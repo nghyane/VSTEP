@@ -4,19 +4,19 @@
 
 ---
 
-## Phân Bổ Dạng Câu Hỏi
+## Kỹ Năng Được Kiểm Tra (Theo VSTEP Official)
 
-```mermaid
-pie showData
-    title Tỷ Lệ Dạng Câu Hỏi Reading
-    "Detail (Chi tiết)" : 32.5
-    "Vocabulary (Từ vựng)" : 17.5
-    "Inference (Suy luận)" : 17.5
-    "Main Idea (Ý chính)" : 12.5
-    "Reference (Đại từ)" : 10
-    "EXCEPT/NOT (Phủ định)" : 7.5
-    "Tone/Attitude (Thái độ)" : 5
-```
+Theo [vstep.vnu.edu.vn](https://vstep.vnu.edu.vn/test-format/), phần Reading kiểm tra 5 kỹ năng:
+
+| Kỹ năng | Mô tả |
+|---------|-------|
+| **Reading for details** | Tìm thông tin cụ thể trong bài |
+| **Reading for main idea** | Xác định ý chính, chủ đề |
+| **Reading for attitudes** | Hiểu thái độ, quan điểm tác giả |
+| **Inferring meaning** | Suy luận từ thông tin ngụ ý |
+| **Understanding vocabulary in context** | Hiểu nghĩa từ theo ngữ cảnh |
+
+**Lưu ý**: Nguồn chính thức không công bố tỷ lệ % cụ thể cho từng dạng câu hỏi.
 
 ## Cấu Trúc Độ Khó Theo Passage
 
@@ -66,7 +66,9 @@ flowchart LR
 
 ---
 
-## Các Dạng Câu Hỏi
+## Các Dạng Câu Hỏi Chi Tiết
+
+> Tỷ lệ % dưới đây là ước tính dựa trên phân tích đề thi thực tế, không phải số liệu chính thức.
 
 ### 1. Detail Questions (Câu hỏi chi tiết) - 30-35%
 
