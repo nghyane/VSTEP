@@ -8,7 +8,7 @@
 
 ```mermaid
 pie showData
-    title 📊 Tỷ Lệ Dạng Câu Hỏi Reading
+    title Tỷ Lệ Dạng Câu Hỏi Reading
     "Detail (Chi tiết)" : 32.5
     "Vocabulary (Từ vựng)" : 17.5
     "Inference (Suy luận)" : 17.5
@@ -23,23 +23,18 @@ pie showData
 ```mermaid
 flowchart LR
     subgraph P1["Passage 1"]
-        L1["🟢 B1<br/>~450 từ<br/>Chủ đề quen thuộc"]
+        L1["B1 - 450 từ - Chủ đề quen thuộc"]
     end
-    
     subgraph P2["Passage 2"]
-        L2["🟡 B2<br/>~500 từ<br/>Khoa học/Xã hội"]
+        L2["B2 - 500 từ - Khoa học/Xã hội"]
     end
-    
     subgraph P3["Passage 3"]
-        L3["🟡 B2<br/>~500 từ<br/>Bán học thuật"]
+        L3["B2 - 500 từ - Bán học thuật"]
     end
-    
     subgraph P4["Passage 4"]
-        L4["🔴 C1<br/>~550 từ<br/>Học thuật phức tạp"]
+        L4["C1 - 550 từ - Học thuật phức tạp"]
     end
-    
     P1 --> P2 --> P3 --> P4
-    
     style L1 fill:#c8e6c9,stroke:#4caf50
     style L2 fill:#fff9c4,stroke:#fbc02d
     style L3 fill:#fff9c4,stroke:#fbc02d
@@ -65,9 +60,9 @@ flowchart LR
 | Passage | Level | Số từ | Đặc điểm nội dung |
 |---------|-------|-------|-------------------|
 | **Passage 1** | B1 (Level 3) | ~450 từ | Chủ đề quen thuộc, tình huống hàng ngày |
-| **Passage 2** | B2 (Level 4) | ~450 từ | Khoa học/Xã hội, thông tin rõ ràng |
-| **Passage 3** | B2 (Level 4) | ~450 từ | Chủ đề chuyên môn, bán học thuật |
-| **Passage 4** | C1 (Level 5) | ~450+ từ | Chủ đề phức tạp, nội dung học thuật |
+| **Passage 2** | B2 (Level 4) | ~500 từ | Khoa học/Xã hội, thông tin rõ ràng |
+| **Passage 3** | B2 (Level 4) | ~500 từ | Chủ đề chuyên môn, bán học thuật |
+| **Passage 4** | C1 (Level 5) | ~550 từ | Chủ đề phức tạp, nội dung học thuật |
 
 ---
 

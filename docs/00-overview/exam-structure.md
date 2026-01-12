@@ -11,6 +11,18 @@
 
 ---
 
+## Căn Cứ Pháp Lý
+
+| Văn bản | Nội dung |
+|---------|----------|
+| **Thông tư 01/2014/TT-BGDĐT** | Khung năng lực ngoại ngữ 6 bậc dùng cho Việt Nam (24/01/2014) |
+| **Quyết định 729/QĐ-BGDĐT** | Quy định định dạng đề thi VSTEP B1-C1 (Bậc 3-5) |
+| **Quyết định 1481/QĐ-BGDĐT** | Quy định định dạng đề thi VSTEP A2 (Bậc 2) |
+
+**Nguồn chính thức**: [vstep.vnu.edu.vn](https://vstep.vnu.edu.vn) | [Thông tư 01/2014](https://english.luatvietnam.vn/circular-no-01-2014-tt-bgddt)
+
+---
+
 ## Cấu trúc bài thi
 
 | Kỹ năng | Thời gian | Số câu/task | Format |
@@ -18,7 +30,7 @@
 | **Listening** | 40 phút | 35 MCQ | 3 parts |
 | **Reading** | 60 phút | 40 MCQ | 4 passages |
 | **Writing** | 60 phút | 2 tasks | Letter + Essay |
-| **Speaking** | 12 phút | 3 parts | Face-to-face |
+| **Speaking** | 10-12 phút | 3 parts | Face-to-face |
 
 **Tổng thời gian**: ~172 phút
 
@@ -26,7 +38,7 @@
 
 ## Chi tiết từng phần
 
-### 🎧 Listening (40 phút)
+### Listening (40 phút)
 
 | Part | Câu hỏi | Nội dung | Level |
 |------|---------|----------|-------|
@@ -34,11 +46,11 @@
 | **Part 2** | Q9-20 | 3 hội thoại dài | B1-B2 |
 | **Part 3** | Q21-35 | 3 bài giảng/thuyết trình | B2-C1 |
 
-⚠️ **Lưu ý**: Audio chỉ phát **MỘT LẦN**
+**Lưu ý**: Audio chỉ phát **MỘT LẦN**
 
 ---
 
-### 📖 Reading (60 phút)
+### Reading (60 phút)
 
 | Passage | Câu hỏi | Độ dài | Level |
 |---------|---------|--------|-------|
@@ -51,7 +63,7 @@
 
 ---
 
-### ✍️ Writing (60 phút)
+### Writing (60 phút)
 
 | Task | Dạng bài | Số từ | Thời gian | Trọng số |
 |------|----------|-------|-----------|----------|
@@ -60,7 +72,7 @@
 
 ---
 
-### 🎤 Speaking (12 phút)
+### Speaking (10-12 phút)
 
 | Part | Tên | Thời gian | Nội dung |
 |------|-----|-----------|----------|
@@ -74,46 +86,39 @@
 
 ```mermaid
 flowchart TB
-    subgraph VSTEP["🎓 VSTEP.3-5 EXAM (~172 phút)"]
+    subgraph VSTEP["VSTEP.3-5 EXAM - 172 phút"]
         direction TB
-        
         subgraph Skills["4 Kỹ Năng"]
-            L["🎧 LISTENING<br/>40 phút | 35 MCQ"]
-            R["📖 READING<br/>60 phút | 40 MCQ"]
-            W["✍️ WRITING<br/>60 phút | 2 tasks"]
-            S["🎤 SPEAKING<br/>12 phút | 3 parts"]
+            L["LISTENING - 40 phút - 35 MCQ"]
+            R["READING - 60 phút - 40 MCQ"]
+            W["WRITING - 60 phút - 2 tasks"]
+            S["SPEAKING - 10-12 phút - 3 parts"]
         end
-        
         subgraph LParts["Listening Parts"]
-            L1["Part 1: Thông báo ngắn<br/>8 câu | B1"]
-            L2["Part 2: Hội thoại<br/>12 câu | B1-B2"]
-            L3["Part 3: Bài giảng<br/>15 câu | B2-C1"]
+            L1["Part 1: Thông báo ngắn - 8 câu - B1"]
+            L2["Part 2: Hội thoại - 12 câu - B1-B2"]
+            L3["Part 3: Bài giảng - 15 câu - B2-C1"]
         end
-        
         subgraph RParts["Reading Passages"]
-            R1["Passage 1: ~450 từ | B1"]
-            R2["Passage 2: ~500 từ | B2"]
-            R3["Passage 3: ~500 từ | B2"]
-            R4["Passage 4: ~550 từ | C1"]
+            R1["Passage 1: 450 từ - B1"]
+            R2["Passage 2: 500 từ - B2"]
+            R3["Passage 3: 500 từ - B2"]
+            R4["Passage 4: 550 từ - C1"]
         end
-        
         subgraph WTasks["Writing Tasks"]
-            W1["Task 1: Email/Letter<br/>≥120 từ | 1/3 điểm"]
-            W2["Task 2: Essay<br/>≥250 từ | 2/3 điểm"]
+            W1["Task 1: Email/Letter - 120 từ - 1/3 điểm"]
+            W2["Task 2: Essay - 250 từ - 2/3 điểm"]
         end
-        
         subgraph SParts["Speaking Parts"]
-            S1["Part 1: Giao tiếp xã hội<br/>2-3 phút"]
-            S2["Part 2: Thảo luận giải pháp<br/>3-4 phút"]
-            S3["Part 3: Phát triển chủ đề<br/>4-5 phút"]
+            S1["Part 1: Giao tiếp xã hội - 2-3 phút"]
+            S2["Part 2: Thảo luận giải pháp - 3-4 phút"]
+            S3["Part 3: Phát triển chủ đề - 4-5 phút"]
         end
-        
         L --> LParts
         R --> RParts
         W --> WTasks
         S --> SParts
     end
-    
     style VSTEP fill:#e8f4fd,stroke:#1976d2
     style L fill:#fff3e0,stroke:#f57c00
     style R fill:#e8f5e9,stroke:#4caf50
@@ -134,7 +139,7 @@ flowchart TB
 │                                                             │
 │  ┌─────────────┐                                           │
 │  │  SPEAKING   │     Total: ~172 minutes                   │
-│  │   12 min    │                                           │
+│  │  10-12 min  │                                           │
 │  │  3 parts    │                                           │
 │  └─────────────┘                                           │
 │                                                             │

@@ -1,8 +1,8 @@
-# 📚 VSTEP Exam Analysis Documentation
+# VSTEP Exam Analysis Documentation
 
 > Tài liệu phân tích toàn diện kỳ thi VSTEP (Vietnamese Standardized Test of English Proficiency)
 
-## 🎯 Mục đích tài liệu
+## Mục đích tài liệu
 
 Phân tích chi tiết format đề thi VSTEP các level B1, B2, C1 phục vụ:
 - Nghiên cứu cấu trúc đề thi
@@ -11,7 +11,7 @@ Phân tích chi tiết format đề thi VSTEP các level B1, B2, C1 phục vụ:
 
 ---
 
-## 📁 Cấu trúc tài liệu
+## Cấu trúc tài liệu
 
 ```
 docs/
@@ -19,62 +19,62 @@ docs/
 ├── README.md                 # Index này
 │
 ├── 00-overview/              # Tổng quan VSTEP
-│   ├── exam-structure.md     # Cấu trúc bài thi ✅
-│   └── scoring-system.md     # Hệ thống tính điểm ✅
+│   ├── exam-structure.md     # Cấu trúc bài thi
+│   └── scoring-system.md     # Hệ thống tính điểm
 │
 ├── 01-format/                # Format tổng quan
-│   └── overview.md           # Tổng quan format VSTEP ✅
+│   └── overview.md           # Tổng quan format VSTEP
 │
-├── 02-writing/               # 🔥 FOCUS: Phân tích Writing
+├── 02-writing/               # FOCUS: Phân tích Writing
 │   │
 │   ├── task1/                # Email/Letter
-│   │   ├── letter-types.md   # 7 loại thư chi tiết ✅
-│   │   └── prompts.md        # Ngân hàng đề Task 1 (20+ đề) ✅
+│   │   ├── letter-types.md   # 7 loại thư chi tiết
+│   │   └── prompts.md        # Ngân hàng đề Task 1 (20+ đề)
 │   │
 │   ├── task2/                # Essay
-│   │   ├── essay-types.md    # 5 dạng essay chi tiết ✅
-│   │   └── prompts.md        # Ngân hàng đề Task 2 (30+ đề) ✅
+│   │   ├── essay-types.md    # 5 dạng essay chi tiết
+│   │   └── prompts.md        # Ngân hàng đề Task 2 (30+ đề)
 │   │
 │   ├── samples/              # Bài mẫu
-│   │   ├── b1-sample.md      # Bài mẫu level B1 ✅
-│   │   ├── b2-sample.md      # Bài mẫu level B2 ✅
-│   │   └── c1-sample.md      # Bài mẫu level C1 ✅
+│   │   ├── b1-sample.md      # Bài mẫu level B1
+│   │   ├── b2-sample.md      # Bài mẫu level B2
+│   │   └── c1-sample.md      # Bài mẫu level C1
 │   │
 │   ├── vocabulary/           # Từ vựng theo chủ đề
-│   │   └── topics.md         # 8 chủ đề, 400+ từ ✅
+│   │   └── topics.md         # 8 chủ đề, 400+ từ
 │   │
 │   └── errors/               # Lỗi thường gặp
-│       └── common-errors.md  # Database lỗi người Việt ✅
+│       └── common-errors.md  # Database lỗi người Việt
 │
 ├── 03-reading/               # Phân tích Reading
-│   ├── format.md             # Format và dạng câu hỏi ✅
-│   └── strategies.md         # Chiến lược làm bài ✅
+│   ├── format.md             # Format và dạng câu hỏi
+│   └── strategies.md         # Chiến lược làm bài
 │
 ├── 04-listening/             # Phân tích Listening
-│   ├── format.md             # Format 3 parts ✅
-│   └── strategies.md         # Chiến lược làm bài ✅
+│   ├── format.md             # Format 3 parts
+│   └── strategies.md         # Chiến lược làm bài
 │
 ├── 05-speaking/              # Phân tích Speaking
-│   ├── format.md             # Format và tiêu chí ✅
-│   └── prompts.md            # Ngân hàng đề Speaking ✅
+│   ├── format.md             # Format và tiêu chí
+│   └── prompts.md            # Ngân hàng đề Speaking
 │
 └── 06-scoring/               # Tiêu chí chấm điểm
-    ├── writing-rubric.md     # Band descriptors Writing 0-10 ✅
-    └── speaking-rubric.md    # Band descriptors Speaking 0-10 ✅
+    ├── writing-rubric.md     # Band descriptors Writing 0-10
+    └── speaking-rubric.md    # Band descriptors Speaking 0-10
 ```
 
 ---
 
-## 🔗 Quick Navigation
+## Quick Navigation
 
-### 📋 Tổng quan VSTEP
+### Tổng quan VSTEP
 | Tài liệu | Mô tả |
 |----------|-------|
 | [Format Overview](./01-format/overview.md) | Tổng quan format VSTEP.3-5, so sánh IELTS |
 | [Exam Structure](./00-overview/exam-structure.md) | Cấu trúc tổng thể 4 kỹ năng |
 | [Scoring System](./00-overview/scoring-system.md) | Cách tính điểm, quy đổi level |
 
-### ✍️ Writing (Focus chính)
+### Writing (Focus chính)
 | Tài liệu | Mô tả |
 |----------|-------|
 | [Task 1 - Letter Types](./02-writing/task1/letter-types.md) | 7 loại thư với templates, phrases |
@@ -89,19 +89,19 @@ docs/
 | [Writing Rubric](./06-scoring/writing-rubric.md) | Band descriptors Writing 0-10 |
 | [Speaking Rubric](./06-scoring/speaking-rubric.md) | Band descriptors Speaking 0-10 |
 
-### 📖 Reading
+### Reading
 | Tài liệu | Mô tả |
 |----------|-------|
 | [Reading Format](./03-reading/format.md) | Format, 8 dạng câu hỏi, chủ đề theo level |
 | [Reading Strategies](./03-reading/strategies.md) | Chiến lược chi tiết từng dạng câu hỏi |
 
-### 🎧 Listening
+### Listening
 | Tài liệu | Mô tả |
 |----------|-------|
 | [Listening Format](./04-listening/format.md) | Format 3 parts, độ khó theo level |
 | [Listening Strategies](./04-listening/strategies.md) | Chiến lược và mẹo làm bài |
 
-### 🗣️ Speaking
+### Speaking
 | Tài liệu | Mô tả |
 |----------|-------|
 | [Speaking Format](./05-speaking/format.md) | Format 3 parts, tiêu chí đánh giá, band descriptors |
@@ -109,7 +109,7 @@ docs/
 
 ---
 
-## 📊 Thống kê nội dung
+## Thống kê nội dung
 
 | Phần | Số lượng |
 |------|----------|
@@ -125,7 +125,7 @@ docs/
 
 ---
 
-## 📅 Nguồn dữ liệu
+## Nguồn dữ liệu
 
 | Loại | Nguồn |
 |------|-------|
@@ -137,14 +137,14 @@ docs/
 
 ---
 
-## 📝 VSTEP Overview
+## VSTEP Overview
 
 ```
 ╔══════════════════════════════════════════════════════════════════╗
 ║                    VSTEP.3-5 TỔNG QUAN                           ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║  KỸ NĂNG: Listening (40p) + Reading (60p) + Writing (60p)        ║
-║           + Speaking (12p) = ~3 giờ tổng cộng                    ║
+║           + Speaking (10-12p) = ~3 giờ tổng cộng                 ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║  ĐIỂM:    0-3.5 = Không cấp chứng chỉ                           ║
 ║           4.0-5.5 = Bậc 3 (B1) ≈ IELTS 4.0-5.5                  ║
@@ -156,6 +156,19 @@ docs/
 ║  TRUNG TÂM THI: 34+ trường đại học trên cả nước                 ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
+
+---
+
+## Về Thư Mục `sample/`
+
+Các file JSON trong thư mục `sample/` là dữ liệu tham khảo được thu thập từ nhiều nguồn khác nhau. **Lưu ý quan trọng:**
+
+- Dữ liệu có thể **không đầy đủ** (chỉ có 1 phần thay vì toàn bộ bài thi)
+- Một số trường `question_text` có thể để trống
+- **Không đại diện** cho format đề thi thực tế 100%
+- Vui lòng tham khảo tài liệu trong `docs/` để biết **format chính thức**
+
+**Nguồn chính thức**: [vstep.vnu.edu.vn/test-format/](https://vstep.vnu.edu.vn/test-format/)
 
 ---
 

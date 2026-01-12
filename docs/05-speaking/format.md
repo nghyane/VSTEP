@@ -1,6 +1,6 @@
 # VSTEP Speaking Section - Phân Tích Chi Tiết
 
-> **Thời gian**: 12 phút | **Số phần**: 3 parts | **Hình thức**: Phỏng vấn trực tiếp
+> **Thời gian**: 10-12 phút | **Số phần**: 3 parts | **Hình thức**: Phỏng vấn trực tiếp
 
 ---
 
@@ -8,30 +8,26 @@
 
 ```mermaid
 flowchart TB
-    subgraph Criteria["🎯 5 TIÊU CHÍ ĐÁNH GIÁ SPEAKING"]
+    subgraph Criteria["5 TIÊU CHÍ ĐÁNH GIÁ SPEAKING"]
         direction TB
-        
-        G["📝 Grammar<br/>Ngữ pháp<br/>20%"]
-        V["📚 Vocabulary<br/>Từ vựng<br/>20%"]
-        P["🗣️ Pronunciation<br/>Phát âm<br/>20%"]
-        F["💨 Fluency<br/>Lưu loát<br/>20%"]
-        D["🔗 Discourse<br/>Diễn ngôn<br/>20%"]
+        G["Grammar - Ngữ pháp - 20%"]
+        V["Vocabulary - Từ vựng - 20%"]
+        P["Pronunciation - Phát âm - 20%"]
+        F["Fluency - Lưu loát - 20%"]
+        D["Discourse - Diễn ngôn - 20%"]
     end
-    
     subgraph Details["Chi Tiết Tiêu Chí"]
-        G1["• Phạm vi cấu trúc<br/>• Độ chính xác<br/>• Độ phức tạp"]
-        V1["• Phạm vi từ vựng<br/>• Từ vựng nâng cao<br/>• Collocations"]
-        P1["• Âm riêng lẻ<br/>• Trọng âm từ/câu<br/>• Ngữ điệu"]
-        F1["• Tốc độ nói<br/>• Ít ngập ngừng<br/>• Tự sửa mượt"]
-        D1["• Tổ chức ý<br/>• Liên kết<br/>• Phát triển chủ đề"]
+        G1["Phạm vi cấu trúc, Độ chính xác, Độ phức tạp"]
+        V1["Phạm vi từ vựng, Từ vựng nâng cao, Collocations"]
+        P1["Âm riêng lẻ, Trọng âm từ/câu, Ngữ điệu"]
+        F1["Tốc độ nói, Ít ngập ngừng, Tự sửa mượt"]
+        D1["Tổ chức ý, Liên kết, Phát triển chủ đề"]
     end
-    
     G --> G1
     V --> V1
     P --> P1
     F --> F1
     D --> D1
-    
     style Criteria fill:#e8f4fd,stroke:#1976d2
     style G fill:#c8e6c9,stroke:#4caf50
     style V fill:#fff9c4,stroke:#fbc02d
@@ -45,19 +41,15 @@ flowchart TB
 ```mermaid
 flowchart LR
     subgraph Part1["Part 1: Social Interaction"]
-        P1T["⏱️ 2-3 phút<br/>📋 3-6 câu hỏi<br/>🎯 Giao tiếp cơ bản"]
+        P1T["2-3 phút - 3-6 câu hỏi - Giao tiếp cơ bản"]
     end
-    
     subgraph Part2["Part 2: Solution Discussion"]
-        P2T["⏱️ 3-4 phút<br/>📋 1 phút chuẩn bị<br/>🎯 Chọn giải pháp tốt nhất"]
+        P2T["3-4 phút - 1 phút chuẩn bị - Chọn giải pháp tốt nhất"]
     end
-    
     subgraph Part3["Part 3: Topic Development"]
-        P3T["⏱️ 4-5 phút<br/>📋 1 phút chuẩn bị<br/>🎯 Phát triển chủ đề sâu"]
+        P3T["4-5 phút - 1 phút chuẩn bị - Phát triển chủ đề sâu"]
     end
-    
     Part1 --> Part2 --> Part3
-    
     style P1T fill:#c8e6c9,stroke:#4caf50
     style P2T fill:#fff9c4,stroke:#fbc02d
     style P3T fill:#ffccbc,stroke:#ff5722
@@ -67,7 +59,7 @@ flowchart LR
 
 | Thông tin | Chi tiết |
 |-----------|----------|
-| **Tổng thời gian** | 12 phút |
+| **Tổng thời gian** | 10-12 phút |
 | **Số phần** | 3 parts |
 | **Hình thức** | Phỏng vấn 1-1 với giám khảo |
 | **Thang điểm** | 0-10 |
