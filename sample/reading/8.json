@@ -1,0 +1,163 @@
+{
+  "exam_type": "reading",
+  "exam_id": "8",
+  "title": "Làm bài luyện đọc | Luyện đề VSTEP",
+  "source_url": "https://luyenthivstep.vn/luyen-de/lam-bai-doc/8",
+  "scraped_at": "2026-01-08T22:24:19",
+  "listening": null,
+  "reading": {
+    "exam_id": "8",
+    "title": "Làm bài luyện đọc | Luyện đề VSTEP",
+    "passages": [
+      {
+        "passage_number": 2,
+        "title": "",
+        "content": "Câu 1: According to the passage, it is believed that modern robots look like\nA. adults\nB. growns-up\nC. teenagers\nD. young children\nCâu 2: The phrase \"a killing spree\" in paragraph (A) is closest meaning to\nA. a massive murder\nB. a dangerous robot\nC. a fast robot\nD. a modern robot\nCâu 3: Why does the writer mention \"fictional depictions\" in paragraph (B)?\nA. to emphasize the importance of robots\nB. to introduce \"roboticists\"\nC. to compare with the definition of \"robot\"\nD. to illustrate some guidelines\nCâu 4: The word \"roboticists\" in paragraph (B) refers to\nA. things that robots can do\nB. parts of a robot\nC. a specialist in robots or robotics\nD. robots industry\nCâu 5: Which of the following is NOT true according to the passage?\nA. Robots are totally believed by humans\nB. People are afraid that robots can steal their jobs\nC. Robots can do tasks independently\nD. People worked less effectively than robots\nCâu 6: The word \"supplant\" in paragraph (C) is closest in meaning to\nA. recover\nB. replace\nC. help\nD. change\nCâu 7: What does the word \"their\" in paragraph (D) refer to?\nA. designers'\nB. factories'\nC. machines'\nD. robots'\nCâu 8: The word \"inevitable\" in paragraph (D) can be replaced by\nA. unbelievable\nB. impossible\nC. important\nD. unavoidable\nCâu 9: What does the word \"them\" in paragraph (C) refer to?\nA. Robots\nB. Toddlers\nC. Humans\nD. Modern robots\nCâu 10: In which paragraph does the writer give a definition?\nA. A\nB. D\nC. B\nD. C",
+        "questions": [
+          {
+            "question_number": 1,
+            "question_text": "",
+            "options": {
+              "A": "adults",
+              "B": "growns-up",
+              "C": "teenagers",
+              "D": "young children"
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 2,
+            "question_text": "",
+            "options": {
+              "A": "a massive murder",
+              "B": "a dangerous robot",
+              "C": "a fast robot",
+              "D": "a modern robot"
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 3,
+            "question_text": "",
+            "options": {
+              "A": "to emphasize the importance of robots",
+              "B": "to introduce \"roboticists\"",
+              "C": "to compare with the definition of \"robot\"",
+              "D": "to illustrate some guidelines"
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 4,
+            "question_text": "",
+            "options": {
+              "A": "things that robots can do",
+              "B": "parts of a robot",
+              "C": "a specialist in robots or robotics",
+              "D": "robots industry"
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 5,
+            "question_text": "",
+            "options": {
+              "A": "Robots are totally believed by humans",
+              "B": "People are afraid that robots can steal their jobs",
+              "C": "Robots can do tasks independently",
+              "D": "People worked less effectively than robots"
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 6,
+            "question_text": "",
+            "options": {
+              "A": "recover",
+              "B": "replace",
+              "C": "help",
+              "D": "change"
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 7,
+            "question_text": "",
+            "options": {
+              "A": "designers'",
+              "B": "factories'",
+              "C": "machines'",
+              "D": "robots'"
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 8,
+            "question_text": "",
+            "options": {
+              "A": "unbelievable",
+              "B": "impossible",
+              "C": "important",
+              "D": "unavoidable"
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 9,
+            "question_text": "",
+            "options": {
+              "A": "Robots",
+              "B": "Toddlers",
+              "C": "Humans",
+              "D": "Modern robots"
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 10,
+            "question_text": "",
+            "options": {
+              "A": "A",
+              "B": "D",
+              "C": "B",
+              "D": "C"
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          }
+        ]
+      }
+    ]
+  },
+  "writing": null,
+  "speaking": null
+}

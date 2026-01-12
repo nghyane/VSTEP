@@ -1,0 +1,27 @@
+{
+  "exam_type": "speaking",
+  "exam_id": "4",
+  "title": "Làm bài luyện nói | Luyện đề VSTEP",
+  "source_url": "https://luyenthivstep.vn/luyen-de/lam-bai-noi/4",
+  "scraped_at": "2026-01-09T11:09:55",
+  "listening": null,
+  "reading": null,
+  "writing": null,
+  "speaking": {
+    "exam_id": "4",
+    "title": "Làm bài luyện nói | Luyện đề VSTEP",
+    "parts": [
+      {
+        "part_number": 1,
+        "title": "",
+        "instructions": "Let's talk about holidays.\n- What did you do on your last holiday?\n- Who do you prefer spending your holidays with?\n- Do you prefer going on holidays abroad?\nNow, let's talk about TV programs.\n- How many hours a day do you watch television?\n- What kinds of programs do you like?\n- Do you prefer watching television alone or with others? Why?",
+        "topic": "",
+        "mind_map_nodes": [],
+        "follow_up_questions": [],
+        "preparation_time": null,
+        "speaking_time": 3,
+        "sample_audio_url": null
+      }
+    ]
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "exam_type": "reading",
+  "exam_id": "6",
+  "title": "Làm bài luyện đọc | Luyện đề VSTEP",
+  "source_url": "https://luyenthivstep.vn/luyen-de/lam-bai-doc/6",
+  "scraped_at": "2026-01-08T22:24:13",
+  "listening": null,
+  "reading": {
+    "exam_id": "6",
+    "title": "Làm bài luyện đọc | Luyện đề VSTEP",
+    "passages": [
+      {
+        "passage_number": 2,
+        "title": "",
+        "content": "Câu 1: The passage answers which of the following questions?\nA. What instruments comprised a typical jazz band of the 1920's?\nB. Which early jazz musicians most influenced rhythmand blues music?\nC. Why is dancing closely related to popular music in the United States?\nD. What are the differences between jazz and other forms of music?\nCâu 2: Which of the following appeared before jazz as a popular music for dancing?\nA. Disco\nB. Rhythm and blues\nC. Ragtime\nD. Rock\nCâu 3: According to the passage, jazz musicians are able to demonstrate their individual artistry mainly by?\nA. reading music with great skill\nB. preparing musical arrangements\nC. being able to play all types of popular music\nD. creating musical variations while performing\nCâu 4: Which of the following was the function of \"get-off\" musicians?\nA. Lead the band\nB. Teach dance routines created for new music\nC. Assist the other band members in packing up after a performance\nD. Provide solo performances in a band or orchestra\nCâu 5: Which two types of music emerged during the same era?\nA. Jazz/Dance\nB. Rock/Rhythm & Blues\nC. Dance/Rhythm & Blues\nD. Jazz/Rock\nCâu 6: Louis Armstrong was mentioned as an influential musician in which jazz style?\nA. Hot jazz / Swing jazz\nB. Structured jazz\nC. Big band jazz\nD. Chorus-based jazz\nCâu 7: The word \"consciously\" is closest in meaning to\nA. carelessly\nB. purposely\nC. easily\nD. periodically\nCâu 8: The word \"unadorned\" is closest in meaning to\nA. inexpensive\nB. lovely\nC. disorganized\nD. plain\nCâu 9: Which of the following terms is defined in the passage?\nA. cornet player\nB. improvisation\nC. multichorus\nD. polyphony\nCâu 10: The topic of the passage is developed primarily by means of\nA. presenting contrasting points of views\nB. dividing the discussion into two major areas\nC. describing historical events in sequence\nD. providing biographies of famous musician",
+        "questions": [
+          {
+            "question_number": 1,
+            "question_text": "",
+            "options": {
+              "A": "What instruments comprised a typical jazz band of the 1920's?",
+              "B": "Which early jazz musicians most influenced rhythmand blues music?",
+              "C": "Why is dancing closely related to popular music in the United States?",
+              "D": "What are the differences between jazz and other forms of music?"
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 2,
+            "question_text": "",
+            "options": {
+              "A": "Disco",
+              "B": "Rhythm and blues",
+              "C": "Ragtime",
+              "D": "Rock"
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 3,
+            "question_text": "",
+            "options": {
+              "A": "reading music with great skill",
+              "B": "preparing musical arrangements",
+              "C": "being able to play all types of popular music",
+              "D": "creating musical variations while performing"
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 4,
+            "question_text": "",
+            "options": {
+              "A": "Lead the band",
+              "B": "Teach dance routines created for new music",
+              "C": "Assist the other band members in packing up after a performance",
+              "D": "Provide solo performances in a band or orchestra"
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 5,
+            "question_text": "",
+            "options": {
+              "A": "Jazz/Dance",
+              "B": "Rock/Rhythm & Blues",
+              "C": "Dance/Rhythm & Blues",
+              "D": "Jazz/Rock"
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 6,
+            "question_text": "",
+            "options": {
+              "A": "Hot jazz / Swing jazz",
+              "B": "Structured jazz",
+              "C": "Big band jazz",
+              "D": "Chorus-based jazz"
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 7,
+            "question_text": "",
+            "options": {
+              "A": "carelessly",
+              "B": "purposely",
+              "C": "easily",
+              "D": "periodically"
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 8,
+            "question_text": "",
+            "options": {
+              "A": "inexpensive",
+              "B": "lovely",
+              "C": "disorganized",
+              "D": "plain"
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 9,
+            "question_text": "",
+            "options": {
+              "A": "cornet player",
+              "B": "improvisation",
+              "C": "multichorus",
+              "D": "polyphony"
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 10,
+            "question_text": "",
+            "options": {
+              "A": "presenting contrasting points of views",
+              "B": "dividing the discussion into two major areas",
+              "C": "describing historical events in sequence",
+              "D": "providing biographies of famous musician"
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          }
+        ]
+      }
+    ]
+  },
+  "writing": null,
+  "speaking": null
+}

@@ -1,0 +1,235 @@
+{
+  "exam_type": "listening",
+  "exam_id": "9",
+  "title": "Làm bài luyện nghe | Luyện đề VSTEP",
+  "source_url": "https://luyenthivstep.vn/luyen-de/lam-bai-nghe/9",
+  "scraped_at": "2026-01-08T22:21:18",
+  "listening": {
+    "exam_id": "9",
+    "title": "Làm bài luyện nghe | Luyện đề VSTEP",
+    "audio_url": "https://luyenthivstep.vn/assets/nhch/listening/bac3/lp3-1664870447_464ab7ec01dcc19a11f6.mp3",
+    "sections": [
+      {
+        "part_number": 1,
+        "part_title": "Listening",
+        "instructions": "",
+        "questions": [
+          {
+            "question_number": 1,
+            "question_text": "",
+            "options": {
+              "A": "There were no Vietnamese people living near her.",
+              "B": "There were no Vietnamese working in the stores.",
+              "C": "Her mother could speak a little English.",
+              "D": "There wasn't always someone to go shopping with her."
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 2,
+            "question_text": "",
+            "options": {
+              "A": "He didn't have many friends there.",
+              "B": "He had had a much better job in Vietnam.",
+              "C": "He couldn't speak any English.",
+              "D": "He couldn't get used to the working style."
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 3,
+            "question_text": "",
+            "options": {
+              "A": "They did not need extra English lessons.",
+              "B": "They speak with American accents.",
+              "C": "They quickly adopted the way of life.",
+              "D": "They look more American."
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 4,
+            "question_text": "",
+            "options": {
+              "A": "Traditional food.",
+              "B": "The warm weather.",
+              "C": "Living close to other people.",
+              "D": "Wearing traditional clothes."
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 5,
+            "question_text": "",
+            "options": {
+              "A": "Her parents only know how to cook Vietnamese food.",
+              "B": "Her parents do not have much money.",
+              "C": "Her parents haven't adopted an American way of life.",
+              "D": "Her parents do not speak English well."
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 6,
+            "question_text": "",
+            "options": {
+              "A": "They didn't teach girls some subjects.",
+              "B": "Girls didn't go to school.",
+              "C": "Every classroom was a mix of boys and girls.",
+              "D": "Boys could learn what they wanted."
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 7,
+            "question_text": "",
+            "options": {
+              "A": "Teachers did not want to teach single-gender classes.",
+              "B": "A law gave girls an equal chance to learn.",
+              "C": "Boys and girls behave better in such classes.",
+              "D": "Scientists said that it was the best thing."
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 8,
+            "question_text": "",
+            "options": {
+              "A": "Because boys know the correct answers.",
+              "B": "Because boys are louder and often talk first.",
+              "C": "Because girls are often shy.",
+              "D": "Because the teacher doesn't ask them questions."
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 9,
+            "question_text": "",
+            "options": {
+              "A": "Boys learn differently than girls.",
+              "B": "They prefer the old teaching styles.",
+              "C": "Boys and girls can bother each other.",
+              "D": "Boys and girls like different things."
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 10,
+            "question_text": "",
+            "options": {
+              "A": "Math",
+              "B": "Physical Education",
+              "C": "Science",
+              "D": "Social Studies"
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 11,
+            "question_text": "",
+            "options": {
+              "A": "the teachers of international department.",
+              "B": "all first-year students in the college.",
+              "C": "the director of international students.",
+              "D": "new international students."
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 12,
+            "question_text": "",
+            "options": {
+              "A": "to deal with all international students' problems.",
+              "B": "to introduce common problems in non-verbal communication.",
+              "C": "to inform the importance of using English in class.",
+              "D": "to introduce the director for international student affairs."
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 13,
+            "question_text": "",
+            "options": {
+              "A": "It's the use of verb tenses and modals.",
+              "B": "It's the language used in class only.",
+              "C": "It's the language of movements and facial expressions.",
+              "D": "It's the way to ask for directions."
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 14,
+            "question_text": "",
+            "options": {
+              "A": "eye contact is the same as most cultures.",
+              "B": "eye contact is considered as a sign of honesty.",
+              "C": "people don't look in others' eyes while talking.",
+              "D": "making eye contact is a sign of disrespect."
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 15,
+            "question_text": "",
+            "options": {
+              "A": "Handshakes are not common.",
+              "B": "A handshake shouldn't be too strong.",
+              "C": "Handshakes need to be firm.",
+              "D": "Shaking hands is not important."
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          }
+        ]
+      }
+    ],
+    "transcript": null
+  },
+  "reading": null,
+  "writing": null,
+  "speaking": null
+}

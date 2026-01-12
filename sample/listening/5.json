@@ -1,0 +1,193 @@
+{
+  "exam_type": "listening",
+  "exam_id": "5",
+  "title": "Làm bài luyện nghe | Luyện đề VSTEP",
+  "source_url": "https://luyenthivstep.vn/luyen-de/lam-bai-nghe/5",
+  "scraped_at": "2026-01-08T22:19:11",
+  "listening": {
+    "exam_id": "5",
+    "title": "Làm bài luyện nghe | Luyện đề VSTEP",
+    "audio_url": "https://luyenthivstep.vn/assets/nhch/listening/bac3/lp2-1664819146_f3e21323a2997bc44c0b.mp3",
+    "sections": [
+      {
+        "part_number": 1,
+        "part_title": "Listening",
+        "instructions": "",
+        "questions": [
+          {
+            "question_number": 1,
+            "question_text": "",
+            "options": {
+              "A": "She is running.",
+              "B": "She is taking the train.",
+              "C": "She is taking the bus.",
+              "D": "She is driving her car."
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 2,
+            "question_text": "",
+            "options": {
+              "A": "He wanted to save time.",
+              "B": "He liked keeping fit at the gym.",
+              "C": "He found running to work was bad for his health.",
+              "D": "He felt tired."
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 3,
+            "question_text": "",
+            "options": {
+              "A": "casual clothes.",
+              "B": "a tracksuit and trainers.",
+              "C": "a shirt and trousers.",
+              "D": "a suit."
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 4,
+            "question_text": "",
+            "options": {
+              "A": "She can make friends at the race.",
+              "B": "It will be good fun.",
+              "C": "It will give big prizes.",
+              "D": "It will make her relaxed."
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 5,
+            "question_text": "",
+            "options": {
+              "A": "His father gave him adventure stories to read.",
+              "B": "His father spent several years travelling around the world.",
+              "C": "His father talked a lot about the places he'd been to.",
+              "D": "His father worked in a travel company."
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 6,
+            "question_text": "",
+            "options": {
+              "A": "He thought he could make a lot of money.",
+              "B": "He wanted to travel to many other different countries.",
+              "C": "He hoped to do more travelling himself.",
+              "D": "He wanted to share his experience with others."
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 7,
+            "question_text": "",
+            "options": {
+              "A": "his wife",
+              "B": "a customer",
+              "C": "his father",
+              "D": "a friend"
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 8,
+            "question_text": "",
+            "options": {
+              "A": "take modern equipment.",
+              "B": "bring in things like television and fridges.",
+              "C": "avoid damaging the area.",
+              "D": "give the local people jobs."
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 9,
+            "question_text": "",
+            "options": {
+              "A": "To get advice about transferring to a different university.",
+              "B": "To decide which classes would be best to take next quarter.",
+              "C": "To ask about the advisor's experiences as an undergraduate.",
+              "D": "To determine the best subject for him to major in."
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 10,
+            "question_text": "",
+            "options": {
+              "A": "He is senior at Kryptos University.",
+              "B": "He wanted to go to a school closer to home.",
+              "C": "He is majoring in accounting.",
+              "D": "He has made lots of friends at Kryptos University."
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 11,
+            "question_text": "",
+            "options": {
+              "A": "Change majors",
+              "B": "Send educational records",
+              "C": "Visit old friends",
+              "D": "Take extra courses"
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 12,
+            "question_text": "",
+            "options": {
+              "A": "He will call his parents.",
+              "B": "He will do research in the lab.",
+              "C": "He will search for more information.",
+              "D": "He will move to his the new university."
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          }
+        ]
+      }
+    ],
+    "transcript": null
+  },
+  "reading": null,
+  "writing": null,
+  "speaking": null
+}

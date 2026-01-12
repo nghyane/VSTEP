@@ -1,0 +1,31 @@
+{
+  "exam_type": "speaking",
+  "exam_id": "3",
+  "title": "Làm bài luyện nói | Luyện đề VSTEP",
+  "source_url": "https://luyenthivstep.vn/luyen-de/lam-bai-noi/3",
+  "scraped_at": "2026-01-09T11:09:53",
+  "listening": null,
+  "reading": null,
+  "writing": null,
+  "speaking": {
+    "exam_id": "3",
+    "title": "Làm bài luyện nói | Luyện đề VSTEP",
+    "parts": [
+      {
+        "part_number": 1,
+        "title": "",
+        "instructions": "Topic: Working in pairs helps students learn better at school.\n\nGives students the opportunity to learn from others\nHelps students become more active\nPair work\nYour own ideas\nImproves students' social skills and interaction\n\nFollow-up questions:\n1. In what situations should pair work be used at school, and why?\n2. What are some possible disadvantages of working in pairs?\n3. How can teachers improve the effectiveness of pair work activities?",
+        "topic": "Working in pairs helps students learn better at school.",
+        "mind_map_nodes": [],
+        "follow_up_questions": [
+          "1. In what situations should pair work be used at school, and why?",
+          "2. What are some possible disadvantages of working in pairs?",
+          "3. How can teachers improve the effectiveness of pair work activities?"
+        ],
+        "preparation_time": null,
+        "speaking_time": 4,
+        "sample_audio_url": null
+      }
+    ]
+  }
+}

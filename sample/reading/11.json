@@ -1,0 +1,163 @@
+{
+  "exam_type": "reading",
+  "exam_id": "11",
+  "title": "Làm bài luyện đọc | Luyện đề VSTEP",
+  "source_url": "https://luyenthivstep.vn/luyen-de/lam-bai-doc/11",
+  "scraped_at": "2026-01-08T22:24:28",
+  "listening": null,
+  "reading": {
+    "exam_id": "11",
+    "title": "Làm bài luyện đọc | Luyện đề VSTEP",
+    "passages": [
+      {
+        "passage_number": 2,
+        "title": "",
+        "content": "Câu 1: What does the passage mainly discuss?\nA. States' rights versus federal rights\nB. The roles of state and federal governments in the economy of the nineteenth century\nC. Regulatory activity by state governments\nD. The participation of state governments in railroad, canal, and turnpike construction\nCâu 2: The word \"effect\" in paragraph (A) is closest in meaning to?\nA. value\nB. influence\nC. argument\nD. restraint\nCâu 3: All of the following are mentioned in the passage as areas that involved state governments in the nineteenth century EXCEPT?\nA. manufacturing\nB. banking\nC. higher education\nD. mining\nCâu 4: The word \"distinct\" in paragraph (A) is closest in meaning to?\nA. innovative\nB. separate\nC. provocative\nD. alarming\nCâu 5: It can be inferred from the first paragraph that in the nineteenth century canals and railroads were _____.\nA. much more expensive to build than they had been previously\nB. sometimes built in part by state companies\nC. built with money that came from the federal government\nD. built predominantly in the western part of the country\nCâu 6: The regulatory activities of state governments included all of the following EXCEPT?\nA. Imposing limits on price fixing\nB. Inspecting perishable trade commodities\nC. Regulating banking activities\nD. Licensing of retail merchants\nCâu 7: The word \"setting\" in paragraph (B) is closest in meaning to?\nA. establishing\nB. avoiding\nC. discussing\nD. analyzing\nCâu 8: The word \"ends\" in paragraph (C) is closest in meaning to?\nA. decisions\nB. goals\nC. services\nD. benefits\nCâu 9: According to the passage, which of the following is true of the Homestead Act of 1862?\nA. It was a law first passed by state governments in the West.\nB. It established tariffs in a number of regions.\nC. It granted settlers easier access to land ownership in the West.\nD. It increased the money supply in the West.\nCâu 10: Which of the following activities was the responsibility of the federal government in the nineteenth century?\nA. Inspection of w",
+        "questions": [
+          {
+            "question_number": 1,
+            "question_text": "",
+            "options": {
+              "A": "States' rights versus federal rights",
+              "B": "The roles of state and federal governments in the economy of the nineteenth century",
+              "C": "Regulatory activity by state governments",
+              "D": "The participation of state governments in railroad, canal, and turnpike construction"
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 2,
+            "question_text": "",
+            "options": {
+              "A": "value",
+              "B": "influence",
+              "C": "argument",
+              "D": "restraint"
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 3,
+            "question_text": "",
+            "options": {
+              "A": "manufacturing",
+              "B": "banking",
+              "C": "higher education",
+              "D": "mining"
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 4,
+            "question_text": "",
+            "options": {
+              "A": "innovative",
+              "B": "separate",
+              "C": "provocative",
+              "D": "alarming"
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 5,
+            "question_text": "",
+            "options": {
+              "A": "much more expensive to build than they had been previously",
+              "B": "sometimes built in part by state companies",
+              "C": "built with money that came from the federal government",
+              "D": "built predominantly in the western part of the country"
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 6,
+            "question_text": "",
+            "options": {
+              "A": "Imposing limits on price fixing",
+              "B": "Inspecting perishable trade commodities",
+              "C": "Regulating banking activities",
+              "D": "Licensing of retail merchants"
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 7,
+            "question_text": "",
+            "options": {
+              "A": "establishing",
+              "B": "avoiding",
+              "C": "discussing",
+              "D": "analyzing"
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 8,
+            "question_text": "",
+            "options": {
+              "A": "decisions",
+              "B": "goals",
+              "C": "services",
+              "D": "benefits"
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 9,
+            "question_text": "",
+            "options": {
+              "A": "It was a law first passed by state governments in the West.",
+              "B": "It established tariffs in a number of regions.",
+              "C": "It granted settlers easier access to land ownership in the West.",
+              "D": "It increased the money supply in the West."
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 10,
+            "question_text": "",
+            "options": {
+              "A": "Inspection of western land development",
+              "B": "Determining the conditions under which individuals worked",
+              "C": "Regulation of the supply of money",
+              "D": "Control of the manufacture of gunpowder"
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          }
+        ]
+      }
+    ]
+  },
+  "writing": null,
+  "speaking": null
+}

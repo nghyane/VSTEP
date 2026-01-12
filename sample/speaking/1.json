@@ -1,0 +1,27 @@
+{
+  "exam_type": "speaking",
+  "exam_id": "1",
+  "title": "Làm bài luyện nói | Luyện đề VSTEP",
+  "source_url": "https://luyenthivstep.vn/luyen-de/lam-bai-noi/1",
+  "scraped_at": "2026-01-09T11:09:51",
+  "listening": null,
+  "reading": null,
+  "writing": null,
+  "speaking": {
+    "exam_id": "1",
+    "title": "Làm bài luyện nói | Luyện đề VSTEP",
+    "parts": [
+      {
+        "part_number": 1,
+        "title": "",
+        "instructions": "Let's talk about going out.\n- How often do you go out? Why?\n- Who do you usually go out with? Why?\n- Where do you often go when you go out? Why?\nNow, let’s talk about a special place you would always want to return to.\n- Can you describe that place?\n- Did you go there alone or with someone else?\n- What makes you want to return to that place?",
+        "topic": "",
+        "mind_map_nodes": [],
+        "follow_up_questions": [],
+        "preparation_time": null,
+        "speaking_time": 3,
+        "sample_audio_url": null
+      }
+    ]
+  }
+}
