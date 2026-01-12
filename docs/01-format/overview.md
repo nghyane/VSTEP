@@ -42,15 +42,64 @@ gantt
 
 ## Đơn Vị Tổ Chức
 
-VSTEP được phát triển và ban hành bởi **Bộ Giáo dục và Đào tạo**. Tính đến tháng 4/2024, có **34 cơ sở giáo dục đại học** được ủy quyền tổ chức thi.
+VSTEP được phát triển và ban hành bởi **Bộ Giáo dục và Đào tạo**. Tính đến tháng 3/2025, có **38 cơ sở giáo dục đại học** được ủy quyền tổ chức thi.
 
-### Các Trung Tâm Khảo Thí Chính
+> **Nguồn chính thức**: [Cục Quản lý chất lượng - Bộ GD&ĐT](https://vqa.moet.gov.vn) (VQA-MOET), cập nhật 31/03/2025
 
-| Khu vực | Trung tâm chính |
-|---------|-----------------|
-| **Hà Nội** | ĐH Ngoại ngữ - ĐHQGHN (ULIS-VNU), ĐH Hà Nội, ĐH Sư phạm Hà Nội, ĐH Ngoại thương, ĐH Kinh tế Quốc dân, Học viện Ngân hàng |
-| **TP.HCM** | ĐH Sư phạm TPHCM, ĐH Ngân hàng TPHCM, ĐH Văn Lang, ĐH Kinh tế TPHCM, ĐH KHXH&NV ĐHQG-HCM, ĐH Sài Gòn |
-| **Các vùng khác** | ĐH Huế, ĐH Đà Nẵng, ĐH Thái Nguyên, ĐH Vinh, ĐH Trà Vinh, ĐH Cần Thơ, ĐH Duy Tân |
+### Danh Sách 38 Trường Tổ Chức Thi VSTEP (Chính thức)
+
+#### Miền Bắc (15 trường)
+
+| STT | Trường | Ghi chú |
+|-----|--------|---------|
+| 1 | ĐH Ngoại ngữ - ĐHQGHN (ULIS-VNU) | Trung tâm chính |
+| 2 | ĐH Sư phạm Hà Nội | |
+| 3 | ĐH Hà Nội | |
+| 4 | ĐH Thái Nguyên | |
+| 5 | Học viện An ninh Nhân dân | |
+| 6 | Học viện Báo chí và Tuyên truyền | |
+| 7 | ĐH Thương mại | |
+| 8 | ĐH Ngoại thương | |
+| 9 | Học viện Khoa học Quân sự | |
+| 10 | Học viện Cảnh sát Nhân dân | |
+| 11 | ĐH Bách khoa Hà Nội | |
+| 12 | ĐH Kinh tế Quốc dân | |
+| 13 | ĐH Phenikaa | |
+| 14 | Học viện Ngân hàng | |
+| 15 | ĐH Thành Đông | Thêm 02/2025 |
+
+#### Miền Trung - Tây Nguyên (6 trường)
+
+| STT | Trường |
+|-----|--------|
+| 1 | ĐH Ngoại ngữ - ĐH Huế |
+| 2 | ĐH Ngoại ngữ - ĐH Đà Nẵng |
+| 3 | ĐH Vinh |
+| 4 | ĐH Duy Tân |
+| 5 | ĐH Quy Nhơn |
+| 6 | ĐH Tây Nguyên |
+
+#### Miền Nam (17 trường)
+
+| STT | Trường | Ghi chú |
+|-----|--------|---------|
+| 1 | ĐH Sư phạm TP.HCM | |
+| 2 | ĐH KHXH&NV - ĐHQG TP.HCM | |
+| 3 | ĐH Ngân hàng TP.HCM | |
+| 4 | ĐH Văn Lang | |
+| 5 | ĐH Kinh tế TP.HCM | |
+| 6 | ĐH Sài Gòn | |
+| 7 | ĐH Cần Thơ | |
+| 8 | ĐH Trà Vinh | |
+| 9 | ĐH Đồng Tháp | |
+| 10 | ĐH Công nghiệp TP.HCM | |
+| 11 | ĐH Công Thương TP.HCM (HUIT) | |
+| 12 | ĐH Kinh tế - Tài chính TP.HCM | |
+| 13 | ĐH Nam Cần Thơ | |
+| 14 | ĐH Lạc Hồng | |
+| 15 | ĐH Tài chính - Marketing | |
+| 16 | ĐH Mở TP.HCM | Thêm 03/2025 |
+| 17 | ĐH Quốc tế Hồng Bàng | Thêm 03/2025 |
 
 ---
 
@@ -106,34 +155,6 @@ VSTEP được phát triển và ban hành bởi **Bộ Giáo dục và Đào t�
 
 ---
 
-## So Sánh VSTEP với IELTS/TOEFL
-
-### Bảng Quy Đổi Điểm (Ước Tính)
-
-| Điểm VSTEP | Level VSTEP | CEFR | IELTS tương đương | TOEFL iBT tương đương |
-|------------|-------------|------|-------------------|----------------------|
-| 4.0 | Bậc 3 | B1 | 4.0 | 42-52 |
-| 4.5 | Bậc 3 | B1 | 4.5 | 53-64 |
-| 5.0-5.5 | Bậc 3 | B1 | 5.0-5.5 | 65-79 |
-| 6.0 | Bậc 4 | B2 | 6.0 | 80-91 |
-| 6.5-7.0 | Bậc 4 | B2 | 6.5 | 92-102 |
-| 7.5-8.0 | Bậc 4 | B2+ | 7.0 | 103-110 |
-| 8.5-10 | Bậc 5 | C1 | 7.5-8.0+ | 110-120 |
-
-### So Sánh VSTEP vs IELTS
-
-| Khía cạnh | VSTEP | IELTS |
-|-----------|-------|-------|
-| **Đơn vị phát triển** | Bộ GD&ĐT Việt Nam | British Council, IDP, Cambridge |
-| **Công nhận** | Chỉ Việt Nam | Quốc tế |
-| **Thang điểm** | 0-10 | 0-9 |
-| **Thời gian Speaking** | 12 phút | 11-14 phút |
-| **Thời gian Listening** | 40 phút | 30 phút |
-| **Lệ phí thi** | ~$72-80 USD | ~$245-260 USD |
-| **Thi máy tính** | Có | Có (một số trung tâm) |
-
----
-
 ## Chi Tiết Từng Kỹ Năng
 
 ### Listening (40 phút - 35 câu)
@@ -172,64 +193,6 @@ VSTEP được phát triển và ban hành bởi **Bộ Giáo dục và Đào t�
 
 ---
 
-## Đăng Ký & Thông Tin Thực Tế
-
-### Lệ Phí Thi (2025)
-
-| Đối tượng | Lệ phí (VNĐ) | Lệ phí (USD ước tính) |
-|-----------|--------------|----------------------|
-| **Thí sinh tự do** | 1,800,000 | ~$72 |
-| **Sinh viên nội bộ** | 1,100,000 - 1,400,000 | ~$44-56 |
-| **Phúc khảo** | 800,000 | ~$32 |
-
-### Tần Suất Thi
-
-- **11+ kỳ thi mỗi năm** tại các trung tâm lớn (ULIS-VNU)
-- Tổ chức hàng tháng hoặc 2 tháng/lần
-- Nhiều trung tâm trên cả nước
-
-### Quy Trình Đăng Ký
-
-1. Chuẩn bị ảnh kỹ thuật số và scan CMND/CCCD
-2. Đăng ký online trên website trung tâm thi
-3. Chuyển khoản lệ phí
-4. Nhận xác nhận và giấy báo dự thi
-
-### Hiệu Lực Chứng Chỉ
-
-| Khía cạnh | Chi tiết |
-|-----------|----------|
-| **Hiệu lực chính thức** | Không ghi ngày hết hạn trên chứng chỉ |
-| **Thực tế** | 1.5-3 năm (tùy cơ sở chấp nhận) |
-| **Tốt nghiệp đại học** | Thường yêu cầu chứng chỉ trong 2 năm |
-| **Sau đại học/Học bổng** | Thường 2-3 năm |
-| **Cơ sở pháp lý** | Công văn 3755/BGDĐT-GDTX 2016 |
-
----
-
-## Tại Sao Chọn VSTEP?
-
-### Ưu Điểm
-
-| Lợi ích | Chi tiết |
-|---------|----------|
-| ✅ **Chi phí thấp** | ~$72 so với ~$250 của IELTS |
-| ✅ **Công nhận trong nước** | Được Chính phủ, các trường ĐH công nhận đầy đủ |
-| ✅ **Yêu cầu tốt nghiệp** | Được chấp nhận cho tốt nghiệp CN/ThS tại hầu hết các trường |
-| ✅ **Công chức** | Hợp lệ cho đơn xin việc công |
-| ✅ **Miễn thi THPT** | VSTEP B1 miễn thi ngoại ngữ THPT |
-| ✅ **Nhiều kỳ thi** | Nhiều ngày thi trong năm |
-
-### Hạn Chế
-
-| Hạn chế | Chi tiết |
-|---------|----------|
-| ❌ **Không công nhận quốc tế** | Không được chấp nhận ở nước ngoài |
-| ❌ **Một số trường ưu tiên IELTS** | Các trường top thường ưu tiên chứng chỉ quốc tế |
-| ❌ **Không dùng cho du học** | Không thể dùng cho du học hoặc định cư |
-
----
-
 ## Tài Liệu Chính Thức
 
 | Tài nguyên | Link |
@@ -252,12 +215,10 @@ VSTEP được phát triển và ban hành bởi **Bộ Giáo dục và Đào t�
 ║           + Speaking (12p) = ~3 giờ tổng cộng                    ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║  ĐIỂM:    0-3.5 = Không cấp chứng chỉ                           ║
-║           4.0-5.5 = Bậc 3 (B1) ≈ IELTS 4.0-5.5                  ║
-║           6.0-8.0 = Bậc 4 (B2) ≈ IELTS 6.0-7.0                  ║
-║           8.5-10  = Bậc 5 (C1) ≈ IELTS 7.5-8.0+                 ║
+║           4.0-5.5 = Bậc 3 (B1)                                   ║
+║           6.0-8.0 = Bậc 4 (B2)                                   ║
+║           8.5-10  = Bậc 5 (C1)                                   ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  LỆ PHÍ: 1,800,000 VNĐ (~$72 USD)                               ║
-║  HIỆU LỰC: Không hết hạn (thực tế 2 năm cho hầu hết mục đích)   ║
-║  TRUNG TÂM THI: 34+ trường đại học trên cả nước                 ║
+║  TRUNG TÂM THI: 38 trường (03/2025 - VQA-MOET)                  ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```

@@ -127,13 +127,23 @@ docs/
 
 ## Nguồn dữ liệu
 
-| Loại | Nguồn |
-|------|-------|
-| **Official** | vstep.vnu.edu.vn (VNU-ULIS) |
-| **Academic** | ERIC, British Council studies |
-| **Đề thi thật** | 2024-2025 từ các ĐH |
-| **Research** | VietTESOL, academic papers |
-| **Practice** | ZIM, EnglishTestStore, OnthiVSTEP |
+| Loại | Nguồn | Nội dung chính |
+|------|-------|----------------|
+| **Official** | vstep.vnu.edu.vn (VNU-ULIS) | Format chính thức, lịch thi |
+| **Đề thi mẫu 2025** | OnthiVSTEP.vn | 19+ bộ đề Reading với đáp án |
+| **Tips & Strategies** | Edulife.com.vn | Mẹo Writing, Speaking, danh sách trường thi |
+| **Academic** | ERIC, British Council studies | Nghiên cứu học thuật |
+| **Đề thi thật** | 2024-2025 từ các ĐH | Đề thi thực tế |
+| **Research** | VietTESOL, academic papers | Bài nghiên cứu |
+| **Practice** | ZIM, EnglishTestStore | Đề luyện tập |
+
+### Nguồn Chính Được Sử Dụng (2025)
+
+| Nguồn | URL | Nội dung đã thu thập |
+|-------|-----|---------------------|
+| **OnthiVSTEP.vn** | https://onthivstep.vn | 19+ đề Reading 2025, đáp án chi tiết |
+| **Edulife.com.vn** | https://edulife.com.vn | Mẹo Writing (P-E-E, template thư), Speaking (A.R.E.A) |
+| **VSTEP VNU** | https://vstep.vnu.edu.vn | Format chính thức, tiêu chí chấm điểm |
 
 ---
 
@@ -144,16 +154,14 @@ docs/
 ║                    VSTEP.3-5 TỔNG QUAN                           ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║  KỸ NĂNG: Listening (40p) + Reading (60p) + Writing (60p)        ║
-║           + Speaking (10-12p) = ~3 giờ tổng cộng                 ║
+║           + Speaking (12p) = ~3 giờ tổng cộng                    ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║  ĐIỂM:    0-3.5 = Không cấp chứng chỉ                           ║
-║           4.0-5.5 = Bậc 3 (B1) ≈ IELTS 4.0-5.5                  ║
-║           6.0-8.0 = Bậc 4 (B2) ≈ IELTS 6.0-7.0                  ║
-║           8.5-10  = Bậc 5 (C1) ≈ IELTS 7.5-8.0+                 ║
+║           4.0-5.5 = Bậc 3 (B1)                                   ║
+║           6.0-8.0 = Bậc 4 (B2)                                   ║
+║           8.5-10  = Bậc 5 (C1)                                   ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  LỆ PHÍ: 1,800,000 VNĐ (~$72 USD)                               ║
-║  HIỆU LỰC: Không hết hạn (thực tế 2 năm)                        ║
-║  TRUNG TÂM THI: 34+ trường đại học trên cả nước                 ║
+║  TRUNG TÂM THI: 38 trường đại học (03/2025 - VQA-MOET)          ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
@@ -172,4 +180,4 @@ Các file JSON trong thư mục `sample/` là dữ liệu tham khảo được t
 
 ---
 
-*Cập nhật: Tháng 1/2026*
+*Cập nhật: Tháng 1/2026 - Dữ liệu từ OnthiVSTEP.vn, Edulife.com.vn*

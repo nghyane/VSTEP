@@ -322,6 +322,81 @@ D. Neutral ✓
 
 ---
 
+## Đề Mẫu Tham Khảo 2025
+
+> ⚠️ **Lưu ý**: Thông tin dưới đây từ OnthiVSTEP.vn (đề luyện tập), chưa được xác minh từ nguồn chính thức. Sử dụng để tham khảo cấu trúc và dạng chủ đề.
+
+### Cấu Trúc Đề Luyện Tập (Tham khảo)
+
+| Passage | Chủ đề mẫu | Level | Số câu |
+|---------|------------|-------|--------|
+| **Passage 1** | Copyright (Bản quyền) | B1 | Q1-10 |
+| **Passage 2** | Hospital Parking Policy (Chính sách đỗ xe bệnh viện) | B2 | Q11-20 |
+| **Passage 3** | Holly's New Flat (Câu chuyện thuê nhà - Narrative) | B2 | Q21-30 |
+| **Passage 4** | US Industrialization (Công nghiệp hóa Hoa Kỳ) | C1 | Q31-40 |
+
+### Phân Tích Dạng Passage Theo Level
+
+#### Passage 1: Copyright (B1)
+- **Thể loại**: Văn bản thông tin, pháp lý
+- **Nội dung**: Giải thích về bản quyền, quyền sở hữu trí tuệ
+- **Đặc điểm**: Từ vựng pháp lý cơ bản, cấu trúc câu đơn giản
+- **Dạng câu hỏi thường gặp**: Detail, Vocabulary in context
+
+#### Passage 2: Hospital Parking Policy (B2)
+- **Thể loại**: Văn bản chính sách, thông báo
+- **Nội dung**: Quy định đỗ xe tại bệnh viện, phí, thời gian
+- **Đặc điểm**: Thông tin thực tế, số liệu cụ thể
+- **Dạng câu hỏi thường gặp**: Detail, Inference, NOT/EXCEPT
+
+#### Passage 3: Holly's New Flat (B2)
+- **Thể loại**: Văn bản tường thuật (narrative)
+- **Nội dung**: Câu chuyện cá nhân về việc thuê căn hộ mới
+- **Đặc điểm**: Ngôi kể thứ nhất, cảm xúc nhân vật, diễn biến sự kiện
+- **Dạng câu hỏi thường gặp**: Inference, Attitude, Reference
+
+#### Passage 4: US Industrialization (C1)
+- **Thể loại**: Văn bản học thuật, lịch sử
+- **Nội dung**: Quá trình công nghiệp hóa tại Hoa Kỳ thế kỷ 19-20
+- **Đặc điểm**: Từ vựng học thuật, cấu trúc phức tạp, quan hệ nhân quả
+- **Dạng câu hỏi thường gặp**: Main idea, Inference, Sentence insertion
+
+### Nguồn Đề Luyện Tập
+
+> ⚠️ Các nguồn bên dưới là tài liệu luyện tập, không phải đề thi chính thức
+
+| Nguồn | Số lượng | Ghi chú |
+|-------|----------|---------|
+| **EnglishTestStore.net** | 50+ đề | Miễn phí, B1-C1 |
+| **OnthiVSTEP.vn** | 15+ đề | Trả phí, cập nhật hàng tuần |
+| **PrepEdu.com** | 20+ đề | VSTEP Collection từ 2017 |
+| **vstep.vnu.edu.vn** | Đề mẫu chính thức | Nguồn chính thức |
+
+### Chủ Đề Phổ Biến Theo Level (Đã xác minh)
+
+**B1 - Passages (Đời sống hàng ngày)**:
+- Nghề nghiệp (tài xế taxi, luật sư, bác sĩ phẫu thuật thần kinh)
+- Thuê nhà, mua sắm, dịch vụ
+- Du lịch, địa điểm nổi tiếng
+- Thể thao, sở thích, giải trí
+- Học tập, giáo dục cơ bản
+
+**B2 - Passages (Chuyên môn/Bán học thuật)**:
+- Môi trường: biến đổi khí hậu, băng tan, rác thải điện tử
+- Xã hội: cân bằng công việc-cuộc sống, mindfulness
+- Công nghệ: làm việc từ xa, mạng xã hội
+- Chính sách: quy định tổ chức, thủ tục hành chính
+- Tâm lý: giảm stress, chức năng nhận thức
+
+**C1 - Passages (Học thuật)**:
+- Lịch sử: Công nghiệp hóa Hoa Kỳ, văn hóa thổ dân Mỹ, kỹ thuật La Mã
+- Khoa học: nguồn gốc sự sống (RNA World), địa chất học
+- Nhân học: đảo Phục Sinh, suy tàn văn minh
+- Ngôn ngữ học: tiến hóa ngữ pháp (pidgins → creoles)
+- Môi trường phức tạp: xói mòn đất, khan hiếm tài nguyên
+
+---
+
 ## Đặc Điểm Bài Đọc Theo Level
 
 | Đặc điểm | B1 | B2 | C1 |
@@ -406,3 +481,4 @@ D. Neutral ✓
 | Điểm và Level | https://vstep.vnu.edu.vn/scores-levels/ |
 | Đề thi mẫu | https://zim.vn/de-thi-vstep |
 | Practice Tests | https://englishteststore.net |
+| **Đề thi minh họa 2025** | https://onthivstep.vn/danh-muc/tat-ca-tin-tuc |

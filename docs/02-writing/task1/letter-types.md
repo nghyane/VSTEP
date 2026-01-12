@@ -1,18 +1,30 @@
 # VSTEP Writing Task 1 - Các Loại Thư/Email
 
-> **Thời gian**: 20 phút | **Số từ yêu cầu**: 120 từ | **Thang điểm**: 0-10
+> **Thời gian**: 20 phút | **Số từ yêu cầu**: 120 từ | **Thang điểm**: 0-10 | **Tỷ trọng**: 1/3 điểm Writing
 
 ## Tổng Quan
 
 Task 1 yêu cầu viết một bức thư hoặc email dựa trên tình huống cho sẵn. Thí sinh cần xử lý **3-4 bullet points** được đề cập trong đề bài.
 
-### Tiêu Chí Đánh Giá
-| Tiêu chí | Trọng số |
-|----------|----------|
-| Task Response (Đáp ứng yêu cầu) | 25% |
-| Coherence & Cohesion (Mạch lạc) | 25% |
-| Vocabulary (Từ vựng) | 25% |
-| Grammar (Ngữ pháp) | 25% |
+### Tiêu Chí Đánh Giá (Nguồn: Edulife.com.vn)
+
+| Tiêu chí | Trọng số | Mô tả chi tiết |
+|----------|----------|----------------|
+| **Task Fulfilment** (Hoàn thành task) | 25% | Đáp ứng đầy đủ yêu cầu đề, xử lý tất cả bullet points |
+| **Organization** (Tổ chức) | 25% | Bố cục rõ ràng, mạch lạc, liên kết logic |
+| **Vocabulary** (Từ vựng) | 25% | Từ vựng đa dạng, phù hợp ngữ cảnh, ít lỗi |
+| **Grammar** (Ngữ pháp) | 25% | Cấu trúc ngữ pháp chính xác, đa dạng |
+
+### Phân Biệt Thư Trang Trọng vs Không Trang Trọng
+
+| Đặc điểm | Thư Trang Trọng (Formal) | Thư Không Trang Trọng (Informal) |
+|----------|--------------------------|----------------------------------|
+| **Đối tượng** | Sếp, công ty, tổ chức, người lạ | Bạn bè, gia đình, đồng nghiệp thân |
+| **Salutation** | Dear Sir/Madam, Dear Mr./Ms. [Name] | Dear [First name], Hi [Name] |
+| **Giọng văn** | Lịch sự, khách quan, chuyên nghiệp | Thân mật, gần gũi, thoải mái |
+| **Từ vựng** | Formal (require, enquire, apologize) | Informal (need, ask, sorry) |
+| **Viết tắt** | KHÔNG dùng (do not, cannot, I am) | CÓ THỂ dùng (don't, can't, I'm) |
+| **Closing** | Yours faithfully/sincerely | Best regards, Take care, Cheers |
 
 ---
 
@@ -561,6 +573,78 @@ Best regards,          ← Semi-formal
 
 [Your Name]
 ```
+
+---
+
+## Template Thư Trang Trọng (Nguồn: Edulife.com.vn)
+
+> Sử dụng khi viết cho công ty, tổ chức, người lạ, hoặc cấp trên
+
+```
+Dear Sir/Madam,
+
+I am writing to [mục đích viết thư - enquire about/complain about/
+apply for/apologize for]. [Thông tin bổ sung về hoàn cảnh nếu cần].
+
+Regarding [bullet point 1], I would like to [yêu cầu/thông tin]. 
+[Giải thích thêm nếu cần]. Furthermore, [bullet point 2], and I 
+believe that [quan điểm/lý do].
+
+In addition, I would appreciate it if you could [bullet point 3]. 
+[Giải thích tại sao điều này quan trọng].
+
+I would be grateful if you could [hành động mong muốn]. I look 
+forward to hearing from you at your earliest convenience.
+
+Yours faithfully,
+[Your Name]
+```
+
+**Các cụm từ formal quan trọng:**
+| Informal | Formal |
+|----------|--------|
+| I want | I would like / I wish |
+| Can you | Could you / Would you be able to |
+| Tell me | Please inform me / Kindly let me know |
+| Sorry | I apologize / Please accept my apologies |
+| Thanks | Thank you for / I am grateful for |
+| As soon as possible | At your earliest convenience |
+| About | Regarding / With regard to |
+
+---
+
+## Template Thư Không Trang Trọng (Nguồn: Edulife.com.vn)
+
+> Sử dụng khi viết cho bạn bè, người thân, đồng nghiệp thân thiết
+
+```
+Dear [Name] / Hi [Name],
+
+How are you? I hope you're doing well! I'm writing to [mục đích].
+
+[Bullet point 1 - viết thoải mái như đang nói chuyện]. It's been 
+really [cảm xúc/nhận xét]! Also, [bullet point 2 - thêm chi tiết].
+
+By the way, [bullet point 3]. I was wondering if you could 
+[yêu cầu nếu có]. That would be great!
+
+Anyway, let me know what you think. Hope to hear from you soon!
+
+Take care / Best wishes / Cheers,
+[Your Name]
+```
+
+**Các cụm từ informal quan trọng:**
+| Formal | Informal |
+|--------|----------|
+| I am writing to inform you | Just wanted to let you know |
+| Please find enclosed | Here's / I'm sending you |
+| I would be grateful if | It would be great if / Could you |
+| I look forward to hearing | Hope to hear from you soon |
+| Regarding your enquiry | About what you asked |
+| I apologize for | Sorry about / I'm really sorry for |
+
+---
 
 ### Checklist Trước Khi Nộp
 

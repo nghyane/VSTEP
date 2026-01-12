@@ -169,14 +169,6 @@
 | 6.0 – 8.0 | Bậc 4 | B2 | Chứng chỉ B2 |
 | 8.5 – 10 | Bậc 5 | C1 | Chứng chỉ C1 |
 
-### Tương Đương IELTS (Ước tính)
-
-| VSTEP Level | IELTS Band |
-|-------------|------------|
-| B1 (Bậc 3) | 4.0 – 5.5 |
-| B2 (Bậc 4) | 6.0 – 7.0 |
-| C1 (Bậc 5) | 7.5 – 8.0+ |
-
 ---
 
 ## So Sánh Độ Khó B1 → B2 → C1

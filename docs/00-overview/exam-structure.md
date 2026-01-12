@@ -30,7 +30,7 @@
 | **Listening** | 40 phút | 35 MCQ | 3 parts |
 | **Reading** | 60 phút | 40 MCQ | 4 passages |
 | **Writing** | 60 phút | 2 tasks | Letter + Essay |
-| **Speaking** | 10-12 phút | 3 parts | Face-to-face |
+| **Speaking** | 12 phút | 3 parts | Face-to-face |
 
 **Tổng thời gian**: ~172 phút
 
@@ -72,7 +72,7 @@
 
 ---
 
-### Speaking (10-12 phút)
+### Speaking (12 phút)
 
 | Part | Tên | Thời gian | Nội dung |
 |------|-----|-----------|----------|
@@ -92,7 +92,7 @@ flowchart TB
             L["LISTENING - 40 phút - 35 MCQ"]
             R["READING - 60 phút - 40 MCQ"]
             W["WRITING - 60 phút - 2 tasks"]
-            S["SPEAKING - 10-12 phút - 3 parts"]
+            S["SPEAKING - 12 phút - 3 parts"]
         end
         subgraph LParts["Listening Parts"]
             L1["Part 1: Thông báo ngắn - 8 câu - B1"]
@@ -139,7 +139,7 @@ flowchart TB
 │                                                             │
 │  ┌─────────────┐                                           │
 │  │  SPEAKING   │     Total: ~172 minutes                   │
-│  │  10-12 min  │                                           │
+│  │   12 min    │                                           │
 │  │  3 parts    │                                           │
 │  └─────────────┘                                           │
 │                                                             │

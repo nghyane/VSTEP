@@ -585,6 +585,116 @@ E - Example (Ví dụ cụ thể)
 L - Link (Liên kết về thesis)
 ```
 
+---
+
+## Cấu Trúc P-E-E Chi Tiết (Nguồn: Edulife.com.vn)
+
+> **P-E-E** (Point - Explain - Example) là cấu trúc chuẩn để viết body paragraph hiệu quả trong VSTEP Writing Task 2.
+
+### Mô Hình P-E-E
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  P - POINT (Topic Sentence) - 1 câu                        │
+│  ─────────────────────────────────────────────────          │
+│  → Nêu ý chính của đoạn văn                                │
+│  → Liên kết với thesis statement                           │
+│  → Sử dụng từ nối (Firstly, Another reason, Furthermore)   │
+├─────────────────────────────────────────────────────────────┤
+│  E - EXPLAIN (Giải thích) - 2-3 câu                        │
+│  ─────────────────────────────────────────────────          │
+│  → Giải thích TẠI SAO point của bạn đúng                   │
+│  → Phát triển ý, đưa ra lý do                              │
+│  → Sử dụng: This is because... / This means that...        │
+├─────────────────────────────────────────────────────────────┤
+│  E - EXAMPLE (Ví dụ) - 2-3 câu                             │
+│  ─────────────────────────────────────────────────          │
+│  → Đưa ví dụ cụ thể minh họa cho point                     │
+│  → Có thể là: số liệu, nghiên cứu, kinh nghiệm cá nhân     │
+│  → Sử dụng: For example... / For instance... / A case...   │
+├─────────────────────────────────────────────────────────────┤
+│  (Optional) LINK - Liên kết - 1 câu                        │
+│  ─────────────────────────────────────────────────          │
+│  → Quay lại thesis, tóm tắt ý đoạn                        │
+│  → Sử dụng: Therefore... / This shows that... / Thus...    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Ví Dụ Áp Dụng P-E-E
+
+**Đề bài:** *Some people believe that technology has made our lives more complicated. Do you agree?*
+
+**Body Paragraph (P-E-E):**
+
+```
+[POINT]
+Firstly, technology has actually simplified many daily tasks 
+that used to consume significant time and effort.
+
+[EXPLAIN]
+This is because modern devices and applications allow us to 
+complete activities in minutes that previously took hours. 
+Tasks such as shopping, banking, and communication can now 
+be done instantly from our smartphones, eliminating the need 
+to travel or wait in queues.
+
+[EXAMPLE]
+For example, instead of visiting a bank branch to transfer 
+money, we can now complete the transaction in seconds using 
+mobile banking apps. Similarly, online shopping platforms 
+allow us to purchase items from around the world without 
+leaving our homes.
+
+[LINK - Optional]
+Therefore, it is clear that technology has streamlined our 
+daily routines rather than complicated them.
+```
+
+### Các Cụm Từ Theo Từng Phần
+
+| Phần | Cụm từ thường dùng |
+|------|-------------------|
+| **POINT** | Firstly, The main reason is, Another argument is, Furthermore, An important point to consider is |
+| **EXPLAIN** | This is because, This means that, In other words, The reason for this is, What this means is |
+| **EXAMPLE** | For example, For instance, A clear example of this is, Research has shown that, Take the case of |
+| **LINK** | Therefore, Thus, Consequently, This demonstrates that, As a result |
+
+### Lỗi Thường Gặp Với P-E-E
+
+| Lỗi | Cách khắc phục |
+|-----|----------------|
+| Point không rõ ràng | Viết topic sentence ngắn gọn, trực tiếp nêu ý chính |
+| Explain quá ngắn | Phát triển 2-3 câu giải thích, không nhảy ngay sang example |
+| Example quá chung chung | Sử dụng ví dụ cụ thể, có số liệu hoặc tên cụ thể |
+| Thiếu liên kết giữa các phần | Dùng từ nối để kết nối Point → Explain → Example |
+| Lặp lại ý từ Point | Explain phải THÊM thông tin, không chỉ paraphrase Point |
+
+### Template P-E-E Cho Từng Dạng Bài
+
+**Opinion Essay:**
+```
+[P] The primary reason I [agree/disagree] is that [reason].
+[E] This is because [explanation of why this reason is valid].
+[E] For instance, [specific example supporting this reason].
+[L] Therefore, [link back to thesis].
+```
+
+**Discussion Essay:**
+```
+[P] Supporters of [view] argue that [main argument].
+[E] This means that [explanation and implications].
+[E] A clear example is [specific evidence or case].
+[L] Thus, [mini-conclusion for this view].
+```
+
+**Problem-Solution Essay:**
+```
+[P] One major cause of this problem is [cause].
+[E] What this means is [explanation of how it causes the problem].
+[E] For example, [specific instance or statistic].
+[L] Consequently, [link to problem/need for solution].
+```
+
 ### 4. Kết Bài Mạnh Mẽ
 - Không thêm ý mới
 - Restate thesis bằng từ khác
