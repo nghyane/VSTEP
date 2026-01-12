@@ -1,6 +1,6 @@
 # VSTEP Writing Samples - B1 Level
 
-> **Level**: B1 (3.5-5.0) | **Focus**: Basic competence, simple expression
+> **Level**: B1 (4.0-5.5) | **Focus**: Basic competence, simple expression
 
 ## Sample 1: Opinion Essay
 

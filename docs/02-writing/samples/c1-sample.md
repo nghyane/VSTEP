@@ -1,6 +1,6 @@
 # VSTEP Writing Samples - C1 Level
 
-> **Level**: C1 (7.5-9.0) | **Focus**: Proficient user, sophisticated expression
+> **Level**: C1 (8.5-10) | **Focus**: Proficient user, sophisticated expression
 
 ## Sample 1: Discussion Essay
 

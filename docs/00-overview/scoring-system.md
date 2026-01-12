@@ -1,5 +1,41 @@
 # Hệ thống tính điểm VSTEP
 
+## Sơ Đồ Hệ Thống Điểm
+
+```mermaid
+flowchart TB
+    subgraph Score["📊 VSTEP SCORING SYSTEM"]
+        direction TB
+        
+        subgraph Input["4 Kỹ Năng (0-10 mỗi kỹ năng)"]
+            L["🎧 Listening"]
+            R["📖 Reading"]
+            W["✍️ Writing"]
+            S["🎤 Speaking"]
+        end
+        
+        subgraph Calculate["Công Thức Tính"]
+            Formula["Overall = (L + R + W + S) ÷ 4<br/>Làm tròn đến 0.5"]
+        end
+        
+        subgraph Levels["Quy Đổi Level"]
+            F["0 - 3.5<br/>❌ Không đạt"]
+            B1["4.0 - 5.5<br/>🥉 B1 (Bậc 3)"]
+            B2["6.0 - 8.0<br/>🥈 B2 (Bậc 4)"]
+            C1["8.5 - 10<br/>🥇 C1 (Bậc 5)"]
+        end
+        
+        Input --> Calculate
+        Calculate --> Levels
+    end
+    
+    style Score fill:#f5f5f5,stroke:#424242
+    style F fill:#ffcdd2,stroke:#c62828
+    style B1 fill:#fff9c4,stroke:#f9a825
+    style B2 fill:#c8e6c9,stroke:#2e7d32
+    style C1 fill:#bbdefb,stroke:#1565c0
+```
+
 ## Thang điểm tổng
 
 | Điểm | VSTEP Level | CEFR | Mô tả |

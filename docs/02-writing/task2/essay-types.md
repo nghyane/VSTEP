@@ -2,6 +2,42 @@
 
 > **Thời gian**: 40 phút | **Số từ yêu cầu**: 250 từ | **Thang điểm**: 0-10
 
+## Sơ Đồ Chọn Dạng Bài
+
+```mermaid
+flowchart TD
+    Start["📝 Đọc Đề Bài"] --> Q1{"Có 'agree/disagree'<br/>hoặc 'opinion'?"}
+    
+    Q1 -->|Có| Opinion["✅ OPINION ESSAY<br/>Bày tỏ quan điểm cá nhân"]
+    
+    Q1 -->|Không| Q2{"Có 'both views'<br/>hoặc 'discuss'?"}
+    
+    Q2 -->|Có| Discussion["✅ DISCUSSION ESSAY<br/>Thảo luận 2 quan điểm"]
+    
+    Q2 -->|Không| Q3{"Có 'causes/problems'<br/>và 'solutions'?"}
+    
+    Q3 -->|Có| ProbSol["✅ PROBLEM-SOLUTION<br/>Phân tích vấn đề + giải pháp"]
+    
+    Q3 -->|Không| Q4{"Có 'advantages'<br/>và 'disadvantages'?"}
+    
+    Q4 -->|Có| AdvDis["✅ ADVANTAGES-DISADVANTAGES<br/>Phân tích thuận/nghịch"]
+    
+    Q4 -->|Không| TwoPart["✅ TWO-PART QUESTION<br/>Trả lời 2 câu hỏi riêng biệt"]
+    
+    Opinion --> Structure1["4 đoạn:<br/>Intro → Body 1 → Body 2 → Conclusion"]
+    Discussion --> Structure2["4 đoạn:<br/>Intro → View 1 → View 2 → Conclusion + Opinion"]
+    ProbSol --> Structure3["4 đoạn:<br/>Intro → Problems → Solutions → Conclusion"]
+    AdvDis --> Structure4["4 đoạn:<br/>Intro → Advantages → Disadvantages → Conclusion"]
+    TwoPart --> Structure5["4 đoạn:<br/>Intro → Answer Q1 → Answer Q2 → Conclusion"]
+    
+    style Start fill:#e3f2fd,stroke:#1976d2
+    style Opinion fill:#c8e6c9,stroke:#4caf50
+    style Discussion fill:#fff9c4,stroke:#fbc02d
+    style ProbSol fill:#ffccbc,stroke:#ff5722
+    style AdvDis fill:#e1bee7,stroke:#9c27b0
+    style TwoPart fill:#b2ebf2,stroke:#00bcd4
+```
+
 ## Tổng Quan
 
 Task 2 yêu cầu viết một bài luận trình bày quan điểm hoặc thảo luận về một chủ đề cho sẵn. Đây là phần quan trọng nhất của Writing vì chiếm nhiều thời gian và đòi hỏi kỹ năng tư duy cao hơn.

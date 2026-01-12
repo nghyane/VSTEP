@@ -1,6 +1,6 @@
 # VSTEP Writing Samples - B2 Level
 
-> **Level**: B2 (5.5-7.0) | **Focus**: Independent user, clear argumentation
+> **Level**: B2 (6.0-8.0) | **Focus**: Independent user, clear argumentation
 
 ## Sample 1: Opinion Essay
 

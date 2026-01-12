@@ -5,6 +5,27 @@
 
 ---
 
+## Lịch Trình Ngày Thi
+
+```mermaid
+gantt
+    title 📅 VSTEP Test Day Timeline
+    dateFormat HH:mm
+    axisFormat %H:%M
+    
+    section Sáng
+    Check-in & Hướng dẫn     :crit, checkin, 07:30, 30m
+    Listening (40 phút)      :active, listening, 08:00, 40m
+    Nghỉ ngắn               :break1, 08:40, 10m
+    Reading (60 phút)        :active, reading, 08:50, 60m
+    Nghỉ ngắn               :break2, 09:50, 10m
+    Writing (60 phút)        :active, writing, 10:00, 60m
+    
+    section Chiều
+    Speaking Check-in        :crit, spcheckin, 13:30, 15m
+    Speaking (12 phút/người) :active, speaking, 13:45, 12m
+```
+
 ## VSTEP Là Gì?
 
 **VSTEP** (Vietnamese Standardized Test of English Proficiency) là bài thi đánh giá năng lực tiếng Anh theo Khung năng lực ngoại ngữ 6 bậc dùng cho Việt Nam.

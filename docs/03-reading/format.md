@@ -4,6 +4,48 @@
 
 ---
 
+## Phân Bổ Dạng Câu Hỏi
+
+```mermaid
+pie showData
+    title 📊 Tỷ Lệ Dạng Câu Hỏi Reading
+    "Detail (Chi tiết)" : 32.5
+    "Vocabulary (Từ vựng)" : 17.5
+    "Inference (Suy luận)" : 17.5
+    "Main Idea (Ý chính)" : 12.5
+    "Reference (Đại từ)" : 10
+    "EXCEPT/NOT (Phủ định)" : 7.5
+    "Tone/Attitude (Thái độ)" : 5
+```
+
+## Cấu Trúc Độ Khó Theo Passage
+
+```mermaid
+flowchart LR
+    subgraph P1["Passage 1"]
+        L1["🟢 B1<br/>~450 từ<br/>Chủ đề quen thuộc"]
+    end
+    
+    subgraph P2["Passage 2"]
+        L2["🟡 B2<br/>~500 từ<br/>Khoa học/Xã hội"]
+    end
+    
+    subgraph P3["Passage 3"]
+        L3["🟡 B2<br/>~500 từ<br/>Bán học thuật"]
+    end
+    
+    subgraph P4["Passage 4"]
+        L4["🔴 C1<br/>~550 từ<br/>Học thuật phức tạp"]
+    end
+    
+    P1 --> P2 --> P3 --> P4
+    
+    style L1 fill:#c8e6c9,stroke:#4caf50
+    style L2 fill:#fff9c4,stroke:#fbc02d
+    style L3 fill:#fff9c4,stroke:#fbc02d
+    style L4 fill:#ffcdd2,stroke:#e53935
+```
+
 ## Tổng Quan Cấu Trúc
 
 | Thông tin | Chi tiết |

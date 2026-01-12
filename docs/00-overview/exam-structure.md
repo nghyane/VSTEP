@@ -72,6 +72,55 @@
 
 ## Visual Overview
 
+```mermaid
+flowchart TB
+    subgraph VSTEP["🎓 VSTEP.3-5 EXAM (~172 phút)"]
+        direction TB
+        
+        subgraph Skills["4 Kỹ Năng"]
+            L["🎧 LISTENING<br/>40 phút | 35 MCQ"]
+            R["📖 READING<br/>60 phút | 40 MCQ"]
+            W["✍️ WRITING<br/>60 phút | 2 tasks"]
+            S["🎤 SPEAKING<br/>12 phút | 3 parts"]
+        end
+        
+        subgraph LParts["Listening Parts"]
+            L1["Part 1: Thông báo ngắn<br/>8 câu | B1"]
+            L2["Part 2: Hội thoại<br/>12 câu | B1-B2"]
+            L3["Part 3: Bài giảng<br/>15 câu | B2-C1"]
+        end
+        
+        subgraph RParts["Reading Passages"]
+            R1["Passage 1: ~450 từ | B1"]
+            R2["Passage 2: ~500 từ | B2"]
+            R3["Passage 3: ~500 từ | B2"]
+            R4["Passage 4: ~550 từ | C1"]
+        end
+        
+        subgraph WTasks["Writing Tasks"]
+            W1["Task 1: Email/Letter<br/>≥120 từ | 1/3 điểm"]
+            W2["Task 2: Essay<br/>≥250 từ | 2/3 điểm"]
+        end
+        
+        subgraph SParts["Speaking Parts"]
+            S1["Part 1: Giao tiếp xã hội<br/>2-3 phút"]
+            S2["Part 2: Thảo luận giải pháp<br/>3-4 phút"]
+            S3["Part 3: Phát triển chủ đề<br/>4-5 phút"]
+        end
+        
+        L --> LParts
+        R --> RParts
+        W --> WTasks
+        S --> SParts
+    end
+    
+    style VSTEP fill:#e8f4fd,stroke:#1976d2
+    style L fill:#fff3e0,stroke:#f57c00
+    style R fill:#e8f5e9,stroke:#4caf50
+    style W fill:#fce4ec,stroke:#e91e63
+    style S fill:#f3e5f5,stroke:#9c27b0
+```
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    VSTEP.3-5 EXAM                           │

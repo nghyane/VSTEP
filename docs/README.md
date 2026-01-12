@@ -59,7 +59,8 @@ docs/
 │   └── prompts.md            # Ngân hàng đề Speaking ✅
 │
 └── 06-scoring/               # Tiêu chí chấm điểm
-    └── writing-rubric.md     # Band descriptors 0-10 ✅
+    ├── writing-rubric.md     # Band descriptors Writing 0-10 ✅
+    └── speaking-rubric.md    # Band descriptors Speaking 0-10 ✅
 ```
 
 ---
@@ -85,7 +86,8 @@ docs/
 | [C1 Sample Essays](./02-writing/samples/c1-sample.md) | Bài mẫu level C1 với phân tích |
 | [Vocabulary Topics](./02-writing/vocabulary/topics.md) | 8 chủ đề, 400+ từ |
 | [Common Errors](./02-writing/errors/common-errors.md) | Lỗi thường gặp người Việt |
-| [Writing Rubric](./06-scoring/writing-rubric.md) | Band descriptors 0-10 |
+| [Writing Rubric](./06-scoring/writing-rubric.md) | Band descriptors Writing 0-10 |
+| [Speaking Rubric](./06-scoring/speaking-rubric.md) | Band descriptors Speaking 0-10 |
 
 ### 📖 Reading
 | Tài liệu | Mô tả |

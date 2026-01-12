@@ -1,6 +1,6 @@
 # VSTEP Writing Rubric - Band Descriptors
 
-> **Thang điểm**: 0-10 | **Bước điểm**: 0.5 | **Quy đổi**: B1 (3.5-5.0), B2 (5.5-7.0), C1 (7.5-9.0)
+> **Thang điểm**: 0-10 | **Bước điểm**: 0.5 | **Quy đổi**: B1 (4.0-5.5), B2 (6.0-8.0), C1 (8.5-10)
 
 ---
 
@@ -42,7 +42,7 @@
 
 ---
 
-## Band 7.5-8.5 (C1)
+## Band 8.5-10 (C1)
 
 ### Task Response
 - Đáp ứng đầy đủ yêu cầu đề bài
@@ -69,7 +69,7 @@
 
 ---
 
-## Band 5.5-7.0 (B2)
+## Band 6.0-8.0 (B2)
 
 ### Task Response
 - Đáp ứng TẤT CẢ phần của đề bài
@@ -102,7 +102,7 @@
 
 ---
 
-## Band 3.5-5.0 (B1)
+## Band 4.0-5.5 (B1)
 
 ### Task Response
 - Đáp ứng đề bài nhưng có thể không đầy đủ
