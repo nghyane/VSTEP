@@ -1,18 +1,8 @@
-![](media/image1.png)
-
-**Capstone Project Report**
-
-**Report 1 -- Project Introduction**
-
-> -- Hanoi, January 2026 --
-
 # I. Record of Changes
 
 | Date | A/M/D | In Charge | Change Description |
 |------|-------|-----------|-------------------|
 | 2026-01-21 | A | Hoàng Văn Anh Nghĩa | Initial document creation |
-| | | | |
-| | | | |
 
 *A - Added, M - Modified, D - Deleted
 
@@ -24,7 +14,7 @@
 
 - Project name (EN): An Adaptive VSTEP Preparation System with Comprehensive Skill Assessment and Personalized Learning Support
 - Project name (VN): Hệ Thống Luyện Thi VSTEP Thích Ứng Với Đánh Giá Toàn Diện Kỹ Năng Và Hỗ Trợ Học Tập Cá Nhân Hóa
-- Project code: SP26SE146
+- Project code: SP26SE145
 - Group name: GSP26SE63
 - Software type: Web Application & Mobile Application
 - Duration: 01/01/2026 – 30/04/2026
@@ -33,9 +23,9 @@
 
 | Full Name | Role | Email | Mobile |
 |-----------|------|-------|--------|
-| Lâm Hữu Khánh Phương | Academic Supervisor | phuonglhk@fe.edu.vn | |
+| Lâm Hữu Khánh Phương | Academic Supervisor | phuonglhk@fe.edu.vn | N/A |
 | Trần Trọng Huỳnh | Industry Supervisor | huynhtt4@fe.edu.vn | 0988258758 |
-| Hoàng Văn Anh Nghĩa | Team Leader | nghiahvase172605@fpt.edu.vn | |
+| Hoàng Văn Anh Nghĩa | Team Leader | nghiahvase172605@fpt.edu.vn | N/A |
 | Nguyễn Minh Khôi | Developer | khoinmse172625@fpt.edu.vn | 0944207257 |
 | Nguyễn Nhật Phát | Developer | phatnnse172607@fpt.edu.vn | 0981567488 |
 | Nguyễn Trần Tấn Phát | Developer | phatnttse173198@fpt.edu.vn | 0343062376 |
@@ -197,8 +187,6 @@ Dự án phù hợp với các xu hướng và chính sách:
 
 ## 5. Software Product Vision
 
-For employees who want to order meals from the company cafeteria or from local restaurants on-line, the Cafeteria Ordering System is an Internet-based and smartphone-enabled application that will accept individual or group meal orders, process payments, and trigger delivery of the prepared meals to a designated location on the Process Impact campus.
-
 **Vision Statement:**
 
 Dành cho sinh viên đại học cần đạt chuẩn đầu ra, người đi làm cần chứng chỉ thăng tiến, và trung tâm ngoại ngữ tại Việt Nam đang gặp khó khăn với phương pháp ôn luyện VSTEP thiếu cá nhân hóa và phản hồi chậm, Hệ thống ôn luyện VSTEP thích ứng là một nền tảng học tập kỹ thuật số kết hợp Web và Mobile cung cấp lộ trình học cá nhân hóa, đánh giá 4 kỹ năng với phản hồi tức thì, và trực quan hóa tiến độ. Khác với các trang web thi thử tĩnh (chỉ có đề và đáp án) hoặc ứng dụng tiếng Anh tổng quát (không bám sát VSTEP), sản phẩm của chúng tôi kết hợp Adaptive Scaffolding + Hybrid Grading + Analytics để thu hẹp skill gap hiệu quả.
@@ -243,46 +231,76 @@ Hệ thống được thiết kế với hai module chính:
 
 ### 6.1 Major Features
 
-FE-01: User Authentication - Đăng ký, đăng nhập, quản lý profile với các vai trò Learner/Instructor/Admin.
+FE-01: User Authentication - Đăng ký, đăng nhập, quản lý profile với các vai trò Learner/Instructor/Admin. Hệ thống hỗ trợ xác thực qua email/password và OAuth (Google). Người dùng có thể cập nhật thông tin cá nhân, đổi mật khẩu, và quản lý các thiết bị đăng nhập.
 
-FE-02: Placement Test - Bài kiểm tra đầu vào xác định trình độ ban đầu cho 4 kỹ năng.
+FE-02: Placement Test - Bài kiểm tra đầu vào xác định trình độ ban đầu cho 4 kỹ năng (Nghe, Nói, Đọc, Viết). Kết quả được sử dụng để khởi tạo Spider Chart và đề xuất lộ trình học phù hợp. Bài test được thiết kế adaptive để rút ngắn thời gian kiểm tra trong khi vẫn đảm bảo độ chính xác.
 
-FE-03: Practice Mode - Listening - Luyện tập kỹ năng Nghe với Adaptive Scaffolding (Full text - Highlight - Pure audio).
+FE-03: Practice Mode - Listening - Luyện tập kỹ năng Nghe với Adaptive Scaffolding (Full text - Highlight - Pure audio). Hệ thống tự động điều chỉnh mức độ hỗ trợ dựa trên kết quả của người học. Bao gồm các dạng bài tập: nghe điền từ, nghe chọn đáp án, và nghe tóm tắt nội dung.
 
-FE-04: Practice Mode - Reading - Luyện tập kỹ năng Đọc với các dạng câu hỏi theo format VSTEP.
+FE-04: Practice Mode - Reading - Luyện tập kỹ năng Đọc với các dạng câu hỏi theo format VSTEP. Bao gồm các dạng: True/False/Not Given, Multiple Choice, Matching Headings, và Fill in the Blanks. Bài đọc được phân loại theo chủ đề và mức độ khó (B1, B2, C1).
 
-FE-05: Practice Mode - Writing - Luyện tập kỹ năng Viết với Adaptive Scaffolding (Template - Keywords - Free writing).
+FE-05: Practice Mode - Writing - Luyện tập kỹ năng Viết với Adaptive Scaffolding (Template - Keywords - Free writing). Hỗ trợ Task 1 (viết email/thư) và Task 2 (viết bài luận). Người học nhận phản hồi tức thì về grammar, vocabulary, và coherence từ AI.
 
-FE-06: Practice Mode - Speaking - Luyện tập kỹ năng Nói với ghi âm và AI feedback.
+FE-06: Practice Mode - Speaking - Luyện tập kỹ năng Nói với ghi âm và AI feedback. Hệ thống đánh giá phát âm, ngữ điệu, và fluency thông qua speech recognition. Bao gồm cả 3 phần của bài thi Speaking VSTEP: Social Interaction, Solution Discussion, và Topic Development.
 
-FE-07: Mock Test Mode - Thi thử giả lập đầy đủ 4 kỹ năng theo đúng format và thời gian VSTEP.
+FE-07: Mock Test Mode - Thi thử giả lập đầy đủ 4 kỹ năng theo đúng format và thời gian VSTEP. Người học trải nghiệm môi trường thi thực tế với đồng hồ đếm ngược và giao diện thi máy tính. Kết quả được tổng hợp thành báo cáo chi tiết với điểm số theo từng kỹ năng và band descriptor.
 
-FE-08: AI Grading - Chấm điểm tự động bằng AI cho các bài tập MCQ, Writing, Speaking.
+FE-08: AI Grading - Chấm điểm tự động bằng AI cho các bài tập MCQ, Writing, Speaking. Sử dụng các model NLP để đánh giá grammar, vocabulary, task achievement, và coherence cho Writing. Tích hợp speech-to-text và pronunciation scoring cho Speaking.
 
-FE-09: Human Grading - Giao diện cho Instructor chấm điểm thủ công với rubric VSTEP.
+FE-09: Human Grading - Giao diện cho Instructor chấm điểm thủ công với rubric VSTEP. Instructor có thể review bài làm, để lại nhận xét chi tiết, và override điểm AI nếu cần. Hệ thống theo dõi workload và phân công bài chấm tự động.
 
-FE-10: Progress Tracking - Spider Chart hiển thị năng lực 4 kỹ năng, Sliding Window theo dõi tiến độ.
+FE-10: Progress Tracking - Spider Chart hiển thị năng lực 4 kỹ năng, Sliding Window theo dõi tiến độ. Spider Chart cập nhật realtime sau mỗi bài tập/thi thử. Sliding Window tính trung bình 10 bài gần nhất để phản ánh năng lực hiện tại, loại bỏ nhiễu từ kết quả cũ.
 
-FE-11: Learning Path - Lộ trình học tập cá nhân hóa dựa trên kết quả và mục tiêu.
+FE-11: Learning Path - Lộ trình học tập cá nhân hóa dựa trên kết quả và mục tiêu. Hệ thống gợi ý bài tập ưu tiên cho kỹ năng yếu nhất. Lộ trình được điều chỉnh động dựa trên tiến độ thực tế của người học.
 
-FE-12: Goal Setting - Thiết lập mục tiêu (B1/B2/C1) và timeline.
+FE-12: Goal Setting - Thiết lập mục tiêu (B1/B2/C1) và timeline. Người học có thể đặt nhiều mục tiêu đồng thời (VD: B1 trong 1 tháng cho Đọc, B2 trong 3 tháng cho Nói). Hệ thống dự đoán khả năng đạt mục tiêu dựa trên tốc độ tiến bộ hiện tại.
 
-FE-13: Content Management - Admin quản lý ngân hàng câu hỏi, đề thi.
+FE-13: Content Management - Admin quản lý ngân hàng câu hỏi, đề thi. Hỗ trợ import/export câu hỏi theo format chuẩn (Excel, JSON). Admin có thể tạo, chỉnh sửa, phân loại câu hỏi theo kỹ năng, chủ đề, và mức độ khó.
 
-FE-14: User Management - Admin quản lý tài khoản, phân quyền.
+FE-14: User Management - Admin quản lý tài khoản, phân quyền. Bao gồm các chức năng: tạo tài khoản hàng loạt, khóa/mở khóa tài khoản, reset mật khẩu, và gán vai trò. Admin có thể xem lịch sử hoạt động của từng tài khoản.
 
-FE-15: Analytics Dashboard - Báo cáo thống kê cho Instructor và Admin.
+FE-15: Analytics Dashboard - Báo cáo thống kê cho Instructor và Admin. Hiển thị các metrics: số lượng người dùng active, tỷ lệ hoàn thành bài tập, điểm trung bình theo kỹ năng. Hỗ trợ lọc theo thời gian, nhóm người dùng, và export báo cáo.
 
-FE-16: Notification System - Thông báo nhắc nhở học tập, kết quả bài thi.
+FE-16: Notification System - Thông báo nhắc nhở học tập, kết quả bài thi. Hỗ trợ push notification (mobile), email, và in-app notification. Người dùng có thể tùy chỉnh tần suất và loại thông báo muốn nhận.
 
 ### 6.2 Limitations & Exclusions
 
-LI-01: Hệ thống chỉ hỗ trợ VSTEP format (B1-B2, B2-C1), không hỗ trợ các kỳ thi tiếng Anh khác (IELTS, TOEFL, TOEIC).
+LI-01: Hệ thống chỉ hỗ trợ VSTEP format (B1-B2, B2-C1), không hỗ trợ các kỳ thi tiếng Anh khác (IELTS, TOEFL, TOEIC). Quyết định này nhằm tập trung nguồn lực phát triển và đảm bảo nội dung bám sát 100% cấu trúc đề thi VSTEP chính thức. Việc mở rộng sang các kỳ thi khác sẽ được xem xét trong các phiên bản sau dựa trên nhu cầu thị trường.
 
-LI-02: AI Grading cho Writing và Speaking là công cụ hỗ trợ, không thay thế hoàn toàn đánh giá của Instructor cho điểm chính thức.
+LI-02: AI Grading cho Writing và Speaking là công cụ hỗ trợ, không thay thế hoàn toàn đánh giá của Instructor cho điểm chính thức. Điểm AI được sử dụng cho mục đích luyện tập và phản hồi nhanh, trong khi điểm chính thức (mock test final score) cần được Instructor review và xác nhận. Điều này đảm bảo độ tin cậy của kết quả đánh giá productive skills.
 
-LI-03: Phiên bản MVP chỉ hỗ trợ tiếng Việt làm ngôn ngữ giao diện chính.
+LI-03: Phiên bản MVP chỉ hỗ trợ tiếng Việt làm ngôn ngữ giao diện chính. Đối tượng mục tiêu chính là người Việt Nam ôn luyện VSTEP, do đó tiếng Việt được ưu tiên để giảm rào cản tiếp cận. Hỗ trợ đa ngôn ngữ (tiếng Anh) sẽ được bổ sung trong các phiên bản tiếp theo.
 
-LI-04: Mobile App chỉ phát triển cho Android trong giai đoạn đầu, iOS sẽ được bổ sung sau.
+LI-04: Mobile App chỉ phát triển cho Android trong giai đoạn đầu, iOS sẽ được bổ sung sau. Theo thống kê, Android chiếm >70% thị phần smartphone tại Việt Nam, do đó được ưu tiên phát triển trước. Người dùng iOS vẫn có thể truy cập đầy đủ chức năng thông qua Progressive Web App (PWA).
 
-LI-05: Hệ thống không tích hợp thanh toán online trong phiên bản MVP.
+LI-05: Hệ thống không tích hợp thanh toán online trong phiên bản MVP. Giai đoạn pilot sẽ áp dụng mô hình freemium hoặc thanh toán offline thông qua đối tác (trung tâm ngoại ngữ). Tích hợp cổng thanh toán (VNPay, MoMo, ZaloPay) sẽ được triển khai khi mở rộng quy mô thương mại.
+
+# III. References
+
+[1] Bộ Giáo dục và Đào tạo. (2015). *Quyết định số 729/QĐ-BGDĐT ngày 11/03/2015 về việc ban hành Định dạng đề thi đánh giá năng lực sử dụng tiếng Anh theo Khung năng lực ngoại ngữ 6 bậc dùng cho Việt Nam*.
+
+[2] Bộ Giáo dục và Đào tạo. (2014). *Thông tư số 01/2014/TT-BGDĐT ngày 24/01/2014 ban hành Khung năng lực ngoại ngữ 6 bậc dùng cho Việt Nam*.
+
+[3] Thủ tướng Chính phủ. (2022). *Quyết định số 131/QĐ-TTg ngày 25/01/2022 phê duyệt Đề án "Tăng cường ứng dụng công nghệ thông tin và chuyển đổi số trong giáo dục và đào tạo giai đoạn 2022-2025, định hướng đến năm 2030"*.
+
+[4] HolonIQ. (2024). *Global EdTech Market to reach $404B by 2025*. Retrieved from https://www.holoniq.com/edtech
+
+[5] Khảo sát sơ bộ nhóm dự án. (2025, tháng 12). *Khảo sát nhu cầu ôn luyện VSTEP với 50 sinh viên FPT University*. Dữ liệu nội bộ.
+
+## Appendix A: Use Case Diagram
+
+(Diagram sẽ được bổ sung trong Report 2 - SRS)
+
+## Appendix B: System Architecture Overview
+
+(Diagram sẽ được bổ sung trong Report 2 - SRS)
+
+## Appendix C: Project Timeline
+
+| Task Package | Description | Start | End |
+|--------------|-------------|-------|-----|
+| TP1 | Web Application Development | 01/01/2026 | 28/02/2026 |
+| TP2 | Mobile Application Development | 15/01/2026 | 15/03/2026 |
+| TP3 | Assessment Engine | 01/02/2026 | 31/03/2026 |
+| TP4 | Personalized Learning Module | 15/02/2026 | 15/04/2026 |
+| TP5 | Testing & Deployment | 01/04/2026 | 30/04/2026 |
