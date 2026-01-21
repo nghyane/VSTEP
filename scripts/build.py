@@ -18,17 +18,29 @@ def set_cell_shading(cell, color):
     cell._tc.get_or_add_tcPr().append(shading)
 
 
-def set_cell_margins(cell, top=Pt(2), bottom=Pt(2), left=Pt(4), right=Pt(4)):
-    """Set cell margins/padding."""
+def set_cell_margins(cell, top=40, bottom=40, left=80, right=80):
+    """Set cell margins/padding in twips (dxa). 20 twips = 1pt."""
     tc = cell._tc
     tcPr = tc.get_or_add_tcPr()
     tcMar = OxmlElement('w:tcMar')
     for margin_name, margin_value in [('top', top), ('bottom', bottom), ('left', left), ('right', right)]:
         node = OxmlElement(f'w:{margin_name}')
-        node.set(qn('w:w'), str(int(margin_value)))
+        node.set(qn('w:w'), str(margin_value))
         node.set(qn('w:type'), 'dxa')
         tcMar.append(node)
     tcPr.append(tcMar)
+
+
+def set_table_width(table, width_pct=100):
+    """Set table width as percentage of page width."""
+    tblPr = table._tbl.tblPr
+    if tblPr is None:
+        tblPr = OxmlElement('w:tblPr')
+        table._tbl.insert(0, tblPr)
+    tblW = OxmlElement('w:tblW')
+    tblW.set(qn('w:w'), str(width_pct * 50))  # 5000 = 100%
+    tblW.set(qn('w:type'), 'pct')
+    tblPr.append(tblW)
 
 # Style mapping - template style names
 STYLE_MAP = {
@@ -309,17 +321,25 @@ def build_docx(md_path, template_path, output_path):
                     except:
                         pass  # Style may not exist
                 
+                # Set table width to 100% for Google Docs/365 compatibility
+                set_table_width(table, 100)
+                
                 # Get cell styles
                 head_style = get_style(doc, "table_head")
                 body_style = get_style(doc, "table_body")
                 
-                for i, row in enumerate(rows):
-                    for j, cell_text in enumerate(row):
+                for i, row_data in enumerate(rows):
+                    table_row = table.rows[i]
+                    # Set row height rule to auto (minimum)
+                    table_row.height_rule = WD_ROW_HEIGHT_RULE.AT_LEAST
+                    table_row.height = Pt(20)  # Minimum height
+                    
+                    for j, cell_text in enumerate(row_data):
                         cell = table.cell(i, j)
                         cell.text = ""
-                        set_cell_margins(cell)  # Add vertical padding
+                        set_cell_margins(cell)  # Add padding (2pt top/bottom, 4pt left/right)
                         p = cell.paragraphs[0]
-                        # Apply "Table Head" to first row, "Table Text small" to others
+                        # Apply "Table Head" to first row, "Normal" to others
                         cell_style = head_style if i == 0 else body_style
                         if cell_style:
                             try:
@@ -335,9 +355,9 @@ def build_docx(md_path, template_path, output_path):
                         style_obj = doc.styles[cell_style] if cell_style else None
                         if style_obj:
                             for run in p.runs:
-                                if style_obj.font.name:
+                                if hasattr(style_obj, 'font') and style_obj.font.name:
                                     run.font.name = style_obj.font.name
-                                if style_obj.font.size:
+                                if hasattr(style_obj, 'font') and style_obj.font.size:
                                     run.font.size = style_obj.font.size
                                 if i == 0:
                                     run.bold = True
