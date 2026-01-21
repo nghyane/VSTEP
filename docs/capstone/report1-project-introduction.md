@@ -1,32 +1,10 @@
-# Report 1 – Project Introduction
+![](media/image1.png)
 
-## An Adaptive VSTEP Preparation System with Comprehensive Skill Assessment and Personalized Learning Support
+**Capstone Project Report**
 
-**Hệ Thống Luyện Thi VSTEP Thích Ứng Với Đánh Giá Toàn Diện Kỹ Năng Và Hỗ Trợ Học Tập Cá Nhân Hóa**
+**Report 1 -- Project Introduction**
 
--- Hanoi, January 2026 --
-
-## Table of Contents
-
-- I. Record of Changes
-- II. Project Introduction
-  - 1. Overview
-    - 1.1 Project Information
-    - 1.2 Project Team
-  - 2. Product Background
-  - 3. Existing Systems
-    - 3.1 Traditional VSTEP Preparation Methods
-    - 3.2 General English Learning Applications
-    - 3.3 VSTEP Mock Test Platforms
-    - 3.4 AI Writing & Speaking Platforms
-    - 3.5 IELTS/TOEFL Preparation Platforms
-  - 4. Business Opportunity
-  - 5. Software Product Vision
-  - 6. Project Scope & Limitations
-    - 6.1 Major Features
-    - 6.2 Limitations & Exclusions
-
----
+> -- Hanoi, January 2026 --
 
 # I. Record of Changes
 
@@ -38,20 +16,18 @@
 
 *A - Added, M - Modified, D - Deleted
 
----
-
 # II. Project Introduction
 
 ## 1. Overview
 
 ### 1.1 Project Information
 
-- **Project name (EN):** An Adaptive VSTEP Preparation System with Comprehensive Skill Assessment and Personalized Learning Support
-- **Project name (VN):** Hệ Thống Luyện Thi VSTEP Thích Ứng Với Đánh Giá Toàn Diện Kỹ Năng Và Hỗ Trợ Học Tập Cá Nhân Hóa
-- **Project code:** SP26SE146
-- **Group name:** GSP26SE63
-- **Software type:** Web Application & Mobile Application
-- **Duration:** 01/01/2026 – 30/04/2026
+- Project name (EN): An Adaptive VSTEP Preparation System with Comprehensive Skill Assessment and Personalized Learning Support
+- Project name (VN): Hệ Thống Luyện Thi VSTEP Thích Ứng Với Đánh Giá Toàn Diện Kỹ Năng Và Hỗ Trợ Học Tập Cá Nhân Hóa
+- Project code: SP26SE146
+- Group name: GSP26SE63
+- Software type: Web Application & Mobile Application
+- Duration: 01/01/2026 – 30/04/2026
 
 ### 1.2 Project Team
 
@@ -64,16 +40,14 @@
 | Nguyễn Nhật Phát | Developer | phatnnse172607@fpt.edu.vn | 0981567488 |
 | Nguyễn Trần Tấn Phát | Developer | phatnttse173198@fpt.edu.vn | 0343062376 |
 
----
-
 ## 2. Product Background
 
-Trong kỷ nguyên hội nhập toàn cầu, năng lực ngoại ngữ đóng vai trò then chốt đối với sự thành công trong học tập và thăng tiến nghề nghiệp. Kỳ thi VSTEP (Vietnamese Standardized Test of English Proficiency) được Bộ Giáo dục và Đào tạo công nhận theo Quyết định số 729/QĐ-BGDĐT ngày 11/03/2015 [1], là công cụ đánh giá năng lực ngoại ngữ theo Khung năng lực ngoại ngữ 6 bậc dùng cho Việt Nam (tương thích CEFR), với các cấp độ từ A1 đến C1.
+Trong kỷ nguyên hội nhập toàn cầu, năng lực ngoại ngữ đóng vai trò then chốt đối với sự thành công trong học tập và thăng tiến nghề nghiệp. Kỳ thi VSTEP (Vietnamese Standardized Test of English Proficiency) được Bộ Giáo dục và Đào tạo công nhận theo Quyết định số 729/QĐ-BGDĐT ngày 11/03/2015, là công cụ đánh giá năng lực ngoại ngữ theo Khung năng lực ngoại ngữ 6 bậc dùng cho Việt Nam (tương thích CEFR), với các cấp độ từ A1 đến C1.
 
 **Quy mô và tầm quan trọng:**
 
-- Theo Thông tư 01/2014/TT-BGDĐT, chứng chỉ ngoại ngữ (bao gồm VSTEP) là điều kiện đầu ra bắt buộc cho sinh viên đại học [2]
-- Hiện có 24 đơn vị được Bộ GD&ĐT cấp phép tổ chức thi VSTEP trên toàn quốc [3]
+- Theo Thông tư 01/2014/TT-BGDĐT, chứng chỉ ngoại ngữ (bao gồm VSTEP) là điều kiện đầu ra bắt buộc cho sinh viên đại học.
+- Hiện có 24 đơn vị được Bộ GD&ĐT cấp phép tổ chức thi VSTEP trên toàn quốc.
 - VSTEP được sử dụng rộng rãi cho:
   - Xét tốt nghiệp đại học/cao đẳng (yêu cầu phổ biến: B1-B2)
   - Cấp chứng chỉ cho giáo viên tiếng Anh (yêu cầu: B2-C1)
@@ -85,10 +59,10 @@ Dựa trên khảo sát sơ bộ với 50 sinh viên FPT University đang ôn lu
 
 | Thách thức | Mô tả | Bằng chứng |
 |------------|-------|------------|
-| Chênh lệch kỹ năng (Skill Gap) | Trình độ không đồng đều giữa 4 kỹ năng. Người học có thể đạt B2 ở Đọc nhưng chỉ A2 ở Nói | 78% người được khảo sát cho biết có ít nhất 1 kỹ năng yếu hơn đáng kể so với các kỹ năng khác |
-| Tài liệu tĩnh (Static Materials) | Phương pháp truyền thống dựa vào tài liệu cố định, không điều chỉnh theo trình độ thực tế | Các sách luyện thi phổ biến (Sách 22 đề, Step Up to VSTEP) chỉ có 1 mức độ khó cố định |
+| Chênh lệch kỹ năng (Skill Gap) | Trình độ không đồng đều giữa 4 kỹ năng. Người học có thể đạt B2 ở Đọc nhưng chỉ A2 ở Nói | 78% người được khảo sát cho biết có ít nhất 1 kỹ năng yếu hơn đáng kể |
+| Tài liệu tĩnh (Static Materials) | Phương pháp truyền thống dựa vào tài liệu cố định, không điều chỉnh theo trình độ thực tế | Các sách luyện thi phổ biến chỉ có 1 mức độ khó cố định |
 | Thiếu cá nhân hóa | Lớp học "cào bằng" không thích ứng được với nhu cầu cá nhân | 65% cho biết mất thời gian vào nội dung đã biết; 72% muốn có lộ trình riêng |
-| Thiếu phản hồi tức thì | Kỹ năng Viết và Nói không được đánh giá ngay, dẫn đến lặp lại sai lầm | Thời gian chờ phản hồi bài Viết trung bình: 3-7 ngày; Nói: chỉ đánh giá trong lớp |
+| Thiếu phản hồi tức thì | Kỹ năng Viết và Nói không được đánh giá ngay, dẫn đến lặp lại sai lầm | Thời gian chờ phản hồi bài Viết trung bình: 3-7 ngày |
 
 *Lưu ý: Dữ liệu khảo sát sơ bộ sẽ được mở rộng và validate trong giai đoạn Requirements Elicitation.*
 
@@ -99,8 +73,6 @@ Dự án "Hệ thống ôn luyện VSTEP thích ứng" được hình thành nh�
 - Chuyển đổi từ mô hình học tập "mức độ cố định" sang "định hướng theo cấp độ"
 - Tích hợp kiến trúc mô-đun kép: Luyện tập chuyên sâu và Thi thử giả lập
 - Áp dụng Adaptive Scaffolding (Hỗ trợ linh hoạt) để cá nhân hóa lộ trình học
-
----
 
 ## 3. Existing Systems
 
@@ -114,7 +86,7 @@ Nhóm phân tích các giải pháp hiện có theo 5 tiêu chí đánh giá:
 
 ### 3.1 Traditional VSTEP Preparation Methods
 
-**Mô tả:** Các trung tâm luyện thi trực tiếp (offline) và giáo trình ôn luyện truyền thống với chương trình "một khuôn mẫu cho tất cả" (one-size-fits-all).
+Các trung tâm luyện thi trực tiếp (offline) và giáo trình ôn luyện truyền thống với chương trình "một khuôn mẫu cho tất cả" (one-size-fits-all).
 
 | Ưu điểm | Nhược điểm |
 |---------|------------|
@@ -124,7 +96,7 @@ Nhóm phân tích các giải pháp hiện có theo 5 tiêu chí đánh giá:
 
 ### 3.2 General English Learning Applications
 
-**Ví dụ:** Duolingo (https://www.duolingo.com/), ELSA Speak (https://elsaspeak.com/)
+Ví dụ: Duolingo (duolingo.com), ELSA Speak (elsaspeak.com)
 
 | Ưu điểm | Nhược điểm |
 |---------|------------|
@@ -133,7 +105,7 @@ Nhóm phân tích các giải pháp hiện có theo 5 tiêu chí đánh giá:
 
 ### 3.3 VSTEP Mock Test Platforms
 
-**Ví dụ:** luyenthivstep.vn, vstepmaster.edu.vn, tienganh123.com
+Ví dụ: luyenthivstep.vn, vstepmaster.edu.vn, tienganh123.com
 
 | Ưu điểm | Nhược điểm |
 |---------|------------|
@@ -143,7 +115,7 @@ Nhóm phân tích các giải pháp hiện có theo 5 tiêu chí đánh giá:
 
 ### 3.4 AI Writing & Speaking Platforms
 
-**Ví dụ:** Grammarly (https://grammarly.com/), Write & Improve by Cambridge (https://writeandimprove.com/), SpeechAce (https://speechace.com/)
+Ví dụ: Grammarly (grammarly.com), Write & Improve by Cambridge (writeandimprove.com), SpeechAce (speechace.com)
 
 | Ưu điểm | Nhược điểm |
 |---------|------------|
@@ -151,9 +123,9 @@ Nhóm phân tích các giải pháp hiện có theo 5 tiêu chí đánh giá:
 | Công nghệ tiên tiến, UX tốt | Chỉ focus 1-2 kỹ năng, không toàn diện |
 | | Không có mock test theo format VSTEP |
 
-### 3.5 IELTS/TOEFL Preparation Platforms (Indirect Competitors)
+### 3.5 IELTS/TOEFL Preparation Platforms
 
-**Ví dụ:** Magoosh (https://magoosh.com/), British Council - Road to IELTS (https://takeielts.britishcouncil.org/)
+Ví dụ: Magoosh (magoosh.com), British Council - Road to IELTS (takeielts.britishcouncil.org)
 
 | Ưu điểm | Nhược điểm |
 |---------|------------|
@@ -174,17 +146,13 @@ Nhóm phân tích các giải pháp hiện có theo 5 tiêu chí đánh giá:
 
 **Kết luận phân tích:** Chưa có giải pháp nào kết hợp được cả 3 yếu tố: (1) Phù hợp VSTEP, (2) Cá nhân hóa adaptive, và (3) Đánh giá đầy đủ 4 kỹ năng với phản hồi tức thì.
 
----
-
 ## 4. Business Opportunity
-
-**Market Problem & Demand:**
 
 Thị trường ôn luyện VSTEP tại Việt Nam đang bộc lộ những lỗ hổng rõ rệt:
 
 | Vấn đề | Chi tiết | Quy mô ảnh hưởng |
 |--------|----------|------------------|
-| Skill Proficiency Gap | Người học không đồng đều 4 kỹ năng. Phương pháp "cào bằng" gây lãng phí thời gian | Khoảng 2 triệu sinh viên đại học cần đạt chuẩn đầu ra ngoại ngữ/năm [4] |
+| Skill Proficiency Gap | Người học không đồng đều 4 kỹ năng. Phương pháp "cào bằng" gây lãng phí thời gian | Khoảng 2 triệu sinh viên đại học cần đạt chuẩn đầu ra ngoại ngữ/năm |
 | Thiếu phản hồi tức thì | Viết và Nói là kỹ năng productive (khó nhất) nhưng không có đánh giá ngay | Thời gian chờ trung bình 3-7 ngày cho bài Viết |
 | Áp lực thời gian | Đa số là người bận rộn (sinh viên năm cuối, người đi làm) | 72% người khảo sát muốn có lộ trình tối ưu thay vì tự học |
 
@@ -218,8 +186,8 @@ Dự án phù hợp với các xu hướng và chính sách:
 
 | Khía cạnh | Phù hợp |
 |-----------|---------|
-| Chuyển đổi số giáo dục | Quyết định 131/QĐ-TTg về "Tăng cường ứng dụng CNTT trong dạy và học" [5] |
-| Personalized Learning | Xu hướng toàn cầu - thị trường EdTech dự kiến đạt $404B vào 2025 [6] |
+| Chuyển đổi số giáo dục | Quyết định 131/QĐ-TTg về "Tăng cường ứng dụng CNTT trong dạy và học" |
+| Personalized Learning | Xu hướng toàn cầu - thị trường EdTech dự kiến đạt $404B vào 2025 |
 | Nhu cầu nội địa | VSTEP là chứng chỉ Việt Nam, giảm phụ thuộc IELTS/TOEFL (chi phí thấp hơn 50-70%) |
 
 **Hypothesis cần validate:**
@@ -227,25 +195,13 @@ Dự án phù hợp với các xu hướng và chính sách:
 - Giả thuyết: Adaptive learning có thể giảm 30-50% thời gian ôn luyện so với phương pháp truyền thống
 - Phương pháp validate: A/B testing trong pilot phase với 2 nhóm người học
 
----
-
 ## 5. Software Product Vision
+
+For employees who want to order meals from the company cafeteria or from local restaurants on-line, the Cafeteria Ordering System is an Internet-based and smartphone-enabled application that will accept individual or group meal orders, process payments, and trigger delivery of the prepared meals to a designated location on the Process Impact campus.
 
 **Vision Statement:**
 
-FOR sinh viên đại học cần đạt chuẩn đầu ra, người đi làm cần chứng chỉ thăng tiến, và trung tâm ngoại ngữ tại Việt Nam
-
-WHO đang gặp khó khăn với phương pháp ôn luyện VSTEP thiếu cá nhân hóa và phản hồi chậm
-
-THE Hệ thống ôn luyện VSTEP thích ứng
-
-IS A nền tảng học tập kỹ thuật số kết hợp Web và Mobile
-
-THAT cung cấp lộ trình học cá nhân hóa, đánh giá 4 kỹ năng với phản hồi tức thì, và trực quan hóa tiến độ
-
-UNLIKE các trang web thi thử tĩnh (chỉ có đề và đáp án) hoặc ứng dụng tiếng Anh tổng quát (không bám sát VSTEP)
-
-OUR PRODUCT kết hợp Adaptive Scaffolding + Hybrid Grading + Analytics để thu hẹp skill gap hiệu quả
+Dành cho sinh viên đại học cần đạt chuẩn đầu ra, người đi làm cần chứng chỉ thăng tiến, và trung tâm ngoại ngữ tại Việt Nam đang gặp khó khăn với phương pháp ôn luyện VSTEP thiếu cá nhân hóa và phản hồi chậm, Hệ thống ôn luyện VSTEP thích ứng là một nền tảng học tập kỹ thuật số kết hợp Web và Mobile cung cấp lộ trình học cá nhân hóa, đánh giá 4 kỹ năng với phản hồi tức thì, và trực quan hóa tiến độ. Khác với các trang web thi thử tĩnh (chỉ có đề và đáp án) hoặc ứng dụng tiếng Anh tổng quát (không bám sát VSTEP), sản phẩm của chúng tôi kết hợp Adaptive Scaffolding + Hybrid Grading + Analytics để thu hẹp skill gap hiệu quả.
 
 **Measurable Vision Targets:**
 
@@ -260,21 +216,11 @@ OUR PRODUCT kết hợp Adaptive Scaffolding + Hybrid Grading + Analytics để 
 
 Hệ thống được thiết kế với hai module chính:
 
-1. **LUYỆN TẬP CHUYÊN SÂU (Practice Mode)**
-   - Adaptive exercises
-   - Scaffolded support
-   - Instant feedback
-   - Skill-focused
+1. **LUYỆN TẬP CHUYÊN SÂU (Practice Mode):** Adaptive exercises, Scaffolded support, Instant feedback, Skill-focused
 
-2. **THI THỬ GIẢ LẬP (Mock Test Mode)**
-   - Timed simulation
-   - Real exam format
-   - Full scoring
-   - Performance report
+2. **THI THỬ GIẢ LẬP (Mock Test Mode):** Timed simulation, Real exam format, Full scoring, Performance report
 
-3. **ADAPTIVE SCAFFOLDING**
-   - Writing: Template - Keywords - Free writing
-   - Listening: Full text - Highlights - Pure audio
+3. **ADAPTIVE SCAFFOLDING:** Writing (Template - Keywords - Free writing), Listening (Full text - Highlights - Pure audio)
 
 **Giá trị cho từng đối tượng:**
 
@@ -286,8 +232,6 @@ Hệ thống được thiết kế với hai module chính:
 
 **Đóng góp xã hội:**
 
-Dự án hướng đến các tác động cụ thể:
-
 | Đóng góp | Mục tiêu đo lường |
 |----------|-------------------|
 | Tiếp cận giáo dục | Giảm rào cản chi phí: VSTEP (~1.5 triệu VND) vs IELTS (~5 triệu VND) |
@@ -295,40 +239,50 @@ Dự án hướng đến các tác động cụ thể:
 | Hỗ trợ vùng sâu vùng xa | Mobile-first design cho khu vực hạ tầng internet hạn chế |
 | Chuẩn bị nguồn nhân lực | Đóng góp vào mục tiêu 50% sinh viên đạt B1+ trước tốt nghiệp |
 
----
-
 ## 6. Project Scope & Limitations
 
 ### 6.1 Major Features
 
-*[Phần này sẽ được hoàn thiện trong bước tiếp theo]*
+FE-01: User Authentication - Đăng ký, đăng nhập, quản lý profile với các vai trò Learner/Instructor/Admin.
+
+FE-02: Placement Test - Bài kiểm tra đầu vào xác định trình độ ban đầu cho 4 kỹ năng.
+
+FE-03: Practice Mode - Listening - Luyện tập kỹ năng Nghe với Adaptive Scaffolding (Full text - Highlight - Pure audio).
+
+FE-04: Practice Mode - Reading - Luyện tập kỹ năng Đọc với các dạng câu hỏi theo format VSTEP.
+
+FE-05: Practice Mode - Writing - Luyện tập kỹ năng Viết với Adaptive Scaffolding (Template - Keywords - Free writing).
+
+FE-06: Practice Mode - Speaking - Luyện tập kỹ năng Nói với ghi âm và AI feedback.
+
+FE-07: Mock Test Mode - Thi thử giả lập đầy đủ 4 kỹ năng theo đúng format và thời gian VSTEP.
+
+FE-08: AI Grading - Chấm điểm tự động bằng AI cho các bài tập MCQ, Writing, Speaking.
+
+FE-09: Human Grading - Giao diện cho Instructor chấm điểm thủ công với rubric VSTEP.
+
+FE-10: Progress Tracking - Spider Chart hiển thị năng lực 4 kỹ năng, Sliding Window theo dõi tiến độ.
+
+FE-11: Learning Path - Lộ trình học tập cá nhân hóa dựa trên kết quả và mục tiêu.
+
+FE-12: Goal Setting - Thiết lập mục tiêu (B1/B2/C1) và timeline.
+
+FE-13: Content Management - Admin quản lý ngân hàng câu hỏi, đề thi.
+
+FE-14: User Management - Admin quản lý tài khoản, phân quyền.
+
+FE-15: Analytics Dashboard - Báo cáo thống kê cho Instructor và Admin.
+
+FE-16: Notification System - Thông báo nhắc nhở học tập, kết quả bài thi.
 
 ### 6.2 Limitations & Exclusions
 
-*[Phần này sẽ được hoàn thiện trong bước tiếp theo]*
+LI-01: Hệ thống chỉ hỗ trợ VSTEP format (B1-B2, B2-C1), không hỗ trợ các kỳ thi tiếng Anh khác (IELTS, TOEFL, TOEIC).
 
----
+LI-02: AI Grading cho Writing và Speaking là công cụ hỗ trợ, không thay thế hoàn toàn đánh giá của Instructor cho điểm chính thức.
 
-## References
+LI-03: Phiên bản MVP chỉ hỗ trợ tiếng Việt làm ngôn ngữ giao diện chính.
 
-[1] Bộ GD&ĐT (2015). Quyết định 729/QĐ-BGDĐT về việc công nhận VSTEP. https://moet.gov.vn
+LI-04: Mobile App chỉ phát triển cho Android trong giai đoạn đầu, iOS sẽ được bổ sung sau.
 
-[2] Bộ GD&ĐT (2014). Thông tư 01/2014/TT-BGDĐT về Khung năng lực ngoại ngữ 6 bậc dùng cho Việt Nam.
-
-[3] Cục Quản lý chất lượng - Bộ GD&ĐT (2024). Danh sách đơn vị tổ chức thi VSTEP. https://qlcl.moet.gov.vn
-
-[4] Bộ GD&ĐT (2024). Báo cáo thống kê giáo dục đại học 2023-2024.
-
-[5] Thủ tướng Chính phủ (2021). Quyết định 131/QĐ-TTg về tăng cường ứng dụng CNTT trong giáo dục.
-
-[6] HolonIQ (2024). Global EdTech Market Report. https://www.holoniq.com/edtech
-
-[7] VSTEP Official. Cấu trúc đề thi VSTEP. https://vstep.vnu.edu.vn
-
-[8] FPT University (2025). Capstone Project Guidelines - SE Department.
-
----
-
-*Document Version: 1.2*
-*Last Updated: January 2026*
-*Status: Draft - Pending Section 6 (Scope & Limitations)*
+LI-05: Hệ thống không tích hợp thanh toán online trong phiên bản MVP.
