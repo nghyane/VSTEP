@@ -5,8 +5,9 @@ MD to DOCX Builder - Uses template styles only.
 
 from docx import Document
 from docx.shared import Pt
-from docx.oxml.ns import nsdecls
-from docx.oxml import parse_xml
+from docx.enum.table import WD_ROW_HEIGHT_RULE
+from docx.oxml.ns import nsdecls, qn
+from docx.oxml import parse_xml, OxmlElement
 from pathlib import Path
 import re
 
@@ -15,6 +16,19 @@ def set_cell_shading(cell, color):
     """Set cell background color."""
     shading = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{color}"/>')
     cell._tc.get_or_add_tcPr().append(shading)
+
+
+def set_cell_margins(cell, top=Pt(2), bottom=Pt(2), left=Pt(4), right=Pt(4)):
+    """Set cell margins/padding."""
+    tc = cell._tc
+    tcPr = tc.get_or_add_tcPr()
+    tcMar = OxmlElement('w:tcMar')
+    for margin_name, margin_value in [('top', top), ('bottom', bottom), ('left', left), ('right', right)]:
+        node = OxmlElement(f'w:{margin_name}')
+        node.set(qn('w:w'), str(int(margin_value)))
+        node.set(qn('w:type'), 'dxa')
+        tcMar.append(node)
+    tcPr.append(tcMar)
 
 # Style mapping - template style names
 STYLE_MAP = {
@@ -26,7 +40,7 @@ STYLE_MAP = {
     "number": "List Paragraph",
     "table": "Table Grid",
     "table_head": "Table Head",
-    "table_body": "Table Text small",
+    "table_body": "Normal",
 }
 
 # Fallbacks if style not in template
@@ -118,9 +132,10 @@ def render_inline(paragraph, text):
         if part.startswith('**') and part.endswith('**'):
             run = paragraph.add_run(part[2:-2])
             run.bold = True
+            run.font.size = Pt(12)
         elif part:
             # Handle italic within non-bold parts
-            italic_parts = re.split(r'(\*.*?\*)', part)
+            italic_parts = re.split(r'(\*[^*]+\*)', part)
             for ip in italic_parts:
                 if ip.startswith('*') and ip.endswith('*') and not ip.startswith('**'):
                     run = paragraph.add_run(ip[1:-1])
@@ -272,10 +287,10 @@ def build_docx(md_path, template_path, output_path):
             text = block[1]
             style_name = get_style(doc, "bullet")
             p = doc.add_paragraph(style=style_name)
-            # Add bullet prefix if falling back to Normal (no list style)
-            if style_name == "Normal":
-                p.paragraph_format.left_indent = Pt(18)
-                p.add_run("• ")
+            # Always add bullet with proper formatting
+            p.paragraph_format.left_indent = Pt(18)
+            p.paragraph_format.first_line_indent = Pt(-18)  # Hanging indent
+            p.add_run("• ")
             render_inline(p, text)
             
         elif block_type == 'number':
@@ -302,6 +317,7 @@ def build_docx(md_path, template_path, output_path):
                     for j, cell_text in enumerate(row):
                         cell = table.cell(i, j)
                         cell.text = ""
+                        set_cell_margins(cell)  # Add vertical padding
                         p = cell.paragraphs[0]
                         # Apply "Table Head" to first row, "Table Text small" to others
                         cell_style = head_style if i == 0 else body_style
@@ -315,17 +331,16 @@ def build_docx(md_path, template_path, output_path):
                             set_cell_shading(cell, "FFE8E1")  # Light pink header
                         # Render text
                         render_inline(p, cell_text)
-                        # Force font and bold for table cells (runs don't inherit from paragraph style)
-                        for run in p.runs:
-                            if i == 0:
-                                # Header: Arial 11pt Bold
-                                run.font.name = "Arial"
-                                run.font.size = Pt(11)
-                                run.bold = True
-                            else:
-                                # Body: Arial 9pt
-                                run.font.name = "Arial"
-                                run.font.size = Pt(9)
+                        # Apply font from style (runs don't inherit automatically)
+                        style_obj = doc.styles[cell_style] if cell_style else None
+                        if style_obj:
+                            for run in p.runs:
+                                if style_obj.font.name:
+                                    run.font.name = style_obj.font.name
+                                if style_obj.font.size:
+                                    run.font.size = style_obj.font.size
+                                if i == 0:
+                                    run.bold = True
     
     # Save
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)

@@ -304,3 +304,4 @@ LI-05: Hệ thống không tích hợp thanh toán online trong phiên bản MVP
 | TP3 | Assessment Engine | 01/02/2026 | 31/03/2026 |
 | TP4 | Personalized Learning Module | 15/02/2026 | 15/04/2026 |
 | TP5 | Testing & Deployment | 01/04/2026 | 30/04/2026 |
+
