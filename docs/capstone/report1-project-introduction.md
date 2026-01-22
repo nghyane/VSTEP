@@ -6,6 +6,7 @@
 | 2026-01-22 | M | Hoàng Văn Anh Nghĩa | Updated VSTEP test centers (24→38), added market data with sources, added adaptive learning research citations |
 | 2026-01-22 | M | Hoàng Văn Anh Nghĩa | Removed unverified data, clarified hypothesis vs validated claims |
 | 2026-01-22 | M | Hoàng Văn Anh Nghĩa | Refined MVP scope: 16→11 features, defer admin features to Phase 2 |
+| 2026-01-22 | M | Hoàng Văn Anh Nghĩa | Updated market data with 2025-2026 sources, added Vietnam-specific AI/Adaptive Learning research |
 
 *A - Added, M - Modified, D - Deleted
 
@@ -40,7 +41,7 @@ Trong kỷ nguyên hội nhập toàn cầu, năng lực ngoại ngữ đóng va
 **Quy mô và tầm quan trọng:**
 
 - Theo Thông tư 01/2014/TT-BGDĐT, chứng chỉ ngoại ngữ (bao gồm VSTEP) là điều kiện đầu ra bắt buộc cho sinh viên đại học.
-- Hiện có 38 đơn vị được Bộ GD&ĐT cấp phép tổ chức thi VSTEP trên toàn quốc (dữ liệu cập nhật tháng 03/2025 từ Cục Quản lý chất lượng) [5].
+- Hiện có 38 đơn vị được Bộ GD&ĐT cấp phép tổ chức thi VSTEP trên toàn quốc (dữ liệu cập nhật tháng 03/2025 từ Cục Quản lý chất lượng)[^5].
 - VSTEP được sử dụng rộng rãi cho:
   - Xét tốt nghiệp đại học/cao đẳng (yêu cầu phổ biến: B1-B2)
   - Cấp chứng chỉ cho giáo viên tiếng Anh (yêu cầu: B2-C1)
@@ -143,15 +144,24 @@ Ví dụ: Magoosh (magoosh.com), British Council - Road to IELTS (takeielts.brit
 
 **Quy mô thị trường:**
 
-Theo các báo cáo nghiên cứu thị trường (IMARC Group, GlobalData, 2024-2025):
+Theo các báo cáo nghiên cứu thị trường (IMARC Group, Ken Research, 2025-2026):
 
-| Phân khúc | Quy mô 2024 | Dự báo 2033 | CAGR |
-|-----------|-------------|-------------|------|
-| Vietnam Digital English Learning | USD 38.45M | USD 120.6M | 12.11% |
-| Vietnam EdTech (tổng) | USD 3.64B | USD 5.4B (2028) | 13.5% |
-| Vietnam Higher Education EdTech | USD 503.79M (2025) | USD 1.376B | 15.43% |
+| Phân khúc | Quy mô 2025 | Dự báo 2033-2034 | CAGR |
+|-----------|-------------|------------------|------|
+| Vietnam EdTech (tổng) | USD 1.1B | USD 3.2B (2034) | 12.31% |
+| Vietnam Digital English Learning | USD 43M | USD 120.6M (2033) | 12.11% |
+| Vietnam Higher Education EdTech | USD 503.79M | USD 1.376B (2033) | 15.43% |
 
-*Nguồn: IMARC Group Vietnam Digital English Language Learning Market Report 2033; GlobalData Vietnam EdTech Market Analysis 2024* [6], [7]
+*Nguồn: IMARC Group Vietnam EdTech Market Report 2034; Ken Research Vietnam Adaptive Learning Market 2030*[^6][^7][^11]
+
+**Động lực tăng trưởng chính:**
+
+| Yếu tố | Chi tiết |
+|--------|----------|
+| Chi tiêu giáo dục cao | Hộ gia đình Việt Nam chi 20-24% tổng chi tiêu cho giáo dục (ASEAN: 6-15%) |
+| Hạ tầng công nghệ | Tỷ lệ người dùng Internet đạt 79.1%, smartphone đứng thứ 2 ASEAN[^13] |
+| Mục tiêu quốc gia 2030 | Kinh tế số đóng góp 30-35% GDP; 90% trường ĐH sử dụng công nghệ học tập số |
+| Đầu tư EdTech | EdTech nhận >400 triệu USD từ 70 nhà đầu tư (2023)[^14] |
 
 Thị trường ôn luyện VSTEP tại Việt Nam đang bộc lộ những lỗ hổng rõ rệt:
 
@@ -204,16 +214,24 @@ Dự án phù hợp với các xu hướng và chính sách:
 
 **Cơ sở khoa học cho Adaptive Learning:**
 
-Các nghiên cứu meta-analysis và thực nghiệm gần đây chứng minh hiệu quả của adaptive learning trong giáo dục ngôn ngữ:
+Các nghiên cứu thực nghiệm gần đây (2023-2025), bao gồm nghiên cứu tại Việt Nam, chứng minh hiệu quả của AI và adaptive learning trong giáo dục ngôn ngữ:
 
 | Nghiên cứu | Phương pháp | Kết quả | Chỉ số |
 |------------|-------------|---------|--------|
 | Wei (2023) | Mixed-methods, 60 EFL students | Nhóm AI vượt trội nhóm truyền thống | η² = 0.81 (L2 Achievement) |
 | Liu & Zu (2024) | Adaptive English Learning System | Điểm năng lực tăng 58.4 → 72.1 | t(98) = 9.36, p < 0.001 |
-| Naseer & Khawaja (2025) | 700 university students | Cải thiện conceptual mastery | 28% (AI) vs 14% (control) |
-| Zheng et al. (2021) | Meta-analysis 24 articles | AI có tác động đáng kể đến thành tích học | 2001-2020 review |
+| Nguyen et al. (2025) | S-O-R model, 462 sinh viên VN | AI personalization tác động tích cực đến Learning Performance | Self-efficacy là biến điều tiết |
+| Prep.vn (2025) | Virtual Speaking Room với AI | Độ chính xác chấm điểm AI vs giám khảo | 90% accuracy |
 
-*Nguồn: Frontiers in Psychology, MDPI Education Sciences, ResearchGate* [8], [9], [10]
+*Nguồn: Frontiers in Psychology; Informing Science Institute; Prep.vn Virtual Speaking Room*[^8][^9][^10][^12]
+
+**Phát hiện quan trọng từ nghiên cứu tại Việt Nam (2025):**
+
+Nghiên cứu định lượng trên 462 sinh viên đại học Việt Nam (Nguyen et al., 2025) sử dụng mô hình S-O-R kết hợp ISSM cho thấy:
+
+- **Intelligence + Personalization**: Các yếu tố "Sự thông minh" và "Cá nhân hóa" của nền tảng AI có tác động tích cực đáng kể đến Perceived Value và Perceived Trust
+- **Self-efficacy**: Năng lực tự chủ đóng vai trò điều tiết - sinh viên càng tự tin thì càng hưởng lợi từ AI
+- **Anthropomorphism**: Tính năng giống con người (chatbot có cảm xúc) tăng giá trị cảm nhận nhưng **không ảnh hưởng trực tiếp đến niềm tin** - trong bối cảnh giáo dục, độ chính xác được ưu tiên hơn sự "thân thiện"
 
 *Lưu ý: Chỉ số ">=30% skill gap reduction" trong UVP là hypothesis dựa trên các nghiên cứu trên, sẽ được validate trong pilot phase.*
 
@@ -236,11 +254,9 @@ Dành cho sinh viên đại học cần đạt chuẩn đầu ra, người đi l
 
 Hệ thống được thiết kế với hai module chính:
 
-1. **LUYỆN TẬP CHUYÊN SÂU (Practice Mode):** Adaptive exercises, Scaffolded support, Instant feedback, Skill-focused
+1. **LUYỆN TẬP CHUYÊN SÂU (Practice Mode):** Adaptive exercises, Scaffolded support, Instant feedback, Skill-focused. Tích hợp Adaptive Scaffolding: Writing (Template → Keywords → Free writing), Listening (Full text → Highlights → Pure audio).
 
 2. **THI THỬ GIẢ LẬP (Mock Test Mode):** Timed simulation, Real exam format, Full scoring, Performance report
-
-3. **ADAPTIVE SCAFFOLDING:** Writing (Template - Keywords - Free writing), Listening (Full text - Highlights - Pure audio)
 
 **Giá trị cho từng đối tượng:**
 
@@ -323,25 +339,33 @@ LI-05: Hệ thống không tích hợp thanh toán online trong phiên bản MVP
 
 # III. References
 
-[1] Bộ Giáo dục và Đào tạo. (2015). *Quyết định số 729/QĐ-BGDĐT ngày 11/03/2015 về việc ban hành Định dạng đề thi đánh giá năng lực sử dụng tiếng Anh theo Khung năng lực ngoại ngữ 6 bậc dùng cho Việt Nam*.
+[^1]: Bộ Giáo dục và Đào tạo. (2015). *Quyết định số 729/QĐ-BGDĐT ngày 11/03/2015 về việc ban hành Định dạng đề thi đánh giá năng lực sử dụng tiếng Anh theo Khung năng lực ngoại ngữ 6 bậc dùng cho Việt Nam*.
 
-[2] Bộ Giáo dục và Đào tạo. (2014). *Thông tư số 01/2014/TT-BGDĐT ngày 24/01/2014 ban hành Khung năng lực ngoại ngữ 6 bậc dùng cho Việt Nam*.
+[^2]: Bộ Giáo dục và Đào tạo. (2014). *Thông tư số 01/2014/TT-BGDĐT ngày 24/01/2014 ban hành Khung năng lực ngoại ngữ 6 bậc dùng cho Việt Nam*.
 
-[3] Thủ tướng Chính phủ. (2022). *Quyết định số 131/QĐ-TTg ngày 25/01/2022 phê duyệt Đề án "Tăng cường ứng dụng công nghệ thông tin và chuyển đổi số trong giáo dục và đào tạo giai đoạn 2022-2025, định hướng đến năm 2030"*.
+[^3]: Thủ tướng Chính phủ. (2022). *Quyết định số 131/QĐ-TTg ngày 25/01/2022 phê duyệt Đề án "Tăng cường ứng dụng công nghệ thông tin và chuyển đổi số trong giáo dục và đào tạo giai đoạn 2022-2025, định hướng đến năm 2030"*.
 
-[4] HolonIQ. (2024). *Global EdTech Market to reach $404B by 2025*. Retrieved from https://www.holoniq.com/edtech
+[^4]: HolonIQ. (2024). *Global EdTech Market to reach $404B by 2025*. Retrieved from https://www.holoniq.com/edtech
 
-[5] Cục Quản lý chất lượng - Bộ Giáo dục và Đào tạo. (2025, tháng 3). *Danh sách các đơn vị tổ chức thi đánh giá năng lực tiếng Anh theo Khung năng lực ngoại ngữ 6 bậc dùng cho Việt Nam*. Retrieved from https://vqa.moet.gov.vn
+[^5]: Cục Quản lý chất lượng - Bộ Giáo dục và Đào tạo. (2025, tháng 3). *Danh sách các đơn vị tổ chức thi đánh giá năng lực tiếng Anh theo Khung năng lực ngoại ngữ 6 bậc dùng cho Việt Nam*. Retrieved from https://vqa.moet.gov.vn
 
-[6] IMARC Group. (2024). *Vietnam Digital English Language Learning Market Report 2024-2033*. Retrieved from https://www.imarcgroup.com/vietnam-digital-english-language-learning-market
+[^6]: IMARC Group. (2025). *Vietnam EdTech Market Size, Share and Growth Trends 2034*. Retrieved from https://www.imarcgroup.com/vietnam-edtech-market
 
-[7] GlobalData. (2024). *Vietnam EdTech Market Summary, Competitive Analysis and Forecast to 2029*. Retrieved from https://www.globaldata.com/store/report/vietnam-edtech-market-analysis/
+[^7]: IMARC Group. (2025). *Vietnam Digital English Language Learning Market Report 2024-2033*. Retrieved from https://www.imarcgroup.com/vietnam-digital-english-language-learning-market
 
-[8] Wei, L. (2023). Artificial intelligence in language instruction: impact on English learning achievement, L2 motivation, and self-regulated learning. *Frontiers in Psychology*, 14, 1261955. https://doi.org/10.3389/fpsyg.2023.1261955
+[^8]: Wei, L. (2023). Artificial intelligence in language instruction: impact on English learning achievement, L2 motivation, and self-regulated learning. *Frontiers in Psychology*, 14, 1261955. https://doi.org/10.3389/fpsyg.2023.1261955
 
-[9] Liu, Y., & Zu, Y. (2024). Design and Implementation of Adaptive English Learning System Integrating Language Contexts. *Journal of Educational Systems*, 4293.
+[^9]: Liu, Y., & Zu, Y. (2024). Design and Implementation of Adaptive English Learning System Integrating Language Contexts. *Journal of Educational Systems*, 4293.
 
-[10] Zheng, L., et al. (2021). The effectiveness of AI in education: A meta-analysis. *MDPI Education Sciences*, 2021.
+[^10]: Nguyen, T. H., et al. (2025). Unravelling Success in AI-Powered Personalized Learning in Vietnam: A Study on the Interplay of Platform Features and Psychological Responses. *Informing Science: The International Journal of an Emerging Transdiscipline*, 28. https://www.informingscience.org/Publications/5668
+
+[^11]: Ken Research. (2025). *Vietnam Adaptive Learning Market 2019-2030*. Retrieved from https://www.kenresearch.com/vietnam-adaptive-learning-market
+
+[^12]: Prep Education. (2025). *Virtual Speaking Room - AI Speaking Practice*. Retrieved from https://prepedu.com/en/news/prep-ai-virtual-speaking-room
+
+[^13]: DataReportal. (2026). *Digital 2026: Vietnam*. Retrieved from https://datareportal.com/reports/digital-2026-vietnam
+
+[^14]: VietNamNet. (2025). *Vietnam's edtech market surges with AI-driven, locally adapted platforms*. Retrieved from https://vietnamnet.vn/en/vietnam-s-edtech-market-surges-with-ai-driven-locally-adapted-platforms-2424532.html
 
 ## Appendix A: Use Case Diagram
 
