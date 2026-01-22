@@ -3,6 +3,9 @@
 | Date | A/M/D | In Charge | Change Description |
 |------|-------|-----------|-------------------|
 | 2026-01-21 | A | Hoàng Văn Anh Nghĩa | Initial document creation |
+| 2026-01-22 | M | Hoàng Văn Anh Nghĩa | Updated VSTEP test centers (24→38), added market data with sources, added adaptive learning research citations |
+| 2026-01-22 | M | Hoàng Văn Anh Nghĩa | Removed unverified data, clarified hypothesis vs validated claims |
+| 2026-01-22 | M | Hoàng Văn Anh Nghĩa | Refined MVP scope: 16→11 features, defer admin features to Phase 2 |
 
 *A - Added, M - Modified, D - Deleted
 
@@ -37,7 +40,7 @@ Trong kỷ nguyên hội nhập toàn cầu, năng lực ngoại ngữ đóng va
 **Quy mô và tầm quan trọng:**
 
 - Theo Thông tư 01/2014/TT-BGDĐT, chứng chỉ ngoại ngữ (bao gồm VSTEP) là điều kiện đầu ra bắt buộc cho sinh viên đại học.
-- Hiện có 24 đơn vị được Bộ GD&ĐT cấp phép tổ chức thi VSTEP trên toàn quốc.
+- Hiện có 38 đơn vị được Bộ GD&ĐT cấp phép tổ chức thi VSTEP trên toàn quốc (dữ liệu cập nhật tháng 03/2025 từ Cục Quản lý chất lượng) [5].
 - VSTEP được sử dụng rộng rãi cho:
   - Xét tốt nghiệp đại học/cao đẳng (yêu cầu phổ biến: B1-B2)
   - Cấp chứng chỉ cho giáo viên tiếng Anh (yêu cầu: B2-C1)
@@ -45,16 +48,16 @@ Trong kỷ nguyên hội nhập toàn cầu, năng lực ngoại ngữ đóng va
 
 **Thách thức hiện tại:**
 
-Dựa trên khảo sát sơ bộ với 50 sinh viên FPT University đang ôn luyện VSTEP (tháng 12/2025) và phân tích các nghiên cứu về học ngoại ngữ, nhóm nhận diện các thách thức chính:
+Dựa trên phân tích các nghiên cứu về học ngoại ngữ và đặc điểm thị trường ôn luyện VSTEP, nhóm nhận diện các thách thức chính:
 
-| Thách thức | Mô tả | Bằng chứng |
-|------------|-------|------------|
-| Chênh lệch kỹ năng (Skill Gap) | Trình độ không đồng đều giữa 4 kỹ năng. Người học có thể đạt B2 ở Đọc nhưng chỉ A2 ở Nói | 78% người được khảo sát cho biết có ít nhất 1 kỹ năng yếu hơn đáng kể |
-| Tài liệu tĩnh (Static Materials) | Phương pháp truyền thống dựa vào tài liệu cố định, không điều chỉnh theo trình độ thực tế | Các sách luyện thi phổ biến chỉ có 1 mức độ khó cố định |
-| Thiếu cá nhân hóa | Lớp học "cào bằng" không thích ứng được với nhu cầu cá nhân | 65% cho biết mất thời gian vào nội dung đã biết; 72% muốn có lộ trình riêng |
-| Thiếu phản hồi tức thì | Kỹ năng Viết và Nói không được đánh giá ngay, dẫn đến lặp lại sai lầm | Thời gian chờ phản hồi bài Viết trung bình: 3-7 ngày |
+| Thách thức | Mô tả |
+|------------|-------|
+| Chênh lệch kỹ năng (Skill Gap) | Trình độ không đồng đều giữa 4 kỹ năng. Người học có thể đạt B2 ở Đọc nhưng chỉ A2 ở Nói - đây là hiện tượng phổ biến trong học ngoại ngữ (receptive vs productive skills) |
+| Tài liệu tĩnh (Static Materials) | Phương pháp truyền thống dựa vào tài liệu cố định, không điều chỉnh theo trình độ thực tế |
+| Thiếu cá nhân hóa | Lớp học "cào bằng" không thích ứng được với nhu cầu cá nhân |
+| Thiếu phản hồi tức thì | Kỹ năng Viết và Nói không được đánh giá ngay, dẫn đến lặp lại sai lầm |
 
-*Lưu ý: Dữ liệu khảo sát sơ bộ sẽ được mở rộng và validate trong giai đoạn Requirements Elicitation.*
+*Lưu ý: Các thách thức trên sẽ được validate trong giai đoạn Requirements Elicitation.*
 
 **Giải pháp đề xuất:**
 
@@ -138,13 +141,25 @@ Ví dụ: Magoosh (magoosh.com), British Council - Road to IELTS (takeielts.brit
 
 ## 4. Business Opportunity
 
+**Quy mô thị trường:**
+
+Theo các báo cáo nghiên cứu thị trường (IMARC Group, GlobalData, 2024-2025):
+
+| Phân khúc | Quy mô 2024 | Dự báo 2033 | CAGR |
+|-----------|-------------|-------------|------|
+| Vietnam Digital English Learning | USD 38.45M | USD 120.6M | 12.11% |
+| Vietnam EdTech (tổng) | USD 3.64B | USD 5.4B (2028) | 13.5% |
+| Vietnam Higher Education EdTech | USD 503.79M (2025) | USD 1.376B | 15.43% |
+
+*Nguồn: IMARC Group Vietnam Digital English Language Learning Market Report 2033; GlobalData Vietnam EdTech Market Analysis 2024* [6], [7]
+
 Thị trường ôn luyện VSTEP tại Việt Nam đang bộc lộ những lỗ hổng rõ rệt:
 
-| Vấn đề | Chi tiết | Quy mô ảnh hưởng |
-|--------|----------|------------------|
-| Skill Proficiency Gap | Người học không đồng đều 4 kỹ năng. Phương pháp "cào bằng" gây lãng phí thời gian | Khoảng 2 triệu sinh viên đại học cần đạt chuẩn đầu ra ngoại ngữ/năm |
-| Thiếu phản hồi tức thì | Viết và Nói là kỹ năng productive (khó nhất) nhưng không có đánh giá ngay | Thời gian chờ trung bình 3-7 ngày cho bài Viết |
-| Áp lực thời gian | Đa số là người bận rộn (sinh viên năm cuối, người đi làm) | 72% người khảo sát muốn có lộ trình tối ưu thay vì tự học |
+| Vấn đề | Chi tiết |
+|--------|----------|
+| Skill Proficiency Gap | Người học không đồng đều 4 kỹ năng. Phương pháp "cào bằng" gây lãng phí thời gian |
+| Thiếu phản hồi tức thì | Viết và Nói là kỹ năng productive (khó nhất) nhưng không có đánh giá ngay |
+| Áp lực thời gian | Đa số là người bận rộn (sinh viên năm cuối, người đi làm) cần lộ trình tối ưu |
 
 **Competitive Landscape Analysis:**
 
@@ -158,12 +173,14 @@ Thị trường ôn luyện VSTEP tại Việt Nam đang bộc lộ những lỗ
 
 Hệ thống tạo ra sự khác biệt với 4 lợi thế cốt lõi và các chỉ số đo lường:
 
-| # | Lợi thế | Mô tả | Chỉ số mục tiêu |
-|---|---------|-------|-----------------|
+| # | Lợi thế | Mô tả | Chỉ số mục tiêu (hypothesis) |
+|---|---------|-------|------------------------------|
 | 1 | Adaptive Scaffolding | Điều chỉnh mức độ hỗ trợ theo trình độ: Writing (Template - Keywords - Free), Listening (Full text - Highlight - Pure audio) | Skill gap reduction >=30% sau 4 tuần |
 | 2 | Hybrid Grading | AI chấm nhanh (grammar, spelling, pronunciation) + Human review cho productive skills | Feedback latency: <5 phút (AI), <24h (Human) |
-| 3 | Advanced Visualization | Spider Chart (độ lệch kỹ năng) + Sliding Window (avg 10 bài gần nhất) | User engagement +40% vs static charts |
+| 3 | Advanced Visualization | Spider Chart (độ lệch kỹ năng) + Sliding Window (avg 10 bài gần nhất) | User engagement improvement vs static charts |
 | 4 | Multi-Goal Profiles | Linh hoạt mục tiêu: B1 trong 1 tháng - B2 trong 3 tháng | Support >=3 concurrent learning goals |
+
+*Lưu ý: Các chỉ số mục tiêu là hypothesis sẽ được đo lường và validate trong pilot phase.*
 
 **Tradeoffs được chấp nhận:**
 
@@ -185,20 +202,35 @@ Dự án phù hợp với các xu hướng và chính sách:
 - Giả thuyết: Adaptive learning có thể giảm 30-50% thời gian ôn luyện so với phương pháp truyền thống
 - Phương pháp validate: A/B testing trong pilot phase với 2 nhóm người học
 
+**Cơ sở khoa học cho Adaptive Learning:**
+
+Các nghiên cứu meta-analysis và thực nghiệm gần đây chứng minh hiệu quả của adaptive learning trong giáo dục ngôn ngữ:
+
+| Nghiên cứu | Phương pháp | Kết quả | Chỉ số |
+|------------|-------------|---------|--------|
+| Wei (2023) | Mixed-methods, 60 EFL students | Nhóm AI vượt trội nhóm truyền thống | η² = 0.81 (L2 Achievement) |
+| Liu & Zu (2024) | Adaptive English Learning System | Điểm năng lực tăng 58.4 → 72.1 | t(98) = 9.36, p < 0.001 |
+| Naseer & Khawaja (2025) | 700 university students | Cải thiện conceptual mastery | 28% (AI) vs 14% (control) |
+| Zheng et al. (2021) | Meta-analysis 24 articles | AI có tác động đáng kể đến thành tích học | 2001-2020 review |
+
+*Nguồn: Frontiers in Psychology, MDPI Education Sciences, ResearchGate* [8], [9], [10]
+
+*Lưu ý: Chỉ số ">=30% skill gap reduction" trong UVP là hypothesis dựa trên các nghiên cứu trên, sẽ được validate trong pilot phase.*
+
 ## 5. Software Product Vision
 
 **Vision Statement:**
 
 Dành cho sinh viên đại học cần đạt chuẩn đầu ra, người đi làm cần chứng chỉ thăng tiến, và trung tâm ngoại ngữ tại Việt Nam đang gặp khó khăn với phương pháp ôn luyện VSTEP thiếu cá nhân hóa và phản hồi chậm, Hệ thống ôn luyện VSTEP thích ứng là một nền tảng học tập kỹ thuật số kết hợp Web và Mobile cung cấp lộ trình học cá nhân hóa, đánh giá 4 kỹ năng với phản hồi tức thì, và trực quan hóa tiến độ. Khác với các trang web thi thử tĩnh (chỉ có đề và đáp án) hoặc ứng dụng tiếng Anh tổng quát (không bám sát VSTEP), sản phẩm của chúng tôi kết hợp Adaptive Scaffolding + Hybrid Grading + Analytics để thu hẹp skill gap hiệu quả.
 
-**Measurable Vision Targets:**
+**Measurable Vision Targets (hypothesis - cần validate trong pilot):**
 
-| Chỉ số | Mục tiêu | Timeline |
-|--------|----------|----------|
-| Skill gap reduction | >=30% | Sau 4 tuần sử dụng |
-| Writing feedback latency | <5 phút (AI) | MVP launch |
-| User satisfaction (NPS) | >=40 | End of pilot |
-| Active users retention | >=60% (monthly) | 3 tháng sau launch |
+| Chỉ số | Mục tiêu | Timeline | Cơ sở |
+|--------|----------|----------|-------|
+| Skill gap reduction | >=30% | Sau 4 tuần sử dụng | Dựa trên research (Wei 2023, Liu & Zu 2024) |
+| Writing feedback latency | <5 phút (AI) | MVP launch | Technical feasibility |
+| User satisfaction (NPS) | >=40 | End of pilot | Industry benchmark |
+| Active users retention | >=60% (monthly) | 3 tháng sau launch | Industry benchmark |
 
 **Kiến trúc Mô-đun Kép:**
 
@@ -218,50 +250,64 @@ Hệ thống được thiết kế với hai module chính:
 | Giảng viên (Instructors) | Hybrid Grading giảm gánh nặng chấm bài, dashboard theo dõi học viên, data-driven feedback |
 | Tổ chức giáo dục | Công cụ chuyển đổi số có khả năng mở rộng, tiết kiệm chi phí, quản lý đa profile người dùng |
 
-**Đóng góp xã hội:**
+**Đóng góp xã hội (mục tiêu dài hạn):**
 
-| Đóng góp | Mục tiêu đo lường |
-|----------|-------------------|
-| Tiếp cận giáo dục | Giảm rào cản chi phí: VSTEP (~1.5 triệu VND) vs IELTS (~5 triệu VND) |
-| Hiệu quả học tập | Giảm skill gap 30% cho người dùng active |
+| Đóng góp | Mô tả |
+|----------|-------|
+| Tiếp cận giáo dục | Giảm rào cản chi phí: Lệ phí thi VSTEP thấp hơn IELTS/TOEFL |
+| Hiệu quả học tập | Hỗ trợ người học rút ngắn skill gap thông qua adaptive learning |
 | Hỗ trợ vùng sâu vùng xa | Mobile-first design cho khu vực hạ tầng internet hạn chế |
-| Chuẩn bị nguồn nhân lực | Đóng góp vào mục tiêu 50% sinh viên đạt B1+ trước tốt nghiệp |
+| Chuẩn bị nguồn nhân lực | Hỗ trợ sinh viên đạt chuẩn đầu ra ngoại ngữ |
 
 ## 6. Project Scope & Limitations
 
 ### 6.1 Major Features
 
-FE-01: User Authentication - Đăng ký, đăng nhập, quản lý profile với các vai trò Learner/Instructor/Admin. Hệ thống hỗ trợ xác thực qua email/password và OAuth (Google). Người dùng có thể cập nhật thông tin cá nhân, đổi mật khẩu, và quản lý các thiết bị đăng nhập.
+**Tổng quan:** 16 tính năng được chia thành 2 phase để đảm bảo delivery trong timeline 4 tháng.
 
-FE-02: Placement Test - Bài kiểm tra đầu vào xác định trình độ ban đầu cho 4 kỹ năng (Nghe, Nói, Đọc, Viết). Kết quả được sử dụng để khởi tạo Spider Chart và đề xuất lộ trình học phù hợp. Bài test được thiết kế adaptive để rút ngắn thời gian kiểm tra trong khi vẫn đảm bảo độ chính xác.
+---
 
-FE-03: Practice Mode - Listening - Luyện tập kỹ năng Nghe với Adaptive Scaffolding (Full text - Highlight - Pure audio). Hệ thống tự động điều chỉnh mức độ hỗ trợ dựa trên kết quả của người học. Bao gồm các dạng bài tập: nghe điền từ, nghe chọn đáp án, và nghe tóm tắt nội dung.
+**PHASE 1 - MVP (Tháng 1-3): 11 Core Features**
 
-FE-04: Practice Mode - Reading - Luyện tập kỹ năng Đọc với các dạng câu hỏi theo format VSTEP. Bao gồm các dạng: True/False/Not Given, Multiple Choice, Matching Headings, và Fill in the Blanks. Bài đọc được phân loại theo chủ đề và mức độ khó (B1, B2, C1).
+*Tập trung vào trải nghiệm học tập và AI Grading*
 
-FE-05: Practice Mode - Writing - Luyện tập kỹ năng Viết với Adaptive Scaffolding (Template - Keywords - Free writing). Hỗ trợ Task 1 (viết email/thư) và Task 2 (viết bài luận). Người học nhận phản hồi tức thì về grammar, vocabulary, và coherence từ AI.
+FE-01: User Authentication - Đăng ký, đăng nhập, quản lý profile với các vai trò Learner/Instructor/Admin. Hỗ trợ xác thực qua email/password và OAuth (Google).
 
-FE-06: Practice Mode - Speaking - Luyện tập kỹ năng Nói với ghi âm và AI feedback. Hệ thống đánh giá phát âm, ngữ điệu, và fluency thông qua speech recognition. Bao gồm cả 3 phần của bài thi Speaking VSTEP: Social Interaction, Solution Discussion, và Topic Development.
+FE-02: Placement Test - Bài kiểm tra đầu vào xác định trình độ ban đầu cho 4 kỹ năng (Nghe, Nói, Đọc, Viết). Kết quả được sử dụng để khởi tạo Spider Chart và đề xuất lộ trình học phù hợp.
 
-FE-07: Mock Test Mode - Thi thử giả lập đầy đủ 4 kỹ năng theo đúng format và thời gian VSTEP. Người học trải nghiệm môi trường thi thực tế với đồng hồ đếm ngược và giao diện thi máy tính. Kết quả được tổng hợp thành báo cáo chi tiết với điểm số theo từng kỹ năng và band descriptor.
+FE-03: Practice Mode - Listening - Luyện tập kỹ năng Nghe với Adaptive Scaffolding (Full text - Highlight - Pure audio). Bao gồm các dạng bài tập: nghe điền từ, nghe chọn đáp án, nghe tóm tắt nội dung.
 
-FE-08: AI Grading - Chấm điểm tự động bằng AI cho các bài tập MCQ, Writing, Speaking. Sử dụng các model NLP để đánh giá grammar, vocabulary, task achievement, và coherence cho Writing. Tích hợp speech-to-text và pronunciation scoring cho Speaking.
+FE-04: Practice Mode - Reading - Luyện tập kỹ năng Đọc với các dạng câu hỏi theo format VSTEP: True/False/Not Given, Multiple Choice, Matching Headings, Fill in the Blanks.
 
-FE-09: Human Grading - Giao diện cho Instructor chấm điểm thủ công với rubric VSTEP. Instructor có thể review bài làm, để lại nhận xét chi tiết, và override điểm AI nếu cần. Hệ thống theo dõi workload và phân công bài chấm tự động.
+FE-05: Practice Mode - Writing + AI Grading - Luyện tập kỹ năng Viết với AI feedback tức thì. Sử dụng LLM API (GPT/Gemini) để đánh giá grammar, vocabulary, coherence, và task achievement theo rubric VSTEP. Hỗ trợ Task 1 (email/thư) và Task 2 (bài luận).
 
-FE-10: Progress Tracking - Spider Chart hiển thị năng lực 4 kỹ năng, Sliding Window theo dõi tiến độ. Spider Chart cập nhật realtime sau mỗi bài tập/thi thử. Sliding Window tính trung bình 10 bài gần nhất để phản ánh năng lực hiện tại, loại bỏ nhiễu từ kết quả cũ.
+FE-06: Practice Mode - Speaking + AI Grading - Luyện tập kỹ năng Nói với ghi âm và AI feedback. Tích hợp Speech-to-Text để transcribe, sau đó dùng LLM đánh giá pronunciation, fluency, và content. Bao gồm 3 phần Speaking VSTEP.
 
-FE-11: Learning Path - Lộ trình học tập cá nhân hóa dựa trên kết quả và mục tiêu. Hệ thống gợi ý bài tập ưu tiên cho kỹ năng yếu nhất. Lộ trình được điều chỉnh động dựa trên tiến độ thực tế của người học.
+FE-07: Mock Test Mode - Thi thử giả lập đầy đủ 4 kỹ năng theo đúng format và thời gian VSTEP. Kết quả được tổng hợp thành báo cáo chi tiết với điểm số theo từng kỹ năng.
 
-FE-12: Goal Setting - Thiết lập mục tiêu (B1/B2/C1) và timeline. Người học có thể đặt nhiều mục tiêu đồng thời (VD: B1 trong 1 tháng cho Đọc, B2 trong 3 tháng cho Nói). Hệ thống dự đoán khả năng đạt mục tiêu dựa trên tốc độ tiến bộ hiện tại.
+FE-08: Human Grading - Giao diện cho Instructor chấm điểm với rubric VSTEP. Instructor review bài Writing/Speaking, để lại nhận xét chi tiết, và có thể override điểm AI nếu cần.
 
-FE-13: Content Management - Admin quản lý ngân hàng câu hỏi, đề thi. Hỗ trợ import/export câu hỏi theo format chuẩn (Excel, JSON). Admin có thể tạo, chỉnh sửa, phân loại câu hỏi theo kỹ năng, chủ đề, và mức độ khó.
+FE-09: Progress Tracking - Spider Chart hiển thị năng lực 4 kỹ năng, Sliding Window theo dõi tiến độ (trung bình 10 bài gần nhất).
 
-FE-14: User Management - Admin quản lý tài khoản, phân quyền. Bao gồm các chức năng: tạo tài khoản hàng loạt, khóa/mở khóa tài khoản, reset mật khẩu, và gán vai trò. Admin có thể xem lịch sử hoạt động của từng tài khoản.
+FE-10: Learning Path - Lộ trình học tập cá nhân hóa dựa trên kết quả Placement Test và tiến độ. MVP sử dụng logic rule-based: skill có điểm thấp nhất được ưu tiên gợi ý bài tập. Phase 2 có thể nâng cấp lên AI-based (ML/Collaborative Filtering) khi có đủ dữ liệu người dùng.
 
-FE-15: Analytics Dashboard - Báo cáo thống kê cho Instructor và Admin. Hiển thị các metrics: số lượng người dùng active, tỷ lệ hoàn thành bài tập, điểm trung bình theo kỹ năng. Hỗ trợ lọc theo thời gian, nhóm người dùng, và export báo cáo.
+FE-11: Goal Setting - Thiết lập mục tiêu (B1/B2/C1) và timeline. Người học đặt mục tiêu cụ thể (VD: B2 trong 3 tháng). Hệ thống hiển thị tiến độ so với mục tiêu và dự đoán khả năng đạt được dựa trên tốc độ tiến bộ hiện tại.
 
-FE-16: Notification System - Thông báo nhắc nhở học tập, kết quả bài thi. Hỗ trợ push notification (mobile), email, và in-app notification. Người dùng có thể tùy chỉnh tần suất và loại thông báo muốn nhận.
+---
+
+**PHASE 2 - Enhancement (Tháng 4): 5 Admin & Support Features**
+
+*Hoàn thiện tính năng quản trị sau khi core features ổn định*
+
+FE-12: Content Management - Admin quản lý ngân hàng câu hỏi, đề thi. Hỗ trợ import/export câu hỏi theo format chuẩn (Excel, JSON). Admin có thể tạo, chỉnh sửa, phân loại câu hỏi theo kỹ năng, chủ đề, và mức độ khó.
+
+FE-13: User Management - Admin quản lý tài khoản, phân quyền. Bao gồm các chức năng: tạo tài khoản hàng loạt, khóa/mở khóa tài khoản, reset mật khẩu, và gán vai trò.
+
+FE-14: Analytics Dashboard - Báo cáo thống kê cho Instructor và Admin. Hiển thị các metrics: số lượng người dùng active, tỷ lệ hoàn thành bài tập, điểm trung bình theo kỹ năng. Hỗ trợ lọc theo thời gian và export báo cáo.
+
+FE-15: Notification System - Thông báo nhắc nhở học tập, kết quả bài thi. Hỗ trợ push notification (mobile), email, và in-app notification.
+
+FE-16: Advanced Admin Features - Các tính năng nâng cao: xem lịch sử hoạt động, phân công bài chấm tự động, tùy chỉnh tần suất thông báo.
 
 ### 6.2 Limitations & Exclusions
 
@@ -285,7 +331,17 @@ LI-05: Hệ thống không tích hợp thanh toán online trong phiên bản MVP
 
 [4] HolonIQ. (2024). *Global EdTech Market to reach $404B by 2025*. Retrieved from https://www.holoniq.com/edtech
 
-[5] Khảo sát sơ bộ nhóm dự án. (2025, tháng 12). *Khảo sát nhu cầu ôn luyện VSTEP với 50 sinh viên FPT University*. Dữ liệu nội bộ.
+[5] Cục Quản lý chất lượng - Bộ Giáo dục và Đào tạo. (2025, tháng 3). *Danh sách các đơn vị tổ chức thi đánh giá năng lực tiếng Anh theo Khung năng lực ngoại ngữ 6 bậc dùng cho Việt Nam*. Retrieved from https://vqa.moet.gov.vn
+
+[6] IMARC Group. (2024). *Vietnam Digital English Language Learning Market Report 2024-2033*. Retrieved from https://www.imarcgroup.com/vietnam-digital-english-language-learning-market
+
+[7] GlobalData. (2024). *Vietnam EdTech Market Summary, Competitive Analysis and Forecast to 2029*. Retrieved from https://www.globaldata.com/store/report/vietnam-edtech-market-analysis/
+
+[8] Wei, L. (2023). Artificial intelligence in language instruction: impact on English learning achievement, L2 motivation, and self-regulated learning. *Frontiers in Psychology*, 14, 1261955. https://doi.org/10.3389/fpsyg.2023.1261955
+
+[9] Liu, Y., & Zu, Y. (2024). Design and Implementation of Adaptive English Learning System Integrating Language Contexts. *Journal of Educational Systems*, 4293.
+
+[10] Zheng, L., et al. (2021). The effectiveness of AI in education: A meta-analysis. *MDPI Education Sciences*, 2021.
 
 ## Appendix A: Use Case Diagram
 
