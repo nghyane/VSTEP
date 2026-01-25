@@ -1,14 +1,54 @@
-# I. Record of Changes
+# I. Definitions and Acronyms
 
-| Date | A/M/D | In Charge | Change Description |
-|------|-------|-----------|-------------------|
-| 2026-01-21 | A | Hoàng Văn Anh Nghĩa | Initial document creation |
-| 2026-01-22 | M | Hoàng Văn Anh Nghĩa | Updated VSTEP test centers (24→38), added market data with sources, added adaptive learning research citations |
-| 2026-01-22 | M | Hoàng Văn Anh Nghĩa | Removed unverified data, clarified hypothesis vs validated claims |
-| 2026-01-22 | M | Hoàng Văn Anh Nghĩa | Refined MVP scope: 16→11 features, defer admin features to Phase 2 |
-| 2026-01-22 | M | Hoàng Văn Anh Nghĩa | Updated market data with 2025-2026 sources, added Vietnam-specific AI/Adaptive Learning research |
+| Acronym | Definition |
+|---------|------------|
+| AI | Artificial Intelligence - Trí tuệ nhân tạo |
+| API | Application Programming Interface - Giao diện lập trình ứng dụng |
+| ASEAN | Association of Southeast Asian Nations - Hiệp hội các Quốc gia Đông Nam Á |
+| CAGR | Compound Annual Growth Rate - Tốc độ tăng trưởng kép hàng năm |
+| CEFR | Common European Framework of Reference for Languages - Khung tham chiếu ngôn ngữ chung châu Âu |
+| CNTT | Công nghệ thông tin |
+| EdTech | Educational Technology - Công nghệ giáo dục |
+| EFL | English as a Foreign Language - Tiếng Anh như một ngoại ngữ |
+| GDP | Gross Domestic Product - Tổng sản phẩm quốc nội |
+| GD&ĐT | Giáo dục và Đào tạo |
+| GPT | Generative Pre-trained Transformer - Mô hình ngôn ngữ lớn của OpenAI |
+| IELTS | International English Language Testing System - Hệ thống kiểm tra tiếng Anh quốc tế |
+| ISSM | Information Systems Success Model - Mô hình thành công hệ thống thông tin |
+| JSON | JavaScript Object Notation - Định dạng trao đổi dữ liệu |
+| LLM | Large Language Model - Mô hình ngôn ngữ lớn |
+| MCQ | Multiple Choice Question - Câu hỏi trắc nghiệm |
+| ML | Machine Learning - Học máy |
+| MVP | Minimum Viable Product - Sản phẩm khả thi tối thiểu |
+| NPS | Net Promoter Score - Chỉ số đo lường mức độ hài lòng khách hàng |
+| OAuth | Open Authorization - Giao thức ủy quyền mở |
+| PWA | Progressive Web App - Ứng dụng web tiến bộ |
+| S-O-R | Stimulus-Organism-Response Model - Mô hình Kích thích-Cơ thể-Phản ứng |
+| SRS | Software Requirements Specification - Đặc tả yêu cầu phần mềm |
+| TOEFL | Test of English as a Foreign Language - Bài kiểm tra tiếng Anh như ngoại ngữ |
+| TOEIC | Test of English for International Communication - Bài kiểm tra tiếng Anh giao tiếp quốc tế |
+| UVP | Unique Value Proposition - Đề xuất giá trị độc đáo |
+| UX | User Experience - Trải nghiệm người dùng |
+| VSTEP | Vietnamese Standardized Test of English Proficiency - Kỳ thi đánh giá năng lực tiếng Anh theo chuẩn Việt Nam |
 
-*A - Added, M - Modified, D - Deleted
+| Term | Definition |
+|------|------------|
+| Adaptive Learning | Học tập thích ứng - Phương pháp học điều chỉnh nội dung theo trình độ người học |
+| Adaptive Scaffolding | Hỗ trợ linh hoạt - Điều chỉnh mức độ hỗ trợ theo năng lực của người học |
+| A/B Testing | Phương pháp thử nghiệm so sánh hai phiên bản để đánh giá hiệu quả |
+| Anthropomorphism | Nhân cách hóa - Tính năng giống con người trong chatbot/AI |
+| Collaborative Filtering | Lọc cộng tác - Kỹ thuật gợi ý dựa trên hành vi người dùng tương tự |
+| Freemium | Mô hình kinh doanh miễn phí cơ bản, trả phí cho tính năng nâng cao |
+| Gamification | Ứng dụng yếu tố trò chơi vào học tập để tăng động lực |
+| Hybrid Grading | Chấm điểm kết hợp AI và giám khảo con người |
+| Pilot Phase | Giai đoạn thử nghiệm với nhóm người dùng thực |
+| Productive Skills | Kỹ năng chủ động (Nói, Viết) - Kỹ năng tạo ra ngôn ngữ |
+| Receptive Skills | Kỹ năng tiếp nhận (Nghe, Đọc) - Kỹ năng tiếp thu ngôn ngữ |
+| Rule-based | Dựa trên luật - Hệ thống hoạt động theo quy tắc được định sẵn |
+| Skill Gap | Khoảng cách kỹ năng - Chênh lệch trình độ giữa các kỹ năng |
+| Sliding Window | Cửa sổ trượt - Phương pháp tính trung bình các bài gần nhất |
+| Spider Chart | Biểu đồ radar/mạng nhện - Trực quan hóa năng lực đa chiều |
+| Speech-to-Text | Chuyển đổi giọng nói thành văn bản |
 
 # II. Project Introduction
 
