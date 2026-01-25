@@ -1,14 +1,22 @@
-# I. Record of Changes
+# I. Definitions and Acronyms
 
-| Date | A/M/D | In Charge | Change Description |
-|------|-------|-----------|-------------------|
-| 2026-01-21 | A | Hoàng Văn Anh Nghĩa | Initial document creation |
-| 2026-01-22 | M | Hoàng Văn Anh Nghĩa | Updated VSTEP test centers (24→38), added market data with sources, added adaptive learning research citations |
-| 2026-01-22 | M | Hoàng Văn Anh Nghĩa | Removed unverified data, clarified hypothesis vs validated claims |
-| 2026-01-22 | M | Hoàng Văn Anh Nghĩa | Refined MVP scope: 16→11 features, defer admin features to Phase 2 |
-| 2026-01-22 | M | Hoàng Văn Anh Nghĩa | Updated market data with 2025-2026 sources, added Vietnam-specific AI/Adaptive Learning research |
+| Acronym | Definition |
+|---------|------------|
+| API - Application Programming Interface - Giao diện lập trình ứng dụng |
+| CEFR - Common European Framework of Reference for Languages - Khung tham chiếu năng lực ngôn ngữ chung châu Âu |
+| CI/CD - Continuous Integration/Continuous Deployment - Tích hợp và Triển khai liên tục |
+| CNTT - Công nghệ thông tin - Information Technology |
+| CSR - Client-Side Rendering - Kỹ thuật hiển thị phía khách hàng |
+| REST - Representational State Transfer - Phong cách kiến trúc API |
+| SSR - Server-Side Rendering - Kỹ thuật hiển thị phía máy chủ |
+| VSTEP - Vietnamese Standardized Test of English Proficiency - Kỳ thi đánh giá năng lực tiếng Anh chuẩn hóa Việt Nam |
 
-*A - Added, M - Modified, D - Deleted
+| Term | Definition |
+|------|------------|
+| Adaptive Scaffolding - Hỗ trợ linh hoạt - Phương pháp điều chỉnh mức độ hỗ trợ theo trình độ người học |
+| Hybrid Grading - Chấm điểm lai - Kết hợp AI và đánh giá thủ công từ giảng viên |
+| Spider Chart - Biểu đồ nhện - Trực quan hóa năng lực 4 kỹ năng |
+| Sliding Window - Cửa sổ trượt - Theo dõi tiến độ dựa trên trung bình N bài gần nhất |
 
 # II. Project Introduction
 

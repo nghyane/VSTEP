@@ -1,0 +1,96 @@
+# VSTEP Capstone - Typography Configuration
+# Single source of truth for all document styles
+
+# Base typography
+base:
+  font: Calibri
+  size: 11
+
+# Paragraph styles
+styles:
+  # Headings
+  Heading 1:
+    font: Calibri
+    size: 16
+    bold: true
+    color: "C00000"  # Red
+    space_before: 18
+    space_after: 6
+    keep_with_next: true
+    outline_level: 0
+
+  Heading 2:
+    font: Calibri
+    size: 14
+    bold: true
+    space_before: 12
+    space_after: 6
+    keep_with_next: true
+    outline_level: 1
+
+  Heading 3:
+    font: Calibri
+    size: 13
+    bold: true
+    space_before: 10
+    space_after: 4
+    keep_with_next: true
+    outline_level: 2
+
+  Heading 4:
+    font: Calibri
+    size: 12
+    bold: true
+    space_before: 8
+    space_after: 4
+    keep_with_next: true
+    outline_level: 3
+
+  Heading 5:
+    font: Calibri
+    size: 11
+    bold: true
+    space_before: 6
+    space_after: 3
+    keep_with_next: true
+    outline_level: 4
+
+  Heading 6:
+    font: Calibri
+    size: 11
+    italic: true
+    space_before: 6
+    space_after: 3
+    keep_with_next: true
+    outline_level: 5
+
+  # Body text
+  Normal:
+    font: Calibri
+    size: 11
+    space_before: 0
+    space_after: 6
+    line_spacing: 1.15
+
+  # Lists
+  List Paragraph:
+    font: Calibri
+    size: 11
+    space_before: 0
+    space_after: 3
+    left_indent: 18
+    first_line_indent: -18
+
+  # Table styles
+  Table Head:
+    font: Calibri
+    size: 11
+    bold: true
+
+  # Caption (for figures/tables)
+  Caption:
+    font: Calibri
+    size: 10
+    italic: true
+    space_before: 6
+    space_after: 12

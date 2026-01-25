@@ -1,15 +1,344 @@
 #!/usr/bin/env python3
 """
-MD to DOCX Builder - Uses template styles only.
+MD to DOCX Builder - Hybrid approach with config-driven styles.
 """
 
+from typing import cast, Any, Dict, TYPE_CHECKING
 from docx import Document
-from docx.shared import Pt
+from docx.shared import Pt, RGBColor
 from docx.enum.table import WD_ROW_HEIGHT_RULE
+from docx.enum.style import WD_STYLE_TYPE
 from docx.oxml.ns import nsdecls, qn
 from docx.oxml import parse_xml, OxmlElement
+from docx.opc.constants import RELATIONSHIP_TYPE as RT
+from lxml import etree  # type: ignore[import-untyped]
 from pathlib import Path
 import re
+import yaml
+
+if TYPE_CHECKING:
+    from docx.document import Document as DocType
+
+
+# XML Namespaces for OOXML
+NSMAP = {
+    'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main',
+    'r': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
+}
+
+
+class EndnoteManager:
+    """Manages native Word endnotes using OOXML manipulation.
+    
+    Word endnotes require:
+    1. An endnotes.xml part in the document package
+    2. w:endnoteReference elements in the document body
+    3. w:endnote elements in endnotes.xml with matching IDs
+    
+    Endnotes appear at END OF DOCUMENT (not bottom of each page like footnotes).
+    """
+    
+    def __init__(self, doc: Any, endnote_definitions: Dict[str, str]):
+        """Initialize endnote manager.
+        
+        Args:
+            doc: The python-docx Document object
+            endnote_definitions: Dict mapping endnote ID (str) to endnote text
+        """
+        self.doc = doc
+        self.definitions = endnote_definitions
+        self._endnotes_part = None
+        self._endnotes_element = None
+        self._next_id = 1  # ID 0 is reserved for separator, -1 for continuation
+        self._id_mapping: Dict[str, int] = {}  # Map markdown IDs to Word IDs
+        
+        if endnote_definitions:
+            self._initialize_endnotes_part()
+    
+    def _initialize_endnotes_part(self):
+        """Create or get the endnotes.xml part in the document."""
+        document_part = self.doc.part
+        
+        # Check if endnotes part already exists
+        for rel in document_part.rels.values():
+            if rel.reltype == RT.ENDNOTES:
+                self._endnotes_part = rel.target_part
+                self._endnotes_element = self._endnotes_part._element
+                # Find highest existing ID
+                for endnote in self._endnotes_element.findall('.//w:endnote', NSMAP):
+                    eid = int(endnote.get(qn('w:id'), '0'))
+                    if eid >= self._next_id:
+                        self._next_id = eid + 1
+                return
+        
+        # Create new endnotes part
+        # Build the endnotes.xml content with separator endnotes
+        endnotes_xml = f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:endnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+            xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+    <w:endnote w:type="separator" w:id="-1">
+        <w:p>
+            <w:r>
+                <w:separator/>
+            </w:r>
+        </w:p>
+    </w:endnote>
+    <w:endnote w:type="continuationSeparator" w:id="0">
+        <w:p>
+            <w:r>
+                <w:continuationSeparator/>
+            </w:r>
+        </w:p>
+    </w:endnote>
+</w:endnotes>'''
+        
+        # Parse and create the endnotes part
+        self._endnotes_element = etree.fromstring(endnotes_xml.encode('utf-8'))
+        
+        # Create a new part for endnotes
+        from docx.opc.part import Part
+        from docx.opc.packuri import PackURI
+        
+        # Create endnotes part
+        endnotes_part_uri = PackURI('/word/endnotes.xml')
+        content_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml'
+        
+        # Create a custom part class to hold our endnotes
+        class EndnotesPart(Part):
+            def __init__(self, partname, content_type, element, package):
+                super().__init__(partname, content_type, package=package)
+                self._element = element
+            
+            @property
+            def blob(self):
+                return etree.tostring(self._element, xml_declaration=True, 
+                                     encoding='UTF-8', standalone=True)
+        
+        self._endnotes_part = EndnotesPart(
+            endnotes_part_uri, 
+            content_type, 
+            self._endnotes_element,
+            document_part.package
+        )
+        
+        # Add relationship from document to endnotes
+        document_part.relate_to(self._endnotes_part, RT.ENDNOTES)
+    
+    def add_endnote_reference(self, paragraph, markdown_id: str) -> bool:
+        """Add a clickable endnote reference to a paragraph.
+        
+        Shows [N] format inline in black (IEEE standard).
+        The w:endnoteReference provides clickable jump-to-endnote functionality.
+        
+        Args:
+            paragraph: The python-docx Paragraph object
+            markdown_id: The endnote ID from markdown (e.g., "5" from [^5])
+            
+        Returns:
+            True if endnote was added, False if definition not found
+        """
+        if markdown_id not in self.definitions:
+            # Fallback if no definition - use IEEE standard styling
+            run = paragraph.add_run(f"[{markdown_id}]")
+            run.font.superscript = False  # Inline, not superscript
+            run.font.size = Pt(11)  # Same as body text
+            run.font.color.rgb = RGBColor(0, 0, 0)  # Black
+            run.font.name = 'Calibri'
+            return False
+        
+        # Get or assign Word endnote ID
+        if markdown_id not in self._id_mapping:
+            word_id = self._next_id
+            self._next_id += 1
+            self._id_mapping[markdown_id] = word_id
+            # Add endnote content to endnotes.xml
+            self._add_endnote_content(word_id, self.definitions[markdown_id])
+        else:
+            word_id = self._id_mapping[markdown_id]
+        
+        # Add visible [N] text inline (IEEE standard)
+        bracket_run = paragraph.add_run(f'[{word_id}]')
+        bracket_run.font.superscript = False  # Inline, not superscript
+        bracket_run.font.color.rgb = RGBColor(0, 0, 0)  # Black
+        bracket_run.font.size = Pt(11)  # Same as body text
+        bracket_run.font.name = 'Calibri'
+        
+        # Create hidden endnote reference for clickable functionality
+        # The w:endnoteReference element provides the link to endnote
+        run = paragraph.add_run()
+        run_element = run._r
+        
+        # Add run properties to hide the auto-generated number
+        rPr = run_element.get_or_add_rPr()
+        # Set vanish property to hide the default endnote number
+        vanish = OxmlElement('w:vanish')
+        rPr.append(vanish)
+        
+        # Add the endnote reference element (hidden, but provides jump functionality)
+        endnote_ref = OxmlElement('w:endnoteReference')
+        endnote_ref.set(qn('w:id'), str(word_id))
+        run_element.append(endnote_ref)
+        
+        return True
+    
+    def _add_endnote_content(self, word_id: int, text: str):
+        """Add endnote content to endnotes.xml."""
+        if self._endnotes_element is None:
+            return
+        
+        # Create the endnote element
+        endnote = etree.SubElement(self._endnotes_element, qn('w:endnote'))
+        endnote.set(qn('w:id'), str(word_id))
+        
+        # Create paragraph
+        p = etree.SubElement(endnote, qn('w:p'))
+        
+        # Add paragraph properties with endnote style
+        pPr = etree.SubElement(p, qn('w:pPr'))
+        pStyle = etree.SubElement(pPr, qn('w:pStyle'))
+        pStyle.set(qn('w:val'), 'EndnoteText')
+        
+        # First run: endnote reference mark (the number that appears in endnote area)
+        r1 = etree.SubElement(p, qn('w:r'))
+        rPr1 = etree.SubElement(r1, qn('w:rPr'))
+        rStyle1 = etree.SubElement(rPr1, qn('w:rStyle'))
+        rStyle1.set(qn('w:val'), 'EndnoteReference')
+        endnote_ref = etree.SubElement(r1, qn('w:endnoteRef'))
+        
+        # Second run: space after number
+        r2 = etree.SubElement(p, qn('w:r'))
+        t2 = etree.SubElement(r2, qn('w:t'))
+        t2.set('{http://www.w3.org/XML/1998/namespace}space', 'preserve')
+        t2.text = ' '
+        
+        # Third run: endnote text content
+        r3 = etree.SubElement(p, qn('w:r'))
+        t3 = etree.SubElement(r3, qn('w:t'))
+        t3.text = text
+    
+    def finalize(self):
+        """Ensure endnotes are properly saved. Called after document is built."""
+        # The endnotes part is already connected via relationship
+        # Just ensure the element is up to date
+        pass
+
+
+def parse_footnote_definitions(md_text: str) -> Dict[str, str]:
+    """Extract footnote definitions from markdown text.
+    
+    Looks for patterns like:
+    [^1]: This is the footnote text.
+    [^2]: Another footnote that can span
+        multiple lines with indentation.
+    
+    Returns:
+        Dict mapping footnote ID (str) to footnote text
+    """
+    definitions = {}
+    lines = md_text.split('\n')
+    i = 0
+    
+    while i < len(lines):
+        line = lines[i]
+        # Match footnote definition start: [^N]: text
+        match = re.match(r'^\[\^(\d+)\]:\s*(.*)$', line)
+        if match:
+            footnote_id = match.group(1)
+            text_parts = [match.group(2)]
+            
+            # Check for continuation lines (indented)
+            i += 1
+            while i < len(lines):
+                next_line = lines[i]
+                # Continuation lines are indented (4 spaces or tab)
+                if next_line.startswith('    ') or next_line.startswith('\t'):
+                    text_parts.append(next_line.strip())
+                    i += 1
+                elif next_line.strip() == '':
+                    # Empty line might be part of multi-paragraph footnote
+                    i += 1
+                else:
+                    break
+            
+            definitions[footnote_id] = ' '.join(text_parts).strip()
+        else:
+            i += 1
+    
+    return definitions
+
+
+def load_style_config():
+    """Load typography configuration from YAML."""
+    config_path = Path(__file__).parent / "styles.yaml"
+    with open(config_path, 'r', encoding='utf-8') as f:
+        return yaml.safe_load(f)
+
+
+def ensure_styles(doc, config):
+    """Ensure all styles from config exist in document.
+    
+    Creates missing styles, updates existing ones from config.
+    """
+    style_config = config.get('styles', {})
+    base_config = config.get('base', {})
+    
+    for style_name, props in style_config.items():
+        # Check if style exists
+        try:
+            style = doc.styles[style_name]
+        except KeyError:
+            # Create new style
+            if style_name.startswith('Heading'):
+                style = doc.styles.add_style(style_name, WD_STYLE_TYPE.PARAGRAPH)
+                style.base_style = doc.styles['Normal']
+            else:
+                style = doc.styles.add_style(style_name, WD_STYLE_TYPE.PARAGRAPH)
+        
+        # Apply properties from config
+        font = style.font
+        pf = style.paragraph_format
+        
+        # Font properties
+        font.name = props.get('font', base_config.get('font', 'Calibri'))
+        font.size = Pt(props.get('size', base_config.get('size', 11)))
+        
+        if props.get('bold'):
+            font.bold = True
+        if props.get('italic'):
+            font.italic = True
+        if props.get('color'):
+            color_hex = props['color']
+            font.color.rgb = RGBColor(
+                int(color_hex[0:2], 16),
+                int(color_hex[2:4], 16),
+                int(color_hex[4:6], 16)
+            )
+        
+        # Paragraph properties
+        if 'space_before' in props:
+            pf.space_before = Pt(props['space_before'])
+        if 'space_after' in props:
+            pf.space_after = Pt(props['space_after'])
+        if 'line_spacing' in props:
+            pf.line_spacing = props['line_spacing']  # Multiple (1.15, 1.5, etc.)
+        if props.get('keep_with_next'):
+            pf.keep_with_next = True
+        if 'left_indent' in props:
+            pf.left_indent = Pt(props['left_indent'])
+        if 'first_line_indent' in props:
+            pf.first_line_indent = Pt(props['first_line_indent'])
+        
+        # Outline level for headings (used by TOC)
+        if 'outline_level' in props:
+            # Set outline level via XML
+            pPr = style.element.get_or_add_pPr()
+            outline = OxmlElement('w:outlineLvl')
+            outline.set(qn('w:val'), str(props['outline_level']))
+            # Remove existing if any
+            existing = pPr.find(qn('w:outlineLvl'))
+            if existing is not None:
+                pPr.remove(existing)
+            pPr.append(outline)
 
 
 def set_cell_shading(cell, color):
@@ -47,7 +376,11 @@ STYLE_MAP = {
     1: "Heading 1",
     2: "Heading 2", 
     3: "Heading 3",
+    4: "Heading 4",
+    5: "Heading 5",
+    6: "Heading 6",
     "normal": "Normal",
+    "bold_label": "Normal",  # Bold subheadings like "**Quy mô:**"
     "bullet": "List Paragraph",
     "number": "List Paragraph",
     "table": "Table Grid",
@@ -92,13 +425,19 @@ def parse_md(md_text):
                 i += 1
                 continue
         
-        # Headings
+        # Headings H1-H6
         if line.startswith('# '):
             blocks.append(('heading', 1, line[2:].strip()))
         elif line.startswith('## '):
             blocks.append(('heading', 2, line[3:].strip()))
         elif line.startswith('### '):
             blocks.append(('heading', 3, line[4:].strip()))
+        elif line.startswith('#### '):
+            blocks.append(('heading', 4, line[5:].strip()))
+        elif line.startswith('##### '):
+            blocks.append(('heading', 5, line[6:].strip()))
+        elif line.startswith('###### '):
+            blocks.append(('heading', 6, line[7:].strip()))
         
         # Bullet list
         elif line.startswith('- ') or line.startswith('* '):
@@ -118,9 +457,14 @@ def parse_md(md_text):
             i -= 1
             blocks.append(('table', parse_table(table_lines)))
         
-        # Normal paragraph
+        # Normal paragraph (check for bold label subheading)
         elif line.strip():
-            blocks.append(('paragraph', line.strip()))
+            text = line.strip()
+            # Detect bold label subheadings like "**Quy mô:**" or "**Tính năng:**"
+            if re.match(r'^\*\*[^*]+:\*\*', text):
+                blocks.append(('bold_label', text))
+            else:
+                blocks.append(('paragraph', text))
         
         i += 1
     
@@ -135,8 +479,55 @@ def parse_table(lines):
             rows.append(cells)
     return rows
 
-def render_inline(paragraph, text):
-    """Render inline formatting (bold, italic) within a paragraph."""
+def add_endnote(paragraph, endnote_id: str, endnote_manager: Any):
+    """Add a native Word endnote reference to a paragraph.
+    
+    Uses EndnoteManager to create clickable endnotes via OOXML.
+    Falls back to superscript if manager is None or a dict (legacy).
+    """
+    if endnote_manager is None:
+        # Fallback: just superscript
+        run = paragraph.add_run(f"[{endnote_id}]")
+        run.font.superscript = True
+        run.font.size = Pt(9)
+        run.font.name = 'Calibri'
+    elif isinstance(endnote_manager, EndnoteManager):
+        # Use native Word endnotes
+        endnote_manager.add_endnote_reference(paragraph, endnote_id)
+    else:
+        # Legacy dict fallback
+        run = paragraph.add_run(f"[{endnote_id}]")
+        run.font.superscript = True
+        run.font.size = Pt(9)
+        run.font.name = 'Calibri'
+
+
+def render_inline(paragraph, text, endnote_manager=None):
+    """Render inline formatting (bold, italic, endnotes) within a paragraph.
+    
+    Args:
+        paragraph: The python-docx Paragraph object
+        text: The text to render with markdown formatting
+        endnote_manager: EndnoteManager instance for native endnotes
+    """
+    # First, handle endnote references [^N]
+    # Split by endnote markers
+    endnote_pattern = r'(\[\^\d+\])'
+    parts = re.split(endnote_pattern, text)
+    
+    for part in parts:
+        # Check if this is an endnote reference
+        endnote_match = re.match(r'\[\^(\d+)\]', part)
+        if endnote_match:
+            endnote_id = endnote_match.group(1)
+            add_endnote(paragraph, endnote_id, endnote_manager)
+        elif part:
+            # Process bold/italic for non-endnote parts
+            render_inline_formatting(paragraph, part)
+
+
+def render_inline_formatting(paragraph, text):
+    """Render bold and italic formatting within text."""
     # Split by bold markers
     parts = re.split(r'(\*\*.*?\*\*)', text)
     
@@ -144,7 +535,8 @@ def render_inline(paragraph, text):
         if part.startswith('**') and part.endswith('**'):
             run = paragraph.add_run(part[2:-2])
             run.bold = True
-            run.font.size = Pt(12)
+            run.font.size = Pt(11)  # Same size as normal, bold weight is enough
+            run.font.name = 'Calibri'
         elif part:
             # Handle italic within non-bold parts
             italic_parts = re.split(r'(\*[^*]+\*)', part)
@@ -152,8 +544,12 @@ def render_inline(paragraph, text):
                 if ip.startswith('*') and ip.endswith('*') and not ip.startswith('**'):
                     run = paragraph.add_run(ip[1:-1])
                     run.italic = True
+                    run.font.size = Pt(11)
+                    run.font.name = 'Calibri'
                 elif ip:
-                    paragraph.add_run(ip)
+                    run = paragraph.add_run(ip)
+                    run.font.size = Pt(11)
+                    run.font.name = 'Calibri'
 
 def find_content_start_index(doc):
     """Find where content should start (after cover/TOC).
@@ -253,15 +649,20 @@ def build_docx(md_path, template_path, output_path):
     # Load template
     doc = Document(str(template_path))
     
-    # Validate required styles exist
-    style_names = [s.name for s in doc.styles]
-    for level, style_name in STYLE_MAP.items():
-        if style_name not in style_names:
-            print(f"Warning: Style '{style_name}' not found in template")
+    # Load style config and ensure all styles exist
+    style_config = load_style_config()
+    ensure_styles(doc, style_config)
+    print("✅ Styles ensured from config")
     
     # Parse markdown
     md_text = Path(md_path).read_text(encoding='utf-8')
     blocks = parse_md(md_text)
+    
+    # Parse endnote definitions and create manager
+    endnote_defs = parse_footnote_definitions(md_text)
+    endnote_manager = EndnoteManager(doc, endnote_defs) if endnote_defs else None
+    if endnote_defs:
+        print(f"📝 Found {len(endnote_defs)} endnote definition(s)")
     
     # Find where content should start (after cover/TOC)
     content_start = find_content_start_index(doc)
@@ -288,12 +689,19 @@ def build_docx(md_path, template_path, output_path):
             text = block[2]
             style_name = get_style(doc, level)
             p = doc.add_paragraph(style=style_name)
-            render_inline(p, text)
+            render_inline(p, text, endnote_manager)
             
         elif block_type == 'paragraph':
             text = block[1]
             p = doc.add_paragraph(style=get_style(doc, "normal"))
-            render_inline(p, text)
+            render_inline(p, text, endnote_manager)
+        
+        elif block_type == 'bold_label':
+            # Bold subheading like "**Quy mô:**" - add extra spacing before
+            text = block[1]
+            p = doc.add_paragraph(style=get_style(doc, "bold_label"))
+            p.paragraph_format.space_before = Pt(6)  # Extra spacing before
+            render_inline(p, text, endnote_manager)
             
         elif block_type == 'bullet':
             text = block[1]
@@ -303,12 +711,15 @@ def build_docx(md_path, template_path, output_path):
             p.paragraph_format.left_indent = Pt(18)
             p.paragraph_format.first_line_indent = Pt(-18)  # Hanging indent
             p.add_run("• ")
-            render_inline(p, text)
+            render_inline(p, text, endnote_manager)
             
         elif block_type == 'number':
             text = block[1]
             p = doc.add_paragraph(style=get_style(doc, "number"))
-            render_inline(p, text)
+            # Match bullet indent for consistency
+            p.paragraph_format.left_indent = Pt(18)
+            p.paragraph_format.first_line_indent = Pt(-18)  # Hanging indent
+            render_inline(p, text, endnote_manager)
             
         elif block_type == 'table':
             rows = block[1]
@@ -350,17 +761,23 @@ def build_docx(md_path, template_path, output_path):
                         if i == 0:
                             set_cell_shading(cell, "FFE8E1")  # Light pink header
                         # Render text
-                        render_inline(p, cell_text)
+                        render_inline(p, cell_text, endnote_manager)
                         # Apply font from style (runs don't inherit automatically)
                         style_obj = doc.styles[cell_style] if cell_style else None
                         if style_obj:
+                            # Cast to Any to avoid LSP errors - python-docx types are incomplete
+                            style_font = cast(Any, style_obj).font if hasattr(style_obj, 'font') else None
                             for run in p.runs:
-                                if hasattr(style_obj, 'font') and style_obj.font.name:
-                                    run.font.name = style_obj.font.name
-                                if hasattr(style_obj, 'font') and style_obj.font.size:
-                                    run.font.size = style_obj.font.size
+                                if style_font and style_font.name:
+                                    run.font.name = style_font.name
+                                if style_font and style_font.size:
+                                    run.font.size = style_font.size
                                 if i == 0:
                                     run.bold = True
+    
+    # Finalize footnotes
+    if endnote_manager:
+        endnote_manager.finalize()
     
     # Save
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
