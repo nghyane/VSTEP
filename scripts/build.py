@@ -789,16 +789,23 @@ def main():
     
     project_root = Path(__file__).parent.parent
     template = project_root / "docs/capstone/templates/fpt-report1-template.docx"
+    output_path = project_root / "docs/capstone/output"
+    
+    # Support both VI and ENG folders
+    vi_path = project_root / "docs/capstone/reports/VI"
+    eng_path = project_root / "docs/capstone/reports/ENG"
     
     if len(sys.argv) > 1:
-        md_path = Path(sys.argv[1])
+        md_name = sys.argv[1]
+        # Try VI first, then ENG
+        md_path = vi_path / f"{md_name}.md"
         if not md_path.exists():
-            # Try relative to capstone
-            md_path = project_root / "docs/capstone" / f"{sys.argv[1]}.md"
+            md_path = eng_path / f"{md_name}.md"
     else:
-        md_path = project_root / "docs/capstone/report1-project-introduction.md"
+        # Default: VI report1
+        md_path = vi_path / "report1-project-introduction.md"
     
-    output = project_root / "docs/capstone/docx" / f"{md_path.stem}.docx"
+    output = output_path / f"{md_path.stem}.docx"
     
     if not md_path.exists():
         print(f"❌ File not found: {md_path}")
