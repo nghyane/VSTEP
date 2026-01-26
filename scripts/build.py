@@ -811,7 +811,8 @@ def main():
         """Build DOCX for a specific language folder."""
         md_file = md_folder / f"{args.name}.md"
         if md_file.exists():
-            output_file = Path(args.output) / f"{args.name}.docx"
+            # Use language suffix for output filename
+            output_file = Path(args.output) / f"{args.name}.{lang}.docx"
             build_docx(md_file, template, output_file)
             return True
         return False
