@@ -786,6 +786,7 @@ def build_docx(md_path, template_path, output_path):
 
 def main():
     import sys
+    import argparse
     
     project_root = Path(__file__).parent.parent
     template = project_root / "docs/capstone/templates/fpt-report1-template.docx"
@@ -795,23 +796,40 @@ def main():
     vi_path = project_root / "docs/capstone/reports/VI"
     eng_path = project_root / "docs/capstone/reports/ENG"
     
-    if len(sys.argv) > 1:
-        md_name = sys.argv[1]
-        # Try VI first, then ENG
-        md_path = vi_path / f"{md_name}.md"
-        if not md_path.exists():
-            md_path = eng_path / f"{md_name}.md"
-    else:
-        # Default: VI report1
-        md_path = vi_path / "report1-project-introduction.md"
+    # Parse arguments
+    parser = argparse.ArgumentParser(description='Build DOCX from MD')
+    parser.add_argument('name', nargs='?', default='report1-project-introduction',
+                        help='Markdown file name (without extension)')
+    parser.add_argument('-l', '--lang', choices=['VI', 'ENG', 'all'], default='VI',
+                        help='Language folder: VI, ENG, or all (default: VI)')
+    parser.add_argument('-o', '--output', default=str(output_path),
+                        help=f'Output directory (default: {output_path})')
     
-    output = output_path / f"{md_path.stem}.docx"
+    args = parser.parse_args()
     
-    if not md_path.exists():
-        print(f"❌ File not found: {md_path}")
+    def build_single(md_folder, lang):
+        """Build DOCX for a specific language folder."""
+        md_file = md_folder / f"{args.name}.md"
+        if md_file.exists():
+            output_file = Path(args.output) / f"{args.name}.docx"
+            build_docx(md_file, template, output_file)
+            return True
+        return False
+    
+    # Build according to language flag
+    built = []
+    if args.lang in ['VI', 'all']:
+        if build_single(vi_path, 'VI'):
+            built.append('VI')
+    if args.lang in ['ENG', 'all']:
+        if build_single(eng_path, 'ENG'):
+            built.append('ENG')
+    
+    if not built:
+        print(f"❌ File not found: {args.name}.md in VI or ENG folders")
         sys.exit(1)
     
-    build_docx(md_path, template, output)
+    print(f"✅ Built: {', '.join(built)} versions")
 
 if __name__ == "__main__":
     main()
