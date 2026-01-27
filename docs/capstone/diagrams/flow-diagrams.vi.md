@@ -1,6 +1,6 @@
 # Sơ Đồ Luồng Hệ Thống Luyện Thi VSTEP Thích Ứng
 
-## 1. Kiến Trúc Hệ Thống
+## 1. Kiến Trúc Hệ Thống (Multi-Language)
 
 ```mermaid
 flowchart TB
@@ -10,155 +10,136 @@ flowchart TB
         A["Admin<br/>User & Content Management"]
     end
 
-    subgraph API ["API Layer"]
-        Auth["Authentication<br/>JWT, OAuth 2.0"]
-        Validate["Request Validation<br/>Input sanitization"]
-        Route["API Router<br/>REST endpoints"]
-    end
-
-    subgraph Monolith ["Modular Monolith (Core Modules)"]
-        subgraph Assessment ["Assessment Module"]
-            Practice["Practice Mode<br/>Adaptive Scaffolding"]
-            Mock["Mock Test Mode<br/>Full Exam Simulation"]
-            Submit["Submission Handler<br/>Sync validation only"]
+    subgraph BunApp ["Bun Main Application"]
+        subgraph API ["API Layer"]
+            Auth["Authentication<br/>JWT, OAuth 2.0"]
+            Validate["Request Validation<br/>Input sanitization"]
+            Route["REST API<br/>Resource-oriented endpoints"]
         end
 
-        subgraph Progress ["Progress Module"]
-            Spider["Spider Chart<br/>4-skill visualization"]
-            Sliding["Sliding Window<br/>Recent 10 attempts"]
-            Metrics["Metrics Engine<br/>Accuracy, trends"]
+        subgraph Core ["Core Modules"]
+            Assessment["Assessment<br/>Practice, Mock, Submission"]
+            Progress["Progress<br/>Spider Chart, Sliding Window"]
+            Content["Content<br/>Question Bank, Recommender"]
         end
 
-        subgraph Content ["Content Module"]
-            QB["Question Bank<br/>Versioned, Tagged"]
-            Rec["Recommender<br/>Rule-based selection"]
+        subgraph QueueClient ["Queue Client"]
+            Enqueue["Job Publisher<br/>Redis Streams/RabbitMQ"]
+            Poller["Status Poller<br/>Job completion check"]
         end
     end
 
-    subgraph Grading ["Grading Bounded Context (Extraction Ready)"]
-        Adapter["Grading Adapter<br/>Internal interface"]
-        State["Grading State<br/>Pending, AI, Human, Final"]
-        Queue["Job Queue<br/>BullMQ (Redis)"]
+    subgraph QueueInfra ["Message Queue"]
+        Stream["Redis Streams<br/>Consumer groups"]
+        Topics["Topics:<br/>grading.request, grading.callback"]
     end
 
-    subgraph QueueInfra ["Queue Infrastructure"]
-        AIJob["grading.ai.requested"]
-        HumanJob["grading.human.requested"]
-        FinalJob["grading.finalize"]
-        RecalcJob["progress.recompute"]
+    subgraph GradingService ["Grading Service (Python/Rust/Go)"]
+        subgraph GradingAPI ["Grading API"]
+            Receive["Job Receiver<br/>Validate, idempotency check"]
+            Router["Task Router<br/>Essay → LLM, Speech → STT"]
+        end
+
+        subgraph GradingCore ["Grading Core"]
+            LLMGrader["LLM Grader<br/>GPT/Gemini (Writing)"]
+            STTGrader["STT Grader<br/>Whisper/API (Speaking)"]
+            Scorer["Scorer Engine<br/>Rubric, confidence calc"]
+        end
+
+        subgraph GradingDB ["Grading Storage"]
+            JobDB["Job State<br/>Pending, Processing, Done"]
+            ResultDB["Results<br/>Scores, Feedback, Diagnostics"]
+        end
     end
 
-    subgraph Workers ["Workers"]
-        AIWorker["AI Grading Worker<br/>LLM, Speech-to-Text"]
-        HumanWorker["Human Assignment<br/>Instructor routing"]
-        FinalWorker["Finalize Worker<br/>Score combination"]
-        RecalcWorker["Recalc Worker<br/>Metric updates"]
-    end
-
-    subgraph External ["External AI Services"]
-        LLM["LLM API<br/>GPT/Gemini (Writing)"]
-        STT["Speech-to-Text<br/>Whisper/API (Speaking)"]
+    subgraph External ["External Services"]
+        LLMs["LLM APIs<br/>GPT-4, Gemini Pro"]
+        STT APIs["Speech-to-Text<br/>Whisper, Azure"]
     end
 
     subgraph Observability ["Observability"]
-        Logs["Logging<br/>Structured JSON"]
+        Logs["Structured Logs<br/>JSON, level-based"]
         Metrics["Metrics<br/>Prometheus format"]
-        Traces["Traces<br/>OpenTelemetry"]
+        Traces["Distributed Traces<br/>OpenTelemetry"]
     end
 
     subgraph Data ["Data Layer"]
-        DB["PostgreSQL<br/>Module-specific tables"]
-        Redis["Redis<br/>Session, Cache, Queue"]
-        Storage["S3/Cloud<br/>Audio files, Uploads"]
+        MainDB["PostgreSQL<br/>Users, Content, Progress (Main App)"]
+        GradingDB["PostgreSQL<br/>Grading Jobs, Results (Grading Service)"]
+        Redis["Redis<br/>Session, Cache, Queue metadata"]
     end
 
     %% Styling
     classDef users fill:#1565c0,stroke:#0d47a1,color:#fff
     classDef api fill:#e65100,stroke:#bf360c,color:#fff
-    classDef module fill:#2e7d32,stroke:#1b5e20,color:#fff
-    classDef bounded fill:#6a1b9a,stroke:#4a148c,color:#fff
+    classDef core fill:#2e7d32,stroke:#1b5e20,color:#fff
     classDef queue fill:#ff8f00,stroke:#ff6f00,color:#fff
-    classDef worker fill:#c62828,stroke:#b71c1c,color:#fff
+    classDef service fill:#6a1b9a,stroke:#4a148c,color:#fff
     classDef external fill:#00796b,stroke:#004d40,color:#fff
     classDef observability fill:#455a64,stroke:#37474f,color:#fff
     classDef data fill:#37474f,stroke:#263238,color:#fff
 
     class L,I,A users
-    class Auth,Validate,Route api
-    class Practice,Mock,Submit,Spider,Sliding,Metrics,QB,Rec module
-    class Adapter,State,Queue bounded
-    class AIJob,HumanJob,FinalJob,RecalcJob queue
-    class AIWorker,HumanWorker,FinalWorker,RecalcWorker worker
-    class LLM,STT external
+    class Auth,Validate,Route,Enqueue,Poller api
+    class Assessment,Progress,Content core
+    class Stream,Topics queue
+    class Receive,Router,LLMGrader,STTGrader,Scorer,JobDB,ResultDB service
+    class LLMs,STT APIs external
     class Logs,Metrics,Traces observability
-    class DB,Redis,Storage data
+    class MainDB,GradingDB,Redis data
 
     %% User flows
-    L --> W
-    L --> P
-    L --> M
-    I --> W
-    A --> W
-    W --> Auth
+    L --> Web["Web/PWA"]
+    L --> Mobile["Mobile App"]
+    Web --> Auth
+    Mobile --> Auth
     Auth --> Route
-    Route --> Practice
-    Route --> Mock
-    Route --> Spider
-    Route --> QB
+    Route --> Assessment
+    Route --> Progress
+    Route --> Content
 
-    %% Sync paths (fast)
-    Practice --> Submit
-    Mock --> Submit
-    Submit --> Validate
-    Validate --> DB
-
-    %% Async boundary
-    Submit --> Adapter
-    Adapter --> Queue
-    Queue --> AIJob
-    Queue --> HumanJob
-    Queue --> FinalJob
-    Queue --> RecalcJob
-
-    %% Worker processing
-    AIJob --> AIWorker
-    HumanJob --> HumanWorker
-    FinalJob --> FinalWorker
-    RecalcJob --> RecalcWorker
-
-    %% External AI
-    AIWorker --> LLM
-    AIWorker --> STT
+    %% Submission flow
+    Assessment --> Enqueue
+    Enqueue --> Stream
+    Stream --> Topics
+    Topics --> Receive
+    Receive --> Router
+    Router --> LLMGrader
+    Router --> STTGrader
+    LLMGrader --> LLMs
+    STTGrader --> STT APIs
+    LLMs --> Scorer
+    STT APIs --> Scorer
+    Scorer --> JobDB
+    Scorer --> ResultDB
+    JobDB --> Poller
+    ResultDB --> Poller
 
     %% Results return
-    LLM --> AIWorker
-    STT --> AIWorker
-    AIWorker --> State
-    HumanWorker --> State
-    State --> FinalWorker
-    FinalWorker --> DB
-    FinalWorker --> Redis
-
-    %% Progress updates
-    DB --> Spider
-    DB --> Sliding
-    Sliding --> Metrics
-    Metrics --> RecalcWorker
+    Poller --> Progress
+    Progress --> MainDB
+    Content --> MainDB
+    Assessment --> MainDB
 
     %% Observability
     Route --> Logs
-    Submit --> Logs
-    AIWorker --> Traces
-    HumanWorker --> Traces
+    Assessment --> Traces
+    Receive --> Traces
+    Scorer --> Traces
     Traces --> Metrics
     Metrics --> Redis
 ```
 
-> **Kiến trúc MVP:** Monolith với module boundaries rõ ràng. AI Grading là bounded context với adapter pattern + async queue, sẵn sàng tách thành service khi cần mở rộng.
-> 
-> **Nguyên tắc:** Grading ALWAYS async (không block request). Sync chỉ validation và read-only queries.
-> 
-> **Queue topics:** `grading.ai.requested`, `grading.human.requested`, `grading.finalize`, `progress.recompute`
+> **Kiến trúc Multi-Language:**
+> - **Main App (Bun)**: API, Auth, Assessment, Progress, Content - TypeScript
+> - **Grading Service (Python/Rust/Go)**: AI Grading, STT, Scoring - ML-optimized language
+> - **Giao tiếp**: REST + Queue (Redis Streams/RabbitMQ) với idempotency
+> - **Database**: Tách biệt hoàn toàn - Main DB vs Grading DB
+>
+> **Nguyên tắc:**
+> - Grading request → enqueue → async processing → poll callback → update progress
+> - Strict API contract với `requestId` cho idempotency
+> - Separate schemas, no cross-service writes
 
 ## 2. Hành Trình Người Dùng
 
@@ -649,7 +630,7 @@ flowchart TB
 
 | Sơ đồ | Mục đích | Thành phần chính |
 |-------|----------|------------------|
-| **Kiến trúc Hệ thống** | Modular Monolith + Bounded Context | Assessment/Progress/Content modules + Grading bounded context (extraction-ready) |
+| **Kiến trúc Hệ thống** | Multi-Language Services | Bun (API/Core) + Python/Rust/Go (Grading) - Separate DB, Queue-based communication |
 | **Hành trình Người dùng** | Vòng đời người học | Registration → Goal → Self-Assessment → Practice/Mock Test |
 | **Practice Mode - Writing** | Adaptive Scaffolding Viết | Template → Keywords → Free Writing |
 | **Practice Mode - Listening** | Adaptive Scaffolding Nghe | Full Text → Highlights → Pure Audio |
