@@ -13,7 +13,7 @@ flowchart TB
     subgraph Frontend ["Frontend Layer"]
         W["Web Application<br/>React/Next.js, Full-featured"]
         P["PWA<br/>Mobile Browser Access"]
-        M["Mobile Application<br/>Native Android"]
+        M["Mobile Application<br/>React Native (Android)"]
     end
 
     subgraph Gateway ["API Gateway"]
@@ -29,7 +29,7 @@ flowchart TB
     end
 
     subgraph Queue ["Job Queue (Async Grading)"]
-        MQ["Message Queue<br/>BullMQ, RabbitMQ, SQS"]
+        MQ["Message Queue<br/>BullMQ (Redis) / RabbitMQ / SQS"]
         Worker["Grading Worker<br/>Process Writing/Speaking"]
     end
 
@@ -46,7 +46,7 @@ flowchart TB
 
     subgraph Data ["Data Layer"]
         DB["PostgreSQL<br/>Users, Questions, Results"]
-        C["Redis<br/>Session, Cache, Queue"]
+        C["Redis<br/>Session, Cache (BullMQ if using)"]
         F["S3/Cloud Storage<br/>Audio Files, Uploads"]
     end
 
@@ -99,7 +99,11 @@ flowchart TB
     HG --> F
     G --> Logs
     AI --> Logs
+    Worker --> Logs
+    G --> Metrics
+    AI --> Metrics
     Worker --> Metrics
+    Logs --> Alerts
     Metrics --> Alerts
 ```
 
