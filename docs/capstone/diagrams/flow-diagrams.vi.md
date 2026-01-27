@@ -88,10 +88,11 @@ flowchart TB
     MQ --> Worker
     Worker --> AI
     Worker --> HG
-    AI --> MQ
-    HG --> MQ
-    AI --> DB
-    HG --> DB
+    AI --> Worker
+    HG --> Worker
+    Worker --> DB
+    Worker --> Notification["Notification<br/>Grading Complete"]
+    Worker --> PT
     AE --> DB
     PT --> DB
     AI --> F
