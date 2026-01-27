@@ -718,6 +718,19 @@ flowchart TB
 | **Progress Tracking** | Analytics & visualization | Spider Chart, Sliding Window, Learning Path |
 | **Authentication & RBAC** | Security & access control | JWT, OAuth, Role-based permissions |
 
+## Tóm Tắt Sơ Đồ
+
+| Sơ đồ | Mục đích | Thành phần chính |
+|-------|----------|------------------|
+| **Kiến trúc Hệ thống** | Thiết kế tổng thể | Frontend, API Gateway, Core Services, Grading, Data Layer |
+| **Hành trình Người dùng** | Vòng đời người học | Đăng ký → Placement → Luyện tập/Thi thử → Tiến độ |
+| **Practice Mode - Writing** | Hỗ trợ kỹ năng Viết | Template → Keywords → Viết tự do |
+| **Practice Mode - Listening** | Hỗ trợ kỹ năng Nghe | Full Text → Highlights → Pure Audio |
+| **Mock Test Flow** | Thi thử giả lập | 4 phần, Timer, Chấm điểm, Báo cáo kết quả |
+| **Hybrid Grading** | Đánh giá AI + Người | AI tức thì → Ghi đè người → Điểm cuối |
+| **Progress Tracking** | Analytics & trực quan | Spider Chart, Sliding Window, Learning Path |
+| **Authentication & RBAC** | Bảo mật & phân quyền | JWT, OAuth, Role-based permissions |
+
 ---
 
 *Document generated for VSTEP Adaptive Learning System (SP26SE145)*
