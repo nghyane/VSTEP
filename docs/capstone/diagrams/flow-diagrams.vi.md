@@ -368,7 +368,6 @@ flowchart TB
     subgraph Final ["Final Output"]
         Feedback["Detailed Feedback<br/>Strengths, Weaknesses"]
         Suggestion["Suggestions<br/>Improvement areas"]
-        Certificate["Certificate<br/>If passing score"]
     end
 
     WritingSubmit --> Transcribe
@@ -388,7 +387,6 @@ flowchart TB
     Rubric --> Override
     Override --> ScoreFinal
     ScoreFinal --> Suggestion
-    Suggestion --> Certificate
 
     classDef submission fill:#1976d2,stroke:#0d47a1,color:#fff
     classDef ai fill:#00796b,stroke:#004d40,color:#fff
@@ -400,7 +398,7 @@ flowchart TB
     class Transcribe,Grammar,Vocab,Content,Fluency,Pronunciation,ScoreAI ai
     class Confidence,AutoPass,HumanReview scoring
     class Instructor,Rubric,Override,ScoreFinal human
-    class Feedback,Suggestion,Certificate final
+    class Feedback,Suggestion final
 ```
 
 ## 6. Luồng Progress Tracking & Learning Path
@@ -424,7 +422,6 @@ flowchart TB
     subgraph SlidingWindow ["Sliding Window Analytics"]
         Window["Moving Average<br/>Last 10 attempts"]
         Trend["Trend Detection<br/>Improving, Stable, Declining"]
-        Prediction["Performance Prediction<br/>Expected score range"]
     end
 
     subgraph LearningPath ["Learning Path Generation"]
@@ -451,10 +448,9 @@ flowchart TB
     Skills --> Gap
     Gap --> Priority
     Window --> Trend
-    Trend --> Prediction
     Priority --> Path
-    Prediction --> Timeline
-    Path --> Adjust
+    Path --> Timeline
+    Timeline --> Adjust
     Skills --> Dashboard
     Window --> Dashboard
     Gap --> Report2
@@ -469,7 +465,7 @@ flowchart TB
 
     class Scores,Attempts,Time,Accuracy data
     class Skills,Levels,Gap,History spider
-    class Window,Trend,Prediction sliding
+    class Window,Trend sliding
     class Priority,Path,Timeline,Adjust path
     class Dashboard,Report2,Notification viz
 ```
@@ -481,7 +477,6 @@ flowchart TB
     subgraph Auth ["Authentication"]
         Login["Login Page<br/>Email/Password"]
         OAuth["OAuth 2.0<br/>Google SSO"]
-        MFA["Multi-Factor Auth<br/>Optional, Recommended"]
         Token["JWT Token<br/>Access + Refresh tokens"]
     end
 
@@ -512,7 +507,6 @@ flowchart TB
 
     Login --> Token
     OAuth --> Token
-    MFA --> Token
     Token --> Validate
     Validate --> Session
     Session --> Refresh
@@ -537,7 +531,7 @@ flowchart TB
     classDef resources fill:#6a1b9a,stroke:#4a148c,color:#fff
     classDef session fill:#455a64,stroke:#37474f,color:#fff
 
-    class Login,OAuth,MFA,Token auth
+    class Login,OAuth,Token auth
     class Validate,Session,Refresh verify
     class Roles,Permissions,Check rbac
     class PracticeRes,MockRes,GradingRes,AdminRes permissions
