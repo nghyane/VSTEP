@@ -25,6 +25,12 @@ flowchart TB
         MM["Mock Test Mode<br/>Full Test Simulation"]
         AE["Adaptive Engine<br/>Personalized Learning Path"]
         PT["Progress Tracking<br/>Spider Chart, Sliding Window"]
+        QB["Question Bank<br/>Versioned Questions, Tags, Difficulty"]
+    end
+
+    subgraph Queue ["Job Queue (Async Grading)"]
+        MQ["Message Queue<br/>BullMQ, RabbitMQ, SQS"]
+        Worker["Grading Worker<br/>Process Writing/Speaking"]
     end
 
     subgraph Grading ["Grading Service"]
@@ -32,9 +38,15 @@ flowchart TB
         HG["Manual Grading Portal<br/>Instructor Review, Override"]
     end
 
+    subgraph Observability ["Observability"]
+        Logs["Logging<br/>Winston, Pino"]
+        Metrics["Metrics<br/>Prometheus, OpenTelemetry"]
+        Alerts["Alerts<br/>Error rate, Latency"]
+    end
+
     subgraph Data ["Data Layer"]
         DB["PostgreSQL<br/>Users, Questions, Results"]
-        C["Redis<br/>Session, Cache"]
+        C["Redis<br/>Session, Cache, Queue"]
         F["S3/Cloud Storage<br/>Audio Files, Uploads"]
     end
 
@@ -42,14 +54,18 @@ flowchart TB
     classDef frontend fill:#6a1b9a,stroke:#4a148c,color:#fff
     classDef gateway fill:#e65100,stroke:#bf360c,color:#fff
     classDef core fill:#2e7d32,stroke:#1b5e20,color:#fff
+    classDef queue fill:#ff8f00,stroke:#ff6f00,color:#fff
     classDef grading fill:#c62828,stroke:#b71c1c,color:#fff
+    classDef observability fill:#00695c,stroke:#004d40,color:#fff
     classDef data fill:#37474f,stroke:#263238,color:#fff
 
     class L,I,A users
     class W,P,M frontend
     class G gateway
-    class PM,MM,AE,PT core
+    class PM,MM,AE,PT,QB core
+    class MQ,Worker queue
     class AI,HG grading
+    class Logs,Metrics,Alerts observability
     class DB,C,F data
 
     L --> W
@@ -65,16 +81,25 @@ flowchart TB
     G --> MM
     G --> AE
     G --> PT
-    PM --> AI
-    MM --> AI
-    MM --> HG
-    PM --> HG
+    G --> QB
+    QB --> DB
+    PM --> MQ
+    MM --> MQ
+    MQ --> Worker
+    Worker --> AI
+    Worker --> HG
+    AI --> MQ
+    HG --> MQ
     AI --> DB
     HG --> DB
     AE --> DB
     PT --> DB
     AI --> F
     HG --> F
+    G --> Logs
+    AI --> Logs
+    Worker --> Metrics
+    Metrics --> Alerts
 ```
 
 ## 2. Hành Trình Người Dùng
