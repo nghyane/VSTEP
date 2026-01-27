@@ -1,6 +1,6 @@
-# Flow Diagrams for Adaptive VSTEP Training System
+# Sơ Đồ Luồng Hệ Thống Luyện Thi VSTEP Thích Ứng
 
-## 1. System Architecture
+## 1. Kiến Trúc Hệ Thống
 
 ```mermaid
 flowchart TB
@@ -77,22 +77,22 @@ flowchart TB
     HG --> F
 ```
 
-## 2. User Journey
+## 2. Hành Trình Người Dùng
 
 ```mermaid
 flowchart LR
-    Start(["Start"])
-    Reg["Register<br/>Email, OAuth (Google)"]
-    Profile["Profile Setup<br/>Role, Goals, Proficiency"]
-    Placement["Placement Test<br/>4-Skill Assessment"]
-    Select["Select Mode<br/>Practice or Mock Test"]
+    Start(["Bắt đầu"])
+    Reg["Đăng ký<br/>Email, OAuth (Google)"]
+    Profile["Thiết lập Hồ sơ<br/>Role, Goals, Current Level"]
+    Placement["Placement Test<br/>Đánh giá 4 kỹ năng"]
+    Select["Chọn Mode<br/>Practice hoặc Mock Test"]
     Practice["Practice Mode<br/>Adaptive Scaffolding"]
-    Mock["Mock Test<br/>Full Test"]
+    Mock["Mock Test<br/>Full Exam Simulation"]
     Feedback["Feedback & Results<br/>AI + Human Grading"]
     Progress["Progress Tracking<br/>Spider Chart, Sliding Window"]
-    GoalCheck{"Goals<br/>Achieved?"}
-    GoalSet["Set Goals<br/>Target Level, Deadline"]
-    End(["End"])
+    GoalCheck{"Goal<br/>Đã đạt?"}
+    GoalSet["Thiết lập Goal<br/>Target Level, Timeline"]
+    End(["Kết thúc"])
 
     Start --> Reg
     Reg --> Profile
@@ -106,12 +106,12 @@ flowchart LR
     Feedback --> Progress
     Progress --> GoalCheck
     GoalSet --> GoalCheck
-    GoalCheck -->|No| Select
-    GoalCheck -->|Yes| End
+    GoalCheck -->|Không| Select
+    GoalCheck -->|Có| End
 
     classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
     classDef process fill:#1976d2,stroke:#0d47a1,color:#fff
-    classDef decision fill:#f57c0,stroke:#e65100,color:#fff
+    classDef decision fill:#f57c00,stroke:#e65100,color:#fff
     classDef outcome fill:#7b1fa2,stroke:#4a148c,color:#fff
 
     class Start,End start
@@ -119,40 +119,40 @@ flowchart LR
     class GoalCheck decision
 ```
 
-## 3. Practice Flow with Adaptive Scaffolding
+## 3. Practice Mode với Adaptive Scaffolding
 
-### 3A. Writing Skill Scaffolding
+### 3A. Writing Adaptive Scaffolding
 
 ```mermaid
 flowchart TB
     subgraph Input ["Input"]
-        Task["Select Writing<br/>Task 1 (Letter), Task 2 (Essay)"]
-        Level["Determine Level<br/>Based on Placement Test"]
+        Task["Select Writing Task<br/>Task 1 (Email), Task 2 (Essay)"]
+        Level["Determine Level<br/>Based on Placement/Test"]
     end
 
     subgraph Assessment ["Assessment"]
-        Stage1["Stage 1: Template<br/>Complete Opening Sentences"]
-        Stage2["Stage 2: Keywords<br/>Key Phrases"]
-        Stage3["Stage 3: Free Writing<br/>No Prompts"]
+        Stage1["Stage 1: Template<br/>Full sentence starters"]
+        Stage2["Stage 2: Keywords<br/>Key phrases, transitions"]
+        Stage3["Stage 3: Free Writing<br/>No scaffolding"]
     end
 
     subgraph Scaffold ["Scaffolding Type"]
         Template["Template Mode<br/>Structure, Connectors, Time"]
-        Keywords["Keywords Mode<br/>Topic Words, Academic Words"]
-        Free["Free Writing<br/>Write Without Support"]
+        Keywords["Keywords Mode<br/>Topic words, Academic vocab"]
+        Free["Free Writing<br/>Independent composition"]
     end
 
     subgraph Feedback ["Feedback"]
-        Grammar["Grammar Check<br/>Instant AI Feedback"]
-        Vocab["Vocabulary<br/>Word Choice, Phrases"]
-        Cohesion["Cohesion & Coherence<br/>Logic, Flow, Organization"]
-        Task["Task Completion<br/>Content, Format"]
+        Grammar["Grammar Check<br/>AI Instant Feedback"]
+        Vocab["Vocabulary<br/>Word choice, Collocations"]
+        Cohesion["Coherence & Cohesion<br/>Logic, Flow, Organization"]
+        Task["Task Achievement<br/>Content coverage, Format"]
     end
 
     subgraph Progression ["Progression"]
-        Up["Level Up<br/>Move to Higher Stage"]
-        Stay["Stay Same<br/>More Practice"]
-        Down["Level Down<br/>Increase Support"]
+        Up["Level Up<br/>Move to next stage"]
+        Stay["Stay Same<br/>Repeat, More practice"]
+        Down["Level Down<br/>Increase support"]
     end
 
     Task --> Level
@@ -185,37 +185,37 @@ flowchart TB
     class Up,Stay,Down progression
 ```
 
-### 3B. Listening Skill Scaffolding
+### 3B. Listening Adaptive Scaffolding
 
 ```mermaid
 flowchart TB
     subgraph Input ["Input"]
-        Exercise["Select Listening<br/>Fill-in, Multiple Choice, Summary"]
-        Level["Determine Level<br/>Based on Placement Test"]
+        Exercise["Select Listening Exercise<br/>Dictation, MCQ, Summary"]
+        Level["Determine Level<br/>Based on Placement/Test"]
     end
 
     subgraph Assessment ["Assessment"]
-        Stage1["Stage 1: Full Text<br/>With Transcript"]
-        Stage2["Stage 2: Highlights<br/>Key Phrases"]
-        Stage3["Stage 3: Pure Audio<br/>No Visual Support"]
+        Stage1["Stage 1: Full Text<br/>Transcript available"]
+        Stage2["Stage 2: Highlights<br/>Key phrases shown"]
+        Stage3["Stage 3: Pure Audio<br/>No visual support"]
     end
 
     subgraph Scaffold ["Scaffolding Type"]
-        FullText["Full Text Mode<br/>Read While Listening"]
-        Highlights["Highlights Mode<br/>Emphasized Keywords"]
-        PureAudio["Pure Audio Mode<br/>Audio Only, No Transcript"]
+        FullText["Full Text Mode<br/>Read while listening"]
+        Highlights["Highlights Mode<br/>Key words emphasized"]
+        PureAudio["Pure Audio Mode<br/>Audio only, no transcript"]
     end
 
     subgraph Feedback ["Feedback"]
-        Accuracy["Check Accuracy<br/>True/False"]
-        Script["View Script<br/>Compare with Transcript"]
-        Tips["Tips & Explanations<br/>Why Answer is Correct"]
+        Accuracy["Accuracy Check<br/>Correct/Incorrect"]
+        Script["Script View<br/>Compare with transcript"]
+        Tips["Tips & Explanations<br/>Why answer is correct"]
     end
 
     subgraph Progression ["Progression"]
-        Up["Level Up<br/>Decrease Support"]
-        Stay["Stay Same<br/>Same Support Level"]
-        Down["Increase Support<br/>Add More Support"]
+        Up["Level Up<br/>Remove scaffolding"]
+        Stay["Stay Same<br/>Same support level"]
+        Down["Increase Support<br/>Add scaffolding"]
     end
 
     Exercise --> Level
@@ -247,53 +247,53 @@ flowchart TB
     class Up,Stay,Down progression
 ```
 
-## 4. Mock Test Flow
+## 4. Luồng Mock Test
 
 ```mermaid
 flowchart TB
-    subgraph Start ["Start"]
-        Intro["Test Introduction<br/>Structure, Time, Instructions"]
+    subgraph Start ["Bắt đầu"]
+        Intro["Test Introduction<br/>Format, Duration, Instructions"]
         Auth["Identity Verification<br/>Login, Session Token"]
     end
 
-    subgraph Section1 ["Section 1: Listening (40 minutes)"]
+    subgraph Section1 ["Section 1: Listening (40 min)"]
         L1["Part 1: Pictures<br/>Question-Response"]
         L2["Part 2: Q&A<br/>Short Conversations"]
-        L3["Part 3: Reading<br/>Passage, Questions"]
+        L3["Part 3: Reading<br/>Passages, Questions"]
     end
 
-    subgraph Section2 ["Section 2: Reading (60 minutes)"]
-        R1["True/False/Not Given<br/>Statement Identification"]
-        R2["Multiple Choice<br/>Select Correct Answer"]
-        R3["Matching/Fill<br/>Headings, Gaps"]
+    subgraph Section2 ["Section 2: Reading (60 min)"]
+        R1["True/False/Not Given<br/>Identify statements"]
+        R2["Multiple Choice<br/>Select correct answer"]
+        R3["Matching/Fill-in<br/>Headings, Blanks"]
     end
 
-    subgraph Section3 ["Section 3: Writing (60 minutes)"]
-        W1["Task 1: Letter<br/>150-180 words"]
+    subgraph Section3 ["Section 3: Writing (60 min)"]
+        W1["Task 1: Email/Letter<br/>150-180 words"]
         W2["Task 2: Essay<br/>300-350 words"]
     end
 
-    subgraph Section4 ["Section 4: Speaking (12 minutes)"]
-        S1["Part 1: Introduction<br/>Personal Questions"]
-        S2["Part 2: Presentation<br/>Speak 1-2 minutes"]
-        S3["Part 3: Discussion<br/>Follow-up Questions"]
+    subgraph Section4 ["Section 4: Speaking (12 min)"]
+        S1["Part 1: Introduction<br/>Personal questions"]
+        S2["Part 2: Cue Card<br/>1-2 min talk"]
+        S3["Part 3: Discussion<br/>Follow-up questions"]
     end
 
-    subgraph Submission ["Submission"]
-        Submit["Submit Test<br/>Confirm Completion"]
-        Verify["Verify Answers<br/>Check Unanswered Items"]
+    subgraph Submission ["Nộp bài"]
+        Submit["Submit Test<br/>Confirm completion"]
+        Verify["Verify Responses<br/>Check incomplete items"]
     end
 
-    subgraph Scoring ["Scoring"]
-        ListeningScore["Listening Score<br/>Multiple Choice Auto"]
-        ReadingScore["Reading Score<br/>Multiple Choice Auto"]
+    subgraph Scoring ["Chấm điểm"]
+        ListeningScore["Listening Score<br/>Auto-graded MCQ"]
+        ReadingScore["Reading Score<br/>Auto-graded MCQ"]
         WritingScore["Writing Score<br/>AI + Human Grading"]
         SpeakingScore["Speaking Score<br/>AI + Human Grading"]
     end
 
-    subgraph Results ["Results"]
-        Total["Total Score<br/>Average of 4 Skills"]
-        Breakdown["Skill Breakdown<br/>Score Per Skill"]
+    subgraph Results ["Kết quả"]
+        Total["Total Score<br/>4-Skill Average"]
+        Breakdown["Skill Breakdown<br/>Each skill score"]
         Report["Detailed Report<br/>Spider Chart, Recommendations"]
     end
 
@@ -322,7 +322,7 @@ flowchart TB
 
     classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
     classDef section fill:#f57c00,stroke:#e65100,color:#fff
-    classDef submission fill:#e65100,stroke:#bf360c,color:#fff
+    classDef submission fill:#e65100,stroke:#bf360c,content:#fff
     classDef scoring fill:#7b1fa2,stroke:#4a148c,color:#fff
     classDef results fill:#37474f,stroke:#263238,color:#fff
 
@@ -333,42 +333,42 @@ flowchart TB
     class Total,Breakdown,Report results
 ```
 
-## 5. Hybrid Grading Flow
+## 5. Luồng Hybrid Grading
 
 ```mermaid
 flowchart TB
     subgraph Submission ["Submission"]
-        WritingSubmit["Writing<br/>Essay, Letter"]
-        SpeakingSubmit["Speaking<br/>Recording"]
+        WritingSubmit["Writing Submission<br/>Essay, Email"]
+        SpeakingSubmit["Speaking Submission<br/>Audio recording"]
     end
 
-    subgraph AI ["AI Process"]
-        Transcribe["Speech-to-Text<br/>Convert Audio to Text"]
+    subgraph AI ["AI Grading Pipeline"]
+        Transcribe["Speech-to-Text<br/>Convert audio to text"]
         Grammar["Grammar Analysis<br/>Errors, Complexity"]
         Vocab["Vocabulary Analysis<br/>Range, Accuracy"]
         Content["Content Analysis<br/>Relevance, Coverage"]
-        Fluency["Fluency Assessment<br/>Speed, Pauses (Speaking)"]
-        Pronunciation["Pronunciation<br/>Acoustic Accuracy (Speaking)"]
-        ScoreAI["AI Score<br/>Calculated Confidence Level"]
+        Fluency["Fluency Assessment<br/>Pace, Pauses (Speaking)"]
+        Pronunciation["Pronunciation<br/>Phonetic accuracy (Speaking)"]
+        ScoreAI["AI Score<br/>Confidence level calculated"]
     end
 
     subgraph Scoring ["Scoring"]
         Confidence{"Confidence<br/>Score > 85?"}
-        AutoPass["Auto Pass<br/>High Confidence"]
-        HumanReview["Manual Review<br/>Low Confidence, Flagged"]
+        AutoPass["Auto-Grade<br/>High confidence"]
+        HumanReview["Human Review<br/>Low confidence, Flagged"]
     end
 
     subgraph Human ["Human Grading"]
         Instructor["Instructor Portal<br/>Review, Comment"]
-        Rubric["Rubric Scoring<br/>VSTEP Criteria"]
-        Override["Override AI<br/>If Necessary"]
-        ScoreFinal["Final Score<br/>AI + Human Combined"]
+        Rubric["Rubric Scoring<br/>VSTEP criteria"]
+        Override["Override AI<br/>If necessary"]
+        ScoreFinal["Final Score<br/>AI + Human weighted"]
     end
 
-    subgraph Final ["Final Results"]
+    subgraph Final ["Final Output"]
         Feedback["Detailed Feedback<br/>Strengths, Weaknesses"]
-        Suggestion["Suggestions<br/>Improvement"]
-        Certificate["Certificate<br/>If Passing Score"]
+        Suggestion["Suggestions<br/>Improvement areas"]
+        Certificate["Certificate<br/>If passing score"]
     end
 
     WritingSubmit --> Transcribe
@@ -403,41 +403,41 @@ flowchart TB
     class Feedback,Suggestion,Certificate final
 ```
 
-## 6. Progress Tracking & Learning Path
+## 6. Luồng Progress Tracking & Learning Path
 
 ```mermaid
 flowchart TB
     subgraph DataCollection ["Data Collection"]
         Scores["Test Scores<br/>Placement, Practice, Mock"]
-        Attempts["Attempt History<br/>Answers"]
-        Time["Study Time<br/>Duration"]
-        Accuracy["Accuracy Rate<br/>Correct/Total"]
+        Attempts["Attempt History<br/>Questions answered"]
+        Time["Time Spent<br/>Learning duration"]
+        Accuracy["Accuracy Rate<br/>Correct/Total ratio"]
     end
 
     subgraph SpiderChart ["Spider Chart Visualization"]
-        Skills["4-Skill Radar<br/>Listening, Reading, Writing, Speaking"]
+        Skills["4 Skills Radar<br/>Listening, Reading, Writing, Speaking"]
         Levels["Level Indicators<br/>A1, A2, B1, B2, C1"]
-        Gap["Gap Analysis<br/>Identify Weaknesses"]
-        History["History Trend<br/>Progress Over Time"]
+        Gap["Skill Gap Analysis<br/>Identify weak areas"]
+        History["Historical Trend<br/>Progress over time"]
     end
 
-    subgraph SlidingWindow ["Sliding Window Analysis"]
-        Window["Moving Average<br/>Last 10 Attempts"]
+    subgraph SlidingWindow ["Sliding Window Analytics"]
+        Window["Moving Average<br/>Last 10 attempts"]
         Trend["Trend Detection<br/>Improving, Stable, Declining"]
-        Prediction["Performance Prediction<br/>Expected Score Range"]
+        Prediction["Performance Prediction<br/>Expected score range"]
     end
 
     subgraph LearningPath ["Learning Path Generation"]
-        Priority["Priority Calculation<br/>Lowest Skills First"]
-        Path["Suggested Path<br/>Exercises, Topics"]
-        Timeline["Time Estimation<br/>Weeks to Goal"]
-        Adjust["Adaptive Adjustment<br/>Based on Progress"]
+        Priority["Priority Calculation<br/>Lowest skill first"]
+        Path["Recommended Path<br/>Exercises, Topics"]
+        Timeline["Timeline Estimate<br/>Weeks to goal"]
+        Adjust["Adaptive Adjustment<br/>Based on progress"]
     end
 
     subgraph Visualization ["Visualization"]
-        Dashboard["Dashboard<br/>Overview, Quick Stats"]
-        Report["Detailed Report<br/>PDF Export"]
-        Notification["Notification<br/>Milestones, Reminders"]
+        Dashboard["User Dashboard<br/>Overview, Quick stats"]
+        Report["Detailed Report<br/>Exportable PDF"]
+        Notification["Notifications<br/>Milestones, Reminders"]
     end
 
     Scores --> DataCollection
@@ -472,7 +472,7 @@ flowchart TB
     class Dashboard,Report,Notification viz
 ```
 
-## 7. Authentication & Role-Based Access Control
+## 7. Authentication & RBAC
 
 ```mermaid
 flowchart TB
@@ -484,28 +484,28 @@ flowchart TB
     end
 
     subgraph Verify ["Verification"]
-        Validate["Token Validation<br/>Signature Check"]
-        Session["Session Management<br/>Redis Cache"]
-        Refresh["Token Refresh<br/>Before Expiry"]
+        Validate["Validate Token<br/>Signature check"]
+        Session["Session Management<br/>Redis cache"]
+        Refresh["Token Refresh<br/>Before expiry"]
     end
 
     subgraph RBAC ["Role-Based Access Control"]
         Roles["Role Assignment<br/>Learner, Instructor, Admin"]
-        Permissions["Permission Matrix<br/>Based on Role"]
-        Check["Permission Check<br/>Each Request"]
+        Permissions["Permission Matrix<br/>Based on role"]
+        Check["Permission Check<br/>Each request"]
     end
 
     subgraph Permissions ["Protected Resources"]
-        PracticeRes["Practice Mode<br/>All Authenticated Users"]
-        MockRes["Mock Test<br/>All Authenticated Users"]
-        GradingRes["Grading Portal<br/>Instructor Only"]
-        AdminRes["Admin Dashboard<br/>Admin Only"]
+        PracticeRes["Practice Mode<br/>All authenticated users"]
+        MockRes["Mock Test<br/>All authenticated users"]
+        GradingRes["Grading Portal<br/>Instructors only"]
+        AdminRes["Admin Panel<br/>Admins only"]
     end
 
     subgraph Session ["Session"]
-        Active["Active Session<br/>User Context"]
-        Timeout["Session Timeout<br/>30 Min Inactivity"]
-        Logout["Logout<br/>Clear Session"]
+        Active["Active Session<br/>User context"]
+        Timeout["Session Timeout<br/>30 min inactivity"]
+        Logout["Logout<br/>Clear session"]
     end
 
     Login --> Token
@@ -542,19 +542,19 @@ flowchart TB
     class Active,Timeout,Logout session
 ```
 
-## Diagram Summary
+## Tóm Tắt Sơ Đồ
 
-| Diagram | Purpose | Key Components |
-|---------|---------|----------------|
-| **System Architecture** | Overall Design | Frontend, API Gateway, Core Services, Grading, Data Layer |
-| **User Journey** | Learner Lifecycle | Register → Placement → Practice/Mock Test → Progress |
-| **Practice - Writing** | Writing Skill Support | Template → Keywords → Free Writing |
-| **Practice - Listening** | Listening Skill Support | Full Text → Highlights → Pure Audio |
-| **Mock Test** | Full Test Experience | 4 Sections, Timer, Grading, Report |
-| **Hybrid Grading** | AI + Human Evaluation | AI Instant → Human Override → Final Score |
-| **Progress Tracking** | Analytics & Visualization | Spider Chart, Sliding Window, Learning Path |
-| **Authentication & RBAC** | Security & Permissions | JWT, OAuth, Role-based Permissions |
+| Sơ đồ | Mục đích | Thành phần chính |
+|-------|----------|------------------|
+| **Kiến trúc Hệ thống** | Thiết kế tổng thể | Frontend, API Gateway, Core Services, Grading, Data Layer |
+| **Hành trình Người dùng** | Vòng đời người học | Registration → Placement → Practice/Mock Test → Progress |
+| **Practice Mode - Writing** | Adaptive Scaffolding Viết | Template → Keywords → Free Writing |
+| **Practice Mode - Listening** | Adaptive Scaffolding Nghe | Full Text → Highlights → Pure Audio |
+| **Mock Test Flow** | Thi thử giả lập | 4 Sections, Timer, Scoring, Results Report |
+| **Hybrid Grading** | Đánh giá AI + Human | AI Instant → Human Override → Final Score |
+| **Progress Tracking** | Analytics & visualization | Spider Chart, Sliding Window, Learning Path |
+| **Authentication & RBAC** | Bảo mật & phân quyền | JWT, OAuth, Role-based permissions |
 
 ---
 
-*Document created for Adaptive VSTEP Training System (SP26SE145)*
+*Tài liệu được tạo cho Hệ thống Luyện Thi VSTEP Thích Ứng (SP26SE145)*
