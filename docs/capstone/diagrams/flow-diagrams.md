@@ -61,12 +61,12 @@ flowchart TB
     adaptive <--> progress
 
     %% Styling
-    classDef users fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-    classDef frontend fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    classDef gateway fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    classDef core fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
-    classDef grading fill:#ffebee,stroke:#c62828,stroke-width:2px
-    classDef data fill:#eceff1,stroke:#455a64,stroke-width:2px
+    classDef users fill:#1565c0,stroke:#0d47a1,stroke-width:2px,color:#fff
+    classDef frontend fill:#6a1b9a,stroke:#4a148c,stroke-width:2px,color:#fff
+    classDef gateway fill:#e65100,stroke:#bf360c,stroke-width:2px,color:#fff
+    classDef core fill:#2e7d32,stroke:#1b5e20,stroke-width:2px,color:#fff
+    classDef grading fill:#c62828,stroke:#b71c1c,stroke-width:2px,color:#fff
+    classDef data fill:#37474f,stroke:#263238,stroke-width:2px,color:#fff
 
     class learner,instructor,admin users
     class web,pwa,mobile frontend
@@ -134,10 +134,10 @@ flowchart LR
     continue --> choice
 
     %% Styling
-    classDef start fill:#4caf50,stroke:#2e7d32,stroke-width:3px,color:#fff
-    classDef process fill:#2196f3,stroke:#1565c0,stroke-width:2px
-    classDef decision fill:#ff9800,stroke:#ef6c00,stroke-width:2px
-    classDef outcome fill:#9c27b0,stroke:#6a1b9a,stroke-width:2px
+    classDef start fill:#1565c0,stroke:#0d47a1,stroke-width:3px,color:#fff
+    classDef process fill:#1976d2,stroke:#0d47a1,stroke-width:2px,color:#fff
+    classDef decision fill:#f57c00,stroke:#e65100,stroke-width:2px,color:#fff
+    classDef outcome fill:#7b1fa2,stroke:#4a148c,stroke-width:2px,color:#fff
 
     class start,achieve start
     class register,login,profile,placement,initialize,practice,mocktest,feedback,track,path,continue process
@@ -213,11 +213,11 @@ flowchart TB
     improve -->|Declining| reset
 
     %% Styling
-    classDef input fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-    classDef assessment fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    classDef scaffold fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
-    classDef feedback fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    classDef progression fill:#ede7f6,stroke:#5e35b1,stroke-width:2px
+    classDef input fill:#1976d2,stroke:#0d47a1,stroke-width:2px,color:#fff
+    classDef assessment fill:#f57c00,stroke:#e65100,stroke-width:2px,color:#fff
+    classDef scaffold fill:#388e3c,stroke:#1b5e20,stroke-width:2px,color:#fff
+    classDef feedback fill:#c62828,stroke:#b71c1c,stroke-width:2px,color:#fff
+    classDef progression fill:#6a1b9a,stroke:#4a148c,stroke-width:2px,color:#fff
 
     class select input
     class level,beginner,intermediate,advanced assessment
@@ -288,11 +288,11 @@ flowchart TB
     improveL -->|Declining| resetL
 
     %% Styling
-    classDef input fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-    classDef assessment fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    classDef scaffold fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
-    classDef feedback fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    classDef progression fill:#ede7f6,stroke:#5e35b1,stroke-width:2px
+    classDef input fill:#1976d2,stroke:#0d47a1,stroke-width:2px,color:#fff
+    classDef assessment fill:#f57c00,stroke:#e65100,stroke-width:2px,color:#fff
+    classDef scaffold fill:#388e3c,stroke:#1b5e20,stroke-width:2px,color:#fff
+    classDef feedback fill:#c62828,stroke:#b71c1c,stroke-width:2px,color:#fff
+    classDef progression fill:#6a1b9a,stroke:#4a148c,stroke-width:2px,color:#fff
 
     class selectL input
     class levelL,beginnerL,intermediateL,advancedL assessment
@@ -396,11 +396,11 @@ flowchart TB
     compare --> recommend
 
     %% Styling
-    classDef start fill:#4caf50,stroke:#2e7d32,stroke-width:3px,color:#fff
-    classDef section fill:#2196f3,stroke:#1565c0,stroke-width:2px,color:#fff
-    classDef submission fill:#ff9800,stroke:#ef6c00,stroke-width:2px
-    classDef scoring fill:#9c27b0,stroke:#6a1b9a,stroke-width:2px,color:#fff
-    classDef results fill:#607d8b,stroke:#37474f,stroke-width:2px,color:#fff
+    classDef start fill:#1565c0,stroke:#0d47a1,stroke-width:3px,color:#fff
+    classDef section fill:#1565c0,stroke:#0d47a1,stroke-width:2px,color:#fff
+    classDef submission fill:#e65100,stroke:#bf360c,stroke-width:2px,color:#fff
+    classDef scoring fill:#7b1fa2,stroke:#4a148c,stroke-width:2px,color:#fff
+    classDef results fill:#37474f,stroke:#263238,stroke-width:2px,color:#fff
 
     class startM start
     class Listening,Reading,Writing,Speaking section
@@ -491,11 +491,11 @@ flowchart TB
     feedbackF --> record
 
     %% Styling
-    classDef submission fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-    classDef ai fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
-    classDef scoring fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    classDef human fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    classDef final fill:#ede7f6,stroke:#5e35b1,stroke-width:2px
+    classDef submission fill:#1976d2,stroke:#0d47a1,stroke-width:2px,color:#fff
+    classDef ai fill:#00796b,stroke:#004d40,stroke-width:2px,color:#fff
+    classDef scoring fill:#fbc02d,stroke:#f57f17,stroke-width:2px,color:#000
+    classDef human fill:#5d4037,stroke:#3e2723,stroke-width:2px,color:#fff
+    classDef final fill:#303f9f,stroke:#1a237e,stroke-width:2px,color:#fff
 
     class input,writing,speaking submission
     class preprocess,stt,criteria,grammar,vocab,coherence,task,content,pronunciation ai
@@ -591,11 +591,11 @@ flowchart TB
     Visualization --> alerts
 
     %% Styling
-    classDef data fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-    classDef spider fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
-    classDef sliding fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    classDef path fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    classDef viz fill:#ede7f6,stroke:#5e35b1,stroke-width:2px
+    classDef data fill:#1976d2,stroke:#0d47a1,stroke-width:2px,color:#fff
+    classDef spider fill:#388e3c,stroke:#1b5e20,stroke-width:2px,color:#fff
+    classDef sliding fill:#f57c00,stroke:#e65100,stroke-width:2px,color:#fff
+    classDef path fill:#7b1fa2,stroke:#4a148c,stroke-width:2px,color:#fff
+    classDef viz fill:#00838f,stroke:#006064,stroke-width:2px,color:#fff
 
     class exercises,scores,timestamps,patterns data
     class skills,levels,gaps,radar spider
@@ -688,12 +688,12 @@ flowchart TB
     Session --> revoke
 
     %% Styling
-    classDef auth fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-    classDef verify fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    classDef rbac fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
-    classDef permissions fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    classDef resources fill:#ede7f6,stroke:#5e35b1,stroke-width:2px
-    classDef session fill:#ffebee,stroke:#c62828,stroke-width:2px
+    classDef auth fill:#1565c0,stroke:#0d47a1,stroke-width:2px,color:#fff
+    classDef verify fill:#e65100,stroke:#bf360c,stroke-width:2px,color:#fff
+    classDef rbac fill:#2e7d32,stroke:#1b5e20,stroke-width:2px,color:#fff
+    classDef permissions fill:#c62828,stroke:#b71c1c,stroke-width:2px,color:#fff
+    classDef resources fill:#6a1b9a,stroke:#4a148c,stroke-width:2px,color:#fff
+    classDef session fill:#455a64,stroke:#37474f,stroke-width:2px,color:#fff
 
     class entry,login,oauth,mfa,token auth
     class validate,verify,session verify
