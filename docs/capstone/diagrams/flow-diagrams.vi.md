@@ -450,7 +450,6 @@ flowchart TB
     class Instructor,Rubric,Override,ScoreFinal human
     class Feedback,Suggestion,Badge final
 ```
-```
 
 ## 6. Luồng Progress Tracking & Learning Path
 
