@@ -1,709 +1,547 @@
 # VSTEP Adaptive Learning System - Flow Diagrams
 
-This document contains comprehensive Mermaid diagrams illustrating the core flows and architecture of the VSTEP Adaptive Learning System.
-
----
-
 ## 1. System Architecture Overview
-
-This diagram shows the dual-module architecture (Practice Mode + Mock Test Mode) with AI grading, Human grading, and user roles.
 
 ```mermaid
 flowchart TB
-    subgraph Users["User Roles"]
-        learner["Learner<br/>Practice, Mock Tests,<br/>Track Progress"]
-        instructor["Instructor<br/>Human Grading,<br/>Student Management"]
-        admin["Admin<br/>Content Management,<br/>User Management"]
+    subgraph Users ["Users"]
+        L["Learner<br/>Practice, Mock Tests, Track Progress"]
+        I["Instructor<br/>Grade Writing/Speaking, Monitor Progress"]
+        A["Admin<br/>Manage Users, Content, Analytics"]
     end
 
-    subgraph Frontend["Frontend Layer"]
-        web["Web Application<br/>React/Next.js"]
-        pwa["PWA<br/>Progressive Web App"]
-        mobile["Android App<br/>React Native"]
+    subgraph Frontend ["Frontend Layer"]
+        W["Web App<br/>React/Next.js, Full Features"]
+        P["PWA<br/>Mobile Browser Access"]
+        M["Mobile App<br/>Android Native"]
     end
 
-    subgraph Gateway["API Gateway Layer"]
-        auth["Authentication<br/>OAuth 2.0 + JWT<br/>Email/Password"]
-        rate["Rate Limiting<br/>Request Throttling"]
-        load["Load Balancer"]
+    subgraph Gateway ["API Gateway"]
+        G["API Gateway<br/>Auth, Rate Limiting, Routing"]
     end
 
-    subgraph Core["Core Services Layer"]
-        practice["Practice Mode<br/>Adaptive Scaffolding<br/>Instant Feedback"]
-        mocktest["Mock Test Mode<br/>Timed Simulation<br/>Full Scoring"]
-        adaptive["Adaptive Engine<br/>Rule-based Logic<br/>Learning Path Gen"]
-        progress["Progress Tracking<br/>Spider Chart<br/>Sliding Window"]
+    subgraph Core ["Core Services"]
+        PM["Practice Mode<br/>Adaptive Exercises, Scaffolding"]
+        MM["Mock Test Mode<br/>Full Exam Simulation"]
+        AE["Adaptive Engine<br/>Personalized Learning Path"]
+        PT["Progress Tracking<br/>Spider Chart, Sliding Window"]
     end
 
-    subgraph Grading["Grading Services Layer"]
-        ai["AI Grading Engine<br/>LLM (GPT/Gemini)<br/>Speech-to-Text"]
-        human["Human Review<br/>Instructor Portal<br/>Score Override"]
+    subgraph Grading ["Grading Services"]
+        AI["AI Grading Engine<br/>LLM (GPT/Gemini), Speech-to-Text"]
+        HG["Human Grading Portal<br/>Instructor Review, Override"]
     end
 
-    subgraph Data["Data Layer"]
-        db["Database<br/>PostgreSQL/MongoDB<br/>Users, Questions, Progress"]
-        cache["Redis Cache<br/>Session, Results<br/>Performance Optimized"]
-        storage["Object Storage<br/>Audio Recordings<br/>Essay Submissions"]
+    subgraph Data ["Data Layer"]
+        DB["PostgreSQL<br/>Users, Questions, Results"]
+        C["Redis<br/>Session, Cache"]
+        F["S3/Cloud Storage<br/>Audio Files, User Uploads"]
     end
 
-    %% Relationships
-    Users --> Frontend
-    Frontend --> Gateway
-    Gateway --> load
-    load --> auth
-    auth --> rate
-    rate --> Core
-    Core --> Grading
-    Grading --> Data
-    
-    Core <--> Grading
-    practice <--> adaptive
-    adaptive <--> progress
+    classDef users fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef frontend fill:#6a1b9a,stroke:#4a148c,color:#fff
+    classDef gateway fill:#e65100,stroke:#bf360c,color:#fff
+    classDef core fill:#2e7d32,stroke:#1b5e20,color:#fff
+    classDef grading fill:#c62828,stroke:#b71c1c,color:#fff
+    classDef data fill:#37474f,stroke:#263238,color:#fff
 
-    %% Styling
-    classDef users fill:#1565c0,stroke:#0d47a1,stroke-width:2px,color:#fff
-    classDef frontend fill:#6a1b9a,stroke:#4a148c,stroke-width:2px,color:#fff
-    classDef gateway fill:#e65100,stroke:#bf360c,stroke-width:2px,color:#fff
-    classDef core fill:#2e7d32,stroke:#1b5e20,stroke-width:2px,color:#fff
-    classDef grading fill:#c62828,stroke:#b71c1c,stroke-width:2px,color:#fff
-    classDef data fill:#37474f,stroke:#263238,stroke-width:2px,color:#fff
+    class L,I,A users
+    class W,P,M frontend
+    class G gateway
+    class PM,MM,AE,PT core
+    class AI,HG grading
+    class DB,C,F data
 
-    class learner,instructor,admin users
-    class web,pwa,mobile frontend
-    class auth,rate,load gateway
-    class practice,mocktest,adaptive,progress core
-    class ai,human grading
-    class db,cache,storage data
+    L --> W
+    L --> P
+    L --> M
+    I --> W
+    I --> P
+    A --> W
+    W --> G
+    P --> G
+    M --> G
+    G --> PM
+    G --> MM
+    G --> AE
+    G --> PT
+    PM --> AI
+    MM --> AI
+    MM --> HG
+    PM --> HG
+    AI --> DB
+    HG --> DB
+    AE --> DB
+    PT --> DB
+    AI --> F
+    HG --> F
 ```
-
----
 
 ## 2. User Journey Flow
 
-High-level flow from registration → placement test → practice/mock test → progress tracking.
-
 ```mermaid
 flowchart LR
-    subgraph Registration["Account Creation"]
-        start(("Start"))
-        register["Register<br/>Email/Password or Google OAuth"]
-        login["Login<br/>JWT Token Generation"]
-    end
+    Start(["Start"])
+    Reg["Registration<br/>Email, OAuth (Google)"]
+    Profile["Profile Setup<br/>Role, Goals, Current Level"]
+    Placement["Placement Test<br/>4 Skills Assessment"]
+    Select["Select Mode<br/>Practice or Mock Test"]
+    Practice["Practice Mode<br/>Adaptive Scaffolding"]
+    Mock["Mock Test<br/>Full Exam Simulation"]
+    Feedback["Feedback & Results<br/>AI + Human Grading"]
+    Progress["Progress Tracking<br/>Spider Chart, Sliding Window"]
+    GoalCheck{"Goal<br/>Achieved?"}
+    GoalSet["Goal Setting<br/>Target Level, Timeline"]
+    End(["End"])
 
-    subgraph Onboarding["Onboarding Process"]
-        profile["Profile Setup<br/>Name, Target Level, Timeline"]
-        placement["Placement Test<br/>4-Skills Assessment"]
-        initialize["Initialize Spider Chart<br/>Set Learning Goals"]
-    end
+    Start --> Reg
+    Reg --> Profile
+    Profile --> Placement
+    Placement --> GoalSet
+    GoalSet --> Select
+    Select --> Practice
+    Select --> Mock
+    Practice --> Feedback
+    Mock --> Feedback
+    Feedback --> Progress
+    Progress --> GoalCheck
+    GoalSet --> GoalCheck
+    GoalCheck -->|No| Select
+    GoalCheck -->|Yes| End
 
-    subgraph Learning["Learning Journey"]
-        choice{"Choose Mode"}
-        practice["Practice Mode<br/>Skill-focused, Adaptive"]
-        mocktest["Mock Test Mode<br/>Full Simulation"]
-        feedback["View Results<br/>AI + Human Feedback"]
-    end
+    classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef process fill:#1976d2,stroke:#0d47a1,color:#fff
+    classDef decision fill:#f57c00,stroke:#e65100,color:#fff
+    classDef outcome fill:#7b1fa2,stroke:#4a148c,color:#fff
 
-    subgraph Progress["Progress Tracking"]
-        track["Track Progress<br/>Spider Chart, Sliding Window"]
-        path["Learning Path<br/>Rule-based Recommendations"]
-        adjust{"Adjust Learning?"}
-    end
-
-    subgraph Completion["Goal Completion"]
-        achieve["Goal Achieved<br/>B1/B2/C1 Target"]
-        continue["Continue Learning<br/>Set New Goals"]
-    end
-
-    %% Flow connections
-    start --> register
-    register --> login
-    login --> profile
-    profile --> placement
-    placement --> initialize
-    initialize --> choice
-    choice --> practice
-    choice --> mocktest
-    practice --> feedback
-    mocktest --> feedback
-    feedback --> track
-    track --> path
-    path --> adjust
-    adjust -->|Yes| choice
-    adjust -->|Goal Met| achieve
-    achieve --> continue
-    continue --> choice
-
-    %% Styling
-    classDef start fill:#1565c0,stroke:#0d47a1,stroke-width:3px,color:#fff
-    classDef process fill:#1976d2,stroke:#0d47a1,stroke-width:2px,color:#fff
-    classDef decision fill:#f57c00,stroke:#e65100,stroke-width:2px,color:#fff
-    classDef outcome fill:#7b1fa2,stroke:#4a148c,stroke-width:2px,color:#fff
-
-    class start,achieve start
-    class register,login,profile,placement,initialize,practice,mocktest,feedback,track,path,continue process
-    class choice,adjust decision
-    class achieve outcome
+    class Start,End start
+    class Reg,Profile,Placement,Practice,Mock,Feedback,Progress,GoalSet process
+    class GoalCheck decision
+    class GoalAchieved outcome
 ```
-
----
 
 ## 3. Practice Mode Flow with Adaptive Scaffolding
 
-Shows how adaptive scaffolding works for Writing and Listening skills.
-
-### 3A. Writing Adaptive Scaffolding Flow
+### 3A. Writing Adaptive Scaffolding
 
 ```mermaid
 flowchart TB
-    subgraph Input["User Input"]
-        select["Select Writing Task<br/>Task 1: Email or Task 2: Essay"]
+    subgraph Input ["Input"]
+        Task["Select Writing Task<br/>Task 1 (Email), Task 2 (Essay)"]
+        Level["Determine Level<br/>Based on Placement/Test"]
     end
 
-    subgraph Assessment["Level Assessment"]
-        level{"Learner Level?"}
-        beginner["Beginner (A1-A2)<br/>High Support Needed"]
-        intermediate["Intermediate (B1-B2)<br/>Moderate Support"]
-        advanced["Advanced (C1)<br/>Minimal Support"]
+    subgraph Assessment ["Assessment"]
+        Stage1["Stage 1: Template<br/>Full sentence starters"]
+        Stage2["Stage 2: Keywords<br/>Key phrases, transitions"]
+        Stage3["Stage 3: Free Writing<br/>No scaffolding"]
     end
 
-    subgraph Scaffold["Adaptive Scaffolding Stages"]
-        stage1["Stage 1: Template<br/>Structured Framework<br/>Fill-in-the-blanks"]
-        stage2["Stage 2: Keywords<br/>Key Phrases & Vocabulary<br/>Hints & Prompts"]
-        stage3["Stage 3: Free Writing<br/>Independent Composition<br/>No Scaffolding"]
+    subgraph Scaffold ["Scaffolding Type"]
+        Template["Template Mode<br/>Structure, Connectors, Time"]
+        Keywords["Keywords Mode<br/>Topic words, Academic vocab"]
+        Free["Free Writing<br/>Independent composition"]
     end
 
-    subgraph Submission["Submission & Feedback"]
-        submit["Submit Response"]
-        ai["AI Instant Grading<br/>Grammar, Vocabulary,<br/>Coherence, Task Achievement"]
-        human{"Human Review?"}
-        feedback["Detailed Feedback<br/>Improvement Suggestions"]
+    subgraph Feedback ["Feedback"]
+        Grammar["Grammar Check<br/>AI Instant Feedback"]
+        Vocab["Vocabulary<br/>Word choice, Collocations"]
+        Cohesion["Coherence & Cohesion<br/>Logic, Flow, Organization"]
+        Task["Task Achievement<br/>Content coverage, Format"]
     end
 
-    subgraph Progression["Skill Progression"]
-        improve{"Improvement Detected?"}
-        next["Next Level<br/>Reduce Scaffolding"]
-        repeat["Same Level<br/>More Practice"]
-        reset["Previous Level<br/>Increase Support"]
+    subgraph Progression ["Progression"]
+        Up["Level Up<br/>Move to next stage"]
+        Stay["Stay Same<br/>Repeat, More practice"]
+        Down["Level Down<br/>Increase support"]
     end
 
-    %% Flow connections
-    select --> level
-    level -->|Low| beginner
-    level -->|Medium| intermediate
-    level -->|High| advanced
-    
-    beginner --> stage1
-    intermediate --> stage1
-    intermediate --> stage2
-    advanced --> stage2
-    advanced --> stage3
-    
-    stage1 --> submit
-    stage2 --> submit
-    stage3 --> submit
-    
-    submit --> ai
-    ai --> human
-    human -->|Yes| feedback
-    human -->|No| feedback
-    feedback --> improve
-    
-    improve -->|Yes| next
-    improve -->|No - Stagnant| repeat
-    improve -->|Declining| reset
+    Task --> Level
+    Level -->|A1-A2| Stage1
+    Level -->|B1| Stage2
+    Level -->|B2-C1| Stage3
+    Stage1 --> Template
+    Stage2 --> Keywords
+    Stage3 --> Free
+    Template --> Grammar
+    Keywords --> Grammar
+    Free --> Grammar
+    Grammar --> Vocab
+    Vocab --> Cohesion
+    Cohesion --> Task
+    Task --> Up
+    Task --> Stay
+    Task --> Down
 
-    %% Styling
-    classDef input fill:#1976d2,stroke:#0d47a1,stroke-width:2px,color:#fff
-    classDef assessment fill:#f57c00,stroke:#e65100,stroke-width:2px,color:#fff
-    classDef scaffold fill:#388e3c,stroke:#1b5e20,stroke-width:2px,color:#fff
-    classDef feedback fill:#c62828,stroke:#b71c1c,stroke-width:2px,color:#fff
-    classDef progression fill:#6a1b9a,stroke:#4a148c,stroke-width:2px,color:#fff
+    classDef input fill:#1976d2,stroke:#0d47a1,color:#fff
+    classDef assessment fill:#f57c00,stroke:#e65100,color:#fff
+    classDef scaffold fill:#388e3c,stroke:#1b5e20,color:#fff
+    classDef feedback fill:#c62828,stroke:#b71c1c,color:#fff
+    classDef progression fill:#6a1b9a,stroke:#4a148c,color:#fff
 
-    class select input
-    class level,beginner,intermediate,advanced assessment
-    class stage1,stage2,stage3 scaffold
-    class submit,ai,human,feedback feedback
-    class improve,next,repeat,reset progression
+    class Task,Level input
+    class Stage1,Stage2,Stage3 assessment
+    class Template,Keywords,Free scaffold
+    class Grammar,Vocab,Cohesion,Task feedback
+    class Up,Stay,Down progression
 ```
 
-### 3B. Listening Adaptive Scaffolding Flow
+### 3B. Listening Adaptive Scaffolding
 
 ```mermaid
 flowchart TB
-    subgraph Input["User Input"]
-        selectL["Select Listening Exercise<br/>Dictation, MCQ, or Summary"]
+    subgraph Input ["Input"]
+        Exercise["Select Listening Exercise<br/>Dictation, MCQ, Summary"]
+        Level["Determine Level<br/>Based on Placement/Test"]
     end
 
-    subgraph AssessmentL["Level Assessment"]
-        levelL{"Learner Level?"}
-        beginnerL["Beginner (A1-A2)<br/>High Support Needed"]
-        intermediateL["Intermediate (B1-B2)<br/>Moderate Support"]
-        advancedL["Advanced (C1)<br/>Minimal Support"]
+    subgraph Assessment ["Assessment"]
+        Stage1["Stage 1: Full Text<br/>Transcript available"]
+        Stage2["Stage 2: Highlights<br/>Key phrases shown"]
+        Stage3["Stage 3: Pure Audio<br/>No visual support"]
     end
 
-    subgraph ScaffoldL["Adaptive Scaffolding Stages"]
-        stage1L["Stage 1: Full Text<br/>Show Transcript<br/>Highlight Key Words"]
-        stage2L["Stage 2: Highlights<br/>Partial Transcript<br/>Key Phrase Emphasis"]
-        stage3L["Stage 3: Pure Audio<br/>No Transcript<br/>Full Listening Practice"]
+    subgraph Scaffold ["Scaffolding Type"]
+        FullText["Full Text Mode<br/>Read while listening"]
+        Highlights["Highlights Mode<br/>Key words emphasized"]
+        PureAudio["Pure Audio Mode<br/>Audio only, no transcript"]
     end
 
-    subgraph SubmissionL["Submission & Feedback"]
-        answer["Submit Answers"]
-        aiL["AI Grading<br/>Accuracy Check, Explanation"]
-        humanL{"Complex Cases?"}
-        feedbackL["Feedback & Tips<br/>Listening Strategies"]
+    subgraph Feedback ["Feedback"]
+        Accuracy["Accuracy Check<br/>Correct/Incorrect"]
+        Script["Script View<br/>Compare with transcript"]
+        Tips["Tips & Explanations<br/>Why answer is correct"]
     end
 
-    subgraph ProgressionL["Skill Progression"]
-        improveL{"Improvement Detected?"}
-        nextL["Next Level<br/>Reduce Scaffolding"]
-        repeatL["Same Level<br/>More Practice"]
-        resetL["Previous Level<br/>Increase Support"]
+    subgraph Progression ["Progression"]
+        Up["Level Up<br/>Remove scaffolding"]
+        Stay["Stay Same<br/>Same support level"]
+        Down["Increase Support<br/>Add scaffolding"]
     end
 
-    %% Flow connections
-    selectL --> levelL
-    levelL -->|Low| beginnerL
-    levelL -->|Medium| intermediateL
-    levelL -->|High| advancedL
-    
-    beginnerL --> stage1L
-    intermediateL --> stage1L
-    intermediateL --> stage2L
-    advancedL --> stage2L
-    advancedL --> stage3L
-    
-    stage1L --> answer
-    stage2L --> answer
-    stage3L --> answer
-    
-    answer --> aiL
-    aiL --> humanL
-    humanL -->|Complex Case| feedbackL
-    humanL -->|Standard| feedbackL
-    feedbackL --> improveL
-    
-    improveL -->|Yes| nextL
-    improveL -->|No - Stagnant| repeatL
-    improveL -->|Declining| resetL
+    Exercise --> Level
+    Level -->|Beginner| Stage1
+    Level -->|Intermediate| Stage2
+    Level -->|Advanced| Stage3
+    Stage1 --> FullText
+    Stage2 --> Highlights
+    Stage3 --> PureAudio
+    FullText --> Accuracy
+    Highlights --> Accuracy
+    PureAudio --> Accuracy
+    Accuracy --> Script
+    Script --> Tips
+    Tips --> Up
+    Tips --> Stay
+    Tips --> Down
 
-    %% Styling
-    classDef input fill:#1976d2,stroke:#0d47a1,stroke-width:2px,color:#fff
-    classDef assessment fill:#f57c00,stroke:#e65100,stroke-width:2px,color:#fff
-    classDef scaffold fill:#388e3c,stroke:#1b5e20,stroke-width:2px,color:#fff
-    classDef feedback fill:#c62828,stroke:#b71c1c,stroke-width:2px,color:#fff
-    classDef progression fill:#6a1b9a,stroke:#4a148c,stroke-width:2px,color:#fff
+    classDef input fill:#1976d2,stroke:#0d47a1,color:#fff
+    classDef assessment fill:#f57c00,stroke:#e65100,color:#fff
+    classDef scaffold fill:#388e3c,stroke:#1b5e20,color:#fff
+    classDef feedback fill:#c62828,stroke:#b71c1c,color:#fff
+    classDef progression fill:#6a1b9a,stroke:#4a148c,color:#fff
 
-    class selectL input
-    class levelL,beginnerL,intermediateL,advancedL assessment
-    class stage1L,stage2L,stage3L scaffoldL
-    class answer,aiL,humanL,feedbackL feedback
-    class improveL,nextL,repeatL,resetL progression
+    class Exercise,Level input
+    class Stage1,Stage2,Stage3 assessment
+    class FullText,Highlights,PureAudio scaffold
+    class Accuracy,Script,Tips feedback
+    class Up,Stay,Down progression
 ```
-
----
 
 ## 4. Mock Test Flow
 
-Complete mock test flow with timer, 4 skills assessment, scoring, and detailed results.
-
 ```mermaid
 flowchart TB
-    subgraph Setup["Test Setup"]
-        startM{"Start Mock Test?"}
-        selectM["Select Test Format<br/>B1-B2 or B2-C1"]
-        intro["Test Instructions<br/>Timing, Format, Rules"]
+    subgraph Start ["Start"]
+        Intro["Test Introduction<br/>Format, Duration, Instructions"]
+        Auth["Identity Verification<br/>Login, Session Token"]
     end
 
-    subgraph Listening["Listening Section (40 min)"]
-        l1["Part 1: Photographs<br/>2 questions"]
-        l2["Part 2: Response<br/>3 questions"]
-        l3["Part 3: Conversation<br/>4 questions"]
-        l4["Part 4: Talk<br/>5 questions"]
-        ltimerL["40 minutes total"]
+    subgraph Section1 ["Section 1: Listening (40 min)"]
+        L1["Part 1: Pictures<br/>Question-Response"]
+        L2["Part 2: Q&A<br/>Short Conversations"]
+        L3["Part 3: Reading<br/>Passages, Questions"]
     end
 
-    subgraph Reading["Reading Section (60 min)"]
-        r1["Part 5: Gap-fill<br/>4 questions"]
-        r2["Part 6: Text Completion<br/>4 questions"]
-        r3["Part 7: Passage<br/>8 questions"]
-        rtimerR["60 minutes total"]
+    subgraph Section2 ["Section 2: Reading (60 min)"]
+        R1["True/False/Not Given<br/>Identify statements"]
+        R2["Multiple Choice<br/>Select correct answer"]
+        R3["Matching/Fill-in<br/>Headings, Blanks"]
     end
 
-    subgraph Writing["Writing Section (60 min)"]
-        w1["Task 1: Email/Letter<br/>~100 words<br/>15 min"]
-        w2["Task 2: Essay<br/>~200 words<br/>45 min"]
-        wtimerW["60 minutes total"]
+    subgraph Section3 ["Section 3: Writing (60 min)"]
+        W1["Task 1: Email/Letter<br/>150-180 words"]
+        W2["Task 2: Essay<br/>300-350 words"]
     end
 
-    subgraph Speaking["Speaking Section (12 min)"]
-        s1["Part 1: Interview<br/>Warm-up questions<br/>3 min"]
-        s2["Part 2: Mini-presentation<br/>Cue card<br/>4 min"]
-        s3["Part 3: Discussion<br/>Follow-up questions<br/>5 min"]
-        stimerS["12 minutes total"]
+    subgraph Section4 ["Section 4: Speaking (12 min)"]
+        S1["Part 1: Introduction<br/>Personal questions"]
+        S2["Part 2: Cue Card<br/>1-2 min talk"]
+        S3["Part 3: Discussion<br/>Follow-up questions"]
     end
 
-    subgraph Submission["Test Submission"]
-        review{"Review All Answers?"}
-        submitM["Submit Test"]
-        timer{"Time Remaining?"}
-        warning["Time Warning<br/>5 minutes left"]
+    subgraph Submission ["Submission"]
+        Submit["Submit Test<br/>Confirm completion"]
+        Verify["Verify Responses<br/>Check incomplete items"]
     end
 
-    subgraph Scoring["Scoring Process"]
-        auto["Auto-score MC<br/>Listening & Reading"]
-        aiM["AI Score Writing<br/>Task Achievement, Coherence,<br/>Grammar, Vocabulary"]
-        aiS["AI Score Speaking<br/>Pronunciation, Fluency,<br/>Content, Grammar"]
-        humanM{"Human Review<br/>Writing & Speaking?"}
+    subgraph Scoring ["Scoring"]
+        ListeningScore["Listening Score<br/>Auto-graded MCQ"]
+        ReadingScore["Reading Score<br/>Auto-graded MCQ"]
+        WritingScore["Writing Score<br/>AI + Human Grading"]
+        SpeakingScore["Speaking Score<br/>AI + Human Grading"]
     end
 
-    subgraph Results["Results & Report"]
-        score["Calculate Scores<br/>Per Skill & Overall"]
-        report["Detailed Report<br/>Band Score (1-10 each skill)"]
-        chart["Spider Chart<br/>4-Skill Visualization"]
-        compare["Compare to<br/>Previous Tests"]
-        recommend["Learning Recommendations<br/>Priority Skills"]
+    subgraph Results ["Results"]
+        Total["Total Score<br/>4-Skill Average"]
+        Breakdown["Skill Breakdown<br/>Each skill score"]
+        Report["Detailed Report<br/>Spider Chart, Recommendations"]
     end
 
-    %% Flow connections
-    startM --> selectM
-    selectM --> intro
-    intro --> Listening
-    Listening --> Reading
-    Reading --> Writing
-    Writing --> Speaking
-    Speaking --> Submission
-    
-    Submission --> review
-    review -->|Yes| Listening
-    review -->|No| submitM
-    submitM --> timer
-    timer -->|Time Up| submitM
-    timer -->|Time Left| warning
-    
-    submitM --> Scoring
-    Scoring --> auto
-    auto --> aiM
-    aiM --> aiS
-    aiS --> humanM
-    humanM -->|Yes| Results
-    humanM -->|No| Results
-    
-    Results --> score
-    score --> report
-    report --> chart
-    chart --> compare
-    compare --> recommend
+    Intro --> Auth
+    Auth --> L1
+    L1 --> L2
+    L2 --> L3
+    L3 --> R1
+    R1 --> R2
+    R2 --> R3
+    R3 --> W1
+    W1 --> W2
+    W2 --> S1
+    S1 --> S2
+    S2 --> S3
+    S3 --> Submit
+    Submit --> Verify
+    Verify -->|Complete| ListeningScore
+    Verify -->|Incomplete| S3
+    ListeningScore --> ReadingScore
+    ReadingScore --> WritingScore
+    WritingScore --> SpeakingScore
+    SpeakingScore --> Total
+    Total --> Breakdown
+    Breakdown --> Report
 
-    %% Styling
-    classDef start fill:#1565c0,stroke:#0d47a1,stroke-width:3px,color:#fff
-    classDef section fill:#1565c0,stroke:#0d47a1,stroke-width:2px,color:#fff
-    classDef submission fill:#e65100,stroke:#bf360c,stroke-width:2px,color:#fff
-    classDef scoring fill:#7b1fa2,stroke:#4a148c,stroke-width:2px,color:#fff
-    classDef results fill:#37474f,stroke:#263238,stroke-width:2px,color:#fff
+    classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef section fill:#f57c00,stroke:#e65100,color:#fff
+    classDef submission fill:#e65100,stroke:#bf360c,color:#fff
+    classDef scoring fill:#7b1fa2,stroke:#4a148c,color:#fff
+    classDef results fill:#37474f,stroke:#263238,color:#fff
 
-    class startM start
-    class Listening,Reading,Writing,Speaking section
-    class review,submitM,timer,warning submission
-    class auto,aiM,aiS,humanM scoring
-    class score,report,chart,compare,recommend results
+    class Intro,Auth start
+    class L1,L2,L3,R1,R2,R3,W1,W2,S1,S2,S3 section
+    class Submit,Verify submission
+    class ListeningScore,ReadingScore,WritingScore,SpeakingScore scoring
+    class Total,Breakdown,Report results
 ```
-
----
 
 ## 5. Hybrid Grading Flow
 
-AI grading (instant) → Human grading (optional override) for Writing and Speaking.
-
 ```mermaid
 flowchart TB
-    subgraph Submission["Submission Entry"]
-        input{"Submission Type?"}
-        writing["Writing Submission<br/>Task 1 or Task 2"]
-        speaking["Speaking Submission<br/>Audio Recording"]
+    subgraph Submission ["Submission"]
+        WritingSubmit["Writing Submission<br/>Essay, Email"]
+        SpeakingSubmit["Speaking Submission<br/>Audio recording"]
     end
 
-    subgraph AI["AI Grading Pipeline"]
-        preprocess["Preprocessing<br/>Text extraction/Audio conversion"]
-        stt["Speech-to-Text<br/>For speaking submissions"]
-        criteria["Analyze Criteria<br/>VSTEP Rubric Assessment"]
-        grammar["Grammar Analysis<br/>Error Detection & Correction"]
-        vocab["Vocabulary Assessment<br/>Range, Appropriateness"]
-        coherence["Coherence & Cohesion<br/>Logical Flow, Transitions"]
-        task["Task Achievement<br/>Task fulfillment check"]
-        content["Content Relevance<br/>Topic coverage, Ideas"]
-        pronunciation["Pronunciation (Speaking)<br/>Fluency, Intonation"]
+    subgraph AI ["AI Grading Pipeline"]
+        Transcribe["Speech-to-Text<br/>Convert audio to text"]
+        Grammar["Grammar Analysis<br/>Errors, Complexity"]
+        Vocab["Vocabulary Analysis<br/>Range, Accuracy"]
+        Content["Content Analysis<br/>Relevance, Coverage"]
+        Fluency["Fluency Assessment<br/>Pace, Pauses (Speaking)"]
+        Pronunciation["Pronunciation<br/>Phonetic accuracy (Speaking)"]
+        ScoreAI["AI Score<br/>Confidence level calculated"]
     end
 
-    subgraph AIScoring["AI Scoring"]
-        aiResult["AI Score<br/>Band 1-10 per criterion"]
-        confidence{"Confidence Level?"}
-        highConf["High Confidence<br/>>85% accuracy"]
-        lowConf["Low Confidence<br/>Human review recommended"]
+    subgraph Scoring ["Scoring"]
+        Confidence{"Confidence<br/>Score > 85?"}
+        AutoPass["Auto-Grade<br/>High confidence"]
+        HumanReview["Human Review<br/>Low confidence, Flagged"]
     end
 
-    subgraph Human["Human Review Process"]
-        queue["Review Queue<br/>Assigned to Instructors"]
-        assign["Assign Instructor<br/>Based on expertise"]
-        reviewH["Human Evaluation<br/>VSTEP Rubric Scoring"]
-        comment["Add Comments<br/>Detailed feedback"]
-        override{"Score Override?"}
+    subgraph Human ["Human Grading"]
+        Instructor["Instructor Portal<br/>Review, Comment"]
+        Rubric["Rubric Scoring<br/>VSTEP criteria"]
+        Override["Override AI<br/>If necessary"]
+        ScoreFinal["Final Score<br/>AI + Human weighted"]
     end
 
-    subgraph Final["Final Result"]
-        merge["Merge Scores<br/>AI + Human (if applicable)"]
-        finalScore["Final Band Score<br/>1-10 scale"]
-        feedbackF["Comprehensive Feedback<br/>Improvement suggestions"]
-        record["Save to Database<br/>Progress tracking"]
+    subgraph Final ["Final Output"]
+        Feedback["Detailed Feedback<br/>Strengths, Weaknesses"]
+        Suggestion["Suggestions<br/>Improvement areas"]
+        Certificate["Certificate<br/>If passing score"]
     end
 
-    %% Flow connections
-    input -->|Writing| writing
-    input -->|Speaking| speaking
-    writing --> preprocess
-    speaking --> stt
-    stt --> preprocess
-    preprocess --> criteria
-    criteria --> grammar
-    criteria --> vocab
-    criteria --> coherence
-    criteria --> task
-    criteria --> content
-    criteria --> pronunciation
-    grammar --> aiResult
-    vocab --> aiResult
-    coherence --> aiResult
-    task --> aiResult
-    content --> aiResult
-    pronunciation --> aiResult
-    aiResult --> confidence
-    confidence -->|High| merge
-    confidence -->|Low| Human
-    Human --> queue
-    queue --> assign
-    assign --> reviewH
-    reviewH --> comment
-    comment --> override
-    override -->|Yes| finalScore
-    override -->|No| aiResult
-    merge --> finalScore
-    finalScore --> feedbackF
-    feedbackF --> record
+    WritingSubmit --> Transcribe
+    SpeakingSubmit --> Transcribe
+    Transcribe --> Grammar
+    Grammar --> Vocab
+    Vocab --> Content
+    Content --> Fluency
+    Fluency --> Pronunciation
+    Pronunciation --> ScoreAI
+    ScoreAI --> Confidence
+    Confidence -->|Yes| AutoPass
+    Confidence -->|No| HumanReview
+    AutoPass --> Feedback
+    HumanReview --> Instructor
+    Instructor --> Rubric
+    Rubric --> Override
+    Override --> ScoreFinal
+    ScoreFinal --> Suggestion
+    Suggestion --> Certificate
 
-    %% Styling
-    classDef submission fill:#1976d2,stroke:#0d47a1,stroke-width:2px,color:#fff
-    classDef ai fill:#00796b,stroke:#004d40,stroke-width:2px,color:#fff
-    classDef scoring fill:#fbc02d,stroke:#f57f17,stroke-width:2px,color:#000
-    classDef human fill:#5d4037,stroke:#3e2723,stroke-width:2px,color:#fff
-    classDef final fill:#303f9f,stroke:#1a237e,stroke-width:2px,color:#fff
+    classDef submission fill:#1976d2,stroke:#0d47a1,color:#fff
+    classDef ai fill:#00796b,stroke:#004d40,color:#fff
+    classDef scoring fill:#fbc02d,stroke:#f57f17,color:#000
+    classDef human fill:#5d4037,stroke:#3e2723,color:#fff
+    classDef final fill:#303f9f,stroke:#1a237e,color:#fff
 
-    class input,writing,speaking submission
-    class preprocess,stt,criteria,grammar,vocab,coherence,task,content,pronunciation ai
-    class aiResult,confidence,highConf,lowConf scoring
-    class queue,assign,reviewH,comment,override human
-    class merge,finalScore,feedbackF,record final
+    class WritingSubmit,SpeakingSubmit submission
+    class Transcribe,Grammar,Vocab,Content,Fluency,Pronunciation,ScoreAI ai
+    class Confidence,AutoPass,HumanReview scoring
+    class Instructor,Rubric,Override,ScoreFinal human
+    class Feedback,Suggestion,Certificate final
 ```
-
----
 
 ## 6. Progress Tracking & Learning Path Flow
 
-Spider Chart, Sliding Window, and rule-based learning path generation.
+```mermaid
+flowchart TB
+    subgraph DataCollection ["Data Collection"]
+        Scores["Test Scores<br/>Placement, Practice, Mock"]
+        Attempts["Attempt History<br/>Questions answered"]
+        Time["Time Spent<br/>Learning duration"]
+        Accuracy["Accuracy Rate<br/>Correct/Total ratio"]
+    end
+
+    subgraph SpiderChart ["Spider Chart Visualization"]
+        Skills["4 Skills Radar<br/>Listening, Reading, Writing, Speaking"]
+        Levels["Level Indicators<br/>A1, A2, B1, B2, C1"]
+        Gap["Skill Gap Analysis<br/>Identify weak areas"]
+        History["Historical Trend<br/>Progress over time"]
+    end
+
+    subgraph SlidingWindow ["Sliding Window Analytics"]
+        Window["Moving Average<br/>Last 10 attempts"]
+        Trend["Trend Detection<br/>Improving, Stable, Declining"]
+        Prediction["Performance Prediction<br/>Expected score range"]
+    end
+
+    subgraph LearningPath ["Learning Path Generation"]
+        Priority["Priority Calculation<br/>Lowest skill first"]
+        Path["Recommended Path<br/>Exercises, Topics"]
+        Timeline["Timeline Estimate<br/>Weeks to goal"]
+        Adjust["Adaptive Adjustment<br/>Based on progress"]
+    end
+
+    subgraph Visualization ["Visualization"]
+        Dashboard["User Dashboard<br/>Overview, Quick stats"]
+        Report["Detailed Report<br/>Exportable PDF"]
+        Notification["Notifications<br/>Milestones, Reminders"]
+    end
+
+    Scores --> DataCollection
+    Attempts --> DataCollection
+    Time --> DataCollection
+    Accuracy --> DataCollection
+    DataCollection --> Skills
+    DataCollection --> Window
+    Skills --> Gap
+    Gap --> Priority
+    Window --> Trend
+    Trend --> Prediction
+    Priority --> Path
+    Prediction --> Timeline
+    Path --> Adjust
+    Skills --> Dashboard
+    Window --> Dashboard
+    Gap --> Report
+    Trend --> Report
+    Path --> Notification
+
+    classDef data fill:#1976d2,stroke:#0d47a1,color:#fff
+    classDef spider fill:#388e3c,stroke:#1b5e20,color:#fff
+    classDef sliding fill:#f57c00,stroke:#e65100,color:#fff
+    classDef path fill:#7b1fa2,stroke:#4a148c,color:#fff
+    classDef viz fill:#00838f,stroke:#006064,color:#fff
+
+    class Scores,Attempts,Time,Accuracy data
+    class Skills,Levels,Gap,History spider
+    class Window,Trend,Prediction sliding
+    class Priority,Path,Timeline,Adjust path
+    class Dashboard,Report,Notification viz
+```
+
+## 7. Authentication & Role-Based Access Control
 
 ```mermaid
 flowchart TB
-    subgraph DataCollection["Data Collection"]
-        exercises["Exercise Completions<br/>Practice & Mock Test Results"]
-        scores["Score Records<br/>Per skill, Per attempt"]
-        timestamps["Timestamps<br/>When exercises completed"]
-        patterns["Usage Patterns<br/>Frequency, Duration"]
+    subgraph Auth ["Authentication"]
+        Login["Login Page<br/>Email/Password"]
+        OAuth["OAuth 2.0<br/>Google SSO"]
+        MFA["Multi-Factor Auth<br/>Optional, Recommended"]
+        Token["JWT Token<br/>Access + Refresh tokens"]
     end
 
-    subgraph SpiderChart["Spider Chart Visualization"]
-        skills["4 Skills Assessment<br/>Listening, Speaking,<br/>Reading, Writing"]
-        levels["Current Levels<br/>A1/A2/B1/B2/C1"]
-        gaps["Skill Gaps<br/>Identify weak areas"]
-        radar["Radar Chart<br/>Multi-dimensional view"]
+    subgraph Verify ["Verification"]
+        Validate["Validate Token<br/>Signature check"]
+        Session["Session Management<br/>Redis cache"]
+        Refresh["Token Refresh<br/>Before expiry"]
     end
 
-    subgraph SlidingWindow["Sliding Window Analytics"]
-        window["Window Size<br/>Last 10 exercises"]
-        average["Calculate Average<br/>Moving average score"]
-        trend["Trend Analysis<br/>Improving, Stable, Declining"]
-        volatility["Volatility Check<br/>Score stability"]
+    subgraph RBAC ["Role-Based Access"]
+        Roles["Role Assignment<br/>Learner, Instructor, Admin"]
+        Permissions["Permission Matrix<br/>Based on role"]
+        Check["Permission Check<br/>Each request"]
     end
 
-    subgraph LearningPath["Learning Path Generation"]
-        priority{"Priority Determination?"}
-        lowestSkill["Identify Lowest Skill<br/>Focus area"]
-        gaps2["Analyze Gaps<br/>Specific sub-skills"]
-        recommend["Generate Recommendations<br/>Exercises, Resources"]
-        timeline["Timeline Estimation<br/>Goal achievement projection"]
+    subgraph Permissions ["Protected Resources"]
+        PracticeRes["Practice Mode<br/>All authenticated users"]
+        MockRes["Mock Test<br/>All authenticated users"]
+        GradingRes["Grading Portal<br/>Instructors only"]
+        AdminRes["Admin Panel<br/>Admins only"]
     end
 
-    subgraph Visualization["Progress Visualization"]
-        dashboard["Dashboard<br/>All metrics at a glance"]
-        history["History Timeline<br/>Progress over time"]
-        goals["Goal Tracking<br/>Progress toward target"]
-        alerts["Alerts & Reminders<br/>Consistency, Milestones"]
+    subgraph Session ["Session"]
+        Active["Active Session<br/>User context"]
+        Timeout["Session Timeout<br/>30 min inactivity"]
+        Logout["Logout<br/>Clear session"]
     end
 
-    %% Flow connections
-    exercises --> DataCollection
-    scores --> DataCollection
-    timestamps --> DataCollection
-    patterns --> DataCollection
-    
-    DataCollection --> SpiderChart
-    DataCollection --> SlidingWindow
-    
-    SpiderChart --> skills
-    SpiderChart --> levels
-    SpiderChart --> gaps
-    skills --> radar
-    levels --> radar
-    gaps --> radar
-    
-    SlidingWindow --> window
-    SlidingWindow --> average
-    SlidingWindow --> trend
-    SlidingWindow --> volatility
-    average --> dashboard
-    trend --> dashboard
-    volatility --> dashboard
-    
-    SpiderChart --> LearningPath
-    SlidingWindow --> LearningPath
-    
-    LearningPath --> priority
-    priority --> lowestSkill
-    lowestSkill --> gaps2
-    gaps2 --> recommend
-    recommend --> timeline
-    
-    SpiderChart --> Visualization
-    SlidingWindow --> Visualization
-    LearningPath --> Visualization
-    
-    Visualization --> dashboard
-    Visualization --> history
-    Visualization --> goals
-    Visualization --> alerts
+    Login --> Token
+    OAuth --> Token
+    MFA --> Token
+    Token --> Validate
+    Validate --> Session
+    Session --> Refresh
+    Refresh --> Session
+    Roles --> Permissions
+    Permissions --> Check
+    Check -->|Yes| PracticeRes
+    Check -->|Yes| MockRes
+    Check -->|Instructor| GradingRes
+    Check -->|Admin| AdminRes
+    PracticeRes --> Active
+    MockRes --> Active
+    GradingRes --> Active
+    AdminRes --> Active
+    Active --> Timeout
+    Timeout -->|Expired| Logout
 
-    %% Styling
-    classDef data fill:#1976d2,stroke:#0d47a1,stroke-width:2px,color:#fff
-    classDef spider fill:#388e3c,stroke:#1b5e20,stroke-width:2px,color:#fff
-    classDef sliding fill:#f57c00,stroke:#e65100,stroke-width:2px,color:#fff
-    classDef path fill:#7b1fa2,stroke:#4a148c,stroke-width:2px,color:#fff
-    classDef viz fill:#00838f,stroke:#006064,stroke-width:2px,color:#fff
+    classDef auth fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef verify fill:#e65100,stroke:#bf360c,color:#fff
+    classDef rbac fill:#2e7d32,stroke:#1b5e20,color:#fff
+    classDef permissions fill:#c62828,stroke:#b71c1c,color:#fff
+    classDef resources fill:#6a1b9a,stroke:#4a148c,color:#fff
+    classDef session fill:#455a64,stroke:#37474f,color:#fff
 
-    class exercises,scores,timestamps,patterns data
-    class skills,levels,gaps,radar spider
-    class window,average,trend,volatility sliding
-    class priority,lowestSkill,gaps2,recommend,timeline path
-    class dashboard,history,goals,alerts viz
+    class Login,OAuth,MFA,Token auth
+    class Validate,Session,Refresh verify
+    class Roles,Permissions,Check rbac
+    class PracticeRes,MockRes,GradingRes,AdminRes permissions
+    class Active,Timeout,Logout session
 ```
-
----
-
-## 7. User Authentication & Role-based Access
-
-Authentication flow with roles (Learner, Instructor, Admin).
-
-```mermaid
-flowchart TB
-    subgraph Auth["Authentication"]
-        entry{"Entry Point"}
-        login["Login<br/>Email + Password"]
-        oauth["OAuth 2.0<br/>Google Sign-In"]
-        mfa{"MFA Required?"}
-        token["JWT Token<br/>Access + Refresh"]
-    end
-
-    subgraph Verification["Verification"]
-        validate["Validate Credentials<br/>Database Check"]
-        verify["Verify MFA<br/>If enabled"]
-        session["Create Session<br/>Redis/Session Store"]
-    end
-
-    subgraph RBAC["Role-Based Access Control"]
-        roles{"User Role?"}
-        learner["Learner<br/>Practice, Mock Tests,<br/>Progress Tracking"]
-        instructor["Instructor<br/>Grade Submissions,<br/>Student Management"]
-        admin["Admin<br/>Content Management,<br/>System Settings"]
-    end
-
-    subgraph Permissions["Permission Matrix"]
-        learnerPerms["View Content<br/>Take Tests<br/>Track Progress<br/>Create Content<br/>Grade"]
-        instructorPerms["View Content<br/>Take Tests<br/>Grade Submissions<br/>View Analytics<br/>Admin"]
-        adminPerms["Full Access<br/>User Management<br/>Content Management<br/>System Settings"]
-    end
-
-    subgraph Protected["Protected Resources"]
-        practiceMode["Practice Mode<br/>Learner: Yes<br/>Instructor: Yes<br/>Admin: No"]
-        mockTestMode["Mock Test Mode<br/>Learner: Yes<br/>Instructor: Yes<br/>Admin: No"]
-        gradingPortal["Grading Portal<br/>Learner: No<br/>Instructor: Yes<br/>Admin: Yes"]
-        adminPanel["Admin Panel<br/>Learner: No<br/>Instructor: No<br/>Admin: Yes"]
-    end
-
-    subgraph Session["Session Management"]
-        refresh["Token Refresh<br/>Before expiry"]
-        logout["Logout<br/>Clear Session"]
-        revoke["Session Revoke<br/>Security violation"]
-    end
-
-    %% Flow connections
-    entry --> login
-    entry --> oauth
-    login --> validate
-    oauth --> validate
-    validate --> mfa
-    mfa -->|Yes| verify
-    mfa -->|No| token
-    verify --> token
-    token --> session
-    session --> RBAC
-    
-    RBAC --> roles
-    roles -->|Learner| learner
-    roles -->|Instructor| instructor
-    roles -->|Admin| admin
-    
-    learner --> learnerPerms
-    instructor --> instructorPerms
-    admin --> adminPerms
-    
-    learnerPerms --> Protected
-    instructorPerms --> Protected
-    adminPerms --> Protected
-    
-    Protected --> practiceMode
-    Protected --> mockTestMode
-    Protected --> gradingPortal
-    Protected --> adminPanel
-    
-    token --> Session
-    Session --> refresh
-    Session --> logout
-    Session --> revoke
-
-    %% Styling
-    classDef auth fill:#1565c0,stroke:#0d47a1,stroke-width:2px,color:#fff
-    classDef verify fill:#e65100,stroke:#bf360c,stroke-width:2px,color:#fff
-    classDef rbac fill:#2e7d32,stroke:#1b5e20,stroke-width:2px,color:#fff
-    classDef permissions fill:#c62828,stroke:#b71c1c,stroke-width:2px,color:#fff
-    classDef resources fill:#6a1b9a,stroke:#4a148c,stroke-width:2px,color:#fff
-    classDef session fill:#455a64,stroke:#37474f,stroke-width:2px,color:#fff
-
-    class entry,login,oauth,mfa,token auth
-    class validate,verify,session verify
-    class roles,learner,instructor,admin rbac
-    class learnerPerms,instructorPerms,adminPerms permissions
-    class practiceMode,mockTestMode,gradingPortal,adminPanel resources
-    class refresh,logout,revoke session
-```
-
----
 
 ## Diagram Summary
 
@@ -717,19 +555,6 @@ flowchart TB
 | **Hybrid Grading** | AI + Human evaluation | AI Instant → Human Override → Final Score |
 | **Progress Tracking** | Analytics & visualization | Spider Chart, Sliding Window, Learning Path |
 | **Authentication & RBAC** | Security & access control | JWT, OAuth, Role-based permissions |
-
-## Tóm Tắt Sơ Đồ
-
-| Sơ đồ | Mục đích | Thành phần chính |
-|-------|----------|------------------|
-| **Kiến trúc Hệ thống** | Thiết kế tổng thể | Frontend, API Gateway, Core Services, Grading, Data Layer |
-| **Hành trình Người dùng** | Vòng đời người học | Đăng ký → Placement → Luyện tập/Thi thử → Tiến độ |
-| **Practice Mode - Writing** | Hỗ trợ kỹ năng Viết | Template → Keywords → Viết tự do |
-| **Practice Mode - Listening** | Hỗ trợ kỹ năng Nghe | Full Text → Highlights → Pure Audio |
-| **Mock Test Flow** | Thi thử giả lập | 4 phần, Timer, Chấm điểm, Báo cáo kết quả |
-| **Hybrid Grading** | Đánh giá AI + Người | AI tức thì → Ghi đè người → Điểm cuối |
-| **Progress Tracking** | Analytics & trực quan | Spider Chart, Sliding Window, Learning Path |
-| **Authentication & RBAC** | Bảo mật & phân quyền | JWT, OAuth, Role-based permissions |
 
 ---
 
