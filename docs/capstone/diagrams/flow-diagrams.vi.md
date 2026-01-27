@@ -20,12 +20,10 @@ flowchart TB
         G["API Gateway<br/>Authentication, Rate Limiting, Routing"]
     end
 
-    subgraph Core ["Core Services"]
-        PM["Practice Mode<br/>Adaptive Exercises, Scaffolding"]
-        MM["Mock Test Mode<br/>Full Test Simulation"]
-        AE["Adaptive Engine<br/>Rule-based (sliding window, accuracy)"]
-        PT["Progress Tracking<br/>Spider Chart, Sliding Window"]
-        QB["Question Bank<br/>Versioned Questions, Tags, Difficulty"]
+    subgraph Core ["Core Services (Logical Modules - Modular Monolith)"]
+        AM["Assessment Module<br/>Practice Mode, Mock Test, Auto-grading LR"]
+        PG["Progress Module<br/>Spider Chart, Sliding Window, Adaptive Logic"]
+        QB["Content Module<br/>Question Bank, Versioning, Tags"]
     end
 
     subgraph Queue ["Job Queue (Async Grading)"]
@@ -62,7 +60,7 @@ flowchart TB
     class L,I,A users
     class W,P,M frontend
     class G gateway
-    class PM,MM,AE,PT,QB core
+    class AM,PG,QB core
     class MQ,Worker queue
     class AI,HG grading
     class Logs,Metrics,Alerts observability
@@ -77,14 +75,11 @@ flowchart TB
     W --> G
     P --> G
     M --> G
-    G --> PM
-    G --> MM
-    G --> AE
-    G --> PT
+    G --> AM
+    G --> PG
     G --> QB
     QB --> DB
-    PM --> MQ
-    MM --> MQ
+    AM --> MQ
     MQ --> Worker
     Worker --> AI
     Worker --> HG
@@ -92,9 +87,9 @@ flowchart TB
     HG --> Worker
     Worker --> DB
     Worker --> Notification["Notification<br/>Grading Complete"]
-    Worker --> PT
-    AE --> DB
-    PT --> DB
+    Worker --> PG
+    AM --> DB
+    PG --> DB
     AI --> F
     HG --> F
     G --> Logs
@@ -107,7 +102,9 @@ flowchart TB
     Metrics --> Alerts
 ```
 
-> **Lưu ý kiến trúc:** Queue, Observability (Logs/Metrics/Alerts) là kiến trúc khái niệm để mở rộng. Implementation MVP sẽ đơn giản hóa.
+> **Lưu ý kiến trúc:** Các module là ranh giới logic trong codebase (modular monolith), không phải microservices riêng biệt trong MVP.
+
+> **Lưu ý kiến trúc:** Queue (BullMQ), Observability (Logs/Metrics/Alerts), Grading Service là kiến trúc khái niệm để mở rộng. Implementation MVP sẽ đơn giản hóa. Các Core Services là logical modules trong modular monolith.
 
 ## 2. Hành Trình Người Dùng
 
@@ -598,7 +595,7 @@ flowchart TB
 
 | Sơ đồ | Mục đích | Thành phần chính |
 |-------|----------|------------------|
-| **Kiến trúc Hệ thống** | Thiết kế tổng thể | Frontend, API Gateway, Core Services, Grading, Data Layer |
+| **Kiến trúc Hệ thống** | Modular Monolith | Assessment, Progress, Content modules (logical, not separate deployables) |
 | **Hành trình Người dùng** | Vòng đời người học | Registration → Goal → Self-Assessment → Practice/Mock Test |
 | **Practice Mode - Writing** | Adaptive Scaffolding Viết | Template → Keywords → Free Writing |
 | **Practice Mode - Listening** | Adaptive Scaffolding Nghe | Full Text → Highlights → Pure Audio |
