@@ -342,18 +342,24 @@ flowchart TB
         SpeakingSubmit["Speaking Submission<br/>Audio recording"]
     end
 
-    subgraph AI ["AI Grading Pipeline"]
+    subgraph AI_Writing ["AI Grading - Writing"]
+        W_Grammar["Grammar Analysis<br/>Errors, Complexity"]
+        W_Vocab["Vocabulary Analysis<br/>Range, Accuracy"]
+        W_Content["Content Analysis<br/>Relevance, Coverage, Coherence"]
+        W_Score["Writing Score<br/>Confidence calculated"]
+    end
+
+    subgraph AI_Speaking ["AI Grading - Speaking"]
         Transcribe["Speech-to-Text<br/>Convert audio to text"]
-        Grammar["Grammar Analysis<br/>Errors, Complexity"]
-        Vocab["Vocabulary Analysis<br/>Range, Accuracy"]
-        Content["Content Analysis<br/>Relevance, Coverage"]
-        Fluency["Fluency Assessment<br/>Pace, Pauses (Speaking)"]
-        Pronunciation["Pronunciation<br/>Phonetic accuracy (Speaking)"]
-        ScoreAI["AI Score<br/>Confidence level calculated"]
+        S_Fluency["Fluency Assessment<br/>Pace, Pauses"]
+        S_Pronunciation["Pronunciation<br/>Phonetic accuracy"]
+        S_Content["Content Analysis<br/>Relevance, Coverage"]
+        S_Score["Speaking Score<br/>Confidence calculated"]
     end
 
     subgraph Scoring ["Scoring"]
-        Confidence{"Confidence<br/>Score > 85?"}
+        Confidence{"Confidence<br/>Score > 85%?"}
+        NoteConfidence("Weighted score:<br/>- Model self-consistency<br/>- Rule checks<br/>- Length validation<br/>- Templated detection")
         AutoPass["Auto-Grade<br/>High confidence"]
         HumanReview["Human Review<br/>Low confidence, Flagged"]
     end
@@ -368,37 +374,52 @@ flowchart TB
     subgraph Final ["Final Output"]
         Feedback["Detailed Feedback<br/>Strengths, Weaknesses"]
         Suggestion["Suggestions<br/>Improvement areas"]
+        Badge["Completion Badge / Report PDF"]
     end
 
-    WritingSubmit --> Transcribe
+    %% Writing flow (no Transcribe)
+    WritingSubmit --> W_Grammar
+    W_Grammar --> W_Vocab
+    W_Vocab --> W_Content
+    W_Content --> W_Score
+
+    %% Speaking flow (needs Transcribe)
     SpeakingSubmit --> Transcribe
-    Transcribe --> Grammar
-    Grammar --> Vocab
-    Vocab --> Content
-    Content --> Fluency
-    Fluency --> Pronunciation
-    Pronunciation --> ScoreAI
-    ScoreAI --> Confidence
+    Transcribe --> S_Fluency
+    Transcribe --> S_Content
+    S_Fluency --> S_Pronunciation
+    S_Pronunciation --> S_Score
+
+    %% Confidence check
+    W_Score --> Confidence
+    S_Score --> Confidence
     Confidence -->|Yes| AutoPass
     Confidence -->|No| HumanReview
+    NoteConfidence -.-> Confidence
+
+    %% Final flow
     AutoPass --> Feedback
     HumanReview --> Instructor
     Instructor --> Rubric
     Rubric --> Override
     Override --> ScoreFinal
     ScoreFinal --> Suggestion
+    Suggestion --> Badge
 
     classDef submission fill:#1976d2,stroke:#0d47a1,color:#fff
     classDef ai fill:#00796b,stroke:#004d40,color:#fff
     classDef scoring fill:#fbc02d,stroke:#f57f17,color:#000
     classDef human fill:#5d4037,stroke:#3e2723,color:#fff
     classDef final fill:#303f9f,stroke:#1a237e,color:#fff
+    classDef note fill:#546e7a,stroke:#37474f,color:#fff
 
     class WritingSubmit,SpeakingSubmit submission
-    class Transcribe,Grammar,Vocab,Content,Fluency,Pronunciation,ScoreAI ai
-    class Confidence,AutoPass,HumanReview scoring
+    class W_Grammar,W_Vocab,W_Content,W_Score ai
+    class Transcribe,S_Fluency,S_Pronunciation,S_Content,S_Score ai
+    class Confidence,AutoPass,HumanReview,NoteConfidence scoring
     class Instructor,Rubric,Override,ScoreFinal human
-    class Feedback,Suggestion final
+    class Feedback,Suggestion,Badge final
+```
 ```
 
 ## 6. Luồng Progress Tracking & Learning Path
