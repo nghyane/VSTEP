@@ -436,16 +436,18 @@ flowchart TB
 
     subgraph Visualization ["Visualization"]
         Dashboard["User Dashboard<br/>Overview, Quick stats"]
-        Report["Detailed Report<br/>Exportable PDF"]
+        Report2["Detailed Report<br/>Exportable PDF"]
         Notification["Notifications<br/>Milestones, Reminders"]
     end
 
-    Scores --> DataCollection
-    Attempts --> DataCollection
-    Time --> DataCollection
-    Accuracy --> DataCollection
-    DataCollection --> Skills
-    DataCollection --> Window
+    Scores --> Skills
+    Scores --> Window
+    Attempts --> Skills
+    Attempts --> Window
+    Time --> Skills
+    Time --> Window
+    Accuracy --> Skills
+    Accuracy --> Window
     Skills --> Gap
     Gap --> Priority
     Window --> Trend
@@ -455,8 +457,8 @@ flowchart TB
     Path --> Adjust
     Skills --> Dashboard
     Window --> Dashboard
-    Gap --> Report
-    Trend --> Report
+    Gap --> Report2
+    Trend --> Report2
     Path --> Notification
 
     classDef data fill:#1976d2,stroke:#0d47a1,color:#fff
@@ -469,7 +471,7 @@ flowchart TB
     class Skills,Levels,Gap,History spider
     class Window,Trend,Prediction sliding
     class Priority,Path,Timeline,Adjust path
-    class Dashboard,Report,Notification viz
+    class Dashboard,Report2,Notification viz
 ```
 
 ## 7. Authentication & RBAC
