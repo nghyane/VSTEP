@@ -23,7 +23,7 @@ flowchart TB
     subgraph Core ["Core Services"]
         PM["Practice Mode<br/>Adaptive Exercises, Scaffolding"]
         MM["Mock Test Mode<br/>Full Test Simulation"]
-        AE["Adaptive Engine<br/>Personalized Learning Path"]
+        AE["Adaptive Engine<br/>Rule-based (sliding window, accuracy)"]
         PT["Progress Tracking<br/>Spider Chart, Sliding Window"]
         QB["Question Bank<br/>Versioned Questions, Tags, Difficulty"]
     end
@@ -107,28 +107,31 @@ flowchart TB
     Metrics --> Alerts
 ```
 
+> **Lưu ý kiến trúc:** Queue, Observability (Logs/Metrics/Alerts) là kiến trúc khái niệm để mở rộng. Implementation MVP sẽ đơn giản hóa.
+
 ## 2. Hành Trình Người Dùng
 
 ```mermaid
 flowchart LR
     Start(["Bắt đầu"])
     Reg["Đăng ký<br/>Email, OAuth (Google)"]
-    Profile["Thiết lập Hồ sơ<br/>Role, Goals, Current Level"]
-    Placement["Placement Test<br/>Đánh giá 4 kỹ năng"]
+    Profile["Thiết lập Hồ sơ<br/>Role, Goals"]
+    GoalSet["Thiết lập Goal<br/>Target Level, Timeline"]
+    SelfAssess["Self-Assessment (Optional)<br/>3-5 phút, ước lượng level"]
     Select["Chọn Mode<br/>Practice hoặc Mock Test"]
     Practice["Practice Mode<br/>Adaptive Scaffolding"]
     Mock["Mock Test<br/>Full Exam Simulation"]
     Feedback["Feedback & Results<br/>AI + Human Grading"]
     Progress["Progress Tracking<br/>Spider Chart, Sliding Window"]
     GoalCheck{"Goal<br/>Đã đạt?"}
-    GoalSet["Thiết lập Goal<br/>Target Level, Timeline"]
+    Placement["Placement Test (Optional)<br/>Đánh giá đầy đủ 4 kỹ năng"]
     End(["Kết thúc"])
 
     Start --> Reg
     Reg --> Profile
-    Profile --> Placement
-    Placement --> GoalSet
-    GoalSet --> Select
+    Profile --> GoalSet
+    GoalSet --> SelfAssess
+    SelfAssess --> Select
     Select --> Practice
     Select --> Mock
     Practice --> Feedback
@@ -138,15 +141,18 @@ flowchart LR
     GoalSet --> GoalCheck
     GoalCheck -->|Không| Select
     GoalCheck -->|Có| End
+    SelfAssess -.->|Sau này| Placement
 
     classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
     classDef process fill:#1976d2,stroke:#0d47a1,color:#fff
     classDef decision fill:#f57c00,stroke:#e65100,color:#fff
     classDef outcome fill:#7b1fa2,stroke:#4a148c,color:#fff
+    classDef optional fill:#78909c,stroke:#546e7a,color:#fff,stroke-dasharray: 5 5
 
     class Start,End start
-    class Reg,Profile,Placement,Practice,Mock,Feedback,Progress,GoalSet process
+    class Reg,Profile,GoalSet,SelfAssess,Practice,Mock,Feedback,Progress,Select process
     class GoalCheck decision
+    class Placement optional
 ```
 
 ## 3. Practice Mode với Adaptive Scaffolding
@@ -389,7 +395,7 @@ flowchart TB
 
     subgraph Scoring ["Scoring"]
         Confidence{"Confidence<br/>Score > 85%?"}
-        NoteConfidence("Weighted score:<br/>- Model self-consistency<br/>- Rule checks<br/>- Length validation<br/>- Templated detection")
+        NoteConfidence("Weighted score:<br/>- Model self-consistency<br/>- Rule checks<br/>- Length validation<br/>- Templated detection<br/><br/><i>Note: Confidence is heuristic, not ML probability</i>")
         AutoPass["Auto-Grade<br/>High confidence"]
         HumanReview["Human Review<br/>Low confidence, Flagged"]
     end
@@ -593,7 +599,7 @@ flowchart TB
 | Sơ đồ | Mục đích | Thành phần chính |
 |-------|----------|------------------|
 | **Kiến trúc Hệ thống** | Thiết kế tổng thể | Frontend, API Gateway, Core Services, Grading, Data Layer |
-| **Hành trình Người dùng** | Vòng đời người học | Registration → Placement → Practice/Mock Test → Progress |
+| **Hành trình Người dùng** | Vòng đời người học | Registration → Goal → Self-Assessment → Practice/Mock Test |
 | **Practice Mode - Writing** | Adaptive Scaffolding Viết | Template → Keywords → Free Writing |
 | **Practice Mode - Listening** | Adaptive Scaffolding Nghe | Full Text → Highlights → Pure Audio |
 | **Mock Test Flow** | Thi thử giả lập | 4 Sections, Timer, Scoring, Results Report |
@@ -602,5 +608,7 @@ flowchart TB
 | **Authentication & RBAC** | Bảo mật & phân quyền | JWT, OAuth, Role-based permissions |
 
 ---
+
+**Tóm tắt hệ thống:** Hệ thống ưu tiên giảm friction cho người học bằng cách cho phép chọn mục tiêu trước, sau đó sử dụng self-assessment và dữ liệu hành vi ban đầu để hiệu chỉnh mức độ học tập dần theo thời gian, thay vì phụ thuộc vào một bài placement test duy nhất.
 
 *Tài liệu được tạo cho Hệ thống Luyện Thi VSTEP Thích Ứng (SP26SE145)*
