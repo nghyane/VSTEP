@@ -1581,7 +1581,9 @@
               "height": 62
             }
           ]
-        },
+        }
+      ]
+    },
     {
       "type": "frame",
       "id": "comp_bottom_nav_id",
@@ -1730,117 +1732,6 @@
                   "fontFamily": "Inter",
                   "fontSize": 11,
                   "fontWeight": "500"
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-                    {
-                      "type": "text",
-                      "id": "ysoPn",
-                      "name": "tab1Label",
-                      "fill": "#0D6E6E",
-                      "content": "Trang chủ",
-                      "fontFamily": "Inter",
-                      "fontSize": 11,
-                      "fontWeight": "600"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "XlYF4",
-                  "name": "tab2",
-                  "width": "fill_container",
-                  "layout": "vertical",
-                  "gap": 8,
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon_font",
-                      "id": "g5hwT",
-                      "name": "tab2Icon",
-                      "width": 22,
-                      "height": 22,
-                      "iconFontName": "book-open",
-                      "iconFontFamily": "lucide",
-                      "fill": "#AAAAAA"
-                    },
-                    {
-                      "type": "text",
-                      "id": "lBvds",
-                      "name": "tab2Label",
-                      "fill": "#AAAAAA",
-                      "content": "Bài học",
-                      "fontFamily": "Inter",
-                      "fontSize": 11,
-                      "fontWeight": "500"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "WoTAk",
-                  "name": "tab3",
-                  "width": "fill_container",
-                  "layout": "vertical",
-                  "gap": 8,
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon_font",
-                      "id": "rkeov",
-                      "name": "tab3Icon",
-                      "width": 22,
-                      "height": 22,
-                      "iconFontName": "activity",
-                      "iconFontFamily": "lucide",
-                      "fill": "#AAAAAA"
-                    },
-                    {
-                      "type": "text",
-                      "id": "jWM6l",
-                      "name": "tab3Label",
-                      "fill": "#AAAAAA",
-                      "content": "Thống kê",
-                      "fontFamily": "Inter",
-                      "fontSize": 11,
-                      "fontWeight": "500"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "odf76",
-                  "name": "tab4",
-                  "width": "fill_container",
-                  "layout": "vertical",
-                  "gap": 8,
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon_font",
-                      "id": "D30I7",
-                      "name": "tab4Icon",
-                      "width": 22,
-                      "height": 22,
-                      "iconFontName": "user",
-                      "iconFontFamily": "lucide",
-                      "fill": "#AAAAAA"
-                    },
-                    {
-                      "type": "text",
-                      "id": "WeGP6",
-                      "name": "tab4Label",
-                      "fill": "#AAAAAA",
-                      "content": "Hồ sơ",
-                      "fontFamily": "Inter",
-                      "fontSize": 11,
-                      "fontWeight": "500"
-                    }
-                  ]
                 }
               ]
             }
