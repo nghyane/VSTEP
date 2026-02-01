@@ -1,6 +1,6 @@
 # Database Schema Specification
 
-> **Phiên bản**: 1.0 · SP26SE145
+> **Phiên bản**: 1.1 · SP26SE145
 
 ## 1. Tổng quan
 
@@ -45,6 +45,7 @@ MVP columns (gợi ý):
 - `created_at`, `expires_at`
 - `replaced_by_jti` (nullable)
 - `revoked_at` (nullable)
+- `device_info` (TEXT/JSONB, nullable) - Lưu thông tin User-Agent/IP để hiển thị trên UI quản lý thiết bị.
 
 ### 2.3 submissions
 
@@ -81,11 +82,22 @@ MVP columns (gợi ý):
 - `is_late` (bool, default false)
 - `created_at`, `updated_at`
 
+**Review Workflow & Hybrid Grading Support:**
+- `review_priority` (ENUM: LOW, MEDIUM, HIGH, CRITICAL, nullable) - Dùng để sắp xếp hàng đợi review.
+- `reviewer_id` (UUID, nullable) - ID của Instructor chấm/duyệt bài.
+- `grading_mode` (ENUM: AUTO, HUMAN, HYBRID, nullable) - Ghi nhận phương thức chấm cuối cùng.
+- `audit_flag` (bool, default false) - Đánh dấu bài cần kiểm tra lại (gian lận, bất thường).
+- `claimed_by` (UUID, nullable) - ID người đang giữ lock chấm bài (Backup cho Redis).
+- `claimed_at` (TIMESTAMP, nullable) - Thời điểm claim lock.
+- `review_queue_position` (INT, nullable) - Thứ tự trong hàng đợi (Cached/Computed).
+- `saga_instance_id` (UUID, nullable) - ID để trace toàn bộ Saga transaction.
+
 Indexes (gợi ý):
 
 - `(user_id, skill, created_at desc)` cho lịch sử
 - `(status, created_at)` cho review queue / dashboard
 - unique `(request_id)` (nullable) để đảm bảo idempotency cho queue-based grading
+- `(review_priority, created_at)` cho việc lấy bài review ưu tiên.
 
 ### 2.3.1 submission_details (New)
 
@@ -105,6 +117,7 @@ Chi tiết outbox pattern: xem `../40-platform/reliability.md`.
 MVP columns (gợi ý):
 
 - `id` (UUID, PK)
+- `submission_id` (FK submissions, ON DELETE CASCADE) - Đảm bảo ràng buộc dữ liệu.
 - `aggregate_type` (e.g. submission)
 - `aggregate_id` (submissionId)
 - `message_type` (grading.request)
@@ -144,6 +157,7 @@ Event log tối giản theo submission để phục vụ:
 
 - SSE replay khi client reconnect với `Last-Event-ID`
 - Audit trail (tiến trình grading, completed/failed)
+- **Saga Tracing**: Theo dõi các bước trong distributed transaction.
 
 Mỗi event phải có một ID ổn định: ưu tiên dùng `eventId` từ `grading.callback`. Nếu event không đến từ grading callback thì Main App tự sinh `eventId`.
 
@@ -151,8 +165,11 @@ Tối thiểu nên lưu:
 
 - `event_id` (PK)
 - `submission_id`
+- `saga_instance_id` (UUID, nullable) - Trace ID của Saga.
 - `request_id` (nullable cho events không thuộc grading)
 - `kind` (progress/completed/error)
+- `saga_step` (ENUM: CREATE, GRADING, REVIEW, COMPENSATE, nullable)
+- `is_compensation` (bool, default false) - Đánh dấu event rollback.
 - `event_at`
 - `data` (JSONB)
 - `created_at`
@@ -163,14 +180,15 @@ Indexes (gợi ý):
 
 - `(submission_id, event_at desc)` cho replay
 - `(request_id)` (nullable) cho trace/debug
+- `(saga_instance_id)` cho việc debug transaction lỗi.
 
 ### 2.7 questions
 
 Ngân hàng câu hỏi. Mỗi câu hỏi thuộc một skill (writing/speaking/listening/reading), một level (A1-C1), và một **format**.
 
-**Search Strategy (Practical MVP)**:
-- Sử dụng **Postgres Full Text Search** (`tsvector`) kết hợp với **Tags** để tìm kiếm.
-- Hiệu năng cao, không phụ thuộc vào AI Model bên ngoài, không tốn chi phí API.
+**Kiến trúc lưu trữ**: Sử dụng **JSONB + Functional Indexes**.
+- Không tách bảng con (Normalization) để giữ linh hoạt cho cấu trúc đề thi đa dạng.
+- Sử dụng **Functional (Expression) Indexes** để đảm bảo hiệu năng query cao (O(log n)) cho các trường hợp lọc theo Scaffolding (Template, Keywords...).
 
 MVP columns (gợi ý):
 
@@ -178,18 +196,29 @@ MVP columns (gợi ý):
 - `skill` (listening/reading/writing/speaking)
 - `level` (A1/A2/B1/B2/C1)
 - `format` (writing_task_1/..., reading_passage, listening_part, speaking_part_1/2/3)
-- `content` (JSONB)
+- `content` (JSONB) - Chứa đề bài, scaffolding (template, keywords), media links.
 - `answer_key` (JSONB, nullable)
 - `search_vector` (tsvector, generated stored) - **Main Search**: Tự động index nội dung text.
 - `tags` (text[]) - **Filter**: Lọc theo chủ đề (Environment, Tech...).
 - `is_active` (bool)
 - `created_at`, `updated_at`
 
-Indexes (gợi ý):
+**Indexes Quan Trọng (Functional Indexes):**
+```sql
+-- Index tìm câu hỏi có Template Scaffolding (cho Adaptive Learning)
+CREATE INDEX idx_questions_has_template 
+ON questions (skill, level) 
+WHERE (content -> 'scaffolding' ->> 'template') IS NOT NULL;
 
-- `(skill, level, format, is_active)`
-- GIN index trên `search_vector` (Fast text search).
-- GIN index trên `tags` (Fast tag filter).
+-- Index tìm câu hỏi có Keywords Scaffolding
+CREATE INDEX idx_questions_has_keywords 
+ON questions (skill, level) 
+WHERE (content -> 'scaffolding' ->> 'keywords') IS NOT NULL;
+
+-- Full text search & Tags
+CREATE INDEX idx_questions_search ON questions USING GIN(search_vector);
+CREATE INDEX idx_questions_tags ON questions USING GIN(tags);
+```
 
 ### 2.8 user_progress
 
@@ -208,6 +237,8 @@ MVP columns (gợi ý):
 - `scaffold_stage` (1/2/3)
 - `attempt_count` (int)
 - `avg_score` (numeric)
+- `streak_count` (int, default 0) - Số lần liên tiếp đạt/không đạt điều kiện Stage Up/Down.
+- `streak_direction` (ENUM: UP, DOWN, NEUTRAL) - Hướng của chuỗi streak hiện tại.
 - `updated_at`
 
 ### 2.8.1 user_skill_scores (New)
@@ -219,6 +250,7 @@ Lưu lịch sử điểm số chi tiết để tính toán Sliding Window và Ad
 - `skill` (listening/reading/writing/speaking)
 - `submission_id` (FK submissions)
 - `score` (numeric)
+- `scaffolding_type` (ENUM: TEMPLATE, KEYWORDS, FREE, nullable) - Ghi nhận loại hỗ trợ đã dùng.
 - `created_at`
 
 **Logic**: Khi cần tính avg_score cho 10 bài gần nhất:
@@ -285,8 +317,11 @@ MVP columns (gợi ý):
 - `skill` (writing/speaking)
 - `status`
 - `attempt` (int)
+- `retry_count` (int, default 0) - Số lần retry tự động.
+- `worker_id` (string, nullable) - ID của worker xử lý (để debug).
 - `result` (JSONB, nullable) (overallScore/band/confidenceScore/criteriaScores/feedback)
-- `error` (JSONB, nullable) (type/code/message/retryable)
+- `error` (JSONB, nullable) (type/code/message)
+- `error_category` (ENUM: NETWORK, RATE_LIMIT, SCHEMA, TIMEOUT, UNKNOWN, nullable) - Phân loại lỗi cho DLQ logic.
 - `created_at`, `updated_at`
 
 Gợi ý index:
