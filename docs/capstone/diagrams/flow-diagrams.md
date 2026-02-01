@@ -25,7 +25,8 @@ flowchart TB
 
         subgraph QueueClient ["Queue Client"]
             Enqueue["Job Publisher<br/>RabbitMQ"]
-            Poller["Status Poller<br/>Job completion check"]
+            CallbackConsumer["Callback Consumer<br/>AMQP grading.callback"]
+            Realtime["SSE Notifier<br/>Server-Sent Events"]
         end
     end
 
@@ -36,7 +37,7 @@ flowchart TB
         DeadLetter["DLQ: grading.dlq"]
     end
 
-    subgraph GradingService ["Grading Service (Python/Rust/Go)"]
+    subgraph GradingService ["Grading Service (Python + Celery)"]
         subgraph GradingAPI ["Grading API"]
             Receive["Job Receiver<br/>Validate, idempotency check"]
             Router["Task Router<br/>Essay → LLM, Speech → STT"]
@@ -82,7 +83,7 @@ flowchart TB
     classDef data fill:#37474f,stroke:#263238,color:#fff
 
     class L,I,A users
-    class Auth,Validate,Route,Enqueue,Poller api
+    class Auth,Validate,Route,Enqueue,CallbackConsumer,Realtime api
     class Assessment,Progress,Content core
     class Broker,QueueReq,QueueCb,DeadLetter queue
     class Receive,Router,LLMGrader,STTGrader,Scorer,JobStateDB,ResultStore service
@@ -116,14 +117,15 @@ flowchart TB
     STTGrader --> Scorer
     Scorer --> JobStateDB
     Scorer --> ResultStore
-    JobStateDB --> Poller
-    ResultStore --> Poller
-
-    %% Callback flow
+    %% Callback flow (AMQP only)
     Scorer --> QueueCb
+    QueueCb --> CallbackConsumer
+    CallbackConsumer --> Progress
+    CallbackConsumer --> Realtime
 
-    %% Results return
-    Poller --> Progress
+    %% SSE real-time updates
+    Realtime --> Web
+    Realtime --> Mobile
     Progress --> MainDB
     Content --> MainDB
     Assessment --> MainDB
@@ -138,14 +140,15 @@ flowchart TB
 ```
 
 > **Multi-Language Architecture:**
-> - **Main App (Bun)**: API, Auth, Assessment, Progress, Content - TypeScript
-> - **Grading Service (Python)**: AI Grading, STT, Scoring - FastAPI + Celery
-> - **Communication**: REST + Queue (RabbitMQ) with idempotency
-> - **Database**: Fully separated - Main DB vs Grading DB
+> - **Main App (Bun + Elysia)**: API, Auth, Assessment, Progress, Content - TypeScript
+> - **Grading Service (Python + Celery)**: AI grading, STT, scoring - Celery workers
+> - **Communication**: Queue-based (RabbitMQ) with idempotency via `requestId`
+> - **Database**: Fully separated - Main DB vs Grading DB (both PostgreSQL)
+> - **Real-time**: SSE (Server-Sent Events) for status updates
 >
 > **Principles:**
-> - Grading request → enqueue → async processing → poll callback → update progress
-> - Strict API contract with `requestId` for idempotency
+> - Grading request → outbox → enqueue → async processing → AMQP callback → update progress → SSE push
+> - Strict API contract with `requestId` for idempotency (at-least-once delivery)
 > - Separate schemas, no cross-service writes
 
 ## 2. User Journey Flow
@@ -442,7 +445,7 @@ flowchart TB
     subgraph Human ["Human Grading"]
         Instructor["Instructor Portal<br/>Review, Comment"]
         Rubric["Rubric Scoring<br/>VSTEP criteria"]
-        Override["Override AI<br/>If necessary"]
+        Override["Override AI<br/>If scoreDiff > 0.5 or bandStepDiff > 1"]
         ScoreFinal["Final Score<br/>AI + Human weighted"]
     end
 
@@ -646,7 +649,7 @@ flowchart TB
 
 | Diagram | Purpose | Key Components |
 |---------|---------|----------------|
-| **System Architecture** | Multi-Language Services | Bun (API/Core) + Python/Rust/Go (Grading) - Separate DB, Queue-based communication |
+| **System Architecture** | Multi-Language Services | Bun+Elysia (API/Core) + Python+Celery (Grading) - Separate DB, RabbitMQ (AMQP), SSE real-time |
 | **User Journey** | Learner lifecycle | Registration → Goal → Self-Assessment → Practice/Mock Test |
 | **Practice Mode - Writing** | Writing adaptive scaffolding | Template → Keywords → Free Writing |
 | **Practice Mode - Listening** | Listening adaptive scaffolding | Full Text → Highlights → Pure Audio |

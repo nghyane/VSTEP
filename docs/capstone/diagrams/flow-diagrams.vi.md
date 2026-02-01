@@ -12,7 +12,7 @@ flowchart TB
 
     subgraph BunApp ["Bun Main Application"]
         subgraph API ["API Layer"]
-            Auth["Authentication<br/>Session Cookie, RBAC"]
+            Auth["Authentication<br/>JWT (Access + Refresh), RBAC"]
             Validate["Request Validation<br/>Input sanitization"]
             Route["REST API<br/>Resource-oriented endpoints"]
         end
@@ -25,8 +25,8 @@ flowchart TB
 
         subgraph QueueClient ["Queue Client"]
             Enqueue["Job Publisher<br/>RabbitMQ"]
-            Poller["Status Poller<br/>Job completion check"]
-            Realtime["Real-time Notifier<br/>WebSocket/SSE"]
+            CallbackConsumer["Callback Consumer<br/>AMQP grading.callback"]
+            Realtime["SSE Notifier<br/>Server-Sent Events"]
         end
     end
 
@@ -37,7 +37,7 @@ flowchart TB
         DeadLetter["DLQ: grading.dlq"]
     end
 
-    subgraph GradingService ["Grading Service (Python/Rust/Go)"]
+    subgraph GradingService ["Grading Service (Python + Celery)"]
         subgraph GradingAPI ["Grading API"]
             Receive["Job Receiver<br/>Validate, idempotency check"]
             Router["Task Router<br/>Essay → LLM, Speech → STT"]
@@ -69,7 +69,7 @@ flowchart TB
     subgraph Data ["Data Layer"]
         MainDB["PostgreSQL<br/>Users, Content, Progress (Main App)"]
         GradingDB["PostgreSQL<br/>Grading Jobs, Results (Grading Service)"]
-        Redis["Redis<br/>Session, Cache, Queue metadata"]
+        Redis["Redis<br/>Cache, Rate limiting"]
     end
 
     %% Styling
@@ -84,7 +84,7 @@ flowchart TB
     classDef error fill:#c62828,stroke:#b71c1c,color:#fff
 
     class L,I,A users
-    class Auth,Validate,Route,Enqueue,Poller,Realtime api
+    class Auth,Validate,Route,Enqueue,CallbackConsumer,Realtime api
     class Assessment,Progress,Content core
     class Broker,QueueReq,QueueCb,DeadLetter queue
     class Receive,Router,LLMGrader,STTGrader,Scorer,JobStateDB,ResultStore service
@@ -118,27 +118,24 @@ flowchart TB
     STTGrader --> Scorer
     Scorer --> JobStateDB
     Scorer --> ResultStore
-    JobStateDB --> Poller
-    ResultStore --> Poller
 
-    %% Callback flow
+    %% Callback flow (AMQP only)
     Scorer --> QueueCb
-    QueueCb --> Realtime
+    QueueCb --> CallbackConsumer
+    CallbackConsumer --> Progress
+    CallbackConsumer --> Realtime
 
-    %% Real-time updates
-    JobStateDB --> Realtime
-    ResultStore --> Realtime
+    %% SSE real-time updates
     Realtime --> Web
     Realtime --> Mobile
 
     %% Error handling
     Receive -.->|"Invalid job"| DeadLetter
     Scorer -.->|"Processing fail"| DeadLetter
-    DeadLetter --> Retry["Retry Logic<br/>Celery countdown"]
-    Retry -->|"Max retries"| Alert["Alert Admin"]
+    DeadLetter --> Retry["Retry Logic<br/>Celery countdown<br/>Exponential + Jitter"]
+    Retry -->|"Max retries (3)"| Alert["Alert Admin"]
 
     %% Results return
-    Poller --> Progress
     Progress --> MainDB
     Content --> MainDB
     Assessment --> MainDB
@@ -153,19 +150,19 @@ flowchart TB
 ```
 
 > **Kiến trúc Multi-Language:**
-> - **Main App (Bun)**: API, Auth, Assessment, Progress, Content - TypeScript
-> - **Grading Service (Python)**: AI Grading, STT, Scoring - FastAPI + Celery
-> - **Giao tiếp**: REST + Queue (RabbitMQ) với idempotency
-> - **Database**: Tách biệt hoàn toàn - Main DB vs Grading DB
-> - **Real-time**: WebSocket/SSE cho status updates
-> - **Error Handling**: Dead Letter Queue + Celery retry
+> - **Main App (Bun + Elysia)**: API, Auth, Assessment, Progress, Content - TypeScript
+> - **Grading Service (Python + Celery)**: AI Grading, STT, Scoring - Celery workers
+> - **Giao tiếp**: Queue-based (RabbitMQ) với idempotency qua `requestId`
+> - **Database**: Tách biệt hoàn toàn - Main DB vs Grading DB (cả hai PostgreSQL)
+> - **Real-time**: SSE (Server-Sent Events) cho status updates
+> - **Error Handling**: Dead Letter Queue + Celery retry (exponential + jitter, max 3)
 >
 > **Nguyên tắc:**
-> - Grading request → enqueue → async processing → poll callback → update progress
-> - Strict API contract với `requestId` cho idempotency
+> - Grading request → outbox → enqueue → async processing → AMQP callback → update progress → SSE push
+> - Strict API contract với `requestId` cho idempotency (at-least-once delivery)
 > - Separate schemas, no cross-service writes
-> - Real-time notifications cho job status changes
-> - Automatic retry với dead letter queue cho failed jobs
+> - SSE notifications cho job status changes
+> - Automatic retry với exponential backoff + jitter, DLQ cho failed jobs
 
 ---
 
@@ -306,8 +303,8 @@ flowchart TB
     end
 
     subgraph MessageQueue ["Message Queue"]
-        JobRequest["Topic: grading.request<br/>Job payload"]
-        JobCallback["Topic: grading.callback<br/>Result payload"]
+        JobRequest["Queue: grading.request<br/>Job payload (via Outbox)"]
+        JobCallback["Queue: grading.callback<br/>Result payload (AMQP)"]
         SagaLog["Saga Log<br/>Event sourcing"]
     end
 
@@ -359,7 +356,7 @@ flowchart TB
     CompensateMain --> FinalUI
 
     %% Timeout handling
-    SagaOrchestrator -->|"Timeout > SLA (Writing 20m / Speaking 60m)"| TimeoutHandler["Timeout Handler"]
+    SagaOrchestrator -->|"Timeout > SLA<br/>(Writing 20m / Speaking 60m)"| TimeoutHandler["Timeout Handler"]
     TimeoutHandler --> CompensateMain
     TimeoutHandler --> Alert["Alert Admin"]
 
@@ -382,11 +379,11 @@ flowchart TB
 
 | Step | Action | Compensation | Timeout |
 |------|--------|--------------|---------|
-|  1 | Create submission (PENDING) | Delete submission | 10s |
-| | 2 | Publish grading job (Outbox pattern) | Mark submission FAILED | 5s |
-| | 3 | Grading service processes | N/A (async) | SLA (Writing 20m / Speaking 60m) |
-| | 4 | Receive callback | Retry callback | 30s |
-| | 5 | Update submission (COMPLETED) | Mark submission ERROR | 10s |
+| 1 | Create submission (PENDING) | Delete submission | 10s |
+| 2 | Publish grading job (Outbox pattern) | Mark submission FAILED | 5s |
+| 3 | Grading service processes | N/A (async) | SLA (Writing 20m / Speaking 60m) |
+| 4 | Receive AMQP callback | Retry callback | 30s |
+| 5 | Update submission (COMPLETED) | Mark submission ERROR | 10s |
 
 ### 3.2 Outbox Pattern
 
@@ -423,66 +420,67 @@ flowchart TB
         UI["UI Components<br/>Status indicators"]
     end
 
-    subgraph Connection ["Connection Layer"]
-        WebSocket["WebSocket Server<br/>Socket.io/ws"]
-        SSE["Server-Sent Events<br/>Fallback"]
-        ConnectionManager["Connection Manager<br/>Heartbeat, reconnect"]
+    subgraph SSELayer ["SSE Layer"]
+        SSEEndpoint["SSE Endpoint<br/>GET /api/sse/submissions/:id"]
+        SSEAuth["Auth via Query Param<br/>?token=JWT"]
+        Heartbeat["Heartbeat<br/>ping every 30s"]
+        ReconnectLogic["Reconnect Logic<br/>Last-Event-ID replay"]
     end
 
-    subgraph Backend ["Backend Services"]
-        StatusPublisher["Status Publisher<br/>Redis Pub/Sub"]
-        EventEmitter["Event Emitter<br/>Domain events"]
-        RESTFallback["REST Fallback<br/>Polling endpoint"]
+    subgraph Backend ["Backend Services (Bun)"]
+        CallbackConsumer["AMQP Callback Consumer<br/>grading.callback queue"]
+        InMemoryPubSub["In-Memory Pub/Sub<br/>submissionId → SSE connections"]
+        DBUpdate["DB Update<br/>Submission status"]
+        RESTFallback["REST Fallback<br/>GET /api/submissions/:id/status"]
     end
 
-    subgraph GradingWorkers ["Grading Workers"]
+    subgraph GradingWorkers ["Grading Workers (Celery)"]
         JobStart["Job Started<br/>PROCESSING"]
-        ProgressUpdate["Progress Update<br/>25%, 50%, 75%"]
-        JobComplete["Job Complete<br/>DONE/ERROR"]
+        ProgressUpdate["Progress Update<br/>ANALYZING, GRADING"]
+        JobComplete["Job Complete<br/>COMPLETED/ERROR"]
     end
 
-    subgraph Redis ["Redis Layer"]
-        PubSub["Pub/Sub Channels<br/>user:{id}:grading"]
-        StateCache["State Cache<br/>TTL: 1 hour"]
+    subgraph MessageQueue ["Message Queue"]
+        CallbackQueue["grading.callback<br/>Result payload"]
     end
 
-    %% Status flow
-    JobStart --> EventEmitter
-    ProgressUpdate --> EventEmitter
-    JobComplete --> EventEmitter
+    %% Grading → Callback flow
+    JobStart --> CallbackQueue
+    ProgressUpdate --> CallbackQueue
+    JobComplete --> CallbackQueue
 
-    EventEmitter --> StatusPublisher
-    StatusPublisher --> PubSub
-    PubSub --> WebSocket
-    PubSub --> SSE
+    %% AMQP Consumer → SSE bridge
+    CallbackQueue --> CallbackConsumer
+    CallbackConsumer --> DBUpdate
+    CallbackConsumer --> InMemoryPubSub
+    InMemoryPubSub --> SSEEndpoint
 
-    %% To user
-    WebSocket --> Browser
-    SSE --> Browser
+    %% SSE → User
+    SSEEndpoint --> Browser
     Browser --> LocalState
     LocalState --> UI
 
-    %% Connection management
-    Browser --> ConnectionManager
-    ConnectionManager -->|"Reconnect"| WebSocket
-    ConnectionManager -->|"Fallback"| SSE
-    ConnectionManager -->|"Last resort"| RESTFallback
+    %% SSE connection management
+    Browser -->|"EventSource"| SSEAuth
+    SSEAuth --> SSEEndpoint
+    SSEEndpoint --> Heartbeat
+    Browser -->|"Reconnect"| ReconnectLogic
+    ReconnectLogic --> SSEEndpoint
 
-    %% State sync
-    RESTFallback --> StateCache
-    StateCache -->|"Sync on reconnect"| Browser
+    %% Fallback
+    Browser -->|"SSE unavailable"| RESTFallback
 
     classDef user fill:#1565c0,stroke:#0d47a1,color:#fff
-    classDef conn fill:#ff8f00,stroke:#ff6f00,color:#fff
+    classDef sse fill:#ff8f00,stroke:#ff6f00,color:#fff
     classDef backend fill:#1976d2,stroke:#0d47a1,color:#fff
     classDef worker fill:#6a1b9a,stroke:#4a148c,color:#fff
-    classDef cache fill:#37474f,stroke:#263238,color:#fff
+    classDef queue fill:#37474f,stroke:#263238,color:#fff
 
     class Browser,LocalState,UI user
-    class WebSocket,SSE,ConnectionManager conn
-    class StatusPublisher,EventEmitter,RESTFallback backend
+    class SSEEndpoint,SSEAuth,Heartbeat,ReconnectLogic sse
+    class CallbackConsumer,InMemoryPubSub,DBUpdate,RESTFallback backend
     class JobStart,ProgressUpdate,JobComplete worker
-    class PubSub,StateCache cache
+    class CallbackQueue queue
 ```
 
 ### 4.1 Status States
@@ -568,7 +566,7 @@ flowchart TB
 
     subgraph HumanGrading ["Human Grading"]
         InstructorReview["Instructor Review<br/>Rubric-based scoring"]
-        Override["Override AI<br/>If discrepancy > 1 band"]
+        Override["Override AI<br/>If scoreDiff > 0.5<br/>or bandStepDiff > 1"]
         WeightedScore["Weighted Final Score<br/>AI + Human"]
     end
 
@@ -685,12 +683,12 @@ Factors:
 ### 5.3 Weighted Final Score (AI + Human)
 
 ```
-If Human and AI agree (within 0.5 band):
+If Human and AI agree (scoreDiff <= 0.5 AND bandStepDiff <= 1):
     Final = (AI_score × 0.4) + (Human_score × 0.6)
 
-If Human and AI disagree (> 0.5 band):
+If Human and AI disagree (scoreDiff > 0.5 OR bandStepDiff > 1):
     Final = Human_score (Human overrides)
-    Flag for model retraining
+    Flag for audit + model tuning
 ```
 
 ---
@@ -1119,13 +1117,15 @@ flowchart TB
         Login["Login Page<br/>Email/Password"]
         OAuth["OAuth (Optional)<br/>Google SSO"]
         RateLimit["Rate Limiting<br/>5 attempts/minute"]
-        SessionCookie["Session Cookie<br/>HTTP-only, signed"]
+        AccessToken["JWT Access Token<br/>Short-lived"]
+        RefreshToken["Refresh Token<br/>Long-lived, rotate"]
     end
 
     subgraph Verify ["Verification"]
-        ValidateSession["Validate Session<br/>Cookie signature + Redis lookup"]
-        SessionStore["Session Store<br/>Redis (TTL)"]
-        Logout["Logout<br/>Clear session"]
+        ValidateAccess["Validate Access JWT<br/>Signature, exp, role"]
+        Refresh["Refresh Endpoint<br/>Rotate refresh token"]
+        RefreshStore["Refresh Token Store<br/>MainDB (hash)"]
+        Logout["Logout<br/>Revoke refresh token"]
     end
 
     subgraph RBAC ["Role-Based Access Control"]
@@ -1141,18 +1141,31 @@ flowchart TB
         AdminRes["Admin Panel<br/>Admins only"]
     end
 
-    subgraph Session ["Session"]
-        Active["Active Session<br/>User context"]
-        Timeout["Session Timeout<br/>30 min inactivity"]
-        Concurrent["Concurrent Session<br/>Max 3 devices"]
+    subgraph Tokens ["Token Lifecycle"]
+        Active["Active Context<br/>Access token claims"]
+        AccessExp["Access Expired<br/>Refresh required"]
+        Concurrent["Concurrent Devices<br/>Max 3 refresh tokens"]
     end
 
     Login --> RateLimit
-    RateLimit -->|"Under limit"| SessionCookie
-    OAuth -.-> SessionCookie
-    SessionCookie --> ValidateSession
-    ValidateSession --> SessionStore
-    SessionStore --> Logout
+    RateLimit -->|"Under limit"| AccessToken
+    RateLimit -->|"Under limit"| RefreshToken
+    OAuth -.-> AccessToken
+    OAuth -.-> RefreshToken
+
+    AccessToken --> ValidateAccess
+    ValidateAccess --> Active
+    Active --> AccessExp
+    AccessExp --> Refresh
+
+    RefreshToken --> Refresh
+    Refresh --> RefreshStore
+    RefreshStore -->|"Rotate"| RefreshToken
+    Refresh --> AccessToken
+    RefreshStore --> Concurrent
+
+    RefreshToken --> Logout
+    Logout --> RefreshStore
 
     Roles --> Permissions
     Permissions --> Check
@@ -1165,9 +1178,6 @@ flowchart TB
     MockRes --> Active
     GradingRes --> Active
     AdminRes --> Active
-    Active --> Timeout
-    Active --> Concurrent
-    Timeout -->|"Expired"| Logout
 
     classDef auth fill:#1565c0,stroke:#0d47a1,color:#fff
     classDef verify fill:#e65100,stroke:#bf360c,color:#fff
@@ -1176,22 +1186,21 @@ flowchart TB
     classDef resources fill:#6a1b9a,stroke:#4a148c,color:#fff
     classDef session fill:#455a64,stroke:#37474f,color:#fff
 
-    class Login,OAuth,RateLimit,SessionCookie auth
-    class ValidateSession,SessionStore,Logout verify
+    class Login,OAuth,RateLimit,AccessToken,RefreshToken auth
+    class ValidateAccess,Refresh,RefreshStore,Logout verify
     class Roles,Permissions,Check rbac
     class PracticeRes,MockRes,GradingRes,AdminRes permissions
-    class Active,Timeout,Concurrent session
+    class Active,AccessExp,Concurrent session
 ```
 
-### 10.1 Session Enforcement (Redis Session List)
+### 10.1 Refresh Token Enforcement (Max 3 devices)
 
-> **Cơ chế enforcement:**
-> - Khi login thành công, tạo session entry: `sessions:{userId}` → Sorted Set
-> - Mỗi entry: `{deviceId, loginTime, lastActivity, tokenHash}`
-> - Max 3 devices → reject login thứ 4 hoặc auto-logout oldest session
-> - Heartbeat cập nhật `lastActivity` mỗi 5 phút
-> - Timeout 30 phút không activity → tự động logout
-> - Logout xóa entry khỏi Redis Sorted Set
+> **Cơ chế enforcement (baseline):**
+> - Mỗi lần login/refresh tạo refresh token với `jti` (rotate khi refresh)
+> - Lưu refresh token dạng hash trong MainDB để revoke + audit
+> - Max 3 refresh tokens active / user → revoke token cũ nhất khi tạo token mới
+> - Logout: revoke refresh token hiện tại
+> - Refresh token reuse (dùng lại token đã bị rotate): revoke token family (force re-login)
 
 ### 10.2 Role Permissions
 
@@ -1315,10 +1324,10 @@ Thiết kế UI được lưu trong thư mục `.claude/pencil/` với định d
 
 | Sơ đồ | Mục đích | Thành phần chính |
 |-------|----------|------------------|
-| **1. Kiến trúc Hệ thống** | Multi-Language Services | Bun (API/Core) + Python/Rust/Go (Grading) - Separate DB, Queue-based, Real-time updates |
+| **1. Kiến trúc Hệ thống** | Multi-Language Services | Bun+Elysia (API/Core) + Python+Celery (Grading) - Separate DB, Queue-based (RabbitMQ), SSE real-time |
 | **2. Error Handling** | Failure Recovery | Retry logic, Circuit breaker, Dead Letter Queue, Compensation |
 | **3. Data Consistency** | Saga Pattern | Saga orchestrator, Event sourcing, Compensation actions |
-| **4. Real-time Updates** | Status Notifications | WebSocket/SSE, Connection management, State sync |
+| **4. Real-time Updates** | Status Notifications | SSE (Server-Sent Events), AMQP callback consumer, In-memory pub/sub |
 | **5. Hybrid Grading** | AI + Human với Confidence | Confidence formula, Routing logic, Weighted scoring |
 | **6. Hành trình Người dùng** | Vòng đời người học | Registration → Goal → Self-Assessment → Practice/Mock Test |
 | **7A. Practice - Writing** | Adaptive Scaffolding Viết | Template → Keywords → Free với progression algorithm |
@@ -1330,6 +1339,6 @@ Thiết kế UI được lưu trong thư mục `.claude/pencil/` với định d
 
 ---
 
-**Tóm tắt hệ thống:** Hệ thống ưu tiên giảm friction cho người học bằng cách cho phép chọn mục tiêu trước, sau đó sử dụng self-assessment và dữ liệu hành vi ban đầu để hiệu chỉnh mức độ học tập dần theo thời gian. Kiến trúc multi-language với queue-based communication đảm bảo scalability, trong khi hybrid grading với confidence score cân bằng automation và accuracy. Real-time updates và comprehensive error handling đảm bảo trải nghiệm người dùng mượt mà.
+**Tóm tắt hệ thống:** Hệ thống ưu tiên giảm friction cho người học bằng cách cho phép chọn mục tiêu trước, sau đó sử dụng self-assessment và dữ liệu hành vi ban đầu để hiệu chỉnh mức độ học tập dần theo thời gian. Kiến trúc multi-language (Bun+Elysia / Python+Celery) với queue-based communication (RabbitMQ) đảm bảo scalability, trong khi hybrid grading với confidence score cân bằng automation và accuracy. SSE real-time updates và comprehensive error handling (outbox pattern, circuit breaker, DLQ) đảm bảo trải nghiệm người dùng mượt mà.
 
 *Cập nhật cho Hệ thống Luyện Thi VSTEP Thích Ứng (SP26SE145)*

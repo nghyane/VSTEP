@@ -4,69 +4,28 @@
 
 Chốt quy tắc rate limiting để bảo vệ API khỏi abuse, brute-force attacks, và đảm bảo fair usage giữa các users.
 
-## Rate Limiting Flow
+## Rate Limiting Flow (tóm tắt)
+
+- Identify client: anonymous theo IP, authenticated theo userId.
+- Xác định tier theo role: anonymous/learner/instructor/admin.
+- Áp dụng token bucket (cho burst nhỏ, chặn sustained abuse).
+- Lưu state trong Redis với TTL để tự cleanup.
 
 ```mermaid
 flowchart TB
-    subgraph Request["Incoming Request"]
-        Client["Client"]
-        Identify["Identify Client<br/>IP or User ID"]
-        CheckAuth{"Authenticated?"}
-    end
-
-    subgraph Tiers["Rate Limit Tiers"]
-        Anonymous["Anonymous<br/>30 req/min"]
-        Learner["Learner<br/>100 req/min"]
-        Instructor["Instructor<br/>500 req/min"]
-        Admin["Admin<br/>500 req/min"]
-    end
-
-    subgraph TokenBucket["Token Bucket Algorithm"]
-        CheckBucket{"Tokens<br/>Available?"}
-        Consume["Consume 1 Token"]
-        Reject["Reject Request<br/>429 Too Many Requests"]
-        AddHeaders["Add Rate Limit Headers"]
-    end
-
-    subgraph Redis["Redis Storage"]
-        Key["Key:<br/>ratelimit:{scope}:{id}"]
-        TTL["TTL: 1 minute"]
-    end
-
-    Client --> Identify
-    Identify --> CheckAuth
-    CheckAuth -->|No| Anonymous
-    CheckAuth -->|Yes| CheckRole{"Check Role"}
-    CheckRole -->|Learner| Learner
-    CheckRole -->|Instructor| Instructor
-    CheckRole -->|Admin| Admin
-
-    Anonymous --> CheckBucket
-    Learner --> CheckBucket
-    Instructor --> CheckBucket
-    Admin --> CheckBucket
-
-    CheckBucket -->|Yes| Consume
-    CheckBucket -->|No| Reject
-    Consume --> Key
-    Key --> TTL
-    TTL --> AddHeaders
-    AddHeaders -->|X-RateLimit-*| Process["Process Request"]
-    Reject -->|Retry-After| ClientError["Return 429"]
-
-    classDef client fill:#1976d2,stroke:#0d47a1,color:#fff
-    classDef tier fill:#388e3c,stroke:#1b5e20,color:#fff
-    classDef bucket fill:#ff8f00,stroke:#ff6f00,color:#fff
-    classDef reject fill:#c62828,stroke:#b71c1c,color:#fff
-    classDef success fill:#2e7d32,stroke:#1b5e20,color:#fff
-    classDef redis fill:#37474f,stroke:#263238,color:#fff
-
-    class Client,Identify,CheckAuth,CheckRole client
-    class Anonymous,Learner,Instructor,Admin tier
-    class CheckBucket,Consume,AddHeaders bucket
-    class Reject,ClientError reject
-    class Process success
-    class Key,TTL redis
+  R[Request] --> I[Identify: ip or userId]
+  I --> T{Pick tier}
+  T --> A[anonymous]
+  T --> L[learner]
+  T --> IN[instructor]
+  T --> AD[admin]
+  A --> B[Token bucket check]
+  L --> B
+  IN --> B
+  AD --> B
+  B -->|allow| OK[Proceed + rate limit headers]
+  B -->|deny| X[429 + Retry-After]
+  B --> S[(Redis state + TTL)]
 ```
 
 ## Scope
@@ -103,7 +62,6 @@ flowchart TB
 | `POST /api/auth/register` | 5 requests | 1 minute | Chống brute-force register |
 | `POST /api/auth/refresh` | 10 requests | 1 minute | Refresh token |
 | `POST /api/submissions` | 10 requests | 1 minute | Tạo submission mới |
-| `POST /api/grading/*` | 5 requests | 1 minute | Trigger grading |
 | `GET /api/*` (read) | Tier default | Tier window | Standard read operations |
 
 ## Contracts
@@ -126,15 +84,12 @@ Khi 429, thêm:
 
 ### Error Response (429)
 
-```json
-{
-  "error": "RATE_LIMIT_EXCEEDED",
-  "message": "Too many requests. Please slow down.",
-  "retryAfter": 60,
-  "limit": 100,
-  "window": "1m"
-}
-```
+Response body (conceptual) phải có đủ thông tin để client hiển thị và retry an toàn:
+
+- error code ổn định
+- message ngắn
+- retryAfter (seconds)
+- limit + window
 
 ### Redis Key Structure
 

@@ -4,49 +4,42 @@
 
 Chốt cơ chế xác thực cho Main App theo mô hình JWT (access/refresh) để dùng được cho web + mobile, triển khai nhanh, và không phụ thuộc session state ở server.
 
-## JWT Flow
+## JWT Flow (tóm tắt)
+
+- Login: validate credentials → issue access+refresh → enforce max 3 refresh tokens/user (FIFO revoke).
+- Access: client gửi Bearer access token; server verify signature + exp + role.
+- Refresh: rotate refresh token (old token bị revoke) → cấp cặp token mới.
+- Logout: revoke refresh token hiện tại.
+- Reuse detection: nếu refresh token đã bị rotate mà vẫn được dùng lại → revoke toàn bộ token family và force re-login.
 
 ```mermaid
 sequenceDiagram
-    participant C as Client
-    participant API as Bun API
-    participant DB as MainDB
-    participant Redis as Redis
+  participant C as Client
+  participant API as Main App
+  participant DB as MainDB
 
-    %% Login
-    C->>API: POST /api/auth/login<br/>email + password
-    API->>DB: Validate credentials
-    DB-->>API: User valid
-    API->>DB: Create refresh token record<br/>hash + jti + userId
-    API->>API: Check device limit (max 3)
-    API->>DB: Revoke oldest if needed (FIFO)
-    API-->>C: Access token + Refresh token
+  C->>API: login(email,password)
+  API->>DB: validate credentials
+  API->>DB: issue refresh token record (hash+jti)
+  API-->>C: access + refresh
 
-    %% Access Protected Resource
-    C->>API: GET /api/resource<br/>Authorization: Bearer {access}
-    API->>API: Verify JWT signature<br/>Check exp
-    API-->>C: Protected data
+  C->>API: access protected (Bearer access)
+  API->>API: verify JWT (sig+exp+role)
+  API-->>C: response
 
-    %% Token Refresh
-    C->>API: POST /api/auth/refresh<br/>refresh token
-    API->>DB: Validate refresh token hash
-    API->>DB: Check if revoked
-    DB-->>API: Token valid
-    API->>DB: Rotate: create new refresh token<br/>Mark old as replaced
-    API-->>C: New access + refresh tokens
+  C->>API: refresh(refresh token)
+  API->>DB: validate token hash + not revoked
+  API->>DB: rotate (revoke old, create new)
+  API-->>C: new access + refresh
 
-    %% Logout
-    C->>API: POST /api/auth/logout<br/>refresh token
-    API->>DB: Revoke refresh token<br/>Set revokedAt
-    API-->>C: 200 OK
+  C->>API: logout(refresh token)
+  API->>DB: revoke refresh token
+  API-->>C: ok
 
-    %% Token Reuse Detection
-    Note over C,Redis: Token Reuse Scenario
-    C->>API: POST /api/auth/refresh<br/>old rotated token
-    API->>DB: Check token status
-    DB-->>API: Token already replaced (reuse!)
-    API->>DB: Revoke ALL user refresh tokens
-    API-->>C: 401 Force re-login
+  C->>API: refresh(using rotated token)
+  API->>DB: detect reuse
+  API->>DB: revoke token family
+  API-->>C: 401 force re-login
 ```
 
 ## Scope
@@ -86,15 +79,15 @@ sequenceDiagram
 
 ### API operations (baseline)
 
-API routes/paths do backend tự quyết định. Hệ thống phải hỗ trợ các operations sau:
+Hệ thống phải hỗ trợ các operations sau (paths cụ thể: xem `../10-contracts/api-endpoints.md`):
 
-| Operation | Auth | Endpoint | Output |
-|-----------|------|----------|--------|
-| Register | Public | `POST /api/auth/register` | user created |
-| Login | Public | `POST /api/auth/login` | access token + refresh token |
-| Refresh | Refresh token | `POST /api/auth/refresh` | rotated refresh token + new access token |
-| Logout | Refresh token | `POST /api/auth/logout` | revoke current refresh token |
-| Get current user context | Access token | `GET /api/auth/me` | `userId`, `role` |
+| Operation | Auth | Output |
+|-----------|------|--------|
+| Register | Public | user created |
+| Login | Public | access token + refresh token |
+| Refresh | Refresh token | rotated refresh token + new access token |
+| Logout | Refresh token | revoke current refresh token |
+| Get current user context | Access token | `userId`, `role` |
 
 ### Refresh token store (requirements)
 

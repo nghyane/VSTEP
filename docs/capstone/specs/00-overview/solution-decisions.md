@@ -6,63 +6,21 @@ Tài liệu này chốt các quyết định kiến trúc/boundary để backend
 
 ## Architecture Overview
 
+- Client (Web/Mobile) gọi Main App.
+- Main App lưu MainDB, dùng Redis cho cache/rate limit.
+- Writing/Speaking: publish `grading.request` → Grading Service xử lý → publish `grading.callback`.
+- Main App consume callback, update MainDB, push SSE.
+
 ```mermaid
-flowchart TB
-    subgraph Client["Client"]
-        Web["Web App"]
-        Mobile["Mobile App"]
-    end
-
-    subgraph MainApp["Bun Main Application"]
-        API["Elysia API"]
-        Auth["JWT Auth"]
-        QueueClient["Queue Client<br/>RabbitMQ Publisher"]
-    end
-
-    subgraph MessageQueue["Message Queue"]
-        Exchange["vstep.exchange"]
-        ReqQueue["grading.request"]
-        CbQueue["grading.callback"]
-        DLQ["grading.dlq"]
-    end
-
-    subgraph GradingService["Python Grading Service"]
-        Celery["Celery Workers"]
-        AI["AI Grading<br/>LLM + STT"]
-    end
-
-    subgraph Data["Data Layer"]
-        MainDB["PostgreSQL<br/>MainDB"]
-        GradingDB["PostgreSQL<br/>GradingDB"]
-        Redis["Redis<br/>Cache + Rate Limit"]
-    end
-
-    Web --> API
-    Mobile --> API
-    API --> Auth
-    API --> QueueClient
-    QueueClient --> Exchange
-    Exchange --> ReqQueue
-    Exchange --> CbQueue
-    Exchange --> DLQ
-    ReqQueue --> Celery
-    Celery --> AI
-    AI --> CbQueue
-    API --> MainDB
-    API --> Redis
-    Celery --> GradingDB
-
-    classDef client fill:#1976d2,stroke:#0d47a1,color:#fff
-    classDef main fill:#e65100,stroke:#bf360c,color:#fff
-    classDef queue fill:#ff8f00,stroke:#ff6f00,color:#fff
-    classDef grading fill:#6a1b9a,stroke:#4a148c,color:#fff
-    classDef data fill:#37474f,stroke:#263238,color:#fff
-
-    class Web,Mobile client
-    class API,Auth,QueueClient main
-    class Exchange,ReqQueue,CbQueue,DLQ queue
-    class Celery,AI grading
-    class MainDB,GradingDB,Redis data
+flowchart LR
+  C[Client] --> API[Main App]
+  API --> DB[(MainDB)]
+  API --> R[(Redis)]
+  API -->|grading.request| MQ[(RabbitMQ)]
+  MQ -->|grading.request| G[Grading Service]
+  G -->|grading.callback| MQ
+  MQ -->|grading.callback| API
+  API -->|SSE| C
 ```
 
 ## Scope
@@ -97,10 +55,10 @@ flowchart TB
 
 ## Contracts
 
-- Message contracts: `docs/capstone/specs/queue-contracts.vi.md`
-- Reliability rules: `docs/capstone/specs/reliability.vi.md`
-- Auth rules: `docs/capstone/specs/authentication.vi.md`
-- Deployment env: `docs/capstone/specs/deployment.vi.md`
+- Message contracts: `../10-contracts/queue-contracts.md`
+- Reliability rules: `../40-platform/reliability.md`
+- Auth rules: `../40-platform/authentication.md`
+- Deployment env: `../50-ops/deployment.md`
 
 ## Failure modes
 

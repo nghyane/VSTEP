@@ -2,75 +2,32 @@
 
 ## Purpose
 
-Chốt các quy tắc reliability để hệ thống chấm (Bun <-> RabbitMQ <-> Python/Celery) chạy ổn định: không mất job, chống duplicate, có retry/DLQ, và xử lý timeout/late-result nhất quán.
+Chốt các quy tắc reliability để hệ thống chấm chạy ổn định: không mất job, chống duplicate, có retry/DLQ, và xử lý timeout/late-result nhất quán.
 
-## Reliability Flow
+## Reliability Flow (tóm tắt)
+
+- Main App tạo submission và đảm bảo publish `grading.request` là reliable (outbox pattern).
+- Grading Service consume request, dedup theo `requestId`, xử lý và phát callback `grading.callback` (progress + final).
+- Main App consume callback, dedup theo `eventId`, cập nhật submission và ghi event log.
+- Retry/backoff có giới hạn; quá giới hạn hoặc non-retryable → DLQ.
+- Timeout SLA chỉ áp dụng cho pha AI (xem `../20-domain/submission-lifecycle.md`).
 
 ```mermaid
 flowchart TB
-    subgraph Submission["Submission Creation"]
-        Create["Create Submission<br/>Status: PENDING"]
-        Outbox["Write to Outbox<br/>pending status"]
-    end
-
-    subgraph Relay["Outbox Relay"]
-        Poll["Poll Outbox<br/>every 5s"]
-        Publish["Publish to<br/>grading.request"]
-        Mark["Mark Published"]
-    end
-
-    subgraph Worker["Celery Worker"]
-        Receive["Receive Job"]
-        Dedup{"Check requestId"}
-        Process["Process Grading"]
-        Retry{"Failed?<br/>Retry < 3?"}
-        Backoff["Exponential Backoff<br/>2^n + jitter"]
-        DLQ["Send to DLQ"]
-    end
-
-    subgraph Timeout["Timeout Handling"]
-        CheckDeadline{"now > deadlineAt?"}
-        MarkFailed["Mark FAILED<br/>TIMEOUT"]
-        StoreLate["Store Late Result<br/>isLate=true"]
-    end
-
-    subgraph Callback["Callback Flow"]
-        SendCb["Send Callback"]
-        ReceiveCb["Receive Callback"]
-        CheckLate{"Callback Late?"}
-        Update["Update Status<br/>COMPLETED"]
-    end
-
-    Create --> Outbox
-    Outbox --> Poll
-    Poll --> Publish
-    Publish --> Mark
-    Publish --> Receive
-    Receive --> Dedup
-    Dedup -->|New| Process
-    Dedup -->|Duplicate| Ignore["Ignore"]
-    Process -->|Success| SendCb
-    Process -->|Fail| Retry
-    Retry -->|Yes| Backoff
-    Backoff --> Receive
-    Retry -->|No| DLQ
-    SendCb --> ReceiveCb
-    ReceiveCb --> CheckDeadline
-    CheckDeadline -->|Yes| MarkFailed
-    CheckDeadline -->|No| CheckLate
-    MarkFailed -->|Late callback| StoreLate
-    CheckLate -->|No| Update
-
-    classDef bun fill:#e65100,stroke:#bf360c,color:#fff
-    classDef relay fill:#ff8f00,stroke:#ff6f00,color:#fff
-    classDef worker fill:#6a1b9a,stroke:#4a148c,color:#fff
-    classDef timeout fill:#c62828,stroke:#b71c1c,color:#fff
-    classDef success fill:#2e7d32,stroke:#1b5e20,color:#fff
-
-    class Create,Outbox,Poll,Mark bun
-    class Publish,ReceiveCb,CheckLate,Update relay
-    class Receive,Dedup,Process,Retry,Backoff,DLQ,Ignore,SendCb worker
-    class CheckDeadline,MarkFailed,StoreLate timeout
+  A[Create submission] --> B[Outbox entry]
+  B --> C[Relay publish grading.request]
+  C --> D[(RabbitMQ)]
+  D --> E[Consume request]
+  E --> F{Dedup requestId}
+  F -->|new| G[Grade + retry/backoff]
+  F -->|dup| H[Return cached result/best-effort]
+  G --> I[Publish grading.callback]
+  I --> D
+  D --> J[Consume callback]
+  J --> K{Dedup eventId}
+  K -->|new| L[Update MainDB + append event log + SSE]
+  K -->|dup| M[Skip]
+  G --> N[DLQ on non-retryable/max retry]
 ```
 
 ## Scope
@@ -87,15 +44,14 @@ flowchart TB
 |------|----------|
 | Delivery | at-least-once (duplicate possible) |
 | Publish reliability | Outbox + relay worker (Main App side) |
-| Outbox poll interval | 5s (configurable via OUTBOX_POLL_INTERVAL_MS) |
-| Outbox batch size | 50 records/poll (configurable) |
-| Retry | `max_retries = 3` (Celery) |
+| Outbox relay | chạy định kỳ; interval/batch configurable |
+| Retry | max retries = 3 |
 | Backoff | exponential + jitter, cap 300s, honor `Retry-After` for 429 |
 | DLQ | `grading.dlq` for non-retryable or max retry |
 | SLA | writing 20m, speaking 60m |
 | Late callback | keep `FAILED(TIMEOUT)`, store result with `isLate=true` |
 | Circuit breaker | open when failure rate > 50% over 20 requests, cooldown 30s, trial 3 requests |
-| Timeout check interval | 60s via cron/scheduler (configurable) |
+| Timeout check | chạy định kỳ; interval configurable |
 
 ## Contracts
 
@@ -114,12 +70,10 @@ Outbox record can be stored in MainDB with minimum fields:
 | `retry_count` / `error_message` | relay retry + debug |
 
 Relay behavior:
-- Relay pulls `pending` by `created_at`.
-- Batch size: 50 records per poll (configurable via OUTBOX_BATCH_SIZE).
-- Publish to RabbitMQ.
-- Mark `published` on success.
-- On publish fail: retry with bounded backoff; do not block new writes.
-- Monitoring: log warning if record older than 60s (configurable via OUTBOX_STALE_THRESHOLD_MS).
+- Relay pulls `pending` theo FIFO (`created_at`).
+- Publish sang RabbitMQ và mark `published` khi thành công.
+- Nếu publish fail: retry với bounded backoff; không được block các writes mới.
+- Monitoring: cảnh báo nếu outbox record bị "kẹt" quá lâu.
 
 ### Retry classification
 

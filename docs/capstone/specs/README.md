@@ -1,64 +1,67 @@
 # Technical Specifications Index
 
-## VSTEP Adaptive Learning System - Technical Design Documents
+Tài liệu kỹ thuật (contract-oriented) cho VSTEP Adaptive Learning System.
 
-This folder contains implementation-oriented technical specs for the VSTEP Adaptive Learning System.
+Writing rule: specs tập trung vào quyết định, contracts, và business rules; code chi tiết nằm ở codebase.
 
-Writing rule: specs focus on decisions, contracts, and business rules; large code snippets belong in the codebase (or separate examples), not in these documents.
+Template rule (áp dụng cho tất cả specs): Purpose / Scope / Decisions / Contracts / Failure modes / Acceptance criteria.
 
-Template rule (applies to all specs): Purpose / Scope / Decisions / Contracts / Failure modes / Acceptance criteria.
+## Reading Guide (for agents)
 
-## 📁 Specifications
+- Bắt đầu với: `00-overview/solution-decisions.md`
+- Khi làm HTTP API: đọc `10-contracts/api-conventions.md` + `10-contracts/errors.md`
+- Khi làm integration Main App ↔ Grading Service: đọc `10-contracts/queue-contracts.md` + `40-platform/reliability.md`
+- Khi làm real-time: đọc `10-contracts/sse.md` + `30-data/database-schema.md`
+- Khi làm auth/rate limit: đọc `40-platform/authentication.md` + `40-platform/rate-limiting.md`
+- Khi làm business rules: đọc `20-domain/submission-lifecycle.md` + `20-domain/hybrid-grading.md`
+- Khi debug duplicate/race: đọc `40-platform/idempotency-concurrency.md`
 
-| File | Description |
-|------|-------------|
-| [solution-decisions.vi.md](./solution-decisions.vi.md) | Architectural decisions, chosen technologies, rationale, and scope boundaries |
-| [queue-contracts.vi.md](./queue-contracts.vi.md) | RabbitMQ topology, message schemas, and idempotency rules |
-| [reliability.vi.md](./reliability.vi.md) | Outbox pattern, retry policies, DLQ handling, and circuit breakers |
-| [authentication.vi.md](./authentication.vi.md) | JWT access/refresh, RBAC, refresh token rotation, and device limits |
-| [rate-limiting.vi.md](./rate-limiting.vi.md) | Rate limiting rules, tiers, Redis storage, and endpoint-specific limits |
-| [deployment.vi.md](./deployment.vi.md) | Docker Compose configuration, environment variables, and deployment commands |
-| [sse.vi.md](./sse.vi.md) | SSE real-time events, grading progress/result push, reconnection |
+## Specs Map
 
-## 📖 Related Documentation
+### 00-overview
 
-- **Flow Diagrams**: [../diagrams/flow-diagrams.vi.md](../diagrams/flow-diagrams.vi.md) - System architecture and process flows
-- **Flow Diagrams (English)**: [../diagrams/flow-diagrams.md](../diagrams/flow-diagrams.md) - English version of flow diagrams
-- **Reports**: [../reports/VI/report1-project-introduction.md](../reports/VI/report1-project-introduction.md) - Project introduction and requirements
+- [solution-decisions.md](./00-overview/solution-decisions.md) - Decisions, scope boundaries, architecture overview
 
-## 🔗 Quick Reference
+### 10-contracts
 
-### Architecture Overview
+- [api-conventions.md](./10-contracts/api-conventions.md) - HTTP conventions (pagination, idempotency, OpenAPI)
+- [errors.md](./10-contracts/errors.md) - Error envelope + stable error codes
+- [api-endpoints.md](./10-contracts/api-endpoints.md) - REST resource catalog (surface overview)
+- [queue-contracts.md](./10-contracts/queue-contracts.md) - RabbitMQ topology + message schemas + idempotency at service boundary
+- [sse.md](./10-contracts/sse.md) - SSE events + reconnection/replay semantics
 
-```mermaid
-flowchart LR
-  client[Clients\nWeb / Mobile] --> bun[Bun + Elysia\nMain App]
+### 20-domain
 
-  bun -->|SQL| mainDb[(PostgreSQL\nMainDB)]
-  bun -->|Cache / Rate limit| redis[(Redis)]
+- [submission-lifecycle.md](./20-domain/submission-lifecycle.md) - Submission state machine + SLA timeout + late callback rule
+- [hybrid-grading.md](./20-domain/hybrid-grading.md) - Hybrid grading (AI+Human) + confidence routing
+- [review-workflow.md](./20-domain/review-workflow.md) - Human review queue + finalization rules
+- [progress-tracking.md](./20-domain/progress-tracking.md) - Progress metrics + learning path rules
+- [adaptive-scaffolding.md](./20-domain/adaptive-scaffolding.md) - Scaffolding stages + progression rules
 
-  bun -->|AMQP\ngrading.request| rabbit[(RabbitMQ)]
-  rabbit -->|grading.request| worker[Python + Celery\nGrading Worker]
-  worker -->|SQL| gradingDb[(PostgreSQL\nGradingDB)]
-  worker -->|AMQP\ngrading.callback| rabbit
-  rabbit -->|grading.callback| bun
+### 30-data
 
-  worker --> llm[LLM Provider]
-  worker --> stt[STT Provider]
-```
+- [database-schema.md](./30-data/database-schema.md) - MainDB/GradingDB/Redis entities + ownership rules
 
-### Key Technologies
+### 40-platform
 
-| Component | Technology |
-|-----------|------------|
-| Main App | Bun + Elysia (TypeScript) |
-| Grading Service | Python + Celery |
-| Message Queue | RabbitMQ (AMQP) |
-| Cache / Rate limit | Redis |
-| Database | PostgreSQL (separate MainDB/GradingDB) |
-| Real-time | SSE (Server-Sent Events) |
-| Auth | JWT (Access + Refresh) |
+- [authentication.md](./40-platform/authentication.md) - JWT access/refresh + rotation + device limits
+- [idempotency-concurrency.md](./40-platform/idempotency-concurrency.md) - Dedup + race condition rules (HTTP/AMQP/DB)
+- [rate-limiting.md](./40-platform/rate-limiting.md) - Rate limit tiers + Redis keys
+- [reliability.md](./40-platform/reliability.md) - Outbox + retry/DLQ + circuit breaker + timeout scheduler
+
+### 50-ops
+
+- [deployment.md](./50-ops/deployment.md) - Docker Compose + env vars + run commands
+- [observability.md](./50-ops/observability.md) - Logs/metrics/correlation for async grading
+- [data-retention-privacy.md](./50-ops/data-retention-privacy.md) - Retention baselines + privacy rules
+- [migrations-backup-dr.md](./50-ops/migrations-backup-dr.md) - Migrations + backup/restore runbook baseline
+
+## Related Documentation
+
+- Flow diagrams (VI): `../diagrams/flow-diagrams.vi.md`
+- Flow diagrams (EN): `../diagrams/flow-diagrams.md`
+- Reports: `../reports/VI/report1-project-introduction.md`
 
 ---
 
-*Document version: 1.1 - Last updated: SP26SE145*
+*Document version: 1.4 - Last updated: SP26SE145*
