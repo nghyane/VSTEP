@@ -1,81 +1,145 @@
 # VSTEP Adaptive Learning System - Flow Diagrams
 
-## 1. System Architecture Overview
+## 1. System Architecture (Multi-Language)
 
 ```mermaid
 flowchart TB
     subgraph Users ["Users"]
-        L["Learner<br/>Practice, Mock Tests, Track Progress"]
-        I["Instructor<br/>Grade Writing/Speaking, Monitor Progress"]
-        A["Admin<br/>Manage Users, Content, Analytics"]
+        L["Learner<br/>Practice, Mock Test, Progress"]
+        I["Instructor<br/>Grading, Monitoring"]
+        A["Admin<br/>User & Content Management"]
     end
 
-    subgraph Frontend ["Frontend Layer"]
-        W["Web App<br/>React/Next.js, Full Features"]
-        P["PWA<br/>Mobile Browser Access"]
-        M["Mobile App<br/>Android Native"]
+    subgraph BunApp ["Bun Main Application"]
+        subgraph API ["API Layer"]
+            Auth["Authentication<br/>JWT, OAuth 2.0"]
+            Validate["Request Validation<br/>Input sanitization"]
+            Route["REST API<br/>Resource-oriented endpoints"]
+        end
+
+        subgraph Core ["Core Modules"]
+            Assessment["Assessment<br/>Practice, Mock, Submission"]
+            Progress["Progress<br/>Spider Chart, Sliding Window"]
+            Content["Content<br/>Question Bank, Recommender"]
+        end
+
+        subgraph QueueClient ["Queue Client"]
+            Enqueue["Job Publisher<br/>Redis Streams/RabbitMQ"]
+            Poller["Status Poller<br/>Job completion check"]
+        end
     end
 
-    subgraph Gateway ["API Gateway"]
-        G["API Gateway<br/>Auth, Rate Limiting, Routing"]
+    subgraph QueueInfra ["Message Queue"]
+        Stream["Redis Streams<br/>Consumer groups"]
+        Topics["Topics:<br/>grading.request, grading.callback"]
     end
 
-    subgraph Core ["Core Services"]
-        PM["Practice Mode<br/>Adaptive Exercises, Scaffolding"]
-        MM["Mock Test Mode<br/>Full Exam Simulation"]
-        AE["Adaptive Engine<br/>Personalized Learning Path"]
-        PT["Progress Tracking<br/>Spider Chart, Sliding Window"]
+    subgraph GradingService ["Grading Service (Python/Rust/Go)"]
+        subgraph GradingAPI ["Grading API"]
+            Receive["Job Receiver<br/>Validate, idempotency check"]
+            Router["Task Router<br/>Essay → LLM, Speech → STT"]
+        end
+
+        subgraph GradingCore ["Grading Core"]
+            LLMGrader["LLM Grader<br/>GPT/Gemini (Writing)"]
+            STTGrader["STT Grader<br/>Whisper/API (Speaking)"]
+            Scorer["Scorer Engine<br/>Rubric, confidence calc"]
+        end
+
+        subgraph GradingDB ["Grading Storage"]
+            JobDB["Job State<br/>Pending, Processing, Done"]
+            ResultDB["Results<br/>Scores, Feedback, Diagnostics"]
+        end
     end
 
-    subgraph Grading ["Grading Services"]
-        AI["AI Grading Engine<br/>LLM (GPT/Gemini), Speech-to-Text"]
-        HG["Human Grading Portal<br/>Instructor Review, Override"]
+    subgraph External ["External Services"]
+        LLMs["LLM APIs<br/>GPT-4, Gemini Pro"]
+        STT APIs["Speech-to-Text<br/>Whisper, Azure"]
+    end
+
+    subgraph Observability ["Observability"]
+        Logs["Structured Logs<br/>JSON, level-based"]
+        Metrics["Metrics<br/>Prometheus format"]
+        Traces["Distributed Traces<br/>OpenTelemetry"]
     end
 
     subgraph Data ["Data Layer"]
-        DB["PostgreSQL<br/>Users, Questions, Results"]
-        C["Redis<br/>Session, Cache"]
-        F["S3/Cloud Storage<br/>Audio Files, User Uploads"]
+        MainDB["PostgreSQL<br/>Users, Content, Progress (Main App)"]
+        GradingDB["PostgreSQL<br/>Grading Jobs, Results (Grading Service)"]
+        Redis["Redis<br/>Session, Cache, Queue metadata"]
     end
 
+    %% Styling
     classDef users fill:#1565c0,stroke:#0d47a1,color:#fff
-    classDef frontend fill:#6a1b9a,stroke:#4a148c,color:#fff
-    classDef gateway fill:#e65100,stroke:#bf360c,color:#fff
+    classDef api fill:#e65100,stroke:#bf360c,color:#fff
     classDef core fill:#2e7d32,stroke:#1b5e20,color:#fff
-    classDef grading fill:#c62828,stroke:#b71c1c,color:#fff
+    classDef queue fill:#ff8f00,stroke:#ff6f00,color:#fff
+    classDef service fill:#6a1b9a,stroke:#4a148c,color:#fff
+    classDef external fill:#00796b,stroke:#004d40,color:#fff
+    classDef observability fill:#455a64,stroke:#37474f,color:#fff
     classDef data fill:#37474f,stroke:#263238,color:#fff
 
     class L,I,A users
-    class W,P,M frontend
-    class G gateway
-    class PM,MM,AE,PT core
-    class AI,HG grading
-    class DB,C,F data
+    class Auth,Validate,Route,Enqueue,Poller api
+    class Assessment,Progress,Content core
+    class Stream,Topics queue
+    class Receive,Router,LLMGrader,STTGrader,Scorer,JobDB,ResultDB service
+    class LLMs,STT APIs external
+    class Logs,Metrics,Traces observability
+    class MainDB,GradingDB,Redis data
 
-    L --> W
-    L --> P
-    L --> M
-    I --> W
-    I --> P
-    A --> W
-    W --> G
-    P --> G
-    M --> G
-    G --> PM
-    G --> MM
-    G --> AE
-    G --> PT
-    PM --> AI
-    MM --> AI
-    MM --> HG
-    PM --> HG
-    AI --> DB
-    HG --> DB
-    AE --> DB
-    PT --> DB
-    AI --> F
-    HG --> F
+    %% User flows
+    L --> Web["Web/PWA"]
+    L --> Mobile["Mobile App"]
+    Web --> Auth
+    Mobile --> Auth
+    Auth --> Route
+    Route --> Assessment
+    Route --> Progress
+    Route --> Content
+
+    %% Submission flow
+    Assessment --> Enqueue
+    Enqueue --> Stream
+    Stream --> Topics
+    Topics --> Receive
+    Receive --> Router
+    Router --> LLMGrader
+    Router --> STTGrader
+    LLMGrader --> LLMs
+    STTGrader --> STT APIs
+    LLMs --> Scorer
+    STT APIs --> Scorer
+    Scorer --> JobDB
+    Scorer --> ResultDB
+    JobDB --> Poller
+    ResultDB --> Poller
+
+    %% Results return
+    Poller --> Progress
+    Progress --> MainDB
+    Content --> MainDB
+    Assessment --> MainDB
+
+    %% Observability
+    Route --> Logs
+    Assessment --> Traces
+    Receive --> Traces
+    Scorer --> Traces
+    Traces --> Metrics
+    Metrics --> Redis
 ```
+
+> **Multi-Language Architecture:**
+> - **Main App (Bun)**: API, Auth, Assessment, Progress, Content - TypeScript
+> - **Grading Service (Python/Rust/Go)**: AI Grading, STT, Scoring - ML-optimized language
+> - **Communication**: REST + Queue (Redis Streams/RabbitMQ) with idempotency
+> - **Database**: Fully separated - Main DB vs Grading DB
+>
+> **Principles:**
+> - Grading request → enqueue → async processing → poll callback → update progress
+> - Strict API contract with `requestId` for idempotency
+> - Separate schemas, no cross-service writes
 
 ## 2. User Journey Flow
 
@@ -83,22 +147,23 @@ flowchart TB
 flowchart LR
     Start(["Start"])
     Reg["Registration<br/>Email, OAuth (Google)"]
-    Profile["Profile Setup<br/>Role, Goals, Current Level"]
-    Placement["Placement Test<br/>4 Skills Assessment"]
+    Profile["Profile Setup<br/>Role, Goals"]
+    GoalSet["Goal Setting<br/>Target Level, Timeline"]
+    SelfAssess["Self-Assessment (Optional)<br/>3-5 min, estimated level"]
     Select["Select Mode<br/>Practice or Mock Test"]
     Practice["Practice Mode<br/>Adaptive Scaffolding"]
     Mock["Mock Test<br/>Full Exam Simulation"]
     Feedback["Feedback & Results<br/>AI + Human Grading"]
     Progress["Progress Tracking<br/>Spider Chart, Sliding Window"]
     GoalCheck{"Goal<br/>Achieved?"}
-    GoalSet["Goal Setting<br/>Target Level, Timeline"]
+    Placement["Placement Test (Optional)<br/>Full 4-skill assessment"]
     End(["End"])
 
     Start --> Reg
     Reg --> Profile
-    Profile --> Placement
-    Placement --> GoalSet
-    GoalSet --> Select
+    Profile --> GoalSet
+    GoalSet --> SelfAssess
+    SelfAssess --> Select
     Select --> Practice
     Select --> Mock
     Practice --> Feedback
@@ -108,16 +173,18 @@ flowchart LR
     GoalSet --> GoalCheck
     GoalCheck -->|No| Select
     GoalCheck -->|Yes| End
+    SelfAssess -.->|Later| Placement
 
     classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
     classDef process fill:#1976d2,stroke:#0d47a1,color:#fff
     classDef decision fill:#f57c00,stroke:#e65100,color:#fff
     classDef outcome fill:#7b1fa2,stroke:#4a148c,color:#fff
+    classDef optional fill:#78909c,stroke:#546e7a,color:#fff,stroke-dasharray: 5 5
 
     class Start,End start
-    class Reg,Profile,Placement,Practice,Mock,Feedback,Progress,GoalSet process
+    class Reg,Profile,GoalSet,SelfAssess,Practice,Mock,Feedback,Progress,Select process
     class GoalCheck decision
-    class GoalAchieved outcome
+    class Placement optional
 ```
 
 ## 3. Practice Mode Flow with Adaptive Scaffolding
@@ -343,18 +410,24 @@ flowchart TB
         SpeakingSubmit["Speaking Submission<br/>Audio recording"]
     end
 
-    subgraph AI ["AI Grading Pipeline"]
+    subgraph AI_Writing ["AI Grading - Writing"]
+        W_Grammar["Grammar Analysis<br/>Errors, Complexity"]
+        W_Vocab["Vocabulary Analysis<br/>Range, Accuracy"]
+        W_Content["Content Analysis<br/>Relevance, Coverage, Coherence"]
+        W_Score["Writing Score<br/>Confidence calculated"]
+    end
+
+    subgraph AI_Speaking ["AI Grading - Speaking"]
         Transcribe["Speech-to-Text<br/>Convert audio to text"]
-        Grammar["Grammar Analysis<br/>Errors, Complexity"]
-        Vocab["Vocabulary Analysis<br/>Range, Accuracy"]
-        Content["Content Analysis<br/>Relevance, Coverage"]
-        Fluency["Fluency Assessment<br/>Pace, Pauses (Speaking)"]
-        Pronunciation["Pronunciation<br/>Phonetic accuracy (Speaking)"]
-        ScoreAI["AI Score<br/>Confidence level calculated"]
+        S_Fluency["Fluency Assessment<br/>Pace, Pauses"]
+        S_Pronunciation["Pronunciation<br/>Phonetic accuracy"]
+        S_Content["Content Analysis<br/>Relevance, Coverage"]
+        S_Score["Speaking Score<br/>Confidence calculated"]
     end
 
     subgraph Scoring ["Scoring"]
-        Confidence{"Confidence<br/>Score > 85?"}
+        Confidence{"Confidence<br/>Score > 85%?"}
+        NoteConfidence("Weighted score:<br/>- Model self-consistency<br/>- Rule checks<br/>- Length validation<br/>- Templated detection<br/><br/><i>Note: Confidence is heuristic, not ML probability</i>")
         AutoPass["Auto-Grade<br/>High confidence"]
         HumanReview["Human Review<br/>Low confidence, Flagged"]
     end
@@ -369,39 +442,51 @@ flowchart TB
     subgraph Final ["Final Output"]
         Feedback["Detailed Feedback<br/>Strengths, Weaknesses"]
         Suggestion["Suggestions<br/>Improvement areas"]
-        Certificate["Certificate<br/>If passing score"]
+        Badge["Completion Badge / Report PDF"]
     end
 
-    WritingSubmit --> Transcribe
+    %% Writing flow (no Transcribe)
+    WritingSubmit --> W_Grammar
+    W_Grammar --> W_Vocab
+    W_Vocab --> W_Content
+    W_Content --> W_Score
+
+    %% Speaking flow (needs Transcribe)
     SpeakingSubmit --> Transcribe
-    Transcribe --> Grammar
-    Grammar --> Vocab
-    Vocab --> Content
-    Content --> Fluency
-    Fluency --> Pronunciation
-    Pronunciation --> ScoreAI
-    ScoreAI --> Confidence
+    Transcribe --> S_Fluency
+    Transcribe --> S_Content
+    S_Fluency --> S_Pronunciation
+    S_Pronunciation --> S_Score
+
+    %% Confidence check
+    W_Score --> Confidence
+    S_Score --> Confidence
     Confidence -->|Yes| AutoPass
     Confidence -->|No| HumanReview
+    NoteConfidence -.-> Confidence
+
+    %% Final flow
     AutoPass --> Feedback
     HumanReview --> Instructor
     Instructor --> Rubric
     Rubric --> Override
     Override --> ScoreFinal
     ScoreFinal --> Suggestion
-    Suggestion --> Certificate
+    Suggestion --> Badge
 
     classDef submission fill:#1976d2,stroke:#0d47a1,color:#fff
     classDef ai fill:#00796b,stroke:#004d40,color:#fff
     classDef scoring fill:#fbc02d,stroke:#f57f17,color:#000
     classDef human fill:#5d4037,stroke:#3e2723,color:#fff
     classDef final fill:#303f9f,stroke:#1a237e,color:#fff
+    classDef note fill:#546e7a,stroke:#37474f,color:#fff
 
     class WritingSubmit,SpeakingSubmit submission
-    class Transcribe,Grammar,Vocab,Content,Fluency,Pronunciation,ScoreAI ai
-    class Confidence,AutoPass,HumanReview scoring
+    class W_Grammar,W_Vocab,W_Content,W_Score ai
+    class Transcribe,S_Fluency,S_Pronunciation,S_Content,S_Score ai
+    class Confidence,AutoPass,HumanReview,NoteConfidence scoring
     class Instructor,Rubric,Override,ScoreFinal human
-    class Feedback,Suggestion,Certificate final
+    class Feedback,Suggestion,Badge final
 ```
 
 ## 6. Progress Tracking & Learning Path Flow
@@ -425,7 +510,6 @@ flowchart TB
     subgraph SlidingWindow ["Sliding Window Analytics"]
         Window["Moving Average<br/>Last 10 attempts"]
         Trend["Trend Detection<br/>Improving, Stable, Declining"]
-        Prediction["Performance Prediction<br/>Expected score range"]
     end
 
     subgraph LearningPath ["Learning Path Generation"]
@@ -441,19 +525,20 @@ flowchart TB
         Notification["Notifications<br/>Milestones, Reminders"]
     end
 
-    Scores --> DataCollection
-    Attempts --> DataCollection
-    Time --> DataCollection
-    Accuracy --> DataCollection
-    DataCollection --> Skills
-    DataCollection --> Window
+    Scores --> Skills
+    Scores --> Window
+    Attempts --> Skills
+    Attempts --> Window
+    Time --> Skills
+    Time --> Window
+    Accuracy --> Skills
+    Accuracy --> Window
     Skills --> Gap
     Gap --> Priority
     Window --> Trend
-    Trend --> Prediction
     Priority --> Path
-    Prediction --> Timeline
-    Path --> Adjust
+    Path --> Timeline
+    Timeline --> Adjust
     Skills --> Dashboard
     Window --> Dashboard
     Gap --> Report
@@ -468,7 +553,7 @@ flowchart TB
 
     class Scores,Attempts,Time,Accuracy data
     class Skills,Levels,Gap,History spider
-    class Window,Trend,Prediction sliding
+    class Window,Trend sliding
     class Priority,Path,Timeline,Adjust path
     class Dashboard,Report,Notification viz
 ```
@@ -480,7 +565,6 @@ flowchart TB
     subgraph Auth ["Authentication"]
         Login["Login Page<br/>Email/Password"]
         OAuth["OAuth 2.0<br/>Google SSO"]
-        MFA["Multi-Factor Auth<br/>Optional, Recommended"]
         Token["JWT Token<br/>Access + Refresh tokens"]
     end
 
@@ -490,7 +574,7 @@ flowchart TB
         Refresh["Token Refresh<br/>Before expiry"]
     end
 
-    subgraph RBAC ["Role-Based Access"]
+    subgraph RBAC ["Role-Based Access Control"]
         Roles["Role Assignment<br/>Learner, Instructor, Admin"]
         Permissions["Permission Matrix<br/>Based on role"]
         Check["Permission Check<br/>Each request"]
@@ -511,7 +595,6 @@ flowchart TB
 
     Login --> Token
     OAuth --> Token
-    MFA --> Token
     Token --> Validate
     Validate --> Session
     Session --> Refresh
@@ -536,7 +619,7 @@ flowchart TB
     classDef resources fill:#6a1b9a,stroke:#4a148c,color:#fff
     classDef session fill:#455a64,stroke:#37474f,color:#fff
 
-    class Login,OAuth,MFA,Token auth
+    class Login,OAuth,Token auth
     class Validate,Session,Refresh verify
     class Roles,Permissions,Check rbac
     class PracticeRes,MockRes,GradingRes,AdminRes permissions
@@ -547,15 +630,17 @@ flowchart TB
 
 | Diagram | Purpose | Key Components |
 |---------|---------|----------------|
-| **System Architecture** | High-level system design | Frontend, API Gateway, Core Services, Grading, Data Layer |
-| **User Journey** | Learner lifecycle | Registration → Placement → Practice/Mock Test → Progress |
-| **Practice Mode - Writing** | Writing skill scaffolding | Template → Keywords → Free Writing |
-| **Practice Mode - Listening** | Listening skill scaffolding | Full Text → Highlights → Pure Audio |
+| **System Architecture** | Multi-Language Services | Bun (API/Core) + Python/Rust/Go (Grading) - Separate DB, Queue-based communication |
+| **User Journey** | Learner lifecycle | Registration → Goal → Self-Assessment → Practice/Mock Test |
+| **Practice Mode - Writing** | Writing adaptive scaffolding | Template → Keywords → Free Writing |
+| **Practice Mode - Listening** | Listening adaptive scaffolding | Full Text → Highlights → Pure Audio |
 | **Mock Test Flow** | Full exam simulation | 4 Sections, Timer, Scoring, Results Report |
 | **Hybrid Grading** | AI + Human evaluation | AI Instant → Human Override → Final Score |
 | **Progress Tracking** | Analytics & visualization | Spider Chart, Sliding Window, Learning Path |
 | **Authentication & RBAC** | Security & access control | JWT, OAuth, Role-based permissions |
 
 ---
+
+**System Summary:** The system prioritizes reducing friction for learners by allowing goal selection first, then using self-assessment and initial behavioral data to gradually calibrate learning levels over time, rather than relying on a single placement test.
 
 *Document generated for VSTEP Adaptive Learning System (SP26SE145)*
