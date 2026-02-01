@@ -4,6 +4,75 @@
 
 Chốt các quy tắc reliability để hệ thống chấm (Bun <-> RabbitMQ <-> Python/Celery) chạy ổn định: không mất job, chống duplicate, có retry/DLQ, và xử lý timeout/late-result nhất quán.
 
+## Reliability Flow
+
+```mermaid
+flowchart TB
+    subgraph Submission["Submission Creation"]
+        Create["Create Submission<br/>Status: PENDING"]
+        Outbox["Write to Outbox<br/>pending status"]
+    end
+
+    subgraph Relay["Outbox Relay"]
+        Poll["Poll Outbox<br/>every 5s"]
+        Publish["Publish to<br/>grading.request"]
+        Mark["Mark Published"]
+    end
+
+    subgraph Worker["Celery Worker"]
+        Receive["Receive Job"]
+        Dedup{"Check requestId"}
+        Process["Process Grading"]
+        Retry{"Failed?<br/>Retry < 3?"}
+        Backoff["Exponential Backoff<br/>2^n + jitter"]
+        DLQ["Send to DLQ"]
+    end
+
+    subgraph Timeout["Timeout Handling"]
+        CheckDeadline{"now > deadlineAt?"}
+        MarkFailed["Mark FAILED<br/>TIMEOUT"]
+        StoreLate["Store Late Result<br/>isLate=true"]
+    end
+
+    subgraph Callback["Callback Flow"]
+        SendCb["Send Callback"]
+        ReceiveCb["Receive Callback"]
+        CheckLate{"Callback Late?"}
+        Update["Update Status<br/>COMPLETED"]
+    end
+
+    Create --> Outbox
+    Outbox --> Poll
+    Poll --> Publish
+    Publish --> Mark
+    Publish --> Receive
+    Receive --> Dedup
+    Dedup -->|New| Process
+    Dedup -->|Duplicate| Ignore["Ignore"]
+    Process -->|Success| SendCb
+    Process -->|Fail| Retry
+    Retry -->|Yes| Backoff
+    Backoff --> Receive
+    Retry -->|No| DLQ
+    SendCb --> ReceiveCb
+    ReceiveCb --> CheckDeadline
+    CheckDeadline -->|Yes| MarkFailed
+    CheckDeadline -->|No| CheckLate
+    MarkFailed -->|Late callback| StoreLate
+    CheckLate -->|No| Update
+
+    classDef bun fill:#e65100,stroke:#bf360c,color:#fff
+    classDef relay fill:#ff8f00,stroke:#ff6f00,color:#fff
+    classDef worker fill:#6a1b9a,stroke:#4a148c,color:#fff
+    classDef timeout fill:#c62828,stroke:#b71c1c,color:#fff
+    classDef success fill:#2e7d32,stroke:#1b5e20,color:#fff
+
+    class Create,Outbox,Poll,Mark bun
+    class Publish,ReceiveCb,CheckLate,Update relay
+    class Receive,Dedup,Process,Retry,Backoff,DLQ,Ignore,SendCb worker
+    class CheckDeadline,MarkFailed,StoreLate timeout
+```
+
 ## Scope
 
 - Outbox pattern ở MainDB (publish `grading.request` reliable).

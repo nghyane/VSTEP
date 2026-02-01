@@ -4,6 +4,45 @@
 
 Chốt hợp đồng message giữa Bun Main App và Python Grading Service qua RabbitMQ để 2 bên implement độc lập nhưng không vênh.
 
+## Queue Topology
+
+```mermaid
+flowchart TB
+    subgraph BunApp["Bun Main App"]
+        Publisher["Job Publisher"]
+        CallbackHandler["Callback Handler"]
+    end
+
+    subgraph RabbitMQ["RabbitMQ"]
+        Exchange["vstep.exchange<br/>direct"]
+        ReqQueue["grading.request<br/>durable"]
+        CbQueue["grading.callback<br/>durable"]
+        DLQ["grading.dlq<br/>durable"]
+    end
+
+    subgraph GradingService["Python Grading Service"]
+        Consumer["Celery Consumer"]
+        CallbackPublisher["Callback Publisher"]
+    end
+
+    Publisher -->|routing_key:<br/>grading.request| Exchange
+    Exchange --> ReqQueue
+    Exchange --> CbQueue
+    Exchange -.->|max retry<br/>exceeded| DLQ
+    ReqQueue --> Consumer
+    Consumer -->|process| CallbackPublisher
+    CallbackPublisher -->|routing_key:<br/>grading.callback| Exchange
+    CbQueue --> CallbackHandler
+
+    classDef bun fill:#e65100,stroke:#bf360c,color:#fff
+    classDef rabbit fill:#ff8f00,stroke:#ff6f00,color:#fff
+    classDef python fill:#6a1b9a,stroke:#4a148c,color:#fff
+
+    class Publisher,CallbackHandler bun
+    class Exchange,ReqQueue,CbQueue,DLQ rabbit
+    class Consumer,CallbackPublisher python
+```
+
 ## Scope
 
 - RabbitMQ topology: exchange/queues cho `grading.request`, `grading.callback`, `grading.dlq`.

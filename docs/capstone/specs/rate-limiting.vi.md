@@ -4,6 +4,71 @@
 
 Chốt quy tắc rate limiting để bảo vệ API khỏi abuse, brute-force attacks, và đảm bảo fair usage giữa các users.
 
+## Rate Limiting Flow
+
+```mermaid
+flowchart TB
+    subgraph Request["Incoming Request"]
+        Client["Client"]
+        Identify["Identify Client<br/>IP or User ID"]
+        CheckAuth{"Authenticated?"}
+    end
+
+    subgraph Tiers["Rate Limit Tiers"]
+        Anonymous["Anonymous<br/>30 req/min"]
+        Learner["Learner<br/>100 req/min"]
+        Premium["Premium<br/>300 req/min"]
+        Admin["Admin<br/>500 req/min"]
+    end
+
+    subgraph TokenBucket["Token Bucket Algorithm"]
+        CheckBucket{"Tokens<br/>Available?"}
+        Consume["Consume 1 Token"]
+        Reject["Reject Request<br/>429 Too Many Requests"]
+        AddHeaders["Add Rate Limit Headers"]
+    end
+
+    subgraph Redis["Redis Storage"]
+        Key["Key:<br/>ratelimit:{scope}:{id}"]
+        TTL["TTL: 1 minute"]
+    end
+
+    Client --> Identify
+    Identify --> CheckAuth
+    CheckAuth -->|No| Anonymous
+    CheckAuth -->|Yes| CheckRole{"Check Role"}
+    CheckRole -->|Learner| Learner
+    CheckRole -->|Premium| Premium
+    CheckRole -->|Admin| Admin
+
+    Anonymous --> CheckBucket
+    Learner --> CheckBucket
+    Premium --> CheckBucket
+    Admin --> CheckBucket
+
+    CheckBucket -->|Yes| Consume
+    CheckBucket -->|No| Reject
+    Consume --> Key
+    Key --> TTL
+    TTL --> AddHeaders
+    AddHeaders -->|X-RateLimit-*| Process["Process Request"]
+    Reject -->|Retry-After| ClientError["Return 429"]
+
+    classDef client fill:#1976d2,stroke:#0d47a1,color:#fff
+    classDef tier fill:#388e3c,stroke:#1b5e20,color:#fff
+    classDef bucket fill:#ff8f00,stroke:#ff6f00,color:#fff
+    classDef reject fill:#c62828,stroke:#b71c1c,color:#fff
+    classDef success fill:#2e7d32,stroke:#1b5e20,color:#fff
+    classDef redis fill:#37474f,stroke:#263238,color:#fff
+
+    class Client,Identify,CheckAuth,CheckRole client
+    class Anonymous,Learner,Premium,Admin tier
+    class CheckBucket,Consume,AddHeaders bucket
+    class Reject,ClientError reject
+    class Process success
+    class Key,TTL redis
+```
+
 ## Scope
 
 - Rate limiting cho Bun Main App (Elysia).

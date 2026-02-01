@@ -12,7 +12,7 @@ flowchart TB
 
     subgraph BunApp ["Bun Main Application"]
         subgraph API ["API Layer"]
-            Auth["Authentication<br/>Session Cookie, RBAC"]
+            Auth["Authentication<br/>JWT (Access + Refresh), RBAC"]
             Validate["Request Validation<br/>Input sanitization"]
             Route["REST API<br/>Resource-oriented endpoints"]
         end
@@ -68,7 +68,7 @@ flowchart TB
     subgraph Data ["Data Layer"]
         MainDB["PostgreSQL<br/>Users, Content, Progress (Main App)"]
         GradingDB["PostgreSQL<br/>Grading Jobs, Results (Grading Service)"]
-        Redis["Redis<br/>Session, Cache, Queue metadata"]
+        Redis["Redis<br/>Cache, Rate limiting"]
     end
 
     %% Styling
@@ -434,7 +434,7 @@ flowchart TB
 
     subgraph Scoring ["Scoring"]
         Confidence{"Confidence<br/>Score > 85%?"}
-        NoteConfidence("Weighted score:<br/>- Model self-consistency<br/>- Rule checks<br/>- Length validation<br/>- Templated detection<br/><br/><i>Note: Confidence is heuristic, not ML probability</i>")
+        NoteConfidence("Weighted score:<br/>- Model self-consistency<br/>- Rule checks<br/>- Length validation<br/>- Templated detection<br/><br/>Note: Confidence is heuristic,<br/>not ML probability")
         AutoPass["Auto-Grade<br/>High confidence"]
         HumanReview["Human Review<br/>Low confidence, Flagged"]
     end
@@ -572,12 +572,15 @@ flowchart TB
     subgraph Auth ["Authentication"]
         Login["Login Page<br/>Email/Password"]
         OAuth["OAuth (Optional)<br/>Google SSO"]
-        SessionCookie["Session Cookie<br/>HTTP-only, signed"]
+        AccessToken["JWT Access Token<br/>Short-lived"]
+        RefreshToken["Refresh Token<br/>Long-lived, rotate"]
     end
 
     subgraph Verify ["Verification"]
-        ValidateSession["Validate Session<br/>Cookie signature + Redis lookup"]
-        SessionStore["Session Store<br/>Redis (TTL)"]
+        ValidateAccess["Validate Access JWT<br/>Signature, exp, role"]
+        Refresh["Refresh Endpoint<br/>Rotate refresh token"]
+        RefreshStore["Refresh Token Store<br/>MainDB (hash)"]
+        Logout["Logout<br/>Revoke refresh token"]
     end
 
     subgraph RBAC ["Role-Based Access Control"]
@@ -593,16 +596,27 @@ flowchart TB
         AdminRes["Admin Panel<br/>Admins only"]
     end
 
-    subgraph Session ["Session"]
-        Active["Active Session<br/>User context"]
-        Timeout["Session Timeout<br/>30 min inactivity"]
-        Logout["Logout<br/>Clear session"]
+    subgraph Tokens ["Token Lifecycle"]
+        Active["Active Context<br/>Access token claims"]
+        AccessExp["Access Expired<br/>Refresh required"]
+        Concurrent["Concurrent Devices<br/>Max 3 refresh tokens"]
     end
 
-    Login --> SessionCookie
-    OAuth -.-> SessionCookie
-    SessionCookie --> ValidateSession
-    ValidateSession --> SessionStore
+    Login --> AccessToken
+    Login --> RefreshToken
+    OAuth -.-> AccessToken
+    OAuth -.-> RefreshToken
+    AccessToken --> ValidateAccess
+    ValidateAccess --> Active
+    Active --> AccessExp
+    AccessExp --> Refresh
+    RefreshToken --> Refresh
+    Refresh --> RefreshStore
+    RefreshStore -->|"Rotate"| RefreshToken
+    Refresh --> AccessToken
+    RefreshStore --> Concurrent
+    RefreshToken --> Logout
+    Logout --> RefreshStore
     Roles --> Permissions
     Permissions --> Check
     Check -->|Yes| PracticeRes
@@ -613,8 +627,6 @@ flowchart TB
     MockRes --> Active
     GradingRes --> Active
     AdminRes --> Active
-    Active --> Timeout
-    Timeout -->|Expired| Logout
 
     classDef auth fill:#1565c0,stroke:#0d47a1,color:#fff
     classDef verify fill:#e65100,stroke:#bf360c,color:#fff
@@ -623,11 +635,11 @@ flowchart TB
     classDef resources fill:#6a1b9a,stroke:#4a148c,color:#fff
     classDef session fill:#455a64,stroke:#37474f,color:#fff
 
-    class Login,OAuth,SessionCookie auth
-    class ValidateSession,SessionStore verify
+    class Login,OAuth,AccessToken,RefreshToken auth
+    class ValidateAccess,Refresh,RefreshStore,Logout verify
     class Roles,Permissions,Check rbac
     class PracticeRes,MockRes,GradingRes,AdminRes permissions
-    class Active,Timeout,Logout session
+    class Active,AccessExp,Concurrent session
 ```
 
 ## Diagram Summary
@@ -641,7 +653,7 @@ flowchart TB
 | **Mock Test Flow** | Full exam simulation | 4 Sections, Timer, Scoring, Results Report |
 | **Hybrid Grading** | AI + Human evaluation | AI Instant → Human Override → Final Score |
 | **Progress Tracking** | Analytics & visualization | Spider Chart, Sliding Window, Learning Path |
-| **Authentication & RBAC** | Security & access control | Session cookie (OAuth optional), role-based permissions |
+| **Authentication & RBAC** | Security & access control | JWT access/refresh (OAuth optional), role-based permissions |
 
 ---
 

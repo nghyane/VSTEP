@@ -2,7 +2,62 @@
 
 ## Purpose
 
-Chot baseline deploy (docker compose) de chay local/dev on dinh va co du services cho Bun + Python/Celery + RabbitMQ.
+Tài liệu này chốt Docker Compose và environment variable cho local development để team chạy được cả Bun Main App và Python Grading Service cùng lúc.
+
+## Docker Architecture
+
+```mermaid
+flowchart TB
+    subgraph DockerCompose["Docker Compose Network"]
+        subgraph Data["Data Layer"]
+            PostgresMain["postgres-main:5432<br/>Main Database"]
+            PostgresGrading["postgres-grading:5433<br/>Grading Database"]
+            RedisService["redis:6379<br/>Cache + Rate Limit"]
+        end
+
+        subgraph MessageQueue["Message Queue"]
+            RabbitMQ["rabbitmq:5672<br/>AMQP + Management:15672"]
+        end
+
+        subgraph Apps["Applications"]
+            BunApp["bun-app:3000<br/>Main API"]
+            GradingAPI["python-grading-api:8000<br/>Grading API"]
+            CeleryWorker["python-celery-worker<br/>Background Workers"]
+        end
+    end
+
+    subgraph External["External Services"]
+        OpenAI["OpenAI API<br/>GPT-4, GPT-4o"]
+        STT["STT API<br/>Whisper, Azure"]
+    end
+
+    BunApp -->|DATABASE_URL_MAIN| PostgresMain
+    BunApp -->|REDIS_URL| RedisService
+    BunApp -->|RABBITMQ_URL| RabbitMQ
+    BunApp -->|read/write| PostgresMain
+
+    GradingAPI -->|DATABASE_URL_GRADING| PostgresGrading
+    GradingAPI -->|read| RabbitMQ
+    GradingAPI -->|write| PostgresGrading
+
+    CeleryWorker -->|consume| RabbitMQ
+    CeleryWorker -->|DATABASE_URL_GRADING| PostgresGrading
+    CeleryWorker -->|OPENAI_API_KEY| OpenAI
+    CeleryWorker -->|STT_API_KEY| STT
+
+    RabbitMQ -->|publish| GradingAPI
+    RabbitMQ -->|consume| CeleryWorker
+
+    classDef data fill:#37474f,stroke:#263238,color:#fff
+    classDef queue fill:#ff8f00,stroke:#ff6f00,color:#fff
+    classDef app fill:#e65100,stroke:#bf360c,color:#fff
+    classDef external fill:#1976d2,stroke:#0d47a1,color:#fff
+
+    class PostgresMain,PostgresGrading,RedisService data
+    class RabbitMQ queue
+    class BunApp,GradingAPI,CeleryWorker app
+    class OpenAI,STT external
+```
 
 ## Scope
 

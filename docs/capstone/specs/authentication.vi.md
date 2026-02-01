@@ -4,6 +4,51 @@
 
 Chốt cơ chế xác thực cho Main App theo mô hình JWT (access/refresh) để dùng được cho web + mobile, triển khai nhanh, và không phụ thuộc session state ở server.
 
+## JWT Flow
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant API as Bun API
+    participant DB as MainDB
+    participant Redis as Redis
+
+    %% Login
+    C->>API: POST /login<br/>email + password
+    API->>DB: Validate credentials
+    DB-->>API: User valid
+    API->>DB: Create refresh token record<br/>hash + jti + userId
+    API->>API: Check device limit (max 3)
+    API->>DB: Revoke oldest if needed (FIFO)
+    API-->>C: Access token + Refresh token
+
+    %% Access Protected Resource
+    C->>API: GET /api/resource<br/>Authorization: Bearer {access}
+    API->>API: Verify JWT signature<br/>Check exp
+    API-->>C: Protected data
+
+    %% Token Refresh
+    C->>API: POST /refresh<br/>refresh token
+    API->>DB: Validate refresh token hash
+    API->>DB: Check if revoked
+    DB-->>API: Token valid
+    API->>DB: Rotate: create new refresh token<br/>Mark old as replaced
+    API-->>C: New access + refresh tokens
+
+    %% Logout
+    C->>API: POST /logout<br/>refresh token
+    API->>DB: Revoke refresh token<br/>Set revokedAt
+    API-->>C: 200 OK
+
+    %% Token Reuse Detection
+    Note over C,Redis: Token Reuse Scenario
+    C->>API: POST /refresh<br/>old rotated token
+    API->>DB: Check token status
+    DB-->>API: Token already replaced (reuse!)
+    API->>DB: Revoke ALL user refresh tokens
+    API-->>C: 401 Force re-login
+```
+
 ## Scope
 
 - Main App (Bun + Elysia): login/register, issue token, refresh, logout, RBAC.

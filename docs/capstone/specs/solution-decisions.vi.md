@@ -4,6 +4,70 @@
 
 Tài liệu này chốt các quyết định kiến trúc/boundary để backend implement nhanh, ít vênh giữa Bun Main App và Python Grading Service.
 
+## Architecture Overview
+
+```mermaid
+flowchart TB
+    subgraph Client["Client"]
+        Web["Web App"]
+        Mobile["Mobile App"]
+    end
+
+    subgraph MainApp["Bun Main Application"]
+        API["Elysia API"]
+        Auth["JWT Auth"]
+        QueueClient["Queue Client<br/>RabbitMQ Publisher"]
+    end
+
+    subgraph MessageQueue["Message Queue"]
+        Exchange["vstep.exchange"]
+        ReqQueue["grading.request"]
+        CbQueue["grading.callback"]
+        DLQ["grading.dlq"]
+    end
+
+    subgraph GradingService["Python Grading Service"]
+        FastAPI["FastAPI<br/>Job Receiver"]
+        Celery["Celery Workers"]
+        AI["AI Grading<br/>LLM + STT"]
+    end
+
+    subgraph Data["Data Layer"]
+        MainDB["PostgreSQL<br/>MainDB"]
+        GradingDB["PostgreSQL<br/>GradingDB"]
+        Redis["Redis<br/>Cache + Rate Limit"]
+    end
+
+    Web --> API
+    Mobile --> API
+    API --> Auth
+    API --> QueueClient
+    QueueClient --> Exchange
+    Exchange --> ReqQueue
+    Exchange --> CbQueue
+    Exchange --> DLQ
+    ReqQueue --> FastAPI
+    FastAPI --> Celery
+    Celery --> AI
+    AI --> CbQueue
+    API --> MainDB
+    API --> Redis
+    FastAPI --> GradingDB
+    Celery --> GradingDB
+
+    classDef client fill:#1976d2,stroke:#0d47a1,color:#fff
+    classDef main fill:#e65100,stroke:#bf360c,color:#fff
+    classDef queue fill:#ff8f00,stroke:#ff6f00,color:#fff
+    classDef grading fill:#6a1b9a,stroke:#4a148c,color:#fff
+    classDef data fill:#37474f,stroke:#263238,color:#fff
+
+    class Web,Mobile client
+    class API,Auth,QueueClient main
+    class Exchange,ReqQueue,CbQueue,DLQ queue
+    class FastAPI,Celery,AI grading
+    class MainDB,GradingDB,Redis data
+```
+
 ## Scope
 
 - Main App: Bun + Elysia (TypeScript)
