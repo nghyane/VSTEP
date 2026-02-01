@@ -10,9 +10,10 @@ VSTEP/
 │   ├── backend/     - Bun + Elysia API (Dev 1)
 │   ├── frontend/    - Bun + Vite + React (Dev 2)
 │   └── grading/     - Python + FastAPI + Celery + OpenAI (Dev 3)
-├── docs/            - Documentation & flow diagrams
-├── designs/         - UI/UX designs (Pencil)
-├── sample/          - Sample exam data
+├── docs/            - Documentation, designs, samples
+│   ├── capstone/    - Project docs & flow diagrams
+│   ├── designs/     - UI/UX designs, styles, assets
+│   └── sample/      - Sample exam data
 └── scripts/         - Build scripts
 ```
 
