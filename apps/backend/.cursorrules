@@ -1,0 +1,58 @@
+# Cursor Rules - VSTEP Backend
+
+## Tech Stack
+- **Runtime**: Bun (not Node.js)
+- **Framework**: Elysia
+- **Database**: PostgreSQL + Drizzle ORM
+- **Validation**: Zod
+- **Queue**: Redis + BullMQ
+
+## Code Style
+- Use TypeScript strict mode
+- Prefer `type` over `interface` for object shapes
+- Use Zod for all runtime validation
+- Export schemas from `./src/schemas/`
+- Export types inferred from schemas using `z.infer<typeof Schema>`
+
+## Database
+- Use Drizzle ORM for all DB operations
+- Schema definitions in `./src/db/schema.ts`
+- Migrations with `drizzle-kit`
+- Never use raw SQL unless necessary
+
+## API Design
+- Use Elysia's validation with Zod schemas
+- Prefix all routes with `/api`
+- Group related routes with `.group()`
+- Always include OpenAPI documentation with `.detail()`
+
+## Error Handling
+- Use Elysia's error handling
+- Return consistent error format: `{ error: string, code: string }`
+- Log errors with structured logging
+
+## Environment
+- Use `.env` for configuration
+- Validate env vars with Zod
+- Never commit `.env` file
+
+## Example Pattern
+```typescript
+// Schema definition
+export const UserSchema = z.object({
+  id: z.string().uuid(),
+  email: z.string().email(),
+});
+export type User = z.infer<typeof UserSchema>;
+
+// Route with validation
+new Elysia()
+  .post('/users', 
+    async ({ body }) => { /* handler */ },
+    {
+      body: CreateUserSchema,
+      response: UserSchema,
+      detail: { summary: 'Create user', tags: ['Users'] }
+    }
+  );
+```
