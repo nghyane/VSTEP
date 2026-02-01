@@ -226,7 +226,7 @@ The system creates differentiation with four core advantages and measurable indi
 | # | Advantage | Description | Target Indicator (hypothesis) |
 |---|-----------|-------|------------------------------|
 | 1 | Adaptive Scaffolding | Adjusting support level based on proficiency: Writing (Template - Keywords - Free), Listening (Full text - Highlight - Pure audio) | Skill gap reduction >=30% after 4 weeks |
-| 2 | Hybrid Grading | AI rapid scoring (grammar, spelling, pronunciation) + Human review for productive skills | Feedback latency: <5 minutes (AI), <24 hours (Human) |
+| 2 | Hybrid Grading | AI rapid scoring (grammar, spelling, pronunciation) + Human review for productive skills | AI latency: typically a few minutes; SLA timeout: Writing 20 minutes, Speaking 60 minutes; Human: <24 hours |
 | 3 | Advanced Visualization | Spider Chart (skill deviation) + Sliding Window (average of 10 recent exercises) | User engagement improvement vs. static charts |
 | 4 | Multi-Goal Profiles | Flexible goals: B1 in 1 month - B2 in 3 months | Support >=3 concurrent learning goals |
 
@@ -279,14 +279,14 @@ Quantitative research on 462 Vietnamese university students (Nguyen et al., 2025
 
 **Vision Statement:**
 
-For university students requiring graduation standards, working professionals needing certifications for career advancement, and language centers in Vietnam facing challenges with non-personalized VSTEP preparation methods and slow feedback, the Adaptive VSTEP Preparation Platform is a digital learning platform combining Web and Mobile that provides personalized learning pathways, four-skill assessment with immediate feedback, and progress visualization. Unlike static mock test websites (containing only questions and answers) or general English applications (not aligned with VSTEP), our product combines Adaptive Scaffolding + Hybrid Grading + Analytics to effectively narrow skill gaps.
+For university students requiring graduation standards, working professionals needing certifications for career advancement, and language centers in Vietnam facing challenges with non-personalized VSTEP preparation methods and slow feedback, the Adaptive VSTEP Preparation Platform is a digital learning platform combining Web and Mobile that provides personalized learning pathways, four-skill assessment with rapid AI feedback, and progress visualization. Unlike static mock test websites (containing only questions and answers) or general English applications (not aligned with VSTEP), our product combines Adaptive Scaffolding + Hybrid Grading + Analytics to effectively narrow skill gaps.
 
 **Measurable Vision Targets (hypothesis - to validate in pilot):**
 
 | Indicator | Target | Timeline | Basis |
 |-----------|----------|----------|-------|
 | Skill gap reduction | >=30% | After 4 weeks of usage | Based on research (Wei 2023, Liu & Zu 2024) |
-| Writing feedback latency | <5 minutes (AI) | MVP launch | Technical feasibility |
+| Writing feedback latency | Typically <5 minutes (AI); SLA timeout 20 minutes | MVP launch | Technical feasibility |
 | User satisfaction (NPS) | >=40 | End of pilot | Industry benchmark |
 | Active users retention | >=60% (monthly) | 3 months post-launch | Industry benchmark |
 
@@ -327,7 +327,7 @@ The system is designed with two main modules:
 
 *Focusing on learning experience and AI Grading*
 
-FE-01: User Authentication - Registration, login, profile management with Learner/Instructor/Admin roles. Supporting email/password and OAuth (Google) authentication.
+FE-01: User Authentication - Registration, login, profile management with Learner/Instructor/Admin roles. Email/password authentication; OAuth (Google) is optional.
 
 FE-02: Placement Test - Initial proficiency assessment for four skills (Listening, Speaking, Reading, Writing). Results used to initialize Spider Chart and recommend appropriate learning pathways.
 
@@ -335,9 +335,9 @@ FE-03: Practice Mode - Listening - Listening skill practice with Adaptive Scaffo
 
 FE-04: Practice Mode - Reading - Reading skill practice with VSTEP-format question types: True/False/Not Given, Multiple Choice, Matching Headings, Fill in the Blanks.
 
-FE-05: Practice Mode - Writing + AI Grading - Writing skill practice with AI immediate feedback. Using LLM API (GPT/Gemini) to evaluate grammar, vocabulary, coherence, and task achievement according to VSTEP rubric. Supporting Task 1 (email) and Task 2 (essay).
+FE-05: Practice Mode - Writing + AI Grading - Writing skill practice with fast AI feedback. Using LLM API (GPT/Gemini) to evaluate grammar, vocabulary, coherence, and task achievement according to VSTEP rubric. SLA timeout: 20 minutes.
 
-FE-06: Practice Mode - Speaking + AI Grading - Speaking skill practice with recording and AI feedback. Integrating Speech-to-Text for transcription, then using LLM to evaluate pronunciation, fluency, and content. Including all 3 VSTEP Speaking parts.
+FE-06: Practice Mode - Speaking + AI Grading - Speaking skill practice with recording and AI feedback. Integrating Speech-to-Text for transcription, then using LLM to evaluate pronunciation, fluency, and content. SLA timeout: 60 minutes.
 
 FE-07: Mock Test Mode - Full four-skill mock test following VSTEP format and timing. Results compiled into detailed reports with scores per skill.
 

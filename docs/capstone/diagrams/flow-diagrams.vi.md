@@ -12,7 +12,7 @@ flowchart TB
 
     subgraph BunApp ["Bun Main Application"]
         subgraph API ["API Layer"]
-            Auth["Authentication<br/>JWT, OAuth 2.0"]
+            Auth["Authentication<br/>Session Cookie, RBAC"]
             Validate["Request Validation<br/>Input sanitization"]
             Route["REST API<br/>Resource-oriented endpoints"]
         end
@@ -24,16 +24,17 @@ flowchart TB
         end
 
         subgraph QueueClient ["Queue Client"]
-            Enqueue["Job Publisher<br/>Redis Streams/RabbitMQ"]
+            Enqueue["Job Publisher<br/>RabbitMQ"]
             Poller["Status Poller<br/>Job completion check"]
             Realtime["Real-time Notifier<br/>WebSocket/SSE"]
         end
     end
 
     subgraph QueueInfra ["Message Queue"]
-        Stream["Redis Streams<br/>Consumer groups"]
-        Topics["Topics:<br/>grading.request, grading.callback"]
-        DeadLetter["Dead Letter Queue<br/>Failed jobs"]
+        Broker["RabbitMQ<br/>Exchange + Queues"]
+        QueueReq["Queue: grading.request"]
+        QueueCb["Queue: grading.callback"]
+        DeadLetter["DLQ: grading.dlq"]
     end
 
     subgraph GradingService ["Grading Service (Python/Rust/Go)"]
@@ -48,15 +49,15 @@ flowchart TB
             Scorer["Scorer Engine<br/>Rubric, confidence calc"]
         end
 
-        subgraph GradingDB ["Grading Storage"]
-            JobDB["Job State<br/>Pending, Processing, Done"]
-            ResultDB["Results<br/>Scores, Feedback, Diagnostics"]
+        subgraph GradingStorage ["Grading Storage"]
+            JobStateDB["Job State<br/>Pending, Processing, Done"]
+            ResultStore["Results<br/>Scores, Feedback, Diagnostics"]
         end
     end
 
     subgraph External ["External Services"]
         LLMs["LLM APIs<br/>GPT-4, Gemini Pro"]
-        STT APIs["Speech-to-Text<br/>Whisper, Azure"]
+        STT_APIs["Speech-to-Text<br/>Whisper, Azure"]
     end
 
     subgraph Observability ["Observability"]
@@ -85,9 +86,9 @@ flowchart TB
     class L,I,A users
     class Auth,Validate,Route,Enqueue,Poller,Realtime api
     class Assessment,Progress,Content core
-    class Stream,Topics,DeadLetter queue
-    class Receive,Router,LLMGrader,STTGrader,Scorer,JobDB,ResultDB service
-    class LLMs,STT APIs external
+    class Broker,QueueReq,QueueCb,DeadLetter queue
+    class Receive,Router,LLMGrader,STTGrader,Scorer,JobStateDB,ResultStore service
+    class LLMs,STT_APIs external
     class Logs,Metrics,Traces observability
     class MainDB,GradingDB,Redis data
 
@@ -103,31 +104,37 @@ flowchart TB
 
     %% Submission flow
     Assessment --> Enqueue
-    Enqueue --> Stream
-    Stream --> Topics
-    Topics --> Receive
+    Enqueue --> Broker
+    Broker --> QueueReq
+    QueueReq --> Receive
     Receive --> Router
     Router --> LLMGrader
     Router --> STTGrader
     LLMGrader --> LLMs
-    STTGrader --> STT APIs
-    LLMs --> Scorer
-    STT APIs --> Scorer
-    Scorer --> JobDB
-    Scorer --> ResultDB
-    JobDB --> Poller
-    ResultDB --> Poller
+    STTGrader --> STT_APIs
+    LLMs --> LLMGrader
+    STT_APIs --> STTGrader
+    LLMGrader --> Scorer
+    STTGrader --> Scorer
+    Scorer --> JobStateDB
+    Scorer --> ResultStore
+    JobStateDB --> Poller
+    ResultStore --> Poller
+
+    %% Callback flow
+    Scorer --> QueueCb
+    QueueCb --> Realtime
 
     %% Real-time updates
-    JobDB --> Realtime
-    ResultDB --> Realtime
+    JobStateDB --> Realtime
+    ResultStore --> Realtime
     Realtime --> Web
     Realtime --> Mobile
 
     %% Error handling
     Receive -.->|"Invalid job"| DeadLetter
     Scorer -.->|"Processing fail"| DeadLetter
-    DeadLetter --> Retry["Retry Logic<br/>Exponential backoff"]
+    DeadLetter --> Retry["Retry Logic<br/>Celery countdown"]
     Retry -->|"Max retries"| Alert["Alert Admin"]
 
     %% Results return
@@ -141,17 +148,17 @@ flowchart TB
     Assessment --> Traces
     Receive --> Traces
     Scorer --> Traces
-    Traces --> Metrics
-    Metrics --> Redis
+    Traces --> MetricsExporter["Metrics Exporter"]
+    MetricsExporter --> Prometheus["Prometheus<br/>Metrics storage"]
 ```
 
 > **Kiến trúc Multi-Language:**
 > - **Main App (Bun)**: API, Auth, Assessment, Progress, Content - TypeScript
-> - **Grading Service (Python/Rust/Go)**: AI Grading, STT, Scoring - ML-optimized language
-> - **Giao tiếp**: REST + Queue (Redis Streams/RabbitMQ) với idempotency
+> - **Grading Service (Python)**: AI Grading, STT, Scoring - FastAPI + Celery
+> - **Giao tiếp**: REST + Queue (RabbitMQ) với idempotency
 > - **Database**: Tách biệt hoàn toàn - Main DB vs Grading DB
 > - **Real-time**: WebSocket/SSE cho status updates
-> - **Error Handling**: Dead Letter Queue + Exponential backoff
+> - **Error Handling**: Dead Letter Queue + Celery retry
 >
 > **Nguyên tắc:**
 > - Grading request → enqueue → async processing → poll callback → update progress
@@ -173,13 +180,13 @@ flowchart TB
     end
 
     subgraph QueuePhase ["Queue Phase"]
-        EnqueueJob["Enqueue Job<br/>Redis Stream"]
+        EnqueueJob["Enqueue Job<br/>RabbitMQ"]
         QueueMonitor["Queue Monitor<br/>Health check"]
     end
 
     subgraph Processing ["Grading Phase"]
-        Dequeue["Dequeue Job<br/>Consumer Group"]
-        Process["Process Job<br/>AI/Human Grading"]
+        Dequeue["Dequeue Job<br/>Celery Worker"]
+        Process["Process Job<br/>AI Grading"]
         CircuitBreaker{"Circuit Breaker<br/>External API status"}
     end
 
@@ -250,6 +257,12 @@ flowchart TB
     class Success,Compensate success
     class RetryLogic,Backoff,ManualRecovery,CircuitReset recovery
 ```
+
+> **Lưu ý về cơ chế retry với delay:**
+> - RabbitMQ hỗ trợ TTL + Dead Letter Exchange (DLX) cho delayed retry
+> - **Triển khai ưu tiên**: Sử dụng Celery retry countdown (exponential backoff)
+> - Celery tự động handle delay: `self.retry(countdown=2**attempt)`
+> - Fallback: RabbitMQ DLX nếu cần cross-service delay
 
 ### 2.1 Retry Strategy
 
@@ -346,7 +359,7 @@ flowchart TB
     CompensateMain --> FinalUI
 
     %% Timeout handling
-    SagaOrchestrator -->|"Timeout > 5min"| TimeoutHandler["Timeout Handler"]
+    SagaOrchestrator -->|"Timeout > SLA (Writing 20m / Speaking 60m)"| TimeoutHandler["Timeout Handler"]
     TimeoutHandler --> CompensateMain
     TimeoutHandler --> Alert["Alert Admin"]
 
@@ -369,13 +382,29 @@ flowchart TB
 
 | Step | Action | Compensation | Timeout |
 |------|--------|--------------|---------|
- 1 | Create submission (PENDING) | Delete submission | 10s |
-| 2 | Publish grading job | Mark submission FAILED | 5s |
-| 3 | Grading service processes | N/A (async) | 5min |
-| 4 | Receive callback | Retry callback | 30s |
-| 5 | Update submission (COMPLETED) | Mark submission ERROR | 10s |
+|  1 | Create submission (PENDING) | Delete submission | 10s |
+| | 2 | Publish grading job (Outbox pattern) | Mark submission FAILED | 5s |
+| | 3 | Grading service processes | N/A (async) | SLA (Writing 20m / Speaking 60m) |
+| | 4 | Receive callback | Retry callback | 30s |
+| | 5 | Update submission (COMPLETED) | Mark submission ERROR | 10s |
 
-### 3.2 Consistency Guarantees
+### 3.2 Outbox Pattern
+
+Để đảm bảo reliable publishing của `grading.request`, sử dụng **Outbox Pattern**:
+- Ghi message vào `outbox` table trong transaction với submission
+- Separate message relay worker đọc outbox và publish sang RabbitMQ
+- Đảm bảo "exactly-once" delivery với deduplication key (requestId)
+
+### 3.3 Handling Late Callbacks
+
+> **Xử lý callbacks muộn (sau timeout):**
+> - Grading service gửi callback với timestamp (`finishedAt`) và `requestId`
+> - Main service so sánh `callbackReceivedAt > deadlineAt` (SLA theo skill)
+> - Nếu submission đã `FAILED(TIMEOUT)` → lưu kết quả muộn (`isLate=true`), giữ nguyên status
+> - Không cập nhật progress/analytics tự động; UI chỉ cho xem (read-only) kết quả muộn
+> - Log late callback để tối ưu SLA/capacity
+
+### 3.4 Consistency Guarantees
 
 - **Main DB**: Source of truth for submission status
 - **Grading DB**: Source of truth for grading results
@@ -458,6 +487,17 @@ flowchart TB
 
 ### 4.1 Status States
 
+> **Mapping với JobDB States (Section 1):**
+> - `PENDING` = Chờ enqueue (user submitted)
+> - `QUEUED` = Job đã trong RabbitMQ
+> - `PROCESSING` = Worker đang xử lý
+> - `ANALYZING` = AI đang analyze (LLM/STT)
+> - `GRADING` = Scorer đang tính điểm
+> - `COMPLETED` = Done, results stored
+> - `ERROR` = Processing fail
+> - `RETRYING` = Đang chờ retry (Celery countdown)
+> - `FAILED` = Timeout (SLA exceeded) hoặc max retries exceeded → Dead Letter
+
 ```mermaid
 stateDiagram-v2
     [*] --> PENDING: User submits
@@ -467,8 +507,8 @@ stateDiagram-v2
     ANALYZING --> GRADING: Scoring
     GRADING --> COMPLETED: Success
     GRADING --> ERROR: Failure
-    PROCESSING --> ERROR: Timeout
-    QUEUED --> ERROR: Invalid job
+    PROCESSING --> FAILED: Timeout (SLA exceeded)
+    QUEUED --> FAILED: Invalid job
     ERROR --> RETRYING: Auto-retry
     RETRYING --> PROCESSING: Retry attempt
     RETRYING --> FAILED: Max retries
@@ -602,12 +642,13 @@ flowchart TB
 ### 5.1 Confidence Score Formula
 
 ```
-Confidence Score = Σ(Factor_i × Weight_i)
+Confidence Score = clamp(0, 100, Σ(Factor_i × Weight_i))
 
 Factors:
 ├── Model Consistency (30%)
 │   └── Calculate std dev across 3 LLM samples
 │   └── Score = 100 - (std_dev × 20)
+│   └── std_dev range: 0-10 (scale factor)
 │
 ├── Rule Validation (25%)
 │   ├── Word count within band range (+20)
@@ -626,6 +667,10 @@ Factors:
     ├── Vocabulary density ok (+25)
     └── Complexity score appropriate (+25)
 ```
+
+> **Xử lý missing factors:**
+> - Nếu factor không khả dụng → skip và redistribute weight
+> - Ví dụ: Content Similarity unavailable → Model Consistency (30/70), Rule Validation (25/70), Length Heuristic (20/70)
 
 ### 5.2 Confidence Thresholds
 
@@ -655,7 +700,7 @@ If Human and AI disagree (> 0.5 band):
 ```mermaid
 flowchart LR
     Start(["Bắt đầu"])
-    Reg["Đăng ký<br/>Email, OAuth (Google)"]
+    Reg["Đăng ký<br/>Email/Password (OAuth tuỳ chọn)"]
     Profile["Thiết lập Hồ sơ<br/>Role, Goals"]
     GoalSet["Thiết lập Goal<br/>Target Level, Timeline"]
     SelfAssess["Self-Assessment (Optional)<br/>3-5 phút, ước lượng level"]
@@ -1072,15 +1117,14 @@ flowchart TB
 flowchart TB
     subgraph Auth ["Authentication"]
         Login["Login Page<br/>Email/Password"]
-        OAuth["OAuth 2.0<br/>Google SSO"]
-        Token["JWT Token<br/>Access + Refresh tokens"]
+        OAuth["OAuth (Optional)<br/>Google SSO"]
         RateLimit["Rate Limiting<br/>5 attempts/minute"]
+        SessionCookie["Session Cookie<br/>HTTP-only, signed"]
     end
 
     subgraph Verify ["Verification"]
-        Validate["Validate Token<br/>Signature check"]
-        Session["Session Management<br/>Redis cache"]
-        Refresh["Token Refresh<br/>Before expiry"]
+        ValidateSession["Validate Session<br/>Cookie signature + Redis lookup"]
+        SessionStore["Session Store<br/>Redis (TTL)"]
         Logout["Logout<br/>Clear session"]
     end
 
@@ -1104,13 +1148,11 @@ flowchart TB
     end
 
     Login --> RateLimit
-    RateLimit -->|"Under limit"| Token
-    OAuth --> Token
-    Token --> Validate
-    Validate --> Session
-    Session --> Refresh
-    Refresh --> Session
-    Session --> Logout
+    RateLimit -->|"Under limit"| SessionCookie
+    OAuth -.-> SessionCookie
+    SessionCookie --> ValidateSession
+    ValidateSession --> SessionStore
+    SessionStore --> Logout
 
     Roles --> Permissions
     Permissions --> Check
@@ -1134,16 +1176,32 @@ flowchart TB
     classDef resources fill:#6a1b9a,stroke:#4a148c,color:#fff
     classDef session fill:#455a64,stroke:#37474f,color:#fff
 
-    class Login,OAuth,Token,RateLimit auth
-    class Validate,Session,Refresh,Logout verify
+    class Login,OAuth,RateLimit,SessionCookie auth
+    class ValidateSession,SessionStore,Logout verify
     class Roles,Permissions,Check rbac
     class PracticeRes,MockRes,GradingRes,AdminRes permissions
     class Active,Timeout,Concurrent session
 ```
 
----
+### 10.1 Session Enforcement (Redis Session List)
 
-## 11. Design System & Style Guide
+> **Cơ chế enforcement:**
+> - Khi login thành công, tạo session entry: `sessions:{userId}` → Sorted Set
+> - Mỗi entry: `{deviceId, loginTime, lastActivity, tokenHash}`
+> - Max 3 devices → reject login thứ 4 hoặc auto-logout oldest session
+> - Heartbeat cập nhật `lastActivity` mỗi 5 phút
+> - Timeout 30 phút không activity → tự động logout
+> - Logout xóa entry khỏi Redis Sorted Set
+
+### 10.2 Role Permissions
+
+| Role | Permissions |
+|------|-------------|
+| **Learner** | Practice Mode, Mock Test, Progress Tracking, View Results |
+| **Instructor** | All Learner permissions + Grading Portal, Review Submissions |
+| **Admin** | All permissions + User Management, Content Management, System Config |
+
+---
 
 ### 11.1 Tổng Quan Thiết Kế
 

@@ -12,7 +12,7 @@ flowchart TB
 
     subgraph BunApp ["Bun Main Application"]
         subgraph API ["API Layer"]
-            Auth["Authentication<br/>JWT, OAuth 2.0"]
+            Auth["Authentication<br/>Session Cookie, RBAC"]
             Validate["Request Validation<br/>Input sanitization"]
             Route["REST API<br/>Resource-oriented endpoints"]
         end
@@ -24,14 +24,16 @@ flowchart TB
         end
 
         subgraph QueueClient ["Queue Client"]
-            Enqueue["Job Publisher<br/>Redis Streams/RabbitMQ"]
+            Enqueue["Job Publisher<br/>RabbitMQ"]
             Poller["Status Poller<br/>Job completion check"]
         end
     end
 
     subgraph QueueInfra ["Message Queue"]
-        Stream["Redis Streams<br/>Consumer groups"]
-        Topics["Topics:<br/>grading.request, grading.callback"]
+        Broker["RabbitMQ<br/>Exchange + Queues"]
+        QueueReq["Queue: grading.request"]
+        QueueCb["Queue: grading.callback"]
+        DeadLetter["DLQ: grading.dlq"]
     end
 
     subgraph GradingService ["Grading Service (Python/Rust/Go)"]
@@ -46,15 +48,15 @@ flowchart TB
             Scorer["Scorer Engine<br/>Rubric, confidence calc"]
         end
 
-        subgraph GradingDB ["Grading Storage"]
-            JobDB["Job State<br/>Pending, Processing, Done"]
-            ResultDB["Results<br/>Scores, Feedback, Diagnostics"]
+        subgraph GradingStorage ["Grading Storage"]
+            JobStateDB["Job State<br/>Pending, Processing, Done"]
+            ResultStore["Results<br/>Scores, Feedback, Diagnostics"]
         end
     end
 
     subgraph External ["External Services"]
         LLMs["LLM APIs<br/>GPT-4, Gemini Pro"]
-        STT APIs["Speech-to-Text<br/>Whisper, Azure"]
+        STT_APIs["Speech-to-Text<br/>Whisper, Azure"]
     end
 
     subgraph Observability ["Observability"]
@@ -82,9 +84,9 @@ flowchart TB
     class L,I,A users
     class Auth,Validate,Route,Enqueue,Poller api
     class Assessment,Progress,Content core
-    class Stream,Topics queue
-    class Receive,Router,LLMGrader,STTGrader,Scorer,JobDB,ResultDB service
-    class LLMs,STT APIs external
+    class Broker,QueueReq,QueueCb,DeadLetter queue
+    class Receive,Router,LLMGrader,STTGrader,Scorer,JobStateDB,ResultStore service
+    class LLMs,STT_APIs external
     class Logs,Metrics,Traces observability
     class MainDB,GradingDB,Redis data
 
@@ -100,20 +102,25 @@ flowchart TB
 
     %% Submission flow
     Assessment --> Enqueue
-    Enqueue --> Stream
-    Stream --> Topics
-    Topics --> Receive
+    Enqueue --> Broker
+    Broker --> QueueReq
+    QueueReq --> Receive
     Receive --> Router
     Router --> LLMGrader
     Router --> STTGrader
     LLMGrader --> LLMs
-    STTGrader --> STT APIs
-    LLMs --> Scorer
-    STT APIs --> Scorer
-    Scorer --> JobDB
-    Scorer --> ResultDB
-    JobDB --> Poller
-    ResultDB --> Poller
+    STTGrader --> STT_APIs
+    LLMs --> LLMGrader
+    STT_APIs --> STTGrader
+    LLMGrader --> Scorer
+    STTGrader --> Scorer
+    Scorer --> JobStateDB
+    Scorer --> ResultStore
+    JobStateDB --> Poller
+    ResultStore --> Poller
+
+    %% Callback flow
+    Scorer --> QueueCb
 
     %% Results return
     Poller --> Progress
@@ -126,14 +133,14 @@ flowchart TB
     Assessment --> Traces
     Receive --> Traces
     Scorer --> Traces
-    Traces --> Metrics
-    Metrics --> Redis
+    Traces --> MetricsExporter["Metrics Exporter"]
+    MetricsExporter --> Prometheus["Prometheus<br/>Metrics storage"]
 ```
 
 > **Multi-Language Architecture:**
 > - **Main App (Bun)**: API, Auth, Assessment, Progress, Content - TypeScript
-> - **Grading Service (Python/Rust/Go)**: AI Grading, STT, Scoring - ML-optimized language
-> - **Communication**: REST + Queue (Redis Streams/RabbitMQ) with idempotency
+> - **Grading Service (Python)**: AI Grading, STT, Scoring - FastAPI + Celery
+> - **Communication**: REST + Queue (RabbitMQ) with idempotency
 > - **Database**: Fully separated - Main DB vs Grading DB
 >
 > **Principles:**
@@ -146,7 +153,7 @@ flowchart TB
 ```mermaid
 flowchart LR
     Start(["Start"])
-    Reg["Registration<br/>Email, OAuth (Google)"]
+    Reg["Registration<br/>Email/Password (OAuth optional)"]
     Profile["Profile Setup<br/>Role, Goals"]
     GoalSet["Goal Setting<br/>Target Level, Timeline"]
     SelfAssess["Self-Assessment (Optional)<br/>3-5 min, estimated level"]
@@ -564,14 +571,13 @@ flowchart TB
 flowchart TB
     subgraph Auth ["Authentication"]
         Login["Login Page<br/>Email/Password"]
-        OAuth["OAuth 2.0<br/>Google SSO"]
-        Token["JWT Token<br/>Access + Refresh tokens"]
+        OAuth["OAuth (Optional)<br/>Google SSO"]
+        SessionCookie["Session Cookie<br/>HTTP-only, signed"]
     end
 
     subgraph Verify ["Verification"]
-        Validate["Validate Token<br/>Signature check"]
-        Session["Session Management<br/>Redis cache"]
-        Refresh["Token Refresh<br/>Before expiry"]
+        ValidateSession["Validate Session<br/>Cookie signature + Redis lookup"]
+        SessionStore["Session Store<br/>Redis (TTL)"]
     end
 
     subgraph RBAC ["Role-Based Access Control"]
@@ -593,12 +599,10 @@ flowchart TB
         Logout["Logout<br/>Clear session"]
     end
 
-    Login --> Token
-    OAuth --> Token
-    Token --> Validate
-    Validate --> Session
-    Session --> Refresh
-    Refresh --> Session
+    Login --> SessionCookie
+    OAuth -.-> SessionCookie
+    SessionCookie --> ValidateSession
+    ValidateSession --> SessionStore
     Roles --> Permissions
     Permissions --> Check
     Check -->|Yes| PracticeRes
@@ -619,8 +623,8 @@ flowchart TB
     classDef resources fill:#6a1b9a,stroke:#4a148c,color:#fff
     classDef session fill:#455a64,stroke:#37474f,color:#fff
 
-    class Login,OAuth,Token auth
-    class Validate,Session,Refresh verify
+    class Login,OAuth,SessionCookie auth
+    class ValidateSession,SessionStore verify
     class Roles,Permissions,Check rbac
     class PracticeRes,MockRes,GradingRes,AdminRes permissions
     class Active,Timeout,Logout session
@@ -637,7 +641,7 @@ flowchart TB
 | **Mock Test Flow** | Full exam simulation | 4 Sections, Timer, Scoring, Results Report |
 | **Hybrid Grading** | AI + Human evaluation | AI Instant → Human Override → Final Score |
 | **Progress Tracking** | Analytics & visualization | Spider Chart, Sliding Window, Learning Path |
-| **Authentication & RBAC** | Security & access control | JWT, OAuth, Role-based permissions |
+| **Authentication & RBAC** | Security & access control | Session cookie (OAuth optional), role-based permissions |
 
 ---
 

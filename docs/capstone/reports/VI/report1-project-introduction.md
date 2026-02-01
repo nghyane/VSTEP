@@ -226,7 +226,7 @@ Hệ thống tạo ra sự khác biệt với 4 lợi thế cốt lõi và các 
 | # | Lợi thế | Mô tả | Chỉ số mục tiêu (hypothesis) |
 |---|---------|-------|------------------------------|
 | 1 | Adaptive Scaffolding | Điều chỉnh mức độ hỗ trợ theo trình độ: Writing (Template - Keywords - Free), Listening (Full text - Highlight - Pure audio) | Skill gap reduction >=30% sau 4 tuần |
-| 2 | Hybrid Grading | AI chấm nhanh (grammar, spelling, pronunciation) + Human review cho productive skills | Feedback latency: <5 phút (AI), <24h (Human) |
+| 2 | Hybrid Grading | AI chấm nhanh (grammar, spelling, pronunciation) + Human review cho productive skills | Feedback latency (AI): thường vài phút; SLA timeout: Writing 20 phút, Speaking 60 phút; Human: <24h |
 | 3 | Advanced Visualization | Spider Chart (độ lệch kỹ năng) + Sliding Window (avg 10 bài gần nhất) | User engagement improvement vs static charts |
 | 4 | Multi-Goal Profiles | Linh hoạt mục tiêu: B1 trong 1 tháng - B2 trong 3 tháng | Support >=3 concurrent learning goals |
 
@@ -279,14 +279,14 @@ Nghiên cứu định lượng trên 462 sinh viên đại học Việt Nam (Ngu
 
 **Vision Statement:**
 
-Dành cho sinh viên đại học cần đạt chuẩn đầu ra, người đi làm cần chứng chỉ thăng tiến, và trung tâm ngoại ngữ tại Việt Nam đang gặp khó khăn với phương pháp ôn luyện VSTEP thiếu cá nhân hóa và phản hồi chậm, Hệ thống ôn luyện VSTEP thích ứng là một nền tảng học tập kỹ thuật số kết hợp Web và Mobile cung cấp lộ trình học cá nhân hóa, đánh giá 4 kỹ năng với phản hồi tức thì, và trực quan hóa tiến độ. Khác với các trang web thi thử tĩnh (chỉ có đề và đáp án) hoặc ứng dụng tiếng Anh tổng quát (không bám sát VSTEP), sản phẩm của chúng tôi kết hợp Adaptive Scaffolding + Hybrid Grading + Analytics để thu hẹp skill gap hiệu quả.
+Dành cho sinh viên đại học cần đạt chuẩn đầu ra, người đi làm cần chứng chỉ thăng tiến, và trung tâm ngoại ngữ tại Việt Nam đang gặp khó khăn với phương pháp ôn luyện VSTEP thiếu cá nhân hóa và phản hồi chậm, Hệ thống ôn luyện VSTEP thích ứng là một nền tảng học tập kỹ thuật số kết hợp Web và Mobile cung cấp lộ trình học cá nhân hóa, đánh giá 4 kỹ năng với phản hồi nhanh (AI), và trực quan hóa tiến độ. Khác với các trang web thi thử tĩnh (chỉ có đề và đáp án) hoặc ứng dụng tiếng Anh tổng quát (không bám sát VSTEP), sản phẩm của chúng tôi kết hợp Adaptive Scaffolding + Hybrid Grading + Analytics để thu hẹp skill gap hiệu quả.
 
 **Measurable Vision Targets (hypothesis - cần validate trong pilot):**
 
 | Chỉ số | Mục tiêu | Timeline | Cơ sở |
 |--------|----------|----------|-------|
 | Skill gap reduction | >=30% | Sau 4 tuần sử dụng | Dựa trên research (Wei 2023, Liu & Zu 2024) |
-| Writing feedback latency | <5 phút (AI) | MVP launch | Technical feasibility |
+| Writing feedback latency | Thường <5 phút (AI); SLA timeout 20 phút | MVP launch | Technical feasibility |
 | User satisfaction (NPS) | >=40 | End of pilot | Industry benchmark |
 | Active users retention | >=60% (monthly) | 3 tháng sau launch | Industry benchmark |
 
@@ -327,7 +327,7 @@ Hệ thống được thiết kế với hai module chính:
 
 *Tập trung vào trải nghiệm học tập và AI Grading*
 
-FE-01: User Authentication - Đăng ký, đăng nhập, quản lý profile với các vai trò Learner/Instructor/Admin. Hỗ trợ xác thực qua email/password và OAuth (Google).
+FE-01: User Authentication - Đăng ký, đăng nhập, quản lý profile với các vai trò Learner/Instructor/Admin. Xác thực email/password; OAuth (Google) là tuỳ chọn.
 
 FE-02: Placement Test - Bài kiểm tra đầu vào xác định trình độ ban đầu cho 4 kỹ năng (Nghe, Nói, Đọc, Viết). Kết quả được sử dụng để khởi tạo Spider Chart và đề xuất lộ trình học phù hợp.
 
@@ -335,9 +335,9 @@ FE-03: Practice Mode - Listening - Luyện tập kỹ năng Nghe với Adaptive 
 
 FE-04: Practice Mode - Reading - Luyện tập kỹ năng Đọc với các dạng câu hỏi theo format VSTEP: True/False/Not Given, Multiple Choice, Matching Headings, Fill in the Blanks.
 
-FE-05: Practice Mode - Writing + AI Grading - Luyện tập kỹ năng Viết với AI feedback tức thì. Sử dụng LLM API (GPT/Gemini) để đánh giá grammar, vocabulary, coherence, và task achievement theo rubric VSTEP. Hỗ trợ Task 1 (email/thư) và Task 2 (bài luận).
+FE-05: Practice Mode - Writing + AI Grading - Luyện tập kỹ năng Viết với AI feedback nhanh. Sử dụng LLM API (GPT/Gemini) để đánh giá grammar, vocabulary, coherence, và task achievement theo rubric VSTEP. SLA timeout: 20 phút.
 
-FE-06: Practice Mode - Speaking + AI Grading - Luyện tập kỹ năng Nói với ghi âm và AI feedback. Tích hợp Speech-to-Text để transcribe, sau đó dùng LLM đánh giá pronunciation, fluency, và content. Bao gồm 3 phần Speaking VSTEP.
+FE-06: Practice Mode - Speaking + AI Grading - Luyện tập kỹ năng Nói với ghi âm và AI feedback. Tích hợp Speech-to-Text để transcribe, sau đó dùng LLM đánh giá pronunciation, fluency, và content. SLA timeout: 60 phút.
 
 FE-07: Mock Test Mode - Thi thử giả lập đầy đủ 4 kỹ năng theo đúng format và thời gian VSTEP. Kết quả được tổng hợp thành báo cáo chi tiết với điểm số theo từng kỹ năng.
 
