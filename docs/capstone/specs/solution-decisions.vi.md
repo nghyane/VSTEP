@@ -27,7 +27,6 @@ flowchart TB
     end
 
     subgraph GradingService["Python Grading Service"]
-        FastAPI["FastAPI<br/>Job Receiver"]
         Celery["Celery Workers"]
         AI["AI Grading<br/>LLM + STT"]
     end
@@ -46,13 +45,11 @@ flowchart TB
     Exchange --> ReqQueue
     Exchange --> CbQueue
     Exchange --> DLQ
-    ReqQueue --> FastAPI
-    FastAPI --> Celery
+    ReqQueue --> Celery
     Celery --> AI
     AI --> CbQueue
     API --> MainDB
     API --> Redis
-    FastAPI --> GradingDB
     Celery --> GradingDB
 
     classDef client fill:#1976d2,stroke:#0d47a1,color:#fff
@@ -64,14 +61,14 @@ flowchart TB
     class Web,Mobile client
     class API,Auth,QueueClient main
     class Exchange,ReqQueue,CbQueue,DLQ queue
-    class FastAPI,Celery,AI grading
+    class Celery,AI grading
     class MainDB,GradingDB,Redis data
 ```
 
 ## Scope
 
 - Main App: Bun + Elysia (TypeScript)
-- Grading Service: Python + FastAPI + Celery
+- Grading Service: Python + Celery
 - Queue cross-service: RabbitMQ
 - DB: PostgreSQL tách MainDB/GradingDB
 - Cache/rate limit: Redis
@@ -85,7 +82,7 @@ flowchart TB
 | Component | Decision | Alternatives |
 |----------|----------|--------------|
 | Main App | Bun + Elysia | Node.js + Express, Deno |
-| Grading Service | Python + FastAPI + Celery | Rust, Go |
+| Grading Service | Python + Celery | Rust, Go |
 | Message Queue | RabbitMQ (AMQP) | Redis Streams, Kafka |
 | Database | PostgreSQL (MainDB + GradingDB) | MySQL, CockroachDB |
 | Cache/Rate limit | Redis | Postgres-only |
@@ -129,4 +126,4 @@ flowchart TB
 
 ---
 
-*Document version: 1.1 - Last updated: SP26SE145*
+*Document version: 1.2 - Last updated: SP26SE145*

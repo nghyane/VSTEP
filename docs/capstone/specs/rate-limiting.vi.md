@@ -17,7 +17,7 @@ flowchart TB
     subgraph Tiers["Rate Limit Tiers"]
         Anonymous["Anonymous<br/>30 req/min"]
         Learner["Learner<br/>100 req/min"]
-        Premium["Premium<br/>300 req/min"]
+        Instructor["Instructor<br/>500 req/min"]
         Admin["Admin<br/>500 req/min"]
     end
 
@@ -38,12 +38,12 @@ flowchart TB
     CheckAuth -->|No| Anonymous
     CheckAuth -->|Yes| CheckRole{"Check Role"}
     CheckRole -->|Learner| Learner
-    CheckRole -->|Premium| Premium
+    CheckRole -->|Instructor| Instructor
     CheckRole -->|Admin| Admin
 
     Anonymous --> CheckBucket
     Learner --> CheckBucket
-    Premium --> CheckBucket
+    Instructor --> CheckBucket
     Admin --> CheckBucket
 
     CheckBucket -->|Yes| Consume
@@ -62,7 +62,7 @@ flowchart TB
     classDef redis fill:#37474f,stroke:#263238,color:#fff
 
     class Client,Identify,CheckAuth,CheckRole client
-    class Anonymous,Learner,Premium,Admin tier
+    class Anonymous,Learner,Instructor,Admin tier
     class CheckBucket,Consume,AddHeaders bucket
     class Reject,ClientError reject
     class Process success
@@ -73,7 +73,7 @@ flowchart TB
 
 - Rate limiting cho Bun Main App (Elysia).
 - Storage: Redis (cho distributed rate limiting).
-- Các tier: anonymous, authenticated, premium.
+- Các tier: anonymous, learner, instructor, admin.
 - Endpoint-specific rules cho auth và grading.
 
 ## Decisions
@@ -91,15 +91,17 @@ flowchart TB
 | Tier | Limit | Window | Burst |
 |------|-------|--------|-------|
 | Anonymous | 30 requests | 1 minute | 5 |
-| Authenticated (Learner) | 100 requests | 1 minute | 20 |
-| Premium | 300 requests | 1 minute | 50 |
-| Admin/Instructor | 500 requests | 1 minute | 100 |
+| Learner | 100 requests | 1 minute | 20 |
+| Instructor | 500 requests | 1 minute | 100 |
+| Admin | 500 requests | 1 minute | 100 |
 
 ### Endpoint-Specific Rules
 
 | Endpoint Pattern | Limit | Window | Notes |
 |------------------|-------|--------|-------|
-| `POST /auth/*` | 5 requests | 1 minute | Chống brute-force login/register |
+| `POST /api/auth/login` | 5 requests | 1 minute | Chống brute-force login/register |
+| `POST /api/auth/register` | 5 requests | 1 minute | Chống brute-force register |
+| `POST /api/auth/refresh` | 10 requests | 1 minute | Refresh token |
 | `POST /api/submissions` | 10 requests | 1 minute | Tạo submission mới |
 | `POST /api/grading/*` | 5 requests | 1 minute | Trigger grading |
 | `GET /api/*` (read) | Tier default | Tier window | Standard read operations |
@@ -159,11 +161,11 @@ Khi 429, thêm:
 ## Acceptance criteria
 
 - 429 responses có đầy đủ headers và JSON body.
-- Rate limits khác nhau cho anonymous vs authenticated vs premium.
-- Auth endpoints (`/auth/*`) có limit riêng biệt thấp hơn.
+- Rate limits khác nhau cho anonymous vs learner vs instructor vs admin.
+- Auth endpoints (`/api/auth/*`) có limit riêng biệt thấp hơn.
 - Redis key có TTL để tự động cleanup.
 - Health endpoints không bị rate limit.
 
 ---
 
-*Document version: 1.0 - Last updated: SP26SE145*
+*Document version: 1.2 - Last updated: SP26SE145*

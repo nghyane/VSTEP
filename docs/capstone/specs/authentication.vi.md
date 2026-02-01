@@ -14,7 +14,7 @@ sequenceDiagram
     participant Redis as Redis
 
     %% Login
-    C->>API: POST /login<br/>email + password
+    C->>API: POST /api/auth/login<br/>email + password
     API->>DB: Validate credentials
     DB-->>API: User valid
     API->>DB: Create refresh token record<br/>hash + jti + userId
@@ -28,7 +28,7 @@ sequenceDiagram
     API-->>C: Protected data
 
     %% Token Refresh
-    C->>API: POST /refresh<br/>refresh token
+    C->>API: POST /api/auth/refresh<br/>refresh token
     API->>DB: Validate refresh token hash
     API->>DB: Check if revoked
     DB-->>API: Token valid
@@ -36,13 +36,13 @@ sequenceDiagram
     API-->>C: New access + refresh tokens
 
     %% Logout
-    C->>API: POST /logout<br/>refresh token
+    C->>API: POST /api/auth/logout<br/>refresh token
     API->>DB: Revoke refresh token<br/>Set revokedAt
     API-->>C: 200 OK
 
     %% Token Reuse Detection
     Note over C,Redis: Token Reuse Scenario
-    C->>API: POST /refresh<br/>old rotated token
+    C->>API: POST /api/auth/refresh<br/>old rotated token
     API->>DB: Check token status
     DB-->>API: Token already replaced (reuse!)
     API->>DB: Revoke ALL user refresh tokens
@@ -88,13 +88,13 @@ sequenceDiagram
 
 API routes/paths do backend tự quyết định. Hệ thống phải hỗ trợ các operations sau:
 
-| Operation | Auth | Output |
-|----------|------|--------|
-| Register | Public | user created |
-| Login | Public | access token + refresh token |
-| Refresh | Refresh token | rotated refresh token + new access token |
-| Logout | Refresh token | revoke current refresh token |
-| Get current user context | Access token | `userId`, `role` |
+| Operation | Auth | Endpoint | Output |
+|-----------|------|----------|--------|
+| Register | Public | `POST /api/auth/register` | user created |
+| Login | Public | `POST /api/auth/login` | access token + refresh token |
+| Refresh | Refresh token | `POST /api/auth/refresh` | rotated refresh token + new access token |
+| Logout | Refresh token | `POST /api/auth/logout` | revoke current refresh token |
+| Get current user context | Access token | `GET /api/auth/me` | `userId`, `role` |
 
 ### Refresh token store (requirements)
 
@@ -130,4 +130,4 @@ Refresh token phải có store server-side (MainDB hoặc Redis). Baseline khuy�
 
 ---
 
-*Document version: 1.1 - Last updated: SP26SE145*
+*Document version: 1.2 - Last updated: SP26SE145*

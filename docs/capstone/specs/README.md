@@ -18,6 +18,7 @@ Template rule (applies to all specs): Purpose / Scope / Decisions / Contracts / 
 | [authentication.vi.md](./authentication.vi.md) | JWT access/refresh, RBAC, refresh token rotation, and device limits |
 | [rate-limiting.vi.md](./rate-limiting.vi.md) | Rate limiting rules, tiers, Redis storage, and endpoint-specific limits |
 | [deployment.vi.md](./deployment.vi.md) | Docker Compose configuration, environment variables, and deployment commands |
+| [sse.vi.md](./sse.vi.md) | SSE real-time events, grading progress/result push, reconnection |
 
 ## 📖 Related Documentation
 
@@ -51,7 +52,7 @@ flowchart LR
 | Component | Technology |
 |-----------|------------|
 | Main App | Bun + Elysia (TypeScript) |
-| Grading Service | Python + FastAPI + Celery |
+| Grading Service | Python + Celery |
 | Message Queue | RabbitMQ (AMQP) |
 | Cache / Rate limit | Redis |
 | Database | PostgreSQL (separate MainDB/GradingDB) |
@@ -60,4 +61,4 @@ flowchart LR
 
 ---
 
-*Document version: 1.0 - Last updated: SP26SE145*
+*Document version: 1.1 - Last updated: SP26SE145*

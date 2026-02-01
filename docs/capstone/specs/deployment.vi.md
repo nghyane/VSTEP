@@ -21,7 +21,6 @@ flowchart TB
 
         subgraph Apps["Applications"]
             BunApp["bun-app:3000<br/>Main API"]
-            GradingAPI["python-grading-api:8000<br/>Grading API"]
             CeleryWorker["python-celery-worker<br/>Background Workers"]
         end
     end
@@ -36,17 +35,13 @@ flowchart TB
     BunApp -->|RABBITMQ_URL| RabbitMQ
     BunApp -->|read/write| PostgresMain
 
-    GradingAPI -->|DATABASE_URL_GRADING| PostgresGrading
-    GradingAPI -->|read| RabbitMQ
-    GradingAPI -->|write| PostgresGrading
-
     CeleryWorker -->|consume| RabbitMQ
     CeleryWorker -->|DATABASE_URL_GRADING| PostgresGrading
     CeleryWorker -->|OPENAI_API_KEY| OpenAI
     CeleryWorker -->|STT_API_KEY| STT
 
-    RabbitMQ -->|publish| GradingAPI
     RabbitMQ -->|consume| CeleryWorker
+    RabbitMQ -->|publish callback| BunApp
 
     classDef data fill:#37474f,stroke:#263238,color:#fff
     classDef queue fill:#ff8f00,stroke:#ff6f00,color:#fff
@@ -55,7 +50,7 @@ flowchart TB
 
     class PostgresMain,PostgresGrading,RedisService data
     class RabbitMQ queue
-    class BunApp,GradingAPI,CeleryWorker app
+    class BunApp,CeleryWorker app
     class OpenAI,STT external
 ```
 
@@ -83,10 +78,9 @@ flowchart TB
 |---------|---------|
 | `postgres-main` | MainDB (users, submissions, outbox, progress) |
 | `postgres-grading` | GradingDB (jobs, results, diagnostics) |
-| `redis` | cache + rate limit (optional) |
+| `redis` | rate-limiting + cache (required) |
 | `rabbitmq` | `grading.request` / `grading.callback` / `grading.dlq` |
 | `bun-app` | Main API (Bun + Elysia) |
-| `python-grading-api` | Grading API (FastAPI) |
 | `python-celery-worker` | Celery workers |
 
 Optional (dev): `prometheus`, `grafana`.
@@ -115,7 +109,6 @@ Rule: capstone specs define the business rules; app-level docs define config key
 | Service | Port | Purpose |
 |---------|------|---------|
 | Bun App | 3000 | Main API |
-| Grading API | 8000 | Grading Service API |
 | PostgreSQL (Main) | 5432 | MainDB |
 | PostgreSQL (Grading) | 5433 | GradingDB |
 | Redis | 6379 | cache/rate limit |
@@ -125,7 +118,7 @@ Rule: capstone specs define the business rules; app-level docs define config key
 ### Health endpoints
 
 - Bun App: `GET /health` checks Postgres/Redis/RabbitMQ connectivity.
-- Grading API: `GET /health` checks Postgres + worker availability (best-effort).
+- Celery Worker: health check via `celery inspect ping` (best-effort).
 
 ## Failure modes
 
@@ -143,4 +136,4 @@ Rule: capstone specs define the business rules; app-level docs define config key
 
 ---
 
-*Document version: 1.1 - Last updated: SP26SE145*
+*Document version: 1.2 - Last updated: SP26SE145*
