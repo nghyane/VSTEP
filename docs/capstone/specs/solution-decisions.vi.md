@@ -1,112 +1,68 @@
 # Chốt Phương Án Kiến Trúc
 
-## 1. Tổng Quan Quyết Định
+## Purpose
 
-| Thành phần | Phương án chọn | Phương án thay thế |
-|------------|----------------|---------------------|
-| Main App | Bun + Elysia (TypeScript) | Node.js + Express, Deno |
+Tài liệu này chốt các quyết định kiến trúc/boundary để backend implement nhanh, ít vênh giữa Bun Main App và Python Grading Service.
+
+## Scope
+
+- Main App: Bun + Elysia (TypeScript)
+- Grading Service: Python + FastAPI + Celery
+- Queue cross-service: RabbitMQ
+- DB: PostgreSQL tách MainDB/GradingDB
+- Cache/rate limit: Redis
+- Real-time: SSE (default)
+- Auth: JWT access/refresh (baseline)
+
+## Decisions
+
+### Tech stack (final)
+
+| Component | Decision | Alternatives |
+|----------|----------|--------------|
+| Main App | Bun + Elysia | Node.js + Express, Deno |
 | Grading Service | Python + FastAPI + Celery | Rust, Go |
 | Message Queue | RabbitMQ (AMQP) | Redis Streams, Kafka |
-| Session Store | Redis | PostgreSQL, MySQL |
-| Real-time | SSE (Server-Sent Events) | WebSocket |
-| Database | PostgreSQL (separate MainDB/GradingDB) | MySQL, CockroachDB |
+| Database | PostgreSQL (MainDB + GradingDB) | MySQL, CockroachDB |
+| Cache/Rate limit | Redis | Postgres-only |
+| Real-time | SSE | WebSocket |
+| Auth | JWT access + refresh | Server session |
 
-## 2. Lý Do Chọn
+### Rationale (ngắn)
 
-### 2.1 Bun + Elysia
-- **Hiệu năng**: Bun nhanh hơn Node.js 2-3x, startup < 50ms
-- **TypeScript native**: Không cần build step, hot reload tức thì
-- **Elysia**: Decorator pattern tự nhiên, type-safe routing
-- **Phù hợp I/O-bound**: Assessment, Progress, Content APIs không cần compute nặng
+- RabbitMQ + Celery: mature, có DLQ/retry tốt, dễ scale worker.
+- JWT access/refresh: dùng được cho web/mobile, không cần session state server.
+- Tách DB: giảm coupling, dễ audit.
 
-### 2.2 Python Grading Service
-- **AI/ML ecosystem**: OpenAI, Whisper, LangChain libraries
-- **FastAPI**: Async native, OpenAPI auto-gen, type validation
-- **Celery**: Task queue mature, retry/backoff built-in
-- **NumPy/Pandas**: Xử lý scoring metrics hiệu quả
+## Contracts
 
-### 2.3 RabbitMQ (thay vì Redis Streams)
-- **Reliability**: Persistent messages, acknowledgements, publisher confirms
-- **Dead Letter Queue**: Native support, không cần workaround
-- **Delayed retry**: TTL + DLX hoặc Celery countdown
-- **Scalability**: Fan-out, routing patterns cho nhiều consumers
-- **Production-ready**: 10+ năm production usage, enterprise support
+- Message contracts: `docs/capstone/specs/queue-contracts.vi.md`
+- Reliability rules: `docs/capstone/specs/reliability.vi.md`
+- Auth rules: `docs/capstone/specs/authentication.vi.md`
+- Deployment env: `docs/capstone/specs/deployment.vi.md`
 
-### 2.4 Redis cho Session (không phải Queue)
-- **Session storage**: Fast read/write, TTL tự động
-- **Cache**: Assessment results, progress metrics
-- **Pub/Sub**: SSE fan-out cho real-time updates
-- **Quyết định rõ ràng**: Redis = ephemeral, RabbitMQ = persistent
+## Failure modes
 
-### 2.5 SSE (thay vì WebSocket)
-- **Đơn giản**: HTTP-based, không cần upgrade handshake
-- **Firewall-friendly**: Port 80/443, proxy-friendly
-- **Auto-reconnect**: Browser native, không cần client library
-- **Use case phù hợp**: Server → Client updates, không cần bidirectional
+| Area | Risk | Mitigation |
+|------|------|------------|
+| Queue | duplicate deliveries | `requestId` idempotency |
+| Provider | 429/timeout | retry/backoff + cap + DLQ |
+| Outbox | publish fail | relay + retry |
+| Provider | cascading failure | circuit breaker (open at >50% failure rate, cooldown 30s) |
+| Auth | refresh token theft | rotation + revoke store |
 
-## 3. Non-Goals (Phạm vi loại trừ)
+## Acceptance criteria
 
-- **OAuth2 provider**: Không tự build IdP, dùng Google/Facebook SDK
-- **WebSocket**: Chỉ SSE, WebSocket optional nếu cần bidirectional
-- **GraphQL**: REST đủ cho resource-oriented APIs
-- **Microservices**: Monorepo với bounded contexts
-- **Multi-region**: Single region deployment ban đầu
-- **Kubernetes**: Docker Compose cho development, có thể mở rộng sau
+- Tất cả service boundary (Main/Grading) giao tiếp qua queue contracts.
+- Quy tắc retry/timeout/late-result áp dụng nhất quán.
+- Auth baseline là JWT access/refresh, không còn session cookie baseline.
 
-## 4. Scope Boundaries
+## Business rules defaults (Chốt)
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    VSTEP Adaptive Learning                   │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌──────────────────┐    ┌──────────────────┐               │
-│  │  Bun Main App    │    │ Python Grading   │               │
-│  │  (Port 3000)     │◄──►│ Service (8000)   │               │
-│  │                  │    │ + Celery Worker  │               │
-│  └────────┬─────────┘    └────────┬─────────┘               │
-│           │                       │                          │
-│           ▼                       ▼                          │
-│  ┌─────────────────────────────────────┐                     │
-│  │         PostgreSQL                  │                     │
-│  │  ┌─────────┐  ┌─────────────────┐  │                     │
-│  │  │ MainDB  │  │   GradingDB     │  │                     │
-│  │  │ (5432)  │  │     (5433)      │  │                     │
-│  │  └─────────┘  └─────────────────┘  │                     │
-│  └─────────────────────────────────────┘                     │
-│           │                       │                          │
-│           ▼                       ▼                          │
-│  ┌──────────────────┐    ┌──────────────────┐               │
-│  │     Redis        │    │     RabbitMQ     │               │
-│  │  (Session/Cache) │    │  (Port 5672)     │               │
-│  └──────────────────┘    └──────────────────┘               │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## 5. Out-of-Scope (Future Considerations)
-
-- **OAuth 2.0 flows**: Có thể thêm sau, session cookie đủ cho baseline
-- **WebSocket**: Nếu cần real-time collaboration
-- **Kubernetes**: Terraform/Ansible cho production deployment
-- **Multi-tenant**: Single organization ban đầu
-- **GraphQL**: Nếu frontend cần flexible queries
-- **CDN**: Static assets có thể tách ra sau
-
-## 6. Business Rules Defaults (Chốt)
-
-- **Grading SLA**:
-  - Writing: 20 phút
-  - Speaking: 60 phút
-- **Timeout handling (Decision: keep FAILED)**:
-  - Main App set `deadlineAt = createdAt + SLA(skill)`.
-  - Quá `deadlineAt` mà chưa có kết quả: `FAILED(TIMEOUT)`.
-  - Callback đến muộn: lưu kết quả (`isLate=true`), giữ nguyên `FAILED`, không cập nhật progress/analytics tự động.
-- **Retry/backoff**:
-  - `max_retries = 3`
-  - Exponential + jitter, cap 5 phút
-  - Tôn trọng `Retry-After` khi gặp 429 từ provider
+- Grading SLA: Writing 20 phút; Speaking 60 phút.
+- Timeout: quá `deadlineAt` → `FAILED(TIMEOUT)`; callback muộn lưu `isLate=true`, giữ `FAILED`.
+- Retry/backoff: `max_retries=3`, exponential + jitter, cap 5 phút, tôn trọng `Retry-After`.
 
 ---
 
-*Document version: 1.0 - Last updated: SP26SE145*
+*Document version: 1.1 - Last updated: SP26SE145*

@@ -1,384 +1,102 @@
 # Reliability & Error Handling
 
-## 1. Outbox Pattern
+## Purpose
 
-### 1.1 Why Outbox Pattern?
+Chốt các quy tắc reliability để hệ thống chấm (Bun <-> RabbitMQ <-> Python/Celery) chạy ổn định: không mất job, chống duplicate, có retry/DLQ, và xử lý timeout/late-result nhất quán.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│              Without Outbox (Potential Data Loss)                │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   Bun App                          RabbitMQ                      │
-│       │                               │                           │
-│       │  1. BEGIN TRANSACTION          │                           │
-│       │──────┐                         │                           │
-│       │      │                         │                           │
-│       │◄─────┘                         │                           │
-│       │                                │                           │
-│       │  2. INSERT submission          │                           │
-│       │       (MainDB)                 │                           │
-│       │──────┐                         │                           │
-│       │      │                         │                           │
-│       │◄─────┘                         │                           │
-│       │                                │                           │
-│       │  3. Publish to RabbitMQ ──────►│                           │
-│       │                                │                           │
-│       │  4. COMMIT                     │                           │
-│       │──────┐                         │                           │
-│       │      │                         │                           │
-│       │◄─────┘                         │                           │
-│       │                                │                           │
-│       │           ⚠️ NETWORK FAILURE    │                           │
-│       │           ⚠️ Message not sent   │                           │
-│       │           ⚠️ Job lost!          │                           │
-│       │                                │                           │
-└─────────────────────────────────────────────────────────────────┘
+## Scope
 
-┌─────────────────────────────────────────────────────────────────┐
-│              With Outbox Pattern (Reliable)                      │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   Bun App                          RabbitMQ                      │
-│       │                               │                           │
-│       │  1. BEGIN TRANSACTION          │                           │
-│       │──────┐                         │                           │
-│       │      │                         │                           │
-│       │◄─────┘                         │                           │
-│       │                                │                           │
-│       │  2. INSERT submission          │                           │
-│       │  3. INSERT outbox message      │                           │
-│       │       (same transaction)       │                           │
-│       │──────┐                         │                           │
-│       │      │                         │                           │
-│       │◄─────┘                         │                           │
-│       │                                │                           │
-│       │  4. COMMIT                     │                           │
-│       │       (atomic: submission +    │                           │
-│       │        outbox message)         │                           │
-│       │──────┐                         │                           │
-│       │      │                         │                           │
-│       │◄─────┘                         │                           │
-│       │                                │                           │
-│       │  5. Message Relay Worker       │                           │
-│       │       reads outbox             │                           │
-│       │       publishes to RabbitMQ    │                           │
-│       │───────────────────────────────►│                           │
-│       │                                │                           │
-│       │  6. UPDATE outbox              │                           │
-│       │       SET processed = true     │                           │
-│       │                                │                           │
-└─────────────────────────────────────────────────────────────────┘
-```
+- Outbox pattern ở MainDB (publish `grading.request` reliable).
+- Retry/backoff policy ở grading worker.
+- DLQ policy và manual recovery.
+- Timeout + late callback rule (business rule).
+- Circuit breaker note cho LLM/STT.
 
-### 1.2 Outbox Table Schema
+## Decisions
 
-```sql
--- MainDB: outbox table
-CREATE TABLE outbox_messages (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    aggregate_id VARCHAR(64) NOT NULL,    -- submissionId
-    aggregate_type VARCHAR(64) NOT NULL,  -- 'Submission'
-    message_type VARCHAR(64) NOT NULL,    -- 'grading.request'
-    payload JSONB NOT NULL,
-    status VARCHAR(32) NOT NULL DEFAULT 'pending',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    processed_at TIMESTAMP WITH TIME ZONE,
-    retry_count INT DEFAULT 0,
-    error_message TEXT
-);
+| Area | Decision |
+|------|----------|
+| Delivery | at-least-once (duplicate possible) |
+| Publish reliability | Outbox + relay worker (Main App side) |
+| Retry | `max_retries = 3` (Celery) |
+| Backoff | exponential + jitter, cap 300s, honor `Retry-After` for 429 |
+| DLQ | `grading.dlq` for non-retryable or max retry |
+| SLA | writing 20m, speaking 60m |
+| Late callback | keep `FAILED(TIMEOUT)`, store result with `isLate=true` |
+| Circuit breaker | open when failure rate > 50%, cooldown 30s |
 
-CREATE INDEX idx_outbox_status ON outbox_messages(status, created_at);
-CREATE INDEX idx_outbox_aggregate ON outbox_messages(aggregate_id, aggregate_type);
-```
+## Contracts
 
-### 1.3 Message Relay Worker
+### Outbox (MainDB) requirements
 
-```python
-# message_relay.py
-import asyncio
-from datetime import datetime
+Outbox record can be stored in MainDB with minimum fields:
 
-async def relay_outbox_messages():
-    """Continuously reads from outbox and publishes to RabbitMQ."""
-    
-    while True:
-        # Get pending messages (oldest first)
-        messages = await db.fetch_all("""
-            SELECT * FROM outbox_messages
-            WHERE status = 'pending'
-            ORDER BY created_at ASC
-            LIMIT 100
-        """)
-        
-        for msg in messages:
-            try:
-                # Publish to RabbitMQ
-                await rabbitmq.publish(
-                    exchange='vstep.exchange',
-                    routing_key='grading.request',
-                    body=msg['payload']
-                )
-                
-                # Mark as processed
-                await db.execute("""
-                    UPDATE outbox_messages
-                    SET status = 'published', processed_at = NOW()
-                    WHERE id = :id
-                """, {'id': msg['id']})
-                
-            except Exception as e:
-                # Update retry count
-                await db.execute("""
-                    UPDATE outbox_messages
-                    SET retry_count = retry_count + 1,
-                        error_message = :error
-                    WHERE id = :id
-                """, {'id': msg['id'], 'error': str(e)})
-        
-        await asyncio.sleep(1)  # Poll interval
-```
+| Field | Purpose |
+|------|---------|
+| `id` | identifier |
+| `aggregate_id` | `submissionId` |
+| `message_type` | `grading.request` |
+| `payload` | JSON body |
+| `status` | `pending` -> `published` / `failed` |
+| `created_at` / `processed_at` | FIFO + audit |
+| `retry_count` / `error_message` | relay retry + debug |
 
-## 2. Retry & Backoff Policy
+Relay behavior:
+- Relay pulls `pending` by `created_at`.
+- Publish to RabbitMQ.
+- Mark `published` on success.
+- On publish fail: retry with bounded backoff; do not block new writes.
 
-### 2.1 Celery Retry Configuration
+### Retry classification
 
-```python
-# tasks/grading.py
-from celery import shared_task
-from celery.exceptions import Retry
+| Failure type | Retry? | Notes |
+|--------------|--------|------|
+| 429 / 5xx from provider | Yes | honor `Retry-After` if present |
+| Network timeout | Yes | bounded retries |
+| Worker lost / crash | Yes | message redelivery may occur |
+| Invalid schema | No | DLQ immediately |
+| Audio decode error | No | DLQ + mark attempt failed |
 
-@shared_task(bind=True, max_retries=3)
-def process_grading(self, request_id: str):
-    try:
-        # Grading logic here
-        result = grade_submission(request_id)
-        return result
-        
-    except TemporaryError as e:
-        # Retry with exponential backoff + jitter (cap 5 minutes)
-        # Note: If upstream returns Retry-After (429), prefer that value.
-        import random
+### DLQ payload requirements
 
-        base = 2 ** self.request.retries  # 2s, 4s, 8s
-        retry_delay = min(base, 300)
-        retry_delay = int(retry_delay * random.uniform(0.8, 1.2))
-        raise self.retry(exc=e, countdown=retry_delay)
-        
-    except PermanentError as e:
-        # Don't retry, send to DLQ
-        await send_to_dlq(request_id, str(e))
-        raise
-```
+DLQ record must retain at least:
 
-### 2.2 Retry Strategy Table
+| Field | Required |
+|------|----------|
+| `requestId` | Yes |
+| `submissionId` | Yes |
+| `failureReason` | Yes |
+| `attemptsMade` | Yes |
+| `lastError` | Yes |
+| `timestamp` | Yes |
 
-| Failure Type | Retry Count | Backoff | Action After Max |
-|--------------|-------------|---------|------------------|
-| LLM API Timeout | 3 | Exponential + jitter, cap 300s | DLQ → Manual Review |
-| STT API Fail | 3 | Exponential + jitter, cap 300s | DLQ → Retry w/ backup |
-| Network Error | 3 | Exponential + jitter, cap 300s | DLQ → Alert Admin |
-| Validation Error | 0 | N/A | Immediate DLQ |
-| Circuit Breaker Open | Until closed | 30s cooldown | Queue pause |
+### Timeout & late-result rule (business)
 
-### 2.3 RabbitMQ DLX Configuration
+- Main App computes `deadlineAt = createdAt + SLA(skill)` at attempt creation.
+- When `now > deadlineAt` and attempt not `COMPLETED`: set `FAILED` with `failureReason=TIMEOUT`.
+- When callback arrives after timeout:
+  - Store grading result with `isLate=true` (audit).
+  - Do not change attempt status.
+  - Do not update progress/analytics automatically.
 
-```json
-{
-  "queues": {
-    "grading.dlq": {
-      "arguments": {}
-    }
-  },
-  "exchanges": {
-    "vstep.dlx": {
-      "type": "direct",
-      "durable": true
-    }
-  },
-  "bindings": {
-    "grading.request": {
-      "dead_letter_exchange": "vstep.dlx",
-      "dead_letter_routing_key": "grading.dlq"
-    }
-  }
-}
-```
+## Failure modes
 
-## 3. DLQ Policy
+| Failure | Expected behavior |
+|--------|-------------------|
+| Outbox relay down | submissions still saved; relay catches up when restarted |
+| Duplicate request | grading dedup by `requestId`, no double-charge |
+| Provider outage | retry/backoff; then DLQ |
+| Callback lost | bounded retry publish; alert if persist |
+| Timeout near-deadline race | deterministic compare using `deadlineAt` and callback received time |
 
-### 3.1 DLQ Processing
+## Acceptance criteria
 
-```python
-# dlq_handler.py
-async def process_dlq():
-    """Process messages from Dead Letter Queue."""
-    
-    while True:
-        msg = await rabbitmq.consume('grading.dlq')
-        
-        # Extract failure reason (best-effort)
-        reason = msg.get('headers', {}).get('x-first-death-reason', 'unknown')
-        
-        # Log for analysis
-        logger.error(f"DLQ: {msg['requestId']} - Reason: {reason}")
-        
-        # Default action: manual review and optional requeue via admin tooling
-        await create_manual_review_ticket(msg)
-```
-
-### 3.2 DLQ Retention
-
-| Policy | Value |
-|--------|-------|
-| Max age in DLQ | 7 days |
-| Max size | 10,000 messages |
-| Archive before delete | S3/Cloud Storage |
-| Alert threshold | 100 messages/day |
-
-## 4. Timeout & Late Callback Handling
-
-### 4.1 SLA Defaults (Business Rules)
-
-| Skill | `grading_sla` | Seconds | Notes |
-|------|----------------|---------|------|
-| writing | 20 minutes | 1200 | Includes queue wait + retries + processing |
-| speaking | 60 minutes | 3600 | Audio/STT can take longer |
-
-### 4.2 Timeout Rule (Main App = Source of Truth)
-
-- At attempt creation time `createdAt`, compute `deadlineAt = createdAt + grading_sla(skill)`.
-- If `now > deadlineAt` and attempt is not `COMPLETED`, Main App marks it as:
-  - `status = FAILED`
-  - `failureReason = TIMEOUT`
-  - `timedOutAt = now`
-- Grading Service may still finish and publish `grading.callback`. Main App will store it as a late result.
-
-### 4.3 Late Callback Rule (Chosen: Keep FAILED)
-
-When `grading.callback` arrives:
-- If attempt already `FAILED(TIMEOUT)` AND `callbackReceivedAt > deadlineAt`:
-  - Store the grading result with `isLate = true` (audit).
-  - DO NOT change attempt status.
-  - DO NOT update progress/analytics automatically.
-  - UI may show a "late result" banner and allow view-only access.
-- Optional (future): Admin/Instructor action "Accept late result" to recompute progress.
-
-### 4.4 Example Pseudocode (Main App)
-
-```typescript
-// callback_handler.ts (conceptual)
-const isTimedOut =
-  attempt.status === 'FAILED' && attempt.failureReason === 'TIMEOUT'
-
-if (isTimedOut && callback.status === 'completed') {
-  await saveGradingResult({
-    requestId: callback.requestId,
-    submissionId: callback.submissionId,
-    isLate: true,
-    receivedAt: callbackReceivedAt
-  })
-  return { accepted: true, late: true }
-}
-
-// Normal path (not timed out)
-await applyCompletion(attempt, callback)
-return { accepted: true, late: false }
-```
-
-## 5. Circuit Breaker (LLM/STT)
-
-### 5.1 Circuit Breaker States
-
-```
-        ┌─────────────────────────────────────────────────────────┐
-        │                   CLOSED (Normal)                       │
-        │   Requests pass through, failures counted               │
-        └────────────────────────┬────────────────────────────────┘
-                                 │
-                                 │ Failure rate > 50%
-                                 ▼
-        ┌─────────────────────────────────────────────────────────┐
-        │                    OPEN (Blocked)                       │
-        │   Requests rejected immediately, fast-fail              │
-        │   Wait 30 seconds then transition to HALF_OPEN          │
-        └────────────────────────┬────────────────────────────────┘
-                                 │
-                                 │ 30s cooldown
-                                 ▼
-        ┌─────────────────────────────────────────────────────────┐
-        │                 HALF_OPEN (Testing)                     │
-        │   Allow limited requests to test recovery               │
-        │   - Success > 80%: CLOSED                               │
-        │   - Any failure: OPEN                                   │
-        └─────────────────────────────────────────────────────────┘
-```
-
-### 5.2 Circuit Breaker Implementation
-
-```python
-# circuit_breaker.py
-from enum import Enum
-from datetime import datetime, timedelta
-
-class CircuitState(Enum):
-    CLOSED = 'closed'
-    OPEN = 'open'
-    HALF_OPEN = 'half_open'
-
-
-class CircuitBreaker:
-    def __init__(self, failure_threshold=0.5, recovery_timeout=30):
-        self.state = CircuitState.CLOSED
-        self.failure_count = 0
-        self.success_count = 0
-        self.total_requests = 0
-        self.failure_threshold = failure_threshold
-        self.recovery_timeout = timedelta(seconds=recovery_timeout)
-        self.last_failure = None
-    
-    async def call(self, func, *args, **kwargs):
-        if self.state == CircuitState.OPEN:
-            if datetime.now() - self.last_failure > self.recovery_timeout:
-                self.state = CircuitState.HALF_OPEN
-            else:
-                raise CircuitOpenError("Circuit breaker is open")
-        
-        try:
-            result = await func(*args, **kwargs)
-            self._on_success()
-            return result
-        except Exception as e:
-            self._on_failure()
-            raise
-    
-    def _on_success(self):
-        self.total_requests += 1
-        self.success_count += 1
-        
-        if self.state == CircuitState.HALF_OPEN:
-            if self.success_count / self.total_requests > 0.8:
-                self.state = CircuitState.CLOSED
-                self._reset()
-    
-    def _on_failure(self):
-        self.total_requests += 1
-        self.failure_count += 1
-        self.last_failure = datetime.now()
-        
-        if self.state == CircuitState.HALF_OPEN:
-            self.state = CircuitState.OPEN
-        elif self.total_requests >= 10:
-            # Check failure rate
-            if self.failure_count / self.total_requests > self.failure_threshold:
-                self.state = CircuitState.OPEN
-    
-    def _reset(self):
-        self.failure_count = 0
-        self.success_count = 0
-        self.total_requests = 0
-```
+- Kill grading worker mid-job: job is redelivered but does not produce duplicate final result.
+- Broker restart: outbox ensures requests are eventually published.
+- Provider returns 429: backoff respects Retry-After and stays within cap.
+- Timeout happens: attempt becomes `FAILED(TIMEOUT)` and does not flip to COMPLETED after late callback.
+- DLQ receives poison message and does not auto-loop.
 
 ---
 
-*Document version: 1.0 - Last updated: SP26SE145*
+*Document version: 1.1 - Last updated: SP26SE145*

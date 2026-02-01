@@ -2,7 +2,11 @@
 
 ## VSTEP Adaptive Learning System - Technical Design Documents
 
-This folder contains detailed technical specifications for the VSTEP Adaptive Learning System implementation.
+This folder contains implementation-oriented technical specs for the VSTEP Adaptive Learning System.
+
+Writing rule: specs focus on decisions, contracts, and business rules; large code snippets belong in the codebase (or separate examples), not in these documents.
+
+Template rule (applies to all specs): Purpose / Scope / Decisions / Contracts / Failure modes / Acceptance criteria.
 
 ## 📁 Specifications
 
@@ -11,7 +15,8 @@ This folder contains detailed technical specifications for the VSTEP Adaptive Le
 | [solution-decisions.vi.md](./solution-decisions.vi.md) | Architectural decisions, chosen technologies, rationale, and scope boundaries |
 | [queue-contracts.vi.md](./queue-contracts.vi.md) | RabbitMQ topology, message schemas, and idempotency rules |
 | [reliability.vi.md](./reliability.vi.md) | Outbox pattern, retry policies, DLQ handling, and circuit breakers |
-| [authentication.vi.md](./authentication.vi.md) | Session management, RBAC, rate limiting, and optional OAuth |
+| [authentication.vi.md](./authentication.vi.md) | JWT access/refresh, RBAC, refresh token rotation, and device limits |
+| [rate-limiting.vi.md](./rate-limiting.vi.md) | Rate limiting rules, tiers, Redis storage, and endpoint-specific limits |
 | [deployment.vi.md](./deployment.vi.md) | Docker Compose configuration, environment variables, and deployment commands |
 
 ## 📖 Related Documentation
@@ -24,19 +29,21 @@ This folder contains detailed technical specifications for the VSTEP Adaptive Le
 
 ### Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    VSTEP Adaptive Learning                   │
-├─────────────────────────────────────────────────────────────┤
-│  Bun + Elysia (Port 3000) ───┐                              │
-│                             RabbitMQ (5672)                  │
-│  Python + FastAPI + Celery ──┘                              │
-│  (Port 8000)                                                 │
-├─────────────────────────────────────────────────────────────┤
-│  PostgreSQL (5432/5433) │ Redis (6379)                      │
-├─────────────────────────────────────────────────────────────┤
-│  External: OpenAI GPT-4, Whisper STT                        │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+  client[Clients\nWeb / Mobile] --> bun[Bun + Elysia\nMain App]
+
+  bun -->|SQL| mainDb[(PostgreSQL\nMainDB)]
+  bun -->|Cache / Rate limit| redis[(Redis)]
+
+  bun -->|AMQP\ngrading.request| rabbit[(RabbitMQ)]
+  rabbit -->|grading.request| worker[Python + Celery\nGrading Worker]
+  worker -->|SQL| gradingDb[(PostgreSQL\nGradingDB)]
+  worker -->|AMQP\ngrading.callback| rabbit
+  rabbit -->|grading.callback| bun
+
+  worker --> llm[LLM Provider]
+  worker --> stt[STT Provider]
 ```
 
 ### Key Technologies
@@ -46,10 +53,10 @@ This folder contains detailed technical specifications for the VSTEP Adaptive Le
 | Main App | Bun + Elysia (TypeScript) |
 | Grading Service | Python + FastAPI + Celery |
 | Message Queue | RabbitMQ (AMQP) |
-| Session Store | Redis |
+| Cache / Rate limit | Redis |
 | Database | PostgreSQL (separate MainDB/GradingDB) |
 | Real-time | SSE (Server-Sent Events) |
-| Auth | Session Cookie + Redis |
+| Auth | JWT (Access + Refresh) |
 
 ---
 

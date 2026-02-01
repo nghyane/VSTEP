@@ -1,292 +1,103 @@
-# Queue Contracts & Message Schemas
+# Queue Contracts (RabbitMQ)
 
-## 1. RabbitMQ Topology
+## Purpose
 
-```
-                    ┌─────────────────────────────────────────┐
-                    │         vstep.exchange (direct)          │
-                    └─────────────────┬───────────────────────┘
-                                      │
-           ┌──────────────────────────┼──────────────────────────┐
-           │                          │                          │
-           ▼                          ▼                          ▼
-   ┌──────────────────┐      ┌──────────────────┐      ┌──────────────────┐
-   │ grading.request   │      │ grading.callback  │      │   grading.dlq     │
-   │    (durable)      │      │    (durable)      │      │    (durable)      │
-   └──────────────────┘      └──────────────────┘      └──────────────────┘
-           │                          │                          │
-           ▼                          ▼                          │
-    ┌─────────────┐            ┌─────────────┐                  │
-    │ Celery App  │            │   Bun App   │                  │
-    │ (Consumer)  │            │  (Consumer) │                  │
-    └─────────────┘            └─────────────┘                  │
-                                                              ▼
-                                                    ┌─────────────────┐
-                                                    │ Manual Recovery │
-                                                    │ / Alert Admin   │
-                                                    └─────────────────┘
-```
+Chốt hợp đồng message giữa Bun Main App và Python Grading Service qua RabbitMQ để 2 bên implement độc lập nhưng không vênh.
 
-### 1.1 Exchange & Queue Configuration
+## Scope
 
-```json
-{
-  "exchange": {
-    "name": "vstep.exchange",
-    "type": "direct",
-    "durable": true
-  },
-  "queues": [
-    {
-      "name": "grading.request",
-      "durable": true,
-      "arguments": {
-        "x-queue-type": "classic",
-        "x-dead-letter-exchange": "vstep.exchange",
-        "x-dead-letter-routing-key": "grading.dlq"
-      }
-    },
-    {
-      "name": "grading.callback",
-      "durable": true,
-      "arguments": {
-        "x-queue-type": "classic"
-      }
-    },
-    {
-      "name": "grading.dlq",
-      "durable": true,
-      "arguments": {}
-    }
-  ]
-}
-```
+- RabbitMQ topology: exchange/queues cho `grading.request`, `grading.callback`, `grading.dlq`.
+- Message payload encoding: JSON UTF-8.
+- Schema + validation rules + versioning.
+- Idempotency rule theo `requestId`.
 
-## 2. Message Schemas
+## Decisions
 
-### 2.1 grading.request Message
+| Item | Decision |
+|------|----------|
+| Exchange | `vstep.exchange` (direct, durable) |
+| Request queue | `grading.request` (durable) |
+| Callback queue | `grading.callback` (durable) |
+| DLQ | `grading.dlq` (durable) |
+| Content type | `application/json; charset=utf-8` |
+| Delivery semantics | at-least-once (duplicate possible) |
+| Schema versioning | `schemaVersion` integer, bump on breaking change |
 
-**Purpose**: Request AI grading for a submission
+## Contracts
 
-```json
-{
-  "requestId": "req_abc123xyz",
-  "submissionId": "sub_456def789",
-  "userId": "usr_111222333",
-  "skill": "writing",
-  "attempt": 3,
-  "deadlineAt": "2026-02-01T10:50:00Z",
-  "payload": {
-    "type": "essay",
-    "content": "The essay content here...",
-    "taskType": "task1",
-    "wordCount": 180,
-    "timeSpent": 2400
-  },
-  "metadata": {
-    "traceId": "trace_789abc123",
-    "spanId": "span_456def789",
-    "timestamp": "2026-02-01T10:30:00Z",
-    "priority": "normal",
-    "retryCount": 0
-  },
-  "callback": {
-    "queue": "grading.callback",
-    "routingKey": "grading.callback"
-  }
-}
-```
+### Topology
 
-#### Field Descriptions
+| Routing key / queue | Producer | Consumer | Notes |
+|---------------------|----------|----------|------|
+| `grading.request` | Bun | Celery worker | Tạo job chấm |
+| `grading.callback` | Python | Bun | Trả kết quả |
+| `grading.dlq` | Broker | Manual tooling | Poison payload / max retry |
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `requestId` | string | Yes | Unique identifier (UUID v4), used for idempotency |
-| `submissionId` | string | Yes | Reference to submission in MainDB |
-| `userId` | string | Yes | User who submitted |
-| `skill` | enum | Yes | `writing` or `speaking` |
-| `attempt` | int | Yes | Attempt number (1-indexed) |
-| `deadlineAt` | string | Yes | ISO 8601 UTC. Computed by Main App using SLA per skill |
-| `payload.type` | string | Yes | `essay`, `email`, `cue_card`, etc. |
-| `payload.content` | string | Yes | The actual content to grade |
-| `payload.wordCount` | int | Yes | For validation |
-| `metadata.traceId` | string | Yes | OpenTelemetry trace ID |
+### Message: `grading.request`
+
+Required fields:
+
+| Field | Type | Required | Notes |
+|-------|------|----------|------|
+| `schemaVersion` | int | Yes | version of contract |
+| `requestId` | string | Yes | UUID v4, idempotency key |
+| `submissionId` | string | Yes | MainDB id |
+| `userId` | string | Yes | owner |
+| `skill` | enum | Yes | `writing`/`speaking` |
+| `attempt` | int | Yes | 1-indexed |
+| `deadlineAt` | string | Yes | ISO 8601 UTC (SLA-based) |
+| `payload` | object | Yes | content to grade |
+| `metadata.traceId` | string | Yes | observability |
 | `metadata.timestamp` | string | Yes | ISO 8601 UTC |
-| `metadata.retryCount` | int | No | Default 0 |
 
-### 2.3 Timeout Semantics (SLA)
+Payload requirements (baseline):
 
-- Main App sets `deadlineAt` when creating the attempt:
-  - `writing`: 20 minutes
-  - `speaking`: 60 minutes
-- Timeout and late-result behavior is defined in `docs/capstone/specs/reliability.vi.md`.
+| Skill | Required payload |
+|------|-------------------|
+| writing | `text`, `taskType` |
+| speaking | `audioUri`, `durationSeconds` |
 
-### 2.2 grading.callback Message
+### Message: `grading.callback`
 
-**Purpose**: Return grading results to Main App
+Required fields:
 
-```json
-{
-  "requestId": "req_abc123xyz",
-  "submissionId": "sub_456def789",
-  "status": "completed",
-  "result": {
-    "overallScore": 7.5,
-    "band": "B2",
-    "criteria": {
-      "task_achievement": 7.0,
-      "coherence_cohesion": 8.0,
-      "lexical_resource": 7.5,
-      "grammatical_range": 7.0
-    },
-    "confidence": 0.92,
-    "feedback": {
-      "strengths": ["Good vocabulary range", "Clear paragraphing"],
-      "improvements": ["Avoid repetition", "More complex sentences"]
-    },
-    "processingTimeMs": 4500,
-    "modelUsed": "gpt-4-turbo"
-  },
-  "error": null,
-  "metadata": {
-    "traceId": "trace_789abc123",
-    "completedAt": "2026-02-01T10:30:45Z"
-  }
-}
-```
+| Field | Type | Required | Notes |
+|-------|------|----------|------|
+| `schemaVersion` | int | Yes | version of contract |
+| `requestId` | string | Yes | join key |
+| `submissionId` | string | Yes | join key |
+| `status` | enum | Yes | `completed`/`error` |
+| `result` | object | Conditional | required when `completed` |
+| `error` | object | Conditional | required when `error` |
+| `metadata.traceId` | string | Yes | observability |
+| `metadata.completedAt` | string | Yes | ISO 8601 UTC |
 
-#### Callback Status Values
+Timeout semantics:
+- Bun sets `deadlineAt` from business rules (writing 20m, speaking 60m).
+- Late-result handling is defined in `docs/capstone/specs/reliability.vi.md`.
 
-| Status | Meaning |
-|--------|---------|
-| `completed` | Grading finished successfully |
-| `error` | Processing failed (see error object) |
-| `retrying` | Temporary failure, will retry |
+### Idempotency
 
-## 3. Idempotency Rules
+- Producer (Bun) must generate stable `requestId` per attempt.
+- Consumer (Python) must dedup by `requestId`:
+  - If already `completed`: publish callback with cached result, do not re-grade.
+  - If already `processing`: treat as duplicate (ignore/reject).
 
-### 3.1 Request Idempotency
+## Failure modes
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                  Idempotency Check Flow                       │
-├──────────────────────────────────────────────────────────────┤
-│                                                               │
-│   Bun App                    Grading Service                  │
-│       │                           │                            │
-│       │  1. Generate requestId    │                            │
-│       │  (UUID v4)                │                            │
-│       │──────┐                    │                            │
-│       │      │                    │                            │
-│       │◄─────┘                    │                            │
-│       │                           │                            │
-│       │  2. Check MainDB          │                            │
-│       │  (outbox table)           │                            │
-│       │──────┐                    │                            │
-│       │      │                    │                            │
-│       │◄─────┘                    │                            │
-│       │                           │                            │
-│       │  3. Publish to RabbitMQ   │                            │
-│       │  with requestId           │                            │
-│       │───────────────────────────►│                            │
-│       │                           │                            │
-│       │                    4. Check GradingDB                 │
-│       │                    (unique constraint)                │
-│       │                    on requestId                       │
-│       │                           │                            │
-│       │                    5. If exists:                      │
-│       │                    → Skip processing                  │
-│       │                    → Send callback with cached result │
-│       │                           │                            │
-│       │                    6. If new:                         │
-│       │                    → Process grading                  │
-│       │                           │                            │
-└──────────────────────────────────────────────────────────────┘
-```
+| Failure | Expected behavior |
+|--------|-------------------|
+| Duplicate delivery | handled by idempotency (no double-charge) |
+| Poison payload | route to DLQ, mark attempt failed |
+| Worker crash mid-task | message redelivered; dedup prevents double grading |
+| Callback publish fails | bounded retry + alert; avoid infinite loops |
 
-### 3.2 Idempotency Key Storage
+## Acceptance criteria
 
-**GradingDB Table: `grading_jobs`**
-
-```sql
-CREATE TABLE grading_jobs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    request_id VARCHAR(64) UNIQUE NOT NULL,
-    submission_id VARCHAR(64) NOT NULL,
-    status VARCHAR(32) NOT NULL DEFAULT 'pending',
-    result JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX idx_grading_jobs_request_id ON grading_jobs(request_id);
-CREATE INDEX idx_grading_jobs_submission_id ON grading_jobs(submission_id);
-CREATE INDEX idx_grading_jobs_status ON grading_jobs(status);
-```
-
-### 3.3 Celery Task Idempotency
-
-```python
-from celery import shared_task
-from sqlalchemy import select
-
-@shared_task(bind=True, max_retries=3)
-def process_grading_request(self, request_id: str):
-    # Task automatically has idempotency via Celery's task_id
-    # Use requestId as Celery task name for deduplication
-    
-    existing = db.execute(
-        select(GradingJob).where(GradingJob.request_id == request_id)
-    ).first()
-    
-    if existing and existing.status == 'completed':
-        # Already processed, return cached result
-        return existing.result
-    
-    if existing and existing.status == 'processing':
-        # Duplicate request, reject
-        raise ValueError(f"Request {request_id} already processing")
-    
-    # Continue processing...
-```
-
-## 4. Consumer Configuration
-
-### 4.1 Celery Worker
-
-```python
-# celery_config.py
-broker_url = "amqp://rabbitmq:5672//"
-task_serializer = "json"
-result_serializer = "json"
-accept_content = ["json"]
-timezone = "UTC"
-task_acks_late = True  # Acknowledge after completion
-task_reject_on_worker_lost = True  # Requeue if worker dies
-worker_prefetch_multiplier = 1  # Process one task at a time
-
-# Retry policy
-task_acks_on_failure_or_timeout = False
-task_default_retry_delay = 2  # seconds (fallback if countdown not provided)
-task_max_retries = 3
-```
-
-### 4.2 Celery Beat (Scheduled Tasks)
-
-```python
-# Periodic tasks for cleanup and monitoring
-beat_schedule = {
-    'cleanup-stale-jobs': {
-        'task': 'tasks.cleanup_stale_jobs',
-        'schedule': 300.0,  # Every 5 minutes
-    },
-    'retry-failed-jobs': {
-        'task': 'tasks.retry_failed_jobs',
-        'schedule': 600.0,  # Every 10 minutes
-    },
-}
-```
+- Two services can be deployed independently and still interoperate.
+- Schema validation rejects invalid payloads deterministically.
+- Duplicate `grading.request` does not create duplicate grading results.
 
 ---
 
-*Document version: 1.0 - Last updated: SP26SE145*
+*Document version: 1.1 - Last updated: SP26SE145*
