@@ -9,6 +9,7 @@ Template rule (áp dụng cho tất cả specs): Purpose / Scope / Decisions / C
 ## Reading Guide (for agents)
 
 - Bắt đầu với: `00-overview/solution-decisions.md`
+- Khi map format đề → data model: đọc `20-domain/vstep-exam-format.md` + `30-data/question-content-schemas.md`
 - Khi làm HTTP API: đọc `10-contracts/api-conventions.md` + `10-contracts/errors.md`
 - Khi làm integration Main App ↔ Grading Service: đọc `10-contracts/queue-contracts.md` + `40-platform/reliability.md`
 - Khi làm real-time: đọc `10-contracts/sse.md` + `30-data/database-schema.md`
@@ -32,6 +33,7 @@ Template rule (áp dụng cho tất cả specs): Purpose / Scope / Decisions / C
 
 ### 20-domain
 
+- [vstep-exam-format.md](./20-domain/vstep-exam-format.md) - VSTEP format mapping → domain model granularity
 - [submission-lifecycle.md](./20-domain/submission-lifecycle.md) - Submission state machine + SLA timeout + late callback rule
 - [hybrid-grading.md](./20-domain/hybrid-grading.md) - Hybrid grading (AI+Human) + confidence routing
 - [review-workflow.md](./20-domain/review-workflow.md) - Human review queue + finalization rules
@@ -41,6 +43,7 @@ Template rule (áp dụng cho tất cả specs): Purpose / Scope / Decisions / C
 ### 30-data
 
 - [database-schema.md](./30-data/database-schema.md) - MainDB/GradingDB/Redis entities + ownership rules
+- [question-content-schemas.md](./30-data/question-content-schemas.md) - Canonical JSON schemas for questions/submissions
 
 ### 40-platform
 
@@ -64,4 +67,4 @@ Template rule (áp dụng cho tất cả specs): Purpose / Scope / Decisions / C
 
 ---
 
-*Document version: 1.4 - Last updated: SP26SE145*
+*Document version: 1.5 - Last updated: SP26SE145*

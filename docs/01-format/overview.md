@@ -112,7 +112,7 @@ VSTEP được phát triển và ban hành bởi **Bộ Giáo dục và Đào t�
 | **Listening** | ~40 phút | 35 MCQ | 3 parts: thông báo, hội thoại, bài giảng |
 | **Reading** | 60 phút | 40 MCQ | 4 passages, 10 câu mỗi bài |
 | **Writing** | 60 phút | 2 tasks | Task 1: Email/thư; Task 2: Essay |
-| **Speaking** | 12 phút | 3 parts | Giao tiếp xã hội, xử lý tình huống, phát triển chủ đề |
+| **Speaking** | 12 phút | 3 parts | Giao tiếp xã hội, thảo luận giải pháp, phát triển chủ đề |
 
 ### Tổng Thời Gian
 
@@ -187,9 +187,9 @@ VSTEP được phát triển và ban hành bởi **Bộ Giáo dục và Đào t�
 
 | Part | Thời gian | Nội dung |
 |------|-----------|----------|
-| Part 1 | 3 phút | Giao tiếp xã hội (3-6 câu hỏi về 2 chủ đề) |
-| Part 2 | 4 phút | Xử lý tình huống (role-play) |
-| Part 3 | 5 phút | Phát triển chủ đề (có thời gian chuẩn bị) |
+| Part 1 | 2-3 phút | Social Interaction (3-6 câu hỏi về 2 chủ đề) |
+| Part 2 | 3-4 phút | Solution Discussion (1 phút chuẩn bị + chọn 1 trong 3 lựa chọn + 2-3 phút nói) |
+| Part 3 | 4-5 phút | Topic Development (1 phút chuẩn bị + 3-4 phút nói + follow-up) |
 
 ---
 

@@ -54,7 +54,7 @@ Chi tiết outbox pattern: xem `../40-platform/reliability.md`.
 
 Bảng idempotency cho AMQP callbacks. Vì callback có thể gồm nhiều progress events và có thể duplicate delivery, Main App phải dedup **theo từng callback message**.
 
-Dedup key: `event_id` (UUID) từ message `grading.callback` schema v2.
+Dedup key: `event_id` (UUID) từ message `grading.callback`.
 
 Tối thiểu nên lưu:
 
@@ -72,10 +72,7 @@ Event log tối giản theo submission để phục vụ:
 - SSE replay khi client reconnect với `Last-Event-ID`
 - Audit trail (tiến trình grading, completed/failed)
 
-Mỗi event phải có một ID ổn định:
-
-- Với schema v2: dùng `eventId` từ `grading.callback`
-- Với schema v1 (không có eventId): Main App tự sinh `eventId` và ghi nhận mapping
+Mỗi event phải có một ID ổn định: ưu tiên dùng `eventId` từ `grading.callback`. Nếu event không đến từ grading callback thì Main App tự sinh `eventId`.
 
 Tối thiểu nên lưu:
 
@@ -91,9 +88,11 @@ Retention: lưu tối thiểu 7 ngày, cleanup bằng scheduled job.
 
 ### 2.7 questions
 
-Ngân hàng câu hỏi. Mỗi câu hỏi thuộc một skill (writing/speaking/listening/reading), một level (A1-C1), và một type (essay, email, mcq, fill_blank, dictation, v.v.).
+Ngân hàng câu hỏi. Mỗi câu hỏi thuộc một skill (writing/speaking/listening/reading), một level (A1-C1), và một **format** (vd. writing_task_1, writing_task_2, reading_passage, listening_part, speaking_part_1/2/3).
 
-Nội dung câu hỏi lưu dạng JSONB linh hoạt để hỗ trợ nhiều loại: text, audio URL (listening), images. Câu hỏi writing/speaking có rubric chấm điểm. Câu hỏi listening/reading có answer_key.
+Nội dung câu hỏi lưu dạng JSONB tối thiểu (prompt/passage/audioUrl + MCQ items...). Shape JSONB tham khảo: `question-content-schemas.md`.
+
+Lưu ý: tài liệu trong `docs/` chỉ để tham khảo format/rubric, không phải chuẩn tối ưu cho thiết kế schema.
 
 Câu hỏi có thể soft-delete (is_active = false). Admin và instructor có quyền tạo/sửa câu hỏi.
 
@@ -164,3 +163,4 @@ Redis phục vụ 3 mục đích chính:
 | Rate limiting keys | `../40-platform/rate-limiting.md` |
 | Confidence & hybrid grading | `../20-domain/hybrid-grading.md` |
 | Adaptive scaffolding | `../20-domain/adaptive-scaffolding.md` |
+| Question content shapes | `question-content-schemas.md` |

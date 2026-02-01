@@ -6,7 +6,7 @@
 
 Chốt **hợp đồng message** giữa Bun Main App và Python Grading Service qua RabbitMQ để 2 bên triển khai độc lập nhưng không vênh.
 
-Tài liệu này là **contract-first**: tập trung vào topology, message shapes, versioning, idempotency, và failure semantics.
+Tài liệu này là **contract-first**: tập trung vào topology, message shapes, idempotency, và failure semantics.
 
 ---
 
@@ -14,7 +14,7 @@ Tài liệu này là **contract-first**: tập trung vào topology, message shap
 
 - Topology: exchange/queues cho `grading.request`, `grading.callback`, `grading.dlq`.
 - Encoding: JSON UTF-8.
-- Versioning: chỉ hỗ trợ `schemaVersion=2`. Message khác version phải bị reject và vào DLQ.
+- Không yêu cầu versioning trong payload (capstone deploy đồng bộ 2 service).
 - Delivery semantics: at-least-once (duplicate/out-of-order possible).
 - Progress events và final result events trên `grading.callback`.
 
@@ -50,25 +50,24 @@ Routing keys (direct exchange):
 
 ---
 
-## 5. Common Message Envelope (Schema v2)
+## 5. Common Message Metadata (Optional)
 
-Tất cả messages v2 phải có các trường chung:
+Khuyến nghị messages có các trường chung sau để debug/trace dễ hơn. Nếu thiếu metadata, consumer vẫn xử lý được miễn payload phần 6/7 hợp lệ.
 
 | Field | Type | Required | Notes |
 |-------|------|----------|------|
-| `schemaVersion` | int | Yes | `2` |
-| `messageType` | string | Yes | `grading.request` hoặc `grading.callback` |
-| `messageId` | string | Yes | UUID v4, unique per message |
-| `createdAt` | string | Yes | ISO 8601 UTC |
-| `trace` | object | Yes | observability |
-| `trace.traceId` | string | Yes | distributed trace id |
-| `producer` | object | Yes | service identity |
-| `producer.service` | string | Yes | `main-app` / `grading-service` |
+| `messageType` | string | No | `grading.request` hoặc `grading.callback` |
+| `messageId` | string | No | UUID v4, unique per message |
+| `createdAt` | string | No | ISO 8601 UTC |
+| `trace` | object | No | observability |
+| `trace.traceId` | string | No | distributed trace id |
+| `producer` | object | No | service identity |
+| `producer.service` | string | No | `main-app` / `grading-service` |
 | `producer.version` | string | No | semantic version/commit id |
 
 ---
 
-## 6. Contract: `grading.request` (Schema v2)
+## 6. Contract: `grading.request`
 
 ### 6.1 Required fields
 
@@ -107,7 +106,7 @@ Tất cả messages v2 phải có các trường chung:
 
 ---
 
-## 7. Contract: `grading.callback` (Schema v2)
+## 7. Contract: `grading.callback`
 
 Callback queue dùng cho **progress updates** và **final result/error**.
 

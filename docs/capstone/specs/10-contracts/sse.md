@@ -104,7 +104,7 @@ In-memory pub/sub là một map đơn giản: `submissionId → Set<SSE connecti
 ## 7. Reconnection & Replay
 
 - Server gửi `retry: 5000` (5 giây) trong stream để browser biết thời gian chờ trước khi reconnect.
-- Mỗi event có `id` field = `eventId` (từ callback schema v2).
+- Mỗi event có `id` field = `eventId` (từ callback message).
 - Khi client reconnect, browser tự động gửi header `Last-Event-ID` với ID của event cuối cùng nhận được.
 - Server replay best-effort bằng cách đọc từ event log theo submission (xem `../30-data/database-schema.md` mục `submission_events`).
 - Nếu không tìm thấy event tương ứng (do retention cleanup hoặc client gửi ID quá cũ), server không fail; thay vào đó client nên gọi polling fallback để sync trạng thái hiện tại.
