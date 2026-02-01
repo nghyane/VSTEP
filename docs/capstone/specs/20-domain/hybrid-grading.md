@@ -144,6 +144,12 @@ Chấm 0-100, chia thành 4 tiêu chí mỗi tiêu chí 25 điểm:
 | 70-84 | Human review required | Medium |
 | 50-69 | Human review required | High |
 | < 50 | Human review required + AI warning | Critical |
+| **Random Spot Check** | Auto-grade + Force Review (5-10% rate) | N/A |
+
+**Spot Check Rule**:
+- Mỗi ngày, hệ thống **ngẫu nhiên chọn 5-10%** các bài có `confidenceScore >= 85` để đẩy vào hàng đợi Human Review (reviewPriority = Medium).
+- Mục đích: Đảm bảo chất lượng AI theo thời gian thực và phát hiện model drift.
+- Spot check được ghi nhận trong audit log với `auditFlag=SPOT_CHECK`.
 
 **Rule**:
 

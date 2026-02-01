@@ -50,6 +50,8 @@ MVP columns (gợi ý):
 
 Bản ghi submission của learner. **Source of truth cho submission status** phía Main App.
 
+**Tối ưu hóa**: Tách nội dung nặng (`answer`, `result`) sang bảng `submission_details` để tăng tốc độ query danh sách và giảm I/O.
+
 Mỗi submission gắn với một user, một question, và một skill (writing/speaking/listening/reading). Chỉ writing và speaking đi qua grading queue; listening/reading được auto-grade ngay bởi Main App (so sánh answer_key).
 
 Trạng thái submission đi qua state machine: PENDING → QUEUED → PROCESSING → ANALYZING → GRADING → COMPLETED (hoặc ERROR/RETRYING/FAILED). Chi tiết: xem `../20-domain/submission-lifecycle.md`.
@@ -72,8 +74,6 @@ MVP columns (gợi ý):
 - `attempt` (int, default 1)
 - `request_id` (UUID, nullable; dùng cho writing/speaking queue)
 - `deadline_at` (nullable)
-- `answer` (JSONB)
-- `result` (JSONB, nullable)
 - `score` (numeric, nullable; 0..10)
 - `band` (A1/A2/B1/B2/C1, nullable)
 - `confidence_score` (int, nullable)
@@ -86,6 +86,15 @@ Indexes (gợi ý):
 - `(user_id, skill, created_at desc)` cho lịch sử
 - `(status, created_at)` cho review queue / dashboard
 - unique `(request_id)` (nullable) để đảm bảo idempotency cho queue-based grading
+
+### 2.3.1 submission_details (New)
+
+Lưu trữ nội dung chi tiết của bài thi để giảm tải cho bảng chính `submissions`.
+
+- `submission_id` (FK submissions, PK)
+- `answer` (JSONB) - Bài làm của thí sinh
+- `result` (JSONB, nullable) - Kết quả chi tiết từ AI/Human
+- `feedback` (TEXT, nullable) - Nhận xét chi tiết
 
 ### 2.4 outbox
 
@@ -103,6 +112,11 @@ MVP columns (gợi ý):
 - `status` (PENDING/PUBLISHED/FAILED)
 - `attempts` (int)
 - `created_at`, `published_at` (nullable)
+
+**Tối ưu hóa Index**: Sử dụng Partial Index để worker tìm job cực nhanh.
+```sql
+CREATE INDEX idx_outbox_pending ON outbox (created_at) WHERE status = 'PENDING';
+```
 
 ### 2.5 processed_callbacks
 
@@ -152,13 +166,11 @@ Indexes (gợi ý):
 
 ### 2.7 questions
 
-Ngân hàng câu hỏi. Mỗi câu hỏi thuộc một skill (writing/speaking/listening/reading), một level (A1-C1), và một **format** (vd. writing_task_1, writing_task_2, reading_passage, listening_part, speaking_part_1/2/3).
+Ngân hàng câu hỏi. Mỗi câu hỏi thuộc một skill (writing/speaking/listening/reading), một level (A1-C1), và một **format**.
 
-Nội dung câu hỏi lưu dạng JSONB tối thiểu (prompt/passage/audioUrl + MCQ items...). Shape JSONB tham khảo: `question-content-schemas.md`.
-
-Lưu ý: tài liệu trong `docs/` chỉ để tham khảo format/rubric, không phải chuẩn tối ưu cho thiết kế schema.
-
-Câu hỏi có thể soft-delete (is_active = false). Admin và instructor có quyền tạo/sửa câu hỏi.
+**Search Strategy (Practical MVP)**:
+- Sử dụng **Postgres Full Text Search** (`tsvector`) kết hợp với **Tags** để tìm kiếm.
+- Hiệu năng cao, không phụ thuộc vào AI Model bên ngoài, không tốn chi phí API.
 
 MVP columns (gợi ý):
 
@@ -168,18 +180,22 @@ MVP columns (gợi ý):
 - `format` (writing_task_1/..., reading_passage, listening_part, speaking_part_1/2/3)
 - `content` (JSONB)
 - `answer_key` (JSONB, nullable)
+- `search_vector` (tsvector, generated stored) - **Main Search**: Tự động index nội dung text.
+- `tags` (text[]) - **Filter**: Lọc theo chủ đề (Environment, Tech...).
 - `is_active` (bool)
 - `created_at`, `updated_at`
 
 Indexes (gợi ý):
 
-- `(skill, level, format, is_active)` để random/select
+- `(skill, level, format, is_active)`
+- GIN index trên `search_vector` (Fast text search).
+- GIN index trên `tags` (Fast tag filter).
 
 ### 2.8 user_progress
 
 Tracking tiến độ học tập theo từng skill. Mỗi user có đúng **1 record per skill** (unique constraint).
 
-Bao gồm: level hiện tại, level mục tiêu, scaffold stage (1=Template, 2=Keywords, 3=Free), mảng scores gần đây (sliding window cho adaptive algorithm), tổng số lần làm bài, điểm trung bình.
+Bao gồm: level hiện tại, level mục tiêu, scaffold stage (1=Template, 2=Keywords, 3=Free), tổng số lần làm bài, điểm trung bình.
 
 Scaffold stage quyết định mức độ hỗ trợ trong practice mode. Chi tiết: xem `../20-domain/adaptive-scaffolding.md`.
 
@@ -190,10 +206,29 @@ MVP columns (gợi ý):
 - `current_level`
 - `target_level`
 - `scaffold_stage` (1/2/3)
-- `recent_scores` (JSONB, optional)
 - `attempt_count` (int)
 - `avg_score` (numeric)
 - `updated_at`
+
+### 2.8.1 user_skill_scores (New)
+
+Lưu lịch sử điểm số chi tiết để tính toán Sliding Window và Adaptive Learning, thay vì lưu JSON array trong bảng `user_progress`.
+
+- `id` (UUID, PK)
+- `user_id` (FK users)
+- `skill` (listening/reading/writing/speaking)
+- `submission_id` (FK submissions)
+- `score` (numeric)
+- `created_at`
+
+**Logic**: Khi cần tính avg_score cho 10 bài gần nhất:
+```sql
+SELECT AVG(score) FROM (
+  SELECT score FROM user_skill_scores 
+  WHERE user_id = ? AND skill = ? 
+  ORDER BY created_at DESC LIMIT 10
+) sub;
+```
 
 ### 2.9 user_goals
 

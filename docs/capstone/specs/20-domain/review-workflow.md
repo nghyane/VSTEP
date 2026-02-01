@@ -23,6 +23,22 @@ Chốt workflow khi AI không đủ confidence (`confidenceScore < 85`) và cầ
 - API (catalog): `GET /admin/submissions/pending-review` (xem `../10-contracts/api-endpoints.md`).
 - Sorting: ưu tiên theo `reviewPriority`, sau đó FIFO theo thời gian vào queue.
 
+### 2.1) Claim mechanism (Race Condition Prevention)
+
+Trước khi instructor bắt đầu review, phải **claim** submission để tránh trùng lặp:
+
+- API: `POST /admin/submissions/:id/claim`
+- Cơ chế:
+  - Sử dụng Redis Distributed Lock với TTL 15 phút (`lock:review:{submissionId}`).
+  - Nếu submission đã được claim bởi instructor khác → trả về 409 CONFLICT với thông tin instructor đang claim.
+  - Nếu claim thành công → trả về thông tin submission + bắt đầu timer.
+- Timeout: Nếu instructor không submit review trong 15 phút, lock tự động expire và submission quay lại queue.
+
+### 2.2) Release mechanism
+
+- API: `POST /admin/submissions/:id/release` (hủy claim, không submit review).
+- Dùng khi instructor mở nhầm bài hoặc cần chuyển cho người khác.
+
 ### 3) Submit review
 
 - API (catalog): `PUT /admin/submissions/:id/review`.

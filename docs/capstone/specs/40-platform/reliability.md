@@ -50,6 +50,7 @@ flowchart TB
 | DLQ | `grading.dlq` for non-retryable or max retry |
 | SLA | writing 20m, speaking 60m |
 | Late callback | keep `FAILED(TIMEOUT)`, store result with `isLate=true` |
+| **Soft Timeout State** | `DELAYED` (queue backlog exceeds threshold) |
 | Circuit breaker | open when failure rate > 50% over 20 requests, cooldown 30s, trial 3 requests |
 | Timeout check | chạy định kỳ; interval configurable |
 
@@ -106,6 +107,18 @@ DLQ record must retain at least:
   - Store grading result with `isLate=true` (audit).
   - Do not change attempt status.
   - Do not update progress/analytics automatically.
+
+### Soft Timeout State (Queue Backpressure)
+
+Khi hệ thống quá tải (hàng đợi RabbitMQ > threshold), thay vì Fail ngay lập tức:
+
+- **Trigger**: Queue depth > 1000 messages hoặc avg wait time > SLA * 0.8.
+- **Action**: Set submission status = `DELAYED`.
+- **User Notification**: Gửi SSE notification cho learner: "Hệ thống đang bận, kết quả sẽ có muộn hơn dự kiến. Cảm ơn bạn đã kiên nhẫn."
+- **Behavior**:
+  - Submission vẫn tiếp tục được xử lý khi queue giảm.
+  - Không bị mark `FAILED` ngay cả khi vượt SLA.
+- **Recovery**: Khi hoàn thành, chuyển `DELAYED` -> `COMPLETED` và thông báo kết quả.
 
 ### Timeout Scheduler
 

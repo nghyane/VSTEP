@@ -73,7 +73,11 @@ sequenceDiagram
 
 - Baseline: tối đa 3 refresh tokens active per user (coi như 3 devices).
 - **Counting rule**: Sắp xếp theo `issuedAt`, revoke token có `issuedAt` cũ nhất (FIFO).
-- Trigger: Khi login tạo refresh token mới và vượt giới hạn 3.
+- **Warning before revoke**: Khi user đăng nhập thiết bị thứ 4:
+  - Trả về warning trong response: `deviceLimitWarning: { currentDevices: 3, oldestDevice: {...}, willRevoke: true }`
+  - User phải xác nhận (UI flow) để revoke thiết bị cũ nhất.
+  - API: `POST /auth/confirm-device-revoke` để thực hiện revoke và login.
+- **Emergency logout**: User có thể manually revoke bất kỳ device nào qua `GET /auth/devices` + `DELETE /auth/devices/:deviceId`.
 
 ## Contracts
 

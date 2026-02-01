@@ -185,24 +185,7 @@ flowchart TB
         Dequeue["Dequeue Job<br/>Celery Worker"]
         Process["Process Job<br/>AI Grading"]
         CircuitBreaker{"Circuit Breaker<br/>External API status"}
-    end
-
-    subgraph ExternalAPI ["External Services"]
-        LLMCall["LLM API Call<br/>GPT/Gemini"]
-        STTCall["STT API Call<br/>Whisper/Azure"]
-    end
-
-    subgraph Recovery ["Recovery Mechanisms"]
-        RetryLogic{"Retry Logic<br/>Attempt < 3?"}
-        Backoff["Exponential Backoff<br/>2^n seconds"]
-        DeadLetter["Dead Letter Queue<br/>Persistent storage"]
-        Compensate["Compensating Action<br/>Rollback/Notify"]
-    end
-
-    subgraph Final ["Resolution"]
-        Success["Success<br/>Return results"]
-        ManualRecovery["Manual Recovery<br/>Admin intervention"]
-        UserNotify["Notify User<br/>Error message"]
+        QueueBackpressure{"Backpressure?<br/>Queue > Threshold"}
     end
 
     %% Main flow
@@ -210,7 +193,9 @@ flowchart TB
     Validate -->|"Valid"| SaveLocal
     SaveLocal --> EnqueueJob
     EnqueueJob --> QueueMonitor
-    QueueMonitor --> Dequeue
+    QueueMonitor --> QueueBackpressure
+    QueueBackpressure -->|"Yes"| DelayedState["Set DELAYED<br/>Notify User"]
+    QueueBackpressure -->|"No"| Dequeue
     Dequeue --> Process
     Process --> CircuitBreaker
 
@@ -560,57 +545,28 @@ flowchart TB
 
     subgraph Routing ["Routing Decision"]
         Threshold{"Confidence ≥ 85%?"}
+        SpotCheck{"Spot Check?<br/>Random 5-10%"}
         AutoGrade["Auto-Grade<br/>Publish result immediately"]
         HumanQueue["Human Review Queue<br/>Priority by confidence"]
     end
 
     subgraph HumanGrading ["Human Grading"]
+        Claim["Claim Submission<br/>Redis Lock (15m)"]
         InstructorReview["Instructor Review<br/>Rubric-based scoring"]
         Override["Override AI<br/>If scoreDiff > 0.5<br/>or bandStepDiff > 1"]
         WeightedScore["Weighted Final Score<br/>AI + Human"]
     end
 
-    subgraph Output ["Final Output"]
-        Feedback["Detailed Feedback<br/>Strengths, weaknesses"]
-        Suggestions["Improvement Suggestions<br/>Personalized"]
-        Report["Score Report<br/>PDF + Dashboard"]
-    end
-
-    %% Writing flow
-    Writing --> Validate
-    Validate --> Extract
-    Extract --> GrammarCheck
-    Extract --> VocabCheck
-    Extract --> ContentCheck
-
-    %% Speaking flow
-    Speaking --> Validate
-    Validate --> Transcribe
-    Transcribe --> Extract
-    Extract --> FluencyCheck
-    Extract --> Pronunciation
-    Transcribe --> ContentCheck
-
-    %% AI scoring convergence
-    GrammarCheck --> ModelConsistency
-    VocabCheck --> ModelConsistency
-    ContentCheck --> ModelConsistency
-    FluencyCheck --> ModelConsistency
-    Pronunciation --> ModelConsistency
-
-    %% Confidence calculation
-    ModelConsistency --> ConfidenceScore
-    RuleValidation --> ConfidenceScore
-    ContentSimilarity --> ConfidenceScore
-    LengthHeuristic --> ConfidenceScore
-
     %% Routing
     ConfidenceScore --> Threshold
-    Threshold -->|"Yes (High confidence)"| AutoGrade
+    Threshold -->|"Yes"| SpotCheck
+    SpotCheck -->|"No"| AutoGrade
+    SpotCheck -->|"Yes"| HumanQueue
     Threshold -->|"No (Low confidence)"| HumanQueue
 
     %% Human grading flow
-    HumanQueue --> InstructorReview
+    HumanQueue --> Claim
+    Claim --> InstructorReview
     InstructorReview --> Override
     Override --> WeightedScore
 
@@ -1198,7 +1154,8 @@ flowchart TB
 > **Cơ chế enforcement (baseline):**
 > - Mỗi lần login/refresh tạo refresh token với `jti` (rotate khi refresh)
 > - Lưu refresh token dạng hash trong MainDB để revoke + audit
-> - Max 3 refresh tokens active / user → revoke token cũ nhất khi tạo token mới
+> - Max 3 refresh tokens active / user
+> - **Login device thứ 4**: Trả về warning + yêu cầu user confirm revoke thiết bị cũ nhất (không tự động revoke)
 > - Logout: revoke refresh token hiện tại
 > - Refresh token reuse (dùng lại token đã bị rotate): revoke token family (force re-login)
 

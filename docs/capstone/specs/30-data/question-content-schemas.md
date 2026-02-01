@@ -32,13 +32,38 @@ Mục tiêu: đủ rõ để backend implement MVP thống nhất; tài liệu t
 - `format`: enum theo skill (bên dưới)
 - `content` (JSONB): payload delivery
 - `answer_key` (JSONB, nullable): chỉ áp dụng cho listening/reading
+- `searchable_text` (TEXT, generated): denormalized text từ content cho Full Text Search
+- `tags` (TEXT[]): array keywords cho quick filtering
+
+## 6) Search & Index Strategy
+
+### 6.1 Full Text Search (Postgres)
+
+Tạo column `searchable_text` được generated từ content:
+
+| Skill | Nội dung denormalize vào searchable_text |
+|-------|-------------------------------------------|
+| Writing | prompt, instructions |
+| Speaking | prompt, instructions, options |
+| Reading | passage, title, items.prompt |
+| Listening | transcript, items.prompt |
+
+Tạo GIN index:
+```sql
+CREATE INDEX idx_questions_searchable ON questions USING GIN (to_tsvector('english', searchable_text));
+```
+
+### 6.2 Tags Array
+
+- Thêm column `tags TEXT[]` cho các keywords như: `["environment", "education", "technology"]`.
+- B-tree index cho exact match và containment queries.
 
 ## 1) Writing
 
 ### 1.1 question.format
 
-- `writing_task_1`
-- `writing_task_2`
+- `writing_task_1` (Letter/Chart)
+- `writing_task_2` (Essay)
 
 ### 1.2 questions.content (writing)
 
@@ -48,9 +73,19 @@ Fields tối thiểu:
 |------|------|----------|------|
 | `taskNumber` | int | Yes | `1` hoặc `2` |
 | `prompt` | string | Yes | đề bài |
-| `instructions` | string | No | nếu muốn hiển thị hướng dẫn riêng |
+| `instructions` | string | No | hướng dẫn làm bài |
 | `minWords` | int | No | default theo task (1:120, 2:250) |
-| `imageUrls` | string[] | No | nếu có hình |
+| `imageUrls` | string[] | No | nếu có hình (biểu đồ, thư mẫu) |
+| `scaffolding` | object | No | **New**: Hỗ trợ Adaptive Learning |
+
+**Scaffolding Shape:**
+```json
+{
+  "template": "Dear [Name],\nI am writing to...", // Level 1 support
+  "keywords": ["complain", "refund", "service"],   // Level 2 support
+  "modelEssay": "Sample full response..."          // Review/Reference
+}
+```
 
 ### 1.3 submissions.answer (writing)
 
@@ -94,68 +129,95 @@ Fields tối thiểu:
 
 ### 3.1 question.format
 
-- `reading_passage`
+- `reading_mcq` (Multiple Choice - Default)
+- `reading_tng` (True/False/Not Given)
+- `reading_matching_headings`
+- `reading_gap_fill`
 
 ### 3.2 questions.content (reading)
 
-Fields tối thiểu:
+**Common Fields:**
+- `passage`: string (HTML/Markdown)
+- `title`: string
 
-| Field | Type | Required | Notes |
-|------|------|----------|------|
-| `passage` | string | Yes | |
-| `title` | string | No | |
-| `items` | array | Yes | list 10 items |
+**Type-Specific Shapes:**
 
-Shape của mỗi item:
+#### A. Multiple Choice / True-False-Not Given
+- `items`: array of objects
+  - `number`: int (global index in test)
+  - `prompt`: string (question text)
+  - `options`: object (`{ "A": "...", "B": "..." }`)
 
-| Field | Type | Required | Notes |
-|------|------|----------|------|
-| `number` | int | Yes | 1..10 |
-| `prompt` | string | Yes | |
-| `options` | object | Yes | keys A/B/C/D |
+#### B. Matching Headings
+- `paragraphs`: array (`[{ "label": "A", "text": "..." }, ...]`)
+- `headings`: array (`["Heading 1", "Heading 2", ...]`)
+- `items`: array (mapping slots)
+  - `number`: int
+  - `targetParagraph`: string ("A")
+
+#### C. Gap Fill
+- `textWithGaps`: string ("... is a [1] of ...")
+- `items`: array
+  - `number`: int
+  - `options`: object (if MCQ fill) OR null (if direct entry)
 
 ### 3.3 questions.answer_key (reading)
 
 | Field | Type | Required | Notes |
 |------|------|----------|------|
-| `correctAnswers` | object | Yes | map `number -> A/B/C/D` |
+| `correctAnswers` | object | Yes | map `number -> value` |
+
+- MCQ/TNG: `number -> "A"`
+- Matching: `number -> index` (of heading)
+- Gap Fill: `number -> "exact word"` OR `number -> "A"`
 
 ### 3.4 submissions.answer (reading)
 
 | Field | Type | Required | Notes |
 |------|------|----------|------|
-| `answers` | object | Yes | map `number -> A/B/C/D` |
+| `answers` | object | Yes | map `number -> user_value` |
 
 ## 4) Listening
 
 ### 4.1 question.format
 
-- `listening_part`
+- `listening_mcq` (Part 1, 2, 3)
+- `listening_dictation` (Practice Mode)
 
 ### 4.2 questions.content (listening)
 
-Fields tối thiểu:
+**Common Fields:**
+- `audioUrl`: string
+- `transcript`: string (Full text)
+- `scaffolding`: object (Adaptive Support)
+  - `keywords`: string[] (Highlight mode)
+  - `slowAudioUrl`: string (Optional for lower levels)
 
-| Field | Type | Required | Notes |
-|------|------|----------|------|
-| `partNumber` | int | Yes | 1/2/3 |
-| `audioUrl` | string | Yes | |
-| `transcript` | string | No | |
-| `items` | array | Yes | list items (count theo part) |
+**Type-Specific Shapes:**
 
-Shape của mỗi item giống Reading: `number`, `prompt`, `options`.
+#### A. Multiple Choice
+- `items`: array
+  - `number`: int
+  - `prompt`: string
+  - `options`: object (`{ "A": "...", "B": "..." }`)
+
+#### B. Dictation (Gap Fill)
+- `transcriptWithGaps`: string ("... [1] ...")
+- `items`: array
+  - `number`: int
+  - `correctText`: string (for validation hint)
 
 ### 4.3 questions.answer_key (listening)
 
 | Field | Type | Required | Notes |
 |------|------|----------|------|
-| `correctAnswers` | object | Yes | map `number -> A/B/C/D` |
+| `correctAnswers` | object | Yes | map `number -> value` |
 
 ### 4.4 submissions.answer (listening)
 
 | Field | Type | Required | Notes |
 |------|------|----------|------|
-| `answers` | object | Yes | map `number -> A/B/C/D` |
+| `answers` | object | Yes | map `number -> value` |
 
 ## 5) submissions.result (common)
 
