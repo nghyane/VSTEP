@@ -1,17 +1,17 @@
-# Question & Submission Content Schemas
+# Question & Submission Content Shapes
 
 > **Phiên bản**: 1.1 · SP26SE145
 
 ## Purpose
 
-Chuẩn hóa schema cho các trường JSONB chính:
+Chốt shape tối thiểu cho các trường JSONB chính:
 
 - `questions.content` (delivery)
 - `questions.answer_key` (auto-grade)
 - `submissions.answer` (user input)
 - `submissions.result` (grading output)
 
-Mục tiêu: thống nhất shape JSONB tối thiểu cho implementation; tài liệu trong `docs/` chỉ để tham khảo format (không phải chuẩn dữ liệu cho data design).
+Mục tiêu: đủ rõ để backend implement MVP thống nhất; tài liệu trong `docs/` chỉ để tham khảo format/rubric (không phải chuẩn dữ liệu cho data design).
 
 ## References
 
@@ -20,9 +20,8 @@ Mục tiêu: thống nhất shape JSONB tối thiểu cho implementation; tài l
 
 ## Conventions
 
-- All IDs are strings.
-- All timestamps ISO 8601 UTC.
 - Không versioning trong JSON payload (capstone update đồng bộ).
+- Các keys trong JSONB ưu tiên camelCase.
 
 ## questions (minimum columns)
 
@@ -43,24 +42,21 @@ Mục tiêu: thống nhất shape JSONB tối thiểu cho implementation; tài l
 
 ### 1.2 questions.content (writing)
 
-```json
-{
-  "taskNumber": 1,
-  "prompt": "...",
-  "instructions": "...",
-  "imageUrls": [],
-  "wordLimit": 120,
-  "criteria": ["taskFulfillment", "organization", "vocabulary", "grammar"]
-}
-```
+Fields tối thiểu:
+
+| Field | Type | Required | Notes |
+|------|------|----------|------|
+| `taskNumber` | int | Yes | `1` hoặc `2` |
+| `prompt` | string | Yes | đề bài |
+| `instructions` | string | No | nếu muốn hiển thị hướng dẫn riêng |
+| `minWords` | int | No | default theo task (1:120, 2:250) |
+| `imageUrls` | string[] | No | nếu có hình |
 
 ### 1.3 submissions.answer (writing)
 
-```json
-{
-  "text": "..."
-}
-```
+| Field | Type | Required | Notes |
+|------|------|----------|------|
+| `text` | string | Yes | bài viết |
 
 ## 2) Speaking
 
@@ -72,28 +68,27 @@ Mục tiêu: thống nhất shape JSONB tối thiểu cho implementation; tài l
 
 ### 2.2 questions.content (speaking)
 
-```json
-{
-  "partNumber": 1,
-  "instructions": "...",
-  "topic": "",
-  "mindMapNodes": [],
-  "followUpQuestions": [],
-  "preparationSeconds": 60,
-  "speakingSeconds": 180,
-  "sampleAudioUrl": null
-}
-```
+Fields tối thiểu:
+
+| Field | Type | Required | Notes |
+|------|------|----------|------|
+| `partNumber` | int | Yes | `1`/`2`/`3` |
+| `prompt` | string | Yes | nội dung chính (topic/câu hỏi) |
+| `instructions` | string | No | |
+| `options` | string[] | No | Part 2: 3 lựa chọn |
+| `mindMapNodes` | string[] | No | Part 3 (optional) |
+| `followUpQuestions` | string[] | No | Part 3 (optional) |
+| `preparationSeconds` | int | No | default 60 |
+| `speakingSeconds` | int | No | default theo part |
+| `sampleAudioUrl` | string | No | |
 
 ### 2.3 submissions.answer (speaking)
 
-```json
-{
-  "audioUrl": "https://...",
-  "durationSeconds": 123,
-  "transcript": null
-}
-```
+| Field | Type | Required | Notes |
+|------|------|----------|------|
+| `audioUrl` | string | Yes | URL tải audio |
+| `durationSeconds` | int | Yes | |
+| `transcript` | string | No | nếu có STT |
 
 ## 3) Reading
 
@@ -103,36 +98,33 @@ Mục tiêu: thống nhất shape JSONB tối thiểu cho implementation; tài l
 
 ### 3.2 questions.content (reading)
 
-```json
-{
-  "passageNumber": 1,
-  "title": "",
-  "passage": "...",
-  "questions": [
-    {
-      "number": 1,
-      "prompt": "...",
-      "options": {"A": "...", "B": "...", "C": "...", "D": "..."}
-    }
-  ]
-}
-```
+Fields tối thiểu:
+
+| Field | Type | Required | Notes |
+|------|------|----------|------|
+| `passage` | string | Yes | |
+| `title` | string | No | |
+| `items` | array | Yes | list 10 items |
+
+Shape của mỗi item:
+
+| Field | Type | Required | Notes |
+|------|------|----------|------|
+| `number` | int | Yes | 1..10 |
+| `prompt` | string | Yes | |
+| `options` | object | Yes | keys A/B/C/D |
 
 ### 3.3 questions.answer_key (reading)
 
-```json
-{
-  "correctAnswers": {"1": "A", "2": "D"}
-}
-```
+| Field | Type | Required | Notes |
+|------|------|----------|------|
+| `correctAnswers` | object | Yes | map `number -> A/B/C/D` |
 
 ### 3.4 submissions.answer (reading)
 
-```json
-{
-  "answers": {"1": "A", "2": "B"}
-}
-```
+| Field | Type | Required | Notes |
+|------|------|----------|------|
+| `answers` | object | Yes | map `number -> A/B/C/D` |
 
 ## 4) Listening
 
@@ -142,59 +134,47 @@ Mục tiêu: thống nhất shape JSONB tối thiểu cho implementation; tài l
 
 ### 4.2 questions.content (listening)
 
-```json
-{
-  "partNumber": 1,
-  "audioUrl": "https://...",
-  "transcript": null,
-  "questions": [
-    {
-      "number": 1,
-      "prompt": "...",
-      "options": {"A": "...", "B": "...", "C": "...", "D": "..."}
-    }
-  ]
-}
-```
+Fields tối thiểu:
+
+| Field | Type | Required | Notes |
+|------|------|----------|------|
+| `partNumber` | int | Yes | 1/2/3 |
+| `audioUrl` | string | Yes | |
+| `transcript` | string | No | |
+| `items` | array | Yes | list items (count theo part) |
+
+Shape của mỗi item giống Reading: `number`, `prompt`, `options`.
 
 ### 4.3 questions.answer_key (listening)
 
-```json
-{
-  "correctAnswers": {"1": "D", "2": "A"}
-}
-```
+| Field | Type | Required | Notes |
+|------|------|----------|------|
+| `correctAnswers` | object | Yes | map `number -> A/B/C/D` |
 
 ### 4.4 submissions.answer (listening)
 
-```json
-{
-  "answers": {"1": "D", "2": "A"}
-}
-```
+| Field | Type | Required | Notes |
+|------|------|----------|------|
+| `answers` | object | Yes | map `number -> A/B/C/D` |
 
 ## 5) submissions.result (common)
 
 ### 5.1 Auto-graded (listening/reading)
 
-```json
-{
-  "correctCount": 32,
-  "total": 40,
-  "score": 8.0,
-  "band": "B2"
-}
-```
+| Field | Type | Required | Notes |
+|------|------|----------|------|
+| `correctCount` | int | Yes | |
+| `total` | int | Yes | 35 (listening) / 40 (reading) |
+| `score` | number | Yes | 0..10 (round 0.5) |
+| `band` | enum | No | optional; có thể derive từ score |
 
 ### 5.2 AI-graded (writing/speaking)
 
-```json
-{
-  "overallScore": 6.5,
-  "band": "B2",
-  "criteriaScores": {"taskFulfillment": 6.0, "organization": 6.5, "vocabulary": 6.5, "grammar": 7.0},
-  "feedback": "...",
-  "confidenceScore": 88,
-  "reviewRequired": false
-}
-```
+| Field | Type | Required | Notes |
+|------|------|----------|------|
+| `overallScore` | number | Yes | 0..10 (round 0.5) |
+| `band` | enum | Yes | A1/A2/B1/B2/C1 |
+| `criteriaScores` | object | No | per-rubric; shape tùy skill |
+| `feedback` | string | No | |
+| `confidenceScore` | int | Yes | 0..100 |
+| `reviewRequired` | boolean | Yes | `confidenceScore < 85` |

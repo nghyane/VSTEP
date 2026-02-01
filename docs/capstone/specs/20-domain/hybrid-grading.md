@@ -59,7 +59,7 @@ Nếu có human review, Final result phải lưu cả:
 
 ### 5.1 Writing
 
-Input tối thiểu: `text`, `taskType` (email/essay), `questionId`.
+Input tối thiểu: `text`, `taskNumber` (1/2), `questionId`.
 
 AI/Human đều chấm theo rubric VSTEP tối thiểu gồm 4 tiêu chí:
 
@@ -70,7 +70,7 @@ AI/Human đều chấm theo rubric VSTEP tối thiểu gồm 4 tiêu chí:
 
 ### 5.2 Speaking
 
-Input tối thiểu: `audioUrl`, `durationSeconds`, `questionId` (và `part` nếu có).
+Input tối thiểu: `audioUrl`, `durationSeconds`, `questionId` (và `partNumber` nếu có).
 
 Yêu cầu tối thiểu: tạo transcript (để instructor review), và chấm theo rubric tương đương (fluency/pronunciation/content/vocabulary).
 

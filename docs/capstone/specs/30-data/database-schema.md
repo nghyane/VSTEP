@@ -22,11 +22,29 @@ Quản lý tài khoản và authentication. Mỗi user có một role duy nhất
 
 **Quan hệ**: Một user có nhiều submissions, nhiều refresh_tokens (max 3 active), một user_progress per skill, nhiều user_goals.
 
+MVP columns (gợi ý):
+
+- `id` (UUID, PK)
+- `email` (unique)
+- `password_hash`
+- `role` (learner/instructor/admin)
+- `created_at`, `updated_at`
+
 ### 2.2 refresh_tokens
 
 Lưu refresh token dạng hash (SHA-256) để hỗ trợ revoke và audit. Mỗi user tối đa 3 active refresh tokens (FIFO — token cũ nhất bị revoke khi tạo token mới). Mỗi token có `jti` (JWT ID) duy nhất để hỗ trợ rotation detection: nếu token đã bị rotate (`replaced_by_jti != null`) mà vẫn được dùng lại → revoke toàn bộ token family của user (force re-login).
 
 Chi tiết: xem `../40-platform/authentication.md`
+
+MVP columns (gợi ý):
+
+- `id` (UUID, PK)
+- `user_id` (FK users)
+- `token_hash` (SHA-256)
+- `jti` (unique)
+- `created_at`, `expires_at`
+- `replaced_by_jti` (nullable)
+- `revoked_at` (nullable)
 
 ### 2.3 submissions
 
@@ -44,11 +62,47 @@ Trường `is_late` đánh dấu submissions mà grading callback đến sau SLA
 
 **Quan hệ**: Một submission thuộc một user và một question. SLA deadline được tính từ thời điểm tạo (writing: +20 phút, speaking: +60 phút).
 
+MVP columns (gợi ý):
+
+- `id` (UUID, PK)
+- `user_id` (FK users)
+- `question_id` (FK questions)
+- `skill` (listening/reading/writing/speaking)
+- `status` (state machine)
+- `attempt` (int, default 1)
+- `request_id` (UUID, nullable; dùng cho writing/speaking queue)
+- `deadline_at` (nullable)
+- `answer` (JSONB)
+- `result` (JSONB, nullable)
+- `score` (numeric, nullable; 0..10)
+- `band` (A1/A2/B1/B2/C1, nullable)
+- `confidence_score` (int, nullable)
+- `review_required` (bool, default false)
+- `is_late` (bool, default false)
+- `created_at`, `updated_at`
+
+Indexes (gợi ý):
+
+- `(user_id, skill, created_at desc)` cho lịch sử
+- `(status, created_at)` cho review queue / dashboard
+- unique `(request_id)` (nullable) để đảm bảo idempotency cho queue-based grading
+
 ### 2.4 outbox
 
 Outbox pattern cho reliable message publishing sang RabbitMQ. Mỗi entry là một message chờ được publish. Outbox relay worker poll table này mỗi 5 giây, lấy batch (max 50) entries có status PENDING, publish sang queue, rồi update status thành PUBLISHED.
 
 Chi tiết outbox pattern: xem `../40-platform/reliability.md`.
+
+MVP columns (gợi ý):
+
+- `id` (UUID, PK)
+- `aggregate_type` (e.g. submission)
+- `aggregate_id` (submissionId)
+- `message_type` (grading.request)
+- `payload` (JSONB)
+- `status` (PENDING/PUBLISHED/FAILED)
+- `attempts` (int)
+- `created_at`, `published_at` (nullable)
 
 ### 2.5 processed_callbacks
 
@@ -64,6 +118,11 @@ Tối thiểu nên lưu:
 - `processed_at`
 
 Records cũ hơn 7 ngày được cleanup bởi scheduled job.
+
+Indexes (gợi ý):
+
+- `(request_id)` để trace/debug
+- `(submission_id)` để join nhanh
 
 ### 2.6 submission_events
 
@@ -86,6 +145,11 @@ Tối thiểu nên lưu:
 
 Retention: lưu tối thiểu 7 ngày, cleanup bằng scheduled job.
 
+Indexes (gợi ý):
+
+- `(submission_id, event_at desc)` cho replay
+- `(request_id)` (nullable) cho trace/debug
+
 ### 2.7 questions
 
 Ngân hàng câu hỏi. Mỗi câu hỏi thuộc một skill (writing/speaking/listening/reading), một level (A1-C1), và một **format** (vd. writing_task_1, writing_task_2, reading_passage, listening_part, speaking_part_1/2/3).
@@ -96,6 +160,21 @@ Lưu ý: tài liệu trong `docs/` chỉ để tham khảo format/rubric, không
 
 Câu hỏi có thể soft-delete (is_active = false). Admin và instructor có quyền tạo/sửa câu hỏi.
 
+MVP columns (gợi ý):
+
+- `id` (UUID, PK)
+- `skill` (listening/reading/writing/speaking)
+- `level` (A1/A2/B1/B2/C1)
+- `format` (writing_task_1/..., reading_passage, listening_part, speaking_part_1/2/3)
+- `content` (JSONB)
+- `answer_key` (JSONB, nullable)
+- `is_active` (bool)
+- `created_at`, `updated_at`
+
+Indexes (gợi ý):
+
+- `(skill, level, format, is_active)` để random/select
+
 ### 2.8 user_progress
 
 Tracking tiến độ học tập theo từng skill. Mỗi user có đúng **1 record per skill** (unique constraint).
@@ -103,6 +182,18 @@ Tracking tiến độ học tập theo từng skill. Mỗi user có đúng **1 r
 Bao gồm: level hiện tại, level mục tiêu, scaffold stage (1=Template, 2=Keywords, 3=Free), mảng scores gần đây (sliding window cho adaptive algorithm), tổng số lần làm bài, điểm trung bình.
 
 Scaffold stage quyết định mức độ hỗ trợ trong practice mode. Chi tiết: xem `../20-domain/adaptive-scaffolding.md`.
+
+MVP columns (gợi ý):
+
+- `user_id` (FK users)
+- `skill` (PK part)
+- `current_level`
+- `target_level`
+- `scaffold_stage` (1/2/3)
+- `recent_scores` (JSONB, optional)
+- `attempt_count` (int)
+- `avg_score` (numeric)
+- `updated_at`
 
 ### 2.9 user_goals
 
@@ -112,9 +203,30 @@ Mục tiêu học tập của learner. Lưu target level (A1-C1) và deadline d�
 
 Cấu hình bài thi thử. Mỗi mock test gồm 4 sections (listening, reading, writing, speaking) với danh sách question IDs và time limits cho mỗi section. Admin tạo và quản lý.
 
+MVP columns (gợi ý):
+
+- `id` (UUID, PK)
+- `level` (B1/B2/C1)
+- `blueprint` (JSONB) (sections + ordered questionIds + time limits)
+- `is_active` (bool)
+- `created_at`, `updated_at`
+
 ### 2.11 mock_test_sessions
 
 Session khi learner làm mock test. Lưu trạng thái (IN_PROGRESS → SUBMITTED → SCORED), answers cho listening/reading (JSONB), và mapping tới submission IDs cho writing/speaking (vì writing/speaking đi qua grading queue riêng).
+
+MVP columns (gợi ý):
+
+- `id` (UUID, PK)
+- `user_id` (FK users)
+- `mock_test_id` (FK mock_tests)
+- `status` (IN_PROGRESS/SUBMITTED/SCORED)
+- `answers` (JSONB) (listening/reading)
+- `submission_ids` (JSONB) (writing/speaking)
+- `section_scores` (JSONB, nullable)
+- `overall_exam_score` (numeric, nullable)
+- `started_at`, `submitted_at` (nullable)
+- `created_at`, `updated_at`
 
 ---
 
@@ -122,23 +234,29 @@ Session khi learner làm mock test. Lưu trạng thái (IN_PROGRESS → SUBMITTE
 
 ### 3.1 grading_jobs
 
-Job state cho grading service. **Source of truth cho grading results** phía Grading Service.
+Job state cho grading service. GradingDB (MVP) chỉ cần **một bảng**: job + result + error.
+
+Lý do: đồ án triển khai đồng bộ, ưu tiên đơn giản; không cần tách `grading_results`/`grading_errors`.
 
 Mỗi job được tạo khi grading worker consume message từ `grading.request` queue. `request_id` (UUID từ queue message) là unique key cho idempotency — nếu nhận duplicate message, skip.
 
 Status riêng của grading service: PENDING → PROCESSING → ANALYZING → GRADING → COMPLETED/ERROR.
 
-### 3.2 grading_results
+MVP columns (gợi ý):
 
-Kết quả chấm điểm chi tiết. One-to-one với grading_job.
+- `id` (UUID, PK)
+- `request_id` (UUID, unique)
+- `submission_id`
+- `skill` (writing/speaking)
+- `status`
+- `attempt` (int)
+- `result` (JSONB, nullable) (overallScore/band/confidenceScore/criteriaScores/feedback)
+- `error` (JSONB, nullable) (type/code/message/retryable)
+- `created_at`, `updated_at`
 
-Bao gồm: overall score (0-10), VSTEP band (A1-C1), confidence score (0-100), điểm theo từng tiêu chí (JSONB), feedback chi tiết, gợi ý cải thiện, raw AI response (để audit), và kết quả human review nếu có.
+Gợi ý index:
 
-Confidence score quyết định routing: >= 85% → auto-grade, < 85% → human review queue. Chi tiết: xem `../20-domain/hybrid-grading.md`.
-
-### 3.3 grading_errors
-
-Log lỗi cho failed jobs. Mỗi error record ghi nhận loại lỗi (LLM_TIMEOUT, STT_FAIL, INVALID_INPUT, v.v.), số lần retry, và liệu lỗi có retryable hay không.
+- `(status, created_at)` để theo dõi backlog
 
 ---
 

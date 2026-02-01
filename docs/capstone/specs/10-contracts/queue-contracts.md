@@ -86,7 +86,7 @@ Khuyến nghị messages có các trường chung sau để debug/trace dễ hơ
 | Field | Type | Required | Notes |
 |-------|------|----------|------|
 | `text` | string | Yes | bài viết |
-| `taskType` | enum | Yes | `email` / `essay` |
+| `taskNumber` | int | Yes | `1` (Task 1) / `2` (Task 2) |
 | `questionId` | string | Yes | question reference |
 
 ### 6.3 Payload (Speaking)
@@ -96,7 +96,7 @@ Khuyến nghị messages có các trường chung sau để debug/trace dễ hơ
 | `audioUrl` | string | Yes | URL tải audio |
 | `durationSeconds` | int | Yes | độ dài audio |
 | `questionId` | string | Yes | question reference |
-| `part` | int | No | speaking part (1/2/3) |
+| `partNumber` | int | No | speaking part (1/2/3) |
 
 ### 6.4 Validation rules
 
