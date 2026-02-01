@@ -1,0 +1,12 @@
+[submodule "apps/frontend"]
+	path = apps/frontend
+	url = https://github.com/nghyane/vstep-frontend.git
+[submodule "apps/grading"]
+	path = apps/grading
+	url = https://github.com/nghyane/vstep-grading.git
+[submodule "apps/backendn"]
+	path = apps/backendn
+	url = https://github.com/nghyane/vstep-backend.git
+[submodule "apps/backend"]
+	path = apps/backend
+	url = https://github.com/nghyane/vstep-backend.git
