@@ -1,3 +1,7 @@
 .venv/
 .DS_Store
 scripts/__pycache__/
+apps/*/node_modules
+apps/*/.env
+apps/backend/dist
+apps/frontend/dist
