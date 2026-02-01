@@ -5,3 +5,35 @@ apps/*/node_modules
 apps/*/.env
 apps/backend/dist
 apps/frontend/dist
+
+# IDE/Editor
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Python
+.venv/
+venv/
+venv_*/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# OpenCode
+opencode.json
+opencode.json.*.bak
+
+# Temp
+*.tmp
+*.temp
+*.log
