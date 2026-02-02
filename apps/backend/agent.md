@@ -194,18 +194,16 @@ bun run typecheck    # Run tsc --noEmit
 bun run check        # Lint + TypeCheck
 ```
 
-### Note on TypeScript Module Resolution
+### TypeScript Configuration
 
-Bun uses its own module resolution that doesn't require `.js` extensions on imports:
+Project uses `moduleResolution: "bundler"` in `tsconfig.json` to support Bun-style imports without `.js` extensions:
+
 ```typescript
-// ✅ Bun allows this
+// ✅ Both Bun and TypeScript accept this
 import { users } from "./schema/users";
-
-// ❌ Node.js/TypeScript requires this
-import { users } from "./schema/users.js";
 ```
 
-When running `tsc --noEmit`, you may see module resolution errors. This is expected - the code runs correctly with Bun. For strict type checking, consider using `bun` runtime checks or adjusting `tsconfig.json` moduleResolution settings.
+This configuration allows TypeScript to properly type-check code while maintaining Bun compatibility.
 
 ---
 
