@@ -32,17 +32,15 @@ Mục tiêu: đủ rõ để backend implement MVP thống nhất; tài liệu t
 - `format`: enum theo skill (bên dưới)
 - `content` (JSONB): payload delivery
 - `answer_key` (JSONB, nullable): chỉ áp dụng cho listening/reading
-- `searchable_text` (TEXT, generated): denormalized text từ content cho Full Text Search
-- `tags` (TEXT[]): array keywords cho quick filtering
 
-## 6) Search & Index Strategy
+## Search Strategy
 
-### 6.1 Full Text Search (Postgres)
+### Full Text Search (Postgres)
 
-Tạo column `searchable_text` được generated từ content:
+Tạo column `search_vector` (tsvector, generated stored) từ content:
 
-| Skill | Nội dung denormalize vào searchable_text |
-|-------|-------------------------------------------|
+| Skill | Nội dung denormalize vào search_vector |
+|-------|----------------------------------------|
 | Writing | prompt, instructions |
 | Speaking | prompt, instructions, options |
 | Reading | passage, title, items.prompt |
@@ -50,13 +48,10 @@ Tạo column `searchable_text` được generated từ content:
 
 Tạo GIN index:
 ```sql
-CREATE INDEX idx_questions_searchable ON questions USING GIN (to_tsvector('english', searchable_text));
+-- search_vector is already tsvector type (generated stored column)
+-- GIN index for fast full-text queries
+CREATE INDEX idx_questions_search ON questions USING GIN (search_vector);
 ```
-
-### 6.2 Tags Array
-
-- Thêm column `tags TEXT[]` cho các keywords như: `["environment", "education", "technology"]`.
-- B-tree index cho exact match và containment queries.
 
 ## 1) Writing
 

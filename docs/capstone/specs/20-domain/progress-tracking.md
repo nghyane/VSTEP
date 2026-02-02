@@ -130,7 +130,7 @@ ETA chỉ là heuristic và phải trả về `unknown` nếu dữ liệu không
 
 ### 10.3 Content selection rules
 
-- Dựa trên metadata của questions (topic/tags/level/type).
+- Dựa trên metadata của questions (topic/level/type).
 - Writing/Speaking: ưu tiên theo criteria yếu nhất (từ feedback/criteria scores).
 - Listening/Reading: ưu tiên theo dạng câu hỏi user sai nhiều (mcq/matching/fill).
 

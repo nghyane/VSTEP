@@ -216,11 +216,11 @@ flowchart TB
     RetryLogic -->|"Yes"| Backoff
     Backoff --> Dequeue
     RetryLogic -->|"No"| DeadLetter
-    DeadLetter --> Compensate
+    DeadLetter --> ErrorHandler
 
-    %% Compensating actions
-    Compensate -->|"Auto-recoverable"| ManualRecovery
-    Compensate -->|"Notify user"| UserNotify
+    %% Error handling actions
+    ErrorHandler -->|"Auto-recoverable"| ManualRecovery
+    ErrorHandler -->|"Notify user"| UserNotify
     ManualRecovery -->|"Success"| Success
 
     %% Circuit breaker recovery
@@ -236,7 +236,7 @@ flowchart TB
     class Submit,Validate,SaveLocal,EnqueueJob,QueueMonitor normal
     class Dequeue,Process,CircuitBreaker,LLMCall,STTCall warning
     class DeadLetter,UserNotify error
-    class Success,Compensate success
+    class Success,ErrorHandler success
     class RetryLogic,Backoff,ManualRecovery,CircuitReset recovery
 ```
 
@@ -270,7 +270,7 @@ stateDiagram-v2
 
 ---
 
-## 3. Data Consistency & Saga Pattern
+## 3. Data Consistency & State Machine
 
 ```mermaid
 flowchart TB
@@ -282,15 +282,14 @@ flowchart TB
 
     subgraph MainService ["Main Application (Bun)"]
         CreateSubmission["Create Submission<br/>Status: PENDING"]
-        SagaOrchestrator["Saga Orchestrator<br/>Coordinate steps"]
+        StateMachine["State Machine<br/>Manage transitions"]
         UpdateStatus["Update Status<br/>PROCESSING → COMPLETED"]
-        CompensateMain["Compensate<br/>Mark FAILED"]
+        HandleError["Handle Error<br/>Mark FAILED/ERROR"]
     end
 
     subgraph MessageQueue ["Message Queue"]
         JobRequest["Queue: grading.request<br/>Job payload (via Outbox)"]
         JobCallback["Queue: grading.callback<br/>Result payload (AMQP)"]
-        SagaLog["Saga Log<br/>Event sourcing"]
     end
 
     subgraph GradingService ["Grading Service"]
@@ -306,14 +305,13 @@ flowchart TB
         RedisCache[("Redis<br/>Status cache")]
     end
 
-    %% Saga flow
+    %% State machine flow
     UserAction --> OptimisticUI
     OptimisticUI --> CreateSubmission
     CreateSubmission --> MainDB
-    CreateSubmission --> SagaOrchestrator
-    SagaOrchestrator --> SagaLog
-    SagaOrchestrator --> JobRequest
-    SagaOrchestrator --> RedisCache
+    CreateSubmission --> StateMachine
+    StateMachine --> RedisCache
+    StateMachine --> JobRequest
 
     %% Grading service processing
     JobRequest --> ReceiveJob
@@ -324,25 +322,25 @@ flowchart TB
     SendCallback --> JobCallback
 
     %% Callback handling
-    JobCallback --> SagaOrchestrator
-    SagaOrchestrator --> UpdateStatus
+    JobCallback --> StateMachine
+    StateMachine --> UpdateStatus
     UpdateStatus --> MainDB
     UpdateStatus --> RedisCache
     UpdateStatus --> FinalUI
 
-    %% Failure compensation
+    %% Failure handling
     ProcessGrading -->|"Fail"| ErrorHandler["Error Handler"]
-    ErrorHandler --> CompensateGrading["Compensate: Store ERROR"]
-    CompensateGrading --> GradingDB
-    CompensateGrading -->|"Callback with error"| JobCallback
-    JobCallback --> CompensateMain
-    CompensateMain --> MainDB
-    CompensateMain --> RedisCache
-    CompensateMain --> FinalUI
+    ErrorHandler --> StoreError["Store: ERROR"]
+    StoreError --> GradingDB
+    StoreError -->|"Callback with error"| JobCallback
+    JobCallback --> HandleError
+    HandleError --> MainDB
+    HandleError --> RedisCache
+    HandleError --> FinalUI
 
     %% Timeout handling
-    SagaOrchestrator -->|"Timeout > SLA<br/>(Writing 20m / Speaking 60m)"| TimeoutHandler["Timeout Handler"]
-    TimeoutHandler --> CompensateMain
+    StateMachine -->|"Timeout > SLA<br/>(Writing 20m / Speaking 60m)"| TimeoutHandler["Timeout Handler"]
+    TimeoutHandler --> HandleError
     TimeoutHandler --> Alert["Alert Admin"]
 
     classDef client fill:#1565c0,stroke:#0d47a1,color:#fff
@@ -353,22 +351,28 @@ flowchart TB
     classDef error fill:#c62828,stroke:#b71c1c,color:#fff
 
     class UserAction,OptimisticUI,FinalUI client
-    class CreateSubmission,SagaOrchestrator,UpdateStatus,CompensateMain,TimeoutHandler main
-    class JobRequest,JobCallback,SagaLog queue
-    class ReceiveJob,ProcessGrading,StoreResult,SendCallback,ErrorHandler,CompensateGrading grading
+    class CreateSubmission,StateMachine,UpdateStatus,HandleError,TimeoutHandler main
+    class JobRequest,JobCallback queue
+    class ReceiveJob,ProcessGrading,StoreResult,SendCallback,ErrorHandler,StoreError grading
     class MainDB,GradingDB,RedisCache data
     class Alert error
 ```
 
-### 3.1 Saga Steps
+### 3.1 State Machine Transitions
 
-| Step | Action | Compensation | Timeout |
-|------|--------|--------------|---------|
-| 1 | Create submission (PENDING) | Delete submission | 10s |
-| 2 | Publish grading job (Outbox pattern) | Mark submission FAILED | 5s |
-| 3 | Grading service processes | N/A (async) | SLA (Writing 20m / Speaking 60m) |
-| 4 | Receive AMQP callback | Retry callback | 30s |
-| 5 | Update submission (COMPLETED) | Mark submission ERROR | 10s |
+| Event | From State | To State | Action |
+|-------|------------|----------|--------|
+| User submits | - | PENDING | Create record |
+| Job published | PENDING | QUEUED | Enqueue to RabbitMQ |
+| Worker picks up | QUEUED | PROCESSING | Start grading |
+| AI analyzing | PROCESSING | ANALYZING | LLM/STT processing |
+| Scoring | ANALYZING | GRADING | Calculate scores |
+| AI done, auto-grade | GRADING | COMPLETED | Save result |
+| AI done, review needed | GRADING | REVIEW_REQUIRED | Queue for instructor |
+| Instructor reviews | REVIEW_REQUIRED | COMPLETED | Save final result |
+| Retryable error | any AI state | ERROR | Log error |
+| Max retries exceeded | ERROR | FAILED | DLQ, notify user |
+| SLA timeout | any AI state | FAILED | Timeout scheduler |
 
 ### 3.2 Outbox Pattern
 
@@ -391,7 +395,6 @@ flowchart TB
 - **Main DB**: Source of truth for submission status
 - **Grading DB**: Source of truth for grading results
 - **Redis**: Cache for real-time status (eventual consistency)
-- **Saga Log**: Audit trail for all saga events
 
 ---
 
@@ -1282,8 +1285,8 @@ Thiết kế UI được lưu trong thư mục `.claude/pencil/` với định d
 | Sơ đồ | Mục đích | Thành phần chính |
 |-------|----------|------------------|
 | **1. Kiến trúc Hệ thống** | Multi-Language Services | Bun+Elysia (API/Core) + Python+Celery (Grading) - Separate DB, Queue-based (RabbitMQ), SSE real-time |
-| **2. Error Handling** | Failure Recovery | Retry logic, Circuit breaker, Dead Letter Queue, Compensation |
-| **3. Data Consistency** | Saga Pattern | Saga orchestrator, Event sourcing, Compensation actions |
+| **2. Error Handling** | Failure Recovery | Retry logic, Circuit breaker, Dead Letter Queue, Error handler |
+| **3. Data Consistency** | State Machine | State machine transitions, Outbox pattern, Retry logic |
 | **4. Real-time Updates** | Status Notifications | SSE (Server-Sent Events), AMQP callback consumer, In-memory pub/sub |
 | **5. Hybrid Grading** | AI + Human với Confidence | Confidence formula, Routing logic, Weighted scoring |
 | **6. Hành trình Người dùng** | Vòng đời người học | Registration → Goal → Self-Assessment → Practice/Mock Test |
