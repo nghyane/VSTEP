@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { sql, sql } from "drizzle-orm";
 import {
   boolean,
   index,

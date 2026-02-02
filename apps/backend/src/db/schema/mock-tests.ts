@@ -6,7 +6,6 @@ import {
   jsonb,
   pgEnum,
   pgTable,
-  text,
   timestamp,
   uuid,
   varchar,
