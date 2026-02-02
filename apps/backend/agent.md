@@ -180,30 +180,24 @@ bun run db:generate  # Generate migrations
 
 ---
 
-## Type Checking & Linting
+## Linting & Code Quality
+
+This project uses **Biome** for all code checking and formatting:
 
 ```bash
-# Biome linting (recommended)
-bun run lint         # Check code style
-bun run format       # Auto-fix formatting
+# Check code style and quality
+bun run check
 
-# TypeScript type check
-bun run typecheck    # Run tsc --noEmit
-
-# Full check
-bun run check        # Lint + TypeCheck
+# Auto-fix formatting issues
+bun run format
 ```
 
-### TypeScript Configuration
+### Why Biome?
 
-Project uses `moduleResolution: "bundler"` in `tsconfig.json` to support Bun-style imports without `.js` extensions:
-
-```typescript
-// ✅ Both Bun and TypeScript accept this
-import { users } from "./schema/users";
-```
-
-This configuration allows TypeScript to properly type-check code while maintaining Bun compatibility.
+- **Fast**: Written in Rust, significantly faster than ESLint/Prettier
+- **Unified**: Linting and formatting in one tool
+- **Bun-native**: Works seamlessly with Bun projects
+- **Type-aware**: Catches common TypeScript issues without separate type checking
 
 ---
 
