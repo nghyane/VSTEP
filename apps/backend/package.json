@@ -7,13 +7,16 @@
     "dev": "bun run --hot src/index.ts",
     "lint": "bunx @biomejs/biome check src",
     "format": "bunx @biomejs/biome format src --write",
-    "db:generate": "bunx drizzle-kit generate",
-    "db:migrate": "bunx drizzle-kit migrate"
+    "db:generate": "bunx tsx node_modules/.bin/drizzle-kit generate",
+    "db:migrate": "bunx tsx node_modules/.bin/drizzle-kit migrate",
+    "db:push": "bunx tsx node_modules/.bin/drizzle-kit push",
+    "db:studio": "bunx tsx node_modules/.bin/drizzle-kit studio"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.13",
     "@types/bun": "latest",
-    "drizzle-kit": "^0.31.8"
+    "drizzle-kit": "^0.31.8",
+    "tsx": "^4.21.0"
   },
   "peerDependencies": {
     "typescript": "^5"
