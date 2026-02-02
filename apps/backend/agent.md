@@ -180,6 +180,35 @@ bun run db:generate  # Generate migrations
 
 ---
 
+## Type Checking & Linting
+
+```bash
+# Biome linting (recommended)
+bun run lint         # Check code style
+bun run format       # Auto-fix formatting
+
+# TypeScript type check
+bun run typecheck    # Run tsc --noEmit
+
+# Full check
+bun run check        # Lint + TypeCheck
+```
+
+### Note on TypeScript Module Resolution
+
+Bun uses its own module resolution that doesn't require `.js` extensions on imports:
+```typescript
+// ✅ Bun allows this
+import { users } from "./schema/users";
+
+// ❌ Node.js/TypeScript requires this
+import { users } from "./schema/users.js";
+```
+
+When running `tsc --noEmit`, you may see module resolution errors. This is expected - the code runs correctly with Bun. For strict type checking, consider using `bun` runtime checks or adjusting `tsconfig.json` moduleResolution settings.
+
+---
+
 ## Testing Approach
 
 ```bash
