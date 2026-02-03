@@ -62,6 +62,8 @@ flowchart TB
     class BunApp,Auth,API,Core,QueueClient bun
     class GradingService,Worker,Grader python
     class DataLayer,MainDB,GradingDB,MQ,Redis data
+    
+    linkStyle default stroke:#9e9e9e,stroke-width:2px
 ```
 
 > **Kiến trúc Multi-Language:**
@@ -131,6 +133,8 @@ flowchart TB
     class Queue,ReqQueue,CbQueue queue
     class Python,Receive,Process,SendCb python
     class SaveDB,SaveGrade db
+
+    linkStyle default stroke:#9e9e9e,stroke-width:2px
 ```
 
 ---
@@ -197,6 +201,8 @@ flowchart TB
     class Retry warning
     class DLQ,Alert error
     class Success,Complete success
+
+    linkStyle default stroke:#9e9e9e,stroke-width:2px
 ```
 
 ### 3.1 Retry Strategy
@@ -219,6 +225,8 @@ stateDiagram-v2
     HalfOpen --> Closed: Success rate > 80%
     HalfOpen --> Open: Any failure
     Closed --> Closed: Process normally
+
+    linkStyle default stroke:#9e9e9e,stroke-width:2px
 ```
 
 ---
@@ -273,6 +281,8 @@ flowchart TB
     class COMPLETED success
     class ERROR,FAILED error
     class REVIEW review
+
+    linkStyle default stroke:#9e9e9e,stroke-width:2px
 ```
 
 ### 4.1 State Machine Transitions
@@ -316,6 +326,8 @@ flowchart TB
 
     class Transaction,Sub,Outbox trans
     class Async,Relay,Lock,Publish,Confirm async
+
+    linkStyle default stroke:#9e9e9e,stroke-width:2px
 ```
 
 ---
@@ -379,6 +391,8 @@ flowchart TB
     class Bun,Consumer,PubSub,DBUpdate,Fallback bun
     class Worker,JobStart,Progress,JobComplete worker
     class Queue,CbQueue queue
+
+    linkStyle default stroke:#9e9e9e,stroke-width:2px
 ```
 
 ### 5.1 Status Mapping
@@ -478,6 +492,8 @@ flowchart TB
     class Confidence,ModelCons,RuleVal,ContentSim,LengthHeur,Score conf
     class Routing,Threshold,SpotCheck,Auto route
     class HumanGrading,Claim,Review,Override,Weighted human
+
+    linkStyle default stroke:#9e9e9e,stroke-width:2px
 ```
 
 ### 6.1 Confidence Score Formula
@@ -567,6 +583,8 @@ flowchart LR
     class Select,GoalCheck decision
     class End success
     class SelfAssess optional
+
+    linkStyle default stroke:#9e9e9e,stroke-width:2px
 ```
 
 ---
@@ -638,6 +656,8 @@ flowchart TB
     class Stage,S1,S2,S3 stage
     class Feedback,Grammar,Vocab,Cohesion,TaskResp feedback
     class Progression,Check,Up,Stay,Down progress
+
+    linkStyle default stroke:#9e9e9e,stroke-width:2px
 ```
 
 ### 8B. Writing Progression Rules
@@ -708,6 +728,8 @@ flowchart TB
     class RBAC,Roles,Check rbac
     class Resources,Practice,Mock,Grading,Admin resources
     class Store data
+
+    linkStyle default stroke:#9e9e9e,stroke-width:2px
 ```
 
 ### 9.1 Refresh Token Enforcement
@@ -733,6 +755,8 @@ flowchart TB
     class Login,Attempt,Revoke,Issue process
     class Count decision
     class Issue success
+
+    linkStyle default stroke:#9e9e9e,stroke-width:2px
 ```
 
 ### 9.2 Role Permissions
