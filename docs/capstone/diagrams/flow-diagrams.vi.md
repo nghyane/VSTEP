@@ -53,15 +53,17 @@ flowchart TB
     Grader --> MQ
     MQ --> BunApp
 
-    classDef users fill:#1565c0,stroke:#90caf9,stroke-width:2px,color:#fff
-    classDef bun fill:#e65100,stroke:#ffab91,stroke-width:2px,color:#fff
-    classDef python fill:#2e7d32,stroke:#a5d6a7,stroke-width:2px,color:#fff
-    classDef data fill:#c2185b,stroke:#f48fb1,stroke-width:2px,color:#fff
+    %% Nodes - solid fill
+    classDef users fill:#1565c0,stroke:#1565c0,color:#fff
+    classDef bun fill:#e65100,stroke:#e65100,color:#fff
+    classDef python fill:#2e7d32,stroke:#2e7d32,color:#fff
+    classDef data fill:#c2185b,stroke:#c2185b,color:#fff
 
-    classDef usersBox fill:none,stroke:#1565c0,stroke-width:3px
-    classDef bunBox fill:none,stroke:#e65100,stroke-width:3px
-    classDef pythonBox fill:none,stroke:#2e7d32,stroke-width:3px
-    classDef dataBox fill:none,stroke:#c2185b,stroke-width:3px
+    %% Subgraph boxes - light fill with dark border
+    classDef usersBox fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
+    classDef bunBox fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
+    classDef pythonBox fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#000
+    classDef dataBox fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
 
     class Users usersBox
     class BunApp bunBox
@@ -72,7 +74,6 @@ flowchart TB
     class Auth,API,Core,QueueClient bun
     class Worker,Grader python
     class MainDB,GradingDB,MQ,Redis data
-    
 ```
 
 > **Kiến trúc Multi-Language:**
@@ -98,18 +99,18 @@ config:
 ---
 flowchart TB
     subgraph Client["CLIENT"]
-        User["User Submit<br/>Writing/Speaking"]
+        User["User Submit\nWriting/Speaking"]
     end
 
     subgraph Bun["MAIN APP (Bun)"]
         direction TB
         Validate["Validate Input"]
-        CreateSub["Create Submission<br/>Status: PENDING"]
+        CreateSub["Create Submission\nStatus: PENDING"]
         SaveDB[("MainDB")]
         WriteOutbox["Write Outbox"]
         Relay["Outbox Relay Worker"]
         Consume["Callback Consumer"]
-        UpdateStatus["Update Status<br/>PROCESSING → COMPLETED"]
+        UpdateStatus["Update Status\nPROCESSING → COMPLETED"]
     end
 
     subgraph Queue["MESSAGE QUEUE"]
@@ -120,7 +121,7 @@ flowchart TB
     subgraph Python["GRADING SERVICE (Python)"]
         direction TB
         Receive["Receive Job"]
-        Process["Process Grading<br/>AI / STT / Scorer"]
+        Process["Process Grading\nAI / STT / Scorer"]
         SaveGrade[("GradingDB")]
         SendCb["Send Callback"]
     end
@@ -131,16 +132,18 @@ flowchart TB
     Receive --> Process --> SaveGrade --> SendCb --> CbQueue --> Consume
     Consume --> UpdateStatus --> SaveDB
 
-    classDef client fill:#1565c0,stroke:#90caf9,stroke-width:2px,color:#fff
-    classDef bun fill:#e65100,stroke:#ffab91,stroke-width:2px,color:#fff
-    classDef queue fill:#7b1fa2,stroke:#ce93d8,stroke-width:2px,color:#fff
-    classDef python fill:#2e7d32,stroke:#a5d6a7,stroke-width:2px,color:#fff
-    classDef db fill:#c2185b,stroke:#f48fb1,stroke-width:2px,color:#fff
+    %% Nodes
+    classDef client fill:#1565c0,stroke:#1565c0,color:#fff
+    classDef bun fill:#e65100,stroke:#e65100,color:#fff
+    classDef queue fill:#7b1fa2,stroke:#7b1fa2,color:#fff
+    classDef python fill:#2e7d32,stroke:#2e7d32,color:#fff
+    classDef db fill:#c2185b,stroke:#c2185b,color:#fff
 
-    classDef clientBox fill:none,stroke:#1565c0,stroke-width:3px
-    classDef bunBox fill:none,stroke:#e65100,stroke-width:3px
-    classDef queueBox fill:none,stroke:#7b1fa2,stroke-width:3px
-    classDef pythonBox fill:none,stroke:#2e7d32,stroke-width:3px
+    %% Boxes
+    classDef clientBox fill:#e3f2fd,stroke:#1565c0,color:#000
+    classDef bunBox fill:#fff3e0,stroke:#e65100,color:#000
+    classDef queueBox fill:#f3e5f5,stroke:#7b1fa2,color:#000
+    classDef pythonBox fill:#e8f5e9,stroke:#2e7d32,color:#000
 
     class Client clientBox
     class Bun bunBox
@@ -152,7 +155,6 @@ flowchart TB
     class ReqQueue,CbQueue queue
     class Receive,Process,SendCb python
     class SaveDB,SaveGrade db
-
 ```
 
 ---
@@ -183,7 +185,7 @@ flowchart TB
     end
 
     subgraph Recovery["RECOVERY"]
-        Retry@{ shape: st-rect, label: "Retry Logic<br/>Exponential + Jitter" }
+        Retry@{ shape: st-rect, label: "Retry Logic\nExponential + Jitter" }
         DLQ@{ shape: doc, label: "Dead Letter Queue" }
         Alert@{ shape: rounded, label: "Alert Admin" }
     end
@@ -194,7 +196,7 @@ flowchart TB
 
     Submit --> Validate --> Enqueue --> Backpressure
     Backpressure -->|"No"| Dequeue
-    Backpressure -->|"Yes"| Delayed["Set DELAYED<br/>Notify User"]
+    Backpressure -->|"Yes"| Delayed["Set DELAYED\nNotify User"]
     
     Dequeue --> Process --> Circuit
     Circuit -->|"Closed"| External
@@ -208,30 +210,31 @@ flowchart TB
     
     Process -->|"Invalid message"| DLQ
 
-    classDef normal fill:#1565c0,stroke:#90caf9,stroke-width:2px,color:#fff
-    classDef decision fill:#e65100,stroke:#ffab91,stroke-width:2px,color:#fff
-    classDef warning fill:#f57c00,stroke:#ffcc80,stroke-width:2px,color:#fff
-    classDef error fill:#c62828,stroke:#ef5350,stroke-width:2px,color:#fff
-    classDef success fill:#2e7d32,stroke:#a5d6a7,stroke-width:2px,color:#fff
+    %% Nodes
+    classDef normal fill:#1976d2,stroke:#1976d2,color:#fff
+    classDef decision fill:#f57c00,stroke:#f57c00,color:#fff
+    classDef warning fill:#ffa726,stroke:#ffa726,color:#000
+    classDef error fill:#d32f2f,stroke:#d32f2f,color:#fff
+    classDef success fill:#388e3c,stroke:#388e3c,color:#fff
 
-    classDef normalBox fill:none,stroke:#1565c0,stroke-width:3px
-    classDef decisionBox fill:none,stroke:#e65100,stroke-width:3px
-    classDef warningBox fill:none,stroke:#f57c00,stroke-width:3px
-    classDef errorBox fill:none,stroke:#c62828,stroke-width:3px
-    classDef successBox fill:none,stroke:#2e7d32,stroke-width:3px
+    %% Boxes
+    classDef normalBox fill:#e3f2fd,stroke:#1976d2,color:#000
+    classDef queueBox fill:#fff8e1,stroke:#f57c00,color:#000
+    classDef processBox fill:#fff3e0,stroke:#ffa726,color:#000
+    classDef errorBox fill:#ffebee,stroke:#d32f2f,color:#000
+    classDef successBox fill:#e8f5e9,stroke:#388e3c,color:#000
 
     class Submission normalBox
-    class QueuePhase decisionBox
-    class Processing normalBox
-    class Recovery warningBox
+    class QueuePhase queueBox
+    class Processing processBox
+    class Recovery errorBox
     class Success successBox
 
-    class Submit,Validate normal
-    class Backpressure,Circuit decision
+    class Submit,Validate,SaveLocal,Enqueue,QueueMonitor normal
+    class Dequeue,Process,Circuit,LLMCall,STTCall decision
     class Retry warning
     class DLQ,Alert error
     class Complete success
-
 ```
 
 ### 3.1 Retry Strategy
@@ -254,7 +257,6 @@ stateDiagram-v2
     HalfOpen --> Closed: Success rate > 80%
     HalfOpen --> Open: Any failure
     Closed --> Closed: Process normally
-
 ```
 
 ---
@@ -298,13 +300,15 @@ flowchart TB
     QUEUED -->|"Invalid job"| FAILED
     PROCESSING -->|"SLA timeout"| FAILED
 
-    classDef pending fill:#616161,stroke:#9e9e9e,stroke-width:2px,color:#fff
-    classDef active fill:#f57c00,stroke:#ffcc80,stroke-width:2px,color:#fff
-    classDef success fill:#2e7d32,stroke:#a5d6a7,stroke-width:2px,color:#fff
-    classDef error fill:#c62828,stroke:#ef5350,stroke-width:2px,color:#fff
-    classDef review fill:#1565c0,stroke:#90caf9,stroke-width:2px,color:#fff
+    %% Nodes
+    classDef pending fill:#757575,stroke:#757575,color:#fff
+    classDef active fill:#f57c00,stroke:#f57c00,color:#fff
+    classDef success fill:#388e3c,stroke:#388e3c,color:#fff
+    classDef error fill:#d32f2f,stroke:#d32f2f,color:#fff
+    classDef review fill:#1976d2,stroke:#1976d2,color:#fff
 
-    classDef statesBox fill:none,stroke:#616161,stroke-width:3px
+    %% Box
+    classDef statesBox fill:#f5f5f5,stroke:#616161,color:#000
 
     class States statesBox
 
@@ -313,7 +317,6 @@ flowchart TB
     class COMPLETED success
     class ERROR,FAILED error
     class REVIEW review
-
 ```
 
 ### 4.1 State Machine Transitions
@@ -339,31 +342,32 @@ flowchart TB
     subgraph Transaction["SAME TRANSACTION"]
         direction TB
         Sub["INSERT INTO submissions"]
-        Outbox["INSERT INTO outbox<br/>status: 'pending'"]
+        Outbox["INSERT INTO outbox\nstatus: 'pending'"]
     end
 
     subgraph Async["ASYNC PROCESSING"]
-        Relay["Outbox Relay Worker<br/>(poll every 1-2s)"]
-        Lock["SELECT ... FOR UPDATE<br/>SKIP LOCKED"]
+        Relay["Outbox Relay Worker\n(poll every 1-2s)"]
+        Lock["SELECT ... FOR UPDATE\nSKIP LOCKED"]
         Publish["Publish to RabbitMQ"]
-        Confirm["UPDATE outbox<br/>status: 'sent'"]
+        Confirm["UPDATE outbox\nstatus: 'sent'"]
     end
 
     Sub --> Outbox
     Outbox -.->|"poll"| Relay --> Lock --> Publish --> Confirm
 
-    classDef trans fill:#1565c0,stroke:#90caf9,stroke-width:2px,color:#fff
-    classDef async fill:#e65100,stroke:#ffab91,stroke-width:2px,color:#fff
+    %% Nodes
+    classDef trans fill:#1976d2,stroke:#1976d2,color:#fff
+    classDef async fill:#f57c00,stroke:#f57c00,color:#fff
 
-    classDef transBox fill:none,stroke:#1565c0,stroke-width:3px
-    classDef asyncBox fill:none,stroke:#e65100,stroke-width:3px
+    %% Boxes
+    classDef transBox fill:#e3f2fd,stroke:#1976d2,color:#000
+    classDef asyncBox fill:#fff3e0,stroke:#f57c00,color:#000
 
     class Transaction transBox
     class Async asyncBox
 
     class Sub,Outbox trans
     class Relay,Lock,Publish,Confirm async
-
 ```
 
 ---
@@ -382,16 +386,16 @@ flowchart TB
     end
 
     subgraph SSE["SSE LAYER"]
-        Endpoint["SSE Endpoint<br/>/api/sse/submissions/:id"]
-        Heartbeat["Heartbeat<br/>30s"]
-        Reconnect["Reconnect Logic<br/>Last-Event-ID"]
+        Endpoint["SSE Endpoint\n/api/sse/submissions/:id"]
+        Heartbeat["Heartbeat\n30s"]
+        Reconnect["Reconnect Logic\nLast-Event-ID"]
     end
 
     subgraph Bun["MAIN APP (Bun)"]
-        Consumer["AMQP Consumer<br/>grading.callback"]
+        Consumer["AMQP Consumer\ngrading.callback"]
         PubSub["In-Memory Pub/Sub"]
         DBUpdate["DB Update"]
-        Fallback["REST Fallback<br/>/api/submissions/:id/status"]
+        Fallback["REST Fallback"]
     end
 
     subgraph Worker["GRADING WORKER"]
@@ -416,17 +420,19 @@ flowchart TB
     Endpoint --> Heartbeat
     Browser --> Reconnect --> Endpoint
 
-    classDef client fill:#1565c0,stroke:#90caf9,stroke-width:2px,color:#fff
-    classDef sse fill:#7b1fa2,stroke:#ce93d8,stroke-width:2px,color:#fff
-    classDef bun fill:#e65100,stroke:#ffab91,stroke-width:2px,color:#fff
-    classDef worker fill:#2e7d32,stroke:#a5d6a7,stroke-width:2px,color:#fff
-    classDef queue fill:#c2185b,stroke:#f48fb1,stroke-width:2px,color:#fff
+    %% Nodes
+    classDef client fill:#1565c0,stroke:#1565c0,color:#fff
+    classDef sse fill:#7b1fa2,stroke:#7b1fa2,color:#fff
+    classDef bun fill:#f57c00,stroke:#f57c00,color:#fff
+    classDef worker fill:#388e3c,stroke:#388e3c,color:#fff
+    classDef queue fill:#c2185b,stroke:#c2185b,color:#fff
 
-    classDef clientBox fill:none,stroke:#1565c0,stroke-width:3px
-    classDef sseBox fill:none,stroke:#7b1fa2,stroke-width:3px
-    classDef bunBox fill:none,stroke:#e65100,stroke-width:3px
-    classDef workerBox fill:none,stroke:#2e7d32,stroke-width:3px
-    classDef queueBox fill:none,stroke:#c2185b,stroke-width:3px
+    %% Boxes
+    classDef clientBox fill:#e3f2fd,stroke:#1565c0,color:#000
+    classDef sseBox fill:#f3e5f5,stroke:#7b1fa2,color:#000
+    classDef bunBox fill:#fff8e1,stroke:#f57c00,color:#000
+    classDef workerBox fill:#e8f5e9,stroke:#388e3c,color:#000
+    classDef queueBox fill:#fce4ec,stroke:#c2185b,color:#000
 
     class Client clientBox
     class SSE sseBox
@@ -438,8 +444,6 @@ flowchart TB
     class Endpoint,Heartbeat,Reconnect sse
     class Consumer,PubSub,DBUpdate,Fallback bun
     class JobStart,Progress,JobComplete worker
-    class CbQueue queue
-
 ```
 
 ### 5.1 Status Mapping
@@ -484,22 +488,22 @@ flowchart TB
     end
 
     subgraph Confidence["CONFIDENCE CALCULATION"]
-        ModelCons@{ shape: fr-rect, label: "Model Consistency<br/>30%" }
-        RuleVal@{ shape: fr-rect, label: "Rule Validation<br/>25%" }
-        ContentSim@{ shape: fr-rect, label: "Content Similarity<br/>25%" }
-        LengthHeur@{ shape: fr-rect, label: "Length Heuristic<br/>20%" }
+        ModelCons@{ shape: fr-rect, label: "Model Consistency\n30%" }
+        RuleVal@{ shape: fr-rect, label: "Rule Validation\n25%" }
+        ContentSim@{ shape: fr-rect, label: "Content Similarity\n25%" }
+        LengthHeur@{ shape: fr-rect, label: "Length Heuristic\n20%" }
         Score@{ shape: diam, label: "Confidence Score\n0-100%" }
     end
 
     subgraph Routing["ROUTING"]
         Threshold@{ shape: diam, label: "Confidence ≥ 85%?" }
-        SpotCheck@{ shape: diam, label: "Spot Check<br/>5-10%?" }
+        SpotCheck@{ shape: diam, label: "Spot Check\n5-10%?" }
         Auto@{ shape: rounded, label: "Auto-Grade" }
         Human@{ shape: rounded, label: "Human Review Queue" }
     end
 
     subgraph HumanGrading["HUMAN GRADING"]
-        Claim@{ shape: fr-rect, label: "Claim Submission<br/>Redis Lock 15m" }
+        Claim@{ shape: fr-rect, label: "Claim Submission\nRedis Lock 15m" }
         Review@{ shape: fr-rect, label: "Instructor Review" }
         Override@{ shape: diam, label: "Override AI?" }
         Weighted@{ shape: fr-rect, label: "Weighted Final Score" }
@@ -526,19 +530,21 @@ flowchart TB
     
     Human --> Claim --> Review --> Override --> Weighted
 
-    classDef input fill:#1565c0,stroke:#90caf9,stroke-width:2px,color:#fff
-    classDef process fill:#e65100,stroke:#ffab91,stroke-width:2px,color:#fff
-    classDef ai fill:#2e7d32,stroke:#a5d6a7,stroke-width:2px,color:#fff
-    classDef conf fill:#f9a825,stroke:#f57f17,stroke-width:2px,color:#000
-    classDef route fill:#7b1fa2,stroke:#ce93d8,stroke-width:2px,color:#fff
-    classDef human fill:#5d4037,stroke:#3e2723,stroke-width:2px,color:#fff
+    %% Nodes
+    classDef input fill:#1976d2,stroke:#1976d2,color:#fff
+    classDef process fill:#f57c00,stroke:#f57c00,color:#fff
+    classDef ai fill:#388e3c,stroke:#388e3c,color:#fff
+    classDef conf fill:#fbc02d,stroke:#fbc02d,color:#000
+    classDef route fill:#7b1fa2,stroke:#7b1fa2,color:#fff
+    classDef human fill:#5d4037,stroke:#5d4037,color:#fff
 
-    classDef inputBox fill:none,stroke:#1565c0,stroke-width:3px
-    classDef processBox fill:none,stroke:#e65100,stroke-width:3px
-    classDef aiBox fill:none,stroke:#2e7d32,stroke-width:3px
-    classDef confBox fill:none,stroke:#f9a825,stroke-width:3px
-    classDef routeBox fill:none,stroke:#7b1fa2,stroke-width:3px
-    classDef humanBox fill:none,stroke:#5d4037,stroke-width:3px
+    %% Boxes
+    classDef inputBox fill:#e3f2fd,stroke:#1976d2,color:#000
+    classDef processBox fill:#fff3e0,stroke:#f57c00,color:#000
+    classDef aiBox fill:#e8f5e9,stroke:#388e3c,color:#000
+    classDef confBox fill:#fff8e1,stroke:#fbc02d,color:#000
+    classDef routeBox fill:#f3e5f5,stroke:#7b1fa2,color:#000
+    classDef humanBox fill:#efebe9,stroke:#5d4037,color:#000
 
     class Input inputBox
     class Preprocess processBox
@@ -551,9 +557,8 @@ flowchart TB
     class Validate,Transcribe,Extract process
     class Grammar,Vocab,Content,Fluency ai
     class ModelCons,RuleVal,ContentSim,LengthHeur,Score conf
-    class Threshold,SpotCheck,Auto route
+    class Threshold,Auto,Human route
     class Claim,Review,Override,Weighted human
-
 ```
 
 ### 6.1 Confidence Score Formula
@@ -611,13 +616,13 @@ config:
 ---
 flowchart LR
     Start@{ shape: circle, label: "Bắt đầu" }
-    Reg@{ shape: fr-rect, label: "Đăng ký<br/>Email/Password" }
-    Profile@{ shape: fr-rect, label: "Thiết lập<br/>Hồ sơ" }
-    Goal@{ shape: fr-rect, label: "Thiết lập Goal<br/>Target Level" }
-    SelfAssess@{ shape: rounded, label: "Self-Assessment<br/>(Optional)" }
+    Reg@{ shape: fr-rect, label: "Đăng ký\nEmail/Password" }
+    Profile@{ shape: fr-rect, label: "Thiết lập\nHồ sơ" }
+    Goal@{ shape: fr-rect, label: "Thiết lập Goal\nTarget Level" }
+    SelfAssess@{ shape: rounded, label: "Self-Assessment\n(Optional)" }
     Select@{ shape: diam, label: "Chọn Mode" }
-    Practice@{ shape: fr-rect, label: "Practice Mode<br/>Adaptive" }
-    Mock@{ shape: fr-rect, label: "Mock Test<br/>Full Exam" }
+    Practice@{ shape: fr-rect, label: "Practice Mode\nAdaptive" }
+    Mock@{ shape: fr-rect, label: "Mock Test\nFull Exam" }
     Feedback@{ shape: fr-rect, label: "Feedback & Results" }
     Progress@{ shape: fr-rect, label: "Progress Tracking" }
     GoalCheck@{ shape: diam, label: "Goal đạt?" }
@@ -632,18 +637,19 @@ flowchart LR
     GoalCheck -->|"Không"| Select
     GoalCheck -->|"Có"| End
 
-    classDef start fill:#1565c0,stroke:#90caf9,stroke-width:2px,color:#fff
-    classDef process fill:#e65100,stroke:#ffab91,stroke-width:2px,color:#fff
-    classDef decision fill:#7b1fa2,stroke:#ce93d8,stroke-width:2px,color:#fff
-    classDef success fill:#2e7d32,stroke:#a5d6a7,stroke-width:2px,color:#fff
-    classDef optional fill:#616161,stroke:#9e9e9e,stroke-width:2px,stroke-dasharray: 5 5,color:#fff
+    %% Nodes
+    classDef start fill:#1565c0,stroke:#1565c0,color:#fff
+    classDef process fill:#e65100,stroke:#e65100,color:#fff
+    classDef decision fill:#7b1fa2,stroke:#7b1fa2,color:#fff
+    classDef success fill:#388e3c,stroke:#388e3c,color:#fff
+    classDef optional fill:#757575,stroke:#757575,color:#fff
 
+    %% No subgraphs in this diagram
     class Start start
     class Reg,Profile,Goal,Practice,Mock,Feedback,Progress process
     class Select,GoalCheck decision
     class End success
     class SelfAssess optional
-
 ```
 
 ---
@@ -706,15 +712,17 @@ flowchart TB
     Down -->|"S2→S1"| S1
     Down -->|"S3→S2"| S2
 
-    classDef input fill:#1565c0,stroke:#90caf9,stroke-width:2px,color:#fff
-    classDef stage fill:#e65100,stroke:#ffab91,stroke-width:2px,color:#fff
-    classDef feedback fill:#2e7d32,stroke:#a5d6a7,stroke-width:2px,color:#fff
-    classDef progress fill:#7b1fa2,stroke:#ce93d8,stroke-width:2px,color:#fff
+    %% Nodes
+    classDef input fill:#1976d2,stroke:#1976d2,color:#fff
+    classDef stage fill:#f57c00,stroke:#f57c00,color:#fff
+    classDef feedback fill:#388e3c,stroke:#388e3c,color:#fff
+    classDef progress fill:#7b1fa2,stroke:#7b1fa2,color:#fff
 
-    classDef inputBox fill:none,stroke:#1565c0,stroke-width:3px
-    classDef stageBox fill:none,stroke:#e65100,stroke-width:3px
-    classDef feedbackBox fill:none,stroke:#2e7d32,stroke-width:3px
-    classDef progressBox fill:none,stroke:#7b1fa2,stroke-width:3px
+    %% Boxes
+    classDef inputBox fill:#e3f2fd,stroke:#1976d2,color:#000
+    classDef stageBox fill:#fff3e0,stroke:#f57c00,color:#000
+    classDef feedbackBox fill:#e8f5e9,stroke:#388e3c,color:#000
+    classDef progressBox fill:#f3e5f5,stroke:#7b1fa2,color:#000
 
     class Input inputBox
     class Stage stageBox
@@ -725,7 +733,6 @@ flowchart TB
     class S1,S2,S3 stage
     class Grammar,Vocab,Cohesion,TaskResp feedback
     class Check,Up,Stay,Down progress
-
 ```
 
 ### 8B. Writing Progression Rules
@@ -752,15 +759,15 @@ config:
 flowchart TB
     subgraph Auth["AUTHENTICATION"]
         Login@{ shape: rounded, label: "Login" }
-        Rate@{ shape: fr-rect, label: "Rate Limit<br/>5 req/min" }
-        Access@{ shape: doc, label: "Access Token<br/>JWT" }
-        Refresh@{ shape: doc, label: "Refresh Token<br/>JWT" }
+        Rate@{ shape: fr-rect, label: "Rate Limit\n5 req/min" }
+        Access@{ shape: doc, label: "Access Token\nJWT" }
+        Refresh@{ shape: doc, label: "Refresh Token\nJWT" }
     end
 
     subgraph Verify["VERIFICATION"]
         Validate@{ shape: fr-rect, label: "Validate JWT" }
         RefreshEp@{ shape: fr-rect, label: "Refresh Endpoint" }
-        Store@{ shape: cyl, label: "Refresh Token Store<br/>MainDB" }
+        Store@{ shape: cyl, label: "Refresh Token Store\nMainDB" }
     end
 
     subgraph RBAC["RBAC"]
@@ -785,29 +792,29 @@ flowchart TB
     Check -->|"Instructor"| Grading
     Check -->|"Admin"| Admin
 
-    classDef auth fill:#1565c0,stroke:#90caf9,stroke-width:2px,color:#fff
-    classDef verify fill:#e65100,stroke:#ffab91,stroke-width:2px,color:#fff
-    classDef rbac fill:#2e7d32,stroke:#a5d6a7,stroke-width:2px,color:#fff
-    classDef resources fill:#7b1fa2,stroke:#ce93d8,stroke-width:2px,color:#fff
-    classDef data fill:#c2185b,stroke:#f48fb1,stroke-width:2px,color:#fff
+    %% Nodes
+    classDef auth fill:#1565c0,stroke:#1565c0,color:#fff
+    classDef verify fill:#e65100,stroke:#e65100,color:#fff
+    classDef rbac fill:#388e3c,stroke:#388e3c,color:#fff
+    classDef resources fill:#7b1fa2,stroke:#7b1fa2,color:#fff
+    classDef data fill:#c2185b,stroke:#c2185b,color:#fff
 
-    classDef authBox fill:none,stroke:#1565c0,stroke-width:3px
-    classDef verifyBox fill:none,stroke:#e65100,stroke-width:3px
-    classDef rbacBox fill:none,stroke:#2e7d32,stroke-width:3px
-    classDef resourcesBox fill:none,stroke:#7b1fa2,stroke-width:3px
-    classDef dataBox fill:none,stroke:#c2185b,stroke-width:3px
+    %% Boxes
+    classDef authBox fill:#e3f2fd,stroke:#1565c0,color:#000
+    classDef verifyBox fill:#fff3e0,stroke:#e65100,color:#000
+    classDef rbacBox fill:#e8f5e9,stroke:#388e3c,color:#000
+    classDef resourcesBox fill:#f3e5f5,stroke:#7b1fa2,color:#000
 
     class Auth authBox
     class Verify verifyBox
     class RBAC rbacBox
     class Resources resourcesBox
-    class Store dataBox
 
     class Login,Rate,Access,Refresh auth
     class Validate,RefreshEp verify
     class Roles,Check rbac
     class Practice,Mock,Grading,Admin resources
-
+    class Store data
 ```
 
 ### 9.1 Refresh Token Enforcement
@@ -817,8 +824,8 @@ flowchart TB
     subgraph Login["LOGIN FLOW"]
         Attempt@{ shape: fr-rect, label: "Login Attempt" }
         Count@{ shape: diam, label: "Count Active Tokens" }
-        Warn@{ shape: rounded, label: "Return 409 Conflict<br/>+ Device List" }
-        Revoke@{ shape: fr-rect, label: "User Confirm Revoke<br/>Oldest Device" }
+        Warn@{ shape: rounded, label: "Return 409 Conflict\n+ Device List" }
+        Revoke@{ shape: fr-rect, label: "User Confirm Revoke\nOldest Device" }
         Issue@{ shape: doc, label: "Issue New Token" }
     end
 
@@ -826,19 +833,19 @@ flowchart TB
     Count -->|"< 3"| Issue
     Count -->|"≥ 3"| Warn --> Revoke --> Issue
 
-    classDef process fill:#e65100,stroke:#ffab91,stroke-width:2px,color:#fff
-    classDef decision fill:#7b1fa2,stroke:#ce93d8,stroke-width:2px,color:#fff
-    classDef success fill:#2e7d32,stroke:#a5d6a7,stroke-width:2px,color:#fff
+    %% Nodes
+    classDef process fill:#1976d2,stroke:#1976d2,color:#fff
+    classDef decision fill:#f57c00,stroke:#f57c00,color:#fff
+    classDef success fill:#388e3c,stroke:#388e3c,color:#fff
 
-    classDef processBox fill:none,stroke:#e65100,stroke-width:3px
-    classDef decisionBox fill:none,stroke:#7b1fa2,stroke-width:3px
-    classDef successBox fill:none,stroke:#2e7d32,stroke-width:3px
+    %% Box
+    classDef loginBox fill:#e3f2fd,stroke:#1976d2,color:#000
 
-    class Login processBox
+    class Login loginBox
 
     class Attempt,Revoke,Issue process
     class Count decision
-
+    class Issue success
 ```
 
 ### 9.2 Role Permissions
@@ -851,54 +858,41 @@ flowchart TB
 
 ---
 
-## Tóm Tắt Diagram Types
+## Style Guide
 
-| Section | Diagram | Features Used |
-|---------|---------|---------------|
-| 1. Kiến trúc | High-level Overview | ELK, cyl, fr-rect, st-rect |
-| 2. Submission Flow | Detailed Flow | doc, cyl, directional subgraphs |
-| 3. Error Handling | Decision Flow | diam, rounded, color-coded states |
-| 4. State Machine | State Diagram | stateDiagram-v2, color-coded circles |
-| 5. Outbox Pattern | Transaction Flow | Dotted lines, transaction grouping |
-| 6. Real-time | SSE Architecture | Invisible connectors, fallback paths |
-| 7. Hybrid Grading | Complex Pipeline | Multi-layer, decision diamonds |
-| 8. User Journey | Linear Flow | LR direction, dbl-circ end |
-| 9. Practice | Scaffolding Flow | Stage progression, feedback loop |
-| 10. Auth | Security Flow | cyl for DB, doc for tokens |
+### Color Convention
 
----
+| Type | Fill | Stroke | Text | Usage |
+|------|------|--------|------|-------|
+| **Nodes** | Solid color | Same as fill | White | Individual elements |
+| **Subgraphs** | Light tint (10-20%) | Dark color | Black | Container boxes |
 
-## Mermaid v11 Style Guide
+### Node Colors
 
-### Shapes Dictionary
+| Layer | Node Fill | Box Fill | Box Stroke |
+|-------|-----------|----------|------------|
+| Client | `#1565c0` | `#e3f2fd` | `#1565c0` |
+| Bun/API | `#e65100` | `#fff3e0` | `#e65100` |
+| Python | `#2e7d32` | `#e8f5e9` | `#2e7d32` |
+| Queue | `#7b1fa2` | `#f3e5f5` | `#7b1fa2` |
+| Database | `#c2185b` | `#fce4ec` | `#c2185b` |
+| Success | `#388e3c` | `#e8f5e9` | `#388e3c` |
+| Error | `#d32f2f` | `#ffebee` | `#d32f2f` |
+| Warning | `#f57c00` | `#fff8e1` | `#f57c00` |
+
+### Shapes
 
 | Shape | Syntax | Usage |
 |-------|--------|-------|
-| Circle | `@{ shape: circle }` | States, users |
+| Circle | `@{ shape: circle }` | Users, states |
 | Double Circle | `@{ shape: dbl-circ }` | End states |
 | Cylinder | `@{ shape: cyl }` | Databases |
-| Document | `@{ shape: doc }` | Queues, files |
-| Rounded | `@{ shape: rounded }` | Processes |
-| Rectangle | `@{ shape: rect }` | Default |
-| Framed Rect | `@{ shape: fr-rect }` | Core processes |
+| Document | `@{ shape: doc }` | Queues, tokens |
+| Rectangle | `@{ shape: rect }` (default) | Processes |
+| Framed Rect | `@{ shape: fr-rect }` | Core modules |
 | Stacked Rect | `@{ shape: st-rect }` | Multi-process |
 | Diamond | `@{ shape: diam }` | Decisions |
-
-### Color Palette (Dark Mode Compatible)
-
-| Layer | Fill | Stroke | Text | WCAG |
-|-------|------|--------|------|------|
-| Client | `#1565c0` | `#90caf9` | `#fff` | AA ✓ |
-| Bun/API | `#e65100` | `#ffab91` | `#fff` | AA ✓ |
-| Python | `#2e7d32` | `#a5d6a7` | `#fff` | AA ✓ |
-| Queue | `#7b1fa2` | `#ce93d8` | `#fff` | AA ✓ |
-| Database | `#c2185b` | `#f48fb1` | `#fff` | AA ✓ |
-| Success | `#1b5e20` | `#81c784` | `#fff` | AAA ✓ |
-| Error | `#b71c1c` | `#ef5350` | `#fff` | AA ✓ |
-| Warning | `#e65100` | `#ffcc80` | `#fff` | AA ✓ |
-| Pending/Gray | `#424242` | `#9e9e9e` | `#fff` | AAA ✓ |
-
-> **Lưu ý về stroke colors**: Sử dụng màu stroke **sáng hơn** fill để hiện rõ trên cả light và dark mode.
+| Rounded | `@{ shape: rounded }` | Soft edges |
 
 ---
 
