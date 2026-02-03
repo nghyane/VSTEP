@@ -53,17 +53,17 @@ flowchart TB
     Grader --> MQ
     MQ --> BunApp
 
-    %% Nodes - solid fill
-    classDef users fill:#1565c0,stroke:#1565c0,color:#fff
-    classDef bun fill:#e65100,stroke:#e65100,color:#fff
-    classDef python fill:#2e7d32,stroke:#2e7d32,color:#fff
-    classDef data fill:#c2185b,stroke:#c2185b,color:#fff
+    %% Nodes - soft pastel fill with dark text
+    classDef users fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#0d47a1
+    classDef bun fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#e65100
+    classDef python fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#2e7d32
+    classDef data fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#880e4f
 
-    %% Subgraph boxes - mid-gray fill visible on both light/dark modes
-    classDef usersBox fill:#616161,stroke:#1565c0,stroke-width:4px,color:#fff
-    classDef bunBox fill:#616161,stroke:#e65100,stroke-width:4px,color:#fff
-    classDef pythonBox fill:#616161,stroke:#2e7d32,stroke-width:4px,color:#fff
-    classDef dataBox fill:#616161,stroke:#c2185b,stroke-width:4px,color:#fff
+    %% Subgraph boxes - very light tint with matching border
+    classDef usersBox fill:#f5f5f5,stroke:#1976d2,stroke-width:3px,color:#333
+    classDef bunBox fill:#f5f5f5,stroke:#f57c00,stroke-width:3px,color:#333
+    classDef pythonBox fill:#f5f5f5,stroke:#388e3c,stroke-width:3px,color:#333
+    classDef dataBox fill:#f5f5f5,stroke:#c2185b,stroke-width:3px,color:#333
 
     class Users usersBox
     class BunApp bunBox
@@ -132,18 +132,18 @@ flowchart TB
     Receive --> Process --> SaveGrade --> SendCb --> CbQueue --> Consume
     Consume --> UpdateStatus --> SaveDB
 
-    %% Nodes
-    classDef client fill:#1565c0,stroke:#1565c0,color:#fff
-    classDef bun fill:#e65100,stroke:#e65100,color:#fff
-    classDef queue fill:#7b1fa2,stroke:#7b1fa2,color:#fff
-    classDef python fill:#2e7d32,stroke:#2e7d32,color:#fff
-    classDef db fill:#c2185b,stroke:#c2185b,color:#fff
+    %% Nodes - soft pastel fill with dark text
+    classDef client fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#0d47a1
+    classDef bun fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#e65100
+    classDef queue fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#4a148c
+    classDef python fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#2e7d32
+    classDef db fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#880e4f
 
-    %% Boxes - transparent with thick colored border
-    classDef clientBox fill:#616161,stroke:#1565c0,stroke-width:4px,color:#fff
-    classDef bunBox fill:#616161,stroke:#e65100,stroke-width:4px,color:#fff
-    classDef queueBox fill:#616161,stroke:#7b1fa2,stroke-width:4px,color:#fff
-    classDef pythonBox fill:#616161,stroke:#2e7d32,stroke-width:4px,color:#fff
+    %% Boxes - light tint with matching border
+    classDef clientBox fill:#f5f5f5,stroke:#1976d2,stroke-width:3px,color:#333
+    classDef bunBox fill:#f5f5f5,stroke:#f57c00,stroke-width:3px,color:#333
+    classDef queueBox fill:#f5f5f5,stroke:#7b1fa2,stroke-width:3px,color:#333
+    classDef pythonBox fill:#f5f5f5,stroke:#388e3c,stroke-width:3px,color:#333
 
     class Client clientBox
     class Bun bunBox
@@ -210,19 +210,19 @@ flowchart TB
     
     Process -->|"Invalid message"| DLQ
 
-    %% Nodes
-    classDef normal fill:#1976d2,stroke:#1976d2,color:#fff
-    classDef decision fill:#f57c00,stroke:#f57c00,color:#fff
-    classDef warning fill:#ffa726,stroke:#ffa726,color:#000
-    classDef error fill:#d32f2f,stroke:#d32f2f,color:#fff
-    classDef success fill:#388e3c,stroke:#388e3c,color:#fff
+    %% Nodes - soft pastel fill with dark text
+    classDef normal fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#0d47a1
+    classDef decision fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#e65100
+    classDef warning fill:#fff8e1,stroke:#ffa726,stroke-width:2px,color:#e65100
+    classDef error fill:#ffebee,stroke:#d32f2f,stroke-width:2px,color:#b71c1c
+    classDef success fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#2e7d32
 
-    %% Boxes - mid-gray fill with colored border
-    classDef normalBox fill:#616161,stroke:#1976d2,stroke-width:4px,color:#fff
-    classDef queueBox fill:#616161,stroke:#f57c00,stroke-width:4px,color:#fff
-    classDef processBox fill:#616161,stroke:#ffa726,stroke-width:4px,color:#000
-    classDef errorBox fill:#616161,stroke:#d32f2f,stroke-width:4px,color:#fff
-    classDef successBox fill:#616161,stroke:#388e3c,stroke-width:4px,color:#fff
+    %% Boxes - light tint with matching border
+    classDef normalBox fill:#f5f5f5,stroke:#1976d2,stroke-width:3px,color:#333
+    classDef queueBox fill:#f5f5f5,stroke:#f57c00,stroke-width:3px,color:#333
+    classDef processBox fill:#f5f5f5,stroke:#ffa726,stroke-width:3px,color:#333
+    classDef errorBox fill:#f5f5f5,stroke:#d32f2f,stroke-width:3px,color:#333
+    classDef successBox fill:#f5f5f5,stroke:#388e3c,stroke-width:3px,color:#333
 
     class Submission normalBox
     class QueuePhase queueBox
@@ -230,9 +230,9 @@ flowchart TB
     class Recovery errorBox
     class Success successBox
 
-    class Submit,Validate,SaveLocal,Enqueue,QueueMonitor normal
-    class Dequeue,Process,Circuit,LLMCall,STTCall decision
-    class Retry warning
+    class Submit,Validate,Enqueue normal
+    class Dequeue,Process,Circuit,External decision
+    class Backpressure,Delayed warning
     class DLQ,Alert error
     class Complete success
 ```
@@ -300,15 +300,15 @@ flowchart TB
     QUEUED -->|"Invalid job"| FAILED
     PROCESSING -->|"SLA timeout"| FAILED
 
-    %% Nodes
-    classDef pending fill:#757575,stroke:#757575,color:#fff
-    classDef active fill:#f57c00,stroke:#f57c00,color:#fff
-    classDef success fill:#388e3c,stroke:#388e3c,color:#fff
-    classDef error fill:#d32f2f,stroke:#d32f2f,color:#fff
-    classDef review fill:#1976d2,stroke:#1976d2,color:#fff
+    %% Nodes - soft pastel fill with dark text
+    classDef pending fill:#f5f5f5,stroke:#757575,stroke-width:2px,color:#424242
+    classDef active fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#e65100
+    classDef success fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#2e7d32
+    classDef error fill:#ffebee,stroke:#d32f2f,stroke-width:2px,color:#b71c1c
+    classDef review fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#0d47a1
 
-    %% Box
-    classDef statesBox fill:#616161,stroke:#9e9e9e,stroke-width:4px,color:#fff
+    %% Box - light tint
+    classDef statesBox fill:#fafafa,stroke:#9e9e9e,stroke-width:3px,color:#333
 
     class States statesBox
 
@@ -355,13 +355,13 @@ flowchart TB
     Sub --> Outbox
     Outbox -.->|"poll"| Relay --> Lock --> Publish --> Confirm
 
-    %% Nodes
-    classDef trans fill:#1976d2,stroke:#1976d2,color:#fff
-    classDef async fill:#f57c00,stroke:#f57c00,color:#fff
+    %% Nodes - soft pastel fill with dark text
+    classDef trans fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#0d47a1
+    classDef async fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#e65100
 
-    %% Boxes
-    classDef transBox fill:#616161,stroke:#1976d2,stroke-width:4px,color:#fff
-    classDef asyncBox fill:#616161,stroke:#f57c00,stroke-width:4px,color:#fff
+    %% Boxes - light tint
+    classDef transBox fill:#f5f5f5,stroke:#1976d2,stroke-width:3px,color:#333
+    classDef asyncBox fill:#f5f5f5,stroke:#f57c00,stroke-width:3px,color:#333
 
     class Transaction transBox
     class Async asyncBox
@@ -420,19 +420,19 @@ flowchart TB
     Endpoint --> Heartbeat
     Browser --> Reconnect --> Endpoint
 
-    %% Nodes
-    classDef client fill:#1565c0,stroke:#1565c0,color:#fff
-    classDef sse fill:#7b1fa2,stroke:#7b1fa2,color:#fff
-    classDef bun fill:#f57c00,stroke:#f57c00,color:#fff
-    classDef worker fill:#388e3c,stroke:#388e3c,color:#fff
-    classDef queue fill:#c2185b,stroke:#c2185b,color:#fff
+    %% Nodes - soft pastel fill with dark text
+    classDef client fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#0d47a1
+    classDef sse fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#4a148c
+    classDef bun fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#e65100
+    classDef worker fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#2e7d32
+    classDef queue fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#880e4f
 
-    %% Boxes
-    classDef clientBox fill:#616161,stroke:#1565c0,stroke-width:4px,color:#fff
-    classDef sseBox fill:#616161,stroke:#7b1fa2,stroke-width:4px,color:#fff
-    classDef bunBox fill:#616161,stroke:#f57c00,stroke-width:4px,color:#fff
-    classDef workerBox fill:#616161,stroke:#388e3c,stroke-width:4px,color:#fff
-    classDef queueBox fill:#616161,stroke:#c2185b,stroke-width:4px,color:#fff
+    %% Boxes - light tint
+    classDef clientBox fill:#f5f5f5,stroke:#1976d2,stroke-width:3px,color:#333
+    classDef sseBox fill:#f5f5f5,stroke:#7b1fa2,stroke-width:3px,color:#333
+    classDef bunBox fill:#f5f5f5,stroke:#f57c00,stroke-width:3px,color:#333
+    classDef workerBox fill:#f5f5f5,stroke:#388e3c,stroke-width:3px,color:#333
+    classDef queueBox fill:#f5f5f5,stroke:#c2185b,stroke-width:3px,color:#333
 
     class Client clientBox
     class SSE sseBox
@@ -530,21 +530,21 @@ flowchart TB
     
     Human --> Claim --> Review --> Override --> Weighted
 
-    %% Nodes
-    classDef input fill:#1976d2,stroke:#1976d2,color:#fff
-    classDef process fill:#f57c00,stroke:#f57c00,color:#fff
-    classDef ai fill:#388e3c,stroke:#388e3c,color:#fff
-    classDef conf fill:#fbc02d,stroke:#fbc02d,color:#000
-    classDef route fill:#7b1fa2,stroke:#7b1fa2,color:#fff
-    classDef human fill:#5d4037,stroke:#5d4037,color:#fff
+    %% Nodes - soft pastel fill with dark text
+    classDef input fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#0d47a1
+    classDef process fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#e65100
+    classDef ai fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#2e7d32
+    classDef conf fill:#fff8e1,stroke:#fbc02d,stroke-width:2px,color:#f57f17
+    classDef route fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#4a148c
+    classDef human fill:#efebe9,stroke:#5d4037,stroke-width:2px,color:#3e2723
 
-    %% Boxes
-    classDef inputBox fill:#616161,stroke:#1976d2,stroke-width:4px,color:#fff
-    classDef processBox fill:#616161,stroke:#f57c00,stroke-width:4px,color:#fff
-    classDef aiBox fill:#616161,stroke:#388e3c,stroke-width:4px,color:#fff
-    classDef confBox fill:#616161,stroke:#fbc02d,stroke-width:4px,color:#000
-    classDef routeBox fill:#616161,stroke:#7b1fa2,stroke-width:4px,color:#fff
-    classDef humanBox fill:#616161,stroke:#5d4037,stroke-width:4px,color:#fff
+    %% Boxes - light tint
+    classDef inputBox fill:#f5f5f5,stroke:#1976d2,stroke-width:3px,color:#333
+    classDef processBox fill:#f5f5f5,stroke:#f57c00,stroke-width:3px,color:#333
+    classDef aiBox fill:#f5f5f5,stroke:#388e3c,stroke-width:3px,color:#333
+    classDef confBox fill:#f5f5f5,stroke:#fbc02d,stroke-width:3px,color:#333
+    classDef routeBox fill:#f5f5f5,stroke:#7b1fa2,stroke-width:3px,color:#333
+    classDef humanBox fill:#f5f5f5,stroke:#5d4037,stroke-width:3px,color:#333
 
     class Input inputBox
     class Preprocess processBox
@@ -637,12 +637,12 @@ flowchart LR
     GoalCheck -->|"Không"| Select
     GoalCheck -->|"Có"| End
 
-    %% Nodes
-    classDef start fill:#1565c0,stroke:#1565c0,color:#fff
-    classDef process fill:#e65100,stroke:#e65100,color:#fff
-    classDef decision fill:#7b1fa2,stroke:#7b1fa2,color:#fff
-    classDef success fill:#388e3c,stroke:#388e3c,color:#fff
-    classDef optional fill:#757575,stroke:#757575,color:#fff
+    %% Nodes - soft pastel fill with dark text
+    classDef start fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#0d47a1
+    classDef process fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#e65100
+    classDef decision fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#4a148c
+    classDef success fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#2e7d32
+    classDef optional fill:#f5f5f5,stroke:#757575,stroke-width:2px,color:#424242
 
     %% No subgraphs in this diagram
     class Start start
@@ -712,17 +712,17 @@ flowchart TB
     Down -->|"S2→S1"| S1
     Down -->|"S3→S2"| S2
 
-    %% Nodes
-    classDef input fill:#1976d2,stroke:#1976d2,color:#fff
-    classDef stage fill:#f57c00,stroke:#f57c00,color:#fff
-    classDef feedback fill:#388e3c,stroke:#388e3c,color:#fff
-    classDef progress fill:#7b1fa2,stroke:#7b1fa2,color:#fff
+    %% Nodes - soft pastel fill with dark text
+    classDef input fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#0d47a1
+    classDef stage fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#e65100
+    classDef feedback fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#2e7d32
+    classDef progress fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#4a148c
 
-    %% Boxes
-    classDef inputBox fill:#616161,stroke:#1976d2,stroke-width:4px,color:#fff
-    classDef stageBox fill:#616161,stroke:#f57c00,stroke-width:4px,color:#fff
-    classDef feedbackBox fill:#616161,stroke:#388e3c,stroke-width:4px,color:#fff
-    classDef progressBox fill:#616161,stroke:#7b1fa2,stroke-width:4px,color:#fff
+    %% Boxes - light tint
+    classDef inputBox fill:#f5f5f5,stroke:#1976d2,stroke-width:3px,color:#333
+    classDef stageBox fill:#f5f5f5,stroke:#f57c00,stroke-width:3px,color:#333
+    classDef feedbackBox fill:#f5f5f5,stroke:#388e3c,stroke-width:3px,color:#333
+    classDef progressBox fill:#f5f5f5,stroke:#7b1fa2,stroke-width:3px,color:#333
 
     class Input inputBox
     class Stage stageBox
@@ -792,18 +792,18 @@ flowchart TB
     Check -->|"Instructor"| Grading
     Check -->|"Admin"| Admin
 
-    %% Nodes
-    classDef auth fill:#1565c0,stroke:#1565c0,color:#fff
-    classDef verify fill:#e65100,stroke:#e65100,color:#fff
-    classDef rbac fill:#388e3c,stroke:#388e3c,color:#fff
-    classDef resources fill:#7b1fa2,stroke:#7b1fa2,color:#fff
-    classDef data fill:#c2185b,stroke:#c2185b,color:#fff
+    %% Nodes - soft pastel fill with dark text
+    classDef auth fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#0d47a1
+    classDef verify fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#e65100
+    classDef rbac fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#2e7d32
+    classDef resources fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#4a148c
+    classDef data fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#880e4f
 
-    %% Boxes
-    classDef authBox fill:#616161,stroke:#1565c0,stroke-width:4px,color:#fff
-    classDef verifyBox fill:#616161,stroke:#e65100,stroke-width:4px,color:#fff
-    classDef rbacBox fill:#616161,stroke:#388e3c,stroke-width:4px,color:#fff
-    classDef resourcesBox fill:#616161,stroke:#7b1fa2,stroke-width:4px,color:#fff
+    %% Boxes - light tint
+    classDef authBox fill:#f5f5f5,stroke:#1976d2,stroke-width:3px,color:#333
+    classDef verifyBox fill:#f5f5f5,stroke:#f57c00,stroke-width:3px,color:#333
+    classDef rbacBox fill:#f5f5f5,stroke:#388e3c,stroke-width:3px,color:#333
+    classDef resourcesBox fill:#f5f5f5,stroke:#7b1fa2,stroke-width:3px,color:#333
 
     class Auth authBox
     class Verify verifyBox
@@ -833,13 +833,13 @@ flowchart TB
     Count -->|"< 3"| Issue
     Count -->|"≥ 3"| Warn --> Revoke --> Issue
 
-    %% Nodes
-    classDef process fill:#1976d2,stroke:#1976d2,color:#fff
-    classDef decision fill:#f57c00,stroke:#f57c00,color:#fff
-    classDef success fill:#388e3c,stroke:#388e3c,color:#fff
+    %% Nodes - soft pastel fill with dark text
+    classDef process fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#0d47a1
+    classDef decision fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#e65100
+    classDef success fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#2e7d32
 
-    %% Box
-    classDef loginBox fill:#616161,stroke:#1976d2,stroke-width:4px,color:#fff
+    %% Box - light tint
+    classDef loginBox fill:#f5f5f5,stroke:#1976d2,stroke-width:3px,color:#333
 
     class Login loginBox
 
@@ -864,23 +864,25 @@ flowchart TB
 
 | Type | Fill | Stroke | Text | Usage |
 |------|------|--------|------|-------|
-| **Nodes** | Solid color | Same as fill | White | Individual elements |
-| **Subgraphs** | Light tint (10-20%) | Dark color | Black | Container boxes |
+| **Nodes** | Light pastel tint | Darker matching color | Dark | Individual elements |
+| **Subgraphs** | Very light gray | Matching category color | Dark | Container boxes |
 
-### Node Colors
+### Color Scheme (Easy on Eyes)
 
-| Layer | Node Fill | Box Stroke | Box Text |
-|-------|-----------|------------|----------|
-| Client | `#1565c0` | `#1565c0` (3px) | `#1565c0` |
-| Bun/API | `#e65100` | `#e65100` (3px) | `#e65100` |
-| Python | `#2e7d32` | `#2e7d32` (3px) | `#2e7d32` |
-| Queue | `#7b1fa2` | `#7b1fa2` (3px) | `#7b1fa2` |
-| Database | `#c2185b` | `#c2185b` (3px) | `#c2185b` |
-| Success | `#388e3c` | `#388e3c` (3px) | `#388e3c` |
-| Error | `#d32f2f` | `#d32f2f` (3px) | `#d32f2f` |
-| Warning | `#f57c00` | `#616161` | `#f57c00` | `#fff` |
+| Category | Node Fill | Node Stroke | Node Text | Box Fill | Box Stroke |
+|----------|-----------|-------------|-----------|----------|------------|
+| **Client/Users** | `#e3f2fd` | `#1976d2` | `#0d47a1` | `#f5f5f5` | `#1976d2` |
+| **Bun/API** | `#fff3e0` | `#f57c00` | `#e65100` | `#f5f5f5` | `#f57c00` |
+| **Python** | `#e8f5e9` | `#388e3c` | `#2e7d32` | `#f5f5f5` | `#388e3c` |
+| **Queue** | `#f3e5f5` | `#7b1fa2` | `#4a148c` | `#f5f5f5` | `#7b1fa2` |
+| **Database** | `#fce4ec` | `#c2185b` | `#880e4f` | `#f5f5f5` | `#c2185b` |
+| **Success** | `#e8f5e9` | `#388e3c` | `#2e7d32` | `#f5f5f5` | `#388e3c` |
+| **Error** | `#ffebee` | `#d32f2f` | `#b71c1c` | `#f5f5f5` | `#d32f2f` |
+| **Warning** | `#fff8e1` | `#ffa726` | `#e65100` | `#f5f5f5` | `#ffa726` |
+| **Info/Normal** | `#e3f2fd` | `#1976d2` | `#0d47a1` | `#f5f5f5` | `#1976d2` |
+| **Optional** | `#f5f5f5` | `#757575` | `#424242` | `#fafafa` | `#9e9e9e` |
 
-> **Note**: Box fill is `#616161` (mid-gray) for visibility on both light and dark GitHub themes.
+> **Note**: Mới đổi sang color scheme pastel - dễ nhìn hơn, không bị chói, text đen đọc dễ hơn trên nền sáng.
 
 ### Shapes
 
@@ -898,4 +900,5 @@ flowchart TB
 
 ---
 
-*Cập nhật với Mermaid v11 ELK layout · SP26SE145*
+*Cập nhật với Mermaid v11 ELK layout · SP26SE145*  
+*Style fix: Pastel color scheme for better readability*
