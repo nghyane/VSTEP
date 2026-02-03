@@ -53,10 +53,10 @@ flowchart TB
     Grader --> MQ
     MQ --> BunApp
 
-    classDef users fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-    classDef bun fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef python fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-    classDef data fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef users fill:#1565c0,stroke:#0d47a1,stroke-width:2px,color:#fff
+    classDef bun fill:#e65100,stroke:#bf360c,stroke-width:2px,color:#fff
+    classDef python fill:#2e7d32,stroke:#1b5e20,stroke-width:2px,color:#fff
+    classDef data fill:#c2185b,stroke:#880e4f,stroke-width:2px,color:#fff
 
     class Users,L,I,A users
     class BunApp,Auth,API,Core,QueueClient bun
@@ -120,11 +120,11 @@ flowchart TB
     Receive --> Process --> SaveGrade --> SendCb --> CbQueue --> Consume
     Consume --> UpdateStatus --> SaveDB
 
-    classDef client fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-    classDef bun fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef queue fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    classDef python fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-    classDef db fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef client fill:#1565c0,stroke:#0d47a1,stroke-width:2px,color:#fff
+    classDef bun fill:#e65100,stroke:#bf360c,stroke-width:2px,color:#fff
+    classDef queue fill:#7b1fa2,stroke:#4a148c,stroke-width:2px,color:#fff
+    classDef python fill:#2e7d32,stroke:#1b5e20,stroke-width:2px,color:#fff
+    classDef db fill:#c2185b,stroke:#880e4f,stroke-width:2px,color:#fff
 
     class Client,User client
     class Bun,Validate,CreateSub,WriteOutbox,Relay,Consume,UpdateStatus bun
@@ -186,11 +186,11 @@ flowchart TB
     
     Process -->|"Invalid message"| DLQ
 
-    classDef normal fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-    classDef decision fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef warning fill:#fff8e1,stroke:#f57c00,stroke-width:2px
-    classDef error fill:#ffebee,stroke:#c62828,stroke-width:2px
-    classDef success fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    classDef normal fill:#1565c0,stroke:#0d47a1,stroke-width:2px,color:#fff
+    classDef decision fill:#e65100,stroke:#bf360c,stroke-width:2px,color:#fff
+    classDef warning fill:#f57c00,stroke:#e65100,stroke-width:2px,color:#fff
+    classDef error fill:#c62828,stroke:#b71c1c,stroke-width:2px,color:#fff
+    classDef success fill:#2e7d32,stroke:#1b5e20,stroke-width:2px,color:#fff
 
     class Submission,QueuePhase,Processing normal
     class Backpressure,Circuit decision
@@ -262,11 +262,11 @@ flowchart TB
     QUEUED -->|"Invalid job"| FAILED
     PROCESSING -->|"SLA timeout"| FAILED
 
-    classDef pending fill:#f5f5f5,stroke:#9e9e9e,stroke-width:2px
-    classDef active fill:#fff8e1,stroke:#f57c00,stroke-width:2px
-    classDef success fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-    classDef error fill:#ffebee,stroke:#c62828,stroke-width:2px
-    classDef review fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    classDef pending fill:#616161,stroke:#424242,stroke-width:2px,color:#fff
+    classDef active fill:#f57c00,stroke:#e65100,stroke-width:2px,color:#fff
+    classDef success fill:#2e7d32,stroke:#1b5e20,stroke-width:2px,color:#fff
+    classDef error fill:#c62828,stroke:#b71c1c,stroke-width:2px,color:#fff
+    classDef review fill:#1565c0,stroke:#0d47a1,stroke-width:2px,color:#fff
 
     class PENDING pending
     class QUEUED,PROCESSING,ANALYZING,GRADING active
@@ -311,8 +311,8 @@ flowchart TB
     Sub --> Outbox
     Outbox -.->|"poll"| Relay --> Lock --> Publish --> Confirm
 
-    classDef trans fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-    classDef async fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef trans fill:#1565c0,stroke:#0d47a1,stroke-width:2px,color:#fff
+    classDef async fill:#e65100,stroke:#bf360c,stroke-width:2px,color:#fff
 
     class Transaction,Sub,Outbox trans
     class Async,Relay,Lock,Publish,Confirm async
@@ -368,11 +368,11 @@ flowchart TB
     Endpoint --> Heartbeat
     Browser --> Reconnect --> Endpoint
 
-    classDef client fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-    classDef sse fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    classDef bun fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef worker fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-    classDef queue fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef client fill:#1565c0,stroke:#0d47a1,stroke-width:2px,color:#fff
+    classDef sse fill:#7b1fa2,stroke:#4a148c,stroke-width:2px,color:#fff
+    classDef bun fill:#e65100,stroke:#bf360c,stroke-width:2px,color:#fff
+    classDef worker fill:#2e7d32,stroke:#1b5e20,stroke-width:2px,color:#fff
+    classDef queue fill:#c2185b,stroke:#880e4f,stroke-width:2px,color:#fff
 
     class Client,Browser,LocalState client
     class SSE,Endpoint,Heartbeat,Reconnect sse
@@ -465,12 +465,12 @@ flowchart TB
     
     Human --> Claim --> Review --> Override --> Weighted
 
-    classDef input fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-    classDef process fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef ai fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-    classDef conf fill:#fff8e1,stroke:#f9a825,stroke-width:2px
-    classDef route fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    classDef human fill:#efebe9,stroke:#5d4037,stroke-width:2px
+    classDef input fill:#1565c0,stroke:#0d47a1,stroke-width:2px,color:#fff
+    classDef process fill:#e65100,stroke:#bf360c,stroke-width:2px,color:#fff
+    classDef ai fill:#2e7d32,stroke:#1b5e20,stroke-width:2px,color:#fff
+    classDef conf fill:#f9a825,stroke:#f57f17,stroke-width:2px,color:#000
+    classDef route fill:#7b1fa2,stroke:#4a148c,stroke-width:2px,color:#fff
+    classDef human fill:#5d4037,stroke:#3e2723,stroke-width:2px,color:#fff
 
     class Input,Writing,Speaking input
     class Preprocess,Validate,Transcribe,Extract process
@@ -556,11 +556,11 @@ flowchart LR
     GoalCheck -->|"Không"| Select
     GoalCheck -->|"Có"| End
 
-    classDef start fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-    classDef process fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef decision fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    classDef success fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-    classDef optional fill:#f5f5f5,stroke:#9e9e9e,stroke-width:2px,stroke-dasharray: 5 5
+    classDef start fill:#1565c0,stroke:#0d47a1,stroke-width:2px,color:#fff
+    classDef process fill:#e65100,stroke:#bf360c,stroke-width:2px,color:#fff
+    classDef decision fill:#7b1fa2,stroke:#4a148c,stroke-width:2px,color:#fff
+    classDef success fill:#2e7d32,stroke:#1b5e20,stroke-width:2px,color:#fff
+    classDef optional fill:#616161,stroke:#424242,stroke-width:2px,stroke-dasharray: 5 5,color:#fff
 
     class Start start
     class Reg,Profile,Goal,Practice,Mock,Feedback,Progress process
@@ -629,10 +629,10 @@ flowchart TB
     Down -->|"S2→S1"| S1
     Down -->|"S3→S2"| S2
 
-    classDef input fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-    classDef stage fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef feedback fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-    classDef progress fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef input fill:#1565c0,stroke:#0d47a1,stroke-width:2px,color:#fff
+    classDef stage fill:#e65100,stroke:#bf360c,stroke-width:2px,color:#fff
+    classDef feedback fill:#2e7d32,stroke:#1b5e20,stroke-width:2px,color:#fff
+    classDef progress fill:#7b1fa2,stroke:#4a148c,stroke-width:2px,color:#fff
 
     class Input,Task,Level,History input
     class Stage,S1,S2,S3 stage
@@ -697,11 +697,11 @@ flowchart TB
     Check -->|"Instructor"| Grading
     Check -->|"Admin"| Admin
 
-    classDef auth fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-    classDef verify fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef rbac fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-    classDef resources fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    classDef data fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef auth fill:#1565c0,stroke:#0d47a1,stroke-width:2px,color:#fff
+    classDef verify fill:#e65100,stroke:#bf360c,stroke-width:2px,color:#fff
+    classDef rbac fill:#2e7d32,stroke:#1b5e20,stroke-width:2px,color:#fff
+    classDef resources fill:#7b1fa2,stroke:#4a148c,stroke-width:2px,color:#fff
+    classDef data fill:#c2185b,stroke:#880e4f,stroke-width:2px,color:#fff
 
     class Auth,Login,Rate,Access,Refresh auth
     class Verify,Validate,RefreshEp verify
@@ -726,9 +726,9 @@ flowchart TB
     Count -->|"< 3"| Issue
     Count -->|"≥ 3"| Warn --> Revoke --> Issue
 
-    classDef process fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef decision fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    classDef success fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    classDef process fill:#e65100,stroke:#bf360c,stroke-width:2px,color:#fff
+    classDef decision fill:#7b1fa2,stroke:#4a148c,stroke-width:2px,color:#fff
+    classDef success fill:#2e7d32,stroke:#1b5e20,stroke-width:2px,color:#fff
 
     class Login,Attempt,Revoke,Issue process
     class Count decision
@@ -778,18 +778,19 @@ flowchart TB
 | Stacked Rect | `@{ shape: st-rect }` | Multi-process |
 | Diamond | `@{ shape: diam }` | Decisions |
 
-### Color Palette
+### Color Palette (Dark Mode Compatible)
 
-| Layer | Fill | Stroke |
-|-------|------|--------|
-| Client | `#e3f2fd` | `#1565c0` |
-| Bun/API | `#fff3e0` | `#e65100` |
-| Python | `#e8f5e9` | `#2e7d32` |
-| Queue | `#f3e5f5` | `#7b1fa2` |
-| Database | `#fce4ec` | `#c2185b` |
-| Success | `#e8f5e9` | `#2e7d32` |
-| Error | `#ffebee` | `#c62828` |
-| Warning | `#fff8e1` | `#f57c00` |
+| Layer | Fill | Stroke | Text |
+|-------|------|--------|------|
+| Client | `#1565c0` | `#0d47a1` | `#fff` |
+| Bun/API | `#e65100` | `#bf360c` | `#fff` |
+| Python | `#2e7d32` | `#1b5e20` | `#fff` |
+| Queue | `#7b1fa2` | `#4a148c` | `#fff` |
+| Database | `#c2185b` | `#880e4f` | `#fff` |
+| Success | `#2e7d32` | `#1b5e20` | `#fff` |
+| Error | `#c62828` | `#b71c1c` | `#fff` |
+| Warning | `#f57c00` | `#e65100` | `#fff` |
+| Pending/Gray | `#616161` | `#424242` | `#fff` |
 
 ---
 
