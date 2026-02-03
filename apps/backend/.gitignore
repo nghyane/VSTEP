@@ -32,3 +32,32 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Finder (MacOS) folder config
 .DS_Store
+
+# Local AI/dev tooling folders
+.agent
+.agents
+.claude
+.cline
+.codebuddy
+.codex
+.commandcode
+.continue
+.crush
+.cursor
+.factory
+.gemini
+.goose
+.junie
+.kilocode
+.kiro
+.kode
+.mcpjam
+.mux
+.neovate
+.opencode
+.openhands
+.pi
+.pochi
+.qoder
+.qwen
+skills
