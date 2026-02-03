@@ -869,16 +869,18 @@ flowchart TB
 
 ### Node Colors
 
-| Layer | Node Fill | Box Fill | Box Stroke |
-|-------|-----------|----------|------------|
-| Client | `#1565c0` | `#e3f2fd` | `#1565c0` |
-| Bun/API | `#e65100` | `#fff3e0` | `#e65100` |
-| Python | `#2e7d32` | `#e8f5e9` | `#2e7d32` |
-| Queue | `#7b1fa2` | `#f3e5f5` | `#7b1fa2` |
-| Database | `#c2185b` | `#fce4ec` | `#c2185b` |
-| Success | `#388e3c` | `#e8f5e9` | `#388e3c` |
-| Error | `#d32f2f` | `#ffebee` | `#d32f2f` |
-| Warning | `#f57c00` | `#fff8e1` | `#f57c00` |
+| Layer | Node Fill | Box Stroke | Box Text |
+|-------|-----------|------------|----------|
+| Client | `#1565c0` | `#1565c0` (3px) | `#1565c0` |
+| Bun/API | `#e65100` | `#e65100` (3px) | `#e65100` |
+| Python | `#2e7d32` | `#2e7d32` (3px) | `#2e7d32` |
+| Queue | `#7b1fa2` | `#7b1fa2` (3px) | `#7b1fa2` |
+| Database | `#c2185b` | `#c2185b` (3px) | `#c2185b` |
+| Success | `#388e3c` | `#388e3c` (3px) | `#388e3c` |
+| Error | `#d32f2f` | `#d32f2f` (3px) | `#d32f2f` |
+| Warning | `#f57c00` | `#f57c00` (3px) | `#f57c00` |
+
+> **Note**: Box fill is always `none` (transparent) for visibility on both light and dark modes.
 
 ### Shapes
 
