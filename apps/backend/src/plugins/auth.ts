@@ -1,6 +1,6 @@
+import { env } from "@common/env";
 import { jwt } from "@elysiajs/jwt";
 import type { Elysia } from "elysia";
-import { env } from "../common/env";
 
 export interface JWTPayload {
   sub: string;

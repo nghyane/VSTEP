@@ -1,135 +1,127 @@
-# VSTEP Backend Guidelines
+# VSTEP Backend
 
-**Stack**: Bun 1.3+ + Elysia + Drizzle + PostgreSQL
-
----
-
-## 1. Philosophy
-
-Code explains what. Comments explain why. Every rule exists to reduce cognitive load.
+**Stack:** Bun 1.3+ + Elysia + Drizzle + PostgreSQL
 
 ---
 
-## 2. Golden Rules
+## Quick Ref
 
-1. **Never use `.js` extension in imports** — Bun convention
-2. **Never use barrel files** — Import directly from `@db/schema/users`
-3. **Never use bcrypt/jsonwebtoken/ioredis/dotenv/jest** — Use Bun natives
-4. **Always use `@t3-oss/env-core`** — Type-safe environment variables
-5. **Always import via alias** — `@db/schema/*`, `@common/*` over relative paths
+```typescript
+// Import patterns
+import { logger } from "@common/logger";
+import { env } from "@common/env";
+import { db } from "@db/index";
+import { users } from "@db/schema/users";
+import { authPlugin } from "@plugins/auth";
+
+// Within same module
+import { helper } from "./utils/helper";
+```
 
 ---
 
-## 3. Patterns
+## Golden Rules
 
-### Auth
+| # | Rule | Check |
+|---|------|-------|
+| 1 | No `.js` in imports | `grep -r "\.js['\"]" src/` |
+| 2 | No barrel files | No `export * from` in schema/ |
+| 3 | No banned packages | `grep -r "bcrypt\|jsonwebtoken\|ioredis\|dotenv\|jest\|console.log" src/` |
+| 4 | Use `@t3-oss/env-core` | `src/common/env.ts` exists |
+| 5 | Cross-module = aliases | `grep -r "\.\./.*common\|db\|plugins" src/` |
 
+---
+
+## File Locations
+
+| Type | Path |
+|------|------|
+| Schema | `src/db/schema/{name}.ts` |
+| Plugins | `src/plugins/{name}.ts` |
+| Common | `src/common/{name}.ts` |
+| Routes | `src/routes/{name}.ts` or inline in `src/index.ts` |
+| Tests | `src/**/*.test.ts` |
+
+---
+
+## What Exists (Use, Don't Re-create)
+
+| Module | Import | Purpose |
+|--------|--------|---------|
+| Logger | `import { logger } from "@common/logger"` | Structured logging. Never `console.log` |
+| Env | `import { env } from "@common/env"` | Type-safe env vars via `@t3-oss/env-core` |
+| DB | `import { db } from "@db/index"` | Drizzle client |
+| Auth | `import { authPlugin } from "@plugins/auth"` | JWT + cookie auth plugin |
+| Password | `Bun.password.hash/verify` | Native Bun password hashing |
+
+---
+
+## Aliases
+
+| Alias | Maps to |
+|-------|---------|
+| `@/*` | `./src/*` |
+| `@db/*` | `./src/db/*` |
+| `@common/*` | `./src/common/*` |
+| `@plugins/*` | `./src/plugins/*` |
+
+---
+
+## Patterns
+
+**Logging:**
 ```typescript
-import { authPlugin } from "./plugins/auth";
-
-const app = new Elysia()
-  .use(authPlugin())
-  .post("/login", async ({ jwt, setAuthCookie, body }) => {
-    const token = await jwt.sign({ sub: user.id, role: user.role });
-    setAuthCookie(token);
-    return { token };
-  })
-  .get("/profile", ({ user }) => user, { auth: true });
+logger.info("Event", { meta: "value" });
+logger.error("Failed", { error: err.message });
 ```
 
-### Password Hashing
-
+**Schema:**
 ```typescript
-const hash = await Bun.password.hash(password, {
-  algorithm: "argon2id",
-  memoryCost: 65536,
-  timeCost: 3,
-});
-const isValid = await Bun.password.verify(password, hash);
-```
-
-### Environment
-
-```typescript
-import { createEnv } from "@t3-oss/env-core";
-
-export const env = createEnv({
-  server: {
-    DATABASE_URL: z.string().url(),
-    JWT_SECRET: z.string().min(32),
-  },
-  runtimeEnv: process.env,
-});
-```
-
-### Schema (No Barrels)
-
-```typescript
-// File: src/db/schema/users.ts
-export const users = pgTable(
-  "users",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    email: varchar("email", { length: 255 }).notNull(),
-    deletedAt: timestamp("deleted_at"),
-  },
-  (table) => ({
-    emailIdx: uniqueIndex("users_email_unique")
-      .on(table.email)
-      .where(sql`${table.deletedAt} IS NULL`),
-  }),
-);
-
+export const users = pgTable("users", { ... });
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 ```
 
-### Comments
-
+**Auth:**
 ```typescript
-// ❌ Don't: states the obvious
-// Increment counter
+const app = new Elysia()
+  .use(authPlugin())
+  .get("/", ({ user }) => user, { auth: true });
+```
+
+**Comments:**
+```typescript
+// ❌ Don't: states obvious
 counter++;
 
-// ✅ Do: explain reasoning
-// Exponential backoff for rate-limited APIs
+// ✅ Do: explain why
+// Exponential backoff: 1s, 2s, 4s...
 const delay = Math.pow(2, attempt) * 1000;
 ```
 
 ---
 
-## 4. Commands
+## Commands
 
 ```bash
-# Dev
-bun run dev          # Hot reload
-bun run check        # Biome lint
-bun run format       # Biome format
+bun run dev              # Hot reload
+bun run check            # Biome lint
+bun run check --write    # Auto-fix
+bun run format           # Format
 
-# DB
-bun run db:push      # Schema to DB (dev)
-bun run db:studio    # GUI
-bun run db:generate  # Migrations
+bun run db:push          # Dev: schema → DB
+bun run db:generate      # Create migrations
+bun run db:migrate       # Run migrations
 
-# Test
-bun test             # Run tests
-
-# Packages
-bun add <pkg>
-bun add -D <pkg>
-bun remove <pkg>
+bun test                 # Run tests
 ```
 
 ---
 
-## Stack Reference
+## Verification
 
-| Feature | Use | Don't Use |
-|---------|-----|-----------|
-| Runtime | Bun 1.3+ | Node.js |
-| Auth | `@elysiajs/jwt` + `Bun.password` | bcrypt, jsonwebtoken |
-| Env | `@t3-oss/env-core` | dotenv |
-| Test | `bun:test` | jest, vitest |
-| Lint | Biome | ESLint, Prettier |
-| DB | postgres (driver) | pg, mysql2 |
-| Cache | `Bun.redis` | ioredis |
+Before completing task:
+- [ ] `bun run check` passes
+- [ ] No `console.log` (use `logger`)
+- [ ] Cross-module imports use aliases (`@common`, `@db`, `@plugins`)
+- [ ] No `.js` extensions
