@@ -60,10 +60,10 @@ flowchart TB
     classDef data fill:#c2185b,stroke:#c2185b,color:#fff
 
     %% Subgraph boxes - mid-gray fill visible on both light/dark modes
-    classDef usersBox fill:#616161,stroke:#1565c0,stroke-width:2px,color:#fff
-    classDef bunBox fill:#616161,stroke:#e65100,stroke-width:2px,color:#fff
-    classDef pythonBox fill:#616161,stroke:#2e7d32,stroke-width:2px,color:#fff
-    classDef dataBox fill:#616161,stroke:#c2185b,stroke-width:2px,color:#fff
+    classDef usersBox fill:#616161,stroke:#1565c0,stroke-width:4px,color:#fff
+    classDef bunBox fill:#616161,stroke:#e65100,stroke-width:4px,color:#fff
+    classDef pythonBox fill:#616161,stroke:#2e7d32,stroke-width:4px,color:#fff
+    classDef dataBox fill:#616161,stroke:#c2185b,stroke-width:4px,color:#fff
 
     class Users usersBox
     class BunApp bunBox
@@ -140,10 +140,10 @@ flowchart TB
     classDef db fill:#c2185b,stroke:#c2185b,color:#fff
 
     %% Boxes - transparent with thick colored border
-    classDef clientBox fill:#616161,stroke:#1565c0,stroke-width:2px,color:#fff
-    classDef bunBox fill:#616161,stroke:#e65100,stroke-width:2px,color:#fff
-    classDef queueBox fill:#616161,stroke:#7b1fa2,stroke-width:2px,color:#fff
-    classDef pythonBox fill:#616161,stroke:#2e7d32,stroke-width:2px,color:#fff
+    classDef clientBox fill:#616161,stroke:#1565c0,stroke-width:4px,color:#fff
+    classDef bunBox fill:#616161,stroke:#e65100,stroke-width:4px,color:#fff
+    classDef queueBox fill:#616161,stroke:#7b1fa2,stroke-width:4px,color:#fff
+    classDef pythonBox fill:#616161,stroke:#2e7d32,stroke-width:4px,color:#fff
 
     class Client clientBox
     class Bun bunBox
@@ -218,11 +218,11 @@ flowchart TB
     classDef success fill:#388e3c,stroke:#388e3c,color:#fff
 
     %% Boxes - mid-gray fill with colored border
-    classDef normalBox fill:#616161,stroke:#1976d2,stroke-width:2px,color:#fff
-    classDef queueBox fill:#616161,stroke:#f57c00,stroke-width:2px,color:#fff
-    classDef processBox fill:#616161,stroke:#ffa726,stroke-width:2px,color:#000
-    classDef errorBox fill:#616161,stroke:#d32f2f,stroke-width:2px,color:#fff
-    classDef successBox fill:#616161,stroke:#388e3c,stroke-width:2px,color:#fff
+    classDef normalBox fill:#616161,stroke:#1976d2,stroke-width:4px,color:#fff
+    classDef queueBox fill:#616161,stroke:#f57c00,stroke-width:4px,color:#fff
+    classDef processBox fill:#616161,stroke:#ffa726,stroke-width:4px,color:#000
+    classDef errorBox fill:#616161,stroke:#d32f2f,stroke-width:4px,color:#fff
+    classDef successBox fill:#616161,stroke:#388e3c,stroke-width:4px,color:#fff
 
     class Submission normalBox
     class QueuePhase queueBox
@@ -308,7 +308,7 @@ flowchart TB
     classDef review fill:#1976d2,stroke:#1976d2,color:#fff
 
     %% Box
-    classDef statesBox fill:#616161,stroke:#616161,stroke-width:2px,color:#fff
+    classDef statesBox fill:#616161,stroke:#9e9e9e,stroke-width:4px,color:#fff
 
     class States statesBox
 
@@ -360,8 +360,8 @@ flowchart TB
     classDef async fill:#f57c00,stroke:#f57c00,color:#fff
 
     %% Boxes
-    classDef transBox fill:#616161,stroke:#1976d2,stroke-width:2px,color:#fff
-    classDef asyncBox fill:#616161,stroke:#f57c00,stroke-width:2px,color:#fff
+    classDef transBox fill:#616161,stroke:#1976d2,stroke-width:4px,color:#fff
+    classDef asyncBox fill:#616161,stroke:#f57c00,stroke-width:4px,color:#fff
 
     class Transaction transBox
     class Async asyncBox
@@ -428,11 +428,11 @@ flowchart TB
     classDef queue fill:#c2185b,stroke:#c2185b,color:#fff
 
     %% Boxes
-    classDef clientBox fill:#616161,stroke:#1565c0,stroke-width:2px,color:#fff
-    classDef sseBox fill:#616161,stroke:#7b1fa2,stroke-width:2px,color:#fff
-    classDef bunBox fill:#616161,stroke:#f57c00,stroke-width:2px,color:#fff
-    classDef workerBox fill:#616161,stroke:#388e3c,stroke-width:2px,color:#fff
-    classDef queueBox fill:#616161,stroke:#c2185b,stroke-width:2px,color:#fff
+    classDef clientBox fill:#616161,stroke:#1565c0,stroke-width:4px,color:#fff
+    classDef sseBox fill:#616161,stroke:#7b1fa2,stroke-width:4px,color:#fff
+    classDef bunBox fill:#616161,stroke:#f57c00,stroke-width:4px,color:#fff
+    classDef workerBox fill:#616161,stroke:#388e3c,stroke-width:4px,color:#fff
+    classDef queueBox fill:#616161,stroke:#c2185b,stroke-width:4px,color:#fff
 
     class Client clientBox
     class SSE sseBox
@@ -539,12 +539,12 @@ flowchart TB
     classDef human fill:#5d4037,stroke:#5d4037,color:#fff
 
     %% Boxes
-    classDef inputBox fill:#616161,stroke:#1976d2,stroke-width:2px,color:#fff
-    classDef processBox fill:#616161,stroke:#f57c00,stroke-width:2px,color:#fff
-    classDef aiBox fill:#616161,stroke:#388e3c,stroke-width:2px,color:#fff
-    classDef confBox fill:#616161,stroke:#fbc02d,stroke-width:2px,color:#000
-    classDef routeBox fill:#616161,stroke:#7b1fa2,stroke-width:2px,color:#fff
-    classDef humanBox fill:#616161,stroke:#5d4037,stroke-width:2px,color:#fff
+    classDef inputBox fill:#616161,stroke:#1976d2,stroke-width:4px,color:#fff
+    classDef processBox fill:#616161,stroke:#f57c00,stroke-width:4px,color:#fff
+    classDef aiBox fill:#616161,stroke:#388e3c,stroke-width:4px,color:#fff
+    classDef confBox fill:#616161,stroke:#fbc02d,stroke-width:4px,color:#000
+    classDef routeBox fill:#616161,stroke:#7b1fa2,stroke-width:4px,color:#fff
+    classDef humanBox fill:#616161,stroke:#5d4037,stroke-width:4px,color:#fff
 
     class Input inputBox
     class Preprocess processBox
@@ -719,10 +719,10 @@ flowchart TB
     classDef progress fill:#7b1fa2,stroke:#7b1fa2,color:#fff
 
     %% Boxes
-    classDef inputBox fill:#616161,stroke:#1976d2,stroke-width:2px,color:#fff
-    classDef stageBox fill:#616161,stroke:#f57c00,stroke-width:2px,color:#fff
-    classDef feedbackBox fill:#616161,stroke:#388e3c,stroke-width:2px,color:#fff
-    classDef progressBox fill:#616161,stroke:#7b1fa2,stroke-width:2px,color:#fff
+    classDef inputBox fill:#616161,stroke:#1976d2,stroke-width:4px,color:#fff
+    classDef stageBox fill:#616161,stroke:#f57c00,stroke-width:4px,color:#fff
+    classDef feedbackBox fill:#616161,stroke:#388e3c,stroke-width:4px,color:#fff
+    classDef progressBox fill:#616161,stroke:#7b1fa2,stroke-width:4px,color:#fff
 
     class Input inputBox
     class Stage stageBox
@@ -800,10 +800,10 @@ flowchart TB
     classDef data fill:#c2185b,stroke:#c2185b,color:#fff
 
     %% Boxes
-    classDef authBox fill:#616161,stroke:#1565c0,stroke-width:2px,color:#fff
-    classDef verifyBox fill:#616161,stroke:#e65100,stroke-width:2px,color:#fff
-    classDef rbacBox fill:#616161,stroke:#388e3c,stroke-width:2px,color:#fff
-    classDef resourcesBox fill:#616161,stroke:#7b1fa2,stroke-width:2px,color:#fff
+    classDef authBox fill:#616161,stroke:#1565c0,stroke-width:4px,color:#fff
+    classDef verifyBox fill:#616161,stroke:#e65100,stroke-width:4px,color:#fff
+    classDef rbacBox fill:#616161,stroke:#388e3c,stroke-width:4px,color:#fff
+    classDef resourcesBox fill:#616161,stroke:#7b1fa2,stroke-width:4px,color:#fff
 
     class Auth authBox
     class Verify verifyBox
@@ -839,7 +839,7 @@ flowchart TB
     classDef success fill:#388e3c,stroke:#388e3c,color:#fff
 
     %% Box
-    classDef loginBox fill:#616161,stroke:#1976d2,stroke-width:2px,color:#fff
+    classDef loginBox fill:#616161,stroke:#1976d2,stroke-width:4px,color:#fff
 
     class Login loginBox
 
