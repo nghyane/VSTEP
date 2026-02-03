@@ -22,24 +22,24 @@ flowchart TB
 
     subgraph BunApp["MAIN APP (Bun + Elysia)"]
         direction TB
-        Auth@{ shape: fr-rect, label: "Authentication\nJWT + RBAC" }
-        API@{ shape: fr-rect, label: "REST API\nResource Endpoints" }
-        Core@{ shape: fr-rect, label: "Core Modules\nAssessment · Progress · Content" }
-        QueueClient@{ shape: st-rect, label: "Queue Client\nRabbitMQ Publisher" }
+        Auth@{ shape: fr-rect, label: "Authentication<br/>JWT + RBAC" }
+        API@{ shape: fr-rect, label: "REST API<br/>Resource Endpoints" }
+        Core@{ shape: fr-rect, label: "Core Modules<br/>Assessment · Progress · Content" }
+        QueueClient@{ shape: st-rect, label: "Queue Client<br/>RabbitMQ Publisher" }
     end
 
     subgraph GradingService["GRADING SERVICE (Python + Celery)"]
         direction TB
         Worker@{ shape: st-rect, label: "Celery Workers" }
-        Grader@{ shape: fr-rect, label: "AI Grading\nLLM · STT · Scorer" }
+        Grader@{ shape: fr-rect, label: "AI Grading<br/>LLM · STT · Scorer" }
     end
 
     subgraph DataLayer["DATA LAYER"]
         direction LR
-        MainDB@{ shape: cyl, label: "PostgreSQL\nMain DB" }
-        GradingDB@{ shape: cyl, label: "PostgreSQL\nGrading DB" }
+        MainDB@{ shape: cyl, label: "PostgreSQL<br/>Main DB" }
+        GradingDB@{ shape: cyl, label: "PostgreSQL<br/>Grading DB" }
         MQ@{ shape: rounded, label: "RabbitMQ" }
-        Redis@{ shape: cyl, label: "Redis\nCache · Rate Limit" }
+        Redis@{ shape: cyl, label: "Redis<br/>Cache · Rate Limit" }
     end
 
     Users --> BunApp
@@ -99,18 +99,18 @@ config:
 ---
 flowchart TB
     subgraph Client["CLIENT"]
-        User["User Submit\nWriting/Speaking"]
+        User["User Submit<br/>Writing/Speaking"]
     end
 
     subgraph Bun["MAIN APP (Bun)"]
         direction TB
         Validate["Validate Input"]
-        CreateSub["Create Submission\nStatus: PENDING"]
+        CreateSub["Create Submission<br/>Status: PENDING"]
         SaveDB[("MainDB")]
         WriteOutbox["Write Outbox"]
         Relay["Outbox Relay Worker"]
         Consume["Callback Consumer"]
-        UpdateStatus["Update Status\nPROCESSING → COMPLETED"]
+        UpdateStatus["Update Status<br/>PROCESSING → COMPLETED"]
     end
 
     subgraph Queue["MESSAGE QUEUE"]
@@ -121,7 +121,7 @@ flowchart TB
     subgraph Python["GRADING SERVICE (Python)"]
         direction TB
         Receive["Receive Job"]
-        Process["Process Grading\nAI / STT / Scorer"]
+        Process["Process Grading<br/>AI / STT / Scorer"]
         SaveGrade[("GradingDB")]
         SendCb["Send Callback"]
     end
@@ -185,7 +185,7 @@ flowchart TB
     end
 
     subgraph Recovery["RECOVERY"]
-        Retry@{ shape: st-rect, label: "Retry Logic\nExponential + Jitter" }
+        Retry@{ shape: st-rect, label: "Retry Logic<br/>Exponential + Jitter" }
         DLQ@{ shape: doc, label: "Dead Letter Queue" }
         Alert@{ shape: rounded, label: "Alert Admin" }
     end
@@ -196,7 +196,7 @@ flowchart TB
 
     Submit --> Validate --> Enqueue --> Backpressure
     Backpressure -->|"No"| Dequeue
-    Backpressure -->|"Yes"| Delayed["Set DELAYED\nNotify User"]
+    Backpressure -->|"Yes"| Delayed["Set DELAYED<br/>Notify User"]
     
     Dequeue --> Process --> Circuit
     Circuit -->|"Closed"| External
@@ -342,14 +342,14 @@ flowchart TB
     subgraph Transaction["SAME TRANSACTION"]
         direction TB
         Sub["INSERT INTO submissions"]
-        Outbox["INSERT INTO outbox\nstatus: 'pending'"]
+        Outbox["INSERT INTO outbox<br/>status: 'pending'"]
     end
 
     subgraph Async["ASYNC PROCESSING"]
-        Relay["Outbox Relay Worker\n(poll every 1-2s)"]
-        Lock["SELECT ... FOR UPDATE\nSKIP LOCKED"]
+        Relay["Outbox Relay Worker<br/>(poll every 1-2s)"]
+        Lock["SELECT ... FOR UPDATE<br/>SKIP LOCKED"]
         Publish["Publish to RabbitMQ"]
-        Confirm["UPDATE outbox\nstatus: 'sent'"]
+        Confirm["UPDATE outbox<br/>status: 'sent'"]
     end
 
     Sub --> Outbox
@@ -386,13 +386,13 @@ flowchart TB
     end
 
     subgraph SSE["SSE LAYER"]
-        Endpoint["SSE Endpoint\n/api/sse/submissions/:id"]
-        Heartbeat["Heartbeat\n30s"]
-        Reconnect["Reconnect Logic\nLast-Event-ID"]
+        Endpoint["SSE Endpoint<br/>/api/sse/submissions/:id"]
+        Heartbeat["Heartbeat<br/>30s"]
+        Reconnect["Reconnect Logic<br/>Last-Event-ID"]
     end
 
     subgraph Bun["MAIN APP (Bun)"]
-        Consumer["AMQP Consumer\ngrading.callback"]
+        Consumer["AMQP Consumer<br/>grading.callback"]
         PubSub["In-Memory Pub/Sub"]
         DBUpdate["DB Update"]
         Fallback["REST Fallback"]
@@ -488,22 +488,22 @@ flowchart TB
     end
 
     subgraph Confidence["CONFIDENCE CALCULATION"]
-        ModelCons@{ shape: fr-rect, label: "Model Consistency\n30%" }
-        RuleVal@{ shape: fr-rect, label: "Rule Validation\n25%" }
-        ContentSim@{ shape: fr-rect, label: "Content Similarity\n25%" }
-        LengthHeur@{ shape: fr-rect, label: "Length Heuristic\n20%" }
-        Score@{ shape: diam, label: "Confidence Score\n0-100%" }
+        ModelCons@{ shape: fr-rect, label: "Model Consistency<br/>30%" }
+        RuleVal@{ shape: fr-rect, label: "Rule Validation<br/>25%" }
+        ContentSim@{ shape: fr-rect, label: "Content Similarity<br/>25%" }
+        LengthHeur@{ shape: fr-rect, label: "Length Heuristic<br/>20%" }
+        Score@{ shape: diam, label: "Confidence Score<br/>0-100%" }
     end
 
     subgraph Routing["ROUTING"]
         Threshold@{ shape: diam, label: "Confidence ≥ 85%?" }
-        SpotCheck@{ shape: diam, label: "Spot Check\n5-10%?" }
+        SpotCheck@{ shape: diam, label: "Spot Check<br/>5-10%?" }
         Auto@{ shape: rounded, label: "Auto-Grade" }
         Human@{ shape: rounded, label: "Human Review Queue" }
     end
 
     subgraph HumanGrading["HUMAN GRADING"]
-        Claim@{ shape: fr-rect, label: "Claim Submission\nRedis Lock 15m" }
+        Claim@{ shape: fr-rect, label: "Claim Submission<br/>Redis Lock 15m" }
         Review@{ shape: fr-rect, label: "Instructor Review" }
         Override@{ shape: diam, label: "Override AI?" }
         Weighted@{ shape: fr-rect, label: "Weighted Final Score" }
@@ -616,13 +616,13 @@ config:
 ---
 flowchart LR
     Start@{ shape: circle, label: "Bắt đầu" }
-    Reg@{ shape: fr-rect, label: "Đăng ký\nEmail/Password" }
-    Profile@{ shape: fr-rect, label: "Thiết lập\nHồ sơ" }
-    Goal@{ shape: fr-rect, label: "Thiết lập Goal\nTarget Level" }
-    SelfAssess@{ shape: rounded, label: "Self-Assessment\n(Optional)" }
+    Reg@{ shape: fr-rect, label: "Đăng ký<br/>Email/Password" }
+    Profile@{ shape: fr-rect, label: "Thiết lập<br/>Hồ sơ" }
+    Goal@{ shape: fr-rect, label: "Thiết lập Goal<br/>Target Level" }
+    SelfAssess@{ shape: rounded, label: "Self-Assessment<br/>(Optional)" }
     Select@{ shape: diam, label: "Chọn Mode" }
-    Practice@{ shape: fr-rect, label: "Practice Mode\nAdaptive" }
-    Mock@{ shape: fr-rect, label: "Mock Test\nFull Exam" }
+    Practice@{ shape: fr-rect, label: "Practice Mode<br/>Adaptive" }
+    Mock@{ shape: fr-rect, label: "Mock Test<br/>Full Exam" }
     Feedback@{ shape: fr-rect, label: "Feedback & Results" }
     Progress@{ shape: fr-rect, label: "Progress Tracking" }
     GoalCheck@{ shape: diam, label: "Goal đạt?" }
@@ -759,15 +759,15 @@ config:
 flowchart TB
     subgraph Auth["AUTHENTICATION"]
         Login@{ shape: rounded, label: "Login" }
-        Rate@{ shape: fr-rect, label: "Rate Limit\n5 req/min" }
-        Access@{ shape: doc, label: "Access Token\nJWT" }
-        Refresh@{ shape: doc, label: "Refresh Token\nJWT" }
+        Rate@{ shape: fr-rect, label: "Rate Limit<br/>5 req/min" }
+        Access@{ shape: doc, label: "Access Token<br/>JWT" }
+        Refresh@{ shape: doc, label: "Refresh Token<br/>JWT" }
     end
 
     subgraph Verify["VERIFICATION"]
         Validate@{ shape: fr-rect, label: "Validate JWT" }
         RefreshEp@{ shape: fr-rect, label: "Refresh Endpoint" }
-        Store@{ shape: cyl, label: "Refresh Token Store\nMainDB" }
+        Store@{ shape: cyl, label: "Refresh Token Store<br/>MainDB" }
     end
 
     subgraph RBAC["RBAC"]
@@ -824,8 +824,8 @@ flowchart TB
     subgraph Login["LOGIN FLOW"]
         Attempt@{ shape: fr-rect, label: "Login Attempt" }
         Count@{ shape: diam, label: "Count Active Tokens" }
-        Warn@{ shape: rounded, label: "Return 409 Conflict\n+ Device List" }
-        Revoke@{ shape: fr-rect, label: "User Confirm Revoke\nOldest Device" }
+        Warn@{ shape: rounded, label: "Return 409 Conflict<br/>+ Device List" }
+        Revoke@{ shape: fr-rect, label: "User Confirm Revoke<br/>Oldest Device" }
         Issue@{ shape: doc, label: "Issue New Token" }
     end
 
