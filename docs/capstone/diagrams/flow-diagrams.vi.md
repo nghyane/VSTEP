@@ -58,12 +58,21 @@ flowchart TB
     classDef python fill:#2e7d32,stroke:#a5d6a7,stroke-width:2px,color:#fff
     classDef data fill:#c2185b,stroke:#f48fb1,stroke-width:2px,color:#fff
 
-    class Users,L,I,A users
-    class BunApp,Auth,API,Core,QueueClient bun
-    class GradingService,Worker,Grader python
-    class DataLayer,MainDB,GradingDB,MQ,Redis data
+    classDef usersBox fill:none,stroke:#1565c0,stroke-width:3px
+    classDef bunBox fill:none,stroke:#e65100,stroke-width:3px
+    classDef pythonBox fill:none,stroke:#2e7d32,stroke-width:3px
+    classDef dataBox fill:none,stroke:#c2185b,stroke-width:3px
+
+    class Users usersBox
+    class BunApp bunBox
+    class GradingService pythonBox
+    class DataLayer dataBox
+
+    class L,I,A users
+    class Auth,API,Core,QueueClient bun
+    class Worker,Grader python
+    class MainDB,GradingDB,MQ,Redis data
     
-    linkStyle default stroke:#9e9e9e,stroke-width:2px
 ```
 
 > **Kiến trúc Multi-Language:**
@@ -128,13 +137,22 @@ flowchart TB
     classDef python fill:#2e7d32,stroke:#a5d6a7,stroke-width:2px,color:#fff
     classDef db fill:#c2185b,stroke:#f48fb1,stroke-width:2px,color:#fff
 
-    class Client,User client
-    class Bun,Validate,CreateSub,WriteOutbox,Relay,Consume,UpdateStatus bun
-    class Queue,ReqQueue,CbQueue queue
-    class Python,Receive,Process,SendCb python
+    classDef clientBox fill:none,stroke:#1565c0,stroke-width:3px
+    classDef bunBox fill:none,stroke:#e65100,stroke-width:3px
+    classDef queueBox fill:none,stroke:#7b1fa2,stroke-width:3px
+    classDef pythonBox fill:none,stroke:#2e7d32,stroke-width:3px
+
+    class Client clientBox
+    class Bun bunBox
+    class Queue queueBox
+    class Python pythonBox
+
+    class User client
+    class Validate,CreateSub,WriteOutbox,Relay,Consume,UpdateStatus bun
+    class ReqQueue,CbQueue queue
+    class Receive,Process,SendCb python
     class SaveDB,SaveGrade db
 
-    linkStyle default stroke:#9e9e9e,stroke-width:2px
 ```
 
 ---
@@ -196,13 +214,24 @@ flowchart TB
     classDef error fill:#c62828,stroke:#ef5350,stroke-width:2px,color:#fff
     classDef success fill:#2e7d32,stroke:#a5d6a7,stroke-width:2px,color:#fff
 
-    class Submission,QueuePhase,Processing normal
+    classDef normalBox fill:none,stroke:#1565c0,stroke-width:3px
+    classDef decisionBox fill:none,stroke:#e65100,stroke-width:3px
+    classDef warningBox fill:none,stroke:#f57c00,stroke-width:3px
+    classDef errorBox fill:none,stroke:#c62828,stroke-width:3px
+    classDef successBox fill:none,stroke:#2e7d32,stroke-width:3px
+
+    class Submission normalBox
+    class QueuePhase decisionBox
+    class Processing normalBox
+    class Recovery warningBox
+    class Success successBox
+
+    class Submit,Validate normal
     class Backpressure,Circuit decision
     class Retry warning
     class DLQ,Alert error
-    class Success,Complete success
+    class Complete success
 
-    linkStyle default stroke:#9e9e9e,stroke-width:2px
 ```
 
 ### 3.1 Retry Strategy
@@ -226,7 +255,6 @@ stateDiagram-v2
     HalfOpen --> Open: Any failure
     Closed --> Closed: Process normally
 
-    linkStyle default stroke:#9e9e9e,stroke-width:2px
 ```
 
 ---
@@ -276,13 +304,16 @@ flowchart TB
     classDef error fill:#c62828,stroke:#ef5350,stroke-width:2px,color:#fff
     classDef review fill:#1565c0,stroke:#90caf9,stroke-width:2px,color:#fff
 
+    classDef statesBox fill:none,stroke:#616161,stroke-width:3px
+
+    class States statesBox
+
     class PENDING pending
     class QUEUED,PROCESSING,ANALYZING,GRADING active
     class COMPLETED success
     class ERROR,FAILED error
     class REVIEW review
 
-    linkStyle default stroke:#9e9e9e,stroke-width:2px
 ```
 
 ### 4.1 State Machine Transitions
@@ -324,10 +355,15 @@ flowchart TB
     classDef trans fill:#1565c0,stroke:#90caf9,stroke-width:2px,color:#fff
     classDef async fill:#e65100,stroke:#ffab91,stroke-width:2px,color:#fff
 
-    class Transaction,Sub,Outbox trans
-    class Async,Relay,Lock,Publish,Confirm async
+    classDef transBox fill:none,stroke:#1565c0,stroke-width:3px
+    classDef asyncBox fill:none,stroke:#e65100,stroke-width:3px
 
-    linkStyle default stroke:#9e9e9e,stroke-width:2px
+    class Transaction transBox
+    class Async asyncBox
+
+    class Sub,Outbox trans
+    class Relay,Lock,Publish,Confirm async
+
 ```
 
 ---
@@ -386,13 +422,24 @@ flowchart TB
     classDef worker fill:#2e7d32,stroke:#a5d6a7,stroke-width:2px,color:#fff
     classDef queue fill:#c2185b,stroke:#f48fb1,stroke-width:2px,color:#fff
 
-    class Client,Browser,LocalState client
-    class SSE,Endpoint,Heartbeat,Reconnect sse
-    class Bun,Consumer,PubSub,DBUpdate,Fallback bun
-    class Worker,JobStart,Progress,JobComplete worker
-    class Queue,CbQueue queue
+    classDef clientBox fill:none,stroke:#1565c0,stroke-width:3px
+    classDef sseBox fill:none,stroke:#7b1fa2,stroke-width:3px
+    classDef bunBox fill:none,stroke:#e65100,stroke-width:3px
+    classDef workerBox fill:none,stroke:#2e7d32,stroke-width:3px
+    classDef queueBox fill:none,stroke:#c2185b,stroke-width:3px
 
-    linkStyle default stroke:#9e9e9e,stroke-width:2px
+    class Client clientBox
+    class SSE sseBox
+    class Bun bunBox
+    class Worker workerBox
+    class Queue queueBox
+
+    class Browser,LocalState client
+    class Endpoint,Heartbeat,Reconnect sse
+    class Consumer,PubSub,DBUpdate,Fallback bun
+    class JobStart,Progress,JobComplete worker
+    class CbQueue queue
+
 ```
 
 ### 5.1 Status Mapping
@@ -486,14 +533,27 @@ flowchart TB
     classDef route fill:#7b1fa2,stroke:#ce93d8,stroke-width:2px,color:#fff
     classDef human fill:#5d4037,stroke:#3e2723,stroke-width:2px,color:#fff
 
-    class Input,Writing,Speaking input
-    class Preprocess,Validate,Transcribe,Extract process
-    class AIGrading,Grammar,Vocab,Content,Fluency ai
-    class Confidence,ModelCons,RuleVal,ContentSim,LengthHeur,Score conf
-    class Routing,Threshold,SpotCheck,Auto route
-    class HumanGrading,Claim,Review,Override,Weighted human
+    classDef inputBox fill:none,stroke:#1565c0,stroke-width:3px
+    classDef processBox fill:none,stroke:#e65100,stroke-width:3px
+    classDef aiBox fill:none,stroke:#2e7d32,stroke-width:3px
+    classDef confBox fill:none,stroke:#f9a825,stroke-width:3px
+    classDef routeBox fill:none,stroke:#7b1fa2,stroke-width:3px
+    classDef humanBox fill:none,stroke:#5d4037,stroke-width:3px
 
-    linkStyle default stroke:#9e9e9e,stroke-width:2px
+    class Input inputBox
+    class Preprocess processBox
+    class AIGrading aiBox
+    class Confidence confBox
+    class Routing routeBox
+    class HumanGrading humanBox
+
+    class Writing,Speaking input
+    class Validate,Transcribe,Extract process
+    class Grammar,Vocab,Content,Fluency ai
+    class ModelCons,RuleVal,ContentSim,LengthHeur,Score conf
+    class Threshold,SpotCheck,Auto route
+    class Claim,Review,Override,Weighted human
+
 ```
 
 ### 6.1 Confidence Score Formula
@@ -584,7 +644,6 @@ flowchart LR
     class End success
     class SelfAssess optional
 
-    linkStyle default stroke:#9e9e9e,stroke-width:2px
 ```
 
 ---
@@ -652,12 +711,21 @@ flowchart TB
     classDef feedback fill:#2e7d32,stroke:#a5d6a7,stroke-width:2px,color:#fff
     classDef progress fill:#7b1fa2,stroke:#ce93d8,stroke-width:2px,color:#fff
 
-    class Input,Task,Level,History input
-    class Stage,S1,S2,S3 stage
-    class Feedback,Grammar,Vocab,Cohesion,TaskResp feedback
-    class Progression,Check,Up,Stay,Down progress
+    classDef inputBox fill:none,stroke:#1565c0,stroke-width:3px
+    classDef stageBox fill:none,stroke:#e65100,stroke-width:3px
+    classDef feedbackBox fill:none,stroke:#2e7d32,stroke-width:3px
+    classDef progressBox fill:none,stroke:#7b1fa2,stroke-width:3px
 
-    linkStyle default stroke:#9e9e9e,stroke-width:2px
+    class Input inputBox
+    class Stage stageBox
+    class Feedback feedbackBox
+    class Progression progressBox
+
+    class Task,Level,History input
+    class S1,S2,S3 stage
+    class Grammar,Vocab,Cohesion,TaskResp feedback
+    class Check,Up,Stay,Down progress
+
 ```
 
 ### 8B. Writing Progression Rules
@@ -723,13 +791,23 @@ flowchart TB
     classDef resources fill:#7b1fa2,stroke:#ce93d8,stroke-width:2px,color:#fff
     classDef data fill:#c2185b,stroke:#f48fb1,stroke-width:2px,color:#fff
 
-    class Auth,Login,Rate,Access,Refresh auth
-    class Verify,Validate,RefreshEp verify
-    class RBAC,Roles,Check rbac
-    class Resources,Practice,Mock,Grading,Admin resources
-    class Store data
+    classDef authBox fill:none,stroke:#1565c0,stroke-width:3px
+    classDef verifyBox fill:none,stroke:#e65100,stroke-width:3px
+    classDef rbacBox fill:none,stroke:#2e7d32,stroke-width:3px
+    classDef resourcesBox fill:none,stroke:#7b1fa2,stroke-width:3px
+    classDef dataBox fill:none,stroke:#c2185b,stroke-width:3px
 
-    linkStyle default stroke:#9e9e9e,stroke-width:2px
+    class Auth authBox
+    class Verify verifyBox
+    class RBAC rbacBox
+    class Resources resourcesBox
+    class Store dataBox
+
+    class Login,Rate,Access,Refresh auth
+    class Validate,RefreshEp verify
+    class Roles,Check rbac
+    class Practice,Mock,Grading,Admin resources
+
 ```
 
 ### 9.1 Refresh Token Enforcement
@@ -752,11 +830,15 @@ flowchart TB
     classDef decision fill:#7b1fa2,stroke:#ce93d8,stroke-width:2px,color:#fff
     classDef success fill:#2e7d32,stroke:#a5d6a7,stroke-width:2px,color:#fff
 
-    class Login,Attempt,Revoke,Issue process
-    class Count decision
-    class Issue success
+    classDef processBox fill:none,stroke:#e65100,stroke-width:3px
+    classDef decisionBox fill:none,stroke:#7b1fa2,stroke-width:3px
+    classDef successBox fill:none,stroke:#2e7d32,stroke-width:3px
 
-    linkStyle default stroke:#9e9e9e,stroke-width:2px
+    class Login processBox
+
+    class Attempt,Revoke,Issue process
+    class Count decision
+
 ```
 
 ### 9.2 Role Permissions
