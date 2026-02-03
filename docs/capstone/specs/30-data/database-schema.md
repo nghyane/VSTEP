@@ -6,11 +6,17 @@
 
 Hệ thống sử dụng **2 PostgreSQL database tách biệt** và **Redis** làm cache layer:
 
-- **Main DB**: Quản lý bởi Main App — users, submissions, progress, questions, mock tests
-- **Grading DB**: Quản lý bởi Grading Service — grading jobs, results, errors
-- **Redis** (`redis:6379`): Rate limiting, submission status cache, circuit breaker state
+| Database | Quản lý bởi | Tables | Connection |
+|----------|-------------|--------|------------|
+| **Main DB** | Main App (Bun) | users, submissions, progress, questions, mock tests, **outbox** | Bun chỉ connect DB này |
+| **Grading DB** | Grading Service (Python) | grading_jobs, grading_results | Python chỉ connect DB này |
+| **Redis** | Main App | — | Rate limiting, cache |
 
-**Nguyên tắc quan trọng**: Không có cross-service writes. Main App chỉ ghi vào Main DB. Grading Service chỉ ghi vào Grading DB. Hai service giao tiếp qua AMQP message queue (xem `../10-contracts/queue-contracts.md`).
+**Nguyên tắc vàng**: 
+- **Không cross-service DB writes**: Main App chỉ ghi Main DB; Grading Service chỉ ghi Grading DB
+- **Không cross-service DB reads**: Main App **không bao giờ** query GradingDB
+- **Giao tiếp duy nhất**: RabbitMQ (AMQP) — xem `../10-contracts/queue-contracts.md`
+- **Outbox pattern**: Outbox table nằm trong **Main DB**, được relay worker đọc và publish sang RabbitMQ
 
 ---
 
@@ -161,7 +167,9 @@ Lưu trữ nội dung chi tiết của bài thi để giảm tải cho bảng ch
 
 ### 2.4 outbox
 
-Outbox pattern cho reliable message publishing sang RabbitMQ. Mỗi entry là một message chờ được publish. Outbox relay worker poll table này mỗi 1-2 giây, sử dụng `FOR UPDATE SKIP LOCKED` để lấy batch (max 50) entries, đảm bảo nhiều worker instance không tranh chấp cùng một row.
+Outbox pattern cho reliable message publishing sang RabbitMQ. **Nằm trong Main DB** — Bun Main App ghi vào đây trong cùng transaction với submission, sau đó relay worker đọc và publish sang RabbitMQ.
+
+Mỗi entry là một message chờ được publish. Outbox relay worker poll table này mỗi 1-2 giây, sử dụng `FOR UPDATE SKIP LOCKED` để lấy batch (max 50) entries, đảm bảo nhiều worker instance không tranh chấp cùng một row.
 
 Chi tiết outbox pattern: xem `../40-platform/reliability.md`.
 

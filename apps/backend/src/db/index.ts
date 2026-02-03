@@ -1,72 +1,19 @@
 import { env } from "@common/env";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-
-// Direct imports from schema files (no barrel files)
-import {
-  mockTestSessionAnswers,
-  mockTestSessionSubmissions,
-  mockTestSessions,
-  mockTests,
-} from "./schema/mock-tests";
-import { outbox, processedCallbacks } from "./schema/outbox";
-import { userGoals, userProgress, userSkillScores } from "./schema/progress";
-import { questions, questionVersions } from "./schema/questions";
-import {
-  submissionDetails,
-  submissionEvents,
-  submissions,
-} from "./schema/submissions";
-import { refreshTokens, users } from "./schema/users";
-
-const client = postgres(env.DATABASE_URL);
+import { drizzle } from "drizzle-orm/bun-sql";
+import { table } from "./schema";
 
 /**
- * Drizzle database client with all tables
- * Use this for all database operations
+ * Drizzle database client with Bun SQL native driver
+ * Fastest PostgreSQL driver for Bun runtime (Zig-based, built-in)
+ * Uses barrel export for centralized schema access
+ * @see https://orm.drizzle.team/docs/connect-bun-sql
  */
-export const db = drizzle(client, {
-  schema: {
-    users,
-    refreshTokens,
-    submissions,
-    submissionDetails,
-    submissionEvents,
-    questions,
-    questionVersions,
-    outbox,
-    processedCallbacks,
-    userProgress,
-    userSkillScores,
-    userGoals,
-    mockTests,
-    mockTestSessions,
-    mockTestSessionAnswers,
-    mockTestSessionSubmissions,
-  },
-});
+export const db = drizzle(env.DATABASE_URL, { schema: table });
 
-// Export tables for direct access when needed
-export {
-  mockTestSessionAnswers,
-  mockTestSessionSubmissions,
-  mockTestSessions,
-  mockTests,
-  outbox,
-  processedCallbacks,
-  userGoals,
-  userProgress,
-  userSkillScores,
-  questions,
-  questionVersions,
-  submissionDetails,
-  submissionEvents,
-  submissions,
-  refreshTokens,
-  users,
-};
+// Re-export table registry for direct access
+export { table };
 
-// Export types from each schema file
+// Re-export all types from schema barrel
 export type {
   MockTest,
   MockTestSession,
@@ -76,43 +23,28 @@ export type {
   NewMockTestSession,
   NewMockTestSessionAnswer,
   NewMockTestSessionSubmission,
-} from "./schema/mock-tests";
-
-export type {
   NewOutbox,
   NewProcessedCallback,
   Outbox,
   ProcessedCallback,
-} from "./schema/outbox";
-
-export type {
   NewUserGoal,
   NewUserProgress,
   NewUserSkillScore,
   UserGoal,
   UserProgress,
   UserSkillScore,
-} from "./schema/progress";
-
-export type {
   NewQuestion,
   NewQuestionVersion,
   Question,
   QuestionVersion,
-} from "./schema/questions";
-
-export type {
   NewSubmission,
   NewSubmissionDetail,
   NewSubmissionEvent,
   Submission,
   SubmissionDetail,
   SubmissionEvent,
-} from "./schema/submissions";
-
-export type {
   NewRefreshToken,
   NewUser,
   RefreshToken,
   User,
-} from "./schema/users";
+} from "./schema";

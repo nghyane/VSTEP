@@ -1,110 +1,73 @@
+/**
+ * Shared Authentication Plugin
+ * Provides guard macros for authentication
+ * Pattern: Elysia derive for type-safe auth context
+ */
+
 import { env } from "@common/env";
-import { jwt } from "@elysiajs/jwt";
-import type { Elysia } from "elysia";
+import { Elysia } from "elysia";
+import { AuthService, type JWTPayload } from "@/modules/auth/service";
+import { ForbiddenError, UnauthorizedError } from "./error";
 
-export interface JWTPayload {
-  sub: string;
-  email: string;
-  role: "learner" | "instructor" | "admin";
-}
+/**
+ * Auth plugin with derive and guard macros
+ * - Derives user from JWT token (cookie or Authorization header)
+ * - Provides `auth` macro for authentication guard
+ * - Provides `admin` macro for admin-only access
+ */
+export const authPlugin = new Elysia({ name: "auth" })
+  .derive({ as: "global" }, async ({ cookie, headers }) => {
+    let token: string | undefined;
 
-export async function hashPassword(password: string): Promise<string> {
-  return Bun.password.hash(password, {
-    algorithm: "argon2id",
-    memoryCost: 65536,
-    timeCost: 3,
-  });
-}
+    // Check cookie first, then Authorization header
+    if (cookie?.auth?.value) {
+      token = String(cookie.auth.value);
+    } else if (headers.authorization?.startsWith("Bearer ")) {
+      token = headers.authorization.slice(7);
+    }
 
-export async function verifyPassword(
-  password: string,
-  hash: string,
-): Promise<boolean> {
-  return Bun.password.verify(password, hash);
-}
+    const user = token
+      ? await AuthService.verifyToken(token, env.JWT_SECRET)
+      : null;
 
-export const authPlugin = () => (app: Elysia) =>
-  app
-    .use(
-      jwt({
-        name: "jwt",
-        secret: env.JWT_SECRET,
-        exp: env.JWT_EXPIRES_IN,
-      }),
-    )
-    .derive(
-      async ({
-        jwt,
-        cookie,
-      }): Promise<{
-        user: JWTPayload | null;
-        isAuthenticated: boolean;
-        setAuthCookie: (token: string) => void;
-        clearAuthCookie: () => void;
-      }> => {
-        const auth = cookie.auth;
-        let user: JWTPayload | null = null;
-
-        const token = auth?.value;
-        if (token && typeof token === "string") {
-          try {
-            const payload = await jwt.verify(token);
-            if (payload && typeof payload === "object" && "email" in payload) {
-              user = payload as unknown as JWTPayload;
-            }
-          } catch {
-            user = null;
-          }
+    return {
+      user,
+      isAuthenticated: !!user,
+      isAdmin: user?.role === "admin",
+      userId: user?.sub || null,
+    } as {
+      user: JWTPayload | null;
+      isAuthenticated: boolean;
+      isAdmin: boolean;
+      userId: string | null;
+    };
+  })
+  .macro(({ onBeforeHandle }) => ({
+    /**
+     * Auth guard - requires authentication
+     * Usage: .get("/", () => "ok", { auth: true })
+     */
+    auth(enabled: boolean) {
+      if (!enabled) return;
+      onBeforeHandle(({ user }: { user: JWTPayload | null }) => {
+        if (!user) {
+          throw new UnauthorizedError("Authentication required");
         }
-
-        return {
-          user,
-          isAuthenticated: !!user,
-          setAuthCookie: (token: string): void => {
-            if (!auth) return;
-            auth.set({
-              value: token,
-              httpOnly: true,
-              secure: env.NODE_ENV === "production",
-              sameSite: "strict",
-              maxAge: 7 * 24 * 60 * 60,
-              path: "/",
-            });
-          },
-          clearAuthCookie: (): void => {
-            if (!auth) return;
-            auth.remove();
-          },
-        };
-      },
-    )
-    .macro(({ onBeforeHandle }) => ({
-      auth(enabled: boolean) {
-        if (!enabled) return;
-        onBeforeHandle(
-          (ctx: {
-            user: JWTPayload | null;
-            error: (status: number, body: unknown) => void;
-          }) => {
-            if (!ctx.user) {
-              return ctx.error(401, { error: "Unauthorized" });
-            }
-          },
-        );
-      },
-      roles(allowedRoles: Array<"learner" | "instructor" | "admin">) {
-        onBeforeHandle(
-          (ctx: {
-            user: JWTPayload | null;
-            error: (status: number, body: unknown) => void;
-          }) => {
-            if (!ctx.user) {
-              return ctx.error(401, { error: "Unauthorized" });
-            }
-            if (!allowedRoles.includes(ctx.user.role)) {
-              return ctx.error(403, { error: "Forbidden" });
-            }
-          },
-        );
-      },
-    }));
+      });
+    },
+    /**
+     * Admin guard - requires admin role
+     * Usage: .get("/", () => "ok", { admin: true })
+     */
+    admin(enabled: boolean) {
+      if (!enabled) return;
+      onBeforeHandle(({ user }: { user: JWTPayload | null }) => {
+        if (!user) {
+          throw new UnauthorizedError("Authentication required");
+        }
+        if (user.role !== "admin") {
+          throw new ForbiddenError("Admin access required");
+        }
+      });
+    },
+  }));

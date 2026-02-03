@@ -1,10 +1,15 @@
 # Queue Contracts (RabbitMQ)
 
-> **Phiên bản**: 2 · SP26SE145
+> **Phiên bản**: 2.1 · SP26SE145
 
 ## 1. Mục đích
 
 Chốt **hợp đồng message** giữa Bun Main App và Python Grading Service qua RabbitMQ để 2 bên triển khai độc lập nhưng không vênh.
+
+> **Kiến trúc nhắc lại**: 
+> - Main App (Bun) ↔ **MainDB** (PostgreSQL)
+> - Grading Service (Python) ↔ **GradingDB** (PostgreSQL)  
+> - **RabbitMQ là giao tiếp duy nhất** giữa 2 services — không shared DB, không direct HTTP calls
 
 Tài liệu này là **contract-first**: tập trung vào topology, message shapes, idempotency, và failure semantics.
 

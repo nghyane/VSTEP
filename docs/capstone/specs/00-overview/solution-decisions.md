@@ -28,10 +28,12 @@ flowchart LR
 - Main App: Bun + Elysia (TypeScript)
 - Grading Service: Python + Celery
 - Queue cross-service: RabbitMQ
-- DB: PostgreSQL tách MainDB/GradingDB
+- DB: PostgreSQL tách MainDB/GradingDB (**Main App chỉ connect MainDB**)
 - Cache/rate limit: Redis
 - Real-time: SSE (default)
 - Auth: JWT access/refresh (baseline)
+
+> **Quan trọng**: Main App (Bun) **không bao giờ** connect trực tiếp đến GradingDB. Giao tiếp duy nhất giữa 2 service là qua RabbitMQ.
 
 ## Decisions
 
