@@ -1,0 +1,163 @@
+{
+  "exam_type": "reading",
+  "exam_id": "10",
+  "title": "Làm bài luyện đọc | Luyện đề VSTEP",
+  "source_url": "https://luyenthivstep.vn/luyen-de/lam-bai-doc/10",
+  "scraped_at": "2026-01-08T22:24:25",
+  "listening": null,
+  "reading": {
+    "exam_id": "10",
+    "title": "Làm bài luyện đọc | Luyện đề VSTEP",
+    "passages": [
+      {
+        "passage_number": 2,
+        "title": "",
+        "content": "Câu 1: The word \"coined\" in paragraph (A) could best be replaced by?\nA. created\nB. mentioned\nC. understood\nD. discovered\nCâu 2: The word \"intervention\" in paragraph (A) can best be replaced by?\nA. source\nB. device\nC. influence\nD. need\nCâu 3: The word \"it\" in paragraph (A) refers to?\nA. light bulb\nB. atom\nC. energy\nD. molecule\nCâu 4: Which of the following statements best describes a laser?\nA. An instrument for measuring light waves\nB. A technique for destroying atoms or molecules\nC. A device for stimulating atoms and molecules to emit light\nD. An atom in a high-energy state\nCâu 5: Why was Towne's early work with stimulated emission done with microwaves?\nA. It was easier to work with longer wavelengths.\nB. The laser had already been developed.\nC. He was not concerned with light amplification.\nD. His partner Schawlow had already begun work on the laser.\nCâu 6: In his research at Columbia University, Charles Townes worked with all of the following EXCEPT?\nA. microwaves\nB. stimulated emission\nC. light waves\nD. a maser\nCâu 7: In approximately what year was the first maser built?\nA. 1953\nB. 1957\nC. 1951\nD. 1917\nCâu 8: The word \"emerged\" in paragraph (B) is closest in meaning to?\nA. succeeded\nB. appeared\nC. increased\nD. concluded\nCâu 9: The word \"outlining\" in paragraph (B) is closest in meaning to?\nA. studying\nB. summarizing\nC. assigning\nD. checking\nCâu 10: Why do people still argue about who deserves the credit for the concept of the laser?\nA. The researchers' notebooks were lost.\nB. The work is still incomplete.\nC. No one claimed credit for the development until recently.\nD. Multiple researchers were independently working on the concept at the same time.",
+        "questions": [
+          {
+            "question_number": 1,
+            "question_text": "",
+            "options": {
+              "A": "created",
+              "B": "mentioned",
+              "C": "understood",
+              "D": "discovered"
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 2,
+            "question_text": "",
+            "options": {
+              "A": "source",
+              "B": "device",
+              "C": "influence",
+              "D": "need"
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 3,
+            "question_text": "",
+            "options": {
+              "A": "light bulb",
+              "B": "atom",
+              "C": "energy",
+              "D": "molecule"
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 4,
+            "question_text": "",
+            "options": {
+              "A": "An instrument for measuring light waves",
+              "B": "A technique for destroying atoms or molecules",
+              "C": "A device for stimulating atoms and molecules to emit light",
+              "D": "An atom in a high-energy state"
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 5,
+            "question_text": "",
+            "options": {
+              "A": "It was easier to work with longer wavelengths.",
+              "B": "The laser had already been developed.",
+              "C": "He was not concerned with light amplification.",
+              "D": "His partner Schawlow had already begun work on the laser."
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 6,
+            "question_text": "",
+            "options": {
+              "A": "microwaves",
+              "B": "stimulated emission",
+              "C": "light waves",
+              "D": "a maser"
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 7,
+            "question_text": "",
+            "options": {
+              "A": "1953",
+              "B": "1957",
+              "C": "1951",
+              "D": "1917"
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 8,
+            "question_text": "",
+            "options": {
+              "A": "succeeded",
+              "B": "appeared",
+              "C": "increased",
+              "D": "concluded"
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 9,
+            "question_text": "",
+            "options": {
+              "A": "studying",
+              "B": "summarizing",
+              "C": "assigning",
+              "D": "checking"
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 10,
+            "question_text": "",
+            "options": {
+              "A": "The researchers' notebooks were lost.",
+              "B": "The work is still incomplete.",
+              "C": "No one claimed credit for the development until recently.",
+              "D": "Multiple researchers were independently working on the concept at the same time."
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          }
+        ]
+      }
+    ]
+  },
+  "writing": null,
+  "speaking": null
+}

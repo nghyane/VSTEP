@@ -1,0 +1,163 @@
+{
+  "exam_type": "reading",
+  "exam_id": "12",
+  "title": "Làm bài luyện đọc | Luyện đề VSTEP",
+  "source_url": "https://luyenthivstep.vn/luyen-de/lam-bai-doc/12",
+  "scraped_at": "2026-01-08T22:24:31",
+  "listening": null,
+  "reading": {
+    "exam_id": "12",
+    "title": "Làm bài luyện đọc | Luyện đề VSTEP",
+    "passages": [
+      {
+        "passage_number": 2,
+        "title": "",
+        "content": "Câu 1: The word \"drastic\" in paragraph (A) is closest in meaning to?\nA. radical\nB. progressive\nC. risky\nD. widespread\nCâu 2: According to the theory that the author calls \"the traditional view\" what was the first form of life to appear on land?\nA. Bacteria\nB. Vascular plants\nC. Plant-eating animals\nD. Meat-eating animals\nCâu 3: According to the passage, what happened about 400 million years ago?\nA. The megafossils were destroyed by floods.\nB. Many terrestrial life-forms died out.\nC. Life began to develop in the ancient seas.\nD. New life-forms on land developed at a rapid rate.\nCâu 4: The word \"extracted\" in paragraph (B) is closest in meaning to?\nA. preserved\nB. located\nC. studied\nD. removed\nCâu 5: What can be inferred from the passage about the microscopic fossils discovered below the Silurian-Devonian boundary?\nA. They consist of modern life-forms.\nB. They were found in approximately the same numbers as vascular plant fossils.\nC. They are older than the megafossils.\nD. They have not been helpful in understanding the evolution of terrestrial life.\nCâu 6: The word \"instances\" in paragraph (B) is closest in meaning to?\nA. methods\nB. reasons\nC. processes\nD. cases\nCâu 7: The word \"they\" in paragraph (B) refers to?\nA. oceans\nB. shores\nC. rocks\nD. specimens\nCâu 8: The word \"entombed\" in paragraph (B) is closest in meaning to?\nA. trapped\nB. crushed\nC. produced\nD. excavated\nCâu 9: Which of the following resulted from the discovery of microscopic fossils?\nA. Old techniques for analyzing fossils were found to have new uses.\nB. The time estimate for the first appearance of terrestrial life-forms was revised.\nC. The origins of primitive sea life were explained.\nD. Assumptions about the locations of ancient seas were changed.\nCâu 10: With which of the following conclusions would the author probably agree?\nA. The discovery of microfossils supports the traditional view of how terrestrial life evolved.\nB. New species have appeared at the same rate over the course of the last 400 m",
+        "questions": [
+          {
+            "question_number": 1,
+            "question_text": "",
+            "options": {
+              "A": "radical",
+              "B": "progressive",
+              "C": "risky",
+              "D": "widespread"
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 2,
+            "question_text": "",
+            "options": {
+              "A": "Bacteria",
+              "B": "Vascular plants",
+              "C": "Plant-eating animals",
+              "D": "Meat-eating animals"
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 3,
+            "question_text": "",
+            "options": {
+              "A": "The megafossils were destroyed by floods.",
+              "B": "Many terrestrial life-forms died out.",
+              "C": "Life began to develop in the ancient seas.",
+              "D": "New life-forms on land developed at a rapid rate."
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 4,
+            "question_text": "",
+            "options": {
+              "A": "preserved",
+              "B": "located",
+              "C": "studied",
+              "D": "removed"
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 5,
+            "question_text": "",
+            "options": {
+              "A": "They consist of modern life-forms.",
+              "B": "They were found in approximately the same numbers as vascular plant fossils.",
+              "C": "They are older than the megafossils.",
+              "D": "They have not been helpful in understanding the evolution of terrestrial life."
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 6,
+            "question_text": "",
+            "options": {
+              "A": "methods",
+              "B": "reasons",
+              "C": "processes",
+              "D": "cases"
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 7,
+            "question_text": "",
+            "options": {
+              "A": "oceans",
+              "B": "shores",
+              "C": "rocks",
+              "D": "specimens"
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 8,
+            "question_text": "",
+            "options": {
+              "A": "trapped",
+              "B": "crushed",
+              "C": "produced",
+              "D": "excavated"
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 9,
+            "question_text": "",
+            "options": {
+              "A": "Old techniques for analyzing fossils were found to have new uses.",
+              "B": "The time estimate for the first appearance of terrestrial life-forms was revised.",
+              "C": "The origins of primitive sea life were explained.",
+              "D": "Assumptions about the locations of ancient seas were changed."
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 10,
+            "question_text": "",
+            "options": {
+              "A": "The discovery of microfossils supports the traditional view of how terrestrial life evolved.",
+              "B": "New species have appeared at the same rate over the course of the last 400 million years.",
+              "C": "The technology used by paleontologists is too primitive to make accurate determinations about ages of fossils.",
+              "D": "The evolution of terrestrial life was just as complex as the origin of life itself."
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          }
+        ]
+      }
+    ]
+  },
+  "writing": null,
+  "speaking": null
+}

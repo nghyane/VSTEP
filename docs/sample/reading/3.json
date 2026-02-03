@@ -1,0 +1,163 @@
+{
+  "exam_type": "reading",
+  "exam_id": "3",
+  "title": "Làm bài luyện đọc | Luyện đề VSTEP",
+  "source_url": "https://luyenthivstep.vn/luyen-de/lam-bai-doc/3",
+  "scraped_at": "2026-01-08T22:19:58",
+  "listening": null,
+  "reading": {
+    "exam_id": "3",
+    "title": "Làm bài luyện đọc | Luyện đề VSTEP",
+    "passages": [
+      {
+        "passage_number": 2,
+        "title": "",
+        "content": "Câu 1: What is the best title of the passage?\nA. Do freezing temperatures completely kill bees?\nB. How do bees survive freezing temperatures?\nC. How can humans protect their homes from beehives?\nD. How do bees produce honey in winter?\nCâu 2: What percentage of pollination is contributed by honeybees?\nA. About three quarters\nB. A half\nC. Over four fifths\nD. About one third\nCâu 3: What do bees use the nectar and pollen they have collected for?\nA. To restore nutrition and protect their hive\nB. To defend themselves and heat up their hive\nC. To warm themselves and protect their hive\nD. To regain nutrition and heat up their hive\nCâu 4: What is “emerge” in paragraph (A) closest in meaning to?\nA. activate\nB. escape\nC. disappear\nD. appear\nCâu 5: According to the passage, freezing temperatures affect the following factors EXCEPT ______.\nA. bee blood\nB. nectar viscosity\nC. bee muscles\nD. bee flight\nCâu 6: In paragraph (B), what best paraphrases the sentence “Clustering, however, does not generate enough heat to combatdeath from freezing”?\nA. There exist other methods to protect bees from death in freezing temperatures.\nB. Clustering is one way to produce heat against dropping temperatures.\nC. Even grouping, the bees will still die if the temperature is low enough.\nD. Enough heat can be generated if bees are likely to form bigger groups in their hive.\nCâu 7: What is the main idea of paragraph (C)?\nA. Freezing weather helps reduce the number of bees in the hive.\nB. Bees can regulate their hive population more easily in freezing temperatures.\nC. There are different roles for bees in the hive.\nD. The queen bee is responsible for producing more worker bees.\nCâu 8: According to the passage, what will be displaced from the hive in cold weather?\nA. The queen\nB. Bee workers\nC. Bee eggs\nD. Drones\nCâu 9: The phrase “the colony” in paragraph (D) can refer to ______.\nA. the structural cavity\nB. the hive\nC. the home’s wall\nD. bee removal company\nCâu 10: According to the passage, which of th",
+        "questions": [
+          {
+            "question_number": 1,
+            "question_text": "",
+            "options": {
+              "A": "Do freezing temperatures completely kill bees?",
+              "B": "How do bees survive freezing temperatures?",
+              "C": "How can humans protect their homes from beehives?",
+              "D": "How do bees produce honey in winter?"
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 2,
+            "question_text": "",
+            "options": {
+              "A": "About three quarters",
+              "B": "A half",
+              "C": "Over four fifths",
+              "D": "About one third"
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 3,
+            "question_text": "",
+            "options": {
+              "A": "To restore nutrition and protect their hive",
+              "B": "To defend themselves and heat up their hive",
+              "C": "To warm themselves and protect their hive",
+              "D": "To regain nutrition and heat up their hive"
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 4,
+            "question_text": "",
+            "options": {
+              "A": "activate",
+              "B": "escape",
+              "C": "disappear",
+              "D": "appear"
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 5,
+            "question_text": "",
+            "options": {
+              "A": "bee blood",
+              "B": "nectar viscosity",
+              "C": "bee muscles",
+              "D": "bee flight"
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 6,
+            "question_text": "",
+            "options": {
+              "A": "There exist other methods to protect bees from death in freezing temperatures.",
+              "B": "Clustering is one way to produce heat against dropping temperatures.",
+              "C": "Even grouping, the bees will still die if the temperature is low enough.",
+              "D": "Enough heat can be generated if bees are likely to form bigger groups in their hive."
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 7,
+            "question_text": "",
+            "options": {
+              "A": "Freezing weather helps reduce the number of bees in the hive.",
+              "B": "Bees can regulate their hive population more easily in freezing temperatures.",
+              "C": "There are different roles for bees in the hive.",
+              "D": "The queen bee is responsible for producing more worker bees."
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 8,
+            "question_text": "",
+            "options": {
+              "A": "The queen",
+              "B": "Bee workers",
+              "C": "Bee eggs",
+              "D": "Drones"
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 9,
+            "question_text": "",
+            "options": {
+              "A": "the structural cavity",
+              "B": "the hive",
+              "C": "the home’s wall",
+              "D": "bee removal company"
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 10,
+            "question_text": "",
+            "options": {
+              "A": "It is noise disturbing the hive on your home’s walls.",
+              "B": "Winter is the perfect time for bees to collect the nectar and pollen.",
+              "C": "Bees can withstand the freezing weather only by gathering in the hive.",
+              "D": "Bees may die as they carry thick flower nectar in dropping temperatures."
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          }
+        ]
+      }
+    ]
+  },
+  "writing": null,
+  "speaking": null
+}

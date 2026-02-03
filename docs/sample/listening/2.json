@@ -1,0 +1,193 @@
+{
+  "exam_type": "listening",
+  "exam_id": "2",
+  "title": "Làm bài luyện nghe | Luyện đề VSTEP",
+  "source_url": "https://luyenthivstep.vn/luyen-de/lam-bai-nghe/2",
+  "scraped_at": "2026-01-08T22:19:03",
+  "listening": {
+    "exam_id": "2",
+    "title": "Làm bài luyện nghe | Luyện đề VSTEP",
+    "audio_url": "https://luyenthivstep.vn/assets/nhch/listening/bac3/lp2-1664819368_d6896b223bf621f8b664.mp3",
+    "sections": [
+      {
+        "part_number": 1,
+        "part_title": "Listening",
+        "instructions": "",
+        "questions": [
+          {
+            "question_number": 1,
+            "question_text": "",
+            "options": {
+              "A": "It costs less than textbooks.",
+              "B": "It is not worth what it costs.",
+              "C": "Its value is worth the price.",
+              "D": "It is free, so make use of it."
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 2,
+            "question_text": "",
+            "options": {
+              "A": "Time spent sleeping",
+              "B": "Time that is wasted",
+              "C": "When you are tired",
+              "D": "When you are bored"
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 3,
+            "question_text": "",
+            "options": {
+              "A": "thirty hours a week",
+              "B": "thirty new words a day",
+              "C": "thirty minutes a day",
+              "D": "thirty new words a week"
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 4,
+            "question_text": "",
+            "options": {
+              "A": "Lily’s advice for studying Chinese",
+              "B": "Lily’s plan for learning Chinese",
+              "C": "Difficulties when learning Chinese",
+              "D": "Time management in learning Chinese"
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 5,
+            "question_text": "",
+            "options": {
+              "A": "People should be aware of their seriousness.",
+              "B": "They are difficult topics to tell children.",
+              "C": "They occur much more frequently now.",
+              "D": "They are even worse than poverty."
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 6,
+            "question_text": "",
+            "options": {
+              "A": "showing a case when their problems are solved",
+              "B": "making them ask and answer ethical questions",
+              "C": "making use of moral lessons in textbooks",
+              "D": "telling them about fairness or loyalty"
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 7,
+            "question_text": "",
+            "options": {
+              "A": "two university students",
+              "B": "a psychologist and a client",
+              "C": "a TV presenter and a guest",
+              "D": "a married couple"
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 8,
+            "question_text": "",
+            "options": {
+              "A": "teaching kids social issues",
+              "B": "repairing kids’ moral problems",
+              "C": "working with kids in modern society",
+              "D": "managing kids in extra classes"
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 9,
+            "question_text": "",
+            "options": {
+              "A": "out-going and confident",
+              "B": "strong but vulnerable",
+              "C": "emotional and easy-going",
+              "D": "energetic but shy"
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 10,
+            "question_text": "",
+            "options": {
+              "A": "They ignore getting late.",
+              "B": "They think they can run fast.",
+              "C": "They lead a relaxing life.",
+              "D": "They are usually considerate."
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 11,
+            "question_text": "",
+            "options": {
+              "A": "She used to be a waitress in the Netherlands.",
+              "B": "She doesn’t like men who discriminate people’s jobs.",
+              "C": "She never wants to date anyone in a restaurant.",
+              "D": "She considers restaurant staff noble people."
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 12,
+            "question_text": "",
+            "options": {
+              "A": "handshake and personality interpretation",
+              "B": "punctuality and restaurant manner",
+              "C": "categories of people in restaurants",
+              "D": "ways of evaluating people’s personalities"
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          }
+        ]
+      }
+    ],
+    "transcript": null
+  },
+  "reading": null,
+  "writing": null,
+  "speaking": null
+}

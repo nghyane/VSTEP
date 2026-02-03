@@ -1,0 +1,24 @@
+{
+  "exam_type": "writing",
+  "exam_id": "2",
+  "title": "Làm bài luyện viết | Luyện đề VSTEP",
+  "source_url": "https://luyenthivstep.vn/luyen-de/lam-bai-viet/2",
+  "scraped_at": "2026-01-08T22:31:49",
+  "listening": null,
+  "reading": null,
+  "writing": {
+    "exam_id": "2",
+    "title": "Làm bài luyện viết | Luyện đề VSTEP",
+    "tasks": [
+      {
+        "task_number": 1,
+        "title": "",
+        "prompt": "You should spend about 40 minutes on this task.\n\nRead the following extract from a report on teenage crime.\n\n\nIn recent years, the rate of crime committed by teenagers in many countries throughout the world has increased. This problem has affected people's lives and security. The rise of crime committed by youth has resulted from many factors. The challenge, therefore, is how to deal with this worrying trend.\n\n\nWrite an essay discussing the possible causes of teenage crime and proposing solutions to address this issue.\n\nGive reasons and relevant examples from your knowledge or experience. You should write at least 250 words. Your response will be evaluated in terms of Task Fulfillment, Organization, Vocabulary and Grammar.\n✍ Nhập bài viết của bạn:\nSố từ: 0\n(Bạn cần viết tối thiểu 250 từ)\n📤 Nộp bài",
+        "instructions": "",
+        "image_urls": [],
+        "word_limit": 250
+      }
+    ]
+  },
+  "speaking": null
+}

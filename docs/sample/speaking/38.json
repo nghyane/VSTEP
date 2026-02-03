@@ -1,0 +1,27 @@
+{
+  "exam_type": "speaking",
+  "exam_id": "38",
+  "title": "Làm bài luyện nói | Luyện đề VSTEP",
+  "source_url": "https://luyenthivstep.vn/luyen-de/lam-bai-noi/38",
+  "scraped_at": "2026-01-09T11:10:43",
+  "listening": null,
+  "reading": null,
+  "writing": null,
+  "speaking": {
+    "exam_id": "38",
+    "title": "Làm bài luyện nói | Luyện đề VSTEP",
+    "parts": [
+      {
+        "part_number": 1,
+        "title": "",
+        "instructions": "Situation: Your town plans to organize an Open Festival and many visitors will attend. Three roles are suggested: a tour guide, a traffic instructor, and a master of ceremonies. Which role do you think would suit you best? Why?",
+        "topic": "",
+        "mind_map_nodes": [],
+        "follow_up_questions": [],
+        "preparation_time": null,
+        "speaking_time": 3,
+        "sample_audio_url": null
+      }
+    ]
+  }
+}

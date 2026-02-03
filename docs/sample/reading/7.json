@@ -1,0 +1,163 @@
+{
+  "exam_type": "reading",
+  "exam_id": "7",
+  "title": "Làm bài luyện đọc | Luyện đề VSTEP",
+  "source_url": "https://luyenthivstep.vn/luyen-de/lam-bai-doc/7",
+  "scraped_at": "2026-01-08T22:24:16",
+  "listening": null,
+  "reading": {
+    "exam_id": "7",
+    "title": "Làm bài luyện đọc | Luyện đề VSTEP",
+    "passages": [
+      {
+        "passage_number": 2,
+        "title": "",
+        "content": "Câu 1: Which of the following would be the best title for this article?\nA. Fashion Show in the Apparel Industry\nB. What should a designers do for a fashion show\nC. Using living models in fashion\nD. Fashion marketing by different models\nCâu 2: What does the word \"it\" in paragraph (A) refer to?\nA. style\nB. dress\nC. designer\nD. wooden dummy\nCâu 3: When did the British couturier start his own salon?\nA. 1858\nB. Early 1911\nC. 1911\nD. Early 1858\nCâu 4: In 1911, who benefited from living models as regular part of fashion promotions?\nA. Whole saler and manufacturers\nB. Retailers and designers\nC. Manufacturers and retailers\nD. Living models and manufacturers\nCâu 5: In paragraph (B), which of the following words can best replace the word \"Apparel\"?\nA. Strength\nB. Jewelry\nC. Sketches\nD. Clothes\nCâu 6: Which of the following best describes the tone of the author in this passage?\nA. indifferent\nB. concerned\nC. pessimistic\nD. skeptical\nCâu 7: Which of the following does NOT refer the role of fashion?\nA. Being a means of expression for the creator and the wearer.\nB. Giving an opportunity for designers to be independent in their thoughts.\nC. Helping the wearer become more confident.\nD. Boosting creativeness for the wearer.\nCâu 8: Which of the following statement is NOT mentioned as the aim of the fashion marketing?\nA. scrutinises fashion trends\nB. coordinate sales\nC. promote goods\nD. increase the amount of clothing\nCâu 9: Why do retailers attend fashion shows?\nA. They get inspiration to select new clothing styles for their boutiques.\nB. They participate in networking with designers and manufacturers.\nC. They can gain a variety of fashion knowledge which may help them run their shops.\nD. They can express their branding identity through fashion shows.\nCâu 10: What are the two main things that a fashion designer can express when participating in a fashion show?\nA. Designing talent and fame\nB. Creativeness and designing talent\nC. Creativeness and income\nD. Fame and designing ability",
+        "questions": [
+          {
+            "question_number": 1,
+            "question_text": "",
+            "options": {
+              "A": "Fashion Show in the Apparel Industry",
+              "B": "What should a designers do for a fashion show",
+              "C": "Using living models in fashion",
+              "D": "Fashion marketing by different models"
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 2,
+            "question_text": "",
+            "options": {
+              "A": "style",
+              "B": "dress",
+              "C": "designer",
+              "D": "wooden dummy"
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 3,
+            "question_text": "",
+            "options": {
+              "A": "1858",
+              "B": "Early 1911",
+              "C": "1911",
+              "D": "Early 1858"
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 4,
+            "question_text": "",
+            "options": {
+              "A": "Whole saler and manufacturers",
+              "B": "Retailers and designers",
+              "C": "Manufacturers and retailers",
+              "D": "Living models and manufacturers"
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 5,
+            "question_text": "",
+            "options": {
+              "A": "Strength",
+              "B": "Jewelry",
+              "C": "Sketches",
+              "D": "Clothes"
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 6,
+            "question_text": "",
+            "options": {
+              "A": "indifferent",
+              "B": "concerned",
+              "C": "pessimistic",
+              "D": "skeptical"
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 7,
+            "question_text": "",
+            "options": {
+              "A": "Being a means of expression for the creator and the wearer.",
+              "B": "Giving an opportunity for designers to be independent in their thoughts.",
+              "C": "Helping the wearer become more confident.",
+              "D": "Boosting creativeness for the wearer."
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 8,
+            "question_text": "",
+            "options": {
+              "A": "scrutinises fashion trends",
+              "B": "coordinate sales",
+              "C": "promote goods",
+              "D": "increase the amount of clothing"
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 9,
+            "question_text": "",
+            "options": {
+              "A": "They get inspiration to select new clothing styles for their boutiques.",
+              "B": "They participate in networking with designers and manufacturers.",
+              "C": "They can gain a variety of fashion knowledge which may help them run their shops.",
+              "D": "They can express their branding identity through fashion shows."
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 10,
+            "question_text": "",
+            "options": {
+              "A": "Designing talent and fame",
+              "B": "Creativeness and designing talent",
+              "C": "Creativeness and income",
+              "D": "Fame and designing ability"
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          }
+        ]
+      }
+    ]
+  },
+  "writing": null,
+  "speaking": null
+}

@@ -1,0 +1,137 @@
+{
+  "exam_type": "listening",
+  "exam_id": "4",
+  "title": "Làm bài luyện nghe | Luyện đề VSTEP",
+  "source_url": "https://luyenthivstep.vn/luyen-de/lam-bai-nghe/4",
+  "scraped_at": "2026-01-08T22:19:08",
+  "listening": {
+    "exam_id": "4",
+    "title": "Làm bài luyện nghe | Luyện đề VSTEP",
+    "audio_url": "https://luyenthivstep.vn/assets/nhch/listening/bac3/lp1-1664862240_a89c501188de559974f2.mp3",
+    "sections": [
+      {
+        "part_number": 1,
+        "part_title": "Listening",
+        "instructions": "",
+        "questions": [
+          {
+            "question_number": 1,
+            "question_text": "",
+            "options": {
+              "A": "CDs",
+              "B": "cello",
+              "C": "piano",
+              "D": "guitar"
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 2,
+            "question_text": "",
+            "options": {
+              "A": "July",
+              "B": "August",
+              "C": "June",
+              "D": "January"
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 3,
+            "question_text": "",
+            "options": {
+              "A": "It'll be foggy.",
+              "B": "It'll be rainy.",
+              "C": "It'll be hot.",
+              "D": "It'll be cold and windy."
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 4,
+            "question_text": "",
+            "options": {
+              "A": "fish",
+              "B": "soup",
+              "C": "vegetables",
+              "D": "meat"
+            },
+            "correct_answer": "C",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 5,
+            "question_text": "",
+            "options": {
+              "A": "in the drawer of the manager's desk",
+              "B": "on a table in the cafe",
+              "C": "in the lost property office",
+              "D": "in the waiter's bag"
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 6,
+            "question_text": "",
+            "options": {
+              "A": "his grandmother",
+              "B": "his sister",
+              "C": "his mother",
+              "D": "his father"
+            },
+            "correct_answer": "A",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 7,
+            "question_text": "",
+            "options": {
+              "A": "overhead bag",
+              "B": "backpack",
+              "C": "suitcase",
+              "D": "sports bag"
+            },
+            "correct_answer": "D",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          },
+          {
+            "question_number": 8,
+            "question_text": "",
+            "options": {
+              "A": "eleven thirty",
+              "B": "eleven fifty",
+              "C": "eleven fifteen",
+              "D": "eleven forty-five"
+            },
+            "correct_answer": "B",
+            "passage": null,
+            "audio_segment": null,
+            "image_url": null
+          }
+        ]
+      }
+    ],
+    "transcript": null
+  },
+  "reading": null,
+  "writing": null,
+  "speaking": null
+}

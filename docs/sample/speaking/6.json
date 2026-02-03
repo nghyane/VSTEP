@@ -1,0 +1,31 @@
+{
+  "exam_type": "speaking",
+  "exam_id": "6",
+  "title": "Làm bài luyện nói | Luyện đề VSTEP",
+  "source_url": "https://luyenthivstep.vn/luyen-de/lam-bai-noi/6",
+  "scraped_at": "2026-01-09T11:09:57",
+  "listening": null,
+  "reading": null,
+  "writing": null,
+  "speaking": {
+    "exam_id": "6",
+    "title": "Làm bài luyện nói | Luyện đề VSTEP",
+    "parts": [
+      {
+        "part_number": 1,
+        "title": "",
+        "instructions": "Topic: Online courses\n\nProvide new learning experience\nBe independent in learning\nOnline courses\nYour own ideas\nBe more convenient to study\n\nFollow-up questions:\n1. What are the advantages of online courses compared to traditional classes?\n2. What challenges do students face when learning online?\n3. How can online learning be improved in the future?",
+        "topic": "Online courses",
+        "mind_map_nodes": [],
+        "follow_up_questions": [
+          "1. What are the advantages of online courses compared to traditional classes?",
+          "2. What challenges do students face when learning online?",
+          "3. How can online learning be improved in the future?"
+        ],
+        "preparation_time": null,
+        "speaking_time": 4,
+        "sample_audio_url": null
+      }
+    ]
+  }
+}
