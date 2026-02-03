@@ -20,13 +20,13 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@db/*": ["./src/db/*"],
+      "@common/*": ["./src/common/*"],
+      "@plugins/*": ["./src/plugins/*"]
     },
 
     "types": ["bun-types"]
-  },
-  "include": ["src/**/*"]
-}
   },
   "include": ["src/**/*", "*.ts"],
   "exclude": ["node_modules", "drizzle"]

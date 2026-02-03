@@ -8,10 +8,9 @@ import {
   pgTable,
   timestamp,
   uuid,
-  varchar,
 } from "drizzle-orm/pg-core";
-import { questionLevelEnum } from "./questions";
-import { submissions } from "./submissions";
+import { questionLevelEnum, questions } from "./questions";
+import { skillEnum, submissions } from "./submissions";
 import { users } from "./users";
 
 export const mockTestStatusEnum = pgEnum("mock_test_status", [
@@ -27,18 +26,22 @@ export const mockTests = pgTable(
     level: questionLevelEnum("level").notNull(),
     blueprint: jsonb("blueprint").notNull(),
     isActive: boolean("is_active").default(true).notNull(),
+    createdBy: uuid("created_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => ({
     levelIdx: index("mock_tests_level_idx").on(table.level),
     activeIdx: index("mock_tests_active_idx")
       .on(table.level)
-      .where(sql`${table.isActive} = true`),
+      .where(sql`${table.isActive} = true AND ${table.deletedAt} IS NULL`),
   }),
 );
 
@@ -58,6 +61,7 @@ export const mockTestSessions = pgTable(
     writingScore: integer("writing_score"),
     speakingScore: integer("speaking_score"),
     overallExamScore: integer("overall_exam_score"),
+    sectionScores: jsonb("section_scores"),
     startedAt: timestamp("started_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -68,10 +72,14 @@ export const mockTestSessions = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => ({
     userIdx: index("mock_test_sessions_user_idx").on(table.userId),
     statusIdx: index("mock_test_sessions_status_idx").on(table.status),
+    userStatusIdx: index("mock_test_sessions_user_status_idx")
+      .on(table.userId, table.status)
+      .where(sql`${table.deletedAt} IS NULL`),
   }),
 );
 
@@ -82,7 +90,9 @@ export const mockTestSessionAnswers = pgTable(
     sessionId: uuid("session_id")
       .references(() => mockTestSessions.id, { onDelete: "cascade" })
       .notNull(),
-    questionId: uuid("question_id").notNull(),
+    questionId: uuid("question_id")
+      .references(() => questions.id, { onDelete: "cascade" })
+      .notNull(),
     answer: jsonb("answer").notNull(),
     isCorrect: boolean("is_correct"),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -109,7 +119,7 @@ export const mockTestSessionSubmissions = pgTable(
     submissionId: uuid("submission_id")
       .references(() => submissions.id, { onDelete: "cascade" })
       .notNull(),
-    skill: varchar("skill", { length: 10 }).notNull(),
+    skill: skillEnum("skill").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

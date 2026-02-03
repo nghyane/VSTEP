@@ -1,15 +1,22 @@
 import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import { Elysia } from "elysia";
-import { config } from "./common/env.js";
+import { env } from "./common/env";
+import { authPlugin } from "./plugins/auth";
 
 /**
  * Main Elysia application with auto OpenAPI generation
  * API Docs available at /docs
  * OpenAPI JSON available at /docs/json
+ *
+ * 2026 Stack:
+ * - Authentication: @elysiajs/jwt + Bun.password (no bcrypt)
+ * - Validation: Zod with @t3-oss/env-core for env
+ * - Database: Drizzle ORM + postgres
  */
 export const app = new Elysia()
   .use(cors())
+  .use(authPlugin()) // JWT + Bun.password auth
   .use(
     swagger({
       path: "/docs",
@@ -32,4 +39,4 @@ export const app = new Elysia()
   .get("/", () => ({ status: "ok" }), {
     detail: { tags: ["Health"], summary: "Health check" },
   })
-  .listen(config.PORT);
+  .listen(env.PORT);

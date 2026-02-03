@@ -1,4 +1,4 @@
-import { sql, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -10,6 +10,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import { questions } from "./questions";
 import { users } from "./users";
 
 export const submissionStatusEnum = pgEnum("submission_status", [
@@ -30,6 +31,19 @@ export const skillEnum = pgEnum("skill", [
   "speaking",
 ]);
 
+export const reviewPriorityEnum = pgEnum("review_priority", [
+  "LOW",
+  "MEDIUM",
+  "HIGH",
+  "CRITICAL",
+]);
+
+export const gradingModeEnum = pgEnum("grading_mode", [
+  "AUTO",
+  "HUMAN",
+  "HYBRID",
+]);
+
 export const submissions = pgTable(
   "submissions",
   {
@@ -37,7 +51,9 @@ export const submissions = pgTable(
     userId: uuid("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
-    questionId: uuid("question_id").notNull(),
+    questionId: uuid("question_id")
+      .references(() => questions.id, { onDelete: "cascade" })
+      .notNull(),
     skill: skillEnum("skill").notNull(),
     status: submissionStatusEnum("status").default("pending").notNull(),
     score: integer("score"),
@@ -45,6 +61,18 @@ export const submissions = pgTable(
     confidenceScore: integer("confidence_score"),
     reviewRequired: boolean("review_required").default(false),
     isLate: boolean("is_late").default(false),
+    attempt: integer("attempt").default(1).notNull(),
+    requestId: uuid("request_id"),
+    reviewPriority: reviewPriorityEnum("review_priority"),
+    reviewerId: uuid("reviewer_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    gradingMode: gradingModeEnum("grading_mode"),
+    auditFlag: boolean("audit_flag").default(false).notNull(),
+    claimedBy: uuid("claimed_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    claimedAt: timestamp("claimed_at", { withTimezone: true }),
     deadlineAt: timestamp("deadline_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -53,6 +81,7 @@ export const submissions = pgTable(
       .defaultNow()
       .notNull(),
     completedAt: timestamp("completed_at", { withTimezone: true }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => ({
     userIdIdx: index("submissions_user_id_idx").on(table.userId),
@@ -63,7 +92,13 @@ export const submissions = pgTable(
     ),
     reviewQueueIdx: index("submissions_review_queue_idx")
       .on(table.status, table.confidenceScore)
-      .where(sql`${table.status} = 'review_required'`),
+      .where(
+        sql`${table.status} = 'review_required' AND ${table.deletedAt} IS NULL`,
+      ),
+    userHistoryIdx: index("submissions_user_history_idx")
+      .on(table.userId, table.createdAt)
+      .where(sql`${table.deletedAt} IS NULL`),
+    requestIdIdx: index("submissions_request_id_idx").on(table.requestId),
   }),
 );
 

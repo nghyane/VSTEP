@@ -1,222 +1,135 @@
-# VSTEP Backend Agent Guidelines
+# VSTEP Backend Guidelines
 
-## Project Context
-- **Framework**: Bun + Elysia + Drizzle ORM + PostgreSQL
-- **Language**: TypeScript
-- **Architecture**: Modular API with domain-driven design
+**Stack**: Bun 1.3+ + Elysia + Drizzle + PostgreSQL
 
 ---
 
-## Code Commenting Best Practices
+## 1. Philosophy
 
-### Core Principle
-> **Code explains WHAT, Comments explain WHY**
-
-### When to Comment
-
-| ✅ DO Comment | ❌ DON'T Comment |
-|--------------|-----------------|
-| Business logic phức tạp | Code tự giải thích (increment counter) |
-| Workaround/Hack | Obvious operations |
-| Quyết định không rõ ràng | What the code is doing |
-| Performance optimization | Variable declarations |
-| Security considerations | Simple loops |
-| API documentation (JSDoc) | Return statements |
-
-### Comment Style Guide
-
-```typescript
-// ❌ BAD - states the obvious
-// Increment the counter
-let counter = 0;
-counter++;
-
-// ✅ GOOD - explains why
-// Retry with exponential backoff to handle rate-limited APIs
-const delay = Math.pow(2, attempt) * 1000;
-
-// ❌ BAD - what instead of why
-// Check if user exists
-if (await userExists(id)) { ... }
-
-// ✅ GOOD - explains business rule
-// Only pending submissions can be cancelled by users
-if (submission.status === "pending") { ... }
-```
-
-### JSDoc for Public APIs
-
-```typescript
-/**
- * Submit writing/speaking answer for grading
- * @param userId - Authenticated user ID
- * @param questionId - Question from question bank
- * @param answer - Answer content (text or audio URL)
- * @returns Submission ID for tracking
- * @throws {ValidationError} If answer format is invalid
- */
-export async function createSubmission(
-  userId: string,
-  questionId: string,
-  answer: AnswerContent
-): Promise<string> { ... }
-```
-
-### TODO/FIXME Format
-
-```typescript
-// TODO(username): Brief description with context
-// See: https://github.com/org/repo/issues/123
-
-// FIXME(username): Known issue with workaround
-// Remove when dependency v2.0 is released
-```
+Code explains what. Comments explain why. Every rule exists to reduce cognitive load.
 
 ---
 
-## Import Conventions
+## 2. Golden Rules
 
-### Bun Project - No .js Extension
-
-```typescript
-// ✅ CORRECT
-import { users } from "./schema/users";
-import { config } from "../common/env";
-
-// ❌ INCORRECT
-import { users } from "./schema/users.js";
-import { config } from "../common/env.js";
-```
-
-### Schema Imports Pattern
-
-```typescript
-// For database client initialization
-import { schema } from "./schema/all";
-
-// For queries (direct import)
-import { users } from "./schema/users";
-import { submissions } from "./schema/submissions";
-
-// For types (barrel file)
-import type { User, Submission } from "./schema";
-```
+1. **Never use `.js` extension in imports** — Bun convention
+2. **Never use barrel files** — Import directly from `@db/schema/users`
+3. **Never use bcrypt/jsonwebtoken/ioredis/dotenv/jest** — Use Bun natives
+4. **Always use `@t3-oss/env-core`** — Type-safe environment variables
+5. **Always import via alias** — `@db/schema/*`, `@common/*` over relative paths
 
 ---
 
-## Database Schema Conventions
+## 3. Patterns
 
-### File Organization
-
-```
-src/db/schema/
-├── all.ts          # All tables for drizzle()
-├── index.ts        # Types only exports
-├── users.ts        # Domain-specific schemas
-├── submissions.ts
-├── questions.ts
-├── outbox.ts
-├── progress.ts
-└── mock-tests.ts
-```
-
-### Schema Definition Style
+### Auth
 
 ```typescript
-// Minimal comments - self-documenting names
+import { authPlugin } from "./plugins/auth";
+
+const app = new Elysia()
+  .use(authPlugin())
+  .post("/login", async ({ jwt, setAuthCookie, body }) => {
+    const token = await jwt.sign({ sub: user.id, role: user.role });
+    setAuthCookie(token);
+    return { token };
+  })
+  .get("/profile", ({ user }) => user, { auth: true });
+```
+
+### Password Hashing
+
+```typescript
+const hash = await Bun.password.hash(password, {
+  algorithm: "argon2id",
+  memoryCost: 65536,
+  timeCost: 3,
+});
+const isValid = await Bun.password.verify(password, hash);
+```
+
+### Environment
+
+```typescript
+import { createEnv } from "@t3-oss/env-core";
+
+export const env = createEnv({
+  server: {
+    DATABASE_URL: z.string().url(),
+    JWT_SECRET: z.string().min(32),
+  },
+  runtimeEnv: process.env,
+});
+```
+
+### Schema (No Barrels)
+
+```typescript
+// File: src/db/schema/users.ts
 export const users = pgTable(
   "users",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     email: varchar("email", { length: 255 }).notNull(),
-    // Only comment non-obvious fields
-    deletedAt: timestamp("deleted_at"), // Soft delete for GDPR compliance
+    deletedAt: timestamp("deleted_at"),
   },
   (table) => ({
-    // Index names follow pattern: table_column_idx
     emailIdx: uniqueIndex("users_email_unique")
       .on(table.email)
       .where(sql`${table.deletedAt} IS NULL`),
   }),
 );
+
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
 ```
 
----
-
-## API Development Guidelines
-
-### Route Handler Structure
+### Comments
 
 ```typescript
-// Group related endpoints
-export const authModule = new Elysia({ prefix: "/auth" })
-  .post("/register", handleRegister, {
-    detail: { tags: ["Auth"], summary: "Register new user" }
-  })
-  .post("/login", handleLogin, {
-    detail: { tags: ["Auth"], summary: "User login" }
-  });
-```
+// ❌ Don't: states the obvious
+// Increment counter
+counter++;
 
-### Error Handling
-
-```typescript
-// Use consistent error format
-throw new Error("User not found", { cause: { code: "USER_NOT_FOUND", status: 404 } });
+// ✅ Do: explain reasoning
+// Exponential backoff for rate-limited APIs
+const delay = Math.pow(2, attempt) * 1000;
 ```
 
 ---
 
-## Drizzle Kit Commands
+## 4. Commands
 
 ```bash
-# Development (with tsx for Bun compatibility)
-bun run db:push      # Push schema changes
-bun run db:studio    # Drizzle Studio GUI
-bun run db:generate  # Generate migrations
+# Dev
+bun run dev          # Hot reload
+bun run check        # Biome lint
+bun run format       # Biome format
 
-# Note: drizzle-kit runs in Node.js context, use tsx wrapper
+# DB
+bun run db:push      # Schema to DB (dev)
+bun run db:studio    # GUI
+bun run db:generate  # Migrations
+
+# Test
+bun test             # Run tests
+
+# Packages
+bun add <pkg>
+bun add -D <pkg>
+bun remove <pkg>
 ```
 
 ---
 
-## Linting & Code Quality
+## Stack Reference
 
-This project uses **Biome** for all code checking and formatting:
-
-```bash
-# Check code style and quality
-bun run check
-
-# Auto-fix formatting issues
-bun run format
-```
-
-### Why Biome?
-
-- **Fast**: Written in Rust, significantly faster than ESLint/Prettier
-- **Unified**: Linting and formatting in one tool
-- **Bun-native**: Works seamlessly with Bun projects
-- **Type-aware**: Catches common TypeScript issues without separate type checking
-
----
-
-## Testing Approach
-
-```bash
-# Run tests
-bun test
-
-# Watch mode
-bun test --watch
-```
-
----
-
-## Key Decisions
-
-1. **Database**: PostgreSQL with Drizzle ORM
-2. **Migrations**: `drizzle-kit push` for development (schema changes frequently)
-3. **Comments**: Minimal, focus on WHY not WHAT
-4. **Imports**: No .js extension (Bun convention)
-5. **Schema**: Separate all.ts (tables) and index.ts (types)
+| Feature | Use | Don't Use |
+|---------|-----|-----------|
+| Runtime | Bun 1.3+ | Node.js |
+| Auth | `@elysiajs/jwt` + `Bun.password` | bcrypt, jsonwebtoken |
+| Env | `@t3-oss/env-core` | dotenv |
+| Test | `bun:test` | jest, vitest |
+| Lint | Biome | ESLint, Prettier |
+| DB | postgres (driver) | pg, mysql2 |
+| Cache | `Bun.redis` | ioredis |

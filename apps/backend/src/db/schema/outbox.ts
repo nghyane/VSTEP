@@ -1,4 +1,4 @@
-import { sql, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import {
   index,
   integer,
@@ -11,7 +11,6 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { submissions } from "./submissions";
-import { users } from "./users";
 
 export const outboxStatusEnum = pgEnum("outbox_status", [
   "pending",
@@ -27,12 +26,15 @@ export const outbox = pgTable(
     submissionId: uuid("submission_id")
       .references(() => submissions.id, { onDelete: "cascade" })
       .notNull(),
+    aggregateType: varchar("aggregate_type", { length: 50 }),
+    aggregateId: uuid("aggregate_id"),
     messageType: varchar("message_type", { length: 50 }).notNull(),
     payload: jsonb("payload").notNull(),
     status: outboxStatusEnum("status").default("pending").notNull(),
     attempts: integer("attempts").default(0).notNull(),
     errorMessage: text("error_message"),
     lockedAt: timestamp("locked_at", { withTimezone: true }),
+    lockedBy: varchar("locked_by", { length: 64 }),
     sentAt: timestamp("sent_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()

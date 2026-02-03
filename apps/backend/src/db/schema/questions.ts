@@ -7,9 +7,11 @@ import {
   pgEnum,
   pgTable,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import { users } from "./users";
 
 export const questionSkillEnum = pgEnum("question_skill", [
   "listening",
@@ -36,6 +38,9 @@ export const questions = pgTable(
     answerKey: jsonb("answer_key"),
     version: integer("version").default(1).notNull(),
     isActive: boolean("is_active").default(true).notNull(),
+    createdBy: uuid("created_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -71,7 +76,7 @@ export const questionVersions = pgTable(
       .notNull(),
   },
   (table) => ({
-    versionUnique: index("question_versions_unique_idx").on(
+    versionUnique: uniqueIndex("question_versions_unique_idx").on(
       table.questionId,
       table.version,
     ),

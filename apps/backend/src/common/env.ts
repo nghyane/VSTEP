@@ -1,18 +1,23 @@
-import { env } from "node:process";
+import { createEnv } from "@t3-oss/env-core";
+import { z } from "zod";
 
-const envSchema = {
-  DATABASE_URL: env.DATABASE_URL ?? "",
-  PORT: parseInt(env.PORT ?? "3000", 10),
-  NODE_ENV: (env.NODE_ENV ?? "development") as
-    | "development"
-    | "production"
-    | "test",
-};
-
-export const config = {
-  DATABASE_URL: envSchema.DATABASE_URL,
-  PORT: envSchema.PORT,
-  NODE_ENV: envSchema.NODE_ENV,
-};
-
-export type EnvConfig = typeof config;
+/**
+ * Type-safe environment variables with runtime validation.
+ * 2026 Stack: Bun auto-loads .env files, no dotenv needed.
+ * @see https://env.t3.gg/docs/core
+ */
+export const env = createEnv({
+  server: {
+    DATABASE_URL: z.string().url(),
+    PORT: z.string().default("3000"),
+    NODE_ENV: z
+      .enum(["development", "production", "test"])
+      .default("development"),
+    JWT_SECRET: z.string().min(32),
+    JWT_EXPIRES_IN: z.string().default("7d"),
+    REDIS_URL: z.string().url().optional(),
+  },
+  runtimeEnv: process.env,
+  skipValidation: !!process.env.CI,
+  emptyStringAsUndefined: true,
+});

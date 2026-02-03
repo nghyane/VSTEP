@@ -1,15 +1,22 @@
-import { sql } from "drizzle-orm";
 import {
   index,
   integer,
-  jsonb,
+  pgEnum,
   pgTable,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import { questionLevelEnum } from "./questions";
 import { skillEnum, submissions } from "./submissions";
 import { users } from "./users";
+
+export const streakDirectionEnum = pgEnum("streak_direction", [
+  "UP",
+  "DOWN",
+  "NEUTRAL",
+]);
 
 export const userProgress = pgTable(
   "user_progress",
@@ -19,11 +26,12 @@ export const userProgress = pgTable(
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     skill: skillEnum("skill").notNull(),
-    currentLevel: varchar("current_level", { length: 2 }).notNull(),
-    targetLevel: varchar("target_level", { length: 2 }),
+    currentLevel: questionLevelEnum("current_level").notNull(),
+    targetLevel: questionLevelEnum("target_level"),
     scaffoldStage: integer("scaffold_stage").default(1).notNull(),
-    attemptCount: integer("attempt_count").default(0).notNull(),
     streakCount: integer("streak_count").default(0).notNull(),
+    streakDirection: streakDirectionEnum("streak_direction"),
+    attemptCount: integer("attempt_count").default(0).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -32,7 +40,7 @@ export const userProgress = pgTable(
       .notNull(),
   },
   (table) => ({
-    userSkillUnique: index("user_progress_user_skill_idx").on(
+    userSkillUnique: uniqueIndex("user_progress_user_skill_idx").on(
       table.userId,
       table.skill,
     ),
@@ -73,8 +81,11 @@ export const userGoals = pgTable(
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     targetBand: integer("target_band").notNull(),
+    currentEstimatedBand: varchar("current_estimated_band", { length: 10 }),
     deadline: timestamp("deadline", { withTimezone: true }),
-    dailyStudyTimeMinutes: integer("daily_study_time_minutes"),
+    dailyStudyTimeMinutes: integer("daily_study_time_minutes")
+      .default(30)
+      .notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

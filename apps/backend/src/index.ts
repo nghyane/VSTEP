@@ -1,4 +1,4 @@
-import { app } from "./app.js";
+import { app } from "./app";
 
 console.log(
   `Server is running at http://${app.server?.hostname}:${app.server?.port}`,
