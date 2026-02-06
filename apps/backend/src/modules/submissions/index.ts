@@ -1,43 +1,9 @@
 import { Skill, SubmissionStatus as SubmissionStatusEnum } from "@common/enums";
-import {
-  ErrorResponse,
-  IdParam,
-  PaginationMeta,
-  PaginationQuery,
-} from "@common/schemas";
+import { ErrorResponse, IdParam, PaginationMeta, PaginationQuery } from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
+import { SubmissionModel } from "./model";
 import { SubmissionService } from "./service";
-
-const SubmissionInfo = t.Object({
-  id: t.String({ format: "uuid" }),
-  userId: t.String({ format: "uuid" }),
-  questionId: t.String({ format: "uuid" }),
-  skill: Skill,
-  status: SubmissionStatusEnum,
-  score: t.Optional(t.Nullable(t.Number())),
-  band: t.Optional(
-    t.Nullable(
-      t.Union([
-        t.Literal("A1"),
-        t.Literal("A2"),
-        t.Literal("B1"),
-        t.Literal("B2"),
-        t.Literal("C1"),
-      ]),
-    ),
-  ),
-  completedAt: t.Optional(t.String()),
-  createdAt: t.String(),
-  updatedAt: t.String(),
-});
-
-const SubmissionWithDetails = t.Object({
-  ...SubmissionInfo.properties,
-  answer: t.Optional(t.Any()),
-  result: t.Optional(t.Any()),
-  feedback: t.Optional(t.Nullable(t.String())),
-});
 
 export const submissions = new Elysia({
   prefix: "/submissions",
@@ -66,7 +32,7 @@ export const submissions = new Elysia({
       }),
       response: {
         200: t.Object({
-          data: t.Array(SubmissionWithDetails),
+          data: t.Array(SubmissionModel.SubmissionWithDetails),
           meta: PaginationMeta,
         }),
         401: ErrorResponse,
@@ -93,7 +59,7 @@ export const submissions = new Elysia({
       auth: true,
       params: IdParam,
       response: {
-        200: SubmissionWithDetails,
+        200: SubmissionModel.SubmissionWithDetails,
         401: ErrorResponse,
         403: ErrorResponse,
         404: ErrorResponse,
@@ -114,13 +80,9 @@ export const submissions = new Elysia({
     },
     {
       auth: true,
-      body: t.Object({
-        questionId: t.String({ format: "uuid" }),
-        skill: Skill,
-        answer: t.Any(),
-      }),
+      body: SubmissionModel.CreateBody,
       response: {
-        201: SubmissionWithDetails,
+        201: SubmissionModel.SubmissionWithDetails,
         400: ErrorResponse,
         401: ErrorResponse,
         404: ErrorResponse,
@@ -148,23 +110,9 @@ export const submissions = new Elysia({
     {
       auth: true,
       params: IdParam,
-      body: t.Partial(
-        t.Object({
-          answer: t.Any(),
-          status: SubmissionStatusEnum,
-          score: t.Number(),
-          band: t.Union([
-            t.Literal("A1"),
-            t.Literal("A2"),
-            t.Literal("B1"),
-            t.Literal("B2"),
-            t.Literal("C1"),
-          ]),
-          feedback: t.String(),
-        }),
-      ),
+      body: SubmissionModel.UpdateBody,
       response: {
-        200: SubmissionWithDetails,
+        200: SubmissionModel.SubmissionWithDetails,
         400: ErrorResponse,
         401: ErrorResponse,
         403: ErrorResponse,
@@ -188,13 +136,9 @@ export const submissions = new Elysia({
     {
       role: "instructor",
       params: IdParam,
-      body: t.Object({
-        score: t.Number(),
-        band: t.Optional(t.String()),
-        feedback: t.Optional(t.String()),
-      }),
+      body: SubmissionModel.GradeBody,
       response: {
-        200: SubmissionWithDetails,
+        200: SubmissionModel.SubmissionWithDetails,
         401: ErrorResponse,
         403: ErrorResponse,
         404: ErrorResponse,

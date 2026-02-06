@@ -5,26 +5,20 @@ import { SignJWT } from "jose";
 import { db, table } from "@/db";
 import type { JWTPayload } from "@/plugins/auth";
 import { ConflictError, UnauthorizedError } from "@/plugins/error";
+import type { AuthModel } from "./model";
 
 const ACCESS_SECRET = new TextEncoder().encode(env.JWT_SECRET!);
 
 const MAX_REFRESH_TOKENS = 3;
 
-export interface UserInfo {
-  id: string;
-  email: string;
-  fullName: string | null;
-  role: "learner" | "instructor" | "admin";
-}
+type UserInfo = AuthModel.UserInfo;
 
-/** SHA-256 hash for refresh token storage */
 function hashToken(token: string): string {
   const hasher = new Bun.CryptoHasher("sha256");
   hasher.update(token);
   return hasher.digest("hex");
 }
 
-/** Parse duration string (e.g. "15m", "7d") to seconds */
 export function parseExpiry(str: string): number {
   const match = str.match(/^(\d+)(s|m|h|d)$/);
   if (!match) return 900;
@@ -44,7 +38,6 @@ export function parseExpiry(str: string): number {
 }
 
 export abstract class AuthService {
-  /** Sign a JWT access token with jose */
   static async signAccessToken(payload: JWTPayload): Promise<string> {
     return new SignJWT({ ...payload })
       .setProtectedHeader({ alg: "HS256" })
@@ -67,9 +60,6 @@ export abstract class AuthService {
     return Bun.password.verify(password, hash);
   }
 
-  /**
-   * Login: verify credentials → enforce max 3 tokens (FIFO) → issue refresh token.
-   */
   static async login(body: {
     email: string;
     password: string;
@@ -147,9 +137,6 @@ export abstract class AuthService {
     };
   }
 
-  /**
-   * Register a new user.
-   */
   static async register(body: {
     email: string;
     password: string;
@@ -187,10 +174,6 @@ export abstract class AuthService {
     };
   }
 
-  /**
-   * Refresh: rotate token + reuse detection.
-   * If a rotated (revoked) token is reused → revoke ALL user tokens (token family attack).
-   */
   static async refreshToken(
     refreshToken: string,
     deviceInfo?: string,
@@ -278,9 +261,6 @@ export abstract class AuthService {
     };
   }
 
-  /**
-   * Revoke a refresh token (logout).
-   */
   static async logout(refreshToken: string): Promise<{ message: string }> {
     await db
       .update(table.refreshTokens)

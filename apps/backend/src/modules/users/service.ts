@@ -1,10 +1,3 @@
-/**
- * Users Module Service
- * Business logic for user management
- * Pattern: Abstract class with static methods (no instantiation)
- * @see https://elysiajs.com/pattern/mvc.html
- */
-
 import { assertExists, serializeDates } from "@common/utils";
 import { and, count, eq, ilike, sql } from "drizzle-orm";
 import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
@@ -25,15 +18,7 @@ const USER_COLUMNS = {
   updatedAt: table.users.updatedAt,
 } as const;
 
-/**
- * User Service - Abstract class with static methods
- * No instantiation needed - all methods are static
- */
 export abstract class UserService {
-  /**
-   * Get user by ID (excluding soft-deleted)
-   * @throws NotFoundError if user not found
-   */
   static async getById(userId: string) {
     const user = await db.query.users.findFirst({
       where: and(eq(table.users.id, userId), notDeleted(table.users)),
@@ -54,9 +39,6 @@ export abstract class UserService {
     return serializeDates(user);
   }
 
-  /**
-   * Get user by email
-   */
   static async getByEmail(email: string) {
     const user = await db.query.users.findFirst({
       where: and(eq(table.users.email, email), notDeleted(table.users)),
@@ -77,9 +59,6 @@ export abstract class UserService {
     return serializeDates(user);
   }
 
-  /**
-   * List users with pagination and filtering
-   */
   static async list(query: {
     page?: number;
     limit?: number;
@@ -128,10 +107,6 @@ export abstract class UserService {
     };
   }
 
-  /**
-   * Create new user
-   * @throws ConflictError if email already exists
-   */
   static async create(body: {
     email: string;
     password: string;
@@ -165,11 +140,6 @@ export abstract class UserService {
     return serializeDates(assertExists(user, "User"));
   }
 
-  /**
-   * Update user
-   * @throws NotFoundError if user not found
-   * @throws ConflictError if email already exists
-   */
   static async update(
     userId: string,
     body: {
@@ -253,10 +223,6 @@ export abstract class UserService {
     });
   }
 
-  /**
-   * Soft delete user
-   * @throws NotFoundError if user not found
-   */
   static async remove(userId: string) {
     return await db.transaction(async (tx) => {
       // Check user exists
@@ -292,11 +258,6 @@ export abstract class UserService {
     });
   }
 
-  /**
-   * Update user password
-   * @throws NotFoundError if user not found
-   * @throws UnauthorizedError if current password is incorrect
-   */
   static async updatePassword(
     userId: string,
     body: { currentPassword: string; newPassword: string },

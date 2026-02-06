@@ -1,44 +1,9 @@
-import { ExamStatus, QuestionLevel } from "@common/enums";
-import {
-  ErrorResponse,
-  IdParam,
-  PaginationMeta,
-  PaginationQuery,
-} from "@common/schemas";
+import { QuestionLevel } from "@common/enums";
+import { ErrorResponse, IdParam, PaginationMeta, PaginationQuery } from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
+import { ExamModel } from "./model";
 import { ExamService } from "./service";
-
-const ExamSchema = t.Object({
-  id: t.String({ format: "uuid" }),
-  level: QuestionLevel,
-  blueprint: t.Any(),
-  isActive: t.Boolean(),
-  createdBy: t.Nullable(t.String({ format: "uuid" })),
-  createdAt: t.String({ format: "date-time" }),
-  updatedAt: t.String({ format: "date-time" }),
-});
-
-const ExamSessionSchema = t.Object({
-  id: t.String({ format: "uuid" }),
-  userId: t.String({ format: "uuid" }),
-  examId: t.String({ format: "uuid" }),
-  status: ExamStatus,
-  listeningScore: t.Nullable(t.Number()),
-  readingScore: t.Nullable(t.Number()),
-  writingScore: t.Nullable(t.Number()),
-  speakingScore: t.Nullable(t.Number()),
-  overallScore: t.Nullable(t.Number()),
-  skillScores: t.Nullable(t.Any()),
-  startedAt: t.String({ format: "date-time" }),
-  completedAt: t.Nullable(t.String({ format: "date-time" })),
-  createdAt: t.String({ format: "date-time" }),
-  updatedAt: t.String({ format: "date-time" }),
-});
-
-const SessionIdParam = t.Object({
-  sessionId: t.String({ format: "uuid" }),
-});
 
 export const exams = new Elysia({
   prefix: "/exams",
@@ -59,7 +24,7 @@ export const exams = new Elysia({
       }),
       response: {
         200: t.Object({
-          data: t.Array(ExamSchema),
+          data: t.Array(ExamModel.Exam),
           meta: PaginationMeta,
         }),
       },
@@ -77,7 +42,7 @@ export const exams = new Elysia({
     {
       params: IdParam,
       response: {
-        200: ExamSchema,
+        200: ExamModel.Exam,
         404: ErrorResponse,
       },
       detail: {
@@ -94,13 +59,9 @@ export const exams = new Elysia({
     },
     {
       role: "admin",
-      body: t.Object({
-        level: QuestionLevel,
-        blueprint: t.Any(),
-        isActive: t.Optional(t.Boolean({ default: true })),
-      }),
+      body: ExamModel.CreateBody,
       response: {
-        201: ExamSchema,
+        201: ExamModel.Exam,
         401: ErrorResponse,
         403: ErrorResponse,
       },
@@ -118,15 +79,9 @@ export const exams = new Elysia({
     {
       role: "admin",
       params: IdParam,
-      body: t.Partial(
-        t.Object({
-          level: QuestionLevel,
-          blueprint: t.Any(),
-          isActive: t.Boolean(),
-        }),
-      ),
+      body: ExamModel.UpdateBody,
       response: {
-        200: ExamSchema,
+        200: ExamModel.Exam,
         401: ErrorResponse,
         403: ErrorResponse,
         404: ErrorResponse,
@@ -148,7 +103,7 @@ export const exams = new Elysia({
         examId: t.String({ format: "uuid" }),
       }),
       response: {
-        200: ExamSessionSchema,
+        200: ExamModel.Session,
         400: ErrorResponse,
         401: ErrorResponse,
       },
@@ -169,9 +124,9 @@ export const exams = new Elysia({
     },
     {
       auth: true,
-      params: SessionIdParam,
+      params: ExamModel.SessionIdParam,
       response: {
-        200: ExamSessionSchema,
+        200: ExamModel.Session,
         401: ErrorResponse,
         403: ErrorResponse,
         404: ErrorResponse,
@@ -189,7 +144,7 @@ export const exams = new Elysia({
     },
     {
       auth: true,
-      params: SessionIdParam,
+      params: ExamModel.SessionIdParam,
       body: t.Object({
         questionId: t.String({ format: "uuid" }),
         answer: t.Any(),
@@ -213,9 +168,9 @@ export const exams = new Elysia({
     },
     {
       auth: true,
-      params: SessionIdParam,
+      params: ExamModel.SessionIdParam,
       response: {
-        200: ExamSessionSchema,
+        200: ExamModel.Session,
         400: ErrorResponse,
         401: ErrorResponse,
         403: ErrorResponse,

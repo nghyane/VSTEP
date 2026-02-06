@@ -1,41 +1,9 @@
 import { QuestionLevel, QuestionSkill } from "@common/enums";
-import {
-  ErrorResponse,
-  IdParam,
-  PaginationMeta,
-  PaginationQuery,
-} from "@common/schemas";
+import { ErrorResponse, IdParam, PaginationMeta, PaginationQuery } from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { authPlugin, verifyAccessToken } from "@/plugins/auth";
+import { QuestionModel } from "./model";
 import { QuestionService } from "./service";
-
-const QuestionInfo = t.Object({
-  id: t.String({ format: "uuid" }),
-  skill: QuestionSkill,
-  level: QuestionLevel,
-  format: t.String(),
-  content: t.Any(),
-  answerKey: t.Optional(t.Any()),
-  version: t.Number(),
-  isActive: t.Boolean(),
-  createdBy: t.Optional(t.Nullable(t.String({ format: "uuid" }))),
-  createdAt: t.String(),
-  updatedAt: t.String(),
-});
-
-const QuestionWithDetails = t.Object({
-  ...QuestionInfo.properties,
-  deletedAt: t.Optional(t.Nullable(t.String())),
-});
-
-const QuestionVersionInfo = t.Object({
-  id: t.String({ format: "uuid" }),
-  questionId: t.String({ format: "uuid" }),
-  version: t.Number(),
-  content: t.Any(),
-  answerKey: t.Optional(t.Any()),
-  createdAt: t.String(),
-});
 
 export const questions = new Elysia({
   prefix: "/questions",
@@ -72,7 +40,7 @@ export const questions = new Elysia({
       }),
       response: {
         200: t.Object({
-          data: t.Array(QuestionWithDetails),
+          data: t.Array(QuestionModel.QuestionWithDetails),
           meta: PaginationMeta,
         }),
         400: ErrorResponse,
@@ -94,7 +62,7 @@ export const questions = new Elysia({
     {
       params: IdParam,
       response: {
-        200: QuestionWithDetails,
+        200: QuestionModel.QuestionWithDetails,
         404: ErrorResponse,
       },
       detail: {
@@ -113,15 +81,9 @@ export const questions = new Elysia({
     },
     {
       auth: true,
-      body: t.Object({
-        skill: QuestionSkill,
-        level: QuestionLevel,
-        format: t.String(),
-        content: t.Any(),
-        answerKey: t.Optional(t.Any()),
-      }),
+      body: QuestionModel.CreateBody,
       response: {
-        201: QuestionInfo,
+        201: QuestionModel.Question,
         400: ErrorResponse,
         401: ErrorResponse,
         422: ErrorResponse,
@@ -148,18 +110,9 @@ export const questions = new Elysia({
     {
       auth: true,
       params: IdParam,
-      body: t.Partial(
-        t.Object({
-          skill: QuestionSkill,
-          level: QuestionLevel,
-          format: t.String(),
-          content: t.Any(),
-          answerKey: t.Optional(t.Any()),
-          isActive: t.Boolean(),
-        }),
-      ),
+      body: QuestionModel.UpdateBody,
       response: {
-        200: QuestionWithDetails,
+        200: QuestionModel.QuestionWithDetails,
         400: ErrorResponse,
         401: ErrorResponse,
         403: ErrorResponse,
@@ -188,12 +141,9 @@ export const questions = new Elysia({
     {
       auth: true,
       params: IdParam,
-      body: t.Object({
-        content: t.Any(),
-        answerKey: t.Optional(t.Any()),
-      }),
+      body: QuestionModel.VersionBody,
       response: {
-        201: QuestionVersionInfo,
+        201: QuestionModel.Version,
         400: ErrorResponse,
         401: ErrorResponse,
         403: ErrorResponse,
@@ -219,10 +169,8 @@ export const questions = new Elysia({
       params: IdParam,
       response: {
         200: t.Object({
-          data: t.Array(QuestionVersionInfo),
-          meta: t.Object({
-            total: t.Number(),
-          }),
+          data: t.Array(QuestionModel.Version),
+          meta: t.Object({ total: t.Number() }),
         }),
         404: ErrorResponse,
       },
@@ -250,7 +198,7 @@ export const questions = new Elysia({
         versionId: t.String({ format: "uuid" }),
       }),
       response: {
-        200: QuestionVersionInfo,
+        200: QuestionModel.Version,
         404: ErrorResponse,
       },
       detail: {
@@ -303,7 +251,7 @@ export const questions = new Elysia({
       role: "admin",
       params: IdParam,
       response: {
-        200: QuestionWithDetails,
+        200: QuestionModel.QuestionWithDetails,
         400: ErrorResponse,
         401: ErrorResponse,
         403: ErrorResponse,

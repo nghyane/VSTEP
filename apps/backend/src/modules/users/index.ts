@@ -8,16 +8,8 @@ import {
 } from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
+import { UserModel } from "./model";
 import { UserService } from "./service";
-
-const UserResponse = t.Object({
-  id: t.String({ format: "uuid" }),
-  email: t.String(),
-  fullName: t.Nullable(t.String()),
-  role: UserRole,
-  createdAt: t.String({ format: "date-time" }),
-  updatedAt: t.String({ format: "date-time" }),
-});
 
 export const users = new Elysia({
   prefix: "/users",
@@ -36,7 +28,7 @@ export const users = new Elysia({
       auth: true,
       params: IdParam,
       response: {
-        200: UserResponse,
+        200: UserModel.User,
         401: ErrorResponse,
         404: ErrorResponse,
       },
@@ -63,7 +55,7 @@ export const users = new Elysia({
       }),
       response: {
         200: t.Object({
-          data: t.Array(UserResponse),
+          data: t.Array(UserModel.User),
           meta: PaginationMeta,
         }),
         401: ErrorResponse,
@@ -85,25 +77,9 @@ export const users = new Elysia({
     },
     {
       role: "admin",
-      body: t.Object({
-        email: t.String({
-          format: "email",
-          error: "Valid email is required",
-        }),
-        password: t.String({
-          minLength: 8,
-          error: "Password must be at least 8 characters",
-        }),
-        fullName: t.Optional(
-          t.String({
-            minLength: 1,
-            maxLength: 100,
-          }),
-        ),
-        role: t.Optional(UserRole),
-      }),
+      body: UserModel.CreateBody,
       response: {
-        201: UserResponse,
+        201: UserModel.User,
         401: ErrorResponse,
         403: ErrorResponse,
         409: ErrorResponse,
@@ -130,25 +106,9 @@ export const users = new Elysia({
     {
       auth: true,
       params: IdParam,
-      body: t.Partial(
-        t.Object({
-          email: t.String({ format: "email" }),
-          fullName: t.Optional(
-            t.Nullable(
-              t.String({
-                minLength: 1,
-                maxLength: 100,
-              }),
-            ),
-          ),
-          role: UserRole,
-          password: t.String({
-            minLength: 8,
-          }),
-        }),
-      ),
+      body: UserModel.UpdateBody,
       response: {
-        200: UserResponse,
+        200: UserModel.User,
         401: ErrorResponse,
         404: ErrorResponse,
         409: ErrorResponse,
@@ -201,13 +161,7 @@ export const users = new Elysia({
     {
       auth: true,
       params: IdParam,
-      body: t.Object({
-        currentPassword: t.String(),
-        newPassword: t.String({
-          minLength: 8,
-          error: "New password must be at least 8 characters",
-        }),
-      }),
+      body: UserModel.PasswordBody,
       response: {
         200: SuccessResponse,
         401: ErrorResponse,
