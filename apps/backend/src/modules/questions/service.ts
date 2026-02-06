@@ -257,7 +257,21 @@ export abstract class QuestionService {
       if (body.answerKey !== undefined) updateValues.answerKey = body.answerKey;
       if (body.isActive !== undefined) updateValues.isActive = body.isActive;
 
-      // Update question
+      // Bump version + create version record when content or answerKey changes
+      const contentChanged = body.content || body.answerKey !== undefined;
+      if (contentChanged) {
+        const newVersion = question.version + 1;
+        updateValues.version = newVersion;
+
+        await tx.insert(table.questionVersions).values({
+          questionId,
+          version: newVersion,
+          content: body.content ?? question.content,
+          answerKey:
+            body.answerKey !== undefined ? body.answerKey : question.answerKey,
+        });
+      }
+
       const [updatedQuestion] = await tx
         .update(table.questions)
         .set(updateValues)

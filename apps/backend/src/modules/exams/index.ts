@@ -24,6 +24,7 @@ const ExamLevel = t.Union([
 
 const ExamStatus = t.Union([
   t.Literal("in_progress"),
+  t.Literal("submitted"),
   t.Literal("completed"),
   t.Literal("abandoned"),
 ]);
@@ -112,7 +113,8 @@ export const exams = new Elysia({ prefix: "/exams" })
 
   .post(
     "/",
-    async ({ body, user }) => {
+    async ({ body, user, set }) => {
+      set.status = 201;
       return await ExamService.create(user!.sub, body);
     },
     {
@@ -123,7 +125,7 @@ export const exams = new Elysia({ prefix: "/exams" })
         isActive: t.Optional(t.Boolean({ default: true })),
       }),
       response: {
-        200: ExamSchema,
+        201: ExamSchema,
         401: ErrorResponse,
         403: ErrorResponse,
       },

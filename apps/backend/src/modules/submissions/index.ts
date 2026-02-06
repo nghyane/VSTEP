@@ -239,7 +239,7 @@ export const submissions = new Elysia({ prefix: "/submissions" })
       params: IdParam,
       body: t.Object({
         score: t.Number(),
-        band: t.Optional(t.Number()),
+        band: t.Optional(t.String()),
         feedback: t.Optional(t.String()),
       }),
       response: {
