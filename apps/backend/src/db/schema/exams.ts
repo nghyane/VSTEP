@@ -7,6 +7,7 @@ import {
   pgEnum,
   pgTable,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 import { questionLevelEnum, questions } from "./questions";
@@ -103,7 +104,10 @@ export const examAnswers = pgTable(
       .notNull(),
   },
   (table) => ({
-    sessionIdx: index("exam_answers_session_idx").on(table.sessionId),
+    sessionQuestionUnique: uniqueIndex("exam_answers_session_question_idx").on(
+      table.sessionId,
+      table.questionId,
+    ),
   }),
 );
 

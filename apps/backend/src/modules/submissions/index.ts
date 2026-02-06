@@ -279,7 +279,7 @@ export const submissions = new Elysia({ prefix: "/submissions" })
   .delete(
     "/:id",
     async ({ params, user, set }) => {
-      const result = await SubmissionService.delete(
+      const result = await SubmissionService.remove(
         params.id,
         user!.sub,
         user!.role === "admin",

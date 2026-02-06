@@ -402,9 +402,9 @@ export abstract class SubmissionService {
   }
 
   /**
-   * Delete submission (soft delete)
+   * Remove submission (soft delete)
    */
-  static async delete(submissionId: string, userId: string, isAdmin: boolean) {
+  static async remove(submissionId: string, userId: string, isAdmin: boolean) {
     return await db.transaction(async (tx) => {
       const [submission] = await tx
         .select()

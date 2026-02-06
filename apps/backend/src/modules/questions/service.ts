@@ -426,9 +426,9 @@ export abstract class QuestionService {
   }
 
   /**
-   * Delete question (soft delete)
+   * Remove question (soft delete)
    */
-  static async delete(questionId: string, userId: string, isAdmin: boolean) {
+  static async remove(questionId: string, userId: string, isAdmin: boolean) {
     return await db.transaction(async (tx) => {
       // Get question
       const [question] = await tx

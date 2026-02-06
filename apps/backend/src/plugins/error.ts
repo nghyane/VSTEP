@@ -232,17 +232,3 @@ export const errorPlugin = new Elysia({ name: "error" })
       requestId,
     };
   });
-
-/**
- * Type guard to check if error is an AppError
- */
-export function isAppError(error: unknown): error is AppError {
-  return error instanceof AppError;
-}
-
-/**
- * Helper to throw errors with proper typing
- */
-export function throwError(error: AppError): never {
-  throw error;
-}

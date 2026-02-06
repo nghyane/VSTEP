@@ -167,7 +167,7 @@ export abstract class ExamService {
         ...body,
         updatedAt: new Date(),
       })
-      .where(eq(table.exams.id, id))
+      .where(and(eq(table.exams.id, id), notDeleted(table.exams)))
       .returning();
 
     if (!exam) {

@@ -35,11 +35,11 @@ const TokenResponse = t.Object({
 export const auth = new Elysia({ prefix: "/auth" })
   .use(authPlugin)
 
-  // POST /auth/sign-in
+  // POST /auth/login
   .post(
-    "/sign-in",
+    "/login",
     async ({ body, jwt, cookie: { auth: authCookie } }) => {
-      const { user, refreshToken } = await AuthService.signIn(body);
+      const { user, refreshToken } = await AuthService.login(body);
 
       const accessToken = await jwt.sign({
         sub: user.id,
@@ -71,18 +71,18 @@ export const auth = new Elysia({ prefix: "/auth" })
         200: t.Object({ user: UserInfo, ...TokenResponse.properties }),
       },
       detail: {
-        summary: "Sign in",
+        summary: "Login",
         description: "Authenticate user with email and password",
         tags: ["Auth"],
       },
     },
   )
 
-  // POST /auth/sign-up
+  // POST /auth/register
   .post(
-    "/sign-up",
+    "/register",
     async ({ body, set }) => {
-      const result = await AuthService.signUp(body);
+      const result = await AuthService.register(body);
       set.status = 201;
       return result;
     },
@@ -104,7 +104,7 @@ export const auth = new Elysia({ prefix: "/auth" })
         409: ErrorResponse,
       },
       detail: {
-        summary: "Sign up",
+        summary: "Register",
         description: "Register a new user account",
         tags: ["Auth"],
       },
