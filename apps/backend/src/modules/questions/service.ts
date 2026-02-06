@@ -4,7 +4,7 @@
  * @see https://elysiajs.com/pattern/mvc.html
  */
 
-import { assertExists } from "@common/utils";
+import { assertExists, serializeDates } from "@common/utils";
 import { and, count, desc, eq, sql } from "drizzle-orm";
 import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
 import {
@@ -12,50 +12,6 @@ import {
   ForbiddenError,
   NotFoundError,
 } from "@/plugins/error";
-
-const mapQuestionResponse = (q: {
-  id: string;
-  skill: string;
-  level: string;
-  format: string;
-  content: unknown;
-  answerKey: unknown;
-  version: number;
-  isActive: boolean;
-  createdBy: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt: Date | null;
-}) => ({
-  id: q.id,
-  skill: q.skill,
-  level: q.level,
-  format: q.format,
-  content: q.content,
-  answerKey: q.answerKey ?? undefined,
-  version: q.version,
-  isActive: q.isActive,
-  createdBy: q.createdBy ?? undefined,
-  createdAt: q.createdAt.toISOString(),
-  updatedAt: q.updatedAt.toISOString(),
-  deletedAt: q.deletedAt?.toISOString(),
-});
-
-const mapVersionResponse = (v: {
-  id: string;
-  questionId: string;
-  version: number;
-  content: unknown;
-  answerKey: unknown;
-  createdAt: Date;
-}) => ({
-  id: v.id,
-  questionId: v.questionId,
-  version: v.version,
-  content: v.content,
-  answerKey: v.answerKey ?? undefined,
-  createdAt: v.createdAt.toISOString(),
-});
 
 /**
  * Question service with static methods
@@ -77,7 +33,7 @@ export abstract class QuestionService {
       throw new NotFoundError("Question not found");
     }
 
-    return mapQuestionResponse(question);
+    return serializeDates(question);
   }
 
   /**
@@ -147,7 +103,7 @@ export abstract class QuestionService {
       .offset(offset);
 
     return {
-      data: questions.map((q) => mapQuestionResponse(q)),
+      data: questions.map(serializeDates),
       meta: paginationMeta(total, query.page, query.limit),
     };
   }
@@ -180,20 +136,7 @@ export abstract class QuestionService {
           isActive: true,
           createdBy: userId,
         })
-        .returning({
-          id: table.questions.id,
-          skill: table.questions.skill,
-          level: table.questions.level,
-          format: table.questions.format,
-          content: table.questions.content,
-          answerKey: table.questions.answerKey,
-          version: table.questions.version,
-          isActive: table.questions.isActive,
-          createdBy: table.questions.createdBy,
-          createdAt: table.questions.createdAt,
-          updatedAt: table.questions.updatedAt,
-          deletedAt: table.questions.deletedAt,
-        });
+        .returning();
 
       const q = assertExists(question, "Question");
 
@@ -205,7 +148,7 @@ export abstract class QuestionService {
         answerKey: body.answerKey ?? null,
       });
 
-      return mapQuestionResponse(q);
+      return serializeDates(q);
     });
   }
 
@@ -276,24 +219,9 @@ export abstract class QuestionService {
         .update(table.questions)
         .set(updateValues)
         .where(eq(table.questions.id, questionId))
-        .returning({
-          id: table.questions.id,
-          skill: table.questions.skill,
-          level: table.questions.level,
-          format: table.questions.format,
-          content: table.questions.content,
-          answerKey: table.questions.answerKey,
-          version: table.questions.version,
-          isActive: table.questions.isActive,
-          createdBy: table.questions.createdBy,
-          createdAt: table.questions.createdAt,
-          updatedAt: table.questions.updatedAt,
-          deletedAt: table.questions.deletedAt,
-        });
+        .returning();
 
-      const q = assertExists(updatedQuestion, "Question");
-
-      return mapQuestionResponse(q);
+      return serializeDates(assertExists(updatedQuestion, "Question"));
     });
   }
 
@@ -346,14 +274,7 @@ export abstract class QuestionService {
           content: body.content,
           answerKey: body.answerKey ?? null,
         })
-        .returning({
-          id: table.questionVersions.id,
-          questionId: table.questionVersions.questionId,
-          version: table.questionVersions.version,
-          content: table.questionVersions.content,
-          answerKey: table.questionVersions.answerKey,
-          createdAt: table.questionVersions.createdAt,
-        });
+        .returning();
 
       const v = assertExists(version, "Version");
 
@@ -368,7 +289,7 @@ export abstract class QuestionService {
         })
         .where(eq(table.questions.id, questionId));
 
-      return mapVersionResponse(v);
+      return serializeDates(v);
     });
   }
 
@@ -392,20 +313,13 @@ export abstract class QuestionService {
 
     // Get all versions
     const versions = await db
-      .select({
-        id: table.questionVersions.id,
-        questionId: table.questionVersions.questionId,
-        version: table.questionVersions.version,
-        content: table.questionVersions.content,
-        answerKey: table.questionVersions.answerKey,
-        createdAt: table.questionVersions.createdAt,
-      })
+      .select()
       .from(table.questionVersions)
       .where(eq(table.questionVersions.questionId, questionId))
       .orderBy(desc(table.questionVersions.version));
 
     return {
-      data: versions.map((v) => mapVersionResponse(v)),
+      data: versions.map(serializeDates),
       meta: {
         total: versions.length,
       },
@@ -422,21 +336,13 @@ export abstract class QuestionService {
         eq(table.questionVersions.id, versionId),
         eq(table.questionVersions.questionId, questionId),
       ),
-      columns: {
-        id: true,
-        questionId: true,
-        version: true,
-        content: true,
-        answerKey: true,
-        createdAt: true,
-      },
     });
 
     if (!version) {
       throw new NotFoundError("Question version not found");
     }
 
-    return mapVersionResponse(version);
+    return serializeDates(version);
   }
 
   /**
@@ -507,24 +413,9 @@ export abstract class QuestionService {
           updatedAt: new Date(),
         })
         .where(eq(table.questions.id, questionId))
-        .returning({
-          id: table.questions.id,
-          skill: table.questions.skill,
-          level: table.questions.level,
-          format: table.questions.format,
-          content: table.questions.content,
-          answerKey: table.questions.answerKey,
-          version: table.questions.version,
-          isActive: table.questions.isActive,
-          createdBy: table.questions.createdBy,
-          createdAt: table.questions.createdAt,
-          updatedAt: table.questions.updatedAt,
-          deletedAt: table.questions.deletedAt,
-        });
+        .returning();
 
-      const q = assertExists(updatedQuestion, "Question");
-
-      return mapQuestionResponse(q);
+      return serializeDates(assertExists(updatedQuestion, "Question"));
     });
   }
 }

@@ -3,43 +3,10 @@
  * Business logic for tracking user progress
  */
 
-import { assertExists } from "@common/utils";
+import { assertExists, serializeDates } from "@common/utils";
 import { and, count, desc, eq, sql } from "drizzle-orm";
 import { db, paginate, paginationMeta, table } from "@/db";
 import { NotFoundError } from "@/plugins/error";
-
-type SkillType = "listening" | "reading" | "writing" | "speaking";
-type LevelType = "A2" | "B1" | "B2" | "C1";
-type StreakDirectionType = "up" | "down" | "neutral";
-
-/**
- * Mapper function for consistent progress response serialization
- */
-const mapProgressResponse = (progress: {
-  id: string;
-  userId: string;
-  skill: string;
-  currentLevel: string;
-  targetLevel: string | null;
-  scaffoldLevel: number;
-  streakCount: number;
-  streakDirection: string | null;
-  attemptCount: number;
-  createdAt: Date;
-  updatedAt: Date;
-}) => ({
-  id: progress.id,
-  userId: progress.userId,
-  skill: progress.skill as SkillType,
-  currentLevel: progress.currentLevel as LevelType,
-  targetLevel: (progress.targetLevel as LevelType) ?? null,
-  scaffoldLevel: progress.scaffoldLevel,
-  streakCount: progress.streakCount,
-  streakDirection: (progress.streakDirection as StreakDirectionType) ?? null,
-  attemptCount: progress.attemptCount,
-  createdAt: progress.createdAt.toISOString(),
-  updatedAt: progress.updatedAt.toISOString(),
-});
 
 /**
  * Progress service with static methods
@@ -59,7 +26,7 @@ export abstract class ProgressService {
       throw new NotFoundError("Progress record not found");
     }
 
-    return mapProgressResponse(progress);
+    return serializeDates(progress);
   }
 
   /**
@@ -69,8 +36,8 @@ export abstract class ProgressService {
     query: {
       page?: number;
       limit?: number;
-      skill?: SkillType;
-      currentLevel?: LevelType;
+      skill?: "listening" | "reading" | "writing" | "speaking";
+      currentLevel?: "A2" | "B1" | "B2" | "C1";
       userId?: string;
     },
     currentUserId: string,
@@ -112,7 +79,7 @@ export abstract class ProgressService {
       .offset(offset);
 
     return {
-      data: progressRecords.map(mapProgressResponse),
+      data: progressRecords.map(serializeDates),
       meta: paginationMeta(total, page, limit),
     };
   }
@@ -123,12 +90,12 @@ export abstract class ProgressService {
   static async updateProgress(
     userId: string,
     body: {
-      skill: SkillType;
-      currentLevel: LevelType;
-      targetLevel?: LevelType;
+      skill: "listening" | "reading" | "writing" | "speaking";
+      currentLevel: "A2" | "B1" | "B2" | "C1";
+      targetLevel?: "A2" | "B1" | "B2" | "C1";
       scaffoldLevel?: number;
       streakCount?: number;
-      streakDirection?: StreakDirectionType;
+      streakDirection?: "up" | "down" | "neutral";
     },
   ) {
     return await db.transaction(async (tx) => {
@@ -165,24 +132,24 @@ export abstract class ProgressService {
           .where(eq(table.userProgress.id, existing.id))
           .returning();
 
-        return mapProgressResponse(assertExists(updated, "Progress record"));
-      } else {
-        const [inserted] = await tx
-          .insert(table.userProgress)
-          .values({
-            userId,
-            skill: body.skill,
-            currentLevel: body.currentLevel,
-            targetLevel: body.targetLevel,
-            scaffoldLevel: body.scaffoldLevel || 1,
-            streakCount: body.streakCount || 0,
-            streakDirection: body.streakDirection || "neutral",
-            attemptCount: 1,
-          })
-          .returning();
-
-        return mapProgressResponse(assertExists(inserted, "Progress record"));
+        return serializeDates(assertExists(updated, "Progress record"));
       }
+
+      const [inserted] = await tx
+        .insert(table.userProgress)
+        .values({
+          userId,
+          skill: body.skill,
+          currentLevel: body.currentLevel,
+          targetLevel: body.targetLevel,
+          scaffoldLevel: body.scaffoldLevel || 1,
+          streakCount: body.streakCount || 0,
+          streakDirection: body.streakDirection || "neutral",
+          attemptCount: 1,
+        })
+        .returning();
+
+      return serializeDates(assertExists(inserted, "Progress record"));
     });
   }
 }

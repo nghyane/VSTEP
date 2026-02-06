@@ -3,7 +3,7 @@
  * Business logic for submission management
  */
 
-import { assertExists } from "@common/utils";
+import { assertExists, serializeDates } from "@common/utils";
 import { and, count, desc, eq } from "drizzle-orm";
 import type { Submission } from "@/db";
 import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
@@ -13,41 +13,18 @@ import {
   NotFoundError,
 } from "@/plugins/error";
 
-// ─── Response mapper ────────────────────────────────────────────
-
-const mapSubmissionResponse = (
-  sub: {
-    id: string;
-    userId: string;
-    questionId: string;
-    skill: string;
-    status: string;
-    score: number | null | undefined;
-    band: string | null | undefined;
-    completedAt: Date | null | undefined;
-    createdAt: Date;
-    updatedAt: Date;
-  },
-  details?: {
-    answer?: unknown;
-    result?: unknown;
-    feedback?: string | null;
-  },
-) => ({
-  id: sub.id,
-  userId: sub.userId,
-  questionId: sub.questionId,
-  skill: sub.skill,
-  status: sub.status,
-  score: sub.score ?? undefined,
-  band: sub.band ?? undefined,
-  completedAt: sub.completedAt?.toISOString() ?? undefined,
-  createdAt: sub.createdAt.toISOString(),
-  updatedAt: sub.updatedAt.toISOString(),
-  answer: details?.answer,
-  result: details?.result,
-  feedback: details?.feedback ?? undefined,
-});
+const SUBMISSION_COLUMNS = {
+  id: table.submissions.id,
+  userId: table.submissions.userId,
+  questionId: table.submissions.questionId,
+  skill: table.submissions.skill,
+  status: table.submissions.status,
+  score: table.submissions.score,
+  band: table.submissions.band,
+  completedAt: table.submissions.completedAt,
+  createdAt: table.submissions.createdAt,
+  updatedAt: table.submissions.updatedAt,
+} as const;
 
 // ─── Service ────────────────────────────────────────────────────
 
@@ -65,6 +42,18 @@ export abstract class SubmissionService {
         eq(table.submissions.id, submissionId),
         notDeleted(table.submissions),
       ),
+      columns: {
+        id: true,
+        userId: true,
+        questionId: true,
+        skill: true,
+        status: true,
+        score: true,
+        band: true,
+        completedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
 
     if (!submission) {
@@ -81,7 +70,12 @@ export abstract class SubmissionService {
       .where(eq(table.submissionDetails.submissionId, submissionId))
       .limit(1);
 
-    return mapSubmissionResponse(submission, details);
+    return {
+      ...serializeDates(submission),
+      answer: details?.answer,
+      result: details?.result,
+      feedback: details?.feedback,
+    };
   }
 
   /**
@@ -140,16 +134,7 @@ export abstract class SubmissionService {
     // Get submissions with details
     const submissions = await db
       .select({
-        id: table.submissions.id,
-        userId: table.submissions.userId,
-        questionId: table.submissions.questionId,
-        skill: table.submissions.skill,
-        status: table.submissions.status,
-        score: table.submissions.score,
-        band: table.submissions.band,
-        completedAt: table.submissions.completedAt,
-        createdAt: table.submissions.createdAt,
-        updatedAt: table.submissions.updatedAt,
+        ...SUBMISSION_COLUMNS,
         answer: table.submissionDetails.answer,
         result: table.submissionDetails.result,
         feedback: table.submissionDetails.feedback,
@@ -165,27 +150,7 @@ export abstract class SubmissionService {
       .offset(offset);
 
     return {
-      data: submissions.map((s) =>
-        mapSubmissionResponse(
-          {
-            id: s.id,
-            userId: s.userId,
-            questionId: s.questionId,
-            skill: s.skill,
-            status: s.status,
-            score: s.score,
-            band: s.band,
-            completedAt: s.completedAt,
-            createdAt: s.createdAt,
-            updatedAt: s.updatedAt,
-          },
-          {
-            answer: s.answer,
-            result: s.result,
-            feedback: s.feedback,
-          },
-        ),
-      ),
+      data: submissions.map((s) => serializeDates(s)),
       meta: paginationMeta(total, page, limit),
     };
   }
@@ -220,18 +185,7 @@ export abstract class SubmissionService {
           skill: body.skill as Submission["skill"],
           status: "pending",
         })
-        .returning({
-          id: table.submissions.id,
-          userId: table.submissions.userId,
-          questionId: table.submissions.questionId,
-          skill: table.submissions.skill,
-          status: table.submissions.status,
-          score: table.submissions.score,
-          band: table.submissions.band,
-          completedAt: table.submissions.completedAt,
-          createdAt: table.submissions.createdAt,
-          updatedAt: table.submissions.updatedAt,
-        });
+        .returning(SUBMISSION_COLUMNS);
 
       const sub = assertExists(submission, "Submission");
 
@@ -241,7 +195,7 @@ export abstract class SubmissionService {
         answer: body.answer,
       });
 
-      return mapSubmissionResponse(sub);
+      return serializeDates(sub);
     });
   }
 
@@ -303,18 +257,7 @@ export abstract class SubmissionService {
         .update(table.submissions)
         .set(updateValues)
         .where(eq(table.submissions.id, submissionId))
-        .returning({
-          id: table.submissions.id,
-          userId: table.submissions.userId,
-          questionId: table.submissions.questionId,
-          skill: table.submissions.skill,
-          status: table.submissions.status,
-          score: table.submissions.score,
-          band: table.submissions.band,
-          completedAt: table.submissions.completedAt,
-          createdAt: table.submissions.createdAt,
-          updatedAt: table.submissions.updatedAt,
-        });
+        .returning(SUBMISSION_COLUMNS);
 
       // Update details if provided
       if (body.answer || body.feedback) {
@@ -337,7 +280,12 @@ export abstract class SubmissionService {
 
       const updatedSub = assertExists(updatedSubmission, "Submission");
 
-      return mapSubmissionResponse(updatedSub, details);
+      return {
+        ...serializeDates(updatedSub),
+        answer: details?.answer,
+        result: details?.result,
+        feedback: details?.feedback,
+      };
     });
   }
 
@@ -380,18 +328,7 @@ export abstract class SubmissionService {
           completedAt: new Date(),
         })
         .where(eq(table.submissions.id, submissionId))
-        .returning({
-          id: table.submissions.id,
-          userId: table.submissions.userId,
-          questionId: table.submissions.questionId,
-          skill: table.submissions.skill,
-          status: table.submissions.status,
-          score: table.submissions.score,
-          band: table.submissions.band,
-          completedAt: table.submissions.completedAt,
-          createdAt: table.submissions.createdAt,
-          updatedAt: table.submissions.updatedAt,
-        });
+        .returning(SUBMISSION_COLUMNS);
 
       if (body.feedback) {
         await tx
@@ -408,7 +345,12 @@ export abstract class SubmissionService {
 
       const updatedSub = assertExists(updatedSubmission, "Submission");
 
-      return mapSubmissionResponse(updatedSub, details);
+      return {
+        ...serializeDates(updatedSub),
+        answer: details?.answer,
+        result: details?.result,
+        feedback: details?.feedback,
+      };
     });
   }
 
