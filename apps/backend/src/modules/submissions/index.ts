@@ -67,7 +67,10 @@ const SubmissionWithDetails = t.Object({
 
 // ─── Controller ─────────────────────────────────────────────────
 
-export const submissions = new Elysia({ prefix: "/submissions" })
+export const submissions = new Elysia({
+  prefix: "/submissions",
+  detail: { tags: ["Submissions"] },
+})
   .use(authPlugin)
 
   /**

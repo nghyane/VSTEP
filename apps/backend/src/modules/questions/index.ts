@@ -68,7 +68,10 @@ const QuestionVersionInfo = t.Object({
  * Mounted at /questions
  * Direct service calls - no .decorate() needed for static methods
  */
-export const questions = new Elysia({ prefix: "/questions" })
+export const questions = new Elysia({
+  prefix: "/questions",
+  detail: { tags: ["Questions"] },
+})
   .use(authPlugin)
 
   // ============ Public Routes ============

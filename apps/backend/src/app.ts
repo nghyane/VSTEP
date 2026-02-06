@@ -1,7 +1,7 @@
 import { env } from "@common/env";
 import { logger } from "@common/logger";
 import { cors } from "@elysiajs/cors";
-import { swagger } from "@elysiajs/swagger";
+import { openapi } from "@elysiajs/openapi";
 import { sql } from "drizzle-orm";
 import { Elysia } from "elysia";
 import { db } from "@/db";
@@ -16,8 +16,7 @@ import { errorPlugin } from "@/plugins/error";
 /** API sub-app — all feature modules mounted under /api */
 const api = new Elysia({ prefix: "/api" })
   .use(
-    swagger({
-      path: "/docs",
+    openapi({
       documentation: {
         info: {
           title: "VSTEP API",

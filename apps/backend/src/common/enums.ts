@@ -1,0 +1,34 @@
+/**
+ * Shared TypeBox enums derived from Drizzle pgEnums.
+ * Single source of truth — import from here instead of redefining in controllers.
+ */
+import { examStatusEnum } from "@db/schema/exams";
+import { streakDirectionEnum } from "@db/schema/progress";
+import { questionLevelEnum, questionSkillEnum } from "@db/schema/questions";
+import {
+  gradingModeEnum,
+  reviewPriorityEnum,
+  skillEnum,
+  submissionStatusEnum,
+  vstepBandEnum,
+} from "@db/schema/submissions";
+import { userRoleEnum } from "@db/schema/users";
+import { t } from "elysia";
+
+/** Convert a Drizzle pgEnum's values array into a TypeBox Union of literals */
+function enumSchema<const T extends readonly [string, ...string[]]>(values: T) {
+  return t.Union(values.map((v) => t.Literal(v))) as unknown as ReturnType<
+    typeof t.Union<{ [K in keyof T]: ReturnType<typeof t.Literal<T[K]>> }>
+  >;
+}
+
+export const UserRole = enumSchema(userRoleEnum.enumValues);
+export const Skill = enumSchema(skillEnum.enumValues);
+export const QuestionSkill = enumSchema(questionSkillEnum.enumValues);
+export const QuestionLevel = enumSchema(questionLevelEnum.enumValues);
+export const VstepBand = enumSchema(vstepBandEnum.enumValues);
+export const SubmissionStatus = enumSchema(submissionStatusEnum.enumValues);
+export const ReviewPriority = enumSchema(reviewPriorityEnum.enumValues);
+export const GradingMode = enumSchema(gradingModeEnum.enumValues);
+export const ExamStatus = enumSchema(examStatusEnum.enumValues);
+export const StreakDirection = enumSchema(streakDirectionEnum.enumValues);

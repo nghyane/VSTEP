@@ -62,7 +62,10 @@ const SessionIdParam = t.Object({
 
 // ─── Controller ──────────────────────────────────────────────────
 
-export const exams = new Elysia({ prefix: "/exams" })
+export const exams = new Elysia({
+  prefix: "/exams",
+  detail: { tags: ["Exams"] },
+})
   .use(authPlugin)
 
   // ============ Public Routes ============

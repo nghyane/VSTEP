@@ -36,7 +36,10 @@ const UserResponse = createResponseSchema(table.users, {
  * Users controller mounted at /users
  * Direct service calls - no .decorate() needed for static methods
  */
-export const users = new Elysia({ prefix: "/users" })
+export const users = new Elysia({
+  prefix: "/users",
+  detail: { tags: ["Users"] },
+})
   .use(authPlugin)
 
   // ============ Protected Routes ============

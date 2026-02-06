@@ -51,7 +51,10 @@ const ProgressResponse = t.Object({
 
 // ─── Controller ──────────────────────────────────────────────────
 
-export const progress = new Elysia({ prefix: "/progress" })
+export const progress = new Elysia({
+  prefix: "/progress",
+  detail: { tags: ["Progress"] },
+})
   .use(authPlugin)
 
   /**

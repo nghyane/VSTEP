@@ -21,7 +21,7 @@ const TokenResponse = t.Object({
   expiresIn: t.Number(),
 });
 
-export const auth = new Elysia({ prefix: "/auth" })
+export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
   .use(authPlugin)
 
   .post(
