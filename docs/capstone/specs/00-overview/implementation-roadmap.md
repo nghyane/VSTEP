@@ -25,9 +25,9 @@ Mỗi phase có:
 | **Auth** | Login, register, refresh rotation, logout, /me, macros | Max 3 tokens/user, reuse detection, jti claim, device tracking |
 | **Users** | Full CRUD, soft-delete, ownership checks | — |
 | **Questions** | CRUD, versioning, restore, soft-delete | Content JSONB validation theo question-content-schemas |
-| **Submissions** | CRUD, grade, auto-grade (exact match), events table, `real` scores, `vstep_band` enum | State machine enforcement, skill routing (MCQ auto vs queue), deadline, outbox relay, confidence routing |
-| **Progress** | Basic CRUD (create/update/list), `real` scores, `vstep_band` targetBand | Sliding window, trend, spider chart, ETA, overall band, update triggers |
-| **Exams** | CRUD, sessions, answers, complete, `real` scores, `submitted` status | Score calculation, exam→submission linking, section management |
+| **Submissions** | CRUD, grade, auto-grade (exact match), events table, `numeric` scores, `vstep_band` enum | State machine enforcement, skill routing (MCQ auto vs queue), deadline, outbox relay, confidence routing |
+| **Progress** | Basic CRUD (create/update/list), `numeric` scores, `vstep_band` targetBand | Sliding window, trend, spider chart, ETA, overall band, update triggers |
+| **Exams** | CRUD, sessions, answers, complete, `numeric` scores, `submitted` status | Score calculation, exam→submission linking, section management |
 | **Goals** | Table exists | Toàn bộ API (CRUD) |
 | **SSE** | — | Toàn bộ |
 | **Queue** | Outbox table exists | Relay worker, RabbitMQ publish/consume, callback consumer |

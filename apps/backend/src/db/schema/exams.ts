@@ -3,9 +3,9 @@ import {
   boolean,
   index,
   jsonb,
+  numeric,
   pgEnum,
   pgTable,
-  real,
   timestamp,
   uniqueIndex,
   uuid,
@@ -58,11 +58,31 @@ export const examSessions = pgTable(
       .references(() => exams.id, { onDelete: "cascade" })
       .notNull(),
     status: examStatusEnum("status").default("in_progress").notNull(),
-    listeningScore: real("listening_score"),
-    readingScore: real("reading_score"),
-    writingScore: real("writing_score"),
-    speakingScore: real("speaking_score"),
-    overallScore: real("overall_score"),
+    listeningScore: numeric("listening_score", {
+      precision: 3,
+      scale: 1,
+      mode: "number",
+    }),
+    readingScore: numeric("reading_score", {
+      precision: 3,
+      scale: 1,
+      mode: "number",
+    }),
+    writingScore: numeric("writing_score", {
+      precision: 3,
+      scale: 1,
+      mode: "number",
+    }),
+    speakingScore: numeric("speaking_score", {
+      precision: 3,
+      scale: 1,
+      mode: "number",
+    }),
+    overallScore: numeric("overall_score", {
+      precision: 3,
+      scale: 1,
+      mode: "number",
+    }),
     skillScores: jsonb("skill_scores"),
     startedAt: timestamp("started_at", { withTimezone: true })
       .defaultNow()

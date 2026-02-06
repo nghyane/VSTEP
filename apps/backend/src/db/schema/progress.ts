@@ -1,9 +1,9 @@
 import {
   index,
   integer,
+  numeric,
   pgEnum,
   pgTable,
-  real,
   timestamp,
   uniqueIndex,
   uuid,
@@ -59,7 +59,11 @@ export const userSkillScores = pgTable(
     submissionId: uuid("submission_id")
       .references(() => submissions.id, { onDelete: "cascade" })
       .notNull(),
-    score: real("score").notNull(),
+    score: numeric("score", {
+      precision: 3,
+      scale: 1,
+      mode: "number",
+    }).notNull(),
     scaffoldingType: varchar("scaffolding_type", { length: 20 }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
