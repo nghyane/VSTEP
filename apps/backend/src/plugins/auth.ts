@@ -1,14 +1,3 @@
-/**
- * Authentication & authorization plugin for Elysia.
- *
- * Pattern: macro resolve-as-guard — `user` is non-null in protected handlers.
- * JWT verification via jose (granular error handling).
- *
- * @example
- *   .get("/me", ({ user }) => user.sub, { auth: true })
- *   .get("/admin", ({ user }) => user, { role: "admin" })
- */
-
 import { env } from "@common/env";
 import { bearer } from "@elysiajs/bearer";
 import { Elysia, t } from "elysia";
@@ -16,9 +5,9 @@ import { jwtVerify, errors as joseErrors } from "jose";
 import { Value } from "@sinclair/typebox/value";
 import { ForbiddenError, TokenExpiredError, UnauthorizedError } from "./error";
 
-// ── Types ───────────────────────────────────────────────────────
+import { userRoleEnum } from "@db/schema/users";
 
-export type Role = "learner" | "instructor" | "admin";
+export type Role = (typeof userRoleEnum.enumValues)[number];
 
 export interface JWTPayload {
   sub: string;
@@ -26,15 +15,11 @@ export interface JWTPayload {
   role: Role;
 }
 
-// ── Role hierarchy ──────────────────────────────────────────────
-
 const ROLE_LEVEL: Record<Role, number> = {
   learner: 0,
   instructor: 1,
   admin: 2,
 };
-
-// ── Runtime validation schema ───────────────────────────────────
 
 const PayloadSchema = t.Object({
   sub: t.String(),
@@ -46,11 +31,7 @@ const PayloadSchema = t.Object({
   ]),
 });
 
-// ── JWT secret (encoded once at startup) ────────────────────────
-
 const JWT_SECRET = new TextEncoder().encode(env.JWT_SECRET!);
-
-// ── Verify access token ─────────────────────────────────────────
 
 export async function verifyAccessToken(token: string): Promise<JWTPayload> {
   try {
@@ -72,13 +53,10 @@ export async function verifyAccessToken(token: string): Promise<JWTPayload> {
   }
 }
 
-// ── Plugin ──────────────────────────────────────────────────────
-
 export const authPlugin = new Elysia({ name: "auth" })
   .use(bearer())
-  // Type hint: macro resolve injects `user` at runtime, this derive
-  // provides the type declaration so TypeScript can see `user` on context.
-  // The actual value is always overwritten by the macro resolve guard.
+  // Elysia macros don't propagate resolve types — this derive provides
+  // the type declaration so TypeScript sees `user` on handler context.
   .derive({ as: "scoped" }, () => ({
     user: undefined as unknown as JWTPayload,
   }))

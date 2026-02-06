@@ -1,36 +1,9 @@
-/**
- * Progress Module Controller
- * Routes for tracking user progress
- */
-
-import { QuestionLevel, Skill, StreakDirection } from "@common/enums";
-import {
-  ErrorResponse,
-  IdParam,
-  PaginationMeta,
-  PaginationQuery,
-} from "@common/schemas";
+import { Skill } from "@common/enums";
+import { ErrorResponse } from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
+import { ProgressModel } from "./model";
 import { ProgressService } from "./service";
-
-// ─── Inline Schemas ─────────────────────────────────────────────
-
-const ProgressResponse = t.Object({
-  id: t.String({ format: "uuid" }),
-  userId: t.String({ format: "uuid" }),
-  skill: Skill,
-  currentLevel: QuestionLevel,
-  targetLevel: t.Nullable(QuestionLevel),
-  scaffoldLevel: t.Number(),
-  streakCount: t.Number(),
-  streakDirection: t.Nullable(StreakDirection),
-  attemptCount: t.Number(),
-  createdAt: t.String({ format: "date-time" }),
-  updatedAt: t.String({ format: "date-time" }),
-});
-
-// ─── Controller ──────────────────────────────────────────────────
 
 export const progress = new Elysia({
   prefix: "/progress",
@@ -38,88 +11,48 @@ export const progress = new Elysia({
 })
   .use(authPlugin)
 
-  /**
-   * GET /progress
-   * List user progress
-   */
   .get(
     "/",
-    async ({ query, user }) => {
-      return await ProgressService.list(
-        query,
-        user.sub,
-        user.role === "admin",
-      );
+    async ({ user }) => {
+      return await ProgressService.getOverview(user.sub);
     },
     {
       auth: true,
-      query: t.Object({
-        ...PaginationQuery.properties,
-        skill: t.Optional(Skill),
-        currentLevel: t.Optional(QuestionLevel),
-        userId: t.Optional(t.String({ format: "uuid" })),
-      }),
       response: {
-        200: t.Object({
-          data: t.Array(ProgressResponse),
-          meta: PaginationMeta,
-        }),
+        200: ProgressModel.OverviewResponse,
         401: ErrorResponse,
       },
-      detail: {
-        summary: "List user progress",
-      },
+      detail: { summary: "Get progress overview (all skills)" },
     },
   )
 
-  /**
-   * GET /progress/:id
-   * Get progress by ID
-   */
   .get(
-    "/:id",
-    async ({ params: { id } }) => {
-      return await ProgressService.getById(id);
+    "/spider-chart",
+    async ({ user }) => {
+      return await ProgressService.getSpiderChart(user.sub);
     },
     {
       auth: true,
-      params: IdParam,
       response: {
-        200: ProgressResponse,
+        200: ProgressModel.SpiderChartResponse,
         401: ErrorResponse,
-        404: ErrorResponse,
       },
-      detail: {
-        summary: "Get progress by ID",
-      },
+      detail: { summary: "Get spider chart data for all skills" },
     },
   )
 
-  /**
-   * POST /progress/update
-   * Update user progress
-   */
-  .post(
-    "/update",
-    async ({ body, user }) => {
-      return await ProgressService.updateProgress(user.sub, body);
+  .get(
+    "/:skill",
+    async ({ params: { skill }, user }) => {
+      return await ProgressService.getBySkill(skill, user.sub);
     },
     {
       auth: true,
-      body: t.Object({
-        skill: Skill,
-        currentLevel: QuestionLevel,
-        targetLevel: t.Optional(QuestionLevel),
-        scaffoldLevel: t.Optional(t.Number()),
-        streakCount: t.Optional(t.Number()),
-        streakDirection: t.Optional(StreakDirection),
-      }),
+      params: t.Object({ skill: Skill }),
       response: {
-        200: ProgressResponse,
+        200: ProgressModel.SkillDetailResponse,
         401: ErrorResponse,
       },
-      detail: {
-        summary: "Update user progress",
-      },
+      detail: { summary: "Get progress for a specific skill" },
     },
   );

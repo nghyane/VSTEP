@@ -1,51 +1,54 @@
-/**
- * Questions Module Service
- * Business logic for question management
- * @see https://elysiajs.com/pattern/mvc.html
- */
-
-import { assertExists, serializeDates } from "@common/utils";
+import { assertExists } from "@common/utils";
 import { and, count, desc, eq, sql } from "drizzle-orm";
 import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
-import {
-  BadRequestError,
-  ForbiddenError,
-  NotFoundError,
-} from "@/plugins/error";
+import type { Question } from "@/db";
+import { BadRequestError, ForbiddenError } from "@/plugins/error";
 
-/**
- * Question service with static methods
- */
-export abstract class QuestionService {
-  /**
-   * Get question by ID
-   * @throws NotFoundError if question not found
-   */
+const QUESTION_PUBLIC_COLUMNS = {
+  id: table.questions.id,
+  skill: table.questions.skill,
+  level: table.questions.level,
+  format: table.questions.format,
+  content: table.questions.content,
+  version: table.questions.version,
+  isActive: table.questions.isActive,
+  createdBy: table.questions.createdBy,
+  createdAt: table.questions.createdAt,
+  updatedAt: table.questions.updatedAt,
+  deletedAt: table.questions.deletedAt,
+} as const;
+
+export class QuestionService {
   static async getById(questionId: string) {
     const question = await db.query.questions.findFirst({
       where: and(
         eq(table.questions.id, questionId),
         notDeleted(table.questions),
       ),
+      columns: {
+        id: true,
+        skill: true,
+        level: true,
+        format: true,
+        content: true,
+        version: true,
+        isActive: true,
+        createdBy: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
 
-    if (!question) {
-      throw new NotFoundError("Question not found");
-    }
-
-    return serializeDates(question);
+    return assertExists(question, "Question");
   }
 
-  /**
-   * List questions with filtering and pagination
-   */
   static async list(
     query: {
       page?: number;
       limit?: number;
-      skill?: "listening" | "reading" | "writing" | "speaking";
-      level?: "A2" | "B1" | "B2" | "C1";
-      format?: string;
+      skill?: Question["skill"];
+      level?: Question["level"];
+      format?: Question["format"];
       isActive?: boolean;
       search?: string;
     },
@@ -93,9 +96,8 @@ export abstract class QuestionService {
 
     const total = countResult?.count || 0;
 
-    // Get questions
     const questions = await db
-      .select()
+      .select(QUESTION_PUBLIC_COLUMNS)
       .from(table.questions)
       .where(whereClause)
       .orderBy(desc(table.questions.createdAt))
@@ -103,20 +105,17 @@ export abstract class QuestionService {
       .offset(offset);
 
     return {
-      data: questions.map(serializeDates),
+      data: questions,
       meta: paginationMeta(total, query.page, query.limit),
     };
   }
 
-  /**
-   * Create new question
-   */
   static async create(
     userId: string,
     body: {
-      skill: "listening" | "reading" | "writing" | "speaking";
-      level: "A2" | "B1" | "B2" | "C1";
-      format: string;
+      skill: Question["skill"];
+      level: Question["level"];
+      format: Question["format"];
       content: unknown;
       answerKey?: unknown;
     },
@@ -148,22 +147,18 @@ export abstract class QuestionService {
         answerKey: body.answerKey ?? null,
       });
 
-      return serializeDates(q);
+      return q;
     });
   }
 
-  /**
-   * Update question
-   * @throws NotFoundError if question not found
-   */
   static async update(
     questionId: string,
     userId: string,
     isAdmin: boolean,
     body: {
-      skill?: "listening" | "reading" | "writing" | "speaking";
-      level?: "A2" | "B1" | "B2" | "C1";
-      format?: string;
+      skill?: Question["skill"];
+      level?: Question["level"];
+      format?: Question["format"];
       content?: unknown;
       answerKey?: unknown;
       isActive?: boolean;
@@ -171,7 +166,7 @@ export abstract class QuestionService {
   ) {
     return await db.transaction(async (tx) => {
       // Get question
-      const [question] = await tx
+      const [row] = await tx
         .select()
         .from(table.questions)
         .where(
@@ -179,9 +174,7 @@ export abstract class QuestionService {
         )
         .limit(1);
 
-      if (!question) {
-        throw new NotFoundError("Question not found");
-      }
+      const question = assertExists(row, "Question");
 
       // Check ownership for non-admin
       if (question.createdBy !== userId && !isAdmin) {
@@ -190,7 +183,7 @@ export abstract class QuestionService {
 
       // Build update values
       const updateValues: Partial<typeof table.questions.$inferInsert> = {
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
       };
 
       if (body.skill !== undefined) updateValues.skill = body.skill;
@@ -222,14 +215,10 @@ export abstract class QuestionService {
         .where(eq(table.questions.id, questionId))
         .returning();
 
-      return serializeDates(assertExists(updatedQuestion, "Question"));
+      return assertExists(updatedQuestion, "Question");
     });
   }
 
-  /**
-   * Create a new version of a question
-   * @throws NotFoundError if question not found
-   */
   static async createVersion(
     questionId: string,
     userId: string,
@@ -241,7 +230,7 @@ export abstract class QuestionService {
   ) {
     return await db.transaction(async (tx) => {
       // Get question
-      const [question] = await tx
+      const [row] = await tx
         .select({
           id: table.questions.id,
           version: table.questions.version,
@@ -253,9 +242,7 @@ export abstract class QuestionService {
         )
         .limit(1);
 
-      if (!question) {
-        throw new NotFoundError("Question not found");
-      }
+      const question = assertExists(row, "Question");
 
       // Check ownership for non-admin
       if (question.createdBy !== userId && !isAdmin) {
@@ -286,31 +273,26 @@ export abstract class QuestionService {
           content: body.content,
           answerKey: body.answerKey ?? null,
           version: newVersion,
-          updatedAt: new Date(),
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(table.questions.id, questionId));
 
-      return serializeDates(v);
+      return v;
     });
   }
 
-  /**
-   * Get all versions of a question
-   * @throws NotFoundError if question not found
-   */
   static async getVersions(questionId: string) {
     // Verify question exists
-    const question = await db.query.questions.findFirst({
-      where: and(
-        eq(table.questions.id, questionId),
-        notDeleted(table.questions),
-      ),
-      columns: { id: true },
-    });
-
-    if (!question) {
-      throw new NotFoundError("Question not found");
-    }
+    assertExists(
+      await db.query.questions.findFirst({
+        where: and(
+          eq(table.questions.id, questionId),
+          notDeleted(table.questions),
+        ),
+        columns: { id: true },
+      }),
+      "Question",
+    );
 
     // Get all versions
     const versions = await db
@@ -320,30 +302,25 @@ export abstract class QuestionService {
       .orderBy(desc(table.questionVersions.version));
 
     return {
-      data: versions.map(serializeDates),
+      data: versions,
       meta: {
         total: versions.length,
       },
     };
   }
 
-  /**
-   * Get a specific version of a question
-   * @throws NotFoundError if question or version not found
-   */
   static async getVersion(questionId: string, versionId: string) {
     // Verify parent question exists and is not soft-deleted
-    const question = await db.query.questions.findFirst({
-      where: and(
-        eq(table.questions.id, questionId),
-        notDeleted(table.questions),
-      ),
-      columns: { id: true },
-    });
-
-    if (!question) {
-      throw new NotFoundError("Question not found");
-    }
+    assertExists(
+      await db.query.questions.findFirst({
+        where: and(
+          eq(table.questions.id, questionId),
+          notDeleted(table.questions),
+        ),
+        columns: { id: true },
+      }),
+      "Question",
+    );
 
     const version = await db.query.questionVersions.findFirst({
       where: and(
@@ -352,20 +329,13 @@ export abstract class QuestionService {
       ),
     });
 
-    if (!version) {
-      throw new NotFoundError("Question version not found");
-    }
-
-    return serializeDates(version);
+    return assertExists(version, "QuestionVersion");
   }
 
-  /**
-   * Remove question (soft delete)
-   */
   static async remove(questionId: string, userId: string, isAdmin: boolean) {
     return await db.transaction(async (tx) => {
       // Get question
-      const [question] = await tx
+      const [row] = await tx
         .select()
         .from(table.questions)
         .where(
@@ -373,9 +343,7 @@ export abstract class QuestionService {
         )
         .limit(1);
 
-      if (!question) {
-        throw new NotFoundError("Question not found");
-      }
+      const question = assertExists(row, "Question");
 
       // Check ownership for non-admin
       if (question.createdBy !== userId && !isAdmin) {
@@ -386,8 +354,8 @@ export abstract class QuestionService {
       await tx
         .update(table.questions)
         .set({
-          deletedAt: new Date(),
-          updatedAt: new Date(),
+          deletedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(table.questions.id, questionId));
 
@@ -395,9 +363,6 @@ export abstract class QuestionService {
     });
   }
 
-  /**
-   * Restore a deleted question (admin only)
-   */
   static async restore(questionId: string, _userId: string, isAdmin: boolean) {
     if (!isAdmin) {
       throw new ForbiddenError("Only admins can restore questions");
@@ -405,15 +370,13 @@ export abstract class QuestionService {
 
     return await db.transaction(async (tx) => {
       // Get deleted question
-      const [question] = await tx
+      const [row] = await tx
         .select()
         .from(table.questions)
         .where(eq(table.questions.id, questionId))
         .limit(1);
 
-      if (!question) {
-        throw new NotFoundError("Question not found");
-      }
+      const question = assertExists(row, "Question");
 
       if (!question.deletedAt) {
         throw new BadRequestError("Question is not deleted");
@@ -424,12 +387,12 @@ export abstract class QuestionService {
         .update(table.questions)
         .set({
           deletedAt: null,
-          updatedAt: new Date(),
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(table.questions.id, questionId))
         .returning();
 
-      return serializeDates(assertExists(updatedQuestion, "Question"));
+      return assertExists(updatedQuestion, "Question");
     });
   }
 }

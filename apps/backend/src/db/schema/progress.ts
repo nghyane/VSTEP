@@ -33,12 +33,13 @@ export const userProgress = pgTable(
     streakCount: integer("streak_count").default(0).notNull(),
     streakDirection: streakDirectionEnum("streak_direction"),
     attemptCount: integer("attempt_count").default(0).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
-      .notNull(),
+      .notNull()
+      .$onUpdate(() => new Date().toISOString()),
   },
   (table) => ({
     userSkillUnique: uniqueIndex("user_progress_user_skill_idx").on(
@@ -65,7 +66,7 @@ export const userSkillScores = pgTable(
       mode: "number",
     }).notNull(),
     scaffoldingType: varchar("scaffolding_type", { length: 20 }),
-    createdAt: timestamp("created_at", { withTimezone: true })
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
   },
@@ -87,16 +88,17 @@ export const userGoals = pgTable(
       .notNull(),
     targetBand: vstepBandEnum("target_band").notNull(),
     currentEstimatedBand: varchar("current_estimated_band", { length: 10 }),
-    deadline: timestamp("deadline", { withTimezone: true }),
+    deadline: timestamp("deadline", { withTimezone: true, mode: "string" }),
     dailyStudyTimeMinutes: integer("daily_study_time_minutes")
       .default(30)
       .notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
-      .notNull(),
+      .notNull()
+      .$onUpdate(() => new Date().toISOString()),
   },
   (table) => ({
     userIdx: index("user_goals_user_idx").on(table.userId),

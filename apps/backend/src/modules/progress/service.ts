@@ -1,155 +1,125 @@
-/**
- * Progress Module Service
- * Business logic for tracking user progress
- */
+import { and, desc, eq } from "drizzle-orm";
+import type { UserProgress } from "@/db";
+import { db, table } from "@/db";
 
-import { assertExists, serializeDates } from "@common/utils";
-import { and, count, desc, eq, sql } from "drizzle-orm";
-import { db, paginate, paginationMeta, table } from "@/db";
-import { NotFoundError } from "@/plugins/error";
+class ProgressService {
+  /** Overview: all 4 skills with latest stats */
+  static async getOverview(userId: string) {
+    const records = await db.query.userProgress.findMany({
+      where: eq(table.userProgress.userId, userId),
+    });
 
-/**
- * Progress service with static methods
- */
-export abstract class ProgressService {
-  /**
-   * Get progress by ID
-   */
-  static async getById(id: string) {
-    const [progress] = await db
-      .select()
-      .from(table.userProgress)
-      .where(eq(table.userProgress.id, id))
-      .limit(1);
-
-    if (!progress) {
-      throw new NotFoundError("Progress record not found");
-    }
-
-    return serializeDates(progress);
-  }
-
-  /**
-   * List user progress
-   */
-  static async list(
-    query: {
-      page?: number;
-      limit?: number;
-      skill?: "listening" | "reading" | "writing" | "speaking";
-      currentLevel?: "A2" | "B1" | "B2" | "C1";
-      userId?: string;
-    },
-    currentUserId: string,
-    isAdmin: boolean,
-  ) {
-    const page = query.page || 1;
-    const limit = query.limit || 20;
-
-    const conditions = [];
-
-    // Non-admin users can only see their own progress
-    if (!isAdmin) {
-      conditions.push(eq(table.userProgress.userId, currentUserId));
-    } else if (query.userId) {
-      conditions.push(eq(table.userProgress.userId, query.userId));
-    }
-
-    if (query.skill) conditions.push(eq(table.userProgress.skill, query.skill));
-    if (query.currentLevel)
-      conditions.push(eq(table.userProgress.currentLevel, query.currentLevel));
-
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-
-    const [countResult] = await db
-      .select({ count: count() })
-      .from(table.userProgress)
-      .where(whereClause);
-
-    const total = countResult?.count || 0;
-
-    const { limit: take, offset } = paginate(page, limit);
-
-    const progressRecords = await db
-      .select()
-      .from(table.userProgress)
-      .where(whereClause)
-      .orderBy(desc(table.userProgress.updatedAt))
-      .limit(take)
-      .offset(offset);
+    // Get the latest goal if any
+    const goal = await db.query.userGoals.findFirst({
+      where: eq(table.userGoals.userId, userId),
+      orderBy: desc(table.userGoals.createdAt),
+    });
 
     return {
-      data: progressRecords.map(serializeDates),
-      meta: paginationMeta(total, page, limit),
+      skills: records,
+      goal: goal ?? null,
     };
   }
 
-  /**
-   * Update or create progress record
-   */
-  static async updateProgress(
-    userId: string,
-    body: {
-      skill: "listening" | "reading" | "writing" | "speaking";
-      currentLevel: "A2" | "B1" | "B2" | "C1";
-      targetLevel?: "A2" | "B1" | "B2" | "C1";
-      scaffoldLevel?: number;
-      streakCount?: number;
-      streakDirection?: "up" | "down" | "neutral";
-    },
-  ) {
-    return await db.transaction(async (tx) => {
-      // Try to find existing record
-      const [existing] = await tx
-        .select()
-        .from(table.userProgress)
-        .where(
-          and(
-            eq(table.userProgress.userId, userId),
-            eq(table.userProgress.skill, body.skill),
-          ),
-        )
-        .limit(1);
-
-      if (existing) {
-        const updateValues: Record<string, unknown> = {
-          currentLevel: body.currentLevel,
-          attemptCount: sql`${table.userProgress.attemptCount} + 1`,
-          updatedAt: new Date(),
-        };
-
-        if (body.targetLevel) updateValues.targetLevel = body.targetLevel;
-        if (body.scaffoldLevel !== undefined)
-          updateValues.scaffoldLevel = body.scaffoldLevel;
-        if (body.streakCount !== undefined)
-          updateValues.streakCount = body.streakCount;
-        if (body.streakDirection)
-          updateValues.streakDirection = body.streakDirection;
-
-        const [updated] = await tx
-          .update(table.userProgress)
-          .set(updateValues)
-          .where(eq(table.userProgress.id, existing.id))
-          .returning();
-
-        return serializeDates(assertExists(updated, "Progress record"));
-      }
-
-      const [inserted] = await tx
-        .insert(table.userProgress)
-        .values({
-          userId,
-          skill: body.skill,
-          currentLevel: body.currentLevel,
-          targetLevel: body.targetLevel,
-          scaffoldLevel: body.scaffoldLevel || 1,
-          streakCount: body.streakCount || 0,
-          streakDirection: body.streakDirection || "neutral",
-          attemptCount: 1,
-        })
-        .returning();
-
-      return serializeDates(assertExists(inserted, "Progress record"));
+  /** Single skill detail with sliding window */
+  static async getBySkill(skill: UserProgress["skill"], userId: string) {
+    const progress = await db.query.userProgress.findFirst({
+      where: and(
+        eq(table.userProgress.userId, userId),
+        eq(table.userProgress.skill, skill),
+      ),
     });
+
+    // Sliding window: last 10 scores
+    const recentScores = await db
+      .select({
+        score: table.userSkillScores.score,
+        createdAt: table.userSkillScores.createdAt,
+      })
+      .from(table.userSkillScores)
+      .where(
+        and(
+          eq(table.userSkillScores.userId, userId),
+          eq(table.userSkillScores.skill, skill),
+        ),
+      )
+      .orderBy(desc(table.userSkillScores.createdAt))
+      .limit(10);
+
+    // Compute metrics
+    const scores = recentScores.map((r) => r.score);
+    const windowAvg =
+      scores.length > 0
+        ? scores.reduce((a, b) => a + b, 0) / scores.length
+        : null;
+
+    const windowStdDev =
+      scores.length > 1
+        ? Math.sqrt(
+            scores.reduce((sum, s) => sum + (s - windowAvg!) ** 2, 0) /
+              (scores.length - 1),
+          )
+        : null;
+
+    // Trend (need at least 6 scores: 3 recent vs 3 previous)
+    let trend:
+      | "improving"
+      | "stable"
+      | "declining"
+      | "inconsistent"
+      | "insufficient_data" = "insufficient_data";
+    if (scores.length >= 6 && windowStdDev !== null) {
+      if (windowStdDev >= 1.5) {
+        trend = "inconsistent";
+      } else {
+        const recent3 = scores.slice(0, 3);
+        const prev3 = scores.slice(3, 6);
+        const avgRecent = recent3.reduce((a, b) => a + b, 0) / 3;
+        const avgPrev = prev3.reduce((a, b) => a + b, 0) / 3;
+        const delta = avgRecent - avgPrev;
+        if (delta >= 0.5) trend = "improving";
+        else if (delta <= -0.5) trend = "declining";
+        else trend = "stable";
+      }
+    } else if (scores.length >= 3) {
+      trend =
+        windowStdDev !== null && windowStdDev >= 1.5 ? "inconsistent" : "stable";
+    }
+
+    return {
+      progress: progress ?? null,
+      recentScores,
+      windowAvg: windowAvg !== null ? Math.round(windowAvg * 10) / 10 : null,
+      windowStdDev:
+        windowStdDev !== null ? Math.round(windowStdDev * 100) / 100 : null,
+      trend,
+    };
+  }
+
+  /** Spider chart data for visualization */
+  static async getSpiderChart(userId: string) {
+    const skills = ["listening", "reading", "writing", "speaking"] as const;
+    const result: Record<string, { current: number; trend: string }> = {};
+
+    for (const skill of skills) {
+      const detail = await ProgressService.getBySkill(skill, userId);
+      result[skill] = {
+        current: detail.windowAvg !== null ? detail.windowAvg * 10 : 0, // normalize 0-100
+        trend: detail.trend,
+      };
+    }
+
+    // Goal
+    const goal = await db.query.userGoals.findFirst({
+      where: eq(table.userGoals.userId, userId),
+      orderBy: desc(table.userGoals.createdAt),
+    });
+
+    return {
+      skills: result,
+      goal: goal ?? null,
+    };
   }
 }
+
+export { ProgressService };

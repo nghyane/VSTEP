@@ -1,18 +1,10 @@
-/**
- * Users Module Service
- * Business logic for user management
- * Pattern: Abstract class with static methods (no instantiation)
- * @see https://elysiajs.com/pattern/mvc.html
- */
-
-import { assertExists, serializeDates } from "@common/utils";
+import { assertExists } from "@common/utils";
 import { and, count, eq, ilike, sql } from "drizzle-orm";
 import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
 import { AuthService } from "@/modules/auth/service";
 import {
   ConflictError,
   ForbiddenError,
-  NotFoundError,
   UnauthorizedError,
 } from "@/plugins/error";
 
@@ -25,15 +17,7 @@ const USER_COLUMNS = {
   updatedAt: table.users.updatedAt,
 } as const;
 
-/**
- * User Service - Abstract class with static methods
- * No instantiation needed - all methods are static
- */
-export abstract class UserService {
-  /**
-   * Get user by ID (excluding soft-deleted)
-   * @throws NotFoundError if user not found
-   */
+export class UserService {
   static async getById(userId: string) {
     const user = await db.query.users.findFirst({
       where: and(eq(table.users.id, userId), notDeleted(table.users)),
@@ -47,39 +31,9 @@ export abstract class UserService {
       },
     });
 
-    if (!user) {
-      throw new NotFoundError("User not found");
-    }
-
-    return serializeDates(user);
+    return assertExists(user, "User");
   }
 
-  /**
-   * Get user by email
-   */
-  static async getByEmail(email: string) {
-    const user = await db.query.users.findFirst({
-      where: and(eq(table.users.email, email), notDeleted(table.users)),
-      columns: {
-        id: true,
-        email: true,
-        fullName: true,
-        role: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-
-    if (!user) {
-      return null;
-    }
-
-    return serializeDates(user);
-  }
-
-  /**
-   * List users with pagination and filtering
-   */
   static async list(query: {
     page?: number;
     limit?: number;
@@ -123,15 +77,11 @@ export abstract class UserService {
       .offset(offset);
 
     return {
-      data: users.map(serializeDates),
+      data: users,
       meta: paginationMeta(total, page, limit),
     };
   }
 
-  /**
-   * Create new user
-   * @throws ConflictError if email already exists
-   */
   static async create(body: {
     email: string;
     password: string;
@@ -158,18 +108,13 @@ export abstract class UserService {
         email: body.email,
         passwordHash,
         fullName: body.fullName,
-        role: body.role || "learner",
+        role: body.role ?? "learner",
       })
       .returning(USER_COLUMNS);
 
-    return serializeDates(assertExists(user, "User"));
+    return assertExists(user, "User");
   }
 
-  /**
-   * Update user
-   * @throws NotFoundError if user not found
-   * @throws ConflictError if email already exists
-   */
   static async update(
     userId: string,
     body: {
@@ -199,9 +144,7 @@ export abstract class UserService {
         .where(and(eq(table.users.id, userId), notDeleted(table.users)))
         .limit(1);
 
-      if (!existingUser) {
-        throw new NotFoundError("User not found");
-      }
+      assertExists(existingUser, "User");
 
       // Check email uniqueness if updating email (exclude soft-deleted)
       if (body.email) {
@@ -228,9 +171,9 @@ export abstract class UserService {
         fullName: string | undefined | null;
         role: "learner" | "instructor" | "admin";
         passwordHash: string;
-        updatedAt: Date;
+        updatedAt: string;
       }> = {
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
       };
 
       if (body.email) updateValues.email = body.email;
@@ -249,14 +192,10 @@ export abstract class UserService {
         .where(eq(table.users.id, userId))
         .returning(USER_COLUMNS);
 
-      return serializeDates(assertExists(user, "User"));
+      return assertExists(user, "User");
     });
   }
 
-  /**
-   * Soft delete user
-   * @throws NotFoundError if user not found
-   */
   static async remove(userId: string) {
     return await db.transaction(async (tx) => {
       // Check user exists
@@ -266,16 +205,14 @@ export abstract class UserService {
         .where(and(eq(table.users.id, userId), notDeleted(table.users)))
         .limit(1);
 
-      if (!existingUser) {
-        throw new NotFoundError("User not found");
-      }
+      assertExists(existingUser, "User");
 
       // Soft delete
       const [user] = await tx
         .update(table.users)
         .set({
-          deletedAt: new Date(),
-          updatedAt: new Date(),
+          deletedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(table.users.id, userId))
         .returning({
@@ -287,16 +224,11 @@ export abstract class UserService {
 
       return {
         id: deletedUser.id,
-        deletedAt: (deletedUser.deletedAt as Date).toISOString(),
+        deletedAt: deletedUser.deletedAt!,
       };
     });
   }
 
-  /**
-   * Update user password
-   * @throws NotFoundError if user not found
-   * @throws UnauthorizedError if current password is incorrect
-   */
   static async updatePassword(
     userId: string,
     body: { currentPassword: string; newPassword: string },
@@ -308,17 +240,16 @@ export abstract class UserService {
     }
 
     // Get user with password
-    const user = await db.query.users.findFirst({
-      where: and(eq(table.users.id, userId), notDeleted(table.users)),
-      columns: {
-        id: true,
-        passwordHash: true,
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundError("User not found");
-    }
+    const user = assertExists(
+      await db.query.users.findFirst({
+        where: and(eq(table.users.id, userId), notDeleted(table.users)),
+        columns: {
+          id: true,
+          passwordHash: true,
+        },
+      }),
+      "User",
+    );
 
     // Verify current password
     const isValid = await AuthService.verifyPassword(
@@ -337,7 +268,7 @@ export abstract class UserService {
       .update(table.users)
       .set({
         passwordHash: newPasswordHash,
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
       })
       .where(eq(table.users.id, userId));
 

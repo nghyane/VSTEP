@@ -1,89 +1,25 @@
-/**
- * Questions Module Controller
- * Elysia routes for question management
- * Pattern: Elysia instance with direct service calls
- * @see https://elysiajs.com/pattern/mvc.html
- */
-
 import { QuestionLevel, QuestionSkill } from "@common/enums";
-import {
-  ErrorResponse,
-  IdParam,
-  PaginationMeta,
-  PaginationQuery,
-} from "@common/schemas";
+import { ErrorResponse, IdParam, PaginationMeta, PaginationQuery } from "@common/schemas";
 import { Elysia, t } from "elysia";
-import { authPlugin, verifyAccessToken } from "@/plugins/auth";
+import { authPlugin } from "@/plugins/auth";
+import { QuestionModel } from "./model";
 import { QuestionService } from "./service";
 
-// ─── Inline Response Schemas ────────────────────────────────────
-
-const QuestionInfo = t.Object({
-  id: t.String({ format: "uuid" }),
-  skill: QuestionSkill,
-  level: QuestionLevel,
-  format: t.String(),
-  content: t.Any(),
-  answerKey: t.Optional(t.Any()),
-  version: t.Number(),
-  isActive: t.Boolean(),
-  createdBy: t.Optional(t.Nullable(t.String({ format: "uuid" }))),
-  createdAt: t.String(),
-  updatedAt: t.String(),
-});
-
-const QuestionWithDetails = t.Object({
-  ...QuestionInfo.properties,
-  deletedAt: t.Optional(t.Nullable(t.String())),
-});
-
-const QuestionVersionInfo = t.Object({
-  id: t.String({ format: "uuid" }),
-  questionId: t.String({ format: "uuid" }),
-  version: t.Number(),
-  content: t.Any(),
-  answerKey: t.Optional(t.Any()),
-  createdAt: t.String(),
-});
-
-// ─── Controller ─────────────────────────────────────────────────
-
-/**
- * Questions controller with all question routes
- * Mounted at /questions
- * Direct service calls - no .decorate() needed for static methods
- */
 export const questions = new Elysia({
   prefix: "/questions",
   detail: { tags: ["Questions"] },
 })
   .use(authPlugin)
 
-  // ============ Public Routes ============
-
-  /**
-   * GET /questions
-   * List questions (public - but shows only active for non-authenticated)
-   */
   .get(
     "/",
-    async ({ query, bearer: token, set }) => {
-      let userId = "anonymous";
-      let isAdmin = false;
-      if (token) {
-        try {
-          const user = await verifyAccessToken(token);
-          userId = user.sub;
-          isAdmin = user.role === "admin";
-        } catch {
-          // Invalid/expired token on public route → treat as anonymous
-        }
-      }
-      const result = await QuestionService.list(query, userId, isAdmin);
-      set.status = 200;
+    async ({ query, user }) => {
+      const isAdmin = user.role === "admin";
+      const result = await QuestionService.list(query, user.sub, isAdmin);
       return result;
     },
     {
+      auth: true,
       query: t.Object({
         ...PaginationQuery.properties,
         skill: t.Optional(QuestionSkill),
@@ -94,10 +30,11 @@ export const questions = new Elysia({
       }),
       response: {
         200: t.Object({
-          data: t.Array(QuestionWithDetails),
+          data: t.Array(QuestionModel.Question),
           meta: PaginationMeta,
         }),
         400: ErrorResponse,
+        401: ErrorResponse,
       },
       detail: {
         summary: "List questions",
@@ -106,21 +43,18 @@ export const questions = new Elysia({
     },
   )
 
-  /**
-   * GET /questions/:id
-   * Get question by ID
-   */
   .get(
     "/:id",
-    async ({ params, set }) => {
+    async ({ params }) => {
       const result = await QuestionService.getById(params.id);
-      set.status = 200;
       return result;
     },
     {
+      auth: true,
       params: IdParam,
       response: {
-        200: QuestionWithDetails,
+        200: QuestionModel.Question,
+        401: ErrorResponse,
         404: ErrorResponse,
       },
       detail: {
@@ -130,12 +64,6 @@ export const questions = new Elysia({
     },
   )
 
-  // ============ Protected Routes ============
-
-  /**
-   * POST /questions
-   * Create new question
-   */
   .post(
     "/",
     async ({ body, user, set }) => {
@@ -144,18 +72,13 @@ export const questions = new Elysia({
       return result;
     },
     {
-      auth: true,
-      body: t.Object({
-        skill: QuestionSkill,
-        level: QuestionLevel,
-        format: t.String(),
-        content: t.Any(),
-        answerKey: t.Optional(t.Any()),
-      }),
+      role: "instructor",
+      body: QuestionModel.CreateBody,
       response: {
-        201: QuestionInfo,
+        201: QuestionModel.Question,
         400: ErrorResponse,
         401: ErrorResponse,
+        403: ErrorResponse,
         422: ErrorResponse,
       },
       detail: {
@@ -165,37 +88,23 @@ export const questions = new Elysia({
     },
   )
 
-  /**
-   * PATCH /questions/:id
-   * Update question
-   */
   .patch(
     "/:id",
-    async ({ params, body, user, set }) => {
+    async ({ params, body, user }) => {
       const result = await QuestionService.update(
         params.id,
         user.sub,
         user.role === "admin",
         body,
       );
-      set.status = 200;
       return result;
     },
     {
-      auth: true,
+      role: "instructor",
       params: IdParam,
-      body: t.Partial(
-        t.Object({
-          skill: QuestionSkill,
-          level: QuestionLevel,
-          format: t.String(),
-          content: t.Any(),
-          answerKey: t.Optional(t.Any()),
-          isActive: t.Boolean(),
-        }),
-      ),
+      body: QuestionModel.UpdateBody,
       response: {
-        200: QuestionWithDetails,
+        200: QuestionModel.QuestionWithDetails,
         400: ErrorResponse,
         401: ErrorResponse,
         403: ErrorResponse,
@@ -209,10 +118,6 @@ export const questions = new Elysia({
     },
   )
 
-  /**
-   * POST /questions/:id/versions
-   * Create a new version of a question
-   */
   .post(
     "/:id/versions",
     async ({ params, body, user, set }) => {
@@ -226,14 +131,11 @@ export const questions = new Elysia({
       return result;
     },
     {
-      auth: true,
+      role: "instructor",
       params: IdParam,
-      body: t.Object({
-        content: t.Any(),
-        answerKey: t.Optional(t.Any()),
-      }),
+      body: QuestionModel.VersionBody,
       response: {
-        201: QuestionVersionInfo,
+        201: QuestionModel.Version,
         400: ErrorResponse,
         401: ErrorResponse,
         403: ErrorResponse,
@@ -248,26 +150,22 @@ export const questions = new Elysia({
     },
   )
 
-  /**
-   * GET /questions/:id/versions
-   * Get all versions of a question
-   */
   .get(
     "/:id/versions",
-    async ({ params, set }) => {
+    async ({ params }) => {
       const result = await QuestionService.getVersions(params.id);
-      set.status = 200;
       return result;
     },
     {
+      role: "instructor",
       params: IdParam,
       response: {
         200: t.Object({
-          data: t.Array(QuestionVersionInfo),
-          meta: t.Object({
-            total: t.Number(),
-          }),
+          data: t.Array(QuestionModel.Version),
+          meta: t.Object({ total: t.Number() }),
         }),
+        401: ErrorResponse,
+        403: ErrorResponse,
         404: ErrorResponse,
       },
       detail: {
@@ -278,18 +176,13 @@ export const questions = new Elysia({
     },
   )
 
-  /**
-   * GET /questions/:id/versions/:versionId
-   * Get a specific version of a question
-   */
   .get(
     "/:id/versions/:versionId",
-    async ({ params, set }) => {
+    async ({ params }) => {
       const result = await QuestionService.getVersion(
         params.id,
         params.versionId,
       );
-      set.status = 200;
       return result;
     },
     {
@@ -298,7 +191,7 @@ export const questions = new Elysia({
         versionId: t.String({ format: "uuid" }),
       }),
       response: {
-        200: QuestionVersionInfo,
+        200: QuestionModel.Version,
         404: ErrorResponse,
       },
       detail: {
@@ -309,23 +202,18 @@ export const questions = new Elysia({
     },
   )
 
-  /**
-   * DELETE /questions/:id
-   * Delete question (soft delete)
-   */
   .delete(
     "/:id",
-    async ({ params, user, set }) => {
+    async ({ params, user }) => {
       const result = await QuestionService.remove(
         params.id,
         user.sub,
         user.role === "admin",
       );
-      set.status = 200;
       return result;
     },
     {
-      auth: true,
+      role: "admin",
       params: IdParam,
       response: {
         200: t.Object({ id: t.String({ format: "uuid" }) }),
@@ -340,26 +228,21 @@ export const questions = new Elysia({
     },
   )
 
-  /**
-   * POST /questions/:id/restore
-   * Restore a deleted question (admin only)
-   */
   .post(
     "/:id/restore",
-    async ({ params, user, set }) => {
+    async ({ params, user }) => {
       const result = await QuestionService.restore(
         params.id,
         user.sub,
         user.role === "admin",
       );
-      set.status = 200;
       return result;
     },
     {
       role: "admin",
       params: IdParam,
       response: {
-        200: QuestionWithDetails,
+        200: QuestionModel.QuestionWithDetails,
         400: ErrorResponse,
         401: ErrorResponse,
         403: ErrorResponse,

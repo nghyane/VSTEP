@@ -82,16 +82,17 @@ export const submissions = pgTable(
     claimedBy: uuid("claimed_by").references(() => users.id, {
       onDelete: "set null",
     }),
-    claimedAt: timestamp("claimed_at", { withTimezone: true }),
-    deadline: timestamp("deadline", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true })
+    claimedAt: timestamp("claimed_at", { withTimezone: true, mode: "string" }),
+    deadline: timestamp("deadline", { withTimezone: true, mode: "string" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
-      .notNull(),
-    completedAt: timestamp("completed_at", { withTimezone: true }),
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+      .notNull()
+      .$onUpdate(() => new Date().toISOString()),
+    completedAt: timestamp("completed_at", { withTimezone: true, mode: "string" }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
   },
   (table) => ({
     userIdIdx: index("submissions_user_id_idx").on(table.userId),
@@ -121,12 +122,13 @@ export const submissionDetails = pgTable("submission_details", {
   answer: jsonb("answer").notNull(),
   result: jsonb("result"),
   feedback: varchar("feedback"),
-  createdAt: timestamp("created_at", { withTimezone: true })
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
     .defaultNow()
     .notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
     .defaultNow()
-    .notNull(),
+    .notNull()
+    .$onUpdate(() => new Date().toISOString()),
 });
 
 export const submissionEvents = pgTable(
@@ -137,7 +139,7 @@ export const submissionEvents = pgTable(
       .references(() => submissions.id, { onDelete: "cascade" })
       .notNull(),
     kind: varchar("kind", { length: 50 }).notNull(),
-    occurredAt: timestamp("occurred_at", { withTimezone: true })
+    occurredAt: timestamp("occurred_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
     data: jsonb("data"),

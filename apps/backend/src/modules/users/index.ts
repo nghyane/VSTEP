@@ -1,10 +1,3 @@
-/**
- * Users Module Controller
- * Elysia routes for user management
- * Pattern: Elysia instance with direct service calls
- * @see https://elysiajs.com/pattern/mvc.html
- */
-
 import { UserRole } from "@common/enums";
 import {
   ErrorResponse,
@@ -15,50 +8,32 @@ import {
 } from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
+import { ForbiddenError } from "@/plugins/error";
+import { UserModel } from "./model";
 import { UserService } from "./service";
 
-// ─── Shared Schemas ─────────────────────────────────────────────
-
-const UserResponse = t.Object({
-  id: t.String({ format: "uuid" }),
-  email: t.String(),
-  fullName: t.Nullable(t.String()),
-  role: UserRole,
-  createdAt: t.String({ format: "date-time" }),
-  updatedAt: t.String({ format: "date-time" }),
-});
-
-// ─── Controller ─────────────────────────────────────────────────
-
-/**
- * Users controller mounted at /users
- * Direct service calls - no .decorate() needed for static methods
- */
 export const users = new Elysia({
   prefix: "/users",
   detail: { tags: ["Users"] },
 })
   .use(authPlugin)
 
-  // ============ Protected Routes ============
-
-  /**
-   * GET /users/:id
-   * Get user by ID
-   */
   .get(
     "/:id",
-    async ({ params, set }) => {
+    async ({ params, user }) => {
+      if (user.role !== "admin" && params.id !== user.sub) {
+        throw new ForbiddenError("You can only view your own profile");
+      }
       const result = await UserService.getById(params.id);
-      set.status = 200;
       return result;
     },
     {
       auth: true,
       params: IdParam,
       response: {
-        200: UserResponse,
+        200: UserModel.User,
         401: ErrorResponse,
+        403: ErrorResponse,
         404: ErrorResponse,
       },
       detail: {
@@ -68,15 +43,10 @@ export const users = new Elysia({
     },
   )
 
-  /**
-   * GET /users
-   * List users (admin only)
-   */
   .get(
     "/",
-    async ({ query, set }) => {
+    async ({ query }) => {
       const result = await UserService.list(query);
-      set.status = 200;
       return result;
     },
     {
@@ -88,7 +58,7 @@ export const users = new Elysia({
       }),
       response: {
         200: t.Object({
-          data: t.Array(UserResponse),
+          data: t.Array(UserModel.User),
           meta: PaginationMeta,
         }),
         401: ErrorResponse,
@@ -101,10 +71,6 @@ export const users = new Elysia({
     },
   )
 
-  /**
-   * POST /users
-   * Create new user (admin only)
-   */
   .post(
     "/",
     async ({ body, set }) => {
@@ -114,25 +80,9 @@ export const users = new Elysia({
     },
     {
       role: "admin",
-      body: t.Object({
-        email: t.String({
-          format: "email",
-          error: "Valid email is required",
-        }),
-        password: t.String({
-          minLength: 8,
-          error: "Password must be at least 8 characters",
-        }),
-        fullName: t.Optional(
-          t.String({
-            minLength: 1,
-            maxLength: 100,
-          }),
-        ),
-        role: t.Optional(UserRole),
-      }),
+      body: UserModel.CreateBody,
       response: {
-        201: UserResponse,
+        201: UserModel.User,
         401: ErrorResponse,
         403: ErrorResponse,
         409: ErrorResponse,
@@ -144,44 +94,23 @@ export const users = new Elysia({
     },
   )
 
-  /**
-   * PATCH /users/:id
-   * Update user
-   */
   .patch(
     "/:id",
-    async ({ params, body, user, set }) => {
+    async ({ params, body, user }) => {
       const result = await UserService.update(
         params.id,
         body,
         user.sub,
         user.role === "admin",
       );
-      set.status = 200;
       return result;
     },
     {
       auth: true,
       params: IdParam,
-      body: t.Partial(
-        t.Object({
-          email: t.String({ format: "email" }),
-          fullName: t.Optional(
-            t.Nullable(
-              t.String({
-                minLength: 1,
-                maxLength: 100,
-              }),
-            ),
-          ),
-          role: UserRole,
-          password: t.String({
-            minLength: 8,
-          }),
-        }),
-      ),
+      body: UserModel.UpdateBody,
       response: {
-        200: UserResponse,
+        200: UserModel.User,
         401: ErrorResponse,
         404: ErrorResponse,
         409: ErrorResponse,
@@ -193,15 +122,10 @@ export const users = new Elysia({
     },
   )
 
-  /**
-   * DELETE /users/:id
-   * Soft delete user (admin only)
-   */
   .delete(
     "/:id",
-    async ({ params, set }) => {
+    async ({ params }) => {
       const result = await UserService.remove(params.id);
-      set.status = 200;
       return result;
     },
     {
@@ -223,32 +147,21 @@ export const users = new Elysia({
     },
   )
 
-  /**
-   * POST /users/:id/password
-   * Update user password
-   */
   .post(
     "/:id/password",
-    async ({ params, body, user, set }) => {
+    async ({ params, body, user }) => {
       const result = await UserService.updatePassword(
         params.id,
         body,
         user.sub,
         user.role === "admin",
       );
-      set.status = 200;
       return result;
     },
     {
       auth: true,
       params: IdParam,
-      body: t.Object({
-        currentPassword: t.String(),
-        newPassword: t.String({
-          minLength: 8,
-          error: "New password must be at least 8 characters",
-        }),
-      }),
+      body: UserModel.PasswordBody,
       response: {
         200: SuccessResponse,
         401: ErrorResponse,

@@ -1,53 +1,9 @@
-/**
- * Exams Module Controller
- * Routes for exam management
- */
-
-import { ExamStatus, QuestionLevel } from "@common/enums";
-import {
-  ErrorResponse,
-  IdParam,
-  PaginationMeta,
-  PaginationQuery,
-} from "@common/schemas";
+import { QuestionLevel } from "@common/enums";
+import { ErrorResponse, IdParam, PaginationMeta, PaginationQuery } from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
+import { ExamModel } from "./model";
 import { ExamService } from "./service";
-
-// ─── Inline Schemas ──────────────────────────────────────────────
-
-const ExamSchema = t.Object({
-  id: t.String({ format: "uuid" }),
-  level: QuestionLevel,
-  blueprint: t.Any(),
-  isActive: t.Boolean(),
-  createdBy: t.Nullable(t.String({ format: "uuid" })),
-  createdAt: t.String({ format: "date-time" }),
-  updatedAt: t.String({ format: "date-time" }),
-});
-
-const ExamSessionSchema = t.Object({
-  id: t.String({ format: "uuid" }),
-  userId: t.String({ format: "uuid" }),
-  examId: t.String({ format: "uuid" }),
-  status: ExamStatus,
-  listeningScore: t.Nullable(t.Number()),
-  readingScore: t.Nullable(t.Number()),
-  writingScore: t.Nullable(t.Number()),
-  speakingScore: t.Nullable(t.Number()),
-  overallScore: t.Nullable(t.Number()),
-  skillScores: t.Nullable(t.Any()),
-  startedAt: t.String({ format: "date-time" }),
-  completedAt: t.Nullable(t.String({ format: "date-time" })),
-  createdAt: t.String({ format: "date-time" }),
-  updatedAt: t.String({ format: "date-time" }),
-});
-
-const SessionIdParam = t.Object({
-  sessionId: t.String({ format: "uuid" }),
-});
-
-// ─── Controller ──────────────────────────────────────────────────
 
 export const exams = new Elysia({
   prefix: "/exams",
@@ -55,14 +11,13 @@ export const exams = new Elysia({
 })
   .use(authPlugin)
 
-  // ============ Public Routes ============
-
   .get(
     "/",
     async ({ query }) => {
       return await ExamService.list(query);
     },
     {
+      auth: true,
       query: t.Object({
         ...PaginationQuery.properties,
         level: t.Optional(QuestionLevel),
@@ -70,9 +25,10 @@ export const exams = new Elysia({
       }),
       response: {
         200: t.Object({
-          data: t.Array(ExamSchema),
+          data: t.Array(ExamModel.Exam),
           meta: PaginationMeta,
         }),
+        401: ErrorResponse,
       },
       detail: {
         summary: "List exams",
@@ -86,9 +42,11 @@ export const exams = new Elysia({
       return await ExamService.getById(id);
     },
     {
+      auth: true,
       params: IdParam,
       response: {
-        200: ExamSchema,
+        200: ExamModel.Exam,
+        401: ErrorResponse,
         404: ErrorResponse,
       },
       detail: {
@@ -96,8 +54,6 @@ export const exams = new Elysia({
       },
     },
   )
-
-  // ============ Admin Routes ============
 
   .post(
     "/",
@@ -107,13 +63,9 @@ export const exams = new Elysia({
     },
     {
       role: "admin",
-      body: t.Object({
-        level: QuestionLevel,
-        blueprint: t.Any(),
-        isActive: t.Optional(t.Boolean({ default: true })),
-      }),
+      body: ExamModel.CreateBody,
       response: {
-        201: ExamSchema,
+        201: ExamModel.Exam,
         401: ErrorResponse,
         403: ErrorResponse,
       },
@@ -131,15 +83,9 @@ export const exams = new Elysia({
     {
       role: "admin",
       params: IdParam,
-      body: t.Partial(
-        t.Object({
-          level: QuestionLevel,
-          blueprint: t.Any(),
-          isActive: t.Boolean(),
-        }),
-      ),
+      body: ExamModel.UpdateBody,
       response: {
-        200: ExamSchema,
+        200: ExamModel.Exam,
         401: ErrorResponse,
         403: ErrorResponse,
         404: ErrorResponse,
@@ -150,22 +96,19 @@ export const exams = new Elysia({
     },
   )
 
-  // ============ Session Routes (Auth Required) ============
-
   .post(
-    "/sessions",
-    async ({ body, user }) => {
-      return await ExamService.startSession(user.sub, body);
+    "/:id/start",
+    async ({ params: { id }, user }) => {
+      return await ExamService.startSession(user.sub, id);
     },
     {
       auth: true,
-      body: t.Object({
-        examId: t.String({ format: "uuid" }),
-      }),
+      params: IdParam,
       response: {
-        200: ExamSessionSchema,
+        200: ExamModel.Session,
         400: ErrorResponse,
         401: ErrorResponse,
+        404: ErrorResponse,
       },
       detail: {
         summary: "Start exam session",
@@ -184,9 +127,9 @@ export const exams = new Elysia({
     },
     {
       auth: true,
-      params: SessionIdParam,
+      params: ExamModel.SessionIdParam,
       response: {
-        200: ExamSessionSchema,
+        200: ExamModel.Session,
         401: ErrorResponse,
         403: ErrorResponse,
         404: ErrorResponse,
@@ -197,14 +140,39 @@ export const exams = new Elysia({
     },
   )
 
+  .put(
+    "/sessions/:sessionId",
+    async ({ params: { sessionId }, body, user }) => {
+      return await ExamService.saveAnswers(
+        sessionId,
+        user.sub,
+        body.answers,
+      );
+    },
+    {
+      auth: true,
+      params: ExamModel.SessionIdParam,
+      body: ExamModel.AnswerSaveBody,
+      response: {
+        200: t.Object({ success: t.Boolean(), saved: t.Number() }),
+        400: ErrorResponse,
+        401: ErrorResponse,
+        403: ErrorResponse,
+      },
+      detail: {
+        summary: "Auto-save answers for session",
+      },
+    },
+  )
+
   .post(
-    "/sessions/:sessionId/submit",
+    "/sessions/:sessionId/answer",
     async ({ params: { sessionId }, body, user }) => {
       return await ExamService.submitAnswer(sessionId, user.sub, body);
     },
     {
       auth: true,
-      params: SessionIdParam,
+      params: ExamModel.SessionIdParam,
       body: t.Object({
         questionId: t.String({ format: "uuid" }),
         answer: t.Any(),
@@ -216,27 +184,27 @@ export const exams = new Elysia({
         403: ErrorResponse,
       },
       detail: {
-        summary: "Submit answer for session",
+        summary: "Submit single answer for session",
       },
     },
   )
 
   .post(
-    "/sessions/:sessionId/complete",
+    "/sessions/:sessionId/submit",
     async ({ params: { sessionId }, user }) => {
-      return await ExamService.completeSession(sessionId, user.sub);
+      return await ExamService.submitExam(sessionId, user.sub);
     },
     {
       auth: true,
-      params: SessionIdParam,
+      params: ExamModel.SessionIdParam,
       response: {
-        200: ExamSessionSchema,
+        200: ExamModel.Session,
         400: ErrorResponse,
         401: ErrorResponse,
         403: ErrorResponse,
       },
       detail: {
-        summary: "Complete exam session",
+        summary: "Submit exam for grading",
       },
     },
   );

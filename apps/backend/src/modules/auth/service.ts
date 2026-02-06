@@ -1,32 +1,25 @@
 import { env } from "@common/env";
 import { assertExists } from "@common/utils";
-import { and, asc, eq, gt, isNull } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNull } from "drizzle-orm";
 import { SignJWT } from "jose";
 import { db, table } from "@/db";
 import type { JWTPayload } from "@/plugins/auth";
 import { ConflictError, UnauthorizedError } from "@/plugins/error";
+import type { AuthModel } from "./model";
 
-// ── JWT secrets (encoded once at startup) ───────────────────────
-
+// env validates JWT_SECRET at startup; ! needed because skipValidation widens type
 const ACCESS_SECRET = new TextEncoder().encode(env.JWT_SECRET!);
 
 const MAX_REFRESH_TOKENS = 3;
 
-export interface UserInfo {
-  id: string;
-  email: string;
-  fullName: string | null;
-  role: "learner" | "instructor" | "admin";
-}
+type UserInfo = AuthModel.UserInfo;
 
-/** SHA-256 hash for refresh token storage */
 function hashToken(token: string): string {
   const hasher = new Bun.CryptoHasher("sha256");
   hasher.update(token);
   return hasher.digest("hex");
 }
 
-/** Parse duration string (e.g. "15m", "7d") to seconds */
 export function parseExpiry(str: string): number {
   const match = str.match(/^(\d+)(s|m|h|d)$/);
   if (!match) return 900;
@@ -45,8 +38,7 @@ export function parseExpiry(str: string): number {
   }
 }
 
-export abstract class AuthService {
-  /** Sign a JWT access token with jose */
+export class AuthService {
   static async signAccessToken(payload: JWTPayload): Promise<string> {
     return new SignJWT({ ...payload })
       .setProtectedHeader({ alg: "HS256" })
@@ -69,9 +61,6 @@ export abstract class AuthService {
     return Bun.password.verify(password, hash);
   }
 
-  /**
-   * Login: verify credentials → enforce max 3 tokens (FIFO) → issue refresh token.
-   */
   static async login(body: {
     email: string;
     password: string;
@@ -101,7 +90,7 @@ export abstract class AuthService {
 
     const refreshToken = crypto.randomUUID();
     const jti = crypto.randomUUID();
-    const refreshExpirySeconds = parseExpiry(env.JWT_REFRESH_EXPIRES_IN);
+    const refreshExpirySeconds = parseExpiry(env.JWT_REFRESH_EXPIRES_IN!);
 
     await db.transaction(async (tx) => {
       // Enforce max 3 active refresh tokens per user (FIFO — revoke oldest)
@@ -109,7 +98,7 @@ export abstract class AuthService {
         where: and(
           eq(table.refreshTokens.userId, user.id),
           isNull(table.refreshTokens.revokedAt),
-          gt(table.refreshTokens.expiresAt, new Date()),
+          gt(table.refreshTokens.expiresAt, new Date().toISOString()),
         ),
         columns: { id: true },
         orderBy: asc(table.refreshTokens.createdAt),
@@ -120,12 +109,11 @@ export abstract class AuthService {
           0,
           activeTokens.length - MAX_REFRESH_TOKENS + 1,
         );
-        for (const t of tokensToRevoke) {
-          await tx
-            .update(table.refreshTokens)
-            .set({ revokedAt: new Date() })
-            .where(eq(table.refreshTokens.id, t.id));
-        }
+        const idsToRevoke = tokensToRevoke.map((t) => t.id);
+        await tx
+          .update(table.refreshTokens)
+          .set({ revokedAt: new Date().toISOString() })
+          .where(inArray(table.refreshTokens.id, idsToRevoke));
       }
 
       await tx.insert(table.refreshTokens).values({
@@ -133,7 +121,7 @@ export abstract class AuthService {
         tokenHash: hashToken(refreshToken),
         jti,
         deviceInfo: body.deviceInfo,
-        expiresAt: new Date(Date.now() + refreshExpirySeconds * 1000),
+        expiresAt: new Date(Date.now() + refreshExpirySeconds * 1000).toISOString(),
       });
     });
 
@@ -149,9 +137,6 @@ export abstract class AuthService {
     };
   }
 
-  /**
-   * Register a new user.
-   */
   static async register(body: {
     email: string;
     password: string;
@@ -189,10 +174,6 @@ export abstract class AuthService {
     };
   }
 
-  /**
-   * Refresh: rotate token + reuse detection.
-   * If a rotated (revoked) token is reused → revoke ALL user tokens (token family attack).
-   */
   static async refreshToken(
     refreshToken: string,
     deviceInfo?: string,
@@ -221,7 +202,7 @@ export abstract class AuthService {
       // Revoke ALL tokens for this user (token family attack)
       await db
         .update(table.refreshTokens)
-        .set({ revokedAt: new Date() })
+        .set({ revokedAt: new Date().toISOString() })
         .where(
           and(
             eq(table.refreshTokens.userId, tokenRecord.userId),
@@ -234,7 +215,7 @@ export abstract class AuthService {
     }
 
     // Token expired
-    if (tokenRecord.expiresAt <= new Date()) {
+    if (new Date(tokenRecord.expiresAt) <= new Date()) {
       throw new UnauthorizedError("Refresh token expired");
     }
 
@@ -251,12 +232,12 @@ export abstract class AuthService {
     // Rotate: revoke old, issue new
     const newRefreshToken = crypto.randomUUID();
     const newJti = crypto.randomUUID();
-    const refreshExpirySeconds = parseExpiry(env.JWT_REFRESH_EXPIRES_IN);
+    const refreshExpirySeconds = parseExpiry(env.JWT_REFRESH_EXPIRES_IN!);
 
     await db.transaction(async (tx) => {
       await tx
         .update(table.refreshTokens)
-        .set({ revokedAt: new Date(), replacedByJti: newJti })
+        .set({ revokedAt: new Date().toISOString(), replacedByJti: newJti })
         .where(eq(table.refreshTokens.id, tokenRecord.id));
 
       await tx.insert(table.refreshTokens).values({
@@ -264,7 +245,7 @@ export abstract class AuthService {
         tokenHash: hashToken(newRefreshToken),
         jti: newJti,
         deviceInfo,
-        expiresAt: new Date(Date.now() + refreshExpirySeconds * 1000),
+        expiresAt: new Date(Date.now() + refreshExpirySeconds * 1000).toISOString(),
       });
     });
 
@@ -280,13 +261,10 @@ export abstract class AuthService {
     };
   }
 
-  /**
-   * Revoke a refresh token (logout).
-   */
   static async logout(refreshToken: string): Promise<{ message: string }> {
     await db
       .update(table.refreshTokens)
-      .set({ revokedAt: new Date() })
+      .set({ revokedAt: new Date().toISOString() })
       .where(eq(table.refreshTokens.tokenHash, hashToken(refreshToken)));
 
     return { message: "Logged out successfully" };

@@ -31,13 +31,14 @@ export const exams = pgTable(
     createdBy: uuid("created_by").references(() => users.id, {
       onDelete: "set null",
     }),
-    createdAt: timestamp("created_at", { withTimezone: true })
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
-      .notNull(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+      .notNull()
+      .$onUpdate(() => new Date().toISOString()),
+    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
   },
   (table) => ({
     levelIdx: index("exams_level_idx").on(table.level),
@@ -84,17 +85,18 @@ export const examSessions = pgTable(
       mode: "number",
     }),
     skillScores: jsonb("skill_scores"),
-    startedAt: timestamp("started_at", { withTimezone: true })
+    startedAt: timestamp("started_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
-    completedAt: timestamp("completed_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true })
+    completedAt: timestamp("completed_at", { withTimezone: true, mode: "string" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
-      .notNull(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+      .notNull()
+      .$onUpdate(() => new Date().toISOString()),
+    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
   },
   (table) => ({
     userIdx: index("exam_sessions_user_idx").on(table.userId),
@@ -117,12 +119,13 @@ export const examAnswers = pgTable(
       .notNull(),
     answer: jsonb("answer").notNull(),
     isCorrect: boolean("is_correct"),
-    createdAt: timestamp("created_at", { withTimezone: true })
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
-      .notNull(),
+      .notNull()
+      .$onUpdate(() => new Date().toISOString()),
   },
   (table) => ({
     sessionQuestionUnique: uniqueIndex("exam_answers_session_question_idx").on(
@@ -143,7 +146,7 @@ export const examSubmissions = pgTable(
       .references(() => submissions.id, { onDelete: "cascade" })
       .notNull(),
     skill: skillEnum("skill").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
   },
