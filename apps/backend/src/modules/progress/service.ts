@@ -1,4 +1,5 @@
 import { and, eq } from "drizzle-orm";
+import type { UserProgress } from "@/db";
 import { db, table } from "@/db";
 
 export abstract class ProgressService {
@@ -11,11 +12,11 @@ export abstract class ProgressService {
   }
 
   /** Get detailed progress for a specific skill */
-  static async getBySkill(skill: string, userId: string) {
+  static async getBySkill(skill: UserProgress["skill"], userId: string) {
     const progress = await db.query.userProgress.findFirst({
       where: and(
         eq(table.userProgress.userId, userId),
-        eq(table.userProgress.skill, skill as any),
+        eq(table.userProgress.skill, skill),
       ),
     });
 
