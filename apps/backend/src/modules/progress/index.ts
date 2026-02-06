@@ -3,6 +3,7 @@
  * Routes for tracking user progress
  */
 
+import { QuestionLevel, Skill, StreakDirection } from "@common/enums";
 import {
   ErrorResponse,
   IdParam,
@@ -15,32 +16,12 @@ import { ProgressService } from "./service";
 
 // ─── Inline Schemas ─────────────────────────────────────────────
 
-const SkillType = t.Union([
-  t.Literal("listening"),
-  t.Literal("reading"),
-  t.Literal("writing"),
-  t.Literal("speaking"),
-]);
-
-const LevelType = t.Union([
-  t.Literal("A2"),
-  t.Literal("B1"),
-  t.Literal("B2"),
-  t.Literal("C1"),
-]);
-
-const StreakDirection = t.Union([
-  t.Literal("up"),
-  t.Literal("down"),
-  t.Literal("neutral"),
-]);
-
 const ProgressResponse = t.Object({
   id: t.String({ format: "uuid" }),
   userId: t.String({ format: "uuid" }),
-  skill: SkillType,
-  currentLevel: LevelType,
-  targetLevel: t.Nullable(LevelType),
+  skill: Skill,
+  currentLevel: QuestionLevel,
+  targetLevel: t.Nullable(QuestionLevel),
   scaffoldLevel: t.Number(),
   streakCount: t.Number(),
   streakDirection: t.Nullable(StreakDirection),
@@ -51,7 +32,10 @@ const ProgressResponse = t.Object({
 
 // ─── Controller ──────────────────────────────────────────────────
 
-export const progress = new Elysia({ prefix: "/progress" })
+export const progress = new Elysia({
+  prefix: "/progress",
+  detail: { tags: ["Progress"] },
+})
   .use(authPlugin)
 
   /**
@@ -71,8 +55,8 @@ export const progress = new Elysia({ prefix: "/progress" })
       auth: true,
       query: t.Object({
         ...PaginationQuery.properties,
-        skill: t.Optional(SkillType),
-        currentLevel: t.Optional(LevelType),
+        skill: t.Optional(Skill),
+        currentLevel: t.Optional(QuestionLevel),
         userId: t.Optional(t.String({ format: "uuid" })),
       }),
       response: {
@@ -84,7 +68,6 @@ export const progress = new Elysia({ prefix: "/progress" })
       },
       detail: {
         summary: "List user progress",
-        tags: ["Progress"],
       },
     },
   )
@@ -108,7 +91,6 @@ export const progress = new Elysia({ prefix: "/progress" })
       },
       detail: {
         summary: "Get progress by ID",
-        tags: ["Progress"],
       },
     },
   )
@@ -125,9 +107,9 @@ export const progress = new Elysia({ prefix: "/progress" })
     {
       auth: true,
       body: t.Object({
-        skill: SkillType,
-        currentLevel: LevelType,
-        targetLevel: t.Optional(LevelType),
+        skill: Skill,
+        currentLevel: QuestionLevel,
+        targetLevel: t.Optional(QuestionLevel),
         scaffoldLevel: t.Optional(t.Number()),
         streakCount: t.Optional(t.Number()),
         streakDirection: t.Optional(StreakDirection),
@@ -138,7 +120,6 @@ export const progress = new Elysia({ prefix: "/progress" })
       },
       detail: {
         summary: "Update user progress",
-        tags: ["Progress"],
       },
     },
   );

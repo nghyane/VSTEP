@@ -3,6 +3,7 @@ import {
   index,
   pgEnum,
   pgTable,
+  text,
   timestamp,
   uniqueIndex,
   uuid,
@@ -52,6 +53,7 @@ export const refreshTokens = pgTable(
     tokenHash: varchar("token_hash", { length: 64 }).notNull(),
     jti: varchar("jti", { length: 36 }).notNull(),
     replacedByJti: varchar("replaced_by_jti", { length: 36 }),
+    deviceInfo: text("device_info"),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })

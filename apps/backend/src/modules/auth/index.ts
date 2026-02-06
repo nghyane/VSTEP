@@ -1,17 +1,9 @@
-/**
- * Auth Module Controller
- * Elysia routes for authentication
- * JWT signing via @elysiajs/jwt plugin — service handles business logic only
- * @see https://elysiajs.com/pattern/mvc.html
- */
-
 import { env } from "@common/env";
 import { ErrorResponse } from "@common/schemas";
 import { Elysia, t } from "elysia";
+import { UserService } from "@/modules/users/service";
 import { authPlugin } from "@/plugins/auth";
 import { AuthService, parseExpiry } from "./service";
-
-// ─── Shared Response Schemas ─────────────────────────────────────
 
 const UserInfo = t.Object({
   id: t.String({ format: "uuid" }),
@@ -30,35 +22,25 @@ const TokenResponse = t.Object({
   expiresIn: t.Number(),
 });
 
-// ─── Controller ──────────────────────────────────────────────────
-
-export const auth = new Elysia({ prefix: "/auth" })
+export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
   .use(authPlugin)
 
-  // POST /auth/login
   .post(
     "/login",
-    async ({ body, jwt, cookie: { auth: authCookie } }) => {
-      const { user, refreshToken } = await AuthService.login(body);
+    async ({ body, jwt, request }) => {
+      const deviceInfo = request.headers.get("user-agent") ?? undefined;
+      const { user, refreshToken, jti } = await AuthService.login({
+        ...body,
+        deviceInfo,
+      });
 
       const accessToken = await jwt.sign({
         sub: user.id,
-        email: user.email,
         role: user.role,
-        fullName: user.fullName ?? "",
+        jti,
       });
 
       const expiresIn = parseExpiry(env.JWT_EXPIRES_IN);
-
-      authCookie.set({
-        value: accessToken,
-        httpOnly: true,
-        secure: env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: expiresIn,
-        path: "/",
-      });
-
       return { user, accessToken, refreshToken, expiresIn };
     },
     {
@@ -66,19 +48,16 @@ export const auth = new Elysia({ prefix: "/auth" })
         email: t.String({ format: "email" }),
         password: t.String({ minLength: 6 }),
       }),
-      cookie: t.Object({ auth: t.Optional(t.String()) }),
       response: {
         200: t.Object({ user: UserInfo, ...TokenResponse.properties }),
       },
       detail: {
         summary: "Login",
         description: "Authenticate user with email and password",
-        tags: ["Auth"],
       },
     },
   )
 
-  // POST /auth/register
   .post(
     "/register",
     async ({ body, set }) => {
@@ -99,42 +78,30 @@ export const auth = new Elysia({ prefix: "/auth" })
       detail: {
         summary: "Register",
         description: "Register a new user account",
-        tags: ["Auth"],
       },
     },
   )
 
-  // POST /auth/refresh
   .post(
     "/refresh",
-    async ({ body, jwt, cookie: { auth: authCookie } }) => {
-      const { user, newRefreshToken } = await AuthService.refreshToken(
+    async ({ body, jwt, request }) => {
+      const deviceInfo = request.headers.get("user-agent") ?? undefined;
+      const { user, newRefreshToken, jti } = await AuthService.refreshToken(
         body.refreshToken,
+        deviceInfo,
       );
 
       const accessToken = await jwt.sign({
         sub: user.id,
-        email: user.email,
         role: user.role,
-        fullName: user.fullName ?? "",
+        jti,
       });
 
       const expiresIn = parseExpiry(env.JWT_EXPIRES_IN);
-
-      authCookie.set({
-        value: accessToken,
-        httpOnly: true,
-        secure: env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: expiresIn,
-        path: "/",
-      });
-
       return { accessToken, refreshToken: newRefreshToken, expiresIn };
     },
     {
       body: t.Object({ refreshToken: t.String() }),
-      cookie: t.Object({ auth: t.Optional(t.String()) }),
       response: {
         200: TokenResponse,
         401: ErrorResponse,
@@ -142,43 +109,31 @@ export const auth = new Elysia({ prefix: "/auth" })
       detail: {
         summary: "Refresh token",
         description: "Get new access token using refresh token",
-        tags: ["Auth"],
       },
     },
   )
 
-  // POST /auth/logout
   .post(
     "/logout",
-    async ({ body, cookie: { auth: authCookie } }) => {
-      const result = await AuthService.logout(body.refreshToken);
-      authCookie.remove();
-      return result;
+    async ({ body }) => {
+      return AuthService.logout(body.refreshToken);
     },
     {
       body: t.Object({ refreshToken: t.String() }),
-      cookie: t.Object({ auth: t.Optional(t.String()) }),
       response: {
         200: t.Object({ message: t.String() }),
       },
       detail: {
         summary: "Logout",
         description: "Logout user and revoke refresh token",
-        tags: ["Auth"],
       },
     },
   )
 
-  // GET /auth/me
   .get(
     "/me",
-    ({ user }) => ({
-      user: {
-        id: user.sub,
-        email: user.email,
-        fullName: user.fullName,
-        role: user.role,
-      },
+    async ({ user }) => ({
+      user: await UserService.getById(user.sub),
     }),
     {
       auth: true,
@@ -189,7 +144,6 @@ export const auth = new Elysia({ prefix: "/auth" })
       detail: {
         summary: "Get current user",
         description: "Get details of the currently authenticated user",
-        tags: ["Auth"],
       },
     },
   );

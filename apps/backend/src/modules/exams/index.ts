@@ -3,6 +3,7 @@
  * Routes for exam management
  */
 
+import { ExamStatus, QuestionLevel } from "@common/enums";
 import {
   ErrorResponse,
   IdParam,
@@ -15,22 +16,9 @@ import { ExamService } from "./service";
 
 // ─── Inline Schemas ──────────────────────────────────────────────
 
-const ExamLevel = t.Union([
-  t.Literal("A2"),
-  t.Literal("B1"),
-  t.Literal("B2"),
-  t.Literal("C1"),
-]);
-
-const ExamStatus = t.Union([
-  t.Literal("in_progress"),
-  t.Literal("completed"),
-  t.Literal("abandoned"),
-]);
-
 const ExamSchema = t.Object({
   id: t.String({ format: "uuid" }),
-  level: ExamLevel,
+  level: QuestionLevel,
   blueprint: t.Any(),
   isActive: t.Boolean(),
   createdBy: t.Nullable(t.String({ format: "uuid" })),
@@ -61,7 +49,10 @@ const SessionIdParam = t.Object({
 
 // ─── Controller ──────────────────────────────────────────────────
 
-export const exams = new Elysia({ prefix: "/exams" })
+export const exams = new Elysia({
+  prefix: "/exams",
+  detail: { tags: ["Exams"] },
+})
   .use(authPlugin)
 
   // ============ Public Routes ============
@@ -74,7 +65,7 @@ export const exams = new Elysia({ prefix: "/exams" })
     {
       query: t.Object({
         ...PaginationQuery.properties,
-        level: t.Optional(ExamLevel),
+        level: t.Optional(QuestionLevel),
         isActive: t.Optional(t.Boolean()),
       }),
       response: {
@@ -85,7 +76,6 @@ export const exams = new Elysia({ prefix: "/exams" })
       },
       detail: {
         summary: "List exams",
-        tags: ["Exams"],
       },
     },
   )
@@ -103,7 +93,6 @@ export const exams = new Elysia({ prefix: "/exams" })
       },
       detail: {
         summary: "Get exam by ID",
-        tags: ["Exams"],
       },
     },
   )
@@ -112,24 +101,24 @@ export const exams = new Elysia({ prefix: "/exams" })
 
   .post(
     "/",
-    async ({ body, user }) => {
+    async ({ body, user, set }) => {
+      set.status = 201;
       return await ExamService.create(user!.sub, body);
     },
     {
       role: "admin",
       body: t.Object({
-        level: ExamLevel,
+        level: QuestionLevel,
         blueprint: t.Any(),
         isActive: t.Optional(t.Boolean({ default: true })),
       }),
       response: {
-        200: ExamSchema,
+        201: ExamSchema,
         401: ErrorResponse,
         403: ErrorResponse,
       },
       detail: {
         summary: "Create exam (Admin)",
-        tags: ["Exams"],
       },
     },
   )
@@ -144,7 +133,7 @@ export const exams = new Elysia({ prefix: "/exams" })
       params: IdParam,
       body: t.Partial(
         t.Object({
-          level: ExamLevel,
+          level: QuestionLevel,
           blueprint: t.Any(),
           isActive: t.Boolean(),
         }),
@@ -157,7 +146,6 @@ export const exams = new Elysia({ prefix: "/exams" })
       },
       detail: {
         summary: "Update exam (Admin)",
-        tags: ["Exams"],
       },
     },
   )
@@ -181,7 +169,6 @@ export const exams = new Elysia({ prefix: "/exams" })
       },
       detail: {
         summary: "Start exam session",
-        tags: ["Exams"],
       },
     },
   )
@@ -206,7 +193,6 @@ export const exams = new Elysia({ prefix: "/exams" })
       },
       detail: {
         summary: "Get session by ID",
-        tags: ["Exams"],
       },
     },
   )
@@ -231,7 +217,6 @@ export const exams = new Elysia({ prefix: "/exams" })
       },
       detail: {
         summary: "Submit answer for session",
-        tags: ["Exams"],
       },
     },
   )
@@ -252,7 +237,6 @@ export const exams = new Elysia({ prefix: "/exams" })
       },
       detail: {
         summary: "Complete exam session",
-        tags: ["Exams"],
       },
     },
   );

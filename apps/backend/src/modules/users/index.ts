@@ -5,8 +5,8 @@
  * @see https://elysiajs.com/pattern/mvc.html
  */
 
+import { UserRole } from "@common/enums";
 import {
-  createResponseSchema,
   ErrorResponse,
   IdParam,
   PaginationMeta,
@@ -14,20 +14,18 @@ import {
   SuccessResponse,
 } from "@common/schemas";
 import { Elysia, t } from "elysia";
-import { table } from "@/db";
 import { authPlugin } from "@/plugins/auth";
 import { UserService } from "./service";
 
 // ─── Shared Schemas ─────────────────────────────────────────────
 
-const UserRole = t.Union([
-  t.Literal("learner"),
-  t.Literal("instructor"),
-  t.Literal("admin"),
-]);
-
-const UserResponse = createResponseSchema(table.users, {
-  omit: ["passwordHash", "deletedAt"],
+const UserResponse = t.Object({
+  id: t.String({ format: "uuid" }),
+  email: t.String(),
+  fullName: t.Nullable(t.String()),
+  role: UserRole,
+  createdAt: t.String({ format: "date-time" }),
+  updatedAt: t.String({ format: "date-time" }),
 });
 
 // ─── Controller ─────────────────────────────────────────────────
@@ -36,7 +34,10 @@ const UserResponse = createResponseSchema(table.users, {
  * Users controller mounted at /users
  * Direct service calls - no .decorate() needed for static methods
  */
-export const users = new Elysia({ prefix: "/users" })
+export const users = new Elysia({
+  prefix: "/users",
+  detail: { tags: ["Users"] },
+})
   .use(authPlugin)
 
   // ============ Protected Routes ============
@@ -63,7 +64,6 @@ export const users = new Elysia({ prefix: "/users" })
       detail: {
         summary: "Get user",
         description: "Get user details by ID",
-        tags: ["Users"],
       },
     },
   )
@@ -97,7 +97,6 @@ export const users = new Elysia({ prefix: "/users" })
       detail: {
         summary: "List users",
         description: "List users with pagination and filtering (Admin only)",
-        tags: ["Users"],
       },
     },
   )
@@ -141,7 +140,6 @@ export const users = new Elysia({ prefix: "/users" })
       detail: {
         summary: "Create user",
         description: "Create a new user account (Admin only)",
-        tags: ["Users"],
       },
     },
   )
@@ -191,7 +189,6 @@ export const users = new Elysia({ prefix: "/users" })
       detail: {
         summary: "Update user",
         description: "Update user details",
-        tags: ["Users"],
       },
     },
   )
@@ -222,7 +219,6 @@ export const users = new Elysia({ prefix: "/users" })
       detail: {
         summary: "Delete user",
         description: "Soft delete a user account (Admin only)",
-        tags: ["Users"],
       },
     },
   )
@@ -262,7 +258,6 @@ export const users = new Elysia({ prefix: "/users" })
       detail: {
         summary: "Update password",
         description: "Update user password",
-        tags: ["Users"],
       },
     },
   );

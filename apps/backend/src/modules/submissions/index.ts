@@ -3,6 +3,7 @@
  * Elysia routes for submission management
  */
 
+import { Skill, SubmissionStatus as SubmissionStatusEnum } from "@common/enums";
 import {
   ErrorResponse,
   IdParam,
@@ -13,34 +14,14 @@ import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import { SubmissionService } from "./service";
 
-// ─── Inline enum schemas ────────────────────────────────────────
-
-const SkillType = t.Union([
-  t.Literal("listening"),
-  t.Literal("reading"),
-  t.Literal("writing"),
-  t.Literal("speaking"),
-]);
-
-const SubmissionStatus = t.Union([
-  t.Literal("pending"),
-  t.Literal("queued"),
-  t.Literal("processing"),
-  t.Literal("completed"),
-  t.Literal("review_pending"),
-  t.Literal("error"),
-  t.Literal("retrying"),
-  t.Literal("failed"),
-]);
-
 // ─── Inline response schemas ────────────────────────────────────
 
 const SubmissionInfo = t.Object({
   id: t.String({ format: "uuid" }),
   userId: t.String({ format: "uuid" }),
   questionId: t.String({ format: "uuid" }),
-  skill: SkillType,
-  status: SubmissionStatus,
+  skill: Skill,
+  status: SubmissionStatusEnum,
   score: t.Optional(t.Nullable(t.Number())),
   band: t.Optional(
     t.Nullable(
@@ -67,7 +48,10 @@ const SubmissionWithDetails = t.Object({
 
 // ─── Controller ─────────────────────────────────────────────────
 
-export const submissions = new Elysia({ prefix: "/submissions" })
+export const submissions = new Elysia({
+  prefix: "/submissions",
+  detail: { tags: ["Submissions"] },
+})
   .use(authPlugin)
 
   /**
@@ -89,8 +73,8 @@ export const submissions = new Elysia({ prefix: "/submissions" })
       auth: true,
       query: t.Object({
         ...PaginationQuery.properties,
-        skill: t.Optional(SkillType),
-        status: t.Optional(SubmissionStatus),
+        skill: t.Optional(Skill),
+        status: t.Optional(SubmissionStatusEnum),
         userId: t.Optional(t.String({ format: "uuid" })),
       }),
       response: {
@@ -103,7 +87,6 @@ export const submissions = new Elysia({ prefix: "/submissions" })
       detail: {
         summary: "List submissions",
         description: "List submissions with filtering and pagination",
-        tags: ["Submissions"],
       },
     },
   )
@@ -135,7 +118,6 @@ export const submissions = new Elysia({ prefix: "/submissions" })
       detail: {
         summary: "Get submission",
         description: "Get a submission by ID",
-        tags: ["Submissions"],
       },
     },
   )
@@ -155,7 +137,7 @@ export const submissions = new Elysia({ prefix: "/submissions" })
       auth: true,
       body: t.Object({
         questionId: t.String({ format: "uuid" }),
-        skill: SkillType,
+        skill: Skill,
         answer: t.Any(),
       }),
       response: {
@@ -168,7 +150,6 @@ export const submissions = new Elysia({ prefix: "/submissions" })
       detail: {
         summary: "Create submission",
         description: "Create a new submission",
-        tags: ["Submissions"],
       },
     },
   )
@@ -195,7 +176,7 @@ export const submissions = new Elysia({ prefix: "/submissions" })
       body: t.Partial(
         t.Object({
           answer: t.Any(),
-          status: SubmissionStatus,
+          status: SubmissionStatusEnum,
           score: t.Number(),
           band: t.Union([
             t.Literal("A1"),
@@ -218,7 +199,6 @@ export const submissions = new Elysia({ prefix: "/submissions" })
       detail: {
         summary: "Update submission",
         description: "Update a submission",
-        tags: ["Submissions"],
       },
     },
   )
@@ -239,7 +219,7 @@ export const submissions = new Elysia({ prefix: "/submissions" })
       params: IdParam,
       body: t.Object({
         score: t.Number(),
-        band: t.Optional(t.Number()),
+        band: t.Optional(t.String()),
         feedback: t.Optional(t.String()),
       }),
       response: {
@@ -252,7 +232,6 @@ export const submissions = new Elysia({ prefix: "/submissions" })
       detail: {
         summary: "Grade submission",
         description: "Grade a submission (instructor/admin only)",
-        tags: ["Submissions"],
       },
     },
   )
@@ -283,7 +262,6 @@ export const submissions = new Elysia({ prefix: "/submissions" })
       detail: {
         summary: "Auto-grade submission",
         description: "Auto-grade an objective submission (admin only)",
-        tags: ["Submissions"],
       },
     },
   )
@@ -315,7 +293,6 @@ export const submissions = new Elysia({ prefix: "/submissions" })
       detail: {
         summary: "Delete submission",
         description: "Soft delete a submission",
-        tags: ["Submissions"],
       },
     },
   );

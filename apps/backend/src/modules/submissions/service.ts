@@ -3,8 +3,8 @@
  * Business logic for submission management
  */
 
-import { assertExists } from "@common/utils";
-import { and, count, desc, eq } from "drizzle-orm";
+import { assertExists, serializeDates } from "@common/utils";
+import { and, count, desc, eq, sql } from "drizzle-orm";
 import type { Submission } from "@/db";
 import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
 import {
@@ -13,41 +13,26 @@ import {
   NotFoundError,
 } from "@/plugins/error";
 
-// ─── Response mapper ────────────────────────────────────────────
+const SUBMISSION_COLUMNS = {
+  id: table.submissions.id,
+  userId: table.submissions.userId,
+  questionId: table.submissions.questionId,
+  skill: table.submissions.skill,
+  status: table.submissions.status,
+  score: table.submissions.score,
+  band: table.submissions.band,
+  completedAt: table.submissions.completedAt,
+  createdAt: table.submissions.createdAt,
+  updatedAt: table.submissions.updatedAt,
+} as const;
 
-const mapSubmissionResponse = (
-  sub: {
-    id: string;
-    userId: string;
-    questionId: string;
-    skill: string;
-    status: string;
-    score: number | null | undefined;
-    band: string | null | undefined;
-    completedAt: Date | null | undefined;
-    createdAt: Date;
-    updatedAt: Date;
-  },
-  details?: {
-    answer?: unknown;
-    result?: unknown;
-    feedback?: string | null;
-  },
-) => ({
-  id: sub.id,
-  userId: sub.userId,
-  questionId: sub.questionId,
-  skill: sub.skill,
-  status: sub.status,
-  score: sub.score ?? undefined,
-  band: sub.band ?? undefined,
-  completedAt: sub.completedAt?.toISOString() ?? undefined,
-  createdAt: sub.createdAt.toISOString(),
-  updatedAt: sub.updatedAt.toISOString(),
-  answer: details?.answer,
-  result: details?.result,
-  feedback: details?.feedback ?? undefined,
-});
+/** Score-to-band mapping per VSTEP spec */
+function scoreToBand(score: number): string | null {
+  if (score >= 8.5) return "C1";
+  if (score >= 6.0) return "B2";
+  if (score >= 4.0) return "B1";
+  return null;
+}
 
 // ─── Service ────────────────────────────────────────────────────
 
@@ -65,6 +50,18 @@ export abstract class SubmissionService {
         eq(table.submissions.id, submissionId),
         notDeleted(table.submissions),
       ),
+      columns: {
+        id: true,
+        userId: true,
+        questionId: true,
+        skill: true,
+        status: true,
+        score: true,
+        band: true,
+        completedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
 
     if (!submission) {
@@ -81,7 +78,12 @@ export abstract class SubmissionService {
       .where(eq(table.submissionDetails.submissionId, submissionId))
       .limit(1);
 
-    return mapSubmissionResponse(submission, details);
+    return {
+      ...serializeDates(submission),
+      answer: details?.answer,
+      result: details?.result,
+      feedback: details?.feedback,
+    };
   }
 
   /**
@@ -140,16 +142,7 @@ export abstract class SubmissionService {
     // Get submissions with details
     const submissions = await db
       .select({
-        id: table.submissions.id,
-        userId: table.submissions.userId,
-        questionId: table.submissions.questionId,
-        skill: table.submissions.skill,
-        status: table.submissions.status,
-        score: table.submissions.score,
-        band: table.submissions.band,
-        completedAt: table.submissions.completedAt,
-        createdAt: table.submissions.createdAt,
-        updatedAt: table.submissions.updatedAt,
+        ...SUBMISSION_COLUMNS,
         answer: table.submissionDetails.answer,
         result: table.submissionDetails.result,
         feedback: table.submissionDetails.feedback,
@@ -165,27 +158,7 @@ export abstract class SubmissionService {
       .offset(offset);
 
     return {
-      data: submissions.map((s) =>
-        mapSubmissionResponse(
-          {
-            id: s.id,
-            userId: s.userId,
-            questionId: s.questionId,
-            skill: s.skill,
-            status: s.status,
-            score: s.score,
-            band: s.band,
-            completedAt: s.completedAt,
-            createdAt: s.createdAt,
-            updatedAt: s.updatedAt,
-          },
-          {
-            answer: s.answer,
-            result: s.result,
-            feedback: s.feedback,
-          },
-        ),
-      ),
+      data: submissions.map((s) => serializeDates(s)),
       meta: paginationMeta(total, page, limit),
     };
   }
@@ -197,9 +170,9 @@ export abstract class SubmissionService {
     userId: string,
     body: { questionId: string; skill: string; answer: unknown },
   ) {
-    // Validate question exists
+    // Validate question exists and is active
     const question = await db.query.questions.findFirst({
-      columns: { id: true },
+      columns: { id: true, isActive: true },
       where: and(
         eq(table.questions.id, body.questionId),
         notDeleted(table.questions),
@@ -208,6 +181,10 @@ export abstract class SubmissionService {
 
     if (!question) {
       throw new NotFoundError("Question not found");
+    }
+
+    if (!question.isActive) {
+      throw new BadRequestError("Question is not active");
     }
 
     // Create submission and details in transaction
@@ -220,18 +197,7 @@ export abstract class SubmissionService {
           skill: body.skill as Submission["skill"],
           status: "pending",
         })
-        .returning({
-          id: table.submissions.id,
-          userId: table.submissions.userId,
-          questionId: table.submissions.questionId,
-          skill: table.submissions.skill,
-          status: table.submissions.status,
-          score: table.submissions.score,
-          band: table.submissions.band,
-          completedAt: table.submissions.completedAt,
-          createdAt: table.submissions.createdAt,
-          updatedAt: table.submissions.updatedAt,
-        });
+        .returning(SUBMISSION_COLUMNS);
 
       const sub = assertExists(submission, "Submission");
 
@@ -241,7 +207,7 @@ export abstract class SubmissionService {
         answer: body.answer,
       });
 
-      return mapSubmissionResponse(sub);
+      return serializeDates(sub);
     });
   }
 
@@ -289,38 +255,32 @@ export abstract class SubmissionService {
         updatedAt: new Date(),
       };
 
-      if (body.status) {
-        updateValues.status = body.status;
-        if (body.status === "completed" && submission.status !== "completed") {
-          updateValues.completedAt = new Date();
+      // Only admins can change status, score, and band
+      if (isAdmin) {
+        if (body.status) {
+          updateValues.status = body.status;
+          if (
+            body.status === "completed" &&
+            submission.status !== "completed"
+          ) {
+            updateValues.completedAt = new Date();
+          }
         }
+        if (body.score !== undefined) updateValues.score = body.score;
+        if (body.band !== undefined) updateValues.band = body.band;
       }
-
-      if (body.score !== undefined) updateValues.score = body.score;
-      if (body.band !== undefined) updateValues.band = body.band;
 
       const [updatedSubmission] = await tx
         .update(table.submissions)
         .set(updateValues)
         .where(eq(table.submissions.id, submissionId))
-        .returning({
-          id: table.submissions.id,
-          userId: table.submissions.userId,
-          questionId: table.submissions.questionId,
-          skill: table.submissions.skill,
-          status: table.submissions.status,
-          score: table.submissions.score,
-          band: table.submissions.band,
-          completedAt: table.submissions.completedAt,
-          createdAt: table.submissions.createdAt,
-          updatedAt: table.submissions.updatedAt,
-        });
+        .returning(SUBMISSION_COLUMNS);
 
       // Update details if provided
-      if (body.answer || body.feedback) {
+      if (body.answer !== undefined || body.feedback !== undefined) {
         const updateDetails: Record<string, unknown> = {};
-        if (body.answer) updateDetails.answer = body.answer;
-        if (body.feedback) updateDetails.feedback = body.feedback;
+        if (body.answer !== undefined) updateDetails.answer = body.answer;
+        if (body.feedback !== undefined) updateDetails.feedback = body.feedback;
 
         await tx
           .update(table.submissionDetails)
@@ -337,7 +297,12 @@ export abstract class SubmissionService {
 
       const updatedSub = assertExists(updatedSubmission, "Submission");
 
-      return mapSubmissionResponse(updatedSub, details);
+      return {
+        ...serializeDates(updatedSub),
+        answer: details?.answer,
+        result: details?.result,
+        feedback: details?.feedback,
+      };
     });
   }
 
@@ -370,28 +335,25 @@ export abstract class SubmissionService {
         );
       }
 
+      // Validate score: 0-10 range, 0.5 step per VSTEP spec
+      if (body.score < 0 || body.score > 10) {
+        throw new BadRequestError("Score must be between 0 and 10");
+      }
+      if (body.score % 0.5 !== 0) {
+        throw new BadRequestError("Score must be in 0.5 increments");
+      }
+
       const [updatedSubmission] = await tx
         .update(table.submissions)
         .set({
           status: "completed",
           score: body.score,
-          band: body.band || null,
+          band: body.band || scoreToBand(body.score),
           updatedAt: new Date(),
           completedAt: new Date(),
         })
         .where(eq(table.submissions.id, submissionId))
-        .returning({
-          id: table.submissions.id,
-          userId: table.submissions.userId,
-          questionId: table.submissions.questionId,
-          skill: table.submissions.skill,
-          status: table.submissions.status,
-          score: table.submissions.score,
-          band: table.submissions.band,
-          completedAt: table.submissions.completedAt,
-          createdAt: table.submissions.createdAt,
-          updatedAt: table.submissions.updatedAt,
-        });
+        .returning(SUBMISSION_COLUMNS);
 
       if (body.feedback) {
         await tx
@@ -408,7 +370,12 @@ export abstract class SubmissionService {
 
       const updatedSub = assertExists(updatedSubmission, "Submission");
 
-      return mapSubmissionResponse(updatedSub, details);
+      return {
+        ...serializeDates(updatedSub),
+        answer: details?.answer,
+        result: details?.result,
+        feedback: details?.feedback,
+      };
     });
   }
 
@@ -449,18 +416,31 @@ export abstract class SubmissionService {
   }
 
   /**
-   * Auto-grade a submission (for objective questions)
+   * Auto-grade a submission (for listening/reading objective questions)
+   * Uses PostgreSQL JSONB per-item comparison instead of JS-side JSON.stringify
+   * Score: (correctCount / totalCount) * 10, rounded to nearest 0.5
    */
   static async autoGrade(
     submissionId: string,
   ): Promise<{ score: number; result: unknown }> {
     return await db.transaction(async (tx) => {
-      const [submission] = await tx
+      // Compute score in PostgreSQL using JSONB per-item comparison
+      const [row] = await tx
         .select({
           id: table.submissions.id,
-          answer: table.submissionDetails.answer,
-          correctAnswer: table.questions.answerKey,
-          format: table.questions.format,
+          skill: table.submissions.skill,
+          answerKey: table.questions.answerKey,
+          correctCount: sql<number>`(
+            SELECT count(*)
+            FROM jsonb_each_text(${table.questions.answerKey} -> 'correctAnswers') ak
+            JOIN jsonb_each_text(${table.submissionDetails.answer} -> 'answers') ua
+              ON ak.key = ua.key
+            WHERE lower(trim(ua.value)) = lower(trim(ak.value))
+          )::int`,
+          totalCount: sql<number>`(
+            SELECT count(*)
+            FROM jsonb_each_text(${table.questions.answerKey} -> 'correctAnswers')
+          )::int`,
         })
         .from(table.submissions)
         .innerJoin(
@@ -474,55 +454,44 @@ export abstract class SubmissionService {
         .where(eq(table.submissions.id, submissionId))
         .limit(1);
 
-      if (!submission) {
+      if (!row) {
         throw new NotFoundError("Submission not found");
       }
 
-      let isCorrect = false;
-      const userAnswer = submission.answer;
-      const correctAnswer = submission.correctAnswer;
-
-      switch (submission.format) {
-        case "multiple_choice":
-          isCorrect =
-            JSON.stringify(userAnswer) === JSON.stringify(correctAnswer);
-          break;
-        case "fill_in_blank":
-          if (
-            typeof userAnswer === "string" &&
-            typeof correctAnswer === "string"
-          ) {
-            isCorrect =
-              userAnswer.trim().toLowerCase() ===
-              correctAnswer.trim().toLowerCase();
-          } else {
-            isCorrect =
-              JSON.stringify(userAnswer) === JSON.stringify(correctAnswer);
-          }
-          break;
-        default: {
-          const answerStr =
-            typeof userAnswer === "string"
-              ? userAnswer
-              : JSON.stringify(userAnswer);
-          const correctAnswerStr =
-            typeof correctAnswer === "string"
-              ? correctAnswer
-              : JSON.stringify(correctAnswer);
-          isCorrect =
-            answerStr?.trim().toLowerCase() ===
-            correctAnswerStr?.trim().toLowerCase();
-        }
+      // Only listening/reading can be auto-graded
+      if (row.skill !== "listening" && row.skill !== "reading") {
+        throw new BadRequestError(
+          "Only listening and reading submissions can be auto-graded",
+        );
       }
 
-      const score = isCorrect ? 100 : 0;
-      const result = { correct: isCorrect, gradedAt: new Date().toISOString() };
+      if (!row.answerKey) {
+        throw new BadRequestError(
+          "Question has no answer key for auto-grading",
+        );
+      }
+
+      const { correctCount, totalCount } = row;
+
+      // (correct / total) * 10, rounded to nearest 0.5 per VSTEP spec
+      const rawScore = totalCount > 0 ? (correctCount / totalCount) * 10 : 0;
+      const score = Math.round(rawScore * 2) / 2;
+      const band = scoreToBand(score);
+
+      const result = {
+        correctCount,
+        totalCount,
+        score,
+        band,
+        gradedAt: new Date().toISOString(),
+      };
 
       await tx
         .update(table.submissions)
         .set({
           status: "completed",
           score,
+          band,
           completedAt: new Date(),
           updatedAt: new Date(),
         })

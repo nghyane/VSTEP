@@ -5,7 +5,7 @@
  * @see https://elysiajs.com/pattern/mvc.html
  */
 
-import { assertExists } from "@common/utils";
+import { assertExists, serializeDates } from "@common/utils";
 import { and, count, eq, ilike, sql } from "drizzle-orm";
 import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
 import { AuthService } from "@/modules/auth/service";
@@ -16,24 +16,14 @@ import {
   UnauthorizedError,
 } from "@/plugins/error";
 
-/**
- * Mapper function for consistent user response serialization
- */
-const mapUserResponse = (user: {
-  id: string;
-  email: string;
-  fullName: string | null;
-  role: "learner" | "instructor" | "admin";
-  createdAt: Date;
-  updatedAt: Date;
-}) => ({
-  id: user.id,
-  email: user.email,
-  fullName: user.fullName,
-  role: user.role,
-  createdAt: user.createdAt.toISOString(),
-  updatedAt: user.updatedAt.toISOString(),
-});
+const USER_COLUMNS = {
+  id: table.users.id,
+  email: table.users.email,
+  fullName: table.users.fullName,
+  role: table.users.role,
+  createdAt: table.users.createdAt,
+  updatedAt: table.users.updatedAt,
+} as const;
 
 /**
  * User Service - Abstract class with static methods
@@ -61,7 +51,7 @@ export abstract class UserService {
       throw new NotFoundError("User not found");
     }
 
-    return mapUserResponse(user);
+    return serializeDates(user);
   }
 
   /**
@@ -84,7 +74,7 @@ export abstract class UserService {
       return null;
     }
 
-    return mapUserResponse(user);
+    return serializeDates(user);
   }
 
   /**
@@ -125,14 +115,7 @@ export abstract class UserService {
 
     // Get users
     const users = await db
-      .select({
-        id: table.users.id,
-        email: table.users.email,
-        fullName: table.users.fullName,
-        role: table.users.role,
-        createdAt: table.users.createdAt,
-        updatedAt: table.users.updatedAt,
-      })
+      .select(USER_COLUMNS)
       .from(table.users)
       .where(whereClause)
       .orderBy(table.users.createdAt)
@@ -140,7 +123,7 @@ export abstract class UserService {
       .offset(offset);
 
     return {
-      data: users.map(mapUserResponse),
+      data: users.map(serializeDates),
       meta: paginationMeta(total, page, limit),
     };
   }
@@ -177,18 +160,9 @@ export abstract class UserService {
         fullName: body.fullName,
         role: body.role || "learner",
       })
-      .returning({
-        id: table.users.id,
-        email: table.users.email,
-        fullName: table.users.fullName,
-        role: table.users.role,
-        createdAt: table.users.createdAt,
-        updatedAt: table.users.updatedAt,
-      });
+      .returning(USER_COLUMNS);
 
-    const createdUser = assertExists(user, "User");
-
-    return mapUserResponse(createdUser);
+    return serializeDates(assertExists(user, "User"));
   }
 
   /**
@@ -273,18 +247,9 @@ export abstract class UserService {
         .update(table.users)
         .set(updateValues)
         .where(eq(table.users.id, userId))
-        .returning({
-          id: table.users.id,
-          email: table.users.email,
-          fullName: table.users.fullName,
-          role: table.users.role,
-          createdAt: table.users.createdAt,
-          updatedAt: table.users.updatedAt,
-        });
+        .returning(USER_COLUMNS);
 
-      const updatedUser = assertExists(user, "User");
-
-      return mapUserResponse(updatedUser);
+      return serializeDates(assertExists(user, "User"));
     });
   }
 

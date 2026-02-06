@@ -1,14 +1,10 @@
-/**
- * Auth Module Service
- * Business logic for authentication — no JWT signing (handled by controller via @elysiajs/jwt)
- * @see https://elysiajs.com/pattern/mvc.html
- */
-
 import { env } from "@common/env";
 import { assertExists } from "@common/utils";
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, asc, eq, gt, isNull } from "drizzle-orm";
 import { db, table } from "@/db";
 import { ConflictError, UnauthorizedError } from "@/plugins/error";
+
+const MAX_REFRESH_TOKENS = 3;
 
 export interface UserInfo {
   id: string;
@@ -43,10 +39,6 @@ export function parseExpiry(str: string): number {
   }
 }
 
-/**
- * Auth Service — abstract class with static methods
- * Handles DB operations + business logic. JWT signing is in the controller.
- */
 export abstract class AuthService {
   static async hashPassword(password: string): Promise<string> {
     return Bun.password.hash(password, {
@@ -64,13 +56,13 @@ export abstract class AuthService {
   }
 
   /**
-   * Verify credentials and create a refresh token.
-   * Returns user info + opaque refresh token for the controller to pair with an access JWT.
+   * Login: verify credentials → enforce max 3 tokens (FIFO) → issue refresh token.
    */
   static async login(body: {
     email: string;
     password: string;
-  }): Promise<{ user: UserInfo; refreshToken: string }> {
+    deviceInfo?: string;
+  }): Promise<{ user: UserInfo; refreshToken: string; jti: string }> {
     const user = await db.query.users.findFirst({
       where: and(
         eq(table.users.email, body.email),
@@ -93,14 +85,42 @@ export abstract class AuthService {
     );
     if (!isValid) throw new UnauthorizedError("Invalid email or password");
 
-    const refreshToken = Bun.randomUUIDv7();
+    const refreshToken = crypto.randomUUID();
+    const jti = crypto.randomUUID();
     const refreshExpirySeconds = parseExpiry(env.JWT_REFRESH_EXPIRES_IN);
 
-    await db.insert(table.refreshTokens).values({
-      userId: user.id,
-      tokenHash: hashToken(refreshToken),
-      jti: Bun.randomUUIDv7(),
-      expiresAt: new Date(Date.now() + refreshExpirySeconds * 1000),
+    await db.transaction(async (tx) => {
+      // Enforce max 3 active refresh tokens per user (FIFO — revoke oldest)
+      const activeTokens = await tx.query.refreshTokens.findMany({
+        where: and(
+          eq(table.refreshTokens.userId, user.id),
+          isNull(table.refreshTokens.revokedAt),
+          gt(table.refreshTokens.expiresAt, new Date()),
+        ),
+        columns: { id: true },
+        orderBy: asc(table.refreshTokens.createdAt),
+      });
+
+      if (activeTokens.length >= MAX_REFRESH_TOKENS) {
+        const tokensToRevoke = activeTokens.slice(
+          0,
+          activeTokens.length - MAX_REFRESH_TOKENS + 1,
+        );
+        for (const t of tokensToRevoke) {
+          await tx
+            .update(table.refreshTokens)
+            .set({ revokedAt: new Date() })
+            .where(eq(table.refreshTokens.id, t.id));
+        }
+      }
+
+      await tx.insert(table.refreshTokens).values({
+        userId: user.id,
+        tokenHash: hashToken(refreshToken),
+        jti,
+        deviceInfo: body.deviceInfo,
+        expiresAt: new Date(Date.now() + refreshExpirySeconds * 1000),
+      });
     });
 
     return {
@@ -111,12 +131,12 @@ export abstract class AuthService {
         role: user.role,
       },
       refreshToken,
+      jti,
     };
   }
 
   /**
    * Register a new user.
-   * @throws ConflictError if email already exists
    */
   static async register(body: {
     email: string;
@@ -156,25 +176,53 @@ export abstract class AuthService {
   }
 
   /**
-   * Validate + rotate a refresh token.
-   * Returns user info + new opaque refresh token for the controller to pair with a new access JWT.
+   * Refresh: rotate token + reuse detection.
+   * If a rotated (revoked) token is reused → revoke ALL user tokens (token family attack).
    */
   static async refreshToken(
     refreshToken: string,
-  ): Promise<{ user: UserInfo; newRefreshToken: string }> {
+    deviceInfo?: string,
+  ): Promise<{ user: UserInfo; newRefreshToken: string; jti: string }> {
     const hash = hashToken(refreshToken);
 
+    // First, find the token record by hash (regardless of revoked status)
     const tokenRecord = await db.query.refreshTokens.findFirst({
-      where: and(
-        eq(table.refreshTokens.tokenHash, hash),
-        isNull(table.refreshTokens.revokedAt),
-        gt(table.refreshTokens.expiresAt, new Date()),
-      ),
-      columns: { id: true, userId: true },
+      where: eq(table.refreshTokens.tokenHash, hash),
+      columns: {
+        id: true,
+        userId: true,
+        jti: true,
+        revokedAt: true,
+        replacedByJti: true,
+        expiresAt: true,
+      },
     });
 
-    if (!tokenRecord)
-      throw new UnauthorizedError("Invalid or expired refresh token");
+    if (!tokenRecord) {
+      throw new UnauthorizedError("Invalid refresh token");
+    }
+
+    // Reuse detection: token already revoked → compromise detected
+    if (tokenRecord.revokedAt || tokenRecord.replacedByJti) {
+      // Revoke ALL tokens for this user (token family attack)
+      await db
+        .update(table.refreshTokens)
+        .set({ revokedAt: new Date() })
+        .where(
+          and(
+            eq(table.refreshTokens.userId, tokenRecord.userId),
+            isNull(table.refreshTokens.revokedAt),
+          ),
+        );
+      throw new UnauthorizedError(
+        "Refresh token reuse detected, all sessions revoked",
+      );
+    }
+
+    // Token expired
+    if (tokenRecord.expiresAt <= new Date()) {
+      throw new UnauthorizedError("Refresh token expired");
+    }
 
     const user = await db.query.users.findFirst({
       where: and(
@@ -184,11 +232,11 @@ export abstract class AuthService {
       columns: { id: true, email: true, fullName: true, role: true },
     });
 
-    if (!user) throw new UnauthorizedError("Invalid or expired refresh token");
+    if (!user) throw new UnauthorizedError("User not found");
 
     // Rotate: revoke old, issue new
-    const newRefreshToken = Bun.randomUUIDv7();
-    const newJti = Bun.randomUUIDv7();
+    const newRefreshToken = crypto.randomUUID();
+    const newJti = crypto.randomUUID();
     const refreshExpirySeconds = parseExpiry(env.JWT_REFRESH_EXPIRES_IN);
 
     await db.transaction(async (tx) => {
@@ -201,6 +249,7 @@ export abstract class AuthService {
         userId: user.id,
         tokenHash: hashToken(newRefreshToken),
         jti: newJti,
+        deviceInfo,
         expiresAt: new Date(Date.now() + refreshExpirySeconds * 1000),
       });
     });
@@ -213,6 +262,7 @@ export abstract class AuthService {
         role: user.role,
       },
       newRefreshToken,
+      jti: newJti,
     };
   }
 
