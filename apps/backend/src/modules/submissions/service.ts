@@ -364,6 +364,12 @@ export abstract class SubmissionService {
         throw new NotFoundError("Submission not found");
       }
 
+      if (submission.status === "completed" || submission.status === "failed") {
+        throw new BadRequestError(
+          `Cannot grade a submission with status "${submission.status}"`,
+        );
+      }
+
       const [updatedSubmission] = await tx
         .update(table.submissions)
         .set({

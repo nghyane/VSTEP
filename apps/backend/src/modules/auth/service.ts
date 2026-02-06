@@ -122,10 +122,12 @@ export abstract class AuthService {
     email: string;
     password: string;
     fullName?: string;
-    role?: "learner" | "instructor" | "admin";
   }): Promise<{ user: UserInfo; message: string }> {
     const existing = await db.query.users.findFirst({
-      where: eq(table.users.email, body.email),
+      where: and(
+        eq(table.users.email, body.email),
+        isNull(table.users.deletedAt),
+      ),
       columns: { id: true },
     });
     if (existing) throw new ConflictError("Email already registered");
@@ -138,7 +140,7 @@ export abstract class AuthService {
         email: body.email,
         passwordHash,
         fullName: body.fullName,
-        role: body.role || "learner",
+        role: "learner",
       })
       .returning({
         id: table.users.id,

@@ -190,31 +190,38 @@ export abstract class ExamService {
       throw new BadRequestError("Exam is not active");
     }
 
-    // Check for existing in-progress session
-    const existingSession = await db.query.examSessions.findFirst({
-      where: and(
-        eq(table.examSessions.userId, userId),
-        eq(table.examSessions.examId, body.examId),
-        eq(table.examSessions.status, "in_progress"),
-        notDeleted(table.examSessions),
-      ),
+    // Wrap in transaction to prevent duplicate sessions from concurrent requests
+    return await db.transaction(async (tx) => {
+      // Check for existing in-progress session
+      const [existingSession] = await tx
+        .select()
+        .from(table.examSessions)
+        .where(
+          and(
+            eq(table.examSessions.userId, userId),
+            eq(table.examSessions.examId, body.examId),
+            eq(table.examSessions.status, "in_progress"),
+            notDeleted(table.examSessions),
+          ),
+        )
+        .limit(1);
+
+      if (existingSession) {
+        return mapSessionResponse(existingSession);
+      }
+
+      const [session] = await tx
+        .insert(table.examSessions)
+        .values({
+          userId,
+          examId: body.examId,
+          status: "in_progress",
+          startedAt: new Date(),
+        })
+        .returning();
+
+      return mapSessionResponse(assertExists(session, "Session"));
     });
-
-    if (existingSession) {
-      return mapSessionResponse(existingSession);
-    }
-
-    const [session] = await db
-      .insert(table.examSessions)
-      .values({
-        userId,
-        examId: body.examId,
-        status: "in_progress",
-        startedAt: new Date(),
-      })
-      .returning();
-
-    return mapSessionResponse(assertExists(session, "Session"));
   }
 
   /**

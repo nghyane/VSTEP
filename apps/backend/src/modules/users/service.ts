@@ -11,6 +11,7 @@ import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
 import { AuthService } from "@/modules/auth/service";
 import {
   ConflictError,
+  ForbiddenError,
   NotFoundError,
   UnauthorizedError,
 } from "@/plugins/error";
@@ -154,9 +155,9 @@ export abstract class UserService {
     fullName?: string;
     role?: "learner" | "instructor" | "admin";
   }) {
-    // Check for existing user
+    // Check for existing active user (soft-deleted emails are reusable)
     const existingUser = await db.query.users.findFirst({
-      where: eq(table.users.email, body.email),
+      where: and(eq(table.users.email, body.email), notDeleted(table.users)),
       columns: { id: true },
     });
 
@@ -203,7 +204,19 @@ export abstract class UserService {
       role?: "learner" | "instructor" | "admin";
       password?: string;
     },
+    currentUserId: string,
+    isAdmin: boolean,
   ) {
+    // Only admins can update other users
+    if (userId !== currentUserId && !isAdmin) {
+      throw new ForbiddenError("You can only update your own profile");
+    }
+
+    // Only admins can change roles
+    if (body.role && !isAdmin) {
+      throw new ForbiddenError("Only admins can change user roles");
+    }
+
     return await db.transaction(async (tx) => {
       // Check user exists
       const [existingUser] = await tx
@@ -216,7 +229,7 @@ export abstract class UserService {
         throw new NotFoundError("User not found");
       }
 
-      // Check email uniqueness if updating email
+      // Check email uniqueness if updating email (exclude soft-deleted)
       if (body.email) {
         const [emailExists] = await tx
           .select({ id: table.users.id })
@@ -225,6 +238,7 @@ export abstract class UserService {
             and(
               eq(table.users.email, body.email),
               sql`${table.users.id} != ${userId}`,
+              sql`${table.users.deletedAt} IS NULL`,
             ),
           )
           .limit(1);
@@ -321,7 +335,13 @@ export abstract class UserService {
   static async updatePassword(
     userId: string,
     body: { currentPassword: string; newPassword: string },
+    currentUserId: string,
+    isAdmin: boolean,
   ) {
+    if (userId !== currentUserId && !isAdmin) {
+      throw new ForbiddenError("You can only change your own password");
+    }
+
     // Get user with password
     const user = await db.query.users.findFirst({
       where: and(eq(table.users.id, userId), notDeleted(table.users)),

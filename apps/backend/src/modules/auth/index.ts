@@ -91,13 +91,6 @@ export const auth = new Elysia({ prefix: "/auth" })
         email: t.String({ format: "email" }),
         password: t.String({ minLength: 8 }),
         fullName: t.Optional(t.String({ minLength: 1, maxLength: 100 })),
-        role: t.Optional(
-          t.Union([
-            t.Literal("learner"),
-            t.Literal("instructor"),
-            t.Literal("admin"),
-          ]),
-        ),
       }),
       response: {
         201: t.Object({ user: UserInfo, message: t.String() }),
