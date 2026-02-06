@@ -318,10 +318,11 @@ GET /api/progress/:skill
 ### Deliverables
 
 #### 6.1 Redis connection
-- Dùng `Bun.redis` (native, built-in Bun 1.3+) — không cần thêm dependency
-- Redis connection config từ `REDIS_URL` env var
-- Lua scripting qua `redis.send("EVAL", [...])` (token bucket atomic operations)
+- Dùng `import { redis, RedisClient } from 'bun'` (native, built-in Bun 1.3+) — không cần thêm dependency
+- Redis connection config từ `REDIS_URL` env var (auto-read bởi default singleton)
+- Atomic token bucket: dùng `redis.send("EVAL", [...])` (**chưa documented chính thức** — nếu gặp vấn đề, fallback sang multi-command `INCR` + `EXPIRE` hoặc dùng `ioredis` cho Lua)
 - Graceful fallback nếu Redis unavailable (log warning, skip rate limiting)
+- **Yêu cầu**: Redis server 7.2+ (Bun.redis dùng RESP3 protocol)
 
 #### 6.2 Token bucket middleware (Elysia plugin)
 - Implement sliding window hoặc token bucket algorithm

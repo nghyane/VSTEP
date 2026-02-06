@@ -55,7 +55,7 @@ export const examSessions = pgTable(
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     examId: uuid("exam_id")
-      .references(() => exams.id, { onDelete: "cascade" })
+      .references(() => exams.id, { onDelete: "restrict" })
       .notNull(),
     status: examStatusEnum("status").default("in_progress").notNull(),
     listeningScore: numeric("listening_score", {
@@ -148,6 +148,9 @@ export const examSubmissions = pgTable(
       .notNull(),
   },
   (table) => ({
+    sessionSubmissionUnique: uniqueIndex(
+      "exam_submissions_session_submission_unique",
+    ).on(table.sessionId, table.submissionId),
     sessionIdx: index("exam_submissions_session_idx").on(table.sessionId),
     submissionIdx: index("exam_submissions_submission_idx").on(
       table.submissionId,

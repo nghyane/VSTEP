@@ -8,6 +8,7 @@ import {
   pgEnum,
   pgTable,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -61,7 +62,7 @@ export const submissions = pgTable(
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     questionId: uuid("question_id")
-      .references(() => questions.id, { onDelete: "cascade" })
+      .references(() => questions.id, { onDelete: "restrict" })
       .notNull(),
     skill: skillEnum("skill").notNull(),
     status: submissionStatusEnum("status").default("pending").notNull(),
@@ -107,7 +108,9 @@ export const submissions = pgTable(
     userHistoryIdx: index("submissions_user_history_idx")
       .on(table.userId, table.createdAt)
       .where(sql`${table.deletedAt} IS NULL`),
-    requestIdIdx: index("submissions_request_id_idx").on(table.requestId),
+    requestIdUnique: uniqueIndex("submissions_request_id_unique").on(
+      table.requestId,
+    ),
   }),
 );
 

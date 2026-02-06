@@ -373,9 +373,9 @@ MVP columns (gợi ý):
 
 - `id` (UUID, PK)
 - `user_id` (FK users, ON DELETE CASCADE)
-- `target_band` (VARCHAR(10), NOT NULL) CHECK (target_band IN ('A1', 'A2', 'B1', 'B2', 'C1'))
+- `target_band` (vstep_band ENUM, NOT NULL) — dùng pgEnum thay vì VARCHAR+CHECK
 - `current_estimated_band` (VARCHAR(10), nullable) - Band hiện tại (tính toán từ bài test đầu vào)
-- `deadline` (DATE, NOT NULL) - Ngày dự kiến thi
+- `deadline` (TIMESTAMPTZ, nullable) - Ngày dự kiến thi (nullable vì learner có thể chưa chốt deadline)
 - `daily_study_time_minutes` (INT, DEFAULT 30) - Cam kết học mỗi ngày
 - `created_at`, `updated_at`
 
