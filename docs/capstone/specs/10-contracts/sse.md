@@ -1,6 +1,6 @@
 # Server-Sent Events (SSE) Specification
 
-> **Phiên bản**: 1.2 · SP26SE145
+> **Phiên bản**: 1.3 · SP26SE145
 
 ## 1. Mục đích
 
@@ -144,7 +144,64 @@ In-memory pub/sub là một map đơn giản: `submissionId → Set<SSE connecti
 
 ---
 
-## 11. Cross-references
+## 11. Implementation Notes (Elysia + Bun)
+
+### SSE Transport
+
+Dùng Elysia built-in `sse()` (import từ `elysia`) + `async function*` generator:
+
+```typescript
+import { sse, t } from "elysia";
+
+app.get("/sse/submissions/:id", async function* ({ params, query, set, request }) {
+  // Auth via query.token (EventSource không hỗ trợ custom headers)
+  // Verify JWT + ownership TRƯỚC first yield
+
+  // Set headers TRƯỚC first yield (sau đó frozen)
+  set.headers["Cache-Control"] = "no-cache, no-transform";
+  set.headers["Connection"] = "keep-alive";
+  set.headers["X-Accel-Buffering"] = "no";
+  // KHÔNG set Content-Type — Elysia tự set text/event-stream
+
+  // First event: retry directive
+  yield sse({ id: "1", retry: 5000, event: "grading.progress",
+    data: { submissionId: params.id, status: "connected" } });
+
+  // Subscribe to SSEHub → yield events → cleanup in finally block
+}, { query: t.Object({ token: t.String() }) });
+```
+
+**Gotchas quan trọng**:
+- Elysia tự set `Content-Type: text/event-stream` — set thủ công sẽ gây duplicate header
+- Headers frozen sau first `yield` — tất cả custom headers phải đặt trước
+- `request.signal` abort → Elysia tự stop generator → dùng `finally` block để cleanup
+- Performance fix trong Elysia ≥1.4.19 (10,000 events: 12s → 18ms)
+
+### SSE Hub (In-memory Pub/Sub)
+
+Singleton `SSEHub`: `Map<submissionId, Set<Subscriber>>`
+
+- `subscribe(id)` → bounded buffer (max 100 events), drop oldest khi overflow
+- `publish(id, event)` → fan-out tới tất cả subscribers
+- `closeChannel(id)` → close tất cả subscribers sau terminal event
+- Map entry tự xóa khi last subscriber disconnect → ngăn memory leak
+- **Horizontal scaling**: SSEHub là per-process. Multi-process cần Redis pub/sub bridge.
+
+### Last-Event-ID Replay
+
+```typescript
+const lastEventId = request.headers.get("Last-Event-ID");
+if (lastEventId) {
+  // Query submission_events WHERE submissionId = ? AND occurred_at > lastEvent.occurred_at
+  // yield sse() cho mỗi missed event
+}
+```
+
+Browser `EventSource` tự gửi `Last-Event-ID` khi reconnect.
+
+---
+
+## 12. Cross-references
 
 | Chủ đề | Tài liệu |
 |--------|-----------|
@@ -152,3 +209,4 @@ In-memory pub/sub là một map đơn giản: `submissionId → Set<SSE connecti
 | Submission states | `../20-domain/submission-lifecycle.md` |
 | Processed callbacks table | `../30-data/database-schema.md` Section 2.5 |
 | Real-time flow diagram | `../../diagrams/flow-diagrams.vi.md` Section 4 |
+| Library stack decisions | `../00-overview/solution-decisions.md` §Library stack |

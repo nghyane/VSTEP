@@ -318,8 +318,9 @@ GET /api/progress/:skill
 ### Deliverables
 
 #### 6.1 Redis connection
-- Add `@elysiajs/redis` hoặc `ioredis` dependency
+- Dùng `Bun.redis` (native, built-in Bun 1.3+) — không cần thêm dependency
 - Redis connection config từ `REDIS_URL` env var
+- Lua scripting qua `redis.send("EVAL", [...])` (token bucket atomic operations)
 - Graceful fallback nếu Redis unavailable (log warning, skip rate limiting)
 
 #### 6.2 Token bucket middleware (Elysia plugin)
@@ -363,44 +364,52 @@ GET /api/progress/:skill
 
 ### Deliverables
 
-#### 7.1 SSE endpoint
+#### 7.1 SSE endpoint (Elysia built-in)
 ```
 GET /api/sse/submissions/:id?token=<jwt>
 ```
-- Auth via query param `token` (JWT access token)
+- Dùng Elysia built-in `sse()` + `async function*` generator pattern
+- Auth via query param `token` (EventSource API không hỗ trợ custom headers)
 - Verify ownership (submission.userId === token.sub)
-- Return `text/event-stream` response
+- Elysia tự set `Content-Type: text/event-stream` — **KHÔNG** set thủ công
+- Set `Cache-Control`, `Connection`, `X-Accel-Buffering` headers **TRƯỚC** first `yield`
 
 #### 7.2 Event types
-```
-event: progress
-data: { "step": "transcribing", "percent": 30 }
+```typescript
+yield sse({ id: "1", event: "grading.progress", retry: 5000,
+  data: { submissionId, step: "transcribing", percent: 30 } });
 
-event: completed
-data: { "score": 7.5, "band": "B2" }
+yield sse({ id: "2", event: "grading.completed",
+  data: { submissionId, score: 7.5, band: "B2" } });
 
-event: review_pending
-data: { "message": "Đang chờ chấm thủ công" }
+yield sse({ id: "3", event: "grading.review_pending",
+  data: { submissionId, message: "Đang chờ chấm thủ công" } });
 
-event: failed
-data: { "reason": "TIMEOUT" }
+yield sse({ id: "4", event: "grading.failed",
+  data: { submissionId, reason: "TIMEOUT" } });
 
-event: ping
-data: { "ts": 1234567890 }
+yield sse({ id: "5", event: "ping",
+  data: { timestamp: new Date().toISOString() } });
 ```
 
 #### 7.3 Last-Event-ID replay
-- Client gửi `Last-Event-ID` header khi reconnect
-- Server replay missed events từ `submissionEvents` table
+- Client gửi `Last-Event-ID` header tự động khi reconnect
+- Server đọc từ `request.headers.get("Last-Event-ID")`
+- Replay missed events từ `submissionEvents` table
 
-#### 7.4 Heartbeat
-- Gửi `ping` event mỗi 30 giây
+#### 7.4 Heartbeat + lifecycle
+- Gửi `ping` event mỗi 30 giây (via `setInterval` + flag)
+- Max lifetime: 30 phút → close stream
 - Close stream khi submission ở terminal state (completed/failed) + 5s grace
+- `request.signal` abort detection → cleanup tự động qua `finally` block
 
-#### 7.5 SSE manager
-- In-memory Map: `submissionId → Set<WritableStream>`
-- Method `broadcast(submissionId, event)` — gọi khi cập nhật submission status
-- Cleanup on disconnect
+#### 7.5 SSE Hub (in-memory pub/sub)
+- Singleton `SSEHub` class: `Map<submissionId, Set<Subscriber>>`
+- `subscribe(submissionId)` → `{ iterator, unsubscribe }` — bounded buffer (100 events), backpressure drop oldest
+- `publish(submissionId, event)` — fan-out từ AMQP callback consumer
+- `closeChannel(submissionId)` — cleanup khi grading kết thúc
+- Subscriber tự unsubscribe khi `request.signal` aborted
+- Map entry tự xóa khi last subscriber disconnect → ngăn memory leak
 
 ### Dependencies
 - Phase 2 (submission status tracking)
@@ -423,19 +432,22 @@ data: { "ts": 1234567890 }
 ### Deliverables
 
 #### 8.1 RabbitMQ connection
-- `amqplib` dependency
+- `@cloudamqp/amqp-client` dependency (zero deps, TypeScript native, tránh Bun `node:stream` bugs)
 - Connection từ `RABBITMQ_URL` env var
+- API: `new AMQPClient(url)` → `client.connect()` → `connection.channel()`
 - Graceful retry on connection failure
 
 #### 8.2 Queue topology setup
+```typescript
+const channel = await connection.channel();
+await channel.exchangeDeclare("vstep.exchange", "direct", { durable: true });
+await channel.queueDeclare("grading.request", { durable: true });
+await channel.queueDeclare("grading.callback", { durable: true });
+await channel.queueDeclare("grading.dlq", { durable: true });
+await channel.queueBind("grading.request", "vstep.exchange", "grading.request");
+await channel.queueBind("grading.callback", "vstep.exchange", "grading.callback");
+await channel.queueBind("grading.dlq", "vstep.exchange", "grading.dlq");
 ```
-Exchange: vstep.exchange (topic)
-Queues:
-  - grading.request (binding: grading.request)
-  - grading.callback (binding: grading.callback)
-  - grading.dlq (binding: grading.dlq)
-```
-- `assertExchange` + `assertQueue` + `bindQueue` on startup
 
 #### 8.3 Outbox relay worker
 - `setInterval` (configurable, default 1s)
