@@ -22,10 +22,10 @@ Mỗi phase có:
 
 | Module | Đã có | Thiếu so với spec |
 |--------|-------|-------------------|
-| **Auth** | Login, register, refresh rotation, logout, /me, macros | Max 3 tokens/user, reuse detection, jti claim, device tracking |
+| **Auth** | Login, register, refresh rotation, logout, /me, macros | Max 3 tokens/user, reuse detection, jti claim, device tracking, `device_info` column |
 | **Users** | Full CRUD, soft-delete, ownership checks | — |
-| **Questions** | CRUD, versioning, restore, soft-delete | Content JSONB validation theo question-content-schemas |
-| **Submissions** | CRUD, grade, auto-grade (exact match), events table, `numeric` scores, `vstep_band` enum | State machine enforcement, skill routing (MCQ auto vs queue), deadline, outbox relay, confidence routing |
+| **Questions** | CRUD, versioning, restore, soft-delete | Content JSONB validation, `search_vector` + functional indexes, merge dual `skill` enum |
+| **Submissions** | CRUD, grade, auto-grade (exact match), events table, `numeric` scores, `vstep_band` enum | State machine enforcement, skill routing (MCQ auto vs queue), deadline, outbox relay, confidence routing, `submission_events.requestId/createdAt`, index alignment |
 | **Progress** | Basic CRUD (create/update/list), `numeric` scores, `vstep_band` targetBand | Sliding window, trend, spider chart, ETA, overall band, update triggers |
 | **Exams** | CRUD, sessions, answers, complete, `numeric` scores, `submitted` status | Score calculation, exam→submission linking, section management |
 | **Goals** | Table exists | Toàn bộ API (CRUD) |
@@ -67,6 +67,7 @@ GET /health → { status: "ok", services: { db: "ok", redis: "ok" | "unavailable
 - **Max 3 active refresh tokens per user**: Khi login, count active tokens; nếu >= 3, revoke cũ nhất (FIFO)
 - **Reuse detection**: Khi refresh token đã bị rotate mà vẫn dùng lại → revoke **toàn bộ tokens của user** (token family revoke)
 - **jti claim** trong access token (spec yêu cầu: `sub`, `role`, `jti`, `iat`, `exp`)
+- **device_info column**: Thêm `deviceInfo` (TEXT, nullable) vào `refreshTokens` schema — lưu User-Agent/IP cho device management UI
 
 #### 1.5 Correlation ID
 - Plugin tạo `requestId` (UUID) cho mỗi request
@@ -142,6 +143,14 @@ POST /api/submissions { questionId, skill, answer }
 #### 2.6 GET /api/submissions/:id/status
 - Polling fallback endpoint (khi SSE không khả dụng)
 - Return: `{ status, progress (nếu processing), result (nếu completed) }`
+
+#### 2.7 Schema alignment (verified mismatches)
+- **Merge dual skill enum**: `question_skill` (questions.ts) → dùng chung `skill` enum từ submissions.ts
+- **Submission indexes theo spec**:
+  - `user_history`: thêm `skill` column → `(userId, skill, createdAt) WHERE deletedAt IS NULL`
+  - Thêm `active_queue` partial index: `(status, createdAt) WHERE status IN ('pending','queued','processing','review_pending','error')`
+  - Xóa `review_queue` index (spec đã loại bỏ — volume thấp, sort in-memory đủ)
+  - Xóa các index thừa (`user_id`, `status`, `user_status`) — đã covered bởi các partial indexes trên
 
 ### Dependencies
 - Phase 1 (API prefix, requestId)
@@ -298,6 +307,10 @@ GET /api/progress/:skill
 - Khi submission COMPLETED → recompute scaffoldLevel cho skill tương ứng
 - Update `userProgress.scaffoldLevel`
 
+#### 5.5 Schema alignment: scaffolding_type enum
+- Tạo `scaffoldingTypeEnum = pgEnum("scaffolding_type", ["template", "keywords", "free"])`
+- Đổi `userSkillScores.scaffoldingType` từ `varchar(20)` → `scaffoldingTypeEnum` — enforce valid values ở DB level
+
 ### Dependencies
 - Phase 4 (progress engine — scoring history needed)
 
@@ -397,6 +410,11 @@ yield sse({ id: "5", event: "ping",
 - Client gửi `Last-Event-ID` header tự động khi reconnect
 - Server đọc từ `request.headers.get("Last-Event-ID")`
 - Replay missed events từ `submissionEvents` table
+
+#### 7.3.1 Schema alignment: submission_events
+- Thêm `requestId` column (UUID, nullable) — trace/debug cho events từ grading callback
+- Thêm `createdAt` column (TIMESTAMPTZ, default now) — tách biệt với `occurredAt` (thời điểm event xảy ra vs thời điểm ghi DB)
+- Thêm index `(requestId)` cho trace/debug
 
 #### 7.4 Heartbeat + lifecycle
 - Gửi `ping` event mỗi 30 giây (via `setInterval` + flag)
@@ -771,12 +789,19 @@ Phase 1 (Foundation)
 
 ---
 
-## Question Content Validation (cross-phase)
+## Question Content Validation & Search (cross-phase)
 
 Áp dụng dần xuyên suốt phases, không phải phase riêng:
 
 **Phase 2**: Validate submission answer format theo skill
+**Phase 5**: Thêm functional indexes cho scaffolding queries:
+  - `idx_questions_has_template ON (skill, level) WHERE (content->'scaffolding'->>'template') IS NOT NULL`
+  - `idx_questions_has_keywords ON (skill, level) WHERE (content->'scaffolding'->>'keywords') IS NOT NULL`
 **Phase 11**: Validate exam question blueprint structure
+**Phase 12** (hoặc riêng): Full-text search infrastructure:
+  - Thêm `search_vector` (tsvector, generated stored) column vào `questions`
+  - Thêm GIN index `idx_questions_search ON questions USING GIN(search_vector)`
+  - Custom SQL migration (Drizzle không generate tsvector automatically)
 
 Schema reference: `question-content-schemas.md`
 
