@@ -6,8 +6,6 @@ import { db, table } from "@/db";
 import type { JWTPayload } from "@/plugins/auth";
 import { ConflictError, UnauthorizedError } from "@/plugins/error";
 
-// ── JWT secrets (encoded once at startup) ───────────────────────
-
 const ACCESS_SECRET = new TextEncoder().encode(env.JWT_SECRET!);
 
 const MAX_REFRESH_TOKENS = 3;

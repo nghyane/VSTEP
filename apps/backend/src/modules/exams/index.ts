@@ -1,8 +1,3 @@
-/**
- * Exams Module Controller
- * Routes for exam management
- */
-
 import { ExamStatus, QuestionLevel } from "@common/enums";
 import {
   ErrorResponse,
@@ -13,8 +8,6 @@ import {
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import { ExamService } from "./service";
-
-// ─── Inline Schemas ──────────────────────────────────────────────
 
 const ExamSchema = t.Object({
   id: t.String({ format: "uuid" }),
@@ -47,15 +40,11 @@ const SessionIdParam = t.Object({
   sessionId: t.String({ format: "uuid" }),
 });
 
-// ─── Controller ──────────────────────────────────────────────────
-
 export const exams = new Elysia({
   prefix: "/exams",
   detail: { tags: ["Exams"] },
 })
   .use(authPlugin)
-
-  // ============ Public Routes ============
 
   .get(
     "/",
@@ -96,8 +85,6 @@ export const exams = new Elysia({
       },
     },
   )
-
-  // ============ Admin Routes ============
 
   .post(
     "/",
@@ -149,8 +136,6 @@ export const exams = new Elysia({
       },
     },
   )
-
-  // ============ Session Routes (Auth Required) ============
 
   .post(
     "/sessions",

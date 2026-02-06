@@ -1,10 +1,3 @@
-/**
- * Users Module Controller
- * Elysia routes for user management
- * Pattern: Elysia instance with direct service calls
- * @see https://elysiajs.com/pattern/mvc.html
- */
-
 import { UserRole } from "@common/enums";
 import {
   ErrorResponse,
@@ -17,8 +10,6 @@ import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import { UserService } from "./service";
 
-// ─── Shared Schemas ─────────────────────────────────────────────
-
 const UserResponse = t.Object({
   id: t.String({ format: "uuid" }),
   email: t.String(),
@@ -28,24 +19,12 @@ const UserResponse = t.Object({
   updatedAt: t.String({ format: "date-time" }),
 });
 
-// ─── Controller ─────────────────────────────────────────────────
-
-/**
- * Users controller mounted at /users
- * Direct service calls - no .decorate() needed for static methods
- */
 export const users = new Elysia({
   prefix: "/users",
   detail: { tags: ["Users"] },
 })
   .use(authPlugin)
 
-  // ============ Protected Routes ============
-
-  /**
-   * GET /users/:id
-   * Get user by ID
-   */
   .get(
     "/:id",
     async ({ params, set }) => {
@@ -68,10 +47,6 @@ export const users = new Elysia({
     },
   )
 
-  /**
-   * GET /users
-   * List users (admin only)
-   */
   .get(
     "/",
     async ({ query, set }) => {
@@ -101,10 +76,6 @@ export const users = new Elysia({
     },
   )
 
-  /**
-   * POST /users
-   * Create new user (admin only)
-   */
   .post(
     "/",
     async ({ body, set }) => {
@@ -144,10 +115,6 @@ export const users = new Elysia({
     },
   )
 
-  /**
-   * PATCH /users/:id
-   * Update user
-   */
   .patch(
     "/:id",
     async ({ params, body, user, set }) => {
@@ -193,10 +160,6 @@ export const users = new Elysia({
     },
   )
 
-  /**
-   * DELETE /users/:id
-   * Soft delete user (admin only)
-   */
   .delete(
     "/:id",
     async ({ params, set }) => {
@@ -223,10 +186,6 @@ export const users = new Elysia({
     },
   )
 
-  /**
-   * POST /users/:id/password
-   * Update user password
-   */
   .post(
     "/:id/password",
     async ({ params, body, user, set }) => {

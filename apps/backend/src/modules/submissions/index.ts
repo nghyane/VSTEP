@@ -1,8 +1,3 @@
-/**
- * Submissions Module Controller
- * Elysia routes for submission management
- */
-
 import { Skill, SubmissionStatus as SubmissionStatusEnum } from "@common/enums";
 import {
   ErrorResponse,
@@ -13,8 +8,6 @@ import {
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import { SubmissionService } from "./service";
-
-// ─── Inline response schemas ────────────────────────────────────
 
 const SubmissionInfo = t.Object({
   id: t.String({ format: "uuid" }),
@@ -46,18 +39,12 @@ const SubmissionWithDetails = t.Object({
   feedback: t.Optional(t.Nullable(t.String())),
 });
 
-// ─── Controller ─────────────────────────────────────────────────
-
 export const submissions = new Elysia({
   prefix: "/submissions",
   detail: { tags: ["Submissions"] },
 })
   .use(authPlugin)
 
-  /**
-   * GET /submissions
-   * List submissions
-   */
   .get(
     "/",
     async ({ query, user, set }) => {
@@ -91,10 +78,6 @@ export const submissions = new Elysia({
     },
   )
 
-  /**
-   * GET /submissions/:id
-   * Get submission by ID
-   */
   .get(
     "/:id",
     async ({ params, user, set }) => {
@@ -122,10 +105,6 @@ export const submissions = new Elysia({
     },
   )
 
-  /**
-   * POST /submissions
-   * Create new submission
-   */
   .post(
     "/",
     async ({ body, user, set }) => {
@@ -154,10 +133,6 @@ export const submissions = new Elysia({
     },
   )
 
-  /**
-   * PATCH /submissions/:id
-   * Update submission
-   */
   .patch(
     "/:id",
     async ({ params, body, user, set }) => {
@@ -203,10 +178,6 @@ export const submissions = new Elysia({
     },
   )
 
-  /**
-   * POST /submissions/:id/grade
-   * Grade submission (instructor/admin only)
-   */
   .post(
     "/:id/grade",
     async ({ params, body, set }) => {
@@ -236,10 +207,6 @@ export const submissions = new Elysia({
     },
   )
 
-  /**
-   * POST /submissions/:id/auto-grade
-   * Auto-grade submission (admin only)
-   */
   .post(
     "/:id/auto-grade",
     async ({ params, set }) => {
@@ -266,10 +233,6 @@ export const submissions = new Elysia({
     },
   )
 
-  /**
-   * DELETE /submissions/:id
-   * Delete submission
-   */
   .delete(
     "/:id",
     async ({ params, user, set }) => {

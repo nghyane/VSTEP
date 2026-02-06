@@ -1,10 +1,3 @@
-/**
- * Questions Module Controller
- * Elysia routes for question management
- * Pattern: Elysia instance with direct service calls
- * @see https://elysiajs.com/pattern/mvc.html
- */
-
 import { QuestionLevel, QuestionSkill } from "@common/enums";
 import {
   ErrorResponse,
@@ -15,8 +8,6 @@ import {
 import { Elysia, t } from "elysia";
 import { authPlugin, verifyAccessToken } from "@/plugins/auth";
 import { QuestionService } from "./service";
-
-// ─── Inline Response Schemas ────────────────────────────────────
 
 const QuestionInfo = t.Object({
   id: t.String({ format: "uuid" }),
@@ -46,25 +37,12 @@ const QuestionVersionInfo = t.Object({
   createdAt: t.String(),
 });
 
-// ─── Controller ─────────────────────────────────────────────────
-
-/**
- * Questions controller with all question routes
- * Mounted at /questions
- * Direct service calls - no .decorate() needed for static methods
- */
 export const questions = new Elysia({
   prefix: "/questions",
   detail: { tags: ["Questions"] },
 })
   .use(authPlugin)
 
-  // ============ Public Routes ============
-
-  /**
-   * GET /questions
-   * List questions (public - but shows only active for non-authenticated)
-   */
   .get(
     "/",
     async ({ query, bearer: token, set }) => {
@@ -106,10 +84,6 @@ export const questions = new Elysia({
     },
   )
 
-  /**
-   * GET /questions/:id
-   * Get question by ID
-   */
   .get(
     "/:id",
     async ({ params, set }) => {
@@ -130,12 +104,6 @@ export const questions = new Elysia({
     },
   )
 
-  // ============ Protected Routes ============
-
-  /**
-   * POST /questions
-   * Create new question
-   */
   .post(
     "/",
     async ({ body, user, set }) => {
@@ -165,10 +133,6 @@ export const questions = new Elysia({
     },
   )
 
-  /**
-   * PATCH /questions/:id
-   * Update question
-   */
   .patch(
     "/:id",
     async ({ params, body, user, set }) => {
@@ -209,10 +173,6 @@ export const questions = new Elysia({
     },
   )
 
-  /**
-   * POST /questions/:id/versions
-   * Create a new version of a question
-   */
   .post(
     "/:id/versions",
     async ({ params, body, user, set }) => {
@@ -248,10 +208,6 @@ export const questions = new Elysia({
     },
   )
 
-  /**
-   * GET /questions/:id/versions
-   * Get all versions of a question
-   */
   .get(
     "/:id/versions",
     async ({ params, set }) => {
@@ -278,10 +234,6 @@ export const questions = new Elysia({
     },
   )
 
-  /**
-   * GET /questions/:id/versions/:versionId
-   * Get a specific version of a question
-   */
   .get(
     "/:id/versions/:versionId",
     async ({ params, set }) => {
@@ -309,10 +261,6 @@ export const questions = new Elysia({
     },
   )
 
-  /**
-   * DELETE /questions/:id
-   * Delete question (soft delete)
-   */
   .delete(
     "/:id",
     async ({ params, user, set }) => {
@@ -340,10 +288,6 @@ export const questions = new Elysia({
     },
   )
 
-  /**
-   * POST /questions/:id/restore
-   * Restore a deleted question (admin only)
-   */
   .post(
     "/:id/restore",
     async ({ params, user, set }) => {

@@ -1,8 +1,3 @@
-/**
- * Progress Module Controller
- * Routes for tracking user progress
- */
-
 import { QuestionLevel, Skill, StreakDirection } from "@common/enums";
 import {
   ErrorResponse,
@@ -13,8 +8,6 @@ import {
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import { ProgressService } from "./service";
-
-// ─── Inline Schemas ─────────────────────────────────────────────
 
 const ProgressResponse = t.Object({
   id: t.String({ format: "uuid" }),
@@ -30,18 +23,12 @@ const ProgressResponse = t.Object({
   updatedAt: t.String({ format: "date-time" }),
 });
 
-// ─── Controller ──────────────────────────────────────────────────
-
 export const progress = new Elysia({
   prefix: "/progress",
   detail: { tags: ["Progress"] },
 })
   .use(authPlugin)
 
-  /**
-   * GET /progress
-   * List user progress
-   */
   .get(
     "/",
     async ({ query, user }) => {
@@ -72,10 +59,6 @@ export const progress = new Elysia({
     },
   )
 
-  /**
-   * GET /progress/:id
-   * Get progress by ID
-   */
   .get(
     "/:id",
     async ({ params: { id } }) => {
@@ -95,10 +78,6 @@ export const progress = new Elysia({
     },
   )
 
-  /**
-   * POST /progress/update
-   * Update user progress
-   */
   .post(
     "/update",
     async ({ body, user }) => {
