@@ -103,7 +103,7 @@ export const exams = new Elysia({
     "/",
     async ({ body, user, set }) => {
       set.status = 201;
-      return await ExamService.create(user!.sub, body);
+      return await ExamService.create(user.sub, body);
     },
     {
       role: "admin",
@@ -155,7 +155,7 @@ export const exams = new Elysia({
   .post(
     "/sessions",
     async ({ body, user }) => {
-      return await ExamService.startSession(user!.sub, body);
+      return await ExamService.startSession(user.sub, body);
     },
     {
       auth: true,
@@ -178,8 +178,8 @@ export const exams = new Elysia({
     async ({ params: { sessionId }, user }) => {
       return await ExamService.getSessionById(
         sessionId,
-        user!.sub,
-        user!.role === "admin",
+        user.sub,
+        user.role === "admin",
       );
     },
     {
@@ -200,7 +200,7 @@ export const exams = new Elysia({
   .post(
     "/sessions/:sessionId/submit",
     async ({ params: { sessionId }, body, user }) => {
-      return await ExamService.submitAnswer(sessionId, user!.sub, body);
+      return await ExamService.submitAnswer(sessionId, user.sub, body);
     },
     {
       auth: true,
@@ -224,7 +224,7 @@ export const exams = new Elysia({
   .post(
     "/sessions/:sessionId/complete",
     async ({ params: { sessionId }, user }) => {
-      return await ExamService.completeSession(sessionId, user!.sub);
+      return await ExamService.completeSession(sessionId, user.sub);
     },
     {
       auth: true,

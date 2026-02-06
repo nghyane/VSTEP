@@ -1,86 +1,110 @@
+/**
+ * Authentication & authorization plugin for Elysia.
+ *
+ * Pattern: macro resolve-as-guard — `user` is non-null in protected handlers.
+ * JWT verification via jose (granular error handling).
+ *
+ * @example
+ *   .get("/me", ({ user }) => user.sub, { auth: true })
+ *   .get("/admin", ({ user }) => user, { role: "admin" })
+ */
+
 import { env } from "@common/env";
 import { bearer } from "@elysiajs/bearer";
-import { jwt } from "@elysiajs/jwt";
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
+import { jwtVerify, errors as joseErrors } from "jose";
+import { Value } from "@sinclair/typebox/value";
 import { ForbiddenError, TokenExpiredError, UnauthorizedError } from "./error";
+
+// ── Types ───────────────────────────────────────────────────────
+
+export type Role = "learner" | "instructor" | "admin";
 
 export interface JWTPayload {
   sub: string;
   jti: string;
-  role: "learner" | "instructor" | "admin";
+  role: Role;
 }
 
-/** Decode JWT payload without signature verification (for expiry detection) */
-function decodePayload(token: string): Record<string, unknown> | null {
+// ── Role hierarchy ──────────────────────────────────────────────
+
+const ROLE_LEVEL: Record<Role, number> = {
+  learner: 0,
+  instructor: 1,
+  admin: 2,
+};
+
+// ── Runtime validation schema ───────────────────────────────────
+
+const PayloadSchema = t.Object({
+  sub: t.String(),
+  jti: t.String(),
+  role: t.Union([
+    t.Literal("learner"),
+    t.Literal("instructor"),
+    t.Literal("admin"),
+  ]),
+});
+
+// ── JWT secret (encoded once at startup) ────────────────────────
+
+const JWT_SECRET = new TextEncoder().encode(env.JWT_SECRET!);
+
+// ── Verify access token ─────────────────────────────────────────
+
+export async function verifyAccessToken(token: string): Promise<JWTPayload> {
   try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    return JSON.parse(atob(parts[1]));
-  } catch {
-    return null;
-  }
-}
+    const { payload } = await jwtVerify(token, JWT_SECRET);
 
-export const authPlugin = new Elysia({ name: "auth" })
-  .use(bearer())
-  .use(
-    jwt({
-      name: "jwt",
-      secret: env.JWT_SECRET,
-      exp: env.JWT_EXPIRES_IN,
-    }),
-  )
-  .use(
-    jwt({
-      name: "refreshJwt",
-      secret: env.JWT_REFRESH_SECRET || env.JWT_SECRET,
-      exp: env.JWT_REFRESH_EXPIRES_IN,
-    }),
-  )
-  .resolve({ as: "global" }, async ({ jwt: jwtCtx, bearer: token }) => {
-    if (!token) return { user: null as JWTPayload | null };
-
-    const payload = await jwtCtx.verify(token);
-    if (!payload) {
-      // Distinguish expired from invalid
-      const decoded = decodePayload(token);
-      if (decoded?.exp && (decoded.exp as number) < Date.now() / 1000) {
-        throw new TokenExpiredError();
-      }
-      return { user: null as JWTPayload | null };
+    if (!Value.Check(PayloadSchema, payload)) {
+      throw new UnauthorizedError("Malformed token payload");
     }
 
     return {
-      user: {
-        sub: payload.sub as string,
-        jti: (payload.jti as string) || "",
-        role: (payload.role as JWTPayload["role"]) || "learner",
-      } satisfies JWTPayload,
+      sub: payload.sub as string,
+      jti: payload.jti as string,
+      role: payload.role as Role,
     };
-  })
+  } catch (e) {
+    if (e instanceof joseErrors.JWTExpired) throw new TokenExpiredError();
+    if (e instanceof UnauthorizedError) throw e;
+    throw new UnauthorizedError("Invalid token");
+  }
+}
+
+// ── Plugin ──────────────────────────────────────────────────────
+
+export const authPlugin = new Elysia({ name: "auth" })
+  .use(bearer())
+  // Type hint: macro resolve injects `user` at runtime, this derive
+  // provides the type declaration so TypeScript can see `user` on context.
+  // The actual value is always overwritten by the macro resolve guard.
+  .derive({ as: "scoped" }, () => ({
+    user: undefined as unknown as JWTPayload,
+  }))
   .macro({
     auth(enabled: boolean) {
       if (!enabled) return;
       return {
-        beforeHandle({ user }: { user: JWTPayload | null }) {
-          if (!user) throw new UnauthorizedError("Authentication required");
+        async resolve({ bearer: token }: { bearer: string | undefined }) {
+          if (!token)
+            throw new UnauthorizedError("Authentication required");
+          return { user: await verifyAccessToken(token) };
         },
       };
     },
-    role(required: "admin" | "instructor") {
+    role(required: Role) {
       return {
-        beforeHandle({ user }: { user: JWTPayload | null }) {
-          if (!user) throw new UnauthorizedError("Authentication required");
-          if (required === "admin" && user.role !== "admin") {
-            throw new ForbiddenError("Admin access required");
+        async resolve({ bearer: token }: { bearer: string | undefined }) {
+          if (!token)
+            throw new UnauthorizedError("Authentication required");
+          const user = await verifyAccessToken(token);
+          if (ROLE_LEVEL[user.role] < ROLE_LEVEL[required]) {
+            throw new ForbiddenError(
+              `${required.charAt(0).toUpperCase() + required.slice(1)} access required`,
+            );
           }
-          if (
-            required === "instructor" &&
-            user.role !== "instructor" &&
-            user.role !== "admin"
-          ) {
-            throw new ForbiddenError("Instructor access required");
-          }
+          return { user };
         },
       };
     },

@@ -27,14 +27,14 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
 
   .post(
     "/login",
-    async ({ body, jwt, request }) => {
+    async ({ body, request }) => {
       const deviceInfo = request.headers.get("user-agent") ?? undefined;
       const { user, refreshToken, jti } = await AuthService.login({
         ...body,
         deviceInfo,
       });
 
-      const accessToken = await jwt.sign({
+      const accessToken = await AuthService.signAccessToken({
         sub: user.id,
         role: user.role,
         jti,
@@ -84,14 +84,14 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
 
   .post(
     "/refresh",
-    async ({ body, jwt, request }) => {
+    async ({ body, request }) => {
       const deviceInfo = request.headers.get("user-agent") ?? undefined;
       const { user, newRefreshToken, jti } = await AuthService.refreshToken(
         body.refreshToken,
         deviceInfo,
       );
 
-      const accessToken = await jwt.sign({
+      const accessToken = await AuthService.signAccessToken({
         sub: user.id,
         role: user.role,
         jti,

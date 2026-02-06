@@ -13,7 +13,7 @@ import {
   PaginationQuery,
 } from "@common/schemas";
 import { Elysia, t } from "elysia";
-import { authPlugin } from "@/plugins/auth";
+import { authPlugin, verifyAccessToken } from "@/plugins/auth";
 import { QuestionService } from "./service";
 
 // ─── Inline Response Schemas ────────────────────────────────────
@@ -67,12 +67,19 @@ export const questions = new Elysia({
    */
   .get(
     "/",
-    async ({ query, user, set }) => {
-      const result = await QuestionService.list(
-        query,
-        user?.sub ?? "anonymous",
-        user?.role === "admin",
-      );
+    async ({ query, bearer: token, set }) => {
+      let userId = "anonymous";
+      let isAdmin = false;
+      if (token) {
+        try {
+          const user = await verifyAccessToken(token);
+          userId = user.sub;
+          isAdmin = user.role === "admin";
+        } catch {
+          // Invalid/expired token on public route → treat as anonymous
+        }
+      }
+      const result = await QuestionService.list(query, userId, isAdmin);
       set.status = 200;
       return result;
     },
@@ -132,7 +139,7 @@ export const questions = new Elysia({
   .post(
     "/",
     async ({ body, user, set }) => {
-      const result = await QuestionService.create(user!.sub, body);
+      const result = await QuestionService.create(user.sub, body);
       set.status = 201;
       return result;
     },
@@ -167,8 +174,8 @@ export const questions = new Elysia({
     async ({ params, body, user, set }) => {
       const result = await QuestionService.update(
         params.id,
-        user!.sub,
-        user!.role === "admin",
+        user.sub,
+        user.role === "admin",
         body,
       );
       set.status = 200;
@@ -211,8 +218,8 @@ export const questions = new Elysia({
     async ({ params, body, user, set }) => {
       const result = await QuestionService.createVersion(
         params.id,
-        user!.sub,
-        user!.role === "admin",
+        user.sub,
+        user.role === "admin",
         body,
       );
       set.status = 201;
@@ -311,8 +318,8 @@ export const questions = new Elysia({
     async ({ params, user, set }) => {
       const result = await QuestionService.remove(
         params.id,
-        user!.sub,
-        user!.role === "admin",
+        user.sub,
+        user.role === "admin",
       );
       set.status = 200;
       return result;
@@ -342,8 +349,8 @@ export const questions = new Elysia({
     async ({ params, user, set }) => {
       const result = await QuestionService.restore(
         params.id,
-        user!.sub,
-        user!.role === "admin",
+        user.sub,
+        user.role === "admin",
       );
       set.status = 200;
       return result;

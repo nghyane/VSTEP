@@ -1,8 +1,14 @@
 import { env } from "@common/env";
 import { assertExists } from "@common/utils";
 import { and, asc, eq, gt, isNull } from "drizzle-orm";
+import { SignJWT } from "jose";
 import { db, table } from "@/db";
+import type { JWTPayload } from "@/plugins/auth";
 import { ConflictError, UnauthorizedError } from "@/plugins/error";
+
+// ── JWT secrets (encoded once at startup) ───────────────────────
+
+const ACCESS_SECRET = new TextEncoder().encode(env.JWT_SECRET!);
 
 const MAX_REFRESH_TOKENS = 3;
 
@@ -40,6 +46,14 @@ export function parseExpiry(str: string): number {
 }
 
 export abstract class AuthService {
+  /** Sign a JWT access token with jose */
+  static async signAccessToken(payload: JWTPayload): Promise<string> {
+    return new SignJWT({ ...payload })
+      .setProtectedHeader({ alg: "HS256" })
+      .setExpirationTime(env.JWT_EXPIRES_IN!)
+      .sign(ACCESS_SECRET);
+  }
+
   static async hashPassword(password: string): Promise<string> {
     return Bun.password.hash(password, {
       algorithm: "argon2id",

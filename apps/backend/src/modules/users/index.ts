@@ -154,8 +154,8 @@ export const users = new Elysia({
       const result = await UserService.update(
         params.id,
         body,
-        user!.sub,
-        user!.role === "admin",
+        user.sub,
+        user.role === "admin",
       );
       set.status = 200;
       return result;
@@ -233,8 +233,8 @@ export const users = new Elysia({
       const result = await UserService.updatePassword(
         params.id,
         body,
-        user!.sub,
-        user!.role === "admin",
+        user.sub,
+        user.role === "admin",
       );
       set.status = 200;
       return result;
