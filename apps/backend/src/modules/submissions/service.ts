@@ -170,9 +170,9 @@ export abstract class SubmissionService {
     userId: string,
     body: { questionId: string; skill: string; answer: unknown },
   ) {
-    // Validate question exists
+    // Validate question exists and is active
     const question = await db.query.questions.findFirst({
-      columns: { id: true },
+      columns: { id: true, isActive: true },
       where: and(
         eq(table.questions.id, body.questionId),
         notDeleted(table.questions),
@@ -181,6 +181,10 @@ export abstract class SubmissionService {
 
     if (!question) {
       throw new NotFoundError("Question not found");
+    }
+
+    if (!question.isActive) {
+      throw new BadRequestError("Question is not active");
     }
 
     // Create submission and details in transaction
@@ -331,12 +335,20 @@ export abstract class SubmissionService {
         );
       }
 
+      // Validate score: 0-10 range, 0.5 step per VSTEP spec
+      if (body.score < 0 || body.score > 10) {
+        throw new BadRequestError("Score must be between 0 and 10");
+      }
+      if (body.score % 0.5 !== 0) {
+        throw new BadRequestError("Score must be in 0.5 increments");
+      }
+
       const [updatedSubmission] = await tx
         .update(table.submissions)
         .set({
           status: "completed",
           score: body.score,
-          band: body.band || null,
+          band: body.band || scoreToBand(body.score),
           updatedAt: new Date(),
           completedAt: new Date(),
         })
@@ -444,6 +456,13 @@ export abstract class SubmissionService {
 
       if (!row) {
         throw new NotFoundError("Submission not found");
+      }
+
+      // Only listening/reading can be auto-graded
+      if (row.skill !== "listening" && row.skill !== "reading") {
+        throw new BadRequestError(
+          "Only listening and reading submissions can be auto-graded",
+        );
       }
 
       if (!row.answerKey) {
