@@ -5,6 +5,7 @@
  * @see https://elysiajs.com/pattern/mvc.html
  */
 
+import { QuestionLevel, QuestionSkill } from "@common/enums";
 import {
   ErrorResponse,
   IdParam,
@@ -14,22 +15,6 @@ import {
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import { QuestionService } from "./service";
-
-// ─── Inline Enum Schemas ────────────────────────────────────────
-
-const QuestionSkill = t.Union([
-  t.Literal("listening"),
-  t.Literal("reading"),
-  t.Literal("writing"),
-  t.Literal("speaking"),
-]);
-
-const QuestionLevel = t.Union([
-  t.Literal("A2"),
-  t.Literal("B1"),
-  t.Literal("B2"),
-  t.Literal("C1"),
-]);
 
 // ─── Inline Response Schemas ────────────────────────────────────
 
@@ -110,7 +95,6 @@ export const questions = new Elysia({
       detail: {
         summary: "List questions",
         description: "List questions with filtering and pagination",
-        tags: ["Questions"],
       },
     },
   )
@@ -135,7 +119,6 @@ export const questions = new Elysia({
       detail: {
         summary: "Get question",
         description: "Get a question by ID",
-        tags: ["Questions"],
       },
     },
   )
@@ -171,7 +154,6 @@ export const questions = new Elysia({
       detail: {
         summary: "Create question",
         description: "Create a new question",
-        tags: ["Questions"],
       },
     },
   )
@@ -216,7 +198,6 @@ export const questions = new Elysia({
       detail: {
         summary: "Update question",
         description: "Update a question",
-        tags: ["Questions"],
       },
     },
   )
@@ -255,7 +236,7 @@ export const questions = new Elysia({
       detail: {
         summary: "Create question version",
         description: "Create a new version of a question",
-        tags: ["Questions", "Versions"],
+        tags: ["Versions"],
       },
     },
   )
@@ -285,7 +266,7 @@ export const questions = new Elysia({
       detail: {
         summary: "List question versions",
         description: "Get all versions of a question",
-        tags: ["Questions", "Versions"],
+        tags: ["Versions"],
       },
     },
   )
@@ -316,7 +297,7 @@ export const questions = new Elysia({
       detail: {
         summary: "Get question version",
         description: "Get a specific version of a question",
-        tags: ["Questions", "Versions"],
+        tags: ["Versions"],
       },
     },
   )
@@ -348,7 +329,6 @@ export const questions = new Elysia({
       detail: {
         summary: "Delete question",
         description: "Soft delete a question",
-        tags: ["Questions"],
       },
     },
   )
@@ -381,7 +361,7 @@ export const questions = new Elysia({
       detail: {
         summary: "Restore question",
         description: "Restore a deleted question (admin only)",
-        tags: ["Questions", "Admin"],
+        tags: ["Admin"],
       },
     },
   );

@@ -5,6 +5,7 @@
  * @see https://elysiajs.com/pattern/mvc.html
  */
 
+import { UserRole } from "@common/enums";
 import {
   createResponseSchema,
   ErrorResponse,
@@ -19,12 +20,6 @@ import { authPlugin } from "@/plugins/auth";
 import { UserService } from "./service";
 
 // ─── Shared Schemas ─────────────────────────────────────────────
-
-const UserRole = t.Union([
-  t.Literal("learner"),
-  t.Literal("instructor"),
-  t.Literal("admin"),
-]);
 
 const UserResponse = createResponseSchema(table.users, {
   omit: ["passwordHash", "deletedAt"],
@@ -66,7 +61,6 @@ export const users = new Elysia({
       detail: {
         summary: "Get user",
         description: "Get user details by ID",
-        tags: ["Users"],
       },
     },
   )
@@ -100,7 +94,6 @@ export const users = new Elysia({
       detail: {
         summary: "List users",
         description: "List users with pagination and filtering (Admin only)",
-        tags: ["Users"],
       },
     },
   )
@@ -144,7 +137,6 @@ export const users = new Elysia({
       detail: {
         summary: "Create user",
         description: "Create a new user account (Admin only)",
-        tags: ["Users"],
       },
     },
   )
@@ -194,7 +186,6 @@ export const users = new Elysia({
       detail: {
         summary: "Update user",
         description: "Update user details",
-        tags: ["Users"],
       },
     },
   )
@@ -225,7 +216,6 @@ export const users = new Elysia({
       detail: {
         summary: "Delete user",
         description: "Soft delete a user account (Admin only)",
-        tags: ["Users"],
       },
     },
   )
@@ -265,7 +255,6 @@ export const users = new Elysia({
       detail: {
         summary: "Update password",
         description: "Update user password",
-        tags: ["Users"],
       },
     },
   );

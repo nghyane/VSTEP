@@ -53,7 +53,6 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
       detail: {
         summary: "Login",
         description: "Authenticate user with email and password",
-        tags: ["Auth"],
       },
     },
   )
@@ -78,7 +77,6 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
       detail: {
         summary: "Register",
         description: "Register a new user account",
-        tags: ["Auth"],
       },
     },
   )
@@ -110,7 +108,6 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
       detail: {
         summary: "Refresh token",
         description: "Get new access token using refresh token",
-        tags: ["Auth"],
       },
     },
   )
@@ -128,7 +125,6 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
       detail: {
         summary: "Logout",
         description: "Logout user and revoke refresh token",
-        tags: ["Auth"],
       },
     },
   )
@@ -155,7 +151,6 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
       detail: {
         summary: "Get current user",
         description: "Get details of the currently authenticated user",
-        tags: ["Auth"],
       },
     },
   );

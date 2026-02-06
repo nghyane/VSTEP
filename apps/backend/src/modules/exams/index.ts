@@ -3,6 +3,7 @@
  * Routes for exam management
  */
 
+import { ExamStatus, QuestionLevel } from "@common/enums";
 import {
   ErrorResponse,
   IdParam,
@@ -15,23 +16,9 @@ import { ExamService } from "./service";
 
 // ─── Inline Schemas ──────────────────────────────────────────────
 
-const ExamLevel = t.Union([
-  t.Literal("A2"),
-  t.Literal("B1"),
-  t.Literal("B2"),
-  t.Literal("C1"),
-]);
-
-const ExamStatus = t.Union([
-  t.Literal("in_progress"),
-  t.Literal("submitted"),
-  t.Literal("completed"),
-  t.Literal("abandoned"),
-]);
-
 const ExamSchema = t.Object({
   id: t.String({ format: "uuid" }),
-  level: ExamLevel,
+  level: QuestionLevel,
   blueprint: t.Any(),
   isActive: t.Boolean(),
   createdBy: t.Nullable(t.String({ format: "uuid" })),
@@ -78,7 +65,7 @@ export const exams = new Elysia({
     {
       query: t.Object({
         ...PaginationQuery.properties,
-        level: t.Optional(ExamLevel),
+        level: t.Optional(QuestionLevel),
         isActive: t.Optional(t.Boolean()),
       }),
       response: {
@@ -89,7 +76,6 @@ export const exams = new Elysia({
       },
       detail: {
         summary: "List exams",
-        tags: ["Exams"],
       },
     },
   )
@@ -107,7 +93,6 @@ export const exams = new Elysia({
       },
       detail: {
         summary: "Get exam by ID",
-        tags: ["Exams"],
       },
     },
   )
@@ -123,7 +108,7 @@ export const exams = new Elysia({
     {
       role: "admin",
       body: t.Object({
-        level: ExamLevel,
+        level: QuestionLevel,
         blueprint: t.Any(),
         isActive: t.Optional(t.Boolean({ default: true })),
       }),
@@ -134,7 +119,6 @@ export const exams = new Elysia({
       },
       detail: {
         summary: "Create exam (Admin)",
-        tags: ["Exams"],
       },
     },
   )
@@ -149,7 +133,7 @@ export const exams = new Elysia({
       params: IdParam,
       body: t.Partial(
         t.Object({
-          level: ExamLevel,
+          level: QuestionLevel,
           blueprint: t.Any(),
           isActive: t.Boolean(),
         }),
@@ -162,7 +146,6 @@ export const exams = new Elysia({
       },
       detail: {
         summary: "Update exam (Admin)",
-        tags: ["Exams"],
       },
     },
   )
@@ -186,7 +169,6 @@ export const exams = new Elysia({
       },
       detail: {
         summary: "Start exam session",
-        tags: ["Exams"],
       },
     },
   )
@@ -211,7 +193,6 @@ export const exams = new Elysia({
       },
       detail: {
         summary: "Get session by ID",
-        tags: ["Exams"],
       },
     },
   )
@@ -236,7 +217,6 @@ export const exams = new Elysia({
       },
       detail: {
         summary: "Submit answer for session",
-        tags: ["Exams"],
       },
     },
   )
@@ -257,7 +237,6 @@ export const exams = new Elysia({
       },
       detail: {
         summary: "Complete exam session",
-        tags: ["Exams"],
       },
     },
   );
