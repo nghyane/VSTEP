@@ -23,7 +23,7 @@ const mapSubmissionResponse = (
     skill: string;
     status: string;
     score: number | null | undefined;
-    band: number | null | undefined;
+    band: string | null | undefined;
     completedAt: Date | null | undefined;
     createdAt: Date;
     updatedAt: Date;
@@ -256,7 +256,7 @@ export abstract class SubmissionService {
       answer?: unknown;
       status?: string;
       score?: number;
-      band?: number;
+      band?: string;
       feedback?: string;
     },
   ) {
@@ -346,7 +346,7 @@ export abstract class SubmissionService {
    */
   static async grade(
     submissionId: string,
-    body: { score: number; band?: number; feedback?: string },
+    body: { score: number; band?: string; feedback?: string },
   ) {
     return await db.transaction(async (tx) => {
       const [submission] = await tx

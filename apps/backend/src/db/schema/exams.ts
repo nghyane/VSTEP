@@ -2,10 +2,10 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
-  integer,
   jsonb,
   pgEnum,
   pgTable,
+  real,
   timestamp,
   uniqueIndex,
   uuid,
@@ -16,6 +16,7 @@ import { users } from "./users";
 
 export const examStatusEnum = pgEnum("exam_status", [
   "in_progress",
+  "submitted",
   "completed",
   "abandoned",
 ]);
@@ -57,11 +58,11 @@ export const examSessions = pgTable(
       .references(() => exams.id, { onDelete: "cascade" })
       .notNull(),
     status: examStatusEnum("status").default("in_progress").notNull(),
-    listeningScore: integer("listening_score"),
-    readingScore: integer("reading_score"),
-    writingScore: integer("writing_score"),
-    speakingScore: integer("speaking_score"),
-    overallScore: integer("overall_score"),
+    listeningScore: real("listening_score"),
+    readingScore: real("reading_score"),
+    writingScore: real("writing_score"),
+    speakingScore: real("speaking_score"),
+    overallScore: real("overall_score"),
     skillScores: jsonb("skill_scores"),
     startedAt: timestamp("started_at", { withTimezone: true })
       .defaultNow()

@@ -81,7 +81,7 @@ flowchart LR
 ## Business rules defaults (Chốt)
 
 - Grading SLA: Writing 20 phút; Speaking 60 phút.
-- Timeout: quá `deadlineAt` → `FAILED(TIMEOUT)`; callback muộn lưu `isLate=true`, giữ `FAILED`.
+- Timeout: quá `deadline` → `failed`; callback muộn lưu `isLate=true`, giữ `failed`.
 - Retry/backoff: `max_retries=3`, exponential + jitter, cap 5 phút, tôn trọng `Retry-After`.
 
 ---

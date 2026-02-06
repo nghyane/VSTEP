@@ -132,7 +132,7 @@ Callback queue dùng cho **progress updates** và **final result/error**.
 
 | Field | Type | Required | Notes |
 |-------|------|----------|------|
-| `status` | enum | Yes | `PROCESSING` |
+| `status` | enum | Yes | `processing` |
 | `progress` | number | No | 0..1 (best-effort) |
 | `message` | string | No | text ngắn cho UI |
 
@@ -154,8 +154,8 @@ Progress events **best-effort**: có thể bị drop; client không nên phụ t
 
 `kind=completed` nghĩa là **AI grading đã kết thúc** (không đồng nghĩa learner có final result ngay). Main App quyết định:
 
-- `reviewPending=false` → set submission status `COMPLETED`
-- `reviewPending=true` → set submission status `REVIEW_PENDING` và đưa vào hàng chờ instructor
+- `reviewPending=false` → set submission status `completed`
+- `reviewPending=true` → set submission status `review_pending` và đưa vào hàng chờ instructor
 
 Chi tiết rubric/feedback shape: tham chiếu `../20-domain/hybrid-grading.md`.
 

@@ -69,7 +69,7 @@ Token truyền qua query parameter vì EventSource API (browser) không cho phé
 ## 5. Các loại Event
 
 ### grading.progress
-Gửi khi grading đang xử lý. Data tối thiểu: submissionId, status (PROCESSING). Có thể kèm progress (0..1) và message (best-effort).
+Gửi khi grading đang xử lý. Data tối thiểu: submissionId, status (`processing`). Có thể kèm progress (0..1) và message (best-effort).
 
 ### grading.review_pending
 Gửi khi AI grading hoàn tất nhưng `reviewPending=true`. UI phải hiển thị trạng thái "đang chờ chấm thủ công" và không coi đây là kết quả cuối cùng.

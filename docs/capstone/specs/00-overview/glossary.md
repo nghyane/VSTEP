@@ -51,7 +51,8 @@ pending → queued → processing → completed
 | Value | Meaning |
 |-------|---------|
 | `in_progress` | Đang làm bài |
-| `completed` | Đã hoàn thành |
+| `submitted` | Đã nộp, chờ chấm writing/speaking |
+| `completed` | Đã hoàn thành, đủ 4 skill scores |
 | `abandoned` | Bỏ dở |
 
 ### Streak Direction (`streak_direction`)
@@ -72,7 +73,10 @@ Tất cả enum values dùng **lowercase**: `pending`, `low`, `auto`, `up`.
 | `grading_mode` | `auto`, `human`, `hybrid` |
 | `streak_direction` | `up`, `down`, `neutral` |
 | `skill` | `listening`, `reading`, `writing`, `speaking` |
-| `question_level` | `A2`, `B1`, `B2`, `C1` |
+| `question_level` | `A1`, `A2`, `B1`, `B2`, `C1` |
+| `vstep_band` | `A1`, `A2`, `B1`, `B2`, `C1` |
+| `outbox_status` | `pending`, `processing`, `published`, `failed` |
+| `exam_status` | `in_progress`, `submitted`, `completed`, `abandoned` |
 
 ## API Verbs
 

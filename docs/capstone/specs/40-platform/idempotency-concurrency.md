@@ -37,8 +37,8 @@ Update rule khi consume callback:
 
 - Insert `processed_callbacks.event_id` trước hoặc trong cùng transaction để đảm bảo exactly-once effects.
 - Update submission bằng “guarded update”:
-  - Nếu `deadlineAt < now` và submission đã FAILED(TIMEOUT) → chỉ lưu `is_late=true`, không flip state.
-  - Nếu nhận progress sau khi đã terminal (COMPLETED/FAILED) → ignore.
+  - Nếu `deadline < now` và submission đã `failed` (timeout) → chỉ lưu `is_late=true`, không flip state.
+  - Nếu nhận progress sau khi đã terminal (`completed`/`failed`) → ignore.
 
 ### 4) Grading Service: request dedup
 
@@ -65,7 +65,7 @@ Update rule khi consume callback:
 |-----------|---------|
 | Duplicate callback deliveries | Bị chặn bởi `processed_callbacks(event_id)` |
 | Out-of-order progress/completed | Completed là authoritative; progress sau completed bị ignore |
-| Late completed sau FAILED(TIMEOUT) | Lưu result `is_late=true`, không update progress |
+| Late completed sau `failed` (timeout) | Lưu result `is_late=true`, không update progress |
 
 ## Acceptance criteria
 

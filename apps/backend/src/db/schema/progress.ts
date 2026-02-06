@@ -3,13 +3,14 @@ import {
   integer,
   pgEnum,
   pgTable,
+  real,
   timestamp,
   uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
 import { questionLevelEnum } from "./questions";
-import { skillEnum, submissions } from "./submissions";
+import { skillEnum, submissions, vstepBandEnum } from "./submissions";
 import { users } from "./users";
 
 export const streakDirectionEnum = pgEnum("streak_direction", [
@@ -58,7 +59,7 @@ export const userSkillScores = pgTable(
     submissionId: uuid("submission_id")
       .references(() => submissions.id, { onDelete: "cascade" })
       .notNull(),
-    score: integer("score").notNull(),
+    score: real("score").notNull(),
     scaffoldingType: varchar("scaffolding_type", { length: 20 }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -80,7 +81,7 @@ export const userGoals = pgTable(
     userId: uuid("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
-    targetBand: integer("target_band").notNull(),
+    targetBand: vstepBandEnum("target_band").notNull(),
     currentEstimatedBand: varchar("current_estimated_band", { length: 10 }),
     deadline: timestamp("deadline", { withTimezone: true }),
     dailyStudyTimeMinutes: integer("daily_study_time_minutes")

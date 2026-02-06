@@ -42,7 +42,17 @@ const SubmissionInfo = t.Object({
   skill: SkillType,
   status: SubmissionStatus,
   score: t.Optional(t.Nullable(t.Number())),
-  band: t.Optional(t.Nullable(t.Number())),
+  band: t.Optional(
+    t.Nullable(
+      t.Union([
+        t.Literal("A1"),
+        t.Literal("A2"),
+        t.Literal("B1"),
+        t.Literal("B2"),
+        t.Literal("C1"),
+      ]),
+    ),
+  ),
   completedAt: t.Optional(t.String()),
   createdAt: t.String(),
   updatedAt: t.String(),
@@ -187,7 +197,13 @@ export const submissions = new Elysia({ prefix: "/submissions" })
           answer: t.Any(),
           status: SubmissionStatus,
           score: t.Number(),
-          band: t.Number(),
+          band: t.Union([
+            t.Literal("A1"),
+            t.Literal("A2"),
+            t.Literal("B1"),
+            t.Literal("B2"),
+            t.Literal("C1"),
+          ]),
           feedback: t.String(),
         }),
       ),

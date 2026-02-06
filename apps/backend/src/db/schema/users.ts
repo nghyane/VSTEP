@@ -60,6 +60,7 @@ export const refreshTokens = pgTable(
   },
   (table) => ({
     tokenHashIdx: index("refresh_tokens_hash_idx").on(table.tokenHash),
+    jtiUnique: uniqueIndex("refresh_tokens_jti_unique").on(table.jti),
     userIdIdx: index("refresh_tokens_user_id_idx").on(table.userId),
     activeIdx: index("refresh_tokens_active_idx")
       .on(table.userId)

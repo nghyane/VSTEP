@@ -6,6 +6,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  real,
   timestamp,
   uuid,
   varchar,
@@ -44,6 +45,14 @@ export const gradingModeEnum = pgEnum("grading_mode", [
   "hybrid",
 ]);
 
+export const vstepBandEnum = pgEnum("vstep_band", [
+  "A1",
+  "A2",
+  "B1",
+  "B2",
+  "C1",
+]);
+
 export const submissions = pgTable(
   "submissions",
   {
@@ -56,8 +65,8 @@ export const submissions = pgTable(
       .notNull(),
     skill: skillEnum("skill").notNull(),
     status: submissionStatusEnum("status").default("pending").notNull(),
-    score: integer("score"),
-    band: integer("band"),
+    score: real("score"),
+    band: vstepBandEnum("band"),
     confidence: integer("confidence"),
     reviewPending: boolean("review_pending").default(false),
     isLate: boolean("is_late").default(false),

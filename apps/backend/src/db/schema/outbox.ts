@@ -15,7 +15,7 @@ import { submissions } from "./submissions";
 export const outboxStatusEnum = pgEnum("outbox_status", [
   "pending",
   "processing",
-  "sent",
+  "published",
   "failed",
 ]);
 
@@ -35,7 +35,7 @@ export const outbox = pgTable(
     errorMessage: text("error_message"),
     lockedAt: timestamp("locked_at", { withTimezone: true }),
     lockedBy: varchar("locked_by", { length: 64 }),
-    sentAt: timestamp("sent_at", { withTimezone: true }),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -53,7 +53,7 @@ export const outbox = pgTable(
 export const processedCallbacks = pgTable(
   "processed_callbacks",
   {
-    eventId: varchar("event_id", { length: 100 }).primaryKey(),
+    eventId: uuid("event_id").primaryKey(),
     requestId: uuid("request_id").notNull(),
     submissionId: uuid("submission_id")
       .references(() => submissions.id, { onDelete: "cascade" })
