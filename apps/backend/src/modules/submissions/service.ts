@@ -4,7 +4,7 @@
  */
 
 import { assertExists, serializeDates } from "@common/utils";
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, sql } from "drizzle-orm";
 import type { Submission } from "@/db";
 import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
 import {
@@ -25,6 +25,14 @@ const SUBMISSION_COLUMNS = {
   createdAt: table.submissions.createdAt,
   updatedAt: table.submissions.updatedAt,
 } as const;
+
+/** Score-to-band mapping per VSTEP spec */
+function scoreToBand(score: number): string | null {
+  if (score >= 8.5) return "C1";
+  if (score >= 6.0) return "B2";
+  if (score >= 4.0) return "B1";
+  return null;
+}
 
 // ─── Service ────────────────────────────────────────────────────
 
@@ -396,18 +404,31 @@ export abstract class SubmissionService {
   }
 
   /**
-   * Auto-grade a submission (for objective questions)
+   * Auto-grade a submission (for listening/reading objective questions)
+   * Uses PostgreSQL JSONB per-item comparison instead of JS-side JSON.stringify
+   * Score: (correctCount / totalCount) * 10, rounded to nearest 0.5
    */
   static async autoGrade(
     submissionId: string,
   ): Promise<{ score: number; result: unknown }> {
     return await db.transaction(async (tx) => {
-      const [submission] = await tx
+      // Compute score in PostgreSQL using JSONB per-item comparison
+      const [row] = await tx
         .select({
           id: table.submissions.id,
-          answer: table.submissionDetails.answer,
-          correctAnswer: table.questions.answerKey,
-          format: table.questions.format,
+          skill: table.submissions.skill,
+          answerKey: table.questions.answerKey,
+          correctCount: sql<number>`(
+            SELECT count(*)
+            FROM jsonb_each_text(${table.questions.answerKey} -> 'correctAnswers') ak
+            JOIN jsonb_each_text(${table.submissionDetails.answer} -> 'answers') ua
+              ON ak.key = ua.key
+            WHERE lower(trim(ua.value)) = lower(trim(ak.value))
+          )::int`,
+          totalCount: sql<number>`(
+            SELECT count(*)
+            FROM jsonb_each_text(${table.questions.answerKey} -> 'correctAnswers')
+          )::int`,
         })
         .from(table.submissions)
         .innerJoin(
@@ -421,55 +442,37 @@ export abstract class SubmissionService {
         .where(eq(table.submissions.id, submissionId))
         .limit(1);
 
-      if (!submission) {
+      if (!row) {
         throw new NotFoundError("Submission not found");
       }
 
-      let isCorrect = false;
-      const userAnswer = submission.answer;
-      const correctAnswer = submission.correctAnswer;
-
-      switch (submission.format) {
-        case "multiple_choice":
-          isCorrect =
-            JSON.stringify(userAnswer) === JSON.stringify(correctAnswer);
-          break;
-        case "fill_in_blank":
-          if (
-            typeof userAnswer === "string" &&
-            typeof correctAnswer === "string"
-          ) {
-            isCorrect =
-              userAnswer.trim().toLowerCase() ===
-              correctAnswer.trim().toLowerCase();
-          } else {
-            isCorrect =
-              JSON.stringify(userAnswer) === JSON.stringify(correctAnswer);
-          }
-          break;
-        default: {
-          const answerStr =
-            typeof userAnswer === "string"
-              ? userAnswer
-              : JSON.stringify(userAnswer);
-          const correctAnswerStr =
-            typeof correctAnswer === "string"
-              ? correctAnswer
-              : JSON.stringify(correctAnswer);
-          isCorrect =
-            answerStr?.trim().toLowerCase() ===
-            correctAnswerStr?.trim().toLowerCase();
-        }
+      if (!row.answerKey) {
+        throw new BadRequestError(
+          "Question has no answer key for auto-grading",
+        );
       }
 
-      const score = isCorrect ? 100 : 0;
-      const result = { correct: isCorrect, gradedAt: new Date().toISOString() };
+      const { correctCount, totalCount } = row;
+
+      // (correct / total) * 10, rounded to nearest 0.5 per VSTEP spec
+      const rawScore = totalCount > 0 ? (correctCount / totalCount) * 10 : 0;
+      const score = Math.round(rawScore * 2) / 2;
+      const band = scoreToBand(score);
+
+      const result = {
+        correctCount,
+        totalCount,
+        score,
+        band,
+        gradedAt: new Date().toISOString(),
+      };
 
       await tx
         .update(table.submissions)
         .set({
           status: "completed",
           score,
+          band,
           completedAt: new Date(),
           updatedAt: new Date(),
         })
