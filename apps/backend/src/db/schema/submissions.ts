@@ -89,7 +89,8 @@ export const submissions = pgTable(
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
-      .notNull(),
+      .notNull()
+      .$onUpdate(() => new Date().toISOString()),
     completedAt: timestamp("completed_at", { withTimezone: true, mode: "string" }),
     deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
   },
@@ -126,7 +127,8 @@ export const submissionDetails = pgTable("submission_details", {
     .notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
     .defaultNow()
-    .notNull(),
+    .notNull()
+    .$onUpdate(() => new Date().toISOString()),
 });
 
 export const submissionEvents = pgTable(

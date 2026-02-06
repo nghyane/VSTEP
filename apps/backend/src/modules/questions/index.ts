@@ -13,10 +13,9 @@ export const questions = new Elysia({
 
   .get(
     "/",
-    async ({ query, user, set }) => {
+    async ({ query, user }) => {
       const isAdmin = user.role === "admin";
       const result = await QuestionService.list(query, user.sub, isAdmin);
-      set.status = 200;
       return result;
     },
     {
@@ -46,9 +45,8 @@ export const questions = new Elysia({
 
   .get(
     "/:id",
-    async ({ params, set }) => {
+    async ({ params }) => {
       const result = await QuestionService.getById(params.id);
-      set.status = 200;
       return result;
     },
     {
@@ -92,14 +90,13 @@ export const questions = new Elysia({
 
   .patch(
     "/:id",
-    async ({ params, body, user, set }) => {
+    async ({ params, body, user }) => {
       const result = await QuestionService.update(
         params.id,
         user.sub,
         user.role === "admin",
         body,
       );
-      set.status = 200;
       return result;
     },
     {
@@ -155,9 +152,8 @@ export const questions = new Elysia({
 
   .get(
     "/:id/versions",
-    async ({ params, set }) => {
+    async ({ params }) => {
       const result = await QuestionService.getVersions(params.id);
-      set.status = 200;
       return result;
     },
     {
@@ -182,12 +178,11 @@ export const questions = new Elysia({
 
   .get(
     "/:id/versions/:versionId",
-    async ({ params, set }) => {
+    async ({ params }) => {
       const result = await QuestionService.getVersion(
         params.id,
         params.versionId,
       );
-      set.status = 200;
       return result;
     },
     {
@@ -209,13 +204,12 @@ export const questions = new Elysia({
 
   .delete(
     "/:id",
-    async ({ params, user, set }) => {
+    async ({ params, user }) => {
       const result = await QuestionService.remove(
         params.id,
         user.sub,
         user.role === "admin",
       );
-      set.status = 200;
       return result;
     },
     {
@@ -236,13 +230,12 @@ export const questions = new Elysia({
 
   .post(
     "/:id/restore",
-    async ({ params, user, set }) => {
+    async ({ params, user }) => {
       const result = await QuestionService.restore(
         params.id,
         user.sub,
         user.role === "admin",
       );
-      set.status = 200;
       return result;
     },
     {

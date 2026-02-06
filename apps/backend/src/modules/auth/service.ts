@@ -38,7 +38,7 @@ export function parseExpiry(str: string): number {
   }
 }
 
-export abstract class AuthService {
+export class AuthService {
   static async signAccessToken(payload: JWTPayload): Promise<string> {
     return new SignJWT({ ...payload })
       .setProtectedHeader({ alg: "HS256" })

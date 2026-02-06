@@ -19,10 +19,25 @@ export const progress = new Elysia({
     {
       auth: true,
       response: {
-        200: t.Array(ProgressModel.Progress),
+        200: ProgressModel.OverviewResponse,
         401: ErrorResponse,
       },
       detail: { summary: "Get progress overview (all skills)" },
+    },
+  )
+
+  .get(
+    "/spider-chart",
+    async ({ user }) => {
+      return await ProgressService.getSpiderChart(user.sub);
+    },
+    {
+      auth: true,
+      response: {
+        200: ProgressModel.SpiderChartResponse,
+        401: ErrorResponse,
+      },
+      detail: { summary: "Get spider chart data for all skills" },
     },
   )
 
@@ -35,7 +50,7 @@ export const progress = new Elysia({
       auth: true,
       params: t.Object({ skill: Skill }),
       response: {
-        200: ProgressModel.Progress,
+        200: ProgressModel.SkillDetailResponse,
         401: ErrorResponse,
       },
       detail: { summary: "Get progress for a specific skill" },

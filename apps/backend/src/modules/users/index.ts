@@ -20,12 +20,11 @@ export const users = new Elysia({
 
   .get(
     "/:id",
-    async ({ params, user, set }) => {
+    async ({ params, user }) => {
       if (user.role !== "admin" && params.id !== user.sub) {
         throw new ForbiddenError("You can only view your own profile");
       }
       const result = await UserService.getById(params.id);
-      set.status = 200;
       return result;
     },
     {
@@ -46,9 +45,8 @@ export const users = new Elysia({
 
   .get(
     "/",
-    async ({ query, set }) => {
+    async ({ query }) => {
       const result = await UserService.list(query);
-      set.status = 200;
       return result;
     },
     {
@@ -98,14 +96,13 @@ export const users = new Elysia({
 
   .patch(
     "/:id",
-    async ({ params, body, user, set }) => {
+    async ({ params, body, user }) => {
       const result = await UserService.update(
         params.id,
         body,
         user.sub,
         user.role === "admin",
       );
-      set.status = 200;
       return result;
     },
     {
@@ -127,9 +124,8 @@ export const users = new Elysia({
 
   .delete(
     "/:id",
-    async ({ params, set }) => {
+    async ({ params }) => {
       const result = await UserService.remove(params.id);
-      set.status = 200;
       return result;
     },
     {
@@ -153,14 +149,13 @@ export const users = new Elysia({
 
   .post(
     "/:id/password",
-    async ({ params, body, user, set }) => {
+    async ({ params, body, user }) => {
       const result = await UserService.updatePassword(
         params.id,
         body,
         user.sub,
         user.role === "admin",
       );
-      set.status = 200;
       return result;
     },
     {

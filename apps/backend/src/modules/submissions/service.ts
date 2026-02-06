@@ -2,11 +2,7 @@ import { assertExists } from "@common/utils";
 import { and, count, desc, eq, sql } from "drizzle-orm";
 import type { Submission } from "@/db";
 import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
-import {
-  BadRequestError,
-  ForbiddenError,
-  NotFoundError,
-} from "@/plugins/error";
+import { BadRequestError, ForbiddenError } from "@/plugins/error";
 
 const SUBMISSION_COLUMNS = {
   id: table.submissions.id,
@@ -28,34 +24,51 @@ function scoreToBand(score: number): Submission["band"] {
   return null; // Below B1 in VSTEP 3-5
 }
 
-export abstract class SubmissionService {
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  pending: ["queued", "failed"],
+  queued: ["processing", "failed"],
+  processing: ["completed", "review_pending", "error", "failed"],
+  review_pending: ["completed"],
+  error: ["retrying"],
+  retrying: ["processing", "failed"],
+  completed: [],
+  failed: [],
+};
+
+function validateTransition(current: string, next: string) {
+  const allowed = VALID_TRANSITIONS[current];
+  if (!allowed?.includes(next)) {
+    throw new BadRequestError(`Cannot transition from ${current} to ${next}`);
+  }
+}
+
+export class SubmissionService {
   static async getById(
     submissionId: string,
     currentUserId: string,
     isAdmin: boolean,
   ) {
-    const submission = await db.query.submissions.findFirst({
-      where: and(
-        eq(table.submissions.id, submissionId),
-        notDeleted(table.submissions),
-      ),
-      columns: {
-        id: true,
-        userId: true,
-        questionId: true,
-        skill: true,
-        status: true,
-        score: true,
-        band: true,
-        completedAt: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-
-    if (!submission) {
-      throw new NotFoundError("Submission not found");
-    }
+    const submission = assertExists(
+      await db.query.submissions.findFirst({
+        where: and(
+          eq(table.submissions.id, submissionId),
+          notDeleted(table.submissions),
+        ),
+        columns: {
+          id: true,
+          userId: true,
+          questionId: true,
+          skill: true,
+          status: true,
+          score: true,
+          band: true,
+          completedAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
+      "Submission",
+    );
 
     if (!isAdmin && submission.userId !== currentUserId) {
       throw new ForbiddenError("You can only view your own submissions");
@@ -145,17 +158,16 @@ export abstract class SubmissionService {
     userId: string,
     body: { questionId: string; answer: unknown },
   ) {
-    const question = await db.query.questions.findFirst({
-      columns: { id: true, skill: true, isActive: true },
-      where: and(
-        eq(table.questions.id, body.questionId),
-        notDeleted(table.questions),
-      ),
-    });
-
-    if (!question) {
-      throw new NotFoundError("Question not found");
-    }
+    const question = assertExists(
+      await db.query.questions.findFirst({
+        columns: { id: true, skill: true, isActive: true },
+        where: and(
+          eq(table.questions.id, body.questionId),
+          notDeleted(table.questions),
+        ),
+      }),
+      "Question",
+    );
 
     if (!question.isActive) {
       throw new BadRequestError("Question is not active");
@@ -196,7 +208,7 @@ export abstract class SubmissionService {
     },
   ) {
     return await db.transaction(async (tx) => {
-      const [submission] = await tx
+      const [row] = await tx
         .select()
         .from(table.submissions)
         .where(
@@ -207,9 +219,7 @@ export abstract class SubmissionService {
         )
         .limit(1);
 
-      if (!submission) {
-        throw new NotFoundError("Submission not found");
-      }
+      const submission = assertExists(row, "Submission");
 
       if (submission.userId !== userId && !isAdmin) {
         throw new ForbiddenError("You can only update your own submissions");
@@ -220,30 +230,17 @@ export abstract class SubmissionService {
         throw new BadRequestError("Cannot update submission in current status");
       }
 
+      // Validate status transition for all callers
+      if (body.status) {
+        validateTransition(submission.status, body.status);
+      }
+
       const updateValues: Partial<typeof table.submissions.$inferInsert> = {
         updatedAt: new Date().toISOString(),
       };
 
       if (isAdmin) {
         if (body.status) {
-          const VALID_TRANSITIONS: Record<string, string[]> = {
-            pending: ["queued", "failed"],
-            queued: ["processing", "failed"],
-            processing: ["completed", "review_pending", "error", "failed"],
-            review_pending: ["completed"],
-            error: ["retrying"],
-            retrying: ["processing", "failed"],
-            completed: [],
-            failed: [],
-          };
-
-          const allowed = VALID_TRANSITIONS[submission.status] ?? [];
-          if (!allowed.includes(body.status)) {
-            throw new BadRequestError(
-              `Invalid transition: ${submission.status} → ${body.status}`,
-            );
-          }
-
           updateValues.status = body.status;
           if (
             body.status === "completed" &&
@@ -297,7 +294,7 @@ export abstract class SubmissionService {
     body: { score: number; band?: Submission["band"]; feedback?: string },
   ) {
     return await db.transaction(async (tx) => {
-      const [submission] = await tx
+      const [row] = await tx
         .select()
         .from(table.submissions)
         .where(
@@ -308,9 +305,7 @@ export abstract class SubmissionService {
         )
         .limit(1);
 
-      if (!submission) {
-        throw new NotFoundError("Submission not found");
-      }
+      const submission = assertExists(row, "Submission");
 
       if (submission.status === "completed" || submission.status === "failed") {
         throw new BadRequestError(
@@ -363,7 +358,7 @@ export abstract class SubmissionService {
 
   static async remove(submissionId: string, userId: string, isAdmin: boolean) {
     return await db.transaction(async (tx) => {
-      const [submission] = await tx
+      const [row] = await tx
         .select()
         .from(table.submissions)
         .where(
@@ -374,9 +369,7 @@ export abstract class SubmissionService {
         )
         .limit(1);
 
-      if (!submission) {
-        throw new NotFoundError("Submission not found");
-      }
+      const submission = assertExists(row, "Submission");
 
       if (submission.userId !== userId && !isAdmin) {
         throw new ForbiddenError("You can only delete your own submissions");
@@ -432,23 +425,21 @@ export abstract class SubmissionService {
         .where(eq(table.submissions.id, submissionId))
         .limit(1);
 
-      if (!row) {
-        throw new NotFoundError("Submission not found");
-      }
+      const data = assertExists(row, "Submission");
 
-      if (row.skill !== "listening" && row.skill !== "reading") {
+      if (data.skill !== "listening" && data.skill !== "reading") {
         throw new BadRequestError(
           "Only listening and reading submissions can be auto-graded",
         );
       }
 
-      if (!row.answerKey) {
+      if (!data.answerKey) {
         throw new BadRequestError(
           "Question has no answer key for auto-grading",
         );
       }
 
-      const { correctCount, totalCount } = row;
+      const { correctCount, totalCount } = data;
 
       const rawScore = totalCount > 0 ? (correctCount / totalCount) * 10 : 0;
       const score = Math.round(rawScore * 2) / 2;

@@ -8,6 +8,8 @@ import {
   NotFoundError,
 } from "@/plugins/error";
 
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 const EXAM_COLUMNS = {
   id: table.exams.id,
   level: table.exams.level,
@@ -35,7 +37,7 @@ const SESSION_COLUMNS = {
   updatedAt: table.examSessions.updatedAt,
 } as const;
 
-export abstract class ExamService {
+export class ExamService {
   static async getById(id: string) {
     const exam = await db.query.exams.findFirst({
       where: and(eq(table.exams.id, id), notDeleted(table.exams)),
@@ -50,11 +52,7 @@ export abstract class ExamService {
       },
     });
 
-    if (!exam) {
-      throw new NotFoundError("Exam not found");
-    }
-
-    return exam;
+    return assertExists(exam, "Exam");
   }
 
   static async list(query: {
@@ -128,11 +126,7 @@ export abstract class ExamService {
       .where(and(eq(table.exams.id, id), notDeleted(table.exams)))
       .returning(EXAM_COLUMNS);
 
-    if (!exam) {
-      throw new NotFoundError("Exam not found");
-    }
-
-    return exam;
+    return assertExists(exam, "Exam");
   }
 
   static async startSession(userId: string, examId: string) {
@@ -212,6 +206,27 @@ export abstract class ExamService {
     return session;
   }
 
+  /** Validate that a questionId exists and is active */
+  private static async validateQuestion(
+    tx: Transaction,
+    questionId: string,
+  ) {
+    const [question] = await tx
+      .select({ id: table.questions.id })
+      .from(table.questions)
+      .where(
+        and(
+          eq(table.questions.id, questionId),
+          eq(table.questions.isActive, true),
+        ),
+      )
+      .limit(1);
+
+    if (!question) {
+      throw new BadRequestError("Invalid or inactive question");
+    }
+  }
+
   /** Submit answer inside a transaction to prevent TOCTOU race */
   static async submitAnswer(
     sessionId: string,
@@ -234,6 +249,8 @@ export abstract class ExamService {
       if (session.status !== "in_progress") {
         throw new BadRequestError("Session is not in progress");
       }
+
+      await ExamService.validateQuestion(tx, body.questionId);
 
       await tx
         .insert(table.examAnswers)
@@ -287,6 +304,8 @@ export abstract class ExamService {
       }
 
       for (const { questionId, answer } of answers) {
+        await ExamService.validateQuestion(tx, questionId);
+
         await tx
           .insert(table.examAnswers)
           .values({ sessionId, questionId, answer })
@@ -363,6 +382,44 @@ export abstract class ExamService {
     };
   }
 
+  /** Calculate score: (correct / total) * 10, rounded to nearest 0.5 */
+  private static calculateScore(correct: number, total: number): number | null {
+    return total === 0 ? null : Math.round((correct / total) * 10 * 2) / 2;
+  }
+
+  /** Create a submission + submissionDetail + examSubmissions link for a writing/speaking answer */
+  private static async createSubmissionForExam(
+    tx: Transaction,
+    userId: string,
+    sessionId: string,
+    questionId: string,
+    answer: unknown,
+    skill: "writing" | "speaking",
+  ) {
+    const [submission] = await tx
+      .insert(table.submissions)
+      .values({
+        userId,
+        questionId,
+        skill,
+        status: "pending",
+      })
+      .returning({ id: table.submissions.id });
+
+    const submissionId = assertExists(submission, "Submission").id;
+
+    await tx.insert(table.submissionDetails).values({
+      submissionId,
+      answer,
+    });
+
+    await tx.insert(table.examSubmissions).values({
+      sessionId,
+      submissionId,
+      skill,
+    });
+  }
+
   /** Submit exam: auto-grade listening/reading, create submissions for writing/speaking */
   static async submitExam(sessionId: string, userId: string) {
     return await db.transaction(async (tx) => {
@@ -423,24 +480,15 @@ export abstract class ExamService {
       // 4. Auto-grade listening/reading, collect writing/speaking
       const gradeResult = ExamService.autoGradeAnswers(answers, questionsMap);
 
-      // 5. Calculate scores: (correct / total) * 10, rounded to nearest 0.5
-      const listeningScore =
-        gradeResult.listeningTotal > 0
-          ? Math.round(
-              (gradeResult.listeningCorrect / gradeResult.listeningTotal) *
-                10 *
-                2,
-            ) / 2
-          : null;
-
-      const readingScore =
-        gradeResult.readingTotal > 0
-          ? Math.round(
-              (gradeResult.readingCorrect / gradeResult.readingTotal) *
-                10 *
-                2,
-            ) / 2
-          : null;
+      // 5. Calculate scores
+      const listeningScore = ExamService.calculateScore(
+        gradeResult.listeningCorrect,
+        gradeResult.listeningTotal,
+      );
+      const readingScore = ExamService.calculateScore(
+        gradeResult.readingCorrect,
+        gradeResult.readingTotal,
+      );
 
       // 6. For writing/speaking: create submission + submissionDetail + examSubmissions link
       let hasPendingSubmissions = false;
@@ -450,29 +498,14 @@ export abstract class ExamService {
         ...gradeResult.speakingAnswers.map((a) => ({ ...a, skill: "speaking" as const })),
       ]) {
         hasPendingSubmissions = true;
-
-        const [submission] = await tx
-          .insert(table.submissions)
-          .values({
-            userId,
-            questionId: wa.questionId,
-            skill: wa.skill,
-            status: "pending",
-          })
-          .returning({ id: table.submissions.id });
-
-        const submissionId = assertExists(submission, "Submission").id;
-
-        await tx.insert(table.submissionDetails).values({
-          submissionId,
-          answer: wa.answer,
-        });
-
-        await tx.insert(table.examSubmissions).values({
+        await ExamService.createSubmissionForExam(
+          tx,
+          userId,
           sessionId,
-          submissionId,
-          skill: wa.skill,
-        });
+          wa.questionId,
+          wa.answer,
+          wa.skill,
+        );
       }
 
       // 7. Update session: scores + status

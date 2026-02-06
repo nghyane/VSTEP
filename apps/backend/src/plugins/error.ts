@@ -94,15 +94,16 @@ function resolveRequestId(request: Request): string {
 }
 
 export const errorPlugin = new Elysia({ name: "error" })
-  .state("requestId", "")
-  .onRequest(({ store, request, set }) => {
+  .derive({ as: "scoped" }, ({ request }) => {
     const requestId = resolveRequestId(request);
-    store.requestId = requestId;
+    return { requestId };
+  })
+  .onAfterHandle({ as: "scoped" }, ({ requestId, set }) => {
     set.headers["x-request-id"] = requestId;
   })
   .error({ APP_ERROR: AppError })
-  .onError(function onError({ code, error, set, store }) {
-    const requestId = store.requestId;
+  .onError(function onError({ code, error, set, requestId }) {
+    set.headers["x-request-id"] = requestId;
 
     // Handle custom AppErrors
     if (error instanceof AppError) {

@@ -13,13 +13,12 @@ export const submissions = new Elysia({
 
   .get(
     "/",
-    async ({ query, user, set }) => {
+    async ({ query, user }) => {
       const result = await SubmissionService.list(
         query,
         user.sub,
         user.role === "admin",
       );
-      set.status = 200;
       return result;
     },
     {
@@ -46,13 +45,12 @@ export const submissions = new Elysia({
 
   .get(
     "/:id",
-    async ({ params, user, set }) => {
+    async ({ params, user }) => {
       const result = await SubmissionService.getById(
         params.id,
         user.sub,
         user.role === "admin",
       );
-      set.status = 200;
       return result;
     },
     {
@@ -97,14 +95,13 @@ export const submissions = new Elysia({
 
   .patch(
     "/:id",
-    async ({ params, body, user, set }) => {
+    async ({ params, body, user }) => {
       const result = await SubmissionService.update(
         params.id,
         user.sub,
         user.role === "admin",
         body,
       );
-      set.status = 200;
       return result;
     },
     {
@@ -128,9 +125,8 @@ export const submissions = new Elysia({
 
   .post(
     "/:id/grade",
-    async ({ params, body, set }) => {
+    async ({ params, body }) => {
       const result = await SubmissionService.grade(params.id, body);
-      set.status = 200;
       return result;
     },
     {
@@ -153,9 +149,8 @@ export const submissions = new Elysia({
 
   .post(
     "/:id/auto-grade",
-    async ({ params, set }) => {
+    async ({ params }) => {
       const result = await SubmissionService.autoGrade(params.id);
-      set.status = 200;
       return result;
     },
     {
@@ -179,13 +174,12 @@ export const submissions = new Elysia({
 
   .delete(
     "/:id",
-    async ({ params, user, set }) => {
+    async ({ params, user }) => {
       const result = await SubmissionService.remove(
         params.id,
         user.sub,
         user.role === "admin",
       );
-      set.status = 200;
       return result;
     },
     {

@@ -2,11 +2,7 @@ import { assertExists } from "@common/utils";
 import { and, count, desc, eq, sql } from "drizzle-orm";
 import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
 import type { Question } from "@/db";
-import {
-  BadRequestError,
-  ForbiddenError,
-  NotFoundError,
-} from "@/plugins/error";
+import { BadRequestError, ForbiddenError } from "@/plugins/error";
 
 const QUESTION_PUBLIC_COLUMNS = {
   id: table.questions.id,
@@ -22,7 +18,7 @@ const QUESTION_PUBLIC_COLUMNS = {
   deletedAt: table.questions.deletedAt,
 } as const;
 
-export abstract class QuestionService {
+export class QuestionService {
   static async getById(questionId: string) {
     const question = await db.query.questions.findFirst({
       where: and(
@@ -43,11 +39,7 @@ export abstract class QuestionService {
       },
     });
 
-    if (!question) {
-      throw new NotFoundError("Question not found");
-    }
-
-    return question;
+    return assertExists(question, "Question");
   }
 
   static async list(
@@ -174,7 +166,7 @@ export abstract class QuestionService {
   ) {
     return await db.transaction(async (tx) => {
       // Get question
-      const [question] = await tx
+      const [row] = await tx
         .select()
         .from(table.questions)
         .where(
@@ -182,9 +174,7 @@ export abstract class QuestionService {
         )
         .limit(1);
 
-      if (!question) {
-        throw new NotFoundError("Question not found");
-      }
+      const question = assertExists(row, "Question");
 
       // Check ownership for non-admin
       if (question.createdBy !== userId && !isAdmin) {
@@ -240,7 +230,7 @@ export abstract class QuestionService {
   ) {
     return await db.transaction(async (tx) => {
       // Get question
-      const [question] = await tx
+      const [row] = await tx
         .select({
           id: table.questions.id,
           version: table.questions.version,
@@ -252,9 +242,7 @@ export abstract class QuestionService {
         )
         .limit(1);
 
-      if (!question) {
-        throw new NotFoundError("Question not found");
-      }
+      const question = assertExists(row, "Question");
 
       // Check ownership for non-admin
       if (question.createdBy !== userId && !isAdmin) {
@@ -295,17 +283,16 @@ export abstract class QuestionService {
 
   static async getVersions(questionId: string) {
     // Verify question exists
-    const question = await db.query.questions.findFirst({
-      where: and(
-        eq(table.questions.id, questionId),
-        notDeleted(table.questions),
-      ),
-      columns: { id: true },
-    });
-
-    if (!question) {
-      throw new NotFoundError("Question not found");
-    }
+    assertExists(
+      await db.query.questions.findFirst({
+        where: and(
+          eq(table.questions.id, questionId),
+          notDeleted(table.questions),
+        ),
+        columns: { id: true },
+      }),
+      "Question",
+    );
 
     // Get all versions
     const versions = await db
@@ -324,17 +311,16 @@ export abstract class QuestionService {
 
   static async getVersion(questionId: string, versionId: string) {
     // Verify parent question exists and is not soft-deleted
-    const question = await db.query.questions.findFirst({
-      where: and(
-        eq(table.questions.id, questionId),
-        notDeleted(table.questions),
-      ),
-      columns: { id: true },
-    });
-
-    if (!question) {
-      throw new NotFoundError("Question not found");
-    }
+    assertExists(
+      await db.query.questions.findFirst({
+        where: and(
+          eq(table.questions.id, questionId),
+          notDeleted(table.questions),
+        ),
+        columns: { id: true },
+      }),
+      "Question",
+    );
 
     const version = await db.query.questionVersions.findFirst({
       where: and(
@@ -343,17 +329,13 @@ export abstract class QuestionService {
       ),
     });
 
-    if (!version) {
-      throw new NotFoundError("Question version not found");
-    }
-
-    return version;
+    return assertExists(version, "QuestionVersion");
   }
 
   static async remove(questionId: string, userId: string, isAdmin: boolean) {
     return await db.transaction(async (tx) => {
       // Get question
-      const [question] = await tx
+      const [row] = await tx
         .select()
         .from(table.questions)
         .where(
@@ -361,9 +343,7 @@ export abstract class QuestionService {
         )
         .limit(1);
 
-      if (!question) {
-        throw new NotFoundError("Question not found");
-      }
+      const question = assertExists(row, "Question");
 
       // Check ownership for non-admin
       if (question.createdBy !== userId && !isAdmin) {
@@ -390,15 +370,13 @@ export abstract class QuestionService {
 
     return await db.transaction(async (tx) => {
       // Get deleted question
-      const [question] = await tx
+      const [row] = await tx
         .select()
         .from(table.questions)
         .where(eq(table.questions.id, questionId))
         .limit(1);
 
-      if (!question) {
-        throw new NotFoundError("Question not found");
-      }
+      const question = assertExists(row, "Question");
 
       if (!question.deletedAt) {
         throw new BadRequestError("Question is not deleted");

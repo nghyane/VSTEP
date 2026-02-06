@@ -36,7 +36,8 @@ export const exams = pgTable(
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
-      .notNull(),
+      .notNull()
+      .$onUpdate(() => new Date().toISOString()),
     deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
   },
   (table) => ({
@@ -93,7 +94,8 @@ export const examSessions = pgTable(
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
-      .notNull(),
+      .notNull()
+      .$onUpdate(() => new Date().toISOString()),
     deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
   },
   (table) => ({
@@ -122,7 +124,8 @@ export const examAnswers = pgTable(
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
-      .notNull(),
+      .notNull()
+      .$onUpdate(() => new Date().toISOString()),
   },
   (table) => ({
     sessionQuestionUnique: uniqueIndex("exam_answers_session_question_idx").on(

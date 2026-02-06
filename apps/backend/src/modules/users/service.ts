@@ -5,7 +5,6 @@ import { AuthService } from "@/modules/auth/service";
 import {
   ConflictError,
   ForbiddenError,
-  NotFoundError,
   UnauthorizedError,
 } from "@/plugins/error";
 
@@ -18,7 +17,7 @@ const USER_COLUMNS = {
   updatedAt: table.users.updatedAt,
 } as const;
 
-export abstract class UserService {
+export class UserService {
   static async getById(userId: string) {
     const user = await db.query.users.findFirst({
       where: and(eq(table.users.id, userId), notDeleted(table.users)),
@@ -32,11 +31,7 @@ export abstract class UserService {
       },
     });
 
-    if (!user) {
-      throw new NotFoundError("User not found");
-    }
-
-    return user;
+    return assertExists(user, "User");
   }
 
   static async list(query: {
@@ -149,9 +144,7 @@ export abstract class UserService {
         .where(and(eq(table.users.id, userId), notDeleted(table.users)))
         .limit(1);
 
-      if (!existingUser) {
-        throw new NotFoundError("User not found");
-      }
+      assertExists(existingUser, "User");
 
       // Check email uniqueness if updating email (exclude soft-deleted)
       if (body.email) {
@@ -212,9 +205,7 @@ export abstract class UserService {
         .where(and(eq(table.users.id, userId), notDeleted(table.users)))
         .limit(1);
 
-      if (!existingUser) {
-        throw new NotFoundError("User not found");
-      }
+      assertExists(existingUser, "User");
 
       // Soft delete
       const [user] = await tx
@@ -249,17 +240,16 @@ export abstract class UserService {
     }
 
     // Get user with password
-    const user = await db.query.users.findFirst({
-      where: and(eq(table.users.id, userId), notDeleted(table.users)),
-      columns: {
-        id: true,
-        passwordHash: true,
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundError("User not found");
-    }
+    const user = assertExists(
+      await db.query.users.findFirst({
+        where: and(eq(table.users.id, userId), notDeleted(table.users)),
+        columns: {
+          id: true,
+          passwordHash: true,
+        },
+      }),
+      "User",
+    );
 
     // Verify current password
     const isValid = await AuthService.verifyPassword(

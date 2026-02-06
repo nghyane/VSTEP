@@ -55,7 +55,8 @@ export const questions = pgTable(
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
-      .notNull(),
+      .notNull()
+      .$onUpdate(() => new Date().toISOString()),
     deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
   },
   (table) => ({
