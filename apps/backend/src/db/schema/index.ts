@@ -4,22 +4,6 @@
  * @see https://orm.drizzle.team/docs/sql-schema-declaration
  */
 
-// Auth & Users
-import { refreshTokens, users } from "./users";
-
-// Submissions
-import {
-  submissionDetails,
-  submissionEvents,
-  submissions,
-} from "./submissions";
-
-// Questions
-import { questionVersions, questions } from "./questions";
-
-// Progress & Gamification
-import { userGoals, userProgress, userSkillScores } from "./progress";
-
 // Mock Tests
 import {
   mockTestSessionAnswers,
@@ -27,9 +11,20 @@ import {
   mockTestSessions,
   mockTests,
 } from "./mock-tests";
-
 // Outbox Pattern
 import { outbox, processedCallbacks } from "./outbox";
+// Progress & Gamification
+import { userGoals, userProgress, userSkillScores } from "./progress";
+// Questions
+import { questions, questionVersions } from "./questions";
+// Submissions
+import {
+  submissionDetails,
+  submissionEvents,
+  submissions,
+} from "./submissions";
+// Auth & Users
+import { refreshTokens, users } from "./users";
 
 /**
  * Centralized table registry

@@ -1,26 +1,64 @@
 /**
  * Submissions Module Controller
  * Elysia routes for submission management
- * Pattern: Elysia instance with direct service calls
- * @see https://elysiajs.com/pattern/mvc.html
  */
 
+import {
+  ErrorResponse,
+  IdParam,
+  PaginationMeta,
+  PaginationQuery,
+} from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
-import { errorPlugin } from "@/plugins/error";
-import { SubmissionModel } from "./model";
 import { SubmissionService } from "./service";
 
-/**
- * Submissions controller with all submission routes
- * Mounted at /submissions
- * Direct service calls - no .decorate() needed for static methods
- */
-export const submissions = new Elysia({ prefix: "/submissions" })
-  .use(errorPlugin)
-  .use(authPlugin)
+// ─── Inline enum schemas ────────────────────────────────────────
 
-  // ============ Protected Routes ============
+const SkillType = t.Union([
+  t.Literal("listening"),
+  t.Literal("reading"),
+  t.Literal("writing"),
+  t.Literal("speaking"),
+]);
+
+const SubmissionStatus = t.Union([
+  t.Literal("pending"),
+  t.Literal("queued"),
+  t.Literal("processing"),
+  t.Literal("analyzing"),
+  t.Literal("grading"),
+  t.Literal("review_required"),
+  t.Literal("completed"),
+  t.Literal("failed"),
+]);
+
+// ─── Inline response schemas ────────────────────────────────────
+
+const SubmissionInfo = t.Object({
+  id: t.String({ format: "uuid" }),
+  userId: t.String({ format: "uuid" }),
+  questionId: t.String({ format: "uuid" }),
+  skill: SkillType,
+  status: SubmissionStatus,
+  score: t.Optional(t.Nullable(t.Number())),
+  band: t.Optional(t.Nullable(t.Number())),
+  completedAt: t.Optional(t.String()),
+  createdAt: t.String(),
+  updatedAt: t.String(),
+});
+
+const SubmissionWithDetails = t.Object({
+  ...SubmissionInfo.properties,
+  answer: t.Optional(t.Any()),
+  result: t.Optional(t.Any()),
+  feedback: t.Optional(t.Nullable(t.String())),
+});
+
+// ─── Controller ─────────────────────────────────────────────────
+
+export const submissions = new Elysia({ prefix: "/submissions" })
+  .use(authPlugin)
 
   /**
    * GET /submissions
@@ -28,18 +66,29 @@ export const submissions = new Elysia({ prefix: "/submissions" })
    */
   .get(
     "/",
-    async ({ query, userId, isAdmin, set }) => {
-      // userId and isAdmin are injected by authPlugin derive
-      const result = await SubmissionService.list(query, userId!, isAdmin);
+    async ({ query, user, set }) => {
+      const result = await SubmissionService.list(
+        query,
+        user!.sub,
+        user!.role === "admin",
+      );
       set.status = 200;
       return result;
     },
     {
       auth: true,
-      query: SubmissionModel.listSubmissionsQuery,
+      query: t.Object({
+        ...PaginationQuery.properties,
+        skill: t.Optional(SkillType),
+        status: t.Optional(SubmissionStatus),
+        userId: t.Optional(t.String({ format: "uuid" })),
+      }),
       response: {
-        200: SubmissionModel.listSubmissionsResponse,
-        401: SubmissionModel.submissionError,
+        200: t.Object({
+          data: t.Array(SubmissionWithDetails),
+          meta: PaginationMeta,
+        }),
+        401: ErrorResponse,
       },
       detail: {
         summary: "List submissions",
@@ -55,23 +104,23 @@ export const submissions = new Elysia({ prefix: "/submissions" })
    */
   .get(
     "/:id",
-    async ({ params, userId, isAdmin, set }) => {
+    async ({ params, user, set }) => {
       const result = await SubmissionService.getById(
         params.id,
-        userId!,
-        isAdmin,
+        user!.sub,
+        user!.role === "admin",
       );
       set.status = 200;
       return result;
     },
     {
       auth: true,
-      params: SubmissionModel.submissionIdParam,
+      params: IdParam,
       response: {
-        200: SubmissionModel.submissionResponse,
-        401: SubmissionModel.submissionError,
-        403: SubmissionModel.submissionError,
-        404: SubmissionModel.submissionError,
+        200: SubmissionWithDetails,
+        401: ErrorResponse,
+        403: ErrorResponse,
+        404: ErrorResponse,
       },
       detail: {
         summary: "Get submission",
@@ -87,20 +136,24 @@ export const submissions = new Elysia({ prefix: "/submissions" })
    */
   .post(
     "/",
-    async ({ body, userId, set }) => {
-      const result = await SubmissionService.create(userId!, body);
+    async ({ body, user, set }) => {
+      const result = await SubmissionService.create(user!.sub, body);
       set.status = 201;
       return result;
     },
     {
       auth: true,
-      body: SubmissionModel.createSubmissionBody,
+      body: t.Object({
+        questionId: t.String({ format: "uuid" }),
+        skill: SkillType,
+        answer: t.Any(),
+      }),
       response: {
-        201: SubmissionModel.createSubmissionResponse,
-        400: SubmissionModel.submissionError,
-        401: SubmissionModel.submissionError,
-        404: SubmissionModel.submissionError,
-        422: SubmissionModel.submissionError,
+        201: SubmissionWithDetails,
+        400: ErrorResponse,
+        401: ErrorResponse,
+        404: ErrorResponse,
+        422: ErrorResponse,
       },
       detail: {
         summary: "Create submission",
@@ -116,11 +169,11 @@ export const submissions = new Elysia({ prefix: "/submissions" })
    */
   .patch(
     "/:id",
-    async ({ params, body, userId, isAdmin, set }) => {
+    async ({ params, body, user, set }) => {
       const result = await SubmissionService.update(
         params.id,
-        userId!,
-        isAdmin,
+        user!.sub,
+        user!.role === "admin",
         body,
       );
       set.status = 200;
@@ -128,15 +181,23 @@ export const submissions = new Elysia({ prefix: "/submissions" })
     },
     {
       auth: true,
-      params: SubmissionModel.submissionIdParam,
-      body: SubmissionModel.updateSubmissionBody,
+      params: IdParam,
+      body: t.Partial(
+        t.Object({
+          answer: t.Any(),
+          status: SubmissionStatus,
+          score: t.Number(),
+          band: t.Number(),
+          feedback: t.String(),
+        }),
+      ),
       response: {
-        200: SubmissionModel.updateSubmissionResponse,
-        400: SubmissionModel.submissionError,
-        401: SubmissionModel.submissionError,
-        403: SubmissionModel.submissionError,
-        404: SubmissionModel.submissionError,
-        422: SubmissionModel.submissionError,
+        200: SubmissionWithDetails,
+        400: ErrorResponse,
+        401: ErrorResponse,
+        403: ErrorResponse,
+        404: ErrorResponse,
+        422: ErrorResponse,
       },
       detail: {
         summary: "Update submission",
@@ -148,7 +209,7 @@ export const submissions = new Elysia({ prefix: "/submissions" })
 
   /**
    * POST /submissions/:id/grade
-   * Grade submission (admin/instructor only)
+   * Grade submission (instructor/admin only)
    */
   .post(
     "/:id/grade",
@@ -158,19 +219,23 @@ export const submissions = new Elysia({ prefix: "/submissions" })
       return result;
     },
     {
-      admin: true,
-      params: SubmissionModel.submissionIdParam,
-      body: SubmissionModel.gradeSubmissionBody,
+      role: "instructor",
+      params: IdParam,
+      body: t.Object({
+        score: t.Number(),
+        band: t.Optional(t.Number()),
+        feedback: t.Optional(t.String()),
+      }),
       response: {
-        200: SubmissionModel.gradeSubmissionResponse,
-        401: SubmissionModel.submissionError,
-        403: SubmissionModel.submissionError,
-        404: SubmissionModel.submissionError,
-        422: SubmissionModel.submissionError,
+        200: SubmissionWithDetails,
+        401: ErrorResponse,
+        403: ErrorResponse,
+        404: ErrorResponse,
+        422: ErrorResponse,
       },
       detail: {
         summary: "Grade submission",
-        description: "Grade a submission (admin/instructor only)",
+        description: "Grade a submission (instructor/admin only)",
         tags: ["Submissions"],
       },
     },
@@ -188,16 +253,16 @@ export const submissions = new Elysia({ prefix: "/submissions" })
       return result;
     },
     {
-      admin: true,
-      params: SubmissionModel.submissionIdParam,
+      role: "admin",
+      params: IdParam,
       response: {
         200: t.Object({
           score: t.Number(),
           result: t.Any(),
         }),
-        401: SubmissionModel.submissionError,
-        403: SubmissionModel.submissionError,
-        404: SubmissionModel.submissionError,
+        401: ErrorResponse,
+        403: ErrorResponse,
+        404: ErrorResponse,
       },
       detail: {
         summary: "Auto-grade submission",
@@ -213,23 +278,23 @@ export const submissions = new Elysia({ prefix: "/submissions" })
    */
   .delete(
     "/:id",
-    async ({ params, userId, isAdmin, set }) => {
+    async ({ params, user, set }) => {
       const result = await SubmissionService.delete(
         params.id,
-        userId!,
-        isAdmin,
+        user!.sub,
+        user!.role === "admin",
       );
       set.status = 200;
       return result;
     },
     {
       auth: true,
-      params: SubmissionModel.submissionIdParam,
+      params: IdParam,
       response: {
-        200: SubmissionModel.deleteSubmissionResponse,
-        401: SubmissionModel.submissionError,
-        403: SubmissionModel.submissionError,
-        404: SubmissionModel.submissionError,
+        200: t.Object({ id: t.String({ format: "uuid" }) }),
+        401: ErrorResponse,
+        403: ErrorResponse,
+        404: ErrorResponse,
       },
       detail: {
         summary: "Delete submission",

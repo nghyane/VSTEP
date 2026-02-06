@@ -21,9 +21,7 @@ export function assertExists<T>(
  * Assert that a value exists or return null
  * Use for optional fields that might be null
  */
-export function assertExistsOrNull<T>(
-  value: T | null | undefined,
-): T | null {
+export function assertExistsOrNull<T>(value: T | null | undefined): T | null {
   if (value === null || value === undefined) {
     return null;
   }

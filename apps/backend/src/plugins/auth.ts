@@ -1,73 +1,85 @@
-/**
- * Shared Authentication Plugin
- * Provides guard macros for authentication
- * Pattern: Elysia derive for type-safe auth context
- */
-
 import { env } from "@common/env";
+import { bearer } from "@elysiajs/bearer";
+import { jwt } from "@elysiajs/jwt";
 import { Elysia } from "elysia";
-import { AuthService, type JWTPayload } from "@/modules/auth/service";
 import { ForbiddenError, UnauthorizedError } from "./error";
 
+export interface JWTPayload {
+  sub: string;
+  email: string;
+  role: "learner" | "instructor" | "admin";
+  fullName: string | null;
+}
+
 /**
- * Auth plugin with derive and guard macros
- * - Derives user from JWT token (cookie or Authorization header)
- * - Provides `auth` macro for authentication guard
- * - Provides `admin` macro for admin-only access
+ * Auth plugin — @elysiajs/jwt + @elysiajs/bearer + resolve + macro
+ *
+ * Provides:
+ *   context.jwt        — sign/verify access tokens
+ *   context.refreshJwt  — sign/verify refresh tokens
+ *   context.bearer      — extracted Bearer token string
+ *   context.user        — JWTPayload | null (resolved per request)
+ *
+ * Macros:
+ *   { auth: true }                    — require authenticated user
+ *   { role: "admin" }                 — require specific role
+ *   { role: "instructor" }            — require instructor or admin
  */
 export const authPlugin = new Elysia({ name: "auth" })
-  .derive({ as: "global" }, async ({ cookie, headers }) => {
-    let token: string | undefined;
+  .use(bearer())
+  .use(
+    jwt({
+      name: "jwt",
+      secret: env.JWT_SECRET,
+      exp: env.JWT_EXPIRES_IN,
+    }),
+  )
+  .use(
+    jwt({
+      name: "refreshJwt",
+      secret: env.JWT_REFRESH_SECRET || env.JWT_SECRET,
+      exp: env.JWT_REFRESH_EXPIRES_IN,
+    }),
+  )
+  .resolve({ as: "global" }, async ({ jwt: jwtCtx, bearer: token }) => {
+    if (!token) return { user: null as JWTPayload | null };
 
-    // Check cookie first, then Authorization header
-    if (cookie?.auth?.value) {
-      token = String(cookie.auth.value);
-    } else if (headers.authorization?.startsWith("Bearer ")) {
-      token = headers.authorization.slice(7);
-    }
-
-    const user = token
-      ? await AuthService.verifyToken(token, env.JWT_SECRET)
-      : null;
+    const payload = await jwtCtx.verify(token);
+    if (!payload) return { user: null as JWTPayload | null };
 
     return {
-      user,
-      isAuthenticated: !!user,
-      isAdmin: user?.role === "admin",
-      userId: user?.sub || null,
-    } as {
-      user: JWTPayload | null;
-      isAuthenticated: boolean;
-      isAdmin: boolean;
-      userId: string | null;
+      user: {
+        sub: payload.sub as string,
+        email: payload.email as string,
+        role: (payload.role as JWTPayload["role"]) || "learner",
+        fullName: (payload.fullName as string) || null,
+      } satisfies JWTPayload,
     };
   })
-  .macro(({ onBeforeHandle }) => ({
-    /**
-     * Auth guard - requires authentication
-     * Usage: .get("/", () => "ok", { auth: true })
-     */
+  .macro({
     auth(enabled: boolean) {
       if (!enabled) return;
-      onBeforeHandle(({ user }: { user: JWTPayload | null }) => {
-        if (!user) {
-          throw new UnauthorizedError("Authentication required");
-        }
-      });
+      return {
+        beforeHandle({ user }: { user: JWTPayload | null }) {
+          if (!user) throw new UnauthorizedError("Authentication required");
+        },
+      };
     },
-    /**
-     * Admin guard - requires admin role
-     * Usage: .get("/", () => "ok", { admin: true })
-     */
-    admin(enabled: boolean) {
-      if (!enabled) return;
-      onBeforeHandle(({ user }: { user: JWTPayload | null }) => {
-        if (!user) {
-          throw new UnauthorizedError("Authentication required");
-        }
-        if (user.role !== "admin") {
-          throw new ForbiddenError("Admin access required");
-        }
-      });
+    role(required: "admin" | "instructor") {
+      return {
+        beforeHandle({ user }: { user: JWTPayload | null }) {
+          if (!user) throw new UnauthorizedError("Authentication required");
+          if (required === "admin" && user.role !== "admin") {
+            throw new ForbiddenError("Admin access required");
+          }
+          if (
+            required === "instructor" &&
+            user.role !== "instructor" &&
+            user.role !== "admin"
+          ) {
+            throw new ForbiddenError("Instructor access required");
+          }
+        },
+      };
     },
-  }));
+  });

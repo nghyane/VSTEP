@@ -4,19 +4,20 @@
  * @see https://elysiajs.com/pattern/mvc.html
  */
 
-import { Elysia } from "elysia";
-import { cors } from "@elysiajs/cors";
-import { swagger } from "@elysiajs/swagger";
 import { env } from "@common/env";
 import { logger } from "@common/logger";
-
-// Error handling plugin
-import { errorPlugin } from "@/plugins/error";
-
+import { cors } from "@elysiajs/cors";
+import { swagger } from "@elysiajs/swagger";
+import { Elysia } from "elysia";
 // Feature modules
 import { auth } from "@/modules/auth";
-import { users } from "@/modules/users";
+import { mockTests } from "@/modules/mock-tests";
+import { progress } from "@/modules/progress";
+import { questions } from "@/modules/questions";
 import { submissions } from "@/modules/submissions";
+import { users } from "@/modules/users";
+// Error handling plugin
+import { errorPlugin } from "@/plugins/error";
 
 /**
  * Main Elysia application with feature-based architecture
@@ -33,13 +34,20 @@ export const app = new Elysia()
         info: {
           title: "VSTEP API",
           version: "1.0.0",
-          description: "VSTEP Exam Platform API - Feature-Based MVC Architecture",
+          description:
+            "VSTEP Exam Platform API - Feature-Based MVC Architecture",
         },
         tags: [
           { name: "Health", description: "Health check endpoints" },
           { name: "Auth", description: "Authentication endpoints" },
           { name: "Users", description: "User management endpoints" },
-          { name: "Submissions", description: "Submission management endpoints" },
+          {
+            name: "Submissions",
+            description: "Submission management endpoints",
+          },
+          { name: "Questions", description: "Question management endpoints" },
+          { name: "Progress", description: "User progress endpoints" },
+          { name: "Mock Tests", description: "Mock test endpoints" },
         ],
       },
     }),
@@ -51,19 +59,26 @@ export const app = new Elysia()
   })
 
   // Health check with detailed info
-  .get("/health", () => ({
-    status: "healthy",
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    memory: process.memoryUsage(),
-  }), {
-    detail: { tags: ["Health"], summary: "Detailed health check" },
-  })
+  .get(
+    "/health",
+    () => ({
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+    }),
+    {
+      detail: { tags: ["Health"], summary: "Detailed health check" },
+    },
+  )
 
   // Mount feature modules
-  .use(auth)      // /auth/* routes
-  .use(users)     // /users/* routes
+  .use(auth) // /auth/* routes
+  .use(users) // /users/* routes
   .use(submissions) // /submissions/* routes
+  .use(questions) // /questions/* routes
+  .use(progress) // /progress/* routes
+  .use(mockTests) // /mock-tests/* routes
 
   // Start server
   .listen(env.PORT);

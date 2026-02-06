@@ -1,57 +1,74 @@
 /**
  * Auth Module Controller
  * Elysia routes for authentication
- * Pattern: Elysia instance with direct service calls
+ * JWT signing via @elysiajs/jwt plugin — service handles business logic only
  * @see https://elysiajs.com/pattern/mvc.html
  */
 
 import { env } from "@common/env";
+import { ErrorResponse } from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
-import { errorPlugin } from "@/plugins/error";
-import { AuthModel } from "./model";
-import { AuthService } from "./service";
+import { AuthService, parseExpiry } from "./service";
 
-/**
- * Auth controller mounted at /auth
- * Direct service calls - no .decorate() needed for static methods
- */
+// ─── Shared Response Schemas ─────────────────────────────────────
+
+const UserInfo = t.Object({
+  id: t.String({ format: "uuid" }),
+  email: t.String(),
+  fullName: t.Nullable(t.String()),
+  role: t.Union([
+    t.Literal("learner"),
+    t.Literal("instructor"),
+    t.Literal("admin"),
+  ]),
+});
+
+const TokenResponse = t.Object({
+  accessToken: t.String(),
+  refreshToken: t.String(),
+  expiresIn: t.Number(),
+});
+
+// ─── Controller ──────────────────────────────────────────────────
+
 export const auth = new Elysia({ prefix: "/auth" })
-  .use(errorPlugin)
   .use(authPlugin)
 
-  // ============ Public Routes ============
-
-  /**
-   * POST /auth/sign-in
-   * Sign in with email and password
-   */
+  // POST /auth/sign-in
   .post(
     "/sign-in",
-    async ({ body, set, cookie: { auth } }) => {
-      const result = await AuthService.signIn(body);
+    async ({ body, jwt, cookie: { auth: authCookie } }) => {
+      const { user, refreshToken } = await AuthService.signIn(body);
 
-      // Set auth cookie
-      auth.set({
-        value: result.accessToken,
+      const accessToken = await jwt.sign({
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+        fullName: user.fullName ?? "",
+      });
+
+      const expiresIn = parseExpiry(env.JWT_EXPIRES_IN);
+
+      authCookie.set({
+        value: accessToken,
         httpOnly: true,
         secure: env.NODE_ENV === "production",
         sameSite: "strict",
-        maxAge: result.expiresIn,
+        maxAge: expiresIn,
         path: "/",
       });
 
-      set.status = 200;
-      return result;
+      return { user, accessToken, refreshToken, expiresIn };
     },
     {
-      body: AuthModel.signInBody,
-      cookie: t.Object({
-        auth: t.Optional(t.String()),
+      body: t.Object({
+        email: t.String({ format: "email" }),
+        password: t.String({ minLength: 6 }),
       }),
+      cookie: t.Object({ auth: t.Optional(t.String()) }),
       response: {
-        200: AuthModel.signInResponse,
-        401: AuthModel.authError,
+        200: t.Object({ user: UserInfo, ...TokenResponse.properties }),
       },
       detail: {
         summary: "Sign in",
@@ -61,10 +78,7 @@ export const auth = new Elysia({ prefix: "/auth" })
     },
   )
 
-  /**
-   * POST /auth/sign-up
-   * Register new user account
-   */
+  // POST /auth/sign-up
   .post(
     "/sign-up",
     async ({ body, set }) => {
@@ -73,10 +87,21 @@ export const auth = new Elysia({ prefix: "/auth" })
       return result;
     },
     {
-      body: AuthModel.signUpBody,
+      body: t.Object({
+        email: t.String({ format: "email" }),
+        password: t.String({ minLength: 8 }),
+        fullName: t.Optional(t.String({ minLength: 1, maxLength: 100 })),
+        role: t.Optional(
+          t.Union([
+            t.Literal("learner"),
+            t.Literal("instructor"),
+            t.Literal("admin"),
+          ]),
+        ),
+      }),
       response: {
-        201: AuthModel.signUpResponse,
-        409: AuthModel.authError,
+        201: t.Object({ user: UserInfo, message: t.String() }),
+        409: ErrorResponse,
       },
       detail: {
         summary: "Sign up",
@@ -86,36 +111,40 @@ export const auth = new Elysia({ prefix: "/auth" })
     },
   )
 
-  /**
-   * POST /auth/refresh
-   * Refresh access token using refresh token
-   */
+  // POST /auth/refresh
   .post(
     "/refresh",
-    async ({ body, set, cookie: { auth } }) => {
-      const result = await AuthService.refreshToken(body.refreshToken);
+    async ({ body, jwt, cookie: { auth: authCookie } }) => {
+      const { user, newRefreshToken } = await AuthService.refreshToken(
+        body.refreshToken,
+      );
 
-      // Update auth cookie with new token
-      auth.set({
-        value: result.accessToken,
+      const accessToken = await jwt.sign({
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+        fullName: user.fullName ?? "",
+      });
+
+      const expiresIn = parseExpiry(env.JWT_EXPIRES_IN);
+
+      authCookie.set({
+        value: accessToken,
         httpOnly: true,
         secure: env.NODE_ENV === "production",
         sameSite: "strict",
-        maxAge: result.expiresIn,
+        maxAge: expiresIn,
         path: "/",
       });
 
-      set.status = 200;
-      return result;
+      return { accessToken, refreshToken: newRefreshToken, expiresIn };
     },
     {
-      body: AuthModel.refreshTokenBody,
-      cookie: t.Object({
-        auth: t.Optional(t.String()),
-      }),
+      body: t.Object({ refreshToken: t.String() }),
+      cookie: t.Object({ auth: t.Optional(t.String()) }),
       response: {
-        200: AuthModel.refreshTokenResponse,
-        401: AuthModel.authError,
+        200: TokenResponse,
+        401: ErrorResponse,
       },
       detail: {
         summary: "Refresh token",
@@ -125,28 +154,19 @@ export const auth = new Elysia({ prefix: "/auth" })
     },
   )
 
-  /**
-   * POST /auth/logout
-   * Logout user and revoke refresh token
-   */
+  // POST /auth/logout
   .post(
     "/logout",
-    async ({ body, set, cookie: { auth } }) => {
+    async ({ body, cookie: { auth: authCookie } }) => {
       const result = await AuthService.logout(body.refreshToken);
-
-      // Clear auth cookie
-      auth.remove();
-
-      set.status = 200;
+      authCookie.remove();
       return result;
     },
     {
-      body: AuthModel.logoutBody,
-      cookie: t.Object({
-        auth: t.Optional(t.String()),
-      }),
+      body: t.Object({ refreshToken: t.String() }),
+      cookie: t.Object({ auth: t.Optional(t.String()) }),
       response: {
-        200: AuthModel.logoutResponse,
+        200: t.Object({ message: t.String() }),
       },
       detail: {
         summary: "Logout",
@@ -156,39 +176,22 @@ export const auth = new Elysia({ prefix: "/auth" })
     },
   )
 
-  /**
-   * GET /auth/me
-   * Get current authenticated user
-   */
+  // GET /auth/me
   .get(
     "/me",
-    async ({ user, set }) => {
-      // user is injected by authPlugin derive
-      if (!user) {
-        set.status = 401;
-        return {
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Authentication required",
-          },
-        };
-      }
-
-      set.status = 200;
-      return {
-        user: {
-          id: user.sub,
-          email: user.email,
-          fullName: user.fullName,
-          role: user.role,
-        },
-      };
-    },
+    ({ user }) => ({
+      user: {
+        id: user.sub,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+      },
+    }),
     {
       auth: true,
       response: {
-        200: AuthModel.meResponse,
-        401: AuthModel.authError,
+        200: t.Object({ user: UserInfo }),
+        401: ErrorResponse,
       },
       detail: {
         summary: "Get current user",

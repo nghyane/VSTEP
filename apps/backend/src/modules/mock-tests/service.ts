@@ -3,41 +3,74 @@
  * Business logic for mock test management
  */
 
-import { assertExists, toISOString, toISOStringRequired } from "@common/utils";
-import { and, count, desc, eq, isNull } from "drizzle-orm";
-import { db, table } from "@/db";
+import { assertExists } from "@common/utils";
+import { and, count, desc, eq } from "drizzle-orm";
+import type { MockTest, MockTestSession } from "@/db";
+import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
 import {
   BadRequestError,
   ForbiddenError,
   NotFoundError,
 } from "@/plugins/error";
-import type { MockTestModel, MockTestStatus } from "./model";
 
-const mapMockTestResponse = (test: any): MockTestModel.MockTest => ({
+// ─── Response Types ──────────────────────────────────────────────
+
+interface MockTestResponse {
+  id: string;
+  level: string;
+  blueprint: unknown;
+  isActive: boolean;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface MockTestSessionResponse {
+  id: string;
+  userId: string;
+  mockTestId: string;
+  status: string;
+  listeningScore: number | null;
+  readingScore: number | null;
+  writingScore: number | null;
+  speakingScore: number | null;
+  overallExamScore: number | null;
+  sectionScores: unknown;
+  startedAt: string;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── Mappers ─────────────────────────────────────────────────────
+
+const mapMockTestResponse = (test: MockTest): MockTestResponse => ({
   id: test.id,
   level: test.level,
   blueprint: test.blueprint,
   isActive: test.isActive,
   createdBy: test.createdBy,
-  createdAt: toISOStringRequired(test.createdAt),
-  updatedAt: toISOStringRequired(test.updatedAt),
+  createdAt: test.createdAt.toISOString(),
+  updatedAt: test.updatedAt.toISOString(),
 });
 
-const mapSessionResponse = (session: any): MockTestModel.MockTestSession => ({
+const mapSessionResponse = (
+  session: MockTestSession,
+): MockTestSessionResponse => ({
   id: session.id,
   userId: session.userId,
   mockTestId: session.mockTestId,
-  status: session.status as typeof MockTestStatus.static,
+  status: session.status,
   listeningScore: session.listeningScore,
   readingScore: session.readingScore,
   writingScore: session.writingScore,
   speakingScore: session.speakingScore,
   overallExamScore: session.overallExamScore,
   sectionScores: session.sectionScores,
-  startedAt: toISOStringRequired(session.startedAt),
-  completedAt: toISOString(session.completedAt),
-  createdAt: toISOStringRequired(session.createdAt),
-  updatedAt: toISOStringRequired(session.updatedAt),
+  startedAt: session.startedAt.toISOString(),
+  completedAt: session.completedAt?.toISOString() ?? null,
+  createdAt: session.createdAt.toISOString(),
+  updatedAt: session.updatedAt.toISOString(),
 });
 
 /**
@@ -47,12 +80,10 @@ export abstract class MockTestService {
   /**
    * Get mock test by ID
    */
-  static async getById(id: string): Promise<MockTestModel.MockTest> {
-    const [test] = await db
-      .select()
-      .from(table.mockTests)
-      .where(and(eq(table.mockTests.id, id), isNull(table.mockTests.deletedAt)))
-      .limit(1);
+  static async getById(id: string): Promise<MockTestResponse> {
+    const test = await db.query.mockTests.findFirst({
+      where: and(eq(table.mockTests.id, id), notDeleted(table.mockTests)),
+    });
 
     if (!test) {
       throw new NotFoundError("Mock test not found");
@@ -64,15 +95,19 @@ export abstract class MockTestService {
   /**
    * List mock tests
    */
-  static async list(
-    query: MockTestModel.ListMockTestsQuery,
-  ): Promise<MockTestModel.ListMockTestsResponse> {
-    const page = query.page || 1;
-    const limit = query.limit || 20;
-    const offset = (page - 1) * limit;
+  static async list(query: {
+    page?: number;
+    limit?: number;
+    level?: string;
+    isActive?: boolean;
+  }) {
+    const { limit, offset } = paginate(query.page, query.limit);
 
-    const conditions = [isNull(table.mockTests.deletedAt)];
-    if (query.level) conditions.push(eq(table.mockTests.level, query.level));
+    const conditions = [notDeleted(table.mockTests)];
+    if (query.level)
+      conditions.push(
+        eq(table.mockTests.level, query.level as MockTest["level"]),
+      );
     if (query.isActive !== undefined)
       conditions.push(eq(table.mockTests.isActive, query.isActive));
 
@@ -83,7 +118,7 @@ export abstract class MockTestService {
       .from(table.mockTests)
       .where(whereClause);
 
-    const total = countResult?.count || 0;
+    const total = countResult?.count ?? 0;
 
     const tests = await db
       .select()
@@ -95,12 +130,7 @@ export abstract class MockTestService {
 
     return {
       data: tests.map(mapMockTestResponse),
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      meta: paginationMeta(total, query.page, query.limit),
     };
   }
 
@@ -109,12 +139,14 @@ export abstract class MockTestService {
    */
   static async create(
     userId: string,
-    body: MockTestModel.CreateMockTestBody,
-  ): Promise<MockTestModel.MockTest> {
+    body: { level: MockTest["level"]; blueprint: unknown; isActive?: boolean },
+  ): Promise<MockTestResponse> {
     const [test] = await db
       .insert(table.mockTests)
       .values({
-        ...body,
+        level: body.level,
+        blueprint: body.blueprint,
+        isActive: body.isActive ?? true,
         createdBy: userId,
       })
       .returning();
@@ -127,8 +159,12 @@ export abstract class MockTestService {
    */
   static async update(
     id: string,
-    body: MockTestModel.UpdateMockTestBody,
-  ): Promise<MockTestModel.MockTest> {
+    body: Partial<{
+      level: MockTest["level"];
+      blueprint: unknown;
+      isActive: boolean;
+    }>,
+  ): Promise<MockTestResponse> {
     const [test] = await db
       .update(table.mockTests)
       .set({
@@ -150,8 +186,8 @@ export abstract class MockTestService {
    */
   static async startSession(
     userId: string,
-    body: MockTestModel.CreateSessionBody,
-  ): Promise<MockTestModel.MockTestSession> {
+    body: { mockTestId: string },
+  ): Promise<MockTestSessionResponse> {
     // Check if test exists and is active
     const test = await MockTestService.getById(body.mockTestId);
     if (!test.isActive) {
@@ -159,18 +195,14 @@ export abstract class MockTestService {
     }
 
     // Check for existing in-progress session
-    const [existingSession] = await db
-      .select()
-      .from(table.mockTestSessions)
-      .where(
-        and(
-          eq(table.mockTestSessions.userId, userId),
-          eq(table.mockTestSessions.mockTestId, body.mockTestId),
-          eq(table.mockTestSessions.status, "in_progress"),
-          isNull(table.mockTestSessions.deletedAt),
-        ),
-      )
-      .limit(1);
+    const existingSession = await db.query.mockTestSessions.findFirst({
+      where: and(
+        eq(table.mockTestSessions.userId, userId),
+        eq(table.mockTestSessions.mockTestId, body.mockTestId),
+        eq(table.mockTestSessions.status, "in_progress"),
+        notDeleted(table.mockTestSessions),
+      ),
+    });
 
     if (existingSession) {
       return mapSessionResponse(existingSession);
@@ -196,17 +228,13 @@ export abstract class MockTestService {
     sessionId: string,
     userId: string,
     isAdmin: boolean,
-  ): Promise<MockTestModel.MockTestSession> {
-    const [session] = await db
-      .select()
-      .from(table.mockTestSessions)
-      .where(
-        and(
-          eq(table.mockTestSessions.id, sessionId),
-          isNull(table.mockTestSessions.deletedAt),
-        ),
-      )
-      .limit(1);
+  ): Promise<MockTestSessionResponse> {
+    const session = await db.query.mockTestSessions.findFirst({
+      where: and(
+        eq(table.mockTestSessions.id, sessionId),
+        notDeleted(table.mockTestSessions),
+      ),
+    });
 
     if (!session) {
       throw new NotFoundError("Session not found");
@@ -225,7 +253,7 @@ export abstract class MockTestService {
   static async submitAnswer(
     sessionId: string,
     userId: string,
-    body: MockTestModel.SubmitAnswerBody,
+    body: { questionId: string; answer: unknown },
   ): Promise<{ success: boolean }> {
     const session = await MockTestService.getSessionById(
       sessionId,
@@ -263,7 +291,7 @@ export abstract class MockTestService {
   static async completeSession(
     sessionId: string,
     userId: string,
-  ): Promise<MockTestModel.MockTestSession> {
+  ): Promise<MockTestSessionResponse> {
     const session = await MockTestService.getSessionById(
       sessionId,
       userId,

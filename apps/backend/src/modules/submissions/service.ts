@@ -1,19 +1,18 @@
 /**
  * Submissions Module Service
  * Business logic for submission management
- * @see https://elysiajs.com/pattern/mvc.html
  */
 
-import { assertExists, toISOString, toISOStringRequired } from "@common/utils";
-import { and, count, desc, eq, isNull } from "drizzle-orm";
-import { db, table } from "@/db";
-import type { SubmissionDetail } from "@/db/schema/submissions";
+import { assertExists } from "@common/utils";
+import { and, count, desc, eq } from "drizzle-orm";
+import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
 import {
   BadRequestError,
   ForbiddenError,
   NotFoundError,
 } from "@/plugins/error";
-import type { SkillType, SubmissionModel, SubmissionStatus } from "./model";
+
+// ─── Response mapper ────────────────────────────────────────────
 
 const mapSubmissionResponse = (
   sub: {
@@ -28,47 +27,44 @@ const mapSubmissionResponse = (
     createdAt: Date;
     updatedAt: Date;
   },
-  details?: Partial<SubmissionDetail>,
-): typeof SubmissionModel.submissionWithDetails.static => ({
+  details?: {
+    answer?: unknown;
+    result?: unknown;
+    feedback?: string | null;
+  },
+) => ({
   id: sub.id,
   userId: sub.userId,
   questionId: sub.questionId,
-  skill: sub.skill as typeof SkillType.static,
-  status: sub.status as typeof SubmissionStatus.static,
+  skill: sub.skill,
+  status: sub.status,
   score: sub.score ?? undefined,
   band: sub.band ?? undefined,
-  completedAt: toISOString(sub.completedAt ?? null) ?? undefined,
-  createdAt: toISOStringRequired(sub.createdAt),
-  updatedAt: toISOStringRequired(sub.updatedAt),
+  completedAt: sub.completedAt?.toISOString() ?? undefined,
+  createdAt: sub.createdAt.toISOString(),
+  updatedAt: sub.updatedAt.toISOString(),
   answer: details?.answer,
   result: details?.result,
   feedback: details?.feedback ?? undefined,
 });
 
-/**
- * Submission service with static methods
- */
+// ─── Service ────────────────────────────────────────────────────
+
 export abstract class SubmissionService {
   /**
    * Get submission by ID
-   * @throws NotFoundError if submission not found
    */
   static async getById(
     submissionId: string,
     currentUserId: string,
     isAdmin: boolean,
-  ): Promise<SubmissionModel.SubmissionResponse> {
-    // Get submission
-    const [submission] = await db
-      .select()
-      .from(table.submissions)
-      .where(
-        and(
-          eq(table.submissions.id, submissionId),
-          isNull(table.submissions.deletedAt),
-        ),
-      )
-      .limit(1);
+  ) {
+    const submission = await db.query.submissions.findFirst({
+      where: and(
+        eq(table.submissions.id, submissionId),
+        notDeleted(table.submissions),
+      ),
+    });
 
     if (!submission) {
       throw new NotFoundError("Submission not found");
@@ -78,7 +74,6 @@ export abstract class SubmissionService {
       throw new ForbiddenError("You can only view your own submissions");
     }
 
-    // Get details if available
     const [details] = await db
       .select()
       .from(table.submissionDetails)
@@ -92,33 +87,38 @@ export abstract class SubmissionService {
    * List submissions with filtering and pagination
    */
   static async list(
-    query: SubmissionModel.ListSubmissionsQuery,
+    query: {
+      page?: number;
+      limit?: number;
+      skill?: string;
+      status?: string;
+      userId?: string;
+    },
     currentUserId: string,
     isAdmin: boolean,
-  ): Promise<SubmissionModel.ListSubmissionsResponse> {
+  ) {
     const page = query.page || 1;
     const limit = query.limit || 20;
-    const offset = (page - 1) * limit;
+    const { limit: safeLimit, offset } = paginate(page, limit);
 
     // Build where conditions
     const conditions: ReturnType<typeof and>[] = [
-      isNull(table.submissions.deletedAt),
+      notDeleted(table.submissions),
     ];
 
     // Non-admin users can only see their own submissions
     if (!isAdmin) {
       conditions.push(eq(table.submissions.userId, currentUserId));
     } else if (query.userId) {
-      // Admin can filter by specific user
       conditions.push(eq(table.submissions.userId, query.userId));
     }
 
     if (query.skill) {
-      conditions.push(eq(table.submissions.skill, query.skill));
+      conditions.push(eq(table.submissions.skill, query.skill as any));
     }
 
     if (query.status) {
-      conditions.push(eq(table.submissions.status, query.status));
+      conditions.push(eq(table.submissions.status, query.status as any));
     }
 
     const whereClause =
@@ -156,7 +156,7 @@ export abstract class SubmissionService {
       )
       .where(whereClause)
       .orderBy(desc(table.submissions.createdAt))
-      .limit(limit)
+      .limit(safeLimit)
       .offset(offset);
 
     return {
@@ -167,7 +167,7 @@ export abstract class SubmissionService {
             userId: s.userId,
             questionId: s.questionId,
             skill: s.skill,
-            status: s.status as typeof SubmissionStatus.static,
+            status: s.status,
             score: s.score,
             band: s.band,
             completedAt: s.completedAt,
@@ -181,12 +181,7 @@ export abstract class SubmissionService {
           },
         ),
       ),
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      meta: paginationMeta(total, page, limit),
     };
   }
 
@@ -195,19 +190,16 @@ export abstract class SubmissionService {
    */
   static async create(
     userId: string,
-    body: SubmissionModel.CreateSubmissionBody,
-  ): Promise<SubmissionModel.CreateSubmissionResponse> {
+    body: { questionId: string; skill: string; answer: unknown },
+  ) {
     // Validate question exists
-    const [question] = await db
-      .select({ id: table.questions.id })
-      .from(table.questions)
-      .where(
-        and(
-          eq(table.questions.id, body.questionId),
-          isNull(table.questions.deletedAt),
-        ),
-      )
-      .limit(1);
+    const question = await db.query.questions.findFirst({
+      columns: { id: true },
+      where: and(
+        eq(table.questions.id, body.questionId),
+        notDeleted(table.questions),
+      ),
+    });
 
     if (!question) {
       throw new NotFoundError("Question not found");
@@ -220,7 +212,7 @@ export abstract class SubmissionService {
         .values({
           userId,
           questionId: body.questionId,
-          skill: body.skill,
+          skill: body.skill as any,
           status: "pending",
         })
         .returning({
@@ -250,24 +242,27 @@ export abstract class SubmissionService {
 
   /**
    * Update submission
-   * @throws NotFoundError if submission not found
-   * @throws ForbiddenError if not the owner
    */
   static async update(
     submissionId: string,
     userId: string,
     isAdmin: boolean,
-    body: SubmissionModel.UpdateSubmissionBody,
-  ): Promise<SubmissionModel.UpdateSubmissionResponse> {
+    body: {
+      answer?: unknown;
+      status?: string;
+      score?: number;
+      band?: number;
+      feedback?: string;
+    },
+  ) {
     return await db.transaction(async (tx) => {
-      // Get submission
       const [submission] = await tx
         .select()
         .from(table.submissions)
         .where(
           and(
             eq(table.submissions.id, submissionId),
-            isNull(table.submissions.deletedAt),
+            notDeleted(table.submissions),
           ),
         )
         .limit(1);
@@ -276,30 +271,21 @@ export abstract class SubmissionService {
         throw new NotFoundError("Submission not found");
       }
 
-      // Check ownership
       if (submission.userId !== userId && !isAdmin) {
         throw new ForbiddenError("You can only update your own submissions");
       }
 
-      // Don't allow updates to completed submissions unless admin
       if (submission.status === "completed" && !isAdmin) {
         throw new BadRequestError("Cannot update completed submission");
       }
 
       // Update submission
-      const updateValues: Partial<{
-        status: typeof SubmissionStatus.static;
-        score: number;
-        band: number;
-        updatedAt: Date;
-        completedAt: Date;
-      }> = {
+      const updateValues: Record<string, unknown> = {
         updatedAt: new Date(),
       };
 
       if (body.status) {
         updateValues.status = body.status;
-        // Only set completedAt when transitioning to completed status
         if (body.status === "completed" && submission.status !== "completed") {
           updateValues.completedAt = new Date();
         }
@@ -327,10 +313,7 @@ export abstract class SubmissionService {
 
       // Update details if provided
       if (body.answer || body.feedback) {
-        const updateDetails: Partial<{
-          answer: any;
-          feedback: string;
-        }> = {};
+        const updateDetails: Record<string, unknown> = {};
         if (body.answer) updateDetails.answer = body.answer;
         if (body.feedback) updateDetails.feedback = body.feedback;
 
@@ -354,21 +337,20 @@ export abstract class SubmissionService {
   }
 
   /**
-   * Grade submission (admin/instructor only)
+   * Grade submission (instructor/admin only)
    */
   static async grade(
     submissionId: string,
-    body: SubmissionModel.GradeSubmissionBody,
-  ): Promise<SubmissionModel.GradeSubmissionResponse> {
+    body: { score: number; band?: number; feedback?: string },
+  ) {
     return await db.transaction(async (tx) => {
-      // Get submission
       const [submission] = await tx
         .select()
         .from(table.submissions)
         .where(
           and(
             eq(table.submissions.id, submissionId),
-            isNull(table.submissions.deletedAt),
+            notDeleted(table.submissions),
           ),
         )
         .limit(1);
@@ -377,7 +359,6 @@ export abstract class SubmissionService {
         throw new NotFoundError("Submission not found");
       }
 
-      // Update submission to completed
       const [updatedSubmission] = await tx
         .update(table.submissions)
         .set({
@@ -401,7 +382,6 @@ export abstract class SubmissionService {
           updatedAt: table.submissions.updatedAt,
         });
 
-      // Update feedback if provided
       if (body.feedback) {
         await tx
           .update(table.submissionDetails)
@@ -409,7 +389,6 @@ export abstract class SubmissionService {
           .where(eq(table.submissionDetails.submissionId, submissionId));
       }
 
-      // Get updated details
       const [details] = await tx
         .select()
         .from(table.submissionDetails)
@@ -425,20 +404,15 @@ export abstract class SubmissionService {
   /**
    * Delete submission (soft delete)
    */
-  static async delete(
-    submissionId: string,
-    userId: string,
-    isAdmin: boolean,
-  ): Promise<SubmissionModel.DeleteSubmissionResponse> {
+  static async delete(submissionId: string, userId: string, isAdmin: boolean) {
     return await db.transaction(async (tx) => {
-      // Get submission
       const [submission] = await tx
         .select()
         .from(table.submissions)
         .where(
           and(
             eq(table.submissions.id, submissionId),
-            isNull(table.submissions.deletedAt),
+            notDeleted(table.submissions),
           ),
         )
         .limit(1);
@@ -447,12 +421,10 @@ export abstract class SubmissionService {
         throw new NotFoundError("Submission not found");
       }
 
-      // Check ownership
       if (submission.userId !== userId && !isAdmin) {
         throw new ForbiddenError("You can only delete your own submissions");
       }
 
-      // Soft delete
       await tx
         .update(table.submissions)
         .set({
@@ -470,9 +442,8 @@ export abstract class SubmissionService {
    */
   static async autoGrade(
     submissionId: string,
-  ): Promise<{ score: number; result: any }> {
+  ): Promise<{ score: number; result: unknown }> {
     return await db.transaction(async (tx) => {
-      // Get submission with question
       const [submission] = await tx
         .select({
           id: table.submissions.id,
@@ -500,7 +471,6 @@ export abstract class SubmissionService {
       const userAnswer = submission.answer;
       const correctAnswer = submission.correctAnswer;
 
-      // Enhanced auto-grading based on question format
       switch (submission.format) {
         case "multiple_choice":
           isCorrect =
@@ -520,7 +490,6 @@ export abstract class SubmissionService {
           }
           break;
         default: {
-          // Fallback to exact match
           const answerStr =
             typeof userAnswer === "string"
               ? userAnswer
@@ -538,7 +507,6 @@ export abstract class SubmissionService {
       const score = isCorrect ? 100 : 0;
       const result = { correct: isCorrect, gradedAt: new Date().toISOString() };
 
-      // Update submission
       await tx
         .update(table.submissions)
         .set({
@@ -551,15 +519,10 @@ export abstract class SubmissionService {
 
       await tx
         .update(table.submissionDetails)
-        .set({
-          result,
-        })
+        .set({ result })
         .where(eq(table.submissionDetails.submissionId, submissionId));
 
-      return {
-        score,
-        result,
-      };
+      return { score, result };
     });
   }
 }

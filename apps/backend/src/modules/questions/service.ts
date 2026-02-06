@@ -4,63 +4,57 @@
  * @see https://elysiajs.com/pattern/mvc.html
  */
 
-import { assertExists, toISOString, toISOStringRequired } from "@common/utils";
-import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
-import { db, table } from "@/db";
+import { assertExists } from "@common/utils";
+import { and, count, desc, eq, sql } from "drizzle-orm";
+import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
 import {
   BadRequestError,
   ForbiddenError,
   NotFoundError,
 } from "@/plugins/error";
-import type {
-  QuestionFormat,
-  QuestionLevel,
-  QuestionModel,
-  QuestionSkill,
-} from "./model";
 
 const mapQuestionResponse = (q: {
   id: string;
   skill: string;
   level: string;
   format: string;
-  content: any;
-  answerKey: any;
+  content: unknown;
+  answerKey: unknown;
   version: number;
   isActive: boolean;
-  createdBy: string | null | undefined;
+  createdBy: string | null;
   createdAt: Date;
   updatedAt: Date;
-  deletedAt: Date | null | undefined;
-}): typeof QuestionModel.questionWithDetails.static => ({
+  deletedAt: Date | null;
+}) => ({
   id: q.id,
-  skill: q.skill as typeof QuestionSkill.static,
-  level: q.level as typeof QuestionLevel.static,
-  format: q.format as typeof QuestionFormat.static,
+  skill: q.skill,
+  level: q.level,
+  format: q.format,
   content: q.content,
   answerKey: q.answerKey ?? undefined,
   version: q.version,
   isActive: q.isActive,
   createdBy: q.createdBy ?? undefined,
-  createdAt: toISOStringRequired(q.createdAt),
-  updatedAt: toISOStringRequired(q.updatedAt),
-  deletedAt: toISOString(q.deletedAt ?? null) ?? undefined,
+  createdAt: q.createdAt.toISOString(),
+  updatedAt: q.updatedAt.toISOString(),
+  deletedAt: q.deletedAt?.toISOString(),
 });
 
 const mapVersionResponse = (v: {
   id: string;
   questionId: string;
   version: number;
-  content: any;
-  answerKey: any;
+  content: unknown;
+  answerKey: unknown;
   createdAt: Date;
-}): typeof QuestionModel.questionVersionInfo.static => ({
+}) => ({
   id: v.id,
   questionId: v.questionId,
   version: v.version,
   content: v.content,
   answerKey: v.answerKey ?? undefined,
-  createdAt: toISOStringRequired(v.createdAt),
+  createdAt: v.createdAt.toISOString(),
 });
 
 /**
@@ -71,19 +65,13 @@ export abstract class QuestionService {
    * Get question by ID
    * @throws NotFoundError if question not found
    */
-  static async getById(
-    questionId: string,
-  ): Promise<QuestionModel.QuestionResponse> {
-    const [question] = await db
-      .select()
-      .from(table.questions)
-      .where(
-        and(
-          eq(table.questions.id, questionId),
-          isNull(table.questions.deletedAt),
-        ),
-      )
-      .limit(1);
+  static async getById(questionId: string) {
+    const question = await db.query.questions.findFirst({
+      where: and(
+        eq(table.questions.id, questionId),
+        notDeleted(table.questions),
+      ),
+    });
 
     if (!question) {
       throw new NotFoundError("Question not found");
@@ -96,18 +84,22 @@ export abstract class QuestionService {
    * List questions with filtering and pagination
    */
   static async list(
-    query: QuestionModel.ListQuestionsQuery,
+    query: {
+      page?: number;
+      limit?: number;
+      skill?: "listening" | "reading" | "writing" | "speaking";
+      level?: "A2" | "B1" | "B2" | "C1";
+      format?: string;
+      isActive?: boolean;
+      search?: string;
+    },
     _currentUserId: string,
     isAdmin: boolean,
-  ): Promise<QuestionModel.ListQuestionsResponse> {
-    const page = query.page || 1;
-    const limit = query.limit || 20;
-    const offset = (page - 1) * limit;
+  ) {
+    const { limit, offset } = paginate(query.page, query.limit);
 
     // Build where conditions
-    const conditions: ReturnType<typeof and>[] = [
-      isNull(table.questions.deletedAt),
-    ];
+    const conditions: ReturnType<typeof and>[] = [notDeleted(table.questions)];
 
     // Admins see all questions including inactive, regular users only see active
     if (!isAdmin) {
@@ -147,20 +139,7 @@ export abstract class QuestionService {
 
     // Get questions
     const questions = await db
-      .select({
-        id: table.questions.id,
-        skill: table.questions.skill,
-        level: table.questions.level,
-        format: table.questions.format,
-        content: table.questions.content,
-        answerKey: table.questions.answerKey,
-        version: table.questions.version,
-        isActive: table.questions.isActive,
-        createdBy: table.questions.createdBy,
-        createdAt: table.questions.createdAt,
-        updatedAt: table.questions.updatedAt,
-        deletedAt: table.questions.deletedAt,
-      })
+      .select()
       .from(table.questions)
       .where(whereClause)
       .orderBy(desc(table.questions.createdAt))
@@ -169,12 +148,7 @@ export abstract class QuestionService {
 
     return {
       data: questions.map((q) => mapQuestionResponse(q)),
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      meta: paginationMeta(total, query.page, query.limit),
     };
   }
 
@@ -183,8 +157,14 @@ export abstract class QuestionService {
    */
   static async create(
     userId: string,
-    body: QuestionModel.CreateQuestionBody,
-  ): Promise<QuestionModel.CreateQuestionResponse> {
+    body: {
+      skill: "listening" | "reading" | "writing" | "speaking";
+      level: "A2" | "B1" | "B2" | "C1";
+      format: string;
+      content: any;
+      answerKey?: any;
+    },
+  ) {
     // Create question and initial version in transaction
     return await db.transaction(async (tx) => {
       // Create question
@@ -237,18 +217,22 @@ export abstract class QuestionService {
     questionId: string,
     userId: string,
     isAdmin: boolean,
-    body: QuestionModel.UpdateQuestionBody,
-  ): Promise<QuestionModel.UpdateQuestionResponse> {
+    body: {
+      skill?: "listening" | "reading" | "writing" | "speaking";
+      level?: "A2" | "B1" | "B2" | "C1";
+      format?: string;
+      content?: any;
+      answerKey?: any;
+      isActive?: boolean;
+    },
+  ) {
     return await db.transaction(async (tx) => {
       // Get question
       const [question] = await tx
         .select()
         .from(table.questions)
         .where(
-          and(
-            eq(table.questions.id, questionId),
-            isNull(table.questions.deletedAt),
-          ),
+          and(eq(table.questions.id, questionId), notDeleted(table.questions)),
         )
         .limit(1);
 
@@ -262,15 +246,7 @@ export abstract class QuestionService {
       }
 
       // Build update values
-      const updateValues: Partial<{
-        skill: typeof QuestionSkill.static;
-        level: typeof QuestionLevel.static;
-        format: typeof QuestionFormat.static;
-        content: any;
-        answerKey: any;
-        isActive: boolean;
-        updatedAt: Date;
-      }> = {
+      const updateValues: Partial<typeof table.questions.$inferInsert> = {
         updatedAt: new Date(),
       };
 
@@ -315,8 +291,11 @@ export abstract class QuestionService {
     questionId: string,
     userId: string,
     isAdmin: boolean,
-    body: QuestionModel.CreateVersionBody,
-  ): Promise<QuestionModel.CreateVersionResponse> {
+    body: {
+      content: any;
+      answerKey?: any;
+    },
+  ) {
     return await db.transaction(async (tx) => {
       // Get question
       const [question] = await tx
@@ -327,10 +306,7 @@ export abstract class QuestionService {
         })
         .from(table.questions)
         .where(
-          and(
-            eq(table.questions.id, questionId),
-            isNull(table.questions.deletedAt),
-          ),
+          and(eq(table.questions.id, questionId), notDeleted(table.questions)),
         )
         .limit(1);
 
@@ -386,20 +362,15 @@ export abstract class QuestionService {
    * Get all versions of a question
    * @throws NotFoundError if question not found
    */
-  static async getVersions(
-    questionId: string,
-  ): Promise<QuestionModel.ListQuestionVersionsResponse> {
+  static async getVersions(questionId: string) {
     // Verify question exists
-    const [question] = await db
-      .select({ id: table.questions.id })
-      .from(table.questions)
-      .where(
-        and(
-          eq(table.questions.id, questionId),
-          isNull(table.questions.deletedAt),
-        ),
-      )
-      .limit(1);
+    const question = await db.query.questions.findFirst({
+      where: and(
+        eq(table.questions.id, questionId),
+        notDeleted(table.questions),
+      ),
+      columns: { id: true },
+    });
 
     if (!question) {
       throw new NotFoundError("Question not found");
@@ -431,27 +402,21 @@ export abstract class QuestionService {
    * Get a specific version of a question
    * @throws NotFoundError if question or version not found
    */
-  static async getVersion(
-    questionId: string,
-    versionId: string,
-  ): Promise<QuestionModel.QuestionVersionResponse> {
-    const [version] = await db
-      .select({
-        id: table.questionVersions.id,
-        questionId: table.questionVersions.questionId,
-        version: table.questionVersions.version,
-        content: table.questionVersions.content,
-        answerKey: table.questionVersions.answerKey,
-        createdAt: table.questionVersions.createdAt,
-      })
-      .from(table.questionVersions)
-      .where(
-        and(
-          eq(table.questionVersions.id, versionId),
-          eq(table.questionVersions.questionId, questionId),
-        ),
-      )
-      .limit(1);
+  static async getVersion(questionId: string, versionId: string) {
+    const version = await db.query.questionVersions.findFirst({
+      where: and(
+        eq(table.questionVersions.id, versionId),
+        eq(table.questionVersions.questionId, questionId),
+      ),
+      columns: {
+        id: true,
+        questionId: true,
+        version: true,
+        content: true,
+        answerKey: true,
+        createdAt: true,
+      },
+    });
 
     if (!version) {
       throw new NotFoundError("Question version not found");
@@ -463,21 +428,14 @@ export abstract class QuestionService {
   /**
    * Delete question (soft delete)
    */
-  static async delete(
-    questionId: string,
-    userId: string,
-    isAdmin: boolean,
-  ): Promise<QuestionModel.DeleteQuestionResponse> {
+  static async delete(questionId: string, userId: string, isAdmin: boolean) {
     return await db.transaction(async (tx) => {
       // Get question
       const [question] = await tx
         .select()
         .from(table.questions)
         .where(
-          and(
-            eq(table.questions.id, questionId),
-            isNull(table.questions.deletedAt),
-          ),
+          and(eq(table.questions.id, questionId), notDeleted(table.questions)),
         )
         .limit(1);
 
@@ -506,11 +464,7 @@ export abstract class QuestionService {
   /**
    * Restore a deleted question (admin only)
    */
-  static async restore(
-    questionId: string,
-    _userId: string,
-    isAdmin: boolean,
-  ): Promise<QuestionModel.UpdateQuestionResponse> {
+  static async restore(questionId: string, _userId: string, isAdmin: boolean) {
     if (!isAdmin) {
       throw new ForbiddenError("Only admins can restore questions");
     }
