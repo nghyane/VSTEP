@@ -2,29 +2,25 @@ import { env } from "@common/env";
 import { bearer } from "@elysiajs/bearer";
 import { jwt } from "@elysiajs/jwt";
 import { Elysia } from "elysia";
-import { ForbiddenError, UnauthorizedError } from "./error";
+import { ForbiddenError, TokenExpiredError, UnauthorizedError } from "./error";
 
 export interface JWTPayload {
   sub: string;
-  email: string;
+  jti: string;
   role: "learner" | "instructor" | "admin";
-  fullName: string | null;
 }
 
-/**
- * Auth plugin — @elysiajs/jwt + @elysiajs/bearer + resolve + macro
- *
- * Provides:
- *   context.jwt        — sign/verify access tokens
- *   context.refreshJwt  — sign/verify refresh tokens
- *   context.bearer      — extracted Bearer token string
- *   context.user        — JWTPayload | null (resolved per request)
- *
- * Macros:
- *   { auth: true }                    — require authenticated user
- *   { role: "admin" }                 — require specific role
- *   { role: "instructor" }            — require instructor or admin
- */
+/** Decode JWT payload without signature verification (for expiry detection) */
+function decodePayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    return JSON.parse(atob(parts[1]));
+  } catch {
+    return null;
+  }
+}
+
 export const authPlugin = new Elysia({ name: "auth" })
   .use(bearer())
   .use(
@@ -45,14 +41,20 @@ export const authPlugin = new Elysia({ name: "auth" })
     if (!token) return { user: null as JWTPayload | null };
 
     const payload = await jwtCtx.verify(token);
-    if (!payload) return { user: null as JWTPayload | null };
+    if (!payload) {
+      // Distinguish expired from invalid
+      const decoded = decodePayload(token);
+      if (decoded?.exp && (decoded.exp as number) < Date.now() / 1000) {
+        throw new TokenExpiredError();
+      }
+      return { user: null as JWTPayload | null };
+    }
 
     return {
       user: {
         sub: payload.sub as string,
-        email: payload.email as string,
+        jti: (payload.jti as string) || "",
         role: (payload.role as JWTPayload["role"]) || "learner",
-        fullName: (payload.fullName as string) || null,
       } satisfies JWTPayload,
     };
   })
