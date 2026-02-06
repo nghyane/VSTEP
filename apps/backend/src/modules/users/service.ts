@@ -1,4 +1,4 @@
-import { assertExists, serializeDates } from "@common/utils";
+import { assertExists } from "@common/utils";
 import { and, count, eq, ilike, sql } from "drizzle-orm";
 import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
 import { AuthService } from "@/modules/auth/service";
@@ -36,7 +36,7 @@ export abstract class UserService {
       throw new NotFoundError("User not found");
     }
 
-    return serializeDates(user);
+    return user;
   }
 
   static async list(query: {
@@ -82,7 +82,7 @@ export abstract class UserService {
       .offset(offset);
 
     return {
-      data: users.map(serializeDates),
+      data: users,
       meta: paginationMeta(total, page, limit),
     };
   }
@@ -117,7 +117,7 @@ export abstract class UserService {
       })
       .returning(USER_COLUMNS);
 
-    return serializeDates(assertExists(user, "User"));
+    return assertExists(user, "User");
   }
 
   static async update(
@@ -178,9 +178,9 @@ export abstract class UserService {
         fullName: string | undefined | null;
         role: "learner" | "instructor" | "admin";
         passwordHash: string;
-        updatedAt: Date;
+        updatedAt: string;
       }> = {
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
       };
 
       if (body.email) updateValues.email = body.email;
@@ -199,7 +199,7 @@ export abstract class UserService {
         .where(eq(table.users.id, userId))
         .returning(USER_COLUMNS);
 
-      return serializeDates(assertExists(user, "User"));
+      return assertExists(user, "User");
     });
   }
 
@@ -220,8 +220,8 @@ export abstract class UserService {
       const [user] = await tx
         .update(table.users)
         .set({
-          deletedAt: new Date(),
-          updatedAt: new Date(),
+          deletedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(table.users.id, userId))
         .returning({
@@ -233,7 +233,7 @@ export abstract class UserService {
 
       return {
         id: deletedUser.id,
-        deletedAt: deletedUser.deletedAt!.toISOString(),
+        deletedAt: deletedUser.deletedAt!,
       };
     });
   }
@@ -278,7 +278,7 @@ export abstract class UserService {
       .update(table.users)
       .set({
         passwordHash: newPasswordHash,
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
       })
       .where(eq(table.users.id, userId));
 

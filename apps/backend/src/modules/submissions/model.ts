@@ -34,7 +34,6 @@ export namespace SubmissionModel {
 
   export const CreateBody = t.Object({
     questionId: t.String({ format: "uuid" }),
-    skill: Skill,
     answer: t.Any(),
   });
 

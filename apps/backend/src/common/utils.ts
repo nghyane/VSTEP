@@ -9,22 +9,3 @@ export function assertExists<T>(
   }
   return value;
 }
-
-type SerializeDates<T> = {
-  [K in keyof T]: T[K] extends Date ? string : T[K];
-};
-
-/**
- * Convert all Date fields in an object to ISO-8601 strings.
- * Elysia validates responses before JSON serialization, so Date objects
- * would fail against t.String({ format: "date-time" }) schemas.
- */
-export function serializeDates<T extends Record<string, unknown>>(
-  obj: T,
-): SerializeDates<T> {
-  const result: Record<string, unknown> = {};
-  for (const [key, val] of Object.entries(obj)) {
-    result[key] = val instanceof Date ? val.toISOString() : val;
-  }
-  return result as SerializeDates<T>;
-}

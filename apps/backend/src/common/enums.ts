@@ -4,7 +4,7 @@
  */
 import { examStatusEnum } from "@db/schema/exams";
 import { streakDirectionEnum } from "@db/schema/progress";
-import { questionLevelEnum, questionSkillEnum } from "@db/schema/questions";
+import { questionFormatEnum, questionLevelEnum } from "@db/schema/questions";
 import {
   gradingModeEnum,
   reviewPriorityEnum,
@@ -24,7 +24,8 @@ function enumSchema<const T extends readonly [string, ...string[]]>(values: T) {
 
 export const UserRole = enumSchema(userRoleEnum.enumValues);
 export const Skill = enumSchema(skillEnum.enumValues);
-export const QuestionSkill = enumSchema(questionSkillEnum.enumValues);
+export const QuestionSkill = enumSchema(skillEnum.enumValues);
+export const QuestionFormat = enumSchema(questionFormatEnum.enumValues);
 export const QuestionLevel = enumSchema(questionLevelEnum.enumValues);
 export const VstepBand = enumSchema(vstepBandEnum.enumValues);
 export const SubmissionStatus = enumSchema(submissionStatusEnum.enumValues);

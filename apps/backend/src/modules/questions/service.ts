@@ -1,6 +1,7 @@
-import { assertExists, serializeDates } from "@common/utils";
+import { assertExists } from "@common/utils";
 import { and, count, desc, eq, sql } from "drizzle-orm";
 import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
+import type { Question } from "@/db";
 import {
   BadRequestError,
   ForbiddenError,
@@ -46,16 +47,16 @@ export abstract class QuestionService {
       throw new NotFoundError("Question not found");
     }
 
-    return serializeDates(question);
+    return question;
   }
 
   static async list(
     query: {
       page?: number;
       limit?: number;
-      skill?: "listening" | "reading" | "writing" | "speaking";
-      level?: "A2" | "B1" | "B2" | "C1";
-      format?: string;
+      skill?: Question["skill"];
+      level?: Question["level"];
+      format?: Question["format"];
       isActive?: boolean;
       search?: string;
     },
@@ -112,7 +113,7 @@ export abstract class QuestionService {
       .offset(offset);
 
     return {
-      data: questions.map(serializeDates),
+      data: questions,
       meta: paginationMeta(total, query.page, query.limit),
     };
   }
@@ -120,9 +121,9 @@ export abstract class QuestionService {
   static async create(
     userId: string,
     body: {
-      skill: "listening" | "reading" | "writing" | "speaking";
-      level: "A2" | "B1" | "B2" | "C1";
-      format: string;
+      skill: Question["skill"];
+      level: Question["level"];
+      format: Question["format"];
       content: unknown;
       answerKey?: unknown;
     },
@@ -154,7 +155,7 @@ export abstract class QuestionService {
         answerKey: body.answerKey ?? null,
       });
 
-      return serializeDates(q);
+      return q;
     });
   }
 
@@ -163,9 +164,9 @@ export abstract class QuestionService {
     userId: string,
     isAdmin: boolean,
     body: {
-      skill?: "listening" | "reading" | "writing" | "speaking";
-      level?: "A2" | "B1" | "B2" | "C1";
-      format?: string;
+      skill?: Question["skill"];
+      level?: Question["level"];
+      format?: Question["format"];
       content?: unknown;
       answerKey?: unknown;
       isActive?: boolean;
@@ -192,7 +193,7 @@ export abstract class QuestionService {
 
       // Build update values
       const updateValues: Partial<typeof table.questions.$inferInsert> = {
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
       };
 
       if (body.skill !== undefined) updateValues.skill = body.skill;
@@ -224,7 +225,7 @@ export abstract class QuestionService {
         .where(eq(table.questions.id, questionId))
         .returning();
 
-      return serializeDates(assertExists(updatedQuestion, "Question"));
+      return assertExists(updatedQuestion, "Question");
     });
   }
 
@@ -284,11 +285,11 @@ export abstract class QuestionService {
           content: body.content,
           answerKey: body.answerKey ?? null,
           version: newVersion,
-          updatedAt: new Date(),
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(table.questions.id, questionId));
 
-      return serializeDates(v);
+      return v;
     });
   }
 
@@ -314,7 +315,7 @@ export abstract class QuestionService {
       .orderBy(desc(table.questionVersions.version));
 
     return {
-      data: versions.map(serializeDates),
+      data: versions,
       meta: {
         total: versions.length,
       },
@@ -346,7 +347,7 @@ export abstract class QuestionService {
       throw new NotFoundError("Question version not found");
     }
 
-    return serializeDates(version);
+    return version;
   }
 
   static async remove(questionId: string, userId: string, isAdmin: boolean) {
@@ -373,8 +374,8 @@ export abstract class QuestionService {
       await tx
         .update(table.questions)
         .set({
-          deletedAt: new Date(),
-          updatedAt: new Date(),
+          deletedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(table.questions.id, questionId));
 
@@ -408,12 +409,12 @@ export abstract class QuestionService {
         .update(table.questions)
         .set({
           deletedAt: null,
-          updatedAt: new Date(),
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(table.questions.id, questionId))
         .returning();
 
-      return serializeDates(assertExists(updatedQuestion, "Question"));
+      return assertExists(updatedQuestion, "Question");
     });
   }
 }

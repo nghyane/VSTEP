@@ -11,13 +11,21 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import { skillEnum } from "./submissions";
 import { users } from "./users";
 
-export const questionSkillEnum = pgEnum("question_skill", [
-  "listening",
-  "reading",
-  "writing",
-  "speaking",
+export const questionFormatEnum = pgEnum("question_format", [
+  "writing_task_1",
+  "writing_task_2",
+  "speaking_part_1",
+  "speaking_part_2",
+  "speaking_part_3",
+  "reading_mcq",
+  "reading_tng",
+  "reading_matching_headings",
+  "reading_gap_fill",
+  "listening_mcq",
+  "listening_dictation",
 ]);
 
 export const questionLevelEnum = pgEnum("question_level", [
@@ -32,9 +40,9 @@ export const questions = pgTable(
   "questions",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    skill: questionSkillEnum("skill").notNull(),
+    skill: skillEnum("skill").notNull(),
     level: questionLevelEnum("level").notNull(),
-    format: varchar("format", { length: 50 }).notNull(),
+    format: questionFormatEnum("format").notNull(),
     content: jsonb("content").notNull(),
     answerKey: jsonb("answer_key"),
     version: integer("version").default(1).notNull(),
@@ -42,13 +50,13 @@ export const questions = pgTable(
     createdBy: uuid("created_by").references(() => users.id, {
       onDelete: "set null",
     }),
-    createdAt: timestamp("created_at", { withTimezone: true })
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
   },
   (table) => ({
     skillLevelIdx: index("questions_skill_level_idx").on(
@@ -72,7 +80,7 @@ export const questionVersions = pgTable(
     version: integer("version").notNull(),
     content: jsonb("content").notNull(),
     answerKey: jsonb("answer_key"),
-    createdAt: timestamp("created_at", { withTimezone: true })
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
   },

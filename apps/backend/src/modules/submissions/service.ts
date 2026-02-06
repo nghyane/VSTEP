@@ -1,4 +1,4 @@
-import { assertExists, serializeDates } from "@common/utils";
+import { assertExists } from "@common/utils";
 import { and, count, desc, eq, sql } from "drizzle-orm";
 import type { Submission } from "@/db";
 import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
@@ -25,8 +25,7 @@ function scoreToBand(score: number): Submission["band"] {
   if (score >= 8.5) return "C1";
   if (score >= 6.0) return "B2";
   if (score >= 4.0) return "B1";
-  if (score >= 2.0) return "A2";
-  return "A1";
+  return null; // Below B1 in VSTEP 3-5
 }
 
 export abstract class SubmissionService {
@@ -69,7 +68,7 @@ export abstract class SubmissionService {
       .limit(1);
 
     return {
-      ...serializeDates(submission),
+      ...submission,
       answer: details?.answer,
       result: details?.result,
       feedback: details?.feedback,
@@ -137,17 +136,17 @@ export abstract class SubmissionService {
       .offset(offset);
 
     return {
-      data: submissions.map((s) => serializeDates(s)),
+      data: submissions,
       meta: paginationMeta(total, page, limit),
     };
   }
 
   static async create(
     userId: string,
-    body: { questionId: string; skill: Submission["skill"]; answer: unknown },
+    body: { questionId: string; answer: unknown },
   ) {
     const question = await db.query.questions.findFirst({
-      columns: { id: true, isActive: true },
+      columns: { id: true, skill: true, isActive: true },
       where: and(
         eq(table.questions.id, body.questionId),
         notDeleted(table.questions),
@@ -168,7 +167,7 @@ export abstract class SubmissionService {
         .values({
           userId,
           questionId: body.questionId,
-          skill: body.skill,
+          skill: question.skill,
           status: "pending",
         })
         .returning(SUBMISSION_COLUMNS);
@@ -180,7 +179,7 @@ export abstract class SubmissionService {
         answer: body.answer,
       });
 
-      return serializeDates(sub);
+      return sub;
     });
   }
 
@@ -216,22 +215,41 @@ export abstract class SubmissionService {
         throw new ForbiddenError("You can only update your own submissions");
       }
 
-      if (submission.status === "completed" && !isAdmin) {
-        throw new BadRequestError("Cannot update completed submission");
+      const MUTABLE_STATUSES = ["pending", "error"];
+      if (!MUTABLE_STATUSES.includes(submission.status) && !isAdmin) {
+        throw new BadRequestError("Cannot update submission in current status");
       }
 
       const updateValues: Partial<typeof table.submissions.$inferInsert> = {
-        updatedAt: new Date(),
+        updatedAt: new Date().toISOString(),
       };
 
       if (isAdmin) {
         if (body.status) {
+          const VALID_TRANSITIONS: Record<string, string[]> = {
+            pending: ["queued", "failed"],
+            queued: ["processing", "failed"],
+            processing: ["completed", "review_pending", "error", "failed"],
+            review_pending: ["completed"],
+            error: ["retrying"],
+            retrying: ["processing", "failed"],
+            completed: [],
+            failed: [],
+          };
+
+          const allowed = VALID_TRANSITIONS[submission.status] ?? [];
+          if (!allowed.includes(body.status)) {
+            throw new BadRequestError(
+              `Invalid transition: ${submission.status} → ${body.status}`,
+            );
+          }
+
           updateValues.status = body.status;
           if (
             body.status === "completed" &&
             submission.status !== "completed"
           ) {
-            updateValues.completedAt = new Date();
+            updateValues.completedAt = new Date().toISOString();
           }
         }
         if (body.score !== undefined) updateValues.score = body.score;
@@ -266,7 +284,7 @@ export abstract class SubmissionService {
       const updatedSub = assertExists(updatedSubmission, "Submission");
 
       return {
-        ...serializeDates(updatedSub),
+        ...updatedSub,
         answer: details?.answer,
         result: details?.result,
         feedback: details?.feedback,
@@ -303,7 +321,7 @@ export abstract class SubmissionService {
       if (body.score < 0 || body.score > 10) {
         throw new BadRequestError("Score must be between 0 and 10");
       }
-      if (body.score % 0.5 !== 0) {
+      if (Math.round(body.score * 2) !== body.score * 2) {
         throw new BadRequestError("Score must be in 0.5 increments");
       }
 
@@ -313,8 +331,8 @@ export abstract class SubmissionService {
           status: "completed",
           score: body.score,
           band: body.band ?? scoreToBand(body.score),
-          updatedAt: new Date(),
-          completedAt: new Date(),
+          updatedAt: new Date().toISOString(),
+          completedAt: new Date().toISOString(),
         })
         .where(eq(table.submissions.id, submissionId))
         .returning(SUBMISSION_COLUMNS);
@@ -335,7 +353,7 @@ export abstract class SubmissionService {
       const updatedSub = assertExists(updatedSubmission, "Submission");
 
       return {
-        ...serializeDates(updatedSub),
+        ...updatedSub,
         answer: details?.answer,
         result: details?.result,
         feedback: details?.feedback,
@@ -367,8 +385,8 @@ export abstract class SubmissionService {
       await tx
         .update(table.submissions)
         .set({
-          deletedAt: new Date(),
-          updatedAt: new Date(),
+          deletedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(table.submissions.id, submissionId));
 
@@ -450,8 +468,8 @@ export abstract class SubmissionService {
           status: "completed",
           score,
           band,
-          completedAt: new Date(),
-          updatedAt: new Date(),
+          completedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(table.submissions.id, submissionId));
 

@@ -1,4 +1,4 @@
-import { QuestionLevel, QuestionSkill } from "@common/enums";
+import { QuestionFormat, QuestionLevel, QuestionSkill } from "@common/enums";
 import { t } from "elysia";
 
 export namespace QuestionModel {
@@ -6,7 +6,7 @@ export namespace QuestionModel {
     id: t.String({ format: "uuid" }),
     skill: QuestionSkill,
     level: QuestionLevel,
-    format: t.String(),
+    format: QuestionFormat,
     content: t.Any(),
     version: t.Number(),
     isActive: t.Boolean(),
@@ -38,7 +38,7 @@ export namespace QuestionModel {
   export const CreateBody = t.Object({
     skill: QuestionSkill,
     level: QuestionLevel,
-    format: t.String(),
+    format: QuestionFormat,
     content: t.Any(),
     answerKey: t.Optional(t.Any()),
   });
@@ -47,7 +47,7 @@ export namespace QuestionModel {
     t.Object({
       skill: QuestionSkill,
       level: QuestionLevel,
-      format: t.String(),
+      format: QuestionFormat,
       content: t.Any(),
       answerKey: t.Optional(t.Any()),
       isActive: t.Boolean(),

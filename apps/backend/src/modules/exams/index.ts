@@ -17,6 +17,7 @@ export const exams = new Elysia({
       return await ExamService.list(query);
     },
     {
+      auth: true,
       query: t.Object({
         ...PaginationQuery.properties,
         level: t.Optional(QuestionLevel),
@@ -27,6 +28,7 @@ export const exams = new Elysia({
           data: t.Array(ExamModel.Exam),
           meta: PaginationMeta,
         }),
+        401: ErrorResponse,
       },
       detail: {
         summary: "List exams",
@@ -40,9 +42,11 @@ export const exams = new Elysia({
       return await ExamService.getById(id);
     },
     {
+      auth: true,
       params: IdParam,
       response: {
         200: ExamModel.Exam,
+        401: ErrorResponse,
         404: ErrorResponse,
       },
       detail: {
@@ -93,19 +97,18 @@ export const exams = new Elysia({
   )
 
   .post(
-    "/sessions",
-    async ({ body, user }) => {
-      return await ExamService.startSession(user.sub, body);
+    "/:id/start",
+    async ({ params: { id }, user }) => {
+      return await ExamService.startSession(user.sub, id);
     },
     {
       auth: true,
-      body: t.Object({
-        examId: t.String({ format: "uuid" }),
-      }),
+      params: IdParam,
       response: {
         200: ExamModel.Session,
         400: ErrorResponse,
         401: ErrorResponse,
+        404: ErrorResponse,
       },
       detail: {
         summary: "Start exam session",
@@ -137,8 +140,33 @@ export const exams = new Elysia({
     },
   )
 
+  .put(
+    "/sessions/:sessionId",
+    async ({ params: { sessionId }, body, user }) => {
+      return await ExamService.saveAnswers(
+        sessionId,
+        user.sub,
+        body.answers,
+      );
+    },
+    {
+      auth: true,
+      params: ExamModel.SessionIdParam,
+      body: ExamModel.AnswerSaveBody,
+      response: {
+        200: t.Object({ success: t.Boolean(), saved: t.Number() }),
+        400: ErrorResponse,
+        401: ErrorResponse,
+        403: ErrorResponse,
+      },
+      detail: {
+        summary: "Auto-save answers for session",
+      },
+    },
+  )
+
   .post(
-    "/sessions/:sessionId/submit",
+    "/sessions/:sessionId/answer",
     async ({ params: { sessionId }, body, user }) => {
       return await ExamService.submitAnswer(sessionId, user.sub, body);
     },
@@ -156,15 +184,15 @@ export const exams = new Elysia({
         403: ErrorResponse,
       },
       detail: {
-        summary: "Submit answer for session",
+        summary: "Submit single answer for session",
       },
     },
   )
 
   .post(
-    "/sessions/:sessionId/complete",
+    "/sessions/:sessionId/submit",
     async ({ params: { sessionId }, user }) => {
-      return await ExamService.completeSession(sessionId, user.sub);
+      return await ExamService.submitExam(sessionId, user.sub);
     },
     {
       auth: true,
@@ -176,7 +204,7 @@ export const exams = new Elysia({
         403: ErrorResponse,
       },
       detail: {
-        summary: "Complete exam session",
+        summary: "Submit exam for grading",
       },
     },
   );

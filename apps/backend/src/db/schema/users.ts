@@ -24,13 +24,13 @@ export const users = pgTable(
     passwordHash: varchar("password_hash", { length: 255 }).notNull(),
     fullName: varchar("full_name", { length: 255 }),
     role: userRoleEnum("role").default("learner").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
   },
   (table) => ({
     emailUnique: uniqueIndex("users_email_unique")
@@ -54,9 +54,9 @@ export const refreshTokens = pgTable(
     jti: varchar("jti", { length: 36 }).notNull(),
     replacedByJti: varchar("replaced_by_jti", { length: 36 }),
     deviceInfo: text("device_info"),
-    revokedAt: timestamp("revoked_at", { withTimezone: true }),
-    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
+    revokedAt: timestamp("revoked_at", { withTimezone: true, mode: "string" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "string" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
   },

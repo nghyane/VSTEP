@@ -1,7 +1,7 @@
 import { QuestionLevel, QuestionSkill } from "@common/enums";
 import { ErrorResponse, IdParam, PaginationMeta, PaginationQuery } from "@common/schemas";
 import { Elysia, t } from "elysia";
-import { authPlugin, verifyAccessToken } from "@/plugins/auth";
+import { authPlugin } from "@/plugins/auth";
 import { QuestionModel } from "./model";
 import { QuestionService } from "./service";
 
@@ -13,23 +13,14 @@ export const questions = new Elysia({
 
   .get(
     "/",
-    async ({ query, bearer: token, set }) => {
-      let userId = "anonymous";
-      let isAdmin = false;
-      if (token) {
-        try {
-          const user = await verifyAccessToken(token);
-          userId = user.sub;
-          isAdmin = user.role === "admin";
-        } catch {
-          // Invalid/expired token on public route → treat as anonymous
-        }
-      }
-      const result = await QuestionService.list(query, userId, isAdmin);
+    async ({ query, user, set }) => {
+      const isAdmin = user.role === "admin";
+      const result = await QuestionService.list(query, user.sub, isAdmin);
       set.status = 200;
       return result;
     },
     {
+      auth: true,
       query: t.Object({
         ...PaginationQuery.properties,
         skill: t.Optional(QuestionSkill),
@@ -44,6 +35,7 @@ export const questions = new Elysia({
           meta: PaginationMeta,
         }),
         400: ErrorResponse,
+        401: ErrorResponse,
       },
       detail: {
         summary: "List questions",
@@ -60,9 +52,11 @@ export const questions = new Elysia({
       return result;
     },
     {
+      auth: true,
       params: IdParam,
       response: {
         200: QuestionModel.Question,
+        401: ErrorResponse,
         404: ErrorResponse,
       },
       detail: {
@@ -80,12 +74,13 @@ export const questions = new Elysia({
       return result;
     },
     {
-      auth: true,
+      role: "instructor",
       body: QuestionModel.CreateBody,
       response: {
         201: QuestionModel.Question,
         400: ErrorResponse,
         401: ErrorResponse,
+        403: ErrorResponse,
         422: ErrorResponse,
       },
       detail: {
@@ -108,7 +103,7 @@ export const questions = new Elysia({
       return result;
     },
     {
-      auth: true,
+      role: "instructor",
       params: IdParam,
       body: QuestionModel.UpdateBody,
       response: {
@@ -139,7 +134,7 @@ export const questions = new Elysia({
       return result;
     },
     {
-      auth: true,
+      role: "instructor",
       params: IdParam,
       body: QuestionModel.VersionBody,
       response: {
@@ -166,12 +161,15 @@ export const questions = new Elysia({
       return result;
     },
     {
+      role: "instructor",
       params: IdParam,
       response: {
         200: t.Object({
           data: t.Array(QuestionModel.Version),
           meta: t.Object({ total: t.Number() }),
         }),
+        401: ErrorResponse,
+        403: ErrorResponse,
         404: ErrorResponse,
       },
       detail: {
@@ -221,7 +219,7 @@ export const questions = new Elysia({
       return result;
     },
     {
-      auth: true,
+      role: "admin",
       params: IdParam,
       response: {
         200: t.Object({ id: t.String({ format: "uuid" }) }),

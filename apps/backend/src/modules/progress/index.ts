@@ -1,5 +1,5 @@
-import { QuestionLevel, Skill } from "@common/enums";
-import { ErrorResponse, IdParam, PaginationMeta, PaginationQuery } from "@common/schemas";
+import { Skill } from "@common/enums";
+import { ErrorResponse } from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import { ProgressModel } from "./model";
@@ -13,68 +13,31 @@ export const progress = new Elysia({
 
   .get(
     "/",
-    async ({ query, user }) => {
-      return await ProgressService.list(
-        query,
-        user.sub,
-        user.role === "admin",
-      );
+    async ({ user }) => {
+      return await ProgressService.getOverview(user.sub);
     },
     {
       auth: true,
-      query: t.Object({
-        ...PaginationQuery.properties,
-        skill: t.Optional(Skill),
-        currentLevel: t.Optional(QuestionLevel),
-        userId: t.Optional(t.String({ format: "uuid" })),
-      }),
       response: {
-        200: t.Object({
-          data: t.Array(ProgressModel.Progress),
-          meta: PaginationMeta,
-        }),
+        200: t.Array(ProgressModel.Progress),
         401: ErrorResponse,
       },
-      detail: {
-        summary: "List user progress",
-      },
+      detail: { summary: "Get progress overview (all skills)" },
     },
   )
 
   .get(
-    "/:id",
-    async ({ params: { id }, user }) => {
-      return await ProgressService.getById(id, user.sub, user.role === "admin");
+    "/:skill",
+    async ({ params: { skill }, user }) => {
+      return await ProgressService.getBySkill(skill, user.sub);
     },
     {
       auth: true,
-      params: IdParam,
-      response: {
-        200: ProgressModel.Progress,
-        401: ErrorResponse,
-        403: ErrorResponse,
-        404: ErrorResponse,
-      },
-      detail: {
-        summary: "Get progress by ID",
-      },
-    },
-  )
-
-  .post(
-    "/update",
-    async ({ body, user }) => {
-      return await ProgressService.updateProgress(user.sub, body);
-    },
-    {
-      auth: true,
-      body: ProgressModel.UpdateBody,
+      params: t.Object({ skill: Skill }),
       response: {
         200: ProgressModel.Progress,
         401: ErrorResponse,
       },
-      detail: {
-        summary: "Update user progress",
-      },
+      detail: { summary: "Get progress for a specific skill" },
     },
   );

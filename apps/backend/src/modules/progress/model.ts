@@ -16,15 +16,5 @@ export namespace ProgressModel {
     updatedAt: t.String({ format: "date-time" }),
   });
 
-  export const UpdateBody = t.Object({
-    skill: Skill,
-    currentLevel: QuestionLevel,
-    targetLevel: t.Optional(QuestionLevel),
-    scaffoldLevel: t.Optional(t.Number()),
-    streakCount: t.Optional(t.Number()),
-    streakDirection: t.Optional(StreakDirection),
-  });
-
   export type Progress = typeof Progress.static;
-  export type UpdateBody = typeof UpdateBody.static;
 }

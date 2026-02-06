@@ -8,6 +8,7 @@ import {
 } from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
+import { ForbiddenError } from "@/plugins/error";
 import { UserModel } from "./model";
 import { UserService } from "./service";
 
@@ -19,7 +20,10 @@ export const users = new Elysia({
 
   .get(
     "/:id",
-    async ({ params, set }) => {
+    async ({ params, user, set }) => {
+      if (user.role !== "admin" && params.id !== user.sub) {
+        throw new ForbiddenError("You can only view your own profile");
+      }
       const result = await UserService.getById(params.id);
       set.status = 200;
       return result;
@@ -30,6 +34,7 @@ export const users = new Elysia({
       response: {
         200: UserModel.User,
         401: ErrorResponse,
+        403: ErrorResponse,
         404: ErrorResponse,
       },
       detail: {

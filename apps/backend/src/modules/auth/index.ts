@@ -76,12 +76,12 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
       });
 
       const expiresIn = parseExpiry(env.JWT_EXPIRES_IN);
-      return { accessToken, refreshToken: newRefreshToken, expiresIn };
+      return { user, accessToken, refreshToken: newRefreshToken, expiresIn };
     },
     {
       body: AuthModel.RefreshBody,
       response: {
-        200: AuthModel.TokenResponse,
+        200: t.Object({ user: AuthModel.UserInfo, ...AuthModel.TokenResponse.properties }),
         401: ErrorResponse,
       },
       detail: {

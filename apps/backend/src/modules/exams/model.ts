@@ -47,8 +47,18 @@ export namespace ExamModel {
     }),
   );
 
+  export const AnswerSaveBody = t.Object({
+    answers: t.Array(
+      t.Object({
+        questionId: t.String({ format: "uuid" }),
+        answer: t.Any(),
+      }),
+    ),
+  });
+
   export type Exam = typeof Exam.static;
   export type Session = typeof Session.static;
   export type CreateBody = typeof CreateBody.static;
   export type UpdateBody = typeof UpdateBody.static;
+  export type AnswerSaveBody = typeof AnswerSaveBody.static;
 }

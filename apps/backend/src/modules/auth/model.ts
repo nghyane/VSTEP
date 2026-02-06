@@ -20,7 +20,7 @@ export namespace AuthModel {
 
   export const LoginBody = t.Object({
     email: t.String({ format: "email" }),
-    password: t.String({ minLength: 8 }),
+    password: t.String(),
   });
 
   export const RegisterBody = t.Object({
