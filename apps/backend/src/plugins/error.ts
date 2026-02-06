@@ -19,23 +19,23 @@ export class AppError extends Error {
     public status: number,
     message: string,
     public code: string,
+    public details?: unknown,
   ) {
     super(message);
     this.name = this.constructor.name;
     Error.captureStackTrace(this, this.constructor);
   }
 
-  toResponse(requestId?: string): Response {
-    return Response.json(
-      {
-        error: {
-          code: this.code,
-          message: this.message,
-        },
-        requestId,
+  toResponse(requestId: string): Record<string, unknown> {
+    const body: Record<string, unknown> = {
+      requestId,
+      error: {
+        code: this.code,
+        message: this.message,
+        ...(this.details !== undefined && { details: this.details }),
       },
-      { status: this.status },
-    );
+    };
+    return body;
   }
 }
 
@@ -54,6 +54,15 @@ export class BadRequestError extends AppError {
 export class UnauthorizedError extends AppError {
   constructor(message = "Unauthorized") {
     super(401, message, "UNAUTHORIZED");
+  }
+}
+
+/**
+ * 401 - Token Expired - Access token expired, client should refresh
+ */
+export class TokenExpiredError extends AppError {
+  constructor(message = "Token expired") {
+    super(401, message, "TOKEN_EXPIRED");
   }
 }
 
@@ -85,11 +94,11 @@ export class ConflictError extends AppError {
 }
 
 /**
- * 422 - Unprocessable Entity - Validation failed
+ * 400 - Validation Error - Invalid input
  */
 export class ValidationError extends AppError {
-  constructor(message = "Validation failed") {
-    super(422, message, "VALIDATION_ERROR");
+  constructor(message = "Validation failed", details?: unknown) {
+    super(400, message, "VALIDATION_ERROR", details);
   }
 }
 
@@ -97,25 +106,11 @@ export class ValidationError extends AppError {
  * 429 - Too Many Requests - Rate limit exceeded
  */
 export class RateLimitError extends AppError {
-  constructor(message = "Rate limit exceeded") {
-    super(429, message, "RATE_LIMIT_EXCEEDED");
-  }
-
-  override toResponse(requestId?: string, retryAfter?: number): Response {
-    const headers: Record<string, string> = {};
-    if (retryAfter) {
-      headers["retry-after"] = String(retryAfter);
-    }
-    return Response.json(
-      {
-        error: {
-          code: this.code,
-          message: this.message,
-        },
-        requestId,
-      },
-      { status: this.status, headers },
-    );
+  constructor(
+    message = "Rate limit exceeded",
+    public retryAfter?: number,
+  ) {
+    super(429, message, "RATE_LIMITED");
   }
 }
 
@@ -150,11 +145,12 @@ export const errorPlugin = new Elysia({ name: "error" })
     APP_ERROR: AppError,
     BAD_REQUEST: BadRequestError,
     UNAUTHORIZED: UnauthorizedError,
+    TOKEN_EXPIRED: TokenExpiredError,
     FORBIDDEN: ForbiddenError,
     NOT_FOUND: NotFoundError,
     CONFLICT: ConflictError,
     VALIDATION_ERROR: ValidationError,
-    RATE_LIMIT: RateLimitError,
+    RATE_LIMITED: RateLimitError,
     INTERNAL_ERROR: InternalError,
   })
   .onError(function onError({ code, error, set, store }) {
@@ -162,54 +158,46 @@ export const errorPlugin = new Elysia({ name: "error" })
 
     // Handle custom AppErrors
     if (error instanceof AppError) {
-      // Log error for server-side errors (5xx)
       if (error.status >= 500) {
         logger.error(`[${requestId}] ${code}`, {
           requestId,
           code,
-          error:
-            error instanceof Error
-              ? { name: error.name, message: error.message, stack: error.stack }
-              : error,
+          error: {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+          },
         });
       }
 
       set.status = error.status;
-
-      // Handle rate limit with retry-after header
-      if (error instanceof RateLimitError) {
-        return error.toResponse(requestId, 60);
+      if (error instanceof RateLimitError && error.retryAfter) {
+        set.headers["retry-after"] = String(error.retryAfter);
       }
-
       return error.toResponse(requestId);
     }
 
-    // Handle Elysia validation errors
+    // Handle Elysia built-in errors
     if (code === "VALIDATION") {
-      const validationError = error as Error & { validator?: unknown };
-      set.status = 422;
+      set.status = 400;
       return {
+        requestId,
         error: {
           code: "VALIDATION_ERROR",
-          message: validationError.message || "Validation failed",
+          message: error.message || "Validation failed",
         },
-        requestId,
       };
     }
 
-    // Handle not found errors
     if (code === "NOT_FOUND") {
       set.status = 404;
       return {
-        error: {
-          code: "NOT_FOUND",
-          message: "Resource not found",
-        },
         requestId,
+        error: { code: "NOT_FOUND", message: "Resource not found" },
       };
     }
 
-    // Handle unknown errors
+    // Unknown errors
     logger.error(`[${requestId}] Unexpected error (${code})`, {
       requestId,
       code,
@@ -220,10 +208,10 @@ export const errorPlugin = new Elysia({ name: "error" })
     });
     set.status = 500;
     return {
+      requestId,
       error: {
         code: "INTERNAL_ERROR",
         message: "An unexpected error occurred",
       },
-      requestId,
     };
   });
