@@ -1,19 +1,9 @@
-/**
- * Error handling plugin for Elysia
- * Provides custom error classes, requestId tracking, and standardized error responses
- * @see https://elysiajs.com/pattern/error-handling.html
- */
-
 import { logger } from "@common/logger";
 import { Elysia } from "elysia";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/**
- * Base custom error class with HTTP status code
- * All custom errors should extend this class
- */
 export class AppError extends Error {
   constructor(
     public status: number,
@@ -39,72 +29,48 @@ export class AppError extends Error {
   }
 }
 
-/**
- * 400 - Bad Request - Invalid input data
- */
 export class BadRequestError extends AppError {
   constructor(message = "Bad request") {
     super(400, message, "BAD_REQUEST");
   }
 }
 
-/**
- * 401 - Unauthorized - Authentication required
- */
 export class UnauthorizedError extends AppError {
   constructor(message = "Unauthorized") {
     super(401, message, "UNAUTHORIZED");
   }
 }
 
-/**
- * 401 - Token Expired - Access token expired, client should refresh
- */
 export class TokenExpiredError extends AppError {
   constructor(message = "Token expired") {
     super(401, message, "TOKEN_EXPIRED");
   }
 }
 
-/**
- * 403 - Forbidden - Insufficient permissions
- */
 export class ForbiddenError extends AppError {
   constructor(message = "Forbidden") {
     super(403, message, "FORBIDDEN");
   }
 }
 
-/**
- * 404 - Not Found - Resource doesn't exist
- */
 export class NotFoundError extends AppError {
   constructor(message = "Not found") {
     super(404, message, "NOT_FOUND");
   }
 }
 
-/**
- * 409 - Conflict - Resource conflict (e.g., duplicate email)
- */
 export class ConflictError extends AppError {
   constructor(message = "Conflict") {
     super(409, message, "CONFLICT");
   }
 }
 
-/**
- * 400 - Validation Error - Invalid input
- */
 export class ValidationError extends AppError {
   constructor(message = "Validation failed", details?: unknown) {
     super(400, message, "VALIDATION_ERROR", details);
   }
 }
 
-/**
- * 429 - Too Many Requests - Rate limit exceeded
- */
 export class RateLimitError extends AppError {
   constructor(
     message = "Rate limit exceeded",
@@ -114,9 +80,6 @@ export class RateLimitError extends AppError {
   }
 }
 
-/**
- * 500 - Internal Server Error - Unexpected server error
- */
 export class InternalError extends AppError {
   constructor(message = "Internal server error") {
     super(500, message, "INTERNAL_ERROR");
@@ -130,10 +93,6 @@ function resolveRequestId(request: Request): string {
   return crypto.randomUUID();
 }
 
-/**
- * Error plugin with requestId tracking and custom error handling
- * Must be registered early in the Elysia pipeline
- */
 export const errorPlugin = new Elysia({ name: "error" })
   .state("requestId", "")
   .onRequest(({ store, request, set }) => {
@@ -141,18 +100,7 @@ export const errorPlugin = new Elysia({ name: "error" })
     store.requestId = requestId;
     set.headers["x-request-id"] = requestId;
   })
-  .error({
-    APP_ERROR: AppError,
-    BAD_REQUEST: BadRequestError,
-    UNAUTHORIZED: UnauthorizedError,
-    TOKEN_EXPIRED: TokenExpiredError,
-    FORBIDDEN: ForbiddenError,
-    NOT_FOUND: NotFoundError,
-    CONFLICT: ConflictError,
-    VALIDATION_ERROR: ValidationError,
-    RATE_LIMITED: RateLimitError,
-    INTERNAL_ERROR: InternalError,
-  })
+  .error({ APP_ERROR: AppError })
   .onError(function onError({ code, error, set, store }) {
     const requestId = store.requestId;
 

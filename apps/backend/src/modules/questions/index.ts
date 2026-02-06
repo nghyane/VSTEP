@@ -40,7 +40,7 @@ export const questions = new Elysia({
       }),
       response: {
         200: t.Object({
-          data: t.Array(QuestionModel.QuestionWithDetails),
+          data: t.Array(QuestionModel.Question),
           meta: PaginationMeta,
         }),
         400: ErrorResponse,
@@ -62,7 +62,7 @@ export const questions = new Elysia({
     {
       params: IdParam,
       response: {
-        200: QuestionModel.QuestionWithDetails,
+        200: QuestionModel.Question,
         404: ErrorResponse,
       },
       detail: {

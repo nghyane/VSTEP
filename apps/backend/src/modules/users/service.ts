@@ -39,26 +39,6 @@ export abstract class UserService {
     return serializeDates(user);
   }
 
-  static async getByEmail(email: string) {
-    const user = await db.query.users.findFirst({
-      where: and(eq(table.users.email, email), notDeleted(table.users)),
-      columns: {
-        id: true,
-        email: true,
-        fullName: true,
-        role: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-
-    if (!user) {
-      return null;
-    }
-
-    return serializeDates(user);
-  }
-
   static async list(query: {
     page?: number;
     limit?: number;
@@ -133,7 +113,7 @@ export abstract class UserService {
         email: body.email,
         passwordHash,
         fullName: body.fullName,
-        role: body.role || "learner",
+        role: body.role ?? "learner",
       })
       .returning(USER_COLUMNS);
 
@@ -253,7 +233,7 @@ export abstract class UserService {
 
       return {
         id: deletedUser.id,
-        deletedAt: (deletedUser.deletedAt as Date).toISOString(),
+        deletedAt: deletedUser.deletedAt!.toISOString(),
       };
     });
   }

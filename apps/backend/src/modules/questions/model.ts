@@ -8,17 +8,22 @@ export namespace QuestionModel {
     level: QuestionLevel,
     format: t.String(),
     content: t.Any(),
-    answerKey: t.Optional(t.Any()),
     version: t.Number(),
     isActive: t.Boolean(),
     createdBy: t.Optional(t.Nullable(t.String({ format: "uuid" }))),
-    createdAt: t.String(),
-    updatedAt: t.String(),
+    createdAt: t.String({ format: "date-time" }),
+    updatedAt: t.String({ format: "date-time" }),
   });
 
   export const QuestionWithDetails = t.Object({
     ...Question.properties,
-    deletedAt: t.Optional(t.Nullable(t.String())),
+    deletedAt: t.Optional(t.Nullable(t.String({ format: "date-time" }))),
+  });
+
+  /** Full question including answerKey — admin/instructor only */
+  export const QuestionFull = t.Object({
+    ...QuestionWithDetails.properties,
+    answerKey: t.Optional(t.Any()),
   });
 
   export const Version = t.Object({
@@ -27,7 +32,7 @@ export namespace QuestionModel {
     version: t.Number(),
     content: t.Any(),
     answerKey: t.Optional(t.Any()),
-    createdAt: t.String(),
+    createdAt: t.String({ format: "date-time" }),
   });
 
   export const CreateBody = t.Object({

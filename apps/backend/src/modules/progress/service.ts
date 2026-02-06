@@ -1,21 +1,10 @@
-/**
- * Progress Module Service
- * Business logic for tracking user progress
- */
-
 import { assertExists, serializeDates } from "@common/utils";
 import { and, count, desc, eq, sql } from "drizzle-orm";
 import { db, paginate, paginationMeta, table } from "@/db";
-import { NotFoundError } from "@/plugins/error";
+import { ForbiddenError, NotFoundError } from "@/plugins/error";
 
-/**
- * Progress service with static methods
- */
 export abstract class ProgressService {
-  /**
-   * Get progress by ID
-   */
-  static async getById(id: string) {
+  static async getById(id: string, currentUserId: string, isAdmin: boolean) {
     const [progress] = await db
       .select()
       .from(table.userProgress)
@@ -26,12 +15,13 @@ export abstract class ProgressService {
       throw new NotFoundError("Progress record not found");
     }
 
+    if (!isAdmin && progress.userId !== currentUserId) {
+      throw new ForbiddenError("You can only view your own progress");
+    }
+
     return serializeDates(progress);
   }
 
-  /**
-   * List user progress
-   */
   static async list(
     query: {
       page?: number;
@@ -43,12 +33,11 @@ export abstract class ProgressService {
     currentUserId: string,
     isAdmin: boolean,
   ) {
-    const page = query.page || 1;
-    const limit = query.limit || 20;
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
 
     const conditions = [];
 
-    // Non-admin users can only see their own progress
     if (!isAdmin) {
       conditions.push(eq(table.userProgress.userId, currentUserId));
     } else if (query.userId) {
@@ -66,7 +55,7 @@ export abstract class ProgressService {
       .from(table.userProgress)
       .where(whereClause);
 
-    const total = countResult?.count || 0;
+    const total = countResult?.count ?? 0;
 
     const { limit: take, offset } = paginate(page, limit);
 
@@ -84,9 +73,6 @@ export abstract class ProgressService {
     };
   }
 
-  /**
-   * Update or create progress record
-   */
   static async updateProgress(
     userId: string,
     body: {
@@ -99,7 +85,6 @@ export abstract class ProgressService {
     },
   ) {
     return await db.transaction(async (tx) => {
-      // Try to find existing record
       const [existing] = await tx
         .select()
         .from(table.userProgress)
@@ -118,12 +103,13 @@ export abstract class ProgressService {
           updatedAt: new Date(),
         };
 
-        if (body.targetLevel) updateValues.targetLevel = body.targetLevel;
+        if (body.targetLevel !== undefined)
+          updateValues.targetLevel = body.targetLevel;
         if (body.scaffoldLevel !== undefined)
           updateValues.scaffoldLevel = body.scaffoldLevel;
         if (body.streakCount !== undefined)
           updateValues.streakCount = body.streakCount;
-        if (body.streakDirection)
+        if (body.streakDirection !== undefined)
           updateValues.streakDirection = body.streakDirection;
 
         const [updated] = await tx
@@ -142,9 +128,9 @@ export abstract class ProgressService {
           skill: body.skill,
           currentLevel: body.currentLevel,
           targetLevel: body.targetLevel,
-          scaffoldLevel: body.scaffoldLevel || 1,
-          streakCount: body.streakCount || 0,
-          streakDirection: body.streakDirection || "neutral",
+          scaffoldLevel: body.scaffoldLevel ?? 1,
+          streakCount: body.streakCount ?? 0,
+          streakDirection: body.streakDirection ?? "neutral",
           attemptCount: 1,
         })
         .returning();

@@ -1,9 +1,3 @@
-/**
- * Questions Module Service
- * Business logic for question management
- * @see https://elysiajs.com/pattern/mvc.html
- */
-
 import { assertExists, serializeDates } from "@common/utils";
 import { and, count, desc, eq, sql } from "drizzle-orm";
 import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
@@ -13,20 +7,39 @@ import {
   NotFoundError,
 } from "@/plugins/error";
 
-/**
- * Question service with static methods
- */
+const QUESTION_PUBLIC_COLUMNS = {
+  id: table.questions.id,
+  skill: table.questions.skill,
+  level: table.questions.level,
+  format: table.questions.format,
+  content: table.questions.content,
+  version: table.questions.version,
+  isActive: table.questions.isActive,
+  createdBy: table.questions.createdBy,
+  createdAt: table.questions.createdAt,
+  updatedAt: table.questions.updatedAt,
+  deletedAt: table.questions.deletedAt,
+} as const;
+
 export abstract class QuestionService {
-  /**
-   * Get question by ID
-   * @throws NotFoundError if question not found
-   */
   static async getById(questionId: string) {
     const question = await db.query.questions.findFirst({
       where: and(
         eq(table.questions.id, questionId),
         notDeleted(table.questions),
       ),
+      columns: {
+        id: true,
+        skill: true,
+        level: true,
+        format: true,
+        content: true,
+        version: true,
+        isActive: true,
+        createdBy: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
 
     if (!question) {
@@ -36,9 +49,6 @@ export abstract class QuestionService {
     return serializeDates(question);
   }
 
-  /**
-   * List questions with filtering and pagination
-   */
   static async list(
     query: {
       page?: number;
@@ -93,9 +103,8 @@ export abstract class QuestionService {
 
     const total = countResult?.count || 0;
 
-    // Get questions
     const questions = await db
-      .select()
+      .select(QUESTION_PUBLIC_COLUMNS)
       .from(table.questions)
       .where(whereClause)
       .orderBy(desc(table.questions.createdAt))
@@ -108,9 +117,6 @@ export abstract class QuestionService {
     };
   }
 
-  /**
-   * Create new question
-   */
   static async create(
     userId: string,
     body: {
@@ -152,10 +158,6 @@ export abstract class QuestionService {
     });
   }
 
-  /**
-   * Update question
-   * @throws NotFoundError if question not found
-   */
   static async update(
     questionId: string,
     userId: string,
@@ -226,10 +228,6 @@ export abstract class QuestionService {
     });
   }
 
-  /**
-   * Create a new version of a question
-   * @throws NotFoundError if question not found
-   */
   static async createVersion(
     questionId: string,
     userId: string,
@@ -294,10 +292,6 @@ export abstract class QuestionService {
     });
   }
 
-  /**
-   * Get all versions of a question
-   * @throws NotFoundError if question not found
-   */
   static async getVersions(questionId: string) {
     // Verify question exists
     const question = await db.query.questions.findFirst({
@@ -327,10 +321,6 @@ export abstract class QuestionService {
     };
   }
 
-  /**
-   * Get a specific version of a question
-   * @throws NotFoundError if question or version not found
-   */
   static async getVersion(questionId: string, versionId: string) {
     // Verify parent question exists and is not soft-deleted
     const question = await db.query.questions.findFirst({
@@ -359,9 +349,6 @@ export abstract class QuestionService {
     return serializeDates(version);
   }
 
-  /**
-   * Remove question (soft delete)
-   */
   static async remove(questionId: string, userId: string, isAdmin: boolean) {
     return await db.transaction(async (tx) => {
       // Get question
@@ -395,9 +382,6 @@ export abstract class QuestionService {
     });
   }
 
-  /**
-   * Restore a deleted question (admin only)
-   */
   static async restore(questionId: string, _userId: string, isAdmin: boolean) {
     if (!isAdmin) {
       throw new ForbiddenError("Only admins can restore questions");

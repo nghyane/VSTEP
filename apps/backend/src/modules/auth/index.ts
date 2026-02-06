@@ -1,6 +1,7 @@
 import { env } from "@common/env";
 import { ErrorResponse } from "@common/schemas";
 import { Elysia, t } from "elysia";
+import { UserModel } from "@/modules/users/model";
 import { UserService } from "@/modules/users/service";
 import { authPlugin } from "@/plugins/auth";
 import { AuthModel } from "./model";
@@ -115,7 +116,7 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
     {
       auth: true,
       response: {
-        200: t.Object({ user: AuthModel.UserInfo }),
+        200: t.Object({ user: UserModel.User }),
         401: ErrorResponse,
       },
       detail: {

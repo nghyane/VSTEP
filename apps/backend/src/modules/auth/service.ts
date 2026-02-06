@@ -1,12 +1,13 @@
 import { env } from "@common/env";
 import { assertExists } from "@common/utils";
-import { and, asc, eq, gt, isNull } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNull } from "drizzle-orm";
 import { SignJWT } from "jose";
 import { db, table } from "@/db";
 import type { JWTPayload } from "@/plugins/auth";
 import { ConflictError, UnauthorizedError } from "@/plugins/error";
 import type { AuthModel } from "./model";
 
+// env validates JWT_SECRET at startup; ! needed because skipValidation widens type
 const ACCESS_SECRET = new TextEncoder().encode(env.JWT_SECRET!);
 
 const MAX_REFRESH_TOKENS = 3;
@@ -89,7 +90,7 @@ export abstract class AuthService {
 
     const refreshToken = crypto.randomUUID();
     const jti = crypto.randomUUID();
-    const refreshExpirySeconds = parseExpiry(env.JWT_REFRESH_EXPIRES_IN);
+    const refreshExpirySeconds = parseExpiry(env.JWT_REFRESH_EXPIRES_IN!);
 
     await db.transaction(async (tx) => {
       // Enforce max 3 active refresh tokens per user (FIFO — revoke oldest)
@@ -108,12 +109,11 @@ export abstract class AuthService {
           0,
           activeTokens.length - MAX_REFRESH_TOKENS + 1,
         );
-        for (const t of tokensToRevoke) {
-          await tx
-            .update(table.refreshTokens)
-            .set({ revokedAt: new Date() })
-            .where(eq(table.refreshTokens.id, t.id));
-        }
+        const idsToRevoke = tokensToRevoke.map((t) => t.id);
+        await tx
+          .update(table.refreshTokens)
+          .set({ revokedAt: new Date() })
+          .where(inArray(table.refreshTokens.id, idsToRevoke));
       }
 
       await tx.insert(table.refreshTokens).values({
@@ -232,7 +232,7 @@ export abstract class AuthService {
     // Rotate: revoke old, issue new
     const newRefreshToken = crypto.randomUUID();
     const newJti = crypto.randomUUID();
-    const refreshExpirySeconds = parseExpiry(env.JWT_REFRESH_EXPIRES_IN);
+    const refreshExpirySeconds = parseExpiry(env.JWT_REFRESH_EXPIRES_IN!);
 
     await db.transaction(async (tx) => {
       await tx

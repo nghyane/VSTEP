@@ -5,7 +5,9 @@ import { jwtVerify, errors as joseErrors } from "jose";
 import { Value } from "@sinclair/typebox/value";
 import { ForbiddenError, TokenExpiredError, UnauthorizedError } from "./error";
 
-export type Role = "learner" | "instructor" | "admin";
+import { userRoleEnum } from "@db/schema/users";
+
+export type Role = (typeof userRoleEnum.enumValues)[number];
 
 export interface JWTPayload {
   sub: string;

@@ -43,8 +43,8 @@ export const progress = new Elysia({
 
   .get(
     "/:id",
-    async ({ params: { id } }) => {
-      return await ProgressService.getById(id);
+    async ({ params: { id }, user }) => {
+      return await ProgressService.getById(id, user.sub, user.role === "admin");
     },
     {
       auth: true,
@@ -52,6 +52,7 @@ export const progress = new Elysia({
       response: {
         200: ProgressModel.Progress,
         401: ErrorResponse,
+        403: ErrorResponse,
         404: ErrorResponse,
       },
       detail: {

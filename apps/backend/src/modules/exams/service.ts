@@ -1,8 +1,3 @@
-/**
- * Exams Module Service
- * Business logic for exam management
- */
-
 import { assertExists, serializeDates } from "@common/utils";
 import { and, count, desc, eq } from "drizzle-orm";
 import type { Exam } from "@/db";
@@ -40,13 +35,7 @@ const SESSION_COLUMNS = {
   updatedAt: table.examSessions.updatedAt,
 } as const;
 
-/**
- * Exam service with static methods
- */
 export abstract class ExamService {
-  /**
-   * Get exam by ID
-   */
   static async getById(id: string) {
     const exam = await db.query.exams.findFirst({
       where: and(eq(table.exams.id, id), notDeleted(table.exams)),
@@ -68,20 +57,17 @@ export abstract class ExamService {
     return serializeDates(exam);
   }
 
-  /**
-   * List exams
-   */
   static async list(query: {
     page?: number;
     limit?: number;
-    level?: string;
+    level?: Exam["level"];
     isActive?: boolean;
   }) {
     const { limit, offset } = paginate(query.page, query.limit);
 
     const conditions = [notDeleted(table.exams)];
     if (query.level)
-      conditions.push(eq(table.exams.level, query.level as Exam["level"]));
+      conditions.push(eq(table.exams.level, query.level));
     if (query.isActive !== undefined)
       conditions.push(eq(table.exams.isActive, query.isActive));
 
@@ -108,9 +94,6 @@ export abstract class ExamService {
     };
   }
 
-  /**
-   * Create exam (Admin only)
-   */
   static async create(
     userId: string,
     body: { level: Exam["level"]; blueprint: unknown; isActive?: boolean },
@@ -128,9 +111,6 @@ export abstract class ExamService {
     return serializeDates(assertExists(exam, "Exam"));
   }
 
-  /**
-   * Update exam (Admin only)
-   */
   static async update(
     id: string,
     body: Partial<{
@@ -155,19 +135,13 @@ export abstract class ExamService {
     return serializeDates(exam);
   }
 
-  /**
-   * Start an exam session
-   */
   static async startSession(userId: string, body: { examId: string }) {
-    // Check if exam exists and is active
     const exam = await ExamService.getById(body.examId);
     if (!exam.isActive) {
       throw new BadRequestError("Exam is not active");
     }
 
-    // Wrap in transaction to prevent duplicate sessions from concurrent requests
     return await db.transaction(async (tx) => {
-      // Check for existing in-progress session
       const [existingSession] = await tx
         .select(SESSION_COLUMNS)
         .from(table.examSessions)
@@ -199,9 +173,6 @@ export abstract class ExamService {
     });
   }
 
-  /**
-   * Get session by ID
-   */
   static async getSessionById(
     sessionId: string,
     userId: string,
@@ -241,56 +212,83 @@ export abstract class ExamService {
     return serializeDates(session);
   }
 
-  /**
-   * Submit an answer for a session
-   */
+  /** Submit answer inside a transaction to prevent TOCTOU race */
   static async submitAnswer(
     sessionId: string,
     userId: string,
     body: { questionId: string; answer: unknown },
   ): Promise<{ success: boolean }> {
-    const session = await ExamService.getSessionById(sessionId, userId, false);
-    if (session.status !== "in_progress") {
-      throw new BadRequestError("Session is not in progress");
-    }
+    return await db.transaction(async (tx) => {
+      const [session] = await tx
+        .select({ id: table.examSessions.id, status: table.examSessions.status, userId: table.examSessions.userId })
+        .from(table.examSessions)
+        .where(and(eq(table.examSessions.id, sessionId), notDeleted(table.examSessions)))
+        .limit(1);
 
-    await db
-      .insert(table.examAnswers)
-      .values({
-        sessionId,
-        questionId: body.questionId,
-        answer: body.answer,
-      })
-      .onConflictDoUpdate({
-        target: [table.examAnswers.sessionId, table.examAnswers.questionId],
-        set: {
+      if (!session) {
+        throw new NotFoundError("Session not found");
+      }
+      if (session.userId !== userId) {
+        throw new ForbiddenError("You do not have access to this session");
+      }
+      if (session.status !== "in_progress") {
+        throw new BadRequestError("Session is not in progress");
+      }
+
+      await tx
+        .insert(table.examAnswers)
+        .values({
+          sessionId,
+          questionId: body.questionId,
           answer: body.answer,
-          updatedAt: new Date(),
-        },
-      });
+        })
+        .onConflictDoUpdate({
+          target: [table.examAnswers.sessionId, table.examAnswers.questionId],
+          set: {
+            answer: body.answer,
+            updatedAt: new Date(),
+          },
+        });
 
-    return { success: true };
+      return { success: true };
+    });
   }
 
-  /**
-   * Complete a session
-   */
+  /** Complete session inside a transaction with status guard in WHERE */
   static async completeSession(sessionId: string, userId: string) {
-    const session = await ExamService.getSessionById(sessionId, userId, false);
-    if (session.status !== "in_progress") {
-      throw new BadRequestError("Session is not in progress");
-    }
+    return await db.transaction(async (tx) => {
+      const [session] = await tx
+        .select({ id: table.examSessions.id, status: table.examSessions.status, userId: table.examSessions.userId })
+        .from(table.examSessions)
+        .where(and(eq(table.examSessions.id, sessionId), notDeleted(table.examSessions)))
+        .limit(1);
 
-    const [updatedSession] = await db
-      .update(table.examSessions)
-      .set({
-        status: "completed",
-        completedAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(table.examSessions.id, sessionId))
-      .returning(SESSION_COLUMNS);
+      if (!session) {
+        throw new NotFoundError("Session not found");
+      }
+      if (session.userId !== userId) {
+        throw new ForbiddenError("You do not have access to this session");
+      }
+      if (session.status !== "in_progress") {
+        throw new BadRequestError("Session is not in progress");
+      }
 
-    return serializeDates(assertExists(updatedSession, "Session"));
+      const [updatedSession] = await tx
+        .update(table.examSessions)
+        .set({
+          status: "completed",
+          completedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(table.examSessions.id, sessionId),
+            eq(table.examSessions.status, "in_progress"),
+          ),
+        )
+        .returning(SESSION_COLUMNS);
+
+      return serializeDates(assertExists(updatedSession, "Session"));
+    });
   }
 }

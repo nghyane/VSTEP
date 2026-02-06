@@ -20,9 +20,9 @@ export namespace SubmissionModel {
         ]),
       ),
     ),
-    completedAt: t.Optional(t.String()),
-    createdAt: t.String(),
-    updatedAt: t.String(),
+    completedAt: t.Optional(t.String({ format: "date-time" })),
+    createdAt: t.String({ format: "date-time" }),
+    updatedAt: t.String({ format: "date-time" }),
   });
 
   export const SubmissionWithDetails = t.Object({
@@ -56,7 +56,15 @@ export namespace SubmissionModel {
 
   export const GradeBody = t.Object({
     score: t.Number(),
-    band: t.Optional(t.String()),
+    band: t.Optional(
+      t.Union([
+        t.Literal("A1"),
+        t.Literal("A2"),
+        t.Literal("B1"),
+        t.Literal("B2"),
+        t.Literal("C1"),
+      ]),
+    ),
     feedback: t.Optional(t.String()),
   });
 

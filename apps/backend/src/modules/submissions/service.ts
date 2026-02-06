@@ -1,8 +1,3 @@
-/**
- * Submissions Module Service
- * Business logic for submission management
- */
-
 import { assertExists, serializeDates } from "@common/utils";
 import { and, count, desc, eq, sql } from "drizzle-orm";
 import type { Submission } from "@/db";
@@ -26,20 +21,15 @@ const SUBMISSION_COLUMNS = {
   updatedAt: table.submissions.updatedAt,
 } as const;
 
-/** Score-to-band mapping per VSTEP spec */
-function scoreToBand(score: number): string | null {
+function scoreToBand(score: number): Submission["band"] {
   if (score >= 8.5) return "C1";
   if (score >= 6.0) return "B2";
   if (score >= 4.0) return "B1";
-  return null;
+  if (score >= 2.0) return "A2";
+  return "A1";
 }
 
-// ─── Service ────────────────────────────────────────────────────
-
 export abstract class SubmissionService {
-  /**
-   * Get submission by ID
-   */
   static async getById(
     submissionId: string,
     currentUserId: string,
@@ -86,30 +76,25 @@ export abstract class SubmissionService {
     };
   }
 
-  /**
-   * List submissions with filtering and pagination
-   */
   static async list(
     query: {
       page?: number;
       limit?: number;
-      skill?: string;
-      status?: string;
+      skill?: Submission["skill"];
+      status?: Submission["status"];
       userId?: string;
     },
     currentUserId: string,
     isAdmin: boolean,
   ) {
-    const page = query.page || 1;
-    const limit = query.limit || 20;
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
     const { limit: safeLimit, offset } = paginate(page, limit);
 
-    // Build where conditions
     const conditions: ReturnType<typeof and>[] = [
       notDeleted(table.submissions),
     ];
 
-    // Non-admin users can only see their own submissions
     if (!isAdmin) {
       conditions.push(eq(table.submissions.userId, currentUserId));
     } else if (query.userId) {
@@ -117,29 +102,23 @@ export abstract class SubmissionService {
     }
 
     if (query.skill) {
-      conditions.push(
-        eq(table.submissions.skill, query.skill as Submission["skill"]),
-      );
+      conditions.push(eq(table.submissions.skill, query.skill));
     }
 
     if (query.status) {
-      conditions.push(
-        eq(table.submissions.status, query.status as Submission["status"]),
-      );
+      conditions.push(eq(table.submissions.status, query.status));
     }
 
     const whereClause =
       conditions.length > 1 ? and(...conditions) : conditions[0];
 
-    // Get total count
     const [countResult] = await db
       .select({ count: count() })
       .from(table.submissions)
       .where(whereClause);
 
-    const total = countResult?.count || 0;
+    const total = countResult?.count ?? 0;
 
-    // Get submissions with details
     const submissions = await db
       .select({
         ...SUBMISSION_COLUMNS,
@@ -163,14 +142,10 @@ export abstract class SubmissionService {
     };
   }
 
-  /**
-   * Create new submission
-   */
   static async create(
     userId: string,
-    body: { questionId: string; skill: string; answer: unknown },
+    body: { questionId: string; skill: Submission["skill"]; answer: unknown },
   ) {
-    // Validate question exists and is active
     const question = await db.query.questions.findFirst({
       columns: { id: true, isActive: true },
       where: and(
@@ -187,21 +162,19 @@ export abstract class SubmissionService {
       throw new BadRequestError("Question is not active");
     }
 
-    // Create submission and details in transaction
     return await db.transaction(async (tx) => {
       const [submission] = await tx
         .insert(table.submissions)
         .values({
           userId,
           questionId: body.questionId,
-          skill: body.skill as Submission["skill"],
+          skill: body.skill,
           status: "pending",
         })
         .returning(SUBMISSION_COLUMNS);
 
       const sub = assertExists(submission, "Submission");
 
-      // Create submission details
       await tx.insert(table.submissionDetails).values({
         submissionId: sub.id,
         answer: body.answer,
@@ -211,18 +184,15 @@ export abstract class SubmissionService {
     });
   }
 
-  /**
-   * Update submission
-   */
   static async update(
     submissionId: string,
     userId: string,
     isAdmin: boolean,
     body: {
       answer?: unknown;
-      status?: string;
+      status?: Submission["status"];
       score?: number;
-      band?: string;
+      band?: Submission["band"];
       feedback?: string;
     },
   ) {
@@ -250,12 +220,10 @@ export abstract class SubmissionService {
         throw new BadRequestError("Cannot update completed submission");
       }
 
-      // Update submission
-      const updateValues: Record<string, unknown> = {
+      const updateValues: Partial<typeof table.submissions.$inferInsert> = {
         updatedAt: new Date(),
       };
 
-      // Only admins can change status, score, and band
       if (isAdmin) {
         if (body.status) {
           updateValues.status = body.status;
@@ -276,9 +244,10 @@ export abstract class SubmissionService {
         .where(eq(table.submissions.id, submissionId))
         .returning(SUBMISSION_COLUMNS);
 
-      // Update details if provided
       if (body.answer !== undefined || body.feedback !== undefined) {
-        const updateDetails: Record<string, unknown> = {};
+        const updateDetails: Partial<
+          typeof table.submissionDetails.$inferInsert
+        > = {};
         if (body.answer !== undefined) updateDetails.answer = body.answer;
         if (body.feedback !== undefined) updateDetails.feedback = body.feedback;
 
@@ -288,7 +257,6 @@ export abstract class SubmissionService {
           .where(eq(table.submissionDetails.submissionId, submissionId));
       }
 
-      // Get updated details
       const [details] = await tx
         .select()
         .from(table.submissionDetails)
@@ -306,12 +274,9 @@ export abstract class SubmissionService {
     });
   }
 
-  /**
-   * Grade submission (instructor/admin only)
-   */
   static async grade(
     submissionId: string,
-    body: { score: number; band?: string; feedback?: string },
+    body: { score: number; band?: Submission["band"]; feedback?: string },
   ) {
     return await db.transaction(async (tx) => {
       const [submission] = await tx
@@ -335,7 +300,6 @@ export abstract class SubmissionService {
         );
       }
 
-      // Validate score: 0-10 range, 0.5 step per VSTEP spec
       if (body.score < 0 || body.score > 10) {
         throw new BadRequestError("Score must be between 0 and 10");
       }
@@ -348,7 +312,7 @@ export abstract class SubmissionService {
         .set({
           status: "completed",
           score: body.score,
-          band: body.band || scoreToBand(body.score),
+          band: body.band ?? scoreToBand(body.score),
           updatedAt: new Date(),
           completedAt: new Date(),
         })
@@ -379,9 +343,6 @@ export abstract class SubmissionService {
     });
   }
 
-  /**
-   * Remove submission (soft delete)
-   */
   static async remove(submissionId: string, userId: string, isAdmin: boolean) {
     return await db.transaction(async (tx) => {
       const [submission] = await tx
@@ -416,15 +377,14 @@ export abstract class SubmissionService {
   }
 
   /**
-   * Auto-grade a submission (for listening/reading objective questions)
-   * Uses PostgreSQL JSONB per-item comparison instead of JS-side JSON.stringify
+   * Auto-grade a submission (for listening/reading objective questions).
+   * Uses PostgreSQL JSONB per-item comparison instead of JS-side JSON.stringify.
    * Score: (correctCount / totalCount) * 10, rounded to nearest 0.5
    */
   static async autoGrade(
     submissionId: string,
   ): Promise<{ score: number; result: unknown }> {
     return await db.transaction(async (tx) => {
-      // Compute score in PostgreSQL using JSONB per-item comparison
       const [row] = await tx
         .select({
           id: table.submissions.id,
@@ -458,7 +418,6 @@ export abstract class SubmissionService {
         throw new NotFoundError("Submission not found");
       }
 
-      // Only listening/reading can be auto-graded
       if (row.skill !== "listening" && row.skill !== "reading") {
         throw new BadRequestError(
           "Only listening and reading submissions can be auto-graded",
@@ -473,7 +432,6 @@ export abstract class SubmissionService {
 
       const { correctCount, totalCount } = row;
 
-      // (correct / total) * 10, rounded to nearest 0.5 per VSTEP spec
       const rawScore = totalCount > 0 ? (correctCount / totalCount) * 10 : 0;
       const score = Math.round(rawScore * 2) / 2;
       const band = scoreToBand(score);
