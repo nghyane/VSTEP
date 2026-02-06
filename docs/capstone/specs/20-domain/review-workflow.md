@@ -4,11 +4,11 @@
 
 ## Purpose
 
-Chốt workflow khi AI không đủ confidence (`confidenceScore < 85`) và cần instructor review để tạo final result.
+Chốt workflow khi AI không đủ confidence (`confidence < 85`) và cần instructor review để tạo final result.
 
 ## Scope
 
-- Submission state `REVIEW_REQUIRED`.
+- Submission state `REVIEW_PENDING`.
 - Review queue + submit review.
 - Audit trail (AI result, human result, final result).
 
@@ -16,7 +16,7 @@ Chốt workflow khi AI không đủ confidence (`confidenceScore < 85`) và cầ
 
 ### 1) Khi nào vào review
 
-- Writing/Speaking: nếu `confidenceScore < 85` (xem `hybrid-grading.md`) → Main App set `REVIEW_REQUIRED`.
+- Writing/Speaking: nếu `confidence < 85` (xem `hybrid-grading.md`) → Main App set `REVIEW_PENDING`.
 
 ### 2) Review queue
 
@@ -55,7 +55,7 @@ Trước khi instructor bắt đầu review, phải **claim** submission để t
 
 ## Contracts
 
-- Khi `REVIEW_REQUIRED`, learner chỉ thấy trạng thái chờ review và ETA best-effort (không hiển thị điểm).
+- Khi `REVIEW_PENDING`, learner chỉ thấy trạng thái chờ review và ETA best-effort (không hiển thị điểm).
 - Sau khi review xong, submission chuyển `COMPLETED` và learner thấy final result.
 
 ## Failure modes
@@ -64,10 +64,10 @@ Trước khi instructor bắt đầu review, phải **claim** submission để t
 |-----------|---------|
 | Instructor review 2 lần cùng submission | Chỉ cho phép 1 finalization; lần sau phải là admin override (nếu support) |
 | Review payload thiếu field | 400 VALIDATION_ERROR |
-| Submission không ở REVIEW_REQUIRED | 409 CONFLICT |
+| Submission không ở REVIEW_PENDING | 409 CONFLICT |
 
 ## Acceptance criteria
 
-- Review queue trả đúng các submission `REVIEW_REQUIRED`.
+- Review queue trả đúng các submission `REVIEW_PENDING`.
 - Submit review tạo final result theo rule agree/override.
 - Audit lưu được AI result + human inputs + final result.

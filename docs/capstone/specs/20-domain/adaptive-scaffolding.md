@@ -86,7 +86,7 @@ Stage transitions:
 
 ## 6. Data Storage
 
-- `user_progress.scaffold_stage`: integer 1-3, ý nghĩa phụ thuộc skill.
+- `user_progress.scaffold_level`: integer 1-3, ý nghĩa phụ thuộc skill.
 - `user_progress.recent_scores`: lưu attempts gần đây phục vụ progression.
 - Late results (`is_late=true`) và FAILED attempts không được đưa vào recent_scores.
 

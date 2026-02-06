@@ -83,7 +83,7 @@ Khuyến nghị messages có các trường chung sau để debug/trace dễ hơ
 | `userId` | string | Yes | owner |
 | `skill` | enum | Yes | `writing` / `speaking` |
 | `attempt` | int | Yes | 1-indexed |
-| `deadlineAt` | string | Yes | ISO 8601 UTC (SLA-based) |
+| `deadline` | string | Yes | ISO 8601 UTC (SLA-based) |
 | `payload` | object | Yes | content to grade |
 
 ### 6.2 Payload (Writing)
@@ -106,7 +106,7 @@ Khuyến nghị messages có các trường chung sau để debug/trace dễ hơ
 ### 6.4 Validation rules
 
 - `requestId` phải ổn định cho cùng submission attempt (resend không đổi).
-- `deadlineAt` do Main App tính theo SLA (writing 20m, speaking 60m).
+- `deadline` do Main App tính theo SLA (writing 20m, speaking 60m).
 - Nếu payload thiếu fields bắt buộc hoặc type không hợp lệ: Grading Service phải phát `grading.callback(kind=error)` với `error.type=INVALID_INPUT`, `retryable=false`, sau đó message phải vào DLQ.
 
 ---
@@ -123,7 +123,7 @@ Callback queue dùng cho **progress updates** và **final result/error**.
 | `submissionId` | string | Yes | join key |
 | `eventId` | string | Yes | UUID v4, unique per callback message (dedup key) |
 | `kind` | enum | Yes | `progress` / `completed` / `error` |
-| `eventAt` | string | Yes | ISO 8601 UTC |
+| `occurredAt` | string | Yes | ISO 8601 UTC |
 | `data` | object | Yes | payload theo `kind` |
 
 ### 7.2 `kind=progress`
@@ -132,7 +132,7 @@ Callback queue dùng cho **progress updates** và **final result/error**.
 
 | Field | Type | Required | Notes |
 |-------|------|----------|------|
-| `status` | enum | Yes | `PROCESSING` / `ANALYZING` / `GRADING` |
+| `status` | enum | Yes | `PROCESSING` |
 | `progress` | number | No | 0..1 (best-effort) |
 | `message` | string | No | text ngắn cho UI |
 
@@ -147,15 +147,15 @@ Progress events **best-effort**: có thể bị drop; client không nên phụ t
 | `result` | object | Yes | AI grading result |
 | `result.overallScore` | number | Yes | 0-10 |
 | `result.band` | enum | Yes | A1/A2/B1/B2/C1 |
-| `result.confidenceScore` | int | Yes | 0-100 |
-| `result.reviewRequired` | boolean | Yes | `confidenceScore < 85` |
-| `result.reviewPriority` | enum | Conditional | Low/Medium/High/Critical khi reviewRequired=true |
+| `result.confidence` | int | Yes | 0-100 |
+| `result.reviewPending` | boolean | Yes | `confidence < 85` |
+| `result.reviewPriority` | enum | Conditional | low/medium/high/critical khi reviewPending=true |
 | `result.auditFlag` | boolean | Yes | true nếu 85-89 hoặc có signals |
 
 `kind=completed` nghĩa là **AI grading đã kết thúc** (không đồng nghĩa learner có final result ngay). Main App quyết định:
 
-- `reviewRequired=false` → set submission status `COMPLETED`
-- `reviewRequired=true` → set submission status `REVIEW_REQUIRED` và đưa vào hàng chờ instructor
+- `reviewPending=false` → set submission status `COMPLETED`
+- `reviewPending=true` → set submission status `REVIEW_PENDING` và đưa vào hàng chờ instructor
 
 Chi tiết rubric/feedback shape: tham chiếu `../20-domain/hybrid-grading.md`.
 

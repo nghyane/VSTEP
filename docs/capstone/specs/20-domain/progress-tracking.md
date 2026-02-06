@@ -35,7 +35,7 @@ Một attempt hợp lệ phải có:
 
 Không đưa vào tính toán progress nếu:
 - submission `status != COMPLETED`
-- submission ở trạng thái `REVIEW_REQUIRED` (chưa có kết quả cuối cùng)
+- submission ở trạng thái `REVIEW_PENDING` (chưa có kết quả cuối cùng)
 - `is_late = true` (late callback sau SLA)
 - submission bị đánh dấu invalid (fraud/suspicious/manual exclude)
 

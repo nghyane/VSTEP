@@ -233,5 +233,5 @@ Fields tối thiểu:
 | `band` | enum | Yes | A1/A2/B1/B2/C1 |
 | `criteriaScores` | object | No | per-rubric; shape tùy skill |
 | `feedback` | string | No | |
-| `confidenceScore` | int | Yes | 0..100 |
-| `reviewRequired` | boolean | Yes | `confidenceScore < 85` |
+| `confidence` | int | Yes | 0..100 |
+| `reviewPending` | boolean | Yes | `confidence < 85` |

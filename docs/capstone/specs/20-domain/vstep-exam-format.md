@@ -84,7 +84,7 @@ Canonical scoring rules (tham khảo): `../../../00-overview/scoring-system.md`
 - Speaking: average 5 criteria (round to nearest 0.5)
 - Overall (exam-style): average 4 skills (round to nearest 0.5)
 
-Lưu ý: progress dashboard trong hệ thống có thể dùng logic riêng (vd. weakest-skill), nhưng **mock test result** nên compute đủ cả `overallExamScore`.
+Lưu ý: progress dashboard trong hệ thống có thể dùng logic riêng (vd. weakest-skill), nhưng **mock test result** nên compute đủ cả `overallScore`.
 
 ## Data model references
 

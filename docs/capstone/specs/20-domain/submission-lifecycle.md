@@ -15,23 +15,17 @@ stateDiagram-v2
   [*] --> PENDING: user submits
   PENDING --> QUEUED: request published
   QUEUED --> PROCESSING: worker picks up
-  PROCESSING --> ANALYZING
-  ANALYZING --> GRADING
-  GRADING --> COMPLETED: reviewRequired=false
-  GRADING --> REVIEW_REQUIRED: reviewRequired=true
-  REVIEW_REQUIRED --> COMPLETED: instructor review
+  PROCESSING --> COMPLETED: reviewRequired=false
+  PROCESSING --> REVIEW_PENDING: reviewRequired=true
+  REVIEW_PENDING --> COMPLETED: instructor review
 
   PROCESSING --> ERROR
-  ANALYZING --> ERROR
-  GRADING --> ERROR
   ERROR --> RETRYING: retryable && retries<3
   RETRYING --> PROCESSING
 
   PENDING --> FAILED: AI SLA timeout
   QUEUED --> FAILED: invalid job / timeout
   PROCESSING --> FAILED: AI SLA timeout
-  ANALYZING --> FAILED: AI SLA timeout
-  GRADING --> FAILED: AI SLA timeout
   RETRYING --> FAILED: max retries
   COMPLETED --> [*]
   FAILED --> [*]
@@ -39,8 +33,8 @@ stateDiagram-v2
 
 Notes:
 
-- AI SLA timeout chi ap dung cho pha AI (khong ap dung cho REVIEW_REQUIRED).
-- REVIEW_REQUIRED la trang thai "AI done" nhung chua co ket qua cuoi cung cho learner.
+- AI SLA timeout chi ap dung cho pha AI (khong ap dung cho REVIEW_PENDING).
+- REVIEW_PENDING la trang thai "AI done" nhung chua co ket qua cuoi cung cho learner.
 
 ---
 
@@ -50,10 +44,8 @@ Notes:
 |--------|------------|---------|-------------------|
 | **PENDING** | Main App | User đã submit, job chưa được đưa vào queue | Vài giây |
 | **QUEUED** | Main App | Job đã trong RabbitMQ, đang chờ worker nhận | Vài giây |
-| **PROCESSING** | Grading Service | Worker đã nhận job, bắt đầu xử lý | Tùy thuộc pipeline |
-| **ANALYZING** | Grading Service | AI đang phân tích nội dung (LLM cho writing, STT + LLM cho speaking) | 10 giây - 5 phút |
-| **GRADING** | Grading Service | Scorer engine đang tính điểm và confidence score | 2 - 30 giây |
-| **REVIEW_REQUIRED** | Main App | AI đã chấm xong nhưng bắt buộc human review; learner chỉ thấy trạng thái chờ review | Chờ instructor |
+| **PROCESSING** | Grading Service | Worker đã nhận job, đang xử lý toàn bộ AI pipeline (LLM/STT + scoring) | 10 giây - 5 phút |
+| **REVIEW_PENDING** | Main App | AI đã chấm xong nhưng bắt buộc human review; learner chỉ thấy trạng thái chờ review | Chờ instructor |
 | **COMPLETED** | Main App | Kết quả cuối cùng sẵn sàng cho learner (auto-grade hoặc sau human review) | Terminal state |
 | **ERROR** | Grading Service | Xử lý gặp lỗi, có thể retry tự động | Transient state |
 | **RETRYING** | Grading Service | Đang chờ retry (countdown với exponential backoff) | 2^n giây + jitter |
@@ -65,21 +57,19 @@ Notes:
 
 ### 4.1 Happy Path (Auto-grade)
 
-PENDING → QUEUED → PROCESSING → ANALYZING → GRADING → COMPLETED
+PENDING → QUEUED → PROCESSING → COMPLETED
 
 1. **User Submit → PENDING**: Main App tạo submission record (atomic với cơ chế publish reliable - xem `../40-platform/reliability.md`).
 2. **PENDING → QUEUED**: Grading request được publish sang `grading.request` theo `../10-contracts/queue-contracts.md`.
 3. **QUEUED → PROCESSING**: Grading worker consume message, tạo grading_job trong Grading DB, gửi progress callback qua `grading.callback`.
-4. **PROCESSING → ANALYZING**: Worker gọi LLM/STT provider, gửi progress callback.
-5. **ANALYZING → GRADING**: AI response nhận xong, scorer engine chạy tính điểm + confidence.
-6. **GRADING → COMPLETED**: AI callback `kind=completed` với `reviewRequired=false`.
+4. **PROCESSING → COMPLETED**: Worker chạy toàn bộ AI pipeline (LLM/STT + scoring), AI callback `kind=completed` với `reviewRequired=false`.
 
 ### 4.2 Happy Path (Review required)
 
-PENDING → QUEUED → PROCESSING → ANALYZING → GRADING → REVIEW_REQUIRED → COMPLETED
+PENDING → QUEUED → PROCESSING → REVIEW_PENDING → COMPLETED
 
-6. **GRADING → REVIEW_REQUIRED**: AI callback `kind=completed` với `reviewRequired=true`.
-7. **REVIEW_REQUIRED → COMPLETED**: Instructor submit review, Main App tạo final result.
+4. **PROCESSING → REVIEW_PENDING**: Worker chạy toàn bộ AI pipeline (LLM/STT + scoring), AI callback `kind=completed` với `reviewRequired=true`.
+5. **REVIEW_PENDING → COMPLETED**: Instructor submit review, Main App tạo final result.
 
 ### 4.3 Error & Retry Path
 
@@ -91,9 +81,9 @@ Chi tiết retry strategy: xem `../40-platform/reliability.md`.
 
 ### 4.4 Timeout Path
 
-Main App chạy timeout scheduler định kỳ. Nếu `now > deadlineAt` và submission vẫn đang ở pha AI (PENDING/QUEUED/PROCESSING/ANALYZING/GRADING/ERROR/RETRYING) → update thành FAILED (TIMEOUT).
+Main App chạy timeout scheduler định kỳ. Nếu `now > deadline` và submission vẫn đang ở pha AI (PENDING/QUEUED/PROCESSING/ERROR/RETRYING) → update thành FAILED (TIMEOUT).
 
-`REVIEW_REQUIRED` không bị timeout theo SLA AI (đây là pha chờ human review).
+`REVIEW_PENDING` không bị timeout theo SLA AI (đây là pha chờ human review).
 
 ### 4.5 Late Callback
 
@@ -113,11 +103,9 @@ Khi grading callback đến cho submission đã FAILED (do timeout):
 | Tạo submission (→ PENDING) | Main App API | Có (tạo mới) | Không | Không |
 | PENDING → QUEUED | Main App publisher | Có (status) | Không | Không |
 | QUEUED → PROCESSING | Grading worker | Không | Có (tạo job) | Có (progress) |
-| PROCESSING → ANALYZING | Grading worker | Không | Có (status) | Có (progress) |
-| ANALYZING → GRADING | Grading worker | Không | Có (status) | Có (progress) |
-| GRADING → REVIEW_REQUIRED | AMQP Consumer (Main App) | Có (status) | Không | Không |
-| GRADING → COMPLETED | AMQP Consumer (Main App) | Có (status + result) | Không | Không |
-| REVIEW_REQUIRED → COMPLETED | Instructor action (Main App) | Có (final result) | Không | Không |
+| PROCESSING → REVIEW_PENDING | AMQP Consumer (Main App) | Có (status) | Không | Không |
+| PROCESSING → COMPLETED | AMQP Consumer (Main App) | Có (status + result) | Không | Không |
+| REVIEW_PENDING → COMPLETED | Instructor action (Main App) | Có (final result) | Không | Không |
 | → ERROR | Grading worker | Không | Có (error log) | Có (nếu hết retry) |
 | ERROR → RETRYING | Grading worker | Không | Có (status) | Không |
 | → FAILED (timeout) | Main App Scheduler | Có (status) | Không | Không |
@@ -158,12 +146,12 @@ User gửi: map câu trả lời (question ID → answer). Main App so sánh v�
 Khi grading hoàn thành:
 
 - Nếu auto-grade: submission chuyển COMPLETED và có final result.
-- Nếu review required: submission chuyển REVIEW_REQUIRED và lưu AI result; final result chỉ có sau human review.
+- Nếu review required: submission chuyển REVIEW_PENDING và lưu AI result; final result chỉ có sau human review.
 
 Result (AI hoặc final) bao gồm tối thiểu:
 - **Overall score**: Thang điểm 0-10
 - **VSTEP band**: A1, A2, B1, B2, C1
-- **Confidence score**: 0-100%, quyết định auto-grade hay cần human review
+- **Confidence**: 0-100%, quyết định auto-grade hay cần human review
 - **Criteria scores**: Điểm theo từng tiêu chí VSTEP với feedback riêng
 - **Feedback**: Strengths, weaknesses, suggestions cho cải thiện
 - **reviewRequired + reviewPriority**: dùng cho routing và hàng chờ instructor
