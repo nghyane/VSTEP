@@ -243,15 +243,20 @@ export abstract class SubmissionService {
         updatedAt: new Date(),
       };
 
-      if (body.status) {
-        updateValues.status = body.status;
-        if (body.status === "completed" && submission.status !== "completed") {
-          updateValues.completedAt = new Date();
+      // Only admins can change status, score, and band
+      if (isAdmin) {
+        if (body.status) {
+          updateValues.status = body.status;
+          if (
+            body.status === "completed" &&
+            submission.status !== "completed"
+          ) {
+            updateValues.completedAt = new Date();
+          }
         }
+        if (body.score !== undefined) updateValues.score = body.score;
+        if (body.band !== undefined) updateValues.band = body.band;
       }
-
-      if (body.score !== undefined) updateValues.score = body.score;
-      if (body.band !== undefined) updateValues.band = body.band;
 
       const [updatedSubmission] = await tx
         .update(table.submissions)
@@ -260,10 +265,10 @@ export abstract class SubmissionService {
         .returning(SUBMISSION_COLUMNS);
 
       // Update details if provided
-      if (body.answer || body.feedback) {
+      if (body.answer !== undefined || body.feedback !== undefined) {
         const updateDetails: Record<string, unknown> = {};
-        if (body.answer) updateDetails.answer = body.answer;
-        if (body.feedback) updateDetails.feedback = body.feedback;
+        if (body.answer !== undefined) updateDetails.answer = body.answer;
+        if (body.feedback !== undefined) updateDetails.feedback = body.feedback;
 
         await tx
           .update(table.submissionDetails)

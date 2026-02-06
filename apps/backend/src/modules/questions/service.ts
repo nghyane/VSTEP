@@ -193,15 +193,16 @@ export abstract class QuestionService {
         updatedAt: new Date(),
       };
 
-      if (body.skill) updateValues.skill = body.skill;
-      if (body.level) updateValues.level = body.level;
-      if (body.format) updateValues.format = body.format;
-      if (body.content) updateValues.content = body.content;
+      if (body.skill !== undefined) updateValues.skill = body.skill;
+      if (body.level !== undefined) updateValues.level = body.level;
+      if (body.format !== undefined) updateValues.format = body.format;
+      if (body.content !== undefined) updateValues.content = body.content;
       if (body.answerKey !== undefined) updateValues.answerKey = body.answerKey;
       if (body.isActive !== undefined) updateValues.isActive = body.isActive;
 
       // Bump version + create version record when content or answerKey changes
-      const contentChanged = body.content || body.answerKey !== undefined;
+      const contentChanged =
+        body.content !== undefined || body.answerKey !== undefined;
       if (contentChanged) {
         const newVersion = question.version + 1;
         updateValues.version = newVersion;
@@ -331,6 +332,19 @@ export abstract class QuestionService {
    * @throws NotFoundError if question or version not found
    */
   static async getVersion(questionId: string, versionId: string) {
+    // Verify parent question exists and is not soft-deleted
+    const question = await db.query.questions.findFirst({
+      where: and(
+        eq(table.questions.id, questionId),
+        notDeleted(table.questions),
+      ),
+      columns: { id: true },
+    });
+
+    if (!question) {
+      throw new NotFoundError("Question not found");
+    }
+
     const version = await db.query.questionVersions.findFirst({
       where: and(
         eq(table.questionVersions.id, versionId),

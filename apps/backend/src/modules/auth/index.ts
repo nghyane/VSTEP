@@ -1,6 +1,7 @@
 import { env } from "@common/env";
 import { ErrorResponse } from "@common/schemas";
 import { Elysia, t } from "elysia";
+import { UserService } from "@/modules/users/service";
 import { authPlugin } from "@/plugins/auth";
 import { AuthService, parseExpiry } from "./service";
 
@@ -131,21 +132,13 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
 
   .get(
     "/me",
-    ({ user }) => ({
-      user: {
-        id: user.sub,
-        role: user.role,
-      },
+    async ({ user }) => ({
+      user: await UserService.getById(user.sub),
     }),
     {
       auth: true,
       response: {
-        200: t.Object({
-          user: t.Object({
-            id: t.String(),
-            role: t.String(),
-          }),
-        }),
+        200: t.Object({ user: UserInfo }),
         401: ErrorResponse,
       },
       detail: {
