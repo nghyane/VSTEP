@@ -13,9 +13,9 @@ import { skillEnum, submissions } from "./submissions";
 import { users } from "./users";
 
 export const streakDirectionEnum = pgEnum("streak_direction", [
-  "UP",
-  "DOWN",
-  "NEUTRAL",
+  "up",
+  "down",
+  "neutral",
 ]);
 
 export const userProgress = pgTable(
@@ -28,7 +28,7 @@ export const userProgress = pgTable(
     skill: skillEnum("skill").notNull(),
     currentLevel: questionLevelEnum("current_level").notNull(),
     targetLevel: questionLevelEnum("target_level"),
-    scaffoldStage: integer("scaffold_stage").default(1).notNull(),
+    scaffoldLevel: integer("scaffold_level").default(1).notNull(),
     streakCount: integer("streak_count").default(0).notNull(),
     streakDirection: streakDirectionEnum("streak_direction"),
     attemptCount: integer("attempt_count").default(0).notNull(),

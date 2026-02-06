@@ -26,10 +26,10 @@ const SubmissionStatus = t.Union([
   t.Literal("pending"),
   t.Literal("queued"),
   t.Literal("processing"),
-  t.Literal("analyzing"),
-  t.Literal("grading"),
-  t.Literal("review_required"),
   t.Literal("completed"),
+  t.Literal("review_pending"),
+  t.Literal("error"),
+  t.Literal("retrying"),
   t.Literal("failed"),
 ]);
 

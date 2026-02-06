@@ -1,10 +1,10 @@
 import { relations } from "drizzle-orm";
 import {
-  mockTestSessionAnswers,
-  mockTestSessionSubmissions,
-  mockTestSessions,
-  mockTests,
-} from "./schema/mock-tests";
+  examAnswers,
+  examSessions,
+  examSubmissions,
+  exams,
+} from "./schema/exams";
 import { outbox } from "./schema/outbox";
 import { userGoals, userProgress, userSkillScores } from "./schema/progress";
 import { questions, questionVersions } from "./schema/questions";
@@ -21,9 +21,9 @@ export const usersRelations = relations(users, ({ many }) => ({
   progress: many(userProgress),
   skillScores: many(userSkillScores),
   goals: many(userGoals),
-  mockTestSessions: many(mockTestSessions),
+  examSessions: many(examSessions),
   createdQuestions: many(questions),
-  createdMockTests: many(mockTests),
+  createdExams: many(exams),
 }));
 
 export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
@@ -108,53 +108,50 @@ export const userGoalsRelations = relations(userGoals, ({ one }) => ({
   user: one(users, { fields: [userGoals.userId], references: [users.id] }),
 }));
 
-export const mockTestsRelations = relations(mockTests, ({ one, many }) => ({
+export const examsRelations = relations(exams, ({ one, many }) => ({
   createdBy: one(users, {
-    fields: [mockTests.createdBy],
+    fields: [exams.createdBy],
     references: [users.id],
   }),
-  sessions: many(mockTestSessions),
+  sessions: many(examSessions),
 }));
 
-export const mockTestSessionsRelations = relations(
-  mockTestSessions,
+export const examSessionsRelations = relations(
+  examSessions,
   ({ one, many }) => ({
     user: one(users, {
-      fields: [mockTestSessions.userId],
+      fields: [examSessions.userId],
       references: [users.id],
     }),
-    mockTest: one(mockTests, {
-      fields: [mockTestSessions.mockTestId],
-      references: [mockTests.id],
+    exam: one(exams, {
+      fields: [examSessions.examId],
+      references: [exams.id],
     }),
-    answers: many(mockTestSessionAnswers),
-    submissions: many(mockTestSessionSubmissions),
+    answers: many(examAnswers),
+    submissions: many(examSubmissions),
   }),
 );
 
-export const mockTestSessionAnswersRelations = relations(
-  mockTestSessionAnswers,
-  ({ one }) => ({
-    session: one(mockTestSessions, {
-      fields: [mockTestSessionAnswers.sessionId],
-      references: [mockTestSessions.id],
-    }),
-    question: one(questions, {
-      fields: [mockTestSessionAnswers.questionId],
-      references: [questions.id],
-    }),
+export const examAnswersRelations = relations(examAnswers, ({ one }) => ({
+  session: one(examSessions, {
+    fields: [examAnswers.sessionId],
+    references: [examSessions.id],
   }),
-);
+  question: one(questions, {
+    fields: [examAnswers.questionId],
+    references: [questions.id],
+  }),
+}));
 
-export const mockTestSessionSubmissionsRelations = relations(
-  mockTestSessionSubmissions,
+export const examSubmissionsRelations = relations(
+  examSubmissions,
   ({ one }) => ({
-    session: one(mockTestSessions, {
-      fields: [mockTestSessionSubmissions.sessionId],
-      references: [mockTestSessions.id],
+    session: one(examSessions, {
+      fields: [examSubmissions.sessionId],
+      references: [examSessions.id],
     }),
     submission: one(submissions, {
-      fields: [mockTestSessionSubmissions.submissionId],
+      fields: [examSubmissions.submissionId],
       references: [submissions.id],
     }),
   }),

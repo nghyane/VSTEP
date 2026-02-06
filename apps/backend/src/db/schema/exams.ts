@@ -13,14 +13,14 @@ import { questionLevelEnum, questions } from "./questions";
 import { skillEnum, submissions } from "./submissions";
 import { users } from "./users";
 
-export const mockTestStatusEnum = pgEnum("mock_test_status", [
+export const examStatusEnum = pgEnum("exam_status", [
   "in_progress",
   "completed",
   "abandoned",
 ]);
 
-export const mockTests = pgTable(
-  "mock_tests",
+export const exams = pgTable(
+  "exams",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     level: questionLevelEnum("level").notNull(),
@@ -38,30 +38,30 @@ export const mockTests = pgTable(
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => ({
-    levelIdx: index("mock_tests_level_idx").on(table.level),
-    activeIdx: index("mock_tests_active_idx")
+    levelIdx: index("exams_level_idx").on(table.level),
+    activeIdx: index("exams_active_idx")
       .on(table.level)
       .where(sql`${table.isActive} = true AND ${table.deletedAt} IS NULL`),
   }),
 );
 
-export const mockTestSessions = pgTable(
-  "mock_test_sessions",
+export const examSessions = pgTable(
+  "exam_sessions",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
-    mockTestId: uuid("mock_test_id")
-      .references(() => mockTests.id, { onDelete: "cascade" })
+    examId: uuid("exam_id")
+      .references(() => exams.id, { onDelete: "cascade" })
       .notNull(),
-    status: mockTestStatusEnum("status").default("in_progress").notNull(),
+    status: examStatusEnum("status").default("in_progress").notNull(),
     listeningScore: integer("listening_score"),
     readingScore: integer("reading_score"),
     writingScore: integer("writing_score"),
     speakingScore: integer("speaking_score"),
-    overallExamScore: integer("overall_exam_score"),
-    sectionScores: jsonb("section_scores"),
+    overallScore: integer("overall_score"),
+    skillScores: jsonb("skill_scores"),
     startedAt: timestamp("started_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -75,20 +75,20 @@ export const mockTestSessions = pgTable(
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => ({
-    userIdx: index("mock_test_sessions_user_idx").on(table.userId),
-    statusIdx: index("mock_test_sessions_status_idx").on(table.status),
-    userStatusIdx: index("mock_test_sessions_user_status_idx")
+    userIdx: index("exam_sessions_user_idx").on(table.userId),
+    statusIdx: index("exam_sessions_status_idx").on(table.status),
+    userStatusIdx: index("exam_sessions_user_status_idx")
       .on(table.userId, table.status)
       .where(sql`${table.deletedAt} IS NULL`),
   }),
 );
 
-export const mockTestSessionAnswers = pgTable(
-  "mock_test_session_answers",
+export const examAnswers = pgTable(
+  "exam_answers",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     sessionId: uuid("session_id")
-      .references(() => mockTestSessions.id, { onDelete: "cascade" })
+      .references(() => examSessions.id, { onDelete: "cascade" })
       .notNull(),
     questionId: uuid("question_id")
       .references(() => questions.id, { onDelete: "cascade" })
@@ -103,18 +103,16 @@ export const mockTestSessionAnswers = pgTable(
       .notNull(),
   },
   (table) => ({
-    sessionIdx: index("mock_test_session_answers_session_idx").on(
-      table.sessionId,
-    ),
+    sessionIdx: index("exam_answers_session_idx").on(table.sessionId),
   }),
 );
 
-export const mockTestSessionSubmissions = pgTable(
-  "mock_test_session_submissions",
+export const examSubmissions = pgTable(
+  "exam_submissions",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     sessionId: uuid("session_id")
-      .references(() => mockTestSessions.id, { onDelete: "cascade" })
+      .references(() => examSessions.id, { onDelete: "cascade" })
       .notNull(),
     submissionId: uuid("submission_id")
       .references(() => submissions.id, { onDelete: "cascade" })
@@ -125,23 +123,18 @@ export const mockTestSessionSubmissions = pgTable(
       .notNull(),
   },
   (table) => ({
-    sessionIdx: index("mock_test_session_submissions_session_idx").on(
-      table.sessionId,
-    ),
-    submissionIdx: index("mock_test_session_submissions_submission_idx").on(
+    sessionIdx: index("exam_submissions_session_idx").on(table.sessionId),
+    submissionIdx: index("exam_submissions_submission_idx").on(
       table.submissionId,
     ),
   }),
 );
 
-export type MockTest = typeof mockTests.$inferSelect;
-export type NewMockTest = typeof mockTests.$inferInsert;
-export type MockTestSession = typeof mockTestSessions.$inferSelect;
-export type NewMockTestSession = typeof mockTestSessions.$inferInsert;
-export type MockTestSessionAnswer = typeof mockTestSessionAnswers.$inferSelect;
-export type NewMockTestSessionAnswer =
-  typeof mockTestSessionAnswers.$inferInsert;
-export type MockTestSessionSubmission =
-  typeof mockTestSessionSubmissions.$inferSelect;
-export type NewMockTestSessionSubmission =
-  typeof mockTestSessionSubmissions.$inferInsert;
+export type Exam = typeof exams.$inferSelect;
+export type NewExam = typeof exams.$inferInsert;
+export type ExamSession = typeof examSessions.$inferSelect;
+export type NewExamSession = typeof examSessions.$inferInsert;
+export type ExamAnswer = typeof examAnswers.$inferSelect;
+export type NewExamAnswer = typeof examAnswers.$inferInsert;
+export type ExamSubmission = typeof examSubmissions.$inferSelect;
+export type NewExamSubmission = typeof examSubmissions.$inferInsert;

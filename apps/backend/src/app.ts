@@ -11,7 +11,7 @@ import { swagger } from "@elysiajs/swagger";
 import { Elysia } from "elysia";
 // Feature modules
 import { auth } from "@/modules/auth";
-import { mockTests } from "@/modules/mock-tests";
+import { exams } from "@/modules/exams";
 import { progress } from "@/modules/progress";
 import { questions } from "@/modules/questions";
 import { submissions } from "@/modules/submissions";
@@ -47,7 +47,7 @@ export const app = new Elysia()
           },
           { name: "Questions", description: "Question management endpoints" },
           { name: "Progress", description: "User progress endpoints" },
-          { name: "Mock Tests", description: "Mock test endpoints" },
+          { name: "Exams", description: "Exam endpoints" },
         ],
       },
     }),
@@ -78,7 +78,7 @@ export const app = new Elysia()
   .use(submissions) // /submissions/* routes
   .use(questions) // /questions/* routes
   .use(progress) // /progress/* routes
-  .use(mockTests) // /mock-tests/* routes
+  .use(exams) // /exams/* routes
 
   // Start server
   .listen(env.PORT);
