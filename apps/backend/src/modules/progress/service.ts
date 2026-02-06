@@ -145,7 +145,7 @@ export abstract class ProgressService {
         .limit(1);
 
       if (existing) {
-        const updateValues: any = {
+        const updateValues: Record<string, unknown> = {
           currentLevel: body.currentLevel,
           attemptCount: sql`${table.userProgress.attemptCount} + 1`,
           updatedAt: new Date(),

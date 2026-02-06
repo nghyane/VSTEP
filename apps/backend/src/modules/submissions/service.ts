@@ -5,6 +5,7 @@
 
 import { assertExists } from "@common/utils";
 import { and, count, desc, eq } from "drizzle-orm";
+import type { Submission } from "@/db";
 import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
 import {
   BadRequestError,
@@ -114,11 +115,15 @@ export abstract class SubmissionService {
     }
 
     if (query.skill) {
-      conditions.push(eq(table.submissions.skill, query.skill as any));
+      conditions.push(
+        eq(table.submissions.skill, query.skill as Submission["skill"]),
+      );
     }
 
     if (query.status) {
-      conditions.push(eq(table.submissions.status, query.status as any));
+      conditions.push(
+        eq(table.submissions.status, query.status as Submission["status"]),
+      );
     }
 
     const whereClause =
@@ -212,7 +217,7 @@ export abstract class SubmissionService {
         .values({
           userId,
           questionId: body.questionId,
-          skill: body.skill as any,
+          skill: body.skill as Submission["skill"],
           status: "pending",
         })
         .returning({

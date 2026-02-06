@@ -1,3 +1,4 @@
+import type { TObject, TSchema } from "@sinclair/typebox";
 import type { Table } from "drizzle-orm";
 import { createSchemaFactory } from "drizzle-typebox";
 import { t } from "elysia";
@@ -15,17 +16,22 @@ export const { createSelectSchema, createInsertSchema, createUpdateSchema } =
 
 // ─── Response Schema Helper ──────────────────────────────────────
 
-function isDateSchema(schema: any): boolean {
-  if (schema.type === "Date") return true;
-  if (schema.anyOf) {
-    return schema.anyOf.some((v: any) => v.type === "Date" || isDateSchema(v));
+function isDateSchema(schema: TSchema): boolean {
+  if ((schema as { type?: string }).type === "Date") return true;
+  if ("anyOf" in schema && Array.isArray(schema.anyOf)) {
+    return schema.anyOf.some(
+      (v: TSchema) =>
+        (v as { type?: string }).type === "Date" || isDateSchema(v),
+    );
   }
   return false;
 }
 
-function isNullable(schema: any): boolean {
-  if (schema.anyOf) {
-    return schema.anyOf.some((v: any) => v.type === "null");
+function isNullable(schema: TSchema): boolean {
+  if ("anyOf" in schema && Array.isArray(schema.anyOf)) {
+    return schema.anyOf.some(
+      (v: TSchema) => (v as { type?: string }).type === "null",
+    );
   }
   return false;
 }
@@ -43,12 +49,12 @@ export function createResponseSchema<T extends Table>(
   table: T,
   opts: { omit?: string[] } = {},
 ) {
-  const schema = createSelectSchema(table);
+  const schema = createSelectSchema(table) as TObject;
   const omitSet = new Set(opts.omit || []);
-  const props: Record<string, any> = {};
+  const props: Record<string, TSchema> = {};
 
   for (const [key, val] of Object.entries(
-    schema.properties as Record<string, any>,
+    schema.properties as Record<string, TSchema>,
   )) {
     if (omitSet.has(key)) continue;
 
