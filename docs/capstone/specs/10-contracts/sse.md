@@ -11,7 +11,7 @@
 ## 2. Phạm vi
 
 - SSE endpoint trên Bun Main App cho từng submission
-- Các event chính: grading.progress, grading.review_required, grading.completed, grading.failed, ping
+- Các event chính: grading.progress, grading.review_pending, grading.completed, grading.failed, ping
 - Authentication qua query parameter (SSE/EventSource API không hỗ trợ custom headers từ browser)
 - Reconnection tự động với `Last-Event-ID` để replay events bị miss
 
@@ -69,10 +69,10 @@ Token truyền qua query parameter vì EventSource API (browser) không cho phé
 ## 5. Các loại Event
 
 ### grading.progress
-Gửi khi grading đang xử lý. Data tối thiểu: submissionId, status (PROCESSING/ANALYZING/GRADING). Có thể kèm progress (0..1) và message (best-effort).
+Gửi khi grading đang xử lý. Data tối thiểu: submissionId, status (PROCESSING). Có thể kèm progress (0..1) và message (best-effort).
 
-### grading.review_required
-Gửi khi AI grading hoàn tất nhưng `reviewRequired=true`. UI phải hiển thị trạng thái “đang chờ chấm thủ công” và không coi đây là kết quả cuối cùng.
+### grading.review_pending
+Gửi khi AI grading hoàn tất nhưng `reviewPending=true`. UI phải hiển thị trạng thái "đang chờ chấm thủ công" và không coi đây là kết quả cuối cùng.
 
 ### grading.completed
 Gửi khi có kết quả cuối cùng sẵn sàng cho learner (auto-grade hoặc sau human review). Client nên đóng connection sau khi nhận event này.

@@ -274,25 +274,19 @@ flowchart TB
         PENDING@{ shape: circle, label: "PENDING" }
         QUEUED@{ shape: circle, label: "QUEUED" }
         PROCESSING@{ shape: circle, label: "PROCESSING" }
-        ANALYZING@{ shape: circle, label: "ANALYZING" }
-        GRADING@{ shape: circle, label: "GRADING" }
         COMPLETED@{ shape: dbl-circ, label: "COMPLETED" }
         ERROR@{ shape: rounded, label: "ERROR" }
         FAILED@{ shape: rounded, label: "FAILED" }
-        REVIEW@{ shape: circle, label: "REVIEW_REQUIRED" }
+        REVIEW@{ shape: circle, label: "REVIEW_PENDING" }
     end
 
     PENDING -->|"Job published"| QUEUED
     QUEUED -->|"Worker picks up"| PROCESSING
-    PROCESSING -->|"AI analyzing"| ANALYZING
-    ANALYZING -->|"Scoring"| GRADING
-    GRADING -->|"AI done, auto-grade"| COMPLETED
-    GRADING -->|"AI done, review needed"| REVIEW
+    PROCESSING -->|"AI done, auto-grade"| COMPLETED
+    PROCESSING -->|"AI done, review needed"| REVIEW
     REVIEW -->|"Instructor reviews"| COMPLETED
-    
+
     PROCESSING -->|"Retryable error"| ERROR
-    ANALYZING -->|"Retryable error"| ERROR
-    GRADING -->|"Retryable error"| ERROR
     
     ERROR -->|"Auto-retry"| PROCESSING
     ERROR -->|"Max retries"| FAILED
@@ -313,7 +307,7 @@ flowchart TB
     class States statesBox
 
     class PENDING pending
-    class QUEUED,PROCESSING,ANALYZING,GRADING active
+    class QUEUED,PROCESSING active
     class COMPLETED success
     class ERROR,FAILED error
     class REVIEW review
@@ -326,14 +320,12 @@ flowchart TB
 | User submits | — | PENDING | Create record |
 | Job published | PENDING | QUEUED | Enqueue to RabbitMQ |
 | Worker picks up | QUEUED | PROCESSING | Start grading |
-| AI analyzing | PROCESSING | ANALYZING | LLM/STT processing |
-| Scoring | ANALYZING | GRADING | Calculate scores |
-| AI done, auto-grade | GRADING | COMPLETED | Save result |
-| AI done, review needed | GRADING | REVIEW_REQUIRED | Queue for instructor |
-| Instructor reviews | REVIEW_REQUIRED | COMPLETED | Save final result |
-| Retryable error | any AI state | ERROR | Log error |
+| AI done, auto-grade | PROCESSING | COMPLETED | Save result |
+| AI done, review needed | PROCESSING | REVIEW_PENDING | Queue for instructor |
+| Instructor reviews | REVIEW_PENDING | COMPLETED | Save final result |
+| Retryable error | PROCESSING | ERROR | Log error |
 | Max retries exceeded | ERROR | FAILED | DLQ, notify user |
-| SLA timeout | any AI state | FAILED | Timeout scheduler |
+| SLA timeout | PROCESSING | FAILED | Timeout scheduler |
 
 ### 4.2 Outbox Pattern
 
@@ -452,8 +444,7 @@ flowchart TB
 |--------|---------|-------------|
 | PENDING | Chờ enqueue | Real-time < 100ms |
 | QUEUED | Job trong RabbitMQ | Real-time < 500ms |
-| PROCESSING | Worker đang xử lý | Batch 25% / 10s |
-| ANALYZING | AI đang analyze | Streaming tokens |
+| PROCESSING | Worker đang xử lý AI grading | Batch 25% / 10s |
 | COMPLETED | Done | Real-time < 100ms |
 | ERROR | Processing fail | Immediate |
 | FAILED | Timeout / Max retries | Immediate |

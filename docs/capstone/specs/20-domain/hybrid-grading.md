@@ -4,7 +4,7 @@
 
 ## 1. Mục đích
 
-Định nghĩa cơ chế **chấm điểm lai (AI + Human)** cho Writing/Speaking và cách tính **Confidence Score (0-100)** để quyết định:
+Định nghĩa cơ chế **chấm điểm lai (AI + Human)** cho Writing/Speaking và cách tính **Confidence (0-100)** để quyết định:
 
 - Auto-grade và trả kết quả ngay
 - Hay đưa vào hàng chờ human review với mức độ ưu tiên
@@ -17,7 +17,7 @@ Spec này tập trung vào **quy tắc, contracts, và tiêu chí chấp nhận*
 
 - Skills: **Writing** và **Speaking**.
 - Listening/Reading: auto-grade theo answer_key, không thuộc phạm vi spec này.
-- Confidence Score dùng cho:
+- Confidence dùng cho:
   - Routing auto vs human
   - Audit flagging
   - Analytics về reliability của AI
@@ -29,7 +29,7 @@ Spec này tập trung vào **quy tắc, contracts, và tiêu chí chấp nhận*
 - **AI result**: kết quả chấm từ pipeline AI (LLM/STT + rubric scorer).
 - **Human result**: kết quả chấm từ instructor theo rubric.
 - **Final result**: kết quả cuối cùng hiển thị cho learner.
-- **Confidence Score**: số nguyên 0-100 thể hiện mức tin cậy vào AI result.
+- **Confidence**: số nguyên 0-100 thể hiện mức tin cậy vào AI result.
 
 ---
 
@@ -41,9 +41,9 @@ Kết quả grading (dù AI hay human) phải có tối thiểu:
 - `band`: A1/A2/B1/B2/C1
 - `criteriaScores`: map tiêu chí → điểm + nhận xét
 - `feedback`: strengths/weaknesses/suggestions
-- `confidenceScore`: 0-100
-- `reviewRequired`: boolean
-- `reviewPriority`: `Low` | `Medium` | `High` | `Critical` (chỉ khi reviewRequired=true)
+- `confidence`: 0-100
+- `reviewPending`: boolean
+- `reviewPriority`: `low` | `medium` | `high` | `critical` (chỉ khi reviewPending=true)
 - `gradingMode`: `auto` | `human` | `hybrid`
 - `auditFlag`: boolean (đánh dấu cần audit)
 
@@ -76,7 +76,7 @@ Yêu cầu tối thiểu: tạo transcript (để instructor review), và chấm
 
 ---
 
-## 6. Confidence Score
+## 6. Confidence
 
 ### 6.1 Công thức tổng quát
 
@@ -139,27 +139,27 @@ Chấm 0-100, chia thành 4 tiêu chí mỗi tiêu chí 25 điểm:
 
 | Confidence | Action | Human Review Priority |
 |------------|--------|----------------------|
-| 90-100 | Auto-grade | None |
-| 85-89 | Auto-grade + auditFlag=true | Low |
-| 70-84 | Human review required | Medium |
-| 50-69 | Human review required | High |
-| < 50 | Human review required + AI warning | Critical |
+| 90-100 | Auto-grade | none |
+| 85-89 | Auto-grade + auditFlag=true | low |
+| 70-84 | Human review required | medium |
+| 50-69 | Human review required | high |
+| < 50 | Human review required + AI warning | critical |
 | **Random Spot Check** | Auto-grade + Force Review (5-10% rate) | N/A |
 
 **Spot Check Rule**:
-- Mỗi ngày, hệ thống **ngẫu nhiên chọn 5-10%** các bài có `confidenceScore >= 85` để đẩy vào hàng đợi Human Review (reviewPriority = Medium).
+- Mỗi ngày, hệ thống **ngẫu nhiên chọn 5-10%** các bài có `confidence >= 85` để đẩy vào hàng đợi Human Review (reviewPriority = medium).
 - Mục đích: Đảm bảo chất lượng AI theo thời gian thực và phát hiện model drift.
 - Spot check được ghi nhận trong audit log với `auditFlag=SPOT_CHECK`.
 
 **Rule**:
 
-- `confidenceScore >= 85` → có thể publish kết quả ngay (auto).
-- `confidenceScore < 85` → `reviewRequired=true`, đưa vào hàng chờ instructor với `reviewPriority` theo bảng.
+- `confidence >= 85` → có thể publish kết quả ngay (auto).
+- `confidence < 85` → `reviewPending=true`, đưa vào hàng chờ instructor với `reviewPriority` theo bảng.
 
 **Tích hợp với submission status (Main App)**:
 
-- Nếu `reviewRequired=false`: Main App có thể set submission status = `COMPLETED`.
-- Nếu `reviewRequired=true`: Main App set submission status = `REVIEW_REQUIRED` và chỉ hiển thị trạng thái “đang chờ chấm thủ công”; không coi đây là kết quả cuối cùng.
+- Nếu `reviewPending=false`: Main App có thể set submission status = `COMPLETED`.
+- Nếu `reviewPending=true`: Main App set submission status = `REVIEW_PENDING` và chỉ hiển thị trạng thái "đang chờ chấm thủ công"; không coi đây là kết quả cuối cùng.
 
 ---
 
@@ -171,7 +171,7 @@ Instructor phải thấy:
 
 - Câu hỏi + rubric
 - Bài làm (text hoặc audio + transcript)
-- AI result (overall + criteria + feedback) và confidence score
+- AI result (overall + criteria + feedback) và confidence
 - Các signals (template similarity, rule violations) nếu có
 
 ### 8.2 Output của human review
@@ -205,13 +205,13 @@ Rules:
 - Nếu LLM provider 429/5xx: retry/backoff + circuit breaker (xem `../40-platform/reliability.md`).
 - Nếu Content Similarity unavailable: bỏ factor và redistribute weight (không fail job).
 - Nếu phát hiện gian lận rõ rệt (high similarity + rule violations nặng):
-  - vẫn tạo result nhưng phải `auditFlag=true` và ưu tiên human review (Critical).
+  - vẫn tạo result nhưng phải `auditFlag=true` và ưu tiên human review (critical).
 
 ---
 
 ## 10. Acceptance Criteria
 
-- Confidence score luôn nằm trong 0-100 và stable theo công thức/weights.
+- Confidence luôn nằm trong 0-100 và stable theo công thức/weights.
 - Missing factor không làm job fail; weights được redistribute nhất quán.
 - Routing theo đúng bảng threshold.
 - Human review tạo ra final result theo rule agree/override.

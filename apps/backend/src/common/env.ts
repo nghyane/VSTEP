@@ -14,7 +14,9 @@ export const env = createEnv({
       .enum(["development", "production", "test"])
       .default("development"),
     JWT_SECRET: z.string().min(32),
-    JWT_EXPIRES_IN: z.string().default("7d"),
+    JWT_REFRESH_SECRET: z.string().min(32).optional(),
+    JWT_EXPIRES_IN: z.string().default("15m"),
+    JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
     REDIS_URL: z.string().url().optional(),
   },
   runtimeEnv: process.env,

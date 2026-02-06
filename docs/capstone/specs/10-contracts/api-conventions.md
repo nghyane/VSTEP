@@ -55,8 +55,8 @@ Offset pagination (baseline):
 
 ```json
 {
-  "items": [],
-  "pagination": {
+  "data": [],
+  "meta": {
     "page": 1,
     "limit": 20,
     "total": 0,
@@ -77,7 +77,7 @@ Canonical error envelope + codes: xem `errors.md`.
 ## Contracts
 
 - Headers (minimum): `Content-Type`, `Accept`, `Authorization`, `X-Request-Id`, `Idempotency-Key`, `Retry-After` (khi 429).
-- List responses luôn có `items` + `pagination`.
+- List responses luôn có `data` + `meta`.
 - Error responses luôn theo `errors.md`.
 
 ## Failure modes
@@ -90,6 +90,6 @@ Canonical error envelope + codes: xem `errors.md`.
 
 ## Acceptance criteria
 
-- Tất cả list endpoints trả về `items` + `pagination`.
+- Tất cả list endpoints trả về `data` + `meta`.
 - Tất cả error responses tuân theo `errors.md` và có `X-Request-Id`.
 - `POST /submissions` an toàn khi client retry (idempotent).

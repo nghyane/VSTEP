@@ -5,18 +5,38 @@
  * @see https://elysiajs.com/pattern/mvc.html
  */
 
-import { Elysia } from "elysia";
+import {
+  createResponseSchema,
+  ErrorResponse,
+  IdParam,
+  PaginationMeta,
+  PaginationQuery,
+  SuccessResponse,
+} from "@common/schemas";
+import { Elysia, t } from "elysia";
+import { table } from "@/db";
 import { authPlugin } from "@/plugins/auth";
-import { errorPlugin } from "@/plugins/error";
-import { UserModel } from "./model";
 import { UserService } from "./service";
+
+// ─── Shared Schemas ─────────────────────────────────────────────
+
+const UserRole = t.Union([
+  t.Literal("learner"),
+  t.Literal("instructor"),
+  t.Literal("admin"),
+]);
+
+const UserResponse = createResponseSchema(table.users, {
+  omit: ["passwordHash", "deletedAt"],
+});
+
+// ─── Controller ─────────────────────────────────────────────────
 
 /**
  * Users controller mounted at /users
  * Direct service calls - no .decorate() needed for static methods
  */
 export const users = new Elysia({ prefix: "/users" })
-  .use(errorPlugin)
   .use(authPlugin)
 
   // ============ Protected Routes ============
@@ -34,11 +54,11 @@ export const users = new Elysia({ prefix: "/users" })
     },
     {
       auth: true,
-      params: UserModel.userIdParam,
+      params: IdParam,
       response: {
-        200: UserModel.userResponse,
-        401: UserModel.userError,
-        404: UserModel.userError,
+        200: UserResponse,
+        401: ErrorResponse,
+        404: ErrorResponse,
       },
       detail: {
         summary: "Get user",
@@ -60,12 +80,19 @@ export const users = new Elysia({ prefix: "/users" })
       return result;
     },
     {
-      admin: true,
-      query: UserModel.listUsersQuery,
+      role: "admin",
+      query: t.Object({
+        ...PaginationQuery.properties,
+        role: t.Optional(UserRole),
+        search: t.Optional(t.String()),
+      }),
       response: {
-        200: UserModel.listUsersResponse,
-        401: UserModel.userError,
-        403: UserModel.userError,
+        200: t.Object({
+          data: t.Array(UserResponse),
+          meta: PaginationMeta,
+        }),
+        401: ErrorResponse,
+        403: ErrorResponse,
       },
       detail: {
         summary: "List users",
@@ -87,13 +114,29 @@ export const users = new Elysia({ prefix: "/users" })
       return result;
     },
     {
-      admin: true,
-      body: UserModel.createUserBody,
+      role: "admin",
+      body: t.Object({
+        email: t.String({
+          format: "email",
+          error: "Valid email is required",
+        }),
+        password: t.String({
+          minLength: 8,
+          error: "Password must be at least 8 characters",
+        }),
+        fullName: t.Optional(
+          t.String({
+            minLength: 1,
+            maxLength: 100,
+          }),
+        ),
+        role: t.Optional(UserRole),
+      }),
       response: {
-        201: UserModel.createUserResponse,
-        401: UserModel.userError,
-        403: UserModel.userError,
-        409: UserModel.userError,
+        201: UserResponse,
+        401: ErrorResponse,
+        403: ErrorResponse,
+        409: ErrorResponse,
       },
       detail: {
         summary: "Create user",
@@ -116,13 +159,29 @@ export const users = new Elysia({ prefix: "/users" })
     },
     {
       auth: true,
-      params: UserModel.userIdParam,
-      body: UserModel.updateUserBody,
+      params: IdParam,
+      body: t.Partial(
+        t.Object({
+          email: t.String({ format: "email" }),
+          fullName: t.Optional(
+            t.Nullable(
+              t.String({
+                minLength: 1,
+                maxLength: 100,
+              }),
+            ),
+          ),
+          role: UserRole,
+          password: t.String({
+            minLength: 8,
+          }),
+        }),
+      ),
       response: {
-        200: UserModel.updateUserResponse,
-        401: UserModel.userError,
-        404: UserModel.userError,
-        409: UserModel.userError,
+        200: UserResponse,
+        401: ErrorResponse,
+        404: ErrorResponse,
+        409: ErrorResponse,
       },
       detail: {
         summary: "Update user",
@@ -144,13 +203,16 @@ export const users = new Elysia({ prefix: "/users" })
       return result;
     },
     {
-      admin: true,
-      params: UserModel.userIdParam,
+      role: "admin",
+      params: IdParam,
       response: {
-        200: UserModel.deleteUserResponse,
-        401: UserModel.userError,
-        403: UserModel.userError,
-        404: UserModel.userError,
+        200: t.Object({
+          id: t.String({ format: "uuid" }),
+          deletedAt: t.String(),
+        }),
+        401: ErrorResponse,
+        403: ErrorResponse,
+        404: ErrorResponse,
       },
       detail: {
         summary: "Delete user",
@@ -173,12 +235,18 @@ export const users = new Elysia({ prefix: "/users" })
     },
     {
       auth: true,
-      params: UserModel.userIdParam,
-      body: UserModel.updatePasswordBody,
+      params: IdParam,
+      body: t.Object({
+        currentPassword: t.String(),
+        newPassword: t.String({
+          minLength: 8,
+          error: "New password must be at least 8 characters",
+        }),
+      }),
       response: {
-        200: UserModel.updatePasswordResponse,
-        401: UserModel.userError,
-        404: UserModel.userError,
+        200: SuccessResponse,
+        401: ErrorResponse,
+        404: ErrorResponse,
       },
       detail: {
         summary: "Update password",

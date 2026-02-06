@@ -1,61 +1,91 @@
+import type { Table } from "drizzle-orm";
+import { createSchemaFactory } from "drizzle-typebox";
 import { t } from "elysia";
 
 /**
- * Drizzle-Typebox utilities
- * Helps with spreading schemas and creating consistent models
+ * Schema factory bound to Elysia's TypeBox instance.
+ * Ensures symbol compatibility between drizzle-typebox and Elysia validation.
+ *
+ * Usage:
+ *   import { createSelectSchema, createInsertSchema } from "@common/schemas";
+ *   const userSelect = createSelectSchema(users);
  */
+export const { createSelectSchema, createInsertSchema, createUpdateSchema } =
+  createSchemaFactory({ typeboxInstance: t });
 
-/**
- * Spread a TypeBox object schema's properties
- * Useful for composing schemas
- */
-export function spread(schema: any) {
-  return schema.properties;
+// ─── Response Schema Helper ──────────────────────────────────────
+
+function isDateSchema(schema: any): boolean {
+  if (schema.type === "Date") return true;
+  if (schema.anyOf) {
+    return schema.anyOf.some((v: any) => v.type === "Date" || isDateSchema(v));
+  }
+  return false;
+}
+
+function isNullable(schema: any): boolean {
+  if (schema.anyOf) {
+    return schema.anyOf.some((v: any) => v.type === "null");
+  }
+  return false;
 }
 
 /**
- * Common pagination schema
+ * Convert a Drizzle table → JSON-safe response TypeBox schema.
+ * - Converts Date/timestamp columns to t.String({ format: "date-time" })
+ * - Respects nullable columns
+ * - Omits internal fields (e.g. passwordHash, deletedAt)
+ *
+ * Usage:
+ *   const userResponse = createResponseSchema(users, { omit: ["passwordHash", "deletedAt"] });
  */
+export function createResponseSchema<T extends Table>(
+  table: T,
+  opts: { omit?: string[] } = {},
+) {
+  const schema = createSelectSchema(table);
+  const omitSet = new Set(opts.omit || []);
+  const props: Record<string, any> = {};
+
+  for (const [key, val] of Object.entries(
+    schema.properties as Record<string, any>,
+  )) {
+    if (omitSet.has(key)) continue;
+
+    if (isDateSchema(val)) {
+      const dateStr = t.String({ format: "date-time" });
+      props[key] = isNullable(val) ? t.Union([dateStr, t.Null()]) : dateStr;
+    } else {
+      props[key] = val;
+    }
+  }
+  return t.Object(props);
+}
+
+// ─── Shared Schemas ──────────────────────────────────────────────
+
 export const PaginationQuery = t.Object({
   page: t.Optional(t.Number({ minimum: 1, default: 1 })),
   limit: t.Optional(t.Number({ minimum: 1, maximum: 100, default: 20 })),
 });
 
-/**
- * Common ID parameter schema
- */
 export const IdParam = t.Object({
   id: t.String({ format: "uuid" }),
 });
 
-/**
- * Standard error response schema
- */
 export const ErrorResponse = t.Object({
   error: t.Object({
     code: t.String(),
     message: t.String(),
+    details: t.Optional(t.Any()),
   }),
   requestId: t.Optional(t.String()),
 });
 
-/**
- * Standard success message response
- */
-export const SuccessMessageResponse = t.Object({
+export const SuccessResponse = t.Object({
   message: t.String(),
 });
 
-/**
- * Standard ID response
- */
-export const IdResponse = t.Object({
-  id: t.String({ format: "uuid" }),
-});
-
-/**
- * Metadata for paginated responses
- */
 export const PaginationMeta = t.Object({
   page: t.Number(),
   limit: t.Number(),

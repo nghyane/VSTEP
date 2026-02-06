@@ -8,7 +8,7 @@ Hệ thống sử dụng **2 PostgreSQL database tách biệt** và **Redis** l�
 
 | Database | Quản lý bởi | Tables | Connection |
 |----------|-------------|--------|------------|
-| **Main DB** | Main App (Bun) | users, submissions, progress, questions, mock tests, **outbox** | Bun chỉ connect DB này |
+| **Main DB** | Main App (Bun) | users, submissions, progress, questions, exams, **outbox** | Bun chỉ connect DB này |
 | **Grading DB** | Grading Service (Python) | grading_jobs, grading_results | Python chỉ connect DB này |
 | **Redis** | Main App | — | Rate limiting, cache |
 
@@ -69,9 +69,9 @@ Bản ghi submission của learner. **Source of truth cho submission status** ph
 
 Mỗi submission gắn với một user, một question, và một skill (writing/speaking/listening/reading). Chỉ writing và speaking đi qua grading queue; listening/reading được auto-grade ngay bởi Main App (so sánh answer_key).
 
-Trạng thái submission đi qua state machine: PENDING → QUEUED → PROCESSING → ANALYZING → GRADING → COMPLETED (hoặc ERROR/RETRYING/FAILED). Chi tiết: xem `../20-domain/submission-lifecycle.md`.
+Trạng thái submission đi qua state machine: PENDING → QUEUED → PROCESSING → COMPLETED (hoặc REVIEW_PENDING/ERROR/RETRYING/FAILED). Chi tiết: xem `../20-domain/submission-lifecycle.md`.
 
-Writing/Speaking có thể đi qua trạng thái `REVIEW_REQUIRED` khi `confidenceScore < 85` (xem `../20-domain/hybrid-grading.md`).
+Writing/Speaking có thể đi qua trạng thái `REVIEW_PENDING` khi `confidence < 85` (xem `../20-domain/hybrid-grading.md`).
 
 Khi submission được tạo, Main App đồng thời tạo một outbox entry trong cùng transaction để đảm bảo reliable publishing.
 
@@ -88,19 +88,19 @@ MVP columns (gợi ý):
 - `status` (state machine)
 - `attempt` (int, default 1)
 - `request_id` (UUID, nullable; dùng cho writing/speaking queue)
-- `deadline_at` (nullable)
+- `deadline` (nullable)
 - `score` (numeric, nullable; 0..10) CHECK (score IS NULL OR (score >= 0 AND score <= 10))
 - `band` (A1/A2/B1/B2/C1, nullable)
-- `confidence_score` (int, nullable)
-- `review_required` (bool, default false)
+- `confidence` (int, nullable)
+- `review_pending` (bool, default false)
 - `is_late` (bool, default false)
 - `created_at`, `updated_at`
 - `deleted_at` (TIMESTAMP, nullable) - **Soft delete**
 
 **Review Workflow & Hybrid Grading Support:**
-- `review_priority` (ENUM: LOW, MEDIUM, HIGH, CRITICAL, nullable) - Dùng để sắp xếp hàng đợi review.
+- `review_priority` (ENUM: low, medium, high, critical, nullable) - Dùng để sắp xếp hàng đợi review.
 - `reviewer_id` (UUID, nullable, FK users ON DELETE SET NULL) - ID của Instructor chấm/duyệt bài.
-- `grading_mode` (ENUM: AUTO, HUMAN, HYBRID, nullable) - Ghi nhận phương thức chấm cuối cùng.
+- `grading_mode` (ENUM: auto, human, hybrid, nullable) - Ghi nhận phương thức chấm cuối cùng.
 - `audit_flag` (bool, default false) - Đánh dấu bài cần kiểm tra lại (gian lận, bất thường).
 - `claimed_by` (UUID, nullable, FK users ON DELETE SET NULL) - ID người đang giữ lock chấm bài (Backup cho Redis).
 - `claimed_at` (TIMESTAMP, nullable) - Thời điểm claim lock.
@@ -121,7 +121,7 @@ ALTER TABLE submissions ADD CONSTRAINT unique_request_id UNIQUE (request_id);
 -- (thay vì index toàn bộ status, giảm ~25% write overhead)
 CREATE INDEX idx_submissions_active_queue
 ON submissions (status, created_at)
-WHERE status IN ('PENDING', 'QUEUED', 'PROCESSING', 'REVIEW_REQUIRED', 'ERROR');
+WHERE status IN ('PENDING', 'QUEUED', 'PROCESSING', 'REVIEW_PENDING', 'ERROR');
 
 -- Đã xóa: (review_priority, created_at) — review queue volume thấp (instructor-facing),
 -- sort in-memory đủ nhanh, không worth write overhead trên mỗi submission insert.
@@ -248,7 +248,7 @@ Tối thiểu nên lưu:
 - `submission_id`
 - `request_id` (nullable cho events không thuộc grading)
 - `kind` (progress/completed/error)
-- `event_at`
+- `occurred_at`
 - `data` (JSONB)
 - `created_at`
 
@@ -256,7 +256,7 @@ Retention: lưu tối thiểu 7 ngày, cleanup bằng scheduled job.
 
 Indexes (gợi ý):
 
-- `(submission_id, event_at desc)` cho replay
+- `(submission_id, occurred_at desc)` cho replay
 - `(request_id)` (nullable) cho trace/debug
 
 ### 2.7 questions
@@ -320,9 +320,9 @@ Indexes:
 
 Tracking tiến độ học tập theo từng skill. Mỗi user có đúng **1 record per skill** (unique constraint).
 
-Bao gồm: level hiện tại, level mục tiêu, scaffold stage (1=Template, 2=Keywords, 3=Free), tổng số lần làm bài.
+Bao gồm: level hiện tại, level mục tiêu, scaffold level (1=Template, 2=Keywords, 3=Free), tổng số lần làm bài.
 
-Scaffold stage quyết định mức độ hỗ trợ trong practice mode. Chi tiết: xem `../20-domain/adaptive-scaffolding.md`.
+Scaffold level quyết định mức độ hỗ trợ trong practice mode. Chi tiết: xem `../20-domain/adaptive-scaffolding.md`.
 
 MVP columns (gợi ý):
 
@@ -330,10 +330,10 @@ MVP columns (gợi ý):
 - `skill` (PK part)
 - `current_level`
 - `target_level`
-- `scaffold_stage` (1/2/3)
+- `scaffold_level` (1/2/3)
 - `attempt_count` (int)
 - `streak_count` (int, default 0) - Số lần liên tiếp đạt/không đạt điều kiện Stage Up/Down.
-- `streak_direction` (ENUM: UP, DOWN, NEUTRAL) - Hướng của chuỗi streak hiện tại.
+- `streak_direction` (ENUM: up, down, neutral) - Hướng của chuỗi streak hiện tại.
 - `updated_at`
 
 > **⚠️ Design Decision — Không lưu `avg_score`**: Điểm trung bình là **computed field** được tính từ `user_skill_scores` (sliding window 10 bài gần nhất). Lưu trữ giá trị này trong `user_progress` tạo ra dual source of truth — nếu quên update khi insert score mới sẽ gây data inconsistent. Thay vào đó, tính realtime từ `user_skill_scores` hoặc cache trong Redis (TTL 5 phút).
@@ -347,7 +347,7 @@ Lưu lịch sử điểm số chi tiết để tính toán Sliding Window và Ad
 - `skill` (listening/reading/writing/speaking)
 - `submission_id` (FK submissions, **ON DELETE CASCADE**)
 - `score` (numeric)
-- `scaffolding_type` (ENUM: TEMPLATE, KEYWORDS, FREE, nullable) - Ghi nhận loại hỗ trợ đã dùng.
+- `scaffolding_type` (ENUM: template, keywords, free, nullable) - Ghi nhận loại hỗ trợ đã dùng.
 - `created_at`
 
 **Performance Index:**
@@ -382,9 +382,9 @@ Indexes (gợi ý):
 
 - `(user_id)` cho việc truy vấn mục tiêu của user
 
-### 2.10 mock_tests
+### 2.10 exams
 
-Cấu hình bài thi thử. Mỗi mock test gồm 4 sections (listening, reading, writing, speaking) với danh sách question IDs và time limits cho mỗi section. Admin tạo và quản lý.
+Cấu hình bài thi thử. Mỗi exam gồm 4 sections (listening, reading, writing, speaking) với danh sách question IDs và time limits cho mỗi section. Admin tạo và quản lý.
 
 MVP columns (gợi ý):
 
@@ -392,13 +392,13 @@ MVP columns (gợi ý):
 - `level` (B1/B2/C1)
 - `blueprint` (JSONB) (sections + ordered questionIds + time limits)
 - `is_active` (bool)
-- `created_by` (UUID, nullable, FK users ON DELETE SET NULL) - **Audit**: ID của admin tạo mock test.
+- `created_by` (UUID, nullable, FK users ON DELETE SET NULL) - **Audit**: ID của admin tạo exam.
 - `created_at`, `updated_at`
 - `deleted_at` (TIMESTAMP, nullable) - **Soft delete**
 
-### 2.11 mock_test_sessions
+### 2.11 exam_sessions
 
-Session khi learner làm mock test. Lưu trạng thái (IN_PROGRESS → SUBMITTED → SCORED). Câu trả lời listening/reading được lưu trong bảng `mock_test_session_answers` (normalized). Writing/speaking submissions được liên kết qua junction table `mock_test_session_submissions`.
+Session khi learner làm exam. Lưu trạng thái (IN_PROGRESS → SUBMITTED → SCORED). Câu trả lời listening/reading được lưu trong bảng `exam_answers` (normalized). Writing/speaking submissions được liên kết qua junction table `exam_submissions`.
 
 **Normalization**: Sử dụng junction tables cho **tất cả** loại answers/submissions thay vì JSONB, đảm bảo referential integrity, tối ưu query per-question, và consistent data access pattern.
 
@@ -406,24 +406,24 @@ MVP columns (gợi ý):
 
 - `id` (UUID, PK)
 - `user_id` (FK users, ON DELETE CASCADE)
-- `mock_test_id` (FK mock_tests, ON DELETE RESTRICT)
+- `exam_id` (FK exams, ON DELETE RESTRICT)
 - `status` (IN_PROGRESS/SUBMITTED/SCORED)
-- `section_scores` (JSONB, nullable)
-- `overall_exam_score` (numeric, nullable)
+- `skill_scores` (JSONB, nullable)
+- `overall_score` (numeric, nullable)
 - `started_at`, `submitted_at` (nullable)
 - `created_at`, `updated_at`
 - `deleted_at` (TIMESTAMP, nullable) - **Soft delete**
 
 **Performance Indexes:**
 ```sql
-CREATE INDEX idx_mock_test_sessions_user_status ON mock_test_sessions (user_id, status, created_at DESC);
+CREATE INDEX idx_exam_sessions_user_status ON exam_sessions (user_id, status, created_at DESC);
 ```
 
-### 2.11.1 mock_test_session_answers (New)
+### 2.11.1 exam_answers (New)
 
-Lưu câu trả lời listening/reading per-question cho mock test session. Thay thế cho `answers` JSONB trong `mock_test_sessions` để đảm bảo referential integrity và hỗ trợ per-question accuracy analysis.
+Lưu câu trả lời listening/reading per-question cho exam session. Thay thế cho `answers` JSONB trong `exam_sessions` để đảm bảo referential integrity và hỗ trợ per-question accuracy analysis.
 
-- `session_id` (FK mock_test_sessions, ON DELETE CASCADE)
+- `session_id` (FK exam_sessions, ON DELETE CASCADE)
 - `question_id` (FK questions)
 - `answer` (JSONB) - Câu trả lời của learner
 - `is_correct` (BOOLEAN, nullable) - Kết quả đánh giá (auto-grade)
@@ -436,12 +436,12 @@ Indexes:
 - `(session_id)` cho việc lấy toàn bộ answers theo session
 - `(question_id)` cho việc phân tích per-question accuracy
 
-### 2.11.2 mock_test_session_submissions (New)
+### 2.11.2 exam_submissions (New)
 
-Junction table liên kết mock test session với submissions của writing/speaking.
+Junction table liên kết exam session với submissions của writing/speaking.
 
 - `id` (UUID, PK)
-- `session_id` (FK mock_test_sessions, ON DELETE CASCADE)
+- `session_id` (FK exam_sessions, ON DELETE CASCADE)
 - `submission_id` (FK submissions, ON DELETE CASCADE)
 - `skill` (writing/speaking) - Phân biệt loại submission
 - `created_at`
@@ -467,11 +467,11 @@ CREATE INDEX idx_users_active ON users (id) WHERE deleted_at IS NULL;
 -- questions table
 CREATE INDEX idx_questions_active ON questions (skill, level) WHERE deleted_at IS NULL;
 
--- mock_tests table
-CREATE INDEX idx_mock_tests_active ON mock_tests (id) WHERE deleted_at IS NULL;
+-- exams table
+CREATE INDEX idx_exams_active ON exams (id) WHERE deleted_at IS NULL;
 
--- mock_test_sessions table
-CREATE INDEX idx_mock_test_sessions_active ON mock_test_sessions (user_id, status, created_at DESC) WHERE deleted_at IS NULL;
+-- exam_sessions table
+CREATE INDEX idx_exam_sessions_active ON exam_sessions (user_id, status, created_at DESC) WHERE deleted_at IS NULL;
 ```
 
 **Lưu ý**: Partial indexes chỉ include các rows thỏa mãn điều kiện WHERE, giúp:
@@ -534,7 +534,7 @@ Lý do: đồ án triển khai đồng bộ, ưu tiên đơn giản; không cầ
 
 Mỗi job được tạo khi grading worker consume message từ `grading.request` queue. `request_id` (UUID từ queue message) là unique key cho idempotency — nếu nhận duplicate message, skip.
 
-Status riêng của grading service: PENDING → PROCESSING → ANALYZING → GRADING → COMPLETED/ERROR.
+Status riêng của grading service: PENDING → PROCESSING → COMPLETED/ERROR.
 
 MVP columns (gợi ý):
 
@@ -546,7 +546,7 @@ MVP columns (gợi ý):
 - `attempt` (int)
 - `retry_count` (int, default 0) - Số lần retry tự động.
 - `worker_id` (string, nullable) - ID của worker xử lý (để debug).
-- `result` (JSONB, nullable) (overallScore/band/confidenceScore/criteriaScores/feedback)
+- `result` (JSONB, nullable) (overallScore/band/confidence/criteriaScores/feedback)
 - `error` (JSONB, nullable) (type/code/message)
 - `error_category` (ENUM: NETWORK, RATE_LIMIT, SCHEMA, TIMEOUT, UNKNOWN, nullable) - Phân loại lỗi cho DLQ logic.
 - `created_at`, `updated_at`
@@ -557,7 +557,7 @@ Gợi ý index:
 
 ### 3.2 grading_job_history (New)
 
-Lưu lịch sử chuyển đổi trạng thái của grading jobs. Hỗ trợ debug pipeline (PENDING → PROCESSING → ANALYZING → GRADING → COMPLETED/ERROR) và phát hiện bottleneck.
+Lưu lịch sử chuyển đổi trạng thái của grading jobs. Hỗ trợ debug pipeline (PENDING → PROCESSING → COMPLETED/ERROR) và phát hiện bottleneck.
 
 - `id` (UUID, PK)
 - `job_id` (FK grading_jobs, ON DELETE CASCADE)

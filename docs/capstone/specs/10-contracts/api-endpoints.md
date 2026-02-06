@@ -15,7 +15,7 @@ Quy ước path:
 - Rate limiting áp dụng theo tier (xem `../40-platform/rate-limiting.md`)
 - Quy ước API chung: xem `api-conventions.md`
 - Tất cả error responses theo format chuẩn (xem `errors.md`)
-- Tất cả list endpoints hỗ trợ offset pagination với `page`, `limit`, trả về `pagination.total` và `pagination.totalPages`
+- Tất cả list endpoints hỗ trợ offset pagination với `page`, `limit`, trả về `meta.total` và `meta.totalPages`
 
 ---
 
@@ -78,19 +78,19 @@ Mục tiêu học tập của learner.
 | POST | /goals | Learner+ | Thiết lập goal mới (target level, target date tùy chọn). |
 | PUT | /goals/:id | Owner | Cập nhật goal (thay đổi target hoặc deadline). |
 
-### 2.6 Mock Tests
+### 2.6 Exams
 
 Thi thử giả lập full 4 skills.
 
 | Method | Path | Auth | Mô tả |
 |--------|------|------|-------|
-| GET | /mock-tests | Có | Danh sách mock tests khả dụng. Filter theo level. |
-| GET | /mock-tests/:id | Có | Chi tiết mock test: 4 sections, thời gian, số câu hỏi. |
-| POST | /mock-tests/:id/start | Learner+ | Bắt đầu session thi thử. Tạo mock_test_session, trả về session ID. |
-| PUT | /mock-tests/sessions/:id | Owner | Cập nhật answers (auto-save mỗi 30 giây từ client). |
-| POST | /mock-tests/sessions/:id/submit | Owner | Nộp bài thi. Auto-grade listening/reading ngay, tạo submissions cho writing/speaking. |
-| GET | /mock-tests/sessions/:id | Owner | Trạng thái session: IN_PROGRESS, SUBMITTED, SCORED. Kết quả per skill khi SCORED. |
-| POST | /mock-tests | Admin | Tạo mock test mới (cấu hình sections, questions, time limits). |
+| GET | /exams | Có | Danh sách exams khả dụng. Filter theo level. |
+| GET | /exams/:id | Có | Chi tiết exam: 4 sections, thời gian, số câu hỏi. |
+| POST | /exams/:id/start | Learner+ | Bắt đầu session thi thử. Tạo exam_session, trả về session ID. |
+| PUT | /exams/sessions/:id | Owner | Cập nhật answers (auto-save mỗi 30 giây từ client). |
+| POST | /exams/sessions/:id/submit | Owner | Nộp bài thi. Auto-grade listening/reading ngay, tạo submissions cho writing/speaking. |
+| GET | /exams/sessions/:id | Owner | Trạng thái session: IN_PROGRESS, SUBMITTED, SCORED. Kết quả per skill khi SCORED. |
+| POST | /exams | Admin | Tạo exam mới (cấu hình sections, questions, time limits). |
 
 ### 2.7 SSE
 

@@ -3,30 +3,42 @@
  * Business logic for tracking user progress
  */
 
-import { assertExists, toISOStringRequired } from "@common/utils";
-import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
-import { db, table } from "@/db";
+import { assertExists } from "@common/utils";
+import { and, count, desc, eq, sql } from "drizzle-orm";
+import { db, paginate, paginationMeta, table } from "@/db";
 import { NotFoundError } from "@/plugins/error";
-import type {
-  LevelType,
-  ProgressModel,
-  SkillType,
-  StreakDirection,
-} from "./model";
 
-const mapProgressResponse = (progress: any): ProgressModel.UserProgress => ({
+type SkillType = "listening" | "reading" | "writing" | "speaking";
+type LevelType = "A2" | "B1" | "B2" | "C1";
+type StreakDirectionType = "UP" | "DOWN" | "NEUTRAL";
+
+/**
+ * Mapper function for consistent progress response serialization
+ */
+const mapProgressResponse = (progress: {
+  id: string;
+  userId: string;
+  skill: string;
+  currentLevel: string;
+  targetLevel: string | null;
+  scaffoldStage: number;
+  streakCount: number;
+  streakDirection: string | null;
+  attemptCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}) => ({
   id: progress.id,
   userId: progress.userId,
-  skill: progress.skill as typeof SkillType.static,
-  currentLevel: progress.currentLevel as typeof LevelType.static,
-  targetLevel: (progress.targetLevel as typeof LevelType.static) || undefined,
+  skill: progress.skill as SkillType,
+  currentLevel: progress.currentLevel as LevelType,
+  targetLevel: (progress.targetLevel as LevelType) ?? null,
   scaffoldStage: progress.scaffoldStage,
   streakCount: progress.streakCount,
-  streakDirection:
-    (progress.streakDirection as typeof StreakDirection.static) || undefined,
+  streakDirection: (progress.streakDirection as StreakDirectionType) ?? null,
   attemptCount: progress.attemptCount,
-  createdAt: toISOStringRequired(progress.createdAt),
-  updatedAt: toISOStringRequired(progress.updatedAt),
+  createdAt: progress.createdAt.toISOString(),
+  updatedAt: progress.updatedAt.toISOString(),
 });
 
 /**
@@ -36,7 +48,7 @@ export abstract class ProgressService {
   /**
    * Get progress by ID
    */
-  static async getById(id: string): Promise<ProgressModel.UserProgress> {
+  static async getById(id: string) {
     const [progress] = await db
       .select()
       .from(table.userProgress)
@@ -54,13 +66,18 @@ export abstract class ProgressService {
    * List user progress
    */
   static async list(
-    query: ProgressModel.ListProgressQuery,
+    query: {
+      page?: number;
+      limit?: number;
+      skill?: SkillType;
+      currentLevel?: LevelType;
+      userId?: string;
+    },
     currentUserId: string,
     isAdmin: boolean,
-  ): Promise<ProgressModel.ListProgressResponse> {
+  ) {
     const page = query.page || 1;
     const limit = query.limit || 20;
-    const offset = (page - 1) * limit;
 
     const conditions = [];
 
@@ -84,22 +101,19 @@ export abstract class ProgressService {
 
     const total = countResult?.count || 0;
 
+    const { limit: take, offset } = paginate(page, limit);
+
     const progressRecords = await db
       .select()
       .from(table.userProgress)
       .where(whereClause)
       .orderBy(desc(table.userProgress.updatedAt))
-      .limit(limit)
+      .limit(take)
       .offset(offset);
 
     return {
       data: progressRecords.map(mapProgressResponse),
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      meta: paginationMeta(total, page, limit),
     };
   }
 
@@ -108,8 +122,15 @@ export abstract class ProgressService {
    */
   static async updateProgress(
     userId: string,
-    body: ProgressModel.UpdateProgressBody,
-  ): Promise<ProgressModel.UserProgress> {
+    body: {
+      skill: SkillType;
+      currentLevel: LevelType;
+      targetLevel?: LevelType;
+      scaffoldStage?: number;
+      streakCount?: number;
+      streakDirection?: StreakDirectionType;
+    },
+  ) {
     return await db.transaction(async (tx) => {
       // Try to find existing record
       const [existing] = await tx
