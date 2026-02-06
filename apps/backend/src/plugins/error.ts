@@ -7,12 +7,8 @@
 import { logger } from "@common/logger";
 import { Elysia } from "elysia";
 
-/**
- * Request context store for tracking requestId
- */
-interface RequestStore {
-  requestId: string;
-}
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Base custom error class with HTTP status code
@@ -132,11 +128,11 @@ export class InternalError extends AppError {
   }
 }
 
-/**
- * Generate unique request ID
- */
-function generateRequestId(): string {
-  return `${Date.now().toString(36)}-${Bun.randomUUIDv7()}`;
+/** Extract or generate a UUID v4 requestId from the incoming request */
+function resolveRequestId(request: Request): string {
+  const header = request.headers.get("x-request-id");
+  if (header && UUID_RE.test(header)) return header;
+  return crypto.randomUUID();
 }
 
 /**
@@ -144,9 +140,11 @@ function generateRequestId(): string {
  * Must be registered early in the Elysia pipeline
  */
 export const errorPlugin = new Elysia({ name: "error" })
-  .onRequest(({ store }) => {
-    // Generate requestId for every request
-    (store as RequestStore).requestId = generateRequestId();
+  .state("requestId", "")
+  .onRequest(({ store, request, set }) => {
+    const requestId = resolveRequestId(request);
+    store.requestId = requestId;
+    set.headers["x-request-id"] = requestId;
   })
   .error({
     APP_ERROR: AppError,
@@ -160,10 +158,7 @@ export const errorPlugin = new Elysia({ name: "error" })
     INTERNAL_ERROR: InternalError,
   })
   .onError(function onError({ code, error, set, store }) {
-    const requestId = (store as RequestStore).requestId;
-
-    // Set requestId header on all responses
-    set.headers["x-request-id"] = requestId;
+    const requestId = store.requestId;
 
     // Handle custom AppErrors
     if (error instanceof AppError) {
