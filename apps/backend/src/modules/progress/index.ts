@@ -47,8 +47,8 @@ export const progress = new Elysia({
     async ({ query, user }) => {
       return await ProgressService.list(
         query,
-        user!.sub,
-        user!.role === "admin",
+        user.sub,
+        user.role === "admin",
       );
     },
     {
@@ -102,7 +102,7 @@ export const progress = new Elysia({
   .post(
     "/update",
     async ({ body, user }) => {
-      return await ProgressService.updateProgress(user!.sub, body);
+      return await ProgressService.updateProgress(user.sub, body);
     },
     {
       auth: true,

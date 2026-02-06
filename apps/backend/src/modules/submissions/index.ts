@@ -63,8 +63,8 @@ export const submissions = new Elysia({
     async ({ query, user, set }) => {
       const result = await SubmissionService.list(
         query,
-        user!.sub,
-        user!.role === "admin",
+        user.sub,
+        user.role === "admin",
       );
       set.status = 200;
       return result;
@@ -100,8 +100,8 @@ export const submissions = new Elysia({
     async ({ params, user, set }) => {
       const result = await SubmissionService.getById(
         params.id,
-        user!.sub,
-        user!.role === "admin",
+        user.sub,
+        user.role === "admin",
       );
       set.status = 200;
       return result;
@@ -129,7 +129,7 @@ export const submissions = new Elysia({
   .post(
     "/",
     async ({ body, user, set }) => {
-      const result = await SubmissionService.create(user!.sub, body);
+      const result = await SubmissionService.create(user.sub, body);
       set.status = 201;
       return result;
     },
@@ -163,8 +163,8 @@ export const submissions = new Elysia({
     async ({ params, body, user, set }) => {
       const result = await SubmissionService.update(
         params.id,
-        user!.sub,
-        user!.role === "admin",
+        user.sub,
+        user.role === "admin",
         body,
       );
       set.status = 200;
@@ -275,8 +275,8 @@ export const submissions = new Elysia({
     async ({ params, user, set }) => {
       const result = await SubmissionService.remove(
         params.id,
-        user!.sub,
-        user!.role === "admin",
+        user.sub,
+        user.role === "admin",
       );
       set.status = 200;
       return result;
