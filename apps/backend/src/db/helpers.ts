@@ -3,7 +3,7 @@ import { isNull, type SQL } from "drizzle-orm";
 /**
  * Soft-delete filter: WHERE deleted_at IS NULL
  */
-export function notDeleted<T extends { deletedAt: any }>(table: T): SQL {
+export function notDeleted<T extends { deletedAt: unknown }>(table: T): SQL {
   return isNull(table.deletedAt);
 }
 

@@ -89,7 +89,7 @@ Thi thử giả lập full 4 skills.
 | POST | /exams/:id/start | Learner+ | Bắt đầu session thi thử. Tạo exam_session, trả về session ID. |
 | PUT | /exams/sessions/:id | Owner | Cập nhật answers (auto-save mỗi 30 giây từ client). |
 | POST | /exams/sessions/:id/submit | Owner | Nộp bài thi. Auto-grade listening/reading ngay, tạo submissions cho writing/speaking. |
-| GET | /exams/sessions/:id | Owner | Trạng thái session: IN_PROGRESS, SUBMITTED, SCORED. Kết quả per skill khi SCORED. |
+| GET | /exams/sessions/:id | Owner | Trạng thái session: `in_progress`, `submitted`, `completed`. Kết quả per skill khi `completed`. |
 | POST | /exams | Admin | Tạo exam mới (cấu hình sections, questions, time limits). |
 
 ### 2.7 SSE
@@ -108,8 +108,10 @@ Quản trị hệ thống. Instructor có quyền human review. Admin có full a
 |--------|------|------|-------|
 | GET | /admin/users | Admin | Danh sách users. Filter theo role, search theo email/name. |
 | PUT | /admin/users/:id/role | Admin | Thay đổi role user (learner ↔ instructor ↔ admin). |
-| GET | /admin/submissions/pending-review | Instructor+ | Danh sách submissions cần human review (confidence < 85%). Sắp xếp theo priority. |
-| PUT | /admin/submissions/:id/review | Instructor+ | Gửi kết quả human review. Rule override: scoreDiff > 0.5 hoặc bandStepDiff > 1 (xem `../20-domain/hybrid-grading.md`). |
+| GET | /admin/submissions/pending-review | Instructor+ | Danh sách submissions cần human review (confidence < 85%). Sắp xếp theo priority, FIFO. |
+| POST | /admin/submissions/:id/claim | Instructor+ | Claim submission để review (Redis lock TTL 15 phút). 409 nếu đã claimed. |
+| POST | /admin/submissions/:id/release | Instructor+ | Release claim (hủy lock, trả submission về queue). |
+| PUT | /admin/submissions/:id/review | Instructor+ | Gửi kết quả human review. Merge rule: agree (0.4AI+0.6Human) hoặc override (xem `../20-domain/hybrid-grading.md`). |
 
 ### 2.9 Health
 

@@ -21,6 +21,7 @@ export const questionSkillEnum = pgEnum("question_skill", [
 ]);
 
 export const questionLevelEnum = pgEnum("question_level", [
+  "A1",
   "A2",
   "B1",
   "B2",

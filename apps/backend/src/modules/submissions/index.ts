@@ -26,10 +26,10 @@ const SubmissionStatus = t.Union([
   t.Literal("pending"),
   t.Literal("queued"),
   t.Literal("processing"),
-  t.Literal("analyzing"),
-  t.Literal("grading"),
-  t.Literal("review_required"),
   t.Literal("completed"),
+  t.Literal("review_pending"),
+  t.Literal("error"),
+  t.Literal("retrying"),
   t.Literal("failed"),
 ]);
 
@@ -42,7 +42,17 @@ const SubmissionInfo = t.Object({
   skill: SkillType,
   status: SubmissionStatus,
   score: t.Optional(t.Nullable(t.Number())),
-  band: t.Optional(t.Nullable(t.Number())),
+  band: t.Optional(
+    t.Nullable(
+      t.Union([
+        t.Literal("A1"),
+        t.Literal("A2"),
+        t.Literal("B1"),
+        t.Literal("B2"),
+        t.Literal("C1"),
+      ]),
+    ),
+  ),
   completedAt: t.Optional(t.String()),
   createdAt: t.String(),
   updatedAt: t.String(),
@@ -187,7 +197,13 @@ export const submissions = new Elysia({ prefix: "/submissions" })
           answer: t.Any(),
           status: SubmissionStatus,
           score: t.Number(),
-          band: t.Number(),
+          band: t.Union([
+            t.Literal("A1"),
+            t.Literal("A2"),
+            t.Literal("B1"),
+            t.Literal("B2"),
+            t.Literal("C1"),
+          ]),
           feedback: t.String(),
         }),
       ),
@@ -279,7 +295,7 @@ export const submissions = new Elysia({ prefix: "/submissions" })
   .delete(
     "/:id",
     async ({ params, user, set }) => {
-      const result = await SubmissionService.delete(
+      const result = await SubmissionService.remove(
         params.id,
         user!.sub,
         user!.role === "admin",

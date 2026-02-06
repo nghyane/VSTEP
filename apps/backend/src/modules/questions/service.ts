@@ -161,8 +161,8 @@ export abstract class QuestionService {
       skill: "listening" | "reading" | "writing" | "speaking";
       level: "A2" | "B1" | "B2" | "C1";
       format: string;
-      content: any;
-      answerKey?: any;
+      content: unknown;
+      answerKey?: unknown;
     },
   ) {
     // Create question and initial version in transaction
@@ -221,8 +221,8 @@ export abstract class QuestionService {
       skill?: "listening" | "reading" | "writing" | "speaking";
       level?: "A2" | "B1" | "B2" | "C1";
       format?: string;
-      content?: any;
-      answerKey?: any;
+      content?: unknown;
+      answerKey?: unknown;
       isActive?: boolean;
     },
   ) {
@@ -292,8 +292,8 @@ export abstract class QuestionService {
     userId: string,
     isAdmin: boolean,
     body: {
-      content: any;
-      answerKey?: any;
+      content: unknown;
+      answerKey?: unknown;
     },
   ) {
     return await db.transaction(async (tx) => {
@@ -426,9 +426,9 @@ export abstract class QuestionService {
   }
 
   /**
-   * Delete question (soft delete)
+   * Remove question (soft delete)
    */
-  static async delete(questionId: string, userId: string, isAdmin: boolean) {
+  static async remove(questionId: string, userId: string, isAdmin: boolean) {
     return await db.transaction(async (tx) => {
       // Get question
       const [question] = await tx

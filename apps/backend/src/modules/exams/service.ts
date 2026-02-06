@@ -1,11 +1,11 @@
 /**
- * Mock Tests Module Service
- * Business logic for mock test management
+ * Exams Module Service
+ * Business logic for exam management
  */
 
 import { assertExists } from "@common/utils";
 import { and, count, desc, eq } from "drizzle-orm";
-import type { MockTest, MockTestSession } from "@/db";
+import type { Exam, ExamSession } from "@/db";
 import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
 import {
   BadRequestError,
@@ -15,7 +15,7 @@ import {
 
 // ─── Response Types ──────────────────────────────────────────────
 
-interface MockTestResponse {
+interface ExamResponse {
   id: string;
   level: string;
   blueprint: unknown;
@@ -25,17 +25,17 @@ interface MockTestResponse {
   updatedAt: string;
 }
 
-interface MockTestSessionResponse {
+interface ExamSessionResponse {
   id: string;
   userId: string;
-  mockTestId: string;
+  examId: string;
   status: string;
   listeningScore: number | null;
   readingScore: number | null;
   writingScore: number | null;
   speakingScore: number | null;
-  overallExamScore: number | null;
-  sectionScores: unknown;
+  overallScore: number | null;
+  skillScores: unknown;
   startedAt: string;
   completedAt: string | null;
   createdAt: string;
@@ -44,29 +44,27 @@ interface MockTestSessionResponse {
 
 // ─── Mappers ─────────────────────────────────────────────────────
 
-const mapMockTestResponse = (test: MockTest): MockTestResponse => ({
-  id: test.id,
-  level: test.level,
-  blueprint: test.blueprint,
-  isActive: test.isActive,
-  createdBy: test.createdBy,
-  createdAt: test.createdAt.toISOString(),
-  updatedAt: test.updatedAt.toISOString(),
+const mapExamResponse = (exam: Exam): ExamResponse => ({
+  id: exam.id,
+  level: exam.level,
+  blueprint: exam.blueprint,
+  isActive: exam.isActive,
+  createdBy: exam.createdBy,
+  createdAt: exam.createdAt.toISOString(),
+  updatedAt: exam.updatedAt.toISOString(),
 });
 
-const mapSessionResponse = (
-  session: MockTestSession,
-): MockTestSessionResponse => ({
+const mapSessionResponse = (session: ExamSession): ExamSessionResponse => ({
   id: session.id,
   userId: session.userId,
-  mockTestId: session.mockTestId,
+  examId: session.examId,
   status: session.status,
   listeningScore: session.listeningScore,
   readingScore: session.readingScore,
   writingScore: session.writingScore,
   speakingScore: session.speakingScore,
-  overallExamScore: session.overallExamScore,
-  sectionScores: session.sectionScores,
+  overallScore: session.overallScore,
+  skillScores: session.skillScores,
   startedAt: session.startedAt.toISOString(),
   completedAt: session.completedAt?.toISOString() ?? null,
   createdAt: session.createdAt.toISOString(),
@@ -74,26 +72,26 @@ const mapSessionResponse = (
 });
 
 /**
- * Mock test service with static methods
+ * Exam service with static methods
  */
-export abstract class MockTestService {
+export abstract class ExamService {
   /**
-   * Get mock test by ID
+   * Get exam by ID
    */
-  static async getById(id: string): Promise<MockTestResponse> {
-    const test = await db.query.mockTests.findFirst({
-      where: and(eq(table.mockTests.id, id), notDeleted(table.mockTests)),
+  static async getById(id: string): Promise<ExamResponse> {
+    const exam = await db.query.exams.findFirst({
+      where: and(eq(table.exams.id, id), notDeleted(table.exams)),
     });
 
-    if (!test) {
-      throw new NotFoundError("Mock test not found");
+    if (!exam) {
+      throw new NotFoundError("Exam not found");
     }
 
-    return mapMockTestResponse(test);
+    return mapExamResponse(exam);
   }
 
   /**
-   * List mock tests
+   * List exams
    */
   static async list(query: {
     page?: number;
@@ -103,46 +101,44 @@ export abstract class MockTestService {
   }) {
     const { limit, offset } = paginate(query.page, query.limit);
 
-    const conditions = [notDeleted(table.mockTests)];
+    const conditions = [notDeleted(table.exams)];
     if (query.level)
-      conditions.push(
-        eq(table.mockTests.level, query.level as MockTest["level"]),
-      );
+      conditions.push(eq(table.exams.level, query.level as Exam["level"]));
     if (query.isActive !== undefined)
-      conditions.push(eq(table.mockTests.isActive, query.isActive));
+      conditions.push(eq(table.exams.isActive, query.isActive));
 
     const whereClause = and(...conditions);
 
     const [countResult] = await db
       .select({ count: count() })
-      .from(table.mockTests)
+      .from(table.exams)
       .where(whereClause);
 
     const total = countResult?.count ?? 0;
 
-    const tests = await db
+    const exams = await db
       .select()
-      .from(table.mockTests)
+      .from(table.exams)
       .where(whereClause)
-      .orderBy(desc(table.mockTests.createdAt))
+      .orderBy(desc(table.exams.createdAt))
       .limit(limit)
       .offset(offset);
 
     return {
-      data: tests.map(mapMockTestResponse),
+      data: exams.map(mapExamResponse),
       meta: paginationMeta(total, query.page, query.limit),
     };
   }
 
   /**
-   * Create mock test (Admin only)
+   * Create exam (Admin only)
    */
   static async create(
     userId: string,
-    body: { level: MockTest["level"]; blueprint: unknown; isActive?: boolean },
-  ): Promise<MockTestResponse> {
-    const [test] = await db
-      .insert(table.mockTests)
+    body: { level: Exam["level"]; blueprint: unknown; isActive?: boolean },
+  ): Promise<ExamResponse> {
+    const [exam] = await db
+      .insert(table.exams)
       .values({
         level: body.level,
         blueprint: body.blueprint,
@@ -151,74 +147,81 @@ export abstract class MockTestService {
       })
       .returning();
 
-    return mapMockTestResponse(assertExists(test, "Mock test"));
+    return mapExamResponse(assertExists(exam, "Exam"));
   }
 
   /**
-   * Update mock test (Admin only)
+   * Update exam (Admin only)
    */
   static async update(
     id: string,
     body: Partial<{
-      level: MockTest["level"];
+      level: Exam["level"];
       blueprint: unknown;
       isActive: boolean;
     }>,
-  ): Promise<MockTestResponse> {
-    const [test] = await db
-      .update(table.mockTests)
+  ): Promise<ExamResponse> {
+    const [exam] = await db
+      .update(table.exams)
       .set({
         ...body,
         updatedAt: new Date(),
       })
-      .where(eq(table.mockTests.id, id))
+      .where(and(eq(table.exams.id, id), notDeleted(table.exams)))
       .returning();
 
-    if (!test) {
-      throw new NotFoundError("Mock test not found");
+    if (!exam) {
+      throw new NotFoundError("Exam not found");
     }
 
-    return mapMockTestResponse(test);
+    return mapExamResponse(exam);
   }
 
   /**
-   * Start a mock test session
+   * Start an exam session
    */
   static async startSession(
     userId: string,
-    body: { mockTestId: string },
-  ): Promise<MockTestSessionResponse> {
-    // Check if test exists and is active
-    const test = await MockTestService.getById(body.mockTestId);
-    if (!test.isActive) {
-      throw new BadRequestError("Mock test is not active");
+    body: { examId: string },
+  ): Promise<ExamSessionResponse> {
+    // Check if exam exists and is active
+    const exam = await ExamService.getById(body.examId);
+    if (!exam.isActive) {
+      throw new BadRequestError("Exam is not active");
     }
 
-    // Check for existing in-progress session
-    const existingSession = await db.query.mockTestSessions.findFirst({
-      where: and(
-        eq(table.mockTestSessions.userId, userId),
-        eq(table.mockTestSessions.mockTestId, body.mockTestId),
-        eq(table.mockTestSessions.status, "in_progress"),
-        notDeleted(table.mockTestSessions),
-      ),
+    // Wrap in transaction to prevent duplicate sessions from concurrent requests
+    return await db.transaction(async (tx) => {
+      // Check for existing in-progress session
+      const [existingSession] = await tx
+        .select()
+        .from(table.examSessions)
+        .where(
+          and(
+            eq(table.examSessions.userId, userId),
+            eq(table.examSessions.examId, body.examId),
+            eq(table.examSessions.status, "in_progress"),
+            notDeleted(table.examSessions),
+          ),
+        )
+        .limit(1);
+
+      if (existingSession) {
+        return mapSessionResponse(existingSession);
+      }
+
+      const [session] = await tx
+        .insert(table.examSessions)
+        .values({
+          userId,
+          examId: body.examId,
+          status: "in_progress",
+          startedAt: new Date(),
+        })
+        .returning();
+
+      return mapSessionResponse(assertExists(session, "Session"));
     });
-
-    if (existingSession) {
-      return mapSessionResponse(existingSession);
-    }
-
-    const [session] = await db
-      .insert(table.mockTestSessions)
-      .values({
-        userId,
-        mockTestId: body.mockTestId,
-        status: "in_progress",
-        startedAt: new Date(),
-      })
-      .returning();
-
-    return mapSessionResponse(assertExists(session, "Session"));
   }
 
   /**
@@ -228,11 +231,11 @@ export abstract class MockTestService {
     sessionId: string,
     userId: string,
     isAdmin: boolean,
-  ): Promise<MockTestSessionResponse> {
-    const session = await db.query.mockTestSessions.findFirst({
+  ): Promise<ExamSessionResponse> {
+    const session = await db.query.examSessions.findFirst({
       where: and(
-        eq(table.mockTestSessions.id, sessionId),
-        notDeleted(table.mockTestSessions),
+        eq(table.examSessions.id, sessionId),
+        notDeleted(table.examSessions),
       ),
     });
 
@@ -255,27 +258,20 @@ export abstract class MockTestService {
     userId: string,
     body: { questionId: string; answer: unknown },
   ): Promise<{ success: boolean }> {
-    const session = await MockTestService.getSessionById(
-      sessionId,
-      userId,
-      false,
-    );
+    const session = await ExamService.getSessionById(sessionId, userId, false);
     if (session.status !== "in_progress") {
       throw new BadRequestError("Session is not in progress");
     }
 
     await db
-      .insert(table.mockTestSessionAnswers)
+      .insert(table.examAnswers)
       .values({
         sessionId,
         questionId: body.questionId,
         answer: body.answer,
       })
       .onConflictDoUpdate({
-        target: [
-          table.mockTestSessionAnswers.sessionId,
-          table.mockTestSessionAnswers.questionId,
-        ],
+        target: [table.examAnswers.sessionId, table.examAnswers.questionId],
         set: {
           answer: body.answer,
           updatedAt: new Date(),
@@ -291,24 +287,20 @@ export abstract class MockTestService {
   static async completeSession(
     sessionId: string,
     userId: string,
-  ): Promise<MockTestSessionResponse> {
-    const session = await MockTestService.getSessionById(
-      sessionId,
-      userId,
-      false,
-    );
+  ): Promise<ExamSessionResponse> {
+    const session = await ExamService.getSessionById(sessionId, userId, false);
     if (session.status !== "in_progress") {
       throw new BadRequestError("Session is not in progress");
     }
 
     const [updatedSession] = await db
-      .update(table.mockTestSessions)
+      .update(table.examSessions)
       .set({
         status: "completed",
         completedAt: new Date(),
         updatedAt: new Date(),
       })
-      .where(eq(table.mockTestSessions.id, sessionId))
+      .where(eq(table.examSessions.id, sessionId))
       .returning();
 
     return mapSessionResponse(assertExists(updatedSession, "Session"));

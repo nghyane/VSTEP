@@ -9,7 +9,11 @@
     "enabled": true,
     "rules": {
       "recommended": true,
+      "complexity": {
+        "noStaticOnlyClass": "off"
+      },
       "style": {
+        "noNonNullAssertion": "off",
         "useNamingConvention": {
           "level": "error",
           "options": {

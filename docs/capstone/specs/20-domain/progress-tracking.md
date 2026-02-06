@@ -10,7 +10,7 @@
 
 - Áp dụng cho 4 skills: Listening, Reading, Writing, Speaking.
 - Tính toán cho user đã đăng nhập (learner).
-- Dữ liệu đầu vào đến từ submissions (practice) và mock test sessions.
+- Dữ liệu đầu vào đến từ submissions (practice) và exam sessions.
 - Hỗ trợ mục tiêu theo level/band: A1, A2, B1, B2, C1.
 
 ## 3. Definitions
@@ -136,8 +136,8 @@ ETA chỉ là heuristic và phải trả về `unknown` nếu dữ liệu không
 
 ## 11. Update Triggers
 
-- On submission COMPLETED: recompute skill window + trend.
-- On mock test SCORED: recompute cả 4 skills.
+- On submission `completed`: recompute skill window + trend.
+- On exam session `completed`: recompute cả 4 skills.
 - Nightly job: recompute ETA + learning path.
 
 ## 12. Failure Modes

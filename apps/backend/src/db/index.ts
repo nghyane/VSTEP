@@ -15,14 +15,14 @@ export const db = drizzle(env.DATABASE_URL, {
 export { table };
 export { notDeleted, paginate, paginationMeta } from "./helpers";
 export type {
-  MockTest,
-  MockTestSession,
-  MockTestSessionAnswer,
-  MockTestSessionSubmission,
-  NewMockTest,
-  NewMockTestSession,
-  NewMockTestSessionAnswer,
-  NewMockTestSessionSubmission,
+  Exam,
+  ExamAnswer,
+  ExamSession,
+  ExamSubmission,
+  NewExam,
+  NewExamAnswer,
+  NewExamSession,
+  NewExamSubmission,
   NewOutbox,
   NewProcessedCallback,
   NewQuestion,

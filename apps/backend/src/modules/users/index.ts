@@ -152,8 +152,13 @@ export const users = new Elysia({ prefix: "/users" })
    */
   .patch(
     "/:id",
-    async ({ params, body, set }) => {
-      const result = await UserService.update(params.id, body);
+    async ({ params, body, user, set }) => {
+      const result = await UserService.update(
+        params.id,
+        body,
+        user!.sub,
+        user!.role === "admin",
+      );
       set.status = 200;
       return result;
     },
@@ -228,8 +233,13 @@ export const users = new Elysia({ prefix: "/users" })
    */
   .post(
     "/:id/password",
-    async ({ params, body, set }) => {
-      const result = await UserService.updatePassword(params.id, body);
+    async ({ params, body, user, set }) => {
+      const result = await UserService.updatePassword(
+        params.id,
+        body,
+        user!.sub,
+        user!.role === "admin",
+      );
       set.status = 200;
       return result;
     },
@@ -246,6 +256,7 @@ export const users = new Elysia({ prefix: "/users" })
       response: {
         200: SuccessResponse,
         401: ErrorResponse,
+        403: ErrorResponse,
         404: ErrorResponse,
       },
       detail: {

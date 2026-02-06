@@ -101,8 +101,8 @@ DLQ record must retain at least:
 
 ### Timeout & late-result rule (business)
 
-- Main App computes `deadlineAt = createdAt + SLA(skill)` at attempt creation.
-- When `now > deadlineAt` and attempt not `COMPLETED`: set `FAILED` with `failureReason=TIMEOUT`.
+- Main App computes `deadline = createdAt + SLA(skill)` at attempt creation.
+- When `now > deadline` and attempt not `completed`: set `failed` with `failureReason=TIMEOUT`.
 - When callback arrives after timeout:
   - Store grading result with `isLate=true` (audit).
   - Do not change attempt status.
@@ -127,8 +127,8 @@ Proactive timeout detection via periodic scheduler:
 | Parameter | Value | Env Variable |
 |-----------|-------|--------------|
 | Check interval | 60s | TIMEOUT_CHECK_INTERVAL_MS=60000 |
-| Query | `status='PROCESSING' AND deadline_at < NOW()` | - |
-| Action | `UPDATE status='FAILED', reason='TIMEOUT'` + SSE notification | - |
+| Query | `status IN ('pending','queued','processing','error','retrying') AND deadline < NOW()` | - |
+| Action | `UPDATE status='failed'` + SSE notification | - |
 
 Implementation options:
 - Bun App: `setInterval` (simple, single instance recommended)
@@ -150,7 +150,7 @@ When circuit OPEN:
 | Duplicate request | grading dedup by `requestId`, no double-charge |
 | Provider outage | retry/backoff; then DLQ; circuit breaker prevents cascading |
 | Callback lost | bounded retry publish; alert if persist |
-| Timeout near-deadline race | deterministic compare using `deadlineAt` and callback received time |
+| Timeout near-deadline race | deterministic compare using `deadline` and callback received time |
 | Circuit breaker open | requests queued with error, retry after cooldown |
 
 ## Acceptance criteria

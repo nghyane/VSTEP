@@ -1,6 +1,7 @@
 import {
   index,
   integer,
+  numeric,
   pgEnum,
   pgTable,
   timestamp,
@@ -9,13 +10,13 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { questionLevelEnum } from "./questions";
-import { skillEnum, submissions } from "./submissions";
+import { skillEnum, submissions, vstepBandEnum } from "./submissions";
 import { users } from "./users";
 
 export const streakDirectionEnum = pgEnum("streak_direction", [
-  "UP",
-  "DOWN",
-  "NEUTRAL",
+  "up",
+  "down",
+  "neutral",
 ]);
 
 export const userProgress = pgTable(
@@ -28,7 +29,7 @@ export const userProgress = pgTable(
     skill: skillEnum("skill").notNull(),
     currentLevel: questionLevelEnum("current_level").notNull(),
     targetLevel: questionLevelEnum("target_level"),
-    scaffoldStage: integer("scaffold_stage").default(1).notNull(),
+    scaffoldLevel: integer("scaffold_level").default(1).notNull(),
     streakCount: integer("streak_count").default(0).notNull(),
     streakDirection: streakDirectionEnum("streak_direction"),
     attemptCount: integer("attempt_count").default(0).notNull(),
@@ -58,7 +59,11 @@ export const userSkillScores = pgTable(
     submissionId: uuid("submission_id")
       .references(() => submissions.id, { onDelete: "cascade" })
       .notNull(),
-    score: integer("score").notNull(),
+    score: numeric("score", {
+      precision: 3,
+      scale: 1,
+      mode: "number",
+    }).notNull(),
     scaffoldingType: varchar("scaffolding_type", { length: 20 }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -80,7 +85,7 @@ export const userGoals = pgTable(
     userId: uuid("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
-    targetBand: integer("target_band").notNull(),
+    targetBand: vstepBandEnum("target_band").notNull(),
     currentEstimatedBand: varchar("current_estimated_band", { length: 10 }),
     deadline: timestamp("deadline", { withTimezone: true }),
     dailyStudyTimeMinutes: integer("daily_study_time_minutes")

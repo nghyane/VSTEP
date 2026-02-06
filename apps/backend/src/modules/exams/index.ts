@@ -1,6 +1,6 @@
 /**
- * Mock Tests Module Controller
- * Routes for mock test management
+ * Exams Module Controller
+ * Routes for exam management
  */
 
 import {
@@ -11,26 +11,26 @@ import {
 } from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
-import { MockTestService } from "./service";
+import { ExamService } from "./service";
 
 // ─── Inline Schemas ──────────────────────────────────────────────
 
-const MockTestLevel = t.Union([
+const ExamLevel = t.Union([
   t.Literal("A2"),
   t.Literal("B1"),
   t.Literal("B2"),
   t.Literal("C1"),
 ]);
 
-const MockTestStatus = t.Union([
+const ExamStatus = t.Union([
   t.Literal("in_progress"),
   t.Literal("completed"),
   t.Literal("abandoned"),
 ]);
 
-const MockTestSchema = t.Object({
+const ExamSchema = t.Object({
   id: t.String({ format: "uuid" }),
-  level: MockTestLevel,
+  level: ExamLevel,
   blueprint: t.Any(),
   isActive: t.Boolean(),
   createdBy: t.Nullable(t.String({ format: "uuid" })),
@@ -38,17 +38,17 @@ const MockTestSchema = t.Object({
   updatedAt: t.String({ format: "date-time" }),
 });
 
-const MockTestSessionSchema = t.Object({
+const ExamSessionSchema = t.Object({
   id: t.String({ format: "uuid" }),
   userId: t.String({ format: "uuid" }),
-  mockTestId: t.String({ format: "uuid" }),
-  status: MockTestStatus,
+  examId: t.String({ format: "uuid" }),
+  status: ExamStatus,
   listeningScore: t.Nullable(t.Number()),
   readingScore: t.Nullable(t.Number()),
   writingScore: t.Nullable(t.Number()),
   speakingScore: t.Nullable(t.Number()),
-  overallExamScore: t.Nullable(t.Number()),
-  sectionScores: t.Nullable(t.Any()),
+  overallScore: t.Nullable(t.Number()),
+  skillScores: t.Nullable(t.Any()),
   startedAt: t.String({ format: "date-time" }),
   completedAt: t.Nullable(t.String({ format: "date-time" })),
   createdAt: t.String({ format: "date-time" }),
@@ -61,7 +61,7 @@ const SessionIdParam = t.Object({
 
 // ─── Controller ──────────────────────────────────────────────────
 
-export const mockTests = new Elysia({ prefix: "/mock-tests" })
+export const exams = new Elysia({ prefix: "/exams" })
   .use(authPlugin)
 
   // ============ Public Routes ============
@@ -69,23 +69,23 @@ export const mockTests = new Elysia({ prefix: "/mock-tests" })
   .get(
     "/",
     async ({ query }) => {
-      return await MockTestService.list(query);
+      return await ExamService.list(query);
     },
     {
       query: t.Object({
         ...PaginationQuery.properties,
-        level: t.Optional(MockTestLevel),
+        level: t.Optional(ExamLevel),
         isActive: t.Optional(t.Boolean()),
       }),
       response: {
         200: t.Object({
-          data: t.Array(MockTestSchema),
+          data: t.Array(ExamSchema),
           meta: PaginationMeta,
         }),
       },
       detail: {
-        summary: "List mock tests",
-        tags: ["Mock Tests"],
+        summary: "List exams",
+        tags: ["Exams"],
       },
     },
   )
@@ -93,17 +93,17 @@ export const mockTests = new Elysia({ prefix: "/mock-tests" })
   .get(
     "/:id",
     async ({ params: { id } }) => {
-      return await MockTestService.getById(id);
+      return await ExamService.getById(id);
     },
     {
       params: IdParam,
       response: {
-        200: MockTestSchema,
+        200: ExamSchema,
         404: ErrorResponse,
       },
       detail: {
-        summary: "Get mock test by ID",
-        tags: ["Mock Tests"],
+        summary: "Get exam by ID",
+        tags: ["Exams"],
       },
     },
   )
@@ -113,23 +113,23 @@ export const mockTests = new Elysia({ prefix: "/mock-tests" })
   .post(
     "/",
     async ({ body, user }) => {
-      return await MockTestService.create(user!.sub, body);
+      return await ExamService.create(user!.sub, body);
     },
     {
       role: "admin",
       body: t.Object({
-        level: MockTestLevel,
+        level: ExamLevel,
         blueprint: t.Any(),
         isActive: t.Optional(t.Boolean({ default: true })),
       }),
       response: {
-        200: MockTestSchema,
+        200: ExamSchema,
         401: ErrorResponse,
         403: ErrorResponse,
       },
       detail: {
-        summary: "Create mock test (Admin)",
-        tags: ["Mock Tests"],
+        summary: "Create exam (Admin)",
+        tags: ["Exams"],
       },
     },
   )
@@ -137,27 +137,27 @@ export const mockTests = new Elysia({ prefix: "/mock-tests" })
   .patch(
     "/:id",
     async ({ params: { id }, body }) => {
-      return await MockTestService.update(id, body);
+      return await ExamService.update(id, body);
     },
     {
       role: "admin",
       params: IdParam,
       body: t.Partial(
         t.Object({
-          level: MockTestLevel,
+          level: ExamLevel,
           blueprint: t.Any(),
           isActive: t.Boolean(),
         }),
       ),
       response: {
-        200: MockTestSchema,
+        200: ExamSchema,
         401: ErrorResponse,
         403: ErrorResponse,
         404: ErrorResponse,
       },
       detail: {
-        summary: "Update mock test (Admin)",
-        tags: ["Mock Tests"],
+        summary: "Update exam (Admin)",
+        tags: ["Exams"],
       },
     },
   )
@@ -167,21 +167,21 @@ export const mockTests = new Elysia({ prefix: "/mock-tests" })
   .post(
     "/sessions",
     async ({ body, user }) => {
-      return await MockTestService.startSession(user!.sub, body);
+      return await ExamService.startSession(user!.sub, body);
     },
     {
       auth: true,
       body: t.Object({
-        mockTestId: t.String({ format: "uuid" }),
+        examId: t.String({ format: "uuid" }),
       }),
       response: {
-        200: MockTestSessionSchema,
+        200: ExamSessionSchema,
         400: ErrorResponse,
         401: ErrorResponse,
       },
       detail: {
-        summary: "Start mock test session",
-        tags: ["Mock Tests"],
+        summary: "Start exam session",
+        tags: ["Exams"],
       },
     },
   )
@@ -189,7 +189,7 @@ export const mockTests = new Elysia({ prefix: "/mock-tests" })
   .get(
     "/sessions/:sessionId",
     async ({ params: { sessionId }, user }) => {
-      return await MockTestService.getSessionById(
+      return await ExamService.getSessionById(
         sessionId,
         user!.sub,
         user!.role === "admin",
@@ -199,14 +199,14 @@ export const mockTests = new Elysia({ prefix: "/mock-tests" })
       auth: true,
       params: SessionIdParam,
       response: {
-        200: MockTestSessionSchema,
+        200: ExamSessionSchema,
         401: ErrorResponse,
         403: ErrorResponse,
         404: ErrorResponse,
       },
       detail: {
         summary: "Get session by ID",
-        tags: ["Mock Tests"],
+        tags: ["Exams"],
       },
     },
   )
@@ -214,7 +214,7 @@ export const mockTests = new Elysia({ prefix: "/mock-tests" })
   .post(
     "/sessions/:sessionId/submit",
     async ({ params: { sessionId }, body, user }) => {
-      return await MockTestService.submitAnswer(sessionId, user!.sub, body);
+      return await ExamService.submitAnswer(sessionId, user!.sub, body);
     },
     {
       auth: true,
@@ -231,7 +231,7 @@ export const mockTests = new Elysia({ prefix: "/mock-tests" })
       },
       detail: {
         summary: "Submit answer for session",
-        tags: ["Mock Tests"],
+        tags: ["Exams"],
       },
     },
   )
@@ -239,20 +239,20 @@ export const mockTests = new Elysia({ prefix: "/mock-tests" })
   .post(
     "/sessions/:sessionId/complete",
     async ({ params: { sessionId }, user }) => {
-      return await MockTestService.completeSession(sessionId, user!.sub);
+      return await ExamService.completeSession(sessionId, user!.sub);
     },
     {
       auth: true,
       params: SessionIdParam,
       response: {
-        200: MockTestSessionSchema,
+        200: ExamSessionSchema,
         400: ErrorResponse,
         401: ErrorResponse,
         403: ErrorResponse,
       },
       detail: {
-        summary: "Complete mock test session",
-        tags: ["Mock Tests"],
+        summary: "Complete exam session",
+        tags: ["Exams"],
       },
     },
   );

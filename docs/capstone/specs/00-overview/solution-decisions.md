@@ -49,11 +49,21 @@ flowchart LR
 | Real-time | SSE | WebSocket |
 | Auth | JWT access + refresh | Server session |
 
+### Library stack (Bun Main App)
+
+| Concern | Library | Rationale |
+|---------|---------|-----------|
+| AMQP client | `@cloudamqp/amqp-client` | Zero deps, TypeScript native, dùng `DataView` (Web API) thay vì `node:stream` — tránh Bun frame corruption bug. Maintained bởi CloudAMQP. **Không dùng amqplib** — có lỗi IPv6 (Bun #4791) và frame corruption (Bun #5627) do phụ thuộc `node:stream`. |
+| Redis client | `Bun.redis` (native) | Built-in Bun 1.3+, nhanh 7.9x so với ioredis, zero deps, auto-pipelining, auto-reconnect. Đủ cho rate limiting, cache, pub/sub, circuit breaker state. **Không dùng ioredis** — chỉ cần khi cluster mode hoặc Lua scripting phức tạp. |
+| SSE | Elysia built-in `sse()` | Tích hợp sẵn core Elysia (v1.3.4+), async generator + `yield sse({id, event, data, retry})`. Tự set `Content-Type: text/event-stream`, abort detection qua `request.signal`. **Không dùng @elysiajs/stream** — đã deprecated từ Elysia 1.1. |
+| Scores | Drizzle `numeric({ precision: 3, scale: 1, mode: 'number' })` | Exact decimal precision cho academic scores (0-10, step 0.5). **Không dùng `real()`** — PostgreSQL REAL (4-byte float) có floating-point errors. |
+
 ### Rationale (ngắn)
 
 - RabbitMQ + Celery: mature, có DLQ/retry tốt, dễ scale worker.
 - JWT access/refresh: dùng được cho web/mobile, không cần session state server.
 - Tách DB: giảm coupling, dễ audit.
+- Library chọn theo tiêu chí "tốt nhất cho Bun runtime", không phải "compatible".
 
 ## Contracts
 
@@ -81,9 +91,9 @@ flowchart LR
 ## Business rules defaults (Chốt)
 
 - Grading SLA: Writing 20 phút; Speaking 60 phút.
-- Timeout: quá `deadlineAt` → `FAILED(TIMEOUT)`; callback muộn lưu `isLate=true`, giữ `FAILED`.
+- Timeout: quá `deadline` → `failed`; callback muộn lưu `isLate=true`, giữ `failed`.
 - Retry/backoff: `max_retries=3`, exponential + jitter, cap 5 phút, tôn trọng `Retry-After`.
 
 ---
 
-*Document version: 1.2 - Last updated: SP26SE145*
+*Document version: 1.3 - Last updated: SP26SE145*

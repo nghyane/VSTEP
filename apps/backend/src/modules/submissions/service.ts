@@ -5,6 +5,7 @@
 
 import { assertExists } from "@common/utils";
 import { and, count, desc, eq } from "drizzle-orm";
+import type { Submission } from "@/db";
 import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
 import {
   BadRequestError,
@@ -22,7 +23,7 @@ const mapSubmissionResponse = (
     skill: string;
     status: string;
     score: number | null | undefined;
-    band: number | null | undefined;
+    band: string | null | undefined;
     completedAt: Date | null | undefined;
     createdAt: Date;
     updatedAt: Date;
@@ -114,11 +115,15 @@ export abstract class SubmissionService {
     }
 
     if (query.skill) {
-      conditions.push(eq(table.submissions.skill, query.skill as any));
+      conditions.push(
+        eq(table.submissions.skill, query.skill as Submission["skill"]),
+      );
     }
 
     if (query.status) {
-      conditions.push(eq(table.submissions.status, query.status as any));
+      conditions.push(
+        eq(table.submissions.status, query.status as Submission["status"]),
+      );
     }
 
     const whereClause =
@@ -212,7 +217,7 @@ export abstract class SubmissionService {
         .values({
           userId,
           questionId: body.questionId,
-          skill: body.skill as any,
+          skill: body.skill as Submission["skill"],
           status: "pending",
         })
         .returning({
@@ -251,7 +256,7 @@ export abstract class SubmissionService {
       answer?: unknown;
       status?: string;
       score?: number;
-      band?: number;
+      band?: string;
       feedback?: string;
     },
   ) {
@@ -341,7 +346,7 @@ export abstract class SubmissionService {
    */
   static async grade(
     submissionId: string,
-    body: { score: number; band?: number; feedback?: string },
+    body: { score: number; band?: string; feedback?: string },
   ) {
     return await db.transaction(async (tx) => {
       const [submission] = await tx
@@ -357,6 +362,12 @@ export abstract class SubmissionService {
 
       if (!submission) {
         throw new NotFoundError("Submission not found");
+      }
+
+      if (submission.status === "completed" || submission.status === "failed") {
+        throw new BadRequestError(
+          `Cannot grade a submission with status "${submission.status}"`,
+        );
       }
 
       const [updatedSubmission] = await tx
@@ -402,9 +413,9 @@ export abstract class SubmissionService {
   }
 
   /**
-   * Delete submission (soft delete)
+   * Remove submission (soft delete)
    */
-  static async delete(submissionId: string, userId: string, isAdmin: boolean) {
+  static async remove(submissionId: string, userId: string, isAdmin: boolean) {
     return await db.transaction(async (tx) => {
       const [submission] = await tx
         .select()

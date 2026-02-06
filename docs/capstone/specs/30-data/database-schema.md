@@ -33,9 +33,10 @@ Quản lý tài khoản và authentication. Mỗi user có một role duy nhất
 MVP columns (gợi ý):
 
 - `id` (UUID, PK)
-- `email` (unique)
-- `password_hash`
-- `role` (learner/instructor/admin)
+- `email` (VARCHAR(255), unique WHERE deleted_at IS NULL)
+- `password_hash` (VARCHAR(255))
+- `full_name` (VARCHAR(255), nullable)
+- `role` (learner/instructor/admin, default learner)
 - `created_at`, `updated_at`
 - `deleted_at` (TIMESTAMP, nullable) - **Soft delete**
 
@@ -121,7 +122,7 @@ ALTER TABLE submissions ADD CONSTRAINT unique_request_id UNIQUE (request_id);
 -- (thay vì index toàn bộ status, giảm ~25% write overhead)
 CREATE INDEX idx_submissions_active_queue
 ON submissions (status, created_at)
-WHERE status IN ('PENDING', 'QUEUED', 'PROCESSING', 'REVIEW_PENDING', 'ERROR');
+WHERE status IN ('pending', 'queued', 'processing', 'review_pending', 'error');
 
 -- Đã xóa: (review_priority, created_at) — review queue volume thấp (instructor-facing),
 -- sort in-memory đủ nhanh, không worth write overhead trên mỗi submission insert.
@@ -183,7 +184,7 @@ MVP columns (gợi ý):
 - `aggregate_id` (submissionId)
 - `message_type` (grading.request)
 - `payload` (JSONB)
-- `status` (PENDING/PROCESSING/PUBLISHED/FAILED)
+- `status` (pending/processing/published/failed)
 - `attempts` (int)
 - `locked_at` (TIMESTAMP, nullable) - Thời điểm worker claim entry.
 - `locked_by` (VARCHAR(64), nullable) - ID của worker đang xử lý.
@@ -195,21 +196,21 @@ MVP columns (gợi ý):
 WITH next_batch AS (
     SELECT id
     FROM outbox
-    WHERE status = 'PENDING'
+    WHERE status = 'pending'
       AND (locked_at IS NULL OR locked_at < NOW() - INTERVAL '5 minutes')
     ORDER BY created_at
     LIMIT 50
     FOR UPDATE SKIP LOCKED
 )
 UPDATE outbox
-SET status = 'PROCESSING', locked_at = NOW(), locked_by = $worker_id
+SET status = 'processing', locked_at = NOW(), locked_by = $worker_id
 WHERE id IN (SELECT id FROM next_batch)
 RETURNING *;
 ```
 
 **Tối ưu hóa Index**: Sử dụng Partial Index để worker tìm job cực nhanh.
 ```sql
-CREATE INDEX idx_outbox_pending ON outbox (created_at) WHERE status = 'PENDING';
+CREATE INDEX idx_outbox_pending ON outbox (created_at) WHERE status = 'pending';
 ```
 
 ### 2.5 processed_callbacks
@@ -271,7 +272,7 @@ MVP columns (gợi ý):
 
 - `id` (UUID, PK)
 - `skill` (listening/reading/writing/speaking)
-- `level` (A1/A2/B1/B2/C1) CHECK (level IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2'))
+- `level` (A1/A2/B1/B2/C1) CHECK (level IN ('A1', 'A2', 'B1', 'B2', 'C1'))
 - `format` (writing_task_1/..., reading_passage, listening_part, speaking_part_1/2/3)
 - `content` (JSONB) - Chứa đề bài, scaffolding (template, keywords), media links.
 - `answer_key` (JSONB, nullable)
@@ -372,9 +373,9 @@ MVP columns (gợi ý):
 
 - `id` (UUID, PK)
 - `user_id` (FK users, ON DELETE CASCADE)
-- `target_band` (VARCHAR(10), NOT NULL) CHECK (target_band IN ('B1', 'B2', 'C1'))
+- `target_band` (vstep_band ENUM, NOT NULL) — dùng pgEnum thay vì VARCHAR+CHECK
 - `current_estimated_band` (VARCHAR(10), nullable) - Band hiện tại (tính toán từ bài test đầu vào)
-- `deadline` (DATE, NOT NULL) - Ngày dự kiến thi
+- `deadline` (TIMESTAMPTZ, nullable) - Ngày dự kiến thi (nullable vì learner có thể chưa chốt deadline)
 - `daily_study_time_minutes` (INT, DEFAULT 30) - Cam kết học mỗi ngày
 - `created_at`, `updated_at`
 
@@ -389,7 +390,7 @@ Cấu hình bài thi thử. Mỗi exam gồm 4 sections (listening, reading, wri
 MVP columns (gợi ý):
 
 - `id` (UUID, PK)
-- `level` (B1/B2/C1)
+- `level` (A1/A2/B1/B2/C1)
 - `blueprint` (JSONB) (sections + ordered questionIds + time limits)
 - `is_active` (bool)
 - `created_by` (UUID, nullable, FK users ON DELETE SET NULL) - **Audit**: ID của admin tạo exam.
@@ -407,10 +408,14 @@ MVP columns (gợi ý):
 - `id` (UUID, PK)
 - `user_id` (FK users, ON DELETE CASCADE)
 - `exam_id` (FK exams, ON DELETE RESTRICT)
-- `status` (IN_PROGRESS/SUBMITTED/SCORED)
+- `status` (in_progress/submitted/completed/abandoned)
+- `listening_score` (numeric(3,1), nullable)
+- `reading_score` (numeric(3,1), nullable)
+- `writing_score` (numeric(3,1), nullable)
+- `speaking_score` (numeric(3,1), nullable)
+- `overall_score` (numeric(3,1), nullable)
 - `skill_scores` (JSONB, nullable)
-- `overall_score` (numeric, nullable)
-- `started_at`, `submitted_at` (nullable)
+- `started_at`, `completed_at` (nullable)
 - `created_at`, `updated_at`
 - `deleted_at` (TIMESTAMP, nullable) - **Soft delete**
 
@@ -643,8 +648,8 @@ CREATE OR REPLACE FUNCTION cascade_soft_delete() RETURNS TRIGGER AS $$ ... $$;
 
 -- 5. CHECK Constraints (Drizzle có thể generate nhưng nên verify)
 ALTER TABLE submissions ADD CONSTRAINT check_score_range CHECK (score IS NULL OR (score >= 0 AND score <= 10));
-ALTER TABLE questions ADD CONSTRAINT check_cefr_level CHECK (level IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2'));
-ALTER TABLE user_goals ADD CONSTRAINT check_target_band CHECK (target_band IN ('B1', 'B2', 'C1'));
+ALTER TABLE questions ADD CONSTRAINT check_cefr_level CHECK (level IN ('A1', 'A2', 'B1', 'B2', 'C1'));
+ALTER TABLE user_goals ADD CONSTRAINT check_target_band CHECK (target_band IN ('A1', 'A2', 'B1', 'B2', 'C1'));
 ```
 
 ### 5.4 Migration cho Partitioned Tables

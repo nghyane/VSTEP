@@ -10,7 +10,7 @@ import { NotFoundError } from "@/plugins/error";
 
 type SkillType = "listening" | "reading" | "writing" | "speaking";
 type LevelType = "A2" | "B1" | "B2" | "C1";
-type StreakDirectionType = "UP" | "DOWN" | "NEUTRAL";
+type StreakDirectionType = "up" | "down" | "neutral";
 
 /**
  * Mapper function for consistent progress response serialization
@@ -21,7 +21,7 @@ const mapProgressResponse = (progress: {
   skill: string;
   currentLevel: string;
   targetLevel: string | null;
-  scaffoldStage: number;
+  scaffoldLevel: number;
   streakCount: number;
   streakDirection: string | null;
   attemptCount: number;
@@ -33,7 +33,7 @@ const mapProgressResponse = (progress: {
   skill: progress.skill as SkillType,
   currentLevel: progress.currentLevel as LevelType,
   targetLevel: (progress.targetLevel as LevelType) ?? null,
-  scaffoldStage: progress.scaffoldStage,
+  scaffoldLevel: progress.scaffoldLevel,
   streakCount: progress.streakCount,
   streakDirection: (progress.streakDirection as StreakDirectionType) ?? null,
   attemptCount: progress.attemptCount,
@@ -126,7 +126,7 @@ export abstract class ProgressService {
       skill: SkillType;
       currentLevel: LevelType;
       targetLevel?: LevelType;
-      scaffoldStage?: number;
+      scaffoldLevel?: number;
       streakCount?: number;
       streakDirection?: StreakDirectionType;
     },
@@ -145,15 +145,15 @@ export abstract class ProgressService {
         .limit(1);
 
       if (existing) {
-        const updateValues: any = {
+        const updateValues: Record<string, unknown> = {
           currentLevel: body.currentLevel,
           attemptCount: sql`${table.userProgress.attemptCount} + 1`,
           updatedAt: new Date(),
         };
 
         if (body.targetLevel) updateValues.targetLevel = body.targetLevel;
-        if (body.scaffoldStage !== undefined)
-          updateValues.scaffoldStage = body.scaffoldStage;
+        if (body.scaffoldLevel !== undefined)
+          updateValues.scaffoldLevel = body.scaffoldLevel;
         if (body.streakCount !== undefined)
           updateValues.streakCount = body.streakCount;
         if (body.streakDirection)
@@ -174,9 +174,9 @@ export abstract class ProgressService {
             skill: body.skill,
             currentLevel: body.currentLevel,
             targetLevel: body.targetLevel,
-            scaffoldStage: body.scaffoldStage || 1,
+            scaffoldLevel: body.scaffoldLevel || 1,
             streakCount: body.streakCount || 0,
-            streakDirection: body.streakDirection || "NEUTRAL",
+            streakDirection: body.streakDirection || "neutral",
             attemptCount: 1,
           })
           .returning();

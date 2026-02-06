@@ -30,9 +30,9 @@ const LevelType = t.Union([
 ]);
 
 const StreakDirection = t.Union([
-  t.Literal("UP"),
-  t.Literal("DOWN"),
-  t.Literal("NEUTRAL"),
+  t.Literal("up"),
+  t.Literal("down"),
+  t.Literal("neutral"),
 ]);
 
 const ProgressResponse = t.Object({
@@ -41,7 +41,7 @@ const ProgressResponse = t.Object({
   skill: SkillType,
   currentLevel: LevelType,
   targetLevel: t.Nullable(LevelType),
-  scaffoldStage: t.Number(),
+  scaffoldLevel: t.Number(),
   streakCount: t.Number(),
   streakDirection: t.Nullable(StreakDirection),
   attemptCount: t.Number(),
@@ -128,7 +128,7 @@ export const progress = new Elysia({ prefix: "/progress" })
         skill: SkillType,
         currentLevel: LevelType,
         targetLevel: t.Optional(LevelType),
-        scaffoldStage: t.Optional(t.Number()),
+        scaffoldLevel: t.Optional(t.Number()),
         streakCount: t.Optional(t.Number()),
         streakDirection: t.Optional(StreakDirection),
       }),

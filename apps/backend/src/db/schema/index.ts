@@ -4,13 +4,8 @@
  * @see https://orm.drizzle.team/docs/sql-schema-declaration
  */
 
-// Mock Tests
-import {
-  mockTestSessionAnswers,
-  mockTestSessionSubmissions,
-  mockTestSessions,
-  mockTests,
-} from "./mock-tests";
+// Exams
+import { examAnswers, examSessions, examSubmissions, exams } from "./exams";
 // Outbox Pattern
 import { outbox, processedCallbacks } from "./outbox";
 // Progress & Gamification
@@ -47,11 +42,11 @@ export const table = {
   userProgress,
   userSkillScores,
   userGoals,
-  // Mock Tests
-  mockTests,
-  mockTestSessions,
-  mockTestSessionAnswers,
-  mockTestSessionSubmissions,
+  // Exams
+  exams,
+  examSessions,
+  examAnswers,
+  examSubmissions,
   // Outbox
   outbox,
   processedCallbacks,
@@ -59,10 +54,10 @@ export const table = {
 
 // Export all tables for direct access
 export {
-  mockTestSessionAnswers,
-  mockTestSessionSubmissions,
-  mockTestSessions,
-  mockTests,
+  examAnswers,
+  examSessions,
+  examSubmissions,
+  exams,
   outbox,
   processedCallbacks,
   questionVersions,
@@ -79,15 +74,15 @@ export {
 
 // Export all types from schema files
 export type {
-  MockTest,
-  MockTestSession,
-  MockTestSessionAnswer,
-  MockTestSessionSubmission,
-  NewMockTest,
-  NewMockTestSession,
-  NewMockTestSessionAnswer,
-  NewMockTestSessionSubmission,
-} from "./mock-tests";
+  Exam,
+  ExamAnswer,
+  ExamSession,
+  ExamSubmission,
+  NewExam,
+  NewExamAnswer,
+  NewExamSession,
+  NewExamSubmission,
+} from "./exams";
 
 export type {
   NewOutbox,

@@ -67,7 +67,7 @@ export abstract class AuthService {
    * Verify credentials and create a refresh token.
    * Returns user info + opaque refresh token for the controller to pair with an access JWT.
    */
-  static async signIn(body: {
+  static async login(body: {
     email: string;
     password: string;
   }): Promise<{ user: UserInfo; refreshToken: string }> {
@@ -118,14 +118,16 @@ export abstract class AuthService {
    * Register a new user.
    * @throws ConflictError if email already exists
    */
-  static async signUp(body: {
+  static async register(body: {
     email: string;
     password: string;
     fullName?: string;
-    role?: "learner" | "instructor" | "admin";
   }): Promise<{ user: UserInfo; message: string }> {
     const existing = await db.query.users.findFirst({
-      where: eq(table.users.email, body.email),
+      where: and(
+        eq(table.users.email, body.email),
+        isNull(table.users.deletedAt),
+      ),
       columns: { id: true },
     });
     if (existing) throw new ConflictError("Email already registered");
@@ -138,7 +140,7 @@ export abstract class AuthService {
         email: body.email,
         passwordHash,
         fullName: body.fullName,
-        role: body.role || "learner",
+        role: "learner",
       })
       .returning({
         id: table.users.id,

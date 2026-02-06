@@ -154,7 +154,7 @@ Result (AI hoặc final) bao gồm tối thiểu:
 - **Confidence**: 0-100%, quyết định auto-grade hay cần human review
 - **Criteria scores**: Điểm theo từng tiêu chí VSTEP với feedback riêng
 - **Feedback**: Strengths, weaknesses, suggestions cho cải thiện
-- **reviewRequired + reviewPriority**: dùng cho routing và hàng chờ instructor
+- **reviewPending + reviewPriority**: dùng cho routing và hàng chờ instructor
 - **gradingMode**: auto/human/hybrid
 
 Confidence threshold và routing logic: xem `hybrid-grading.md`.

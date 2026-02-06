@@ -325,7 +325,7 @@ export const questions = new Elysia({ prefix: "/questions" })
   .delete(
     "/:id",
     async ({ params, user, set }) => {
-      const result = await QuestionService.delete(
+      const result = await QuestionService.remove(
         params.id,
         user!.sub,
         user!.role === "admin",
