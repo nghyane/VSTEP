@@ -20,6 +20,15 @@ export function escapeLike(str: string): string {
   return str.replace(/[%_\\]/g, "\\$&");
 }
 
+/** Centralized password hashing — argon2id with tuned cost params */
+export function hashPassword(password: string): Promise<string> {
+  return Bun.password.hash(password, {
+    algorithm: "argon2id",
+    memoryCost: 65536,
+    timeCost: 3,
+  });
+}
+
 /** Reusable ownership + admin check */
 export function assertOwnerOrAdmin(
   resourceUserId: string,

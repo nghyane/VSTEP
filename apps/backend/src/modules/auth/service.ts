@@ -1,5 +1,5 @@
 import { env } from "@common/env";
-import { assertExists, now } from "@common/utils";
+import { assertExists, hashPassword, now } from "@common/utils";
 import { and, asc, eq, gt, inArray, isNull } from "drizzle-orm";
 import { SignJWT } from "jose";
 import { db, notDeleted, table } from "@/db";
@@ -72,21 +72,6 @@ async function buildTokenResponse(
 }
 
 export class AuthService {
-  static async hashPassword(password: string): Promise<string> {
-    return Bun.password.hash(password, {
-      algorithm: "argon2id",
-      memoryCost: 65536,
-      timeCost: 3,
-    });
-  }
-
-  static async verifyPassword(
-    password: string,
-    hash: string,
-  ): Promise<boolean> {
-    return Bun.password.verify(password, hash);
-  }
-
   static async login(body: {
     email: string;
     password: string;
@@ -105,10 +90,7 @@ export class AuthService {
 
     if (!user) throw new UnauthorizedError("Invalid email or password");
 
-    const isValid = await AuthService.verifyPassword(
-      body.password,
-      user.passwordHash,
-    );
+    const isValid = await Bun.password.verify(body.password, user.passwordHash);
     if (!isValid) throw new UnauthorizedError("Invalid email or password");
 
     const refreshToken = crypto.randomUUID();
@@ -169,7 +151,7 @@ export class AuthService {
     });
     if (existing) throw new ConflictError("Email already registered");
 
-    const passwordHash = await AuthService.hashPassword(body.password);
+    const passwordHash = await hashPassword(body.password);
 
     const [user] = await db
       .insert(table.users)

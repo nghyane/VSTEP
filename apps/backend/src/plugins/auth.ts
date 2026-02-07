@@ -1,6 +1,5 @@
 import { env } from "@common/env";
 import type { userRoleEnum } from "@db/schema/users";
-import { bearer } from "@elysiajs/bearer";
 import { Value } from "@sinclair/typebox/value";
 import { Elysia, t } from "elysia";
 import { errors as joseErrors, jwtVerify } from "jose";
@@ -52,6 +51,11 @@ export async function verifyAccessToken(token: string): Promise<JWTPayload> {
   }
 }
 
+/** Extract bearer token from Authorization header */
+function extractBearer(request: Request): string | undefined {
+  return request.headers.get("authorization")?.split(" ", 2)[1];
+}
+
 /** Shared auth logic — verify bearer token and return JWT payload */
 async function authenticate(token: string | undefined): Promise<JWTPayload> {
   if (!token) throw new UnauthorizedError("Authentication required");
@@ -59,7 +63,6 @@ async function authenticate(token: string | undefined): Promise<JWTPayload> {
 }
 
 export const authPlugin = new Elysia({ name: "auth" })
-  .use(bearer())
   // Elysia macros don't propagate resolve types — this derive provides
   // the type declaration so TypeScript sees `user` on handler context.
   .derive({ as: "scoped" }, () => ({
@@ -69,15 +72,15 @@ export const authPlugin = new Elysia({ name: "auth" })
     auth(enabled: boolean) {
       if (!enabled) return;
       return {
-        async resolve({ bearer: token }: { bearer: string | undefined }) {
-          return { user: await authenticate(token) };
+        async resolve({ request }: { request: Request }) {
+          return { user: await authenticate(extractBearer(request)) };
         },
       };
     },
     role(required: Role) {
       return {
-        async resolve({ bearer: token }: { bearer: string | undefined }) {
-          const user = await authenticate(token);
+        async resolve({ request }: { request: Request }) {
+          const user = await authenticate(extractBearer(request));
           if (ROLE_LEVEL[user.role] < ROLE_LEVEL[required]) {
             throw new ForbiddenError(
               `${required.charAt(0).toUpperCase() + required.slice(1)} access required`,
