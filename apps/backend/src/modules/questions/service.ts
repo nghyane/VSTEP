@@ -254,25 +254,26 @@ export class QuestionService {
 
       const newVersion = question.version + 1;
 
-      // Create new version record
+      const answerKey =
+        body.answerKey !== undefined ? body.answerKey : question.answerKey;
+
       const [version] = await tx
         .insert(table.questionVersions)
         .values({
           questionId,
           version: newVersion,
           content: body.content,
-          answerKey: body.answerKey ?? null,
+          answerKey,
         })
         .returning();
 
       const v = assertExists(version, "Version");
 
-      // Update question with new content and version
       await tx
         .update(table.questions)
         .set({
           content: body.content,
-          answerKey: body.answerKey ?? null,
+          answerKey,
           version: newVersion,
           updatedAt: now(),
         })

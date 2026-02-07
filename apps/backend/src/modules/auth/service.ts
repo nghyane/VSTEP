@@ -145,33 +145,34 @@ export class AuthService {
     password: string;
     fullName?: string;
   }): Promise<{ user: UserInfo; message: string }> {
-    const existing = await db.query.users.findFirst({
-      where: and(eq(table.users.email, body.email), notDeleted(table.users)),
-      columns: { id: true },
-    });
-    if (existing) throw new ConflictError("Email already registered");
-
     const passwordHash = await hashPassword(body.password);
 
-    const [user] = await db
-      .insert(table.users)
-      .values({
-        email: body.email,
-        passwordHash,
-        fullName: body.fullName,
-        role: "learner",
-      })
-      .returning({
-        id: table.users.id,
-        email: table.users.email,
-        fullName: table.users.fullName,
-        role: table.users.role,
+    const user = await db.transaction(async (tx) => {
+      const existing = await tx.query.users.findFirst({
+        where: and(eq(table.users.email, body.email), notDeleted(table.users)),
+        columns: { id: true },
       });
+      if (existing) throw new ConflictError("Email already registered");
 
-    return {
-      user: assertExists(user, "User"),
-      message: "Account created successfully",
-    };
+      const [row] = await tx
+        .insert(table.users)
+        .values({
+          email: body.email,
+          passwordHash,
+          fullName: body.fullName,
+          role: "learner",
+        })
+        .returning({
+          id: table.users.id,
+          email: table.users.email,
+          fullName: table.users.fullName,
+          role: table.users.role,
+        });
+
+      return assertExists(row, "User");
+    });
+
+    return { user, message: "Account created successfully" };
   }
 
   /**
@@ -184,13 +185,13 @@ export class AuthService {
   ): Promise<TokenResponse> {
     const hash = hashToken(refreshToken);
 
-    return await db.transaction(async (tx) => {
+    // Return result from tx instead of throwing inside — so revoke-all commits
+    const result = await db.transaction(async (tx) => {
       const tokenRecord = await tx.query.refreshTokens.findFirst({
         where: eq(table.refreshTokens.tokenHash, hash),
         columns: {
           id: true,
           userId: true,
-          jti: true,
           revokedAt: true,
           replacedByJti: true,
           expiresAt: true,
@@ -201,7 +202,7 @@ export class AuthService {
         throw new UnauthorizedError("Invalid refresh token");
       }
 
-      // Reuse detection: token already revoked → compromise detected
+      // Reuse detection: revoke ALL user sessions, let tx commit
       if (tokenRecord.revokedAt || tokenRecord.replacedByJti) {
         await tx
           .update(table.refreshTokens)
@@ -212,9 +213,7 @@ export class AuthService {
               isNull(table.refreshTokens.revokedAt),
             ),
           );
-        throw new UnauthorizedError(
-          "Refresh token reuse detected, all sessions revoked",
-        );
+        return { reuse: true as const };
       }
 
       if (new Date(tokenRecord.expiresAt) <= new Date()) {
@@ -231,7 +230,6 @@ export class AuthService {
 
       if (!user) throw new UnauthorizedError("User not found");
 
-      // Rotate: revoke old, issue new
       const newRefreshToken = crypto.randomUUID();
       const newJti = crypto.randomUUID();
 
@@ -250,8 +248,20 @@ export class AuthService {
         ).toISOString(),
       });
 
-      return buildTokenResponse(user, newJti, newRefreshToken);
+      return { reuse: false as const, user, newJti, newRefreshToken };
     });
+
+    if (result.reuse) {
+      throw new UnauthorizedError(
+        "Refresh token reuse detected, all sessions revoked",
+      );
+    }
+
+    return buildTokenResponse(
+      result.user,
+      result.newJti,
+      result.newRefreshToken,
+    );
   }
 
   static async logout(refreshToken: string): Promise<{ message: string }> {

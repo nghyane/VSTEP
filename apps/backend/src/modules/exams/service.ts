@@ -356,12 +356,15 @@ export class ExamService {
         const userAnswers = (ea.answer ?? {}) as Record<string, string>;
 
         for (const [key, correctValue] of Object.entries(correctAnswers)) {
+          const isCorrect =
+            userAnswers[key]?.toLowerCase().trim() ===
+            correctValue?.toLowerCase().trim();
           if (skill === "listening") {
             listeningTotal++;
-            if (userAnswers[key] === correctValue) listeningCorrect++;
+            if (isCorrect) listeningCorrect++;
           } else {
             readingTotal++;
-            if (userAnswers[key] === correctValue) readingCorrect++;
+            if (isCorrect) readingCorrect++;
           }
         }
       } else if (skill === "writing") {

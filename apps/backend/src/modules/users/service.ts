@@ -84,28 +84,27 @@ export class UserService {
     fullName?: string;
     role?: "learner" | "instructor" | "admin";
   }) {
-    const existingUser = await db.query.users.findFirst({
-      where: and(eq(table.users.email, body.email), notDeleted(table.users)),
-      columns: { id: true },
-    });
-
-    if (existingUser) {
-      throw new ConflictError("Email already registered");
-    }
-
     const passwordHash = await hashPassword(body.password);
 
-    const [user] = await db
-      .insert(table.users)
-      .values({
-        email: body.email,
-        passwordHash,
-        fullName: body.fullName,
-        role: body.role ?? "learner",
-      })
-      .returning(USER_COLUMNS);
+    return await db.transaction(async (tx) => {
+      const existing = await tx.query.users.findFirst({
+        where: and(eq(table.users.email, body.email), notDeleted(table.users)),
+        columns: { id: true },
+      });
+      if (existing) throw new ConflictError("Email already registered");
 
-    return assertExists(user, "User");
+      const [user] = await tx
+        .insert(table.users)
+        .values({
+          email: body.email,
+          passwordHash,
+          fullName: body.fullName,
+          role: body.role ?? "learner",
+        })
+        .returning(USER_COLUMNS);
+
+      return assertExists(user, "User");
+    });
   }
 
   static async update(

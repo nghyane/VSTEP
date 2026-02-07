@@ -51,9 +51,11 @@ export async function verifyAccessToken(token: string): Promise<JWTPayload> {
   }
 }
 
-/** Extract bearer token from Authorization header */
+/** Extract bearer token from Authorization header (validates "Bearer" scheme) */
 function extractBearer(request: Request): string | undefined {
-  return request.headers.get("authorization")?.split(" ", 2)[1];
+  const header = request.headers.get("authorization");
+  if (!header?.startsWith("Bearer ")) return undefined;
+  return header.slice(7);
 }
 
 /** Shared auth logic — verify bearer token and return JWT payload */

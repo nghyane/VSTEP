@@ -242,11 +242,6 @@ export class SubmissionService {
         throw new BadRequestError("Cannot update submission in current status");
       }
 
-      // Validate status transition for all callers
-      if (body.status) {
-        validateTransition(submission.status, body.status);
-      }
-
       const timestamp = now();
       const updateValues: Partial<typeof table.submissions.$inferInsert> = {
         updatedAt: timestamp,
@@ -254,6 +249,7 @@ export class SubmissionService {
 
       if (isAdmin) {
         if (body.status) {
+          validateTransition(submission.status, body.status);
           updateValues.status = body.status;
           if (
             body.status === "completed" &&
@@ -334,7 +330,7 @@ export class SubmissionService {
         .where(eq(table.submissions.id, submissionId))
         .returning(SUBMISSION_COLUMNS);
 
-      if (body.feedback) {
+      if (body.feedback !== undefined) {
         await tx
           .update(table.submissionDetails)
           .set({ feedback: body.feedback })
@@ -393,6 +389,7 @@ export class SubmissionService {
       const [row] = await tx
         .select({
           id: table.submissions.id,
+          status: table.submissions.status,
           skill: table.submissions.skill,
           answerKey: table.questions.answerKey,
           correctCount: sql<number>`(
@@ -420,6 +417,12 @@ export class SubmissionService {
         .limit(1);
 
       const data = assertExists(row, "Submission");
+
+      if (data.status === "completed" || data.status === "failed") {
+        throw new BadRequestError(
+          `Cannot auto-grade a submission with status "${data.status}"`,
+        );
+      }
 
       if (data.skill !== "listening" && data.skill !== "reading") {
         throw new BadRequestError(
