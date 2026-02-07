@@ -1,111 +1,214 @@
 ---
-description: Use Bun instead of Node.js, npm, pnpm, or vite.
-globs: "*.ts, *.tsx, *.html, *.css, *.js, *.jsx, package.json"
+description: VSTEP Backend — Bun + Elysia + Drizzle + PostgreSQL conventions.
+globs: "*.ts, *.tsx, *.js, *.jsx, package.json, biome.json, tsconfig.json, drizzle.config.ts"
 alwaysApply: false
 ---
 
-Default to using Bun instead of Node.js.
+# VSTEP Backend
 
-- Use `bun <file>` instead of `node <file>` or `ts-node <file>`
-- Use `bun test` instead of `jest` or `vitest`
-- Use `bun build <file.html|file.ts|file.css>` instead of `webpack` or `esbuild`
-- Use `bun install` instead of `npm install` or `yarn install` or `pnpm install`
-- Use `bun run <script>` instead of `npm run <script>` or `yarn run <script>` or `pnpm run <script>`
-- Bun automatically loads .env, so don't use dotenv.
+**Stack:** Bun 1.3+ runtime, Elysia 1.4+ framework, Drizzle ORM 0.45+, PostgreSQL, TypeBox validation, Biome linting.
 
-## APIs
+## Use Bun — Not Node
 
-- `Bun.serve()` supports WebSockets, HTTPS, and routes. Don't use `express`.
-- `bun:sqlite` for SQLite. Don't use `better-sqlite3`.
-- `Bun.redis` for Redis. Don't use `ioredis`.
-- `Bun.sql` for Postgres. Don't use `pg` or `postgres.js`.
-- `WebSocket` is built-in. Don't use `ws`.
-- Prefer `Bun.file` over `node:fs`'s readFile/writeFile
-- Bun.$`ls` instead of execa.
+- `bun run dev` / `bun test` / `bun install` — never npm/yarn/pnpm/jest/vitest
+- `Bun.password.hash()` / `.verify()` for passwords — never bcrypt/argon2 packages
+- `jose` for JWT — never jsonwebtoken
+- Bun auto-loads `.env` — never use dotenv
+- `Bun.sql` powers Drizzle — never use pg/postgres.js directly
 
-## Testing
+## Commands
 
-Use `bun test` to run tests.
+```bash
+bun run dev              # Hot-reload dev server
+bun run check            # Biome lint check
+bun run check --write    # Auto-fix lint issues
+bun run format           # Format code
+bun test                 # Run tests
 
-```ts#index.test.ts
-import { test, expect } from "bun:test";
-
-test("hello world", () => {
-  expect(1).toBe(1);
-});
+bun run db:push          # Push schema to DB (dev)
+bun run db:generate      # Generate migrations
+bun run db:migrate       # Run migrations
+bun run db:studio        # Drizzle Studio GUI
 ```
 
-## Frontend
+## Import Aliases
 
-Use HTML imports with `Bun.serve()`. Don't use `vite`. HTML imports fully support React, CSS, Tailwind.
+```typescript
+import { logger } from "@common/logger";
+import { env } from "@common/env";
+import { db } from "@db/index";
+import { users } from "@db/schema/users";
+import { authPlugin } from "@plugins/auth";
+import { auth } from "@/modules/auth";
 
-Server:
+// Within same module — relative imports are fine
+import { helper } from "./utils/helper";
+```
 
-```ts#index.ts
-import index from "./index.html"
+| Alias | Maps to |
+|-------|---------|
+| `@/*` | `./src/*` |
+| `@db/*` | `./src/db/*` |
+| `@common/*` | `./src/common/*` |
+| `@plugins/*` | `./src/plugins/*` |
 
-Bun.serve({
-  routes: {
-    "/": index,
-    "/api/users/:id": {
-      GET: (req) => {
-        return new Response(JSON.stringify({ id: req.params.id }));
-      },
-    },
-  },
-  // optional websocket support
-  websocket: {
-    open: (ws) => {
-      ws.send("Hello, world!");
-    },
-    message: (ws, message) => {
-      ws.send(message);
-    },
-    close: (ws) => {
-      // handle close
-    }
-  },
-  development: {
-    hmr: true,
-    console: true,
+## File Locations
+
+| Type | Path | Pattern |
+|------|------|---------|
+| Module routes | `src/modules/{name}/index.ts` | Elysia routes + auth guards |
+| Module schemas | `src/modules/{name}/model.ts` | TypeBox schemas in namespace |
+| Module logic | `src/modules/{name}/service.ts` | Static methods on a class |
+| DB schema | `src/db/schema/{name}.ts` | Drizzle pgTable definitions |
+| DB relations | `src/db/relations.ts` | Drizzle relational queries setup |
+| DB helpers | `src/db/helpers.ts` | `pagination()`, `notDeleted()` |
+| Plugins | `src/plugins/{name}.ts` | Elysia plugins (auth, error) |
+| Shared utils | `src/common/{name}.ts` | Logger, env, schemas, utils |
+| Tests | `src/**/*.test.ts` or `src/**/__tests__/` | bun:test |
+
+## Existing Utilities (Use, Don't Recreate)
+
+| Utility | Import | Purpose |
+|---------|--------|---------|
+| `logger` | `@common/logger` | Structured logging — never `console.log` |
+| `env` | `@common/env` | Type-safe env vars (`@t3-oss/env-core` + Zod) |
+| `db` | `@db/index` | Drizzle PostgreSQL client |
+| `authPlugin` | `@plugins/auth` | JWT bearer auth + role macros |
+| `errorPlugin` | `@/plugins/error` | Error handling + request ID tracing |
+| `pagination()` | `@db/helpers` | Pagination offset/limit + meta builder |
+| `notDeleted()` | `@db/helpers` | Soft-delete WHERE filter |
+| `now()` | `@common/utils` | Current timestamp |
+| `assertExists()` | `@common/utils` | Throws NotFoundError if null |
+| `assertAccess()` | `@common/utils` | Throws ForbiddenError on ownership mismatch |
+| `escapeLike()` | `@common/utils` | Escape SQL LIKE wildcards |
+| Shared enums | `@common/enums` | Skill, Role, Band, etc. (from pgEnums) |
+| Shared schemas | `@common/schemas` | Pagination params, error responses |
+
+## Patterns
+
+### Module Route
+
+```typescript
+import { Elysia } from "elysia";
+import { authPlugin } from "@plugins/auth";
+import { FeatureService } from "./service";
+import { Feature } from "./model";
+
+export const feature = new Elysia({ prefix: "/feature" })
+  .use(authPlugin())
+  .get("/", ({ query }) => FeatureService.list(query), {
+    auth: true,
+    query: Feature.ListQuery,
+    response: { 200: Feature.ListResponse },
+    detail: { tags: ["Feature"], summary: "List features" },
+  });
+```
+
+### Service Class
+
+```typescript
+import { db } from "@db/index";
+import { features } from "@db/schema/features";
+import { eq } from "drizzle-orm";
+
+export class FeatureService {
+  static async list(query: { page?: number; limit?: number }) {
+    // business logic with Drizzle queries
   }
-})
-```
 
-HTML files can import .tsx, .jsx or .js files directly and Bun's bundler will transpile & bundle automatically. `<link>` tags can point to stylesheets and Bun's CSS bundler will bundle.
-
-```html#index.html
-<html>
-  <body>
-    <h1>Hello, world!</h1>
-    <script type="module" src="./frontend.tsx"></script>
-  </body>
-</html>
-```
-
-With the following `frontend.tsx`:
-
-```tsx#frontend.tsx
-import React from "react";
-
-// import .css files directly and it works
-import './index.css';
-
-import { createRoot } from "react-dom/client";
-
-const root = createRoot(document.body);
-
-export default function Frontend() {
-  return <h1>Hello, world!</h1>;
+  static async getById(id: string) {
+    const result = await db.query.features.findFirst({
+      where: eq(features.id, id),
+    });
+    return assertExists(result, "Feature");
+  }
 }
-
-root.render(<Frontend />);
 ```
 
-Then, run index.ts
+### Model Schema (TypeBox namespace)
 
-```sh
-bun --hot ./index.ts
+```typescript
+import { t } from "elysia";
+
+export namespace Feature {
+  export const ListQuery = t.Object({
+    page: t.Optional(t.Number({ minimum: 1 })),
+    limit: t.Optional(t.Number({ minimum: 1, maximum: 100 })),
+  });
+
+  export const ListResponse = t.Object({
+    data: t.Array(t.Object({ id: t.String(), name: t.String() })),
+    meta: t.Object({ page: t.Number(), limit: t.Number(), total: t.Number() }),
+  });
+}
 ```
 
-For more information, read the Bun API docs in `node_modules/bun-types/docs/**.md`.
+### DB Schema
+
+```typescript
+import { pgTable, uuid, varchar, timestamp } from "drizzle-orm/pg-core";
+
+export const features = pgTable("features", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
+  deletedAt: timestamp("deleted_at"),
+});
+
+export type Feature = typeof features.$inferSelect;
+export type NewFeature = typeof features.$inferInsert;
+```
+
+### Auth Guards
+
+```typescript
+// Require authenticated user
+.get("/", handler, { auth: true })
+
+// Require specific role (hierarchy: learner < instructor < admin)
+.post("/", handler, { role: "instructor" })
+.delete("/:id", handler, { role: "admin" })
+```
+
+### Logging
+
+```typescript
+import { logger } from "@common/logger";
+
+logger.info("Event description", { key: "value" });
+logger.error("Something failed", { error: err.message });
+// Never use console.log — Biome warns on it
+```
+
+## Golden Rules
+
+1. **No `.js` in imports** — TypeScript only, no extensions
+2. **No barrel re-exports** — No `export * from` in schema files
+3. **No banned packages** — No bcrypt, jsonwebtoken, ioredis, dotenv, pg, jest
+4. **Cross-module = aliases** — Always use `@common/`, `@db/`, `@plugins/`, `@/`
+5. **Soft deletes** — Use `deletedAt` + `notDeleted()` filter, never hard delete
+6. **Static service methods** — Services are classes with only static methods
+7. **TypeBox for API validation** — Not Zod (Zod is only for env config)
+8. **OpenAPI detail on every route** — Include `tags` and `summary`
+
+## Naming Conventions (Biome-enforced)
+
+- Types, interfaces, classes, enums: `PascalCase`
+- Enum members: `PascalCase` or `CONSTANT_CASE`
+- Functions, variables: `camelCase`
+- Constants: `camelCase` or `CONSTANT_CASE`
+- Object properties: `camelCase` or `CONSTANT_CASE`
+
+## Verification
+
+Before completing any task:
+
+- [ ] `bun run check` passes
+- [ ] `bun test` passes
+- [ ] No `console.log` (use `logger`)
+- [ ] Cross-module imports use aliases
+- [ ] No `.js` extensions in imports
+- [ ] No unused imports or variables
+- [ ] Routes have OpenAPI `detail` with tags and summary
+- [ ] New DB tables include `createdAt`, `updatedAt`, and `deletedAt`
