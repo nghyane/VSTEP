@@ -1,3 +1,4 @@
+import { UserRole } from "@common/enums";
 import { t } from "elysia";
 
 export namespace AuthModel {
@@ -5,11 +6,7 @@ export namespace AuthModel {
     id: t.String({ format: "uuid" }),
     email: t.String(),
     fullName: t.Nullable(t.String()),
-    role: t.Union([
-      t.Literal("learner"),
-      t.Literal("instructor"),
-      t.Literal("admin"),
-    ]),
+    role: UserRole,
   });
 
   export const TokenResponse = t.Object({

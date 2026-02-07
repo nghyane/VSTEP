@@ -1,5 +1,12 @@
 import { Skill, SubmissionStatus as SubmissionStatusEnum } from "@common/enums";
-import { ErrorResponse, IdParam, PaginationMeta, PaginationQuery } from "@common/schemas";
+import {
+  AuthErrors,
+  CrudErrors,
+  ErrorResponse,
+  IdParam,
+  PaginationMeta,
+  PaginationQuery,
+} from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import { SubmissionModel } from "./model";
@@ -13,14 +20,8 @@ export const submissions = new Elysia({
 
   .get(
     "/",
-    async ({ query, user }) => {
-      const result = await SubmissionService.list(
-        query,
-        user.sub,
-        user.role === "admin",
-      );
-      return result;
-    },
+    ({ query, user }) =>
+      SubmissionService.list(query, user.sub, user.role === "admin"),
     {
       auth: true,
       query: t.Object({
@@ -34,7 +35,7 @@ export const submissions = new Elysia({
           data: t.Array(SubmissionModel.SubmissionWithDetails),
           meta: PaginationMeta,
         }),
-        401: ErrorResponse,
+        ...AuthErrors,
       },
       detail: {
         summary: "List submissions",
@@ -45,22 +46,14 @@ export const submissions = new Elysia({
 
   .get(
     "/:id",
-    async ({ params, user }) => {
-      const result = await SubmissionService.getById(
-        params.id,
-        user.sub,
-        user.role === "admin",
-      );
-      return result;
-    },
+    ({ params, user }) =>
+      SubmissionService.getById(params.id, user.sub, user.role === "admin"),
     {
       auth: true,
       params: IdParam,
       response: {
         200: SubmissionModel.SubmissionWithDetails,
-        401: ErrorResponse,
-        403: ErrorResponse,
-        404: ErrorResponse,
+        ...CrudErrors,
       },
       detail: {
         summary: "Get submission",
@@ -72,9 +65,8 @@ export const submissions = new Elysia({
   .post(
     "/",
     async ({ body, user, set }) => {
-      const result = await SubmissionService.create(user.sub, body);
       set.status = 201;
-      return result;
+      return SubmissionService.create(user.sub, body);
     },
     {
       auth: true,
@@ -82,8 +74,7 @@ export const submissions = new Elysia({
       response: {
         201: SubmissionModel.SubmissionWithDetails,
         400: ErrorResponse,
-        401: ErrorResponse,
-        404: ErrorResponse,
+        ...CrudErrors,
         422: ErrorResponse,
       },
       detail: {
@@ -95,15 +86,13 @@ export const submissions = new Elysia({
 
   .patch(
     "/:id",
-    async ({ params, body, user }) => {
-      const result = await SubmissionService.update(
+    ({ params, body, user }) =>
+      SubmissionService.update(
         params.id,
         user.sub,
         user.role === "admin",
         body,
-      );
-      return result;
-    },
+      ),
     {
       auth: true,
       params: IdParam,
@@ -111,9 +100,7 @@ export const submissions = new Elysia({
       response: {
         200: SubmissionModel.SubmissionWithDetails,
         400: ErrorResponse,
-        401: ErrorResponse,
-        403: ErrorResponse,
-        404: ErrorResponse,
+        ...CrudErrors,
         422: ErrorResponse,
       },
       detail: {
@@ -125,19 +112,14 @@ export const submissions = new Elysia({
 
   .post(
     "/:id/grade",
-    async ({ params, body }) => {
-      const result = await SubmissionService.grade(params.id, body);
-      return result;
-    },
+    ({ params, body }) => SubmissionService.grade(params.id, body),
     {
       role: "instructor",
       params: IdParam,
       body: SubmissionModel.GradeBody,
       response: {
         200: SubmissionModel.SubmissionWithDetails,
-        401: ErrorResponse,
-        403: ErrorResponse,
-        404: ErrorResponse,
+        ...CrudErrors,
         422: ErrorResponse,
       },
       detail: {
@@ -149,10 +131,7 @@ export const submissions = new Elysia({
 
   .post(
     "/:id/auto-grade",
-    async ({ params }) => {
-      const result = await SubmissionService.autoGrade(params.id);
-      return result;
-    },
+    ({ params }) => SubmissionService.autoGrade(params.id),
     {
       role: "admin",
       params: IdParam,
@@ -161,9 +140,7 @@ export const submissions = new Elysia({
           score: t.Number(),
           result: t.Any(),
         }),
-        401: ErrorResponse,
-        403: ErrorResponse,
-        404: ErrorResponse,
+        ...CrudErrors,
       },
       detail: {
         summary: "Auto-grade submission",
@@ -174,22 +151,14 @@ export const submissions = new Elysia({
 
   .delete(
     "/:id",
-    async ({ params, user }) => {
-      const result = await SubmissionService.remove(
-        params.id,
-        user.sub,
-        user.role === "admin",
-      );
-      return result;
-    },
+    ({ params, user }) =>
+      SubmissionService.remove(params.id, user.sub, user.role === "admin"),
     {
       auth: true,
       params: IdParam,
       response: {
         200: t.Object({ id: t.String({ format: "uuid" }) }),
-        401: ErrorResponse,
-        403: ErrorResponse,
-        404: ErrorResponse,
+        ...CrudErrors,
       },
       detail: {
         summary: "Delete submission",

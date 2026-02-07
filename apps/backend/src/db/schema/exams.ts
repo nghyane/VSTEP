@@ -88,7 +88,10 @@ export const examSessions = pgTable(
     startedAt: timestamp("started_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
-    completedAt: timestamp("completed_at", { withTimezone: true, mode: "string" }),
+    completedAt: timestamp("completed_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),

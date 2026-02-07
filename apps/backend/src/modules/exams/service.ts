@@ -1,12 +1,8 @@
-import { assertExists } from "@common/utils";
+import { assertExists, assertOwnerOrAdmin, now } from "@common/utils";
 import { and, count, desc, eq, inArray } from "drizzle-orm";
 import type { Exam } from "@/db";
-import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
-import {
-  BadRequestError,
-  ForbiddenError,
-  NotFoundError,
-} from "@/plugins/error";
+import { db, notDeleted, pagination, table } from "@/db";
+import { BadRequestError, NotFoundError } from "@/plugins/error";
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -61,11 +57,10 @@ export class ExamService {
     level?: Exam["level"];
     isActive?: boolean;
   }) {
-    const { limit, offset } = paginate(query.page, query.limit);
+    const pg = pagination(query.page, query.limit);
 
     const conditions = [notDeleted(table.exams)];
-    if (query.level)
-      conditions.push(eq(table.exams.level, query.level));
+    if (query.level) conditions.push(eq(table.exams.level, query.level));
     if (query.isActive !== undefined)
       conditions.push(eq(table.exams.isActive, query.isActive));
 
@@ -83,12 +78,12 @@ export class ExamService {
       .from(table.exams)
       .where(whereClause)
       .orderBy(desc(table.exams.createdAt))
-      .limit(limit)
-      .offset(offset);
+      .limit(pg.limit)
+      .offset(pg.offset);
 
     return {
       data: exams,
-      meta: paginationMeta(total, query.page, query.limit),
+      meta: pg.meta(total),
     };
   }
 
@@ -121,7 +116,7 @@ export class ExamService {
       .update(table.exams)
       .set({
         ...body,
-        updatedAt: new Date().toISOString(),
+        updatedAt: now(),
       })
       .where(and(eq(table.exams.id, id), notDeleted(table.exams)))
       .returning(EXAM_COLUMNS);
@@ -159,7 +154,7 @@ export class ExamService {
           userId,
           examId,
           status: "in_progress",
-          startedAt: new Date().toISOString(),
+          startedAt: now(),
         })
         .returning(SESSION_COLUMNS);
 
@@ -199,18 +194,18 @@ export class ExamService {
       throw new NotFoundError("Session not found");
     }
 
-    if (session.userId !== userId && !isAdmin) {
-      throw new ForbiddenError("You do not have access to this session");
-    }
+    assertOwnerOrAdmin(
+      session.userId,
+      userId,
+      isAdmin,
+      "You do not have access to this session",
+    );
 
     return session;
   }
 
   /** Validate that a questionId exists and is active */
-  private static async validateQuestion(
-    tx: Transaction,
-    questionId: string,
-  ) {
+  private static async validateQuestion(tx: Transaction, questionId: string) {
     const [question] = await tx
       .select({ id: table.questions.id })
       .from(table.questions)
@@ -235,17 +230,29 @@ export class ExamService {
   ): Promise<{ success: boolean }> {
     return await db.transaction(async (tx) => {
       const [session] = await tx
-        .select({ id: table.examSessions.id, status: table.examSessions.status, userId: table.examSessions.userId })
+        .select({
+          id: table.examSessions.id,
+          status: table.examSessions.status,
+          userId: table.examSessions.userId,
+        })
         .from(table.examSessions)
-        .where(and(eq(table.examSessions.id, sessionId), notDeleted(table.examSessions)))
+        .where(
+          and(
+            eq(table.examSessions.id, sessionId),
+            notDeleted(table.examSessions),
+          ),
+        )
         .limit(1);
 
       if (!session) {
         throw new NotFoundError("Session not found");
       }
-      if (session.userId !== userId) {
-        throw new ForbiddenError("You do not have access to this session");
-      }
+      assertOwnerOrAdmin(
+        session.userId,
+        userId,
+        false,
+        "You do not have access to this session",
+      );
       if (session.status !== "in_progress") {
         throw new BadRequestError("Session is not in progress");
       }
@@ -263,7 +270,7 @@ export class ExamService {
           target: [table.examAnswers.sessionId, table.examAnswers.questionId],
           set: {
             answer: body.answer,
-            updatedAt: new Date().toISOString(),
+            updatedAt: now(),
           },
         });
 
@@ -296,25 +303,43 @@ export class ExamService {
       if (!session) {
         throw new NotFoundError("Session not found");
       }
-      if (session.userId !== userId) {
-        throw new ForbiddenError("You do not have access to this session");
-      }
+      assertOwnerOrAdmin(
+        session.userId,
+        userId,
+        false,
+        "You do not have access to this session",
+      );
       if (session.status !== "in_progress") {
         throw new BadRequestError("Session is not in progress");
       }
 
-      for (const { questionId, answer } of answers) {
-        await ExamService.validateQuestion(tx, questionId);
+      // Batch validate all questions
+      const questionIds = answers.map((a) => a.questionId);
+      const validQuestions = await tx
+        .select({ id: table.questions.id })
+        .from(table.questions)
+        .where(
+          and(
+            inArray(table.questions.id, questionIds),
+            eq(table.questions.isActive, true),
+          ),
+        );
+      const validIds = new Set(validQuestions.map((q) => q.id));
+      const invalidIds = questionIds.filter((id) => !validIds.has(id));
+      if (invalidIds.length > 0) {
+        throw new BadRequestError(
+          `Invalid or inactive questions: ${invalidIds.join(", ")}`,
+        );
+      }
 
+      const timestamp = now();
+      for (const { questionId, answer } of answers) {
         await tx
           .insert(table.examAnswers)
           .values({ sessionId, questionId, answer })
           .onConflictDoUpdate({
-            target: [
-              table.examAnswers.sessionId,
-              table.examAnswers.questionId,
-            ],
-            set: { answer, updatedAt: new Date().toISOString() },
+            target: [table.examAnswers.sessionId, table.examAnswers.questionId],
+            set: { answer, updatedAt: timestamp },
           });
       }
 
@@ -325,10 +350,7 @@ export class ExamService {
   /** Auto-grade listening/reading answers against question answerKeys */
   private static autoGradeAnswers(
     examAnswers: { questionId: string; answer: unknown }[],
-    questionsMap: Map<
-      string,
-      { skill: string; answerKey: unknown }
-    >,
+    questionsMap: Map<string, { skill: string; answerKey: unknown }>,
   ): {
     listeningCorrect: number;
     listeningTotal: number;
@@ -442,9 +464,12 @@ export class ExamService {
       if (!session) {
         throw new NotFoundError("Session not found");
       }
-      if (session.userId !== userId) {
-        throw new ForbiddenError("You do not have access to this session");
-      }
+      assertOwnerOrAdmin(
+        session.userId,
+        userId,
+        false,
+        "You do not have access to this session",
+      );
       if (session.status !== "in_progress") {
         throw new BadRequestError("Session is not in progress");
       }
@@ -474,7 +499,10 @@ export class ExamService {
         .where(inArray(table.questions.id, questionIds));
 
       const questionsMap = new Map(
-        questionsRows.map((q) => [q.id, { skill: q.skill, answerKey: q.answerKey }]),
+        questionsRows.map((q) => [
+          q.id,
+          { skill: q.skill, answerKey: q.answerKey },
+        ]),
       );
 
       // 4. Auto-grade listening/reading, collect writing/speaking
@@ -494,8 +522,14 @@ export class ExamService {
       let hasPendingSubmissions = false;
 
       for (const wa of [
-        ...gradeResult.writingAnswers.map((a) => ({ ...a, skill: "writing" as const })),
-        ...gradeResult.speakingAnswers.map((a) => ({ ...a, skill: "speaking" as const })),
+        ...gradeResult.writingAnswers.map((a) => ({
+          ...a,
+          skill: "writing" as const,
+        })),
+        ...gradeResult.speakingAnswers.map((a) => ({
+          ...a,
+          skill: "speaking" as const,
+        })),
       ]) {
         hasPendingSubmissions = true;
         await ExamService.createSubmissionForExam(
@@ -510,6 +544,7 @@ export class ExamService {
 
       // 7. Update session: scores + status
       const finalStatus = hasPendingSubmissions ? "submitted" : "completed";
+      const timestamp = now();
 
       const [updatedSession] = await tx
         .update(table.examSessions)
@@ -517,8 +552,8 @@ export class ExamService {
           listeningScore,
           readingScore,
           status: finalStatus,
-          completedAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          completedAt: timestamp,
+          updatedAt: timestamp,
         })
         .where(
           and(

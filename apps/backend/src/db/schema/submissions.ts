@@ -91,7 +91,10 @@ export const submissions = pgTable(
       .defaultNow()
       .notNull()
       .$onUpdate(() => new Date().toISOString()),
-    completedAt: timestamp("completed_at", { withTimezone: true, mode: "string" }),
+    completedAt: timestamp("completed_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
     deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
   },
   (table) => ({

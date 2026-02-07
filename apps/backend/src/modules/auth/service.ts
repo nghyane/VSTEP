@@ -1,5 +1,5 @@
 import { env } from "@common/env";
-import { assertExists } from "@common/utils";
+import { assertExists, now } from "@common/utils";
 import { and, asc, eq, gt, inArray, isNull } from "drizzle-orm";
 import { SignJWT } from "jose";
 import { db, table } from "@/db";
@@ -98,7 +98,7 @@ export class AuthService {
         where: and(
           eq(table.refreshTokens.userId, user.id),
           isNull(table.refreshTokens.revokedAt),
-          gt(table.refreshTokens.expiresAt, new Date().toISOString()),
+          gt(table.refreshTokens.expiresAt, now()),
         ),
         columns: { id: true },
         orderBy: asc(table.refreshTokens.createdAt),
@@ -112,7 +112,7 @@ export class AuthService {
         const idsToRevoke = tokensToRevoke.map((t) => t.id);
         await tx
           .update(table.refreshTokens)
-          .set({ revokedAt: new Date().toISOString() })
+          .set({ revokedAt: now() })
           .where(inArray(table.refreshTokens.id, idsToRevoke));
       }
 
@@ -121,7 +121,9 @@ export class AuthService {
         tokenHash: hashToken(refreshToken),
         jti,
         deviceInfo: body.deviceInfo,
-        expiresAt: new Date(Date.now() + refreshExpirySeconds * 1000).toISOString(),
+        expiresAt: new Date(
+          Date.now() + refreshExpirySeconds * 1000,
+        ).toISOString(),
       });
     });
 
@@ -202,7 +204,7 @@ export class AuthService {
       // Revoke ALL tokens for this user (token family attack)
       await db
         .update(table.refreshTokens)
-        .set({ revokedAt: new Date().toISOString() })
+        .set({ revokedAt: now() })
         .where(
           and(
             eq(table.refreshTokens.userId, tokenRecord.userId),
@@ -237,7 +239,7 @@ export class AuthService {
     await db.transaction(async (tx) => {
       await tx
         .update(table.refreshTokens)
-        .set({ revokedAt: new Date().toISOString(), replacedByJti: newJti })
+        .set({ revokedAt: now(), replacedByJti: newJti })
         .where(eq(table.refreshTokens.id, tokenRecord.id));
 
       await tx.insert(table.refreshTokens).values({
@@ -245,7 +247,9 @@ export class AuthService {
         tokenHash: hashToken(newRefreshToken),
         jti: newJti,
         deviceInfo,
-        expiresAt: new Date(Date.now() + refreshExpirySeconds * 1000).toISOString(),
+        expiresAt: new Date(
+          Date.now() + refreshExpirySeconds * 1000,
+        ).toISOString(),
       });
     });
 
@@ -264,7 +268,7 @@ export class AuthService {
   static async logout(refreshToken: string): Promise<{ message: string }> {
     await db
       .update(table.refreshTokens)
-      .set({ revokedAt: new Date().toISOString() })
+      .set({ revokedAt: now() })
       .where(eq(table.refreshTokens.tokenHash, hashToken(refreshToken)));
 
     return { message: "Logged out successfully" };

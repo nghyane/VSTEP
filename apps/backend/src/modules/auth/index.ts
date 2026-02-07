@@ -31,7 +31,10 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
     {
       body: AuthModel.LoginBody,
       response: {
-        200: t.Object({ user: AuthModel.UserInfo, ...AuthModel.TokenResponse.properties }),
+        200: t.Object({
+          user: AuthModel.UserInfo,
+          ...AuthModel.TokenResponse.properties,
+        }),
       },
       detail: {
         summary: "Login",
@@ -81,7 +84,10 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
     {
       body: AuthModel.RefreshBody,
       response: {
-        200: t.Object({ user: AuthModel.UserInfo, ...AuthModel.TokenResponse.properties }),
+        200: t.Object({
+          user: AuthModel.UserInfo,
+          ...AuthModel.TokenResponse.properties,
+        }),
         401: ErrorResponse,
       },
       detail: {

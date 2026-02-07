@@ -1,4 +1,9 @@
-import { QuestionLevel, Skill, StreakDirection, VstepBand } from "@common/enums";
+import {
+  QuestionLevel,
+  Skill,
+  StreakDirection,
+  VstepBand,
+} from "@common/enums";
 import { t } from "elysia";
 
 export namespace ProgressModel {

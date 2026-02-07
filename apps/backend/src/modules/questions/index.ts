@@ -1,5 +1,12 @@
-import { QuestionLevel, QuestionSkill } from "@common/enums";
-import { ErrorResponse, IdParam, PaginationMeta, PaginationQuery } from "@common/schemas";
+import { QuestionLevel, Skill } from "@common/enums";
+import {
+  AuthErrors,
+  CrudErrors,
+  ErrorResponse,
+  IdParam,
+  PaginationMeta,
+  PaginationQuery,
+} from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import { QuestionModel } from "./model";
@@ -14,15 +21,13 @@ export const questions = new Elysia({
   .get(
     "/",
     async ({ query, user }) => {
-      const isAdmin = user.role === "admin";
-      const result = await QuestionService.list(query, user.sub, isAdmin);
-      return result;
+      return await QuestionService.list(query, user.sub, user.role === "admin");
     },
     {
       auth: true,
       query: t.Object({
         ...PaginationQuery.properties,
-        skill: t.Optional(QuestionSkill),
+        skill: t.Optional(Skill),
         level: t.Optional(QuestionLevel),
         format: t.Optional(t.String()),
         isActive: t.Optional(t.Boolean()),
@@ -34,7 +39,7 @@ export const questions = new Elysia({
           meta: PaginationMeta,
         }),
         400: ErrorResponse,
-        401: ErrorResponse,
+        ...AuthErrors,
       },
       detail: {
         summary: "List questions",
@@ -46,16 +51,14 @@ export const questions = new Elysia({
   .get(
     "/:id",
     async ({ params }) => {
-      const result = await QuestionService.getById(params.id);
-      return result;
+      return await QuestionService.getById(params.id);
     },
     {
       auth: true,
       params: IdParam,
       response: {
         200: QuestionModel.Question,
-        401: ErrorResponse,
-        404: ErrorResponse,
+        ...CrudErrors,
       },
       detail: {
         summary: "Get question",
@@ -67,9 +70,8 @@ export const questions = new Elysia({
   .post(
     "/",
     async ({ body, user, set }) => {
-      const result = await QuestionService.create(user.sub, body);
       set.status = 201;
-      return result;
+      return await QuestionService.create(user.sub, body);
     },
     {
       role: "instructor",
@@ -77,8 +79,7 @@ export const questions = new Elysia({
       response: {
         201: QuestionModel.Question,
         400: ErrorResponse,
-        401: ErrorResponse,
-        403: ErrorResponse,
+        ...AuthErrors,
         422: ErrorResponse,
       },
       detail: {
@@ -91,13 +92,12 @@ export const questions = new Elysia({
   .patch(
     "/:id",
     async ({ params, body, user }) => {
-      const result = await QuestionService.update(
+      return await QuestionService.update(
         params.id,
         user.sub,
         user.role === "admin",
         body,
       );
-      return result;
     },
     {
       role: "instructor",
@@ -106,9 +106,7 @@ export const questions = new Elysia({
       response: {
         200: QuestionModel.QuestionWithDetails,
         400: ErrorResponse,
-        401: ErrorResponse,
-        403: ErrorResponse,
-        404: ErrorResponse,
+        ...CrudErrors,
         422: ErrorResponse,
       },
       detail: {
@@ -121,14 +119,13 @@ export const questions = new Elysia({
   .post(
     "/:id/versions",
     async ({ params, body, user, set }) => {
-      const result = await QuestionService.createVersion(
+      set.status = 201;
+      return await QuestionService.createVersion(
         params.id,
         user.sub,
         user.role === "admin",
         body,
       );
-      set.status = 201;
-      return result;
     },
     {
       role: "instructor",
@@ -137,9 +134,7 @@ export const questions = new Elysia({
       response: {
         201: QuestionModel.Version,
         400: ErrorResponse,
-        401: ErrorResponse,
-        403: ErrorResponse,
-        404: ErrorResponse,
+        ...CrudErrors,
         422: ErrorResponse,
       },
       detail: {
@@ -153,8 +148,7 @@ export const questions = new Elysia({
   .get(
     "/:id/versions",
     async ({ params }) => {
-      const result = await QuestionService.getVersions(params.id);
-      return result;
+      return await QuestionService.getVersions(params.id);
     },
     {
       role: "instructor",
@@ -164,9 +158,7 @@ export const questions = new Elysia({
           data: t.Array(QuestionModel.Version),
           meta: t.Object({ total: t.Number() }),
         }),
-        401: ErrorResponse,
-        403: ErrorResponse,
-        404: ErrorResponse,
+        ...CrudErrors,
       },
       detail: {
         summary: "List question versions",
@@ -179,11 +171,7 @@ export const questions = new Elysia({
   .get(
     "/:id/versions/:versionId",
     async ({ params }) => {
-      const result = await QuestionService.getVersion(
-        params.id,
-        params.versionId,
-      );
-      return result;
+      return await QuestionService.getVersion(params.id, params.versionId);
     },
     {
       params: t.Object({
@@ -205,21 +193,18 @@ export const questions = new Elysia({
   .delete(
     "/:id",
     async ({ params, user }) => {
-      const result = await QuestionService.remove(
+      return await QuestionService.remove(
         params.id,
         user.sub,
         user.role === "admin",
       );
-      return result;
     },
     {
       role: "admin",
       params: IdParam,
       response: {
         200: t.Object({ id: t.String({ format: "uuid" }) }),
-        401: ErrorResponse,
-        403: ErrorResponse,
-        404: ErrorResponse,
+        ...CrudErrors,
       },
       detail: {
         summary: "Delete question",
@@ -231,12 +216,11 @@ export const questions = new Elysia({
   .post(
     "/:id/restore",
     async ({ params, user }) => {
-      const result = await QuestionService.restore(
+      return await QuestionService.restore(
         params.id,
         user.sub,
         user.role === "admin",
       );
-      return result;
     },
     {
       role: "admin",
@@ -244,9 +228,7 @@ export const questions = new Elysia({
       response: {
         200: QuestionModel.QuestionWithDetails,
         400: ErrorResponse,
-        401: ErrorResponse,
-        403: ErrorResponse,
-        404: ErrorResponse,
+        ...CrudErrors,
       },
       detail: {
         summary: "Restore question",

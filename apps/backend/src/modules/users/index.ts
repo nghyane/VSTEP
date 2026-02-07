@@ -1,14 +1,16 @@
 import { UserRole } from "@common/enums";
 import {
-  ErrorResponse,
+  AuthErrors,
+  CrudErrors,
+  CrudWithConflictErrors,
   IdParam,
   PaginationMeta,
   PaginationQuery,
   SuccessResponse,
 } from "@common/schemas";
+import { assertOwnerOrAdmin } from "@common/utils";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
-import { ForbiddenError } from "@/plugins/error";
 import { UserModel } from "./model";
 import { UserService } from "./service";
 
@@ -21,21 +23,18 @@ export const users = new Elysia({
   .get(
     "/:id",
     async ({ params, user }) => {
-      if (user.role !== "admin" && params.id !== user.sub) {
-        throw new ForbiddenError("You can only view your own profile");
-      }
-      const result = await UserService.getById(params.id);
-      return result;
+      assertOwnerOrAdmin(
+        params.id,
+        user.sub,
+        user.role === "admin",
+        "You can only view your own profile",
+      );
+      return UserService.getById(params.id);
     },
     {
       auth: true,
       params: IdParam,
-      response: {
-        200: UserModel.User,
-        401: ErrorResponse,
-        403: ErrorResponse,
-        404: ErrorResponse,
-      },
+      response: { 200: UserModel.User, ...CrudErrors },
       detail: {
         summary: "Get user",
         description: "Get user details by ID",
@@ -43,50 +42,36 @@ export const users = new Elysia({
     },
   )
 
-  .get(
-    "/",
-    async ({ query }) => {
-      const result = await UserService.list(query);
-      return result;
-    },
-    {
-      role: "admin",
-      query: t.Object({
-        ...PaginationQuery.properties,
-        role: t.Optional(UserRole),
-        search: t.Optional(t.String()),
+  .get("/", ({ query }) => UserService.list(query), {
+    role: "admin",
+    query: t.Object({
+      ...PaginationQuery.properties,
+      role: t.Optional(UserRole),
+      search: t.Optional(t.String()),
+    }),
+    response: {
+      200: t.Object({
+        data: t.Array(UserModel.User),
+        meta: PaginationMeta,
       }),
-      response: {
-        200: t.Object({
-          data: t.Array(UserModel.User),
-          meta: PaginationMeta,
-        }),
-        401: ErrorResponse,
-        403: ErrorResponse,
-      },
-      detail: {
-        summary: "List users",
-        description: "List users with pagination and filtering (Admin only)",
-      },
+      ...AuthErrors,
     },
-  )
+    detail: {
+      summary: "List users",
+      description: "List users with pagination and filtering (Admin only)",
+    },
+  })
 
   .post(
     "/",
     async ({ body, set }) => {
-      const result = await UserService.create(body);
       set.status = 201;
-      return result;
+      return UserService.create(body);
     },
     {
       role: "admin",
       body: UserModel.CreateBody,
-      response: {
-        201: UserModel.User,
-        401: ErrorResponse,
-        403: ErrorResponse,
-        409: ErrorResponse,
-      },
+      response: { 201: UserModel.User, ...CrudWithConflictErrors },
       detail: {
         summary: "Create user",
         description: "Create a new user account (Admin only)",
@@ -96,25 +81,13 @@ export const users = new Elysia({
 
   .patch(
     "/:id",
-    async ({ params, body, user }) => {
-      const result = await UserService.update(
-        params.id,
-        body,
-        user.sub,
-        user.role === "admin",
-      );
-      return result;
-    },
+    ({ params, body, user }) =>
+      UserService.update(params.id, body, user.sub, user.role === "admin"),
     {
       auth: true,
       params: IdParam,
       body: UserModel.UpdateBody,
-      response: {
-        200: UserModel.User,
-        401: ErrorResponse,
-        404: ErrorResponse,
-        409: ErrorResponse,
-      },
+      response: { 200: UserModel.User, ...CrudWithConflictErrors },
       detail: {
         summary: "Update user",
         description: "Update user details",
@@ -122,52 +95,36 @@ export const users = new Elysia({
     },
   )
 
-  .delete(
-    "/:id",
-    async ({ params }) => {
-      const result = await UserService.remove(params.id);
-      return result;
+  .delete("/:id", ({ params }) => UserService.remove(params.id), {
+    role: "admin",
+    params: IdParam,
+    response: {
+      200: t.Object({
+        id: t.String({ format: "uuid" }),
+        deletedAt: t.String(),
+      }),
+      ...CrudErrors,
     },
-    {
-      role: "admin",
-      params: IdParam,
-      response: {
-        200: t.Object({
-          id: t.String({ format: "uuid" }),
-          deletedAt: t.String(),
-        }),
-        401: ErrorResponse,
-        403: ErrorResponse,
-        404: ErrorResponse,
-      },
-      detail: {
-        summary: "Delete user",
-        description: "Soft delete a user account (Admin only)",
-      },
+    detail: {
+      summary: "Delete user",
+      description: "Soft delete a user account (Admin only)",
     },
-  )
+  })
 
   .post(
     "/:id/password",
-    async ({ params, body, user }) => {
-      const result = await UserService.updatePassword(
+    ({ params, body, user }) =>
+      UserService.updatePassword(
         params.id,
         body,
         user.sub,
         user.role === "admin",
-      );
-      return result;
-    },
+      ),
     {
       auth: true,
       params: IdParam,
       body: UserModel.PasswordBody,
-      response: {
-        200: SuccessResponse,
-        401: ErrorResponse,
-        403: ErrorResponse,
-        404: ErrorResponse,
-      },
+      response: { 200: SuccessResponse, ...CrudErrors },
       detail: {
         summary: "Update password",
         description: "Update user password",
