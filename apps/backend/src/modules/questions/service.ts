@@ -9,6 +9,32 @@ import type { Question } from "@/db";
 import { db, notDeleted, pagination, table } from "@/db";
 import { BadRequestError, ForbiddenError } from "@/plugins/error";
 
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/** Fetch question in transaction and verify ownership */
+async function fetchOwnedQuestion(
+  tx: Transaction,
+  questionId: string,
+  userId: string,
+  isAdmin: boolean,
+  action: string,
+) {
+  const [row] = await tx
+    .select()
+    .from(table.questions)
+    .where(and(eq(table.questions.id, questionId), notDeleted(table.questions)))
+    .limit(1);
+
+  const question = assertExists(row, "Question");
+  assertOwnerOrAdmin(
+    question.createdBy ?? "",
+    userId,
+    isAdmin,
+    `You can only ${action} your own questions`,
+  );
+  return question;
+}
+
 const QUESTION_PUBLIC_COLUMNS = {
   id: table.questions.id,
   skill: table.questions.skill,
@@ -57,7 +83,6 @@ export class QuestionService {
       isActive?: boolean;
       search?: string;
     },
-    _currentUserId: string,
     isAdmin: boolean,
   ) {
     const pg = pagination(query.page, query.limit);
@@ -169,23 +194,12 @@ export class QuestionService {
     },
   ) {
     return await db.transaction(async (tx) => {
-      // Get question
-      const [row] = await tx
-        .select()
-        .from(table.questions)
-        .where(
-          and(eq(table.questions.id, questionId), notDeleted(table.questions)),
-        )
-        .limit(1);
-
-      const question = assertExists(row, "Question");
-
-      // Check ownership for non-admin
-      assertOwnerOrAdmin(
-        question.createdBy ?? "",
+      const question = await fetchOwnedQuestion(
+        tx,
+        questionId,
         userId,
         isAdmin,
-        "You can only update your own questions",
+        "update",
       );
 
       // Build update values
@@ -236,27 +250,12 @@ export class QuestionService {
     },
   ) {
     return await db.transaction(async (tx) => {
-      // Get question
-      const [row] = await tx
-        .select({
-          id: table.questions.id,
-          version: table.questions.version,
-          createdBy: table.questions.createdBy,
-        })
-        .from(table.questions)
-        .where(
-          and(eq(table.questions.id, questionId), notDeleted(table.questions)),
-        )
-        .limit(1);
-
-      const question = assertExists(row, "Question");
-
-      // Check ownership for non-admin
-      assertOwnerOrAdmin(
-        question.createdBy ?? "",
+      const question = await fetchOwnedQuestion(
+        tx,
+        questionId,
         userId,
         isAdmin,
-        "You can only create versions of your own questions",
+        "create versions of",
       );
 
       const newVersion = question.version + 1;
@@ -342,24 +341,7 @@ export class QuestionService {
 
   static async remove(questionId: string, userId: string, isAdmin: boolean) {
     return await db.transaction(async (tx) => {
-      // Get question
-      const [row] = await tx
-        .select()
-        .from(table.questions)
-        .where(
-          and(eq(table.questions.id, questionId), notDeleted(table.questions)),
-        )
-        .limit(1);
-
-      const question = assertExists(row, "Question");
-
-      // Check ownership for non-admin
-      assertOwnerOrAdmin(
-        question.createdBy ?? "",
-        userId,
-        isAdmin,
-        "You can only delete your own questions",
-      );
+      await fetchOwnedQuestion(tx, questionId, userId, isAdmin, "delete");
 
       // Soft delete
       const timestamp = now();
@@ -375,7 +357,7 @@ export class QuestionService {
     });
   }
 
-  static async restore(questionId: string, _userId: string, isAdmin: boolean) {
+  static async restore(questionId: string, isAdmin: boolean) {
     if (!isAdmin) {
       throw new ForbiddenError("Only admins can restore questions");
     }

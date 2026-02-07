@@ -204,6 +204,40 @@ export class ExamService {
     return session;
   }
 
+  /** Fetch session, verify ownership, and ensure it's in_progress */
+  private static async fetchActiveSession(
+    tx: Transaction,
+    sessionId: string,
+    userId: string,
+  ) {
+    const [session] = await tx
+      .select({
+        id: table.examSessions.id,
+        status: table.examSessions.status,
+        userId: table.examSessions.userId,
+      })
+      .from(table.examSessions)
+      .where(
+        and(
+          eq(table.examSessions.id, sessionId),
+          notDeleted(table.examSessions),
+        ),
+      )
+      .limit(1);
+
+    if (!session) throw new NotFoundError("Session not found");
+    assertOwnerOrAdmin(
+      session.userId,
+      userId,
+      false,
+      "You do not have access to this session",
+    );
+    if (session.status !== "in_progress") {
+      throw new BadRequestError("Session is not in progress");
+    }
+    return session;
+  }
+
   /** Validate that a questionId exists and is active */
   private static async validateQuestion(tx: Transaction, questionId: string) {
     const [question] = await tx
@@ -229,34 +263,7 @@ export class ExamService {
     body: { questionId: string; answer: unknown },
   ): Promise<{ success: boolean }> {
     return await db.transaction(async (tx) => {
-      const [session] = await tx
-        .select({
-          id: table.examSessions.id,
-          status: table.examSessions.status,
-          userId: table.examSessions.userId,
-        })
-        .from(table.examSessions)
-        .where(
-          and(
-            eq(table.examSessions.id, sessionId),
-            notDeleted(table.examSessions),
-          ),
-        )
-        .limit(1);
-
-      if (!session) {
-        throw new NotFoundError("Session not found");
-      }
-      assertOwnerOrAdmin(
-        session.userId,
-        userId,
-        false,
-        "You do not have access to this session",
-      );
-      if (session.status !== "in_progress") {
-        throw new BadRequestError("Session is not in progress");
-      }
-
+      await ExamService.fetchActiveSession(tx, sessionId, userId);
       await ExamService.validateQuestion(tx, body.questionId);
 
       await tx
@@ -285,33 +292,7 @@ export class ExamService {
     answers: { questionId: string; answer: unknown }[],
   ): Promise<{ success: boolean; saved: number }> {
     return await db.transaction(async (tx) => {
-      const [session] = await tx
-        .select({
-          id: table.examSessions.id,
-          status: table.examSessions.status,
-          userId: table.examSessions.userId,
-        })
-        .from(table.examSessions)
-        .where(
-          and(
-            eq(table.examSessions.id, sessionId),
-            notDeleted(table.examSessions),
-          ),
-        )
-        .limit(1);
-
-      if (!session) {
-        throw new NotFoundError("Session not found");
-      }
-      assertOwnerOrAdmin(
-        session.userId,
-        userId,
-        false,
-        "You do not have access to this session",
-      );
-      if (session.status !== "in_progress") {
-        throw new BadRequestError("Session is not in progress");
-      }
+      await ExamService.fetchActiveSession(tx, sessionId, userId);
 
       // Batch validate all questions
       const questionIds = answers.map((a) => a.questionId);
@@ -445,36 +426,9 @@ export class ExamService {
   /** Submit exam: auto-grade listening/reading, create submissions for writing/speaking */
   static async submitExam(sessionId: string, userId: string) {
     return await db.transaction(async (tx) => {
-      // 1. Lock session and verify ownership + status
-      const [session] = await tx
-        .select({
-          id: table.examSessions.id,
-          status: table.examSessions.status,
-          userId: table.examSessions.userId,
-        })
-        .from(table.examSessions)
-        .where(
-          and(
-            eq(table.examSessions.id, sessionId),
-            notDeleted(table.examSessions),
-          ),
-        )
-        .limit(1);
+      await ExamService.fetchActiveSession(tx, sessionId, userId);
 
-      if (!session) {
-        throw new NotFoundError("Session not found");
-      }
-      assertOwnerOrAdmin(
-        session.userId,
-        userId,
-        false,
-        "You do not have access to this session",
-      );
-      if (session.status !== "in_progress") {
-        throw new BadRequestError("Session is not in progress");
-      }
-
-      // 2. Fetch all exam answers for this session
+      // 1. Fetch all exam answers for this session
       const answers = await tx
         .select({
           questionId: table.examAnswers.questionId,

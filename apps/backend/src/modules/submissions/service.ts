@@ -17,6 +17,32 @@ const SUBMISSION_COLUMNS = {
   updatedAt: table.submissions.updatedAt,
 } as const;
 
+type DbLike = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/** Fetch submissionDetails and merge with base submission */
+async function enrichWithDetails<T extends Record<string, unknown>>(
+  dbOrTx: DbLike,
+  submission: T,
+  submissionId: string,
+) {
+  const [details] = await dbOrTx
+    .select({
+      answer: table.submissionDetails.answer,
+      result: table.submissionDetails.result,
+      feedback: table.submissionDetails.feedback,
+    })
+    .from(table.submissionDetails)
+    .where(eq(table.submissionDetails.submissionId, submissionId))
+    .limit(1);
+
+  return {
+    ...submission,
+    answer: details?.answer ?? null,
+    result: details?.result ?? null,
+    feedback: details?.feedback ?? null,
+  };
+}
+
 function scoreToBand(score: number): Submission["band"] {
   if (score >= 8.5) return "C1";
   if (score >= 6.0) return "B2";
@@ -77,18 +103,7 @@ export class SubmissionService {
       "You can only view your own submissions",
     );
 
-    const [details] = await db
-      .select()
-      .from(table.submissionDetails)
-      .where(eq(table.submissionDetails.submissionId, submissionId))
-      .limit(1);
-
-    return {
-      ...submission,
-      answer: details?.answer,
-      result: details?.result,
-      feedback: details?.feedback,
-    };
+    return enrichWithDetails(db, submission, submissionId);
   }
 
   static async list(
@@ -274,20 +289,8 @@ export class SubmissionService {
           .where(eq(table.submissionDetails.submissionId, submissionId));
       }
 
-      const [details] = await tx
-        .select()
-        .from(table.submissionDetails)
-        .where(eq(table.submissionDetails.submissionId, submissionId))
-        .limit(1);
-
       const updatedSub = assertExists(updatedSubmission, "Submission");
-
-      return {
-        ...updatedSub,
-        answer: details?.answer,
-        result: details?.result,
-        feedback: details?.feedback,
-      };
+      return enrichWithDetails(tx, updatedSub, submissionId);
     });
   }
 
@@ -342,20 +345,8 @@ export class SubmissionService {
           .where(eq(table.submissionDetails.submissionId, submissionId));
       }
 
-      const [details] = await tx
-        .select()
-        .from(table.submissionDetails)
-        .where(eq(table.submissionDetails.submissionId, submissionId))
-        .limit(1);
-
       const updatedSub = assertExists(updatedSubmission, "Submission");
-
-      return {
-        ...updatedSub,
-        answer: details?.answer,
-        result: details?.result,
-        feedback: details?.feedback,
-      };
+      return enrichWithDetails(tx, updatedSub, submissionId);
     });
   }
 
