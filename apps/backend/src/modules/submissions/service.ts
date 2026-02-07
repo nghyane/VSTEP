@@ -1,5 +1,5 @@
 import { assertExists, assertOwnerOrAdmin, now } from "@common/utils";
-import { type SQL, and, count, desc, eq, sql } from "drizzle-orm";
+import { and, count, desc, eq, type SQL, sql } from "drizzle-orm";
 import type { Submission } from "@/db";
 import { db, notDeleted, pagination, table } from "@/db";
 import { BadRequestError } from "@/plugins/error";
@@ -104,9 +104,7 @@ export class SubmissionService {
   ) {
     const pg = pagination(query.page, query.limit);
 
-    const conditions: SQL[] = [
-      notDeleted(table.submissions),
-    ];
+    const conditions: SQL[] = [notDeleted(table.submissions)];
 
     if (!isAdmin) {
       conditions.push(eq(table.submissions.userId, currentUserId));

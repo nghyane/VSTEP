@@ -1,4 +1,8 @@
-import { Skill, SubmissionStatus as SubmissionStatusEnum } from "@common/enums";
+import {
+  Skill,
+  SubmissionStatus as SubmissionStatusEnum,
+  VstepBand,
+} from "@common/enums";
 import { t } from "elysia";
 
 export namespace SubmissionModel {
@@ -9,17 +13,7 @@ export namespace SubmissionModel {
     skill: Skill,
     status: SubmissionStatusEnum,
     score: t.Optional(t.Nullable(t.Number())),
-    band: t.Optional(
-      t.Nullable(
-        t.Union([
-          t.Literal("A1"),
-          t.Literal("A2"),
-          t.Literal("B1"),
-          t.Literal("B2"),
-          t.Literal("C1"),
-        ]),
-      ),
-    ),
+    band: t.Optional(t.Nullable(VstepBand)),
     completedAt: t.Optional(t.String({ format: "date-time" })),
     createdAt: t.String({ format: "date-time" }),
     updatedAt: t.String({ format: "date-time" }),
@@ -42,28 +36,14 @@ export namespace SubmissionModel {
       answer: t.Any(),
       status: SubmissionStatusEnum,
       score: t.Number(),
-      band: t.Union([
-        t.Literal("A1"),
-        t.Literal("A2"),
-        t.Literal("B1"),
-        t.Literal("B2"),
-        t.Literal("C1"),
-      ]),
+      band: VstepBand,
       feedback: t.String(),
     }),
   );
 
   export const GradeBody = t.Object({
     score: t.Number(),
-    band: t.Optional(
-      t.Union([
-        t.Literal("A1"),
-        t.Literal("A2"),
-        t.Literal("B1"),
-        t.Literal("B2"),
-        t.Literal("C1"),
-      ]),
-    ),
+    band: t.Optional(VstepBand),
     feedback: t.Optional(t.String()),
   });
 

@@ -1,6 +1,11 @@
-import { assertExists } from "@common/utils";
-import { and, count, eq, ilike, sql } from "drizzle-orm";
-import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
+import {
+  assertExists,
+  assertOwnerOrAdmin,
+  escapeLike,
+  now,
+} from "@common/utils";
+import { and, count, eq, ilike, ne, type SQL } from "drizzle-orm";
+import { db, notDeleted, pagination, table } from "@/db";
 import { AuthService } from "@/modules/auth/service";
 import {
   ConflictError,
@@ -40,45 +45,40 @@ export class UserService {
     role?: "learner" | "instructor" | "admin";
     search?: string;
   }) {
-    const page = query.page || 1;
-    const limit = query.limit || 20;
+    const pg = pagination(query.page, query.limit);
 
-    // Build where conditions
-    const conditions: ReturnType<typeof and>[] = [notDeleted(table.users)];
+    const conditions: SQL[] = [notDeleted(table.users)];
 
     if (query.role) {
       conditions.push(eq(table.users.role, query.role));
     }
 
     if (query.search) {
-      conditions.push(ilike(table.users.fullName, `%${query.search}%`));
+      conditions.push(
+        ilike(table.users.fullName, `%${escapeLike(query.search)}%`),
+      );
     }
 
-    const whereClause =
-      conditions.length > 1 ? and(...conditions) : conditions[0];
+    const whereClause = and(...conditions);
 
-    // Get total count
     const [countResult] = await db
       .select({ count: count() })
       .from(table.users)
       .where(whereClause);
 
-    const total = countResult?.count || 0;
+    const total = countResult?.count ?? 0;
 
-    const { limit: take, offset } = paginate(page, limit);
-
-    // Get users
     const users = await db
       .select(USER_COLUMNS)
       .from(table.users)
       .where(whereClause)
       .orderBy(table.users.createdAt)
-      .limit(take)
-      .offset(offset);
+      .limit(pg.limit)
+      .offset(pg.offset);
 
     return {
       data: users,
-      meta: paginationMeta(total, page, limit),
+      meta: pg.meta(total),
     };
   }
 
@@ -88,7 +88,6 @@ export class UserService {
     fullName?: string;
     role?: "learner" | "instructor" | "admin";
   }) {
-    // Check for existing active user (soft-deleted emails are reusable)
     const existingUser = await db.query.users.findFirst({
       where: and(eq(table.users.email, body.email), notDeleted(table.users)),
       columns: { id: true },
@@ -98,10 +97,8 @@ export class UserService {
       throw new ConflictError("Email already registered");
     }
 
-    // Hash password
     const passwordHash = await AuthService.hashPassword(body.password);
 
-    // Create user
     const [user] = await db
       .insert(table.users)
       .values({
@@ -121,23 +118,22 @@ export class UserService {
       email?: string;
       fullName?: string | null;
       role?: "learner" | "instructor" | "admin";
-      password?: string;
     },
     currentUserId: string,
     isAdmin: boolean,
   ) {
-    // Only admins can update other users
-    if (userId !== currentUserId && !isAdmin) {
-      throw new ForbiddenError("You can only update your own profile");
-    }
+    assertOwnerOrAdmin(
+      userId,
+      currentUserId,
+      isAdmin,
+      "You can only update your own profile",
+    );
 
-    // Only admins can change roles
     if (body.role && !isAdmin) {
       throw new ForbiddenError("Only admins can change user roles");
     }
 
     return await db.transaction(async (tx) => {
-      // Check user exists
       const [existingUser] = await tx
         .select({ id: table.users.id })
         .from(table.users)
@@ -146,7 +142,6 @@ export class UserService {
 
       assertExists(existingUser, "User");
 
-      // Check email uniqueness if updating email (exclude soft-deleted)
       if (body.email) {
         const [emailExists] = await tx
           .select({ id: table.users.id })
@@ -154,8 +149,8 @@ export class UserService {
           .where(
             and(
               eq(table.users.email, body.email),
-              sql`${table.users.id} != ${userId}`,
-              sql`${table.users.deletedAt} IS NULL`,
+              ne(table.users.id, userId),
+              notDeleted(table.users),
             ),
           )
           .limit(1);
@@ -165,27 +160,14 @@ export class UserService {
         }
       }
 
-      // Build update values
-      const updateValues: Partial<{
-        email: string;
-        fullName: string | undefined | null;
-        role: "learner" | "instructor" | "admin";
-        passwordHash: string;
-        updatedAt: string;
-      }> = {
-        updatedAt: new Date().toISOString(),
+      const updateValues: Partial<typeof table.users.$inferInsert> = {
+        updatedAt: now(),
       };
 
       if (body.email) updateValues.email = body.email;
       if (body.fullName !== undefined) updateValues.fullName = body.fullName;
       if (body.role) updateValues.role = body.role;
-      if (body.password) {
-        updateValues.passwordHash = await AuthService.hashPassword(
-          body.password,
-        );
-      }
 
-      // Update user
       const [user] = await tx
         .update(table.users)
         .set(updateValues)
@@ -198,7 +180,6 @@ export class UserService {
 
   static async remove(userId: string) {
     return await db.transaction(async (tx) => {
-      // Check user exists
       const [existingUser] = await tx
         .select({ id: table.users.id })
         .from(table.users)
@@ -207,12 +188,12 @@ export class UserService {
 
       assertExists(existingUser, "User");
 
-      // Soft delete
+      const timestamp = now();
       const [user] = await tx
         .update(table.users)
         .set({
-          deletedAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          deletedAt: timestamp,
+          updatedAt: timestamp,
         })
         .where(eq(table.users.id, userId))
         .returning({
@@ -235,11 +216,13 @@ export class UserService {
     currentUserId: string,
     isAdmin: boolean,
   ) {
-    if (userId !== currentUserId && !isAdmin) {
-      throw new ForbiddenError("You can only change your own password");
-    }
+    assertOwnerOrAdmin(
+      userId,
+      currentUserId,
+      isAdmin,
+      "You can only change your own password",
+    );
 
-    // Get user with password
     const user = assertExists(
       await db.query.users.findFirst({
         where: and(eq(table.users.id, userId), notDeleted(table.users)),
@@ -251,7 +234,6 @@ export class UserService {
       "User",
     );
 
-    // Verify current password
     const isValid = await AuthService.verifyPassword(
       body.currentPassword,
       user.passwordHash,
@@ -261,14 +243,13 @@ export class UserService {
       throw new UnauthorizedError("Current password is incorrect");
     }
 
-    // Hash and update new password
     const newPasswordHash = await AuthService.hashPassword(body.newPassword);
 
     await db
       .update(table.users)
       .set({
         passwordHash: newPasswordHash,
-        updatedAt: new Date().toISOString(),
+        updatedAt: now(),
       })
       .where(eq(table.users.id, userId));
 

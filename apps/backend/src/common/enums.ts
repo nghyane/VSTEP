@@ -24,7 +24,6 @@ function enumSchema<const T extends readonly [string, ...string[]]>(values: T) {
 
 export const UserRole = enumSchema(userRoleEnum.enumValues);
 export const Skill = enumSchema(skillEnum.enumValues);
-export const QuestionSkill = enumSchema(skillEnum.enumValues);
 export const QuestionFormat = enumSchema(questionFormatEnum.enumValues);
 export const QuestionLevel = enumSchema(questionLevelEnum.enumValues);
 export const VstepBand = enumSchema(vstepBandEnum.enumValues);

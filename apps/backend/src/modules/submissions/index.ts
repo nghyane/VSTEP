@@ -1,5 +1,12 @@
 import { Skill, SubmissionStatus as SubmissionStatusEnum } from "@common/enums";
-import { AuthErrors, CrudErrors, ErrorResponse, IdParam, PaginationMeta, PaginationQuery } from "@common/schemas";
+import {
+  AuthErrors,
+  CrudErrors,
+  ErrorResponse,
+  IdParam,
+  PaginationMeta,
+  PaginationQuery,
+} from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import { SubmissionModel } from "./model";
@@ -80,7 +87,12 @@ export const submissions = new Elysia({
   .patch(
     "/:id",
     ({ params, body, user }) =>
-      SubmissionService.update(params.id, user.sub, user.role === "admin", body),
+      SubmissionService.update(
+        params.id,
+        user.sub,
+        user.role === "admin",
+        body,
+      ),
     {
       auth: true,
       params: IdParam,

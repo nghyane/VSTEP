@@ -30,3 +30,11 @@ export const PaginationMeta = t.Object({
   total: t.Number(),
   totalPages: t.Number(),
 });
+
+// ─── Error Response Presets ─────────────────────────────────────
+export const AuthErrors = { 401: ErrorResponse, 403: ErrorResponse } as const;
+export const CrudErrors = { ...AuthErrors, 404: ErrorResponse } as const;
+export const CrudWithConflictErrors = {
+  ...CrudErrors,
+  409: ErrorResponse,
+} as const;

@@ -31,7 +31,6 @@ export namespace UserModel {
         t.Nullable(t.String({ minLength: 1, maxLength: 100 })),
       ),
       role: UserRole,
-      password: t.String({ minLength: 8 }),
     }),
   );
 

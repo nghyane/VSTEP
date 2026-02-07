@@ -12,37 +12,33 @@ const LEVELS: Record<LogLevel, number> = {
   error: 3,
 };
 
+const STREAMS: Record<LogLevel, typeof Bun.stdout> = {
+  debug: Bun.stdout,
+  info: Bun.stdout,
+  warn: Bun.stderr,
+  error: Bun.stderr,
+};
+
 const currentLevel = LEVELS[(process.env.LOG_LEVEL as LogLevel) || "info"];
 
-const format = (
+function log(
   level: LogLevel,
   message: string,
   meta?: Record<string, unknown>,
-): string => {
-  const time = new Date().toISOString();
-  const log = { time, level, message, ...meta };
-  return `${JSON.stringify(log)}\n`;
-};
+): void {
+  if (LEVELS[level] >= currentLevel) {
+    const time = new Date().toISOString();
+    STREAMS[level].write(
+      `${JSON.stringify({ time, level, message, ...meta })}\n`,
+    );
+  }
+}
 
 export const logger = {
-  debug: (msg: string, meta?: Record<string, unknown>) => {
-    if (LEVELS.debug >= currentLevel) {
-      Bun.stdout.write(format("debug", msg, meta));
-    }
-  },
-  info: (msg: string, meta?: Record<string, unknown>) => {
-    if (LEVELS.info >= currentLevel) {
-      Bun.stdout.write(format("info", msg, meta));
-    }
-  },
-  warn: (msg: string, meta?: Record<string, unknown>) => {
-    if (LEVELS.warn >= currentLevel) {
-      Bun.stderr.write(format("warn", msg, meta));
-    }
-  },
-  error: (msg: string, meta?: Record<string, unknown>) => {
-    if (LEVELS.error >= currentLevel) {
-      Bun.stderr.write(format("error", msg, meta));
-    }
-  },
+  debug: (msg: string, meta?: Record<string, unknown>) =>
+    log("debug", msg, meta),
+  info: (msg: string, meta?: Record<string, unknown>) => log("info", msg, meta),
+  warn: (msg: string, meta?: Record<string, unknown>) => log("warn", msg, meta),
+  error: (msg: string, meta?: Record<string, unknown>) =>
+    log("error", msg, meta),
 };

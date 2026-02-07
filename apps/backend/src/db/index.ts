@@ -13,7 +13,7 @@ export const db = drizzle(env.DATABASE_URL, {
 });
 
 export { table };
-export { notDeleted, paginate, paginationMeta } from "./helpers";
+export { notDeleted, pagination } from "./helpers";
 export type {
   Exam,
   ExamAnswer,

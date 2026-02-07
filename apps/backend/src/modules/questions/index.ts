@@ -1,4 +1,4 @@
-import { QuestionLevel, QuestionSkill } from "@common/enums";
+import { QuestionLevel, Skill } from "@common/enums";
 import {
   AuthErrors,
   CrudErrors,
@@ -27,7 +27,7 @@ export const questions = new Elysia({
       auth: true,
       query: t.Object({
         ...PaginationQuery.properties,
-        skill: t.Optional(QuestionSkill),
+        skill: t.Optional(Skill),
         level: t.Optional(QuestionLevel),
         format: t.Optional(t.String()),
         isActive: t.Optional(t.Boolean()),
