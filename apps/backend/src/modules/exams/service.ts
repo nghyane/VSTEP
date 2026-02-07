@@ -1,8 +1,9 @@
-import { assertExists, assertOwnerOrAdmin, now } from "@common/utils";
+import { assertAccess, assertExists, now } from "@common/utils";
 import { and, count, desc, eq, inArray } from "drizzle-orm";
 import type { Exam } from "@/db";
 import { db, notDeleted, pagination, table } from "@/db";
-import { BadRequestError, NotFoundError } from "@/plugins/error";
+import type { Actor } from "@/plugins/auth";
+import { BadRequestError } from "@/plugins/error";
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -32,6 +33,34 @@ const SESSION_COLUMNS = {
   createdAt: table.examSessions.createdAt,
   updatedAt: table.examSessions.updatedAt,
 } as const;
+
+/** Fetch and validate an in-progress session owned by the actor */
+async function getActiveSession(
+  tx: Transaction,
+  sessionId: string,
+  actor: Actor,
+) {
+  const [session] = await tx
+    .select({
+      id: table.examSessions.id,
+      status: table.examSessions.status,
+      userId: table.examSessions.userId,
+    })
+    .from(table.examSessions)
+    .where(
+      and(eq(table.examSessions.id, sessionId), notDeleted(table.examSessions)),
+    )
+    .limit(1);
+
+  const s = assertExists(session, "Session");
+  assertAccess(s.userId, actor, "You do not have access to this session");
+
+  if (s.status !== "in_progress") {
+    throw new BadRequestError("Session is not in progress");
+  }
+
+  return s;
+}
 
 export class ExamService {
   static async getById(id: string) {
@@ -130,7 +159,7 @@ export class ExamService {
       throw new BadRequestError("Exam is not active");
     }
 
-    return await db.transaction(async (tx) => {
+    return db.transaction(async (tx) => {
       const [existingSession] = await tx
         .select(SESSION_COLUMNS)
         .from(table.examSessions)
@@ -162,11 +191,7 @@ export class ExamService {
     });
   }
 
-  static async getSessionById(
-    sessionId: string,
-    userId: string,
-    isAdmin: boolean,
-  ) {
+  static async getSessionById(sessionId: string, actor: Actor) {
     const session = await db.query.examSessions.findFirst({
       where: and(
         eq(table.examSessions.id, sessionId),
@@ -190,18 +215,9 @@ export class ExamService {
       },
     });
 
-    if (!session) {
-      throw new NotFoundError("Session not found");
-    }
-
-    assertOwnerOrAdmin(
-      session.userId,
-      userId,
-      isAdmin,
-      "You do not have access to this session",
-    );
-
-    return session;
+    const s = assertExists(session, "Session");
+    assertAccess(s.userId, actor, "You do not have access to this session");
+    return s;
   }
 
   /** Validate that a questionId exists and is active */
@@ -225,38 +241,11 @@ export class ExamService {
   /** Submit answer inside a transaction to prevent TOCTOU race */
   static async submitAnswer(
     sessionId: string,
-    userId: string,
+    actor: Actor,
     body: { questionId: string; answer: unknown },
   ): Promise<{ success: boolean }> {
-    return await db.transaction(async (tx) => {
-      const [session] = await tx
-        .select({
-          id: table.examSessions.id,
-          status: table.examSessions.status,
-          userId: table.examSessions.userId,
-        })
-        .from(table.examSessions)
-        .where(
-          and(
-            eq(table.examSessions.id, sessionId),
-            notDeleted(table.examSessions),
-          ),
-        )
-        .limit(1);
-
-      if (!session) {
-        throw new NotFoundError("Session not found");
-      }
-      assertOwnerOrAdmin(
-        session.userId,
-        userId,
-        false,
-        "You do not have access to this session",
-      );
-      if (session.status !== "in_progress") {
-        throw new BadRequestError("Session is not in progress");
-      }
-
+    return db.transaction(async (tx) => {
+      await getActiveSession(tx, sessionId, actor);
       await ExamService.validateQuestion(tx, body.questionId);
 
       await tx
@@ -281,37 +270,11 @@ export class ExamService {
   /** Bulk upsert answers for auto-save */
   static async saveAnswers(
     sessionId: string,
-    userId: string,
+    actor: Actor,
     answers: { questionId: string; answer: unknown }[],
   ): Promise<{ success: boolean; saved: number }> {
-    return await db.transaction(async (tx) => {
-      const [session] = await tx
-        .select({
-          id: table.examSessions.id,
-          status: table.examSessions.status,
-          userId: table.examSessions.userId,
-        })
-        .from(table.examSessions)
-        .where(
-          and(
-            eq(table.examSessions.id, sessionId),
-            notDeleted(table.examSessions),
-          ),
-        )
-        .limit(1);
-
-      if (!session) {
-        throw new NotFoundError("Session not found");
-      }
-      assertOwnerOrAdmin(
-        session.userId,
-        userId,
-        false,
-        "You do not have access to this session",
-      );
-      if (session.status !== "in_progress") {
-        throw new BadRequestError("Session is not in progress");
-      }
+    return db.transaction(async (tx) => {
+      await getActiveSession(tx, sessionId, actor);
 
       // Batch validate all questions
       const questionIds = answers.map((a) => a.questionId);
@@ -351,14 +314,7 @@ export class ExamService {
   private static autoGradeAnswers(
     examAnswers: { questionId: string; answer: unknown }[],
     questionsMap: Map<string, { skill: string; answerKey: unknown }>,
-  ): {
-    listeningCorrect: number;
-    listeningTotal: number;
-    readingCorrect: number;
-    readingTotal: number;
-    writingAnswers: { questionId: string; answer: unknown }[];
-    speakingAnswers: { questionId: string; answer: unknown }[];
-  } {
+  ) {
     let listeningCorrect = 0;
     let listeningTotal = 0;
     let readingCorrect = 0;
@@ -443,38 +399,11 @@ export class ExamService {
   }
 
   /** Submit exam: auto-grade listening/reading, create submissions for writing/speaking */
-  static async submitExam(sessionId: string, userId: string) {
-    return await db.transaction(async (tx) => {
-      // 1. Lock session and verify ownership + status
-      const [session] = await tx
-        .select({
-          id: table.examSessions.id,
-          status: table.examSessions.status,
-          userId: table.examSessions.userId,
-        })
-        .from(table.examSessions)
-        .where(
-          and(
-            eq(table.examSessions.id, sessionId),
-            notDeleted(table.examSessions),
-          ),
-        )
-        .limit(1);
+  static async submitExam(sessionId: string, actor: Actor) {
+    return db.transaction(async (tx) => {
+      const session = await getActiveSession(tx, sessionId, actor);
 
-      if (!session) {
-        throw new NotFoundError("Session not found");
-      }
-      assertOwnerOrAdmin(
-        session.userId,
-        userId,
-        false,
-        "You do not have access to this session",
-      );
-      if (session.status !== "in_progress") {
-        throw new BadRequestError("Session is not in progress");
-      }
-
-      // 2. Fetch all exam answers for this session
+      // Fetch all exam answers for this session
       const answers = await tx
         .select({
           questionId: table.examAnswers.questionId,
@@ -487,7 +416,7 @@ export class ExamService {
         throw new BadRequestError("No answers found for this session");
       }
 
-      // 3. Batch-fetch questions for those answers
+      // Batch-fetch questions for those answers
       const questionIds = answers.map((a) => a.questionId);
       const questionsRows = await tx
         .select({
@@ -505,10 +434,10 @@ export class ExamService {
         ]),
       );
 
-      // 4. Auto-grade listening/reading, collect writing/speaking
+      // Auto-grade listening/reading, collect writing/speaking
       const gradeResult = ExamService.autoGradeAnswers(answers, questionsMap);
 
-      // 5. Calculate scores
+      // Calculate scores
       const listeningScore = ExamService.calculateScore(
         gradeResult.listeningCorrect,
         gradeResult.listeningTotal,
@@ -518,7 +447,7 @@ export class ExamService {
         gradeResult.readingTotal,
       );
 
-      // 6. For writing/speaking: create submission + submissionDetail + examSubmissions link
+      // For writing/speaking: create submission + submissionDetail + examSubmissions link
       let hasPendingSubmissions = false;
 
       for (const wa of [
@@ -534,7 +463,7 @@ export class ExamService {
         hasPendingSubmissions = true;
         await ExamService.createSubmissionForExam(
           tx,
-          userId,
+          session.userId,
           sessionId,
           wa.questionId,
           wa.answer,
@@ -542,7 +471,7 @@ export class ExamService {
         );
       }
 
-      // 7. Update session: scores + status
+      // Update session: scores + status
       const finalStatus = hasPendingSubmissions ? "submitted" : "completed";
       const timestamp = now();
 

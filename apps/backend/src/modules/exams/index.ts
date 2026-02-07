@@ -44,9 +44,9 @@ export const exams = new Elysia({
 
   .post(
     "/",
-    async ({ body, user, set }) => {
+    ({ body, user, set }) => {
       set.status = 201;
-      return await ExamService.create(user.sub, body);
+      return ExamService.create(user.sub, body);
     },
     {
       role: "admin",
@@ -78,7 +78,7 @@ export const exams = new Elysia({
   .get(
     "/sessions/:sessionId",
     ({ params: { sessionId }, user }) =>
-      ExamService.getSessionById(sessionId, user.sub, user.role === "admin"),
+      ExamService.getSessionById(sessionId, user),
     {
       auth: true,
       params: ExamModel.SessionIdParam,
@@ -90,7 +90,7 @@ export const exams = new Elysia({
   .put(
     "/sessions/:sessionId",
     ({ params: { sessionId }, body, user }) =>
-      ExamService.saveAnswers(sessionId, user.sub, body.answers),
+      ExamService.saveAnswers(sessionId, user, body.answers),
     {
       auth: true,
       params: ExamModel.SessionIdParam,
@@ -107,7 +107,7 @@ export const exams = new Elysia({
   .post(
     "/sessions/:sessionId/answer",
     ({ params: { sessionId }, body, user }) =>
-      ExamService.submitAnswer(sessionId, user.sub, body),
+      ExamService.submitAnswer(sessionId, user, body),
     {
       auth: true,
       params: ExamModel.SessionIdParam,
@@ -127,7 +127,7 @@ export const exams = new Elysia({
   .post(
     "/sessions/:sessionId/submit",
     ({ params: { sessionId }, user }) =>
-      ExamService.submitExam(sessionId, user.sub),
+      ExamService.submitExam(sessionId, user),
     {
       auth: true,
       params: ExamModel.SessionIdParam,

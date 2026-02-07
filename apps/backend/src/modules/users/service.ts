@@ -1,12 +1,8 @@
-import {
-  assertExists,
-  assertOwnerOrAdmin,
-  escapeLike,
-  now,
-} from "@common/utils";
+import { assertAccess, assertExists, escapeLike, now } from "@common/utils";
 import { and, count, eq, ilike, ne, type SQL } from "drizzle-orm";
 import { db, notDeleted, pagination, table } from "@/db";
 import { AuthService } from "@/modules/auth/service";
+import type { Actor } from "@/plugins/auth";
 import {
   ConflictError,
   ForbiddenError,
@@ -119,21 +115,15 @@ export class UserService {
       fullName?: string | null;
       role?: "learner" | "instructor" | "admin";
     },
-    currentUserId: string,
-    isAdmin: boolean,
+    actor: Actor,
   ) {
-    assertOwnerOrAdmin(
-      userId,
-      currentUserId,
-      isAdmin,
-      "You can only update your own profile",
-    );
+    assertAccess(userId, actor, "You can only update your own profile");
 
-    if (body.role && !isAdmin) {
+    if (body.role && !actor.is("admin")) {
       throw new ForbiddenError("Only admins can change user roles");
     }
 
-    return await db.transaction(async (tx) => {
+    return db.transaction(async (tx) => {
       const [existingUser] = await tx
         .select({ id: table.users.id })
         .from(table.users)
@@ -179,7 +169,7 @@ export class UserService {
   }
 
   static async remove(userId: string) {
-    return await db.transaction(async (tx) => {
+    return db.transaction(async (tx) => {
       const [existingUser] = await tx
         .select({ id: table.users.id })
         .from(table.users)
@@ -213,15 +203,9 @@ export class UserService {
   static async updatePassword(
     userId: string,
     body: { currentPassword: string; newPassword: string },
-    currentUserId: string,
-    isAdmin: boolean,
+    actor: Actor,
   ) {
-    assertOwnerOrAdmin(
-      userId,
-      currentUserId,
-      isAdmin,
-      "You can only change your own password",
-    );
+    assertAccess(userId, actor, "You can only change your own password");
 
     const user = assertExists(
       await db.query.users.findFirst({

@@ -8,7 +8,7 @@ import {
   PaginationQuery,
   SuccessResponse,
 } from "@common/schemas";
-import { assertOwnerOrAdmin } from "@common/utils";
+import { assertAccess } from "@common/utils";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import { UserModel } from "./model";
@@ -22,13 +22,8 @@ export const users = new Elysia({
 
   .get(
     "/:id",
-    async ({ params, user }) => {
-      assertOwnerOrAdmin(
-        params.id,
-        user.sub,
-        user.role === "admin",
-        "You can only view your own profile",
-      );
+    ({ params, user }) => {
+      assertAccess(params.id, user, "You can only view your own profile");
       return UserService.getById(params.id);
     },
     {
@@ -64,7 +59,7 @@ export const users = new Elysia({
 
   .post(
     "/",
-    async ({ body, set }) => {
+    ({ body, set }) => {
       set.status = 201;
       return UserService.create(body);
     },
@@ -81,8 +76,7 @@ export const users = new Elysia({
 
   .patch(
     "/:id",
-    ({ params, body, user }) =>
-      UserService.update(params.id, body, user.sub, user.role === "admin"),
+    ({ params, body, user }) => UserService.update(params.id, body, user),
     {
       auth: true,
       params: IdParam,
@@ -114,12 +108,7 @@ export const users = new Elysia({
   .post(
     "/:id/password",
     ({ params, body, user }) =>
-      UserService.updatePassword(
-        params.id,
-        body,
-        user.sub,
-        user.role === "admin",
-      ),
+      UserService.updatePassword(params.id, body, user),
     {
       auth: true,
       params: IdParam,

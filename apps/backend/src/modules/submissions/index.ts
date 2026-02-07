@@ -18,36 +18,30 @@ export const submissions = new Elysia({
 })
   .use(authPlugin)
 
-  .get(
-    "/",
-    ({ query, user }) =>
-      SubmissionService.list(query, user.sub, user.role === "admin"),
-    {
-      auth: true,
-      query: t.Object({
-        ...PaginationQuery.properties,
-        skill: t.Optional(Skill),
-        status: t.Optional(SubmissionStatusEnum),
-        userId: t.Optional(t.String({ format: "uuid" })),
+  .get("/", ({ query, user }) => SubmissionService.list(query, user), {
+    auth: true,
+    query: t.Object({
+      ...PaginationQuery.properties,
+      skill: t.Optional(Skill),
+      status: t.Optional(SubmissionStatusEnum),
+      userId: t.Optional(t.String({ format: "uuid" })),
+    }),
+    response: {
+      200: t.Object({
+        data: t.Array(SubmissionModel.SubmissionWithDetails),
+        meta: PaginationMeta,
       }),
-      response: {
-        200: t.Object({
-          data: t.Array(SubmissionModel.SubmissionWithDetails),
-          meta: PaginationMeta,
-        }),
-        ...AuthErrors,
-      },
-      detail: {
-        summary: "List submissions",
-        description: "List submissions with filtering and pagination",
-      },
+      ...AuthErrors,
     },
-  )
+    detail: {
+      summary: "List submissions",
+      description: "List submissions with filtering and pagination",
+    },
+  })
 
   .get(
     "/:id",
-    ({ params, user }) =>
-      SubmissionService.getById(params.id, user.sub, user.role === "admin"),
+    ({ params, user }) => SubmissionService.getById(params.id, user),
     {
       auth: true,
       params: IdParam,
@@ -64,7 +58,7 @@ export const submissions = new Elysia({
 
   .post(
     "/",
-    async ({ body, user, set }) => {
+    ({ body, user, set }) => {
       set.status = 201;
       return SubmissionService.create(user.sub, body);
     },
@@ -86,13 +80,7 @@ export const submissions = new Elysia({
 
   .patch(
     "/:id",
-    ({ params, body, user }) =>
-      SubmissionService.update(
-        params.id,
-        user.sub,
-        user.role === "admin",
-        body,
-      ),
+    ({ params, body, user }) => SubmissionService.update(params.id, user, body),
     {
       auth: true,
       params: IdParam,
@@ -151,8 +139,7 @@ export const submissions = new Elysia({
 
   .delete(
     "/:id",
-    ({ params, user }) =>
-      SubmissionService.remove(params.id, user.sub, user.role === "admin"),
+    ({ params, user }) => SubmissionService.remove(params.id, user),
     {
       auth: true,
       params: IdParam,

@@ -14,11 +14,22 @@ export interface JWTPayload {
   role: Role;
 }
 
+export interface Actor extends JWTPayload {
+  is(required: Role): boolean;
+}
+
 const ROLE_LEVEL: Record<Role, number> = {
   learner: 0,
   instructor: 1,
   admin: 2,
 };
+
+function toActor(payload: JWTPayload): Actor {
+  return {
+    ...payload,
+    is: (required: Role) => ROLE_LEVEL[payload.role] >= ROLE_LEVEL[required],
+  };
+}
 
 const PayloadSchema = t.Object({
   sub: t.String(),
@@ -54,10 +65,8 @@ export async function verifyAccessToken(token: string): Promise<JWTPayload> {
 
 export const authPlugin = new Elysia({ name: "auth" })
   .use(bearer())
-  // Elysia macros don't propagate resolve types — this derive provides
-  // the type declaration so TypeScript sees `user` on handler context.
   .derive({ as: "scoped" }, () => ({
-    user: undefined as unknown as JWTPayload,
+    user: undefined as unknown as Actor,
   }))
   .macro({
     auth(enabled: boolean) {
@@ -65,7 +74,7 @@ export const authPlugin = new Elysia({ name: "auth" })
       return {
         async resolve({ bearer: token }: { bearer: string | undefined }) {
           if (!token) throw new UnauthorizedError("Authentication required");
-          return { user: await verifyAccessToken(token) };
+          return { user: toActor(await verifyAccessToken(token)) };
         },
       };
     },
@@ -73,8 +82,8 @@ export const authPlugin = new Elysia({ name: "auth" })
       return {
         async resolve({ bearer: token }: { bearer: string | undefined }) {
           if (!token) throw new UnauthorizedError("Authentication required");
-          const user = await verifyAccessToken(token);
-          if (ROLE_LEVEL[user.role] < ROLE_LEVEL[required]) {
+          const user = toActor(await verifyAccessToken(token));
+          if (!user.is(required)) {
             throw new ForbiddenError(
               `${required.charAt(0).toUpperCase() + required.slice(1)} access required`,
             );

@@ -18,60 +18,48 @@ export const questions = new Elysia({
 })
   .use(authPlugin)
 
-  .get(
-    "/",
-    async ({ query, user }) => {
-      return await QuestionService.list(query, user.sub, user.role === "admin");
-    },
-    {
-      auth: true,
-      query: t.Object({
-        ...PaginationQuery.properties,
-        skill: t.Optional(Skill),
-        level: t.Optional(QuestionLevel),
-        format: t.Optional(t.String()),
-        isActive: t.Optional(t.Boolean()),
-        search: t.Optional(t.String()),
+  .get("/", ({ query, user }) => QuestionService.list(query, user), {
+    auth: true,
+    query: t.Object({
+      ...PaginationQuery.properties,
+      skill: t.Optional(Skill),
+      level: t.Optional(QuestionLevel),
+      format: t.Optional(t.String()),
+      isActive: t.Optional(t.Boolean()),
+      search: t.Optional(t.String()),
+    }),
+    response: {
+      200: t.Object({
+        data: t.Array(QuestionModel.Question),
+        meta: PaginationMeta,
       }),
-      response: {
-        200: t.Object({
-          data: t.Array(QuestionModel.Question),
-          meta: PaginationMeta,
-        }),
-        400: ErrorResponse,
-        ...AuthErrors,
-      },
-      detail: {
-        summary: "List questions",
-        description: "List questions with filtering and pagination",
-      },
+      400: ErrorResponse,
+      ...AuthErrors,
     },
-  )
+    detail: {
+      summary: "List questions",
+      description: "List questions with filtering and pagination",
+    },
+  })
 
-  .get(
-    "/:id",
-    async ({ params }) => {
-      return await QuestionService.getById(params.id);
+  .get("/:id", ({ params }) => QuestionService.getById(params.id), {
+    auth: true,
+    params: IdParam,
+    response: {
+      200: QuestionModel.Question,
+      ...CrudErrors,
     },
-    {
-      auth: true,
-      params: IdParam,
-      response: {
-        200: QuestionModel.Question,
-        ...CrudErrors,
-      },
-      detail: {
-        summary: "Get question",
-        description: "Get a question by ID",
-      },
+    detail: {
+      summary: "Get question",
+      description: "Get a question by ID",
     },
-  )
+  })
 
   .post(
     "/",
-    async ({ body, user, set }) => {
+    ({ body, user, set }) => {
       set.status = 201;
-      return await QuestionService.create(user.sub, body);
+      return QuestionService.create(user.sub, body);
     },
     {
       role: "instructor",
@@ -91,14 +79,7 @@ export const questions = new Elysia({
 
   .patch(
     "/:id",
-    async ({ params, body, user }) => {
-      return await QuestionService.update(
-        params.id,
-        user.sub,
-        user.role === "admin",
-        body,
-      );
-    },
+    ({ params, body, user }) => QuestionService.update(params.id, user, body),
     {
       role: "instructor",
       params: IdParam,
@@ -118,14 +99,9 @@ export const questions = new Elysia({
 
   .post(
     "/:id/versions",
-    async ({ params, body, user, set }) => {
+    ({ params, body, user, set }) => {
       set.status = 201;
-      return await QuestionService.createVersion(
-        params.id,
-        user.sub,
-        user.role === "admin",
-        body,
-      );
+      return QuestionService.createVersion(params.id, user, body);
     },
     {
       role: "instructor",
@@ -147,9 +123,7 @@ export const questions = new Elysia({
 
   .get(
     "/:id/versions",
-    async ({ params }) => {
-      return await QuestionService.getVersions(params.id);
-    },
+    ({ params }) => QuestionService.getVersions(params.id),
     {
       role: "instructor",
       params: IdParam,
@@ -170,9 +144,7 @@ export const questions = new Elysia({
 
   .get(
     "/:id/versions/:versionId",
-    async ({ params }) => {
-      return await QuestionService.getVersion(params.id, params.versionId);
-    },
+    ({ params }) => QuestionService.getVersion(params.id, params.versionId),
     {
       params: t.Object({
         id: t.String({ format: "uuid" }),
@@ -192,13 +164,7 @@ export const questions = new Elysia({
 
   .delete(
     "/:id",
-    async ({ params, user }) => {
-      return await QuestionService.remove(
-        params.id,
-        user.sub,
-        user.role === "admin",
-      );
-    },
+    ({ params, user }) => QuestionService.remove(params.id, user),
     {
       role: "admin",
       params: IdParam,
@@ -213,27 +179,17 @@ export const questions = new Elysia({
     },
   )
 
-  .post(
-    "/:id/restore",
-    async ({ params, user }) => {
-      return await QuestionService.restore(
-        params.id,
-        user.sub,
-        user.role === "admin",
-      );
+  .post("/:id/restore", ({ params }) => QuestionService.restore(params.id), {
+    role: "admin",
+    params: IdParam,
+    response: {
+      200: QuestionModel.QuestionWithDetails,
+      400: ErrorResponse,
+      ...CrudErrors,
     },
-    {
-      role: "admin",
-      params: IdParam,
-      response: {
-        200: QuestionModel.QuestionWithDetails,
-        400: ErrorResponse,
-        ...CrudErrors,
-      },
-      detail: {
-        summary: "Restore question",
-        description: "Restore a deleted question (admin only)",
-        tags: ["Admin"],
-      },
+    detail: {
+      summary: "Restore question",
+      description: "Restore a deleted question (admin only)",
+      tags: ["Admin"],
     },
-  );
+  });
