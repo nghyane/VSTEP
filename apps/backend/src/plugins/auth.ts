@@ -30,7 +30,7 @@ const PayloadSchema = t.Object({
   ]),
 });
 
-const JWT_SECRET = new TextEncoder().encode(env.JWT_SECRET!);
+export const JWT_SECRET = new TextEncoder().encode(env.JWT_SECRET!);
 
 export async function verifyAccessToken(token: string): Promise<JWTPayload> {
   try {
@@ -52,6 +52,12 @@ export async function verifyAccessToken(token: string): Promise<JWTPayload> {
   }
 }
 
+/** Shared auth logic — verify bearer token and return JWT payload */
+async function authenticate(token: string | undefined): Promise<JWTPayload> {
+  if (!token) throw new UnauthorizedError("Authentication required");
+  return verifyAccessToken(token);
+}
+
 export const authPlugin = new Elysia({ name: "auth" })
   .use(bearer())
   // Elysia macros don't propagate resolve types — this derive provides
@@ -64,16 +70,14 @@ export const authPlugin = new Elysia({ name: "auth" })
       if (!enabled) return;
       return {
         async resolve({ bearer: token }: { bearer: string | undefined }) {
-          if (!token) throw new UnauthorizedError("Authentication required");
-          return { user: await verifyAccessToken(token) };
+          return { user: await authenticate(token) };
         },
       };
     },
     role(required: Role) {
       return {
         async resolve({ bearer: token }: { bearer: string | undefined }) {
-          if (!token) throw new UnauthorizedError("Authentication required");
-          const user = await verifyAccessToken(token);
+          const user = await authenticate(token);
           if (ROLE_LEVEL[user.role] < ROLE_LEVEL[required]) {
             throw new ForbiddenError(
               `${required.charAt(0).toUpperCase() + required.slice(1)} access required`,

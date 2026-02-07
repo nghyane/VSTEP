@@ -66,24 +66,20 @@ export class ExamService {
 
     const whereClause = and(...conditions);
 
-    const [countResult] = await db
-      .select({ count: count() })
-      .from(table.exams)
-      .where(whereClause);
-
-    const total = countResult?.count ?? 0;
-
-    const exams = await db
-      .select(EXAM_COLUMNS)
-      .from(table.exams)
-      .where(whereClause)
-      .orderBy(desc(table.exams.createdAt))
-      .limit(pg.limit)
-      .offset(pg.offset);
+    const [countResult, exams] = await Promise.all([
+      db.select({ count: count() }).from(table.exams).where(whereClause),
+      db
+        .select(EXAM_COLUMNS)
+        .from(table.exams)
+        .where(whereClause)
+        .orderBy(desc(table.exams.createdAt))
+        .limit(pg.limit)
+        .offset(pg.offset),
+    ]);
 
     return {
       data: exams,
-      meta: pg.meta(total),
+      meta: pg.meta(countResult[0]?.count ?? 0),
     };
   }
 
@@ -473,9 +469,7 @@ export class ExamService {
       );
 
       // 6. For writing/speaking: create submission + submissionDetail + examSubmissions link
-      let hasPendingSubmissions = false;
-
-      for (const wa of [
+      const pendingAnswers = [
         ...gradeResult.writingAnswers.map((a) => ({
           ...a,
           skill: "writing" as const,
@@ -484,8 +478,9 @@ export class ExamService {
           ...a,
           skill: "speaking" as const,
         })),
-      ]) {
-        hasPendingSubmissions = true;
+      ];
+
+      for (const wa of pendingAnswers) {
         await ExamService.createSubmissionForExam(
           tx,
           userId,
@@ -497,7 +492,7 @@ export class ExamService {
       }
 
       // 7. Update session: scores + status
-      const finalStatus = hasPendingSubmissions ? "submitted" : "completed";
+      const finalStatus = pendingAnswers.length > 0 ? "submitted" : "completed";
       const timestamp = now();
 
       const [updatedSession] = await tx

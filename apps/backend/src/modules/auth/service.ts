@@ -2,12 +2,12 @@ import { env } from "@common/env";
 import { assertExists, now } from "@common/utils";
 import { and, asc, eq, gt, inArray, isNull } from "drizzle-orm";
 import { SignJWT } from "jose";
-import { db, table } from "@/db";
+import { db, notDeleted, table } from "@/db";
 import type { JWTPayload } from "@/plugins/auth";
+import { JWT_SECRET } from "@/plugins/auth";
 import { ConflictError, UnauthorizedError } from "@/plugins/error";
 import type { AuthModel } from "./model";
 
-const ACCESS_SECRET = new TextEncoder().encode(env.JWT_SECRET!);
 const MAX_REFRESH_TOKENS = 3;
 
 type UserInfo = AuthModel.UserInfo;
@@ -45,11 +45,8 @@ function parseExpiry(str: string): number {
 const ACCESS_EXPIRY_SECONDS = parseExpiry(env.JWT_EXPIRES_IN);
 const REFRESH_EXPIRY_SECONDS = parseExpiry(env.JWT_REFRESH_EXPIRES_IN!);
 
-function hashToken(token: string): string {
-  const hasher = new Bun.CryptoHasher("sha256");
-  hasher.update(token);
-  return hasher.digest("hex");
-}
+const hashToken = (token: string): string =>
+  new Bun.CryptoHasher("sha256").update(token).digest("hex");
 
 /** Sign access token + build the full token response */
 async function buildTokenResponse(
@@ -64,7 +61,7 @@ async function buildTokenResponse(
   } satisfies JWTPayload)
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime(env.JWT_EXPIRES_IN!)
-    .sign(ACCESS_SECRET);
+    .sign(JWT_SECRET);
 
   return {
     user,
@@ -96,10 +93,7 @@ export class AuthService {
     deviceInfo?: string;
   }): Promise<TokenResponse> {
     const user = await db.query.users.findFirst({
-      where: and(
-        eq(table.users.email, body.email),
-        isNull(table.users.deletedAt),
-      ),
+      where: and(eq(table.users.email, body.email), notDeleted(table.users)),
       columns: {
         id: true,
         email: true,
@@ -170,10 +164,7 @@ export class AuthService {
     fullName?: string;
   }): Promise<{ user: UserInfo; message: string }> {
     const existing = await db.query.users.findFirst({
-      where: and(
-        eq(table.users.email, body.email),
-        isNull(table.users.deletedAt),
-      ),
+      where: and(eq(table.users.email, body.email), notDeleted(table.users)),
       columns: { id: true },
     });
     if (existing) throw new ConflictError("Email already registered");
@@ -201,63 +192,67 @@ export class AuthService {
     };
   }
 
+  /**
+   * Refresh token rotation — entire flow runs inside a single transaction
+   * to prevent TOCTOU race conditions on concurrent requests.
+   */
   static async refreshToken(
     refreshToken: string,
     deviceInfo?: string,
   ): Promise<TokenResponse> {
     const hash = hashToken(refreshToken);
 
-    const tokenRecord = await db.query.refreshTokens.findFirst({
-      where: eq(table.refreshTokens.tokenHash, hash),
-      columns: {
-        id: true,
-        userId: true,
-        jti: true,
-        revokedAt: true,
-        replacedByJti: true,
-        expiresAt: true,
-      },
-    });
+    return await db.transaction(async (tx) => {
+      const tokenRecord = await tx.query.refreshTokens.findFirst({
+        where: eq(table.refreshTokens.tokenHash, hash),
+        columns: {
+          id: true,
+          userId: true,
+          jti: true,
+          revokedAt: true,
+          replacedByJti: true,
+          expiresAt: true,
+        },
+      });
 
-    if (!tokenRecord) {
-      throw new UnauthorizedError("Invalid refresh token");
-    }
+      if (!tokenRecord) {
+        throw new UnauthorizedError("Invalid refresh token");
+      }
 
-    // Reuse detection: token already revoked → compromise detected
-    if (tokenRecord.revokedAt || tokenRecord.replacedByJti) {
-      await db
-        .update(table.refreshTokens)
-        .set({ revokedAt: now() })
-        .where(
-          and(
-            eq(table.refreshTokens.userId, tokenRecord.userId),
-            isNull(table.refreshTokens.revokedAt),
-          ),
+      // Reuse detection: token already revoked → compromise detected
+      if (tokenRecord.revokedAt || tokenRecord.replacedByJti) {
+        await tx
+          .update(table.refreshTokens)
+          .set({ revokedAt: now() })
+          .where(
+            and(
+              eq(table.refreshTokens.userId, tokenRecord.userId),
+              isNull(table.refreshTokens.revokedAt),
+            ),
+          );
+        throw new UnauthorizedError(
+          "Refresh token reuse detected, all sessions revoked",
         );
-      throw new UnauthorizedError(
-        "Refresh token reuse detected, all sessions revoked",
-      );
-    }
+      }
 
-    if (new Date(tokenRecord.expiresAt) <= new Date()) {
-      throw new UnauthorizedError("Refresh token expired");
-    }
+      if (new Date(tokenRecord.expiresAt) <= new Date()) {
+        throw new UnauthorizedError("Refresh token expired");
+      }
 
-    const user = await db.query.users.findFirst({
-      where: and(
-        eq(table.users.id, tokenRecord.userId),
-        isNull(table.users.deletedAt),
-      ),
-      columns: { id: true, email: true, fullName: true, role: true },
-    });
+      const user = await tx.query.users.findFirst({
+        where: and(
+          eq(table.users.id, tokenRecord.userId),
+          notDeleted(table.users),
+        ),
+        columns: { id: true, email: true, fullName: true, role: true },
+      });
 
-    if (!user) throw new UnauthorizedError("User not found");
+      if (!user) throw new UnauthorizedError("User not found");
 
-    // Rotate: revoke old, issue new
-    const newRefreshToken = crypto.randomUUID();
-    const newJti = crypto.randomUUID();
+      // Rotate: revoke old, issue new
+      const newRefreshToken = crypto.randomUUID();
+      const newJti = crypto.randomUUID();
 
-    await db.transaction(async (tx) => {
       await tx
         .update(table.refreshTokens)
         .set({ revokedAt: now(), replacedByJti: newJti })
@@ -272,9 +267,9 @@ export class AuthService {
           Date.now() + REFRESH_EXPIRY_SECONDS * 1000,
         ).toISOString(),
       });
-    });
 
-    return buildTokenResponse(user, newJti, newRefreshToken);
+      return buildTokenResponse(user, newJti, newRefreshToken);
+    });
   }
 
   static async logout(refreshToken: string): Promise<{ message: string }> {
