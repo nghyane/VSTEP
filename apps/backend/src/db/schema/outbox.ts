@@ -35,7 +35,10 @@ export const outbox = pgTable(
     errorMessage: text("error_message"),
     lockedAt: timestamp("locked_at", { withTimezone: true, mode: "string" }),
     lockedBy: varchar("locked_by", { length: 64 }),
-    publishedAt: timestamp("published_at", { withTimezone: true, mode: "string" }),
+    publishedAt: timestamp("published_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
@@ -58,7 +61,10 @@ export const processedCallbacks = pgTable(
     submissionId: uuid("submission_id")
       .references(() => submissions.id, { onDelete: "cascade" })
       .notNull(),
-    processedAt: timestamp("processed_at", { withTimezone: true, mode: "string" })
+    processedAt: timestamp("processed_at", {
+      withTimezone: true,
+      mode: "string",
+    })
       .defaultNow()
       .notNull(),
   },

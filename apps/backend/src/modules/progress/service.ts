@@ -83,7 +83,9 @@ class ProgressService {
       }
     } else if (scores.length >= 3) {
       trend =
-        windowStdDev !== null && windowStdDev >= 1.5 ? "inconsistent" : "stable";
+        windowStdDev !== null && windowStdDev >= 1.5
+          ? "inconsistent"
+          : "stable";
     }
 
     return {

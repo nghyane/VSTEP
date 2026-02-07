@@ -1,5 +1,5 @@
 import "./test-env";
-import { describe, test, expect } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { Elysia } from "elysia";
 import { SignJWT } from "jose";
 import { authPlugin, type Role } from "../auth";
@@ -22,16 +22,12 @@ const app = new Elysia()
   .use(errorPlugin)
   .use(authPlugin)
   .get("/public", () => ({ message: "public" }))
-  .get(
-    "/protected",
-    ({ user }) => ({ userId: user.sub, role: user.role }),
-    { auth: true },
-  )
-  .get(
-    "/admin-only",
-    ({ user }) => ({ userId: user.sub, role: user.role }),
-    { role: "admin" as Role },
-  )
+  .get("/protected", ({ user }) => ({ userId: user.sub, role: user.role }), {
+    auth: true,
+  })
+  .get("/admin-only", ({ user }) => ({ userId: user.sub, role: user.role }), {
+    role: "admin" as Role,
+  })
   .get(
     "/instructor-up",
     ({ user }) => ({ userId: user.sub, role: user.role }),
@@ -46,9 +42,7 @@ describe("Auth Plugin", () => {
   });
 
   test("GET /protected — no token → 401 UNAUTHORIZED", async () => {
-    const res = await app.handle(
-      new Request("http://localhost/protected"),
-    );
+    const res = await app.handle(new Request("http://localhost/protected"));
     expect(res.status).toBe(401);
     const body: any = await res.json();
     expect(body.error.code).toBe("UNAUTHORIZED");
@@ -187,9 +181,7 @@ describe("Auth Plugin", () => {
   });
 
   test("GET /admin-only — no token → 401", async () => {
-    const res = await app.handle(
-      new Request("http://localhost/admin-only"),
-    );
+    const res = await app.handle(new Request("http://localhost/admin-only"));
     expect(res.status).toBe(401);
   });
 

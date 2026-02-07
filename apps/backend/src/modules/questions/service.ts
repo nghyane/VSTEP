@@ -1,7 +1,12 @@
-import { assertExists } from "@common/utils";
-import { and, count, desc, eq, sql } from "drizzle-orm";
-import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
+import {
+  assertExists,
+  assertOwnerOrAdmin,
+  escapeLike,
+  now,
+} from "@common/utils";
+import { and, count, desc, eq, type SQL, sql } from "drizzle-orm";
 import type { Question } from "@/db";
+import { db, notDeleted, pagination, table } from "@/db";
 import { BadRequestError, ForbiddenError } from "@/plugins/error";
 
 const QUESTION_PUBLIC_COLUMNS = {
@@ -55,10 +60,10 @@ export class QuestionService {
     _currentUserId: string,
     isAdmin: boolean,
   ) {
-    const { limit, offset } = paginate(query.page, query.limit);
+    const pg = pagination(query.page, query.limit);
 
     // Build where conditions
-    const conditions: ReturnType<typeof and>[] = [notDeleted(table.questions)];
+    const conditions: SQL[] = [notDeleted(table.questions)];
 
     // Admins see all questions including inactive, regular users only see active
     if (!isAdmin) {
@@ -81,12 +86,11 @@ export class QuestionService {
 
     if (query.search) {
       conditions.push(
-        sql`${table.questions.content}::text ILIKE ${`%${query.search}%`}`,
+        sql`${table.questions.content}::text ILIKE ${`%${escapeLike(query.search)}%`}`,
       );
     }
 
-    const whereClause =
-      conditions.length > 1 ? and(...conditions) : conditions[0];
+    const whereClause = and(...conditions);
 
     // Get total count
     const [countResult] = await db
@@ -101,12 +105,12 @@ export class QuestionService {
       .from(table.questions)
       .where(whereClause)
       .orderBy(desc(table.questions.createdAt))
-      .limit(limit)
-      .offset(offset);
+      .limit(pg.limit)
+      .offset(pg.offset);
 
     return {
       data: questions,
-      meta: paginationMeta(total, query.page, query.limit),
+      meta: pg.meta(total),
     };
   }
 
@@ -177,13 +181,16 @@ export class QuestionService {
       const question = assertExists(row, "Question");
 
       // Check ownership for non-admin
-      if (question.createdBy !== userId && !isAdmin) {
-        throw new ForbiddenError("You can only update your own questions");
-      }
+      assertOwnerOrAdmin(
+        question.createdBy ?? "",
+        userId,
+        isAdmin,
+        "You can only update your own questions",
+      );
 
       // Build update values
       const updateValues: Partial<typeof table.questions.$inferInsert> = {
-        updatedAt: new Date().toISOString(),
+        updatedAt: now(),
       };
 
       if (body.skill !== undefined) updateValues.skill = body.skill;
@@ -245,11 +252,12 @@ export class QuestionService {
       const question = assertExists(row, "Question");
 
       // Check ownership for non-admin
-      if (question.createdBy !== userId && !isAdmin) {
-        throw new ForbiddenError(
-          "You can only create versions of your own questions",
-        );
-      }
+      assertOwnerOrAdmin(
+        question.createdBy ?? "",
+        userId,
+        isAdmin,
+        "You can only create versions of your own questions",
+      );
 
       const newVersion = question.version + 1;
 
@@ -273,7 +281,7 @@ export class QuestionService {
           content: body.content,
           answerKey: body.answerKey ?? null,
           version: newVersion,
-          updatedAt: new Date().toISOString(),
+          updatedAt: now(),
         })
         .where(eq(table.questions.id, questionId));
 
@@ -346,16 +354,20 @@ export class QuestionService {
       const question = assertExists(row, "Question");
 
       // Check ownership for non-admin
-      if (question.createdBy !== userId && !isAdmin) {
-        throw new ForbiddenError("You can only delete your own questions");
-      }
+      assertOwnerOrAdmin(
+        question.createdBy ?? "",
+        userId,
+        isAdmin,
+        "You can only delete your own questions",
+      );
 
       // Soft delete
+      const timestamp = now();
       await tx
         .update(table.questions)
         .set({
-          deletedAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          deletedAt: timestamp,
+          updatedAt: timestamp,
         })
         .where(eq(table.questions.id, questionId));
 
@@ -387,7 +399,7 @@ export class QuestionService {
         .update(table.questions)
         .set({
           deletedAt: null,
-          updatedAt: new Date().toISOString(),
+          updatedAt: now(),
         })
         .where(eq(table.questions.id, questionId))
         .returning();

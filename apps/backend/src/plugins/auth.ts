@@ -1,11 +1,10 @@
 import { env } from "@common/env";
+import type { userRoleEnum } from "@db/schema/users";
 import { bearer } from "@elysiajs/bearer";
-import { Elysia, t } from "elysia";
-import { jwtVerify, errors as joseErrors } from "jose";
 import { Value } from "@sinclair/typebox/value";
+import { Elysia, t } from "elysia";
+import { errors as joseErrors, jwtVerify } from "jose";
 import { ForbiddenError, TokenExpiredError, UnauthorizedError } from "./error";
-
-import { userRoleEnum } from "@db/schema/users";
 
 export type Role = (typeof userRoleEnum.enumValues)[number];
 
@@ -65,8 +64,7 @@ export const authPlugin = new Elysia({ name: "auth" })
       if (!enabled) return;
       return {
         async resolve({ bearer: token }: { bearer: string | undefined }) {
-          if (!token)
-            throw new UnauthorizedError("Authentication required");
+          if (!token) throw new UnauthorizedError("Authentication required");
           return { user: await verifyAccessToken(token) };
         },
       };
@@ -74,8 +72,7 @@ export const authPlugin = new Elysia({ name: "auth" })
     role(required: Role) {
       return {
         async resolve({ bearer: token }: { bearer: string | undefined }) {
-          if (!token)
-            throw new UnauthorizedError("Authentication required");
+          if (!token) throw new UnauthorizedError("Authentication required");
           const user = await verifyAccessToken(token);
           if (ROLE_LEVEL[user.role] < ROLE_LEVEL[required]) {
             throw new ForbiddenError(

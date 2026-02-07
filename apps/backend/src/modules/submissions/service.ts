@@ -1,8 +1,8 @@
-import { assertExists } from "@common/utils";
-import { and, count, desc, eq, sql } from "drizzle-orm";
+import { assertExists, assertOwnerOrAdmin, now } from "@common/utils";
+import { type SQL, and, count, desc, eq, sql } from "drizzle-orm";
 import type { Submission } from "@/db";
-import { db, notDeleted, paginate, paginationMeta, table } from "@/db";
-import { BadRequestError, ForbiddenError } from "@/plugins/error";
+import { db, notDeleted, pagination, table } from "@/db";
+import { BadRequestError } from "@/plugins/error";
 
 const SUBMISSION_COLUMNS = {
   id: table.submissions.id,
@@ -70,9 +70,12 @@ export class SubmissionService {
       "Submission",
     );
 
-    if (!isAdmin && submission.userId !== currentUserId) {
-      throw new ForbiddenError("You can only view your own submissions");
-    }
+    assertOwnerOrAdmin(
+      submission.userId,
+      currentUserId,
+      isAdmin,
+      "You can only view your own submissions",
+    );
 
     const [details] = await db
       .select()
@@ -99,11 +102,9 @@ export class SubmissionService {
     currentUserId: string,
     isAdmin: boolean,
   ) {
-    const page = query.page ?? 1;
-    const limit = query.limit ?? 20;
-    const { limit: safeLimit, offset } = paginate(page, limit);
+    const pg = pagination(query.page, query.limit);
 
-    const conditions: ReturnType<typeof and>[] = [
+    const conditions: SQL[] = [
       notDeleted(table.submissions),
     ];
 
@@ -121,8 +122,7 @@ export class SubmissionService {
       conditions.push(eq(table.submissions.status, query.status));
     }
 
-    const whereClause =
-      conditions.length > 1 ? and(...conditions) : conditions[0];
+    const whereClause = and(...conditions);
 
     const [countResult] = await db
       .select({ count: count() })
@@ -145,12 +145,12 @@ export class SubmissionService {
       )
       .where(whereClause)
       .orderBy(desc(table.submissions.createdAt))
-      .limit(safeLimit)
-      .offset(offset);
+      .limit(pg.limit)
+      .offset(pg.offset);
 
     return {
       data: submissions,
-      meta: paginationMeta(total, page, limit),
+      meta: pg.meta(total),
     };
   }
 
@@ -191,7 +191,7 @@ export class SubmissionService {
         answer: body.answer,
       });
 
-      return sub;
+      return { ...sub, answer: body.answer, result: null, feedback: null };
     });
   }
 
@@ -221,9 +221,12 @@ export class SubmissionService {
 
       const submission = assertExists(row, "Submission");
 
-      if (submission.userId !== userId && !isAdmin) {
-        throw new ForbiddenError("You can only update your own submissions");
-      }
+      assertOwnerOrAdmin(
+        submission.userId,
+        userId,
+        isAdmin,
+        "You can only update your own submissions",
+      );
 
       const MUTABLE_STATUSES = ["pending", "error"];
       if (!MUTABLE_STATUSES.includes(submission.status) && !isAdmin) {
@@ -235,8 +238,9 @@ export class SubmissionService {
         validateTransition(submission.status, body.status);
       }
 
+      const timestamp = now();
       const updateValues: Partial<typeof table.submissions.$inferInsert> = {
-        updatedAt: new Date().toISOString(),
+        updatedAt: timestamp,
       };
 
       if (isAdmin) {
@@ -246,7 +250,7 @@ export class SubmissionService {
             body.status === "completed" &&
             submission.status !== "completed"
           ) {
-            updateValues.completedAt = new Date().toISOString();
+            updateValues.completedAt = timestamp;
           }
         }
         if (body.score !== undefined) updateValues.score = body.score;
@@ -320,14 +324,15 @@ export class SubmissionService {
         throw new BadRequestError("Score must be in 0.5 increments");
       }
 
+      const timestamp = now();
       const [updatedSubmission] = await tx
         .update(table.submissions)
         .set({
           status: "completed",
           score: body.score,
           band: body.band ?? scoreToBand(body.score),
-          updatedAt: new Date().toISOString(),
-          completedAt: new Date().toISOString(),
+          updatedAt: timestamp,
+          completedAt: timestamp,
         })
         .where(eq(table.submissions.id, submissionId))
         .returning(SUBMISSION_COLUMNS);
@@ -371,15 +376,19 @@ export class SubmissionService {
 
       const submission = assertExists(row, "Submission");
 
-      if (submission.userId !== userId && !isAdmin) {
-        throw new ForbiddenError("You can only delete your own submissions");
-      }
+      assertOwnerOrAdmin(
+        submission.userId,
+        userId,
+        isAdmin,
+        "You can only delete your own submissions",
+      );
 
+      const timestamp = now();
       await tx
         .update(table.submissions)
         .set({
-          deletedAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          deletedAt: timestamp,
+          updatedAt: timestamp,
         })
         .where(eq(table.submissions.id, submissionId));
 
@@ -445,12 +454,13 @@ export class SubmissionService {
       const score = Math.round(rawScore * 2) / 2;
       const band = scoreToBand(score);
 
+      const timestamp = now();
       const result = {
         correctCount,
         totalCount,
         score,
         band,
-        gradedAt: new Date().toISOString(),
+        gradedAt: timestamp,
       };
 
       await tx
@@ -459,8 +469,8 @@ export class SubmissionService {
           status: "completed",
           score,
           band,
-          completedAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          completedAt: timestamp,
+          updatedAt: timestamp,
         })
         .where(eq(table.submissions.id, submissionId));
 

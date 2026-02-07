@@ -56,7 +56,10 @@ export const refreshTokens = pgTable(
     replacedByJti: varchar("replaced_by_jti", { length: 36 }),
     deviceInfo: text("device_info"),
     revokedAt: timestamp("revoked_at", { withTimezone: true, mode: "string" }),
-    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "string" }).notNull(),
+    expiresAt: timestamp("expires_at", {
+      withTimezone: true,
+      mode: "string",
+    }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),

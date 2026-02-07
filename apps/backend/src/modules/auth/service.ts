@@ -121,7 +121,9 @@ export class AuthService {
         tokenHash: hashToken(refreshToken),
         jti,
         deviceInfo: body.deviceInfo,
-        expiresAt: new Date(Date.now() + refreshExpirySeconds * 1000).toISOString(),
+        expiresAt: new Date(
+          Date.now() + refreshExpirySeconds * 1000,
+        ).toISOString(),
       });
     });
 
@@ -245,7 +247,9 @@ export class AuthService {
         tokenHash: hashToken(newRefreshToken),
         jti: newJti,
         deviceInfo,
-        expiresAt: new Date(Date.now() + refreshExpirySeconds * 1000).toISOString(),
+        expiresAt: new Date(
+          Date.now() + refreshExpirySeconds * 1000,
+        ).toISOString(),
       });
     });
 
