@@ -97,22 +97,16 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
     },
   )
 
-  .post(
-    "/logout",
-    async ({ body }) => {
-      return AuthService.logout(body.refreshToken);
+  .post("/logout", ({ body }) => AuthService.logout(body.refreshToken), {
+    body: AuthModel.LogoutBody,
+    response: {
+      200: t.Object({ message: t.String() }),
     },
-    {
-      body: AuthModel.LogoutBody,
-      response: {
-        200: t.Object({ message: t.String() }),
-      },
-      detail: {
-        summary: "Logout",
-        description: "Logout user and revoke refresh token",
-      },
+    detail: {
+      summary: "Logout",
+      description: "Logout user and revoke refresh token",
     },
-  )
+  })
 
   .get(
     "/me",

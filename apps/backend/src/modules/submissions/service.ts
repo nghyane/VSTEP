@@ -1,7 +1,8 @@
-import { assertExists, assertOwnerOrAdmin, now } from "@common/utils";
+import { assertAccess, assertExists, now } from "@common/utils";
 import { and, count, desc, eq, type SQL, sql } from "drizzle-orm";
 import type { Submission } from "@/db";
 import { db, notDeleted, pagination, table } from "@/db";
+import type { Actor } from "@/plugins/auth";
 import { BadRequestError } from "@/plugins/error";
 
 const SUBMISSION_COLUMNS = {
@@ -43,46 +44,21 @@ function validateTransition(current: string, next: string) {
 }
 
 export class SubmissionService {
-  static async getById(
-    submissionId: string,
-    currentUserId: string,
-    isAdmin: boolean,
-  ) {
-    const submission = assertExists(
+  static async getById(submissionId: string, actor: Actor) {
+    const row = assertExists(
       await db.query.submissions.findFirst({
         where: and(
           eq(table.submissions.id, submissionId),
           notDeleted(table.submissions),
         ),
-        columns: {
-          id: true,
-          userId: true,
-          questionId: true,
-          skill: true,
-          status: true,
-          score: true,
-          band: true,
-          completedAt: true,
-          createdAt: true,
-          updatedAt: true,
-        },
+        with: { details: true },
       }),
       "Submission",
     );
 
-    assertOwnerOrAdmin(
-      submission.userId,
-      currentUserId,
-      isAdmin,
-      "You can only view your own submissions",
-    );
+    assertAccess(row.userId, actor, "You can only view your own submissions");
 
-    const [details] = await db
-      .select()
-      .from(table.submissionDetails)
-      .where(eq(table.submissionDetails.submissionId, submissionId))
-      .limit(1);
-
+    const { details, ...submission } = row;
     return {
       ...submission,
       answer: details?.answer,
@@ -99,15 +75,14 @@ export class SubmissionService {
       status?: Submission["status"];
       userId?: string;
     },
-    currentUserId: string,
-    isAdmin: boolean,
+    actor: Actor,
   ) {
     const pg = pagination(query.page, query.limit);
 
     const conditions: SQL[] = [notDeleted(table.submissions)];
 
-    if (!isAdmin) {
-      conditions.push(eq(table.submissions.userId, currentUserId));
+    if (!actor.is("admin")) {
+      conditions.push(eq(table.submissions.userId, actor.sub));
     } else if (query.userId) {
       conditions.push(eq(table.submissions.userId, query.userId));
     }
@@ -171,7 +146,7 @@ export class SubmissionService {
       throw new BadRequestError("Question is not active");
     }
 
-    return await db.transaction(async (tx) => {
+    return db.transaction(async (tx) => {
       const [submission] = await tx
         .insert(table.submissions)
         .values({
@@ -195,8 +170,7 @@ export class SubmissionService {
 
   static async update(
     submissionId: string,
-    userId: string,
-    isAdmin: boolean,
+    actor: Actor,
     body: {
       answer?: unknown;
       status?: Submission["status"];
@@ -205,7 +179,7 @@ export class SubmissionService {
       feedback?: string;
     },
   ) {
-    return await db.transaction(async (tx) => {
+    return db.transaction(async (tx) => {
       const [row] = await tx
         .select()
         .from(table.submissions)
@@ -219,19 +193,17 @@ export class SubmissionService {
 
       const submission = assertExists(row, "Submission");
 
-      assertOwnerOrAdmin(
+      assertAccess(
         submission.userId,
-        userId,
-        isAdmin,
+        actor,
         "You can only update your own submissions",
       );
 
       const MUTABLE_STATUSES = ["pending", "error"];
-      if (!MUTABLE_STATUSES.includes(submission.status) && !isAdmin) {
+      if (!MUTABLE_STATUSES.includes(submission.status) && !actor.is("admin")) {
         throw new BadRequestError("Cannot update submission in current status");
       }
 
-      // Validate status transition for all callers
       if (body.status) {
         validateTransition(submission.status, body.status);
       }
@@ -241,7 +213,7 @@ export class SubmissionService {
         updatedAt: timestamp,
       };
 
-      if (isAdmin) {
+      if (actor.is("admin")) {
         if (body.status) {
           updateValues.status = body.status;
           if (
@@ -295,7 +267,7 @@ export class SubmissionService {
     submissionId: string,
     body: { score: number; band?: Submission["band"]; feedback?: string },
   ) {
-    return await db.transaction(async (tx) => {
+    return db.transaction(async (tx) => {
       const [row] = await tx
         .select()
         .from(table.submissions)
@@ -359,8 +331,8 @@ export class SubmissionService {
     });
   }
 
-  static async remove(submissionId: string, userId: string, isAdmin: boolean) {
-    return await db.transaction(async (tx) => {
+  static async remove(submissionId: string, actor: Actor) {
+    return db.transaction(async (tx) => {
       const [row] = await tx
         .select()
         .from(table.submissions)
@@ -374,10 +346,9 @@ export class SubmissionService {
 
       const submission = assertExists(row, "Submission");
 
-      assertOwnerOrAdmin(
+      assertAccess(
         submission.userId,
-        userId,
-        isAdmin,
+        actor,
         "You can only delete your own submissions",
       );
 
@@ -402,7 +373,7 @@ export class SubmissionService {
   static async autoGrade(
     submissionId: string,
   ): Promise<{ score: number; result: unknown }> {
-    return await db.transaction(async (tx) => {
+    return db.transaction(async (tx) => {
       const [row] = await tx
         .select({
           id: table.submissions.id,

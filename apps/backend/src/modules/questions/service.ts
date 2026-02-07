@@ -1,13 +1,9 @@
-import {
-  assertExists,
-  assertOwnerOrAdmin,
-  escapeLike,
-  now,
-} from "@common/utils";
+import { assertAccess, assertExists, escapeLike, now } from "@common/utils";
 import { and, count, desc, eq, type SQL, sql } from "drizzle-orm";
 import type { Question } from "@/db";
 import { db, notDeleted, pagination, table } from "@/db";
-import { BadRequestError, ForbiddenError } from "@/plugins/error";
+import type { Actor } from "@/plugins/auth";
+import { BadRequestError } from "@/plugins/error";
 
 const QUESTION_PUBLIC_COLUMNS = {
   id: table.questions.id,
@@ -57,16 +53,13 @@ export class QuestionService {
       isActive?: boolean;
       search?: string;
     },
-    _currentUserId: string,
-    isAdmin: boolean,
+    actor: Actor,
   ) {
     const pg = pagination(query.page, query.limit);
 
-    // Build where conditions
     const conditions: SQL[] = [notDeleted(table.questions)];
 
-    // Admins see all questions including inactive, regular users only see active
-    if (!isAdmin) {
+    if (!actor.is("admin")) {
       conditions.push(eq(table.questions.isActive, true));
     } else if (query.isActive !== undefined) {
       conditions.push(eq(table.questions.isActive, query.isActive));
@@ -92,13 +85,12 @@ export class QuestionService {
 
     const whereClause = and(...conditions);
 
-    // Get total count
     const [countResult] = await db
       .select({ count: count() })
       .from(table.questions)
       .where(whereClause);
 
-    const total = countResult?.count || 0;
+    const total = countResult?.count ?? 0;
 
     const questions = await db
       .select(QUESTION_PUBLIC_COLUMNS)
@@ -124,9 +116,7 @@ export class QuestionService {
       answerKey?: unknown;
     },
   ) {
-    // Create question and initial version in transaction
-    return await db.transaction(async (tx) => {
-      // Create question
+    return db.transaction(async (tx) => {
       const [question] = await tx
         .insert(table.questions)
         .values({
@@ -143,7 +133,6 @@ export class QuestionService {
 
       const q = assertExists(question, "Question");
 
-      // Create initial version
       await tx.insert(table.questionVersions).values({
         questionId: q.id,
         version: 1,
@@ -157,8 +146,7 @@ export class QuestionService {
 
   static async update(
     questionId: string,
-    userId: string,
-    isAdmin: boolean,
+    actor: Actor,
     body: {
       skill?: Question["skill"];
       level?: Question["level"];
@@ -168,8 +156,7 @@ export class QuestionService {
       isActive?: boolean;
     },
   ) {
-    return await db.transaction(async (tx) => {
-      // Get question
+    return db.transaction(async (tx) => {
       const [row] = await tx
         .select()
         .from(table.questions)
@@ -180,15 +167,12 @@ export class QuestionService {
 
       const question = assertExists(row, "Question");
 
-      // Check ownership for non-admin
-      assertOwnerOrAdmin(
+      assertAccess(
         question.createdBy ?? "",
-        userId,
-        isAdmin,
+        actor,
         "You can only update your own questions",
       );
 
-      // Build update values
       const updateValues: Partial<typeof table.questions.$inferInsert> = {
         updatedAt: now(),
       };
@@ -200,7 +184,6 @@ export class QuestionService {
       if (body.answerKey !== undefined) updateValues.answerKey = body.answerKey;
       if (body.isActive !== undefined) updateValues.isActive = body.isActive;
 
-      // Bump version + create version record when content or answerKey changes
       const contentChanged =
         body.content !== undefined || body.answerKey !== undefined;
       if (contentChanged) {
@@ -228,15 +211,13 @@ export class QuestionService {
 
   static async createVersion(
     questionId: string,
-    userId: string,
-    isAdmin: boolean,
+    actor: Actor,
     body: {
       content: unknown;
       answerKey?: unknown;
     },
   ) {
-    return await db.transaction(async (tx) => {
-      // Get question
+    return db.transaction(async (tx) => {
       const [row] = await tx
         .select({
           id: table.questions.id,
@@ -251,17 +232,14 @@ export class QuestionService {
 
       const question = assertExists(row, "Question");
 
-      // Check ownership for non-admin
-      assertOwnerOrAdmin(
+      assertAccess(
         question.createdBy ?? "",
-        userId,
-        isAdmin,
+        actor,
         "You can only create versions of your own questions",
       );
 
       const newVersion = question.version + 1;
 
-      // Create new version record
       const [version] = await tx
         .insert(table.questionVersions)
         .values({
@@ -274,7 +252,6 @@ export class QuestionService {
 
       const v = assertExists(version, "Version");
 
-      // Update question with new content and version
       await tx
         .update(table.questions)
         .set({
@@ -290,7 +267,6 @@ export class QuestionService {
   }
 
   static async getVersions(questionId: string) {
-    // Verify question exists
     assertExists(
       await db.query.questions.findFirst({
         where: and(
@@ -302,7 +278,6 @@ export class QuestionService {
       "Question",
     );
 
-    // Get all versions
     const versions = await db
       .select()
       .from(table.questionVersions)
@@ -311,14 +286,11 @@ export class QuestionService {
 
     return {
       data: versions,
-      meta: {
-        total: versions.length,
-      },
+      meta: { total: versions.length },
     };
   }
 
   static async getVersion(questionId: string, versionId: string) {
-    // Verify parent question exists and is not soft-deleted
     assertExists(
       await db.query.questions.findFirst({
         where: and(
@@ -340,9 +312,8 @@ export class QuestionService {
     return assertExists(version, "QuestionVersion");
   }
 
-  static async remove(questionId: string, userId: string, isAdmin: boolean) {
-    return await db.transaction(async (tx) => {
-      // Get question
+  static async remove(questionId: string, actor: Actor) {
+    return db.transaction(async (tx) => {
       const [row] = await tx
         .select()
         .from(table.questions)
@@ -353,15 +324,12 @@ export class QuestionService {
 
       const question = assertExists(row, "Question");
 
-      // Check ownership for non-admin
-      assertOwnerOrAdmin(
+      assertAccess(
         question.createdBy ?? "",
-        userId,
-        isAdmin,
+        actor,
         "You can only delete your own questions",
       );
 
-      // Soft delete
       const timestamp = now();
       await tx
         .update(table.questions)
@@ -375,13 +343,8 @@ export class QuestionService {
     });
   }
 
-  static async restore(questionId: string, _userId: string, isAdmin: boolean) {
-    if (!isAdmin) {
-      throw new ForbiddenError("Only admins can restore questions");
-    }
-
-    return await db.transaction(async (tx) => {
-      // Get deleted question
+  static async restore(questionId: string) {
+    return db.transaction(async (tx) => {
       const [row] = await tx
         .select()
         .from(table.questions)
@@ -394,7 +357,6 @@ export class QuestionService {
         throw new BadRequestError("Question is not deleted");
       }
 
-      // Restore question
       const [updatedQuestion] = await tx
         .update(table.questions)
         .set({

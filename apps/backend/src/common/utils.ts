@@ -1,3 +1,4 @@
+import type { Actor } from "@/plugins/auth";
 import { ForbiddenError, NotFoundError } from "@/plugins/error";
 
 export function assertExists<T>(
@@ -20,14 +21,12 @@ export function escapeLike(str: string): string {
   return str.replace(/[%_\\]/g, "\\$&");
 }
 
-/** Reusable ownership + admin check */
-export function assertOwnerOrAdmin(
+/** Owner or admin bypass — works with the 3-role hierarchy */
+export function assertAccess(
   resourceUserId: string,
-  currentUserId: string,
-  isAdmin: boolean,
+  actor: Actor,
   message = "You do not have access to this resource",
 ): void {
-  if (resourceUserId !== currentUserId && !isAdmin) {
-    throw new ForbiddenError(message);
-  }
+  if (resourceUserId === actor.sub || actor.is("admin")) return;
+  throw new ForbiddenError(message);
 }
