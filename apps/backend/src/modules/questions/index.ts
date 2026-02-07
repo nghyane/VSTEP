@@ -36,7 +36,6 @@ export const questions = new Elysia({
           data: t.Array(QuestionModel.Question),
           meta: PaginationMeta,
         }),
-        400: ErrorResponse,
         ...AuthErrors,
       },
       detail: {
@@ -70,9 +69,7 @@ export const questions = new Elysia({
       body: QuestionModel.CreateBody,
       response: {
         201: QuestionModel.Question,
-        400: ErrorResponse,
         ...AuthErrors,
-        422: ErrorResponse,
       },
       detail: {
         summary: "Create question",
@@ -91,9 +88,7 @@ export const questions = new Elysia({
       body: QuestionModel.UpdateBody,
       response: {
         200: QuestionModel.QuestionWithDetails,
-        400: ErrorResponse,
         ...CrudErrors,
-        422: ErrorResponse,
       },
       detail: {
         summary: "Update question",
@@ -119,9 +114,7 @@ export const questions = new Elysia({
       body: QuestionModel.VersionBody,
       response: {
         201: QuestionModel.Version,
-        400: ErrorResponse,
         ...CrudErrors,
-        422: ErrorResponse,
       },
       detail: {
         summary: "Create question version",
@@ -156,13 +149,14 @@ export const questions = new Elysia({
     "/:id/versions/:versionId",
     ({ params }) => QuestionService.getVersion(params.id, params.versionId),
     {
+      role: "instructor",
       params: t.Object({
         id: t.String({ format: "uuid" }),
         versionId: t.String({ format: "uuid" }),
       }),
       response: {
         200: QuestionModel.Version,
-        404: ErrorResponse,
+        ...CrudErrors,
       },
       detail: {
         summary: "Get question version",

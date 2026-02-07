@@ -75,7 +75,6 @@ export const submissions = new Elysia({
         201: SubmissionModel.SubmissionWithDetails,
         400: ErrorResponse,
         ...CrudErrors,
-        422: ErrorResponse,
       },
       detail: {
         summary: "Create submission",
@@ -101,7 +100,6 @@ export const submissions = new Elysia({
         200: SubmissionModel.SubmissionWithDetails,
         400: ErrorResponse,
         ...CrudErrors,
-        422: ErrorResponse,
       },
       detail: {
         summary: "Update submission",
@@ -119,8 +117,8 @@ export const submissions = new Elysia({
       body: SubmissionModel.GradeBody,
       response: {
         200: SubmissionModel.SubmissionWithDetails,
+        400: ErrorResponse,
         ...CrudErrors,
-        422: ErrorResponse,
       },
       detail: {
         summary: "Grade submission",
@@ -140,6 +138,7 @@ export const submissions = new Elysia({
           score: t.Number(),
           result: t.Any(),
         }),
+        400: ErrorResponse,
         ...CrudErrors,
       },
       detail: {

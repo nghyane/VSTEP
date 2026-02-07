@@ -114,13 +114,13 @@ export class UserService {
 
   static async update(
     userId: string,
+    currentUserId: string,
+    isAdmin: boolean,
     body: {
       email?: string;
       fullName?: string | null;
       role?: "learner" | "instructor" | "admin";
     },
-    currentUserId: string,
-    isAdmin: boolean,
   ) {
     assertOwnerOrAdmin(
       userId,
@@ -212,9 +212,9 @@ export class UserService {
 
   static async updatePassword(
     userId: string,
-    body: { currentPassword: string; newPassword: string },
     currentUserId: string,
     isAdmin: boolean,
+    body: { currentPassword: string; newPassword: string },
   ) {
     assertOwnerOrAdmin(
       userId,

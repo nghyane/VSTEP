@@ -1,11 +1,10 @@
-import { env } from "@common/env";
 import { AuthErrors, ErrorResponse } from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { UserModel } from "@/modules/users/model";
 import { UserService } from "@/modules/users/service";
 import { authPlugin } from "@/plugins/auth";
 import { AuthModel } from "./model";
-import { AuthService, parseExpiry } from "./service";
+import { AuthService } from "./service";
 
 const TokenResponseSchema = t.Object({
   user: AuthModel.UserInfo,
@@ -17,29 +16,13 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
 
   .post(
     "/login",
-    async ({ body, request }) => {
+    ({ body, request }) => {
       const deviceInfo = request.headers.get("user-agent") ?? undefined;
-      const { user, refreshToken, jti } = await AuthService.login({
-        ...body,
-        deviceInfo,
-      });
-
-      const accessToken = await AuthService.signAccessToken({
-        sub: user.id,
-        role: user.role,
-        jti,
-      });
-
-      return {
-        user,
-        accessToken,
-        refreshToken,
-        expiresIn: parseExpiry(env.JWT_EXPIRES_IN),
-      };
+      return AuthService.login({ ...body, deviceInfo });
     },
     {
       body: AuthModel.LoginBody,
-      response: { 200: TokenResponseSchema },
+      response: { 200: TokenResponseSchema, 401: ErrorResponse },
       detail: {
         summary: "Login",
         description: "Authenticate user with email and password",
@@ -68,25 +51,9 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
 
   .post(
     "/refresh",
-    async ({ body, request }) => {
+    ({ body, request }) => {
       const deviceInfo = request.headers.get("user-agent") ?? undefined;
-      const { user, newRefreshToken, jti } = await AuthService.refreshToken(
-        body.refreshToken,
-        deviceInfo,
-      );
-
-      const accessToken = await AuthService.signAccessToken({
-        sub: user.id,
-        role: user.role,
-        jti,
-      });
-
-      return {
-        user,
-        accessToken,
-        refreshToken: newRefreshToken,
-        expiresIn: parseExpiry(env.JWT_EXPIRES_IN),
-      };
+      return AuthService.refreshToken(body.refreshToken, deviceInfo);
     },
     {
       body: AuthModel.RefreshBody,

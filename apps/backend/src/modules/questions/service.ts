@@ -35,7 +35,7 @@ async function fetchOwnedQuestion(
   return question;
 }
 
-const QUESTION_PUBLIC_COLUMNS = {
+const QUESTION_COLUMNS = {
   id: table.questions.id,
   skill: table.questions.skill,
   level: table.questions.level,
@@ -46,7 +46,6 @@ const QUESTION_PUBLIC_COLUMNS = {
   createdBy: table.questions.createdBy,
   createdAt: table.questions.createdAt,
   updatedAt: table.questions.updatedAt,
-  deletedAt: table.questions.deletedAt,
 } as const;
 
 export class QuestionService {
@@ -123,10 +122,10 @@ export class QuestionService {
       .from(table.questions)
       .where(whereClause);
 
-    const total = countResult?.count || 0;
+    const total = countResult?.count ?? 0;
 
     const questions = await db
-      .select(QUESTION_PUBLIC_COLUMNS)
+      .select(QUESTION_COLUMNS)
       .from(table.questions)
       .where(whereClause)
       .orderBy(desc(table.questions.createdAt))

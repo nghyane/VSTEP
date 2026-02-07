@@ -82,7 +82,7 @@ export const users = new Elysia({
   .patch(
     "/:id",
     ({ params, body, user }) =>
-      UserService.update(params.id, body, user.sub, user.role === "admin"),
+      UserService.update(params.id, user.sub, user.role === "admin", body),
     {
       auth: true,
       params: IdParam,
@@ -116,9 +116,9 @@ export const users = new Elysia({
     ({ params, body, user }) =>
       UserService.updatePassword(
         params.id,
-        body,
         user.sub,
         user.role === "admin",
+        body,
       ),
     {
       auth: true,

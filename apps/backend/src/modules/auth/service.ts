@@ -7,22 +7,25 @@ import type { JWTPayload } from "@/plugins/auth";
 import { ConflictError, UnauthorizedError } from "@/plugins/error";
 import type { AuthModel } from "./model";
 
-// env validates JWT_SECRET at startup; ! needed because skipValidation widens type
 const ACCESS_SECRET = new TextEncoder().encode(env.JWT_SECRET!);
-
 const MAX_REFRESH_TOKENS = 3;
 
 type UserInfo = AuthModel.UserInfo;
 
-function hashToken(token: string): string {
-  const hasher = new Bun.CryptoHasher("sha256");
-  hasher.update(token);
-  return hasher.digest("hex");
+interface TokenResponse {
+  user: UserInfo;
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
 }
 
-export function parseExpiry(str: string): number {
+function parseExpiry(str: string): number {
   const match = str.match(/^(\d+)(s|m|h|d)$/);
-  if (!match) return 900;
+  if (!match) {
+    throw new Error(
+      `Invalid expiry format: "${str}" (expected e.g. "15m", "7d")`,
+    );
+  }
   const n = Number.parseInt(match[1], 10);
   switch (match[2]) {
     case "s":
@@ -34,18 +37,44 @@ export function parseExpiry(str: string): number {
     case "d":
       return n * 86400;
     default:
-      return 900;
+      throw new Error(`Invalid expiry unit: "${match[2]}"`);
   }
 }
 
-export class AuthService {
-  static async signAccessToken(payload: JWTPayload): Promise<string> {
-    return new SignJWT({ ...payload })
-      .setProtectedHeader({ alg: "HS256" })
-      .setExpirationTime(env.JWT_EXPIRES_IN!)
-      .sign(ACCESS_SECRET);
-  }
+/** Pre-compute at module load — bad config crashes at startup, not at first request */
+const ACCESS_EXPIRY_SECONDS = parseExpiry(env.JWT_EXPIRES_IN);
+const REFRESH_EXPIRY_SECONDS = parseExpiry(env.JWT_REFRESH_EXPIRES_IN!);
 
+function hashToken(token: string): string {
+  const hasher = new Bun.CryptoHasher("sha256");
+  hasher.update(token);
+  return hasher.digest("hex");
+}
+
+/** Sign access token + build the full token response */
+async function buildTokenResponse(
+  user: UserInfo,
+  jti: string,
+  rawRefreshToken: string,
+): Promise<TokenResponse> {
+  const accessToken = await new SignJWT({
+    sub: user.id,
+    role: user.role,
+    jti,
+  } satisfies JWTPayload)
+    .setProtectedHeader({ alg: "HS256" })
+    .setExpirationTime(env.JWT_EXPIRES_IN!)
+    .sign(ACCESS_SECRET);
+
+  return {
+    user,
+    accessToken,
+    refreshToken: rawRefreshToken,
+    expiresIn: ACCESS_EXPIRY_SECONDS,
+  };
+}
+
+export class AuthService {
   static async hashPassword(password: string): Promise<string> {
     return Bun.password.hash(password, {
       algorithm: "argon2id",
@@ -65,7 +94,7 @@ export class AuthService {
     email: string;
     password: string;
     deviceInfo?: string;
-  }): Promise<{ user: UserInfo; refreshToken: string; jti: string }> {
+  }): Promise<TokenResponse> {
     const user = await db.query.users.findFirst({
       where: and(
         eq(table.users.email, body.email),
@@ -90,10 +119,8 @@ export class AuthService {
 
     const refreshToken = crypto.randomUUID();
     const jti = crypto.randomUUID();
-    const refreshExpirySeconds = parseExpiry(env.JWT_REFRESH_EXPIRES_IN!);
 
     await db.transaction(async (tx) => {
-      // Enforce max 3 active refresh tokens per user (FIFO — revoke oldest)
       const activeTokens = await tx.query.refreshTokens.findMany({
         where: and(
           eq(table.refreshTokens.userId, user.id),
@@ -122,21 +149,19 @@ export class AuthService {
         jti,
         deviceInfo: body.deviceInfo,
         expiresAt: new Date(
-          Date.now() + refreshExpirySeconds * 1000,
+          Date.now() + REFRESH_EXPIRY_SECONDS * 1000,
         ).toISOString(),
       });
     });
 
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
-        role: user.role,
-      },
-      refreshToken,
-      jti,
+    const userInfo: UserInfo = {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
     };
+
+    return buildTokenResponse(userInfo, jti, refreshToken);
   }
 
   static async register(body: {
@@ -179,10 +204,9 @@ export class AuthService {
   static async refreshToken(
     refreshToken: string,
     deviceInfo?: string,
-  ): Promise<{ user: UserInfo; newRefreshToken: string; jti: string }> {
+  ): Promise<TokenResponse> {
     const hash = hashToken(refreshToken);
 
-    // First, find the token record by hash (regardless of revoked status)
     const tokenRecord = await db.query.refreshTokens.findFirst({
       where: eq(table.refreshTokens.tokenHash, hash),
       columns: {
@@ -201,7 +225,6 @@ export class AuthService {
 
     // Reuse detection: token already revoked → compromise detected
     if (tokenRecord.revokedAt || tokenRecord.replacedByJti) {
-      // Revoke ALL tokens for this user (token family attack)
       await db
         .update(table.refreshTokens)
         .set({ revokedAt: now() })
@@ -216,7 +239,6 @@ export class AuthService {
       );
     }
 
-    // Token expired
     if (new Date(tokenRecord.expiresAt) <= new Date()) {
       throw new UnauthorizedError("Refresh token expired");
     }
@@ -234,7 +256,6 @@ export class AuthService {
     // Rotate: revoke old, issue new
     const newRefreshToken = crypto.randomUUID();
     const newJti = crypto.randomUUID();
-    const refreshExpirySeconds = parseExpiry(env.JWT_REFRESH_EXPIRES_IN!);
 
     await db.transaction(async (tx) => {
       await tx
@@ -248,21 +269,12 @@ export class AuthService {
         jti: newJti,
         deviceInfo,
         expiresAt: new Date(
-          Date.now() + refreshExpirySeconds * 1000,
+          Date.now() + REFRESH_EXPIRY_SECONDS * 1000,
         ).toISOString(),
       });
     });
 
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
-        role: user.role,
-      },
-      newRefreshToken,
-      jti: newJti,
-    };
+    return buildTokenResponse(user, newJti, newRefreshToken);
   }
 
   static async logout(refreshToken: string): Promise<{ message: string }> {

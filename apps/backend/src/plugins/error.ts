@@ -102,7 +102,7 @@ export const errorPlugin = new Elysia({ name: "error" })
     set.headers["x-request-id"] = requestId;
   })
   .error({ APP_ERROR: AppError })
-  .onError(function onError({ code, error, set, requestId }) {
+  .onError({ as: "scoped" }, function onError({ code, error, set, requestId }) {
     set.headers["x-request-id"] = requestId;
 
     // Handle custom AppErrors
