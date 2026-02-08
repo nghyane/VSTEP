@@ -65,6 +65,33 @@ Mục tiêu: Fix toàn bộ bugs + chuyển pattern phù hợp Bun/Node ecosyste
 - **Bug**: `feedback: varchar("feedback")` không length + `t.String()` không maxLength.
 - **Fix**: Schema `varchar("feedback", { length: 10000 })`, model `t.String({ maxLength: 10000 })`.
 
+### 1.11 `app.ts` gọi `.listen()` ở module scope
+- **File**: `src/app.ts:64`
+- **Bug**: Import `app` = server start ngay. Integration test import `app` sẽ start real server.
+- **Fix**: Tách `app` creation (export) khỏi `.listen()`. Di chuyển `.listen()` vào `src/index.ts`:
+  ```typescript
+  // app.ts — chỉ export app, KHÔNG listen
+  export const app = new Elysia().use(...);
+  // index.ts — entry point, listen ở đây
+  import { app } from "@/app";
+  app.listen(env.PORT);
+  ```
+
+### 1.12 `env.JWT_SECRET!` — non-null assertion
+- **File**: `src/plugins/auth.ts:44`, `src/modules/auth/service.ts:12`
+- **Bug**: `skipValidation: !!process.env.CI` trong env.ts → type widens thành `string | undefined`. Code dùng `!` để bypass.
+- **Fix**: Bỏ `skipValidation` hoặc dùng fallback pattern:
+  ```typescript
+  const secret = env.JWT_SECRET;
+  if (!secret) throw new Error("JWT_SECRET is required");
+  const ACCESS_SECRET = new TextEncoder().encode(secret);
+  ```
+
+### 1.13 `ExamService.saveAnswers()` N+1 validate
+- **File**: `src/modules/exams/service.ts:306-319`
+- **Bug**: Loop validate + upsert từng answer = 2N queries.
+- **Fix**: Batch validate tất cả questionIds 1 lần, rồi batch upsert.
+
 ---
 
 ## Phase 2: JSONB Validation (Input Layer)
@@ -289,6 +316,51 @@ async function countWhere(tbl, where, database = db) {
 - `src/db/schema/outbox.ts` + `processedCallbacks` + relations: không có service nào dùng.
 - **Quyết định**: Giữ nếu grading service sẽ dùng. Xóa nếu không.
 
+### 6.5 Dead error classes
+- **File**: `src/plugins/error.ts`
+- `RateLimitError` (line 74): khai báo nhưng **không import/throw ở bất kỳ đâu**.
+- `ValidationError` (line 68): khai báo nhưng không throw — Elysia xử lý validation qua built-in `VALIDATION` code.
+- `InternalError` (line 83): khai báo nhưng không throw — error handler tự trả 500.
+- **Fix**: Xóa 3 class này hoặc giữ nếu plan dùng (rate limiting sẽ dùng `RateLimitError`).
+
+### 6.6 Unused dependency `drizzle-typebox`
+- **File**: `package.json:31`
+- `"drizzle-typebox": "^0.3.3"` — không có file nào import. Dead dependency.
+- **Fix**: `bun remove drizzle-typebox`.
+
+### 6.7 `tsconfig.json` — unnecessary options
+- `"jsx": "react-jsx"` — backend không có JSX. Harmless nhưng gây confuse.
+- `"allowJs": true` — không có file `.js` nào.
+- **Fix**: Xóa 2 options này.
+
+### 6.8 `biome.json` — `noConsole` nên là `error`
+- Hiện tại: `"noConsole": "warn"`. CLAUDE.md quy định **No `console.log`**.
+- **Fix**: Đổi thành `"error"`.
+
+### 6.9 `biome.json` — `noNonNullAssertion` đang tắt globally
+- `"noNonNullAssertion": "off"` cho phép `!` operator ở mọi nơi.
+- Sau khi fix 1.12 (JWT_SECRET), bật lại rule này: `"warn"` hoặc `"error"`.
+
+### 6.10 `auth.ts` plugin — unsafe `user` derive
+- **File**: `src/plugins/auth.ts:68-70`
+- `user: undefined as unknown as Actor` — public routes truy cập `user.sub` sẽ crash runtime.
+- Elysia pattern limitation. **Fix**: Document rõ HOẶC derive `user` as `Actor | undefined`, route handlers check null.
+
+### 6.11 `ProgressService.getSpiderChart()` N+1 query
+- **File**: `src/modules/progress/service.ts:104-109`
+- Gọi `getBySkill()` trong loop 4 skills = 8 queries.
+- **Fix**: Query tất cả skills 1 lần, group in-memory.
+
+### 6.12 `README.md` lỗi thời
+- **File**: `apps/backend/README.md`
+- Nội dung là template `bun init`. Không phản ánh project thực tế.
+- **Fix**: Update hoặc xóa (CLAUDE.md đã đầy đủ).
+
+### 6.13 `CODEBASE_REVIEW.md` — review cũ ở root
+- **File**: `/CODEBASE_REVIEW.md`
+- Review trước đó, một số items đã fix, nhiều items trùng plan này.
+- **Fix**: Xóa sau khi plan hoàn thành (tránh confuse 2 nguồn truth).
+
 ---
 
 ## Tổng kết
@@ -300,7 +372,7 @@ async function countWhere(tbl, where, database = db) {
 | **3** | Pattern (functions + no namespace) | ~20 | **HIGH** |
 | **4** | DB Schema Cleanup | ~6 | **MEDIUM** |
 | **5** | Unit Tests | ~4 | **MEDIUM** |
-| **6** | Code Cleanup | ~8 | **LOW** |
+| **6** | Code Cleanup | ~15 | **LOW** |
 
 Thứ tự: Phase 1 → 2 → 3 → 4 → 5 → 6.
 Phase 5 có thể làm song song với Phase 3 (test pure functions ngay khi export).
