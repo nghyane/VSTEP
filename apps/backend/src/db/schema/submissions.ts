@@ -12,8 +12,11 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import { skillEnum, vstepBandEnum } from "./enums";
 import { questions } from "./questions";
 import { users } from "./users";
+
+export { skillEnum, vstepBandEnum };
 
 export const submissionStatusEnum = pgEnum("submission_status", [
   "pending",
@@ -24,13 +27,6 @@ export const submissionStatusEnum = pgEnum("submission_status", [
   "error",
   "retrying",
   "failed",
-]);
-
-export const skillEnum = pgEnum("skill", [
-  "listening",
-  "reading",
-  "writing",
-  "speaking",
 ]);
 
 export const reviewPriorityEnum = pgEnum("review_priority", [
@@ -44,14 +40,6 @@ export const gradingModeEnum = pgEnum("grading_mode", [
   "auto",
   "human",
   "hybrid",
-]);
-
-export const vstepBandEnum = pgEnum("vstep_band", [
-  "A1",
-  "A2",
-  "B1",
-  "B2",
-  "C1",
 ]);
 
 export const submissions = pgTable(

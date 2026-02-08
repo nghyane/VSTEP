@@ -1,4 +1,5 @@
 import { env } from "@common/env";
+import { hashPassword, verifyPassword } from "@common/password";
 import { assertExists, now } from "@common/utils";
 import { and, asc, eq, gt, inArray, isNull } from "drizzle-orm";
 import { SignJWT } from "jose";
@@ -46,21 +47,6 @@ export class AuthService {
       .sign(ACCESS_SECRET);
   }
 
-  static async hashPassword(password: string): Promise<string> {
-    return Bun.password.hash(password, {
-      algorithm: "argon2id",
-      memoryCost: 65536,
-      timeCost: 3,
-    });
-  }
-
-  static async verifyPassword(
-    password: string,
-    hash: string,
-  ): Promise<boolean> {
-    return Bun.password.verify(password, hash);
-  }
-
   static async login(body: {
     email: string;
     password: string;
@@ -82,10 +68,7 @@ export class AuthService {
 
     if (!user) throw new UnauthorizedError("Invalid email or password");
 
-    const isValid = await AuthService.verifyPassword(
-      body.password,
-      user.passwordHash,
-    );
+    const isValid = await verifyPassword(body.password, user.passwordHash);
     if (!isValid) throw new UnauthorizedError("Invalid email or password");
 
     const refreshToken = crypto.randomUUID();
@@ -144,36 +127,39 @@ export class AuthService {
     password: string;
     fullName?: string;
   }): Promise<{ user: UserInfo; message: string }> {
-    const existing = await db.query.users.findFirst({
-      where: and(
-        eq(table.users.email, body.email),
-        isNull(table.users.deletedAt),
-      ),
-      columns: { id: true },
-    });
-    if (existing) throw new ConflictError("Email already registered");
+    const passwordHash = await hashPassword(body.password);
 
-    const passwordHash = await AuthService.hashPassword(body.password);
+    try {
+      const [user] = await db
+        .insert(table.users)
+        .values({
+          email: body.email,
+          passwordHash,
+          fullName: body.fullName,
+          role: "learner",
+        })
+        .returning({
+          id: table.users.id,
+          email: table.users.email,
+          fullName: table.users.fullName,
+          role: table.users.role,
+        });
 
-    const [user] = await db
-      .insert(table.users)
-      .values({
-        email: body.email,
-        passwordHash,
-        fullName: body.fullName,
-        role: "learner",
-      })
-      .returning({
-        id: table.users.id,
-        email: table.users.email,
-        fullName: table.users.fullName,
-        role: table.users.role,
-      });
-
-    return {
-      user: assertExists(user, "User"),
-      message: "Account created successfully",
-    };
+      return {
+        user: assertExists(user, "User"),
+        message: "Account created successfully",
+      };
+    } catch (e: unknown) {
+      if (
+        typeof e === "object" &&
+        e !== null &&
+        "code" in e &&
+        (e as { code: string }).code === "23505"
+      ) {
+        throw new ConflictError("Email already registered");
+      }
+      throw e;
+    }
   }
 
   static async refreshToken(
