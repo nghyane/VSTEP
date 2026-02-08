@@ -92,6 +92,23 @@ Mục tiêu: Fix toàn bộ bugs + chuyển pattern phù hợp Bun/Node ecosyste
 - **Bug**: Loop validate + upsert từng answer = 2N queries.
 - **Fix**: Batch validate tất cả questionIds 1 lần, rồi batch upsert.
 
+### 1.14 `UserService.updatePassword()` — không có transaction
+- **File**: `src/modules/users/service.ts:203-241`
+- **Bug**: Read password hash → verify → update — 3 bước tách rời, không transaction.
+  Race condition: 2 concurrent requests cùng verify old password thành công, cả 2 đều update.
+- **Fix**: Wrap toàn bộ trong `db.transaction()`.
+
+### 1.15 `SubmissionService.create()` — validate question ngoài transaction
+- **File**: `src/modules/submissions/service.ts:131-170`
+- **Bug**: Question validation (line 135-144) ngoài tx, insert submission (line 150) trong tx.
+  Question có thể bị deactivate/xóa giữa 2 bước.
+- **Fix**: Di chuyển question validation vào trong transaction.
+
+### 1.16 `ExamService.startSession()` — validate exam ngoài transaction
+- **File**: `src/modules/exams/service.ts:160-196`
+- **Bug**: `getById()` (line 161) ngoài tx, `insert session` (line 166) trong tx. Exam có thể bị deactivate giữa 2 bước.
+- **Fix**: Di chuyển exam validation vào trong transaction.
+
 ---
 
 ## Phase 2: JSONB Validation (Input Layer)
@@ -357,18 +374,40 @@ async function countWhere(tbl, where, database = db) {
 - Review trước đó, một số items đã fix, nhiều items trùng plan này.
 - **Fix**: Xóa sau khi plan hoàn thành (tránh confuse 2 nguồn truth).
 
+### 6.14 `agent.md` — nhiều thông tin sai
+- **File**: `apps/backend/agent.md`
+- Line 42: Routes path sai — ghi `src/routes/{name}.ts` nhưng thực tế là `src/modules/{name}/index.ts`.
+- Line 54: Ghi "JWT + cookie auth plugin" — **không có cookie**, chỉ bearer token.
+- Line 88: `.use(authPlugin())` — **sai**. `authPlugin` là Elysia instance, không phải function. Phải là `.use(authPlugin)`.
+- Line 55: Password nên reference `@common/password` thay vì `Bun.password` trực tiếp.
+- Thiếu: Module pattern (`index.ts` + `model.ts` + `service.ts`).
+- **Fix**: Cập nhật hoặc xóa (CLAUDE.md đã đầy đủ hơn).
+
+### 6.15 `CLAUDE.md` — số liệu sai
+- **File**: `/CLAUDE.md`
+- "13 tables" → thực tế **16 tables** (thiếu đếm `examSubmissions`, `processedCallbacks`, `questionVersions`).
+- "10 PostgreSQL enums" → thực tế **12 enums** (thiếu `reviewPriorityEnum`, `gradingModeEnum`).
+- `JWT_REFRESH_SECRET` vẫn xuất hiện trong mô tả `.env` — đã bị xóa.
+- `password.ts` không có trong bảng "Key Source Files" và "Existing Utilities".
+- **Fix**: Cập nhật cho đúng thực tế.
+
+### 6.16 Dependency: `esbuild` moderate vulnerability
+- `drizzle-kit` → `esbuild <=0.24.2` — [GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99)
+- **Impact**: Dev dependency only (drizzle-kit + tsx), không ảnh hưởng production runtime.
+- **Fix**: `bun update` khi esbuild patch available.
+
 ---
 
 ## Tổng kết
 
 | Phase | Nội dung | Files | Ưu tiên |
 |-------|----------|-------|---------|
-| **1** | Bugs & Security | ~10 | **CRITICAL** |
+| **1** | Bugs & Security | ~12 | **CRITICAL** |
 | **2** | JSONB Validation | ~9 | **HIGH** |
 | **3** | Pattern (functions + no namespace) | ~20 | **HIGH** |
 | **4** | DB Schema Cleanup | ~6 | **MEDIUM** |
 | **5** | Unit Tests | ~4 | **MEDIUM** |
-| **6** | Code Cleanup | ~15 | **LOW** |
+| **6** | Code Cleanup + Docs | ~18 | **LOW** |
 
 Thứ tự: Phase 1 → 2 → 3 → 4 → 5 → 6.
 Phase 5 có thể làm song song với Phase 3 (test pure functions ngay khi export).
