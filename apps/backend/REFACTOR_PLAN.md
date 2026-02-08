@@ -83,8 +83,8 @@ Thay `t.Any()` bằng TypeBox schemas cụ thể, validate ở HTTP request laye
 > `reading_gap_fill`, `listening_dictation` — các format này là IELTS, **không tồn tại trong VSTEP**.
 > Giữ lại trong enum cho extensibility nhưng document rõ. JSONB schemas focus vào formats thực tế.
 >
-> **Sample data** (`docs/sample/`): Cấu trúc `question_number`, `question_text`, `options`, `correct_answer`
-> khác với canonical schema (`number`, `prompt`, `options`). Cần data transform khi import.
+> **Sample data** (`docs/sample/`): Dùng để phân tích cấu trúc VSTEP, không phải data thực tế.
+> Canonical JSONB schema được thiết kế dựa trên hiểu biết từ sample + spec.
 
 - [ ] **2.1** Question Content Schemas — tạo `src/modules/questions/content-schemas.ts`
   - **reading_mcq**: `{ passage: string, title?: string, items: [{ number, prompt, options: {A,B,C,D} }] }`
