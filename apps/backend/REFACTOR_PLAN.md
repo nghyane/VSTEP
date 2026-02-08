@@ -1,413 +1,183 @@
 # Backend Refactor Plan
 
 Mục tiêu: Fix toàn bộ bugs + chuyển pattern phù hợp Bun/Node ecosystem.
+Thứ tự: Phase 1 → 2 → 3 → 4 → 5 → 6 (Phase 5 có thể song song Phase 3).
 
 ---
 
 ## Phase 1: Fix Bugs & Security (CRITICAL)
 
-### 1.1 Race condition `UserService.create()`
-- **File**: `src/modules/users/service.ts:87-94`
-- **Bug**: Check-then-insert (TOCTOU). `AuthService.register()` đã fix, nhưng `UserService.create()` chưa.
-- **Fix**: Bỏ `findFirst` check, catch PostgreSQL error code `23505`.
+- [ ] **1.1** Race condition `UserService.create()` — `src/modules/users/service.ts:87-94`
+  - Check-then-insert (TOCTOU). Bỏ `findFirst`, catch PostgreSQL `23505`.
 
-### 1.2 Auth bypass — `GET /questions/:id/versions/:versionId`
-- **File**: `src/modules/questions/index.ts:145-163`
-- **Bug**: Endpoint không có `auth: true` hoặc `role`. Ai cũng xem được `answerKey`.
-- **Fix**: Thêm `role: "instructor"`.
+- [ ] **1.2** Auth bypass `GET /questions/:id/versions/:versionId` — `src/modules/questions/index.ts:145-163`
+  - Endpoint không có auth → ai cũng xem được `answerKey`. Thêm `role: "instructor"`.
 
-### 1.3 Response schema mismatch — Questions module
-- **File**: `src/modules/questions/service.ts:132, 206, 367`
-- **Bug**: 3 methods dùng `.returning()` không chọn columns → trả `answerKey`, `deletedAt` ngoài schema → TypeBox reject response.
-- **Affected routes**: `POST /questions`, `PATCH /questions/:id`, `POST /questions/:id/restore`
-- **Fix**: Dùng `.returning(QUESTION_PUBLIC_COLUMNS)` thay vì `.returning()`.
+- [ ] **1.3** Response schema mismatch — Questions `.returning()` — `src/modules/questions/service.ts:132, 206, 367`
+  - `.returning()` trả `answerKey`, `deletedAt` ngoài schema → TypeBox reject. Dùng `.returning(QUESTION_PUBLIC_COLUMNS)`.
 
-### 1.4 `scoreToBand()` thiếu A1/A2
-- **File**: `src/modules/submissions/service.ts:21-26`
-- **Bug**: Enum có `["A1","A2","B1","B2","C1"]` nhưng function chỉ trả B1/B2/C1/null.
-- **Fix**:
-  ```
-  >= 8.5 → C1
-  >= 6.0 → B2
-  >= 4.0 → B1
-  >= 2.0 → A2
-  > 0    → A1
-  0      → null
-  ```
+- [ ] **1.4** `scoreToBand()` thiếu A1/A2 — `src/modules/submissions/service.ts:21-26`
+  - Chỉ trả B1/B2/C1/null, thiếu A1/A2. Fix: ≥8.5→C1, ≥6→B2, ≥4→B1, ≥2→A2, >0→A1, 0→null.
 
-### 1.5 `ProgressService.getSpiderChart()` math bug
-- **File**: `src/modules/progress/service.ts:148`
-- **Bug**: `(Math.round(avg * 10) / 10) * 10` tạo scale 0-100, mọi nơi khác dùng 0-10.
-- **Fix**: Bỏ `* 10`.
+- [ ] **1.5** Spider chart math bug — `src/modules/progress/service.ts:148`
+  - `*10` tạo scale 0-100, mọi nơi khác 0-10. Bỏ `*10`.
 
-### 1.6 Admin không thể force-complete submission
-- **File**: `src/modules/submissions/service.ts:208-209`
-- **Bug**: `validateTransition()` chạy cho cả admin, nhưng `pending → completed` không hợp lệ.
-- **Fix**: Admin bypass `validateTransition()`.
+- [ ] **1.6** Admin không force-complete submission — `src/modules/submissions/service.ts:208-209`
+  - `validateTransition()` chạy cho cả admin. Fix: admin bypass.
 
-### 1.7 `ExamService.submitExam()` N+1 inserts
-- **File**: `src/modules/exams/service.ts:462-481`
-- **Bug**: Loop 3 INSERT/answer cho writing/speaking.
-- **Fix**: Batch insert `.values([...])`.
+- [ ] **1.7** `submitExam()` N+1 inserts — `src/modules/exams/service.ts:462-481`
+  - Loop INSERT/answer cho writing/speaking. Fix: batch `.values([...])`.
 
-### 1.8 Unbounded array — `AnswerSaveBody`
-- **File**: `src/modules/exams/model.ts:50-57`
-- **Bug**: `t.Array()` không có `maxItems`. Attacker gửi hàng triệu answers.
-- **Fix**: Thêm `{ maxItems: 200 }` (VSTEP max ~75 questions, 200 là safe margin).
+- [ ] **1.8** Unbounded array `AnswerSaveBody` — `src/modules/exams/model.ts:50-57`
+  - `t.Array()` không `maxItems`. Thêm `{ maxItems: 200 }`.
 
-### 1.9 Score validation thiếu bounds ở schema level
-- **File**: `src/modules/submissions/model.ts:44-48`
-- **Bug**: `GradeBody.score` là `t.Number()` không min/max. Service check runtime nhưng schema nên validate.
-- **Fix**: `t.Number({ minimum: 0, maximum: 10 })`.
+- [ ] **1.9** Score thiếu bounds — `src/modules/submissions/model.ts:44-48`
+  - `t.Number()` không min/max. Fix: `t.Number({ minimum: 0, maximum: 10 })`.
 
-### 1.10 Feedback string không giới hạn length
-- **File**: `src/modules/submissions/model.ts:47` + `src/db/schema/submissions.ts:115`
-- **Bug**: `feedback: varchar("feedback")` không length + `t.String()` không maxLength.
-- **Fix**: Schema `varchar("feedback", { length: 10000 })`, model `t.String({ maxLength: 10000 })`.
+- [ ] **1.10** Feedback string không giới hạn — `src/modules/submissions/model.ts:47` + `src/db/schema/submissions.ts:115`
+  - Schema `varchar("feedback", { length: 10000 })`, model `t.String({ maxLength: 10000 })`.
 
-### 1.11 `app.ts` gọi `.listen()` ở module scope
-- **File**: `src/app.ts:64`
-- **Bug**: Import `app` = server start ngay. Integration test import `app` sẽ start real server.
-- **Fix**: Tách `app` creation (export) khỏi `.listen()`. Di chuyển `.listen()` vào `src/index.ts`:
-  ```typescript
-  // app.ts — chỉ export app, KHÔNG listen
-  export const app = new Elysia().use(...);
-  // index.ts — entry point, listen ở đây
-  import { app } from "@/app";
-  app.listen(env.PORT);
-  ```
+- [ ] **1.11** `app.ts` gọi `.listen()` ở module scope — `src/app.ts:64`
+  - Import `app` = server start. Fix: tách `.listen()` vào `src/index.ts`.
 
-### 1.12 `env.JWT_SECRET!` — non-null assertion
-- **File**: `src/plugins/auth.ts:44`, `src/modules/auth/service.ts:12`
-- **Bug**: `skipValidation: !!process.env.CI` trong env.ts → type widens thành `string | undefined`. Code dùng `!` để bypass.
-- **Fix**: Bỏ `skipValidation` hoặc dùng fallback pattern:
-  ```typescript
-  const secret = env.JWT_SECRET;
-  if (!secret) throw new Error("JWT_SECRET is required");
-  const ACCESS_SECRET = new TextEncoder().encode(secret);
-  ```
+- [ ] **1.12** `env.JWT_SECRET!` non-null assertion — `src/plugins/auth.ts:44`, `src/modules/auth/service.ts:12`
+  - `skipValidation` widens type. Fix: bỏ `skipValidation` hoặc runtime check + throw.
 
-### 1.13 `ExamService.saveAnswers()` N+1 validate
-- **File**: `src/modules/exams/service.ts:306-319`
-- **Bug**: Loop validate + upsert từng answer = 2N queries.
-- **Fix**: Batch validate tất cả questionIds 1 lần, rồi batch upsert.
+- [ ] **1.13** `saveAnswers()` N+1 validate — `src/modules/exams/service.ts:306-319`
+  - Loop validate + upsert 2N queries. Fix: batch validate 1 lần, batch upsert.
 
-### 1.14 `UserService.updatePassword()` — không có transaction
-- **File**: `src/modules/users/service.ts:203-241`
-- **Bug**: Read password hash → verify → update — 3 bước tách rời, không transaction.
-  Race condition: 2 concurrent requests cùng verify old password thành công, cả 2 đều update.
-- **Fix**: Wrap toàn bộ trong `db.transaction()`.
+- [ ] **1.14** `updatePassword()` không transaction — `src/modules/users/service.ts:203-241`
+  - Read → verify → update tách rời. Fix: wrap `db.transaction()`.
 
-### 1.15 `SubmissionService.create()` — validate question ngoài transaction
-- **File**: `src/modules/submissions/service.ts:131-170`
-- **Bug**: Question validation (line 135-144) ngoài tx, insert submission (line 150) trong tx.
-  Question có thể bị deactivate/xóa giữa 2 bước.
-- **Fix**: Di chuyển question validation vào trong transaction.
+- [ ] **1.15** `SubmissionService.create()` validate ngoài tx — `src/modules/submissions/service.ts:131-170`
+  - Question validation ngoài tx, insert trong tx. Fix: di chuyển vào tx.
 
-### 1.16 `ExamService.startSession()` — validate exam ngoài transaction
-- **File**: `src/modules/exams/service.ts:160-196`
-- **Bug**: `getById()` (line 161) ngoài tx, `insert session` (line 166) trong tx. Exam có thể bị deactivate giữa 2 bước.
-- **Fix**: Di chuyển exam validation vào trong transaction.
+- [ ] **1.16** `startSession()` validate ngoài tx — `src/modules/exams/service.ts:160-196`
+  - `getById()` ngoài tx, insert session trong tx. Fix: di chuyển vào tx.
 
 ---
 
-## Phase 2: JSONB Validation (Input Layer)
+## Phase 2: JSONB Validation — Input Layer (HIGH)
 
 Thay `t.Any()` bằng TypeBox schemas cụ thể, validate ở HTTP request layer.
 
-### 2.1 Question Content Schemas
-- **File mới**: `src/modules/questions/content-schemas.ts`
-- Mỗi `questionFormat` có schema riêng:
+- [ ] **2.1** Question Content Schemas — tạo `src/modules/questions/content-schemas.ts`
+  - Mỗi `questionFormat` có schema riêng (reading_mcq, listening_mcq, writing_task, speaking_part, etc.)
 
-```
-reading_mcq / reading_tng / reading_matching_headings / reading_gap_fill:
-  { passage: string, title?: string, items: [{ number, prompt, options: {A,B,C,D} }] }
+- [ ] **2.2** Answer Key Schema
+  - `correctAnswers: Record<string, string>` (reading/listening only)
 
-listening_mcq:
-  { audioUrl: string, transcript?: string, items: [{ number, prompt, options }] }
+- [ ] **2.3** User Answer Schema
+  - reading/listening: `{ answers: Record<string, string> }`, writing: `{ text: string }`, speaking: `{ audioUrl, durationSeconds, transcript? }`
 
-listening_dictation:
-  { audioUrl: string, items: [{ number, prompt }] }
+- [ ] **2.4** Blueprint Schema (Exam)
+  - Typed schema cho `exams.blueprint` JSONB (listening/reading/writing/speaking sections)
 
-writing_task_1 / writing_task_2:
-  { taskNumber: 1|2, prompt: string, instructions?: string, minWords?: number, imageUrls?: string[] }
-
-speaking_part_1 / speaking_part_2 / speaking_part_3:
-  { partNumber: 1|2|3, prompt: string, instructions?: string, options?: string[], preparationSeconds?: number, speakingSeconds?: number }
-```
-
-### 2.2 Answer Key Schema
-```
-correctAnswers: Record<string, string>  (reading/listening only)
-```
-
-### 2.3 User Answer Schema
-```
-reading/listening: { answers: Record<string, string> }
-writing:          { text: string }
-speaking:         { audioUrl: string, durationSeconds: number, transcript?: string }
-```
-
-### 2.4 Blueprint Schema
-```
-{
-  listening: { parts: [{ partNumber, questionIds: string[], count }], totalQuestions, duration },
-  reading:   { passages: [{ passageNumber, questionIds: string[], count, level }], totalQuestions, duration },
-  writing:   { tasks: [{ taskNumber, questionId: string, minWords, weight }], duration },
-  speaking:  { parts: [{ partNumber, questionId: string, prepTime?, duration }] }
-}
-```
-
-### 2.5 Cách implement
-- TypeBox schemas trong `content-schemas.ts`.
-- Route dùng `t.Union` discriminated by `format` field.
-- Service nhận typed data, không cần force cast.
-- Response schemas cho JSONB output fields cũng define cụ thể (thay `t.Any()`).
+- [ ] **2.5** Apply schemas vào routes + response
+  - Route dùng `t.Union` discriminated by format. Response schemas cho JSONB output cũng define cụ thể.
 
 ---
 
-## Phase 3: Pattern — Static Class → Plain Functions
+## Phase 3: Pattern — Static Class → Plain Functions (HIGH)
 
-### Nguyên tắc
-- **Plain exported functions** thay vì static class methods.
-- **`db` là parameter có default** → testable không cần DI framework.
-- Idiomatic cho Bun/Node/Elysia ecosystem.
+- [ ] **3.1** Chuyển 7 service files sang plain functions (`db` as parameter with default)
+  - `auth/service.ts` (AuthService → 5 functions)
+  - `users/service.ts` (UserService → 6 functions)
+  - `questions/service.ts` (QuestionService → 9 functions)
+  - `submissions/service.ts` (SubmissionService → 7 functions)
+  - `exams/service.ts` (ExamService → 9 functions)
+  - `progress/service.ts` (ProgressService → 3 functions)
+  - `health/service.ts` (HealthService → 1 function)
+  - Cập nhật route files (`index.ts`) import tương ứng.
 
-### 3.1 Chuyển đổi từng service
+- [ ] **3.2** Bỏ biome override `noStaticOnlyClass` — `biome.json`
 
-**Trước:**
-```typescript
-export class AuthService {
-  static async login(body: {...}) {
-    const user = await db.query.users.findFirst(...);
-  }
-}
-```
+- [ ] **3.3** Bỏ namespace pattern trong model.ts → prefix
+  - `AuthModel.LoginBody` → `AuthLoginBody`, etc. cho tất cả 6 modules.
 
-**Sau:**
-```typescript
-export async function login(body: {...}, database = db) {
-  const user = await database.query.users.findFirst(...);
-}
-```
-
-**Các file cần thay đổi:**
-
-| File | Class | Functions |
-|------|-------|-----------|
-| `auth/service.ts` | `AuthService` | `signAccessToken`, `login`, `register`, `refreshToken`, `logout` |
-| `users/service.ts` | `UserService` | `getById`, `list`, `create`, `update`, `remove`, `updatePassword` |
-| `questions/service.ts` | `QuestionService` | `getById`, `list`, `create`, `update`, `createVersion`, `getVersions`, `getVersion`, `remove`, `restore` |
-| `submissions/service.ts` | `SubmissionService` | `getById`, `list`, `create`, `update`, `grade`, `remove`, `autoGrade` |
-| `exams/service.ts` | `ExamService` | `getById`, `list`, `create`, `update`, `startSession`, `getSessionById`, `submitAnswer`, `saveAnswers`, `submitExam` |
-| `progress/service.ts` | `ProgressService` | `getOverview`, `getBySkill`, `getSpiderChart` |
-| `health/service.ts` | `HealthService` | `check` |
-
-**Route files** (`index.ts`) cập nhật import:
-```typescript
-import * as authService from "./service";
-.post("/login", () => authService.login(body))
-```
-
-### 3.2 Bỏ biome override `noStaticOnlyClass`
-- Sau khi chuyển hết, xóa `"noStaticOnlyClass": "off"` trong `biome.json`.
-
-### 3.3 Bỏ namespace pattern trong model.ts
-```typescript
-// Trước
-export namespace AuthModel {
-  export const LoginBody = t.Object({...});
-}
-// Sau — prefix thay namespace
-export const AuthLoginBody = t.Object({...});
-export const AuthUserInfo = t.Object({...});
-```
-
-Prefix = tên module (`Auth`, `User`, `Exam`, `Question`, `Submission`, `Progress`).
-
-### 3.4 Pure functions export riêng để test
-- `scoreToBand(score)` — `submissions/service.ts`
-- `validateTransition(current, next)` — `submissions/service.ts`
-- `computeTrend(scores, stdDev)` — `progress/service.ts`
-- `parseExpiry(str)` — `auth/service.ts`
-- `hashToken(token)` — `auth/service.ts`
+- [ ] **3.4** Export pure functions riêng để test
+  - `scoreToBand`, `validateTransition`, `computeTrend`, `parseExpiry`, `hashToken`
 
 ---
 
-## Phase 4: DB Schema Cleanup
+## Phase 4: DB Schema Cleanup (MEDIUM)
 
-### 4.1 Thêm indexes thiếu
-| Table | Column(s) | Lý do |
-|-------|-----------|-------|
-| `refreshTokens` | `expiresAt` | Filter token expired trong `login()` |
-| `submissions` | `skill` | Filter by skill trong `list()` |
-| `submissions` | `questionId` | FK nhưng không có index |
-| `questions` | `createdBy` | `assertAccess` check ownership |
-| `examSessions` | `examId` | Filter sessions by exam |
+- [ ] **4.1** Thêm indexes thiếu
+  - `refreshTokens.expiresAt`, `submissions.skill`, `submissions.questionId`, `questions.createdBy`, `examSessions.examId`
 
-### 4.2 Xóa index thừa
-- `questions_skill_level_idx` — trùng với `questions_active_idx` (cùng `skill, level`).
+- [ ] **4.2** Xóa index thừa `questions_skill_level_idx` (trùng `questions_active_idx`)
 
-### 4.3 Cleanup unused columns trong `submissions`
-Grading service sẽ xây dựng sau → **giữ lại** columns phục vụ grading/review:
-- **Giữ**: `confidence`, `reviewPriority`, `reviewerId`, `gradingMode`, `claimedBy`, `claimedAt`
-- **Xóa**: `requestId` (never set, unique index vô nghĩa), `auditFlag` (never read/write), `isLate` (never set), `reviewPending` (trùng với `status = 'review_pending'`)
+- [ ] **4.3** Xóa unused columns `submissions`: `requestId`, `auditFlag`, `isLate`, `reviewPending` + xóa `submissions_request_id_unique`
+  - Giữ grading columns: `confidence`, `reviewPriority`, `reviewerId`, `gradingMode`, `claimedBy`, `claimedAt`
 
-Xóa `submissions_request_id_unique` index.
+- [ ] **4.4** Fix `examAnswers.isCorrect` — persist khi auto-grade hoặc xóa column
 
-### 4.4 Xóa/persist `examAnswers.isCorrect`
-- Column `isCorrect` không bao giờ được set. `autoGradeAnswers()` tính in-memory nhưng không persist.
-- **Fix**: Hoặc persist khi auto-grade, hoặc xóa column.
+- [ ] **4.5** Bỏ `$onUpdate` trên `updatedAt` (giữ explicit set trong service)
 
-### 4.5 Bỏ `$onUpdate` trên schema
-- `$onUpdate(() => new Date().toISOString())` trên `updatedAt` + service cũng set `updatedAt: now()` = double-set.
-- **Fix**: Bỏ `$onUpdate`, giữ explicit set trong service (rõ ràng hơn).
-
-### 4.6 Thêm `varchar` length limits
-Các `varchar` không có length:
-- `submissionDetails.feedback` → thêm `{ length: 10000 }`
-- Các `varchar` khác đã có length. OK.
+- [ ] **4.6** Thêm `varchar` length limit cho `submissionDetails.feedback` → `{ length: 10000 }`
 
 ---
 
-## Phase 5: Unit Tests
+## Phase 5: Unit Tests (MEDIUM)
 
-### 5.1 Pure function tests (không cần mock DB)
-- **File**: `src/modules/submissions/__tests__/grading.test.ts`
-  - `scoreToBand`: mọi khoảng score (0, 1, 3, 4, 6, 8.5, 10)
-  - `validateTransition`: mọi transition hợp lệ + không hợp lệ
-- **File**: `src/modules/progress/__tests__/trend.test.ts`
-  - `computeTrend`: insufficient_data, stable, improving, declining, inconsistent
-- **File**: `src/modules/auth/__tests__/helpers.test.ts`
-  - `parseExpiry`: s/m/h/d + invalid format
-  - `hashToken`: deterministic output
+- [ ] **5.1** Pure function tests (không cần mock DB)
+  - `submissions/__tests__/grading.test.ts`: `scoreToBand`, `validateTransition`
+  - `progress/__tests__/trend.test.ts`: `computeTrend`
+  - `auth/__tests__/helpers.test.ts`: `parseExpiry`, `hashToken`
 
-### 5.2 Service tests (mock DB via parameter)
-Sau Phase 3, mỗi service function nhận `database` parameter:
-```typescript
-import { describe, test, expect, mock } from "bun:test";
-import { login } from "../service";
-
-const mockDb = {
-  query: { users: { findFirst: mock(() => ({...})) } }
-};
-
-test("login with valid credentials", async () => {
-  const result = await login({ email: "a@b.c", password: "pass" }, mockDb);
-  expect(result.user.id).toBe("1");
-});
-```
+- [ ] **5.2** Service tests (mock DB via parameter)
+  - Sau Phase 3, mỗi function nhận `database` parameter → mock dễ dàng.
 
 ---
 
-## Phase 6: Code Cleanup
+## Phase 6: Code Cleanup & Docs (LOW)
 
-### 6.1 Bỏ COLUMN constants trùng lặp
-```typescript
-// Trước
-const EXAM_COLUMNS = { id: table.exams.id, level: table.exams.level, ... };
-// Sau
-import { getTableColumns } from "drizzle-orm";
-const { deletedAt, ...examColumns } = getTableColumns(table.exams);
-```
+- [ ] **6.1** Bỏ COLUMN constants trùng lặp → dùng `getTableColumns()` + destructure bỏ `deletedAt`
 
-### 6.2 Extract pagination count helper
-```typescript
-// Lặp 5 lần → extract
-async function countWhere(tbl, where, database = db) {
-  const [r] = await database.select({ count: count() }).from(tbl).where(where);
-  return r?.count ?? 0;
-}
-```
+- [ ] **6.2** Extract pagination count helper `countWhere(tbl, where, database)`
 
-### 6.3 ProgressService thiếu soft-delete filter
-- `getOverview()` line 34: query `userProgress` không có `notDeleted()`.
-- `getBySkill()` line 51: query `userProgress` không có `notDeleted()`.
-- `getSpiderChart()` line 104-116: query `userSkillScores` không filter deleted.
-- **Fix**: Thêm filter hoặc join với users để đảm bảo user chưa bị xóa.
+- [ ] **6.3** ProgressService thiếu soft-delete filter — `src/modules/progress/service.ts`
+  - `getOverview`, `getBySkill`, `getSpiderChart` không filter deleted users.
 
-### 6.4 Outbox schema — giữ cho grading service
-- `src/db/schema/outbox.ts` + `processedCallbacks` + relations: chưa có service nào dùng.
-- **Giữ lại** — grading service sẽ dùng outbox pattern để gửi submission tới AI grading.
+- [ ] **6.4** Outbox schema — giữ cho grading service (không xóa)
 
-### 6.5 Dead error classes
-- **File**: `src/plugins/error.ts`
-- `RateLimitError` (line 74): **giữ** — sẽ dùng khi thêm rate limiting.
-- `ValidationError` (line 68): xóa — Elysia xử lý validation qua built-in `VALIDATION` code.
-- `InternalError` (line 83): xóa — error handler tự trả 500.
+- [ ] **6.5** Xóa dead error classes: `ValidationError`, `InternalError` — `src/plugins/error.ts`
+  - Giữ `RateLimitError` (sẽ dùng cho rate limiting).
 
-### 6.6 Unused dependency `drizzle-typebox`
-- **File**: `package.json:31`
-- `"drizzle-typebox": "^0.3.3"` — không có file nào import. Dead dependency.
-- **Fix**: `bun remove drizzle-typebox`.
+- [ ] **6.6** Remove unused dep `drizzle-typebox` — `bun remove drizzle-typebox`
 
-### 6.7 `tsconfig.json` — unnecessary options
-- `"jsx": "react-jsx"` — backend không có JSX. Harmless nhưng gây confuse.
-- `"allowJs": true` — không có file `.js` nào.
-- **Fix**: Xóa 2 options này.
+- [ ] **6.7** `tsconfig.json` — xóa `"jsx": "react-jsx"` và `"allowJs": true`
 
-### 6.8 `biome.json` — `noConsole` nên là `error`
-- Hiện tại: `"noConsole": "warn"`. CLAUDE.md quy định **No `console.log`**.
-- **Fix**: Đổi thành `"error"`.
+- [ ] **6.8** `biome.json` — đổi `noConsole` từ `"warn"` → `"error"`
 
-### 6.9 `biome.json` — `noNonNullAssertion` đang tắt globally
-- `"noNonNullAssertion": "off"` cho phép `!` operator ở mọi nơi.
-- Sau khi fix 1.12 (JWT_SECRET), bật lại rule này: `"warn"` hoặc `"error"`.
+- [ ] **6.9** `biome.json` — bật lại `noNonNullAssertion` (sau khi fix 1.12)
 
-### 6.10 `auth.ts` plugin — unsafe `user` derive
-- **File**: `src/plugins/auth.ts:68-70`
-- `user: undefined as unknown as Actor` — public routes truy cập `user.sub` sẽ crash runtime.
-- Elysia pattern limitation. **Fix**: Document rõ HOẶC derive `user` as `Actor | undefined`, route handlers check null.
+- [ ] **6.10** Auth plugin unsafe `user` derive — `src/plugins/auth.ts:68-70`
+  - `undefined as unknown as Actor`. Fix: document hoặc derive as `Actor | undefined`.
 
-### 6.11 `ProgressService.getSpiderChart()` N+1 query
-- **File**: `src/modules/progress/service.ts:104-109`
-- Gọi `getBySkill()` trong loop 4 skills = 8 queries.
-- **Fix**: Query tất cả skills 1 lần, group in-memory.
+- [ ] **6.11** `getSpiderChart()` N+1 query — `src/modules/progress/service.ts:104-109`
+  - 4 skills × 2 queries = 8 queries. Fix: query tất cả 1 lần, group in-memory.
 
-### 6.12 `README.md` lỗi thời
-- **File**: `apps/backend/README.md`
-- Nội dung là template `bun init`. Không phản ánh project thực tế.
-- **Fix**: Update hoặc xóa (CLAUDE.md đã đầy đủ).
+- [ ] **6.12** Update `README.md` — `apps/backend/README.md` (template `bun init` cũ)
 
-### 6.13 `CODEBASE_REVIEW.md` — review cũ ở root
-- **File**: `/CODEBASE_REVIEW.md`
-- Review trước đó, một số items đã fix, nhiều items trùng plan này.
-- **Fix**: Xóa sau khi plan hoàn thành (tránh confuse 2 nguồn truth).
+- [ ] **6.13** Xóa `CODEBASE_REVIEW.md` (trùng plan này)
 
-### 6.14 `agent.md` — nhiều thông tin sai
-- **File**: `apps/backend/agent.md`
-- Line 42: Routes path sai — ghi `src/routes/{name}.ts` nhưng thực tế là `src/modules/{name}/index.ts`.
-- Line 54: Ghi "JWT + cookie auth plugin" — **không có cookie**, chỉ bearer token.
-- Line 88: `.use(authPlugin())` — **sai**. `authPlugin` là Elysia instance, không phải function. Phải là `.use(authPlugin)`.
-- Line 55: Password nên reference `@common/password` thay vì `Bun.password` trực tiếp.
-- Thiếu: Module pattern (`index.ts` + `model.ts` + `service.ts`).
-- **Fix**: Cập nhật hoặc xóa (CLAUDE.md đã đầy đủ hơn).
+- [ ] **6.14** Fix `agent.md` — sai routes path, sai authPlugin syntax, thiếu module pattern
 
-### 6.15 `CLAUDE.md` — số liệu sai
-- **File**: `/CLAUDE.md`
-- "13 tables" → thực tế **16 tables** (thiếu đếm `examSubmissions`, `processedCallbacks`, `questionVersions`).
-- "10 PostgreSQL enums" → thực tế **12 enums** (thiếu `reviewPriorityEnum`, `gradingModeEnum`).
-- `JWT_REFRESH_SECRET` vẫn xuất hiện trong mô tả `.env` — đã bị xóa.
-- `password.ts` không có trong bảng "Key Source Files" và "Existing Utilities".
-- **Fix**: Cập nhật cho đúng thực tế.
+- [ ] **6.15** Fix `CLAUDE.md` — sai 13→16 tables, 10→12 enums, stale JWT_REFRESH_SECRET, thiếu password.ts
 
-### 6.16 Dependency: `esbuild` moderate vulnerability
-- `drizzle-kit` → `esbuild <=0.24.2` — [GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99)
-- **Impact**: Dev dependency only (drizzle-kit + tsx), không ảnh hưởng production runtime.
-- **Fix**: `bun update` khi esbuild patch available.
+- [ ] **6.16** `esbuild` moderate vulnerability (dev only) — update khi patch available
 
 ---
 
 ## Tổng kết
 
-| Phase | Nội dung | Files | Ưu tiên |
+| Phase | Nội dung | Items | Ưu tiên |
 |-------|----------|-------|---------|
-| **1** | Bugs & Security | ~12 | **CRITICAL** |
-| **2** | JSONB Validation | ~9 | **HIGH** |
-| **3** | Pattern (functions + no namespace) | ~20 | **HIGH** |
-| **4** | DB Schema Cleanup | ~6 | **MEDIUM** |
-| **5** | Unit Tests | ~4 | **MEDIUM** |
-| **6** | Code Cleanup + Docs | ~18 | **LOW** |
-
-Thứ tự: Phase 1 → 2 → 3 → 4 → 5 → 6.
-Phase 5 có thể làm song song với Phase 3 (test pure functions ngay khi export).
+| **1** | Bugs & Security | 16 | **CRITICAL** |
+| **2** | JSONB Validation | 5 | **HIGH** |
+| **3** | Pattern (functions + no namespace) | 4 | **HIGH** |
+| **4** | DB Schema Cleanup | 6 | **MEDIUM** |
+| **5** | Unit Tests | 2 | **MEDIUM** |
+| **6** | Code Cleanup + Docs | 16 | **LOW** |
+| | **Tổng** | **49** | |
