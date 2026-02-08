@@ -14,12 +14,13 @@ import type { Actor } from "@/plugins/auth";
 import {
   ConflictError,
   ForbiddenError,
+  isUniqueViolation,
   UnauthorizedError,
 } from "@/plugins/error";
 
 const {
-  passwordHash: _ph,
-  deletedAt: _da,
+  passwordHash: _passwordHash,
+  deletedAt: _deletedAt,
   ...USER_COLUMNS
 } = getTableColumns(table.users);
 
@@ -103,11 +104,7 @@ export async function createUser(body: {
 
     return assertExists(user, "User");
   } catch (err: unknown) {
-    if (
-      err instanceof Error &&
-      "code" in err &&
-      (err as { code: string }).code === "23505"
-    ) {
+    if (isUniqueViolation(err)) {
       throw new ConflictError("Email already registered");
     }
     throw err;

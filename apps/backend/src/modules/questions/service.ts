@@ -13,7 +13,7 @@ import { db, notDeleted, pagination, table } from "@/db";
 import type { Actor } from "@/plugins/auth";
 import { BadRequestError } from "@/plugins/error";
 
-const { answerKey: _ak, ...QUESTION_PUBLIC_COLUMNS } = getTableColumns(
+const { answerKey: _answerKey, ...QUESTION_PUBLIC_COLUMNS } = getTableColumns(
   table.questions,
 );
 
@@ -162,7 +162,7 @@ export async function updateQuestion(
     const question = assertExists(row, "Question");
 
     assertAccess(
-      question.createdBy ?? "",
+      question.createdBy,
       actor,
       "You can only update your own questions",
     );
@@ -227,7 +227,7 @@ export async function createQuestionVersion(
     const question = assertExists(row, "Question");
 
     assertAccess(
-      question.createdBy ?? "",
+      question.createdBy,
       actor,
       "You can only create versions of your own questions",
     );
@@ -322,7 +322,7 @@ export async function removeQuestion(questionId: string, actor: Actor) {
     const question = assertExists(row, "Question");
 
     assertAccess(
-      question.createdBy ?? "",
+      question.createdBy,
       actor,
       "You can only delete your own questions",
     );

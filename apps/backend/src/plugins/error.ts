@@ -74,6 +74,16 @@ export class RateLimitError extends AppError {
   }
 }
 
+/** Check if an error is a PostgreSQL unique constraint violation (code 23505) */
+export function isUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code: string }).code === "23505"
+  );
+}
+
 /** Extract or generate a UUID v4 requestId from the incoming request */
 function resolveRequestId(request: Request): string {
   const header = request.headers.get("x-request-id");

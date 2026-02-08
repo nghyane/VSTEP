@@ -1,4 +1,5 @@
 import { assertAccess, assertExists, now } from "@common/utils";
+import { Value } from "@sinclair/typebox/value";
 import {
   and,
   count,
@@ -8,21 +9,42 @@ import {
   inArray,
   sql,
 } from "drizzle-orm";
-import type { Exam } from "@/db";
+import type { DbTransaction, Exam } from "@/db";
 import { db, notDeleted, pagination, table } from "@/db";
+import {
+  ObjectiveAnswer,
+  ObjectiveAnswerKey,
+} from "@/modules/questions/content-schemas";
 import type { Actor } from "@/plugins/auth";
 import { BadRequestError } from "@/plugins/error";
 
-type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+function parseAnswerKey(raw: unknown): Record<string, string> {
+  if (Value.Check(ObjectiveAnswerKey, raw)) return raw.correctAnswers;
+  return {};
+}
 
-const { deletedAt: _ed, ...EXAM_COLUMNS } = getTableColumns(table.exams);
-const { deletedAt: _sd, ...SESSION_COLUMNS } = getTableColumns(
+function parseUserAnswer(raw: unknown): Record<string, string> {
+  if (Value.Check(ObjectiveAnswer, raw)) return raw.answers;
+  if (typeof raw === "object" && raw !== null && !Array.isArray(raw)) {
+    // Legacy shape: flat { "1": "A", "2": "B" } without wrapper
+    const entries = Object.entries(raw as Record<string, unknown>).filter(
+      ([, v]) => typeof v === "string",
+    );
+    if (entries.length > 0) return Object.fromEntries(entries);
+  }
+  return {};
+}
+
+const { deletedAt: _examDeletedAt, ...EXAM_COLUMNS } = getTableColumns(
+  table.exams,
+);
+const { deletedAt: _sessionDeletedAt, ...SESSION_COLUMNS } = getTableColumns(
   table.examSessions,
 );
 
 /** Fetch and validate an in-progress session owned by the actor */
 async function getActiveSession(
-  tx: Transaction,
+  tx: DbTransaction,
   sessionId: string,
   actor: Actor,
 ) {
@@ -189,27 +211,18 @@ export async function startExamSession(userId: string, examId: string) {
   });
 }
 
+/** Derive a { key: true } columns object from SESSION_COLUMNS keys for findFirst/findMany */
+const SESSION_QUERY_COLUMNS = Object.fromEntries(
+  Object.keys(SESSION_COLUMNS).map((k) => [k, true]),
+) as Record<keyof typeof SESSION_COLUMNS, true>;
+
 export async function getExamSessionById(sessionId: string, actor: Actor) {
   const session = await db.query.examSessions.findFirst({
     where: and(
       eq(table.examSessions.id, sessionId),
       notDeleted(table.examSessions),
     ),
-    columns: {
-      id: true,
-      userId: true,
-      examId: true,
-      status: true,
-      listeningScore: true,
-      readingScore: true,
-      writingScore: true,
-      speakingScore: true,
-      overallScore: true,
-      startedAt: true,
-      completedAt: true,
-      createdAt: true,
-      updatedAt: true,
-    },
+    columns: SESSION_QUERY_COLUMNS,
   });
 
   const s = assertExists(session, "Session");
@@ -217,8 +230,8 @@ export async function getExamSessionById(sessionId: string, actor: Actor) {
   return s;
 }
 
-/** Validate that a questionId exists and is active */
-async function validateQuestion(tx: Transaction, questionId: string) {
+/** Validate that a questionId exists, is active, and is not soft-deleted */
+async function validateQuestion(tx: DbTransaction, questionId: string) {
   const [question] = await tx
     .select({ id: table.questions.id })
     .from(table.questions)
@@ -226,6 +239,7 @@ async function validateQuestion(tx: Transaction, questionId: string) {
       and(
         eq(table.questions.id, questionId),
         eq(table.questions.isActive, true),
+        notDeleted(table.questions),
       ),
     )
     .limit(1);
@@ -329,15 +343,17 @@ export function autoGradeAnswers(
 
   for (const ea of examAnswers) {
     const question = questionsMap.get(ea.questionId);
-    if (!question) continue;
+    if (!question) {
+      throw new BadRequestError(
+        `Question ${ea.questionId} not found during grading`,
+      );
+    }
 
     const { skill, answerKey } = question;
 
     if (skill === "listening" || skill === "reading") {
-      const correctAnswers =
-        (answerKey as { correctAnswers?: Record<string, string> })
-          ?.correctAnswers ?? {};
-      const userAnswers = (ea.answer ?? {}) as Record<string, string>;
+      const correctAnswers = parseAnswerKey(answerKey);
+      const userAnswers = parseUserAnswer(ea.answer);
 
       let qCorrect = 0;
       let qTotal = 0;
@@ -394,78 +410,161 @@ export function calculateOverallScore(
   return Math.round(avg * 2) / 2;
 }
 
+/** Fetch all exam answers for a session */
+async function fetchSessionAnswers(tx: DbTransaction, sessionId: string) {
+  const answers = await tx
+    .select({
+      questionId: table.examAnswers.questionId,
+      answer: table.examAnswers.answer,
+    })
+    .from(table.examAnswers)
+    .where(eq(table.examAnswers.sessionId, sessionId));
+
+  if (answers.length === 0) {
+    throw new BadRequestError("No answers found for this session");
+  }
+  return answers;
+}
+
+/** Batch-fetch questions for a list of question IDs */
+async function fetchQuestionsForAnswers(
+  tx: DbTransaction,
+  questionIds: string[],
+) {
+  const rows = await tx
+    .select({
+      id: table.questions.id,
+      skill: table.questions.skill,
+      answerKey: table.questions.answerKey,
+    })
+    .from(table.questions)
+    .where(inArray(table.questions.id, questionIds));
+
+  return new Map(
+    rows.map((q) => [q.id, { skill: q.skill, answerKey: q.answerKey }]),
+  );
+}
+
+/** Persist isCorrect flags on objective answers */
+async function persistCorrectness(
+  tx: DbTransaction,
+  sessionId: string,
+  correctnessMap: Map<string, boolean>,
+) {
+  if (correctnessMap.size === 0) return;
+
+  const correctIds: string[] = [];
+  const incorrectIds: string[] = [];
+  for (const [qId, correct] of correctnessMap) {
+    if (correct) correctIds.push(qId);
+    else incorrectIds.push(qId);
+  }
+  if (correctIds.length > 0) {
+    await tx
+      .update(table.examAnswers)
+      .set({ isCorrect: true })
+      .where(
+        and(
+          eq(table.examAnswers.sessionId, sessionId),
+          inArray(table.examAnswers.questionId, correctIds),
+        ),
+      );
+  }
+  if (incorrectIds.length > 0) {
+    await tx
+      .update(table.examAnswers)
+      .set({ isCorrect: false })
+      .where(
+        and(
+          eq(table.examAnswers.sessionId, sessionId),
+          inArray(table.examAnswers.questionId, incorrectIds),
+        ),
+      );
+  }
+}
+
+/** Batch-create pending submissions for writing/speaking answers */
+async function createPendingSubmissions(
+  tx: DbTransaction,
+  sessionId: string,
+  userId: string,
+  pendingAnswers: {
+    questionId: string;
+    answer: unknown;
+    skill: "writing" | "speaking";
+  }[],
+) {
+  if (pendingAnswers.length === 0) return;
+
+  const insertedSubmissions = await tx
+    .insert(table.submissions)
+    .values(
+      pendingAnswers.map((a) => ({
+        userId,
+        questionId: a.questionId,
+        skill: a.skill,
+        status: "pending" as const,
+      })),
+    )
+    .returning({ id: table.submissions.id });
+
+  await tx.insert(table.submissionDetails).values(
+    insertedSubmissions.map((sub, i) => ({
+      submissionId: sub.id,
+      answer: pendingAnswers[i].answer,
+    })),
+  );
+
+  await tx.insert(table.examSubmissions).values(
+    insertedSubmissions.map((sub, i) => ({
+      sessionId,
+      submissionId: sub.id,
+      skill: pendingAnswers[i].skill,
+    })),
+  );
+}
+
+/** Finalize session: set scores, status, and completedAt */
+async function finalizeSession(
+  tx: DbTransaction,
+  sessionId: string,
+  scores: { listeningScore: number | null; readingScore: number | null },
+  status: string,
+) {
+  const timestamp = now();
+  const [updatedSession] = await tx
+    .update(table.examSessions)
+    .set({
+      listeningScore: scores.listeningScore,
+      readingScore: scores.readingScore,
+      status,
+      completedAt: timestamp,
+      updatedAt: timestamp,
+    })
+    .where(
+      and(
+        eq(table.examSessions.id, sessionId),
+        eq(table.examSessions.status, "in_progress"),
+      ),
+    )
+    .returning(SESSION_COLUMNS);
+
+  return assertExists(updatedSession, "Session");
+}
+
 /** Submit exam: auto-grade listening/reading, create submissions for writing/speaking */
 export async function submitExam(sessionId: string, actor: Actor) {
   return db.transaction(async (tx) => {
     const session = await getActiveSession(tx, sessionId, actor);
+    const answers = await fetchSessionAnswers(tx, sessionId);
 
-    // Fetch all exam answers for this session
-    const answers = await tx
-      .select({
-        questionId: table.examAnswers.questionId,
-        answer: table.examAnswers.answer,
-      })
-      .from(table.examAnswers)
-      .where(eq(table.examAnswers.sessionId, sessionId));
-
-    if (answers.length === 0) {
-      throw new BadRequestError("No answers found for this session");
-    }
-
-    // Batch-fetch questions for those answers
     const questionIds = answers.map((a) => a.questionId);
-    const questionsRows = await tx
-      .select({
-        id: table.questions.id,
-        skill: table.questions.skill,
-        answerKey: table.questions.answerKey,
-      })
-      .from(table.questions)
-      .where(inArray(table.questions.id, questionIds));
+    const questionsMap = await fetchQuestionsForAnswers(tx, questionIds);
 
-    const questionsMap = new Map(
-      questionsRows.map((q) => [
-        q.id,
-        { skill: q.skill, answerKey: q.answerKey },
-      ]),
-    );
-
-    // Auto-grade listening/reading, collect writing/speaking
     const gradeResult = autoGradeAnswers(answers, questionsMap);
 
-    // Persist isCorrect on objective answers
-    if (gradeResult.correctnessMap.size > 0) {
-      const correctIds: string[] = [];
-      const incorrectIds: string[] = [];
-      for (const [qId, correct] of gradeResult.correctnessMap) {
-        if (correct) correctIds.push(qId);
-        else incorrectIds.push(qId);
-      }
-      if (correctIds.length > 0) {
-        await tx
-          .update(table.examAnswers)
-          .set({ isCorrect: true })
-          .where(
-            and(
-              eq(table.examAnswers.sessionId, sessionId),
-              inArray(table.examAnswers.questionId, correctIds),
-            ),
-          );
-      }
-      if (incorrectIds.length > 0) {
-        await tx
-          .update(table.examAnswers)
-          .set({ isCorrect: false })
-          .where(
-            and(
-              eq(table.examAnswers.sessionId, sessionId),
-              inArray(table.examAnswers.questionId, incorrectIds),
-            ),
-          );
-      }
-    }
+    await persistCorrectness(tx, sessionId, gradeResult.correctnessMap);
 
-    // Calculate scores
     const listeningScore = calculateScore(
       gradeResult.listeningCorrect,
       gradeResult.listeningTotal,
@@ -474,14 +573,7 @@ export async function submitExam(sessionId: string, actor: Actor) {
       gradeResult.readingCorrect,
       gradeResult.readingTotal,
     );
-    const overallScore = calculateOverallScore([
-      listeningScore,
-      readingScore,
-      null, // writing: pending grading
-      null, // speaking: pending grading
-    ]);
 
-    // Batch create submissions for writing/speaking answers
     const pendingAnswers = [
       ...gradeResult.writingAnswers.map((a) => ({
         ...a,
@@ -492,62 +584,108 @@ export async function submitExam(sessionId: string, actor: Actor) {
         skill: "speaking" as const,
       })),
     ];
-    const hasPendingSubmissions = pendingAnswers.length > 0;
 
-    if (hasPendingSubmissions) {
-      // Batch insert: submissions
-      const insertedSubmissions = await tx
-        .insert(table.submissions)
-        .values(
-          pendingAnswers.map((wa) => ({
-            userId: session.userId,
-            questionId: wa.questionId,
-            skill: wa.skill,
-            status: "pending" as const,
-          })),
-        )
-        .returning({ id: table.submissions.id });
+    await createPendingSubmissions(
+      tx,
+      sessionId,
+      session.userId,
+      pendingAnswers,
+    );
 
-      // Batch insert: submission details
-      await tx.insert(table.submissionDetails).values(
-        insertedSubmissions.map((sub, i) => ({
-          submissionId: sub.id,
-          answer: pendingAnswers[i].answer,
-        })),
-      );
+    const finalStatus = pendingAnswers.length > 0 ? "submitted" : "completed";
+    return finalizeSession(
+      tx,
+      sessionId,
+      { listeningScore, readingScore },
+      finalStatus,
+    );
+  });
+}
 
-      // Batch insert: exam-submission links
-      await tx.insert(table.examSubmissions).values(
-        insertedSubmissions.map((sub, i) => ({
-          sessionId,
-          submissionId: sub.id,
-          skill: pendingAnswers[i].skill,
-        })),
-      );
-    }
-
-    // Update session: scores + status
-    const finalStatus = hasPendingSubmissions ? "submitted" : "completed";
-    const timestamp = now();
-
-    const [updatedSession] = await tx
-      .update(table.examSessions)
-      .set({
-        listeningScore,
-        readingScore,
-        overallScore,
-        status: finalStatus,
-        completedAt: timestamp,
-        updatedAt: timestamp,
+/** Recompute overallScore when a submission is graded. Called after writing/speaking grading completes. */
+export async function updateSessionScoreIfComplete(sessionId: string) {
+  return db.transaction(async (tx) => {
+    const [session] = await tx
+      .select({
+        id: table.examSessions.id,
+        status: table.examSessions.status,
+        listeningScore: table.examSessions.listeningScore,
+        readingScore: table.examSessions.readingScore,
+        writingScore: table.examSessions.writingScore,
+        speakingScore: table.examSessions.speakingScore,
       })
+      .from(table.examSessions)
       .where(
         and(
           eq(table.examSessions.id, sessionId),
-          eq(table.examSessions.status, "in_progress"),
+          notDeleted(table.examSessions),
         ),
       )
+      .limit(1);
+
+    if (!session || session.status === "completed") return null;
+
+    // Check if all exam_submissions are completed
+    const pendingSubmissions = await tx
+      .select({ id: table.examSubmissions.id })
+      .from(table.examSubmissions)
+      .innerJoin(
+        table.submissions,
+        eq(table.examSubmissions.submissionId, table.submissions.id),
+      )
+      .where(
+        and(
+          eq(table.examSubmissions.sessionId, sessionId),
+          sql`${table.submissions.status} != 'completed'`,
+        ),
+      )
+      .limit(1);
+
+    if (pendingSubmissions.length > 0) return null;
+
+    // Fetch actual writing/speaking scores from completed submissions
+    const skillScores = await tx
+      .select({
+        skill: table.examSubmissions.skill,
+        score: table.submissions.score,
+      })
+      .from(table.examSubmissions)
+      .innerJoin(
+        table.submissions,
+        eq(table.examSubmissions.submissionId, table.submissions.id),
+      )
+      .where(eq(table.examSubmissions.sessionId, sessionId));
+
+    let writingScore = session.writingScore;
+    let speakingScore = session.speakingScore;
+    for (const row of skillScores) {
+      if (row.skill === "writing" && row.score !== null)
+        writingScore = row.score;
+      if (row.skill === "speaking" && row.score !== null)
+        speakingScore = row.score;
+    }
+
+    const overallScore = calculateOverallScore([
+      session.listeningScore,
+      session.readingScore,
+      writingScore,
+      speakingScore,
+    ]);
+
+    const timestamp = now();
+    const [updated] = await tx
+      .update(table.examSessions)
+      .set({
+        writingScore,
+        speakingScore,
+        overallScore,
+        status: overallScore !== null ? "completed" : session.status,
+        completedAt: overallScore !== null ? timestamp : undefined,
+        updatedAt: timestamp,
+      })
+      .where(eq(table.examSessions.id, sessionId))
       .returning(SESSION_COLUMNS);
 
-    return assertExists(updatedSession, "Session");
+    return updated ?? null;
   });
 }

@@ -5,7 +5,11 @@ import { and, asc, eq, gt, inArray, isNull } from "drizzle-orm";
 import { SignJWT } from "jose";
 import { db, table } from "@/db";
 import type { JWTPayload } from "@/plugins/auth";
-import { ConflictError, UnauthorizedError } from "@/plugins/error";
+import {
+  ConflictError,
+  isUniqueViolation,
+  UnauthorizedError,
+} from "@/plugins/error";
 import type { AuthUserInfo } from "./model";
 
 if (!env.JWT_SECRET) throw new Error("JWT_SECRET is required");
@@ -155,12 +159,7 @@ export async function register(body: {
       message: "Account created successfully",
     };
   } catch (e: unknown) {
-    if (
-      typeof e === "object" &&
-      e !== null &&
-      "code" in e &&
-      (e as { code: string }).code === "23505"
-    ) {
+    if (isUniqueViolation(e)) {
       throw new ConflictError("Email already registered");
     }
     throw e;
@@ -173,61 +172,61 @@ export async function refreshToken(
 ): Promise<{ user: UserInfo; newRefreshToken: string; jti: string }> {
   const hash = hashToken(token);
 
-  // First, find the token record by hash (regardless of revoked status)
-  const tokenRecord = await db.query.refreshTokens.findFirst({
-    where: eq(table.refreshTokens.tokenHash, hash),
-    columns: {
-      id: true,
-      userId: true,
-      jti: true,
-      revokedAt: true,
-      replacedByJti: true,
-      expiresAt: true,
-    },
-  });
+  return db.transaction(async (tx) => {
+    // Find the token record by hash (regardless of revoked status)
+    const tokenRecord = await tx.query.refreshTokens.findFirst({
+      where: eq(table.refreshTokens.tokenHash, hash),
+      columns: {
+        id: true,
+        userId: true,
+        jti: true,
+        revokedAt: true,
+        replacedByJti: true,
+        expiresAt: true,
+      },
+    });
 
-  if (!tokenRecord) {
-    throw new UnauthorizedError("Invalid refresh token");
-  }
+    if (!tokenRecord) {
+      throw new UnauthorizedError("Invalid refresh token");
+    }
 
-  // Reuse detection: token already revoked → compromise detected
-  if (tokenRecord.revokedAt || tokenRecord.replacedByJti) {
-    // Revoke ALL tokens for this user (token family attack)
-    await db
-      .update(table.refreshTokens)
-      .set({ revokedAt: now() })
-      .where(
-        and(
-          eq(table.refreshTokens.userId, tokenRecord.userId),
-          isNull(table.refreshTokens.revokedAt),
-        ),
+    // Reuse detection: token already revoked → compromise detected
+    if (tokenRecord.revokedAt || tokenRecord.replacedByJti) {
+      // Revoke ALL tokens for this user (token family attack)
+      await tx
+        .update(table.refreshTokens)
+        .set({ revokedAt: now() })
+        .where(
+          and(
+            eq(table.refreshTokens.userId, tokenRecord.userId),
+            isNull(table.refreshTokens.revokedAt),
+          ),
+        );
+      throw new UnauthorizedError(
+        "Refresh token reuse detected, all sessions revoked",
       );
-    throw new UnauthorizedError(
-      "Refresh token reuse detected, all sessions revoked",
-    );
-  }
+    }
 
-  // Token expired
-  if (new Date(tokenRecord.expiresAt) <= new Date()) {
-    throw new UnauthorizedError("Refresh token expired");
-  }
+    // Token expired
+    if (new Date(tokenRecord.expiresAt) <= new Date()) {
+      throw new UnauthorizedError("Refresh token expired");
+    }
 
-  const user = await db.query.users.findFirst({
-    where: and(
-      eq(table.users.id, tokenRecord.userId),
-      isNull(table.users.deletedAt),
-    ),
-    columns: { id: true, email: true, fullName: true, role: true },
-  });
+    const user = await tx.query.users.findFirst({
+      where: and(
+        eq(table.users.id, tokenRecord.userId),
+        isNull(table.users.deletedAt),
+      ),
+      columns: { id: true, email: true, fullName: true, role: true },
+    });
 
-  if (!user) throw new UnauthorizedError("User not found");
+    if (!user) throw new UnauthorizedError("User not found");
 
-  // Rotate: revoke old, issue new
-  const newRefreshToken = crypto.randomUUID();
-  const newJti = crypto.randomUUID();
-  const refreshExpirySeconds = parseExpiry(JWT_REFRESH_EXPIRES_IN);
+    // Rotate: revoke old, issue new
+    const newRefreshToken = crypto.randomUUID();
+    const newJti = crypto.randomUUID();
+    const refreshExpirySeconds = parseExpiry(JWT_REFRESH_EXPIRES_IN);
 
-  await db.transaction(async (tx) => {
     await tx
       .update(table.refreshTokens)
       .set({ revokedAt: now(), replacedByJti: newJti })
@@ -242,18 +241,18 @@ export async function refreshToken(
         Date.now() + refreshExpirySeconds * 1000,
       ).toISOString(),
     });
-  });
 
-  return {
-    user: {
-      id: user.id,
-      email: user.email,
-      fullName: user.fullName,
-      role: user.role,
-    },
-    newRefreshToken,
-    jti: newJti,
-  };
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+      },
+      newRefreshToken,
+      jti: newJti,
+    };
+  });
 }
 
 export async function logout(token: string): Promise<{ message: string }> {

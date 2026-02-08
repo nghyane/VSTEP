@@ -1,22 +1,33 @@
 import { assertAccess, assertExists, now } from "@common/utils";
-import { and, count, desc, eq, type SQL, sql } from "drizzle-orm";
+import {
+  and,
+  count,
+  desc,
+  eq,
+  getTableColumns,
+  type SQL,
+  sql,
+} from "drizzle-orm";
 import type { Submission } from "@/db";
 import { db, notDeleted, pagination, table } from "@/db";
 import type { Actor } from "@/plugins/auth";
 import { BadRequestError } from "@/plugins/error";
 
-const SUBMISSION_COLUMNS = {
-  id: table.submissions.id,
-  userId: table.submissions.userId,
-  questionId: table.submissions.questionId,
-  skill: table.submissions.skill,
-  status: table.submissions.status,
-  score: table.submissions.score,
-  band: table.submissions.band,
-  completedAt: table.submissions.completedAt,
-  createdAt: table.submissions.createdAt,
-  updatedAt: table.submissions.updatedAt,
-} as const;
+const {
+  confidence: _confidence,
+  isLate: _isLate,
+  attempt: _attempt,
+  requestId: _requestId,
+  reviewPriority: _reviewPriority,
+  reviewerId: _reviewerId,
+  gradingMode: _gradingMode,
+  auditFlag: _auditFlag,
+  claimedBy: _claimedBy,
+  claimedAt: _claimedAt,
+  deadline: _deadline,
+  deletedAt: _deletedAt,
+  ...SUBMISSION_COLUMNS
+} = getTableColumns(table.submissions);
 
 /** VSTEP.3-5 only assesses B1-C1. Scores below 4.0 = below B1, not A1/A2. */
 export function scoreToBand(score: number): Submission["band"] {
@@ -27,7 +38,7 @@ export function scoreToBand(score: number): Submission["band"] {
   return null;
 }
 
-export const VALID_TRANSITIONS: Record<string, string[]> = {
+const VALID_TRANSITIONS: Record<string, string[]> = {
   pending: ["queued", "failed"],
   queued: ["processing", "failed"],
   processing: ["completed", "review_pending", "error", "failed"],
@@ -250,19 +261,24 @@ export async function updateSubmission(
         .where(eq(table.submissionDetails.submissionId, submissionId));
     }
 
+    const updatedSub = assertExists(updatedSubmission, "Submission");
+
+    // Use .returning() data where possible, fetch details only once
     const [details] = await tx
-      .select()
+      .select({
+        answer: table.submissionDetails.answer,
+        result: table.submissionDetails.result,
+        feedback: table.submissionDetails.feedback,
+      })
       .from(table.submissionDetails)
       .where(eq(table.submissionDetails.submissionId, submissionId))
       .limit(1);
 
-    const updatedSub = assertExists(updatedSubmission, "Submission");
-
     return {
       ...updatedSub,
-      answer: details?.answer,
-      result: details?.result,
-      feedback: details?.feedback,
+      answer: details?.answer ?? null,
+      result: details?.result ?? null,
+      feedback: details?.feedback ?? null,
     };
   });
 }
@@ -294,7 +310,7 @@ export async function gradeSubmission(
     if (body.score < 0 || body.score > 10) {
       throw new BadRequestError("Score must be between 0 and 10");
     }
-    if (Math.round(body.score * 2) !== body.score * 2) {
+    if ((body.score * 10) % 5 !== 0) {
       throw new BadRequestError("Score must be in 0.5 increments");
     }
 
@@ -318,19 +334,23 @@ export async function gradeSubmission(
         .where(eq(table.submissionDetails.submissionId, submissionId));
     }
 
+    const updatedSub = assertExists(updatedSubmission, "Submission");
+
     const [details] = await tx
-      .select()
+      .select({
+        answer: table.submissionDetails.answer,
+        result: table.submissionDetails.result,
+        feedback: table.submissionDetails.feedback,
+      })
       .from(table.submissionDetails)
       .where(eq(table.submissionDetails.submissionId, submissionId))
       .limit(1);
 
-    const updatedSub = assertExists(updatedSubmission, "Submission");
-
     return {
       ...updatedSub,
-      answer: details?.answer,
-      result: details?.result,
-      feedback: details?.feedback,
+      answer: details?.answer ?? null,
+      result: details?.result ?? null,
+      feedback: details?.feedback ?? null,
     };
   });
 }

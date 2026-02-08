@@ -1,5 +1,7 @@
 import "../../plugins/__tests__/test-env";
 import { describe, expect, test } from "bun:test";
+import { assertAccess } from "@common/utils";
+import { isUniqueViolation } from "../../plugins/error";
 import { hashToken, parseExpiry } from "../auth/service";
 import {
   autoGradeAnswers,
@@ -7,11 +9,7 @@ import {
   calculateScore,
 } from "../exams/service";
 import { computeTrend } from "../progress/service";
-import {
-  scoreToBand,
-  VALID_TRANSITIONS,
-  validateTransition,
-} from "../submissions/service";
+import { scoreToBand, validateTransition } from "../submissions/service";
 
 // ─── scoreToBand ──────────────────────────────────────────────
 
@@ -110,9 +108,11 @@ describe("validateTransition", () => {
     expect(() => validateTransition("nonexistent", "pending")).toThrow();
   });
 
-  test("all terminal states have no allowed transitions", () => {
-    expect(VALID_TRANSITIONS.completed).toEqual([]);
-    expect(VALID_TRANSITIONS.failed).toEqual([]);
+  test("terminal states reject all transitions", () => {
+    expect(() => validateTransition("completed", "pending")).toThrow();
+    expect(() => validateTransition("completed", "queued")).toThrow();
+    expect(() => validateTransition("failed", "pending")).toThrow();
+    expect(() => validateTransition("failed", "queued")).toThrow();
   });
 });
 
@@ -332,16 +332,16 @@ describe("autoGradeAnswers", () => {
     expect(result.correctnessMap.size).toBe(0);
   });
 
-  test("skips unknown question IDs", () => {
+  test("throws for unknown question IDs (R1.4)", () => {
     const questionsMap = new Map<
       string,
       { skill: string; answerKey: unknown }
     >();
     const answers = [{ questionId: "unknown", answer: {} }];
 
-    const result = autoGradeAnswers(answers, questionsMap);
-    expect(result.listeningTotal).toBe(0);
-    expect(result.readingTotal).toBe(0);
+    expect(() => autoGradeAnswers(answers, questionsMap)).toThrow(
+      "Question unknown not found during grading",
+    );
   });
 
   test("mixed skills in single exam", () => {
@@ -382,5 +382,132 @@ describe("autoGradeAnswers", () => {
     expect(result.listeningCorrect).toBe(0);
     expect(result.listeningTotal).toBe(1);
     expect(result.correctnessMap.get("q1")).toBe(false);
+  });
+
+  test("type-safe answer parsing with { answers: {} } shape (R1.1)", () => {
+    const questionsMap = new Map([
+      ["q1", makeQuestion("reading", { "1": "A", "2": "B" })],
+    ]);
+    const answers = [
+      { questionId: "q1", answer: { answers: { "1": "A", "2": "B" } } },
+    ];
+
+    const result = autoGradeAnswers(answers, questionsMap);
+    expect(result.readingCorrect).toBe(2);
+    expect(result.readingTotal).toBe(2);
+    expect(result.correctnessMap.get("q1")).toBe(true);
+  });
+
+  test("handles malformed answerKey gracefully (R1.1)", () => {
+    const questionsMap = new Map<string, { skill: string; answerKey: unknown }>(
+      [["q1", { skill: "reading", answerKey: "not-an-object" }]],
+    );
+    const answers = [{ questionId: "q1", answer: { answers: { "1": "A" } } }];
+
+    const result = autoGradeAnswers(answers, questionsMap);
+    expect(result.readingCorrect).toBe(0);
+    expect(result.readingTotal).toBe(0);
+  });
+});
+
+// ─── isUniqueViolation (R3.1) ──────────────────────────────────
+
+describe("isUniqueViolation", () => {
+  test("returns true for PG unique violation error", () => {
+    const err = Object.assign(new Error("duplicate key"), { code: "23505" });
+    expect(isUniqueViolation(err)).toBe(true);
+  });
+
+  test("returns true for plain object with code 23505", () => {
+    expect(isUniqueViolation({ code: "23505" })).toBe(true);
+  });
+
+  test("returns false for other PG errors", () => {
+    expect(isUniqueViolation({ code: "23503" })).toBe(false);
+  });
+
+  test("returns false for null/undefined/string", () => {
+    expect(isUniqueViolation(null)).toBe(false);
+    expect(isUniqueViolation(undefined)).toBe(false);
+    expect(isUniqueViolation("23505")).toBe(false);
+  });
+});
+
+// ─── assertAccess with nullable (R4.2) ────────────────────────
+
+describe("assertAccess", () => {
+  const makeActor = (sub: string, role: "learner" | "instructor" | "admin") => {
+    const roleLevel = { learner: 0, instructor: 1, admin: 2 };
+    return {
+      sub,
+      jti: "jti-1",
+      role,
+      is: (required: "learner" | "instructor" | "admin") =>
+        roleLevel[role] >= roleLevel[required],
+    };
+  };
+
+  test("allows owner access", () => {
+    expect(() =>
+      assertAccess("user-1", makeActor("user-1", "learner")),
+    ).not.toThrow();
+  });
+
+  test("allows admin access to any resource", () => {
+    expect(() =>
+      assertAccess("user-1", makeActor("admin-1", "admin")),
+    ).not.toThrow();
+  });
+
+  test("denies non-owner non-admin", () => {
+    expect(() =>
+      assertAccess("user-1", makeActor("user-2", "learner")),
+    ).toThrow("You do not have access to this resource");
+  });
+
+  test("null owner — only admin can access", () => {
+    expect(() =>
+      assertAccess(null, makeActor("admin-1", "admin")),
+    ).not.toThrow();
+  });
+
+  test("null owner — non-admin denied", () => {
+    expect(() => assertAccess(null, makeActor("user-1", "learner"))).toThrow();
+  });
+});
+
+// ─── scoreToBand boundaries (R5.4) ───────────────────────────
+
+describe("scoreToBand boundaries", () => {
+  test("3.99 → null (just below B1)", () => {
+    expect(scoreToBand(3.99)).toBeNull();
+  });
+
+  test("4.0 → B1 (exact boundary)", () => {
+    expect(scoreToBand(4.0)).toBe("B1");
+  });
+
+  test("5.99 → B1 (just below B2)", () => {
+    expect(scoreToBand(5.99)).toBe("B1");
+  });
+
+  test("8.49 → B2 (just below C1)", () => {
+    expect(scoreToBand(8.49)).toBe("B2");
+  });
+});
+
+// ─── calculateOverallScore edge (R5.3) ──────────────────────
+
+describe("calculateOverallScore edge cases", () => {
+  test("[10, 0, 10, 0] = 5.0", () => {
+    expect(calculateOverallScore([10, 0, 10, 0])).toBe(5);
+  });
+
+  test("[0, 0, 0, 0] = 0", () => {
+    expect(calculateOverallScore([0, 0, 0, 0])).toBe(0);
+  });
+
+  test("[10, 10, 10, 10] = 10", () => {
+    expect(calculateOverallScore([10, 10, 10, 10])).toBe(10);
   });
 });
