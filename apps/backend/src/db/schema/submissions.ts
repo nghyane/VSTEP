@@ -112,7 +112,7 @@ export const submissionDetails = pgTable("submission_details", {
     .primaryKey(),
   answer: jsonb("answer").notNull(),
   result: jsonb("result"),
-  feedback: varchar("feedback"),
+  feedback: varchar("feedback", { length: 10000 }),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
     .defaultNow()
     .notNull(),

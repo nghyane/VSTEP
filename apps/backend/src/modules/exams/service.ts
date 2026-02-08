@@ -1,5 +1,5 @@
 import { assertAccess, assertExists, now } from "@common/utils";
-import { and, count, desc, eq, inArray } from "drizzle-orm";
+import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
 import type { Exam } from "@/db";
 import { db, notDeleted, pagination, table } from "@/db";
 import type { Actor } from "@/plugins/auth";
@@ -158,12 +158,21 @@ export class ExamService {
   }
 
   static async startSession(userId: string, examId: string) {
-    const exam = await ExamService.getById(examId);
-    if (!exam.isActive) {
-      throw new BadRequestError("Exam is not active");
-    }
-
     return db.transaction(async (tx) => {
+      const [examRow] = await tx
+        .select({
+          id: table.exams.id,
+          isActive: table.exams.isActive,
+        })
+        .from(table.exams)
+        .where(and(eq(table.exams.id, examId), notDeleted(table.exams)))
+        .limit(1);
+
+      const exam = assertExists(examRow, "Exam");
+      if (!exam.isActive) {
+        throw new BadRequestError("Exam is not active");
+      }
+
       const [existingSession] = await tx
         .select(SESSION_COLUMNS)
         .from(table.examSessions)
@@ -300,15 +309,22 @@ export class ExamService {
       }
 
       const timestamp = now();
-      for (const { questionId, answer } of answers) {
-        await tx
-          .insert(table.examAnswers)
-          .values({ sessionId, questionId, answer })
-          .onConflictDoUpdate({
-            target: [table.examAnswers.sessionId, table.examAnswers.questionId],
-            set: { answer, updatedAt: timestamp },
-          });
-      }
+      await tx
+        .insert(table.examAnswers)
+        .values(
+          answers.map(({ questionId, answer }) => ({
+            sessionId,
+            questionId,
+            answer,
+          })),
+        )
+        .onConflictDoUpdate({
+          target: [table.examAnswers.sessionId, table.examAnswers.questionId],
+          set: {
+            answer: sql`excluded.answer`,
+            updatedAt: timestamp,
+          },
+        });
 
       return { success: true, saved: answers.length };
     });
@@ -374,39 +390,6 @@ export class ExamService {
     return total === 0 ? null : Math.round((correct / total) * 10 * 2) / 2;
   }
 
-  /** Create a submission + submissionDetail + examSubmissions link for a writing/speaking answer */
-  private static async createSubmissionForExam(
-    tx: Transaction,
-    userId: string,
-    sessionId: string,
-    questionId: string,
-    answer: unknown,
-    skill: "writing" | "speaking",
-  ) {
-    const [submission] = await tx
-      .insert(table.submissions)
-      .values({
-        userId,
-        questionId,
-        skill,
-        status: "pending",
-      })
-      .returning({ id: table.submissions.id });
-
-    const submissionId = assertExists(submission, "Submission").id;
-
-    await tx.insert(table.submissionDetails).values({
-      submissionId,
-      answer,
-    });
-
-    await tx.insert(table.examSubmissions).values({
-      sessionId,
-      submissionId,
-      skill,
-    });
-  }
-
   /** Submit exam: auto-grade listening/reading, create submissions for writing/speaking */
   static async submitExam(sessionId: string, actor: Actor) {
     return db.transaction(async (tx) => {
@@ -456,10 +439,8 @@ export class ExamService {
         gradeResult.readingTotal,
       );
 
-      // For writing/speaking: create submission + submissionDetail + examSubmissions link
-      let hasPendingSubmissions = false;
-
-      for (const wa of [
+      // Batch create submissions for writing/speaking answers
+      const pendingAnswers = [
         ...gradeResult.writingAnswers.map((a) => ({
           ...a,
           skill: "writing" as const,
@@ -468,15 +449,38 @@ export class ExamService {
           ...a,
           skill: "speaking" as const,
         })),
-      ]) {
-        hasPendingSubmissions = true;
-        await ExamService.createSubmissionForExam(
-          tx,
-          session.userId,
-          sessionId,
-          wa.questionId,
-          wa.answer,
-          wa.skill,
+      ];
+      const hasPendingSubmissions = pendingAnswers.length > 0;
+
+      if (hasPendingSubmissions) {
+        // Batch insert: submissions
+        const insertedSubmissions = await tx
+          .insert(table.submissions)
+          .values(
+            pendingAnswers.map((wa) => ({
+              userId: session.userId,
+              questionId: wa.questionId,
+              skill: wa.skill,
+              status: "pending" as const,
+            })),
+          )
+          .returning({ id: table.submissions.id });
+
+        // Batch insert: submission details
+        await tx.insert(table.submissionDetails).values(
+          insertedSubmissions.map((sub, i) => ({
+            submissionId: sub.id,
+            answer: pendingAnswers[i].answer,
+          })),
+        );
+
+        // Batch insert: exam-submission links
+        await tx.insert(table.examSubmissions).values(
+          insertedSubmissions.map((sub, i) => ({
+            sessionId,
+            submissionId: sub.id,
+            skill: pendingAnswers[i].skill,
+          })),
         );
       }
 

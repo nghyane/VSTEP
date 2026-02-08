@@ -145,7 +145,7 @@ export class ProgressService {
           : null;
 
       result[skill] = {
-        current: avg !== null ? (Math.round(avg * 10) / 10) * 10 : 0,
+        current: avg !== null ? Math.round(avg * 10) / 10 : 0,
         trend: computeTrend(scores, stdDev),
       };
     }

@@ -129,7 +129,7 @@ export class QuestionService {
           isActive: true,
           createdBy: userId,
         })
-        .returning();
+        .returning(QUESTION_PUBLIC_COLUMNS);
 
       const q = assertExists(question, "Question");
 
@@ -203,7 +203,7 @@ export class QuestionService {
         .update(table.questions)
         .set(updateValues)
         .where(eq(table.questions.id, questionId))
-        .returning();
+        .returning(QUESTION_PUBLIC_COLUMNS);
 
       return assertExists(updatedQuestion, "Question");
     });
@@ -364,7 +364,7 @@ export class QuestionService {
           updatedAt: now(),
         })
         .where(eq(table.questions.id, questionId))
-        .returning();
+        .returning(QUESTION_PUBLIC_COLUMNS);
 
       return assertExists(updatedQuestion, "Question");
     });

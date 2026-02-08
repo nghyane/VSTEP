@@ -41,7 +41,8 @@ const PayloadSchema = t.Object({
   ]),
 });
 
-const JWT_SECRET = new TextEncoder().encode(env.JWT_SECRET!);
+if (!env.JWT_SECRET) throw new Error("JWT_SECRET is required");
+const JWT_SECRET = new TextEncoder().encode(env.JWT_SECRET);
 
 export async function verifyAccessToken(token: string): Promise<JWTPayload> {
   try {

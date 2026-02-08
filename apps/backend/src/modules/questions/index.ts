@@ -1,4 +1,4 @@
-import { QuestionLevel, Skill } from "@common/enums";
+import { QuestionFormat, QuestionLevel, Skill } from "@common/enums";
 import {
   AuthErrors,
   CrudErrors,
@@ -24,7 +24,7 @@ export const questions = new Elysia({
       ...PaginationQuery.properties,
       skill: t.Optional(Skill),
       level: t.Optional(QuestionLevel),
-      format: t.Optional(t.String()),
+      format: t.Optional(QuestionFormat),
       isActive: t.Optional(t.Boolean()),
       search: t.Optional(t.String()),
     }),
@@ -146,13 +146,14 @@ export const questions = new Elysia({
     "/:id/versions/:versionId",
     ({ params }) => QuestionService.getVersion(params.id, params.versionId),
     {
+      role: "instructor",
       params: t.Object({
         id: t.String({ format: "uuid" }),
         versionId: t.String({ format: "uuid" }),
       }),
       response: {
         200: QuestionModel.Version,
-        404: ErrorResponse,
+        ...CrudErrors,
       },
       detail: {
         summary: "Get question version",

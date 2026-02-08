@@ -8,8 +8,14 @@ import type { JWTPayload } from "@/plugins/auth";
 import { ConflictError, UnauthorizedError } from "@/plugins/error";
 import type { AuthModel } from "./model";
 
-// env validates JWT_SECRET at startup; ! needed because skipValidation widens type
-const ACCESS_SECRET = new TextEncoder().encode(env.JWT_SECRET!);
+if (!env.JWT_SECRET) throw new Error("JWT_SECRET is required");
+if (!env.JWT_EXPIRES_IN) throw new Error("JWT_EXPIRES_IN is required");
+if (!env.JWT_REFRESH_EXPIRES_IN)
+  throw new Error("JWT_REFRESH_EXPIRES_IN is required");
+
+const ACCESS_SECRET = new TextEncoder().encode(env.JWT_SECRET);
+const JWT_EXPIRES_IN: string = env.JWT_EXPIRES_IN;
+const JWT_REFRESH_EXPIRES_IN: string = env.JWT_REFRESH_EXPIRES_IN;
 
 const MAX_REFRESH_TOKENS = 3;
 
@@ -43,7 +49,7 @@ export class AuthService {
   static async signAccessToken(payload: JWTPayload): Promise<string> {
     return new SignJWT({ ...payload })
       .setProtectedHeader({ alg: "HS256" })
-      .setExpirationTime(env.JWT_EXPIRES_IN!)
+      .setExpirationTime(JWT_EXPIRES_IN)
       .sign(ACCESS_SECRET);
   }
 
@@ -73,7 +79,7 @@ export class AuthService {
 
     const refreshToken = crypto.randomUUID();
     const jti = crypto.randomUUID();
-    const refreshExpirySeconds = parseExpiry(env.JWT_REFRESH_EXPIRES_IN!);
+    const refreshExpirySeconds = parseExpiry(JWT_REFRESH_EXPIRES_IN);
 
     await db.transaction(async (tx) => {
       // Enforce max 3 active refresh tokens per user (FIFO — revoke oldest)
@@ -220,7 +226,7 @@ export class AuthService {
     // Rotate: revoke old, issue new
     const newRefreshToken = crypto.randomUUID();
     const newJti = crypto.randomUUID();
-    const refreshExpirySeconds = parseExpiry(env.JWT_REFRESH_EXPIRES_IN!);
+    const refreshExpirySeconds = parseExpiry(JWT_REFRESH_EXPIRES_IN);
 
     await db.transaction(async (tx) => {
       await tx

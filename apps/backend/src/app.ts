@@ -1,5 +1,4 @@
 import { env } from "@common/env";
-import { logger } from "@common/logger";
 import { cors } from "@elysiajs/cors";
 import { openapi } from "@elysiajs/openapi";
 import { Elysia } from "elysia";
@@ -60,10 +59,4 @@ export const app = new Elysia()
   .get("/health", () => HealthService.check(), {
     detail: { tags: ["Health"], summary: "Health check" },
   })
-  .use(api)
-  .listen(env.PORT);
-
-logger.info("Server started", {
-  url: `http://${app.server?.hostname}:${app.server?.port}`,
-  env: process.env.NODE_ENV,
-});
+  .use(api);

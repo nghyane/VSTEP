@@ -84,28 +84,30 @@ export class UserService {
     fullName?: string;
     role?: "learner" | "instructor" | "admin";
   }) {
-    const existingUser = await db.query.users.findFirst({
-      where: and(eq(table.users.email, body.email), notDeleted(table.users)),
-      columns: { id: true },
-    });
-
-    if (existingUser) {
-      throw new ConflictError("Email already registered");
-    }
-
     const passwordHash = await hashPassword(body.password);
 
-    const [user] = await db
-      .insert(table.users)
-      .values({
-        email: body.email,
-        passwordHash,
-        fullName: body.fullName,
-        role: body.role ?? "learner",
-      })
-      .returning(USER_COLUMNS);
+    try {
+      const [user] = await db
+        .insert(table.users)
+        .values({
+          email: body.email,
+          passwordHash,
+          fullName: body.fullName,
+          role: body.role ?? "learner",
+        })
+        .returning(USER_COLUMNS);
 
-    return assertExists(user, "User");
+      return assertExists(user, "User");
+    } catch (err: unknown) {
+      if (
+        err instanceof Error &&
+        "code" in err &&
+        (err as { code: string }).code === "23505"
+      ) {
+        throw new ConflictError("Email already registered");
+      }
+      throw err;
+    }
   }
 
   static async update(
@@ -207,36 +209,38 @@ export class UserService {
   ) {
     assertAccess(userId, actor, "You can only change your own password");
 
-    const user = assertExists(
-      await db.query.users.findFirst({
-        where: and(eq(table.users.id, userId), notDeleted(table.users)),
-        columns: {
-          id: true,
-          passwordHash: true,
-        },
-      }),
-      "User",
-    );
+    return db.transaction(async (tx) => {
+      const [row] = await tx
+        .select({
+          id: table.users.id,
+          passwordHash: table.users.passwordHash,
+        })
+        .from(table.users)
+        .where(and(eq(table.users.id, userId), notDeleted(table.users)))
+        .limit(1);
 
-    const isValid = await verifyPassword(
-      body.currentPassword,
-      user.passwordHash,
-    );
+      const user = assertExists(row, "User");
 
-    if (!isValid) {
-      throw new UnauthorizedError("Current password is incorrect");
-    }
+      const isValid = await verifyPassword(
+        body.currentPassword,
+        user.passwordHash,
+      );
 
-    const newPasswordHash = await hashPassword(body.newPassword);
+      if (!isValid) {
+        throw new UnauthorizedError("Current password is incorrect");
+      }
 
-    await db
-      .update(table.users)
-      .set({
-        passwordHash: newPasswordHash,
-        updatedAt: now(),
-      })
-      .where(eq(table.users.id, userId));
+      const newPasswordHash = await hashPassword(body.newPassword);
 
-    return { message: "Password updated successfully" };
+      await tx
+        .update(table.users)
+        .set({
+          passwordHash: newPasswordHash,
+          updatedAt: now(),
+        })
+        .where(eq(table.users.id, userId));
+
+      return { message: "Password updated successfully" };
+    });
   }
 }

@@ -12,7 +12,7 @@ export namespace SubmissionModel {
     questionId: t.String({ format: "uuid" }),
     skill: Skill,
     status: SubmissionStatusEnum,
-    score: t.Optional(t.Nullable(t.Number())),
+    score: t.Optional(t.Nullable(t.Number({ minimum: 0, maximum: 10 }))),
     band: t.Optional(t.Nullable(VstepBand)),
     completedAt: t.Optional(t.String({ format: "date-time" })),
     createdAt: t.String({ format: "date-time" }),
@@ -23,7 +23,7 @@ export namespace SubmissionModel {
     ...Submission.properties,
     answer: t.Optional(t.Any()),
     result: t.Optional(t.Any()),
-    feedback: t.Optional(t.Nullable(t.String())),
+    feedback: t.Optional(t.Nullable(t.String({ maxLength: 10000 }))),
   });
 
   export const CreateBody = t.Object({
@@ -35,16 +35,16 @@ export namespace SubmissionModel {
     t.Object({
       answer: t.Any(),
       status: SubmissionStatusEnum,
-      score: t.Number(),
+      score: t.Number({ minimum: 0, maximum: 10 }),
       band: VstepBand,
-      feedback: t.String(),
+      feedback: t.String({ maxLength: 10000 }),
     }),
   );
 
   export const GradeBody = t.Object({
-    score: t.Number(),
+    score: t.Number({ minimum: 0, maximum: 10 }),
     band: t.Optional(VstepBand),
-    feedback: t.Optional(t.String()),
+    feedback: t.Optional(t.String({ maxLength: 10000 })),
   });
 
   export type Submission = typeof Submission.static;

@@ -18,11 +18,13 @@ const SUBMISSION_COLUMNS = {
   updatedAt: table.submissions.updatedAt,
 } as const;
 
+/** VSTEP.3-5 only assesses B1-C1. Scores below 4.0 = below B1, not A1/A2. */
 function scoreToBand(score: number): Submission["band"] {
+  if (score < 0) return null;
   if (score >= 8.5) return "C1";
   if (score >= 6.0) return "B2";
   if (score >= 4.0) return "B1";
-  return null; // Below B1 in VSTEP 3-5
+  return null;
 }
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -132,22 +134,28 @@ export class SubmissionService {
     userId: string,
     body: { questionId: string; answer: unknown },
   ) {
-    const question = assertExists(
-      await db.query.questions.findFirst({
-        columns: { id: true, skill: true, isActive: true },
-        where: and(
-          eq(table.questions.id, body.questionId),
-          notDeleted(table.questions),
-        ),
-      }),
-      "Question",
-    );
-
-    if (!question.isActive) {
-      throw new BadRequestError("Question is not active");
-    }
-
     return db.transaction(async (tx) => {
+      const [questionRow] = await tx
+        .select({
+          id: table.questions.id,
+          skill: table.questions.skill,
+          isActive: table.questions.isActive,
+        })
+        .from(table.questions)
+        .where(
+          and(
+            eq(table.questions.id, body.questionId),
+            notDeleted(table.questions),
+          ),
+        )
+        .limit(1);
+
+      const question = assertExists(questionRow, "Question");
+
+      if (!question.isActive) {
+        throw new BadRequestError("Question is not active");
+      }
+
       const [submission] = await tx
         .insert(table.submissions)
         .values({
@@ -205,16 +213,13 @@ export class SubmissionService {
         throw new BadRequestError("Cannot update submission in current status");
       }
 
-      if (body.status) {
-        validateTransition(submission.status, body.status);
-      }
-
       const timestamp = now();
       const updateValues: Partial<typeof table.submissions.$inferInsert> = {
         updatedAt: timestamp,
       };
 
       if (actor.is("admin")) {
+        // Admin bypasses state machine — can force any transition
         if (body.status) {
           updateValues.status = body.status;
           if (
@@ -226,6 +231,8 @@ export class SubmissionService {
         }
         if (body.score !== undefined) updateValues.score = body.score;
         if (body.band !== undefined) updateValues.band = body.band;
+      } else if (body.status) {
+        validateTransition(submission.status, body.status);
       }
 
       const [updatedSubmission] = await tx

@@ -126,59 +126,59 @@ Specs có nhiều chỗ sai domain VSTEP, contradictions, over-engineering. Sử
 
 ## Phase 1: Fix Bugs & Security (CRITICAL)
 
-- [ ] **1.1** Race condition `UserService.create()` — `src/modules/users/service.ts:87-94`
+- [x] **1.1** Race condition `UserService.create()` — `src/modules/users/service.ts:87-94`
   - Check-then-insert (TOCTOU). Bỏ `findFirst`, catch PostgreSQL `23505`.
 
-- [ ] **1.2** Auth bypass `GET /questions/:id/versions/:versionId` — `src/modules/questions/index.ts:145-163`
+- [x] **1.2** Auth bypass `GET /questions/:id/versions/:versionId` — `src/modules/questions/index.ts:145-163`
   - Endpoint không có auth → ai cũng xem được `answerKey`. Thêm `role: "instructor"`.
 
-- [ ] **1.3** Response schema mismatch — Questions `.returning()` — `src/modules/questions/service.ts`
+- [x] **1.3** Response schema mismatch — Questions `.returning()` — `src/modules/questions/service.ts`
   - `create()` line 132, `update()` line 206, `restore()` line 367: `.returning()` trả toàn bộ row (bao gồm `answerKey`, `deletedAt`) ngoài response schema → TypeBox reject hoặc leak answer key.
   - Fix: `.returning(QUESTION_PUBLIC_COLUMNS)` cho cả 3 methods.
 
-- [ ] **1.4** `scoreToBand()` logic — `src/modules/submissions/service.ts:21-26`
+- [x] **1.4** `scoreToBand()` logic — `src/modules/submissions/service.ts:21-26`
   - **VSTEP.3-5 chỉ đánh giá B1-C1**. A1/A2 là cấp độ VSTEP.1-2, không dùng cho scoring.
   - Hiện tại: ≥8.5→C1, ≥6→B2, ≥4→B1, else→null. Logic đúng hướng nhưng thiếu xử lý edge.
   - Fix: Giữ null cho <4.0 (= below B1). KHÔNG map sang A1/A2. Validate score ≥0.
 
-- [ ] **1.5** Spider chart math bug — `src/modules/progress/service.ts:148`
+- [x] **1.5** Spider chart math bug — `src/modules/progress/service.ts:148`
   - `(Math.round(avg * 10) / 10) * 10` tạo scale 0-100, mọi nơi khác 0-10. Bỏ `* 10`.
 
-- [ ] **1.6** Admin không force-complete submission — `src/modules/submissions/service.ts:208-209`
+- [x] **1.6** Admin không force-complete submission — `src/modules/submissions/service.ts:208-209`
   - `validateTransition()` chạy cho cả admin. Fix: admin bypass.
 
-- [ ] **1.7** `submitExam()` N+1 inserts — `src/modules/exams/service.ts:462-481`
+- [x] **1.7** `submitExam()` N+1 inserts — `src/modules/exams/service.ts:462-481`
   - Loop `createSubmissionForExam()` → 3 INSERTs/answer.
   - Fix: batch `.values([...])` cho mỗi table.
 
-- [ ] **1.8** Unbounded array `AnswerSaveBody` — `src/modules/exams/model.ts:50-57`
+- [x] **1.8** Unbounded array `AnswerSaveBody` — `src/modules/exams/model.ts:50-57`
   - `t.Array()` không `maxItems`. Fix: `{ maxItems: 200 }`.
 
-- [ ] **1.9** Score thiếu bounds — `src/modules/submissions/model.ts:44-48`
+- [x] **1.9** Score thiếu bounds — `src/modules/submissions/model.ts:44-48`
   - Fix: `t.Number({ minimum: 0, maximum: 10 })`.
 
-- [ ] **1.10** Feedback string không giới hạn — `src/modules/submissions/model.ts:47` + `src/db/schema/submissions.ts:115`
+- [x] **1.10** Feedback string không giới hạn — `src/modules/submissions/model.ts:47` + `src/db/schema/submissions.ts:115`
   - Fix: Schema `varchar("feedback", { length: 10000 })`, model `t.String({ maxLength: 10000 })`.
 
-- [ ] **1.11** `app.ts` gọi `.listen()` ở module scope — `src/app.ts:64`
+- [x] **1.11** `app.ts` gọi `.listen()` ở module scope — `src/app.ts:64`
   - Fix: tách `.listen()` vào `src/index.ts`.
 
-- [ ] **1.12** `env.JWT_SECRET!` non-null assertion — `src/plugins/auth.ts:44`, `src/modules/auth/service.ts:12`
+- [x] **1.12** `env.JWT_SECRET!` non-null assertion — `src/plugins/auth.ts:44`, `src/modules/auth/service.ts:12`
   - Fix: bỏ `skipValidation` hoặc runtime check + throw.
 
-- [ ] **1.13** `saveAnswers()` N+1 upserts — `src/modules/exams/service.ts:330-340`
+- [x] **1.13** `saveAnswers()` N+1 upserts — `src/modules/exams/service.ts:330-340`
   - Batch validation đã làm. Chỉ còn loop upsert. Fix: batch upsert 1 statement.
 
-- [ ] **1.14** `updatePassword()` không transaction — `src/modules/users/service.ts:203-241`
+- [x] **1.14** `updatePassword()` không transaction — `src/modules/users/service.ts:203-241`
   - Fix: wrap `db.transaction()`.
 
-- [ ] **1.15** `SubmissionService.create()` validate ngoài tx — `src/modules/submissions/service.ts:131-170`
+- [x] **1.15** `SubmissionService.create()` validate ngoài tx — `src/modules/submissions/service.ts:131-170`
   - Fix: di chuyển question validation vào tx.
 
-- [ ] **1.16** `startSession()` validate ngoài tx — `src/modules/exams/service.ts:160-196`
+- [x] **1.16** `startSession()` validate ngoài tx — `src/modules/exams/service.ts:160-196`
   - Fix: di chuyển exam validation vào tx.
 
-- [ ] **1.17** Questions list `format` query dùng `t.String()` — `src/modules/questions/index.ts:27`
+- [x] **1.17** Questions list `format` query dùng `t.String()` — `src/modules/questions/index.ts:27`
   - Fix: `t.Optional(QuestionFormat)`.
 
 ---

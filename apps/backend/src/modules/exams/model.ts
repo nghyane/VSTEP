@@ -53,6 +53,7 @@ export namespace ExamModel {
         questionId: t.String({ format: "uuid" }),
         answer: t.Any(),
       }),
+      { maxItems: 200 },
     ),
   });
 
