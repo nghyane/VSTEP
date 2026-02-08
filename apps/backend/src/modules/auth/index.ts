@@ -1,11 +1,25 @@
 import { env } from "@common/env";
 import { ErrorResponse } from "@common/schemas";
 import { Elysia, t } from "elysia";
-import { UserModel } from "@/modules/users/model";
-import { UserService } from "@/modules/users/service";
+import { UserSchema } from "@/modules/users/model";
+import { getUserById } from "@/modules/users/service";
 import { authPlugin } from "@/plugins/auth";
-import { AuthModel } from "./model";
-import { AuthService, parseExpiry } from "./service";
+import {
+  AuthLoginBody,
+  AuthLogoutBody,
+  AuthRefreshBody,
+  AuthRegisterBody,
+  AuthTokenResponse,
+  AuthUserInfo,
+} from "./model";
+import {
+  login,
+  logout,
+  parseExpiry,
+  refreshToken,
+  register,
+  signAccessToken,
+} from "./service";
 
 export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
   .use(authPlugin)
@@ -14,26 +28,30 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
     "/login",
     async ({ body, request }) => {
       const deviceInfo = request.headers.get("user-agent") ?? undefined;
-      const { user, refreshToken, jti } = await AuthService.login({
+      const {
+        user,
+        refreshToken: newRefresh,
+        jti,
+      } = await login({
         ...body,
         deviceInfo,
       });
 
-      const accessToken = await AuthService.signAccessToken({
+      const accessToken = await signAccessToken({
         sub: user.id,
         role: user.role,
         jti,
       });
 
       const expiresIn = parseExpiry(env.JWT_EXPIRES_IN);
-      return { user, accessToken, refreshToken, expiresIn };
+      return { user, accessToken, refreshToken: newRefresh, expiresIn };
     },
     {
-      body: AuthModel.LoginBody,
+      body: AuthLoginBody,
       response: {
         200: t.Object({
-          user: AuthModel.UserInfo,
-          ...AuthModel.TokenResponse.properties,
+          user: AuthUserInfo,
+          ...AuthTokenResponse.properties,
         }),
       },
       detail: {
@@ -46,14 +64,14 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
   .post(
     "/register",
     async ({ body, set }) => {
-      const result = await AuthService.register(body);
+      const result = await register(body);
       set.status = 201;
       return result;
     },
     {
-      body: AuthModel.RegisterBody,
+      body: AuthRegisterBody,
       response: {
-        201: t.Object({ user: AuthModel.UserInfo, message: t.String() }),
+        201: t.Object({ user: AuthUserInfo, message: t.String() }),
         409: ErrorResponse,
       },
       detail: {
@@ -67,12 +85,12 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
     "/refresh",
     async ({ body, request }) => {
       const deviceInfo = request.headers.get("user-agent") ?? undefined;
-      const { user, newRefreshToken, jti } = await AuthService.refreshToken(
+      const { user, newRefreshToken, jti } = await refreshToken(
         body.refreshToken,
         deviceInfo,
       );
 
-      const accessToken = await AuthService.signAccessToken({
+      const accessToken = await signAccessToken({
         sub: user.id,
         role: user.role,
         jti,
@@ -82,11 +100,11 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
       return { user, accessToken, refreshToken: newRefreshToken, expiresIn };
     },
     {
-      body: AuthModel.RefreshBody,
+      body: AuthRefreshBody,
       response: {
         200: t.Object({
-          user: AuthModel.UserInfo,
-          ...AuthModel.TokenResponse.properties,
+          user: AuthUserInfo,
+          ...AuthTokenResponse.properties,
         }),
         401: ErrorResponse,
       },
@@ -97,8 +115,8 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
     },
   )
 
-  .post("/logout", ({ body }) => AuthService.logout(body.refreshToken), {
-    body: AuthModel.LogoutBody,
+  .post("/logout", ({ body }) => logout(body.refreshToken), {
+    body: AuthLogoutBody,
     response: {
       200: t.Object({ message: t.String() }),
     },
@@ -111,12 +129,12 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
   .get(
     "/me",
     async ({ user }) => ({
-      user: await UserService.getById(user.sub),
+      user: await getUserById(user.sub),
     }),
     {
       auth: true,
       response: {
-        200: t.Object({ user: UserModel.User }),
+        200: t.Object({ user: UserSchema }),
         401: ErrorResponse,
       },
       detail: {

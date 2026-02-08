@@ -29,8 +29,7 @@ export const users = pgTable(
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
-      .notNull()
-      .$onUpdate(() => new Date().toISOString()),
+      .notNull(),
     deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
   },
   (table) => ({
@@ -68,6 +67,7 @@ export const refreshTokens = pgTable(
     tokenHashIdx: index("refresh_tokens_hash_idx").on(table.tokenHash),
     jtiUnique: uniqueIndex("refresh_tokens_jti_unique").on(table.jti),
     userIdIdx: index("refresh_tokens_user_id_idx").on(table.userId),
+    expiresAtIdx: index("refresh_tokens_expires_at_idx").on(table.expiresAt),
     activeIdx: index("refresh_tokens_active_idx")
       .on(table.userId)
       .where(sql`${table.revokedAt} IS NULL`),

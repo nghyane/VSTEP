@@ -1,6 +1,7 @@
 import { env } from "@common/env";
 import type { userRoleEnum } from "@db/schema/users";
 import { bearer } from "@elysiajs/bearer";
+import type { Static } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 import { Elysia, t } from "elysia";
 import { errors as joseErrors, jwtVerify } from "jose";
@@ -41,7 +42,8 @@ const PayloadSchema = t.Object({
   ]),
 });
 
-const JWT_SECRET = new TextEncoder().encode(env.JWT_SECRET!);
+if (!env.JWT_SECRET) throw new Error("JWT_SECRET is required");
+const JWT_SECRET = new TextEncoder().encode(env.JWT_SECRET);
 
 export async function verifyAccessToken(token: string): Promise<JWTPayload> {
   try {
@@ -51,11 +53,8 @@ export async function verifyAccessToken(token: string): Promise<JWTPayload> {
       throw new UnauthorizedError("Malformed token payload");
     }
 
-    return {
-      sub: payload.sub as string,
-      jti: payload.jti as string,
-      role: payload.role as Role,
-    };
+    const validated = payload as Static<typeof PayloadSchema>;
+    return { sub: validated.sub, jti: validated.jti, role: validated.role };
   } catch (e) {
     if (e instanceof joseErrors.JWTExpired) throw new TokenExpiredError();
     if (e instanceof UnauthorizedError) throw e;
@@ -65,6 +64,8 @@ export async function verifyAccessToken(token: string): Promise<JWTPayload> {
 
 export const authPlugin = new Elysia({ name: "auth" })
   .use(bearer())
+  // Elysia macro typing workaround: `user` is overwritten by auth/role
+  // resolvers before any handler that requires authentication accesses it.
   .derive({ as: "scoped" }, () => ({
     user: undefined as unknown as Actor,
   }))

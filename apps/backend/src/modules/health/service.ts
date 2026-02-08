@@ -43,11 +43,10 @@ async function checkRedis(): Promise<Status> {
 async function checkRabbitMQ(): Promise<Status> {
   if (!env.RABBITMQ_URL) return "unavailable";
   try {
-    const mgmtUrl = env.RABBITMQ_URL.replace(/^amqp/, "http").replace(
-      /:5672/,
-      ":15672",
-    );
-    const res = await fetch(`${mgmtUrl}/api/health/checks/alarms`, {
+    const parsed = new URL(env.RABBITMQ_URL);
+    parsed.protocol = parsed.protocol === "amqps:" ? "https:" : "http:";
+    parsed.port = "15672";
+    const res = await fetch(`${parsed.origin}/api/health/checks/alarms`, {
       signal: AbortSignal.timeout(2000),
     }).catch(() => null);
     return res?.ok ? "ok" : "error";
@@ -56,24 +55,22 @@ async function checkRabbitMQ(): Promise<Status> {
   }
 }
 
-export class HealthService {
-  static async check(): Promise<HealthResult> {
-    const [dbStatus, redisStatus, rabbitmqStatus] = await Promise.all([
-      checkPostgres(),
-      checkRedis(),
-      checkRabbitMQ(),
-    ]);
+export async function checkHealth(): Promise<HealthResult> {
+  const [dbStatus, redisStatus, rabbitmqStatus] = await Promise.all([
+    checkPostgres(),
+    checkRedis(),
+    checkRabbitMQ(),
+  ]);
 
-    const services: Record<string, Status> = {
-      db: dbStatus,
-      redis: redisStatus,
-      rabbitmq: rabbitmqStatus,
-    };
+  const services: Record<string, Status> = {
+    db: dbStatus,
+    redis: redisStatus,
+    rabbitmq: rabbitmqStatus,
+  };
 
-    const allOk = Object.values(services).every(
-      (s) => s === "ok" || s === "unavailable",
-    );
+  const allOk = Object.values(services).every(
+    (s) => s === "ok" || s === "unavailable",
+  );
 
-    return { status: allOk ? "ok" : "degraded", services };
-  }
+  return { status: allOk ? "ok" : "degraded", services };
 }

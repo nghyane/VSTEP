@@ -65,12 +65,6 @@ export class ConflictError extends AppError {
   }
 }
 
-export class ValidationError extends AppError {
-  constructor(message = "Validation failed", details?: unknown) {
-    super(400, message, "VALIDATION_ERROR", details);
-  }
-}
-
 export class RateLimitError extends AppError {
   constructor(
     message = "Rate limit exceeded",
@@ -80,10 +74,14 @@ export class RateLimitError extends AppError {
   }
 }
 
-export class InternalError extends AppError {
-  constructor(message = "Internal server error") {
-    super(500, message, "INTERNAL_ERROR");
-  }
+/** Check if an error is a PostgreSQL unique constraint violation (code 23505) */
+export function isUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code: string }).code === "23505"
+  );
 }
 
 /** Extract or generate a UUID v4 requestId from the incoming request */

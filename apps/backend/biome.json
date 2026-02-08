@@ -9,11 +9,8 @@
     "enabled": true,
     "rules": {
       "recommended": true,
-      "complexity": {
-        "noStaticOnlyClass": "off"
-      },
       "style": {
-        "noNonNullAssertion": "off",
+        "noNonNullAssertion": "error",
         "useNamingConvention": {
           "level": "error",
           "options": {
@@ -82,7 +79,7 @@
         "noUnusedVariables": "error"
       },
       "suspicious": {
-        "noConsole": "warn"
+        "noConsole": "error"
       },
       "nursery": {
         "noImportCycles": "error"

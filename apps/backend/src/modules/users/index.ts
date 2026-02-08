@@ -11,8 +11,20 @@ import {
 import { assertAccess } from "@common/utils";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
-import { UserModel } from "./model";
-import { UserService } from "./service";
+import {
+  UserCreateBody,
+  UserPasswordBody,
+  UserSchema,
+  UserUpdateBody,
+} from "./model";
+import {
+  createUser,
+  getUserById,
+  listUsers,
+  removeUser,
+  updateUser,
+  updateUserPassword,
+} from "./service";
 
 export const users = new Elysia({
   prefix: "/users",
@@ -24,12 +36,12 @@ export const users = new Elysia({
     "/:id",
     ({ params, user }) => {
       assertAccess(params.id, user, "You can only view your own profile");
-      return UserService.getById(params.id);
+      return getUserById(params.id);
     },
     {
       auth: true,
       params: IdParam,
-      response: { 200: UserModel.User, ...CrudErrors },
+      response: { 200: UserSchema, ...CrudErrors },
       detail: {
         summary: "Get user",
         description: "Get user details by ID",
@@ -37,7 +49,7 @@ export const users = new Elysia({
     },
   )
 
-  .get("/", ({ query }) => UserService.list(query), {
+  .get("/", ({ query }) => listUsers(query), {
     role: "admin",
     query: t.Object({
       ...PaginationQuery.properties,
@@ -46,7 +58,7 @@ export const users = new Elysia({
     }),
     response: {
       200: t.Object({
-        data: t.Array(UserModel.User),
+        data: t.Array(UserSchema),
         meta: PaginationMeta,
       }),
       ...AuthErrors,
@@ -61,12 +73,12 @@ export const users = new Elysia({
     "/",
     ({ body, set }) => {
       set.status = 201;
-      return UserService.create(body);
+      return createUser(body);
     },
     {
       role: "admin",
-      body: UserModel.CreateBody,
-      response: { 201: UserModel.User, ...CrudWithConflictErrors },
+      body: UserCreateBody,
+      response: { 201: UserSchema, ...CrudWithConflictErrors },
       detail: {
         summary: "Create user",
         description: "Create a new user account (Admin only)",
@@ -76,12 +88,12 @@ export const users = new Elysia({
 
   .patch(
     "/:id",
-    ({ params, body, user }) => UserService.update(params.id, body, user),
+    ({ params, body, user }) => updateUser(params.id, body, user),
     {
       auth: true,
       params: IdParam,
-      body: UserModel.UpdateBody,
-      response: { 200: UserModel.User, ...CrudWithConflictErrors },
+      body: UserUpdateBody,
+      response: { 200: UserSchema, ...CrudWithConflictErrors },
       detail: {
         summary: "Update user",
         description: "Update user details",
@@ -89,7 +101,7 @@ export const users = new Elysia({
     },
   )
 
-  .delete("/:id", ({ params }) => UserService.remove(params.id), {
+  .delete("/:id", ({ params }) => removeUser(params.id), {
     role: "admin",
     params: IdParam,
     response: {
@@ -107,12 +119,11 @@ export const users = new Elysia({
 
   .post(
     "/:id/password",
-    ({ params, body, user }) =>
-      UserService.updatePassword(params.id, body, user),
+    ({ params, body, user }) => updateUserPassword(params.id, body, user),
     {
       auth: true,
       params: IdParam,
-      body: UserModel.PasswordBody,
+      body: UserPasswordBody,
       response: { 200: SuccessResponse, ...CrudErrors },
       detail: {
         summary: "Update password",

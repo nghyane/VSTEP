@@ -126,59 +126,59 @@ Specs có nhiều chỗ sai domain VSTEP, contradictions, over-engineering. Sử
 
 ## Phase 1: Fix Bugs & Security (CRITICAL)
 
-- [ ] **1.1** Race condition `UserService.create()` — `src/modules/users/service.ts:87-94`
+- [x] **1.1** Race condition `UserService.create()` — `src/modules/users/service.ts:87-94`
   - Check-then-insert (TOCTOU). Bỏ `findFirst`, catch PostgreSQL `23505`.
 
-- [ ] **1.2** Auth bypass `GET /questions/:id/versions/:versionId` — `src/modules/questions/index.ts:145-163`
+- [x] **1.2** Auth bypass `GET /questions/:id/versions/:versionId` — `src/modules/questions/index.ts:145-163`
   - Endpoint không có auth → ai cũng xem được `answerKey`. Thêm `role: "instructor"`.
 
-- [ ] **1.3** Response schema mismatch — Questions `.returning()` — `src/modules/questions/service.ts`
+- [x] **1.3** Response schema mismatch — Questions `.returning()` — `src/modules/questions/service.ts`
   - `create()` line 132, `update()` line 206, `restore()` line 367: `.returning()` trả toàn bộ row (bao gồm `answerKey`, `deletedAt`) ngoài response schema → TypeBox reject hoặc leak answer key.
   - Fix: `.returning(QUESTION_PUBLIC_COLUMNS)` cho cả 3 methods.
 
-- [ ] **1.4** `scoreToBand()` logic — `src/modules/submissions/service.ts:21-26`
+- [x] **1.4** `scoreToBand()` logic — `src/modules/submissions/service.ts:21-26`
   - **VSTEP.3-5 chỉ đánh giá B1-C1**. A1/A2 là cấp độ VSTEP.1-2, không dùng cho scoring.
   - Hiện tại: ≥8.5→C1, ≥6→B2, ≥4→B1, else→null. Logic đúng hướng nhưng thiếu xử lý edge.
   - Fix: Giữ null cho <4.0 (= below B1). KHÔNG map sang A1/A2. Validate score ≥0.
 
-- [ ] **1.5** Spider chart math bug — `src/modules/progress/service.ts:148`
+- [x] **1.5** Spider chart math bug — `src/modules/progress/service.ts:148`
   - `(Math.round(avg * 10) / 10) * 10` tạo scale 0-100, mọi nơi khác 0-10. Bỏ `* 10`.
 
-- [ ] **1.6** Admin không force-complete submission — `src/modules/submissions/service.ts:208-209`
+- [x] **1.6** Admin không force-complete submission — `src/modules/submissions/service.ts:208-209`
   - `validateTransition()` chạy cho cả admin. Fix: admin bypass.
 
-- [ ] **1.7** `submitExam()` N+1 inserts — `src/modules/exams/service.ts:462-481`
+- [x] **1.7** `submitExam()` N+1 inserts — `src/modules/exams/service.ts:462-481`
   - Loop `createSubmissionForExam()` → 3 INSERTs/answer.
   - Fix: batch `.values([...])` cho mỗi table.
 
-- [ ] **1.8** Unbounded array `AnswerSaveBody` — `src/modules/exams/model.ts:50-57`
+- [x] **1.8** Unbounded array `AnswerSaveBody` — `src/modules/exams/model.ts:50-57`
   - `t.Array()` không `maxItems`. Fix: `{ maxItems: 200 }`.
 
-- [ ] **1.9** Score thiếu bounds — `src/modules/submissions/model.ts:44-48`
+- [x] **1.9** Score thiếu bounds — `src/modules/submissions/model.ts:44-48`
   - Fix: `t.Number({ minimum: 0, maximum: 10 })`.
 
-- [ ] **1.10** Feedback string không giới hạn — `src/modules/submissions/model.ts:47` + `src/db/schema/submissions.ts:115`
+- [x] **1.10** Feedback string không giới hạn — `src/modules/submissions/model.ts:47` + `src/db/schema/submissions.ts:115`
   - Fix: Schema `varchar("feedback", { length: 10000 })`, model `t.String({ maxLength: 10000 })`.
 
-- [ ] **1.11** `app.ts` gọi `.listen()` ở module scope — `src/app.ts:64`
+- [x] **1.11** `app.ts` gọi `.listen()` ở module scope — `src/app.ts:64`
   - Fix: tách `.listen()` vào `src/index.ts`.
 
-- [ ] **1.12** `env.JWT_SECRET!` non-null assertion — `src/plugins/auth.ts:44`, `src/modules/auth/service.ts:12`
+- [x] **1.12** `env.JWT_SECRET!` non-null assertion — `src/plugins/auth.ts:44`, `src/modules/auth/service.ts:12`
   - Fix: bỏ `skipValidation` hoặc runtime check + throw.
 
-- [ ] **1.13** `saveAnswers()` N+1 upserts — `src/modules/exams/service.ts:330-340`
+- [x] **1.13** `saveAnswers()` N+1 upserts — `src/modules/exams/service.ts:330-340`
   - Batch validation đã làm. Chỉ còn loop upsert. Fix: batch upsert 1 statement.
 
-- [ ] **1.14** `updatePassword()` không transaction — `src/modules/users/service.ts:203-241`
+- [x] **1.14** `updatePassword()` không transaction — `src/modules/users/service.ts:203-241`
   - Fix: wrap `db.transaction()`.
 
-- [ ] **1.15** `SubmissionService.create()` validate ngoài tx — `src/modules/submissions/service.ts:131-170`
+- [x] **1.15** `SubmissionService.create()` validate ngoài tx — `src/modules/submissions/service.ts:131-170`
   - Fix: di chuyển question validation vào tx.
 
-- [ ] **1.16** `startSession()` validate ngoài tx — `src/modules/exams/service.ts:160-196`
+- [x] **1.16** `startSession()` validate ngoài tx — `src/modules/exams/service.ts:160-196`
   - Fix: di chuyển exam validation vào tx.
 
-- [ ] **1.17** Questions list `format` query dùng `t.String()` — `src/modules/questions/index.ts:27`
+- [x] **1.17** Questions list `format` query dùng `t.String()` — `src/modules/questions/index.ts:27`
   - Fix: `t.Optional(QuestionFormat)`.
 
 ---
@@ -194,7 +194,7 @@ Thay `t.Any()` bằng TypeBox schemas cụ thể, validate ở HTTP request laye
 > `reading_gap_fill`, `listening_dictation` — IELTS formats, **không tồn tại trong VSTEP**.
 > Giữ enum cho extensibility, document rõ.
 
-- [ ] **2.1** Question Content Schemas — tạo `src/modules/questions/content-schemas.ts`
+- [x] **2.1** Question Content Schemas — tạo `src/modules/questions/content-schemas.ts`
   - **reading_mcq**: `{ passage: string, title?: string, items: [{ number, prompt, options: {A,B,C,D} }] }`
   - **listening_mcq**: `{ audioUrl: string, transcript?: string, scaffolding?: { keywords?, slowAudioUrl? }, items: [{ number, prompt, options }] }`
   - **writing_task_1**: `{ taskNumber: 1, prompt, instructions?, minWords?(120), imageUrls? }`
@@ -203,58 +203,58 @@ Thay `t.Any()` bằng TypeBox schemas cụ thể, validate ở HTTP request laye
   - **speaking_part_2**: `{ partNumber: 2, prompt, instructions?, options: string[3], preparationSeconds?, speakingSeconds? }`
   - **speaking_part_3**: `{ partNumber: 3, prompt, instructions?, followUpQuestions?, preparationSeconds?, speakingSeconds? }`
 
-- [ ] **2.2** Answer Key Schema
+- [x] **2.2** Answer Key Schema
   - Reading/Listening: `{ correctAnswers: Record<string, string> }`
   - Writing/Speaking: `null`
 
-- [ ] **2.3** User Answer Schema
+- [x] **2.3** User Answer Schema
   - Reading/Listening: `{ answers: Record<string, string> }`
   - Writing: `{ text: string }`
   - Speaking: `{ audioUrl: string, durationSeconds: number, transcript?: string }`
 
-- [ ] **2.4** Blueprint Schema (Exam)
+- [x] **2.4** Blueprint Schema (Exam)
   - Typed schema cho `exams.blueprint` JSONB (listening/reading/writing/speaking sections + duration).
 
-- [ ] **2.5** Apply schemas vào routes + response
+- [x] **2.5** Apply schemas vào routes + response
   - Route: `t.Union` discriminated by format. Response: typed JSONB output.
 
 ---
 
 ## Phase 3: Pattern — Static Class → Plain Functions (HIGH)
 
-- [ ] **3.1** Chuyển 7 service files sang plain functions (`db` as parameter with default)
+- [x] **3.1** Chuyển 7 service files sang plain functions (`db` as parameter with default)
   - Cập nhật route files import tương ứng.
 
-- [ ] **3.2** Bỏ biome override `noStaticOnlyClass` — `biome.json`
+- [x] **3.2** Bỏ biome override `noStaticOnlyClass` — `biome.json`
 
-- [ ] **3.3** Bỏ namespace pattern trong model.ts → prefix
+- [x] **3.3** Bỏ namespace pattern trong model.ts → prefix
   - `AuthModel.LoginBody` → `AuthLoginBody`, etc.
 
-- [ ] **3.4** Export pure functions riêng để test
+- [x] **3.4** Export pure functions riêng để test
   - `scoreToBand`, `validateTransition`, `computeTrend`, `parseExpiry`, `hashToken`
 
 ---
 
 ## Phase 4: DB Schema Cleanup (MEDIUM)
 
-- [ ] **4.1** Thêm indexes thiếu
+- [x] **4.1** Thêm indexes thiếu
   - `refreshTokens.expiresAt`, `submissions.skill`, `submissions.questionId`, `questions.createdBy`, `examSessions.examId`
 
-- [ ] **4.2** Xóa index thừa `questions_skill_level_idx` (trùng `questions_active_idx`)
+- [x] **4.2** Xóa index thừa `questions_skill_level_idx` (trùng `questions_active_idx`)
 
-- [ ] **4.3** Cleanup `submissions` columns
+- [x] **4.3** Cleanup `submissions` columns
   - **Xóa**: `reviewPending` (redundant với status `review_pending`)
   - **Giữ**: `requestId`, `auditFlag`, `isLate`, `confidence`, `reviewPriority`, `reviewerId`, `gradingMode`, `claimedBy`, `claimedAt`, `deadline`
 
-- [ ] **4.4** Fix `examAnswers.isCorrect` — persist khi auto-grade trong `submitExam()`
+- [x] **4.4** Fix `examAnswers.isCorrect` — persist khi auto-grade trong `submitExam()`
 
-- [ ] **4.5** Bỏ `$onUpdate` trên `updatedAt` (giữ explicit set trong service)
+- [x] **4.5** Bỏ `$onUpdate` trên `updatedAt` (giữ explicit set trong service)
 
-- [ ] **4.6** Thêm `varchar` length limit: `submissionDetails.feedback` → `{ length: 10000 }`
+- [x] **4.6** Thêm `varchar` length limit: `submissionDetails.feedback` → `{ length: 10000 }`
 
-- [ ] **4.7** Xóa `examSessions.skillScores` JSONB (dead column, redundant với 4 individual score columns)
+- [x] **4.7** Xóa `examSessions.skillScores` JSONB (dead column, redundant với 4 individual score columns)
 
-- [ ] **4.8** `examSessions.overallScore` — tạo helper `calculateOverallScore()` dùng `avg / 4` rounded 0.5
+- [x] **4.8** `examSessions.overallScore` — tạo helper `calculateOverallScore()` dùng `avg / 4` rounded 0.5
 
 ---
 
@@ -267,7 +267,7 @@ Thay `t.Any()` bằng TypeBox schemas cụ thể, validate ở HTTP request laye
 
 ## Phase 6: Unit Tests (MEDIUM)
 
-- [ ] **6.1** Pure function tests (không cần mock DB)
+- [x] **6.1** Pure function tests (không cần mock DB)
   - `scoreToBand` (0, 3.5, 4, 5.5, 6, 8, 8.5, 10)
   - `validateTransition` (all valid + invalid + admin bypass)
   - `computeTrend` (insufficient_data, stable, improving, declining, inconsistent)
@@ -281,39 +281,39 @@ Thay `t.Any()` bằng TypeBox schemas cụ thể, validate ở HTTP request laye
 
 ## Phase 7: Code Cleanup & Docs (LOW)
 
-- [ ] **7.1** Bỏ COLUMN constants trùng lặp → `getTableColumns()` + destructure
+- [x] **7.1** Bỏ COLUMN constants trùng lặp → `getTableColumns()` + destructure
 
-- [ ] **7.2** Extract pagination count helper `countWhere()`
+- [ ] **7.2** Extract pagination count helper `countWhere()` — skipped (circular import with db/index)
 
-- [ ] **7.3** ProgressService thiếu soft-delete filter
+- [ ] **7.3** ProgressService thiếu soft-delete filter — skipped (progress tables lack deletedAt column)
 
-- [ ] **7.4** Outbox schema — giữ cho grading service
+- [x] **7.4** Outbox schema — giữ cho grading service (no action needed)
 
-- [ ] **7.5** Xóa dead error classes: `ValidationError`, `InternalError`
+- [x] **7.5** Xóa dead error classes: `ValidationError`, `InternalError`
 
-- [ ] **7.6** Remove unused dep `drizzle-typebox`
+- [x] **7.6** Remove unused dep `drizzle-typebox`
 
-- [ ] **7.7** `tsconfig.json` — xóa `"jsx": "react-jsx"`, `"allowJs": true`
+- [x] **7.7** `tsconfig.json` — xóa `"jsx": "react-jsx"`, `"allowJs": true`
 
-- [ ] **7.8** `biome.json` — `noConsole` → `"error"`
+- [x] **7.8** `biome.json` — `noConsole` → `"error"`
 
-- [ ] **7.9** `biome.json` — bật lại `noNonNullAssertion` (sau fix 1.12)
+- [x] **7.9** `biome.json` — bật lại `noNonNullAssertion` (sau fix 1.12)
 
-- [ ] **7.10** Auth plugin unsafe `user` derive — document hoặc fix type
+- [x] **7.10** Auth plugin unsafe `user` derive — document hoặc fix type
 
-- [ ] **7.11** `getSpiderChart()` incomplete fields (thiếu `previous`, `target`, `confidence` per spec)
+- [ ] **7.11** `getSpiderChart()` incomplete fields — skipped (feature gap, future work)
 
-- [ ] **7.12** Update `README.md`
+- [ ] **7.12** Update `README.md` — skipped (minimal placeholder, no actionable update)
 
-- [ ] **7.13** Xóa `CODEBASE_REVIEW.md`
+- [x] **7.13** Xóa `CODEBASE_REVIEW.md` — already gone
 
-- [ ] **7.14** Fix `agent.md`
+- [x] **7.14** Fix `agent.md` — deleted (duplicate of CLAUDE.md)
 
-- [ ] **7.15** Fix `CLAUDE.md` — sai table/enum counts, stale refs, thiếu password.ts
+- [ ] **7.15** Fix `CLAUDE.md` — deferred to project owner
 
-- [ ] **7.16** `esbuild` vulnerability — update khi patch available
+- [ ] **7.16** `esbuild` vulnerability — monitoring, no patch available
 
-- [ ] **7.17** Document `questionFormatEnum` IELTS values (JSDoc)
+- [x] **7.17** Document `questionFormatEnum` IELTS values (JSDoc)
 
 ---
 

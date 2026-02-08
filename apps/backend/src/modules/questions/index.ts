@@ -1,4 +1,4 @@
-import { QuestionLevel, Skill } from "@common/enums";
+import { QuestionFormat, QuestionLevel, Skill } from "@common/enums";
 import {
   AuthErrors,
   CrudErrors,
@@ -9,8 +9,25 @@ import {
 } from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
-import { QuestionModel } from "./model";
-import { QuestionService } from "./service";
+import {
+  QuestionCreateBody,
+  QuestionSchema,
+  QuestionUpdateBody,
+  QuestionVersionBody,
+  QuestionVersionSchema,
+  QuestionWithDetailsSchema,
+} from "./model";
+import {
+  createQuestion,
+  createQuestionVersion,
+  getQuestionById,
+  getQuestionVersion,
+  getQuestionVersions,
+  listQuestions,
+  removeQuestion,
+  restoreQuestion,
+  updateQuestion,
+} from "./service";
 
 export const questions = new Elysia({
   prefix: "/questions",
@@ -18,19 +35,19 @@ export const questions = new Elysia({
 })
   .use(authPlugin)
 
-  .get("/", ({ query, user }) => QuestionService.list(query, user), {
+  .get("/", ({ query, user }) => listQuestions(query, user), {
     auth: true,
     query: t.Object({
       ...PaginationQuery.properties,
       skill: t.Optional(Skill),
       level: t.Optional(QuestionLevel),
-      format: t.Optional(t.String()),
+      format: t.Optional(QuestionFormat),
       isActive: t.Optional(t.Boolean()),
       search: t.Optional(t.String()),
     }),
     response: {
       200: t.Object({
-        data: t.Array(QuestionModel.Question),
+        data: t.Array(QuestionSchema),
         meta: PaginationMeta,
       }),
       400: ErrorResponse,
@@ -42,11 +59,11 @@ export const questions = new Elysia({
     },
   })
 
-  .get("/:id", ({ params }) => QuestionService.getById(params.id), {
+  .get("/:id", ({ params }) => getQuestionById(params.id), {
     auth: true,
     params: IdParam,
     response: {
-      200: QuestionModel.Question,
+      200: QuestionSchema,
       ...CrudErrors,
     },
     detail: {
@@ -59,13 +76,13 @@ export const questions = new Elysia({
     "/",
     ({ body, user, set }) => {
       set.status = 201;
-      return QuestionService.create(user.sub, body);
+      return createQuestion(user.sub, body);
     },
     {
       role: "instructor",
-      body: QuestionModel.CreateBody,
+      body: QuestionCreateBody,
       response: {
-        201: QuestionModel.Question,
+        201: QuestionSchema,
         400: ErrorResponse,
         ...AuthErrors,
         422: ErrorResponse,
@@ -79,13 +96,13 @@ export const questions = new Elysia({
 
   .patch(
     "/:id",
-    ({ params, body, user }) => QuestionService.update(params.id, user, body),
+    ({ params, body, user }) => updateQuestion(params.id, user, body),
     {
       role: "instructor",
       params: IdParam,
-      body: QuestionModel.UpdateBody,
+      body: QuestionUpdateBody,
       response: {
-        200: QuestionModel.QuestionWithDetails,
+        200: QuestionWithDetailsSchema,
         400: ErrorResponse,
         ...CrudErrors,
         422: ErrorResponse,
@@ -101,14 +118,14 @@ export const questions = new Elysia({
     "/:id/versions",
     ({ params, body, user, set }) => {
       set.status = 201;
-      return QuestionService.createVersion(params.id, user, body);
+      return createQuestionVersion(params.id, user, body);
     },
     {
       role: "instructor",
       params: IdParam,
-      body: QuestionModel.VersionBody,
+      body: QuestionVersionBody,
       response: {
-        201: QuestionModel.Version,
+        201: QuestionVersionSchema,
         400: ErrorResponse,
         ...CrudErrors,
         422: ErrorResponse,
@@ -121,38 +138,35 @@ export const questions = new Elysia({
     },
   )
 
-  .get(
-    "/:id/versions",
-    ({ params }) => QuestionService.getVersions(params.id),
-    {
-      role: "instructor",
-      params: IdParam,
-      response: {
-        200: t.Object({
-          data: t.Array(QuestionModel.Version),
-          meta: t.Object({ total: t.Number() }),
-        }),
-        ...CrudErrors,
-      },
-      detail: {
-        summary: "List question versions",
-        description: "Get all versions of a question",
-        tags: ["Versions"],
-      },
+  .get("/:id/versions", ({ params }) => getQuestionVersions(params.id), {
+    role: "instructor",
+    params: IdParam,
+    response: {
+      200: t.Object({
+        data: t.Array(QuestionVersionSchema),
+        meta: t.Object({ total: t.Number() }),
+      }),
+      ...CrudErrors,
     },
-  )
+    detail: {
+      summary: "List question versions",
+      description: "Get all versions of a question",
+      tags: ["Versions"],
+    },
+  })
 
   .get(
     "/:id/versions/:versionId",
-    ({ params }) => QuestionService.getVersion(params.id, params.versionId),
+    ({ params }) => getQuestionVersion(params.id, params.versionId),
     {
+      role: "instructor",
       params: t.Object({
         id: t.String({ format: "uuid" }),
         versionId: t.String({ format: "uuid" }),
       }),
       response: {
-        200: QuestionModel.Version,
-        404: ErrorResponse,
+        200: QuestionVersionSchema,
+        ...CrudErrors,
       },
       detail: {
         summary: "Get question version",
@@ -162,28 +176,24 @@ export const questions = new Elysia({
     },
   )
 
-  .delete(
-    "/:id",
-    ({ params, user }) => QuestionService.remove(params.id, user),
-    {
-      role: "admin",
-      params: IdParam,
-      response: {
-        200: t.Object({ id: t.String({ format: "uuid" }) }),
-        ...CrudErrors,
-      },
-      detail: {
-        summary: "Delete question",
-        description: "Soft delete a question",
-      },
-    },
-  )
-
-  .post("/:id/restore", ({ params }) => QuestionService.restore(params.id), {
+  .delete("/:id", ({ params, user }) => removeQuestion(params.id, user), {
     role: "admin",
     params: IdParam,
     response: {
-      200: QuestionModel.QuestionWithDetails,
+      200: t.Object({ id: t.String({ format: "uuid" }) }),
+      ...CrudErrors,
+    },
+    detail: {
+      summary: "Delete question",
+      description: "Soft delete a question",
+    },
+  })
+
+  .post("/:id/restore", ({ params }) => restoreQuestion(params.id), {
+    role: "admin",
+    params: IdParam,
+    response: {
+      200: QuestionWithDetailsSchema,
       400: ErrorResponse,
       ...CrudErrors,
     },

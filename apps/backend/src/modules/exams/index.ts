@@ -8,9 +8,27 @@ import {
   PaginationQuery,
 } from "@common/schemas";
 import { Elysia, t } from "elysia";
+import { SubmissionAnswer } from "@/modules/questions/content-schemas";
 import { authPlugin } from "@/plugins/auth";
-import { ExamModel } from "./model";
-import { ExamService } from "./service";
+import {
+  ExamAnswerSaveBody,
+  ExamCreateBody,
+  ExamSchema,
+  ExamSessionIdParam,
+  ExamSessionSchema,
+  ExamUpdateBody,
+} from "./model";
+import {
+  createExam,
+  getExamById,
+  getExamSessionById,
+  listExams,
+  saveExamAnswers,
+  startExamSession,
+  submitExam,
+  submitExamAnswer,
+  updateExam,
+} from "./service";
 
 export const exams = new Elysia({
   prefix: "/exams",
@@ -18,7 +36,7 @@ export const exams = new Elysia({
 })
   .use(authPlugin)
 
-  .get("/", ({ query }) => ExamService.list(query), {
+  .get("/", ({ query }) => listExams(query), {
     auth: true,
     query: t.Object({
       ...PaginationQuery.properties,
@@ -27,7 +45,7 @@ export const exams = new Elysia({
     }),
     response: {
       200: t.Object({
-        data: t.Array(ExamModel.Exam),
+        data: t.Array(ExamSchema),
         meta: PaginationMeta,
       }),
       ...AuthErrors,
@@ -35,10 +53,10 @@ export const exams = new Elysia({
     detail: { summary: "List exams" },
   })
 
-  .get("/:id", ({ params: { id } }) => ExamService.getById(id), {
+  .get("/:id", ({ params: { id } }) => getExamById(id), {
     auth: true,
     params: IdParam,
-    response: { 200: ExamModel.Exam, ...CrudErrors },
+    response: { 200: ExamSchema, ...CrudErrors },
     detail: { summary: "Get exam by ID" },
   })
 
@@ -46,43 +64,42 @@ export const exams = new Elysia({
     "/",
     ({ body, user, set }) => {
       set.status = 201;
-      return ExamService.create(user.sub, body);
+      return createExam(user.sub, body);
     },
     {
       role: "admin",
-      body: ExamModel.CreateBody,
-      response: { 201: ExamModel.Exam, ...AuthErrors },
+      body: ExamCreateBody,
+      response: { 201: ExamSchema, ...AuthErrors },
       detail: { summary: "Create exam (Admin)" },
     },
   )
 
-  .patch("/:id", ({ params: { id }, body }) => ExamService.update(id, body), {
+  .patch("/:id", ({ params: { id }, body }) => updateExam(id, body), {
     role: "admin",
     params: IdParam,
-    body: ExamModel.UpdateBody,
-    response: { 200: ExamModel.Exam, ...CrudErrors },
+    body: ExamUpdateBody,
+    response: { 200: ExamSchema, ...CrudErrors },
     detail: { summary: "Update exam (Admin)" },
   })
 
   .post(
     "/:id/start",
-    ({ params: { id }, user }) => ExamService.startSession(user.sub, id),
+    ({ params: { id }, user }) => startExamSession(user.sub, id),
     {
       auth: true,
       params: IdParam,
-      response: { 200: ExamModel.Session, 400: ErrorResponse, ...CrudErrors },
+      response: { 200: ExamSessionSchema, 400: ErrorResponse, ...CrudErrors },
       detail: { summary: "Start exam session" },
     },
   )
 
   .get(
     "/sessions/:sessionId",
-    ({ params: { sessionId }, user }) =>
-      ExamService.getSessionById(sessionId, user),
+    ({ params: { sessionId }, user }) => getExamSessionById(sessionId, user),
     {
       auth: true,
-      params: ExamModel.SessionIdParam,
-      response: { 200: ExamModel.Session, ...CrudErrors },
+      params: ExamSessionIdParam,
+      response: { 200: ExamSessionSchema, ...CrudErrors },
       detail: { summary: "Get session by ID" },
     },
   )
@@ -90,11 +107,11 @@ export const exams = new Elysia({
   .put(
     "/sessions/:sessionId",
     ({ params: { sessionId }, body, user }) =>
-      ExamService.saveAnswers(sessionId, user, body.answers),
+      saveExamAnswers(sessionId, user, body.answers),
     {
       auth: true,
-      params: ExamModel.SessionIdParam,
-      body: ExamModel.AnswerSaveBody,
+      params: ExamSessionIdParam,
+      body: ExamAnswerSaveBody,
       response: {
         200: t.Object({ success: t.Boolean(), saved: t.Number() }),
         400: ErrorResponse,
@@ -107,13 +124,13 @@ export const exams = new Elysia({
   .post(
     "/sessions/:sessionId/answer",
     ({ params: { sessionId }, body, user }) =>
-      ExamService.submitAnswer(sessionId, user, body),
+      submitExamAnswer(sessionId, user, body),
     {
       auth: true,
-      params: ExamModel.SessionIdParam,
+      params: ExamSessionIdParam,
       body: t.Object({
         questionId: t.String({ format: "uuid" }),
-        answer: t.Any(),
+        answer: SubmissionAnswer,
       }),
       response: {
         200: t.Object({ success: t.Boolean() }),
@@ -126,12 +143,11 @@ export const exams = new Elysia({
 
   .post(
     "/sessions/:sessionId/submit",
-    ({ params: { sessionId }, user }) =>
-      ExamService.submitExam(sessionId, user),
+    ({ params: { sessionId }, user }) => submitExam(sessionId, user),
     {
       auth: true,
-      params: ExamModel.SessionIdParam,
-      response: { 200: ExamModel.Session, 400: ErrorResponse, ...AuthErrors },
+      params: ExamSessionIdParam,
+      response: { 200: ExamSessionSchema, 400: ErrorResponse, ...AuthErrors },
       detail: { summary: "Submit exam for grading" },
     },
   );

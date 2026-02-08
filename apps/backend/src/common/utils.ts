@@ -21,12 +21,13 @@ export function escapeLike(str: string): string {
   return str.replace(/[%_\\]/g, "\\$&");
 }
 
-/** Owner or admin bypass — works with the 3-role hierarchy */
+/** Owner or admin bypass — works with the 3-role hierarchy. Null owner = no owner, only admin can access. */
 export function assertAccess(
-  resourceUserId: string,
+  resourceUserId: string | null,
   actor: Actor,
   message = "You do not have access to this resource",
 ): void {
-  if (resourceUserId === actor.sub || actor.is("admin")) return;
+  if (resourceUserId !== null && resourceUserId === actor.sub) return;
+  if (actor.is("admin")) return;
   throw new ForbiddenError(message);
 }

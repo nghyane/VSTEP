@@ -9,7 +9,7 @@ type Trend =
   | "inconsistent"
   | "insufficient_data";
 
-function computeTrend(scores: number[], stdDev: number | null): Trend {
+export function computeTrend(scores: number[], stdDev: number | null): Trend {
   if (scores.length >= 6 && stdDev !== null) {
     if (stdDev >= 1.5) return "inconsistent";
     const recent3 = scores.slice(0, 3);
@@ -27,35 +27,85 @@ function computeTrend(scores: number[], stdDev: number | null): Trend {
   return "insufficient_data";
 }
 
-export class ProgressService {
-  /** Overview: all 4 skills with latest stats */
-  static async getOverview(userId: string) {
-    const records = await db.query.userProgress.findMany({
-      where: eq(table.userProgress.userId, userId),
-    });
+/** Overview: all 4 skills with latest stats */
+export async function getProgressOverview(userId: string) {
+  const records = await db.query.userProgress.findMany({
+    where: eq(table.userProgress.userId, userId),
+  });
 
-    const goal = await db.query.userGoals.findFirst({
-      where: eq(table.userGoals.userId, userId),
-      orderBy: desc(table.userGoals.createdAt),
-    });
+  const goal = await db.query.userGoals.findFirst({
+    where: eq(table.userGoals.userId, userId),
+    orderBy: desc(table.userGoals.createdAt),
+  });
 
-    return {
-      skills: records,
-      goal: goal ?? null,
-    };
-  }
+  return {
+    skills: records,
+    goal: goal ?? null,
+  };
+}
 
-  /** Single skill detail with sliding window */
-  static async getBySkill(skill: UserProgress["skill"], userId: string) {
-    const progress = await db.query.userProgress.findFirst({
-      where: and(
-        eq(table.userProgress.userId, userId),
-        eq(table.userProgress.skill, skill),
+/** Single skill detail with sliding window */
+export async function getProgressBySkill(
+  skill: UserProgress["skill"],
+  userId: string,
+) {
+  const progress = await db.query.userProgress.findFirst({
+    where: and(
+      eq(table.userProgress.userId, userId),
+      eq(table.userProgress.skill, skill),
+    ),
+  });
+
+  const recentScores = await db
+    .select({
+      score: table.userSkillScores.score,
+      createdAt: table.userSkillScores.createdAt,
+    })
+    .from(table.userSkillScores)
+    .where(
+      and(
+        eq(table.userSkillScores.userId, userId),
+        eq(table.userSkillScores.skill, skill),
       ),
-    });
+    )
+    .orderBy(desc(table.userSkillScores.createdAt))
+    .limit(10);
 
-    const recentScores = await db
+  const scores = recentScores.map((r) => r.score);
+  const windowAvg =
+    scores.length > 0
+      ? scores.reduce((a, b) => a + b, 0) / scores.length
+      : null;
+
+  const windowStdDev =
+    scores.length > 1 && windowAvg !== null
+      ? Math.sqrt(
+          scores.reduce((sum, s) => sum + (s - windowAvg) ** 2, 0) /
+            (scores.length - 1),
+        )
+      : null;
+
+  const trend = computeTrend(scores, windowStdDev);
+
+  return {
+    progress: progress ?? null,
+    recentScores,
+    windowAvg: windowAvg !== null ? Math.round(windowAvg * 10) / 10 : null,
+    windowStdDev:
+      windowStdDev !== null ? Math.round(windowStdDev * 100) / 100 : null,
+    trend,
+  };
+}
+
+/** Spider chart data — batch query (2 queries instead of 8) */
+export async function getSpiderChart(userId: string) {
+  const skills = ["listening", "reading", "writing", "speaking"] as const;
+
+  // Batch: all recent scores + goal in 2 queries
+  const [allScores, goal] = await Promise.all([
+    db
       .select({
+        skill: table.userSkillScores.skill,
         score: table.userSkillScores.score,
         createdAt: table.userSkillScores.createdAt,
       })
@@ -63,96 +113,47 @@ export class ProgressService {
       .where(
         and(
           eq(table.userSkillScores.userId, userId),
-          eq(table.userSkillScores.skill, skill),
+          inArray(table.userSkillScores.skill, [...skills]),
         ),
       )
-      .orderBy(desc(table.userSkillScores.createdAt))
-      .limit(10);
+      .orderBy(desc(table.userSkillScores.createdAt)),
+    db.query.userGoals.findFirst({
+      where: eq(table.userGoals.userId, userId),
+      orderBy: desc(table.userGoals.createdAt),
+    }),
+  ]);
 
-    const scores = recentScores.map((r) => r.score);
-    const windowAvg =
+  // Group scores by skill (keep last 10 per skill)
+  const scoresBySkill = new Map<string, number[]>();
+  for (const row of allScores) {
+    const arr = scoresBySkill.get(row.skill) ?? [];
+    if (arr.length < 10) arr.push(row.score);
+    scoresBySkill.set(row.skill, arr);
+  }
+
+  const result: Record<string, { current: number; trend: string }> = {};
+  for (const skill of skills) {
+    const scores = scoresBySkill.get(skill) ?? [];
+    const avg =
       scores.length > 0
         ? scores.reduce((a, b) => a + b, 0) / scores.length
         : null;
-
-    const windowStdDev =
-      scores.length > 1
+    const stdDev =
+      scores.length > 1 && avg !== null
         ? Math.sqrt(
-            scores.reduce((sum, s) => sum + (s - windowAvg!) ** 2, 0) /
+            scores.reduce((sum, s) => sum + (s - avg) ** 2, 0) /
               (scores.length - 1),
           )
         : null;
 
-    const trend = computeTrend(scores, windowStdDev);
-
-    return {
-      progress: progress ?? null,
-      recentScores,
-      windowAvg: windowAvg !== null ? Math.round(windowAvg * 10) / 10 : null,
-      windowStdDev:
-        windowStdDev !== null ? Math.round(windowStdDev * 100) / 100 : null,
-      trend,
+    result[skill] = {
+      current: avg !== null ? Math.round(avg * 10) / 10 : 0,
+      trend: computeTrend(scores, stdDev),
     };
   }
 
-  /** Spider chart data — batch query (2 queries instead of 8) */
-  static async getSpiderChart(userId: string) {
-    const skills = ["listening", "reading", "writing", "speaking"] as const;
-
-    // Batch: all recent scores + goal in 2 queries
-    const [allScores, goal] = await Promise.all([
-      db
-        .select({
-          skill: table.userSkillScores.skill,
-          score: table.userSkillScores.score,
-          createdAt: table.userSkillScores.createdAt,
-        })
-        .from(table.userSkillScores)
-        .where(
-          and(
-            eq(table.userSkillScores.userId, userId),
-            inArray(table.userSkillScores.skill, [...skills]),
-          ),
-        )
-        .orderBy(desc(table.userSkillScores.createdAt)),
-      db.query.userGoals.findFirst({
-        where: eq(table.userGoals.userId, userId),
-        orderBy: desc(table.userGoals.createdAt),
-      }),
-    ]);
-
-    // Group scores by skill (keep last 10 per skill)
-    const scoresBySkill = new Map<string, number[]>();
-    for (const row of allScores) {
-      const arr = scoresBySkill.get(row.skill) ?? [];
-      if (arr.length < 10) arr.push(row.score);
-      scoresBySkill.set(row.skill, arr);
-    }
-
-    const result: Record<string, { current: number; trend: string }> = {};
-    for (const skill of skills) {
-      const scores = scoresBySkill.get(skill) ?? [];
-      const avg =
-        scores.length > 0
-          ? scores.reduce((a, b) => a + b, 0) / scores.length
-          : null;
-      const stdDev =
-        scores.length > 1
-          ? Math.sqrt(
-              scores.reduce((sum, s) => sum + (s - avg!) ** 2, 0) /
-                (scores.length - 1),
-            )
-          : null;
-
-      result[skill] = {
-        current: avg !== null ? (Math.round(avg * 10) / 10) * 10 : 0,
-        trend: computeTrend(scores, stdDev),
-      };
-    }
-
-    return {
-      skills: result,
-      goal: goal ?? null,
-    };
-  }
+  return {
+    skills: result,
+    goal: goal ?? null,
+  };
 }
