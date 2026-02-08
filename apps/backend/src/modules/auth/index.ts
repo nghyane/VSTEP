@@ -1,4 +1,3 @@
-import { env } from "@common/env";
 import { ErrorResponse } from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { UserSchema } from "@/modules/users/model";
@@ -12,40 +11,18 @@ import {
   AuthTokenResponse,
   AuthUserInfo,
 } from "./model";
-import {
-  login,
-  logout,
-  parseExpiry,
-  refreshToken,
-  register,
-  signAccessToken,
-} from "./service";
+import { login, logout, refresh, register } from "./service";
 
 export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
   .use(authPlugin)
 
   .post(
     "/login",
-    async ({ body, request }) => {
-      const deviceInfo = request.headers.get("user-agent") ?? undefined;
-      const {
-        user,
-        refreshToken: newRefresh,
-        jti,
-      } = await login({
+    ({ body, request }) =>
+      login({
         ...body,
-        deviceInfo,
-      });
-
-      const accessToken = await signAccessToken({
-        sub: user.id,
-        role: user.role,
-        jti,
-      });
-
-      const expiresIn = parseExpiry(env.JWT_EXPIRES_IN);
-      return { user, accessToken, refreshToken: newRefresh, expiresIn };
-    },
+        deviceInfo: request.headers.get("user-agent") ?? undefined,
+      }),
     {
       body: AuthLoginBody,
       response: {
@@ -64,9 +41,8 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
   .post(
     "/register",
     async ({ body, set }) => {
-      const result = await register(body);
       set.status = 201;
-      return result;
+      return register(body);
     },
     {
       body: AuthRegisterBody,
@@ -83,22 +59,11 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
 
   .post(
     "/refresh",
-    async ({ body, request }) => {
-      const deviceInfo = request.headers.get("user-agent") ?? undefined;
-      const { user, newRefreshToken, jti } = await refreshToken(
-        body.refreshToken,
-        deviceInfo,
-      );
-
-      const accessToken = await signAccessToken({
-        sub: user.id,
-        role: user.role,
-        jti,
-      });
-
-      const expiresIn = parseExpiry(env.JWT_EXPIRES_IN);
-      return { user, accessToken, refreshToken: newRefreshToken, expiresIn };
-    },
+    ({ body, request }) =>
+      refresh({
+        refreshToken: body.refreshToken,
+        deviceInfo: request.headers.get("user-agent") ?? undefined,
+      }),
     {
       body: AuthRefreshBody,
       response: {

@@ -24,7 +24,13 @@ const {
   ...USER_COLUMNS
 } = getTableColumns(table.users);
 
-export async function getUserById(userId: string) {
+// ── Public API ──────────────────────────────────────────────────────
+
+export async function getUserById(userId: string, actor?: Actor) {
+  if (actor) {
+    assertAccess(userId, actor, "You can only view your own profile");
+  }
+
   const user = await db.query.users.findFirst({
     where: and(eq(table.users.id, userId), notDeleted(table.users)),
     columns: {
