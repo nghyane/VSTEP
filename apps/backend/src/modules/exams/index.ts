@@ -8,6 +8,7 @@ import {
   PaginationQuery,
 } from "@common/schemas";
 import { Elysia, t } from "elysia";
+import { SubmissionAnswer } from "@/modules/questions/content-schemas";
 import { authPlugin } from "@/plugins/auth";
 import { ExamModel } from "./model";
 import { ExamService } from "./service";
@@ -113,7 +114,7 @@ export const exams = new Elysia({
       params: ExamModel.SessionIdParam,
       body: t.Object({
         questionId: t.String({ format: "uuid" }),
-        answer: t.Any(),
+        answer: SubmissionAnswer,
       }),
       response: {
         200: t.Object({ success: t.Boolean() }),

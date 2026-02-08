@@ -8,6 +8,7 @@ import {
   PaginationQuery,
 } from "@common/schemas";
 import { Elysia, t } from "elysia";
+import { AutoGradeResult } from "@/modules/questions/content-schemas";
 import { authPlugin } from "@/plugins/auth";
 import { SubmissionModel } from "./model";
 import { SubmissionService } from "./service";
@@ -126,7 +127,7 @@ export const submissions = new Elysia({
       response: {
         200: t.Object({
           score: t.Number(),
-          result: t.Any(),
+          result: AutoGradeResult,
         }),
         ...CrudErrors,
       },

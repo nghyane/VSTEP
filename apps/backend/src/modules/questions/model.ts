@@ -1,5 +1,6 @@
 import { QuestionFormat, QuestionLevel, Skill } from "@common/enums";
 import { t } from "elysia";
+import { ObjectiveAnswerKey, QuestionContent } from "./content-schemas";
 
 export namespace QuestionModel {
   export const Question = t.Object({
@@ -7,7 +8,7 @@ export namespace QuestionModel {
     skill: Skill,
     level: QuestionLevel,
     format: QuestionFormat,
-    content: t.Any(),
+    content: QuestionContent,
     version: t.Number(),
     isActive: t.Boolean(),
     createdBy: t.Optional(t.Nullable(t.String({ format: "uuid" }))),
@@ -23,15 +24,15 @@ export namespace QuestionModel {
   /** Full question including answerKey — admin/instructor only */
   export const QuestionFull = t.Object({
     ...QuestionWithDetails.properties,
-    answerKey: t.Optional(t.Any()),
+    answerKey: t.Optional(t.Nullable(ObjectiveAnswerKey)),
   });
 
   export const Version = t.Object({
     id: t.String({ format: "uuid" }),
     questionId: t.String({ format: "uuid" }),
     version: t.Number(),
-    content: t.Any(),
-    answerKey: t.Optional(t.Any()),
+    content: QuestionContent,
+    answerKey: t.Optional(t.Nullable(ObjectiveAnswerKey)),
     createdAt: t.String({ format: "date-time" }),
   });
 
@@ -39,8 +40,8 @@ export namespace QuestionModel {
     skill: Skill,
     level: QuestionLevel,
     format: QuestionFormat,
-    content: t.Any(),
-    answerKey: t.Optional(t.Any()),
+    content: QuestionContent,
+    answerKey: t.Optional(ObjectiveAnswerKey),
   });
 
   export const UpdateBody = t.Partial(
@@ -48,15 +49,15 @@ export namespace QuestionModel {
       skill: Skill,
       level: QuestionLevel,
       format: QuestionFormat,
-      content: t.Any(),
-      answerKey: t.Optional(t.Any()),
+      content: QuestionContent,
+      answerKey: t.Optional(ObjectiveAnswerKey),
       isActive: t.Boolean(),
     }),
   );
 
   export const VersionBody = t.Object({
-    content: t.Any(),
-    answerKey: t.Optional(t.Any()),
+    content: QuestionContent,
+    answerKey: t.Optional(ObjectiveAnswerKey),
   });
 
   export type Question = typeof Question.static;

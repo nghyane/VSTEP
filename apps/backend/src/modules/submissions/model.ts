@@ -4,6 +4,10 @@ import {
   VstepBand,
 } from "@common/enums";
 import { t } from "elysia";
+import {
+  GradingResult,
+  SubmissionAnswer,
+} from "@/modules/questions/content-schemas";
 
 export namespace SubmissionModel {
   export const Submission = t.Object({
@@ -21,19 +25,19 @@ export namespace SubmissionModel {
 
   export const SubmissionWithDetails = t.Object({
     ...Submission.properties,
-    answer: t.Optional(t.Any()),
-    result: t.Optional(t.Any()),
+    answer: t.Optional(t.Nullable(SubmissionAnswer)),
+    result: t.Optional(t.Nullable(GradingResult)),
     feedback: t.Optional(t.Nullable(t.String({ maxLength: 10000 }))),
   });
 
   export const CreateBody = t.Object({
     questionId: t.String({ format: "uuid" }),
-    answer: t.Any(),
+    answer: SubmissionAnswer,
   });
 
   export const UpdateBody = t.Partial(
     t.Object({
-      answer: t.Any(),
+      answer: SubmissionAnswer,
       status: SubmissionStatusEnum,
       score: t.Number({ minimum: 0, maximum: 10 }),
       band: VstepBand,

@@ -1,11 +1,23 @@
 import { ExamStatus, QuestionLevel } from "@common/enums";
 import { t } from "elysia";
+import {
+  ExamBlueprint,
+  SubmissionAnswer,
+} from "@/modules/questions/content-schemas";
+
+/** Per-skill score breakdown stored in session.skillScores JSONB */
+const SkillScores = t.Object({
+  listening: t.Optional(t.Nullable(t.Number({ minimum: 0, maximum: 10 }))),
+  reading: t.Optional(t.Nullable(t.Number({ minimum: 0, maximum: 10 }))),
+  writing: t.Optional(t.Nullable(t.Number({ minimum: 0, maximum: 10 }))),
+  speaking: t.Optional(t.Nullable(t.Number({ minimum: 0, maximum: 10 }))),
+});
 
 export namespace ExamModel {
   export const Exam = t.Object({
     id: t.String({ format: "uuid" }),
     level: QuestionLevel,
-    blueprint: t.Any(),
+    blueprint: ExamBlueprint,
     isActive: t.Boolean(),
     createdBy: t.Nullable(t.String({ format: "uuid" })),
     createdAt: t.String({ format: "date-time" }),
@@ -22,7 +34,7 @@ export namespace ExamModel {
     writingScore: t.Nullable(t.Number()),
     speakingScore: t.Nullable(t.Number()),
     overallScore: t.Nullable(t.Number()),
-    skillScores: t.Nullable(t.Any()),
+    skillScores: t.Nullable(SkillScores),
     startedAt: t.String({ format: "date-time" }),
     completedAt: t.Nullable(t.String({ format: "date-time" })),
     createdAt: t.String({ format: "date-time" }),
@@ -35,14 +47,14 @@ export namespace ExamModel {
 
   export const CreateBody = t.Object({
     level: QuestionLevel,
-    blueprint: t.Any(),
+    blueprint: ExamBlueprint,
     isActive: t.Optional(t.Boolean({ default: true })),
   });
 
   export const UpdateBody = t.Partial(
     t.Object({
       level: QuestionLevel,
-      blueprint: t.Any(),
+      blueprint: ExamBlueprint,
       isActive: t.Boolean(),
     }),
   );
@@ -51,7 +63,7 @@ export namespace ExamModel {
     answers: t.Array(
       t.Object({
         questionId: t.String({ format: "uuid" }),
-        answer: t.Any(),
+        answer: SubmissionAnswer,
       }),
       { maxItems: 200 },
     ),

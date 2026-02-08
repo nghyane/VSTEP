@@ -194,7 +194,7 @@ Thay `t.Any()` bằng TypeBox schemas cụ thể, validate ở HTTP request laye
 > `reading_gap_fill`, `listening_dictation` — IELTS formats, **không tồn tại trong VSTEP**.
 > Giữ enum cho extensibility, document rõ.
 
-- [ ] **2.1** Question Content Schemas — tạo `src/modules/questions/content-schemas.ts`
+- [x] **2.1** Question Content Schemas — tạo `src/modules/questions/content-schemas.ts`
   - **reading_mcq**: `{ passage: string, title?: string, items: [{ number, prompt, options: {A,B,C,D} }] }`
   - **listening_mcq**: `{ audioUrl: string, transcript?: string, scaffolding?: { keywords?, slowAudioUrl? }, items: [{ number, prompt, options }] }`
   - **writing_task_1**: `{ taskNumber: 1, prompt, instructions?, minWords?(120), imageUrls? }`
@@ -203,19 +203,19 @@ Thay `t.Any()` bằng TypeBox schemas cụ thể, validate ở HTTP request laye
   - **speaking_part_2**: `{ partNumber: 2, prompt, instructions?, options: string[3], preparationSeconds?, speakingSeconds? }`
   - **speaking_part_3**: `{ partNumber: 3, prompt, instructions?, followUpQuestions?, preparationSeconds?, speakingSeconds? }`
 
-- [ ] **2.2** Answer Key Schema
+- [x] **2.2** Answer Key Schema
   - Reading/Listening: `{ correctAnswers: Record<string, string> }`
   - Writing/Speaking: `null`
 
-- [ ] **2.3** User Answer Schema
+- [x] **2.3** User Answer Schema
   - Reading/Listening: `{ answers: Record<string, string> }`
   - Writing: `{ text: string }`
   - Speaking: `{ audioUrl: string, durationSeconds: number, transcript?: string }`
 
-- [ ] **2.4** Blueprint Schema (Exam)
+- [x] **2.4** Blueprint Schema (Exam)
   - Typed schema cho `exams.blueprint` JSONB (listening/reading/writing/speaking sections + duration).
 
-- [ ] **2.5** Apply schemas vào routes + response
+- [x] **2.5** Apply schemas vào routes + response
   - Route: `t.Union` discriminated by format. Response: typed JSONB output.
 
 ---
