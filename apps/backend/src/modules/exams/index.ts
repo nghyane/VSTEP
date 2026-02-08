@@ -1,11 +1,9 @@
-import { QuestionLevel } from "@common/enums";
 import {
   AuthErrors,
   CrudErrors,
   ErrorResponse,
   IdParam,
   PaginationMeta,
-  PaginationQuery,
 } from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { SubmissionAnswer } from "@/modules/questions/content-schemas";
@@ -13,6 +11,7 @@ import { authPlugin } from "@/plugins/auth";
 import {
   ExamAnswerSaveBody,
   ExamCreateBody,
+  ExamListQuery,
   ExamSchema,
   ExamSessionIdParam,
   ExamSessionSchema,
@@ -38,11 +37,7 @@ export const exams = new Elysia({
 
   .get("/", ({ query }) => listExams(query), {
     auth: true,
-    query: t.Object({
-      ...PaginationQuery.properties,
-      level: t.Optional(QuestionLevel),
-      isActive: t.Optional(t.Boolean()),
-    }),
+    query: ExamListQuery,
     response: {
       200: t.Object({
         data: t.Array(ExamSchema),
@@ -50,14 +45,21 @@ export const exams = new Elysia({
       }),
       ...AuthErrors,
     },
-    detail: { summary: "List exams" },
+    detail: {
+      summary: "List exams",
+      description:
+        "Retrieve a paginated list of exams, optionally filtered by level and active status.",
+    },
   })
 
-  .get("/:id", ({ params: { id } }) => getExamById(id), {
+  .get("/:id", ({ params }) => getExamById(params.id), {
     auth: true,
     params: IdParam,
     response: { 200: ExamSchema, ...CrudErrors },
-    detail: { summary: "Get exam by ID" },
+    detail: {
+      summary: "Get exam by ID",
+      description: "Retrieve a single exam by its unique identifier.",
+    },
   })
 
   .post(
@@ -70,44 +72,60 @@ export const exams = new Elysia({
       role: "admin",
       body: ExamCreateBody,
       response: { 201: ExamSchema, ...AuthErrors },
-      detail: { summary: "Create exam (Admin)" },
+      detail: {
+        summary: "Create exam (Admin)",
+        description:
+          "Create a new exam with a level, blueprint, and optional active status. Requires admin role.",
+      },
     },
   )
 
-  .patch("/:id", ({ params: { id }, body }) => updateExam(id, body), {
+  .patch("/:id", ({ params, body }) => updateExam(params.id, body), {
     role: "admin",
     params: IdParam,
     body: ExamUpdateBody,
     response: { 200: ExamSchema, ...CrudErrors },
-    detail: { summary: "Update exam (Admin)" },
+    detail: {
+      summary: "Update exam (Admin)",
+      description:
+        "Partially update an existing exam's level, blueprint, or active status. Requires admin role.",
+    },
   })
 
   .post(
     "/:id/start",
-    ({ params: { id }, user }) => startExamSession(user.sub, id),
+    ({ params, user }) => startExamSession(user.sub, params.id),
     {
       auth: true,
       params: IdParam,
       response: { 200: ExamSessionSchema, 400: ErrorResponse, ...CrudErrors },
-      detail: { summary: "Start exam session" },
+      detail: {
+        summary: "Start exam session",
+        description:
+          "Start a new exam session or return an existing in-progress session for the given exam.",
+      },
     },
   )
 
   .get(
     "/sessions/:sessionId",
-    ({ params: { sessionId }, user }) => getExamSessionById(sessionId, user),
+    ({ params, user }) => getExamSessionById(params.sessionId, user),
     {
       auth: true,
       params: ExamSessionIdParam,
       response: { 200: ExamSessionSchema, ...CrudErrors },
-      detail: { summary: "Get session by ID" },
+      detail: {
+        summary: "Get session by ID",
+        description:
+          "Retrieve an exam session by its unique identifier. Only the session owner or an admin can access it.",
+      },
     },
   )
 
   .put(
     "/sessions/:sessionId",
-    ({ params: { sessionId }, body, user }) =>
-      saveExamAnswers(sessionId, user, body.answers),
+    ({ params, body, user }) =>
+      saveExamAnswers(params.sessionId, body.answers, user),
     {
       auth: true,
       params: ExamSessionIdParam,
@@ -117,14 +135,17 @@ export const exams = new Elysia({
         400: ErrorResponse,
         ...AuthErrors,
       },
-      detail: { summary: "Auto-save answers for session" },
+      detail: {
+        summary: "Auto-save answers for session",
+        description:
+          "Bulk upsert answers for an in-progress exam session. Used for periodic auto-save.",
+      },
     },
   )
 
   .post(
     "/sessions/:sessionId/answer",
-    ({ params: { sessionId }, body, user }) =>
-      submitExamAnswer(sessionId, user, body),
+    ({ params, body, user }) => submitExamAnswer(params.sessionId, body, user),
     {
       auth: true,
       params: ExamSessionIdParam,
@@ -137,17 +158,25 @@ export const exams = new Elysia({
         400: ErrorResponse,
         ...AuthErrors,
       },
-      detail: { summary: "Submit single answer for session" },
+      detail: {
+        summary: "Submit single answer for session",
+        description:
+          "Submit or update a single answer for a specific question within an in-progress exam session.",
+      },
     },
   )
 
   .post(
     "/sessions/:sessionId/submit",
-    ({ params: { sessionId }, user }) => submitExam(sessionId, user),
+    ({ params, user }) => submitExam(params.sessionId, user),
     {
       auth: true,
       params: ExamSessionIdParam,
       response: { 200: ExamSessionSchema, 400: ErrorResponse, ...AuthErrors },
-      detail: { summary: "Submit exam for grading" },
+      detail: {
+        summary: "Submit exam for grading",
+        description:
+          "Finalize an exam session: auto-grade listening/reading answers and create pending submissions for writing/speaking.",
+      },
     },
   );

@@ -19,10 +19,7 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
   .post(
     "/login",
     ({ body, request }) =>
-      login({
-        ...body,
-        deviceInfo: request.headers.get("user-agent") ?? undefined,
-      }),
+      login(body, request.headers.get("user-agent") ?? undefined),
     {
       body: AuthLoginBody,
       response: {
@@ -60,10 +57,10 @@ export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
   .post(
     "/refresh",
     ({ body, request }) =>
-      refresh({
-        refreshToken: body.refreshToken,
-        deviceInfo: request.headers.get("user-agent") ?? undefined,
-      }),
+      refresh(
+        body.refreshToken,
+        request.headers.get("user-agent") ?? undefined,
+      ),
     {
       body: AuthRefreshBody,
       response: {

@@ -9,25 +9,30 @@ import {
   sql,
 } from "drizzle-orm";
 import type { Submission } from "@/db";
-import { db, notDeleted, pagination, table } from "@/db";
+import { db, notDeleted, omitColumns, pagination, table } from "@/db";
 import type { Actor } from "@/plugins/auth";
 import { BadRequestError } from "@/plugins/error";
+import type {
+  SubmissionCreateBody,
+  SubmissionGradeBody,
+  SubmissionListQuery,
+  SubmissionUpdateBody,
+} from "./model";
 
-const {
-  confidence: _confidence,
-  isLate: _isLate,
-  attempt: _attempt,
-  requestId: _requestId,
-  reviewPriority: _reviewPriority,
-  reviewerId: _reviewerId,
-  gradingMode: _gradingMode,
-  auditFlag: _auditFlag,
-  claimedBy: _claimedBy,
-  claimedAt: _claimedAt,
-  deadline: _deadline,
-  deletedAt: _deletedAt,
-  ...SUBMISSION_COLUMNS
-} = getTableColumns(table.submissions);
+const SUBMISSION_COLUMNS = omitColumns(getTableColumns(table.submissions), [
+  "confidence",
+  "isLate",
+  "attempt",
+  "requestId",
+  "reviewPriority",
+  "reviewerId",
+  "gradingMode",
+  "auditFlag",
+  "claimedBy",
+  "claimedAt",
+  "deadline",
+  "deletedAt",
+]);
 
 /** VSTEP.3-5 only assesses B1-C1. Scores below 4.0 = below B1, not A1/A2. */
 export function scoreToBand(score: number): Submission["band"] {
@@ -81,13 +86,7 @@ export async function getSubmissionById(submissionId: string, actor: Actor) {
 }
 
 export async function listSubmissions(
-  query: {
-    page?: number;
-    limit?: number;
-    skill?: Submission["skill"];
-    status?: Submission["status"];
-    userId?: string;
-  },
+  query: SubmissionListQuery,
   actor: Actor,
 ) {
   const pg = pagination(query.page, query.limit);
@@ -110,29 +109,27 @@ export async function listSubmissions(
 
   const whereClause = and(...conditions);
 
-  const [countResult] = await db
-    .select({ count: count() })
-    .from(table.submissions)
-    .where(whereClause);
+  const [countResult, submissions] = await Promise.all([
+    db.select({ count: count() }).from(table.submissions).where(whereClause),
+    db
+      .select({
+        ...SUBMISSION_COLUMNS,
+        answer: table.submissionDetails.answer,
+        result: table.submissionDetails.result,
+        feedback: table.submissionDetails.feedback,
+      })
+      .from(table.submissions)
+      .leftJoin(
+        table.submissionDetails,
+        eq(table.submissions.id, table.submissionDetails.submissionId),
+      )
+      .where(whereClause)
+      .orderBy(desc(table.submissions.createdAt))
+      .limit(pg.limit)
+      .offset(pg.offset),
+  ]);
 
-  const total = countResult?.count ?? 0;
-
-  const submissions = await db
-    .select({
-      ...SUBMISSION_COLUMNS,
-      answer: table.submissionDetails.answer,
-      result: table.submissionDetails.result,
-      feedback: table.submissionDetails.feedback,
-    })
-    .from(table.submissions)
-    .leftJoin(
-      table.submissionDetails,
-      eq(table.submissions.id, table.submissionDetails.submissionId),
-    )
-    .where(whereClause)
-    .orderBy(desc(table.submissions.createdAt))
-    .limit(pg.limit)
-    .offset(pg.offset);
+  const total = countResult[0]?.count ?? 0;
 
   return {
     data: submissions,
@@ -142,23 +139,20 @@ export async function listSubmissions(
 
 export async function createSubmission(
   userId: string,
-  body: { questionId: string; answer: unknown },
+  body: SubmissionCreateBody,
 ) {
   return db.transaction(async (tx) => {
-    const [questionRow] = await tx
-      .select({
-        id: table.questions.id,
-        skill: table.questions.skill,
-        isActive: table.questions.isActive,
-      })
-      .from(table.questions)
-      .where(
-        and(
-          eq(table.questions.id, body.questionId),
-          notDeleted(table.questions),
-        ),
-      )
-      .limit(1);
+    const questionRow = await tx.query.questions.findFirst({
+      where: and(
+        eq(table.questions.id, body.questionId),
+        notDeleted(table.questions),
+      ),
+      columns: {
+        id: true,
+        skill: true,
+        isActive: true,
+      },
+    });
 
     const question = assertExists(questionRow, "Question");
 
@@ -189,26 +183,16 @@ export async function createSubmission(
 
 export async function updateSubmission(
   submissionId: string,
+  body: SubmissionUpdateBody,
   actor: Actor,
-  body: {
-    answer?: unknown;
-    status?: Submission["status"];
-    score?: number;
-    band?: Submission["band"];
-    feedback?: string;
-  },
 ) {
   return db.transaction(async (tx) => {
-    const [row] = await tx
-      .select()
-      .from(table.submissions)
-      .where(
-        and(
-          eq(table.submissions.id, submissionId),
-          notDeleted(table.submissions),
-        ),
-      )
-      .limit(1);
+    const row = await tx.query.submissions.findFirst({
+      where: and(
+        eq(table.submissions.id, submissionId),
+        notDeleted(table.submissions),
+      ),
+    });
 
     const submission = assertExists(row, "Submission");
 
@@ -285,19 +269,15 @@ export async function updateSubmission(
 
 export async function gradeSubmission(
   submissionId: string,
-  body: { score: number; band?: Submission["band"]; feedback?: string },
+  body: SubmissionGradeBody,
 ) {
   return db.transaction(async (tx) => {
-    const [row] = await tx
-      .select()
-      .from(table.submissions)
-      .where(
-        and(
-          eq(table.submissions.id, submissionId),
-          notDeleted(table.submissions),
-        ),
-      )
-      .limit(1);
+    const row = await tx.query.submissions.findFirst({
+      where: and(
+        eq(table.submissions.id, submissionId),
+        notDeleted(table.submissions),
+      ),
+    });
 
     const submission = assertExists(row, "Submission");
 
@@ -357,16 +337,12 @@ export async function gradeSubmission(
 
 export async function removeSubmission(submissionId: string, actor: Actor) {
   return db.transaction(async (tx) => {
-    const [row] = await tx
-      .select()
-      .from(table.submissions)
-      .where(
-        and(
-          eq(table.submissions.id, submissionId),
-          notDeleted(table.submissions),
-        ),
-      )
-      .limit(1);
+    const row = await tx.query.submissions.findFirst({
+      where: and(
+        eq(table.submissions.id, submissionId),
+        notDeleted(table.submissions),
+      ),
+    });
 
     const submission = assertExists(row, "Submission");
 
@@ -385,7 +361,7 @@ export async function removeSubmission(submissionId: string, actor: Actor) {
       })
       .where(eq(table.submissions.id, submissionId));
 
-    return { id: submissionId };
+    return { id: submissionId, deletedAt: timestamp };
   });
 }
 

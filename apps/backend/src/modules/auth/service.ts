@@ -10,29 +10,17 @@ import {
   isUniqueViolation,
   UnauthorizedError,
 } from "@/plugins/error";
-import type { AuthUserInfo } from "./model";
+import type { AuthLoginBody, AuthRegisterBody, AuthUserInfo } from "./model";
 
-// ── Config ──────────────────────────────────────────────────────────
+// ── Pure helpers (exported for testing) ──────────────────────────────
 
-if (!env.JWT_SECRET) throw new Error("JWT_SECRET is required");
-if (!env.JWT_EXPIRES_IN) throw new Error("JWT_EXPIRES_IN is required");
-if (!env.JWT_REFRESH_EXPIRES_IN)
-  throw new Error("JWT_REFRESH_EXPIRES_IN is required");
-
-const ACCESS_SECRET = new TextEncoder().encode(env.JWT_SECRET);
-const JWT_EXPIRES_IN: string = env.JWT_EXPIRES_IN;
-const JWT_REFRESH_EXPIRES_IN: string = env.JWT_REFRESH_EXPIRES_IN;
-const MAX_REFRESH_TOKENS = 3;
-
-// ── Internal helpers ────────────────────────────────────────────────
-
-function hashToken(token: string): string {
+export function hashToken(token: string): string {
   const hasher = new Bun.CryptoHasher("sha256");
   hasher.update(token);
   return hasher.digest("hex");
 }
 
-function parseExpiry(str: string): number {
+export function parseExpiry(str: string): number {
   const match = str.match(/^(\d+)(s|m|h|d)$/);
   if (!match) return 900;
   const n = Number.parseInt(match[1], 10);
@@ -50,10 +38,15 @@ function parseExpiry(str: string): number {
   }
 }
 
+// ── Internal ────────────────────────────────────────────────────────
+
+const ACCESS_SECRET = new TextEncoder().encode(env.JWT_SECRET);
+const MAX_REFRESH_TOKENS = 3;
+
 async function signAccessToken(payload: JWTPayload): Promise<string> {
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: "HS256" })
-    .setExpirationTime(JWT_EXPIRES_IN)
+    .setExpirationTime(env.JWT_EXPIRES_IN)
     .sign(ACCESS_SECRET);
 }
 
@@ -66,18 +59,14 @@ function buildTokenResponse(
     user,
     accessToken,
     refreshToken,
-    expiresIn: parseExpiry(JWT_EXPIRES_IN),
+    expiresIn: parseExpiry(env.JWT_EXPIRES_IN),
   };
 }
 
 // ── Public API ──────────────────────────────────────────────────────
 
-export async function login(body: {
-  email: string;
-  password: string;
-  deviceInfo?: string;
-}) {
-  const user = await db.query.users.findFirst({
+export async function login(body: AuthLoginBody, deviceInfo?: string) {
+  const row = await db.query.users.findFirst({
     where: and(
       eq(table.users.email, body.email),
       isNull(table.users.deletedAt),
@@ -91,19 +80,19 @@ export async function login(body: {
     },
   });
 
-  if (!user) throw new UnauthorizedError("Invalid email or password");
+  if (!row) throw new UnauthorizedError("Invalid email or password");
 
-  const isValid = await verifyPassword(body.password, user.passwordHash);
+  const isValid = await verifyPassword(body.password, row.passwordHash);
   if (!isValid) throw new UnauthorizedError("Invalid email or password");
 
   const newRefreshToken = crypto.randomUUID();
   const jti = crypto.randomUUID();
-  const refreshExpirySeconds = parseExpiry(JWT_REFRESH_EXPIRES_IN);
+  const refreshExpirySeconds = parseExpiry(env.JWT_REFRESH_EXPIRES_IN);
 
   await db.transaction(async (tx) => {
     const activeTokens = await tx.query.refreshTokens.findMany({
       where: and(
-        eq(table.refreshTokens.userId, user.id),
+        eq(table.refreshTokens.userId, row.id),
         isNull(table.refreshTokens.revokedAt),
         gt(table.refreshTokens.expiresAt, now()),
       ),
@@ -124,37 +113,33 @@ export async function login(body: {
     }
 
     await tx.insert(table.refreshTokens).values({
-      userId: user.id,
+      userId: row.id,
       tokenHash: hashToken(newRefreshToken),
       jti,
-      deviceInfo: body.deviceInfo,
+      deviceInfo,
       expiresAt: new Date(
         Date.now() + refreshExpirySeconds * 1000,
       ).toISOString(),
     });
   });
 
-  const userInfo: AuthUserInfo = {
-    id: user.id,
-    email: user.email,
-    fullName: user.fullName,
-    role: user.role,
+  const user: AuthUserInfo = {
+    id: row.id,
+    email: row.email,
+    fullName: row.fullName,
+    role: row.role,
   };
 
   const accessToken = await signAccessToken({
-    sub: user.id,
-    role: user.role,
+    sub: row.id,
+    role: row.role,
     jti,
   });
 
-  return buildTokenResponse(userInfo, accessToken, newRefreshToken);
+  return buildTokenResponse(user, accessToken, newRefreshToken);
 }
 
-export async function register(body: {
-  email: string;
-  password: string;
-  fullName?: string;
-}) {
+export async function register(body: AuthRegisterBody) {
   const passwordHash = await hashPassword(body.password);
 
   try {
@@ -185,11 +170,8 @@ export async function register(body: {
   }
 }
 
-export async function refresh(body: {
-  refreshToken: string;
-  deviceInfo?: string;
-}) {
-  const hash = hashToken(body.refreshToken);
+export async function refresh(refreshToken: string, deviceInfo?: string) {
+  const hash = hashToken(refreshToken);
 
   return db.transaction(async (tx) => {
     const tokenRecord = await tx.query.refreshTokens.findFirst({
@@ -239,7 +221,7 @@ export async function refresh(body: {
 
     const newRefreshToken = crypto.randomUUID();
     const newJti = crypto.randomUUID();
-    const refreshExpirySeconds = parseExpiry(JWT_REFRESH_EXPIRES_IN);
+    const refreshExpirySeconds = parseExpiry(env.JWT_REFRESH_EXPIRES_IN);
 
     await tx
       .update(table.refreshTokens)
@@ -250,7 +232,7 @@ export async function refresh(body: {
       userId: user.id,
       tokenHash: hashToken(newRefreshToken),
       jti: newJti,
-      deviceInfo: body.deviceInfo,
+      deviceInfo,
       expiresAt: new Date(
         Date.now() + refreshExpirySeconds * 1000,
       ).toISOString(),

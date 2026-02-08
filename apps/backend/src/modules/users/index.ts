@@ -1,18 +1,16 @@
-import { UserRole } from "@common/enums";
 import {
   AuthErrors,
   CrudErrors,
   CrudWithConflictErrors,
   IdParam,
   PaginationMeta,
-  PaginationQuery,
   SuccessResponse,
 } from "@common/schemas";
-import { assertAccess } from "@common/utils";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import {
   UserCreateBody,
+  UserListQuery,
   UserPasswordBody,
   UserSchema,
   UserUpdateBody,
@@ -32,30 +30,19 @@ export const users = new Elysia({
 })
   .use(authPlugin)
 
-  .get(
-    "/:id",
-    ({ params, user }) => {
-      assertAccess(params.id, user, "You can only view your own profile");
-      return getUserById(params.id);
+  .get("/:id", ({ params, user }) => getUserById(params.id, user), {
+    auth: true,
+    params: IdParam,
+    response: { 200: UserSchema, ...CrudErrors },
+    detail: {
+      summary: "Get user",
+      description: "Get user details by ID",
     },
-    {
-      auth: true,
-      params: IdParam,
-      response: { 200: UserSchema, ...CrudErrors },
-      detail: {
-        summary: "Get user",
-        description: "Get user details by ID",
-      },
-    },
-  )
+  })
 
   .get("/", ({ query }) => listUsers(query), {
     role: "admin",
-    query: t.Object({
-      ...PaginationQuery.properties,
-      role: t.Optional(UserRole),
-      search: t.Optional(t.String()),
-    }),
+    query: UserListQuery,
     response: {
       200: t.Object({
         data: t.Array(UserSchema),
@@ -71,7 +58,7 @@ export const users = new Elysia({
 
   .post(
     "/",
-    ({ body, set }) => {
+    async ({ body, set }) => {
       set.status = 201;
       return createUser(body);
     },
@@ -107,7 +94,7 @@ export const users = new Elysia({
     response: {
       200: t.Object({
         id: t.String({ format: "uuid" }),
-        deletedAt: t.String(),
+        deletedAt: t.String({ format: "date-time" }),
       }),
       ...CrudErrors,
     },
