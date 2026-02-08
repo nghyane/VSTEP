@@ -5,14 +5,6 @@ import {
   SubmissionAnswer,
 } from "@/modules/questions/content-schemas";
 
-/** Per-skill score breakdown stored in session.skillScores JSONB */
-const SkillScores = t.Object({
-  listening: t.Optional(t.Nullable(t.Number({ minimum: 0, maximum: 10 }))),
-  reading: t.Optional(t.Nullable(t.Number({ minimum: 0, maximum: 10 }))),
-  writing: t.Optional(t.Nullable(t.Number({ minimum: 0, maximum: 10 }))),
-  speaking: t.Optional(t.Nullable(t.Number({ minimum: 0, maximum: 10 }))),
-});
-
 export const ExamSchema = t.Object({
   id: t.String({ format: "uuid" }),
   level: QuestionLevel,
@@ -33,7 +25,6 @@ export const ExamSessionSchema = t.Object({
   writingScore: t.Nullable(t.Number()),
   speakingScore: t.Nullable(t.Number()),
   overallScore: t.Nullable(t.Number()),
-  skillScores: t.Nullable(SkillScores),
   startedAt: t.String({ format: "date-time" }),
   completedAt: t.Nullable(t.String({ format: "date-time" })),
   createdAt: t.String({ format: "date-time" }),

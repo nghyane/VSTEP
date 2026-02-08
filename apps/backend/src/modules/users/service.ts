@@ -1,6 +1,14 @@
 import { hashPassword, verifyPassword } from "@common/password";
 import { assertAccess, assertExists, escapeLike, now } from "@common/utils";
-import { and, count, eq, ilike, ne, type SQL } from "drizzle-orm";
+import {
+  and,
+  count,
+  eq,
+  getTableColumns,
+  ilike,
+  ne,
+  type SQL,
+} from "drizzle-orm";
 import { db, notDeleted, pagination, table } from "@/db";
 import type { Actor } from "@/plugins/auth";
 import {
@@ -9,14 +17,11 @@ import {
   UnauthorizedError,
 } from "@/plugins/error";
 
-const USER_COLUMNS = {
-  id: table.users.id,
-  email: table.users.email,
-  fullName: table.users.fullName,
-  role: table.users.role,
-  createdAt: table.users.createdAt,
-  updatedAt: table.users.updatedAt,
-} as const;
+const {
+  passwordHash: _ph,
+  deletedAt: _da,
+  ...USER_COLUMNS
+} = getTableColumns(table.users);
 
 export async function getUserById(userId: string) {
   const user = await db.query.users.findFirst({
@@ -196,7 +201,7 @@ export async function removeUser(userId: string) {
 
     return {
       id: deletedUser.id,
-      deletedAt: deletedUser.deletedAt!,
+      deletedAt: deletedUser.deletedAt ?? timestamp,
     };
   });
 }

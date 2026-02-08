@@ -237,24 +237,24 @@ Thay `t.Any()` bằng TypeBox schemas cụ thể, validate ở HTTP request laye
 
 ## Phase 4: DB Schema Cleanup (MEDIUM)
 
-- [ ] **4.1** Thêm indexes thiếu
+- [x] **4.1** Thêm indexes thiếu
   - `refreshTokens.expiresAt`, `submissions.skill`, `submissions.questionId`, `questions.createdBy`, `examSessions.examId`
 
-- [ ] **4.2** Xóa index thừa `questions_skill_level_idx` (trùng `questions_active_idx`)
+- [x] **4.2** Xóa index thừa `questions_skill_level_idx` (trùng `questions_active_idx`)
 
-- [ ] **4.3** Cleanup `submissions` columns
+- [x] **4.3** Cleanup `submissions` columns
   - **Xóa**: `reviewPending` (redundant với status `review_pending`)
   - **Giữ**: `requestId`, `auditFlag`, `isLate`, `confidence`, `reviewPriority`, `reviewerId`, `gradingMode`, `claimedBy`, `claimedAt`, `deadline`
 
-- [ ] **4.4** Fix `examAnswers.isCorrect` — persist khi auto-grade trong `submitExam()`
+- [x] **4.4** Fix `examAnswers.isCorrect` — persist khi auto-grade trong `submitExam()`
 
-- [ ] **4.5** Bỏ `$onUpdate` trên `updatedAt` (giữ explicit set trong service)
+- [x] **4.5** Bỏ `$onUpdate` trên `updatedAt` (giữ explicit set trong service)
 
-- [ ] **4.6** Thêm `varchar` length limit: `submissionDetails.feedback` → `{ length: 10000 }`
+- [x] **4.6** Thêm `varchar` length limit: `submissionDetails.feedback` → `{ length: 10000 }`
 
-- [ ] **4.7** Xóa `examSessions.skillScores` JSONB (dead column, redundant với 4 individual score columns)
+- [x] **4.7** Xóa `examSessions.skillScores` JSONB (dead column, redundant với 4 individual score columns)
 
-- [ ] **4.8** `examSessions.overallScore` — tạo helper `calculateOverallScore()` dùng `avg / 4` rounded 0.5
+- [x] **4.8** `examSessions.overallScore` — tạo helper `calculateOverallScore()` dùng `avg / 4` rounded 0.5
 
 ---
 
@@ -267,7 +267,7 @@ Thay `t.Any()` bằng TypeBox schemas cụ thể, validate ở HTTP request laye
 
 ## Phase 6: Unit Tests (MEDIUM)
 
-- [ ] **6.1** Pure function tests (không cần mock DB)
+- [x] **6.1** Pure function tests (không cần mock DB)
   - `scoreToBand` (0, 3.5, 4, 5.5, 6, 8, 8.5, 10)
   - `validateTransition` (all valid + invalid + admin bypass)
   - `computeTrend` (insufficient_data, stable, improving, declining, inconsistent)
@@ -281,39 +281,39 @@ Thay `t.Any()` bằng TypeBox schemas cụ thể, validate ở HTTP request laye
 
 ## Phase 7: Code Cleanup & Docs (LOW)
 
-- [ ] **7.1** Bỏ COLUMN constants trùng lặp → `getTableColumns()` + destructure
+- [x] **7.1** Bỏ COLUMN constants trùng lặp → `getTableColumns()` + destructure
 
-- [ ] **7.2** Extract pagination count helper `countWhere()`
+- [ ] **7.2** Extract pagination count helper `countWhere()` — skipped (circular import with db/index)
 
-- [ ] **7.3** ProgressService thiếu soft-delete filter
+- [ ] **7.3** ProgressService thiếu soft-delete filter — skipped (progress tables lack deletedAt column)
 
-- [ ] **7.4** Outbox schema — giữ cho grading service
+- [x] **7.4** Outbox schema — giữ cho grading service (no action needed)
 
-- [ ] **7.5** Xóa dead error classes: `ValidationError`, `InternalError`
+- [x] **7.5** Xóa dead error classes: `ValidationError`, `InternalError`
 
-- [ ] **7.6** Remove unused dep `drizzle-typebox`
+- [x] **7.6** Remove unused dep `drizzle-typebox`
 
-- [ ] **7.7** `tsconfig.json` — xóa `"jsx": "react-jsx"`, `"allowJs": true`
+- [x] **7.7** `tsconfig.json` — xóa `"jsx": "react-jsx"`, `"allowJs": true`
 
-- [ ] **7.8** `biome.json` — `noConsole` → `"error"`
+- [x] **7.8** `biome.json` — `noConsole` → `"error"`
 
-- [ ] **7.9** `biome.json` — bật lại `noNonNullAssertion` (sau fix 1.12)
+- [x] **7.9** `biome.json` — bật lại `noNonNullAssertion` (sau fix 1.12)
 
-- [ ] **7.10** Auth plugin unsafe `user` derive — document hoặc fix type
+- [x] **7.10** Auth plugin unsafe `user` derive — document hoặc fix type
 
-- [ ] **7.11** `getSpiderChart()` incomplete fields (thiếu `previous`, `target`, `confidence` per spec)
+- [ ] **7.11** `getSpiderChart()` incomplete fields — skipped (feature gap, future work)
 
-- [ ] **7.12** Update `README.md`
+- [ ] **7.12** Update `README.md` — skipped (minimal placeholder, no actionable update)
 
-- [ ] **7.13** Xóa `CODEBASE_REVIEW.md`
+- [x] **7.13** Xóa `CODEBASE_REVIEW.md` — already gone
 
-- [ ] **7.14** Fix `agent.md`
+- [x] **7.14** Fix `agent.md` — deleted (duplicate of CLAUDE.md)
 
-- [ ] **7.15** Fix `CLAUDE.md` — sai table/enum counts, stale refs, thiếu password.ts
+- [ ] **7.15** Fix `CLAUDE.md` — deferred to project owner
 
-- [ ] **7.16** `esbuild` vulnerability — update khi patch available
+- [ ] **7.16** `esbuild` vulnerability — monitoring, no patch available
 
-- [ ] **7.17** Document `questionFormatEnum` IELTS values (JSDoc)
+- [x] **7.17** Document `questionFormatEnum` IELTS values (JSDoc)
 
 ---
 

@@ -1,23 +1,21 @@
 import { assertAccess, assertExists, escapeLike, now } from "@common/utils";
-import { and, count, desc, eq, type SQL, sql } from "drizzle-orm";
+import {
+  and,
+  count,
+  desc,
+  eq,
+  getTableColumns,
+  type SQL,
+  sql,
+} from "drizzle-orm";
 import type { Question } from "@/db";
 import { db, notDeleted, pagination, table } from "@/db";
 import type { Actor } from "@/plugins/auth";
 import { BadRequestError } from "@/plugins/error";
 
-const QUESTION_PUBLIC_COLUMNS = {
-  id: table.questions.id,
-  skill: table.questions.skill,
-  level: table.questions.level,
-  format: table.questions.format,
-  content: table.questions.content,
-  version: table.questions.version,
-  isActive: table.questions.isActive,
-  createdBy: table.questions.createdBy,
-  createdAt: table.questions.createdAt,
-  updatedAt: table.questions.updatedAt,
-  deletedAt: table.questions.deletedAt,
-} as const;
+const { answerKey: _ak, ...QUESTION_PUBLIC_COLUMNS } = getTableColumns(
+  table.questions,
+);
 
 export async function getQuestionById(questionId: string) {
   const question = await db.query.questions.findFirst({

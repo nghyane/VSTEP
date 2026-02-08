@@ -78,9 +78,9 @@ export async function getProgressBySkill(
       : null;
 
   const windowStdDev =
-    scores.length > 1
+    scores.length > 1 && windowAvg !== null
       ? Math.sqrt(
-          scores.reduce((sum, s) => sum + (s - windowAvg!) ** 2, 0) /
+          scores.reduce((sum, s) => sum + (s - windowAvg) ** 2, 0) /
             (scores.length - 1),
         )
       : null;
@@ -139,9 +139,9 @@ export async function getSpiderChart(userId: string) {
         ? scores.reduce((a, b) => a + b, 0) / scores.length
         : null;
     const stdDev =
-      scores.length > 1
+      scores.length > 1 && avg !== null
         ? Math.sqrt(
-            scores.reduce((sum, s) => sum + (s - avg!) ** 2, 0) /
+            scores.reduce((sum, s) => sum + (s - avg) ** 2, 0) /
               (scores.length - 1),
           )
         : null;

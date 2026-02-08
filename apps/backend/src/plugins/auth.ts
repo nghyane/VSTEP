@@ -66,6 +66,8 @@ export async function verifyAccessToken(token: string): Promise<JWTPayload> {
 
 export const authPlugin = new Elysia({ name: "auth" })
   .use(bearer())
+  // Elysia macro typing workaround: `user` is overwritten by auth/role
+  // resolvers before any handler that requires authentication accesses it.
   .derive({ as: "scoped" }, () => ({
     user: undefined as unknown as Actor,
   }))

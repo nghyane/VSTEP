@@ -65,24 +65,12 @@ export class ConflictError extends AppError {
   }
 }
 
-export class ValidationError extends AppError {
-  constructor(message = "Validation failed", details?: unknown) {
-    super(400, message, "VALIDATION_ERROR", details);
-  }
-}
-
 export class RateLimitError extends AppError {
   constructor(
     message = "Rate limit exceeded",
     public retryAfter?: number,
   ) {
     super(429, message, "RATE_LIMITED");
-  }
-}
-
-export class InternalError extends AppError {
-  constructor(message = "Internal server error") {
-    super(500, message, "INTERNAL_ERROR");
   }
 }
 

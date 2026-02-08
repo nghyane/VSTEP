@@ -37,8 +37,7 @@ export const exams = pgTable(
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
-      .notNull()
-      .$onUpdate(() => new Date().toISOString()),
+      .notNull(),
     deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
   },
   (table) => ({
@@ -85,7 +84,6 @@ export const examSessions = pgTable(
       scale: 1,
       mode: "number",
     }),
-    skillScores: jsonb("skill_scores"),
     startedAt: timestamp("started_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
@@ -98,12 +96,12 @@ export const examSessions = pgTable(
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
-      .notNull()
-      .$onUpdate(() => new Date().toISOString()),
+      .notNull(),
     deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
   },
   (table) => ({
     userIdx: index("exam_sessions_user_idx").on(table.userId),
+    examIdIdx: index("exam_sessions_exam_id_idx").on(table.examId),
     statusIdx: index("exam_sessions_status_idx").on(table.status),
     userStatusIdx: index("exam_sessions_user_status_idx")
       .on(table.userId, table.status)
@@ -128,8 +126,7 @@ export const examAnswers = pgTable(
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
-      .notNull()
-      .$onUpdate(() => new Date().toISOString()),
+      .notNull(),
   },
   (table) => ({
     sessionQuestionUnique: uniqueIndex("exam_answers_session_question_idx").on(

@@ -13,6 +13,11 @@ import {
 import { skillEnum } from "./enums";
 import { users } from "./users";
 
+/**
+ * VSTEP formats: writing_task_1/2, speaking_part_1/2/3, reading_mcq, listening_mcq.
+ * Non-VSTEP (IELTS) formats kept for extensibility: reading_tng, reading_matching_headings,
+ * reading_gap_fill, listening_dictation. These are NOT used in VSTEP.3-5 exams.
+ */
 export const questionFormatEnum = pgEnum("question_format", [
   "writing_task_1",
   "writing_task_2",
@@ -54,19 +59,15 @@ export const questions = pgTable(
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
-      .notNull()
-      .$onUpdate(() => new Date().toISOString()),
+      .notNull(),
     deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
   },
   (table) => ({
-    skillLevelIdx: index("questions_skill_level_idx").on(
-      table.skill,
-      table.level,
-    ),
     activeIdx: index("questions_active_idx")
       .on(table.skill, table.level)
       .where(sql`${table.isActive} = true AND ${table.deletedAt} IS NULL`),
     formatIdx: index("questions_format_idx").on(table.format),
+    createdByIdx: index("questions_created_by_idx").on(table.createdBy),
   }),
 );
 

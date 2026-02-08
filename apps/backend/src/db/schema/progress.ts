@@ -39,8 +39,7 @@ export const userProgress = pgTable(
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
-      .notNull()
-      .$onUpdate(() => new Date().toISOString()),
+      .notNull(),
   },
   (table) => ({
     userSkillUnique: uniqueIndex("user_progress_user_skill_idx").on(
@@ -98,8 +97,7 @@ export const userGoals = pgTable(
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
-      .notNull()
-      .$onUpdate(() => new Date().toISOString()),
+      .notNull(),
   },
   (table) => ({
     userIdx: index("user_goals_user_idx").on(table.userId),

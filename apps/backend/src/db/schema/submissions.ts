@@ -57,7 +57,6 @@ export const submissions = pgTable(
     score: numeric("score", { precision: 3, scale: 1, mode: "number" }),
     band: vstepBandEnum("band"),
     confidence: integer("confidence"),
-    reviewPending: boolean("review_pending").default(false),
     isLate: boolean("is_late").default(false),
     attempt: integer("attempt").default(1).notNull(),
     requestId: uuid("request_id"),
@@ -77,8 +76,7 @@ export const submissions = pgTable(
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
-      .notNull()
-      .$onUpdate(() => new Date().toISOString()),
+      .notNull(),
     completedAt: timestamp("completed_at", {
       withTimezone: true,
       mode: "string",
@@ -87,6 +85,8 @@ export const submissions = pgTable(
   },
   (table) => ({
     userIdIdx: index("submissions_user_id_idx").on(table.userId),
+    skillIdx: index("submissions_skill_idx").on(table.skill),
+    questionIdIdx: index("submissions_question_id_idx").on(table.questionId),
     statusIdx: index("submissions_status_idx").on(table.status),
     userStatusIdx: index("submissions_user_status_idx").on(
       table.userId,

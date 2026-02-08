@@ -1,5 +1,13 @@
 import { assertAccess, assertExists, now } from "@common/utils";
-import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
+import {
+  and,
+  count,
+  desc,
+  eq,
+  getTableColumns,
+  inArray,
+  sql,
+} from "drizzle-orm";
 import type { Exam } from "@/db";
 import { db, notDeleted, pagination, table } from "@/db";
 import type { Actor } from "@/plugins/auth";
@@ -7,32 +15,10 @@ import { BadRequestError } from "@/plugins/error";
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-const EXAM_COLUMNS = {
-  id: table.exams.id,
-  level: table.exams.level,
-  blueprint: table.exams.blueprint,
-  isActive: table.exams.isActive,
-  createdBy: table.exams.createdBy,
-  createdAt: table.exams.createdAt,
-  updatedAt: table.exams.updatedAt,
-} as const;
-
-const SESSION_COLUMNS = {
-  id: table.examSessions.id,
-  userId: table.examSessions.userId,
-  examId: table.examSessions.examId,
-  status: table.examSessions.status,
-  listeningScore: table.examSessions.listeningScore,
-  readingScore: table.examSessions.readingScore,
-  writingScore: table.examSessions.writingScore,
-  speakingScore: table.examSessions.speakingScore,
-  overallScore: table.examSessions.overallScore,
-  skillScores: table.examSessions.skillScores,
-  startedAt: table.examSessions.startedAt,
-  completedAt: table.examSessions.completedAt,
-  createdAt: table.examSessions.createdAt,
-  updatedAt: table.examSessions.updatedAt,
-} as const;
+const { deletedAt: _ed, ...EXAM_COLUMNS } = getTableColumns(table.exams);
+const { deletedAt: _sd, ...SESSION_COLUMNS } = getTableColumns(
+  table.examSessions,
+);
 
 /** Fetch and validate an in-progress session owned by the actor */
 async function getActiveSession(
@@ -219,7 +205,6 @@ export async function getExamSessionById(sessionId: string, actor: Actor) {
       writingScore: true,
       speakingScore: true,
       overallScore: true,
-      skillScores: true,
       startedAt: true,
       completedAt: true,
       createdAt: true,
@@ -340,6 +325,7 @@ export function autoGradeAnswers(
   let readingTotal = 0;
   const writingAnswers: { questionId: string; answer: unknown }[] = [];
   const speakingAnswers: { questionId: string; answer: unknown }[] = [];
+  const correctnessMap = new Map<string, boolean>();
 
   for (const ea of examAnswers) {
     const question = questionsMap.get(ea.questionId);
@@ -353,11 +339,18 @@ export function autoGradeAnswers(
           ?.correctAnswers ?? {};
       const userAnswers = (ea.answer ?? {}) as Record<string, string>;
 
+      let qCorrect = 0;
+      let qTotal = 0;
+
       for (const [key, correctValue] of Object.entries(correctAnswers)) {
         const userValue = userAnswers[key];
         const isCorrect =
           userValue != null &&
           userValue.trim().toLowerCase() === correctValue.trim().toLowerCase();
+
+        qTotal++;
+        if (isCorrect) qCorrect++;
+
         if (skill === "listening") {
           listeningTotal++;
           if (isCorrect) listeningCorrect++;
@@ -366,6 +359,8 @@ export function autoGradeAnswers(
           if (isCorrect) readingCorrect++;
         }
       }
+
+      correctnessMap.set(ea.questionId, qTotal > 0 && qCorrect === qTotal);
     } else if (skill === "writing") {
       writingAnswers.push(ea);
     } else if (skill === "speaking") {
@@ -380,12 +375,23 @@ export function autoGradeAnswers(
     readingTotal,
     writingAnswers,
     speakingAnswers,
+    correctnessMap,
   };
 }
 
 /** Calculate score: (correct / total) * 10, rounded to nearest 0.5 */
 export function calculateScore(correct: number, total: number): number | null {
   return total === 0 ? null : Math.round((correct / total) * 10 * 2) / 2;
+}
+
+/** Calculate overall score: average of all 4 skill scores, rounded to nearest 0.5. Returns null if any score is missing. */
+export function calculateOverallScore(
+  scores: (number | null)[],
+): number | null {
+  if (scores.length === 0 || scores.some((s) => s === null)) return null;
+  const valid = scores as number[];
+  const avg = valid.reduce((sum, s) => sum + s, 0) / valid.length;
+  return Math.round(avg * 2) / 2;
 }
 
 /** Submit exam: auto-grade listening/reading, create submissions for writing/speaking */
@@ -427,6 +433,38 @@ export async function submitExam(sessionId: string, actor: Actor) {
     // Auto-grade listening/reading, collect writing/speaking
     const gradeResult = autoGradeAnswers(answers, questionsMap);
 
+    // Persist isCorrect on objective answers
+    if (gradeResult.correctnessMap.size > 0) {
+      const correctIds: string[] = [];
+      const incorrectIds: string[] = [];
+      for (const [qId, correct] of gradeResult.correctnessMap) {
+        if (correct) correctIds.push(qId);
+        else incorrectIds.push(qId);
+      }
+      if (correctIds.length > 0) {
+        await tx
+          .update(table.examAnswers)
+          .set({ isCorrect: true })
+          .where(
+            and(
+              eq(table.examAnswers.sessionId, sessionId),
+              inArray(table.examAnswers.questionId, correctIds),
+            ),
+          );
+      }
+      if (incorrectIds.length > 0) {
+        await tx
+          .update(table.examAnswers)
+          .set({ isCorrect: false })
+          .where(
+            and(
+              eq(table.examAnswers.sessionId, sessionId),
+              inArray(table.examAnswers.questionId, incorrectIds),
+            ),
+          );
+      }
+    }
+
     // Calculate scores
     const listeningScore = calculateScore(
       gradeResult.listeningCorrect,
@@ -436,6 +474,12 @@ export async function submitExam(sessionId: string, actor: Actor) {
       gradeResult.readingCorrect,
       gradeResult.readingTotal,
     );
+    const overallScore = calculateOverallScore([
+      listeningScore,
+      readingScore,
+      null, // writing: pending grading
+      null, // speaking: pending grading
+    ]);
 
     // Batch create submissions for writing/speaking answers
     const pendingAnswers = [
@@ -491,6 +535,7 @@ export async function submitExam(sessionId: string, actor: Actor) {
       .set({
         listeningScore,
         readingScore,
+        overallScore,
         status: finalStatus,
         completedAt: timestamp,
         updatedAt: timestamp,
