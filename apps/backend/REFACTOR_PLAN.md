@@ -222,15 +222,15 @@ Thay `t.Any()` bằng TypeBox schemas cụ thể, validate ở HTTP request laye
 
 ## Phase 3: Pattern — Static Class → Plain Functions (HIGH)
 
-- [ ] **3.1** Chuyển 7 service files sang plain functions (`db` as parameter with default)
+- [x] **3.1** Chuyển 7 service files sang plain functions (`db` as parameter with default)
   - Cập nhật route files import tương ứng.
 
-- [ ] **3.2** Bỏ biome override `noStaticOnlyClass` — `biome.json`
+- [x] **3.2** Bỏ biome override `noStaticOnlyClass` — `biome.json`
 
-- [ ] **3.3** Bỏ namespace pattern trong model.ts → prefix
+- [x] **3.3** Bỏ namespace pattern trong model.ts → prefix
   - `AuthModel.LoginBody` → `AuthLoginBody`, etc.
 
-- [ ] **3.4** Export pure functions riêng để test
+- [x] **3.4** Export pure functions riêng để test
   - `scoreToBand`, `validateTransition`, `computeTrend`, `parseExpiry`, `hashToken`
 
 ---

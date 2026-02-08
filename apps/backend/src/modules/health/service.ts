@@ -56,24 +56,22 @@ async function checkRabbitMQ(): Promise<Status> {
   }
 }
 
-export class HealthService {
-  static async check(): Promise<HealthResult> {
-    const [dbStatus, redisStatus, rabbitmqStatus] = await Promise.all([
-      checkPostgres(),
-      checkRedis(),
-      checkRabbitMQ(),
-    ]);
+export async function checkHealth(): Promise<HealthResult> {
+  const [dbStatus, redisStatus, rabbitmqStatus] = await Promise.all([
+    checkPostgres(),
+    checkRedis(),
+    checkRabbitMQ(),
+  ]);
 
-    const services: Record<string, Status> = {
-      db: dbStatus,
-      redis: redisStatus,
-      rabbitmq: rabbitmqStatus,
-    };
+  const services: Record<string, Status> = {
+    db: dbStatus,
+    redis: redisStatus,
+    rabbitmq: rabbitmqStatus,
+  };
 
-    const allOk = Object.values(services).every(
-      (s) => s === "ok" || s === "unavailable",
-    );
+  const allOk = Object.values(services).every(
+    (s) => s === "ok" || s === "unavailable",
+  );
 
-    return { status: allOk ? "ok" : "degraded", services };
-  }
+  return { status: allOk ? "ok" : "degraded", services };
 }

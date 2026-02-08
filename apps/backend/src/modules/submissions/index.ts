@@ -10,8 +10,21 @@ import {
 import { Elysia, t } from "elysia";
 import { AutoGradeResult } from "@/modules/questions/content-schemas";
 import { authPlugin } from "@/plugins/auth";
-import { SubmissionModel } from "./model";
-import { SubmissionService } from "./service";
+import {
+  SubmissionCreateBody,
+  SubmissionGradeBody,
+  SubmissionUpdateBody,
+  SubmissionWithDetailsSchema,
+} from "./model";
+import {
+  autoGradeSubmission,
+  createSubmission,
+  getSubmissionById,
+  gradeSubmission,
+  listSubmissions,
+  removeSubmission,
+  updateSubmission,
+} from "./service";
 
 export const submissions = new Elysia({
   prefix: "/submissions",
@@ -19,7 +32,7 @@ export const submissions = new Elysia({
 })
   .use(authPlugin)
 
-  .get("/", ({ query, user }) => SubmissionService.list(query, user), {
+  .get("/", ({ query, user }) => listSubmissions(query, user), {
     auth: true,
     query: t.Object({
       ...PaginationQuery.properties,
@@ -29,7 +42,7 @@ export const submissions = new Elysia({
     }),
     response: {
       200: t.Object({
-        data: t.Array(SubmissionModel.SubmissionWithDetails),
+        data: t.Array(SubmissionWithDetailsSchema),
         meta: PaginationMeta,
       }),
       ...AuthErrors,
@@ -40,34 +53,30 @@ export const submissions = new Elysia({
     },
   })
 
-  .get(
-    "/:id",
-    ({ params, user }) => SubmissionService.getById(params.id, user),
-    {
-      auth: true,
-      params: IdParam,
-      response: {
-        200: SubmissionModel.SubmissionWithDetails,
-        ...CrudErrors,
-      },
-      detail: {
-        summary: "Get submission",
-        description: "Get a submission by ID",
-      },
+  .get("/:id", ({ params, user }) => getSubmissionById(params.id, user), {
+    auth: true,
+    params: IdParam,
+    response: {
+      200: SubmissionWithDetailsSchema,
+      ...CrudErrors,
     },
-  )
+    detail: {
+      summary: "Get submission",
+      description: "Get a submission by ID",
+    },
+  })
 
   .post(
     "/",
     ({ body, user, set }) => {
       set.status = 201;
-      return SubmissionService.create(user.sub, body);
+      return createSubmission(user.sub, body);
     },
     {
       auth: true,
-      body: SubmissionModel.CreateBody,
+      body: SubmissionCreateBody,
       response: {
-        201: SubmissionModel.SubmissionWithDetails,
+        201: SubmissionWithDetailsSchema,
         400: ErrorResponse,
         ...CrudErrors,
         422: ErrorResponse,
@@ -81,13 +90,13 @@ export const submissions = new Elysia({
 
   .patch(
     "/:id",
-    ({ params, body, user }) => SubmissionService.update(params.id, user, body),
+    ({ params, body, user }) => updateSubmission(params.id, user, body),
     {
       auth: true,
       params: IdParam,
-      body: SubmissionModel.UpdateBody,
+      body: SubmissionUpdateBody,
       response: {
-        200: SubmissionModel.SubmissionWithDetails,
+        200: SubmissionWithDetailsSchema,
         400: ErrorResponse,
         ...CrudErrors,
         422: ErrorResponse,
@@ -99,58 +108,46 @@ export const submissions = new Elysia({
     },
   )
 
-  .post(
-    "/:id/grade",
-    ({ params, body }) => SubmissionService.grade(params.id, body),
-    {
-      role: "instructor",
-      params: IdParam,
-      body: SubmissionModel.GradeBody,
-      response: {
-        200: SubmissionModel.SubmissionWithDetails,
-        ...CrudErrors,
-        422: ErrorResponse,
-      },
-      detail: {
-        summary: "Grade submission",
-        description: "Grade a submission (instructor/admin only)",
-      },
+  .post("/:id/grade", ({ params, body }) => gradeSubmission(params.id, body), {
+    role: "instructor",
+    params: IdParam,
+    body: SubmissionGradeBody,
+    response: {
+      200: SubmissionWithDetailsSchema,
+      ...CrudErrors,
+      422: ErrorResponse,
     },
-  )
+    detail: {
+      summary: "Grade submission",
+      description: "Grade a submission (instructor/admin only)",
+    },
+  })
 
-  .post(
-    "/:id/auto-grade",
-    ({ params }) => SubmissionService.autoGrade(params.id),
-    {
-      role: "admin",
-      params: IdParam,
-      response: {
-        200: t.Object({
-          score: t.Number(),
-          result: AutoGradeResult,
-        }),
-        ...CrudErrors,
-      },
-      detail: {
-        summary: "Auto-grade submission",
-        description: "Auto-grade an objective submission (admin only)",
-      },
+  .post("/:id/auto-grade", ({ params }) => autoGradeSubmission(params.id), {
+    role: "admin",
+    params: IdParam,
+    response: {
+      200: t.Object({
+        score: t.Number(),
+        result: AutoGradeResult,
+      }),
+      ...CrudErrors,
     },
-  )
+    detail: {
+      summary: "Auto-grade submission",
+      description: "Auto-grade an objective submission (admin only)",
+    },
+  })
 
-  .delete(
-    "/:id",
-    ({ params, user }) => SubmissionService.remove(params.id, user),
-    {
-      auth: true,
-      params: IdParam,
-      response: {
-        200: t.Object({ id: t.String({ format: "uuid" }) }),
-        ...CrudErrors,
-      },
-      detail: {
-        summary: "Delete submission",
-        description: "Soft delete a submission",
-      },
+  .delete("/:id", ({ params, user }) => removeSubmission(params.id, user), {
+    auth: true,
+    params: IdParam,
+    response: {
+      200: t.Object({ id: t.String({ format: "uuid" }) }),
+      ...CrudErrors,
     },
-  );
+    detail: {
+      summary: "Delete submission",
+      description: "Soft delete a submission",
+    },
+  });

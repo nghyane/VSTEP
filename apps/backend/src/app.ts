@@ -4,7 +4,7 @@ import { openapi } from "@elysiajs/openapi";
 import { Elysia } from "elysia";
 import { auth } from "@/modules/auth";
 import { exams } from "@/modules/exams";
-import { HealthService } from "@/modules/health/service";
+import { checkHealth } from "@/modules/health/service";
 import { progress } from "@/modules/progress";
 import { questions } from "@/modules/questions";
 import { submissions } from "@/modules/submissions";
@@ -56,7 +56,7 @@ export const app = new Elysia()
       credentials: true,
     }),
   )
-  .get("/health", () => HealthService.check(), {
+  .get("/health", () => checkHealth(), {
     detail: { tags: ["Health"], summary: "Health check" },
   })
   .use(api);
