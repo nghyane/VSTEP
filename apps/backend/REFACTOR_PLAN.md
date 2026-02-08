@@ -231,15 +231,12 @@ Prefix = tên module (`Auth`, `User`, `Exam`, `Question`, `Submission`, `Progres
 ### 4.2 Xóa index thừa
 - `questions_skill_level_idx` — trùng với `questions_active_idx` (cùng `skill, level`).
 
-### 4.3 Xóa 10 unused columns trong `submissions`
-Các columns khai báo nhưng **không có service nào đọc/ghi**:
-- `confidence`, `reviewPending`, `isLate`, `requestId`
-- `reviewPriority`, `reviewerId`, `gradingMode`
-- `auditFlag`, `claimedBy`, `claimedAt`
+### 4.3 Cleanup unused columns trong `submissions`
+Grading service sẽ xây dựng sau → **giữ lại** columns phục vụ grading/review:
+- **Giữ**: `confidence`, `reviewPriority`, `reviewerId`, `gradingMode`, `claimedBy`, `claimedAt`
+- **Xóa**: `requestId` (never set, unique index vô nghĩa), `auditFlag` (never read/write), `isLate` (never set), `reviewPending` (trùng với `status = 'review_pending'`)
 
-Cũng xóa `submissions_request_id_unique` index (never used).
-
-> **Lưu ý**: Nếu team plan dùng cho human review queue → giữ lại `reviewPriority`, `reviewerId`, `claimedBy`, `claimedAt`, `gradingMode`. Cần confirm với team.
+Xóa `submissions_request_id_unique` index.
 
 ### 4.4 Xóa/persist `examAnswers.isCorrect`
 - Column `isCorrect` không bao giờ được set. `autoGradeAnswers()` tính in-memory nhưng không persist.
@@ -312,16 +309,15 @@ async function countWhere(tbl, where, database = db) {
 - `getSpiderChart()` line 104-116: query `userSkillScores` không filter deleted.
 - **Fix**: Thêm filter hoặc join với users để đảm bảo user chưa bị xóa.
 
-### 6.4 Outbox schema — dead code
-- `src/db/schema/outbox.ts` + `processedCallbacks` + relations: không có service nào dùng.
-- **Quyết định**: Giữ nếu grading service sẽ dùng. Xóa nếu không.
+### 6.4 Outbox schema — giữ cho grading service
+- `src/db/schema/outbox.ts` + `processedCallbacks` + relations: chưa có service nào dùng.
+- **Giữ lại** — grading service sẽ dùng outbox pattern để gửi submission tới AI grading.
 
 ### 6.5 Dead error classes
 - **File**: `src/plugins/error.ts`
-- `RateLimitError` (line 74): khai báo nhưng **không import/throw ở bất kỳ đâu**.
-- `ValidationError` (line 68): khai báo nhưng không throw — Elysia xử lý validation qua built-in `VALIDATION` code.
-- `InternalError` (line 83): khai báo nhưng không throw — error handler tự trả 500.
-- **Fix**: Xóa 3 class này hoặc giữ nếu plan dùng (rate limiting sẽ dùng `RateLimitError`).
+- `RateLimitError` (line 74): **giữ** — sẽ dùng khi thêm rate limiting.
+- `ValidationError` (line 68): xóa — Elysia xử lý validation qua built-in `VALIDATION` code.
+- `InternalError` (line 83): xóa — error handler tự trả 500.
 
 ### 6.6 Unused dependency `drizzle-typebox`
 - **File**: `package.json:31`
