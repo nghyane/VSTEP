@@ -141,12 +141,16 @@ export class ExamService {
       isActive: boolean;
     }>,
   ) {
+    const updateValues: Partial<typeof table.exams.$inferInsert> = {
+      updatedAt: now(),
+    };
+    if (body.level !== undefined) updateValues.level = body.level;
+    if (body.blueprint !== undefined) updateValues.blueprint = body.blueprint;
+    if (body.isActive !== undefined) updateValues.isActive = body.isActive;
+
     const [exam] = await db
       .update(table.exams)
-      .set({
-        ...body,
-        updatedAt: now(),
-      })
+      .set(updateValues)
       .where(and(eq(table.exams.id, id), notDeleted(table.exams)))
       .returning(EXAM_COLUMNS);
 
@@ -335,12 +339,17 @@ export class ExamService {
         const userAnswers = (ea.answer ?? {}) as Record<string, string>;
 
         for (const [key, correctValue] of Object.entries(correctAnswers)) {
+          const userValue = userAnswers[key];
+          const isCorrect =
+            userValue != null &&
+            userValue.trim().toLowerCase() ===
+              correctValue.trim().toLowerCase();
           if (skill === "listening") {
             listeningTotal++;
-            if (userAnswers[key] === correctValue) listeningCorrect++;
+            if (isCorrect) listeningCorrect++;
           } else {
             readingTotal++;
-            if (userAnswers[key] === correctValue) readingCorrect++;
+            if (isCorrect) readingCorrect++;
           }
         }
       } else if (skill === "writing") {

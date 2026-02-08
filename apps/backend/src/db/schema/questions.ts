@@ -9,9 +9,8 @@ import {
   timestamp,
   uniqueIndex,
   uuid,
-  varchar,
 } from "drizzle-orm/pg-core";
-import { skillEnum } from "./submissions";
+import { skillEnum } from "./enums";
 import { users } from "./users";
 
 export const questionFormatEnum = pgEnum("question_format", [

@@ -9,8 +9,9 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import { skillEnum, vstepBandEnum } from "./enums";
 import { questionLevelEnum } from "./questions";
-import { skillEnum, submissions, vstepBandEnum } from "./submissions";
+import { submissions } from "./submissions";
 import { users } from "./users";
 
 export const streakDirectionEnum = pgEnum("streak_direction", [

@@ -1,7 +1,7 @@
+import { hashPassword, verifyPassword } from "@common/password";
 import { assertAccess, assertExists, escapeLike, now } from "@common/utils";
 import { and, count, eq, ilike, ne, type SQL } from "drizzle-orm";
 import { db, notDeleted, pagination, table } from "@/db";
-import { AuthService } from "@/modules/auth/service";
 import type { Actor } from "@/plugins/auth";
 import {
   ConflictError,
@@ -93,7 +93,7 @@ export class UserService {
       throw new ConflictError("Email already registered");
     }
 
-    const passwordHash = await AuthService.hashPassword(body.password);
+    const passwordHash = await hashPassword(body.password);
 
     const [user] = await db
       .insert(table.users)
@@ -218,7 +218,7 @@ export class UserService {
       "User",
     );
 
-    const isValid = await AuthService.verifyPassword(
+    const isValid = await verifyPassword(
       body.currentPassword,
       user.passwordHash,
     );
@@ -227,7 +227,7 @@ export class UserService {
       throw new UnauthorizedError("Current password is incorrect");
     }
 
-    const newPasswordHash = await AuthService.hashPassword(body.newPassword);
+    const newPasswordHash = await hashPassword(body.newPassword);
 
     await db
       .update(table.users)

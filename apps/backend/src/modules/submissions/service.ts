@@ -29,6 +29,7 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   pending: ["queued", "failed"],
   queued: ["processing", "failed"],
   processing: ["completed", "review_pending", "error", "failed"],
+  // biome-ignore lint/style/useNamingConvention: must match DB enum value
   review_pending: ["completed"],
   error: ["retrying"],
   retrying: ["processing", "failed"],
@@ -377,6 +378,7 @@ export class SubmissionService {
       const [row] = await tx
         .select({
           id: table.submissions.id,
+          status: table.submissions.status,
           skill: table.submissions.skill,
           answerKey: table.questions.answerKey,
           correctCount: sql<number>`(
@@ -404,6 +406,12 @@ export class SubmissionService {
         .limit(1);
 
       const data = assertExists(row, "Submission");
+
+      if (data.status === "completed" || data.status === "failed") {
+        throw new BadRequestError(
+          `Cannot auto-grade a submission with status "${data.status}"`,
+        );
+      }
 
       if (data.skill !== "listening" && data.skill !== "reading") {
         throw new BadRequestError(

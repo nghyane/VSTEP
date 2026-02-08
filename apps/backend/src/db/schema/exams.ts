@@ -10,8 +10,9 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import { skillEnum } from "./enums";
 import { questionLevelEnum, questions } from "./questions";
-import { skillEnum, submissions } from "./submissions";
+import { submissions } from "./submissions";
 import { users } from "./users";
 
 export const examStatusEnum = pgEnum("exam_status", [

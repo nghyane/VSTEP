@@ -47,7 +47,16 @@ const api = new Elysia({ prefix: "/api" })
 /** Root app — health check outside /api, everything else inside */
 export const app = new Elysia()
   .use(errorPlugin)
-  .use(cors())
+  .use(
+    cors({
+      origin: env.ALLOWED_ORIGINS
+        ? env.ALLOWED_ORIGINS.split(",")
+        : env.NODE_ENV === "production"
+          ? []
+          : true,
+      credentials: true,
+    }),
+  )
   .get("/health", () => HealthService.check(), {
     detail: { tags: ["Health"], summary: "Health check" },
   })
