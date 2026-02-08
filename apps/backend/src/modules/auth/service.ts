@@ -10,20 +10,9 @@ import {
   isUniqueViolation,
   UnauthorizedError,
 } from "@/plugins/error";
-import type { AuthUserInfo } from "./model";
+import type { AuthLoginBody, AuthRegisterBody, AuthUserInfo } from "./model";
 
-if (!env.JWT_SECRET) throw new Error("JWT_SECRET is required");
-if (!env.JWT_EXPIRES_IN) throw new Error("JWT_EXPIRES_IN is required");
-if (!env.JWT_REFRESH_EXPIRES_IN)
-  throw new Error("JWT_REFRESH_EXPIRES_IN is required");
-
-const ACCESS_SECRET = new TextEncoder().encode(env.JWT_SECRET);
-const JWT_EXPIRES_IN: string = env.JWT_EXPIRES_IN;
-const JWT_REFRESH_EXPIRES_IN: string = env.JWT_REFRESH_EXPIRES_IN;
-
-const MAX_REFRESH_TOKENS = 3;
-
-type UserInfo = AuthUserInfo;
+// ── Pure helpers (exported for testing) ──────────────────────────────
 
 export function hashToken(token: string): string {
   const hasher = new Bun.CryptoHasher("sha256");
@@ -49,19 +38,35 @@ export function parseExpiry(str: string): number {
   }
 }
 
-export async function signAccessToken(payload: JWTPayload): Promise<string> {
+// ── Internal ────────────────────────────────────────────────────────
+
+const ACCESS_SECRET = new TextEncoder().encode(env.JWT_SECRET);
+const MAX_REFRESH_TOKENS = 3;
+
+async function signAccessToken(payload: JWTPayload): Promise<string> {
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: "HS256" })
-    .setExpirationTime(JWT_EXPIRES_IN)
+    .setExpirationTime(env.JWT_EXPIRES_IN)
     .sign(ACCESS_SECRET);
 }
 
-export async function login(body: {
-  email: string;
-  password: string;
-  deviceInfo?: string;
-}): Promise<{ user: UserInfo; refreshToken: string; jti: string }> {
-  const user = await db.query.users.findFirst({
+function buildTokenResponse(
+  user: AuthUserInfo,
+  accessToken: string,
+  refreshToken: string,
+) {
+  return {
+    user,
+    accessToken,
+    refreshToken,
+    expiresIn: parseExpiry(env.JWT_EXPIRES_IN),
+  };
+}
+
+// ── Public API ──────────────────────────────────────────────────────
+
+export async function login(body: AuthLoginBody, deviceInfo?: string) {
+  const row = await db.query.users.findFirst({
     where: and(
       eq(table.users.email, body.email),
       isNull(table.users.deletedAt),
@@ -75,20 +80,19 @@ export async function login(body: {
     },
   });
 
-  if (!user) throw new UnauthorizedError("Invalid email or password");
+  if (!row) throw new UnauthorizedError("Invalid email or password");
 
-  const isValid = await verifyPassword(body.password, user.passwordHash);
+  const isValid = await verifyPassword(body.password, row.passwordHash);
   if (!isValid) throw new UnauthorizedError("Invalid email or password");
 
   const newRefreshToken = crypto.randomUUID();
   const jti = crypto.randomUUID();
-  const refreshExpirySeconds = parseExpiry(JWT_REFRESH_EXPIRES_IN);
+  const refreshExpirySeconds = parseExpiry(env.JWT_REFRESH_EXPIRES_IN);
 
   await db.transaction(async (tx) => {
-    // Enforce max 3 active refresh tokens per user (FIFO — revoke oldest)
     const activeTokens = await tx.query.refreshTokens.findMany({
       where: and(
-        eq(table.refreshTokens.userId, user.id),
+        eq(table.refreshTokens.userId, row.id),
         isNull(table.refreshTokens.revokedAt),
         gt(table.refreshTokens.expiresAt, now()),
       ),
@@ -109,33 +113,33 @@ export async function login(body: {
     }
 
     await tx.insert(table.refreshTokens).values({
-      userId: user.id,
+      userId: row.id,
       tokenHash: hashToken(newRefreshToken),
       jti,
-      deviceInfo: body.deviceInfo,
+      deviceInfo,
       expiresAt: new Date(
         Date.now() + refreshExpirySeconds * 1000,
       ).toISOString(),
     });
   });
 
-  return {
-    user: {
-      id: user.id,
-      email: user.email,
-      fullName: user.fullName,
-      role: user.role,
-    },
-    refreshToken: newRefreshToken,
-    jti,
+  const user: AuthUserInfo = {
+    id: row.id,
+    email: row.email,
+    fullName: row.fullName,
+    role: row.role,
   };
+
+  const accessToken = await signAccessToken({
+    sub: row.id,
+    role: row.role,
+    jti,
+  });
+
+  return buildTokenResponse(user, accessToken, newRefreshToken);
 }
 
-export async function register(body: {
-  email: string;
-  password: string;
-  fullName?: string;
-}): Promise<{ user: UserInfo; message: string }> {
+export async function register(body: AuthRegisterBody) {
   const passwordHash = await hashPassword(body.password);
 
   try {
@@ -166,14 +170,10 @@ export async function register(body: {
   }
 }
 
-export async function refreshToken(
-  token: string,
-  deviceInfo?: string,
-): Promise<{ user: UserInfo; newRefreshToken: string; jti: string }> {
-  const hash = hashToken(token);
+export async function refresh(refreshToken: string, deviceInfo?: string) {
+  const hash = hashToken(refreshToken);
 
   return db.transaction(async (tx) => {
-    // Find the token record by hash (regardless of revoked status)
     const tokenRecord = await tx.query.refreshTokens.findFirst({
       where: eq(table.refreshTokens.tokenHash, hash),
       columns: {
@@ -190,9 +190,7 @@ export async function refreshToken(
       throw new UnauthorizedError("Invalid refresh token");
     }
 
-    // Reuse detection: token already revoked → compromise detected
     if (tokenRecord.revokedAt || tokenRecord.replacedByJti) {
-      // Revoke ALL tokens for this user (token family attack)
       await tx
         .update(table.refreshTokens)
         .set({ revokedAt: now() })
@@ -207,7 +205,6 @@ export async function refreshToken(
       );
     }
 
-    // Token expired
     if (new Date(tokenRecord.expiresAt) <= new Date()) {
       throw new UnauthorizedError("Refresh token expired");
     }
@@ -222,10 +219,9 @@ export async function refreshToken(
 
     if (!user) throw new UnauthorizedError("User not found");
 
-    // Rotate: revoke old, issue new
     const newRefreshToken = crypto.randomUUID();
     const newJti = crypto.randomUUID();
-    const refreshExpirySeconds = parseExpiry(JWT_REFRESH_EXPIRES_IN);
+    const refreshExpirySeconds = parseExpiry(env.JWT_REFRESH_EXPIRES_IN);
 
     await tx
       .update(table.refreshTokens)
@@ -242,24 +238,21 @@ export async function refreshToken(
       ).toISOString(),
     });
 
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
-        role: user.role,
-      },
-      newRefreshToken,
+    const accessToken = await signAccessToken({
+      sub: user.id,
+      role: user.role,
       jti: newJti,
-    };
+    });
+
+    return buildTokenResponse(user, accessToken, newRefreshToken);
   });
 }
 
-export async function logout(token: string): Promise<{ message: string }> {
+export async function logout(refreshToken: string) {
   await db
     .update(table.refreshTokens)
     .set({ revokedAt: now() })
-    .where(eq(table.refreshTokens.tokenHash, hashToken(token)));
+    .where(eq(table.refreshTokens.tokenHash, hashToken(refreshToken)));
 
   return { message: "Logged out successfully" };
 }

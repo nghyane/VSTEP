@@ -41,7 +41,15 @@ export const UserPasswordBody = t.Object({
   }),
 });
 
+export const UserListQuery = t.Object({
+  page: t.Optional(t.Number({ minimum: 1, default: 1 })),
+  limit: t.Optional(t.Number({ minimum: 1, maximum: 100, default: 20 })),
+  role: t.Optional(UserRole),
+  search: t.Optional(t.String()),
+});
+
 export type UserSchema = typeof UserSchema.static;
 export type UserCreateBody = typeof UserCreateBody.static;
 export type UserUpdateBody = typeof UserUpdateBody.static;
 export type UserPasswordBody = typeof UserPasswordBody.static;
+export type UserListQuery = typeof UserListQuery.static;

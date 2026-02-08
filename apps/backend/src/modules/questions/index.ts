@@ -1,16 +1,15 @@
-import { QuestionFormat, QuestionLevel, Skill } from "@common/enums";
 import {
   AuthErrors,
   CrudErrors,
   ErrorResponse,
   IdParam,
   PaginationMeta,
-  PaginationQuery,
 } from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import {
   QuestionCreateBody,
+  QuestionListQuery,
   QuestionSchema,
   QuestionUpdateBody,
   QuestionVersionBody,
@@ -37,14 +36,7 @@ export const questions = new Elysia({
 
   .get("/", ({ query, user }) => listQuestions(query, user), {
     auth: true,
-    query: t.Object({
-      ...PaginationQuery.properties,
-      skill: t.Optional(Skill),
-      level: t.Optional(QuestionLevel),
-      format: t.Optional(QuestionFormat),
-      isActive: t.Optional(t.Boolean()),
-      search: t.Optional(t.String()),
-    }),
+    query: QuestionListQuery,
     response: {
       200: t.Object({
         data: t.Array(QuestionSchema),
@@ -96,7 +88,7 @@ export const questions = new Elysia({
 
   .patch(
     "/:id",
-    ({ params, body, user }) => updateQuestion(params.id, user, body),
+    ({ params, body, user }) => updateQuestion(params.id, body, user),
     {
       role: "instructor",
       params: IdParam,
@@ -109,7 +101,7 @@ export const questions = new Elysia({
       },
       detail: {
         summary: "Update question",
-        description: "Update a question",
+        description: "Update a question by ID",
       },
     },
   )
@@ -118,7 +110,7 @@ export const questions = new Elysia({
     "/:id/versions",
     ({ params, body, user, set }) => {
       set.status = 201;
-      return createQuestionVersion(params.id, user, body);
+      return createQuestionVersion(params.id, body, user);
     },
     {
       role: "instructor",
@@ -180,7 +172,10 @@ export const questions = new Elysia({
     role: "admin",
     params: IdParam,
     response: {
-      200: t.Object({ id: t.String({ format: "uuid" }) }),
+      200: t.Object({
+        id: t.String({ format: "uuid" }),
+        deletedAt: t.String({ format: "date-time" }),
+      }),
       ...CrudErrors,
     },
     detail: {

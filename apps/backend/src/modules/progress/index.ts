@@ -22,22 +22,31 @@ export const progress = new Elysia({
   .get("/", ({ user }) => getProgressOverview(user.sub), {
     auth: true,
     response: { 200: ProgressOverviewResponse, ...AuthErrors },
-    detail: { summary: "Get progress overview (all skills)" },
+    detail: {
+      summary: "Get progress overview",
+      description: "Get progress overview for all skills",
+    },
   })
 
   .get("/spider-chart", ({ user }) => getSpiderChart(user.sub), {
     auth: true,
     response: { 200: ProgressSpiderChartResponse, ...AuthErrors },
-    detail: { summary: "Get spider chart data for all skills" },
+    detail: {
+      summary: "Get spider chart",
+      description: "Get spider chart data for all skills",
+    },
   })
 
   .get(
     "/:skill",
-    ({ params: { skill }, user }) => getProgressBySkill(skill, user.sub),
+    ({ params, user }) => getProgressBySkill(user.sub, params.skill),
     {
       auth: true,
       params: t.Object({ skill: Skill }),
       response: { 200: ProgressSkillDetailResponse, ...AuthErrors },
-      detail: { summary: "Get progress for a specific skill" },
+      detail: {
+        summary: "Get skill progress",
+        description: "Get detailed progress for a specific skill",
+      },
     },
   );

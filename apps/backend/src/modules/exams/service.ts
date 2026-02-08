@@ -9,14 +9,15 @@ import {
   inArray,
   sql,
 } from "drizzle-orm";
-import type { DbTransaction, Exam } from "@/db";
-import { db, notDeleted, pagination, table } from "@/db";
+import type { DbTransaction } from "@/db";
+import { db, notDeleted, omitColumns, pagination, table } from "@/db";
 import {
   ObjectiveAnswer,
   ObjectiveAnswerKey,
 } from "@/modules/questions/content-schemas";
 import type { Actor } from "@/plugins/auth";
 import { BadRequestError } from "@/plugins/error";
+import type { ExamCreateBody, ExamListQuery, ExamUpdateBody } from "./model";
 
 function parseAnswerKey(raw: unknown): Record<string, string> {
   if (Value.Check(ObjectiveAnswerKey, raw)) return raw.correctAnswers;
@@ -35,12 +36,15 @@ function parseUserAnswer(raw: unknown): Record<string, string> {
   return {};
 }
 
-const { deletedAt: _examDeletedAt, ...EXAM_COLUMNS } = getTableColumns(
-  table.exams,
-);
-const { deletedAt: _sessionDeletedAt, ...SESSION_COLUMNS } = getTableColumns(
-  table.examSessions,
-);
+const EXAM_COLUMNS = omitColumns(getTableColumns(table.exams), ["deletedAt"]);
+const SESSION_COLUMNS = omitColumns(getTableColumns(table.examSessions), [
+  "deletedAt",
+]);
+
+/** Derive a { key: true } columns object from SESSION_COLUMNS keys for relational queries */
+const SESSION_QUERY_COLUMNS = Object.fromEntries(
+  Object.keys(SESSION_COLUMNS).map((k) => [k, true] as const),
+) as { [K in keyof typeof SESSION_COLUMNS]: true };
 
 /** Fetch and validate an in-progress session owned by the actor */
 async function getActiveSession(
@@ -87,12 +91,7 @@ export async function getExamById(id: string) {
   return assertExists(exam, "Exam");
 }
 
-export async function listExams(query: {
-  page?: number;
-  limit?: number;
-  level?: Exam["level"];
-  isActive?: boolean;
-}) {
+export async function listExams(query: ExamListQuery) {
   const pg = pagination(query.page, query.limit);
 
   const conditions = [notDeleted(table.exams)];
@@ -102,31 +101,28 @@ export async function listExams(query: {
 
   const whereClause = and(...conditions);
 
-  const [countResult] = await db
-    .select({ count: count() })
-    .from(table.exams)
-    .where(whereClause);
-
-  const total = countResult?.count ?? 0;
-
-  const exams = await db
-    .select(EXAM_COLUMNS)
-    .from(table.exams)
-    .where(whereClause)
-    .orderBy(desc(table.exams.createdAt))
-    .limit(pg.limit)
-    .offset(pg.offset);
+  const [countResult, exams] = await Promise.all([
+    db
+      .select({ count: count() })
+      .from(table.exams)
+      .where(whereClause)
+      .then(([row]) => row?.count ?? 0),
+    db
+      .select(EXAM_COLUMNS)
+      .from(table.exams)
+      .where(whereClause)
+      .orderBy(desc(table.exams.createdAt))
+      .limit(pg.limit)
+      .offset(pg.offset),
+  ]);
 
   return {
     data: exams,
-    meta: pg.meta(total),
+    meta: pg.meta(countResult),
   };
 }
 
-export async function createExam(
-  userId: string,
-  body: { level: Exam["level"]; blueprint: unknown; isActive?: boolean },
-) {
+export async function createExam(userId: string, body: ExamCreateBody) {
   const [exam] = await db
     .insert(table.exams)
     .values({
@@ -140,14 +136,7 @@ export async function createExam(
   return assertExists(exam, "Exam");
 }
 
-export async function updateExam(
-  id: string,
-  body: Partial<{
-    level: Exam["level"];
-    blueprint: unknown;
-    isActive: boolean;
-  }>,
-) {
+export async function updateExam(id: string, body: ExamUpdateBody) {
   const updateValues: Partial<typeof table.exams.$inferInsert> = {
     updatedAt: now(),
   };
@@ -166,14 +155,10 @@ export async function updateExam(
 
 export async function startExamSession(userId: string, examId: string) {
   return db.transaction(async (tx) => {
-    const [examRow] = await tx
-      .select({
-        id: table.exams.id,
-        isActive: table.exams.isActive,
-      })
-      .from(table.exams)
-      .where(and(eq(table.exams.id, examId), notDeleted(table.exams)))
-      .limit(1);
+    const examRow = await db.query.exams.findFirst({
+      where: and(eq(table.exams.id, examId), notDeleted(table.exams)),
+      columns: { id: true, isActive: true },
+    });
 
     const exam = assertExists(examRow, "Exam");
     if (!exam.isActive) {
@@ -211,11 +196,6 @@ export async function startExamSession(userId: string, examId: string) {
   });
 }
 
-/** Derive a { key: true } columns object from SESSION_COLUMNS keys for findFirst/findMany */
-const SESSION_QUERY_COLUMNS = Object.fromEntries(
-  Object.keys(SESSION_COLUMNS).map((k) => [k, true]),
-) as Record<keyof typeof SESSION_COLUMNS, true>;
-
 export async function getExamSessionById(sessionId: string, actor: Actor) {
   const session = await db.query.examSessions.findFirst({
     where: and(
@@ -252,8 +232,8 @@ async function validateQuestion(tx: DbTransaction, questionId: string) {
 /** Submit answer inside a transaction to prevent TOCTOU race */
 export async function submitExamAnswer(
   sessionId: string,
-  actor: Actor,
   body: { questionId: string; answer: unknown },
+  actor: Actor,
 ): Promise<{ success: boolean }> {
   return db.transaction(async (tx) => {
     await getActiveSession(tx, sessionId, actor);
@@ -281,8 +261,8 @@ export async function submitExamAnswer(
 /** Bulk upsert answers for auto-save */
 export async function saveExamAnswers(
   sessionId: string,
-  actor: Actor,
   answers: { questionId: string; answer: unknown }[],
+  actor: Actor,
 ): Promise<{ success: boolean; saved: number }> {
   return db.transaction(async (tx) => {
     await getActiveSession(tx, sessionId, actor);

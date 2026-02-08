@@ -59,8 +59,20 @@ export const QuestionVersionBody = t.Object({
   answerKey: t.Optional(ObjectiveAnswerKey),
 });
 
+export const QuestionListQuery = t.Object({
+  page: t.Optional(t.Number({ minimum: 1, default: 1 })),
+  limit: t.Optional(t.Number({ minimum: 1, maximum: 100, default: 20 })),
+  skill: t.Optional(Skill),
+  level: t.Optional(QuestionLevel),
+  format: t.Optional(QuestionFormat),
+  isActive: t.Optional(t.Boolean()),
+  search: t.Optional(t.String()),
+});
+
 export type QuestionSchema = typeof QuestionSchema.static;
 export type QuestionWithDetailsSchema = typeof QuestionWithDetailsSchema.static;
 export type QuestionVersionSchema = typeof QuestionVersionSchema.static;
 export type QuestionCreateBody = typeof QuestionCreateBody.static;
 export type QuestionUpdateBody = typeof QuestionUpdateBody.static;
+export type QuestionListQuery = typeof QuestionListQuery.static;
+export type QuestionVersionBody = typeof QuestionVersionBody.static;

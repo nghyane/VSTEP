@@ -1,11 +1,9 @@
-import { Skill, SubmissionStatus as SubmissionStatusEnum } from "@common/enums";
 import {
   AuthErrors,
   CrudErrors,
   ErrorResponse,
   IdParam,
   PaginationMeta,
-  PaginationQuery,
 } from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { AutoGradeResult } from "@/modules/questions/content-schemas";
@@ -13,6 +11,7 @@ import { authPlugin } from "@/plugins/auth";
 import {
   SubmissionCreateBody,
   SubmissionGradeBody,
+  SubmissionListQuery,
   SubmissionUpdateBody,
   SubmissionWithDetailsSchema,
 } from "./model";
@@ -34,12 +33,7 @@ export const submissions = new Elysia({
 
   .get("/", ({ query, user }) => listSubmissions(query, user), {
     auth: true,
-    query: t.Object({
-      ...PaginationQuery.properties,
-      skill: t.Optional(Skill),
-      status: t.Optional(SubmissionStatusEnum),
-      userId: t.Optional(t.String({ format: "uuid" })),
-    }),
+    query: SubmissionListQuery,
     response: {
       200: t.Object({
         data: t.Array(SubmissionWithDetailsSchema),
@@ -90,7 +84,7 @@ export const submissions = new Elysia({
 
   .patch(
     "/:id",
-    ({ params, body, user }) => updateSubmission(params.id, user, body),
+    ({ params, body, user }) => updateSubmission(params.id, body, user),
     {
       auth: true,
       params: IdParam,
@@ -143,7 +137,10 @@ export const submissions = new Elysia({
     auth: true,
     params: IdParam,
     response: {
-      200: t.Object({ id: t.String({ format: "uuid" }) }),
+      200: t.Object({
+        id: t.String({ format: "uuid" }),
+        deletedAt: t.String({ format: "date-time" }),
+      }),
       ...CrudErrors,
     },
     detail: {

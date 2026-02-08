@@ -8,14 +8,19 @@ import {
   type SQL,
   sql,
 } from "drizzle-orm";
-import type { Question } from "@/db";
-import { db, notDeleted, pagination, table } from "@/db";
+import { db, notDeleted, omitColumns, pagination, table } from "@/db";
 import type { Actor } from "@/plugins/auth";
 import { BadRequestError } from "@/plugins/error";
+import type {
+  QuestionCreateBody,
+  QuestionListQuery,
+  QuestionUpdateBody,
+  QuestionVersionBody,
+} from "./model";
 
-const { answerKey: _answerKey, ...QUESTION_PUBLIC_COLUMNS } = getTableColumns(
-  table.questions,
-);
+const QUESTION_PUBLIC_COLUMNS = omitColumns(getTableColumns(table.questions), [
+  "answerKey",
+]);
 
 export async function getQuestionById(questionId: string) {
   const question = await db.query.questions.findFirst({
@@ -37,18 +42,7 @@ export async function getQuestionById(questionId: string) {
   return assertExists(question, "Question");
 }
 
-export async function listQuestions(
-  query: {
-    page?: number;
-    limit?: number;
-    skill?: Question["skill"];
-    level?: Question["level"];
-    format?: Question["format"];
-    isActive?: boolean;
-    search?: string;
-  },
-  actor: Actor,
-) {
+export async function listQuestions(query: QuestionListQuery, actor: Actor) {
   const pg = pagination(query.page, query.limit);
 
   const conditions: SQL[] = [notDeleted(table.questions)];
@@ -79,20 +73,18 @@ export async function listQuestions(
 
   const whereClause = and(...conditions);
 
-  const [countResult] = await db
-    .select({ count: count() })
-    .from(table.questions)
-    .where(whereClause);
+  const [countResult, questions] = await Promise.all([
+    db.select({ count: count() }).from(table.questions).where(whereClause),
+    db
+      .select(QUESTION_PUBLIC_COLUMNS)
+      .from(table.questions)
+      .where(whereClause)
+      .orderBy(desc(table.questions.createdAt))
+      .limit(pg.limit)
+      .offset(pg.offset),
+  ]);
 
-  const total = countResult?.count ?? 0;
-
-  const questions = await db
-    .select(QUESTION_PUBLIC_COLUMNS)
-    .from(table.questions)
-    .where(whereClause)
-    .orderBy(desc(table.questions.createdAt))
-    .limit(pg.limit)
-    .offset(pg.offset);
+  const total = countResult[0]?.count ?? 0;
 
   return {
     data: questions,
@@ -100,16 +92,7 @@ export async function listQuestions(
   };
 }
 
-export async function createQuestion(
-  userId: string,
-  body: {
-    skill: Question["skill"];
-    level: Question["level"];
-    format: Question["format"];
-    content: unknown;
-    answerKey?: unknown;
-  },
-) {
+export async function createQuestion(userId: string, body: QuestionCreateBody) {
   return db.transaction(async (tx) => {
     const [question] = await tx
       .insert(table.questions)
@@ -140,26 +123,19 @@ export async function createQuestion(
 
 export async function updateQuestion(
   questionId: string,
+  body: QuestionUpdateBody,
   actor: Actor,
-  body: {
-    skill?: Question["skill"];
-    level?: Question["level"];
-    format?: Question["format"];
-    content?: unknown;
-    answerKey?: unknown;
-    isActive?: boolean;
-  },
 ) {
   return db.transaction(async (tx) => {
-    const [row] = await tx
-      .select()
-      .from(table.questions)
-      .where(
-        and(eq(table.questions.id, questionId), notDeleted(table.questions)),
-      )
-      .limit(1);
-
-    const question = assertExists(row, "Question");
+    const question = assertExists(
+      await tx.query.questions.findFirst({
+        where: and(
+          eq(table.questions.id, questionId),
+          notDeleted(table.questions),
+        ),
+      }),
+      "Question",
+    );
 
     assertAccess(
       question.createdBy,
@@ -205,26 +181,24 @@ export async function updateQuestion(
 
 export async function createQuestionVersion(
   questionId: string,
+  body: QuestionVersionBody,
   actor: Actor,
-  body: {
-    content: unknown;
-    answerKey?: unknown;
-  },
 ) {
   return db.transaction(async (tx) => {
-    const [row] = await tx
-      .select({
-        id: table.questions.id,
-        version: table.questions.version,
-        createdBy: table.questions.createdBy,
-      })
-      .from(table.questions)
-      .where(
-        and(eq(table.questions.id, questionId), notDeleted(table.questions)),
-      )
-      .limit(1);
-
-    const question = assertExists(row, "Question");
+    const question = assertExists(
+      await tx.query.questions.findFirst({
+        where: and(
+          eq(table.questions.id, questionId),
+          notDeleted(table.questions),
+        ),
+        columns: {
+          id: true,
+          version: true,
+          createdBy: true,
+        },
+      }),
+      "Question",
+    );
 
     assertAccess(
       question.createdBy,
@@ -311,15 +285,15 @@ export async function getQuestionVersion(
 
 export async function removeQuestion(questionId: string, actor: Actor) {
   return db.transaction(async (tx) => {
-    const [row] = await tx
-      .select()
-      .from(table.questions)
-      .where(
-        and(eq(table.questions.id, questionId), notDeleted(table.questions)),
-      )
-      .limit(1);
-
-    const question = assertExists(row, "Question");
+    const question = assertExists(
+      await tx.query.questions.findFirst({
+        where: and(
+          eq(table.questions.id, questionId),
+          notDeleted(table.questions),
+        ),
+      }),
+      "Question",
+    );
 
     assertAccess(
       question.createdBy,
@@ -336,19 +310,18 @@ export async function removeQuestion(questionId: string, actor: Actor) {
       })
       .where(eq(table.questions.id, questionId));
 
-    return { id: questionId };
+    return { id: questionId, deletedAt: timestamp };
   });
 }
 
 export async function restoreQuestion(questionId: string) {
   return db.transaction(async (tx) => {
-    const [row] = await tx
-      .select()
-      .from(table.questions)
-      .where(eq(table.questions.id, questionId))
-      .limit(1);
-
-    const question = assertExists(row, "Question");
+    const question = assertExists(
+      await tx.query.questions.findFirst({
+        where: eq(table.questions.id, questionId),
+      }),
+      "Question",
+    );
 
     if (!question.deletedAt) {
       throw new BadRequestError("Question is not deleted");
