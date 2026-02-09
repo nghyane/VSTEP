@@ -1,12 +1,12 @@
-import { UserRole } from "@common/enums";
+import { UserSchema } from "@db/typebox";
 import { t } from "elysia";
 
-export const AuthUserInfo = t.Object({
-  id: t.String({ format: "uuid" }),
-  email: t.String(),
-  fullName: t.Nullable(t.String()),
-  role: UserRole,
-});
+export const AuthUserInfo = t.Pick(UserSchema, [
+  "id",
+  "email",
+  "fullName",
+  "role",
+]);
 
 export const AuthTokenResponse = t.Object({
   accessToken: t.String(),
@@ -37,3 +37,5 @@ export type AuthUserInfo = typeof AuthUserInfo.static;
 export type AuthTokenResponse = typeof AuthTokenResponse.static;
 export type AuthLoginBody = typeof AuthLoginBody.static;
 export type AuthRegisterBody = typeof AuthRegisterBody.static;
+export type AuthRefreshBody = typeof AuthRefreshBody.static;
+export type AuthLogoutBody = typeof AuthLogoutBody.static;

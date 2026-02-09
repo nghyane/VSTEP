@@ -1,15 +1,6 @@
 import { UserRole } from "@common/enums";
 import { t } from "elysia";
 
-export const UserSchema = t.Object({
-  id: t.String({ format: "uuid" }),
-  email: t.String(),
-  fullName: t.Nullable(t.String()),
-  role: UserRole,
-  createdAt: t.String({ format: "date-time" }),
-  updatedAt: t.String({ format: "date-time" }),
-});
-
 export const UserCreateBody = t.Object({
   email: t.String({
     format: "email",
@@ -48,7 +39,6 @@ export const UserListQuery = t.Object({
   search: t.Optional(t.String()),
 });
 
-export type UserSchema = typeof UserSchema.static;
 export type UserCreateBody = typeof UserCreateBody.static;
 export type UserUpdateBody = typeof UserUpdateBody.static;
 export type UserPasswordBody = typeof UserPasswordBody.static;

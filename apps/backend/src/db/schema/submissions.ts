@@ -12,7 +12,12 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import type {
+  GradingResult,
+  SubmissionAnswer,
+} from "@/modules/questions/content-schemas";
 import { skillEnum, vstepBandEnum } from "./enums";
+import { timestamps, timestampsWithSoftDelete } from "./helpers";
 import { questions } from "./questions";
 import { users } from "./users";
 
@@ -71,17 +76,11 @@ export const submissions = pgTable(
     }),
     claimedAt: timestamp("claimed_at", { withTimezone: true, mode: "string" }),
     deadline: timestamp("deadline", { withTimezone: true, mode: "string" }),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
+    ...timestampsWithSoftDelete,
     completedAt: timestamp("completed_at", {
       withTimezone: true,
       mode: "string",
     }),
-    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
   },
   (table) => ({
     userIdIdx: index("submissions_user_id_idx").on(table.userId),
@@ -110,16 +109,10 @@ export const submissionDetails = pgTable("submission_details", {
   submissionId: uuid("submission_id")
     .references(() => submissions.id, { onDelete: "cascade" })
     .primaryKey(),
-  answer: jsonb("answer").notNull(),
-  result: jsonb("result"),
+  answer: jsonb("answer").$type<SubmissionAnswer>().notNull(),
+  result: jsonb("result").$type<GradingResult | null>(),
   feedback: varchar("feedback", { length: 10000 }),
-  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-    .defaultNow()
-    .notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
-    .defaultNow()
-    .notNull()
-    .$onUpdate(() => new Date().toISOString()),
+  ...timestamps,
 });
 
 export const submissionEvents = pgTable(

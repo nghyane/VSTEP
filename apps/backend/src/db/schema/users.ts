@@ -9,6 +9,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import { createdAt, timestampsWithSoftDelete } from "./helpers";
 
 export const userRoleEnum = pgEnum("user_role", [
   "learner",
@@ -24,13 +25,7 @@ export const users = pgTable(
     passwordHash: varchar("password_hash", { length: 255 }).notNull(),
     fullName: varchar("full_name", { length: 255 }),
     role: userRoleEnum("role").default("learner").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
+    ...timestampsWithSoftDelete,
   },
   (table) => ({
     emailUnique: uniqueIndex("users_email_unique")
@@ -59,9 +54,7 @@ export const refreshTokens = pgTable(
       withTimezone: true,
       mode: "string",
     }).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
+    createdAt,
   },
   (table) => ({
     tokenHashIdx: index("refresh_tokens_hash_idx").on(table.tokenHash),

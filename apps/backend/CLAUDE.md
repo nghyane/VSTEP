@@ -57,14 +57,14 @@ import { helper } from "./utils/helper";
 | Type | Path | Pattern |
 |------|------|---------|
 | Module routes | `src/modules/{name}/index.ts` | Elysia routes + auth guards |
-| Module schemas | `src/modules/{name}/model.ts` | TypeBox schemas in namespace |
-| Module logic | `src/modules/{name}/service.ts` | Static methods on a class |
+| Module schemas | `src/modules/{name}/model.ts` | TypeBox schemas (direct exports) |
+| Module logic | `src/modules/{name}/service.ts` | Plain exported functions |
 | DB schema | `src/db/schema/{name}.ts` | Drizzle pgTable definitions |
+| DB column helpers | `src/db/schema/helpers.ts` | Reusable `timestamps`, `timestampsWithSoftDelete` |
 | DB relations | `src/db/relations.ts` | Drizzle relational queries setup |
 | DB helpers | `src/db/helpers.ts` | `pagination()`, `notDeleted()` |
 | Plugins | `src/plugins/{name}.ts` | Elysia plugins (auth, error) |
 | Shared utils | `src/common/{name}.ts` | Logger, env, schemas, utils |
-| Tests | `src/**/*.test.ts` or `src/**/__tests__/` | bun:test |
 
 ## Existing Utilities (Use, Don't Recreate)
 
@@ -91,69 +91,64 @@ import { helper } from "./utils/helper";
 ```typescript
 import { Elysia } from "elysia";
 import { authPlugin } from "@plugins/auth";
-import { FeatureService } from "./service";
-import { Feature } from "./model";
+import { listFeatures } from "./service";
+import { FeatureListQuery, FeatureListResponse } from "./model";
 
-export const feature = new Elysia({ prefix: "/feature" })
+export const feature = new Elysia({ name: "module:feature", prefix: "/feature", detail: { tags: ["Feature"] } })
   .use(authPlugin())
-  .get("/", ({ query }) => FeatureService.list(query), {
+  .get("/", ({ query }) => listFeatures(query), {
     auth: true,
-    query: Feature.ListQuery,
-    response: { 200: Feature.ListResponse },
-    detail: { tags: ["Feature"], summary: "List features" },
+    query: FeatureListQuery,
+    response: { 200: FeatureListResponse },
+    detail: { summary: "List features" },
   });
 ```
 
-### Service Class
+### Service (Plain Functions)
 
 ```typescript
 import { db } from "@db/index";
 import { features } from "@db/schema/features";
 import { eq } from "drizzle-orm";
 
-export class FeatureService {
-  static async list(query: { page?: number; limit?: number }) {
-    // business logic with Drizzle queries
-  }
+export async function listFeatures(query: { page?: number; limit?: number }) {
+  // business logic with Drizzle queries
+}
 
-  static async getById(id: string) {
-    const result = await db.query.features.findFirst({
-      where: eq(features.id, id),
-    });
-    return assertExists(result, "Feature");
-  }
+export async function getFeatureById(id: string) {
+  const result = await db.query.features.findFirst({
+    where: eq(features.id, id),
+  });
+  return assertExists(result, "Feature");
 }
 ```
 
-### Model Schema (TypeBox namespace)
+### Model Schema (TypeBox direct exports)
 
 ```typescript
 import { t } from "elysia";
 
-export namespace Feature {
-  export const ListQuery = t.Object({
-    page: t.Optional(t.Number({ minimum: 1 })),
-    limit: t.Optional(t.Number({ minimum: 1, maximum: 100 })),
-  });
+export const FeatureListQuery = t.Object({
+  page: t.Optional(t.Number({ minimum: 1 })),
+  limit: t.Optional(t.Number({ minimum: 1, maximum: 100 })),
+});
 
-  export const ListResponse = t.Object({
-    data: t.Array(t.Object({ id: t.String(), name: t.String() })),
-    meta: t.Object({ page: t.Number(), limit: t.Number(), total: t.Number() }),
-  });
-}
+export const FeatureListResponse = t.Object({
+  data: t.Array(t.Object({ id: t.String(), name: t.String() })),
+  meta: t.Object({ page: t.Number(), limit: t.Number(), total: t.Number() }),
+});
 ```
 
 ### DB Schema
 
 ```typescript
-import { pgTable, uuid, varchar, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar } from "drizzle-orm/pg-core";
+import { timestampsWithSoftDelete } from "./helpers";
 
 export const features = pgTable("features", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
-  deletedAt: timestamp("deleted_at"),
+  ...timestampsWithSoftDelete,
 });
 
 export type Feature = typeof features.$inferSelect;
@@ -188,7 +183,7 @@ logger.error("Something failed", { error: err.message });
 3. **No banned packages** — No bcrypt, jsonwebtoken, ioredis, dotenv, pg, jest
 4. **Cross-module = aliases** — Always use `@common/`, `@db/`, `@plugins/`, `@/`
 5. **Soft deletes** — Use `deletedAt` + `notDeleted()` filter, never hard delete
-6. **Static service methods** — Services are classes with only static methods
+6. **Plain function services** — Services export plain functions, not classes
 7. **TypeBox for API validation** — Not Zod (Zod is only for env config)
 8. **OpenAPI detail on every route** — Include `tags` and `summary`
 
@@ -205,10 +200,10 @@ logger.error("Something failed", { error: err.message });
 Before completing any task:
 
 - [ ] `bun run check` passes
-- [ ] `bun test` passes
 - [ ] No `console.log` (use `logger`)
 - [ ] Cross-module imports use aliases
 - [ ] No `.js` extensions in imports
 - [ ] No unused imports or variables
 - [ ] Routes have OpenAPI `detail` with tags and summary
-- [ ] New DB tables include `createdAt`, `updatedAt`, and `deletedAt`
+- [ ] New DB tables use `timestampsWithSoftDelete` from `@db/schema/helpers`
+- [ ] Routes have `name` property on Elysia instance (`name: "module:{name}"`)

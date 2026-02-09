@@ -1,4 +1,5 @@
 import { assertAccess, assertExists, now } from "@common/utils";
+import { Value } from "@sinclair/typebox/value";
 import {
   and,
   count,
@@ -8,16 +9,20 @@ import {
   type SQL,
   sql,
 } from "drizzle-orm";
-import type { Submission } from "@/db";
 import { db, notDeleted, omitColumns, pagination, table } from "@/db";
+import {
+  ObjectiveAnswer,
+  ObjectiveAnswerKey,
+} from "@/modules/questions/content-schemas";
 import type { Actor } from "@/plugins/auth";
-import { BadRequestError } from "@/plugins/error";
+import { BadRequestError, ConflictError } from "@/plugins/error";
 import type {
   SubmissionCreateBody,
   SubmissionGradeBody,
   SubmissionListQuery,
   SubmissionUpdateBody,
 } from "./model";
+import { scoreToBand } from "./pure";
 
 const SUBMISSION_COLUMNS = omitColumns(getTableColumns(table.submissions), [
   "confidence",
@@ -34,15 +39,29 @@ const SUBMISSION_COLUMNS = omitColumns(getTableColumns(table.submissions), [
   "deletedAt",
 ]);
 
-/** VSTEP.3-5 only assesses B1-C1. Scores below 4.0 = below B1, not A1/A2. */
-export function scoreToBand(score: number): Submission["band"] {
-  if (score < 0) return null;
-  if (score >= 8.5) return "C1";
-  if (score >= 6.0) return "B2";
-  if (score >= 4.0) return "B1";
-  return null;
-}
+type SubmissionInsert = typeof table.submissions.$inferInsert;
+type SubmissionSkill = "listening" | "reading" | "writing" | "speaking";
+type SubmissionStatus =
+  | "pending"
+  | "queued"
+  | "processing"
+  | "completed"
+  | "review_pending"
+  | "error"
+  | "retrying"
+  | "failed";
+type SubmissionBand = "A1" | "A2" | "B1" | "B2" | "C1" | null;
 
+/**
+ * Map a 0-10 score to VSTEP.3-5 proficiency bands.
+ * Scores below 4.0 are treated as below B1 and return null.
+ */
+export { scoreToBand };
+
+/**
+ * Submission status state machine.
+ * Each key lists the only allowed next statuses for transition validation.
+ */
 const VALID_TRANSITIONS: Record<string, string[]> = {
   pending: ["queued", "failed"],
   queued: ["processing", "failed"],
@@ -58,7 +77,7 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 export function validateTransition(current: string, next: string) {
   const allowed = VALID_TRANSITIONS[current];
   if (!allowed?.includes(next)) {
-    throw new BadRequestError(`Cannot transition from ${current} to ${next}`);
+    throw new ConflictError(`Cannot transition from ${current} to ${next}`);
   }
 }
 
@@ -100,11 +119,15 @@ export async function listSubmissions(
   }
 
   if (query.skill) {
-    conditions.push(eq(table.submissions.skill, query.skill));
+    conditions.push(
+      eq(table.submissions.skill, query.skill as SubmissionSkill),
+    );
   }
 
   if (query.status) {
-    conditions.push(eq(table.submissions.status, query.status));
+    conditions.push(
+      eq(table.submissions.status, query.status as SubmissionStatus),
+    );
   }
 
   const whereClause = and(...conditions);
@@ -204,26 +227,27 @@ export async function updateSubmission(
 
     const MUTABLE_STATUSES = ["pending", "error"];
     if (!MUTABLE_STATUSES.includes(submission.status) && !actor.is("admin")) {
-      throw new BadRequestError("Cannot update submission in current status");
+      throw new ConflictError("Cannot update submission in current status");
     }
 
     const timestamp = now();
-    const updateValues: Partial<typeof table.submissions.$inferInsert> = {
+    const updateValues: Partial<SubmissionInsert> = {
       updatedAt: timestamp,
     };
 
     if (actor.is("admin")) {
       // Admin bypasses state machine — can force any transition
       if (body.status) {
-        updateValues.status = body.status;
+        updateValues.status = body.status as SubmissionInsert["status"];
         if (body.status === "completed" && submission.status !== "completed") {
           updateValues.completedAt = timestamp;
         }
       }
       if (body.score !== undefined) updateValues.score = body.score;
-      if (body.band !== undefined) updateValues.band = body.band;
+      if (body.band !== undefined)
+        updateValues.band = body.band as SubmissionBand;
     } else if (body.status) {
-      validateTransition(submission.status, body.status);
+      validateTransition(submission.status, body.status as string);
     }
 
     const [updatedSubmission] = await tx
@@ -282,7 +306,7 @@ export async function gradeSubmission(
     const submission = assertExists(row, "Submission");
 
     if (submission.status === "completed" || submission.status === "failed") {
-      throw new BadRequestError(
+      throw new ConflictError(
         `Cannot grade a submission with status "${submission.status}"`,
       );
     }
@@ -300,7 +324,7 @@ export async function gradeSubmission(
       .set({
         status: "completed",
         score: body.score,
-        band: body.band ?? scoreToBand(body.score),
+        band: (body.band ?? scoreToBand(body.score)) as SubmissionBand,
         updatedAt: timestamp,
         completedAt: timestamp,
       })
@@ -366,13 +390,10 @@ export async function removeSubmission(submissionId: string, actor: Actor) {
 }
 
 /**
- * Auto-grade a submission (for listening/reading objective questions).
- * Uses PostgreSQL JSONB per-item comparison instead of JS-side JSON.stringify.
- * Score: (correctCount / totalCount) * 10, rounded to nearest 0.5
+ * Auto-grade objective listening/reading submissions by comparing JSONB answers in SQL.
+ * Computes score as (correct/total) * 10, rounds to nearest 0.5, and persists result + completion state.
  */
-export async function autoGradeSubmission(
-  submissionId: string,
-): Promise<{ score: number; result: unknown }> {
+export async function autoGradeSubmission(submissionId: string) {
   return db.transaction(async (tx) => {
     const [row] = await tx
       .select({
@@ -380,6 +401,7 @@ export async function autoGradeSubmission(
         status: table.submissions.status,
         skill: table.submissions.skill,
         answerKey: table.questions.answerKey,
+        answer: table.submissionDetails.answer,
         correctCount: sql<number>`(
             SELECT count(*)
             FROM jsonb_each_text(${table.questions.answerKey} -> 'correctAnswers') ak
@@ -407,7 +429,7 @@ export async function autoGradeSubmission(
     const data = assertExists(row, "Submission");
 
     if (data.status === "completed" || data.status === "failed") {
-      throw new BadRequestError(
+      throw new ConflictError(
         `Cannot auto-grade a submission with status "${data.status}"`,
       );
     }
@@ -420,6 +442,13 @@ export async function autoGradeSubmission(
 
     if (!data.answerKey) {
       throw new BadRequestError("Question has no answer key for auto-grading");
+    }
+
+    if (
+      !Value.Check(ObjectiveAnswerKey, data.answerKey) ||
+      !Value.Check(ObjectiveAnswer, data.answer)
+    ) {
+      throw new BadRequestError("Answer format incompatible with auto-grading");
     }
 
     const { correctCount, totalCount } = data;

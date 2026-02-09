@@ -1,5 +1,11 @@
 import { hashPassword, verifyPassword } from "@common/password";
-import { assertAccess, assertExists, escapeLike, now } from "@common/utils";
+import {
+  assertAccess,
+  assertExists,
+  escapeLike,
+  normalizeEmail,
+  now,
+} from "@common/utils";
 import {
   and,
   count,
@@ -83,13 +89,14 @@ export async function listUsers(query: UserListQuery) {
 }
 
 export async function createUser(body: UserCreateBody) {
+  const email = normalizeEmail(body.email);
   const passwordHash = await hashPassword(body.password);
 
   try {
     const [user] = await db
       .insert(table.users)
       .values({
-        email: body.email,
+        email,
         passwordHash,
         fullName: body.fullName,
         role: body.role ?? "learner",
@@ -110,6 +117,7 @@ export async function updateUser(
   body: UserUpdateBody,
   actor: Actor,
 ) {
+  const email = body.email ? normalizeEmail(body.email) : undefined;
   assertAccess(userId, actor, "You can only update your own profile");
 
   if (body.role && !actor.is("admin")) {
@@ -125,10 +133,10 @@ export async function updateUser(
       "User",
     );
 
-    if (body.email) {
+    if (email) {
       const emailExists = await tx.query.users.findFirst({
         where: and(
-          eq(table.users.email, body.email),
+          eq(table.users.email, email),
           ne(table.users.id, userId),
           notDeleted(table.users),
         ),
@@ -142,7 +150,7 @@ export async function updateUser(
     const updateValues: Partial<typeof table.users.$inferInsert> = {
       updatedAt: now(),
     };
-    if (body.email) updateValues.email = body.email;
+    if (email) updateValues.email = email;
     if (body.fullName !== undefined) updateValues.fullName = body.fullName;
     if (body.role) updateValues.role = body.role;
 

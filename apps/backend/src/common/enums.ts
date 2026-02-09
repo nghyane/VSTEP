@@ -15,11 +15,9 @@ import {
 import { userRoleEnum } from "@db/schema/users";
 import { t } from "elysia";
 
-/** Convert a Drizzle pgEnum's values array into a TypeBox Union of literals */
+/** Convert a Drizzle pgEnum's values array into an Elysia UnionEnum schema. */
 function enumSchema<const T extends readonly [string, ...string[]]>(values: T) {
-  return t.Union(values.map((v) => t.Literal(v))) as unknown as ReturnType<
-    typeof t.Union<{ [K in keyof T]: ReturnType<typeof t.Literal<T[K]>> }>
-  >;
+  return t.UnionEnum(values);
 }
 
 export const UserRole = enumSchema(userRoleEnum.enumValues);

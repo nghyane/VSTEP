@@ -26,6 +26,7 @@ import {
 } from "./service";
 
 export const submissions = new Elysia({
+  name: "module:submissions",
   prefix: "/submissions",
   detail: { tags: ["Submissions"] },
 })

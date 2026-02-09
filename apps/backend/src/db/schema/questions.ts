@@ -6,11 +6,15 @@ import {
   jsonb,
   pgEnum,
   pgTable,
-  timestamp,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import type {
+  ObjectiveAnswerKey,
+  QuestionContent,
+} from "@/modules/questions/content-schemas";
 import { skillEnum } from "./enums";
+import { createdAt, timestampsWithSoftDelete } from "./helpers";
 import { users } from "./users";
 
 /**
@@ -47,20 +51,14 @@ export const questions = pgTable(
     skill: skillEnum("skill").notNull(),
     level: questionLevelEnum("level").notNull(),
     format: questionFormatEnum("format").notNull(),
-    content: jsonb("content").notNull(),
-    answerKey: jsonb("answer_key"),
+    content: jsonb("content").$type<QuestionContent>().notNull(),
+    answerKey: jsonb("answer_key").$type<ObjectiveAnswerKey | null>(),
     version: integer("version").default(1).notNull(),
     isActive: boolean("is_active").default(true).notNull(),
     createdBy: uuid("created_by").references(() => users.id, {
       onDelete: "set null",
     }),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
+    ...timestampsWithSoftDelete,
   },
   (table) => ({
     activeIdx: index("questions_active_idx")
@@ -79,11 +77,9 @@ export const questionVersions = pgTable(
       .references(() => questions.id, { onDelete: "cascade" })
       .notNull(),
     version: integer("version").notNull(),
-    content: jsonb("content").notNull(),
-    answerKey: jsonb("answer_key"),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
+    content: jsonb("content").$type<QuestionContent>().notNull(),
+    answerKey: jsonb("answer_key").$type<ObjectiveAnswerKey | null>(),
+    createdAt,
   },
   (table) => ({
     versionUnique: uniqueIndex("question_versions_unique_idx").on(

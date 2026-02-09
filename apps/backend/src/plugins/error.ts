@@ -65,22 +65,17 @@ export class ConflictError extends AppError {
   }
 }
 
-export class RateLimitError extends AppError {
-  constructor(
-    message = "Rate limit exceeded",
-    public retryAfter?: number,
-  ) {
-    super(429, message, "RATE_LIMITED");
-  }
-}
-
 /** Check if an error is a PostgreSQL unique constraint violation (code 23505) */
 export function isUniqueViolation(err: unknown): boolean {
+  return hasPgCode(err, "23505");
+}
+
+function hasPgCode(err: unknown, code: string): boolean {
   return (
     typeof err === "object" &&
     err !== null &&
     "code" in err &&
-    (err as { code: string }).code === "23505"
+    (err as { code: string }).code === code
   );
 }
 
@@ -103,7 +98,6 @@ export const errorPlugin = new Elysia({ name: "error" })
   .onError(function onError({ code, error, set, requestId }) {
     set.headers["x-request-id"] = requestId;
 
-    // Handle custom AppErrors
     if (error instanceof AppError) {
       if (error.status >= 500) {
         logger.error(`[${requestId}] ${code}`, {
@@ -118,13 +112,9 @@ export const errorPlugin = new Elysia({ name: "error" })
       }
 
       set.status = error.status;
-      if (error instanceof RateLimitError && error.retryAfter) {
-        set.headers["retry-after"] = String(error.retryAfter);
-      }
-      return error.toResponse(requestId);
+      return error.toResponse(requestId as string);
     }
 
-    // Handle Elysia built-in errors
     if (code === "VALIDATION") {
       set.status = 400;
       return {
@@ -144,7 +134,6 @@ export const errorPlugin = new Elysia({ name: "error" })
       };
     }
 
-    // Unknown errors
     logger.error(`[${requestId}] Unexpected error (${code})`, {
       requestId,
       code,

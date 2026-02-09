@@ -19,7 +19,7 @@ const STREAMS: Record<LogLevel, typeof Bun.stdout> = {
   error: Bun.stderr,
 };
 
-const currentLevel = LEVELS[(process.env.LOG_LEVEL as LogLevel) || "info"];
+const currentLevel = LEVELS[(Bun.env.LOG_LEVEL as LogLevel) || "info"];
 
 function log(
   level: LogLevel,

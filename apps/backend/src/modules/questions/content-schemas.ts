@@ -250,3 +250,9 @@ export const ExamBlueprint = t.Object({
   speaking: t.Optional(BlueprintSection),
   durationMinutes: t.Optional(t.Integer({ minimum: 1 })),
 });
+
+export type QuestionContent = typeof QuestionContent.static;
+export type ObjectiveAnswerKey = typeof ObjectiveAnswerKey.static;
+export type SubmissionAnswer = typeof SubmissionAnswer.static;
+export type GradingResult = typeof GradingResult.static;
+export type ExamBlueprint = typeof ExamBlueprint.static;

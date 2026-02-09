@@ -1,17 +1,7 @@
-import { isNull, type SQL } from "drizzle-orm";
+import { type Column, isNull, type SQL } from "drizzle-orm";
 
-export function notDeleted<T extends { deletedAt: unknown }>(table: T): SQL {
+export function notDeleted<T extends { deletedAt: Column }>(table: T): SQL {
   return isNull(table.deletedAt);
-}
-
-/** Pick only the listed keys from a getTableColumns() result */
-export function pickColumns<
-  T extends Record<string, unknown>,
-  K extends keyof T,
->(columns: T, keys: K[]): Pick<T, K> {
-  const result = {} as Pick<T, K>;
-  for (const key of keys) result[key] = columns[key];
-  return result;
 }
 
 /** Omit the listed keys from a getTableColumns() result */

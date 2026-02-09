@@ -10,6 +10,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { skillEnum, vstepBandEnum } from "./enums";
+import { createdAt, timestamps } from "./helpers";
 import { questionLevelEnum } from "./questions";
 import { submissions } from "./submissions";
 import { users } from "./users";
@@ -34,12 +35,7 @@ export const userProgress = pgTable(
     streakCount: integer("streak_count").default(0).notNull(),
     streakDirection: streakDirectionEnum("streak_direction"),
     attemptCount: integer("attempt_count").default(0).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
+    ...timestamps,
   },
   (table) => ({
     userSkillUnique: uniqueIndex("user_progress_user_skill_idx").on(
@@ -66,9 +62,7 @@ export const userSkillScores = pgTable(
       mode: "number",
     }).notNull(),
     scaffoldingType: varchar("scaffolding_type", { length: 20 }),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
+    createdAt,
   },
   (table) => ({
     userSkillIdx: index("user_skill_scores_user_skill_idx").on(
@@ -92,12 +86,7 @@ export const userGoals = pgTable(
     dailyStudyTimeMinutes: integer("daily_study_time_minutes")
       .default(30)
       .notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
+    ...timestamps,
   },
   (table) => ({
     userIdx: index("user_goals_user_idx").on(table.userId),

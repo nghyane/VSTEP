@@ -83,6 +83,14 @@ export type {
   NewExamSession,
   NewExamSubmission,
 } from "./exams";
+export {
+  createdAt,
+  deletedAt,
+  id,
+  timestamps,
+  timestampsWithSoftDelete,
+  updatedAt,
+} from "./helpers";
 
 export type {
   NewOutbox,

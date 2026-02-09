@@ -1,6 +1,6 @@
 import { ErrorResponse } from "@common/schemas";
+import { UserSchema } from "@db/typebox";
 import { Elysia, t } from "elysia";
-import { UserSchema } from "@/modules/users/model";
 import { getUserById } from "@/modules/users/service";
 import { authPlugin } from "@/plugins/auth";
 import {
@@ -13,7 +13,11 @@ import {
 } from "./model";
 import { login, logout, refresh, register } from "./service";
 
-export const auth = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
+export const auth = new Elysia({
+  name: "module:auth",
+  prefix: "/auth",
+  detail: { tags: ["Auth"] },
+})
   .use(authPlugin)
 
   .post(

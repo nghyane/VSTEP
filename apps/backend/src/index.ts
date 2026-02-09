@@ -6,7 +6,7 @@ app.listen(env.PORT);
 
 logger.info("Server started", {
   url: `http://${app.server?.hostname}:${app.server?.port}`,
-  env: process.env.NODE_ENV,
+  env: Bun.env.NODE_ENV,
 });
 
 export { app };

@@ -5,6 +5,7 @@ import {
   IdParam,
   PaginationMeta,
 } from "@common/schemas";
+import { ExamSchema, ExamSessionSchema } from "@db/typebox";
 import { Elysia, t } from "elysia";
 import { SubmissionAnswer } from "@/modules/questions/content-schemas";
 import { authPlugin } from "@/plugins/auth";
@@ -12,9 +13,7 @@ import {
   ExamAnswerSaveBody,
   ExamCreateBody,
   ExamListQuery,
-  ExamSchema,
   ExamSessionIdParam,
-  ExamSessionSchema,
   ExamUpdateBody,
 } from "./model";
 import {
@@ -30,6 +29,7 @@ import {
 } from "./service";
 
 export const exams = new Elysia({
+  name: "module:exams",
   prefix: "/exams",
   detail: { tags: ["Exams"] },
 })

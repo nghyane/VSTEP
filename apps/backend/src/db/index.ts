@@ -13,7 +13,7 @@ export const db = drizzle(env.DATABASE_URL, {
 });
 
 export { table };
-export { notDeleted, omitColumns, pagination, pickColumns } from "./helpers";
+export { notDeleted, omitColumns, pagination } from "./helpers";
 
 /** Transaction type derived from the db client — use instead of fragile Parameters<> extraction */
 export type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];

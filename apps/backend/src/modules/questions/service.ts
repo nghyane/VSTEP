@@ -155,7 +155,11 @@ export async function updateQuestion(
     if (body.isActive !== undefined) updateValues.isActive = body.isActive;
 
     const contentChanged =
-      body.content !== undefined || body.answerKey !== undefined;
+      (body.content !== undefined &&
+        JSON.stringify(body.content) !== JSON.stringify(question.content)) ||
+      (body.answerKey !== undefined &&
+        JSON.stringify(body.answerKey) !== JSON.stringify(question.answerKey));
+
     if (contentChanged) {
       const newVersion = question.version + 1;
       updateValues.version = newVersion;

@@ -5,16 +5,18 @@ import {
   IdParam,
   PaginationMeta,
 } from "@common/schemas";
+import {
+  QuestionSchema,
+  QuestionVersionSchema,
+  QuestionWithDetailsSchema,
+} from "@db/typebox";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import {
   QuestionCreateBody,
   QuestionListQuery,
-  QuestionSchema,
   QuestionUpdateBody,
   QuestionVersionBody,
-  QuestionVersionSchema,
-  QuestionWithDetailsSchema,
 } from "./model";
 import {
   createQuestion,
@@ -29,6 +31,7 @@ import {
 } from "./service";
 
 export const questions = new Elysia({
+  name: "module:questions",
   prefix: "/questions",
   detail: { tags: ["Questions"] },
 })

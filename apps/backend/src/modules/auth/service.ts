@@ -1,6 +1,6 @@
 import { env } from "@common/env";
 import { hashPassword, verifyPassword } from "@common/password";
-import { assertExists, now } from "@common/utils";
+import { assertExists, normalizeEmail, now } from "@common/utils";
 import { and, asc, eq, gt, inArray, isNull } from "drizzle-orm";
 import { SignJWT } from "jose";
 import { db, table } from "@/db";
@@ -11,32 +11,11 @@ import {
   UnauthorizedError,
 } from "@/plugins/error";
 import type { AuthLoginBody, AuthRegisterBody, AuthUserInfo } from "./model";
+import { hashToken, parseExpiry } from "./pure";
 
 // ── Pure helpers (exported for testing) ──────────────────────────────
 
-export function hashToken(token: string): string {
-  const hasher = new Bun.CryptoHasher("sha256");
-  hasher.update(token);
-  return hasher.digest("hex");
-}
-
-export function parseExpiry(str: string): number {
-  const match = str.match(/^(\d+)(s|m|h|d)$/);
-  if (!match) return 900;
-  const n = Number.parseInt(match[1], 10);
-  switch (match[2]) {
-    case "s":
-      return n;
-    case "m":
-      return n * 60;
-    case "h":
-      return n * 3600;
-    case "d":
-      return n * 86400;
-    default:
-      return 900;
-  }
-}
+export { hashToken, parseExpiry };
 
 // ── Internal ────────────────────────────────────────────────────────
 
@@ -66,11 +45,10 @@ function buildTokenResponse(
 // ── Public API ──────────────────────────────────────────────────────
 
 export async function login(body: AuthLoginBody, deviceInfo?: string) {
+  const email = normalizeEmail(body.email);
+
   const row = await db.query.users.findFirst({
-    where: and(
-      eq(table.users.email, body.email),
-      isNull(table.users.deletedAt),
-    ),
+    where: and(eq(table.users.email, email), isNull(table.users.deletedAt)),
     columns: {
       id: true,
       email: true,
@@ -140,13 +118,14 @@ export async function login(body: AuthLoginBody, deviceInfo?: string) {
 }
 
 export async function register(body: AuthRegisterBody) {
+  const email = normalizeEmail(body.email);
   const passwordHash = await hashPassword(body.password);
 
   try {
     const [user] = await db
       .insert(table.users)
       .values({
-        email: body.email,
+        email,
         passwordHash,
         fullName: body.fullName,
         role: "learner",
@@ -172,31 +151,54 @@ export async function register(body: AuthRegisterBody) {
 
 export async function refresh(refreshToken: string, deviceInfo?: string) {
   const hash = hashToken(refreshToken);
+  const newJti = crypto.randomUUID();
 
   return db.transaction(async (tx) => {
-    const tokenRecord = await tx.query.refreshTokens.findFirst({
-      where: eq(table.refreshTokens.tokenHash, hash),
-      columns: {
-        id: true,
-        userId: true,
-        jti: true,
-        revokedAt: true,
-        replacedByJti: true,
-        expiresAt: true,
-      },
-    });
+    // Atomic rotate: only one concurrent request can win this UPDATE
+    const [rotated] = await tx
+      .update(table.refreshTokens)
+      .set({ revokedAt: now(), replacedByJti: newJti })
+      .where(
+        and(
+          eq(table.refreshTokens.tokenHash, hash),
+          isNull(table.refreshTokens.revokedAt),
+          isNull(table.refreshTokens.replacedByJti),
+          gt(table.refreshTokens.expiresAt, now()),
+        ),
+      )
+      .returning({
+        id: table.refreshTokens.id,
+        userId: table.refreshTokens.userId,
+        jti: table.refreshTokens.jti,
+      });
 
-    if (!tokenRecord) {
-      throw new UnauthorizedError("Invalid refresh token");
-    }
+    // If no row returned, figure out why
+    if (!rotated) {
+      const existing = await tx.query.refreshTokens.findFirst({
+        where: eq(table.refreshTokens.tokenHash, hash),
+        columns: {
+          userId: true,
+          revokedAt: true,
+          replacedByJti: true,
+          expiresAt: true,
+        },
+      });
 
-    if (tokenRecord.revokedAt || tokenRecord.replacedByJti) {
+      if (!existing) {
+        throw new UnauthorizedError("Invalid refresh token");
+      }
+
+      if (new Date(existing.expiresAt) <= new Date()) {
+        throw new UnauthorizedError("Refresh token expired");
+      }
+
+      // Reuse detected — revoke ALL active tokens for this user
       await tx
         .update(table.refreshTokens)
         .set({ revokedAt: now() })
         .where(
           and(
-            eq(table.refreshTokens.userId, tokenRecord.userId),
+            eq(table.refreshTokens.userId, existing.userId),
             isNull(table.refreshTokens.revokedAt),
           ),
         );
@@ -205,13 +207,9 @@ export async function refresh(refreshToken: string, deviceInfo?: string) {
       );
     }
 
-    if (new Date(tokenRecord.expiresAt) <= new Date()) {
-      throw new UnauthorizedError("Refresh token expired");
-    }
-
     const user = await tx.query.users.findFirst({
       where: and(
-        eq(table.users.id, tokenRecord.userId),
+        eq(table.users.id, rotated.userId),
         isNull(table.users.deletedAt),
       ),
       columns: { id: true, email: true, fullName: true, role: true },
@@ -220,13 +218,7 @@ export async function refresh(refreshToken: string, deviceInfo?: string) {
     if (!user) throw new UnauthorizedError("User not found");
 
     const newRefreshToken = crypto.randomUUID();
-    const newJti = crypto.randomUUID();
     const refreshExpirySeconds = parseExpiry(env.JWT_REFRESH_EXPIRES_IN);
-
-    await tx
-      .update(table.refreshTokens)
-      .set({ revokedAt: now(), replacedByJti: newJti })
-      .where(eq(table.refreshTokens.id, tokenRecord.id));
 
     await tx.insert(table.refreshTokens).values({
       userId: user.id,

@@ -10,7 +10,12 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import type {
+  ExamBlueprint,
+  SubmissionAnswer,
+} from "@/modules/questions/content-schemas";
 import { skillEnum } from "./enums";
+import { createdAt, timestamps, timestampsWithSoftDelete } from "./helpers";
 import { questionLevelEnum, questions } from "./questions";
 import { submissions } from "./submissions";
 import { users } from "./users";
@@ -27,18 +32,12 @@ export const exams = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     level: questionLevelEnum("level").notNull(),
-    blueprint: jsonb("blueprint").notNull(),
+    blueprint: jsonb("blueprint").$type<ExamBlueprint>().notNull(),
     isActive: boolean("is_active").default(true).notNull(),
     createdBy: uuid("created_by").references(() => users.id, {
       onDelete: "set null",
     }),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
+    ...timestampsWithSoftDelete,
   },
   (table) => ({
     levelIdx: index("exams_level_idx").on(table.level),
@@ -91,13 +90,7 @@ export const examSessions = pgTable(
       withTimezone: true,
       mode: "string",
     }),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
+    ...timestampsWithSoftDelete,
   },
   (table) => ({
     userIdx: index("exam_sessions_user_idx").on(table.userId),
@@ -119,14 +112,9 @@ export const examAnswers = pgTable(
     questionId: uuid("question_id")
       .references(() => questions.id, { onDelete: "cascade" })
       .notNull(),
-    answer: jsonb("answer").notNull(),
+    answer: jsonb("answer").$type<SubmissionAnswer>().notNull(),
     isCorrect: boolean("is_correct"),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
+    ...timestamps,
   },
   (table) => ({
     sessionQuestionUnique: uniqueIndex("exam_answers_session_question_idx").on(
@@ -147,9 +135,7 @@ export const examSubmissions = pgTable(
       .references(() => submissions.id, { onDelete: "cascade" })
       .notNull(),
     skill: skillEnum("skill").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
+    createdAt,
   },
   (table) => ({
     sessionSubmissionUnique: uniqueIndex(

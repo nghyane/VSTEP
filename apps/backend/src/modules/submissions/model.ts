@@ -3,30 +3,18 @@ import {
   SubmissionStatus as SubmissionStatusEnum,
   VstepBand,
 } from "@common/enums";
+import { SubmissionSchema } from "@db/typebox";
 import { t } from "elysia";
 import {
   GradingResult,
   SubmissionAnswer,
 } from "@/modules/questions/content-schemas";
 
-export const SubmissionSchema = t.Object({
-  id: t.String({ format: "uuid" }),
-  userId: t.String({ format: "uuid" }),
-  questionId: t.String({ format: "uuid" }),
-  skill: Skill,
-  status: SubmissionStatusEnum,
-  score: t.Optional(t.Nullable(t.Number({ minimum: 0, maximum: 10 }))),
-  band: t.Optional(t.Nullable(VstepBand)),
-  completedAt: t.Optional(t.String({ format: "date-time" })),
-  createdAt: t.String({ format: "date-time" }),
-  updatedAt: t.String({ format: "date-time" }),
-});
-
 export const SubmissionWithDetailsSchema = t.Object({
   ...SubmissionSchema.properties,
-  answer: t.Optional(t.Nullable(SubmissionAnswer)),
-  result: t.Optional(t.Nullable(GradingResult)),
-  feedback: t.Optional(t.Nullable(t.String({ maxLength: 10000 }))),
+  answer: t.Nullable(SubmissionAnswer),
+  result: t.Nullable(GradingResult),
+  feedback: t.Nullable(t.String({ maxLength: 10000 })),
 });
 
 export const SubmissionCreateBody = t.Object({
@@ -58,7 +46,6 @@ export const SubmissionListQuery = t.Object({
   userId: t.Optional(t.String({ format: "uuid" })),
 });
 
-export type SubmissionSchema = typeof SubmissionSchema.static;
 export type SubmissionWithDetailsSchema =
   typeof SubmissionWithDetailsSchema.static;
 export type SubmissionCreateBody = typeof SubmissionCreateBody.static;

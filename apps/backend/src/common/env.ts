@@ -8,19 +8,25 @@ import { z } from "zod";
  */
 export const env = createEnv({
   server: {
-    DATABASE_URL: z.string().url(),
+    DATABASE_URL: z.url(),
     PORT: z.string().default("3000"),
     NODE_ENV: z
       .enum(["development", "production", "test"])
       .default("development"),
     JWT_SECRET: z.string().min(32),
-    JWT_EXPIRES_IN: z.string().default("15m"),
-    JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
+    JWT_EXPIRES_IN: z
+      .string()
+      .regex(/^\s*\d+\s*[smhd]\s*$/i, "Must be a duration like 15m, 1h, 7d")
+      .default("15m"),
+    JWT_REFRESH_EXPIRES_IN: z
+      .string()
+      .regex(/^\s*\d+\s*[smhd]\s*$/i, "Must be a duration like 15m, 1h, 7d")
+      .default("7d"),
     ALLOWED_ORIGINS: z.string().optional(),
-    REDIS_URL: z.string().url().optional(),
-    RABBITMQ_URL: z.string().url().optional(),
+    REDIS_URL: z.url().optional(),
+    RABBITMQ_URL: z.url().optional(),
   },
-  runtimeEnv: process.env,
-  skipValidation: !!process.env.CI,
+  runtimeEnv: Bun.env,
+  skipValidation: !!Bun.env.CI,
   emptyStringAsUndefined: true,
 });

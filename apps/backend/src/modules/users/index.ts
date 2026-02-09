@@ -6,13 +6,13 @@ import {
   PaginationMeta,
   SuccessResponse,
 } from "@common/schemas";
+import { UserSchema } from "@db/typebox";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import {
   UserCreateBody,
   UserListQuery,
   UserPasswordBody,
-  UserSchema,
   UserUpdateBody,
 } from "./model";
 import {
@@ -25,6 +25,7 @@ import {
 } from "./service";
 
 export const users = new Elysia({
+  name: "module:users",
   prefix: "/users",
   detail: { tags: ["Users"] },
 })

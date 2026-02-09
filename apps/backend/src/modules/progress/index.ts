@@ -14,6 +14,7 @@ import {
 } from "./service";
 
 export const progress = new Elysia({
+  name: "module:progress",
   prefix: "/progress",
   detail: { tags: ["Progress"] },
 })

@@ -1,4 +1,6 @@
 import { assertAccess, assertExists, now } from "@common/utils";
+import type { DbTransaction } from "@db/index";
+import { db, notDeleted, omitColumns, pagination, table } from "@db/index";
 import { Value } from "@sinclair/typebox/value";
 import {
   and,
@@ -9,18 +11,21 @@ import {
   inArray,
   sql,
 } from "drizzle-orm";
-import type { DbTransaction } from "@/db";
-import { db, notDeleted, omitColumns, pagination, table } from "@/db";
+import type {
+  ObjectiveAnswerKey,
+  SubmissionAnswer,
+} from "@/modules/questions/content-schemas";
 import {
   ObjectiveAnswer,
-  ObjectiveAnswerKey,
+  ObjectiveAnswerKey as ObjectiveAnswerKeySchema,
 } from "@/modules/questions/content-schemas";
 import type { Actor } from "@/plugins/auth";
-import { BadRequestError } from "@/plugins/error";
+import { BadRequestError, ConflictError } from "@/plugins/error";
 import type { ExamCreateBody, ExamListQuery, ExamUpdateBody } from "./model";
+import { calculateOverallScore, calculateScore } from "./pure";
 
 function parseAnswerKey(raw: unknown): Record<string, string> {
-  if (Value.Check(ObjectiveAnswerKey, raw)) return raw.correctAnswers;
+  if (Value.Check(ObjectiveAnswerKeySchema, raw)) return raw.correctAnswers;
   return {};
 }
 
@@ -31,7 +36,8 @@ function parseUserAnswer(raw: unknown): Record<string, string> {
     const entries = Object.entries(raw as Record<string, unknown>).filter(
       ([, v]) => typeof v === "string",
     );
-    if (entries.length > 0) return Object.fromEntries(entries);
+    if (entries.length > 0)
+      return Object.fromEntries(entries) as Record<string, string>;
   }
   return {};
 }
@@ -40,6 +46,12 @@ const EXAM_COLUMNS = omitColumns(getTableColumns(table.exams), ["deletedAt"]);
 const SESSION_COLUMNS = omitColumns(getTableColumns(table.examSessions), [
   "deletedAt",
 ]);
+type ExamLevel = "A1" | "A2" | "B1" | "B2" | "C1";
+type ExamSessionStatus =
+  | "in_progress"
+  | "submitted"
+  | "completed"
+  | "abandoned";
 
 /** Derive a { key: true } columns object from SESSION_COLUMNS keys for relational queries */
 const SESSION_QUERY_COLUMNS = Object.fromEntries(
@@ -68,10 +80,46 @@ async function getActiveSession(
   assertAccess(s.userId, actor, "You do not have access to this session");
 
   if (s.status !== "in_progress") {
-    throw new BadRequestError("Session is not in progress");
+    throw new ConflictError("Session is not in progress");
   }
 
   return s;
+}
+
+async function validateBlueprintQuestions(
+  tx: DbTransaction,
+  blueprint: ExamCreateBody["blueprint"],
+) {
+  const questionIds = [
+    ...(blueprint.listening?.questionIds ?? []),
+    ...(blueprint.reading?.questionIds ?? []),
+    ...(blueprint.writing?.questionIds ?? []),
+    ...(blueprint.speaking?.questionIds ?? []),
+  ];
+
+  if (questionIds.length === 0) return;
+
+  const uniqueQuestionIds = [...new Set(questionIds)];
+
+  const foundQuestions = await tx
+    .select({ id: table.questions.id })
+    .from(table.questions)
+    .where(
+      and(
+        inArray(table.questions.id, uniqueQuestionIds),
+        notDeleted(table.questions),
+        eq(table.questions.isActive, true),
+      ),
+    );
+
+  if (foundQuestions.length === uniqueQuestionIds.length) return;
+
+  const foundIds = new Set(foundQuestions.map((question) => question.id));
+  const missingIds = uniqueQuestionIds.filter((id) => !foundIds.has(id));
+
+  throw new BadRequestError(
+    `Blueprint references non-existent or inactive questions: [${missingIds.join(", ")}]`,
+  );
 }
 
 export async function getExamById(id: string) {
@@ -95,7 +143,8 @@ export async function listExams(query: ExamListQuery) {
   const pg = pagination(query.page, query.limit);
 
   const conditions = [notDeleted(table.exams)];
-  if (query.level) conditions.push(eq(table.exams.level, query.level));
+  if (query.level)
+    conditions.push(eq(table.exams.level, query.level as ExamLevel));
   if (query.isActive !== undefined)
     conditions.push(eq(table.exams.isActive, query.isActive));
 
@@ -123,39 +172,49 @@ export async function listExams(query: ExamListQuery) {
 }
 
 export async function createExam(userId: string, body: ExamCreateBody) {
-  const [exam] = await db
-    .insert(table.exams)
-    .values({
-      level: body.level,
-      blueprint: body.blueprint,
-      isActive: body.isActive ?? true,
-      createdBy: userId,
-    })
-    .returning(EXAM_COLUMNS);
+  return db.transaction(async (tx) => {
+    await validateBlueprintQuestions(tx, body.blueprint);
 
-  return assertExists(exam, "Exam");
+    const [exam] = await tx
+      .insert(table.exams)
+      .values({
+        level: body.level as ExamLevel,
+        blueprint: body.blueprint,
+        isActive: body.isActive ?? true,
+        createdBy: userId,
+      })
+      .returning(EXAM_COLUMNS);
+
+    return assertExists(exam, "Exam");
+  });
 }
 
 export async function updateExam(id: string, body: ExamUpdateBody) {
-  const updateValues: Partial<typeof table.exams.$inferInsert> = {
-    updatedAt: now(),
-  };
-  if (body.level !== undefined) updateValues.level = body.level;
-  if (body.blueprint !== undefined) updateValues.blueprint = body.blueprint;
-  if (body.isActive !== undefined) updateValues.isActive = body.isActive;
+  return db.transaction(async (tx) => {
+    const updateValues: Partial<typeof table.exams.$inferInsert> = {
+      updatedAt: now(),
+    };
 
-  const [exam] = await db
-    .update(table.exams)
-    .set(updateValues)
-    .where(and(eq(table.exams.id, id), notDeleted(table.exams)))
-    .returning(EXAM_COLUMNS);
+    if (body.level !== undefined) updateValues.level = body.level as ExamLevel;
+    if (body.blueprint !== undefined) {
+      await validateBlueprintQuestions(tx, body.blueprint);
+      updateValues.blueprint = body.blueprint;
+    }
+    if (body.isActive !== undefined) updateValues.isActive = body.isActive;
 
-  return assertExists(exam, "Exam");
+    const [exam] = await tx
+      .update(table.exams)
+      .set(updateValues)
+      .where(and(eq(table.exams.id, id), notDeleted(table.exams)))
+      .returning(EXAM_COLUMNS);
+
+    return assertExists(exam, "Exam");
+  });
 }
 
 export async function startExamSession(userId: string, examId: string) {
   return db.transaction(async (tx) => {
-    const examRow = await db.query.exams.findFirst({
+    const examRow = await tx.query.exams.findFirst({
       where: and(eq(table.exams.id, examId), notDeleted(table.exams)),
       columns: { id: true, isActive: true },
     });
@@ -232,7 +291,7 @@ async function validateQuestion(tx: DbTransaction, questionId: string) {
 /** Submit answer inside a transaction to prevent TOCTOU race */
 export async function submitExamAnswer(
   sessionId: string,
-  body: { questionId: string; answer: unknown },
+  body: { questionId: string; answer: SubmissionAnswer },
   actor: Actor,
 ): Promise<{ success: boolean }> {
   return db.transaction(async (tx) => {
@@ -261,7 +320,7 @@ export async function submitExamAnswer(
 /** Bulk upsert answers for auto-save */
 export async function saveExamAnswers(
   sessionId: string,
-  answers: { questionId: string; answer: unknown }[],
+  answers: { questionId: string; answer: SubmissionAnswer }[],
   actor: Actor,
 ): Promise<{ success: boolean; saved: number }> {
   return db.transaction(async (tx) => {
@@ -308,17 +367,26 @@ export async function saveExamAnswers(
   });
 }
 
-/** Auto-grade listening/reading answers against question answerKeys */
+/**
+ * Auto-grade objective (listening/reading) answers by normalized per-item string comparison.
+ * Writing and speaking answers are collected for manual grading workflows.
+ */
 export function autoGradeAnswers(
-  examAnswers: { questionId: string; answer: unknown }[],
-  questionsMap: Map<string, { skill: string; answerKey: unknown }>,
+  examAnswers: { questionId: string; answer: SubmissionAnswer }[],
+  questionsMap: Map<
+    string,
+    { skill: string; answerKey: ObjectiveAnswerKey | null }
+  >,
 ) {
   let listeningCorrect = 0;
   let listeningTotal = 0;
   let readingCorrect = 0;
   let readingTotal = 0;
-  const writingAnswers: { questionId: string; answer: unknown }[] = [];
-  const speakingAnswers: { questionId: string; answer: unknown }[] = [];
+  const writingAnswers: { questionId: string; answer: SubmissionAnswer }[] = [];
+  const speakingAnswers: {
+    questionId: string;
+    answer: SubmissionAnswer;
+  }[] = [];
   const correctnessMap = new Map<string, boolean>();
 
   for (const ea of examAnswers) {
@@ -375,20 +443,11 @@ export function autoGradeAnswers(
   };
 }
 
-/** Calculate score: (correct / total) * 10, rounded to nearest 0.5 */
-export function calculateScore(correct: number, total: number): number | null {
-  return total === 0 ? null : Math.round((correct / total) * 10 * 2) / 2;
-}
-
-/** Calculate overall score: average of all 4 skill scores, rounded to nearest 0.5. Returns null if any score is missing. */
-export function calculateOverallScore(
-  scores: (number | null)[],
-): number | null {
-  if (scores.length === 0 || scores.some((s) => s === null)) return null;
-  const valid = scores as number[];
-  const avg = valid.reduce((sum, s) => sum + s, 0) / valid.length;
-  return Math.round(avg * 2) / 2;
-}
+/**
+ * calculateScore: (correct / total) * 10 rounded to nearest 0.5.
+ * calculateOverallScore: average of all skill scores rounded to nearest 0.5, null if any is missing.
+ */
+export { calculateOverallScore, calculateScore };
 
 /** Fetch all exam answers for a session */
 async function fetchSessionAnswers(tx: DbTransaction, sessionId: string) {
@@ -470,7 +529,7 @@ async function createPendingSubmissions(
   userId: string,
   pendingAnswers: {
     questionId: string;
-    answer: unknown;
+    answer: SubmissionAnswer;
     skill: "writing" | "speaking";
   }[],
 ) {
@@ -489,18 +548,24 @@ async function createPendingSubmissions(
     .returning({ id: table.submissions.id });
 
   await tx.insert(table.submissionDetails).values(
-    insertedSubmissions.map((sub, i) => ({
-      submissionId: sub.id,
-      answer: pendingAnswers[i].answer,
-    })),
+    insertedSubmissions.map((sub, i) => {
+      const pending = assertExists(pendingAnswers[i], "Pending answer");
+      return {
+        submissionId: sub.id,
+        answer: pending.answer,
+      };
+    }),
   );
 
   await tx.insert(table.examSubmissions).values(
-    insertedSubmissions.map((sub, i) => ({
-      sessionId,
-      submissionId: sub.id,
-      skill: pendingAnswers[i].skill,
-    })),
+    insertedSubmissions.map((sub, i) => {
+      const pending = assertExists(pendingAnswers[i], "Pending answer");
+      return {
+        sessionId,
+        submissionId: sub.id,
+        skill: pending.skill,
+      };
+    }),
   );
 }
 
@@ -517,7 +582,7 @@ async function finalizeSession(
     .set({
       listeningScore: scores.listeningScore,
       readingScore: scores.readingScore,
-      status,
+      status: status as ExamSessionStatus,
       completedAt: timestamp,
       updatedAt: timestamp,
     })
@@ -532,7 +597,10 @@ async function finalizeSession(
   return assertExists(updatedSession, "Session");
 }
 
-/** Submit exam: auto-grade listening/reading, create submissions for writing/speaking */
+/**
+ * Submit an in-progress exam session by orchestrating objective grading, correctness persistence,
+ * pending writing/speaking submission creation, and final session status/score update.
+ */
 export async function submitExam(sessionId: string, actor: Actor) {
   return db.transaction(async (tx) => {
     const session = await getActiveSession(tx, sessionId, actor);
@@ -603,7 +671,7 @@ export async function updateSessionScoreIfComplete(sessionId: string) {
       )
       .limit(1);
 
-    if (!session || session.status === "completed") return null;
+    if (!session || session.status !== "submitted") return null;
 
     // Check if all exam_submissions are completed
     const pendingSubmissions = await tx
@@ -616,6 +684,7 @@ export async function updateSessionScoreIfComplete(sessionId: string) {
       .where(
         and(
           eq(table.examSubmissions.sessionId, sessionId),
+          notDeleted(table.submissions),
           sql`${table.submissions.status} != 'completed'`,
         ),
       )
@@ -634,7 +703,14 @@ export async function updateSessionScoreIfComplete(sessionId: string) {
         table.submissions,
         eq(table.examSubmissions.submissionId, table.submissions.id),
       )
-      .where(eq(table.examSubmissions.sessionId, sessionId));
+      .where(
+        and(
+          eq(table.examSubmissions.sessionId, sessionId),
+          notDeleted(table.submissions),
+        ),
+      );
+
+    if (skillScores.length === 0) return null;
 
     let writingScore = session.writingScore;
     let speakingScore = session.speakingScore;

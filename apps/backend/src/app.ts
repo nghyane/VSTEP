@@ -4,7 +4,7 @@ import { openapi } from "@elysiajs/openapi";
 import { Elysia } from "elysia";
 import { auth } from "@/modules/auth";
 import { exams } from "@/modules/exams";
-import { checkHealth } from "@/modules/health/service";
+import { healthModule } from "@/modules/health";
 import { progress } from "@/modules/progress";
 import { questions } from "@/modules/questions";
 import { submissions } from "@/modules/submissions";
@@ -50,13 +50,13 @@ export const app = new Elysia()
     cors({
       origin: env.ALLOWED_ORIGINS
         ? env.ALLOWED_ORIGINS.split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
         : env.NODE_ENV === "production"
           ? []
           : true,
       credentials: true,
     }),
   )
-  .get("/health", () => checkHealth(), {
-    detail: { tags: ["Health"], summary: "Health check" },
-  })
+  .use(healthModule)
   .use(api);

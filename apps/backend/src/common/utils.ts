@@ -21,6 +21,10 @@ export function escapeLike(str: string): string {
   return str.replace(/[%_\\]/g, "\\$&");
 }
 
+export function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
 /** Owner or admin bypass — works with the 3-role hierarchy. Null owner = no owner, only admin can access. */
 export function assertAccess(
   resourceUserId: string | null,
