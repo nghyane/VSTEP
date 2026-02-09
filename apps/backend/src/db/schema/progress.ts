@@ -9,8 +9,8 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import { createdAt, timestamps } from "./columns";
 import { skillEnum, vstepBandEnum } from "./enums";
-import { createdAt, timestamps } from "./helpers";
 import { questionLevelEnum } from "./questions";
 import { submissions } from "./submissions";
 import { users } from "./users";

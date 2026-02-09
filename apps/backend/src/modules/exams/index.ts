@@ -1,3 +1,4 @@
+import { SubmissionAnswer } from "@common/answer-schemas";
 import {
   AuthErrors,
   CrudErrors,
@@ -7,8 +8,8 @@ import {
 } from "@common/schemas";
 import { ExamSchema, ExamSessionSchema } from "@db/typebox";
 import { Elysia, t } from "elysia";
-import { SubmissionAnswer } from "@/modules/questions/content-schemas";
 import { authPlugin } from "@/plugins/auth";
+import { submitExam } from "./grading-service";
 import {
   ExamAnswerSaveBody,
   ExamCreateBody,
@@ -16,17 +17,13 @@ import {
   ExamSessionIdParam,
   ExamUpdateBody,
 } from "./model";
+import { createExam, getExamById, listExams, updateExam } from "./service";
 import {
-  createExam,
-  getExamById,
   getExamSessionById,
-  listExams,
   saveExamAnswers,
   startExamSession,
-  submitExam,
   submitExamAnswer,
-  updateExam,
-} from "./service";
+} from "./session-service";
 
 export const exams = new Elysia({
   name: "module:exams",

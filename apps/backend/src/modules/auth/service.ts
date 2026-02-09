@@ -1,4 +1,6 @@
+import { MAX_REFRESH_TOKENS_PER_USER } from "@common/constants";
 import { env } from "@common/env";
+import { AUTH_MESSAGES } from "@common/messages";
 import { hashPassword, verifyPassword } from "@common/password";
 import { assertExists, normalizeEmail, now } from "@common/utils";
 import { and, asc, eq, gt, inArray, isNull } from "drizzle-orm";
@@ -20,7 +22,6 @@ export { hashToken, parseExpiry };
 // ── Internal ────────────────────────────────────────────────────────
 
 const ACCESS_SECRET = new TextEncoder().encode(env.JWT_SECRET);
-const MAX_REFRESH_TOKENS = 3;
 
 async function signAccessToken(payload: JWTPayload): Promise<string> {
   return new SignJWT({ ...payload })
@@ -58,10 +59,10 @@ export async function login(body: AuthLoginBody, deviceInfo?: string) {
     },
   });
 
-  if (!row) throw new UnauthorizedError("Invalid email or password");
+  if (!row) throw new UnauthorizedError(AUTH_MESSAGES.invalidCredentials);
 
   const isValid = await verifyPassword(body.password, row.passwordHash);
-  if (!isValid) throw new UnauthorizedError("Invalid email or password");
+  if (!isValid) throw new UnauthorizedError(AUTH_MESSAGES.invalidCredentials);
 
   const newRefreshToken = crypto.randomUUID();
   const jti = crypto.randomUUID();
@@ -78,12 +79,12 @@ export async function login(body: AuthLoginBody, deviceInfo?: string) {
       orderBy: asc(table.refreshTokens.createdAt),
     });
 
-    if (activeTokens.length >= MAX_REFRESH_TOKENS) {
+    if (activeTokens.length >= MAX_REFRESH_TOKENS_PER_USER) {
       const tokensToRevoke = activeTokens.slice(
         0,
-        activeTokens.length - MAX_REFRESH_TOKENS + 1,
+        activeTokens.length - MAX_REFRESH_TOKENS_PER_USER + 1,
       );
-      const idsToRevoke = tokensToRevoke.map((t) => t.id);
+      const idsToRevoke = tokensToRevoke.map((token) => token.id);
       await tx
         .update(table.refreshTokens)
         .set({ revokedAt: now() })
@@ -143,7 +144,7 @@ export async function register(body: AuthRegisterBody) {
     };
   } catch (e: unknown) {
     if (isUniqueViolation(e)) {
-      throw new ConflictError("Email already registered");
+      throw new ConflictError(AUTH_MESSAGES.emailAlreadyRegistered);
     }
     throw e;
   }
@@ -185,11 +186,11 @@ export async function refresh(refreshToken: string, deviceInfo?: string) {
       });
 
       if (!existing) {
-        throw new UnauthorizedError("Invalid refresh token");
+        throw new UnauthorizedError(AUTH_MESSAGES.tokenInvalid);
       }
 
       if (new Date(existing.expiresAt) <= new Date()) {
-        throw new UnauthorizedError("Refresh token expired");
+        throw new UnauthorizedError(AUTH_MESSAGES.tokenExpired);
       }
 
       // Reuse detected — revoke ALL active tokens for this user
@@ -202,9 +203,7 @@ export async function refresh(refreshToken: string, deviceInfo?: string) {
             isNull(table.refreshTokens.revokedAt),
           ),
         );
-      throw new UnauthorizedError(
-        "Refresh token reuse detected, all sessions revoked",
-      );
+      throw new UnauthorizedError(AUTH_MESSAGES.tokenReuseDetected);
     }
 
     const user = await tx.query.users.findFirst({
@@ -215,7 +214,7 @@ export async function refresh(refreshToken: string, deviceInfo?: string) {
       columns: { id: true, email: true, fullName: true, role: true },
     });
 
-    if (!user) throw new UnauthorizedError("User not found");
+    if (!user) throw new UnauthorizedError(AUTH_MESSAGES.userNotFound);
 
     const newRefreshToken = crypto.randomUUID();
     const refreshExpirySeconds = parseExpiry(env.JWT_REFRESH_EXPIRES_IN);

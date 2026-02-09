@@ -1,3 +1,4 @@
+import { QUESTION_MESSAGES } from "@common/messages";
 import { assertAccess, assertExists, escapeLike, now } from "@common/utils";
 import {
   and,
@@ -8,7 +9,14 @@ import {
   type SQL,
   sql,
 } from "drizzle-orm";
-import { db, notDeleted, omitColumns, pagination, table } from "@/db";
+import {
+  db,
+  notDeleted,
+  omitColumns,
+  paginatedList,
+  softDelete,
+  table,
+} from "@/db";
 import type { Actor } from "@/plugins/auth";
 import { BadRequestError } from "@/plugins/error";
 import type {
@@ -22,6 +30,7 @@ const QUESTION_PUBLIC_COLUMNS = omitColumns(getTableColumns(table.questions), [
   "answerKey",
 ]);
 
+/** Public resource — any authenticated user can view a question. No ownership check needed. */
 export async function getQuestionById(questionId: string) {
   const question = await db.query.questions.findFirst({
     where: and(eq(table.questions.id, questionId), notDeleted(table.questions)),
@@ -43,8 +52,6 @@ export async function getQuestionById(questionId: string) {
 }
 
 export async function listQuestions(query: QuestionListQuery, actor: Actor) {
-  const pg = pagination(query.page, query.limit);
-
   const conditions: SQL[] = [notDeleted(table.questions)];
 
   if (!actor.is("admin")) {
@@ -73,23 +80,25 @@ export async function listQuestions(query: QuestionListQuery, actor: Actor) {
 
   const whereClause = and(...conditions);
 
-  const [countResult, questions] = await Promise.all([
-    db.select({ count: count() }).from(table.questions).where(whereClause),
-    db
-      .select(QUESTION_PUBLIC_COLUMNS)
-      .from(table.questions)
-      .where(whereClause)
-      .orderBy(desc(table.questions.createdAt))
-      .limit(pg.limit)
-      .offset(pg.offset),
-  ]);
-
-  const total = countResult[0]?.count ?? 0;
-
-  return {
-    data: questions,
-    meta: pg.meta(total),
-  };
+  return paginatedList({
+    page: query.page,
+    limit: query.limit,
+    getCount: async () => {
+      const [result] = await db
+        .select({ count: count() })
+        .from(table.questions)
+        .where(whereClause);
+      return result?.count ?? 0;
+    },
+    getData: ({ limit, offset }) =>
+      db
+        .select(QUESTION_PUBLIC_COLUMNS)
+        .from(table.questions)
+        .where(whereClause)
+        .orderBy(desc(table.questions.createdAt))
+        .limit(limit)
+        .offset(offset),
+  });
 }
 
 export async function createQuestion(userId: string, body: QuestionCreateBody) {
@@ -137,11 +146,7 @@ export async function updateQuestion(
       "Question",
     );
 
-    assertAccess(
-      question.createdBy,
-      actor,
-      "You can only update your own questions",
-    );
+    assertAccess(question.createdBy, actor, QUESTION_MESSAGES.updateOwn);
 
     const updateValues: Partial<typeof table.questions.$inferInsert> = {
       updatedAt: now(),
@@ -204,11 +209,7 @@ export async function createQuestionVersion(
       "Question",
     );
 
-    assertAccess(
-      question.createdBy,
-      actor,
-      "You can only create versions of your own questions",
-    );
+    assertAccess(question.createdBy, actor, QUESTION_MESSAGES.versionOwn);
 
     const newVersion = question.version + 1;
 
@@ -289,32 +290,38 @@ export async function getQuestionVersion(
 
 export async function removeQuestion(questionId: string, actor: Actor) {
   return db.transaction(async (tx) => {
-    const question = assertExists(
-      await tx.query.questions.findFirst({
-        where: and(
-          eq(table.questions.id, questionId),
-          notDeleted(table.questions),
-        ),
-      }),
-      "Question",
-    );
+    return softDelete(tx, {
+      entityName: "Question",
+      findExisting: async (trx) => {
+        const question = assertExists(
+          await trx.query.questions.findFirst({
+            where: and(
+              eq(table.questions.id, questionId),
+              notDeleted(table.questions),
+            ),
+          }),
+          "Question",
+        );
 
-    assertAccess(
-      question.createdBy,
-      actor,
-      "You can only delete your own questions",
-    );
+        assertAccess(question.createdBy, actor, QUESTION_MESSAGES.deleteOwn);
+        return question;
+      },
+      runDelete: async (trx, timestamp) => {
+        const [question] = await trx
+          .update(table.questions)
+          .set({
+            deletedAt: timestamp,
+            updatedAt: timestamp,
+          })
+          .where(eq(table.questions.id, questionId))
+          .returning({
+            id: table.questions.id,
+            deletedAt: table.questions.deletedAt,
+          });
 
-    const timestamp = now();
-    await tx
-      .update(table.questions)
-      .set({
-        deletedAt: timestamp,
-        updatedAt: timestamp,
-      })
-      .where(eq(table.questions.id, questionId));
-
-    return { id: questionId, deletedAt: timestamp };
+        return question;
+      },
+    });
   });
 }
 
@@ -328,7 +335,7 @@ export async function restoreQuestion(questionId: string) {
     );
 
     if (!question.deletedAt) {
-      throw new BadRequestError("Question is not deleted");
+      throw new BadRequestError(QUESTION_MESSAGES.notDeleted);
     }
 
     const [updatedQuestion] = await tx

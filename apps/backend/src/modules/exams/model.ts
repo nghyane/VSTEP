@@ -1,9 +1,7 @@
+import { SubmissionAnswer } from "@common/answer-schemas";
 import { QuestionLevel } from "@common/enums";
+import { ExamBlueprint } from "@common/grading-schemas";
 import { t } from "elysia";
-import {
-  ExamBlueprint,
-  SubmissionAnswer,
-} from "@/modules/questions/content-schemas";
 
 export const ExamSessionIdParam = t.Object({
   sessionId: t.String({ format: "uuid" }),

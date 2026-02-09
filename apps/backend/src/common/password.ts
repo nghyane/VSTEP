@@ -1,13 +1,11 @@
+import { ARGON2_CONFIG } from "@common/constants";
+
 /**
  * Password hashing utilities using Bun's built-in Argon2id.
  * Extracted from AuthService to avoid cross-module coupling.
  */
 export async function hashPassword(password: string): Promise<string> {
-  return Bun.password.hash(password, {
-    algorithm: "argon2id",
-    memoryCost: 65536,
-    timeCost: 3,
-  });
+  return Bun.password.hash(password, ARGON2_CONFIG);
 }
 
 export async function verifyPassword(

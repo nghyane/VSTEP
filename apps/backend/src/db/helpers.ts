@@ -1,3 +1,4 @@
+import { MAX_PAGE_SIZE } from "@common/constants";
 import { type Column, isNull, type SQL } from "drizzle-orm";
 
 export function notDeleted<T extends { deletedAt: Column }>(table: T): SQL {
@@ -20,7 +21,7 @@ export function omitColumns<
  */
 export function pagination(page = 1, limit = 20) {
   const safePage = Math.max(page, 1);
-  const safeLimit = Math.min(Math.max(limit, 1), 100);
+  const safeLimit = Math.min(Math.max(limit, 1), MAX_PAGE_SIZE);
   return {
     page: safePage,
     limit: safeLimit,

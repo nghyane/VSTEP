@@ -1,3 +1,5 @@
+import { BAND_THRESHOLDS } from "@common/constants";
+
 export type SubmissionBand = "B1" | "B2" | "C1" | null;
 
 /**
@@ -6,8 +8,8 @@ export type SubmissionBand = "B1" | "B2" | "C1" | null;
  */
 export function scoreToBand(score: number): SubmissionBand {
   if (score < 0) return null;
-  if (score >= 8.5) return "C1";
-  if (score >= 6.0) return "B2";
-  if (score >= 4.0) return "B1";
+  if (score >= BAND_THRESHOLDS.C1) return "C1";
+  if (score >= BAND_THRESHOLDS.B2) return "B2";
+  if (score >= BAND_THRESHOLDS.B1) return "B1";
   return null;
 }

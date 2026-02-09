@@ -1,6 +1,6 @@
+import { ExamBlueprint } from "@common/grading-schemas";
 import { examSessions, exams } from "@db/schema";
 import { t } from "elysia";
-import { ExamBlueprint } from "@/modules/questions/content-schemas";
 import { createSelectSchema } from "./factory";
 
 const ExamRow = createSelectSchema(exams, {

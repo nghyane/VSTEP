@@ -1,3 +1,4 @@
+import { AutoGradeResult } from "@common/grading-schemas";
 import {
   AuthErrors,
   CrudErrors,
@@ -6,7 +7,6 @@ import {
   PaginationMeta,
 } from "@common/schemas";
 import { Elysia, t } from "elysia";
-import { AutoGradeResult } from "@/modules/questions/content-schemas";
 import { authPlugin } from "@/plugins/auth";
 import {
   SubmissionCreateBody,

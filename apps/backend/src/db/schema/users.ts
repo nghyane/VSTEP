@@ -9,7 +9,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { createdAt, timestampsWithSoftDelete } from "./helpers";
+import { createdAt, timestampsWithSoftDelete } from "./columns";
 
 export const userRoleEnum = pgEnum("user_role", [
   "learner",

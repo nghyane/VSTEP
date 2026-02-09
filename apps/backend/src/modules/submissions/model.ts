@@ -1,14 +1,12 @@
+import { SubmissionAnswer } from "@common/answer-schemas";
 import {
   Skill,
   SubmissionStatus as SubmissionStatusEnum,
   VstepBand,
 } from "@common/enums";
+import { GradingResult } from "@common/grading-schemas";
 import { SubmissionSchema } from "@db/typebox";
 import { t } from "elysia";
-import {
-  GradingResult,
-  SubmissionAnswer,
-} from "@/modules/questions/content-schemas";
 
 export const SubmissionWithDetailsSchema = t.Object({
   ...SubmissionSchema.properties,
@@ -26,14 +24,14 @@ export const SubmissionUpdateBody = t.Partial(
   t.Object({
     answer: SubmissionAnswer,
     status: SubmissionStatusEnum,
-    score: t.Number({ minimum: 0, maximum: 10 }),
+    score: t.Number({ minimum: 0, maximum: 10, multipleOf: 0.5 }),
     band: VstepBand,
     feedback: t.String({ maxLength: 10000 }),
   }),
 );
 
 export const SubmissionGradeBody = t.Object({
-  score: t.Number({ minimum: 0, maximum: 10 }),
+  score: t.Number({ minimum: 0, maximum: 10, multipleOf: 0.5 }),
   band: t.Optional(VstepBand),
   feedback: t.Optional(t.String({ maxLength: 10000 })),
 });

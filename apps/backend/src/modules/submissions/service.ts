@@ -1,3 +1,5 @@
+import { ObjectiveAnswer, ObjectiveAnswerKey } from "@common/answer-schemas";
+import { SUBMISSION_MESSAGES } from "@common/messages";
 import { assertAccess, assertExists, now } from "@common/utils";
 import { Value } from "@sinclair/typebox/value";
 import {
@@ -9,11 +11,14 @@ import {
   type SQL,
   sql,
 } from "drizzle-orm";
-import { db, notDeleted, omitColumns, pagination, table } from "@/db";
 import {
-  ObjectiveAnswer,
-  ObjectiveAnswerKey,
-} from "@/modules/questions/content-schemas";
+  db,
+  notDeleted,
+  omitColumns,
+  paginatedList,
+  softDelete,
+  table,
+} from "@/db";
 import type { Actor } from "@/plugins/auth";
 import { BadRequestError, ConflictError } from "@/plugins/error";
 import type {
@@ -40,17 +45,6 @@ const SUBMISSION_COLUMNS = omitColumns(getTableColumns(table.submissions), [
 ]);
 
 type SubmissionInsert = typeof table.submissions.$inferInsert;
-type SubmissionSkill = "listening" | "reading" | "writing" | "speaking";
-type SubmissionStatus =
-  | "pending"
-  | "queued"
-  | "processing"
-  | "completed"
-  | "review_pending"
-  | "error"
-  | "retrying"
-  | "failed";
-type SubmissionBand = "A1" | "A2" | "B1" | "B2" | "C1" | null;
 
 /**
  * Map a 0-10 score to VSTEP.3-5 proficiency bands.
@@ -93,7 +87,7 @@ export async function getSubmissionById(submissionId: string, actor: Actor) {
     "Submission",
   );
 
-  assertAccess(row.userId, actor, "You can only view your own submissions");
+  assertAccess(row.userId, actor, SUBMISSION_MESSAGES.viewOwn);
 
   const { details, ...submission } = row;
   return {
@@ -108,8 +102,6 @@ export async function listSubmissions(
   query: SubmissionListQuery,
   actor: Actor,
 ) {
-  const pg = pagination(query.page, query.limit);
-
   const conditions: SQL[] = [notDeleted(table.submissions)];
 
   if (!actor.is("admin")) {
@@ -119,45 +111,43 @@ export async function listSubmissions(
   }
 
   if (query.skill) {
-    conditions.push(
-      eq(table.submissions.skill, query.skill as SubmissionSkill),
-    );
+    conditions.push(eq(table.submissions.skill, query.skill));
   }
 
   if (query.status) {
-    conditions.push(
-      eq(table.submissions.status, query.status as SubmissionStatus),
-    );
+    conditions.push(eq(table.submissions.status, query.status));
   }
 
   const whereClause = and(...conditions);
 
-  const [countResult, submissions] = await Promise.all([
-    db.select({ count: count() }).from(table.submissions).where(whereClause),
-    db
-      .select({
-        ...SUBMISSION_COLUMNS,
-        answer: table.submissionDetails.answer,
-        result: table.submissionDetails.result,
-        feedback: table.submissionDetails.feedback,
-      })
-      .from(table.submissions)
-      .leftJoin(
-        table.submissionDetails,
-        eq(table.submissions.id, table.submissionDetails.submissionId),
-      )
-      .where(whereClause)
-      .orderBy(desc(table.submissions.createdAt))
-      .limit(pg.limit)
-      .offset(pg.offset),
-  ]);
-
-  const total = countResult[0]?.count ?? 0;
-
-  return {
-    data: submissions,
-    meta: pg.meta(total),
-  };
+  return paginatedList({
+    page: query.page,
+    limit: query.limit,
+    getCount: async () => {
+      const [result] = await db
+        .select({ count: count() })
+        .from(table.submissions)
+        .where(whereClause);
+      return result?.count ?? 0;
+    },
+    getData: ({ limit, offset }) =>
+      db
+        .select({
+          ...SUBMISSION_COLUMNS,
+          answer: table.submissionDetails.answer,
+          result: table.submissionDetails.result,
+          feedback: table.submissionDetails.feedback,
+        })
+        .from(table.submissions)
+        .leftJoin(
+          table.submissionDetails,
+          eq(table.submissions.id, table.submissionDetails.submissionId),
+        )
+        .where(whereClause)
+        .orderBy(desc(table.submissions.createdAt))
+        .limit(limit)
+        .offset(offset),
+  });
 }
 
 export async function createSubmission(
@@ -180,7 +170,7 @@ export async function createSubmission(
     const question = assertExists(questionRow, "Question");
 
     if (!question.isActive) {
-      throw new BadRequestError("Question is not active");
+      throw new BadRequestError(SUBMISSION_MESSAGES.questionNotActive);
     }
 
     const [submission] = await tx
@@ -219,15 +209,11 @@ export async function updateSubmission(
 
     const submission = assertExists(row, "Submission");
 
-    assertAccess(
-      submission.userId,
-      actor,
-      "You can only update your own submissions",
-    );
+    assertAccess(submission.userId, actor, SUBMISSION_MESSAGES.updateOwn);
 
     const MUTABLE_STATUSES = ["pending", "error"];
     if (!MUTABLE_STATUSES.includes(submission.status) && !actor.is("admin")) {
-      throw new ConflictError("Cannot update submission in current status");
+      throw new ConflictError(SUBMISSION_MESSAGES.cannotUpdateInCurrentStatus);
     }
 
     const timestamp = now();
@@ -238,16 +224,15 @@ export async function updateSubmission(
     if (actor.is("admin")) {
       // Admin bypasses state machine — can force any transition
       if (body.status) {
-        updateValues.status = body.status as SubmissionInsert["status"];
+        updateValues.status = body.status;
         if (body.status === "completed" && submission.status !== "completed") {
           updateValues.completedAt = timestamp;
         }
       }
       if (body.score !== undefined) updateValues.score = body.score;
-      if (body.band !== undefined)
-        updateValues.band = body.band as SubmissionBand;
+      if (body.band !== undefined) updateValues.band = body.band;
     } else if (body.status) {
-      validateTransition(submission.status, body.status as string);
+      validateTransition(submission.status, body.status);
     }
 
     const [updatedSubmission] = await tx
@@ -311,20 +296,13 @@ export async function gradeSubmission(
       );
     }
 
-    if (body.score < 0 || body.score > 10) {
-      throw new BadRequestError("Score must be between 0 and 10");
-    }
-    if ((body.score * 10) % 5 !== 0) {
-      throw new BadRequestError("Score must be in 0.5 increments");
-    }
-
     const timestamp = now();
     const [updatedSubmission] = await tx
       .update(table.submissions)
       .set({
         status: "completed",
         score: body.score,
-        band: (body.band ?? scoreToBand(body.score)) as SubmissionBand,
+        band: body.band ?? scoreToBand(body.score),
         updatedAt: timestamp,
         completedAt: timestamp,
       })
@@ -361,31 +339,38 @@ export async function gradeSubmission(
 
 export async function removeSubmission(submissionId: string, actor: Actor) {
   return db.transaction(async (tx) => {
-    const row = await tx.query.submissions.findFirst({
-      where: and(
-        eq(table.submissions.id, submissionId),
-        notDeleted(table.submissions),
-      ),
+    return softDelete(tx, {
+      entityName: "Submission",
+      findExisting: async (trx) => {
+        const submission = assertExists(
+          await trx.query.submissions.findFirst({
+            where: and(
+              eq(table.submissions.id, submissionId),
+              notDeleted(table.submissions),
+            ),
+          }),
+          "Submission",
+        );
+
+        assertAccess(submission.userId, actor, SUBMISSION_MESSAGES.deleteOwn);
+        return submission;
+      },
+      runDelete: async (trx, timestamp) => {
+        const [submission] = await trx
+          .update(table.submissions)
+          .set({
+            deletedAt: timestamp,
+            updatedAt: timestamp,
+          })
+          .where(eq(table.submissions.id, submissionId))
+          .returning({
+            id: table.submissions.id,
+            deletedAt: table.submissions.deletedAt,
+          });
+
+        return submission;
+      },
     });
-
-    const submission = assertExists(row, "Submission");
-
-    assertAccess(
-      submission.userId,
-      actor,
-      "You can only delete your own submissions",
-    );
-
-    const timestamp = now();
-    await tx
-      .update(table.submissions)
-      .set({
-        deletedAt: timestamp,
-        updatedAt: timestamp,
-      })
-      .where(eq(table.submissions.id, submissionId));
-
-    return { id: submissionId, deletedAt: timestamp };
   });
 }
 
@@ -435,20 +420,18 @@ export async function autoGradeSubmission(submissionId: string) {
     }
 
     if (data.skill !== "listening" && data.skill !== "reading") {
-      throw new BadRequestError(
-        "Only listening and reading submissions can be auto-graded",
-      );
+      throw new BadRequestError(SUBMISSION_MESSAGES.objectiveOnlyAutoGrading);
     }
 
     if (!data.answerKey) {
-      throw new BadRequestError("Question has no answer key for auto-grading");
+      throw new BadRequestError(SUBMISSION_MESSAGES.noAnswerKeyForAutoGrading);
     }
 
     if (
       !Value.Check(ObjectiveAnswerKey, data.answerKey) ||
       !Value.Check(ObjectiveAnswer, data.answer)
     ) {
-      throw new BadRequestError("Answer format incompatible with auto-grading");
+      throw new BadRequestError(SUBMISSION_MESSAGES.incompatibleAnswerFormat);
     }
 
     const { correctCount, totalCount } = data;

@@ -1,3 +1,5 @@
+import type { SubmissionAnswer } from "@common/answer-schemas";
+import type { ExamBlueprint } from "@common/grading-schemas";
 import { sql } from "drizzle-orm";
 import {
   boolean,
@@ -10,12 +12,8 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import type {
-  ExamBlueprint,
-  SubmissionAnswer,
-} from "@/modules/questions/content-schemas";
+import { createdAt, timestamps, timestampsWithSoftDelete } from "./columns";
 import { skillEnum } from "./enums";
-import { createdAt, timestamps, timestampsWithSoftDelete } from "./helpers";
 import { questionLevelEnum, questions } from "./questions";
 import { submissions } from "./submissions";
 import { users } from "./users";

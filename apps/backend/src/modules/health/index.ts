@@ -1,4 +1,5 @@
-import { Elysia, t } from "elysia";
+import { Elysia } from "elysia";
+import { HealthResponse } from "./model";
 import { checkHealth } from "./service";
 
 export const healthModule = new Elysia({
@@ -6,21 +7,6 @@ export const healthModule = new Elysia({
   prefix: "/health",
   detail: { tags: ["Health"] },
 }).get("/", async () => checkHealth(), {
-  response: {
-    200: t.Object({
-      status: t.String(),
-      services: t.Object({
-        db: t.Object({ status: t.String(), latency: t.Optional(t.Number()) }),
-        redis: t.Object({
-          status: t.String(),
-          latency: t.Optional(t.Number()),
-        }),
-        rabbitmq: t.Object({
-          status: t.String(),
-          latency: t.Optional(t.Number()),
-        }),
-      }),
-    }),
-  },
+  response: { 200: HealthResponse },
   detail: { summary: "Health check" },
 });

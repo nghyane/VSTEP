@@ -1,3 +1,5 @@
+import type { ObjectiveAnswerKey } from "@common/answer-schemas";
+import type { QuestionContent } from "@common/question-content";
 import { sql } from "drizzle-orm";
 import {
   boolean,
@@ -9,12 +11,8 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import type {
-  ObjectiveAnswerKey,
-  QuestionContent,
-} from "@/modules/questions/content-schemas";
+import { createdAt, timestampsWithSoftDelete } from "./columns";
 import { skillEnum } from "./enums";
-import { createdAt, timestampsWithSoftDelete } from "./helpers";
 import { users } from "./users";
 
 /**

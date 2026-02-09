@@ -1,6 +1,7 @@
+import { ObjectiveAnswerKey } from "@common/answer-schemas";
 import { QuestionFormat, QuestionLevel, Skill } from "@common/enums";
+import { QuestionContent } from "@common/question-content";
 import { t } from "elysia";
-import { ObjectiveAnswerKey, QuestionContent } from "./content-schemas";
 
 export const QuestionCreateBody = t.Object({
   skill: Skill,

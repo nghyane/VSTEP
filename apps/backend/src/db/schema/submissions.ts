@@ -1,3 +1,5 @@
+import type { SubmissionAnswer } from "@common/answer-schemas";
+import type { GradingResult } from "@common/grading-schemas";
 import { sql } from "drizzle-orm";
 import {
   boolean,
@@ -12,12 +14,8 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import type {
-  GradingResult,
-  SubmissionAnswer,
-} from "@/modules/questions/content-schemas";
+import { timestamps, timestampsWithSoftDelete } from "./columns";
 import { skillEnum, vstepBandEnum } from "./enums";
-import { timestamps, timestampsWithSoftDelete } from "./helpers";
 import { questions } from "./questions";
 import { users } from "./users";
 

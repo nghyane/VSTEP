@@ -72,6 +72,14 @@ export {
   users,
 };
 
+export {
+  createdAt,
+  deletedAt,
+  id,
+  timestamps,
+  timestampsWithSoftDelete,
+  updatedAt,
+} from "./columns";
 // Export all types from schema files
 export type {
   Exam,
@@ -83,14 +91,6 @@ export type {
   NewExamSession,
   NewExamSubmission,
 } from "./exams";
-export {
-  createdAt,
-  deletedAt,
-  id,
-  timestamps,
-  timestampsWithSoftDelete,
-  updatedAt,
-} from "./helpers";
 
 export type {
   NewOutbox,

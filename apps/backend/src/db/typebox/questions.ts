@@ -1,9 +1,7 @@
+import { ObjectiveAnswerKey } from "@common/answer-schemas";
+import { QuestionContent } from "@common/question-content";
 import { questions, questionVersions } from "@db/schema";
 import { t } from "elysia";
-import {
-  ObjectiveAnswerKey,
-  QuestionContent,
-} from "@/modules/questions/content-schemas";
 import { createSelectSchema } from "./factory";
 
 const QuestionRow = createSelectSchema(questions, {

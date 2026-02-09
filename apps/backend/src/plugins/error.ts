@@ -112,7 +112,7 @@ export const errorPlugin = new Elysia({ name: "error" })
       }
 
       set.status = error.status;
-      return error.toResponse(requestId as string);
+      return error.toResponse(requestId || "");
     }
 
     if (code === "VALIDATION") {
