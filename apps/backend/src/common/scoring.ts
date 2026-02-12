@@ -1,4 +1,6 @@
-/** Score thresholds for VSTEP band mapping (0-10 scale) */
+import { ObjectiveAnswer, ObjectiveAnswerKey } from "@db/types/answers";
+import { Value } from "@sinclair/typebox/value";
+
 export const BAND_THRESHOLDS = {
   C1: 8.5,
   B2: 6.0,
@@ -7,10 +9,7 @@ export const BAND_THRESHOLDS = {
 
 export type VstepBand = "B1" | "B2" | "C1" | null;
 
-/**
- * Map a 0-10 score to VSTEP.3-5 proficiency bands.
- * Scores below 4.0 are treated as below B1 and return null.
- */
+/** Scores below B1 (4.0) return null */
 export function scoreToBand(score: number): VstepBand {
   if (score < 0) return null;
   if (score >= BAND_THRESHOLDS.C1) return "C1";
@@ -19,15 +18,11 @@ export function scoreToBand(score: number): VstepBand {
   return null;
 }
 
-/** Calculate a skill score: (correct / total) * 10, rounded to nearest 0.5 */
 export function calculateScore(correct: number, total: number): number | null {
   return total === 0 ? null : Math.round((correct / total) * 10 * 2) / 2;
 }
 
-/**
- * Calculate overall score as the average of all skill scores, rounded to nearest 0.5.
- * Returns null when any required skill score is still missing.
- */
+/** Returns null when any skill score is still missing */
 export function calculateOverallScore(
   scores: (number | null)[],
 ): number | null {
@@ -35,4 +30,22 @@ export function calculateOverallScore(
   const valid = scores as number[];
   const avg = valid.reduce((sum, s) => sum + s, 0) / valid.length;
   return Math.round(avg * 2) / 2;
+}
+
+export function parseAnswerKey(raw: unknown): Record<string, string> {
+  if (Value.Check(ObjectiveAnswerKey, raw)) return raw.correctAnswers;
+  return {};
+}
+
+/** Falls back to extracting string values from plain objects */
+export function parseUserAnswer(raw: unknown): Record<string, string> {
+  if (Value.Check(ObjectiveAnswer, raw)) return raw.answers;
+  if (typeof raw === "object" && raw !== null && !Array.isArray(raw)) {
+    const entries = Object.entries(raw as Record<string, unknown>).filter(
+      ([, v]) => typeof v === "string",
+    );
+    if (entries.length > 0)
+      return Object.fromEntries(entries) as Record<string, string>;
+  }
+  return {};
 }

@@ -1,7 +1,12 @@
+import { UserRole } from "@db/enums";
 import { t } from "elysia";
-import { User } from "@/modules/users/schema";
 
-export const AuthUser = t.Pick(User, ["id", "email", "fullName", "role"]);
+export const AuthUser = t.Object({
+  id: t.String({ format: "uuid" }),
+  email: t.String({ format: "email" }),
+  fullName: t.Nullable(t.String()),
+  role: UserRole,
+});
 
 export const TokenResponse = t.Object({
   accessToken: t.String(),

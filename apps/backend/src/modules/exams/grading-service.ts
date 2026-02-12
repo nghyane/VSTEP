@@ -1,36 +1,18 @@
 import type { Actor } from "@common/auth-types";
 import { BadRequestError } from "@common/errors";
-import { calculateScore } from "@common/scoring";
+import {
+  calculateScore,
+  parseAnswerKey,
+  parseUserAnswer,
+} from "@common/scoring";
 import { assertExists } from "@common/utils";
 import type { DbTransaction } from "@db/index";
 import { db, notDeleted, table } from "@db/index";
 import type { ObjectiveAnswerKey, SubmissionAnswer } from "@db/types/answers";
-import {
-  ObjectiveAnswer,
-  ObjectiveAnswerKey as ObjectiveAnswerKeySchema,
-} from "@db/types/answers";
-import { Value } from "@sinclair/typebox/value";
 import { and, eq, inArray } from "drizzle-orm";
 import { SESSION_COLUMNS } from "./schema";
 import type { ExamSessionStatus } from "./service";
 import { getActiveSession } from "./session-service";
-
-function parseAnswerKey(raw: unknown): Record<string, string> {
-  if (Value.Check(ObjectiveAnswerKeySchema, raw)) return raw.correctAnswers;
-  return {};
-}
-
-function parseUserAnswer(raw: unknown): Record<string, string> {
-  if (Value.Check(ObjectiveAnswer, raw)) return raw.answers;
-  if (typeof raw === "object" && raw !== null && !Array.isArray(raw)) {
-    const entries = Object.entries(raw as Record<string, unknown>).filter(
-      ([, v]) => typeof v === "string",
-    );
-    if (entries.length > 0)
-      return Object.fromEntries(entries) as Record<string, string>;
-  }
-  return {};
-}
 
 type AnswerEntry = { questionId: string; answer: SubmissionAnswer };
 type QuestionInfo = { skill: string; answerKey: ObjectiveAnswerKey | null };

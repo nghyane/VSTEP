@@ -15,11 +15,8 @@ const JSONB_REFINE = {
   answerKey: t.Nullable(ObjectiveAnswerKey),
 };
 
-/** Drizzle select columns (no answerKey/deletedAt) for .select()/.returning() */
 const { answerKey: _, deletedAt: __, ...columns } = getTableColumns(questions);
 export const QUESTION_COLUMNS = columns;
-
-// ── Response schemas — derived from Drizzle table ────────────────────
 
 const SelectQuestion = createSelectSchema(questions, JSONB_REFINE);
 
@@ -34,8 +31,6 @@ export const QuestionVersion = createSelectSchema(
   JSONB_REFINE,
 );
 export type QuestionVersion = typeof QuestionVersion.static;
-
-// ── Request schemas — derived from createInsertSchema/createUpdateSchema ─
 
 const InsertQuestion = createInsertSchema(questions, {
   skill: Skill,

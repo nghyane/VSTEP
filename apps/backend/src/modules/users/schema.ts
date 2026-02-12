@@ -4,17 +4,12 @@ import { getTableColumns } from "drizzle-orm";
 import { createSelectSchema } from "drizzle-typebox";
 import { t } from "elysia";
 
-/** Drizzle select columns (no passwordHash/deletedAt) for .select()/.returning() */
 const { passwordHash: _, deletedAt: __, ...columns } = getTableColumns(users);
 export const USER_COLUMNS = columns;
 
-/** Response schema — derived from Drizzle table, omit internal fields */
 const UserRow = createSelectSchema(users);
 export const User = t.Omit(UserRow, ["passwordHash", "deletedAt"]);
 export type User = typeof User.static;
-
-// ── Request schemas ──────────────────────────────────────────────────
-// Manual: `password` (API) ≠ `passwordHash` (DB) — cannot derive from createInsertSchema
 
 export const UserCreateBody = t.Object({
   email: t.String({ format: "email", error: "Valid email is required" }),

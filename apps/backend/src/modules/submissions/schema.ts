@@ -1,4 +1,5 @@
 import { Skill, SubmissionStatus, VstepBand } from "@db/enums";
+import { omitColumns } from "@db/index";
 import { submissions } from "@db/schema";
 import { SubmissionAnswer } from "@db/types/answers";
 import { GradingResult } from "@db/types/grading";
@@ -6,7 +7,6 @@ import { getTableColumns } from "drizzle-orm";
 import { createSelectSchema } from "drizzle-typebox";
 import { t } from "elysia";
 
-/** Internal columns excluded from API responses */
 const OMITTED = [
   "confidence",
   "isLate",
@@ -22,23 +22,15 @@ const OMITTED = [
   "deletedAt",
 ] as const;
 
-/** Drizzle select columns (omit internal fields) for .select()/.returning() */
-const allColumns = getTableColumns(submissions);
-const skipSet = new Set<string>(OMITTED as unknown as string[]);
-const filtered = Object.fromEntries(
-  Object.entries(allColumns).filter(([k]) => !skipSet.has(k)),
+export const SUBMISSION_COLUMNS = omitColumns(
+  getTableColumns(submissions),
+  OMITTED,
 );
-export const SUBMISSION_COLUMNS = filtered as Omit<
-  typeof allColumns,
-  (typeof OMITTED)[number]
->;
 
-/** Exclusion map for db.query.* columns — Drizzle native pattern */
+/** For db.query.* — Drizzle columns exclusion pattern */
 export const SUBMISSION_EXCLUDE = Object.fromEntries(
   OMITTED.map((k) => [k, false] as const),
 ) as { [K in (typeof OMITTED)[number]]: false };
-
-// ── Response schemas — derived from Drizzle table ────────────────────
 
 const SubmissionRow = createSelectSchema(submissions);
 
@@ -54,9 +46,6 @@ export const SubmissionFull = t.Composite([
   }),
 ]);
 export type SubmissionFull = typeof SubmissionFull.static;
-
-// ── Request schemas ──────────────────────────────────────────────────
-// Manual: spans multiple tables (submissions + submissionDetails)
 
 export const SubmissionCreateBody = t.Object({
   questionId: t.String({ format: "uuid" }),

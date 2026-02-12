@@ -10,13 +10,10 @@ import {
 } from "drizzle-typebox";
 import { t } from "elysia";
 
-/** Drizzle select columns (no deletedAt) for .select()/.returning() */
 const { deletedAt: _, ...examColumns } = getTableColumns(exams);
 const { deletedAt: __, ...sessionColumns } = getTableColumns(examSessions);
 export const EXAM_COLUMNS = examColumns;
 export const SESSION_COLUMNS = sessionColumns;
-
-// ── Response schemas — derived from Drizzle table ────────────────────
 
 const ExamRow = createSelectSchema(exams, { blueprint: ExamBlueprint });
 const SessionRow = createSelectSchema(examSessions);
@@ -26,8 +23,6 @@ export type Exam = typeof Exam.static;
 
 export const ExamSession = t.Omit(SessionRow, ["deletedAt"]);
 export type ExamSession = typeof ExamSession.static;
-
-// ── Request schemas — derived from createInsertSchema/createUpdateSchema ─
 
 const InsertExam = createInsertSchema(exams, {
   level: QuestionLevel,

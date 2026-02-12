@@ -1,7 +1,6 @@
 import { type Actor, ROLES } from "@common/auth-types";
 import { ForbiddenError, NotFoundError } from "@common/errors";
 
-/** Trim + lowercase an email address. Shared by auth & users modules. */
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
@@ -16,12 +15,11 @@ export function assertExists<T>(
   return value;
 }
 
-/** Escape special LIKE characters to prevent wildcard abuse */
 export function escapeLike(str: string): string {
   return str.replace(/[%_\\]/g, "\\$&");
 }
 
-/** Owner or admin bypass — works with the 3-role hierarchy. Null owner = no owner, only admin can access. */
+/** Null owner = no owner, only admin can access */
 export function assertAccess(
   resourceUserId: string | null,
   actor: Actor,
