@@ -1,28 +1,24 @@
 import type { Actor } from "@common/auth-types";
 import { ROLES } from "@common/auth-types";
 import { BadRequestError, ConflictError } from "@common/errors";
-import { assertAccess, assertExists, now } from "@common/utils";
+import { scoreToBand } from "@common/scoring";
+import { assertAccess, assertExists } from "@common/utils";
 import type { DbTransaction } from "@db/index";
-import { db, notDeleted, table } from "@db/index";
-import { paginatedQuery } from "@db/repos";
-import { submissionView } from "@db/views";
+import { db, notDeleted, paginated, table } from "@db/index";
 import { and, count, desc, eq, type SQL } from "drizzle-orm";
-import { SUBMISSION_MESSAGES } from "./messages";
 import type {
   SubmissionCreateBody,
   SubmissionGradeBody,
   SubmissionListQuery,
   SubmissionUpdateBody,
 } from "./schema";
-import { scoreToBand } from "./scoring";
+import { SUBMISSION_COLUMNS, SUBMISSION_EXCLUDE } from "./schema";
 
 const DETAIL_COLUMNS = {
   answer: table.submissionDetails.answer,
   result: table.submissionDetails.result,
   feedback: table.submissionDetails.feedback,
 };
-
-type SubmissionInsert = typeof table.submissions.$inferInsert;
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   pending: ["queued", "failed"],
@@ -40,11 +36,8 @@ const MUTABLE_STATUSES = ["pending", "error"];
 const GRADABLE_STATUSES = ["review_pending", "processing"];
 
 export function validateTransition(current: string, next: string) {
-  const allowed = VALID_TRANSITIONS[current];
-  if (!allowed?.includes(next)) {
-    throw new ConflictError(
-      SUBMISSION_MESSAGES.invalidTransition(current, next),
-    );
+  if (!VALID_TRANSITIONS[current]?.includes(next)) {
+    throw new ConflictError(`Cannot transition from ${current} to ${next}`);
   }
 }
 
@@ -69,7 +62,7 @@ export async function getSubmissionById(submissionId: string, actor: Actor) {
         eq(table.submissions.id, submissionId),
         notDeleted(table.submissions),
       ),
-      columns: submissionView.queryColumns,
+      columns: SUBMISSION_EXCLUDE,
       with: {
         details: { columns: { answer: true, result: true, feedback: true } },
       },
@@ -77,14 +70,14 @@ export async function getSubmissionById(submissionId: string, actor: Actor) {
     "Submission",
   );
 
-  assertAccess(row.userId, actor, SUBMISSION_MESSAGES.viewOwn);
+  assertAccess(row.userId, actor, "You can only view your own submissions");
 
-  const { details, ...submission } = row;
+  const { details: d, ...sub } = row;
   return {
-    ...submission,
-    answer: details?.answer ?? null,
-    result: details?.result ?? null,
-    feedback: details?.feedback ?? null,
+    ...sub,
+    answer: d?.answer ?? null,
+    result: d?.result ?? null,
+    feedback: d?.feedback ?? null,
   };
 }
 
@@ -92,39 +85,33 @@ export async function listSubmissions(
   query: SubmissionListQuery,
   actor: Actor,
 ) {
-  const conditions: SQL[] = [notDeleted(table.submissions)];
+  const where = and(
+    ...[
+      notDeleted(table.submissions),
+      !actor.is(ROLES.ADMIN) && eq(table.submissions.userId, actor.sub),
+      actor.is(ROLES.ADMIN) &&
+        query.userId &&
+        eq(table.submissions.userId, query.userId),
+      query.skill && eq(table.submissions.skill, query.skill),
+      query.status && eq(table.submissions.status, query.status),
+    ].filter((c): c is SQL => Boolean(c)),
+  );
 
-  if (!actor.is(ROLES.ADMIN)) {
-    conditions.push(eq(table.submissions.userId, actor.sub));
-  } else if (query.userId) {
-    conditions.push(eq(table.submissions.userId, query.userId));
-  }
-
-  if (query.skill) {
-    conditions.push(eq(table.submissions.skill, query.skill));
-  }
-
-  if (query.status) {
-    conditions.push(eq(table.submissions.status, query.status));
-  }
-
-  const whereClause = and(...conditions);
-
-  const pg = paginatedQuery(query.page, query.limit);
+  const pg = paginated(query.page, query.limit);
   return pg.resolve({
     count: db
       .select({ count: count() })
       .from(table.submissions)
-      .where(whereClause)
-      .then((result) => result[0]?.count ?? 0),
+      .where(where)
+      .then((r) => r[0]?.count ?? 0),
     query: db
-      .select({ ...submissionView.columns, ...DETAIL_COLUMNS })
+      .select({ ...SUBMISSION_COLUMNS, ...DETAIL_COLUMNS })
       .from(table.submissions)
       .leftJoin(
         table.submissionDetails,
         eq(table.submissions.id, table.submissionDetails.submissionId),
       )
-      .where(whereClause)
+      .where(where)
       .orderBy(desc(table.submissions.createdAt))
       .limit(pg.limit)
       .offset(pg.offset),
@@ -136,25 +123,22 @@ export async function createSubmission(
   body: SubmissionCreateBody,
 ) {
   return db.transaction(async (tx) => {
-    const questionRow = await tx.query.questions.findFirst({
-      where: and(
-        eq(table.questions.id, body.questionId),
-        notDeleted(table.questions),
-      ),
-      columns: {
-        id: true,
-        skill: true,
-        isActive: true,
-      },
-    });
-
-    const question = assertExists(questionRow, "Question");
+    const question = assertExists(
+      await tx.query.questions.findFirst({
+        where: and(
+          eq(table.questions.id, body.questionId),
+          notDeleted(table.questions),
+        ),
+        columns: { id: true, skill: true, isActive: true },
+      }),
+      "Question",
+    );
 
     if (!question.isActive) {
-      throw new BadRequestError(SUBMISSION_MESSAGES.questionNotActive);
+      throw new BadRequestError("Question is not active");
     }
 
-    const [submission] = await tx
+    const [sub] = await tx
       .insert(table.submissions)
       .values({
         userId,
@@ -162,16 +146,16 @@ export async function createSubmission(
         skill: question.skill,
         status: "pending",
       })
-      .returning(submissionView.columns);
+      .returning(SUBMISSION_COLUMNS);
 
-    const sub = assertExists(submission, "Submission");
+    const submission = assertExists(sub, "Submission");
 
     await tx.insert(table.submissionDetails).values({
-      submissionId: sub.id,
+      submissionId: submission.id,
       answer: body.answer,
     });
 
-    return { ...sub, answer: body.answer, result: null, feedback: null };
+    return { ...submission, answer: body.answer, result: null, feedback: null };
   });
 }
 
@@ -181,71 +165,72 @@ export async function updateSubmission(
   actor: Actor,
 ) {
   return db.transaction(async (tx) => {
-    const row = await tx.query.submissions.findFirst({
-      where: and(
-        eq(table.submissions.id, submissionId),
-        notDeleted(table.submissions),
-      ),
-      columns: { id: true, userId: true, status: true },
-    });
+    const submission = assertExists(
+      await tx.query.submissions.findFirst({
+        where: and(
+          eq(table.submissions.id, submissionId),
+          notDeleted(table.submissions),
+        ),
+        columns: { id: true, userId: true, status: true },
+      }),
+      "Submission",
+    );
 
-    const submission = assertExists(row, "Submission");
-
-    assertAccess(submission.userId, actor, SUBMISSION_MESSAGES.updateOwn);
+    assertAccess(
+      submission.userId,
+      actor,
+      "You can only update your own submissions",
+    );
 
     if (
       !MUTABLE_STATUSES.includes(submission.status) &&
       !actor.is(ROLES.ADMIN)
     ) {
-      throw new ConflictError(SUBMISSION_MESSAGES.cannotUpdateInCurrentStatus);
+      throw new ConflictError("Cannot update submission in current status");
     }
 
-    const timestamp = now();
-    const updateValues: Partial<SubmissionInsert> = {
-      updatedAt: timestamp,
+    const ts = new Date().toISOString();
+
+    if (body.status) validateTransition(submission.status, body.status);
+
+    const set = {
+      updatedAt: ts,
+      ...(body.status && { status: body.status }),
+      ...(body.status === "completed" &&
+        submission.status !== "completed" && { completedAt: ts }),
+      ...(actor.is(ROLES.ADMIN) &&
+        body.score !== undefined && {
+          score: body.score,
+          ...(!body.status &&
+            submission.status !== "completed" && {
+              status: "completed" as const,
+              completedAt: ts,
+            }),
+        }),
+      ...(actor.is(ROLES.ADMIN) &&
+        body.band !== undefined && { band: body.band }),
     };
 
-    if (body.status) {
-      validateTransition(submission.status, body.status);
-      updateValues.status = body.status;
-      if (body.status === "completed" && submission.status !== "completed") {
-        updateValues.completedAt = timestamp;
-      }
-    }
-
-    if (actor.is(ROLES.ADMIN)) {
-      if (body.score !== undefined) {
-        if (submission.status !== "completed" && !body.status) {
-          updateValues.status = "completed";
-          updateValues.completedAt = timestamp;
-        }
-        updateValues.score = body.score;
-      }
-      if (body.band !== undefined) updateValues.band = body.band;
-    }
-
-    const [updatedSubmission] = await tx
+    const [updated] = await tx
       .update(table.submissions)
-      .set(updateValues)
+      .set(set)
       .where(eq(table.submissions.id, submissionId))
-      .returning(submissionView.columns);
+      .returning(SUBMISSION_COLUMNS);
 
     if (body.answer !== undefined || body.feedback !== undefined) {
-      const updateDetails: Partial<
-        typeof table.submissionDetails.$inferInsert
-      > = {};
-      if (body.answer !== undefined) updateDetails.answer = body.answer;
-      if (body.feedback !== undefined) updateDetails.feedback = body.feedback;
-
       await tx
         .update(table.submissionDetails)
-        .set(updateDetails)
+        .set({
+          ...(body.answer !== undefined && { answer: body.answer }),
+          ...(body.feedback !== undefined && { feedback: body.feedback }),
+        })
         .where(eq(table.submissionDetails.submissionId, submissionId));
     }
 
-    const updatedSub = assertExists(updatedSubmission, "Submission");
-
-    return { ...updatedSub, ...(await fetchDetails(tx, submissionId)) };
+    return {
+      ...assertExists(updated, "Submission"),
+      ...(await fetchDetails(tx, submissionId)),
+    };
   });
 }
 
@@ -254,34 +239,35 @@ export async function gradeSubmission(
   body: SubmissionGradeBody,
 ) {
   return db.transaction(async (tx) => {
-    const row = await tx.query.submissions.findFirst({
-      where: and(
-        eq(table.submissions.id, submissionId),
-        notDeleted(table.submissions),
-      ),
-      columns: { id: true, status: true },
-    });
-
-    const submission = assertExists(row, "Submission");
+    const submission = assertExists(
+      await tx.query.submissions.findFirst({
+        where: and(
+          eq(table.submissions.id, submissionId),
+          notDeleted(table.submissions),
+        ),
+        columns: { id: true, status: true },
+      }),
+      "Submission",
+    );
 
     if (!GRADABLE_STATUSES.includes(submission.status)) {
       throw new ConflictError(
-        SUBMISSION_MESSAGES.cannotGradeStatus(submission.status),
+        `Cannot grade a submission with status "${submission.status}"`,
       );
     }
 
-    const timestamp = now();
-    const [updatedSubmission] = await tx
+    const ts = new Date().toISOString();
+    const [updated] = await tx
       .update(table.submissions)
       .set({
         status: "completed",
         score: body.score,
         band: body.band ?? scoreToBand(body.score),
-        updatedAt: timestamp,
-        completedAt: timestamp,
+        updatedAt: ts,
+        completedAt: ts,
       })
       .where(eq(table.submissions.id, submissionId))
-      .returning(submissionView.columns);
+      .returning(SUBMISSION_COLUMNS);
 
     if (body.feedback) {
       await tx
@@ -290,9 +276,10 @@ export async function gradeSubmission(
         .where(eq(table.submissionDetails.submissionId, submissionId));
     }
 
-    const updatedSub = assertExists(updatedSubmission, "Submission");
-
-    return { ...updatedSub, ...(await fetchDetails(tx, submissionId)) };
+    return {
+      ...assertExists(updated, "Submission"),
+      ...(await fetchDetails(tx, submissionId)),
+    };
   });
 }
 
@@ -309,15 +296,16 @@ export async function removeSubmission(submissionId: string, actor: Actor) {
       "Submission",
     );
 
-    assertAccess(submission.userId, actor, SUBMISSION_MESSAGES.deleteOwn);
+    assertAccess(
+      submission.userId,
+      actor,
+      "You can only delete your own submissions",
+    );
 
-    const timestamp = now();
+    const ts = new Date().toISOString();
     const [deleted] = await tx
       .update(table.submissions)
-      .set({
-        deletedAt: timestamp,
-        updatedAt: timestamp,
-      })
+      .set({ deletedAt: ts, updatedAt: ts })
       .where(eq(table.submissions.id, submissionId))
       .returning({
         id: table.submissions.id,
@@ -325,6 +313,6 @@ export async function removeSubmission(submissionId: string, actor: Actor) {
       });
 
     const removed = assertExists(deleted, "Submission");
-    return { id: removed.id, deletedAt: removed.deletedAt ?? timestamp };
+    return { id: removed.id, deletedAt: removed.deletedAt ?? ts };
   });
 }

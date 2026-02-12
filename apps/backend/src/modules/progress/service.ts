@@ -1,12 +1,8 @@
 import type { UserProgress } from "@db/index";
 import { db, table } from "@db/index";
 import { and, desc, eq, inArray } from "drizzle-orm";
-import { computeStats, computeTrend, round } from "./trends";
+import { computeStats, computeTrend } from "./trends";
 
-/**
- * Classify trend from recent scores using volatility and a 3-vs-3 average delta.
- * Thresholds: stdDev >= 1.5 => inconsistent, delta >= 0.5 => improving, delta <= -0.5 => declining.
- */
 export { computeTrend };
 
 export async function getProgressOverview(userId: string) {
@@ -56,8 +52,8 @@ export async function getProgressBySkill(
   return {
     progress: progress ?? null,
     recentScores,
-    windowAvg: avg !== null ? round(avg, 1) : null,
-    windowStdDev: stdDev !== null ? round(stdDev, 2) : null,
+    windowAvg: avg !== null ? Math.round(avg * 10) / 10 : null,
+    windowStdDev: stdDev !== null ? Math.round(stdDev * 100) / 100 : null,
     trend: computeTrend(scores, stdDev),
   };
 }
@@ -86,23 +82,25 @@ export async function getSpiderChart(userId: string) {
     }),
   ]);
 
-  const scoresBySkill = new Map<string, number[]>();
-  for (const row of allScores) {
-    const arr = scoresBySkill.get(row.skill) ?? [];
-    if (arr.length < 10) arr.push(row.score);
-    scoresBySkill.set(row.skill, arr);
-  }
+  const grouped = allScores.reduce((m, r) => {
+    const arr = m.get(r.skill) ?? [];
+    if (arr.length < 10) m.set(r.skill, [...arr, r.score]);
+    return m;
+  }, new Map<string, number[]>());
 
-  const result: Record<string, { current: number; trend: string }> = {};
-  for (const skill of skills) {
-    const scores = scoresBySkill.get(skill) ?? [];
-    const { avg, stdDev } = computeStats(scores);
-
-    result[skill] = {
-      current: avg !== null ? round(avg, 1) : 0,
-      trend: computeTrend(scores, stdDev),
-    };
-  }
+  const result = Object.fromEntries(
+    skills.map((s) => {
+      const sc = grouped.get(s) ?? [];
+      const { avg, stdDev } = computeStats(sc);
+      return [
+        s,
+        {
+          current: avg !== null ? Math.round(avg * 10) / 10 : 0,
+          trend: computeTrend(sc, stdDev),
+        },
+      ];
+    }),
+  );
 
   return { skills: result, goal: goal ?? null };
 }

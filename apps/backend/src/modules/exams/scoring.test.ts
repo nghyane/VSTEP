@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { calculateOverallScore, calculateScore } from "./scoring";
+import { calculateOverallScore, calculateScore } from "@common/scoring";
 
 describe("calculateScore", () => {
   it("returns 0 when there are no correct answers", () => {

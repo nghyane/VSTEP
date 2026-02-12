@@ -15,7 +15,6 @@ import {
   makeRequest,
   testEmailPrefix,
 } from "@/test/helpers";
-import { AUTH_MESSAGES } from "../messages";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -98,9 +97,7 @@ describe("auth integration", () => {
     if (!isRecord(duplicate.data.error)) return;
 
     expect(duplicate.data.error.code).toBe("CONFLICT");
-    expect(duplicate.data.error.message).toBe(
-      AUTH_MESSAGES.emailAlreadyRegistered,
-    );
+    expect(duplicate.data.error.message).toBe("Email already registered");
   });
 
   it("logs in with valid credentials", async () => {
@@ -145,9 +142,7 @@ describe("auth integration", () => {
     if (!isRecord(loginResult.data.error)) return;
 
     expect(loginResult.data.error.code).toBe("UNAUTHORIZED");
-    expect(loginResult.data.error.message).toBe(
-      AUTH_MESSAGES.invalidCredentials,
-    );
+    expect(loginResult.data.error.message).toBe("Invalid email or password");
   });
 
   it("refreshes token with a valid refresh token", async () => {

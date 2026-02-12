@@ -1,67 +1,53 @@
 import type { Actor } from "@common/auth-types";
 import { ROLES } from "@common/auth-types";
 import { BadRequestError } from "@common/errors";
-import { assertAccess, assertExists, escapeLike, now } from "@common/utils";
-import { db, notDeleted, table } from "@db/index";
-import { paginatedQuery } from "@db/repos";
-import { questionView } from "@db/views";
+import { assertAccess, assertExists, escapeLike } from "@common/utils";
+import { db, notDeleted, paginated, table } from "@db/index";
 import { and, count, desc, eq, type SQL, sql } from "drizzle-orm";
-import { QUESTION_MESSAGES } from "./messages";
 import type {
   QuestionCreateBody,
   QuestionListQuery,
   QuestionUpdateBody,
 } from "./schema";
+import { QUESTION_COLUMNS } from "./schema";
 
 export async function getQuestionById(questionId: string) {
   const question = await db.query.questions.findFirst({
     where: and(eq(table.questions.id, questionId), notDeleted(table.questions)),
-    columns: questionView.queryColumns,
+    columns: { answerKey: false, deletedAt: false },
   });
 
   return assertExists(question, "Question");
 }
 
 export async function listQuestions(query: QuestionListQuery, actor: Actor) {
-  const conditions: SQL[] = [notDeleted(table.questions)];
+  const admin = actor.is(ROLES.ADMIN);
+  const where = and(
+    ...[
+      notDeleted(table.questions),
+      !admin && eq(table.questions.isActive, true),
+      admin &&
+        query.isActive !== undefined &&
+        eq(table.questions.isActive, query.isActive),
+      query.skill && eq(table.questions.skill, query.skill),
+      query.level && eq(table.questions.level, query.level),
+      query.format && eq(table.questions.format, query.format),
+      query.search &&
+        sql`${table.questions.content}::text ILIKE ${`%${escapeLike(query.search)}%`}`,
+    ].filter((c): c is SQL => Boolean(c)),
+  );
 
-  if (!actor.is(ROLES.ADMIN)) {
-    conditions.push(eq(table.questions.isActive, true));
-  } else if (query.isActive !== undefined) {
-    conditions.push(eq(table.questions.isActive, query.isActive));
-  }
-
-  if (query.skill) {
-    conditions.push(eq(table.questions.skill, query.skill));
-  }
-
-  if (query.level) {
-    conditions.push(eq(table.questions.level, query.level));
-  }
-
-  if (query.format) {
-    conditions.push(eq(table.questions.format, query.format));
-  }
-
-  if (query.search) {
-    conditions.push(
-      sql`${table.questions.content}::text ILIKE ${`%${escapeLike(query.search)}%`}`,
-    );
-  }
-
-  const whereClause = and(...conditions);
-
-  const pg = paginatedQuery(query.page, query.limit);
+  const pg = paginated(query.page, query.limit);
   return pg.resolve({
     count: db
       .select({ count: count() })
       .from(table.questions)
-      .where(whereClause)
-      .then((result) => result[0]?.count ?? 0),
+      .where(where)
+      .then((r) => r[0]?.count ?? 0),
     query: db
-      .select(questionView.columns)
+      .select(QUESTION_COLUMNS)
       .from(table.questions)
-      .where(whereClause)
+      .where(where)
       .orderBy(desc(table.questions.createdAt))
       .limit(pg.limit)
       .offset(pg.offset),
@@ -82,7 +68,7 @@ export async function createQuestion(userId: string, body: QuestionCreateBody) {
         isActive: true,
         createdBy: userId,
       })
-      .returning(questionView.columns);
+      .returning(QUESTION_COLUMNS);
 
     const q = assertExists(question, "Question");
 
@@ -120,45 +106,43 @@ export async function updateQuestion(
       "Question",
     );
 
-    assertAccess(question.createdBy, actor, QUESTION_MESSAGES.updateOwn);
+    assertAccess(
+      question.createdBy,
+      actor,
+      "You can only update your own questions",
+    );
 
-    const updateValues: Partial<typeof table.questions.$inferInsert> = {
-      updatedAt: now(),
-    };
-
-    if (body.skill !== undefined) updateValues.skill = body.skill;
-    if (body.level !== undefined) updateValues.level = body.level;
-    if (body.format !== undefined) updateValues.format = body.format;
-    if (body.content !== undefined) updateValues.content = body.content;
-    if (body.answerKey !== undefined) updateValues.answerKey = body.answerKey;
-    if (body.isActive !== undefined) updateValues.isActive = body.isActive;
-
+    // Bump version whenever content or answerKey is touched — simple and predictable
     const contentChanged =
-      (body.content !== undefined &&
-        JSON.stringify(body.content) !== JSON.stringify(question.content)) ||
-      (body.answerKey !== undefined &&
-        JSON.stringify(body.answerKey) !== JSON.stringify(question.answerKey));
+      body.content !== undefined || body.answerKey !== undefined;
+    const nextVersion = contentChanged ? question.version + 1 : undefined;
 
-    if (contentChanged) {
-      const newVersion = question.version + 1;
-      updateValues.version = newVersion;
-
+    if (nextVersion) {
       await tx.insert(table.questionVersions).values({
         questionId,
-        version: newVersion,
+        version: nextVersion,
         content: body.content ?? question.content,
         answerKey:
           body.answerKey !== undefined ? body.answerKey : question.answerKey,
       });
     }
 
-    const [updatedQuestion] = await tx
+    const [updated] = await tx
       .update(table.questions)
-      .set(updateValues)
+      .set({
+        updatedAt: new Date().toISOString(),
+        ...(body.skill !== undefined && { skill: body.skill }),
+        ...(body.level !== undefined && { level: body.level }),
+        ...(body.format !== undefined && { format: body.format }),
+        ...(body.content !== undefined && { content: body.content }),
+        ...(body.answerKey !== undefined && { answerKey: body.answerKey }),
+        ...(body.isActive !== undefined && { isActive: body.isActive }),
+        ...(nextVersion && { version: nextVersion }),
+      })
       .where(eq(table.questions.id, questionId))
-      .returning(questionView.columns);
+      .returning(QUESTION_COLUMNS);
 
-    return assertExists(updatedQuestion, "Question");
+    return assertExists(updated, "Question");
   });
 }
 
@@ -175,15 +159,16 @@ export async function removeQuestion(questionId: string, actor: Actor) {
       "Question",
     );
 
-    assertAccess(question.createdBy, actor, QUESTION_MESSAGES.deleteOwn);
+    assertAccess(
+      question.createdBy,
+      actor,
+      "You can only delete your own questions",
+    );
 
-    const timestamp = now();
+    const ts = new Date().toISOString();
     const [deleted] = await tx
       .update(table.questions)
-      .set({
-        deletedAt: timestamp,
-        updatedAt: timestamp,
-      })
+      .set({ deletedAt: ts, updatedAt: ts })
       .where(eq(table.questions.id, questionId))
       .returning({
         id: table.questions.id,
@@ -191,7 +176,7 @@ export async function removeQuestion(questionId: string, actor: Actor) {
       });
 
     const removed = assertExists(deleted, "Question");
-    return { id: removed.id, deletedAt: removed.deletedAt ?? timestamp };
+    return { id: removed.id, deletedAt: removed.deletedAt ?? ts };
   });
 }
 
@@ -206,18 +191,15 @@ export async function restoreQuestion(questionId: string) {
     );
 
     if (!question.deletedAt) {
-      throw new BadRequestError(QUESTION_MESSAGES.notDeleted);
+      throw new BadRequestError("Question is not deleted");
     }
 
-    const [updatedQuestion] = await tx
+    const [updated] = await tx
       .update(table.questions)
-      .set({
-        deletedAt: null,
-        updatedAt: now(),
-      })
+      .set({ deletedAt: null, updatedAt: new Date().toISOString() })
       .where(eq(table.questions.id, questionId))
-      .returning(questionView.columns);
+      .returning(QUESTION_COLUMNS);
 
-    return assertExists(updatedQuestion, "Question");
+    return assertExists(updated, "Question");
   });
 }

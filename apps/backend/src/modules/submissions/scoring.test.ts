@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { scoreToBand } from "./scoring";
+import { scoreToBand } from "@common/scoring";
 
 describe("scoreToBand", () => {
   it("returns null below B1 threshold", () => {

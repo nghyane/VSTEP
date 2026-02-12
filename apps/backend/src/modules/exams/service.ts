@@ -1,81 +1,75 @@
 import { BadRequestError } from "@common/errors";
-import { assertExists, now } from "@common/utils";
+import { assertExists } from "@common/utils";
 import type { DbTransaction } from "@db/index";
-import { db, notDeleted, table } from "@db/index";
-import { paginatedQuery } from "@db/repos";
-import { examView } from "@db/views";
-import { and, count, desc, eq, inArray } from "drizzle-orm";
-import { EXAM_MESSAGES } from "./messages";
+import { db, notDeleted, paginated, table } from "@db/index";
+import type { ExamSession } from "@db/schema/exams";
+import { and, count, desc, eq, inArray, type SQL } from "drizzle-orm";
 import type { ExamCreateBody, ExamListQuery, ExamUpdateBody } from "./schema";
+import { EXAM_COLUMNS } from "./schema";
 
-export type ExamSessionStatus =
-  (typeof table.examSessions.$inferSelect)["status"];
+export type ExamSessionStatus = ExamSession["status"];
 
-async function validateBlueprintQuestions(
+async function validateBlueprint(
   tx: DbTransaction,
   blueprint: ExamCreateBody["blueprint"],
 ) {
-  const questionIds = [
-    ...(blueprint.listening?.questionIds ?? []),
-    ...(blueprint.reading?.questionIds ?? []),
-    ...(blueprint.writing?.questionIds ?? []),
-    ...(blueprint.speaking?.questionIds ?? []),
+  const ids = [
+    ...new Set(
+      (["listening", "reading", "writing", "speaking"] as const).flatMap(
+        (k) => blueprint[k]?.questionIds ?? [],
+      ),
+    ),
   ];
+  if (ids.length === 0) return;
 
-  if (questionIds.length === 0) return;
-
-  const uniqueQuestionIds = [...new Set(questionIds)];
-
-  const foundQuestions = await tx
+  const found = await tx
     .select({ id: table.questions.id })
     .from(table.questions)
     .where(
       and(
-        inArray(table.questions.id, uniqueQuestionIds),
+        inArray(table.questions.id, ids),
         notDeleted(table.questions),
         eq(table.questions.isActive, true),
       ),
     );
 
-  if (foundQuestions.length === uniqueQuestionIds.length) return;
+  if (found.length === ids.length) return;
 
-  const foundIds = new Set(foundQuestions.map((question) => question.id));
-  const missingIds = uniqueQuestionIds.filter((id) => !foundIds.has(id));
-
+  const have = new Set(found.map((q) => q.id));
   throw new BadRequestError(
-    EXAM_MESSAGES.blueprintMissingQuestions(missingIds),
+    `Blueprint references non-existent or inactive questions: [${ids.filter((id) => !have.has(id)).join(", ")}]`,
   );
 }
 
-/** Public resource — any authenticated user can view an exam. No ownership check needed. */
 export async function getExamById(id: string) {
   const exam = await db.query.exams.findFirst({
     where: and(eq(table.exams.id, id), notDeleted(table.exams)),
-    columns: examView.queryColumns,
+    columns: { deletedAt: false },
   });
 
   return assertExists(exam, "Exam");
 }
 
 export async function listExams(query: ExamListQuery) {
-  const conditions = [notDeleted(table.exams)];
-  if (query.level) conditions.push(eq(table.exams.level, query.level));
-  if (query.isActive !== undefined)
-    conditions.push(eq(table.exams.isActive, query.isActive));
+  const where = and(
+    ...[
+      notDeleted(table.exams),
+      query.level && eq(table.exams.level, query.level),
+      query.isActive !== undefined && eq(table.exams.isActive, query.isActive),
+    ].filter((c): c is SQL => Boolean(c)),
+  );
 
-  const whereClause = and(...conditions);
-
-  const pg = paginatedQuery(query.page, query.limit);
+  const pg = paginated(query.page, query.limit);
   return pg.resolve({
     count: db
       .select({ count: count() })
       .from(table.exams)
-      .where(whereClause)
-      .then((result) => result[0]?.count ?? 0),
+      .where(where)
+      .then((r) => r[0]?.count ?? 0),
     query: db
-      .select(examView.columns)
+      .select(EXAM_COLUMNS)
       .from(table.exams)
-      .where(whereClause)
+      .where(where)
       .orderBy(desc(table.exams.createdAt))
       .limit(pg.limit)
       .offset(pg.offset),
@@ -84,7 +78,7 @@ export async function listExams(query: ExamListQuery) {
 
 export async function createExam(userId: string, body: ExamCreateBody) {
   return db.transaction(async (tx) => {
-    await validateBlueprintQuestions(tx, body.blueprint);
+    await validateBlueprint(tx, body.blueprint);
 
     const [exam] = await tx
       .insert(table.exams)
@@ -94,7 +88,7 @@ export async function createExam(userId: string, body: ExamCreateBody) {
         isActive: body.isActive ?? true,
         createdBy: userId,
       })
-      .returning(examView.columns);
+      .returning(EXAM_COLUMNS);
 
     return assertExists(exam, "Exam");
   });
@@ -102,22 +96,20 @@ export async function createExam(userId: string, body: ExamCreateBody) {
 
 export async function updateExam(id: string, body: ExamUpdateBody) {
   return db.transaction(async (tx) => {
-    const updateValues: Partial<typeof table.exams.$inferInsert> = {
-      updatedAt: now(),
-    };
-
-    if (body.level !== undefined) updateValues.level = body.level;
     if (body.blueprint !== undefined) {
-      await validateBlueprintQuestions(tx, body.blueprint);
-      updateValues.blueprint = body.blueprint;
+      await validateBlueprint(tx, body.blueprint);
     }
-    if (body.isActive !== undefined) updateValues.isActive = body.isActive;
 
     const [exam] = await tx
       .update(table.exams)
-      .set(updateValues)
+      .set({
+        updatedAt: new Date().toISOString(),
+        ...(body.level !== undefined && { level: body.level }),
+        ...(body.blueprint !== undefined && { blueprint: body.blueprint }),
+        ...(body.isActive !== undefined && { isActive: body.isActive }),
+      })
       .where(and(eq(table.exams.id, id), notDeleted(table.exams)))
-      .returning(examView.columns);
+      .returning(EXAM_COLUMNS);
 
     return assertExists(exam, "Exam");
   });

@@ -1,8 +1,7 @@
 import type { Actor } from "@common/auth-types";
-import { assertAccess, assertExists, now } from "@common/utils";
+import { assertAccess, assertExists } from "@common/utils";
 import { db, notDeleted, table } from "@db/index";
 import { and, desc, eq } from "drizzle-orm";
-import { QUESTION_MESSAGES } from "./messages";
 import type { QuestionVersionBody } from "./schema";
 
 export async function createQuestionVersion(
@@ -26,7 +25,11 @@ export async function createQuestionVersion(
       "Question",
     );
 
-    assertAccess(question.createdBy, actor, QUESTION_MESSAGES.versionOwn);
+    assertAccess(
+      question.createdBy,
+      actor,
+      "You can only create versions of your own questions",
+    );
 
     const newVersion = question.version + 1;
 
@@ -48,7 +51,7 @@ export async function createQuestionVersion(
         content: body.content,
         answerKey: body.answerKey ?? null,
         version: newVersion,
-        updatedAt: now(),
+        updatedAt: new Date().toISOString(),
       })
       .where(eq(table.questions.id, questionId));
 

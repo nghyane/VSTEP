@@ -3,67 +3,51 @@ import { ROLES } from "@common/auth-types";
 import {
   ConflictError,
   ForbiddenError,
-  isUniqueViolation,
   UnauthorizedError,
 } from "@common/errors";
-import { hashPassword, verifyPassword } from "@common/password";
-import {
-  assertAccess,
-  assertExists,
-  escapeLike,
-  normalizeEmail,
-  now,
-} from "@common/utils";
-import { db, notDeleted, table } from "@db/index";
-import { paginatedQuery } from "@db/repos";
-import { userView } from "@db/views";
+import { assertAccess, assertExists, escapeLike } from "@common/utils";
+import { db, notDeleted, paginated, table } from "@db/index";
 import { and, count, eq, ilike, ne, type SQL } from "drizzle-orm";
-import { USER_MESSAGES } from "./messages";
 import type {
   UserCreateBody,
   UserListQuery,
   UserPasswordBody,
   UserUpdateBody,
 } from "./schema";
+import { USER_COLUMNS } from "./schema";
 
 export async function getUserById(userId: string, actor?: Actor) {
-  if (actor) {
-    assertAccess(userId, actor, USER_MESSAGES.viewOwnProfile);
-  }
+  if (actor) assertAccess(userId, actor, "You can only view your own profile");
 
   const user = await db.query.users.findFirst({
     where: and(eq(table.users.id, userId), notDeleted(table.users)),
-    columns: userView.queryColumns,
+    columns: { passwordHash: false, deletedAt: false },
   });
 
   return assertExists(user, "User");
 }
 
 export async function listUsers(query: UserListQuery) {
-  const conditions: SQL[] = [notDeleted(table.users)];
+  const where = and(
+    ...[
+      notDeleted(table.users),
+      query.role && eq(table.users.role, query.role),
+      query.search &&
+        ilike(table.users.fullName, `%${escapeLike(query.search)}%`),
+    ].filter((c): c is SQL => Boolean(c)),
+  );
 
-  if (query.role) {
-    conditions.push(eq(table.users.role, query.role));
-  }
-  if (query.search) {
-    conditions.push(
-      ilike(table.users.fullName, `%${escapeLike(query.search)}%`),
-    );
-  }
-
-  const whereClause = and(...conditions);
-
-  const pg = paginatedQuery(query.page, query.limit);
+  const pg = paginated(query.page, query.limit);
   return pg.resolve({
     count: db
       .select({ count: count() })
       .from(table.users)
-      .where(whereClause)
-      .then((result) => result[0]?.count ?? 0),
+      .where(where)
+      .then((r) => r[0]?.count ?? 0),
     query: db
-      .select(userView.columns)
+      .select(USER_COLUMNS)
       .from(table.users)
-      .where(whereClause)
+      .where(where)
       .orderBy(table.users.createdAt)
       .limit(pg.limit)
       .offset(pg.offset),
@@ -71,27 +55,22 @@ export async function listUsers(query: UserListQuery) {
 }
 
 export async function createUser(body: UserCreateBody) {
-  const email = normalizeEmail(body.email);
-  const passwordHash = await hashPassword(body.password);
+  const email = body.email.trim().toLowerCase();
+  const hash = await Bun.password.hash(body.password, "argon2id");
 
-  try {
-    const [user] = await db
-      .insert(table.users)
-      .values({
-        email,
-        passwordHash,
-        fullName: body.fullName,
-        role: body.role ?? ROLES.LEARNER,
-      })
-      .returning(userView.columns);
+  const [user] = await db
+    .insert(table.users)
+    .values({
+      email,
+      passwordHash: hash,
+      fullName: body.fullName,
+      role: body.role ?? ROLES.LEARNER,
+    })
+    .onConflictDoNothing({ target: table.users.email })
+    .returning(USER_COLUMNS);
 
-    return assertExists(user, "User");
-  } catch (err: unknown) {
-    if (isUniqueViolation(err)) {
-      throw new ConflictError(USER_MESSAGES.emailAlreadyRegistered);
-    }
-    throw err;
-  }
+  if (!user) throw new ConflictError("Email already registered");
+  return user;
 }
 
 export async function updateUser(
@@ -99,11 +78,11 @@ export async function updateUser(
   body: UserUpdateBody,
   actor: Actor,
 ) {
-  const email = body.email ? normalizeEmail(body.email) : undefined;
-  assertAccess(userId, actor, USER_MESSAGES.updateOwnProfile);
+  const email = body.email ? body.email.trim().toLowerCase() : undefined;
+  assertAccess(userId, actor, "You can only update your own profile");
 
   if (body.role && !actor.is(ROLES.ADMIN)) {
-    throw new ForbiddenError(USER_MESSAGES.adminRoleOnly);
+    throw new ForbiddenError("Only admins can change user roles");
   }
 
   return db.transaction(async (tx) => {
@@ -116,7 +95,7 @@ export async function updateUser(
     );
 
     if (email) {
-      const emailExists = await tx.query.users.findFirst({
+      const exists = await tx.query.users.findFirst({
         where: and(
           eq(table.users.email, email),
           ne(table.users.id, userId),
@@ -124,23 +103,19 @@ export async function updateUser(
         ),
         columns: { id: true },
       });
-      if (emailExists) {
-        throw new ConflictError(USER_MESSAGES.emailInUse);
-      }
+      if (exists) throw new ConflictError("Email already in use");
     }
-
-    const updateValues: Partial<typeof table.users.$inferInsert> = {
-      updatedAt: now(),
-    };
-    if (email) updateValues.email = email;
-    if (body.fullName !== undefined) updateValues.fullName = body.fullName;
-    if (body.role) updateValues.role = body.role;
 
     const [user] = await tx
       .update(table.users)
-      .set(updateValues)
+      .set({
+        updatedAt: new Date().toISOString(),
+        ...(email && { email }),
+        ...(body.fullName !== undefined && { fullName: body.fullName }),
+        ...(body.role && { role: body.role }),
+      })
       .where(eq(table.users.id, userId))
-      .returning(userView.columns);
+      .returning(USER_COLUMNS);
 
     return assertExists(user, "User");
   });
@@ -156,15 +131,15 @@ export async function removeUser(userId: string) {
       "User",
     );
 
-    const timestamp = now();
+    const ts = new Date().toISOString();
     const [deleted] = await tx
       .update(table.users)
-      .set({ deletedAt: timestamp, updatedAt: timestamp })
+      .set({ deletedAt: ts, updatedAt: ts })
       .where(eq(table.users.id, userId))
       .returning({ id: table.users.id, deletedAt: table.users.deletedAt });
 
     const user = assertExists(deleted, "User");
-    return { id: user.id, deletedAt: user.deletedAt ?? timestamp };
+    return { id: user.id, deletedAt: user.deletedAt ?? ts };
   });
 }
 
@@ -173,7 +148,7 @@ export async function updateUserPassword(
   body: UserPasswordBody,
   actor: Actor,
 ) {
-  assertAccess(userId, actor, USER_MESSAGES.changeOwnPassword);
+  assertAccess(userId, actor, "You can only change your own password");
 
   return db.transaction(async (tx) => {
     const user = assertExists(
@@ -184,18 +159,16 @@ export async function updateUserPassword(
       "User",
     );
 
-    const isValid = await verifyPassword(
-      body.currentPassword,
-      user.passwordHash,
-    );
-    if (!isValid) {
-      throw new UnauthorizedError(USER_MESSAGES.incorrectPassword);
+    if (!(await Bun.password.verify(body.currentPassword, user.passwordHash))) {
+      throw new UnauthorizedError("Current password is incorrect");
     }
 
-    const newPasswordHash = await hashPassword(body.newPassword);
     await tx
       .update(table.users)
-      .set({ passwordHash: newPasswordHash, updatedAt: now() })
+      .set({
+        passwordHash: await Bun.password.hash(body.newPassword, "argon2id"),
+        updatedAt: new Date().toISOString(),
+      })
       .where(eq(table.users.id, userId));
 
     return { message: "Password updated successfully" };

@@ -1,11 +1,10 @@
 import { BadRequestError, ConflictError } from "@common/errors";
-import { assertExists, now } from "@common/utils";
+import { calculateScore, scoreToBand } from "@common/scoring";
+import { assertExists } from "@common/utils";
 import { db, table } from "@db/index";
 import { ObjectiveAnswer, ObjectiveAnswerKey } from "@db/types/answers";
 import { Value } from "@sinclair/typebox/value";
 import { eq, sql } from "drizzle-orm";
-import { SUBMISSION_MESSAGES } from "./messages";
-import { scoreToBand } from "./scoring";
 
 export async function autoGradeSubmission(submissionId: string) {
   return db.transaction(async (tx) => {
@@ -44,39 +43,34 @@ export async function autoGradeSubmission(submissionId: string) {
 
     if (["completed", "failed", "review_pending"].includes(data.status)) {
       throw new ConflictError(
-        SUBMISSION_MESSAGES.cannotAutoGradeStatus(data.status),
+        `Cannot auto-grade a submission with status "${data.status}"`,
       );
     }
 
     if (data.skill !== "listening" && data.skill !== "reading") {
-      throw new BadRequestError(SUBMISSION_MESSAGES.objectiveOnlyAutoGrading);
+      throw new BadRequestError(
+        "Only listening and reading submissions can be auto-graded",
+      );
     }
 
     if (!data.answerKey) {
-      throw new BadRequestError(SUBMISSION_MESSAGES.noAnswerKeyForAutoGrading);
+      throw new BadRequestError("Question has no answer key for auto-grading");
     }
 
     if (
       !Value.Check(ObjectiveAnswerKey, data.answerKey) ||
       !Value.Check(ObjectiveAnswer, data.answer)
     ) {
-      throw new BadRequestError(SUBMISSION_MESSAGES.incompatibleAnswerFormat);
+      throw new BadRequestError("Answer format incompatible with auto-grading");
     }
 
     const { correctCount, totalCount } = data;
 
-    const rawScore = totalCount > 0 ? (correctCount / totalCount) * 10 : 0;
-    const score = Math.round(rawScore * 2) / 2;
+    const score = calculateScore(correctCount, totalCount) ?? 0;
     const band = scoreToBand(score);
 
-    const timestamp = now();
-    const result = {
-      correctCount,
-      totalCount,
-      score,
-      band,
-      gradedAt: timestamp,
-    };
+    const ts = new Date().toISOString();
+    const result = { correctCount, totalCount, score, band, gradedAt: ts };
 
     await tx
       .update(table.submissions)
@@ -84,8 +78,8 @@ export async function autoGradeSubmission(submissionId: string) {
         status: "completed",
         score,
         band,
-        completedAt: timestamp,
-        updatedAt: timestamp,
+        completedAt: ts,
+        updatedAt: ts,
       })
       .where(eq(table.submissions.id, submissionId));
 

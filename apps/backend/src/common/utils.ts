@@ -11,18 +11,9 @@ export function assertExists<T>(
   return value;
 }
 
-/** ISO timestamp — use a single call per operation for consistent timestamps */
-export function now(): string {
-  return new Date().toISOString();
-}
-
 /** Escape special LIKE characters to prevent wildcard abuse */
 export function escapeLike(str: string): string {
   return str.replace(/[%_\\]/g, "\\$&");
-}
-
-export function normalizeEmail(email: string): string {
-  return email.trim().toLowerCase();
 }
 
 /** Owner or admin bypass — works with the 3-role hierarchy. Null owner = no owner, only admin can access. */

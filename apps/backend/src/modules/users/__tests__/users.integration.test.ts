@@ -14,7 +14,6 @@ import {
   loginTestUser,
   makeRequest,
 } from "@/test/helpers";
-import { USER_MESSAGES } from "../messages";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -147,7 +146,9 @@ describe("users integration", () => {
     if (!isRecord(patchResult.data.error)) return;
 
     expect(patchResult.data.error.code).toBe("FORBIDDEN");
-    expect(patchResult.data.error.message).toBe(USER_MESSAGES.adminRoleOnly);
+    expect(patchResult.data.error.message).toBe(
+      "Only admins can change user roles",
+    );
   });
 
   it("admin can update another user and delete user", async () => {
@@ -288,7 +289,7 @@ describe("users integration", () => {
 
     expect(updatePassword.data.error.code).toBe("UNAUTHORIZED");
     expect(updatePassword.data.error.message).toBe(
-      USER_MESSAGES.incorrectPassword,
+      "Current password is incorrect",
     );
   });
 });

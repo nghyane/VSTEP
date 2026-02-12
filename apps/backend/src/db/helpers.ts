@@ -5,24 +5,28 @@ export function notDeleted<T extends { deletedAt: Column }>(table: T): SQL {
   return isNull(table.deletedAt);
 }
 
-/**
- * Combined pagination helper — returns limit, offset, and a meta() builder.
- * Replaces the old paginate() + paginationMeta() pair.
- */
-export function pagination(page = 1, limit = 20) {
+export function paginated(page = 1, limit = 20) {
   const safePage = Math.max(page, 1);
   const safeLimit = Math.min(Math.max(limit, 1), MAX_PAGE_SIZE);
+  const offset = (safePage - 1) * safeLimit;
+
+  function meta(total: number) {
+    return {
+      page: safePage,
+      limit: safeLimit,
+      total,
+      totalPages: Math.ceil(total / safeLimit),
+    };
+  }
+
   return {
     page: safePage,
     limit: safeLimit,
-    offset: (safePage - 1) * safeLimit,
-    meta(total: number) {
-      return {
-        page: safePage,
-        limit: safeLimit,
-        total,
-        totalPages: Math.ceil(total / safeLimit),
-      };
+    offset,
+    meta,
+    async resolve<T>(opts: { count: Promise<number>; query: Promise<T[]> }) {
+      const [total, data] = await Promise.all([opts.count, opts.query]);
+      return { data, meta: meta(total) };
     },
   };
 }

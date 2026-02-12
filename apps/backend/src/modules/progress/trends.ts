@@ -1,12 +1,7 @@
 import { TREND_THRESHOLDS } from "./constants";
 
-interface Stats {
-  avg: number | null;
-  stdDev: number | null;
-}
-
 /** Compute mean and sample standard deviation from a score window. */
-export function computeStats(scores: number[]): Stats {
+export function computeStats(scores: number[]) {
   if (scores.length === 0) return { avg: null, stdDev: null };
 
   const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
@@ -19,12 +14,6 @@ export function computeStats(scores: number[]): Stats {
       : null;
 
   return { avg, stdDev };
-}
-
-/** Round to N decimal places. */
-export function round(value: number, decimals: number): number {
-  const factor = 10 ** decimals;
-  return Math.round(value * factor) / factor;
 }
 
 export type Trend =
@@ -44,11 +33,11 @@ export function computeTrend(scores: number[], stdDev: number | null): Trend {
     stdDev !== null
   ) {
     if (stdDev >= TREND_THRESHOLDS.inconsistentStdDev) return "inconsistent";
-    const recent3 = scores.slice(0, 3);
-    const prev3 = scores.slice(3, 6);
-    const avgRecent = recent3.reduce((a, b) => a + b, 0) / 3;
-    const avgPrev = prev3.reduce((a, b) => a + b, 0) / 3;
-    const delta = avgRecent - avgPrev;
+    const recent = scores.slice(0, 3);
+    const prev = scores.slice(3, 6);
+    const delta =
+      recent.reduce((a, b) => a + b, 0) / 3 -
+      prev.reduce((a, b) => a + b, 0) / 3;
     if (delta >= TREND_THRESHOLDS.improvingDelta) return "improving";
     if (delta <= TREND_THRESHOLDS.decliningDelta) return "declining";
     return "stable";

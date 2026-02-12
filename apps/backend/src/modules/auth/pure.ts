@@ -1,26 +1,22 @@
 import { BadRequestError } from "@common/errors";
 
 /** @internal Exported for unit testing deterministic hashing behavior. */
-export function hashToken(token: string): string {
-  const hasher = new Bun.CryptoHasher("sha256");
-  hasher.update(token);
-  return hasher.digest("hex");
-}
+export const hashToken = (token: string) =>
+  new Bun.CryptoHasher("sha256").update(token).digest("hex");
 
 /** @internal Exported for unit testing expiry parsing edge cases. */
-export function parseExpiry(str: string): number {
-  const trimmed = str.trim().toLowerCase();
-  const match = trimmed.match(/^(\d+)([smhd])$/);
-  if (!match) {
+export function parseExpiry(str: string) {
+  const m = str
+    .trim()
+    .toLowerCase()
+    .match(/^(\d+)([smhd])$/);
+  if (!m) {
     throw new BadRequestError(
       `Invalid expiry format: "${str}" (expected e.g. 15m, 1h, 7d)`,
     );
   }
-  const value = match[1];
-  const unit = match[2];
-  if (!value || !unit) {
-    throw new BadRequestError(`Invalid expiry format: "${str}"`);
-  }
+  const value = m[1] ?? "";
+  const unit = m[2] ?? "s";
   const n = Number.parseInt(value, 10);
   if (n === 0) {
     throw new BadRequestError(`Expiry duration must be > 0: "${str}"`);

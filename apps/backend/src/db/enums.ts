@@ -15,18 +15,13 @@ import {
 import { userRoleEnum } from "@db/schema/users";
 import { t } from "elysia";
 
-/** Convert a Drizzle pgEnum's values array into an Elysia UnionEnum schema (no default). */
-function enumSchema<const T extends readonly [string, ...string[]]>(values: T) {
-  return t.UnionEnum(values, { default: undefined });
-}
-
-export const UserRole = enumSchema(userRoleEnum.enumValues);
-export const Skill = enumSchema(skillEnum.enumValues);
-export const QuestionFormat = enumSchema(questionFormatEnum.enumValues);
-export const QuestionLevel = enumSchema(questionLevelEnum.enumValues);
-export const VstepBand = enumSchema(vstepBandEnum.enumValues);
-export const SubmissionStatus = enumSchema(submissionStatusEnum.enumValues);
-export const ReviewPriority = enumSchema(reviewPriorityEnum.enumValues);
-export const GradingMode = enumSchema(gradingModeEnum.enumValues);
-export const ExamStatus = enumSchema(examStatusEnum.enumValues);
-export const StreakDirection = enumSchema(streakDirectionEnum.enumValues);
+export const UserRole = t.UnionEnum(userRoleEnum.enumValues);
+export const Skill = t.UnionEnum(skillEnum.enumValues);
+export const QuestionFormat = t.UnionEnum(questionFormatEnum.enumValues);
+export const QuestionLevel = t.UnionEnum(questionLevelEnum.enumValues);
+export const VstepBand = t.UnionEnum(vstepBandEnum.enumValues);
+export const SubmissionStatus = t.UnionEnum(submissionStatusEnum.enumValues);
+export const ReviewPriority = t.UnionEnum(reviewPriorityEnum.enumValues);
+export const GradingMode = t.UnionEnum(gradingModeEnum.enumValues);
+export const ExamStatus = t.UnionEnum(examStatusEnum.enumValues);
+export const StreakDirection = t.UnionEnum(streakDirectionEnum.enumValues);
