@@ -1,6 +1,9 @@
 import { env } from "@common/env";
+import { logger } from "@common/logger";
+import { db } from "@db/index";
 import { sql } from "drizzle-orm";
-import { db } from "@/db";
+
+const TIMEOUT_MS = 2_000;
 
 type Status = "ok" | "unavailable" | "error";
 
@@ -14,94 +17,57 @@ interface HealthResult {
   services: {
     db: ServiceHealth;
     redis: ServiceHealth;
-    rabbitmq: ServiceHealth;
   };
 }
 
-async function checkPostgres(): Promise<ServiceHealth> {
-  const startedAt = Date.now();
+async function timed(
+  name: string,
+  check: () => Promise<void>,
+): Promise<ServiceHealth> {
+  const start = Date.now();
   try {
-    await db.execute(sql`SELECT 1`);
-    return { status: "ok", latency: Date.now() - startedAt };
-  } catch {
-    return { status: "error" };
-  }
-}
-
-async function checkRedis(): Promise<ServiceHealth> {
-  if (!env.REDIS_URL) return { status: "unavailable" };
-
-  const startedAt = Date.now();
-  let socket: Bun.Socket<unknown> | null = null;
-
-  try {
-    const url = new URL(env.REDIS_URL);
-
-    socket = await Promise.race([
-      Bun.connect({
-        hostname: url.hostname,
-        port: Number(url.port) || 6379,
-        socket: {
-          data() {},
-          open() {},
-          connectError() {},
-        },
-      }),
-      new Promise<never>((_, reject) => {
-        const timeoutId = setTimeout(() => {
-          reject(new Error("Redis health check timed out"));
-        }, 2000);
-        timeoutId.unref?.();
-      }),
+    await Promise.race([
+      check(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("timed out")), TIMEOUT_MS),
+      ),
     ]);
-
-    return { status: "ok", latency: Date.now() - startedAt };
-  } catch {
-    return { status: "error" };
-  } finally {
-    socket?.end();
-  }
-}
-
-async function checkRabbitMQ(): Promise<ServiceHealth> {
-  if (!env.RABBITMQ_URL) return { status: "unavailable" };
-
-  const startedAt = Date.now();
-
-  try {
-    const parsed = new URL(env.RABBITMQ_URL);
-    parsed.protocol = parsed.protocol === "amqps:" ? "https:" : "http:";
-    parsed.port = "15672";
-
-    const res = await fetch(`${parsed.origin}/api/health/checks/alarms`, {
-      signal: AbortSignal.timeout(2000),
-    }).catch(() => null);
-
-    if (!res?.ok) {
-      return { status: "error" };
-    }
-
-    return { status: "ok", latency: Date.now() - startedAt };
-  } catch {
+    return { status: "ok", latency: Date.now() - start };
+  } catch (err) {
+    logger.warn(`${name} health check failed`, {
+      error: err instanceof Error ? err.message : String(err),
+    });
     return { status: "error" };
   }
 }
+
+async function tcpProbe(url: string, defaultPort: number): Promise<void> {
+  const parsed = new URL(url);
+  const socket = await Bun.connect({
+    hostname: parsed.hostname,
+    port: Number(parsed.port) || defaultPort,
+    socket: { data() {}, open() {}, connectError() {} },
+  });
+  socket.end();
+}
+
+const unavailable: ServiceHealth = { status: "unavailable" };
 
 export async function checkHealth(): Promise<HealthResult> {
-  const [dbStatus, redisStatus, rabbitmqStatus] = await Promise.all([
-    checkPostgres(),
-    checkRedis(),
-    checkRabbitMQ(),
+  const { REDIS_URL } = env;
+
+  const [dbHealth, redisHealth] = await Promise.all([
+    timed("Postgres", () => db.execute(sql`SELECT 1`).then(() => {})),
+    REDIS_URL ? timed("Redis", () => tcpProbe(REDIS_URL, 6379)) : unavailable,
   ]);
 
   const services = {
-    db: dbStatus,
-    redis: redisStatus,
-    rabbitmq: rabbitmqStatus,
+    db: dbHealth,
+    redis: redisHealth,
   };
 
   const allOk = Object.values(services).every(
-    (service) => service.status === "ok" || service.status === "unavailable",
+    (s) => s.status === "ok" || s.status === "unavailable",
   );
 
   return { status: allOk ? "ok" : "degraded", services };

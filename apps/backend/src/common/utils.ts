@@ -1,5 +1,5 @@
-import type { Actor } from "@/plugins/auth";
-import { ForbiddenError, NotFoundError } from "@/plugins/error";
+import { type Actor, ROLES } from "@common/auth-types";
+import { ForbiddenError, NotFoundError } from "@common/errors";
 
 export function assertExists<T>(
   value: T | null | undefined,
@@ -32,6 +32,6 @@ export function assertAccess(
   message = "You do not have access to this resource",
 ): void {
   if (resourceUserId !== null && resourceUserId === actor.sub) return;
-  if (actor.is("admin")) return;
+  if (actor.is(ROLES.ADMIN)) return;
   throw new ForbiddenError(message);
 }

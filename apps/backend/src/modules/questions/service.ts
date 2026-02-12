@@ -1,51 +1,22 @@
-import { QUESTION_MESSAGES } from "@common/messages";
+import type { Actor } from "@common/auth-types";
+import { ROLES } from "@common/auth-types";
+import { BadRequestError } from "@common/errors";
 import { assertAccess, assertExists, escapeLike, now } from "@common/utils";
-import {
-  and,
-  count,
-  desc,
-  eq,
-  getTableColumns,
-  type SQL,
-  sql,
-} from "drizzle-orm";
-import {
-  db,
-  notDeleted,
-  omitColumns,
-  paginatedList,
-  softDelete,
-  table,
-} from "@/db";
-import type { Actor } from "@/plugins/auth";
-import { BadRequestError } from "@/plugins/error";
+import { db, notDeleted, table } from "@db/index";
+import { paginatedQuery } from "@db/repos";
+import { questionView } from "@db/views";
+import { and, count, desc, eq, type SQL, sql } from "drizzle-orm";
+import { QUESTION_MESSAGES } from "./messages";
 import type {
   QuestionCreateBody,
   QuestionListQuery,
   QuestionUpdateBody,
-  QuestionVersionBody,
-} from "./model";
+} from "./schema";
 
-const QUESTION_PUBLIC_COLUMNS = omitColumns(getTableColumns(table.questions), [
-  "answerKey",
-]);
-
-/** Public resource — any authenticated user can view a question. No ownership check needed. */
 export async function getQuestionById(questionId: string) {
   const question = await db.query.questions.findFirst({
     where: and(eq(table.questions.id, questionId), notDeleted(table.questions)),
-    columns: {
-      id: true,
-      skill: true,
-      level: true,
-      format: true,
-      content: true,
-      version: true,
-      isActive: true,
-      createdBy: true,
-      createdAt: true,
-      updatedAt: true,
-    },
+    columns: questionView.queryColumns,
   });
 
   return assertExists(question, "Question");
@@ -54,7 +25,7 @@ export async function getQuestionById(questionId: string) {
 export async function listQuestions(query: QuestionListQuery, actor: Actor) {
   const conditions: SQL[] = [notDeleted(table.questions)];
 
-  if (!actor.is("admin")) {
+  if (!actor.is(ROLES.ADMIN)) {
     conditions.push(eq(table.questions.isActive, true));
   } else if (query.isActive !== undefined) {
     conditions.push(eq(table.questions.isActive, query.isActive));
@@ -80,24 +51,20 @@ export async function listQuestions(query: QuestionListQuery, actor: Actor) {
 
   const whereClause = and(...conditions);
 
-  return paginatedList({
-    page: query.page,
-    limit: query.limit,
-    getCount: async () => {
-      const [result] = await db
-        .select({ count: count() })
-        .from(table.questions)
-        .where(whereClause);
-      return result?.count ?? 0;
-    },
-    getData: ({ limit, offset }) =>
-      db
-        .select(QUESTION_PUBLIC_COLUMNS)
-        .from(table.questions)
-        .where(whereClause)
-        .orderBy(desc(table.questions.createdAt))
-        .limit(limit)
-        .offset(offset),
+  const pg = paginatedQuery(query.page, query.limit);
+  return pg.resolve({
+    count: db
+      .select({ count: count() })
+      .from(table.questions)
+      .where(whereClause)
+      .then((result) => result[0]?.count ?? 0),
+    query: db
+      .select(questionView.columns)
+      .from(table.questions)
+      .where(whereClause)
+      .orderBy(desc(table.questions.createdAt))
+      .limit(pg.limit)
+      .offset(pg.offset),
   });
 }
 
@@ -115,7 +82,7 @@ export async function createQuestion(userId: string, body: QuestionCreateBody) {
         isActive: true,
         createdBy: userId,
       })
-      .returning(QUESTION_PUBLIC_COLUMNS);
+      .returning(questionView.columns);
 
     const q = assertExists(question, "Question");
 
@@ -142,6 +109,13 @@ export async function updateQuestion(
           eq(table.questions.id, questionId),
           notDeleted(table.questions),
         ),
+        columns: {
+          id: true,
+          createdBy: true,
+          content: true,
+          answerKey: true,
+          version: true,
+        },
       }),
       "Question",
     );
@@ -182,17 +156,13 @@ export async function updateQuestion(
       .update(table.questions)
       .set(updateValues)
       .where(eq(table.questions.id, questionId))
-      .returning(QUESTION_PUBLIC_COLUMNS);
+      .returning(questionView.columns);
 
     return assertExists(updatedQuestion, "Question");
   });
 }
 
-export async function createQuestionVersion(
-  questionId: string,
-  body: QuestionVersionBody,
-  actor: Actor,
-) {
+export async function removeQuestion(questionId: string, actor: Actor) {
   return db.transaction(async (tx) => {
     const question = assertExists(
       await tx.query.questions.findFirst({
@@ -200,128 +170,28 @@ export async function createQuestionVersion(
           eq(table.questions.id, questionId),
           notDeleted(table.questions),
         ),
-        columns: {
-          id: true,
-          version: true,
-          createdBy: true,
-        },
+        columns: { id: true, createdBy: true },
       }),
       "Question",
     );
 
-    assertAccess(question.createdBy, actor, QUESTION_MESSAGES.versionOwn);
+    assertAccess(question.createdBy, actor, QUESTION_MESSAGES.deleteOwn);
 
-    const newVersion = question.version + 1;
-
-    const [version] = await tx
-      .insert(table.questionVersions)
-      .values({
-        questionId,
-        version: newVersion,
-        content: body.content,
-        answerKey: body.answerKey ?? null,
-      })
-      .returning();
-
-    const v = assertExists(version, "Version");
-
-    await tx
+    const timestamp = now();
+    const [deleted] = await tx
       .update(table.questions)
       .set({
-        content: body.content,
-        answerKey: body.answerKey ?? null,
-        version: newVersion,
-        updatedAt: now(),
+        deletedAt: timestamp,
+        updatedAt: timestamp,
       })
-      .where(eq(table.questions.id, questionId));
+      .where(eq(table.questions.id, questionId))
+      .returning({
+        id: table.questions.id,
+        deletedAt: table.questions.deletedAt,
+      });
 
-    return v;
-  });
-}
-
-export async function getQuestionVersions(questionId: string) {
-  assertExists(
-    await db.query.questions.findFirst({
-      where: and(
-        eq(table.questions.id, questionId),
-        notDeleted(table.questions),
-      ),
-      columns: { id: true },
-    }),
-    "Question",
-  );
-
-  const versions = await db
-    .select()
-    .from(table.questionVersions)
-    .where(eq(table.questionVersions.questionId, questionId))
-    .orderBy(desc(table.questionVersions.version));
-
-  return {
-    data: versions,
-    meta: { total: versions.length },
-  };
-}
-
-export async function getQuestionVersion(
-  questionId: string,
-  versionId: string,
-) {
-  assertExists(
-    await db.query.questions.findFirst({
-      where: and(
-        eq(table.questions.id, questionId),
-        notDeleted(table.questions),
-      ),
-      columns: { id: true },
-    }),
-    "Question",
-  );
-
-  const version = await db.query.questionVersions.findFirst({
-    where: and(
-      eq(table.questionVersions.id, versionId),
-      eq(table.questionVersions.questionId, questionId),
-    ),
-  });
-
-  return assertExists(version, "QuestionVersion");
-}
-
-export async function removeQuestion(questionId: string, actor: Actor) {
-  return db.transaction(async (tx) => {
-    return softDelete(tx, {
-      entityName: "Question",
-      findExisting: async (trx) => {
-        const question = assertExists(
-          await trx.query.questions.findFirst({
-            where: and(
-              eq(table.questions.id, questionId),
-              notDeleted(table.questions),
-            ),
-          }),
-          "Question",
-        );
-
-        assertAccess(question.createdBy, actor, QUESTION_MESSAGES.deleteOwn);
-        return question;
-      },
-      runDelete: async (trx, timestamp) => {
-        const [question] = await trx
-          .update(table.questions)
-          .set({
-            deletedAt: timestamp,
-            updatedAt: timestamp,
-          })
-          .where(eq(table.questions.id, questionId))
-          .returning({
-            id: table.questions.id,
-            deletedAt: table.questions.deletedAt,
-          });
-
-        return question;
-      },
-    });
+    const removed = assertExists(deleted, "Question");
+    return { id: removed.id, deletedAt: removed.deletedAt ?? timestamp };
   });
 }
 
@@ -330,6 +200,7 @@ export async function restoreQuestion(questionId: string) {
     const question = assertExists(
       await tx.query.questions.findFirst({
         where: eq(table.questions.id, questionId),
+        columns: { id: true, deletedAt: true },
       }),
       "Question",
     );
@@ -345,7 +216,7 @@ export async function restoreQuestion(questionId: string) {
         updatedAt: now(),
       })
       .where(eq(table.questions.id, questionId))
-      .returning(QUESTION_PUBLIC_COLUMNS);
+      .returning(questionView.columns);
 
     return assertExists(updatedQuestion, "Question");
   });

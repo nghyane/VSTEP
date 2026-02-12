@@ -33,6 +33,15 @@ const api = new Elysia({ prefix: "/api" })
           { name: "Progress", description: "User progress endpoints" },
           { name: "Exams", description: "Exam endpoints" },
         ],
+        components: {
+          securitySchemes: {
+            bearerAuth: {
+              type: "http",
+              scheme: "bearer",
+              bearerFormat: "JWT",
+            },
+          },
+        },
       },
     }),
   )

@@ -1,5 +1,5 @@
-import type { SubmissionAnswer } from "@common/answer-schemas";
-import type { ExamBlueprint } from "@common/grading-schemas";
+import type { SubmissionAnswer } from "@db/types/answers";
+import type { ExamBlueprint } from "@db/types/grading";
 import { sql } from "drizzle-orm";
 import {
   boolean,

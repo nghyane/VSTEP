@@ -1,6 +1,5 @@
+import { QuestionLevel, Skill } from "@db/enums";
 import { t } from "elysia";
-
-// ─── Shared Schemas ──────────────────────────────────────────────
 
 export const PaginationQuery = t.Object({
   page: t.Optional(t.Number({ minimum: 1, default: 1 })),
@@ -9,6 +8,22 @@ export const PaginationQuery = t.Object({
 
 export const IdParam = t.Object({
   id: t.String({ format: "uuid" }),
+});
+
+export const SkillFilter = t.Object({
+  skill: t.Optional(Skill),
+});
+
+export const LevelFilter = t.Object({
+  level: t.Optional(QuestionLevel),
+});
+
+export const SearchFilter = t.Object({
+  search: t.Optional(t.String({ maxLength: 255 })),
+});
+
+export const ActiveFilter = t.Object({
+  isActive: t.Optional(t.Boolean()),
 });
 
 export const ErrorResponse = t.Object({
@@ -31,7 +46,6 @@ export const PaginationMeta = t.Object({
   totalPages: t.Number(),
 });
 
-// ─── Error Response Presets ─────────────────────────────────────
 export const AuthErrors = { 401: ErrorResponse, 403: ErrorResponse } as const;
 export const CrudErrors = { ...AuthErrors, 404: ErrorResponse } as const;
 export const CrudWithConflictErrors = {

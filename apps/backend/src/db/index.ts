@@ -13,42 +13,8 @@ export const db = drizzle(env.DATABASE_URL, {
 });
 
 export { table };
-export { notDeleted, omitColumns, pagination } from "./helpers";
-export { paginatedList, softDelete } from "./query-helpers";
+export { notDeleted, pagination } from "./helpers";
 
 /** Transaction type derived from the db client — use instead of fragile Parameters<> extraction */
 export type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-export type {
-  Exam,
-  ExamAnswer,
-  ExamSession,
-  ExamSubmission,
-  NewExam,
-  NewExamAnswer,
-  NewExamSession,
-  NewExamSubmission,
-  NewOutbox,
-  NewProcessedCallback,
-  NewQuestion,
-  NewQuestionVersion,
-  NewRefreshToken,
-  NewSubmission,
-  NewSubmissionDetail,
-  NewSubmissionEvent,
-  NewUser,
-  NewUserGoal,
-  NewUserProgress,
-  NewUserSkillScore,
-  Outbox,
-  ProcessedCallback,
-  Question,
-  QuestionVersion,
-  RefreshToken,
-  Submission,
-  SubmissionDetail,
-  SubmissionEvent,
-  User,
-  UserGoal,
-  UserProgress,
-  UserSkillScore,
-} from "./schema";
+export type { UserProgress } from "./schema";

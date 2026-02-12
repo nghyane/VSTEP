@@ -1,4 +1,11 @@
-import { USER_MESSAGES } from "@common/messages";
+import type { Actor } from "@common/auth-types";
+import { ROLES } from "@common/auth-types";
+import {
+  ConflictError,
+  ForbiddenError,
+  isUniqueViolation,
+  UnauthorizedError,
+} from "@common/errors";
 import { hashPassword, verifyPassword } from "@common/password";
 import {
   assertAccess,
@@ -7,45 +14,17 @@ import {
   normalizeEmail,
   now,
 } from "@common/utils";
-import {
-  and,
-  count,
-  eq,
-  getTableColumns,
-  ilike,
-  ne,
-  type SQL,
-} from "drizzle-orm";
-import {
-  db,
-  notDeleted,
-  omitColumns,
-  paginatedList,
-  softDelete,
-  table,
-} from "@/db";
-import type { Actor } from "@/plugins/auth";
-import {
-  ConflictError,
-  ForbiddenError,
-  isUniqueViolation,
-  UnauthorizedError,
-} from "@/plugins/error";
+import { db, notDeleted, table } from "@db/index";
+import { paginatedQuery } from "@db/repos";
+import { userView } from "@db/views";
+import { and, count, eq, ilike, ne, type SQL } from "drizzle-orm";
+import { USER_MESSAGES } from "./messages";
 import type {
   UserCreateBody,
   UserListQuery,
   UserPasswordBody,
   UserUpdateBody,
-} from "./model";
-
-// ── Column sets ─────────────────────────────────────────────────────
-
-const USER_COLUMNS = omitColumns(getTableColumns(table.users), [
-  "passwordHash",
-  "deletedAt",
-]);
-
-// ── Public API ──────────────────────────────────────────────────────
+} from "./schema";
 
 export async function getUserById(userId: string, actor?: Actor) {
   if (actor) {
@@ -54,14 +33,7 @@ export async function getUserById(userId: string, actor?: Actor) {
 
   const user = await db.query.users.findFirst({
     where: and(eq(table.users.id, userId), notDeleted(table.users)),
-    columns: {
-      id: true,
-      email: true,
-      fullName: true,
-      role: true,
-      createdAt: true,
-      updatedAt: true,
-    },
+    columns: userView.queryColumns,
   });
 
   return assertExists(user, "User");
@@ -81,24 +53,20 @@ export async function listUsers(query: UserListQuery) {
 
   const whereClause = and(...conditions);
 
-  return paginatedList({
-    page: query.page,
-    limit: query.limit,
-    getCount: async () => {
-      const [result] = await db
-        .select({ count: count() })
-        .from(table.users)
-        .where(whereClause);
-      return result?.count ?? 0;
-    },
-    getData: ({ limit, offset }) =>
-      db
-        .select(USER_COLUMNS)
-        .from(table.users)
-        .where(whereClause)
-        .orderBy(table.users.createdAt)
-        .limit(limit)
-        .offset(offset),
+  const pg = paginatedQuery(query.page, query.limit);
+  return pg.resolve({
+    count: db
+      .select({ count: count() })
+      .from(table.users)
+      .where(whereClause)
+      .then((result) => result[0]?.count ?? 0),
+    query: db
+      .select(userView.columns)
+      .from(table.users)
+      .where(whereClause)
+      .orderBy(table.users.createdAt)
+      .limit(pg.limit)
+      .offset(pg.offset),
   });
 }
 
@@ -113,9 +81,9 @@ export async function createUser(body: UserCreateBody) {
         email,
         passwordHash,
         fullName: body.fullName,
-        role: body.role ?? "learner",
+        role: body.role ?? ROLES.LEARNER,
       })
-      .returning(USER_COLUMNS);
+      .returning(userView.columns);
 
     return assertExists(user, "User");
   } catch (err: unknown) {
@@ -134,7 +102,7 @@ export async function updateUser(
   const email = body.email ? normalizeEmail(body.email) : undefined;
   assertAccess(userId, actor, USER_MESSAGES.updateOwnProfile);
 
-  if (body.role && !actor.is("admin")) {
+  if (body.role && !actor.is(ROLES.ADMIN)) {
     throw new ForbiddenError(USER_MESSAGES.adminRoleOnly);
   }
 
@@ -172,7 +140,7 @@ export async function updateUser(
       .update(table.users)
       .set(updateValues)
       .where(eq(table.users.id, userId))
-      .returning(USER_COLUMNS);
+      .returning(userView.columns);
 
     return assertExists(user, "User");
   });
@@ -180,22 +148,23 @@ export async function updateUser(
 
 export async function removeUser(userId: string) {
   return db.transaction(async (tx) => {
-    return softDelete(tx, {
-      entityName: "User",
-      findExisting: (trx) =>
-        trx.query.users.findFirst({
-          where: and(eq(table.users.id, userId), notDeleted(table.users)),
-          columns: { id: true },
-        }),
-      runDelete: async (trx, timestamp) => {
-        const [user] = await trx
-          .update(table.users)
-          .set({ deletedAt: timestamp, updatedAt: timestamp })
-          .where(eq(table.users.id, userId))
-          .returning({ id: table.users.id, deletedAt: table.users.deletedAt });
-        return user;
-      },
-    });
+    assertExists(
+      await tx.query.users.findFirst({
+        where: and(eq(table.users.id, userId), notDeleted(table.users)),
+        columns: { id: true },
+      }),
+      "User",
+    );
+
+    const timestamp = now();
+    const [deleted] = await tx
+      .update(table.users)
+      .set({ deletedAt: timestamp, updatedAt: timestamp })
+      .where(eq(table.users.id, userId))
+      .returning({ id: table.users.id, deletedAt: table.users.deletedAt });
+
+    const user = assertExists(deleted, "User");
+    return { id: user.id, deletedAt: user.deletedAt ?? timestamp };
   });
 }
 

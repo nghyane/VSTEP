@@ -1,3 +1,4 @@
+import { ROLES } from "@common/auth-types";
 import {
   AuthErrors,
   CrudErrors,
@@ -6,15 +7,15 @@ import {
   PaginationMeta,
   SuccessResponse,
 } from "@common/schemas";
-import { UserSchema } from "@db/typebox";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import {
+  User,
   UserCreateBody,
   UserListQuery,
   UserPasswordBody,
   UserUpdateBody,
-} from "./model";
+} from "./schema";
 import {
   createUser,
   getUserById,
@@ -34,26 +35,30 @@ export const users = new Elysia({
   .get("/:id", ({ params, user }) => getUserById(params.id, user), {
     auth: true,
     params: IdParam,
-    response: { 200: UserSchema, ...CrudErrors },
+    response: { 200: User, ...CrudErrors },
     detail: {
-      summary: "Get user",
-      description: "Get user details by ID",
+      summary: "Get user by ID",
+      description:
+        "Retrieve a user's profile. Admins may view any user; non-admins may only view their own.",
+      security: [{ bearerAuth: [] }],
     },
   })
 
   .get("/", ({ query }) => listUsers(query), {
-    role: "admin",
+    role: ROLES.ADMIN,
     query: UserListQuery,
     response: {
       200: t.Object({
-        data: t.Array(UserSchema),
+        data: t.Array(User),
         meta: PaginationMeta,
       }),
       ...AuthErrors,
     },
     detail: {
       summary: "List users",
-      description: "List users with pagination and filtering (Admin only)",
+      description:
+        "Return a paginated list of users with optional search and role filter. Requires admin role.",
+      security: [{ bearerAuth: [] }],
     },
   })
 
@@ -64,12 +69,14 @@ export const users = new Elysia({
       return createUser(body);
     },
     {
-      role: "admin",
+      role: ROLES.ADMIN,
       body: UserCreateBody,
-      response: { 201: UserSchema, ...CrudWithConflictErrors },
+      response: { 201: User, ...CrudWithConflictErrors },
       detail: {
         summary: "Create user",
-        description: "Create a new user account (Admin only)",
+        description:
+          "Create a new user account with a specified role. Requires admin role.",
+        security: [{ bearerAuth: [] }],
       },
     },
   )
@@ -81,16 +88,18 @@ export const users = new Elysia({
       auth: true,
       params: IdParam,
       body: UserUpdateBody,
-      response: { 200: UserSchema, ...CrudWithConflictErrors },
+      response: { 200: User, ...CrudWithConflictErrors },
       detail: {
         summary: "Update user",
-        description: "Update user details",
+        description:
+          "Partially update a user's profile (name, email). Users may update themselves; admins may update anyone.",
+        security: [{ bearerAuth: [] }],
       },
     },
   )
 
   .delete("/:id", ({ params }) => removeUser(params.id), {
-    role: "admin",
+    role: ROLES.ADMIN,
     params: IdParam,
     response: {
       200: t.Object({
@@ -101,7 +110,9 @@ export const users = new Elysia({
     },
     detail: {
       summary: "Delete user",
-      description: "Soft delete a user account (Admin only)",
+      description:
+        "Soft-delete a user account. The record is retained but excluded from queries. Requires admin role.",
+      security: [{ bearerAuth: [] }],
     },
   })
 
@@ -114,8 +125,10 @@ export const users = new Elysia({
       body: UserPasswordBody,
       response: { 200: SuccessResponse, ...CrudErrors },
       detail: {
-        summary: "Update password",
-        description: "Update user password",
+        summary: "Change password",
+        description:
+          "Change a user's password. Requires the current password for verification.",
+        security: [{ bearerAuth: [] }],
       },
     },
   );

@@ -1,18 +1,18 @@
 # Modules
 
-**7 modules** — Feature-based MVC. Each module: `index.ts` (routes) + `model.ts` (schemas) + `service.ts` (logic).
+**7 modules** — Feature-based MVC. Each module: `index.ts` (routes) + `schema.ts` (TypeBox schemas) + `service.ts` (logic).
 
 ## MODULE MAP
 
 | Module | Prefix | Files | Domain |
 |--------|--------|-------|--------|
-| `auth/` | /api/auth | index+model+service | Login, register, JWT rotation, logout |
-| `users/` | /api/users | index+model+service | Admin CRUD, password changes, search |
-| `questions/` | /api/questions | index+model+service+**content-schemas** | Question bank, versioning, JSONB content types |
-| `submissions/` | /api/submissions | index+model+service | Answer submission, auto/human grading pipeline |
-| `exams/` | /api/exams | index+model+service | Exam sessions, answer tracking, scoring |
-| `progress/` | /api/progress | index+model+service | Adaptive learning, skill scores, streaks, goals |
-| `health/` | / | **service.ts only** | DB/Redis/RabbitMQ health (infra, not feature) |
+| `auth/` | /api/auth | index+schema+service | Login, register, JWT rotation, logout |
+| `users/` | /api/users | index+schema+service | Admin CRUD, password changes, search |
+| `questions/` | /api/questions | index+schema+service | Question bank, versioning, JSONB content types |
+| `submissions/` | /api/submissions | index+schema+service | Answer submission, auto/human grading pipeline |
+| `exams/` | /api/exams | index+schema+service | Exam sessions, answer tracking, scoring |
+| `progress/` | /api/progress | index+schema+service | Adaptive learning, skill scores, streaks, goals |
+| `health/` | / | index+schema+service | DB/Redis health (infra, not feature) |
 
 ## ROUTE FILE PATTERN
 
@@ -37,16 +37,15 @@ export const moduleName = new Elysia({
 
 Plain exported `async function`s — never classes. Import `db` from `@db/index`. Return typed results.
 
-## MODEL PATTERN
+## SCHEMA PATTERN
 
-TypeBox `t.Object(...)` schemas exported directly — no namespace wrapping. Separate request (Query/Body) and response schemas.
+Each module's `schema.ts` contains ALL TypeBox schemas — both request (Body/Query) and response (drizzle-derived row types). Response schemas appear first, request schemas below. No namespace wrapping.
 
 ## DEVIATIONS
 
 | Module | Deviation | Reason |
 |--------|-----------|--------|
-| `health/` | No index.ts or model.ts | Infrastructure concern — route defined in `app.ts`, not self-contained |
-| `questions/` | Extra `content-schemas.ts` | Discriminated union TypeBox schemas for 10 question formats (JSONB) |
+| `questions/` | Extra files in `@db/types/` | JSONB content types (`question-content.ts`, `answers.ts`, `grading.ts`) shared across modules |
 
 ## DOMAIN NOTES
 
@@ -57,7 +56,7 @@ TypeBox `t.Object(...)` schemas exported directly — no namespace wrapping. Sep
 
 ## WHERE TO ADD A NEW MODULE
 
-1. Create `src/modules/{name}/` with `index.ts` + `model.ts` + `service.ts`
+1. Create `src/modules/{name}/` with `index.ts` + `schema.ts` + `service.ts`
 2. Copy route pattern from `auth/index.ts`
 3. Mount in `src/app.ts` → `api.use(moduleName)`
 4. Add DB tables in `src/db/schema/{name}.ts` if needed

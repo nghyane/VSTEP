@@ -1,17 +1,16 @@
 import { ErrorResponse } from "@common/schemas";
-import { UserSchema } from "@db/typebox";
 import { Elysia, t } from "elysia";
-import { getUserById } from "@/modules/users/service";
+import { User } from "@/modules/users/schema";
 import { authPlugin } from "@/plugins/auth";
 import {
-  AuthLoginBody,
-  AuthLogoutBody,
-  AuthRefreshBody,
-  AuthRegisterBody,
-  AuthTokenResponse,
-  AuthUserInfo,
-} from "./model";
-import { login, logout, refresh, register } from "./service";
+  AuthUser,
+  LoginBody,
+  LoginResponse,
+  LogoutBody,
+  RefreshBody,
+  RegisterBody,
+} from "./schema";
+import { getCurrentUser, login, logout, refresh, register } from "./service";
 
 export const auth = new Elysia({
   name: "module:auth",
@@ -25,16 +24,14 @@ export const auth = new Elysia({
     ({ body, request }) =>
       login(body, request.headers.get("user-agent") ?? undefined),
     {
-      body: AuthLoginBody,
+      body: LoginBody,
       response: {
-        200: t.Object({
-          user: AuthUserInfo,
-          ...AuthTokenResponse.properties,
-        }),
+        200: LoginResponse,
       },
       detail: {
-        summary: "Login",
-        description: "Authenticate user with email and password",
+        summary: "Log in",
+        description:
+          "Authenticate with email and password. Returns access and refresh tokens.",
       },
     },
   )
@@ -46,14 +43,14 @@ export const auth = new Elysia({
       return register(body);
     },
     {
-      body: AuthRegisterBody,
+      body: RegisterBody,
       response: {
-        201: t.Object({ user: AuthUserInfo, message: t.String() }),
+        201: t.Object({ user: AuthUser, message: t.String() }),
         409: ErrorResponse,
       },
       detail: {
         summary: "Register",
-        description: "Register a new user account",
+        description: "Create a new learner account with email and password.",
       },
     },
   )
@@ -66,46 +63,49 @@ export const auth = new Elysia({
         request.headers.get("user-agent") ?? undefined,
       ),
     {
-      body: AuthRefreshBody,
+      body: RefreshBody,
       response: {
-        200: t.Object({
-          user: AuthUserInfo,
-          ...AuthTokenResponse.properties,
-        }),
+        200: LoginResponse,
         401: ErrorResponse,
       },
       detail: {
         summary: "Refresh token",
-        description: "Get new access token using refresh token",
+        description:
+          "Exchange a valid refresh token for a new access/refresh token pair. The old refresh token is revoked.",
       },
     },
   )
 
-  .post("/logout", ({ body }) => logout(body.refreshToken), {
-    body: AuthLogoutBody,
+  .post("/logout", ({ body, user }) => logout(body.refreshToken, user.sub), {
+    auth: true,
+    body: LogoutBody,
     response: {
       200: t.Object({ message: t.String() }),
+      401: ErrorResponse,
     },
     detail: {
-      summary: "Logout",
-      description: "Logout user and revoke refresh token",
+      summary: "Log out",
+      description: "Revoke the given refresh token, ending the session.",
+      security: [{ bearerAuth: [] }],
     },
   })
 
   .get(
     "/me",
     async ({ user }) => ({
-      user: await getUserById(user.sub),
+      user: await getCurrentUser(user.sub),
     }),
     {
       auth: true,
       response: {
-        200: t.Object({ user: UserSchema }),
+        200: t.Object({ user: User }),
         401: ErrorResponse,
       },
       detail: {
         summary: "Get current user",
-        description: "Get details of the currently authenticated user",
+        description:
+          "Return the profile of the authenticated user identified by the access token.",
+        security: [{ bearerAuth: [] }],
       },
     },
   );

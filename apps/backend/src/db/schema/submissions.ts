@@ -1,5 +1,5 @@
-import type { SubmissionAnswer } from "@common/answer-schemas";
-import type { GradingResult } from "@common/grading-schemas";
+import type { SubmissionAnswer } from "@db/types/answers";
+import type { GradingResult } from "@db/types/grading";
 import { sql } from "drizzle-orm";
 import {
   boolean,

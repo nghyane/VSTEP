@@ -1,29 +1,23 @@
+import {
+  type Actor,
+  type JWTPayload,
+  ROLE_LEVEL,
+  ROLES,
+  type Role,
+} from "@common/auth-types";
 import { env } from "@common/env";
-import type { userRoleEnum } from "@db/schema/users";
+import {
+  ForbiddenError,
+  TokenExpiredError,
+  UnauthorizedError,
+} from "@common/errors";
 import { bearer } from "@elysiajs/bearer";
 import type { Static } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 import { Elysia, t } from "elysia";
 import { errors as joseErrors, jwtVerify } from "jose";
-import { ForbiddenError, TokenExpiredError, UnauthorizedError } from "./error";
 
-export type Role = (typeof userRoleEnum.enumValues)[number];
-
-export interface JWTPayload {
-  sub: string;
-  jti: string;
-  role: Role;
-}
-
-export interface Actor extends JWTPayload {
-  is(required: Role): boolean;
-}
-
-const ROLE_LEVEL: Record<Role, number> = {
-  learner: 0,
-  instructor: 1,
-  admin: 2,
-};
+export type { Actor, JWTPayload, Role };
 
 function toActor(payload: JWTPayload): Actor {
   return {
@@ -35,11 +29,7 @@ function toActor(payload: JWTPayload): Actor {
 const PayloadSchema = t.Object({
   sub: t.String(),
   jti: t.String(),
-  role: t.Union([
-    t.Literal("learner"),
-    t.Literal("instructor"),
-    t.Literal("admin"),
-  ]),
+  role: t.Union(Object.values(ROLES).map((r) => t.Literal(r))),
 });
 
 if (!env.JWT_SECRET) throw new Error("JWT_SECRET is required");

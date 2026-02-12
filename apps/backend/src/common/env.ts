@@ -24,7 +24,6 @@ export const env = createEnv({
       .default("7d"),
     ALLOWED_ORIGINS: z.string().optional(),
     REDIS_URL: z.url().optional(),
-    RABBITMQ_URL: z.url().optional(),
   },
   runtimeEnv: Bun.env,
   skipValidation: !!Bun.env.CI,

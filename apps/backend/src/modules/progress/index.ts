@@ -1,12 +1,12 @@
-import { Skill } from "@common/enums";
 import { AuthErrors } from "@common/schemas";
+import { Skill } from "@db/enums";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import {
   ProgressOverviewResponse,
   ProgressSkillDetailResponse,
   ProgressSpiderChartResponse,
-} from "./model";
+} from "./schema";
 import {
   getProgressBySkill,
   getProgressOverview,
@@ -25,7 +25,9 @@ export const progress = new Elysia({
     response: { 200: ProgressOverviewResponse, ...AuthErrors },
     detail: {
       summary: "Get progress overview",
-      description: "Get progress overview for all skills",
+      description:
+        "Return an aggregated progress summary across all four skills for the authenticated user.",
+      security: [{ bearerAuth: [] }],
     },
   })
 
@@ -33,8 +35,10 @@ export const progress = new Elysia({
     auth: true,
     response: { 200: ProgressSpiderChartResponse, ...AuthErrors },
     detail: {
-      summary: "Get spider chart",
-      description: "Get spider chart data for all skills",
+      summary: "Get spider chart data",
+      description:
+        "Return skill-score data points suitable for rendering a radar/spider chart.",
+      security: [{ bearerAuth: [] }],
     },
   })
 
@@ -47,7 +51,9 @@ export const progress = new Elysia({
       response: { 200: ProgressSkillDetailResponse, ...AuthErrors },
       detail: {
         summary: "Get skill progress",
-        description: "Get detailed progress for a specific skill",
+        description:
+          "Return detailed progress metrics, score history, and adaptive scaffold level for a specific skill.",
+        security: [{ bearerAuth: [] }],
       },
     },
   );

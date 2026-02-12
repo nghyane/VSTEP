@@ -1,25 +1,37 @@
+import type { JWTPayload } from "@common/auth-types";
+import { ROLES } from "@common/auth-types";
 import { MAX_REFRESH_TOKENS_PER_USER } from "@common/constants";
 import { env } from "@common/env";
-import { AUTH_MESSAGES } from "@common/messages";
-import { hashPassword, verifyPassword } from "@common/password";
-import { assertExists, normalizeEmail, now } from "@common/utils";
-import { and, asc, eq, gt, inArray, isNull } from "drizzle-orm";
-import { SignJWT } from "jose";
-import { db, table } from "@/db";
-import type { JWTPayload } from "@/plugins/auth";
 import {
   ConflictError,
   isUniqueViolation,
   UnauthorizedError,
-} from "@/plugins/error";
-import type { AuthLoginBody, AuthRegisterBody, AuthUserInfo } from "./model";
+} from "@common/errors";
+import { hashPassword, verifyPassword } from "@common/password";
+import { assertExists, normalizeEmail, now } from "@common/utils";
+import { db, notDeleted, table } from "@db/index";
+import { and, asc, eq, gt, inArray, isNull } from "drizzle-orm";
+import { SignJWT } from "jose";
+import { getUserById } from "@/modules/users/service";
+import { AUTH_MESSAGES } from "./messages";
 import { hashToken, parseExpiry } from "./pure";
-
-// ── Pure helpers (exported for testing) ──────────────────────────────
+import type { AuthUser, LoginBody, RegisterBody } from "./schema";
 
 export { hashToken, parseExpiry };
 
-// ── Internal ────────────────────────────────────────────────────────
+const AUTH_USER_QUERY_COLUMNS = {
+  id: true,
+  email: true,
+  fullName: true,
+  role: true,
+} as const;
+
+const AUTH_USER_RETURNING = {
+  id: table.users.id,
+  email: table.users.email,
+  fullName: table.users.fullName,
+  role: table.users.role,
+};
 
 const ACCESS_SECRET = new TextEncoder().encode(env.JWT_SECRET);
 
@@ -31,7 +43,7 @@ async function signAccessToken(payload: JWTPayload): Promise<string> {
 }
 
 function buildTokenResponse(
-  user: AuthUserInfo,
+  user: AuthUser,
   accessToken: string,
   refreshToken: string,
 ) {
@@ -43,20 +55,12 @@ function buildTokenResponse(
   };
 }
 
-// ── Public API ──────────────────────────────────────────────────────
-
-export async function login(body: AuthLoginBody, deviceInfo?: string) {
+export async function login(body: LoginBody, deviceInfo?: string) {
   const email = normalizeEmail(body.email);
 
   const row = await db.query.users.findFirst({
-    where: and(eq(table.users.email, email), isNull(table.users.deletedAt)),
-    columns: {
-      id: true,
-      email: true,
-      fullName: true,
-      role: true,
-      passwordHash: true,
-    },
+    where: and(eq(table.users.email, email), notDeleted(table.users)),
+    columns: { ...AUTH_USER_QUERY_COLUMNS, passwordHash: true },
   });
 
   if (!row) throw new UnauthorizedError(AUTH_MESSAGES.invalidCredentials);
@@ -102,7 +106,7 @@ export async function login(body: AuthLoginBody, deviceInfo?: string) {
     });
   });
 
-  const user: AuthUserInfo = {
+  const user: AuthUser = {
     id: row.id,
     email: row.email,
     fullName: row.fullName,
@@ -118,7 +122,7 @@ export async function login(body: AuthLoginBody, deviceInfo?: string) {
   return buildTokenResponse(user, accessToken, newRefreshToken);
 }
 
-export async function register(body: AuthRegisterBody) {
+export async function register(body: RegisterBody) {
   const email = normalizeEmail(body.email);
   const passwordHash = await hashPassword(body.password);
 
@@ -129,14 +133,9 @@ export async function register(body: AuthRegisterBody) {
         email,
         passwordHash,
         fullName: body.fullName,
-        role: "learner",
+        role: ROLES.LEARNER,
       })
-      .returning({
-        id: table.users.id,
-        email: table.users.email,
-        fullName: table.users.fullName,
-        role: table.users.role,
-      });
+      .returning(AUTH_USER_RETURNING);
 
     return {
       user: assertExists(user, "User"),
@@ -173,7 +172,6 @@ export async function refresh(refreshToken: string, deviceInfo?: string) {
         jti: table.refreshTokens.jti,
       });
 
-    // If no row returned, figure out why
     if (!rotated) {
       const existing = await tx.query.refreshTokens.findFirst({
         where: eq(table.refreshTokens.tokenHash, hash),
@@ -207,11 +205,8 @@ export async function refresh(refreshToken: string, deviceInfo?: string) {
     }
 
     const user = await tx.query.users.findFirst({
-      where: and(
-        eq(table.users.id, rotated.userId),
-        isNull(table.users.deletedAt),
-      ),
-      columns: { id: true, email: true, fullName: true, role: true },
+      where: and(eq(table.users.id, rotated.userId), notDeleted(table.users)),
+      columns: AUTH_USER_QUERY_COLUMNS,
     });
 
     if (!user) throw new UnauthorizedError(AUTH_MESSAGES.userNotFound);
@@ -239,11 +234,20 @@ export async function refresh(refreshToken: string, deviceInfo?: string) {
   });
 }
 
-export async function logout(refreshToken: string) {
+export async function logout(refreshToken: string, userId: string) {
   await db
     .update(table.refreshTokens)
     .set({ revokedAt: now() })
-    .where(eq(table.refreshTokens.tokenHash, hashToken(refreshToken)));
+    .where(
+      and(
+        eq(table.refreshTokens.tokenHash, hashToken(refreshToken)),
+        eq(table.refreshTokens.userId, userId),
+      ),
+    );
 
   return { message: "Logged out successfully" };
+}
+
+export async function getCurrentUser(userId: string) {
+  return getUserById(userId);
 }

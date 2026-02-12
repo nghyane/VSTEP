@@ -1,21 +1,19 @@
-import type {
-  ObjectiveAnswerKey,
-  SubmissionAnswer,
-} from "@common/answer-schemas";
-import {
-  ObjectiveAnswer,
-  ObjectiveAnswerKey as ObjectiveAnswerKeySchema,
-} from "@common/answer-schemas";
-import { EXAM_MESSAGES } from "@common/messages";
+import type { Actor } from "@common/auth-types";
+import { BadRequestError } from "@common/errors";
 import { assertExists, now } from "@common/utils";
 import type { DbTransaction } from "@db/index";
 import { db, notDeleted, table } from "@db/index";
+import type { ObjectiveAnswerKey, SubmissionAnswer } from "@db/types/answers";
+import {
+  ObjectiveAnswer,
+  ObjectiveAnswerKey as ObjectiveAnswerKeySchema,
+} from "@db/types/answers";
+import { sessionView } from "@db/views";
 import { Value } from "@sinclair/typebox/value";
-import { and, eq, inArray, sql } from "drizzle-orm";
-import type { Actor } from "@/plugins/auth";
-import { BadRequestError } from "@/plugins/error";
-import { calculateOverallScore, calculateScore } from "./pure";
-import { type ExamSessionStatus, SESSION_COLUMNS } from "./service";
+import { and, eq, inArray } from "drizzle-orm";
+import { EXAM_MESSAGES } from "./messages";
+import { calculateOverallScore, calculateScore } from "./scoring";
+import type { ExamSessionStatus } from "./service";
 import { getActiveSession } from "./session-service";
 
 function parseAnswerKey(raw: unknown): Record<string, string> {
@@ -60,7 +58,7 @@ export function autoGradeAnswers(
     const question = questionsMap.get(ea.questionId);
     if (!question) {
       throw new BadRequestError(
-        `Question ${ea.questionId} not found during grading`,
+        EXAM_MESSAGES.questionNotFoundDuringGrading(ea.questionId),
       );
     }
 
@@ -144,7 +142,12 @@ async function fetchQuestionsForAnswers(
       answerKey: table.questions.answerKey,
     })
     .from(table.questions)
-    .where(inArray(table.questions.id, questionIds));
+    .where(
+      and(
+        inArray(table.questions.id, questionIds),
+        notDeleted(table.questions),
+      ),
+    );
 
   return new Map(
     rows.map((q) => [q.id, { skill: q.skill, answerKey: q.answerKey }]),
@@ -259,7 +262,7 @@ async function finalizeSession(
         eq(table.examSessions.status, "in_progress"),
       ),
     )
-    .returning(SESSION_COLUMNS);
+    .returning(sessionView.columns);
 
   return assertExists(updatedSession, "Session");
 }
@@ -314,101 +317,5 @@ export async function submitExam(sessionId: string, actor: Actor) {
       { listeningScore, readingScore },
       finalStatus,
     );
-  });
-}
-
-/** Recompute overallScore when a submission is graded. Called after writing/speaking grading completes. */
-export async function updateSessionScoreIfComplete(sessionId: string) {
-  return db.transaction(async (tx) => {
-    const [session] = await tx
-      .select({
-        id: table.examSessions.id,
-        status: table.examSessions.status,
-        listeningScore: table.examSessions.listeningScore,
-        readingScore: table.examSessions.readingScore,
-        writingScore: table.examSessions.writingScore,
-        speakingScore: table.examSessions.speakingScore,
-      })
-      .from(table.examSessions)
-      .where(
-        and(
-          eq(table.examSessions.id, sessionId),
-          notDeleted(table.examSessions),
-        ),
-      )
-      .limit(1);
-
-    if (!session || session.status !== "submitted") return null;
-
-    // Check if all exam_submissions are completed
-    const pendingSubmissions = await tx
-      .select({ id: table.examSubmissions.id })
-      .from(table.examSubmissions)
-      .innerJoin(
-        table.submissions,
-        eq(table.examSubmissions.submissionId, table.submissions.id),
-      )
-      .where(
-        and(
-          eq(table.examSubmissions.sessionId, sessionId),
-          notDeleted(table.submissions),
-          sql`${table.submissions.status} != 'completed'`,
-        ),
-      )
-      .limit(1);
-
-    if (pendingSubmissions.length > 0) return null;
-
-    // Fetch actual writing/speaking scores from completed submissions
-    const skillScores = await tx
-      .select({
-        skill: table.examSubmissions.skill,
-        score: table.submissions.score,
-      })
-      .from(table.examSubmissions)
-      .innerJoin(
-        table.submissions,
-        eq(table.examSubmissions.submissionId, table.submissions.id),
-      )
-      .where(
-        and(
-          eq(table.examSubmissions.sessionId, sessionId),
-          notDeleted(table.submissions),
-        ),
-      );
-
-    if (skillScores.length === 0) return null;
-
-    let writingScore = session.writingScore;
-    let speakingScore = session.speakingScore;
-    for (const row of skillScores) {
-      if (row.skill === "writing" && row.score !== null)
-        writingScore = row.score;
-      if (row.skill === "speaking" && row.score !== null)
-        speakingScore = row.score;
-    }
-
-    const overallScore = calculateOverallScore([
-      session.listeningScore,
-      session.readingScore,
-      writingScore,
-      speakingScore,
-    ]);
-
-    const timestamp = now();
-    const [updated] = await tx
-      .update(table.examSessions)
-      .set({
-        writingScore,
-        speakingScore,
-        overallScore,
-        status: overallScore !== null ? "completed" : session.status,
-        completedAt: overallScore !== null ? timestamp : undefined,
-        updatedAt: timestamp,
-      })
-      .where(eq(table.examSessions.id, sessionId))
-      .returning(SESSION_COLUMNS);
-
-    return updated ?? null;
   });
 }

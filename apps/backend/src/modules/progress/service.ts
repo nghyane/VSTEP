@@ -1,17 +1,13 @@
+import type { UserProgress } from "@db/index";
+import { db, table } from "@db/index";
 import { and, desc, eq, inArray } from "drizzle-orm";
-import type { UserProgress } from "@/db";
-import { db, table } from "@/db";
-import { computeTrend } from "./pure";
-
-// ── Pure functions ──────────────────────────────────────────────────
+import { computeStats, computeTrend, round } from "./trends";
 
 /**
  * Classify trend from recent scores using volatility and a 3-vs-3 average delta.
  * Thresholds: stdDev >= 1.5 => inconsistent, delta >= 0.5 => improving, delta <= -0.5 => declining.
  */
 export { computeTrend };
-
-// ── Public API ──────────────────────────────────────────────────────
 
 export async function getProgressOverview(userId: string) {
   const [records, goal] = await Promise.all([
@@ -55,26 +51,14 @@ export async function getProgressBySkill(
   ]);
 
   const scores = recentScores.map((r) => r.score);
-  const windowAvg =
-    scores.length > 0
-      ? scores.reduce((a, b) => a + b, 0) / scores.length
-      : null;
-
-  const windowStdDev =
-    scores.length > 1 && windowAvg !== null
-      ? Math.sqrt(
-          scores.reduce((sum, s) => sum + (s - windowAvg) ** 2, 0) /
-            (scores.length - 1),
-        )
-      : null;
+  const { avg, stdDev } = computeStats(scores);
 
   return {
     progress: progress ?? null,
     recentScores,
-    windowAvg: windowAvg !== null ? Math.round(windowAvg * 10) / 10 : null,
-    windowStdDev:
-      windowStdDev !== null ? Math.round(windowStdDev * 100) / 100 : null,
-    trend: computeTrend(scores, windowStdDev),
+    windowAvg: avg !== null ? round(avg, 1) : null,
+    windowStdDev: stdDev !== null ? round(stdDev, 2) : null,
+    trend: computeTrend(scores, stdDev),
   };
 }
 
@@ -112,20 +96,10 @@ export async function getSpiderChart(userId: string) {
   const result: Record<string, { current: number; trend: string }> = {};
   for (const skill of skills) {
     const scores = scoresBySkill.get(skill) ?? [];
-    const avg =
-      scores.length > 0
-        ? scores.reduce((a, b) => a + b, 0) / scores.length
-        : null;
-    const stdDev =
-      scores.length > 1 && avg !== null
-        ? Math.sqrt(
-            scores.reduce((sum, s) => sum + (s - avg) ** 2, 0) /
-              (scores.length - 1),
-          )
-        : null;
+    const { avg, stdDev } = computeStats(scores);
 
     result[skill] = {
-      current: avg !== null ? Math.round(avg * 10) / 10 : 0,
+      current: avg !== null ? round(avg, 1) : 0,
       trend: computeTrend(scores, stdDev),
     };
   }

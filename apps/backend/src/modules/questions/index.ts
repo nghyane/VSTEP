@@ -1,3 +1,4 @@
+import { ROLES } from "@common/auth-types";
 import {
   AuthErrors,
   CrudErrors,
@@ -5,30 +6,29 @@ import {
   IdParam,
   PaginationMeta,
 } from "@common/schemas";
-import {
-  QuestionSchema,
-  QuestionVersionSchema,
-  QuestionWithDetailsSchema,
-} from "@db/typebox";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import {
+  Question,
   QuestionCreateBody,
   QuestionListQuery,
   QuestionUpdateBody,
+  QuestionVersion,
   QuestionVersionBody,
-} from "./model";
+} from "./schema";
 import {
   createQuestion,
-  createQuestionVersion,
   getQuestionById,
-  getQuestionVersion,
-  getQuestionVersions,
   listQuestions,
   removeQuestion,
   restoreQuestion,
   updateQuestion,
 } from "./service";
+import {
+  createQuestionVersion,
+  getQuestionVersion,
+  getQuestionVersions,
+} from "./version-service";
 
 export const questions = new Elysia({
   name: "module:questions",
@@ -42,7 +42,7 @@ export const questions = new Elysia({
     query: QuestionListQuery,
     response: {
       200: t.Object({
-        data: t.Array(QuestionSchema),
+        data: t.Array(Question),
         meta: PaginationMeta,
       }),
       400: ErrorResponse,
@@ -50,7 +50,9 @@ export const questions = new Elysia({
     },
     detail: {
       summary: "List questions",
-      description: "List questions with filtering and pagination",
+      description:
+        "Return a paginated list of questions with optional skill, level, and keyword filters.",
+      security: [{ bearerAuth: [] }],
     },
   })
 
@@ -58,12 +60,14 @@ export const questions = new Elysia({
     auth: true,
     params: IdParam,
     response: {
-      200: QuestionSchema,
+      200: Question,
       ...CrudErrors,
     },
     detail: {
-      summary: "Get question",
-      description: "Get a question by ID",
+      summary: "Get question by ID",
+      description:
+        "Retrieve a single question including its latest version content.",
+      security: [{ bearerAuth: [] }],
     },
   })
 
@@ -74,17 +78,19 @@ export const questions = new Elysia({
       return createQuestion(user.sub, body);
     },
     {
-      role: "instructor",
+      role: ROLES.INSTRUCTOR,
       body: QuestionCreateBody,
       response: {
-        201: QuestionSchema,
+        201: Question,
         400: ErrorResponse,
         ...AuthErrors,
         422: ErrorResponse,
       },
       detail: {
         summary: "Create question",
-        description: "Create a new question",
+        description:
+          "Create a new question with content and metadata. Requires instructor role or above.",
+        security: [{ bearerAuth: [] }],
       },
     },
   )
@@ -93,18 +99,20 @@ export const questions = new Elysia({
     "/:id",
     ({ params, body, user }) => updateQuestion(params.id, body, user),
     {
-      role: "instructor",
+      role: ROLES.INSTRUCTOR,
       params: IdParam,
       body: QuestionUpdateBody,
       response: {
-        200: QuestionWithDetailsSchema,
+        200: Question,
         400: ErrorResponse,
         ...CrudErrors,
         422: ErrorResponse,
       },
       detail: {
         summary: "Update question",
-        description: "Update a question by ID",
+        description:
+          "Partially update a question's metadata or content. Requires instructor role or above.",
+        security: [{ bearerAuth: [] }],
       },
     },
   )
@@ -116,37 +124,41 @@ export const questions = new Elysia({
       return createQuestionVersion(params.id, body, user);
     },
     {
-      role: "instructor",
+      role: ROLES.INSTRUCTOR,
       params: IdParam,
       body: QuestionVersionBody,
       response: {
-        201: QuestionVersionSchema,
+        201: QuestionVersion,
         400: ErrorResponse,
         ...CrudErrors,
         422: ErrorResponse,
       },
       detail: {
         summary: "Create question version",
-        description: "Create a new version of a question",
+        description:
+          "Publish a new immutable version snapshot of the question's content. Requires instructor role or above.",
         tags: ["Versions"],
+        security: [{ bearerAuth: [] }],
       },
     },
   )
 
   .get("/:id/versions", ({ params }) => getQuestionVersions(params.id), {
-    role: "instructor",
+    role: ROLES.INSTRUCTOR,
     params: IdParam,
     response: {
       200: t.Object({
-        data: t.Array(QuestionVersionSchema),
+        data: t.Array(QuestionVersion),
         meta: t.Object({ total: t.Number() }),
       }),
       ...CrudErrors,
     },
     detail: {
       summary: "List question versions",
-      description: "Get all versions of a question",
+      description:
+        "Return all version snapshots for a question, ordered by creation date. Requires instructor role or above.",
       tags: ["Versions"],
+      security: [{ bearerAuth: [] }],
     },
   })
 
@@ -154,25 +166,27 @@ export const questions = new Elysia({
     "/:id/versions/:versionId",
     ({ params }) => getQuestionVersion(params.id, params.versionId),
     {
-      role: "instructor",
+      role: ROLES.INSTRUCTOR,
       params: t.Object({
         id: t.String({ format: "uuid" }),
         versionId: t.String({ format: "uuid" }),
       }),
       response: {
-        200: QuestionVersionSchema,
+        200: QuestionVersion,
         ...CrudErrors,
       },
       detail: {
-        summary: "Get question version",
-        description: "Get a specific version of a question",
+        summary: "Get question version by ID",
+        description:
+          "Retrieve a specific version snapshot of a question. Requires instructor role or above.",
         tags: ["Versions"],
+        security: [{ bearerAuth: [] }],
       },
     },
   )
 
   .delete("/:id", ({ params, user }) => removeQuestion(params.id, user), {
-    role: "admin",
+    role: ROLES.ADMIN,
     params: IdParam,
     response: {
       200: t.Object({
@@ -183,21 +197,25 @@ export const questions = new Elysia({
     },
     detail: {
       summary: "Delete question",
-      description: "Soft delete a question",
+      description:
+        "Soft-delete a question. The record is retained but excluded from queries. Requires admin role.",
+      security: [{ bearerAuth: [] }],
     },
   })
 
   .post("/:id/restore", ({ params }) => restoreQuestion(params.id), {
-    role: "admin",
+    role: ROLES.ADMIN,
     params: IdParam,
     response: {
-      200: QuestionWithDetailsSchema,
+      200: Question,
       400: ErrorResponse,
       ...CrudErrors,
     },
     detail: {
       summary: "Restore question",
-      description: "Restore a deleted question (admin only)",
+      description:
+        "Restore a previously soft-deleted question back to active status. Requires admin role.",
       tags: ["Admin"],
+      security: [{ bearerAuth: [] }],
     },
   });

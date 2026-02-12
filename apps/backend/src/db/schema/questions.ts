@@ -1,5 +1,5 @@
-import type { ObjectiveAnswerKey } from "@common/answer-schemas";
-import type { QuestionContent } from "@common/question-content";
+import type { ObjectiveAnswerKey } from "@db/types/answers";
+import type { QuestionContent } from "@db/types/question-content";
 import { sql } from "drizzle-orm";
 import {
   boolean,

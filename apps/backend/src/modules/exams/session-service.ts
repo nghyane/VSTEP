@@ -1,12 +1,12 @@
-import type { SubmissionAnswer } from "@common/answer-schemas";
-import { EXAM_MESSAGES } from "@common/messages";
+import type { Actor } from "@common/auth-types";
+import { BadRequestError, ConflictError } from "@common/errors";
 import { assertAccess, assertExists, now } from "@common/utils";
 import type { DbTransaction } from "@db/index";
 import { db, notDeleted, table } from "@db/index";
+import type { SubmissionAnswer } from "@db/types/answers";
+import { sessionView } from "@db/views";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import type { Actor } from "@/plugins/auth";
-import { BadRequestError, ConflictError } from "@/plugins/error";
-import { SESSION_COLUMNS, SESSION_QUERY_COLUMNS } from "./service";
+import { EXAM_MESSAGES } from "./messages";
 
 /** Fetch and validate an in-progress session owned by the actor */
 export async function getActiveSession(
@@ -49,7 +49,7 @@ export async function startExamSession(userId: string, examId: string) {
     }
 
     const [existingSession] = await tx
-      .select(SESSION_COLUMNS)
+      .select(sessionView.columns)
       .from(table.examSessions)
       .where(
         and(
@@ -73,7 +73,7 @@ export async function startExamSession(userId: string, examId: string) {
         status: "in_progress",
         startedAt: now(),
       })
-      .returning(SESSION_COLUMNS);
+      .returning(sessionView.columns);
 
     return assertExists(session, "Session");
   });
@@ -85,7 +85,7 @@ export async function getExamSessionById(sessionId: string, actor: Actor) {
       eq(table.examSessions.id, sessionId),
       notDeleted(table.examSessions),
     ),
-    columns: SESSION_QUERY_COLUMNS,
+    columns: sessionView.queryColumns,
   });
 
   const s = assertExists(session, "Session");
@@ -150,7 +150,6 @@ export async function saveExamAnswers(
   return db.transaction(async (tx) => {
     await getActiveSession(tx, sessionId, actor);
 
-    // Batch validate all questions
     const questionIds = answers.map((a) => a.questionId);
     const validQuestions = await tx
       .select({ id: table.questions.id })
@@ -159,14 +158,13 @@ export async function saveExamAnswers(
         and(
           inArray(table.questions.id, questionIds),
           eq(table.questions.isActive, true),
+          notDeleted(table.questions),
         ),
       );
     const validIds = new Set(validQuestions.map((q) => q.id));
     const invalidIds = questionIds.filter((id) => !validIds.has(id));
     if (invalidIds.length > 0) {
-      throw new BadRequestError(
-        `Invalid or inactive questions: ${invalidIds.join(", ")}`,
-      );
+      throw new BadRequestError(EXAM_MESSAGES.invalidQuestions(invalidIds));
     }
 
     const timestamp = now();

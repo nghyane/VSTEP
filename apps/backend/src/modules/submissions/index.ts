@@ -1,4 +1,4 @@
-import { AutoGradeResult } from "@common/grading-schemas";
+import { ROLES } from "@common/auth-types";
 import {
   AuthErrors,
   CrudErrors,
@@ -6,17 +6,18 @@ import {
   IdParam,
   PaginationMeta,
 } from "@common/schemas";
+import { AutoGradeResult } from "@db/types/grading";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
+import { autoGradeSubmission } from "./auto-grade-service";
 import {
   SubmissionCreateBody,
+  SubmissionFull,
   SubmissionGradeBody,
   SubmissionListQuery,
   SubmissionUpdateBody,
-  SubmissionWithDetailsSchema,
-} from "./model";
+} from "./schema";
 import {
-  autoGradeSubmission,
   createSubmission,
   getSubmissionById,
   gradeSubmission,
@@ -37,14 +38,16 @@ export const submissions = new Elysia({
     query: SubmissionListQuery,
     response: {
       200: t.Object({
-        data: t.Array(SubmissionWithDetailsSchema),
+        data: t.Array(SubmissionFull),
         meta: PaginationMeta,
       }),
       ...AuthErrors,
     },
     detail: {
       summary: "List submissions",
-      description: "List submissions with filtering and pagination",
+      description:
+        "Return a paginated list of submissions with optional status, skill, and date filters.",
+      security: [{ bearerAuth: [] }],
     },
   })
 
@@ -52,12 +55,14 @@ export const submissions = new Elysia({
     auth: true,
     params: IdParam,
     response: {
-      200: SubmissionWithDetailsSchema,
+      200: SubmissionFull,
       ...CrudErrors,
     },
     detail: {
-      summary: "Get submission",
-      description: "Get a submission by ID",
+      summary: "Get submission by ID",
+      description:
+        "Retrieve a single submission including its grading details and event history.",
+      security: [{ bearerAuth: [] }],
     },
   })
 
@@ -71,14 +76,16 @@ export const submissions = new Elysia({
       auth: true,
       body: SubmissionCreateBody,
       response: {
-        201: SubmissionWithDetailsSchema,
+        201: SubmissionFull,
         400: ErrorResponse,
         ...CrudErrors,
         422: ErrorResponse,
       },
       detail: {
         summary: "Create submission",
-        description: "Create a new submission",
+        description:
+          "Submit an answer for a specific question. The submission enters the grading pipeline.",
+        security: [{ bearerAuth: [] }],
       },
     },
   )
@@ -91,35 +98,39 @@ export const submissions = new Elysia({
       params: IdParam,
       body: SubmissionUpdateBody,
       response: {
-        200: SubmissionWithDetailsSchema,
+        200: SubmissionFull,
         400: ErrorResponse,
         ...CrudErrors,
         422: ErrorResponse,
       },
       detail: {
         summary: "Update submission",
-        description: "Update a submission",
+        description:
+          "Partially update a pending submission's answer content before grading begins.",
+        security: [{ bearerAuth: [] }],
       },
     },
   )
 
   .post("/:id/grade", ({ params, body }) => gradeSubmission(params.id, body), {
-    role: "instructor",
+    role: ROLES.INSTRUCTOR,
     params: IdParam,
     body: SubmissionGradeBody,
     response: {
-      200: SubmissionWithDetailsSchema,
+      200: SubmissionFull,
       ...CrudErrors,
       422: ErrorResponse,
     },
     detail: {
       summary: "Grade submission",
-      description: "Grade a submission (instructor/admin only)",
+      description:
+        "Assign a manual score and feedback to a submission. Requires instructor role or above.",
+      security: [{ bearerAuth: [] }],
     },
   })
 
   .post("/:id/auto-grade", ({ params }) => autoGradeSubmission(params.id), {
-    role: "admin",
+    role: ROLES.ADMIN,
     params: IdParam,
     response: {
       200: t.Object({
@@ -130,7 +141,9 @@ export const submissions = new Elysia({
     },
     detail: {
       summary: "Auto-grade submission",
-      description: "Auto-grade an objective submission (admin only)",
+      description:
+        "Automatically grade an objective (listening/reading) submission against answer keys. Requires admin role.",
+      security: [{ bearerAuth: [] }],
     },
   })
 
@@ -146,6 +159,8 @@ export const submissions = new Elysia({
     },
     detail: {
       summary: "Delete submission",
-      description: "Soft delete a submission",
+      description:
+        "Soft-delete a submission. The record is retained but excluded from queries.",
+      security: [{ bearerAuth: [] }],
     },
   });

@@ -1,85 +1,21 @@
+import { AppError } from "@common/errors";
 import { logger } from "@common/logger";
 import { Elysia } from "elysia";
+
+export {
+  AppError,
+  BadRequestError,
+  ConflictError,
+  ForbiddenError,
+  isUniqueViolation,
+  NotFoundError,
+  TokenExpiredError,
+  UnauthorizedError,
+} from "@common/errors";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export class AppError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-    public code: string,
-    public details?: unknown,
-  ) {
-    super(message);
-    this.name = this.constructor.name;
-    Error.captureStackTrace(this, this.constructor);
-  }
-
-  toResponse(requestId: string): Record<string, unknown> {
-    const body: Record<string, unknown> = {
-      requestId,
-      error: {
-        code: this.code,
-        message: this.message,
-        ...(this.details !== undefined && { details: this.details }),
-      },
-    };
-    return body;
-  }
-}
-
-export class BadRequestError extends AppError {
-  constructor(message = "Bad request") {
-    super(400, message, "BAD_REQUEST");
-  }
-}
-
-export class UnauthorizedError extends AppError {
-  constructor(message = "Unauthorized") {
-    super(401, message, "UNAUTHORIZED");
-  }
-}
-
-export class TokenExpiredError extends AppError {
-  constructor(message = "Token expired") {
-    super(401, message, "TOKEN_EXPIRED");
-  }
-}
-
-export class ForbiddenError extends AppError {
-  constructor(message = "Forbidden") {
-    super(403, message, "FORBIDDEN");
-  }
-}
-
-export class NotFoundError extends AppError {
-  constructor(message = "Not found") {
-    super(404, message, "NOT_FOUND");
-  }
-}
-
-export class ConflictError extends AppError {
-  constructor(message = "Conflict") {
-    super(409, message, "CONFLICT");
-  }
-}
-
-/** Check if an error is a PostgreSQL unique constraint violation (code 23505) */
-export function isUniqueViolation(err: unknown): boolean {
-  return hasPgCode(err, "23505");
-}
-
-function hasPgCode(err: unknown, code: string): boolean {
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    "code" in err &&
-    (err as { code: string }).code === code
-  );
-}
-
-/** Extract or generate a UUID v4 requestId from the incoming request */
 function resolveRequestId(request: Request): string {
   const header = request.headers.get("x-request-id");
   if (header && UUID_RE.test(header)) return header;
