@@ -1,6 +1,11 @@
 import { type Actor, ROLES } from "@common/auth-types";
 import { ForbiddenError, NotFoundError } from "@common/errors";
 
+/** Trim + lowercase an email address. Shared by auth & users modules. */
+export function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
 export function assertExists<T>(
   value: T | null | undefined,
   resource: string,

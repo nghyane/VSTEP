@@ -1,7 +1,8 @@
 import { ROLES } from "@common/auth-types";
-import { MAX_REFRESH_TOKENS_PER_USER } from "@common/constants";
+import { JWT_SECRET_KEY, MAX_REFRESH_TOKENS_PER_USER } from "@common/constants";
 import { env } from "@common/env";
 import { ConflictError, UnauthorizedError } from "@common/errors";
+import { normalizeEmail } from "@common/utils";
 import { db, notDeleted, table } from "@db/index";
 import { and, asc, eq, gt, inArray, isNull } from "drizzle-orm";
 import { SignJWT } from "jose";
@@ -15,13 +16,11 @@ const AUTH_USER_RETURNING = {
   role: table.users.role,
 };
 
-const ACCESS_SECRET = new TextEncoder().encode(env.JWT_SECRET);
-
 async function signAccessToken(sub: string, role: string) {
   return new SignJWT({ sub, role })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime(env.JWT_EXPIRES_IN)
-    .sign(ACCESS_SECRET);
+    .sign(JWT_SECRET_KEY);
 }
 
 function tokenResponse(user: AuthUser, access: string, refresh: string) {
@@ -40,7 +39,7 @@ function refreshExpiry() {
 }
 
 export async function login(body: LoginBody, deviceInfo?: string) {
-  const email = body.email.trim().toLowerCase();
+  const email = normalizeEmail(body.email);
 
   const row = await db.query.users.findFirst({
     where: and(eq(table.users.email, email), notDeleted(table.users)),
@@ -103,7 +102,7 @@ export async function login(body: LoginBody, deviceInfo?: string) {
 }
 
 export async function register(body: RegisterBody) {
-  const email = body.email.trim().toLowerCase();
+  const email = normalizeEmail(body.email);
   const hash = await Bun.password.hash(body.password, "argon2id");
 
   const [user] = await db

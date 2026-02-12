@@ -194,6 +194,18 @@ export async function submitExam(sessionId: string, actor: Actor) {
           skill: assertExists(pending[i], "Pending answer").skill,
         })),
       );
+
+      await tx.insert(table.outbox).values(
+        inserted.map((sub, i) => ({
+          submissionId: sub.id,
+          messageType: "submission.pending_review",
+          payload: {
+            sessionId,
+            skill: assertExists(pending[i], "Pending answer").skill,
+            userId: session.userId,
+          },
+        })),
+      );
     }
 
     const ts = new Date().toISOString();

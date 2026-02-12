@@ -5,7 +5,12 @@ import {
   ForbiddenError,
   UnauthorizedError,
 } from "@common/errors";
-import { assertAccess, assertExists, escapeLike } from "@common/utils";
+import {
+  assertAccess,
+  assertExists,
+  escapeLike,
+  normalizeEmail,
+} from "@common/utils";
 import { db, notDeleted, paginated, table } from "@db/index";
 import { and, count, eq, ilike, ne, type SQL } from "drizzle-orm";
 import type {
@@ -55,7 +60,7 @@ export async function listUsers(query: UserListQuery) {
 }
 
 export async function createUser(body: UserCreateBody) {
-  const email = body.email.trim().toLowerCase();
+  const email = normalizeEmail(body.email);
   const hash = await Bun.password.hash(body.password, "argon2id");
 
   const [user] = await db
@@ -78,7 +83,7 @@ export async function updateUser(
   body: UserUpdateBody,
   actor: Actor,
 ) {
-  const email = body.email ? body.email.trim().toLowerCase() : undefined;
+  const email = body.email ? normalizeEmail(body.email) : undefined;
   assertAccess(userId, actor, "You can only update your own profile");
 
   if (body.role && !actor.is(ROLES.ADMIN)) {

@@ -1,4 +1,5 @@
 import { BadRequestError } from "@common/errors";
+import { createStateMachine } from "@common/state-machine";
 import { assertExists } from "@common/utils";
 import type { DbTransaction } from "@db/index";
 import { db, notDeleted, paginated, table } from "@db/index";
@@ -8,6 +9,14 @@ import type { ExamCreateBody, ExamListQuery, ExamUpdateBody } from "./schema";
 import { EXAM_COLUMNS } from "./schema";
 
 export type ExamSessionStatus = ExamSession["status"];
+
+export const examSessionMachine = createStateMachine<ExamSessionStatus>({
+  // biome-ignore lint/style/useNamingConvention: must match DB enum value
+  in_progress: ["submitted", "completed", "abandoned"],
+  submitted: ["completed"],
+  completed: [],
+  abandoned: [],
+});
 
 async function validateBlueprint(
   tx: DbTransaction,

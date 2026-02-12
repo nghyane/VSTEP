@@ -4,7 +4,7 @@ import {
   ROLE_LEVEL,
   type Role,
 } from "@common/auth-types";
-import { env } from "@common/env";
+import { JWT_SECRET_KEY } from "@common/constants";
 import {
   ForbiddenError,
   TokenExpiredError,
@@ -28,10 +28,8 @@ const PayloadSchema = t.Object({
   role: t.UnionEnum(["learner", "instructor", "admin"]),
 });
 
-const JWT_SECRET = new TextEncoder().encode(env.JWT_SECRET);
-
 export async function verifyAccessToken(token: string): Promise<JWTPayload> {
-  const { payload } = await jwtVerify(token, JWT_SECRET).catch((e) => {
+  const { payload } = await jwtVerify(token, JWT_SECRET_KEY).catch((e) => {
     if (e instanceof joseErrors.JWTExpired) throw new TokenExpiredError();
     throw new UnauthorizedError("Invalid token");
   });

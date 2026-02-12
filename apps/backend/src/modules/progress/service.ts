@@ -3,8 +3,6 @@ import { db, table } from "@db/index";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { computeStats, computeTrend } from "./trends";
 
-export { computeTrend };
-
 export async function getProgressOverview(userId: string) {
   const [records, goal] = await Promise.all([
     db.query.userProgress.findMany({

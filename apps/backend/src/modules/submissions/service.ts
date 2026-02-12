@@ -2,9 +2,11 @@ import type { Actor } from "@common/auth-types";
 import { ROLES } from "@common/auth-types";
 import { BadRequestError, ConflictError } from "@common/errors";
 import { scoreToBand } from "@common/scoring";
+import { createStateMachine } from "@common/state-machine";
 import { assertAccess, assertExists } from "@common/utils";
 import type { DbTransaction } from "@db/index";
 import { db, notDeleted, paginated, table } from "@db/index";
+import type { submissionStatusEnum } from "@db/schema/submissions";
 import { and, count, desc, eq, type SQL } from "drizzle-orm";
 import type {
   SubmissionCreateBody,
@@ -20,7 +22,9 @@ const DETAIL_COLUMNS = {
   feedback: table.submissionDetails.feedback,
 };
 
-const VALID_TRANSITIONS: Record<string, string[]> = {
+type SubmissionStatus = (typeof submissionStatusEnum.enumValues)[number];
+
+export const submissionMachine = createStateMachine<SubmissionStatus>({
   pending: ["queued", "failed"],
   queued: ["processing", "failed"],
   processing: ["completed", "review_pending", "error", "failed"],
@@ -30,16 +34,10 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   retrying: ["processing", "failed"],
   completed: [],
   failed: [],
-};
+});
 
-const MUTABLE_STATUSES = ["pending", "error"];
-const GRADABLE_STATUSES = ["review_pending", "processing"];
-
-export function validateTransition(current: string, next: string) {
-  if (!VALID_TRANSITIONS[current]?.includes(next)) {
-    throw new ConflictError(`Cannot transition from ${current} to ${next}`);
-  }
-}
+const MUTABLE_STATUSES: SubmissionStatus[] = ["pending", "error"];
+const GRADABLE_STATUSES: SubmissionStatus[] = ["review_pending", "processing"];
 
 async function fetchDetails(tx: DbTransaction, submissionId: string) {
   const [row] = await tx
@@ -191,7 +189,8 @@ export async function updateSubmission(
 
     const ts = new Date().toISOString();
 
-    if (body.status) validateTransition(submission.status, body.status);
+    if (body.status)
+      submissionMachine.assertTransition(submission.status, body.status);
 
     const set = {
       updatedAt: ts,
