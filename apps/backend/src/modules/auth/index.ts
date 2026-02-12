@@ -1,6 +1,7 @@
 import { ErrorResponse } from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { User } from "@/modules/users/schema";
+import { getUserById } from "@/modules/users/service";
 import { authPlugin } from "@/plugins/auth";
 import {
   AuthUser,
@@ -10,7 +11,7 @@ import {
   RefreshBody,
   RegisterBody,
 } from "./schema";
-import { getCurrentUser, login, logout, refresh, register } from "./service";
+import { login, logout, refresh, register } from "./service";
 
 export const auth = new Elysia({
   name: "module:auth",
@@ -93,7 +94,7 @@ export const auth = new Elysia({
   .get(
     "/me",
     async ({ user }) => ({
-      user: await getCurrentUser(user.sub),
+      user: await getUserById(user.sub),
     }),
     {
       auth: true,

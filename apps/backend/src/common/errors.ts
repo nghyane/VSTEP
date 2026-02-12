@@ -1,3 +1,13 @@
+function has<K extends string>(v: unknown, k: K): v is Record<K, unknown> {
+  return typeof v === "object" && v !== null && k in v;
+}
+
+function pgCode(v: unknown) {
+  if (has(v, "code") && v.code === "23505") return "23505";
+  if (has(v, "errno") && v.errno === "23505") return "23505";
+  return null;
+}
+
 export class AppError extends Error {
   constructor(
     public status: number,
@@ -10,8 +20,8 @@ export class AppError extends Error {
     Error.captureStackTrace(this, this.constructor);
   }
 
-  toResponse(requestId: string): Record<string, unknown> {
-    const body: Record<string, unknown> = {
+  toResponse(requestId: string) {
+    return {
       requestId,
       error: {
         code: this.code,
@@ -19,7 +29,6 @@ export class AppError extends Error {
         ...(this.details !== undefined && { details: this.details }),
       },
     };
-    return body;
   }
 }
 
@@ -59,13 +68,8 @@ export class ConflictError extends AppError {
   }
 }
 
-export function isUniqueViolation(err: unknown): boolean {
-  if (!err || typeof err !== "object") return false;
-  const obj = err as Record<string, unknown>;
-  if (obj.code === "23505" || obj.errno === "23505") return true;
-  if (obj.cause && typeof obj.cause === "object") {
-    const cause = obj.cause as Record<string, unknown>;
-    return cause.code === "23505" || cause.errno === "23505";
-  }
+export function isUniqueViolation(err: unknown) {
+  if (pgCode(err) === "23505") return true;
+  if (has(err, "cause") && pgCode(err.cause) === "23505") return true;
   return false;
 }

@@ -1,26 +1,43 @@
-import {
-  ActiveFilter,
-  LevelFilter,
-  PaginationQuery,
-  SearchFilter,
-  SkillFilter,
-} from "@common/schemas";
 import { QuestionFormat, QuestionLevel, Skill } from "@db/enums";
+import { questions, questionVersions } from "@db/schema";
 import { ObjectiveAnswerKey } from "@db/types/answers";
 import { QuestionContent } from "@db/types/question-content";
-import { questionFullView, questionVersionView, questionView } from "@db/views";
+import { getTableColumns } from "drizzle-orm";
+import {
+  createInsertSchema,
+  createSelectSchema,
+  createUpdateSchema,
+} from "drizzle-typebox";
 import { t } from "elysia";
 
-export const Question = questionView.schema;
+const JSONB_REFINE = {
+  content: QuestionContent,
+  answerKey: t.Nullable(ObjectiveAnswerKey),
+};
+
+/** Drizzle select columns (no answerKey/deletedAt) for .select()/.returning() */
+const { answerKey: _, deletedAt: __, ...columns } = getTableColumns(questions);
+export const QUESTION_COLUMNS = columns;
+
+// ── Response schemas — derived from Drizzle table ────────────────────
+
+const SelectQuestion = createSelectSchema(questions, JSONB_REFINE);
+
+export const Question = t.Omit(SelectQuestion, ["answerKey", "deletedAt"]);
 export type Question = typeof Question.static;
 
-export const QuestionFull = questionFullView.schema;
+export const QuestionFull = t.Omit(SelectQuestion, ["deletedAt"]);
 export type QuestionFull = typeof QuestionFull.static;
 
-export const QuestionVersion = questionVersionView.schema;
+export const QuestionVersion = createSelectSchema(
+  questionVersions,
+  JSONB_REFINE,
+);
 export type QuestionVersion = typeof QuestionVersion.static;
 
-export const QuestionCreateBody = t.Object({
+// ── Request schemas — derived from createInsertSchema/createUpdateSchema ─
+
+const InsertQuestion = createInsertSchema(questions, {
   skill: Skill,
   level: QuestionLevel,
   format: QuestionFormat,
@@ -28,32 +45,46 @@ export const QuestionCreateBody = t.Object({
   answerKey: t.Optional(ObjectiveAnswerKey),
 });
 
-export const QuestionUpdateBody = t.Partial(
-  t.Object({
-    skill: Skill,
-    level: QuestionLevel,
-    format: QuestionFormat,
-    content: QuestionContent,
-    answerKey: t.Optional(ObjectiveAnswerKey),
-    isActive: t.Boolean(),
-  }),
-);
+export const QuestionCreateBody = t.Pick(InsertQuestion, [
+  "skill",
+  "level",
+  "format",
+  "content",
+  "answerKey",
+]);
+
+const UpdateQuestion = createUpdateSchema(questions, {
+  skill: () => Skill,
+  level: () => QuestionLevel,
+  format: () => QuestionFormat,
+  content: () => QuestionContent,
+  answerKey: () => ObjectiveAnswerKey,
+  isActive: () => t.Boolean(),
+});
+
+export const QuestionUpdateBody = t.Pick(UpdateQuestion, [
+  "skill",
+  "level",
+  "format",
+  "content",
+  "answerKey",
+  "isActive",
+]);
 
 export const QuestionVersionBody = t.Object({
   content: QuestionContent,
   answerKey: t.Optional(ObjectiveAnswerKey),
 });
 
-export const QuestionListQuery = t.Composite([
-  PaginationQuery,
-  SkillFilter,
-  LevelFilter,
-  ActiveFilter,
-  SearchFilter,
-  t.Object({
-    format: t.Optional(QuestionFormat),
-  }),
-]);
+export const QuestionListQuery = t.Object({
+  page: t.Optional(t.Number({ minimum: 1, default: 1 })),
+  limit: t.Optional(t.Number({ minimum: 1, maximum: 100, default: 20 })),
+  skill: t.Optional(Skill),
+  level: t.Optional(QuestionLevel),
+  format: t.Optional(QuestionFormat),
+  isActive: t.Optional(t.Boolean()),
+  search: t.Optional(t.String({ maxLength: 255 })),
+});
 
 export type QuestionCreateBody = typeof QuestionCreateBody.static;
 export type QuestionUpdateBody = typeof QuestionUpdateBody.static;

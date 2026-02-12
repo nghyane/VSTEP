@@ -2,31 +2,18 @@ import { AppError } from "@common/errors";
 import { logger } from "@common/logger";
 import { Elysia } from "elysia";
 
-export {
-  AppError,
-  BadRequestError,
-  ConflictError,
-  ForbiddenError,
-  isUniqueViolation,
-  NotFoundError,
-  TokenExpiredError,
-  UnauthorizedError,
-} from "@common/errors";
-
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function resolveRequestId(request: Request): string {
+function resolveRequestId(request: Request) {
   const header = request.headers.get("x-request-id");
-  if (header && UUID_RE.test(header)) return header;
-  return crypto.randomUUID();
+  return header && UUID_RE.test(header) ? header : crypto.randomUUID();
 }
 
 export const errorPlugin = new Elysia({ name: "error" })
-  .derive({ as: "scoped" }, ({ request }) => {
-    const requestId = resolveRequestId(request);
-    return { requestId };
-  })
+  .derive({ as: "scoped" }, ({ request }) => ({
+    requestId: resolveRequestId(request),
+  }))
   .onAfterHandle({ as: "scoped" }, ({ requestId, set }) => {
     set.headers["x-request-id"] = requestId;
   })

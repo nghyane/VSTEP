@@ -1,4 +1,6 @@
-export type Role = "learner" | "instructor" | "admin";
+import type { userRoleEnum } from "@db/schema/users";
+
+export type Role = (typeof userRoleEnum.enumValues)[number];
 
 export const ROLES = {
   LEARNER: "learner",
@@ -12,12 +14,6 @@ export const ROLE_LEVEL: Record<Role, number> = {
   admin: 2,
 };
 
-export interface JWTPayload {
-  sub: string;
-  jti: string;
-  role: Role;
-}
+export type JWTPayload = { sub: string; role: Role };
 
-export interface Actor extends JWTPayload {
-  is(required: Role): boolean;
-}
+export type Actor = JWTPayload & { is(required: Role): boolean };

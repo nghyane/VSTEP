@@ -1,1 +1,0 @@
-export { paginatedQuery } from "./helpers";

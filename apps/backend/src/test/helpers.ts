@@ -1,5 +1,4 @@
 import type { Role } from "@common/auth-types";
-import { hashPassword } from "@common/password";
 import { db, table } from "@db/index";
 import { inArray, like } from "drizzle-orm";
 import { app } from "@/app";
@@ -62,7 +61,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function buildTestEmail(prefix = testEmailPrefix): string {
+function buildTestEmail(prefix = testEmailPrefix) {
   return `${prefix}${crypto.randomUUID()}@test.com`;
 }
 
@@ -75,7 +74,7 @@ export async function createTestUser(
 ): Promise<TestUserResult> {
   const password = input.password ?? "Password123!";
   const email = input.email ?? buildTestEmail();
-  const passwordHash = await hashPassword(password);
+  const passwordHash = await Bun.password.hash(password, "argon2id");
 
   const [createdUser] = await db
     .insert(table.users)

@@ -5,43 +5,24 @@ import { sql } from "drizzle-orm";
 
 const TIMEOUT_MS = 2_000;
 
-type Status = "ok" | "unavailable" | "error";
-
-interface ServiceHealth {
-  status: Status;
-  latency?: number;
-}
-
-interface HealthResult {
-  status: "ok" | "degraded";
-  services: {
-    db: ServiceHealth;
-    redis: ServiceHealth;
-  };
-}
-
-async function timed(
-  name: string,
-  check: () => Promise<void>,
-): Promise<ServiceHealth> {
+async function timed(name: string, check: () => Promise<void>) {
   const start = Date.now();
-  try {
-    await Promise.race([
-      check(),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("timed out")), TIMEOUT_MS),
-      ),
-    ]);
-    return { status: "ok", latency: Date.now() - start };
-  } catch (err) {
-    logger.warn(`${name} health check failed`, {
-      error: err instanceof Error ? err.message : String(err),
+  return Promise.race([
+    check(),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("timed out")), TIMEOUT_MS),
+    ),
+  ])
+    .then(() => ({ status: "ok" as const, latency: Date.now() - start }))
+    .catch((err) => {
+      logger.warn(`${name} health check failed`, {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      return { status: "error" as const };
     });
-    return { status: "error" };
-  }
 }
 
-async function tcpProbe(url: string, defaultPort: number): Promise<void> {
+async function tcpProbe(url: string, defaultPort: number) {
   const parsed = new URL(url);
   const socket = await Bun.connect({
     hostname: parsed.hostname,
@@ -51,24 +32,20 @@ async function tcpProbe(url: string, defaultPort: number): Promise<void> {
   socket.end();
 }
 
-const unavailable: ServiceHealth = { status: "unavailable" };
+const unavailable = { status: "unavailable" as const };
 
-export async function checkHealth(): Promise<HealthResult> {
-  const { REDIS_URL } = env;
-
+export async function checkHealth() {
   const [dbHealth, redisHealth] = await Promise.all([
     timed("Postgres", () => db.execute(sql`SELECT 1`).then(() => {})),
-    REDIS_URL ? timed("Redis", () => tcpProbe(REDIS_URL, 6379)) : unavailable,
+    env.REDIS_URL
+      ? timed("Redis", () => tcpProbe(env.REDIS_URL as string, 6379))
+      : unavailable,
   ]);
 
-  const services = {
-    db: dbHealth,
-    redis: redisHealth,
-  };
-
+  const services = { db: dbHealth, redis: redisHealth };
   const allOk = Object.values(services).every(
     (s) => s.status === "ok" || s.status === "unavailable",
   );
 
-  return { status: allOk ? "ok" : "degraded", services };
+  return { status: allOk ? ("ok" as const) : ("degraded" as const), services };
 }
