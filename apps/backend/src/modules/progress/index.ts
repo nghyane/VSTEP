@@ -69,12 +69,22 @@ export const progress = new Elysia({
     },
   )
 
-  .post("/goals", ({ body, user }) => createGoal(user.sub, body), {
-    auth: true,
-    body: GoalBody,
-    response: { 200: Goal, ...AuthErrors, 409: ErrorResponse },
-    detail: { summary: "Create learning goal", security: [{ bearerAuth: [] }] },
-  })
+  .post(
+    "/goals",
+    ({ body, user, set }) => {
+      set.status = 201;
+      return createGoal(user.sub, body);
+    },
+    {
+      auth: true,
+      body: GoalBody,
+      response: { 201: Goal, ...AuthErrors, 409: ErrorResponse },
+      detail: {
+        summary: "Create learning goal",
+        security: [{ bearerAuth: [] }],
+      },
+    },
+  )
 
   .patch(
     "/goals/:id",

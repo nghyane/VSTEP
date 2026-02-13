@@ -1,5 +1,6 @@
-import { ConflictError, NotFoundError } from "@common/errors";
+import { ConflictError, ForbiddenError } from "@common/errors";
 import { BAND_THRESHOLDS, scoreToBand } from "@common/scoring";
+import { assertExists } from "@common/utils";
 import { SKILLS } from "@db/enums";
 import type { DbTransaction, UserProgress } from "@db/index";
 import { db, table } from "@db/index";
@@ -231,13 +232,16 @@ export async function updateGoal(
   goalId: string,
   body: GoalUpdateBody,
 ) {
-  const existing = await db.query.userGoals.findFirst({
-    where: and(
-      eq(table.userGoals.id, goalId),
-      eq(table.userGoals.userId, userId),
-    ),
-  });
-  if (!existing) throw new NotFoundError("Goal not found");
+  const existing = assertExists(
+    await db.query.userGoals.findFirst({
+      where: eq(table.userGoals.id, goalId),
+    }),
+    "Goal",
+  );
+
+  if (existing.userId !== userId) {
+    throw new ForbiddenError("You can only update your own goal");
+  }
 
   const rows = await db
     .update(table.userGoals)
@@ -245,28 +249,25 @@ export async function updateGoal(
       ...body,
       updatedAt: new Date().toISOString(),
     })
-    .where(
-      and(eq(table.userGoals.id, goalId), eq(table.userGoals.userId, userId)),
-    )
+    .where(eq(table.userGoals.id, goalId))
     .returning();
 
   return rows[0] as (typeof rows)[0];
 }
 
 export async function removeGoal(userId: string, goalId: string) {
-  const existing = await db.query.userGoals.findFirst({
-    where: and(
-      eq(table.userGoals.id, goalId),
-      eq(table.userGoals.userId, userId),
-    ),
-  });
-  if (!existing) throw new NotFoundError("Goal not found");
+  const existing = assertExists(
+    await db.query.userGoals.findFirst({
+      where: eq(table.userGoals.id, goalId),
+    }),
+    "Goal",
+  );
 
-  await db
-    .delete(table.userGoals)
-    .where(
-      and(eq(table.userGoals.id, goalId), eq(table.userGoals.userId, userId)),
-    );
+  if (existing.userId !== userId) {
+    throw new ForbiddenError("You can only delete your own goal");
+  }
+
+  await db.delete(table.userGoals).where(eq(table.userGoals.id, goalId));
 
   return { id: goalId, deleted: true as const };
 }
