@@ -15,7 +15,7 @@ import { bearer } from "@elysiajs/bearer";
 import type { Static } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 import { Elysia, t } from "elysia";
-import { errors as joseErrors, jwtVerify } from "jose";
+import { errors, jwtVerify } from "jose";
 
 function toActor(payload: JWTPayload): Actor {
   return {
@@ -31,7 +31,7 @@ const PayloadSchema = t.Object({
 
 export async function verifyAccessToken(token: string): Promise<JWTPayload> {
   const { payload } = await jwtVerify(token, JWT_SECRET_KEY).catch((e) => {
-    if (e instanceof joseErrors.JWTExpired) throw new TokenExpiredError();
+    if (e instanceof errors.JWTExpired) throw new TokenExpiredError();
     throw new UnauthorizedError("Invalid token");
   });
 
