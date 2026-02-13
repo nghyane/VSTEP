@@ -43,7 +43,7 @@ export const ProgressSkillDetail = t.Object({
   progress: t.Nullable(SkillProgress),
   recentScores: t.Array(ProgressRecentScore),
   windowAvg: t.Nullable(t.Number()),
-  windowStdDev: t.Nullable(t.Number()),
+  windowDeviation: t.Nullable(t.Number()),
   trend: ProgressTrend,
 });
 

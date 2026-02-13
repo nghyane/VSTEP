@@ -14,10 +14,10 @@ const TREND_THRESHOLDS = {
 
 /** Compute mean and sample standard deviation from a score window. */
 export function computeStats(scores: number[]) {
-  if (scores.length === 0) return { avg: null, stdDev: null };
+  if (scores.length === 0) return { avg: null, deviation: null };
 
   const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-  const stdDev =
+  const deviation =
     scores.length > 1
       ? Math.sqrt(
           scores.reduce((sum, s) => sum + (s - avg) ** 2, 0) /
@@ -25,7 +25,7 @@ export function computeStats(scores: number[]) {
         )
       : null;
 
-  return { avg, stdDev };
+  return { avg, deviation };
 }
 
 export type Trend =
@@ -37,14 +37,17 @@ export type Trend =
 
 /**
  * Classify trend from recent scores using volatility and a 3-vs-3 average delta.
- * Thresholds: stdDev >= 1.5 => inconsistent, delta >= 0.5 => improving, delta <= -0.5 => declining.
+ * Thresholds: deviation >= 1.5 => inconsistent, delta >= 0.5 => improving, delta <= -0.5 => declining.
  */
-export function computeTrend(scores: number[], stdDev: number | null): Trend {
+export function computeTrend(
+  scores: number[],
+  deviation: number | null,
+): Trend {
   if (
     scores.length >= TREND_THRESHOLDS.fullAnalysisMinScores &&
-    stdDev !== null
+    deviation !== null
   ) {
-    if (stdDev >= TREND_THRESHOLDS.inconsistentStdDev) return "inconsistent";
+    if (deviation >= TREND_THRESHOLDS.inconsistentStdDev) return "inconsistent";
     const recent = scores.slice(0, 3);
     const prev = scores.slice(3, 6);
     const delta =
@@ -55,7 +58,8 @@ export function computeTrend(scores: number[], stdDev: number | null): Trend {
     return "stable";
   }
   if (scores.length >= TREND_THRESHOLDS.basicAnalysisMinScores) {
-    return stdDev !== null && stdDev >= TREND_THRESHOLDS.inconsistentStdDev
+    return deviation !== null &&
+      deviation >= TREND_THRESHOLDS.inconsistentStdDev
       ? "inconsistent"
       : "stable";
   }

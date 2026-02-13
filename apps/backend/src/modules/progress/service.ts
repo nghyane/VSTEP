@@ -43,8 +43,8 @@ export async function updateUserProgress(
     .limit(10);
 
   const scores = recentScores.map((r) => r.score);
-  const { avg, stdDev } = computeStats(scores);
-  const trend = computeTrend(scores, stdDev);
+  const { avg, deviation } = computeStats(scores);
+  const trend = computeTrend(scores, deviation);
 
   const currentLevel = avg !== null ? (scoreToBand(avg) ?? "A2") : "A2";
 
@@ -142,14 +142,15 @@ export async function getProgressBySkill(
   ]);
 
   const scores = recentScores.map((r) => r.score);
-  const { avg, stdDev } = computeStats(scores);
+  const { avg, deviation } = computeStats(scores);
 
   return {
     progress: progress ?? null,
     recentScores,
     windowAvg: avg !== null ? Math.round(avg * 10) / 10 : null,
-    windowStdDev: stdDev !== null ? Math.round(stdDev * 100) / 100 : null,
-    trend: computeTrend(scores, stdDev),
+    windowDeviation:
+      deviation !== null ? Math.round(deviation * 100) / 100 : null,
+    trend: computeTrend(scores, deviation),
   };
 }
 
@@ -184,12 +185,12 @@ export async function getSpiderChart(userId: string) {
   const result = Object.fromEntries(
     SKILLS.map((s) => {
       const sc = grouped.get(s) ?? [];
-      const { avg, stdDev } = computeStats(sc);
+      const { avg, deviation } = computeStats(sc);
       return [
         s,
         {
           current: avg !== null ? Math.round(avg * 10) / 10 : 0,
-          trend: computeTrend(sc, stdDev),
+          trend: computeTrend(sc, deviation),
         },
       ];
     }),
@@ -312,8 +313,8 @@ export async function getProgressForUsers(userIds: string[]) {
       SKILLS.map((skill) => {
         const key = `${userId}:${skill}`;
         const recentScores = scoresByUserSkill.get(key) ?? [];
-        const { avg, stdDev } = computeStats(recentScores);
-        const trend = computeTrend(recentScores, stdDev);
+        const { avg, deviation } = computeStats(recentScores);
+        const trend = computeTrend(recentScores, deviation);
         const progress = progressByUserSkill.get(key);
 
         return [
