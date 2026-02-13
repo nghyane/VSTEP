@@ -176,6 +176,50 @@ export async function joinTestClass(
   return learner;
 }
 
+export interface TestQuestionResult {
+  questionId: string;
+  instructor: LoginResult;
+}
+
+export async function createTestQuestion(
+  instructorInput: TestUserInput = {},
+): Promise<TestQuestionResult> {
+  const instructor = await loginTestUser({
+    role: "instructor",
+    ...instructorInput,
+  });
+
+  const { data } = await api.post("/api/questions", {
+    token: instructor.accessToken,
+    body: {
+      skill: "reading",
+      level: "B2",
+      format: "reading_mcq",
+      content: {
+        passage: "Test passage for integration testing.",
+        items: [
+          {
+            number: 1,
+            prompt: "What is the main idea?",
+            options: {
+              A: "Option A",
+              B: "Option B",
+              C: "Option C",
+              D: "Option D",
+            },
+          },
+        ],
+      },
+      answerKey: { correctAnswers: { "1": "A" } },
+    },
+  });
+
+  return {
+    questionId: data.id as string,
+    instructor,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Cleanup
 // ---------------------------------------------------------------------------
@@ -189,7 +233,21 @@ export async function cleanupTestData(emailPrefix = testEmailPrefix) {
   const ids = rows.map((r) => r.id);
   if (ids.length === 0) return;
 
-  // Delete in FK order: feedback → members → classes → tokens → users
+  // Delete in FK order: question_versions → questions → feedback → members → classes → tokens → users
+  await db
+    .delete(table.questionVersions)
+    .where(
+      inArray(
+        table.questionVersions.questionId,
+        db
+          .select({ id: table.questions.id })
+          .from(table.questions)
+          .where(inArray(table.questions.createdBy, ids)),
+      ),
+    );
+  await db
+    .delete(table.questions)
+    .where(inArray(table.questions.createdBy, ids));
   await db
     .delete(table.instructorFeedback)
     .where(inArray(table.instructorFeedback.fromUserId, ids));
