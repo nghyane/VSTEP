@@ -54,8 +54,9 @@ export type FeedbackListQuery = typeof FeedbackListQuery.static;
 // ── Composite schemas ──────────────────────────────────────
 
 export const ClassDetail = t.Composite([
-  Class,
+  t.Omit(Class, ["inviteCode"]),
   t.Object({
+    inviteCode: t.Nullable(t.String()),
     members: t.Array(
       t.Object({
         id: t.String({ format: "uuid" }),

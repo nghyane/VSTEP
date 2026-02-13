@@ -68,7 +68,7 @@ export async function listClasses(query: ClassListQuery, actor: Actor) {
   const pg = paginated(query.page, query.limit);
 
   const memberCountSq = db
-    .select({ count: sql<number>`count(*)::int` })
+    .select({ count: sql<number>`count(*)::int`.as("member_count") })
     .from(table.classMembers)
     .where(
       and(
