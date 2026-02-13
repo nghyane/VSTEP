@@ -1,6 +1,5 @@
 import {
   afterAll,
-  afterEach,
   beforeAll,
   beforeEach,
   describe,
@@ -11,25 +10,17 @@ import {
   cleanupTestData,
   createTestApp,
   createTestUser,
+  isRecord,
   loginTestUser,
   makeRequest,
 } from "@/test/helpers";
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
 describe("users integration", () => {
-  beforeAll(async () => {
+  beforeAll(() => {
     createTestApp();
-    await cleanupTestData();
   });
 
   beforeEach(async () => {
-    await cleanupTestData();
-  });
-
-  afterEach(async () => {
     await cleanupTestData();
   });
 

@@ -1,6 +1,5 @@
 import {
   afterAll,
-  afterEach,
   beforeAll,
   beforeEach,
   describe,
@@ -8,33 +7,22 @@ import {
   it,
 } from "bun:test";
 import {
+  buildTestEmail,
   cleanupTestData,
   createTestApp,
   createTestUser,
+  isRecord,
   loginTestUser,
   makeRequest,
   testEmailPrefix,
 } from "@/test/helpers";
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function buildEmail(): string {
-  return `${testEmailPrefix}${crypto.randomUUID()}@test.com`;
-}
-
 describe("auth integration", () => {
-  beforeAll(async () => {
+  beforeAll(() => {
     createTestApp();
-    await cleanupTestData();
   });
 
   beforeEach(async () => {
-    await cleanupTestData();
-  });
-
-  afterEach(async () => {
     await cleanupTestData();
   });
 
@@ -43,7 +31,7 @@ describe("auth integration", () => {
   });
 
   it("registers a learner account", async () => {
-    const email = buildEmail();
+    const email = buildTestEmail();
     const result = await makeRequest({
       method: "POST",
       path: "/api/auth/register",
@@ -89,7 +77,7 @@ describe("auth integration", () => {
   });
 
   it("rejects duplicate register email", async () => {
-    const email = buildEmail();
+    const email = buildTestEmail();
 
     await makeRequest({
       method: "POST",
