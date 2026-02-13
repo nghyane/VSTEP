@@ -1,14 +1,10 @@
 import { join } from "node:path";
 import { Value } from "@sinclair/typebox/value";
 import { t } from "elysia";
-import type { DbTransaction } from "../src/db/index";
 import { skillEnum } from "../src/db/schema/enums";
 import type { NewQuestion } from "../src/db/schema/questions";
 import { ObjectiveAnswerKey } from "../src/db/types/answers";
 import { QuestionContent } from "../src/db/types/question-content";
-
-/** @deprecated Use `DbTransaction` from `@db/index` directly */
-export type Db = DbTransaction;
 
 export const SKILLS = skillEnum.enumValues;
 

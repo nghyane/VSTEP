@@ -1,7 +1,7 @@
+import type { DbTransaction } from "../../src/db/index";
 import { table } from "../../src/db/schema/index";
 import type { NewQuestion } from "../../src/db/schema/questions";
 import {
-  type Db,
   logResult,
   logSection,
   readSeedFiles,
@@ -14,7 +14,7 @@ export interface SeededQuestions {
 }
 
 export async function seedQuestions(
-  db: Db,
+  db: DbTransaction,
   adminId: string,
 ): Promise<SeededQuestions> {
   logSection("Questions");

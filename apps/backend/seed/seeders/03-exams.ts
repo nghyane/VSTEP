@@ -1,13 +1,14 @@
+import type { DbTransaction } from "../../src/db/index";
 import type { NewExam } from "../../src/db/schema/exams";
 import { table } from "../../src/db/schema/index";
 import type { ExamBlueprint } from "../../src/db/types/grading";
-import { type Db, logResult, logSection, SKILLS } from "../utils";
+import { logResult, logSection, SKILLS } from "../utils";
 import type { SeededQuestions } from "./02-questions";
 
 type Level = NewExam["level"];
 
 export async function seedExams(
-  db: Db,
+  db: DbTransaction,
   adminId: string,
   questions: SeededQuestions["all"],
 ): Promise<void> {

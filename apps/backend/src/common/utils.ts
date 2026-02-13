@@ -29,3 +29,9 @@ export function assertAccess(
   if (actor.is(ROLES.ADMIN)) return;
   throw new ForbiddenError(message);
 }
+
+/** Generate a cryptographically random invite code (base64url, 16 bytes = 22 chars). */
+export function generateInviteCode(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return Buffer.from(bytes).toString("base64url");
+}

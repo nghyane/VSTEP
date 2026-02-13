@@ -1,5 +1,5 @@
+import type { DbTransaction } from "../../src/db/index";
 import { table } from "../../src/db/schema/index";
-import type { Db } from "../utils";
 import { hashPassword, logResult, logSection } from "../utils";
 
 const SEED_USERS = [
@@ -26,7 +26,7 @@ export interface SeededUsers {
   learners: Array<{ id: string; email: string }>;
 }
 
-export async function seedUsers(db: Db): Promise<SeededUsers> {
+export async function seedUsers(db: DbTransaction): Promise<SeededUsers> {
   logSection("Users");
 
   const passwordHash = await hashPassword(SEED_PASSWORD);

@@ -4,6 +4,7 @@ import { table } from "../src/db/schema/index";
 import { SEED_PASSWORD, seedUsers } from "./seeders/01-users";
 import { seedQuestions } from "./seeders/02-questions";
 import { seedExams } from "./seeders/03-exams";
+import { seedClasses } from "./seeders/04-classes";
 
 const tableNames = Object.values(table)
   .map((t) => getTableName(t))
@@ -23,6 +24,7 @@ async function main(): Promise<void> {
     const users = await seedUsers(tx);
     const { all: questions } = await seedQuestions(tx, users.admin.id);
     await seedExams(tx, users.admin.id, questions);
+    await seedClasses(tx, users);
     return users;
   });
 

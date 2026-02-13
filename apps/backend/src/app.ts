@@ -3,6 +3,7 @@ import { cors } from "@elysiajs/cors";
 import { openapi } from "@elysiajs/openapi";
 import { Elysia } from "elysia";
 import { auth } from "@/modules/auth";
+import { classesModule } from "@/modules/classes";
 import { exams } from "@/modules/exams";
 import { healthModule } from "@/modules/health";
 import { progress } from "@/modules/progress";
@@ -32,6 +33,11 @@ const api = new Elysia({ prefix: "/api" })
           { name: "Questions", description: "Question management endpoints" },
           { name: "Progress", description: "User progress endpoints" },
           { name: "Exams", description: "Exam endpoints" },
+          {
+            name: "Classes",
+            description:
+              "Class management, enrollment, dashboard, and feedback",
+          },
         ],
         components: {
           securitySchemes: {
@@ -50,7 +56,8 @@ const api = new Elysia({ prefix: "/api" })
   .use(submissions)
   .use(questions)
   .use(progress)
-  .use(exams);
+  .use(exams)
+  .use(classesModule);
 
 /** Root app — health check outside /api, everything else inside */
 export const app = new Elysia()
