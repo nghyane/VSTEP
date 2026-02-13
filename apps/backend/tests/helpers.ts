@@ -1,3 +1,4 @@
+import { expect } from "bun:test";
 import type { Role } from "@common/auth-types";
 import { db, table } from "@db/index";
 import { inArray, like } from "drizzle-orm";
@@ -5,15 +6,71 @@ import { app } from "@/app";
 
 export const testEmailPrefix = "itest-";
 
-type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | { [key: string]: JsonValue };
+// ---------------------------------------------------------------------------
+// Request helpers
+// ---------------------------------------------------------------------------
 
-type JsonObject = { [key: string]: JsonValue };
+type Data = Record<string, unknown>;
+
+interface RequestOptions {
+  body?: Data;
+  token?: string;
+  headers?: Record<string, string>;
+}
+
+interface RequestResult {
+  status: number;
+  data: Data;
+}
+
+async function request(
+  method: string,
+  path: string,
+  opts: RequestOptions = {},
+): Promise<RequestResult> {
+  const headers = new Headers(opts.headers);
+  if (opts.body) headers.set("content-type", "application/json");
+  if (opts.token) headers.set("authorization", `Bearer ${opts.token}`);
+
+  const response = await app.handle(
+    new Request(`http://localhost${path}`, {
+      method,
+      headers,
+      body: opts.body ? JSON.stringify(opts.body) : undefined,
+    }),
+  );
+
+  const data = (await response.json()) as Data;
+  return { status: response.status, data };
+}
+
+export const api = {
+  get: (path: string, opts?: RequestOptions) => request("GET", path, opts),
+  post: (path: string, opts?: RequestOptions) => request("POST", path, opts),
+  patch: (path: string, opts?: RequestOptions) => request("PATCH", path, opts),
+  delete: (path: string, opts?: RequestOptions) =>
+    request("DELETE", path, opts),
+};
+
+// ---------------------------------------------------------------------------
+// Assertion helpers
+// ---------------------------------------------------------------------------
+
+export function expectError(
+  result: RequestResult,
+  status: number,
+  code: string,
+  message?: string,
+) {
+  expect(result.status).toBe(status);
+  const error = result.data.error as Data;
+  expect(error.code).toBe(code);
+  if (message) expect(error.message).toBe(message);
+}
+
+// ---------------------------------------------------------------------------
+// Test data factories
+// ---------------------------------------------------------------------------
 
 interface TestUserInput {
   email?: string;
@@ -23,50 +80,25 @@ interface TestUserInput {
 }
 
 interface TestUserResult {
-  user: {
-    id: string;
-    email: string;
-    fullName: string | null;
-    role: Role;
-  };
+  user: { id: string; email: string; fullName: string | null; role: Role };
   password: string;
 }
 
-interface LoginTestUserResult extends TestUserResult {
+interface LoginResult extends TestUserResult {
   accessToken: string;
   refreshToken: string;
   expiresIn: number;
 }
 
-interface MakeRequestOptions {
-  method?: string;
-  path: string;
-  body?: JsonObject;
-  token?: string;
-  headers?: Record<string, string>;
-}
-
-interface MakeRequestResult {
-  response: Response;
-  status: number;
-  data: JsonValue | string | null;
-}
-
-interface CleanupTestDataOptions {
-  emailPrefix?: string;
-  userIds?: string[];
-}
-
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
+interface TestClassResult {
+  classId: string;
+  className: string;
+  inviteCode: string;
+  instructor: LoginResult;
 }
 
 export function buildTestEmail(prefix = testEmailPrefix) {
   return `${prefix}${crypto.randomUUID()}@test.com`;
-}
-
-export function createTestApp() {
-  return app;
 }
 
 export async function createTestUser(
@@ -76,7 +108,7 @@ export async function createTestUser(
   const email = input.email ?? buildTestEmail();
   const passwordHash = await Bun.password.hash(password, "argon2id");
 
-  const [createdUser] = await db
+  const [user] = await db
     .insert(table.users)
     .values({
       email,
@@ -91,116 +123,87 @@ export async function createTestUser(
       role: table.users.role,
     });
 
-  if (!createdUser) {
-    throw new Error("Failed to create test user");
-  }
-
-  return {
-    user: createdUser,
-    password,
-  };
+  if (!user) throw new Error("Failed to create test user");
+  return { user, password };
 }
 
 export async function loginTestUser(
   input: TestUserInput = {},
-): Promise<LoginTestUserResult> {
+): Promise<LoginResult> {
   const created = await createTestUser(input);
-
-  const loginResponse = await makeRequest({
-    method: "POST",
-    path: "/api/auth/login",
-    body: {
-      email: created.user.email,
-      password: created.password,
-    },
+  const { data } = await api.post("/api/auth/login", {
+    body: { email: created.user.email, password: created.password },
   });
-
-  if (loginResponse.status !== 200 || !isRecord(loginResponse.data)) {
-    throw new Error("Failed to login test user");
-  }
-
-  const accessToken = loginResponse.data.accessToken;
-  const refreshToken = loginResponse.data.refreshToken;
-  const expiresIn = loginResponse.data.expiresIn;
-
-  if (
-    typeof accessToken !== "string" ||
-    typeof refreshToken !== "string" ||
-    typeof expiresIn !== "number"
-  ) {
-    throw new Error("Login response is missing token fields");
-  }
 
   return {
     ...created,
-    accessToken,
-    refreshToken,
-    expiresIn,
+    accessToken: data.accessToken as string,
+    refreshToken: data.refreshToken as string,
+    expiresIn: data.expiresIn as number,
   };
 }
 
-export async function cleanupTestData(
-  options: CleanupTestDataOptions = {},
-): Promise<void> {
-  const prefix = options.emailPrefix ?? testEmailPrefix;
+export async function createTestClass(
+  instructorInput: TestUserInput = {},
+): Promise<TestClassResult> {
+  const instructor = await loginTestUser({
+    role: "instructor",
+    ...instructorInput,
+  });
 
-  const usersByPrefix = await db
-    .select({ id: table.users.id })
-    .from(table.users)
-    .where(like(table.users.email, `${prefix}%`));
-
-  const userIdSet = new Set(options.userIds ?? []);
-  for (const row of usersByPrefix) {
-    userIdSet.add(row.id);
-  }
-
-  const userIds = Array.from(userIdSet);
-
-  if (userIds.length === 0) {
-    return;
-  }
-
-  await db
-    .delete(table.refreshTokens)
-    .where(inArray(table.refreshTokens.userId, userIds));
-
-  await db.delete(table.users).where(inArray(table.users.id, userIds));
-}
-
-export async function makeRequest(
-  options: MakeRequestOptions,
-): Promise<MakeRequestResult> {
-  const method = options.method ?? "GET";
-  const requestHeaders = new Headers(options.headers);
-
-  if (options.body) {
-    requestHeaders.set("content-type", "application/json");
-  }
-
-  if (options.token) {
-    requestHeaders.set("authorization", `Bearer ${options.token}`);
-  }
-
-  const response = await createTestApp().handle(
-    new Request(`http://localhost${options.path}`, {
-      method,
-      headers: requestHeaders,
-      body: options.body ? JSON.stringify(options.body) : undefined,
-    }),
-  );
-
-  const contentType = response.headers.get("content-type") ?? "";
-  let data: JsonValue | string | null = null;
-
-  if (contentType.includes("application/json")) {
-    data = (await response.json()) as JsonValue;
-  } else {
-    data = await response.text();
-  }
+  const { data } = await api.post("/api/classes", {
+    token: instructor.accessToken,
+    body: { name: `Test Class ${crypto.randomUUID().slice(0, 8)}` },
+  });
 
   return {
-    response,
-    status: response.status,
-    data,
+    classId: data.id as string,
+    className: data.name as string,
+    inviteCode: data.inviteCode as string,
+    instructor,
   };
+}
+
+export async function joinTestClass(
+  inviteCode: string,
+  learnerInput: TestUserInput = {},
+): Promise<LoginResult> {
+  const learner = await loginTestUser({ role: "learner", ...learnerInput });
+  await api.post("/api/classes/join", {
+    token: learner.accessToken,
+    body: { inviteCode },
+  });
+  return learner;
+}
+
+// ---------------------------------------------------------------------------
+// Cleanup
+// ---------------------------------------------------------------------------
+
+export async function cleanupTestData(emailPrefix = testEmailPrefix) {
+  const rows = await db
+    .select({ id: table.users.id })
+    .from(table.users)
+    .where(like(table.users.email, `${emailPrefix}%`));
+
+  const ids = rows.map((r) => r.id);
+  if (ids.length === 0) return;
+
+  // Delete in FK order: feedback → members → classes → tokens → users
+  await db
+    .delete(table.instructorFeedback)
+    .where(inArray(table.instructorFeedback.fromUserId, ids));
+  await db
+    .delete(table.instructorFeedback)
+    .where(inArray(table.instructorFeedback.toUserId, ids));
+  await db
+    .delete(table.classMembers)
+    .where(inArray(table.classMembers.userId, ids));
+  await db
+    .delete(table.classes)
+    .where(inArray(table.classes.instructorId, ids));
+  await db
+    .delete(table.refreshTokens)
+    .where(inArray(table.refreshTokens.userId, ids));
+  await db.delete(table.users).where(inArray(table.users.id, ids));
 }
