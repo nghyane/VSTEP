@@ -1,0 +1,16 @@
+{
+  "skill": "speaking",
+  "format": "speaking_part_1",
+  "level": "B1",
+  "content": {
+    "partNumber": 1,
+    "prompt": "Situation: A school is planning to invest money in improving the quality of education. Three areas are suggested: teachers, students, and facilities. Which area do you think the school should invest in? Why?",
+    "speakingSeconds": 180
+  },
+  "answerKey": null,
+  "metadata": {
+    "source": "crawled",
+    "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-noi/2",
+    "examId": 2
+  }
+}

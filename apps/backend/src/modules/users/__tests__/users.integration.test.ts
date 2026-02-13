@@ -37,15 +37,16 @@ describe("users integration", () => {
     await cleanupTestData();
   });
 
-  it("admin can create and list users", async () => {
+  it("admin can create user and find them in list", async () => {
     const admin = await loginTestUser({ role: "admin" });
 
+    const email = `itest-${crypto.randomUUID()}@test.com`;
     const createResult = await makeRequest({
       method: "POST",
       path: "/api/users",
       token: admin.accessToken,
       body: {
-        email: `itest-${crypto.randomUUID()}@test.com`,
+        email,
         password: "Password123!",
         fullName: "Created By Admin",
         role: "instructor",
@@ -56,12 +57,13 @@ describe("users integration", () => {
     expect(isRecord(createResult.data)).toBe(true);
     if (!isRecord(createResult.data)) return;
 
-    expect(typeof createResult.data.email).toBe("string");
+    expect(createResult.data.email).toBe(email);
     expect(createResult.data.role).toBe("instructor");
+    expect(createResult.data.fullName).toBe("Created By Admin");
 
     const listResult = await makeRequest({
       method: "GET",
-      path: "/api/users?page=1&limit=20",
+      path: "/api/users?page=1&limit=100",
       token: admin.accessToken,
     });
 
@@ -70,10 +72,17 @@ describe("users integration", () => {
     if (!isRecord(listResult.data)) return;
 
     expect(Array.isArray(listResult.data.data)).toBe(true);
+    const users = listResult.data.data as Record<string, unknown>[];
+
+    // Created user should appear in the list
+    const found = users.find((u) => u.email === email);
+    expect(found).toBeDefined();
+    expect(found?.role).toBe("instructor");
+
     expect(isRecord(listResult.data.meta)).toBe(true);
     if (!isRecord(listResult.data.meta)) return;
-
-    expect(typeof listResult.data.meta.total).toBe("number");
+    // At least admin + created user
+    expect(listResult.data.meta.total).toBeGreaterThanOrEqual(2);
   });
 
   it("regular user cannot access admin list endpoint", async () => {
@@ -124,6 +133,28 @@ describe("users integration", () => {
     if (!isRecord(patchResult.data)) return;
 
     expect(patchResult.data.fullName).toBe("Updated Learner");
+    // Role should remain unchanged
+    expect(patchResult.data.role).toBe("learner");
+  });
+
+  it("learner cannot view another user profile", async () => {
+    const learner = await loginTestUser({ role: "learner" });
+    const other = await createTestUser({ role: "learner" });
+
+    const result = await makeRequest({
+      method: "GET",
+      path: `/api/users/${other.user.id}`,
+      token: learner.accessToken,
+    });
+
+    expect(result.status).toBe(403);
+    expect(isRecord(result.data)).toBe(true);
+    if (!isRecord(result.data)) return;
+
+    expect(isRecord(result.data.error)).toBe(true);
+    if (!isRecord(result.data.error)) return;
+
+    expect(result.data.error.code).toBe("FORBIDDEN");
   });
 
   it("regular user cannot change role", async () => {
@@ -151,7 +182,7 @@ describe("users integration", () => {
     );
   });
 
-  it("admin can update another user and delete user", async () => {
+  it("admin can update another user role and delete user", async () => {
     const admin = await loginTestUser({ role: "admin" });
     const learner = await createTestUser({ role: "learner" });
 
@@ -183,6 +214,7 @@ describe("users integration", () => {
     expect(deleteResult.data.id).toBe(learner.user.id);
     expect(typeof deleteResult.data.deletedAt).toBe("string");
 
+    // Soft-deleted user should return 404 on GET
     const getDeleted = await makeRequest({
       method: "GET",
       path: `/api/users/${learner.user.id}`,
@@ -197,6 +229,31 @@ describe("users integration", () => {
     if (!isRecord(getDeleted.data.error)) return;
 
     expect(getDeleted.data.error.code).toBe("NOT_FOUND");
+  });
+
+  it("rejects update with duplicate email", async () => {
+    const admin = await loginTestUser({ role: "admin" });
+    const userA = await createTestUser({ role: "learner" });
+    const userB = await createTestUser({ role: "learner" });
+
+    const patchResult = await makeRequest({
+      method: "PATCH",
+      path: `/api/users/${userA.user.id}`,
+      token: admin.accessToken,
+      body: {
+        email: userB.user.email,
+      },
+    });
+
+    expect(patchResult.status).toBe(409);
+    expect(isRecord(patchResult.data)).toBe(true);
+    if (!isRecord(patchResult.data)) return;
+
+    expect(isRecord(patchResult.data.error)).toBe(true);
+    if (!isRecord(patchResult.data.error)) return;
+
+    expect(patchResult.data.error.code).toBe("CONFLICT");
+    expect(patchResult.data.error.message).toBe("Email already in use");
   });
 
   it("owner can change password and login with new password", async () => {
@@ -231,6 +288,18 @@ describe("users integration", () => {
     });
 
     expect(loginWithNewPassword.status).toBe(200);
+
+    // Old password should no longer work
+    const loginWithOldPassword = await makeRequest({
+      method: "POST",
+      path: "/api/auth/login",
+      body: {
+        email: learner.user.email,
+        password: "OldPass123!",
+      },
+    });
+
+    expect(loginWithOldPassword.status).toBe(401);
   });
 
   it("admin can change another user password when current password is known", async () => {

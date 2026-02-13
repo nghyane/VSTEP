@@ -1,0 +1,23 @@
+{
+  "skill": "speaking",
+  "format": "speaking_part_3",
+  "level": "B1",
+  "content": {
+    "partNumber": 3,
+    "prompt": "Topic: Working in pairs helps students learn better at school.\n\nGives students the opportunity to learn from others\nHelps students become more active\nPair work\nYour own ideas\nImproves students' social skills and interaction\n\nFollow-up questions:\n1. In what situations should pair work be used at school, and why?\n2. What are some possible disadvantages of working in pairs?\n3. How can teachers improve the effectiveness of pair work activities?",
+    "speakingSeconds": 240,
+    "topic": "Working in pairs helps students learn better at school.",
+    "mindMapNodes": [],
+    "followUpQuestions": [
+      "1. In what situations should pair work be used at school, and why?",
+      "2. What are some possible disadvantages of working in pairs?",
+      "3. How can teachers improve the effectiveness of pair work activities?"
+    ]
+  },
+  "answerKey": null,
+  "metadata": {
+    "source": "crawled",
+    "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-noi/3",
+    "examId": 3
+  }
+}

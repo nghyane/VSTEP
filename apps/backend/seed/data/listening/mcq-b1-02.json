@@ -1,0 +1,107 @@
+{
+  "skill": "listening",
+  "format": "listening_mcq",
+  "level": "B1",
+  "content": {
+    "audioUrl": "https://luyenthivstep.vn/assets/nhch/listening/bac3/lp2-1664819368_d6896b223bf621f8b664.mp3",
+    "items": [
+      {
+        "number": 1,
+        "prompt": "What does the speaker say about education?",
+        "options": {
+          "A": "It costs less than textbooks.",
+          "B": "It is not worth what it costs.",
+          "C": "Its value is worth the price.",
+          "D": "It is free, so make use of it."
+        }
+      },
+      {
+        "number": 2,
+        "prompt": "What does \"dead time\" refer to?",
+        "options": {
+          "A": "Time spent sleeping",
+          "B": "Time that is wasted",
+          "C": "When you are tired",
+          "D": "When you are bored"
+        }
+      },
+      {
+        "number": 3,
+        "prompt": "How much time should Lily spend on learning new words?",
+        "options": {
+          "A": "thirty hours a week",
+          "B": "thirty new words a day",
+          "C": "thirty minutes a day",
+          "D": "thirty new words a week"
+        }
+      },
+      {
+        "number": 4,
+        "prompt": "What is the main topic of the conversation?",
+        "options": {
+          "A": "Lily's advice for studying Chinese",
+          "B": "Lily's plan for learning Chinese",
+          "C": "Difficulties when learning Chinese",
+          "D": "Time management in learning Chinese"
+        }
+      },
+      {
+        "number": 5,
+        "prompt": "What does the speaker imply about social issues?",
+        "options": {
+          "A": "People should be aware of their seriousness.",
+          "B": "They are difficult topics to tell children.",
+          "C": "They occur much more frequently now.",
+          "D": "They are even worse than poverty."
+        }
+      },
+      {
+        "number": 6,
+        "prompt": "How can children best learn about moral values?",
+        "options": {
+          "A": "showing a case when their problems are solved",
+          "B": "making them ask and answer ethical questions",
+          "C": "making use of moral lessons in textbooks",
+          "D": "telling them about fairness or loyalty"
+        }
+      },
+      {
+        "number": 7,
+        "prompt": "What is the likely relationship between the two speakers?",
+        "options": {
+          "A": "two university students",
+          "B": "a psychologist and a client",
+          "C": "a TV presenter and a guest",
+          "D": "a married couple"
+        }
+      },
+      {
+        "number": 8,
+        "prompt": "What is the conversation mainly about?",
+        "options": {
+          "A": "teaching kids social issues",
+          "B": "repairing kids' moral problems",
+          "C": "working with kids in modern society",
+          "D": "managing kids in extra classes"
+        }
+      }
+    ]
+  },
+  "answerKey": {
+    "correctAnswers": {
+      "1": "C",
+      "2": "B",
+      "3": "D",
+      "4": "A",
+      "5": "B",
+      "6": "A",
+      "7": "C",
+      "8": "A"
+    }
+  },
+  "metadata": {
+    "source": "crawled",
+    "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-nghe/2",
+    "examId": 2
+  }
+}

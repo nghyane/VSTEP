@@ -1,0 +1,130 @@
+{
+  "skill": "reading",
+  "format": "reading_mcq",
+  "level": "B1",
+  "content": {
+    "passage": "The continents we live on today have not always existed in their present form. According to geoscientists, the continents first rose above the oceans approximately three billion years ago. Unlike the thin crust that lies beneath the ocean floor, continental crust is remarkably thick — roughly five times thicker than that of the ocean floor. This thick, less-dense crust is what allows the continents to float high above the surrounding seafloor, rising about two and a half miles on average. However, exactly when and how this continental crust formed remains a subject of considerable debate among researchers.\n\n(A) To shed light on this question — that is, to clarify the process by which continents came into being — scientists have studied the chemical composition of ancient rocks. The crust of the seafloor is formed through volcanic activity. When volcanoes erupt beneath the ocean, molten rock, or magma, rises to the surface and cools. As this magma cools and crystallizes, minerals with lower melting points solidify first. Through repeated cycles of melting and cooling, the volume of silica in the resulting rock gradually extends, producing lighter, thicker rock that differs significantly from the dense basalt of the ocean floor.\n\n(B) Over time, these silica-rich rocks accumulated into large masses of buoyant continental crust. The thick, buoyant nature of these chunks of crust would have made them rise high above what became the seafloor. To trace the age of these ancient rocks, scientists measure the ratio of rubidium to strontium trapped within crystal structures, since rubidium decays into strontium at a known rate. Such measurements have confirmed that the oldest continental rocks date back roughly three billion years.\n\n(C) One leading explanation for the sudden appearance of so much continental crust around three billion years ago involves plate tectonics — the movement of enormous rock plates across the Earth's outer layer. Some researchers believe that plate tectonics began operating in its modern form around that time, and the accompanying — that is, supplementary — geological processes of subduction and mountain building drove the large-scale production of continental crust. In other words, the movement of these tectonic plates over the Earth's outer layer probably helped form much of the continental crust that we see today. While alternative theories exist, the plate tectonics model remains the most widely accepted framework for understanding continental formation.",
+    "title": "Passage 2",
+    "items": [
+      {
+        "number": 1,
+        "prompt": "According to the geoscientists, when were the continents assumed to first rise above the oceans?",
+        "options": {
+          "A": "3 billion years ago",
+          "B": "2 billion years ago",
+          "C": "4 billion years ago",
+          "D": "1 billion years ago"
+        }
+      },
+      {
+        "number": 2,
+        "prompt": "What is true about the continents?",
+        "options": {
+          "A": "They rise about four miles above the seafloor.",
+          "B": "Their crust is five times thicker than the ocean floor crust.",
+          "C": "Their crust is dense and has average thickness.",
+          "D": "They are made of thick and underlying crust."
+        }
+      },
+      {
+        "number": 3,
+        "prompt": "What can be claimed about the time continents were formed?",
+        "options": {
+          "A": "It is subject to argument.",
+          "B": "It is put forward in a contest.",
+          "C": "It was dated from the earliest days.",
+          "D": "It is beyond human’s knowledge."
+        }
+      },
+      {
+        "number": 4,
+        "prompt": "What does the phrase “To shed light on” in paragraph (A) mean?",
+        "options": {
+          "A": "To release",
+          "B": "To clarify",
+          "C": "To illustrate",
+          "D": "To ignite"
+        }
+      },
+      {
+        "number": 5,
+        "prompt": "According to the passage, how was the crust of the seafloor formed?",
+        "options": {
+          "A": "Through tectonic compression.",
+          "B": "Through continental erosion.",
+          "C": "Through silica deposition.",
+          "D": "Through volcanic activity."
+        }
+      },
+      {
+        "number": 6,
+        "prompt": "What happens when magma cools and crystallizes?",
+        "options": {
+          "A": "The volume of silica in rock extends.",
+          "B": "Rubidium volume gradually plunges.",
+          "C": "The molten rock diminishes in silica.",
+          "D": "Strontium’s volume boosts."
+        }
+      },
+      {
+        "number": 7,
+        "prompt": "What can be inferred from the sentence “The thick, buoyant nature of these chunks of crust would have made them rise high above what became the seafloor” in paragraph (B)?",
+        "options": {
+          "A": "The seafloor is composed of comparatively thin crust.",
+          "B": "The thick and floating crust rose lower than what made the seafloor.",
+          "C": "The thick and buoyant chunks of crust are the cause of seafloor rising.",
+          "D": "Floating crust supported the continents to rise from the oceans."
+        }
+      },
+      {
+        "number": 8,
+        "prompt": "What is “accompanying” in paragraph (C) closest in meaning to?",
+        "options": {
+          "A": "Concurrent",
+          "B": "Supplementary",
+          "C": "Cooperating",
+          "D": "Following"
+        }
+      },
+      {
+        "number": 9,
+        "prompt": "What can be concluded from the passage about the appearance of continental crust about 3 billion years ago?",
+        "options": {
+          "A": "The moment plate tectonics began properly marked the appearance of continental crust.",
+          "B": "No theory can be proposed for the reason why continental crust occurred three billion years ago.",
+          "C": "The movement of the rock plates finally made up the minority of continental crust.",
+          "D": "That the plate tectonics moved over the Earth’s outer layer probably helps form lots of the continental crust."
+        }
+      },
+      {
+        "number": 10,
+        "prompt": "Question 10",
+        "options": {
+          "A": "A general statement of an issue followed by detailed possible explanations.",
+          "B": "A general presentation followed by a detailed discussion of both sides of an issue.",
+          "C": "A discussion of different aspects raised from some theories about the question.",
+          "D": "A list of possible explanations to a question followed by a detailed discussion."
+        }
+      }
+    ]
+  },
+  "answerKey": {
+    "correctAnswers": {
+      "1": "A",
+      "2": "B",
+      "3": "A",
+      "4": "B",
+      "5": "D",
+      "6": "A",
+      "7": "A",
+      "8": "B",
+      "9": "D",
+      "10": "A"
+    }
+  },
+  "metadata": {
+    "source": "crawled",
+    "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-doc/4",
+    "examId": 4
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "skill": "reading",
+  "format": "reading_tng",
+  "level": "B1",
+  "content": {
+    "passage": "Green tea has been consumed in East Asia for thousands of years and is now one of the most popular beverages worldwide. It is made from the leaves of the Camellia sinensis plant, which are quickly heated after picking to prevent oxidation. This process preserves the green colour and the natural compounds found in the leaves.\n\nResearchers have found that green tea contains high levels of antioxidants called catechins, which may help protect cells from damage. Some studies suggest that drinking green tea regularly can reduce the risk of heart disease and lower cholesterol levels. However, scientists caution that more large-scale clinical trials are needed before definitive health claims can be made.\n\nIn Japan, green tea is often served during formal ceremonies that follow strict traditional rules. The tea ceremony, known as \"chanoyu,\" dates back to the 15th century and emphasises harmony, respect, and tranquillity. In China, tea culture developed even earlier, with records of tea drinking appearing as far back as the 3rd century.\n\nToday, the global green tea market is valued at over 20 billion US dollars. China remains the largest producer, followed by Japan and South Korea. Vietnam has also emerged as a significant exporter in recent decades, shipping tea to markets across Europe and North America.",
+    "title": "The Story of Green Tea",
+    "items": [
+      {
+        "number": 1,
+        "prompt": "Green tea leaves are heated quickly to preserve their colour.",
+        "options": {
+          "A": "True",
+          "B": "False",
+          "C": "Not Given"
+        }
+      },
+      {
+        "number": 2,
+        "prompt": "Scientists have conclusively proven that green tea prevents heart disease.",
+        "options": {
+          "A": "True",
+          "B": "False",
+          "C": "Not Given"
+        }
+      },
+      {
+        "number": 3,
+        "prompt": "The Japanese tea ceremony focuses on speed and efficiency.",
+        "options": {
+          "A": "True",
+          "B": "False",
+          "C": "Not Given"
+        }
+      },
+      {
+        "number": 4,
+        "prompt": "Tea drinking in China began before the 5th century.",
+        "options": {
+          "A": "True",
+          "B": "False",
+          "C": "Not Given"
+        }
+      },
+      {
+        "number": 5,
+        "prompt": "Green tea is more expensive than black tea.",
+        "options": {
+          "A": "True",
+          "B": "False",
+          "C": "Not Given"
+        }
+      },
+      {
+        "number": 6,
+        "prompt": "Vietnam exports green tea to European countries.",
+        "options": {
+          "A": "True",
+          "B": "False",
+          "C": "Not Given"
+        }
+      },
+      {
+        "number": 7,
+        "prompt": "Japan is the world's largest producer of green tea.",
+        "options": {
+          "A": "True",
+          "B": "False",
+          "C": "Not Given"
+        }
+      },
+      {
+        "number": 8,
+        "prompt": "Catechins are a type of antioxidant found in green tea.",
+        "options": {
+          "A": "True",
+          "B": "False",
+          "C": "Not Given"
+        }
+      }
+    ]
+  },
+  "answerKey": {
+    "correctAnswers": {
+      "1": "A",
+      "2": "B",
+      "3": "B",
+      "4": "A",
+      "5": "C",
+      "6": "A",
+      "7": "B",
+      "8": "A"
+    }
+  },
+  "metadata": {
+    "source": "synthetic"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "skill": "writing",
+  "format": "writing_task_1",
+  "level": "B2",
+  "content": {
+    "taskNumber": 1,
+    "prompt": "You should spend about 20 minutes on this task.\n\nYou recently attended a professional development workshop organised by your company. However, you were dissatisfied with several aspects of the event. Write a letter to the Human Resources manager in which you:\n\n- describe the workshop you attended\n- explain what problems you experienced\n- suggest improvements for future workshops\n\nYou should write at least 120 words. Do not include your name. Your response will be evaluated in terms of Task Fulfillment, Organization, Vocabulary and Grammar.",
+    "minWords": 120,
+    "imageUrls": []
+  },
+  "answerKey": null,
+  "metadata": {
+    "source": "synthetic"
+  }
+}

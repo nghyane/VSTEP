@@ -1,0 +1,118 @@
+{
+  "skill": "reading",
+  "format": "reading_tng",
+  "level": "B2",
+  "content": {
+    "passage": "The concept of neuroplasticity has fundamentally altered our understanding of the human brain. Once thought to be a rigid organ whose structure was essentially fixed after childhood, the brain is now recognised as remarkably adaptable, capable of reorganising its neural pathways in response to learning, experience, and even injury.\n\nPioneering research conducted in the late 20th century demonstrated that the adult brain could generate new neurons, a process termed neurogenesis. This discovery contradicted decades of established neuroscientific dogma. Studies on London taxi drivers, for instance, revealed that their hippocampi—the brain regions associated with spatial navigation—were significantly larger than those of control subjects, a difference attributed to the extensive mental mapping required by their profession.\n\nClinical applications of neuroplasticity have proven particularly promising in rehabilitation medicine. Stroke patients who undergo intensive, repetitive physical therapy can recover motor functions that were initially lost, as undamaged areas of the brain gradually assume the responsibilities of the affected regions. Similarly, individuals who lose their sight often develop heightened auditory and tactile sensitivity, reflecting the reallocation of visual cortex resources to other sensory modalities.\n\nCritics, however, caution against overstating the brain's malleability. While neuroplasticity offers genuine therapeutic potential, it does not imply that any cognitive deficit can be overcome through willpower alone. The degree of neural reorganisation varies considerably depending on factors such as age, the severity of injury, and the specific brain regions involved. Furthermore, maladaptive plasticity—in which the brain reorganises in harmful ways—has been implicated in conditions ranging from chronic pain to phantom limb syndrome.\n\nDespite these caveats, neuroplasticity remains one of the most consequential discoveries in modern neuroscience, offering both a framework for understanding human cognition and a foundation for innovative therapeutic interventions.",
+    "title": "Neuroplasticity: The Brain's Capacity for Change",
+    "items": [
+      {
+        "number": 1,
+        "prompt": "Scientists have always known that the adult brain can generate new neurons.",
+        "options": {
+          "A": "True",
+          "B": "False",
+          "C": "Not Given"
+        }
+      },
+      {
+        "number": 2,
+        "prompt": "London taxi drivers were found to have larger hippocampi than other people.",
+        "options": {
+          "A": "True",
+          "B": "False",
+          "C": "Not Given"
+        }
+      },
+      {
+        "number": 3,
+        "prompt": "Stroke patients can only recover motor functions within the first month after the stroke occurs.",
+        "options": {
+          "A": "True",
+          "B": "False",
+          "C": "Not Given"
+        }
+      },
+      {
+        "number": 4,
+        "prompt": "People who lose their sight may develop better hearing abilities.",
+        "options": {
+          "A": "True",
+          "B": "False",
+          "C": "Not Given"
+        }
+      },
+      {
+        "number": 5,
+        "prompt": "The degree of neural reorganisation is the same regardless of the patient's age.",
+        "options": {
+          "A": "True",
+          "B": "False",
+          "C": "Not Given"
+        }
+      },
+      {
+        "number": 6,
+        "prompt": "Maladaptive plasticity has been linked to chronic pain.",
+        "options": {
+          "A": "True",
+          "B": "False",
+          "C": "Not Given"
+        }
+      },
+      {
+        "number": 7,
+        "prompt": "Neuroplasticity research receives more government funding than any other area of neuroscience.",
+        "options": {
+          "A": "True",
+          "B": "False",
+          "C": "Not Given"
+        }
+      },
+      {
+        "number": 8,
+        "prompt": "The discovery of neurogenesis went against previously accepted scientific beliefs.",
+        "options": {
+          "A": "True",
+          "B": "False",
+          "C": "Not Given"
+        }
+      },
+      {
+        "number": 9,
+        "prompt": "Neuroplasticity means any cognitive deficit can be overcome through willpower.",
+        "options": {
+          "A": "True",
+          "B": "False",
+          "C": "Not Given"
+        }
+      },
+      {
+        "number": 10,
+        "prompt": "The hippocampus is associated with spatial navigation.",
+        "options": {
+          "A": "True",
+          "B": "False",
+          "C": "Not Given"
+        }
+      }
+    ]
+  },
+  "answerKey": {
+    "correctAnswers": {
+      "1": "B",
+      "2": "A",
+      "3": "C",
+      "4": "A",
+      "5": "B",
+      "6": "A",
+      "7": "C",
+      "8": "A",
+      "9": "B",
+      "10": "A"
+    }
+  },
+  "metadata": {
+    "source": "synthetic"
+  }
+}

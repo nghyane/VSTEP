@@ -1,0 +1,17 @@
+{
+  "skill": "speaking",
+  "format": "speaking_part_2",
+  "level": "B1",
+  "content": {
+    "partNumber": 2,
+    "prompt": "Some people prefer to study alone, while others prefer to study in groups. Which do you prefer and why?",
+    "instructions": "You have 1 minute to prepare and 2-3 minutes to speak. Give reasons and examples to support your choice.",
+    "options": ["Study alone", "Study in groups"],
+    "preparationSeconds": 60,
+    "speakingSeconds": 180
+  },
+  "answerKey": null,
+  "metadata": {
+    "source": "synthetic"
+  }
+}

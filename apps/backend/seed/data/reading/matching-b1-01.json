@@ -1,0 +1,58 @@
+{
+  "skill": "reading",
+  "format": "reading_matching_headings",
+  "level": "B1",
+  "content": {
+    "title": "The Growth of Online Shopping",
+    "paragraphs": [
+      {
+        "label": "A",
+        "text": "Twenty years ago, most people bought their clothes, groceries, and electronics from physical stores. Shopping meant driving to a mall or walking to the local market. However, the arrival of the internet changed everything. In the early 2000s, companies like Amazon and eBay began offering a wide range of products online, and consumers quickly discovered the convenience of shopping from home."
+      },
+      {
+        "label": "B",
+        "text": "One of the biggest advantages of online shopping is the ability to compare prices easily. With just a few clicks, shoppers can check the cost of an item across dozens of different websites. This has made the market more competitive, forcing retailers to offer better deals and discounts to attract customers."
+      },
+      {
+        "label": "C",
+        "text": "Despite its popularity, online shopping does have drawbacks. Many customers complain that they cannot touch or try products before buying them, which leads to a high rate of returns. Delivery delays and damaged packages are also common problems. In addition, some shoppers worry about the security of their personal and financial information when making purchases online."
+      },
+      {
+        "label": "D",
+        "text": "Looking ahead, experts predict that online shopping will continue to grow. Advances in technology such as virtual reality fitting rooms and drone deliveries could solve many current problems. Some analysts believe that within the next decade, the majority of all retail purchases will take place online, fundamentally transforming the way we buy goods."
+      },
+      {
+        "label": "E",
+        "text": "Small businesses have also benefited from the rise of e-commerce. Previously, a local craftsperson or farmer could only sell to people in their immediate area. Now, platforms like Etsy and Shopify allow them to reach customers around the world, opening up new income opportunities and helping rural economies develop."
+      }
+    ],
+    "headings": [
+      "Price comparison and market competition",
+      "The beginning of a new era in retail",
+      "Problems that shoppers face online",
+      "New opportunities for small enterprises",
+      "What the future holds for e-commerce",
+      "The decline of traditional department stores",
+      "How governments regulate online marketplaces"
+    ],
+    "items": [
+      { "number": 1, "targetParagraph": "A" },
+      { "number": 2, "targetParagraph": "B" },
+      { "number": 3, "targetParagraph": "C" },
+      { "number": 4, "targetParagraph": "D" },
+      { "number": 5, "targetParagraph": "E" }
+    ]
+  },
+  "answerKey": {
+    "correctAnswers": {
+      "1": "The beginning of a new era in retail",
+      "2": "Price comparison and market competition",
+      "3": "Problems that shoppers face online",
+      "4": "What the future holds for e-commerce",
+      "5": "New opportunities for small enterprises"
+    }
+  },
+  "metadata": {
+    "source": "synthetic"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "skill": "writing",
+  "format": "writing_task_1",
+  "level": "B1",
+  "content": {
+    "taskNumber": 1,
+    "prompt": "You should spend about 20 minutes on this task. You have received this email from an English-speaking pen friend.\n\n\nI'm a rock fan. I can listen to rock all day.\n\nWhat about you?\nWhat kind of music do you like?\nWhat is your favourite song and artist?\nPlease write to tell me more about your music taste.\n\n\nWrite an email to your friend responding to their questions and sharing your music preferences.\n\nYou should write at least 120 words. Do not include your name. Your response will be evaluated in terms of Task Fulfillment, Organization, Vocabulary and Grammar.",
+    "minWords": 120,
+    "imageUrls": []
+  },
+  "answerKey": null,
+  "metadata": {
+    "source": "crawled",
+    "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-viet/33",
+    "examId": 33
+  }
+}

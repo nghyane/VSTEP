@@ -185,7 +185,7 @@ export const questions = new Elysia({
     },
   )
 
-  .delete("/:id", ({ params, user }) => removeQuestion(params.id, user), {
+  .delete("/:id", ({ params }) => removeQuestion(params.id), {
     role: ROLES.ADMIN,
     params: IdParam,
     response: {

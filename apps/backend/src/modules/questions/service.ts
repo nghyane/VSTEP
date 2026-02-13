@@ -146,23 +146,17 @@ export async function updateQuestion(
   });
 }
 
-export async function removeQuestion(questionId: string, actor: Actor) {
+export async function removeQuestion(questionId: string) {
   return db.transaction(async (tx) => {
-    const question = assertExists(
+    assertExists(
       await tx.query.questions.findFirst({
         where: and(
           eq(table.questions.id, questionId),
           notDeleted(table.questions),
         ),
-        columns: { id: true, createdBy: true },
+        columns: { id: true },
       }),
       "Question",
-    );
-
-    assertAccess(
-      question.createdBy,
-      actor,
-      "You can only delete your own questions",
     );
 
     const ts = new Date().toISOString();

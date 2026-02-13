@@ -97,9 +97,9 @@ export const submissions = pgTable(
     userHistoryIdx: index("submissions_user_history_idx")
       .on(table.userId, table.createdAt)
       .where(sql`${table.deletedAt} IS NULL`),
-    requestIdUnique: uniqueIndex("submissions_request_id_unique").on(
-      table.requestId,
-    ),
+    requestIdUnique: uniqueIndex("submissions_request_id_unique")
+      .on(table.requestId)
+      .where(sql`${table.requestId} IS NOT NULL`),
   }),
 );
 
@@ -113,6 +113,9 @@ export const submissionDetails = pgTable("submission_details", {
   ...timestamps,
 });
 
+// TODO(P2): submissionEvents table is defined but never populated
+//   - Insert events on every status transition, grading, claim/release
+//   - Enables audit trail + materialized view reconstruction
 export const submissionEvents = pgTable(
   "submission_events",
   {

@@ -1,4 +1,4 @@
-import { ConflictError } from "@common/errors";
+import { BadRequestError } from "@common/errors";
 
 type TransitionMap<S extends string> = Partial<Record<S, readonly S[]>>;
 
@@ -15,7 +15,9 @@ export function createStateMachine<S extends string>(
     },
     assertTransition(from: S, to: S): void {
       if (!this.canTransition(from, to)) {
-        throw new ConflictError(`Cannot transition from "${from}" to "${to}"`);
+        throw new BadRequestError(
+          `Cannot transition from "${from}" to "${to}"`,
+        );
       }
     },
     validNextStates(from: S): readonly S[] {

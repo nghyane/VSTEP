@@ -99,6 +99,19 @@
           }
         }
       }
+    },
+    {
+      "includes": ["seed/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          },
+          "style": {
+            "useNamingConvention": "off"
+          }
+        }
+      }
     }
   ]
 }

@@ -1,3 +1,12 @@
+// TODO(P1): Implement outbox processor (background job)
+//   - Consume pending outbox events on interval or via Bun scheduled task
+//   - Lock rows (lockedAt/lockedBy) to prevent duplicate processing
+//   - Process by messageType: "submission.pending_review" → route to instructor queue
+//   - Mark as "published" on success, increment attempts + set errorMessage on failure
+//   - Use processedCallbacks for idempotency (dedup by eventId)
+//   - Implement exponential backoff for retries
+//   Location: create src/services/outbox-processor.ts or src/jobs/outbox.ts
+
 import { sql } from "drizzle-orm";
 import {
   index,
@@ -7,6 +16,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -69,7 +79,9 @@ export const processedCallbacks = pgTable(
       .notNull(),
   },
   (table) => ({
-    requestIdx: index("processed_callbacks_request_idx").on(table.requestId),
+    requestIdx: uniqueIndex("processed_callbacks_request_idx").on(
+      table.requestId,
+    ),
   }),
 );
 

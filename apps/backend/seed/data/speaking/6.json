@@ -1,0 +1,23 @@
+{
+  "skill": "speaking",
+  "format": "speaking_part_3",
+  "level": "B1",
+  "content": {
+    "partNumber": 3,
+    "prompt": "Topic: Online courses\n\nProvide new learning experience\nBe independent in learning\nOnline courses\nYour own ideas\nBe more convenient to study\n\nFollow-up questions:\n1. What are the advantages of online courses compared to traditional classes?\n2. What challenges do students face when learning online?\n3. How can online learning be improved in the future?",
+    "speakingSeconds": 240,
+    "topic": "Online courses",
+    "mindMapNodes": [],
+    "followUpQuestions": [
+      "1. What are the advantages of online courses compared to traditional classes?",
+      "2. What challenges do students face when learning online?",
+      "3. How can online learning be improved in the future?"
+    ]
+  },
+  "answerKey": null,
+  "metadata": {
+    "source": "crawled",
+    "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-noi/6",
+    "examId": 6
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "skill": "reading",
+  "format": "reading_gap_fill",
+  "level": "B1",
+  "content": {
+    "title": "The Importance of Sleep",
+    "textWithGaps": "Sleep is essential for maintaining good (1)___. During sleep, the body repairs damaged (2)___ and strengthens the immune system. Scientists recommend that adults get between seven and nine (3)___ of sleep each night.\n\nA lack of sleep can lead to serious (4)___. People who do not sleep enough are more likely to suffer from heart disease, obesity, and depression. Poor sleep also affects (5)___, making it harder to focus at work or school.\n\nTo improve sleep quality, experts suggest establishing a regular (6)___. Going to bed and waking up at the same time every day helps the body develop a natural rhythm. It is also important to avoid (7)___ and electronic devices before bedtime, as they can stimulate the brain and make it difficult to fall asleep.\n\nFinally, the sleeping (8)___ matters. A dark, quiet, and cool room is ideal for a restful night.",
+    "items": [
+      {
+        "number": 1,
+        "options": {
+          "A": "health",
+          "B": "wealth",
+          "C": "strength",
+          "D": "growth"
+        }
+      },
+      {
+        "number": 2,
+        "options": {
+          "A": "tissues",
+          "B": "muscles",
+          "C": "organs",
+          "D": "bones"
+        }
+      },
+      {
+        "number": 3,
+        "options": {
+          "A": "hours",
+          "B": "minutes",
+          "C": "periods",
+          "D": "stages"
+        }
+      },
+      {
+        "number": 4,
+        "options": {
+          "A": "problems",
+          "B": "accidents",
+          "C": "injuries",
+          "D": "illnesses"
+        }
+      },
+      {
+        "number": 5,
+        "options": {
+          "A": "concentration",
+          "B": "appetite",
+          "C": "breathing",
+          "D": "movement"
+        }
+      },
+      {
+        "number": 6,
+        "options": {
+          "A": "routine",
+          "B": "exercise",
+          "C": "diet",
+          "D": "habit"
+        }
+      },
+      {
+        "number": 7,
+        "options": {
+          "A": "caffeine",
+          "B": "water",
+          "C": "exercise",
+          "D": "reading"
+        }
+      },
+      {
+        "number": 8,
+        "options": {
+          "A": "environment",
+          "B": "position",
+          "C": "duration",
+          "D": "pattern"
+        }
+      }
+    ]
+  },
+  "answerKey": {
+    "correctAnswers": {
+      "1": "health",
+      "2": "tissues",
+      "3": "hours",
+      "4": "problems",
+      "5": "concentration",
+      "6": "routine",
+      "7": "caffeine",
+      "8": "environment"
+    }
+  },
+  "metadata": {
+    "source": "synthetic"
+  }
+}

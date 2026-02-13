@@ -13,6 +13,12 @@ import {
   getSpiderChart,
 } from "./service";
 
+// TODO(P2): Add goal CRUD routes
+//   - POST /progress/goals       → createGoal (set target band, deadline)
+//   - PATCH /progress/goals/:id  → updateGoal (partial update)
+//   - DELETE /progress/goals/:id → deleteGoal
+//   Currently userGoals table is never written to.
+
 export const progress = new Elysia({
   name: "module:progress",
   prefix: "/progress",

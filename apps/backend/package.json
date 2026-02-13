@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "bun run --hot src/index.ts",
     "test": "bun test",
-    "check": "bunx @biomejs/biome check src",
-    "format": "bunx @biomejs/biome format src --write",
+    "check": "bunx @biomejs/biome check src seed",
+    "format": "bunx @biomejs/biome format src seed --write",
+    "db:seed": "bun run seed/index.ts",
     "db:generate": "bunx tsx node_modules/.bin/drizzle-kit generate",
     "db:migrate": "bunx tsx node_modules/.bin/drizzle-kit migrate",
     "db:push": "bunx tsx node_modules/.bin/drizzle-kit push",

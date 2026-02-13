@@ -1,0 +1,107 @@
+{
+  "skill": "listening",
+  "format": "listening_mcq",
+  "level": "B1",
+  "content": {
+    "audioUrl": "https://luyenthivstep.vn/assets/nhch/listening/bac3/lp1-1664862240_a89c501188de559974f2.mp3",
+    "items": [
+      {
+        "number": 1,
+        "prompt": "Question 1",
+        "options": {
+          "A": "CDs",
+          "B": "cello",
+          "C": "piano",
+          "D": "guitar"
+        }
+      },
+      {
+        "number": 2,
+        "prompt": "Question 2",
+        "options": {
+          "A": "July",
+          "B": "August",
+          "C": "June",
+          "D": "January"
+        }
+      },
+      {
+        "number": 3,
+        "prompt": "Question 3",
+        "options": {
+          "A": "It'll be foggy.",
+          "B": "It'll be rainy.",
+          "C": "It'll be hot.",
+          "D": "It'll be cold and windy."
+        }
+      },
+      {
+        "number": 4,
+        "prompt": "Question 4",
+        "options": {
+          "A": "fish",
+          "B": "soup",
+          "C": "vegetables",
+          "D": "meat"
+        }
+      },
+      {
+        "number": 5,
+        "prompt": "Question 5",
+        "options": {
+          "A": "in the drawer of the manager's desk",
+          "B": "on a table in the cafe",
+          "C": "in the lost property office",
+          "D": "in the waiter's bag"
+        }
+      },
+      {
+        "number": 6,
+        "prompt": "Question 6",
+        "options": {
+          "A": "his grandmother",
+          "B": "his sister",
+          "C": "his mother",
+          "D": "his father"
+        }
+      },
+      {
+        "number": 7,
+        "prompt": "Question 7",
+        "options": {
+          "A": "overhead bag",
+          "B": "backpack",
+          "C": "suitcase",
+          "D": "sports bag"
+        }
+      },
+      {
+        "number": 8,
+        "prompt": "Question 8",
+        "options": {
+          "A": "eleven thirty",
+          "B": "eleven fifty",
+          "C": "eleven fifteen",
+          "D": "eleven forty-five"
+        }
+      }
+    ]
+  },
+  "answerKey": {
+    "correctAnswers": {
+      "1": "A",
+      "2": "A",
+      "3": "D",
+      "4": "C",
+      "5": "A",
+      "6": "A",
+      "7": "D",
+      "8": "B"
+    }
+  },
+  "metadata": {
+    "source": "crawled",
+    "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-nghe/4",
+    "examId": 4
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "skill": "reading",
+  "format": "reading_mcq",
+  "level": "B1",
+  "content": {
+    "passage": "(A) When a species is no longer able to survive in its environment, it becomes extinct. Extinction is a natural process that has been occurring from time to time throughout Earth's history, as the fossil record clearly shows. Scientists estimate that more than 99 percent of all species that have ever lived on Earth are no longer in existence. In other words, most species in Earth's history have ultimately disappeared. A species may become extinct for many reasons. Rapid ecological change can cause the loss of food resources, bring about sudden temperature changes, and create intense competition among species for the remaining habitats. These environmental pressures can lead to the gradual demise of entire populations. The fossil evidence indicates that extinction has not been a single dramatic event but rather something that has occurred repeatedly across different geological periods.\n\n(B) One important aspect of extinction is that species do not exist in isolation. They depend on one another in complex ways. For example, plankton, the tiny organisms floating in the ocean, form the base of the marine food chain. Fish feed on plankton, and larger marine animals feed on those fish. If plankton were to disappear, the entire chain of ocean life would collapse. This example of plankton demonstrates the interdependence of different species and shows why the extinction of even a small organism can have enormous consequences for many other forms of life.\n\n(C) A remarkable finding from recent scientific research is that survival of a species may depend not only on its ability to adapt but also on chance events. Catastrophic occurrences such as asteroid impacts or massive volcanic eruptions can wipe out species regardless of how well they have adapted. Approximately 225 million years ago, a mass extinction event destroyed nearly 90 percent of all species on Earth. This event, the largest extinction in history, reshaped the course of life on our planet and allowed entirely new groups of organisms to rise and fill the empty ecological spaces.",
+    "title": "Passage 2",
+    "items": [
+      {
+        "number": 1,
+        "prompt": "The word \"it\" in paragraph (A) refers to",
+        "options": {
+          "A": "99 percent",
+          "B": "species",
+          "C": "environment",
+          "D": "extinction"
+        }
+      },
+      {
+        "number": 2,
+        "prompt": "The word \"ultimately\" in paragraph (A) is closest in meaning to",
+        "options": {
+          "A": "eventually",
+          "B": "exceptionally",
+          "C": "dramatically",
+          "D": "infortunately"
+        }
+      },
+      {
+        "number": 3,
+        "prompt": "What does the author say in paragraph (A) regarding most species in Earth's history?",
+        "options": {
+          "A": "They have caused rapid change in the environment.",
+          "B": "They have remained basically unchanged from their original forms.",
+          "C": "They have been able to adapt to ecological changes.",
+          "D": "They are no longer in existence."
+        }
+      },
+      {
+        "number": 4,
+        "prompt": "Which of the following is NOT mentioned in paragraph (A) as resulting from rapid ecological change?",
+        "options": {
+          "A": "Availability of food resources",
+          "B": "Introduction of new species",
+          "C": "Temperature changes",
+          "D": "Competition among species"
+        }
+      },
+      {
+        "number": 5,
+        "prompt": "The word \"demise\" in paragraph (A) is closest in meaning to",
+        "options": {
+          "A": "recovery",
+          "B": "help",
+          "C": "change",
+          "D": "death"
+        }
+      },
+      {
+        "number": 6,
+        "prompt": "Why is \"plankton\" in paragraph (B) mentioned?",
+        "options": {
+          "A": "To emphasize the importance of food resources inpreventing mass extinction.",
+          "B": "To illustrate a comparison between organisms thatlive on the land and those that live in the ocean.",
+          "C": "To point out that certain species could never become extinct.",
+          "D": "To demonstrate the interdependence of different species."
+        }
+      },
+      {
+        "number": 7,
+        "prompt": "According to paragraph (A), evidence from fossils suggests that",
+        "options": {
+          "A": "extinctions on Earth have generally been massive.",
+          "B": "there has been only one mass extinction in Earth's history.",
+          "C": "extinction of species has occurred from time to time throughout Earth's history.",
+          "D": "dinosaurs became extinct much earlier than scientists originally believed."
+        }
+      },
+      {
+        "number": 8,
+        "prompt": "The word \"finding\" in paragraph (C) is closest in meaning to",
+        "options": {
+          "A": "research method",
+          "B": "ongoing experiment",
+          "C": "published information",
+          "D": "scientific discovery"
+        }
+      },
+      {
+        "number": 9,
+        "prompt": "In paragraph (C), the author makes which of the following statements about a species' survival?",
+        "options": {
+          "A": "It may depend on chance events.",
+          "B": "It does not vary greatly from species to species.",
+          "C": "It reflects the interrelationship of many species.",
+          "D": "It is associated with astronomical conditions."
+        }
+      },
+      {
+        "number": 10,
+        "prompt": "Question 10",
+        "options": {
+          "A": "65 million years ago",
+          "B": "225 million years ago",
+          "C": "250 million years ago",
+          "D": "26 million years ago"
+        }
+      }
+    ]
+  },
+  "answerKey": {
+    "correctAnswers": {
+      "1": "B",
+      "2": "A",
+      "3": "D",
+      "4": "B",
+      "5": "D",
+      "6": "D",
+      "7": "C",
+      "8": "D",
+      "9": "A",
+      "10": "B"
+    }
+  },
+  "metadata": {
+    "source": "crawled",
+    "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-doc/5",
+    "examId": 5
+  }
+}

@@ -15,6 +15,13 @@ import { questionLevelEnum } from "./questions";
 import { submissions } from "./submissions";
 import { users } from "./users";
 
+// TODO(P1): All 3 tables below (userProgress, userSkillScores, userGoals) have schemas
+//   but NO insert/update logic exists anywhere in the codebase.
+//   - userProgress: never upserted after grading → progress overview always empty
+//   - userSkillScores: never inserted → spider-chart/trend returns no data
+//   - userGoals: never created/updated → no goal tracking
+//   See src/modules/progress/service.ts for read-only queries that depend on this data.
+
 export const streakDirectionEnum = pgEnum("streak_direction", [
   "up",
   "down",
@@ -53,9 +60,9 @@ export const userSkillScores = pgTable(
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     skill: skillEnum("skill").notNull(),
-    submissionId: uuid("submission_id")
-      .references(() => submissions.id, { onDelete: "cascade" })
-      .notNull(),
+    submissionId: uuid("submission_id").references(() => submissions.id, {
+      onDelete: "cascade",
+    }),
     score: numeric("score", {
       precision: 3,
       scale: 1,

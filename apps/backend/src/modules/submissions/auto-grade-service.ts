@@ -1,16 +1,22 @@
 import { BadRequestError, ConflictError } from "@common/errors";
 import { calculateScore, scoreToBand } from "@common/scoring";
 import { assertExists } from "@common/utils";
+import type { UserProgress } from "@db/index";
 import { db, table } from "@db/index";
 import { ObjectiveAnswer, ObjectiveAnswerKey } from "@db/types/answers";
 import { Value } from "@sinclair/typebox/value";
 import { eq, sql } from "drizzle-orm";
+import {
+  recordSkillScore,
+  updateUserProgress,
+} from "@/modules/progress/service";
 
 export async function autoGradeSubmission(submissionId: string) {
   return db.transaction(async (tx) => {
     const [row] = await tx
       .select({
         id: table.submissions.id,
+        userId: table.submissions.userId,
         status: table.submissions.status,
         skill: table.submissions.skill,
         answerKey: table.questions.answerKey,
@@ -87,6 +93,13 @@ export async function autoGradeSubmission(submissionId: string) {
       .update(table.submissionDetails)
       .set({ result })
       .where(eq(table.submissionDetails.submissionId, submissionId));
+
+    const skill = data.skill as UserProgress["skill"];
+    await recordSkillScore(data.userId, skill, submissionId, score, tx);
+    await updateUserProgress(data.userId, skill, tx);
+
+    // TODO(P1): Record submission event
+    //   - Insert submissionEvents: kind="auto_graded", data={ correctCount, totalCount, score, band }
 
     return { score, result };
   });

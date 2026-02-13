@@ -1,0 +1,107 @@
+{
+  "skill": "listening",
+  "format": "listening_mcq",
+  "level": "B1",
+  "content": {
+    "audioUrl": "https://luyenthivstep.vn/assets/nhch/listening/bac3/lp1-1664862652_48ad9ca8f9e034e23c54.mp3",
+    "items": [
+      {
+        "number": 1,
+        "prompt": "Question 1",
+        "options": {
+          "A": "yellow",
+          "B": "black",
+          "C": "blue",
+          "D": "brown"
+        }
+      },
+      {
+        "number": 2,
+        "prompt": "Question 2",
+        "options": {
+          "A": "chair",
+          "B": "shelf",
+          "C": "bed",
+          "D": "desk"
+        }
+      },
+      {
+        "number": 3,
+        "prompt": "Question 3",
+        "options": {
+          "A": "candies",
+          "B": "a plant",
+          "C": "some chocolates",
+          "D": "a book"
+        }
+      },
+      {
+        "number": 4,
+        "prompt": "Question 4",
+        "options": {
+          "A": "outside the cinema",
+          "B": "at the station",
+          "C": "in the snack bar",
+          "D": "in the clothes shop"
+        }
+      },
+      {
+        "number": 5,
+        "prompt": "Question 5",
+        "options": {
+          "A": "sailing",
+          "B": "swimming",
+          "C": "diving",
+          "D": "waterskiing"
+        }
+      },
+      {
+        "number": 6,
+        "prompt": "Question 6",
+        "options": {
+          "A": "hammer",
+          "B": "screwdriver",
+          "C": "paintbrush",
+          "D": "knife"
+        }
+      },
+      {
+        "number": 7,
+        "prompt": "Question 7",
+        "options": {
+          "A": "heavy rain",
+          "B": "very hot and dry",
+          "C": "foggy and windy",
+          "D": "sunny and light shower"
+        }
+      },
+      {
+        "number": 8,
+        "prompt": "Question 8",
+        "options": {
+          "A": "orange juice, bread and tomatoes",
+          "B": "orange juice and tomatoes",
+          "C": "orange juice and bread",
+          "D": "orange juice, bread and newspaper"
+        }
+      }
+    ]
+  },
+  "answerKey": {
+    "correctAnswers": {
+      "1": "A",
+      "2": "B",
+      "3": "B",
+      "4": "C",
+      "5": "A",
+      "6": "C",
+      "7": "D",
+      "8": "C"
+    }
+  },
+  "metadata": {
+    "source": "crawled",
+    "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-nghe/7",
+    "examId": 7
+  }
+}

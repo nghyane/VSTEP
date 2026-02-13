@@ -3,8 +3,8 @@ function has<K extends string>(v: unknown, k: K): v is Record<K, unknown> {
 }
 
 function pgCode(v: unknown) {
-  if (has(v, "code") && v.code === "23505") return "23505";
-  if (has(v, "errno") && v.errno === "23505") return "23505";
+  if (has(v, "code") && String(v.code) === "23505") return "23505";
+  if (has(v, "errno") && String(v.errno) === "23505") return "23505";
   return null;
 }
 

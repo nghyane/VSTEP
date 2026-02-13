@@ -1,0 +1,130 @@
+{
+  "skill": "reading",
+  "format": "reading_mcq",
+  "level": "B1",
+  "content": {
+    "passage": "(A) Fashion shows have a long history in the apparel industry. The concept of presenting new clothing designs to an audience dates back to the mid-nineteenth century. In 1858, a British couturier opened his own salon in Paris, becoming the first designer to display a dress on a wooden dummy so that customers could see the style before ordering it. This practice quickly spread, and designers began to look for better ways to present their creations.\n\n(B) By early 1911, manufacturers and retailers had recognised the value of using living models as a regular part of fashion promotions. Models would walk through showrooms wearing the latest designs, and this allowed both manufacturers and retailers to benefit from seeing how apparel — that is, clothes — looked and moved on a real person. Retailers began attending fashion shows regularly because they could gain a variety of fashion knowledge which helped them run their shops more effectively. By observing new trends and styles firsthand, shop owners learned what their customers would want to buy in the coming season.\n\n(C) Fashion shows also serve as an important platform for designers. When participating in a show, a fashion designer can express two main things: creativeness and designing talent. The show gives designers the freedom to be independent in their thoughts and to experiment with new ideas. At the same time, fashion is a means of expression for both the creator and the wearer, helping the wearer become more confident through personal style. However, it is important to note that fashion does not boost creativeness for the wearer; rather, the creative work belongs to the designer.\n\n(D) The author is concerned about certain practices in the fashion industry, particularly in marketing. Fashion marketing scrutinises fashion trends, coordinates sales, and promotes goods to consumers. However, the aim of fashion marketing is not to increase the amount of clothing people own but to guide consumer choices toward quality and style. The industry must balance commercial interests with responsible practices to remain sustainable.",
+    "title": "Passage 2",
+    "items": [
+      {
+        "number": 1,
+        "prompt": "Which of the following would be the best title for this article?",
+        "options": {
+          "A": "Fashion Show in the Apparel Industry",
+          "B": "What should a designers do for a fashion show",
+          "C": "Using living models in fashion",
+          "D": "Fashion marketing by different models"
+        }
+      },
+      {
+        "number": 2,
+        "prompt": "What does the word \"it\" in paragraph (A) refer to?",
+        "options": {
+          "A": "style",
+          "B": "dress",
+          "C": "designer",
+          "D": "wooden dummy"
+        }
+      },
+      {
+        "number": 3,
+        "prompt": "When did the British couturier start his own salon?",
+        "options": {
+          "A": "1858",
+          "B": "Early 1911",
+          "C": "1911",
+          "D": "Early 1858"
+        }
+      },
+      {
+        "number": 4,
+        "prompt": "In 1911, who benefited from living models as regular part of fashion promotions?",
+        "options": {
+          "A": "Whole saler and manufacturers",
+          "B": "Retailers and designers",
+          "C": "Manufacturers and retailers",
+          "D": "Living models and manufacturers"
+        }
+      },
+      {
+        "number": 5,
+        "prompt": "In paragraph (B), which of the following words can best replace the word \"Apparel\"?",
+        "options": {
+          "A": "Strength",
+          "B": "Jewelry",
+          "C": "Sketches",
+          "D": "Clothes"
+        }
+      },
+      {
+        "number": 6,
+        "prompt": "Which of the following best describes the tone of the author in this passage?",
+        "options": {
+          "A": "indifferent",
+          "B": "concerned",
+          "C": "pessimistic",
+          "D": "skeptical"
+        }
+      },
+      {
+        "number": 7,
+        "prompt": "Which of the following does NOT refer the role of fashion?",
+        "options": {
+          "A": "Being a means of expression for the creator and the wearer.",
+          "B": "Giving an opportunity for designers to be independent in their thoughts.",
+          "C": "Helping the wearer become more confident.",
+          "D": "Boosting creativeness for the wearer."
+        }
+      },
+      {
+        "number": 8,
+        "prompt": "Which of the following statement is NOT mentioned as the aim of the fashion marketing?",
+        "options": {
+          "A": "scrutinises fashion trends",
+          "B": "coordinate sales",
+          "C": "promote goods",
+          "D": "increase the amount of clothing"
+        }
+      },
+      {
+        "number": 9,
+        "prompt": "Why do retailers attend fashion shows?",
+        "options": {
+          "A": "They get inspiration to select new clothing styles for their boutiques.",
+          "B": "They participate in networking with designers and manufacturers.",
+          "C": "They can gain a variety of fashion knowledge which may help them run their shops.",
+          "D": "They can express their branding identity through fashion shows."
+        }
+      },
+      {
+        "number": 10,
+        "prompt": "What are the two main things that a fashion designer can express when participating in a fashion show?",
+        "options": {
+          "A": "Designing talent and fame",
+          "B": "Creativeness and designing talent",
+          "C": "Creativeness and income",
+          "D": "Fame and designing ability"
+        }
+      }
+    ]
+  },
+  "answerKey": {
+    "correctAnswers": {
+      "1": "A",
+      "2": "B",
+      "3": "A",
+      "4": "C",
+      "5": "D",
+      "6": "B",
+      "7": "D",
+      "8": "D",
+      "9": "C",
+      "10": "B"
+    }
+  },
+  "metadata": {
+    "source": "crawled",
+    "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-doc/7",
+    "examId": 7
+  }
+}

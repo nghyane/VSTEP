@@ -113,7 +113,7 @@ export async function register(body: RegisterBody) {
       fullName: body.fullName,
       role: ROLES.LEARNER,
     })
-    .onConflictDoNothing({ target: table.users.email })
+    .onConflictDoNothing()
     .returning(AUTH_USER_RETURNING);
 
   if (!user) throw new ConflictError("Email already registered");
@@ -124,65 +124,70 @@ export async function refresh(refreshToken: string, deviceInfo?: string) {
   const hash = hashToken(refreshToken);
   const jti = crypto.randomUUID();
 
-  return db.transaction(async (tx) => {
-    const [rotated] = await tx
-      .update(table.refreshTokens)
-      .set({ revokedAt: new Date().toISOString(), replacedByJti: jti })
-      .where(
-        and(
-          eq(table.refreshTokens.tokenHash, hash),
-          isNull(table.refreshTokens.revokedAt),
-          isNull(table.refreshTokens.replacedByJti),
-          gt(table.refreshTokens.expiresAt, new Date().toISOString()),
-        ),
-      )
-      .returning({
-        id: table.refreshTokens.id,
-        userId: table.refreshTokens.userId,
-        jti: table.refreshTokens.jti,
-      });
+  // Attempt atomic rotation: revoke old token and find its owner in one UPDATE.
+  const [rotated] = await db
+    .update(table.refreshTokens)
+    .set({ revokedAt: new Date().toISOString(), replacedByJti: jti })
+    .where(
+      and(
+        eq(table.refreshTokens.tokenHash, hash),
+        isNull(table.refreshTokens.revokedAt),
+        isNull(table.refreshTokens.replacedByJti),
+        gt(table.refreshTokens.expiresAt, new Date().toISOString()),
+      ),
+    )
+    .returning({
+      id: table.refreshTokens.id,
+      userId: table.refreshTokens.userId,
+      jti: table.refreshTokens.jti,
+    });
 
-    if (!rotated) {
-      const existing = await tx.query.refreshTokens.findFirst({
-        where: eq(table.refreshTokens.tokenHash, hash),
-        columns: {
-          userId: true,
-          revokedAt: true,
-          replacedByJti: true,
-          expiresAt: true,
-        },
-      });
+  if (!rotated) {
+    // Token not active — determine reason for a clear error message.
+    const existing = await db.query.refreshTokens.findFirst({
+      where: eq(table.refreshTokens.tokenHash, hash),
+      columns: {
+        userId: true,
+        revokedAt: true,
+        replacedByJti: true,
+        expiresAt: true,
+      },
+    });
 
-      if (!existing) throw new UnauthorizedError("Invalid refresh token");
+    if (!existing) throw new UnauthorizedError("Invalid refresh token");
 
-      if (new Date(existing.expiresAt) <= new Date()) {
-        throw new UnauthorizedError("Refresh token expired");
-      }
-
-      // Token was explicitly revoked (logout) — not reuse
-      if (existing.revokedAt && !existing.replacedByJti) {
-        throw new UnauthorizedError("Refresh token has been revoked");
-      }
-
-      // Token was already rotated — genuine reuse, revoke all sessions
-      if (existing.replacedByJti) {
-        await tx
-          .update(table.refreshTokens)
-          .set({ revokedAt: new Date().toISOString() })
-          .where(
-            and(
-              eq(table.refreshTokens.userId, existing.userId),
-              isNull(table.refreshTokens.revokedAt),
-            ),
-          );
-        throw new UnauthorizedError(
-          "Refresh token reuse detected, all sessions revoked",
-        );
-      }
-
-      throw new UnauthorizedError("Invalid refresh token");
+    if (new Date(existing.expiresAt) <= new Date()) {
+      throw new UnauthorizedError("Refresh token expired");
     }
 
+    // Token was explicitly revoked (logout) — not reuse
+    if (existing.revokedAt && !existing.replacedByJti) {
+      throw new UnauthorizedError("Refresh token has been revoked");
+    }
+
+    // Token was already rotated — genuine reuse, revoke all active sessions.
+    // Runs outside the issuing transaction so the revocation persists even
+    // though we throw afterwards.
+    if (existing.replacedByJti) {
+      await db
+        .update(table.refreshTokens)
+        .set({ revokedAt: new Date().toISOString() })
+        .where(
+          and(
+            eq(table.refreshTokens.userId, existing.userId),
+            isNull(table.refreshTokens.revokedAt),
+          ),
+        );
+      throw new UnauthorizedError(
+        "Refresh token reuse detected, all sessions revoked",
+      );
+    }
+
+    throw new UnauthorizedError("Invalid refresh token");
+  }
+
+  // Happy path: issue a new token pair inside a transaction.
+  return db.transaction(async (tx) => {
     const user = await tx.query.users.findFirst({
       where: and(eq(table.users.id, rotated.userId), notDeleted(table.users)),
       columns: { id: true, email: true, fullName: true, role: true },

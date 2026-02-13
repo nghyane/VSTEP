@@ -1,0 +1,130 @@
+{
+  "skill": "reading",
+  "format": "reading_mcq",
+  "level": "B1",
+  "content": {
+    "passage": "",
+    "title": "Passage 2",
+    "items": [
+      {
+        "number": 1,
+        "prompt": "According to the passage, it is believed that modern robots look like",
+        "options": {
+          "A": "adults",
+          "B": "growns-up",
+          "C": "teenagers",
+          "D": "young children"
+        }
+      },
+      {
+        "number": 2,
+        "prompt": "The phrase \"a killing spree\" in paragraph (A) is closest meaning to",
+        "options": {
+          "A": "a massive murder",
+          "B": "a dangerous robot",
+          "C": "a fast robot",
+          "D": "a modern robot"
+        }
+      },
+      {
+        "number": 3,
+        "prompt": "Why does the writer mention \"fictional depictions\" in paragraph (B)?",
+        "options": {
+          "A": "to emphasize the importance of robots",
+          "B": "to introduce \"roboticists\"",
+          "C": "to compare with the definition of \"robot\"",
+          "D": "to illustrate some guidelines"
+        }
+      },
+      {
+        "number": 4,
+        "prompt": "The word \"roboticists\" in paragraph (B) refers to",
+        "options": {
+          "A": "things that robots can do",
+          "B": "parts of a robot",
+          "C": "a specialist in robots or robotics",
+          "D": "robots industry"
+        }
+      },
+      {
+        "number": 5,
+        "prompt": "Which of the following is NOT true according to the passage?",
+        "options": {
+          "A": "Robots are totally believed by humans",
+          "B": "People are afraid that robots can steal their jobs",
+          "C": "Robots can do tasks independently",
+          "D": "People worked less effectively than robots"
+        }
+      },
+      {
+        "number": 6,
+        "prompt": "The word \"supplant\" in paragraph (C) is closest in meaning to",
+        "options": {
+          "A": "recover",
+          "B": "replace",
+          "C": "help",
+          "D": "change"
+        }
+      },
+      {
+        "number": 7,
+        "prompt": "What does the word \"their\" in paragraph (D) refer to?",
+        "options": {
+          "A": "designers'",
+          "B": "factories'",
+          "C": "machines'",
+          "D": "robots'"
+        }
+      },
+      {
+        "number": 8,
+        "prompt": "The word \"inevitable\" in paragraph (D) can be replaced by",
+        "options": {
+          "A": "unbelievable",
+          "B": "impossible",
+          "C": "important",
+          "D": "unavoidable"
+        }
+      },
+      {
+        "number": 9,
+        "prompt": "What does the word \"them\" in paragraph (C) refer to?",
+        "options": {
+          "A": "Robots",
+          "B": "Toddlers",
+          "C": "Humans",
+          "D": "Modern robots"
+        }
+      },
+      {
+        "number": 10,
+        "prompt": "In which paragraph does the writer give a definition?",
+        "options": {
+          "A": "A",
+          "B": "D",
+          "C": "B",
+          "D": "C"
+        }
+      }
+    ]
+  },
+  "answerKey": {
+    "correctAnswers": {
+      "1": "D",
+      "2": "A",
+      "3": "C",
+      "4": "C",
+      "5": "A",
+      "6": "B",
+      "7": "D",
+      "8": "D",
+      "9": "D",
+      "10": "A"
+    }
+  },
+  "metadata": {
+    "source": "crawled",
+    "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-doc/8",
+    "examId": 8
+  }
+}

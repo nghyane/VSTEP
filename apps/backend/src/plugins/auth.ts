@@ -10,6 +10,7 @@ import {
   TokenExpiredError,
   UnauthorizedError,
 } from "@common/errors";
+import { UserRole } from "@db/enums";
 import { bearer } from "@elysiajs/bearer";
 import type { Static } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
@@ -25,7 +26,7 @@ function toActor(payload: JWTPayload): Actor {
 
 const PayloadSchema = t.Object({
   sub: t.String(),
-  role: t.UnionEnum(["learner", "instructor", "admin"]),
+  role: UserRole,
 });
 
 export async function verifyAccessToken(token: string): Promise<JWTPayload> {

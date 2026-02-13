@@ -1,0 +1,17 @@
+{
+  "skill": "writing",
+  "format": "writing_task_1",
+  "level": "B1",
+  "content": {
+    "taskNumber": 1,
+    "prompt": "You should spend about 20 minutes on this task.\n\nYou have asked your closest friend Brianna to help look after your house and pet when you are on holiday. She has written you an email asking for more information. Read this part of her email below.\n\n\nGreat to hear that you are going to visit Dubai! I'm sure you will have a wonderful time there. Don't worry, I'll look after your house and your pet while you are away. I just want to know the time you leave for Dubai and when you will be back. I don't have a lot of experience looking after animals, so tell me how to care for your pet. Also, are there any other household duties I am supposed to do?\nLots of love,\nBrianna\n\n\nWrite a letter to respond to Brianna.\n\nYou should write at least 120 words. Do not include your name. Your response will be evaluated in terms of Task Fulfillment, Organization, Vocabulary and Grammar.",
+    "minWords": 120,
+    "imageUrls": []
+  },
+  "answerKey": null,
+  "metadata": {
+    "source": "crawled",
+    "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-viet/1",
+    "examId": 1
+  }
+}

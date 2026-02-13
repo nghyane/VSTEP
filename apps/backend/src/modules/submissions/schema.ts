@@ -27,6 +27,23 @@ export const SUBMISSION_COLUMNS = omitColumns(
   OMITTED,
 );
 
+const QUEUE_OMITTED = [
+  "confidence",
+  "isLate",
+  "attempt",
+  "requestId",
+  "gradingMode",
+  "auditFlag",
+  "deadline",
+  "deletedAt",
+] as const;
+
+/** Includes review-specific columns (claimedBy, claimedAt, reviewPriority, reviewerId) */
+export const REVIEW_QUEUE_COLUMNS = omitColumns(
+  getTableColumns(submissions),
+  QUEUE_OMITTED,
+);
+
 /** For db.query.* — Drizzle columns exclusion pattern */
 export const SUBMISSION_EXCLUDE = Object.fromEntries(
   OMITTED.map((k) => [k, false] as const),
@@ -76,7 +93,42 @@ export const SubmissionListQuery = t.Object({
   userId: t.Optional(t.String({ format: "uuid" })),
 });
 
+export const ReviewQueueQuery = t.Object({
+  page: t.Optional(t.Number({ minimum: 1, default: 1 })),
+  limit: t.Optional(t.Number({ minimum: 1, maximum: 100, default: 20 })),
+  skill: t.Optional(Skill),
+  priority: t.Optional(t.UnionEnum(["low", "medium", "high", "critical"])),
+});
+
+export const SubmissionReviewBody = t.Object({
+  overallScore: t.Number({ minimum: 0, maximum: 10, multipleOf: 0.5 }),
+  band: t.Optional(VstepBand),
+  criteriaScores: t.Optional(t.Record(t.String(), t.Any())),
+  feedback: t.Optional(t.String({ minLength: 1, maxLength: 10000 })),
+  reviewComment: t.Optional(t.String({ maxLength: 5000 })),
+});
+
+export const SubmissionAssignBody = t.Object({
+  reviewerId: t.String({ format: "uuid" }),
+});
+
+export const ReviewQueueItem = t.Composite([
+  Submission,
+  t.Object({
+    claimedBy: t.Nullable(t.String({ format: "uuid" })),
+    claimedAt: t.Nullable(t.String({ format: "date-time" })),
+    reviewPriority: t.Nullable(
+      t.UnionEnum(["low", "medium", "high", "critical"]),
+    ),
+    reviewerId: t.Nullable(t.String({ format: "uuid" })),
+  }),
+]);
+
 export type SubmissionCreateBody = typeof SubmissionCreateBody.static;
 export type SubmissionUpdateBody = typeof SubmissionUpdateBody.static;
 export type SubmissionGradeBody = typeof SubmissionGradeBody.static;
 export type SubmissionListQuery = typeof SubmissionListQuery.static;
+export type ReviewQueueQuery = typeof ReviewQueueQuery.static;
+export type SubmissionReviewBody = typeof SubmissionReviewBody.static;
+export type SubmissionAssignBody = typeof SubmissionAssignBody.static;
+export type ReviewQueueItem = typeof ReviewQueueItem.static;

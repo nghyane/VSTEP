@@ -10,6 +10,10 @@ import type { DbTransaction } from "@db/index";
 import { db, notDeleted, table } from "@db/index";
 import type { ObjectiveAnswerKey, SubmissionAnswer } from "@db/types/answers";
 import { and, eq, inArray } from "drizzle-orm";
+import {
+  recordSkillScore,
+  updateUserProgress,
+} from "@/modules/progress/service";
 import { SESSION_COLUMNS } from "./schema";
 import type { ExamSessionStatus } from "./service";
 import { getActiveSession } from "./session-service";
@@ -209,6 +213,25 @@ export async function submitExam(sessionId: string, actor: Actor) {
         ),
       )
       .returning(SESSION_COLUMNS);
+
+    if (listeningScore !== null) {
+      await recordSkillScore(
+        session.userId,
+        "listening",
+        null,
+        listeningScore,
+        tx,
+      );
+      await updateUserProgress(session.userId, "listening", tx);
+    }
+    if (readingScore !== null) {
+      await recordSkillScore(session.userId, "reading", null, readingScore, tx);
+      await updateUserProgress(session.userId, "reading", tx);
+    }
+
+    // TODO(P2): Calculate and persist overallScore on examSession
+    //   - After W/S submissions are graded (via outbox consumer callback), compute overall
+    //   - Currently writingScore, speakingScore, overallScore remain null
 
     return assertExists(updated, "Session");
   });

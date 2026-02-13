@@ -1,0 +1,65 @@
+{
+  "skill": "reading",
+  "format": "reading_matching_headings",
+  "level": "B2",
+  "content": {
+    "title": "The Science and Ethics of Artificial Intelligence",
+    "paragraphs": [
+      {
+        "label": "A",
+        "text": "Artificial intelligence, broadly defined as the simulation of human cognitive processes by machines, has its roots in the mid-20th century. Alan Turing's seminal 1950 paper posed the question of whether machines could think, laying the conceptual groundwork for decades of subsequent research. Early AI systems were rule-based, relying on explicitly programmed instructions to perform narrowly defined tasks such as playing chess or solving algebraic equations."
+      },
+      {
+        "label": "B",
+        "text": "The advent of machine learning in the 1990s and 2000s marked a paradigm shift. Rather than following fixed rules, these systems learned patterns from vast datasets, enabling them to make predictions and classifications with increasing accuracy. Deep learning, a subset of machine learning that employs layered neural networks, has proven especially effective in domains such as image recognition, natural language processing, and autonomous navigation."
+      },
+      {
+        "label": "C",
+        "text": "The economic implications of widespread AI adoption are substantial. A 2023 report by McKinsey estimated that generative AI alone could add between 2.6 and 4.4 trillion US dollars annually to the global economy. Industries ranging from healthcare and finance to manufacturing and logistics are already deploying AI systems to streamline operations, reduce costs, and enhance decision-making."
+      },
+      {
+        "label": "D",
+        "text": "However, the proliferation of AI technologies has raised pressing ethical concerns. Algorithmic bias, whereby AI systems perpetuate or amplify existing social prejudices embedded in their training data, has been documented across hiring platforms, criminal justice tools, and credit scoring models. The opacity of many AI decision-making processes further complicates accountability, as affected individuals may have no means of understanding or contesting automated decisions."
+      },
+      {
+        "label": "E",
+        "text": "In response, governments and international organisations have begun formulating regulatory frameworks for AI governance. The European Union's AI Act, adopted in 2024, classifies AI applications by risk level and imposes stringent requirements on high-risk systems, including mandatory transparency and human oversight. Similar legislative efforts are underway in the United States, China, and several other jurisdictions."
+      },
+      {
+        "label": "F",
+        "text": "The question of whether AI will ultimately displace human workers or augment their capabilities remains fiercely contested. Optimists point to historical precedent, noting that previous technological revolutions—from the printing press to the personal computer—created more jobs than they eliminated. Pessimists counter that the pace and breadth of AI-driven automation are qualitatively different, potentially rendering entire categories of skilled employment obsolete."
+      }
+    ],
+    "headings": [
+      "The origins and early development of AI",
+      "From rules to learning: a technological turning point",
+      "Economic impact across global industries",
+      "Bias, opacity, and questions of fairness",
+      "Government efforts to regulate AI systems",
+      "The debate over AI and the future of work",
+      "AI in education and academic research",
+      "The role of open-source communities in AI development"
+    ],
+    "items": [
+      { "number": 1, "targetParagraph": "A" },
+      { "number": 2, "targetParagraph": "B" },
+      { "number": 3, "targetParagraph": "C" },
+      { "number": 4, "targetParagraph": "D" },
+      { "number": 5, "targetParagraph": "E" },
+      { "number": 6, "targetParagraph": "F" }
+    ]
+  },
+  "answerKey": {
+    "correctAnswers": {
+      "1": "The origins and early development of AI",
+      "2": "From rules to learning: a technological turning point",
+      "3": "Economic impact across global industries",
+      "4": "Bias, opacity, and questions of fairness",
+      "5": "Government efforts to regulate AI systems",
+      "6": "The debate over AI and the future of work"
+    }
+  },
+  "metadata": {
+    "source": "synthetic"
+  }
+}

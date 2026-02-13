@@ -1,0 +1,130 @@
+{
+  "skill": "reading",
+  "format": "reading_mcq",
+  "level": "B1",
+  "content": {
+    "passage": "(A) Every year, thousands of young people from Western countries take time off between leaving school and starting university to volunteer in developing nations. This practice, commonly known as a \"gap year,\" has become a rite of passage for many. More often than not, these volunteers are motivated by a genuine desire to make a difference in the world. However, the attitude towards volunteering abroad is changing as people begin to question whether such trips truly benefit local communities or merely serve the interests of the volunteers themselves.\n\n(B) In recent years, a growing body of research has highlighted the drawbacks of so-called \"voluntourism.\" Commercial purposes may be cleverly hidden under the claim of humane purposes. Some companies market volunteer placements as life-changing humanitarian experiences while generating significant profits. These drawbacks have raised serious concerns among development experts and policy makers. One particularly troubling finding is that in some countries, children are deliberately kept in inadequate living conditions in orphanages in order to attract sympathy and get voluntary contributions from visiting tourists. In extreme cases, children are even recruited from families who are led to believe that their sons and daughters will receive a better education.\n\n(C) Mark Watson, a researcher who has spent years studying the effects of voluntourism, expects to see a positive transformation in volunteers' attitudes. He believes that when young people travel to poorer regions with the right preparation, they can develop a deeper understanding of global inequality. Watson often uses the example of digging wells to illustrate his point. \"Many volunteers arrive thinking they will dig wells for villages that lack clean water,\" he explains. \"But volunteering abroad requires thinking about what is actually needed. Does the village need a well, or does it need trained engineers who can maintain the water system for years to come?\" His message is clear: good intentions must be perfectly matched with practical skills and genuine local needs.\n\n(D) Despite its problems, volunteering abroad is not without value. When done responsibly, the whole process can reveal a real face to poverty and vulnerability, and shift consciousness toward the understanding of a shared humanity. The key lies in ensuring that volunteer programmes are designed around the needs of local communities rather than the desires of well-meaning travellers.",
+    "title": "Passage 2",
+    "items": [
+      {
+        "number": 1,
+        "prompt": "When do westerners typically do their volunteering?",
+        "options": {
+          "A": "After graduating from university",
+          "B": "While looking for a suitable job",
+          "C": "Between secondary school and upper secondary school",
+          "D": "Between leaving school and starting university"
+        }
+      },
+      {
+        "number": 2,
+        "prompt": "Which of the following would best describe the present attitude towards volunteering abroad?",
+        "options": {
+          "A": "Frightened",
+          "B": "Changing",
+          "C": "Frustrated",
+          "D": "Disapproving"
+        }
+      },
+      {
+        "number": 3,
+        "prompt": "What is “More often than not” in paragraph (A) closest in meaning to?",
+        "options": {
+          "A": "All the time",
+          "B": "Most of the time",
+          "C": "For a time",
+          "D": "Sometimes"
+        }
+      },
+      {
+        "number": 4,
+        "prompt": "According to the writer, which of the following statements is true about volunteering abroad?",
+        "options": {
+          "A": "The nature of volunteering abroad is claimed to make money for profit.",
+          "B": "The need for volunteers in developing countries has grown for the past few years.",
+          "C": "There are usually purposeful placements in volunteering abroad for profit aims.",
+          "D": "Commercial purposes may be hidden under the claim of humane purposes of volunteering."
+        }
+      },
+      {
+        "number": 5,
+        "prompt": "What does the word “These” in paragraph (B) refer to?",
+        "options": {
+          "A": "Drawbacks of voluntourism",
+          "B": "Studies on voluntourism",
+          "C": "Demands for voluntourism",
+          "D": "Advantages of voluntourism"
+        }
+      },
+      {
+        "number": 6,
+        "prompt": "What are children being kept in inadequate living conditions for?",
+        "options": {
+          "A": "To show the poverty of these places",
+          "B": "To reflect their real living standards",
+          "C": "To legally implement children trafficking",
+          "D": "To get voluntary contributions from visitors"
+        }
+      },
+      {
+        "number": 7,
+        "prompt": "According to the passage, what does Mark Watson expect to see regarding volunteering abroad?",
+        "options": {
+          "A": "A positive transformation in volunteers’ attitudes",
+          "B": "A sense of realism for the volunteers abroad",
+          "C": "An acknowledgement from potential volunteers",
+          "D": "A good support from potential volunteers"
+        }
+      },
+      {
+        "number": 8,
+        "prompt": "What message does Mark Watson want to pass to future volunteers through the idea of digging wells?",
+        "options": {
+          "A": "Would-be volunteers should think more about doing unskilled work.",
+          "B": "It is not rational to think that volunteering abroad is to help the poor.",
+          "C": "Volunteers cannot do anything worthy if they only do unskilled work.",
+          "D": "Volunteering abroad requires thinking about what is actually needed."
+        }
+      },
+      {
+        "number": 9,
+        "prompt": "Question 9",
+        "options": {
+          "A": "thoroughly prepared",
+          "B": "perfectly matched",
+          "C": "suitably qualified",
+          "D": "carefully selected"
+        }
+      },
+      {
+        "number": 10,
+        "prompt": "Question 10",
+        "options": {
+          "A": "This process may lead to significant changes in voluntourism to eliminate possible harm to developing countries.",
+          "B": "The whole process can reveal a real face to poverty and vulnerability, and shift consciousness toward the understanding of a shared humanity.",
+          "C": "That is to say, volunteering abroad mainly requires the youth enthusiasm if they want to make a real contribution.",
+          "D": "A sense of humanity and sympathy is highly appreciated to make volunteering abroad worthwhile in every case."
+        }
+      }
+    ]
+  },
+  "answerKey": {
+    "correctAnswers": {
+      "1": "D",
+      "2": "B",
+      "3": "B",
+      "4": "D",
+      "5": "A",
+      "6": "D",
+      "7": "A",
+      "8": "D",
+      "9": "B",
+      "10": "B"
+    }
+  },
+  "metadata": {
+    "source": "crawled",
+    "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-doc/2",
+    "examId": 2
+  }
+}

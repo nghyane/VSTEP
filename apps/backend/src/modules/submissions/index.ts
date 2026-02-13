@@ -11,18 +11,27 @@ import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import { autoGradeSubmission } from "./auto-grade-service";
 import {
+  ReviewQueueItem,
+  ReviewQueueQuery,
+  SubmissionAssignBody,
   SubmissionCreateBody,
   SubmissionFull,
   SubmissionGradeBody,
   SubmissionListQuery,
+  SubmissionReviewBody,
   SubmissionUpdateBody,
 } from "./schema";
 import {
+  assignSubmission,
+  claimSubmission,
   createSubmission,
+  getReviewQueue,
   getSubmissionById,
   gradeSubmission,
   listSubmissions,
+  releaseSubmission,
   removeSubmission,
+  submitReview,
   updateSubmission,
 } from "./service";
 
@@ -146,6 +155,100 @@ export const submissions = new Elysia({
       security: [{ bearerAuth: [] }],
     },
   })
+
+  // Review Queue routes
+  .get("/queue", ({ query, user }) => getReviewQueue(query, user), {
+    role: ROLES.INSTRUCTOR,
+    query: ReviewQueueQuery,
+    response: {
+      200: t.Object({
+        data: t.Array(ReviewQueueItem),
+        meta: PaginationMeta,
+      }),
+      ...AuthErrors,
+    },
+    detail: {
+      summary: "Get review queue",
+      description:
+        "List submissions pending human review, ordered by priority then FIFO.",
+      security: [{ bearerAuth: [] }],
+    },
+  })
+
+  .post("/:id/claim", ({ params, user }) => claimSubmission(params.id, user), {
+    role: ROLES.INSTRUCTOR,
+    params: IdParam,
+    response: {
+      200: SubmissionFull,
+      ...CrudErrors,
+      409: ErrorResponse,
+    },
+    detail: {
+      summary: "Claim submission for review",
+      description:
+        "Claim a submission to start reviewing. Returns 409 if already claimed by another reviewer.",
+      security: [{ bearerAuth: [] }],
+    },
+  })
+
+  .post(
+    "/:id/release",
+    ({ params, user }) => releaseSubmission(params.id, user),
+    {
+      role: ROLES.INSTRUCTOR,
+      params: IdParam,
+      response: {
+        200: SubmissionFull,
+        ...CrudErrors,
+      },
+      detail: {
+        summary: "Release claimed submission",
+        description: "Release a claimed submission back to the review queue.",
+        security: [{ bearerAuth: [] }],
+      },
+    },
+  )
+
+  .put(
+    "/:id/review",
+    ({ params, body, user }) => submitReview(params.id, body, user),
+    {
+      role: ROLES.INSTRUCTOR,
+      params: IdParam,
+      body: SubmissionReviewBody,
+      response: {
+        200: SubmissionFull,
+        ...CrudErrors,
+        409: ErrorResponse,
+      },
+      detail: {
+        summary: "Submit review",
+        description:
+          "Submit human review with score and feedback. Merges with AI result according to confidence rules.",
+        security: [{ bearerAuth: [] }],
+      },
+    },
+  )
+
+  .post(
+    "/:id/assign",
+    ({ params, body, user }) => assignSubmission(params.id, body, user),
+    {
+      role: ROLES.ADMIN,
+      params: IdParam,
+      body: SubmissionAssignBody,
+      response: {
+        200: ReviewQueueItem,
+        ...CrudErrors,
+      },
+      detail: {
+        summary: "Assign reviewer",
+        description:
+          "Admin assigns a specific instructor to review a submission.",
+        security: [{ bearerAuth: [] }],
+      },
+    },
+  )
 
   .delete("/:id", ({ params, user }) => removeSubmission(params.id, user), {
     auth: true,

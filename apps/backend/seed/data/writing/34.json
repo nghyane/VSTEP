@@ -1,0 +1,17 @@
+{
+  "skill": "writing",
+  "format": "writing_task_2",
+  "level": "B1",
+  "content": {
+    "taskNumber": 2,
+    "prompt": "You should spend about 40 minutes on this task.\n\nRead the following text from an article about ex-prisoners.\n\n\nIt is undeniable that ex-prisoners can reintegrate into society and become responsible, productive citizens. Some former prisoners successfully turn their lives around and contribute positively to society. Many argue that they are the most effective individuals to educate teenagers about the consequences of crime.\n\n\nWrite an essay for an educated audience discussing your opinion on whether ex-prisoners are the best people to educate teenagers about crime. Support your answer with specific reasons and relevant examples.\n\nGive reasons and relevant examples from your knowledge or experience. You should write at least 250 words. Your response will be evaluated in terms of Task Fulfillment, Organization, Vocabulary and Grammar.",
+    "minWords": 250,
+    "imageUrls": []
+  },
+  "answerKey": null,
+  "metadata": {
+    "source": "crawled",
+    "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-viet/34",
+    "examId": 34
+  }
+}

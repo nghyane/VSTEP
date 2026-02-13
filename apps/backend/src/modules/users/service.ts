@@ -71,7 +71,7 @@ export async function createUser(body: UserCreateBody) {
       fullName: body.fullName,
       role: body.role ?? ROLES.LEARNER,
     })
-    .onConflictDoNothing({ target: table.users.email })
+    .onConflictDoNothing()
     .returning(USER_COLUMNS);
 
   if (!user) throw new ConflictError("Email already registered");
@@ -86,7 +86,7 @@ export async function updateUser(
   const email = body.email ? normalizeEmail(body.email) : undefined;
   assertAccess(userId, actor, "You can only update your own profile");
 
-  if (body.role && !actor.is(ROLES.ADMIN)) {
+  if (body.role !== undefined && !actor.is(ROLES.ADMIN)) {
     throw new ForbiddenError("Only admins can change user roles");
   }
 
