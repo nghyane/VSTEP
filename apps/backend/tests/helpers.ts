@@ -48,6 +48,7 @@ export const api = {
   get: (path: string, opts?: RequestOptions) => request("GET", path, opts),
   post: (path: string, opts?: RequestOptions) => request("POST", path, opts),
   patch: (path: string, opts?: RequestOptions) => request("PATCH", path, opts),
+  put: (path: string, opts?: RequestOptions) => request("PUT", path, opts),
   delete: (path: string, opts?: RequestOptions) =>
     request("DELETE", path, opts),
 };
@@ -221,6 +222,111 @@ export async function createTestQuestion(
 }
 
 // ---------------------------------------------------------------------------
+// Exam factory
+// ---------------------------------------------------------------------------
+
+interface TestExamResult {
+  examId: string;
+  questionIds: {
+    listening: string[];
+    reading: string[];
+    writing: string[];
+    speaking: string[];
+  };
+  admin: LoginResult;
+}
+
+export async function createTestExam(): Promise<TestExamResult> {
+  const admin = await loginTestUser({ role: "admin" });
+  const instructor = await loginTestUser({ role: "instructor" });
+
+  const createQ = async (
+    skill: string,
+    format: string,
+    content: Record<string, unknown>,
+    answerKey?: Record<string, unknown>,
+  ) => {
+    const { data } = await api.post("/api/questions", {
+      token: instructor.accessToken,
+      body: {
+        skill,
+        level: "B2",
+        format,
+        content,
+        ...(answerKey && { answerKey }),
+      },
+    });
+    return data.id as string;
+  };
+
+  const listeningId = await createQ(
+    "listening",
+    "listening_mcq",
+    {
+      audioUrl: "https://example.com/audio.mp3",
+      items: [
+        {
+          number: 1,
+          prompt: "What did the speaker say?",
+          options: { A: "Hello", B: "Goodbye", C: "Thanks", D: "Sorry" },
+        },
+      ],
+    },
+    { correctAnswers: { "1": "A" } },
+  );
+
+  const readingId = await createQ(
+    "reading",
+    "reading_mcq",
+    {
+      passage: "Integration test passage.",
+      items: [
+        {
+          number: 1,
+          prompt: "Main idea?",
+          options: { A: "A", B: "B", C: "C", D: "D" },
+        },
+      ],
+    },
+    { correctAnswers: { "1": "A" } },
+  );
+
+  const writingId = await createQ("writing", "writing_task_1", {
+    taskNumber: 1,
+    prompt: "Write about testing.",
+  });
+
+  const speakingId = await createQ("speaking", "speaking_part_1", {
+    partNumber: 1,
+    prompt: "Talk about your experience with testing.",
+  });
+
+  const { data } = await api.post("/api/exams", {
+    token: admin.accessToken,
+    body: {
+      level: "B2",
+      blueprint: {
+        listening: { questionIds: [listeningId] },
+        reading: { questionIds: [readingId] },
+        writing: { questionIds: [writingId] },
+        speaking: { questionIds: [speakingId] },
+      },
+    },
+  });
+
+  return {
+    examId: data.id as string,
+    questionIds: {
+      listening: [listeningId],
+      reading: [readingId],
+      writing: [writingId],
+      speaking: [speakingId],
+    },
+    admin,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Cleanup
 // ---------------------------------------------------------------------------
 
@@ -241,6 +347,42 @@ export async function cleanupTestData(emailPrefix = testEmailPrefix) {
     .delete(table.userProgress)
     .where(inArray(table.userProgress.userId, ids));
   await db.delete(table.userGoals).where(inArray(table.userGoals.userId, ids));
+
+  // Exam data (before submissions due to examSubmissions FK)
+  const sessionIds = await db
+    .select({ id: table.examSessions.id })
+    .from(table.examSessions)
+    .where(inArray(table.examSessions.userId, ids));
+  const sIds = sessionIds.map((r) => r.id);
+  if (sIds.length > 0) {
+    await db
+      .delete(table.examSubmissions)
+      .where(inArray(table.examSubmissions.sessionId, sIds));
+    await db
+      .delete(table.examAnswers)
+      .where(inArray(table.examAnswers.sessionId, sIds));
+  }
+  await db
+    .delete(table.examSessions)
+    .where(inArray(table.examSessions.userId, ids));
+
+  // Submissions (submissionDetails cascades via FK, but be safe)
+  const subIds = await db
+    .select({ id: table.submissions.id })
+    .from(table.submissions)
+    .where(inArray(table.submissions.userId, ids));
+  const submissionIdList = subIds.map((r) => r.id);
+  if (submissionIdList.length > 0) {
+    await db
+      .delete(table.submissionDetails)
+      .where(inArray(table.submissionDetails.submissionId, submissionIdList));
+  }
+  await db
+    .delete(table.submissions)
+    .where(inArray(table.submissions.userId, ids));
+
+  // Exams (created by test users)
+  await db.delete(table.exams).where(inArray(table.exams.createdBy, ids));
 
   // Delete in FK order: question_versions → questions → feedback → members → classes → tokens → users
   await db
