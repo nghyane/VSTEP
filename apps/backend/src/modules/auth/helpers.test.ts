@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { hashToken, parseExpiry } from "./pure";
+import { hashToken, parseExpiry } from "./helpers";
 
 describe("parseExpiry", () => {
   it("parses seconds", () => {

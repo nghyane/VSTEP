@@ -16,7 +16,7 @@ import {
 } from "@/modules/progress/service";
 import { SESSION_COLUMNS } from "./schema";
 import type { ExamSessionStatus } from "./service";
-import { getActiveSession } from "./session-service";
+import { getActiveSession } from "./session";
 
 type AnswerEntry = { questionId: string; answer: SubmissionAnswer };
 type QuestionInfo = { skill: string; answerKey: ObjectiveAnswerKey | null };

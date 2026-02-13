@@ -6,11 +6,11 @@
 
 | Module | Prefix | Extra files | Domain |
 |--------|--------|-------------|--------|
-| `auth/` | /api/auth | `pure.ts` | Login, register, JWT rotation, logout |
+| `auth/` | /api/auth | `helpers.ts` | Login, register, JWT rotation, logout |
 | `users/` | /api/users | — | Admin CRUD, password changes, search |
-| `questions/` | /api/questions | `version-service.ts` | Question bank, versioning, JSONB content |
-| `submissions/` | /api/submissions | `auto-grade-service.ts` | Answer submission, auto/human grading pipeline |
-| `exams/` | /api/exams | `session-service.ts`, `grading-service.ts` | Exam sessions, answer tracking, scoring |
+| `questions/` | /api/questions | `version.ts` | Question bank, versioning, JSONB content |
+| `submissions/` | /api/submissions | `auto-grade.ts` | Answer submission, auto/human grading pipeline |
+| `exams/` | /api/exams | `session.ts`, `grading.ts` | Exam sessions, answer tracking, scoring |
 | `progress/` | /api/progress | `trends.ts`, `constants.ts` | Adaptive learning, skill scores, streaks |
 | `health/` | /health | — | DB/Redis health check |
 

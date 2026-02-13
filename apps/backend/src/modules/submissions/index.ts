@@ -9,7 +9,14 @@ import {
 import { AutoGradeResult } from "@db/types/grading";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
-import { autoGradeSubmission } from "./auto-grade-service";
+import { autoGradeSubmission } from "./auto-grade";
+import {
+  assignSubmission,
+  claimSubmission,
+  getReviewQueue,
+  releaseSubmission,
+  submitReview,
+} from "./review";
 import {
   ReviewQueueItem,
   ReviewQueueQuery,
@@ -22,16 +29,11 @@ import {
   SubmissionUpdateBody,
 } from "./schema";
 import {
-  assignSubmission,
-  claimSubmission,
   createSubmission,
-  getReviewQueue,
   getSubmissionById,
   gradeSubmission,
   listSubmissions,
-  releaseSubmission,
   removeSubmission,
-  submitReview,
   updateSubmission,
 } from "./service";
 

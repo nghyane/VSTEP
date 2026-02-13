@@ -28,7 +28,7 @@ import {
   createQuestionVersion,
   getQuestionVersion,
   getQuestionVersions,
-} from "./version-service";
+} from "./version";
 
 export const questions = new Elysia({
   name: "module:questions",

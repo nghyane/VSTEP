@@ -6,7 +6,7 @@ import { normalizeEmail } from "@common/utils";
 import { db, notDeleted, table } from "@db/index";
 import { and, asc, eq, gt, inArray, isNull } from "drizzle-orm";
 import { SignJWT } from "jose";
-import { hashToken, parseExpiry } from "./pure";
+import { hashToken, parseExpiry } from "./helpers";
 import type { AuthUser, LoginBody, RegisterBody } from "./schema";
 
 const AUTH_USER_RETURNING = {

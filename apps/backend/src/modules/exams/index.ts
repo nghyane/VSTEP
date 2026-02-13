@@ -9,7 +9,7 @@ import {
 import { SubmissionAnswer } from "@db/types/answers";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
-import { submitExam } from "./grading-service";
+import { submitExam } from "./grading";
 import {
   Exam,
   ExamAnswerSaveBody,
@@ -25,7 +25,7 @@ import {
   saveExamAnswers,
   startExamSession,
   submitExamAnswer,
-} from "./session-service";
+} from "./session";
 
 export const exams = new Elysia({
   name: "module:exams",
