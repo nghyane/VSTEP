@@ -13,7 +13,7 @@ import {
   isRecord,
   loginTestUser,
   makeRequest,
-} from "@/test/helpers";
+} from "./helpers";
 
 describe("users integration", () => {
   beforeAll(() => {

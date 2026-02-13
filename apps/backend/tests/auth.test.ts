@@ -15,7 +15,7 @@ import {
   loginTestUser,
   makeRequest,
   testEmailPrefix,
-} from "@/test/helpers";
+} from "./helpers";
 
 describe("auth integration", () => {
   beforeAll(() => {
