@@ -1,3 +1,4 @@
+import { VstepBand } from "@db/enums";
 import { userGoals, userProgress } from "@db/schema";
 import { createSelectSchema } from "drizzle-typebox";
 import { t } from "elysia";
@@ -8,12 +9,22 @@ export type SkillProgress = typeof SkillProgress.static;
 export const Goal = createSelectSchema(userGoals);
 export type Goal = typeof Goal.static;
 
-export const ProgressOverviewResponse = t.Object({
+export const GoalBody = t.Object({
+  targetBand: VstepBand,
+  deadline: t.String({ format: "date-time" }),
+  dailyStudyTimeMinutes: t.Optional(t.Integer({ minimum: 5, maximum: 480 })),
+});
+export type GoalBody = typeof GoalBody.static;
+
+export const GoalUpdateBody = t.Partial(GoalBody);
+export type GoalUpdateBody = typeof GoalUpdateBody.static;
+
+export const ProgressOverview = t.Object({
   skills: t.Array(SkillProgress),
   goal: t.Nullable(Goal),
 });
 
-export type ProgressOverviewResponse = typeof ProgressOverviewResponse.static;
+export type ProgressOverview = typeof ProgressOverview.static;
 
 export const ProgressRecentScore = t.Object({
   score: t.Number(),
@@ -28,7 +39,7 @@ export const ProgressTrend = t.Union([
   t.Literal("insufficient_data"),
 ]);
 
-export const ProgressSkillDetailResponse = t.Object({
+export const ProgressSkillDetail = t.Object({
   progress: t.Nullable(SkillProgress),
   recentScores: t.Array(ProgressRecentScore),
   windowAvg: t.Nullable(t.Number()),
@@ -36,18 +47,16 @@ export const ProgressSkillDetailResponse = t.Object({
   trend: ProgressTrend,
 });
 
-export type ProgressSkillDetailResponse =
-  typeof ProgressSkillDetailResponse.static;
+export type ProgressSkillDetail = typeof ProgressSkillDetail.static;
 
 export const ProgressSpiderChartSkill = t.Object({
   current: t.Number(),
   trend: t.String(),
 });
 
-export const ProgressSpiderChartResponse = t.Object({
+export const ProgressSpiderChart = t.Object({
   skills: t.Record(t.String(), ProgressSpiderChartSkill),
   goal: t.Nullable(Goal),
 });
 
-export type ProgressSpiderChartResponse =
-  typeof ProgressSpiderChartResponse.static;
+export type ProgressSpiderChart = typeof ProgressSpiderChart.static;

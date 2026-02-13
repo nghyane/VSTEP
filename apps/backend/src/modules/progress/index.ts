@@ -1,23 +1,28 @@
-import { AuthErrors } from "@common/schemas";
+import {
+  AuthErrors,
+  CrudErrors,
+  ErrorResponse,
+  IdParam,
+} from "@common/schemas";
 import { Skill } from "@db/enums";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import {
-  ProgressOverviewResponse,
-  ProgressSkillDetailResponse,
-  ProgressSpiderChartResponse,
+  Goal,
+  GoalBody,
+  GoalUpdateBody,
+  ProgressOverview,
+  ProgressSkillDetail,
+  ProgressSpiderChart,
 } from "./schema";
 import {
+  createGoal,
   getProgressBySkill,
   getProgressOverview,
   getSpiderChart,
+  removeGoal,
+  updateGoal,
 } from "./service";
-
-// TODO(P2): Add goal CRUD routes
-//   - POST /progress/goals       → createGoal (set target band, deadline)
-//   - PATCH /progress/goals/:id  → updateGoal (partial update)
-//   - DELETE /progress/goals/:id → deleteGoal
-//   Currently userGoals table is never written to.
 
 export const progress = new Elysia({
   name: "module:progress",
@@ -28,7 +33,7 @@ export const progress = new Elysia({
 
   .get("/", ({ user }) => getProgressOverview(user.sub), {
     auth: true,
-    response: { 200: ProgressOverviewResponse, ...AuthErrors },
+    response: { 200: ProgressOverview, ...AuthErrors },
     detail: {
       summary: "Get progress overview",
       description:
@@ -39,7 +44,7 @@ export const progress = new Elysia({
 
   .get("/spider-chart", ({ user }) => getSpiderChart(user.sub), {
     auth: true,
-    response: { 200: ProgressSpiderChartResponse, ...AuthErrors },
+    response: { 200: ProgressSpiderChart, ...AuthErrors },
     detail: {
       summary: "Get spider chart data",
       description:
@@ -54,7 +59,7 @@ export const progress = new Elysia({
     {
       auth: true,
       params: t.Object({ skill: Skill }),
-      response: { 200: ProgressSkillDetailResponse, ...AuthErrors },
+      response: { 200: ProgressSkillDetail, ...AuthErrors },
       detail: {
         summary: "Get skill progress",
         description:
@@ -62,4 +67,39 @@ export const progress = new Elysia({
         security: [{ bearerAuth: [] }],
       },
     },
-  );
+  )
+
+  .post("/goals", ({ body, user }) => createGoal(user.sub, body), {
+    auth: true,
+    body: GoalBody,
+    response: { 200: Goal, ...AuthErrors, 409: ErrorResponse },
+    detail: { summary: "Create learning goal", security: [{ bearerAuth: [] }] },
+  })
+
+  .patch(
+    "/goals/:id",
+    ({ params, body, user }) => updateGoal(user.sub, params.id, body),
+    {
+      auth: true,
+      params: IdParam,
+      body: GoalUpdateBody,
+      response: { 200: Goal, ...CrudErrors },
+      detail: {
+        summary: "Update learning goal",
+        security: [{ bearerAuth: [] }],
+      },
+    },
+  )
+
+  .delete("/goals/:id", ({ params, user }) => removeGoal(user.sub, params.id), {
+    auth: true,
+    params: IdParam,
+    response: {
+      200: t.Object({ id: t.String(), deleted: t.Boolean() }),
+      ...CrudErrors,
+    },
+    detail: {
+      summary: "Delete learning goal",
+      security: [{ bearerAuth: [] }],
+    },
+  });

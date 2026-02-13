@@ -1,5 +1,11 @@
-import { scoreToBand } from "@common/scoring";
-import type { DbTransaction } from "@db/index";
+import { ConflictError, NotFoundError } from "@common/errors";
+import { BAND_THRESHOLDS, scoreToBand } from "@common/scoring";
+import { SKILLS } from "@db/enums";
+import type { DbTransaction, UserProgress } from "@db/index";
+import { db, table } from "@db/index";
+import { and, desc, eq, inArray } from "drizzle-orm";
+import type { GoalBody, GoalUpdateBody } from "./schema";
+import { computeStats, computeTrend } from "./trends";
 
 export async function recordSkillScore(
   userId: string,
@@ -94,17 +100,6 @@ export async function updateUserProgress(
     });
 }
 
-// TODO(P2): Implement goal management functions
-//   - createGoal(userId, { targetBand, deadline, dailyStudyTimeMinutes })
-//   - updateGoal(userId, goalId, partial)
-//   - deleteGoal(userId, goalId)
-//   - Currently userGoals table is read-only (never inserted/updated)
-
-import type { UserProgress } from "@db/index";
-import { db, table } from "@db/index";
-import { and, desc, eq, inArray } from "drizzle-orm";
-import { computeStats, computeTrend } from "./trends";
-
 export async function getProgressOverview(userId: string) {
   const [records, goal] = await Promise.all([
     db.query.userProgress.findMany({
@@ -159,8 +154,6 @@ export async function getProgressBySkill(
 }
 
 export async function getSpiderChart(userId: string) {
-  const skills = ["listening", "reading", "writing", "speaking"] as const;
-
   const [allScores, goal] = await Promise.all([
     db
       .select({
@@ -172,7 +165,7 @@ export async function getSpiderChart(userId: string) {
       .where(
         and(
           eq(table.userSkillScores.userId, userId),
-          inArray(table.userSkillScores.skill, skills),
+          inArray(table.userSkillScores.skill, SKILLS),
         ),
       )
       .orderBy(desc(table.userSkillScores.createdAt)),
@@ -189,7 +182,7 @@ export async function getSpiderChart(userId: string) {
   }, new Map<string, number[]>());
 
   const result = Object.fromEntries(
-    skills.map((s) => {
+    SKILLS.map((s) => {
       const sc = grouped.get(s) ?? [];
       const { avg, stdDev } = computeStats(sc);
       return [
@@ -203,4 +196,199 @@ export async function getSpiderChart(userId: string) {
   );
 
   return { skills: result, goal: goal ?? null };
+}
+
+// ── Goal CRUD ──────────────────────────────────────────────
+
+export async function createGoal(userId: string, body: GoalBody) {
+  const existing = await db.query.userGoals.findFirst({
+    where: eq(table.userGoals.userId, userId),
+  });
+  if (existing) {
+    throw new ConflictError(
+      "User already has an active goal. Update or delete it first.",
+    );
+  }
+
+  const rows = await db
+    .insert(table.userGoals)
+    .values({
+      userId,
+      targetBand: body.targetBand,
+      deadline: body.deadline,
+      ...(body.dailyStudyTimeMinutes !== undefined && {
+        dailyStudyTimeMinutes: body.dailyStudyTimeMinutes,
+      }),
+    })
+    .returning();
+
+  return rows[0] as (typeof rows)[0];
+}
+
+export async function updateGoal(
+  userId: string,
+  goalId: string,
+  body: GoalUpdateBody,
+) {
+  const existing = await db.query.userGoals.findFirst({
+    where: and(
+      eq(table.userGoals.id, goalId),
+      eq(table.userGoals.userId, userId),
+    ),
+  });
+  if (!existing) throw new NotFoundError("Goal not found");
+
+  const rows = await db
+    .update(table.userGoals)
+    .set({
+      ...body,
+      updatedAt: new Date().toISOString(),
+    })
+    .where(
+      and(eq(table.userGoals.id, goalId), eq(table.userGoals.userId, userId)),
+    )
+    .returning();
+
+  return rows[0] as (typeof rows)[0];
+}
+
+export async function removeGoal(userId: string, goalId: string) {
+  const existing = await db.query.userGoals.findFirst({
+    where: and(
+      eq(table.userGoals.id, goalId),
+      eq(table.userGoals.userId, userId),
+    ),
+  });
+  if (!existing) throw new NotFoundError("Goal not found");
+
+  await db
+    .delete(table.userGoals)
+    .where(
+      and(eq(table.userGoals.id, goalId), eq(table.userGoals.userId, userId)),
+    );
+
+  return { id: goalId, deleted: true as const };
+}
+
+// ── Batch queries (for instructor dashboard) ───────────────
+
+const RECENT_SCORES_LIMIT = 10;
+const AT_RISK_AVG_THRESHOLD = 5.0;
+const AT_RISK_DEADLINE_DAYS = 30;
+
+export async function getProgressForUsers(userIds: string[]) {
+  if (userIds.length === 0) return [];
+
+  const [progressRecords, scores] = await Promise.all([
+    db
+      .select()
+      .from(table.userProgress)
+      .where(inArray(table.userProgress.userId, userIds)),
+    db
+      .select()
+      .from(table.userSkillScores)
+      .where(inArray(table.userSkillScores.userId, userIds))
+      .orderBy(desc(table.userSkillScores.createdAt)),
+  ]);
+
+  const scoresByUserSkill = new Map<string, number[]>();
+  for (const s of scores) {
+    const key = `${s.userId}:${s.skill}`;
+    const arr = scoresByUserSkill.get(key);
+    if (!arr) {
+      scoresByUserSkill.set(key, [s.score]);
+    } else if (arr.length < RECENT_SCORES_LIMIT) {
+      arr.push(s.score);
+    }
+  }
+
+  const progressByUserSkill = new Map<string, (typeof progressRecords)[0]>();
+  for (const p of progressRecords) {
+    progressByUserSkill.set(`${p.userId}:${p.skill}`, p);
+  }
+
+  return userIds.map((userId) => {
+    const skills = Object.fromEntries(
+      SKILLS.map((skill) => {
+        const key = `${userId}:${skill}`;
+        const recentScores = scoresByUserSkill.get(key) ?? [];
+        const { avg, stdDev } = computeStats(recentScores);
+        const trend = computeTrend(recentScores, stdDev);
+        const progress = progressByUserSkill.get(key);
+
+        return [
+          skill,
+          {
+            currentLevel:
+              progress?.currentLevel ??
+              (avg !== null ? (scoreToBand(avg) ?? "A2") : null),
+            avg: avg !== null ? Math.round(avg * 10) / 10 : null,
+            trend,
+            attemptCount: progress?.attemptCount ?? 0,
+            streakCount: progress?.streakCount ?? 0,
+          },
+        ];
+      }),
+    );
+    return { userId, skills };
+  });
+}
+
+export async function getAtRiskLearners(userIds: string[]) {
+  if (userIds.length === 0) return [];
+
+  const [progressData, goals] = await Promise.all([
+    getProgressForUsers(userIds),
+    db
+      .select()
+      .from(table.userGoals)
+      .where(inArray(table.userGoals.userId, userIds)),
+  ]);
+
+  const goalByUser = new Map(goals.map((g) => [g.userId, g]));
+  const now = Date.now();
+  const thirtyDaysMs = AT_RISK_DEADLINE_DAYS * 24 * 60 * 60 * 1000;
+
+  return progressData.map(({ userId, skills }) => {
+    const reasons: string[] = [];
+
+    for (const [skill, data] of Object.entries(skills)) {
+      if (data.trend === "declining") {
+        reasons.push(`Declining trend in ${skill}`);
+      }
+      if (data.avg !== null && data.avg < AT_RISK_AVG_THRESHOLD) {
+        reasons.push(`Low average (${data.avg}) in ${skill}`);
+      }
+    }
+
+    const goal = goalByUser.get(userId);
+    if (goal?.deadline) {
+      const deadlineMs = new Date(goal.deadline).getTime();
+      const approaching = deadlineMs - now < thirtyDaysMs && deadlineMs > now;
+      if (approaching) {
+        const currentBands = Object.values(skills)
+          .map((s) => s.currentLevel)
+          .filter(Boolean) as string[];
+        const targetBand = goal.targetBand;
+        const targetThreshold =
+          BAND_THRESHOLDS[targetBand as keyof typeof BAND_THRESHOLDS];
+        const allMeetTarget =
+          currentBands.length > 0 &&
+          currentBands.every((b) => {
+            const bandThreshold =
+              BAND_THRESHOLDS[b as keyof typeof BAND_THRESHOLDS];
+            return bandThreshold !== undefined && targetThreshold !== undefined
+              ? bandThreshold >= targetThreshold
+              : false;
+          });
+
+        if (!allMeetTarget) {
+          const deadlineStr = goal.deadline.slice(0, 10);
+          reasons.push(`Behind goal: target ${targetBand} by ${deadlineStr}`);
+        }
+      }
+    }
+
+    return { userId, atRisk: reasons.length > 0, reasons };
+  });
 }
