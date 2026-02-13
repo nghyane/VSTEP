@@ -113,9 +113,7 @@ export const submissionDetails = pgTable("submission_details", {
   ...timestamps,
 });
 
-// TODO(P2): submissionEvents table is defined but never populated
-//   - Insert events on every status transition, grading, claim/release
-//   - Enables audit trail + materialized view reconstruction
+// TODO(P2): Record submissionEvents on status transitions for audit trail
 export const submissionEvents = pgTable(
   "submission_events",
   {

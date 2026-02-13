@@ -4,6 +4,7 @@
  * @see https://orm.drizzle.team/docs/sql-schema-declaration
  */
 
+import { classes, classMembers, instructorFeedback } from "./classes";
 import { examAnswers, examSessions, examSubmissions, exams } from "./exams";
 import { outbox, processedCallbacks } from "./outbox";
 import { userGoals, userProgress, userSkillScores } from "./progress";
@@ -38,13 +39,19 @@ export const table = {
   examSubmissions,
   outbox,
   processedCallbacks,
+  classes,
+  classMembers,
+  instructorFeedback,
 } as const;
 
 export {
+  classMembers,
+  classes,
   examAnswers,
   examSessions,
   examSubmissions,
   exams,
+  instructorFeedback,
   outbox,
   processedCallbacks,
   questionVersions,
@@ -59,4 +66,12 @@ export {
   users,
 };
 
+export type {
+  Class,
+  ClassMember,
+  InstructorFeedback,
+  NewClass,
+  NewClassMember,
+  NewInstructorFeedback,
+} from "./classes";
 export type { UserProgress } from "./progress";

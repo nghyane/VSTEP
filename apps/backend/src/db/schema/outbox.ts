@@ -1,11 +1,4 @@
-// TODO(P1): Implement outbox processor (background job)
-//   - Consume pending outbox events on interval or via Bun scheduled task
-//   - Lock rows (lockedAt/lockedBy) to prevent duplicate processing
-//   - Process by messageType: "submission.pending_review" → route to instructor queue
-//   - Mark as "published" on success, increment attempts + set errorMessage on failure
-//   - Use processedCallbacks for idempotency (dedup by eventId)
-//   - Implement exponential backoff for retries
-//   Location: create src/services/outbox-processor.ts or src/jobs/outbox.ts
+// TODO(P1): Implement outbox processor — background job to consume pending events with retry + dedup
 
 import { sql } from "drizzle-orm";
 import {

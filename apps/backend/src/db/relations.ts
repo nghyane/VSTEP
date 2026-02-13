@@ -1,4 +1,5 @@
 import { relations } from "drizzle-orm";
+import { classes, classMembers, instructorFeedback } from "./schema/classes";
 import {
   examAnswers,
   examSessions,
@@ -24,6 +25,10 @@ export const usersRelations = relations(users, ({ many }) => ({
   examSessions: many(examSessions),
   createdQuestions: many(questions),
   createdExams: many(exams),
+  ownedClasses: many(classes),
+  classMemberships: many(classMembers),
+  feedbackGiven: many(instructorFeedback, { relationName: "feedbackFrom" }),
+  feedbackReceived: many(instructorFeedback, { relationName: "feedbackTo" }),
 }));
 
 export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
@@ -163,3 +168,47 @@ export const outboxRelations = relations(outbox, ({ one }) => ({
     references: [submissions.id],
   }),
 }));
+
+export const classesRelations = relations(classes, ({ one, many }) => ({
+  instructor: one(users, {
+    fields: [classes.instructorId],
+    references: [users.id],
+  }),
+  members: many(classMembers),
+  feedback: many(instructorFeedback),
+}));
+
+export const classMembersRelations = relations(classMembers, ({ one }) => ({
+  class: one(classes, {
+    fields: [classMembers.classId],
+    references: [classes.id],
+  }),
+  user: one(users, {
+    fields: [classMembers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const instructorFeedbackRelations = relations(
+  instructorFeedback,
+  ({ one }) => ({
+    class: one(classes, {
+      fields: [instructorFeedback.classId],
+      references: [classes.id],
+    }),
+    from: one(users, {
+      fields: [instructorFeedback.fromUserId],
+      references: [users.id],
+      relationName: "feedbackFrom",
+    }),
+    to: one(users, {
+      fields: [instructorFeedback.toUserId],
+      references: [users.id],
+      relationName: "feedbackTo",
+    }),
+    submission: one(submissions, {
+      fields: [instructorFeedback.submissionId],
+      references: [submissions.id],
+    }),
+  }),
+);
