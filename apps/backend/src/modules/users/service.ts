@@ -21,15 +21,19 @@ import type {
 } from "./schema";
 import { USER_COLUMNS } from "./schema";
 
-export async function getUserById(userId: string, actor?: Actor) {
-  if (actor) assertAccess(userId, actor, "You can only view your own profile");
-
+/** Internal lookup — no auth check. Use getUserById for route-facing calls. */
+export async function findUserById(userId: string) {
   const user = await db.query.users.findFirst({
     where: and(eq(table.users.id, userId), notDeleted(table.users)),
     columns: { passwordHash: false, deletedAt: false },
   });
 
   return assertExists(user, "User");
+}
+
+export async function getUserById(userId: string, actor: Actor) {
+  assertAccess(userId, actor, "You can only view your own profile");
+  return findUserById(userId);
 }
 
 export async function listUsers(query: UserListQuery) {
@@ -117,7 +121,7 @@ export async function updateUser(
         updatedAt: new Date().toISOString(),
         ...(email && { email }),
         ...(body.fullName !== undefined && { fullName: body.fullName }),
-        ...(body.role && { role: body.role }),
+        ...(body.role !== undefined && { role: body.role }),
       })
       .where(eq(table.users.id, userId))
       .returning(USER_COLUMNS);
