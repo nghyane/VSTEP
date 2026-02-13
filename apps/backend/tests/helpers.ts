@@ -233,6 +233,15 @@ export async function cleanupTestData(emailPrefix = testEmailPrefix) {
   const ids = rows.map((r) => r.id);
   if (ids.length === 0) return;
 
+  // Progress data
+  await db
+    .delete(table.userSkillScores)
+    .where(inArray(table.userSkillScores.userId, ids));
+  await db
+    .delete(table.userProgress)
+    .where(inArray(table.userProgress.userId, ids));
+  await db.delete(table.userGoals).where(inArray(table.userGoals.userId, ids));
+
   // Delete in FK order: question_versions → questions → feedback → members → classes → tokens → users
   await db
     .delete(table.questionVersions)
