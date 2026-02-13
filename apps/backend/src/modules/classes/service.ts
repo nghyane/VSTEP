@@ -310,6 +310,18 @@ export async function joinClass(body: { inviteCode: string }, actor: Actor) {
 }
 
 export async function leaveClass(classId: string, actor: Actor) {
+  const cls = assertExists(
+    await db.query.classes.findFirst({
+      where: and(eq(table.classes.id, classId), notDeleted(table.classes)),
+      columns: { instructorId: true },
+    }),
+    "Class",
+  );
+
+  if (cls.instructorId === actor.sub) {
+    throw new BadRequestError("Class instructor cannot leave their own class");
+  }
+
   const membership = assertExists(
     await db.query.classMembers.findFirst({
       where: and(
@@ -487,22 +499,20 @@ export async function listFeedback(
 
   const conditions = [eq(table.instructorFeedback.classId, classId)];
 
+  // Verify class exists and is not deleted
+  const cls = assertExists(
+    await db.query.classes.findFirst({
+      where: and(eq(table.classes.id, classId), notDeleted(table.classes)),
+      columns: { id: true, instructorId: true },
+    }),
+    "Class",
+  );
+
   // Learner can only see their own feedback
   if (!actor.is(ROLES.INSTRUCTOR)) {
     conditions.push(eq(table.instructorFeedback.toUserId, actor.sub));
-  } else {
-    // Instructor: verify they own this class (admin bypasses)
-    if (!actor.is(ROLES.ADMIN)) {
-      const cls = await db.query.classes.findFirst({
-        where: and(eq(table.classes.id, classId), notDeleted(table.classes)),
-        columns: { instructorId: true },
-      });
-      if (!cls || cls.instructorId !== actor.sub) {
-        throw new ForbiddenError(
-          "Only the class instructor can view all feedback",
-        );
-      }
-    }
+  } else if (!actor.is(ROLES.ADMIN) && cls.instructorId !== actor.sub) {
+    throw new ForbiddenError("Only the class instructor can view all feedback");
   }
 
   if (query.skill) {
