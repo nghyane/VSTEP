@@ -1,7 +1,5 @@
 import { QuestionFormat, QuestionLevel, Skill } from "@db/enums";
 import { questions, questionVersions } from "@db/schema";
-import { skillEnum } from "@db/schema/enums";
-import { questionFormatEnum, questionLevelEnum } from "@db/schema/questions";
 import { ObjectiveAnswerKey } from "@db/types/answers";
 import { QuestionContent } from "@db/types/question-content";
 import { getTableColumns } from "drizzle-orm";
@@ -73,13 +71,9 @@ export const QuestionVersionBody = t.Object({
 export const QuestionListQuery = t.Object({
   page: t.Optional(t.Number({ minimum: 1, default: 1 })),
   limit: t.Optional(t.Number({ minimum: 1, maximum: 100, default: 20 })),
-  skill: t.Optional(t.UnionEnum(skillEnum.enumValues, { default: undefined })),
-  level: t.Optional(
-    t.UnionEnum(questionLevelEnum.enumValues, { default: undefined }),
-  ),
-  format: t.Optional(
-    t.UnionEnum(questionFormatEnum.enumValues, { default: undefined }),
-  ),
+  skill: t.Optional(Skill),
+  level: t.Optional(QuestionLevel),
+  format: t.Optional(QuestionFormat),
   isActive: t.Optional(t.Boolean()),
   search: t.Optional(t.String({ maxLength: 255 })),
 });

@@ -12,9 +12,17 @@ import { userRoleEnum } from "@db/schema/users";
 import { t } from "elysia";
 
 export const UserRole = t.UnionEnum(userRoleEnum.enumValues);
-export const Skill = t.UnionEnum(skillEnum.enumValues);
+export const Skill = t.UnionEnum(skillEnum.enumValues, { default: undefined });
 export const SKILLS = skillEnum.enumValues;
-export const QuestionFormat = t.UnionEnum(questionFormatEnum.enumValues);
-export const QuestionLevel = t.UnionEnum(questionLevelEnum.enumValues);
-export const VstepBand = t.UnionEnum(vstepBandEnum.enumValues);
-export const SubmissionStatus = t.UnionEnum(submissionStatusEnum.enumValues);
+export const QuestionFormat = t.UnionEnum(questionFormatEnum.enumValues, {
+  default: undefined,
+});
+export const QuestionLevel = t.UnionEnum(questionLevelEnum.enumValues, {
+  default: undefined,
+});
+export const VstepBand = t.UnionEnum(vstepBandEnum.enumValues, {
+  default: undefined,
+});
+export const SubmissionStatus = t.UnionEnum(submissionStatusEnum.enumValues, {
+  default: undefined,
+});
