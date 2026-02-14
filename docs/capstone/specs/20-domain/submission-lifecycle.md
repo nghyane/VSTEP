@@ -1,173 +1,150 @@
-# Submission Lifecycle Specification
+# Submission Lifecycle
 
-> **Phiên bản**: 1.1 · SP26SE145
+> **Version**: 2.0 · SP26SE145
 
-## 1. Tổng quan
+## 1. Overview
 
-Submission là entity trung tâm kết nối Main App và Grading Service. Spec này định nghĩa vòng đời của một submission từ khi user nộp bài đến khi nhận kết quả, bao gồm state machine, ownership rules, và xử lý edge cases.
+A submission tracks a learner's answer from creation to final score. Listening/Reading are auto-graded synchronously. Writing/Speaking are dispatched to a Python grading worker via Redis and graded asynchronously by Gemini.
 
 ---
 
-## 2. State Machine
+## 2. State Machine (5 states)
 
-```mermaid
-stateDiagram-v2
-  [*] --> PENDING: user submits
-  PENDING --> QUEUED: request published
-  QUEUED --> PROCESSING: worker picks up
-  PROCESSING --> COMPLETED: reviewRequired=false
-  PROCESSING --> REVIEW_PENDING: reviewRequired=true
-  REVIEW_PENDING --> COMPLETED: instructor review
-
-  PROCESSING --> ERROR
-  ERROR --> RETRYING: retryable && retries<3
-  RETRYING --> PROCESSING
-
-  PENDING --> FAILED: AI SLA timeout
-  QUEUED --> FAILED: invalid job / timeout
-  PROCESSING --> FAILED: AI SLA timeout
-  RETRYING --> FAILED: max retries
-  COMPLETED --> [*]
-  FAILED --> [*]
+```
+                         ┌─────────────────────────────────────────┐
+                         │           validation error              │
+                         v                                         │
+                    ┌─────────┐                               ┌────┴───┐
+  user submits ───>│ PENDING  │                               │ FAILED │
+                    └────┬────┘                               └────────┘
+                         │                                         ^
+          ┌──────────────┼──────────────┐                          │
+          │ L/R: auto-grade             │ W/S: LPUSH Redis         │
+          │ sync                        │                          │
+          v                             v                          │
+   ┌───────────┐                 ┌────────────┐   retries          │
+   │ COMPLETED │                 │ PROCESSING │   exhausted        │
+   └───────────┘                 └──────┬─────┘────────────────────┘
+          ^                             │
+          │              ┌──────────────┼──────────────┐
+          │              │ confidence                   │ confidence
+          │              │ high                         │ medium/low
+          │              v                              v
+          │       ┌───────────┐                ┌────────────────┐
+          │       │ COMPLETED │                │ REVIEW_PENDING │
+          │       └───────────┘                └───────┬────────┘
+          │                                            │
+          │                     instructor reviews     │
+          └────────────────────────────────────────────┘
 ```
 
-Notes:
+---
 
-- AI SLA timeout chi ap dung cho pha AI (khong ap dung cho REVIEW_PENDING).
-- REVIEW_PENDING la trang thai "AI done" nhung chua co ket qua cuoi cung cho learner.
+## 3. State Definitions
+
+| State | Owner | Meaning |
+|-------|-------|---------|
+| `pending` | Backend | Submission created, not yet graded or dispatched |
+| `processing` | Worker | Grading in progress (W/S only) |
+| `completed` | Backend | Final score available to learner |
+| `review_pending` | Backend | AI graded but confidence too low; awaiting instructor |
+| `failed` | Backend | Unrecoverable error (validation failure or retries exhausted) |
+
+No `queued`, `error`, or `retrying` states. The arq worker handles retry internally (max 3 attempts with backoff). The backend only observes the final outcome.
 
 ---
 
-## 3. Định nghĩa trạng thái
+## 4. Transitions
 
-| Status | Ai quản lý | Ý nghĩa | Thời gian dự kiến |
-|--------|------------|---------|-------------------|
-| **PENDING** | Main App | User đã submit, job chưa được đưa vào queue | Vài giây |
-| **QUEUED** | Main App | Job đã trong RabbitMQ, đang chờ worker nhận | Vài giây |
-| **PROCESSING** | Grading Service | Worker đã nhận job, đang xử lý toàn bộ AI pipeline (LLM/STT + scoring) | 10 giây - 5 phút |
-| **REVIEW_PENDING** | Main App | AI đã chấm xong nhưng bắt buộc human review; learner chỉ thấy trạng thái chờ review | Chờ instructor |
-| **COMPLETED** | Main App | Kết quả cuối cùng sẵn sàng cho learner (auto-grade hoặc sau human review) | Terminal state |
-| **ERROR** | Grading Service | Xử lý gặp lỗi, có thể retry tự động | Transient state |
-| **RETRYING** | Grading Service | Đang chờ retry (countdown với exponential backoff) | 2^n giây + jitter |
-| **FAILED** | Cả hai | Timeout SLA hoặc max retries exceeded, message vào DLQ | Terminal state |
+### 4.1 Listening / Reading (synchronous)
 
----
+```
+pending → completed
+```
 
-## 4. Luồng chuyển trạng thái
+1. Learner submits answers (map of questionId → selected answer).
+2. Backend compares against answer key, computes score via `calculateScore()`.
+3. Status set to `completed` in the same request. No Redis, no worker.
 
-### 4.1 Happy Path (Auto-grade)
+### 4.2 Writing / Speaking (asynchronous)
 
-PENDING → QUEUED → PROCESSING → COMPLETED
+```
+pending → processing → completed
+pending → processing → review_pending → completed
+pending → processing → failed
+pending → failed
+```
 
-1. **User Submit → PENDING**: Main App tạo submission record (atomic với cơ chế publish reliable - xem `../40-platform/reliability.md`).
-2. **PENDING → QUEUED**: Grading request được publish sang `grading.request` theo `../10-contracts/queue-contracts.md`.
-3. **QUEUED → PROCESSING**: Grading worker consume message, tạo grading_job trong Grading DB, gửi progress callback qua `grading.callback`.
-4. **PROCESSING → COMPLETED**: Worker chạy toàn bộ AI pipeline (LLM/STT + scoring), AI callback `kind=completed` với `reviewRequired=false`.
+1. Learner submits (text for writing, audio URL for speaking).
+2. Backend validates input. On validation error → `failed`.
+3. Backend sets status to `processing` and pushes task to Redis list `grading:tasks` via `LPUSH`.
+4. Python worker pops task (`BRPOP`), runs AI pipeline (Gemini + grammar model for writing, Whisper + Gemini for speaking).
+5. Worker writes result directly to PostgreSQL (`submissions` + `submissionDetails`).
+6. Based on AI confidence:
+   - **High** → status = `completed`. Learner sees score immediately.
+   - **Medium/Low** → status = `review_pending`. Queued for instructor review.
+7. If all 3 retries fail → status = `failed`.
 
-### 4.2 Happy Path (Review required)
+### 4.3 Review Resolution
 
-PENDING → QUEUED → PROCESSING → REVIEW_PENDING → COMPLETED
+```
+review_pending → completed
+```
 
-4. **PROCESSING → REVIEW_PENDING**: Worker chạy toàn bộ AI pipeline (LLM/STT + scoring), AI callback `kind=completed` với `reviewRequired=true`.
-5. **REVIEW_PENDING → COMPLETED**: Instructor submit review, Main App tạo final result.
-
-### 4.3 Error & Retry Path
-
-1. Khi gặp lỗi (LLM timeout, STT failure, processing exception) → chuyển ERROR.
-2. Worker auto-retry nếu retry_count < 3. Backoff: exponential (2^attempt) + random jitter. Cap tối đa 5 phút.
-3. Nếu vượt max retries → message vào Dead Letter Queue, callback error gửi về Main App → FAILED.
-
-Chi tiết retry strategy: xem `../40-platform/reliability.md`.
-
-### 4.4 Timeout Path
-
-Main App chạy timeout scheduler định kỳ. Nếu `now > deadline` và submission vẫn đang ở pha AI (PENDING/QUEUED/PROCESSING/ERROR/RETRYING) → update thành FAILED (TIMEOUT).
-
-`REVIEW_PENDING` không bị timeout theo SLA AI (đây là pha chờ human review).
-
-### 4.5 Late Callback
-
-Khi grading callback đến cho submission đã FAILED (do timeout):
-- Giữ nguyên status FAILED, không rollback
-- Lưu result với đánh dấu `is_late = true`
-- Không tính vào progress/analytics
-- UI cho phép user xem kết quả muộn ở chế độ read-only
-- Log để phân tích và tối ưu SLA/capacity
+Instructor claims submission, reviews AI result, submits final score. Backend sets status to `completed` with `gradingMode = 'human'`.
 
 ---
 
-## 5. Ownership Rules — Ai update gì
+## 5. Grading by Skill
 
-| Chuyển trạng thái | Trigger bởi | Update Main DB | Update Grading DB | Gửi callback |
-|-------------------|------------|----------------|-------------------|---------------|
-| Tạo submission (→ PENDING) | Main App API | Có (tạo mới) | Không | Không |
-| PENDING → QUEUED | Main App publisher | Có (status) | Không | Không |
-| QUEUED → PROCESSING | Grading worker | Không | Có (tạo job) | Có (progress) |
-| PROCESSING → REVIEW_PENDING | AMQP Consumer (Main App) | Có (status) | Không | Không |
-| PROCESSING → COMPLETED | AMQP Consumer (Main App) | Có (status + result) | Không | Không |
-| REVIEW_PENDING → COMPLETED | Instructor action (Main App) | Có (final result) | Không | Không |
-| → ERROR | Grading worker | Không | Có (error log) | Có (nếu hết retry) |
-| ERROR → RETRYING | Grading worker | Không | Có (status) | Không |
-| → FAILED (timeout) | Main App Scheduler | Có (status) | Không | Không |
-| Nhận callback (AMQP) | AMQP Consumer (Main App) | Có (status + result) | Không | Không (push SSE) |
-
-**Nguyên tắc bất biến**: Main DB chỉ được ghi bởi Main App. Grading DB chỉ được ghi bởi Grading Service. Giao tiếp qua AMQP queue.
+| Skill | Method | Uses Redis | Grading Pipeline |
+|-------|--------|------------|------------------|
+| Listening | Auto-grade (answer key comparison) | No | Sync in backend |
+| Reading | Auto-grade (answer key comparison) | No | Sync in backend |
+| Writing | Gemini (content) + grammar model | Yes | Async via worker |
+| Speaking | Whisper (STT) + Gemini (assessment) | Yes | Async via worker |
 
 ---
 
-## 6. Phân loại theo skill
+## 6. Submission Content by Skill
 
-| Skill | Grading method | Đi qua queue | SLA |
-|-------|---------------|--------------|-----|
-| Writing | AI (LLM) + optional human review | Có | 20 phút |
-| Speaking | STT + AI (LLM) + optional human review | Có | 60 phút |
-| Listening | Auto-grade bởi Main App (so sánh answer_key) | Không | Instant |
-| Reading | Auto-grade bởi Main App (so sánh answer_key) | Không | Instant |
+**Writing**: text content, word count, task type (email/essay), questionId. Graded on 4 VSTEP criteria: Task Achievement, Coherence & Cohesion, Lexical Resource, Grammatical Range & Accuracy.
 
-Listening/Reading submissions không đi qua state machine phức tạp — chúng được chấm ngay khi submit và chuyển thẳng sang COMPLETED.
+**Speaking**: audio URL, duration, part number (1/2/3), questionId. Pipeline: Whisper transcription → Gemini grading on Fluency, Pronunciation, Content, Vocabulary.
+
+**Listening/Reading**: answer map (`questionId → selectedAnswer`). Backend compares with stored answer key. Score on 0-10 scale with 0.5 steps.
 
 ---
 
-## 7. Nội dung submission theo skill
+## 7. Result Schema
 
-### Writing
-User gửi: nội dung bài viết (text), số từ, loại task (email hoặc essay). Grading Service đánh giá theo rubric VSTEP (task achievement, coherence & cohesion, lexical resource, grammatical range).
+All graded submissions store:
 
-### Speaking
-User gửi: file audio (URL), thời lượng, part number (1/2/3). Grading Service: STT transcribe → LLM grading (fluency, pronunciation, content, vocabulary).
+- `overallScore`: 0-10 (0.5 steps)
+- `band`: B1 / B2 / C1 (derived via `scoreToBand()`)
+- `gradingMode`: `auto` | `human`
 
-### Listening/Reading
-User gửi: map câu trả lời (question ID → answer). Main App so sánh với answer_key trong bảng questions để tính điểm ngay.
+Writing/Speaking additionally store in `submissionDetails`:
+
+- `criteriaScores`: per-criterion scores with feedback
+- `feedback`: strengths, weaknesses, suggestions
+- `confidence`: `high` | `medium` | `low`
+- `grammarErrors`: array (writing only)
+- `aiScore` + `humanScore`: preserved for audit
+- `auditFlag`: true when `|aiScore - humanScore| > 0.5`
 
 ---
 
-## 8. Kết quả chấm điểm (result schema)
+## 8. Data Lifecycle
 
-Khi grading hoàn thành:
-
-- Nếu auto-grade: submission chuyển COMPLETED và có final result.
-- Nếu review required: submission chuyển REVIEW_PENDING và lưu AI result; final result chỉ có sau human review.
-
-Result (AI hoặc final) bao gồm tối thiểu:
-- **Overall score**: Thang điểm 0-10
-- **VSTEP band**: A1, A2, B1, B2, C1
-- **Confidence**: 0-100%, quyết định auto-grade hay cần human review
-- **Criteria scores**: Điểm theo từng tiêu chí VSTEP với feedback riêng
-- **Feedback**: Strengths, weaknesses, suggestions cho cải thiện
-- **reviewPending + reviewPriority**: dùng cho routing và hàng chờ instructor
-- **gradingMode**: auto/human/hybrid
-
-Confidence threshold và routing logic: xem `hybrid-grading.md`.
+Hard delete with `ON DELETE CASCADE`. No soft delete. When a submission is deleted, all related `submissionDetails` rows cascade-delete.
 
 ---
 
 ## 9. Cross-references
 
-| Chủ đề | Tài liệu |
-|--------|-----------|
-| Queue message format | `../10-contracts/queue-contracts.md` |
-| Error handling & retry | `../40-platform/reliability.md` |
-| SSE status push | `../10-contracts/sse.md` |
-| Database tables | `../30-data/database-schema.md` |
-| API endpoints | `../10-contracts/api-endpoints.md` |
-| Confidence score & hybrid grading | `../../diagrams/flow-diagrams.vi.md` Section 5 |
+| Topic | Document |
+|-------|----------|
+| Grading pipeline & confidence | `hybrid-grading.md` |
+| Instructor review flow | `review-workflow.md` |
+| Redis task contract | `../10-contracts/queue-contracts.md` |

@@ -1,9 +1,8 @@
 import type { Actor } from "@common/auth-types";
 import { ROLES } from "@common/auth-types";
-import { BadRequestError } from "@common/errors";
 import { assertAccess, assertExists, escapeLike } from "@common/utils";
-import { db, notDeleted, paginated, table } from "@db/index";
-import { and, count, desc, eq, type SQL, sql } from "drizzle-orm";
+import { db, paginate, table } from "@db/index";
+import { and, desc, eq, sql } from "drizzle-orm";
 import type {
   QuestionCreateBody,
   QuestionListQuery,
@@ -13,8 +12,8 @@ import { QUESTION_COLUMNS } from "./schema";
 
 export async function getQuestionById(questionId: string) {
   const question = await db.query.questions.findFirst({
-    where: and(eq(table.questions.id, questionId), notDeleted(table.questions)),
-    columns: { answerKey: false, deletedAt: false },
+    where: eq(table.questions.id, questionId),
+    columns: { answerKey: false },
   });
 
   return assertExists(question, "Question");
@@ -23,35 +22,28 @@ export async function getQuestionById(questionId: string) {
 export async function listQuestions(query: QuestionListQuery, actor: Actor) {
   const admin = actor.is(ROLES.ADMIN);
   const where = and(
-    ...[
-      notDeleted(table.questions),
-      !admin && eq(table.questions.isActive, true),
-      admin &&
-        query.isActive !== undefined &&
-        eq(table.questions.isActive, query.isActive),
-      query.skill && eq(table.questions.skill, query.skill),
-      query.level && eq(table.questions.level, query.level),
-      query.format && eq(table.questions.format, query.format),
-      query.search &&
-        sql`${table.questions.content}::text ILIKE ${`%${escapeLike(query.search)}%`}`,
-    ].filter((c): c is SQL => Boolean(c)),
+    !admin ? eq(table.questions.isActive, true) : undefined,
+    admin && query.isActive !== undefined
+      ? eq(table.questions.isActive, query.isActive)
+      : undefined,
+    query.skill ? eq(table.questions.skill, query.skill) : undefined,
+    query.level ? eq(table.questions.level, query.level) : undefined,
+    query.format ? eq(table.questions.format, query.format) : undefined,
+    query.search
+      ? sql`${table.questions.content}::text ILIKE ${`%${escapeLike(query.search)}%`}`
+      : undefined,
   );
 
-  const pg = paginated(query.page, query.limit);
-  return pg.resolve({
-    count: db
-      .select({ count: count() })
-      .from(table.questions)
-      .where(where)
-      .then((r) => r[0]?.count ?? 0),
-    query: db
+  return paginate(
+    db
       .select(QUESTION_COLUMNS)
       .from(table.questions)
       .where(where)
       .orderBy(desc(table.questions.createdAt))
-      .limit(pg.limit)
-      .offset(pg.offset),
-  });
+      .$dynamic(),
+    db.$count(table.questions, where),
+    query,
+  );
 }
 
 export async function createQuestion(userId: string, body: QuestionCreateBody) {
@@ -91,10 +83,7 @@ export async function updateQuestion(
   return db.transaction(async (tx) => {
     const question = assertExists(
       await tx.query.questions.findFirst({
-        where: and(
-          eq(table.questions.id, questionId),
-          notDeleted(table.questions),
-        ),
+        where: eq(table.questions.id, questionId),
         columns: {
           id: true,
           createdBy: true,
@@ -150,50 +139,17 @@ export async function removeQuestion(questionId: string) {
   return db.transaction(async (tx) => {
     assertExists(
       await tx.query.questions.findFirst({
-        where: and(
-          eq(table.questions.id, questionId),
-          notDeleted(table.questions),
-        ),
+        where: eq(table.questions.id, questionId),
         columns: { id: true },
       }),
       "Question",
     );
 
-    const ts = new Date().toISOString();
     const [deleted] = await tx
-      .update(table.questions)
-      .set({ deletedAt: ts, updatedAt: ts })
+      .delete(table.questions)
       .where(eq(table.questions.id, questionId))
-      .returning({
-        id: table.questions.id,
-        deletedAt: table.questions.deletedAt,
-      });
+      .returning({ id: table.questions.id });
 
-    const removed = assertExists(deleted, "Question");
-    return { id: removed.id, deletedAt: removed.deletedAt ?? ts };
-  });
-}
-
-export async function restoreQuestion(questionId: string) {
-  return db.transaction(async (tx) => {
-    const question = assertExists(
-      await tx.query.questions.findFirst({
-        where: eq(table.questions.id, questionId),
-        columns: { id: true, deletedAt: true },
-      }),
-      "Question",
-    );
-
-    if (!question.deletedAt) {
-      throw new BadRequestError("Question is not deleted");
-    }
-
-    const [updated] = await tx
-      .update(table.questions)
-      .set({ deletedAt: null, updatedAt: new Date().toISOString() })
-      .where(eq(table.questions.id, questionId))
-      .returning(QUESTION_COLUMNS);
-
-    return assertExists(updated, "Question");
+    return assertExists(deleted, "Question");
   });
 }

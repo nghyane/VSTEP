@@ -2,72 +2,75 @@
 
 ## Purpose
 
-Tài liệu này chốt các quyết định kiến trúc/boundary để backend implement nhanh, ít vênh giữa Bun Main App và Python Grading Service.
+Tài liệu này chốt các quyết định kiến trúc/boundary để backend implement nhanh, ít vênh giữa Bun Main App và Python Grading Worker.
 
 ## Architecture Overview
 
 - Client (Web/Mobile) gọi Main App.
-- Main App lưu MainDB, dùng Redis cho cache/rate limit.
-- Writing/Speaking: publish `grading.request` → Grading Service xử lý → publish `grading.callback`.
-- Main App consume callback, update MainDB, push SSE.
+- Main App lưu PostgreSQL, dùng Redis cho cache/rate limit/grading queue.
+- Writing/Speaking: enqueue job vào Redis list → arq worker xử lý → ghi kết quả trực tiếp vào PostgreSQL.
+- Main App poll hoặc SSE để thông báo kết quả cho client.
 
 ```mermaid
 flowchart LR
-  C[Client] --> API[Main App]
-  API --> DB[(MainDB)]
+  C[Client] --> API[Main App - Bun/Elysia]
+  API --> DB[(PostgreSQL)]
   API --> R[(Redis)]
-  API -->|grading.request| MQ[(RabbitMQ)]
-  MQ -->|grading.request| G[Grading Service]
-  G -->|grading.callback| MQ
-  MQ -->|grading.callback| API
+  API -->|enqueue job| R
+  R -->|dequeue job| W[Grading Worker - Python/arq]
+  W -->|write results| DB
   API -->|SSE| C
 ```
 
 ## Scope
 
 - Main App: Bun + Elysia (TypeScript)
-- Grading Service: Python + Celery
-- Queue cross-service: RabbitMQ
-- DB: PostgreSQL tách MainDB/GradingDB (**Main App chỉ connect MainDB**)
-- Cache/rate limit: Redis
+- Grading Worker: Python + arq (async Redis-based task queue)
+- Queue: Redis list (arq protocol)
+- DB: PostgreSQL (shared — cả Main App và Grading Worker connect cùng DB)
+- Cache/rate limit: Redis (`import { redis } from "bun"` — built-in, no extra deps)
 - Real-time: SSE (default)
-- Auth: JWT access/refresh (baseline)
+- Auth: JWT access/refresh (jose + Bun.password Argon2id)
 
-> **Quan trọng**: Main App (Bun) **không bao giờ** connect trực tiếp đến GradingDB. Giao tiếp duy nhất giữa 2 service là qua RabbitMQ.
+> **Shared-DB**: Grading Worker ghi kết quả trực tiếp vào PostgreSQL. Không cần callback queue hay outbox pattern.
 
 ## Decisions
 
 ### Tech stack (final)
 
-| Component | Decision | Alternatives |
-|----------|----------|--------------|
-| Main App | Bun + Elysia | Node.js + Express, Deno |
-| Grading Service | Python + Celery | Rust, Go |
-| Message Queue | RabbitMQ (AMQP) | Redis Streams, Kafka |
-| Database | PostgreSQL (MainDB + GradingDB) | MySQL, CockroachDB |
-| Cache/Rate limit | Redis | Postgres-only |
-| Real-time | SSE | WebSocket |
-| Auth | JWT access + refresh | Server session |
+| Component | Decision | Rationale |
+|----------|----------|-----------|
+| Main App | Bun + Elysia | Fast runtime, TypeScript native |
+| Grading Worker | Python + arq | arq is lightweight Redis-based queue, simpler than Celery |
+| Task Queue | Redis list (arq) | Fewer moving parts than RabbitMQ, arq handles retry internally |
+| Database | PostgreSQL (single, shared) | Shared-DB eliminates need for callback queue/outbox |
+| Cache/Rate limit | Redis (Bun built-in) | `import { redis } from "bun"`, zero deps, 7.9x faster than ioredis |
+| Real-time | SSE | Elysia built-in `sse()`, sufficient for unidirectional updates |
+| Auth | JWT access + refresh | jose + Bun.password (Argon2id), web/mobile compatible |
 
 ### Library stack (Bun Main App)
 
 | Concern | Library | Rationale |
 |---------|---------|-----------|
-| AMQP client | `@cloudamqp/amqp-client` | Zero deps, TypeScript native, dùng `DataView` (Web API) thay vì `node:stream` — tránh Bun frame corruption bug. Maintained bởi CloudAMQP. **Không dùng amqplib** — có lỗi IPv6 (Bun #4791) và frame corruption (Bun #5627) do phụ thuộc `node:stream`. |
-| Redis client | `Bun.redis` (native) | Built-in Bun 1.3+, nhanh 7.9x so với ioredis, zero deps, auto-pipelining, auto-reconnect. Đủ cho rate limiting, cache, pub/sub, circuit breaker state. **Không dùng ioredis** — chỉ cần khi cluster mode hoặc Lua scripting phức tạp. |
-| SSE | Elysia built-in `sse()` | Tích hợp sẵn core Elysia (v1.3.4+), async generator + `yield sse({id, event, data, retry})`. Tự set `Content-Type: text/event-stream`, abort detection qua `request.signal`. **Không dùng @elysiajs/stream** — đã deprecated từ Elysia 1.1. |
-| Scores | Drizzle `numeric({ precision: 3, scale: 1, mode: 'number' })` | Exact decimal precision cho academic scores (0-10, step 0.5). **Không dùng `real()`** — PostgreSQL REAL (4-byte float) có floating-point errors. |
+| Redis client | `Bun.redis` (native) | Built-in Bun 1.3+, zero deps, auto-pipelining, auto-reconnect. Requires Redis 7.2+ (RESP3). |
+| SSE | Elysia built-in `sse()` | Tích hợp sẵn core Elysia (v1.3.4+), async generator + `yield sse({id, event, data, retry})`. |
+| Scores | Drizzle `numeric({ precision: 3, scale: 1, mode: 'number' })` | Exact decimal precision cho academic scores (0-10, step 0.5). |
+| ORM | Drizzle ORM | SQL-first, PostgreSQL-native features (partial indexes, JSONB, FOR UPDATE SKIP LOCKED). |
 
-### Rationale (ngắn)
+### Key architectural decisions
 
-- RabbitMQ + Celery: mature, có DLQ/retry tốt, dễ scale worker.
-- JWT access/refresh: dùng được cho web/mobile, không cần session state server.
-- Tách DB: giảm coupling, dễ audit.
-- Library chọn theo tiêu chí "tốt nhất cho Bun runtime", không phải "compatible".
+| Decision | Choice | Why |
+|----------|--------|-----|
+| Delete strategy | Hard delete + ON DELETE CASCADE | Simpler for capstone scope. No `deleted_at` columns, no soft-delete cleanup jobs. |
+| Grading pipeline | Shared-DB (worker writes directly to PostgreSQL) | Eliminates outbox pattern, callback queue, processed_callbacks table. |
+| Task queue | Redis + arq (not RabbitMQ + Celery) | Fewer moving parts. arq handles retry/backoff internally (max 3 retries). |
+| Submission states | 5-state machine (pending/processing/completed/review_pending/failed) | arq handles retry internally, no need for queued/retrying/error states. |
+| Review priority | 3 levels (low/medium/high) | Sufficient granularity for capstone. |
+| Grading mode | 3 values (auto/human/hybrid) | Covers all grading scenarios. |
+| Password hashing | Argon2id (`Bun.password`) | Built-in, more secure than bcrypt. |
 
 ## Contracts
 
-- Message contracts: `../10-contracts/queue-contracts.md`
 - Reliability rules: `../40-platform/reliability.md`
 - Auth rules: `../40-platform/authentication.md`
 - Deployment env: `../50-ops/deployment.md`
@@ -76,24 +79,24 @@ flowchart LR
 
 | Area | Risk | Mitigation |
 |------|------|------------|
-| Queue | duplicate deliveries | `requestId` idempotency |
-| Provider | 429/timeout | retry/backoff + cap + DLQ |
-| Outbox | publish fail | relay + retry |
+| Grading worker | job failure | arq retry (max 3, exponential backoff) |
+| Provider (LLM/STT) | 429/timeout | retry/backoff within arq worker |
 | Provider | cascading failure | circuit breaker (open at >50% failure rate, cooldown 30s) |
-| Auth | refresh token theft | rotation + revoke store |
+| Auth | refresh token theft | rotation + reuse detection + revoke store |
+| Redis | unavailable | graceful degradation (skip rate limiting, log warning) |
 
 ## Acceptance criteria
 
-- Tất cả service boundary (Main/Grading) giao tiếp qua queue contracts.
-- Quy tắc retry/timeout/late-result áp dụng nhất quán.
-- Auth baseline là JWT access/refresh, không còn session cookie baseline.
+- Grading worker reads from Redis queue, writes results to PostgreSQL.
+- Retry/backoff handled by arq (max 3 retries, exponential backoff).
+- Auth baseline là JWT access/refresh, rotation + reuse detection.
+- 5-state submission lifecycle enforced by state machine.
 
 ## Business rules defaults (Chốt)
 
-- Grading SLA: Writing 20 phút; Speaking 60 phút.
-- Timeout: quá `deadline` → `failed`; callback muộn lưu `isLate=true`, giữ `failed`.
-- Retry/backoff: `max_retries=3`, exponential + jitter, cap 5 phút, tôn trọng `Retry-After`.
+- Retry/backoff: `max_retries=3`, exponential + jitter (arq handles internally).
+- Review priority: 3 levels (low/medium/high).
 
 ---
 
-*Document version: 1.3 - Last updated: SP26SE145*
+*Document version: 2.0 - Last updated: SP26SE145*

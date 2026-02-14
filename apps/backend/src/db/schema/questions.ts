@@ -11,7 +11,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { createdAt, timestampsWithSoftDelete } from "./columns";
+import { createdAt, timestamps } from "./columns";
 import { skillEnum } from "./enums";
 import { users } from "./users";
 
@@ -56,12 +56,12 @@ export const questions = pgTable(
     createdBy: uuid("created_by").references(() => users.id, {
       onDelete: "set null",
     }),
-    ...timestampsWithSoftDelete,
+    ...timestamps,
   },
   (table) => ({
     activeIdx: index("questions_active_idx")
       .on(table.skill, table.level)
-      .where(sql`${table.isActive} = true AND ${table.deletedAt} IS NULL`),
+      .where(sql`${table.isActive} = true`),
     formatIdx: index("questions_format_idx").on(table.format),
     createdByIdx: index("questions_created_by_idx").on(table.createdBy),
   }),

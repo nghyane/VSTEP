@@ -7,13 +7,14 @@ import {
 } from "@common/scoring";
 import { assertExists } from "@common/utils";
 import type { DbTransaction } from "@db/index";
-import { db, notDeleted, table } from "@db/index";
+import { db, table } from "@db/index";
 import type { ObjectiveAnswerKey, SubmissionAnswer } from "@db/types/answers";
 import { and, eq, inArray } from "drizzle-orm";
 import {
   recordSkillScore,
   updateUserProgress,
 } from "@/modules/progress/service";
+import { dispatchGrading } from "@/modules/submissions/grading-dispatch";
 import { SESSION_COLUMNS } from "./schema";
 import type { ExamSessionStatus } from "./service";
 import { getActiveSession } from "./session";
@@ -130,12 +131,7 @@ export async function submitExam(sessionId: string, actor: Actor) {
         answerKey: table.questions.answerKey,
       })
       .from(table.questions)
-      .where(
-        and(
-          inArray(table.questions.id, questionIds),
-          notDeleted(table.questions),
-        ),
-      );
+      .where(inArray(table.questions.id, questionIds));
 
     const questionsMap = new Map(
       rows.map((q) => [q.id, { skill: q.skill, answerKey: q.answerKey }]),
@@ -166,31 +162,30 @@ export async function submitExam(sessionId: string, actor: Actor) {
         )
         .returning({ id: table.submissions.id });
 
+      const pairs = inserted.map((sub, i) => ({
+        sub,
+        pending: assertExists(pending[i], "Pending answer"),
+      }));
+
       await tx.insert(table.submissionDetails).values(
-        inserted.map((sub, i) => ({
+        pairs.map(({ sub, pending: p }) => ({
           submissionId: sub.id,
-          answer: assertExists(pending[i], "Pending answer").answer,
+          answer: p.answer,
         })),
       );
 
       await tx.insert(table.examSubmissions).values(
-        inserted.map((sub, i) => ({
+        pairs.map(({ sub, pending: p }) => ({
           sessionId,
           submissionId: sub.id,
-          skill: assertExists(pending[i], "Pending answer").skill,
+          skill: p.skill,
         })),
       );
 
-      await tx.insert(table.outbox).values(
-        inserted.map((sub, i) => ({
-          submissionId: sub.id,
-          messageType: "submission.pending_review",
-          payload: {
-            sessionId,
-            skill: assertExists(pending[i], "Pending answer").skill,
-            userId: session.userId,
-          },
-        })),
+      await Promise.all(
+        pairs.map(({ sub, pending: p }) =>
+          dispatchGrading(tx, sub.id, p.skill, p.questionId, p.answer),
+        ),
       );
     }
 
@@ -229,9 +224,7 @@ export async function submitExam(sessionId: string, actor: Actor) {
       await updateUserProgress(session.userId, "reading", tx);
     }
 
-    // TODO(P2): Calculate and persist overallScore on examSession
-    //   - After W/S submissions are graded (via outbox consumer callback), compute overall
-    //   - Currently writingScore, speakingScore, overallScore remain null
+    // TODO: Overall score calculated after grading service returns W/S results via callback
 
     return assertExists(updated, "Session");
   });

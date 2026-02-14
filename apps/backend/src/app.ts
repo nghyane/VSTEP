@@ -3,9 +3,9 @@ import { cors } from "@elysiajs/cors";
 import { openapi } from "@elysiajs/openapi";
 import { Elysia } from "elysia";
 import { auth } from "@/modules/auth";
-import { classesModule } from "@/modules/classes";
+import { classes } from "@/modules/classes";
 import { exams } from "@/modules/exams";
-import { healthModule } from "@/modules/health";
+import { health } from "@/modules/health";
 import { progress } from "@/modules/progress";
 import { questions } from "@/modules/questions";
 import { submissions } from "@/modules/submissions";
@@ -57,7 +57,7 @@ const api = new Elysia({ prefix: "/api" })
   .use(questions)
   .use(progress)
   .use(exams)
-  .use(classesModule);
+  .use(classes);
 
 /** Root app — health check outside /api, everything else inside */
 export const app = new Elysia()
@@ -74,5 +74,5 @@ export const app = new Elysia()
       credentials: true,
     }),
   )
-  .use(healthModule)
+  .use(health)
   .use(api);

@@ -8,18 +8,12 @@ import { createSelectSchema } from "drizzle-typebox";
 import { t } from "elysia";
 
 const OMITTED = [
-  "confidence",
-  "isLate",
-  "attempt",
-  "requestId",
   "reviewPriority",
   "reviewerId",
   "gradingMode",
   "auditFlag",
   "claimedBy",
   "claimedAt",
-  "deadline",
-  "deletedAt",
 ] as const;
 
 export const SUBMISSION_COLUMNS = omitColumns(
@@ -27,16 +21,7 @@ export const SUBMISSION_COLUMNS = omitColumns(
   OMITTED,
 );
 
-const QUEUE_OMITTED = [
-  "confidence",
-  "isLate",
-  "attempt",
-  "requestId",
-  "gradingMode",
-  "auditFlag",
-  "deadline",
-  "deletedAt",
-] as const;
+const QUEUE_OMITTED = ["gradingMode", "auditFlag"] as const;
 
 /** Includes review-specific columns (claimedBy, claimedAt, reviewPriority, reviewerId) */
 export const REVIEW_QUEUE_COLUMNS = omitColumns(
@@ -97,7 +82,7 @@ export const ReviewQueueQuery = t.Object({
   page: t.Optional(t.Number({ minimum: 1, default: 1 })),
   limit: t.Optional(t.Number({ minimum: 1, maximum: 100, default: 20 })),
   skill: t.Optional(Skill),
-  priority: t.Optional(t.UnionEnum(["low", "medium", "high", "critical"])),
+  priority: t.Optional(t.UnionEnum(["low", "medium", "high"])),
 });
 
 export const SubmissionReviewBody = t.Object({
@@ -117,9 +102,7 @@ export const ReviewQueueItem = t.Composite([
   t.Object({
     claimedBy: t.Nullable(t.String({ format: "uuid" })),
     claimedAt: t.Nullable(t.String({ format: "date-time" })),
-    reviewPriority: t.Nullable(
-      t.UnionEnum(["low", "medium", "high", "critical"]),
-    ),
+    reviewPriority: t.Nullable(t.UnionEnum(["low", "medium", "high"])),
     reviewerId: t.Nullable(t.String({ format: "uuid" })),
   }),
 ]);

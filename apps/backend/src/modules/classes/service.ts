@@ -3,7 +3,7 @@ import { ROLES } from "@common/auth-types";
 import { BadRequestError, ConflictError, ForbiddenError } from "@common/errors";
 import { assertExists, generateInviteCode } from "@common/utils";
 import { SKILLS } from "@db/enums";
-import { db, notDeleted, paginated, table } from "@db/index";
+import { db, paginate, table } from "@db/index";
 import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
 import {
   getAtRiskLearners,
@@ -22,7 +22,7 @@ import type {
 async function assertClassOwner(classId: string, actor: Actor) {
   const cls = assertExists(
     await db.query.classes.findFirst({
-      where: and(eq(table.classes.id, classId), notDeleted(table.classes)),
+      where: eq(table.classes.id, classId),
     }),
     "Class",
   );
@@ -65,8 +65,6 @@ export async function createClass(body: CreateClassBody, actor: Actor) {
 }
 
 export async function listClasses(query: ClassListQuery, actor: Actor) {
-  const pg = paginated(query.page, query.limit);
-
   const memberCountSq = db
     .select({ count: sql<number>`count(*)::int`.as("member_count") })
     .from(table.classMembers)
@@ -85,67 +83,43 @@ export async function listClasses(query: ClassListQuery, actor: Actor) {
     inviteCode: table.classes.inviteCode,
     createdAt: table.classes.createdAt,
     updatedAt: table.classes.updatedAt,
-    deletedAt: table.classes.deletedAt,
     memberCount: memberCountSq.as("memberCount"),
   };
 
   if (actor.is(ROLES.ADMIN)) {
-    const where = notDeleted(table.classes);
-    return pg.resolve({
-      count: db
-        .select({ count: count() })
-        .from(table.classes)
-        .where(where)
-        .then((r) => r[0]?.count ?? 0),
-      query: db
+    return paginate(
+      db
         .select(selectColumns)
         .from(table.classes)
-        .where(where)
         .orderBy(desc(table.classes.createdAt))
-        .limit(pg.limit)
-        .offset(pg.offset),
-    });
+        .$dynamic(),
+      db.$count(table.classes),
+      query,
+    );
   }
 
   if (actor.is(ROLES.INSTRUCTOR)) {
-    const where = and(
-      notDeleted(table.classes),
-      eq(table.classes.instructorId, actor.sub),
-    );
-    return pg.resolve({
-      count: db
-        .select({ count: count() })
-        .from(table.classes)
-        .where(where)
-        .then((r) => r[0]?.count ?? 0),
-      query: db
+    const where = eq(table.classes.instructorId, actor.sub);
+    return paginate(
+      db
         .select(selectColumns)
         .from(table.classes)
         .where(where)
         .orderBy(desc(table.classes.createdAt))
-        .limit(pg.limit)
-        .offset(pg.offset),
-    });
+        .$dynamic(),
+      db.$count(table.classes, where),
+      query,
+    );
   }
 
   // Learner: classes they are a member of
   const where = and(
-    notDeleted(table.classes),
     eq(table.classMembers.userId, actor.sub),
     isNull(table.classMembers.removedAt),
   );
 
-  return pg.resolve({
-    count: db
-      .select({ count: count() })
-      .from(table.classes)
-      .innerJoin(
-        table.classMembers,
-        eq(table.classMembers.classId, table.classes.id),
-      )
-      .where(where)
-      .then((r) => r[0]?.count ?? 0),
-    query: db
+  return paginate(
+    db
       .select(selectColumns)
       .from(table.classes)
       .innerJoin(
@@ -154,15 +128,24 @@ export async function listClasses(query: ClassListQuery, actor: Actor) {
       )
       .where(where)
       .orderBy(desc(table.classes.createdAt))
-      .limit(pg.limit)
-      .offset(pg.offset),
-  });
+      .$dynamic(),
+    db
+      .select({ count: count() })
+      .from(table.classes)
+      .innerJoin(
+        table.classMembers,
+        eq(table.classMembers.classId, table.classes.id),
+      )
+      .where(where)
+      .then((r) => r[0]?.count ?? 0),
+    query,
+  );
 }
 
 export async function getClassById(classId: string, actor: Actor) {
   const cls = assertExists(
     await db.query.classes.findFirst({
-      where: and(eq(table.classes.id, classId), notDeleted(table.classes)),
+      where: eq(table.classes.id, classId),
     }),
     "Class",
   );
@@ -230,18 +213,12 @@ export async function updateClass(
 export async function removeClass(classId: string, actor: Actor) {
   await assertClassOwner(classId, actor);
 
-  const ts = new Date().toISOString();
   const [deleted] = await db
-    .update(table.classes)
-    .set({ deletedAt: ts, updatedAt: ts })
+    .delete(table.classes)
     .where(eq(table.classes.id, classId))
-    .returning({
-      id: table.classes.id,
-      deletedAt: table.classes.deletedAt,
-    });
+    .returning({ id: table.classes.id });
 
-  const removed = assertExists(deleted, "Class");
-  return { id: removed.id, deletedAt: removed.deletedAt ?? ts };
+  return assertExists(deleted, "Class");
 }
 
 export async function rotateInviteCode(classId: string, actor: Actor) {
@@ -263,10 +240,7 @@ export async function joinClass(body: { inviteCode: string }, actor: Actor) {
   return db.transaction(async (tx) => {
     const cls = assertExists(
       await tx.query.classes.findFirst({
-        where: and(
-          eq(table.classes.inviteCode, body.inviteCode),
-          notDeleted(table.classes),
-        ),
+        where: eq(table.classes.inviteCode, body.inviteCode),
       }),
       "Invalid invite code",
     );
@@ -312,7 +286,7 @@ export async function joinClass(body: { inviteCode: string }, actor: Actor) {
 export async function leaveClass(classId: string, actor: Actor) {
   const cls = assertExists(
     await db.query.classes.findFirst({
-      where: and(eq(table.classes.id, classId), notDeleted(table.classes)),
+      where: eq(table.classes.id, classId),
       columns: { instructorId: true },
     }),
     "Class",
@@ -495,14 +469,12 @@ export async function listFeedback(
   query: FeedbackListQuery,
   actor: Actor,
 ) {
-  const pg = paginated(query.page, query.limit);
-
   const conditions = [eq(table.instructorFeedback.classId, classId)];
 
-  // Verify class exists and is not deleted
+  // Verify class exists
   const cls = assertExists(
     await db.query.classes.findFirst({
-      where: and(eq(table.classes.id, classId), notDeleted(table.classes)),
+      where: eq(table.classes.id, classId),
       columns: { id: true, instructorId: true },
     }),
     "Class",
@@ -521,18 +493,14 @@ export async function listFeedback(
 
   const where = and(...conditions);
 
-  return pg.resolve({
-    count: db
-      .select({ count: count() })
-      .from(table.instructorFeedback)
-      .where(where)
-      .then((r) => r[0]?.count ?? 0),
-    query: db
+  return paginate(
+    db
       .select()
       .from(table.instructorFeedback)
       .where(where)
       .orderBy(desc(table.instructorFeedback.createdAt))
-      .limit(pg.limit)
-      .offset(pg.offset),
-  });
+      .$dynamic(),
+    db.$count(table.instructorFeedback, where),
+    query,
+  );
 }

@@ -23,14 +23,14 @@ Mỗi phase có:
 | Module | Đã có | Thiếu so với spec |
 |--------|-------|-------------------|
 | **Auth** | Login, register, refresh rotation, logout, /me, macros | Max 3 tokens/user, reuse detection, jti claim, device tracking, `device_info` column |
-| **Users** | Full CRUD, soft-delete, ownership checks | — |
-| **Questions** | CRUD, versioning, restore, soft-delete | Content JSONB validation, `search_vector` + functional indexes, merge dual `skill` enum |
-| **Submissions** | CRUD, grade, auto-grade (exact match), events table, `numeric` scores, `vstep_band` enum | State machine enforcement, skill routing (MCQ auto vs queue), deadline, outbox relay, confidence routing, `submission_events.requestId/createdAt`, index alignment |
+| **Users** | Full CRUD, hard delete, ownership checks | — |
+| **Questions** | CRUD, versioning, hard delete | Content JSONB validation, `search_vector` + functional indexes |
+| **Submissions** | CRUD, grade, auto-grade (exact match), `numeric` scores, `vstep_band` enum, 5-state machine | Skill routing (MCQ auto vs Redis queue), Redis enqueue for writing/speaking |
 | **Progress** | Basic CRUD (create/update/list), `numeric` scores, `vstep_band` targetBand | Sliding window, trend, spider chart, ETA, overall band, update triggers |
 | **Exams** | CRUD, sessions, answers, complete, `numeric` scores, `submitted` status | Score calculation, exam→submission linking, section management |
 | **Goals** | Table exists | Toàn bộ API (CRUD) |
 | **SSE** | — | Toàn bộ |
-| **Queue** | Outbox table exists | Relay worker, RabbitMQ publish/consume, callback consumer |
+| **Queue** | — | Redis queue (arq), enqueue grading jobs, worker writes results to DB |
 | **Review** | — | Review queue, claim/release, merge rules |
 | **Rate limit** | Error class exists | Redis middleware, tier-based limits |
 | **Infra** | Error plugin, logger, env validation | /api prefix, health check, correlation IDs, structured logs |
@@ -52,11 +52,10 @@ Mỗi phase có:
 
 #### 1.2 Health check endpoint
 ```
-GET /health → { status: "ok", services: { db: "ok", redis: "ok" | "unavailable", rabbitmq: "ok" | "unavailable" } }
+GET /health → { status: "ok", services: { db: "ok", redis: "ok" | "unavailable" } }
 ```
 - Check PostgreSQL connection
 - Check Redis (graceful — trả unavailable nếu chưa cài)
-- Check RabbitMQ (graceful — trả unavailable nếu chưa cài)
 
 #### 1.3 Error code standardization
 - Thêm `TOKEN_EXPIRED` error code (tách khỏi `UNAUTHORIZED`) — spec yêu cầu riêng
@@ -100,7 +99,7 @@ GET /health → { status: "ok", services: { db: "ok", redis: "ok" | "unavailable
 POST /api/submissions { questionId, skill, answer }
 ```
 - **Listening/Reading**: auto-grade ngay (so answer_key) → status = `completed` → return result
-- **Writing/Speaking**: tạo submission `pending` → ghi outbox entry → return submission + deadline + SSE URL
+- **Writing/Speaking**: tạo submission `pending` → enqueue Redis job (arq) → return submission + SSE URL
 
 #### 2.2 Auto-grade listening/reading
 - Lookup `questions.answerKey` cho questionId
@@ -110,56 +109,37 @@ POST /api/submissions { questionId, skill, answer }
 - Set status = `completed`, ghi result vào `submissionDetails`
 - Ghi `submissionEvents` record (kind = `completed`)
 
-#### 2.3 Deadline computation
-- `deadline = createdAt + SLA(skill)`
-  - Writing: 20 phút
-  - Speaking: 60 phút
-  - Listening/Reading: N/A (instant)
-- Lưu vào `submissions.deadline` khi tạo writing/speaking submission
-
-#### 2.4 State machine enforcement
+#### 2.3 State machine enforcement
 - Service method `transitionStatus(submissionId, fromStatus, toStatus)` với allowed transitions:
   ```
-  pending → queued
-  queued → processing
-  processing → completed | review_pending | error
+  pending → processing
+  processing → completed | review_pending | failed
   review_pending → completed
-  error → retrying
-  retrying → processing
-  pending|queued|processing|error|retrying → failed
+  pending → failed
   ```
 - Reject invalid transitions with 409 CONFLICT
 
-#### 2.5 Outbox entry creation
-- Khi tạo writing/speaking submission, **trong cùng transaction**:
-  1. INSERT submission (status = pending)
-  2. INSERT submissionDetails
-  3. INSERT outbox (messageType = `grading.request`, payload = queue contract)
-- Outbox payload theo `queue-contracts.md`:
-  ```json
-  { "requestId": "...", "submissionId": "...", "skill": "writing", "answer": {...}, "questionId": "...", "deadline": "..." }
-  ```
+#### 2.4 Redis queue enqueue
+- Khi tạo writing/speaking submission:
+  1. INSERT submission (status = pending) + INSERT submissionDetails (in transaction)
+  2. Enqueue job vào Redis list (arq protocol) with `{ submissionId, skill, questionId }`
+  3. arq worker picks up job, calls LLM/STT, writes result directly to PostgreSQL
 
-#### 2.6 GET /api/submissions/:id/status
+#### 2.5 GET /api/submissions/:id/status
 - Polling fallback endpoint (khi SSE không khả dụng)
 - Return: `{ status, progress (nếu processing), result (nếu completed) }`
 
-#### 2.7 Schema alignment (verified mismatches)
-- **Merge dual skill enum**: `question_skill` (questions.ts) → dùng chung `skill` enum từ submissions.ts
-- **Submission indexes theo spec**:
-  - `user_history`: thêm `skill` column → `(userId, skill, createdAt) WHERE deletedAt IS NULL`
-  - Thêm `active_queue` partial index: `(status, createdAt) WHERE status IN ('pending','queued','processing','review_pending','error')`
-  - Xóa `review_queue` index (spec đã loại bỏ — volume thấp, sort in-memory đủ)
-  - Xóa các index thừa (`user_id`, `status`, `user_status`) — đã covered bởi các partial indexes trên
+#### 2.6 Schema alignment
+- Unified `skill` enum across all tables (shared from `enums.ts`)
+- No `deleted_at` columns (hard delete + ON DELETE CASCADE)
 
 ### Dependencies
 - Phase 1 (API prefix, requestId)
 
 ### Acceptance criteria
 - POST submission listening/reading → instant completed + score + result
-- POST submission writing → pending + outbox entry created + deadline set
+- POST submission writing → pending + Redis job enqueued
 - Invalid status transitions bị reject
-- Outbox entry created atomically với submission
 
 ---
 
@@ -208,7 +188,7 @@ PATCH  /api/goals/:id     — update goal (owner only)
 ### Deliverables
 
 #### 4.1 Sliding window computation
-- Per skill: query 10 attempts gần nhất (`status = completed`, không `is_late`)
+- Per skill: query 10 attempts gần nhất (`status = completed`)
 - Compute: `windowAvg`, `windowStdDev`
 - Nếu < 3 attempts: return `insufficient_data`
 
@@ -411,11 +391,6 @@ yield sse({ id: "5", event: "ping",
 - Server đọc từ `request.headers.get("Last-Event-ID")`
 - Replay missed events từ `submissionEvents` table
 
-#### 7.3.1 Schema alignment: submission_events
-- Thêm `requestId` column (UUID, nullable) — trace/debug cho events từ grading callback
-- Thêm `createdAt` column (TIMESTAMPTZ, default now) — tách biệt với `occurredAt` (thời điểm event xảy ra vs thời điểm ghi DB)
-- Thêm index `(requestId)` cho trace/debug
-
 #### 7.4 Heartbeat + lifecycle
 - Gửi `ping` event mỗi 30 giây (via `setInterval` + flag)
 - Max lifetime: 30 phút → close stream
@@ -425,7 +400,7 @@ yield sse({ id: "5", event: "ping",
 #### 7.5 SSE Hub (in-memory pub/sub)
 - Singleton `SSEHub` class: `Map<submissionId, Set<Subscriber>>`
 - `subscribe(submissionId)` → `{ iterator, unsubscribe }` — bounded buffer (100 events), backpressure drop oldest
-- `publish(submissionId, event)` — fan-out từ AMQP callback consumer
+- `publish(submissionId, event)` — fan-out khi grading worker updates submission status in DB
 - `closeChannel(submissionId)` — cleanup khi grading kết thúc
 - Subscriber tự unsubscribe khi `request.signal` aborted
 - Map entry tự xóa khi last subscriber disconnect → ngăn memory leak
@@ -442,68 +417,45 @@ yield sse({ id: "5", event: "ping",
 
 ---
 
-## Phase 8: RabbitMQ Integration
+## Phase 8: Redis Queue + Grading Worker Integration
 
-**Mục tiêu**: Reliable async grading pipeline.
+**Mục tiêu**: Reliable async grading pipeline via Redis + arq.
 
-**Spec refs**: `queue-contracts.md`, `reliability.md`
+**Spec refs**: `reliability.md`
 
 ### Deliverables
 
-#### 8.1 RabbitMQ connection
-- `@cloudamqp/amqp-client` dependency (zero deps, TypeScript native, tránh Bun `node:stream` bugs)
-- Connection từ `RABBITMQ_URL` env var
-- API: `new AMQPClient(url)` → `client.connect()` → `connection.channel()`
-- Graceful retry on connection failure
+#### 8.1 Redis queue (arq protocol)
+- Main App enqueues grading jobs vào Redis list using arq-compatible format
+- Redis connection via `import { redis } from "bun"` (built-in, no extra deps)
+- Requires Redis 7.2+ (RESP3 protocol)
 
-#### 8.2 Queue topology setup
-```typescript
-const channel = await connection.channel();
-await channel.exchangeDeclare("vstep.exchange", "direct", { durable: true });
-await channel.queueDeclare("grading.request", { durable: true });
-await channel.queueDeclare("grading.callback", { durable: true });
-await channel.queueDeclare("grading.dlq", { durable: true });
-await channel.queueBind("grading.request", "vstep.exchange", "grading.request");
-await channel.queueBind("grading.callback", "vstep.exchange", "grading.callback");
-await channel.queueBind("grading.dlq", "vstep.exchange", "grading.dlq");
-```
+#### 8.2 Grading worker (Python/arq)
+- arq worker consumes jobs from Redis list
+- Calls LLM/STT API with retry/backoff (arq handles internally, max 3 retries)
+- Writes results directly to PostgreSQL (shared-DB):
+  - UPDATE `submissions` set status/score/band/gradingMode
+  - UPDATE `submission_details` set result/feedback
+- No callback queue needed — shared-DB eliminates the need
 
-#### 8.3 Outbox relay worker
-- `setInterval` (configurable, default 1s)
-- Query: `SELECT * FROM outbox WHERE status = 'pending' ORDER BY created_at LIMIT 10`
-- For each: publish to `vstep.exchange` with routing key `grading.request`
-- On success: mark `status = 'published'`, set `sent_at`
-- On failure: increment `attempts`, set `error_message`; if attempts >= 5 → `status = 'failed'`
-- Lock mechanism: `locked_at + locked_by` to prevent duplicate relay in multi-instance
+#### 8.3 SSE notification on completion
+- Main App polls or uses Redis pub/sub to detect submission status changes
+- Broadcast SSE event to connected clients when grading completes
 
-#### 8.4 Callback consumer
-- Consume from `grading.callback` queue
-- Dedup by `eventId` → check `processedCallbacks` table
-- Parse callback `kind`:
-  - **progress**: update submission events, broadcast SSE
-  - **completed**: update submission status + result, broadcast SSE, trigger progress recompute
-  - **error**: update submission status, retry logic
-
-#### 8.5 Late callback handling
-- Nếu submission đã `failed` (timeout) khi callback đến:
-  - Store result với `is_late = true`
-  - Giữ nguyên status `failed`
-  - Không tính vào progress
-
-#### 8.6 Idempotency
-- `processedCallbacks.eventId` (UNIQUE) — dedup callbacks
-- `outbox` relay — check `status != 'published'` trước khi publish
-- `submissions.requestId` — dedup grading requests
+#### 8.4 Worker failure handling
+- arq handles retry internally (max 3 retries, exponential backoff)
+- After max retries exhausted: submission status set to `failed`
+- No DLQ — failed jobs logged by arq, admin can query `submissions WHERE status = 'failed'`
 
 ### Dependencies
-- Phase 2 (outbox entries, submission lifecycle)
-- Phase 7 (SSE broadcasting — nếu muốn push realtime)
+- Phase 2 (submission lifecycle)
+- Phase 7 (SSE broadcasting)
 
 ### Acceptance criteria
-- Outbox relay publish tất cả pending entries
-- Callback consumer dedup theo eventId
-- Late callback stored nhưng không thay đổi FAILED status
-- Queue topology tự tạo on startup
+- Grading job enqueued in Redis when writing/speaking submission created
+- arq worker processes job and writes result to PostgreSQL
+- Submission status updates to completed/failed after grading
+- SSE notification sent on completion
 
 ---
 
@@ -520,9 +472,9 @@ await channel.queueBind("grading.dlq", "vstep.exchange", "grading.dlq");
 GET /api/admin/submissions/pending-review
 ```
 - Filter: `status = 'review_pending'`
-- Sort: `reviewPriority` (critical > high > medium > low), then FIFO
+- Sort: `reviewPriority` (high > medium > low), then FIFO
 - Pagination
-- Include: submission info + AI result + question + confidence
+- Include: submission info + AI result + question
 
 #### 9.2 Claim mechanism
 ```
@@ -581,44 +533,35 @@ Update:
 
 ---
 
-## Phase 10: Timeout & Reliability
+## Phase 10: Reliability & Circuit Breaker
 
-**Mục tiêu**: Phát hiện timeout, xử lý DLQ, circuit breaker.
+**Mục tiêu**: Circuit breaker cho LLM/STT providers, failed job monitoring.
 
-**Spec refs**: `reliability.md`, `submission-lifecycle.md` §4.4
+**Spec refs**: `reliability.md`
 
 ### Deliverables
 
-#### 10.1 Timeout scheduler
-- `setInterval` mỗi 60 giây (configurable via `TIMEOUT_CHECK_INTERVAL_MS`)
-- Query: `status IN ('pending','queued','processing','error','retrying') AND deadline < NOW()`
-- Action: update `status = 'failed'`, log event, broadcast SSE `failed` + reason `TIMEOUT`
-- Redis lock nếu multi-instance (`lock:timeout-scheduler`)
+#### 10.1 Circuit breaker (grading worker)
+- Store circuit breaker state in Redis
+- Open when failure rate > 50% over 20 requests, cooldown 30s, trial 3 requests
+- When open: worker skips LLM/STT calls, marks job for retry after cooldown
 
-#### 10.2 DELAYED state (soft timeout)
-- Khi queue depth > threshold (configurable, default 1000):
-  - Không fail submission
-  - SSE notification: "Hệ thống đang bận, kết quả sẽ có muộn hơn dự kiến"
-  - Khi hoàn thành: DELAYED → COMPLETED bình thường
+#### 10.2 Failed job monitoring
+- Admin endpoint: `GET /api/admin/submissions?status=failed` — list failed grading jobs
+- arq handles retry internally (max 3 retries, exponential backoff)
+- After max retries: submission status = `failed`, logged for admin review
 
-#### 10.3 DLQ monitoring
-- Consume `grading.dlq` queue
-- Log DLQ entries vào DB hoặc alert
-- Admin endpoint: `GET /api/admin/dlq` — list failed jobs
-
-#### 10.4 Circuit breaker state (informational)
-- Store circuit breaker state in Redis (cho Grading Service đọc)
-- Admin endpoint: `GET /api/admin/circuit-breaker` — xem trạng thái
+#### 10.3 Circuit breaker admin endpoint
+- `GET /api/admin/circuit-breaker` — view current state (open/closed/half-open)
 
 ### Dependencies
-- Phase 8 (RabbitMQ)
+- Phase 8 (Redis queue + grading worker)
 - Phase 6 (Redis)
 
 ### Acceptance criteria
-- Submissions quá deadline → FAILED(TIMEOUT)
-- Late callback sau timeout → stored is_late, status giữ FAILED
-- DLQ entries viewable by admin
-- Timeout scheduler chạy đúng interval
+- Circuit breaker opens at >50% failure rate
+- Failed submissions queryable by admin
+- arq retry exhaustion results in `failed` status
 
 ---
 
@@ -660,7 +603,7 @@ GET /api/exams/:id
 
 ### Dependencies
 - Phase 2 (auto-grading, submission lifecycle)
-- Phase 8 (queue — for writing/speaking grading)
+- Phase 8 (Redis queue — for writing/speaking grading)
 
 ### Acceptance criteria
 - Submit exam → listening/reading scored instantly
@@ -684,7 +627,6 @@ GET  /api/admin/users                      — list users (đã có qua /api/use
 PUT  /api/admin/users/:id/role             — change role
 GET  /api/admin/submissions/pending-review  — Phase 9
 GET  /api/admin/submissions/stats          — submission distribution, avg grading time
-GET  /api/admin/dlq                        — Phase 10
 GET  /api/admin/circuit-breaker            — Phase 10
 ```
 
@@ -694,9 +636,8 @@ GET  /api/admin/circuit-breaker            — Phase 10
 - Log levels: debug/info/warn/error
 
 #### 12.3 Correlation ID propagation
-- `requestId` (HTTP) → inject vào outbox payload → `traceId` trong queue messages
-- Callback consumer: extract `traceId` và attach to processing context
-- Logs trong callback processing include `traceId`
+- `requestId` (HTTP) → inject vào grading job metadata
+- Grading worker logs include `requestId` for tracing
 
 #### 12.4 Metrics endpoints (optional)
 ```
@@ -704,9 +645,9 @@ GET /api/admin/metrics
 ```
 - HTTP latency p50/p95
 - Error rate
-- Outbox backlog count
 - Active SSE connections
 - Review queue size
+- Redis queue depth
 
 ### Dependencies
 - Phase 1 (requestId)
@@ -714,7 +655,7 @@ GET /api/admin/metrics
 
 ### Acceptance criteria
 - All logs JSON structured với requestId
-- Correlation từ HTTP → queue → callback logs
+- Correlation từ HTTP → Redis queue → grading worker logs
 - Admin role required cho tất cả /admin endpoints
 
 ---
@@ -727,29 +668,21 @@ GET /api/admin/metrics
 
 ### Deliverables
 
-#### 13.1 Scheduled cleanup jobs
-- `setInterval` hoặc `pg_cron`:
-  - `processedCallbacks`: delete WHERE `processedAt < NOW() - 7 days`
-  - `submissionEvents`: delete WHERE `occurredAt < NOW() - 7 days`
-  - `outbox`: delete WHERE `status = 'published' AND sentAt < NOW() - 3 days`
-
-#### 13.2 Refresh token cleanup
+#### 13.1 Refresh token cleanup
 - Delete expired + revoked tokens older than 30 days
 - Already somewhat handled by rotation, but periodic cleanup prevents table bloat
 
-#### 13.3 User deletion (anonymization)
-- Khi admin soft-delete user:
-  - Revoke all refresh tokens
-  - Anonymize PII: email → hash, fullName → null
-- `DELETE /api/users/:id` đã có soft-delete; thêm anonymization
+#### 13.2 User deletion
+- Hard delete user (ON DELETE CASCADE removes all related data)
+- Revoke all refresh tokens before delete
+- `DELETE /api/users/:id` performs hard delete
 
 ### Dependencies
 - Phase 1
 
 ### Acceptance criteria
-- Cleanup jobs chạy đúng schedule
-- Expired data bị xóa theo retention rules
-- User deletion anonymizes PII
+- Expired refresh tokens cleaned up periodically
+- User deletion cascades to all related data
 
 ---
 
@@ -761,9 +694,9 @@ Phase 1 (Foundation)
 │   ├── Phase 4 (Progress engine) ← Phase 2, Phase 3
 │   │   └── Phase 5 (Scaffolding) ← Phase 4
 │   ├── Phase 7 (SSE) ← Phase 2
-│   ├── Phase 8 (RabbitMQ) ← Phase 2, Phase 7
+│   ├── Phase 8 (Redis queue + arq) ← Phase 2, Phase 7
 │   │   ├── Phase 9 (Review) ← Phase 6, Phase 7, Phase 8
-│   │   ├── Phase 10 (Timeout) ← Phase 6, Phase 8
+│   │   ├── Phase 10 (Reliability) ← Phase 6, Phase 8
 │   │   └── Phase 11 (Exam scoring) ← Phase 2, Phase 8
 │   └── Phase 12 (Admin) ← Phase 1, Phase 8
 ├── Phase 3 (Goals) ← Phase 1
@@ -823,7 +756,7 @@ Schema reference: `question-content-schemas.md`
 | `errors.md` | 1 |
 | `authentication.md` | 1 |
 | `submission-lifecycle.md` | 2, 8, 10 |
-| `queue-contracts.md` | 8 |
+| ~~`queue-contracts.md`~~ | ~~8~~ (replaced by Redis queue) |
 | `sse.md` | 7 |
 | `hybrid-grading.md` | 8, 9 |
 | `review-workflow.md` | 9 |
@@ -837,4 +770,4 @@ Schema reference: `question-content-schemas.md`
 | `observability.md` | 12 |
 | `data-retention-privacy.md` | 13 |
 | `deployment.md` | all (Docker, env vars) |
-| `idempotency-concurrency.md` | 8 |
+| `idempotency-concurrency.md` | 8, 9 |

@@ -15,12 +15,12 @@ const JSONB_REFINE = {
   answerKey: t.Nullable(ObjectiveAnswerKey),
 };
 
-const { answerKey: _, deletedAt: __, ...columns } = getTableColumns(questions);
+const { answerKey: _, ...columns } = getTableColumns(questions);
 export const QUESTION_COLUMNS = columns;
 
 const SelectQuestion = createSelectSchema(questions, JSONB_REFINE);
 
-export const Question = t.Omit(SelectQuestion, ["answerKey", "deletedAt"]);
+export const Question = t.Omit(SelectQuestion, ["answerKey"]);
 export type Question = typeof Question.static;
 
 export const QuestionVersion = createSelectSchema(

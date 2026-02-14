@@ -2,7 +2,7 @@ import { Elysia } from "elysia";
 import { HealthResponse } from "./schema";
 import { checkHealth } from "./service";
 
-export const healthModule = new Elysia({
+export const health = new Elysia({
   name: "module:health",
   prefix: "/health",
   detail: { tags: ["Health"] },

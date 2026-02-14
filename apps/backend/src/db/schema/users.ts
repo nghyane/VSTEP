@@ -9,7 +9,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { createdAt, timestampsWithSoftDelete } from "./columns";
+import { createdAt, timestamps } from "./columns";
 
 export const userRoleEnum = pgEnum("user_role", [
   "learner",
@@ -25,16 +25,11 @@ export const users = pgTable(
     passwordHash: varchar("password_hash", { length: 255 }).notNull(),
     fullName: varchar("full_name", { length: 255 }),
     role: userRoleEnum("role").default("learner").notNull(),
-    ...timestampsWithSoftDelete,
+    ...timestamps,
   },
   (table) => ({
-    emailUnique: uniqueIndex("users_email_unique")
-      .on(table.email)
-      .where(sql`${table.deletedAt} IS NULL`),
+    emailUnique: uniqueIndex("users_email_unique").on(table.email),
     roleIdx: index("users_role_idx").on(table.role),
-    activeIdx: index("users_active_idx")
-      .on(table.id)
-      .where(sql`${table.deletedAt} IS NULL`),
   }),
 );
 

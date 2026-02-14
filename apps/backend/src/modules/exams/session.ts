@@ -2,7 +2,7 @@ import type { Actor } from "@common/auth-types";
 import { BadRequestError, ConflictError } from "@common/errors";
 import { assertAccess, assertExists } from "@common/utils";
 import type { DbTransaction } from "@db/index";
-import { db, notDeleted, table } from "@db/index";
+import { db, table } from "@db/index";
 import type { SubmissionAnswer } from "@db/types/answers";
 import type { ExamBlueprint } from "@db/types/grading";
 import { and, eq, sql } from "drizzle-orm";
@@ -35,9 +35,7 @@ export async function getActiveSession(
       examId: table.examSessions.examId,
     })
     .from(table.examSessions)
-    .where(
-      and(eq(table.examSessions.id, sessionId), notDeleted(table.examSessions)),
-    )
+    .where(eq(table.examSessions.id, sessionId))
     .limit(1);
 
   const s = assertExists(session, "Session");
@@ -66,7 +64,7 @@ export async function startExamSession(userId: string, examId: string) {
   return db.transaction(async (tx) => {
     const exam = assertExists(
       await tx.query.exams.findFirst({
-        where: and(eq(table.exams.id, examId), notDeleted(table.exams)),
+        where: eq(table.exams.id, examId),
         columns: { id: true, isActive: true },
       }),
       "Exam",
@@ -82,7 +80,6 @@ export async function startExamSession(userId: string, examId: string) {
           eq(table.examSessions.userId, userId),
           eq(table.examSessions.examId, examId),
           eq(table.examSessions.status, "in_progress"),
-          notDeleted(table.examSessions),
         ),
       )
       .limit(1);
@@ -105,11 +102,7 @@ export async function startExamSession(userId: string, examId: string) {
 
 export async function getExamSessionById(sessionId: string, actor: Actor) {
   const session = await db.query.examSessions.findFirst({
-    where: and(
-      eq(table.examSessions.id, sessionId),
-      notDeleted(table.examSessions),
-    ),
-    columns: { deletedAt: false },
+    where: eq(table.examSessions.id, sessionId),
   });
 
   const s = assertExists(session, "Session");

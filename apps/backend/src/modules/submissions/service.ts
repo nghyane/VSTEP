@@ -1,8 +1,3 @@
-// TODO(P1): Record submissionEvents on every status transition
-//   - Insert into submissionEvents table with kind + data JSONB
-//   - Kinds: "created", "status_changed", "auto_graded", "manually_graded", "claimed", "released"
-//   - Currently submissionEvents table is defined but never populated
-
 import type { Actor } from "@common/auth-types";
 import { ROLES } from "@common/auth-types";
 import { BadRequestError, ConflictError } from "@common/errors";
@@ -10,13 +5,14 @@ import { scoreToBand } from "@common/scoring";
 import { createStateMachine } from "@common/state-machine";
 import { assertAccess, assertExists } from "@common/utils";
 import type { DbTransaction } from "@db/index";
-import { db, notDeleted, paginated, table } from "@db/index";
+import { db, paginate, table } from "@db/index";
 import type { submissionStatusEnum } from "@db/schema/submissions";
-import { and, count, desc, eq, type SQL } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import {
   recordSkillScore,
   updateUserProgress,
 } from "@/modules/progress/service";
+import { dispatchGrading } from "./grading-dispatch";
 import type {
   SubmissionCreateBody,
   SubmissionGradeBody,
@@ -33,19 +29,17 @@ const DETAIL_COLUMNS = {
 
 type SubmissionStatus = (typeof submissionStatusEnum.enumValues)[number];
 
+const REVIEW_PENDING = "review_pending" satisfies SubmissionStatus;
+
 export const submissionMachine = createStateMachine<SubmissionStatus>({
-  pending: ["queued", "failed"],
-  queued: ["processing", "failed"],
-  processing: ["completed", "review_pending", "error", "failed"],
-  // biome-ignore lint/style/useNamingConvention: must match DB enum value
-  review_pending: ["completed"],
-  error: ["retrying"],
-  retrying: ["processing", "failed"],
+  pending: ["processing", "failed"],
+  processing: ["completed", REVIEW_PENDING, "failed"],
+  [REVIEW_PENDING]: ["completed"],
   completed: [],
   failed: [],
 });
 
-const MUTABLE_STATUSES: SubmissionStatus[] = ["pending", "error"];
+const MUTABLE_STATUSES: SubmissionStatus[] = ["pending"];
 const GRADABLE_STATUSES: SubmissionStatus[] = ["review_pending", "processing"];
 
 export async function fetchDetails(tx: DbTransaction, submissionId: string) {
@@ -65,10 +59,7 @@ export async function fetchDetails(tx: DbTransaction, submissionId: string) {
 export async function getSubmissionById(submissionId: string, actor: Actor) {
   const row = assertExists(
     await db.query.submissions.findFirst({
-      where: and(
-        eq(table.submissions.id, submissionId),
-        notDeleted(table.submissions),
-      ),
+      where: eq(table.submissions.id, submissionId),
       columns: SUBMISSION_EXCLUDE,
       with: {
         details: { columns: { answer: true, result: true, feedback: true } },
@@ -95,25 +86,18 @@ export async function listSubmissions(
   actor: Actor,
 ) {
   const where = and(
-    ...[
-      notDeleted(table.submissions),
-      !actor.is(ROLES.ADMIN) && eq(table.submissions.userId, actor.sub),
-      actor.is(ROLES.ADMIN) &&
-        query.userId &&
-        eq(table.submissions.userId, query.userId),
-      query.skill && eq(table.submissions.skill, query.skill),
-      query.status && eq(table.submissions.status, query.status),
-    ].filter((c): c is SQL => Boolean(c)),
+    !actor.is(ROLES.ADMIN)
+      ? eq(table.submissions.userId, actor.sub)
+      : undefined,
+    actor.is(ROLES.ADMIN) && query.userId
+      ? eq(table.submissions.userId, query.userId)
+      : undefined,
+    query.skill ? eq(table.submissions.skill, query.skill) : undefined,
+    query.status ? eq(table.submissions.status, query.status) : undefined,
   );
 
-  const pg = paginated(query.page, query.limit);
-  return pg.resolve({
-    count: db
-      .select({ count: count() })
-      .from(table.submissions)
-      .where(where)
-      .then((r) => r[0]?.count ?? 0),
-    query: db
+  return paginate(
+    db
       .select({ ...SUBMISSION_COLUMNS, ...DETAIL_COLUMNS })
       .from(table.submissions)
       .leftJoin(
@@ -122,9 +106,10 @@ export async function listSubmissions(
       )
       .where(where)
       .orderBy(desc(table.submissions.createdAt))
-      .limit(pg.limit)
-      .offset(pg.offset),
-  });
+      .$dynamic(),
+    db.$count(table.submissions, where),
+    query,
+  );
 }
 
 export async function createSubmission(
@@ -134,10 +119,7 @@ export async function createSubmission(
   return db.transaction(async (tx) => {
     const question = assertExists(
       await tx.query.questions.findFirst({
-        where: and(
-          eq(table.questions.id, body.questionId),
-          notDeleted(table.questions),
-        ),
+        where: eq(table.questions.id, body.questionId),
         columns: { id: true, skill: true, isActive: true },
       }),
       "Question",
@@ -164,7 +146,25 @@ export async function createSubmission(
       answer: body.answer,
     });
 
-    return { ...submission, answer: body.answer, result: null, feedback: null };
+    const result = {
+      ...submission,
+      answer: body.answer,
+      result: null,
+      feedback: null,
+    };
+
+    // Auto-trigger AI grading for writing/speaking
+    if (question.skill === "writing" || question.skill === "speaking") {
+      await dispatchGrading(
+        tx,
+        submission.id,
+        question.skill,
+        question.id,
+        body.answer,
+      );
+    }
+
+    return result;
   });
 }
 
@@ -176,10 +176,7 @@ export async function updateSubmission(
   return db.transaction(async (tx) => {
     const submission = assertExists(
       await tx.query.submissions.findFirst({
-        where: and(
-          eq(table.submissions.id, submissionId),
-          notDeleted(table.submissions),
-        ),
+        where: eq(table.submissions.id, submissionId),
         columns: { id: true, userId: true, status: true },
       }),
       "Submission",
@@ -251,10 +248,7 @@ export async function gradeSubmission(
   return db.transaction(async (tx) => {
     const submission = assertExists(
       await tx.query.submissions.findFirst({
-        where: and(
-          eq(table.submissions.id, submissionId),
-          notDeleted(table.submissions),
-        ),
+        where: eq(table.submissions.id, submissionId),
         columns: { id: true, status: true, userId: true, skill: true },
       }),
       "Submission",
@@ -306,10 +300,7 @@ export async function removeSubmission(submissionId: string, actor: Actor) {
   return db.transaction(async (tx) => {
     const submission = assertExists(
       await tx.query.submissions.findFirst({
-        where: and(
-          eq(table.submissions.id, submissionId),
-          notDeleted(table.submissions),
-        ),
+        where: eq(table.submissions.id, submissionId),
         columns: { id: true, userId: true },
       }),
       "Submission",
@@ -321,17 +312,11 @@ export async function removeSubmission(submissionId: string, actor: Actor) {
       "You can only delete your own submissions",
     );
 
-    const ts = new Date().toISOString();
     const [deleted] = await tx
-      .update(table.submissions)
-      .set({ deletedAt: ts, updatedAt: ts })
+      .delete(table.submissions)
       .where(eq(table.submissions.id, submissionId))
-      .returning({
-        id: table.submissions.id,
-        deletedAt: table.submissions.deletedAt,
-      });
+      .returning({ id: table.submissions.id });
 
-    const removed = assertExists(deleted, "Submission");
-    return { id: removed.id, deletedAt: removed.deletedAt ?? ts };
+    return assertExists(deleted, "Submission");
   });
 }

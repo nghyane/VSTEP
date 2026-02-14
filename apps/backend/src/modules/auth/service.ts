@@ -3,7 +3,7 @@ import { JWT_SECRET_KEY, MAX_REFRESH_TOKENS_PER_USER } from "@common/constants";
 import { env } from "@common/env";
 import { ConflictError, UnauthorizedError } from "@common/errors";
 import { normalizeEmail } from "@common/utils";
-import { db, notDeleted, table } from "@db/index";
+import { db, table } from "@db/index";
 import { and, asc, eq, gt, inArray, isNull } from "drizzle-orm";
 import { SignJWT } from "jose";
 import { hashToken, parseExpiry } from "./helpers";
@@ -42,7 +42,7 @@ export async function login(body: LoginBody, deviceInfo?: string) {
   const email = normalizeEmail(body.email);
 
   const row = await db.query.users.findFirst({
-    where: and(eq(table.users.email, email), notDeleted(table.users)),
+    where: eq(table.users.email, email),
     columns: {
       id: true,
       email: true,
@@ -189,7 +189,7 @@ export async function refresh(refreshToken: string, deviceInfo?: string) {
   // Happy path: issue a new token pair inside a transaction.
   return db.transaction(async (tx) => {
     const user = await tx.query.users.findFirst({
-      where: and(eq(table.users.id, rotated.userId), notDeleted(table.users)),
+      where: eq(table.users.id, rotated.userId),
       columns: { id: true, email: true, fullName: true, role: true },
     });
 

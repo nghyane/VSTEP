@@ -1,24 +1,10 @@
-// TODO(P1): Record submissionEvents on claim/release/review transitions
-//   - Insert into submissionEvents table with kind + data JSONB
-//   - Kinds: "claimed", "released", "manually_graded"
-
 import type { Actor } from "@common/auth-types";
 import { ROLES } from "@common/auth-types";
 import { BadRequestError, ConflictError, ForbiddenError } from "@common/errors";
 import { scoreToBand } from "@common/scoring";
 import { assertExists } from "@common/utils";
-import { db, notDeleted, paginated, table } from "@db/index";
-import {
-  and,
-  asc,
-  count,
-  eq,
-  isNull,
-  lt,
-  or,
-  type SQL,
-  sql,
-} from "drizzle-orm";
+import { db, paginate, table } from "@db/index";
+import { and, asc, eq, isNull, lt, or, sql } from "drizzle-orm";
 import {
   recordSkillScore,
   updateUserProgress,
@@ -33,40 +19,29 @@ import { fetchDetails } from "./service";
 
 const CLAIM_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
 
-function bandIndex(band: string | null): number {
-  const map: Record<string, number> = { A1: 1, A2: 2, B1: 3, B2: 4, C1: 5 };
-  return band ? (map[band] ?? 0) : 0;
-}
-
 const priorityOrder = sql`CASE ${table.submissions.reviewPriority}
-  WHEN 'critical' THEN 1 WHEN 'high' THEN 2
-  WHEN 'medium' THEN 3 WHEN 'low' THEN 4 ELSE 5 END`;
+  WHEN 'high' THEN 1 WHEN 'medium' THEN 2
+  WHEN 'low' THEN 3 ELSE 4 END`;
 
 export async function getReviewQueue(query: ReviewQueueQuery, _actor: Actor) {
   const where = and(
-    ...[
-      eq(table.submissions.status, "review_pending"),
-      notDeleted(table.submissions),
-      query.skill && eq(table.submissions.skill, query.skill),
-      query.priority && eq(table.submissions.reviewPriority, query.priority),
-    ].filter((c): c is SQL => Boolean(c)),
+    eq(table.submissions.status, "review_pending"),
+    query.skill ? eq(table.submissions.skill, query.skill) : undefined,
+    query.priority
+      ? eq(table.submissions.reviewPriority, query.priority)
+      : undefined,
   );
 
-  const pg = paginated(query.page, query.limit);
-  return pg.resolve({
-    count: db
-      .select({ count: count() })
-      .from(table.submissions)
-      .where(where)
-      .then((r) => r[0]?.count ?? 0),
-    query: db
+  return paginate(
+    db
       .select(REVIEW_QUEUE_COLUMNS)
       .from(table.submissions)
       .where(where)
       .orderBy(priorityOrder, asc(table.submissions.createdAt))
-      .limit(pg.limit)
-      .offset(pg.offset),
-  });
+      .$dynamic(),
+    db.$count(table.submissions, where),
+    query,
+  );
 }
 
 export async function claimSubmission(submissionId: string, actor: Actor) {
@@ -77,7 +52,6 @@ export async function claimSubmission(submissionId: string, actor: Actor) {
         where: and(
           eq(table.submissions.id, submissionId),
           eq(table.submissions.status, "review_pending"),
-          notDeleted(table.submissions),
         ),
         columns: { id: true },
       }),
@@ -93,7 +67,6 @@ export async function claimSubmission(submissionId: string, actor: Actor) {
         and(
           eq(table.submissions.id, submissionId),
           eq(table.submissions.status, "review_pending"),
-          notDeleted(table.submissions),
           or(
             isNull(table.submissions.claimedBy),
             lt(
@@ -124,7 +97,6 @@ export async function releaseSubmission(submissionId: string, actor: Actor) {
         where: and(
           eq(table.submissions.id, submissionId),
           eq(table.submissions.status, "review_pending"),
-          notDeleted(table.submissions),
         ),
         columns: { id: true, claimedBy: true },
       }),
@@ -144,7 +116,6 @@ export async function releaseSubmission(submissionId: string, actor: Actor) {
         and(
           eq(table.submissions.id, submissionId),
           eq(table.submissions.status, "review_pending"),
-          notDeleted(table.submissions),
           actor.is(ROLES.ADMIN)
             ? undefined
             : eq(table.submissions.claimedBy, actor.sub),
@@ -170,10 +141,7 @@ export async function submitReview(
   return db.transaction(async (tx) => {
     const submission = assertExists(
       await tx.query.submissions.findFirst({
-        where: and(
-          eq(table.submissions.id, submissionId),
-          notDeleted(table.submissions),
-        ),
+        where: eq(table.submissions.id, submissionId),
         columns: {
           id: true,
           status: true,
@@ -181,7 +149,6 @@ export async function submitReview(
           skill: true,
           score: true,
           band: true,
-          confidence: true,
           claimedBy: true,
         },
       }),
@@ -200,36 +167,20 @@ export async function submitReview(
 
     // Fetch AI result from details
     const details = await fetchDetails(tx, submissionId);
+    const existingResult =
+      typeof details.result === "object" && details.result !== null
+        ? details.result
+        : null;
 
-    // Merge rule: AI vs human score
-    const aiScore = submission.score;
-    const humanScore = body.overallScore;
-    let finalScore: number;
-    let gradingMode: "human" | "hybrid";
-    let auditFlag = false;
-
-    if (aiScore != null) {
-      const scoreDiff = Math.abs(aiScore - humanScore);
-      const bandStepDiff = Math.abs(
-        bandIndex(submission.band) - bandIndex(body.band ?? null),
-      );
-
-      if (scoreDiff <= 0.5 && bandStepDiff <= 1) {
-        finalScore = aiScore * 0.4 + humanScore * 0.6;
-        gradingMode = "hybrid";
-      } else {
-        finalScore = humanScore;
-        gradingMode = "human";
-        auditFlag = true;
-      }
-    } else {
-      finalScore = humanScore;
-      gradingMode = "human";
-    }
-
-    // Round to nearest 0.5
-    finalScore = Math.round(finalScore * 2) / 2;
+    // Instructor override is final
+    const finalScore = Math.round(body.overallScore * 2) / 2;
     const finalBand = body.band ?? scoreToBand(finalScore);
+    const priorScore =
+      existingResult && "score" in existingResult
+        ? (existingResult.score as number)
+        : null;
+    const auditFlag =
+      priorScore != null && Math.abs(priorScore - body.overallScore) > 0.5;
 
     const ts = new Date().toISOString();
     const [updated] = await tx
@@ -241,14 +192,13 @@ export async function submitReview(
         completedAt: ts,
         updatedAt: ts,
         reviewerId: actor.sub,
-        gradingMode,
+        gradingMode: "human",
         auditFlag,
       })
       .where(
         and(
           eq(table.submissions.id, submissionId),
           eq(table.submissions.status, "review_pending"),
-          notDeleted(table.submissions),
           actor.is(ROLES.ADMIN)
             ? undefined
             : eq(table.submissions.claimedBy, actor.sub),
@@ -262,13 +212,11 @@ export async function submitReview(
       );
     }
 
-    // Merge AI + human result in details
+    // Store AI + human result in details
     const mergedResult = {
-      ...(typeof details.result === "object" && details.result !== null
-        ? details.result
-        : {}),
+      ...(existingResult ?? {}),
       humanReview: {
-        score: humanScore,
+        score: body.overallScore,
         band: body.band ?? null,
         criteriaScores: body.criteriaScores ?? null,
         feedback: body.feedback ?? null,
@@ -276,9 +224,6 @@ export async function submitReview(
         reviewerId: actor.sub,
         reviewedAt: ts,
       },
-      finalScore,
-      gradingMode,
-      auditFlag,
     };
 
     await tx
@@ -316,7 +261,6 @@ export async function assignSubmission(
         where: and(
           eq(table.submissions.id, submissionId),
           eq(table.submissions.status, "review_pending"),
-          notDeleted(table.submissions),
         ),
         columns: { id: true },
       }),
@@ -326,10 +270,7 @@ export async function assignSubmission(
     // Verify the reviewer exists
     assertExists(
       await tx.query.users.findFirst({
-        where: and(
-          eq(table.users.id, body.reviewerId),
-          notDeleted(table.users),
-        ),
+        where: eq(table.users.id, body.reviewerId),
         columns: { id: true },
       }),
       "Reviewer",

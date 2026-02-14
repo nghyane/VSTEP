@@ -11,12 +11,4 @@ export const updatedAt = timestamp("updated_at", tsConfig)
   .notNull()
   .$onUpdate(() => new Date().toISOString());
 
-export const deletedAt = timestamp("deleted_at", tsConfig);
-
 export const timestamps = { createdAt, updatedAt } as const;
-
-export const timestampsWithSoftDelete = {
-  createdAt,
-  updatedAt,
-  deletedAt,
-} as const;

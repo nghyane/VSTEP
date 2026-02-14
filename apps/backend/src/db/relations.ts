@@ -6,14 +6,9 @@ import {
   examSubmissions,
   exams,
 } from "./schema/exams";
-import { outbox } from "./schema/outbox";
 import { userGoals, userProgress, userSkillScores } from "./schema/progress";
 import { questions, questionVersions } from "./schema/questions";
-import {
-  submissionDetails,
-  submissionEvents,
-  submissions,
-} from "./schema/submissions";
+import { submissionDetails, submissions } from "./schema/submissions";
 import { refreshTokens, users } from "./schema/users";
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -35,7 +30,7 @@ export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
   user: one(users, { fields: [refreshTokens.userId], references: [users.id] }),
 }));
 
-export const submissionsRelations = relations(submissions, ({ one, many }) => ({
+export const submissionsRelations = relations(submissions, ({ one }) => ({
   user: one(users, { fields: [submissions.userId], references: [users.id] }),
   question: one(questions, {
     fields: [submissions.questionId],
@@ -45,8 +40,6 @@ export const submissionsRelations = relations(submissions, ({ one, many }) => ({
     fields: [submissions.id],
     references: [submissionDetails.submissionId],
   }),
-  events: many(submissionEvents),
-  outboxEntries: many(outbox),
 }));
 
 export const submissionDetailsRelations = relations(
@@ -54,16 +47,6 @@ export const submissionDetailsRelations = relations(
   ({ one }) => ({
     submission: one(submissions, {
       fields: [submissionDetails.submissionId],
-      references: [submissions.id],
-    }),
-  }),
-);
-
-export const submissionEventsRelations = relations(
-  submissionEvents,
-  ({ one }) => ({
-    submission: one(submissions, {
-      fields: [submissionEvents.submissionId],
       references: [submissions.id],
     }),
   }),
@@ -161,13 +144,6 @@ export const examSubmissionsRelations = relations(
     }),
   }),
 );
-
-export const outboxRelations = relations(outbox, ({ one }) => ({
-  submission: one(submissions, {
-    fields: [outbox.submissionId],
-    references: [submissions.id],
-  }),
-}));
 
 export const classesRelations = relations(classes, ({ one, many }) => ({
   instructor: one(users, {

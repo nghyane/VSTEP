@@ -6,14 +6,9 @@
 
 import { classes, classMembers, instructorFeedback } from "./classes";
 import { examAnswers, examSessions, examSubmissions, exams } from "./exams";
-import { outbox, processedCallbacks } from "./outbox";
 import { userGoals, userProgress, userSkillScores } from "./progress";
 import { questions, questionVersions } from "./questions";
-import {
-  submissionDetails,
-  submissionEvents,
-  submissions,
-} from "./submissions";
+import { submissionDetails, submissions } from "./submissions";
 import { refreshTokens, users } from "./users";
 
 /**
@@ -27,7 +22,6 @@ export const table = {
   refreshTokens,
   submissions,
   submissionDetails,
-  submissionEvents,
   questions,
   questionVersions,
   userProgress,
@@ -37,8 +31,6 @@ export const table = {
   examSessions,
   examAnswers,
   examSubmissions,
-  outbox,
-  processedCallbacks,
   classes,
   classMembers,
   instructorFeedback,
@@ -52,13 +44,10 @@ export {
   examSubmissions,
   exams,
   instructorFeedback,
-  outbox,
-  processedCallbacks,
   questionVersions,
   questions,
   refreshTokens,
   submissionDetails,
-  submissionEvents,
   submissions,
   userGoals,
   userProgress,

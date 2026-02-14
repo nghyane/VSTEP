@@ -11,8 +11,8 @@ import {
   escapeLike,
   normalizeEmail,
 } from "@common/utils";
-import { db, notDeleted, paginated, table } from "@db/index";
-import { and, count, eq, ilike, ne, type SQL } from "drizzle-orm";
+import { db, paginate, table } from "@db/index";
+import { and, eq, ilike, ne } from "drizzle-orm";
 import type {
   UserCreateBody,
   UserListQuery,
@@ -24,8 +24,8 @@ import { USER_COLUMNS } from "./schema";
 /** Internal lookup — no auth check. Use getUserById for route-facing calls. */
 export async function findUserById(userId: string) {
   const user = await db.query.users.findFirst({
-    where: and(eq(table.users.id, userId), notDeleted(table.users)),
-    columns: { passwordHash: false, deletedAt: false },
+    where: eq(table.users.id, userId),
+    columns: { passwordHash: false },
   });
 
   return assertExists(user, "User");
@@ -38,29 +38,22 @@ export async function getUserById(userId: string, actor: Actor) {
 
 export async function listUsers(query: UserListQuery) {
   const where = and(
-    ...[
-      notDeleted(table.users),
-      query.role && eq(table.users.role, query.role),
-      query.search &&
-        ilike(table.users.fullName, `%${escapeLike(query.search)}%`),
-    ].filter((c): c is SQL => Boolean(c)),
+    query.role ? eq(table.users.role, query.role) : undefined,
+    query.search
+      ? ilike(table.users.fullName, `%${escapeLike(query.search)}%`)
+      : undefined,
   );
 
-  const pg = paginated(query.page, query.limit);
-  return pg.resolve({
-    count: db
-      .select({ count: count() })
-      .from(table.users)
-      .where(where)
-      .then((r) => r[0]?.count ?? 0),
-    query: db
+  return paginate(
+    db
       .select(USER_COLUMNS)
       .from(table.users)
       .where(where)
       .orderBy(table.users.createdAt)
-      .limit(pg.limit)
-      .offset(pg.offset),
-  });
+      .$dynamic(),
+    db.$count(table.users, where),
+    query,
+  );
 }
 
 export async function createUser(body: UserCreateBody) {
@@ -97,7 +90,7 @@ export async function updateUser(
   return db.transaction(async (tx) => {
     assertExists(
       await tx.query.users.findFirst({
-        where: and(eq(table.users.id, userId), notDeleted(table.users)),
+        where: eq(table.users.id, userId),
         columns: { id: true },
       }),
       "User",
@@ -105,11 +98,7 @@ export async function updateUser(
 
     if (email) {
       const exists = await tx.query.users.findFirst({
-        where: and(
-          eq(table.users.email, email),
-          ne(table.users.id, userId),
-          notDeleted(table.users),
-        ),
+        where: and(eq(table.users.email, email), ne(table.users.id, userId)),
         columns: { id: true },
       });
       if (exists) throw new ConflictError("Email already in use");
@@ -134,21 +123,18 @@ export async function removeUser(userId: string) {
   return db.transaction(async (tx) => {
     assertExists(
       await tx.query.users.findFirst({
-        where: and(eq(table.users.id, userId), notDeleted(table.users)),
+        where: eq(table.users.id, userId),
         columns: { id: true },
       }),
       "User",
     );
 
-    const ts = new Date().toISOString();
     const [deleted] = await tx
-      .update(table.users)
-      .set({ deletedAt: ts, updatedAt: ts })
+      .delete(table.users)
       .where(eq(table.users.id, userId))
-      .returning({ id: table.users.id, deletedAt: table.users.deletedAt });
+      .returning({ id: table.users.id });
 
-    const user = assertExists(deleted, "User");
-    return { id: user.id, deletedAt: user.deletedAt ?? ts };
+    return assertExists(deleted, "User");
   });
 }
 
@@ -162,7 +148,7 @@ export async function updateUserPassword(
   return db.transaction(async (tx) => {
     const user = assertExists(
       await tx.query.users.findFirst({
-        where: and(eq(table.users.id, userId), notDeleted(table.users)),
+        where: eq(table.users.id, userId),
         columns: { id: true, passwordHash: true },
       }),
       "User",

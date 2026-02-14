@@ -21,7 +21,6 @@ import {
   getQuestionById,
   listQuestions,
   removeQuestion,
-  restoreQuestion,
   updateQuestion,
 } from "./service";
 import {
@@ -191,31 +190,12 @@ export const questions = new Elysia({
     response: {
       200: t.Object({
         id: t.String({ format: "uuid" }),
-        deletedAt: t.String({ format: "date-time" }),
       }),
       ...CrudErrors,
     },
     detail: {
       summary: "Delete question",
-      description:
-        "Soft-delete a question. The record is retained but excluded from queries. Requires admin role.",
-      security: [{ bearerAuth: [] }],
-    },
-  })
-
-  .post("/:id/restore", ({ params }) => restoreQuestion(params.id), {
-    role: ROLES.ADMIN,
-    params: IdParam,
-    response: {
-      200: Question,
-      400: ErrorResponse,
-      ...CrudErrors,
-    },
-    detail: {
-      summary: "Restore question",
-      description:
-        "Restore a previously soft-deleted question back to active status. Requires admin role.",
-      tags: ["Admin"],
+      description: "Delete a question. Requires admin role.",
       security: [{ bearerAuth: [] }],
     },
   });

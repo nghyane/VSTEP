@@ -1,227 +1,153 @@
-# Hybrid Grading & Confidence Score Specification
+# AI Grading & Confidence Routing
 
-> **Phiên bản**: 1.0 · SP26SE145
+> **Version**: 2.0 · SP26SE145
 
-## 1. Mục đích
+## 1. Overview
 
-Định nghĩa cơ chế **chấm điểm lai (AI + Human)** cho Writing/Speaking và cách tính **Confidence (0-100)** để quyết định:
-
-- Auto-grade và trả kết quả ngay
-- Hay đưa vào hàng chờ human review với mức độ ưu tiên
-
-Spec này tập trung vào **quy tắc, contracts, và tiêu chí chấp nhận**, không mô tả code/implementation.
+Writing and Speaking submissions are graded by AI (Gemini). The AI produces a structured result with a self-assessed confidence level. Confidence determines whether the result is auto-accepted or routed to an instructor for review. Listening/Reading are auto-graded locally and are not covered here.
 
 ---
 
-## 2. Phạm vi
+## 2. Grading Pipelines
 
-- Skills: **Writing** và **Speaking**.
-- Listening/Reading: auto-grade theo answer_key, không thuộc phạm vi spec này.
-- Confidence dùng cho:
-  - Routing auto vs human
-  - Audit flagging
-  - Analytics về reliability của AI
+### 2.1 Writing
 
----
+```
+Submission text
+  ├─> Gemini (structured rubric prompt)
+  │     → Task Achievement, Coherence, Lexical Resource scores + feedback
+  ├─> Grammar model
+  │     → Grammar errors list + Grammatical Range score
+  └─> Merge
+        → AIGradeResult
+```
 
-## 3. Định nghĩa
+Single Gemini call with structured output. Grammar model runs in parallel for detailed error detection. Results are merged into one `AIGradeResult`.
 
-- **AI result**: kết quả chấm từ pipeline AI (LLM/STT + rubric scorer).
-- **Human result**: kết quả chấm từ instructor theo rubric.
-- **Final result**: kết quả cuối cùng hiển thị cho learner.
-- **Confidence**: số nguyên 0-100 thể hiện mức tin cậy vào AI result.
-
----
-
-## 4. Output Contracts (Result Shape)
-
-Kết quả grading (dù AI hay human) phải có tối thiểu:
-
-- `overallScore`: 0-10
-- `band`: A1/A2/B1/B2/C1
-- `criteriaScores`: map tiêu chí → điểm + nhận xét
-- `feedback`: strengths/weaknesses/suggestions
-- `confidence`: 0-100
-- `reviewPending`: boolean
-- `reviewPriority`: `low` | `medium` | `high` | `critical` (chỉ khi reviewPending=true)
-- `gradingMode`: `auto` | `human` | `hybrid`
-- `auditFlag`: boolean (đánh dấu cần audit)
-
-Nếu có human review, Final result phải lưu cả:
-
-- `ai`: AI result (snapshot)
-- `human`: Human result (snapshot)
-- `final`: Final result (derived)
-
----
-
-## 5. Inputs & Rubric Requirements
-
-### 5.1 Writing
-
-Input tối thiểu: `text`, `taskNumber` (1/2), `questionId`.
-
-AI/Human đều chấm theo rubric VSTEP tối thiểu gồm 4 tiêu chí:
-
+**VSTEP Writing Criteria** (each scored 0-10):
 - Task Achievement
 - Coherence & Cohesion
 - Lexical Resource
 - Grammatical Range & Accuracy
 
-### 5.2 Speaking
+### 2.2 Speaking
 
-Input tối thiểu: `audioUrl`, `durationSeconds`, `questionId` (và `partNumber` nếu có).
+```
+Audio file
+  ├─> Whisper (STT)
+  │     → Transcript text
+  └─> Gemini (transcript + audio context)
+        → Fluency, Pronunciation, Content, Vocabulary scores + feedback
+        → AIGradeResult
+```
 
-Yêu cầu tối thiểu: tạo transcript (để instructor review), và chấm theo rubric tương đương (fluency/pronunciation/content/vocabulary).
+Whisper transcribes audio first. Gemini grades the transcript against the rubric.
 
----
-
-## 6. Confidence
-
-### 6.1 Công thức tổng quát
-
-ConfidenceScore = clamp(0, 100, sum(Factor_i * Weight_i))
-
-Default weights:
-
-- Model Consistency: 30%
-- Rule Validation: 25%
-- Content Similarity: 25%
-- Length Heuristic: 20%
-
-**Missing factors**: nếu một factor không khả dụng, bỏ factor đó và **redistribute weight theo tỷ lệ** giữa các factor còn lại.
-
-### 6.2 Factor definitions
-
-#### A. Model Consistency (30%)
-
-Mục tiêu: đo độ ổn định của AI grading.
-
-- Chạy grading bằng LLM **N lần** (default N=3).
-- Lấy `overallScore` của mỗi lần.
-- Tính `stdDev` trên thang 0-10.
-- Convert sang score 0-100 theo rule:
-  - `score = 100 - (stdDev * 20)`
-  - Clamp vào 0-100
-
-#### B. Rule Validation (25%)
-
-Mục tiêu: đảm bảo input tuân thủ constraints để AI grading có ý nghĩa.
-
-Chấm theo checklist 0-100, chia thành 4 tiêu chí mỗi tiêu chí 25 điểm:
-
-- Word count trong range hợp lệ theo task/level
-- Format compliance (email/essay structure, required parts)
-- Rubric coverage (đủ nội dung trả lời yêu cầu)
-- Time limit compliance (nếu có tracking)
-
-#### C. Content Similarity (25%)
-
-Mục tiêu: phát hiện template/copy.
-
-- Tính cosine similarity giữa bài làm và tập template/known patterns.
-- Convert: `score = (1 - similarity) * 100` (similarity càng thấp → score càng cao)
-
-#### D. Length Heuristic (20%)
-
-Mục tiêu: phát hiện bài quá ngắn/quá dài hoặc cấu trúc bất thường.
-
-Chấm 0-100, chia thành 4 tiêu chí mỗi tiêu chí 25 điểm:
-
-- Sentence count hợp lý
-- Paragraph structure hợp lệ
-- Vocabulary density nằm trong range
-- Complexity score hợp lý
+**VSTEP Speaking Criteria** (each scored 0-10):
+- Fluency & Coherence
+- Pronunciation
+- Content & Relevance
+- Vocabulary & Grammar
 
 ---
 
-## 7. Confidence Thresholds & Routing
+## 3. AI Result Contract
 
-| Confidence | Action | Human Review Priority |
-|------------|--------|----------------------|
-| 90-100 | Auto-grade | none |
-| 85-89 | Auto-grade + auditFlag=true | low |
-| 70-84 | Human review required | medium |
-| 50-69 | Human review required | high |
-| < 50 | Human review required + AI warning | critical |
-| **Random Spot Check** | Auto-grade + Force Review (5-10% rate) | N/A |
-
-**Spot Check Rule**:
-- Mỗi ngày, hệ thống **ngẫu nhiên chọn 5-10%** các bài có `confidence >= 85` để đẩy vào hàng đợi Human Review (reviewPriority = medium).
-- Mục đích: Đảm bảo chất lượng AI theo thời gian thực và phát hiện model drift.
-- Spot check được ghi nhận trong audit log với `auditFlag=SPOT_CHECK`.
-
-**Rule**:
-
-- `confidence >= 85` → có thể publish kết quả ngay (auto).
-- `confidence < 85` → `reviewPending=true`, đưa vào hàng chờ instructor với `reviewPriority` theo bảng.
-
-**Tích hợp với submission status (Main App)**:
-
-- Nếu `reviewPending=false`: Main App có thể set submission status = `COMPLETED`.
-- Nếu `reviewPending=true`: Main App set submission status = `REVIEW_PENDING` và chỉ hiển thị trạng thái "đang chờ chấm thủ công"; không coi đây là kết quả cuối cùng.
-
----
-
-## 8. Human Review
-
-### 8.1 Input cho instructor
-
-Instructor phải thấy:
-
-- Câu hỏi + rubric
-- Bài làm (text hoặc audio + transcript)
-- AI result (overall + criteria + feedback) và confidence
-- Các signals (template similarity, rule violations) nếu có
-
-### 8.2 Output của human review
-
-Human result phải theo cùng result shape (overallScore, band, criteriaScores, feedback).
-
-### 8.3 Final score aggregation
-
-Định nghĩa “agree” để quyết định weighted vs override:
-
-- `scoreDiff = abs(ai.overallScore - human.overallScore)`
-- `bandStepDiff = abs(bandIndex(ai.band) - bandIndex(human.band))`
-  - bandIndex: A1=1, A2=2, B1=3, B2=4, C1=5
-
-Rules:
-
-- Nếu `scoreDiff <= 0.5` **và** `bandStepDiff <= 1`:
-  - `final.overallScore = ai*0.4 + human*0.6`
-  - `final.band` suy ra từ `final.overallScore` theo mapping hệ thống
-  - `gradingMode = hybrid`
-- Ngược lại:
-  - `final = human` (human overrides)
-  - `gradingMode = human`
-  - `auditFlag = true` và ghi nhận “discrepancy” cho model analysis
+```typescript
+type AIGradeResult = {
+  overallScore: number;         // 0-10, 0.5 steps
+  band: "B1" | "B2" | "C1";    // derived via scoreToBand()
+  criteriaScores: {
+    name: string;
+    score: number;              // 0-10
+    feedback: string;
+  }[];
+  feedback: {
+    strengths: string[];
+    weaknesses: string[];
+    suggestions: string[];
+  };
+  grammarErrors?: {             // writing only
+    sentence: string;
+    error: string;
+    correction: string;
+  }[];
+  confidence: "high" | "medium" | "low";
+};
+```
 
 ---
 
-## 9. Failure & Safety Rules
+## 4. Confidence
 
-- Nếu STT fail (speaking): retry theo policy (xem `../40-platform/reliability.md`); nếu hết retry → ERROR.
-- Nếu LLM provider 429/5xx: retry/backoff + circuit breaker (xem `../40-platform/reliability.md`).
-- Nếu Content Similarity unavailable: bỏ factor và redistribute weight (không fail job).
-- Nếu phát hiện gian lận rõ rệt (high similarity + rule violations nặng):
-  - vẫn tạo result nhưng phải `auditFlag=true` và ưu tiên human review (critical).
+### 4.1 How It's Determined
+
+3 levels, not a numeric 0-100 score. Derived from two signals:
+
+1. **AI self-assessment**: Gemini is prompted to rate its own confidence as part of the structured output.
+2. **Schema validation**: if the AI output fails structural checks (missing criteria, scores out of range), confidence is downgraded.
+
+| Level | Meaning |
+|-------|---------|
+| `high` | AI is confident, output well-structured |
+| `medium` | AI reports uncertainty or minor schema issues |
+| `low` | AI explicitly uncertain, or significant schema/content problems |
+
+### 4.2 Routing Rules
+
+| Confidence | Submission Status | Review Priority |
+|------------|-------------------|-----------------|
+| `high` | `completed` (auto-accept) | — |
+| `medium` | `review_pending` | `medium` |
+| `low` | `review_pending` | `high` |
+
+No spot-check system. No 4-factor weighted formula. No N=3 LLM consistency runs.
 
 ---
 
-## 10. Acceptance Criteria
+## 5. Instructor Review
 
-- Confidence luôn nằm trong 0-100 và stable theo công thức/weights.
-- Missing factor không làm job fail; weights được redistribute nhất quán.
-- Routing theo đúng bảng threshold.
-- Human review tạo ra final result theo rule agree/override.
-- Mọi quyết định (routing, override, auditFlag) có thể audit từ dữ liệu lưu trữ.
+### 5.1 What the Instructor Sees
+
+- Original question + rubric
+- Learner's submission (text or audio + transcript)
+- Full AI result: scores, criteria breakdown, feedback, grammar errors
+- AI confidence level
+
+### 5.2 Review Outcome
+
+The instructor submits their own scores. **Instructor score is always final.**
+
+- `gradingMode` is set to `'human'`
+- No weighted blending (no 40/60 merge)
+- Both `aiScore` and `humanScore` are preserved in `submissionDetails`
+
+### 5.3 Audit Flag
+
+```
+auditFlag = |aiScore - humanScore| > 0.5
+```
+
+When flagged, the discrepancy is recorded for future model analysis. This helps track AI accuracy over time but has no effect on the final score.
 
 ---
 
-## 11. Cross-references
+## 6. Score Computation
 
-- Confidence overview diagram → `docs/capstone/diagrams/flow-diagrams.vi.md` Section 5
-- Queue events (progress/completed/error) → `../10-contracts/queue-contracts.md`
-- Retry/DLQ/circuit breaker → `../40-platform/reliability.md`
-- Submission lifecycle (late result exclusion) → `submission-lifecycle.md`
+- `overallScore` = weighted average of criteria scores (equal weights)
+- Rounded to nearest 0.5 via `calculateScore()`
+- Band derived via `scoreToBand()`:
+  - 8.5-10 → C1
+  - 6.5-8.0 → B2
+  - 4.0-6.0 → B1
+  - Below 4.0 → null (below VSTEP threshold)
+
+---
+
+## 7. Cross-references
+
+| Topic | Document |
+|-------|----------|
+| Submission states & transitions | `submission-lifecycle.md` |
+| Review queue & claim workflow | `review-workflow.md` |
+| Redis task format | `../10-contracts/queue-contracts.md` |

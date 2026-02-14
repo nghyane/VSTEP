@@ -1,9 +1,5 @@
 import { MAX_PAGE_SIZE } from "@common/constants";
-import { type Column, isNull, type SQL } from "drizzle-orm";
-
-export function notDeleted<T extends { deletedAt: Column }>(table: T): SQL {
-  return isNull(table.deletedAt);
-}
+import type { PgSelect } from "drizzle-orm/pg-core";
 
 export function omitColumns<
   T extends Record<string, unknown>,
@@ -15,28 +11,23 @@ export function omitColumns<
   ) as Omit<T, K>;
 }
 
-export function paginated(page = 1, limit = 20) {
-  const safePage = Math.max(page, 1);
-  const safeLimit = Math.min(Math.max(limit, 1), MAX_PAGE_SIZE);
-  const offset = (safePage - 1) * safeLimit;
+/** Paginate a $dynamic() query builder: applies limit/offset and runs count in parallel. */
+export async function paginate<T extends PgSelect>(
+  qb: T,
+  count: Promise<number>,
+  opts: { page?: number; limit?: number },
+) {
+  const page = Math.max(opts.page ?? 1, 1);
+  const limit = Math.min(Math.max(opts.limit ?? 20, 1), MAX_PAGE_SIZE);
+  const offset = (page - 1) * limit;
 
-  function meta(total: number) {
-    return {
-      page: safePage,
-      limit: safeLimit,
-      total,
-      totalPages: Math.ceil(total / safeLimit),
-    };
-  }
+  const [data, total] = await Promise.all([
+    qb.limit(limit).offset(offset),
+    count,
+  ]);
 
   return {
-    page: safePage,
-    limit: safeLimit,
-    offset,
-    meta,
-    async resolve<T>(opts: { count: Promise<number>; query: Promise<T[]> }) {
-      const [total, data] = await Promise.all([opts.count, opts.query]);
-      return { data, meta: meta(total) };
-    },
+    data,
+    meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
   };
 }

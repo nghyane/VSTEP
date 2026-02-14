@@ -35,7 +35,7 @@ import {
   updateClass,
 } from "./service";
 
-export const classesModule = new Elysia({
+export const classes = new Elysia({
   name: "module:classes",
   prefix: "/classes",
   detail: { tags: ["Classes"] },
@@ -92,7 +92,6 @@ export const classesModule = new Elysia({
     response: {
       200: t.Object({
         id: t.String({ format: "uuid" }),
-        deletedAt: t.String({ format: "date-time" }),
       }),
       ...CrudErrors,
     },

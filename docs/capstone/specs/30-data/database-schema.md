@@ -1,44 +1,42 @@
 # Database Schema Specification
 
-> **Phiên bản**: 1.2 · SP26SE145
+> **Phiên bản**: 2.0 · SP26SE145
 
 ## 1. Tổng quan
 
-Hệ thống sử dụng **2 PostgreSQL database tách biệt** và **Redis** làm cache layer:
+Hệ thống sử dụng **1 PostgreSQL database** (shared-DB) và **Redis** cho cache/queue:
 
-| Database | Quản lý bởi | Tables | Connection |
-|----------|-------------|--------|------------|
-| **Main DB** | Main App (Bun) | users, submissions, progress, questions, exams, **outbox** | Bun chỉ connect DB này |
-| **Grading DB** | Grading Service (Python) | grading_jobs, grading_results | Python chỉ connect DB này |
-| **Redis** | Main App | — | Rate limiting, cache |
+| Component | Quản lý bởi | Mục đích | Connection |
+|-----------|-------------|----------|------------|
+| **PostgreSQL** | Main App (Bun) + Grading Worker (Python) | All tables | Cả hai service connect cùng DB |
+| **Redis** | Main App + arq Worker | Queue, cache, rate limiting | `import { redis } from "bun"` (built-in) |
 
-**Nguyên tắc vàng**: 
-- **Không cross-service DB writes**: Main App chỉ ghi Main DB; Grading Service chỉ ghi Grading DB
-- **Không cross-service DB reads**: Main App **không bao giờ** query GradingDB
-- **Giao tiếp duy nhất**: RabbitMQ (AMQP) — xem `../10-contracts/queue-contracts.md`
-- **Outbox pattern**: Outbox table nằm trong **Main DB**, được relay worker đọc và publish sang RabbitMQ
+**Nguyên tắc**:
+- **Shared-DB**: Grading worker (Python/arq) đọc job từ Redis queue, gọi LLM/STT, ghi kết quả trực tiếp vào PostgreSQL.
+- **Queue**: Redis list (`arq`) thay vì RabbitMQ. Đơn giản, ít moving parts.
+- **Hard delete**: Sử dụng `ON DELETE CASCADE` — không có soft delete (`deleted_at`).
+- **ORM**: Drizzle ORM (TypeScript schema → PostgreSQL).
 
 ---
 
-## 2. Main Database
+## 2. Tables
 
 ### 2.1 users
 
-Quản lý tài khoản và authentication. Mỗi user có một role duy nhất (learner, instructor, admin). Email là unique identifier cho đăng nhập. Password lưu dạng bcrypt hash.
+Quản lý tài khoản và authentication. Mỗi user có một role duy nhất (learner, instructor, admin). Email là unique identifier cho đăng nhập. Password lưu dạng Argon2id hash (`Bun.password`).
 
 **Quan hệ**: Một user có nhiều submissions, nhiều refresh_tokens (max 3 active), một user_progress per skill, nhiều user_goals.
 
-**Soft Deletes**: Sử dụng `deleted_at` để hỗ trợ soft delete, cho phép khôi phục dữ liệu và duy trì referential integrity.
-
-MVP columns (gợi ý):
+Columns:
 
 - `id` (UUID, PK)
-- `email` (VARCHAR(255), unique WHERE deleted_at IS NULL)
+- `email` (VARCHAR(255), unique)
 - `password_hash` (VARCHAR(255))
 - `full_name` (VARCHAR(255), nullable)
 - `role` (learner/instructor/admin, default learner)
 - `created_at`, `updated_at`
-- `deleted_at` (TIMESTAMP, nullable) - **Soft delete**
+
+FK references pointing to `users` use `ON DELETE CASCADE` (submissions, refresh_tokens, user_progress, user_goals, class_members, instructor_feedback) or `ON DELETE SET NULL` (questions.created_by, exams.created_by, submissions.reviewer_id, submissions.claimed_by).
 
 ### 2.2 refresh_tokens
 
@@ -46,278 +44,152 @@ Lưu refresh token dạng hash (SHA-256) để hỗ trợ revoke và audit. Mỗ
 
 Chi tiết: xem `../40-platform/authentication.md`
 
-MVP columns (gợi ý):
+Columns:
 
 - `id` (UUID, PK)
-- `user_id` (FK users)
-- `token_hash` (SHA-256)
-- `jti` (unique)
-- `created_at`, `expires_at`
-- `replaced_by_jti` (nullable)
-- `revoked_at` (nullable)
-- `device_info` (TEXT/JSONB, nullable) - Lưu thông tin User-Agent/IP để hiển thị trên UI quản lý thiết bị.
+- `user_id` (FK users, ON DELETE CASCADE)
+- `token_hash` (VARCHAR(64))
+- `jti` (VARCHAR(36), unique)
+- `replaced_by_jti` (VARCHAR(36), nullable)
+- `device_info` (TEXT, nullable) - User-Agent/IP cho device management UI
+- `revoked_at` (TIMESTAMPTZ, nullable)
+- `expires_at` (TIMESTAMPTZ, NOT NULL)
+- `created_at`
 
-Indexes (gợi ý):
+Indexes:
 
 - unique `(jti)` cho rotation detection
-- `idx_refresh_tokens_active` (`user_id`, `created_at`) WHERE `revoked_at IS NULL` - **Performance**: Tối ưu truy vấn active tokens cho authentication và token revocation.
+- `(token_hash)` cho lookup
+- `(user_id)` cho token management
+- `(expires_at)` cho cleanup
+- partial `(user_id) WHERE revoked_at IS NULL` cho active token queries
 
 ### 2.3 submissions
 
-Bản ghi submission của learner. **Source of truth cho submission status** phía Main App.
+Bản ghi submission của learner. Mỗi submission gắn với một user, một question, và một skill (writing/speaking/listening/reading).
 
-**Tối ưu hóa**: Tách nội dung nặng (`answer`, `result`) sang bảng `submission_details` để tăng tốc độ query danh sách và giảm I/O.
+Chỉ writing và speaking đi qua grading queue (Redis + arq worker); listening/reading được auto-grade ngay bởi Main App (so sánh answer_key).
 
-Mỗi submission gắn với một user, một question, và một skill (writing/speaking/listening/reading). Chỉ writing và speaking đi qua grading queue; listening/reading được auto-grade ngay bởi Main App (so sánh answer_key).
+Trạng thái submission đi qua 5-state machine:
 
-Trạng thái submission đi qua state machine: PENDING → QUEUED → PROCESSING → COMPLETED (hoặc REVIEW_PENDING/ERROR/RETRYING/FAILED). Chi tiết: xem `../20-domain/submission-lifecycle.md`.
+```
+pending → processing → completed
+                    → review_pending → completed
+                    → failed
+pending → failed
+```
 
-Writing/Speaking có thể đi qua trạng thái `REVIEW_PENDING` khi `confidence < 85` (xem `../20-domain/hybrid-grading.md`).
+Chi tiết: xem `../20-domain/submission-lifecycle.md`.
 
-Khi submission được tạo, Main App đồng thời tạo một outbox entry trong cùng transaction để đảm bảo reliable publishing.
+Nội dung nặng (`answer`, `result`) tách sang bảng `submission_details` để tăng tốc query danh sách.
 
-Trường `is_late` đánh dấu submissions mà grading callback đến sau SLA timeout — kết quả được lưu nhưng không tính vào progress.
-
-**Quan hệ**: Một submission thuộc một user và một question. SLA deadline được tính từ thời điểm tạo (writing: +20 phút, speaking: +60 phút).
-
-MVP columns (gợi ý):
+Columns:
 
 - `id` (UUID, PK)
 - `user_id` (FK users, ON DELETE CASCADE)
 - `question_id` (FK questions, ON DELETE RESTRICT)
 - `skill` (listening/reading/writing/speaking)
-- `status` (state machine)
-- `attempt` (int, default 1)
-- `request_id` (UUID, nullable; dùng cho writing/speaking queue)
-- `deadline` (nullable)
-- `score` (numeric, nullable; 0..10) CHECK (score IS NULL OR (score >= 0 AND score <= 10))
-- `band` (A1/A2/B1/B2/C1, nullable)
-- `confidence` (int, nullable)
-- `review_pending` (bool, default false)
-- `is_late` (bool, default false)
+- `status` (submission_status enum — 5 values: pending/processing/completed/review_pending/failed)
+- `score` (numeric(3,1), nullable; 0..10)
+- `band` (vstep_band enum, nullable)
+- `review_priority` (review_priority enum — 3 values: low/medium/high, nullable)
+- `reviewer_id` (UUID, nullable, FK users ON DELETE SET NULL) - Instructor chấm/duyệt bài
+- `grading_mode` (grading_mode enum — 3 values: auto/human/hybrid, nullable)
+- `audit_flag` (bool, default false) - Đánh dấu bài cần kiểm tra lại
+- `claimed_by` (UUID, nullable, FK users ON DELETE SET NULL) - Người đang giữ lock chấm bài
+- `claimed_at` (TIMESTAMPTZ, nullable)
 - `created_at`, `updated_at`
-- `deleted_at` (TIMESTAMP, nullable) - **Soft delete**
+- `completed_at` (TIMESTAMPTZ, nullable)
 
-**Review Workflow & Hybrid Grading Support:**
-- `review_priority` (ENUM: low, medium, high, critical, nullable) - Dùng để sắp xếp hàng đợi review.
-- `reviewer_id` (UUID, nullable, FK users ON DELETE SET NULL) - ID của Instructor chấm/duyệt bài.
-- `grading_mode` (ENUM: auto, human, hybrid, nullable) - Ghi nhận phương thức chấm cuối cùng.
-- `audit_flag` (bool, default false) - Đánh dấu bài cần kiểm tra lại (gian lận, bất thường).
-- `claimed_by` (UUID, nullable, FK users ON DELETE SET NULL) - ID người đang giữ lock chấm bài (Backup cho Redis).
-- `claimed_at` (TIMESTAMP, nullable) - Thời điểm claim lock.
-
-
-Indexes (tối ưu — giảm write overhead trên high-write table):
+Indexes:
 
 ```sql
--- Giữ: Essential cho user history (learner xem lịch sử)
-CREATE INDEX idx_submissions_user_history
-ON submissions (user_id, skill, created_at DESC)
-WHERE deleted_at IS NULL;
+-- User history (learner xem lịch sử)
+CREATE INDEX submissions_user_id_idx ON submissions (user_id);
+CREATE INDEX submissions_skill_idx ON submissions (skill);
+CREATE INDEX submissions_question_id_idx ON submissions (question_id);
+CREATE INDEX submissions_status_idx ON submissions (status);
+CREATE INDEX submissions_user_status_idx ON submissions (user_id, status);
+CREATE INDEX submissions_user_history_idx ON submissions (user_id, created_at);
 
--- Giữ: Unique constraint = index, required cho idempotency
-ALTER TABLE submissions ADD CONSTRAINT unique_request_id UNIQUE (request_id);
-
--- Tối ưu: Chuyển sang Partial Index — chỉ index các status đang active
--- (thay vì index toàn bộ status, giảm ~25% write overhead)
-CREATE INDEX idx_submissions_active_queue
-ON submissions (status, created_at)
-WHERE status IN ('pending', 'queued', 'processing', 'review_pending', 'error');
-
--- Đã xóa: (review_priority, created_at) — review queue volume thấp (instructor-facing),
--- sort in-memory đủ nhanh, không worth write overhead trên mỗi submission insert.
+-- Review queue (partial — chỉ review_pending)
+CREATE INDEX submissions_review_queue_idx ON submissions (status)
+  WHERE status = 'review_pending';
 ```
 
 **Security - Row Level Security (RLS) + Secure Views (Defense-in-Depth):**
 
 Sử dụng **2 lớp bảo vệ** để tránh data leak:
 
-1. **Secure Views** (primary enforcement): App queries đi qua views có built-in user filter → single point of enforcement, không thể drift giữa các bảng.
-2. **RLS policies** (safety net): Giữ trên `submissions` và `submission_details` — phòng trường hợp developer viết raw query bypass view (debug, admin tool, migration script).
+1. **Secure Views** (primary enforcement): App queries đi qua views có built-in user filter.
+2. **RLS policies** (safety net): phòng trường hợp developer viết raw query bypass view.
 
 ```sql
--- Secure View: Single enforcement point cho submission data
--- App set user context trước mỗi request: SET app.current_user_id = 'uuid';
 CREATE VIEW user_submissions AS
 SELECT s.*, sd.answer, sd.result, sd.feedback
 FROM submissions s
 LEFT JOIN submission_details sd ON s.id = sd.submission_id
-WHERE s.user_id = current_setting('app.current_user_id')::UUID
-  AND s.deleted_at IS NULL;
+WHERE s.user_id = current_setting('app.current_user_id')::UUID;
 ```
 
-RLS policies (giữ làm safety net):
+RLS policies (safety net):
 - `submissions_select`: User chỉ có thể SELECT rows với `user_id = auth.uid()`
 - `submissions_insert`: User chỉ có thể INSERT với `user_id = auth.uid()`
 - `submissions_update`: User chỉ có thể UPDATE rows của chính họ
 
-> **Lưu ý**: `user_progress`, `user_goals`, `user_skill_scores` **không cần RLS** — các bảng này luôn được query bằng `user_id` trong WHERE clause ở application layer, và không chứa dữ liệu nhạy cảm cần bảo vệ ở DB level.
-
-### 2.3.1 submission_details (New)
+### 2.3.1 submission_details
 
 Lưu trữ nội dung chi tiết của bài thi để giảm tải cho bảng chính `submissions`.
 
-- `submission_id` (FK submissions, PK)
+- `submission_id` (FK submissions, PK, ON DELETE CASCADE)
 - `answer` (JSONB) - Bài làm của thí sinh
 - `result` (JSONB, nullable) - Kết quả chi tiết từ AI/Human
-- `feedback` (TEXT, nullable) - Nhận xét chi tiết
+- `feedback` (VARCHAR(10000), nullable) - Nhận xét chi tiết
+- `created_at`, `updated_at`
 
-**Security - Row Level Security (RLS):** Áp dụng RLS tương tự `submissions` làm safety net. Tuy nhiên, **primary access control** thông qua `user_submissions` view (xem trên). Tạo foreign key constraint với `ON DELETE CASCADE`.
-
-> **⚠️ MITIGATED RISK:** RLS drift giữa `submissions` và `submission_details` đã được giảm thiểu nhờ Secure View pattern — view `user_submissions` JOIN 2 bảng với 1 filter duy nhất tại `s.user_id`. Tuy nhiên, khi thêm RLS policy mới cho `submissions`, vẫn nên áp dụng tương tự cho `submission_details` (defense-in-depth).
-
-### 2.4 outbox
-
-Outbox pattern cho reliable message publishing sang RabbitMQ. **Nằm trong Main DB** — Bun Main App ghi vào đây trong cùng transaction với submission, sau đó relay worker đọc và publish sang RabbitMQ.
-
-Mỗi entry là một message chờ được publish. Outbox relay worker poll table này mỗi 1-2 giây, sử dụng `FOR UPDATE SKIP LOCKED` để lấy batch (max 50) entries, đảm bảo nhiều worker instance không tranh chấp cùng một row.
-
-Chi tiết outbox pattern: xem `../40-platform/reliability.md`.
-
-**Concurrency Control**: Khi chạy nhiều outbox relay workers, mỗi worker sử dụng `SELECT ... FOR UPDATE SKIP LOCKED` để claim batch riêng biệt. Nếu worker crash giữa chừng, entries có `locked_at` quá 5 phút sẽ tự động được release (timeout-based recovery).
-
-MVP columns (gợi ý):
-
-- `id` (UUID, PK)
-- `submission_id` (FK submissions, ON DELETE CASCADE)
-- `aggregate_type` (e.g. submission)
-- `aggregate_id` (submissionId)
-- `message_type` (grading.request)
-- `payload` (JSONB)
-- `status` (pending/processing/published/failed)
-- `attempts` (int)
-- `locked_at` (TIMESTAMP, nullable) - Thời điểm worker claim entry.
-- `locked_by` (VARCHAR(64), nullable) - ID của worker đang xử lý.
-- `created_at`, `published_at` (nullable)
-
-**Worker Query Pattern** (tránh race condition giữa nhiều workers):
-```sql
--- Mỗi worker claim batch riêng biệt, không tranh chấp
-WITH next_batch AS (
-    SELECT id
-    FROM outbox
-    WHERE status = 'pending'
-      AND (locked_at IS NULL OR locked_at < NOW() - INTERVAL '5 minutes')
-    ORDER BY created_at
-    LIMIT 50
-    FOR UPDATE SKIP LOCKED
-)
-UPDATE outbox
-SET status = 'processing', locked_at = NOW(), locked_by = $worker_id
-WHERE id IN (SELECT id FROM next_batch)
-RETURNING *;
-```
-
-**Tối ưu hóa Index**: Sử dụng Partial Index để worker tìm job cực nhanh.
-```sql
-CREATE INDEX idx_outbox_pending ON outbox (created_at) WHERE status = 'pending';
-```
-
-### 2.5 processed_callbacks
-
-Bảng idempotency cho AMQP callbacks. Vì callback có thể gồm nhiều progress events và có thể duplicate delivery, Main App phải dedup **theo từng callback message**.
-
-Dedup key: `event_id` (UUID) từ message `grading.callback`.
-
-Tối thiểu nên lưu:
-
-- `event_id` (PK)
-- `request_id`
-- `submission_id`
-- `processed_at`
-
-Records cũ hơn 7 ngày được cleanup bởi scheduled job.
-
-Indexes (gợi ý):
-
-- `(request_id)` để trace/debug
-- `(submission_id)` để join nhanh
-
-### 2.6 submission_events
-
-Event log tối giản theo submission để phục vụ:
-
-- SSE replay khi client reconnect với `Last-Event-ID`
-- Audit trail (tiến trình grading, completed/failed)
-
-
-Mỗi event phải có một ID ổn định: ưu tiên dùng `eventId` từ `grading.callback`. Nếu event không đến từ grading callback thì Main App tự sinh `eventId`.
-
-Tối thiểu nên lưu:
-
-- `event_id` (PK)
-- `submission_id`
-- `request_id` (nullable cho events không thuộc grading)
-- `kind` (progress/completed/error)
-- `occurred_at`
-- `data` (JSONB)
-- `created_at`
-
-Retention: lưu tối thiểu 7 ngày, cleanup bằng scheduled job.
-
-Indexes (gợi ý):
-
-- `(submission_id, occurred_at desc)` cho replay
-- `(request_id)` (nullable) cho trace/debug
-
-### 2.7 questions
+### 2.4 questions
 
 Ngân hàng câu hỏi. Mỗi câu hỏi thuộc một skill (writing/speaking/listening/reading), một level (A1-C1), và một **format**.
 
-**Kiến trúc lưu trữ**: Sử dụng **JSONB + Functional Indexes**.
-- Không tách bảng con (Normalization) để giữ linh hoạt cho cấu trúc đề thi đa dạng.
-- Sử dụng **Functional (Expression) Indexes** để đảm bảo hiệu năng query cao (O(log n)) cho các trường hợp lọc theo Scaffolding (Template, Keywords...).
+**Kiến trúc lưu trữ**: Sử dụng **JSONB** cho `content` và `answer_key` — linh hoạt cho cấu trúc đề thi đa dạng.
 
-MVP columns (gợi ý):
+Columns:
 
 - `id` (UUID, PK)
-- `skill` (listening/reading/writing/speaking)
-- `level` (A1/A2/B1/B2/C1) CHECK (level IN ('A1', 'A2', 'B1', 'B2', 'C1'))
-- `format` (writing_task_1/..., reading_passage, listening_part, speaking_part_1/2/3)
-- `content` (JSONB) - Chứa đề bài, scaffolding (template, keywords), media links.
+- `skill` (skill enum)
+- `level` (question_level enum: A1/A2/B1/B2/C1)
+- `format` (question_format enum)
+- `content` (JSONB) - Đề bài, scaffolding, media links
 - `answer_key` (JSONB, nullable)
-- `search_vector` (tsvector, generated stored) - **Main Search**: Tự động index nội dung text.
-- `is_active` (bool)
-- `version` (INT, default 1) - **Versioning**: Số version hiện tại của câu hỏi.
-- `created_by` (UUID, nullable, FK users ON DELETE SET NULL) - **Audit**: ID của instructor/admin tạo câu hỏi.
+- `version` (INT, default 1)
+- `is_active` (bool, default true)
+- `created_by` (UUID, nullable, FK users ON DELETE SET NULL)
 - `created_at`, `updated_at`
-- `deleted_at` (TIMESTAMP, nullable) - **Soft delete**
-
-**Indexes Quan Trọng (Functional Indexes):**
-```sql
--- Index tìm câu hỏi có Template Scaffolding (cho Adaptive Learning)
-CREATE INDEX idx_questions_has_template 
-ON questions (skill, level) 
-WHERE (content -> 'scaffolding' ->> 'template') IS NOT NULL;
-
--- Index tìm câu hỏi có Keywords Scaffolding
-CREATE INDEX idx_questions_has_keywords 
-ON questions (skill, level) 
-WHERE (content -> 'scaffolding' ->> 'keywords') IS NOT NULL;
-
--- Full text search
-CREATE INDEX idx_questions_search ON questions USING GIN(search_vector);
-```
-
-**Question Versioning**: Khi câu hỏi được cập nhật (content, answer_key), tạo record mới trong `question_versions` và tăng `version`.
-
-### 2.7.1 question_versions (New)
-
-Lưu trữ snapshot của câu hỏi theo từng version. Hỗ trợ audit trail và rollback khi cần thiết.
-
-- `id` (UUID, PK)
-- `question_id` (FK questions, ON DELETE CASCADE)
-- `version` (INT, NOT NULL) - Version của câu hỏi
-- `content` (JSONB) - Snapshot content tại version này
-- `answer_key` (JSONB, nullable) - Snapshot answer_key tại version này
-- `created_at` - Thời điểm tạo version
 
 Indexes:
 
-- unique `(question_id, version)` để đảm bảo mỗi version là duy nhất
-- `(question_id)` cho việc truy vết lịch sử
+```sql
+CREATE INDEX questions_active_idx ON questions (skill, level) WHERE is_active = true;
+CREATE INDEX questions_format_idx ON questions (format);
+CREATE INDEX questions_created_by_idx ON questions (created_by);
+```
 
-### 2.8 user_progress
+### 2.4.1 question_versions
+
+Lưu trữ snapshot của câu hỏi theo từng version. Hỗ trợ audit trail và rollback.
+
+- `id` (UUID, PK)
+- `question_id` (FK questions, ON DELETE CASCADE)
+- `version` (INT, NOT NULL)
+- `content` (JSONB)
+- `answer_key` (JSONB, nullable)
+- `created_at`
+
+Indexes:
+
+- unique `(question_id, version)`
+
+### 2.5 user_progress
 
 Tracking tiến độ học tập theo từng skill. Mỗi user có đúng **1 record per skill** (unique constraint).
 
@@ -325,290 +197,216 @@ Bao gồm: level hiện tại, level mục tiêu, scaffold level (1=Template, 2=
 
 Scaffold level quyết định mức độ hỗ trợ trong practice mode. Chi tiết: xem `../20-domain/adaptive-scaffolding.md`.
 
-MVP columns (gợi ý):
-
-- `user_id` (FK users)
-- `skill` (PK part)
-- `current_level`
-- `target_level`
-- `scaffold_level` (1/2/3)
-- `attempt_count` (int)
-- `streak_count` (int, default 0) - Số lần liên tiếp đạt/không đạt điều kiện Stage Up/Down.
-- `streak_direction` (ENUM: up, down, neutral) - Hướng của chuỗi streak hiện tại.
-- `updated_at`
-
-> **⚠️ Design Decision — Không lưu `avg_score`**: Điểm trung bình là **computed field** được tính từ `user_skill_scores` (sliding window 10 bài gần nhất). Lưu trữ giá trị này trong `user_progress` tạo ra dual source of truth — nếu quên update khi insert score mới sẽ gây data inconsistent. Thay vào đó, tính realtime từ `user_skill_scores` hoặc cache trong Redis (TTL 5 phút).
-
-### 2.8.1 user_skill_scores (New)
-
-Lưu lịch sử điểm số chi tiết để tính toán Sliding Window và Adaptive Learning, thay vì lưu JSON array trong bảng `user_progress`.
-
-- `id` (UUID, PK)
-- `user_id` (FK users, **ON DELETE CASCADE**)
-- `skill` (listening/reading/writing/speaking)
-- `submission_id` (FK submissions, **ON DELETE CASCADE**)
-- `score` (numeric)
-- `scaffolding_type` (ENUM: template, keywords, free, nullable) - Ghi nhận loại hỗ trợ đã dùng.
-- `created_at`
-
-**Performance Index:**
-```sql
-CREATE INDEX idx_user_skill_scores_window ON user_skill_scores (user_id, skill, created_at DESC);
-```
-
-**Logic**: Khi cần tính avg_score cho 10 bài gần nhất:
-```sql
-SELECT AVG(score) FROM (
-  SELECT score FROM user_skill_scores 
-  WHERE user_id = ? AND skill = ? 
-  ORDER BY created_at DESC LIMIT 10
-) sub;
-```
-
-### 2.9 user_goals
-
-Mục tiêu học tập của learner. Lưu target level (A1-C1) và deadline dự kiến. Dùng để tính learning path recommendations và hiển thị progress dashboard.
-
-MVP columns (gợi ý):
+Columns:
 
 - `id` (UUID, PK)
 - `user_id` (FK users, ON DELETE CASCADE)
-- `target_band` (vstep_band ENUM, NOT NULL) — dùng pgEnum thay vì VARCHAR+CHECK
-- `current_estimated_band` (VARCHAR(10), nullable) - Band hiện tại (tính toán từ bài test đầu vào)
-- `deadline` (TIMESTAMPTZ, nullable) - Ngày dự kiến thi (nullable vì learner có thể chưa chốt deadline)
-- `daily_study_time_minutes` (INT, DEFAULT 30) - Cam kết học mỗi ngày
+- `skill` (skill enum)
+- `current_level` (question_level enum)
+- `target_level` (question_level enum, nullable)
+- `scaffold_level` (INT, default 1)
+- `streak_count` (INT, default 0) - Chuỗi streak liên tiếp
+- `streak_direction` (streak_direction enum: up/down/neutral, nullable)
+- `attempt_count` (INT, default 0)
 - `created_at`, `updated_at`
 
-Indexes (gợi ý):
+Indexes:
 
-- `(user_id)` cho việc truy vấn mục tiêu của user
+- unique `(user_id, skill)`
 
-### 2.10 exams
+> **Design Decision — Không lưu `avg_score`**: Điểm trung bình là computed field tính từ `user_skill_scores` (sliding window 10 bài gần nhất). Tránh dual source of truth.
 
-Cấu hình bài thi thử. Mỗi exam gồm 4 sections (listening, reading, writing, speaking) với danh sách question IDs và time limits cho mỗi section. Admin tạo và quản lý.
+### 2.5.1 user_skill_scores
 
-MVP columns (gợi ý):
+Lưu lịch sử điểm số chi tiết để tính toán Sliding Window và Adaptive Learning.
 
 - `id` (UUID, PK)
-- `level` (A1/A2/B1/B2/C1)
-- `blueprint` (JSONB) (sections + ordered questionIds + time limits)
-- `is_active` (bool)
-- `created_by` (UUID, nullable, FK users ON DELETE SET NULL) - **Audit**: ID của admin tạo exam.
+- `user_id` (FK users, ON DELETE CASCADE)
+- `skill` (skill enum)
+- `submission_id` (FK submissions, ON DELETE CASCADE, nullable)
+- `score` (numeric(3,1))
+- `scaffolding_type` (VARCHAR(20), nullable) - Loại hỗ trợ đã dùng
+- `created_at`
+
+Index:
+
+```sql
+CREATE INDEX user_skill_scores_user_skill_idx ON user_skill_scores (user_id, skill, created_at);
+```
+
+### 2.6 user_goals
+
+Mục tiêu học tập của learner.
+
+Columns:
+
+- `id` (UUID, PK)
+- `user_id` (FK users, ON DELETE CASCADE)
+- `target_band` (vstep_band enum, NOT NULL)
+- `current_estimated_band` (VARCHAR(10), nullable)
+- `deadline` (TIMESTAMPTZ, nullable) - Ngày dự kiến thi
+- `daily_study_time_minutes` (INT, default 30)
 - `created_at`, `updated_at`
-- `deleted_at` (TIMESTAMP, nullable) - **Soft delete**
 
-### 2.11 exam_sessions
+Indexes:
 
-Session khi learner làm exam. Lưu trạng thái (IN_PROGRESS → SUBMITTED → SCORED). Câu trả lời listening/reading được lưu trong bảng `exam_answers` (normalized). Writing/speaking submissions được liên kết qua junction table `exam_submissions`.
+- `(user_id)`
 
-**Normalization**: Sử dụng junction tables cho **tất cả** loại answers/submissions thay vì JSONB, đảm bảo referential integrity, tối ưu query per-question, và consistent data access pattern.
+### 2.7 exams
 
-MVP columns (gợi ý):
+Cấu hình bài thi thử. Mỗi exam gồm 4 sections (listening, reading, writing, speaking) với danh sách question IDs và time limits.
+
+Columns:
+
+- `id` (UUID, PK)
+- `level` (question_level enum)
+- `blueprint` (JSONB) - Sections + ordered questionIds + time limits
+- `is_active` (bool, default true)
+- `created_by` (UUID, nullable, FK users ON DELETE SET NULL)
+- `created_at`, `updated_at`
+
+Indexes:
+
+```sql
+CREATE INDEX exams_level_idx ON exams (level);
+CREATE INDEX exams_active_idx ON exams (level) WHERE is_active = true;
+```
+
+### 2.8 exam_sessions
+
+Session khi learner làm exam. Câu trả lời listening/reading lưu trong `exam_answers`. Writing/speaking submissions liên kết qua `exam_submissions`.
+
+Columns:
 
 - `id` (UUID, PK)
 - `user_id` (FK users, ON DELETE CASCADE)
 - `exam_id` (FK exams, ON DELETE RESTRICT)
-- `status` (in_progress/submitted/completed/abandoned)
-- `listening_score` (numeric(3,1), nullable)
-- `reading_score` (numeric(3,1), nullable)
-- `writing_score` (numeric(3,1), nullable)
-- `speaking_score` (numeric(3,1), nullable)
+- `status` (exam_status enum: in_progress/submitted/completed/abandoned)
+- `listening_score`, `reading_score`, `writing_score`, `speaking_score` (numeric(3,1), nullable)
 - `overall_score` (numeric(3,1), nullable)
-- `skill_scores` (JSONB, nullable)
-- `started_at`, `completed_at` (nullable)
+- `started_at` (TIMESTAMPTZ, default now)
+- `completed_at` (TIMESTAMPTZ, nullable)
 - `created_at`, `updated_at`
-- `deleted_at` (TIMESTAMP, nullable) - **Soft delete**
-
-**Performance Indexes:**
-```sql
-CREATE INDEX idx_exam_sessions_user_status ON exam_sessions (user_id, status, created_at DESC);
-```
-
-### 2.11.1 exam_answers (New)
-
-Lưu câu trả lời listening/reading per-question cho exam session. Thay thế cho `answers` JSONB trong `exam_sessions` để đảm bảo referential integrity và hỗ trợ per-question accuracy analysis.
-
-- `session_id` (FK exam_sessions, ON DELETE CASCADE)
-- `question_id` (FK questions)
-- `answer` (JSONB) - Câu trả lời của learner
-- `is_correct` (BOOLEAN, nullable) - Kết quả đánh giá (auto-grade)
-- `created_at`
-
-PK: `(session_id, question_id)` — composite primary key.
 
 Indexes:
 
-- `(session_id)` cho việc lấy toàn bộ answers theo session
-- `(question_id)` cho việc phân tích per-question accuracy
+```sql
+CREATE INDEX exam_sessions_user_idx ON exam_sessions (user_id);
+CREATE INDEX exam_sessions_exam_id_idx ON exam_sessions (exam_id);
+CREATE INDEX exam_sessions_status_idx ON exam_sessions (status);
+CREATE INDEX exam_sessions_user_status_idx ON exam_sessions (user_id, status);
+```
 
-### 2.11.2 exam_submissions (New)
+### 2.8.1 exam_answers
+
+Lưu câu trả lời listening/reading per-question cho exam session.
+
+- `id` (UUID, PK)
+- `session_id` (FK exam_sessions, ON DELETE CASCADE)
+- `question_id` (FK questions, ON DELETE CASCADE)
+- `answer` (JSONB)
+- `is_correct` (BOOLEAN, nullable)
+- `created_at`, `updated_at`
+
+Indexes:
+
+- unique `(session_id, question_id)`
+
+### 2.8.2 exam_submissions
 
 Junction table liên kết exam session với submissions của writing/speaking.
 
 - `id` (UUID, PK)
 - `session_id` (FK exam_sessions, ON DELETE CASCADE)
 - `submission_id` (FK submissions, ON DELETE CASCADE)
-- `skill` (writing/speaking) - Phân biệt loại submission
+- `skill` (skill enum)
 - `created_at`
 
 Indexes:
 
-- unique `(session_id, submission_id)` để tránh duplicate
-- `(session_id)` cho việc join với session
-- `(submission_id)` cho việc truy vết submission
+- unique `(session_id, submission_id)`
+- `(session_id)`
+- `(submission_id)`
 
-### 2.12 Partial Indexes for Soft Deletes
+### 2.9 classes
 
-Các bảng có sử dụng soft delete (`deleted_at`) nên có partial indexes để tối ưu hóa query trên các records active (chưa bị xóa). Điều này giúp query performance tương đương với hard delete trong khi vẫn giữ được dữ liệu cho audit/rollback.
-
-**Recommended Partial Indexes:**
-```sql
--- users table
-CREATE INDEX idx_users_active ON users (id) WHERE deleted_at IS NULL;
-
--- submissions table (đã được tích hợp trong idx_submissions_user_history ở 2.3)
--- Không cần index riêng — idx_submissions_user_history đã có WHERE deleted_at IS NULL
-
--- questions table
-CREATE INDEX idx_questions_active ON questions (skill, level) WHERE deleted_at IS NULL;
-
--- exams table
-CREATE INDEX idx_exams_active ON exams (id) WHERE deleted_at IS NULL;
-
--- exam_sessions table
-CREATE INDEX idx_exam_sessions_active ON exam_sessions (user_id, status, created_at DESC) WHERE deleted_at IS NULL;
-```
-
-**Lưu ý**: Partial indexes chỉ include các rows thỏa mãn điều kiện WHERE, giúp:
-- Giảm kích thước index
-- Tăng tốc độ query trên active records
-- Đảm bảo query planner ưu tiên active data
-
-### 2.12.1 Soft Delete Cleanup
-
-Soft deleted records được giữ lại cho mục đích audit và recovery. Hiện tại sử dụng single `deleted_at` timestamp cho tất cả bảng với retention period 30 ngày.
-
-```sql
--- Simple cleanup (current approach):
-DELETE FROM {table} WHERE deleted_at IS NOT NULL AND deleted_at < NOW() - INTERVAL '30 days';
-```
-
-> **Production Enhancement**: Sau này khi scale, nên differentiate retention per table (submissions: 365 ngày, events: 90 ngày, callbacks: 7 ngày) và implement automated scheduled job.
-
-### 2.13 Production Considerations
-
-> **Lưu ý:** Các tính năng dưới đây được thiết kế nhưng **không implement trong capstone scope**. Document tại đây để thể hiện awareness và phục vụ mở rộng sau này.
-
-#### Partitioning Strategy (Future)
-
-Khi data volume vượt 1M records, các bảng `submission_events` và `processed_callbacks` nên được partition:
-
-- **Loại:** Range Partitioning theo `created_at` (monthly)
-- **Lý do chưa implement:** Data volume trong capstone không đủ lớn để justify overhead. Partitioning thêm deployment complexity (partition creation, maintenance) mà không mang lại lợi ích thực tế.
-- **Khi nào cần:** Khi single table scan > 100ms hoặc data > 1M rows.
-
-```sql
--- Example (future implementation):
-CREATE TABLE submission_events (...) PARTITION BY RANGE (created_at);
-CREATE TABLE submission_events_2026_01 PARTITION OF submission_events
-    FOR VALUES FROM ('2026-01-01') TO ('2026-02-01');
-```
-
-#### Data Retention Policy (Future)
-
-Hiện tại sử dụng single soft delete (`deleted_at` timestamp) cho tất cả bảng. Production system cần:
-
-- **Automated cleanup:** Scheduled job xóa soft-deleted records sau 30 ngày
-- **Differentiated retention:** Submissions (365 ngày), Events (90 ngày), Callbacks (7 ngày)
-- **GDPR compliance:** Hard delete user data khi có request
-
-```sql
--- Simple cleanup (current approach):
-DELETE FROM {table} WHERE deleted_at IS NOT NULL AND deleted_at < NOW() - INTERVAL '30 days';
-```
-
----
-
-## 3. Grading Database
-
-### 3.1 grading_jobs
-
-Job state cho grading service. GradingDB (MVP) chỉ cần **một bảng**: job + result + error.
-
-Lý do: đồ án triển khai đồng bộ, ưu tiên đơn giản; không cần tách `grading_results`/`grading_errors`.
-
-Mỗi job được tạo khi grading worker consume message từ `grading.request` queue. `request_id` (UUID từ queue message) là unique key cho idempotency — nếu nhận duplicate message, skip.
-
-Status riêng của grading service: PENDING → PROCESSING → COMPLETED/ERROR.
-
-MVP columns (gợi ý):
+Quản lý lớp học. Mỗi lớp có một instructor và nhiều learners.
 
 - `id` (UUID, PK)
-- `request_id` (UUID, unique)
-- `submission_id`
-- `skill` (writing/speaking)
-- `status`
-- `attempt` (int)
-- `retry_count` (int, default 0) - Số lần retry tự động.
-- `worker_id` (string, nullable) - ID của worker xử lý (để debug).
-- `result` (JSONB, nullable) (overallScore/band/confidence/criteriaScores/feedback)
-- `error` (JSONB, nullable) (type/code/message)
-- `error_category` (ENUM: NETWORK, RATE_LIMIT, SCHEMA, TIMEOUT, UNKNOWN, nullable) - Phân loại lỗi cho DLQ logic.
+- `name` (TEXT, NOT NULL)
+- `description` (TEXT, nullable)
+- `instructor_id` (FK users, NOT NULL)
+- `invite_code` (TEXT, unique, NOT NULL)
 - `created_at`, `updated_at`
 
-Gợi ý index:
-
-- `(status, created_at)` để theo dõi backlog
-
-### 3.2 grading_job_history (New)
-
-Lưu lịch sử chuyển đổi trạng thái của grading jobs. Hỗ trợ debug pipeline (PENDING → PROCESSING → COMPLETED/ERROR) và phát hiện bottleneck.
+### 2.9.1 class_members
 
 - `id` (UUID, PK)
-- `job_id` (FK grading_jobs, ON DELETE CASCADE)
-- `from_status` (VARCHAR(20)) - Trạng thái trước
-- `to_status` (VARCHAR(20)) - Trạng thái sau
-- `changed_at` (TIMESTAMP, DEFAULT NOW())
-- `changed_by` (VARCHAR(100)) - worker_id hoặc 'system'
-- `metadata` (JSONB, nullable) - Context bổ sung (retry reason, error snapshot, duration)
+- `class_id` (FK classes, ON DELETE CASCADE)
+- `user_id` (FK users, ON DELETE CASCADE)
+- `joined_at` (TIMESTAMPTZ, default now)
+- `removed_at` (TIMESTAMPTZ, nullable)
 
 Indexes:
 
-- `(job_id, changed_at DESC)` cho việc trace từng job
-- `(to_status, changed_at)` cho dashboard monitoring
+- unique `(class_id, user_id)`
+- `(user_id)`
 
-**Implementation**: Sử dụng trigger `AFTER UPDATE` trên `grading_jobs.status` để tự động insert history record, đảm bảo không bị miss.
+### 2.9.2 instructor_feedback
+
+- `id` (UUID, PK)
+- `class_id` (FK classes, ON DELETE CASCADE)
+- `from_user_id` (FK users, ON DELETE CASCADE)
+- `to_user_id` (FK users, ON DELETE CASCADE)
+- `content` (TEXT, NOT NULL)
+- `skill` (skill enum, nullable)
+- `submission_id` (FK submissions, ON DELETE CASCADE, nullable)
+- `created_at`
+
+---
+
+## 3. Enums Summary
+
+| Enum | Values |
+|------|--------|
+| `user_role` | learner, instructor, admin |
+| `skill` | listening, reading, writing, speaking |
+| `vstep_band` | A1, A2, B1, B2, C1 |
+| `submission_status` | pending, processing, completed, review_pending, failed |
+| `review_priority` | low, medium, high |
+| `grading_mode` | auto, human, hybrid |
+| `question_format` | writing_task_1, writing_task_2, speaking_part_1/2/3, reading_mcq, reading_tng, reading_matching_headings, reading_gap_fill, listening_mcq, listening_dictation |
+| `question_level` | A1, A2, B1, B2, C1 |
+| `exam_status` | in_progress, submitted, completed, abandoned |
+| `streak_direction` | up, down, neutral |
 
 ---
 
 ## 4. Redis
 
-Redis phục vụ 3 mục đích chính:
+Redis phục vụ 4 mục đích chính (accessed via `import { redis } from "bun"` — built-in, no extra deps):
 
-- **Rate limiting**: Token bucket state per user/endpoint. Key pattern và chi tiết: xem `../40-platform/rate-limiting.md`
-- **Submission status cache**: Cache trạng thái submission hiện tại (TTL 1 giờ) để giảm DB load cho polling fallback
-- **Circuit breaker state**: Trạng thái circuit breaker cho external APIs (LLM, STT). Chi tiết: xem `../40-platform/reliability.md`
+- **Grading queue**: Redis list consumed by arq worker (Python). Replaces RabbitMQ.
+- **Rate limiting**: Token bucket state per user/endpoint.
+- **Submission status cache**: Cache trạng thái submission hiện tại (TTL 1h) để giảm DB load cho polling fallback.
+- **Review claim locks**: Distributed lock for instructor review claim (`lock:review:{submissionId}` TTL 15 min).
 
 ---
 
 ## 5. Database Migration Strategy
 
-Schema thay đổi được quản lý bởi **Drizzle ORM** (`drizzle-kit`) — ORM SQL-first phù hợp cho schema PostgreSQL-heavy này.
+Schema thay đổi được quản lý bởi **Drizzle ORM** (`drizzle-kit`).
 
 ### 5.1 Tại sao Drizzle (không phải Prisma)
 
-Schema này sử dụng nhiều PostgreSQL-specific features mà Prisma **không support native**:
+Schema này sử dụng nhiều PostgreSQL-specific features mà Prisma không support native:
 
 | Feature | Prisma | Drizzle |
 |---------|--------|---------|
-| Partial Index (`WHERE deleted_at IS NULL`) | ❌ Không support | ✅ `sql` helper |
-| Functional Index (JSONB path) | ❌ Raw SQL migration | ✅ Support |
-| Generated column (`tsvector`) | ❌ Raw SQL | ✅ `sql` helper |
-| `FOR UPDATE SKIP LOCKED` | ⚠️ Chỉ qua `$queryRaw` | ✅ Native |
-| RLS policies | ❌ Raw SQL | ❌ Raw SQL (cả hai) |
-| Range Partitioning | ❌ Không support | ❌ Không support (cả hai) |
-
-> **Kết luận**: Drizzle cover được ~80% schema features. Phần còn lại (RLS, Partitioning, Triggers) cần **custom SQL migrations**.
+| Partial Index (`WHERE is_active = true`) | No | Yes |
+| Functional Index (JSONB path) | Raw SQL only | Supported |
+| `FOR UPDATE SKIP LOCKED` | `$queryRaw` only | Native |
+| RLS policies | Raw SQL | Raw SQL (cả hai) |
 
 ### 5.2 Migration Workflow
 
@@ -618,43 +416,25 @@ drizzle-kit generate → review SQL → drizzle-kit migrate → verify
 
 **Conventions:**
 - `drizzle-kit generate` tạo migration files từ schema TypeScript changes
-- Migration files (`.sql`) được commit vào Git tại `drizzle/migrations/`
-- Mọi schema changes phải qua migration — **không chạy ALTER TABLE trực tiếp**
-- Custom SQL (RLS, triggers, partitions) được thêm thủ công vào migration files sau khi generate
-
-**Environments:**
-| Environment | Migration Mode | Notes |
-|------------|---------------|-------|
-| Local dev | Auto-run on startup | `drizzle-kit migrate` trong docker-compose |
-| Staging | CI/CD pipeline | Chạy trước khi deploy app |
-| Production | Manual approval + CI/CD | Review migration trước khi apply |
+- Migration files (`.sql`) committed vào Git tại `drizzle/migrations/`
+- Mọi schema changes phải qua migration — không chạy ALTER TABLE trực tiếp
+- Custom SQL (RLS, triggers) thêm thủ công vào migration files sau khi generate
 
 ### 5.3 Custom SQL Migrations (Ngoài Drizzle)
 
-Các features sau **phải** được thêm thủ công vào migration files:
-
 ```sql
--- 1. RLS Policies (Drizzle không generate được)
+-- 1. RLS Policies
 ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY submissions_select ON submissions FOR SELECT USING (user_id = current_setting('app.current_user_id')::UUID);
+CREATE POLICY submissions_select ON submissions FOR SELECT
+  USING (user_id = current_setting('app.current_user_id')::UUID);
 
 -- 2. Secure Views
 CREATE VIEW user_submissions AS ...;
 
--- 3. Partitioning: Documented as future production enhancement (see Section 2.13)
-
--- 4. Triggers (soft delete cascade, grading_job_history)
-CREATE OR REPLACE FUNCTION cascade_soft_delete() RETURNS TRIGGER AS $$ ... $$;
-
--- 5. CHECK Constraints (Drizzle có thể generate nhưng nên verify)
-ALTER TABLE submissions ADD CONSTRAINT check_score_range CHECK (score IS NULL OR (score >= 0 AND score <= 10));
-ALTER TABLE questions ADD CONSTRAINT check_cefr_level CHECK (level IN ('A1', 'A2', 'B1', 'B2', 'C1'));
-ALTER TABLE user_goals ADD CONSTRAINT check_target_band CHECK (target_band IN ('A1', 'A2', 'B1', 'B2', 'C1'));
+-- 3. CHECK Constraints
+ALTER TABLE submissions ADD CONSTRAINT check_score_range
+  CHECK (score IS NULL OR (score >= 0 AND score <= 10));
 ```
-
-### 5.4 Migration cho Partitioned Tables
-
-Partitioning cho `processed_callbacks` và `submission_events` được **document as future enhancement** (xem Section 2.13). Hiện tại, các bảng này sử dụng single table với GIN indexes.
 
 ---
 
@@ -663,11 +443,13 @@ Partitioning cho `processed_callbacks` và `submission_events` được **docume
 | Chủ đề | Tài liệu |
 |--------|-----------|
 | Submission states | `../20-domain/submission-lifecycle.md` |
-| Outbox pattern | `../40-platform/reliability.md` |
-| Queue message format | `../10-contracts/queue-contracts.md` |
+| Reliability & retry | `../40-platform/reliability.md` |
 | Auth & token details | `../40-platform/authentication.md` |
 | Rate limiting keys | `../40-platform/rate-limiting.md` |
-| Confidence & hybrid grading | `../20-domain/hybrid-grading.md` |
+| Hybrid grading | `../20-domain/hybrid-grading.md` |
 | Adaptive scaffolding | `../20-domain/adaptive-scaffolding.md` |
 | Question content shapes | `question-content-schemas.md` |
-| Database migration strategy | Section 5 (this document) |
+
+---
+
+*Document version: 2.0 - Last updated: SP26SE145*

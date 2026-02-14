@@ -1,73 +1,119 @@
-# Human Review Workflow
+# Instructor Review Workflow
 
-> **Phiên bản**: 1.0 · SP26SE145
+> **Version**: 2.0 · SP26SE145
 
-## Purpose
+## 1. Overview
 
-Chốt workflow khi AI không đủ confidence (`confidence < 85`) và cần instructor review để tạo final result.
+When AI confidence is `medium` or `low`, a Writing/Speaking submission enters `review_pending` status. Instructors review the AI result and submit a final score. The instructor's score is always authoritative — no blending with the AI score.
 
-## Scope
+---
 
-- Submission state `REVIEW_PENDING`.
-- Review queue + submit review.
-- Audit trail (AI result, human result, final result).
+## 2. Review Queue
 
-## Decisions
+### `GET /api/submissions/review/queue`
 
-### 1) Khi nào vào review
+Returns submissions in `review_pending` status, ordered by priority then creation time (FIFO within same priority).
 
-- Writing/Speaking: nếu `confidence < 85` (xem `hybrid-grading.md`) → Main App set `REVIEW_PENDING`.
+**Query parameters:**
 
-### 2) Review queue
+| Param | Type | Description |
+|-------|------|-------------|
+| `skill` | `writing` \| `speaking` | Filter by skill |
+| `priority` | `low` \| `medium` \| `high` | Filter by review priority |
+| `page` | number | Pagination |
+| `limit` | number | Page size (default 20) |
 
-- API (catalog): `GET /admin/submissions/pending-review` (xem `../10-contracts/api-endpoints.md`).
-- Sorting: ưu tiên theo `reviewPriority`, sau đó FIFO theo thời gian vào queue.
+**Response:** Paginated list with `{ data, meta }`. Each item includes submission summary, AI score, confidence level, priority, and claim status.
 
-### 2.1) Claim mechanism (Race Condition Prevention)
+---
 
-Trước khi instructor bắt đầu review, phải **claim** submission để tránh trùng lặp:
+## 3. Claim / Release
 
-- API: `POST /admin/submissions/:id/claim`
-- Cơ chế:
-  - Sử dụng Redis Distributed Lock với TTL 15 phút (`lock:review:{submissionId}`).
-  - Nếu submission đã được claim bởi instructor khác → trả về 409 CONFLICT với thông tin instructor đang claim.
-  - Nếu claim thành công → trả về thông tin submission + bắt đầu timer.
-- Timeout: Nếu instructor không submit review trong 15 phút, lock tự động expire và submission quay lại queue.
+### `POST /api/submissions/:id/review/claim`
 
-### 2.2) Release mechanism
+Instructor claims a submission before reviewing. Sets `claimedBy` (instructor user ID) and `claimedAt` (timestamp) on the submission.
 
-- API: `POST /admin/submissions/:id/release` (hủy claim, không submit review).
-- Dùng khi instructor mở nhầm bài hoặc cần chuyển cho người khác.
+- If already claimed by another instructor → `409 Conflict`
+- If submission not in `review_pending` → `409 Conflict`
 
-### 3) Submit review
+### `POST /api/submissions/:id/review/release`
 
-- API (catalog): `PUT /admin/submissions/:id/review`.
-- Payload tối thiểu:
-  - `overallScore` (0-10)
-  - `band` (A1/A2/B1/B2/C1)
-  - `criteriaScores` + `feedback` (best-effort, có thể tối giản ở version đầu)
-  - `reviewComment` (optional, dành cho audit)
+Releases a claimed submission back to the queue. Clears `claimedBy` and `claimedAt`.
 
-### 4) Merge rule (AI vs Human)
+- Only the claiming instructor (or admin) can release
+- No automatic timeout-based release (kept simple for capstone scope)
 
-- Quy tắc agree/override theo `hybrid-grading.md`.
-- Final result phải ghi rõ `gradingMode` (auto/hybrid/human) và `reviewerId`.
+---
 
-## Contracts
+## 4. Submit Review
 
-- Khi `REVIEW_PENDING`, learner chỉ thấy trạng thái chờ review và ETA best-effort (không hiển thị điểm).
-- Sau khi review xong, submission chuyển `COMPLETED` và learner thấy final result.
+### `POST /api/submissions/:id/review`
 
-## Failure modes
+Instructor submits their final assessment. Payload:
 
-| Tình huống | Hành vi |
-|-----------|---------|
-| Instructor review 2 lần cùng submission | Chỉ cho phép 1 finalization; lần sau phải là admin override (nếu support) |
-| Review payload thiếu field | 400 VALIDATION_ERROR |
-| Submission không ở REVIEW_PENDING | 409 CONFLICT |
+```typescript
+{
+  overallScore: number;       // 0-10, 0.5 steps
+  band: "B1" | "B2" | "C1";
+  criteriaScores: {
+    name: string;
+    score: number;
+    feedback: string;
+  }[];
+  feedback: string;           // general feedback
+  reviewComment?: string;     // internal note for audit
+}
+```
 
-## Acceptance criteria
+**Effects:**
+1. Submission status → `completed`
+2. `gradingMode` → `'human'`
+3. `humanScore` stored alongside existing `aiScore`
+4. `auditFlag` = true if `|aiScore - humanScore| > 0.5`
+5. `reviewedBy` and `reviewedAt` recorded
 
-- Review queue trả đúng các submission `REVIEW_PENDING`.
-- Submit review tạo final result theo rule agree/override.
-- Audit lưu được AI result + human inputs + final result.
+**Preconditions:**
+- Submission must be in `review_pending` status
+- Instructor must be the current claimant (or admin)
+
+---
+
+## 5. Admin Assignment
+
+### `POST /api/submissions/:id/review/assign`
+
+Admin directly assigns a reviewer to a submission. Sets `claimedBy` to the specified instructor, bypassing the claim flow.
+
+- Only accessible to admin role
+- Overrides any existing claim
+
+---
+
+## 6. Scoring Rules
+
+- **Final score = instructor score.** Always. No weighted merge.
+- `gradingMode = 'human'` on all reviewed submissions
+- Both AI and human results preserved in `submissionDetails` for audit
+- `auditFlag` tracks significant AI-human discrepancies for model improvement
+
+---
+
+## 7. Error Cases
+
+| Scenario | Response |
+|----------|----------|
+| Review payload missing required fields | `400 Bad Request` |
+| Submission not in `review_pending` | `409 Conflict` |
+| Submission claimed by another instructor | `409 Conflict` |
+| Instructor not authorized | `403 Forbidden` |
+| Submission not found | `404 Not Found` |
+
+---
+
+## 8. Cross-references
+
+| Topic | Document |
+|-------|----------|
+| Confidence routing rules | `hybrid-grading.md` |
+| Submission states | `submission-lifecycle.md` |
+| API endpoint catalog | `../10-contracts/api-endpoints.md` |

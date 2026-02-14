@@ -1,6 +1,6 @@
 import type { Actor } from "@common/auth-types";
 import { assertAccess, assertExists } from "@common/utils";
-import { db, notDeleted, table } from "@db/index";
+import { db, table } from "@db/index";
 import { and, desc, eq } from "drizzle-orm";
 import type { QuestionVersionBody } from "./schema";
 
@@ -12,10 +12,7 @@ export async function createQuestionVersion(
   return db.transaction(async (tx) => {
     const question = assertExists(
       await tx.query.questions.findFirst({
-        where: and(
-          eq(table.questions.id, questionId),
-          notDeleted(table.questions),
-        ),
+        where: eq(table.questions.id, questionId),
         columns: {
           id: true,
           version: true,
@@ -62,10 +59,7 @@ export async function createQuestionVersion(
 export async function getQuestionVersions(questionId: string) {
   assertExists(
     await db.query.questions.findFirst({
-      where: and(
-        eq(table.questions.id, questionId),
-        notDeleted(table.questions),
-      ),
+      where: eq(table.questions.id, questionId),
       columns: { id: true },
     }),
     "Question",
@@ -89,10 +83,7 @@ export async function getQuestionVersion(
 ) {
   assertExists(
     await db.query.questions.findFirst({
-      where: and(
-        eq(table.questions.id, questionId),
-        notDeleted(table.questions),
-      ),
+      where: eq(table.questions.id, questionId),
       columns: { id: true },
     }),
     "Question",

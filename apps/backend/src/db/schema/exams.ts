@@ -12,7 +12,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { createdAt, timestamps, timestampsWithSoftDelete } from "./columns";
+import { createdAt, timestamps } from "./columns";
 import { skillEnum } from "./enums";
 import { questionLevelEnum, questions } from "./questions";
 import { submissions } from "./submissions";
@@ -35,13 +35,13 @@ export const exams = pgTable(
     createdBy: uuid("created_by").references(() => users.id, {
       onDelete: "set null",
     }),
-    ...timestampsWithSoftDelete,
+    ...timestamps,
   },
   (table) => ({
     levelIdx: index("exams_level_idx").on(table.level),
     activeIdx: index("exams_active_idx")
       .on(table.level)
-      .where(sql`${table.isActive} = true AND ${table.deletedAt} IS NULL`),
+      .where(sql`${table.isActive} = true`),
   }),
 );
 
@@ -88,15 +88,16 @@ export const examSessions = pgTable(
       withTimezone: true,
       mode: "string",
     }),
-    ...timestampsWithSoftDelete,
+    ...timestamps,
   },
   (table) => ({
     userIdx: index("exam_sessions_user_idx").on(table.userId),
     examIdIdx: index("exam_sessions_exam_id_idx").on(table.examId),
     statusIdx: index("exam_sessions_status_idx").on(table.status),
-    userStatusIdx: index("exam_sessions_user_status_idx")
-      .on(table.userId, table.status)
-      .where(sql`${table.deletedAt} IS NULL`),
+    userStatusIdx: index("exam_sessions_user_status_idx").on(
+      table.userId,
+      table.status,
+    ),
   }),
 );
 

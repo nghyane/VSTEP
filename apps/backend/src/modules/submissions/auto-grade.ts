@@ -98,9 +98,6 @@ export async function autoGradeSubmission(submissionId: string) {
     await recordSkillScore(data.userId, skill, submissionId, score, tx);
     await updateUserProgress(data.userId, skill, tx);
 
-    // TODO(P1): Record submission event
-    //   - Insert submissionEvents: kind="auto_graded", data={ correctCount, totalCount, score, band }
-
     return { score, result };
   });
 }

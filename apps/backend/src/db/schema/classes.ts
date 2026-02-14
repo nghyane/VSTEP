@@ -6,7 +6,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { timestampsWithSoftDelete } from "./columns";
+import { timestamps } from "./columns";
 import { skillEnum } from "./enums";
 import { submissions } from "./submissions";
 import { users } from "./users";
@@ -21,7 +21,7 @@ export const classes = pgTable(
       .notNull()
       .references(() => users.id),
     inviteCode: text("invite_code").notNull(),
-    ...timestampsWithSoftDelete,
+    ...timestamps,
   },
   (table) => ({
     inviteCodeUnique: uniqueIndex("classes_invite_code_idx").on(
@@ -37,10 +37,10 @@ export const classMembers = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     classId: uuid("class_id")
       .notNull()
-      .references(() => classes.id),
+      .references(() => classes.id, { onDelete: "cascade" }),
     userId: uuid("user_id")
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: "cascade" }),
     joinedAt: timestamp("joined_at", { withTimezone: true, mode: "string" })
       .notNull()
       .defaultNow(),
@@ -61,16 +61,18 @@ export const instructorFeedback = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     classId: uuid("class_id")
       .notNull()
-      .references(() => classes.id),
+      .references(() => classes.id, { onDelete: "cascade" }),
     fromUserId: uuid("from_user_id")
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: "cascade" }),
     toUserId: uuid("to_user_id")
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: "cascade" }),
     content: text("content").notNull(),
     skill: skillEnum("skill"),
-    submissionId: uuid("submission_id").references(() => submissions.id),
+    submissionId: uuid("submission_id").references(() => submissions.id, {
+      onDelete: "cascade",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .notNull()
       .defaultNow(),

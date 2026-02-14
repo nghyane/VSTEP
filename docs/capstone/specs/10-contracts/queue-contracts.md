@@ -1,214 +1,146 @@
-# Queue Contracts (RabbitMQ)
+# Queue Contract (Redis)
 
-> **Phiên bản**: 2.1 · SP26SE145
+> **Version**: 2.0 · SP26SE145
 
-## 1. Mục đích
+## 1. Overview
 
-Chốt **hợp đồng message** giữa Bun Main App và Python Grading Service qua RabbitMQ để 2 bên triển khai độc lập nhưng không vênh.
+The backend and Python grading worker communicate through a Redis list. The backend pushes grading tasks; the worker pops them, grades via AI, and writes results directly to the shared PostgreSQL database. No HTTP callbacks, no message broker, no separate grading database.
 
-> **Kiến trúc nhắc lại**: 
-> - Main App (Bun) ↔ **MainDB** (PostgreSQL)
-> - Grading Service (Python) ↔ **GradingDB** (PostgreSQL)  
-> - **RabbitMQ là giao tiếp duy nhất** giữa 2 services — không shared DB, không direct HTTP calls
+```
+┌──────────┐    LPUSH     ┌─────────────────┐    BRPOP    ┌──────────────┐
+│  Backend  │ ──────────> │  grading:tasks  │ ─────────> │ Python Worker │
+│  (Bun)    │             │  (Redis list)   │            │  (arq)        │
+└──────────┘              └─────────────────┘            └──────┬───────┘
+                                                                │
+                                                   UPDATE/INSERT│
+                                                                v
+                                                        ┌──────────────┐
+                                                        │  PostgreSQL  │
+                                                        │  (shared DB) │
+                                                        └──────────────┘
+```
 
-Tài liệu này là **contract-first**: tập trung vào topology, message shapes, idempotency, và failure semantics.
-
----
-
-## 2. Phạm vi
-
-- Topology: exchange/queues cho `grading.request`, `grading.callback`, `grading.dlq`.
-- Encoding: JSON UTF-8.
-- Không yêu cầu versioning trong payload (capstone deploy đồng bộ 2 service).
-- Delivery semantics: at-least-once (duplicate/out-of-order possible).
-- Progress events và final result events trên `grading.callback`.
-
-Không bao gồm: schema DB, SSE endpoint, UI flows.
-
----
-
-## 3. Topology
-
-| Item | Value |
-|------|-------|
-| Exchange | `vstep.exchange` (direct, durable) |
-| Request queue | `grading.request` (durable) |
-| Callback queue | `grading.callback` (durable) |
-| DLQ | `grading.dlq` (durable) |
-| Content type | `application/json; charset=utf-8` |
-
-Routing keys (direct exchange):
-
-| Routing key | Producer | Consumer | Notes |
-|------------|----------|----------|------|
-| `grading.request` | Main App | Grading Service | Tạo job chấm |
-| `grading.callback` | Grading Service | Main App | Progress + kết quả |
-| `grading.dlq` | Broker | Manual tooling | Poison payload / non-retryable / max retry |
+**Key design decisions:**
+- Shared-DB architecture. Worker writes directly to `submissions` and `submissionDetails`.
+- Redis via `import { redis } from "bun"` (Bun built-in client). No ioredis, no RabbitMQ.
+- No callback queue, no DLQ, no outbox table, no dedup table.
 
 ---
 
-## 4. Delivery & Ordering Semantics
+## 2. Queue
 
-- **At-least-once**: consumer phải handle duplicate deliveries.
-- **Ordering không đảm bảo**: progress events có thể đến muộn/đảo thứ tự.
-- **Final event là authoritative**: callback `kind=completed|error` kết thúc job.
-
----
-
-## 5. Common Message Metadata (Optional)
-
-Khuyến nghị messages có các trường chung sau để debug/trace dễ hơn. Nếu thiếu metadata, consumer vẫn xử lý được miễn payload phần 6/7 hợp lệ.
-
-| Field | Type | Required | Notes |
-|-------|------|----------|------|
-| `messageType` | string | No | `grading.request` hoặc `grading.callback` |
-| `messageId` | string | No | UUID v4, unique per message |
-| `createdAt` | string | No | ISO 8601 UTC |
-| `trace` | object | No | observability |
-| `trace.traceId` | string | No | distributed trace id |
-| `producer` | object | No | service identity |
-| `producer.service` | string | No | `main-app` / `grading-service` |
-| `producer.version` | string | No | semantic version/commit id |
+| Property | Value |
+|----------|-------|
+| Queue name | `grading:tasks` |
+| Data structure | Redis List (FIFO via LPUSH/BRPOP) |
+| Encoding | JSON UTF-8 |
+| Delivery | At-most-once per pop (BRPOP is atomic) |
 
 ---
 
-## 6. Contract: `grading.request`
+## 3. Task Payload
 
-### 6.1 Required fields
+Backend pushes this JSON to `grading:tasks`:
 
-| Field | Type | Required | Notes |
-|-------|------|----------|------|
-| `requestId` | string | Yes | UUID v4, idempotency key per submission attempt |
-| `submissionId` | string | Yes | MainDB submission id |
-| `userId` | string | Yes | owner |
-| `skill` | enum | Yes | `writing` / `speaking` |
-| `attempt` | int | Yes | 1-indexed |
-| `deadline` | string | Yes | ISO 8601 UTC (SLA-based) |
-| `payload` | object | Yes | content to grade |
+```typescript
+type GradingTask = {
+  submissionId: string;   // UUID, primary key in submissions table
+  questionId: string;     // UUID, reference to questions table
+  skill: "writing" | "speaking";
+  answer: WritingAnswer | SpeakingAnswer;
+  dispatchedAt: string;   // ISO 8601 UTC
+};
 
-### 6.2 Payload (Writing)
+type WritingAnswer = {
+  text: string;
+  wordCount: number;
+  taskType: "email" | "essay";
+};
 
-| Field | Type | Required | Notes |
-|-------|------|----------|------|
-| `text` | string | Yes | bài viết |
-| `taskNumber` | int | Yes | `1` (Task 1) / `2` (Task 2) |
-| `questionId` | string | Yes | question reference |
+type SpeakingAnswer = {
+  audioUrl: string;
+  durationSeconds: number;
+  partNumber: 1 | 2 | 3;
+};
+```
 
-### 6.3 Payload (Speaking)
-
-| Field | Type | Required | Notes |
-|-------|------|----------|------|
-| `audioUrl` | string | Yes | URL tải audio |
-| `durationSeconds` | int | Yes | độ dài audio |
-| `questionId` | string | Yes | question reference |
-| `partNumber` | int | No | speaking part (1/2/3) |
-
-### 6.4 Validation rules
-
-- `requestId` phải ổn định cho cùng submission attempt (resend không đổi).
-- `deadline` do Main App tính theo SLA (writing 20m, speaking 60m).
-- Nếu payload thiếu fields bắt buộc hoặc type không hợp lệ: Grading Service phải phát `grading.callback(kind=error)` với `error.type=INVALID_INPUT`, `retryable=false`, sau đó message phải vào DLQ.
+Only Writing and Speaking go through the queue. Listening/Reading are auto-graded synchronously in the backend.
 
 ---
 
-## 7. Contract: `grading.callback`
+## 4. Worker Behavior
 
-Callback queue dùng cho **progress updates** và **final result/error**.
+The Python worker uses **arq** (async Redis queue framework).
 
-### 7.1 Required fields
+| Setting | Value |
+|---------|-------|
+| `max_tries` | 3 |
+| `job_timeout` | 60s |
+| Retry backoff | Exponential (arq default) |
 
-| Field | Type | Required | Notes |
-|-------|------|----------|------|
-| `requestId` | string | Yes | join key |
-| `submissionId` | string | Yes | join key |
-| `eventId` | string | Yes | UUID v4, unique per callback message (dedup key) |
-| `kind` | enum | Yes | `progress` / `completed` / `error` |
-| `occurredAt` | string | Yes | ISO 8601 UTC |
-| `data` | object | Yes | payload theo `kind` |
+### 4.1 Processing Flow
 
-### 7.2 `kind=progress`
+1. Worker pops task from `grading:tasks` via BRPOP.
+2. Runs AI pipeline:
+   - **Writing**: Gemini (content rubric) + grammar model → merge results
+   - **Speaking**: Whisper (STT) → Gemini (rubric grading) → merge results
+3. Writes result to PostgreSQL in a single transaction:
+   - `UPDATE submissions SET status, overallScore, band, gradingMode, ...`
+   - `INSERT INTO submissionDetails (criteriaScores, feedback, confidence, ...)`
+4. Status is set based on confidence:
+   - `high` → `completed`
+   - `medium` → `review_pending` (priority: medium)
+   - `low` → `review_pending` (priority: high)
 
-`data` tối thiểu:
+### 4.2 Failure Handling
 
-| Field | Type | Required | Notes |
-|-------|------|----------|------|
-| `status` | enum | Yes | `processing` |
-| `progress` | number | No | 0..1 (best-effort) |
-| `message` | string | No | text ngắn cho UI |
-
-Progress events **best-effort**: có thể bị drop; client không nên phụ thuộc để quyết định business logic.
-
-### 7.3 `kind=completed`
-
-`data` tối thiểu:
-
-| Field | Type | Required | Notes |
-|-------|------|----------|------|
-| `result` | object | Yes | AI grading result |
-| `result.overallScore` | number | Yes | 0-10 |
-| `result.band` | enum | Yes | A1/A2/B1/B2/C1 |
-| `result.confidence` | int | Yes | 0-100 |
-| `result.reviewPending` | boolean | Yes | `confidence < 85` |
-| `result.reviewPriority` | enum | Conditional | low/medium/high/critical khi reviewPending=true |
-| `result.auditFlag` | boolean | Yes | true nếu 85-89 hoặc có signals |
-
-`kind=completed` nghĩa là **AI grading đã kết thúc** (không đồng nghĩa learner có final result ngay). Main App quyết định:
-
-- `reviewPending=false` → set submission status `completed`
-- `reviewPending=true` → set submission status `review_pending` và đưa vào hàng chờ instructor
-
-Chi tiết rubric/feedback shape: tham chiếu `../20-domain/hybrid-grading.md`.
-
-### 7.4 `kind=error`
-
-`data` tối thiểu:
-
-| Field | Type | Required | Notes |
-|-------|------|----------|------|
-| `error` | object | Yes | error details |
-| `error.type` | string | Yes | e.g. LLM_TIMEOUT, STT_FAIL, INVALID_INPUT, CIRCUIT_OPEN |
-| `error.code` | string | Yes | stable code for client/UI |
-| `error.message` | string | Yes | human readable (for logs/admin) |
-| `error.retryable` | boolean | Yes | retryable hay không |
+- arq retries automatically up to `max_tries=3` with exponential backoff.
+- The backend never sees intermediate retries. No `error` or `retrying` states.
+- After 3 failures, the worker sets `status = 'failed'` on the submission.
+- Worker logs the error details (Gemini timeout, Whisper failure, etc.) for debugging.
 
 ---
 
-## 8. Idempotency Requirements
+## 5. Backend Dispatch
 
-### 8.1 Request dedup (Grading Service)
+When a Writing/Speaking submission is created:
 
-- Dedup theo `requestId`.
-- Nếu nhận duplicate `grading.request`:
-  - Nếu đã có final result: publish lại `grading.callback(kind=completed)` với cached result.
-  - Nếu đang processing: có thể ignore hoặc publish progress hiện tại (best-effort).
+```typescript
+// Pseudocode — actual implementation in submission service
+await db.update(submissions)
+  .set({ status: "processing" })
+  .where(eq(submissions.id, submissionId));
 
-### 8.2 Callback dedup (Main App)
+await redis.lpush("grading:tasks", JSON.stringify({
+  submissionId,
+  questionId,
+  skill,
+  answer,
+  dispatchedAt: new Date().toISOString(),
+}));
+```
 
-- Dedup theo `eventId` (unique per callback message).
-- Final result idempotency theo `requestId`:
-  - duplicate completed callbacks không được tạo duplicate result/submission updates.
-
----
-
-## 9. DLQ Requirements
-
-Message bị route DLQ khi:
-
-- Invalid schema / missing required fields
-- Non-retryable processing errors
-- Max retries exceeded
-
-DLQ payload phải giữ tối thiểu:
-
-- Original message (hoặc reference)
-- `requestId`, `submissionId`
-- `failureReason`, `attemptsMade`, `timestamp`, `lastError`
+Status is set to `processing` before pushing to Redis. If the Redis push fails, the submission remains in `processing` and can be detected by monitoring.
 
 ---
 
-## 10. Acceptance Criteria
+## 6. Monitoring
 
-- Hai service triển khai độc lập vẫn interoperate đúng contract.
-- Duplicate `grading.request` không tạo duplicate grading job/final result.
-- Callback progress có thể đến nhiều lần và được dedup bằng eventId.
-- Callback final (completed/error) là authoritative và có thể replay mà không gây side effects.
+| What | How |
+|------|-----|
+| Queue depth | `LLEN grading:tasks` |
+| Stuck submissions | Query `submissions WHERE status = 'processing' AND updatedAt < now() - interval '5 min'` |
+| Worker health | arq worker logs + process monitoring |
+| Error rate | Count `submissions WHERE status = 'failed'` over time window |
+
+No dead-letter queue. Failed submissions are visible directly in the database with `status = 'failed'`.
+
+---
+
+## 7. Cross-references
+
+| Topic | Document |
+|-------|----------|
+| Submission lifecycle & states | `../20-domain/submission-lifecycle.md` |
+| Grading pipeline & confidence | `../20-domain/hybrid-grading.md` |
+| Review workflow | `../20-domain/review-workflow.md` |

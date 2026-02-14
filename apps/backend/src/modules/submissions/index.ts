@@ -72,7 +72,7 @@ export const submissions = new Elysia({
     detail: {
       summary: "Get submission by ID",
       description:
-        "Retrieve a single submission including its grading details and event history.",
+        "Retrieve a single submission including its grading details.",
       security: [{ bearerAuth: [] }],
     },
   })
@@ -226,7 +226,7 @@ export const submissions = new Elysia({
       detail: {
         summary: "Submit review",
         description:
-          "Submit human review with score and feedback. Merges with AI result according to confidence rules.",
+          "Submit human review with score and feedback. Instructor override is final.",
         security: [{ bearerAuth: [] }],
       },
     },
@@ -258,14 +258,12 @@ export const submissions = new Elysia({
     response: {
       200: t.Object({
         id: t.String({ format: "uuid" }),
-        deletedAt: t.String({ format: "date-time" }),
       }),
       ...CrudErrors,
     },
     detail: {
       summary: "Delete submission",
-      description:
-        "Soft-delete a submission. The record is retained but excluded from queries.",
+      description: "Delete a submission.",
       security: [{ bearerAuth: [] }],
     },
   });

@@ -10,18 +10,18 @@ import {
 } from "drizzle-typebox";
 import { t } from "elysia";
 
-const { deletedAt: _, ...examColumns } = getTableColumns(exams);
-const { deletedAt: __, ...sessionColumns } = getTableColumns(examSessions);
+const examColumns = getTableColumns(exams);
+const sessionColumns = getTableColumns(examSessions);
 export const EXAM_COLUMNS = examColumns;
 export const SESSION_COLUMNS = sessionColumns;
 
 const ExamRow = createSelectSchema(exams, { blueprint: ExamBlueprint });
 const SessionRow = createSelectSchema(examSessions);
 
-export const Exam = t.Omit(ExamRow, ["deletedAt"]);
+export const Exam = ExamRow;
 export type Exam = typeof Exam.static;
 
-export const ExamSession = t.Omit(SessionRow, ["deletedAt"]);
+export const ExamSession = SessionRow;
 export type ExamSession = typeof ExamSession.static;
 
 const InsertExam = createInsertSchema(exams, {

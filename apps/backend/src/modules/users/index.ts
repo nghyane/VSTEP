@@ -104,14 +104,12 @@ export const users = new Elysia({
     response: {
       200: t.Object({
         id: t.String({ format: "uuid" }),
-        deletedAt: t.String({ format: "date-time" }),
       }),
       ...CrudErrors,
     },
     detail: {
       summary: "Delete user",
-      description:
-        "Soft-delete a user account. The record is retained but excluded from queries. Requires admin role.",
+      description: "Delete a user account. Requires admin role.",
       security: [{ bearerAuth: [] }],
     },
   })

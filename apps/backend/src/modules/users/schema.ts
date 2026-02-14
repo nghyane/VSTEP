@@ -5,7 +5,7 @@ import { getTableColumns } from "drizzle-orm";
 import { createSelectSchema } from "drizzle-typebox";
 import { t } from "elysia";
 
-const { passwordHash: _, deletedAt: __, ...columns } = getTableColumns(users);
+const { passwordHash: _, ...columns } = getTableColumns(users);
 export const USER_COLUMNS = columns;
 
 /** UserRole without the Drizzle-inherited default — for optional filter/update fields. */
@@ -14,7 +14,7 @@ const OptionalUserRole = t.UnionEnum(userRoleEnum.enumValues, {
 });
 
 const UserRow = createSelectSchema(users);
-export const User = t.Omit(UserRow, ["passwordHash", "deletedAt"]);
+export const User = t.Omit(UserRow, ["passwordHash"]);
 export type User = typeof User.static;
 
 export const UserCreateBody = t.Object({

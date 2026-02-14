@@ -2,9 +2,9 @@ import { BadRequestError } from "@common/errors";
 import { createStateMachine } from "@common/state-machine";
 import { assertExists } from "@common/utils";
 import type { DbTransaction } from "@db/index";
-import { db, notDeleted, paginated, table } from "@db/index";
+import { db, paginate, table } from "@db/index";
 import type { ExamSession } from "@db/schema/exams";
-import { and, count, desc, eq, inArray, type SQL } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import type { ExamCreateBody, ExamListQuery, ExamUpdateBody } from "./schema";
 import { EXAM_COLUMNS } from "./schema";
 
@@ -35,11 +35,7 @@ async function validateBlueprint(
     .select({ id: table.questions.id })
     .from(table.questions)
     .where(
-      and(
-        inArray(table.questions.id, ids),
-        notDeleted(table.questions),
-        eq(table.questions.isActive, true),
-      ),
+      and(inArray(table.questions.id, ids), eq(table.questions.isActive, true)),
     );
 
   if (found.length === ids.length) return;
@@ -52,8 +48,7 @@ async function validateBlueprint(
 
 export async function getExamById(id: string) {
   const exam = await db.query.exams.findFirst({
-    where: and(eq(table.exams.id, id), notDeleted(table.exams)),
-    columns: { deletedAt: false },
+    where: eq(table.exams.id, id),
   });
 
   return assertExists(exam, "Exam");
@@ -61,28 +56,22 @@ export async function getExamById(id: string) {
 
 export async function listExams(query: ExamListQuery) {
   const where = and(
-    ...[
-      notDeleted(table.exams),
-      query.level && eq(table.exams.level, query.level),
-      query.isActive !== undefined && eq(table.exams.isActive, query.isActive),
-    ].filter((c): c is SQL => Boolean(c)),
+    query.level ? eq(table.exams.level, query.level) : undefined,
+    query.isActive !== undefined
+      ? eq(table.exams.isActive, query.isActive)
+      : undefined,
   );
 
-  const pg = paginated(query.page, query.limit);
-  return pg.resolve({
-    count: db
-      .select({ count: count() })
-      .from(table.exams)
-      .where(where)
-      .then((r) => r[0]?.count ?? 0),
-    query: db
+  return paginate(
+    db
       .select(EXAM_COLUMNS)
       .from(table.exams)
       .where(where)
       .orderBy(desc(table.exams.createdAt))
-      .limit(pg.limit)
-      .offset(pg.offset),
-  });
+      .$dynamic(),
+    db.$count(table.exams, where),
+    query,
+  );
 }
 
 export async function createExam(userId: string, body: ExamCreateBody) {
@@ -117,7 +106,7 @@ export async function updateExam(id: string, body: ExamUpdateBody) {
         ...(body.blueprint !== undefined && { blueprint: body.blueprint }),
         ...(body.isActive !== undefined && { isActive: body.isActive }),
       })
-      .where(and(eq(table.exams.id, id), notDeleted(table.exams)))
+      .where(eq(table.exams.id, id))
       .returning(EXAM_COLUMNS);
 
     return assertExists(exam, "Exam");
