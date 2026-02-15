@@ -10,6 +10,10 @@ import type {
   QuestionUpdateBody,
 } from "./schema";
 import { QUESTION_COLUMNS } from "./schema";
+import {
+  assertAnswerKeyMatchesFormat,
+  assertContentMatchesFormat,
+} from "./validation";
 
 export async function getQuestionById(questionId: string) {
   const question = await db.query.questions.findFirst({
@@ -48,6 +52,13 @@ export async function listQuestions(query: QuestionListQuery, actor: Actor) {
 }
 
 export async function createQuestion(userId: string, body: QuestionCreateBody) {
+  assertContentMatchesFormat(body.format, body.content);
+  assertAnswerKeyMatchesFormat(
+    body.format,
+    body.content,
+    body.answerKey ?? null,
+  );
+
   return db.transaction(async (tx) => {
     const q = await tx
       .insert(table.questions)
@@ -87,6 +98,7 @@ export async function updateQuestion(
         columns: {
           id: true,
           createdBy: true,
+          format: true,
           content: true,
           answerKey: true,
           version: true,
@@ -100,6 +112,24 @@ export async function updateQuestion(
       actor,
       "You can only update your own questions",
     );
+
+    if (
+      body.format !== undefined ||
+      body.content !== undefined ||
+      body.answerKey !== undefined
+    ) {
+      const effectiveFormat = body.format ?? question.format;
+      const effectiveContent = body.content ?? question.content;
+      const effectiveAnswerKey =
+        body.answerKey !== undefined ? body.answerKey : question.answerKey;
+
+      assertContentMatchesFormat(effectiveFormat, effectiveContent);
+      assertAnswerKeyMatchesFormat(
+        effectiveFormat,
+        effectiveContent,
+        effectiveAnswerKey,
+      );
+    }
 
     // Bump version whenever content or answerKey is touched — simple and predictable
     const contentChanged =
@@ -150,12 +180,12 @@ export async function removeQuestion(questionId: string) {
       .where(
         and(
           eq(table.exams.isActive, true),
-          sql`${table.exams.blueprint}::jsonb @> ANY(ARRAY[
-            jsonb_build_object('listening', jsonb_build_object('questionIds', jsonb_build_array(${questionId}::text))),
-            jsonb_build_object('reading', jsonb_build_object('questionIds', jsonb_build_array(${questionId}::text))),
-            jsonb_build_object('writing', jsonb_build_object('questionIds', jsonb_build_array(${questionId}::text))),
-            jsonb_build_object('speaking', jsonb_build_object('questionIds', jsonb_build_array(${questionId}::text)))
-          ])`,
+          sql`(
+            ${table.exams.blueprint}->'listening'->'questionIds' @> ${JSON.stringify([questionId])}::jsonb OR
+            ${table.exams.blueprint}->'reading'->'questionIds' @> ${JSON.stringify([questionId])}::jsonb OR
+            ${table.exams.blueprint}->'writing'->'questionIds' @> ${JSON.stringify([questionId])}::jsonb OR
+            ${table.exams.blueprint}->'speaking'->'questionIds' @> ${JSON.stringify([questionId])}::jsonb
+          )`,
         ),
       )
       .limit(1);

@@ -90,7 +90,8 @@ export function computeEta(
     values.push(scores[i] as number);
   }
 
-  // Linear regression: slope = cov(x,y) / var(x)
+  // Linear regression: slope = Σ(xi-x̄)(yi-ȳ) / Σ(xi-x̄)²
+  // x = days since first attempt, y = score
   const n = times.length;
   const sumX = times.reduce((a, b) => a + b, 0);
   const sumY = values.reduce((a, b) => a + b, 0);

@@ -141,69 +141,55 @@ export async function submitReview(
   actor: Actor,
 ) {
   return db.transaction(async (tx) => {
-    const submission = assertExists(
-      await tx.query.submissions.findFirst({
-        where: eq(table.submissions.id, submissionId),
-        columns: {
-          id: true,
-          status: true,
-          userId: true,
-          skill: true,
-          score: true,
-          band: true,
-          claimedBy: true,
-        },
-      }),
-      "Submission",
-    );
+    const [submission, details] = await Promise.all([
+      tx.query.submissions
+        .findFirst({
+          where: eq(table.submissions.id, submissionId),
+          columns: {
+            id: true,
+            status: true,
+            userId: true,
+            skill: true,
+            claimedBy: true,
+          },
+        })
+        .then((s) => assertExists(s, "Submission")),
+      fetchDetails(tx, submissionId),
+    ]);
 
     if (submission.status !== "review_pending") {
       throw new ConflictError(
         `Cannot review a submission with status "${submission.status}"`,
       );
     }
-
     if (submission.claimedBy !== actor.sub && !actor.is(ROLES.ADMIN)) {
       throw new ForbiddenError("You must claim this submission first");
     }
 
-    // Fetch AI result from details
-    const details = await fetchDetails(tx, submissionId);
-    const existingResult =
-      typeof details.result === "object" && details.result !== null
-        ? details.result
-        : null;
-
-    // Instructor override is final
-    const finalScore = Math.round(body.overallScore * 2) / 2;
-    const finalBand = body.band ?? scoreToBand(finalScore);
-    const priorScore =
-      existingResult && "score" in existingResult
-        ? (existingResult.score as number)
-        : null;
-    const auditFlag =
-      priorScore != null && Math.abs(priorScore - body.overallScore) > 0.5;
-
+    const grade = resolveHumanGrade(body, details.result, actor.sub);
     const ts = new Date().toISOString();
+
+    const claimGuard = actor.is(ROLES.ADMIN)
+      ? undefined
+      : eq(table.submissions.claimedBy, actor.sub);
+
     const updated = await tx
       .update(table.submissions)
       .set({
-        score: finalScore,
-        band: finalBand,
+        score: grade.score,
+        band: grade.band,
         status: "completed",
         completedAt: ts,
         updatedAt: ts,
         reviewerId: actor.sub,
         gradingMode: "human",
-        auditFlag,
+        auditFlag: grade.auditFlag,
       })
       .where(
         and(
           eq(table.submissions.id, submissionId),
           eq(table.submissions.status, "review_pending"),
-          actor.is(ROLES.ADMIN)
-            ? undefined
-            : eq(table.submissions.claimedBy, actor.sub),
+          claimGuard,
         ),
       )
       .returning(SUBMISSION_COLUMNS)
@@ -215,25 +201,11 @@ export async function submitReview(
       );
     }
 
-    // Store AI + human result in details
-    const mergedResult = {
-      ...(existingResult ?? {}),
-      humanReview: {
-        score: body.overallScore,
-        band: body.band ?? null,
-        criteriaScores: body.criteriaScores ?? null,
-        feedback: body.feedback ?? null,
-        reviewComment: body.reviewComment ?? null,
-        reviewerId: actor.sub,
-        reviewedAt: ts,
-      },
-    };
-
     await tx
       .update(table.submissionDetails)
       .set({
         feedback: body.feedback ?? details.feedback,
-        result: sql`${JSON.stringify(mergedResult)}::jsonb`,
+        result: sql`${JSON.stringify(grade.result)}::jsonb`,
       })
       .where(eq(table.submissionDetails.submissionId, submissionId));
 
@@ -241,16 +213,53 @@ export async function submitReview(
       submission.userId,
       submission.skill,
       submissionId,
-      finalScore,
+      grade.score,
       tx,
     );
     await updateUserProgress(submission.userId, submission.skill, tx);
 
     return {
       ...updated,
-      ...(await fetchDetails(tx, submissionId)),
+      answer: details.answer,
+      result: grade.result,
+      feedback: body.feedback ?? details.feedback,
     };
   });
+}
+
+function resolveHumanGrade(
+  body: SubmissionReviewBody,
+  aiResult: unknown,
+  reviewerId: string,
+) {
+  const score = Math.round(body.overallScore * 2) / 2;
+  const band = body.band ?? scoreToBand(score);
+
+  const existing =
+    typeof aiResult === "object" && aiResult !== null
+      ? (aiResult as Record<string, unknown>)
+      : null;
+
+  const aiScore =
+    existing && typeof existing.overallScore === "number"
+      ? existing.overallScore
+      : null;
+  const auditFlag =
+    aiScore != null && Math.abs(aiScore - body.overallScore) > 0.5;
+
+  const result = {
+    ...(existing ?? {}),
+    overallScore: body.overallScore,
+    band,
+    criteriaScores: body.criteriaScores,
+    feedback: body.feedback,
+    reviewComment: body.reviewComment,
+    reviewerId,
+    reviewedAt: new Date().toISOString(),
+    ...(aiScore != null && { aiScore }),
+  };
+
+  return { score, band, auditFlag, result };
 }
 
 export async function assignSubmission(

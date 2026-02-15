@@ -2,6 +2,7 @@ import type { Actor } from "@common/auth-types";
 import { BadRequestError } from "@common/errors";
 import {
   calculateScore,
+  normalizeAnswer,
   parseAnswerKey,
   parseUserAnswer,
 } from "@common/scoring";
@@ -27,13 +28,13 @@ export function autoGradeAnswers(
   questionsMap: Map<string, QuestionInfo>,
 ) {
   const acc = {
-    lOk: 0,
-    lTot: 0,
-    rOk: 0,
-    rTot: 0,
+    listeningCorrect: 0,
+    listeningTotal: 0,
+    readingCorrect: 0,
+    readingTotal: 0,
     writing: [] as AnswerEntry[],
     speaking: [] as AnswerEntry[],
-    map: new Map<string, boolean>(),
+    correctness: new Map<string, boolean>(),
   };
 
   for (const ea of answers) {
@@ -55,18 +56,22 @@ export function autoGradeAnswers(
     const key = parseAnswerKey(q.answerKey);
     const ans = parseUserAnswer(ea.answer);
     const items = Object.entries(key);
-    const ok = items.filter(
-      ([k, v]) => ans[k]?.trim().toLowerCase() === v.trim().toLowerCase(),
+    const correct = items.filter(
+      ([id, expected]) =>
+        normalizeAnswer(ans[id] ?? "") === normalizeAnswer(expected),
     ).length;
 
-    acc.map.set(ea.questionId, items.length > 0 && ok === items.length);
+    acc.correctness.set(
+      ea.questionId,
+      items.length > 0 && correct === items.length,
+    );
 
     if (q.skill === "listening") {
-      acc.lOk += ok;
-      acc.lTot += items.length;
+      acc.listeningCorrect += correct;
+      acc.listeningTotal += items.length;
     } else {
-      acc.rOk += ok;
-      acc.rTot += items.length;
+      acc.readingCorrect += correct;
+      acc.readingTotal += items.length;
     }
   }
 
@@ -81,28 +86,32 @@ async function persistCorrectness(
   if (correctness.size === 0) return;
 
   const entries = [...correctness.entries()];
-  const ok = entries.filter(([, v]) => v).map(([k]) => k);
-  const bad = entries.filter(([, v]) => !v).map(([k]) => k);
+  const correct = entries
+    .filter(([, isCorrect]) => isCorrect)
+    .map(([id]) => id);
+  const incorrect = entries
+    .filter(([, isCorrect]) => !isCorrect)
+    .map(([id]) => id);
 
-  if (ok.length > 0) {
+  if (correct.length > 0) {
     await tx
       .update(table.examAnswers)
       .set({ isCorrect: true })
       .where(
         and(
           eq(table.examAnswers.sessionId, sessionId),
-          inArray(table.examAnswers.questionId, ok),
+          inArray(table.examAnswers.questionId, correct),
         ),
       );
   }
-  if (bad.length > 0) {
+  if (incorrect.length > 0) {
     await tx
       .update(table.examAnswers)
       .set({ isCorrect: false })
       .where(
         and(
           eq(table.examAnswers.sessionId, sessionId),
-          inArray(table.examAnswers.questionId, bad),
+          inArray(table.examAnswers.questionId, incorrect),
         ),
       );
   }
@@ -139,10 +148,16 @@ export async function submitExam(sessionId: string, actor: Actor) {
 
     const grade = autoGradeAnswers(answers, questionsMap);
 
-    await persistCorrectness(tx, sessionId, grade.map);
+    await persistCorrectness(tx, sessionId, grade.correctness);
 
-    const listeningScore = calculateScore(grade.lOk, grade.lTot);
-    const readingScore = calculateScore(grade.rOk, grade.rTot);
+    const listeningScore = calculateScore(
+      grade.listeningCorrect,
+      grade.listeningTotal,
+    );
+    const readingScore = calculateScore(
+      grade.readingCorrect,
+      grade.readingTotal,
+    );
 
     const pending = [
       ...grade.writing.map((a) => ({ ...a, skill: "writing" as const })),
@@ -181,6 +196,14 @@ export async function submitExam(sessionId: string, actor: Actor) {
           skill: p.skill,
         })),
       );
+
+      for (const { pending: p } of pairs) {
+        if (!p.answer || typeof p.answer !== "object") {
+          throw new BadRequestError(
+            `Invalid answer format for ${p.skill} question ${p.questionId}`,
+          );
+        }
+      }
 
       await Promise.all(
         pairs.map(({ sub, pending: p }) =>

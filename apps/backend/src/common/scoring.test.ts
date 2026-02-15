@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import {
-  calculateOverallScore,
   calculateScore,
+  normalizeAnswer,
   parseAnswerKey,
   parseUserAnswer,
   scoreToBand,
@@ -32,33 +32,6 @@ describe("calculateScore", () => {
   it("handles 1 correct out of many", () => {
     // 1/10 * 10 = 1.0 → round(1.0*2)/2 = 1.0
     expect(calculateScore(1, 10)).toBe(1);
-  });
-});
-
-describe("calculateOverallScore", () => {
-  it("returns null for empty array", () => {
-    expect(calculateOverallScore([])).toBeNull();
-  });
-
-  it("averages all skills and rounds to nearest 0.5", () => {
-    // (6+7+8+9)/4 = 7.5 → round(7.5*2)/2 = 7.5
-    expect(calculateOverallScore([6, 7, 8, 9])).toBe(7.5);
-  });
-
-  it("rounds non-0.5 averages correctly", () => {
-    // (6+7+8)/3 = 7.0
-    expect(calculateOverallScore([6, 7, 8])).toBe(7);
-    // (5+6+8+9)/4 = 7.0
-    expect(calculateOverallScore([5, 6, 8, 9])).toBe(7);
-  });
-
-  it("returns null when any skill score is null", () => {
-    expect(calculateOverallScore([6, null, 8, 9])).toBeNull();
-    expect(calculateOverallScore([null])).toBeNull();
-  });
-
-  it("handles single skill", () => {
-    expect(calculateOverallScore([8.5])).toBe(8.5);
   });
 });
 
@@ -111,6 +84,25 @@ describe("parseAnswerKey", () => {
 
   it("returns empty object for empty correctAnswers", () => {
     expect(parseAnswerKey({ correctAnswers: {} })).toEqual({});
+  });
+});
+
+describe("normalizeAnswer", () => {
+  it("trims and lowercases", () => {
+    expect(normalizeAnswer("  Hello World  ")).toBe("hello world");
+  });
+
+  it("collapses multiple spaces", () => {
+    expect(normalizeAnswer("the   quick   brown")).toBe("the quick brown");
+  });
+
+  it("returns empty string for empty input", () => {
+    expect(normalizeAnswer("")).toBe("");
+    expect(normalizeAnswer("   ")).toBe("");
+  });
+
+  it("returns already-normalized string unchanged", () => {
+    expect(normalizeAnswer("already clean")).toBe("already clean");
   });
 });
 

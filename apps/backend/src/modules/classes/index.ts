@@ -8,6 +8,9 @@ import {
 } from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
+import { getDashboard, getMemberProgress } from "./dashboard";
+import { createFeedback, listFeedback } from "./feedback";
+import { joinClass, leaveClass, removeMember } from "./members";
 import {
   Class,
   ClassDetail,
@@ -21,16 +24,9 @@ import {
 } from "./schema";
 import {
   createClass,
-  createFeedback,
   getClassById,
-  getDashboard,
-  getMemberProgress,
-  joinClass,
-  leaveClass,
   listClasses,
-  listFeedback,
   removeClass,
-  removeMember,
   rotateInviteCode,
   updateClass,
 } from "./service";
@@ -41,8 +37,6 @@ export const classes = new Elysia({
   detail: { tags: ["Classes"] },
 })
   .use(authPlugin)
-
-  // ── Class CRUD ───────────────────────────────────────────
 
   .post("/", ({ body, user }) => createClass(body, user), {
     role: ROLES.INSTRUCTOR,
@@ -98,8 +92,6 @@ export const classes = new Elysia({
     detail: { summary: "Delete class", security: [{ bearerAuth: [] }] },
   })
 
-  // ── Invite code ──────────────────────────────────────────
-
   .post(
     "/:id/rotate-code",
     ({ params, user }) => rotateInviteCode(params.id, user),
@@ -113,8 +105,6 @@ export const classes = new Elysia({
       },
     },
   )
-
-  // ── Join / Leave ─────────────────────────────────────────
 
   .post("/join", ({ body, user }) => joinClass(body, user), {
     auth: true,
@@ -146,8 +136,6 @@ export const classes = new Elysia({
     detail: { summary: "Leave class", security: [{ bearerAuth: [] }] },
   })
 
-  // ── Member management ────────────────────────────────────
-
   .delete(
     "/:id/members/:userId",
     ({ params, user }) => removeMember(params.id, params.userId, user),
@@ -170,8 +158,6 @@ export const classes = new Elysia({
       },
     },
   )
-
-  // ── Dashboard ────────────────────────────────────────────
 
   .get("/:id/dashboard", ({ params, user }) => getDashboard(params.id, user), {
     role: ROLES.INSTRUCTOR,
@@ -199,8 +185,6 @@ export const classes = new Elysia({
       },
     },
   )
-
-  // ── Feedback ─────────────────────────────────────────────
 
   .post(
     "/:id/feedback",

@@ -43,9 +43,12 @@ export async function checkHealth() {
   ]);
 
   const services = { db: dbHealth, redis: redisHealth };
-  const allOk = Object.values(services).every(
+  const allHealthy = Object.values(services).every(
     (s) => s.status === "ok" || s.status === "unavailable",
   );
 
-  return { status: allOk ? ("ok" as const) : ("degraded" as const), services };
+  return {
+    status: allHealthy ? ("ok" as const) : ("degraded" as const),
+    services,
+  };
 }

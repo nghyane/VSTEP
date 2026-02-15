@@ -210,6 +210,7 @@ describe("questions integration", () => {
               },
             ],
           },
+          answerKey: { correctAnswers: { "1": "A" } },
         },
       });
     }

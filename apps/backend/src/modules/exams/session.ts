@@ -62,15 +62,16 @@ async function loadBlueprintIds(tx: DbTransaction, examId: string) {
 
 export async function startExamSession(userId: string, examId: string) {
   return db.transaction(async (tx) => {
-    const exam = assertExists(
-      await tx.query.exams.findFirst({
-        where: eq(table.exams.id, examId),
-        columns: { id: true, isActive: true },
-      }),
-      "Exam",
-    );
+    // Lock exam row to serialize concurrent session creation for the same exam
+    const [exam] = await tx
+      .select({ id: table.exams.id, isActive: table.exams.isActive })
+      .from(table.exams)
+      .where(eq(table.exams.id, examId))
+      .for("update")
+      .limit(1);
 
-    if (!exam.isActive) throw new BadRequestError("Exam is not active");
+    const e = assertExists(exam, "Exam");
+    if (!e.isActive) throw new BadRequestError("Exam is not active");
 
     const [existing] = await tx
       .select(SESSION_COLUMNS)
@@ -133,11 +134,22 @@ export async function submitExamAnswer(
   });
 }
 
+const MAX_ANSWERS_PER_REQUEST = 200;
+
 export async function saveExamAnswers(
   sessionId: string,
   answers: { questionId: string; answer: SubmissionAnswer }[],
   actor: Actor,
 ) {
+  if (answers.length === 0) {
+    throw new BadRequestError("At least one answer is required");
+  }
+  if (answers.length > MAX_ANSWERS_PER_REQUEST) {
+    throw new BadRequestError(
+      `Maximum ${MAX_ANSWERS_PER_REQUEST} answers per request`,
+    );
+  }
+
   return db.transaction(async (tx) => {
     const session = await getActiveSession(tx, sessionId, actor);
     const allowed = await loadBlueprintIds(tx, session.examId);

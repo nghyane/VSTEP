@@ -15,11 +15,6 @@ import { createdAt, timestamps } from "./columns";
 import { skillEnum } from "./enums";
 import { users } from "./users";
 
-/**
- * VSTEP formats: writing_task_1/2, speaking_part_1/2/3, reading_mcq, listening_mcq.
- * Non-VSTEP (IELTS) formats kept for extensibility: reading_tng, reading_matching_headings,
- * reading_gap_fill, listening_dictation. These are NOT used in VSTEP.3-5 exams.
- */
 export const questionFormatEnum = pgEnum("question_format", [
   "writing_task_1",
   "writing_task_2",

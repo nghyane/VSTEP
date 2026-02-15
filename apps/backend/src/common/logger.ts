@@ -1,7 +1,4 @@
-/**
- * Simple logger using Bun.stdout/stderr
- * Zero dependency, fast, stable for academic projects
- */
+import { env } from "@common/env";
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -19,7 +16,7 @@ const STREAMS: Record<LogLevel, typeof Bun.stdout> = {
   error: Bun.stderr,
 };
 
-const currentLevel = LEVELS[(Bun.env.LOG_LEVEL as LogLevel) || "info"];
+const currentLevel = LEVELS[env.LOG_LEVEL];
 
 function log(
   level: LogLevel,

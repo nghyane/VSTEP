@@ -62,11 +62,14 @@ export async function getProgressForUsers(userIds: string[]) {
   });
 }
 
-export async function getAtRiskLearners(userIds: string[]) {
+export async function getAtRiskLearners(
+  userIds: string[],
+  precomputedProgress?: Awaited<ReturnType<typeof getProgressForUsers>>,
+) {
   if (userIds.length === 0) return [];
 
   const [progressData, goals] = await Promise.all([
-    getProgressForUsers(userIds),
+    precomputedProgress ?? getProgressForUsers(userIds),
     db
       .select()
       .from(table.userGoals)

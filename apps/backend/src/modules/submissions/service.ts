@@ -40,7 +40,11 @@ export const submissionMachine = createStateMachine<SubmissionStatus>({
 });
 
 const MUTABLE_STATUSES: SubmissionStatus[] = ["pending"];
-const GRADABLE_STATUSES: SubmissionStatus[] = ["review_pending", "processing"];
+const GRADABLE_STATUSES: SubmissionStatus[] = [
+  "pending",
+  "review_pending",
+  "processing",
+];
 
 export async function fetchDetails(tx: DbTransaction, submissionId: string) {
   const [row] = await tx
@@ -152,7 +156,7 @@ export async function createSubmission(
       feedback: null,
     };
 
-    // Auto-trigger AI grading for writing/speaking
+    // Subjective skills need AI grading via worker queue
     if (question.skill === "writing" || question.skill === "speaking") {
       await dispatchGrading(
         tx,
@@ -246,6 +250,10 @@ export async function gradeSubmission(
   body: SubmissionGradeBody,
 ) {
   return db.transaction(async (tx) => {
+    if (body.score === undefined || body.score === null) {
+      throw new BadRequestError("Score is required for grading");
+    }
+
     const ts = new Date().toISOString();
     const updated = await tx
       .update(table.submissions)

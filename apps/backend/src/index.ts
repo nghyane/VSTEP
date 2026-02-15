@@ -10,7 +10,7 @@ try {
 
   logger.info("Server started", {
     url: `http://${app.server?.hostname}:${app.server?.port}`,
-    env: Bun.env.NODE_ENV,
+    env: env.NODE_ENV,
   });
 } catch (err) {
   logger.error("Failed to start server", { error: err });

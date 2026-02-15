@@ -82,7 +82,9 @@ export const ReviewQueueQuery = t.Object({
   page: t.Optional(t.Number({ minimum: 1, default: 1 })),
   limit: t.Optional(t.Number({ minimum: 1, maximum: 100, default: 20 })),
   skill: t.Optional(Skill),
-  priority: t.Optional(t.UnionEnum(["low", "medium", "high"])),
+  priority: t.Optional(
+    t.UnionEnum(["low", "medium", "high"], { default: undefined }),
+  ),
 });
 
 export const SubmissionReviewBody = t.Object({
@@ -100,10 +102,10 @@ export const SubmissionAssignBody = t.Object({
 export const ReviewQueueItem = t.Composite([
   Submission,
   t.Object({
-    claimedBy: t.Nullable(t.String({ format: "uuid" })),
-    claimedAt: t.Nullable(t.String({ format: "date-time" })),
+    claimedBy: t.Nullable(t.String()),
+    claimedAt: t.Nullable(t.String()),
     reviewPriority: t.Nullable(t.UnionEnum(["low", "medium", "high"])),
-    reviewerId: t.Nullable(t.String({ format: "uuid" })),
+    reviewerId: t.Nullable(t.String()),
   }),
 ]);
 

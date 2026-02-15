@@ -18,18 +18,16 @@ export function scoreToBand(score: number): VstepBand {
   return null;
 }
 
+// Simplified linear mapping for demo — real VSTEP uses non-linear conversion tables
 export function calculateScore(correct: number, total: number): number | null {
-  return total === 0 ? null : Math.round((correct / total) * 10 * 2) / 2;
+  if (total === 0) return null;
+  const ratio = Math.min(correct / total, 1);
+  return Math.round(ratio * 10 * 2) / 2;
 }
 
-/** Returns null when any skill score is still missing */
-export function calculateOverallScore(
-  scores: (number | null)[],
-): number | null {
-  if (scores.length === 0 || scores.some((s) => s === null)) return null;
-  const valid = scores as number[];
-  const avg = valid.reduce((sum, s) => sum + s, 0) / valid.length;
-  return Math.round(avg * 2) / 2;
+/** Normalize for comparison: trim, collapse whitespace, lowercase */
+export function normalizeAnswer(value: string): string {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
 export function parseAnswerKey(raw: unknown): Record<string, string> {

@@ -125,7 +125,6 @@ export async function refresh(refreshToken: string, deviceInfo?: string) {
   const hash = hashToken(refreshToken);
   const jti = crypto.randomUUID();
 
-  // Attempt atomic rotation: revoke old token and find its owner in one UPDATE.
   const rotated = await db
     .update(table.refreshTokens)
     .set({ revokedAt: new Date().toISOString(), replacedByJti: jti })
@@ -188,7 +187,6 @@ export async function refresh(refreshToken: string, deviceInfo?: string) {
     throw new UnauthorizedError("Invalid refresh token");
   }
 
-  // Happy path: issue a new token pair inside a transaction.
   return db.transaction(async (tx) => {
     const user = await tx.query.users.findFirst({
       where: eq(table.users.id, rotated.userId),

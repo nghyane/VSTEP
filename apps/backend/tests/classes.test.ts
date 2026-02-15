@@ -1,4 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from "bun:test";
+import { db, table } from "@db/index";
 import {
   api,
   cleanupTestData,
@@ -411,6 +412,140 @@ describe("classes integration", () => {
 
     const result = await api.get(`/api/classes/${cls.classId}/dashboard`, {
       token: learner.accessToken,
+    });
+
+    expectError(result, 403, "FORBIDDEN");
+  });
+
+  // ── Instructor progress / at-risk detection ─────────────
+
+  it("dashboard detects at-risk learner with low average", async () => {
+    const cls = await createTestClass();
+    const learner = await joinTestClass(cls.inviteCode);
+    const userId = learner.user.id;
+
+    await db.insert(table.userProgress).values({
+      userId,
+      skill: "listening",
+      currentLevel: "B1",
+    });
+
+    const lowScores = [3.0, 3.5, 4.0, 3.5, 4.5];
+    await db.insert(table.userSkillScores).values(
+      lowScores.map((score, i) => ({
+        userId,
+        skill: "listening" as const,
+        score,
+        createdAt: new Date(Date.now() - i * 86400000).toISOString(),
+      })),
+    );
+
+    const { status, data } = await api.get(
+      `/api/classes/${cls.classId}/dashboard`,
+      { token: cls.instructor.accessToken },
+    );
+
+    expect(status).toBe(200);
+    expect(data.atRiskCount).toBeGreaterThanOrEqual(1);
+    const atRisk = data.atRiskLearners as {
+      userId: string;
+      reasons: string[];
+    }[];
+    const learnerRisk = atRisk.find((r) => r.userId === userId);
+    expect(learnerRisk).toBeDefined();
+    const lowAvgReason = learnerRisk?.reasons.some((r: string) =>
+      r.includes("Low average"),
+    );
+    expect(lowAvgReason).toBe(true);
+  });
+
+  it("dashboard detects at-risk learner with declining trend", async () => {
+    const cls = await createTestClass();
+    const learner = await joinTestClass(cls.inviteCode);
+    const userId = learner.user.id;
+
+    await db.insert(table.userProgress).values({
+      userId,
+      skill: "reading",
+      currentLevel: "B1",
+    });
+
+    // 6 scores needed for full trend analysis: newest first → declining
+    // Newest 3 avg = (5.0+5.5+6.0)/3 = 5.5, Oldest 3 avg = (7.0+7.5+8.0)/3 = 7.5
+    // delta = -2.0 (< -0.5 → declining), stddev ≈ 1.18 (< 1.5 → not inconsistent)
+    const decliningScores = [5.0, 5.5, 6.0, 7.0, 7.5, 8.0];
+    await db.insert(table.userSkillScores).values(
+      decliningScores.map((score, i) => ({
+        userId,
+        skill: "reading" as const,
+        score,
+        createdAt: new Date(Date.now() - i * 86400000).toISOString(),
+      })),
+    );
+
+    const { status, data } = await api.get(
+      `/api/classes/${cls.classId}/dashboard`,
+      { token: cls.instructor.accessToken },
+    );
+
+    expect(status).toBe(200);
+    const atRisk = data.atRiskLearners as {
+      userId: string;
+      reasons: string[];
+    }[];
+    const learnerRisk = atRisk.find((r) => r.userId === userId);
+    expect(learnerRisk).toBeDefined();
+    const decliningReason = learnerRisk?.reasons.some((r: string) =>
+      r.includes("Declining"),
+    );
+    expect(decliningReason).toBe(true);
+  });
+
+  it("member progress returns skill data", async () => {
+    const cls = await createTestClass();
+    const learner = await joinTestClass(cls.inviteCode);
+    const userId = learner.user.id;
+
+    await db.insert(table.userProgress).values({
+      userId,
+      skill: "listening",
+      currentLevel: "B1",
+      streakCount: 3,
+    });
+
+    await db.insert(table.userSkillScores).values(
+      [6.0, 6.5, 7.0].map((score, i) => ({
+        userId,
+        skill: "listening" as const,
+        score,
+        createdAt: new Date(Date.now() - i * 86400000).toISOString(),
+      })),
+    );
+
+    const { status, data } = await api.get(
+      `/api/classes/${cls.classId}/members/${userId}/progress`,
+      { token: cls.instructor.accessToken },
+    );
+
+    expect(status).toBe(200);
+    expect(data.userId).toBe(userId);
+    const skills = data.skills as Record<
+      string,
+      { currentLevel: string; avg: number | null; streakCount: number }
+    >;
+    const listening = skills.listening;
+    expect(listening).toBeDefined();
+    expect(listening?.currentLevel).toBe("B1");
+    expect(listening?.avg).toBeNumber();
+    expect(listening?.streakCount).toBe(3);
+  });
+
+  it("non-owner instructor cannot access dashboard", async () => {
+    const cls = await createTestClass();
+    const otherInstructor = await loginTestUser({ role: "instructor" });
+
+    const result = await api.get(`/api/classes/${cls.classId}/dashboard`, {
+      token: otherInstructor.accessToken,
     });
 
     expectError(result, 403, "FORBIDDEN");

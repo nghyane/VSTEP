@@ -3,8 +3,6 @@ import { classes, classMembers, instructorFeedback } from "@db/schema";
 import { createSelectSchema } from "drizzle-typebox";
 import { t } from "elysia";
 
-// ── Response schemas ───────────────────────────────────────
-
 export const Class = createSelectSchema(classes);
 export type Class = typeof Class.static;
 
@@ -13,8 +11,6 @@ export type ClassMember = typeof ClassMember.static;
 
 export const Feedback = createSelectSchema(instructorFeedback);
 export type Feedback = typeof Feedback.static;
-
-// ── Request schemas ────────────────────────────────────────
 
 export const CreateClassBody = t.Object({
   name: t.String({ minLength: 1, maxLength: 255 }),
@@ -50,8 +46,6 @@ export const FeedbackListQuery = t.Object({
   skill: t.Optional(Skill),
 });
 export type FeedbackListQuery = typeof FeedbackListQuery.static;
-
-// ── Composite schemas ──────────────────────────────────────
 
 export const ClassDetail = t.Composite([
   t.Omit(Class, ["inviteCode"]),

@@ -9,7 +9,7 @@ import { z } from "zod";
 export const env = createEnv({
   server: {
     DATABASE_URL: z.url(),
-    PORT: z.string().default("3000"),
+    PORT: z.coerce.number().default(3000),
     NODE_ENV: z
       .enum(["development", "production", "test"])
       .default("development"),
@@ -22,6 +22,7 @@ export const env = createEnv({
       .string()
       .regex(/^\s*\d+\s*[smhd]\s*$/i, "Must be a duration like 15m, 1h, 7d")
       .default("7d"),
+    LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
     ALLOWED_ORIGINS: z.string().optional(),
     REDIS_URL: z.url().optional(),
   },
