@@ -7,7 +7,7 @@ import { assertAccess, assertExists } from "@common/utils";
 import type { DbTransaction } from "@db/index";
 import { db, paginate, table } from "@db/index";
 import type { submissionStatusEnum } from "@db/schema/submissions";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import {
   recordSkillScore,
   updateUserProgress,
@@ -188,6 +188,10 @@ export async function updateSubmission(
       "You can only update your own submissions",
     );
 
+    if (!actor.is(ROLES.ADMIN)) {
+      delete body.status;
+    }
+
     if (
       !MUTABLE_STATUSES.includes(submission.status) &&
       !actor.is(ROLES.ADMIN)
@@ -246,20 +250,6 @@ export async function gradeSubmission(
   body: SubmissionGradeBody,
 ) {
   return db.transaction(async (tx) => {
-    const submission = assertExists(
-      await tx.query.submissions.findFirst({
-        where: eq(table.submissions.id, submissionId),
-        columns: { id: true, status: true, userId: true, skill: true },
-      }),
-      "Submission",
-    );
-
-    if (!GRADABLE_STATUSES.includes(submission.status)) {
-      throw new ConflictError(
-        `Cannot grade a submission with status "${submission.status}"`,
-      );
-    }
-
     const ts = new Date().toISOString();
     const [updated] = await tx
       .update(table.submissions)
@@ -270,8 +260,19 @@ export async function gradeSubmission(
         updatedAt: ts,
         completedAt: ts,
       })
-      .where(eq(table.submissions.id, submissionId))
+      .where(
+        and(
+          eq(table.submissions.id, submissionId),
+          inArray(table.submissions.status, GRADABLE_STATUSES),
+        ),
+      )
       .returning(SUBMISSION_COLUMNS);
+
+    if (!updated) {
+      throw new ConflictError(
+        "Submission is already graded or in a non-gradable state",
+      );
+    }
 
     if (body.feedback) {
       await tx
@@ -281,16 +282,16 @@ export async function gradeSubmission(
     }
 
     await recordSkillScore(
-      submission.userId,
-      submission.skill,
+      updated.userId,
+      updated.skill,
       submissionId,
       body.score,
       tx,
     );
-    await updateUserProgress(submission.userId, submission.skill, tx);
+    await updateUserProgress(updated.userId, updated.skill, tx);
 
     return {
-      ...assertExists(updated, "Submission"),
+      ...updated,
       ...(await fetchDetails(tx, submissionId)),
     };
   });
@@ -301,7 +302,7 @@ export async function removeSubmission(submissionId: string, actor: Actor) {
     const submission = assertExists(
       await tx.query.submissions.findFirst({
         where: eq(table.submissions.id, submissionId),
-        columns: { id: true, userId: true },
+        columns: { id: true, userId: true, status: true },
       }),
       "Submission",
     );
@@ -311,6 +312,13 @@ export async function removeSubmission(submissionId: string, actor: Actor) {
       actor,
       "You can only delete your own submissions",
     );
+
+    if (
+      submission.status === "completed" ||
+      submission.status === "review_pending"
+    ) {
+      throw new ConflictError("Cannot delete a graded submission");
+    }
 
     const [deleted] = await tx
       .delete(table.submissions)

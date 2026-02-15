@@ -156,9 +156,9 @@ describe("questions integration", () => {
     expect(data.level).toBe("A2");
   });
 
-  // ── Soft delete / restore ────────────────────────────────
+  // ── Delete ───────────────────────────────────────────────
 
-  it("admin deletes a question (soft delete)", async () => {
+  it("admin deletes a question", async () => {
     const { questionId } = await createTestQuestion();
     const admin = await loginTestUser({ role: "admin" });
 
@@ -168,7 +168,6 @@ describe("questions integration", () => {
 
     expect(status).toBe(200);
     expect(data.id).toBe(questionId);
-    expect(data.deletedAt).toBeString();
 
     // Deleted question returns 404
     const viewer = await loginTestUser({ role: "learner" });
@@ -186,35 +185,6 @@ describe("questions integration", () => {
     });
 
     expectError(result, 403, "FORBIDDEN");
-  });
-
-  it("admin restores a deleted question", async () => {
-    const { questionId } = await createTestQuestion();
-    const admin = await loginTestUser({ role: "admin" });
-
-    await api.delete(`/api/questions/${questionId}`, {
-      token: admin.accessToken,
-    });
-
-    const { status, data } = await api.post(
-      `/api/questions/${questionId}/restore`,
-      { token: admin.accessToken },
-    );
-
-    expect(status).toBe(200);
-    expect(data.id).toBe(questionId);
-    expect(data.isActive).toBe(true);
-  });
-
-  it("restoring a non-deleted question returns 400", async () => {
-    const { questionId } = await createTestQuestion();
-    const admin = await loginTestUser({ role: "admin" });
-
-    const result = await api.post(`/api/questions/${questionId}/restore`, {
-      token: admin.accessToken,
-    });
-
-    expectError(result, 400, "BAD_REQUEST", "Question is not deleted");
   });
 
   // ── List / filter ────────────────────────────────────────

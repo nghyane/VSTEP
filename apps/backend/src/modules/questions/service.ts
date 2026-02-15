@@ -1,5 +1,6 @@
 import type { Actor } from "@common/auth-types";
 import { ROLES } from "@common/auth-types";
+import { ConflictError } from "@common/errors";
 import { assertAccess, assertExists, escapeLike } from "@common/utils";
 import { db, paginate, table } from "@db/index";
 import { and, desc, eq, sql } from "drizzle-orm";
@@ -144,6 +145,23 @@ export async function removeQuestion(questionId: string) {
       }),
       "Question",
     );
+
+    const referencingExams = await tx
+      .select({ id: table.exams.id })
+      .from(table.exams)
+      .where(
+        and(
+          eq(table.exams.isActive, true),
+          sql`${table.exams.blueprint}::text LIKE ${`%${questionId}%`}`,
+        ),
+      )
+      .limit(1);
+
+    if (referencingExams.length > 0) {
+      throw new ConflictError(
+        "Cannot delete question referenced by active exams",
+      );
+    }
 
     const [deleted] = await tx
       .delete(table.questions)

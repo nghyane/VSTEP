@@ -66,7 +66,7 @@ describe("classes integration", () => {
     expectError(result, 403, "FORBIDDEN");
   });
 
-  it("instructor deletes own class (soft delete)", async () => {
+  it("instructor deletes own class", async () => {
     const { classId, instructor } = await createTestClass();
 
     const { status, data } = await api.delete(`/api/classes/${classId}`, {
@@ -75,7 +75,6 @@ describe("classes integration", () => {
 
     expect(status).toBe(200);
     expect(data.id).toBe(classId);
-    expect(data.deletedAt).toBeString();
 
     // Deleted class should not appear in list
     const list = await api.get("/api/classes", {

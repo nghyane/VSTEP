@@ -98,7 +98,7 @@ export const users = new Elysia({
     },
   )
 
-  .delete("/:id", ({ params }) => removeUser(params.id), {
+  .delete("/:id", ({ params, user }) => removeUser(params.id, user), {
     role: ROLES.ADMIN,
     params: IdParam,
     response: {

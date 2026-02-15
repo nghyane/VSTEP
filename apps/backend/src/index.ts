@@ -3,7 +3,10 @@ import { logger } from "@common/logger";
 import { app } from "@/app";
 
 try {
-  app.listen(env.PORT);
+  app.listen({
+    port: env.PORT,
+    maxRequestBodySize: 1024 * 1024 * 2, // 2MB
+  });
 
   logger.info("Server started", {
     url: `http://${app.server?.hostname}:${app.server?.port}`,

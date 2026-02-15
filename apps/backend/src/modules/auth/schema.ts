@@ -26,7 +26,7 @@ export const LoginBody = t.Object({
 
 export const RegisterBody = t.Object({
   email: t.String({ format: "email" }),
-  password: t.String({ minLength: 8 }),
+  password: t.String({ minLength: 8, maxLength: 128 }),
   fullName: t.Optional(t.String({ minLength: 1, maxLength: 100 })),
 });
 

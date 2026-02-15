@@ -204,7 +204,7 @@ describe("submissions integration", () => {
 
   // ── Delete submission ────────────────────────────────────
 
-  it("deletes own submission (soft delete)", async () => {
+  it("deletes own submission", async () => {
     const { questionId } = await createTestQuestion();
     const learner = await loginTestUser({ role: "learner" });
 
@@ -220,7 +220,6 @@ describe("submissions integration", () => {
 
     expect(status).toBe(200);
     expect(data.id).toBe(subId);
-    expect(data.deletedAt).toBeString();
   });
 
   it("cannot delete another user submission", async () => {

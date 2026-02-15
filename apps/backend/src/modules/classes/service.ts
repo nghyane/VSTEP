@@ -480,8 +480,9 @@ export async function listFeedback(
     "Class",
   );
 
-  // Learner can only see their own feedback
+  // Learner: must be an active member and can only see their own feedback
   if (!actor.is(ROLES.INSTRUCTOR)) {
+    await assertActiveMember(classId, actor.sub);
     conditions.push(eq(table.instructorFeedback.toUserId, actor.sub));
   } else if (!actor.is(ROLES.ADMIN) && cls.instructorId !== actor.sub) {
     throw new ForbiddenError("Only the class instructor can view all feedback");

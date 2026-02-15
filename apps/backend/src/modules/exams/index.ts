@@ -34,7 +34,7 @@ export const exams = new Elysia({
 })
   .use(authPlugin)
 
-  .get("/", ({ query }) => listExams(query), {
+  .get("/", ({ query, user }) => listExams(query, user), {
     auth: true,
     query: ExamListQuery,
     response: {
@@ -52,7 +52,7 @@ export const exams = new Elysia({
     },
   })
 
-  .get("/:id", ({ params }) => getExamById(params.id), {
+  .get("/:id", ({ params, user }) => getExamById(params.id, user), {
     auth: true,
     params: IdParam,
     response: { 200: Exam, ...CrudErrors },

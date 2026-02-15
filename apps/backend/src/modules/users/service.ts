@@ -119,7 +119,11 @@ export async function updateUser(
   });
 }
 
-export async function removeUser(userId: string) {
+export async function removeUser(userId: string, actor: Actor) {
+  if (userId === actor.sub) {
+    throw new ForbiddenError("Cannot delete your own account");
+  }
+
   return db.transaction(async (tx) => {
     assertExists(
       await tx.query.users.findFirst({

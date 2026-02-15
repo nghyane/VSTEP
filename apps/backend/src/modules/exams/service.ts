@@ -1,4 +1,6 @@
-import { BadRequestError } from "@common/errors";
+import type { Actor } from "@common/auth-types";
+import { ROLES } from "@common/auth-types";
+import { BadRequestError, ConflictError } from "@common/errors";
 import { createStateMachine } from "@common/state-machine";
 import { assertExists } from "@common/utils";
 import type { DbTransaction } from "@db/index";
@@ -29,7 +31,8 @@ async function validateBlueprint(
       ),
     ),
   ];
-  if (ids.length === 0) return;
+  if (ids.length === 0)
+    throw new BadRequestError("Exam must contain at least one question");
 
   const found = await tx
     .select({ id: table.questions.id })
@@ -46,20 +49,24 @@ async function validateBlueprint(
   );
 }
 
-export async function getExamById(id: string) {
+export async function getExamById(id: string, actor: Actor) {
   const exam = await db.query.exams.findFirst({
-    where: eq(table.exams.id, id),
+    where: and(
+      eq(table.exams.id, id),
+      actor.is(ROLES.ADMIN) ? undefined : eq(table.exams.isActive, true),
+    ),
   });
 
   return assertExists(exam, "Exam");
 }
 
-export async function listExams(query: ExamListQuery) {
+export async function listExams(query: ExamListQuery, actor: Actor) {
   const where = and(
     query.level ? eq(table.exams.level, query.level) : undefined,
     query.isActive !== undefined
       ? eq(table.exams.isActive, query.isActive)
       : undefined,
+    actor.is(ROLES.ADMIN) ? undefined : eq(table.exams.isActive, true),
   );
 
   return paginate(
@@ -94,6 +101,19 @@ export async function createExam(userId: string, body: ExamCreateBody) {
 
 export async function updateExam(id: string, body: ExamUpdateBody) {
   return db.transaction(async (tx) => {
+    const existing = assertExists(
+      await tx.query.exams.findFirst({
+        where: eq(table.exams.id, id),
+      }),
+      "Exam",
+    );
+
+    const hasNonToggleFields =
+      body.level !== undefined || body.blueprint !== undefined;
+    if (existing.isActive && hasNonToggleFields) {
+      throw new ConflictError("Deactivate the exam before modifying it");
+    }
+
     if (body.blueprint !== undefined) {
       await validateBlueprint(tx, body.blueprint);
     }

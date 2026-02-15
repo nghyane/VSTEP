@@ -104,7 +104,6 @@ describe("users integration", () => {
     });
     expect(del.status).toBe(200);
     expect(del.data.id).toBe(learner.user.id);
-    expect(del.data.deletedAt).toBeString();
 
     const getDeleted = await api.get(`/api/users/${learner.user.id}`, {
       token: admin.accessToken,
