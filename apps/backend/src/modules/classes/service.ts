@@ -3,12 +3,12 @@ import { ROLES } from "@common/auth-types";
 import { BadRequestError, ConflictError, ForbiddenError } from "@common/errors";
 import { assertExists, generateInviteCode } from "@common/utils";
 import { SKILLS } from "@db/enums";
-import { db, paginate, table } from "@db/index";
+import { db, paginate, table, takeFirst, takeFirstOrThrow } from "@db/index";
 import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
 import {
   getAtRiskLearners,
   getProgressForUsers,
-} from "@/modules/progress/service";
+} from "@/modules/progress/instructor";
 import type {
   ClassListQuery,
   CreateClassBody,
@@ -51,7 +51,7 @@ async function assertActiveMember(classId: string, userId: string) {
 
 export async function createClass(body: CreateClassBody, actor: Actor) {
   const inviteCode = generateInviteCode();
-  const [created] = await db
+  return db
     .insert(table.classes)
     .values({
       name: body.name,
@@ -59,9 +59,8 @@ export async function createClass(body: CreateClassBody, actor: Actor) {
       instructorId: actor.sub,
       inviteCode,
     })
-    .returning();
-
-  return assertExists(created, "Class");
+    .returning()
+    .then(takeFirstOrThrow);
 }
 
 export async function listClasses(query: ClassListQuery, actor: Actor) {
@@ -198,40 +197,37 @@ export async function updateClass(
 ) {
   await assertClassOwner(classId, actor);
 
-  const [updated] = await db
+  return db
     .update(table.classes)
     .set({
       ...body,
       updatedAt: new Date().toISOString(),
     })
     .where(eq(table.classes.id, classId))
-    .returning();
-
-  return assertExists(updated, "Class");
+    .returning()
+    .then(takeFirstOrThrow);
 }
 
 export async function removeClass(classId: string, actor: Actor) {
   await assertClassOwner(classId, actor);
 
-  const [deleted] = await db
+  return db
     .delete(table.classes)
     .where(eq(table.classes.id, classId))
-    .returning({ id: table.classes.id });
-
-  return assertExists(deleted, "Class");
+    .returning({ id: table.classes.id })
+    .then(takeFirstOrThrow);
 }
 
 export async function rotateInviteCode(classId: string, actor: Actor) {
   await assertClassOwner(classId, actor);
 
   const newCode = generateInviteCode();
-  const [updated] = await db
+  return db
     .update(table.classes)
     .set({ inviteCode: newCode, updatedAt: new Date().toISOString() })
     .where(eq(table.classes.id, classId))
-    .returning();
-
-  return assertExists(updated, "Class");
+    .returning()
+    .then(takeFirstOrThrow);
 }
 
 // ── Join / Leave ───────────────────────────────────────────
@@ -265,13 +261,14 @@ export async function joinClass(body: { inviteCode: string }, actor: Actor) {
         .where(eq(table.classMembers.id, existing.id));
     } else {
       // New join: use onConflictDoNothing to handle race condition
-      const [inserted] = await tx
+      const inserted = await tx
         .insert(table.classMembers)
         .values({ classId: cls.id, userId: actor.sub })
         .onConflictDoNothing({
           target: [table.classMembers.classId, table.classMembers.userId],
         })
-        .returning();
+        .returning()
+        .then(takeFirst);
 
       // If nothing inserted, another concurrent request already joined
       if (!inserted) {
@@ -449,7 +446,7 @@ export async function createFeedback(
     }
   }
 
-  const [feedback] = await db
+  return db
     .insert(table.instructorFeedback)
     .values({
       classId,
@@ -459,9 +456,8 @@ export async function createFeedback(
       skill: body.skill ?? null,
       submissionId: body.submissionId ?? null,
     })
-    .returning();
-
-  return assertExists(feedback, "Feedback");
+    .returning()
+    .then(takeFirstOrThrow);
 }
 
 export async function listFeedback(

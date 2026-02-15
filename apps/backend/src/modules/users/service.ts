@@ -11,7 +11,7 @@ import {
   escapeLike,
   normalizeEmail,
 } from "@common/utils";
-import { db, paginate, table } from "@db/index";
+import { db, paginate, table, takeFirst, takeFirstOrThrow } from "@db/index";
 import { and, eq, ilike, ne } from "drizzle-orm";
 import type {
   UserCreateBody,
@@ -60,7 +60,7 @@ export async function createUser(body: UserCreateBody) {
   const email = normalizeEmail(body.email);
   const hash = await Bun.password.hash(body.password, "argon2id");
 
-  const [user] = await db
+  const user = await db
     .insert(table.users)
     .values({
       email,
@@ -69,7 +69,8 @@ export async function createUser(body: UserCreateBody) {
       role: body.role ?? ROLES.LEARNER,
     })
     .onConflictDoNothing()
-    .returning(USER_COLUMNS);
+    .returning(USER_COLUMNS)
+    .then(takeFirst);
 
   if (!user) throw new ConflictError("Email already registered");
   return user;
@@ -104,7 +105,7 @@ export async function updateUser(
       if (exists) throw new ConflictError("Email already in use");
     }
 
-    const [user] = await tx
+    return tx
       .update(table.users)
       .set({
         updatedAt: new Date().toISOString(),
@@ -113,9 +114,8 @@ export async function updateUser(
         ...(body.role !== undefined && { role: body.role }),
       })
       .where(eq(table.users.id, userId))
-      .returning(USER_COLUMNS);
-
-    return assertExists(user, "User");
+      .returning(USER_COLUMNS)
+      .then(takeFirstOrThrow);
   });
 }
 
@@ -133,12 +133,11 @@ export async function removeUser(userId: string, actor: Actor) {
       "User",
     );
 
-    const [deleted] = await tx
+    return tx
       .delete(table.users)
       .where(eq(table.users.id, userId))
-      .returning({ id: table.users.id });
-
-    return assertExists(deleted, "User");
+      .returning({ id: table.users.id })
+      .then(takeFirstOrThrow);
   });
 }
 

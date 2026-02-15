@@ -2,7 +2,7 @@ import type { Actor } from "@common/auth-types";
 import { ROLES } from "@common/auth-types";
 import { ConflictError } from "@common/errors";
 import { assertAccess, assertExists, escapeLike } from "@common/utils";
-import { db, paginate, table } from "@db/index";
+import { db, paginate, table, takeFirstOrThrow } from "@db/index";
 import { and, desc, eq, sql } from "drizzle-orm";
 import type {
   QuestionCreateBody,
@@ -49,7 +49,7 @@ export async function listQuestions(query: QuestionListQuery, actor: Actor) {
 
 export async function createQuestion(userId: string, body: QuestionCreateBody) {
   return db.transaction(async (tx) => {
-    const [question] = await tx
+    const q = await tx
       .insert(table.questions)
       .values({
         skill: body.skill,
@@ -61,9 +61,8 @@ export async function createQuestion(userId: string, body: QuestionCreateBody) {
         isActive: true,
         createdBy: userId,
       })
-      .returning(QUESTION_COLUMNS);
-
-    const q = assertExists(question, "Question");
+      .returning(QUESTION_COLUMNS)
+      .then(takeFirstOrThrow);
 
     await tx.insert(table.questionVersions).values({
       questionId: q.id,
@@ -117,7 +116,7 @@ export async function updateQuestion(
       });
     }
 
-    const [updated] = await tx
+    return tx
       .update(table.questions)
       .set({
         updatedAt: new Date().toISOString(),
@@ -130,9 +129,8 @@ export async function updateQuestion(
         ...(nextVersion && { version: nextVersion }),
       })
       .where(eq(table.questions.id, questionId))
-      .returning(QUESTION_COLUMNS);
-
-    return assertExists(updated, "Question");
+      .returning(QUESTION_COLUMNS)
+      .then(takeFirstOrThrow);
   });
 }
 
@@ -152,7 +150,12 @@ export async function removeQuestion(questionId: string) {
       .where(
         and(
           eq(table.exams.isActive, true),
-          sql`${table.exams.blueprint}::text LIKE ${`%${questionId}%`}`,
+          sql`${table.exams.blueprint}::jsonb @> ANY(ARRAY[
+            jsonb_build_object('listening', jsonb_build_object('questionIds', jsonb_build_array(${questionId}::text))),
+            jsonb_build_object('reading', jsonb_build_object('questionIds', jsonb_build_array(${questionId}::text))),
+            jsonb_build_object('writing', jsonb_build_object('questionIds', jsonb_build_array(${questionId}::text))),
+            jsonb_build_object('speaking', jsonb_build_object('questionIds', jsonb_build_array(${questionId}::text)))
+          ])`,
         ),
       )
       .limit(1);
@@ -163,11 +166,10 @@ export async function removeQuestion(questionId: string) {
       );
     }
 
-    const [deleted] = await tx
+    return tx
       .delete(table.questions)
       .where(eq(table.questions.id, questionId))
-      .returning({ id: table.questions.id });
-
-    return assertExists(deleted, "Question");
+      .returning({ id: table.questions.id })
+      .then(takeFirstOrThrow);
   });
 }

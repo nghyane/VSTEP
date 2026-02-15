@@ -1,6 +1,6 @@
 # Progress Tracking & Learning Path Specification
 
-> **Phiên bản**: 1.0 · SP26SE145
+> **Phiên bản**: 2.0 · SP26SE145
 
 ## 1. Purpose
 
@@ -36,8 +36,6 @@ Một attempt hợp lệ phải có:
 Không đưa vào tính toán progress nếu:
 - submission `status != COMPLETED`
 - submission ở trạng thái `REVIEW_PENDING` (chưa có kết quả cuối cùng)
-- `is_late = true` (late callback sau SLA)
-- submission bị đánh dấu invalid (fraud/suspicious/manual exclude)
 
 ## 5. Score Normalization Rules
 
@@ -77,15 +75,16 @@ Với mỗi skill:
 
 ## 7. Spider Chart (Visualization Contract)
 
-Dữ liệu spider chart phải gồm:
-- `skills`: 4 skill keys theo thứ tự cố định
-- `current`: 4 giá trị normalized 0-100 từ `windowAvg`
-- `previous`: baseline 7 ngày trước (nếu có) theo cùng cách tính
-- `target`: 4 giá trị normalized theo goal (nếu user set goal)
-- `trend`: nhãn trend per skill
-- `confidence`: high/medium/low theo độ đầy đủ dữ liệu (>=10 attempts: high, 6-9: medium, 3-5: low)
+Dữ liệu spider chart gồm:
+- `skills`: object với 4 skill keys, mỗi key chứa:
+  - `current`: windowAvg (0-10), rounded 1 decimal
+  - `trend`: improving/stable/declining/inconsistent/insufficient_data
+- `goal`: goal hiện tại của user (hoặc null)
+- `eta`: object chứa:
+  - `weeks`: số tuần ước tính tổng thể (max per-skill), hoặc null
+  - `perSkill`: record skill → weeks hoặc null
 
-Spec không bắt buộc JSON schema cố định; chỉ yêu cầu các trường logic này tồn tại.
+Scores được lấy bằng `ROW_NUMBER() OVER (PARTITION BY skill)` giới hạn 10 rows/skill ở SQL, tránh over-fetching.
 
 ## 8. Overall Level Derivation
 
@@ -103,18 +102,29 @@ Mục tiêu của rule này là tránh hiển thị overall band "ảo" khi có 
 
 ## 9. ETA (Time-to-Goal) Heuristic
 
-ETA chỉ là heuristic và phải trả về `unknown` nếu dữ liệu không đủ.
+ETA chỉ là heuristic và phải trả về `null` nếu dữ liệu không đủ.
 
 ### 9.1 When ETA is available
 
-- User có goal (`targetLevel` hoặc `targetBand`).
-- Mỗi skill có >= 6 attempts hợp lệ.
+- User có goal (`targetBand`).
+- Mỗi skill có >= 3 attempts hợp lệ (threshold: `basicAnalysisMinScores`).
 
 ### 9.2 ETA computation
 
-- Tính `rate` theo từng skill: thay đổi `windowAvg` theo tuần (so sánh tuần hiện tại vs tuần trước).
-- Ước tính số tuần cần để mỗi skill đạt `targetBand`.
+- Sử dụng **linear regression** trên sliding window (max 10 scores).
+  - X = thời gian (days kể từ attempt đầu tiên).
+  - Y = score.
+  - Slope = cov(X,Y) / var(X) — tốc độ cải thiện điểm/ngày.
+- `gap = targetScore - meanScore`, `etaDays = gap / slope`, `etaWeeks = ceil(etaDays / 7)`.
+- Trả về `null` khi: slope <= 0 (không cải thiện), varX ≈ 0 (tất cả attempts cùng ngày), hoặc etaWeeks > 52.
+- Trả về `0` khi avg đã đạt hoặc vượt target.
 - ETA cuối cùng là **max(ETA per skill)** (kỹ năng chậm nhất quyết định).
+
+### 9.3 Why linear regression
+
+- Unified estimator cho mọi sample size (>= 3), không có discontinuity.
+- Tính đến cadence thực tế (user luyện thường xuyên hơn → ETA ngắn hơn).
+- Ổn định hơn so với delta-based estimator ở sample nhỏ.
 
 ## 10. Learning Path Generation
 
@@ -136,9 +146,9 @@ ETA chỉ là heuristic và phải trả về `unknown` nếu dữ liệu không
 
 ## 11. Update Triggers
 
-- On submission `completed`: recompute skill window + trend.
+- On submission `completed`: recompute skill window + trend, upsert `userProgress`.
 - On exam session `completed`: recompute cả 4 skills.
-- Nightly job: recompute ETA + learning path.
+- ETA được tính on-demand khi user request (không cần nightly job).
 
 ## 12. Failure Modes
 
@@ -148,12 +158,12 @@ ETA chỉ là heuristic và phải trả về `unknown` nếu dữ liệu không
 
 ## 13. Acceptance Criteria
 
-- Progress chỉ tính từ attempts hợp lệ (COMPLETED, không late, không excluded).
+- Progress chỉ tính từ attempts hợp lệ (COMPLETED).
 - Trend classification đúng theo rule delta/stddev.
-- Spider chart có đủ trường logic: current/previous/target/trend/confidence.
+- Spider chart có đủ trường logic: current/trend/eta per skill.
 - Overall band không vượt quá band thấp nhất trong 4 skills.
-- ETA trả về `unknown` khi không đủ dữ liệu; khi đủ dữ liệu, ETA phản ánh skill chậm nhất.
-- Learning path luôn có tối thiểu 1 session/skill/tuần.
+- ETA trả về `null` khi không đủ dữ liệu hoặc không cải thiện; khi đủ dữ liệu, ETA phản ánh skill chậm nhất.
+- Score fetching bounded bằng window function (max 10/skill) — không over-fetch.
 
 ## 14. Cross-references
 

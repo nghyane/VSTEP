@@ -7,6 +7,7 @@ import {
 import { Skill } from "@db/enums";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
+import { createGoal, removeGoal, updateGoal } from "./goals";
 import {
   Goal,
   GoalBody,
@@ -16,12 +17,9 @@ import {
   ProgressSpiderChart,
 } from "./schema";
 import {
-  createGoal,
   getProgressBySkill,
   getProgressOverview,
   getSpiderChart,
-  removeGoal,
-  updateGoal,
 } from "./service";
 
 export const progress = new Elysia({
@@ -88,7 +86,7 @@ export const progress = new Elysia({
 
   .patch(
     "/goals/:id",
-    ({ params, body, user }) => updateGoal(user.sub, params.id, body),
+    ({ params, body, user }) => updateGoal(user, params.id, body),
     {
       auth: true,
       params: IdParam,
@@ -101,7 +99,7 @@ export const progress = new Elysia({
     },
   )
 
-  .delete("/goals/:id", ({ params, user }) => removeGoal(user.sub, params.id), {
+  .delete("/goals/:id", ({ params, user }) => removeGoal(user, params.id), {
     auth: true,
     params: IdParam,
     response: {

@@ -7,7 +7,7 @@ import {
 } from "@common/scoring";
 import { assertExists } from "@common/utils";
 import type { DbTransaction } from "@db/index";
-import { db, table } from "@db/index";
+import { db, table, takeFirstOrThrow } from "@db/index";
 import type { ObjectiveAnswerKey, SubmissionAnswer } from "@db/types/answers";
 import { and, eq, inArray } from "drizzle-orm";
 import {
@@ -192,7 +192,7 @@ export async function submitExam(sessionId: string, actor: Actor) {
     const ts = new Date().toISOString();
     const status: ExamSessionStatus =
       pending.length > 0 ? "submitted" : "completed";
-    const [updated] = await tx
+    const updated = await tx
       .update(table.examSessions)
       .set({
         listeningScore,
@@ -207,7 +207,8 @@ export async function submitExam(sessionId: string, actor: Actor) {
           eq(table.examSessions.status, "in_progress"),
         ),
       )
-      .returning(SESSION_COLUMNS);
+      .returning(SESSION_COLUMNS)
+      .then(takeFirstOrThrow);
 
     if (listeningScore !== null) {
       await recordSkillScore(
@@ -224,8 +225,6 @@ export async function submitExam(sessionId: string, actor: Actor) {
       await updateUserProgress(session.userId, "reading", tx);
     }
 
-    // TODO: Overall score calculated after grading service returns W/S results via callback
-
-    return assertExists(updated, "Session");
+    return updated;
   });
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { computeStats, computeTrend } from "./trends";
+import { computeEta, computeStats, computeTrend } from "./trends";
 
 describe("computeStats", () => {
   it("returns nulls for empty array", () => {
@@ -87,5 +87,79 @@ describe("computeTrend", () => {
     // fullAnalysis requires deviation !== null, so falls through to basicAnalysis (length >= 3).
     // With null deviation, basicAnalysis returns "stable".
     expect(computeTrend([6, 6, 6, 6, 6, 6], null)).toBe("stable");
+  });
+});
+
+describe("computeEta", () => {
+  const makeTimestamps = (count: number, intervalDays: number) => {
+    const now = new Date("2026-02-15T00:00:00Z");
+    return Array.from({ length: count }, (_, i) => {
+      const d = new Date(
+        now.getTime() - i * intervalDays * 24 * 60 * 60 * 1000,
+      );
+      return d.toISOString();
+    });
+  };
+
+  it("returns null for fewer than 3 scores", () => {
+    const ts = makeTimestamps(2, 7);
+    expect(computeEta([5, 4], ts, 8.5)).toBeNull();
+    expect(computeEta([], [], 6.0)).toBeNull();
+  });
+
+  it("returns null for targetScore <= 0", () => {
+    const ts = makeTimestamps(3, 7);
+    expect(computeEta([5, 4, 3], ts, 0)).toBeNull();
+    expect(computeEta([5, 4, 3], ts, -1)).toBeNull();
+  });
+
+  it("returns 0 when avg already meets target", () => {
+    const ts = makeTimestamps(3, 7);
+    expect(computeEta([9, 8.5, 9], ts, 8.5)).toBe(0);
+  });
+
+  it("returns null when rate <= 0 (declining)", () => {
+    // Newest first: 3, 4, 5 → rate = (3 - 5) / 2 = -1
+    const ts = makeTimestamps(3, 7);
+    expect(computeEta([3, 4, 5], ts, 8.0)).toBeNull();
+  });
+
+  it("returns null when rate is 0 (stable)", () => {
+    const ts = makeTimestamps(3, 7);
+    expect(computeEta([5, 5, 5], ts, 8.0)).toBeNull();
+  });
+
+  it("computes correct ETA for 3-5 scores (linear regression)", () => {
+    // Scores newest-first: [6, 5, 4], weekly intervals
+    // Chronological: times=[0, 7, 14], values=[4, 5, 6]
+    // slope = 1/7 score/day, meanY=5, gap=3, etaDays=21, etaWeeks=3
+    const ts = makeTimestamps(3, 7);
+    expect(computeEta([6, 5, 4], ts, 8.0)).toBe(3);
+  });
+
+  it("computes correct ETA for 6+ scores (linear regression)", () => {
+    // Scores newest-first: [7, 7, 7, 5, 5, 5], weekly intervals
+    // Chronological: times=[0,7,14,21,28,35], values=[5,5,5,7,7,7]
+    // slope ≈ 0.0735 score/day, meanY=6, gap=2.5, etaDays≈34, etaWeeks=5
+    const ts = makeTimestamps(6, 7);
+    expect(computeEta([7, 7, 7, 5, 5, 5], ts, 8.5)).toBe(5);
+  });
+
+  it("returns null when no valid timestamps", () => {
+    expect(
+      computeEta([6, 5, 4], ["invalid", "invalid", "invalid"], 8.0),
+    ).toBeNull();
+  });
+
+  it("handles non-uniform timestamp intervals", () => {
+    // Scores newest-first: [7, 6, 5]
+    // Chronological: times=[0, 11, 14], values=[5, 6, 7]
+    // slope ≈ 0.129 score/day, meanY=6, gap=2, etaDays≈15.5, etaWeeks=3
+    const ts = [
+      "2026-02-15T00:00:00Z",
+      "2026-02-12T00:00:00Z",
+      "2026-02-01T00:00:00Z",
+    ];
+    expect(computeEta([7, 6, 5], ts, 8.0)).toBe(3);
   });
 });

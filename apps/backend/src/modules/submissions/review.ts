@@ -3,7 +3,7 @@ import { ROLES } from "@common/auth-types";
 import { BadRequestError, ConflictError, ForbiddenError } from "@common/errors";
 import { scoreToBand } from "@common/scoring";
 import { assertExists } from "@common/utils";
-import { db, paginate, table } from "@db/index";
+import { db, paginate, table, takeFirst, takeFirstOrThrow } from "@db/index";
 import { and, asc, eq, isNull, lt, or, sql } from "drizzle-orm";
 import {
   recordSkillScore,
@@ -60,7 +60,7 @@ export async function claimSubmission(submissionId: string, actor: Actor) {
 
     // Atomic conditional update — no TOCTOU race
     const ts = new Date().toISOString();
-    const [updated] = await tx
+    const updated = await tx
       .update(table.submissions)
       .set({ claimedBy: actor.sub, claimedAt: ts, updatedAt: ts })
       .where(
@@ -77,7 +77,8 @@ export async function claimSubmission(submissionId: string, actor: Actor) {
           ),
         ),
       )
-      .returning(SUBMISSION_COLUMNS);
+      .returning(SUBMISSION_COLUMNS)
+      .then(takeFirst);
 
     if (!updated) {
       throw new ConflictError(
@@ -109,7 +110,7 @@ export async function releaseSubmission(submissionId: string, actor: Actor) {
 
     // Atomic conditional update — owner or admin only
     const ts = new Date().toISOString();
-    const [updated] = await tx
+    const updated = await tx
       .update(table.submissions)
       .set({ claimedBy: null, claimedAt: null, updatedAt: ts })
       .where(
@@ -121,7 +122,8 @@ export async function releaseSubmission(submissionId: string, actor: Actor) {
             : eq(table.submissions.claimedBy, actor.sub),
         ),
       )
-      .returning(SUBMISSION_COLUMNS);
+      .returning(SUBMISSION_COLUMNS)
+      .then(takeFirst);
 
     if (!updated) {
       throw new ForbiddenError(
@@ -183,7 +185,7 @@ export async function submitReview(
       priorScore != null && Math.abs(priorScore - body.overallScore) > 0.5;
 
     const ts = new Date().toISOString();
-    const [updated] = await tx
+    const updated = await tx
       .update(table.submissions)
       .set({
         score: finalScore,
@@ -204,7 +206,8 @@ export async function submitReview(
             : eq(table.submissions.claimedBy, actor.sub),
         ),
       )
-      .returning(SUBMISSION_COLUMNS);
+      .returning(SUBMISSION_COLUMNS)
+      .then(takeFirst);
 
     if (!updated) {
       throw new ConflictError(
@@ -244,7 +247,7 @@ export async function submitReview(
     await updateUserProgress(submission.userId, submission.skill, tx);
 
     return {
-      ...assertExists(updated, "Submission"),
+      ...updated,
       ...(await fetchDetails(tx, submissionId)),
     };
   });
@@ -277,12 +280,11 @@ export async function assignSubmission(
     );
 
     const ts = new Date().toISOString();
-    const [updated] = await tx
+    return tx
       .update(table.submissions)
       .set({ reviewerId: body.reviewerId, updatedAt: ts })
       .where(eq(table.submissions.id, submissionId))
-      .returning(REVIEW_QUEUE_COLUMNS);
-
-    return assertExists(updated, "Submission");
+      .returning(REVIEW_QUEUE_COLUMNS)
+      .then(takeFirstOrThrow);
   });
 }

@@ -4,7 +4,7 @@ import { BadRequestError, ConflictError } from "@common/errors";
 import { createStateMachine } from "@common/state-machine";
 import { assertExists } from "@common/utils";
 import type { DbTransaction } from "@db/index";
-import { db, paginate, table } from "@db/index";
+import { db, paginate, table, takeFirstOrThrow } from "@db/index";
 import type { ExamSession } from "@db/schema/exams";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import type { ExamCreateBody, ExamListQuery, ExamUpdateBody } from "./schema";
@@ -85,7 +85,7 @@ export async function createExam(userId: string, body: ExamCreateBody) {
   return db.transaction(async (tx) => {
     await validateBlueprint(tx, body.blueprint);
 
-    const [exam] = await tx
+    return tx
       .insert(table.exams)
       .values({
         level: body.level,
@@ -93,9 +93,8 @@ export async function createExam(userId: string, body: ExamCreateBody) {
         isActive: body.isActive ?? true,
         createdBy: userId,
       })
-      .returning(EXAM_COLUMNS);
-
-    return assertExists(exam, "Exam");
+      .returning(EXAM_COLUMNS)
+      .then(takeFirstOrThrow);
   });
 }
 
@@ -118,7 +117,7 @@ export async function updateExam(id: string, body: ExamUpdateBody) {
       await validateBlueprint(tx, body.blueprint);
     }
 
-    const [exam] = await tx
+    return tx
       .update(table.exams)
       .set({
         updatedAt: new Date().toISOString(),
@@ -127,8 +126,7 @@ export async function updateExam(id: string, body: ExamUpdateBody) {
         ...(body.isActive !== undefined && { isActive: body.isActive }),
       })
       .where(eq(table.exams.id, id))
-      .returning(EXAM_COLUMNS);
-
-    return assertExists(exam, "Exam");
+      .returning(EXAM_COLUMNS)
+      .then(takeFirstOrThrow);
   });
 }

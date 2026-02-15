@@ -3,7 +3,7 @@ import { JWT_SECRET_KEY, MAX_REFRESH_TOKENS_PER_USER } from "@common/constants";
 import { env } from "@common/env";
 import { ConflictError, UnauthorizedError } from "@common/errors";
 import { normalizeEmail } from "@common/utils";
-import { db, table } from "@db/index";
+import { db, table, takeFirst } from "@db/index";
 import { and, asc, eq, gt, inArray, isNull } from "drizzle-orm";
 import { SignJWT } from "jose";
 import { hashToken, parseExpiry } from "./helpers";
@@ -105,7 +105,7 @@ export async function register(body: RegisterBody) {
   const email = normalizeEmail(body.email);
   const hash = await Bun.password.hash(body.password, "argon2id");
 
-  const [user] = await db
+  const user = await db
     .insert(table.users)
     .values({
       email,
@@ -114,7 +114,8 @@ export async function register(body: RegisterBody) {
       role: ROLES.LEARNER,
     })
     .onConflictDoNothing()
-    .returning(AUTH_USER_RETURNING);
+    .returning(AUTH_USER_RETURNING)
+    .then(takeFirst);
 
   if (!user) throw new ConflictError("Email already registered");
   return { user, message: "Account created successfully" };
@@ -125,7 +126,7 @@ export async function refresh(refreshToken: string, deviceInfo?: string) {
   const jti = crypto.randomUUID();
 
   // Attempt atomic rotation: revoke old token and find its owner in one UPDATE.
-  const [rotated] = await db
+  const rotated = await db
     .update(table.refreshTokens)
     .set({ revokedAt: new Date().toISOString(), replacedByJti: jti })
     .where(
@@ -140,7 +141,8 @@ export async function refresh(refreshToken: string, deviceInfo?: string) {
       id: table.refreshTokens.id,
       userId: table.refreshTokens.userId,
       jti: table.refreshTokens.jti,
-    });
+    })
+    .then(takeFirst);
 
   if (!rotated) {
     // Token not active — determine reason for a clear error message.

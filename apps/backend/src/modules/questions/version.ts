@@ -1,6 +1,6 @@
 import type { Actor } from "@common/auth-types";
 import { assertAccess, assertExists } from "@common/utils";
-import { db, table } from "@db/index";
+import { db, table, takeFirstOrThrow } from "@db/index";
 import { and, desc, eq } from "drizzle-orm";
 import type { QuestionVersionBody } from "./schema";
 
@@ -30,7 +30,7 @@ export async function createQuestionVersion(
 
     const newVersion = question.version + 1;
 
-    const [version] = await tx
+    const v = await tx
       .insert(table.questionVersions)
       .values({
         questionId,
@@ -38,9 +38,8 @@ export async function createQuestionVersion(
         content: body.content,
         answerKey: body.answerKey ?? null,
       })
-      .returning();
-
-    const v = assertExists(version, "Version");
+      .returning()
+      .then(takeFirstOrThrow);
 
     await tx
       .update(table.questions)

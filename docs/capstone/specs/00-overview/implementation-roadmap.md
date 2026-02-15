@@ -302,7 +302,9 @@ GET /api/progress/:skill
 
 ---
 
-## Phase 6: Rate Limiting
+## Phase 6: Rate Limiting (DROPPED — out of capstone scope)
+
+> **DROPPED** — out of capstone scope. Not needed for demo.
 
 **Mục tiêu**: Bảo vệ API khỏi abuse.
 
@@ -533,7 +535,9 @@ Update:
 
 ---
 
-## Phase 10: Reliability & Circuit Breaker
+## Phase 10: Reliability & Circuit Breaker (DROPPED — out of capstone scope)
+
+> **DROPPED** — out of capstone scope. Not needed for demo.
 
 **Mục tiêu**: Circuit breaker cho LLM/STT providers, failed job monitoring.
 
@@ -613,7 +617,9 @@ GET /api/exams/:id
 
 ---
 
-## Phase 12: Admin & Observability
+## Phase 12: Admin & Observability (DROPPED — out of capstone scope)
+
+> **DROPPED** — out of capstone scope. Not needed for demo.
 
 **Mục tiêu**: Admin tooling và structured logging.
 
@@ -660,7 +666,9 @@ GET /api/admin/metrics
 
 ---
 
-## Phase 13: Data Retention & Cleanup
+## Phase 13: Data Retention & Cleanup (DROPPED — out of capstone scope)
+
+> **DROPPED** — out of capstone scope. Not needed for demo.
 
 **Mục tiêu**: TTL cleanup, data privacy.
 

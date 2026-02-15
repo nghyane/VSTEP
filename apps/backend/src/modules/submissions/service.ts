@@ -5,7 +5,7 @@ import { scoreToBand } from "@common/scoring";
 import { createStateMachine } from "@common/state-machine";
 import { assertAccess, assertExists } from "@common/utils";
 import type { DbTransaction } from "@db/index";
-import { db, paginate, table } from "@db/index";
+import { db, paginate, table, takeFirst, takeFirstOrThrow } from "@db/index";
 import type { submissionStatusEnum } from "@db/schema/submissions";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import {
@@ -129,7 +129,7 @@ export async function createSubmission(
       throw new BadRequestError("Question is not active");
     }
 
-    const [sub] = await tx
+    const submission = await tx
       .insert(table.submissions)
       .values({
         userId,
@@ -137,9 +137,8 @@ export async function createSubmission(
         skill: question.skill,
         status: "pending",
       })
-      .returning(SUBMISSION_COLUMNS);
-
-    const submission = assertExists(sub, "Submission");
+      .returning(SUBMISSION_COLUMNS)
+      .then(takeFirstOrThrow);
 
     await tx.insert(table.submissionDetails).values({
       submissionId: submission.id,
@@ -188,10 +187,6 @@ export async function updateSubmission(
       "You can only update your own submissions",
     );
 
-    if (!actor.is(ROLES.ADMIN)) {
-      delete body.status;
-    }
-
     if (
       !MUTABLE_STATUSES.includes(submission.status) &&
       !actor.is(ROLES.ADMIN)
@@ -200,19 +195,19 @@ export async function updateSubmission(
     }
 
     const ts = new Date().toISOString();
+    const status = actor.is(ROLES.ADMIN) ? body.status : undefined;
 
-    if (body.status)
-      submissionMachine.assertTransition(submission.status, body.status);
+    if (status) submissionMachine.assertTransition(submission.status, status);
 
     const set = {
       updatedAt: ts,
-      ...(body.status && { status: body.status }),
-      ...(body.status === "completed" &&
+      ...(status && { status }),
+      ...(status === "completed" &&
         submission.status !== "completed" && { completedAt: ts }),
       ...(actor.is(ROLES.ADMIN) &&
         body.score !== undefined && {
           score: body.score,
-          ...(!body.status &&
+          ...(!status &&
             submission.status !== "completed" && {
               status: "completed" as const,
               completedAt: ts,
@@ -222,11 +217,12 @@ export async function updateSubmission(
         body.band !== undefined && { band: body.band }),
     };
 
-    const [updated] = await tx
+    const updated = await tx
       .update(table.submissions)
       .set(set)
       .where(eq(table.submissions.id, submissionId))
-      .returning(SUBMISSION_COLUMNS);
+      .returning(SUBMISSION_COLUMNS)
+      .then(takeFirstOrThrow);
 
     if (body.answer !== undefined || body.feedback !== undefined) {
       await tx
@@ -239,7 +235,7 @@ export async function updateSubmission(
     }
 
     return {
-      ...assertExists(updated, "Submission"),
+      ...updated,
       ...(await fetchDetails(tx, submissionId)),
     };
   });
@@ -251,7 +247,7 @@ export async function gradeSubmission(
 ) {
   return db.transaction(async (tx) => {
     const ts = new Date().toISOString();
-    const [updated] = await tx
+    const updated = await tx
       .update(table.submissions)
       .set({
         status: "completed",
@@ -266,7 +262,8 @@ export async function gradeSubmission(
           inArray(table.submissions.status, GRADABLE_STATUSES),
         ),
       )
-      .returning(SUBMISSION_COLUMNS);
+      .returning(SUBMISSION_COLUMNS)
+      .then(takeFirst);
 
     if (!updated) {
       throw new ConflictError(
@@ -320,11 +317,10 @@ export async function removeSubmission(submissionId: string, actor: Actor) {
       throw new ConflictError("Cannot delete a graded submission");
     }
 
-    const [deleted] = await tx
+    return tx
       .delete(table.submissions)
       .where(eq(table.submissions.id, submissionId))
-      .returning({ id: table.submissions.id });
-
-    return assertExists(deleted, "Submission");
+      .returning({ id: table.submissions.id })
+      .then(takeFirstOrThrow);
   });
 }

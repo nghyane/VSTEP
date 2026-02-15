@@ -45,6 +45,7 @@ export const ProgressSkillDetail = t.Object({
   windowAvg: t.Nullable(t.Number()),
   windowDeviation: t.Nullable(t.Number()),
   trend: ProgressTrend,
+  eta: t.Nullable(t.Number()),
 });
 
 export type ProgressSkillDetail = typeof ProgressSkillDetail.static;
@@ -57,6 +58,10 @@ export const ProgressSpiderChartSkill = t.Object({
 export const ProgressSpiderChart = t.Object({
   skills: t.Record(t.String(), ProgressSpiderChartSkill),
   goal: t.Nullable(Goal),
+  eta: t.Object({
+    weeks: t.Nullable(t.Number()),
+    perSkill: t.Record(t.String(), t.Nullable(t.Number())),
+  }),
 });
 
 export type ProgressSpiderChart = typeof ProgressSpiderChart.static;

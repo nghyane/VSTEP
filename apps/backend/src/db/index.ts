@@ -8,7 +8,7 @@ export const db = drizzle(env.DATABASE_URL, {
 });
 
 export { table };
-export { omitColumns, paginate } from "./helpers";
+export { omitColumns, paginate, takeFirst, takeFirstOrThrow } from "./helpers";
 
 export type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type { UserProgress } from "./schema";

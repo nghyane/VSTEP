@@ -1,5 +1,18 @@
 import { MAX_PAGE_SIZE } from "@common/constants";
+import { NotFoundError } from "@common/errors";
 import type { PgSelect } from "drizzle-orm/pg-core";
+
+/** Extract the first row or undefined. Chain with `.returning().then(takeFirst)`. */
+export function takeFirst<T>(rows: T[]): T | undefined {
+  return rows[0];
+}
+
+/** Extract the first row or throw NotFoundError. Chain with `.returning().then(takeFirstOrThrow)`. */
+export function takeFirstOrThrow<T>(rows: T[]): T {
+  const first = rows[0];
+  if (!first) throw new NotFoundError("Record");
+  return first;
+}
 
 export function omitColumns<
   T extends Record<string, unknown>,

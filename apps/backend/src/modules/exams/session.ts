@@ -2,7 +2,7 @@ import type { Actor } from "@common/auth-types";
 import { BadRequestError, ConflictError } from "@common/errors";
 import { assertAccess, assertExists } from "@common/utils";
 import type { DbTransaction } from "@db/index";
-import { db, table } from "@db/index";
+import { db, table, takeFirstOrThrow } from "@db/index";
 import type { SubmissionAnswer } from "@db/types/answers";
 import type { ExamBlueprint } from "@db/types/grading";
 import { and, eq, sql } from "drizzle-orm";
@@ -86,7 +86,7 @@ export async function startExamSession(userId: string, examId: string) {
 
     if (existing) return existing;
 
-    const [session] = await tx
+    return tx
       .insert(table.examSessions)
       .values({
         userId,
@@ -94,9 +94,8 @@ export async function startExamSession(userId: string, examId: string) {
         status: "in_progress",
         startedAt: new Date().toISOString(),
       })
-      .returning(SESSION_COLUMNS);
-
-    return assertExists(session, "Session");
+      .returning(SESSION_COLUMNS)
+      .then(takeFirstOrThrow);
   });
 }
 
