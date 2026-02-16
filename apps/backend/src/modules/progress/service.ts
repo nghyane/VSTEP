@@ -117,7 +117,7 @@ export async function sync(
   const { avg, deviation } = computeStats(scores);
   const trend = computeTrend(scores, deviation);
 
-  const currentLevel = avg !== null ? scoreToLevel(avg) : "A1";
+  const currentLevel = avg !== null ? scoreToLevel(avg) : "A2";
 
   const streakDirection = trendToDirection(trend);
 

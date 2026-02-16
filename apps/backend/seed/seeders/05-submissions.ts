@@ -2,13 +2,13 @@ import type { DbTransaction } from "../../src/db/index";
 import { table } from "../../src/db/schema/index";
 import type { NewSubmission } from "../../src/db/schema/submissions";
 import type { SubmissionAnswer } from "../../src/db/types/answers";
-import type { GradingResult } from "../../src/db/types/grading";
+import type { Result } from "../../src/db/types/grading";
 import { logResult, logSection } from "../utils";
 import type { SeededUsers } from "./01-users";
 import type { SeededQuestions } from "./02-questions";
 
 export interface SeededSubmissions {
-  all: Array<{ id: string; skill: string; userId: string }>;
+  all: Array<{ id: string; skill: string; userId: string; status: string }>;
 }
 
 function findQuestion(
@@ -34,8 +34,9 @@ function autoGradeResult(
   total: number,
   score: number,
   band: string,
-): GradingResult {
+): Result {
   return {
+    type: "auto" as const,
     correctCount: correct,
     totalCount: total,
     score,
@@ -48,8 +49,9 @@ function aiGradeResult(
   overallScore: number,
   band: string,
   confidence: "high" | "medium" | "low",
-): GradingResult {
+): Result {
   return {
+    type: "ai" as const,
     overallScore,
     band,
     criteriaScores: {
@@ -67,7 +69,7 @@ function aiGradeResult(
 interface SubmissionSeed {
   submission: NewSubmission;
   answer: SubmissionAnswer;
-  result: GradingResult | null;
+  result: Result | null;
 }
 
 export async function seedSubmissions(
@@ -243,6 +245,7 @@ export async function seedSubmissions(
       id: table.submissions.id,
       skill: table.submissions.skill,
       userId: table.submissions.userId,
+      status: table.submissions.status,
     });
 
   const detailValues = inserted.map((row, i) => ({

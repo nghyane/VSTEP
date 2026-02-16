@@ -6,6 +6,7 @@ import { auth } from "@/modules/auth";
 import { classes } from "@/modules/classes";
 import { exams } from "@/modules/exams";
 import { health } from "@/modules/health";
+import { knowledgePoints } from "@/modules/knowledge-points";
 import { progress } from "@/modules/progress";
 import { questions } from "@/modules/questions";
 import { submissions } from "@/modules/submissions";
@@ -31,6 +32,10 @@ const api = new Elysia({ prefix: "/api" })
             description: "Submission management endpoints",
           },
           { name: "Questions", description: "Question management endpoints" },
+          {
+            name: "Knowledge Points",
+            description: "Knowledge point taxonomy for adaptive learning",
+          },
           { name: "Progress", description: "User progress endpoints" },
           { name: "Exams", description: "Exam endpoints" },
           {
@@ -55,6 +60,7 @@ const api = new Elysia({ prefix: "/api" })
   .use(users)
   .use(submissions)
   .use(questions)
+  .use(knowledgePoints)
   .use(progress)
   .use(exams)
   .use(classes);

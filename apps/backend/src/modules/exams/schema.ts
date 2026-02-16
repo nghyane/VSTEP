@@ -1,7 +1,7 @@
 import { QuestionLevel } from "@db/enums";
 import { examSessions, exams } from "@db/schema";
 import { SubmissionAnswer } from "@db/types/answers";
-import { ExamBlueprint } from "@db/types/grading";
+import { ExamBlueprint } from "@db/types/exam-blueprint";
 import { getTableColumns } from "drizzle-orm";
 import {
   createInsertSchema,

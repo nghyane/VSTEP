@@ -1,16 +1,30 @@
 {
   "skill": "speaking",
-  "format": "speaking_part_1",
-  "level": "B1",
   "content": {
-    "partNumber": 1,
-    "prompt": "Situation: If you won a lottery of 1 billion VND, what would you do with the money? Three options are suggested: buying a new house, starting a business, and depositing the money in the bank. Which option do you think is the best choice? Why?",
-    "speakingSeconds": 180
+    "topics": [
+      {
+        "name": "Situation: If you won a lottery of 1 billion VND, what would you do with the money? Three options are suggested: buying a new house, starting a business, and depositing the money in the bank. Which option do you think is the best choice? Why?",
+        "questions": [
+          "Tell me more about situation: if you won a lottery of 1 billion vnd, what would you do with the money? three options are suggested: buying a new house, starting a business, and depositing the money in the bank. which option do you think is the best choice? why?.",
+          "Tell me more about situation: if you won a lottery of 1 billion vnd, what would you do with the money? three options are suggested: buying a new house, starting a business, and depositing the money in the bank. which option do you think is the best choice? why?.",
+          "Tell me more about situation: if you won a lottery of 1 billion vnd, what would you do with the money? three options are suggested: buying a new house, starting a business, and depositing the money in the bank. which option do you think is the best choice? why?."
+        ]
+      },
+      {
+        "name": "General topic",
+        "questions": [
+          "Can you tell me about this?",
+          "Why is this important to you?",
+          "How does this affect your life?"
+        ]
+      }
+    ]
   },
   "answerKey": null,
   "metadata": {
     "source": "crawled",
     "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-noi/5",
     "examId": 5
-  }
+  },
+  "part": 1
 }

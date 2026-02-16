@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm";
 
 const GRADING_QUEUE = "grading:tasks";
 
-export interface GradingTask {
+export interface Task {
   submissionId: string;
   questionId: string;
   skill: Skill;
@@ -22,7 +22,7 @@ export async function prepare(
   skill: Skill,
   questionId: string,
   answer: unknown,
-): Promise<GradingTask> {
+): Promise<Task> {
   const ts = new Date().toISOString();
   await tx
     .update(table.submissions)
@@ -32,7 +32,7 @@ export async function prepare(
 }
 
 /** Push collected tasks to Redis. Call AFTER transaction commits. */
-export async function dispatch(tasks: GradingTask[]) {
+export async function dispatch(tasks: Task[]) {
   if (tasks.length === 0) return;
   await Promise.all(
     tasks.map((task) =>

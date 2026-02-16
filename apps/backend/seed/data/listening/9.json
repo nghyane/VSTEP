@@ -1,184 +1,163 @@
 {
   "skill": "listening",
-  "format": "listening_mcq",
-  "level": "B1",
   "content": {
     "audioUrl": "https://luyenthivstep.vn/assets/nhch/listening/bac3/lp3-1664870447_464ab7ec01dcc19a11f6.mp3",
     "items": [
       {
-        "number": 1,
-        "prompt": "Question 1",
-        "options": {
-          "A": "There were no Vietnamese people living near her.",
-          "B": "There were no Vietnamese working in the stores.",
-          "C": "Her mother could speak a little English.",
-          "D": "There wasn't always someone to go shopping with her."
-        }
+        "stem": "Question 1",
+        "options": [
+          "There were no Vietnamese people living near her.",
+          "There were no Vietnamese working in the stores.",
+          "Her mother could speak a little English.",
+          "There wasn't always someone to go shopping with her."
+        ]
       },
       {
-        "number": 2,
-        "prompt": "Question 2",
-        "options": {
-          "A": "He didn't have many friends there.",
-          "B": "He had had a much better job in Vietnam.",
-          "C": "He couldn't speak any English.",
-          "D": "He couldn't get used to the working style."
-        }
+        "stem": "Question 2",
+        "options": [
+          "He didn't have many friends there.",
+          "He had had a much better job in Vietnam.",
+          "He couldn't speak any English.",
+          "He couldn't get used to the working style."
+        ]
       },
       {
-        "number": 3,
-        "prompt": "Question 3",
-        "options": {
-          "A": "They did not need extra English lessons.",
-          "B": "They speak with American accents.",
-          "C": "They quickly adopted the way of life.",
-          "D": "They look more American."
-        }
+        "stem": "Question 3",
+        "options": [
+          "They did not need extra English lessons.",
+          "They speak with American accents.",
+          "They quickly adopted the way of life.",
+          "They look more American."
+        ]
       },
       {
-        "number": 4,
-        "prompt": "Question 4",
-        "options": {
-          "A": "Traditional food.",
-          "B": "The warm weather.",
-          "C": "Living close to other people.",
-          "D": "Wearing traditional clothes."
-        }
+        "stem": "Question 4",
+        "options": [
+          "Traditional food.",
+          "The warm weather.",
+          "Living close to other people.",
+          "Wearing traditional clothes."
+        ]
       },
       {
-        "number": 5,
-        "prompt": "Question 5",
-        "options": {
-          "A": "Her parents only know how to cook Vietnamese food.",
-          "B": "Her parents do not have much money.",
-          "C": "Her parents haven't adopted an American way of life.",
-          "D": "Her parents do not speak English well."
-        }
+        "stem": "Question 5",
+        "options": [
+          "Her parents only know how to cook Vietnamese food.",
+          "Her parents do not have much money.",
+          "Her parents haven't adopted an American way of life.",
+          "Her parents do not speak English well."
+        ]
       },
       {
-        "number": 6,
-        "prompt": "Question 6",
-        "options": {
-          "A": "They didn't teach girls some subjects.",
-          "B": "Girls didn't go to school.",
-          "C": "Every classroom was a mix of boys and girls.",
-          "D": "Boys could learn what they wanted."
-        }
+        "stem": "Question 6",
+        "options": [
+          "They didn't teach girls some subjects.",
+          "Girls didn't go to school.",
+          "Every classroom was a mix of boys and girls.",
+          "Boys could learn what they wanted."
+        ]
       },
       {
-        "number": 7,
-        "prompt": "Question 7",
-        "options": {
-          "A": "Teachers did not want to teach single-gender classes.",
-          "B": "A law gave girls an equal chance to learn.",
-          "C": "Boys and girls behave better in such classes.",
-          "D": "Scientists said that it was the best thing."
-        }
+        "stem": "Question 7",
+        "options": [
+          "Teachers did not want to teach single-gender classes.",
+          "A law gave girls an equal chance to learn.",
+          "Boys and girls behave better in such classes.",
+          "Scientists said that it was the best thing."
+        ]
       },
       {
-        "number": 8,
-        "prompt": "Question 8",
-        "options": {
-          "A": "Because boys know the correct answers.",
-          "B": "Because boys are louder and often talk first.",
-          "C": "Because girls are often shy.",
-          "D": "Because the teacher doesn't ask them questions."
-        }
+        "stem": "Question 8",
+        "options": [
+          "Because boys know the correct answers.",
+          "Because boys are louder and often talk first.",
+          "Because girls are often shy.",
+          "Because the teacher doesn't ask them questions."
+        ]
       },
       {
-        "number": 9,
-        "prompt": "Question 9",
-        "options": {
-          "A": "Boys learn differently than girls.",
-          "B": "They prefer the old teaching styles.",
-          "C": "Boys and girls can bother each other.",
-          "D": "Boys and girls like different things."
-        }
+        "stem": "Question 9",
+        "options": [
+          "Boys learn differently than girls.",
+          "They prefer the old teaching styles.",
+          "Boys and girls can bother each other.",
+          "Boys and girls like different things."
+        ]
       },
       {
-        "number": 10,
-        "prompt": "Question 10",
-        "options": {
-          "A": "Math",
-          "B": "Physical Education",
-          "C": "Science",
-          "D": "Social Studies"
-        }
+        "stem": "Question 10",
+        "options": ["Math", "Physical Education", "Science", "Social Studies"]
       },
       {
-        "number": 11,
-        "prompt": "Question 11",
-        "options": {
-          "A": "the teachers of international department.",
-          "B": "all first-year students in the college.",
-          "C": "the director of international students.",
-          "D": "new international students."
-        }
+        "stem": "Question 11",
+        "options": [
+          "the teachers of international department.",
+          "all first-year students in the college.",
+          "the director of international students.",
+          "new international students."
+        ]
       },
       {
-        "number": 12,
-        "prompt": "Question 12",
-        "options": {
-          "A": "to deal with all international students' problems.",
-          "B": "to introduce common problems in non-verbal communication.",
-          "C": "to inform the importance of using English in class.",
-          "D": "to introduce the director for international student affairs."
-        }
+        "stem": "Question 12",
+        "options": [
+          "to deal with all international students' problems.",
+          "to introduce common problems in non-verbal communication.",
+          "to inform the importance of using English in class.",
+          "to introduce the director for international student affairs."
+        ]
       },
       {
-        "number": 13,
-        "prompt": "Question 13",
-        "options": {
-          "A": "It's the use of verb tenses and modals.",
-          "B": "It's the language used in class only.",
-          "C": "It's the language of movements and facial expressions.",
-          "D": "It's the way to ask for directions."
-        }
+        "stem": "Question 13",
+        "options": [
+          "It's the use of verb tenses and modals.",
+          "It's the language used in class only.",
+          "It's the language of movements and facial expressions.",
+          "It's the way to ask for directions."
+        ]
       },
       {
-        "number": 14,
-        "prompt": "Question 14",
-        "options": {
-          "A": "eye contact is the same as most cultures.",
-          "B": "eye contact is considered as a sign of honesty.",
-          "C": "people don't look in others' eyes while talking.",
-          "D": "making eye contact is a sign of disrespect."
-        }
+        "stem": "Question 14",
+        "options": [
+          "eye contact is the same as most cultures.",
+          "eye contact is considered as a sign of honesty.",
+          "people don't look in others' eyes while talking.",
+          "making eye contact is a sign of disrespect."
+        ]
       },
       {
-        "number": 15,
-        "prompt": "Question 15",
-        "options": {
-          "A": "Handshakes are not common.",
-          "B": "A handshake shouldn't be too strong.",
-          "C": "Handshakes need to be firm.",
-          "D": "Shaking hands is not important."
-        }
+        "stem": "Question 15",
+        "options": [
+          "Handshakes are not common.",
+          "A handshake shouldn't be too strong.",
+          "Handshakes need to be firm.",
+          "Shaking hands is not important."
+        ]
       }
     ]
   },
   "answerKey": {
     "correctAnswers": {
-      "1": "B",
-      "2": "B",
-      "3": "B",
-      "4": "C",
-      "5": "C",
-      "6": "A",
-      "7": "B",
-      "8": "B",
-      "9": "B",
-      "10": "B",
-      "11": "D",
-      "12": "B",
-      "13": "C",
-      "14": "B",
-      "15": "C"
+      "1": "1",
+      "2": "1",
+      "3": "1",
+      "4": "2",
+      "5": "2",
+      "6": "0",
+      "7": "1",
+      "8": "1",
+      "9": "1",
+      "10": "1",
+      "11": "3",
+      "12": "1",
+      "13": "2",
+      "14": "1",
+      "15": "2"
     }
   },
   "metadata": {
     "source": "crawled",
     "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-nghe/9",
     "examId": 9
-  }
+  },
+  "part": 1
 }

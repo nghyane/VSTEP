@@ -6,7 +6,7 @@ import {
   IdParam,
   PaginationMeta,
 } from "@common/schemas";
-import { AutoGradeResult } from "@db/types/grading";
+import { AutoResult } from "@db/types/grading";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import { autoGrade } from "./auto-grade";
@@ -130,7 +130,7 @@ export const submissions = new Elysia({
     response: {
       200: t.Object({
         score: t.Number(),
-        result: AutoGradeResult,
+        result: AutoResult,
       }),
       ...CrudErrors,
     },

@@ -1,19 +1,31 @@
 {
   "skill": "listening",
-  "format": "listening_dictation",
-  "level": "B2",
   "content": {
     "audioUrl": "https://example.com/listening/b2-archaeology-lecture.mp3",
     "transcript": "Archaeological evidence suggests that the earliest known civilisation in Mesopotamia developed sophisticated irrigation systems approximately five thousand years ago. These systems enabled farmers to cultivate crops in otherwise arid landscapes, thereby supporting population growth and the emergence of complex urban societies. The surplus of agricultural production allowed a significant proportion of the population to specialise in non-farming activities such as trade, craftsmanship, and governance. Scholars believe that writing itself evolved partly as a means of recording agricultural transactions and inventories.",
     "transcriptWithGaps": "Archaeological (1)___ suggests that the earliest known civilisation in Mesopotamia developed (2)___ irrigation systems approximately five thousand years ago. These systems enabled farmers to (3)___ crops in otherwise arid landscapes, thereby supporting population growth and the (4)___ of complex urban societies. The surplus of agricultural (5)___ allowed a significant proportion of the population to (6)___ in non-farming activities such as trade, craftsmanship, and governance. Scholars believe that writing itself evolved partly as a means of recording agricultural (7)___ and inventories.",
     "items": [
-      { "number": 1, "correctText": "evidence" },
-      { "number": 2, "correctText": "sophisticated" },
-      { "number": 3, "correctText": "cultivate" },
-      { "number": 4, "correctText": "emergence" },
-      { "number": 5, "correctText": "production" },
-      { "number": 6, "correctText": "specialise" },
-      { "number": 7, "correctText": "transactions" }
+      {
+        "correctText": "evidence"
+      },
+      {
+        "correctText": "sophisticated"
+      },
+      {
+        "correctText": "cultivate"
+      },
+      {
+        "correctText": "emergence"
+      },
+      {
+        "correctText": "production"
+      },
+      {
+        "correctText": "specialise"
+      },
+      {
+        "correctText": "transactions"
+      }
     ]
   },
   "answerKey": {
@@ -29,5 +41,6 @@
   },
   "metadata": {
     "source": "synthetic"
-  }
+  },
+  "part": 2
 }

@@ -1,7 +1,7 @@
 import type { DbTransaction } from "../../src/db/index";
 import type { NewExam } from "../../src/db/schema/exams";
 import { table } from "../../src/db/schema/index";
-import type { ExamBlueprint } from "../../src/db/types/grading";
+import type { ExamBlueprint } from "../../src/db/types/exam-blueprint";
 import { logResult, logSection, SKILLS } from "../utils";
 import type { SeededQuestions } from "./02-questions";
 
@@ -42,13 +42,15 @@ export async function seedExams(
 
 function buildBlueprint(
   questions: SeededQuestions["all"],
-  level: string,
+  _level: string,
 ): ExamBlueprint {
   const blueprint: ExamBlueprint = { durationMinutes: 150 };
 
   for (const skill of SKILLS) {
+    // Pick first few questions per skill for this exam
     const ids = questions
-      .filter((q) => q.skill === skill && q.level === level)
+      .filter((q) => q.skill === skill)
+      .slice(0, 4)
       .map((q) => q.id);
     if (ids.length > 0) {
       blueprint[skill] = { questionIds: ids };

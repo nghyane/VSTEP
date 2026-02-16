@@ -1,16 +1,30 @@
 {
   "skill": "speaking",
-  "format": "speaking_part_1",
-  "level": "B1",
   "content": {
-    "partNumber": 1,
-    "prompt": "Situation: A school is planning to invest money in improving the quality of education. Three areas are suggested: teachers, students, and facilities. Which area do you think the school should invest in? Why?",
-    "speakingSeconds": 180
+    "topics": [
+      {
+        "name": "Situation: A school is planning to invest money in improving the quality of education. Three areas are suggested: teachers, students, and facilities. Which area do you think the school should invest in? Why?",
+        "questions": [
+          "Tell me more about situation: a school is planning to invest money in improving the quality of education. three areas are suggested: teachers, students, and facilities. which area do you think the school should invest in? why?.",
+          "Tell me more about situation: a school is planning to invest money in improving the quality of education. three areas are suggested: teachers, students, and facilities. which area do you think the school should invest in? why?.",
+          "Tell me more about situation: a school is planning to invest money in improving the quality of education. three areas are suggested: teachers, students, and facilities. which area do you think the school should invest in? why?."
+        ]
+      },
+      {
+        "name": "General topic",
+        "questions": [
+          "Can you tell me about this?",
+          "Why is this important to you?",
+          "How does this affect your life?"
+        ]
+      }
+    ]
   },
   "answerKey": null,
   "metadata": {
     "source": "crawled",
     "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-noi/2",
     "examId": 2
-  }
+  },
+  "part": 1
 }

@@ -100,16 +100,7 @@
         }
       }
     },
-    {
-      "includes": ["src/modules/questions/validation.ts"],
-      "linter": {
-        "rules": {
-          "style": {
-            "useNamingConvention": "off"
-          }
-        }
-      }
-    },
+
     {
       "includes": ["seed/**"],
       "linter": {

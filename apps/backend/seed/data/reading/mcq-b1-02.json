@@ -1,130 +1,109 @@
 {
   "skill": "reading",
-  "format": "reading_mcq",
-  "level": "B1",
   "content": {
     "passage": "",
     "title": "How Do Bees Survive Freezing Temperatures?",
     "items": [
       {
-        "number": 1,
-        "prompt": "What is the best title of the passage?",
-        "options": {
-          "A": "Do freezing temperatures completely kill bees?",
-          "B": "How do bees survive freezing temperatures?",
-          "C": "How can humans protect their homes from beehives?",
-          "D": "How do bees produce honey in winter?"
-        }
+        "stem": "What is the best title of the passage?",
+        "options": [
+          "Do freezing temperatures completely kill bees?",
+          "How do bees survive freezing temperatures?",
+          "How can humans protect their homes from beehives?",
+          "How do bees produce honey in winter?"
+        ]
       },
       {
-        "number": 2,
-        "prompt": "What percentage of pollination is contributed by honeybees?",
-        "options": {
-          "A": "About three quarters",
-          "B": "A half",
-          "C": "Over four fifths",
-          "D": "About one third"
-        }
+        "stem": "What percentage of pollination is contributed by honeybees?",
+        "options": [
+          "About three quarters",
+          "A half",
+          "Over four fifths",
+          "About one third"
+        ]
       },
       {
-        "number": 3,
-        "prompt": "What do bees use the nectar and pollen they have collected for?",
-        "options": {
-          "A": "To restore nutrition and protect their hive",
-          "B": "To defend themselves and heat up their hive",
-          "C": "To warm themselves and protect their hive",
-          "D": "To regain nutrition and heat up their hive"
-        }
+        "stem": "What do bees use the nectar and pollen they have collected for?",
+        "options": [
+          "To restore nutrition and protect their hive",
+          "To defend themselves and heat up their hive",
+          "To warm themselves and protect their hive",
+          "To regain nutrition and heat up their hive"
+        ]
       },
       {
-        "number": 4,
-        "prompt": "What is \"emerge\" in paragraph (A) closest in meaning to?",
-        "options": {
-          "A": "activate",
-          "B": "escape",
-          "C": "disappear",
-          "D": "appear"
-        }
+        "stem": "What is \"emerge\" in paragraph (A) closest in meaning to?",
+        "options": ["activate", "escape", "disappear", "appear"]
       },
       {
-        "number": 5,
-        "prompt": "According to the passage, freezing temperatures affect the following factors EXCEPT ______.",
-        "options": {
-          "A": "bee blood",
-          "B": "nectar viscosity",
-          "C": "bee muscles",
-          "D": "bee flight"
-        }
+        "stem": "According to the passage, freezing temperatures affect the following factors EXCEPT ______.",
+        "options": [
+          "bee blood",
+          "nectar viscosity",
+          "bee muscles",
+          "bee flight"
+        ]
       },
       {
-        "number": 6,
-        "prompt": "In paragraph (B), what best paraphrases the sentence \"Clustering, however, does not generate enough heat to combat death from freezing\"?",
-        "options": {
-          "A": "There exist other methods to protect bees from death in freezing temperatures.",
-          "B": "Clustering is one way to produce heat against dropping temperatures.",
-          "C": "Even grouping, the bees will still die if the temperature is low enough.",
-          "D": "Enough heat can be generated if bees are likely to form bigger groups in their hive."
-        }
+        "stem": "In paragraph (B), what best paraphrases the sentence \"Clustering, however, does not generate enough heat to combat death from freezing\"?",
+        "options": [
+          "There exist other methods to protect bees from death in freezing temperatures.",
+          "Clustering is one way to produce heat against dropping temperatures.",
+          "Even grouping, the bees will still die if the temperature is low enough.",
+          "Enough heat can be generated if bees are likely to form bigger groups in their hive."
+        ]
       },
       {
-        "number": 7,
-        "prompt": "What is the main idea of paragraph (C)?",
-        "options": {
-          "A": "Freezing weather helps reduce the number of bees in the hive.",
-          "B": "Bees can regulate their hive population more easily in freezing temperatures.",
-          "C": "There are different roles for bees in the hive.",
-          "D": "The queen bee is responsible for producing more worker bees."
-        }
+        "stem": "What is the main idea of paragraph (C)?",
+        "options": [
+          "Freezing weather helps reduce the number of bees in the hive.",
+          "Bees can regulate their hive population more easily in freezing temperatures.",
+          "There are different roles for bees in the hive.",
+          "The queen bee is responsible for producing more worker bees."
+        ]
       },
       {
-        "number": 8,
-        "prompt": "According to the passage, what will be displaced from the hive in cold weather?",
-        "options": {
-          "A": "The queen",
-          "B": "Bee workers",
-          "C": "Bee eggs",
-          "D": "Drones"
-        }
+        "stem": "According to the passage, what will be displaced from the hive in cold weather?",
+        "options": ["The queen", "Bee workers", "Bee eggs", "Drones"]
       },
       {
-        "number": 9,
-        "prompt": "The phrase \"the colony\" in paragraph (D) can refer to ______.",
-        "options": {
-          "A": "the structural cavity",
-          "B": "the hive",
-          "C": "the home's wall",
-          "D": "bee removal company"
-        }
+        "stem": "The phrase \"the colony\" in paragraph (D) can refer to ______.",
+        "options": [
+          "the structural cavity",
+          "the hive",
+          "the home's wall",
+          "bee removal company"
+        ]
       },
       {
-        "number": 10,
-        "prompt": "According to the passage, which of the following is true?",
-        "options": {
-          "A": "It is noise disturbing the hive on your home's walls.",
-          "B": "Winter is the perfect time for bees to collect the nectar and pollen.",
-          "C": "Bees can withstand the freezing weather only by gathering in the hive.",
-          "D": "Bees may die as they carry thick flower nectar in dropping temperatures."
-        }
+        "stem": "According to the passage, which of the following is true?",
+        "options": [
+          "It is noise disturbing the hive on your home's walls.",
+          "Winter is the perfect time for bees to collect the nectar and pollen.",
+          "Bees can withstand the freezing weather only by gathering in the hive.",
+          "Bees may die as they carry thick flower nectar in dropping temperatures."
+        ]
       }
     ]
   },
   "answerKey": {
     "correctAnswers": {
-      "1": "B",
-      "2": "C",
-      "3": "D",
-      "4": "D",
-      "5": "A",
-      "6": "C",
-      "7": "B",
-      "8": "D",
-      "9": "B",
-      "10": "C"
+      "1": "1",
+      "2": "2",
+      "3": "3",
+      "4": "3",
+      "5": "0",
+      "6": "2",
+      "7": "1",
+      "8": "3",
+      "9": "1",
+      "10": "2"
     }
   },
   "metadata": {
     "source": "crawled",
     "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-doc/3",
     "examId": 3
-  }
+  },
+  "part": 1
 }

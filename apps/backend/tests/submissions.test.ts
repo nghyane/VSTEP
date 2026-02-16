@@ -162,9 +162,12 @@ describe("submissions integration", () => {
       token: instructor.accessToken,
       body: {
         skill: "writing",
-        level: "B2",
-        format: "writing_task_1",
-        content: { taskNumber: 1, prompt: "Write about your day." },
+        part: 1,
+        content: {
+          prompt: "Write about your day.",
+          taskType: "letter",
+          minWords: 120,
+        },
       },
     });
 
@@ -177,12 +180,8 @@ describe("submissions integration", () => {
     });
     const subId = created.data.id as string;
 
-    // Transition through valid states: pending → queued → processing → review_pending
+    // Transition through valid states: pending → processing → review_pending
     const admin = await loginTestUser({ role: "admin" });
-    await api.patch(`/api/submissions/${subId}`, {
-      token: admin.accessToken,
-      body: { status: "queued" },
-    });
     await api.patch(`/api/submissions/${subId}`, {
       token: admin.accessToken,
       body: { status: "processing" },

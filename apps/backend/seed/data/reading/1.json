@@ -1,130 +1,99 @@
 {
   "skill": "reading",
-  "format": "reading_mcq",
-  "level": "B1",
   "content": {
     "passage": "(A) The belief that a person's blood type can determine their personality has a long history in Japan and other parts of Asia. Although the idea has little following in Western countries, it remains extremely popular in Asian nations, particularly Japan, where it influences everyday conversations, romantic matchmaking, and even hiring decisions. The theory was introduced in the early twentieth century and has persisted despite a lack of scientific evidence. It continues to shape the way many Japanese people view themselves and those around them.\n\n(B) According to the theory, each of the four main blood types — A, B, AB, and O — is associated with a distinct set of personality traits. People with Type A blood are generally described as well-organized, patient, and sensitive. They tend to be considerate of others and often suppress their own feelings in order to get on well with the people around them. Type B individuals, on the other hand, are said to be intuitive, self-confident, and sociable. They are creative thinkers who also get on well with people, though they can sometimes be seen as selfish. The theory is often used as a tool for deciphering, or cracking, the code of someone's character based on nothing more than their blood group.\n\nType AB people are considered to be rational and calm. They are known for being non-emotional in their assessment of situations, which allows them to make balanced decisions. However, they can appear distant or indecisive to others. Type O individuals are portrayed as determined, down-to-earth, and practical. They are popular among their peers and often follow established rules. Their strong willpower helps them achieve their goals, and their physical strength gives them natural advantages in sports.\n\n(C) Despite its popularity, the blood type personality theory has a darker side. In Japan, the term \"bura hara\" — short for \"blood type harassment\" — describes the discrimination or bullying that people may face because of their blood type. For example, certain blood types may be unfairly judged as unsuitable for particular jobs or relationships. Critics argue that grouping people by blood type is no more scientific than astrology, yet the practice persists in popular culture. Whether one views it as harmless fun or a source of prejudice, the theory of blood type personality remains a fascinating lens through which many people try to understand human behaviour. In short, what your blood type can tell you may depend largely on where in the world you live.",
     "title": "Passage 2",
     "items": [
       {
-        "number": 1,
-        "prompt": "Which of the following is said about the idea that blood types and personalities are related?",
-        "options": {
-          "A": "It is more popular in Asian countries than in the West.",
-          "B": "It is used in schools and workplaces to categorize people.",
-          "C": "It was originally developed by a Japanese scientist.",
-          "D": "Its accuracy has been supported with scientific data."
-        }
+        "stem": "Which of the following is said about the idea that blood types and personalities are related?",
+        "options": [
+          "It is more popular in Asian countries than in the West.",
+          "It is used in schools and workplaces to categorize people.",
+          "It was originally developed by a Japanese scientist.",
+          "Its accuracy has been supported with scientific data."
+        ]
       },
       {
-        "number": 2,
-        "prompt": "What does the word “it” in paragraph (A) refer to?",
-        "options": {
-          "A": "blood",
-          "B": "school",
-          "C": "personality",
-          "D": "theory"
-        }
+        "stem": "What does the word “it” in paragraph (A) refer to?",
+        "options": ["blood", "school", "personality", "theory"]
       },
       {
-        "number": 3,
-        "prompt": "What is learnt about blood type A personality?",
-        "options": {
-          "A": "They cannot perform in jobs that require frequent contact with others.",
-          "B": "They often suppress their own feelings to get on well with others.",
-          "C": "They suffer from anxiety as a result of their inability to communicate.",
-          "D": "Trying to communicate with others make them mentally exhausted."
-        }
+        "stem": "What is learnt about blood type A personality?",
+        "options": [
+          "They cannot perform in jobs that require frequent contact with others.",
+          "They often suppress their own feelings to get on well with others.",
+          "They suffer from anxiety as a result of their inability to communicate.",
+          "Trying to communicate with others make them mentally exhausted."
+        ]
       },
       {
-        "number": 4,
-        "prompt": "Which blood type personality is intuitive and self-confident?",
-        "options": {
-          "A": "Type B",
-          "B": "Type O",
-          "C": "Type AB",
-          "D": "Type A"
-        }
+        "stem": "Which blood type personality is intuitive and self-confident?",
+        "options": ["Type B", "Type O", "Type AB", "Type A"]
       },
       {
-        "number": 5,
-        "prompt": "Which blood type personality does not let emotion affect their assessment?",
-        "options": {
-          "A": "Type O",
-          "B": "Type AB",
-          "C": "Type A",
-          "D": "Type B"
-        }
+        "stem": "Which blood type personality does not let emotion affect their assessment?",
+        "options": ["Type O", "Type AB", "Type A", "Type B"]
       },
       {
-        "number": 6,
-        "prompt": "What is shared between blood type A personality and blood type B personality?",
-        "options": {
-          "A": "They prioritize others’ needs.",
-          "B": "They can become great leaders.",
-          "C": "They get on well with people.",
-          "D": "They are naturally outgoing."
-        }
+        "stem": "What is shared between blood type A personality and blood type B personality?",
+        "options": [
+          "They prioritize others’ needs.",
+          "They can become great leaders.",
+          "They get on well with people.",
+          "They are naturally outgoing."
+        ]
       },
       {
-        "number": 7,
-        "prompt": "What can the word “deciphering” in paragraph (B) be best replaced by?",
-        "options": {
-          "A": "discovering",
-          "B": "feeling",
-          "C": "translating",
-          "D": "cracking"
-        }
+        "stem": "What can the word “deciphering” in paragraph (B) be best replaced by?",
+        "options": ["discovering", "feeling", "translating", "cracking"]
       },
       {
-        "number": 8,
-        "prompt": "Which of the following sentences defines an unfamiliar term?",
-        "options": {
-          "A": "The passage explains the meaning of \"bura hara.\"",
-          "B": "The passage describes the personality traits of Type A.",
-          "C": "The passage discusses the discrimination against Type B individuals.",
-          "D": "The passage compares different blood type personalities."
-        }
+        "stem": "Which of the following sentences defines an unfamiliar term?",
+        "options": [
+          "The passage explains the meaning of \"bura hara.\"",
+          "The passage describes the personality traits of Type A.",
+          "The passage discusses the discrimination against Type B individuals.",
+          "The passage compares different blood type personalities."
+        ]
       },
       {
-        "number": 9,
-        "prompt": "What is NOT true about blood type O personality?",
-        "options": {
-          "A": "They are down-to-earth and often follow the rules.",
-          "B": "Their unpopularity with people makes them lonely.",
-          "C": "They use willpower to achieve what they want.",
-          "D": "Their physical strength gives them advantages in sports."
-        }
+        "stem": "What is NOT true about blood type O personality?",
+        "options": [
+          "They are down-to-earth and often follow the rules.",
+          "Their unpopularity with people makes them lonely.",
+          "They use willpower to achieve what they want.",
+          "Their physical strength gives them advantages in sports."
+        ]
       },
       {
-        "number": 10,
-        "prompt": "Which of the following can serve best as the title",
-        "options": {
-          "A": "The blood type personality traits",
-          "B": "Applications of blood group system",
-          "C": "The blood type personality myth",
-          "D": "What your blood type can tell you"
-        }
+        "stem": "Which of the following can serve best as the title",
+        "options": [
+          "The blood type personality traits",
+          "Applications of blood group system",
+          "The blood type personality myth",
+          "What your blood type can tell you"
+        ]
       }
     ]
   },
   "answerKey": {
     "correctAnswers": {
-      "1": "A",
-      "2": "D",
-      "3": "B",
-      "4": "A",
-      "5": "B",
-      "6": "C",
-      "7": "D",
-      "8": "A",
-      "9": "B",
-      "10": "D"
+      "1": "0",
+      "2": "3",
+      "3": "1",
+      "4": "0",
+      "5": "1",
+      "6": "2",
+      "7": "3",
+      "8": "0",
+      "9": "1",
+      "10": "3"
     }
   },
   "metadata": {
     "source": "crawled",
     "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-doc/1",
     "examId": 1
-  }
+  },
+  "part": 1
 }

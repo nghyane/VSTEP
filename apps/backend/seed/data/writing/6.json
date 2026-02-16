@@ -1,17 +1,15 @@
 {
   "skill": "writing",
-  "format": "writing_task_2",
-  "level": "B1",
   "content": {
-    "taskNumber": 2,
     "prompt": "You should spend about 40 minutes on this task.\n\nRead the following text from an article about the Internet:\n\n\nIt is evident that the Internet has increasingly brought about significant changes to our life. According to a recent study, the more time people use the Internet, the less time they spend with real human beings. Some people say that instead of seeing the Internet as a way of opening up new communication possibilities worldwide, we should be concerned about the effect it is having on social interactions.\n\n\nWrite an essay for an educated audience discussing the effects of the Internet on human interactions. Support your arguments with reasons and relevant examples.\n\nGive reasons and relevant examples from your knowledge or experience. You should write at least 250 words. Your response will be evaluated in terms of Task Fulfillment, Organization, Vocabulary and Grammar.",
     "minWords": 250,
-    "imageUrls": []
+    "taskType": "essay"
   },
   "answerKey": null,
   "metadata": {
     "source": "crawled",
     "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-viet/6",
     "examId": 6
-  }
+  },
+  "part": 2
 }

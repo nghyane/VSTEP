@@ -1,100 +1,38 @@
 {
   "skill": "reading",
-  "format": "reading_gap_fill",
-  "level": "B2",
   "content": {
     "title": "The Economics of Renewable Energy",
     "textWithGaps": "The global transition to renewable energy sources has (1)___ dramatically over the past two decades. Solar and wind power, once considered prohibitively expensive, have become increasingly (2)___ with conventional fossil fuels. The cost of solar photovoltaic panels, for instance, has declined by approximately 90 percent since 2010.\n\nGovernments around the world have played a (3)___ role in accelerating this transition through subsidies, tax incentives, and regulatory mandates. The European Union has set an ambitious (4)___ of generating 42.5 percent of its energy from renewable sources by 2030, while China has invested heavily in manufacturing capacity for solar panels and lithium-ion batteries.\n\nHowever, the intermittent (5)___ of solar and wind energy presents a significant technical challenge. Unlike coal or natural gas power plants, which can generate electricity on demand, renewable installations depend on weather conditions. This (6)___ has spurred substantial investment in energy storage technologies, particularly large-scale battery systems that can retain surplus electricity for use during periods of low generation.\n\nCritics also point to the environmental (7)___ of renewable energy infrastructure. The mining of rare earth minerals for wind turbines and the disposal of expired solar panels raise legitimate sustainability concerns. Addressing these issues will require a (8)___ approach that considers the full lifecycle of renewable energy systems.\n\nDespite these challenges, the economic (9)___ for renewables continues to strengthen as technology improves and economies of scale reduce production costs. Many energy analysts now regard the shift away from fossil fuels as both economically (10)___ and environmentally imperative.",
     "items": [
       {
-        "number": 1,
-        "options": {
-          "A": "accelerated",
-          "B": "diminished",
-          "C": "fluctuated",
-          "D": "stagnated"
-        }
+        "options": ["accelerated", "diminished", "fluctuated", "stagnated"]
       },
       {
-        "number": 2,
-        "options": {
-          "A": "competitive",
-          "B": "compatible",
-          "C": "comparable",
-          "D": "comprehensive"
-        }
+        "options": ["competitive", "compatible", "comparable", "comprehensive"]
       },
       {
-        "number": 3,
-        "options": {
-          "A": "pivotal",
-          "B": "marginal",
-          "C": "passive",
-          "D": "secondary"
-        }
+        "options": ["pivotal", "marginal", "passive", "secondary"]
       },
       {
-        "number": 4,
-        "options": {
-          "A": "target",
-          "B": "budget",
-          "C": "quota",
-          "D": "estimate"
-        }
+        "options": ["target", "budget", "quota", "estimate"]
       },
       {
-        "number": 5,
-        "options": {
-          "A": "nature",
-          "B": "output",
-          "C": "supply",
-          "D": "effect"
-        }
+        "options": ["nature", "output", "supply", "effect"]
       },
       {
-        "number": 6,
-        "options": {
-          "A": "limitation",
-          "B": "regulation",
-          "C": "complication",
-          "D": "observation"
-        }
+        "options": ["limitation", "regulation", "complication", "observation"]
       },
       {
-        "number": 7,
-        "options": {
-          "A": "footprint",
-          "B": "movement",
-          "C": "outcome",
-          "D": "structure"
-        }
+        "options": ["footprint", "movement", "outcome", "structure"]
       },
       {
-        "number": 8,
-        "options": {
-          "A": "holistic",
-          "B": "selective",
-          "C": "gradual",
-          "D": "flexible"
-        }
+        "options": ["holistic", "selective", "gradual", "flexible"]
       },
       {
-        "number": 9,
-        "options": {
-          "A": "case",
-          "B": "theory",
-          "C": "trend",
-          "D": "impact"
-        }
+        "options": ["case", "theory", "trend", "impact"]
       },
       {
-        "number": 10,
-        "options": {
-          "A": "rational",
-          "B": "optional",
-          "C": "radical",
-          "D": "nominal"
-        }
+        "options": ["rational", "optional", "radical", "nominal"]
       }
     ]
   },
@@ -114,5 +52,6 @@
   },
   "metadata": {
     "source": "synthetic"
-  }
+  },
+  "part": 2
 }

@@ -18,15 +18,14 @@ export function scoreToBand(score: number): VstepBand {
   return null;
 }
 
-export type QuestionLevel = "A1" | "A2" | "B1" | "B2" | "C1";
+export type QuestionLevel = "A2" | "B1" | "B2" | "C1";
 
 /** Map score (0–10) to question difficulty level (always returns a level) */
 export function scoreToLevel(score: number): QuestionLevel {
   if (score >= BAND_THRESHOLDS.C1) return "C1";
   if (score >= BAND_THRESHOLDS.B2) return "B2";
   if (score >= BAND_THRESHOLDS.B1) return "B1";
-  if (score >= 2.0) return "A2";
-  return "A1";
+  return "A2";
 }
 
 // Simplified linear mapping for demo — real VSTEP uses non-linear conversion tables

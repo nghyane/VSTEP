@@ -1,18 +1,21 @@
+import { VstepBand } from "@db/enums";
 import { t } from "elysia";
 
-/** Auto-grade result for listening/reading MCQ (computed locally). */
-export const AutoGradeResult = t.Object({
+/** Auto-grade result for listening/reading (computed locally). */
+export const AutoResult = t.Object({
+  type: t.Literal("auto"),
   correctCount: t.Integer({ minimum: 0 }),
   totalCount: t.Integer({ minimum: 0 }),
   score: t.Number({ minimum: 0, maximum: 10 }),
-  band: t.Optional(t.Nullable(t.String())),
-  gradedAt: t.Optional(t.String()),
+  band: t.Optional(VstepBand),
+  gradedAt: t.String(),
 });
 
 /** AI grade result from grading service (writing/speaking). */
-export const AIGradeResult = t.Object({
+export const AIResult = t.Object({
+  type: t.Literal("ai"),
   overallScore: t.Number({ minimum: 0, maximum: 10 }),
-  band: t.Optional(t.String()),
+  band: t.Optional(VstepBand),
   criteriaScores: t.Record(t.String(), t.Number()),
   feedback: t.String(),
   grammarErrors: t.Optional(
@@ -25,18 +28,15 @@ export const AIGradeResult = t.Object({
       }),
     ),
   ),
-  confidence: t.Union([
-    t.Literal("high"),
-    t.Literal("medium"),
-    t.Literal("low"),
-  ]),
-  gradedAt: t.Optional(t.String()),
+  confidence: t.UnionEnum(["high", "medium", "low"]),
+  gradedAt: t.String(),
 });
 
 /** Instructor review result (override or accept AI grade). */
-export const HumanGradeResult = t.Object({
+export const HumanResult = t.Object({
+  type: t.Literal("human"),
   overallScore: t.Number({ minimum: 0, maximum: 10 }),
-  band: t.Optional(t.Nullable(t.String())),
+  band: t.Optional(VstepBand),
   criteriaScores: t.Optional(t.Record(t.String(), t.Number())),
   feedback: t.Optional(t.String()),
   reviewerId: t.String({ format: "uuid" }),
@@ -44,26 +44,9 @@ export const HumanGradeResult = t.Object({
   reviewComment: t.Optional(t.String()),
 });
 
-export const GradingResult = t.Union([
-  AutoGradeResult,
-  AIGradeResult,
-  HumanGradeResult,
-]);
+export const Result = t.Union([AutoResult, AIResult, HumanResult]);
 
-const BlueprintSection = t.Object({
-  questionIds: t.Array(t.String({ format: "uuid" })),
-});
-
-export const ExamBlueprint = t.Object({
-  listening: t.Optional(BlueprintSection),
-  reading: t.Optional(BlueprintSection),
-  writing: t.Optional(BlueprintSection),
-  speaking: t.Optional(BlueprintSection),
-  durationMinutes: t.Optional(t.Integer({ minimum: 1 })),
-});
-
-export type AutoGradeResult = typeof AutoGradeResult.static;
-export type AIGradeResult = typeof AIGradeResult.static;
-export type HumanGradeResult = typeof HumanGradeResult.static;
-export type GradingResult = typeof GradingResult.static;
-export type ExamBlueprint = typeof ExamBlueprint.static;
+export type AutoResult = typeof AutoResult.static;
+export type AIResult = typeof AIResult.static;
+export type HumanResult = typeof HumanResult.static;
+export type Result = typeof Result.static;

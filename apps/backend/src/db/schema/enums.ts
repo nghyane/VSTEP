@@ -14,6 +14,19 @@ export const skillEnum = pgEnum("skill", [
 export const SKILLS = skillEnum.enumValues;
 export type Skill = (typeof SKILLS)[number];
 
+export const questionLevelEnum = pgEnum("question_level", [
+  "A2",
+  "B1",
+  "B2",
+  "C1",
+]);
+
+export const knowledgePointCategoryEnum = pgEnum("knowledge_point_category", [
+  "grammar",
+  "vocabulary",
+  "strategy",
+]);
+
 export const vstepBandEnum = pgEnum("vstep_band", [
   "A1",
   "A2",

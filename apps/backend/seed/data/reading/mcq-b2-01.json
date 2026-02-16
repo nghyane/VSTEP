@@ -1,106 +1,82 @@
 {
   "skill": "reading",
-  "format": "reading_mcq",
-  "level": "B2",
   "content": {
     "passage": "The phenomenon of urbanisation has profoundly reshaped societies across the globe, yet its consequences remain a subject of vigorous academic debate. By 2050, nearly 68 percent of the world's population is projected to reside in urban areas, up from approximately 55 percent in 2018. This unprecedented demographic shift carries far-reaching implications for infrastructure, public health, and environmental sustainability.\n\nHistorically, cities have served as engines of economic growth, concentrating human capital, innovation, and cultural exchange in ways that rural settings seldom replicate. The density of urban populations facilitates the efficient delivery of services such as healthcare, education, and sanitation, thereby contributing to measurable improvements in quality of life. Furthermore, the agglomeration of industries within metropolitan regions fosters specialisation, enabling firms to benefit from shared supply chains, knowledge spillovers, and a deep labour pool.\n\nNevertheless, the rapid pace of urbanisation in developing nations has outstripped the capacity of municipal governments to provide adequate housing, transportation, and utilities. Informal settlements, commonly known as slums, have proliferated on the peripheries of megacities in sub-Saharan Africa, South Asia, and Latin America. Residents of these communities frequently lack access to potable water, electricity, and waste management services, rendering them disproportionately vulnerable to communicable diseases and environmental hazards.\n\nMoreover, the environmental footprint of expanding cities is considerable. Urban areas account for roughly 70 percent of global carbon dioxide emissions, driven by energy consumption in buildings, industrial processes, and transportation networks. The conversion of agricultural land and natural habitats into built environments exacerbates biodiversity loss and disrupts local ecosystems. In response, urban planners have increasingly advocated for compact city models, mixed-use zoning, and investments in public transit as strategies for mitigating the ecological costs of growth.\n\nUltimately, the trajectory of urbanisation will depend on the policy choices made by national and local governments. Cities that invest in resilient infrastructure, inclusive governance, and green technologies are more likely to harness the benefits of density while minimising its drawbacks. Conversely, those that neglect long-term planning risk entrenching inequality and environmental degradation for generations to come.",
     "title": "The Double-Edged Sword of Urbanisation",
     "items": [
       {
-        "number": 1,
-        "prompt": "What is the primary purpose of the passage?",
-        "options": {
-          "A": "To argue that urbanisation should be reversed in developing countries",
-          "B": "To present the benefits and challenges of global urbanisation",
-          "C": "To compare urbanisation rates between developed and developing nations",
-          "D": "To promote compact city models as the ideal solution for all countries"
-        }
+        "stem": "What is the primary purpose of the passage?",
+        "options": [
+          "To argue that urbanisation should be reversed in developing countries",
+          "To present the benefits and challenges of global urbanisation",
+          "To compare urbanisation rates between developed and developing nations",
+          "To promote compact city models as the ideal solution for all countries"
+        ]
       },
       {
-        "number": 2,
-        "prompt": "According to paragraph 2, what advantage does urban density provide?",
-        "options": {
-          "A": "It reduces the overall population growth rate.",
-          "B": "It allows governments to lower taxation levels.",
-          "C": "It enables more efficient delivery of public services.",
-          "D": "It eliminates the need for rural agricultural production."
-        }
+        "stem": "According to paragraph 2, what advantage does urban density provide?",
+        "options": [
+          "It reduces the overall population growth rate.",
+          "It allows governments to lower taxation levels.",
+          "It enables more efficient delivery of public services.",
+          "It eliminates the need for rural agricultural production."
+        ]
       },
       {
-        "number": 3,
-        "prompt": "The word \"outstripped\" in paragraph 3 is closest in meaning to ______.",
-        "options": {
-          "A": "complemented",
-          "B": "surpassed",
-          "C": "undermined",
-          "D": "stabilised"
-        }
+        "stem": "The word \"outstripped\" in paragraph 3 is closest in meaning to ______.",
+        "options": ["complemented", "surpassed", "undermined", "stabilised"]
       },
       {
-        "number": 4,
-        "prompt": "Which of the following is NOT mentioned as a problem in informal settlements?",
-        "options": {
-          "A": "Lack of clean drinking water",
-          "B": "Insufficient waste management",
-          "C": "High rates of unemployment",
-          "D": "Vulnerability to communicable diseases"
-        }
+        "stem": "Which of the following is NOT mentioned as a problem in informal settlements?",
+        "options": [
+          "Lack of clean drinking water",
+          "Insufficient waste management",
+          "High rates of unemployment",
+          "Vulnerability to communicable diseases"
+        ]
       },
       {
-        "number": 5,
-        "prompt": "What does the phrase \"knowledge spillovers\" in paragraph 2 most likely refer to?",
-        "options": {
-          "A": "The sharing of information and expertise among nearby businesses",
-          "B": "The loss of trade secrets through industrial espionage",
-          "C": "The spread of misinformation through social media platforms",
-          "D": "The transfer of skilled workers from cities to rural areas"
-        }
+        "stem": "What does the phrase \"knowledge spillovers\" in paragraph 2 most likely refer to?",
+        "options": [
+          "The sharing of information and expertise among nearby businesses",
+          "The loss of trade secrets through industrial espionage",
+          "The spread of misinformation through social media platforms",
+          "The transfer of skilled workers from cities to rural areas"
+        ]
       },
       {
-        "number": 6,
-        "prompt": "According to the passage, urban areas are responsible for approximately what percentage of global CO2 emissions?",
-        "options": {
-          "A": "55 percent",
-          "B": "60 percent",
-          "C": "68 percent",
-          "D": "70 percent"
-        }
+        "stem": "According to the passage, urban areas are responsible for approximately what percentage of global CO2 emissions?",
+        "options": ["55 percent", "60 percent", "68 percent", "70 percent"]
       },
       {
-        "number": 7,
-        "prompt": "Which strategy do urban planners advocate to reduce the environmental impact of cities?",
-        "options": {
-          "A": "Expanding urban boundaries to reduce population density",
-          "B": "Investing in private vehicle infrastructure",
-          "C": "Adopting compact city models and public transit",
-          "D": "Relocating industrial zones to rural regions"
-        }
+        "stem": "Which strategy do urban planners advocate to reduce the environmental impact of cities?",
+        "options": [
+          "Expanding urban boundaries to reduce population density",
+          "Investing in private vehicle infrastructure",
+          "Adopting compact city models and public transit",
+          "Relocating industrial zones to rural regions"
+        ]
       },
       {
-        "number": 8,
-        "prompt": "The word \"entrenching\" in the final paragraph is closest in meaning to ______.",
-        "options": {
-          "A": "reversing",
-          "B": "discovering",
-          "C": "deepening",
-          "D": "preventing"
-        }
+        "stem": "The word \"entrenching\" in the final paragraph is closest in meaning to ______.",
+        "options": ["reversing", "discovering", "deepening", "preventing"]
       }
     ]
   },
   "answerKey": {
     "correctAnswers": {
-      "1": "B",
-      "2": "C",
-      "3": "B",
-      "4": "C",
-      "5": "A",
-      "6": "D",
-      "7": "C",
-      "8": "C"
+      "1": "1",
+      "2": "2",
+      "3": "1",
+      "4": "2",
+      "5": "0",
+      "6": "3",
+      "7": "2",
+      "8": "2"
     }
   },
   "metadata": {
     "source": "synthetic"
-  }
+  },
+  "part": 1
 }

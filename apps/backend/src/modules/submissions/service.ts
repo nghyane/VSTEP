@@ -4,7 +4,7 @@ import { BadRequestError, ConflictError } from "@common/errors";
 import { assertAccess, assertExists } from "@common/utils";
 import { db, paginate, table, takeFirstOrThrow } from "@db/index";
 import { and, desc, eq } from "drizzle-orm";
-import { dispatch, type GradingTask, prepare } from "./grading-dispatch";
+import { dispatch, prepare, type Task } from "./grading-dispatch";
 import type {
   SubmissionCreateBody,
   SubmissionListQuery,
@@ -72,7 +72,7 @@ export async function list(query: SubmissionListQuery, actor: Actor) {
 }
 
 export async function create(userId: string, body: SubmissionCreateBody) {
-  const pending: GradingTask[] = [];
+  const pending: Task[] = [];
   const created = await db.transaction(async (tx) => {
     const question = assertExists(
       await tx.query.questions.findFirst({

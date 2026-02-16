@@ -1,184 +1,168 @@
 {
   "skill": "listening",
-  "format": "listening_mcq",
-  "level": "B1",
   "content": {
     "audioUrl": "https://luyenthivstep.vn/assets/nhch/listening/bac3/lp3-1642953955_8fd0411ca381afb64bf8.mp3",
     "items": [
       {
-        "number": 1,
-        "prompt": "Question 1",
-        "options": {
-          "A": "the right to play the fully-formed game",
-          "B": "more turns to play the game",
-          "C": "extra features supporting the game",
-          "D": "special jewelry to give other players"
-        }
+        "stem": "Question 1",
+        "options": [
+          "the right to play the fully-formed game",
+          "more turns to play the game",
+          "extra features supporting the game",
+          "special jewelry to give other players"
+        ]
       },
       {
-        "number": 2,
-        "prompt": "Question 2",
-        "options": {
-          "A": "It was exceptionally well-received.",
-          "B": "It was among the most successful games.",
-          "C": "It was released 10 years before the 2nd version.",
-          "D": "It was totally free to download."
-        }
+        "stem": "Question 2",
+        "options": [
+          "It was exceptionally well-received.",
+          "It was among the most successful games.",
+          "It was released 10 years before the 2nd version.",
+          "It was totally free to download."
+        ]
       },
       {
-        "number": 3,
-        "prompt": "Question 3",
-        "options": {
-          "A": "a game developer",
-          "B": "a game tester",
-          "C": "a game reviewer",
-          "D": "a game player"
-        }
+        "stem": "Question 3",
+        "options": [
+          "a game developer",
+          "a game tester",
+          "a game reviewer",
+          "a game player"
+        ]
       },
       {
-        "number": 4,
-        "prompt": "Question 4",
-        "options": {
-          "A": "a name of a character in the game",
-          "B": "a virtual bonus achieved by players",
-          "C": "a real present to give player fellows",
-          "D": "the final stage of the game"
-        }
+        "stem": "Question 4",
+        "options": [
+          "a name of a character in the game",
+          "a virtual bonus achieved by players",
+          "a real present to give player fellows",
+          "the final stage of the game"
+        ]
       },
       {
-        "number": 5,
-        "prompt": "Question 5",
-        "options": {
-          "A": "its improvement",
-          "B": "its developers",
-          "C": "its criticisms",
-          "D": "its attraction"
-        }
+        "stem": "Question 5",
+        "options": [
+          "its improvement",
+          "its developers",
+          "its criticisms",
+          "its attraction"
+        ]
       },
       {
-        "number": 6,
-        "prompt": "Question 6",
-        "options": {
-          "A": "poor people in South Africa",
-          "B": "people in sub-tropical countries",
-          "C": "part of African kids under 5",
-          "D": "people without Mosquirix injection"
-        }
+        "stem": "Question 6",
+        "options": [
+          "poor people in South Africa",
+          "people in sub-tropical countries",
+          "part of African kids under 5",
+          "people without Mosquirix injection"
+        ]
       },
       {
-        "number": 7,
-        "prompt": "Question 7",
-        "options": {
-          "A": "African children",
-          "B": "only those in 7 African countries",
-          "C": "scientists and African children",
-          "D": "tourists to sub-Saharan Africa"
-        }
+        "stem": "Question 7",
+        "options": [
+          "African children",
+          "only those in 7 African countries",
+          "scientists and African children",
+          "tourists to sub-Saharan Africa"
+        ]
       },
       {
-        "number": 8,
-        "prompt": "Question 8",
-        "options": {
-          "A": "It is effective for anyone over 17 months.",
-          "B": "It is costly due to late application.",
-          "C": "Its full effect is enabled by a booster shot.",
-          "D": "In the future, it will be effective for babies."
-        }
+        "stem": "Question 8",
+        "options": [
+          "It is effective for anyone over 17 months.",
+          "It is costly due to late application.",
+          "Its full effect is enabled by a booster shot.",
+          "In the future, it will be effective for babies."
+        ]
       },
       {
-        "number": 9,
-        "prompt": "Question 9",
-        "options": {
-          "A": "They are the sponsors of one of 11 research centres.",
-          "B": "They are visitors without vaccine to the disease area.",
-          "C": "They are sponsors of poor African children.",
-          "D": "They are the sponsors of the injection project."
-        }
+        "stem": "Question 9",
+        "options": [
+          "They are the sponsors of one of 11 research centres.",
+          "They are visitors without vaccine to the disease area.",
+          "They are sponsors of poor African children.",
+          "They are the sponsors of the injection project."
+        ]
       },
       {
-        "number": 10,
-        "prompt": "Question 10",
-        "options": {
-          "A": "the development process of the vaccine",
-          "B": "scientists’ opinions of the injection",
-          "C": "the mechanism of the vaccine",
-          "D": "the effectiveness of the vaccine"
-        }
+        "stem": "Question 10",
+        "options": [
+          "the development process of the vaccine",
+          "scientists’ opinions of the injection",
+          "the mechanism of the vaccine",
+          "the effectiveness of the vaccine"
+        ]
       },
       {
-        "number": 11,
-        "prompt": "Question 11",
-        "options": {
-          "A": "human trace in northern Europe years ago",
-          "B": "cheese-making origin in northern Europe",
-          "C": "archaeological evidence of pottery vessels",
-          "D": "Polish ancient cheese-making technology"
-        }
+        "stem": "Question 11",
+        "options": [
+          "human trace in northern Europe years ago",
+          "cheese-making origin in northern Europe",
+          "archaeological evidence of pottery vessels",
+          "Polish ancient cheese-making technology"
+        ]
       },
       {
-        "number": 12,
-        "prompt": "Question 12",
-        "options": {
-          "A": "some five-thousand-year-old records",
-          "B": "the residual of milk and cattle",
-          "C": "remains of an ancient people group",
-          "D": "the remains of broken pottery"
-        }
+        "stem": "Question 12",
+        "options": [
+          "some five-thousand-year-old records",
+          "the residual of milk and cattle",
+          "remains of an ancient people group",
+          "the remains of broken pottery"
+        ]
       },
       {
-        "number": 13,
-        "prompt": "Question 13",
-        "options": {
-          "A": "They didn’t like milk with lactose in it.",
-          "B": "Milk with lactose upset their digestion.",
-          "C": "It was the reason for their cheese invention.",
-          "D": "It prevented them from consuming dairy food."
-        }
+        "stem": "Question 13",
+        "options": [
+          "They didn’t like milk with lactose in it.",
+          "Milk with lactose upset their digestion.",
+          "It was the reason for their cheese invention.",
+          "It prevented them from consuming dairy food."
+        ]
       },
       {
-        "number": 14,
-        "prompt": "Question 14",
-        "options": {
-          "A": "Traditional and Neolithic cheese are made differently.",
-          "B": "Cheese is stored to use for a very long time.",
-          "C": "There is a time to make the best cheese.",
-          "D": "France is home to the best cheese."
-        }
+        "stem": "Question 14",
+        "options": [
+          "Traditional and Neolithic cheese are made differently.",
+          "Cheese is stored to use for a very long time.",
+          "There is a time to make the best cheese.",
+          "France is home to the best cheese."
+        ]
       },
       {
-        "number": 15,
-        "prompt": "Question 15",
-        "options": {
-          "A": "History of cheese",
-          "B": "Best cheese in the world",
-          "C": "Discovery of cheese origin",
-          "D": "Variety of cheese"
-        }
+        "stem": "Question 15",
+        "options": [
+          "History of cheese",
+          "Best cheese in the world",
+          "Discovery of cheese origin",
+          "Variety of cheese"
+        ]
       }
     ]
   },
   "answerKey": {
     "correctAnswers": {
-      "1": "C",
-      "2": "A",
-      "3": "D",
-      "4": "B",
-      "5": "C",
-      "6": "C",
-      "7": "A",
-      "8": "C",
-      "9": "D",
-      "10": "A",
-      "11": "B",
-      "12": "B",
-      "13": "B",
-      "14": "C",
-      "15": "C"
+      "1": "2",
+      "2": "0",
+      "3": "3",
+      "4": "1",
+      "5": "2",
+      "6": "2",
+      "7": "0",
+      "8": "2",
+      "9": "3",
+      "10": "0",
+      "11": "1",
+      "12": "1",
+      "13": "1",
+      "14": "2",
+      "15": "2"
     }
   },
   "metadata": {
     "source": "crawled",
     "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-nghe/3",
     "examId": 3
-  }
+  },
+  "part": 1
 }

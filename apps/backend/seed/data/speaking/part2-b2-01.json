@@ -1,17 +1,18 @@
 {
   "skill": "speaking",
-  "format": "speaking_part_2",
-  "level": "B2",
   "content": {
-    "partNumber": 2,
-    "prompt": "Many young people today choose to work for large multinational corporations, while others prefer to start their own businesses. Which career path do you think is more beneficial for young professionals?",
-    "instructions": "You have 1 minute to prepare and 2-3 minutes to speak. Present your opinion clearly and support it with reasons and examples.",
-    "options": ["Work for a large corporation", "Start your own business"],
+    "situation": "Many young people today choose to work for large multinational corporations, while others prefer to start their own businesses. Which career path do you think is more beneficial for young professionals?",
+    "options": [
+      "Work for a large corporation",
+      "Start your own business",
+      "A combination of both"
+    ],
     "preparationSeconds": 60,
     "speakingSeconds": 180
   },
   "answerKey": null,
   "metadata": {
     "source": "synthetic"
-  }
+  },
+  "part": 2
 }

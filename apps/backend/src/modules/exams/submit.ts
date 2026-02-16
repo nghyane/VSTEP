@@ -7,8 +7,8 @@ import { and, eq, inArray } from "drizzle-orm";
 import { record, sync } from "@/modules/progress/service";
 import {
   dispatch,
-  type GradingTask,
   prepare,
+  type Task,
 } from "@/modules/submissions/grading-dispatch";
 import { gradeAnswers, persistCorrectness } from "./grading";
 import { SESSION_COLUMNS } from "./schema";
@@ -16,7 +16,7 @@ import type { ExamSessionStatus } from "./service";
 import { active } from "./session";
 
 export async function submit(sessionId: string, actor: Actor) {
-  const gradingTasks: GradingTask[] = [];
+  const gradingTasks: Task[] = [];
   const updated = await db.transaction(async (tx) => {
     const session = await active(tx, sessionId, actor);
 

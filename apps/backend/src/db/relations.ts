@@ -6,8 +6,17 @@ import {
   examSubmissions,
   exams,
 } from "./schema/exams";
-import { userGoals, userProgress, userSkillScores } from "./schema/progress";
-import { questions, questionVersions } from "./schema/questions";
+import {
+  knowledgePoints,
+  questionKnowledgePoints,
+} from "./schema/knowledge-points";
+import {
+  userGoals,
+  userKnowledgeProgress,
+  userProgress,
+  userSkillScores,
+} from "./schema/progress";
+import { questions } from "./schema/questions";
 import { submissionDetails, submissions } from "./schema/submissions";
 import { refreshTokens, users } from "./schema/users";
 
@@ -17,6 +26,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   progress: many(userProgress),
   skillScores: many(userSkillScores),
   goals: many(userGoals),
+  knowledgeProgress: many(userKnowledgeProgress),
   examSessions: many(examSessions),
   createdQuestions: many(questions),
   createdExams: many(exams),
@@ -32,10 +42,6 @@ export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
 
 export const submissionsRelations = relations(submissions, ({ one }) => ({
   user: one(users, { fields: [submissions.userId], references: [users.id] }),
-  question: one(questions, {
-    fields: [submissions.questionId],
-    references: [questions.id],
-  }),
   details: one(submissionDetails, {
     fields: [submissions.id],
     references: [submissionDetails.submissionId],
@@ -52,24 +58,47 @@ export const submissionDetailsRelations = relations(
   }),
 );
 
+// ---------------------------------------------------------------------------
+// Questions
+// ---------------------------------------------------------------------------
+
 export const questionsRelations = relations(questions, ({ one, many }) => ({
-  createdBy: one(users, {
+  creator: one(users, {
     fields: [questions.createdBy],
     references: [users.id],
   }),
-  versions: many(questionVersions),
-  submissions: many(submissions),
+  knowledgePoints: many(questionKnowledgePoints),
 }));
 
-export const questionVersionsRelations = relations(
-  questionVersions,
+// ---------------------------------------------------------------------------
+// Knowledge Points
+// ---------------------------------------------------------------------------
+
+export const knowledgePointsRelations = relations(
+  knowledgePoints,
+  ({ many }) => ({
+    questions: many(questionKnowledgePoints),
+    userProgress: many(userKnowledgeProgress),
+  }),
+);
+
+export const questionKnowledgePointsRelations = relations(
+  questionKnowledgePoints,
   ({ one }) => ({
     question: one(questions, {
-      fields: [questionVersions.questionId],
+      fields: [questionKnowledgePoints.questionId],
       references: [questions.id],
+    }),
+    knowledgePoint: one(knowledgePoints, {
+      fields: [questionKnowledgePoints.knowledgePointId],
+      references: [knowledgePoints.id],
     }),
   }),
 );
+
+// ---------------------------------------------------------------------------
+// Progress
+// ---------------------------------------------------------------------------
 
 export const userProgressRelations = relations(userProgress, ({ one }) => ({
   user: one(users, {
@@ -95,6 +124,24 @@ export const userSkillScoresRelations = relations(
 export const userGoalsRelations = relations(userGoals, ({ one }) => ({
   user: one(users, { fields: [userGoals.userId], references: [users.id] }),
 }));
+
+export const userKnowledgeProgressRelations = relations(
+  userKnowledgeProgress,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [userKnowledgeProgress.userId],
+      references: [users.id],
+    }),
+    knowledgePoint: one(knowledgePoints, {
+      fields: [userKnowledgeProgress.knowledgePointId],
+      references: [knowledgePoints.id],
+    }),
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Exams
+// ---------------------------------------------------------------------------
 
 export const examsRelations = relations(exams, ({ one, many }) => ({
   createdBy: one(users, {
@@ -125,10 +172,6 @@ export const examAnswersRelations = relations(examAnswers, ({ one }) => ({
     fields: [examAnswers.sessionId],
     references: [examSessions.id],
   }),
-  question: one(questions, {
-    fields: [examAnswers.questionId],
-    references: [questions.id],
-  }),
 }));
 
 export const examSubmissionsRelations = relations(
@@ -144,6 +187,10 @@ export const examSubmissionsRelations = relations(
     }),
   }),
 );
+
+// ---------------------------------------------------------------------------
+// Classes
+// ---------------------------------------------------------------------------
 
 export const classesRelations = relations(classes, ({ one, many }) => ({
   instructor: one(users, {

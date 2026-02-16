@@ -1,106 +1,97 @@
 {
   "skill": "listening",
-  "format": "listening_mcq",
-  "level": "B2",
   "content": {
     "audioUrl": "https://example.com/listening/b2-urbanisation-lecture.mp3",
     "transcript": "Good afternoon, everyone. Today I want to discuss the phenomenon of urban heat islands and what cities around the world are doing to address them. An urban heat island occurs when a city experiences significantly higher temperatures than the surrounding rural areas. This effect is primarily caused by the extensive use of concrete and asphalt, which absorb and retain heat far more effectively than natural surfaces like soil and vegetation. In some cities, the temperature difference between urban and rural areas can exceed five degrees Celsius during summer months. Several strategies have been proposed to mitigate this effect. Green roofs, which involve planting vegetation on building rooftops, can reduce surface temperatures by up to 30 degrees. Cities like Singapore and Copenhagen have mandated green roof installations on new public buildings. Another approach involves increasing the reflectivity of urban surfaces through the use of light-coloured materials, a technique known as cool roofing. Research conducted in Los Angeles found that cool roofs reduced indoor temperatures by an average of two degrees, leading to significant energy savings. Tree planting programmes have also shown promising results. A comprehensive study in Melbourne demonstrated that increasing urban tree canopy coverage by ten percent could lower neighbourhood temperatures by up to 1.5 degrees Celsius.",
     "items": [
       {
-        "number": 1,
-        "prompt": "What is the primary cause of urban heat islands according to the speaker?",
-        "options": {
-          "A": "Increased vehicle emissions in city centres",
-          "B": "The extensive use of heat-absorbing materials like concrete and asphalt",
-          "C": "The removal of underground water sources beneath cities",
-          "D": "Industrial pollution released from factories in urban areas"
-        }
+        "stem": "What is the primary cause of urban heat islands according to the speaker?",
+        "options": [
+          "Increased vehicle emissions in city centres",
+          "The extensive use of heat-absorbing materials like concrete and asphalt",
+          "The removal of underground water sources beneath cities",
+          "Industrial pollution released from factories in urban areas"
+        ]
       },
       {
-        "number": 2,
-        "prompt": "By how much can green roofs reduce surface temperatures?",
-        "options": {
-          "A": "Up to 5 degrees",
-          "B": "Up to 10 degrees",
-          "C": "Up to 20 degrees",
-          "D": "Up to 30 degrees"
-        }
+        "stem": "By how much can green roofs reduce surface temperatures?",
+        "options": [
+          "Up to 5 degrees",
+          "Up to 10 degrees",
+          "Up to 20 degrees",
+          "Up to 30 degrees"
+        ]
       },
       {
-        "number": 3,
-        "prompt": "Which cities are mentioned as requiring green roofs on new public buildings?",
-        "options": {
-          "A": "Los Angeles and Melbourne",
-          "B": "Singapore and Copenhagen",
-          "C": "London and New York",
-          "D": "Tokyo and Paris"
-        }
+        "stem": "Which cities are mentioned as requiring green roofs on new public buildings?",
+        "options": [
+          "Los Angeles and Melbourne",
+          "Singapore and Copenhagen",
+          "London and New York",
+          "Tokyo and Paris"
+        ]
       },
       {
-        "number": 4,
-        "prompt": "What does the term \"cool roofing\" refer to?",
-        "options": {
-          "A": "Installing air conditioning systems on rooftops",
-          "B": "Using light-coloured materials to increase surface reflectivity",
-          "C": "Covering roofs with ice during summer months",
-          "D": "Planting heat-resistant vegetation on building tops"
-        }
+        "stem": "What does the term \"cool roofing\" refer to?",
+        "options": [
+          "Installing air conditioning systems on rooftops",
+          "Using light-coloured materials to increase surface reflectivity",
+          "Covering roofs with ice during summer months",
+          "Planting heat-resistant vegetation on building tops"
+        ]
       },
       {
-        "number": 5,
-        "prompt": "What did the Melbourne study find about urban tree canopy coverage?",
-        "options": {
-          "A": "A 5% increase could eliminate the heat island effect entirely",
-          "B": "Trees are less effective than green roofs at reducing temperatures",
-          "C": "A 10% increase could lower temperatures by up to 1.5 degrees",
-          "D": "Tree planting is too expensive to implement on a large scale"
-        }
+        "stem": "What did the Melbourne study find about urban tree canopy coverage?",
+        "options": [
+          "A 5% increase could eliminate the heat island effect entirely",
+          "Trees are less effective than green roofs at reducing temperatures",
+          "A 10% increase could lower temperatures by up to 1.5 degrees",
+          "Tree planting is too expensive to implement on a large scale"
+        ]
       },
       {
-        "number": 6,
-        "prompt": "What is the maximum temperature difference between urban and rural areas mentioned in the lecture?",
-        "options": {
-          "A": "Two degrees Celsius",
-          "B": "Three degrees Celsius",
-          "C": "Five degrees Celsius",
-          "D": "Ten degrees Celsius"
-        }
+        "stem": "What is the maximum temperature difference between urban and rural areas mentioned in the lecture?",
+        "options": [
+          "Two degrees Celsius",
+          "Three degrees Celsius",
+          "Five degrees Celsius",
+          "Ten degrees Celsius"
+        ]
       },
       {
-        "number": 7,
-        "prompt": "What benefit of cool roofs was found in the Los Angeles research?",
-        "options": {
-          "A": "They completely eliminated the need for air conditioning",
-          "B": "They reduced indoor temperatures by an average of two degrees",
-          "C": "They lasted longer than traditional roofing materials",
-          "D": "They reduced carbon emissions by thirty percent"
-        }
+        "stem": "What benefit of cool roofs was found in the Los Angeles research?",
+        "options": [
+          "They completely eliminated the need for air conditioning",
+          "They reduced indoor temperatures by an average of two degrees",
+          "They lasted longer than traditional roofing materials",
+          "They reduced carbon emissions by thirty percent"
+        ]
       },
       {
-        "number": 8,
-        "prompt": "What is the main purpose of the lecture?",
-        "options": {
-          "A": "To compare the climates of different cities around the world",
-          "B": "To explain urban heat islands and strategies for reducing them",
-          "C": "To argue that cities should stop using concrete in construction",
-          "D": "To promote a specific company's green roofing products"
-        }
+        "stem": "What is the main purpose of the lecture?",
+        "options": [
+          "To compare the climates of different cities around the world",
+          "To explain urban heat islands and strategies for reducing them",
+          "To argue that cities should stop using concrete in construction",
+          "To promote a specific company's green roofing products"
+        ]
       }
     ]
   },
   "answerKey": {
     "correctAnswers": {
-      "1": "B",
-      "2": "D",
-      "3": "B",
-      "4": "B",
-      "5": "C",
-      "6": "C",
-      "7": "B",
-      "8": "B"
+      "1": "1",
+      "2": "3",
+      "3": "1",
+      "4": "1",
+      "5": "2",
+      "6": "2",
+      "7": "1",
+      "8": "1"
     }
   },
   "metadata": {
     "source": "synthetic"
-  }
+  },
+  "part": 1
 }

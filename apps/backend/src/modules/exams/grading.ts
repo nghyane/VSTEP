@@ -21,7 +21,7 @@ interface SkillTally {
   total: number;
 }
 
-export interface GradeResult {
+export interface Tally {
   listening: SkillTally;
   reading: SkillTally;
   subjective: (AnswerEntry & { skill: Skill })[];
@@ -31,10 +31,10 @@ export interface GradeResult {
 export function gradeAnswers(
   answers: AnswerEntry[],
   questionsMap: Map<string, QuestionInfo>,
-): GradeResult {
+): Tally {
   const listening: SkillTally = { correct: 0, total: 0 };
   const reading: SkillTally = { correct: 0, total: 0 };
-  const subjective: GradeResult["subjective"] = [];
+  const subjective: Tally["subjective"] = [];
   const correctness = new Map<string, boolean>();
 
   for (const ea of answers) {

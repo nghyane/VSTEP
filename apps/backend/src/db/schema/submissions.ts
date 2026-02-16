@@ -1,5 +1,5 @@
 import type { SubmissionAnswer } from "@db/types/answers";
-import type { GradingResult } from "@db/types/grading";
+import type { Result } from "@db/types/grading";
 import { sql } from "drizzle-orm";
 import {
   boolean,
@@ -14,7 +14,6 @@ import {
 } from "drizzle-orm/pg-core";
 import { timestamps } from "./columns";
 import { skillEnum, vstepBandEnum } from "./enums";
-import { questions } from "./questions";
 import { users } from "./users";
 
 export { skillEnum, vstepBandEnum };
@@ -46,9 +45,7 @@ export const submissions = pgTable(
     userId: uuid("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
-    questionId: uuid("question_id")
-      .references(() => questions.id, { onDelete: "restrict" })
-      .notNull(),
+    questionId: uuid("question_id").notNull(),
     skill: skillEnum("skill").notNull(),
     status: submissionStatusEnum("status").default("pending").notNull(),
     score: numeric("score", { precision: 3, scale: 1, mode: "number" }),
@@ -93,7 +90,7 @@ export const submissionDetails = pgTable("submission_details", {
     .references(() => submissions.id, { onDelete: "cascade" })
     .primaryKey(),
   answer: jsonb("answer").$type<SubmissionAnswer>().notNull(),
-  result: jsonb("result").$type<GradingResult | null>(),
+  result: jsonb("result").$type<Result | null>(),
   feedback: varchar("feedback", { length: 10000 }),
   ...timestamps,
 });

@@ -1,5 +1,9 @@
 import type { DbTransaction } from "../../src/db/index";
-import type { NewExamAnswer, NewExamSession } from "../../src/db/schema/exams";
+import type {
+  NewExamAnswer,
+  NewExamSession,
+  NewExamSubmission,
+} from "../../src/db/schema/exams";
 import { table } from "../../src/db/schema/index";
 import type { SubmissionAnswer } from "../../src/db/types/answers";
 import { logResult, logSection } from "../utils";
@@ -159,20 +163,20 @@ export async function seedExamSessions(
     (s) => s.userId === learner1 && s.skill === "speaking",
   );
 
-  const examSubmissionData = [];
+  const examSubmissionData: NewExamSubmission[] = [];
 
   if (learner1WritingSub) {
     examSubmissionData.push({
       sessionId: sessions[0].id,
       submissionId: learner1WritingSub.id,
-      skill: "writing" as const,
+      skill: "writing",
     });
   }
   if (learner1SpeakingSub) {
     examSubmissionData.push({
       sessionId: sessions[0].id,
       submissionId: learner1SpeakingSub.id,
-      skill: "speaking" as const,
+      skill: "speaking",
     });
   }
 
@@ -184,7 +188,7 @@ export async function seedExamSessions(
     examSubmissionData.push({
       sessionId: sessions[2].id,
       submissionId: learner2WritingSub.id,
-      skill: "writing" as const,
+      skill: "writing",
     });
   }
 

@@ -1,151 +1,133 @@
 {
   "skill": "listening",
-  "format": "listening_mcq",
-  "level": "B1",
   "content": {
     "audioUrl": "https://luyenthivstep.vn/assets/nhch/listening/bac3/lp2-1664819146_f3e21323a2997bc44c0b.mp3",
     "items": [
       {
-        "number": 1,
-        "prompt": "Question 1",
-        "options": {
-          "A": "She is running.",
-          "B": "She is taking the train.",
-          "C": "She is taking the bus.",
-          "D": "She is driving her car."
-        }
+        "stem": "Question 1",
+        "options": [
+          "She is running.",
+          "She is taking the train.",
+          "She is taking the bus.",
+          "She is driving her car."
+        ]
       },
       {
-        "number": 2,
-        "prompt": "Question 2",
-        "options": {
-          "A": "He wanted to save time.",
-          "B": "He liked keeping fit at the gym.",
-          "C": "He found running to work was bad for his health.",
-          "D": "He felt tired."
-        }
+        "stem": "Question 2",
+        "options": [
+          "He wanted to save time.",
+          "He liked keeping fit at the gym.",
+          "He found running to work was bad for his health.",
+          "He felt tired."
+        ]
       },
       {
-        "number": 3,
-        "prompt": "Question 3",
-        "options": {
-          "A": "casual clothes.",
-          "B": "a tracksuit and trainers.",
-          "C": "a shirt and trousers.",
-          "D": "a suit."
-        }
+        "stem": "Question 3",
+        "options": [
+          "casual clothes.",
+          "a tracksuit and trainers.",
+          "a shirt and trousers.",
+          "a suit."
+        ]
       },
       {
-        "number": 4,
-        "prompt": "Question 4",
-        "options": {
-          "A": "She can make friends at the race.",
-          "B": "It will be good fun.",
-          "C": "It will give big prizes.",
-          "D": "It will make her relaxed."
-        }
+        "stem": "Question 4",
+        "options": [
+          "She can make friends at the race.",
+          "It will be good fun.",
+          "It will give big prizes.",
+          "It will make her relaxed."
+        ]
       },
       {
-        "number": 5,
-        "prompt": "Question 5",
-        "options": {
-          "A": "His father gave him adventure stories to read.",
-          "B": "His father spent several years travelling around the world.",
-          "C": "His father talked a lot about the places he'd been to.",
-          "D": "His father worked in a travel company."
-        }
+        "stem": "Question 5",
+        "options": [
+          "His father gave him adventure stories to read.",
+          "His father spent several years travelling around the world.",
+          "His father talked a lot about the places he'd been to.",
+          "His father worked in a travel company."
+        ]
       },
       {
-        "number": 6,
-        "prompt": "Question 6",
-        "options": {
-          "A": "He thought he could make a lot of money.",
-          "B": "He wanted to travel to many other different countries.",
-          "C": "He hoped to do more travelling himself.",
-          "D": "He wanted to share his experience with others."
-        }
+        "stem": "Question 6",
+        "options": [
+          "He thought he could make a lot of money.",
+          "He wanted to travel to many other different countries.",
+          "He hoped to do more travelling himself.",
+          "He wanted to share his experience with others."
+        ]
       },
       {
-        "number": 7,
-        "prompt": "Question 7",
-        "options": {
-          "A": "his wife",
-          "B": "a customer",
-          "C": "his father",
-          "D": "a friend"
-        }
+        "stem": "Question 7",
+        "options": ["his wife", "a customer", "his father", "a friend"]
       },
       {
-        "number": 8,
-        "prompt": "Question 8",
-        "options": {
-          "A": "take modern equipment.",
-          "B": "bring in things like television and fridges.",
-          "C": "avoid damaging the area.",
-          "D": "give the local people jobs."
-        }
+        "stem": "Question 8",
+        "options": [
+          "take modern equipment.",
+          "bring in things like television and fridges.",
+          "avoid damaging the area.",
+          "give the local people jobs."
+        ]
       },
       {
-        "number": 9,
-        "prompt": "Question 9",
-        "options": {
-          "A": "To get advice about transferring to a different university.",
-          "B": "To decide which classes would be best to take next quarter.",
-          "C": "To ask about the advisor's experiences as an undergraduate.",
-          "D": "To determine the best subject for him to major in."
-        }
+        "stem": "Question 9",
+        "options": [
+          "To get advice about transferring to a different university.",
+          "To decide which classes would be best to take next quarter.",
+          "To ask about the advisor's experiences as an undergraduate.",
+          "To determine the best subject for him to major in."
+        ]
       },
       {
-        "number": 10,
-        "prompt": "Question 10",
-        "options": {
-          "A": "He is senior at Kryptos University.",
-          "B": "He wanted to go to a school closer to home.",
-          "C": "He is majoring in accounting.",
-          "D": "He has made lots of friends at Kryptos University."
-        }
+        "stem": "Question 10",
+        "options": [
+          "He is senior at Kryptos University.",
+          "He wanted to go to a school closer to home.",
+          "He is majoring in accounting.",
+          "He has made lots of friends at Kryptos University."
+        ]
       },
       {
-        "number": 11,
-        "prompt": "Question 11",
-        "options": {
-          "A": "Change majors",
-          "B": "Send educational records",
-          "C": "Visit old friends",
-          "D": "Take extra courses"
-        }
+        "stem": "Question 11",
+        "options": [
+          "Change majors",
+          "Send educational records",
+          "Visit old friends",
+          "Take extra courses"
+        ]
       },
       {
-        "number": 12,
-        "prompt": "Question 12",
-        "options": {
-          "A": "He will call his parents.",
-          "B": "He will do research in the lab.",
-          "C": "He will search for more information.",
-          "D": "He will move to his the new university."
-        }
+        "stem": "Question 12",
+        "options": [
+          "He will call his parents.",
+          "He will do research in the lab.",
+          "He will search for more information.",
+          "He will move to his the new university."
+        ]
       }
     ]
   },
   "answerKey": {
     "correctAnswers": {
-      "1": "A",
-      "2": "C",
-      "3": "D",
-      "4": "B",
-      "5": "C",
-      "6": "D",
-      "7": "B",
-      "8": "C",
-      "9": "A",
-      "10": "B",
-      "11": "D",
-      "12": "C"
+      "1": "0",
+      "2": "2",
+      "3": "3",
+      "4": "1",
+      "5": "2",
+      "6": "3",
+      "7": "1",
+      "8": "2",
+      "9": "0",
+      "10": "1",
+      "11": "3",
+      "12": "2"
     }
   },
   "metadata": {
     "source": "crawled",
     "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-nghe/5",
     "examId": 5
-  }
+  },
+  "part": 1
 }

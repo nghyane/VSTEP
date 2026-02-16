@@ -6,8 +6,14 @@
 
 import { classes, classMembers, instructorFeedback } from "./classes";
 import { examAnswers, examSessions, examSubmissions, exams } from "./exams";
-import { userGoals, userProgress, userSkillScores } from "./progress";
-import { questions, questionVersions } from "./questions";
+import { knowledgePoints, questionKnowledgePoints } from "./knowledge-points";
+import {
+  userGoals,
+  userKnowledgeProgress,
+  userProgress,
+  userSkillScores,
+} from "./progress";
+import { questions } from "./questions";
 import { submissionDetails, submissions } from "./submissions";
 import { refreshTokens, users } from "./users";
 
@@ -23,10 +29,12 @@ export const table = {
   submissions,
   submissionDetails,
   questions,
-  questionVersions,
+  knowledgePoints,
+  questionKnowledgePoints,
   userProgress,
   userSkillScores,
   userGoals,
+  userKnowledgeProgress,
   exams,
   examSessions,
   examAnswers,
@@ -44,12 +52,14 @@ export {
   examSubmissions,
   exams,
   instructorFeedback,
-  questionVersions,
+  knowledgePoints,
+  questionKnowledgePoints,
   questions,
   refreshTokens,
   submissionDetails,
   submissions,
   userGoals,
+  userKnowledgeProgress,
   userProgress,
   userSkillScores,
   users,
@@ -63,6 +73,14 @@ export type {
   NewClassMember,
   NewInstructorFeedback,
 } from "./classes";
-export type { UserProgress } from "./progress";
-export type { QuestionFormat } from "./questions";
-export { QUESTION_FORMATS } from "./questions";
+export type {
+  KnowledgePoint,
+  NewKnowledgePoint,
+  QuestionKnowledgePoint,
+} from "./knowledge-points";
+export type {
+  NewUserKnowledgeProgress,
+  UserKnowledgeProgress,
+  UserProgress,
+} from "./progress";
+export type { NewQuestion, Question } from "./questions";

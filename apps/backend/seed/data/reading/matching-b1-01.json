@@ -1,7 +1,5 @@
 {
   "skill": "reading",
-  "format": "reading_matching_headings",
-  "level": "B1",
   "content": {
     "title": "The Growth of Online Shopping",
     "paragraphs": [
@@ -34,13 +32,6 @@
       "What the future holds for e-commerce",
       "The decline of traditional department stores",
       "How governments regulate online marketplaces"
-    ],
-    "items": [
-      { "number": 1, "targetParagraph": "A" },
-      { "number": 2, "targetParagraph": "B" },
-      { "number": 3, "targetParagraph": "C" },
-      { "number": 4, "targetParagraph": "D" },
-      { "number": 5, "targetParagraph": "E" }
     ]
   },
   "answerKey": {
@@ -54,5 +45,6 @@
   },
   "metadata": {
     "source": "synthetic"
-  }
+  },
+  "part": 4
 }

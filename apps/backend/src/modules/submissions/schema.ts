@@ -2,7 +2,7 @@ import { Skill, SubmissionStatus, VstepBand } from "@db/enums";
 import { omitColumns } from "@db/index";
 import { submissions } from "@db/schema";
 import { SubmissionAnswer } from "@db/types/answers";
-import { GradingResult } from "@db/types/grading";
+import { Result } from "@db/types/grading";
 import { getTableColumns } from "drizzle-orm";
 import { createSelectSchema } from "drizzle-typebox";
 import { t } from "elysia";
@@ -43,7 +43,7 @@ export const SubmissionFull = t.Composite([
   Submission,
   t.Object({
     answer: t.Nullable(SubmissionAnswer),
-    result: t.Nullable(GradingResult),
+    result: t.Nullable(Result),
     feedback: t.Nullable(t.String({ maxLength: 10000 })),
   }),
 ]);

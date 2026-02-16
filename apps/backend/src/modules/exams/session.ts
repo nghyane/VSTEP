@@ -2,10 +2,10 @@ import type { Actor } from "@common/auth-types";
 import { BadRequestError, ConflictError } from "@common/errors";
 import { assertAccess, assertExists } from "@common/utils";
 import type { DbTransaction } from "@db/index";
-import { db, table, takeFirstOrThrow } from "@db/index";
+import { db, table, takeFirst, takeFirstOrThrow } from "@db/index";
 import { SKILLS } from "@db/schema/enums";
 import type { SubmissionAnswer } from "@db/types/answers";
-import type { ExamBlueprint } from "@db/types/grading";
+import type { ExamBlueprint } from "@db/types/exam-blueprint";
 import { and, eq, sql } from "drizzle-orm";
 import { SESSION_COLUMNS } from "./schema";
 
@@ -22,18 +22,20 @@ export async function active(
   sessionId: string,
   actor: Actor,
 ) {
-  const [found] = await tx
-    .select({
-      id: table.examSessions.id,
-      status: table.examSessions.status,
-      userId: table.examSessions.userId,
-      examId: table.examSessions.examId,
-    })
-    .from(table.examSessions)
-    .where(eq(table.examSessions.id, sessionId))
-    .limit(1);
-
-  const session = assertExists(found, "Session");
+  const session = assertExists(
+    await tx
+      .select({
+        id: table.examSessions.id,
+        status: table.examSessions.status,
+        userId: table.examSessions.userId,
+        examId: table.examSessions.examId,
+      })
+      .from(table.examSessions)
+      .where(eq(table.examSessions.id, sessionId))
+      .limit(1)
+      .then(takeFirst),
+    "Session",
+  );
   assertAccess(session.userId, actor, "You do not have access to this session");
 
   if (session.status !== "in_progress") {
@@ -51,23 +53,25 @@ async function loadBlueprintIds(tx: DbTransaction, examId: string) {
     }),
     "Exam",
   );
-  return blueprintQuestionIds(exam.blueprint as ExamBlueprint);
+  return blueprintQuestionIds(exam.blueprint);
 }
 
 export async function start(userId: string, examId: string) {
   return db.transaction(async (tx) => {
     // Lock exam row to serialize concurrent session creation for the same exam
-    const [found] = await tx
-      .select({ id: table.exams.id, isActive: table.exams.isActive })
-      .from(table.exams)
-      .where(eq(table.exams.id, examId))
-      .for("update")
-      .limit(1);
-
-    const exam = assertExists(found, "Exam");
+    const exam = assertExists(
+      await tx
+        .select({ id: table.exams.id, isActive: table.exams.isActive })
+        .from(table.exams)
+        .where(eq(table.exams.id, examId))
+        .for("update")
+        .limit(1)
+        .then(takeFirst),
+      "Exam",
+    );
     if (!exam.isActive) throw new BadRequestError("Exam is not active");
 
-    const [existing] = await tx
+    const current = await tx
       .select(SESSION_COLUMNS)
       .from(table.examSessions)
       .where(
@@ -77,9 +81,10 @@ export async function start(userId: string, examId: string) {
           eq(table.examSessions.status, "in_progress"),
         ),
       )
-      .limit(1);
+      .limit(1)
+      .then(takeFirst);
 
-    if (existing) return existing;
+    if (current) return current;
 
     return tx
       .insert(table.examSessions)

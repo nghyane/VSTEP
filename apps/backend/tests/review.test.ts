@@ -16,19 +16,17 @@ async function createReviewPendingSub() {
     token: instructor.accessToken,
     body: {
       skill: "reading",
-      level: "B2",
-      format: "reading_mcq",
+      part: 1,
       content: {
         passage: "Review workflow test passage.",
         items: [
           {
-            number: 1,
-            prompt: "Main idea?",
-            options: { A: "A", B: "B", C: "C", D: "D" },
+            stem: "Main idea?",
+            options: ["A", "B", "C", "D"],
           },
         ],
       },
-      answerKey: { correctAnswers: { "1": "A" } },
+      answerKey: { correctAnswers: { "1": "0" } },
     },
   });
 

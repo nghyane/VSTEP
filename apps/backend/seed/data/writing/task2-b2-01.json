@@ -1,15 +1,13 @@
 {
   "skill": "writing",
-  "format": "writing_task_2",
-  "level": "B2",
   "content": {
-    "taskNumber": 2,
     "prompt": "You should spend about 40 minutes on this task.\n\nRead the following extract from a newspaper article.\n\n\nWith the rapid development of artificial intelligence, many experts predict that a significant number of jobs currently performed by humans will be automated within the next two decades. While some view this as an opportunity for economic growth and improved efficiency, others express concern about widespread unemployment and growing inequality.\n\n\nWrite an essay discussing the potential effects of artificial intelligence on the job market and suggesting how governments and individuals should prepare for these changes.\n\nGive reasons and relevant examples from your knowledge or experience. You should write at least 250 words. Your response will be evaluated in terms of Task Fulfillment, Organization, Vocabulary and Grammar.",
     "minWords": 250,
-    "imageUrls": []
+    "taskType": "essay"
   },
   "answerKey": null,
   "metadata": {
     "source": "synthetic"
-  }
+  },
+  "part": 2
 }

@@ -1,162 +1,165 @@
 import { t } from "elysia";
 
-const MCQOptions = t.Object({
-  A: t.String(),
-  B: t.String(),
-  C: t.String(),
-  D: t.String(),
-});
+// ---------------------------------------------------------------------------
+// Shared item schemas
+// ---------------------------------------------------------------------------
 
+/** MCQ with 4 options (A, B, C, D) — used by listening & reading MCQ */
 const MCQItem = t.Object({
-  number: t.Integer(),
-  prompt: t.String(),
-  options: MCQOptions,
+  stem: t.String(),
+  options: t.Array(t.String(), { minItems: 4, maxItems: 4 }),
 });
 
-const WritingScaffolding = t.Optional(
-  t.Object({
-    template: t.Optional(t.String()),
-    keywords: t.Optional(t.Array(t.String())),
-    modelEssay: t.Optional(t.String()),
+/** True / Not Given item — 3 options only */
+const TNGItem = t.Object({
+  stem: t.String(),
+  options: t.Array(t.String(), { minItems: 3, maxItems: 3 }),
+});
+
+// ---------------------------------------------------------------------------
+// Listening
+// ---------------------------------------------------------------------------
+
+/** Parts 1-3: audio + MCQ items */
+export const ListeningContent = t.Object({
+  audioUrl: t.String({ format: "uri" }),
+  transcript: t.Optional(t.String()),
+  items: t.Array(MCQItem, { minItems: 1, maxItems: 8 }),
+});
+
+/** Dictation: audio + transcript with gaps, fill-in-the-blank */
+export const ListeningDictationContent = t.Object({
+  audioUrl: t.String({ format: "uri" }),
+  transcript: t.String(),
+  transcriptWithGaps: t.String(),
+  items: t.Array(t.Object({ correctText: t.String() }), {
+    minItems: 1,
+    maxItems: 10,
   }),
-);
-
-export const WritingTask1Content = t.Object({
-  taskNumber: t.Literal(1),
-  prompt: t.String(),
-  instructions: t.Optional(t.String()),
-  minWords: t.Optional(t.Integer({ default: 120 })),
-  imageUrls: t.Optional(t.Array(t.String())),
-  scaffolding: WritingScaffolding,
 });
 
-export const WritingTask2Content = t.Object({
-  taskNumber: t.Literal(2),
-  prompt: t.String(),
-  instructions: t.Optional(t.String()),
-  minWords: t.Optional(t.Integer({ default: 250 })),
-  imageUrls: t.Optional(t.Array(t.String())),
-  scaffolding: WritingScaffolding,
-});
+// ---------------------------------------------------------------------------
+// Reading
+// ---------------------------------------------------------------------------
 
-export const SpeakingPart1Content = t.Object({
-  partNumber: t.Literal(1),
-  prompt: t.String(),
-  instructions: t.Optional(t.String()),
-  speakingSeconds: t.Optional(t.Integer()),
-  sampleAudioUrl: t.Optional(t.String()),
-});
-
-export const SpeakingPart2Content = t.Object({
-  partNumber: t.Literal(2),
-  prompt: t.String(),
-  instructions: t.Optional(t.String()),
-  options: t.Array(t.String(), { minItems: 2, maxItems: 5 }),
-  preparationSeconds: t.Optional(t.Integer({ default: 60 })),
-  speakingSeconds: t.Optional(t.Integer()),
-  sampleAudioUrl: t.Optional(t.String()),
-});
-
-export const SpeakingPart3Content = t.Object({
-  partNumber: t.Literal(3),
-  prompt: t.String(),
-  instructions: t.Optional(t.String()),
-  mindMapNodes: t.Optional(t.Array(t.String())),
-  followUpQuestions: t.Optional(t.Array(t.String())),
-  preparationSeconds: t.Optional(t.Integer({ default: 60 })),
-  speakingSeconds: t.Optional(t.Integer()),
-  sampleAudioUrl: t.Optional(t.String()),
-});
-
-export const ReadingMCQContent = t.Object({
+/** Passages with MCQ items (standard reading comprehension) */
+export const ReadingContent = t.Object({
   passage: t.String(),
   title: t.Optional(t.String()),
-  items: t.Array(MCQItem, { minItems: 1 }),
+  items: t.Array(MCQItem, { minItems: 1, maxItems: 10 }),
 });
 
+/** True / Not Given reading items */
 export const ReadingTNGContent = t.Object({
   passage: t.String(),
   title: t.Optional(t.String()),
-  items: t.Array(
-    t.Object({
-      number: t.Integer(),
-      prompt: t.String(),
-      options: t.Object({
-        A: t.String(),
-        B: t.String(),
-        C: t.String(),
-      }),
-    }),
-    { minItems: 1 },
-  ),
+  items: t.Array(TNGItem, { minItems: 1, maxItems: 10 }),
 });
 
-export const ReadingMatchingHeadingsContent = t.Object({
-  passage: t.Optional(t.String()),
-  title: t.Optional(t.String()),
-  paragraphs: t.Array(t.Object({ label: t.String(), text: t.String() }), {
-    minItems: 1,
-  }),
-  headings: t.Array(t.String(), { minItems: 1 }),
-  items: t.Array(
-    t.Object({ number: t.Integer(), targetParagraph: t.String() }),
-    { minItems: 1 },
-  ),
-});
-
+/** Gap-fill: text with numbered blanks + MCQ per blank */
 export const ReadingGapFillContent = t.Object({
-  passage: t.Optional(t.String()),
   title: t.Optional(t.String()),
   textWithGaps: t.String(),
   items: t.Array(
     t.Object({
-      number: t.Integer(),
-      options: t.Optional(MCQOptions),
+      options: t.Array(t.String(), { minItems: 4, maxItems: 4 }),
     }),
-    { minItems: 1 },
+    { minItems: 1, maxItems: 10 },
   ),
 });
 
-const ListeningScaffolding = t.Optional(
-  t.Object({
-    keywords: t.Optional(t.Array(t.String())),
-    slowAudioUrl: t.Optional(t.String()),
+/** Matching headings: paragraphs matched to headings */
+export const ReadingMatchingContent = t.Object({
+  title: t.Optional(t.String()),
+  paragraphs: t.Array(t.Object({ label: t.String(), text: t.String() }), {
+    minItems: 1,
+    maxItems: 10,
   }),
-);
-
-export const ListeningMCQContent = t.Object({
-  audioUrl: t.String(),
-  transcript: t.Optional(t.String()),
-  scaffolding: ListeningScaffolding,
-  items: t.Array(MCQItem, { minItems: 1 }),
+  headings: t.Array(t.String(), { minItems: 1, maxItems: 15 }),
 });
 
-export const ListeningDictationContent = t.Object({
-  audioUrl: t.String(),
-  transcript: t.Optional(t.String()),
-  transcriptWithGaps: t.String(),
-  scaffolding: ListeningScaffolding,
-  items: t.Array(
+// ---------------------------------------------------------------------------
+// Writing
+// Task 1: Letter/email (formal or informal), min 120 words
+// Task 2: Academic essay (opinion/adv-disadv/problem-solution), min 250 words
+// Scored on: Task Completion, Organization, Vocabulary, Grammar
+// No images/charts — all text-based prompts
+// ---------------------------------------------------------------------------
+
+export const WritingContent = t.Object({
+  prompt: t.String(),
+  taskType: t.UnionEnum(["letter", "essay"]),
+  instructions: t.Optional(t.Array(t.String())),
+  minWords: t.Integer({ minimum: 50 }),
+  requiredPoints: t.Optional(t.Array(t.String())),
+});
+
+// ---------------------------------------------------------------------------
+// Speaking
+// Part 1: Social interaction — 2 topics × 3 questions, no prep, 3 min total
+// Part 2: Solution discussion — situation + 3 options, 1 min prep, 2 min speak
+// Part 3: Topic development — mind-map + follow-up, 1 min prep, 4-5 min speak
+// ---------------------------------------------------------------------------
+
+export const SpeakingPart1Content = t.Object({
+  topics: t.Array(
     t.Object({
-      number: t.Integer(),
-      correctText: t.Optional(t.String()),
+      name: t.String(),
+      questions: t.Array(t.String(), { minItems: 3, maxItems: 3 }),
     }),
-    { minItems: 1 },
+    { minItems: 2, maxItems: 2 },
   ),
 });
 
-export const QuestionContent = t.Union([
-  WritingTask1Content,
-  WritingTask2Content,
+export const SpeakingPart2Content = t.Object({
+  situation: t.String(),
+  options: t.Array(t.String(), { minItems: 3, maxItems: 3 }),
+  preparationSeconds: t.Integer({ default: 60 }),
+  speakingSeconds: t.Integer({ default: 120 }),
+});
+
+export const SpeakingPart3Content = t.Object({
+  centralIdea: t.String(),
+  suggestions: t.Array(t.String(), { minItems: 3, maxItems: 3 }),
+  followUpQuestion: t.String(),
+  preparationSeconds: t.Integer({ default: 60 }),
+  speakingSeconds: t.Integer({ default: 300 }),
+});
+
+export const SpeakingContent = t.Union([
   SpeakingPart1Content,
   SpeakingPart2Content,
   SpeakingPart3Content,
-  ReadingMCQContent,
-  ReadingTNGContent,
-  ReadingMatchingHeadingsContent,
-  ReadingGapFillContent,
-  ListeningMCQContent,
-  ListeningDictationContent,
 ]);
 
+// ---------------------------------------------------------------------------
+// Union of all content types
+// ---------------------------------------------------------------------------
+
+export const QuestionContent = t.Union([
+  ListeningContent,
+  ListeningDictationContent,
+  ReadingContent,
+  ReadingTNGContent,
+  ReadingGapFillContent,
+  ReadingMatchingContent,
+  WritingContent,
+  SpeakingContent,
+]);
+
+// ---------------------------------------------------------------------------
+// Static types
+// ---------------------------------------------------------------------------
+
+export type ListeningContent = typeof ListeningContent.static;
+export type ListeningDictationContent = typeof ListeningDictationContent.static;
+export type ReadingContent = typeof ReadingContent.static;
+export type ReadingTNGContent = typeof ReadingTNGContent.static;
+export type ReadingGapFillContent = typeof ReadingGapFillContent.static;
+export type ReadingMatchingContent = typeof ReadingMatchingContent.static;
+export type WritingContent = typeof WritingContent.static;
+export type SpeakingPart1Content = typeof SpeakingPart1Content.static;
+export type SpeakingPart2Content = typeof SpeakingPart2Content.static;
+export type SpeakingPart3Content = typeof SpeakingPart3Content.static;
+export type SpeakingContent = typeof SpeakingContent.static;
 export type QuestionContent = typeof QuestionContent.static;

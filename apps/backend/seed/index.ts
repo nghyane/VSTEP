@@ -8,6 +8,7 @@ import { seedClasses } from "./seeders/04-classes";
 import { seedSubmissions } from "./seeders/05-submissions";
 import { seedExamSessions } from "./seeders/06-exam-sessions";
 import { seedProgress } from "./seeders/07-progress";
+import { seedKnowledgePoints } from "./seeders/08-knowledge-points";
 
 const tableNames = Object.values(table)
   .map((t) => getTableName(t))
@@ -29,7 +30,8 @@ async function main(): Promise<void> {
     const exams = await seedExams(tx, users.admin.id, questions);
     const submissions = await seedSubmissions(tx, users, questions);
     await seedExamSessions(tx, users, exams, questions, submissions);
-    await seedProgress(tx, users, submissions);
+    const knowledgePoints = await seedKnowledgePoints(tx, questions);
+    await seedProgress(tx, users, submissions, knowledgePoints);
     await seedClasses(tx, users);
     return users;
   });

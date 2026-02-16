@@ -1,14 +1,28 @@
 {
   "skill": "speaking",
-  "format": "speaking_part_1",
-  "level": "B2",
   "content": {
-    "partNumber": 1,
-    "prompt": "Let's talk about technology in daily life.\n- How has technology changed the way you communicate with others?\n- Do you think people spend too much time on their phones? Why or why not?\n- What technology do you find most useful in your daily routine?\nNow, let's talk about social media.\n- How often do you use social media platforms?\n- Do you think social media has more advantages or disadvantages? Why?\n- How do you think social media will change in the next ten years?",
-    "speakingSeconds": 180
+    "topics": [
+      {
+        "name": "technology in daily life",
+        "questions": [
+          "How has technology changed the way you communicate with others?",
+          "Do you think people spend too much time on their phones? Why or why not?",
+          "What technology do you find most useful in your daily routine?"
+        ]
+      },
+      {
+        "name": "social media",
+        "questions": [
+          "How often do you use social media platforms?",
+          "Do you think social media has more advantages or disadvantages? Why?",
+          "How do you think social media will change in the next ten years?"
+        ]
+      }
+    ]
   },
   "answerKey": null,
   "metadata": {
     "source": "synthetic"
-  }
+  },
+  "part": 1
 }

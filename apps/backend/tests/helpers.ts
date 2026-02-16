@@ -194,24 +194,17 @@ export async function createTestQuestion(
     token: instructor.accessToken,
     body: {
       skill: "reading",
-      level: "B2",
-      format: "reading_mcq",
+      part: 1,
       content: {
         passage: "Test passage for integration testing.",
         items: [
           {
-            number: 1,
-            prompt: "What is the main idea?",
-            options: {
-              A: "Option A",
-              B: "Option B",
-              C: "Option C",
-              D: "Option D",
-            },
+            stem: "What is the main idea?",
+            options: ["Option A", "Option B", "Option C", "Option D"],
           },
         ],
       },
-      answerKey: { correctAnswers: { "1": "A" } },
+      answerKey: { correctAnswers: { "1": "0" } },
     },
   });
 
@@ -242,7 +235,7 @@ export async function createTestExam(): Promise<TestExamResult> {
 
   const createQ = async (
     skill: string,
-    format: string,
+    part: number,
     content: Record<string, unknown>,
     answerKey?: Record<string, unknown>,
   ) => {
@@ -250,8 +243,7 @@ export async function createTestExam(): Promise<TestExamResult> {
       token: instructor.accessToken,
       body: {
         skill,
-        level: "B2",
-        format,
+        part,
         content,
         ...(answerKey && { answerKey }),
       },
@@ -261,44 +253,59 @@ export async function createTestExam(): Promise<TestExamResult> {
 
   const listeningId = await createQ(
     "listening",
-    "listening_mcq",
+    1,
     {
       audioUrl: "https://example.com/audio.mp3",
       items: [
         {
-          number: 1,
-          prompt: "What did the speaker say?",
-          options: { A: "Hello", B: "Goodbye", C: "Thanks", D: "Sorry" },
+          stem: "What did the speaker say?",
+          options: ["Hello", "Goodbye", "Thanks", "Sorry"],
         },
       ],
     },
-    { correctAnswers: { "1": "A" } },
+    { correctAnswers: { "1": "0" } },
   );
 
   const readingId = await createQ(
     "reading",
-    "reading_mcq",
+    1,
     {
       passage: "Integration test passage.",
       items: [
         {
-          number: 1,
-          prompt: "Main idea?",
-          options: { A: "A", B: "B", C: "C", D: "D" },
+          stem: "Main idea?",
+          options: ["A", "B", "C", "D"],
         },
       ],
     },
-    { correctAnswers: { "1": "A" } },
+    { correctAnswers: { "1": "0" } },
   );
 
-  const writingId = await createQ("writing", "writing_task_1", {
-    taskNumber: 1,
+  const writingId = await createQ("writing", 1, {
     prompt: "Write about testing.",
+    taskType: "letter",
+    minWords: 120,
   });
 
-  const speakingId = await createQ("speaking", "speaking_part_1", {
-    partNumber: 1,
-    prompt: "Talk about your experience with testing.",
+  const speakingId = await createQ("speaking", 1, {
+    topics: [
+      {
+        name: "Testing",
+        questions: [
+          "What is testing?",
+          "Why is testing important?",
+          "How do you test?",
+        ],
+      },
+      {
+        name: "Experience",
+        questions: [
+          "Tell me about your experience.",
+          "What did you learn?",
+          "What would you change?",
+        ],
+      },
+    ],
   });
 
   const { data } = await api.post("/api/exams", {
@@ -384,18 +391,7 @@ export async function cleanupTestData(emailPrefix = testEmailPrefix) {
   // Exams (created by test users)
   await db.delete(table.exams).where(inArray(table.exams.createdBy, ids));
 
-  // Delete in FK order: question_versions → questions → feedback → members → classes → tokens → users
-  await db
-    .delete(table.questionVersions)
-    .where(
-      inArray(
-        table.questionVersions.questionId,
-        db
-          .select({ id: table.questions.id })
-          .from(table.questions)
-          .where(inArray(table.questions.createdBy, ids)),
-      ),
-    );
+  // Delete in FK order: questions → feedback → members → classes → tokens → users
   await db
     .delete(table.questions)
     .where(inArray(table.questions.createdBy, ids));

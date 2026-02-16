@@ -1,16 +1,30 @@
 {
   "skill": "speaking",
-  "format": "speaking_part_1",
-  "level": "B1",
   "content": {
-    "partNumber": 1,
-    "prompt": "Situation: Your town plans to organize an Open Festival and many visitors will attend. Three roles are suggested: a tour guide, a traffic instructor, and a master of ceremonies. Which role do you think would suit you best? Why?",
-    "speakingSeconds": 180
+    "topics": [
+      {
+        "name": "Situation: Your town plans to organize an Open Festival and many visitors will attend. Three roles are suggested: a tour guide, a traffic instructor, and a master of ceremonies. Which role do you think would suit you best? Why?",
+        "questions": [
+          "Tell me more about situation: your town plans to organize an open festival and many visitors will attend. three roles are suggested: a tour guide, a traffic instructor, and a master of ceremonies. which role do you think would suit you best? why?.",
+          "Tell me more about situation: your town plans to organize an open festival and many visitors will attend. three roles are suggested: a tour guide, a traffic instructor, and a master of ceremonies. which role do you think would suit you best? why?.",
+          "Tell me more about situation: your town plans to organize an open festival and many visitors will attend. three roles are suggested: a tour guide, a traffic instructor, and a master of ceremonies. which role do you think would suit you best? why?."
+        ]
+      },
+      {
+        "name": "General topic",
+        "questions": [
+          "Can you tell me about this?",
+          "Why is this important to you?",
+          "How does this affect your life?"
+        ]
+      }
+    ]
   },
   "answerKey": null,
   "metadata": {
     "source": "crawled",
     "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-noi/38",
     "examId": 38
-  }
+  },
+  "part": 1
 }

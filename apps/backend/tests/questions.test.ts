@@ -13,34 +13,30 @@ describe("questions integration", () => {
 
   // ── CRUD ─────────────────────────────────────────────────
 
-  it("instructor creates a question with version 1", async () => {
+  it("instructor creates a question", async () => {
     const instructor = await loginTestUser({ role: "instructor" });
 
     const { status, data } = await api.post("/api/questions", {
       token: instructor.accessToken,
       body: {
         skill: "reading",
-        level: "B2",
-        format: "reading_mcq",
+        part: 1,
         content: {
           passage: "The quick brown fox.",
           items: [
             {
-              number: 1,
-              prompt: "What color is the fox?",
-              options: { A: "Brown", B: "Red", C: "Blue", D: "Green" },
+              stem: "What color is the fox?",
+              options: ["Brown", "Red", "Blue", "Green"],
             },
           ],
         },
-        answerKey: { correctAnswers: { "1": "A" } },
+        answerKey: { correctAnswers: { "1": "0" } },
       },
     });
 
     expect(status).toBe(201);
     expect(data.skill).toBe("reading");
-    expect(data.level).toBe("B2");
-    expect(data.format).toBe("reading_mcq");
-    expect(data.version).toBe(1);
+    expect(data.part).toBe(1);
     expect(data.isActive).toBe(true);
     expect(data.createdBy).toBe(instructor.user.id);
   });
@@ -52,15 +48,13 @@ describe("questions integration", () => {
       token: learner.accessToken,
       body: {
         skill: "reading",
-        level: "B1",
-        format: "reading_mcq",
+        part: 1,
         content: {
           passage: "Should fail.",
           items: [
             {
-              number: 1,
-              prompt: "Nope",
-              options: { A: "A", B: "B", C: "C", D: "D" },
+              stem: "Nope",
+              options: ["A", "B", "C", "D"],
             },
           ],
         },
@@ -99,16 +93,14 @@ describe("questions integration", () => {
 
     const { status, data } = await api.patch(`/api/questions/${questionId}`, {
       token: instructor.accessToken,
-      body: { level: "C1", isActive: false },
+      body: { isActive: false },
     });
 
     expect(status).toBe(200);
-    expect(data.level).toBe("C1");
     expect(data.isActive).toBe(false);
-    expect(data.version).toBe(1); // no content change, no version bump
   });
 
-  it("instructor updates content — version bumps", async () => {
+  it("instructor updates content", async () => {
     const { questionId, instructor } = await createTestQuestion();
 
     const { status, data } = await api.patch(`/api/questions/${questionId}`, {
@@ -118,9 +110,8 @@ describe("questions integration", () => {
           passage: "Updated passage.",
           items: [
             {
-              number: 1,
-              prompt: "New question?",
-              options: { A: "A1", B: "B1", C: "C1", D: "D1" },
+              stem: "New question?",
+              options: ["A1", "B1", "C1", "D1"],
             },
           ],
         },
@@ -128,7 +119,7 @@ describe("questions integration", () => {
     });
 
     expect(status).toBe(200);
-    expect(data.version).toBe(2);
+    expect(data.id).toBe(questionId);
   });
 
   it("other instructor cannot update question they did not create", async () => {
@@ -137,7 +128,7 @@ describe("questions integration", () => {
 
     const result = await api.patch(`/api/questions/${questionId}`, {
       token: other.accessToken,
-      body: { level: "A1" },
+      body: { isActive: false },
     });
 
     expectError(result, 403, "FORBIDDEN");
@@ -149,11 +140,11 @@ describe("questions integration", () => {
 
     const { status, data } = await api.patch(`/api/questions/${questionId}`, {
       token: admin.accessToken,
-      body: { level: "A2" },
+      body: { isActive: false },
     });
 
     expect(status).toBe(200);
-    expect(data.level).toBe("A2");
+    expect(data.isActive).toBe(false);
   });
 
   // ── Delete ───────────────────────────────────────────────
@@ -198,19 +189,17 @@ describe("questions integration", () => {
         token: instructor.accessToken,
         body: {
           skill: "reading",
-          level: "B2",
-          format: "reading_mcq",
+          part: 1,
           content: {
             passage: `Passage ${i}`,
             items: [
               {
-                number: 1,
-                prompt: `Q${i}`,
-                options: { A: "A", B: "B", C: "C", D: "D" },
+                stem: `Q${i}`,
+                options: ["A", "B", "C", "D"],
               },
             ],
           },
-          answerKey: { correctAnswers: { "1": "A" } },
+          answerKey: { correctAnswers: { "1": "0" } },
         },
       });
     }
@@ -234,24 +223,25 @@ describe("questions integration", () => {
       token: instructor.accessToken,
       body: {
         skill: "writing",
-        level: "B2",
-        format: "writing_task_1",
-        content: { taskNumber: 1, prompt: "Write about your day." },
+        part: 1,
+        content: {
+          prompt: "Write about your day.",
+          taskType: "letter",
+          minWords: 120,
+        },
       },
     });
     await api.post("/api/questions", {
       token: instructor.accessToken,
       body: {
         skill: "reading",
-        level: "B2",
-        format: "reading_mcq",
+        part: 1,
         content: {
           passage: "Reading passage",
           items: [
             {
-              number: 1,
-              prompt: "Q",
-              options: { A: "A", B: "B", C: "C", D: "D" },
+              stem: "Q",
+              options: ["A", "B", "C", "D"],
             },
           ],
         },
@@ -286,120 +276,5 @@ describe("questions integration", () => {
 
     const items = data.data as Record<string, unknown>[];
     expect(items.find((q) => q.id === questionId)).toBeUndefined();
-  });
-
-  // ── Versioning ───────────────────────────────────────────
-
-  it("creates a new version explicitly", async () => {
-    const { questionId, instructor } = await createTestQuestion();
-
-    const { status, data } = await api.post(
-      `/api/questions/${questionId}/versions`,
-      {
-        token: instructor.accessToken,
-        body: {
-          content: {
-            passage: "Version 2 passage.",
-            items: [
-              {
-                number: 1,
-                prompt: "V2 question?",
-                options: { A: "A", B: "B", C: "C", D: "D" },
-              },
-            ],
-          },
-        },
-      },
-    );
-
-    expect(status).toBe(201);
-    expect(data.version).toBe(2);
-    expect(data.questionId).toBe(questionId);
-  });
-
-  it("lists all versions of a question", async () => {
-    const { questionId, instructor } = await createTestQuestion();
-
-    // Create version 2
-    await api.post(`/api/questions/${questionId}/versions`, {
-      token: instructor.accessToken,
-      body: {
-        content: {
-          passage: "V2",
-          items: [
-            {
-              number: 1,
-              prompt: "Q",
-              options: { A: "A", B: "B", C: "C", D: "D" },
-            },
-          ],
-        },
-      },
-    });
-
-    const { status, data } = await api.get(
-      `/api/questions/${questionId}/versions`,
-      { token: instructor.accessToken },
-    );
-
-    expect(status).toBe(200);
-    const versions = data.data as Record<string, unknown>[];
-    expect(versions).toHaveLength(2);
-    const meta = data.meta as Record<string, unknown>;
-    expect(meta.total).toBe(2);
-  });
-
-  it("gets a specific version by ID", async () => {
-    const { questionId, instructor } = await createTestQuestion();
-
-    const created = await api.post(`/api/questions/${questionId}/versions`, {
-      token: instructor.accessToken,
-      body: {
-        content: {
-          passage: "Specific version",
-          items: [
-            {
-              number: 1,
-              prompt: "Q",
-              options: { A: "A", B: "B", C: "C", D: "D" },
-            },
-          ],
-        },
-      },
-    });
-
-    const versionId = created.data.id as string;
-
-    const { status, data } = await api.get(
-      `/api/questions/${questionId}/versions/${versionId}`,
-      { token: instructor.accessToken },
-    );
-
-    expect(status).toBe(200);
-    expect(data.id).toBe(versionId);
-    expect(data.version).toBe(2);
-  });
-
-  it("other instructor cannot create version on question they did not create", async () => {
-    const { questionId } = await createTestQuestion();
-    const other = await loginTestUser({ role: "instructor" });
-
-    const result = await api.post(`/api/questions/${questionId}/versions`, {
-      token: other.accessToken,
-      body: {
-        content: {
-          passage: "Hijack attempt",
-          items: [
-            {
-              number: 1,
-              prompt: "Q",
-              options: { A: "A", B: "B", C: "C", D: "D" },
-            },
-          ],
-        },
-      },
-    });
-
-    expectError(result, 403, "FORBIDDEN");
   });
 });

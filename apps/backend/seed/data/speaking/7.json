@@ -1,16 +1,30 @@
 {
   "skill": "speaking",
-  "format": "speaking_part_1",
-  "level": "B1",
   "content": {
-    "partNumber": 1,
-    "prompt": "Let's talk about birthdays.\n- When is your birthday?\n- What do you usually do on your birthday?\n- What is your favorite family celebration? Why?\nNow, let's talk about public transportation.\n- What is the best way to travel in your town or city?\n- What is your favorite means of transportation?\n- Do you think people should use public transportation more? Why?",
-    "speakingSeconds": 180
+    "topics": [
+      {
+        "name": "birthdays",
+        "questions": [
+          "When is your birthday?",
+          "What do you usually do on your birthday?",
+          "What is your favorite family celebration? Why?"
+        ]
+      },
+      {
+        "name": "public transportation",
+        "questions": [
+          "What is the best way to travel in your town or city?",
+          "What is your favorite means of transportation?",
+          "Do you think people should use public transportation more? Why?"
+        ]
+      }
+    ]
   },
   "answerKey": null,
   "metadata": {
     "source": "crawled",
     "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-noi/7",
     "examId": 7
-  }
+  },
+  "part": 1
 }

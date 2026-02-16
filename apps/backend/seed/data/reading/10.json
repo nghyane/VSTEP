@@ -1,130 +1,89 @@
 {
   "skill": "reading",
-  "format": "reading_mcq",
-  "level": "B1",
   "content": {
     "passage": "",
     "title": "Passage 2",
     "items": [
       {
-        "number": 1,
-        "prompt": "The word \"coined\" in paragraph (A) could best be replaced by?",
-        "options": {
-          "A": "created",
-          "B": "mentioned",
-          "C": "understood",
-          "D": "discovered"
-        }
+        "stem": "The word \"coined\" in paragraph (A) could best be replaced by?",
+        "options": ["created", "mentioned", "understood", "discovered"]
       },
       {
-        "number": 2,
-        "prompt": "The word \"intervention\" in paragraph (A) can best be replaced by?",
-        "options": {
-          "A": "source",
-          "B": "device",
-          "C": "influence",
-          "D": "need"
-        }
+        "stem": "The word \"intervention\" in paragraph (A) can best be replaced by?",
+        "options": ["source", "device", "influence", "need"]
       },
       {
-        "number": 3,
-        "prompt": "The word \"it\" in paragraph (A) refers to?",
-        "options": {
-          "A": "light bulb",
-          "B": "atom",
-          "C": "energy",
-          "D": "molecule"
-        }
+        "stem": "The word \"it\" in paragraph (A) refers to?",
+        "options": ["light bulb", "atom", "energy", "molecule"]
       },
       {
-        "number": 4,
-        "prompt": "Which of the following statements best describes a laser?",
-        "options": {
-          "A": "An instrument for measuring light waves",
-          "B": "A technique for destroying atoms or molecules",
-          "C": "A device for stimulating atoms and molecules to emit light",
-          "D": "An atom in a high-energy state"
-        }
+        "stem": "Which of the following statements best describes a laser?",
+        "options": [
+          "An instrument for measuring light waves",
+          "A technique for destroying atoms or molecules",
+          "A device for stimulating atoms and molecules to emit light",
+          "An atom in a high-energy state"
+        ]
       },
       {
-        "number": 5,
-        "prompt": "Why was Towne's early work with stimulated emission done with microwaves?",
-        "options": {
-          "A": "It was easier to work with longer wavelengths.",
-          "B": "The laser had already been developed.",
-          "C": "He was not concerned with light amplification.",
-          "D": "His partner Schawlow had already begun work on the laser."
-        }
+        "stem": "Why was Towne's early work with stimulated emission done with microwaves?",
+        "options": [
+          "It was easier to work with longer wavelengths.",
+          "The laser had already been developed.",
+          "He was not concerned with light amplification.",
+          "His partner Schawlow had already begun work on the laser."
+        ]
       },
       {
-        "number": 6,
-        "prompt": "In his research at Columbia University, Charles Townes worked with all of the following EXCEPT?",
-        "options": {
-          "A": "microwaves",
-          "B": "stimulated emission",
-          "C": "light waves",
-          "D": "a maser"
-        }
+        "stem": "In his research at Columbia University, Charles Townes worked with all of the following EXCEPT?",
+        "options": [
+          "microwaves",
+          "stimulated emission",
+          "light waves",
+          "a maser"
+        ]
       },
       {
-        "number": 7,
-        "prompt": "In approximately what year was the first maser built?",
-        "options": {
-          "A": "1953",
-          "B": "1957",
-          "C": "1951",
-          "D": "1917"
-        }
+        "stem": "In approximately what year was the first maser built?",
+        "options": ["1953", "1957", "1951", "1917"]
       },
       {
-        "number": 8,
-        "prompt": "The word \"emerged\" in paragraph (B) is closest in meaning to?",
-        "options": {
-          "A": "succeeded",
-          "B": "appeared",
-          "C": "increased",
-          "D": "concluded"
-        }
+        "stem": "The word \"emerged\" in paragraph (B) is closest in meaning to?",
+        "options": ["succeeded", "appeared", "increased", "concluded"]
       },
       {
-        "number": 9,
-        "prompt": "The word \"outlining\" in paragraph (B) is closest in meaning to?",
-        "options": {
-          "A": "studying",
-          "B": "summarizing",
-          "C": "assigning",
-          "D": "checking"
-        }
+        "stem": "The word \"outlining\" in paragraph (B) is closest in meaning to?",
+        "options": ["studying", "summarizing", "assigning", "checking"]
       },
       {
-        "number": 10,
-        "prompt": "Why do people still argue about who deserves the credit for the concept of the laser?",
-        "options": {
-          "A": "The researchers' notebooks were lost.",
-          "B": "The work is still incomplete.",
-          "C": "No one claimed credit for the development until recently.",
-          "D": "Multiple researchers were independently working on the concept at the same time."
-        }
+        "stem": "Why do people still argue about who deserves the credit for the concept of the laser?",
+        "options": [
+          "The researchers' notebooks were lost.",
+          "The work is still incomplete.",
+          "No one claimed credit for the development until recently.",
+          "Multiple researchers were independently working on the concept at the same time."
+        ]
       }
     ]
   },
   "answerKey": {
     "correctAnswers": {
-      "1": "A",
-      "2": "C",
-      "3": "C",
-      "4": "C",
-      "5": "A",
-      "6": "C",
-      "7": "A",
-      "8": "B",
-      "9": "B",
-      "10": "D"
+      "1": "0",
+      "2": "2",
+      "3": "2",
+      "4": "2",
+      "5": "0",
+      "6": "2",
+      "7": "0",
+      "8": "1",
+      "9": "1",
+      "10": "3"
     }
   },
   "metadata": {
     "source": "crawled",
     "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-doc/10",
     "examId": 10
-  }
+  },
+  "part": 1
 }

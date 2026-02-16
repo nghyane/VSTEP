@@ -2,6 +2,7 @@ import { ROLES } from "@common/auth-types";
 import {
   AuthErrors,
   CrudErrors,
+  CrudWithConflictErrors,
   ErrorResponse,
   IdParam,
   PaginationMeta,
@@ -13,11 +14,9 @@ import {
   QuestionCreateBody,
   QuestionListQuery,
   QuestionUpdateBody,
-  QuestionVersion,
-  QuestionVersionBody,
+  QuestionWithKnowledgePoints,
 } from "./schema";
 import { create, find, list, remove, update } from "./service";
-import * as version from "./version";
 
 export const questions = new Elysia({
   name: "module:questions",
@@ -40,7 +39,7 @@ export const questions = new Elysia({
     detail: {
       summary: "List questions",
       description:
-        "Return a paginated list of questions with optional skill, level, and keyword filters.",
+        "Return a paginated list of questions with optional skill, part, and keyword filters.",
       security: [{ bearerAuth: [] }],
     },
   })
@@ -49,13 +48,13 @@ export const questions = new Elysia({
     auth: true,
     params: IdParam,
     response: {
-      200: Question,
+      200: QuestionWithKnowledgePoints,
       ...CrudErrors,
     },
     detail: {
       summary: "Get question by ID",
       description:
-        "Retrieve a single question including its latest version content.",
+        "Retrieve a single question including its linked knowledge points.",
       security: [{ bearerAuth: [] }],
     },
   })
@@ -70,15 +69,16 @@ export const questions = new Elysia({
       role: ROLES.INSTRUCTOR,
       body: QuestionCreateBody,
       response: {
-        201: Question,
+        201: QuestionWithKnowledgePoints,
         400: ErrorResponse,
         ...AuthErrors,
+        ...CrudWithConflictErrors,
         422: ErrorResponse,
       },
       detail: {
         summary: "Create question",
         description:
-          "Create a new question with content and metadata. Requires instructor role or above.",
+          "Create a new question with content, answer key, and optional knowledge point links. Requires instructor role or above.",
         security: [{ bearerAuth: [] }],
       },
     },
@@ -89,86 +89,18 @@ export const questions = new Elysia({
     params: IdParam,
     body: QuestionUpdateBody,
     response: {
-      200: Question,
+      200: QuestionWithKnowledgePoints,
       400: ErrorResponse,
-      ...CrudErrors,
+      ...CrudWithConflictErrors,
       422: ErrorResponse,
     },
     detail: {
       summary: "Update question",
       description:
-        "Partially update a question's metadata or content. Requires instructor role or above.",
+        "Partially update a question's metadata, content, or knowledge point links. Requires instructor role or above.",
       security: [{ bearerAuth: [] }],
     },
   })
-
-  .post(
-    "/:id/versions",
-    ({ params, body, user, set }) => {
-      set.status = 201;
-      return version.create(params.id, body, user);
-    },
-    {
-      role: ROLES.INSTRUCTOR,
-      params: IdParam,
-      body: QuestionVersionBody,
-      response: {
-        201: QuestionVersion,
-        400: ErrorResponse,
-        ...CrudErrors,
-        422: ErrorResponse,
-      },
-      detail: {
-        summary: "Create question version",
-        description:
-          "Publish a new immutable version snapshot of the question's content. Requires instructor role or above.",
-        tags: ["Versions"],
-        security: [{ bearerAuth: [] }],
-      },
-    },
-  )
-
-  .get("/:id/versions", ({ params }) => version.list(params.id), {
-    role: ROLES.INSTRUCTOR,
-    params: IdParam,
-    response: {
-      200: t.Object({
-        data: t.Array(QuestionVersion),
-        meta: t.Object({ total: t.Number() }),
-      }),
-      ...CrudErrors,
-    },
-    detail: {
-      summary: "List question versions",
-      description:
-        "Return all version snapshots for a question, ordered by creation date. Requires instructor role or above.",
-      tags: ["Versions"],
-      security: [{ bearerAuth: [] }],
-    },
-  })
-
-  .get(
-    "/:id/versions/:versionId",
-    ({ params }) => version.find(params.id, params.versionId),
-    {
-      role: ROLES.INSTRUCTOR,
-      params: t.Object({
-        id: t.String({ format: "uuid" }),
-        versionId: t.String({ format: "uuid" }),
-      }),
-      response: {
-        200: QuestionVersion,
-        ...CrudErrors,
-      },
-      detail: {
-        summary: "Get question version by ID",
-        description:
-          "Retrieve a specific version snapshot of a question. Requires instructor role or above.",
-        tags: ["Versions"],
-        security: [{ bearerAuth: [] }],
-      },
-    },
-  )
 
   .delete("/:id", ({ params }) => remove(params.id), {
     role: ROLES.ADMIN,
@@ -177,11 +109,12 @@ export const questions = new Elysia({
       200: t.Object({
         id: t.String({ format: "uuid" }),
       }),
-      ...CrudErrors,
+      ...CrudWithConflictErrors,
     },
     detail: {
       summary: "Delete question",
-      description: "Delete a question. Requires admin role.",
+      description:
+        "Delete a question. Fails if referenced by active exams. Requires admin role.",
       security: [{ bearerAuth: [] }],
     },
   });

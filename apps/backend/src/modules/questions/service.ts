@@ -2,87 +2,176 @@ import type { Actor } from "@common/auth-types";
 import { ROLES } from "@common/auth-types";
 import { ConflictError } from "@common/errors";
 import { assertAccess, assertExists, escapeLike } from "@common/utils";
-import { db, paginate, table, takeFirstOrThrow } from "@db/index";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { db, paginate, takeFirst, takeFirstOrThrow } from "@db/index";
+import { exams } from "@db/schema/exams";
+import {
+  knowledgePoints,
+  questionKnowledgePoints,
+} from "@db/schema/knowledge-points";
+import { questions } from "@db/schema/questions";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type {
   QuestionCreateBody,
   QuestionListQuery,
   QuestionUpdateBody,
 } from "./schema";
-import { QUESTION_COLUMNS } from "./schema";
-import {
-  assertAnswerKeyMatchesFormat,
-  assertContentMatchesFormat,
-} from "./validation";
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+async function syncKnowledgePoints(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  questionId: string,
+  knowledgePointIds: string[],
+) {
+  await tx
+    .delete(questionKnowledgePoints)
+    .where(eq(questionKnowledgePoints.questionId, questionId));
+
+  if (knowledgePointIds.length > 0) {
+    // Validate all knowledge point IDs exist
+    const existing = await tx
+      .select({ id: knowledgePoints.id })
+      .from(knowledgePoints)
+      .where(inArray(knowledgePoints.id, knowledgePointIds));
+
+    if (existing.length !== knowledgePointIds.length) {
+      const found = new Set(existing.map((r) => r.id));
+      const missing = knowledgePointIds.filter((id) => !found.has(id));
+      throw new ConflictError(
+        `Knowledge points not found: ${missing.join(", ")}`,
+      );
+    }
+
+    await tx.insert(questionKnowledgePoints).values(
+      knowledgePointIds.map((kpId) => ({
+        questionId,
+        knowledgePointId: kpId,
+      })),
+    );
+  }
+}
+
+async function getKnowledgePointIds(questionId: string) {
+  const rows = await db
+    .select({ knowledgePointId: questionKnowledgePoints.knowledgePointId })
+    .from(questionKnowledgePoints)
+    .where(eq(questionKnowledgePoints.questionId, questionId));
+  return rows.map((r) => r.knowledgePointId);
+}
+
+// ---------------------------------------------------------------------------
+// CRUD
+// ---------------------------------------------------------------------------
 
 export async function find(questionId: string) {
-  const question = await db.query.questions.findFirst({
-    where: eq(table.questions.id, questionId),
-    columns: { answerKey: false },
-  });
-
-  return assertExists(question, "Question");
+  const question = assertExists(
+    await db
+      .select()
+      .from(questions)
+      .where(eq(questions.id, questionId))
+      .limit(1)
+      .then(takeFirst),
+    "Question",
+  );
+  const knowledgePointIds = await getKnowledgePointIds(questionId);
+  return { ...question, knowledgePointIds };
 }
 
 export async function list(query: QuestionListQuery, actor: Actor) {
   const admin = actor.is(ROLES.ADMIN);
+
+  // If filtering by knowledgePointId, join the junction table
+  const hasKpFilter = query.knowledgePointId !== undefined;
+
   const where = and(
-    !admin ? eq(table.questions.isActive, true) : undefined,
+    !admin ? eq(questions.isActive, true) : undefined,
     admin && query.isActive !== undefined
-      ? eq(table.questions.isActive, query.isActive)
+      ? eq(questions.isActive, query.isActive)
       : undefined,
-    query.skill ? eq(table.questions.skill, query.skill) : undefined,
-    query.level ? eq(table.questions.level, query.level) : undefined,
-    query.format ? eq(table.questions.format, query.format) : undefined,
+    query.skill ? eq(questions.skill, query.skill) : undefined,
+    query.part ? eq(questions.part, query.part) : undefined,
+    hasKpFilter
+      ? eq(
+          questionKnowledgePoints.knowledgePointId,
+          query.knowledgePointId as string,
+        )
+      : undefined,
     query.search
-      ? sql`${table.questions.content}::text ILIKE ${`%${escapeLike(query.search)}%`}`
+      ? sql`${questions.content}::text ILIKE ${`%${escapeLike(query.search)}%`}`
       : undefined,
   );
 
+  if (hasKpFilter) {
+    const baseQuery = db
+      .select({
+        id: questions.id,
+        skill: questions.skill,
+        part: questions.part,
+        content: questions.content,
+        answerKey: questions.answerKey,
+        explanation: questions.explanation,
+        isActive: questions.isActive,
+        createdBy: questions.createdBy,
+        createdAt: questions.createdAt,
+        updatedAt: questions.updatedAt,
+      })
+      .from(questions)
+      .innerJoin(
+        questionKnowledgePoints,
+        eq(questions.id, questionKnowledgePoints.questionId),
+      )
+      .where(where)
+      .orderBy(desc(questions.createdAt));
+
+    const countQuery = db
+      .select({ count: sql<number>`count(*)` })
+      .from(questions)
+      .innerJoin(
+        questionKnowledgePoints,
+        eq(questions.id, questionKnowledgePoints.questionId),
+      )
+      .where(where)
+      .then((r) => Number(r[0]?.count ?? 0));
+
+    return paginate(baseQuery.$dynamic(), countQuery, query);
+  }
+
   return paginate(
     db
-      .select(QUESTION_COLUMNS)
-      .from(table.questions)
+      .select()
+      .from(questions)
       .where(where)
-      .orderBy(desc(table.questions.createdAt))
+      .orderBy(desc(questions.createdAt))
       .$dynamic(),
-    db.$count(table.questions, where),
+    db.$count(questions, where),
     query,
   );
 }
 
 export async function create(userId: string, body: QuestionCreateBody) {
-  assertContentMatchesFormat(body.format, body.content);
-  assertAnswerKeyMatchesFormat(
-    body.format,
-    body.content,
-    body.answerKey ?? null,
-  );
-
   return db.transaction(async (tx) => {
     const question = await tx
-      .insert(table.questions)
+      .insert(questions)
       .values({
         skill: body.skill,
-        level: body.level,
-        format: body.format,
+        part: body.part,
         content: body.content,
         answerKey: body.answerKey ?? null,
-        version: 1,
+        explanation: body.explanation ?? null,
         isActive: true,
         createdBy: userId,
       })
-      .returning(QUESTION_COLUMNS)
+      .returning()
       .then(takeFirstOrThrow);
 
-    await tx.insert(table.questionVersions).values({
-      questionId: question.id,
-      version: 1,
-      content: body.content,
-      answerKey: body.answerKey ?? null,
-    });
+    const knowledgePointIds = body.knowledgePointIds ?? [];
+    if (knowledgePointIds.length > 0) {
+      await syncKnowledgePoints(tx, question.id, knowledgePointIds);
+    }
 
-    return question;
+    return { ...question, knowledgePointIds };
   });
 }
 
@@ -92,99 +181,71 @@ export async function update(
   actor: Actor,
 ) {
   return db.transaction(async (tx) => {
-    const question = assertExists(
-      await tx.query.questions.findFirst({
-        where: eq(table.questions.id, questionId),
-        columns: {
-          id: true,
-          createdBy: true,
-          format: true,
-          content: true,
-          answerKey: true,
-          version: true,
-        },
-      }),
+    const existing = assertExists(
+      await tx
+        .select()
+        .from(questions)
+        .where(eq(questions.id, questionId))
+        .limit(1)
+        .then(takeFirst),
       "Question",
     );
 
     assertAccess(
-      question.createdBy,
+      existing.createdBy,
       actor,
       "You can only update your own questions",
     );
 
-    if (
-      body.format !== undefined ||
-      body.content !== undefined ||
-      body.answerKey !== undefined
-    ) {
-      const effectiveFormat = body.format ?? question.format;
-      const effectiveContent = body.content ?? question.content;
-      const effectiveAnswerKey =
-        body.answerKey !== undefined ? body.answerKey : question.answerKey;
-
-      assertContentMatchesFormat(effectiveFormat, effectiveContent);
-      assertAnswerKeyMatchesFormat(
-        effectiveFormat,
-        effectiveContent,
-        effectiveAnswerKey,
-      );
-    }
-
-    // Bump version whenever content or answerKey is touched — simple and predictable
-    const contentChanged =
-      body.content !== undefined || body.answerKey !== undefined;
-    const nextVersion = contentChanged ? question.version + 1 : undefined;
-
-    if (nextVersion) {
-      await tx.insert(table.questionVersions).values({
-        questionId,
-        version: nextVersion,
-        content: body.content ?? question.content,
-        answerKey:
-          body.answerKey !== undefined ? body.answerKey : question.answerKey,
-      });
-    }
-
-    return tx
-      .update(table.questions)
+    const updated = await tx
+      .update(questions)
       .set({
-        updatedAt: new Date().toISOString(),
-        ...(body.skill !== undefined && { skill: body.skill }),
-        ...(body.level !== undefined && { level: body.level }),
-        ...(body.format !== undefined && { format: body.format }),
+        ...(body.part !== undefined && { part: body.part }),
         ...(body.content !== undefined && { content: body.content }),
         ...(body.answerKey !== undefined && { answerKey: body.answerKey }),
+        ...(body.explanation !== undefined && {
+          explanation: body.explanation,
+        }),
         ...(body.isActive !== undefined && { isActive: body.isActive }),
-        ...(nextVersion && { version: nextVersion }),
       })
-      .where(eq(table.questions.id, questionId))
-      .returning(QUESTION_COLUMNS)
+      .where(eq(questions.id, questionId))
+      .returning()
       .then(takeFirstOrThrow);
+
+    if (body.knowledgePointIds !== undefined) {
+      await syncKnowledgePoints(tx, questionId, body.knowledgePointIds);
+    }
+
+    const knowledgePointIds =
+      body.knowledgePointIds ?? (await getKnowledgePointIds(questionId));
+
+    return { ...updated, knowledgePointIds };
   });
 }
 
 export async function remove(questionId: string) {
   return db.transaction(async (tx) => {
     assertExists(
-      await tx.query.questions.findFirst({
-        where: eq(table.questions.id, questionId),
-        columns: { id: true },
-      }),
+      await tx
+        .select({ id: questions.id })
+        .from(questions)
+        .where(eq(questions.id, questionId))
+        .limit(1)
+        .then(takeFirst),
       "Question",
     );
 
     const referencingExams = await tx
-      .select({ id: table.exams.id })
-      .from(table.exams)
+      .select({ id: exams.id })
+      .from(exams)
       .where(
         and(
-          eq(table.exams.isActive, true),
+          eq(exams.isActive, true),
           sql`(
-            ${table.exams.blueprint}->'listening'->'questionIds' @> ${JSON.stringify([questionId])}::jsonb OR
-            ${table.exams.blueprint}->'reading'->'questionIds' @> ${JSON.stringify([questionId])}::jsonb OR
-            ${table.exams.blueprint}->'writing'->'questionIds' @> ${JSON.stringify([questionId])}::jsonb OR
-            ${table.exams.blueprint}->'speaking'->'questionIds' @> ${JSON.stringify([questionId])}::jsonb
+            ${exams.blueprint}->'listening'->'questionIds' @> ${JSON.stringify([questionId])}::jsonb OR
+            ${exams.blueprint}->'reading'->'questionIds' @> ${JSON.stringify([questionId])}::jsonb OR
+            ${exams.blueprint}->'writing'->'questionIds' @> ${JSON.stringify([questionId])}::jsonb OR
+            ${exams.blueprint}->'speaking'->'questionIds' @> ${JSON.stringify([questionId])}::jsonb
           )`,
         ),
       )
@@ -197,9 +258,9 @@ export async function remove(questionId: string) {
     }
 
     return tx
-      .delete(table.questions)
-      .where(eq(table.questions.id, questionId))
-      .returning({ id: table.questions.id })
+      .delete(questions)
+      .where(eq(questions.id, questionId))
+      .returning({ id: questions.id })
       .then(takeFirstOrThrow);
   });
 }

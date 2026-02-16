@@ -1,107 +1,73 @@
 {
   "skill": "listening",
-  "format": "listening_mcq",
-  "level": "B1",
   "content": {
     "audioUrl": "https://luyenthivstep.vn/assets/nhch/listening/bac3/lp1-1664862240_a89c501188de559974f2.mp3",
     "items": [
       {
-        "number": 1,
-        "prompt": "Question 1",
-        "options": {
-          "A": "CDs",
-          "B": "cello",
-          "C": "piano",
-          "D": "guitar"
-        }
+        "stem": "Question 1",
+        "options": ["CDs", "cello", "piano", "guitar"]
       },
       {
-        "number": 2,
-        "prompt": "Question 2",
-        "options": {
-          "A": "July",
-          "B": "August",
-          "C": "June",
-          "D": "January"
-        }
+        "stem": "Question 2",
+        "options": ["July", "August", "June", "January"]
       },
       {
-        "number": 3,
-        "prompt": "Question 3",
-        "options": {
-          "A": "It'll be foggy.",
-          "B": "It'll be rainy.",
-          "C": "It'll be hot.",
-          "D": "It'll be cold and windy."
-        }
+        "stem": "Question 3",
+        "options": [
+          "It'll be foggy.",
+          "It'll be rainy.",
+          "It'll be hot.",
+          "It'll be cold and windy."
+        ]
       },
       {
-        "number": 4,
-        "prompt": "Question 4",
-        "options": {
-          "A": "fish",
-          "B": "soup",
-          "C": "vegetables",
-          "D": "meat"
-        }
+        "stem": "Question 4",
+        "options": ["fish", "soup", "vegetables", "meat"]
       },
       {
-        "number": 5,
-        "prompt": "Question 5",
-        "options": {
-          "A": "in the drawer of the manager's desk",
-          "B": "on a table in the cafe",
-          "C": "in the lost property office",
-          "D": "in the waiter's bag"
-        }
+        "stem": "Question 5",
+        "options": [
+          "in the drawer of the manager's desk",
+          "on a table in the cafe",
+          "in the lost property office",
+          "in the waiter's bag"
+        ]
       },
       {
-        "number": 6,
-        "prompt": "Question 6",
-        "options": {
-          "A": "his grandmother",
-          "B": "his sister",
-          "C": "his mother",
-          "D": "his father"
-        }
+        "stem": "Question 6",
+        "options": ["his grandmother", "his sister", "his mother", "his father"]
       },
       {
-        "number": 7,
-        "prompt": "Question 7",
-        "options": {
-          "A": "overhead bag",
-          "B": "backpack",
-          "C": "suitcase",
-          "D": "sports bag"
-        }
+        "stem": "Question 7",
+        "options": ["overhead bag", "backpack", "suitcase", "sports bag"]
       },
       {
-        "number": 8,
-        "prompt": "Question 8",
-        "options": {
-          "A": "eleven thirty",
-          "B": "eleven fifty",
-          "C": "eleven fifteen",
-          "D": "eleven forty-five"
-        }
+        "stem": "Question 8",
+        "options": [
+          "eleven thirty",
+          "eleven fifty",
+          "eleven fifteen",
+          "eleven forty-five"
+        ]
       }
     ]
   },
   "answerKey": {
     "correctAnswers": {
-      "1": "A",
-      "2": "A",
-      "3": "D",
-      "4": "C",
-      "5": "A",
-      "6": "A",
-      "7": "D",
-      "8": "B"
+      "1": "0",
+      "2": "0",
+      "3": "3",
+      "4": "2",
+      "5": "0",
+      "6": "0",
+      "7": "3",
+      "8": "1"
     }
   },
   "metadata": {
     "source": "crawled",
     "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-nghe/4",
     "examId": 4
-  }
+  },
+  "part": 1
 }

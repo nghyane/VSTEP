@@ -1,130 +1,94 @@
 {
   "skill": "reading",
-  "format": "reading_mcq",
-  "level": "B1",
   "content": {
     "passage": "",
     "title": "Passage 2",
     "items": [
       {
-        "number": 1,
-        "prompt": "The word \"drastic\" in paragraph (A) is closest in meaning to?",
-        "options": {
-          "A": "radical",
-          "B": "progressive",
-          "C": "risky",
-          "D": "widespread"
-        }
+        "stem": "The word \"drastic\" in paragraph (A) is closest in meaning to?",
+        "options": ["radical", "progressive", "risky", "widespread"]
       },
       {
-        "number": 2,
-        "prompt": "According to the theory that the author calls \"the traditional view\" what was the first form of life to appear on land?",
-        "options": {
-          "A": "Bacteria",
-          "B": "Vascular plants",
-          "C": "Plant-eating animals",
-          "D": "Meat-eating animals"
-        }
+        "stem": "According to the theory that the author calls \"the traditional view\" what was the first form of life to appear on land?",
+        "options": [
+          "Bacteria",
+          "Vascular plants",
+          "Plant-eating animals",
+          "Meat-eating animals"
+        ]
       },
       {
-        "number": 3,
-        "prompt": "According to the passage, what happened about 400 million years ago?",
-        "options": {
-          "A": "The megafossils were destroyed by floods.",
-          "B": "Many terrestrial life-forms died out.",
-          "C": "Life began to develop in the ancient seas.",
-          "D": "New life-forms on land developed at a rapid rate."
-        }
+        "stem": "According to the passage, what happened about 400 million years ago?",
+        "options": [
+          "The megafossils were destroyed by floods.",
+          "Many terrestrial life-forms died out.",
+          "Life began to develop in the ancient seas.",
+          "New life-forms on land developed at a rapid rate."
+        ]
       },
       {
-        "number": 4,
-        "prompt": "The word \"extracted\" in paragraph (B) is closest in meaning to?",
-        "options": {
-          "A": "preserved",
-          "B": "located",
-          "C": "studied",
-          "D": "removed"
-        }
+        "stem": "The word \"extracted\" in paragraph (B) is closest in meaning to?",
+        "options": ["preserved", "located", "studied", "removed"]
       },
       {
-        "number": 5,
-        "prompt": "What can be inferred from the passage about the microscopic fossils discovered below the Silurian-Devonian boundary?",
-        "options": {
-          "A": "They consist of modern life-forms.",
-          "B": "They were found in approximately the same numbers as vascular plant fossils.",
-          "C": "They are older than the megafossils.",
-          "D": "They have not been helpful in understanding the evolution of terrestrial life."
-        }
+        "stem": "What can be inferred from the passage about the microscopic fossils discovered below the Silurian-Devonian boundary?",
+        "options": [
+          "They consist of modern life-forms.",
+          "They were found in approximately the same numbers as vascular plant fossils.",
+          "They are older than the megafossils.",
+          "They have not been helpful in understanding the evolution of terrestrial life."
+        ]
       },
       {
-        "number": 6,
-        "prompt": "The word \"instances\" in paragraph (B) is closest in meaning to?",
-        "options": {
-          "A": "methods",
-          "B": "reasons",
-          "C": "processes",
-          "D": "cases"
-        }
+        "stem": "The word \"instances\" in paragraph (B) is closest in meaning to?",
+        "options": ["methods", "reasons", "processes", "cases"]
       },
       {
-        "number": 7,
-        "prompt": "The word \"they\" in paragraph (B) refers to?",
-        "options": {
-          "A": "oceans",
-          "B": "shores",
-          "C": "rocks",
-          "D": "specimens"
-        }
+        "stem": "The word \"they\" in paragraph (B) refers to?",
+        "options": ["oceans", "shores", "rocks", "specimens"]
       },
       {
-        "number": 8,
-        "prompt": "The word \"entombed\" in paragraph (B) is closest in meaning to?",
-        "options": {
-          "A": "trapped",
-          "B": "crushed",
-          "C": "produced",
-          "D": "excavated"
-        }
+        "stem": "The word \"entombed\" in paragraph (B) is closest in meaning to?",
+        "options": ["trapped", "crushed", "produced", "excavated"]
       },
       {
-        "number": 9,
-        "prompt": "Which of the following resulted from the discovery of microscopic fossils?",
-        "options": {
-          "A": "Old techniques for analyzing fossils were found to have new uses.",
-          "B": "The time estimate for the first appearance of terrestrial life-forms was revised.",
-          "C": "The origins of primitive sea life were explained.",
-          "D": "Assumptions about the locations of ancient seas were changed."
-        }
+        "stem": "Which of the following resulted from the discovery of microscopic fossils?",
+        "options": [
+          "Old techniques for analyzing fossils were found to have new uses.",
+          "The time estimate for the first appearance of terrestrial life-forms was revised.",
+          "The origins of primitive sea life were explained.",
+          "Assumptions about the locations of ancient seas were changed."
+        ]
       },
       {
-        "number": 10,
-        "prompt": "With which of the following conclusions would the author probably agree?",
-        "options": {
-          "A": "The discovery of microfossils supports the traditional view of how terrestrial life evolved.",
-          "B": "New species have appeared at the same rate over the course of the last 400 million years.",
-          "C": "The technology used by paleontologists is too primitive to make accurate determinations about ages of fossils.",
-          "D": "The evolution of terrestrial life was just as complex as the origin of life itself."
-        }
+        "stem": "With which of the following conclusions would the author probably agree?",
+        "options": [
+          "The discovery of microfossils supports the traditional view of how terrestrial life evolved.",
+          "New species have appeared at the same rate over the course of the last 400 million years.",
+          "The technology used by paleontologists is too primitive to make accurate determinations about ages of fossils.",
+          "The evolution of terrestrial life was just as complex as the origin of life itself."
+        ]
       }
     ]
   },
   "answerKey": {
     "correctAnswers": {
-      "1": "A",
-      "2": "B",
-      "3": "D",
-      "4": "D",
-      "5": "C",
-      "6": "D",
-      "7": "D",
-      "8": "A",
-      "9": "B",
-      "10": "D"
+      "1": "0",
+      "2": "1",
+      "3": "3",
+      "4": "3",
+      "5": "2",
+      "6": "3",
+      "7": "3",
+      "8": "0",
+      "9": "1",
+      "10": "3"
     }
   },
   "metadata": {
     "source": "crawled",
     "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-doc/12",
     "examId": 12
-  }
+  },
+  "part": 1
 }

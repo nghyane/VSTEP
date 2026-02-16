@@ -1,4 +1,5 @@
 import {
+  foreignKey,
   index,
   integer,
   numeric,
@@ -10,8 +11,8 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import { createdAt, timestamps } from "./columns";
-import { skillEnum, vstepBandEnum } from "./enums";
-import { questionLevelEnum } from "./questions";
+import { questionLevelEnum, skillEnum, vstepBandEnum } from "./enums";
+import { knowledgePoints } from "./knowledge-points";
 import { submissions } from "./submissions";
 import { users } from "./users";
 
@@ -97,5 +98,40 @@ export type UserProgress = typeof userProgress.$inferSelect;
 export type NewUserProgress = typeof userProgress.$inferInsert;
 export type UserSkillScore = typeof userSkillScores.$inferSelect;
 export type NewUserSkillScore = typeof userSkillScores.$inferInsert;
+export const userKnowledgeProgress = pgTable(
+  "user_knowledge_progress",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    knowledgePointId: uuid("knowledge_point_id").notNull(),
+    masteryScore: numeric("mastery_score", {
+      precision: 5,
+      scale: 2,
+      mode: "number",
+    })
+      .default(0)
+      .notNull(),
+    totalAttempted: integer("total_attempted").default(0).notNull(),
+    totalCorrect: integer("total_correct").default(0).notNull(),
+    ...timestamps,
+  },
+  (table) => ({
+    userKpUnique: uniqueIndex("user_knowledge_progress_user_kp_idx").on(
+      table.userId,
+      table.knowledgePointId,
+    ),
+    kpFk: foreignKey({
+      name: "user_kp_progress_kp_id_fk",
+      columns: [table.knowledgePointId],
+      foreignColumns: [knowledgePoints.id],
+    }).onDelete("cascade"),
+  }),
+);
+
 export type UserGoal = typeof userGoals.$inferSelect;
 export type NewUserGoal = typeof userGoals.$inferInsert;
+export type UserKnowledgeProgress = typeof userKnowledgeProgress.$inferSelect;
+export type NewUserKnowledgeProgress =
+  typeof userKnowledgeProgress.$inferInsert;

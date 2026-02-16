@@ -1,5 +1,5 @@
 import type { SubmissionAnswer } from "@db/types/answers";
-import type { ExamBlueprint } from "@db/types/grading";
+import type { ExamBlueprint } from "@db/types/exam-blueprint";
 import { sql } from "drizzle-orm";
 import {
   boolean,
@@ -13,8 +13,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { createdAt, timestamps } from "./columns";
-import { skillEnum } from "./enums";
-import { questionLevelEnum, questions } from "./questions";
+import { questionLevelEnum, skillEnum } from "./enums";
 import { submissions } from "./submissions";
 import { users } from "./users";
 
@@ -108,9 +107,7 @@ export const examAnswers = pgTable(
     sessionId: uuid("session_id")
       .references(() => examSessions.id, { onDelete: "cascade" })
       .notNull(),
-    questionId: uuid("question_id")
-      .references(() => questions.id, { onDelete: "cascade" })
-      .notNull(),
+    questionId: uuid("question_id").notNull(),
     answer: jsonb("answer").$type<SubmissionAnswer>().notNull(),
     isCorrect: boolean("is_correct"),
     ...timestamps,

@@ -10,7 +10,7 @@ import {
 } from "../utils";
 
 export interface SeededQuestions {
-  all: Array<{ id: string; skill: string; level: string }>;
+  all: Array<{ id: string; skill: string; part: number }>;
 }
 
 export async function seedQuestions(
@@ -25,23 +25,14 @@ export async function seedQuestions(
   const inserted = await db.insert(table.questions).values(values).returning({
     id: table.questions.id,
     skill: table.questions.skill,
-    level: table.questions.level,
+    part: table.questions.part,
   });
-
-  const versions = inserted.map((row, i) => ({
-    questionId: row.id,
-    version: 1,
-    content: allRecords[i].content,
-    answerKey: allRecords[i].answerKey,
-  }));
-  await db.insert(table.questionVersions).values(versions);
 
   for (const skill of SKILLS) {
     const count = inserted.filter((r) => r.skill === skill).length;
     if (count > 0) logResult(`  ${skill}`, count);
   }
   logResult("Total questions", inserted.length);
-  logResult("Question versions", versions.length);
 
   return { all: inserted };
 }
@@ -49,8 +40,7 @@ export async function seedQuestions(
 function toQuestion(record: SeedRecord, createdBy: string): NewQuestion {
   return {
     skill: record.skill,
-    level: record.level,
-    format: record.format,
+    part: record.part,
     content: record.content,
     answerKey: record.answerKey,
     createdBy,

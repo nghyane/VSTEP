@@ -1,84 +1,71 @@
-import { QuestionFormat, QuestionLevel, Skill } from "@db/enums";
-import { questions, questionVersions } from "@db/schema";
+import { Skill } from "@db/enums";
 import { ObjectiveAnswerKey } from "@db/types/answers";
 import { QuestionContent } from "@db/types/question-content";
-import { getTableColumns } from "drizzle-orm";
-import {
-  createInsertSchema,
-  createSelectSchema,
-  createUpdateSchema,
-} from "drizzle-typebox";
 import { t } from "elysia";
 
-const JSONB_REFINE = {
+// ---------------------------------------------------------------------------
+// Response schemas
+// ---------------------------------------------------------------------------
+
+export const Question = t.Object({
+  id: t.String({ format: "uuid" }),
+  skill: Skill,
+  part: t.Integer(),
   content: QuestionContent,
-  answerKey: t.Nullable(ObjectiveAnswerKey),
-};
-
-const { answerKey: _, ...columns } = getTableColumns(questions);
-export const QUESTION_COLUMNS = columns;
-
-const SelectQuestion = createSelectSchema(questions, JSONB_REFINE);
-
-export const Question = t.Omit(SelectQuestion, ["answerKey"]);
+  answerKey: t.Optional(t.Nullable(ObjectiveAnswerKey)),
+  explanation: t.Optional(t.Nullable(t.String())),
+  isActive: t.Boolean(),
+  createdBy: t.Nullable(t.String({ format: "uuid" })),
+  createdAt: t.String(),
+  updatedAt: t.String(),
+});
 export type Question = typeof Question.static;
 
-export const QuestionVersion = createSelectSchema(
-  questionVersions,
-  JSONB_REFINE,
-);
-export type QuestionVersion = typeof QuestionVersion.static;
+export const QuestionWithKnowledgePoints = t.Intersect([
+  Question,
+  t.Object({
+    knowledgePointIds: t.Array(t.String({ format: "uuid" })),
+  }),
+]);
+export type QuestionWithKnowledgePoints =
+  typeof QuestionWithKnowledgePoints.static;
 
-const InsertQuestion = createInsertSchema(questions, {
+// ---------------------------------------------------------------------------
+// Request schemas
+// ---------------------------------------------------------------------------
+
+export const QuestionCreateBody = t.Object({
   skill: Skill,
-  level: QuestionLevel,
-  format: QuestionFormat,
+  part: t.Integer({ minimum: 1, maximum: 4 }),
   content: QuestionContent,
   answerKey: t.Optional(ObjectiveAnswerKey),
+  explanation: t.Optional(t.String()),
+  knowledgePointIds: t.Optional(
+    t.Array(t.String({ format: "uuid" }), { maxItems: 10 }),
+  ),
 });
 
-export const QuestionCreateBody = t.Pick(InsertQuestion, [
-  "skill",
-  "level",
-  "format",
-  "content",
-  "answerKey",
-]);
-
-const UpdateQuestion = createUpdateSchema(questions, {
-  skill: () => Skill,
-  level: () => QuestionLevel,
-  format: () => QuestionFormat,
-  content: () => QuestionContent,
-  answerKey: () => ObjectiveAnswerKey,
-  isActive: () => t.Boolean(),
-});
-
-export const QuestionUpdateBody = t.Pick(UpdateQuestion, [
-  "skill",
-  "level",
-  "format",
-  "content",
-  "answerKey",
-  "isActive",
-]);
-
-export const QuestionVersionBody = t.Object({
-  content: QuestionContent,
+export const QuestionUpdateBody = t.Object({
+  part: t.Optional(t.Integer({ minimum: 1, maximum: 4 })),
+  content: t.Optional(QuestionContent),
   answerKey: t.Optional(ObjectiveAnswerKey),
+  explanation: t.Optional(t.String()),
+  isActive: t.Optional(t.Boolean()),
+  knowledgePointIds: t.Optional(
+    t.Array(t.String({ format: "uuid" }), { maxItems: 10 }),
+  ),
 });
 
 export const QuestionListQuery = t.Object({
   page: t.Optional(t.Number({ minimum: 1, default: 1 })),
   limit: t.Optional(t.Number({ minimum: 1, maximum: 100, default: 20 })),
   skill: t.Optional(Skill),
-  level: t.Optional(QuestionLevel),
-  format: t.Optional(QuestionFormat),
+  part: t.Optional(t.Integer({ minimum: 1, maximum: 4 })),
   isActive: t.Optional(t.Boolean()),
+  knowledgePointId: t.Optional(t.String({ format: "uuid" })),
   search: t.Optional(t.String({ maxLength: 255 })),
 });
 
 export type QuestionCreateBody = typeof QuestionCreateBody.static;
 export type QuestionUpdateBody = typeof QuestionUpdateBody.static;
 export type QuestionListQuery = typeof QuestionListQuery.static;
-export type QuestionVersionBody = typeof QuestionVersionBody.static;

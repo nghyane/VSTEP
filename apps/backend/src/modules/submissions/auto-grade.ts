@@ -1,7 +1,6 @@
 import { BadRequestError, ConflictError } from "@common/errors";
 import { normalizeAnswer, scoreToBand } from "@common/scoring";
 import { assertExists } from "@common/utils";
-import type { UserProgress } from "@db/index";
 import { db, table } from "@db/index";
 import { ObjectiveAnswer, ObjectiveAnswerKey } from "@db/types/answers";
 import { Value } from "@sinclair/typebox/value";
@@ -71,10 +70,17 @@ export async function autoGrade(submissionId: string) {
 
     const ratio = Math.min(correctCount / totalCount, 1);
     const score = Math.round(ratio * 10 * 2) / 2;
-    const band = scoreToBand(score);
+    const band = scoreToBand(score) ?? undefined;
 
     const ts = new Date().toISOString();
-    const result = { correctCount, totalCount, score, band, gradedAt: ts };
+    const result = {
+      type: "auto" as const,
+      correctCount,
+      totalCount,
+      score,
+      band,
+      gradedAt: ts,
+    };
 
     await tx
       .update(table.submissions)
@@ -92,10 +98,9 @@ export async function autoGrade(submissionId: string) {
       .set({ result })
       .where(eq(table.submissionDetails.submissionId, submissionId));
 
-    const skill = submission.skill as UserProgress["skill"];
     await Promise.all([
-      record(submission.userId, skill, submissionId, score, tx),
-      sync(submission.userId, skill, tx),
+      record(submission.userId, submission.skill, submissionId, score, tx),
+      sync(submission.userId, submission.skill, tx),
     ]);
 
     return { score, result };

@@ -1,7 +1,5 @@
 {
   "skill": "reading",
-  "format": "reading_matching_headings",
-  "level": "B2",
   "content": {
     "title": "The Science and Ethics of Artificial Intelligence",
     "paragraphs": [
@@ -39,14 +37,6 @@
       "The debate over AI and the future of work",
       "AI in education and academic research",
       "The role of open-source communities in AI development"
-    ],
-    "items": [
-      { "number": 1, "targetParagraph": "A" },
-      { "number": 2, "targetParagraph": "B" },
-      { "number": 3, "targetParagraph": "C" },
-      { "number": 4, "targetParagraph": "D" },
-      { "number": 5, "targetParagraph": "E" },
-      { "number": 6, "targetParagraph": "F" }
     ]
   },
   "answerKey": {
@@ -61,5 +51,6 @@
   },
   "metadata": {
     "source": "synthetic"
-  }
+  },
+  "part": 4
 }

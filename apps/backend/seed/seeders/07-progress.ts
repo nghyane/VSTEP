@@ -2,17 +2,20 @@ import type { DbTransaction } from "../../src/db/index";
 import { table } from "../../src/db/schema/index";
 import type {
   NewUserGoal,
+  NewUserKnowledgeProgress,
   NewUserProgress,
   NewUserSkillScore,
 } from "../../src/db/schema/progress";
 import { logResult, logSection } from "../utils";
 import type { SeededUsers } from "./01-users";
 import type { SeededSubmissions } from "./05-submissions";
+import type { SeededKnowledgePoints } from "./08-knowledge-points";
 
 export async function seedProgress(
   db: DbTransaction,
   users: SeededUsers,
   submissions: SeededSubmissions,
+  knowledgePoints: SeededKnowledgePoints,
 ): Promise<void> {
   logSection("Progress");
 
@@ -253,4 +256,107 @@ export async function seedProgress(
 
   await db.insert(table.userGoals).values(goalData);
   logResult("User goals", goalData.length);
+
+  // User knowledge progress: learners' mastery of specific knowledge points
+  const grammarKPs = knowledgePoints.all.filter(
+    (kp) => kp.category === "grammar",
+  );
+  const vocabKPs = knowledgePoints.all.filter(
+    (kp) => kp.category === "vocabulary",
+  );
+  const strategyKPs = knowledgePoints.all.filter(
+    (kp) => kp.category === "strategy",
+  );
+
+  const knowledgeProgressData: NewUserKnowledgeProgress[] = [
+    // Learner 1 — has practiced more, varied mastery
+    {
+      userId: learner1,
+      knowledgePointId: grammarKPs[0].id, // Tenses
+      masteryScore: 0.82,
+      totalAttempted: 15,
+      totalCorrect: 12,
+    },
+    {
+      userId: learner1,
+      knowledgePointId: grammarKPs[1].id, // Passive Voice
+      masteryScore: 0.6,
+      totalAttempted: 10,
+      totalCorrect: 6,
+    },
+    {
+      userId: learner1,
+      knowledgePointId: grammarKPs[3].id, // Relative Clauses
+      masteryScore: 0.45,
+      totalAttempted: 8,
+      totalCorrect: 4,
+    },
+    {
+      userId: learner1,
+      knowledgePointId: vocabKPs[0].id, // Academic Vocabulary
+      masteryScore: 0.75,
+      totalAttempted: 20,
+      totalCorrect: 15,
+    },
+    {
+      userId: learner1,
+      knowledgePointId: vocabKPs[2].id, // Synonyms and Antonyms
+      masteryScore: 0.7,
+      totalAttempted: 10,
+      totalCorrect: 7,
+    },
+    {
+      userId: learner1,
+      knowledgePointId: vocabKPs[4].id, // Context Clue Vocabulary
+      masteryScore: 0.85,
+      totalAttempted: 12,
+      totalCorrect: 10,
+    },
+    {
+      userId: learner1,
+      knowledgePointId: strategyKPs[0].id, // Skimming for Main Idea
+      masteryScore: 0.9,
+      totalAttempted: 18,
+      totalCorrect: 16,
+    },
+    {
+      userId: learner1,
+      knowledgePointId: strategyKPs[2].id, // Inference and Implication
+      masteryScore: 0.55,
+      totalAttempted: 12,
+      totalCorrect: 7,
+    },
+    // Learner 2 — newer user, fewer attempts
+    {
+      userId: learner2,
+      knowledgePointId: grammarKPs[0].id, // Tenses
+      masteryScore: 0.5,
+      totalAttempted: 6,
+      totalCorrect: 3,
+    },
+    {
+      userId: learner2,
+      knowledgePointId: vocabKPs[0].id, // Academic Vocabulary
+      masteryScore: 0.4,
+      totalAttempted: 5,
+      totalCorrect: 2,
+    },
+    {
+      userId: learner2,
+      knowledgePointId: strategyKPs[0].id, // Skimming for Main Idea
+      masteryScore: 0.6,
+      totalAttempted: 5,
+      totalCorrect: 3,
+    },
+    {
+      userId: learner2,
+      knowledgePointId: strategyKPs[1].id, // Scanning for Specific Info
+      masteryScore: 0.33,
+      totalAttempted: 3,
+      totalCorrect: 1,
+    },
+  ];
+
+  await db.insert(table.userKnowledgeProgress).values(knowledgeProgressData);
+  logResult("User knowledge progress", knowledgeProgressData.length);
 }

@@ -12,8 +12,7 @@ const SEED_DIR = join(import.meta.dir, "data");
 
 export interface SeedRecord {
   skill: NewQuestion["skill"];
-  format: NewQuestion["format"];
-  level: NewQuestion["level"];
+  part: NewQuestion["part"];
   content: NewQuestion["content"];
   answerKey: NewQuestion["answerKey"];
   metadata: { source: string; [key: string]: unknown };
@@ -21,8 +20,7 @@ export interface SeedRecord {
 
 const SeedRecordSchema = t.Object({
   skill: t.String(),
-  format: t.String(),
-  level: t.String(),
+  part: t.Integer({ minimum: 1, maximum: 4 }),
   content: QuestionContent,
   answerKey: t.Union([ObjectiveAnswerKey, t.Null()]),
   metadata: t.Object({ source: t.String() }, { additionalProperties: true }),

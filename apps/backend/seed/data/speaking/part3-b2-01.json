@@ -1,28 +1,19 @@
 {
   "skill": "speaking",
-  "format": "speaking_part_3",
-  "level": "B2",
   "content": {
-    "partNumber": 3,
-    "prompt": "Topic: The impact of technology on education in the 21st century.",
-    "instructions": "You have 2 minutes to prepare. Use the mind map below to organise your ideas, then speak for 3-4 minutes. After your presentation, the examiner will ask follow-up questions.",
-    "mindMapNodes": [
+    "centralIdea": "The impact of technology on education in the 21st century.",
+    "suggestions": [
       "Online learning platforms and accessibility",
       "AI-powered tutoring and personalised learning",
-      "Digital textbooks replacing traditional materials",
-      "Student engagement and motivation in digital classrooms",
-      "Your own ideas"
+      "Digital textbooks replacing traditional materials"
     ],
-    "followUpQuestions": [
-      "How has technology changed the way students learn compared to twenty years ago?",
-      "What are the main disadvantages of relying too heavily on technology in education?",
-      "Do you think traditional classrooms will eventually be replaced by online learning? Why or why not?"
-    ],
+    "followUpQuestion": "How has technology changed the way students learn compared to twenty years ago?",
     "preparationSeconds": 120,
     "speakingSeconds": 240
   },
   "answerKey": null,
   "metadata": {
     "source": "synthetic"
-  }
+  },
+  "part": 3
 }

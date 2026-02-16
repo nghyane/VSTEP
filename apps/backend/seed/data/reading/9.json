@@ -1,130 +1,89 @@
 {
   "skill": "reading",
-  "format": "reading_mcq",
-  "level": "B1",
   "content": {
     "passage": "(A) Beads have been part of human culture for thousands of years, and there are many compelling reasons for studying them. Over time, the appearance of beads may change significantly. Exposure to sunlight, handling by many owners, and chemical reactions with skin oils can alter the color, texture, and surface quality of beads. Ancient beads that were once bright and shiny may now look faded and worn, and these changes in appearance tell researchers much about how the beads were used. In earlier civilizations, people adorned — that is, decorated — their bodies and possessions with beads made from shells, stones, and bones.\n\n(B) Beads were commonly attached to attire, meaning clothing, as a form of personal expression and social status. They also served mundane, or ordinary, everyday purposes such as counting and trading. Because beads are small, durable, portable, and of recognised value, they possess the key characteristics of collectible objects. However, scarcity is not considered one of these collectible characteristics, since beads have been produced in enormous quantities throughout history. The color, shape, and material of beads are factors that make people want to pick them up and appreciate them by touch, though the odor of beads is not a relevant factor in this tactile appeal.\n\n(C) Researchers try to unravel — that is, discover — the hidden stories behind ancient beads. Beads can help scholars understand trade routes, cultural exchanges, and social customs of past civilisations. Knowledge of bead history is especially useful for anthropologists, who study human societies and cultures. By examining where certain beads originated and where they ended up, anthropologists can draw conclusions about migration patterns and relationships between distant communities.\n\n(D) However, it is often difficult to trace the history of certain ancient beads because they have been moved from their original locations. Beads are small and easily transported, so they frequently passed through many hands and travelled great distances from where they were first made. This movement makes it challenging for researchers to determine their true origins and to piece together the full story of their journey through human history.",
     "title": "Passage 2",
     "items": [
       {
-        "number": 1,
-        "prompt": "What is the main subject of the passage?",
-        "options": {
-          "A": "Different types of beads",
-          "B": "The reasons for studying beads",
-          "C": "How beads are made",
-          "D": "Materials used in making beads"
-        }
+        "stem": "What is the main subject of the passage?",
+        "options": [
+          "Different types of beads",
+          "The reasons for studying beads",
+          "How beads are made",
+          "Materials used in making beads"
+        ]
       },
       {
-        "number": 2,
-        "prompt": "The word \"adorned\" in paragraph (A) is closest in meaning to?",
-        "options": {
-          "A": "decorated",
-          "B": "enhanced",
-          "C": "embellished",
-          "D": "ornamented"
-        }
+        "stem": "The word \"adorned\" in paragraph (A) is closest in meaning to?",
+        "options": ["decorated", "enhanced", "embellished", "ornamented"]
       },
       {
-        "number": 3,
-        "prompt": "The word \"attire\" in paragraph (B) is closest in meaning to?",
-        "options": {
-          "A": "clothing",
-          "B": "ritual",
-          "C": "importance",
-          "D": "history"
-        }
+        "stem": "The word \"attire\" in paragraph (B) is closest in meaning to?",
+        "options": ["clothing", "ritual", "importance", "history"]
       },
       {
-        "number": 4,
-        "prompt": "All of the following are given as characteristics of collectible objects EXCEPT?",
-        "options": {
-          "A": "portability",
-          "B": "scarcity",
-          "C": "durability",
-          "D": "value"
-        }
+        "stem": "All of the following are given as characteristics of collectible objects EXCEPT?",
+        "options": ["portability", "scarcity", "durability", "value"]
       },
       {
-        "number": 5,
-        "prompt": "According to the passage, all of the following are factors that make people want to touch beads EXCEPT?",
-        "options": {
-          "A": "the odor",
-          "B": "the color",
-          "C": "the shape",
-          "D": "the material"
-        }
+        "stem": "According to the passage, all of the following are factors that make people want to touch beads EXCEPT?",
+        "options": ["the odor", "the color", "the shape", "the material"]
       },
       {
-        "number": 6,
-        "prompt": "The word \"unravel\" in paragraph (C) is closest in meaning to?",
-        "options": {
-          "A": "transport",
-          "B": "discover",
-          "C": "communicate",
-          "D": "improve"
-        }
+        "stem": "The word \"unravel\" in paragraph (C) is closest in meaning to?",
+        "options": ["transport", "discover", "communicate", "improve"]
       },
       {
-        "number": 7,
-        "prompt": "The word \"mundane\" in paragraph (C) is closest in meaning to?",
-        "options": {
-          "A": "beautiful",
-          "B": "carved",
-          "C": "heavy",
-          "D": "ordinary"
-        }
+        "stem": "The word \"mundane\" in paragraph (C) is closest in meaning to?",
+        "options": ["beautiful", "carved", "heavy", "ordinary"]
       },
       {
-        "number": 8,
-        "prompt": "It is difficult to trace the history of certain ancient beads because they _____.",
-        "options": {
-          "A": "have been buried underground",
-          "B": "have been moved from their original locations",
-          "C": "are small in size",
-          "D": "are frequently lost"
-        }
+        "stem": "It is difficult to trace the history of certain ancient beads because they _____.",
+        "options": [
+          "have been buried underground",
+          "have been moved from their original locations",
+          "are small in size",
+          "are frequently lost"
+        ]
       },
       {
-        "number": 9,
-        "prompt": "Knowledge of the history of some beads may be useful in the studies done by which of the following?",
-        "options": {
-          "A": "Economists",
-          "B": "Agricultural experts",
-          "C": "Medical researchers",
-          "D": "Anthropologist"
-        }
+        "stem": "Knowledge of the history of some beads may be useful in the studies done by which of the following?",
+        "options": [
+          "Economists",
+          "Agricultural experts",
+          "Medical researchers",
+          "Anthropologist"
+        ]
       },
       {
-        "number": 10,
-        "prompt": "Where in the passage does the author describe why the appearance of beads may change?",
-        "options": {
-          "A": "Paragraph (A)",
-          "B": "Paragraph (D)",
-          "C": "Paragraph (C)",
-          "D": "Paragraph (B)"
-        }
+        "stem": "Where in the passage does the author describe why the appearance of beads may change?",
+        "options": [
+          "Paragraph (A)",
+          "Paragraph (D)",
+          "Paragraph (C)",
+          "Paragraph (B)"
+        ]
       }
     ]
   },
   "answerKey": {
     "correctAnswers": {
-      "1": "B",
-      "2": "A",
-      "3": "A",
-      "4": "B",
-      "5": "A",
-      "6": "B",
-      "7": "D",
-      "8": "B",
-      "9": "D",
-      "10": "A"
+      "1": "1",
+      "2": "0",
+      "3": "0",
+      "4": "1",
+      "5": "0",
+      "6": "1",
+      "7": "3",
+      "8": "1",
+      "9": "3",
+      "10": "0"
     }
   },
   "metadata": {
     "source": "crawled",
     "sourceUrl": "https://luyenthivstep.vn/luyen-de/lam-bai-doc/9",
     "examId": 9
-  }
+  },
+  "part": 1
 }
