@@ -1,4 +1,5 @@
 import { BadRequestError } from "@common/errors";
+import { ObjectiveAnswerKey } from "@db/types/answers";
 import {
   ListeningDictationContent,
   ListeningMCQContent,
@@ -82,7 +83,7 @@ export function assertAnswerKeyMatchesFormat(
   }
 
   const answers = requireAnswerKey(answerKey, format);
-  const items = extractItemNumbers(content as ItemsContent);
+  const items = (content as ItemsContent).items.map((i) => String(i.number));
   assertKeysMatchItems(Object.keys(answers), items, format);
 
   // Gap fill is special: each item may be MCQ or free-text
@@ -105,20 +106,11 @@ function requireAnswerKey(
 ): Record<string, string> {
   if (answerKey == null)
     throw new BadRequestError(`Answer key is required for format '${format}'`);
-  if (
-    typeof answerKey !== "object" ||
-    !("correctAnswers" in answerKey) ||
-    typeof answerKey.correctAnswers !== "object" ||
-    answerKey.correctAnswers === null
-  )
+  if (!Value.Check(ObjectiveAnswerKey, answerKey))
     throw new BadRequestError(
       `Answer key must have a 'correctAnswers' object for format '${format}'`,
     );
-  return answerKey.correctAnswers as Record<string, string>;
-}
-
-function extractItemNumbers(content: ItemsContent): string[] {
-  return content.items.map((item) => String(item.number));
+  return answerKey.correctAnswers;
 }
 
 function assertKeysMatchItems(
