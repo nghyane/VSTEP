@@ -49,12 +49,11 @@ export function parseAnswerKey(raw: unknown): Record<string, string> {
 /** Falls back to extracting string values from plain objects */
 export function parseUserAnswer(raw: unknown): Record<string, string> {
   if (Value.Check(ObjectiveAnswer, raw)) return raw.answers;
-  if (typeof raw === "object" && raw !== null && !Array.isArray(raw)) {
-    const entries = Object.entries(raw as Record<string, unknown>).filter(
-      ([, v]) => typeof v === "string",
-    );
-    if (entries.length > 0)
-      return Object.fromEntries(entries) as Record<string, string>;
-  }
-  return {};
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
+  const entries = Object.entries(raw as Record<string, unknown>).filter(
+    ([, v]) => typeof v === "string",
+  );
+  return entries.length > 0
+    ? (Object.fromEntries(entries) as Record<string, string>)
+    : {};
 }

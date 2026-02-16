@@ -4,6 +4,8 @@ import { BadRequestError, ConflictError, ForbiddenError } from "@common/errors";
 import { scoreToBand } from "@common/scoring";
 import { assertExists } from "@common/utils";
 import { db, paginate, table, takeFirst, takeFirstOrThrow } from "@db/index";
+import { AIGradeResult } from "@db/types/grading";
+import { Value } from "@sinclair/typebox/value";
 import { and, asc, eq, isNull, lt, or, sql } from "drizzle-orm";
 import { record, sync } from "@/modules/progress/service";
 import type {
@@ -230,15 +232,9 @@ function resolveHumanGrade(
   const score = Math.round(body.overallScore * 2) / 2;
   const band = body.band ?? scoreToBand(score);
 
-  const existing =
-    typeof aiResult === "object" && aiResult !== null
-      ? (aiResult as Record<string, unknown>)
-      : null;
+  const existing = Value.Check(AIGradeResult, aiResult) ? aiResult : null;
 
-  const aiScore =
-    existing && typeof existing.overallScore === "number"
-      ? existing.overallScore
-      : null;
+  const aiScore = existing?.overallScore ?? null;
   const auditFlag =
     aiScore != null && Math.abs(aiScore - body.overallScore) > 0.5;
 

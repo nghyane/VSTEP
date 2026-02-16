@@ -15,6 +15,15 @@ import {
 import type { TSchema } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 
+interface NumberedItem {
+  number: number | string;
+  options?: unknown;
+}
+
+interface ItemsContent {
+  items: NumberedItem[];
+}
+
 const CONTENT_SCHEMAS: Record<string, TSchema> = {
   writing_task_1: WritingTask1Content,
   writing_task_2: WritingTask2Content,
@@ -73,12 +82,12 @@ export function assertAnswerKeyMatchesFormat(
   }
 
   const answers = requireAnswerKey(answerKey, format);
-  const items = extractItemNumbers(content);
+  const items = extractItemNumbers(content as ItemsContent);
   assertKeysMatchItems(Object.keys(answers), items, format);
 
   // Gap fill is special: each item may be MCQ or free-text
   if (format === "reading_gap_fill") {
-    assertGapFillValues(content, answers, format);
+    assertGapFillValues(content as ItemsContent, answers, format);
     return;
   }
 
@@ -108,18 +117,8 @@ function requireAnswerKey(
   return answerKey.correctAnswers as Record<string, string>;
 }
 
-function extractItemNumbers(content: unknown): string[] {
-  if (typeof content !== "object" || content === null) return [];
-  if (!("items" in content) || !Array.isArray(content.items)) return [];
-  return content.items
-    .filter(
-      (item: unknown) =>
-        typeof item === "object" &&
-        item !== null &&
-        "number" in item &&
-        (typeof item.number === "number" || typeof item.number === "string"),
-    )
-    .map((item: { number: number | string }) => String(item.number));
+function extractItemNumbers(content: ItemsContent): string[] {
+  return content.items.map((item) => String(item.number));
 }
 
 function assertKeysMatchItems(
@@ -166,18 +165,13 @@ function assertValuesNonEmpty(
 }
 
 function assertGapFillValues(
-  content: unknown,
+  content: ItemsContent,
   answers: Record<string, string>,
   format: string,
 ): void {
-  if (typeof content !== "object" || content === null) return;
-  if (!("items" in content) || !Array.isArray(content.items)) return;
-
-  const items = new Map<string, { options?: unknown }>();
-  for (const item of content.items) {
-    if (typeof item === "object" && item !== null && "number" in item)
-      items.set(String(item.number), item as { options?: unknown });
-  }
+  const items = new Map(
+    content.items.map((item) => [String(item.number), item]),
+  );
 
   for (const [key, value] of Object.entries(answers)) {
     const item = items.get(key);
