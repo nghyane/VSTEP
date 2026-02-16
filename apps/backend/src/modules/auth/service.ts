@@ -57,7 +57,7 @@ export async function login(body: LoginBody, deviceInfo?: string) {
     throw new UnauthorizedError("Invalid email or password");
   }
 
-  const tok = crypto.randomUUID();
+  const token = crypto.randomUUID();
   const jti = crypto.randomUUID();
 
   await db.transaction(async (tx) => {
@@ -83,7 +83,7 @@ export async function login(body: LoginBody, deviceInfo?: string) {
 
     await tx.insert(table.refreshTokens).values({
       userId: row.id,
-      tokenHash: hashToken(tok),
+      tokenHash: hashToken(token),
       jti,
       deviceInfo,
       expiresAt: refreshExpiry(),
@@ -98,7 +98,7 @@ export async function login(body: LoginBody, deviceInfo?: string) {
   };
   const access = await signAccessToken(row.id, row.role);
 
-  return tokenResponse(user, access, tok);
+  return tokenResponse(user, access, token);
 }
 
 export async function register(body: RegisterBody) {
@@ -195,18 +195,18 @@ export async function refresh(refreshToken: string, deviceInfo?: string) {
 
     if (!user) throw new UnauthorizedError("User not found");
 
-    const tok = crypto.randomUUID();
+    const token = crypto.randomUUID();
 
     await tx.insert(table.refreshTokens).values({
       userId: user.id,
-      tokenHash: hashToken(tok),
+      tokenHash: hashToken(token),
       jti,
       deviceInfo,
       expiresAt: refreshExpiry(),
     });
 
     const access = await signAccessToken(user.id, user.role);
-    return tokenResponse(user, access, tok);
+    return tokenResponse(user, access, token);
   });
 }
 

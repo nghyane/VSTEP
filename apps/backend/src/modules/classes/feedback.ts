@@ -78,7 +78,6 @@ export async function list(
 ) {
   const conditions = [eq(table.instructorFeedback.classId, classId)];
 
-  // Verify class exists
   const cls = assertExists(
     await db.query.classes.findFirst({
       where: eq(table.classes.id, classId),

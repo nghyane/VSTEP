@@ -60,7 +60,7 @@ export async function create(userId: string, body: QuestionCreateBody) {
   );
 
   return db.transaction(async (tx) => {
-    const q = await tx
+    const question = await tx
       .insert(table.questions)
       .values({
         skill: body.skill,
@@ -76,13 +76,13 @@ export async function create(userId: string, body: QuestionCreateBody) {
       .then(takeFirstOrThrow);
 
     await tx.insert(table.questionVersions).values({
-      questionId: q.id,
+      questionId: question.id,
       version: 1,
       content: body.content,
       answerKey: body.answerKey ?? null,
     });
 
-    return q;
+    return question;
   });
 }
 

@@ -8,7 +8,6 @@ import type { ExamBlueprint } from "@db/types/grading";
 import { and, eq, sql } from "drizzle-orm";
 import { SESSION_COLUMNS } from "./schema";
 
-/** Extract all questionIds from an exam blueprint */
 function blueprintQuestionIds(bp: ExamBlueprint): Set<string> {
   const ids = new Set<string>();
   for (const skill of [
@@ -22,12 +21,12 @@ function blueprintQuestionIds(bp: ExamBlueprint): Set<string> {
   return ids;
 }
 
-export async function getActiveSession(
+export async function active(
   tx: DbTransaction,
   sessionId: string,
   actor: Actor,
 ) {
-  const [session] = await tx
+  const [found] = await tx
     .select({
       id: table.examSessions.id,
       status: table.examSessions.status,
@@ -38,17 +37,16 @@ export async function getActiveSession(
     .where(eq(table.examSessions.id, sessionId))
     .limit(1);
 
-  const s = assertExists(session, "Session");
-  assertAccess(s.userId, actor, "You do not have access to this session");
+  const session = assertExists(found, "Session");
+  assertAccess(session.userId, actor, "You do not have access to this session");
 
-  if (s.status !== "in_progress") {
+  if (session.status !== "in_progress") {
     throw new ConflictError("Session is not in progress");
   }
 
-  return s;
+  return session;
 }
 
-/** Load blueprint question IDs for a session's exam (cached per tx) */
 async function loadBlueprintIds(tx: DbTransaction, examId: string) {
   const exam = assertExists(
     await tx.query.exams.findFirst({
@@ -63,15 +61,15 @@ async function loadBlueprintIds(tx: DbTransaction, examId: string) {
 export async function start(userId: string, examId: string) {
   return db.transaction(async (tx) => {
     // Lock exam row to serialize concurrent session creation for the same exam
-    const [exam] = await tx
+    const [found] = await tx
       .select({ id: table.exams.id, isActive: table.exams.isActive })
       .from(table.exams)
       .where(eq(table.exams.id, examId))
       .for("update")
       .limit(1);
 
-    const e = assertExists(exam, "Exam");
-    if (!e.isActive) throw new BadRequestError("Exam is not active");
+    const exam = assertExists(found, "Exam");
+    if (!exam.isActive) throw new BadRequestError("Exam is not active");
 
     const [existing] = await tx
       .select(SESSION_COLUMNS)
@@ -101,13 +99,13 @@ export async function start(userId: string, examId: string) {
 }
 
 export async function findSession(sessionId: string, actor: Actor) {
-  const session = await db.query.examSessions.findFirst({
+  const found = await db.query.examSessions.findFirst({
     where: eq(table.examSessions.id, sessionId),
   });
 
-  const s = assertExists(session, "Session");
-  assertAccess(s.userId, actor, "You do not have access to this session");
-  return s;
+  const session = assertExists(found, "Session");
+  assertAccess(session.userId, actor, "You do not have access to this session");
+  return session;
 }
 
 export async function answer(
@@ -116,7 +114,7 @@ export async function answer(
   actor: Actor,
 ) {
   return db.transaction(async (tx) => {
-    const session = await getActiveSession(tx, sessionId, actor);
+    const session = await active(tx, sessionId, actor);
     const allowed = await loadBlueprintIds(tx, session.examId);
     if (!allowed.has(body.questionId)) {
       throw new BadRequestError("Question is not part of this exam");
@@ -151,7 +149,7 @@ export async function saveAnswers(
   }
 
   return db.transaction(async (tx) => {
-    const session = await getActiveSession(tx, sessionId, actor);
+    const session = await active(tx, sessionId, actor);
     const allowed = await loadBlueprintIds(tx, session.examId);
 
     const invalid = answers

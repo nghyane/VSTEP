@@ -1,21 +1,17 @@
 import { BAND_THRESHOLDS } from "@common/scoring";
 
-/** Round to 1 decimal place */
 export function round1(n: number): number {
   return Math.round(n * 10) / 10;
 }
 
-/** Round to 2 decimal places */
 export function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
-/** Get minimum score threshold for a band. Returns undefined for unknown bands. */
 export function bandMinScore(band: string): number | undefined {
   return BAND_THRESHOLDS[band as keyof typeof BAND_THRESHOLDS];
 }
 
-/** Map Trend to streak direction for userProgress storage */
 export function trendToDirection(trend: Trend): "up" | "down" | "neutral" {
   if (trend === "improving") return "up";
   if (trend === "declining") return "down";
@@ -36,7 +32,6 @@ export const TREND_THRESHOLDS = {
   basicAnalysisMinScores: 3,
 } as const;
 
-/** Compute mean and sample standard deviation from a score window. */
 export function computeStats(scores: number[]) {
   if (scores.length === 0) return { avg: null, deviation: null };
 

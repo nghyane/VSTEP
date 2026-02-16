@@ -34,12 +34,12 @@ export async function find(submissionId: string, actor: Actor) {
     assertAccess(row.userId, actor, "You can only view your own submissions");
   }
 
-  const { details: d, ...sub } = row;
+  const { details: detail, ...submission } = row;
   return {
-    ...sub,
-    answer: d?.answer ?? null,
-    result: d?.result ?? null,
-    feedback: d?.feedback ?? null,
+    ...submission,
+    answer: detail?.answer ?? null,
+    result: detail?.result ?? null,
+    feedback: detail?.feedback ?? null,
   };
 }
 

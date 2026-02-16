@@ -31,34 +31,34 @@ export async function autoGrade(submissionId: string) {
       .where(eq(table.submissions.id, submissionId))
       .limit(1);
 
-    const data = assertExists(row, "Submission");
+    const submission = assertExists(row, "Submission");
 
-    if (["completed", "failed", "review_pending"].includes(data.status)) {
+    if (["completed", "failed", "review_pending"].includes(submission.status)) {
       throw new ConflictError(
-        `Cannot auto-grade a submission with status "${data.status}"`,
+        `Cannot auto-grade a submission with status "${submission.status}"`,
       );
     }
 
-    if (data.skill !== "listening" && data.skill !== "reading") {
+    if (submission.skill !== "listening" && submission.skill !== "reading") {
       throw new BadRequestError(
         "Only listening and reading submissions can be auto-graded",
       );
     }
 
-    if (!data.answerKey) {
+    if (!submission.answerKey) {
       throw new BadRequestError("Question has no answer key for auto-grading");
     }
 
     if (
-      !Value.Check(ObjectiveAnswerKey, data.answerKey) ||
-      !Value.Check(ObjectiveAnswer, data.answer)
+      !Value.Check(ObjectiveAnswerKey, submission.answerKey) ||
+      !Value.Check(ObjectiveAnswer, submission.answer)
     ) {
       throw new BadRequestError("Answer format incompatible with auto-grading");
     }
 
     // Grade in application code — SQL jsonb extraction fails on double-encoded JSONB
-    const expected = data.answerKey.correctAnswers;
-    const given = data.answer.answers;
+    const expected = submission.answerKey.correctAnswers;
+    const given = submission.answer.answers;
     const entries = Object.entries(expected);
     const totalCount = entries.length;
 
@@ -92,9 +92,11 @@ export async function autoGrade(submissionId: string) {
       .set({ result })
       .where(eq(table.submissionDetails.submissionId, submissionId));
 
-    const skill = data.skill as UserProgress["skill"];
-    await record(data.userId, skill, submissionId, score, tx);
-    await sync(data.userId, skill, tx);
+    const skill = submission.skill as UserProgress["skill"];
+    await Promise.all([
+      record(submission.userId, skill, submissionId, score, tx),
+      sync(submission.userId, skill, tx),
+    ]);
 
     return { score, result };
   });

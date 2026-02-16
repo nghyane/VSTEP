@@ -136,7 +136,7 @@ export async function review(
   actor: Actor,
 ) {
   return db.transaction(async (tx) => {
-    const [submission, det] = await Promise.all([
+    const [submission, existing] = await Promise.all([
       tx.query.submissions
         .findFirst({
           where: eq(table.submissions.id, submissionId),
@@ -161,7 +161,7 @@ export async function review(
       throw new ForbiddenError("You must claim this submission first");
     }
 
-    const g = resolveHumanGrade(body, det.result, actor.sub);
+    const resolved = resolveHumanGrade(body, existing.result, actor.sub);
     const ts = new Date().toISOString();
 
     const claimGuard = actor.is(ROLES.ADMIN)
@@ -171,14 +171,14 @@ export async function review(
     const updated = await tx
       .update(table.submissions)
       .set({
-        score: g.score,
-        band: g.band,
+        score: resolved.score,
+        band: resolved.band,
         status: "completed",
         completedAt: ts,
         updatedAt: ts,
         reviewerId: actor.sub,
         gradingMode: "human",
-        auditFlag: g.auditFlag,
+        auditFlag: resolved.auditFlag,
       })
       .where(
         and(
@@ -199,8 +199,8 @@ export async function review(
     await tx
       .update(table.submissionDetails)
       .set({
-        feedback: body.feedback ?? det.feedback,
-        result: sql`${JSON.stringify(g.result)}::jsonb`,
+        feedback: body.feedback ?? existing.feedback,
+        result: sql`${JSON.stringify(resolved.result)}::jsonb`,
       })
       .where(eq(table.submissionDetails.submissionId, submissionId));
 
@@ -208,16 +208,16 @@ export async function review(
       submission.userId,
       submission.skill,
       submissionId,
-      g.score,
+      resolved.score,
       tx,
     );
     await sync(submission.userId, submission.skill, tx);
 
     return {
       ...updated,
-      answer: det.answer,
-      result: g.result,
-      feedback: body.feedback ?? det.feedback,
+      answer: existing.answer,
+      result: resolved.result,
+      feedback: body.feedback ?? existing.feedback,
     };
   });
 }

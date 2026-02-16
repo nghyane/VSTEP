@@ -26,7 +26,7 @@ export async function overview(userId: string) {
 }
 
 export async function bySkill(userId: string, skill: UserProgress["skill"]) {
-  const [progress, recentScoresData, goal] = await Promise.all([
+  const [progress, scoreHistory, goal] = await Promise.all([
     db.query.userProgress.findFirst({
       where: and(
         eq(table.userProgress.userId, userId),
@@ -50,8 +50,8 @@ export async function bySkill(userId: string, skill: UserProgress["skill"]) {
     latest(userId),
   ]);
 
-  const scores = recentScoresData.map((r) => r.score);
-  const timestamps = recentScoresData.map((r) => r.createdAt);
+  const scores = scoreHistory.map((r) => r.score);
+  const timestamps = scoreHistory.map((r) => r.createdAt);
   const { avg, deviation } = computeStats(scores);
 
   const targetScore = goal ? bandMinScore(goal.targetBand) : undefined;
@@ -63,7 +63,7 @@ export async function bySkill(userId: string, skill: UserProgress["skill"]) {
 
   return {
     progress: progress ?? null,
-    recentScores: recentScoresData,
+    recentScores: scoreHistory,
     windowAvg: avg !== null ? round1(avg) : null,
     windowDeviation: deviation !== null ? round2(deviation) : null,
     trend: computeTrend(scores, deviation),

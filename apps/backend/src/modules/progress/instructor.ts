@@ -68,7 +68,7 @@ export async function atRisk(
 ) {
   if (userIds.length === 0) return [];
 
-  const [progressData, goals] = await Promise.all([
+  const [progress, goals] = await Promise.all([
     precomputedProgress ?? forUsers(userIds),
     db
       .select()
@@ -80,15 +80,15 @@ export async function atRisk(
   const now = Date.now();
   const thirtyDaysMs = AT_RISK_DEADLINE_DAYS * 24 * 60 * 60 * 1000;
 
-  return progressData.map(({ userId, skills }) => {
+  return progress.map(({ userId, skills }) => {
     const reasons: string[] = [];
 
-    for (const [skill, data] of Object.entries(skills)) {
-      if (data.trend === "declining") {
+    for (const [skill, stats] of Object.entries(skills)) {
+      if (stats.trend === "declining") {
         reasons.push(`Declining trend in ${skill}`);
       }
-      if (data.avg !== null && data.avg < AT_RISK_AVG_THRESHOLD) {
-        reasons.push(`Low average (${data.avg}) in ${skill}`);
+      if (stats.avg !== null && stats.avg < AT_RISK_AVG_THRESHOLD) {
+        reasons.push(`Low average (${stats.avg}) in ${skill}`);
       }
     }
 

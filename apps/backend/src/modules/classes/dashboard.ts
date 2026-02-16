@@ -54,15 +54,15 @@ export async function dashboard(classId: string, actor: Actor) {
     );
 
   const userIds = members.map((m) => m.userId);
-  const progressData = await forUsers(userIds);
-  const atRiskData = await atRisk(userIds, progressData);
+  const progress = await forUsers(userIds);
+  const risks = await atRisk(userIds, progress);
 
   const skillSummary = Object.fromEntries(
     SKILLS.map((skill) => {
       const avgs: number[] = [];
       const trendCounts = { improving: 0, stable: 0, declining: 0 };
 
-      for (const p of progressData) {
+      for (const p of progress) {
         const s = p.skills[skill];
         if (s?.avg !== null && s?.avg !== undefined) avgs.push(s.avg);
         if (s?.trend && s.trend in trendCounts) {
@@ -82,7 +82,7 @@ export async function dashboard(classId: string, actor: Actor) {
 
   const memberMap = new Map(members.map((m) => [m.userId, m]));
 
-  const atRiskLearners = atRiskData
+  const atRiskLearners = risks
     .filter((r) => r.atRisk)
     .map((r) => {
       const member = memberMap.get(r.userId);

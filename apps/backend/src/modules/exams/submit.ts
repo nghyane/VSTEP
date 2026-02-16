@@ -9,11 +9,11 @@ import { dispatchGrading } from "@/modules/submissions/grading-dispatch";
 import { gradeAnswers, persistCorrectness } from "./grading";
 import { SESSION_COLUMNS } from "./schema";
 import type { ExamSessionStatus } from "./service";
-import { getActiveSession } from "./session";
+import { active } from "./session";
 
 export async function submit(sessionId: string, actor: Actor) {
   return db.transaction(async (tx) => {
-    const session = await getActiveSession(tx, sessionId, actor);
+    const session = await active(tx, sessionId, actor);
 
     const answers = await tx
       .select({
@@ -27,7 +27,7 @@ export async function submit(sessionId: string, actor: Actor) {
       throw new BadRequestError("No answers found for this session");
 
     const questionIds = answers.map((a) => a.questionId);
-    const rows = await tx
+    const questions = await tx
       .select({
         id: table.questions.id,
         skill: table.questions.skill,
@@ -37,7 +37,7 @@ export async function submit(sessionId: string, actor: Actor) {
       .where(inArray(table.questions.id, questionIds));
 
     const questionsMap = new Map(
-      rows.map((q) => [q.id, { skill: q.skill, answerKey: q.answerKey }]),
+      questions.map((q) => [q.id, { skill: q.skill, answerKey: q.answerKey }]),
     );
 
     const grade = gradeAnswers(answers, questionsMap);
@@ -127,14 +127,22 @@ export async function submit(sessionId: string, actor: Actor) {
       .returning(SESSION_COLUMNS)
       .then(takeFirstOrThrow);
 
+    const updates: Promise<void>[] = [];
     if (listeningScore !== null) {
-      await record(session.userId, "listening", null, listeningScore, tx);
-      await sync(session.userId, "listening", tx);
+      updates.push(
+        record(session.userId, "listening", null, listeningScore, tx).then(() =>
+          sync(session.userId, "listening", tx),
+        ),
+      );
     }
     if (readingScore !== null) {
-      await record(session.userId, "reading", null, readingScore, tx);
-      await sync(session.userId, "reading", tx);
+      updates.push(
+        record(session.userId, "reading", null, readingScore, tx).then(() =>
+          sync(session.userId, "reading", tx),
+        ),
+      );
     }
+    if (updates.length > 0) await Promise.all(updates);
 
     return updated;
   });
