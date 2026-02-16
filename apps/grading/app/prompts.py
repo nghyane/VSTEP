@@ -1,4 +1,4 @@
-def build_writing_prompt(text: str, task_type: str) -> str:
+def writing(text: str, task_type: str) -> str:
     return f"""You are a VSTEP writing examiner. Grade the following {task_type} using the VSTEP writing rubric.
 
 ## Rubric (each criterion 0-10, use 0.5 increments)
@@ -34,7 +34,7 @@ SPEAKING_PART_CONTEXT = {
 }
 
 
-def build_speaking_prompt(transcript: str, part_number: int) -> str:
+def speaking(transcript: str, part_number: int) -> str:
     context = SPEAKING_PART_CONTEXT.get(part_number, SPEAKING_PART_CONTEXT[1])
 
     return f"""You are a VSTEP speaking examiner. Grade the following spoken response transcript using the VSTEP speaking rubric.

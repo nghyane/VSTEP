@@ -4,19 +4,19 @@ from psycopg_pool import AsyncConnectionPool
 
 from app.config import settings
 from app.logger import logger
-from app.models import AIGradeResult, GradingTask
+from app.models import Result, Task
 
 pool: AsyncConnectionPool | None = None
 
 
-async def init_pool():
+async def init():
     global pool
     pool = AsyncConnectionPool(conninfo=settings.database_url, min_size=2, max_size=10)
     await pool.open()
     logger.info("db_pool_opened")
 
 
-async def close_pool():
+async def close():
     global pool
     if pool:
         await pool.close()
@@ -32,7 +32,7 @@ def resolve_status(confidence: str) -> tuple[str, str | None]:
     return "review_pending", "high"
 
 
-async def save_result(task: GradingTask, result: AIGradeResult):
+async def save(task: Task, result: Result):
     status, priority = resolve_status(result.confidence)
     now = datetime.now(timezone.utc).isoformat()
     completed = now if status == "completed" else None
@@ -59,7 +59,7 @@ async def save_result(task: GradingTask, result: AIGradeResult):
             )
 
 
-async def mark_failed(submission_id: str):
+async def fail(submission_id: str):
     now = datetime.now(timezone.utc).isoformat()
 
     async with pool.connection() as conn:

@@ -2,16 +2,15 @@ import httpx
 from pydantic import ValidationError
 from redis.asyncio import Redis
 
-from app.models import AIGradeResult, GradingTask, PermanentError
-from app.speaking import grade_speaking
-from app.writing import grade_writing
+from app import speaking, writing
+from app.models import PermanentError, Result, Task
 
 
-async def grade(task: GradingTask, redis: Redis) -> AIGradeResult:
+async def grade(task: Task, redis: Redis) -> Result:
     try:
         if task.skill == "writing":
-            return await grade_writing(task)
-        return await grade_speaking(task, redis)
+            return await writing.grade(task)
+        return await speaking.grade(task, redis)
     except (KeyError, ValidationError) as e:
         raise PermanentError(f"invalid answer payload: {e}") from e
     except httpx.HTTPStatusError as e:

@@ -1,9 +1,9 @@
 from datetime import datetime, timezone
 
 from app.llm import router
-from app.models import AIGradeResult, GradingTask, WritingGrade
-from app.prompts import build_writing_prompt
-from app.scoring import round_score, score_to_band
+from app.models import Result, Task, WritingScore
+from app.prompts import writing as writing_prompt
+from app.scoring import snap, to_band
 
 WRITING_CRITERIA = {
     "taskAchievement": "task_achievement",
@@ -13,35 +13,35 @@ WRITING_CRITERIA = {
 }
 
 
-def to_result(grade: WritingGrade) -> AIGradeResult:
+def to_result(score: WritingScore) -> Result:
     criteria = {
-        name: getattr(grade, attr) for name, attr in WRITING_CRITERIA.items()
+        name: getattr(score, attr) for name, attr in WRITING_CRITERIA.items()
     }
     average = sum(criteria.values()) / len(criteria)
-    score = round_score(average)
+    overall = snap(average)
 
-    return AIGradeResult(
-        overallScore=score,
-        band=score_to_band(score),
+    return Result(
+        overallScore=overall,
+        band=to_band(overall),
         criteriaScores=criteria,
-        feedback=grade.feedback,
-        confidence=grade.confidence,
+        feedback=score.feedback,
+        confidence=score.confidence,
         gradedAt=datetime.now(timezone.utc).isoformat(),
     )
 
 
-async def grade_writing(task: GradingTask) -> AIGradeResult:
+async def grade(task: Task) -> Result:
     answer = task.writing_answer()
     text = answer.text
     task_type = answer.task_type
 
-    prompt = build_writing_prompt(text, task_type)
+    prompt = writing_prompt(text, task_type)
     response = await router.acompletion(
         model="grader",
         messages=[{"role": "user", "content": prompt}],
-        response_format=WritingGrade,
+        response_format=WritingScore,
         temperature=0.3,
     )
 
-    grade = WritingGrade.model_validate_json(response.choices[0].message.content)
-    return to_result(grade)
+    score = WritingScore.model_validate_json(response.choices[0].message.content)
+    return to_result(score)

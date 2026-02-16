@@ -3,9 +3,9 @@ from datetime import datetime, timezone
 from redis.asyncio import Redis
 
 from app.llm import router
-from app.models import AIGradeResult, GradingTask, SpeakingGrade
-from app.prompts import build_speaking_prompt
-from app.scoring import round_score, score_to_band
+from app.models import Result, SpeakingScore, Task
+from app.prompts import speaking as speaking_prompt
+from app.scoring import snap, to_band
 from app.stt import transcribe
 
 SPEAKING_CRITERIA = {
@@ -16,35 +16,35 @@ SPEAKING_CRITERIA = {
 }
 
 
-def to_result(grade: SpeakingGrade) -> AIGradeResult:
+def to_result(score: SpeakingScore) -> Result:
     criteria = {
-        name: getattr(grade, attr) for name, attr in SPEAKING_CRITERIA.items()
+        name: getattr(score, attr) for name, attr in SPEAKING_CRITERIA.items()
     }
     average = sum(criteria.values()) / len(criteria)
-    score = round_score(average)
+    overall = snap(average)
 
-    return AIGradeResult(
-        overallScore=score,
-        band=score_to_band(score),
+    return Result(
+        overallScore=overall,
+        band=to_band(overall),
         criteriaScores=criteria,
-        feedback=grade.feedback,
-        confidence=grade.confidence,
+        feedback=score.feedback,
+        confidence=score.confidence,
         gradedAt=datetime.now(timezone.utc).isoformat(),
     )
 
 
-async def grade_speaking(task: GradingTask, redis: Redis) -> AIGradeResult:
+async def grade(task: Task, redis: Redis) -> Result:
     answer = task.speaking_answer()
     transcript = await transcribe(answer.audio_url, redis)
     part = answer.part_number
 
-    prompt = build_speaking_prompt(transcript, part)
+    prompt = speaking_prompt(transcript, part)
     response = await router.acompletion(
         model="grader",
         messages=[{"role": "user", "content": prompt}],
-        response_format=SpeakingGrade,
+        response_format=SpeakingScore,
         temperature=0.3,
     )
 
-    grade = SpeakingGrade.model_validate_json(response.choices[0].message.content)
-    return to_result(grade)
+    score = SpeakingScore.model_validate_json(response.choices[0].message.content)
+    return to_result(score)

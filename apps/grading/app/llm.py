@@ -6,8 +6,8 @@ litellm.set_verbose = False
 litellm.suppress_debug_info = True
 
 
-def build_model_list() -> list[dict]:
-    models = [
+def models() -> list[dict]:
+    result = [
         {
             "model_name": "grader",
             "litellm_params": {
@@ -19,7 +19,7 @@ def build_model_list() -> list[dict]:
         }
     ]
     if settings.llm_fallback_model:
-        models.append(
+        result.append(
             {
                 "model_name": "grader",
                 "litellm_params": {
@@ -29,11 +29,11 @@ def build_model_list() -> list[dict]:
                 },
             }
         )
-    return models
+    return result
 
 
 router = Router(
-    model_list=build_model_list(),
+    model_list=models(),
     num_retries=settings.llm_retries,
     timeout=settings.llm_timeout,
 )

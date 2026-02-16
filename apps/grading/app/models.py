@@ -22,7 +22,7 @@ class SpeakingAnswer(BaseModel):
     part_number: int = Field(1, alias="partNumber")
 
 
-class GradingTask(BaseModel):
+class Task(BaseModel):
     """Matches backend LPUSH payload to grading:tasks"""
 
     model_config = ConfigDict(populate_by_name=True)
@@ -47,7 +47,7 @@ class GrammarError(BaseModel):
     suggestion: str | None = None
 
 
-class AIGradeResult(BaseModel):
+class Result(BaseModel):
     """Matches backend src/db/types/grading.ts AIGradeResult exactly.
     Serialized as camelCase JSONB in submission_details.result"""
 
@@ -62,7 +62,7 @@ class AIGradeResult(BaseModel):
     graded_at: str | None = Field(None, alias="gradedAt")
 
 
-class WritingGrade(BaseModel):
+class WritingScore(BaseModel):
     """Structured output from LLM for writing grading"""
 
     task_achievement: float = Field(ge=0, le=10)
@@ -73,7 +73,7 @@ class WritingGrade(BaseModel):
     confidence: Literal["high", "medium", "low"]
 
 
-class SpeakingGrade(BaseModel):
+class SpeakingScore(BaseModel):
     """Structured output from LLM for speaking grading"""
 
     fluency: float = Field(ge=0, le=10)

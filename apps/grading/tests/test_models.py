@@ -1,10 +1,10 @@
 import pytest
 from pydantic import ValidationError
 
-from app.models import AIGradeResult, GradingTask, WritingGrade
+from app.models import Result, Task, WritingScore
 
 
-def test_grading_task_from_camel_case():
+def test_task_from_camel_case():
     data = {
         "submissionId": "abc-123",
         "questionId": "q-456",
@@ -12,13 +12,13 @@ def test_grading_task_from_camel_case():
         "answer": {"text": "Some essay text"},
         "dispatchedAt": "2026-01-01T00:00:00Z",
     }
-    task = GradingTask.model_validate(data)
+    task = Task.model_validate(data)
     assert task.submission_id == "abc-123"
     assert task.question_id == "q-456"
     assert task.skill == "writing"
 
 
-def test_grading_task_from_snake_case():
+def test_task_from_snake_case():
     data = {
         "submission_id": "abc-123",
         "question_id": "q-456",
@@ -26,12 +26,12 @@ def test_grading_task_from_snake_case():
         "answer": {"audioUrl": "https://example.com/audio.mp3"},
         "dispatched_at": "2026-01-01T00:00:00Z",
     }
-    task = GradingTask.model_validate(data)
+    task = Task.model_validate(data)
     assert task.submission_id == "abc-123"
     assert task.skill == "speaking"
 
 
-def test_grading_task_invalid_skill():
+def test_task_invalid_skill():
     data = {
         "submissionId": "abc-123",
         "questionId": "q-456",
@@ -40,11 +40,11 @@ def test_grading_task_invalid_skill():
         "dispatchedAt": "2026-01-01T00:00:00Z",
     }
     with pytest.raises(ValidationError):
-        GradingTask.model_validate(data)
+        Task.model_validate(data)
 
 
-def test_ai_grade_result_serializes_camel_case():
-    result = AIGradeResult(
+def test_result_serializes_camel_case():
+    result = Result(
         overallScore=7.5,
         band="B2",
         criteriaScores={"taskAchievement": 7.0, "coherenceCohesion": 8.0},
@@ -59,9 +59,9 @@ def test_ai_grade_result_serializes_camel_case():
     assert dumped["overallScore"] == 7.5
 
 
-def test_ai_grade_result_score_bounds():
+def test_result_score_bounds():
     with pytest.raises(ValidationError):
-        AIGradeResult(
+        Result(
             overallScore=11.0,
             criteriaScores={},
             feedback="",
@@ -69,7 +69,7 @@ def test_ai_grade_result_score_bounds():
         )
 
     with pytest.raises(ValidationError):
-        AIGradeResult(
+        Result(
             overallScore=-1.0,
             criteriaScores={},
             feedback="",
@@ -77,9 +77,9 @@ def test_ai_grade_result_score_bounds():
         )
 
 
-def test_writing_grade_score_bounds():
+def test_writing_score_bounds():
     with pytest.raises(ValidationError):
-        WritingGrade(
+        WritingScore(
             task_achievement=11.0,
             coherence_cohesion=7.0,
             lexical_resource=7.0,
@@ -88,7 +88,7 @@ def test_writing_grade_score_bounds():
             confidence="high",
         )
 
-    grade = WritingGrade(
+    score = WritingScore(
         task_achievement=8.5,
         coherence_cohesion=7.0,
         lexical_resource=6.5,
@@ -96,5 +96,5 @@ def test_writing_grade_score_bounds():
         feedback="Solid essay",
         confidence="medium",
     )
-    assert grade.task_achievement == 8.5
-    assert grade.confidence == "medium"
+    assert score.task_achievement == 8.5
+    assert score.confidence == "medium"
