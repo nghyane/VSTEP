@@ -5,6 +5,7 @@ import { createStateMachine } from "@common/state-machine";
 import { assertExists } from "@common/utils";
 import type { DbTransaction } from "@db/index";
 import { db, paginate, table, takeFirstOrThrow } from "@db/index";
+import { SKILLS } from "@db/schema/enums";
 import type { ExamSession } from "@db/schema/exams";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import type { ExamCreateBody, ExamListQuery, ExamUpdateBody } from "./schema";
@@ -25,11 +26,7 @@ async function validateBlueprint(
   blueprint: ExamCreateBody["blueprint"],
 ) {
   const ids = [
-    ...new Set(
-      (["listening", "reading", "writing", "speaking"] as const).flatMap(
-        (k) => blueprint[k]?.questionIds ?? [],
-      ),
-    ),
+    ...new Set(SKILLS.flatMap((k) => blueprint[k]?.questionIds ?? [])),
   ];
   if (ids.length === 0)
     throw new BadRequestError("Exam must contain at least one question");

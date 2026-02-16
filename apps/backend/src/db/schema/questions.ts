@@ -29,6 +29,9 @@ export const questionFormatEnum = pgEnum("question_format", [
   "listening_dictation",
 ]);
 
+export const QUESTION_FORMATS = questionFormatEnum.enumValues;
+export type QuestionFormat = (typeof QUESTION_FORMATS)[number];
+
 export const questionLevelEnum = pgEnum("question_level", [
   "A1",
   "A2",

@@ -64,3 +64,5 @@ export type {
   NewInstructorFeedback,
 } from "./classes";
 export type { UserProgress } from "./progress";
+export type { QuestionFormat } from "./questions";
+export { QUESTION_FORMATS } from "./questions";

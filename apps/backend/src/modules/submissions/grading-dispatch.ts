@@ -1,36 +1,48 @@
 import { logger } from "@common/logger";
 import type { DbTransaction } from "@db/index";
 import { table } from "@db/index";
+import type { Skill } from "@db/schema/enums";
 import { redis } from "bun";
 import { eq } from "drizzle-orm";
 
 const GRADING_QUEUE = "grading:tasks";
 
-/** Push W/S submission to Redis queue for AI grading, set status to processing. */
-export async function dispatchGrading(
+export interface GradingTask {
+  submissionId: string;
+  questionId: string;
+  skill: Skill;
+  answer: unknown;
+  dispatchedAt: string;
+}
+
+/** Mark submission as processing inside the transaction. Returns a task to dispatch after commit. */
+export async function prepare(
   tx: DbTransaction,
   submissionId: string,
-  skill: string,
+  skill: Skill,
   questionId: string,
   answer: unknown,
-) {
+): Promise<GradingTask> {
   const ts = new Date().toISOString();
-
-  await redis.send("LPUSH", [
-    GRADING_QUEUE,
-    JSON.stringify({
-      submissionId,
-      questionId,
-      skill,
-      answer,
-      dispatchedAt: ts,
-    }),
-  ]);
-
   await tx
     .update(table.submissions)
     .set({ status: "processing", updatedAt: ts })
     .where(eq(table.submissions.id, submissionId));
+  return { submissionId, questionId, skill, answer, dispatchedAt: ts };
+}
 
-  logger.info("Dispatched grading task", { submissionId, skill });
+/** Push collected tasks to Redis. Call AFTER transaction commits. */
+export async function dispatch(tasks: GradingTask[]) {
+  if (tasks.length === 0) return;
+  await Promise.all(
+    tasks.map((task) =>
+      redis.send("LPUSH", [GRADING_QUEUE, JSON.stringify(task)]),
+    ),
+  );
+  for (const task of tasks) {
+    logger.info("Dispatched grading task", {
+      submissionId: task.submissionId,
+      skill: task.skill,
+    });
+  }
 }

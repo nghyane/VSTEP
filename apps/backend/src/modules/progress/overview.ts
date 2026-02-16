@@ -1,9 +1,9 @@
-import { SKILLS } from "@db/enums";
 import type { UserProgress } from "@db/index";
 import { db, table } from "@db/index";
+import { SKILLS } from "@db/schema/enums";
 import { and, desc, eq } from "drizzle-orm";
 import { latest } from "./goals";
-import { recentScores } from "./service";
+import { recentScores, WINDOW_SIZE } from "./service";
 import {
   bandMinScore,
   computeEta,
@@ -46,7 +46,7 @@ export async function bySkill(userId: string, skill: UserProgress["skill"]) {
         ),
       )
       .orderBy(desc(table.userSkillScores.createdAt))
-      .limit(10),
+      .limit(WINDOW_SIZE),
     latest(userId),
   ]);
 

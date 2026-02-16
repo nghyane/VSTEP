@@ -11,6 +11,9 @@ export const skillEnum = pgEnum("skill", [
   "speaking",
 ]);
 
+export const SKILLS = skillEnum.enumValues;
+export type Skill = (typeof SKILLS)[number];
+
 export const vstepBandEnum = pgEnum("vstep_band", [
   "A1",
   "A2",

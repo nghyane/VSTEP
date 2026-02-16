@@ -1,6 +1,6 @@
 import { scoreToLevel } from "@common/scoring";
-import { SKILLS } from "@db/enums";
 import { db, table } from "@db/index";
+import { SKILLS } from "@db/schema/enums";
 import { inArray } from "drizzle-orm";
 import { recentScoresForUsers } from "./service";
 import { bandMinScore, computeStats, computeTrend, round1 } from "./trends";

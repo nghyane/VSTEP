@@ -3,6 +3,7 @@ import { BadRequestError, ConflictError } from "@common/errors";
 import { assertAccess, assertExists } from "@common/utils";
 import type { DbTransaction } from "@db/index";
 import { db, table, takeFirstOrThrow } from "@db/index";
+import { SKILLS } from "@db/schema/enums";
 import type { SubmissionAnswer } from "@db/types/answers";
 import type { ExamBlueprint } from "@db/types/grading";
 import { and, eq, sql } from "drizzle-orm";
@@ -10,12 +11,7 @@ import { SESSION_COLUMNS } from "./schema";
 
 function blueprintQuestionIds(bp: ExamBlueprint): Set<string> {
   const ids = new Set<string>();
-  for (const skill of [
-    "listening",
-    "reading",
-    "writing",
-    "speaking",
-  ] as const) {
+  for (const skill of SKILLS) {
     for (const id of bp[skill]?.questionIds ?? []) ids.add(id);
   }
   return ids;

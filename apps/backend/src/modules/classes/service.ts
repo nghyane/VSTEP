@@ -4,26 +4,12 @@ import { ForbiddenError } from "@common/errors";
 import { assertExists, generateInviteCode } from "@common/utils";
 import { db, paginate, table, takeFirstOrThrow } from "@db/index";
 import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
+import { assertClassOwner } from "./guards";
 import type {
   ClassListQuery,
   CreateClassBody,
   UpdateClassBody,
 } from "./schema";
-
-async function assertClassOwner(classId: string, actor: Actor) {
-  const cls = assertExists(
-    await db.query.classes.findFirst({
-      where: eq(table.classes.id, classId),
-    }),
-    "Class",
-  );
-  if (!actor.is(ROLES.ADMIN) && cls.instructorId !== actor.sub) {
-    throw new ForbiddenError(
-      "Only the class instructor can perform this action",
-    );
-  }
-  return cls;
-}
 
 export async function create(body: CreateClassBody, actor: Actor) {
   const inviteCode = generateInviteCode();

@@ -4,7 +4,7 @@ import { BadRequestError, ConflictError } from "@common/errors";
 import { assertAccess, assertExists } from "@common/utils";
 import { db, paginate, table, takeFirstOrThrow } from "@db/index";
 import { and, desc, eq } from "drizzle-orm";
-import { dispatchGrading } from "./grading-dispatch";
+import { dispatch, type GradingTask, prepare } from "./grading-dispatch";
 import type {
   SubmissionCreateBody,
   SubmissionListQuery,
@@ -72,7 +72,8 @@ export async function list(query: SubmissionListQuery, actor: Actor) {
 }
 
 export async function create(userId: string, body: SubmissionCreateBody) {
-  return db.transaction(async (tx) => {
+  const pending: GradingTask[] = [];
+  const created = await db.transaction(async (tx) => {
     const question = assertExists(
       await tx.query.questions.findFirst({
         where: eq(table.questions.id, body.questionId),
@@ -108,19 +109,21 @@ export async function create(userId: string, body: SubmissionCreateBody) {
       feedback: null,
     };
 
-    // Subjective skills need AI grading via worker queue
     if (question.skill === "writing" || question.skill === "speaking") {
-      await dispatchGrading(
-        tx,
-        submission.id,
-        question.skill,
-        question.id,
-        body.answer,
+      pending.push(
+        await prepare(
+          tx,
+          submission.id,
+          question.skill,
+          question.id,
+          body.answer,
+        ),
       );
     }
-
     return result;
   });
+  await dispatch(pending);
+  return created;
 }
 
 export async function update(

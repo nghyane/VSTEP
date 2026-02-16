@@ -202,7 +202,7 @@ export async function review(
       .update(table.submissionDetails)
       .set({
         feedback: body.feedback ?? existing.feedback,
-        result: sql`${JSON.stringify(resolved.result)}::jsonb`,
+        result: resolved.result,
       })
       .where(eq(table.submissionDetails.submissionId, submissionId));
 

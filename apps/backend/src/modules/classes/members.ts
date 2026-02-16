@@ -1,24 +1,9 @@
 import type { Actor } from "@common/auth-types";
-import { ROLES } from "@common/auth-types";
-import { BadRequestError, ConflictError, ForbiddenError } from "@common/errors";
+import { BadRequestError, ConflictError } from "@common/errors";
 import { assertExists } from "@common/utils";
 import { db, table, takeFirst } from "@db/index";
 import { and, eq, isNull } from "drizzle-orm";
-
-async function assertClassOwner(classId: string, actor: Actor) {
-  const cls = assertExists(
-    await db.query.classes.findFirst({
-      where: eq(table.classes.id, classId),
-    }),
-    "Class",
-  );
-  if (!actor.is(ROLES.ADMIN) && cls.instructorId !== actor.sub) {
-    throw new ForbiddenError(
-      "Only the class instructor can perform this action",
-    );
-  }
-  return cls;
-}
+import { assertClassOwner } from "./guards";
 
 export async function join(body: { inviteCode: string }, actor: Actor) {
   return db.transaction(async (tx) => {

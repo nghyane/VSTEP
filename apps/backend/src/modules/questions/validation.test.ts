@@ -263,11 +263,7 @@ describe("assertContentMatchesFormat", () => {
     ).toThrow(BadRequestError);
   });
 
-  it("throws for unknown format", () => {
-    expect(() => assertContentMatchesFormat("unknown_format", {})).toThrow(
-      BadRequestError,
-    );
-  });
+  // "unknown format" case is now prevented at compile time via QuestionFormat type
 });
 
 describe("assertAnswerKeyMatchesFormat", () => {

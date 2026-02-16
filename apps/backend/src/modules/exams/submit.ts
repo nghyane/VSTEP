@@ -5,14 +5,19 @@ import { assertExists } from "@common/utils";
 import { db, table, takeFirstOrThrow } from "@db/index";
 import { and, eq, inArray } from "drizzle-orm";
 import { record, sync } from "@/modules/progress/service";
-import { dispatchGrading } from "@/modules/submissions/grading-dispatch";
+import {
+  dispatch,
+  type GradingTask,
+  prepare,
+} from "@/modules/submissions/grading-dispatch";
 import { gradeAnswers, persistCorrectness } from "./grading";
 import { SESSION_COLUMNS } from "./schema";
 import type { ExamSessionStatus } from "./service";
 import { active } from "./session";
 
 export async function submit(sessionId: string, actor: Actor) {
-  return db.transaction(async (tx) => {
+  const gradingTasks: GradingTask[] = [];
+  const updated = await db.transaction(async (tx) => {
     const session = await active(tx, sessionId, actor);
 
     const answers = await tx
@@ -45,24 +50,21 @@ export async function submit(sessionId: string, actor: Actor) {
     await persistCorrectness(tx, sessionId, grade.correctness);
 
     const listeningScore = calculateScore(
-      grade.listeningCorrect,
-      grade.listeningTotal,
+      grade.listening.correct,
+      grade.listening.total,
     );
     const readingScore = calculateScore(
-      grade.readingCorrect,
-      grade.readingTotal,
+      grade.reading.correct,
+      grade.reading.total,
     );
 
-    const pending = [
-      ...grade.writing.map((a) => ({ ...a, skill: "writing" as const })),
-      ...grade.speaking.map((a) => ({ ...a, skill: "speaking" as const })),
-    ];
+    const awaitingReview = grade.subjective;
 
-    if (pending.length > 0) {
+    if (awaitingReview.length > 0) {
       const inserted = await tx
         .insert(table.submissions)
         .values(
-          pending.map((a) => ({
+          awaitingReview.map((a) => ({
             userId: session.userId,
             questionId: a.questionId,
             skill: a.skill,
@@ -73,43 +75,49 @@ export async function submit(sessionId: string, actor: Actor) {
 
       const pairs = inserted.map((sub, i) => ({
         sub,
-        pending: assertExists(pending[i], "Pending answer"),
+        entry: assertExists(awaitingReview[i], "Subjective answer"),
       }));
 
       await tx.insert(table.submissionDetails).values(
-        pairs.map(({ sub, pending: p }) => ({
+        pairs.map(({ sub, entry }) => ({
           submissionId: sub.id,
-          answer: p.answer,
+          answer: entry.answer,
         })),
       );
 
       await tx.insert(table.examSubmissions).values(
-        pairs.map(({ sub, pending: p }) => ({
+        pairs.map(({ sub, entry }) => ({
           sessionId,
           submissionId: sub.id,
-          skill: p.skill,
+          skill: entry.skill,
         })),
       );
 
-      for (const { pending: p } of pairs) {
-        if (!p.answer || typeof p.answer !== "object") {
+      for (const { entry } of pairs) {
+        if (!entry.answer || typeof entry.answer !== "object") {
           throw new BadRequestError(
-            `Invalid answer format for ${p.skill} question ${p.questionId}`,
+            `Invalid answer format for ${entry.skill} question ${entry.questionId}`,
           );
         }
       }
 
-      await Promise.all(
-        pairs.map(({ sub, pending: p }) =>
-          dispatchGrading(tx, sub.id, p.skill, p.questionId, p.answer),
-        ),
-      );
+      for (const { sub, entry } of pairs) {
+        gradingTasks.push(
+          await prepare(
+            tx,
+            sub.id,
+            entry.skill,
+            entry.questionId,
+            entry.answer,
+          ),
+        );
+      }
     }
 
     const ts = new Date().toISOString();
     const status: ExamSessionStatus =
-      pending.length > 0 ? "submitted" : "completed";
-    const updated = await tx
+      awaitingReview.length > 0 ? "submitted" : "completed";
+    const result = await tx
       .update(table.examSessions)
       .set({
         listeningScore,
@@ -127,23 +135,25 @@ export async function submit(sessionId: string, actor: Actor) {
       .returning(SESSION_COLUMNS)
       .then(takeFirstOrThrow);
 
-    const updates: Promise<void>[] = [];
+    const progressUpdates: Promise<void>[] = [];
     if (listeningScore !== null) {
-      updates.push(
+      progressUpdates.push(
         record(session.userId, "listening", null, listeningScore, tx).then(() =>
           sync(session.userId, "listening", tx),
         ),
       );
     }
     if (readingScore !== null) {
-      updates.push(
+      progressUpdates.push(
         record(session.userId, "reading", null, readingScore, tx).then(() =>
           sync(session.userId, "reading", tx),
         ),
       );
     }
-    if (updates.length > 0) await Promise.all(updates);
+    if (progressUpdates.length > 0) await Promise.all(progressUpdates);
 
-    return updated;
+    return result;
   });
+  await dispatch(gradingTasks);
+  return updated;
 }

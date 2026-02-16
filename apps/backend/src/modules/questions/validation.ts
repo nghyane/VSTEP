@@ -1,4 +1,5 @@
 import { BadRequestError } from "@common/errors";
+import type { QuestionFormat } from "@db/schema";
 import { ObjectiveAnswerKey } from "@db/types/answers";
 import {
   ListeningDictationContent,
@@ -16,16 +17,12 @@ import {
 import type { TSchema } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 
-interface NumberedItem {
-  number: number | string;
-  options?: unknown;
+interface ObjectiveItem {
+  number: number;
+  options?: Record<string, string>;
 }
 
-interface ItemsContent {
-  items: NumberedItem[];
-}
-
-const CONTENT_SCHEMAS: Record<string, TSchema> = {
+const CONTENT_SCHEMAS: Record<QuestionFormat, TSchema> = {
   writing_task_1: WritingTask1Content,
   writing_task_2: WritingTask2Content,
   speaking_part_1: SpeakingPart1Content,
@@ -39,7 +36,7 @@ const CONTENT_SCHEMAS: Record<string, TSchema> = {
   listening_dictation: ListeningDictationContent,
 };
 
-const SUBJECTIVE_FORMATS = new Set([
+const SUBJECTIVE_FORMATS = new Set<QuestionFormat>([
   "writing_task_1",
   "writing_task_2",
   "speaking_part_1",
@@ -51,7 +48,7 @@ const ABCD = new Set(["A", "B", "C", "D"]);
 const ABC = new Set(["A", "B", "C"]);
 
 // Objective formats → allowed answer values (null = any non-empty string)
-const ALLOWED_VALUES: Record<string, Set<string> | null> = {
+const ALLOWED_VALUES: Partial<Record<QuestionFormat, Set<string> | null>> = {
   reading_mcq: ABCD,
   listening_mcq: ABCD,
   reading_tng: ABC,
@@ -60,17 +57,16 @@ const ALLOWED_VALUES: Record<string, Set<string> | null> = {
 };
 
 export function assertContentMatchesFormat(
-  format: string,
+  format: QuestionFormat,
   content: unknown,
 ): void {
   const schema = CONTENT_SCHEMAS[format];
-  if (!schema) throw new BadRequestError(`Unknown question format '${format}'`);
   if (!Value.Check(schema, content))
     throw new BadRequestError(`Content does not match format '${format}'`);
 }
 
 export function assertAnswerKeyMatchesFormat(
-  format: string,
+  format: QuestionFormat,
   content: unknown,
   answerKey: unknown,
 ): void {
@@ -83,12 +79,12 @@ export function assertAnswerKeyMatchesFormat(
   }
 
   const answers = requireAnswerKey(answerKey, format);
-  const items = (content as ItemsContent).items.map((i) => String(i.number));
-  assertKeysMatchItems(Object.keys(answers), items, format);
+  const items = extractItems(content);
+  const itemNumbers = items.map((i) => String(i.number));
+  assertKeysMatchItems(Object.keys(answers), itemNumbers, format);
 
-  // Gap fill is special: each item may be MCQ or free-text
   if (format === "reading_gap_fill") {
-    assertGapFillValues(content as ItemsContent, answers, format);
+    assertGapFillValues(items, answers, format);
     return;
   }
 
@@ -100,9 +96,14 @@ export function assertAnswerKeyMatchesFormat(
   }
 }
 
+/** Extract items from schema-validated objective content (single cast boundary). */
+function extractItems(content: unknown): ObjectiveItem[] {
+  return (content as { items: ObjectiveItem[] }).items;
+}
+
 function requireAnswerKey(
   answerKey: unknown,
-  format: string,
+  format: QuestionFormat,
 ): Record<string, string> {
   if (answerKey == null)
     throw new BadRequestError(`Answer key is required for format '${format}'`);
@@ -116,7 +117,7 @@ function requireAnswerKey(
 function assertKeysMatchItems(
   keys: string[],
   items: string[],
-  format: string,
+  format: QuestionFormat,
 ): void {
   const itemSet = new Set(items);
   if (keys.length !== itemSet.size)
@@ -134,7 +135,7 @@ function assertKeysMatchItems(
 function assertValuesInSet(
   answers: Record<string, string>,
   allowed: Set<string>,
-  format: string,
+  format: QuestionFormat,
 ): void {
   for (const [key, value] of Object.entries(answers)) {
     if (!allowed.has(value.toUpperCase()))
@@ -146,7 +147,7 @@ function assertValuesInSet(
 
 function assertValuesNonEmpty(
   answers: Record<string, string>,
-  format: string,
+  format: QuestionFormat,
 ): void {
   for (const [key, value] of Object.entries(answers)) {
     if (!value.trim())
@@ -157,19 +158,17 @@ function assertValuesNonEmpty(
 }
 
 function assertGapFillValues(
-  content: ItemsContent,
+  items: ObjectiveItem[],
   answers: Record<string, string>,
-  format: string,
+  format: QuestionFormat,
 ): void {
-  const items = new Map(
-    content.items.map((item) => [String(item.number), item]),
-  );
+  const itemMap = new Map(items.map((item) => [String(item.number), item]));
 
   for (const [key, value] of Object.entries(answers)) {
-    const item = items.get(key);
+    const item = itemMap.get(key);
     if (!item) continue;
 
-    if (item.options != null && typeof item.options === "object") {
+    if (item.options !== undefined) {
       if (!ABCD.has(value.toUpperCase()))
         throw new BadRequestError(
           `Answer key value '${value}' for MCQ gap item ${key} must be A, B, C, or D for format '${format}'`,

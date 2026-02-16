@@ -6,25 +6,36 @@ import {
 } from "@common/scoring";
 import type { DbTransaction } from "@db/index";
 import { table } from "@db/index";
+import type { Skill } from "@db/schema/enums";
 import type { ObjectiveAnswerKey, SubmissionAnswer } from "@db/types/answers";
 import { and, eq, inArray } from "drizzle-orm";
 
-type AnswerEntry = { questionId: string; answer: SubmissionAnswer };
-type QuestionInfo = { skill: string; answerKey: ObjectiveAnswerKey | null };
+export type AnswerEntry = { questionId: string; answer: SubmissionAnswer };
+export type QuestionInfo = {
+  skill: Skill;
+  answerKey: ObjectiveAnswerKey | null;
+};
+
+interface SkillTally {
+  correct: number;
+  total: number;
+}
+
+export interface GradeResult {
+  listening: SkillTally;
+  reading: SkillTally;
+  subjective: (AnswerEntry & { skill: Skill })[];
+  correctness: Map<string, boolean>;
+}
 
 export function gradeAnswers(
   answers: AnswerEntry[],
   questionsMap: Map<string, QuestionInfo>,
-) {
-  const acc = {
-    listeningCorrect: 0,
-    listeningTotal: 0,
-    readingCorrect: 0,
-    readingTotal: 0,
-    writing: [] as AnswerEntry[],
-    speaking: [] as AnswerEntry[],
-    correctness: new Map<string, boolean>(),
-  };
+): GradeResult {
+  const listening: SkillTally = { correct: 0, total: 0 };
+  const reading: SkillTally = { correct: 0, total: 0 };
+  const subjective: GradeResult["subjective"] = [];
+  const correctness = new Map<string, boolean>();
 
   for (const ea of answers) {
     const q = questionsMap.get(ea.questionId);
@@ -33,12 +44,8 @@ export function gradeAnswers(
         `Question ${ea.questionId} not found during grading`,
       );
 
-    if (q.skill === "writing") {
-      acc.writing.push(ea);
-      continue;
-    }
-    if (q.skill === "speaking") {
-      acc.speaking.push(ea);
+    if (q.skill === "writing" || q.skill === "speaking") {
+      subjective.push({ ...ea, skill: q.skill });
       continue;
     }
 
@@ -50,21 +57,17 @@ export function gradeAnswers(
         normalizeAnswer(ans[id] ?? "") === normalizeAnswer(expected),
     ).length;
 
-    acc.correctness.set(
+    correctness.set(
       ea.questionId,
       items.length > 0 && correct === items.length,
     );
 
-    if (q.skill === "listening") {
-      acc.listeningCorrect += correct;
-      acc.listeningTotal += items.length;
-      continue;
-    }
-    acc.readingCorrect += correct;
-    acc.readingTotal += items.length;
+    const tally = q.skill === "listening" ? listening : reading;
+    tally.correct += correct;
+    tally.total += items.length;
   }
 
-  return acc;
+  return { listening, reading, subjective, correctness };
 }
 
 export async function persistCorrectness(

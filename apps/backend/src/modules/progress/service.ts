@@ -9,7 +9,7 @@ import {
   trendToDirection,
 } from "./trends";
 
-const WINDOW_SIZE = 10;
+export const WINDOW_SIZE = 10;
 
 /**
  * Fetch top-N recent scores per skill for a user, bounded in SQL.
@@ -104,7 +104,7 @@ export async function sync(
         ),
       )
       .orderBy(desc(table.userSkillScores.createdAt))
-      .limit(10),
+      .limit(WINDOW_SIZE),
     executor.query.userProgress.findFirst({
       where: and(
         eq(table.userProgress.userId, userId),
