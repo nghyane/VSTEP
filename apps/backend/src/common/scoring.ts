@@ -9,7 +9,7 @@ export const BAND_THRESHOLDS = {
 
 export type VstepBand = "B1" | "B2" | "C1" | null;
 
-/** Scores below B1 (4.0) return null */
+/** Scores below B1 (4.0) return null — no certificate awarded. */
 export function scoreToBand(score: number): VstepBand {
   if (score < 0) return null;
   if (score >= BAND_THRESHOLDS.C1) return "C1";

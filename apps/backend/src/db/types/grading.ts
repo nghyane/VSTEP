@@ -36,7 +36,7 @@ export const AIGradeResult = t.Object({
 /** Instructor review result (override or accept AI grade). */
 export const HumanGradeResult = t.Object({
   overallScore: t.Number({ minimum: 0, maximum: 10 }),
-  band: t.Optional(t.String()),
+  band: t.Optional(t.Nullable(t.String())),
   criteriaScores: t.Optional(t.Record(t.String(), t.Number())),
   feedback: t.Optional(t.String()),
   reviewerId: t.String({ format: "uuid" }),
