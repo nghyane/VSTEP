@@ -5,6 +5,9 @@ import { SEED_PASSWORD, seedUsers } from "./seeders/01-users";
 import { seedQuestions } from "./seeders/02-questions";
 import { seedExams } from "./seeders/03-exams";
 import { seedClasses } from "./seeders/04-classes";
+import { seedSubmissions } from "./seeders/05-submissions";
+import { seedExamSessions } from "./seeders/06-exam-sessions";
+import { seedProgress } from "./seeders/07-progress";
 
 const tableNames = Object.values(table)
   .map((t) => getTableName(t))
@@ -23,7 +26,10 @@ async function main(): Promise<void> {
     // Run seeders in order — fail at any step → rollback everything
     const users = await seedUsers(tx);
     const { all: questions } = await seedQuestions(tx, users.admin.id);
-    await seedExams(tx, users.admin.id, questions);
+    const exams = await seedExams(tx, users.admin.id, questions);
+    const submissions = await seedSubmissions(tx, users, questions);
+    await seedExamSessions(tx, users, exams, questions, submissions);
+    await seedProgress(tx, users, submissions);
     await seedClasses(tx, users);
     return users;
   });

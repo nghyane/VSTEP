@@ -7,11 +7,15 @@ import type { SeededQuestions } from "./02-questions";
 
 type Level = NewExam["level"];
 
+export interface SeededExams {
+  all: Array<{ id: string; level: string }>;
+}
+
 export async function seedExams(
   db: DbTransaction,
   adminId: string,
   questions: SeededQuestions["all"],
-): Promise<void> {
+): Promise<SeededExams> {
   logSection("Exams");
 
   const levels: Level[] = ["B1", "B2"];
@@ -32,6 +36,8 @@ export async function seedExams(
   }
 
   logResult("Exams", inserted.length);
+
+  return { all: inserted };
 }
 
 function buildBlueprint(
@@ -41,9 +47,11 @@ function buildBlueprint(
   const blueprint: ExamBlueprint = { durationMinutes: 150 };
 
   for (const skill of SKILLS) {
-    const match = questions.find((q) => q.skill === skill && q.level === level);
-    if (match) {
-      blueprint[skill] = { questionIds: [match.id] };
+    const ids = questions
+      .filter((q) => q.skill === skill && q.level === level)
+      .map((q) => q.id);
+    if (ids.length > 0) {
+      blueprint[skill] = { questionIds: ids };
     }
   }
 
