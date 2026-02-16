@@ -51,15 +51,16 @@ export async function updateGoal(
 
   assertAccess(existing.userId, actor);
 
-  const set: Record<string, unknown> = { updatedAt: new Date().toISOString() };
-  if (body.targetBand !== undefined) set.targetBand = body.targetBand;
-  if (body.deadline !== undefined) set.deadline = body.deadline;
-  if (body.dailyStudyTimeMinutes !== undefined)
-    set.dailyStudyTimeMinutes = body.dailyStudyTimeMinutes;
-
   return db
     .update(table.userGoals)
-    .set(set)
+    .set({
+      updatedAt: new Date().toISOString(),
+      ...(body.targetBand !== undefined && { targetBand: body.targetBand }),
+      ...(body.deadline !== undefined && { deadline: body.deadline }),
+      ...(body.dailyStudyTimeMinutes !== undefined && {
+        dailyStudyTimeMinutes: body.dailyStudyTimeMinutes,
+      }),
+    })
     .where(eq(table.userGoals.id, goalId))
     .returning()
     .then(takeFirstOrThrow);

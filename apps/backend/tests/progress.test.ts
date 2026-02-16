@@ -5,8 +5,6 @@ describe("progress integration", () => {
   beforeEach(() => cleanupTestData());
   afterAll(() => cleanupTestData());
 
-  // ── Progress overview ────────────────────────────────────
-
   it("returns progress overview for authenticated user", async () => {
     const learner = await loginTestUser({ role: "learner" });
 
@@ -23,8 +21,6 @@ describe("progress integration", () => {
     const result = await api.get("/api/progress");
     expectError(result, 401, "UNAUTHORIZED");
   });
-
-  // ── Spider chart ─────────────────────────────────────────
 
   it("returns spider chart data structure", async () => {
     const learner = await loginTestUser({ role: "learner" });
@@ -44,8 +40,6 @@ describe("progress integration", () => {
       expect(s.trend).toBeString();
     }
   });
-
-  // ── Skill detail ─────────────────────────────────────────
 
   it("returns skill detail for a specific skill", async () => {
     const learner = await loginTestUser({ role: "learner" });
@@ -69,8 +63,6 @@ describe("progress integration", () => {
       expect(status).toBe(200);
     }
   });
-
-  // ── Goal CRUD ────────────────────────────────────────────
 
   it("creates a learning goal", async () => {
     const learner = await loginTestUser({ role: "learner" });
@@ -191,8 +183,6 @@ describe("progress integration", () => {
 
     expectError(result, 403, "FORBIDDEN");
   });
-
-  // ── Overview includes goal ───────────────────────────────
 
   it("overview includes the active goal", async () => {
     const learner = await loginTestUser({ role: "learner" });

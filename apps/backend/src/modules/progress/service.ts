@@ -12,6 +12,7 @@ import {
   round1,
   round2,
   TREND_THRESHOLDS,
+  type Trend,
   trendToDirection,
 } from "./trends";
 
@@ -251,27 +252,24 @@ export async function getSpiderChart(userId: string) {
     group.timestamps.push(r.createdAt);
   }
 
+  const skills: Record<string, { current: number; trend: Trend }> = {};
   const perSkill: Record<string, number | null> = {};
-  const skills = Object.fromEntries(
-    SKILLS.map((s) => {
-      const group = scoresBySkill.get(s);
-      const scores = group?.scores ?? [];
-      const { avg, deviation } = computeStats(scores);
 
-      perSkill[s] =
-        targetScore !== undefined && group
-          ? computeEta(group.scores, group.timestamps, targetScore)
-          : null;
+  for (const s of SKILLS) {
+    const group = scoresBySkill.get(s);
+    const scores = group?.scores ?? [];
+    const { avg, deviation } = computeStats(scores);
 
-      return [
-        s,
-        {
-          current: avg !== null ? round1(avg) : 0,
-          trend: computeTrend(scores, deviation),
-        },
-      ];
-    }),
-  );
+    skills[s] = {
+      current: avg !== null ? round1(avg) : 0,
+      trend: computeTrend(scores, deviation),
+    };
+
+    perSkill[s] =
+      targetScore !== undefined && group
+        ? computeEta(group.scores, group.timestamps, targetScore)
+        : null;
+  }
 
   const validEtas = Object.values(perSkill).filter(
     (v): v is number => v !== null,
