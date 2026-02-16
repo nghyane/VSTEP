@@ -5,17 +5,14 @@ import { scoreToBand } from "@common/scoring";
 import { assertExists } from "@common/utils";
 import { db, paginate, table, takeFirst, takeFirstOrThrow } from "@db/index";
 import { and, asc, eq, isNull, lt, or, sql } from "drizzle-orm";
-import {
-  recordSkillScore,
-  updateUserProgress,
-} from "@/modules/progress/service";
+import { record, sync } from "@/modules/progress/service";
 import type {
   ReviewQueueQuery,
   SubmissionAssignBody,
   SubmissionReviewBody,
 } from "./schema";
 import { REVIEW_QUEUE_COLUMNS, SUBMISSION_COLUMNS } from "./schema";
-import { fetchDetails } from "./service";
+import { details } from "./shared";
 
 const CLAIM_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
 
@@ -23,7 +20,7 @@ const priorityOrder = sql`CASE ${table.submissions.reviewPriority}
   WHEN 'high' THEN 1 WHEN 'medium' THEN 2
   WHEN 'low' THEN 3 ELSE 4 END`;
 
-export async function getReviewQueue(query: ReviewQueueQuery, _actor: Actor) {
+export async function queue(query: ReviewQueueQuery, _actor: Actor) {
   const where = and(
     eq(table.submissions.status, "review_pending"),
     query.skill ? eq(table.submissions.skill, query.skill) : undefined,
@@ -44,9 +41,8 @@ export async function getReviewQueue(query: ReviewQueueQuery, _actor: Actor) {
   );
 }
 
-export async function claimSubmission(submissionId: string, actor: Actor) {
+export async function claim(submissionId: string, actor: Actor) {
   return db.transaction(async (tx) => {
-    // Existence check for proper 404
     assertExists(
       await tx.query.submissions.findFirst({
         where: and(
@@ -86,13 +82,12 @@ export async function claimSubmission(submissionId: string, actor: Actor) {
       );
     }
 
-    return { ...updated, ...(await fetchDetails(tx, submissionId)) };
+    return { ...updated, ...(await details(tx, submissionId)) };
   });
 }
 
-export async function releaseSubmission(submissionId: string, actor: Actor) {
+export async function release(submissionId: string, actor: Actor) {
   return db.transaction(async (tx) => {
-    // Existence + state check for proper 404 / 400
     const submission = assertExists(
       await tx.query.submissions.findFirst({
         where: and(
@@ -131,17 +126,17 @@ export async function releaseSubmission(submissionId: string, actor: Actor) {
       );
     }
 
-    return { ...updated, ...(await fetchDetails(tx, submissionId)) };
+    return { ...updated, ...(await details(tx, submissionId)) };
   });
 }
 
-export async function submitReview(
+export async function review(
   submissionId: string,
   body: SubmissionReviewBody,
   actor: Actor,
 ) {
   return db.transaction(async (tx) => {
-    const [submission, details] = await Promise.all([
+    const [submission, det] = await Promise.all([
       tx.query.submissions
         .findFirst({
           where: eq(table.submissions.id, submissionId),
@@ -154,7 +149,7 @@ export async function submitReview(
           },
         })
         .then((s) => assertExists(s, "Submission")),
-      fetchDetails(tx, submissionId),
+      details(tx, submissionId),
     ]);
 
     if (submission.status !== "review_pending") {
@@ -166,7 +161,7 @@ export async function submitReview(
       throw new ForbiddenError("You must claim this submission first");
     }
 
-    const grade = resolveHumanGrade(body, details.result, actor.sub);
+    const g = resolveHumanGrade(body, det.result, actor.sub);
     const ts = new Date().toISOString();
 
     const claimGuard = actor.is(ROLES.ADMIN)
@@ -176,14 +171,14 @@ export async function submitReview(
     const updated = await tx
       .update(table.submissions)
       .set({
-        score: grade.score,
-        band: grade.band,
+        score: g.score,
+        band: g.band,
         status: "completed",
         completedAt: ts,
         updatedAt: ts,
         reviewerId: actor.sub,
         gradingMode: "human",
-        auditFlag: grade.auditFlag,
+        auditFlag: g.auditFlag,
       })
       .where(
         and(
@@ -204,25 +199,25 @@ export async function submitReview(
     await tx
       .update(table.submissionDetails)
       .set({
-        feedback: body.feedback ?? details.feedback,
-        result: sql`${JSON.stringify(grade.result)}::jsonb`,
+        feedback: body.feedback ?? det.feedback,
+        result: sql`${JSON.stringify(g.result)}::jsonb`,
       })
       .where(eq(table.submissionDetails.submissionId, submissionId));
 
-    await recordSkillScore(
+    await record(
       submission.userId,
       submission.skill,
       submissionId,
-      grade.score,
+      g.score,
       tx,
     );
-    await updateUserProgress(submission.userId, submission.skill, tx);
+    await sync(submission.userId, submission.skill, tx);
 
     return {
       ...updated,
-      answer: details.answer,
-      result: grade.result,
-      feedback: body.feedback ?? details.feedback,
+      answer: det.answer,
+      result: g.result,
+      feedback: body.feedback ?? det.feedback,
     };
   });
 }
@@ -262,7 +257,7 @@ function resolveHumanGrade(
   return { score, band, auditFlag, result };
 }
 
-export async function assignSubmission(
+export async function assign(
   submissionId: string,
   body: SubmissionAssignBody,
   _actor: Actor,
@@ -279,7 +274,6 @@ export async function assignSubmission(
       "Submission",
     );
 
-    // Verify the reviewer exists
     assertExists(
       await tx.query.users.findFirst({
         where: eq(table.users.id, body.reviewerId),

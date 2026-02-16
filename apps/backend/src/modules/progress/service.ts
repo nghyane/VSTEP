@@ -1,18 +1,11 @@
-import { scoreToBand } from "@common/scoring";
-import { SKILLS } from "@db/enums";
+import { scoreToLevel } from "@common/scoring";
 import type { DbTransaction, UserProgress } from "@db/index";
 import { db, table } from "@db/index";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
-import { getLatestGoal } from "./goals";
 import {
-  bandMinScore,
-  computeEta,
   computeStats,
   computeTrend,
-  round1,
-  round2,
   TREND_THRESHOLDS,
-  type Trend,
   trendToDirection,
 } from "./trends";
 
@@ -22,7 +15,7 @@ const WINDOW_SIZE = 10;
  * Fetch top-N recent scores per skill for a user, bounded in SQL.
  * Uses ROW_NUMBER() window function — returns at most WINDOW_SIZE rows per skill.
  */
-async function getRecentScoresAllSkills(userId: string) {
+export async function recentScores(userId: string) {
   const ranked = db
     .select({
       skill: table.userSkillScores.skill,
@@ -51,7 +44,7 @@ async function getRecentScoresAllSkills(userId: string) {
  * Fetch top-N recent scores per (user, skill) for multiple users.
  * Uses ROW_NUMBER() window function — returns at most WINDOW_SIZE rows per user+skill.
  */
-export async function getRecentScoresForUsers(userIds: string[]) {
+export async function recentScoresForUsers(userIds: string[]) {
   const ranked = db
     .select({
       userId: table.userSkillScores.userId,
@@ -77,7 +70,7 @@ export async function getRecentScoresForUsers(userIds: string[]) {
     .where(sql`${ranked.rn} <= ${WINDOW_SIZE}`);
 }
 
-export async function recordSkillScore(
+export async function record(
   userId: string,
   skill: UserProgress["skill"],
   submissionId: string | null,
@@ -93,14 +86,14 @@ export async function recordSkillScore(
   });
 }
 
-export async function updateUserProgress(
+export async function sync(
   userId: string,
   skill: UserProgress["skill"],
   tx?: DbTransaction,
 ) {
   const executor = tx ?? db;
 
-  const [recentScores, existing] = await Promise.all([
+  const [recentScoresData, existing] = await Promise.all([
     executor
       .select({ score: table.userSkillScores.score })
       .from(table.userSkillScores)
@@ -120,11 +113,11 @@ export async function updateUserProgress(
     }),
   ]);
 
-  const scores = recentScores.map((r) => r.score);
+  const scores = recentScoresData.map((r) => r.score);
   const { avg, deviation } = computeStats(scores);
   const trend = computeTrend(scores, deviation);
 
-  const currentLevel = avg !== null ? (scoreToBand(avg) ?? "A2") : "A2";
+  const currentLevel = avg !== null ? scoreToLevel(avg) : "A1";
 
   const streakDirection = trendToDirection(trend);
 
@@ -167,117 +160,4 @@ export async function updateUserProgress(
         updatedAt: new Date().toISOString(),
       },
     });
-}
-
-export async function getProgressOverview(userId: string) {
-  const [records, goal] = await Promise.all([
-    db.query.userProgress.findMany({
-      where: eq(table.userProgress.userId, userId),
-    }),
-    getLatestGoal(userId),
-  ]);
-
-  return { skills: records, goal };
-}
-
-export async function getProgressBySkill(
-  userId: string,
-  skill: UserProgress["skill"],
-) {
-  const [progress, recentScores, goal] = await Promise.all([
-    db.query.userProgress.findFirst({
-      where: and(
-        eq(table.userProgress.userId, userId),
-        eq(table.userProgress.skill, skill),
-      ),
-    }),
-    db
-      .select({
-        score: table.userSkillScores.score,
-        createdAt: table.userSkillScores.createdAt,
-      })
-      .from(table.userSkillScores)
-      .where(
-        and(
-          eq(table.userSkillScores.userId, userId),
-          eq(table.userSkillScores.skill, skill),
-        ),
-      )
-      .orderBy(desc(table.userSkillScores.createdAt))
-      .limit(10),
-    getLatestGoal(userId),
-  ]);
-
-  const scores = recentScores.map((r) => r.score);
-  const timestamps = recentScores.map((r) => r.createdAt);
-  const { avg, deviation } = computeStats(scores);
-
-  const targetScore = goal ? bandMinScore(goal.targetBand) : undefined;
-
-  const eta =
-    targetScore !== undefined
-      ? computeEta(scores, timestamps, targetScore)
-      : null;
-
-  return {
-    progress: progress ?? null,
-    recentScores,
-    windowAvg: avg !== null ? round1(avg) : null,
-    windowDeviation: deviation !== null ? round2(deviation) : null,
-    trend: computeTrend(scores, deviation),
-    eta,
-  };
-}
-
-export async function getSpiderChart(userId: string) {
-  const [allScores, goal] = await Promise.all([
-    getRecentScoresAllSkills(userId),
-    getLatestGoal(userId),
-  ]);
-
-  const targetScore = goal ? bandMinScore(goal.targetBand) : undefined;
-
-  // Group scores by skill (already bounded to 10 per skill by SQL)
-  const scoresBySkill = new Map<
-    string,
-    { scores: number[]; timestamps: string[] }
-  >();
-  for (const r of allScores) {
-    let group = scoresBySkill.get(r.skill);
-    if (!group) {
-      group = { scores: [], timestamps: [] };
-      scoresBySkill.set(r.skill, group);
-    }
-    group.scores.push(r.score);
-    group.timestamps.push(r.createdAt);
-  }
-
-  const skills: Record<string, { current: number; trend: Trend }> = {};
-  const perSkill: Record<string, number | null> = {};
-
-  for (const s of SKILLS) {
-    const group = scoresBySkill.get(s);
-    const scores = group?.scores ?? [];
-    const { avg, deviation } = computeStats(scores);
-
-    skills[s] = {
-      current: avg !== null ? round1(avg) : 0,
-      trend: computeTrend(scores, deviation),
-    };
-
-    perSkill[s] =
-      targetScore !== undefined && group
-        ? computeEta(group.scores, group.timestamps, targetScore)
-        : null;
-  }
-
-  const validEtas = Object.values(perSkill).filter(
-    (v): v is number => v !== null,
-  );
-  const overallWeeks =
-    targetScore !== undefined && validEtas.length > 0
-      ? Math.max(...validEtas)
-      : null;
-
-  return { skills, goal, eta: { weeks: overallWeeks, perSkill } };
 }

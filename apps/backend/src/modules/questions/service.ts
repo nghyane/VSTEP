@@ -15,7 +15,7 @@ import {
   assertContentMatchesFormat,
 } from "./validation";
 
-export async function getQuestionById(questionId: string) {
+export async function find(questionId: string) {
   const question = await db.query.questions.findFirst({
     where: eq(table.questions.id, questionId),
     columns: { answerKey: false },
@@ -24,7 +24,7 @@ export async function getQuestionById(questionId: string) {
   return assertExists(question, "Question");
 }
 
-export async function listQuestions(query: QuestionListQuery, actor: Actor) {
+export async function list(query: QuestionListQuery, actor: Actor) {
   const admin = actor.is(ROLES.ADMIN);
   const where = and(
     !admin ? eq(table.questions.isActive, true) : undefined,
@@ -51,7 +51,7 @@ export async function listQuestions(query: QuestionListQuery, actor: Actor) {
   );
 }
 
-export async function createQuestion(userId: string, body: QuestionCreateBody) {
+export async function create(userId: string, body: QuestionCreateBody) {
   assertContentMatchesFormat(body.format, body.content);
   assertAnswerKeyMatchesFormat(
     body.format,
@@ -86,7 +86,7 @@ export async function createQuestion(userId: string, body: QuestionCreateBody) {
   });
 }
 
-export async function updateQuestion(
+export async function update(
   questionId: string,
   body: QuestionUpdateBody,
   actor: Actor,
@@ -164,7 +164,7 @@ export async function updateQuestion(
   });
 }
 
-export async function removeQuestion(questionId: string) {
+export async function remove(questionId: string) {
   return db.transaction(async (tx) => {
     assertExists(
       await tx.query.questions.findFirst({

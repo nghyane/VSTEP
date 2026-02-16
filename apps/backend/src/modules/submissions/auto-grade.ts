@@ -1,17 +1,14 @@
 import { BadRequestError, ConflictError } from "@common/errors";
-import { calculateScore, scoreToBand } from "@common/scoring";
+import { normalizeAnswer, scoreToBand } from "@common/scoring";
 import { assertExists } from "@common/utils";
 import type { UserProgress } from "@db/index";
 import { db, table } from "@db/index";
 import { ObjectiveAnswer, ObjectiveAnswerKey } from "@db/types/answers";
 import { Value } from "@sinclair/typebox/value";
-import { eq, sql } from "drizzle-orm";
-import {
-  recordSkillScore,
-  updateUserProgress,
-} from "@/modules/progress/service";
+import { eq } from "drizzle-orm";
+import { record, sync } from "@/modules/progress/service";
 
-export async function autoGradeSubmission(submissionId: string) {
+export async function autoGrade(submissionId: string) {
   return db.transaction(async (tx) => {
     const [row] = await tx
       .select({
@@ -21,17 +18,6 @@ export async function autoGradeSubmission(submissionId: string) {
         skill: table.submissions.skill,
         answerKey: table.questions.answerKey,
         answer: table.submissionDetails.answer,
-        correctCount: sql<number>`(
-            SELECT count(*)
-            FROM jsonb_each_text(${table.questions.answerKey} -> 'correctAnswers') ak
-            JOIN jsonb_each_text(${table.submissionDetails.answer} -> 'answers') ua
-              ON ak.key = ua.key
-            WHERE lower(trim(ua.value)) = lower(trim(ak.value))
-          )::int`,
-        totalCount: sql<number>`(
-            SELECT count(*)
-            FROM jsonb_each_text(${table.questions.answerKey} -> 'correctAnswers')
-          )::int`,
       })
       .from(table.submissions)
       .innerJoin(
@@ -70,9 +56,21 @@ export async function autoGradeSubmission(submissionId: string) {
       throw new BadRequestError("Answer format incompatible with auto-grading");
     }
 
-    const { correctCount, totalCount } = data;
+    // Grade in application code — SQL jsonb extraction fails on double-encoded JSONB
+    const expected = data.answerKey.correctAnswers;
+    const given = data.answer.answers;
+    const entries = Object.entries(expected);
+    const totalCount = entries.length;
 
-    const score = calculateScore(correctCount, totalCount) ?? 0;
+    if (totalCount === 0)
+      throw new BadRequestError("Question has no answer items to grade");
+
+    const correctCount = entries.filter(
+      ([id, exp]) => normalizeAnswer(given[id] ?? "") === normalizeAnswer(exp),
+    ).length;
+
+    const ratio = Math.min(correctCount / totalCount, 1);
+    const score = Math.round(ratio * 10 * 2) / 2;
     const band = scoreToBand(score);
 
     const ts = new Date().toISOString();
@@ -95,8 +93,8 @@ export async function autoGradeSubmission(submissionId: string) {
       .where(eq(table.submissionDetails.submissionId, submissionId));
 
     const skill = data.skill as UserProgress["skill"];
-    await recordSkillScore(data.userId, skill, submissionId, score, tx);
-    await updateUserProgress(data.userId, skill, tx);
+    await record(data.userId, skill, submissionId, score, tx);
+    await sync(data.userId, skill, tx);
 
     return { score, result };
   });

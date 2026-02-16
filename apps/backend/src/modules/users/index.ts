@@ -16,14 +16,7 @@ import {
   UserPasswordBody,
   UserUpdateBody,
 } from "./schema";
-import {
-  createUser,
-  getUserById,
-  listUsers,
-  removeUser,
-  updateUser,
-  updateUserPassword,
-} from "./service";
+import { byId, create, list, remove, update, updatePassword } from "./service";
 
 export const users = new Elysia({
   name: "module:users",
@@ -32,7 +25,7 @@ export const users = new Elysia({
 })
   .use(authPlugin)
 
-  .get("/:id", ({ params, user }) => getUserById(params.id, user), {
+  .get("/:id", ({ params, user }) => byId(params.id, user), {
     auth: true,
     params: IdParam,
     response: { 200: User, ...CrudErrors },
@@ -44,7 +37,7 @@ export const users = new Elysia({
     },
   })
 
-  .get("/", ({ query }) => listUsers(query), {
+  .get("/", ({ query }) => list(query), {
     role: ROLES.ADMIN,
     query: UserListQuery,
     response: {
@@ -66,7 +59,7 @@ export const users = new Elysia({
     "/",
     async ({ body, set }) => {
       set.status = 201;
-      return createUser(body);
+      return create(body);
     },
     {
       role: ROLES.ADMIN,
@@ -81,24 +74,20 @@ export const users = new Elysia({
     },
   )
 
-  .patch(
-    "/:id",
-    ({ params, body, user }) => updateUser(params.id, body, user),
-    {
-      auth: true,
-      params: IdParam,
-      body: UserUpdateBody,
-      response: { 200: User, ...CrudWithConflictErrors },
-      detail: {
-        summary: "Update user",
-        description:
-          "Partially update a user's profile (name, email). Users may update themselves; admins may update anyone.",
-        security: [{ bearerAuth: [] }],
-      },
+  .patch("/:id", ({ params, body, user }) => update(params.id, body, user), {
+    auth: true,
+    params: IdParam,
+    body: UserUpdateBody,
+    response: { 200: User, ...CrudWithConflictErrors },
+    detail: {
+      summary: "Update user",
+      description:
+        "Partially update a user's profile (name, email). Users may update themselves; admins may update anyone.",
+      security: [{ bearerAuth: [] }],
     },
-  )
+  })
 
-  .delete("/:id", ({ params, user }) => removeUser(params.id, user), {
+  .delete("/:id", ({ params, user }) => remove(params.id, user), {
     role: ROLES.ADMIN,
     params: IdParam,
     response: {
@@ -116,7 +105,7 @@ export const users = new Elysia({
 
   .post(
     "/:id/password",
-    ({ params, body, user }) => updateUserPassword(params.id, body, user),
+    ({ params, body, user }) => updatePassword(params.id, body, user),
     {
       auth: true,
       params: IdParam,

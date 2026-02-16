@@ -1,14 +1,14 @@
-import { scoreToBand } from "@common/scoring";
+import { scoreToLevel } from "@common/scoring";
 import { SKILLS } from "@db/enums";
 import { db, table } from "@db/index";
 import { inArray } from "drizzle-orm";
-import { getRecentScoresForUsers } from "./service";
+import { recentScoresForUsers } from "./service";
 import { bandMinScore, computeStats, computeTrend, round1 } from "./trends";
 
 const AT_RISK_AVG_THRESHOLD = 5.0;
 const AT_RISK_DEADLINE_DAYS = 30;
 
-export async function getProgressForUsers(userIds: string[]) {
+export async function forUsers(userIds: string[]) {
   if (userIds.length === 0) return [];
 
   const [progressRecords, scores] = await Promise.all([
@@ -16,7 +16,7 @@ export async function getProgressForUsers(userIds: string[]) {
       .select()
       .from(table.userProgress)
       .where(inArray(table.userProgress.userId, userIds)),
-    getRecentScoresForUsers(userIds),
+    recentScoresForUsers(userIds),
   ]);
 
   const scoresByUserSkill = new Map<string, number[]>();
@@ -49,7 +49,7 @@ export async function getProgressForUsers(userIds: string[]) {
           {
             currentLevel:
               progress?.currentLevel ??
-              (avg !== null ? (scoreToBand(avg) ?? "A2") : null),
+              (avg !== null ? scoreToLevel(avg) : null),
             avg: avg !== null ? round1(avg) : null,
             trend,
             attemptCount: progress?.attemptCount ?? 0,
@@ -62,14 +62,14 @@ export async function getProgressForUsers(userIds: string[]) {
   });
 }
 
-export async function getAtRiskLearners(
+export async function atRisk(
   userIds: string[],
-  precomputedProgress?: Awaited<ReturnType<typeof getProgressForUsers>>,
+  precomputedProgress?: Awaited<ReturnType<typeof forUsers>>,
 ) {
   if (userIds.length === 0) return [];
 
   const [progressData, goals] = await Promise.all([
-    precomputedProgress ?? getProgressForUsers(userIds),
+    precomputedProgress ?? forUsers(userIds),
     db
       .select()
       .from(table.userGoals)

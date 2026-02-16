@@ -1,66 +1,24 @@
 import type { Actor } from "@common/auth-types";
 import { ROLES } from "@common/auth-types";
 import { BadRequestError, ConflictError } from "@common/errors";
-import { scoreToBand } from "@common/scoring";
-import { createStateMachine } from "@common/state-machine";
 import { assertAccess, assertExists } from "@common/utils";
-import type { DbTransaction } from "@db/index";
-import { db, paginate, table, takeFirst, takeFirstOrThrow } from "@db/index";
-import type { submissionStatusEnum } from "@db/schema/submissions";
-import { and, desc, eq, inArray } from "drizzle-orm";
-import {
-  recordSkillScore,
-  updateUserProgress,
-} from "@/modules/progress/service";
+import { db, paginate, table, takeFirstOrThrow } from "@db/index";
+import { and, desc, eq } from "drizzle-orm";
 import { dispatchGrading } from "./grading-dispatch";
 import type {
   SubmissionCreateBody,
-  SubmissionGradeBody,
   SubmissionListQuery,
   SubmissionUpdateBody,
 } from "./schema";
 import { SUBMISSION_COLUMNS, SUBMISSION_EXCLUDE } from "./schema";
+import {
+  DETAIL_COLUMNS,
+  details,
+  MUTABLE_STATUSES,
+  submissionMachine,
+} from "./shared";
 
-const DETAIL_COLUMNS = {
-  answer: table.submissionDetails.answer,
-  result: table.submissionDetails.result,
-  feedback: table.submissionDetails.feedback,
-};
-
-type SubmissionStatus = (typeof submissionStatusEnum.enumValues)[number];
-
-const REVIEW_PENDING = "review_pending" satisfies SubmissionStatus;
-
-export const submissionMachine = createStateMachine<SubmissionStatus>({
-  pending: ["processing", "failed"],
-  processing: ["completed", REVIEW_PENDING, "failed"],
-  [REVIEW_PENDING]: ["completed"],
-  completed: [],
-  failed: [],
-});
-
-const MUTABLE_STATUSES: SubmissionStatus[] = ["pending"];
-const GRADABLE_STATUSES: SubmissionStatus[] = [
-  "pending",
-  "review_pending",
-  "processing",
-];
-
-export async function fetchDetails(tx: DbTransaction, submissionId: string) {
-  const [row] = await tx
-    .select(DETAIL_COLUMNS)
-    .from(table.submissionDetails)
-    .where(eq(table.submissionDetails.submissionId, submissionId))
-    .limit(1);
-
-  return {
-    answer: row?.answer ?? null,
-    result: row?.result ?? null,
-    feedback: row?.feedback ?? null,
-  };
-}
-
-export async function getSubmissionById(submissionId: string, actor: Actor) {
+export async function find(submissionId: string, actor: Actor) {
   const row = assertExists(
     await db.query.submissions.findFirst({
       where: eq(table.submissions.id, submissionId),
@@ -85,10 +43,7 @@ export async function getSubmissionById(submissionId: string, actor: Actor) {
   };
 }
 
-export async function listSubmissions(
-  query: SubmissionListQuery,
-  actor: Actor,
-) {
+export async function list(query: SubmissionListQuery, actor: Actor) {
   const where = and(
     !actor.is(ROLES.ADMIN)
       ? eq(table.submissions.userId, actor.sub)
@@ -116,10 +71,7 @@ export async function listSubmissions(
   );
 }
 
-export async function createSubmission(
-  userId: string,
-  body: SubmissionCreateBody,
-) {
+export async function create(userId: string, body: SubmissionCreateBody) {
   return db.transaction(async (tx) => {
     const question = assertExists(
       await tx.query.questions.findFirst({
@@ -171,7 +123,7 @@ export async function createSubmission(
   });
 }
 
-export async function updateSubmission(
+export async function update(
   submissionId: string,
   body: SubmissionUpdateBody,
   actor: Actor,
@@ -240,69 +192,12 @@ export async function updateSubmission(
 
     return {
       ...updated,
-      ...(await fetchDetails(tx, submissionId)),
+      ...(await details(tx, submissionId)),
     };
   });
 }
 
-export async function gradeSubmission(
-  submissionId: string,
-  body: SubmissionGradeBody,
-) {
-  return db.transaction(async (tx) => {
-    if (body.score === undefined || body.score === null) {
-      throw new BadRequestError("Score is required for grading");
-    }
-
-    const ts = new Date().toISOString();
-    const updated = await tx
-      .update(table.submissions)
-      .set({
-        status: "completed",
-        score: body.score,
-        band: body.band ?? scoreToBand(body.score),
-        updatedAt: ts,
-        completedAt: ts,
-      })
-      .where(
-        and(
-          eq(table.submissions.id, submissionId),
-          inArray(table.submissions.status, GRADABLE_STATUSES),
-        ),
-      )
-      .returning(SUBMISSION_COLUMNS)
-      .then(takeFirst);
-
-    if (!updated) {
-      throw new ConflictError(
-        "Submission is already graded or in a non-gradable state",
-      );
-    }
-
-    if (body.feedback) {
-      await tx
-        .update(table.submissionDetails)
-        .set({ feedback: body.feedback })
-        .where(eq(table.submissionDetails.submissionId, submissionId));
-    }
-
-    await recordSkillScore(
-      updated.userId,
-      updated.skill,
-      submissionId,
-      body.score,
-      tx,
-    );
-    await updateUserProgress(updated.userId, updated.skill, tx);
-
-    return {
-      ...updated,
-      ...(await fetchDetails(tx, submissionId)),
-    };
-  });
-}
-
-export async function removeSubmission(submissionId: string, actor: Actor) {
+export async function remove(submissionId: string, actor: Actor) {
   return db.transaction(async (tx) => {
     const submission = assertExists(
       await tx.query.submissions.findFirst({

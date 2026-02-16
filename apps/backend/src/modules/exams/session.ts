@@ -60,7 +60,7 @@ async function loadBlueprintIds(tx: DbTransaction, examId: string) {
   return blueprintQuestionIds(exam.blueprint as ExamBlueprint);
 }
 
-export async function startExamSession(userId: string, examId: string) {
+export async function start(userId: string, examId: string) {
   return db.transaction(async (tx) => {
     // Lock exam row to serialize concurrent session creation for the same exam
     const [exam] = await tx
@@ -100,7 +100,7 @@ export async function startExamSession(userId: string, examId: string) {
   });
 }
 
-export async function getExamSessionById(sessionId: string, actor: Actor) {
+export async function findSession(sessionId: string, actor: Actor) {
   const session = await db.query.examSessions.findFirst({
     where: eq(table.examSessions.id, sessionId),
   });
@@ -110,7 +110,7 @@ export async function getExamSessionById(sessionId: string, actor: Actor) {
   return s;
 }
 
-export async function submitExamAnswer(
+export async function answer(
   sessionId: string,
   body: { questionId: string; answer: SubmissionAnswer },
   actor: Actor,
@@ -136,7 +136,7 @@ export async function submitExamAnswer(
 
 const MAX_ANSWERS_PER_REQUEST = 200;
 
-export async function saveExamAnswers(
+export async function saveAnswers(
   sessionId: string,
   answers: { questionId: string; answer: SubmissionAnswer }[],
   actor: Actor,

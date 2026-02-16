@@ -1,12 +1,12 @@
 import { Elysia } from "elysia";
 import { HealthResponse } from "./schema";
-import { checkHealth } from "./service";
+import { check } from "./service";
 
 export const health = new Elysia({
   name: "module:health",
   prefix: "/health",
   detail: { tags: ["Health"] },
-}).get("/", async () => checkHealth(), {
+}).get("/", async () => check(), {
   response: { 200: HealthResponse },
   detail: {
     summary: "Health check",

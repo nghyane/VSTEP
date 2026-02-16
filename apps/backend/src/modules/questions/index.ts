@@ -16,18 +16,8 @@ import {
   QuestionVersion,
   QuestionVersionBody,
 } from "./schema";
-import {
-  createQuestion,
-  getQuestionById,
-  listQuestions,
-  removeQuestion,
-  updateQuestion,
-} from "./service";
-import {
-  createQuestionVersion,
-  getQuestionVersion,
-  getQuestionVersions,
-} from "./version";
+import { create, find, list, remove, update } from "./service";
+import * as version from "./version";
 
 export const questions = new Elysia({
   name: "module:questions",
@@ -36,7 +26,7 @@ export const questions = new Elysia({
 })
   .use(authPlugin)
 
-  .get("/", ({ query, user }) => listQuestions(query, user), {
+  .get("/", ({ query, user }) => list(query, user), {
     auth: true,
     query: QuestionListQuery,
     response: {
@@ -55,7 +45,7 @@ export const questions = new Elysia({
     },
   })
 
-  .get("/:id", ({ params }) => getQuestionById(params.id), {
+  .get("/:id", ({ params }) => find(params.id), {
     auth: true,
     params: IdParam,
     response: {
@@ -74,7 +64,7 @@ export const questions = new Elysia({
     "/",
     ({ body, user, set }) => {
       set.status = 201;
-      return createQuestion(user.sub, body);
+      return create(user.sub, body);
     },
     {
       role: ROLES.INSTRUCTOR,
@@ -94,33 +84,29 @@ export const questions = new Elysia({
     },
   )
 
-  .patch(
-    "/:id",
-    ({ params, body, user }) => updateQuestion(params.id, body, user),
-    {
-      role: ROLES.INSTRUCTOR,
-      params: IdParam,
-      body: QuestionUpdateBody,
-      response: {
-        200: Question,
-        400: ErrorResponse,
-        ...CrudErrors,
-        422: ErrorResponse,
-      },
-      detail: {
-        summary: "Update question",
-        description:
-          "Partially update a question's metadata or content. Requires instructor role or above.",
-        security: [{ bearerAuth: [] }],
-      },
+  .patch("/:id", ({ params, body, user }) => update(params.id, body, user), {
+    role: ROLES.INSTRUCTOR,
+    params: IdParam,
+    body: QuestionUpdateBody,
+    response: {
+      200: Question,
+      400: ErrorResponse,
+      ...CrudErrors,
+      422: ErrorResponse,
     },
-  )
+    detail: {
+      summary: "Update question",
+      description:
+        "Partially update a question's metadata or content. Requires instructor role or above.",
+      security: [{ bearerAuth: [] }],
+    },
+  })
 
   .post(
     "/:id/versions",
     ({ params, body, user, set }) => {
       set.status = 201;
-      return createQuestionVersion(params.id, body, user);
+      return version.create(params.id, body, user);
     },
     {
       role: ROLES.INSTRUCTOR,
@@ -142,7 +128,7 @@ export const questions = new Elysia({
     },
   )
 
-  .get("/:id/versions", ({ params }) => getQuestionVersions(params.id), {
+  .get("/:id/versions", ({ params }) => version.list(params.id), {
     role: ROLES.INSTRUCTOR,
     params: IdParam,
     response: {
@@ -163,7 +149,7 @@ export const questions = new Elysia({
 
   .get(
     "/:id/versions/:versionId",
-    ({ params }) => getQuestionVersion(params.id, params.versionId),
+    ({ params }) => version.find(params.id, params.versionId),
     {
       role: ROLES.INSTRUCTOR,
       params: t.Object({
@@ -184,7 +170,7 @@ export const questions = new Elysia({
     },
   )
 
-  .delete("/:id", ({ params }) => removeQuestion(params.id), {
+  .delete("/:id", ({ params }) => remove(params.id), {
     role: ROLES.ADMIN,
     params: IdParam,
     response: {

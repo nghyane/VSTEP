@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { BadRequestError } from "@common/errors";
 import type { ObjectiveAnswerKey, SubmissionAnswer } from "@db/types/answers";
-import { autoGradeAnswers } from "./grading";
+import { gradeAnswers } from "./grading";
 
 type AnswerEntry = { questionId: string; answer: SubmissionAnswer };
 type QuestionInfo = { skill: string; answerKey: ObjectiveAnswerKey | null };
@@ -18,9 +18,9 @@ function objKey(correctAnswers: Record<string, string>): ObjectiveAnswerKey {
   return { correctAnswers } as ObjectiveAnswerKey;
 }
 
-describe("autoGradeAnswers", () => {
+describe("gradeAnswers", () => {
   it("returns zeros for empty answers", () => {
-    const result = autoGradeAnswers([], new Map());
+    const result = gradeAnswers([], new Map());
     expect(result.listeningCorrect).toBe(0);
     expect(result.listeningTotal).toBe(0);
     expect(result.readingCorrect).toBe(0);
@@ -38,7 +38,7 @@ describe("autoGradeAnswers", () => {
       ["q1", { skill: "listening", answerKey: objKey({ "1": "A", "2": "B" }) }],
     ]);
 
-    const result = autoGradeAnswers(answers, qMap);
+    const result = gradeAnswers(answers, qMap);
     expect(result.listeningCorrect).toBe(2);
     expect(result.listeningTotal).toBe(2);
     expect(result.readingCorrect).toBe(0);
@@ -54,7 +54,7 @@ describe("autoGradeAnswers", () => {
       ["q1", { skill: "reading", answerKey: objKey({ "1": "C", "2": "X" }) }],
     ]);
 
-    const result = autoGradeAnswers(answers, qMap);
+    const result = gradeAnswers(answers, qMap);
     expect(result.readingCorrect).toBe(1);
     expect(result.readingTotal).toBe(2);
     expect(result.correctness.get("q1")).toBe(false);
@@ -71,7 +71,7 @@ describe("autoGradeAnswers", () => {
       ],
     ]);
 
-    const result = autoGradeAnswers(answers, qMap);
+    const result = gradeAnswers(answers, qMap);
     expect(result.listeningCorrect).toBe(2);
     expect(result.listeningTotal).toBe(2);
     expect(result.correctness.get("q1")).toBe(true);
@@ -84,7 +84,7 @@ describe("autoGradeAnswers", () => {
     };
     const qMap = makeMap([["q1", { skill: "writing", answerKey: null }]]);
 
-    const result = autoGradeAnswers([entry], qMap);
+    const result = gradeAnswers([entry], qMap);
     expect(result.writing).toHaveLength(1);
     expect(result.writing[0]).toBe(entry);
     expect(result.listeningCorrect).toBe(0);
@@ -102,7 +102,7 @@ describe("autoGradeAnswers", () => {
     };
     const qMap = makeMap([["q1", { skill: "speaking", answerKey: null }]]);
 
-    const result = autoGradeAnswers([entry], qMap);
+    const result = gradeAnswers([entry], qMap);
     expect(result.speaking).toHaveLength(1);
     expect(result.speaking[0]).toBe(entry);
     expect(result.correctness.size).toBe(0);
@@ -113,7 +113,7 @@ describe("autoGradeAnswers", () => {
       { questionId: "unknown", answer: objAnswer({ "1": "A" }) },
     ];
 
-    expect(() => autoGradeAnswers(answers, new Map())).toThrow(BadRequestError);
+    expect(() => gradeAnswers(answers, new Map())).toThrow(BadRequestError);
   });
 
   it("marks question false when answerKey is null", () => {
@@ -122,7 +122,7 @@ describe("autoGradeAnswers", () => {
     ];
     const qMap = makeMap([["q1", { skill: "listening", answerKey: null }]]);
 
-    const result = autoGradeAnswers(answers, qMap);
+    const result = gradeAnswers(answers, qMap);
     // null answerKey → parseAnswerKey returns {} → items.length=0 → false
     expect(result.correctness.get("q1")).toBe(false);
     expect(result.listeningCorrect).toBe(0);
@@ -143,7 +143,7 @@ describe("autoGradeAnswers", () => {
       ["w1", { skill: "writing", answerKey: null }],
     ]);
 
-    const result = autoGradeAnswers(answers, qMap);
+    const result = gradeAnswers(answers, qMap);
     expect(result.listeningCorrect).toBe(2); // l1: 2/2, l2: 0/1
     expect(result.listeningTotal).toBe(3);
     expect(result.readingCorrect).toBe(1);
@@ -172,7 +172,7 @@ describe("autoGradeAnswers", () => {
       ],
     ]);
 
-    const result = autoGradeAnswers(answers, qMap);
+    const result = gradeAnswers(answers, qMap);
     expect(result.readingCorrect).toBe(2);
     expect(result.readingTotal).toBe(3);
     expect(result.correctness.get("q1")).toBe(false);
@@ -186,7 +186,7 @@ describe("autoGradeAnswers", () => {
       ["q1", { skill: "listening", answerKey: objKey({ "1": "A", "2": "B" }) }],
     ]);
 
-    const result = autoGradeAnswers(answers, qMap);
+    const result = gradeAnswers(answers, qMap);
     // user only answered key "1", key "2" → ans["2"] is undefined → no match
     expect(result.listeningCorrect).toBe(1);
     expect(result.listeningTotal).toBe(2);
@@ -211,7 +211,7 @@ describe("autoGradeAnswers", () => {
         ],
       ]);
 
-      const result = autoGradeAnswers(answers, qMap);
+      const result = gradeAnswers(answers, qMap);
       expect(result.readingCorrect).toBe(3);
       expect(result.readingTotal).toBe(3);
       expect(result.correctness.get("q1")).toBe(true);
@@ -234,7 +234,7 @@ describe("autoGradeAnswers", () => {
         ],
       ]);
 
-      const result = autoGradeAnswers(answers, qMap);
+      const result = gradeAnswers(answers, qMap);
       expect(result.readingCorrect).toBe(2);
       expect(result.readingTotal).toBe(3);
       expect(result.correctness.get("q1")).toBe(false);
@@ -248,7 +248,7 @@ describe("autoGradeAnswers", () => {
         ["q1", { skill: "reading", answerKey: objKey({ "1": "A", "2": "B" }) }],
       ]);
 
-      const result = autoGradeAnswers(answers, qMap);
+      const result = gradeAnswers(answers, qMap);
       expect(result.readingCorrect).toBe(2);
       expect(result.correctness.get("q1")).toBe(true);
     });
@@ -275,7 +275,7 @@ describe("autoGradeAnswers", () => {
         ],
       ]);
 
-      const result = autoGradeAnswers(answers, qMap);
+      const result = gradeAnswers(answers, qMap);
       expect(result.readingCorrect).toBe(2);
       expect(result.correctness.get("q1")).toBe(true);
     });
@@ -300,7 +300,7 @@ describe("autoGradeAnswers", () => {
         ],
       ]);
 
-      const result = autoGradeAnswers(answers, qMap);
+      const result = gradeAnswers(answers, qMap);
       expect(result.readingCorrect).toBe(1);
       expect(result.readingTotal).toBe(2);
       expect(result.correctness.get("q1")).toBe(false);
@@ -320,7 +320,7 @@ describe("autoGradeAnswers", () => {
         ],
       ]);
 
-      const result = autoGradeAnswers(answers, qMap);
+      const result = gradeAnswers(answers, qMap);
       expect(result.readingCorrect).toBe(1);
       expect(result.correctness.get("q1")).toBe(true);
     });
@@ -344,7 +344,7 @@ describe("autoGradeAnswers", () => {
         ],
       ]);
 
-      const result = autoGradeAnswers(answers, qMap);
+      const result = gradeAnswers(answers, qMap);
       expect(result.readingCorrect).toBe(2);
       expect(result.correctness.get("q1")).toBe(true);
     });
@@ -366,7 +366,7 @@ describe("autoGradeAnswers", () => {
         ],
       ]);
 
-      const result = autoGradeAnswers(answers, qMap);
+      const result = gradeAnswers(answers, qMap);
       expect(result.readingCorrect).toBe(2);
       expect(result.correctness.get("q1")).toBe(true);
     });
@@ -379,7 +379,7 @@ describe("autoGradeAnswers", () => {
         ["q1", { skill: "reading", answerKey: objKey({ "1": "however" }) }],
       ]);
 
-      const result = autoGradeAnswers(answers, qMap);
+      const result = gradeAnswers(answers, qMap);
       expect(result.readingCorrect).toBe(0);
       expect(result.correctness.get("q1")).toBe(false);
     });
@@ -394,7 +394,7 @@ describe("autoGradeAnswers", () => {
         ["q1", { skill: "reading", answerKey: objKey({ "1": "B", "2": "A" }) }],
       ]);
 
-      const result = autoGradeAnswers(answers, qMap);
+      const result = gradeAnswers(answers, qMap);
       expect(result.readingCorrect).toBe(2);
       expect(result.correctness.get("q1")).toBe(true);
     });
@@ -418,7 +418,7 @@ describe("autoGradeAnswers", () => {
         ],
       ]);
 
-      const result = autoGradeAnswers(answers, qMap);
+      const result = gradeAnswers(answers, qMap);
       expect(result.listeningCorrect).toBe(2);
       expect(result.correctness.get("q1")).toBe(true);
     });
@@ -440,7 +440,7 @@ describe("autoGradeAnswers", () => {
         ],
       ]);
 
-      const result = autoGradeAnswers(answers, qMap);
+      const result = gradeAnswers(answers, qMap);
       expect(result.listeningCorrect).toBe(2);
       expect(result.correctness.get("q1")).toBe(true);
     });
@@ -456,7 +456,7 @@ describe("autoGradeAnswers", () => {
         ],
       ]);
 
-      const result = autoGradeAnswers(answers, qMap);
+      const result = gradeAnswers(answers, qMap);
       expect(result.listeningCorrect).toBe(0);
       expect(result.correctness.get("q1")).toBe(false);
     });
@@ -496,7 +496,7 @@ describe("autoGradeAnswers", () => {
         ],
       ]);
 
-      const result = autoGradeAnswers(answers, qMap);
+      const result = gradeAnswers(answers, qMap);
       // r-mcq: 1/2 correct, r-tng: 2/3 correct → reading: 3/5
       expect(result.readingCorrect).toBe(3);
       expect(result.readingTotal).toBe(5);

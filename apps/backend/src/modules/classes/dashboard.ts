@@ -5,10 +5,7 @@ import { assertExists } from "@common/utils";
 import { SKILLS } from "@db/enums";
 import { db, table } from "@db/index";
 import { and, eq, isNull } from "drizzle-orm";
-import {
-  getAtRiskLearners,
-  getProgressForUsers,
-} from "@/modules/progress/instructor";
+import { atRisk, forUsers } from "@/modules/progress/instructor";
 
 async function assertClassOwner(classId: string, actor: Actor) {
   const cls = assertExists(
@@ -38,7 +35,7 @@ async function assertActiveMember(classId: string, userId: string) {
   );
 }
 
-export async function getDashboard(classId: string, actor: Actor) {
+export async function dashboard(classId: string, actor: Actor) {
   await assertClassOwner(classId, actor);
 
   const members = await db
@@ -57,8 +54,8 @@ export async function getDashboard(classId: string, actor: Actor) {
     );
 
   const userIds = members.map((m) => m.userId);
-  const progressData = await getProgressForUsers(userIds);
-  const atRiskData = await getAtRiskLearners(userIds, progressData);
+  const progressData = await forUsers(userIds);
+  const atRiskData = await atRisk(userIds, progressData);
 
   const skillSummary = Object.fromEntries(
     SKILLS.map((skill) => {
@@ -105,7 +102,7 @@ export async function getDashboard(classId: string, actor: Actor) {
   };
 }
 
-export async function getMemberProgress(
+export async function memberProgress(
   classId: string,
   userId: string,
   actor: Actor,
@@ -113,6 +110,6 @@ export async function getMemberProgress(
   await assertClassOwner(classId, actor);
   await assertActiveMember(classId, userId);
 
-  const [result] = await getProgressForUsers([userId]);
+  const [result] = await forUsers([userId]);
   return result ?? null;
 }

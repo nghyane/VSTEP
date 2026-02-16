@@ -49,7 +49,7 @@ async function validateBlueprint(
   );
 }
 
-export async function getExamById(id: string, actor: Actor) {
+export async function find(id: string, actor: Actor) {
   const exam = await db.query.exams.findFirst({
     where: and(
       eq(table.exams.id, id),
@@ -60,7 +60,7 @@ export async function getExamById(id: string, actor: Actor) {
   return assertExists(exam, "Exam");
 }
 
-export async function listExams(query: ExamListQuery, actor: Actor) {
+export async function list(query: ExamListQuery, actor: Actor) {
   const where = and(
     query.level ? eq(table.exams.level, query.level) : undefined,
     query.isActive !== undefined
@@ -81,7 +81,7 @@ export async function listExams(query: ExamListQuery, actor: Actor) {
   );
 }
 
-export async function createExam(userId: string, body: ExamCreateBody) {
+export async function create(userId: string, body: ExamCreateBody) {
   return db.transaction(async (tx) => {
     await validateBlueprint(tx, body.blueprint);
 
@@ -98,7 +98,7 @@ export async function createExam(userId: string, body: ExamCreateBody) {
   });
 }
 
-export async function updateExam(id: string, body: ExamUpdateBody) {
+export async function update(id: string, body: ExamUpdateBody) {
   return db.transaction(async (tx) => {
     const existing = assertExists(
       await tx.query.exams.findFirst({

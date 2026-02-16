@@ -34,7 +34,7 @@ async function tcpProbe(url: string, defaultPort: number) {
 
 const unavailable = { status: "unavailable" as const };
 
-export async function checkHealth() {
+export async function check() {
   const [dbHealth, redisHealth] = await Promise.all([
     timed("Postgres", () => db.execute(sql`SELECT 1`).then(() => {})),
     env.REDIS_URL

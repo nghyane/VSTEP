@@ -1,7 +1,7 @@
 import { ErrorResponse } from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { User } from "@/modules/users/schema";
-import { findUserById } from "@/modules/users/service";
+import * as users from "@/modules/users/service";
 import { authPlugin } from "@/plugins/auth";
 import {
   AuthUser,
@@ -94,7 +94,7 @@ export const auth = new Elysia({
   .get(
     "/me",
     async ({ user }) => ({
-      user: await findUserById(user.sub),
+      user: await users.find(user.sub),
     }),
     {
       auth: true,

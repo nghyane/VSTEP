@@ -4,7 +4,7 @@ import { db, table, takeFirstOrThrow } from "@db/index";
 import { and, desc, eq } from "drizzle-orm";
 import type { QuestionVersionBody } from "./schema";
 
-export async function createQuestionVersion(
+export async function create(
   questionId: string,
   body: QuestionVersionBody,
   actor: Actor,
@@ -55,7 +55,7 @@ export async function createQuestionVersion(
   });
 }
 
-export async function getQuestionVersions(questionId: string) {
+export async function list(questionId: string) {
   assertExists(
     await db.query.questions.findFirst({
       where: eq(table.questions.id, questionId),
@@ -76,10 +76,7 @@ export async function getQuestionVersions(questionId: string) {
   };
 }
 
-export async function getQuestionVersion(
-  questionId: string,
-  versionId: string,
-) {
+export async function find(questionId: string, versionId: string) {
   assertExists(
     await db.query.questions.findFirst({
       where: eq(table.questions.id, questionId),

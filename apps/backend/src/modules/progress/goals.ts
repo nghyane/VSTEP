@@ -6,14 +6,14 @@ import { eq } from "drizzle-orm";
 import type { GoalBody, GoalUpdateBody } from "./schema";
 
 /** Fetch the user's latest (and only) goal, or null */
-export async function getLatestGoal(userId: string) {
+export async function latest(userId: string) {
   const goal = await db.query.userGoals.findFirst({
     where: eq(table.userGoals.userId, userId),
   });
   return goal ?? null;
 }
 
-export async function createGoal(userId: string, body: GoalBody) {
+export async function create(userId: string, body: GoalBody) {
   const existing = await db.query.userGoals.findFirst({
     where: eq(table.userGoals.userId, userId),
   });
@@ -37,7 +37,7 @@ export async function createGoal(userId: string, body: GoalBody) {
     .then(takeFirstOrThrow);
 }
 
-export async function updateGoal(
+export async function update(
   actor: Actor,
   goalId: string,
   body: GoalUpdateBody,
@@ -66,7 +66,7 @@ export async function updateGoal(
     .then(takeFirstOrThrow);
 }
 
-export async function removeGoal(actor: Actor, goalId: string) {
+export async function remove(actor: Actor, goalId: string) {
   const existing = assertExists(
     await db.query.userGoals.findFirst({
       where: eq(table.userGoals.id, goalId),

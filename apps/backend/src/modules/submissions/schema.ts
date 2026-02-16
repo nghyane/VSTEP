@@ -90,7 +90,9 @@ export const ReviewQueueQuery = t.Object({
 export const SubmissionReviewBody = t.Object({
   overallScore: t.Number({ minimum: 0, maximum: 10, multipleOf: 0.5 }),
   band: t.Optional(VstepBand),
-  criteriaScores: t.Optional(t.Record(t.String(), t.Any())),
+  criteriaScores: t.Optional(
+    t.Record(t.String(), t.Number({ minimum: 0, maximum: 10 })),
+  ),
   feedback: t.Optional(t.String({ minLength: 1, maxLength: 10000 })),
   reviewComment: t.Optional(t.String({ maxLength: 5000 })),
 });

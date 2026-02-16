@@ -15,8 +15,8 @@ export function parseExpiry(str: string) {
       `Invalid expiry format: "${str}" (expected e.g. 15m, 1h, 7d)`,
     );
   }
-  const value = m[1] ?? "";
-  const unit = m[2] ?? "s";
+  const value = m[1];
+  const unit = m[2];
   const n = Number.parseInt(value, 10);
   if (n === 0) {
     throw new BadRequestError(`Expiry duration must be > 0: "${str}"`);
@@ -27,5 +27,5 @@ export function parseExpiry(str: string) {
     h: 3600,
     d: 86400,
   };
-  return n * (multipliers[unit] ?? 1);
+  return n * multipliers[unit];
 }

@@ -7,7 +7,8 @@ import {
 import { Skill } from "@db/enums";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
-import { createGoal, removeGoal, updateGoal } from "./goals";
+import { create, remove, update } from "./goals";
+import { bySkill, overview, spiderChart } from "./overview";
 import {
   Goal,
   GoalBody,
@@ -16,11 +17,6 @@ import {
   ProgressSkillDetail,
   ProgressSpiderChart,
 } from "./schema";
-import {
-  getProgressBySkill,
-  getProgressOverview,
-  getSpiderChart,
-} from "./service";
 
 export const progress = new Elysia({
   name: "module:progress",
@@ -29,7 +25,7 @@ export const progress = new Elysia({
 })
   .use(authPlugin)
 
-  .get("/", ({ user }) => getProgressOverview(user.sub), {
+  .get("/", ({ user }) => overview(user.sub), {
     auth: true,
     response: { 200: ProgressOverview, ...AuthErrors },
     detail: {
@@ -40,7 +36,7 @@ export const progress = new Elysia({
     },
   })
 
-  .get("/spider-chart", ({ user }) => getSpiderChart(user.sub), {
+  .get("/spider-chart", ({ user }) => spiderChart(user.sub), {
     auth: true,
     response: { 200: ProgressSpiderChart, ...AuthErrors },
     detail: {
@@ -51,27 +47,23 @@ export const progress = new Elysia({
     },
   })
 
-  .get(
-    "/:skill",
-    ({ params, user }) => getProgressBySkill(user.sub, params.skill),
-    {
-      auth: true,
-      params: t.Object({ skill: Skill }),
-      response: { 200: ProgressSkillDetail, ...AuthErrors },
-      detail: {
-        summary: "Get skill progress",
-        description:
-          "Return detailed progress metrics, score history, and adaptive scaffold level for a specific skill.",
-        security: [{ bearerAuth: [] }],
-      },
+  .get("/:skill", ({ params, user }) => bySkill(user.sub, params.skill), {
+    auth: true,
+    params: t.Object({ skill: Skill }),
+    response: { 200: ProgressSkillDetail, ...AuthErrors },
+    detail: {
+      summary: "Get skill progress",
+      description:
+        "Return detailed progress metrics, score history, and adaptive scaffold level for a specific skill.",
+      security: [{ bearerAuth: [] }],
     },
-  )
+  })
 
   .post(
     "/goals",
     ({ body, user, set }) => {
       set.status = 201;
-      return createGoal(user.sub, body);
+      return create(user.sub, body);
     },
     {
       auth: true,
@@ -86,7 +78,7 @@ export const progress = new Elysia({
 
   .patch(
     "/goals/:id",
-    ({ params, body, user }) => updateGoal(user, params.id, body),
+    ({ params, body, user }) => update(user, params.id, body),
     {
       auth: true,
       params: IdParam,
@@ -99,7 +91,7 @@ export const progress = new Elysia({
     },
   )
 
-  .delete("/goals/:id", ({ params, user }) => removeGoal(user, params.id), {
+  .delete("/goals/:id", ({ params, user }) => remove(user, params.id), {
     auth: true,
     params: IdParam,
     response: {

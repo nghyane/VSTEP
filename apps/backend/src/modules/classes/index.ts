@@ -8,9 +8,9 @@ import {
 } from "@common/schemas";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
-import { getDashboard, getMemberProgress } from "./dashboard";
-import { createFeedback, listFeedback } from "./feedback";
-import { joinClass, leaveClass, removeMember } from "./members";
+import { dashboard, memberProgress } from "./dashboard";
+import * as feedback from "./feedback";
+import * as members from "./members";
 import {
   Class,
   ClassDetail,
@@ -23,12 +23,12 @@ import {
   UpdateClassBody,
 } from "./schema";
 import {
-  createClass,
-  getClassById,
-  listClasses,
-  removeClass,
+  create,
+  find,
+  list,
+  remove,
   rotateInviteCode,
-  updateClass,
+  update,
 } from "./service";
 
 export const classes = new Elysia({
@@ -38,14 +38,14 @@ export const classes = new Elysia({
 })
   .use(authPlugin)
 
-  .post("/", ({ body, user }) => createClass(body, user), {
+  .post("/", ({ body, user }) => create(body, user), {
     role: ROLES.INSTRUCTOR,
     body: CreateClassBody,
     response: { 200: Class, ...AuthErrors },
     detail: { summary: "Create class", security: [{ bearerAuth: [] }] },
   })
 
-  .get("/", ({ query, user }) => listClasses(query, user), {
+  .get("/", ({ query, user }) => list(query, user), {
     auth: true,
     query: ClassListQuery,
     response: {
@@ -55,7 +55,7 @@ export const classes = new Elysia({
     detail: { summary: "List my classes", security: [{ bearerAuth: [] }] },
   })
 
-  .get("/:id", ({ params, user }) => getClassById(params.id, user), {
+  .get("/:id", ({ params, user }) => find(params.id, user), {
     auth: true,
     params: IdParam,
     response: { 200: ClassDetail, ...CrudErrors },
@@ -65,22 +65,18 @@ export const classes = new Elysia({
     },
   })
 
-  .patch(
-    "/:id",
-    ({ params, body, user }) => updateClass(params.id, body, user),
-    {
-      role: ROLES.INSTRUCTOR,
-      params: IdParam,
-      body: UpdateClassBody,
-      response: { 200: Class, ...CrudErrors },
-      detail: {
-        summary: "Update class",
-        security: [{ bearerAuth: [] }],
-      },
+  .patch("/:id", ({ params, body, user }) => update(params.id, body, user), {
+    role: ROLES.INSTRUCTOR,
+    params: IdParam,
+    body: UpdateClassBody,
+    response: { 200: Class, ...CrudErrors },
+    detail: {
+      summary: "Update class",
+      security: [{ bearerAuth: [] }],
     },
-  )
+  })
 
-  .delete("/:id", ({ params, user }) => removeClass(params.id, user), {
+  .delete("/:id", ({ params, user }) => remove(params.id, user), {
     role: ROLES.INSTRUCTOR,
     params: IdParam,
     response: {
@@ -106,7 +102,7 @@ export const classes = new Elysia({
     },
   )
 
-  .post("/join", ({ body, user }) => joinClass(body, user), {
+  .post("/join", ({ body, user }) => members.join(body, user), {
     auth: true,
     body: JoinClassBody,
     response: {
@@ -123,7 +119,7 @@ export const classes = new Elysia({
     },
   })
 
-  .post("/:id/leave", ({ params, user }) => leaveClass(params.id, user), {
+  .post("/:id/leave", ({ params, user }) => members.leave(params.id, user), {
     auth: true,
     params: IdParam,
     response: {
@@ -138,7 +134,7 @@ export const classes = new Elysia({
 
   .delete(
     "/:id/members/:userId",
-    ({ params, user }) => removeMember(params.id, params.userId, user),
+    ({ params, user }) => members.remove(params.id, params.userId, user),
     {
       role: ROLES.INSTRUCTOR,
       params: t.Object({
@@ -159,10 +155,35 @@ export const classes = new Elysia({
     },
   )
 
-  .get("/:id/dashboard", ({ params, user }) => getDashboard(params.id, user), {
+  .get("/:id/dashboard", ({ params, user }) => dashboard(params.id, user), {
     role: ROLES.INSTRUCTOR,
     params: IdParam,
-    response: { 200: t.Any(), ...CrudErrors },
+    response: {
+      200: t.Object({
+        memberCount: t.Number(),
+        atRiskCount: t.Number(),
+        atRiskLearners: t.Array(
+          t.Object({
+            userId: t.String(),
+            fullName: t.Nullable(t.String()),
+            email: t.String(),
+            reasons: t.Array(t.String()),
+          }),
+        ),
+        skillSummary: t.Record(
+          t.String(),
+          t.Object({
+            avgScore: t.Nullable(t.Number()),
+            trendDistribution: t.Object({
+              improving: t.Number(),
+              stable: t.Number(),
+              declining: t.Number(),
+            }),
+          }),
+        ),
+      }),
+      ...CrudErrors,
+    },
     detail: {
       summary: "Class dashboard overview",
       security: [{ bearerAuth: [] }],
@@ -171,14 +192,14 @@ export const classes = new Elysia({
 
   .get(
     "/:id/members/:userId/progress",
-    ({ params, user }) => getMemberProgress(params.id, params.userId, user),
+    ({ params, user }) => memberProgress(params.id, params.userId, user),
     {
       role: ROLES.INSTRUCTOR,
       params: t.Object({
         id: t.String({ format: "uuid" }),
         userId: t.String({ format: "uuid" }),
       }),
-      response: { 200: t.Any(), ...CrudErrors },
+      response: { 200: t.Unknown(), ...CrudErrors },
       detail: {
         summary: "View member progress",
         security: [{ bearerAuth: [] }],
@@ -188,7 +209,7 @@ export const classes = new Elysia({
 
   .post(
     "/:id/feedback",
-    ({ params, body, user }) => createFeedback(params.id, body, user),
+    ({ params, body, user }) => feedback.create(params.id, body, user),
     {
       role: ROLES.INSTRUCTOR,
       params: IdParam,
@@ -203,7 +224,7 @@ export const classes = new Elysia({
 
   .get(
     "/:id/feedback",
-    ({ params, query, user }) => listFeedback(params.id, query, user),
+    ({ params, query, user }) => feedback.list(params.id, query, user),
     {
       auth: true,
       params: IdParam,

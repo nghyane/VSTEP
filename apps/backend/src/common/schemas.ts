@@ -9,7 +9,7 @@ export const ErrorResponse = t.Object({
   error: t.Object({
     code: t.String(),
     message: t.String(),
-    details: t.Optional(t.Any()),
+    details: t.Optional(t.Unknown()),
   }),
 });
 

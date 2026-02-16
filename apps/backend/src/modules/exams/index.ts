@@ -9,7 +9,6 @@ import {
 import { SubmissionAnswer } from "@db/types/answers";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
-import { submitExam } from "./grading";
 import {
   Exam,
   ExamAnswerSaveBody,
@@ -19,13 +18,9 @@ import {
   ExamUpdateBody,
   SessionParams,
 } from "./schema";
-import { createExam, getExamById, listExams, updateExam } from "./service";
-import {
-  getExamSessionById,
-  saveExamAnswers,
-  startExamSession,
-  submitExamAnswer,
-} from "./session";
+import { create, find, list, update } from "./service";
+import { answer, findSession, saveAnswers, start } from "./session";
+import { submit } from "./submit";
 
 export const exams = new Elysia({
   name: "module:exams",
@@ -34,7 +29,7 @@ export const exams = new Elysia({
 })
   .use(authPlugin)
 
-  .get("/", ({ query, user }) => listExams(query, user), {
+  .get("/", ({ query, user }) => list(query, user), {
     auth: true,
     query: ExamListQuery,
     response: {
@@ -52,7 +47,7 @@ export const exams = new Elysia({
     },
   })
 
-  .get("/:id", ({ params, user }) => getExamById(params.id, user), {
+  .get("/:id", ({ params, user }) => find(params.id, user), {
     auth: true,
     params: IdParam,
     response: { 200: Exam, ...CrudErrors },
@@ -68,7 +63,7 @@ export const exams = new Elysia({
     "/",
     ({ body, user, set }) => {
       set.status = 201;
-      return createExam(user.sub, body);
+      return create(user.sub, body);
     },
     {
       role: ROLES.ADMIN,
@@ -83,7 +78,7 @@ export const exams = new Elysia({
     },
   )
 
-  .patch("/:id", ({ params, body }) => updateExam(params.id, body), {
+  .patch("/:id", ({ params, body }) => update(params.id, body), {
     role: ROLES.ADMIN,
     params: IdParam,
     body: ExamUpdateBody,
@@ -96,25 +91,21 @@ export const exams = new Elysia({
     },
   })
 
-  .post(
-    "/:id/start",
-    ({ params, user }) => startExamSession(user.sub, params.id),
-    {
-      auth: true,
-      params: IdParam,
-      response: { 200: ExamSession, 400: ErrorResponse, ...CrudErrors },
-      detail: {
-        summary: "Start exam session",
-        description:
-          "Start a new exam session or resume an existing in-progress session for the given exam.",
-        security: [{ bearerAuth: [] }],
-      },
+  .post("/:id/start", ({ params, user }) => start(user.sub, params.id), {
+    auth: true,
+    params: IdParam,
+    response: { 200: ExamSession, 400: ErrorResponse, ...CrudErrors },
+    detail: {
+      summary: "Start exam session",
+      description:
+        "Start a new exam session or resume an existing in-progress session for the given exam.",
+      security: [{ bearerAuth: [] }],
     },
-  )
+  })
 
   .get(
     "/sessions/:sessionId",
-    ({ params, user }) => getExamSessionById(params.sessionId, user),
+    ({ params, user }) => findSession(params.sessionId, user),
     {
       auth: true,
       params: SessionParams,
@@ -131,7 +122,7 @@ export const exams = new Elysia({
   .put(
     "/sessions/:sessionId",
     ({ params, body, user }) =>
-      saveExamAnswers(params.sessionId, body.answers, user),
+      saveAnswers(params.sessionId, body.answers, user),
     {
       auth: true,
       params: SessionParams,
@@ -152,7 +143,7 @@ export const exams = new Elysia({
 
   .post(
     "/sessions/:sessionId/answer",
-    ({ params, body, user }) => submitExamAnswer(params.sessionId, body, user),
+    ({ params, body, user }) => answer(params.sessionId, body, user),
     {
       auth: true,
       params: SessionParams,
@@ -176,7 +167,7 @@ export const exams = new Elysia({
 
   .post(
     "/sessions/:sessionId/submit",
-    ({ params, user }) => submitExam(params.sessionId, user),
+    ({ params, user }) => submit(params.sessionId, user),
     {
       auth: true,
       params: SessionParams,

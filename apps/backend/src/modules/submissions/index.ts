@@ -9,14 +9,9 @@ import {
 import { AutoGradeResult } from "@db/types/grading";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
-import { autoGradeSubmission } from "./auto-grade";
-import {
-  assignSubmission,
-  claimSubmission,
-  getReviewQueue,
-  releaseSubmission,
-  submitReview,
-} from "./review";
+import { autoGrade } from "./auto-grade";
+import { grade } from "./grade";
+import { assign, claim, queue, release, review } from "./review";
 import {
   ReviewQueueItem,
   ReviewQueueQuery,
@@ -28,14 +23,7 @@ import {
   SubmissionReviewBody,
   SubmissionUpdateBody,
 } from "./schema";
-import {
-  createSubmission,
-  getSubmissionById,
-  gradeSubmission,
-  listSubmissions,
-  removeSubmission,
-  updateSubmission,
-} from "./service";
+import { create, find, list, remove, update } from "./service";
 
 export const submissions = new Elysia({
   name: "module:submissions",
@@ -44,7 +32,7 @@ export const submissions = new Elysia({
 })
   .use(authPlugin)
 
-  .get("/", ({ query, user }) => listSubmissions(query, user), {
+  .get("/", ({ query, user }) => list(query, user), {
     auth: true,
     query: SubmissionListQuery,
     response: {
@@ -62,7 +50,7 @@ export const submissions = new Elysia({
     },
   })
 
-  .get("/:id", ({ params, user }) => getSubmissionById(params.id, user), {
+  .get("/:id", ({ params, user }) => find(params.id, user), {
     auth: true,
     params: IdParam,
     response: {
@@ -81,7 +69,7 @@ export const submissions = new Elysia({
     "/",
     ({ body, user, set }) => {
       set.status = 201;
-      return createSubmission(user.sub, body);
+      return create(user.sub, body);
     },
     {
       auth: true,
@@ -101,29 +89,25 @@ export const submissions = new Elysia({
     },
   )
 
-  .patch(
-    "/:id",
-    ({ params, body, user }) => updateSubmission(params.id, body, user),
-    {
-      auth: true,
-      params: IdParam,
-      body: SubmissionUpdateBody,
-      response: {
-        200: SubmissionFull,
-        400: ErrorResponse,
-        ...CrudErrors,
-        422: ErrorResponse,
-      },
-      detail: {
-        summary: "Update submission",
-        description:
-          "Partially update a pending submission's answer content before grading begins.",
-        security: [{ bearerAuth: [] }],
-      },
+  .patch("/:id", ({ params, body, user }) => update(params.id, body, user), {
+    auth: true,
+    params: IdParam,
+    body: SubmissionUpdateBody,
+    response: {
+      200: SubmissionFull,
+      400: ErrorResponse,
+      ...CrudErrors,
+      422: ErrorResponse,
     },
-  )
+    detail: {
+      summary: "Update submission",
+      description:
+        "Partially update a pending submission's answer content before grading begins.",
+      security: [{ bearerAuth: [] }],
+    },
+  })
 
-  .post("/:id/grade", ({ params, body }) => gradeSubmission(params.id, body), {
+  .post("/:id/grade", ({ params, body }) => grade(params.id, body), {
     role: ROLES.INSTRUCTOR,
     params: IdParam,
     body: SubmissionGradeBody,
@@ -140,7 +124,7 @@ export const submissions = new Elysia({
     },
   })
 
-  .post("/:id/auto-grade", ({ params }) => autoGradeSubmission(params.id), {
+  .post("/:id/auto-grade", ({ params }) => autoGrade(params.id), {
     role: ROLES.ADMIN,
     params: IdParam,
     response: {
@@ -158,8 +142,7 @@ export const submissions = new Elysia({
     },
   })
 
-  // Review Queue routes
-  .get("/queue", ({ query, user }) => getReviewQueue(query, user), {
+  .get("/queue", ({ query, user }) => queue(query, user), {
     role: ROLES.INSTRUCTOR,
     query: ReviewQueueQuery,
     response: {
@@ -177,7 +160,7 @@ export const submissions = new Elysia({
     },
   })
 
-  .post("/:id/claim", ({ params, user }) => claimSubmission(params.id, user), {
+  .post("/:id/claim", ({ params, user }) => claim(params.id, user), {
     role: ROLES.INSTRUCTOR,
     params: IdParam,
     response: {
@@ -193,27 +176,23 @@ export const submissions = new Elysia({
     },
   })
 
-  .post(
-    "/:id/release",
-    ({ params, user }) => releaseSubmission(params.id, user),
-    {
-      role: ROLES.INSTRUCTOR,
-      params: IdParam,
-      response: {
-        200: SubmissionFull,
-        ...CrudErrors,
-      },
-      detail: {
-        summary: "Release claimed submission",
-        description: "Release a claimed submission back to the review queue.",
-        security: [{ bearerAuth: [] }],
-      },
+  .post("/:id/release", ({ params, user }) => release(params.id, user), {
+    role: ROLES.INSTRUCTOR,
+    params: IdParam,
+    response: {
+      200: SubmissionFull,
+      ...CrudErrors,
     },
-  )
+    detail: {
+      summary: "Release claimed submission",
+      description: "Release a claimed submission back to the review queue.",
+      security: [{ bearerAuth: [] }],
+    },
+  })
 
   .put(
     "/:id/review",
-    ({ params, body, user }) => submitReview(params.id, body, user),
+    ({ params, body, user }) => review(params.id, body, user),
     {
       role: ROLES.INSTRUCTOR,
       params: IdParam,
@@ -234,7 +213,7 @@ export const submissions = new Elysia({
 
   .post(
     "/:id/assign",
-    ({ params, body, user }) => assignSubmission(params.id, body, user),
+    ({ params, body, user }) => assign(params.id, body, user),
     {
       role: ROLES.ADMIN,
       params: IdParam,
@@ -252,7 +231,7 @@ export const submissions = new Elysia({
     },
   )
 
-  .delete("/:id", ({ params, user }) => removeSubmission(params.id, user), {
+  .delete("/:id", ({ params, user }) => remove(params.id, user), {
     auth: true,
     params: IdParam,
     response: {

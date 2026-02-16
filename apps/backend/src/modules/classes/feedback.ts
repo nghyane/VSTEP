@@ -34,7 +34,7 @@ async function assertActiveMember(classId: string, userId: string) {
   );
 }
 
-export async function createFeedback(
+export async function create(
   classId: string,
   body: CreateFeedbackBody,
   actor: Actor,
@@ -71,7 +71,7 @@ export async function createFeedback(
     .then(takeFirstOrThrow);
 }
 
-export async function listFeedback(
+export async function list(
   classId: string,
   query: FeedbackListQuery,
   actor: Actor,

@@ -20,7 +20,7 @@ async function assertClassOwner(classId: string, actor: Actor) {
   return cls;
 }
 
-export async function joinClass(body: { inviteCode: string }, actor: Actor) {
+export async function join(body: { inviteCode: string }, actor: Actor) {
   return db.transaction(async (tx) => {
     const cls = assertExists(
       await tx.query.classes.findFirst({
@@ -46,28 +46,26 @@ export async function joinClass(body: { inviteCode: string }, actor: Actor) {
         .update(table.classMembers)
         .set({ removedAt: null, joinedAt: new Date().toISOString() })
         .where(eq(table.classMembers.id, existing.id));
-    } else {
-      // New join: use onConflictDoNothing to handle race condition
-      const inserted = await tx
-        .insert(table.classMembers)
-        .values({ classId: cls.id, userId: actor.sub })
-        .onConflictDoNothing({
-          target: [table.classMembers.classId, table.classMembers.userId],
-        })
-        .returning()
-        .then(takeFirst);
-
-      // If nothing inserted, another concurrent request already joined
-      if (!inserted) {
-        throw new ConflictError("Already a member of this class");
-      }
+      return { classId: cls.id, className: cls.name };
+    }
+    // New join: use onConflictDoNothing to handle race condition
+    const inserted = await tx
+      .insert(table.classMembers)
+      .values({ classId: cls.id, userId: actor.sub })
+      .onConflictDoNothing({
+        target: [table.classMembers.classId, table.classMembers.userId],
+      })
+      .returning()
+      .then(takeFirst);
+    if (!inserted) {
+      throw new ConflictError("Already a member of this class");
     }
 
     return { classId: cls.id, className: cls.name };
   });
 }
 
-export async function leaveClass(classId: string, actor: Actor) {
+export async function leave(classId: string, actor: Actor) {
   const cls = assertExists(
     await db.query.classes.findFirst({
       where: eq(table.classes.id, classId),
@@ -100,11 +98,7 @@ export async function leaveClass(classId: string, actor: Actor) {
   return { id: membership.id, removedAt: ts };
 }
 
-export async function removeMember(
-  classId: string,
-  userId: string,
-  actor: Actor,
-) {
+export async function remove(classId: string, userId: string, actor: Actor) {
   await assertClassOwner(classId, actor);
 
   const membership = assertExists(

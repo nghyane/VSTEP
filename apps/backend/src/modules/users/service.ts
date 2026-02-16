@@ -21,8 +21,8 @@ import type {
 } from "./schema";
 import { USER_COLUMNS } from "./schema";
 
-/** Internal lookup — no auth check. Use getUserById for route-facing calls. */
-export async function findUserById(userId: string) {
+/** Internal lookup — no auth check. Use byId for route-facing calls. */
+export async function find(userId: string) {
   const user = await db.query.users.findFirst({
     where: eq(table.users.id, userId),
     columns: { passwordHash: false },
@@ -31,12 +31,12 @@ export async function findUserById(userId: string) {
   return assertExists(user, "User");
 }
 
-export async function getUserById(userId: string, actor: Actor) {
+export async function byId(userId: string, actor: Actor) {
   assertAccess(userId, actor, "You can only view your own profile");
-  return findUserById(userId);
+  return find(userId);
 }
 
-export async function listUsers(query: UserListQuery) {
+export async function list(query: UserListQuery) {
   const where = and(
     query.role ? eq(table.users.role, query.role) : undefined,
     query.search
@@ -56,7 +56,7 @@ export async function listUsers(query: UserListQuery) {
   );
 }
 
-export async function createUser(body: UserCreateBody) {
+export async function create(body: UserCreateBody) {
   const email = normalizeEmail(body.email);
   const hash = await Bun.password.hash(body.password, "argon2id");
 
@@ -76,7 +76,7 @@ export async function createUser(body: UserCreateBody) {
   return user;
 }
 
-export async function updateUser(
+export async function update(
   userId: string,
   body: UserUpdateBody,
   actor: Actor,
@@ -119,7 +119,7 @@ export async function updateUser(
   });
 }
 
-export async function removeUser(userId: string, actor: Actor) {
+export async function remove(userId: string, actor: Actor) {
   if (userId === actor.sub) {
     throw new ForbiddenError("Cannot delete your own account");
   }
@@ -141,7 +141,7 @@ export async function removeUser(userId: string, actor: Actor) {
   });
 }
 
-export async function updateUserPassword(
+export async function updatePassword(
   userId: string,
   body: UserPasswordBody,
   actor: Actor,

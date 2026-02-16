@@ -25,7 +25,7 @@ async function assertClassOwner(classId: string, actor: Actor) {
   return cls;
 }
 
-export async function createClass(body: CreateClassBody, actor: Actor) {
+export async function create(body: CreateClassBody, actor: Actor) {
   const inviteCode = generateInviteCode();
   return db
     .insert(table.classes)
@@ -39,7 +39,7 @@ export async function createClass(body: CreateClassBody, actor: Actor) {
     .then(takeFirstOrThrow);
 }
 
-export async function listClasses(query: ClassListQuery, actor: Actor) {
+export async function list(query: ClassListQuery, actor: Actor) {
   const memberCountSq = db
     .select({ count: sql<number>`count(*)::int`.as("member_count") })
     .from(table.classMembers)
@@ -117,7 +117,7 @@ export async function listClasses(query: ClassListQuery, actor: Actor) {
   );
 }
 
-export async function getClassById(classId: string, actor: Actor) {
+export async function find(classId: string, actor: Actor) {
   const cls = assertExists(
     await db.query.classes.findFirst({
       where: eq(table.classes.id, classId),
@@ -125,7 +125,6 @@ export async function getClassById(classId: string, actor: Actor) {
     "Class",
   );
 
-  // Authorization: admin, owner, or active member
   if (!actor.is(ROLES.ADMIN) && cls.instructorId !== actor.sub) {
     const membership = await db.query.classMembers.findFirst({
       where: and(
@@ -165,7 +164,7 @@ export async function getClassById(classId: string, actor: Actor) {
   return { ...displayClass, members, memberCount: members.length };
 }
 
-export async function updateClass(
+export async function update(
   classId: string,
   body: UpdateClassBody,
   actor: Actor,
@@ -183,7 +182,7 @@ export async function updateClass(
     .then(takeFirstOrThrow);
 }
 
-export async function removeClass(classId: string, actor: Actor) {
+export async function remove(classId: string, actor: Actor) {
   await assertClassOwner(classId, actor);
 
   return db
