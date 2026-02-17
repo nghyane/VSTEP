@@ -1,8 +1,12 @@
 {
   "skill": "speaking",
   "content": {
-    "centralIdea": "Online courses\n\nProvide new learning experience\nBe independent in learning\nOnline courses\nYour own ideas\nBe more convenient to study\n\nFollow-up questions:\n1. What are the advantages of online courses compared to traditional classes?\n2. What challenges do students face when learning online?\n3. How can online learning be improved in the future?",
-    "suggestions": [],
+    "centralIdea": "Online courses",
+    "suggestions": [
+      "Provide new learning experience",
+      "Be independent in learning",
+      "Be more convenient to study"
+    ],
     "followUpQuestion": "1. What are the advantages of online courses compared to traditional classes?",
     "preparationSeconds": 60,
     "speakingSeconds": 240

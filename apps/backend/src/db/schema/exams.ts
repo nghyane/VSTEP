@@ -14,6 +14,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { createdAt, timestamps } from "./columns";
 import { questionLevelEnum, skillEnum } from "./enums";
+import { questions } from "./questions";
 import { submissions } from "./submissions";
 import { users } from "./users";
 
@@ -107,7 +108,9 @@ export const examAnswers = pgTable(
     sessionId: uuid("session_id")
       .references(() => examSessions.id, { onDelete: "cascade" })
       .notNull(),
-    questionId: uuid("question_id").notNull(),
+    questionId: uuid("question_id")
+      .references(() => questions.id, { onDelete: "restrict" })
+      .notNull(),
     answer: jsonb("answer").$type<SubmissionAnswer>().notNull(),
     isCorrect: boolean("is_correct"),
     ...timestamps,

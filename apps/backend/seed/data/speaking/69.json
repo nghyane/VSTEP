@@ -1,8 +1,12 @@
 {
   "skill": "speaking",
   "content": {
-    "centralIdea": "Traditional festivals carry important cultural values.\n\nHonor community strength\nTeach history and culture\nTraditional festivals\nYour own ideas\nImprove spiritual life\n\nFollow-up questions:\n1. Which local festival in your area or country would be most interesting for a foreign guest?\n2. Do people today appreciate public holidays as much as in the past?\n3. What should the government do to preserve traditional festivals?",
-    "suggestions": [],
+    "centralIdea": "Traditional festivals carry important cultural values.",
+    "suggestions": [
+      "Honor community strength",
+      "Teach history and culture",
+      "Improve spiritual life"
+    ],
     "followUpQuestion": "1. Which local festival in your area or country would be most interesting for a foreign guest?",
     "preparationSeconds": 60,
     "speakingSeconds": 240

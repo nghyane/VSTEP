@@ -1,3 +1,4 @@
+import type { TSchema } from "@sinclair/typebox";
 import { t } from "elysia";
 
 // ---------------------------------------------------------------------------
@@ -20,11 +21,10 @@ const TNGItem = t.Object({
 // Listening
 // ---------------------------------------------------------------------------
 
-/** Parts 1-3: audio + MCQ items */
 export const ListeningContent = t.Object({
   audioUrl: t.String({ format: "uri" }),
   transcript: t.Optional(t.String()),
-  items: t.Array(MCQItem, { minItems: 1, maxItems: 8 }),
+  items: t.Array(MCQItem, { minItems: 1, maxItems: 15 }),
 });
 
 /** Dictation: audio + transcript with gaps, fill-in-the-blank */
@@ -146,6 +146,41 @@ export const QuestionContent = t.Union([
   WritingContent,
   SpeakingContent,
 ]);
+
+// ---------------------------------------------------------------------------
+// Validation maps
+// ---------------------------------------------------------------------------
+
+export const VALID_PARTS = {
+  listening: [1, 2, 3],
+  reading: [1, 2, 3, 4],
+  writing: [1, 2],
+  speaking: [1, 2, 3],
+} as const;
+
+export const OBJECTIVE_SKILLS = new Set(["listening", "reading"] as const);
+
+const ReadingContentUnion = t.Union([
+  ReadingContent,
+  ReadingTNGContent,
+  ReadingGapFillContent,
+  ReadingMatchingContent,
+]);
+
+export const CONTENT_MAP: Record<string, TSchema> = {
+  "listening:1": ListeningContent,
+  "listening:2": ListeningContent,
+  "listening:3": ListeningContent,
+  "reading:1": ReadingContentUnion,
+  "reading:2": ReadingContentUnion,
+  "reading:3": ReadingContentUnion,
+  "reading:4": ReadingContentUnion,
+  "writing:1": WritingContent,
+  "writing:2": WritingContent,
+  "speaking:1": SpeakingPart1Content,
+  "speaking:2": SpeakingPart2Content,
+  "speaking:3": SpeakingPart3Content,
+};
 
 // ---------------------------------------------------------------------------
 // Static types

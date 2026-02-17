@@ -8,7 +8,7 @@ VSTEP exam practice platform with AI grading and adaptive learning. Capstone pro
 - Use Bun, not Node. `bun run`, `bun test`, `bun install`, `Bun.password`, `jose` -- never npm/yarn/jest/vitest/bcrypt/jsonwebtoken/dotenv.
 - Bun auto-loads `.env` -- never use `dotenv`.
 - All commands run from `apps/backend/`.
-- `bun run check` must pass before considering work complete.
+- `bun run check --write` must pass before considering work complete. Always use `--write` to auto-fix formatting and import ordering.
 
 ## Commands
 

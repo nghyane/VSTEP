@@ -1,6 +1,17 @@
 import { Skill } from "@db/enums";
 import { ObjectiveAnswerKey } from "@db/types/answers";
-import { QuestionContent } from "@db/types/question-content";
+import {
+  ListeningContent,
+  QuestionContent,
+  ReadingContent,
+  ReadingGapFillContent,
+  ReadingMatchingContent,
+  ReadingTNGContent,
+  SpeakingPart1Content,
+  SpeakingPart2Content,
+  SpeakingPart3Content,
+  WritingContent,
+} from "@db/types/question-content";
 import { t } from "elysia";
 
 // ---------------------------------------------------------------------------
@@ -34,16 +45,60 @@ export type QuestionWithKnowledgePoints =
 // Request schemas
 // ---------------------------------------------------------------------------
 
-export const QuestionCreateBody = t.Object({
-  skill: Skill,
-  part: t.Integer({ minimum: 1, maximum: 4 }),
-  content: QuestionContent,
-  answerKey: t.Optional(ObjectiveAnswerKey),
-  explanation: t.Optional(t.String()),
-  knowledgePointIds: t.Optional(
-    t.Array(t.String({ format: "uuid" }), { maxItems: 10 }),
-  ),
+const KnowledgePointIds = t.Optional(
+  t.Array(t.String({ format: "uuid" }), { maxItems: 10 }),
+);
+const Explanation = t.Optional(t.String());
+
+const ListeningCreateBody = t.Object({
+  skill: t.Literal("listening"),
+  part: t.UnionEnum([1, 2, 3]),
+  content: ListeningContent,
+  answerKey: ObjectiveAnswerKey,
+  explanation: Explanation,
+  knowledgePointIds: KnowledgePointIds,
 });
+
+const ReadingCreateBody = t.Object({
+  skill: t.Literal("reading"),
+  part: t.UnionEnum([1, 2, 3, 4]),
+  content: t.Union([
+    ReadingContent,
+    ReadingTNGContent,
+    ReadingGapFillContent,
+    ReadingMatchingContent,
+  ]),
+  answerKey: ObjectiveAnswerKey,
+  explanation: Explanation,
+  knowledgePointIds: KnowledgePointIds,
+});
+
+const WritingCreateBody = t.Object({
+  skill: t.Literal("writing"),
+  part: t.UnionEnum([1, 2]),
+  content: WritingContent,
+  explanation: Explanation,
+  knowledgePointIds: KnowledgePointIds,
+});
+
+const SpeakingCreateBody = t.Object({
+  skill: t.Literal("speaking"),
+  part: t.UnionEnum([1, 2, 3]),
+  content: t.Union([
+    SpeakingPart1Content,
+    SpeakingPart2Content,
+    SpeakingPart3Content,
+  ]),
+  explanation: Explanation,
+  knowledgePointIds: KnowledgePointIds,
+});
+
+export const QuestionCreateBody = t.Union([
+  ListeningCreateBody,
+  ReadingCreateBody,
+  WritingCreateBody,
+  SpeakingCreateBody,
+]);
 
 export const QuestionUpdateBody = t.Object({
   part: t.Optional(t.Integer({ minimum: 1, maximum: 4 })),

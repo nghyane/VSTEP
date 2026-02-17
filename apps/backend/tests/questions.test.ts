@@ -58,6 +58,7 @@ describe("questions integration", () => {
             },
           ],
         },
+        answerKey: { correctAnswers: { "1": "0" } },
       },
     });
 
@@ -245,6 +246,7 @@ describe("questions integration", () => {
             },
           ],
         },
+        answerKey: { correctAnswers: { "1": "0" } },
       },
     });
 

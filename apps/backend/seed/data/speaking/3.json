@@ -1,8 +1,12 @@
 {
   "skill": "speaking",
   "content": {
-    "centralIdea": "Working in pairs helps students learn better at school.\n\nGives students the opportunity to learn from others\nHelps students become more active\nPair work\nYour own ideas\nImproves students' social skills and interaction\n\nFollow-up questions:\n1. In what situations should pair work be used at school, and why?\n2. What are some possible disadvantages of working in pairs?\n3. How can teachers improve the effectiveness of pair work activities?",
-    "suggestions": [],
+    "centralIdea": "Working in pairs helps students learn better at school.",
+    "suggestions": [
+      "Gives students the opportunity to learn from others",
+      "Helps students become more active",
+      "Improves students' social skills and interaction"
+    ],
     "followUpQuestion": "1. In what situations should pair work be used at school, and why?",
     "preparationSeconds": 60,
     "speakingSeconds": 240

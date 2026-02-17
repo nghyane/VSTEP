@@ -1,10 +1,15 @@
 import { join } from "node:path";
 import { Value } from "@sinclair/typebox/value";
 import { t } from "elysia";
+import type { Skill } from "../src/db/schema/enums";
 import { skillEnum } from "../src/db/schema/enums";
 import type { NewQuestion } from "../src/db/schema/questions";
 import { ObjectiveAnswerKey } from "../src/db/types/answers";
-import { QuestionContent } from "../src/db/types/question-content";
+import {
+  CONTENT_MAP,
+  OBJECTIVE_SKILLS,
+  VALID_PARTS,
+} from "../src/db/types/question-content";
 
 export const SKILLS = skillEnum.enumValues;
 
@@ -18,15 +23,57 @@ export interface SeedRecord {
   metadata: { source: string; [key: string]: unknown };
 }
 
-const SeedRecordSchema = t.Object({
-  skill: t.String(),
-  part: t.Integer({ minimum: 1, maximum: 4 }),
-  content: QuestionContent,
-  answerKey: t.Union([ObjectiveAnswerKey, t.Null()]),
-  metadata: t.Object({ source: t.String() }, { additionalProperties: true }),
-});
+const MetadataSchema = t.Object(
+  { source: t.String() },
+  { additionalProperties: true },
+);
 
-/** Read all JSON seed files for a given skill, sorted by filename. Validates each against TypeBox schemas. */
+function validateSeedRecord(
+  raw: unknown,
+  skill: string,
+  file: string,
+): SeedRecord {
+  const obj = raw as Record<string, unknown>;
+  const sk = obj.skill as Skill;
+  const part = obj.part as number;
+  const key = `${sk}:${part}`;
+
+  const validParts: readonly number[] = VALID_PARTS[sk];
+  if (!validParts?.includes(part))
+    throw new Error(
+      `${skill}/${file}: invalid part ${part} for ${sk} (valid: ${validParts?.join(", ")})`,
+    );
+
+  const contentSchema = CONTENT_MAP[key];
+  if (!contentSchema || !Value.Check(contentSchema, obj.content)) {
+    const errors = contentSchema
+      ? [...Value.Errors(contentSchema, obj.content)]
+      : [];
+    const detail = errors.map((e) => `  ${e.path}: ${e.message}`).join("\n");
+    throw new Error(
+      `${skill}/${file}: content does not match ${key} schema\n${detail}`,
+    );
+  }
+
+  if (
+    OBJECTIVE_SKILLS.has(sk) &&
+    !Value.Check(ObjectiveAnswerKey, obj.answerKey)
+  )
+    throw new Error(
+      `${skill}/${file}: objective skill ${sk} requires a valid answerKey`,
+    );
+
+  if (!OBJECTIVE_SKILLS.has(sk) && obj.answerKey != null)
+    throw new Error(
+      `${skill}/${file}: subjective skill ${sk} must not have answerKey`,
+    );
+
+  if (!Value.Check(MetadataSchema, obj.metadata))
+    throw new Error(`${skill}/${file}: invalid metadata`);
+
+  return obj as unknown as SeedRecord;
+}
+
 export async function readSeedFiles(skill: string): Promise<SeedRecord[]> {
   const dir = join(SEED_DIR, skill);
   const glob = new Bun.Glob("*.json");
@@ -39,12 +86,7 @@ export async function readSeedFiles(skill: string): Promise<SeedRecord[]> {
   const records: SeedRecord[] = [];
   for (const file of paths) {
     const raw = await Bun.file(join(dir, file)).json();
-    if (!Value.Check(SeedRecordSchema, raw)) {
-      const errors = [...Value.Errors(SeedRecordSchema, raw)];
-      const detail = errors.map((e) => `  ${e.path}: ${e.message}`).join("\n");
-      throw new Error(`Invalid seed data in ${skill}/${file}:\n${detail}`);
-    }
-    records.push(raw as SeedRecord);
+    records.push(validateSeedRecord(raw, skill, file));
   }
   return records;
 }

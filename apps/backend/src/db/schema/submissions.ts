@@ -14,6 +14,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { timestamps } from "./columns";
 import { skillEnum, vstepBandEnum } from "./enums";
+import { questions } from "./questions";
 import { users } from "./users";
 
 export { skillEnum, vstepBandEnum };
@@ -45,7 +46,9 @@ export const submissions = pgTable(
     userId: uuid("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
-    questionId: uuid("question_id").notNull(),
+    questionId: uuid("question_id")
+      .references(() => questions.id, { onDelete: "restrict" })
+      .notNull(),
     skill: skillEnum("skill").notNull(),
     status: submissionStatusEnum("status").default("pending").notNull(),
     score: numeric("score", { precision: 3, scale: 1, mode: "number" }),

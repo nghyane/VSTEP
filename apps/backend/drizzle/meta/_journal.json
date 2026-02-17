@@ -15,6 +15,13 @@
       "when": 1771245455730,
       "tag": "0001_puzzling_pyro",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1771324844558,
+      "tag": "0002_sharp_wild_pack",
+      "breakpoints": true
     }
   ]
 }

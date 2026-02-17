@@ -1,15 +1,24 @@
 import type { Actor } from "@common/auth-types";
 import { ROLES } from "@common/auth-types";
-import { ConflictError } from "@common/errors";
+import { BadRequestError, ConflictError } from "@common/errors";
 import { assertAccess, assertExists, escapeLike } from "@common/utils";
 import { db, paginate, takeFirst, takeFirstOrThrow } from "@db/index";
+import type { Skill } from "@db/schema/enums";
 import { exams } from "@db/schema/exams";
 import {
   knowledgePoints,
   questionKnowledgePoints,
 } from "@db/schema/knowledge-points";
 import { questions } from "@db/schema/questions";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import type { ObjectiveAnswerKey } from "@db/types/answers";
+import {
+  CONTENT_MAP,
+  OBJECTIVE_SKILLS,
+  type QuestionContent,
+  VALID_PARTS,
+} from "@db/types/question-content";
+import { Value } from "@sinclair/typebox/value";
+import { and, desc, eq, getTableColumns, inArray, sql } from "drizzle-orm";
 import type {
   QuestionCreateBody,
   QuestionListQuery,
@@ -30,7 +39,6 @@ async function syncKnowledgePoints(
     .where(eq(questionKnowledgePoints.questionId, questionId));
 
   if (knowledgePointIds.length > 0) {
-    // Validate all knowledge point IDs exist
     const existing = await tx
       .select({ id: knowledgePoints.id })
       .from(knowledgePoints)
@@ -61,6 +69,33 @@ async function getKnowledgePointIds(questionId: string) {
   return rows.map((r) => r.knowledgePointId);
 }
 
+function validateQuestion(
+  skill: Skill,
+  part: number,
+  content: QuestionContent,
+  answerKey: ObjectiveAnswerKey | null,
+) {
+  const validParts: readonly number[] = VALID_PARTS[skill];
+  if (!validParts.includes(part))
+    throw new BadRequestError(
+      `Invalid part ${part} for ${skill} (valid: ${validParts.join(", ")})`,
+    );
+
+  const schema = CONTENT_MAP[`${skill}:${part}`];
+  if (!schema || !Value.Check(schema, content))
+    throw new BadRequestError(
+      `Content does not match expected schema for ${skill} part ${part}`,
+    );
+
+  if (OBJECTIVE_SKILLS.has(skill) && !answerKey)
+    throw new BadRequestError(`answerKey is required for ${skill} questions`);
+
+  if (!OBJECTIVE_SKILLS.has(skill) && answerKey)
+    throw new BadRequestError(
+      `answerKey must not be set for ${skill} questions`,
+    );
+}
+
 // ---------------------------------------------------------------------------
 // CRUD
 // ---------------------------------------------------------------------------
@@ -82,7 +117,6 @@ export async function find(questionId: string) {
 export async function list(query: QuestionListQuery, actor: Actor) {
   const admin = actor.is(ROLES.ADMIN);
 
-  // If filtering by knowledgePointId, join the junction table
   const hasKpFilter = query.knowledgePointId !== undefined;
 
   const where = and(
@@ -104,19 +138,8 @@ export async function list(query: QuestionListQuery, actor: Actor) {
   );
 
   if (hasKpFilter) {
-    const baseQuery = db
-      .select({
-        id: questions.id,
-        skill: questions.skill,
-        part: questions.part,
-        content: questions.content,
-        answerKey: questions.answerKey,
-        explanation: questions.explanation,
-        isActive: questions.isActive,
-        createdBy: questions.createdBy,
-        createdAt: questions.createdAt,
-        updatedAt: questions.updatedAt,
-      })
+    const kpJoin = db
+      .select(getTableColumns(questions))
       .from(questions)
       .innerJoin(
         questionKnowledgePoints,
@@ -135,7 +158,7 @@ export async function list(query: QuestionListQuery, actor: Actor) {
       .where(where)
       .then((r) => Number(r[0]?.count ?? 0));
 
-    return paginate(baseQuery.$dynamic(), countQuery, query);
+    return paginate(kpJoin.$dynamic(), countQuery, query);
   }
 
   return paginate(
@@ -152,13 +175,15 @@ export async function list(query: QuestionListQuery, actor: Actor) {
 
 export async function create(userId: string, body: QuestionCreateBody) {
   return db.transaction(async (tx) => {
+    const answerKey = "answerKey" in body ? body.answerKey : null;
+
     const question = await tx
       .insert(questions)
       .values({
         skill: body.skill,
         part: body.part,
         content: body.content,
-        answerKey: body.answerKey ?? null,
+        answerKey,
         explanation: body.explanation ?? null,
         isActive: true,
         createdBy: userId,
@@ -196,6 +221,13 @@ export async function update(
       actor,
       "You can only update your own questions",
     );
+
+    const mergedSkill = existing.skill;
+    const mergedPart = body.part ?? existing.part;
+    const mergedContent = body.content ?? existing.content;
+    const mergedAnswerKey =
+      body.answerKey !== undefined ? body.answerKey : existing.answerKey;
+    validateQuestion(mergedSkill, mergedPart, mergedContent, mergedAnswerKey);
 
     const updated = await tx
       .update(questions)
