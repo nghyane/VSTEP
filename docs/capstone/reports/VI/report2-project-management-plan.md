@@ -41,7 +41,7 @@
 | 1.4 | Quản lý hồ sơ (GET /auth/me, cập nhật profile) | Đơn giản | 3 |
 | **2** | **Ngân hàng câu hỏi** | | **14** |
 | 2.1 | CRUD câu hỏi (4 kỹ năng × nhiều định dạng, nội dung JSONB) | Trung bình | 5 |
-| 2.2 | Validation nội dung câu hỏi (schema theo từng kỹ năng) | Trung bình | 4 |
+| 2.2 | Validation nội dung câu hỏi (Zod schema theo từng kỹ năng) | Trung bình | 4 |
 | 2.3 | Pipeline nạp dữ liệu mẫu (JSON → DB với schema validation) | Đơn giản | 3 |
 | 2.4 | Quản lý phiên bản câu hỏi | Đơn giản | 2 |
 | **3** | **Nộp bài & Chấm tự động** | | **22** |
@@ -135,7 +135,7 @@
 | 1 | Nhà cung cấp LLM/STT (Groq, OpenAI) bị rate limit hoặc downtime gây trễ chấm điểm | Cao | Trung bình | Sử dụng LiteLLM router với hỗ trợ fallback model. Worker retry (tối đa 3 lần, exponential backoff). Dead letter queue cho các lỗi liên tục. |
 | 2 | Chất lượng chấm AI không đủ tốt cho kỹ năng Viết/Nói | Cao | Trung bình | Định tuyến theo confidence: low/medium → hàng đợi review giảng viên. Audit flag theo dõi chênh lệch điểm AI vs. giảng viên để cải thiện mô hình. |
 | 3 | Thành viên thiếu kinh nghiệm với Bun/Elysia/Drizzle | Trung bình | Cao | Kế hoạch đào tạo (Tuần 1-2). Leader review code và pair programming. Technical specs viết trước khi code. |
-| 4 | Độ phức tạp schema JSONB gây không nhất quán dữ liệu | Trung bình | Trung bình | TypeBox validation tại API boundary. Seed data được validate theo schema. Schema nội dung câu hỏi được tài liệu hóa trong specs. |
+| 4 | Độ phức tạp schema JSONB gây không nhất quán dữ liệu | Trung bình | Trung bình | Zod validation tại API boundary. Seed data được validate theo schema. Schema nội dung câu hỏi được tài liệu hóa trong specs. |
 | 5 | Phình phạm vi — tính năng Phase 2 lấn vào thời gian phát triển lõi | Cao | Trung bình | Phân tách phase nghiêm ngặt (Phase 1: MVP tuần 1-10/Sprint 1-5, Phase 2: nâng cao tuần 11-14/Sprint 6-7). Tính năng FE-12 đến FE-16 hoãn rõ ràng. Các phase Rate Limiting, Circuit Breaker, Observability, Data Retention bị loại khỏi phạm vi capstone. |
 | 6 | Vấn đề tích hợp giữa Bun Main App và Python Grading Worker | Trung bình | Trung bình | Kiến trúc Shared-DB (cả hai service ghi cùng PostgreSQL). Redis queue contract được định nghĩa trong specs. Integration test sớm từ Sprint 3. |
 | 7 | Xử lý file âm thanh cho đánh giá Nói (upload, lưu trữ, phiên âm) | Trung bình | Thấp | Sử dụng pre-signed URL cho upload audio. Whisper transcription qua LiteLLM với Redis caching (tránh phiên âm lại). |
@@ -177,9 +177,9 @@ Các tính năng Rate Limiting, Circuit Breaker, Admin & Observability, Data Ret
 ### 2.2 Quản lý chất lượng
 
 **Phòng ngừa lỗi (Defect Prevention)**:
-- Technical specs viết trước khi triển khai (22 file spec bao gồm domain rules, API contracts, data schemas, platform concerns)
+- Technical specs viết trước khi triển khai (20 file spec bao gồm domain rules, API contracts, data schemas, platform concerns)
 - Code style được enforced bởi Biome linter (`bun run check`) với các rule nghiêm ngặt: `noConsole`, `noImportCycles`, `useNamingConvention`, `noNonNullAssertion`
-- TypeBox schemas validate toàn bộ input tại API boundary — nguyên tắc "Parse, Don't Validate"
+- Zod schemas validate toàn bộ input tại API boundary — nguyên tắc "Parse, Don't Validate"
 
 **Review mã nguồn (Code Review)**:
 - Mọi thay đổi mã nguồn phải qua pull request review trước khi merge vào main
@@ -231,7 +231,7 @@ Các tính năng Rate Limiting, Circuit Breaker, Admin & Observability, Data Ret
 |---|-------------------|----------|---------|
 | 1 | Report 1 — Giới thiệu dự án | 15/01/2026 | Đã nộp |
 | 2 | Report 2 — Kế hoạch quản lý dự án | 01/02/2026 | Tài liệu này |
-| 3 | Technical Specifications (22 file spec) | 15/01/2026 | Domain, contracts, data, platform, ops |
+| 3 | Technical Specifications (20 file spec) | 15/01/2026 | Domain, contracts, data, platform, ops |
 | 4 | Database Schema (Drizzle ORM + migrations) | 31/01/2026 | PostgreSQL tables, enums, indexes |
 | 5 | Sprint 1-2: Nền tảng + Auth + Questions + Submissions | 28/02/2026 | Backend Phases 1-3 |
 | 6 | Sprint 3-4: Dịch vụ chấm AI + Chấm tự động + Review | 15/03/2026 | Grading worker + quy trình chấm thủ công |
@@ -320,14 +320,14 @@ D — Thực hiện · R — Review · S — Hỗ trợ · I — Được thông
 
 | Danh mục | Công cụ / Hạ tầng |
 |----------|-------------------|
-| Công nghệ (Backend) | Bun + Elysia + Drizzle ORM + TypeBox + Jose (JWT) |
+| Công nghệ (Backend) | Bun + Elysia + Drizzle ORM + Zod + Jose (JWT) |
 | Công nghệ (Frontend) | React 19 + Vite 7 + TypeScript |
 | Công nghệ (Grading) | Python + FastAPI + LiteLLM + Redis BRPOP worker |
 | Cơ sở dữ liệu | PostgreSQL 17 (dùng chung bởi Backend + Grading) |
 | Queue / Cache | Redis 7 Alpine (grading queue + caching) |
 | Nhà cung cấp AI | Groq (Llama 3.3 70B cho LLM, Whisper Large V3 Turbo cho STT) qua LiteLLM |
 | IDE/Editor | Visual Studio Code, Cursor |
-| Lint / Format | Biome (TypeScript), Ruff (Python) |
+| Lint / Format | Biome (TypeScript) |
 | Kiểm thử | bun:test (backend), pytest (grading) |
 | Sơ đồ | Mermaid (trong Markdown), draw.io |
 | Tài liệu | Markdown (quản lý bằng Git), python-docx (sinh DOCX qua `scripts/build.py`) |

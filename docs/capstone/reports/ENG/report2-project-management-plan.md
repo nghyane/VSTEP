@@ -41,7 +41,7 @@
 | 1.4 | Profile management (GET /auth/me, update profile) | Simple | 3 |
 | **2** | **Question Bank** | | **14** |
 | 2.1 | Question CRUD (4 skills × multiple formats, JSONB content) | Medium | 5 |
-| 2.2 | Question content validation (skill-specific schemas) | Medium | 4 |
+| 2.2 | Question content validation (Zod skill-specific schemas) | Medium | 4 |
 | 2.3 | Seed data pipeline (JSON → DB with schema validation) | Simple | 3 |
 | 2.4 | Question versioning | Simple | 2 |
 | **3** | **Submission & Auto-grading** | | **22** |
@@ -135,7 +135,7 @@
 | 1 | LLM/STT provider rate limits or downtime (Groq, OpenAI) causing grading delays | High | Medium | Implement LiteLLM router with fallback model support. Worker retries (max 3, exponential backoff). Dead letter queue for persistent failures. |
 | 2 | AI grading quality insufficient for productive skills (Writing/Speaking) | High | Medium | Confidence-based routing: low/medium confidence → instructor review queue. Audit flag tracks AI vs. human score discrepancies for model improvement. |
 | 3 | Team members lack experience with Bun/Elysia/Drizzle stack | Medium | High | Training plan (Week 1-2). Team lead provides code review and pair programming. Comprehensive technical specs pre-written. |
-| 4 | JSONB schema complexity causes data inconsistency | Medium | Medium | TypeBox validation at API boundary. Seed data validated against schemas. Question content schemas documented in specs. |
+| 4 | JSONB schema complexity causes data inconsistency | Medium | Medium | Zod validation at API boundary. Seed data validated against schemas. Question content schemas documented in specs. |
 | 5 | Scope creep — Phase 2 features expanding into core development time | High | Medium | Strict phase separation (Phase 1: MVP Weeks 1-10/Sprints 1-5, Phase 2: Enhancement Weeks 11-14/Sprints 6-7). Features FE-12 to FE-16 explicitly deferred. Rate Limiting, Circuit Breaker, Observability, Data Retention phases dropped from capstone scope. |
 | 6 | Integration issues between Bun Main App and Python Grading Worker | Medium | Medium | Shared-DB architecture (both services write to same PostgreSQL). Redis queue contract defined in specs. Integration tested early in Sprint 3. |
 | 7 | Audio file handling for Speaking assessment (upload, storage, transcription) | Medium | Low | Use pre-signed URLs for audio upload. Whisper transcription via LiteLLM with Redis caching (avoid re-transcription). |
@@ -177,9 +177,9 @@ Rate Limiting, Circuit Breaker, Admin & Observability, and Data Retention featur
 ### 2.2 Quality Management
 
 **Defect Prevention**:
-- Technical specifications written before implementation (22 spec files covering domain rules, API contracts, data schemas, platform concerns)
+- Technical specifications written before implementation (20 spec files covering domain rules, API contracts, data schemas, platform concerns)
 - Code style enforced by Biome linter (`bun run check`) with strict rules: `noConsole`, `noImportCycles`, `useNamingConvention`, `noNonNullAssertion`
-- TypeBox schemas validate all inputs at API boundaries — "Parse, Don't Validate" principle
+- Zod schemas validate all inputs at API boundaries — "Parse, Don't Validate" principle
 
 **Code Review**:
 - All code changes go through pull request review before merge to main
@@ -231,7 +231,7 @@ Rate Limiting, Circuit Breaker, Admin & Observability, and Data Retention featur
 |---|------------|----------|-------|
 | 1 | Report 1 — Project Introduction | 15/01/2026 | Submitted |
 | 2 | Report 2 — Project Management Plan | 01/02/2026 | This document |
-| 3 | Technical Specifications (22 spec files) | 15/01/2026 | Covers domain, contracts, data, platform, ops |
+| 3 | Technical Specifications (20 spec files) | 15/01/2026 | Covers domain, contracts, data, platform, ops |
 | 4 | Database Schema (Drizzle ORM + migrations) | 31/01/2026 | PostgreSQL tables, enums, indexes |
 | 5 | Sprint 1-2: Foundation + Auth + Questions + Submissions | 28/02/2026 | Backend Phases 1-3 |
 | 6 | Sprint 3-4: AI Grading Service + Auto-grading + Review | 15/03/2026 | Grading worker + human review workflow |
@@ -297,7 +297,7 @@ D — Do · R — Review · S — Support · I — Informed · (blank) — Omitt
 ### 6.1 Document Management
 
 - All project documents stored in Git repository under `docs/capstone/`
-  - `specs/` — Technical specifications (22 files organized into 00-overview, 10-contracts, 20-domain, 30-data, 40-platform, 50-ops)
+  - `specs/` — Technical specifications (20 files organized into 00-overview, 10-contracts, 20-domain, 30-data, 40-platform, 50-ops)
   - `reports/` — Capstone reports (ENG and VI versions)
   - `diagrams/` — Flow diagrams and architecture diagrams
 - Version control via Git commits with semantic commit messages (`docs:` prefix)
@@ -320,14 +320,14 @@ D — Do · R — Review · S — Support · I — Informed · (blank) — Omitt
 
 | Category | Tools / Infrastructure |
 |----------|----------------------|
-| Technology (Backend) | Bun + Elysia + Drizzle ORM + TypeBox + Jose (JWT) |
+| Technology (Backend) | Bun + Elysia + Drizzle ORM + Zod + Jose (JWT) |
 | Technology (Frontend) | React 19 + Vite 7 + TypeScript |
 | Technology (Grading) | Python + FastAPI + LiteLLM + Redis BRPOP worker |
 | Database | PostgreSQL 17 (shared by Backend + Grading) |
 | Queue / Cache | Redis 7 Alpine (grading queue + caching) |
 | AI Providers | Groq (Llama 3.3 70B for LLM, Whisper Large V3 Turbo for STT) via LiteLLM |
 | IDEs/Editors | Visual Studio Code, Cursor |
-| Linting / Formatting | Biome (TypeScript), Ruff (Python) |
+| Linting / Formatting | Biome (TypeScript) |
 | Testing | bun:test (backend), pytest (grading) |
 | Diagramming | Mermaid (in Markdown), draw.io |
 | Documentation | Markdown (Git-versioned), python-docx (DOCX generation via `scripts/build.py`) |
