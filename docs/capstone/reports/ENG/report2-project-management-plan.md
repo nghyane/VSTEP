@@ -215,11 +215,12 @@ Rate Limiting, Circuit Breaker, Admin & Observability, and Data Retention featur
 
 | Training Area | Participants | When, Duration | Waiver Criteria |
 |--------------|-------------|----------------|-----------------|
-| Bun runtime + Elysia framework | Khôi, Phát (NN), Phát (NTT) | Week 1-2, 3 days | Prior experience with Elysia |
-| Drizzle ORM + PostgreSQL | Khôi, Phát (NN), Phát (NTT) | Week 1-2, 2 days | Mandatory |
-| TypeBox schema validation | Khôi | Week 2, 1 day | Mandatory |
-| Python FastAPI + LiteLLM | Phát (NTT) | Week 1-2, 3 days | Prior FastAPI experience |
-| React 19 + Vite 7 | Phát (NN) | Week 1, 2 days | Prior React experience |
+| Bun runtime + Elysia framework | Nghĩa | Week 1-2, 3 days | Prior experience with Elysia |
+| Drizzle ORM + PostgreSQL | Nghĩa | Week 1-2, 2 days | Mandatory |
+| TypeBox schema validation | Nghĩa | Week 2, 1 day | Mandatory |
+| Python FastAPI + LiteLLM | Nghĩa | Week 1-2, 3 days | Prior FastAPI experience |
+| React 19 + Vite 7 | Phát (NTT), Phát (NN) | Week 1-2, 3 days | Prior React experience |
+| React Native (Mobile) | Khôi | Week 1-2, 3 days | Prior React Native experience |
 | JWT authentication flow | All developers | Week 2, 1 day | Mandatory |
 | Git workflow (branching, PR review) | All members | Week 1, 0.5 day | Mandatory |
 
@@ -227,18 +228,20 @@ Rate Limiting, Circuit Breaker, Admin & Observability, and Data Retention featur
 
 ## 3. Project Deliverables
 
-| # | Deliverable | Due Date | Notes |
-|---|------------|----------|-------|
-| 1 | Report 1 — Project Introduction | 15/01/2026 | Submitted |
-| 2 | Report 2 — Project Management Plan | 01/02/2026 | This document |
-| 3 | Technical Specifications (20 spec files) | 15/01/2026 | Covers domain, contracts, data, platform, ops |
-| 4 | Database Schema (Drizzle ORM + migrations) | 31/01/2026 | PostgreSQL tables, enums, indexes |
-| 5 | Sprint 1-2: Foundation + Auth + Questions + Submissions | 28/02/2026 | Backend Phases 1-3 |
-| 6 | Sprint 3-4: AI Grading Service + Auto-grading + Review | 15/03/2026 | Grading worker + human review workflow |
-| 7 | Sprint 5: Progress Tracking + Scaffolding + Exams + Frontend MVP | 31/03/2026 | Backend Phases 4-5, 9 + Frontend core |
-| 8 | Report 3 — SRS Document | 15/03/2026 | Software Requirements Specification |
-| 9 | Sprint 6-7: Enhancement features + System testing | 15/04/2026 | Phase 2 features (FE-12 to FE-16) |
-| 10 | Final Report + Demo | 30/04/2026 | Final presentation and deployment |
+| # | Deliverable | Due Date | Owner | Notes |
+|---|------------|----------|-------|-------|
+| 1 | Report 1 — Project Introduction | 15/01/2026 | Nghĩa | Submitted |
+| 2 | Report 2 — Project Management Plan | 01/02/2026 | Nghĩa | This document |
+| 3 | Technical Specifications (20 spec files) | 15/01/2026 | Nghĩa | Covers domain, contracts, data, platform, ops |
+| 4 | Database Schema (Drizzle ORM + migrations) | 31/01/2026 | Nghĩa | PostgreSQL tables, enums, indexes |
+| 5 | Sprint 1-2: Foundation + Auth + Questions + Submissions | 28/02/2026 | Nghĩa | Backend Phases 1-3 |
+| 6 | Sprint 3-4: AI Grading Service + Auto-grading + Review | 15/03/2026 | Nghĩa | Grading worker + human review workflow |
+| 7 | Sprint 5: Progress Tracking + Scaffolding + Exams | 31/03/2026 | Nghĩa | Backend Phases 4-5, 9 |
+| 8 | Frontend MVP (Web) | 31/03/2026 | Phát (NTT), Phát (NN) | Core web UI (auth, practice, mock test, dashboard) |
+| 9 | Mobile App (React Native) | 15/04/2026 | Khôi | Learner mobile application |
+| 10 | Report 3 — SRS Document | 15/03/2026 | Nghĩa | Software Requirements Specification |
+| 11 | Sprint 6-7: Enhancement features + System testing | 15/04/2026 | All | Phase 2 features (FE-12 to FE-16) |
+| 12 | Final Report + Demo | 30/04/2026 | All | Final presentation and deployment |
 
 ---
 
@@ -246,33 +249,37 @@ Rate Limiting, Circuit Breaker, Admin & Observability, and Data Retention featur
 
 D — Do · R — Review · S — Support · I — Informed · (blank) — Omitted
 
-| Responsibility | Nghĩa (Leader) | Khôi (Dev 1) | Phát NN (Dev 2) | Phát NTT (Dev 3) |
+| Responsibility | Nghĩa (Leader, BE & AI) | Khôi (Mobile) | Phát NN (FE) | Phát NTT (FE) |
 |---------------|:---:|:---:|:---:|:---:|
 | Project Planning & Tracking | D | S | I | I |
-| Technical Specifications (specs/) | R | D | S | S |
+| Technical Specifications (specs/) | D | S | S | S |
 | Report 1 — Project Introduction | D | S | S | S |
 | Report 2 — Project Management Plan | D | R | I | I |
 | Report 3 — SRS Document | D | S | S | R |
-| Backend: Auth module | S | D | | |
-| Backend: Questions module | S | D | | |
-| Backend: Submissions & State machine | R | D | | |
-| Backend: Exams module | S | D | | |
-| Backend: Progress & Scaffolding | R | D | | |
-| Backend: Human Review Workflow | S | D | | |
-| Backend: Goals & Classes | S | D | | |
-| Backend: Integration Tests | R | D | S | |
-| Frontend: Auth & Profile pages | | S | D | |
-| Frontend: Practice mode UI | | S | D | |
-| Frontend: Mock test UI | | S | D | |
-| Frontend: Progress dashboard | | S | D | |
-| Frontend: Instructor review UI | | S | D | |
-| Grading: Writing pipeline | | S | | D |
-| Grading: Speaking pipeline (STT + LLM) | | S | | D |
-| Grading: Redis worker + retry logic | | S | | D |
-| Grading: Unit tests | | | | D |
-| Database Schema & Migrations | R | D | I | I |
-| Seed Data Pipeline | S | D | | |
-| Docker Compose & Infrastructure | S | D | | S |
+| Backend: Auth module | D | | | |
+| Backend: Questions module | D | | | |
+| Backend: Submissions & State machine | D | | | |
+| Backend: Exams module | D | | | |
+| Backend: Progress & Scaffolding | D | | | |
+| Backend: Human Review Workflow | D | | | |
+| Backend: Goals & Classes | D | | | |
+| Backend: Integration Tests | D | | S | S |
+| Frontend: Auth & Profile pages | | | D | S |
+| Frontend: Practice mode UI | | | S | D |
+| Frontend: Mock test UI | | | D | S |
+| Frontend: Progress dashboard | | | S | D |
+| Frontend: Instructor review UI | | | D | S |
+| Frontend: Type sync & API integration | S | | D | D |
+| Mobile: Learner UI (React Native) | | D | S | S |
+| Mobile: Backend API integration | S | D | | |
+| Mobile: Audio recording & upload (Speaking) | S | D | | |
+| Grading: Writing pipeline | D | | | |
+| Grading: Speaking pipeline (STT + LLM) | D | | | |
+| Grading: Redis worker + retry logic | D | | | |
+| Grading: Unit tests | D | | | |
+| Database Schema & Migrations | D | I | I | I |
+| Seed Data Pipeline | D | | | |
+| Docker Compose & Infrastructure | D | S | | |
 | System Testing & QA | D | S | S | S |
 | Final Report & Demo | D | S | S | S |
 

@@ -215,11 +215,12 @@ Các tính năng Rate Limiting, Circuit Breaker, Admin & Observability, Data Ret
 
 | Lĩnh vực đào tạo | Người tham gia | Thời gian, Thời lượng | Điều kiện miễn |
 |------------------|----------------|----------------------|----------------|
-| Bun runtime + Elysia framework | Khôi, Phát (NN), Phát (NTT) | Tuần 1-2, 3 ngày | Có kinh nghiệm Elysia trước đó |
-| Drizzle ORM + PostgreSQL | Khôi, Phát (NN), Phát (NTT) | Tuần 1-2, 2 ngày | Bắt buộc |
-| TypeBox schema validation | Khôi | Tuần 2, 1 ngày | Bắt buộc |
-| Python FastAPI + LiteLLM | Phát (NTT) | Tuần 1-2, 3 ngày | Có kinh nghiệm FastAPI trước đó |
-| React 19 + Vite 7 | Phát (NN) | Tuần 1, 2 ngày | Có kinh nghiệm React trước đó |
+| Bun runtime + Elysia framework | Nghĩa | Tuần 1-2, 3 ngày | Có kinh nghiệm Elysia trước đó |
+| Drizzle ORM + PostgreSQL | Nghĩa | Tuần 1-2, 2 ngày | Bắt buộc |
+| TypeBox schema validation | Nghĩa | Tuần 2, 1 ngày | Bắt buộc |
+| Python FastAPI + LiteLLM | Nghĩa | Tuần 1-2, 3 ngày | Có kinh nghiệm FastAPI trước đó |
+| React 19 + Vite 7 | Phát (NTT), Phát (NN) | Tuần 1-2, 3 ngày | Có kinh nghiệm React trước đó |
+| React Native (Mobile) | Khôi | Tuần 1-2, 3 ngày | Có kinh nghiệm React Native trước đó |
 | Luồng xác thực JWT | Tất cả developers | Tuần 2, 1 ngày | Bắt buộc |
 | Git workflow (branching, PR review) | Tất cả thành viên | Tuần 1, 0,5 ngày | Bắt buộc |
 
@@ -227,18 +228,20 @@ Các tính năng Rate Limiting, Circuit Breaker, Admin & Observability, Data Ret
 
 ## 3. Sản Phẩm Bàn Giao
 
-| # | Sản phẩm bàn giao | Ngày hạn | Ghi chú |
-|---|-------------------|----------|---------|
-| 1 | Report 1 — Giới thiệu dự án | 15/01/2026 | Đã nộp |
-| 2 | Report 2 — Kế hoạch quản lý dự án | 01/02/2026 | Tài liệu này |
-| 3 | Technical Specifications (20 file spec) | 15/01/2026 | Domain, contracts, data, platform, ops |
-| 4 | Database Schema (Drizzle ORM + migrations) | 31/01/2026 | PostgreSQL tables, enums, indexes |
-| 5 | Sprint 1-2: Nền tảng + Auth + Questions + Submissions | 28/02/2026 | Backend Phases 1-3 |
-| 6 | Sprint 3-4: Dịch vụ chấm AI + Chấm tự động + Review | 15/03/2026 | Grading worker + quy trình chấm thủ công |
-| 7 | Sprint 5: Theo dõi tiến độ + Scaffolding + Exams + Frontend MVP | 31/03/2026 | Backend Phases 4-5, 9 + Frontend cốt lõi |
-| 8 | Report 3 — Tài liệu SRS | 15/03/2026 | Đặc tả yêu cầu phần mềm |
-| 9 | Sprint 6-7: Tính năng nâng cao + Kiểm thử hệ thống | 15/04/2026 | Tính năng Phase 2 (FE-12 đến FE-16) |
-| 10 | Báo cáo cuối + Demo | 30/04/2026 | Thuyết trình cuối và triển khai |
+| # | Sản phẩm bàn giao | Ngày hạn | Người phụ trách | Ghi chú |
+|---|-------------------|----------|----------------|---------|
+| 1 | Report 1 — Giới thiệu dự án | 15/01/2026 | Nghĩa | Đã nộp |
+| 2 | Report 2 — Kế hoạch quản lý dự án | 01/02/2026 | Nghĩa | Tài liệu này |
+| 3 | Technical Specifications (20 file spec) | 15/01/2026 | Nghĩa | Domain, contracts, data, platform, ops |
+| 4 | Database Schema (Drizzle ORM + migrations) | 31/01/2026 | Nghĩa | PostgreSQL tables, enums, indexes |
+| 5 | Sprint 1-2: Nền tảng + Auth + Questions + Submissions | 28/02/2026 | Nghĩa | Backend Phases 1-3 |
+| 6 | Sprint 3-4: Dịch vụ chấm AI + Chấm tự động + Review | 15/03/2026 | Nghĩa | Grading worker + quy trình chấm thủ công |
+| 7 | Sprint 5: Theo dõi tiến độ + Scaffolding + Exams | 31/03/2026 | Nghĩa | Backend Phases 4-5, 9 |
+| 8 | Frontend MVP (Web) | 31/03/2026 | Phát (NTT), Phát (NN) | Giao diện web cốt lõi (auth, luyện tập, thi thử, dashboard) |
+| 9 | Ứng dụng Mobile (React Native) | 15/04/2026 | Khôi | Ứng dụng di động cho learner |
+| 10 | Report 3 — Tài liệu SRS | 15/03/2026 | Nghĩa | Đặc tả yêu cầu phần mềm |
+| 11 | Sprint 6-7: Tính năng nâng cao + Kiểm thử hệ thống | 15/04/2026 | Tất cả | Tính năng Phase 2 (FE-12 đến FE-16) |
+| 12 | Báo cáo cuối + Demo | 30/04/2026 | Tất cả | Thuyết trình cuối và triển khai |
 
 ---
 
@@ -246,33 +249,37 @@ Các tính năng Rate Limiting, Circuit Breaker, Admin & Observability, Data Ret
 
 D — Thực hiện · R — Review · S — Hỗ trợ · I — Được thông báo · (trống) — Không liên quan
 
-| Trách nhiệm | Nghĩa (Leader) | Khôi (Dev 1) | Phát NN (Dev 2) | Phát NTT (Dev 3) |
+| Trách nhiệm | Nghĩa (Leader, BE & AI) | Khôi (Mobile) | Phát NN (FE) | Phát NTT (FE) |
 |-------------|:---:|:---:|:---:|:---:|
 | Lập kế hoạch & Theo dõi dự án | D | S | I | I |
-| Technical Specifications (specs/) | R | D | S | S |
+| Technical Specifications (specs/) | D | S | S | S |
 | Report 1 — Giới thiệu dự án | D | S | S | S |
 | Report 2 — Kế hoạch quản lý dự án | D | R | I | I |
 | Report 3 — Tài liệu SRS | D | S | S | R |
-| Backend: Module Auth | S | D | | |
-| Backend: Module Questions | S | D | | |
-| Backend: Module Submissions & State machine | R | D | | |
-| Backend: Module Exams | S | D | | |
-| Backend: Module Progress & Scaffolding | R | D | | |
-| Backend: Quy trình chấm thủ công | S | D | | |
-| Backend: Module Goals & Classes | S | D | | |
-| Backend: Integration Tests | R | D | S | |
-| Frontend: Trang xác thực & Hồ sơ | | S | D | |
-| Frontend: Giao diện chế độ luyện tập | | S | D | |
-| Frontend: Giao diện thi thử | | S | D | |
-| Frontend: Dashboard tiến độ | | S | D | |
-| Frontend: Giao diện review giảng viên | | S | D | |
-| Grading: Pipeline chấm Viết | | S | | D |
-| Grading: Pipeline chấm Nói (STT + LLM) | | S | | D |
-| Grading: Redis worker + retry logic | | S | | D |
-| Grading: Unit tests | | | | D |
-| Database Schema & Migrations | R | D | I | I |
-| Pipeline nạp dữ liệu mẫu | S | D | | |
-| Docker Compose & Hạ tầng | S | D | | S |
+| Backend: Module Auth | D | | | |
+| Backend: Module Questions | D | | | |
+| Backend: Module Submissions & State machine | D | | | |
+| Backend: Module Exams | D | | | |
+| Backend: Module Progress & Scaffolding | D | | | |
+| Backend: Quy trình chấm thủ công | D | | | |
+| Backend: Module Goals & Classes | D | | | |
+| Backend: Integration Tests | D | | S | S |
+| Frontend: Trang xác thực & Hồ sơ | | | D | S |
+| Frontend: Giao diện chế độ luyện tập | | | S | D |
+| Frontend: Giao diện thi thử | | | D | S |
+| Frontend: Dashboard tiến độ | | | S | D |
+| Frontend: Giao diện review giảng viên | | | D | S |
+| Frontend: Đồng bộ type và tích hợp API | S | | D | D |
+| Mobile: Giao diện learner (React Native) | | D | S | S |
+| Mobile: Tích hợp API backend | S | D | | |
+| Mobile: Ghi âm & Upload audio (Speaking) | S | D | | |
+| Grading: Pipeline chấm Viết | D | | | |
+| Grading: Pipeline chấm Nói (STT + LLM) | D | | | |
+| Grading: Redis worker + retry logic | D | | | |
+| Grading: Unit tests | D | | | |
+| Database Schema & Migrations | D | I | I | I |
+| Pipeline nạp dữ liệu mẫu | D | | | |
+| Docker Compose & Hạ tầng | D | S | | |
 | Kiểm thử hệ thống & QA | D | S | S | S |
 | Báo cáo cuối & Demo | D | S | S | S |
 
