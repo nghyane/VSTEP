@@ -1,665 +1,908 @@
 # VSTEP Adaptive Learning System - Flow Diagrams
 
-## 1. System Architecture (Multi-Language)
+## 1. System Architecture
 
 ```mermaid
 flowchart TB
     subgraph Users ["Users"]
         L["Learner<br/>Practice, Mock Test, Progress"]
-        I["Instructor<br/>Grading, Monitoring"]
+        I["Instructor<br/>Grading, Feedback, Monitoring"]
         A["Admin<br/>User & Content Management"]
     end
 
-    subgraph BunApp ["Bun Main Application"]
-        subgraph API ["API Layer"]
-            Auth["Authentication<br/>JWT (Access + Refresh), RBAC"]
-            Validate["Request Validation<br/>Input sanitization"]
-            Route["REST API<br/>Resource-oriented endpoints"]
+    subgraph BunApp ["Bun + Elysia Application"]
+        subgraph Plugins ["Plugins"]
+            ErrorPlugin["Error Plugin<br/>Structured error handling"]
+            CORS["CORS<br/>Origin whitelist"]
+            OpenAPI["OpenAPI<br/>Auto-generated docs"]
         end
 
-        subgraph Core ["Core Modules"]
-            Assessment["Assessment<br/>Practice, Mock, Submission"]
-            Progress["Progress<br/>Spider Chart, Sliding Window"]
-            Content["Content<br/>Question Bank, Recommender"]
+        subgraph AuthLayer ["Auth Layer"]
+            AuthPlugin["Auth Plugin<br/>JWT validation, RBAC"]
+            Bearer["Bearer Token<br/>Extract from header"]
+            RoleCheck["Role Guard<br/>Learner, Instructor, Admin"]
         end
 
-        subgraph QueueClient ["Queue Client"]
-            Enqueue["Job Publisher<br/>RabbitMQ"]
-            CallbackConsumer["Callback Consumer<br/>AMQP grading.callback"]
-            Realtime["SSE Notifier<br/>Server-Sent Events"]
-        end
-    end
-
-    subgraph QueueInfra ["Message Queue"]
-        Broker["RabbitMQ<br/>Exchange + Queues"]
-        QueueReq["Queue: grading.request"]
-        QueueCb["Queue: grading.callback"]
-        DeadLetter["DLQ: grading.dlq"]
-    end
-
-    subgraph GradingService ["Grading Service (Python + Celery)"]
-        subgraph GradingAPI ["Grading API"]
-            Receive["Job Receiver<br/>Validate, idempotency check"]
-            Router["Task Router<br/>Essay → LLM, Speech → STT"]
+        subgraph Modules ["Feature Modules"]
+            Auth["Auth<br/>Login, Register, Refresh, Logout"]
+            UsersMod["Users<br/>Profile, CRUD"]
+            ExamsMod["Exams<br/>Blueprint, Sessions, Submit"]
+            SubsMod["Submissions<br/>Create, Auto-grade, Review workflow"]
+            QuestionsMod["Questions<br/>Bank, Answer Keys, KP tagging"]
+            KPMod["Knowledge Points<br/>Taxonomy, Hierarchy"]
+            ProgressMod["Progress<br/>Spider Chart, Trends, Goals"]
+            ClassesMod["Classes<br/>Invite code, Dashboard, Feedback"]
+            HealthMod["Health<br/>PG + Redis probe"]
         end
 
-        subgraph GradingCore ["Grading Core"]
-            LLMGrader["LLM Grader<br/>GPT/Gemini (Writing)"]
-            STTGrader["STT Grader<br/>Whisper/API (Speaking)"]
-            Scorer["Scorer Engine<br/>Rubric, confidence calc"]
+        subgraph Grading ["Grading Engine"]
+            AutoGrade["Auto-Grade<br/>Objective: Listening, Reading<br/>In-process scoring"]
+            GradingDispatch["Grading Dispatch<br/>Subjective: Writing, Speaking<br/>Push to Redis queue"]
+            ReviewWorkflow["Review Workflow<br/>Queue, Claim, Release, Assign"]
+            StateMachine["State Machine<br/>pending → processing →<br/>completed | review_pending"]
         end
 
-        subgraph GradingStorage ["Grading Storage"]
-            JobStateDB["Job State<br/>Pending, Processing, Done"]
-            ResultStore["Results<br/>Scores, Feedback, Diagnostics"]
+        subgraph ProgressEngine ["Progress Engine"]
+            SlidingWindow["Sliding Window<br/>Last 10 attempts per skill"]
+            TrendDetect["Trend Detection<br/>Improving, Stable, Declining"]
+            ScoreRecord["Score Recorder<br/>user_skill_scores insert"]
         end
     end
 
-    subgraph External ["External Services"]
-        LLMs["LLM APIs<br/>GPT-4, Gemini Pro"]
-        STT_APIs["Speech-to-Text<br/>Whisper, Azure"]
+    subgraph Infrastructure ["Infrastructure"]
+        PG["PostgreSQL<br/>Single DB via Drizzle ORM"]
+        Redis["Redis<br/>Grading task queue<br/>(grading:tasks)"]
     end
 
-    subgraph Observability ["Observability"]
-        Logs["Structured Logs<br/>JSON, level-based"]
-        Metrics["Metrics<br/>Prometheus format"]
-        Traces["Distributed Traces<br/>OpenTelemetry"]
+    subgraph Tables ["Database Tables"]
+        UsersT["users, refresh_tokens"]
+        ExamsT["exams, exam_sessions,<br/>exam_answers, exam_submissions"]
+        SubsT["submissions, submission_details"]
+        QuestionsT["questions, question_knowledge_points"]
+        ProgressT["user_progress, user_skill_scores,<br/>user_goals, user_knowledge_progress"]
+        ClassesT["classes, class_members,<br/>instructor_feedback"]
     end
 
-    subgraph Data ["Data Layer"]
-        MainDB["PostgreSQL<br/>Users, Content, Progress (Main App)"]
-        GradingDB["PostgreSQL<br/>Grading Jobs, Results (Grading Service)"]
-        Redis["Redis<br/>Cache, Rate limiting"]
-    end
+    %% User flows
+    L --> Auth
+    I --> Auth
+    A --> Auth
+    Auth --> AuthPlugin
+    AuthPlugin --> Bearer
+    Bearer --> RoleCheck
+
+    RoleCheck --> ExamsMod
+    RoleCheck --> SubsMod
+    RoleCheck --> ProgressMod
+    RoleCheck --> ClassesMod
+    RoleCheck --> QuestionsMod
+    RoleCheck --> KPMod
+
+    %% Grading flow
+    SubsMod --> AutoGrade
+    SubsMod --> GradingDispatch
+    SubsMod --> ReviewWorkflow
+    AutoGrade --> StateMachine
+    GradingDispatch --> Redis
+    ReviewWorkflow --> StateMachine
+
+    %% Progress flow
+    StateMachine --> ScoreRecord
+    ScoreRecord --> SlidingWindow
+    SlidingWindow --> TrendDetect
+
+    %% Data access
+    Modules --> PG
+    Grading --> PG
+    ProgressEngine --> PG
+    PG --> Tables
+    HealthMod -.-> PG
+    HealthMod -.-> Redis
 
     %% Styling
     classDef users fill:#1565c0,stroke:#0d47a1,color:#fff
-    classDef api fill:#e65100,stroke:#bf360c,color:#fff
-    classDef core fill:#2e7d32,stroke:#1b5e20,color:#fff
-    classDef queue fill:#ff8f00,stroke:#ff6f00,color:#fff
-    classDef service fill:#6a1b9a,stroke:#4a148c,color:#fff
-    classDef external fill:#00796b,stroke:#004d40,color:#fff
-    classDef observability fill:#455a64,stroke:#37474f,color:#fff
-    classDef data fill:#37474f,stroke:#263238,color:#fff
+    classDef plugins fill:#78909c,stroke:#546e7a,color:#fff
+    classDef auth fill:#e65100,stroke:#bf360c,color:#fff
+    classDef modules fill:#2e7d32,stroke:#1b5e20,color:#fff
+    classDef grading fill:#6a1b9a,stroke:#4a148c,color:#fff
+    classDef progress fill:#00796b,stroke:#004d40,color:#fff
+    classDef infra fill:#37474f,stroke:#263238,color:#fff
+    classDef tables fill:#455a64,stroke:#37474f,color:#fff
 
     class L,I,A users
-    class Auth,Validate,Route,Enqueue,CallbackConsumer,Realtime api
-    class Assessment,Progress,Content core
-    class Broker,QueueReq,QueueCb,DeadLetter queue
-    class Receive,Router,LLMGrader,STTGrader,Scorer,JobStateDB,ResultStore service
-    class LLMs,STT_APIs external
-    class Logs,Metrics,Traces observability
-    class MainDB,GradingDB,Redis data
-
-    %% User flows
-    L --> Web["Web/PWA"]
-    L --> Mobile["Mobile App"]
-    Web --> Auth
-    Mobile --> Auth
-    Auth --> Route
-    Route --> Assessment
-    Route --> Progress
-    Route --> Content
-
-    %% Submission flow
-    Assessment --> Enqueue
-    Enqueue --> Broker
-    Broker --> QueueReq
-    QueueReq --> Receive
-    Receive --> Router
-    Router --> LLMGrader
-    Router --> STTGrader
-    LLMGrader --> LLMs
-    STTGrader --> STT_APIs
-    LLMs --> LLMGrader
-    STT_APIs --> STTGrader
-    LLMGrader --> Scorer
-    STTGrader --> Scorer
-    Scorer --> JobStateDB
-    Scorer --> ResultStore
-    %% Callback flow (AMQP only)
-    Scorer --> QueueCb
-    QueueCb --> CallbackConsumer
-    CallbackConsumer --> Progress
-    CallbackConsumer --> Realtime
-
-    %% SSE real-time updates
-    Realtime --> Web
-    Realtime --> Mobile
-    Progress --> MainDB
-    Content --> MainDB
-    Assessment --> MainDB
-
-    %% Observability
-    Route --> Logs
-    Assessment --> Traces
-    Receive --> Traces
-    Scorer --> Traces
-    Traces --> MetricsExporter["Metrics Exporter"]
-    MetricsExporter --> Prometheus["Prometheus<br/>Metrics storage"]
+    class ErrorPlugin,CORS,OpenAPI plugins
+    class AuthPlugin,Bearer,RoleCheck auth
+    class Auth,UsersMod,ExamsMod,SubsMod,QuestionsMod,KPMod,ProgressMod,ClassesMod,HealthMod modules
+    class AutoGrade,GradingDispatch,ReviewWorkflow,StateMachine grading
+    class SlidingWindow,TrendDetect,ScoreRecord progress
+    class PG,Redis infra
+    class UsersT,ExamsT,SubsT,QuestionsT,ProgressT,ClassesT tables
 ```
 
-> **Multi-Language Architecture:**
-> - **Main App (Bun + Elysia)**: API, Auth, Assessment, Progress, Content - TypeScript
-> - **Grading Service (Python + Celery)**: AI grading, STT, scoring - Celery workers
-> - **Communication**: Queue-based (RabbitMQ) with idempotency via `requestId`
-> - **Database**: Fully separated - Main DB vs Grading DB (both PostgreSQL)
-> - **Real-time**: SSE (Server-Sent Events) for status updates
->
-> **Principles:**
-> - Grading request → outbox → enqueue → async processing → AMQP callback → update progress → SSE push
-> - Strict API contract with `requestId` for idempotency (at-least-once delivery)
-> - Separate schemas, no cross-service writes
+> **Architecture Notes:**
+> - **Monolithic**: Single Bun + Elysia application — all modules in one process
+> - **PostgreSQL**: Single database, all tables, managed via Drizzle ORM
+> - **Redis**: Used for grading task dispatch queue (`grading:tasks` via `LPUSH`), health-checked via TCP probe
+> - **JWT Auth**: Access token (short-lived) + Refresh token (long-lived, rotated) via `jose`
+> - **Password hashing**: Argon2id via `Bun.password.hash()`
+> - **State machine**: Reusable FSM (`createStateMachine`) for submission lifecycle
+> - **Elysia plugins**: CORS, OpenAPI (auto-docs), error handling, auth guard with role levels
 
 ## 2. User Journey Flow
 
 ```mermaid
 flowchart LR
     Start(["Start"])
-    Reg["Registration<br/>Email/Password (OAuth optional)"]
-    Profile["Profile Setup<br/>Role, Goals"]
-    GoalSet["Goal Setting<br/>Target Level, Timeline"]
-    SelfAssess["Self-Assessment (Optional)<br/>3-5 min, estimated level"]
-    Select["Select Mode<br/>Practice or Mock Test"]
-    Practice["Practice Mode<br/>Adaptive Scaffolding"]
-    Mock["Mock Test<br/>Full Exam Simulation"]
-    Feedback["Feedback & Results<br/>AI + Human Grading"]
-    Progress["Progress Tracking<br/>Spider Chart, Sliding Window"]
+    Reg["Registration<br/>Email + Password<br/>(role = learner)"]
+    Login["Login<br/>JWT Access + Refresh"]
+    Select["Select Mode<br/>Practice or Exam"]
+
+    subgraph PracticeFlow ["Practice Mode"]
+        PickQ["Pick Question<br/>By skill, level, KP"]
+        Submit["Create Submission<br/>POST /api/submissions"]
+        Processing{"Skill<br/>Type?"}
+        AutoResult["Auto-Graded<br/>pending → processing → completed"]
+        DispatchQ["Dispatched to Redis<br/>pending → processing"]
+        ReviewQ["Review Queue<br/>processing → review_pending"]
+        InstructorGrade["Instructor Review<br/>Claim → Grade → completed"]
+    end
+
+    subgraph ExamFlow ["Exam Mode"]
+        StartExam["Start Session<br/>POST /api/exams/:id/start"]
+        Answer["Save Answers<br/>POST /sessions/:id/answer"]
+        SubmitExam["Submit Session<br/>Inline-grade objective<br/>Dispatch subjective to Redis"]
+        ExamResult["Exam Result<br/>Per-skill scores on session"]
+    end
+
+    Progress["Progress Dashboard<br/>Spider chart, trends, goals"]
+    ClassJoin["Join Class<br/>POST /api/classes/join<br/>(invite code)"]
     GoalCheck{"Goal<br/>Achieved?"}
-    Placement["Placement Test (Optional)<br/>Full 4-skill assessment"]
     End(["End"])
 
     Start --> Reg
-    Reg --> Profile
-    Profile --> GoalSet
-    GoalSet --> SelfAssess
-    SelfAssess --> Select
-    Select --> Practice
-    Select --> Mock
-    Practice --> Feedback
-    Mock --> Feedback
-    Feedback --> Progress
+    Reg --> Login
+    Login --> Select
+    Select --> PickQ
+    Select --> StartExam
+
+    PickQ --> Submit
+    Submit --> Processing
+    Processing -->|"Listening / Reading"| AutoResult
+    Processing -->|"Writing / Speaking"| DispatchQ
+    DispatchQ --> ReviewQ
+    ReviewQ --> InstructorGrade
+    AutoResult --> Progress
+    InstructorGrade --> Progress
+
+    StartExam --> Answer
+    Answer --> SubmitExam
+    SubmitExam --> ExamResult
+    ExamResult --> Progress
+
     Progress --> GoalCheck
-    GoalSet --> GoalCheck
+    Progress --> ClassJoin
     GoalCheck -->|No| Select
     GoalCheck -->|Yes| End
-    SelfAssess -.->|Later| Placement
 
     classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
     classDef process fill:#1976d2,stroke:#0d47a1,color:#fff
     classDef decision fill:#f57c00,stroke:#e65100,color:#fff
-    classDef outcome fill:#7b1fa2,stroke:#4a148c,color:#fff
-    classDef optional fill:#78909c,stroke:#546e7a,color:#fff,stroke-dasharray: 5 5
+    classDef practice fill:#388e3c,stroke:#1b5e20,color:#fff
+    classDef exam fill:#6a1b9a,stroke:#4a148c,color:#fff
 
     class Start,End start
-    class Reg,Profile,GoalSet,SelfAssess,Practice,Mock,Feedback,Progress,Select process
-    class GoalCheck decision
-    class Placement optional
+    class Reg,Login,Select,Progress,ClassJoin process
+    class Processing,GoalCheck decision
+    class PickQ,Submit,AutoResult,DispatchQ,ReviewQ,InstructorGrade practice
+    class StartExam,Answer,SubmitExam,ExamResult exam
 ```
 
-## 3. Practice Mode Flow with Adaptive Scaffolding
+## 3. Submission State Machine
 
-### 3A. Writing Adaptive Scaffolding
+```mermaid
+stateDiagram-v2
+    [*] --> pending: Create submission
+
+    pending --> processing: grading-dispatch.prepare()<br/>or auto-grade begins
+    pending --> failed: Validation error
+
+    processing --> completed: Auto-grade succeeds<br/>(Listening/Reading)
+    processing --> review_pending: Subjective skill<br/>(Writing/Speaking)
+    processing --> failed: Grading error
+
+    review_pending --> completed: Instructor reviews<br/>(score + feedback)
+
+    completed --> [*]
+    failed --> [*]
+
+    note right of pending
+        Created with:
+        - userId, questionId, skill
+        - status = "pending"
+        - submissionDetails.answer (JSONB)
+    end note
+
+    note right of processing
+        grading-dispatch.prepare() sets
+        status = "processing" inside tx,
+        then dispatch() pushes task to
+        Redis queue after commit
+    end note
+
+    note left of review_pending
+        Instructor workflow:
+        GET /queue → claim → review → completed
+        Supports: priority (low/med/high),
+        claim/release, assign
+    end note
+
+    note right of completed
+        After grading:
+        - score (0-10, half-step)
+        - band (B1/B2/C1 or null)
+        - Progress recorded via record()
+        - Sliding window synced via sync()
+    end note
+```
+
+> **State transitions (from `shared.ts`):**
+> ```
+> pending     → [processing, failed]
+> processing  → [completed, review_pending, failed]
+> review_pending → [completed]
+> completed   → [] (terminal)
+> failed      → [] (terminal)
+> ```
+>
+> **GRADABLE_STATUSES:** `pending`, `review_pending`, `processing`
+> **MUTABLE_STATUSES:** `pending` (only pending submissions can be updated by learner)
+
+### 3A. Auto-Grade Flow (Listening & Reading)
 
 ```mermaid
 flowchart TB
-    subgraph Input ["Input"]
-        Task["Select Writing Task<br/>Task 1 (Email), Task 2 (Essay)"]
-        Level["Determine Level<br/>Based on Placement/Test"]
+    Start["POST /api/submissions/:id/auto-grade<br/>(role: admin)"]
+    Validate["Validate Submission<br/>Status NOT in [completed, failed, review_pending]<br/>Skill = listening or reading"]
+    LoadKey["Load Answer Key<br/>question.answerKey (ObjectiveAnswerKey)"]
+    CheckFormat["Validate Format<br/>Value.Check(ObjectiveAnswerKey)<br/>Value.Check(ObjectiveAnswer)"]
+    Compare["Compare Each Answer<br/>normalizeAnswer(): trim, collapse ws, lowercase"]
+    Calculate["Calculate Score<br/>correct/total × 10, round to 0.5"]
+    Band["Determine Band<br/>B1 ≥ 4.0, B2 ≥ 6.0, C1 ≥ 8.5<br/>Below 4.0 = null"]
+    Update["Update Submission (in tx)<br/>status=completed, score, band, completedAt"]
+    RecordProgress["progress.record()<br/>Insert user_skill_scores row"]
+    SyncWindow["progress.sync()<br/>Upsert user_progress with<br/>sliding window recalculation"]
+    Done["Return Graded Submission"]
+
+    Start --> Validate
+    Validate --> LoadKey
+    LoadKey --> CheckFormat
+    CheckFormat --> Compare
+    Compare --> Calculate
+    Calculate --> Band
+    Band --> Update
+    Update --> RecordProgress
+    RecordProgress --> SyncWindow
+    SyncWindow --> Done
+
+    classDef endpoint fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef logic fill:#2e7d32,stroke:#1b5e20,color:#fff
+    classDef data fill:#f57c00,stroke:#e65100,color:#fff
+
+    class Start,Done endpoint
+    class Validate,LoadKey,CheckFormat,Compare,Calculate,Band logic
+    class Update,RecordProgress,SyncWindow data
+```
+
+### 3B. Grading Dispatch Flow (Writing & Speaking)
+
+```mermaid
+flowchart TB
+    Create["Submission created<br/>status = pending"]
+    Prepare["grading-dispatch.prepare()<br/>Set status = processing (in tx)<br/>Build Task object"]
+    Commit["Transaction commits"]
+    Dispatch["grading-dispatch.dispatch()<br/>Redis LPUSH grading:tasks<br/>JSON task payload"]
+    Queue["Redis Queue: grading:tasks<br/>{ submissionId, questionId, skill, answer, dispatchedAt }"]
+    Worker["External Worker (future)<br/>Consumes from Redis queue"]
+    Callback["Worker completes grading<br/>Updates submission status"]
+
+    Create --> Prepare
+    Prepare --> Commit
+    Commit --> Dispatch
+    Dispatch --> Queue
+    Queue --> Worker
+    Worker --> Callback
+
+    classDef app fill:#1976d2,stroke:#0d47a1,color:#fff
+    classDef redis fill:#c62828,stroke:#b71c1c,color:#fff
+    classDef future fill:#78909c,stroke:#546e7a,color:#fff,stroke-dasharray: 5 5
+
+    class Create,Prepare,Commit,Dispatch app
+    class Queue redis
+    class Worker,Callback future
+```
+
+### 3C. Review Workflow (Instructor)
+
+```mermaid
+flowchart TB
+    Queue["GET /api/submissions/queue<br/>(role: instructor)<br/>Filter by status=review_pending<br/>Priority ordering: high > medium > low"]
+    Claim["POST /:id/claim<br/>Set claimedBy = instructor<br/>Prevents concurrent reviewers"]
+    Review["PUT /:id/review<br/>Submit: score, band,<br/>reviewComment, feedback"]
+    Record["Update submission:<br/>status=completed, score, band,<br/>reviewerId, completedAt"]
+    InsertReview["Insert submission_details:<br/>result, feedback JSONB"]
+    Progress["progress.record() + sync()<br/>Update user_skill_scores<br/>Recalculate user_progress"]
+    Release["POST /:id/release<br/>(if reviewer can't finish)"]
+    Assign["POST /:id/assign<br/>(role: instructor/admin)<br/>Pre-assign to specific reviewer"]
+
+    Queue --> Claim
+    Claim --> Review
+    Review --> Record
+    Record --> InsertReview
+    InsertReview --> Progress
+
+    Claim --> Release
+    Queue --> Assign
+    Assign --> Claim
+
+    classDef route fill:#1976d2,stroke:#0d47a1,color:#fff
+    classDef action fill:#5d4037,stroke:#3e2723,color:#fff
+    classDef data fill:#f57c00,stroke:#e65100,color:#fff
+
+    class Queue,Claim,Release,Assign route
+    class Review action
+    class Record,InsertReview,Progress data
+```
+
+## 4. Exam Session Flow
+
+```mermaid
+flowchart TB
+    subgraph Setup ["Exam Setup (Instructor/Admin)"]
+        CreateExam["POST /api/exams<br/>(role: instructor)<br/>Define level + blueprint"]
+        Blueprint["ExamBlueprint<br/>Per skill: { questionIds: string[] }<br/>Fixed question selection"]
+        ListExams["GET /api/exams<br/>Filter by level, active status"]
+        UpdateExam["PATCH /api/exams/:id<br/>(role: admin)"]
     end
 
-    subgraph Assessment ["Assessment"]
-        Stage1["Stage 1: Template<br/>Full sentence starters"]
-        Stage2["Stage 2: Keywords<br/>Key phrases, transitions"]
-        Stage3["Stage 3: Free Writing<br/>No scaffolding"]
+    subgraph Session ["Exam Session (Learner)"]
+        Start["POST /api/exams/:id/start<br/>Creates session (in_progress)<br/>Returns existing if already active"]
+        FindSession["GET /sessions/:sessionId<br/>Resume session, view state"]
+        SaveAnswer["POST /sessions/:sessionId/answer<br/>Upsert into exam_answers<br/>{ questionId, answer }"]
+        UpdateSession["PUT /sessions/:sessionId<br/>Batch save answers"]
+        Timer["Timer Tracking<br/>startedAt on session row"]
+        Submit["POST /sessions/:sessionId/submit<br/>Finalize all answers"]
     end
 
-    subgraph Scaffold ["Scaffolding Type"]
-        Template["Template Mode<br/>Structure, Connectors, Time"]
-        Keywords["Keywords Mode<br/>Topic words, Academic vocab"]
-        Free["Free Writing<br/>Independent composition"]
+    subgraph SubmitLogic ["Submit Processing (in-process)"]
+        LoadAnswers["Load all exam_answers<br/>for this session"]
+        LoadQuestions["Load questions with answerKey<br/>and skill info"]
+        GradeObjective["gradeAnswers()<br/>Score listening + reading<br/>inline comparison"]
+        PersistCorrectness["persistCorrectness()<br/>Set isCorrect on exam_answers"]
+        CreateSubjective["Create submissions for<br/>writing + speaking questions<br/>status = pending"]
+        DispatchRedis["grading-dispatch.prepare() + dispatch()<br/>Push subjective to Redis queue"]
+        CalcScores["Calculate session scores<br/>listeningScore, readingScore"]
+        RecordObjective["progress.record() + sync()<br/>for listening + reading"]
     end
 
-    subgraph Feedback ["Feedback"]
-        Grammar["Grammar Check<br/>AI Instant Feedback"]
-        Vocab["Vocabulary<br/>Word choice, Collocations"]
-        Cohesion["Coherence & Cohesion<br/>Logic, Flow, Organization"]
-        Task["Task Achievement<br/>Content coverage, Format"]
+    subgraph Result ["Session Result"]
+        SessionStatus{"All skills<br/>graded?"}
+        Submitted["Session status = submitted<br/>Waiting for subjective grading"]
+        Completed["Session status = completed<br/>All scores filled"]
+        Breakdown["Score Breakdown<br/>Per-skill: listening, reading,<br/>writing, speaking, overall"]
     end
 
-    subgraph Progression ["Progression"]
-        Up["Level Up<br/>Move to next stage"]
-        Stay["Stay Same<br/>Repeat, More practice"]
-        Down["Level Down<br/>Increase support"]
+    CreateExam --> Blueprint
+    ListExams --> Start
+    UpdateExam --> Blueprint
+    Start --> FindSession
+    FindSession --> SaveAnswer
+    SaveAnswer --> Timer
+    UpdateSession --> Timer
+    Timer --> Submit
+
+    Submit --> LoadAnswers
+    LoadAnswers --> LoadQuestions
+    LoadQuestions --> GradeObjective
+    GradeObjective --> PersistCorrectness
+    PersistCorrectness --> CalcScores
+    CalcScores --> RecordObjective
+    LoadQuestions --> CreateSubjective
+    CreateSubjective --> DispatchRedis
+
+    RecordObjective --> SessionStatus
+    DispatchRedis --> SessionStatus
+    SessionStatus -->|"Subjective pending"| Submitted
+    SessionStatus -->|"All graded"| Completed
+    Submitted --> Breakdown
+    Completed --> Breakdown
+
+    classDef setup fill:#78909c,stroke:#546e7a,color:#fff
+    classDef session fill:#1976d2,stroke:#0d47a1,color:#fff
+    classDef submit fill:#f57c00,stroke:#e65100,color:#fff
+    classDef result fill:#6a1b9a,stroke:#4a148c,color:#fff
+
+    class CreateExam,Blueprint,ListExams,UpdateExam setup
+    class Start,FindSession,SaveAnswer,UpdateSession,Timer,Submit session
+    class LoadAnswers,LoadQuestions,GradeObjective,PersistCorrectness,CreateSubjective,DispatchRedis,CalcScores,RecordObjective submit
+    class SessionStatus,Submitted,Completed,Breakdown result
+```
+
+> **Exam Session States:** `in_progress` → `submitted` → `completed` | `abandoned`
+>
+> **Session columns:** listeningScore, readingScore, writingScore, speakingScore, overallScore, overallBand
+>
+> **Submit process:**
+> 1. Grade objective (listening/reading) inline via `gradeAnswers()` — compare answers, calculate score
+> 2. Set `isCorrect` on each `exam_answer` via `persistCorrectness()`
+> 3. Create `submissions` + `submission_details` for subjective questions (writing/speaking)
+> 4. Link via `exam_submissions` junction table
+> 5. Dispatch subjective tasks to Redis via `grading-dispatch`
+> 6. Record objective scores in progress
+> 7. Set session status: `submitted` (if subjective pending) or `completed` (if all done)
+
+## 5. Progress Tracking & Sliding Window
+
+```mermaid
+flowchart TB
+    subgraph Input ["Score Input"]
+        AutoScore["Auto-Grade completed<br/>Listening/Reading score"]
+        ManualScore["Review completed<br/>Writing/Speaking score"]
+        ExamScore["Exam submit<br/>Inline objective scores"]
     end
 
-    Task --> Level
-    Level -->|A1-A2| Stage1
-    Level -->|B1| Stage2
-    Level -->|B2-C1| Stage3
-    Stage1 --> Template
-    Stage2 --> Keywords
-    Stage3 --> Free
-    Template --> Grammar
-    Keywords --> Grammar
-    Free --> Grammar
-    Grammar --> Vocab
-    Vocab --> Cohesion
-    Cohesion --> Task
-    Task --> Up
-    Task --> Stay
-    Task --> Down
+    subgraph Record ["progress.record()"]
+        InsertScore["Insert user_skill_scores<br/>userId, skill, score, band,<br/>submissionId, questionId"]
+        UpdateKP["Update user_knowledge_progress<br/>(via question → KP mapping)"]
+    end
+
+    subgraph SlidingWindow ["progress.sync() — Sliding Window (WINDOW_SIZE = 10)"]
+        Fetch["Fetch last 10 scores<br/>Per skill, DESC by createdAt"]
+        ComputeStats["computeStats()<br/>mean, count, latest score"]
+        ComputeTrend["computeTrend()<br/>Linear regression slope"]
+        Direction{"Trend<br/>Direction?"}
+        Improving["improving ↑<br/>slope > TREND_THRESHOLDS"]
+        Stable["stable →<br/>within threshold"]
+        Declining["declining ↓<br/>slope < -threshold"]
+    end
+
+    subgraph Sync ["Upsert user_progress"]
+        Upsert["One row per user per skill<br/>INSERT ... ON CONFLICT UPDATE"]
+        Fields["Updated fields:<br/>- averageScore (mean of window)<br/>- latestScore<br/>- totalAttempts (count)<br/>- currentLevel (scoreToLevel())<br/>- trend (improving/stable/declining)<br/>- updatedAt"]
+    end
+
+    subgraph API ["Progress API Endpoints"]
+        SpiderChart["GET /api/progress/spider-chart<br/>4-skill radar data"]
+        SkillDetail["GET /api/progress/:skill<br/>Score history, trend, level"]
+        Overview["GET /api/progress<br/>All skills aggregated"]
+        Goals["POST/PATCH/DELETE /api/progress/goals<br/>Target band + deadline"]
+    end
+
+    AutoScore --> InsertScore
+    ManualScore --> InsertScore
+    ExamScore --> InsertScore
+    InsertScore --> UpdateKP
+    InsertScore --> Fetch
+    Fetch --> ComputeStats
+    ComputeStats --> ComputeTrend
+    ComputeTrend --> Direction
+    Direction --> Improving
+    Direction --> Stable
+    Direction --> Declining
+    Improving --> Upsert
+    Stable --> Upsert
+    Declining --> Upsert
+    Upsert --> Fields
+
+    Fields --> SpiderChart
+    Fields --> SkillDetail
+    Fields --> Overview
+    Goals --> Overview
 
     classDef input fill:#1976d2,stroke:#0d47a1,color:#fff
-    classDef assessment fill:#f57c00,stroke:#e65100,color:#fff
-    classDef scaffold fill:#388e3c,stroke:#1b5e20,color:#fff
-    classDef feedback fill:#c62828,stroke:#b71c1c,color:#fff
-    classDef progression fill:#6a1b9a,stroke:#4a148c,color:#fff
+    classDef record fill:#388e3c,stroke:#1b5e20,color:#fff
+    classDef window fill:#f57c00,stroke:#e65100,color:#fff
+    classDef sync fill:#00796b,stroke:#004d40,color:#fff
+    classDef api fill:#6a1b9a,stroke:#4a148c,color:#fff
 
-    class Task,Level input
-    class Stage1,Stage2,Stage3 assessment
-    class Template,Keywords,Free scaffold
-    class Grammar,Vocab,Cohesion,Task feedback
-    class Up,Stay,Down progression
+    class AutoScore,ManualScore,ExamScore input
+    class InsertScore,UpdateKP record
+    class Fetch,ComputeStats,ComputeTrend,Direction,Improving,Stable,Declining window
+    class Upsert,Fields sync
+    class SpiderChart,SkillDetail,Overview,Goals api
 ```
 
-### 3B. Listening Adaptive Scaffolding
+> **Scoring rules:**
+> - Score range: 0–10 (half-step: `precision: 3, scale: 1`)
+> - Band thresholds: B1 ≥ 4.0, B2 ≥ 6.0, C1 ≥ 8.5 (below 4.0 = null)
+> - `scoreToLevel()`: C1 ≥ 8.5, B2 ≥ 6.0, B1 ≥ 4.0, else A2
+> - `calculateScore(correct, total)`: `Math.round(ratio × 10 × 2) / 2` — linear, half-step rounding
+> - Trend computed via linear regression slope on sliding window scores
+>
+> **Instructor progress view:** `progress/instructor.ts` → `forUsers()` aggregates per-user per-skill data with at-risk detection (`avg < 5.0`), used by class dashboard
+
+## 6. Authentication & Token Lifecycle
 
 ```mermaid
 flowchart TB
-    subgraph Input ["Input"]
-        Exercise["Select Listening Exercise<br/>Dictation, MCQ, Summary"]
-        Level["Determine Level<br/>Based on Placement/Test"]
+    subgraph Login ["Login Flow"]
+        Creds["POST /api/auth/login<br/>email + password"]
+        Verify["Bun.password.verify()<br/>Against stored argon2id hash"]
+        GenAccess["SignJWT (jose)<br/>Claims: sub, role, iat<br/>Expiry: env.JWT_EXPIRES_IN"]
+        GenRefresh["crypto.randomUUID()<br/>Store SHA-256 hash in DB"]
+        DeviceInfo["Record User-Agent<br/>On refresh_tokens row"]
+        MaxCheck["Count active tokens<br/>for this user"]
+        Prune["Prune oldest if ><br/>MAX_REFRESH_TOKENS_PER_USER (3)"]
     end
 
-    subgraph Assessment ["Assessment"]
-        Stage1["Stage 1: Full Text<br/>Transcript available"]
-        Stage2["Stage 2: Highlights<br/>Key phrases shown"]
-        Stage3["Stage 3: Pure Audio<br/>No visual support"]
+    subgraph Register ["Registration"]
+        RegInput["POST /api/auth/register<br/>email, password, fullName"]
+        NormEmail["normalizeEmail()<br/>Lowercase, trim"]
+        DupCheck["Email unique constraint<br/>409 if duplicate"]
+        HashPwd["Bun.password.hash(pw, 'argon2id')"]
+        CreateUser["Insert user<br/>role = learner (default)"]
     end
 
-    subgraph Scaffold ["Scaffolding Type"]
-        FullText["Full Text Mode<br/>Read while listening"]
-        Highlights["Highlights Mode<br/>Key words emphasized"]
-        PureAudio["Pure Audio Mode<br/>Audio only, no transcript"]
+    subgraph Refresh ["Token Refresh (Rotation)"]
+        RefreshReq["POST /api/auth/refresh<br/>{ refreshToken }"]
+        HashLookup["hashToken(refreshToken)<br/>SHA-256 → find by tokenHash"]
+        CheckValid["Check: not revoked,<br/>not expired, not replaced"]
+        FamilyDetect{"Token already<br/>replaced?"}
+        RevokeFamily["REPLAY DETECTED<br/>Revoke ALL tokens in family<br/>(security breach response)"]
+        RevokeOld["Revoke old token<br/>Set revokedAt + replacedByJti"]
+        IssueNew["Issue new access + refresh pair<br/>New JTI links to old"]
     end
 
-    subgraph Feedback ["Feedback"]
-        Accuracy["Accuracy Check<br/>Correct/Incorrect"]
-        Script["Script View<br/>Compare with transcript"]
-        Tips["Tips & Explanations<br/>Why answer is correct"]
+    subgraph Logout ["Logout"]
+        LogoutReq["POST /api/auth/logout<br/>(auth required)<br/>{ refreshToken }"]
+        Revoke["Set revokedAt on token"]
     end
 
-    subgraph Progression ["Progression"]
-        Up["Level Up<br/>Remove scaffolding"]
-        Stay["Stay Same<br/>Same support level"]
-        Down["Increase Support<br/>Add scaffolding"]
+    subgraph Me ["Current User"]
+        MeReq["GET /api/auth/me<br/>(auth required)"]
+        MeResult["Return full user profile"]
     end
 
-    Exercise --> Level
-    Level -->|Beginner| Stage1
-    Level -->|Intermediate| Stage2
-    Level -->|Advanced| Stage3
-    Stage1 --> FullText
-    Stage2 --> Highlights
-    Stage3 --> PureAudio
-    FullText --> Accuracy
-    Highlights --> Accuracy
-    PureAudio --> Accuracy
-    Accuracy --> Script
-    Script --> Tips
-    Tips --> Up
-    Tips --> Stay
-    Tips --> Down
+    subgraph RBAC ["Role-Based Access"]
+        Roles["Roles: learner (0), instructor (1), admin (2)"]
+        LevelCheck["ROLE_LEVEL comparison<br/>admin > instructor > learner"]
+        Resources["Protected resources:<br/>- Exam create → instructor<br/>- Manual grade → instructor<br/>- Review queue → instructor<br/>- Exam update → admin<br/>- Auto-grade trigger → admin<br/>- User management → admin"]
+    end
 
-    classDef input fill:#1976d2,stroke:#0d47a1,color:#fff
-    classDef assessment fill:#f57c00,stroke:#e65100,color:#fff
-    classDef scaffold fill:#388e3c,stroke:#1b5e20,color:#fff
-    classDef feedback fill:#c62828,stroke:#b71c1c,color:#fff
-    classDef progression fill:#6a1b9a,stroke:#4a148c,color:#fff
+    Creds --> Verify
+    Verify --> GenAccess
+    Verify --> GenRefresh
+    GenRefresh --> DeviceInfo
+    DeviceInfo --> MaxCheck
+    MaxCheck --> Prune
 
-    class Exercise,Level input
-    class Stage1,Stage2,Stage3 assessment
-    class FullText,Highlights,PureAudio scaffold
-    class Accuracy,Script,Tips feedback
-    class Up,Stay,Down progression
+    RegInput --> NormEmail
+    NormEmail --> DupCheck
+    DupCheck --> HashPwd
+    HashPwd --> CreateUser
+
+    RefreshReq --> HashLookup
+    HashLookup --> CheckValid
+    CheckValid --> FamilyDetect
+    FamilyDetect -->|"replacedByJti exists"| RevokeFamily
+    FamilyDetect -->|"Valid, not replaced"| RevokeOld
+    RevokeOld --> IssueNew
+
+    LogoutReq --> Revoke
+    MeReq --> MeResult
+
+    Roles --> LevelCheck
+    LevelCheck --> Resources
+
+    classDef login fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef register fill:#388e3c,stroke:#1b5e20,color:#fff
+    classDef refresh fill:#f57c00,stroke:#e65100,color:#fff
+    classDef logout fill:#c62828,stroke:#b71c1c,color:#fff
+    classDef me fill:#00796b,stroke:#004d40,color:#fff
+    classDef rbac fill:#6a1b9a,stroke:#4a148c,color:#fff
+
+    class Creds,Verify,GenAccess,GenRefresh,DeviceInfo,MaxCheck,Prune login
+    class RegInput,NormEmail,DupCheck,HashPwd,CreateUser register
+    class RefreshReq,HashLookup,CheckValid,FamilyDetect,RevokeFamily,RevokeOld,IssueNew refresh
+    class LogoutReq,Revoke logout
+    class MeReq,MeResult me
+    class Roles,LevelCheck,Resources rbac
 ```
 
-## 4. Mock Test Flow
+> **Token security details:**
+> - Refresh tokens stored as SHA-256 hashes via `hashToken()` — never plaintext
+> - Token family rotation: if a refresh token with `replacedByJti` is reused → revoke ALL tokens for that user (replay detection)
+> - `MAX_REFRESH_TOKENS_PER_USER = 3` — limits concurrent sessions, prunes oldest
+> - Access token: signed JWT via `jose` (`SignJWT`), claims: `{ sub, role, iat }`
+> - No OAuth/SSO — email + password only
+
+## 7. Classes & Instructor Feedback Flow
 
 ```mermaid
 flowchart TB
-    subgraph Start ["Start"]
-        Intro["Test Introduction<br/>Format, Duration, Instructions"]
-        Auth["Identity Verification<br/>Login, Session Token"]
+    subgraph ClassMgmt ["Class Management (Instructor)"]
+        Create["POST /api/classes<br/>(role: instructor)<br/>Auto-generates invite code"]
+        List["GET /api/classes<br/>List owned + enrolled classes"]
+        Detail["GET /api/classes/:id<br/>Class + member list"]
+        Update["PATCH /api/classes/:id<br/>(role: instructor, owner only)"]
+        Delete["DELETE /api/classes/:id<br/>(role: instructor, owner only)"]
+        RotateCode["POST /:id/rotate-code<br/>(role: instructor, owner only)<br/>Generate new invite code"]
     end
 
-    subgraph Section1 ["Section 1: Listening (40 min)"]
-        L1["Part 1: Pictures<br/>Question-Response"]
-        L2["Part 2: Q&A<br/>Short Conversations"]
-        L3["Part 3: Reading<br/>Passages, Questions"]
+    subgraph Members ["Enrollment"]
+        Join["POST /api/classes/join<br/>{ inviteCode }<br/>Any authenticated user"]
+        Leave["POST /:id/leave<br/>Learner leaves class"]
+        RemoveMember["DELETE /:id/members/:userId<br/>(role: instructor, owner only)"]
+        Guards["Authorization Guards<br/>assertOwner() / assertMember()"]
     end
 
-    subgraph Section2 ["Section 2: Reading (60 min)"]
-        R1["True/False/Not Given<br/>Identify statements"]
-        R2["Multiple Choice<br/>Select correct answer"]
-        R3["Matching/Fill-in<br/>Headings, Blanks"]
+    subgraph Dashboard ["Class Dashboard (Instructor)"]
+        DashboardEndpoint["GET /:id/dashboard<br/>(role: instructor)"]
+        MemberProgressEndpoint["GET /:id/members/:userId/progress<br/>(role: instructor)"]
+        ClassStats["Aggregated metrics:<br/>- Per-skill averages<br/>- Member count<br/>- At-risk students (avg < 5.0)"]
+        IndividualProgress["Individual learner:<br/>- Per-skill scores + trends<br/>- Goal progress<br/>- Recent submissions"]
     end
 
-    subgraph Section3 ["Section 3: Writing (60 min)"]
-        W1["Task 1: Email/Letter<br/>150-180 words"]
-        W2["Task 2: Essay<br/>300-350 words"]
+    subgraph Feedback ["Instructor Feedback"]
+        GiveFeedback["POST /:id/feedback<br/>(role: instructor)<br/>Target specific learner"]
+        ListFeedback["GET /:id/feedback<br/>Filter by learner, paginated"]
+        FeedbackData["Feedback content:<br/>- targetUserId<br/>- skill (optional)<br/>- comment text<br/>- createdAt"]
     end
 
-    subgraph Section4 ["Section 4: Speaking (12 min)"]
-        S1["Part 1: Introduction<br/>Personal questions"]
-        S2["Part 2: Cue Card<br/>1-2 min talk"]
-        S3["Part 3: Discussion<br/>Follow-up questions"]
-    end
+    Create --> List
+    List --> Detail
+    Detail --> Update
+    Detail --> Delete
+    Create --> RotateCode
 
-    subgraph Submission ["Submission"]
-        Submit["Submit Test<br/>Confirm completion"]
-        Verify["Verify Responses<br/>Check incomplete items"]
-    end
+    Join --> Guards
+    Leave --> Guards
+    RemoveMember --> Guards
 
-    subgraph Scoring ["Scoring"]
-        ListeningScore["Listening Score<br/>Auto-graded MCQ"]
-        ReadingScore["Reading Score<br/>Auto-graded MCQ"]
-        WritingScore["Writing Score<br/>AI + Human Grading"]
-        SpeakingScore["Speaking Score<br/>AI + Human Grading"]
-    end
+    Detail --> DashboardEndpoint
+    DashboardEndpoint --> ClassStats
+    DashboardEndpoint --> MemberProgressEndpoint
+    MemberProgressEndpoint --> IndividualProgress
 
-    subgraph Results ["Results"]
-        Total["Total Score<br/>4-Skill Average"]
-        Breakdown["Skill Breakdown<br/>Each skill score"]
-        Report["Detailed Report<br/>Spider Chart, Recommendations"]
-    end
+    Detail --> GiveFeedback
+    GiveFeedback --> FeedbackData
+    ListFeedback --> FeedbackData
 
-    Intro --> Auth
-    Auth --> L1
-    L1 --> L2
-    L2 --> L3
-    L3 --> R1
-    R1 --> R2
-    R2 --> R3
-    R3 --> W1
-    W1 --> W2
-    W2 --> S1
-    S1 --> S2
-    S2 --> S3
-    S3 --> Submit
-    Submit --> Verify
-    Verify -->|Complete| ListeningScore
-    Verify -->|Incomplete| S3
-    ListeningScore --> ReadingScore
-    ReadingScore --> WritingScore
-    WritingScore --> SpeakingScore
-    SpeakingScore --> Total
-    Total --> Breakdown
-    Breakdown --> Report
+    classDef mgmt fill:#1976d2,stroke:#0d47a1,color:#fff
+    classDef members fill:#388e3c,stroke:#1b5e20,color:#fff
+    classDef dashboard fill:#f57c00,stroke:#e65100,color:#fff
+    classDef feedback fill:#6a1b9a,stroke:#4a148c,color:#fff
 
-    classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
-    classDef section fill:#f57c00,stroke:#e65100,color:#fff
-    classDef submission fill:#e65100,stroke:#bf360c,color:#fff
-    classDef scoring fill:#7b1fa2,stroke:#4a148c,color:#fff
-    classDef results fill:#37474f,stroke:#263238,color:#fff
-
-    class Intro,Auth start
-    class L1,L2,L3,R1,R2,R3,W1,W2,S1,S2,S3 section
-    class Submit,Verify submission
-    class ListeningScore,ReadingScore,WritingScore,SpeakingScore scoring
-    class Total,Breakdown,Report results
+    class Create,List,Detail,Update,Delete,RotateCode mgmt
+    class Join,Leave,RemoveMember,Guards members
+    class DashboardEndpoint,MemberProgressEndpoint,ClassStats,IndividualProgress dashboard
+    class GiveFeedback,ListFeedback,FeedbackData feedback
 ```
 
-## 5. Hybrid Grading Flow
+## 8. Knowledge Points & Adaptive Learning
 
 ```mermaid
 flowchart TB
-    subgraph Submission ["Submission"]
-        WritingSubmit["Writing Submission<br/>Essay, Email"]
-        SpeakingSubmit["Speaking Submission<br/>Audio recording"]
+    subgraph Taxonomy ["Knowledge Point Taxonomy"]
+        KP["knowledge_points table<br/>id, name, skill, parentId"]
+        Parent["Parent KP<br/>e.g. 'Listening Comprehension'"]
+        Child["Child KP<br/>e.g. 'Main Idea Extraction'"]
+        Junction["question_knowledge_points<br/>Many-to-many junction"]
     end
 
-    subgraph AI_Writing ["AI Grading - Writing"]
-        W_Grammar["Grammar Analysis<br/>Errors, Complexity"]
-        W_Vocab["Vocabulary Analysis<br/>Range, Accuracy"]
-        W_Content["Content Analysis<br/>Relevance, Coverage, Coherence"]
-        W_Score["Writing Score<br/>Confidence calculated"]
+    subgraph API ["KP API (role: instructor+)"]
+        ListKP["GET /api/knowledge-points<br/>List with hierarchy"]
+        CreateKP["POST /api/knowledge-points"]
+        UpdateKP["PATCH /api/knowledge-points/:id"]
+        DeleteKP["DELETE /api/knowledge-points/:id"]
     end
 
-    subgraph AI_Speaking ["AI Grading - Speaking"]
-        Transcribe["Speech-to-Text<br/>Convert audio to text"]
-        S_Fluency["Fluency Assessment<br/>Pace, Pauses"]
-        S_Pronunciation["Pronunciation<br/>Phonetic accuracy"]
-        S_Content["Content Analysis<br/>Relevance, Coverage"]
-        S_Score["Speaking Score<br/>Confidence calculated"]
+    subgraph Tracking ["Mastery Tracking"]
+        Attempt["Learner completes submission<br/>Question tagged with KPs"]
+        Score["Score recorded<br/>Per-submission, per-KP"]
+        Mastery["user_knowledge_progress<br/>Mastery level per KP per user"]
     end
 
-    subgraph Scoring ["Scoring"]
-        Confidence{"Confidence<br/>Score > 85%?"}
-        NoteConfidence("Weighted score:<br/>- Model self-consistency<br/>- Rule checks<br/>- Length validation<br/>- Templated detection<br/><br/>Note: Confidence is heuristic,<br/>not ML probability")
-        AutoPass["Auto-Grade<br/>High confidence"]
-        HumanReview["Human Review<br/>Low confidence, Flagged"]
+    subgraph Adaptive ["Adaptive Selection"]
+        Weak["Identify weak KPs<br/>Low mastery scores"]
+        Recommend["Recommend questions<br/>Target weak knowledge points"]
+        Level["scoreToLevel() mapping<br/>A2 / B1 / B2 / C1"]
     end
 
-    subgraph Human ["Human Grading"]
-        Instructor["Instructor Portal<br/>Review, Comment"]
-        Rubric["Rubric Scoring<br/>VSTEP criteria"]
-        Override["Override AI<br/>If scoreDiff > 0.5 or bandStepDiff > 1"]
-        ScoreFinal["Final Score<br/>AI + Human weighted"]
-    end
+    KP --> Parent
+    Parent --> Child
+    Child --> Junction
+    Junction --> Attempt
 
-    subgraph Final ["Final Output"]
-        Feedback["Detailed Feedback<br/>Strengths, Weaknesses"]
-        Suggestion["Suggestions<br/>Improvement areas"]
-        Badge["Completion Badge / Report PDF"]
-    end
+    ListKP --> KP
+    CreateKP --> KP
+    UpdateKP --> KP
+    DeleteKP --> KP
 
-    %% Writing flow (no Transcribe)
-    WritingSubmit --> W_Grammar
-    W_Grammar --> W_Vocab
-    W_Vocab --> W_Content
-    W_Content --> W_Score
+    Attempt --> Score
+    Score --> Mastery
+    Mastery --> Weak
+    Weak --> Recommend
+    Recommend --> Level
+    Level --> Attempt
 
-    %% Speaking flow (needs Transcribe)
-    SpeakingSubmit --> Transcribe
-    Transcribe --> S_Fluency
-    Transcribe --> S_Content
-    S_Fluency --> S_Pronunciation
-    S_Pronunciation --> S_Score
+    classDef taxonomy fill:#1976d2,stroke:#0d47a1,color:#fff
+    classDef api fill:#78909c,stroke:#546e7a,color:#fff
+    classDef tracking fill:#388e3c,stroke:#1b5e20,color:#fff
+    classDef adaptive fill:#f57c00,stroke:#e65100,color:#fff
 
-    %% Confidence check
-    W_Score --> Confidence
-    S_Score --> Confidence
-    Confidence -->|Yes| AutoPass
-    Confidence -->|No| HumanReview
-    NoteConfidence -.-> Confidence
-
-    %% Final flow
-    AutoPass --> Feedback
-    HumanReview --> Instructor
-    Instructor --> Rubric
-    Rubric --> Override
-    Override --> ScoreFinal
-    ScoreFinal --> Suggestion
-    Suggestion --> Badge
-
-    classDef submission fill:#1976d2,stroke:#0d47a1,color:#fff
-    classDef ai fill:#00796b,stroke:#004d40,color:#fff
-    classDef scoring fill:#fbc02d,stroke:#f57f17,color:#000
-    classDef human fill:#5d4037,stroke:#3e2723,color:#fff
-    classDef final fill:#303f9f,stroke:#1a237e,color:#fff
-    classDef note fill:#546e7a,stroke:#37474f,color:#fff
-
-    class WritingSubmit,SpeakingSubmit submission
-    class W_Grammar,W_Vocab,W_Content,W_Score ai
-    class Transcribe,S_Fluency,S_Pronunciation,S_Content,S_Score ai
-    class Confidence,AutoPass,HumanReview,NoteConfidence scoring
-    class Instructor,Rubric,Override,ScoreFinal human
-    class Feedback,Suggestion,Badge final
+    class KP,Parent,Child,Junction taxonomy
+    class ListKP,CreateKP,UpdateKP,DeleteKP api
+    class Attempt,Score,Mastery tracking
+    class Weak,Recommend,Level adaptive
 ```
 
-## 6. Progress Tracking & Learning Path Flow
+## 9. Database Entity Relationship
 
 ```mermaid
-flowchart TB
-    subgraph DataCollection ["Data Collection"]
-        Scores["Test Scores<br/>Placement, Practice, Mock"]
-        Attempts["Attempt History<br/>Questions answered"]
-        Time["Time Spent<br/>Learning duration"]
-        Accuracy["Accuracy Rate<br/>Correct/Total ratio"]
-    end
+erDiagram
+    users ||--o{ refresh_tokens : "has"
+    users ||--o{ submissions : "creates"
+    users ||--o{ user_progress : "tracks"
+    users ||--o{ user_skill_scores : "records"
+    users ||--o{ user_goals : "sets"
+    users ||--o{ user_knowledge_progress : "learns"
+    users ||--o{ exam_sessions : "takes"
+    users ||--o{ classes : "owns"
+    users ||--o{ class_members : "joins"
+    users ||--o{ instructor_feedback : "gives/receives"
 
-    subgraph SpiderChart ["Spider Chart Visualization"]
-        Skills["4 Skills Radar<br/>Listening, Reading, Writing, Speaking"]
-        Levels["Level Indicators<br/>A1, A2, B1, B2, C1"]
-        Gap["Skill Gap Analysis<br/>Identify weak areas"]
-        History["Historical Trend<br/>Progress over time"]
-    end
+    questions ||--o{ submissions : "answered_in"
+    questions ||--o{ question_knowledge_points : "tagged_with"
+    questions ||--o{ exam_answers : "included_in"
 
-    subgraph SlidingWindow ["Sliding Window Analytics"]
-        Window["Moving Average<br/>Last 10 attempts"]
-        Trend["Trend Detection<br/>Improving, Stable, Declining"]
-    end
+    knowledge_points ||--o{ question_knowledge_points : "maps_to"
+    knowledge_points ||--o{ user_knowledge_progress : "tracked_by"
+    knowledge_points ||--o{ knowledge_points : "parent_child"
 
-    subgraph LearningPath ["Learning Path Generation"]
-        Priority["Priority Calculation<br/>Lowest skill first"]
-        Path["Recommended Path<br/>Exercises, Topics"]
-        Timeline["Timeline Estimate<br/>Weeks to goal"]
-        Adjust["Adaptive Adjustment<br/>Based on progress"]
-    end
+    exams ||--o{ exam_sessions : "has"
+    exam_sessions ||--o{ exam_answers : "contains"
+    exam_sessions ||--o{ exam_submissions : "produces"
 
-    subgraph Visualization ["Visualization"]
-        Dashboard["User Dashboard<br/>Overview, Quick stats"]
-        Report["Detailed Report<br/>Exportable PDF"]
-        Notification["Notifications<br/>Milestones, Reminders"]
-    end
+    submissions ||--o{ submission_details : "has_detail"
+    submissions ||--o{ exam_submissions : "linked_from"
 
-    Scores --> Skills
-    Scores --> Window
-    Attempts --> Skills
-    Attempts --> Window
-    Time --> Skills
-    Time --> Window
-    Accuracy --> Skills
-    Accuracy --> Window
-    Skills --> Gap
-    Gap --> Priority
-    Window --> Trend
-    Priority --> Path
-    Path --> Timeline
-    Timeline --> Adjust
-    Skills --> Dashboard
-    Window --> Dashboard
-    Gap --> Report
-    Trend --> Report
-    Path --> Notification
+    classes ||--o{ class_members : "enrolls"
+    classes ||--o{ instructor_feedback : "contains"
 
-    classDef data fill:#1976d2,stroke:#0d47a1,color:#fff
-    classDef spider fill:#388e3c,stroke:#1b5e20,color:#fff
-    classDef sliding fill:#f57c00,stroke:#e65100,color:#fff
-    classDef path fill:#7b1fa2,stroke:#4a148c,color:#fff
-    classDef viz fill:#00838f,stroke:#006064,color:#fff
+    users {
+        uuid id PK
+        varchar email UK
+        varchar password_hash
+        varchar full_name
+        enum role "learner | instructor | admin"
+        timestamp created_at
+        timestamp updated_at
+    }
 
-    class Scores,Attempts,Time,Accuracy data
-    class Skills,Levels,Gap,History spider
-    class Window,Trend sliding
-    class Priority,Path,Timeline,Adjust path
-    class Dashboard,Report,Notification viz
-```
+    refresh_tokens {
+        uuid id PK
+        uuid user_id FK
+        varchar token_hash
+        varchar jti UK
+        varchar replaced_by_jti
+        text device_info
+        timestamp revoked_at
+        timestamp expires_at
+    }
 
-## 7. Authentication & Role-Based Access Control
+    submissions {
+        uuid id PK
+        uuid user_id FK
+        uuid question_id FK
+        enum skill "listening | reading | writing | speaking"
+        enum status "pending | processing | review_pending | completed | failed"
+        numeric score "0-10 precision 3.1"
+        enum band "B1 | B2 | C1 | null"
+        enum review_priority "low | medium | high"
+        enum grading_mode "auto | human | hybrid"
+        uuid reviewer_id FK
+        uuid claimed_by FK
+        boolean audit_flag
+        timestamp completed_at
+    }
 
-```mermaid
-flowchart TB
-    subgraph Auth ["Authentication"]
-        Login["Login Page<br/>Email/Password"]
-        OAuth["OAuth (Optional)<br/>Google SSO"]
-        AccessToken["JWT Access Token<br/>Short-lived"]
-        RefreshToken["Refresh Token<br/>Long-lived, rotate"]
-    end
+    submission_details {
+        uuid id PK
+        uuid submission_id FK
+        jsonb answer "SubmissionAnswer"
+        jsonb result "Result"
+        jsonb feedback "string or structured"
+    }
 
-    subgraph Verify ["Verification"]
-        ValidateAccess["Validate Access JWT<br/>Signature, exp, role"]
-        Refresh["Refresh Endpoint<br/>Rotate refresh token"]
-        RefreshStore["Refresh Token Store<br/>MainDB (hash)"]
-        Logout["Logout<br/>Revoke refresh token"]
-    end
+    exams {
+        uuid id PK
+        enum level "A2 | B1 | B2 | C1"
+        jsonb blueprint "ExamBlueprint"
+        boolean is_active
+        uuid created_by FK
+    }
 
-    subgraph RBAC ["Role-Based Access Control"]
-        Roles["Role Assignment<br/>Learner, Instructor, Admin"]
-        Permissions["Permission Matrix<br/>Based on role"]
-        Check["Permission Check<br/>Each request"]
-    end
+    exam_sessions {
+        uuid id PK
+        uuid exam_id FK
+        uuid user_id FK
+        enum status "in_progress | submitted | completed | abandoned"
+        numeric listening_score
+        numeric reading_score
+        numeric writing_score
+        numeric speaking_score
+        numeric overall_score
+        timestamp started_at
+        timestamp completed_at
+    }
 
-    subgraph Permissions ["Protected Resources"]
-        PracticeRes["Practice Mode<br/>All authenticated users"]
-        MockRes["Mock Test<br/>All authenticated users"]
-        GradingRes["Grading Portal<br/>Instructors only"]
-        AdminRes["Admin Panel<br/>Admins only"]
-    end
+    exam_answers {
+        uuid id PK
+        uuid session_id FK
+        uuid question_id FK
+        jsonb answer "SubmissionAnswer"
+        boolean is_correct
+    }
 
-    subgraph Tokens ["Token Lifecycle"]
-        Active["Active Context<br/>Access token claims"]
-        AccessExp["Access Expired<br/>Refresh required"]
-        Concurrent["Concurrent Devices<br/>Max 3 refresh tokens"]
-    end
+    exam_submissions {
+        uuid id PK
+        uuid session_id FK
+        uuid submission_id FK
+        enum skill
+    }
 
-    Login --> AccessToken
-    Login --> RefreshToken
-    OAuth -.-> AccessToken
-    OAuth -.-> RefreshToken
-    AccessToken --> ValidateAccess
-    ValidateAccess --> Active
-    Active --> AccessExp
-    AccessExp --> Refresh
-    RefreshToken --> Refresh
-    Refresh --> RefreshStore
-    RefreshStore -->|"Rotate"| RefreshToken
-    Refresh --> AccessToken
-    RefreshStore --> Concurrent
-    RefreshToken --> Logout
-    Logout --> RefreshStore
-    Roles --> Permissions
-    Permissions --> Check
-    Check -->|Yes| PracticeRes
-    Check -->|Yes| MockRes
-    Check -->|Instructor| GradingRes
-    Check -->|Admin| AdminRes
-    PracticeRes --> Active
-    MockRes --> Active
-    GradingRes --> Active
-    AdminRes --> Active
+    classes {
+        uuid id PK
+        varchar name
+        varchar invite_code UK
+        uuid owner_id FK
+    }
 
-    classDef auth fill:#1565c0,stroke:#0d47a1,color:#fff
-    classDef verify fill:#e65100,stroke:#bf360c,color:#fff
-    classDef rbac fill:#2e7d32,stroke:#1b5e20,color:#fff
-    classDef permissions fill:#c62828,stroke:#b71c1c,color:#fff
-    classDef resources fill:#6a1b9a,stroke:#4a148c,color:#fff
-    classDef session fill:#455a64,stroke:#37474f,color:#fff
+    class_members {
+        uuid id PK
+        uuid class_id FK
+        uuid user_id FK
+    }
 
-    class Login,OAuth,AccessToken,RefreshToken auth
-    class ValidateAccess,Refresh,RefreshStore,Logout verify
-    class Roles,Permissions,Check rbac
-    class PracticeRes,MockRes,GradingRes,AdminRes permissions
-    class Active,AccessExp,Concurrent session
+    user_progress {
+        uuid id PK
+        uuid user_id FK
+        enum skill
+        numeric average_score
+        numeric latest_score
+        integer total_attempts
+        enum current_level "A2 | B1 | B2 | C1"
+        varchar trend "improving | stable | declining"
+    }
 ```
 
 ## Diagram Summary
 
 | Diagram | Purpose | Key Components |
 |---------|---------|----------------|
-| **System Architecture** | Multi-Language Services | Bun+Elysia (API/Core) + Python+Celery (Grading) - Separate DB, RabbitMQ (AMQP), SSE real-time |
-| **User Journey** | Learner lifecycle | Registration → Goal → Self-Assessment → Practice/Mock Test |
-| **Practice Mode - Writing** | Writing adaptive scaffolding | Template → Keywords → Free Writing |
-| **Practice Mode - Listening** | Listening adaptive scaffolding | Full Text → Highlights → Pure Audio |
-| **Mock Test Flow** | Full exam simulation | 4 Sections, Timer, Scoring, Results Report |
-| **Hybrid Grading** | AI + Human evaluation | AI Instant → Human Override → Final Score |
-| **Progress Tracking** | Analytics & visualization | Spider Chart, Sliding Window, Learning Path |
-| **Authentication & RBAC** | Security & access control | JWT access/refresh (OAuth optional), role-based permissions |
+| **System Architecture** | Monolithic Bun + Elysia | Single process, PostgreSQL + Redis, Drizzle ORM |
+| **User Journey** | Learner lifecycle | Register → Practice/Exam → Grade → Progress → Goals |
+| **State Machine** | Submission lifecycle (5 states) | pending → processing → completed/review_pending → completed |
+| **Auto-Grade** | Objective scoring | Listening/Reading: normalize + compare → score → band → progress |
+| **Grading Dispatch** | Subjective task queue | Write to Redis via `grading-dispatch.ts` after tx commit |
+| **Review Workflow** | Instructor grading | Queue → Claim → Review → Complete (with priority + assign) |
+| **Exam Session** | Full exam flow | Start → Answer → Submit (inline-grade obj + dispatch subj) |
+| **Progress Tracking** | Sliding window analytics | record() + sync(): last 10 scores, trend, level |
+| **Authentication** | JWT token lifecycle | Access + Refresh, rotation, replay detection, family revocation |
+| **Classes** | Instructor-learner | Invite code join, dashboard, member progress, feedback |
+| **Knowledge Points** | Adaptive learning | Hierarchical taxonomy, question tagging, mastery tracking |
+| **Database ER** | Data model | 15+ tables with full column detail |
 
----
+## API Route Map
 
-**System Summary:** The system prioritizes reducing friction for learners by allowing goal selection first, then using self-assessment and initial behavioral data to gradually calibrate learning levels over time, rather than relying on a single placement test.
-
-*Document generated for VSTEP Adaptive Learning System (SP26SE145)*
+| Module | Prefix | Endpoints |
+|--------|--------|-----------|
+| **Health** | `/health` | `GET /` — PG + Redis health probe |
+| **Auth** | `/api/auth` | `POST /login`, `POST /register`, `POST /refresh`, `POST /logout`, `GET /me` |
+| **Users** | `/api/users` | `GET /`, `GET /:id`, `PATCH /:id`, `DELETE /:id` |
+| **Questions** | `/api/questions` | `GET /`, `POST /`, `GET /:id`, `PATCH /:id`, `DELETE /:id` |
+| **Knowledge Points** | `/api/knowledge-points` | `GET /`, `POST /`, `GET /:id`, `PATCH /:id`, `DELETE /:id` |
+| **Submissions** | `/api/submissions` | `GET /`, `GET /:id`, `POST /`, `PATCH /:id`, `DELETE /:id`, `POST /:id/auto-grade` (admin), `POST /:id/grade` (instructor), `GET /queue` (instructor), `POST /:id/claim` (instructor), `POST /:id/release` (instructor), `PUT /:id/review` (instructor), `POST /:id/assign` (instructor) |
+| **Exams** | `/api/exams` | `GET /`, `GET /:id`, `POST /` (instructor), `PATCH /:id` (admin), `POST /:id/start`, `GET /sessions/:sessionId`, `PUT /sessions/:sessionId`, `POST /sessions/:sessionId/answer`, `POST /sessions/:sessionId/submit` |
+| **Progress** | `/api/progress` | `GET /`, `GET /spider-chart`, `GET /:skill`, `POST /goals`, `PATCH /goals/:id`, `DELETE /goals/:id` |
+| **Classes** | `/api/classes` | `POST /` (instructor), `GET /`, `GET /:id`, `PATCH /:id` (instructor), `DELETE /:id` (instructor), `POST /:id/rotate-code` (instructor), `POST /join`, `POST /:id/leave`, `DELETE /:id/members/:userId` (instructor), `GET /:id/dashboard` (instructor), `GET /:id/members/:userId/progress` (instructor), `POST /:id/feedback` (instructor), `GET /:id/feedback` |
