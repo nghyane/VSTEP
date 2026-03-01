@@ -165,14 +165,14 @@ Phase 1 (Foundation Hardening)
 ├── Phase 2 (Submission Lifecycle & Auto-grading)
 │   ├── Phase 4 (Progress Computation Engine)
 │   │   └── Phase 5 (Adaptive Scaffolding)
-│   ├── Phase 7 (SSE Real-time Notifications)
-│   └── Phase 8 (Redis Queue + Grading Worker Integration)
-│       ├── Phase 9 (Human Review Workflow)
-│       └── Phase 11 (Exam Scoring & Session Flow)
+│   ├── Phase 6 (SSE Real-time Notifications)
+│   └── Phase 7 (Redis Queue + Grading Worker Integration)
+│       ├── Phase 8 (Human Review Workflow)
+│       └── Phase 9 (Exam Scoring & Session Flow)
 └── Phase 3 (Goals Module) — parallelizable with Phase 2
 ```
 
-Phases 6 (Rate Limiting), 10 (Circuit Breaker), 12 (Admin & Observability), 13 (Data Retention) are **dropped** — out of capstone scope.
+Rate Limiting, Circuit Breaker, Admin & Observability, and Data Retention features are **dropped** — out of capstone scope.
 
 ### 2.2 Quality Management
 
@@ -235,7 +235,7 @@ Phases 6 (Rate Limiting), 10 (Circuit Breaker), 12 (Admin & Observability), 13 (
 | 4 | Database Schema (Drizzle ORM + migrations) | 31/01/2026 | PostgreSQL tables, enums, indexes |
 | 5 | Sprint 1-2: Foundation + Auth + Questions + Submissions | 28/02/2026 | Backend Phases 1-3 |
 | 6 | Sprint 3-4: AI Grading Service + Auto-grading + Review | 15/03/2026 | Grading worker + human review workflow |
-| 7 | Sprint 5: Progress Tracking + Scaffolding + Exams + Frontend MVP | 31/03/2026 | Backend Phases 4-5, 11 + Frontend core |
+| 7 | Sprint 5: Progress Tracking + Scaffolding + Exams + Frontend MVP | 31/03/2026 | Backend Phases 4-5, 9 + Frontend core |
 | 8 | Report 3 — SRS Document | 15/03/2026 | Software Requirements Specification |
 | 9 | Sprint 6-7: Enhancement features + System testing | 15/04/2026 | Phase 2 features (FE-12 to FE-16) |
 | 10 | Final Report + Demo | 30/04/2026 | Final presentation and deployment |

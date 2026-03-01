@@ -165,14 +165,14 @@ Phase 1 (Củng cố nền tảng)
 ├── Phase 2 (Vòng đời Submission & Chấm tự động)
 │   ├── Phase 4 (Engine tính toán tiến độ)
 │   │   └── Phase 5 (Adaptive Scaffolding)
-│   ├── Phase 7 (SSE thông báo realtime)
-│   └── Phase 8 (Redis Queue + tích hợp Grading Worker)
-│       ├── Phase 9 (Quy trình chấm thủ công)
-│       └── Phase 11 (Chấm điểm & vòng đời Exam)
+│   ├── Phase 6 (SSE thông báo realtime)
+│   └── Phase 7 (Redis Queue + tích hợp Grading Worker)
+│       ├── Phase 8 (Quy trình chấm thủ công)
+│       └── Phase 9 (Chấm điểm & vòng đời Exam)
 └── Phase 3 (Module mục tiêu) — có thể song song với Phase 2
 ```
 
-Các phase 6 (Rate Limiting), 10 (Circuit Breaker), 12 (Admin & Observability), 13 (Data Retention) **bị loại bỏ** — ngoài phạm vi capstone.
+Các tính năng Rate Limiting, Circuit Breaker, Admin & Observability, Data Retention **bị loại bỏ** — ngoài phạm vi capstone.
 
 ### 2.2 Quản lý chất lượng
 
@@ -235,7 +235,7 @@ Các phase 6 (Rate Limiting), 10 (Circuit Breaker), 12 (Admin & Observability), 
 | 4 | Database Schema (Drizzle ORM + migrations) | 31/01/2026 | PostgreSQL tables, enums, indexes |
 | 5 | Sprint 1-2: Nền tảng + Auth + Questions + Submissions | 28/02/2026 | Backend Phases 1-3 |
 | 6 | Sprint 3-4: Dịch vụ chấm AI + Chấm tự động + Review | 15/03/2026 | Grading worker + quy trình chấm thủ công |
-| 7 | Sprint 5: Theo dõi tiến độ + Scaffolding + Exams + Frontend MVP | 31/03/2026 | Backend Phases 4-5, 11 + Frontend cốt lõi |
+| 7 | Sprint 5: Theo dõi tiến độ + Scaffolding + Exams + Frontend MVP | 31/03/2026 | Backend Phases 4-5, 9 + Frontend cốt lõi |
 | 8 | Report 3 — Tài liệu SRS | 15/03/2026 | Đặc tả yêu cầu phần mềm |
 | 9 | Sprint 6-7: Tính năng nâng cao + Kiểm thử hệ thống | 15/04/2026 | Tính năng Phase 2 (FE-12 đến FE-16) |
 | 10 | Báo cáo cuối + Demo | 30/04/2026 | Thuyết trình cuối và triển khai |
