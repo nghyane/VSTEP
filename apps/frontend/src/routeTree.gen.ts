@@ -9,38 +9,140 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LearnerRouteImport } from './routes/_learner'
+import { Route as InstructorRouteImport } from './routes/_instructor'
+import { Route as FocusedRouteImport } from './routes/_focused'
+import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LearnerDashboardRouteImport } from './routes/_learner/dashboard'
+import { Route as InstructorManageRouteImport } from './routes/_instructor/manage'
+import { Route as FocusedExamRouteImport } from './routes/_focused/exam'
+import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 
+const LearnerRoute = LearnerRouteImport.update({
+  id: '/_learner',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InstructorRoute = InstructorRouteImport.update({
+  id: '/_instructor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FocusedRoute = FocusedRouteImport.update({
+  id: '/_focused',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/_auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LearnerDashboardRoute = LearnerDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => LearnerRoute,
+} as any)
+const InstructorManageRoute = InstructorManageRouteImport.update({
+  id: '/manage',
+  path: '/manage',
+  getParentRoute: () => InstructorRoute,
+} as any)
+const FocusedExamRoute = FocusedExamRouteImport.update({
+  id: '/exam',
+  path: '/exam',
+  getParentRoute: () => FocusedRoute,
+} as any)
+const AuthLoginRoute = AuthLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AuthRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof AuthLoginRoute
+  '/exam': typeof FocusedExamRoute
+  '/manage': typeof InstructorManageRoute
+  '/dashboard': typeof LearnerDashboardRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof AuthLoginRoute
+  '/exam': typeof FocusedExamRoute
+  '/manage': typeof InstructorManageRoute
+  '/dashboard': typeof LearnerDashboardRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_auth': typeof AuthRouteWithChildren
+  '/_focused': typeof FocusedRouteWithChildren
+  '/_instructor': typeof InstructorRouteWithChildren
+  '/_learner': typeof LearnerRouteWithChildren
+  '/_auth/login': typeof AuthLoginRoute
+  '/_focused/exam': typeof FocusedExamRoute
+  '/_instructor/manage': typeof InstructorManageRoute
+  '/_learner/dashboard': typeof LearnerDashboardRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/login' | '/exam' | '/manage' | '/dashboard'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/login' | '/exam' | '/manage' | '/dashboard'
+  id:
+    | '__root__'
+    | '/'
+    | '/_auth'
+    | '/_focused'
+    | '/_instructor'
+    | '/_learner'
+    | '/_auth/login'
+    | '/_focused/exam'
+    | '/_instructor/manage'
+    | '/_learner/dashboard'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRouteWithChildren
+  FocusedRoute: typeof FocusedRouteWithChildren
+  InstructorRoute: typeof InstructorRouteWithChildren
+  LearnerRoute: typeof LearnerRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/_learner': {
+      id: '/_learner'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof LearnerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_instructor': {
+      id: '/_instructor'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof InstructorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_focused': {
+      id: '/_focused'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof FocusedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_auth': {
+      id: '/_auth'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +150,87 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_learner/dashboard': {
+      id: '/_learner/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof LearnerDashboardRouteImport
+      parentRoute: typeof LearnerRoute
+    }
+    '/_instructor/manage': {
+      id: '/_instructor/manage'
+      path: '/manage'
+      fullPath: '/manage'
+      preLoaderRoute: typeof InstructorManageRouteImport
+      parentRoute: typeof InstructorRoute
+    }
+    '/_focused/exam': {
+      id: '/_focused/exam'
+      path: '/exam'
+      fullPath: '/exam'
+      preLoaderRoute: typeof FocusedExamRouteImport
+      parentRoute: typeof FocusedRoute
+    }
+    '/_auth/login': {
+      id: '/_auth/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof AuthLoginRouteImport
+      parentRoute: typeof AuthRoute
+    }
   }
 }
 
+interface AuthRouteChildren {
+  AuthLoginRoute: typeof AuthLoginRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthLoginRoute: AuthLoginRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
+interface FocusedRouteChildren {
+  FocusedExamRoute: typeof FocusedExamRoute
+}
+
+const FocusedRouteChildren: FocusedRouteChildren = {
+  FocusedExamRoute: FocusedExamRoute,
+}
+
+const FocusedRouteWithChildren =
+  FocusedRoute._addFileChildren(FocusedRouteChildren)
+
+interface InstructorRouteChildren {
+  InstructorManageRoute: typeof InstructorManageRoute
+}
+
+const InstructorRouteChildren: InstructorRouteChildren = {
+  InstructorManageRoute: InstructorManageRoute,
+}
+
+const InstructorRouteWithChildren = InstructorRoute._addFileChildren(
+  InstructorRouteChildren,
+)
+
+interface LearnerRouteChildren {
+  LearnerDashboardRoute: typeof LearnerDashboardRoute
+}
+
+const LearnerRouteChildren: LearnerRouteChildren = {
+  LearnerDashboardRoute: LearnerDashboardRoute,
+}
+
+const LearnerRouteWithChildren =
+  LearnerRoute._addFileChildren(LearnerRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRouteWithChildren,
+  FocusedRoute: FocusedRouteWithChildren,
+  InstructorRoute: InstructorRouteWithChildren,
+  LearnerRoute: LearnerRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
