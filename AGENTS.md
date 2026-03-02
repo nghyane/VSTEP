@@ -37,3 +37,10 @@ docker-compose.yml  # Local dev services (PostgreSQL, Redis)
 - Backend communicates with Grading service via Celery tasks through Redis.
 - Auth: JWT Bearer tokens (issued by backend, validated on each request).
 - Shared types: Backend is source of truth. Frontend will sync via `bun run sync-types` (planned).
+
+## Git Rules
+
+- **Never rebase without asking.** Use `git pull --no-rebase` (merge) by default. Only rebase if explicitly requested.
+- **Never force push** (`git push --force` / `--force-with-lease`) without explicit approval.
+- **Never `git reset --hard`** or `git checkout -- .`** unless specifically requested.
+- Stage only files related to the current change. Do not commit unrelated modified files.
