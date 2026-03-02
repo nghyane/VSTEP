@@ -222,11 +222,14 @@ flowchart TB
 
     subgraph Common ["Common Layer"]
         Env["env.ts<br/>t3-oss/env-core<br/>Validated env vars"]
-        Errors["errors.ts<br/>AppError hierarchy<br/>BadRequest, NotFound,<br/>Conflict, Unauthorized"]
+        Errors["errors.ts<br/>AppError hierarchy<br/>BadRequest, NotFound,<br/>Conflict, Unauthorized,<br/>Forbidden, TokenExpired"]
         Logger["logger.ts<br/>Structured JSON logging"]
         Scoring["scoring.ts<br/>scoreToBand, normalizeAnswer,<br/>BAND_THRESHOLDS"]
         StateMachine["state-machine.ts<br/>Submission state transitions"]
-        Utils["utils.ts<br/>assertExists, assertAccess"]
+        Utils["utils.ts<br/>assertExists, assertAccess,<br/>normalizeEmail, generateInviteCode"]
+        Constants["constants.ts<br/>MAX_PAGE_SIZE, JWT_SECRET_KEY,<br/>MAX_REFRESH_TOKENS_PER_USER"]
+        AuthTypes["auth-types.ts<br/>Actor, ROLES, ROLE_LEVEL,<br/>JWTPayload"]
+        Schemas["schemas.ts<br/>Shared TypeBox enum schemas"]
     end
 
     subgraph DBLayer ["Database Layer"]
@@ -262,7 +265,7 @@ flowchart TB
     class AppTS,IndexTS entry
     class ErrorPlugin,CorsPlugin,OpenAPIPlugin plugin
     class Auth,Users,Questions,Submissions,Exams,Progress,Classes,KnowledgePoints,Health module
-    class Env,Errors,Logger,Scoring,StateMachine,Utils common
+    class Env,Errors,Logger,Scoring,StateMachine,Utils,Constants,AuthTypes,Schemas common
     class Schema,Relations,DBIndex,Types db
     class PG,RedisExt ext
 ```
@@ -399,7 +402,7 @@ flowchart TB
 flowchart TB
     subgraph Monorepo ["VSTEP Monorepo"]
         subgraph BackendPkg ["apps/backend/src/"]
-            CommonPkg["common/<br/>env, errors, logger,<br/>scoring, state-machine, utils"]
+            CommonPkg["common/<br/>env, errors, logger, scoring,<br/>state-machine, utils, constants,<br/>auth-types, schemas"]
             DBPkg["db/<br/>schema/, relations,<br/>types/, helpers, index"]
             ModulesPkg["modules/<br/>auth, users, questions,<br/>submissions, exams, progress,<br/>classes, knowledge-points, health"]
             PluginsPkg["plugins/<br/>auth middleware,<br/>error handler"]
@@ -1027,26 +1030,28 @@ The system uses PostgreSQL JSONB columns for flexible, schema-variant data. All 
 
 #### 4.3.1 Question Content (`questions.content`)
 
-Discriminated union on question `skill` and `part`. Supports 8 format types:
+Discriminated union on question `skill` and `part`. Supports 10 content types:
 
-| Skill | Format Key | Content Structure |
+| Skill | Content Type | Content Structure |
 |-------|-----------|-------------------|
-| Listening | `listening_mcq` | `{ audioUrl, transcript?, items: [{ id, stem, options: [A,B,C,D] }] }` |
-| Reading | `reading_mcq` | `{ passage, items: [{ id, stem, options: [A,B,C,D] }] }` |
-| Reading | `reading_tng` | `{ passage, items: [{ id, statement }] }` (True/False/Not Given) |
-| Reading | `reading_matching_headings` | `{ passage, headings: [], paragraphs: [] }` |
-| Reading | `reading_gap_fill` | `{ passage (with gaps), items: [{ id, gapIndex }] }` |
-| Writing | `writing_task_1` | `{ prompt, instructions, minWords: 120 }` |
-| Writing | `writing_task_2` | `{ prompt, instructions, minWords: 250 }` |
-| Speaking | `speaking_part_1/2/3` | `{ prompt, preparationSeconds, topics? }` |
+| Listening | `ListeningContent` | `{ audioUrl, transcript?, items: [{ stem, options: [A,B,C,D] }] }` |
+| Listening | `ListeningDictationContent` | `{ audioUrl, transcript, transcriptWithGaps, items: [{ correctText }] }` |
+| Reading | `ReadingContent` | `{ passage, title?, items: [{ stem, options: [A,B,C,D] }] }` |
+| Reading | `ReadingTNGContent` | `{ passage, title?, items: [{ stem, options: [T,F,NG] }] }` (True/False/Not Given) |
+| Reading | `ReadingMatchingContent` | `{ title?, paragraphs: [{ label, text }], headings: [] }` |
+| Reading | `ReadingGapFillContent` | `{ title?, textWithGaps, items: [{ options: [A,B,C,D] }] }` |
+| Writing | `WritingContent` | `{ prompt, taskType: "letter" \| "essay", instructions?, minWords, requiredPoints? }` |
+| Speaking | `SpeakingPart1Content` | `{ topics: [{ name, questions: [3] }] }` (2 topics, social interaction) |
+| Speaking | `SpeakingPart2Content` | `{ situation, options: [3], preparationSeconds, speakingSeconds }` |
+| Speaking | `SpeakingPart3Content` | `{ centralIdea, suggestions: [3], followUpQuestion, preparationSeconds, speakingSeconds }` |
 
 #### 4.3.2 Submission Answer (`submission_details.answer`)
 
 | Type | Structure | Used For |
 |------|-----------|----------|
 | `ObjectiveAnswer` | `{ answers: Record<string, string> }` | Listening, Reading |
-| `WritingAnswer` | `{ text, wordCount, taskType }` | Writing |
-| `SpeakingAnswer` | `{ audioUrl, durationSeconds, partNumber }` | Speaking |
+| `WritingAnswer` | `{ text }` | Writing |
+| `SpeakingAnswer` | `{ audioUrl, durationSeconds, transcript? }` | Speaking |
 
 #### 4.3.3 Grading Result (`submission_details.result`)
 
@@ -1062,10 +1067,11 @@ Discriminated union on `type` field:
 
 ```
 ExamBlueprint = {
-  listening: { questionIds: string[] },
-  reading:   { questionIds: string[] },
-  writing:   { questionIds: string[] },
-  speaking:  { questionIds: string[] }
+  listening?: { questionIds: string[] },
+  reading?:   { questionIds: string[] },
+  writing?:   { questionIds: string[] },
+  speaking?:  { questionIds: string[] },
+  durationMinutes?: number
 }
 ```
 
