@@ -19,14 +19,15 @@
 | Date | A/M/D | In Charge | Change Description |
 |------|-------|-----------|-------------------|
 | 15/03/2026 | A | Nghĩa (Leader) | Initial SRS document — functional & non-functional requirements |
+| 02/03/2026 | M | Nghĩa (Leader) | Added Use Case diagrams, Actors, Screens Flow, Screen Authorization, ERD, Activity diagrams |
 
 ---
 
 # II. Software Requirement Specification
 
-## 1. Introduction
+## 1. Overall Description
 
-### 1.1 Purpose
+### 1.1 Product Overview
 
 This Software Requirement Specification (SRS) document describes all functional and non-functional requirements for the **Adaptive VSTEP Preparation System** — a web and mobile platform that helps Vietnamese learners prepare for the VSTEP (Vietnamese Standardized Test of English Proficiency) examination through adaptive learning, AI-powered grading, and personalized progress tracking.
 
@@ -37,7 +38,7 @@ The intended audience includes:
 - **QA testers** — for test case derivation
 - **Stakeholders** — for feature validation and acceptance
 
-### 1.2 Scope
+#### 1.1.1 Scope
 
 The system covers:
 
@@ -57,7 +58,158 @@ The system does **not** cover:
 - iOS native app (Android-first; iOS via PWA)
 - Multi-language UI (Vietnamese only in MVP)
 
-### 1.3 Definitions and Acronyms
+#### 1.1.2 System Context Diagram
+
+The context diagram below illustrates the external entities and system interfaces for the Adaptive VSTEP Preparation System. The system boundary encompasses the Web/Mobile clients, the Main API Server, the Grading Worker, PostgreSQL, and Redis. External entities include the three user roles (Learner, Instructor, Admin) and the AI provider APIs (Groq LLM and Groq Whisper).
+
+```mermaid
+flowchart TB
+    subgraph ExternalActors ["External Actors"]
+        Learner["👤 Learner\n(Web / Mobile)"]
+        Instructor["👤 Instructor\n(Web)"]
+        Admin["👤 Admin\n(Web)"]
+    end
+
+    subgraph System ["Adaptive VSTEP Preparation System"]
+        WebApp["Web Application\nReact 19 + Vite 7"]
+        MobileApp["Mobile Application\nReact Native (Android)"]
+        Backend["Main API Server\nBun + Elysia"]
+        GradingWorker["Grading Worker\nPython + FastAPI"]
+        DB["PostgreSQL 17"]
+        Cache["Redis 7.2+\n(Queue + Cache)"]
+    end
+
+    subgraph ExternalServices ["External Services"]
+        GroqLLM["Groq API\nLlama 3.3 70B\n(LLM Grading)"]
+        GroqSTT["Groq API\nWhisper Large V3 Turbo\n(Speech-to-Text)"]
+    end
+
+    Learner -->|"HTTPS + SSE"| WebApp
+    Learner -->|"HTTPS + SSE"| MobileApp
+    Instructor -->|"HTTPS"| WebApp
+    Admin -->|"HTTPS"| WebApp
+
+    WebApp -->|"REST API\n(JSON + JWT)"| Backend
+    MobileApp -->|"REST API\n(JSON + JWT)"| Backend
+
+    Backend -->|"Drizzle ORM\n(TCP 5432)"| DB
+    Backend -->|"LPUSH tasks\n(RESP3)"| Cache
+    Backend -->|"SSE events"| WebApp
+    Backend -->|"SSE events"| MobileApp
+
+    GradingWorker -->|"BRPOP tasks\n(RESP3)"| Cache
+    GradingWorker -->|"Write results\n(asyncpg)"| DB
+    GradingWorker -->|"HTTPS\nLLM grading"| GroqLLM
+    GradingWorker -->|"HTTPS\nSTT transcription"| GroqSTT
+
+    classDef actor fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef system fill:#2e7d32,stroke:#1b5e20,color:#fff
+    classDef external fill:#e65100,stroke:#bf360c,color:#fff
+
+    class Learner,Instructor,Admin actor
+    class WebApp,MobileApp,Backend,GradingWorker,DB,Cache system
+    class GroqLLM,GroqSTT external
+```
+
+Key architectural decisions:
+
+- **Shared-DB**: Both Main App and Grading Worker connect to the same PostgreSQL database. Worker writes grading results directly — no callback queue or outbox pattern needed.
+- **Redis Queue**: Redis list with LPUSH/BRPOP replaces RabbitMQ. Simpler, fewer moving parts.
+- **SSE Real-time**: Server-Sent Events for unidirectional grading status updates to clients.
+- **JWT Auth**: Access/refresh token pair with rotation and reuse detection.
+
+#### 1.1.3 System Interfaces
+
+| Interface | Protocol | Description |
+|-----------|----------|-------------|
+| Client ↔ Main App | REST (HTTPS) + SSE | All user interactions via REST API; real-time grading updates via SSE |
+| Main App ↔ PostgreSQL | TCP (PostgreSQL wire protocol) | Drizzle ORM for data access |
+| Main App ↔ Redis | RESP3 (Bun built-in) | Queue enqueue, cache, rate limiting, review claim locks |
+| Grading Worker ↔ Redis | RESP3 | BRPOP for job dequeue |
+| Grading Worker ↔ PostgreSQL | TCP (psycopg/asyncpg) | Direct write of grading results |
+| Grading Worker ↔ AI Providers | HTTPS | LLM (Groq Llama 3.3) for grading, Whisper (Groq) for STT |
+
+### 1.2 Business Rules
+
+See [Section 5.1 — Business Rules](#51-business-rules) for the complete list. Key rules include:
+
+- Score range 0–10 in half-steps (numeric 3,1)
+- Band derivation: C1 ≥ 8.5, B2 ≥ 6.0, B1 ≥ 4.0, below 4.0 = null
+- Overall band = min(band per skill)
+- AI confidence routing: high → completed, medium/low → review_pending
+- Sliding window N=10, minimum 3 attempts for trend computation
+- Max 3 active refresh tokens per user (FIFO)
+
+### 1.3 Product Functions
+
+The system provides 16 features organized in two delivery phases:
+
+**Phase 1 — MVP (Months 1–3): 11 Core Features**
+
+| ID | Feature | Description |
+|----|---------|-------------|
+| FE-01 | User Authentication | Registration, login, JWT lifecycle, RBAC (learner/instructor/admin), max 3 devices |
+| FE-02 | Placement Test | Initial four-skill proficiency assessment to initialize Spider Chart and learning pathway |
+| FE-03 | Practice Mode — Listening | Adaptive Scaffolding (Full Text → Highlights → Pure Audio), MCQ exercises |
+| FE-04 | Practice Mode — Reading | VSTEP question types: True/False/Not Given, MCQ, Matching Headings, Fill-in-the-Blanks |
+| FE-05 | Practice Mode — Writing + AI Grading | AI feedback using LLM (4 VSTEP criteria), SLA timeout 20 minutes |
+| FE-06 | Practice Mode — Speaking + AI Grading | STT transcription + LLM assessment (4 criteria), SLA timeout 60 minutes |
+| FE-07 | Mock Test Mode | Full four-skill timed exam following VSTEP format with detailed scoring report |
+| FE-08 | Human Grading | Instructor review of AI-graded Writing/Speaking submissions with claim/release and merge rules |
+| FE-09 | Progress Tracking | Spider Chart, Sliding Window (N=10), trend classification, ETA estimation |
+| FE-10 | Learning Path | Personalized pathway based on weakest skill prioritization (rule-based) |
+| FE-11 | Goal Setting | Target band, deadline, daily study time, achievement/on-track status |
+
+**Phase 2 — Enhancement (Month 4): 5 Admin Features**
+
+| ID | Feature | Description |
+|----|---------|-------------|
+| FE-12 | Content Management | Question bank CRUD, import/export (Excel, JSON) |
+| FE-13 | User Management | Bulk account creation, lock/unlock, password reset, role assignment |
+| FE-14 | Analytics Dashboard | Active users, completion rates, average scores, time-based filtering |
+| FE-15 | Notification System | Push notifications (mobile), email, in-app notifications |
+| FE-16 | Advanced Admin Features | Activity history, automatic assignment distribution |
+
+### 1.4 User Characteristics
+
+| User Role | Characteristics | Technical Proficiency |
+|-----------|----------------|----------------------|
+| **Learner** | University students (final year) or working professionals preparing for VSTEP certification. Age range 18–35. Primary device: smartphone (Android 70%+). May have limited internet bandwidth. | Basic to intermediate. Familiar with mobile apps and web browsing. |
+| **Instructor** | English language instructors at universities or language centers. Responsible for reviewing AI-graded Writing/Speaking submissions and providing feedback. | Intermediate. Comfortable with web applications and basic data interpretation. |
+| **Admin** | System administrators managing users, question banks, and platform configuration. | Advanced. Familiar with content management systems and data administration. |
+
+### 1.5 Constraints
+
+| # | Constraint | Description |
+|---|-----------|-------------|
+| C-01 | VSTEP Format Only | System supports only VSTEP.3-5 (B1–C1) format, not IELTS/TOEFL/TOEIC |
+| C-02 | AI Grading Limitation | AI grading for Writing/Speaking is supplementary; official scores require instructor confirmation |
+| C-03 | Vietnamese UI Only | MVP supports Vietnamese interface only |
+| C-04 | Android Priority | Mobile app targets Android first; iOS users access via PWA |
+| C-05 | No Payment Integration | MVP uses freemium model; no online payment gateway |
+| C-06 | LLM Provider Dependency | AI grading depends on external LLM/STT providers (Groq, OpenAI) with rate limits |
+| C-07 | Capstone Timeline | 4-month development window (14 weeks, 7 sprints) |
+| C-08 | Team Size | 4 developers (1 BE+AI, 1 Mobile, 2 FE) |
+
+### 1.6 Assumptions and Dependencies
+
+**Assumptions:**
+
+- A-01: Learners have access to a stable internet connection (minimum 1 Mbps for audio streaming)
+- A-02: Learners have a device with a microphone for Speaking practice
+- A-03: VSTEP exam format and rubric remain stable during the project duration
+- A-04: AI providers (Groq, OpenAI) maintain service availability and API compatibility
+- A-05: PostgreSQL and Redis are available and operational in the deployment environment
+
+**Dependencies:**
+
+- D-01: Groq API (Llama 3.3 70B) for LLM-based Writing/Speaking grading
+- D-02: Groq API (Whisper Large V3 Turbo) for Speech-to-Text transcription
+- D-03: PostgreSQL 17 for data persistence
+- D-04: Redis 7.2+ for task queue, caching, and distributed locks
+- D-05: Docker Compose for local development environment orchestration
+
+### 1.7 Definitions and Acronyms
 
 #### Acronyms
 
@@ -94,7 +246,7 @@ The system does **not** cover:
 | Confidence | AI self-assessed reliability of grading result (high, medium, low) |
 | Review Priority | Urgency level for instructor review (low, medium, high) |
 
-### 1.4 References
+### 1.8 References
 
 | # | Document | Description |
 |---|----------|-------------|
@@ -113,141 +265,678 @@ The system does **not** cover:
 | 13 | `specs/40-platform/authentication.md` | JWT flow, rotation, device limits |
 | 14 | `specs/50-ops/deployment.md` | Docker Compose and environment variables |
 
-### 1.5 Overview
-
-The remainder of this document is organized as follows:
-
-- **Section 2 — Overall Description**: Product perspective, product functions, user characteristics, constraints, and assumptions.
-- **Section 3 — Functional Requirements**: Detailed requirements for each feature organized by feature groups.
-- **Section 4 — Non-Functional Requirements**: External interfaces, quality attributes (usability, reliability, performance, security, scalability).
-- **Section 5 — Requirement Appendix**: Business rules, common requirements, and application messages.
-
 ---
 
-## 2. Overall Description
+## 2. User Requirements
 
-### 2.1 Product Perspective
+### 2.1 Actors
 
-The Adaptive VSTEP Preparation System is a new, self-contained product designed to fill a gap in the Vietnamese EdTech market where no existing solution combines: (1) VSTEP alignment, (2) adaptive personalization, and (3) comprehensive four-skill assessment with immediate AI feedback.
+| # | Actor | Description |
+|---|-------|-------------|
+| 1 | **Learner** | A registered user (role = `learner`) who practices English skills, takes mock tests, views progress, sets goals, and joins classes. Primary consumer of adaptive scaffolding and AI grading feedback. |
+| 2 | **Instructor** | A user (role = `instructor`) who creates exams and questions, reviews AI-graded Writing/Speaking submissions, manages classes, monitors learner progress, and provides feedback. Inherits all Learner capabilities. |
+| 3 | **Admin** | A user (role = `admin`) who manages users, question bank, system configuration, and views analytics dashboards. Inherits all Instructor capabilities. |
+| 4 | **Grading Worker** | An automated system actor (Python + FastAPI) that consumes grading tasks from Redis, performs AI grading via external LLM/STT APIs, and writes results to the database. |
+| 5 | **AI Provider (Groq)** | External service providing LLM inference (Llama 3.3 70B) for Writing/Speaking grading and STT transcription (Whisper Large V3 Turbo) for Speaking submissions. |
 
-#### 2.1.1 System Architecture
+### 2.2 Use Cases
 
+#### 2.2.1 Use Case Diagram — Learner
+
+```mermaid
+flowchart LR
+    Learner(("👤 Learner"))
+
+    subgraph Authentication ["Authentication"]
+        UC01["UC-01\nRegister"]
+        UC02["UC-02\nLogin"]
+        UC03["UC-03\nLogout"]
+        UC04["UC-04\nRefresh Token"]
+    end
+
+    subgraph PracticeMode ["Practice Mode"]
+        UC10["UC-10\nPractice Listening"]
+        UC11["UC-11\nPractice Reading"]
+        UC12["UC-12\nPractice Writing"]
+        UC13["UC-13\nPractice Speaking"]
+        UC14["UC-14\nView Submission Result"]
+        UC15["UC-15\nView AI Feedback"]
+    end
+
+    subgraph ExamMode ["Mock Test Mode"]
+        UC20["UC-20\nList Available Exams"]
+        UC21["UC-21\nStart Exam Session"]
+        UC22["UC-22\nAnswer Exam Questions"]
+        UC23["UC-23\nSubmit Exam"]
+        UC24["UC-24\nView Exam Result"]
+    end
+
+    subgraph ProgressGoals ["Progress & Goals"]
+        UC30["UC-30\nView Progress Overview"]
+        UC31["UC-31\nView Spider Chart"]
+        UC32["UC-32\nView Skill Detail"]
+        UC33["UC-33\nSet Learning Goal"]
+        UC34["UC-34\nView ETA Estimation"]
+    end
+
+    subgraph ClassEnroll ["Class"]
+        UC40["UC-40\nJoin Class"]
+        UC41["UC-41\nLeave Class"]
+        UC42["UC-42\nView Instructor Feedback"]
+    end
+
+    Learner --- UC01
+    Learner --- UC02
+    Learner --- UC03
+    Learner --- UC04
+    Learner --- UC10
+    Learner --- UC11
+    Learner --- UC12
+    Learner --- UC13
+    Learner --- UC14
+    Learner --- UC15
+    Learner --- UC20
+    Learner --- UC21
+    Learner --- UC22
+    Learner --- UC23
+    Learner --- UC24
+    Learner --- UC30
+    Learner --- UC31
+    Learner --- UC32
+    Learner --- UC33
+    Learner --- UC34
+    Learner --- UC40
+    Learner --- UC41
+    Learner --- UC42
+
+    UC12 -.->|"includes"| UC14
+    UC13 -.->|"includes"| UC14
+    UC14 -.->|"includes"| UC15
+    UC21 -.->|"includes"| UC22
+    UC22 -.->|"includes"| UC23
+
+    classDef actor fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef uc fill:#fff,stroke:#333,color:#333
+
+    class Learner actor
 ```
-┌──────────────────┐     ┌──────────────────────────┐     ┌─────────────┐
-│  Client           │     │  Main App                 │     │  PostgreSQL  │
-│  (Web / Mobile)   │────>│  Bun + Elysia (REST API) │────>│  (Shared DB) │
-│                   │<────│                           │<────│              │
-└──────────────────┘ SSE  └──────────┬───────────────┘     └──────┬───────┘
-                                     │ enqueue job                 │
-                                     v                             │
-                              ┌─────────────┐                      │
-                              │    Redis     │                      │
-                              │  (Queue +    │                      │
-                              │   Cache)     │                      │
-                              └──────┬──────┘                      │
-                                     │ dequeue job                  │
-                                     v                             │
-                              ┌─────────────────────┐              │
-                              │  Grading Worker      │──────────────┘
-                              │  Python + arq        │  write results
-                              │  (LLM + STT)         │
-                              └─────────────────────┘
+
+#### 2.2.2 Use Case Diagram — Instructor
+
+```mermaid
+flowchart LR
+    Instructor(("👤 Instructor"))
+
+    subgraph ReviewGrading ["Review & Grading"]
+        UC50["UC-50\nView Review Queue"]
+        UC51["UC-51\nClaim Submission"]
+        UC52["UC-52\nReview & Grade Submission"]
+        UC53["UC-53\nRelease Submission"]
+    end
+
+    subgraph ExamMgmt ["Exam Management"]
+        UC60["UC-60\nCreate Exam"]
+        UC61["UC-61\nManage Questions"]
+    end
+
+    subgraph ClassMgmt ["Class Management"]
+        UC70["UC-70\nCreate Class"]
+        UC71["UC-71\nView Class Dashboard"]
+        UC72["UC-72\nView Member Progress"]
+        UC73["UC-73\nGive Feedback"]
+        UC74["UC-74\nRotate Invite Code"]
+        UC75["UC-75\nRemove Member"]
+    end
+
+    Instructor --- UC50
+    Instructor --- UC51
+    Instructor --- UC52
+    Instructor --- UC53
+    Instructor --- UC60
+    Instructor --- UC61
+    Instructor --- UC70
+    Instructor --- UC71
+    Instructor --- UC72
+    Instructor --- UC73
+    Instructor --- UC74
+    Instructor --- UC75
+
+    UC51 -.->|"includes"| UC52
+    UC51 -.->|"extends"| UC53
+
+    classDef actor fill:#e65100,stroke:#bf360c,color:#fff
+    class Instructor actor
 ```
 
-Key architectural decisions:
+#### 2.2.3 Use Case Diagram — Admin
 
-- **Shared-DB**: Both Main App and Grading Worker connect to the same PostgreSQL database. Worker writes grading results directly — no callback queue or outbox pattern needed.
-- **Redis Queue**: Redis list with arq protocol replaces RabbitMQ. Simpler, fewer moving parts.
-- **SSE Real-time**: Server-Sent Events for unidirectional grading status updates to clients.
-- **JWT Auth**: Access/refresh token pair with rotation and reuse detection.
+```mermaid
+flowchart LR
+    Admin(("👤 Admin"))
 
-#### 2.1.2 System Interfaces
+    subgraph UserMgmt ["User Management"]
+        UC80["UC-80\nList Users"]
+        UC81["UC-81\nChange User Role"]
+        UC82["UC-82\nLock/Unlock Account"]
+        UC83["UC-83\nReset Password"]
+        UC84["UC-84\nBulk Create Users"]
+    end
 
-| Interface | Protocol | Description |
-|-----------|----------|-------------|
-| Client ↔ Main App | REST (HTTPS) + SSE | All user interactions via REST API; real-time grading updates via SSE |
-| Main App ↔ PostgreSQL | TCP (PostgreSQL wire protocol) | Drizzle ORM for data access |
-| Main App ↔ Redis | RESP3 (Bun built-in) | Queue enqueue, cache, rate limiting, review claim locks |
-| Grading Worker ↔ Redis | RESP3 (arq) | BRPOP for job dequeue |
-| Grading Worker ↔ PostgreSQL | TCP (psycopg/asyncpg) | Direct write of grading results |
-| Grading Worker ↔ AI Providers | HTTPS | LLM (Groq Llama 3.3) for grading, Whisper (Groq) for STT |
+    subgraph ContentMgmt ["Content Management"]
+        UC85["UC-85\nManage Question Bank"]
+        UC86["UC-86\nImport/Export Questions"]
+        UC87["UC-87\nManage Knowledge Points"]
+        UC88["UC-88\nUpdate Exam"]
+    end
 
-### 2.2 Product Functions
+    subgraph Analytics ["Analytics"]
+        UC90["UC-90\nView Admin Dashboard"]
+        UC91["UC-91\nView System Analytics"]
+        UC92["UC-92\nTrigger Auto-Grade"]
+    end
 
-The system provides 16 features organized in two delivery phases:
+    Admin --- UC80
+    Admin --- UC81
+    Admin --- UC82
+    Admin --- UC83
+    Admin --- UC84
+    Admin --- UC85
+    Admin --- UC86
+    Admin --- UC87
+    Admin --- UC88
+    Admin --- UC90
+    Admin --- UC91
+    Admin --- UC92
 
-**Phase 1 — MVP (Months 1–3): 11 Core Features**
+    classDef actor fill:#6a1b9a,stroke:#4a148c,color:#fff
+    class Admin actor
+```
 
-| ID | Feature | Description |
-|----|---------|-------------|
-| FE-01 | User Authentication | Registration, login, JWT lifecycle, RBAC (learner/instructor/admin), max 3 devices |
-| FE-02 | Placement Test | Initial four-skill proficiency assessment to initialize Spider Chart and learning pathway |
-| FE-03 | Practice Mode — Listening | Adaptive Scaffolding (Full Text → Highlights → Pure Audio), MCQ exercises |
-| FE-04 | Practice Mode — Reading | VSTEP question types: True/False/Not Given, MCQ, Matching Headings, Fill-in-the-Blanks |
-| FE-05 | Practice Mode — Writing + AI Grading | AI feedback using LLM (4 VSTEP criteria), SLA timeout 20 minutes |
-| FE-06 | Practice Mode — Speaking + AI Grading | STT transcription + LLM assessment (4 criteria), SLA timeout 60 minutes |
-| FE-07 | Mock Test Mode | Full four-skill timed exam following VSTEP format with detailed scoring report |
-| FE-08 | Human Grading | Instructor review of AI-graded Writing/Speaking submissions with claim/release and merge rules |
-| FE-09 | Progress Tracking | Spider Chart, Sliding Window (N=10), trend classification, ETA estimation |
-| FE-10 | Learning Path | Personalized pathway based on weakest skill prioritization (rule-based) |
-| FE-11 | Goal Setting | Target band, deadline, daily study time, achievement/on-track status |
+#### 2.2.4 Use Case Descriptions
 
-**Phase 2 — Enhancement (Month 4): 5 Admin Features**
-
-| ID | Feature | Description |
-|----|---------|-------------|
-| FE-12 | Content Management | Question bank CRUD, import/export (Excel, JSON) |
-| FE-13 | User Management | Bulk account creation, lock/unlock, password reset, role assignment |
-| FE-14 | Analytics Dashboard | Active users, completion rates, average scores, time-based filtering |
-| FE-15 | Notification System | Push notifications (mobile), email, in-app notifications |
-| FE-16 | Advanced Admin Features | Activity history, automatic assignment distribution |
-
-### 2.3 User Characteristics
-
-| User Role | Characteristics | Technical Proficiency |
-|-----------|----------------|----------------------|
-| **Learner** | University students (final year) or working professionals preparing for VSTEP certification. Age range 18–35. Primary device: smartphone (Android 70%+). May have limited internet bandwidth. | Basic to intermediate. Familiar with mobile apps and web browsing. |
-| **Instructor** | English language instructors at universities or language centers. Responsible for reviewing AI-graded Writing/Speaking submissions and providing feedback. | Intermediate. Comfortable with web applications and basic data interpretation. |
-| **Admin** | System administrators managing users, question banks, and platform configuration. | Advanced. Familiar with content management systems and data administration. |
-
-### 2.4 Constraints
-
-| # | Constraint | Description |
-|---|-----------|-------------|
-| C-01 | VSTEP Format Only | System supports only VSTEP.3-5 (B1–C1) format, not IELTS/TOEFL/TOEIC |
-| C-02 | AI Grading Limitation | AI grading for Writing/Speaking is supplementary; official scores require instructor confirmation |
-| C-03 | Vietnamese UI Only | MVP supports Vietnamese interface only |
-| C-04 | Android Priority | Mobile app targets Android first; iOS users access via PWA |
-| C-05 | No Payment Integration | MVP uses freemium model; no online payment gateway |
-| C-06 | LLM Provider Dependency | AI grading depends on external LLM/STT providers (Groq, OpenAI) with rate limits |
-| C-07 | Capstone Timeline | 4-month development window (14 weeks, 7 sprints) |
-| C-08 | Team Size | 4 developers (1 BE+AI, 1 Mobile, 2 FE) |
-
-### 2.5 Assumptions and Dependencies
-
-**Assumptions:**
-
-- A-01: Learners have access to a stable internet connection (minimum 1 Mbps for audio streaming)
-- A-02: Learners have a device with a microphone for Speaking practice
-- A-03: VSTEP exam format and rubric remain stable during the project duration
-- A-04: AI providers (Groq, OpenAI) maintain service availability and API compatibility
-- A-05: PostgreSQL and Redis are available and operational in the deployment environment
-
-**Dependencies:**
-
-- D-01: Groq API (Llama 3.3 70B) for LLM-based Writing/Speaking grading
-- D-02: Groq API (Whisper Large V3 Turbo) for Speech-to-Text transcription
-- D-03: PostgreSQL 17 for data persistence
-- D-04: Redis 7.2+ for task queue (arq), caching, and distributed locks
-- D-05: Docker Compose for local development environment orchestration
+| ID | Use Case | Actor(s) | Description |
+|----|----------|----------|-------------|
+| UC-01 | Register | Learner | Create account with email, password, fullName. Role defaults to `learner`. |
+| UC-02 | Login | Learner, Instructor, Admin | Authenticate with email + password. Receive JWT access + refresh token pair. Max 3 devices (FIFO). |
+| UC-03 | Logout | Learner, Instructor, Admin | Revoke current refresh token. |
+| UC-04 | Refresh Token | Learner, Instructor, Admin | Rotate refresh token — revoke old, issue new pair. Replay detection triggers full revocation. |
+| UC-10 | Practice Listening | Learner | Retrieve listening question with adaptive scaffolding (Full Text → Highlights → Pure Audio). Auto-graded immediately. |
+| UC-11 | Practice Reading | Learner | Retrieve reading question (MCQ, T/F/NG, Matching, Gap Fill). Auto-graded immediately. |
+| UC-12 | Practice Writing | Learner | Submit written response. AI grading async via Redis queue + LLM. Includes UC-14. |
+| UC-13 | Practice Speaking | Learner | Submit audio recording. STT + AI grading async via Redis queue. Includes UC-14. |
+| UC-14 | View Submission Result | Learner | View score, band, criteria breakdown for a completed submission. |
+| UC-15 | View AI Feedback | Learner | View detailed AI feedback text, grammar errors (writing), pronunciation notes (speaking). |
+| UC-20 | List Available Exams | Learner | Browse mock test exams filtered by level (B1/B2/C1). |
+| UC-21 | Start Exam Session | Learner | Begin a timed 4-skill exam session. Creates `exam_session` with `in_progress` status. |
+| UC-22 | Answer Exam Questions | Learner | Answer questions during exam. Auto-saved every 30 seconds. |
+| UC-23 | Submit Exam | Learner | Finalize exam. L/R auto-graded inline; W/S dispatched to Redis for AI grading. |
+| UC-24 | View Exam Result | Learner | View per-skill scores, bands, and overall score when all skills graded. |
+| UC-30 | View Progress Overview | Learner | See all 4 skills: current level, average score, trend, attempt count. |
+| UC-31 | View Spider Chart | Learner | 4-axis radar chart showing current scores + goal target per skill. |
+| UC-32 | View Skill Detail | Learner | Score history (last 10), trend classification, scaffold level for one skill. |
+| UC-33 | Set Learning Goal | Learner | Set target band (B1/B2/C1), optional deadline, daily study time. |
+| UC-34 | View ETA Estimation | Learner | Estimated weeks to reach goal per skill via linear regression on sliding window. |
+| UC-40 | Join Class | Learner | Join a class using instructor-provided invite code. |
+| UC-41 | Leave Class | Learner | Leave a joined class. |
+| UC-42 | View Instructor Feedback | Learner | View feedback comments from instructor for a specific class. |
+| UC-50 | View Review Queue | Instructor | List `review_pending` submissions sorted by priority (high → medium → low), then FIFO. |
+| UC-51 | Claim Submission | Instructor | Lock a submission for exclusive review (15 min TTL). |
+| UC-52 | Review & Grade Submission | Instructor | Submit final score, band, criteria scores, feedback. Instructor score is always final. |
+| UC-53 | Release Submission | Instructor | Release a claimed submission back to queue if unable to finish. |
+| UC-60 | Create Exam | Instructor | Define exam with level and blueprint (per-skill question selection). |
+| UC-61 | Manage Questions | Instructor | Create and update questions in the question bank. |
+| UC-70 | Create Class | Instructor | Create a class with auto-generated invite code. |
+| UC-71 | View Class Dashboard | Instructor | Aggregated class stats: per-skill averages, at-risk students (avg < 5.0). |
+| UC-72 | View Member Progress | Instructor | Individual learner progress: per-skill scores, trends, goal status. |
+| UC-73 | Give Feedback | Instructor | Post feedback comment targeting a specific learner in the class. |
+| UC-74 | Rotate Invite Code | Instructor | Generate new invite code for a class (invalidates old code). |
+| UC-75 | Remove Member | Instructor | Remove a learner from the class. |
+| UC-80 | List Users | Admin | Paginated user list with filters (role, email/name search). |
+| UC-81 | Change User Role | Admin | Change user role between learner/instructor/admin. |
+| UC-82 | Lock/Unlock Account | Admin | Disable/enable user account access. |
+| UC-83 | Reset Password | Admin | Admin-initiated password reset for a user. |
+| UC-84 | Bulk Create Users | Admin | Create multiple accounts from CSV/Excel upload. |
+| UC-85 | Manage Question Bank | Admin | Full CRUD on questions. Soft-delete via `is_active = false`. |
+| UC-86 | Import/Export Questions | Admin | Bulk import from JSON/Excel; export for backup. |
+| UC-87 | Manage Knowledge Points | Admin | CRUD on knowledge point taxonomy (grammar, vocabulary, strategy). |
+| UC-88 | Update Exam | Admin | Modify exam blueprint and level. |
+| UC-90 | View Admin Dashboard | Admin | System-wide analytics: total users, submission distribution, queue size. |
+| UC-91 | View System Analytics | Admin | Daily active users, average grading time, completion rates. |
+| UC-92 | Trigger Auto-Grade | Admin | Manually trigger auto-grading for pending Listening/Reading submissions. |
 
 ---
 
 ## 3. Functional Requirements
 
-### 3.1 FE-01: User Authentication
+### 3.1 System Functional Overview
 
-#### 3.1.1 Register
+#### 3.1.1 Screens Flow — Learner
+
+```mermaid
+flowchart TB
+    Login["Login Screen"]
+    Register["Register Screen"]
+    Home["Home / Dashboard"]
+
+    subgraph Practice ["Practice Mode"]
+        SkillSelect["Skill Selection\n(L/R/W/S)"]
+        QuestionView["Question View\n(with scaffolding)"]
+        SubmitAnswer["Submit Answer"]
+        ResultView["Result / Feedback View"]
+    end
+
+    subgraph Exam ["Mock Test Mode"]
+        ExamList["Exam List\n(filter by level)"]
+        ExamDetail["Exam Detail\n(blueprint preview)"]
+        ExamSession["Exam Session\n(timed, 4 sections)"]
+        ExamResult["Exam Result\n(per-skill breakdown)"]
+    end
+
+    subgraph Progress ["Progress"]
+        ProgressOverview["Progress Overview\n(Spider Chart)"]
+        SkillDetail["Skill Detail\n(score history, trend)"]
+        GoalSetting["Goal Setting\n(target band, deadline)"]
+    end
+
+    subgraph ClassView ["Class"]
+        ClassList["My Classes"]
+        JoinClass["Join Class\n(invite code)"]
+        FeedbackView["Instructor Feedback"]
+    end
+
+    Profile["Profile Settings"]
+
+    Login --> Home
+    Register --> Login
+    Home --> SkillSelect
+    Home --> ExamList
+    Home --> ProgressOverview
+    Home --> ClassList
+    Home --> Profile
+
+    SkillSelect --> QuestionView --> SubmitAnswer --> ResultView
+    ResultView --> SkillSelect
+
+    ExamList --> ExamDetail --> ExamSession --> ExamResult
+    ExamResult --> Home
+
+    ProgressOverview --> SkillDetail
+    ProgressOverview --> GoalSetting
+
+    ClassList --> JoinClass
+    ClassList --> FeedbackView
+
+    classDef auth fill:#78909c,stroke:#546e7a,color:#fff
+    classDef main fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef practice fill:#2e7d32,stroke:#1b5e20,color:#fff
+    classDef exam fill:#6a1b9a,stroke:#4a148c,color:#fff
+    classDef progress fill:#f57c00,stroke:#e65100,color:#fff
+    classDef class fill:#00796b,stroke:#004d40,color:#fff
+
+    class Login,Register auth
+    class Home,Profile main
+    class SkillSelect,QuestionView,SubmitAnswer,ResultView practice
+    class ExamList,ExamDetail,ExamSession,ExamResult exam
+    class ProgressOverview,SkillDetail,GoalSetting progress
+    class ClassList,JoinClass,FeedbackView class
+```
+
+#### 3.1.2 Screens Flow — Instructor
+
+```mermaid
+flowchart TB
+    Login["Login Screen"]
+    Home["Instructor Dashboard"]
+
+    subgraph Review ["Review & Grading"]
+        ReviewQueue["Review Queue\n(priority sorted)"]
+        ReviewDetail["Review Detail\n(AI result + student answer)"]
+        SubmitReview["Submit Review\n(score + feedback)"]
+    end
+
+    subgraph ClassMgmt ["Class Management"]
+        ClassList["My Classes"]
+        CreateClass["Create Class"]
+        ClassDashboard["Class Dashboard\n(member stats)"]
+        MemberProgress["Member Progress\n(individual detail)"]
+        GiveFeedback["Give Feedback"]
+    end
+
+    subgraph Content ["Content"]
+        QuestionBank["Question Bank"]
+        CreateQuestion["Create/Edit Question"]
+        CreateExam["Create Exam\n(blueprint builder)"]
+    end
+
+    Login --> Home
+    Home --> ReviewQueue --> ReviewDetail --> SubmitReview
+    SubmitReview --> ReviewQueue
+
+    Home --> ClassList
+    ClassList --> CreateClass
+    ClassList --> ClassDashboard --> MemberProgress
+    ClassDashboard --> GiveFeedback
+
+    Home --> QuestionBank --> CreateQuestion
+    Home --> CreateExam
+
+    classDef auth fill:#78909c,stroke:#546e7a,color:#fff
+    classDef main fill:#e65100,stroke:#bf360c,color:#fff
+    classDef review fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef class fill:#2e7d32,stroke:#1b5e20,color:#fff
+    classDef content fill:#6a1b9a,stroke:#4a148c,color:#fff
+
+    class Login auth
+    class Home main
+    class ReviewQueue,ReviewDetail,SubmitReview review
+    class ClassList,CreateClass,ClassDashboard,MemberProgress,GiveFeedback class
+    class QuestionBank,CreateQuestion,CreateExam content
+```
+
+#### 3.1.3 Screen Descriptions
+
+| # | Feature | Screen | Description |
+|---|---------|--------|-------------|
+| 1 | Authentication | Login | Email + password form. Links to Register. Returns JWT token pair on success. |
+| 2 | Authentication | Register | Email, password (min 8 chars), full name form. Redirects to Login on success. |
+| 3 | Home | Dashboard | Landing page showing quick-start links to Practice, Exam, Progress. Summary widgets. |
+| 4 | Practice | Skill Selection | Grid of 4 skills (Listening, Reading, Writing, Speaking) with current level badges. |
+| 5 | Practice | Question View | Displays question content with scaffolding applied. Audio player for Listening/Speaking. Text editor for Writing. |
+| 6 | Practice | Submit Answer | Confirmation before submission. Word count check for Writing (min 120/250 words). |
+| 7 | Practice | Result / Feedback | Score (0–10), band, per-criteria breakdown. AI feedback text. Grammar errors (Writing). |
+| 8 | Exam | Exam List | Card list of available exams. Filter by level (B1/B2/C1). Shows question count per section. |
+| 9 | Exam | Exam Detail | Blueprint preview: 4 sections with question counts and time limits. Start button. |
+| 10 | Exam | Exam Session | Timed exam with section tabs. Auto-save every 30s. Timer with 5min/1min warnings. |
+| 11 | Exam | Exam Result | Per-skill score breakdown. Overall score and band. Pending indicator for W/S grading. |
+| 12 | Progress | Overview | Spider Chart (4-axis radar). Per-skill trend indicators. Overall band estimate. |
+| 13 | Progress | Skill Detail | Last 10 scores chart. Trend classification. Scaffold level indicator. ETA to goal. |
+| 14 | Progress | Goal Setting | Target band selector (B1/B2/C1). Deadline date picker. Daily study time input. |
+| 15 | Class | My Classes | List of joined + owned classes. Join button with invite code input. |
+| 16 | Class | Class Dashboard | Instructor view: member count, per-skill averages, at-risk students (avg < 5.0). |
+| 17 | Class | Member Progress | Individual learner detail: per-skill scores, trends, goal status, recent submissions. |
+| 18 | Review | Review Queue | Table of `review_pending` submissions. Priority badge (high/medium/low). Claim button. |
+| 19 | Review | Review Detail | Side-by-side: student answer (left) + AI grading result (right). Score input form. |
+| 20 | Content | Question Bank | Paginated table with filters (skill, level, format, active). Create/Edit/Delete actions. |
+| 21 | Content | Create/Edit Question | Form with skill, level, content JSONB editor, answer key, rubric fields. |
+
+#### 3.1.4 Screen Authorization
+
+| Screen | Learner | Instructor | Admin |
+|--------|---------|------------|-------|
+| Login / Register | X | X | X |
+| Dashboard (Home) | X | X | X |
+| Practice — Skill Selection | X | X | X |
+| Practice — Question View | X | X | X |
+| Practice — Result / Feedback | X (own) | X (own) | X (all) |
+| Exam — List | X | X | X |
+| Exam — Start Session | X | X | X |
+| Exam — Session (timed) | X | X | X |
+| Exam — Result | X (own) | X (own) | X (all) |
+| Progress — Overview | X (own) | X (own) | X (all) |
+| Progress — Skill Detail | X (own) | X (own) | X (all) |
+| Progress — Goal Setting | X | X | X |
+| Class — My Classes | X | X | X |
+| Class — Join (invite code) | X | X | X |
+| Class — Dashboard | | X (owner) | X |
+| Class — Member Progress | | X (owner) | X |
+| Class — Give Feedback | | X (owner) | X |
+| Review — Queue | | X | X |
+| Review — Detail + Grade | | X | X |
+| Content — Question Bank | | X | X |
+| Content — Create/Edit Question | | X | X |
+| Content — Delete Question | | | X |
+| Content — Create Exam | | X | X |
+| Content — Update Exam | | | X |
+| Admin — User List | | | X |
+| Admin — Change Role | | | X |
+| Admin — Lock/Unlock | | | X |
+| Admin — Analytics Dashboard | | | X |
+| Admin — Trigger Auto-Grade | | | X |
+
+#### 3.1.5 Non-Screen Functions
+
+| # | Feature | System Function | Description |
+|---|---------|----------------|-------------|
+| 1 | AI Grading | Grading Worker (BRPOP) | Async worker polls Redis `grading:tasks` queue. Routes to Writing or Speaking grading pipeline. Writes results to PostgreSQL. |
+| 2 | AI Grading | Confidence Routing | After AI grading: high → `completed`, medium → `review_pending` (priority medium), low → `review_pending` (priority high). |
+| 3 | AI Grading | Dead Letter Queue | Failed tasks after max retries → `LPUSH grading:dlq` for manual inspection. |
+| 4 | Auth | Token Rotation | On refresh: revoke old token, issue new pair. If reused rotated token detected → revoke ALL user tokens. |
+| 5 | Auth | Device Pruning | On login: if active refresh tokens ≥ 3, revoke oldest (FIFO). |
+| 6 | Progress | Sliding Window Sync | After every score recorded: fetch last 10 scores per skill → compute mean, trend, scaffold adjustment → upsert `user_progress`. |
+| 7 | Exam | Auto-Save | Client sends answer snapshot every 30s → upsert `exam_answers`. Rejected if session already submitted. |
+| 8 | Exam | Submit Processing | On exam submit: auto-grade L/R inline → create W/S submissions → dispatch to Redis → update session scores. |
+| 9 | Health | Health Check | `GET /health` probes PostgreSQL and Redis connectivity. Returns service status. |
+| 10 | API | OpenAPI Generation | Auto-generated OpenAPI spec at `GET /openapi.json` via Elysia plugin. |
+
+#### 3.1.6 Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    users ||--o{ refresh_tokens : "has sessions"
+    users ||--o{ submissions : "creates"
+    users ||--o{ user_progress : "tracks (1 per skill)"
+    users ||--o{ user_skill_scores : "records scores"
+    users ||--o{ user_goals : "sets goals"
+    users ||--o{ user_knowledge_progress : "learns KPs"
+    users ||--o{ exam_sessions : "takes exams"
+    users ||--o{ classes : "owns (instructor)"
+    users ||--o{ class_members : "enrolls in"
+    users ||--o{ instructor_feedback : "gives/receives"
+
+    questions ||--o{ submissions : "answered in"
+    questions ||--o{ question_knowledge_points : "tagged with"
+    questions ||--o{ exam_answers : "included in"
+
+    knowledge_points ||--o{ question_knowledge_points : "mapped to"
+    knowledge_points ||--o{ user_knowledge_progress : "tracked by"
+
+    exams ||--o{ exam_sessions : "has sessions"
+    exam_sessions ||--o{ exam_answers : "contains answers"
+    exam_sessions ||--o{ exam_submissions : "produces submissions"
+
+    submissions ||--|| submission_details : "has detail (1:1)"
+    submissions ||--o{ exam_submissions : "linked from exam"
+    submissions ||--o{ user_skill_scores : "records score"
+
+    classes ||--o{ class_members : "enrolls members"
+    classes ||--o{ instructor_feedback : "contains feedback"
+
+    users {
+        uuid id PK
+        varchar email UK "unique, not null"
+        varchar password_hash "argon2id"
+        varchar full_name
+        enum role "learner | instructor | admin"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    refresh_tokens {
+        uuid id PK
+        uuid user_id FK
+        varchar token_hash "SHA-256"
+        varchar jti UK "JWT ID"
+        varchar replaced_by_jti "rotation tracking"
+        text device_info
+        timestamp revoked_at "nullable"
+        timestamp expires_at
+    }
+
+    questions {
+        uuid id PK
+        enum skill "listening | reading | writing | speaking"
+        smallint part "L:1-3 R:1-4 W:1-2 S:1-3"
+        jsonb content "QuestionContent (8 types)"
+        jsonb answer_key "ObjectiveAnswerKey (L/R only)"
+        text explanation
+        boolean is_active "soft delete"
+        uuid created_by FK
+    }
+
+    submissions {
+        uuid id PK
+        uuid user_id FK
+        uuid question_id FK
+        enum skill "listening | reading | writing | speaking"
+        enum status "pending | processing | completed | review_pending | failed"
+        numeric score "0.0-10.0 step 0.5"
+        enum band "A1 | A2 | B1 | B2 | C1"
+        enum review_priority "low | medium | high"
+        enum grading_mode "auto | human | hybrid"
+        uuid reviewer_id FK "nullable"
+        uuid claimed_by FK "nullable"
+        timestamp claimed_at
+        boolean audit_flag "AI vs human diff > 0.5"
+        timestamp completed_at
+    }
+
+    submission_details {
+        uuid submission_id PK_FK "1:1 with submissions"
+        jsonb answer "Objective | Writing | Speaking"
+        jsonb result "Auto | AI | Human Result"
+        varchar feedback "max 10000 chars"
+    }
+
+    exams {
+        uuid id PK
+        enum level "A2 | B1 | B2 | C1"
+        jsonb blueprint "per-skill questionIds"
+        boolean is_active
+        uuid created_by FK
+    }
+
+    exam_sessions {
+        uuid id PK
+        uuid user_id FK
+        uuid exam_id FK
+        enum status "in_progress | submitted | completed | abandoned"
+        numeric listening_score
+        numeric reading_score
+        numeric writing_score
+        numeric speaking_score
+        numeric overall_score
+        timestamp started_at
+        timestamp completed_at
+    }
+
+    exam_answers {
+        uuid id PK
+        uuid session_id FK
+        uuid question_id FK
+        jsonb answer "SubmissionAnswer"
+        boolean is_correct "set on submit"
+    }
+
+    exam_submissions {
+        uuid id PK
+        uuid session_id FK
+        uuid submission_id FK
+        enum skill
+    }
+
+    knowledge_points {
+        uuid id PK
+        enum category "grammar | vocabulary | strategy"
+        varchar name UK
+    }
+
+    question_knowledge_points {
+        uuid question_id PK_FK
+        uuid knowledge_point_id PK_FK
+    }
+
+    user_progress {
+        uuid id PK
+        uuid user_id FK
+        enum skill
+        enum current_level "A2 | B1 | B2 | C1"
+        enum target_level "nullable"
+        integer scaffold_level "1-5"
+        integer streak_count
+        enum streak_direction "up | down | neutral"
+        integer attempt_count
+    }
+
+    user_skill_scores {
+        uuid id PK
+        uuid user_id FK
+        enum skill
+        uuid submission_id FK
+        numeric score "0.0-10.0"
+        varchar scaffolding_type
+    }
+
+    user_goals {
+        uuid id PK
+        uuid user_id FK
+        enum target_band "A1-C1"
+        varchar current_estimated_band
+        timestamp deadline
+        integer daily_study_time_minutes "default 30"
+    }
+
+    user_knowledge_progress {
+        uuid id PK
+        uuid user_id FK
+        uuid knowledge_point_id FK
+        numeric mastery_score "0-100"
+        integer total_attempted
+        integer total_correct
+    }
+
+    classes {
+        uuid id PK
+        text name
+        text description
+        uuid instructor_id FK
+        text invite_code UK
+    }
+
+    class_members {
+        uuid id PK
+        uuid class_id FK
+        uuid user_id FK
+        timestamp joined_at
+        timestamp removed_at "nullable"
+    }
+
+    instructor_feedback {
+        uuid id PK
+        uuid class_id FK
+        uuid from_user_id FK
+        uuid to_user_id FK
+        text content
+        enum skill "nullable"
+        uuid submission_id FK "nullable"
+    }
+```
+
+**Entity Descriptions:**
+
+| # | Entity | Description |
+|---|--------|-------------|
+| 1 | `users` | Registered users with role-based access (learner, instructor, admin). Argon2id password hashing. |
+| 2 | `refresh_tokens` | JWT refresh tokens stored as SHA-256 hashes. Supports rotation, replay detection, and device tracking. Max 3 per user. |
+| 3 | `questions` | Question bank with JSONB content supporting 8 format types across 4 skills. Answer keys for objective questions (L/R). |
+| 4 | `submissions` | A learner's answer to a question. Tracks lifecycle via state machine (pending → processing → completed/review_pending/failed). |
+| 5 | `submission_details` | 1:1 with submissions. Stores answer JSONB, grading result JSONB (auto/AI/human), and feedback text. |
+| 6 | `exams` | Mock test definitions with level and blueprint (per-skill question selection). |
+| 7 | `exam_sessions` | Timed exam session tracking. Stores per-skill scores and overall score. |
+| 8 | `exam_answers` | Individual answers within an exam session. `is_correct` set during submit processing. |
+| 9 | `exam_submissions` | Junction table linking exam sessions to submissions (for subjective W/S questions). |
+| 10 | `knowledge_points` | Taxonomy of knowledge points (grammar, vocabulary, strategy) for adaptive learning. |
+| 11 | `question_knowledge_points` | Many-to-many junction between questions and knowledge points. |
+| 12 | `user_progress` | One row per user per skill. Sliding window aggregates: average score, trend, scaffold level. |
+| 13 | `user_skill_scores` | Individual score records feeding into the sliding window (last 10 per skill). |
+| 14 | `user_goals` | Learning goals with target band, deadline, daily study time. |
+| 15 | `user_knowledge_progress` | Per-user per-knowledge-point mastery tracking. |
+| 16 | `classes` | Instructor-owned classes with auto-generated invite codes. |
+| 17 | `class_members` | Class enrollment records with join/remove timestamps. |
+| 18 | `instructor_feedback` | Feedback comments from instructor to learner within a class context. |
+
+### 3.2 FE-01: User Authentication
+
+#### 3.2.1 Register
 
 - **Description**: A new user creates an account by providing email, password, and display name.
 - **Input**: `email` (unique), `password` (min 8 characters), `fullName`
@@ -258,7 +947,7 @@ The system provides 16 features organized in two delivery phases:
   - Invalid email format → 400 VALIDATION_ERROR
   - Password too short → 400 VALIDATION_ERROR
 
-#### 3.1.2 Login
+#### 3.2.2 Login
 
 - **Description**: User authenticates with email and password, receives JWT token pair.
 - **Input**: `email`, `password`
@@ -268,7 +957,7 @@ The system provides 16 features organized in two delivery phases:
   - Invalid credentials → 401 UNAUTHORIZED
   - Account not found → 401 UNAUTHORIZED
 
-#### 3.1.3 Refresh Token
+#### 3.2.3 Refresh Token
 
 - **Description**: Rotate refresh token — revoke old, issue new pair.
 - **Input**: `refreshToken` (in request body)
@@ -278,14 +967,14 @@ The system provides 16 features organized in two delivery phases:
   - Token expired → 401 TOKEN_EXPIRED
   - Token already revoked (reuse detection) → revoke ALL user tokens → 401 UNAUTHORIZED (force re-login)
 
-#### 3.1.4 Logout
+#### 3.2.4 Logout
 
 - **Description**: Revoke current refresh token.
 - **Input**: `refreshToken`
 - **Processing**: Find token by hash → set `revokedAt` timestamp
 - **Output**: `{ success: true }`
 
-#### 3.1.5 Get Current User
+#### 3.2.5 Get Current User
 
 - **Description**: Return user profile from access token claims.
 - **Input**: Bearer access token (Authorization header)
@@ -294,25 +983,90 @@ The system provides 16 features organized in two delivery phases:
   - Missing/invalid token → 401 UNAUTHORIZED
   - Expired token → 401 TOKEN_EXPIRED
 
-### 3.2 FE-02: Placement Test
+#### 3.2.6 Authentication & Token Lifecycle Diagram
 
-#### 3.2.1 Start Placement Test
+```mermaid
+flowchart TB
+    subgraph Registration ["Registration Flow"]
+        RegStart(["User submits\nregistration form"])
+        Validate["Validate input\nemail, password ≥8, fullName"]
+        NormEmail["normalizeEmail()\nlowercase + trim"]
+        CheckDup{"Email\nexists?"}
+        DupError["409 CONFLICT\nEmail already exists"]
+        HashPw["Bun.password.hash()\nArgon2id"]
+        CreateUser["INSERT users\nrole = learner"]
+        RegDone(["Return user profile\n(no tokens — must login)"])
+    end
+
+    subgraph Login ["Login Flow"]
+        LoginStart(["User submits\nemail + password"])
+        FindUser["Find user by email"]
+        VerifyPw["Bun.password.verify()\nArgon2id comparison"]
+        PwFail["401 UNAUTHORIZED\nInvalid credentials"]
+        GenAccess["SignJWT (jose)\nclaims: sub, role, iat\nexpiry: JWT_EXPIRES_IN"]
+        GenRefresh["crypto.randomUUID()\nSHA-256 hash → store in DB"]
+        DeviceInfo["Record User-Agent\non refresh_tokens row"]
+        CountTokens{"Active tokens\n≥ 3?"}
+        PruneOldest["Revoke oldest\nrefresh token (FIFO)"]
+        LoginDone(["Return\naccessToken, refreshToken, user"])
+    end
+
+    subgraph Refresh ["Token Refresh (Rotation)"]
+        RefreshStart(["Client sends\nrefresh token"])
+        HashToken["hashToken()\nSHA-256 lookup"]
+        CheckValid{"Token valid?\nnot revoked,\nnot expired"}
+        InvalidToken["401 UNAUTHORIZED"]
+        CheckReplaced{"Already\nreplaced?"}
+        ReplayDetect["REPLAY DETECTED!\nRevoke ALL user tokens\nForce re-login"]
+        RevokeOld["Revoke old token\nSet replacedByJti"]
+        IssueNew["Issue new pair\naccess + refresh tokens"]
+        RefreshDone(["Return new\naccessToken, refreshToken"])
+    end
+
+    RegStart --> Validate --> NormEmail --> CheckDup
+    CheckDup -->|"Yes"| DupError
+    CheckDup -->|"No"| HashPw --> CreateUser --> RegDone
+
+    LoginStart --> FindUser --> VerifyPw
+    VerifyPw -->|"Fail"| PwFail
+    VerifyPw -->|"Pass"| GenAccess
+    GenAccess --> GenRefresh --> DeviceInfo --> CountTokens
+    CountTokens -->|"Yes"| PruneOldest --> LoginDone
+    CountTokens -->|"No"| LoginDone
+
+    RefreshStart --> HashToken --> CheckValid
+    CheckValid -->|"Invalid"| InvalidToken
+    CheckValid -->|"Valid"| CheckReplaced
+    CheckReplaced -->|"Yes (reuse!)"| ReplayDetect
+    CheckReplaced -->|"No"| RevokeOld --> IssueNew --> RefreshDone
+
+    classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef error fill:#c62828,stroke:#b71c1c,color:#fff
+    classDef action fill:#2e7d32,stroke:#1b5e20,color:#fff
+
+    class RegStart,LoginStart,RefreshStart,RegDone,LoginDone,RefreshDone start
+    class DupError,PwFail,InvalidToken,ReplayDetect error
+```
+
+### 3.3 FE-02: Placement Test
+
+#### 3.3.1 Start Placement Test
 
 - **Description**: Initialize a placement assessment covering all four skills to determine initial proficiency level.
 - **Input**: Authenticated learner request
 - **Processing**: Select a balanced set of questions across skills and difficulty levels → create placement session
 - **Output**: Session ID, question set organized by skill
 
-#### 3.2.2 Submit Placement Test
+#### 3.3.2 Submit Placement Test
 
 - **Description**: Submit placement test answers and receive initial proficiency assessment.
 - **Input**: Session ID, answers for all four skills
 - **Processing**: Auto-grade Listening/Reading via answer key → create Writing/Speaking submissions for AI grading → compute initial per-skill bands → initialize `user_progress` records → initialize Spider Chart
 - **Output**: Per-skill band (A1–C1), recommended initial scaffold levels, suggested learning pathway
 
-### 3.3 FE-03: Practice Mode — Listening
+### 3.4 FE-03: Practice Mode — Listening
 
-#### 3.3.1 Get Listening Practice Question
+#### 3.4.1 Get Listening Practice Question
 
 - **Description**: Retrieve a listening practice question with adaptive scaffolding applied.
 - **Input**: Authenticated learner request, optional filters (level, format)
@@ -322,7 +1076,7 @@ The system provides 16 features organized in two delivery phases:
   - Stage 3 (Pure Audio): Audio only, no transcript
 - **Output**: Question content with appropriate scaffolding applied, audio URL
 
-#### 3.3.2 Submit Listening Practice Answer
+#### 3.4.2 Submit Listening Practice Answer
 
 - **Description**: Submit answer to a listening practice question and receive immediate score.
 - **Input**: `questionId`, `answer` (map of questionId → selected answer)
@@ -333,9 +1087,9 @@ The system provides 16 features organized in two delivery phases:
   - Keep stage: avg in [50, 80)
   - Level down (increase scaffold): avg < 50 for 2 consecutive attempts
 
-### 3.4 FE-04: Practice Mode — Reading
+### 3.5 FE-04: Practice Mode — Reading
 
-#### 3.4.1 Get Reading Practice Question
+#### 3.5.1 Get Reading Practice Question
 
 - **Description**: Retrieve a reading practice question in VSTEP format.
 - **Input**: Authenticated learner request, optional filters (level, format type)
@@ -343,16 +1097,16 @@ The system provides 16 features organized in two delivery phases:
 - **Output**: Passage text, question items (MCQ, True/False/Not Given, Matching Headings, Fill-in-the-Blanks)
 - **Supported Formats**: `reading_mcq`, `reading_tng`, `reading_matching_headings`, `reading_gap_fill`
 
-#### 3.4.2 Submit Reading Practice Answer
+#### 3.5.2 Submit Reading Practice Answer
 
 - **Description**: Submit answers and receive immediate auto-graded result.
 - **Input**: `questionId`, `answer` (map of questionId → selected answer)
 - **Processing**: Compare against answer key → calculate score → derive band → update progress
 - **Output**: Score (0–10), band, correct/incorrect per item
 
-### 3.5 FE-05: Practice Mode — Writing + AI Grading
+### 3.6 FE-05: Practice Mode — Writing + AI Grading
 
-#### 3.5.1 Get Writing Practice Question
+#### 3.6.1 Get Writing Practice Question
 
 - **Description**: Retrieve a writing practice question with adaptive scaffolding.
 - **Input**: Authenticated learner request, optional filters (level, task type)
@@ -363,7 +1117,7 @@ The system provides 16 features organized in two delivery phases:
 - **Output**: Question content (prompt, instructions, minWords), scaffolding materials
 - **Supported Formats**: `writing_task_1` (Letter/Email, ≥120 words), `writing_task_2` (Essay, ≥250 words)
 
-#### 3.5.2 Submit Writing Practice Answer
+#### 3.6.2 Submit Writing Practice Answer
 
 - **Description**: Submit written response for AI grading (asynchronous).
 - **Input**: `questionId`, `skill: "writing"`, `answer: { text, wordCount }`
@@ -389,61 +1143,122 @@ The system provides 16 features organized in two delivery phases:
   - Stage 3 → Stage 2: avg < 65 for 2 consecutive attempts
   - Hint usage > 50% in window of 3 → blocks level up
 
-#### 3.5.3 Get Submission Status (Polling Fallback)
+#### 3.6.3 Get Submission Status (Polling Fallback)
 
 - **Description**: Polling endpoint for clients that cannot use SSE.
 - **Input**: Submission ID
 - **Output**: `{ status, progress (if processing), result (if completed) }`
 
-### 3.6 FE-06: Practice Mode — Speaking + AI Grading
+#### 3.6.4 Writing/Speaking AI Grading Pipeline Diagram
 
-#### 3.6.1 Get Speaking Practice Question
+```mermaid
+flowchart TB
+    Start(["Learner submits\nWriting/Speaking answer"])
+
+    CreateSub["Create Submission\nstatus = pending"]
+    CreateDetail["Create Submission Detail\nanswer JSONB saved"]
+    Prepare["grading-dispatch.prepare()\nSet status = processing\n(inside DB transaction)"]
+    Commit["Transaction commits"]
+    Dispatch["grading-dispatch.dispatch()\nLPUSH grading:tasks\nJSON payload to Redis"]
+
+    subgraph GradingWorker ["Grading Worker (Python + FastAPI)"]
+        Dequeue["BRPOP grading:tasks\n(poll with 5s timeout)"]
+        Route{"Skill?"}
+        Writing["writing.grade()\nExtract text + taskType\nCall LLM (Groq Llama 3.3 70B)\n4 criteria scoring"]
+        Speaking["speaking.grade()\nDownload audio\nSTT (Groq Whisper)\nTranscript → LLM grading\n4 criteria scoring"]
+        CalcScore["Calculate overall score\navg(4 criteria) → snap to 0.5\nDetermine band"]
+        Confidence{"AI Confidence?"}
+    end
+
+    HighConf["status = completed\npriority = null"]
+    MedConf["status = review_pending\npriority = medium"]
+    LowConf["status = review_pending\npriority = high"]
+
+    SaveResult["db.save()\nUPDATE submissions\nUPDATE submission_details.result"]
+    RecordProgress["progress.record()\nInsert user_skill_scores"]
+    SyncProgress["progress.sync()\nUpsert user_progress\nSliding window recalc"]
+    SSE["Broadcast SSE event\nto learner client"]
+    End(["Done"])
+
+    ErrorPath["PermanentError?\ndb.fail() → status = failed\nLPUSH grading:dlq"]
+
+    Start --> CreateSub --> CreateDetail --> Prepare --> Commit --> Dispatch
+    Dispatch --> Dequeue --> Route
+    Route -->|"writing"| Writing
+    Route -->|"speaking"| Speaking
+    Writing --> CalcScore
+    Speaking --> CalcScore
+    CalcScore --> Confidence
+    Confidence -->|"high"| HighConf
+    Confidence -->|"medium"| MedConf
+    Confidence -->|"low"| LowConf
+    HighConf --> SaveResult
+    MedConf --> SaveResult
+    LowConf --> SaveResult
+    SaveResult --> RecordProgress --> SyncProgress --> SSE --> End
+
+    CalcScore -.->|"error"| ErrorPath
+
+    classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef worker fill:#e65100,stroke:#bf360c,color:#fff
+    classDef result fill:#2e7d32,stroke:#1b5e20,color:#fff
+    classDef error fill:#c62828,stroke:#b71c1c,color:#fff
+
+    class Start,End start
+    class Dequeue,Route,Writing,Speaking,CalcScore,Confidence worker
+    class HighConf,MedConf,LowConf,SaveResult,RecordProgress,SyncProgress,SSE result
+    class ErrorPath error
+```
+
+### 3.7 FE-06: Practice Mode — Speaking + AI Grading
+
+#### 3.7.1 Get Speaking Practice Question
 
 - **Description**: Retrieve a speaking practice question.
 - **Input**: Authenticated learner request, optional filters (level, part number)
 - **Output**: Question content (prompt, preparationSeconds), part number (1/2/3)
 - **Supported Formats**: `speaking_part_1` (Social Interaction), `speaking_part_2` (Solution Discussion), `speaking_part_3` (Topic Development)
 
-#### 3.6.2 Submit Speaking Practice Answer
+#### 3.7.2 Submit Speaking Practice Answer
 
 - **Description**: Submit audio recording for AI grading (asynchronous).
 - **Input**: `questionId`, `skill: "speaking"`, `answer: { audioUrl, durationSeconds }`
-- **Processing**: Same flow as Writing (validate → create submission → enqueue to Redis → return SSE URL)
+- **Processing**: Same flow as Writing (validate → create submission → enqueue to Redis → return SSE URL). See [Section 3.6.4 — AI Grading Pipeline Diagram](#364-writingspeaking-ai-grading-pipeline-diagram).
 - **AI Grading Pipeline** (async in worker):
   - Whisper transcribes audio to text
   - LLM grades transcript against 4 VSTEP criteria: Fluency & Coherence, Pronunciation, Content & Relevance, Vocabulary & Grammar (each 0–10)
   - Confidence routing same as Writing
 - **Output**: `{ submissionId, status: "pending", sseUrl: "/api/sse/submissions/{id}" }`
 
-### 3.7 FE-07: Mock Test Mode
+### 3.8 FE-07: Mock Test Mode
 
-#### 3.7.1 List Available Exams
+#### 3.8.1 List Available Exams
 
 - **Description**: List mock test exams available for the learner.
 - **Input**: Optional filter by level (B1/B2/C1)
 - **Output**: List of exams with level, section count, time limits
 
-#### 3.7.2 Get Exam Detail
+#### 3.8.2 Get Exam Detail
 
 - **Description**: View exam blueprint — 4 sections, question counts, time limits.
 - **Input**: Exam ID
 - **Output**: Exam details with sections (listening, reading, writing, speaking), question count per section, time limits
 
-#### 3.7.3 Start Exam Session
+#### 3.8.3 Start Exam Session
 
 - **Description**: Begin a timed mock test session.
 - **Input**: Exam ID
 - **Processing**: Create `exam_session` record (status = `in_progress`), record `started_at`
 - **Output**: Session ID, questions organized by section, time limits per section
 
-#### 3.7.4 Auto-Save Answers
+#### 3.8.4 Auto-Save Answers
 
 - **Description**: Periodically save exam answers (client sends every 30 seconds).
 - **Input**: Session ID, answers JSON (full snapshot)
 - **Processing**: Update `exam_answers` records. Reject if session already submitted.
 - **Output**: `{ saved: true }`
 
-#### 3.7.5 Submit Exam Session
+#### 3.8.5 Submit Exam Session
 
 - **Description**: Submit the completed exam for grading.
 - **Input**: Session ID
@@ -456,22 +1271,89 @@ The system provides 16 features organized in two delivery phases:
   6. When all 4 skill scores available → `overall_score = average(4 skills)` → status = `completed`
 - **Output**: Session status, immediate L/R scores, pending W/S submissions
 
-#### 3.7.6 Get Exam Session Result
+#### 3.8.6 Get Exam Session Result
 
 - **Description**: View exam session status and results.
 - **Input**: Session ID (owner only)
 - **Output**: Status (`in_progress`/`submitted`/`completed`/`abandoned`), per-skill scores and bands, overall score (when completed)
 
-### 3.8 FE-08: Human Grading (Instructor Review)
+#### 3.8.7 Exam Session Flow Diagram
 
-#### 3.8.1 View Review Queue
+```mermaid
+flowchart TB
+    Start(["Learner starts\nmock test"])
+
+    ListExams["GET /api/exams\nList available exams\nFilter by level: B1/B2/C1"]
+    StartSession["POST /api/exams/:id/start\nCreate exam_session\nstatus = in_progress"]
+    LoadQuestions["Load exam blueprint\n4 sections: L, R, W, S\nReturn organized questions"]
+
+    subgraph ExamTaking ["Exam Taking (Timed)"]
+        Answer["Answer questions\nPOST /sessions/:id/answer\nUpsert exam_answers"]
+        AutoSave["Client auto-save\nevery 30 seconds"]
+        Timer["Timer tracking\nVisual warning at 5min, 1min"]
+    end
+
+    Submit["POST /sessions/:id/submit\nFinalize exam"]
+
+    subgraph SubmitProcessing ["Submit Processing"]
+        LoadAnswers["Load all exam_answers"]
+        GradeListening["Grade Listening\nCompare with answer key\nscore = (correct/35) × 10"]
+        GradeReading["Grade Reading\nCompare with answer key\nscore = (correct/40) × 10"]
+        PersistCorrect["persistCorrectness()\nSet isCorrect on each answer"]
+        CreateWSubs["Create Writing submissions\nCreate Speaking submissions\nstatus = pending"]
+        DispatchWS["grading-dispatch\nPush W/S tasks to Redis"]
+        RecordLR["progress.record() + sync()\nfor Listening and Reading"]
+    end
+
+    CheckAll{"All skills\ngraded?"}
+    Submitted["Session status = submitted\nWaiting for W/S grading"]
+    Completed["Session status = completed\nAll 4 skill scores available"]
+    Result["Exam Result\nPer-skill scores + bands\noverall = avg(4 skills)"]
+    End(["Done"])
+
+    Start --> ListExams --> StartSession --> LoadQuestions
+    LoadQuestions --> Answer
+    Answer --> AutoSave
+    AutoSave --> Timer
+    Timer --> Submit
+
+    Submit --> LoadAnswers
+    LoadAnswers --> GradeListening
+    LoadAnswers --> GradeReading
+    GradeListening --> PersistCorrect
+    GradeReading --> PersistCorrect
+    PersistCorrect --> RecordLR
+    LoadAnswers --> CreateWSubs --> DispatchWS
+
+    RecordLR --> CheckAll
+    DispatchWS --> CheckAll
+    CheckAll -->|"W/S pending"| Submitted
+    CheckAll -->|"All done"| Completed
+    Submitted --> Result
+    Completed --> Result
+    Result --> End
+
+    classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef exam fill:#6a1b9a,stroke:#4a148c,color:#fff
+    classDef process fill:#f57c00,stroke:#e65100,color:#fff
+    classDef result fill:#2e7d32,stroke:#1b5e20,color:#fff
+
+    class Start,End start
+    class Answer,AutoSave,Timer exam
+    class LoadAnswers,GradeListening,GradeReading,PersistCorrect,CreateWSubs,DispatchWS,RecordLR process
+    class Submitted,Completed,Result result
+```
+
+### 3.9 FE-08: Human Grading (Instructor Review)
+
+#### 3.9.1 View Review Queue
 
 - **Description**: List submissions awaiting instructor review.
 - **Input**: Instructor/Admin authentication
 - **Processing**: Query submissions with `status = 'review_pending'`, sorted by `review_priority` (high > medium > low) then FIFO
 - **Output**: Paginated list with submission info, AI result, question content
 
-#### 3.8.2 Claim Submission for Review
+#### 3.9.2 Claim Submission for Review
 
 - **Description**: Lock a submission for exclusive review by the current instructor.
 - **Input**: Submission ID
@@ -480,14 +1362,14 @@ The system provides 16 features organized in two delivery phases:
 - **Error Cases**:
   - Already claimed by another instructor → 409 CONFLICT with claimant info
 
-#### 3.8.3 Release Submission
+#### 3.9.3 Release Submission
 
 - **Description**: Release a claimed submission back to the review queue.
 - **Input**: Submission ID
 - **Processing**: Delete Redis lock → clear `claimed_by` and `claimed_at`
 - **Output**: `{ released: true }`
 
-#### 3.8.4 Submit Review
+#### 3.9.4 Submit Review
 
 - **Description**: Submit instructor's final score and feedback.
 - **Input**: `{ overallScore, band, criteriaScores, feedback, reviewComment }`
@@ -502,15 +1384,114 @@ The system provides 16 features organized in two delivery phases:
   8. Trigger progress recompute for the learner
 - **Output**: Updated submission with final scores
 
-### 3.9 FE-09: Progress Tracking
+#### 3.9.5 Instructor Review Workflow Diagram
 
-#### 3.9.1 Get Progress Overview
+```mermaid
+flowchart TB
+    Start(["Instructor opens\nReview Queue"])
+
+    ViewQueue["GET /api/submissions/queue\nFilter: status = review_pending\nSort: priority high > med > low\nthen FIFO created_at"]
+
+    SelectSub["Select submission\nto review"]
+
+    Claim["POST /:id/claim\nSet claimed_by = instructor\nSet claimed_at = now\nLock: 15 min TTL"]
+
+    ClaimCheck{"Already\nclaimed?"}
+    ClaimFail["409 CONFLICT\nAlready claimed by\nanother instructor"]
+
+    ViewAIResult["View AI grading result\n- 4 criteria scores\n- Overall score and band\n- Feedback text\n- Confidence level"]
+
+    ReviewDecision{"Instructor\ndecision"}
+
+    Release["POST /:id/release\nClear claimed_by\nReturn to queue"]
+
+    SubmitReview["PUT /:id/review\n- overallScore 0-10\n- band B1/B2/C1\n- criteriaScores\n- feedback\n- reviewComment"]
+
+    UpdateSub["Update Submission\nstatus = completed\ngradingMode = human\nreviewerId = instructor\nauditFlag = |aiScore - humanScore| > 0.5"]
+
+    SaveResult["Save HumanResult\nto submission_details.result\n(AI result also preserved)"]
+
+    Progress["progress.record() + sync()\nUpdate learner scores\nRecalculate sliding window"]
+
+    SSEEvent["Broadcast SSE event\ncompleted to learner"]
+
+    End(["Done"])
+
+    Start --> ViewQueue --> SelectSub --> Claim
+    Claim --> ClaimCheck
+    ClaimCheck -->|"Yes"| ClaimFail
+    ClaimCheck -->|"No"| ViewAIResult
+    ViewAIResult --> ReviewDecision
+    ReviewDecision -->|"Cannot finish"| Release
+    ReviewDecision -->|"Submit grade"| SubmitReview
+    Release --> ViewQueue
+    SubmitReview --> UpdateSub --> SaveResult --> Progress --> SSEEvent --> End
+
+    classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef action fill:#e65100,stroke:#bf360c,color:#fff
+    classDef error fill:#c62828,stroke:#b71c1c,color:#fff
+    classDef result fill:#2e7d32,stroke:#1b5e20,color:#fff
+
+    class Start,End start
+    class ViewQueue,SelectSub,Claim,ViewAIResult,ReviewDecision action
+    class ClaimFail error
+    class SubmitReview,UpdateSub,SaveResult,Progress,SSEEvent,Release result
+```
+
+#### 3.9.6 Submission State Machine Diagram
+
+```mermaid
+stateDiagram-v2
+    [*] --> pending: POST /api/submissions\n(Learner creates submission)
+
+    pending --> processing: Listening/Reading → auto-grade begins\nWriting/Speaking → grading-dispatch.prepare()
+    pending --> failed: Validation error
+
+    processing --> completed: Auto-grade succeeds (L/R)\nOR AI confidence = high (W/S)
+    processing --> review_pending: AI confidence = medium or low\n(Writing/Speaking)
+    processing --> failed: Grading error / max retries
+
+    review_pending --> completed: Instructor submits review\n(PUT /:id/review)
+
+    completed --> [*]
+    failed --> [*]
+
+    note right of pending
+        MUTABLE: learner can update answer
+        Created with: userId, questionId,
+        skill, status = pending
+        submissionDetails.answer (JSONB)
+    end note
+
+    note right of processing
+        Objective: auto-grade in-process
+        Subjective: task pushed to
+        Redis queue grading:tasks
+    end note
+
+    note left of review_pending
+        Instructor workflow:
+        GET /queue → claim → review
+        Priority: high > medium > low
+        Claim lock: 15 min TTL
+    end note
+
+    note right of completed
+        Score: 0-10 (half-step)
+        Band: B1/B2/C1 or null
+        Progress recorded + synced
+    end note
+```
+
+### 3.10 FE-09: Progress Tracking
+
+#### 3.10.1 Get Progress Overview
 
 - **Description**: Overall progress across all four skills.
 - **Input**: Authenticated learner request
 - **Output**: Per-skill summary (current level, target level, scaffold stage, average score, attempt count, trend)
 
-#### 3.9.2 Get Progress by Skill
+#### 3.10.2 Get Progress by Skill
 
 - **Description**: Detailed progress for a specific skill.
 - **Input**: Skill name (listening/reading/writing/speaking)
@@ -523,7 +1504,7 @@ The system provides 16 features organized in two delivery phases:
   - `stable`: otherwise
   - `insufficient_data`: < 3 attempts
 
-#### 3.9.3 Get Spider Chart Data
+#### 3.10.3 Get Spider Chart Data
 
 - **Description**: Data for four-skill Spider Chart visualization.
 - **Input**: Authenticated learner request
@@ -541,13 +1522,13 @@ The system provides 16 features organized in two delivery phases:
   }
   ```
 
-#### 3.9.4 Overall Band Derivation
+#### 3.10.4 Overall Band Derivation
 
 - **Rule**: `overallBand = min(bandListening, bandReading, bandWriting, bandSpeaking)`
 - If any skill has insufficient data → overall band marked as `low_confidence`
 - Prevents displaying an inflated overall band when one skill is significantly weaker
 
-#### 3.9.5 ETA (Time-to-Goal) Heuristic
+#### 3.10.5 ETA (Time-to-Goal) Heuristic
 
 - **Prerequisites**: User has a goal (targetBand), each skill has ≥ 3 attempts
 - **Method**: Linear regression on sliding window (max 10 scores per skill)
@@ -558,9 +1539,82 @@ The system provides 16 features organized in two delivery phases:
 - **Returns 0** when: average already meets or exceeds target
 - **Overall ETA**: `max(ETA per skill)` — slowest skill determines timeline
 
-### 3.10 FE-10: Learning Path
+#### 3.10.6 Progress Tracking & Sliding Window Diagram
 
-#### 3.10.1 Get Personalized Learning Path
+```mermaid
+flowchart TB
+    Start(["Score input event"])
+
+    Source{"Score\nSource?"}
+    AutoGrade["Auto-Grade completed\nListening/Reading"]
+    AIGrade["AI Grading completed\nWriting/Speaking"]
+    InstructorGrade["Instructor Review completed\nWriting/Speaking"]
+
+    Record["progress.record()\nINSERT INTO user_skill_scores\n(userId, skill, score, submissionId)"]
+
+    Fetch["Fetch last 10 scores\nPer skill, DESC by created_at\n(Sliding Window, N=10)"]
+
+    Stats["computeStats(scores)\n- mean (average)\n- count\n- deviation (sample std dev)"]
+
+    CountCheck{"Count\n≥ 3?"}
+    Insufficient["trend = insufficient_data"]
+
+    CountCheck2{"Count\n≥ 6?"}
+
+    SmallWindow["3-5 scores:\nCheck deviation only"]
+    LargeWindow["6+ scores:\nCompare recent 3 avg\nvs previous 3 avg"]
+
+    DevCheck1{"deviation\n≥ 1.5?"}
+    Inconsistent1["trend = inconsistent"]
+    Stable1["trend = stable"]
+
+    DevCheck2{"deviation\n≥ 1.5?"}
+    Inconsistent2["trend = inconsistent"]
+
+    DeltaCalc["delta = avg(last 3) - avg(prev 3)"]
+    DeltaCheck{"delta?"}
+    Improving["trend = improving\n(delta ≥ +0.5)"]
+    Declining["trend = declining\n(delta ≤ -0.5)"]
+    Stable2["trend = stable"]
+
+    Upsert["UPSERT user_progress\nON CONFLICT (user_id, skill)\naverageScore, latestScore,\ntotalAttempts, currentLevel,\ntrend, scaffoldLevel"]
+
+    End(["Done"])
+
+    Start --> Source
+    Source --> AutoGrade --> Record
+    Source --> AIGrade --> Record
+    Source --> InstructorGrade --> Record
+
+    Record --> Fetch --> Stats --> CountCheck
+    CountCheck -->|"< 3"| Insufficient --> Upsert
+    CountCheck -->|"≥ 3"| CountCheck2
+    CountCheck2 -->|"3-5"| SmallWindow --> DevCheck1
+    CountCheck2 -->|"≥ 6"| LargeWindow --> DevCheck2
+
+    DevCheck1 -->|"Yes"| Inconsistent1 --> Upsert
+    DevCheck1 -->|"No"| Stable1 --> Upsert
+
+    DevCheck2 -->|"Yes"| Inconsistent2 --> Upsert
+    DevCheck2 -->|"No"| DeltaCalc --> DeltaCheck
+    DeltaCheck -->|"≥ +0.5"| Improving --> Upsert
+    DeltaCheck -->|"≤ -0.5"| Declining --> Upsert
+    DeltaCheck -->|"otherwise"| Stable2 --> Upsert
+
+    Upsert --> End
+
+    classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef compute fill:#f57c00,stroke:#e65100,color:#fff
+    classDef trend fill:#2e7d32,stroke:#1b5e20,color:#fff
+
+    class Start,End start
+    class AutoGrade,AIGrade,InstructorGrade,Record,Fetch,Stats,CountCheck,CountCheck2 compute
+    class Insufficient,Inconsistent1,Inconsistent2,Stable1,Stable2,Improving,Declining trend
+```
+
+### 3.11 FE-10: Learning Path
+
+#### 3.11.1 Get Personalized Learning Path
 
 - **Description**: Generate a weekly learning plan based on current progress.
 - **Input**: Authenticated learner request
@@ -572,15 +1626,15 @@ The system provides 16 features organized in two delivery phases:
   5. Content selection: Writing/Speaking → prioritize weakest criteria; Listening/Reading → prioritize most-failed question types
 - **Output**: Weekly plan with recommended exercises per skill, difficulty level, and estimated duration
 
-### 3.11 FE-11: Goal Setting
+### 3.12 FE-11: Goal Setting
 
-#### 3.11.1 Create Goal
+#### 3.12.1 Create Goal
 
 - **Description**: Set a learning goal with target band and optional deadline.
 - **Input**: `{ targetBand (B1/B2/C1), deadline? (date), dailyStudyTimeMinutes? (default 30) }`
 - **Output**: Created goal with status computation
 
-#### 3.11.2 Get Current Goal
+#### 3.12.2 Get Current Goal
 
 - **Description**: Retrieve the learner's current active goal with status.
 - **Output**: `{ targetBand, deadline, dailyStudyTimeMinutes, achieved, onTrack, daysRemaining }`
@@ -589,15 +1643,15 @@ The system provides 16 features organized in two delivery phases:
   - `onTrack`: true if ETA ≤ deadline
   - `daysRemaining`: deadline − now
 
-#### 3.11.3 Update Goal
+#### 3.12.3 Update Goal
 
 - **Description**: Modify goal parameters (owner only).
 - **Input**: Goal ID, updated fields
 - **Output**: Updated goal with recomputed status
 
-### 3.12 FE-12: Content Management
+### 3.13 FE-12: Content Management
 
-#### 3.12.1 Question CRUD
+#### 3.13.1 Question CRUD
 
 - **Description**: Admin/Instructor manages the question bank.
 - **Create**: Provide skill, level, format, content (JSONB), answer_key (JSONB for L/R), rubric (for W/S)
@@ -605,15 +1659,15 @@ The system provides 16 features organized in two delivery phases:
 - **Update**: Modify question content. Creates a new version snapshot in `question_versions`.
 - **Delete**: Admin soft-deletes by setting `is_active = false`.
 
-#### 3.12.2 Import/Export
+#### 3.13.2 Import/Export
 
 - **Description**: Bulk import questions from JSON/Excel format, export for backup.
 - **Import**: Validate against skill-specific Zod schemas → insert with version 1
 - **Export**: Generate JSON/Excel with all question data
 
-### 3.13 FE-13: User Management
+### 3.14 FE-13: User Management
 
-#### 3.13.1 Admin User Operations
+#### 3.14.1 Admin User Operations
 
 - **List Users**: Paginated list with filters (role, email/name search)
 - **Change Role**: `PUT /api/admin/users/:id/role` — change between learner/instructor/admin
@@ -621,21 +1675,21 @@ The system provides 16 features organized in two delivery phases:
 - **Lock/Unlock**: Disable/enable user account access
 - **Reset Password**: Admin-initiated password reset
 
-### 3.14 FE-14: Analytics Dashboard
+### 3.15 FE-14: Analytics Dashboard
 
-#### 3.14.1 Instructor Dashboard
+#### 3.15.1 Instructor Dashboard
 
 - **Description**: View class statistics and learner progress.
 - **Output**: Active learner count, assignment completion rates, average scores by skill, per-learner progress summary
 
-#### 3.14.2 Admin Dashboard
+#### 3.15.2 Admin Dashboard
 
 - **Description**: System-wide analytics.
 - **Output**: Total users by role, submission distribution by status, average grading time, review queue size, daily active users
 
-### 3.15 FE-15: Notification System
+### 3.16 FE-15: Notification System
 
-#### 3.15.1 Notification Types
+#### 3.16.1 Notification Types
 
 | Type | Trigger | Channel |
 |------|---------|---------|
@@ -645,13 +1699,13 @@ The system provides 16 features organized in two delivery phases:
 | Exam Result Ready | Exam session → completed | In-app, Push (mobile) |
 | Account Activity | Login from new device | Email |
 
-### 3.16 FE-16: Advanced Admin Features
+### 3.17 FE-16: Advanced Admin Features
 
-#### 3.16.1 Activity History
+#### 3.17.1 Activity History
 
 - **Description**: View user activity logs (logins, submissions, reviews).
 
-#### 3.16.2 Auto-Assignment Distribution
+#### 3.17.2 Auto-Assignment Distribution
 
 - **Description**: Automatically distribute review_pending submissions to available instructors based on workload.
 
@@ -829,4 +1883,4 @@ The system provides 16 features organized in two delivery phases:
 
 ---
 
-*Document version: 1.0 — Last updated: SP26SE145*
+*Document version: 2.0 — Last updated: SP26SE145*
