@@ -742,9 +742,9 @@ stateDiagram-v2
 
 ```mermaid
 stateDiagram-v2
-    [*] --> InProgress: POST /api/exams/:id/start
+    [*] --> InProgress: POST /api/exams/examId/start
 
-    InProgress --> Submitted: POST /sessions/:id/submit
+    InProgress --> Submitted: POST /sessions/sessionId/submit
     InProgress --> Abandoned: Timeout or manual abandon
 
     Submitted --> ExamCompleted: All 4 skill scores available
