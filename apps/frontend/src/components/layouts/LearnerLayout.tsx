@@ -32,7 +32,7 @@ export function LearnerLayout() {
 
 	return (
 		<div className="min-h-screen bg-background">
-			<header className="sticky top-0 z-40 bg-background">
+			<header className="sticky top-0 z-40 border-b bg-background">
 				<div className="mx-auto flex h-14 max-w-6xl items-center px-6">
 					<Link to="/" className="mr-8">
 						<Logo />
