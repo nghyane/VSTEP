@@ -1447,11 +1447,11 @@ stateDiagram-v2
     pending --> processing: L/R auto-grade, W/S dispatch to grading queue
     pending --> failed: Validation error
 
-    processing --> completed: Auto-grade #40;L/R#41; or AI high confidence #40;W/S#41;
-    processing --> review_pending: AI medium or low confidence #40;W/S#41;
+    processing --> completed: Auto-grade L/R or AI high confidence W/S
+    processing --> review_pending: AI medium/low confidence W/S
     processing --> failed: Grading error or max retries
 
-    review_pending --> completed: Instructor submits review #40;PUT /:id/review#41;
+    review_pending --> completed: Instructor submits review
 
     completed --> [*]
     failed --> [*]
@@ -1460,7 +1460,7 @@ stateDiagram-v2
         MUTABLE: learner can update answer
         Created with userId, questionId,
         skill, status = pending
-        submissionDetails.answer #40;JSONB#41;
+        submissionDetails.answer JSONB
     end note
 
     note right of processing
@@ -1477,7 +1477,7 @@ stateDiagram-v2
     end note
 
     note right of completed
-        Score 0-10 #40;half-step#41;
+        Score 0-10, half-step
         Band: B1/B2/C1 or null
         Progress recorded + synced
     end note
