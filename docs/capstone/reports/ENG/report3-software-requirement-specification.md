@@ -311,7 +311,7 @@ flowchart LR
         UC24["UC-24\nView Exam Result"]
     end
 
-    subgraph ProgressGoals ["Progress & Goals"]
+    subgraph ProgressGoals ["Progress and Goals"]
         UC30["UC-30\nView Progress Overview"]
         UC31["UC-31\nView Spider Chart"]
         UC32["UC-32\nView Skill Detail"]
@@ -367,10 +367,10 @@ flowchart LR
 flowchart LR
     Instructor(("👤 Instructor"))
 
-    subgraph ReviewGrading ["Review & Grading"]
+    subgraph ReviewGrading ["Review and Grading"]
         UC50["UC-50\nView Review Queue"]
         UC51["UC-51\nClaim Submission"]
-        UC52["UC-52\nReview & Grade Submission"]
+        UC52["UC-52\nReview and Grade Submission"]
         UC53["UC-53\nRelease Submission"]
     end
 
@@ -588,7 +588,7 @@ flowchart TB
     Login["Login Screen"]
     Home["Instructor Dashboard"]
 
-    subgraph Review ["Review & Grading"]
+    subgraph Review ["Review and Grading"]
         ReviewQueue["Review Queue\n(priority sorted)"]
         ReviewDetail["Review Detail\n(AI result + student answer)"]
         SubmitReview["Submit Review\n(score + feedback)"]
@@ -989,7 +989,7 @@ erDiagram
 flowchart TB
     subgraph Registration ["Registration Flow"]
         RegStart(["User submits\nregistration form"])
-        Validate["Validate input\nemail, password ≥8, fullName"]
+        Validate["Validate input\nemail, password min 8, fullName"]
         NormEmail["normalizeEmail()\nlowercase + trim"]
         CheckDup{"Email\nexists?"}
         DupError["409 CONFLICT\nEmail already exists"]
@@ -1004,7 +1004,7 @@ flowchart TB
         VerifyPw["Bun.password.verify()\nArgon2id comparison"]
         PwFail["401 UNAUTHORIZED\nInvalid credentials"]
         GenAccess["SignJWT (jose)\nclaims: sub, role, iat\nexpiry: JWT_EXPIRES_IN"]
-        GenRefresh["crypto.randomUUID()\nSHA-256 hash → store in DB"]
+        GenRefresh["crypto.randomUUID()\nSHA-256 hash, store in DB"]
         DeviceInfo["Record User-Agent\non refresh_tokens row"]
         CountTokens{"Active tokens\n≥ 3?"}
         PruneOldest["Revoke oldest\nrefresh token (FIFO)"]
@@ -1165,8 +1165,8 @@ flowchart TB
         Dequeue["BRPOP grading:tasks\n(poll with 5s timeout)"]
         Route{"Skill?"}
         Writing["writing.grade()\nExtract text + taskType\nCall LLM (Groq Llama 3.3 70B)\n4 criteria scoring"]
-        Speaking["speaking.grade()\nDownload audio\nSTT (Groq Whisper)\nTranscript → LLM grading\n4 criteria scoring"]
-        CalcScore["Calculate overall score\navg(4 criteria) → snap to 0.5\nDetermine band"]
+        Speaking["speaking.grade()\nDownload audio\nSTT Groq Whisper\nTranscript to LLM grading\n4 criteria scoring"]
+        CalcScore["Calculate overall score\navg 4 criteria, snap to 0.5\nDetermine band"]
         Confidence{"AI Confidence?"}
     end
 
@@ -1180,7 +1180,7 @@ flowchart TB
     SSE["Broadcast SSE event\nto learner client"]
     End(["Done"])
 
-    ErrorPath["PermanentError?\ndb.fail() → status = failed\nLPUSH grading:dlq"]
+    ErrorPath["PermanentError?\ndb.fail, status = failed\nLPUSH grading:dlq"]
 
     Start --> CreateSub --> CreateDetail --> Prepare --> Commit --> Dispatch
     Dispatch --> Dequeue --> Route
@@ -1573,8 +1573,8 @@ flowchart TB
 
     DeltaCalc["delta = avg(last 3) - avg(prev 3)"]
     DeltaCheck{"delta?"}
-    Improving["trend = improving\n(delta ≥ +0.5)"]
-    Declining["trend = declining\n(delta ≤ -0.5)"]
+    Improving["trend = improving\ndelta ge +0.5"]
+    Declining["trend = declining\ndelta le -0.5"]
     Stable2["trend = stable"]
 
     Upsert["UPSERT user_progress\nON CONFLICT (user_id, skill)\naverageScore, latestScore,\ntotalAttempts, currentLevel,\ntrend, scaffoldLevel"]
