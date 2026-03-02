@@ -571,14 +571,14 @@ flowchart TB
     classDef practice fill:#2e7d32,stroke:#1b5e20,color:#fff
     classDef exam fill:#6a1b9a,stroke:#4a148c,color:#fff
     classDef progress fill:#f57c00,stroke:#e65100,color:#fff
-    classDef class fill:#00796b,stroke:#004d40,color:#fff
+    classDef cls fill:#00796b,stroke:#004d40,color:#fff
 
     class Login,Register auth
     class Home,Profile main
     class SkillSelect,QuestionView,SubmitAnswer,ResultView practice
     class ExamList,ExamDetail,ExamSession,ExamResult exam
     class ProgressOverview,SkillDetail,GoalSetting progress
-    class ClassList,JoinClass,FeedbackView class
+    class ClassList,JoinClass,FeedbackView cls
 ```
 
 #### 3.1.2 Screens Flow — Instructor
@@ -623,13 +623,13 @@ flowchart TB
     classDef auth fill:#78909c,stroke:#546e7a,color:#fff
     classDef main fill:#e65100,stroke:#bf360c,color:#fff
     classDef review fill:#1565c0,stroke:#0d47a1,color:#fff
-    classDef class fill:#2e7d32,stroke:#1b5e20,color:#fff
+    classDef cls fill:#2e7d32,stroke:#1b5e20,color:#fff
     classDef content fill:#6a1b9a,stroke:#4a148c,color:#fff
 
     class Login auth
     class Home main
     class ReviewQueue,ReviewDetail,SubmitReview review
-    class ClassList,CreateClass,ClassDashboard,MemberProgress,GiveFeedback class
+    class ClassList,CreateClass,ClassDashboard,MemberProgress,GiveFeedback cls
     class QuestionBank,CreateQuestion,CreateExam content
 ```
 
@@ -791,7 +791,7 @@ erDiagram
     }
 
     submission_details {
-        uuid submission_id PK_FK "1:1 with submissions"
+        uuid submission_id PK "FK to submissions"
         jsonb answer "Objective | Writing | Speaking"
         jsonb result "Auto | AI | Human Result"
         varchar feedback "max 10000 chars"
@@ -841,8 +841,8 @@ erDiagram
     }
 
     question_knowledge_points {
-        uuid question_id PK_FK
-        uuid knowledge_point_id PK_FK
+        uuid question_id PK "FK to questions"
+        uuid knowledge_point_id PK "FK to knowledge_points"
     }
 
     user_progress {
