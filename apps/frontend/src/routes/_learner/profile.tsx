@@ -1,7 +1,7 @@
 import { LockPasswordIcon, Mail01Icon, UserCircleIcon, UserIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute } from "@tanstack/react-router"
-import { type FormEvent, useState } from "react"
+import { type FormEvent, useEffect, useState } from "react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -66,8 +66,17 @@ function UpdateInfoForm({ userId }: { userId: string }) {
 	const { data } = useUser(userId)
 	const update = useUpdateUser(userId)
 
-	const [fullName, setFullName] = useState(data?.fullName ?? "")
-	const [email, setEmail] = useState(data?.email ?? "")
+	const [fullName, setFullName] = useState("")
+	const [email, setEmail] = useState("")
+
+	useEffect(() => {
+		if (data) {
+			setFullName(data.fullName ?? "")
+			setEmail(data.email ?? "")
+		}
+	}, [data])
+
+	const hasChanges = fullName !== (data?.fullName ?? "") || email !== (data?.email ?? "")
 
 	function handleSubmit(e: FormEvent) {
 		e.preventDefault()
@@ -90,6 +99,7 @@ function UpdateInfoForm({ userId }: { userId: string }) {
 					<Input
 						id="fullName"
 						type="text"
+						placeholder={data?.fullName ?? "Nhập họ và tên"}
 						value={fullName}
 						onChange={(e) => setFullName(e.target.value)}
 					/>
@@ -100,13 +110,19 @@ function UpdateInfoForm({ userId }: { userId: string }) {
 						<HugeiconsIcon icon={Mail01Icon} className="size-4 text-muted-foreground" />
 						Email
 					</Label>
-					<Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+					<Input
+						id="email"
+						type="email"
+						placeholder={data?.email ?? "Nhập email"}
+						value={email}
+						onChange={(e) => setEmail(e.target.value)}
+					/>
 				</div>
 
 				{update.isSuccess && <p className="text-sm text-success">Đã cập nhật thông tin</p>}
 				{update.isError && <p className="text-sm text-destructive">{update.error.message}</p>}
 
-				<Button type="submit" disabled={update.isPending}>
+				<Button type="submit" disabled={update.isPending || !hasChanges}>
 					{update.isPending ? "Đang lưu..." : "Lưu thay đổi"}
 				</Button>
 			</form>

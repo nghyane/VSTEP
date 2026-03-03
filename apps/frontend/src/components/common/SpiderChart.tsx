@@ -13,7 +13,7 @@ interface SpiderChartProps {
 
 const SIZE = 280
 const CENTER = SIZE / 2
-const RADIUS = 110
+const RADIUS = 88
 const LEVELS = 5
 
 function polarToXY(angle: number, radius: number) {

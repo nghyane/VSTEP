@@ -11,12 +11,15 @@ import {
 } from "@hugeicons/core-free-icons"
 import type { IconSvgElement } from "@hugeicons/react"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
+import { SpiderChart } from "@/components/common/SpiderChart"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { api } from "@/lib/api"
+import { useExams } from "@/hooks/use-exams"
+import { useProgress, useSpiderChart } from "@/hooks/use-progress"
+import { useSubmissions } from "@/hooks/use-submissions"
 import { cn } from "@/lib/utils"
-import type { Exam, PaginatedResponse, ProgressOverview, Skill } from "@/types/api"
+import type { Exam, Skill, SubmissionStatus, Trend } from "@/types/api"
 
 export const Route = createFileRoute("/_learner/dashboard")({
 	component: LearnerDashboard,
@@ -46,18 +49,30 @@ const skillColor: Record<Skill, string> = {
 
 const SKILL_ORDER: Skill[] = ["listening", "reading", "writing", "speaking"]
 
-function useProgress() {
-	return useQuery({
-		queryKey: ["progress"],
-		queryFn: () => api.get<ProgressOverview>("/api/progress"),
-	})
+const skillColorText: Record<Skill, string> = {
+	listening: "text-skill-listening",
+	reading: "text-skill-reading",
+	writing: "text-skill-writing",
+	speaking: "text-skill-speaking",
 }
 
-function useExams() {
-	return useQuery({
-		queryKey: ["exams"],
-		queryFn: () => api.get<PaginatedResponse<Exam>>("/api/exams"),
-	})
+const trendDisplay: Record<Trend, { text: string; className: string }> = {
+	improving: { text: "↑ Tiến bộ", className: "text-success" },
+	stable: { text: "→ Ổn định", className: "text-muted-foreground" },
+	declining: { text: "↓ Giảm", className: "text-destructive" },
+	inconsistent: { text: "~ Không đều", className: "text-warning" },
+	insufficient_data: { text: "— Chưa đủ", className: "text-muted-foreground" },
+}
+
+const statusConfig: Record<
+	SubmissionStatus,
+	{ label: string; variant: "default" | "secondary" | "destructive" | "outline" }
+> = {
+	pending: { label: "Đang chờ", variant: "secondary" },
+	processing: { label: "Đang xử lý", variant: "secondary" },
+	completed: { label: "Hoàn thành", variant: "outline" },
+	review_pending: { label: "Chờ chấm", variant: "secondary" },
+	failed: { label: "Lỗi", variant: "destructive" },
 }
 
 function getBlueprint(exam: Exam): ExamBlueprint {
@@ -90,6 +105,8 @@ function ExamCard({ exam, skill }: { exam: Exam; skill: Skill }) {
 function LearnerDashboard() {
 	const progress = useProgress()
 	const exams = useExams()
+	const spiderChart = useSpiderChart()
+	const submissions = useSubmissions()
 
 	const isLoading = progress.isLoading || exams.isLoading
 	const error = progress.error || exams.error
@@ -108,6 +125,15 @@ function LearnerDashboard() {
 
 	const totalAttempts = skills.reduce((sum, s) => sum + s.attemptCount, 0)
 	const dailyGoalMinutes = goal?.dailyStudyTimeMinutes ?? 45
+	const recentSubmissions = submissions.data?.data ?? []
+
+	const spiderSkills = spiderChart.data
+		? SKILL_ORDER.map((skill) => ({
+				label: skillMeta[skill].label,
+				value: spiderChart.data?.skills[skill]?.current ?? 0,
+				color: skillColorText[skill],
+			}))
+		: []
 
 	function examsForSkill(skill: Skill) {
 		return examList.filter((e) => {
@@ -121,6 +147,52 @@ function LearnerDashboard() {
 		<div className="grid gap-10 lg:grid-cols-[1fr_300px]">
 			{/* Left — content */}
 			<div className="space-y-10">
+				{/* Skill progress bars */}
+				<div className="space-y-3">
+					<h2 className="text-lg font-bold">Kỹ năng của bạn</h2>
+					<div className="grid gap-3 sm:grid-cols-2">
+						{SKILL_ORDER.map((skill) => {
+							const sp = skills.find((s) => s.skill === skill)
+							const spiderSkill = spiderChart.data?.skills[skill]
+							if (!sp) return null
+							const trend = spiderSkill ? trendDisplay[spiderSkill.trend] : null
+							return (
+								<Link
+									key={skill}
+									to="/progress/$skill"
+									params={{ skill }}
+									className={cn(
+										"flex items-center gap-3 rounded-xl p-4 transition-colors",
+										"bg-muted/30 hover:bg-muted/50",
+									)}
+								>
+									<div
+										className={cn(
+											"flex size-9 items-center justify-center rounded-lg",
+											skillColor[skill],
+										)}
+									>
+										<HugeiconsIcon icon={skillMeta[skill].icon} className="size-5" />
+									</div>
+									<div className="flex-1">
+										<div className="flex items-center justify-between">
+											<span className="font-medium">{skillMeta[skill].label}</span>
+											<span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
+												{sp.currentLevel ?? "—"}
+											</span>
+										</div>
+										<div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+											<span>{sp.attemptCount} bài</span>
+											{trend && <span className={trend.className}>{trend.text}</span>}
+										</div>
+									</div>
+								</Link>
+							)
+						})}
+					</div>
+				</div>
+
+				{/* Exam cards by skill */}
 				{SKILL_ORDER.map((skill) => {
 					const meta = skillMeta[skill]
 					const skillExams = examsForSkill(skill)
@@ -147,6 +219,51 @@ function LearnerDashboard() {
 						</div>
 					)
 				})}
+
+				{/* Recent submissions */}
+				{recentSubmissions.length > 0 && (
+					<div className="space-y-3">
+						<div className="flex items-center justify-between">
+							<h2 className="text-lg font-bold">Bài nộp gần đây</h2>
+							<Link to="/submissions" className="text-sm text-primary hover:underline">
+								Xem tất cả
+							</Link>
+						</div>
+						<div className="space-y-2">
+							{recentSubmissions.slice(0, 5).map((s) => (
+								<Link
+									key={s.id}
+									to="/submissions/$id"
+									params={{ id: s.id }}
+									className="flex items-center gap-3 rounded-xl bg-muted/30 p-3 transition-colors hover:bg-muted/50"
+								>
+									<div
+										className={cn(
+											"flex size-8 items-center justify-center rounded-lg",
+											skillColor[s.skill],
+										)}
+									>
+										<HugeiconsIcon icon={skillMeta[s.skill].icon} className="size-4" />
+									</div>
+									<div className="flex-1">
+										<span className="text-sm font-medium">{skillMeta[s.skill].label}</span>
+										<p className="text-xs text-muted-foreground">
+											{new Date(s.createdAt).toLocaleDateString("vi-VN")}
+										</p>
+									</div>
+									<div className="flex items-center gap-2">
+										<span className="text-sm font-bold tabular-nums">
+											{s.score != null ? `${s.score}/10` : "—"}
+										</span>
+										<Badge variant={statusConfig[s.status].variant}>
+											{statusConfig[s.status].label}
+										</Badge>
+									</div>
+								</Link>
+							))}
+						</div>
+					</div>
+				)}
 			</div>
 
 			{/* Right — sticky sidebar */}
@@ -168,6 +285,14 @@ function LearnerDashboard() {
 							</p>
 						)}
 					</div>
+
+					{/* Spider chart */}
+					{spiderSkills.length > 0 && (
+						<div className="rounded-2xl bg-muted/30 p-5">
+							<h3 className="mb-2 text-sm font-medium">Tổng quan kỹ năng</h3>
+							<SpiderChart skills={spiderSkills} className="mx-auto size-52" />
+						</div>
+					)}
 
 					{/* Quick stats */}
 					<div className="space-y-4 px-1">

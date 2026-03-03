@@ -15,6 +15,7 @@ import { Logo } from "@/components/common/Logo"
 import { SpiderChart } from "@/components/common/SpiderChart"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { user } from "@/lib/auth"
 import { cn } from "@/lib/utils"
 
 export const Route = createFileRoute("/")({
@@ -140,9 +141,24 @@ const STEPS = [
 ]
 
 const BANDS = [
-	{ level: "B1", label: "Trung cấp", desc: "Giao tiếp trong công việc và đời sống" },
-	{ level: "B2", label: "Trung cấp cao", desc: "Tự tin trong môi trường học thuật" },
-	{ level: "C1", label: "Nâng cao", desc: "Sử dụng tiếng Anh linh hoạt, chính xác" },
+	{
+		level: "B1",
+		label: "Trung cấp",
+		desc: "Giao tiếp trong công việc và đời sống hàng ngày. Hiểu được ý chính khi nghe và đọc.",
+		skills: ["Nghe hiểu hội thoại", "Viết thư cơ bản", "Đọc hiểu văn bản ngắn"],
+	},
+	{
+		level: "B2",
+		label: "Trung cấp cao",
+		desc: "Tự tin trong môi trường học thuật và chuyên môn. Tranh luận được quan điểm.",
+		skills: ["Nghe bài giảng dài", "Viết luận có cấu trúc", "Nói trôi chảy"],
+	},
+	{
+		level: "C1",
+		label: "Nâng cao",
+		desc: "Sử dụng tiếng Anh linh hoạt, chính xác trong mọi tình huống phức tạp.",
+		skills: ["Nghe mọi ngữ cảnh", "Viết học thuật", "Thuyết trình chuyên sâu"],
+	},
 ]
 
 const TESTIMONIALS = [
@@ -227,20 +243,41 @@ function LandingPage() {
 /* ── header ── */
 
 function Header() {
+	const currentUser = user()
+
 	return (
 		<header className="sticky top-0 z-50 bg-background/90 backdrop-blur-md">
 			<div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
 				<Link to="/">
 					<Logo />
 				</Link>
-				<div className="flex items-center gap-2">
-					<Button variant="ghost" size="sm" asChild>
-						<Link to="/login">Đăng nhập</Link>
-					</Button>
-					<Button size="sm" className="rounded-xl" asChild>
-						<Link to="/register">Bắt đầu</Link>
-					</Button>
-				</div>
+				{currentUser ? (
+					<Link
+						to={currentUser.role === "admin" ? "/admin" : "/dashboard"}
+						className="flex items-center gap-2"
+					>
+						<span className="text-sm font-medium">{currentUser.fullName ?? currentUser.email}</span>
+						<Avatar className="size-8">
+							<AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
+								{(currentUser.fullName ?? currentUser.email)
+									.split(" ")
+									.map((w) => w[0])
+									.slice(0, 2)
+									.join("")
+									.toUpperCase()}
+							</AvatarFallback>
+						</Avatar>
+					</Link>
+				) : (
+					<div className="flex items-center gap-2">
+						<Button variant="ghost" size="sm" asChild>
+							<Link to="/login">Đăng nhập</Link>
+						</Button>
+						<Button size="sm" className="rounded-xl" asChild>
+							<Link to="/register">Bắt đầu</Link>
+						</Button>
+					</div>
+				)}
 			</div>
 		</header>
 	)
@@ -275,18 +312,6 @@ function Hero() {
 							<Button variant="outline" size="lg" className="rounded-xl px-8 text-base" asChild>
 								<a href="#how-it-works">Xem cách hoạt động</a>
 							</Button>
-						</div>
-						<div className="flex items-center gap-3 pt-2">
-							<div className="flex -space-x-2">
-								{["TA", "BL", "HN", "MT"].map((initials) => (
-									<Avatar key={initials} size="sm">
-										<AvatarFallback className="bg-primary/10 text-primary text-xs">
-											{initials}
-										</AvatarFallback>
-									</Avatar>
-								))}
-							</div>
-							<span className="text-sm text-muted-foreground">10,000+ học viên đã tham gia</span>
 						</div>
 					</div>
 				</AnimSection>
@@ -376,30 +401,41 @@ function RoadmapSection() {
 						sub="Từ B1 đến C1 — mỗi cấp độ là một bước tiến cụ thể"
 					/>
 				</AnimSection>
-				<div className="relative mx-auto mt-16 max-w-xl">
-					<div className="absolute top-0 bottom-0 left-1/2 w-px -translate-x-1/2 bg-border" />
-					<div className="flex flex-col gap-16">
-						{BANDS.map((b, i) => {
-							const right = i % 2 !== 0
-							return (
-								<AnimSection key={b.level} delay={i * 150}>
-									<div className="relative flex items-center">
-										<div className={cn("flex-1 pr-10 text-right", right && "invisible")}>
-											<p className="font-bold">{b.label}</p>
-											<p className="text-sm text-muted-foreground">{b.desc}</p>
-										</div>
-										<div className="relative z-10 flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 transition-transform duration-300 hover:scale-110">
-											<span className="text-lg font-bold text-primary">{b.level}</span>
-										</div>
-										<div className={cn("flex-1 pl-10", !right && "invisible")}>
-											<p className="font-bold">{b.label}</p>
-											<p className="text-sm text-muted-foreground">{b.desc}</p>
-										</div>
+				<div className="mt-12 grid gap-6 lg:grid-cols-3">
+					{BANDS.map((b, i) => (
+						<AnimSection key={b.level} delay={i * 150}>
+							<div className="relative flex flex-col gap-4 rounded-2xl bg-muted/30 p-6">
+								{/* Step indicator */}
+								<div className="flex items-center gap-3">
+									<div className="flex size-12 items-center justify-center rounded-xl bg-primary/10">
+										<span className="text-lg font-bold text-primary">{b.level}</span>
 									</div>
-								</AnimSection>
-							)
-						})}
-					</div>
+									<div>
+										<p className="font-bold">{b.label}</p>
+										<p className="text-xs text-muted-foreground">Cấp độ {i + 1}/3</p>
+									</div>
+									{i < BANDS.length - 1 && (
+										<span className="ml-auto hidden text-xl text-muted-foreground/50 lg:block">
+											→
+										</span>
+									)}
+								</div>
+								{/* Description */}
+								<p className="text-sm leading-relaxed text-muted-foreground">{b.desc}</p>
+								{/* Skills */}
+								<div className="flex flex-wrap gap-2">
+									{b.skills.map((s) => (
+										<span
+											key={s}
+											className="rounded-full bg-primary/8 px-3 py-1 text-xs font-medium text-primary"
+										>
+											{s}
+										</span>
+									))}
+								</div>
+							</div>
+						</AnimSection>
+					))}
 				</div>
 			</div>
 		</section>

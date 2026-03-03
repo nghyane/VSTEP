@@ -23,15 +23,17 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { useProgress } from "@/hooks/use-progress"
 import { logout } from "@/lib/api"
 import { clear, refreshToken, token, user } from "@/lib/auth"
 import { cn } from "@/lib/utils"
 
 const DAYS_OF_WEEK = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
-const ACTIVE_DAYS = [true, true, true, true, true, false, false]
 
 export function LearnerLayout() {
-	const streakCount = 12
+	const progress = useProgress()
+	const streakCount = progress.data?.skills.reduce((max, s) => Math.max(max, s.streakCount), 0) ?? 0
+	const activeDays = DAYS_OF_WEEK.map((_, i) => i >= 7 - Math.min(streakCount, 7))
 	const currentUser = user()
 	const initials = currentUser?.fullName
 		? currentUser.fullName
@@ -111,10 +113,10 @@ export function LearnerLayout() {
 												<div
 													className={cn(
 														"flex size-8 items-center justify-center rounded-full",
-														ACTIVE_DAYS[i] ? "bg-warning/15 text-warning" : "bg-muted",
+														activeDays[i] ? "bg-warning/15 text-warning" : "bg-muted",
 													)}
 												>
-													{ACTIVE_DAYS[i] ? (
+													{activeDays[i] ? (
 														<HugeiconsIcon icon={CheckmarkCircle01Icon} className="size-4" />
 													) : null}
 												</div>
