@@ -9,16 +9,38 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as LearnerRouteImport } from './routes/_learner'
 import { Route as InstructorRouteImport } from './routes/_instructor'
 import { Route as FocusedRouteImport } from './routes/_focused'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminUsersRouteImport } from './routes/admin/users'
+import { Route as AdminSubmissionsRouteImport } from './routes/admin/submissions'
+import { Route as AdminQuestionsRouteImport } from './routes/admin/questions'
+import { Route as AdminKnowledgePointsRouteImport } from './routes/admin/knowledge-points'
+import { Route as AdminExamsRouteImport } from './routes/admin/exams'
+import { Route as LearnerProfileRouteImport } from './routes/_learner/profile'
+import { Route as LearnerOnboardingRouteImport } from './routes/_learner/onboarding'
 import { Route as LearnerDashboardRouteImport } from './routes/_learner/dashboard'
 import { Route as InstructorManageRouteImport } from './routes/_instructor/manage'
 import { Route as FocusedExamRouteImport } from './routes/_focused/exam'
+import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
+import { Route as LearnerSubmissionsIndexRouteImport } from './routes/_learner/submissions/index'
+import { Route as LearnerProgressIndexRouteImport } from './routes/_learner/progress/index'
+import { Route as LearnerExamsIndexRouteImport } from './routes/_learner/exams/index'
+import { Route as LearnerSubmissionsIdRouteImport } from './routes/_learner/submissions/$id'
+import { Route as LearnerProgressSkillRouteImport } from './routes/_learner/progress/$skill'
+import { Route as LearnerExamsExamIdRouteImport } from './routes/_learner/exams/$examId'
+import { Route as LearnerExamsSessionsSessionIdRouteImport } from './routes/_learner/exams/sessions.$sessionId'
 
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LearnerRoute = LearnerRouteImport.update({
   id: '/_learner',
   getParentRoute: () => rootRouteImport,
@@ -40,6 +62,46 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSubmissionsRoute = AdminSubmissionsRouteImport.update({
+  id: '/submissions',
+  path: '/submissions',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminQuestionsRoute = AdminQuestionsRouteImport.update({
+  id: '/questions',
+  path: '/questions',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminKnowledgePointsRoute = AdminKnowledgePointsRouteImport.update({
+  id: '/knowledge-points',
+  path: '/knowledge-points',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminExamsRoute = AdminExamsRouteImport.update({
+  id: '/exams',
+  path: '/exams',
+  getParentRoute: () => AdminRoute,
+} as any)
+const LearnerProfileRoute = LearnerProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => LearnerRoute,
+} as any)
+const LearnerOnboardingRoute = LearnerOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => LearnerRoute,
+} as any)
 const LearnerDashboardRoute = LearnerDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -55,25 +117,99 @@ const FocusedExamRoute = FocusedExamRouteImport.update({
   path: '/exam',
   getParentRoute: () => FocusedRoute,
 } as any)
+const AuthRegisterRoute = AuthRegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthLoginRoute = AuthLoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => AuthRoute,
 } as any)
+const LearnerSubmissionsIndexRoute = LearnerSubmissionsIndexRouteImport.update({
+  id: '/submissions/',
+  path: '/submissions/',
+  getParentRoute: () => LearnerRoute,
+} as any)
+const LearnerProgressIndexRoute = LearnerProgressIndexRouteImport.update({
+  id: '/progress/',
+  path: '/progress/',
+  getParentRoute: () => LearnerRoute,
+} as any)
+const LearnerExamsIndexRoute = LearnerExamsIndexRouteImport.update({
+  id: '/exams/',
+  path: '/exams/',
+  getParentRoute: () => LearnerRoute,
+} as any)
+const LearnerSubmissionsIdRoute = LearnerSubmissionsIdRouteImport.update({
+  id: '/submissions/$id',
+  path: '/submissions/$id',
+  getParentRoute: () => LearnerRoute,
+} as any)
+const LearnerProgressSkillRoute = LearnerProgressSkillRouteImport.update({
+  id: '/progress/$skill',
+  path: '/progress/$skill',
+  getParentRoute: () => LearnerRoute,
+} as any)
+const LearnerExamsExamIdRoute = LearnerExamsExamIdRouteImport.update({
+  id: '/exams/$examId',
+  path: '/exams/$examId',
+  getParentRoute: () => LearnerRoute,
+} as any)
+const LearnerExamsSessionsSessionIdRoute =
+  LearnerExamsSessionsSessionIdRouteImport.update({
+    id: '/exams/sessions/$sessionId',
+    path: '/exams/sessions/$sessionId',
+    getParentRoute: () => LearnerRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/login': typeof AuthLoginRoute
+  '/register': typeof AuthRegisterRoute
   '/exam': typeof FocusedExamRoute
   '/manage': typeof InstructorManageRoute
   '/dashboard': typeof LearnerDashboardRoute
+  '/onboarding': typeof LearnerOnboardingRoute
+  '/profile': typeof LearnerProfileRoute
+  '/admin/exams': typeof AdminExamsRoute
+  '/admin/knowledge-points': typeof AdminKnowledgePointsRoute
+  '/admin/questions': typeof AdminQuestionsRoute
+  '/admin/submissions': typeof AdminSubmissionsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/': typeof AdminIndexRoute
+  '/exams/$examId': typeof LearnerExamsExamIdRoute
+  '/progress/$skill': typeof LearnerProgressSkillRoute
+  '/submissions/$id': typeof LearnerSubmissionsIdRoute
+  '/exams/': typeof LearnerExamsIndexRoute
+  '/progress/': typeof LearnerProgressIndexRoute
+  '/submissions/': typeof LearnerSubmissionsIndexRoute
+  '/exams/sessions/$sessionId': typeof LearnerExamsSessionsSessionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof AuthLoginRoute
+  '/register': typeof AuthRegisterRoute
   '/exam': typeof FocusedExamRoute
   '/manage': typeof InstructorManageRoute
   '/dashboard': typeof LearnerDashboardRoute
+  '/onboarding': typeof LearnerOnboardingRoute
+  '/profile': typeof LearnerProfileRoute
+  '/admin/exams': typeof AdminExamsRoute
+  '/admin/knowledge-points': typeof AdminKnowledgePointsRoute
+  '/admin/questions': typeof AdminQuestionsRoute
+  '/admin/submissions': typeof AdminSubmissionsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin': typeof AdminIndexRoute
+  '/exams/$examId': typeof LearnerExamsExamIdRoute
+  '/progress/$skill': typeof LearnerProgressSkillRoute
+  '/submissions/$id': typeof LearnerSubmissionsIdRoute
+  '/exams': typeof LearnerExamsIndexRoute
+  '/progress': typeof LearnerProgressIndexRoute
+  '/submissions': typeof LearnerSubmissionsIndexRoute
+  '/exams/sessions/$sessionId': typeof LearnerExamsSessionsSessionIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -82,16 +218,76 @@ export interface FileRoutesById {
   '/_focused': typeof FocusedRouteWithChildren
   '/_instructor': typeof InstructorRouteWithChildren
   '/_learner': typeof LearnerRouteWithChildren
+  '/admin': typeof AdminRouteWithChildren
   '/_auth/login': typeof AuthLoginRoute
+  '/_auth/register': typeof AuthRegisterRoute
   '/_focused/exam': typeof FocusedExamRoute
   '/_instructor/manage': typeof InstructorManageRoute
   '/_learner/dashboard': typeof LearnerDashboardRoute
+  '/_learner/onboarding': typeof LearnerOnboardingRoute
+  '/_learner/profile': typeof LearnerProfileRoute
+  '/admin/exams': typeof AdminExamsRoute
+  '/admin/knowledge-points': typeof AdminKnowledgePointsRoute
+  '/admin/questions': typeof AdminQuestionsRoute
+  '/admin/submissions': typeof AdminSubmissionsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/': typeof AdminIndexRoute
+  '/_learner/exams/$examId': typeof LearnerExamsExamIdRoute
+  '/_learner/progress/$skill': typeof LearnerProgressSkillRoute
+  '/_learner/submissions/$id': typeof LearnerSubmissionsIdRoute
+  '/_learner/exams/': typeof LearnerExamsIndexRoute
+  '/_learner/progress/': typeof LearnerProgressIndexRoute
+  '/_learner/submissions/': typeof LearnerSubmissionsIndexRoute
+  '/_learner/exams/sessions/$sessionId': typeof LearnerExamsSessionsSessionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/exam' | '/manage' | '/dashboard'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/login'
+    | '/register'
+    | '/exam'
+    | '/manage'
+    | '/dashboard'
+    | '/onboarding'
+    | '/profile'
+    | '/admin/exams'
+    | '/admin/knowledge-points'
+    | '/admin/questions'
+    | '/admin/submissions'
+    | '/admin/users'
+    | '/admin/'
+    | '/exams/$examId'
+    | '/progress/$skill'
+    | '/submissions/$id'
+    | '/exams/'
+    | '/progress/'
+    | '/submissions/'
+    | '/exams/sessions/$sessionId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/exam' | '/manage' | '/dashboard'
+  to:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/exam'
+    | '/manage'
+    | '/dashboard'
+    | '/onboarding'
+    | '/profile'
+    | '/admin/exams'
+    | '/admin/knowledge-points'
+    | '/admin/questions'
+    | '/admin/submissions'
+    | '/admin/users'
+    | '/admin'
+    | '/exams/$examId'
+    | '/progress/$skill'
+    | '/submissions/$id'
+    | '/exams'
+    | '/progress'
+    | '/submissions'
+    | '/exams/sessions/$sessionId'
   id:
     | '__root__'
     | '/'
@@ -99,10 +295,27 @@ export interface FileRouteTypes {
     | '/_focused'
     | '/_instructor'
     | '/_learner'
+    | '/admin'
     | '/_auth/login'
+    | '/_auth/register'
     | '/_focused/exam'
     | '/_instructor/manage'
     | '/_learner/dashboard'
+    | '/_learner/onboarding'
+    | '/_learner/profile'
+    | '/admin/exams'
+    | '/admin/knowledge-points'
+    | '/admin/questions'
+    | '/admin/submissions'
+    | '/admin/users'
+    | '/admin/'
+    | '/_learner/exams/$examId'
+    | '/_learner/progress/$skill'
+    | '/_learner/submissions/$id'
+    | '/_learner/exams/'
+    | '/_learner/progress/'
+    | '/_learner/submissions/'
+    | '/_learner/exams/sessions/$sessionId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -111,10 +324,18 @@ export interface RootRouteChildren {
   FocusedRoute: typeof FocusedRouteWithChildren
   InstructorRoute: typeof InstructorRouteWithChildren
   LearnerRoute: typeof LearnerRouteWithChildren
+  AdminRoute: typeof AdminRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_learner': {
       id: '/_learner'
       path: ''
@@ -150,6 +371,62 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/submissions': {
+      id: '/admin/submissions'
+      path: '/submissions'
+      fullPath: '/admin/submissions'
+      preLoaderRoute: typeof AdminSubmissionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/questions': {
+      id: '/admin/questions'
+      path: '/questions'
+      fullPath: '/admin/questions'
+      preLoaderRoute: typeof AdminQuestionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/knowledge-points': {
+      id: '/admin/knowledge-points'
+      path: '/knowledge-points'
+      fullPath: '/admin/knowledge-points'
+      preLoaderRoute: typeof AdminKnowledgePointsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/exams': {
+      id: '/admin/exams'
+      path: '/exams'
+      fullPath: '/admin/exams'
+      preLoaderRoute: typeof AdminExamsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_learner/profile': {
+      id: '/_learner/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof LearnerProfileRouteImport
+      parentRoute: typeof LearnerRoute
+    }
+    '/_learner/onboarding': {
+      id: '/_learner/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof LearnerOnboardingRouteImport
+      parentRoute: typeof LearnerRoute
+    }
     '/_learner/dashboard': {
       id: '/_learner/dashboard'
       path: '/dashboard'
@@ -171,6 +448,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FocusedExamRouteImport
       parentRoute: typeof FocusedRoute
     }
+    '/_auth/register': {
+      id: '/_auth/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof AuthRegisterRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/login': {
       id: '/_auth/login'
       path: '/login'
@@ -178,15 +462,66 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_learner/submissions/': {
+      id: '/_learner/submissions/'
+      path: '/submissions'
+      fullPath: '/submissions/'
+      preLoaderRoute: typeof LearnerSubmissionsIndexRouteImport
+      parentRoute: typeof LearnerRoute
+    }
+    '/_learner/progress/': {
+      id: '/_learner/progress/'
+      path: '/progress'
+      fullPath: '/progress/'
+      preLoaderRoute: typeof LearnerProgressIndexRouteImport
+      parentRoute: typeof LearnerRoute
+    }
+    '/_learner/exams/': {
+      id: '/_learner/exams/'
+      path: '/exams'
+      fullPath: '/exams/'
+      preLoaderRoute: typeof LearnerExamsIndexRouteImport
+      parentRoute: typeof LearnerRoute
+    }
+    '/_learner/submissions/$id': {
+      id: '/_learner/submissions/$id'
+      path: '/submissions/$id'
+      fullPath: '/submissions/$id'
+      preLoaderRoute: typeof LearnerSubmissionsIdRouteImport
+      parentRoute: typeof LearnerRoute
+    }
+    '/_learner/progress/$skill': {
+      id: '/_learner/progress/$skill'
+      path: '/progress/$skill'
+      fullPath: '/progress/$skill'
+      preLoaderRoute: typeof LearnerProgressSkillRouteImport
+      parentRoute: typeof LearnerRoute
+    }
+    '/_learner/exams/$examId': {
+      id: '/_learner/exams/$examId'
+      path: '/exams/$examId'
+      fullPath: '/exams/$examId'
+      preLoaderRoute: typeof LearnerExamsExamIdRouteImport
+      parentRoute: typeof LearnerRoute
+    }
+    '/_learner/exams/sessions/$sessionId': {
+      id: '/_learner/exams/sessions/$sessionId'
+      path: '/exams/sessions/$sessionId'
+      fullPath: '/exams/sessions/$sessionId'
+      preLoaderRoute: typeof LearnerExamsSessionsSessionIdRouteImport
+      parentRoute: typeof LearnerRoute
+    }
   }
 }
 
 interface AuthRouteChildren {
   AuthLoginRoute: typeof AuthLoginRoute
+  AuthRegisterRoute: typeof AuthRegisterRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthLoginRoute: AuthLoginRoute,
+  AuthRegisterRoute: AuthRegisterRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
@@ -216,14 +551,52 @@ const InstructorRouteWithChildren = InstructorRoute._addFileChildren(
 
 interface LearnerRouteChildren {
   LearnerDashboardRoute: typeof LearnerDashboardRoute
+  LearnerOnboardingRoute: typeof LearnerOnboardingRoute
+  LearnerProfileRoute: typeof LearnerProfileRoute
+  LearnerExamsExamIdRoute: typeof LearnerExamsExamIdRoute
+  LearnerProgressSkillRoute: typeof LearnerProgressSkillRoute
+  LearnerSubmissionsIdRoute: typeof LearnerSubmissionsIdRoute
+  LearnerExamsIndexRoute: typeof LearnerExamsIndexRoute
+  LearnerProgressIndexRoute: typeof LearnerProgressIndexRoute
+  LearnerSubmissionsIndexRoute: typeof LearnerSubmissionsIndexRoute
+  LearnerExamsSessionsSessionIdRoute: typeof LearnerExamsSessionsSessionIdRoute
 }
 
 const LearnerRouteChildren: LearnerRouteChildren = {
   LearnerDashboardRoute: LearnerDashboardRoute,
+  LearnerOnboardingRoute: LearnerOnboardingRoute,
+  LearnerProfileRoute: LearnerProfileRoute,
+  LearnerExamsExamIdRoute: LearnerExamsExamIdRoute,
+  LearnerProgressSkillRoute: LearnerProgressSkillRoute,
+  LearnerSubmissionsIdRoute: LearnerSubmissionsIdRoute,
+  LearnerExamsIndexRoute: LearnerExamsIndexRoute,
+  LearnerProgressIndexRoute: LearnerProgressIndexRoute,
+  LearnerSubmissionsIndexRoute: LearnerSubmissionsIndexRoute,
+  LearnerExamsSessionsSessionIdRoute: LearnerExamsSessionsSessionIdRoute,
 }
 
 const LearnerRouteWithChildren =
   LearnerRoute._addFileChildren(LearnerRouteChildren)
+
+interface AdminRouteChildren {
+  AdminExamsRoute: typeof AdminExamsRoute
+  AdminKnowledgePointsRoute: typeof AdminKnowledgePointsRoute
+  AdminQuestionsRoute: typeof AdminQuestionsRoute
+  AdminSubmissionsRoute: typeof AdminSubmissionsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminExamsRoute: AdminExamsRoute,
+  AdminKnowledgePointsRoute: AdminKnowledgePointsRoute,
+  AdminQuestionsRoute: AdminQuestionsRoute,
+  AdminSubmissionsRoute: AdminSubmissionsRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -231,6 +604,7 @@ const rootRouteChildren: RootRouteChildren = {
   FocusedRoute: FocusedRouteWithChildren,
   InstructorRoute: InstructorRouteWithChildren,
   LearnerRoute: LearnerRouteWithChildren,
+  AdminRoute: AdminRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

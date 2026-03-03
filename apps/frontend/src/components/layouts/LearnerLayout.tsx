@@ -1,5 +1,6 @@
 import {
 	AnalyticsUpIcon,
+	AssignmentsIcon,
 	CheckmarkCircle01Icon,
 	DocumentValidationIcon,
 	Fire02Icon,
@@ -22,6 +23,8 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { logout } from "@/lib/api"
+import { clear, refreshToken, token, user } from "@/lib/auth"
 import { cn } from "@/lib/utils"
 
 const DAYS_OF_WEEK = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
@@ -29,6 +32,26 @@ const ACTIVE_DAYS = [true, true, true, true, true, false, false]
 
 export function LearnerLayout() {
 	const streakCount = 12
+	const currentUser = user()
+	const initials = currentUser?.fullName
+		? currentUser.fullName
+				.split(" ")
+				.map((w) => w[0])
+				.slice(0, 2)
+				.join("")
+				.toUpperCase()
+		: (currentUser?.email?.slice(0, 2).toUpperCase() ?? "??")
+
+	async function handleLogout() {
+		try {
+			const t = token()
+			const r = refreshToken()
+			if (t && r) await logout(r, t)
+		} finally {
+			clear()
+			window.location.href = "/login"
+		}
+	}
 
 	return (
 		<div className="min-h-screen bg-background">
@@ -40,8 +63,9 @@ export function LearnerLayout() {
 					<nav className="hidden items-center gap-1 md:flex">
 						{[
 							{ label: "Trang chủ", icon: Home01Icon, href: "/dashboard" as const },
-							{ label: "Bài thi", icon: DocumentValidationIcon, href: "/dashboard" as const },
-							{ label: "Tiến độ", icon: AnalyticsUpIcon, href: "/dashboard" as const },
+							{ label: "Bài thi", icon: DocumentValidationIcon, href: "/exams" as const },
+							{ label: "Tiến độ", icon: AnalyticsUpIcon, href: "/progress" as const },
+							{ label: "Bài nộp", icon: AssignmentsIcon, href: "/submissions" as const },
 						].map((item) => (
 							<Link
 								key={item.label}
@@ -106,21 +130,23 @@ export function LearnerLayout() {
 							<DropdownMenuTrigger className="outline-none">
 								<Avatar className="size-8 cursor-pointer">
 									<AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
-										VN
+										{initials}
 									</AvatarFallback>
 								</Avatar>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end" className="w-48">
-								<DropdownMenuItem>
-									<HugeiconsIcon icon={UserCircleIcon} className="size-4" strokeWidth={1.75} />
-									Hồ sơ
+								<DropdownMenuItem asChild>
+									<Link to="/profile">
+										<HugeiconsIcon icon={UserCircleIcon} className="size-4" strokeWidth={1.75} />
+										Hồ sơ
+									</Link>
 								</DropdownMenuItem>
 								<DropdownMenuItem>
 									<HugeiconsIcon icon={Settings01Icon} className="size-4" strokeWidth={1.75} />
 									Cài đặt
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
-								<DropdownMenuItem>
+								<DropdownMenuItem onClick={handleLogout}>
 									<HugeiconsIcon icon={Logout01Icon} className="size-4" strokeWidth={1.75} />
 									Đăng xuất
 								</DropdownMenuItem>

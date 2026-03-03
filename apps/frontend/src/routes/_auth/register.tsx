@@ -3,15 +3,16 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { login } from "@/lib/api"
+import { login, register } from "@/lib/api"
 import { save } from "@/lib/auth"
 
-export const Route = createFileRoute("/_auth/login")({
-	component: LoginPage,
+export const Route = createFileRoute("/_auth/register")({
+	component: RegisterPage,
 })
 
-function LoginPage() {
+function RegisterPage() {
 	const navigate = useNavigate()
+	const [fullName, setFullName] = useState("")
 	const [email, setEmail] = useState("")
 	const [password, setPassword] = useState("")
 	const [error, setError] = useState("")
@@ -22,12 +23,12 @@ function LoginPage() {
 		setError("")
 		setLoading(true)
 		try {
+			await register(email, password, fullName || undefined)
 			const res = await login(email, password)
 			save(res.accessToken, res.refreshToken, res.user)
-			const dest = res.user.role === "admin" ? "/admin" : "/dashboard"
-			navigate({ to: dest })
+			navigate({ to: "/onboarding" })
 		} catch (err) {
-			setError(err instanceof Error ? err.message : "Đăng nhập thất bại")
+			setError(err instanceof Error ? err.message : "Đã xảy ra lỗi")
 		} finally {
 			setLoading(false)
 		}
@@ -36,10 +37,20 @@ function LoginPage() {
 	return (
 		<div className="space-y-6">
 			<div>
-				<h2 className="text-2xl font-semibold tracking-tight">Đăng nhập</h2>
-				<p className="mt-1 text-sm text-muted-foreground">Nhập email và mật khẩu để tiếp tục</p>
+				<h2 className="text-2xl font-semibold tracking-tight">Tạo tài khoản</h2>
+				<p className="mt-1 text-sm text-muted-foreground">Bắt đầu hành trình chinh phục VSTEP</p>
 			</div>
 			<form onSubmit={handleSubmit} className="space-y-4">
+				<div className="space-y-2">
+					<Label htmlFor="fullName">Họ và tên</Label>
+					<Input
+						id="fullName"
+						type="text"
+						placeholder="Nguyễn Văn A"
+						value={fullName}
+						onChange={(e) => setFullName(e.target.value)}
+					/>
+				</div>
 				<div className="space-y-2">
 					<Label htmlFor="email">Email</Label>
 					<Input
@@ -56,7 +67,7 @@ function LoginPage() {
 					<Input
 						id="password"
 						type="password"
-						placeholder="••••••••"
+						placeholder="Tối thiểu 8 ký tự"
 						value={password}
 						onChange={(e) => setPassword(e.target.value)}
 						required
@@ -64,13 +75,13 @@ function LoginPage() {
 				</div>
 				{error && <p className="text-sm text-destructive">{error}</p>}
 				<Button type="submit" className="w-full" disabled={loading}>
-					{loading ? "Đang đăng nhập..." : "Đăng nhập"}
+					{loading ? "Đang xử lý..." : "Tạo tài khoản"}
 				</Button>
 			</form>
 			<p className="text-center text-sm text-muted-foreground">
-				Chưa có tài khoản?{" "}
-				<Link to="/register" className="text-primary hover:underline">
-					Đăng ký
+				Đã có tài khoản?{" "}
+				<Link to="/login" className="text-primary hover:underline">
+					Đăng nhập
 				</Link>
 			</p>
 		</div>
