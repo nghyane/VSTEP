@@ -9,6 +9,8 @@
     "test:unit": "bun test src/",
     "test:integration": "bun test tests/",
     "check": "bunx @biomejs/biome check src seed tests",
+    "typecheck": "bunx tsc --noEmit",
+    "verify": "bun run check --write && bun run typecheck",
     "format": "bunx @biomejs/biome format src seed --write",
     "db:seed": "bun run seed/index.ts",
     "db:generate": "bunx --bun drizzle-kit generate",

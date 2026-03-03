@@ -44,3 +44,6 @@ docker-compose.yml  # Local dev services (PostgreSQL, Redis)
 - **Never force push** (`git push --force` / `--force-with-lease`) without explicit approval.
 - **Never `git reset --hard`** or `git checkout -- .`** unless specifically requested.
 - Stage only files related to the current change. Do not commit unrelated modified files.
+
+## Memories
+- VSTEP project: GitHub issues tạo theo feature, không theo screen. Issue chỉ cần đọc xong biết làm gì, xong khi nào — không cần template cứng. Team 4 người đều dùng AI agent, issue để team communicate chứ không phải prompt cho agent.
