@@ -1,6 +1,8 @@
 import {
 	Book01Icon,
+	BubbleChatIcon,
 	DashboardSquare01Icon,
+	DocumentValidationIcon,
 	Logout01Icon,
 	PencilEdit01Icon,
 	Settings01Icon,
@@ -21,13 +23,28 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { logout } from "@/lib/api"
+import { clear, refreshToken, token } from "@/lib/auth"
 
 const navItems = [
-	{ label: "Dashboard", icon: DashboardSquare01Icon, href: "/" },
-	{ label: "Đề thi", icon: Book01Icon, href: "/" },
-	{ label: "Chấm bài", icon: PencilEdit01Icon, href: "/" },
-	{ label: "Lớp học", icon: UserGroup02Icon, href: "/" },
+	{ label: "Tổng quan", icon: DashboardSquare01Icon, href: "/admin" as const },
+	{ label: "Người dùng", icon: UserGroup02Icon, href: "/admin/users" as const },
+	{ label: "Đề thi", icon: DocumentValidationIcon, href: "/admin/exams" as const },
+	{ label: "Câu hỏi", icon: Book01Icon, href: "/admin/questions" as const },
+	{ label: "Điểm kiến thức", icon: BubbleChatIcon, href: "/admin/knowledge-points" as const },
+	{ label: "Bài nộp", icon: PencilEdit01Icon, href: "/admin/submissions" as const },
 ]
+
+async function handleLogout() {
+	try {
+		const t = token()
+		const r = refreshToken()
+		if (t && r) await logout(r, t)
+	} finally {
+		clear()
+		window.location.href = "/login"
+	}
+}
 
 export function AppSidebar() {
 	return (
@@ -60,14 +77,14 @@ export function AppSidebar() {
 				<SidebarMenu>
 					<SidebarMenuItem>
 						<SidebarMenuButton asChild>
-							<Link to="/">
+							<Link to="/admin">
 								<HugeiconsIcon icon={Settings01Icon} className="size-4" />
 								<span>Cài đặt</span>
 							</Link>
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 					<SidebarMenuItem>
-						<SidebarMenuButton>
+						<SidebarMenuButton onClick={handleLogout}>
 							<HugeiconsIcon icon={Logout01Icon} className="size-4" />
 							<span>Đăng xuất</span>
 						</SidebarMenuButton>
