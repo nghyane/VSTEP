@@ -2,11 +2,12 @@ import type { Actor } from "@common/auth-types";
 import { BadRequestError, ConflictError } from "@common/errors";
 import { assertAccess, assertExists } from "@common/utils";
 import type { DbTransaction } from "@db/index";
-import { db, table, takeFirst, takeFirstOrThrow } from "@db/index";
+import { db, paginate, table, takeFirst, takeFirstOrThrow } from "@db/index";
 import { SKILLS } from "@db/schema/enums";
 import type { SubmissionAnswer } from "@db/types/answers";
 import type { ExamBlueprint } from "@db/types/exam-blueprint";
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import type { SessionListQuery } from "./schema";
 import { SESSION_COLUMNS } from "./schema";
 
 function blueprintQuestionIds(bp: ExamBlueprint): Set<string> {
@@ -100,13 +101,45 @@ export async function start(userId: string, examId: string) {
 }
 
 export async function findSession(sessionId: string, actor: Actor) {
-  const found = await db.query.examSessions.findFirst({
-    where: eq(table.examSessions.id, sessionId),
-  });
+  const found = assertExists(
+    await db.query.examSessions.findFirst({
+      where: eq(table.examSessions.id, sessionId),
+      with: {
+        answers: {
+          columns: { questionId: true, answer: true },
+        },
+      },
+    }),
+    "Session",
+  );
+  assertAccess(found.userId, actor, "You do not have access to this session");
 
-  const session = assertExists(found, "Session");
-  assertAccess(session.userId, actor, "You do not have access to this session");
-  return session;
+  const exam = assertExists(
+    await db.query.exams.findFirst({
+      where: eq(table.exams.id, found.examId),
+      columns: { blueprint: true },
+    }),
+    "Exam",
+  );
+
+  const questionIds = [...blueprintQuestionIds(exam.blueprint)];
+  const questions =
+    questionIds.length > 0
+      ? await db.query.questions.findMany({
+          where: inArray(table.questions.id, questionIds),
+          columns: { id: true, skill: true, part: true, content: true },
+        })
+      : [];
+
+  const { answers: rawAnswers, ...session } = found;
+  return {
+    ...session,
+    questions,
+    answers: rawAnswers.map(({ questionId, answer }) => ({
+      questionId,
+      answer,
+    })),
+  };
 }
 
 export async function answer(
@@ -179,4 +212,21 @@ export async function saveAnswers(
 
     return { success: true, saved: answers.length };
   });
+}
+
+export async function listSessions(userId: string, query: SessionListQuery) {
+  const where = and(
+    eq(table.examSessions.userId, userId),
+    query.status ? eq(table.examSessions.status, query.status) : undefined,
+  );
+  return paginate(
+    db
+      .select(SESSION_COLUMNS)
+      .from(table.examSessions)
+      .where(where)
+      .orderBy(desc(table.examSessions.startedAt))
+      .$dynamic(),
+    db.$count(table.examSessions, where),
+    query,
+  );
 }

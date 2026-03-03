@@ -15,11 +15,19 @@ import {
   ExamCreateBody,
   ExamListQuery,
   ExamSession,
+  ExamSessionDetail,
   ExamUpdateBody,
+  SessionListQuery,
   SessionParams,
 } from "./schema";
 import { create, find, list, update } from "./service";
-import { answer, findSession, saveAnswers, start } from "./session";
+import {
+  answer,
+  findSession,
+  listSessions,
+  saveAnswers,
+  start,
+} from "./session";
 import { submit } from "./submit";
 
 export const exams = new Elysia({
@@ -103,17 +111,35 @@ export const exams = new Elysia({
     },
   })
 
+  .get("/sessions", ({ query, user }) => listSessions(user.sub, query), {
+    auth: true,
+    query: SessionListQuery,
+    response: {
+      200: t.Object({
+        data: t.Array(ExamSession),
+        meta: PaginationMeta,
+      }),
+      ...AuthErrors,
+    },
+    detail: {
+      summary: "List exam sessions",
+      description:
+        "Return a paginated list of the current user's exam sessions with optional status filter.",
+      security: [{ bearerAuth: [] }],
+    },
+  })
+
   .get(
     "/sessions/:sessionId",
     ({ params, user }) => findSession(params.sessionId, user),
     {
       auth: true,
       params: SessionParams,
-      response: { 200: ExamSession, ...CrudErrors },
+      response: { 200: ExamSessionDetail, ...CrudErrors },
       detail: {
-        summary: "Get exam session by ID",
+        summary: "Get exam session detail",
         description:
-          "Retrieve an exam session including saved answers. Only the session owner or an admin may access.",
+          "Retrieve an exam session with full question content and saved answers. Answer keys are hidden while the session is in progress.",
         security: [{ bearerAuth: [] }],
       },
     },
