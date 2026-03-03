@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "VSTEP Practice",
+    "slug": "vstep-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "vstep",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-image.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#4F5BD5"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.vstep.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#4F5BD5"
+      },
+      "package": "com.vstep.mobile"
+    },
+    "plugins": ["expo-router", "expo-secure-store", "expo-system-ui"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
