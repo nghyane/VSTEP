@@ -13,6 +13,7 @@ import { createFileRoute, Link } from "@tanstack/react-router"
 import { useEffect, useRef, useState } from "react"
 import { Logo } from "@/components/common/Logo"
 import { SpiderChart } from "@/components/common/SpiderChart"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -114,21 +115,27 @@ const DEMO_SCORES = [
 	{ label: "Speaking", value: 6.5, color: "text-skill-speaking" },
 ]
 
-const FEATURES = [
+const STEPS = [
 	{
-		icon: Target02Icon,
-		title: "Học tập tương tác",
-		desc: "Bài học chia nhỏ, mỗi ngày chỉ cần 15 phút.",
-	},
-	{
+		num: "1",
+		title: "Làm bài thi thử",
+		desc: "Chọn đề thi VSTEP đầy đủ 4 kỹ năng hoặc luyện riêng từng phần. Bắt đầu chỉ trong 30 giây.",
 		icon: CheckmarkCircle01Icon,
-		title: "Thi thử sát thực tế",
-		desc: "Đề thi đầy đủ 4 kỹ năng theo chuẩn VSTEP.",
+		reversed: false,
 	},
 	{
+		num: "2",
+		title: "AI chấm điểm tức thì",
+		desc: "Hệ thống AI phân tích bài Writing & Speaking theo rubric chuẩn VSTEP, trả kết quả trong vài phút.",
+		icon: Target02Icon,
+		reversed: true,
+	},
+	{
+		num: "3",
+		title: "Xem lộ trình cá nhân",
+		desc: "Nhận phân tích điểm mạnh / yếu và bài tập được gợi ý riêng theo trình độ của bạn.",
 		icon: Fire02Icon,
-		title: "Streak & XP",
-		desc: "Hệ thống streak giúp bạn duy trì động lực mỗi ngày.",
+		reversed: false,
 	},
 ]
 
@@ -138,11 +145,31 @@ const BANDS = [
 	{ level: "C1", label: "Nâng cao", desc: "Sử dụng tiếng Anh linh hoạt, chính xác" },
 ]
 
-const STATS = [
-	{ value: "10,000+", label: "Học viên" },
-	{ value: "500+", label: "Bài thi" },
-	{ value: "4", label: "Kỹ năng" },
-	{ value: "3", label: "Cấp độ" },
+const TESTIMONIALS = [
+	{
+		name: "Minh Anh",
+		role: "Sinh viên ĐH Bách Khoa",
+		quote:
+			"Mình từ B1 lên B2 sau 2 tháng luyện tập. AI chấm Writing rất chi tiết, chỉ ra đúng lỗi cần sửa.",
+		score: "B1 → B2",
+		initials: "MA",
+	},
+	{
+		name: "Thanh Hà",
+		role: "Nhân viên văn phòng",
+		quote:
+			"Giao diện dễ dùng, luyện 15 phút mỗi ngày trên điện thoại. Tiết kiệm thời gian hơn đi học trung tâm.",
+		score: "B2 → C1",
+		initials: "TH",
+	},
+	{
+		name: "Đức Huy",
+		role: "Giảng viên tiếng Anh",
+		quote:
+			"Đề thi sát chuẩn VSTEP, phù hợp để giới thiệu cho sinh viên luyện tập thêm ngoài giờ học.",
+		score: "Đề xuất cho SV",
+		initials: "ĐH",
+	},
 ]
 
 /* ── shared ── */
@@ -188,9 +215,9 @@ function LandingPage() {
 			<Header />
 			<Hero />
 			<SkillsSection />
-			<FeaturesSection />
+			<HowItWorksSection />
 			<RoadmapSection />
-			<StatsSection />
+			<TestimonialsSection />
 			<CtaSection />
 			<Footer />
 		</div>
@@ -201,7 +228,7 @@ function LandingPage() {
 
 function Header() {
 	return (
-		<header className="sticky top-0 z-50 border-b border-border/40 bg-background/90 backdrop-blur-md">
+		<header className="sticky top-0 z-50 bg-background/90 backdrop-blur-md">
 			<div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
 				<Link to="/">
 					<Logo />
@@ -230,24 +257,36 @@ function Hero() {
 				<AnimSection>
 					<div className="space-y-6">
 						<div className="inline-flex items-center gap-2 rounded-full bg-primary/8 px-4 py-1.5 text-sm font-medium text-primary">
-							Miễn phí hoàn toàn
+							Miễn phí · AI chấm điểm tức thì
 						</div>
 						<h1 className="text-4xl font-bold leading-[1.15] tracking-tight lg:text-5xl">
-							Chinh phục VSTEP
+							Từ 0 đến VSTEP C1
 							<br />
-							<span className="text-primary">theo cách hoàn toàn mới</span>
+							<span className="text-primary">trong 90 ngày</span>
 						</h1>
 						<p className="max-w-md text-lg leading-relaxed text-muted-foreground">
-							Luyện thi hiệu quả với bài học tương tác, đề thi thử sát thực tế và phản hồi tức thì
-							từ AI.
+							Nền tảng luyện thi VSTEP duy nhất với AI chấm Writing &amp; Speaking theo rubric chuẩn
+							Bộ GD&amp;ĐT — hoàn toàn miễn phí.
 						</p>
 						<div className="flex flex-wrap gap-3 pt-2">
 							<Button size="lg" className="rounded-xl px-8 text-base" asChild>
 								<Link to="/register">Bắt đầu ngay</Link>
 							</Button>
 							<Button variant="outline" size="lg" className="rounded-xl px-8 text-base" asChild>
-								<Link to="/login">Tôi đã có tài khoản</Link>
+								<a href="#how-it-works">Xem cách hoạt động</a>
 							</Button>
+						</div>
+						<div className="flex items-center gap-3 pt-2">
+							<div className="flex -space-x-2">
+								{["TA", "BL", "HN", "MT"].map((initials) => (
+									<Avatar key={initials} size="sm">
+										<AvatarFallback className="bg-primary/10 text-primary text-xs">
+											{initials}
+										</AvatarFallback>
+									</Avatar>
+								))}
+							</div>
+							<span className="text-sm text-muted-foreground">10,000+ học viên đã tham gia</span>
 						</div>
 					</div>
 				</AnimSection>
@@ -269,7 +308,7 @@ function Hero() {
 
 function SkillsSection() {
 	return (
-		<section className="border-t border-border/40 bg-muted/20">
+		<section className="bg-muted/20">
 			<div className="mx-auto max-w-5xl px-6 py-20">
 				<AnimSection>
 					<Heading
@@ -280,7 +319,7 @@ function SkillsSection() {
 				<div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 					{SKILLS.map((s, i) => (
 						<AnimSection key={s.key} delay={i * 100}>
-							<TiltCard className="rounded-2xl border border-border/40 bg-background p-6 transition-colors hover:border-border">
+							<TiltCard className="rounded-2xl bg-muted/30 p-6 transition-colors hover:bg-muted/50">
 								<div className={cn("mb-4 inline-flex rounded-xl p-3", s.color)}>
 									<HugeiconsIcon icon={s.icon} className="size-6" />
 								</div>
@@ -295,27 +334,29 @@ function SkillsSection() {
 	)
 }
 
-/* ── features ── */
+/* ── how it works ── */
 
-function FeaturesSection() {
+function HowItWorksSection() {
 	return (
-		<section className="mx-auto max-w-5xl px-6 py-20">
+		<section id="how-it-works" className="mx-auto max-w-5xl px-6 py-20">
 			<AnimSection>
-				<Heading
-					title="Học thông minh hơn"
-					sub="Phương pháp học được thiết kế dựa trên nghiên cứu khoa học"
-				/>
+				<Heading title="Cách hoạt động" sub="3 bước để chinh phục VSTEP" />
 			</AnimSection>
-			<div className="mt-12 grid gap-5 sm:grid-cols-3">
-				{FEATURES.map((f, i) => (
-					<AnimSection key={f.title} delay={i * 120}>
-						<TiltCard className="space-y-3 rounded-2xl border border-border/40 p-6">
-							<div className="inline-flex rounded-xl bg-primary/10 p-3 text-primary">
-								<HugeiconsIcon icon={f.icon} className="size-6" />
+			<div className="mt-16 flex flex-col gap-20">
+				{STEPS.map((step, i) => (
+					<AnimSection key={step.num} delay={i * 150}>
+						<div className="grid items-center gap-12 lg:grid-cols-2">
+							<div className={cn("space-y-4", step.reversed && "lg:order-last")}>
+								<div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+									{step.num}
+								</div>
+								<h3 className="text-xl font-bold">{step.title}</h3>
+								<p className="text-muted-foreground">{step.desc}</p>
 							</div>
-							<h3 className="font-bold">{f.title}</h3>
-							<p className="text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
-						</TiltCard>
+							<div className="flex aspect-video items-center justify-center rounded-3xl bg-primary/5">
+								<HugeiconsIcon icon={step.icon} className="size-16 text-primary/40" />
+							</div>
+						</div>
 					</AnimSection>
 				))}
 			</div>
@@ -327,7 +368,7 @@ function FeaturesSection() {
 
 function RoadmapSection() {
 	return (
-		<section className="border-t border-border/40 bg-muted/20">
+		<section className="bg-muted/20">
 			<div className="mx-auto max-w-5xl px-6 py-20">
 				<AnimSection>
 					<Heading
@@ -347,7 +388,7 @@ function RoadmapSection() {
 											<p className="font-bold">{b.label}</p>
 											<p className="text-sm text-muted-foreground">{b.desc}</p>
 										</div>
-										<div className="relative z-10 flex size-14 shrink-0 items-center justify-center rounded-2xl border-2 border-primary bg-background transition-transform duration-300 hover:scale-110">
+										<div className="relative z-10 flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 transition-transform duration-300 hover:scale-110">
 											<span className="text-lg font-bold text-primary">{b.level}</span>
 										</div>
 										<div className={cn("flex-1 pl-10", !right && "invisible")}>
@@ -365,17 +406,35 @@ function RoadmapSection() {
 	)
 }
 
-/* ── stats ── */
+/* ── testimonials ── */
 
-function StatsSection() {
+function TestimonialsSection() {
 	return (
-		<section className="mx-auto max-w-5xl px-6 py-16">
-			<div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
-				{STATS.map((s, i) => (
-					<AnimSection key={s.label} delay={i * 80}>
-						<div className="text-center transition-transform duration-300 hover:scale-105">
-							<p className="text-3xl font-bold tabular-nums text-primary">{s.value}</p>
-							<p className="mt-1 text-sm text-muted-foreground">{s.label}</p>
+		<section className="mx-auto max-w-5xl px-6 py-20">
+			<AnimSection>
+				<Heading title="Học viên nói gì?" sub="Hàng nghìn người đã cải thiện điểm VSTEP" />
+			</AnimSection>
+			<div className="mt-12 grid gap-4 sm:grid-cols-3">
+				{TESTIMONIALS.map((t, i) => (
+					<AnimSection key={t.name} delay={i * 120}>
+						<div className="rounded-2xl bg-muted/30 p-6">
+							<div className="flex items-center gap-3">
+								<Avatar>
+									<AvatarFallback className="bg-primary/10 text-primary">
+										{t.initials}
+									</AvatarFallback>
+								</Avatar>
+								<div>
+									<p className="text-sm font-bold">{t.name}</p>
+									<p className="text-xs text-muted-foreground">{t.role}</p>
+								</div>
+							</div>
+							<p className="mt-4 text-sm leading-relaxed text-muted-foreground">{t.quote}</p>
+							<div className="mt-4">
+								<span className="rounded-full bg-success/10 px-3 py-1 text-xs font-bold text-success">
+									{t.score}
+								</span>
+							</div>
 						</div>
 					</AnimSection>
 				))}
@@ -388,18 +447,21 @@ function StatsSection() {
 
 function CtaSection() {
 	return (
-		<section className="border-t border-border/40 bg-muted/20">
-			<div className="mx-auto max-w-5xl px-6 py-20 text-center">
-				<AnimSection>
-					<h2 className="text-2xl font-bold lg:text-3xl">Sẵn sàng chinh phục VSTEP?</h2>
+		<section className="mx-auto max-w-5xl px-6 py-20">
+			<AnimSection>
+				<div className="rounded-3xl bg-primary/5 px-6 py-16 text-center">
+					<h2 className="text-2xl font-bold lg:text-3xl">
+						Bắt đầu luyện thi ngay hôm nay — hoàn toàn miễn phí
+					</h2>
 					<p className="mx-auto mt-3 max-w-md text-muted-foreground">
-						Tham gia cùng hàng nghìn học viên đang luyện thi mỗi ngày.
+						Không cần thẻ tín dụng. Tạo tài khoản trong 30 giây và làm bài thi thử đầu tiên.
 					</p>
 					<Button size="lg" className="mt-8 rounded-xl px-10 text-base" asChild>
-						<Link to="/register">Bắt đầu học miễn phí</Link>
+						<Link to="/register">Tạo tài khoản miễn phí</Link>
 					</Button>
-				</AnimSection>
-			</div>
+					<p className="mt-4 text-sm text-muted-foreground">10,000+ học viên đã tham gia</p>
+				</div>
+			</AnimSection>
 		</section>
 	)
 }
@@ -408,7 +470,7 @@ function CtaSection() {
 
 function Footer() {
 	return (
-		<footer className="border-t border-border/40">
+		<footer className="mt-8">
 			<div className="mx-auto flex max-w-5xl flex-col items-center gap-4 px-6 py-8 sm:flex-row sm:justify-between">
 				<p className="text-sm text-muted-foreground">© 2026 VSTEP Practice</p>
 				<nav className="flex gap-6 text-sm text-muted-foreground">

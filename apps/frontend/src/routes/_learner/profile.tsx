@@ -2,7 +2,11 @@ import { LockPasswordIcon, Mail01Icon, UserCircleIcon, UserIcon } from "@hugeico
 import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute } from "@tanstack/react-router"
 import { type FormEvent, useState } from "react"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { PasswordInput } from "@/components/ui/password-input"
 import { useChangePassword, useUpdateUser, useUser } from "@/hooks/use-user"
 import { user } from "@/lib/auth"
 import { cn } from "@/lib/utils"
@@ -11,11 +15,21 @@ export const Route = createFileRoute("/_learner/profile")({
 	component: ProfilePage,
 })
 
+const ROLE_LABELS: Record<string, string> = {
+	learner: "Người học",
+	instructor: "Giảng viên",
+	admin: "Quản trị viên",
+}
+
 function ProfileSection({ userId }: { userId: string }) {
-	const { data, isLoading } = useUser(userId)
+	const { data, isLoading, isError, error } = useUser(userId)
 
 	if (isLoading) {
 		return <p className="py-10 text-center text-muted-foreground">Đang tải...</p>
+	}
+
+	if (isError) {
+		return <p className="py-10 text-center text-destructive">{error.message}</p>
 	}
 
 	if (!data) return null
@@ -29,19 +43,16 @@ function ProfileSection({ userId }: { userId: string }) {
 
 	return (
 		<div className="flex items-center gap-6">
-			<div
-				className={cn(
-					"flex size-20 items-center justify-center rounded-full",
-					"bg-primary/10 text-3xl font-bold text-primary",
-				)}
-			>
-				{initials}
-			</div>
+			<Avatar className={cn("size-20")}>
+				<AvatarFallback className={cn("bg-primary/10 text-3xl font-bold text-primary")}>
+					{initials}
+				</AvatarFallback>
+			</Avatar>
 			<div className="space-y-1">
 				<h2 className="text-xl font-bold">{data.fullName ?? "Chưa đặt tên"}</h2>
 				<p className="text-sm text-muted-foreground">{data.email}</p>
 				<span className="inline-block rounded-full bg-primary/10 px-3 py-0.5 text-xs font-medium text-primary">
-					Người học
+					{ROLE_LABELS[data.role] ?? data.role}
 				</span>
 				<p className="text-xs text-muted-foreground">
 					Thành viên từ {new Date(data.createdAt).toLocaleDateString("vi-VN")}
@@ -72,40 +83,27 @@ function UpdateInfoForm({ userId }: { userId: string }) {
 
 			<form onSubmit={handleSubmit} className="space-y-4">
 				<div className="space-y-1.5">
-					<label htmlFor="fullName" className="flex items-center gap-1.5 text-sm font-medium">
+					<Label htmlFor="fullName" className="flex items-center gap-1.5">
 						<HugeiconsIcon icon={UserIcon} className="size-4 text-muted-foreground" />
 						Họ và tên
-					</label>
-					<input
+					</Label>
+					<Input
 						id="fullName"
 						type="text"
 						value={fullName}
 						onChange={(e) => setFullName(e.target.value)}
-						className={cn(
-							"w-full rounded-xl border border-input bg-background px-3 py-2 text-sm",
-							"focus:outline-none focus:ring-2 focus:ring-ring",
-						)}
 					/>
 				</div>
 
 				<div className="space-y-1.5">
-					<label htmlFor="email" className="flex items-center gap-1.5 text-sm font-medium">
+					<Label htmlFor="email" className="flex items-center gap-1.5">
 						<HugeiconsIcon icon={Mail01Icon} className="size-4 text-muted-foreground" />
 						Email
-					</label>
-					<input
-						id="email"
-						type="email"
-						value={email}
-						onChange={(e) => setEmail(e.target.value)}
-						className={cn(
-							"w-full rounded-xl border border-input bg-background px-3 py-2 text-sm",
-							"focus:outline-none focus:ring-2 focus:ring-ring",
-						)}
-					/>
+					</Label>
+					<Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
 				</div>
 
-				{update.isSuccess && <p className="text-sm text-green-600">Đã cập nhật thông tin</p>}
+				{update.isSuccess && <p className="text-sm text-success">Đã cập nhật thông tin</p>}
 				{update.isError && <p className="text-sm text-destructive">{update.error.message}</p>}
 
 				<Button type="submit" disabled={update.isPending}>
@@ -149,11 +147,6 @@ function ChangePasswordForm({ userId }: { userId: string }) {
 		)
 	}
 
-	const inputClass = cn(
-		"w-full rounded-xl border border-input bg-background px-3 py-2 text-sm",
-		"focus:outline-none focus:ring-2 focus:ring-ring",
-	)
-
 	return (
 		<div className="rounded-2xl bg-muted/30 p-6">
 			<div className="mb-5 flex items-center gap-2">
@@ -163,46 +156,34 @@ function ChangePasswordForm({ userId }: { userId: string }) {
 
 			<form onSubmit={handleSubmit} className="space-y-4">
 				<div className="space-y-1.5">
-					<label htmlFor="currentPw" className="text-sm font-medium">
-						Mật khẩu hiện tại
-					</label>
-					<input
+					<Label htmlFor="currentPw">Mật khẩu hiện tại</Label>
+					<PasswordInput
 						id="currentPw"
-						type="password"
 						value={currentPassword}
 						onChange={(e) => setCurrentPassword(e.target.value)}
-						className={inputClass}
 					/>
 				</div>
 
 				<div className="space-y-1.5">
-					<label htmlFor="newPw" className="text-sm font-medium">
-						Mật khẩu mới
-					</label>
-					<input
+					<Label htmlFor="newPw">Mật khẩu mới</Label>
+					<PasswordInput
 						id="newPw"
-						type="password"
 						value={newPassword}
 						onChange={(e) => setNewPassword(e.target.value)}
-						className={inputClass}
 					/>
 				</div>
 
 				<div className="space-y-1.5">
-					<label htmlFor="confirmPw" className="text-sm font-medium">
-						Xác nhận mật khẩu mới
-					</label>
-					<input
+					<Label htmlFor="confirmPw">Xác nhận mật khẩu mới</Label>
+					<PasswordInput
 						id="confirmPw"
-						type="password"
 						value={confirmPassword}
 						onChange={(e) => setConfirmPassword(e.target.value)}
-						className={inputClass}
 					/>
 				</div>
 
 				{validationError && <p className="text-sm text-destructive">{validationError}</p>}
-				{changePw.isSuccess && <p className="text-sm text-green-600">Đã đổi mật khẩu thành công</p>}
+				{changePw.isSuccess && <p className="text-sm text-success">Đã đổi mật khẩu thành công</p>}
 				{changePw.isError && <p className="text-sm text-destructive">{changePw.error.message}</p>}
 
 				<Button type="submit" disabled={changePw.isPending}>
