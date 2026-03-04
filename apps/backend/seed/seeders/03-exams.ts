@@ -20,6 +20,7 @@ export async function seedExams(
 
   const levels: Level[] = ["B1", "B2"];
   const examsToInsert: NewExam[] = levels.map((level) => ({
+    title: `Đề thi VSTEP ${level}`,
     level,
     blueprint: buildBlueprint(questions, level),
     isActive: true,

@@ -107,3 +107,6 @@ export const moduleName = new Elysia({ name: "module:name", prefix: "/name", det
 - No trivial wrappers. No speculative code (YAGNI).
 - `env` from `@common/env` — never `Bun.env` directly. `logger` from `@common/logger` — never `console.log`.
 - When 2+ modules share a concept, extract to `src/common/`.
+
+## Memories
+- VSTEP project: `bun run db:push` requires interactive confirmation (Enter), so don't run it automatically — let the user run it manually.

@@ -30,9 +30,11 @@ const InsertExam = createInsertSchema(exams, {
   blueprint: ExamBlueprint,
 });
 export const ExamCreateBody = t.Pick(InsertExam, [
+  "title",
   "level",
   "blueprint",
   "isActive",
+  "description",
 ]);
 
 const UpdateExam = createUpdateSchema(exams, {
@@ -41,9 +43,11 @@ const UpdateExam = createUpdateSchema(exams, {
   isActive: () => t.Boolean(),
 });
 export const ExamUpdateBody = t.Pick(UpdateExam, [
+  "title",
   "level",
   "blueprint",
   "isActive",
+  "description",
 ]);
 
 export const SessionListQuery = t.Object({

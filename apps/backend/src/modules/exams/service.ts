@@ -85,9 +85,11 @@ export async function create(userId: string, body: ExamCreateBody) {
     return tx
       .insert(table.exams)
       .values({
+        title: body.title,
         level: body.level,
         blueprint: body.blueprint,
         isActive: body.isActive ?? true,
+        description: body.description,
         createdBy: userId,
       })
       .returning(EXAM_COLUMNS)

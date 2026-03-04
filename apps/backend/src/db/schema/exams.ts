@@ -8,9 +8,11 @@ import {
   numeric,
   pgEnum,
   pgTable,
+  text,
   timestamp,
   uniqueIndex,
   uuid,
+  varchar,
 } from "drizzle-orm/pg-core";
 import { createdAt, timestamps } from "./columns";
 import { questionLevelEnum, skillEnum } from "./enums";
@@ -30,6 +32,8 @@ export const exams = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     level: questionLevelEnum("level").notNull(),
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description"),
     blueprint: jsonb("blueprint").$type<ExamBlueprint>().notNull(),
     isActive: boolean("is_active").default(true).notNull(),
     createdBy: uuid("created_by").references(() => users.id, {
