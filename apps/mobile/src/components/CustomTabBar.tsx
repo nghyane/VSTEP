@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useThemeColors, spacing, radius } from "@/theme";
+import { useHaptics } from "@/contexts/HapticsContext";
 
 const INSET = 4;
 
@@ -19,6 +20,7 @@ export function CustomTabBar({
   insets,
 }: BottomTabBarProps) {
   const c = useThemeColors();
+  const { trigger } = useHaptics();
   const [barWidth, setBarWidth] = useState(0);
   const animLeft = useRef(new Animated.Value(0)).current;
   const didMount = useRef(false);
@@ -79,6 +81,7 @@ export function CustomTabBar({
           const isCenter = index === centerIdx;
 
           const onPress = () => {
+            trigger();
             const event = navigation.emit({
               type: "tabPress",
               target: route.key,

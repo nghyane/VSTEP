@@ -14,6 +14,7 @@ import {
   getStoredUser,
 } from "@/lib/auth";
 import { logoutApi } from "@/lib/api";
+import { HapticsProvider } from "@/contexts/HapticsContext";
 import type { AuthUser } from "@/types/api";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -77,12 +78,14 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <AuthContext.Provider value={{ user, isLoading, signIn, signOut }}>
+          <HapticsProvider>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="(auth)" />
             <Stack.Screen name="(app)" />
           </Stack>
           <StatusBar style="dark" />
+          </HapticsProvider>
         </AuthContext.Provider>
       </QueryClientProvider>
     </SafeAreaProvider>

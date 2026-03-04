@@ -1,4 +1,5 @@
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, StyleSheet, Text, View } from "react-native";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { ScreenWrapper } from "@/components/ScreenWrapper";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -42,7 +43,7 @@ export default function ExamsScreen() {
 function ExamCard({ exam, onPress, colors: c }: { exam: Exam; onPress: () => void; colors: ReturnType<typeof useThemeColors> }) {
   const bp = exam.blueprint as ExamBlueprint;
   return (
-    <TouchableOpacity style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]} onPress={onPress}>
+    <HapticTouchable style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]} onPress={onPress}>
       <View style={styles.cardTop}>
         <View style={[styles.levelBadge, { backgroundColor: c.primary + "18" }]}>
           <Text style={[styles.levelText, { color: c.primary }]}>{exam.level}</Text>
@@ -68,7 +69,7 @@ function ExamCard({ exam, onPress, colors: c }: { exam: Exam; onPress: () => voi
           );
         })}
       </View>
-    </TouchableOpacity>
+    </HapticTouchable>
   );
 }
 

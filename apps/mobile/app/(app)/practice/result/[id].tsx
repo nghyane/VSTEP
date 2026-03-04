@@ -1,7 +1,8 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { useQuery } from "@tanstack/react-query";
 import { ScreenWrapper } from "@/components/ScreenWrapper";
 import { ErrorScreen } from "@/components/ErrorScreen";
@@ -126,7 +127,7 @@ export default function PracticeResultScreen() {
 
         {/* Actions */}
         <View style={styles.actions}>
-          <TouchableOpacity
+          <HapticTouchable
             style={[styles.primaryBtn, { backgroundColor: c.primary }]}
             onPress={() => router.replace("/(app)/practice")}
           >
@@ -134,15 +135,15 @@ export default function PracticeResultScreen() {
             <Text style={[styles.btnText, { color: c.primaryForeground }]}>
               Tiếp tục luyện tập
             </Text>
-          </TouchableOpacity>
+          </HapticTouchable>
 
-          <TouchableOpacity
+          <HapticTouchable
             style={[styles.outlineBtn, { borderColor: c.border }]}
             onPress={() => router.push(`/(app)/submissions/${id}`)}
           >
             <Ionicons name="document-text-outline" size={18} color={c.foreground} />
             <Text style={[styles.btnText, { color: c.foreground }]}>Xem chi tiết</Text>
-          </TouchableOpacity>
+          </HapticTouchable>
         </View>
       </ScrollView>
     </ScreenWrapper>

@@ -1,7 +1,8 @@
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, StyleSheet, Text, View } from "react-native";
 import { ScreenWrapper } from "@/components/ScreenWrapper";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -45,7 +46,7 @@ export default function SubmissionsScreen() {
           const status = statusConfig[item.status];
           const statusColor = status.color === "success" ? c.success : status.color === "destructive" ? c.destructive : c.mutedForeground;
           return (
-            <TouchableOpacity
+            <HapticTouchable
               style={[styles.row, { backgroundColor: c.card, borderColor: c.border }]}
               onPress={() => router.push(`/(app)/submissions/${item.id}`)}
             >
@@ -62,7 +63,7 @@ export default function SubmissionsScreen() {
                 </Text>
                 <Text style={{ color: statusColor, fontSize: fontSize.xs, fontWeight: "600" }}>{status.label}</Text>
               </View>
-            </TouchableOpacity>
+            </HapticTouchable>
           );
         }}
       />

@@ -6,12 +6,12 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { Logo } from "@/components/Logo";
 import { useCreateGoal, useProgress, useUpdateGoal } from "@/hooks/use-progress";
 import { useThemeColors, spacing, radius, fontSize } from "@/theme";
@@ -33,7 +33,7 @@ interface OptionCardProps {
 function OptionCard({ icon, title, subtitle, selected, badge, onPress }: OptionCardProps) {
   const c = useThemeColors();
   return (
-    <TouchableOpacity
+    <HapticTouchable
       activeOpacity={0.7}
       onPress={onPress}
       style={[
@@ -64,7 +64,7 @@ function OptionCard({ icon, title, subtitle, selected, badge, onPress }: OptionC
       {selected && (
         <Ionicons name="checkmark-circle" size={22} color={c.primary} />
       )}
-    </TouchableOpacity>
+    </HapticTouchable>
   );
 }
 
@@ -82,7 +82,7 @@ interface BandCardProps {
 function BandCard({ band, score, description, selected, badge, onPress }: BandCardProps) {
   const c = useThemeColors();
   return (
-    <TouchableOpacity
+    <HapticTouchable
       activeOpacity={0.7}
       onPress={onPress}
       style={[
@@ -106,7 +106,7 @@ function BandCard({ band, score, description, selected, badge, onPress }: BandCa
       </View>
       <Text style={[styles.bandScore, { color: c.mutedForeground }]}>{score}</Text>
       <Text style={[styles.bandDesc, { color: c.mutedForeground }]}>{description}</Text>
-    </TouchableOpacity>
+    </HapticTouchable>
   );
 }
 
@@ -422,26 +422,26 @@ export default function OnboardingScreen() {
         ]}
       >
         {step === 0 ? (
-          <TouchableOpacity
+          <HapticTouchable
             activeOpacity={0.8}
             style={[styles.primaryBtnFull, { backgroundColor: c.primary }]}
             onPress={goForward}
           >
             <Text style={[styles.btnTextPrimary, { color: c.primaryForeground }]}>Bắt đầu</Text>
-          </TouchableOpacity>
+          </HapticTouchable>
         ) : (
           <View style={styles.btnRow}>
-            <TouchableOpacity
+            <HapticTouchable
               activeOpacity={0.7}
               style={[styles.outlineBtn, { borderColor: c.border }]}
               onPress={goBack}
             >
               <Ionicons name="chevron-back" size={18} color={c.foreground} />
               <Text style={[styles.btnTextOutline, { color: c.foreground }]}>Quay lại</Text>
-            </TouchableOpacity>
+            </HapticTouchable>
 
             {step === 3 ? (
-              <TouchableOpacity
+              <HapticTouchable
                 activeOpacity={0.8}
                 style={[
                   styles.primaryBtn,
@@ -463,9 +463,9 @@ export default function OnboardingScreen() {
                     <Ionicons name="checkmark" size={18} color={c.primaryForeground} />
                   </>
                 )}
-              </TouchableOpacity>
+              </HapticTouchable>
             ) : (
-              <TouchableOpacity
+              <HapticTouchable
                 activeOpacity={0.8}
                 style={[
                   styles.primaryBtn,
@@ -481,7 +481,7 @@ export default function OnboardingScreen() {
                   Tiếp tục
                 </Text>
                 <Ionicons name="chevron-forward" size={18} color={c.primaryForeground} />
-              </TouchableOpacity>
+              </HapticTouchable>
             )}
           </View>
         )}

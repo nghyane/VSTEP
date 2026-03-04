@@ -1,6 +1,7 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { ScreenWrapper } from "@/components/ScreenWrapper";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
@@ -62,7 +63,7 @@ function SkillCard({
   const trend = TREND_MAP[progress?.streakDirection ?? "neutral"];
 
   return (
-    <TouchableOpacity
+    <HapticTouchable
       style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
       onPress={onPress}
       activeOpacity={0.7}
@@ -86,7 +87,7 @@ function SkillCard({
       <Text style={[styles.trendText, { color: c.mutedForeground }]}>
         {trend.icon} {trend.label}
       </Text>
-    </TouchableOpacity>
+    </HapticTouchable>
   );
 }
 

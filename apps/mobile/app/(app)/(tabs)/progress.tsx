@@ -1,4 +1,5 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { ScreenWrapper } from "@/components/ScreenWrapper";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -140,7 +141,7 @@ function SkillBar({
 }) {
   const skillColor = useSkillColor(skill);
   return (
-    <TouchableOpacity style={[styles.skillCard, { backgroundColor: c.card, borderColor: c.border }]} onPress={onPress}>
+    <HapticTouchable style={[styles.skillCard, { backgroundColor: c.card, borderColor: c.border }]} onPress={onPress}>
       <View style={styles.skillTop}>
         <View style={[styles.skillIconWrap, { backgroundColor: skillColor + "20" }]}>
           <Ionicons name={icon} size={18} color={skillColor} />
@@ -152,7 +153,7 @@ function SkillBar({
       <View style={[styles.barBg, { backgroundColor: c.muted }]}>
         <View style={[styles.barFill, { backgroundColor: skillColor, width: `${pct}%` }]} />
       </View>
-    </TouchableOpacity>
+    </HapticTouchable>
   );
 }
 

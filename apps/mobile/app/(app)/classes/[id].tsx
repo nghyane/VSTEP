@@ -1,7 +1,8 @@
-import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, FlatList, StyleSheet, Text, View } from "react-native";
 import { ScreenWrapper } from "@/components/ScreenWrapper";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { EmptyState } from "@/components/EmptyState";
@@ -106,14 +107,14 @@ export default function ClassDetailScreen() {
         }
         renderItem={renderFeedback}
         ListFooterComponent={
-          <TouchableOpacity
+          <HapticTouchable
             style={[styles.leaveBtn, { borderColor: c.destructive }]}
             onPress={handleLeave}
             disabled={leaveClass.isPending}
           >
             <Ionicons name="log-out-outline" size={18} color={c.destructive} />
             <Text style={[styles.leaveBtnText, { color: c.destructive }]}>Rời lớp</Text>
-          </TouchableOpacity>
+          </HapticTouchable>
         }
       />
     </ScreenWrapper>

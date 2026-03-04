@@ -4,12 +4,12 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { ScreenWrapper } from "@/components/ScreenWrapper";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -45,7 +45,7 @@ export default function ClassesScreen() {
   };
 
   const renderClass = ({ item }: { item: Class }) => (
-    <TouchableOpacity
+    <HapticTouchable
       style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
       onPress={() => router.push(`/(app)/classes/${item.id}`)}
     >
@@ -61,7 +61,7 @@ export default function ClassesScreen() {
         ) : null}
       </View>
       <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
-    </TouchableOpacity>
+    </HapticTouchable>
   );
 
   return (
@@ -98,14 +98,14 @@ export default function ClassesScreen() {
                   onChangeText={setInviteCode}
                   autoCapitalize="none"
                 />
-                <TouchableOpacity
+                <HapticTouchable
                   style={[styles.joinBtn, { backgroundColor: c.primary, opacity: joinClass.isPending ? 0.6 : 1 }]}
                   onPress={handleJoin}
                   disabled={joinClass.isPending}
                 >
                   <Ionicons name="enter" size={18} color={c.primaryForeground} />
                   <Text style={[styles.joinBtnText, { color: c.primaryForeground }]}>Tham gia</Text>
-                </TouchableOpacity>
+                </HapticTouchable>
               </View>
               {feedback && (
                 <Text

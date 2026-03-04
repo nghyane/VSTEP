@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -119,9 +120,9 @@ export default function ExamDetailScreen() {
       <View style={[styles.header, { backgroundColor: c.card, borderBottomColor: c.border, paddingTop: insets.top + spacing.sm }]}>
         {/* Back + title row */}
         <View style={styles.headerTop}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
+          <HapticTouchable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
             <Ionicons name="chevron-back" size={24} color={c.foreground} />
-          </TouchableOpacity>
+          </HapticTouchable>
           <View style={{ flex: 1 }}>
             <Text style={[styles.examTitle, { color: c.foreground }]}>Đề thi {exam.level}</Text>
             <Text style={[styles.examSub, { color: c.mutedForeground }]}>
@@ -151,7 +152,7 @@ export default function ExamDetailScreen() {
       {/* Start full exam button (pinned bottom) */}
       {completedCount >= totalCount && (
         <View style={[styles.bottomBar, { backgroundColor: c.card, borderTopColor: c.border }]}>
-          <TouchableOpacity
+          <HapticTouchable
             style={[styles.examBtn, { backgroundColor: c.primary, opacity: startExam.isPending ? 0.6 : 1 }]}
             onPress={() =>
               startExam.mutate(exam.id, {
@@ -164,7 +165,7 @@ export default function ExamDetailScreen() {
             <Text style={[styles.examBtnText, { color: c.primaryForeground }]}>
               {startExam.isPending ? "Đang bắt đầu..." : "Thi thật"}
             </Text>
-          </TouchableOpacity>
+          </HapticTouchable>
           {startExam.error && (
             <Text style={{ color: c.destructive, fontSize: fontSize.xs, marginTop: spacing.xs }}>
               {startExam.error.message}

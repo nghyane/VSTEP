@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { ScreenWrapper } from "@/components/ScreenWrapper";
 import { Logo } from "@/components/Logo";
 import { Ionicons } from "@expo/vector-icons";
@@ -49,7 +50,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Hero Action — Practice */}
-        <TouchableOpacity
+        <HapticTouchable
           style={[styles.heroCard, { backgroundColor: c.primary }]}
           onPress={() => router.push("/(app)/practice")}
           activeOpacity={0.85}
@@ -64,7 +65,7 @@ export default function HomeScreen() {
             </Text>
           </View>
           <Ionicons name="arrow-forward-circle" size={28} color={c.primaryForeground + "AA"} />
-        </TouchableOpacity>
+        </HapticTouchable>
 
         {/* Quick Stats */}
         <View style={styles.statsRow}>
@@ -141,7 +142,7 @@ function SkillCard({
 }) {
   const skillColor = useSkillColor(skill);
   return (
-    <TouchableOpacity
+    <HapticTouchable
       style={[styles.skillCard, { backgroundColor: c.card, borderColor: c.border }]}
       onPress={onPress}
       activeOpacity={0.7}
@@ -158,7 +159,7 @@ function SkillCard({
           {attempts} lần
         </Text>
       </View>
-    </TouchableOpacity>
+    </HapticTouchable>
   );
 }
 

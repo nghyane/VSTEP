@@ -4,9 +4,9 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { ScreenWrapper } from "@/components/ScreenWrapper";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -51,7 +51,7 @@ export default function ClassesTab() {
   };
 
   const renderClass = ({ item }: { item: Class }) => (
-    <TouchableOpacity
+    <HapticTouchable
       style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
       onPress={() => router.push(`/(app)/classes/${item.id}`)}
     >
@@ -72,7 +72,7 @@ export default function ClassesTab() {
         ) : null}
       </View>
       <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
-    </TouchableOpacity>
+    </HapticTouchable>
   );
 
   return (
@@ -117,7 +117,7 @@ export default function ClassesTab() {
                   onChangeText={setInviteCode}
                   autoCapitalize="none"
                 />
-                <TouchableOpacity
+                <HapticTouchable
                   style={[
                     styles.joinBtn,
                     {
@@ -134,7 +134,7 @@ export default function ClassesTab() {
                   >
                     Tham gia
                   </Text>
-                </TouchableOpacity>
+                </HapticTouchable>
               </View>
               {feedback && (
                 <Text

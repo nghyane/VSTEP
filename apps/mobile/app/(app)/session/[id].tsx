@@ -5,12 +5,12 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { useQueries } from "@tanstack/react-query";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -277,27 +277,27 @@ function InProgress({ session, sessionId, exam }: { session: ExamSession; sessio
 
       {/* Bottom navigation */}
       <View style={[styles.navBar, { borderTopColor: c.border }]}>
-        <TouchableOpacity
+        <HapticTouchable
           style={[styles.navBtn, { opacity: questionIdx > 0 ? 1 : 0.4 }]}
           onPress={() => questionIdx > 0 && setQuestionIdx(questionIdx - 1)}
           disabled={questionIdx <= 0}
         >
           <Ionicons name="chevron-back" size={18} color={c.foreground} />
           <Text style={[styles.navBtnText, { color: c.foreground }]}>Trước</Text>
-        </TouchableOpacity>
+        </HapticTouchable>
 
         <Text style={[styles.navCounter, { color: c.mutedForeground }]}>
           {questionIdx + 1}/{currentQIds.length}
         </Text>
 
-        <TouchableOpacity
+        <HapticTouchable
           style={[styles.navBtn, { opacity: questionIdx < currentQIds.length - 1 ? 1 : 0.4 }]}
           onPress={() => questionIdx < currentQIds.length - 1 && setQuestionIdx(questionIdx + 1)}
           disabled={questionIdx >= currentQIds.length - 1}
         >
           <Text style={[styles.navBtnText, { color: c.foreground }]}>Sau</Text>
           <Ionicons name="chevron-forward" size={18} color={c.foreground} />
-        </TouchableOpacity>
+        </HapticTouchable>
       </View>
     </View>
   );
@@ -339,7 +339,7 @@ function TopBar({
           <Text style={[styles.saveLabel, { color: c.success }]}>Đã lưu</Text>
         )}
       </View>
-      <TouchableOpacity
+      <HapticTouchable
         style={[styles.submitTopBtn, { backgroundColor: c.primary }]}
         onPress={onSubmit}
         disabled={isSubmitting}
@@ -352,7 +352,7 @@ function TopBar({
             <Text style={{ color: c.primaryForeground, fontWeight: "600", fontSize: fontSize.sm }}>Nộp bài</Text>
           </>
         )}
-      </TouchableOpacity>
+      </HapticTouchable>
     </View>
   );
 }
@@ -378,7 +378,7 @@ function SkillTab({
   const borderColor = active ? skillColor : "transparent";
 
   return (
-    <TouchableOpacity
+    <HapticTouchable
       style={[styles.skillTab, { backgroundColor: bg, borderColor }]}
       onPress={onPress}
     >
@@ -389,7 +389,7 @@ function SkillTab({
       <Text style={{ color: active ? skillColor : c.mutedForeground, fontSize: 10, fontWeight: "500" }}>
         {answered}/{total}
       </Text>
-    </TouchableOpacity>
+    </HapticTouchable>
   );
 }
 
@@ -493,7 +493,7 @@ function ObjectiveView({
               const letter = OPTION_LETTERS[oi] ?? String(oi);
               const selected = answers[idx] === letter;
               return (
-                <TouchableOpacity
+                <HapticTouchable
                   key={oi}
                   style={[
                     styles.optionRow,
@@ -524,7 +524,7 @@ function ObjectiveView({
                     </Text>
                   </View>
                   <Text style={[styles.optionText, { color: c.foreground }]}>{opt}</Text>
-                </TouchableOpacity>
+                </HapticTouchable>
               );
             })}
           </View>
@@ -676,9 +676,9 @@ function Completed({ session, exam }: { session: ExamSession; exam: any }) {
         <ScoreRow key={skill} skill={skill} score={score} colors={c} />
       ))}
 
-      <TouchableOpacity style={[styles.outlineBtn, { borderColor: c.border }]} onPress={() => router.replace("/(app)/(tabs)")}>
+      <HapticTouchable style={[styles.outlineBtn, { borderColor: c.border }]} onPress={() => router.replace("/(app)/(tabs)")}>
         <Text style={{ color: c.foreground, fontWeight: "600" }}>Về trang chủ</Text>
-      </TouchableOpacity>
+      </HapticTouchable>
     </ScrollView>
   );
 }

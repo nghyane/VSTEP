@@ -1,15 +1,16 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { Audio } from "expo-av";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { ScreenWrapper } from "@/components/ScreenWrapper";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { ErrorScreen } from "@/components/ErrorScreen";
@@ -51,6 +52,8 @@ export default function PracticeQuestionScreen() {
   });
 
   const [pickedId, setPickedId] = useState<string | null>(null);
+  const [audioUri, setAudioUri] = useState<string | null>(null);
+  const [audioDuration, setAudioDuration] = useState(0);
 
   const questions = useMemo(() => data?.data ?? [], [data]);
   const question = useMemo(() => {
@@ -71,6 +74,8 @@ export default function PracticeQuestionScreen() {
     setPickedId(next.id);
     setAnswers({});
     setText("");
+    setAudioUri(null);
+    setAudioDuration(0);
   }, [questions, question]);
 
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -91,15 +96,21 @@ export default function PracticeQuestionScreen() {
   const canSubmit =
     kind === "objective"
       ? Object.keys(answers).length > 0
-      : text.trim().length > 0;
+      : kind === "speaking"
+        ? audioUri !== null
+        : text.trim().length > 0;
 
   const handleSubmit = () => {
     if (!canSubmit || submitMutation.isPending) return;
 
-    const answer =
-      kind === "objective"
-        ? { answers }
-        : { text: text.trim() };
+    let answer;
+    if (kind === "objective") {
+      answer = { answers };
+    } else if (kind === "speaking") {
+      answer = { audioUrl: audioUri!, durationSeconds: Math.round(audioDuration / 1000) };
+    } else {
+      answer = { text: text.trim() };
+    }
 
     submitMutation.mutate(
       { questionId: question.id, answer },
@@ -118,9 +129,9 @@ export default function PracticeQuestionScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Header */}
         <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <HapticTouchable onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color={c.foreground} />
-          </TouchableOpacity>
+          </HapticTouchable>
           <Text style={[styles.headerTitle, { color: c.foreground }]}>
             {SKILL_LABELS[skill as Skill] ?? skill}
           </Text>
@@ -149,22 +160,24 @@ export default function PracticeQuestionScreen() {
         {kind === "speaking" && (
           <SpeakingView
             content={question.content as SpeakingPart1Content | SpeakingPart2Content | SpeakingPart3Content}
-            text={text}
-            onChangeText={setText}
+            audioUri={audioUri}
+            audioDurationMs={audioDuration}
+            onRecorded={(uri, duration) => { setAudioUri(uri); setAudioDuration(duration); }}
+            onClear={() => { setAudioUri(null); setAudioDuration(0); }}
           />
         )}
 
         {/* Actions */}
         <View style={styles.actions}>
-          <TouchableOpacity
+          <HapticTouchable
             style={[styles.secondaryBtn, { borderColor: c.border }]}
             onPress={pickAnother}
           >
             <Ionicons name="shuffle-outline" size={18} color={c.foreground} />
             <Text style={[styles.btnText, { color: c.foreground }]}>Câu hỏi khác</Text>
-          </TouchableOpacity>
+          </HapticTouchable>
 
-          <TouchableOpacity
+          <HapticTouchable
             style={[
               styles.submitBtn,
               { backgroundColor: canSubmit ? c.primary : c.muted },
@@ -191,7 +204,7 @@ export default function PracticeQuestionScreen() {
                 </Text>
               </>
             )}
-          </TouchableOpacity>
+          </HapticTouchable>
         </View>
 
         {submitMutation.isError && (
@@ -251,7 +264,7 @@ function ObjectiveView({
               const letter = OPTION_LETTERS[oi] ?? String(oi);
               const selected = answers[idx] === letter;
               return (
-                <TouchableOpacity
+                <HapticTouchable
                   key={oi}
                   style={[
                     styles.optionRow,
@@ -282,7 +295,7 @@ function ObjectiveView({
                     </Text>
                   </View>
                   <Text style={[styles.optionText, { color: c.foreground }]}>{opt}</Text>
-                </TouchableOpacity>
+                </HapticTouchable>
               );
             })}
           </View>
@@ -347,14 +360,75 @@ function WritingView({
 
 function SpeakingView({
   content,
-  text,
-  onChangeText,
+  audioUri,
+  audioDurationMs,
+  onRecorded,
+  onClear,
 }: {
   content: SpeakingPart1Content | SpeakingPart2Content | SpeakingPart3Content;
-  text: string;
-  onChangeText: (t: string) => void;
+  audioUri: string | null;
+  audioDurationMs: number;
+  onRecorded: (uri: string, durationMs: number) => void;
+  onClear: () => void;
 }) {
   const c = useThemeColors();
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const soundRef = useRef<Audio.Sound | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      soundRef.current?.unloadAsync();
+    };
+  }, []);
+
+  async function startRecording() {
+    await Audio.requestPermissionsAsync();
+    await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+    const { recording: rec } = await Audio.Recording.createAsync(
+      Audio.RecordingOptionsPresets.HIGH_QUALITY,
+    );
+    setRecording(rec);
+    setIsRecording(true);
+    setElapsed(0);
+    timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
+  }
+
+  async function stopRecording() {
+    if (!recording) return;
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    setIsRecording(false);
+    await recording.stopAndUnloadAsync();
+    await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+    const status = await recording.getStatusAsync();
+    const uri = recording.getURI();
+    setRecording(null);
+    if (uri) onRecorded(uri, status.durationMillis ?? elapsed * 1000);
+  }
+
+  async function playAudio() {
+    if (!audioUri) return;
+    if (soundRef.current) await soundRef.current.unloadAsync();
+    const { sound } = await Audio.Sound.createAsync({ uri: audioUri });
+    soundRef.current = sound;
+    setPlaying(true);
+    sound.setOnPlaybackStatusUpdate((s) => {
+      if (s.isLoaded && s.didJustFinish) setPlaying(false);
+    });
+    await sound.playAsync();
+  }
+
+  function handleClear() {
+    soundRef.current?.unloadAsync();
+    setPlaying(false);
+    onClear();
+  }
+
+  const formatTime = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
   return (
     <View style={styles.section}>
@@ -401,18 +475,46 @@ function SpeakingView({
         )}
       </View>
 
-      <TextInput
-        style={[
-          styles.textArea,
-          { backgroundColor: c.card, borderColor: c.border, color: c.foreground },
-        ]}
-        placeholder="Nhập bài nói của bạn..."
-        placeholderTextColor={c.mutedForeground}
-        multiline
-        textAlignVertical="top"
-        value={text}
-        onChangeText={onChangeText}
-      />
+      {/* Recorder */}
+      <View style={[styles.recorderBox, { backgroundColor: c.card, borderColor: c.border }]}>
+        {!audioUri ? (
+          <>
+            <HapticTouchable
+              style={[styles.micBtn, { backgroundColor: isRecording ? c.destructive : c.primary }]}
+              onPress={isRecording ? stopRecording : startRecording}
+            >
+              <Ionicons name={isRecording ? "stop" : "mic"} size={28} color={c.primaryForeground} />
+            </HapticTouchable>
+            <Text style={[styles.recorderLabel, { color: isRecording ? c.destructive : c.mutedForeground }]}>
+              {isRecording ? formatTime(elapsed) : "Nhấn để thu âm"}
+            </Text>
+            {isRecording && (
+              <View style={[styles.recordingDot, { backgroundColor: c.destructive }]} />
+            )}
+          </>
+        ) : (
+          <>
+            <View style={styles.playbackRow}>
+              <HapticTouchable
+                style={[styles.playBtn, { backgroundColor: c.primary + "15" }]}
+                onPress={playAudio}
+                disabled={playing}
+              >
+                <Ionicons name={playing ? "volume-high" : "play"} size={22} color={c.primary} />
+              </HapticTouchable>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.recorderLabel, { color: c.foreground }]}>Đã ghi âm</Text>
+                <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs }}>
+                  {formatTime(Math.round(audioDurationMs / 1000))}
+                </Text>
+              </View>
+              <HapticTouchable onPress={handleClear}>
+                <Ionicons name="trash-outline" size={20} color={c.destructive} />
+              </HapticTouchable>
+            </View>
+          </>
+        )}
+      </View>
     </View>
   );
 }
@@ -494,4 +596,37 @@ const styles = StyleSheet.create({
   },
   btnText: { fontSize: fontSize.sm, fontWeight: "600" },
   errorText: { fontSize: fontSize.sm, textAlign: "center" },
+  recorderBox: {
+    borderWidth: 1,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  micBtn: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  recorderLabel: { fontSize: fontSize.sm, fontWeight: "600" },
+  recordingDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  playbackRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    width: "100%" as any,
+  },
+  playBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

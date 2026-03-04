@@ -6,9 +6,9 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { Link, useRouter } from "expo-router";
 import { useAuth } from "@/hooks/use-auth";
 import { loginApi } from "@/lib/api";
@@ -85,7 +85,7 @@ export default function LoginScreen() {
 
           {error ? <Text style={[styles.error, { color: c.destructive }]}>{error}</Text> : null}
 
-          <TouchableOpacity
+          <HapticTouchable
             style={[styles.button, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
             onPress={handleLogin}
             disabled={loading}
@@ -93,7 +93,7 @@ export default function LoginScreen() {
             <Text style={[styles.buttonText, { color: c.primaryForeground }]}>
               {loading ? "Đang đăng nhập..." : "Đăng nhập"}
             </Text>
-          </TouchableOpacity>
+          </HapticTouchable>
         </View>
 
         <View style={styles.footer}>
@@ -101,11 +101,11 @@ export default function LoginScreen() {
             Chưa có tài khoản?{" "}
           </Text>
           <Link href="/(auth)/register" asChild>
-            <TouchableOpacity>
+            <HapticTouchable>
               <Text style={{ color: c.primary, fontSize: fontSize.sm, fontWeight: "600" }}>
                 Đăng ký
               </Text>
-            </TouchableOpacity>
+            </HapticTouchable>
           </Link>
         </View>
       </ScrollView>
