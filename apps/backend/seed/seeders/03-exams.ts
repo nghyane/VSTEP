@@ -18,11 +18,30 @@ export async function seedExams(
 ): Promise<SeededExams> {
   logSection("Exams");
 
-  const levels: Level[] = ["B1", "B2"];
-  const examsToInsert: NewExam[] = levels.map((level) => ({
-    title: `Đề thi VSTEP ${level}`,
-    level,
-    blueprint: buildBlueprint(questions, level),
+  const examConfigs: Array<{
+    level: Level;
+    title: string;
+    description: string | undefined;
+  }> = [
+    {
+      level: "B1",
+      title: "Đề thi thử VSTEP B1 - Đề số 1",
+      description:
+        "Đề thi thử trình độ B1 gồm 4 kỹ năng: Nghe, Đọc, Viết, Nói. Thời gian làm bài 150 phút.",
+    },
+    {
+      level: "B2",
+      title: "Đề thi thử VSTEP B2 - Đề số 1",
+      description:
+        "Đề thi thử trình độ B2 gồm 4 kỹ năng: Nghe, Đọc, Viết, Nói. Thời gian làm bài 150 phút.",
+    },
+  ];
+
+  const examsToInsert: NewExam[] = examConfigs.map((config) => ({
+    title: config.title,
+    description: config.description,
+    level: config.level,
+    blueprint: buildBlueprint(questions, config.level),
     isActive: true,
     createdBy: adminId,
   }));

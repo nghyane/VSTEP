@@ -29,6 +29,7 @@ describe("exams integration", () => {
     const result = await api.post("/api/exams", {
       token: instructor.accessToken,
       body: {
+        title: "Unauthorized Exam",
         level: "B2",
         blueprint: {
           listening: { questionIds: [] },

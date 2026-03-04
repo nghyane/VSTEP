@@ -6,6 +6,14 @@ import { app } from "@/app";
 
 export const testEmailPrefix = "itest-";
 
+let cachedDefaultHash: string | null = null;
+async function getDefaultHash(): Promise<string> {
+  if (!cachedDefaultHash) {
+    cachedDefaultHash = await Bun.password.hash("Password123!", "argon2id");
+  }
+  return cachedDefaultHash;
+}
+
 // ---------------------------------------------------------------------------
 // Request helpers
 // ---------------------------------------------------------------------------
@@ -107,7 +115,10 @@ export async function createTestUser(
 ): Promise<TestUserResult> {
   const password = input.password ?? "Password123!";
   const email = input.email ?? buildTestEmail();
-  const passwordHash = await Bun.password.hash(password, "argon2id");
+  const passwordHash =
+    password === "Password123!"
+      ? await getDefaultHash()
+      : await Bun.password.hash(password, "argon2id");
 
   const [user] = await db
     .insert(table.users)
@@ -230,8 +241,10 @@ interface TestExamResult {
 }
 
 export async function createTestExam(): Promise<TestExamResult> {
-  const admin = await loginTestUser({ role: "admin" });
-  const instructor = await loginTestUser({ role: "instructor" });
+  const [admin, instructor] = await Promise.all([
+    loginTestUser({ role: "admin" }),
+    loginTestUser({ role: "instructor" }),
+  ]);
 
   const createQ = async (
     skill: string,
@@ -311,6 +324,7 @@ export async function createTestExam(): Promise<TestExamResult> {
   const { data } = await api.post("/api/exams", {
     token: admin.accessToken,
     body: {
+      title: "Đề thi VSTEP B2 - Test",
       level: "B2",
       blueprint: {
         listening: { questionIds: [listeningId] },
