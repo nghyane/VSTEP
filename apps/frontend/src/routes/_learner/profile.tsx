@@ -2,14 +2,13 @@ import { LockPasswordIcon, Mail01Icon, UserCircleIcon, UserIcon } from "@hugeico
 import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute } from "@tanstack/react-router"
 import { type FormEvent, useEffect, useState } from "react"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { AvatarUpload } from "@/components/common/AvatarUpload"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { PasswordInput } from "@/components/ui/password-input"
-import { useChangePassword, useUpdateUser, useUser } from "@/hooks/use-user"
+import { useChangePassword, useUpdateUser, useUploadAvatar, useUser } from "@/hooks/use-user"
 import { user } from "@/lib/auth"
-import { cn } from "@/lib/utils"
 
 export const Route = createFileRoute("/_learner/profile")({
 	component: ProfilePage,
@@ -23,6 +22,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 function ProfileSection({ userId }: { userId: string }) {
 	const { data, isLoading, isError, error } = useUser(userId)
+	const uploadAvatar = useUploadAvatar(userId)
 
 	if (isLoading) {
 		return <p className="py-10 text-center text-muted-foreground">Đang tải...</p>
@@ -34,20 +34,16 @@ function ProfileSection({ userId }: { userId: string }) {
 
 	if (!data) return null
 
-	const initials = (data.fullName ?? data.email)
-		.split(" ")
-		.map((w) => w[0])
-		.slice(0, 2)
-		.join("")
-		.toUpperCase()
-
 	return (
 		<div className="flex items-center gap-6">
-			<Avatar className={cn("size-20")}>
-				<AvatarFallback className={cn("bg-primary/10 text-3xl font-bold text-primary")}>
-					{initials}
-				</AvatarFallback>
-			</Avatar>
+			<AvatarUpload
+				avatarKey={data.avatarKey}
+				fullName={data.fullName}
+				email={data.email}
+				isPending={uploadAvatar.isPending}
+				onUpload={(blob) => uploadAvatar.mutate(blob)}
+				className="size-20"
+			/>
 			<div className="space-y-1">
 				<h2 className="text-xl font-bold">{data.fullName ?? "Chưa đặt tên"}</h2>
 				<p className="text-sm text-muted-foreground">{data.email}</p>

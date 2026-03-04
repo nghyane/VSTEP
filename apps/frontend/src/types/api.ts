@@ -46,12 +46,14 @@ interface ExamBlueprint {
 
 interface Exam {
 	id: string
+	title: string
 	level: QuestionLevel
 	blueprint: ExamBlueprint
 	isActive: boolean
 	createdBy: string | null
 	createdAt: string
 	updatedAt: string
+	description: string | null
 }
 
 interface ExamSession {
@@ -255,6 +257,7 @@ interface User {
 	email: string
 	fullName: string | null
 	role: "learner" | "instructor" | "admin"
+	avatarKey: string | null
 	createdAt: string
 	updatedAt: string
 }

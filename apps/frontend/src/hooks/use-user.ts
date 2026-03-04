@@ -27,4 +27,18 @@ function useChangePassword(userId: string) {
 	})
 }
 
-export { useChangePassword, useUpdateUser, useUser }
+function useUploadAvatar(userId: string) {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: (file: Blob) => {
+			const formData = new FormData()
+			formData.append("avatar", file, "avatar.jpg")
+			return api.upload<{ avatarKey: string }>(`/api/users/${userId}/avatar`, formData)
+		},
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ["users", userId] })
+		},
+	})
+}
+
+export { useChangePassword, useUpdateUser, useUploadAvatar, useUser }

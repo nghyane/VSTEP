@@ -16,6 +16,7 @@ import { SpiderChart } from "@/components/common/SpiderChart"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { user } from "@/lib/auth"
+import { getInitials } from "@/lib/avatar"
 import { cn } from "@/lib/utils"
 
 export const Route = createFileRoute("/")({
@@ -259,12 +260,7 @@ function Header() {
 						<span className="text-sm font-medium">{currentUser.fullName ?? currentUser.email}</span>
 						<Avatar className="size-8">
 							<AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
-								{(currentUser.fullName ?? currentUser.email)
-									.split(" ")
-									.map((w) => w[0])
-									.slice(0, 2)
-									.join("")
-									.toUpperCase()}
+								{getInitials(currentUser.fullName, currentUser.email)}
 							</AvatarFallback>
 						</Avatar>
 					</Link>

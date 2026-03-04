@@ -110,6 +110,29 @@ async function authRequest<T>(path: string, options: RequestInit = {}): Promise<
 	}
 }
 
+async function uploadFile<T>(path: string, formData: FormData): Promise<T> {
+	const { token: getToken } = await import("@/lib/auth")
+
+	const accessToken = getToken()
+	if (!accessToken) throw new ApiError(401, "Not authenticated")
+
+	const res = await fetch(`${API_URL}${path}`, {
+		method: "POST",
+		headers: { Authorization: `Bearer ${accessToken}` },
+		body: formData,
+	})
+
+	if (!res.ok) {
+		const body = await res.json().catch(() => ({}))
+		const fallback = STATUS_MESSAGES[res.status] ?? "Đã có lỗi xảy ra"
+		const serverMessage: string | undefined = body?.error?.message ?? body?.message
+		const translated = serverMessage ? (ERROR_TRANSLATIONS[serverMessage] ?? fallback) : fallback
+		throw new ApiError(res.status, translated)
+	}
+
+	return res.json()
+}
+
 // Public API
 const api = {
 	get: <T>(path: string) => authRequest<T>(path),
@@ -120,6 +143,7 @@ const api = {
 	patch: <T>(path: string, body?: unknown) =>
 		authRequest<T>(path, { method: "PATCH", body: body ? JSON.stringify(body) : undefined }),
 	delete: <T>(path: string) => authRequest<T>(path, { method: "DELETE" }),
+	upload: <T>(path: string, formData: FormData) => uploadFile<T>(path, formData),
 }
 
 // Auth endpoints (no auth header needed)

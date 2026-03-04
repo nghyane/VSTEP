@@ -13,7 +13,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Link, Outlet } from "@tanstack/react-router"
 import { Logo } from "@/components/common/Logo"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
 	DropdownMenu,
@@ -24,8 +24,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useProgress } from "@/hooks/use-progress"
+import { useUser } from "@/hooks/use-user"
 import { logout } from "@/lib/api"
 import { clear, refreshToken, token, user } from "@/lib/auth"
+import { avatarUrl, getInitials } from "@/lib/avatar"
 import { cn } from "@/lib/utils"
 
 const DAYS_OF_WEEK = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
@@ -35,14 +37,9 @@ export function LearnerLayout() {
 	const streakCount = progress.data?.skills.reduce((max, s) => Math.max(max, s.streakCount), 0) ?? 0
 	const activeDays = DAYS_OF_WEEK.map((_, i) => i >= 7 - Math.min(streakCount, 7))
 	const currentUser = user()
-	const initials = currentUser?.fullName
-		? currentUser.fullName
-				.split(" ")
-				.map((w) => w[0])
-				.slice(0, 2)
-				.join("")
-				.toUpperCase()
-		: (currentUser?.email?.slice(0, 2).toUpperCase() ?? "??")
+	const { data: userData } = useUser(currentUser?.id ?? "")
+	const initials = getInitials(currentUser?.fullName, currentUser?.email)
+	const avatarSrc = avatarUrl(userData?.avatarKey, currentUser?.fullName)
 
 	async function handleLogout() {
 		try {
@@ -131,6 +128,7 @@ export function LearnerLayout() {
 						<DropdownMenu>
 							<DropdownMenuTrigger className="outline-none">
 								<Avatar className="size-8 cursor-pointer">
+									<AvatarImage src={avatarSrc} alt={currentUser?.fullName ?? "Avatar"} />
 									<AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
 										{initials}
 									</AvatarFallback>
