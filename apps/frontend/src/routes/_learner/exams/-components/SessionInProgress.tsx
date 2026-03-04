@@ -4,12 +4,12 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useSubmitExam } from "@/hooks/use-exam-session"
 import { cn } from "@/lib/utils"
-import type { Exam, ExamSession } from "@/types/api"
+import type { Exam, ExamSessionDetail } from "@/types/api"
 import { SKILL_ORDER, skillColor, skillMeta } from "./skill-meta"
 import { useTimer } from "./useTimer"
 
 interface SessionInProgressProps {
-	session: ExamSession
+	session: ExamSessionDetail
 	sessionId: string
 	exam: Exam | null
 }
@@ -78,6 +78,24 @@ export function SessionInProgress({ session, sessionId, exam }: SessionInProgres
 								</div>
 							)
 						})}
+					</div>
+				</div>
+			)}
+
+			{/* Answer progress */}
+			{session.questions.length > 0 && (
+				<div className="rounded-xl bg-muted/30 p-4">
+					<div className="flex items-center justify-between">
+						<span className="text-sm font-medium">Tiến độ trả lời</span>
+						<span className="text-sm font-bold tabular-nums text-primary">
+							{session.answers.length}/{session.questions.length}
+						</span>
+					</div>
+					<div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+						<div
+							className="h-full rounded-full bg-primary transition-all"
+							style={{ width: `${(session.answers.length / session.questions.length) * 100}%` }}
+						/>
 					</div>
 				</div>
 			)}

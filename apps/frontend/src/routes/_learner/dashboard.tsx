@@ -15,6 +15,7 @@ import { createFileRoute, Link } from "@tanstack/react-router"
 import { SpiderChart } from "@/components/common/SpiderChart"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { useExamSessions } from "@/hooks/use-exam-session"
 import { useExams } from "@/hooks/use-exams"
 import { useProgress, useSpiderChart } from "@/hooks/use-progress"
 import { useSubmissions } from "@/hooks/use-submissions"
@@ -107,6 +108,7 @@ function LearnerDashboard() {
 	const exams = useExams()
 	const spiderChart = useSpiderChart()
 	const submissions = useSubmissions()
+	const recentSessions = useExamSessions({ limit: 5 })
 
 	const isLoading = progress.isLoading || exams.isLoading
 	const error = progress.error || exams.error
@@ -126,6 +128,7 @@ function LearnerDashboard() {
 	const totalAttempts = skills.reduce((sum, s) => sum + s.attemptCount, 0)
 	const dailyGoalMinutes = goal?.dailyStudyTimeMinutes ?? 45
 	const recentSubmissions = submissions.data?.data ?? []
+	const sessionList = recentSessions.data?.data ?? []
 
 	const spiderSkills = spiderChart.data
 		? SKILL_ORDER.map((skill) => ({
@@ -219,6 +222,55 @@ function LearnerDashboard() {
 						</div>
 					)
 				})}
+
+				{/* Recent exam sessions */}
+				{sessionList.length > 0 && (
+					<div className="space-y-3">
+						<h2 className="text-lg font-bold">Phiên thi gần đây</h2>
+						<div className="space-y-2">
+							{sessionList.map((s) => {
+								const isInProgress = s.status === "in_progress"
+								return (
+									<Link
+										key={s.id}
+										to="/exams/sessions/$sessionId"
+										params={{ sessionId: s.id }}
+										className="flex items-center gap-3 rounded-xl bg-muted/30 p-3 transition-colors hover:bg-muted/50"
+									>
+										<div
+											className={cn(
+												"flex size-8 items-center justify-center rounded-lg",
+												isInProgress ? "bg-warning/15 text-warning" : "bg-primary/15 text-primary",
+											)}
+										>
+											<HugeiconsIcon icon={DocumentValidationIcon} className="size-4" />
+										</div>
+										<div className="flex-1">
+											<span className="text-sm font-medium">
+												{isInProgress
+													? "Đang làm bài"
+													: s.status === "completed"
+														? "Hoàn thành"
+														: s.status === "submitted"
+															? "Đã nộp"
+															: "Đã hủy"}
+											</span>
+											<p className="text-xs text-muted-foreground">
+												{new Date(s.startedAt).toLocaleDateString("vi-VN")}
+											</p>
+										</div>
+										<div className="flex items-center gap-2">
+											{s.overallScore != null && (
+												<span className="text-sm font-bold tabular-nums">{s.overallScore}/10</span>
+											)}
+											{isInProgress && <Badge variant="secondary">Tiếp tục</Badge>}
+										</div>
+									</Link>
+								)
+							})}
+						</div>
+					</div>
+				)}
 
 				{/* Recent submissions */}
 				{recentSubmissions.length > 0 && (

@@ -1,11 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
-import type { ProgressOverview, ProgressSkillDetail, SpiderChartResponse } from "@/types/api"
+import type {
+	ActivityResponse,
+	ProgressOverview,
+	ProgressSkillDetail,
+	SpiderChartResponse,
+} from "@/types/api"
 
 function useProgress() {
 	return useQuery({
 		queryKey: ["progress"],
 		queryFn: () => api.get<ProgressOverview>("/api/progress"),
+	})
+}
+
+function useActivity(days = 7) {
+	return useQuery({
+		queryKey: ["progress", "activity", days],
+		queryFn: () => api.get<ActivityResponse>(`/api/progress/activity?days=${days}`),
 	})
 }
 
@@ -64,4 +76,12 @@ function useDeleteGoal() {
 	})
 }
 
-export { useCreateGoal, useDeleteGoal, useProgress, useSkillDetail, useSpiderChart, useUpdateGoal }
+export {
+	useActivity,
+	useCreateGoal,
+	useDeleteGoal,
+	useProgress,
+	useSkillDetail,
+	useSpiderChart,
+	useUpdateGoal,
+}

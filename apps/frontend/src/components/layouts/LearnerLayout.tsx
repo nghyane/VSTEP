@@ -23,7 +23,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { useProgress } from "@/hooks/use-progress"
+import { useActivity } from "@/hooks/use-progress"
 import { useUser } from "@/hooks/use-user"
 import { logout } from "@/lib/api"
 import { clear, refreshToken, token, user } from "@/lib/auth"
@@ -33,9 +33,23 @@ import { cn } from "@/lib/utils"
 const DAYS_OF_WEEK = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
 
 export function LearnerLayout() {
-	const progress = useProgress()
-	const streakCount = progress.data?.skills.reduce((max, s) => Math.max(max, s.streakCount), 0) ?? 0
-	const activeDays = DAYS_OF_WEEK.map((_, i) => i >= 7 - Math.min(streakCount, 7))
+	const { data: activity } = useActivity(7)
+	const streakCount = activity?.streak ?? 0
+	const activeDatesSet = new Set(activity?.activeDays ?? [])
+
+	function isActiveDay(dayIndex: number): boolean {
+		const today = new Date()
+		const todayDow = (today.getDay() + 6) % 7
+		const diff = dayIndex - todayDow
+		const date = new Date(today)
+		date.setDate(today.getDate() + diff)
+		const yyyy = date.getFullYear()
+		const mm = String(date.getMonth() + 1).padStart(2, "0")
+		const dd = String(date.getDate()).padStart(2, "0")
+		return activeDatesSet.has(`${yyyy}-${mm}-${dd}`)
+	}
+
+	const activeDays = DAYS_OF_WEEK.map((_, i) => isActiveDay(i))
 	const currentUser = user()
 	const { data: userData } = useUser(currentUser?.id ?? "")
 	const initials = getInitials(currentUser?.fullName, currentUser?.email)

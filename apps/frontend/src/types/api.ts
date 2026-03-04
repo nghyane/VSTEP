@@ -72,6 +72,24 @@ interface ExamSession {
 	updatedAt: string
 }
 
+// Session detail (from GET /api/exams/sessions/:id — includes questions + answers)
+interface SessionQuestion {
+	id: string
+	skill: Skill
+	part: number
+	content: QuestionContent
+}
+
+interface SessionAnswer {
+	questionId: string
+	answer: SubmissionAnswer
+}
+
+interface ExamSessionDetail extends ExamSession {
+	questions: SessionQuestion[]
+	answers: SessionAnswer[]
+}
+
 // Progress
 type StreakDirection = "up" | "down" | "neutral"
 
@@ -103,6 +121,13 @@ interface Goal {
 interface ProgressOverview {
 	skills: SkillProgress[]
 	goal: Goal | null
+}
+
+// Activity (from GET /api/progress/activity)
+interface ActivityResponse {
+	streak: number
+	total: number
+	activeDays: string[]
 }
 
 type Trend = "improving" | "stable" | "declining" | "inconsistent" | "insufficient_data"
@@ -309,12 +334,14 @@ interface QuestionWithKnowledgePoints extends Question {
 
 export type {
 	AuthUser,
+	ActivityResponse,
 	Exam,
 	KnowledgePoint,
 	KnowledgePointCategory,
 	ExamAnswer,
 	ExamBlueprint,
 	ExamSession,
+	ExamSessionDetail,
 	Goal,
 	GradingMode,
 	ListeningContent,
@@ -338,6 +365,8 @@ export type {
 	Skill,
 	SkillProgress,
 	SpeakingAnswer,
+	SessionAnswer,
+	SessionQuestion,
 	SpeakingPart1Content,
 	SpeakingPart2Content,
 	SpeakingPart3Content,

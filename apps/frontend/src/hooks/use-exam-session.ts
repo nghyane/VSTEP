@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
-import type { ExamSession, SubmissionAnswer } from "@/types/api"
+import type {
+	ExamSession,
+	ExamSessionDetail,
+	PaginatedResponse,
+	SubmissionAnswer,
+} from "@/types/api"
 
 function useExamDetail(examId: string) {
 	return useQuery({
@@ -22,7 +27,26 @@ function useStartExam() {
 function useExamSession(sessionId: string) {
 	return useQuery({
 		queryKey: ["exam-sessions", sessionId],
-		queryFn: () => api.get<ExamSession>(`/api/exams/sessions/${sessionId}`),
+		queryFn: () => api.get<ExamSessionDetail>(`/api/exams/sessions/${sessionId}`),
+	})
+}
+
+interface UseExamSessionsParams {
+	page?: number
+	limit?: number
+	status?: ExamSession["status"]
+}
+
+function useExamSessions(params: UseExamSessionsParams = {}) {
+	const { page = 1, limit = 20, status } = params
+	const search = new URLSearchParams()
+	search.set("page", String(page))
+	search.set("limit", String(limit))
+	if (status) search.set("status", status)
+
+	return useQuery({
+		queryKey: ["exam-sessions", { page, limit, status }],
+		queryFn: () => api.get<PaginatedResponse<ExamSession>>(`/api/exams/sessions?${search}`),
 	})
 }
 
@@ -53,6 +77,7 @@ function useSubmitExam(sessionId: string) {
 
 export {
 	useAnswerQuestion,
+	useExamSessions,
 	useExamDetail,
 	useExamSession,
 	useSaveAnswers,

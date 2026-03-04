@@ -2,11 +2,11 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { Link } from "@tanstack/react-router"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import type { Exam, ExamSession, Skill } from "@/types/api"
+import type { Exam, ExamSessionDetail, Skill } from "@/types/api"
 import { skillColor, skillMeta } from "./skill-meta"
 
 interface SessionCompletedProps {
-	session: ExamSession
+	session: ExamSessionDetail
 	exam: Exam | null
 }
 
