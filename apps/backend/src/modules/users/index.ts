@@ -16,7 +16,15 @@ import {
   UserPasswordBody,
   UserUpdateBody,
 } from "./schema";
-import { byId, create, list, remove, update, updatePassword } from "./service";
+import {
+  byId,
+  create,
+  list,
+  remove,
+  update,
+  updatePassword,
+  uploadAvatar,
+} from "./service";
 
 export const users = new Elysia({
   name: "module:users",
@@ -115,6 +123,31 @@ export const users = new Elysia({
         summary: "Change password",
         description:
           "Change a user's password. Requires the current password for verification.",
+        security: [{ bearerAuth: [] }],
+      },
+    },
+  )
+
+  .post(
+    "/:id/avatar",
+    ({ params, body, user }) => uploadAvatar(params.id, body.avatar, user),
+    {
+      auth: true,
+      params: IdParam,
+      body: t.Object({
+        avatar: t.File({
+          type: ["image/jpeg", "image/png", "image/webp", "image/gif"],
+          maxSize: "5m",
+        }),
+      }),
+      response: {
+        200: t.Object({ avatarKey: t.String() }),
+        ...CrudErrors,
+      },
+      detail: {
+        summary: "Upload avatar",
+        description:
+          "Upload a profile avatar image. Max 5MB. JPEG, PNG, WebP, GIF.",
         security: [{ bearerAuth: [] }],
       },
     },

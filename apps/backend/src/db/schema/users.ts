@@ -24,6 +24,7 @@ export const users = pgTable(
     email: varchar("email", { length: 255 }).notNull(),
     passwordHash: varchar("password_hash", { length: 255 }).notNull(),
     fullName: varchar("full_name", { length: 255 }),
+    avatarKey: varchar("avatar_key", { length: 512 }),
     role: userRoleEnum("role").default("learner").notNull(),
     ...timestamps,
   },

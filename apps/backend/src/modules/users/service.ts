@@ -5,6 +5,7 @@ import {
   ForbiddenError,
   UnauthorizedError,
 } from "@common/errors";
+import { storage } from "@common/storage";
 import {
   assertAccess,
   assertExists,
@@ -171,4 +172,28 @@ export async function updatePassword(
 
     return { message: "Password updated successfully" };
   });
+}
+
+export async function uploadAvatar(userId: string, file: File, actor: Actor) {
+  assertAccess(userId, actor, "You can only update your own avatar");
+
+  assertExists(
+    await db.query.users.findFirst({
+      where: eq(table.users.id, userId),
+      columns: { id: true },
+    }),
+    "User",
+  );
+
+  const ext = file.name?.split(".").pop() ?? "jpg";
+  const key = `avatars/${userId}.${ext}`;
+
+  await storage.write(key, file);
+
+  await db
+    .update(table.users)
+    .set({ avatarKey: key, updatedAt: new Date().toISOString() })
+    .where(eq(table.users.id, userId));
+
+  return { avatarKey: key };
 }
