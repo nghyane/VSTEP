@@ -60,10 +60,13 @@ class ApiError extends Error {
 let refreshPromise: Promise<void> | null = null
 
 async function authRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
-	const { token, refreshToken: storedRefresh, save, clear } = await import("@/lib/auth")
+	const { token, refreshToken: storedRefresh, save, handleAuthError } = await import("@/lib/auth")
 
 	const accessToken = token()
-	if (!accessToken) throw new ApiError(401, "Not authenticated")
+	if (!accessToken) {
+		handleAuthError()
+		throw new ApiError(401, "Not authenticated")
+	}
 
 	const authedOptions = {
 		...options,
@@ -78,7 +81,7 @@ async function authRequest<T>(path: string, options: RequestInit = {}): Promise<
 		// Try refresh
 		const refresh = storedRefresh()
 		if (!refresh) {
-			clear()
+			handleAuthError()
 			throw err
 		}
 
@@ -91,7 +94,7 @@ async function authRequest<T>(path: string, options: RequestInit = {}): Promise<
 					save(res.accessToken, res.refreshToken, res.user)
 				})
 				.catch(() => {
-					clear()
+					handleAuthError()
 					throw new ApiError(401, "Session expired")
 				})
 				.finally(() => {
@@ -111,10 +114,13 @@ async function authRequest<T>(path: string, options: RequestInit = {}): Promise<
 }
 
 async function uploadFile<T>(path: string, formData: FormData): Promise<T> {
-	const { token: getToken } = await import("@/lib/auth")
+	const { token: getToken, handleAuthError } = await import("@/lib/auth")
 
 	const accessToken = getToken()
-	if (!accessToken) throw new ApiError(401, "Not authenticated")
+	if (!accessToken) {
+		handleAuthError()
+		throw new ApiError(401, "Not authenticated")
+	}
 
 	const res = await fetch(`${API_URL}${path}`, {
 		method: "POST",
@@ -124,6 +130,10 @@ async function uploadFile<T>(path: string, formData: FormData): Promise<T> {
 
 	if (!res.ok) {
 		const body = await res.json().catch(() => ({}))
+		if (res.status === 401) {
+			handleAuthError()
+			throw new ApiError(401, "Session expired")
+		}
 		const fallback = STATUS_MESSAGES[res.status] ?? "Đã có lỗi xảy ra"
 		const serverMessage: string | undefined = body?.error?.message ?? body?.message
 		const translated = serverMessage ? (ERROR_TRANSLATIONS[serverMessage] ?? fallback) : fallback
