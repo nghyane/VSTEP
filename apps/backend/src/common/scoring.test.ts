@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import {
+  calculateOverallScore,
   calculateScore,
   normalizeAnswer,
   parseAnswerKey,
@@ -128,5 +129,46 @@ describe("parseUserAnswer", () => {
 
   it("returns empty object when plain object has no string values", () => {
     expect(parseUserAnswer({ a: 1, b: true })).toEqual({});
+  });
+});
+
+describe("calculateOverallScore", () => {
+  it("returns null if any skill is null", () => {
+    expect(calculateOverallScore(7, 8, null, 6)).toBeNull();
+    expect(calculateOverallScore(null, 8, 7, 6)).toBeNull();
+    expect(calculateOverallScore(7, null, 7, 6)).toBeNull();
+    expect(calculateOverallScore(7, 8, 7, null)).toBeNull();
+  });
+
+  it("returns null if all skills are null", () => {
+    expect(calculateOverallScore(null, null, null, null)).toBeNull();
+  });
+
+  it("averages 4 equal scores", () => {
+    expect(calculateOverallScore(7, 7, 7, 7)).toBe(7.0);
+  });
+
+  it("averages and rounds to nearest 0.5", () => {
+    // (6 + 7 + 8 + 9) / 4 = 7.5
+    expect(calculateOverallScore(6, 7, 8, 9)).toBe(7.5);
+    // (5 + 6 + 7 + 8) / 4 = 6.5
+    expect(calculateOverallScore(5, 6, 7, 8)).toBe(6.5);
+  });
+
+  it("rounds .25 down and .75 up to nearest 0.5", () => {
+    // (4 + 5 + 6 + 7) / 4 = 5.5
+    expect(calculateOverallScore(4, 5, 6, 7)).toBe(5.5);
+    // (4.5 + 5 + 6 + 7) / 4 = 5.625 → round(11.25)/2 = 11/2 = 5.5
+    expect(calculateOverallScore(4.5, 5, 6, 7)).toBe(5.5);
+    // (5 + 5 + 6 + 7) / 4 = 5.75 → round(11.5)/2 = 12/2 = 6.0
+    expect(calculateOverallScore(5, 5, 6, 7)).toBe(6.0);
+  });
+
+  it("handles perfect scores", () => {
+    expect(calculateOverallScore(10, 10, 10, 10)).toBe(10.0);
+  });
+
+  it("handles zero scores", () => {
+    expect(calculateOverallScore(0, 0, 0, 0)).toBe(0);
   });
 });

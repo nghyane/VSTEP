@@ -1,4 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from "bun:test";
+import { db, table } from "@db/index";
+import { eq } from "drizzle-orm";
 import {
   api,
   cleanupTestData,
@@ -282,5 +284,53 @@ describe("exams integration", () => {
     expect(data.listeningScore).toBeNumber();
     expect(data.readingScore).toBeNumber();
     expect(data.status).toBeOneOf(["submitted", "completed"]);
+  });
+
+  it("stores part on exam_submissions for subjective skills", async () => {
+    const exam = await createTestExam();
+    const learner = await loginTestUser({ role: "learner" });
+
+    const started = await api.post(`/api/exams/${exam.examId}/start`, {
+      token: learner.accessToken,
+    });
+    const sessionId = started.data.id as string;
+
+    // Answer all 4 skills
+    for (const [qid, answer] of [
+      [exam.questionIds.listening[0], { answers: { "1": "A" } }],
+      [exam.questionIds.reading[0], { answers: { "1": "A" } }],
+      [exam.questionIds.writing[0], { text: "Essay text." }],
+      [
+        exam.questionIds.speaking[0],
+        { audioUrl: "https://example.com/a.mp3", durationSeconds: 60 },
+      ],
+    ] as const) {
+      await api.post(`/api/exams/sessions/${sessionId}/answer`, {
+        token: learner.accessToken,
+        body: { questionId: qid, answer },
+      });
+    }
+
+    await api.post(`/api/exams/sessions/${sessionId}/submit`, {
+      token: learner.accessToken,
+    });
+
+    // Verify exam_submissions have part set from the question
+    const rows = await db
+      .select({
+        skill: table.examSubmissions.skill,
+        part: table.examSubmissions.part,
+      })
+      .from(table.examSubmissions)
+      .where(eq(table.examSubmissions.sessionId, sessionId));
+
+    expect(rows.length).toBeGreaterThanOrEqual(2); // writing + speaking
+    for (const row of rows) {
+      expect(row.part).toBeNumber();
+    }
+    const writing = rows.find((r) => r.skill === "writing");
+    const speaking = rows.find((r) => r.skill === "speaking");
+    expect(writing?.part).toBe(1); // writing question is part 1
+    expect(speaking?.part).toBe(1); // speaking question is part 1
   });
 });

@@ -16,7 +16,7 @@ import { IN_FLIGHT_STATUSES } from "@/modules/submissions/shared";
  */
 
 /** VSTEP weighted: Task 1 weight=1, Task 2 weight=2. Formula: (t1 + t2×2) / 3 */
-function weightedWritingAvg(
+export function weightedWritingAvg(
   scores: { score: number; part: number | null }[],
 ): number | null {
   if (scores.length === 0) return null;
