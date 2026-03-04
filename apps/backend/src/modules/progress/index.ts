@@ -8,8 +8,10 @@ import { Skill } from "@db/enums";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import { create, remove, update } from "./goals";
-import { bySkill, overview, spiderChart } from "./overview";
+import { activity, bySkill, overview, spiderChart } from "./overview";
 import {
+  ActivityQuery,
+  ActivityResponse,
   Goal,
   GoalBody,
   GoalUpdateBody,
@@ -43,6 +45,18 @@ export const progress = new Elysia({
       summary: "Get spider chart data",
       description:
         "Return skill-score data points suitable for rendering a radar/spider chart.",
+      security: [{ bearerAuth: [] }],
+    },
+  })
+
+  .get("/activity", ({ query, user }) => activity(user.sub, query.days), {
+    auth: true,
+    query: ActivityQuery,
+    response: { 200: ActivityResponse, ...AuthErrors },
+    detail: {
+      summary: "Get activity streak",
+      description:
+        "Return consecutive-day streak count and list of active days.",
       security: [{ bearerAuth: [] }],
     },
   })

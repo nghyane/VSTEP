@@ -65,3 +65,13 @@ export const ProgressSpiderChart = t.Object({
 });
 
 export type ProgressSpiderChart = typeof ProgressSpiderChart.static;
+
+export const ActivityQuery = t.Object({
+  days: t.Integer({ minimum: 1, maximum: 90, default: 7 }),
+});
+
+export const ActivityResponse = t.Object({
+  streak: t.Integer(),
+  total: t.Integer(),
+  activeDays: t.Array(t.String({ format: "date" })),
+});
