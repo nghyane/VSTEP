@@ -21,6 +21,25 @@ const TNGItem = t.Object({
 // Listening
 // ---------------------------------------------------------------------------
 
+export const ListeningPart1Content = t.Object({
+  audioUrl: t.String({ format: "uri" }),
+  transcript: t.Optional(t.String()),
+  items: t.Array(MCQItem, { minItems: 1, maxItems: 8 }),
+});
+
+export const ListeningPart2Content = t.Object({
+  audioUrl: t.String({ format: "uri" }),
+  transcript: t.Optional(t.String()),
+  items: t.Array(MCQItem, { minItems: 1, maxItems: 12 }),
+});
+
+export const ListeningPart3Content = t.Object({
+  audioUrl: t.String({ format: "uri" }),
+  transcript: t.Optional(t.String()),
+  items: t.Array(MCQItem, { minItems: 1, maxItems: 15 }),
+});
+
+/** Generic listening content — Elysia body/response schema (maxItems covers all parts). */
 export const ListeningContent = t.Object({
   audioUrl: t.String({ format: "uri" }),
   transcript: t.Optional(t.String()),
@@ -168,9 +187,9 @@ const ReadingContentUnion = t.Union([
 ]);
 
 export const CONTENT_MAP: Record<string, TSchema> = {
-  "listening:1": ListeningContent,
-  "listening:2": ListeningContent,
-  "listening:3": ListeningContent,
+  "listening:1": ListeningPart1Content,
+  "listening:2": ListeningPart2Content,
+  "listening:3": ListeningPart3Content,
   "reading:1": ReadingContentUnion,
   "reading:2": ReadingContentUnion,
   "reading:3": ReadingContentUnion,
@@ -186,6 +205,9 @@ export const CONTENT_MAP: Record<string, TSchema> = {
 // Static types
 // ---------------------------------------------------------------------------
 
+export type ListeningPart1Content = typeof ListeningPart1Content.static;
+export type ListeningPart2Content = typeof ListeningPart2Content.static;
+export type ListeningPart3Content = typeof ListeningPart3Content.static;
 export type ListeningContent = typeof ListeningContent.static;
 export type ListeningDictationContent = typeof ListeningDictationContent.static;
 export type ReadingContent = typeof ReadingContent.static;

@@ -1,4 +1,4 @@
-import { Skill } from "@db/enums";
+import { QuestionLevel, Skill } from "@db/enums";
 import { ObjectiveAnswerKey } from "@db/types/answers";
 import {
   ListeningContent,
@@ -21,6 +21,7 @@ import { t } from "elysia";
 export const Question = t.Object({
   id: t.String({ format: "uuid" }),
   skill: Skill,
+  level: QuestionLevel,
   part: t.Integer(),
   content: QuestionContent,
   answerKey: t.Optional(t.Nullable(ObjectiveAnswerKey)),
@@ -52,6 +53,7 @@ const Explanation = t.Optional(t.String());
 
 const ListeningCreateBody = t.Object({
   skill: t.Literal("listening"),
+  level: QuestionLevel,
   part: t.UnionEnum([1, 2, 3]),
   content: ListeningContent,
   answerKey: ObjectiveAnswerKey,
@@ -61,6 +63,7 @@ const ListeningCreateBody = t.Object({
 
 const ReadingCreateBody = t.Object({
   skill: t.Literal("reading"),
+  level: QuestionLevel,
   part: t.UnionEnum([1, 2, 3, 4]),
   content: t.Union([
     ReadingContent,
@@ -76,6 +79,7 @@ const ReadingCreateBody = t.Object({
 const WritingCreateBody = t.Object({
   skill: t.Literal("writing"),
   part: t.UnionEnum([1, 2]),
+  level: QuestionLevel,
   content: WritingContent,
   explanation: Explanation,
   knowledgePointIds: KnowledgePointIds,
@@ -84,6 +88,7 @@ const WritingCreateBody = t.Object({
 const SpeakingCreateBody = t.Object({
   skill: t.Literal("speaking"),
   part: t.UnionEnum([1, 2, 3]),
+  level: QuestionLevel,
   content: t.Union([
     SpeakingPart1Content,
     SpeakingPart2Content,
@@ -102,6 +107,7 @@ export const QuestionCreateBody = t.Union([
 
 export const QuestionUpdateBody = t.Object({
   part: t.Optional(t.Integer({ minimum: 1, maximum: 4 })),
+  level: t.Optional(QuestionLevel),
   content: t.Optional(QuestionContent),
   answerKey: t.Optional(ObjectiveAnswerKey),
   explanation: t.Optional(t.String()),
@@ -115,6 +121,7 @@ export const QuestionListQuery = t.Object({
   page: t.Optional(t.Number({ minimum: 1, default: 1 })),
   limit: t.Optional(t.Number({ minimum: 1, maximum: 100, default: 20 })),
   skill: t.Optional(Skill),
+  level: t.Optional(QuestionLevel),
   part: t.Optional(t.Integer({ minimum: 1, maximum: 4 })),
   isActive: t.Optional(t.Boolean()),
   knowledgePointId: t.Optional(t.String({ format: "uuid" })),

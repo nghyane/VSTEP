@@ -9,10 +9,10 @@ from app.scoring import snap, to_band
 from app.stt import transcribe
 
 SPEAKING_CRITERIA = {
-    "fluency": "fluency",
+    "fluencyOrganization": "fluency_organization",
     "pronunciation": "pronunciation",
-    "content": "content",
     "vocabulary": "vocabulary",
+    "grammar": "grammar",
 }
 
 

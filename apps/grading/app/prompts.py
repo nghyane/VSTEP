@@ -3,10 +3,10 @@ def writing(text: str, task_type: str) -> str:
 
 ## Rubric (each criterion 0-10, use 0.5 increments)
 
-- **Task Achievement**: How well the response addresses the task requirements. Relevance, completeness, and development of ideas.
-- **Coherence & Cohesion**: Logical organization, paragraphing, use of cohesive devices, and overall flow.
-- **Lexical Resource**: Range and accuracy of vocabulary. Appropriateness of word choice and collocations.
-- **Grammatical Range & Accuracy**: Variety and correctness of grammatical structures. Control of complex sentences.
+- **Task Fulfillment**: How well the response fulfills the task requirements. Relevance, completeness, and development of ideas.
+- **Organization**: Logical organization, paragraphing, use of cohesive devices, and overall flow.
+- **Vocabulary**: Range and accuracy of vocabulary. Appropriateness of word choice and collocations.
+- **Grammar**: Variety and correctness of grammatical structures. Control of complex sentences.
 
 ## Student Response
 
@@ -18,10 +18,10 @@ Evaluate the response against each criterion. Provide constructive feedback high
 
 Respond with ONLY valid JSON matching this schema:
 {{
-  "task_achievement": <float 0-10>,
-  "coherence_cohesion": <float 0-10>,
-  "lexical_resource": <float 0-10>,
-  "grammatical_range": <float 0-10>,
+  "task_fulfillment": <float 0-10>,
+  "organization": <float 0-10>,
+  "vocabulary": <float 0-10>,
+  "grammar": <float 0-10>,
   "feedback": "<constructive feedback as a single string>",
   "confidence": "<high|medium|low>"
 }}"""
@@ -43,9 +43,9 @@ def speaking(transcript: str, part_number: int) -> str:
 
 ## Rubric (each criterion 0-10, use 0.5 increments)
 
-- **Fluency**: Natural pace, minimal hesitation, self-correction ability. Sustained speech without unnatural pauses.
+- **Fluency & Organization**: Natural pace, minimal hesitation, self-correction ability. Logical organization of ideas in speech.
 - **Pronunciation**: Clarity of individual sounds, word stress, intonation patterns, and overall intelligibility.
-- **Content**: Relevance and depth of ideas. Task completion, argument development, and supporting details.
+- **Grammar**: Variety and correctness of grammatical structures in spoken language.
 - **Vocabulary**: Range and precision of vocabulary. Use of topic-specific and academic language.
 
 ## Transcript
@@ -58,9 +58,9 @@ Evaluate the transcript against each criterion. Account for the fact this is spo
 
 Respond with ONLY valid JSON matching this schema:
 {{
-  "fluency": <float 0-10>,
+  "fluency_organization": <float 0-10>,
   "pronunciation": <float 0-10>,
-  "content": <float 0-10>,
+  "grammar": <float 0-10>,
   "vocabulary": <float 0-10>,
   "feedback": "<constructive feedback as a single string>",
   "confidence": "<high|medium|low>"

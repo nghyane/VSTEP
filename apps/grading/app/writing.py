@@ -6,10 +6,10 @@ from app.prompts import writing as writing_prompt
 from app.scoring import snap, to_band
 
 WRITING_CRITERIA = {
-    "taskAchievement": "task_achievement",
-    "coherenceCohesion": "coherence_cohesion",
-    "lexicalResource": "lexical_resource",
-    "grammaticalRange": "grammatical_range",
+    "taskFulfillment": "task_fulfillment",
+    "organization": "organization",
+    "vocabulary": "vocabulary",
+    "grammar": "grammar",
 }
 
 

@@ -65,10 +65,10 @@ class Result(BaseModel):
 class WritingScore(BaseModel):
     """Structured output from LLM for writing grading"""
 
-    task_achievement: float = Field(ge=0, le=10)
-    coherence_cohesion: float = Field(ge=0, le=10)
-    lexical_resource: float = Field(ge=0, le=10)
-    grammatical_range: float = Field(ge=0, le=10)
+    task_fulfillment: float = Field(ge=0, le=10)
+    organization: float = Field(ge=0, le=10)
+    vocabulary: float = Field(ge=0, le=10)
+    grammar: float = Field(ge=0, le=10)
     feedback: str
     confidence: Literal["high", "medium", "low"]
 
@@ -76,9 +76,9 @@ class WritingScore(BaseModel):
 class SpeakingScore(BaseModel):
     """Structured output from LLM for speaking grading"""
 
-    fluency: float = Field(ge=0, le=10)
+    fluency_organization: float = Field(ge=0, le=10)
     pronunciation: float = Field(ge=0, le=10)
-    content: float = Field(ge=0, le=10)
+    grammar: float = Field(ge=0, le=10)
     vocabulary: float = Field(ge=0, le=10)
     feedback: str
     confidence: Literal["high", "medium", "low"]
