@@ -5,8 +5,14 @@ import type { Exam, ExamBlueprint, QuestionLevel } from "@/types/api"
 function useCreateExam() {
 	const qc = useQueryClient()
 	return useMutation({
-		mutationFn: (body: { level: QuestionLevel; blueprint: ExamBlueprint; isActive?: boolean }) =>
-			api.post<Exam>("/api/exams", body),
+		mutationFn: (body: {
+			title: string
+			level: QuestionLevel
+			blueprint: ExamBlueprint
+			isActive?: boolean
+			description?: string | null
+			durationMinutes?: number | null
+		}) => api.post<Exam>("/api/exams", body),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: ["exams"] })
 		},
@@ -21,9 +27,12 @@ function useAdminUpdateExam() {
 			...body
 		}: {
 			id: string
+			title?: string
 			level?: QuestionLevel
 			blueprint?: ExamBlueprint
 			isActive?: boolean
+			description?: string | null
+			durationMinutes?: number | null
 		}) => api.patch<Exam>(`/api/exams/${id}`, body),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: ["exams"] })

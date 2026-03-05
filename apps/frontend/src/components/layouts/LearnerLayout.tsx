@@ -1,13 +1,11 @@
 import {
 	AnalyticsUpIcon,
-	AssignmentsIcon,
+	Book02Icon,
 	CheckmarkCircle01Icon,
 	DocumentValidationIcon,
 	Fire02Icon,
-	Home01Icon,
 	Logout01Icon,
 	Menu01Icon,
-	Settings01Icon,
 	UserCircleIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -75,18 +73,17 @@ export function LearnerLayout() {
 					</Link>
 					<nav className="hidden items-center gap-1 md:flex">
 						{[
-							{ label: "Trang chủ", icon: Home01Icon, href: "/dashboard" as const },
-							{ label: "Bài thi", icon: DocumentValidationIcon, href: "/exams" as const },
+							{ label: "Luyện tập", icon: Book02Icon, href: "/practice" as const },
+							{ label: "Thi thử", icon: DocumentValidationIcon, href: "/exams" as const },
 							{ label: "Tiến độ", icon: AnalyticsUpIcon, href: "/progress" as const },
-							{ label: "Bài nộp", icon: AssignmentsIcon, href: "/submissions" as const },
 						].map((item) => (
 							<Link
 								key={item.label}
 								to={item.href}
-								className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+								className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
 								activeProps={{
 									className:
-										"flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors text-foreground",
+										"flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary transition-colors",
 								}}
 							>
 								<HugeiconsIcon icon={item.icon} className="size-[18px]" strokeWidth={1.75} />
@@ -154,10 +151,6 @@ export function LearnerLayout() {
 										<HugeiconsIcon icon={UserCircleIcon} className="size-4" strokeWidth={1.75} />
 										Hồ sơ
 									</Link>
-								</DropdownMenuItem>
-								<DropdownMenuItem>
-									<HugeiconsIcon icon={Settings01Icon} className="size-4" strokeWidth={1.75} />
-									Cài đặt
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem onClick={handleLogout}>

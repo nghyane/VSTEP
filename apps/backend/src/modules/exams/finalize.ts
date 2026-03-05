@@ -197,6 +197,8 @@ export async function writePlacement(
       speakingLevel: level(scores.speaking),
       writingSource: "ai",
       speakingSource: "ai",
+      source: "placement",
+      confidence: "high",
     })
     .onConflictDoUpdate({
       target: table.userPlacements.userId,
@@ -209,6 +211,8 @@ export async function writePlacement(
         speakingLevel: level(scores.speaking),
         writingSource: "ai",
         speakingSource: "ai",
+        source: "placement",
+        confidence: "high",
         updatedAt: new Date().toISOString(),
       },
     });

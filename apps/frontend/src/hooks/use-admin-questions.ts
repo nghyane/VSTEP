@@ -63,6 +63,7 @@ function useUpdateQuestion() {
 			answerKey?: { correctAnswers: Record<string, string> }
 			explanation?: string
 			isActive?: boolean
+			level?: string
 			knowledgePointIds?: string[]
 		}) => api.patch<QuestionWithKnowledgePoints>(`/api/questions/${id}`, body),
 		onSuccess: () => {

@@ -371,6 +371,8 @@ export async function seedProgress(
       userId: learner1,
       sessionId: placementSession.id,
       status: "completed",
+      source: "placement",
+      confidence: "high",
       listeningLevel: scoreToLevel(5.0),
       readingLevel: scoreToLevel(6.0),
       writingLevel: scoreToLevel(5.5),

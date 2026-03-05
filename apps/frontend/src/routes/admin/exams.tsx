@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { useAdminUpdateExam, useCreateExam } from "@/hooks/use-admin-exams"
 import { useExams } from "@/hooks/use-exams"
 import { cn } from "@/lib/utils"
-import type { QuestionLevel } from "@/types/api"
+import type { ExamType, QuestionLevel } from "@/types/api"
 
 export const Route = createFileRoute("/admin/exams")({
 	component: AdminExams,
@@ -22,6 +22,12 @@ const levelColor: Record<QuestionLevel, string> = {
 	C1: "bg-red-100 text-red-700",
 }
 
+const examTypeLabels: Record<ExamType, string> = {
+	practice: "Luyện tập",
+	placement: "Xếp lớp",
+	mock: "Thi thử",
+}
+
 function AdminExams() {
 	const { data, isLoading, error } = useExams()
 	const createExam = useCreateExam()
@@ -30,16 +36,20 @@ function AdminExams() {
 	const [level, setLevel] = useState<QuestionLevel>("B1")
 	const [isActive, setIsActive] = useState(true)
 	const [blueprint, setBlueprint] = useState("")
+	const [title, setTitle] = useState("")
+	const [durationMinutes, setDurationMinutes] = useState<number | undefined>(undefined)
 
 	function handleCreate() {
 		try {
 			const parsed = JSON.parse(blueprint)
 			createExam.mutate(
-				{ level, blueprint: parsed, isActive },
+				{ title, level, blueprint: parsed, isActive, durationMinutes: durationMinutes || null },
 				{
 					onSuccess: () => {
 						setShowForm(false)
 						setBlueprint("")
+						setTitle("")
+						setDurationMinutes(undefined)
 					},
 				},
 			)
@@ -75,6 +85,15 @@ function AdminExams() {
 			{showForm && (
 				<div className="rounded-2xl border bg-muted/30 p-5 space-y-4">
 					<div className="flex flex-wrap gap-4">
+						<label className="flex-1 space-y-1">
+							<span className="text-sm font-medium">Tiêu đề</span>
+							<input
+								value={title}
+								onChange={(e) => setTitle(e.target.value)}
+								placeholder="Nhập tiêu đề đề thi..."
+								className="block w-full rounded-2xl border bg-background px-3 py-2 text-sm"
+							/>
+						</label>
 						<label className="space-y-1">
 							<span className="text-sm font-medium">Cấp độ</span>
 							<select
@@ -88,6 +107,18 @@ function AdminExams() {
 									</option>
 								))}
 							</select>
+						</label>
+						<label className="space-y-1">
+							<span className="text-sm font-medium">Thời gian (phút)</span>
+							<input
+								type="number"
+								value={durationMinutes ?? ""}
+								onChange={(e) =>
+									setDurationMinutes(e.target.value ? Number(e.target.value) : undefined)
+								}
+								placeholder="Ví dụ: 120"
+								className="block rounded-2xl border bg-background px-3 py-2 text-sm w-32"
+							/>
 						</label>
 						<label className="flex items-center gap-2 self-end">
 							<input
@@ -121,8 +152,10 @@ function AdminExams() {
 					<table className="w-full text-sm">
 						<thead className="bg-muted/50">
 							<tr>
-								<th className="px-4 py-3 text-left font-medium">ID</th>
+								<th className="px-4 py-3 text-left font-medium">Tiêu đề</th>
 								<th className="px-4 py-3 text-left font-medium">Cấp độ</th>
+								<th className="px-4 py-3 text-left font-medium">Loại</th>
+								<th className="px-4 py-3 text-left font-medium">Thời gian</th>
 								<th className="px-4 py-3 text-left font-medium">Trạng thái</th>
 								<th className="px-4 py-3 text-left font-medium">Ngày tạo</th>
 								<th className="px-4 py-3 text-right font-medium">Hành động</th>
@@ -131,9 +164,15 @@ function AdminExams() {
 						<tbody>
 							{exams.map((exam) => (
 								<tr key={exam.id} className="border-t">
-									<td className="px-4 py-3 font-mono text-xs">{exam.id.slice(0, 8)}…</td>
+									<td className="px-4 py-3 font-medium">
+										{exam.title || `${exam.id.slice(0, 8)}…`}
+									</td>
 									<td className="px-4 py-3">
 										<Badge className={cn("border-0", levelColor[exam.level])}>{exam.level}</Badge>
+									</td>
+									<td className="px-4 py-3">{examTypeLabels[exam.type] ?? exam.type}</td>
+									<td className="px-4 py-3 text-muted-foreground">
+										{exam.durationMinutes ? `${exam.durationMinutes} phút` : "—"}
 									</td>
 									<td className="px-4 py-3">
 										{exam.isActive ? (

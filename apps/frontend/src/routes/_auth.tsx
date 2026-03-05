@@ -4,7 +4,7 @@ import { isAuthenticated } from "@/lib/auth"
 
 export const Route = createFileRoute("/_auth")({
 	beforeLoad: () => {
-		if (isAuthenticated()) throw redirect({ to: "/dashboard" })
+		if (isAuthenticated()) throw redirect({ to: "/practice" })
 	},
 	component: AuthLayout,
 })

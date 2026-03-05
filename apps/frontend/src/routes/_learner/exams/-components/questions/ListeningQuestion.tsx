@@ -57,3 +57,31 @@ export const ListeningQuestion = memo(function ListeningQuestion({
 		</div>
 	)
 })
+
+export function AudioPlayerSection({
+	audioUrl,
+	transcript,
+}: {
+	audioUrl: string
+	transcript?: string
+}) {
+	return (
+		<div className="space-y-4">
+			<div className="rounded-xl bg-muted/30 p-4">
+				{/* biome-ignore lint/a11y/useMediaCaption: VSTEP listening exam audio */}
+				<audio
+					controls
+					controlsList="nodownload"
+					preload="metadata"
+					className="w-full"
+					src={audioUrl}
+				/>
+			</div>
+			{transcript && (
+				<div className="rounded-xl bg-muted/30 p-4">
+					<p className="whitespace-pre-line text-sm">{transcript}</p>
+				</div>
+			)}
+		</div>
+	)
+}

@@ -22,18 +22,25 @@ import { Route as AdminQuestionsRouteImport } from './routes/admin/questions'
 import { Route as AdminKnowledgePointsRouteImport } from './routes/admin/knowledge-points'
 import { Route as AdminExamsRouteImport } from './routes/admin/exams'
 import { Route as LearnerProfileRouteImport } from './routes/_learner/profile'
-import { Route as LearnerOnboardingRouteImport } from './routes/_learner/onboarding'
 import { Route as LearnerDashboardRouteImport } from './routes/_learner/dashboard'
 import { Route as InstructorManageRouteImport } from './routes/_instructor/manage'
+import { Route as FocusedOnboardingRouteImport } from './routes/_focused/onboarding'
+import { Route as FocusedExerciseRouteImport } from './routes/_focused/exercise'
 import { Route as FocusedExamRouteImport } from './routes/_focused/exam'
 import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as LearnerSubmissionsIndexRouteImport } from './routes/_learner/submissions/index'
 import { Route as LearnerProgressIndexRouteImport } from './routes/_learner/progress/index'
+import { Route as LearnerPracticeIndexRouteImport } from './routes/_learner/practice/index'
 import { Route as LearnerExamsIndexRouteImport } from './routes/_learner/exams/index'
 import { Route as LearnerSubmissionsIdRouteImport } from './routes/_learner/submissions/$id'
 import { Route as LearnerProgressSkillRouteImport } from './routes/_learner/progress/$skill'
+import { Route as LearnerPracticeWritingRouteImport } from './routes/_learner/practice/writing'
+import { Route as LearnerPracticeSpeakingRouteImport } from './routes/_learner/practice/speaking'
+import { Route as LearnerPracticeReadingRouteImport } from './routes/_learner/practice/reading'
+import { Route as LearnerPracticeListeningRouteImport } from './routes/_learner/practice/listening'
 import { Route as LearnerExamsExamIdRouteImport } from './routes/_learner/exams/$examId'
+import { Route as FocusedPracticeSessionIdRouteImport } from './routes/_focused/practice.$sessionId'
 import { Route as LearnerExamsSessionsSessionIdRouteImport } from './routes/_learner/exams/sessions.$sessionId'
 
 const AdminRoute = AdminRouteImport.update({
@@ -97,11 +104,6 @@ const LearnerProfileRoute = LearnerProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => LearnerRoute,
 } as any)
-const LearnerOnboardingRoute = LearnerOnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => LearnerRoute,
-} as any)
 const LearnerDashboardRoute = LearnerDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -111,6 +113,16 @@ const InstructorManageRoute = InstructorManageRouteImport.update({
   id: '/manage',
   path: '/manage',
   getParentRoute: () => InstructorRoute,
+} as any)
+const FocusedOnboardingRoute = FocusedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => FocusedRoute,
+} as any)
+const FocusedExerciseRoute = FocusedExerciseRouteImport.update({
+  id: '/exercise',
+  path: '/exercise',
+  getParentRoute: () => FocusedRoute,
 } as any)
 const FocusedExamRoute = FocusedExamRouteImport.update({
   id: '/exam',
@@ -137,6 +149,11 @@ const LearnerProgressIndexRoute = LearnerProgressIndexRouteImport.update({
   path: '/progress/',
   getParentRoute: () => LearnerRoute,
 } as any)
+const LearnerPracticeIndexRoute = LearnerPracticeIndexRouteImport.update({
+  id: '/practice/',
+  path: '/practice/',
+  getParentRoute: () => LearnerRoute,
+} as any)
 const LearnerExamsIndexRoute = LearnerExamsIndexRouteImport.update({
   id: '/exams/',
   path: '/exams/',
@@ -152,11 +169,38 @@ const LearnerProgressSkillRoute = LearnerProgressSkillRouteImport.update({
   path: '/progress/$skill',
   getParentRoute: () => LearnerRoute,
 } as any)
+const LearnerPracticeWritingRoute = LearnerPracticeWritingRouteImport.update({
+  id: '/practice/writing',
+  path: '/practice/writing',
+  getParentRoute: () => LearnerRoute,
+} as any)
+const LearnerPracticeSpeakingRoute = LearnerPracticeSpeakingRouteImport.update({
+  id: '/practice/speaking',
+  path: '/practice/speaking',
+  getParentRoute: () => LearnerRoute,
+} as any)
+const LearnerPracticeReadingRoute = LearnerPracticeReadingRouteImport.update({
+  id: '/practice/reading',
+  path: '/practice/reading',
+  getParentRoute: () => LearnerRoute,
+} as any)
+const LearnerPracticeListeningRoute =
+  LearnerPracticeListeningRouteImport.update({
+    id: '/practice/listening',
+    path: '/practice/listening',
+    getParentRoute: () => LearnerRoute,
+  } as any)
 const LearnerExamsExamIdRoute = LearnerExamsExamIdRouteImport.update({
   id: '/exams/$examId',
   path: '/exams/$examId',
   getParentRoute: () => LearnerRoute,
 } as any)
+const FocusedPracticeSessionIdRoute =
+  FocusedPracticeSessionIdRouteImport.update({
+    id: '/practice/$sessionId',
+    path: '/practice/$sessionId',
+    getParentRoute: () => FocusedRoute,
+  } as any)
 const LearnerExamsSessionsSessionIdRoute =
   LearnerExamsSessionsSessionIdRouteImport.update({
     id: '/exams/sessions/$sessionId',
@@ -170,9 +214,10 @@ export interface FileRoutesByFullPath {
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
   '/exam': typeof FocusedExamRoute
+  '/exercise': typeof FocusedExerciseRoute
+  '/onboarding': typeof FocusedOnboardingRoute
   '/manage': typeof InstructorManageRoute
   '/dashboard': typeof LearnerDashboardRoute
-  '/onboarding': typeof LearnerOnboardingRoute
   '/profile': typeof LearnerProfileRoute
   '/admin/exams': typeof AdminExamsRoute
   '/admin/knowledge-points': typeof AdminKnowledgePointsRoute
@@ -180,10 +225,16 @@ export interface FileRoutesByFullPath {
   '/admin/submissions': typeof AdminSubmissionsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/': typeof AdminIndexRoute
+  '/practice/$sessionId': typeof FocusedPracticeSessionIdRoute
   '/exams/$examId': typeof LearnerExamsExamIdRoute
+  '/practice/listening': typeof LearnerPracticeListeningRoute
+  '/practice/reading': typeof LearnerPracticeReadingRoute
+  '/practice/speaking': typeof LearnerPracticeSpeakingRoute
+  '/practice/writing': typeof LearnerPracticeWritingRoute
   '/progress/$skill': typeof LearnerProgressSkillRoute
   '/submissions/$id': typeof LearnerSubmissionsIdRoute
   '/exams/': typeof LearnerExamsIndexRoute
+  '/practice/': typeof LearnerPracticeIndexRoute
   '/progress/': typeof LearnerProgressIndexRoute
   '/submissions/': typeof LearnerSubmissionsIndexRoute
   '/exams/sessions/$sessionId': typeof LearnerExamsSessionsSessionIdRoute
@@ -193,9 +244,10 @@ export interface FileRoutesByTo {
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
   '/exam': typeof FocusedExamRoute
+  '/exercise': typeof FocusedExerciseRoute
+  '/onboarding': typeof FocusedOnboardingRoute
   '/manage': typeof InstructorManageRoute
   '/dashboard': typeof LearnerDashboardRoute
-  '/onboarding': typeof LearnerOnboardingRoute
   '/profile': typeof LearnerProfileRoute
   '/admin/exams': typeof AdminExamsRoute
   '/admin/knowledge-points': typeof AdminKnowledgePointsRoute
@@ -203,10 +255,16 @@ export interface FileRoutesByTo {
   '/admin/submissions': typeof AdminSubmissionsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin': typeof AdminIndexRoute
+  '/practice/$sessionId': typeof FocusedPracticeSessionIdRoute
   '/exams/$examId': typeof LearnerExamsExamIdRoute
+  '/practice/listening': typeof LearnerPracticeListeningRoute
+  '/practice/reading': typeof LearnerPracticeReadingRoute
+  '/practice/speaking': typeof LearnerPracticeSpeakingRoute
+  '/practice/writing': typeof LearnerPracticeWritingRoute
   '/progress/$skill': typeof LearnerProgressSkillRoute
   '/submissions/$id': typeof LearnerSubmissionsIdRoute
   '/exams': typeof LearnerExamsIndexRoute
+  '/practice': typeof LearnerPracticeIndexRoute
   '/progress': typeof LearnerProgressIndexRoute
   '/submissions': typeof LearnerSubmissionsIndexRoute
   '/exams/sessions/$sessionId': typeof LearnerExamsSessionsSessionIdRoute
@@ -222,9 +280,10 @@ export interface FileRoutesById {
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/register': typeof AuthRegisterRoute
   '/_focused/exam': typeof FocusedExamRoute
+  '/_focused/exercise': typeof FocusedExerciseRoute
+  '/_focused/onboarding': typeof FocusedOnboardingRoute
   '/_instructor/manage': typeof InstructorManageRoute
   '/_learner/dashboard': typeof LearnerDashboardRoute
-  '/_learner/onboarding': typeof LearnerOnboardingRoute
   '/_learner/profile': typeof LearnerProfileRoute
   '/admin/exams': typeof AdminExamsRoute
   '/admin/knowledge-points': typeof AdminKnowledgePointsRoute
@@ -232,10 +291,16 @@ export interface FileRoutesById {
   '/admin/submissions': typeof AdminSubmissionsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/': typeof AdminIndexRoute
+  '/_focused/practice/$sessionId': typeof FocusedPracticeSessionIdRoute
   '/_learner/exams/$examId': typeof LearnerExamsExamIdRoute
+  '/_learner/practice/listening': typeof LearnerPracticeListeningRoute
+  '/_learner/practice/reading': typeof LearnerPracticeReadingRoute
+  '/_learner/practice/speaking': typeof LearnerPracticeSpeakingRoute
+  '/_learner/practice/writing': typeof LearnerPracticeWritingRoute
   '/_learner/progress/$skill': typeof LearnerProgressSkillRoute
   '/_learner/submissions/$id': typeof LearnerSubmissionsIdRoute
   '/_learner/exams/': typeof LearnerExamsIndexRoute
+  '/_learner/practice/': typeof LearnerPracticeIndexRoute
   '/_learner/progress/': typeof LearnerProgressIndexRoute
   '/_learner/submissions/': typeof LearnerSubmissionsIndexRoute
   '/_learner/exams/sessions/$sessionId': typeof LearnerExamsSessionsSessionIdRoute
@@ -248,9 +313,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/exam'
+    | '/exercise'
+    | '/onboarding'
     | '/manage'
     | '/dashboard'
-    | '/onboarding'
     | '/profile'
     | '/admin/exams'
     | '/admin/knowledge-points'
@@ -258,10 +324,16 @@ export interface FileRouteTypes {
     | '/admin/submissions'
     | '/admin/users'
     | '/admin/'
+    | '/practice/$sessionId'
     | '/exams/$examId'
+    | '/practice/listening'
+    | '/practice/reading'
+    | '/practice/speaking'
+    | '/practice/writing'
     | '/progress/$skill'
     | '/submissions/$id'
     | '/exams/'
+    | '/practice/'
     | '/progress/'
     | '/submissions/'
     | '/exams/sessions/$sessionId'
@@ -271,9 +343,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/exam'
+    | '/exercise'
+    | '/onboarding'
     | '/manage'
     | '/dashboard'
-    | '/onboarding'
     | '/profile'
     | '/admin/exams'
     | '/admin/knowledge-points'
@@ -281,10 +354,16 @@ export interface FileRouteTypes {
     | '/admin/submissions'
     | '/admin/users'
     | '/admin'
+    | '/practice/$sessionId'
     | '/exams/$examId'
+    | '/practice/listening'
+    | '/practice/reading'
+    | '/practice/speaking'
+    | '/practice/writing'
     | '/progress/$skill'
     | '/submissions/$id'
     | '/exams'
+    | '/practice'
     | '/progress'
     | '/submissions'
     | '/exams/sessions/$sessionId'
@@ -299,9 +378,10 @@ export interface FileRouteTypes {
     | '/_auth/login'
     | '/_auth/register'
     | '/_focused/exam'
+    | '/_focused/exercise'
+    | '/_focused/onboarding'
     | '/_instructor/manage'
     | '/_learner/dashboard'
-    | '/_learner/onboarding'
     | '/_learner/profile'
     | '/admin/exams'
     | '/admin/knowledge-points'
@@ -309,10 +389,16 @@ export interface FileRouteTypes {
     | '/admin/submissions'
     | '/admin/users'
     | '/admin/'
+    | '/_focused/practice/$sessionId'
     | '/_learner/exams/$examId'
+    | '/_learner/practice/listening'
+    | '/_learner/practice/reading'
+    | '/_learner/practice/speaking'
+    | '/_learner/practice/writing'
     | '/_learner/progress/$skill'
     | '/_learner/submissions/$id'
     | '/_learner/exams/'
+    | '/_learner/practice/'
     | '/_learner/progress/'
     | '/_learner/submissions/'
     | '/_learner/exams/sessions/$sessionId'
@@ -420,13 +506,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LearnerProfileRouteImport
       parentRoute: typeof LearnerRoute
     }
-    '/_learner/onboarding': {
-      id: '/_learner/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof LearnerOnboardingRouteImport
-      parentRoute: typeof LearnerRoute
-    }
     '/_learner/dashboard': {
       id: '/_learner/dashboard'
       path: '/dashboard'
@@ -440,6 +519,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/manage'
       preLoaderRoute: typeof InstructorManageRouteImport
       parentRoute: typeof InstructorRoute
+    }
+    '/_focused/onboarding': {
+      id: '/_focused/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof FocusedOnboardingRouteImport
+      parentRoute: typeof FocusedRoute
+    }
+    '/_focused/exercise': {
+      id: '/_focused/exercise'
+      path: '/exercise'
+      fullPath: '/exercise'
+      preLoaderRoute: typeof FocusedExerciseRouteImport
+      parentRoute: typeof FocusedRoute
     }
     '/_focused/exam': {
       id: '/_focused/exam'
@@ -476,6 +569,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LearnerProgressIndexRouteImport
       parentRoute: typeof LearnerRoute
     }
+    '/_learner/practice/': {
+      id: '/_learner/practice/'
+      path: '/practice'
+      fullPath: '/practice/'
+      preLoaderRoute: typeof LearnerPracticeIndexRouteImport
+      parentRoute: typeof LearnerRoute
+    }
     '/_learner/exams/': {
       id: '/_learner/exams/'
       path: '/exams'
@@ -497,12 +597,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LearnerProgressSkillRouteImport
       parentRoute: typeof LearnerRoute
     }
+    '/_learner/practice/writing': {
+      id: '/_learner/practice/writing'
+      path: '/practice/writing'
+      fullPath: '/practice/writing'
+      preLoaderRoute: typeof LearnerPracticeWritingRouteImport
+      parentRoute: typeof LearnerRoute
+    }
+    '/_learner/practice/speaking': {
+      id: '/_learner/practice/speaking'
+      path: '/practice/speaking'
+      fullPath: '/practice/speaking'
+      preLoaderRoute: typeof LearnerPracticeSpeakingRouteImport
+      parentRoute: typeof LearnerRoute
+    }
+    '/_learner/practice/reading': {
+      id: '/_learner/practice/reading'
+      path: '/practice/reading'
+      fullPath: '/practice/reading'
+      preLoaderRoute: typeof LearnerPracticeReadingRouteImport
+      parentRoute: typeof LearnerRoute
+    }
+    '/_learner/practice/listening': {
+      id: '/_learner/practice/listening'
+      path: '/practice/listening'
+      fullPath: '/practice/listening'
+      preLoaderRoute: typeof LearnerPracticeListeningRouteImport
+      parentRoute: typeof LearnerRoute
+    }
     '/_learner/exams/$examId': {
       id: '/_learner/exams/$examId'
       path: '/exams/$examId'
       fullPath: '/exams/$examId'
       preLoaderRoute: typeof LearnerExamsExamIdRouteImport
       parentRoute: typeof LearnerRoute
+    }
+    '/_focused/practice/$sessionId': {
+      id: '/_focused/practice/$sessionId'
+      path: '/practice/$sessionId'
+      fullPath: '/practice/$sessionId'
+      preLoaderRoute: typeof FocusedPracticeSessionIdRouteImport
+      parentRoute: typeof FocusedRoute
     }
     '/_learner/exams/sessions/$sessionId': {
       id: '/_learner/exams/sessions/$sessionId'
@@ -528,10 +663,16 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface FocusedRouteChildren {
   FocusedExamRoute: typeof FocusedExamRoute
+  FocusedExerciseRoute: typeof FocusedExerciseRoute
+  FocusedOnboardingRoute: typeof FocusedOnboardingRoute
+  FocusedPracticeSessionIdRoute: typeof FocusedPracticeSessionIdRoute
 }
 
 const FocusedRouteChildren: FocusedRouteChildren = {
   FocusedExamRoute: FocusedExamRoute,
+  FocusedExerciseRoute: FocusedExerciseRoute,
+  FocusedOnboardingRoute: FocusedOnboardingRoute,
+  FocusedPracticeSessionIdRoute: FocusedPracticeSessionIdRoute,
 }
 
 const FocusedRouteWithChildren =
@@ -551,12 +692,16 @@ const InstructorRouteWithChildren = InstructorRoute._addFileChildren(
 
 interface LearnerRouteChildren {
   LearnerDashboardRoute: typeof LearnerDashboardRoute
-  LearnerOnboardingRoute: typeof LearnerOnboardingRoute
   LearnerProfileRoute: typeof LearnerProfileRoute
   LearnerExamsExamIdRoute: typeof LearnerExamsExamIdRoute
+  LearnerPracticeListeningRoute: typeof LearnerPracticeListeningRoute
+  LearnerPracticeReadingRoute: typeof LearnerPracticeReadingRoute
+  LearnerPracticeSpeakingRoute: typeof LearnerPracticeSpeakingRoute
+  LearnerPracticeWritingRoute: typeof LearnerPracticeWritingRoute
   LearnerProgressSkillRoute: typeof LearnerProgressSkillRoute
   LearnerSubmissionsIdRoute: typeof LearnerSubmissionsIdRoute
   LearnerExamsIndexRoute: typeof LearnerExamsIndexRoute
+  LearnerPracticeIndexRoute: typeof LearnerPracticeIndexRoute
   LearnerProgressIndexRoute: typeof LearnerProgressIndexRoute
   LearnerSubmissionsIndexRoute: typeof LearnerSubmissionsIndexRoute
   LearnerExamsSessionsSessionIdRoute: typeof LearnerExamsSessionsSessionIdRoute
@@ -564,12 +709,16 @@ interface LearnerRouteChildren {
 
 const LearnerRouteChildren: LearnerRouteChildren = {
   LearnerDashboardRoute: LearnerDashboardRoute,
-  LearnerOnboardingRoute: LearnerOnboardingRoute,
   LearnerProfileRoute: LearnerProfileRoute,
   LearnerExamsExamIdRoute: LearnerExamsExamIdRoute,
+  LearnerPracticeListeningRoute: LearnerPracticeListeningRoute,
+  LearnerPracticeReadingRoute: LearnerPracticeReadingRoute,
+  LearnerPracticeSpeakingRoute: LearnerPracticeSpeakingRoute,
+  LearnerPracticeWritingRoute: LearnerPracticeWritingRoute,
   LearnerProgressSkillRoute: LearnerProgressSkillRoute,
   LearnerSubmissionsIdRoute: LearnerSubmissionsIdRoute,
   LearnerExamsIndexRoute: LearnerExamsIndexRoute,
+  LearnerPracticeIndexRoute: LearnerPracticeIndexRoute,
   LearnerProgressIndexRoute: LearnerProgressIndexRoute,
   LearnerSubmissionsIndexRoute: LearnerSubmissionsIndexRoute,
   LearnerExamsSessionsSessionIdRoute: LearnerExamsSessionsSessionIdRoute,

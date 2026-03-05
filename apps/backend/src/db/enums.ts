@@ -5,6 +5,8 @@
 
 import {
   knowledgePointCategoryEnum,
+  placementConfidenceEnum,
+  placementSourceEnum,
   questionLevelEnum,
   skillEnum,
   vstepBandEnum,
@@ -26,5 +28,12 @@ export const SubmissionStatus = t.UnionEnum(submissionStatusEnum.enumValues, {
 });
 export const KnowledgePointCategory = t.UnionEnum(
   knowledgePointCategoryEnum.enumValues,
+  { default: undefined },
+);
+export const PlacementSource = t.UnionEnum(placementSourceEnum.enumValues, {
+  default: undefined,
+});
+export const PlacementConfidence = t.UnionEnum(
+  placementConfidenceEnum.enumValues,
   { default: undefined },
 );

@@ -18,20 +18,10 @@ export const Route = createFileRoute("/admin/knowledge-points")({
 const categoryLabels: Record<string, string> = {
 	grammar: "Ngữ pháp",
 	vocabulary: "Từ vựng",
-	pronunciation: "Phát âm",
-	discourse: "Diễn ngôn",
-	pragmatics: "Ngữ dụng",
-	fluency: "Lưu loát",
+	strategy: "Chiến lược",
 }
 
-const categories: KnowledgePointCategory[] = [
-	"grammar",
-	"vocabulary",
-	"pronunciation",
-	"discourse",
-	"pragmatics",
-	"fluency",
-]
+const categories: KnowledgePointCategory[] = ["grammar", "vocabulary", "strategy"]
 
 function KnowledgePointsPage() {
 	const [category, setCategory] = useState<string>("")

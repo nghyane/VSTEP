@@ -39,3 +39,15 @@ export const placementStatusEnum = pgEnum("placement_status", [
   "completed",
   "skipped",
 ]);
+
+export const placementSourceEnum = pgEnum("placement_source", [
+  "self_assess",
+  "placement",
+  "skipped",
+]);
+
+export const placementConfidenceEnum = pgEnum("placement_confidence", [
+  "high",
+  "medium",
+  "low",
+]);

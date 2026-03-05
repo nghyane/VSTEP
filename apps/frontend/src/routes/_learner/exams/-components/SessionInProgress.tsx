@@ -23,7 +23,7 @@ interface SessionInProgressProps {
 export function SessionInProgress({ session, sessionId, exam }: SessionInProgressProps) {
 	const [confirming, setConfirming] = useState(false)
 	const submitExam = useSubmitExam(sessionId)
-	const durationMinutes = exam?.blueprint?.durationMinutes ?? 0
+	const durationMinutes = exam?.durationMinutes ?? 0
 	const remaining = useTimer(session.startedAt, durationMinutes)
 	const { answers, updateAnswer, flush, isSaving } = useExamAnswers(sessionId, session.answers)
 

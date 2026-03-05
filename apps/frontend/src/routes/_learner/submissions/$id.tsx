@@ -11,7 +11,7 @@ import { createFileRoute, Link } from "@tanstack/react-router"
 import { Badge } from "@/components/ui/badge"
 import { useSubmission } from "@/hooks/use-submissions"
 import { cn } from "@/lib/utils"
-import type { Skill, SubmissionStatus } from "@/types/api"
+import type { GradingResult, Skill, SubmissionStatus } from "@/types/api"
 
 export const Route = createFileRoute("/_learner/submissions/$id")({
 	component: SubmissionDetailPage,
@@ -42,6 +42,32 @@ const statusConfig: Record<
 	failed: { label: "Lỗi", variant: "destructive" },
 }
 
+const WRITING_CRITERIA_LABELS: Record<string, string> = {
+	taskFulfillment: "Task Fulfillment",
+	organization: "Organization",
+	vocabulary: "Vocabulary",
+	grammar: "Grammar",
+}
+
+const SPEAKING_CRITERIA_LABELS: Record<string, string> = {
+	fluencyOrganization: "Fluency & Organization",
+	grammar: "Grammar",
+	pronunciation: "Pronunciation",
+	vocabulary: "Vocabulary",
+}
+
+function getCriteriaLabel(skill: Skill, key: string): string {
+	const labels = skill === "writing" ? WRITING_CRITERIA_LABELS : SPEAKING_CRITERIA_LABELS
+	return labels[key] ?? key
+}
+
+function getCriteriaScores(result: GradingResult | null): Record<string, number> | null {
+	if (!result) return null
+	if (result.type === "ai") return result.criteriaScores
+	if (result.type === "human") return result.criteriaScores ?? null
+	return null
+}
+
 function SubmissionDetailPage() {
 	const { id } = Route.useParams()
 	const { data, isLoading, isError } = useSubmission(id)
@@ -70,6 +96,8 @@ function SubmissionDetailPage() {
 	const status = statusConfig[data.status]
 	const submittedDate = new Date(data.createdAt).toLocaleString("vi-VN")
 	const completedDate = data.completedAt ? new Date(data.completedAt).toLocaleString("vi-VN") : null
+	const criteriaScores = getCriteriaScores(data.result)
+	const hasDetailedResult = data.skill === "writing" || data.skill === "speaking"
 
 	return (
 		<div className="space-y-6">
@@ -109,6 +137,26 @@ function SubmissionDetailPage() {
 						<p className="text-lg text-muted-foreground">Đang chấm</p>
 					)}
 				</div>
+
+				{/* Criteria scores */}
+				{hasDetailedResult && criteriaScores && Object.keys(criteriaScores).length > 0 && (
+					<div className="space-y-3">
+						<p className="text-sm font-medium">Điểm thành phần</p>
+						<div className="grid gap-3 sm:grid-cols-2">
+							{Object.entries(criteriaScores).map(([key, score]) => (
+								<div
+									key={key}
+									className="flex items-center justify-between rounded-lg bg-muted/30 px-4 py-3"
+								>
+									<span className="text-sm text-muted-foreground">
+										{getCriteriaLabel(data.skill, key)}
+									</span>
+									<span className="text-sm font-bold tabular-nums">{score}/10</span>
+								</div>
+							))}
+						</div>
+					</div>
+				)}
 
 				{/* Dates */}
 				<div className="flex flex-wrap gap-6 text-sm text-muted-foreground">

@@ -1,7 +1,8 @@
+import { BAND_THRESHOLDS } from "@common/scoring";
 import type { UserProgress } from "@db/index";
 import { db, table } from "@db/index";
 import { SKILLS } from "@db/schema/enums";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { latest } from "./goals";
 import { recentScores, WINDOW_SIZE } from "./service";
 import {
@@ -14,15 +15,80 @@ import {
   type Trend,
 } from "./trends";
 
+function daysUntil(deadline: string): number {
+  return Math.ceil((new Date(deadline).getTime() - Date.now()) / 86_400_000);
+}
+
+const BAND_ORDER: Record<string, number> = { B1: 1, B2: 2, C1: 3 };
+
+/** VSTEP overall = lowest of 4 skills. Returns null if any skill missing. */
+function overallBand(records: UserProgress[]): string | null {
+  if (records.length < SKILLS.length) return null;
+
+  let minOrder = Number.POSITIVE_INFINITY;
+  let minBand: string | null = null;
+
+  for (const r of records) {
+    const threshold =
+      BAND_THRESHOLDS[r.currentLevel as keyof typeof BAND_THRESHOLDS];
+    if (threshold === undefined) return null;
+    const order = BAND_ORDER[r.currentLevel] ?? 0;
+    if (order < minOrder) {
+      minOrder = order;
+      minBand = r.currentLevel;
+    }
+  }
+
+  return minBand;
+}
+
+function enrichGoal(
+  goal: Awaited<ReturnType<typeof latest>>,
+  records: UserProgress[],
+  etaWeeks: number | null,
+) {
+  if (!goal) return null;
+
+  const current = overallBand(records);
+  const achieved =
+    current !== null &&
+    (BAND_ORDER[current] ?? 0) >= (BAND_ORDER[goal.targetBand] ?? 0);
+
+  const daysRemaining = goal.deadline ? daysUntil(goal.deadline) : null;
+
+  const onTrack =
+    etaWeeks !== null && daysRemaining !== null
+      ? etaWeeks * 7 <= daysRemaining
+      : null;
+
+  return { ...goal, achieved, onTrack, daysRemaining };
+}
+
 export async function overview(userId: string) {
-  const [records, goal] = await Promise.all([
+  const [records, goal, allScores] = await Promise.all([
     db.query.userProgress.findMany({
       where: eq(table.userProgress.userId, userId),
     }),
     latest(userId),
+    recentScores(userId),
   ]);
 
-  return { skills: records, goal };
+  // Compute max ETA across skills (bottleneck = slowest skill)
+  let maxEta: number | null = null;
+  if (goal) {
+    const targetScore = bandMinScore(goal.targetBand);
+    if (targetScore !== undefined) {
+      const scoresBySkill = groupBySkill(allScores);
+      for (const s of SKILLS) {
+        const group = scoresBySkill.get(s);
+        if (!group) continue;
+        const eta = computeEta(group.scores, group.timestamps, targetScore);
+        if (eta !== null && (maxEta === null || eta > maxEta)) maxEta = eta;
+      }
+    }
+  }
+
+  return { skills: records, goal: enrichGoal(goal, records, maxEta) };
 }
 
 export async function bySkill(userId: string, skill: UserProgress["skill"]) {
@@ -71,6 +137,22 @@ export async function bySkill(userId: string, skill: UserProgress["skill"]) {
   };
 }
 
+function groupBySkill(
+  allScores: { skill: string; score: number; createdAt: string }[],
+) {
+  const map = new Map<string, { scores: number[]; timestamps: string[] }>();
+  for (const r of allScores) {
+    let group = map.get(r.skill);
+    if (!group) {
+      group = { scores: [], timestamps: [] };
+      map.set(r.skill, group);
+    }
+    group.scores.push(r.score);
+    group.timestamps.push(r.createdAt);
+  }
+  return map;
+}
+
 export async function spiderChart(userId: string) {
   const [allScores, goal] = await Promise.all([
     recentScores(userId),
@@ -78,21 +160,7 @@ export async function spiderChart(userId: string) {
   ]);
 
   const targetScore = goal ? bandMinScore(goal.targetBand) : undefined;
-
-  // Group scores by skill (already bounded to 10 per skill by SQL)
-  const scoresBySkill = new Map<
-    string,
-    { scores: number[]; timestamps: string[] }
-  >();
-  for (const r of allScores) {
-    let group = scoresBySkill.get(r.skill);
-    if (!group) {
-      group = { scores: [], timestamps: [] };
-      scoresBySkill.set(r.skill, group);
-    }
-    group.scores.push(r.score);
-    group.timestamps.push(r.createdAt);
-  }
+  const scoresBySkill = groupBySkill(allScores);
 
   const skills: Record<string, { current: number; trend: Trend }> = {};
   const perSkill: Record<string, number | null> = {};
@@ -122,53 +190,4 @@ export async function spiderChart(userId: string) {
       : null;
 
   return { skills, goal, eta: { weeks: overallWeeks, perSkill } };
-}
-
-export async function activity(userId: string, days: number) {
-  const rows = await db
-    .selectDistinctOn([sql`DATE(${table.userSkillScores.createdAt})`], {
-      date: sql<string>`DATE(${table.userSkillScores.createdAt})::text`.as(
-        "date",
-      ),
-    })
-    .from(table.userSkillScores)
-    .where(eq(table.userSkillScores.userId, userId))
-    .orderBy(sql`DATE(${table.userSkillScores.createdAt}) DESC`);
-
-  let streak = 0;
-  const first = rows[0];
-  if (first) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    let expected = today;
-    const firstDate = new Date(first.date);
-    firstDate.setHours(0, 0, 0, 0);
-
-    if (firstDate.getTime() < today.getTime()) {
-      expected = new Date(today);
-      expected.setDate(expected.getDate() - 1);
-    }
-
-    for (const row of rows) {
-      const d = new Date(row.date);
-      d.setHours(0, 0, 0, 0);
-      if (d.getTime() === expected.getTime()) {
-        streak++;
-        expected = new Date(expected);
-        expected.setDate(expected.getDate() - 1);
-      } else {
-        break;
-      }
-    }
-  }
-
-  const cutoff = new Date();
-  cutoff.setHours(0, 0, 0, 0);
-  cutoff.setDate(cutoff.getDate() - days + 1);
-  const cutoffStr = cutoff.toISOString().slice(0, 10);
-
-  const activeDays = rows.filter((r) => r.date >= cutoffStr).map((r) => r.date);
-
-  return { streak, total: rows.length, activeDays };
 }

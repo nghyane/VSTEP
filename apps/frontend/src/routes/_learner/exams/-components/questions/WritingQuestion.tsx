@@ -79,3 +79,38 @@ export const WritingQuestion = memo(function WritingQuestion({
 		</div>
 	)
 })
+
+export const WritingPromptSection = memo(function WritingPromptSection({
+	content,
+}: {
+	content: WritingContent
+}) {
+	return (
+		<div className="space-y-4">
+			<div className="rounded-xl bg-muted/30 p-5">
+				<p className="whitespace-pre-line">{content.prompt}</p>
+			</div>
+
+			{content.instructions && content.instructions.length > 0 && (
+				<ol className="list-decimal space-y-1 pl-6 text-sm">
+					{content.instructions.map((instruction, i) => (
+						<li key={`ins-${i}`}>{instruction}</li>
+					))}
+				</ol>
+			)}
+
+			{content.requiredPoints && content.requiredPoints.length > 0 && (
+				<div className="space-y-1">
+					<p className="text-sm font-medium">Yêu cầu:</p>
+					<ul className="list-disc space-y-1 pl-6 text-sm">
+						{content.requiredPoints.map((point, i) => (
+							<li key={`pt-${i}`}>{point}</li>
+						))}
+					</ul>
+				</div>
+			)}
+
+			<p className="text-sm text-muted-foreground">Tối thiểu {content.minWords} từ</p>
+		</div>
+	)
+})

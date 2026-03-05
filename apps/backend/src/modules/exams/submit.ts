@@ -1,20 +1,19 @@
 import type { Actor } from "@common/auth-types";
 import { BadRequestError } from "@common/errors";
-import {
-  calculateOverallScore,
-  calculateScore,
-  scoreToBand,
-} from "@common/scoring";
+import { calculateScore } from "@common/scoring";
 import { assertExists } from "@common/utils";
 import { db, table, takeFirstOrThrow } from "@db/index";
 import { and, eq, inArray } from "drizzle-orm";
+import {
+  finalizePlacementOnboarding,
+  populateKnowledgeProgress,
+} from "@/modules/onboarding/service";
 import { record, sync } from "@/modules/progress/service";
 import {
   dispatch,
   prepare,
   type Task,
 } from "@/modules/submissions/grading-dispatch";
-import { writePlacement } from "./finalize";
 import { gradeAnswers, persistCorrectness } from "./grading";
 import { SESSION_COLUMNS } from "./schema";
 import type { ExamSessionStatus } from "./service";
@@ -181,27 +180,12 @@ export async function submit(sessionId: string, actor: Actor) {
         .then((rows) => rows[0]);
 
       if (exam?.type === "placement") {
-        const overallScore = calculateOverallScore(
-          listeningScore,
-          readingScore,
-          null,
-          null,
-        );
-        const overallBand =
-          overallScore !== null ? scoreToBand(overallScore) : null;
-
-        await tx
-          .update(table.examSessions)
-          .set({ overallScore, overallBand, updatedAt: ts })
-          .where(eq(table.examSessions.id, sessionId));
-
-        await writePlacement(tx, session.userId, sessionId, {
-          listening: listeningScore,
-          reading: readingScore,
-          writing: null,
-          speaking: null,
-        });
+        await finalizePlacementOnboarding(tx, session.userId, sessionId);
+      } else {
+        await populateKnowledgeProgress(tx, session.userId, grade.correctness);
       }
+    } else {
+      await populateKnowledgeProgress(tx, session.userId, grade.correctness);
     }
 
     return result;

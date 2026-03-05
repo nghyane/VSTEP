@@ -19,9 +19,19 @@ export type GoalBody = typeof GoalBody.static;
 export const GoalUpdateBody = t.Partial(GoalBody);
 export type GoalUpdateBody = typeof GoalUpdateBody.static;
 
+export const EnrichedGoal = t.Intersect([
+  Goal,
+  t.Object({
+    achieved: t.Boolean(),
+    onTrack: t.Nullable(t.Boolean()),
+    daysRemaining: t.Nullable(t.Integer()),
+  }),
+]);
+export type EnrichedGoal = typeof EnrichedGoal.static;
+
 export const ProgressOverview = t.Object({
   skills: t.Array(SkillProgress),
-  goal: t.Nullable(Goal),
+  goal: t.Nullable(EnrichedGoal),
 });
 
 export type ProgressOverview = typeof ProgressOverview.static;

@@ -44,6 +44,20 @@ services:
       timeout: 3s
       retries: 5
 
+  minio-init:
+    image: minio/minio:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        mc alias set local http://minio:9000 minioadmin minioadmin
+        mc mb --ignore-existing local/vstep
+        mc anonymous set download local/vstep/avatars
+    restart: "no"
+
 volumes:
   pgdata:
   redisdata:

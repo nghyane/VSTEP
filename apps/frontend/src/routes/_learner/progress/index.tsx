@@ -9,6 +9,7 @@ import {
 import type { IconSvgElement } from "@hugeicons/react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link } from "@tanstack/react-router"
+import { SpiderChart } from "@/components/common/SpiderChart"
 import { useProgress, useSpiderChart } from "@/hooks/use-progress"
 import { cn } from "@/lib/utils"
 import type { Skill, Trend } from "@/types/api"
@@ -29,6 +30,13 @@ const skillColor: Record<Skill, string> = {
 	reading: "bg-skill-reading/15 text-skill-reading",
 	writing: "bg-skill-writing/15 text-skill-writing",
 	speaking: "bg-skill-speaking/15 text-skill-speaking",
+}
+
+const skillColorText: Record<Skill, string> = {
+	listening: "text-skill-listening",
+	reading: "text-skill-reading",
+	writing: "text-skill-writing",
+	speaking: "text-skill-speaking",
 }
 
 const skillBarBg: Record<Skill, string> = {
@@ -63,6 +71,14 @@ function ProgressOverviewPage() {
 	const goal = spiderData?.goal ?? progress.data?.goal ?? null
 	const hasData = spiderData && Object.keys(spiderData.skills).length > 0
 
+	const spiderSkills = spiderData
+		? SKILLS.map(({ key, label }) => ({
+				label,
+				value: spiderData.skills[key]?.current ?? 0,
+				color: skillColorText[key],
+			}))
+		: []
+
 	if (!hasData) {
 		return (
 			<div className="py-20 text-center">
@@ -81,6 +97,12 @@ function ProgressOverviewPage() {
 
 			<div className="grid gap-8 lg:grid-cols-[1fr_300px]">
 				<div className="space-y-8">
+					{spiderSkills.length > 0 && (
+						<div className="flex flex-col items-center rounded-xl bg-muted/30 p-6">
+							<h2 className="mb-2 text-sm font-medium text-muted-foreground">Tổng quan kỹ năng</h2>
+							<SpiderChart skills={spiderSkills} className="size-64" />
+						</div>
+					)}
 					<SkillBars skills={spiderData.skills} />
 					<EtaSection eta={spiderData.eta} />
 				</div>

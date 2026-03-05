@@ -98,7 +98,7 @@ export const ReadingQuestion = memo(function ReadingQuestion({
 	)
 })
 
-const PassageSection = memo(function PassageSection({ passage }: { passage: string }) {
+export const PassageSection = memo(function PassageSection({ passage }: { passage: string }) {
 	return (
 		<div className="max-h-[400px] overflow-y-auto rounded-xl bg-muted/30 p-5">
 			<div className="prose prose-sm whitespace-pre-line">{passage}</div>
@@ -106,7 +106,7 @@ const PassageSection = memo(function PassageSection({ passage }: { passage: stri
 	)
 })
 
-const MatchingSection = memo(function MatchingSection({
+export const MatchingSection = memo(function MatchingSection({
 	content,
 }: {
 	content: ReadingMatchingContent

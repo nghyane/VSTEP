@@ -38,4 +38,12 @@ function isAuthenticated() {
 	return !!token()
 }
 
-export { clear, isAuthenticated, refreshToken, save, token, user }
+let redirecting = false
+function handleAuthError() {
+	if (redirecting) return
+	redirecting = true
+	clear()
+	window.location.href = "/login"
+}
+
+export { clear, handleAuthError, isAuthenticated, refreshToken, save, token, user }

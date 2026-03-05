@@ -7,6 +7,7 @@ import { classes } from "@/modules/classes";
 import { exams } from "@/modules/exams";
 import { health } from "@/modules/health";
 import { knowledgePoints } from "@/modules/knowledge-points";
+import { onboarding } from "@/modules/onboarding";
 import { progress } from "@/modules/progress";
 import { questions } from "@/modules/questions";
 import { submissions } from "@/modules/submissions";
@@ -43,6 +44,11 @@ const api = new Elysia({ prefix: "/api" })
             description:
               "Class management, enrollment, dashboard, and feedback",
           },
+          {
+            name: "Onboarding",
+            description:
+              "Learner onboarding: placement test, self-assessment, or skip",
+          },
         ],
         components: {
           securitySchemes: {
@@ -63,7 +69,8 @@ const api = new Elysia({ prefix: "/api" })
   .use(knowledgePoints)
   .use(progress)
   .use(exams)
-  .use(classes);
+  .use(classes)
+  .use(onboarding);
 
 /** Root app — health check outside /api, everything else inside */
 export const app = new Elysia()

@@ -12,6 +12,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { createdAt, timestamps } from "./columns";
 import {
+  placementConfidenceEnum,
+  placementSourceEnum,
   placementStatusEnum,
   questionLevelEnum,
   skillEnum,
@@ -149,6 +151,8 @@ export const userPlacements = pgTable("user_placements", {
     onDelete: "set null",
   }),
   status: placementStatusEnum("status").notNull(),
+  source: placementSourceEnum("source").notNull(),
+  confidence: placementConfidenceEnum("confidence").notNull(),
   listeningLevel: questionLevelEnum("listening_level").notNull(),
   readingLevel: questionLevelEnum("reading_level").notNull(),
   writingLevel: questionLevelEnum("writing_level").notNull(),

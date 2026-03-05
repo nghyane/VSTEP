@@ -25,7 +25,7 @@ function LoginPage() {
 		try {
 			const res = await login(email, password)
 			save(res.accessToken, res.refreshToken, res.user)
-			const dest = res.user.role === "admin" ? "/admin" : "/dashboard"
+			const dest = res.user.role === "admin" ? "/admin" : "/practice"
 			navigate({ to: dest })
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Đăng nhập thất bại")

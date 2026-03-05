@@ -31,23 +31,27 @@ interface PaginatedResponse<T> {
 	meta: PaginationMeta
 }
 
+type ExamType = "practice" | "placement" | "mock"
+
 // Exams
 type Skill = "listening" | "reading" | "writing" | "speaking"
 type QuestionLevel = "A2" | "B1" | "B2" | "C1"
-type VstepBand = "A1" | "A2" | "B1" | "B2" | "C1"
+type VstepBand = "B1" | "B2" | "C1"
 
 interface ExamBlueprint {
 	listening?: { questionIds: string[] }
 	reading?: { questionIds: string[] }
 	writing?: { questionIds: string[] }
 	speaking?: { questionIds: string[] }
-	durationMinutes: number
+	durationMinutes?: number
 }
 
 interface Exam {
 	id: string
 	title: string
 	level: QuestionLevel
+	type: ExamType
+	durationMinutes: number | null
 	blueprint: ExamBlueprint
 	isActive: boolean
 	createdBy: string | null
@@ -66,6 +70,7 @@ interface ExamSession {
 	writingScore: number | null
 	speakingScore: number | null
 	overallScore: number | null
+	overallBand: VstepBand | null
 	startedAt: string
 	completedAt: string | null
 	createdAt: string
@@ -97,8 +102,8 @@ interface SkillProgress {
 	id: string
 	userId: string
 	skill: Skill
-	currentLevel: VstepBand | null
-	targetLevel: VstepBand | null
+	currentLevel: QuestionLevel
+	targetLevel: QuestionLevel | null
 	scaffoldLevel: number
 	streakCount: number
 	streakDirection: StreakDirection
@@ -223,6 +228,7 @@ type QuestionContent =
 interface Question {
 	id: string
 	skill: Skill
+	level: QuestionLevel
 	part: number
 	content: QuestionContent
 	answerKey?: { correctAnswers: Record<string, string> } | null
@@ -287,6 +293,40 @@ interface User {
 	updatedAt: string
 }
 
+// Grading results
+interface AutoResult {
+	type: "auto"
+	correctCount: number
+	totalCount: number
+	score: number
+	band?: VstepBand
+	gradedAt: string
+}
+
+interface AIResult {
+	type: "ai"
+	overallScore: number
+	band?: VstepBand
+	criteriaScores: Record<string, number>
+	feedback: string
+	grammarErrors?: { offset: number; length: number; message: string; suggestion?: string }[]
+	confidence: "high" | "medium" | "low"
+	gradedAt: string
+}
+
+interface HumanResult {
+	type: "human"
+	overallScore: number
+	band?: VstepBand
+	criteriaScores?: Record<string, number>
+	feedback?: string
+	reviewerId: string
+	reviewedAt: string
+	reviewComment?: string
+}
+
+type GradingResult = AutoResult | AIResult | HumanResult
+
 // Submissions
 type SubmissionStatus = "pending" | "processing" | "completed" | "review_pending" | "failed"
 type GradingMode = "auto" | "human" | "hybrid"
@@ -306,18 +346,12 @@ interface Submission {
 
 interface SubmissionFull extends Submission {
 	answer: SubmissionAnswer | null
-	result: Record<string, unknown> | null
+	result: GradingResult | null
 	feedback: string | null
 }
 
 // Knowledge Points
-type KnowledgePointCategory =
-	| "grammar"
-	| "vocabulary"
-	| "pronunciation"
-	| "discourse"
-	| "pragmatics"
-	| "fluency"
+type KnowledgePointCategory = "grammar" | "vocabulary" | "strategy"
 
 interface KnowledgePoint {
 	id: string
@@ -333,9 +367,14 @@ interface QuestionWithKnowledgePoints extends Question {
 }
 
 export type {
+	AIResult,
 	AuthUser,
 	ActivityResponse,
+	AutoResult,
 	Exam,
+	ExamType,
+	GradingResult,
+	HumanResult,
 	KnowledgePoint,
 	KnowledgePointCategory,
 	ExamAnswer,

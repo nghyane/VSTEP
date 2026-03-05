@@ -7,8 +7,9 @@ import {
 import { Skill } from "@db/enums";
 import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
+import { activity } from "./activity";
 import { create, remove, update } from "./goals";
-import { activity, bySkill, overview, spiderChart } from "./overview";
+import { bySkill, overview, spiderChart } from "./overview";
 import {
   ActivityQuery,
   ActivityResponse,

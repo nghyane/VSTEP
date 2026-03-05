@@ -6,7 +6,7 @@ export const Route = createFileRoute("/admin")({
 	beforeLoad: () => {
 		if (!isAuthenticated()) throw redirect({ to: "/login" })
 		const u = user()
-		if (u?.role !== "admin") throw redirect({ to: "/dashboard" })
+		if (u?.role !== "admin") throw redirect({ to: "/practice" })
 	},
 	component: AdminLayout,
 })

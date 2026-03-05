@@ -32,11 +32,11 @@ function ExamSessionPage() {
 	return (
 		<div className="mx-auto max-w-4xl space-y-6">
 			<Link
-				to="/dashboard"
+				to="/practice"
 				className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
 			>
 				<HugeiconsIcon icon={ArrowLeft02Icon} className="size-4" />
-				Về trang chủ
+				Về trang Luyện tập
 			</Link>
 
 			{isActive ? (

@@ -107,6 +107,7 @@ function AdminQuestions() {
 							<tr>
 								<th className="px-4 py-3 text-left font-medium">Kỹ năng</th>
 								<th className="px-4 py-3 text-left font-medium">Phần</th>
+								<th className="px-4 py-3 text-left font-medium">Cấp độ</th>
 								<th className="px-4 py-3 text-left font-medium">Trạng thái</th>
 								<th className="px-4 py-3 text-left font-medium">Ngày tạo</th>
 								<th className="px-4 py-3 text-right font-medium">Hành động</th>
@@ -126,6 +127,7 @@ function AdminQuestions() {
 												</Badge>
 											</td>
 											<td className="px-4 py-3">Part {q.part}</td>
+											<td className="px-4 py-3">{q.level}</td>
 											<td className="px-4 py-3">
 												{q.isActive ? (
 													<span className="text-emerald-600">Hoạt động</span>
@@ -160,7 +162,7 @@ function AdminQuestions() {
 										</tr>
 										{isExpanded && (
 											<tr key={`${q.id}-detail`} className="border-t bg-muted/20">
-												<td colSpan={5} className="px-4 py-3">
+												<td colSpan={6} className="px-4 py-3">
 													<pre className="max-h-64 overflow-auto rounded-2xl bg-muted/40 p-3 text-xs font-mono">
 														{JSON.stringify(q.content, null, 2)}
 													</pre>
