@@ -1,4 +1,4 @@
-import { ArrowLeft01Icon } from "@hugeicons/core-free-icons"
+import { ArrowLeft01Icon, BulbIcon, Gps01Icon, TextIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { useCallback, useRef, useState } from "react"
@@ -191,6 +191,73 @@ function SpeakingFeedback() {
 	)
 }
 
+// --- Mock AI highlight data ---
+
+type HighlightEntry = { phrase: string; note: string }
+
+const MOCK_PARAPHRASE: HighlightEntry[] = [
+	{ phrase: "the increasing", note: "→ the growing / the rising" },
+	{ phrase: "significant impact", note: "→ considerable effect / profound influence" },
+	{ phrase: "play an important role", note: "→ serve a crucial function" },
+	{ phrase: "in recent years", note: "→ over the past few years / lately" },
+	{ phrase: "as a result", note: "→ consequently / therefore" },
+	{ phrase: "take into account", note: "→ consider / bear in mind" },
+]
+
+const MOCK_EXPLAIN: HighlightEntry[] = [
+	{ phrase: "However", note: "Liên từ chỉ sự tương phản (contrast)" },
+	{ phrase: "Moreover", note: "Liên từ bổ sung thông tin (addition)" },
+	{ phrase: "Therefore", note: "Liên từ chỉ kết quả (result)" },
+	{ phrase: "significant", note: "adj. quan trọng, đáng kể — dùng trong academic writing" },
+	{ phrase: "increasing", note: "present participle dùng làm adj. — chỉ xu hướng tăng" },
+	{ phrase: "In addition", note: "Cụm trạng từ nối — thêm ý bổ sung" },
+]
+
+function HighlightedText({
+	text,
+	highlights,
+	color,
+}: {
+	text: string
+	highlights: HighlightEntry[]
+	color: "sky" | "amber"
+}) {
+	if (highlights.length === 0) return <>{text}</>
+
+	const colorCls =
+		color === "sky" ? "bg-sky-200/60 dark:bg-sky-800/40" : "bg-amber-200/60 dark:bg-amber-800/40"
+	const tooltipCls =
+		color === "sky" ? "bg-sky-600 dark:bg-sky-500" : "bg-amber-600 dark:bg-amber-500"
+
+	const pattern = new RegExp(
+		`(${highlights.map((h) => h.phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`,
+		"gi",
+	)
+	const parts = text.split(pattern)
+
+	return (
+		<>
+			{parts.map((part, i) => {
+				const match = highlights.find((h) => h.phrase.toLowerCase() === part.toLowerCase())
+				if (!match) return <span key={i}>{part}</span>
+				return (
+					<span key={i} className="group/hl relative inline">
+						<mark className={cn("rounded px-0.5", colorCls)}>{part}</mark>
+						<span
+							className={cn(
+								"pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 -translate-x-1/2 whitespace-nowrap rounded-md px-2 py-1 text-[11px] text-white opacity-0 shadow-md transition-opacity group-hover/hl:opacity-100",
+								tooltipCls,
+							)}
+						>
+							{match.note}
+						</span>
+					</span>
+				)
+			})}
+		</>
+	)
+}
+
 // --- Main ---
 
 function ExercisePage() {
@@ -203,6 +270,7 @@ function ExercisePage() {
 	const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({})
 	const [writingTexts, setWritingTexts] = useState<Record<number, string>>({})
 	const [submitted, setSubmitted] = useState(false)
+	const [activeAiTool, setActiveAiTool] = useState<"paraphrase" | "explain" | null>(null)
 
 	const handleSelect = useCallback(
 		(questionNumber: number, letter: string) => {
@@ -223,6 +291,7 @@ function ExercisePage() {
 		setSubmitted(false)
 		setSelectedAnswers({})
 		setWritingTexts({})
+		setActiveAiTool(null)
 		window.scrollTo({ top: 0, behavior: "smooth" })
 	}, [])
 
@@ -264,189 +333,278 @@ function ExercisePage() {
 				</Button>
 			</header>
 
-			{/* Content */}
-			<div className="flex-1 overflow-y-auto">
-				<div className="mx-auto max-w-3xl space-y-6 p-6">
-					{/* Results (after submit) */}
-					{submitted && (
-						<div ref={resultsRef}>
+			{/* Content — split layout */}
+			<div className="flex flex-1 overflow-hidden">
+				{/* Left — exercise */}
+				<div className="flex-1 overflow-y-auto">
+					<div className="mx-auto max-w-3xl space-y-6 p-6">
+						{/* Listening */}
+						{skill === "listening" &&
+							(() => {
+								const e = exam as ListeningExam
+								return (
+									<div className="space-y-6">
+										<audio controls src={e.audioUrl} className="w-full rounded-lg">
+											<track kind="captions" />
+										</audio>
+										{e.sections.map((section) => (
+											<div key={section.partNumber} className="space-y-4">
+												{section.partTitle && (
+													<h3 className="text-sm font-semibold">{section.partTitle}</h3>
+												)}
+												{section.instructions && (
+													<p className="text-sm text-muted-foreground">{section.instructions}</p>
+												)}
+												{section.questions.map((q) => (
+													<div key={q.questionNumber} className="space-y-2">
+														<p className="text-sm font-medium">
+															Câu {q.questionNumber}.{q.questionText ? ` ${q.questionText}` : ""}
+														</p>
+														<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+															{Object.entries(q.options).map(([letter, text]) => (
+																<McqOption
+																	key={letter}
+																	letter={letter}
+																	text={text}
+																	isSelected={selectedAnswers[q.questionNumber] === letter}
+																	isCorrect={submitted && q.correctAnswer === letter}
+																	isWrong={
+																		submitted &&
+																		selectedAnswers[q.questionNumber] === letter &&
+																		q.correctAnswer !== letter
+																	}
+																	submitted={submitted}
+																	onSelect={() => handleSelect(q.questionNumber, letter)}
+																/>
+															))}
+														</div>
+													</div>
+												))}
+											</div>
+										))}
+									</div>
+								)
+							})()}
+
+						{/* Reading */}
+						{skill === "reading" &&
+							(() => {
+								const e = exam as ReadingExam
+								return (
+									<div className="space-y-6">
+										{e.passages.map((passage) => (
+											<div key={passage.passageNumber} className="space-y-4">
+												{passage.title && (
+													<h3 className="text-sm font-semibold">{passage.title}</h3>
+												)}
+												<div
+													className="rounded-xl bg-muted/10 p-4 text-sm leading-relaxed"
+													style={{ whiteSpace: "pre-wrap" }}
+												>
+													{activeAiTool ? (
+														<HighlightedText
+															text={passage.content}
+															highlights={
+																activeAiTool === "paraphrase" ? MOCK_PARAPHRASE : MOCK_EXPLAIN
+															}
+															color={activeAiTool === "paraphrase" ? "sky" : "amber"}
+														/>
+													) : (
+														passage.content
+													)}
+												</div>
+												{passage.questions.map((q) => (
+													<div key={q.questionNumber} className="space-y-2">
+														<p className="text-sm font-medium">
+															Câu {q.questionNumber}.{q.questionText ? ` ${q.questionText}` : ""}
+														</p>
+														<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+															{Object.entries(q.options).map(([letter, text]) => (
+																<McqOption
+																	key={letter}
+																	letter={letter}
+																	text={text}
+																	isSelected={selectedAnswers[q.questionNumber] === letter}
+																	isCorrect={submitted && q.correctAnswer === letter}
+																	isWrong={
+																		submitted &&
+																		selectedAnswers[q.questionNumber] === letter &&
+																		q.correctAnswer !== letter
+																	}
+																	submitted={submitted}
+																	onSelect={() => handleSelect(q.questionNumber, letter)}
+																/>
+															))}
+														</div>
+													</div>
+												))}
+											</div>
+										))}
+									</div>
+								)
+							})()}
+
+						{/* Writing */}
+						{skill === "writing" &&
+							(() => {
+								const e = exam as WritingExam
+								return (
+									<div className="space-y-6">
+										{e.tasks.map((task) => {
+											const text = writingTexts[task.taskNumber] ?? ""
+											const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0
+											return (
+												<div key={task.taskNumber} className="space-y-4">
+													{task.title && <h3 className="text-sm font-semibold">{task.title}</h3>}
+													<div
+														className="rounded-xl bg-muted/10 p-4 text-sm leading-relaxed"
+														style={{ whiteSpace: "pre-wrap" }}
+													>
+														{task.prompt}
+													</div>
+													{task.instructions && (
+														<p className="text-sm text-muted-foreground">{task.instructions}</p>
+													)}
+													<textarea
+														className="min-h-[250px] w-full rounded-xl border bg-background p-4 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/30"
+														placeholder="Nhập bài viết của bạn..."
+														value={text}
+														onChange={(e) =>
+															setWritingTexts((prev) => ({
+																...prev,
+																[task.taskNumber]: e.target.value,
+															}))
+														}
+														disabled={submitted}
+													/>
+													<p className="text-sm text-muted-foreground">
+														{wordCount}/{task.wordLimit} từ
+														{wordCount < task.wordLimit && (
+															<span className="ml-1 text-orange-500">
+																(cần tối thiểu {task.wordLimit} từ)
+															</span>
+														)}
+													</p>
+												</div>
+											)
+										})}
+									</div>
+								)
+							})()}
+
+						{/* Speaking */}
+						{skill === "speaking" &&
+							(() => {
+								const e = exam as SpeakingExam
+								return (
+									<div className="space-y-6">
+										{e.parts.map((part) => (
+											<div key={part.partNumber} className="space-y-3">
+												{part.title && <h3 className="text-sm font-semibold">{part.title}</h3>}
+												<div
+													className="rounded-xl bg-muted/10 p-4 text-sm leading-relaxed"
+													style={{ whiteSpace: "pre-wrap" }}
+												>
+													{part.instructions}
+												</div>
+												<p className="text-sm text-muted-foreground">
+													Thời gian nói: {part.speakingTime} phút
+												</p>
+												<div className="rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">
+													Chức năng ghi âm đang được phát triển
+												</div>
+											</div>
+										))}
+									</div>
+								)
+							})()}
+					</div>
+				</div>
+
+				{/* Right — AI tools sidebar (after submit) */}
+				{submitted && (
+					<aside className="hidden w-[320px] shrink-0 overflow-y-auto border-l lg:block">
+						<div ref={resultsRef} className="space-y-4 p-5">
+							{/* Results */}
 							{(skill === "listening" || skill === "reading") && (
 								<McqResults questions={questions} answers={selectedAnswers} />
 							)}
 							{skill === "writing" && <WritingFeedback />}
 							{skill === "speaking" && <SpeakingFeedback />}
-						</div>
-					)}
 
-					{/* Listening */}
-					{skill === "listening" &&
-						(() => {
-							const e = exam as ListeningExam
-							return (
-								<div className="space-y-6">
-									<audio controls src={e.audioUrl} className="w-full rounded-lg">
-										<track kind="captions" />
-									</audio>
-									{e.sections.map((section) => (
-										<div key={section.partNumber} className="space-y-4">
-											{section.partTitle && (
-												<h3 className="text-sm font-semibold">{section.partTitle}</h3>
-											)}
-											{section.instructions && (
-												<p className="text-sm text-muted-foreground">{section.instructions}</p>
-											)}
-											{section.questions.map((q) => (
-												<div key={q.questionNumber} className="space-y-2">
-													<p className="text-sm font-medium">
-														Câu {q.questionNumber}.{q.questionText ? ` ${q.questionText}` : ""}
-													</p>
-													<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-														{Object.entries(q.options).map(([letter, text]) => (
-															<McqOption
-																key={letter}
-																letter={letter}
-																text={text}
-																isSelected={selectedAnswers[q.questionNumber] === letter}
-																isCorrect={submitted && q.correctAnswer === letter}
-																isWrong={
-																	submitted &&
-																	selectedAnswers[q.questionNumber] === letter &&
-																	q.correctAnswer !== letter
-																}
-																submitted={submitted}
-																onSelect={() => handleSelect(q.questionNumber, letter)}
-															/>
-														))}
-													</div>
-												</div>
-											))}
+							{/* AI tools */}
+							<div className="space-y-3">
+								<p className="text-sm font-semibold">Công cụ AI</p>
+
+								{/* Paraphrasing */}
+								<div
+									className={cn(
+										"rounded-xl p-4 transition-colors",
+										activeAiTool === "paraphrase"
+											? "bg-sky-500/10 ring-1 ring-sky-500/30"
+											: "bg-muted/30",
+									)}
+								>
+									<div className="flex items-start gap-3">
+										<div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-500/15 text-sky-600 dark:text-sky-400">
+											<HugeiconsIcon icon={TextIcon} className="size-4" />
 										</div>
-									))}
-								</div>
-							)
-						})()}
-
-					{/* Reading */}
-					{skill === "reading" &&
-						(() => {
-							const e = exam as ReadingExam
-							return (
-								<div className="space-y-6">
-									{e.passages.map((passage) => (
-										<div key={passage.passageNumber} className="space-y-4">
-											{passage.title && <h3 className="text-sm font-semibold">{passage.title}</h3>}
-											<div
-												className="rounded-xl bg-muted/10 p-4 text-sm leading-relaxed"
-												style={{ whiteSpace: "pre-wrap" }}
-											>
-												{passage.content}
-											</div>
-											{passage.questions.map((q) => (
-												<div key={q.questionNumber} className="space-y-2">
-													<p className="text-sm font-medium">
-														Câu {q.questionNumber}.{q.questionText ? ` ${q.questionText}` : ""}
-													</p>
-													<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-														{Object.entries(q.options).map(([letter, text]) => (
-															<McqOption
-																key={letter}
-																letter={letter}
-																text={text}
-																isSelected={selectedAnswers[q.questionNumber] === letter}
-																isCorrect={submitted && q.correctAnswer === letter}
-																isWrong={
-																	submitted &&
-																	selectedAnswers[q.questionNumber] === letter &&
-																	q.correctAnswer !== letter
-																}
-																submitted={submitted}
-																onSelect={() => handleSelect(q.questionNumber, letter)}
-															/>
-														))}
-													</div>
-												</div>
-											))}
-										</div>
-									))}
-								</div>
-							)
-						})()}
-
-					{/* Writing */}
-					{skill === "writing" &&
-						(() => {
-							const e = exam as WritingExam
-							return (
-								<div className="space-y-6">
-									{e.tasks.map((task) => {
-										const text = writingTexts[task.taskNumber] ?? ""
-										const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0
-										return (
-											<div key={task.taskNumber} className="space-y-4">
-												{task.title && <h3 className="text-sm font-semibold">{task.title}</h3>}
-												<div
-													className="rounded-xl bg-muted/10 p-4 text-sm leading-relaxed"
-													style={{ whiteSpace: "pre-wrap" }}
-												>
-													{task.prompt}
-												</div>
-												{task.instructions && (
-													<p className="text-sm text-muted-foreground">{task.instructions}</p>
-												)}
-												<textarea
-													className="min-h-[250px] w-full rounded-xl border bg-background p-4 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/30"
-													placeholder="Nhập bài viết của bạn..."
-													value={text}
-													onChange={(e) =>
-														setWritingTexts((prev) => ({
-															...prev,
-															[task.taskNumber]: e.target.value,
-														}))
-													}
-													disabled={submitted}
-												/>
-												<p className="text-sm text-muted-foreground">
-													{wordCount}/{task.wordLimit} từ
-													{wordCount < task.wordLimit && (
-														<span className="ml-1 text-orange-500">
-															(cần tối thiểu {task.wordLimit} từ)
-														</span>
-													)}
-												</p>
-											</div>
-										)
-									})}
-								</div>
-							)
-						})()}
-
-					{/* Speaking */}
-					{skill === "speaking" &&
-						(() => {
-							const e = exam as SpeakingExam
-							return (
-								<div className="space-y-6">
-									{e.parts.map((part) => (
-										<div key={part.partNumber} className="space-y-3">
-											{part.title && <h3 className="text-sm font-semibold">{part.title}</h3>}
-											<div
-												className="rounded-xl bg-muted/10 p-4 text-sm leading-relaxed"
-												style={{ whiteSpace: "pre-wrap" }}
-											>
-												{part.instructions}
-											</div>
-											<p className="text-sm text-muted-foreground">
-												Thời gian nói: {part.speakingTime} phút
+										<div className="flex-1">
+											<p className="text-sm font-semibold">Paraphrasing</p>
+											<p className="mt-0.5 text-xs text-muted-foreground">
+												Tô sáng các cụm từ có thể diễn đạt lại trong bài.
 											</p>
-											<div className="rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">
-												Chức năng ghi âm đang được phát triển
-											</div>
 										</div>
-									))}
+									</div>
+									<Button
+										size="sm"
+										variant={activeAiTool === "paraphrase" ? "default" : "outline"}
+										className="mt-3 w-full gap-1.5 rounded-lg text-xs"
+										onClick={() =>
+											setActiveAiTool((prev) => (prev === "paraphrase" ? null : "paraphrase"))
+										}
+									>
+										<HugeiconsIcon icon={Gps01Icon} className="size-3.5" />
+										{activeAiTool === "paraphrase" ? "Đang định vị" : "Định vị"}
+									</Button>
 								</div>
-							)
-						})()}
-				</div>
+
+								{/* Giải thích chi tiết */}
+								<div
+									className={cn(
+										"rounded-xl p-4 transition-colors",
+										activeAiTool === "explain"
+											? "bg-amber-500/10 ring-1 ring-amber-500/30"
+											: "bg-muted/30",
+									)}
+								>
+									<div className="flex items-start gap-3">
+										<div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400">
+											<HugeiconsIcon icon={BulbIcon} className="size-4" />
+										</div>
+										<div className="flex-1">
+											<p className="text-sm font-semibold">Giải thích chi tiết</p>
+											<p className="mt-0.5 text-xs text-muted-foreground">
+												Tô sáng ngữ pháp, từ vựng và chiến lược làm bài.
+											</p>
+										</div>
+									</div>
+									<Button
+										size="sm"
+										variant={activeAiTool === "explain" ? "default" : "outline"}
+										className="mt-3 w-full gap-1.5 rounded-lg text-xs"
+										onClick={() =>
+											setActiveAiTool((prev) => (prev === "explain" ? null : "explain"))
+										}
+									>
+										<HugeiconsIcon icon={Gps01Icon} className="size-3.5" />
+										{activeAiTool === "explain" ? "Đang định vị" : "Định vị"}
+									</Button>
+								</div>
+							</div>
+						</div>
+					</aside>
+				)}
 			</div>
 
 			{/* Bottom bar */}
