@@ -18,7 +18,6 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { useEffect, useRef, useState } from "react"
 import { Logo } from "@/components/common/Logo"
-import { SpiderChart } from "@/components/common/SpiderChart"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -127,34 +126,27 @@ const SKILLS: SkillItem[] = [
 	},
 ]
 
-const DEMO_SCORES = [
-	{ label: "Listening", value: 7.5, color: "text-skill-listening" },
-	{ label: "Reading", value: 8, color: "text-skill-reading" },
-	{ label: "Writing", value: 6, color: "text-skill-writing" },
-	{ label: "Speaking", value: 6.5, color: "text-skill-speaking" },
-]
-
 const STEPS = [
 	{
 		num: "1",
 		title: "Làm bài thi thử",
 		desc: "Chọn đề thi VSTEP đầy đủ 4 kỹ năng hoặc luyện riêng từng phần. Bắt đầu chỉ trong 30 giây.",
 		icon: CheckmarkCircle01Icon,
-		reversed: false,
+		accent: "from-sky-400/30 to-sky-400/10",
 	},
 	{
 		num: "2",
 		title: "AI chấm điểm tức thì",
 		desc: "Hệ thống AI phân tích bài Writing & Speaking theo rubric chuẩn VSTEP, trả kết quả trong vài phút.",
 		icon: Target02Icon,
-		reversed: true,
+		accent: "from-sky-400/30 to-sky-400/10",
 	},
 	{
 		num: "3",
 		title: "Xem lộ trình cá nhân",
 		desc: "Nhận phân tích điểm mạnh / yếu và bài tập được gợi ý riêng theo trình độ của bạn.",
 		icon: Fire02Icon,
-		reversed: false,
+		accent: "from-sky-400/30 to-sky-400/10",
 	},
 ]
 
@@ -268,16 +260,25 @@ function Header() {
 	}
 
 	return (
-		<header className="sticky top-0 z-50 bg-background/90 backdrop-blur-md">
-			<div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
+		<header className="absolute top-0 right-0 left-0 z-50">
+			<div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
 				<Link to="/">
-					<Logo />
+					<Logo className="text-white" />
 				</Link>
 				<div className="flex items-center gap-2">
-					<Button variant="ghost" size="sm" asChild>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="text-white/80 hover:bg-white/10 hover:text-white"
+						asChild
+					>
 						<Link to="/login">Đăng nhập</Link>
 					</Button>
-					<Button size="sm" className="rounded-xl" asChild>
+					<Button
+						size="sm"
+						className="rounded-full bg-white px-6 font-bold text-[oklch(0.35_0.18_258)] hover:bg-white/90"
+						asChild
+					>
 						<Link to="/register">Bắt đầu</Link>
 					</Button>
 				</div>
@@ -422,42 +423,55 @@ function AuthenticatedHeader() {
 }
 
 function Hero() {
-	const chartRef = useTilt(6)
-
 	return (
-		<section className="relative overflow-hidden">
-			<div className="mx-auto grid max-w-5xl items-center gap-12 px-6 py-24 lg:grid-cols-2 lg:gap-8">
+		<section className="relative overflow-hidden bg-gradient-to-b from-[oklch(0.35_0.18_258)] via-[oklch(0.45_0.2_258)] to-[oklch(0.50_0.2_258)]">
+			{/* Decorative background elements */}
+			<div className="pointer-events-none absolute inset-0">
+				{/* Large radial glow */}
+				<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[800px] rounded-full bg-white/[0.04]" />
+				{/* Concentric circles */}
+				<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[500px] rounded-full border border-white/[0.06]" />
+				<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[700px] rounded-full border border-white/[0.04]" />
+				<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[900px] rounded-full border border-white/[0.03]" />
+				{/* Small floating accent circles */}
+				<div className="absolute top-16 right-[20%] size-10 rounded-full bg-amber-400/80 blur-[1px]" />
+				<div className="absolute top-12 right-[15%] size-6 rounded-full bg-white/20" />
+				<div className="absolute bottom-20 left-[10%] size-4 rounded-full bg-white/15" />
+			</div>
+
+			<div className="relative mx-auto flex max-w-4xl flex-col items-center px-6 pt-28 pb-32 text-center">
 				<AnimSection>
-					<div className="space-y-6">
-						<div className="inline-flex items-center gap-2 rounded-full bg-primary/8 px-4 py-1.5 text-sm font-medium text-primary">
-							Miễn phí · AI chấm điểm tức thì
-						</div>
-						<h1 className="text-4xl font-bold leading-[1.15] tracking-tight lg:text-5xl">
-							Từ 0 đến VSTEP C1
-							<br />
-							<span className="text-primary">trong 90 ngày</span>
-						</h1>
-						<p className="max-w-md text-lg leading-relaxed text-muted-foreground">
-							Nền tảng luyện thi VSTEP duy nhất với AI chấm Writing &amp; Speaking theo rubric chuẩn
-							Bộ GD&amp;ĐT — hoàn toàn miễn phí.
-						</p>
-						<div className="flex flex-wrap gap-3 pt-2">
-							<Button size="lg" className="rounded-xl px-8 text-base" asChild>
-								<Link to="/register">Bắt đầu ngay</Link>
-							</Button>
-							<Button variant="outline" size="lg" className="rounded-xl px-8 text-base" asChild>
-								<a href="#how-it-works">Xem cách hoạt động</a>
-							</Button>
-						</div>
-					</div>
+					<h1 className="text-5xl font-bold leading-[1.15] tracking-tight text-white md:text-6xl lg:text-7xl">
+						Nền tảng Luyện thi
+						<br />
+						<span className="text-amber-300">VSTEP</span> thông minh
+					</h1>
+				</AnimSection>
+
+				<AnimSection delay={100}>
+					<p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-white/75">
+						AI chấm Writing &amp; Speaking theo rubric chuẩn Bộ GD&amp;ĐT — lộ trình cá nhân hoá từ
+						B1 đến C1, hoàn toàn miễn phí.
+					</p>
 				</AnimSection>
 
 				<AnimSection delay={200}>
-					<div
-						ref={chartRef}
-						className="flex items-center justify-center transition-transform duration-200 ease-out"
-					>
-						<SpiderChart skills={DEMO_SCORES} className="size-72 lg:size-80" />
+					<div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+						<Button
+							size="lg"
+							className="rounded-full bg-white px-10 text-base font-bold text-[oklch(0.35_0.18_258)] shadow-lg shadow-black/20 hover:bg-white/90"
+							asChild
+						>
+							<Link to="/register">BẮT ĐẦU NGAY</Link>
+						</Button>
+						<Button
+							variant="ghost"
+							size="lg"
+							className="rounded-full border border-white/30 bg-transparent px-10 text-base font-bold text-white hover:bg-white/10 hover:text-white"
+							asChild
+						>
+							<a href="#how-it-works">XEM CÁCH HOẠT ĐỘNG</a>
+						</Button>
 					</div>
 				</AnimSection>
 			</div>
@@ -499,26 +513,59 @@ function SkillsSection() {
 
 function HowItWorksSection() {
 	return (
-		<section id="how-it-works" className="mx-auto max-w-5xl px-6 py-20">
-			<AnimSection>
-				<Heading title="Cách hoạt động" sub="3 bước để chinh phục VSTEP" />
-			</AnimSection>
-			<div className="mt-16 flex flex-col gap-20">
+		<section id="how-it-works" className="py-20">
+			<div className="mx-auto max-w-5xl px-6">
+				<AnimSection>
+					<Heading
+						title="Tối ưu hành trình Luyện thi VSTEP"
+						sub="3 bước đơn giản để chinh phục VSTEP cùng AI"
+					/>
+				</AnimSection>
+			</div>
+
+			{/* Sticky card stack */}
+			<div className="mx-auto mt-12 max-w-3xl px-6">
 				{STEPS.map((step, i) => (
-					<AnimSection key={step.num} delay={i * 150}>
-						<div className="grid items-center gap-12 lg:grid-cols-2">
-							<div className={cn("space-y-4", step.reversed && "lg:order-last")}>
-								<div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-									{step.num}
+					<div key={step.num} className="sticky top-20 pb-6" style={{ zIndex: i + 1 }}>
+						<div
+							className={cn(
+								"relative min-h-[560px] overflow-hidden rounded-3xl bg-gradient-to-b from-[#001656] from-[7%] to-[#0172FA] p-8 shadow-2xl shadow-black/20 lg:min-h-[620px] lg:p-10",
+							)}
+						>
+							{/* Accent gradient overlay */}
+							<div
+								className={cn(
+									"pointer-events-none absolute inset-0 bg-gradient-to-br opacity-60",
+									step.accent,
+								)}
+							/>
+
+							{/* Large watermark step number */}
+							<p className="relative text-6xl font-bold text-[#0071F9]/25 lg:text-8xl">
+								Bước {step.num}
+							</p>
+
+							{/* Illustration — absolutely centered on right half */}
+							<div className="pointer-events-none absolute inset-y-0 right-8 hidden w-[45%] items-center lg:flex lg:right-10">
+								<div className="flex h-[70%] w-full items-center justify-center rounded-2xl bg-white/[0.06] backdrop-blur-sm">
+									<HugeiconsIcon icon={step.icon} className="size-16 text-white/25" />
 								</div>
-								<h3 className="text-xl font-bold">{step.title}</h3>
-								<p className="text-muted-foreground">{step.desc}</p>
 							</div>
-							<div className="flex aspect-video items-center justify-center rounded-3xl bg-primary/5">
-								<HugeiconsIcon icon={step.icon} className="size-16 text-primary/40" />
+
+							{/* Text content — bottom left */}
+							<div className="absolute bottom-8 left-8 max-w-[35%] lg:bottom-10 lg:left-10">
+								<div className="space-y-3">
+									<h3 className="text-xl font-bold text-white lg:text-2xl">{step.title}</h3>
+									<p className="leading-relaxed text-white/65">{step.desc}</p>
+								</div>
+							</div>
+
+							{/* Mobile illustration fallback */}
+							<div className="mt-6 flex min-h-[240px] items-center justify-center rounded-2xl bg-white/[0.06] backdrop-blur-sm lg:hidden">
+								<HugeiconsIcon icon={step.icon} className="size-16 text-white/25" />
 							</div>
 						</div>
-					</AnimSection>
+					</div>
 				))}
 			</div>
 		</section>
