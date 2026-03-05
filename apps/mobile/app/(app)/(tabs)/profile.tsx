@@ -16,6 +16,10 @@ import { useUser } from "@/hooks/use-user";
 import { useThemeColors, spacing, radius, fontSize } from "@/theme";
 import { useHaptics } from "@/contexts/HapticsContext";
 
+function showComingSoon() {
+  Alert.alert("Thông báo", "Tính năng đang phát triển");
+}
+
 export default function ProfileScreen() {
   const c = useThemeColors();
   const router = useRouter();
@@ -45,7 +49,7 @@ export default function ProfileScreen() {
   return (
     <ScreenWrapper>
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-      <Text style={[styles.title, { color: c.foreground }]}>Hồ sơ & Cài đặt</Text>
+      <Text style={[styles.title, { color: c.foreground }]}>Tài khoản</Text>
 
       {/* Avatar */}
       <View style={styles.avatarSection}>
@@ -54,62 +58,106 @@ export default function ProfileScreen() {
         </View>
         <Text style={[styles.name, { color: c.foreground }]}>{u.fullName ?? "Chưa đặt tên"}</Text>
         <Text style={[styles.email, { color: c.mutedForeground }]}>{u.email}</Text>
-        <View style={[styles.roleBadge, { backgroundColor: c.primary + "18" }]}>
-          <Text style={{ color: c.primary, fontSize: fontSize.xs, fontWeight: "600" }}>Người học</Text>
+      </View>
+
+      {/* TÀI KHOẢN */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionHeader, { color: c.primary }]}>TÀI KHOẢN</Text>
+        <View style={[styles.card, { borderColor: c.border }]}>
+          <HapticTouchable
+            style={[styles.row, { borderColor: c.border }]}
+            onPress={() => { router.push("/(app)/account"); }}
+          >
+            <Ionicons name="person-outline" size={20} color={c.foreground} />
+            <Text style={[styles.rowText, { color: c.foreground }]}>Hồ sơ</Text>
+            <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
+          </HapticTouchable>
+          <HapticTouchable
+            style={[styles.row, styles.rowLast]}
+            onPress={() => { router.push("/(app)/account"); }}
+          >
+            <Ionicons name="lock-closed-outline" size={20} color={c.foreground} />
+            <Text style={[styles.rowText, { color: c.foreground }]}>Đổi mật khẩu</Text>
+            <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
+          </HapticTouchable>
         </View>
       </View>
 
-      {/* Navigation rows */}
-      <View style={[styles.navGroup, { borderColor: c.border }]}>
-        <HapticTouchable
-          style={[styles.navRow, { borderColor: c.border }]}
-          onPress={() => { router.push("/(app)/account"); }}
-        >
-          <Ionicons name="shield-checkmark" size={20} color={c.foreground} />
-          <Text style={[styles.navText, { color: c.foreground }]}>Tài khoản & Bảo mật</Text>
-          <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
-        </HapticTouchable>
-
-        <HapticTouchable
-          style={[styles.navRow, { borderColor: c.border }]}
-          onPress={() => { router.push("/(app)/submissions"); }}
-        >
-          <Ionicons name="list" size={20} color={c.foreground} />
-          <Text style={[styles.navText, { color: c.foreground }]}>Lịch sử bài nộp</Text>
-          <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
-        </HapticTouchable>
-
-        <HapticTouchable
-          style={[styles.navRow, styles.navRowLast, { borderColor: c.border }]}
-          onPress={() => { router.push("/(app)/goal"); }}
-        >
-          <Ionicons name="flag" size={20} color={c.foreground} />
-          <Text style={[styles.navText, { color: c.foreground }]}>Mục tiêu học tập</Text>
-          <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
-        </HapticTouchable>
-      </View>
-
-      {/* Settings */}
-      <View style={[styles.navGroup, { borderColor: c.border }]}>
-        <View style={[styles.navRow, styles.navRowLast, { borderColor: c.border }]}>
-          <Ionicons name="phone-portrait-outline" size={20} color={c.foreground} />
-          <Text style={[styles.navText, { color: c.foreground }]}>Rung khi chạm</Text>
-          <Switch
-            value={hapticsEnabled}
-            onValueChange={(v) => {
-              setHapticsEnabled(v);
-              if (v) trigger();
-            }}
-            trackColor={{ false: c.muted, true: c.primary + "60" }}
-            thumbColor={hapticsEnabled ? c.primary : c.mutedForeground}
-          />
+      {/* HỌC TẬP */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionHeader, { color: c.primary }]}>HỌC TẬP</Text>
+        <View style={[styles.card, { borderColor: c.border }]}>
+          <HapticTouchable
+            style={[styles.row, { borderColor: c.border }]}
+            onPress={() => { router.push("/(app)/submissions"); }}
+          >
+            <Ionicons name="list-outline" size={20} color={c.foreground} />
+            <Text style={[styles.rowText, { color: c.foreground }]}>Lịch sử bài nộp</Text>
+            <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
+          </HapticTouchable>
+          <HapticTouchable
+            style={[styles.row, styles.rowLast]}
+            onPress={() => { router.push("/(app)/goal"); }}
+          >
+            <Ionicons name="flag-outline" size={20} color={c.foreground} />
+            <Text style={[styles.rowText, { color: c.foreground }]}>Mục tiêu học tập</Text>
+            <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
+          </HapticTouchable>
         </View>
       </View>
 
-      <HapticTouchable style={[styles.logoutBtn, { backgroundColor: c.destructive + "15" }]} onPress={handleLogout}>
-        <Ionicons name="log-out-outline" size={20} color={c.destructive} />
-        <Text style={[styles.logoutText, { color: c.destructive }]}>Đăng xuất</Text>
-      </HapticTouchable>
+      {/* CÀI ĐẶT */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionHeader, { color: c.primary }]}>CÀI ĐẶT</Text>
+        <View style={[styles.card, { borderColor: c.border }]}>
+          <View style={[styles.row, { borderColor: c.border }]}>
+            <Ionicons name="phone-portrait-outline" size={20} color={c.foreground} />
+            <Text style={[styles.rowText, { color: c.foreground }]}>Rung khi chạm</Text>
+            <Switch
+              value={hapticsEnabled}
+              onValueChange={(v) => {
+                setHapticsEnabled(v);
+                if (v) trigger();
+              }}
+              trackColor={{ false: c.muted, true: c.primary + "60" }}
+              thumbColor={hapticsEnabled ? c.primary : c.mutedForeground}
+            />
+          </View>
+          <HapticTouchable
+            style={[styles.row, { borderColor: c.border }]}
+            onPress={showComingSoon}
+          >
+            <Ionicons name="document-text-outline" size={20} color={c.foreground} />
+            <Text style={[styles.rowText, { color: c.foreground }]}>Điều khoản & Điều kiện</Text>
+            <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
+          </HapticTouchable>
+          <HapticTouchable
+            style={[styles.row, { borderColor: c.border }]}
+            onPress={showComingSoon}
+          >
+            <Ionicons name="shield-outline" size={20} color={c.foreground} />
+            <Text style={[styles.rowText, { color: c.foreground }]}>Chính sách bảo mật</Text>
+            <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
+          </HapticTouchable>
+          <HapticTouchable
+            style={[styles.row, { borderColor: c.border }]}
+            onPress={showComingSoon}
+          >
+            <Ionicons name="headset-outline" size={20} color={c.foreground} />
+            <Text style={[styles.rowText, { color: c.foreground }]}>Liên hệ/ Hỗ trợ</Text>
+            <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
+          </HapticTouchable>
+          <HapticTouchable
+            style={[styles.row, styles.rowLast]}
+            onPress={handleLogout}
+          >
+            <Ionicons name="log-out-outline" size={20} color={c.destructive} />
+            <Text style={[styles.rowText, { color: c.destructive }]}>Đăng xuất</Text>
+          </HapticTouchable>
+        </View>
+      </View>
+
+      <Text style={[styles.version, { color: c.mutedForeground }]}>Phiên bản 1.0.0</Text>
     </ScrollView>
     </ScreenWrapper>
   );
@@ -117,18 +165,18 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
-  content: { padding: spacing.xl, paddingBottom: spacing["3xl"], gap: spacing.xl },
-  title: { fontSize: fontSize["2xl"], fontWeight: "700" },
+  content: { padding: spacing.xl, paddingBottom: spacing["3xl"], gap: spacing.lg },
+  title: { fontSize: fontSize["2xl"], fontWeight: "700", textAlign: "center" },
   avatarSection: { alignItems: "center", gap: spacing.sm },
-  avatar: { width: 72, height: 72, borderRadius: 36, justifyContent: "center", alignItems: "center" },
-  avatarText: { fontSize: fontSize["2xl"], fontWeight: "700" },
+  avatar: { width: 90, height: 90, borderRadius: 45, justifyContent: "center", alignItems: "center" },
+  avatarText: { fontSize: fontSize["3xl"], fontWeight: "700" },
   name: { fontSize: fontSize.xl, fontWeight: "700" },
   email: { fontSize: fontSize.sm },
-  roleBadge: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.full },
-  navGroup: { borderWidth: 1, borderRadius: radius.xl, overflow: "hidden" },
-  navRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.base, paddingVertical: spacing.base, borderBottomWidth: 1 },
-  navRowLast: { borderBottomWidth: 0 },
-  navText: { flex: 1, fontSize: fontSize.sm, fontWeight: "500" },
-  logoutBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, borderRadius: radius.lg, paddingVertical: spacing.base },
-  logoutText: { fontSize: fontSize.sm, fontWeight: "600" },
+  section: { gap: spacing.sm },
+  sectionHeader: { fontSize: fontSize.xs, fontWeight: "700", letterSpacing: 0.5, paddingLeft: spacing.xs },
+  card: { borderWidth: 1, borderRadius: radius.xl, overflow: "hidden" },
+  row: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.base, paddingVertical: spacing.base, borderBottomWidth: 1 },
+  rowLast: { borderBottomWidth: 0 },
+  rowText: { flex: 1, fontSize: fontSize.sm, fontWeight: "500" },
+  version: { fontSize: fontSize.xs, textAlign: "center", marginTop: spacing.sm },
 });

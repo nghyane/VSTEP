@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { Link, useRouter } from "expo-router";
 import { useAuth } from "@/hooks/use-auth";
@@ -24,6 +25,8 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleRegister() {
     if (!email || !password) return;
@@ -52,7 +55,7 @@ export default function RegisterScreen() {
       >
         <View style={styles.header}>
           <Logo size="lg" />
-          <Text style={[styles.heading, { color: c.foreground }]}>Tạo tài khoản</Text>
+          <Text style={[styles.heading, { color: c.foreground }]}>Tạo tài khoản mới</Text>
           <Text style={[styles.subtitle, { color: c.mutedForeground }]}>
             Bắt đầu hành trình chinh phục VSTEP
           </Text>
@@ -87,14 +90,23 @@ export default function RegisterScreen() {
 
           <View style={styles.field}>
             <Text style={[styles.label, { color: c.foreground }]}>Mật khẩu</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: c.card, borderColor: c.border, color: c.foreground }]}
-              placeholder="Tối thiểu 8 ký tự"
-              placeholderTextColor={c.mutedForeground}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
+            <View style={[styles.inputRow, { backgroundColor: c.card, borderColor: c.border }]}>
+              <TextInput
+                style={[styles.inputFlex, { color: c.foreground }]}
+                placeholder="Tối thiểu 8 ký tự"
+                placeholderTextColor={c.mutedForeground}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+              />
+              <HapticTouchable onPress={() => setShowPassword((v) => !v)} style={styles.eyeBtn}>
+                <Ionicons
+                  name={showPassword ? "eye-off" : "eye"}
+                  size={20}
+                  color={c.mutedForeground}
+                />
+              </HapticTouchable>
+            </View>
           </View>
 
           {error ? <Text style={[styles.error, { color: c.destructive }]}>{error}</Text> : null}
@@ -110,18 +122,21 @@ export default function RegisterScreen() {
           </HapticTouchable>
         </View>
 
-        <View style={styles.footer}>
-          <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm }}>
-            Đã có tài khoản?{" "}
-          </Text>
-          <Link href="/(auth)/login" asChild>
-            <HapticTouchable>
-              <Text style={{ color: c.primary, fontSize: fontSize.sm, fontWeight: "600" }}>
-                Đăng nhập
-              </Text>
-            </HapticTouchable>
-          </Link>
+        <View style={styles.divider}>
+          <View style={[styles.dividerLine, { backgroundColor: c.border }]} />
+          <Text style={[styles.dividerText, { color: c.mutedForeground }]}>hoặc</Text>
+          <View style={[styles.dividerLine, { backgroundColor: c.border }]} />
         </View>
+
+        <Link href="/(auth)/login" asChild>
+          <HapticTouchable style={[styles.outlineButton, { borderColor: c.border }]}>
+            <Text style={[styles.outlineButtonText, { color: c.foreground }]}>
+              Đã có tài khoản? Đăng nhập
+            </Text>
+          </HapticTouchable>
+        </Link>
+
+        <Text style={[styles.version, { color: c.mutedForeground }]}>Phiên bản 1.0.0</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -130,7 +145,7 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   scroll: { flexGrow: 1, justifyContent: "center", padding: spacing.xl },
-  header: { marginBottom: spacing["2xl"] },
+  header: { alignItems: "center", marginBottom: spacing["2xl"] },
   heading: { fontSize: fontSize["2xl"], fontWeight: "700", marginTop: spacing.sm },
   subtitle: { fontSize: fontSize.sm, marginTop: spacing.xs },
   form: { gap: spacing.base },
@@ -143,6 +158,19 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     fontSize: fontSize.base,
   },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.base,
+  },
+  inputFlex: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    fontSize: fontSize.base,
+  },
+  eyeBtn: { padding: spacing.xs },
   error: { fontSize: fontSize.sm },
   button: {
     borderRadius: radius.lg,
@@ -151,5 +179,23 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   buttonText: { fontSize: fontSize.base, fontWeight: "600" },
-  footer: { flexDirection: "row", justifyContent: "center", marginTop: spacing["2xl"] },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: spacing.xl,
+  },
+  dividerLine: { flex: 1, height: 1 },
+  dividerText: { marginHorizontal: spacing.md, fontSize: fontSize.sm },
+  outlineButton: {
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    paddingVertical: spacing.base,
+    alignItems: "center",
+  },
+  outlineButtonText: { fontSize: fontSize.base, fontWeight: "600" },
+  version: {
+    fontSize: fontSize.xs,
+    textAlign: "center",
+    marginTop: spacing.xl,
+  },
 });

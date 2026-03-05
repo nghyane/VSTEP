@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   Easing,
   ScrollView,
@@ -12,7 +13,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { HapticTouchable } from "@/components/HapticTouchable";
-import { Logo } from "@/components/Logo";
 import { useCreateGoal, useProgress, useUpdateGoal } from "@/hooks/use-progress";
 import { useThemeColors, spacing, radius, fontSize } from "@/theme";
 import type { VstepBand } from "@/types/api";
@@ -218,11 +218,31 @@ export default function OnboardingScreen() {
       await progressQuery.refetch();
       router.replace("/(app)/(tabs)");
     };
+    const onError = (err: Error) => {
+      Alert.alert("Lỗi", err.message || "Không thể lưu mục tiêu");
+    };
 
     if (existingGoal) {
-      updateGoal.mutate({ id: existingGoal.id, ...payload }, { onSuccess });
+      updateGoal.mutate({ id: existingGoal.id, ...payload }, { onSuccess, onError });
     } else {
-      createGoal.mutate(payload, { onSuccess });
+      createGoal.mutate(payload, {
+        onSuccess,
+        onError: (err: Error) => {
+          // 409 = goal already exists, refetch and try update
+          if (err.message?.includes("already")) {
+            progressQuery.refetch().then(() => {
+              const goal = progressQuery.data?.goal;
+              if (goal) {
+                updateGoal.mutate({ id: goal.id, ...payload }, { onSuccess, onError });
+              } else {
+                onError(err);
+              }
+            });
+          } else {
+            onError(err);
+          }
+        },
+      });
     }
   }
 
@@ -235,14 +255,30 @@ export default function OnboardingScreen() {
       case 0:
         return (
           <View style={styles.welcomeContainer}>
-            <View style={styles.logoWrapper}>
-              <Logo size="lg" />
+            <View style={styles.illustrationArea}>
+              {/* Main circle */}
+              <View style={[styles.mainCircle, { backgroundColor: c.primary + '15' }]}>
+                <Ionicons name="school" size={56} color={c.primary} />
+              </View>
+              {/* Floating skill icons */}
+              <View style={[styles.floatingIcon, styles.floatingTopLeft, { backgroundColor: c.skillListening + '20' }]}>
+                <Ionicons name="headset" size={20} color={c.skillListening} />
+              </View>
+              <View style={[styles.floatingIcon, styles.floatingTopRight, { backgroundColor: c.skillSpeaking + '20' }]}>
+                <Ionicons name="mic" size={20} color={c.skillSpeaking} />
+              </View>
+              <View style={[styles.floatingIcon, styles.floatingBottomLeft, { backgroundColor: c.skillReading + '20' }]}>
+                <Ionicons name="book" size={20} color={c.skillReading} />
+              </View>
+              <View style={[styles.floatingIcon, styles.floatingBottomRight, { backgroundColor: c.skillWriting + '20' }]}>
+                <Ionicons name="create" size={20} color={c.skillWriting} />
+              </View>
             </View>
             <Text style={[styles.welcomeTitle, { color: c.foreground }]}>
-              Chào mừng đến với VSTEP!
+              Học thông minh hơn với AI
             </Text>
             <Text style={[styles.welcomeSubtitle, { color: c.mutedForeground }]}>
-              Hãy trả lời vài câu hỏi ngắn để chúng tôi cá nhân hóa lộ trình học tập cho bạn
+              Luyện tập Nghe, Nói, Đọc, Viết với AI chấm điểm và hướng dẫn bạn cải thiện
             </Text>
           </View>
         );
@@ -542,11 +578,46 @@ const styles = StyleSheet.create({
   // Welcome (step 0)
   welcomeContainer: {
     alignItems: "center",
-    paddingTop: spacing["3xl"],
-    gap: spacing.base,
+    paddingTop: spacing["2xl"],
+    gap: spacing.lg,
   },
-  logoWrapper: {
-    marginBottom: spacing.lg,
+  illustrationArea: {
+    width: 200,
+    height: 200,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.base,
+  },
+  mainCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  floatingIcon: {
+    position: "absolute",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  floatingTopLeft: {
+    top: 10,
+    left: 10,
+  },
+  floatingTopRight: {
+    top: 10,
+    right: 10,
+  },
+  floatingBottomLeft: {
+    bottom: 10,
+    left: 10,
+  },
+  floatingBottomRight: {
+    bottom: 10,
+    right: 10,
   },
   welcomeTitle: {
     fontSize: fontSize["2xl"],

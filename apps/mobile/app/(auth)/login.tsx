@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -8,12 +9,14 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { Link, useRouter } from "expo-router";
 import { useAuth } from "@/hooks/use-auth";
 import { loginApi } from "@/lib/api";
 import { Logo } from "@/components/Logo";
 import { useThemeColors, spacing, radius, fontSize } from "@/theme";
+
 export default function LoginScreen() {
   const router = useRouter();
   const { signIn } = useAuth();
@@ -21,6 +24,7 @@ export default function LoginScreen() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -50,9 +54,11 @@ export default function LoginScreen() {
       >
         <View style={styles.header}>
           <Logo size="lg" />
-          <Text style={[styles.heading, { color: c.foreground }]}>Đăng nhập</Text>
+          <Text style={[styles.heading, { color: c.foreground }]}>
+            Đăng nhập vào VSTEP
+          </Text>
           <Text style={[styles.subtitle, { color: c.mutedForeground }]}>
-            Nhập email và mật khẩu để tiếp tục
+            Nền tảng luyện thi VSTEP thông minh
           </Text>
         </View>
 
@@ -72,15 +78,34 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.field}>
-            <Text style={[styles.label, { color: c.foreground }]}>Mật khẩu</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: c.card, borderColor: c.border, color: c.foreground }]}
-              placeholder="••••••••"
-              placeholderTextColor={c.mutedForeground}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
+            <View style={styles.labelRow}>
+              <Text style={[styles.label, { color: c.foreground }]}>Mật khẩu</Text>
+              <HapticTouchable
+                onPress={() => Alert.alert("Thông báo", "Tính năng đang phát triển")}
+              >
+                <Text style={[styles.forgotText, { color: c.primary }]}>Quên mật khẩu?</Text>
+              </HapticTouchable>
+            </View>
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={[styles.passwordInput, { backgroundColor: c.card, borderColor: c.border, color: c.foreground }]}
+                placeholder="••••••••"
+                placeholderTextColor={c.mutedForeground}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+              />
+              <HapticTouchable
+                style={styles.eyeButton}
+                onPress={() => setShowPassword((prev) => !prev)}
+              >
+                <Ionicons
+                  name={showPassword ? "eye-off" : "eye"}
+                  size={fontSize.xl}
+                  color={c.mutedForeground}
+                />
+              </HapticTouchable>
+            </View>
           </View>
 
           {error ? <Text style={[styles.error, { color: c.destructive }]}>{error}</Text> : null}
@@ -96,18 +121,21 @@ export default function LoginScreen() {
           </HapticTouchable>
         </View>
 
-        <View style={styles.footer}>
-          <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm }}>
-            Chưa có tài khoản?{" "}
-          </Text>
-          <Link href="/(auth)/register" asChild>
-            <HapticTouchable>
-              <Text style={{ color: c.primary, fontSize: fontSize.sm, fontWeight: "600" }}>
-                Đăng ký
-              </Text>
-            </HapticTouchable>
-          </Link>
+        <View style={styles.divider}>
+          <View style={[styles.dividerLine, { backgroundColor: c.border }]} />
+          <Text style={[styles.dividerText, { color: c.mutedForeground }]}>hoặc</Text>
+          <View style={[styles.dividerLine, { backgroundColor: c.border }]} />
         </View>
+
+        <Link href="/(auth)/register" asChild>
+          <HapticTouchable style={[styles.outlineButton, { borderColor: c.border }]}>
+            <Text style={[styles.outlineButtonText, { color: c.foreground }]}>
+              Đăng ký tài khoản
+            </Text>
+          </HapticTouchable>
+        </Link>
+
+        <Text style={[styles.version, { color: c.mutedForeground }]}>Phiên bản 1.0.0</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -116,18 +144,36 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   scroll: { flexGrow: 1, justifyContent: "center", padding: spacing.xl },
-  header: { marginBottom: spacing["2xl"] },
-  heading: { fontSize: fontSize["2xl"], fontWeight: "700", marginTop: spacing.sm },
-  subtitle: { fontSize: fontSize.sm, marginTop: spacing.xs },
+  header: { alignItems: "center", marginBottom: spacing["2xl"] },
+  heading: { fontSize: fontSize["2xl"], fontWeight: "700", marginTop: spacing.md, textAlign: "center" },
+  subtitle: { fontSize: fontSize.sm, marginTop: spacing.xs, textAlign: "center" },
   form: { gap: spacing.base },
   field: { gap: spacing.xs },
+  labelRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   label: { fontSize: fontSize.sm, fontWeight: "500" },
+  forgotText: { fontSize: fontSize.sm, fontWeight: "500" },
   input: {
     borderWidth: 1,
     borderRadius: radius.lg,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
     fontSize: fontSize.base,
+  },
+  passwordContainer: { position: "relative" },
+  passwordInput: {
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    paddingRight: spacing["3xl"],
+    fontSize: fontSize.base,
+  },
+  eyeButton: {
+    position: "absolute",
+    right: spacing.md,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
   },
   error: { fontSize: fontSize.sm },
   button: {
@@ -137,5 +183,19 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   buttonText: { fontSize: fontSize.base, fontWeight: "600" },
-  footer: { flexDirection: "row", justifyContent: "center", marginTop: spacing["2xl"] },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: spacing.xl,
+  },
+  dividerLine: { flex: 1, height: 1 },
+  dividerText: { fontSize: fontSize.sm, marginHorizontal: spacing.md },
+  outlineButton: {
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    paddingVertical: spacing.base,
+    alignItems: "center",
+  },
+  outlineButtonText: { fontSize: fontSize.base, fontWeight: "600" },
+  version: { fontSize: fontSize.xs, textAlign: "center", marginTop: spacing["2xl"] },
 });
