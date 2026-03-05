@@ -1,17 +1,17 @@
 import { env } from "@common/env";
-import { drizzle } from "drizzle-orm/bun-sql";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import * as relations from "./relations";
 import { table } from "./schema";
 
-export const db = drizzle({
-  connection: {
-    url: env.DATABASE_URL,
-    max: 10,
-    idleTimeout: 30,
-    // biome-ignore lint/style/useNamingConvention: PostgreSQL GUC parameter
-    connection: { TimeZone: "Asia/Ho_Chi_Minh" },
-  },
-  schema: { ...table, ...relations },
+const client = postgres(env.DATABASE_URL, {
+	max: 10,
+	idle_timeout: 30,
+	connection: { TimeZone: "Asia/Ho_Chi_Minh" },
+});
+
+export const db = drizzle(client, {
+	schema: { ...table, ...relations },
 });
 
 export { table };
