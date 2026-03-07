@@ -4,6 +4,7 @@ import {
 	CheckmarkCircle01Icon,
 	DocumentValidationIcon,
 	Fire02Icon,
+	LanguageSkillIcon,
 	Logout01Icon,
 	Menu01Icon,
 	UserCircleIcon,
@@ -74,6 +75,7 @@ export function LearnerLayout() {
 					<nav className="hidden items-center gap-1 md:flex">
 						{[
 							{ label: "Luyện tập", icon: Book02Icon, href: "/practice" as const },
+							{ label: "Từ vựng", icon: LanguageSkillIcon, href: "/vocabulary" as const },
 							{ label: "Thi thử", icon: DocumentValidationIcon, href: "/exams" as const },
 							{ label: "Tiến độ", icon: AnalyticsUpIcon, href: "/progress" as const },
 						].map((item) => (
