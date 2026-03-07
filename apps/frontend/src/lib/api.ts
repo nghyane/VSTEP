@@ -31,6 +31,40 @@ const ERROR_TRANSLATIONS: Record<string, string> = {
 	Conflict: "Dữ liệu bị trùng lặp",
 }
 
+
+// Vietnamese field names for validation errors
+const FIELD_LABELS: Record<string, string> = {
+	"/email": "Email",
+	"/password": "Mật khẩu",
+	"/fullName": "Họ tên",
+	"/refreshToken": "Token",
+}
+
+// Map Elysia/TypeBox validation messages to Vietnamese
+function translateValidation(body: Record<string, unknown>): string | null {
+	if (body?.type !== "validation" || typeof body.property !== "string") return null
+
+	const field = FIELD_LABELS[body.property] ?? body.property
+	const msg = typeof body.message === "string" ? body.message : ""
+
+	// "Expected string length greater or equal to N"
+	const minLen = msg.match(/string length greater or equal to (\d+)/)
+	if (minLen) return `${field} phải có ít nhất ${minLen[1]} ký tự`
+
+	// "Expected string length less or equal to N"
+	const maxLen = msg.match(/string length less or equal to (\d+)/)
+	if (maxLen) return `${field} không được quá ${maxLen[1]} ký tự`
+
+	// "Expected string to match 'email' format"
+	if (msg.includes("email") && msg.includes("format")) return "Email không đúng định dạng"
+
+	// Required / missing
+	if (msg.includes("Required") || msg.includes("Expected required")) return `${field} không được để trống`
+
+	// Fallback: field + generic
+	return `${field} không hợp lệ`
+}
+
 // Internal: raw fetch with JSON headers
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 	const res = await fetch(`${API_URL}${path}`, {
@@ -39,6 +73,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 	})
 	if (!res.ok) {
 		const body = await res.json().catch(() => ({}))
+		const validation = translateValidation(body)
+		if (validation) throw new ApiError(res.status, validation)
 		const fallback = STATUS_MESSAGES[res.status] ?? "Đã có lỗi xảy ra"
 		const serverMessage: string | undefined = body?.error?.message ?? body?.message
 		const translated = serverMessage ? (ERROR_TRANSLATIONS[serverMessage] ?? fallback) : fallback
@@ -134,6 +170,8 @@ async function uploadFile<T>(path: string, formData: FormData): Promise<T> {
 			handleAuthError()
 			throw new ApiError(401, "Session expired")
 		}
+		const validation = translateValidation(body)
+		if (validation) throw new ApiError(res.status, validation)
 		const fallback = STATUS_MESSAGES[res.status] ?? "Đã có lỗi xảy ra"
 		const serverMessage: string | undefined = body?.error?.message ?? body?.message
 		const translated = serverMessage ? (ERROR_TRANSLATIONS[serverMessage] ?? fallback) : fallback
