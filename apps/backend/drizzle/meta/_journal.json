@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1771245233533,
-      "tag": "0000_fat_jackal",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1771245455730,
-      "tag": "0001_puzzling_pyro",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1771324844558,
-      "tag": "0002_sharp_wild_pack",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1772585600490,
-      "tag": "0003_quick_sheva_callister",
+      "when": 1773014023990,
+      "tag": "0000_past_mysterio",
       "breakpoints": true
     }
   ]

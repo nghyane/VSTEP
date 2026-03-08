@@ -10,6 +10,7 @@ import {
   knowledgePoints,
   questionKnowledgePoints,
 } from "./schema/knowledge-points";
+import { deviceTokens, notifications } from "./schema/notifications";
 import {
   userGoals,
   userKnowledgeProgress,
@@ -20,6 +21,11 @@ import {
 import { questions } from "./schema/questions";
 import { submissionDetails, submissions } from "./schema/submissions";
 import { refreshTokens, users } from "./schema/users";
+import {
+  userVocabularyProgress,
+  vocabularyTopics,
+  vocabularyWords,
+} from "./schema/vocabulary";
 
 export const usersRelations = relations(users, ({ many }) => ({
   refreshTokens: many(refreshTokens),
@@ -36,6 +42,9 @@ export const usersRelations = relations(users, ({ many }) => ({
   feedbackGiven: many(instructorFeedback, { relationName: "feedbackFrom" }),
   feedbackReceived: many(instructorFeedback, { relationName: "feedbackTo" }),
   placements: many(userPlacements),
+  notifications: many(notifications),
+  deviceTokens: many(deviceTokens),
+  vocabularyProgress: many(userVocabularyProgress),
 }));
 
 export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
@@ -255,5 +264,59 @@ export const userPlacementsRelations = relations(userPlacements, ({ one }) => ({
   session: one(examSessions, {
     fields: [userPlacements.sessionId],
     references: [examSessions.id],
+  }),
+}));
+
+// ---------------------------------------------------------------------------
+// Vocabulary
+// ---------------------------------------------------------------------------
+
+export const vocabularyTopicsRelations = relations(
+  vocabularyTopics,
+  ({ many }) => ({
+    words: many(vocabularyWords),
+  }),
+);
+
+export const vocabularyWordsRelations = relations(
+  vocabularyWords,
+  ({ one, many }) => ({
+    topic: one(vocabularyTopics, {
+      fields: [vocabularyWords.topicId],
+      references: [vocabularyTopics.id],
+    }),
+    userProgress: many(userVocabularyProgress),
+  }),
+);
+
+export const userVocabularyProgressRelations = relations(
+  userVocabularyProgress,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [userVocabularyProgress.userId],
+      references: [users.id],
+    }),
+    word: one(vocabularyWords, {
+      fields: [userVocabularyProgress.wordId],
+      references: [vocabularyWords.id],
+    }),
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Notifications
+// ---------------------------------------------------------------------------
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+}));
+
+export const deviceTokensRelations = relations(deviceTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [deviceTokens.userId],
+    references: [users.id],
   }),
 }));

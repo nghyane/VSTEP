@@ -19,6 +19,7 @@ import {
 import { createdAt, timestamps } from "./columns";
 
 import {
+  examSkillEnum,
   examTypeEnum,
   questionLevelEnum,
   skillEnum,
@@ -43,6 +44,7 @@ export const exams = pgTable(
     title: varchar("title", { length: 255 }).notNull(),
     description: text("description"),
     type: examTypeEnum("type").default("practice").notNull(),
+    skill: examSkillEnum("skill"),
     durationMinutes: integer("duration_minutes"),
     blueprint: jsonb("blueprint").$type<ExamBlueprint>().notNull(),
     isActive: boolean("is_active").default(true).notNull(),
@@ -53,6 +55,7 @@ export const exams = pgTable(
   },
   (table) => ({
     levelIdx: index("exams_level_idx").on(table.level),
+    skillIdx: index("exams_skill_idx").on(table.skill),
     activeIdx: index("exams_active_idx")
       .on(table.level)
       .where(sql`${table.isActive} = true`),

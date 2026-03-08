@@ -7,6 +7,7 @@
 import { classes, classMembers, instructorFeedback } from "./classes";
 import { examAnswers, examSessions, examSubmissions, exams } from "./exams";
 import { knowledgePoints, questionKnowledgePoints } from "./knowledge-points";
+import { deviceTokens, notifications } from "./notifications";
 import {
   userGoals,
   userKnowledgeProgress,
@@ -17,6 +18,11 @@ import {
 import { questions } from "./questions";
 import { submissionDetails, submissions } from "./submissions";
 import { refreshTokens, users } from "./users";
+import {
+  userVocabularyProgress,
+  vocabularyTopics,
+  vocabularyWords,
+} from "./vocabulary";
 
 /**
  * Centralized table registry
@@ -44,17 +50,24 @@ export const table = {
   classes,
   classMembers,
   instructorFeedback,
+  vocabularyTopics,
+  vocabularyWords,
+  userVocabularyProgress,
+  notifications,
+  deviceTokens,
 } as const;
 
 export {
   classMembers,
   classes,
+  deviceTokens,
   examAnswers,
   examSessions,
   examSubmissions,
   exams,
   instructorFeedback,
   knowledgePoints,
+  notifications,
   questionKnowledgePoints,
   questions,
   refreshTokens,
@@ -65,7 +78,10 @@ export {
   userKnowledgeProgress,
   userProgress,
   userSkillScores,
+  userVocabularyProgress,
   users,
+  vocabularyTopics,
+  vocabularyWords,
 };
 
 export type {
@@ -82,6 +98,12 @@ export type {
   QuestionKnowledgePoint,
 } from "./knowledge-points";
 export type {
+  DeviceToken,
+  NewDeviceToken,
+  NewNotification,
+  Notification,
+} from "./notifications";
+export type {
   NewUserKnowledgeProgress,
   NewUserPlacement,
   UserKnowledgeProgress,
@@ -89,3 +111,11 @@ export type {
   UserProgress,
 } from "./progress";
 export type { NewQuestion, Question } from "./questions";
+export type {
+  NewUserVocabularyProgress,
+  NewVocabularyTopic,
+  NewVocabularyWord,
+  UserVocabularyProgress,
+  VocabularyTopic,
+  VocabularyWord,
+} from "./vocabulary";
