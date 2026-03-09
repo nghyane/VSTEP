@@ -341,6 +341,7 @@ erDiagram
     submissions ||--|| submission_details : "has detail 1-to-1"
     submissions ||--o{ exam_submissions : "linked from exam"
     submissions ||--o{ user_skill_scores : "records score"
+    submissions ||--o{ instructor_feedback : "reviewed in"
 
     classes ||--o{ class_members : "enrolls members"
     classes ||--o{ instructor_feedback : "contains feedback"
@@ -353,6 +354,7 @@ erDiagram
         varchar email UK "unique not null"
         varchar password_hash "argon2id"
         varchar full_name "nullable"
+        varchar avatar_key "nullable max 512"
         enum role "learner | instructor | admin"
         timestamp created_at
         timestamp updated_at
@@ -373,6 +375,7 @@ erDiagram
     questions {
         uuid id PK
         enum skill "listening | reading | writing | speaking"
+        enum level "A2 | B1 | B2 | C1"
         smallint part "L:1-3 R:1-4 W:1-2 S:1-3"
         jsonb content "QuestionContent 8 types"
         jsonb answer_key "ObjectiveAnswerKey nullable"
@@ -458,6 +461,7 @@ erDiagram
         uuid session_id FK
         uuid submission_id FK
         enum skill "writing | speaking"
+        smallint part "nullable"
         timestamp created_at
     }
 
@@ -536,7 +540,6 @@ erDiagram
         uuid class_id FK
         uuid user_id FK
         timestamp joined_at "not null"
-        timestamp removed_at "nullable"
     }
 
     instructor_feedback {
@@ -595,6 +598,23 @@ erDiagram
         timestamp created_at
     }
 
+    user_placements {
+        uuid id PK
+        uuid user_id FK UK "unique not null"
+        uuid session_id FK "nullable"
+        enum status "completed | skipped"
+        enum source "self_assess | placement | skipped"
+        enum confidence "high | medium | low"
+        enum listening_level "A2 | B1 | B2 | C1"
+        enum reading_level "A2 | B1 | B2 | C1"
+        enum writing_level "A2 | B1 | B2 | C1"
+        enum speaking_level "A2 | B1 | B2 | C1"
+        varchar writing_source "max 20 not null"
+        varchar speaking_source "max 20 not null"
+        timestamp created_at
+        timestamp updated_at
+    }
+
     device_tokens {
         uuid id PK
         uuid user_id FK "not null"
@@ -637,6 +657,104 @@ Hệ thống sử dụng các cột JSONB của PostgreSQL cho dữ liệu linh 
 #### 2.3.1 Nội Dung Câu Hỏi (`questions.content`)
 
 Union phân biệt theo `skill` và `part` của câu hỏi. Hỗ trợ 10 loại nội dung:
+
+```mermaid
+classDiagram
+    direction TB
+
+    class QuestionContent {
+        <<Union>>
+    }
+
+    class ListeningContent {
+        string audioUrl
+        string? transcript
+        MCQItem[] items
+    }
+
+    class ListeningDictationContent {
+        string audioUrl
+        string transcript
+        string transcriptWithGaps
+        DictationItem[] items
+    }
+
+    class ReadingContent {
+        string passage
+        string? title
+        MCQItem[] items
+    }
+
+    class ReadingTNGContent {
+        string passage
+        string? title
+        TNGItem[] items
+    }
+
+    class ReadingGapFillContent {
+        string? title
+        string textWithGaps
+        GapFillItem[] items
+    }
+
+    class ReadingMatchingContent {
+        string? title
+        Paragraph[] paragraphs
+        string[] headings
+    }
+
+    class WritingContent {
+        string prompt
+        "letter | essay" taskType
+        string[]? instructions
+        int minWords
+        string[]? requiredPoints
+    }
+
+    class SpeakingPart1Content {
+        Topic[] topics
+    }
+
+    class SpeakingPart2Content {
+        string situation
+        string[3] options
+        int preparationSeconds
+        int speakingSeconds
+    }
+
+    class SpeakingPart3Content {
+        string centralIdea
+        string[3] suggestions
+        string followUpQuestion
+        int preparationSeconds
+        int speakingSeconds
+    }
+
+    class MCQItem {
+        string stem
+        string[4] options
+    }
+
+    class TNGItem {
+        string stem
+        string[3] options
+    }
+
+    QuestionContent <|-- ListeningContent
+    QuestionContent <|-- ListeningDictationContent
+    QuestionContent <|-- ReadingContent
+    QuestionContent <|-- ReadingTNGContent
+    QuestionContent <|-- ReadingGapFillContent
+    QuestionContent <|-- ReadingMatchingContent
+    QuestionContent <|-- WritingContent
+    QuestionContent <|-- SpeakingPart1Content
+    QuestionContent <|-- SpeakingPart2Content
+    QuestionContent <|-- SpeakingPart3Content
+
+    ListeningContent *-- MCQItem
+    ReadingContent *-- MCQItem
+    ReadingTNGContent *-- TNGItem
+```
 
 | Kỹ năng | Loại nội dung | Cấu trúc nội dung |
 |-------|-----------|-------------------|
@@ -691,7 +809,7 @@ ExamBlueprint = {
 |----------|--------|---------|
 | `user_role` | `learner`, `instructor`, `admin` | `users.role` |
 | `skill` | `listening`, `reading`, `writing`, `speaking` | `questions`, `submissions`, `user_progress`, `user_skill_scores`, `exam_submissions`, `instructor_feedback` |
-| `question_level` | `A2`, `B1`, `B2`, `C1` | `exams.level`, `user_progress.current_level`, `user_progress.target_level` |
+| `question_level` | `A2`, `B1`, `B2`, `C1` | `questions.level`, `exams.level`, `user_progress.current_level`, `user_progress.target_level`, `user_placements.*_level` |
 | `vstep_band` | `B1`, `B2`, `C1` | `submissions.band`, `user_goals.target_band`, `user_goals.current_estimated_band`, `exam_sessions.overall_band` |
 | `submission_status` | `pending`, `processing`, `completed`, `review_pending`, `failed` | `submissions.status` |
 | `review_priority` | `low`, `medium`, `high` | `submissions.review_priority` |
