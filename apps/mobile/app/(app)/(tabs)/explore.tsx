@@ -34,14 +34,14 @@ const STEPS = [
   {
     num: "1",
     title: "Làm bài thi thử",
-    desc: "Chọn đề thi VSTEP đầy đủ 4 kỹ năng hoặc luyện riêng từng phần.",
+    desc: "Chọn đề thi Aptis đầy đủ 4 kỹ năng hoặc luyện riêng từng phần.",
     icon: "document-text" as const,
     gradient: ["#4F5BD5", "#6C7BF0"] as [string, string],
   },
   {
     num: "2",
     title: "AI chấm điểm tức thì",
-    desc: "AI phân tích Writing & Speaking theo rubric chuẩn VSTEP, trả kết quả trong vài phút.",
+    desc: "AI phân tích Writing & Speaking theo rubric chuẩn Aptis, trả kết quả trong vài phút.",
     icon: "flash" as const,
     gradient: ["#30A46C", "#4FD1A0"] as [string, string],
   },
@@ -99,7 +99,7 @@ const TESTIMONIALS = [
   {
     name: "Đức Huy",
     role: "Giảng viên tiếng Anh",
-    quote: "Đề thi sát chuẩn VSTEP, phù hợp để giới thiệu cho sinh viên luyện tập thêm ngoài giờ.",
+    quote: "Đề thi sát chuẩn Aptis, phù hợp để giới thiệu cho sinh viên luyện tập thêm ngoài giờ.",
     score: "Đề xuất cho SV",
     initials: "ĐH",
   },
@@ -214,7 +214,7 @@ function LevelCard({
   return (
     <Animated.View style={[styles.levelCard, { backgroundColor: c.muted, borderColor: c.border }, anim]}>
       <View style={[styles.levelBadge, { backgroundColor: c.primary + "18" }]}>
-        <Text style={[styles.levelBadgeText, { color: c.primary }]}>VSTEP</Text>
+        <Text style={[styles.levelBadgeText, { color: c.primary }]}>Aptis</Text>
       </View>
       <Text style={[styles.levelTitle, { color: c.foreground }]}>
         {displayCurrent} → {goal.targetBand}
@@ -349,7 +349,7 @@ function HowItWorksSection({ colors: c }: { colors: ReturnType<typeof useThemeCo
         Tối ưu hành trình luyện thi
       </Text>
       <Text style={[styles.sectionSub, { color: c.mutedForeground }]}>
-        3 bước đơn giản để chinh phục VSTEP cùng AI
+        3 bước đơn giản để chinh phục Aptis cùng AI
       </Text>
       {STEPS.map((step, i) => (
         <StepCard key={step.num} step={step} index={i} colors={c} />
@@ -447,7 +447,7 @@ function TestimonialsSection({ colors: c }: { colors: ReturnType<typeof useTheme
     <View style={styles.section}>
       <Text style={[styles.sectionTitle, { color: c.foreground }]}>Học viên nói gì?</Text>
       <Text style={[styles.sectionSub, { color: c.mutedForeground }]}>
-        Hàng nghìn người đã cải thiện điểm VSTEP
+        Hàng nghìn người đã cải thiện điểm Aptis
       </Text>
       <ScrollView
         horizontal

@@ -86,7 +86,7 @@ export default function ExamsScreen() {
                 <Ionicons name="document-text" size={24} color={c.primary} />
               </View>
               <View style={styles.summaryText}>
-                <Text style={[styles.summaryTitle, { color: c.foreground }]}>Đề thi VSTEP</Text>
+                <Text style={[styles.summaryTitle, { color: c.foreground }]}>Đề thi Aptis</Text>
                 <Text style={[styles.summarySub, { color: c.mutedForeground }]}>
                   {exams.length} đề thi có sẵn
                 </Text>

@@ -352,7 +352,7 @@ export default function OnboardingScreen() {
           <>
             <StepHeader
               step={1}
-              title="Mục tiêu band điểm VSTEP?"
+              title="Mục tiêu band điểm Aptis?"
               subtitle="Hệ thống sẽ điều chỉnh bài tập phù hợp"
             />
             <View style={styles.optionList}>

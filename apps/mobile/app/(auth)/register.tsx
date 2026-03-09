@@ -82,7 +82,7 @@ export default function RegisterScreen() {
           <Logo size="lg" />
           <Text style={[styles.heading, { color: c.foreground }]}>Tạo tài khoản mới</Text>
           <Text style={[styles.subtitle, { color: c.mutedForeground }]}>
-            Bắt đầu hành trình chinh phục VSTEP
+            Bắt đầu hành trình chinh phục Aptis
           </Text>
         </View>
 

@@ -1,32 +1,44 @@
 {
   "expo": {
-    "name": "VSTEP Practice",
-    "slug": "vstep-mobile",
+    "name": "Aptis",
+    "slug": "aptis-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "vstep",
+    "scheme": "aptis",
     "userInterfaceStyle": "light",
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-image.png",
       "resizeMode": "contain",
-      "backgroundColor": "#4F5BD5"
+      "backgroundColor": "#013396"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.vstep.mobile"
+      "bundleIdentifier": "com.aptis.mobile"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#4F5BD5"
+        "backgroundColor": "#013396"
       },
-      "package": "com.vstep.mobile",
+      "package": "com.aptis.mobile",
       "softwareKeyboardLayoutMode": "pan"
     },
-    "plugins": ["expo-router", "expo-secure-store", "expo-system-ui"],
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-system-ui"
+    ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "dbb38b89-9f0c-4a0c-94e1-1b17d5554246"
+      }
+    },
+    "owner": "khoiawesome"
   }
 }

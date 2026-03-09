@@ -76,10 +76,10 @@ export default function LoginScreen() {
         <View style={styles.header}>
           <Logo size="lg" />
           <Text style={[styles.heading, { color: c.foreground }]}>
-            Đăng nhập vào VSTEP
+            Đăng nhập vào Aptis
           </Text>
           <Text style={[styles.subtitle, { color: c.mutedForeground }]}>
-            Nền tảng luyện thi VSTEP thông minh
+            Nền tảng luyện thi Aptis thông minh
           </Text>
         </View>
 
