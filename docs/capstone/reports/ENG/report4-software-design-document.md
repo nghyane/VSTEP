@@ -77,12 +77,12 @@ flowchart TB
     subgraph DataLayer ["Data Layer"]
         PG["PostgreSQL 17<br/>Primary Data Store"]
         Redis["Redis 7.2+<br/>Streams + Cache"]
-        MinIO["MinIO<br/>S3-compatible<br/>Object Storage"]
+        ObjectStorage["S3-compatible<br/>Object Storage"]
     end
 
     subgraph External ["External Services"]
-        LLMAPI["LLM Provider<br/>GPT-4o / Cloudflare<br/>Llama 3.3 70B"]
-        STTAPI["Cloudflare Workers AI<br/>Deepgram Nova 3<br/>Speech-to-Text"]
+        LLMAPI["LLM Provider APIs<br/>current implementation:<br/>OpenAI-compatible / Cloudflare"]
+        STTAPI["STT Provider APIs<br/>current implementation:<br/>Cloudflare Workers AI"]
     end
 
     WebApp -->|"REST<br/>JSON + JWT"| Gateway
@@ -116,7 +116,7 @@ flowchart TB
     class WebApp,MobileApp client
     class Gateway,AuthMod,SubMod,ExamMod,QuestMod,ProgMod,ClassMod,UserMod,KPMod,HealthMod api
     class Worker,WritingPipe,SpeakingPipe worker
-    class PG,Redis,MinIO data
+    class PG,Redis,ObjectStorage data
     class LLMAPI,STTAPI external
 ```
 
@@ -128,11 +128,11 @@ flowchart TB
         subgraph DockerCompose ["Docker Compose"]
             PGContainer["PostgreSQL 17<br/>Container<br/>Port 5432"]
             RedisContainer["Redis 7.2 Alpine<br/>Container<br/>Port 6379"]
-            MinIOContainer["MinIO<br/>Container<br/>Port 9000/9001"]
+            ObjectStorageContainer["S3-compatible Object Storage<br/>Container in local dev<br/>Port 9000/9001"]
         end
 
         subgraph BunRuntime ["Bun Runtime"]
-            BackendAPI["Backend API Server<br/>Elysia on port 3001<br/>bun run dev"]
+            BackendAPI["Backend API Server<br/>Elysia on port 3000<br/>bun run dev"]
         end
 
         subgraph PythonRuntime ["Python Runtime"]
@@ -146,21 +146,21 @@ flowchart TB
     end
 
     subgraph ExternalAPIs ["External APIs"]
-        AIProviders["AI Provider APIs<br/>OpenAI / Cloudflare Workers AI"]
+        AIProviders["AI Provider APIs<br/>current implementation: OpenAI-compatible + Cloudflare Workers AI"]
     end
 
     BackendAPI -->|"TCP 5432"| PGContainer
     BackendAPI -->|"TCP 6379"| RedisContainer
-    BackendAPI -->|"S3 API 9000"| MinIOContainer
+    BackendAPI -->|"S3 API 9000"| ObjectStorageContainer
     GradingWorker -->|"TCP 6379"| RedisContainer
     GradingWorker -->|"HTTPS"| AIProviders
-    FrontendDev -->|"HTTP :3001"| BackendAPI
+    FrontendDev -->|"HTTP :3000"| BackendAPI
 
     classDef container fill:#0277bd,stroke:#01579b,color:#fff
     classDef runtime fill:#2e7d32,stroke:#1b5e20,color:#fff
     classDef external fill:#e65100,stroke:#bf360c,color:#fff
 
-    class PGContainer,RedisContainer,MinIOContainer container
+    class PGContainer,RedisContainer,ObjectStorageContainer container
     class BackendAPI,GradingAPI,GradingWorker,FrontendDev runtime
     class AIProviders external
 ```
@@ -181,12 +181,12 @@ flowchart TB
 | Frontend Language | TypeScript | 5.x | Type-safe frontend development |
 | Grading Runtime | Python | 3.11+ | AI grading microservice runtime |
 | Grading Framework | FastAPI | latest | Health check and admin API for grading service |
-| LLM Provider | OpenAI GPT-4o + Cloudflare Llama 3.3 70B | — | Writing/Speaking AI grading via LLM (primary + fallback) |
-| STT Provider | Cloudflare Workers AI (Deepgram Nova 3) | — | Speech-to-Text transcription for Speaking |
+| LLM Provider | Provider-configurable LLM APIs | — | Writing/Speaking AI grading via LLM; current implementation uses OpenAI-compatible and Cloudflare providers |
+| STT Provider | Provider-configurable STT APIs | — | Speech-to-Text transcription for Speaking; current implementation uses Cloudflare Workers AI |
 | Linting | Biome | latest | Code formatting and linting enforcement |
 | Testing (Backend) | bun:test | — | Unit and integration testing |
 | Testing (Grading) | pytest | — | Grading service unit tests |
-| Containerization | Docker Compose | — | Local development PostgreSQL + Redis + MinIO |
+| Containerization | Docker Compose | — | Local development PostgreSQL + Redis + S3-compatible object storage |
 
 ---
 
@@ -198,7 +198,7 @@ flowchart TB
 flowchart TB
     subgraph EntryPoint ["Entry Point"]
         AppTS["app.ts<br/>Elysia root app"]
-        IndexTS["index.ts<br/>app.listen on port 3001"]
+        IndexTS["index.ts<br/>app.listen on port 3000"]
     end
 
     subgraph Plugins ["Plugins"]
@@ -285,7 +285,7 @@ flowchart TB
         Grading["grading.py<br/>grade router<br/>writing vs speaking dispatch"]
         Writing["writing.py<br/>Writing grading pipeline<br/>Extract text, call LLM,<br/>4-criteria scoring"]
         Speaking["speaking.py<br/>Speaking grading pipeline<br/>Download audio, STT,<br/>transcript to LLM"]
-        STT["stt.py<br/>Deepgram Nova 3 client<br/>Audio to transcript"]
+        STT["stt.py<br/>Provider-configurable STT client<br/>Audio to transcript"]
         LLM["llm.py<br/>LLM client<br/>Structured output parsing"]
         Prompts["prompts.py<br/>VSTEP rubric prompts<br/>Writing + Speaking templates"]
     end
@@ -1369,9 +1369,9 @@ flowchart TB
 
 | Service | Provider | Purpose | Integration |
 |---------|----------|---------|-------------|
-| LLM Grading | OpenAI (GPT-4o) + Cloudflare (Llama 3.3 70B) | AI-powered Writing/Speaking assessment against VSTEP rubric | HTTPS REST via httpx + Cloudflare SDK |
-| Speech-to-Text | Cloudflare Workers AI (Deepgram Nova 3) | Audio transcription for Speaking submissions | HTTPS REST via httpx |
-| Object Storage | MinIO (S3-compatible) | Audio file storage (Speaking recordings), user avatars | S3 API via Bun S3Client |
+| LLM Grading | Provider-configurable LLM APIs | AI-powered Writing/Speaking assessment against VSTEP rubric | Current implementation uses OpenAI-compatible HTTP APIs and Cloudflare Workers AI |
+| Speech-to-Text | Provider-configurable STT APIs | Audio transcription for Speaking submissions | Current implementation uses Cloudflare Workers AI via HTTPS REST |
+| Object Storage | S3-compatible object storage | Audio file storage (Speaking recordings), user avatars | Bun `S3Client`; local development may use MinIO |
 | Authentication | Self-hosted (JWT) | Access/refresh token pair with rotation, reuse detection | Jose library (HS256) |
 | Password Hashing | Bun built-in | Argon2id password hashing | Bun.password API |
 
@@ -1394,7 +1394,7 @@ flowchart TB
 | **Mobile** | React Native | latest | TypeScript | Cross-platform mobile (Android-first) |
 | **AI/Grading** | Python | 3.11+ | Python | Grading microservice runtime |
 | | FastAPI | latest | Python | Health check and admin API |
-| | httpx + Cloudflare SDK | latest | Python | HTTP client for AI provider APIs |
+| | httpx + provider SDKs | latest | Python | HTTP client layer for AI provider APIs |
 | | Redis (Streams) | — | — | Task queue consumer (XREADGROUP) |
 | **Database** | PostgreSQL | 17 | SQL | Primary relational data store (JSONB) |
 | | Redis | 7.2+ | — | Streams, cache |
@@ -1410,16 +1410,16 @@ flowchart TB
 | Git | Version control | Feature branches, PR-based review, conventional commits |
 | GitHub Issues | Task tracking | Sprint backlog, bug tracking |
 | GitHub Projects | Project management | Kanban board for sprint planning |
-| Docker / Docker Compose | Containerization | Local dev: PostgreSQL, Redis, MinIO. Production: all services |
+| Docker / Docker Compose | Containerization | Local dev: PostgreSQL, Redis, S3-compatible object storage. Production deployment remains environment-dependent |
 | Biome CI | Code quality gate | `bun run check` on all PRs (lint + format) |
 
 ### 8.4 Deployment Environments
 
 | Environment | Purpose | Infrastructure | URL |
 |-------------|---------|---------------|-----|
-| **Local Development** | Individual developer setup | Docker Compose (PostgreSQL, Redis, MinIO) + Bun dev server + Vite dev server | `localhost:3001` (API), `localhost:5173` (Web) |
-| **Docker Compose (Full)** | Integration testing, demo | All services containerized: Backend, Grading, PostgreSQL, Redis, MinIO | `localhost:4000` (API), `localhost:8000` (Grading) |
-| **Production** | Live deployment (planned) | Cloud VM or container orchestration (to be determined post-capstone) | TBD |
+| **Local Development** | Individual developer setup | Docker Compose (PostgreSQL, Redis, local S3-compatible object storage) + Bun dev server + Vite dev server | `localhost:3000` (API), `localhost:5173` (Web) |
+| **Docker Compose (Full)** | Integration testing, demo | Containerized backend, grading, PostgreSQL, Redis, and local object storage; exact composition may evolve with the deployment setup | `localhost:4000` (API), `localhost:8000` (Grading) |
+| **Production** | Live deployment (planned) | Cloud VM or container orchestration (to be determined post-capstone) with provider-configurable object storage and AI integrations | TBD |
 
 *Note: Production deployment infrastructure will be finalized based on scaling requirements after the capstone pilot phase.*
 

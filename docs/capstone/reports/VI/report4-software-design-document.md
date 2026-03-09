@@ -31,7 +31,7 @@ Hệ thống Luyện thi VSTEP Thích ứng tuân theo kiến trúc **monorepo d
 | Ứng dụng | Runtime | Vai trò |
 |-------------|---------|------|
 | **Backend** (API chính) | Bun + Elysia | Máy chủ REST API xử lý tất cả yêu cầu từ client, xác thực, logic nghiệp vụ, và chấm điểm tự động cho các kỹ năng trắc nghiệm |
-| **Grading** (Worker AI) | Python + FastAPI | Worker bất đồng bộ tiêu thụ tác vụ từ hàng đợi Redis cho việc chấm Writing/Speaking bằng AI thông qua LLM và STT |
+| **Grading** (Worker AI) | Python + FastAPI | Worker bất đồng bộ tiêu thụ tác vụ từ Redis Streams cho việc chấm Writing/Speaking bằng AI thông qua LLM và STT |
 | **Frontend** (Web SPA) | React 19 + Vite 7 | Ứng dụng trang đơn phục vụ giao diện cho người học, giảng viên và quản trị viên |
 
 **Các quyết định kiến trúc chính:**
@@ -74,13 +74,13 @@ flowchart TB
 
     subgraph DataLayer ["Data Layer"]
         PG["PostgreSQL 17<br/>Primary Data Store"]
-        Redis["Redis 7.2+<br/>Queue + Locks + Cache"]
-        MinIO["MinIO<br/>S3-compatible<br/>Object Storage"]
+        Redis["Redis 7.2+<br/>Streams + Cache"]
+        ObjectStorage["S3-compatible<br/>Object Storage"]
     end
 
     subgraph External ["External Services"]
-        LLMAPI["LLM Provider<br/>GPT-4o / Cloudflare<br/>Llama 3.3 70B"]
-        STTAPI["Cloudflare Workers AI<br/>Deepgram Nova 3<br/>Speech-to-Text"]
+        LLMAPI["LLM Provider APIs<br/>triển khai hiện tại:<br/>OpenAI-compatible / Cloudflare"]
+        STTAPI["STT Provider APIs<br/>triển khai hiện tại:<br/>Cloudflare Workers AI"]
     end
 
     WebApp -->|"REST<br/>JSON + JWT"| Gateway
@@ -103,7 +103,7 @@ flowchart TB
 
     HealthMod -->|"ping"| PG
     HealthMod -->|"ping"| Redis
-    Modules -->|"S3 API<br/>TCP 9000"| MinIO
+    Modules -->|"S3 API<br/>TCP 9000"| ObjectStorage
 
     classDef client fill:#1565c0,stroke:#0d47a1,color:#fff
     classDef api fill:#2e7d32,stroke:#1b5e20,color:#fff
@@ -114,7 +114,7 @@ flowchart TB
     class WebApp,MobileApp client
     class Gateway,AuthMod,SubMod,ExamMod,QuestMod,ProgMod,ClassMod,UserMod,KPMod,HealthMod api
     class Worker,WritingPipe,SpeakingPipe worker
-    class PG,Redis,MinIO data
+    class PG,Redis,ObjectStorage data
     class LLMAPI,STTAPI external
 ```
 
@@ -126,11 +126,11 @@ flowchart TB
         subgraph DockerCompose ["Docker Compose"]
             PGContainer["PostgreSQL 17<br/>Container<br/>Port 5432"]
             RedisContainer["Redis 7.2 Alpine<br/>Container<br/>Port 6379"]
-            MinIOContainer["MinIO<br/>Container<br/>Port 9000/9001"]
+            ObjectStorageContainer["S3-compatible Object Storage<br/>Container cho local dev<br/>Port 9000/9001"]
         end
 
         subgraph BunRuntime ["Bun Runtime"]
-            BackendAPI["Backend API Server<br/>Elysia on port 3001<br/>bun run dev"]
+            BackendAPI["Backend API Server<br/>Elysia on port 3000<br/>bun run dev"]
         end
 
         subgraph PythonRuntime ["Python Runtime"]
@@ -144,21 +144,21 @@ flowchart TB
     end
 
     subgraph ExternalAPIs ["External APIs"]
-        AIProviders["AI Provider APIs<br/>OpenAI / Cloudflare Workers AI"]
+        AIProviders["AI Provider APIs<br/>triển khai hiện tại: OpenAI-compatible + Cloudflare Workers AI"]
     end
 
     BackendAPI -->|"TCP 5432"| PGContainer
     BackendAPI -->|"TCP 6379"| RedisContainer
-    BackendAPI -->|"S3 API 9000"| MinIOContainer
+    BackendAPI -->|"S3 API 9000"| ObjectStorageContainer
     GradingWorker -->|"TCP 6379"| RedisContainer
     GradingWorker -->|"HTTPS"| AIProviders
-    FrontendDev -->|"HTTP :3001"| BackendAPI
+    FrontendDev -->|"HTTP :3000"| BackendAPI
 
     classDef container fill:#0277bd,stroke:#01579b,color:#fff
     classDef runtime fill:#2e7d32,stroke:#1b5e20,color:#fff
     classDef external fill:#e65100,stroke:#bf360c,color:#fff
 
-    class PGContainer,RedisContainer,MinIOContainer container
+    class PGContainer,RedisContainer,ObjectStorageContainer container
     class BackendAPI,GradingAPI,GradingWorker,FrontendDev runtime
     class AIProviders external
 ```
@@ -173,18 +173,18 @@ flowchart TB
 | Xác thực Schema | Zod / TypeBox | latest | Xác thực đầu vào tại biên API |
 | JWT | Jose | latest | Ký, xác minh JWT và quản lý token |
 | Cơ sở dữ liệu | PostgreSQL | 17 | Kho dữ liệu quan hệ chính với hỗ trợ JSONB |
-| Cache / Hàng đợi | Redis | 7.2+ | Hàng đợi tác vụ (Streams XADD/XREADGROUP), khóa phân tán, caching |
+| Cache / Hàng đợi | Redis | 7.2+ | Hàng đợi tác vụ (Streams XADD/XREADGROUP), caching |
 | Frontend | React | 19 | Thư viện thành phần UI |
 | Công cụ build | Vite | 7 | Build frontend, dev server, HMR |
 | Ngôn ngữ Frontend | TypeScript | 5.x | Phát triển frontend an toàn kiểu |
 | Runtime chấm điểm | Python | 3.11+ | Runtime dịch vụ chấm điểm AI |
 | Framework chấm điểm | FastAPI | latest | Health check và API quản trị cho dịch vụ chấm điểm |
-| Nhà cung cấp LLM | OpenAI GPT-4o + Cloudflare Llama 3.3 70B | — | Chấm điểm Writing/Speaking bằng AI qua LLM (primary + fallback) |
-| Nhà cung cấp STT | Cloudflare Workers AI (Deepgram Nova 3) | — | Chuyển đổi giọng nói thành văn bản cho Speaking |
+| Nhà cung cấp LLM | API LLM có thể cấu hình nhà cung cấp | — | Chấm điểm Writing/Speaking bằng AI qua LLM; triển khai hiện tại dùng OpenAI-compatible và Cloudflare |
+| Nhà cung cấp STT | API STT có thể cấu hình nhà cung cấp | — | Chuyển đổi giọng nói thành văn bản cho Speaking; triển khai hiện tại dùng Cloudflare Workers AI |
 | Linting | Biome | latest | Định dạng code và thực thi lint |
 | Kiểm thử (Backend) | bun:test | — | Kiểm thử đơn vị và tích hợp |
 | Kiểm thử (Grading) | pytest | — | Kiểm thử đơn vị dịch vụ chấm điểm |
-| Container hóa | Docker Compose | — | PostgreSQL + Redis + MinIO cho phát triển cục bộ |
+| Container hóa | Docker Compose | — | PostgreSQL + Redis + object storage tương thích S3 cho phát triển cục bộ |
 
 ---
 
@@ -196,7 +196,7 @@ flowchart TB
 flowchart TB
     subgraph EntryPoint ["Entry Point"]
         AppTS["app.ts<br/>Elysia root app"]
-        IndexTS["index.ts<br/>app.listen on port 3001"]
+        IndexTS["index.ts<br/>app.listen on port 3000"]
     end
 
     subgraph Plugins ["Plugins"]
@@ -283,7 +283,7 @@ flowchart TB
         Grading["grading.py<br/>grade router<br/>writing vs speaking dispatch"]
         Writing["writing.py<br/>Writing grading pipeline<br/>Extract text, call LLM,<br/>4-criteria scoring"]
         Speaking["speaking.py<br/>Speaking grading pipeline<br/>Download audio, STT,<br/>transcript to LLM"]
-        STT["stt.py<br/>Deepgram Nova 3 client<br/>Audio to transcript"]
+        STT["stt.py<br/>STT client có thể cấu hình nhà cung cấp<br/>Audio to transcript"]
         LLM["llm.py<br/>LLM client<br/>Structured output parsing"]
         Prompts["prompts.py<br/>VSTEP rubric prompts<br/>Writing + Speaking templates"]
     end
@@ -1366,9 +1366,9 @@ flowchart TB
 
 | Dịch vụ | Nhà cung cấp | Mục đích | Tích hợp |
 |---------|----------|---------|-------------|
-| Chấm điểm LLM | OpenAI (GPT-4o) + Cloudflare (Llama 3.3 70B) | Đánh giá Writing/Speaking bằng AI theo rubric VSTEP | HTTPS REST qua httpx + Cloudflare SDK |
-| Chuyển giọng nói thành văn bản | Cloudflare Workers AI (Deepgram Nova 3) | Phiên âm audio cho bài nộp Speaking | HTTPS REST qua httpx |
-| Lưu trữ đối tượng | MinIO (tương thích S3) | Lưu trữ file audio (bản ghi Speaking), avatar người dùng | S3 API qua Bun S3Client |
+| Chấm điểm LLM | API LLM có thể cấu hình nhà cung cấp | Đánh giá Writing/Speaking bằng AI theo rubric VSTEP | Triển khai hiện tại dùng OpenAI-compatible HTTP APIs và Cloudflare Workers AI |
+| Chuyển giọng nói thành văn bản | API STT có thể cấu hình nhà cung cấp | Phiên âm audio cho bài nộp Speaking | Triển khai hiện tại dùng Cloudflare Workers AI qua HTTPS REST |
+| Lưu trữ đối tượng | Object storage tương thích S3 | Lưu trữ file audio (bản ghi Speaking), avatar người dùng | Bun `S3Client`; local development có thể dùng MinIO |
 | Xác thực | Tự triển khai (JWT) | Cặp access/refresh token với rotation, phát hiện tái sử dụng | Thư viện Jose (HS256) |
 | Băm mật khẩu | Bun tích hợp sẵn | Băm mật khẩu Argon2id | Bun.password API |
 
@@ -1391,10 +1391,10 @@ flowchart TB
 | **Mobile** | React Native | latest | TypeScript | Đa nền tảng di động (ưu tiên Android) |
 | **AI/Chấm điểm** | Python | 3.11+ | Python | Runtime dịch vụ chấm điểm |
 | | FastAPI | latest | Python | Health check và API quản trị |
-| | httpx + Cloudflare SDK | latest | Python | HTTP client cho AI provider APIs |
+| | httpx + provider SDKs | latest | Python | Lớp HTTP client cho AI provider APIs |
 | | Redis (Streams) | — | — | Consumer hàng đợi tác vụ |
 | **Cơ sở dữ liệu** | PostgreSQL | 17 | SQL | Kho dữ liệu quan hệ chính (JSONB) |
-| | Redis | 7.2+ | — | Hàng đợi, cache, khóa phân tán |
+| | Redis | 7.2+ | — | Streams, cache |
 | **Linting** | Biome | latest | — | Định dạng code và thực thi lint |
 | **Kiểm thử** | bun:test | — | TypeScript | Kiểm thử đơn vị + tích hợp Backend |
 | | pytest | — | Python | Kiểm thử dịch vụ chấm điểm |
@@ -1407,16 +1407,16 @@ flowchart TB
 | Git | Quản lý phiên bản | Feature branch, review qua PR, conventional commits |
 | GitHub Issues | Theo dõi tác vụ | Sprint backlog, theo dõi lỗi |
 | GitHub Projects | Quản lý dự án | Bảng Kanban cho lập kế hoạch sprint |
-| Docker / Docker Compose | Container hóa | Phát triển cục bộ: PostgreSQL, Redis, MinIO. Production: tất cả dịch vụ |
+| Docker / Docker Compose | Container hóa | Phát triển cục bộ: PostgreSQL, Redis, object storage tương thích S3. Production phụ thuộc môi trường triển khai |
 | Biome CI | Cổng chất lượng code | `bun run check` trên tất cả PR (lint + format) |
 
 ### 8.4 Môi Trường Triển Khai
 
 | Môi trường | Mục đích | Hạ tầng | URL |
 |-------------|---------|---------------|-----|
-| **Phát triển cục bộ** | Thiết lập cho từng lập trình viên | Docker Compose (PostgreSQL, Redis, MinIO) + Bun dev server + Vite dev server | `localhost:3001` (API), `localhost:5173` (Web) |
-| **Docker Compose (Đầy đủ)** | Kiểm thử tích hợp, demo | Tất cả dịch vụ container hóa: Backend, Grading, PostgreSQL, Redis, MinIO | `localhost:4000` (API), `localhost:8000` (Grading) |
-| **Production** | Triển khai chính thức (dự kiến) | VM đám mây hoặc container orchestration (sẽ xác định sau capstone) | TBD |
+| **Phát triển cục bộ** | Thiết lập cho từng lập trình viên | Docker Compose (PostgreSQL, Redis, object storage tương thích S3 cho local) + Bun dev server + Vite dev server | `localhost:3000` (API), `localhost:5173` (Web) |
+| **Docker Compose (Đầy đủ)** | Kiểm thử tích hợp, demo | Backend, Grading, PostgreSQL, Redis và object storage local được container hóa; cấu hình chính xác có thể tiếp tục điều chỉnh theo setup triển khai | `localhost:4000` (API), `localhost:8000` (Grading) |
+| **Production** | Triển khai chính thức (dự kiến) | VM đám mây hoặc container orchestration (sẽ xác định sau capstone) với object storage và AI integrations có thể cấu hình nhà cung cấp | TBD |
 
 *Ghi chú: Hạ tầng triển khai production sẽ được hoàn thiện dựa trên yêu cầu mở rộng sau giai đoạn pilot capstone.*
 
