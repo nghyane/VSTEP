@@ -1,4 +1,4 @@
-import { ArrowRight01Icon, HeadphonesIcon } from "@hugeicons/core-free-icons"
+import { ArrowRight01Icon, HeadphonesIcon, PlayIcon, VolumeHighIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -117,7 +117,7 @@ function ReadinessModal({
 					</div>
 					<DialogTitle className="text-xl">Bạn đã sẵn sàng chưa?</DialogTitle>
 					<DialogDescription className="text-balance text-center">
-						Bài nghe sẽ tự động phát khi bạn bấm bắt đầu.
+						Bạn có thể xem trước câu hỏi trước khi phát audio.
 						<br />
 						Hãy đảm bảo tai nghe đã được kết nối và âm lượng phù hợp.
 					</DialogDescription>
@@ -153,8 +153,11 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 	const [activeSectionIdx, setActiveSectionIdx] = useState(0)
 	const [isReady, setIsReady] = useState(false)
 	const audioRefs = useRef<(HTMLAudioElement | null)[]>([])
+	const [playingIdx, setPlayingIdx] = useState(-1)
 	const [currentTime, setCurrentTime] = useState(0)
 	const [duration, setDuration] = useState(0)
+
+	const isPlaying = playingIdx >= 0
 
 	const activeQuestion = sections[activeSectionIdx]
 	const content = activeQuestion?.content as ListeningContent | undefined
@@ -178,23 +181,27 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 		[sections, answers],
 	)
 
-	// Sync progress bar display from the active section's audio
+	// Sync progress bar from the PLAYING section's audio (not the viewed section)
 	useEffect(() => {
+		if (playingIdx < 0) {
+			setCurrentTime(0)
+			setDuration(0)
+			return
+		}
+
 		const syncFromAudio = () => {
-			const audio = audioRefs.current[activeSectionIdx]
+			const audio = audioRefs.current[playingIdx]
 			if (!audio) return
 			setCurrentTime(audio.currentTime)
 			if (audio.duration && Number.isFinite(audio.duration)) setDuration(audio.duration)
 		}
 
-		// Immediately sync on section switch
 		syncFromAudio()
-
 		const id = setInterval(syncFromAudio, 250)
 		return () => clearInterval(id)
-	}, [activeSectionIdx])
+	}, [playingIdx])
 
-	// Set up ended listeners (auto-advance) and start first section when ready
+	// Set up ended listeners (auto-advance to next section sequentially)
 	useEffect(() => {
 		if (!isReady) return
 
@@ -206,8 +213,9 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 
 			const onEnded = () => {
 				if (i < sections.length - 1) {
+					setPlayingIdx(i + 1)
 					setActiveSectionIdx(i + 1)
-					audioRefs.current[i + 1]?.play().catch(() => {})
+					audioRefs.current[i + 1]?.play().catch(() => { })
 				}
 			}
 
@@ -215,11 +223,16 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 			cleanups.push(() => audio.removeEventListener("ended", onEnded))
 		}
 
-		// Start playing the first section
-		audioRefs.current[0]?.play().catch(() => {})
-
 		return () => { for (const fn of cleanups) fn() }
 	}, [isReady, sections])
+
+	// Start audio always from section 0, snap view to it
+	const handleStartAudio = useCallback(() => {
+		if (isPlaying) return
+		setPlayingIdx(0)
+		setActiveSectionIdx(0)
+		audioRefs.current[0]?.play().catch(() => { })
+	}, [isPlaying])
 
 	const handleNextSection = useCallback(() => {
 		setActiveSectionIdx((i) => Math.min(i + 1, sections.length - 1))
@@ -267,12 +280,28 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 			{/* ---- Audio progress bar (non-interactive, no seeking) ---- */}
 			<div className="border-t bg-muted/10 px-4 py-2">
 				<div className="flex items-center gap-3">
-					<div className="flex items-center gap-2">
-						<HugeiconsIcon icon={HeadphonesIcon} className="size-4 text-muted-foreground" />
-						<span className="font-mono text-xs font-semibold tabular-nums text-primary">
-							{formatTime(currentTime)}
-						</span>
-					</div>
+					{!isPlaying ? (
+						<button
+							type="button"
+							onClick={handleStartAudio}
+							className="flex items-center gap-2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+						>
+							<HugeiconsIcon icon={PlayIcon} className="size-3.5" />
+
+						</button>
+					) : (
+						<div className="flex items-center gap-2">
+							<HugeiconsIcon icon={HeadphonesIcon} className="size-4 text-muted-foreground" />
+							<span className="font-mono text-xs font-semibold tabular-nums text-primary">
+								{formatTime(currentTime)}
+							</span>
+							{playingIdx !== activeSectionIdx && (
+								<span className="text-xs text-muted-foreground">
+									(Section {playingIdx + 1})
+								</span>
+							)}
+						</div>
+					)}
 					<div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
 						<div
 							className="absolute inset-y-0 left-0 rounded-full bg-primary transition-[width] duration-300"
@@ -338,6 +367,7 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 				<div className="flex items-center gap-1.5">
 					{sectionsMeta.map((meta, i) => {
 						const isActive = i === activeSectionIdx
+						const isCurrentlyPlaying = i === playingIdx
 						const pct = meta.total > 0 ? (meta.answered / meta.total) * 100 : 0
 						return (
 							<button
@@ -345,15 +375,16 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 								type="button"
 								onClick={() => setActiveSectionIdx(i)}
 								className={cn(
-									"relative flex items-center gap-1.5 overflow-hidden rounded-full px-3 pb-2.5 pt-1.5 text-xs font-medium transition-colors",
+									"relative overflow-hidden rounded-full px-3 pb-2.5 pt-1.5 text-xs font-medium transition-colors",
 									isActive
 										? "bg-primary text-primary-foreground"
 										: "bg-muted text-muted-foreground hover:bg-muted/80",
 								)}
 							>
-								Section {i + 1}
-								<span className="opacity-80">
-									{meta.answered}/{meta.total}
+								<span className="inline-flex items-center gap-1.5">
+									{isCurrentlyPlaying && <HugeiconsIcon icon={VolumeHighIcon} className="size-3.5 shrink-0" />}
+									Section {i + 1}
+									<span className="opacity-80">{meta.answered}/{meta.total}</span>
 								</span>
 								{/* Mini progress bar */}
 								<span

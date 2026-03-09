@@ -3,7 +3,7 @@ import { useSaveAnswers } from "@/hooks/use-exam-session"
 import type { SessionAnswer, SubmissionAnswer } from "@/types/api"
 
 const DEBOUNCE_MS = 2500
-const OPTION_LETTERS = ["A", "B", "C", "D"] as const
+const OPTION_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 function buildInitialMap(initial: SessionAnswer[]): Map<string, SubmissionAnswer> {
 	const map = new Map<string, SubmissionAnswer>()

@@ -1,6 +1,15 @@
-import { ArrowLeft01Icon, ArrowRight01Icon, Mic01Icon } from "@hugeicons/core-free-icons"
+import {
+	ArrowLeft01Icon,
+	ArrowRight01Icon,
+	Mic01Icon,
+	PauseIcon,
+	RecordIcon,
+	SquareIcon,
+	VolumeHighIcon,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useReactMediaRecorder } from "react-media-recorder"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type {
@@ -9,6 +18,7 @@ import type {
 	SpeakingPart1Content,
 	SpeakingPart2Content,
 	SpeakingPart3Content,
+	SubmissionAnswer,
 } from "@/types/api"
 
 // --- Type guards ---
@@ -41,15 +51,272 @@ function formatDuration(seconds: number): string {
 	return s > 0 ? `${m}m ${s}s` : `${m}m`
 }
 
+function formatTimer(seconds: number): string {
+	const m = Math.floor(seconds / 60)
+	const s = seconds % 60
+	return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
+}
+
 // --- Props ---
 
 interface SpeakingExamPanelProps {
 	questions: ExamSessionDetail["questions"]
+	answers: Map<string, SubmissionAnswer>
+	onUpdateSpeaking: (questionId: string, audioUrl: string, durationSeconds: number) => void
+}
+
+// --- Recorder per question ---
+
+type RecorderPhase = "idle" | "preparing" | "recording" | "done"
+
+function SpeakingRecorder({
+	preparationSeconds,
+	speakingSeconds,
+	existingAudioUrl,
+	onRecorded,
+}: {
+	preparationSeconds: number
+	speakingSeconds: number
+	existingAudioUrl: string | null
+	onRecorded: (audioUrl: string, durationSeconds: number) => void
+}) {
+	const [phase, setPhase] = useState<RecorderPhase>(existingAudioUrl ? "done" : "idle")
+	const [timer, setTimer] = useState(0)
+	const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+	const recordStartRef = useRef(0)
+	const onRecordedRef = useRef(onRecorded)
+	onRecordedRef.current = onRecorded
+
+	const {
+		status,
+		startRecording,
+		stopRecording,
+		mediaBlobUrl,
+		clearBlobUrl,
+	} = useReactMediaRecorder({
+		audio: true,
+		video: false,
+		askPermissionOnMount: false,
+		onStop: () => {
+			setPhase("done")
+		},
+	})
+
+	// Save answer when recording finishes (use ref to avoid re-trigger loop)
+	useEffect(() => {
+		if (phase === "done" && mediaBlobUrl) {
+			const elapsed = Math.round((Date.now() - recordStartRef.current) / 1000)
+			onRecordedRef.current(mediaBlobUrl, Math.max(1, elapsed))
+		}
+	}, [phase, mediaBlobUrl])
+
+	// Preparation countdown → auto-start recording
+	useEffect(() => {
+		if (phase !== "preparing") return
+		setTimer(preparationSeconds)
+
+		timerRef.current = setInterval(() => {
+			setTimer((t) => {
+				if (t <= 1) {
+					// Start recording
+					setPhase("recording")
+					recordStartRef.current = Date.now()
+					startRecording()
+					return speakingSeconds
+				}
+				return t - 1
+			})
+		}, 1000)
+
+		return () => {
+			if (timerRef.current) clearInterval(timerRef.current)
+		}
+	}, [phase, preparationSeconds, speakingSeconds, startRecording])
+
+	// Recording countdown → auto-stop
+	useEffect(() => {
+		if (phase !== "recording") return
+
+		setTimer(speakingSeconds)
+		if (timerRef.current) clearInterval(timerRef.current)
+
+		timerRef.current = setInterval(() => {
+			setTimer((t) => {
+				if (t <= 1) {
+					stopRecording()
+					return 0
+				}
+				return t - 1
+			})
+		}, 1000)
+
+		return () => {
+			if (timerRef.current) clearInterval(timerRef.current)
+		}
+	}, [phase, speakingSeconds, stopRecording])
+
+	const handleStart = useCallback(() => {
+		if (preparationSeconds > 0) {
+			setPhase("preparing")
+		} else {
+			setPhase("recording")
+			recordStartRef.current = Date.now()
+			startRecording()
+		}
+	}, [preparationSeconds, startRecording])
+
+	const handleStop = useCallback(() => {
+		if (timerRef.current) clearInterval(timerRef.current)
+		stopRecording()
+		setPhase("done")
+	}, [stopRecording])
+
+	const handleRetry = useCallback(() => {
+		clearBlobUrl()
+		setPhase("idle")
+		setTimer(0)
+	}, [clearBlobUrl])
+
+	// Playback
+	const playbackRef = useRef<HTMLAudioElement>(null)
+	const [playingBack, setPlayingBack] = useState(false)
+
+	const handlePlayback = useCallback(() => {
+		const audio = playbackRef.current
+		const url = mediaBlobUrl ?? existingAudioUrl
+		if (!audio || !url) return
+		audio.src = url
+		audio.onended = () => setPlayingBack(false)
+		audio.play().catch(() => {})
+		setPlayingBack(true)
+	}, [mediaBlobUrl, existingAudioUrl])
+
+	const isError = status === "permission_denied" || status === "no_specified_media_found"
+	const audioUrl = mediaBlobUrl ?? existingAudioUrl
+	const hasDoneRecording = phase === "done" && audioUrl
+
+	return (
+		<div className="space-y-3 rounded-xl border bg-muted/10 p-4">
+			{/* Status bar */}
+			<div
+				className={cn(
+					"flex h-14 items-center justify-center rounded-lg border",
+					phase === "recording"
+						? "border-destructive/30 bg-destructive/5"
+						: phase === "preparing"
+							? "border-amber-400/30 bg-amber-50 dark:bg-amber-950/20"
+							: "bg-muted/30",
+				)}
+			>
+				{phase === "idle" && (
+					<span className="text-sm text-muted-foreground">
+						Bấm "Bắt đầu" để chuẩn bị và ghi âm
+					</span>
+				)}
+				{phase === "preparing" && (
+					<div className="flex items-center gap-3">
+						<span className="size-2 animate-pulse rounded-full bg-amber-500" />
+						<span className="text-sm font-medium text-amber-700 dark:text-amber-400">
+							Chuẩn bị... {formatTimer(timer)}
+						</span>
+					</div>
+				)}
+				{phase === "recording" && (
+					<div className="flex items-center gap-3">
+						<span className="size-2 animate-pulse rounded-full bg-destructive" />
+						<span className="text-sm font-medium text-destructive">
+							Đang ghi âm... {formatTimer(timer)}
+						</span>
+					</div>
+				)}
+				{phase === "done" && audioUrl && (
+					<span className="text-sm text-muted-foreground">
+						Đã ghi xong — bấm "Nghe lại" để kiểm tra
+					</span>
+				)}
+			</div>
+
+			{/* Action buttons */}
+			<div className="flex flex-wrap items-center gap-2">
+				{phase === "idle" && (
+					<Button size="sm" onClick={handleStart}>
+						<HugeiconsIcon icon={RecordIcon} className="size-4" />
+						{preparationSeconds > 0
+							? `Bắt đầu (chuẩn bị ${formatDuration(preparationSeconds)})`
+							: "Bắt đầu ghi âm"}
+					</Button>
+				)}
+				{phase === "recording" && (
+					<Button size="sm" variant="destructive" onClick={handleStop}>
+						<HugeiconsIcon icon={SquareIcon} className="size-3.5" />
+						Dừng
+					</Button>
+				)}
+				{phase === "preparing" && (
+					<Button size="sm" variant="outline" disabled>
+						<HugeiconsIcon icon={Mic01Icon} className="size-4 animate-pulse" />
+						Đang chuẩn bị...
+					</Button>
+				)}
+				{hasDoneRecording && (
+					<>
+						<Button size="sm" variant="outline" onClick={handlePlayback} disabled={playingBack}>
+							<HugeiconsIcon icon={playingBack ? PauseIcon : VolumeHighIcon} className="size-4" />
+							{playingBack ? "Đang phát..." : "Nghe lại"}
+						</Button>
+						<Button size="sm" variant="outline" onClick={handleRetry}>
+							<HugeiconsIcon icon={RecordIcon} className="size-4 text-destructive" />
+							Ghi lại
+						</Button>
+					</>
+				)}
+			</div>
+
+			{isError && (
+				<p className="text-xs text-destructive">
+					Không thể truy cập microphone. Hãy cấp quyền trên trình duyệt.
+				</p>
+			)}
+			{hasDoneRecording && (
+				<p className="text-xs font-medium text-emerald-600">✓ Đã ghi âm xong</p>
+			)}
+
+			{/* biome-ignore lint/a11y/useMediaCaption: playback only */}
+			<audio ref={playbackRef} className="hidden" />
+		</div>
+	)
+}
+
+// --- Part 1 recorder (no prep/speaking timer — free practice) ---
+
+function Part1Recorder({
+	existingAudioUrl,
+	onRecorded,
+}: {
+	existingAudioUrl: string | null
+	onRecorded: (audioUrl: string, durationSeconds: number) => void
+}) {
+	return (
+		<SpeakingRecorder
+			preparationSeconds={0}
+			speakingSeconds={180}
+			existingAudioUrl={existingAudioUrl}
+			onRecorded={onRecorded}
+		/>
+	)
 }
 
 // --- Content renderers ---
 
-function Part1Content({ content }: { content: SpeakingPart1Content }) {
+function Part1Content({
+	content,
+	existingAudioUrl,
+	onRecorded,
+}: {
+	content: SpeakingPart1Content
+	existingAudioUrl: string | null
+	onRecorded: (audioUrl: string, durationSeconds: number) => void
+}) {
 	return (
 		<div className="space-y-6">
 			{content.topics.map((topic, ti) => (
@@ -68,11 +335,24 @@ function Part1Content({ content }: { content: SpeakingPart1Content }) {
 					</ul>
 				</div>
 			))}
+
+			<Part1Recorder
+				existingAudioUrl={existingAudioUrl}
+				onRecorded={onRecorded}
+			/>
 		</div>
 	)
 }
 
-function Part2Content({ content }: { content: SpeakingPart2Content }) {
+function Part2Content({
+	content,
+	existingAudioUrl,
+	onRecorded,
+}: {
+	content: SpeakingPart2Content
+	existingAudioUrl: string | null
+	onRecorded: (audioUrl: string, durationSeconds: number) => void
+}) {
 	return (
 		<div className="space-y-5">
 			<div className="rounded-xl bg-muted/30 p-5">
@@ -100,11 +380,26 @@ function Part2Content({ content }: { content: SpeakingPart2Content }) {
 				<span>Chuẩn bị: {formatDuration(content.preparationSeconds)}</span>
 				<span>Nói: {formatDuration(content.speakingSeconds)}</span>
 			</div>
+
+			<SpeakingRecorder
+				preparationSeconds={content.preparationSeconds}
+				speakingSeconds={content.speakingSeconds}
+				existingAudioUrl={existingAudioUrl}
+				onRecorded={onRecorded}
+			/>
 		</div>
 	)
 }
 
-function Part3Content({ content }: { content: SpeakingPart3Content }) {
+function Part3Content({
+	content,
+	existingAudioUrl,
+	onRecorded,
+}: {
+	content: SpeakingPart3Content
+	existingAudioUrl: string | null
+	onRecorded: (audioUrl: string, durationSeconds: number) => void
+}) {
 	return (
 		<div className="space-y-5">
 			<div className="rounded-xl bg-muted/30 p-5">
@@ -137,13 +432,20 @@ function Part3Content({ content }: { content: SpeakingPart3Content }) {
 				<span>Chuẩn bị: {formatDuration(content.preparationSeconds)}</span>
 				<span>Nói: {formatDuration(content.speakingSeconds)}</span>
 			</div>
+
+			<SpeakingRecorder
+				preparationSeconds={content.preparationSeconds}
+				speakingSeconds={content.speakingSeconds}
+				existingAudioUrl={existingAudioUrl}
+				onRecorded={onRecorded}
+			/>
 		</div>
 	)
 }
 
 // --- Main Panel ---
 
-export function SpeakingExamPanel({ questions }: SpeakingExamPanelProps) {
+export function SpeakingExamPanel({ questions, answers, onUpdateSpeaking }: SpeakingExamPanelProps) {
 	const parts = useMemo(() => [...questions].sort((a, b) => a.part - b.part), [questions])
 
 	const [activePartIdx, setActivePartIdx] = useState(0)
@@ -158,6 +460,23 @@ export function SpeakingExamPanel({ questions }: SpeakingExamPanelProps) {
 	const handleNextPart = useCallback(() => {
 		setActivePartIdx((i) => Math.min(i + 1, parts.length - 1))
 	}, [parts.length])
+
+	// Get existing audio URL for the active question
+	const getExistingAudioUrl = useCallback(
+		(questionId: string): string | null => {
+			const entry = answers.get(questionId)
+			if (entry && "audioUrl" in entry) return entry.audioUrl
+			return null
+		},
+		[answers],
+	)
+
+	const handleRecorded = useCallback(
+		(questionId: string) => (audioUrl: string, durationSeconds: number) => {
+			onUpdateSpeaking(questionId, audioUrl, durationSeconds)
+		},
+		[onUpdateSpeaking],
+	)
 
 	if (!activeQuestion || !content) return null
 
@@ -177,18 +496,28 @@ export function SpeakingExamPanel({ questions }: SpeakingExamPanelProps) {
 						</span>
 					</div>
 
-					{/* Recording notice */}
-					<div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
-						<HugeiconsIcon icon={Mic01Icon} className="size-4 text-primary" />
-						<p className="text-sm text-primary">
-							Chức năng ghi âm đang được phát triển. Hãy luyện nói theo các câu hỏi bên dưới.
-						</p>
-					</div>
-
-					{/* Part-specific content */}
-					{isPart1(content) && <Part1Content content={content} />}
-					{isPart2(content) && <Part2Content content={content} />}
-					{isPart3(content) && <Part3Content content={content} />}
+					{/* Part-specific content + recorder */}
+					{isPart1(content) && (
+						<Part1Content
+							content={content}
+							existingAudioUrl={getExistingAudioUrl(activeQuestion.id)}
+							onRecorded={handleRecorded(activeQuestion.id)}
+						/>
+					)}
+					{isPart2(content) && (
+						<Part2Content
+							content={content}
+							existingAudioUrl={getExistingAudioUrl(activeQuestion.id)}
+							onRecorded={handleRecorded(activeQuestion.id)}
+						/>
+					)}
+					{isPart3(content) && (
+						<Part3Content
+							content={content}
+							existingAudioUrl={getExistingAudioUrl(activeQuestion.id)}
+							onRecorded={handleRecorded(activeQuestion.id)}
+						/>
+					)}
 				</div>
 			</div>
 
@@ -209,6 +538,7 @@ export function SpeakingExamPanel({ questions }: SpeakingExamPanelProps) {
 					{parts.map((q, i) => {
 						const isActive = i === activePartIdx
 						const label = getPartLabel(q.content)
+						const hasRecording = getExistingAudioUrl(q.id) != null
 						return (
 							<button
 								key={i}
@@ -221,6 +551,7 @@ export function SpeakingExamPanel({ questions }: SpeakingExamPanelProps) {
 										: "bg-muted text-muted-foreground hover:bg-muted/80",
 								)}
 							>
+								{hasRecording && <span className="text-emerald-400">✓</span>}
 								Part {i + 1}
 								<span className="hidden opacity-80 sm:inline">· {label}</span>
 							</button>

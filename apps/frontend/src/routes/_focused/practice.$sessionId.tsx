@@ -1,9 +1,9 @@
 import {
-	ArrowLeft01Icon,
 	ArrowRight01Icon,
 	Cancel01Icon,
 	CheckmarkCircle02Icon,
 	Clock01Icon,
+	Alert02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
@@ -30,6 +30,7 @@ import { ListeningExamPanel } from "./-components/ListeningExamPanel"
 import { ReadingExamPanel } from "./-components/ReadingExamPanel"
 import { SpeakingExamPanel } from "./-components/SpeakingExamPanel"
 import { WritingExamPanel } from "./-components/WritingExamPanel"
+import { DeviceCheckScreen } from "./-components/DeviceCheckScreen"
 
 export const Route = createFileRoute("/_focused/practice/$sessionId")({
 	component: PracticePage,
@@ -64,6 +65,8 @@ function PracticePage() {
 
 	const [currentSkillIndex, setCurrentSkillIndex] = useState(0)
 	const [confirming, setConfirming] = useState(false)
+	const [confirmingNextSkill, setConfirmingNextSkill] = useState(false)
+	const [deviceChecked, setDeviceChecked] = useState(false)
 
 	// Group questions by skill
 	const questionsBySkill = useMemo(() => {
@@ -80,6 +83,17 @@ function PracticePage() {
 	const activeSkills = useMemo(
 		() => SKILL_ORDER.filter((s) => (questionsBySkill.get(s)?.length ?? 0) > 0),
 		[questionsBySkill],
+	)
+
+	// Build skill info for device check screen
+	const skillInfoForCheck = useMemo(
+		() =>
+			activeSkills.map((skill) => {
+				const qs = questionsBySkill.get(skill) ?? []
+				const parts = new Set(qs.map((q) => q.part))
+				return { skill, sections: parts.size }
+			}),
+		[activeSkills, questionsBySkill],
 	)
 
 	const currentSkill = activeSkills[currentSkillIndex] ?? activeSkills[0]
@@ -110,12 +124,17 @@ function PracticePage() {
 		[updateAnswer],
 	)
 
-	// Navigation
-	const prevSkill = useCallback(() => {
-		setCurrentSkillIndex((i) => Math.max(0, i - 1))
-	}, [])
+	// Speaking handler
+	const handleSpeakingUpdate = useCallback(
+		(questionId: string, audioUrl: string, durationSeconds: number) => {
+			updateAnswer(questionId, { audioUrl, durationSeconds } as SubmissionAnswer)
+		},
+		[updateAnswer],
+	)
 
-	const nextSkill = useCallback(() => {
+	// Navigation
+	const confirmNextSkill = useCallback(() => {
+		setConfirmingNextSkill(false)
 		setCurrentSkillIndex((i) => Math.min(activeSkills.length - 1, i + 1))
 	}, [activeSkills.length])
 
@@ -156,6 +175,18 @@ function PracticePage() {
 					</Link>
 				</Button>
 			</div>
+		)
+	}
+
+
+	if (!deviceChecked) {
+		return (
+			<DeviceCheckScreen
+				examTitle={exam?.title ?? "Bài thi VSTEP"}
+				durationMinutes={durationMinutes}
+				skills={skillInfoForCheck}
+				onStart={() => setDeviceChecked(true)}
+			/>
 		)
 	}
 
@@ -212,7 +243,11 @@ function PracticePage() {
 					onUpdateWriting={handleWritingUpdate}
 				/>
 			) : currentSkill === "speaking" ? (
-				<SpeakingExamPanel questions={currentQuestions} />
+				<SpeakingExamPanel
+					questions={currentQuestions}
+					answers={answers}
+					onUpdateSpeaking={handleSpeakingUpdate}
+				/>
 			) : (
 				<div className="flex flex-1 items-center justify-center">
 					<p className="text-muted-foreground">Chọn một phần thi để bắt đầu.</p>
@@ -221,10 +256,7 @@ function PracticePage() {
 
 			{/* Footer */}
 			<footer className="z-40 flex h-12 shrink-0 items-center justify-between border-t px-4">
-				<Button variant="outline" size="sm" onClick={prevSkill} disabled={currentSkillIndex === 0}>
-					<HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
-					<span className="hidden sm:inline">Phần trước</span>
-				</Button>
+				<div className="w-24" />
 				<span className="text-sm font-medium">
 					{currentSkillLabel} ({currentSkillIndex + 1}/{activeSkills.length})
 				</span>
@@ -234,7 +266,7 @@ function PracticePage() {
 						Nộp bài
 					</Button>
 				) : (
-					<Button variant="outline" size="sm" onClick={nextSkill}>
+					<Button variant="outline" size="sm" onClick={() => setConfirmingNextSkill(true)}>
 						<span className="hidden sm:inline">Phần tiếp</span>
 						<HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
 					</Button>
@@ -264,6 +296,30 @@ function PracticePage() {
 						<Button onClick={handleSubmit} disabled={submitExam.isPending}>
 							<HugeiconsIcon icon={CheckmarkCircle02Icon} className="size-4" />
 							{submitExam.isPending ? "Đang nộp..." : "Nộp bài"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Confirm Next Skill Dialog */}
+			<Dialog open={confirmingNextSkill} onOpenChange={setConfirmingNextSkill}>
+				<DialogContent>
+					<DialogHeader className="items-center text-center">
+						<div className="mx-auto flex size-14 items-center justify-center rounded-full bg-warning/10">
+							<HugeiconsIcon icon={Alert02Icon} className="size-7 text-warning" />
+						</div>
+						<DialogTitle>Chuyển sang phần {skillMeta[activeSkills[currentSkillIndex + 1] ?? currentSkill].label}?</DialogTitle>
+						<DialogDescription className="text-balance text-center">
+							Sau khi chuyển, bạn sẽ <span className="font-semibold text-foreground">không thể quay lại</span> phần {currentSkillLabel} để chỉnh sửa câu trả lời.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter className="sm:justify-center gap-2">
+						<Button variant="outline" onClick={() => setConfirmingNextSkill(false)}>
+							Ở lại
+						</Button>
+						<Button onClick={confirmNextSkill}>
+							Chuyển phần
+							<HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
 						</Button>
 					</DialogFooter>
 				</DialogContent>
