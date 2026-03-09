@@ -44,23 +44,24 @@ The system covers:
 
 - **Practice Mode** for four English skills (Listening, Reading, Writing, Speaking) with adaptive scaffolding
 - **Mock Test Mode** simulating full VSTEP examinations (VSTEP.3-5: B1–C1)
-- **AI Grading** for Writing and Speaking using LLM (Groq Llama 3.3 70B) and Speech-to-Text (Groq Whisper Large V3 Turbo)
-- **Human Review Workflow** for instructor verification of AI-graded submissions
+- **AI Grading** for Writing and Speaking using a provider-configurable LLM/STT integration through the grading service
+- **Human Review Workflow** for instructor verification of low/medium-confidence Writing/Speaking submissions
 - **Progress Tracking** with Spider Chart visualization, Sliding Window analytics, trend classification, and ETA estimation
 - **Goal Setting** with target band, deadline, and achievement tracking
 - **Class Management** for instructors to monitor and provide feedback to learners
-- **Admin tools** for user management, content management, and analytics
+- **Admin tools** for user management and content management
+- **Vocabulary Learning** for topic-based word study and progress tracking
 
 The system does **not** cover:
 
 - Other English proficiency tests (IELTS, TOEFL, TOEIC)
 - Online payment integration (MVP phase)
-- iOS native app (Android-first; iOS via PWA)
-- Multi-language UI (Vietnamese only in MVP)
+- iOS native app
+- Multi-language UI in the current implementation
 
 #### 1.1.2 System Context Diagram
 
-The context diagram below illustrates the external entities and system interfaces for the Adaptive VSTEP Preparation System. The system boundary encompasses the Web/Mobile clients, the Main API Server, the Grading Worker, PostgreSQL, and Redis. External entities include the three user roles (Learner, Instructor, Admin) and the AI provider APIs (Groq LLM and Groq Whisper).
+The context diagram below illustrates the current implemented system interfaces for the Adaptive VSTEP Preparation System. The system boundary encompasses the Web client, Mobile client, Main API Server, Grading Service, PostgreSQL, Redis, and object storage used for uploaded audio. External entities include the three user roles (Learner, Instructor, Admin) and provider-configurable AI APIs used by the grading service.
 
 ```mermaid
 flowchart TB
@@ -72,20 +73,20 @@ flowchart TB
 
     subgraph System ["Adaptive VSTEP Preparation System"]
         WebApp["Web Application<br/>React 19 + Vite 7"]
-        MobileApp["Mobile Application<br/>React Native (Android)"]
+        MobileApp["Mobile Application<br/>Expo + React Native"]
         Backend["Main API Server<br/>Bun + Elysia"]
-        GradingWorker["Grading Worker<br/>Python + FastAPI"]
+        GradingWorker["Grading Service<br/>Python + FastAPI"]
         DB["PostgreSQL 17"]
-        Cache["Redis 7.2+<br/>(Queue + Cache)"]
+        Cache["Redis 7.2+<br/>(Streams + Cache)"]
+        Storage["Object Storage<br/>(S3-compatible)"]
     end
 
     subgraph ExternalServices ["External Services"]
-        GroqLLM["Groq API<br/>Llama 3.3 70B<br/>(LLM Grading)"]
-        GroqSTT["Groq API<br/>Whisper Large V3 Turbo<br/>(Speech-to-Text)"]
+        LLMProvider["LLM / STT Provider APIs<br/>(provider-configurable)"]
     end
 
-    Learner -->|"HTTPS + SSE"| WebApp
-    Learner -->|"HTTPS + SSE"| MobileApp
+    Learner -->|"HTTPS"| WebApp
+    Learner -->|"HTTPS"| MobileApp
     Instructor -->|"HTTPS"| WebApp
     Admin -->|"HTTPS"| WebApp
 
@@ -93,41 +94,31 @@ flowchart TB
     MobileApp -->|"REST API<br/>(JSON + JWT)"| Backend
 
     Backend -->|"Drizzle ORM<br/>(TCP 5432)"| DB
-    Backend -->|"LPUSH tasks<br/>(RESP3)"| Cache
-    Backend -->|"SSE events"| WebApp
-    Backend -->|"SSE events"| MobileApp
+    Backend -->|"XADD tasks / XREAD results"| Cache
+    Backend -->|"Audio upload"| Storage
 
-    GradingWorker -->|"BRPOP tasks<br/>(RESP3)"| Cache
-    GradingWorker -->|"Write results<br/>(asyncpg)"| DB
-    GradingWorker -->|"HTTPS<br/>LLM grading"| GroqLLM
-    GradingWorker -->|"HTTPS<br/>STT transcription"| GroqSTT
-
-    classDef actor fill:#1565c0,stroke:#0d47a1,color:#fff
-    classDef system fill:#2e7d32,stroke:#1b5e20,color:#fff
-    classDef external fill:#e65100,stroke:#bf360c,color:#fff
-
-    class Learner,Instructor,Admin actor
-    class WebApp,MobileApp,Backend,GradingWorker,DB,Cache system
-    class GroqLLM,GroqSTT external
+    GradingWorker -->|"XREADGROUP tasks / XADD results"| Cache
+    GradingWorker -->|"HTTPS"| LLMProvider
+    GradingWorker -->|"Read uploaded audio"| Storage
 ```
 
 Key architectural decisions:
 
-- **Shared-DB**: Both Main App and Grading Worker connect to the same PostgreSQL database. Worker writes grading results directly — no callback queue or outbox pattern needed.
-- **Redis Queue**: Redis list with LPUSH/BRPOP replaces RabbitMQ. Simpler, fewer moving parts.
-- **SSE Real-time**: Server-Sent Events for unidirectional grading status updates to clients.
-- **JWT Auth**: Access/refresh token pair with rotation and reuse detection.
+- **Backend-owned persistence**: the grading service does not write PostgreSQL directly; it publishes grading results back to Redis and the backend consumer updates the database.
+- **Redis Streams**: grading tasks/results use Redis Streams (`XADD`, `XREADGROUP`) rather than Redis lists (`LPUSH`, `BRPOP`).
+- **JWT Auth**: access/refresh token pair with rotation and reuse detection.
+- **S3-compatible upload flow**: speaking audio is uploaded first, then graded asynchronously by the grading service.
 
 #### 1.1.3 System Interfaces
 
 | Interface | Protocol | Description |
 |-----------|----------|-------------|
-| Client ↔ Main App | REST (HTTPS) + SSE | All user interactions via REST API; real-time grading updates via SSE |
+| Client ↔ Main App | REST (HTTPS) | All user interactions use JSON REST APIs with JWT authentication |
 | Main App ↔ PostgreSQL | TCP (PostgreSQL wire protocol) | Drizzle ORM for data access |
-| Main App ↔ Redis | RESP3 (Bun built-in) | Queue enqueue, cache, rate limiting, review claim locks |
-| Grading Worker ↔ Redis | RESP3 | BRPOP for job dequeue |
-| Grading Worker ↔ PostgreSQL | TCP (psycopg/asyncpg) | Direct write of grading results |
-| Grading Worker ↔ AI Providers | HTTPS | LLM (Groq Llama 3.3) for grading, Whisper (Groq) for STT |
+| Main App ↔ Redis | RESP / Redis Streams | Grading task dispatch, grading result consumption, and caching |
+| Main App ↔ Object Storage | S3-compatible API | Audio file upload/storage for speaking submissions |
+| Grading Service ↔ Redis | RESP / Redis Streams | Consume grading tasks and publish grading results |
+| Grading Service ↔ AI Providers | HTTPS | Provider-configurable LLM/STT calls for grading and transcription |
 
 ### 1.2 Business Rules
 
@@ -165,11 +156,11 @@ The system provides 16 features organized in two delivery phases:
 
 | ID | Feature | Description |
 |----|---------|-------------|
-| FE-12 | Content Management | Question bank CRUD, import/export (Excel, JSON) |
-| FE-13 | User Management | Bulk account creation, lock/unlock, password reset, role assignment |
-| FE-14 | Analytics Dashboard | Active users, completion rates, average scores, time-based filtering |
-| FE-15 | Notification System | Push notifications (mobile), email, in-app notifications |
-| FE-16 | Advanced Admin Features | Activity history, automatic assignment distribution |
+| FE-12 | Content Management | Question bank CRUD and knowledge point management |
+| FE-13 | User Management | User listing, role assignment, and self-service password change support |
+| FE-14 | Notification System | In-app notifications and device token registration |
+| FE-15 | Mobile Support | Mobile learner flows for practice, exams, submissions, and classes |
+| FE-16 | AI Utilities | Auxiliary AI-powered language tools exposed by the backend |
 
 ### 1.4 User Characteristics
 
@@ -196,19 +187,20 @@ The system provides 16 features organized in two delivery phases:
 
 **Assumptions:**
 
-- A-01: Learners have access to a stable internet connection (minimum 1 Mbps for audio streaming)
+- A-01: Learners have access to a stable internet connection (minimum 1 Mbps recommended for audio streaming and uploads)
 - A-02: Learners have a device with a microphone for Speaking practice
 - A-03: VSTEP exam format and rubric remain stable during the project duration
-- A-04: AI providers (Groq, OpenAI) maintain service availability and API compatibility
-- A-05: PostgreSQL and Redis are available and operational in the deployment environment
+- A-04: The configured AI provider(s) maintain service availability and API compatibility
+- A-05: PostgreSQL, Redis, and object storage are available in the deployment environment
 
 **Dependencies:**
 
-- D-01: Groq API (Llama 3.3 70B) for LLM-based Writing/Speaking grading
-- D-02: Groq API (Whisper Large V3 Turbo) for Speech-to-Text transcription
+- D-01: Provider-compatible LLM API for Writing/Speaking grading
+- D-02: Provider-compatible STT API for Speaking transcription
 - D-03: PostgreSQL 17 for data persistence
-- D-04: Redis 7.2+ for task queue, caching, and distributed locks
-- D-05: Docker Compose for local development environment orchestration
+- D-04: Redis 7.2+ for streams and caching
+- D-05: S3-compatible object storage for uploaded audio
+- D-06: Docker Compose for local development environment orchestration
 
 ### 1.7 Definitions and Acronyms
 
@@ -274,11 +266,11 @@ The system provides 16 features organized in two delivery phases:
 
 | # | Actor | Description |
 |---|-------|-------------|
-| 1 | **Learner** | A registered user (role = `learner`) who practices English skills, takes mock tests, views progress, sets goals, and joins classes. Primary consumer of adaptive scaffolding and AI grading feedback. |
-| 2 | **Instructor** | A user (role = `instructor`) who creates exams and questions, reviews AI-graded Writing/Speaking submissions, manages classes, monitors learner progress, and provides feedback. Inherits all Learner capabilities. |
-| 3 | **Admin** | A user (role = `admin`) who manages users, question bank, system configuration, and views analytics dashboards. Inherits all Instructor capabilities. |
-| 4 | **Grading Worker** | An automated system actor (Python + FastAPI) that consumes grading tasks from Redis, performs AI grading via external LLM/STT APIs, and writes results to the database. |
-| 5 | **AI Provider (Groq)** | External service providing LLM inference (Llama 3.3 70B) for Writing/Speaking grading and STT transcription (Whisper Large V3 Turbo) for Speaking submissions. |
+| 1 | **Learner** | A registered user (role = `learner`) who practices English skills, takes mock tests, views progress, sets goals, learns vocabulary, and joins classes. |
+| 2 | **Instructor** | A user (role = `instructor`) who reviews Writing/Speaking submissions, manages classes, monitors learner progress, provides feedback, and can manage questions. Inherits learner capabilities by role hierarchy. |
+| 3 | **Admin** | A user (role = `admin`) who manages users, questions, exams, knowledge points, submissions, and instructor review operations. Inherits lower-role capabilities by role hierarchy. |
+| 4 | **Grading Service** | An automated system actor (Python + FastAPI) that consumes grading tasks from Redis Streams, performs AI grading via external LLM/STT APIs, and publishes grading results back to Redis for the backend to persist. |
+| 5 | **AI Provider** | External provider-compatible API used for LLM inference and STT transcription. The implementation is not hard-wired to a single vendor. |
 
 ### 2.2 Use Cases
 
@@ -375,8 +367,7 @@ flowchart LR
         UC53["UC-53<br/>Release Submission"]
     end
 
-    subgraph ExamMgmt ["Exam Management"]
-        UC60["UC-60<br/>Create Exam"]
+    subgraph ExamMgmt ["Exam and Question Management"]
         UC61["UC-61<br/>Manage Questions"]
     end
 
@@ -393,7 +384,6 @@ flowchart LR
     Instructor --- UC51
     Instructor --- UC52
     Instructor --- UC53
-    Instructor --- UC60
     Instructor --- UC61
     Instructor --- UC70
     Instructor --- UC71
@@ -418,16 +408,18 @@ flowchart LR
     subgraph UserMgmt ["User Management"]
         UC80["UC-80<br/>List Users"]
         UC81["UC-81<br/>Change User Role"]
-        UC82["UC-82<br/>Lock/Unlock Account"]
-        UC83["UC-83<br/>Reset Password"]
-        UC84["UC-84<br/>Bulk Create Users"]
     end
 
     subgraph ContentMgmt ["Content Management"]
         UC85["UC-85<br/>Manage Question Bank"]
-        UC86["UC-86<br/>Import/Export Questions"]
         UC87["UC-87<br/>Manage Knowledge Points"]
-        UC88["UC-88<br/>Update Exam"]
+        UC88["UC-88<br/>Manage Exams"]
+    end
+
+    subgraph Operations ["Operations"]
+        UC89["UC-89<br/>Manage Review Queue"]
+        UC90["UC-90<br/>Manage Notifications"]
+    end
     end
 
     subgraph Analytics ["Analytics"]
@@ -438,16 +430,11 @@ flowchart LR
 
     Admin --- UC80
     Admin --- UC81
-    Admin --- UC82
-    Admin --- UC83
-    Admin --- UC84
     Admin --- UC85
-    Admin --- UC86
     Admin --- UC87
     Admin --- UC88
+    Admin --- UC89
     Admin --- UC90
-    Admin --- UC91
-    Admin --- UC92
 
     classDef actor fill:#6a1b9a,stroke:#4a148c,color:#fff
     class Admin actor
@@ -463,15 +450,15 @@ flowchart LR
 | UC-04 | Refresh Token | Learner, Instructor, Admin | Rotate refresh token — revoke old, issue new pair. Replay detection triggers full revocation. |
 | UC-10 | Practice Listening | Learner | Retrieve listening question with adaptive scaffolding (Full Text → Highlights → Pure Audio). Auto-graded immediately. |
 | UC-11 | Practice Reading | Learner | Retrieve reading question (MCQ, T/F/NG, Matching, Gap Fill). Auto-graded immediately. |
-| UC-12 | Practice Writing | Learner | Submit written response. AI grading async via Redis queue + LLM. Includes UC-14. |
-| UC-13 | Practice Speaking | Learner | Submit audio recording. STT + AI grading async via Redis queue. Includes UC-14. |
+| UC-12 | Practice Writing | Learner | Submit written response. AI grading async via Redis Streams + LLM. Includes UC-14. |
+| UC-13 | Practice Speaking | Learner | Submit audio recording. STT + AI grading async via Redis Streams. Includes UC-14. |
 | UC-14 | View Submission Result | Learner | View score, band, criteria breakdown for a completed submission. |
-| UC-15 | View AI Feedback | Learner | View detailed AI feedback text, grammar errors (writing), pronunciation notes (speaking). |
+| UC-15 | View AI Feedback | Learner | View detailed AI/human feedback attached to a submission result. |
 | UC-20 | List Available Exams | Learner | Browse mock test exams filtered by level (B1/B2/C1). |
-| UC-21 | Start Exam Session | Learner | Begin a timed 4-skill exam session. Creates `exam_session` with `in_progress` status. |
-| UC-22 | Answer Exam Questions | Learner | Answer questions during exam. Auto-saved every 30 seconds. |
-| UC-23 | Submit Exam | Learner | Finalize exam. L/R auto-graded inline; W/S dispatched to Redis for AI grading. |
-| UC-24 | View Exam Result | Learner | View per-skill scores, bands, and overall score when all skills graded. |
+| UC-21 | Start Exam Session | Learner | Begin a timed exam session. Creates `exam_session` with `in_progress` status. |
+| UC-22 | Answer Exam Questions | Learner | Answer questions during exam. Auto-saved periodically. |
+| UC-23 | Submit Exam | Learner | Finalize exam. L/R auto-graded inline; W/S submissions are created and dispatched for async grading. |
+| UC-24 | View Exam Result | Learner | View per-skill scores, bands, and overall score when the session is finalized. |
 | UC-30 | View Progress Overview | Learner | See all 4 skills: current level, average score, trend, attempt count. |
 | UC-31 | View Spider Chart | Learner | 4-axis radar chart showing current scores + goal target per skill. |
 | UC-32 | View Skill Detail | Learner | Score history (last 10), trend classification, scaffold level for one skill. |
@@ -481,29 +468,23 @@ flowchart LR
 | UC-41 | Leave Class | Learner | Leave a joined class. |
 | UC-42 | View Instructor Feedback | Learner | View feedback comments from instructor for a specific class. |
 | UC-50 | View Review Queue | Instructor | List `review_pending` submissions sorted by priority (high → medium → low), then FIFO. |
-| UC-51 | Claim Submission | Instructor | Lock a submission for exclusive review (15 min TTL). |
+| UC-51 | Claim Submission | Instructor | Claim a submission for review with a 15-minute timeout based on `claimedAt`. |
 | UC-52 | Review & Grade Submission | Instructor | Submit final score, band, criteria scores, feedback. Instructor score is always final. |
 | UC-53 | Release Submission | Instructor | Release a claimed submission back to queue if unable to finish. |
-| UC-60 | Create Exam | Instructor | Define exam with level and blueprint (per-skill question selection). |
 | UC-61 | Manage Questions | Instructor | Create and update questions in the question bank. |
 | UC-70 | Create Class | Instructor | Create a class with auto-generated invite code. |
-| UC-71 | View Class Dashboard | Instructor | Aggregated class stats: per-skill averages, at-risk students (avg < 5.0). |
-| UC-72 | View Member Progress | Instructor | Individual learner progress: per-skill scores, trends, goal status. |
+| UC-71 | View Class Dashboard | Instructor | View class members and class-related progress/feedback data. |
+| UC-72 | View Member Progress | Instructor | Individual learner progress within class context. |
 | UC-73 | Give Feedback | Instructor | Post feedback comment targeting a specific learner in the class. |
 | UC-74 | Rotate Invite Code | Instructor | Generate new invite code for a class (invalidates old code). |
 | UC-75 | Remove Member | Instructor | Remove a learner from the class. |
-| UC-80 | List Users | Admin | Paginated user list with filters (role, email/name search). |
+| UC-80 | List Users | Admin | Paginated user list with filters. |
 | UC-81 | Change User Role | Admin | Change user role between learner/instructor/admin. |
-| UC-82 | Lock/Unlock Account | Admin | Disable/enable user account access. |
-| UC-83 | Reset Password | Admin | Admin-initiated password reset for a user. |
-| UC-84 | Bulk Create Users | Admin | Create multiple accounts from CSV/Excel upload. |
-| UC-85 | Manage Question Bank | Admin | Full CRUD on questions. Soft-delete via `is_active = false`. |
-| UC-86 | Import/Export Questions | Admin | Bulk import from JSON/Excel; export for backup. |
-| UC-87 | Manage Knowledge Points | Admin | CRUD on knowledge point taxonomy (grammar, vocabulary, strategy). |
-| UC-88 | Update Exam | Admin | Modify exam blueprint and level. |
-| UC-90 | View Admin Dashboard | Admin | System-wide analytics: total users, submission distribution, queue size. |
-| UC-91 | View System Analytics | Admin | Daily active users, average grading time, completion rates. |
-| UC-92 | Trigger Auto-Grade | Admin | Manually trigger auto-grading for pending Listening/Reading submissions. |
+| UC-85 | Manage Question Bank | Admin | Full CRUD on questions. Deletion is hard delete in the current implementation. |
+| UC-87 | Manage Knowledge Points | Admin | CRUD on knowledge point taxonomy. |
+| UC-88 | Manage Exams | Admin | Create, update, and delete exams. |
+| UC-89 | Manage Review Queue | Admin | View and operate on the review workflow with elevated permissions. |
+| UC-90 | Manage Notifications | Admin | View notifications/devices and related operational data exposed by the backend. |
 
 ---
 
@@ -710,9 +691,8 @@ flowchart TB
 | Content — Update Exam | | | X |
 | Admin — User List | | | X |
 | Admin — Change Role | | | X |
-| Admin — Lock/Unlock | | | X |
-| Admin — Analytics Dashboard | | | X |
-| Admin — Trigger Auto-Grade | | | X |
+| Admin — User List | | | X |
+| Admin — Change Role | | | X |
 | Vocabulary — Topics | X | X | X |
 | Vocabulary — Learn Words | X | X | X |
 | Submissions — History | X (own) | X (own) | X (all) |
@@ -723,14 +703,14 @@ flowchart TB
 
 | # | Feature | System Function | Description |
 |---|---------|----------------|-------------|
-| 1 | AI Grading | Grading Worker (BRPOP) | Async worker polls Redis `grading:tasks` queue. Routes to Writing or Speaking grading pipeline. Writes results to PostgreSQL. |
+| 1 | AI Grading | Grading Service (Redis Streams) | Async worker reads tasks from Redis Stream `grading:tasks` via `XREADGROUP`. Routes to Writing or Speaking grading pipeline. Publishes results to `grading:results` stream for the backend consumer to persist. |
 | 2 | AI Grading | Confidence Routing | After AI grading: high → `completed`, medium → `review_pending` (priority medium), low → `review_pending` (priority high). |
-| 3 | AI Grading | Dead Letter Queue | Failed tasks after max retries → `LPUSH grading:dlq` for manual inspection. |
+| 3 | AI Grading | Failure Handling | Failed tasks after max retries → failure marker published to `grading:results` stream → backend sets submission status to `failed`. |
 | 4 | Auth | Token Rotation | On refresh: revoke old token, issue new pair. If reused rotated token detected → revoke ALL user tokens. |
 | 5 | Auth | Device Pruning | On login: if active refresh tokens ≥ 3, revoke oldest (FIFO). |
 | 6 | Progress | Sliding Window Sync | After every score recorded: fetch last 10 scores per skill → compute mean, trend, scaffold adjustment → upsert `user_progress`. |
-| 7 | Exam | Auto-Save | Client sends answer snapshot every 30s → upsert `exam_answers`. Rejected if session already submitted. |
-| 8 | Exam | Submit Processing | On exam submit: auto-grade L/R inline → create W/S submissions → dispatch to Redis → update session scores. |
+| 7 | Exam | Auto-Save | Client sends answer snapshot periodically → upsert `exam_answers`. Rejected if session already submitted. |
+| 8 | Exam | Submit Processing | On exam submit: auto-grade L/R inline → create W/S submissions → dispatch to Redis Streams → update session scores. |
 | 9 | Health | Health Check | `GET /health` probes PostgreSQL and Redis connectivity. Returns service status. |
 | 10 | API | OpenAPI Generation | Auto-generated OpenAPI spec at `GET /openapi.json` via Elysia plugin. |
 
@@ -869,7 +849,7 @@ erDiagram
 
     knowledge_points {
         uuid id PK
-        enum category "grammar | vocabulary | strategy"
+        enum category "grammar | vocabulary | strategy | topic"
         varchar name UK
     }
 
@@ -1144,17 +1124,17 @@ flowchart TB
 
 #### 3.3.1 Start Placement Test
 
-- **Description**: Initialize a placement assessment covering all four skills to determine initial proficiency level.
+- **Description**: Initialize a placement assessment covering Listening and Reading skills to determine initial proficiency level. The current implementation tests two objective skills only; Writing and Speaking levels are set via self-assessment or skipped.
 - **Input**: Authenticated learner request
-- **Processing**: Select a balanced set of questions across skills and difficulty levels → create placement session
+- **Processing**: Generate a dynamic placement exam for listening + reading → create placement session
 - **Output**: Session ID, question set organized by skill
 
 #### 3.3.2 Submit Placement Test
 
 - **Description**: Submit placement test answers and receive initial proficiency assessment.
-- **Input**: Session ID, answers for all four skills
-- **Processing**: Auto-grade Listening/Reading via answer key → create Writing/Speaking submissions for AI grading → compute initial per-skill bands → initialize `user_progress` records → initialize Spider Chart
-- **Output**: Per-skill band (A1–C1), recommended initial scaffold levels, suggested learning pathway
+- **Input**: Session ID, answers for listening and reading
+- **Processing**: Auto-grade Listening/Reading via answer key → compute initial per-skill bands → initialize `user_progress` records → initialize Spider Chart
+- **Output**: Per-skill band, recommended initial scaffold levels, suggested learning pathway
 
 #### 3.3.3 Placement Test Flow Diagram
 
@@ -1166,7 +1146,7 @@ flowchart TB
 
     subgraph PlacementTest ["Placement Test"]
         SelectLevel["Select starting level<br/>(self-assessment)"]
-        TakeTest["Take placement exam<br/>4 skills: L, R, W, S"]
+        TakeTest["Take placement exam<br/>Listening + Reading"]
         GradeObjective["Auto-grade L/R<br/>via answer key"]
         GradeSubjective["Dispatch W/S<br/>to AI grading queue"]
         WaitResults["Wait for all<br/>skill scores"]
@@ -1267,11 +1247,11 @@ flowchart TB
 
     AutoGrade["Auto-grade immediately<br/>Compare with answer key<br/>Score calculated inline"]
 
-    AIGrade["Dispatch to AI grading<br/>LPUSH to Redis queue<br/>Status: processing"]
+    AIGrade["Dispatch to AI grading<br/>XADD to Redis Stream<br/>Status: processing"]
 
     ViewResult["View result<br/>Score, band, feedback"]
 
-    WaitAI["Wait for AI result<br/>(SSE notification)"]
+    WaitAI["Wait for AI result<br/>(poll for status)"]
 
     ViewAIResult["View AI feedback<br/>Criteria scores,<br/>grammar errors"]
 
@@ -1322,12 +1302,11 @@ flowchart TB
   1. Validate input (text not empty, skill matches question)
   2. Create submission record (status = `pending`)
   3. Create submission_details record (answer JSONB)
-  4. LPUSH grading task to Redis list `grading:tasks`
-  5. Return submission ID with SSE URL for status tracking
-- **Output**: `{ submissionId, status: "pending", sseUrl: "/api/sse/submissions/{id}" }`
+  4. XADD grading task to Redis Stream `grading:tasks`
+  5. Return submission ID for status polling
+- **Output**: `{ submissionId, status: "pending" }`
 - **AI Grading Pipeline** (async in worker):
   - LLM evaluates against 4 VSTEP criteria: Task Achievement, Coherence & Cohesion, Lexical Resource, Grammatical Range & Accuracy (each 0–10)
-  - Grammar model runs in parallel for detailed error detection
   - Results merged into `AIGradeResult` with overall score, band, criteria scores, feedback, grammar errors, confidence level
 - **Confidence Routing**:
   - High confidence → status = `completed` (auto-accept)
@@ -1340,9 +1319,9 @@ flowchart TB
   - Stage 3 → Stage 2: avg < 65 for 2 consecutive attempts
   - Hint usage > 50% in window of 3 → blocks level up
 
-#### 3.6.3 Get Submission Status (Polling Fallback)
+#### 3.6.3 Get Submission Status
 
-- **Description**: Polling endpoint for clients that cannot use SSE.
+- **Description**: Polling endpoint to check submission grading status.
 - **Input**: Submission ID
 - **Output**: `{ status, progress (if processing), result (if completed) }`
 
@@ -1356,14 +1335,14 @@ flowchart TB
     CreateDetail["Create Submission Detail<br/>answer JSONB saved"]
     Prepare["grading-dispatch.prepare()<br/>Set status = processing<br/>(inside DB transaction)"]
     Commit["Transaction commits"]
-    Dispatch["grading-dispatch.dispatch()<br/>LPUSH grading:tasks<br/>JSON payload to Redis"]
+    Dispatch["grading-dispatch.dispatch()<br/>XADD grading:tasks<br/>JSON payload to Redis Stream"]
 
-    subgraph GradingWorker ["Grading Worker (Python + FastAPI)"]
-        Dequeue["BRPOP grading:tasks<br/>(poll with 5s timeout)"]
+    subgraph GradingWorker ["Grading Service (Python + FastAPI)"]
+        Dequeue["XREADGROUP grading:tasks<br/>(consumer group poll)"]
         Route{"Skill?"}
-        Writing["writing.grade()<br/>Extract text + taskType<br/>Call LLM (Groq Llama 3.3 70B)<br/>4 criteria scoring"]
-        Speaking["speaking.grade()<br/>Download audio<br/>STT Groq Whisper<br/>Transcript to LLM grading<br/>4 criteria scoring"]
-        CalcScore["Calculate overall score<br/>avg 4 criteria, snap to 0.5<br/>Determine band"]
+        Writing["writing.grade()<br/>Extract text + taskType<br/>Call LLM (provider-configurable)<br/>4 criteria scoring"]
+        Speaking["speaking.grade()<br/>Download audio<br/>STT transcription<br/>Transcript to LLM grading<br/>4 criteria scoring"]
+        CalcScore["Calculate overall score<br/>avg 4 criteria, snap to 0.5<br/>Determine band + confidence"]
         Confidence{"AI Confidence?"}
     end
 
@@ -1371,13 +1350,17 @@ flowchart TB
     MedConf["status = review_pending<br/>priority = medium"]
     LowConf["status = review_pending<br/>priority = high"]
 
-    SaveResult["db.save()<br/>UPDATE submissions<br/>UPDATE submission_details.result"]
-    RecordProgress["progress.record()<br/>Insert user_skill_scores"]
-    SyncProgress["progress.sync()<br/>Upsert user_progress<br/>Sliding window recalc"]
-    SSE["Broadcast SSE event<br/>to learner client"]
+    PublishResult["XADD grading:results<br/>Publish result to Redis Stream"]
+
+    subgraph BackendConsumer ["Backend Consumer"]
+        ReadResult["XREADGROUP grading:results<br/>Read grading result"]
+        UpdateDB["Update submissions +<br/>submission_details in DB"]
+        RecordProgress["progress.record() + sync()<br/>Update sliding window"]
+    end
+
     End(["Done"])
 
-    ErrorPath["PermanentError?<br/>db.fail, status = failed<br/>LPUSH grading:dlq"]
+    ErrorPath["On failure after retries:<br/>XADD grading:results<br/>with failed marker"]
 
     Start --> CreateSub --> CreateDetail --> Prepare --> Commit --> Dispatch
     Dispatch --> Dequeue --> Route
@@ -1389,10 +1372,10 @@ flowchart TB
     Confidence -->|"high"| HighConf
     Confidence -->|"medium"| MedConf
     Confidence -->|"low"| LowConf
-    HighConf --> SaveResult
-    MedConf --> SaveResult
-    LowConf --> SaveResult
-    SaveResult --> RecordProgress --> SyncProgress --> SSE --> End
+    HighConf --> PublishResult
+    MedConf --> PublishResult
+    LowConf --> PublishResult
+    PublishResult --> ReadResult --> UpdateDB --> RecordProgress --> End
 
     CalcScore -.->|"error"| ErrorPath
 
@@ -1400,10 +1383,12 @@ flowchart TB
     classDef worker fill:#e65100,stroke:#bf360c,color:#fff
     classDef result fill:#2e7d32,stroke:#1b5e20,color:#fff
     classDef error fill:#c62828,stroke:#b71c1c,color:#fff
+    classDef consumer fill:#00695c,stroke:#004d40,color:#fff
 
     class Start,End start
     class Dequeue,Route,Writing,Speaking,CalcScore,Confidence worker
-    class HighConf,MedConf,LowConf,SaveResult,RecordProgress,SyncProgress,SSE result
+    class HighConf,MedConf,LowConf,PublishResult result
+    class ReadResult,UpdateDB,RecordProgress consumer
     class ErrorPath error
 ```
 
@@ -1420,12 +1405,12 @@ flowchart TB
 
 - **Description**: Submit audio recording for AI grading (asynchronous).
 - **Input**: `questionId`, `skill: "speaking"`, `answer: { audioUrl, durationSeconds }`
-- **Processing**: Same flow as Writing (validate → create submission → enqueue to Redis → return SSE URL). See [Section 3.6.4 — AI Grading Pipeline Diagram](#364-writingspeaking-ai-grading-pipeline-diagram).
+- **Processing**: Same flow as Writing (validate → create submission → dispatch to Redis Streams). See [Section 3.6.4 — AI Grading Pipeline Diagram](#364-writingspeaking-ai-grading-pipeline-diagram).
 - **AI Grading Pipeline** (async in worker):
   - Whisper transcribes audio to text
   - LLM grades transcript against 4 VSTEP criteria: Fluency & Coherence, Pronunciation, Content & Relevance, Vocabulary & Grammar (each 0–10)
   - Confidence routing same as Writing
-- **Output**: `{ submissionId, status: "pending", sseUrl: "/api/sse/submissions/{id}" }`
+- **Output**: `{ submissionId, status: "pending" }`
 
 ### 3.8 FE-07: Mock Test Mode
 
@@ -1460,8 +1445,8 @@ flowchart TB
 - **Description**: Submit the completed exam for grading.
 - **Input**: Session ID
 - **Processing**:
-  1. Auto-grade Listening answers: compare with answer key → `listening_score = (correct/35) × 10` (round to 0.5)
-  2. Auto-grade Reading answers: `reading_score = (correct/40) × 10` (round to 0.5)
+  1. Auto-grade Listening answers: compare with answer key → `listening_score = (correct/total) × 10` (round to 0.5)
+  2. Auto-grade Reading answers: `reading_score = (correct/total) × 10` (round to 0.5)
   3. Create Writing submissions (status = `pending`) → link via `exam_submissions` → enqueue to Redis
   4. Create Speaking submissions (status = `pending`) → link via `exam_submissions` → enqueue to Redis
   5. Update session status to `submitted`
@@ -1494,8 +1479,8 @@ flowchart TB
 
     subgraph SubmitProcessing ["Submit Processing"]
         LoadAnswers["Load all exam_answers"]
-        GradeListening["Grade Listening<br/>Compare with answer key<br/>score = (correct/35) × 10"]
-        GradeReading["Grade Reading<br/>Compare with answer key<br/>score = (correct/40) × 10"]
+        GradeListening["Grade Listening<br/>Compare with answer key<br/>score = (correct/total) × 10"]
+        GradeReading["Grade Reading<br/>Compare with answer key<br/>score = (correct/total) × 10"]
         PersistCorrect["persistCorrectness()<br/>Set isCorrect on each answer"]
         CreateWSubs["Create Writing submissions<br/>Create Speaking submissions<br/>status = pending"]
         DispatchWS["grading-dispatch<br/>Push W/S tasks to Redis"]
@@ -1554,7 +1539,7 @@ flowchart TB
 
 - **Description**: Lock a submission for exclusive review by the current instructor.
 - **Input**: Submission ID
-- **Processing**: Acquire Redis distributed lock `lock:review:{submissionId}` (TTL 15 min) → set `claimed_by` and `claimed_at`
+- **Processing**: Atomic conditional UPDATE on submissions table: set `claimed_by` and `claimed_at` where unclaimed or claim expired (15 min timeout)
 - **Output**: Submission details with AI result for review
 - **Error Cases**:
   - Already claimed by another instructor → 409 CONFLICT with claimant info
@@ -1563,7 +1548,7 @@ flowchart TB
 
 - **Description**: Release a claimed submission back to the review queue.
 - **Input**: Submission ID
-- **Processing**: Delete Redis lock → clear `claimed_by` and `claimed_at`
+- **Processing**: Atomic conditional UPDATE: clear `claimed_by` and `claimed_at` (owner or admin only)
 - **Output**: `{ released: true }`
 
 #### 3.9.4 Submit Review
@@ -1575,10 +1560,7 @@ flowchart TB
   2. Both AI result and human result preserved in `submissionDetails.result` for audit
   3. Set `auditFlag = true` when `|aiScore - humanScore| > 0.5`
   4. Update submission status → `completed`
-  5. Record `submissionEvent` (kind = `reviewed`)
-  6. Release Redis lock
-  7. Broadcast SSE `completed` event
-  8. Trigger progress recompute for the learner
+  5. Trigger progress recompute for the learner
 - **Output**: Updated submission with final scores
 
 #### 3.9.5 Instructor Review Workflow Diagram
@@ -1591,7 +1573,7 @@ flowchart TB
 
     SelectSub["Select submission<br/>to review"]
 
-    Claim["POST /:id/claim<br/>Set claimed_by = instructor<br/>Set claimed_at = now<br/>Lock: 15 min TTL"]
+    Claim["POST /:id/claim<br/>Set claimed_by = instructor<br/>Set claimed_at = now<br/>Timeout: 15 min DB conditional"]
 
     ClaimCheck{"Already<br/>claimed?"}
     ClaimFail["409 CONFLICT<br/>Already claimed by<br/>another instructor"]
@@ -1610,8 +1592,6 @@ flowchart TB
 
     Progress["progress.record() + sync()<br/>Update learner scores<br/>Recalculate sliding window"]
 
-    SSEEvent["Broadcast SSE event<br/>completed to learner"]
-
     End(["Done"])
 
     Start --> ViewQueue --> SelectSub --> Claim
@@ -1622,7 +1602,7 @@ flowchart TB
     ReviewDecision -->|"Cannot finish"| Release
     ReviewDecision -->|"Submit grade"| SubmitReview
     Release --> ViewQueue
-    SubmitReview --> UpdateSub --> SaveResult --> Progress --> SSEEvent --> End
+    SubmitReview --> UpdateSub --> SaveResult --> Progress --> End
 
     classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
     classDef action fill:#e65100,stroke:#bf360c,color:#fff
@@ -1632,7 +1612,7 @@ flowchart TB
     class Start,End start
     class ViewQueue,SelectSub,Claim,ViewAIResult,ReviewDecision action
     class ClaimFail error
-    class SubmitReview,UpdateSub,SaveResult,Progress,SSEEvent,Release result
+    class SubmitReview,UpdateSub,SaveResult,Progress,Release result
 ```
 
 #### 3.9.6 Submission State Machine Diagram
@@ -1670,7 +1650,7 @@ stateDiagram-v2
         Instructor workflow:
         GET /queue, claim, review
         Priority: high > medium > low
-        Claim lock: 15 min TTL
+        Claim timeout: 15 min (DB)
     end note
 
     note right of completed
@@ -1893,62 +1873,28 @@ flowchart TB
 
 #### 3.13.1 Question CRUD
 
-- **Description**: Admin/Instructor manages the question bank.
-- **Create**: Provide skill, level, format, content (JSONB), answer_key (JSONB for L/R), rubric (for W/S)
-- **Read**: List with filters (skill, level, format, is_active). Detail view includes content and answer_key.
-- **Update**: Modify question content. Creates a new version snapshot in `question_versions`.
-- **Delete**: Admin soft-deletes by setting `is_active = false`.
-
-#### 3.13.2 Import/Export
-
-- **Description**: Bulk import questions from JSON/Excel format, export for backup.
-- **Import**: Validate against skill-specific Zod schemas → insert with version 1
-- **Export**: Generate JSON/Excel with all question data
+ **Description**: Admin/Instructor manages the question bank.
+ **Create**: Provide skill, level, format, content (JSONB), answer_key (JSONB for L/R), rubric (for W/S)
+ **Read**: List with filters (skill, level, format, is_active). Detail view includes content and answer_key.
+ **Update**: Modify question content and metadata directly on the question record.
+ **Delete**: Hard deletes questions (`is_active` exists for filtering but deletion is permanent).
 
 ### 3.14 FE-13: User Management
 
 #### 3.14.1 Admin User Operations
 
-- **List Users**: Paginated list with filters (role, email/name search)
-- **Change Role**: `PUT /api/admin/users/:id/role` — change between learner/instructor/admin
-- **Bulk Create**: Create multiple user accounts from CSV/Excel
-- **Lock/Unlock**: Disable/enable user account access
-- **Reset Password**: Admin-initiated password reset
+ **List Users**: Paginated list with filters (role, email/name search)
+ **Change Role**: `PUT /api/admin/users/:id/role` — change between learner/instructor/admin
+ **Change Password**: Self-service only, requires current password
 
-### 3.15 FE-14: Analytics Dashboard
+### 3.15 FE-14: Notification System
 
-#### 3.15.1 Instructor Dashboard
+#### 3.15.1 Notification Storage and Device Registration
 
-- **Description**: View class statistics and learner progress.
-- **Output**: Active learner count, assignment completion rates, average scores by skill, per-learner progress summary
-
-#### 3.15.2 Admin Dashboard
-
-- **Description**: System-wide analytics.
-- **Output**: Total users by role, submission distribution by status, average grading time, review queue size, daily active users
-
-### 3.16 FE-15: Notification System
-
-#### 3.16.1 Notification Types
-
-| Type | Trigger | Channel |
-|------|---------|---------|
-| Grading Complete | Submission status → completed | In-app, Push (mobile) |
-| Review Required | New review_pending submission | In-app (instructor) |
-| Goal Reminder | Daily study time not met | Push (mobile), In-app |
-| Exam Result Ready | Exam session → completed | In-app, Push (mobile) |
-| Account Activity | Login from new device | Email |
-
-### 3.17 FE-16: Advanced Admin Features
-
-#### 3.17.1 Activity History
-
-- **Description**: View user activity logs (logins, submissions, reviews).
-
-#### 3.17.2 Auto-Assignment Distribution
-
-- **Description**: Automatically distribute review_pending submissions to available instructors based on workload.
-
+ **Description**: The system stores in-app notifications and registered device tokens for supported push delivery.
+ **Notification Data**: Notification records capture recipient, type, title/content, read state, and timestamps.
+ **Device Token Registration**: Authenticated users can register device tokens so the backend can associate push-capable devices with a user account.
+ **Read Flow**: Users can list notifications and mark them as read.
 ---
 
 ## 4. Non-Functional Requirements
@@ -1972,16 +1918,15 @@ flowchart TB
 
 | External System | Interface | Purpose |
 |----------------|-----------|---------|
-| Groq API (Llama 3.3 70B) | HTTPS REST | LLM-based Writing/Speaking grading |
-| Groq API (Whisper Large V3 Turbo) | HTTPS REST | Speech-to-Text transcription |
+| LLM Provider API (configurable) | HTTPS REST | LLM-based Writing/Speaking grading |
+| STT Provider API (configurable) | HTTPS REST | Speech-to-Text transcription |
 | PostgreSQL 17 | TCP 5432 | Primary data store |
-| Redis 7.2+ | TCP 6379 | Queue, cache, distributed locks |
+| Redis 7.2+ | TCP 6379 | Streams and caching |
 
 #### 4.1.4 Communication Interfaces
 
 - **Protocol**: HTTPS (TLS 1.2+) for all client-server communication
 - **API Format**: REST, JSON (UTF-8), ISO 8601 UTC timestamps
-- **Real-time**: SSE for grading status updates (unidirectional server → client)
 - **Authentication**: JWT Bearer tokens in `Authorization` header
 
 ### 4.2 Quality Attributes
@@ -2002,12 +1947,11 @@ flowchart TB
 | Requirement | Specification |
 |-------------|---------------|
 | REQ-R01 | System availability: ≥ 99% during business hours (8:00–22:00 ICT) |
-| REQ-R02 | Grading worker retry: max 3 attempts with exponential backoff (arq handles internally) |
+| REQ-R02 | Grading worker retry: max 3 attempts with exponential backoff (grading service handles internally with exponential backoff) |
 | REQ-R03 | After max retries exhausted, submission status set to `failed` — no silent data loss |
 | REQ-R04 | Exam auto-save every 30 seconds — maximum data loss of 30 seconds of work on connection failure |
 | REQ-R05 | Refresh token reuse detection — compromised token triggers revocation of all user tokens |
 | REQ-R06 | Database uses `ON DELETE CASCADE` — referential integrity maintained on all deletions |
-| REQ-R07 | SSE reconnection with `Last-Event-ID` replay — no missed grading events |
 
 #### 4.2.3 Performance
 
@@ -2019,7 +1963,6 @@ flowchart TB
 | REQ-P04 | Speaking AI grading SLA: typically < 10 minutes, timeout 60 minutes |
 | REQ-P05 | Spider chart data computation: < 1 second |
 | REQ-P06 | Concurrent users supported: ≥ 100 simultaneous learners |
-| REQ-P07 | SSE heartbeat: every 30 seconds, max connection lifetime 30 minutes |
 | REQ-P08 | Database query for progress (sliding window): bounded to max 10 rows per skill via window function |
 
 #### 4.2.4 Security
@@ -2031,18 +1974,16 @@ flowchart TB
 | REQ-S03 | JWT access tokens are short-lived; refresh tokens support rotation and reuse detection |
 | REQ-S04 | Maximum 3 active refresh tokens per user (device limit) |
 | REQ-S05 | RBAC enforced on all API endpoints — learner/instructor/admin role gates |
-| REQ-S06 | Submission data access restricted to owner (Row Level Security + Secure Views) |
+| REQ-S06 | Submission data access restricted to owner (application-level ownership checks via `assertAccess()` helper) |
 | REQ-S07 | No secrets in code or logs — environment variables via `.env` files |
 | REQ-S08 | Request correlation: `X-Request-Id` header on all responses for audit trail |
-| REQ-S09 | Idempotency-Key support on `POST /submissions` to prevent duplicate submissions on retry |
 
 #### 4.2.5 Scalability
 
 | Requirement | Specification |
 |-------------|---------------|
-| REQ-SC01 | Grading worker can scale horizontally — multiple arq workers consuming from same Redis queue |
+| REQ-SC01 | Grading worker can scale horizontally — multiple grading service workers consuming from the same Redis stream group |
 | REQ-SC02 | Database indexes optimized for common query patterns (user history, review queue, active questions) |
-| REQ-SC03 | SSE hub uses in-memory pub/sub with bounded buffer (100 events) and backpressure |
 | REQ-SC04 | Question bank supports 10,000+ questions without performance degradation |
 
 ---
@@ -2053,8 +1994,8 @@ flowchart TB
 
 | ID | Rule Definition |
 |----|-----------------|
-| BR-01 | Listening score = `(correct / 35) × 10`, rounded to nearest 0.5 |
-| BR-02 | Reading score = `(correct / 40) × 10`, rounded to nearest 0.5 |
+| BR-01 | Listening score = `(correct / total) × 10`, rounded to nearest 0.5 |
+| BR-02 | Reading score = `(correct / total) × 10`, rounded to nearest 0.5 |
 | BR-03 | Writing score = weighted average of 4 criteria (equal weights), rounded to nearest 0.5. For exam: `writing = task1 × (1/3) + task2 × (2/3)` |
 | BR-04 | Speaking score = average of 4 criteria, rounded to nearest 0.5 |
 | BR-05 | Overall exam score = average of 4 skill scores, rounded to nearest 0.5 |
@@ -2071,7 +2012,7 @@ flowchart TB
 | BR-16 | Max 3 active refresh tokens per user (FIFO — oldest revoked when 4th created) |
 | BR-17 | Refresh token reuse (rotated token reused) → revoke ALL user tokens → force re-login |
 | BR-18 | Exam session auto-save does not overwrite once session is submitted |
-| BR-19 | Review claim lock: Redis TTL 15 minutes. Auto-release after expiry |
+| BR-19 | Review claim timeout: 15 minutes via DB conditional update on `claimed_at` |
 | BR-20 | ETA returns null when: slope ≤ 0, insufficient data (< 3 attempts), or estimated > 52 weeks |
 | BR-21 | Hard delete with `ON DELETE CASCADE` — no soft delete (except questions: `is_active = false`) |
 | BR-22 | All scores use `numeric(3,1)` — range 0.0 to 10.0, step 0.5 |
@@ -2087,7 +2028,6 @@ flowchart TB
 | CR-05 | All error responses follow standard envelope: `{ error: { code, message, requestId, details? } }` |
 | CR-06 | All responses include `X-Request-Id` header (generated or echoed from client) |
 | CR-07 | Authentication via `Authorization: Bearer <jwt>` header on protected endpoints |
-| CR-08 | Idempotency supported via `Idempotency-Key` header on POST endpoints with side effects |
 | CR-09 | Health check endpoint: `GET /health` returns `{ status: "ok", services: { db, redis } }` |
 | CR-10 | OpenAPI specification auto-generated and available at `GET /openapi.json` |
 
