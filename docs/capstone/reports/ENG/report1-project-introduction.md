@@ -413,7 +413,55 @@ LI-05: The system does not integrate online payment in the MVP version. The pilo
 
 ## Appendix B: System Architecture Overview
 
-(Diagram to be added in Report 2 - SRS)
+
+```mermaid
+flowchart TB
+    subgraph Clients ["Client Layer"]
+        WebApp["Web Application<br/>React 19 + Vite 7"]
+        MobileApp["Mobile Application<br/>React Native (Android)"]
+    end
+
+    subgraph Backend ["API Layer — Bun + Elysia"]
+        API["REST API Server<br/>Auth, Submissions, Exams,<br/>Questions, Progress, Classes"]
+    end
+
+    subgraph Grading ["Worker Layer — Python"]
+        Worker["Grading Worker<br/>Writing (LLM) + Speaking (STT+LLM)"]
+    end
+
+    subgraph Data ["Data Layer"]
+        PG["PostgreSQL 17"]
+        Redis["Redis 7.2+<br/>Queue + Locks"]
+        MinIO["MinIO<br/>Object Storage (S3)"]
+    end
+
+    subgraph External ["External Services"]
+        Groq["Groq API<br/>Llama 3.3 70B + Whisper V3"]
+    end
+
+    WebApp --> API
+    MobileApp --> API
+    API --> PG
+    API --> Redis
+    API --> MinIO
+    API -->|"dispatch tasks"| Redis
+    Worker -->|"consume tasks"| Redis
+    Worker --> PG
+    Worker --> Groq
+
+    classDef client fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef api fill:#2e7d32,stroke:#1b5e20,color:#fff
+    classDef worker fill:#e65100,stroke:#bf360c,color:#fff
+    classDef data fill:#6a1b9a,stroke:#4a148c,color:#fff
+    classDef external fill:#c62828,stroke:#b71c1c,color:#fff
+
+    class WebApp,MobileApp client
+    class API api
+    class Worker worker
+    class PG,Redis,MinIO data
+    class Groq external
+```
+
 
 ## Appendix C: Project Timeline
 

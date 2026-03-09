@@ -159,6 +159,7 @@ The system provides 16 features organized in two delivery phases:
 | FE-09 | Progress Tracking | Spider Chart, Sliding Window (N=10), trend classification, ETA estimation |
 | FE-10 | Learning Path | Personalized pathway based on weakest skill prioritization (rule-based) |
 | FE-11 | Goal Setting | Target band, deadline, daily study time, achievement/on-track status |
+| FE-11b | Vocabulary Learning | Vocabulary topics and word learning with flashcard-style interface, progress tracking per word |
 
 **Phase 2 — Enhancement (Month 4): 5 Admin Features**
 
@@ -536,12 +537,17 @@ flowchart TB
         ProgressOverview["Progress Overview<br/>(Spider Chart)"]
         SkillDetail["Skill Detail<br/>(score history, trend)"]
         GoalSetting["Goal Setting<br/>(target band, deadline)"]
+        ProgressHistory["Progress History<br/>(activity heatmap)"]
     end
 
-    subgraph ClassView ["Class"]
-        ClassList["My Classes"]
-        JoinClass["Join Class<br/>(invite code)"]
-        FeedbackView["Instructor Feedback"]
+    subgraph Vocabulary ["Vocabulary"]
+        VocabTopics["Vocabulary Topics"]
+        VocabLearn["Learn Words<br/>(flashcard view)"]
+    end
+
+    subgraph Submissions ["Submissions"]
+        SubmissionList["Submission History"]
+        SubmissionDetail["Submission Detail<br/>(score, feedback)"]
     end
 
     Profile["Profile Settings"]
@@ -566,19 +572,29 @@ flowchart TB
     ClassList --> JoinClass
     ClassList --> FeedbackView
 
+    Home --> VocabTopics
+    VocabTopics --> VocabLearn
+
+    Home --> SubmissionList
+    SubmissionList --> SubmissionDetail
+
+    ProgressOverview --> ProgressHistory
+
     classDef auth fill:#78909c,stroke:#546e7a,color:#fff
     classDef main fill:#1565c0,stroke:#0d47a1,color:#fff
     classDef practice fill:#2e7d32,stroke:#1b5e20,color:#fff
     classDef exam fill:#6a1b9a,stroke:#4a148c,color:#fff
     classDef progress fill:#f57c00,stroke:#e65100,color:#fff
     classDef cls fill:#00796b,stroke:#004d40,color:#fff
+    classDef vocab fill:#00695c,stroke:#004d40,color:#fff
 
     class Login,Register auth
     class Home,Profile main
-    class SkillSelect,QuestionView,SubmitAnswer,ResultView practice
+    class SkillSelect,QuestionView,SubmitAnswer,ResultView,SubmissionList,SubmissionDetail practice
     class ExamList,ExamDetail,ExamSession,ExamResult exam
-    class ProgressOverview,SkillDetail,GoalSetting progress
+    class ProgressOverview,SkillDetail,GoalSetting,ProgressHistory progress
     class ClassList,JoinClass,FeedbackView cls
+    class VocabTopics,VocabLearn vocab
 ```
 
 #### 3.1.2 Screens Flow — Instructor
@@ -658,6 +674,11 @@ flowchart TB
 | 19 | Review | Review Detail | Side-by-side: student answer (left) + AI grading result (right). Score input form. |
 | 20 | Content | Question Bank | Paginated table with filters (skill, level, format, active). Create/Edit/Delete actions. |
 | 21 | Content | Create/Edit Question | Form with skill, level, content JSONB editor, answer key, rubric fields. |
+| 22 | Vocabulary | Topics List | Grid of vocabulary topics with word count per topic and learning progress indicator. |
+| 23 | Vocabulary | Learn Words | Flashcard-style word learning view. Shows word, phonetic, definition, examples. Mark as known/unknown. |
+| 24 | Submissions | History | Paginated list of past submissions with skill filter, score, band, and status badges. |
+| 25 | Submissions | Detail | Full submission detail: question, student answer, score breakdown, AI/human feedback. |
+| 26 | Progress | History | Activity heatmap showing daily practice frequency. Doughnut chart of skill distribution. |
 
 #### 3.1.4 Screen Authorization
 
@@ -692,6 +713,11 @@ flowchart TB
 | Admin — Lock/Unlock | | | X |
 | Admin — Analytics Dashboard | | | X |
 | Admin — Trigger Auto-Grade | | | X |
+| Vocabulary — Topics | X | X | X |
+| Vocabulary — Learn Words | X | X | X |
+| Submissions — History | X (own) | X (own) | X (all) |
+| Submissions — Detail | X (own) | X (own) | X (all) |
+| Progress — History | X (own) | X (own) | X (all) |
 
 #### 3.1.5 Non-Screen Functions
 
@@ -722,6 +748,13 @@ erDiagram
     users ||--o{ classes : "owns (instructor)"
     users ||--o{ class_members : "enrolls in"
     users ||--o{ instructor_feedback : "gives/receives"
+    users ||--o{ notifications : "receives"
+    users ||--o{ device_tokens : "registers devices"
+    users ||--o{ user_placements : "has placements"
+
+    vocabulary_topics ||--o{ vocabulary_words : "contains"
+    vocabulary_words ||--o{ user_vocabulary_progress : "tracked by"
+    users ||--o{ user_vocabulary_progress : "learns words"
 
     questions ||--o{ submissions : "answered in"
     questions ||--o{ question_knowledge_points : "tagged with"
@@ -909,6 +942,59 @@ erDiagram
         enum skill "nullable"
         uuid submission_id FK "nullable"
     }
+
+    vocabulary_topics {
+        uuid id PK
+        varchar name UK "unique max 200"
+        text description
+        varchar icon_key "nullable"
+        integer sort_order "default 0"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    vocabulary_words {
+        uuid id PK
+        uuid topic_id FK
+        varchar word "max 100"
+        varchar phonetic "nullable"
+        varchar audio_url "nullable"
+        varchar part_of_speech "max 20"
+        text definition
+        text explanation
+        jsonb examples "string array"
+        integer sort_order "default 0"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    user_vocabulary_progress {
+        uuid user_id PK "FK to users"
+        uuid word_id PK "FK to vocabulary_words"
+        boolean known "default false"
+        timestamp last_reviewed_at "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    notifications {
+        uuid id PK
+        uuid user_id FK
+        enum type "grading_completed | feedback_received | class_invite | goal_achieved | system"
+        varchar title "max 255"
+        text body "nullable"
+        jsonb data "nullable"
+        timestamp read_at "nullable"
+        timestamp created_at
+    }
+
+    device_tokens {
+        uuid id PK
+        uuid user_id FK
+        text token UK "unique"
+        varchar platform "ios | android | web"
+        timestamp created_at
+    }
 ```
 
 **Entity Descriptions:**
@@ -933,6 +1019,12 @@ erDiagram
 | 16 | `classes` | Instructor-owned classes with auto-generated invite codes. |
 | 17 | `class_members` | Class enrollment records with join/remove timestamps. |
 | 18 | `instructor_feedback` | Feedback comments from instructor to learner within a class context. |
+| 19 | `vocabulary_topics` | Vocabulary learning topics with name, description, and ordering. |
+| 20 | `vocabulary_words` | Individual vocabulary words within topics. Includes phonetic, audio, part of speech, definition, examples. |
+| 21 | `user_vocabulary_progress` | Per-user per-word learning progress tracking. Composite PK (user_id, word_id). |
+| 22 | `notifications` | User notifications for grading completion, feedback, goals, system messages. |
+| 23 | `device_tokens` | Push notification device tokens for mobile/web platforms. |
+| 24 | `user_placements` | Initial placement test results recording skill levels and source. |
 
 ### 3.2 FE-01: User Authentication
 
@@ -1064,6 +1156,56 @@ flowchart TB
 - **Processing**: Auto-grade Listening/Reading via answer key → create Writing/Speaking submissions for AI grading → compute initial per-skill bands → initialize `user_progress` records → initialize Spider Chart
 - **Output**: Per-skill band (A1–C1), recommended initial scaffold levels, suggested learning pathway
 
+#### 3.3.3 Placement Test Flow Diagram
+
+```mermaid
+flowchart TB
+    Start(["Learner completes<br/>registration"])
+
+    OnboardingChoice{"Onboarding<br/>method?"}
+
+    subgraph PlacementTest ["Placement Test"]
+        SelectLevel["Select starting level<br/>(self-assessment)"]
+        TakeTest["Take placement exam<br/>4 skills: L, R, W, S"]
+        GradeObjective["Auto-grade L/R<br/>via answer key"]
+        GradeSubjective["Dispatch W/S<br/>to AI grading queue"]
+        WaitResults["Wait for all<br/>skill scores"]
+    end
+
+    subgraph SelfAssess ["Self-Assessment"]
+        RateSkills["Learner rates own<br/>proficiency per skill<br/>(B1 / B2 / C1)"]
+    end
+
+    Skip["Skip onboarding<br/>Default: B1 all skills"]
+
+    InitProgress["Initialize user_progress<br/>per skill: currentLevel,<br/>scaffoldLevel = 1"]
+    InitSpider["Initialize Spider Chart<br/>with baseline scores"]
+    RecommendPath["Suggest learning pathway<br/>based on weakest skill"]
+
+    Dashboard["Redirect to<br/>Dashboard"]
+
+    Start --> OnboardingChoice
+    OnboardingChoice -->|"Take test"| SelectLevel --> TakeTest
+    TakeTest --> GradeObjective
+    TakeTest --> GradeSubjective
+    GradeObjective --> WaitResults
+    GradeSubjective --> WaitResults
+    WaitResults --> InitProgress
+
+    OnboardingChoice -->|"Self-assess"| RateSkills --> InitProgress
+    OnboardingChoice -->|"Skip"| Skip --> InitProgress
+
+    InitProgress --> InitSpider --> RecommendPath --> Dashboard
+
+    classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef process fill:#2e7d32,stroke:#1b5e20,color:#fff
+    classDef result fill:#f57c00,stroke:#e65100,color:#fff
+
+    class Start,Dashboard start
+    class SelectLevel,TakeTest,GradeObjective,GradeSubjective,WaitResults,RateSkills,Skip process
+    class InitProgress,InitSpider,RecommendPath result
+```
+
 ### 3.4 FE-03: Practice Mode — Listening
 
 #### 3.4.1 Get Listening Practice Question
@@ -1103,6 +1245,61 @@ flowchart TB
 - **Input**: `questionId`, `answer` (map of questionId → selected answer)
 - **Processing**: Compare against answer key → calculate score → derive band → update progress
 - **Output**: Score (0–10), band, correct/incorrect per item
+
+#### 3.5.3 Learner Practice Flow Diagram
+
+```mermaid
+flowchart TB
+    Start(["Learner opens<br/>Practice Mode"])
+
+    SkillSelect["Select skill<br/>Listening / Reading /<br/>Writing / Speaking"]
+
+    ChooseQuestion["Browse questions<br/>filtered by level"]
+
+    StartSession["Start practice session<br/>(focused full-screen)"]
+
+    subgraph AnswerPhase ["Answer Phase"]
+        ViewQuestion["View question<br/>with scaffolding applied"]
+        SubmitAnswer["Submit answer"]
+    end
+
+    SkillCheck{"Skill type?"}
+
+    AutoGrade["Auto-grade immediately<br/>Compare with answer key<br/>Score calculated inline"]
+
+    AIGrade["Dispatch to AI grading<br/>LPUSH to Redis queue<br/>Status: processing"]
+
+    ViewResult["View result<br/>Score, band, feedback"]
+
+    WaitAI["Wait for AI result<br/>(SSE notification)"]
+
+    ViewAIResult["View AI feedback<br/>Criteria scores,<br/>grammar errors"]
+
+    UpdateProgress["Progress updated<br/>Sliding window recalc<br/>Scaffold level check"]
+
+    Continue{"Continue<br/>practicing?"}
+
+    End(["Return to<br/>Practice selection"])
+
+    Start --> SkillSelect --> ChooseQuestion --> StartSession
+    StartSession --> ViewQuestion --> SubmitAnswer
+    SubmitAnswer --> SkillCheck
+    SkillCheck -->|"Listening / Reading"| AutoGrade --> ViewResult
+    SkillCheck -->|"Writing / Speaking"| AIGrade --> WaitAI --> ViewAIResult
+    ViewResult --> UpdateProgress
+    ViewAIResult --> UpdateProgress
+    UpdateProgress --> Continue
+    Continue -->|"Yes"| SkillSelect
+    Continue -->|"No"| End
+
+    classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef action fill:#2e7d32,stroke:#1b5e20,color:#fff
+    classDef ai fill:#e65100,stroke:#bf360c,color:#fff
+
+    class Start,End start
+    class SkillSelect,ChooseQuestion,StartSession,ViewQuestion,SubmitAnswer,ViewResult,Continue action
+    class AutoGrade,AIGrade,WaitAI,ViewAIResult,UpdateProgress ai
+```
 
 ### 3.6 FE-05: Practice Mode — Writing + AI Grading
 
@@ -1625,6 +1822,49 @@ flowchart TB
   4. Remaining sessions distributed proportionally to `gapToTarget`
   5. Content selection: Writing/Speaking → prioritize weakest criteria; Listening/Reading → prioritize most-failed question types
 - **Output**: Weekly plan with recommended exercises per skill, difficulty level, and estimated duration
+
+#### 3.11.2 Class Management Flow Diagram
+
+```mermaid
+flowchart TB
+    subgraph InstructorFlow ["Instructor"]
+        IStart(["Instructor creates class"])
+        CreateClass["POST /api/classes<br/>Auto-generate invite code"]
+        ShareCode["Share invite code<br/>with learners"]
+        ViewDashboard["View Class Dashboard<br/>Per-skill averages,<br/>at-risk students (avg < 5.0)"]
+        ViewMember["View Member Progress<br/>Individual scores, trends,<br/>goal status"]
+        GiveFeedback["Post feedback<br/>to specific learner"]
+        RotateCode["Rotate invite code<br/>(invalidate old code)"]
+        RemoveMember["Remove member<br/>from class"]
+    end
+
+    subgraph LearnerFlow ["Learner"]
+        LStart(["Learner receives<br/>invite code"])
+        JoinClass["POST /api/classes/join<br/>Enter invite code"]
+        ViewFeedback["View instructor<br/>feedback"]
+        LeaveClass["Leave class"]
+    end
+
+    IStart --> CreateClass --> ShareCode
+    ShareCode --> LStart
+    LStart --> JoinClass
+
+    CreateClass --> ViewDashboard
+    ViewDashboard --> ViewMember
+    ViewDashboard --> GiveFeedback
+    ViewDashboard --> RotateCode
+    ViewDashboard --> RemoveMember
+
+    JoinClass --> ViewFeedback
+    JoinClass --> LeaveClass
+    GiveFeedback --> ViewFeedback
+
+    classDef instructor fill:#e65100,stroke:#bf360c,color:#fff
+    classDef learner fill:#1565c0,stroke:#0d47a1,color:#fff
+
+    class IStart,CreateClass,ShareCode,ViewDashboard,ViewMember,GiveFeedback,RotateCode,RemoveMember instructor
+    class LStart,JoinClass,ViewFeedback,LeaveClass learner
+```
 
 ### 3.12 FE-11: Goal Setting
 

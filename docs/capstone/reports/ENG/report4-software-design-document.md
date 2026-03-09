@@ -78,6 +78,7 @@ flowchart TB
     subgraph DataLayer ["Data Layer"]
         PG["PostgreSQL 17<br/>Primary Data Store"]
         Redis["Redis 7.2+<br/>Queue + Locks + Cache"]
+        MinIO["MinIO<br/>S3-compatible<br/>Object Storage"]
     end
 
     subgraph External ["External Services"]
@@ -105,6 +106,7 @@ flowchart TB
 
     HealthMod -->|"ping"| PG
     HealthMod -->|"ping"| Redis
+    Modules -->|"S3 API<br/>TCP 9000"| MinIO
 
     classDef client fill:#1565c0,stroke:#0d47a1,color:#fff
     classDef api fill:#2e7d32,stroke:#1b5e20,color:#fff
@@ -115,7 +117,7 @@ flowchart TB
     class WebApp,MobileApp client
     class Gateway,AuthMod,SubMod,ExamMod,QuestMod,ProgMod,ClassMod,UserMod,KPMod,HealthMod api
     class Worker,WritingPipe,SpeakingPipe worker
-    class PG,Redis data
+    class PG,Redis,MinIO data
     class GroqLLM,GroqSTT external
 ```
 
@@ -127,6 +129,7 @@ flowchart TB
         subgraph DockerCompose ["Docker Compose"]
             PGContainer["PostgreSQL 17<br/>Container<br/>Port 5432"]
             RedisContainer["Redis 7.2 Alpine<br/>Container<br/>Port 6379"]
+            MinIOContainer["MinIO<br/>Container<br/>Port 9000/9001"]
         end
 
         subgraph BunRuntime ["Bun Runtime"]
@@ -149,6 +152,7 @@ flowchart TB
 
     BackendAPI -->|"TCP 5432"| PGContainer
     BackendAPI -->|"TCP 6379"| RedisContainer
+    BackendAPI -->|"S3 API 9000"| MinIOContainer
     GradingWorker -->|"TCP 5432"| PGContainer
     GradingWorker -->|"TCP 6379"| RedisContainer
     GradingWorker -->|"HTTPS"| Groq
@@ -158,7 +162,7 @@ flowchart TB
     classDef runtime fill:#2e7d32,stroke:#1b5e20,color:#fff
     classDef external fill:#e65100,stroke:#bf360c,color:#fff
 
-    class PGContainer,RedisContainer container
+    class PGContainer,RedisContainer,MinIOContainer container
     class BackendAPI,GradingAPI,GradingWorker,FrontendDev runtime
     class Groq external
 ```
@@ -184,7 +188,7 @@ flowchart TB
 | Linting | Biome | latest | Code formatting and linting enforcement |
 | Testing (Backend) | bun:test | — | Unit and integration testing |
 | Testing (Grading) | pytest | — | Grading service unit tests |
-| Containerization | Docker Compose | — | Local development PostgreSQL + Redis |
+| Containerization | Docker Compose | — | Local development PostgreSQL + Redis + MinIO |
 
 ---
 
@@ -787,6 +791,9 @@ erDiagram
     users ||--o{ class_members : "enrolls in"
     users ||--o{ instructor_feedback : "gives feedback"
     users ||--o{ instructor_feedback : "receives feedback"
+    users ||--o{ notifications : "receives"
+    users ||--o{ device_tokens : "registers devices"
+    users ||--o{ user_placements : "has placements"
     users ||--o{ questions : "creates"
     users ||--o{ exams : "creates"
 
@@ -807,6 +814,9 @@ erDiagram
 
     classes ||--o{ class_members : "enrolls members"
     classes ||--o{ instructor_feedback : "contains feedback"
+    vocabulary_topics ||--o{ vocabulary_words : "contains"
+    vocabulary_words ||--o{ user_vocabulary_progress : "tracked by"
+    users ||--o{ user_vocabulary_progress : "learns words"
 
     users {
         uuid id PK
@@ -1002,6 +1012,59 @@ erDiagram
         uuid submission_id FK "nullable"
         timestamp created_at
     }
+
+    vocabulary_topics {
+        uuid id PK
+        varchar name UK "unique max 200"
+        text description "not null"
+        varchar icon_key "nullable"
+        integer sort_order "default 0"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    vocabulary_words {
+        uuid id PK
+        uuid topic_id FK "not null"
+        varchar word "max 100 not null"
+        varchar phonetic "max 100 nullable"
+        varchar audio_url "max 500 nullable"
+        varchar part_of_speech "max 20 not null"
+        text definition "not null"
+        text explanation "not null"
+        jsonb examples "string array default []"
+        integer sort_order "default 0"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    user_vocabulary_progress {
+        uuid user_id PK "FK to users"
+        uuid word_id PK "FK to vocabulary_words"
+        boolean known "default false"
+        timestamp last_reviewed_at "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    notifications {
+        uuid id PK
+        uuid user_id FK "not null"
+        enum type "notification_type enum"
+        varchar title "max 255 not null"
+        text body "nullable"
+        jsonb data "nullable"
+        timestamp read_at "nullable"
+        timestamp created_at
+    }
+
+    device_tokens {
+        uuid id PK
+        uuid user_id FK "not null"
+        text token UK "unique not null"
+        varchar platform "max 10 not null"
+        timestamp created_at
+    }
 ```
 
 ### 4.2 Index Strategy
@@ -1023,6 +1086,10 @@ erDiagram
 | `class_members_class_user_idx` | class_members | (class_id, user_id) | Unique | Prevent duplicate enrollment |
 | `exam_answers_session_question_idx` | exam_answers | (session_id, question_id) | Unique | One answer per question per session |
 | `feedback_class_to_idx` | instructor_feedback | (class_id, to_user_id) | Composite | Feedback lookup for learner in class |
+| `vocabulary_words_topic_idx` | vocabulary_words | topic_id | B-Tree | Fast word lookup by topic |
+| `notifications_user_idx` | notifications | (user_id, created_at) | Composite | User notification timeline |
+| `notifications_unread_idx` | notifications | user_id | Partial (read_at IS NULL) | Fast unread notification count |
+| `device_tokens_user_idx` | device_tokens | user_id | B-Tree | Device lookup for push notifications |
 
 ### 4.3 JSONB Schema Design
 
@@ -1089,6 +1156,12 @@ ExamBlueprint = {
 | `exam_status` | `in_progress`, `submitted`, `completed`, `abandoned` | `exam_sessions.status` |
 | `streak_direction` | `up`, `down`, `neutral` | `user_progress.streak_direction` |
 | `knowledge_point_category` | `grammar`, `vocabulary`, `strategy` | `knowledge_points.category` |
+| `notification_type` | `grading_completed`, `feedback_received`, `class_invite`, `goal_achieved`, `system` | `notifications.type` |
+| `exam_type` | `practice`, `placement`, `mock` | `exams.type` |
+| `exam_skill` | `listening`, `reading`, `writing`, `speaking`, `mixed` | `exams.skill` |
+| `placement_status` | `completed`, `skipped` | `user_placements.status` |
+| `placement_source` | `self_assess`, `placement`, `skipped` | `user_placements.source` |
+| `placement_confidence` | `high`, `medium`, `low` | `user_placements.confidence` |
 
 ---
 
@@ -1286,7 +1359,69 @@ flowchart TB
 
 ---
 
-## 7. References
+## 8. Product & Technology Summary
+
+### 8.1 Third-Party Services
+
+| Service | Provider | Purpose | Integration |
+|---------|----------|---------|-------------|
+| LLM Grading | Groq (Llama 3.3 70B) | AI-powered Writing/Speaking assessment against VSTEP rubric | HTTPS REST via LiteLLM |
+| Speech-to-Text | Groq (Whisper Large V3 Turbo) | Audio transcription for Speaking submissions | HTTPS REST via LiteLLM |
+| Object Storage | MinIO (S3-compatible) | Audio file storage (Speaking recordings), user avatars | S3 API via Bun S3Client |
+| Authentication | Self-hosted (JWT) | Access/refresh token pair with rotation, reuse detection | Jose library (HS256) |
+| Password Hashing | Bun built-in | Argon2id password hashing | Bun.password API |
+
+### 8.2 Development Technology Stack
+
+| Layer | Technology | Version | Language | Purpose |
+|-------|-----------|---------|----------|---------|
+| **Frontend** | React | 19 | TypeScript | UI component library (SPA) |
+| | Vite | 7 | — | Build tool, dev server, HMR |
+| | TanStack Router | latest | TypeScript | File-based routing with type safety |
+| | TanStack Query | latest | TypeScript | Server state management, caching |
+| | Tailwind CSS | 4 | — | Utility-first CSS framework |
+| | shadcn/ui | — | TypeScript | UI component primitives |
+| | Recharts | latest | TypeScript | Charts (Spider Chart, Activity Heatmap) |
+| **Backend** | Bun | latest | TypeScript | High-performance JS/TS runtime |
+| | Elysia | 1.x | TypeScript | Type-safe REST API framework with OpenAPI |
+| | Drizzle ORM | latest | TypeScript | Type-safe SQL query builder with migrations |
+| | Jose | latest | TypeScript | JWT signing and verification |
+| | TypeBox / Zod | latest | TypeScript | Schema validation at API boundaries |
+| **Mobile** | React Native | latest | TypeScript | Cross-platform mobile (Android-first) |
+| **AI/Grading** | Python | 3.11+ | Python | Grading microservice runtime |
+| | FastAPI | latest | Python | Health check and admin API |
+| | LiteLLM | latest | Python | Unified LLM/STT provider interface |
+| | Redis (BRPOP) | — | — | Task queue consumer |
+| **Database** | PostgreSQL | 17 | SQL | Primary relational data store (JSONB) |
+| | Redis | 7.2+ | — | Queue, cache, distributed locks |
+| **Linting** | Biome | latest | — | Code formatting and lint enforcement |
+| **Testing** | bun:test | — | TypeScript | Backend unit + integration tests |
+| | pytest | — | Python | Grading service tests |
+
+### 8.3 Source Code Management & DevOps
+
+| Tool | Purpose | Details |
+|------|---------|---------|
+| GitHub | Source code hosting | Single monorepo (`VSTEP/`) containing all 3 apps |
+| Git | Version control | Feature branches, PR-based review, conventional commits |
+| GitHub Issues | Task tracking | Sprint backlog, bug tracking |
+| GitHub Projects | Project management | Kanban board for sprint planning |
+| Docker / Docker Compose | Containerization | Local dev: PostgreSQL, Redis, MinIO. Production: all services |
+| Biome CI | Code quality gate | `bun run check` on all PRs (lint + format) |
+
+### 8.4 Deployment Environments
+
+| Environment | Purpose | Infrastructure | URL |
+|-------------|---------|---------------|-----|
+| **Local Development** | Individual developer setup | Docker Compose (PostgreSQL, Redis, MinIO) + Bun dev server + Vite dev server | `localhost:3001` (API), `localhost:5173` (Web) |
+| **Docker Compose (Full)** | Integration testing, demo | All services containerized: Backend, Grading, PostgreSQL, Redis, MinIO | `localhost:4000` (API), `localhost:8000` (Grading) |
+| **Production** | Live deployment (planned) | Cloud VM or container orchestration (to be determined post-capstone) | TBD |
+
+*Note: Production deployment infrastructure will be finalized based on scaling requirements after the capstone pilot phase.*
+
+---
+
+## 9. References
 
 | # | Document | Description |
 |---|----------|-------------|

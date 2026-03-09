@@ -343,3 +343,83 @@ D — Do · R — Review · S — Support · I — Informed · (blank) — Omitt
 | Project Management | GitHub Issues, GitHub Projects |
 | Communication | Discord (daily), Google Meet (sprint ceremonies) |
 | API Documentation | OpenAPI (auto-generated from Elysia route schemas) |
+
+
+---
+
+## 7. Team Contribution & Effort Tracking (Week 1–8)
+
+### 7.1 Member Roles & Responsibilities
+
+| Member | Student ID | Role | Primary Responsibilities |
+|--------|-----------|------|--------------------------|
+| Hoàng Văn Anh Nghĩa | SE172605 | Team Leader, Backend & AI Developer | Backend architecture, all backend modules, AI grading service, database design, technical specs, project management, documentation |
+| Nguyễn Minh Khôi | SE172625 | Mobile Developer | React Native mobile app, API integration, audio recording (Speaking) |
+| Nguyễn Nhật Phát | SE172607 | Frontend Developer | Web UI (auth, practice mode, mock test, submissions), API integration |
+| Nguyễn Trần Tấn Phát | SE173198 | Frontend Developer | Web UI (progress dashboard, vocabulary, exam results, components), type sync |
+
+### 7.2 Effort Summary (Week 1–8)
+
+| Member | Development (hours) | Documentation (hours) | Total (hours) | Contribution (%) | Status |
+|--------|--------------------:|----------------------:|--------------:|------------------:|--------|
+| Hoàng Văn Anh Nghĩa | 96 | 36 | 132 | 30% | Active (Week 1–8) |
+| Nguyễn Minh Khôi | 82 | 12 | 94 | 22% | Active (Week 1–8) |
+| Nguyễn Nhật Phát | 84 | 14 | 98 | 24% | Active (Week 1–8) |
+| Nguyễn Trần Tấn Phát | 80 | 16 | 96 | 24% | Active (Week 1–8) |
+| **Total** | **342** | **78** | **420** | **100%** | |
+
+*Man-hours estimated based on weekly sprint reports and git activity logs.*
+
+### 7.3 Detailed Task Breakdown
+
+| Week | Member | Task | Category | Hours | Completion |
+|------|--------|------|----------|------:|------------|
+| 1–2 | Nghĩa | Project planning, WBS, technical specs (20 files) | Documentation | 18 | Completed |
+| 1–2 | Nghĩa | Database schema design (Drizzle ORM + migrations) | Development | 8 | Completed |
+| 1–2 | Nghĩa | Backend Phase 1: Auth module (JWT, RBAC, refresh rotation) | Development | 10 | Completed |
+| 1–2 | Khôi | React Native project setup, navigation structure | Development | 14 | Completed |
+| 1–2 | Khôi | Mobile: Research & prototype audio recording | Development | 6 | Completed |
+| 1–2 | Phát NN | Frontend project setup (React 19 + Vite 7 + TanStack Router) | Development | 12 | Completed |
+| 1–2 | Phát NN | Frontend: Layout system, route guards, API client | Development | 8 | Completed |
+| 1–2 | Phát NTT | UI component library setup (shadcn/ui + Tailwind) | Development | 14 | Completed |
+| 1–2 | Phát NTT | Report 1–2 initial draft | Documentation | 6 | Completed |
+| 3–4 | Nghĩa | Backend Phase 2–3: Questions, Submissions, Auto-grading | Development | 16 | Completed |
+| 3–4 | Nghĩa | Grading service: Writing pipeline (LLM), Speaking pipeline (STT + LLM) | Development | 12 | Completed |
+| 3–4 | Nghĩa | Backend Phase 4: Progress tracking, sliding window | Development | 8 | Completed |
+| 3–4 | Khôi | Mobile: Auth screens, dashboard, practice mode UI | Development | 16 | Completed |
+| 3–4 | Khôi | Mobile: API integration, token management | Development | 6 | Completed |
+| 3–4 | Phát NN | Frontend: Auth pages (login, register, forgot password) | Development | 10 | Completed |
+| 3–4 | Phát NN | Frontend: Practice mode (4 skills), exercise flow | Development | 14 | Completed |
+| 3–4 | Phát NTT | Frontend: Progress dashboard (Spider Chart), exam list | Development | 16 | Completed |
+| 3–4 | Phát NTT | Frontend: Result pages, score display components | Development | 6 | Completed |
+| 5–6 | Nghĩa | Backend Phase 5–9: Exams, sessions, goals, classes, review workflow | Development | 14 | Completed |
+| 5–6 | Nghĩa | Backend: Vocabulary module, notifications, uploads (S3/MinIO) | Development | 10 | Completed |
+| 5–6 | Nghĩa | Report 1–4 (ENG + VI versions) | Documentation | 10 | Completed |
+| 5–6 | Khôi | Mobile: Exam session, Speaking recording, push notifications | Development | 18 | Completed |
+| 5–6 | Khôi | Mobile: Report sections (mobile architecture) | Documentation | 6 | Completed |
+| 5–6 | Phát NN | Frontend: Mock test UI (timed exam), submission history | Development | 18 | Completed |
+| 5–6 | Phát NN | Frontend: Submission detail, feedback display | Development | 6 | Completed |
+| 5–6 | Phát NTT | Frontend: Vocabulary pages, progress history (heatmap) | Development | 16 | Completed |
+| 5–6 | Phát NTT | Report 3–4 screen descriptions, UI screenshots | Documentation | 6 | Completed |
+| 7–8 | Nghĩa | Backend: Knowledge points, practice session, learning path | Development | 10 | Completed |
+| 7–8 | Nghĩa | Integration testing, seed data pipeline, Docker setup | Development | 8 | Completed |
+| 7–8 | Nghĩa | Report updates, ERD diagrams, activity diagrams | Documentation | 8 | Completed |
+| 7–8 | Khôi | Mobile: Offline caching, device check, platform polish | Development | 16 | Completed |
+| 7–8 | Khôi | Mobile: Report sections (deployment, testing) | Documentation | 6 | Completed |
+| 7–8 | Phát NN | Frontend: Admin pages (users, questions, exams, submissions) | Development | 16 | Completed |
+| 7–8 | Phát NN | Frontend: Report sections (screen flows, test cases) | Documentation | 14 | Completed |
+| 7–8 | Phát NTT | Frontend: Reading answer detail, chart components, UI polish | Development | 14 | Completed |
+| 7–8 | Phát NTT | Report: Tech stack tables, component docs | Documentation | 4 | Completed |
+
+*Hours estimated based on sprint velocity and task complexity. Each sprint = 2 weeks.*
+
+### 7.4 Key Deliverables by Member
+
+| Member | Key Deliverables | Lines of Code (approx.) |
+|--------|-----------------|------------------------:|
+| Nghĩa | Backend (all 12 modules), Grading service (Python), DB schema (24 tables), 20 spec files, 8 reports (ENG+VI), seed data, Docker config | ~18,500 |
+| Khôi | Mobile app (React Native Android), audio recording, push notifications, offline caching, exam session | ~14,200 |
+| Phát NN | Auth UI, practice mode (4 skills), mock test, admin pages (4 CRUD), submission history, API client | ~12,800 |
+| Phát NTT | Progress dashboard (Spider Chart + Heatmap), vocabulary UI, chart components, exam results, UI component library | ~11,600 |
+
+*Lines of code estimated from git insertions − deletions, excluding auto-generated files and documentation.*
