@@ -48,7 +48,7 @@ class GrammarError(BaseModel):
 
 
 class Result(BaseModel):
-    """Matches backend src/db/types/grading.ts AIGradeResult exactly.
+    """Matches backend src/db/types/grading.ts AIResult exactly.
     Serialized as camelCase JSONB in submission_details.result"""
 
     model_config = ConfigDict(populate_by_name=True)
@@ -57,9 +57,11 @@ class Result(BaseModel):
     band: str | None = None
     criteria_scores: dict[str, float] = Field(alias="criteriaScores")
     feedback: str
-    grammar_errors: list[GrammarError] | None = Field(None, alias="grammarErrors")
+    grammar_errors: list[GrammarError] | None = Field(
+        default=None, alias="grammarErrors"
+    )
     confidence: Literal["high", "medium", "low"]
-    graded_at: str | None = Field(None, alias="gradedAt")
+    graded_at: str | None = Field(default=None, alias="gradedAt")
 
 
 class WritingScore(BaseModel):
