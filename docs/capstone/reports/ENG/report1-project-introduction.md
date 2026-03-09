@@ -464,9 +464,9 @@ flowchart TB
 | Task Package | Description | Start | End |
 |--------------|-------------|-------|-----|
 | TP1 | Web Application Development | 01/01/2026 | 28/02/2026 |
-| TP2 | Mobile Application Development | 15/01/2026 | 15/03/2026 |
+| TP2 | Mobile Application Development | 15/01/2026 | 07/04/2026 |
 | TP3 | Assessment Engine | 01/02/2026 | 31/03/2026 |
-| TP4 | Personalized Learning Module | 15/02/2026 | 15/04/2026 |
-| TP5 | Testing & Deployment | 01/04/2026 | 30/04/2026 |
+| TP4 | Personalized Learning Module | 15/02/2026 | 07/04/2026 |
+| TP5 | Testing & Deployment | 01/04/2026 | 20/04/2026 |
 
 (End of file)
