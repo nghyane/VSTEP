@@ -87,3 +87,28 @@ export const ActivityResponse = t.Object({
   totalExercises: t.Integer(),
   totalStudyTimeMinutes: t.Integer(),
 });
+
+export const LearningPathSkill = t.Object({
+  skill: t.String(),
+  currentLevel: t.String(),
+  targetLevel: t.String(),
+  sessionsPerWeek: t.Integer(),
+  focusArea: t.Nullable(t.String()),
+  recommendedLevel: t.String(),
+  estimatedMinutes: t.Integer(),
+  weakTopics: t.Array(
+    t.Object({
+      id: t.String(),
+      name: t.String(),
+      masteryScore: t.Number(),
+    }),
+  ),
+  priority: t.Integer(),
+});
+
+export const LearningPathResponse = t.Object({
+  weeklyPlan: t.Array(LearningPathSkill),
+  totalMinutesPerWeek: t.Integer(),
+  projectedImprovement: t.Nullable(t.String()),
+});
+export type LearningPathResponse = typeof LearningPathResponse.static;

@@ -9,6 +9,7 @@ import { health } from "@/modules/health";
 import { knowledgePoints } from "@/modules/knowledge-points";
 import { devicesModule, notificationsModule } from "@/modules/notifications";
 import { onboarding } from "@/modules/onboarding";
+import { practice } from "@/modules/practice";
 import { progress } from "@/modules/progress";
 import { questions } from "@/modules/questions";
 import { submissions } from "@/modules/submissions";
@@ -53,6 +54,10 @@ const api = new Elysia({ prefix: "/api" })
               "Learner onboarding: placement test, self-assessment, or skip",
           },
           {
+            name: "Practice",
+            description: "Adaptive practice question selection",
+          },
+          {
             name: "Vocabulary",
             description: "Vocabulary topics, words, and learning progress",
           },
@@ -89,6 +94,7 @@ const api = new Elysia({ prefix: "/api" })
   .use(onboarding)
   .use(vocabulary)
   .use(uploads)
+  .use(practice)
   .use(notificationsModule)
   .use(devicesModule);
 

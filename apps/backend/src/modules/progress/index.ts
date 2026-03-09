@@ -9,6 +9,7 @@ import { Elysia, t } from "elysia";
 import { authPlugin } from "@/plugins/auth";
 import { activity } from "./activity";
 import { create, remove, update } from "./goals";
+import { learningPath } from "./learning-path";
 import { bySkill, overview, spiderChart } from "./overview";
 import {
   ActivityQuery,
@@ -16,6 +17,7 @@ import {
   Goal,
   GoalBody,
   GoalUpdateBody,
+  LearningPathResponse,
   ProgressOverview,
   ProgressSkillDetail,
   ProgressSpiderChart,
@@ -58,6 +60,17 @@ export const progress = new Elysia({
       summary: "Get activity streak",
       description:
         "Return consecutive-day streak count and list of active days.",
+      security: [{ bearerAuth: [] }],
+    },
+  })
+
+  .get("/learning-path", ({ user }) => learningPath(user.sub), {
+    auth: true,
+    response: { 200: LearningPathResponse, ...AuthErrors },
+    detail: {
+      summary: "Get personalized learning path",
+      description:
+        "Returns a weekly learning plan based on skill gaps, weak topics, and target goals.",
       security: [{ bearerAuth: [] }],
     },
   })
