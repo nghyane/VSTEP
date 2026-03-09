@@ -75,47 +75,62 @@ async def complete(messages: list[dict]) -> str:
 
     # Primary
     model = settings.llm_model
-    for attempt in range(1, settings.llm_retries + 1):
-        try:
-            if model.startswith("cloudflare/"):
-                return await _call_cloudflare(
-                    messages=messages,
-                    model=model.removeprefix("cloudflare/"),
-                    account_id=settings.llm_account_id,
-                )
-            else:
-                return await _call_openai(
-                    messages=messages,
-                    model=model.removeprefix("openai/"),
-                    api_base=settings.llm_api_base,
-                    api_key=settings.llm_api_key,
-                    timeout=settings.llm_timeout,
-                )
-        except Exception as e:
-            last_error = e
-            logger.warning("LLM primary failed", model=model, attempt=attempt, error=str(e))
-
-    # Fallback
-    if settings.llm_fallback_model:
-        fb = settings.llm_fallback_model
+    primary_ready = (
+        model.startswith("cloudflare/") and settings.llm_account_id and settings.llm_api_key
+    ) or (
+        not model.startswith("cloudflare/") and settings.llm_api_base and settings.llm_api_key
+    )
+    if primary_ready:
         for attempt in range(1, settings.llm_retries + 1):
             try:
-                if fb.startswith("cloudflare/"):
+                if model.startswith("cloudflare/"):
                     return await _call_cloudflare(
                         messages=messages,
-                        model=fb.removeprefix("cloudflare/"),
-                        account_id=settings.llm_fallback_account_id or settings.llm_account_id,
+                        model=model.removeprefix("cloudflare/"),
+                        account_id=settings.llm_account_id,
                     )
                 else:
                     return await _call_openai(
                         messages=messages,
-                        model=fb.removeprefix("openai/"),
-                        api_base=settings.llm_fallback_api_base or settings.llm_api_base,
-                        api_key=settings.llm_fallback_api_key or settings.llm_api_key,
+                        model=model.removeprefix("openai/"),
+                        api_base=settings.llm_api_base,
+                        api_key=settings.llm_api_key,
                         timeout=settings.llm_timeout,
                     )
             except Exception as e:
                 last_error = e
-                logger.warning("LLM fallback failed", model=fb, attempt=attempt, error=str(e))
+                logger.warning("LLM primary failed", model=model, attempt=attempt, error=str(e))
+
+    # Fallback
+    fb = settings.llm_fallback_model
+    if fb:
+        fb_account = settings.llm_fallback_account_id or settings.llm_account_id
+        fb_key = settings.llm_fallback_api_key or settings.llm_api_key
+        fb_base = settings.llm_fallback_api_base or settings.llm_api_base
+        fallback_ready = (
+            fb.startswith("cloudflare/") and fb_account and fb_key
+        ) or (
+            not fb.startswith("cloudflare/") and fb_base and fb_key
+        )
+        if fallback_ready:
+            for attempt in range(1, settings.llm_retries + 1):
+                try:
+                    if fb.startswith("cloudflare/"):
+                        return await _call_cloudflare(
+                            messages=messages,
+                            model=fb.removeprefix("cloudflare/"),
+                            account_id=fb_account,
+                        )
+                    else:
+                        return await _call_openai(
+                            messages=messages,
+                            model=fb.removeprefix("openai/"),
+                            api_base=fb_base,
+                            api_key=fb_key,
+                            timeout=settings.llm_timeout,
+                        )
+                except Exception as e:
+                    last_error = e
+                    logger.warning("LLM fallback failed", model=fb, attempt=attempt, error=str(e))
 
     raise LLMError(f"All LLM providers failed: {last_error}")
