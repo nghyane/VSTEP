@@ -319,51 +319,49 @@ The system is designed with two main modules:
 
 ### 6.1 Major Features
 
-**Overview:** 16 features divided into 2 phases to ensure delivery within the 4-month timeline.
+**Overview:** 15 features divided into 2 phases to ensure delivery within the 4-month timeline.
 
 ---
 
-**PHASE 1 - MVP (Months 1-3): 11 Core Features**
+**PHASE 1 - MVP (Months 1-3): 9 Core Features**
 
 *Focusing on learning experience and AI Grading*
 
-FE-01: User Authentication - Registration, login, profile management with Learner/Instructor/Admin roles. Email/password authentication; OAuth (Google) is optional.
+FE-01: Placement Test - Initial proficiency assessment for four skills (Listening, Speaking, Reading, Writing). Results used to initialize Spider Chart and recommend appropriate learning pathways.
 
-FE-02: Placement Test - Initial proficiency assessment for four skills (Listening, Speaking, Reading, Writing). Results used to initialize Spider Chart and recommend appropriate learning pathways.
+FE-02: Practice Mode - Listening - Listening skill practice with Adaptive Scaffolding (Full text - Highlight - Pure audio). Including exercise types: dictation, multiple choice, content summarization.
 
-FE-03: Practice Mode - Listening - Listening skill practice with Adaptive Scaffolding (Full text - Highlight - Pure audio). Including exercise types: dictation, multiple choice, content summarization.
+FE-03: Practice Mode - Reading - Reading skill practice with VSTEP-format question types: True/False/Not Given, Multiple Choice, Matching Headings, Fill in the Blanks.
 
-FE-04: Practice Mode - Reading - Reading skill practice with VSTEP-format question types: True/False/Not Given, Multiple Choice, Matching Headings, Fill in the Blanks.
+FE-04: Practice Mode - Writing + AI Grading - Writing skill practice with fast AI feedback. Using LLM API (GPT-5.4 via OpenAI-compatible proxy, fallback: Llama 3.3 70B via Cloudflare Workers AI) to evaluate grammar, vocabulary, coherence, and task achievement according to VSTEP rubric. SLA timeout: 20 minutes.
 
-FE-05: Practice Mode - Writing + AI Grading - Writing skill practice with fast AI feedback. Using LLM API (GPT-5.4 via OpenAI-compatible proxy, fallback: Llama 3.3 70B via Cloudflare Workers AI) to evaluate grammar, vocabulary, coherence, and task achievement according to VSTEP rubric. SLA timeout: 20 minutes.
+FE-05: Practice Mode - Speaking + AI Grading - Speaking skill practice with recording and AI feedback. Integrating Speech-to-Text for transcription, then using LLM to evaluate pronunciation, fluency, and content. SLA timeout: 60 minutes.
 
-FE-06: Practice Mode - Speaking + AI Grading - Speaking skill practice with recording and AI feedback. Integrating Speech-to-Text for transcription, then using LLM to evaluate pronunciation, fluency, and content. SLA timeout: 60 minutes.
+FE-06: Mock Test Mode - Full four-skill mock test following VSTEP format and timing. Results compiled into detailed reports with scores per skill.
 
-FE-07: Mock Test Mode - Full four-skill mock test following VSTEP format and timing. Results compiled into detailed reports with scores per skill.
+FE-07: Human Grading - Instructor interface for scoring with VSTEP rubric. Instructor reviews Writing/Speaking submissions, provides detailed comments, and can override AI scores if necessary.
 
-FE-08: Human Grading - Instructor interface for scoring with VSTEP rubric. Instructor reviews Writing/Speaking submissions, provides detailed comments, and can override AI scores if necessary.
+FE-08: Progress Tracking - Spider Chart displaying four-skill competency, Sliding Window for progress tracking (average of 10 most recent exercises).
 
-FE-09: Progress Tracking - Spider Chart displaying four-skill competency, Sliding Window for progress tracking (average of 10 most recent exercises).
-
-FE-10: Learning Path - Personalized learning pathway based on Placement Test results and progress. MVP uses rule-based logic: lowest-scoring skill prioritized for exercise recommendations. Phase 2 may upgrade to AI-based (ML/Collaborative Filtering) when sufficient user data is available.
-
-FE-11: Goal Setting - Goal (B1/B2/C1) and timeline establishment. Learners set specific goals (e.g., B2 in 3 months). System displays progress toward goals and predicts achievement likelihood based on current learning pace.
+FE-09: Goal Setting - Goal (B1/B2/C1) and timeline establishment. Learners set specific goals (e.g., B2 in 3 months). System displays progress toward goals and predicts achievement likelihood based on current learning pace.
 
 ---
 
-**PHASE 2 - Enhancement (Month 4): 5 Admin & Support Features**
+**PHASE 2 - Enhancement (Month 4): 6 Admin & Support Features**
 
 *Completing administrative features after core features stabilize*
 
-FE-12: Content Management - Admin manages question bank and exam sets. Supporting import/export in standard formats (Excel, JSON). Admin can create, edit, and categorize questions by skill, topic, and difficulty level.
+FE-10: Content Management - Admin manages question bank and exam sets. Supporting import/export in standard formats (Excel, JSON). Admin can create, edit, and categorize questions by skill, topic, and difficulty level.
 
-FE-13: User Management - Admin manages accounts and permissions. Including functions: bulk account creation, account locking/unlocking, password reset, and role assignment.
+FE-11: User Management - Admin manages accounts and permissions. Including functions: bulk account creation, account locking/unlocking, password reset, and role assignment.
 
-FE-14: Analytics Dashboard - Statistical reporting for Instructors and Admin. Displaying metrics: active user count, assignment completion rate, average score by skill. Supporting time-based filtering and report export.
+FE-12: Analytics Dashboard - Statistical reporting for Instructors and Admin. Displaying metrics: active user count, assignment completion rate, average score by skill. Supporting time-based filtering and report export.
 
-FE-15: Notification System - Learning reminders and exam results notifications. Supporting push notification (mobile), email, and in-app notification.
+FE-13: Notification System - Learning reminders and exam results notifications. Supporting push notification (mobile), email, and in-app notification.
 
-FE-16: Advanced Admin Features - Advanced features: activity history viewing, automatic assignment distribution, notification frequency customization.
+FE-14: Online Payment - Online payment integration for purchasing exam sets. Supporting payment gateways (VNPay, MoMo, ZaloPay) for exam purchases. Full commercial features (subscription plans, premium content packages) will be implemented when scaling commercially.
+
+FE-15: Advanced Admin Features - Advanced features: activity history viewing, automatic assignment distribution, notification frequency customization.
 
 ### 6.2 Limitations & Exclusions
 
@@ -374,8 +372,6 @@ LI-02: AI Grading for Writing and Speaking is a supportive tool, not a complete 
 LI-03: MVP version supports only Vietnamese as the primary interface language. The primary target audience is Vietnamese VSTEP candidates, therefore Vietnamese is prioritized to reduce accessibility barriers. Multi-language support (English) will be added in subsequent versions.
 
 LI-04: Mobile App development targets Android only in the initial phase, with iOS to be added later. According to statistics, Android holds over 70% of smartphone market share in Vietnam, therefore prioritized for initial development. iOS users can still access full functionality through Progressive Web App (PWA).
-
-LI-05: The system does not integrate online payment in the MVP version. The pilot phase will apply freemium model or offline payment through partners (language centers). Payment gateway integration (VNPay, MoMo, ZaloPay) will be implemented when scaling commercially.
 
 # III. References
 
@@ -431,7 +427,7 @@ flowchart TB
 
     subgraph Data ["Data Layer"]
         PG["PostgreSQL 17"]
-        Redis["Redis 7.2+<br/>Queue + Locks"]
+        Redis["Redis+<br/>Queue + Locks"]
         MinIO["MinIO<br/>Object Storage (S3)"]
     end
 
