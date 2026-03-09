@@ -2,6 +2,14 @@ import { ArrowRight01Icon, HeadphonesIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { getObjectiveAnswer } from "@/routes/_learner/exams/-components/questions/useExamAnswers"
 import type { ExamSessionDetail, ListeningContent, SubmissionAnswer } from "@/types/api"
@@ -81,6 +89,61 @@ function ListeningMCQItem({
 	)
 }
 
+// --- Readiness Modal ---
+
+function ReadinessModal({
+	totalSections,
+	totalQuestions,
+	onReady,
+}: {
+	totalSections: number
+	totalQuestions: number
+	onReady: () => void
+}) {
+	const [countdown, setCountdown] = useState(3)
+
+	useEffect(() => {
+		if (countdown <= 0) return
+		const timer = setTimeout(() => setCountdown((c) => c - 1), 1000)
+		return () => clearTimeout(timer)
+	}, [countdown])
+
+	return (
+		<Dialog open>
+			<DialogContent showCloseButton={false} className="sm:max-w-md">
+				<DialogHeader className="items-center text-center">
+					<div className="mx-auto flex size-16 items-center justify-center rounded-full bg-primary/10">
+						<HugeiconsIcon icon={HeadphonesIcon} className="size-8 text-primary" />
+					</div>
+					<DialogTitle className="text-xl">Bạn đã sẵn sàng chưa?</DialogTitle>
+					<DialogDescription className="text-balance text-center">
+						Bài nghe sẽ tự động phát khi bạn bấm bắt đầu.
+						<br />
+						Hãy đảm bảo tai nghe đã được kết nối và âm lượng phù hợp.
+					</DialogDescription>
+				</DialogHeader>
+
+				<div className="rounded-lg border bg-muted/50 p-3 text-center text-sm text-muted-foreground space-y-1">
+					<p>
+						Bài thi gồm <span className="font-medium text-foreground">{totalSections} phần</span> với{" "}
+						<span className="font-medium text-foreground">{totalQuestions} câu hỏi</span>.
+					</p>
+					<p>
+						Âm thanh mỗi phần chỉ phát{" "}
+						<span className="font-medium text-foreground">một lần duy nhất</span>, không thể tua lại.
+					</p>
+				</div>
+
+				<DialogFooter className="sm:justify-center">
+					<Button size="lg" className="w-full" disabled={countdown > 0} onClick={onReady}>
+						{countdown > 0 ? `Sẵn sàng (${countdown}s)` : "Bắt đầu làm bài"}
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	)
+}
+
 // --- Main Panel ---
 
 export function ListeningExamPanel({ questions, answers, onSelectMCQ }: ListeningExamPanelProps) {
@@ -88,7 +151,8 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 	const sections = useMemo(() => [...questions].sort((a, b) => a.part - b.part), [questions])
 
 	const [activeSectionIdx, setActiveSectionIdx] = useState(0)
-	const audioRef = useRef<HTMLAudioElement>(null)
+	const [isReady, setIsReady] = useState(false)
+	const audioRefs = useRef<(HTMLAudioElement | null)[]>([])
 	const [currentTime, setCurrentTime] = useState(0)
 	const [duration, setDuration] = useState(0)
 
@@ -114,47 +178,48 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 		[sections, answers],
 	)
 
-	// Audio event listeners — re-bind when section changes
+	// Sync progress bar display from the active section's audio
 	useEffect(() => {
-		const audio = audioRef.current
-		if (!audio) return
-
-		const onTimeUpdate = () => {
+		const syncFromAudio = () => {
+			const audio = audioRefs.current[activeSectionIdx]
+			if (!audio) return
 			setCurrentTime(audio.currentTime)
 			if (audio.duration && Number.isFinite(audio.duration)) setDuration(audio.duration)
 		}
-		const onLoadedMetadata = () => {
-			if (audio.duration && Number.isFinite(audio.duration)) setDuration(audio.duration)
-		}
-		const onEnded = () => {
-			// Auto-advance to next section when audio finishes
-			setActiveSectionIdx((i) => {
-				if (i < sections.length - 1) return i + 1
-				return i
-			})
-		}
 
-		audio.addEventListener("timeupdate", onTimeUpdate)
-		audio.addEventListener("loadedmetadata", onLoadedMetadata)
-		audio.addEventListener("ended", onEnded)
+		// Immediately sync on section switch
+		syncFromAudio()
 
-		return () => {
-			audio.removeEventListener("timeupdate", onTimeUpdate)
-			audio.removeEventListener("loadedmetadata", onLoadedMetadata)
-			audio.removeEventListener("ended", onEnded)
-		}
-	}, [sections.length])
+		const id = setInterval(syncFromAudio, 250)
+		return () => clearInterval(id)
+	}, [activeSectionIdx])
 
-	// Auto-play when section changes
+	// Set up ended listeners (auto-advance) and start first section when ready
 	useEffect(() => {
-		const audio = audioRef.current
-		if (!audio || !content?.audioUrl) return
+		if (!isReady) return
 
-		setCurrentTime(0)
-		setDuration(0)
-		audio.load()
-		audio.play().catch(() => {})
-	}, [content?.audioUrl])
+		const cleanups: (() => void)[] = []
+
+		for (let i = 0; i < sections.length; i++) {
+			const audio = audioRefs.current[i]
+			if (!audio) continue
+
+			const onEnded = () => {
+				if (i < sections.length - 1) {
+					setActiveSectionIdx(i + 1)
+					audioRefs.current[i + 1]?.play().catch(() => {})
+				}
+			}
+
+			audio.addEventListener("ended", onEnded)
+			cleanups.push(() => audio.removeEventListener("ended", onEnded))
+		}
+
+		// Start playing the first section
+		audioRefs.current[0]?.play().catch(() => {})
+
+		return () => { for (const fn of cleanups) fn() }
+	}, [isReady, sections])
 
 	const handleNextSection = useCallback(() => {
 		setActiveSectionIdx((i) => Math.min(i + 1, sections.length - 1))
@@ -172,6 +237,14 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden">
+			{!isReady && (
+				<ReadinessModal
+					totalSections={sections.length}
+					totalQuestions={sectionsMeta.reduce((sum, s) => sum + s.total, 0)}
+					onReady={() => setIsReady(true)}
+				/>
+			)}
+
 			{/* ---- Questions area (scrollable) ---- */}
 			<div className="flex-1 overflow-y-auto">
 				<div className="mx-auto max-w-3xl space-y-6 p-6">
@@ -211,9 +284,20 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 					</span>
 				</div>
 
-				{/* Hidden audio element — no native controls, prevents seeking */}
-				{/* biome-ignore lint/a11y/useMediaCaption: VSTEP listening exam audio */}
-				<audio ref={audioRef} src={content.audioUrl} preload="metadata" className="hidden" />
+				{/* Hidden audio elements — one per section, play independently */}
+				{sections.map((q, i) => {
+					const c = q.content as ListeningContent
+					return (
+						// biome-ignore lint/a11y/useMediaCaption: VSTEP listening exam audio
+						<audio
+							key={q.id}
+							ref={(el) => { audioRefs.current[i] = el }}
+							src={c.audioUrl}
+							preload="metadata"
+							className="hidden"
+						/>
+					)
+				})}
 			</div>
 
 			{/* ---- Question numbers row ---- */}
