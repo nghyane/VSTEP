@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from app.llm import router
+from app.llm import complete
 from app.models import Result, Task, WritingScore
 from app.prompts import writing as writing_prompt
 from app.scoring import snap, to_band
@@ -36,12 +36,6 @@ async def grade(task: Task) -> Result:
     task_type = answer.task_type
 
     prompt = writing_prompt(text, task_type)
-    response = await router.acompletion(
-        model="grader",
-        messages=[{"role": "user", "content": prompt}],
-        response_format=WritingScore,
-        temperature=0.3,
-    )
-
-    score = WritingScore.model_validate_json(response.choices[0].message.content)
+    content = await complete([{"role": "user", "content": prompt}])
+    score = WritingScore.model_validate_json(content)
     return to_result(score)

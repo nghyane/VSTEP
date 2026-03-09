@@ -5,7 +5,7 @@ from typing import Literal
 from fastapi import APIRouter
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.llm import router
+from app.llm import complete
 from app.logger import logger
 
 
@@ -21,19 +21,9 @@ def extract_json(text: str) -> dict:
     return json.loads(text)
 
 
-async def complete(prompt: str) -> str:
-    """Call LLM with streaming and collect full response."""
-    response = await router.acompletion(
-        model="grader",
-        messages=[{"role": "user", "content": prompt}],
-        stream=True,
-    )
-    chunks = []
-    async for chunk in response:
-        delta = chunk.choices[0].delta.content
-        if delta:
-            chunks.append(delta)
-    return "".join(chunks)
+async def _complete(prompt: str) -> str:
+    """Call LLM and collect response."""
+    return await complete([{"role": "user", "content": prompt}])
 
 ai_router = APIRouter()
 
@@ -71,7 +61,7 @@ async def paraphrase(req: ParaphraseRequest):
     prompt += f"\n\nText:\n{req.text}"
 
     logger.info("paraphrase request for skill=%s len=%d", req.skill, len(req.text))
-    content = await complete(prompt)
+    content = await _complete(prompt)
 
     result = ParaphraseResponse.model_validate(extract_json(content))
     return result
@@ -136,7 +126,7 @@ async def explain(req: ExplainRequest):
     prompt += f"\nText:\n{req.text}"
 
     logger.info("explain request for skill=%s len=%d", req.skill, len(req.text))
-    content = await complete(prompt)
+    content = await _complete(prompt)
 
     result = ExplainResponse.model_validate(extract_json(content))
     return result.model_dump(by_alias=True)

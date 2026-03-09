@@ -4,10 +4,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    llm_model: str = "groq/llama-3.3-70b-versatile"
-    llm_api_base: str | None = None
+    llm_model: str = "cloudflare/@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    llm_account_id: str | None = None
+    llm_api_base: str | None = None  # for openai-compatible
     llm_api_key: str | None = None
     llm_fallback_model: str | None = None
+    llm_fallback_account_id: str | None = None
+    llm_fallback_api_base: str | None = None
     llm_fallback_api_key: str | None = None
     llm_timeout: int = 60
     llm_retries: int = 3
