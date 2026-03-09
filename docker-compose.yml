@@ -27,38 +27,42 @@ services:
       timeout: 3s
       retries: 5
 
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
+
+
+  backend:
+    build: ./apps/backend
+    command: sh -c "bunx --bun drizzle-kit push --force && bun run seed/index.ts && bun run src/index.ts"
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "4000:4000"
+    env_file: ./apps/backend/.env
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    volumes:
-      - miniodata:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+      DATABASE_URL: postgres://user:password@postgres:5432/vstep
+      REDIS_URL: redis://redis:6379
+    develop:
+      watch:
+        - action: sync
+          path: ./apps/backend/src
+          target: /app/src
+        - action: rebuild
+          path: ./apps/backend/package.json
 
-  minio-init:
-    image: minio/minio:latest
+  grading:
+    build: ./apps/grading
+    ports:
+      - "8000:8000"
+    env_file: ./apps/grading/.env
+    environment:
+      REDIS_URL: redis://redis:6379
     depends_on:
-      minio:
+      redis:
         condition: service_healthy
-    entrypoint: /bin/sh
-    command:
-      - -c
-      - |
-        mc alias set local http://minio:9000 minioadmin minioadmin
-        mc mb --ignore-existing local/vstep
-        mc anonymous set download local/vstep/avatars
-    restart: "no"
-
+    develop:
+      watch:
+        - action: sync
+          path: ./apps/grading/app
+          target: /app/app
+        - action: rebuild
+          path: ./apps/grading/requirements.txt
 volumes:
   pgdata:
   redisdata:
-  miniodata:
