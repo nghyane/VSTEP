@@ -147,12 +147,14 @@ function DoughnutChartCard({
 	return (
 		<div className="rounded-xl border bg-card p-5">
 			<h3 className="mb-3 text-sm font-semibold">Điểm trung bình theo kỹ năng</h3>
-			<div className="flex items-center gap-4">
-				<div className="w-32 shrink-0">
+			<div className="flex items-center gap-6">
+				<div className="w-36 shrink-0">
 					<DoughnutChart
 						segments={segments}
 						centerLabel="Tổng số bài test"
 						centerValue={total}
+						innerRadius={35}
+						className="max-h-[140px]"
 					/>
 				</div>
 				<DoughnutLegend segments={segments} className="flex-col items-start" />

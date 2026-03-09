@@ -18,7 +18,7 @@ interface DoughnutChartProps {
 	segments: DoughnutSegment[]
 	centerLabel?: string
 	centerValue?: string | number
-	size?: number
+	innerRadius?: number
 	strokeWidth?: number
 	className?: string
 }
@@ -27,6 +27,7 @@ export function DoughnutChart({
 	segments,
 	centerLabel,
 	centerValue,
+	innerRadius = 60,
 	className,
 }: DoughnutChartProps) {
 	const { chartData, chartConfig } = useMemo(() => {
@@ -55,12 +56,13 @@ export function DoughnutChart({
 					data={chartData}
 					dataKey="count"
 					nameKey="skill"
-					innerRadius={60}
+					innerRadius={innerRadius}
 					strokeWidth={5}
 				>
 					<Label
 						content={({ viewBox }) => {
 							if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+								const isSmall = innerRadius < 50
 								return (
 									<text
 										x={viewBox.cx}
@@ -70,16 +72,16 @@ export function DoughnutChart({
 									>
 										<tspan
 											x={viewBox.cx}
-											y={viewBox.cy}
-											className="fill-foreground text-3xl font-bold"
+											y={(viewBox.cy || 0) - (centerLabel && !isSmall ? 8 : 0)}
+											className={cn("fill-foreground font-bold", isSmall ? "text-xl" : "text-3xl")}
 										>
 											{centerValue}
 										</tspan>
-										{centerLabel && (
+										{centerLabel && !isSmall && (
 											<tspan
 												x={viewBox.cx}
-												y={(viewBox.cy || 0) + 24}
-												className="fill-muted-foreground"
+												y={(viewBox.cy || 0) + 18}
+												className="fill-muted-foreground text-xs"
 											>
 												{centerLabel}
 											</tspan>
