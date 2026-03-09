@@ -1,0 +1,171 @@
+erDiagram
+    users ||--o{ user_progress : "tracks"
+    users ||--o{ user_goals : "sets"
+    users ||--o{ user_knowledge_progress : "learns"
+    users ||--o{ classes : "owns"
+    users ||--o{ class_members : "enrolls"
+    users ||--o{ instructor_feedback : "gives"
+    users ||--o{ notifications : "receives"
+    users ||--o{ device_tokens : "registers"
+    users ||--o{ user_placements : "has"
+    users ||--o{ user_vocabulary_progress : "learns"
+    classes ||--o{ class_members : "has"
+    classes ||--o{ instructor_feedback : "contains"
+    knowledge_points ||--o{ question_knowledge_points : "mapped"
+    knowledge_points ||--o{ user_knowledge_progress : "tracked"
+    vocabulary_topics ||--o{ vocabulary_words : "contains"
+    vocabulary_words ||--o{ user_vocabulary_progress : "tracked"
+
+    users {
+        uuid id PK
+        varchar email UK
+        enum role "learner|instructor|admin"
+    }
+
+    user_progress {
+        uuid id PK
+        uuid user_id FK
+        enum skill "L|R|W|S"
+        enum current_level "A2|B1|B2|C1"
+        enum target_level "nullable"
+        integer scaffold_level "1-5"
+        integer streak_count "default 0"
+        enum streak_direction "up|down|neutral"
+        integer attempt_count "default 0"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    user_goals {
+        uuid id PK
+        uuid user_id FK
+        enum target_band "B1|B2|C1"
+        enum current_estimated_band "nullable"
+        timestamp deadline "nullable"
+        integer daily_study_minutes "default 30"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    user_knowledge_progress {
+        uuid id PK
+        uuid user_id FK
+        uuid knowledge_point_id FK
+        numeric mastery_score "0-100"
+        integer total_attempted "default 0"
+        integer total_correct "default 0"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    knowledge_points {
+        uuid id PK
+        enum category "4 types"
+        varchar name UK "max 200"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    question_knowledge_points {
+        uuid question_id PK "FK"
+        uuid knowledge_point_id PK "FK"
+    }
+
+    classes {
+        uuid id PK
+        text name
+        text description "nullable"
+        uuid instructor_id FK
+        text invite_code UK
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    class_members {
+        uuid id PK
+        uuid class_id FK
+        uuid user_id FK
+        timestamp joined_at
+        timestamp removed_at "nullable"
+    }
+
+    instructor_feedback {
+        uuid id PK
+        uuid class_id FK
+        uuid from_user_id FK
+        uuid to_user_id FK
+        text content
+        enum skill "nullable"
+        uuid submission_id FK "nullable"
+        timestamp created_at
+    }
+
+    vocabulary_topics {
+        uuid id PK
+        varchar name UK "max 200"
+        text description
+        varchar icon_key "nullable"
+        integer sort_order "default 0"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    vocabulary_words {
+        uuid id PK
+        uuid topic_id FK
+        varchar word "max 100"
+        varchar phonetic "nullable"
+        varchar audio_url "nullable"
+        varchar part_of_speech "max 20"
+        text definition
+        text explanation
+        jsonb examples "string array"
+        integer sort_order "default 0"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    user_vocabulary_progress {
+        uuid user_id PK "FK"
+        uuid word_id PK "FK"
+        boolean known "default false"
+        timestamp last_reviewed_at "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    notifications {
+        uuid id PK
+        uuid user_id FK
+        enum type "notification type"
+        varchar title "max 255"
+        text body "nullable"
+        jsonb data "nullable"
+        timestamp read_at "nullable"
+        timestamp created_at
+    }
+
+    device_tokens {
+        uuid id PK
+        uuid user_id FK
+        text token UK
+        varchar platform "max 10"
+        timestamp created_at
+    }
+
+    user_placements {
+        uuid id PK
+        uuid user_id FK "unique"
+        uuid session_id FK "nullable"
+        enum status "placement status"
+        enum source "placement source"
+        enum confidence "placement confidence"
+        enum listening_level "A2|B1|B2|C1"
+        enum reading_level "A2|B1|B2|C1"
+        enum writing_level "A2|B1|B2|C1"
+        enum speaking_level "A2|B1|B2|C1"
+        varchar writing_source "max 20"
+        varchar speaking_source "max 20"
+        timestamp created_at
+        timestamp updated_at
+    }

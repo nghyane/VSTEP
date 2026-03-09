@@ -1,0 +1,26 @@
+sequenceDiagram
+    participant C as Client
+    participant B as Backend
+    participant DB as PostgreSQL
+
+    C->>B: POST /api/auth/refresh
+    B->>B: SHA-256 hash token
+
+    B->>DB: Find token by hash
+    DB-->>B: Token record
+
+    alt Not found or expired
+        B-->>C: 401 Token Expired
+    end
+
+    alt Already revoked
+        Note over B,DB: Replay attack detected
+        B->>DB: Revoke all user tokens
+        B-->>C: 401 Force re-login
+    end
+
+    B->>DB: Revoke old token
+    B->>B: Sign new access token
+    B->>B: Generate new refresh token
+    B->>DB: Store new token
+    B-->>C: 200 {accessToken, refreshToken}

@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 610.841 803.2" width="610.841" height="803.2" style="--bg:#ffffff;--fg:#1f2328;--line:#d1d9e0;--accent:#0969da;--muted:#59636e;background:var(--bg)">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap');
+  text { font-family: 'Inter', system-ui, sans-serif; }
+  svg {
+    /* Derived from --bg and --fg (overridable via --line, --accent, etc.) */
+    --_text:          var(--fg);
+    --_text-sec:      var(--muted, color-mix(in srgb, var(--fg) 60%, var(--bg)));
+    --_text-muted:    var(--muted, color-mix(in srgb, var(--fg) 40%, var(--bg)));
+    --_text-faint:    color-mix(in srgb, var(--fg) 25%, var(--bg));
+    --_line:          var(--line, color-mix(in srgb, var(--fg) 50%, var(--bg)));
+    --_arrow:         var(--accent, color-mix(in srgb, var(--fg) 85%, var(--bg)));
+    --_node-fill:     var(--surface, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+    --_node-stroke:   var(--border, color-mix(in srgb, var(--fg) 20%, var(--bg)));
+    --_group-fill:    var(--bg);
+    --_group-hdr:     color-mix(in srgb, var(--fg) 5%, var(--bg));
+    --_inner-stroke:  color-mix(in srgb, var(--fg) 12%, var(--bg));
+    --_key-badge:     color-mix(in srgb, var(--fg) 10%, var(--bg));
+  }
+</style>
+<defs>
+  <marker id="arrowhead" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+    <polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+  </marker>
+  <marker id="arrowhead-start" markerWidth="8" markerHeight="5" refX="1" refY="2.5" orient="auto-start-reverse">
+    <polygon points="8 0, 0 2.5, 8 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+  </marker>
+</defs>
+<g class="subgraph" data-id="backend" data-label="apps/backend">
+  <rect x="40" y="40" width="243.19400000000002" height="266.70000000000005" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="40" y="40" width="243.19400000000002" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="52" y="54" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">apps/backend</text>
+</g>
+<g class="subgraph" data-id="grading" data-label="apps/grading">
+  <rect x="40" y="411.6" width="443.412" height="351.6" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="40" y="411.6" width="443.412" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="52" y="425.6" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">apps/grading</text>
+</g>
+<g class="subgraph" data-id="frontend" data-label="apps/frontend">
+  <rect x="303.194" y="40" width="267.647" height="351.6" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="303.194" y="40" width="267.647" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="315.194" y="54" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">apps/frontend</text>
+</g>
+<polyline class="edge" data-from="AppEntry" data-to="Modules" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="173.03466666666668,120.9 173.03466666666665,132.9 209.83599999999998,132.9 209.83599999999998,168.9" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="AppEntry" data-to="Plugins" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="147.19533333333334,120.9 147.19533333333334,132.9 100.31649999999999,132.9 100.31649999999999,168.9" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Modules" data-to="Common" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="194.07583333333332,205.8 194.07583333333332,217.8 131.34283333333335,217.8 131.34283333333332,253.8" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Modules" data-to="DB" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="225.59616666666668,205.8 225.59616666666668,253.8" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Plugins" data-to="Common" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="100.31649999999999,205.8 100.31649999999999,253.8" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Main" data-to="GWorker" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="220.16216666666665,492.5 220.16216666666665,504.5 295.125,504.5 295.125,540.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Main" data-to="Config" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="191.3588333333333,492.5 191.3588333333333,504.5 135.8845,504.5 135.8845,540.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="GWorker" data-to="Pipelines" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="295.125,577.4000000000001 295.125,625.4000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Pipelines" data-to="LLM" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="265.28583333333336,662.3000000000001 265.28583333333336,674.3000000000001 219.469,674.3000000000001 219.469,710.3000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Pipelines" data-to="Models" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="324.96416666666664,662.3000000000001 324.96416666666664,674.3000000000001 393.303,674.3000000000001 393.303,710.3000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Routes" data-to="Pages" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="441.4635,120.9 441.4635,168.9" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Pages" data-to="Components" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="427.6793333333333,205.8 427.6793333333333,217.8 365.14500000000004,217.8 365.14500000000004,253.8" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Pages" data-to="Hooks" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="455.24766666666665,205.8 455.24766666666665,217.8 505.3375,217.8 505.3375,253.8" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Hooks" data-to="Services" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="505.3375,290.70000000000005 505.3375,338.70000000000005" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Components" data-to="Lib" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="365.14500000000004,290.70000000000005 365.14500000000004,338.70000000000005" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<g class="node" data-id="AppEntry" data-label="app.ts" data-shape="rectangle">
+  <rect x="121.356" y="84" width="77.518" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="160.115" y="102.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">app.ts</text>
+</g>
+<g class="node" data-id="Modules" data-label="modules/" data-shape="rectangle">
+  <rect x="162.5555" y="168.9" width="94.561" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="209.836" y="187.35000000000002" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">modules/</text>
+</g>
+<g class="node" data-id="Plugins" data-label="plugins/" data-shape="rectangle">
+  <rect x="56" y="168.9" width="88.633" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="100.31649999999999" y="187.35000000000002" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">plugins/</text>
+</g>
+<g class="node" data-id="Common" data-label="common/" data-shape="rectangle">
+  <rect x="69.29016666666666" y="253.8" width="93.07900000000001" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="115.82966666666667" y="272.25" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">common/</text>
+</g>
+<g class="node" data-id="DB" data-label="db/" data-shape="rectangle">
+  <rect x="205.43616666666668" y="253.8" width="60.474999999999994" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="235.6736666666667" y="272.25" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">db/</text>
+</g>
+<g class="node" data-id="Main" data-label="main.py" data-shape="rectangle">
+  <rect x="162.5555" y="455.6" width="86.41" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="205.76049999999998" y="474.05" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">main.py</text>
+</g>
+<g class="node" data-id="GWorker" data-label="worker.py" data-shape="rectangle">
+  <rect x="243.769" y="540.5" width="102.71199999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="295.125" y="558.95" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">worker.py</text>
+</g>
+<g class="node" data-id="Pipelines" data-label="writing.py / speaking.py" data-shape="rectangle">
+  <rect x="205.60750000000002" y="625.4000000000001" width="179.03499999999997" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="295.125" y="643.8500000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">writing.py / speaking.py</text>
+</g>
+<g class="node" data-id="LLM" data-label="llm.py / stt.py" data-shape="rectangle">
+  <rect x="162.5555" y="710.3000000000001" width="113.827" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="219.469" y="728.7500000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">llm.py / stt.py</text>
+</g>
+<g class="node" data-id="Models" data-label="models.py / scoring.py" data-shape="rectangle">
+  <rect x="306.7495" y="710.3000000000001" width="173.107" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="393.303" y="728.7500000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">models.py / scoring.py</text>
+</g>
+<g class="node" data-id="Config" data-label="config.py / logger.py" data-shape="rectangle">
+  <rect x="56" y="540.5" width="159.769" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="135.8845" y="558.95" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">config.py / logger.py</text>
+</g>
+<g class="node" data-id="Routes" data-label="routes/" data-shape="rectangle">
+  <rect x="399.37" y="84" width="84.187" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="441.4635" y="102.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">routes/</text>
+</g>
+<g class="node" data-id="Pages" data-label="pages/" data-shape="rectangle">
+  <rect x="400.111" y="168.9" width="82.705" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="441.4635" y="187.35000000000002" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">pages/</text>
+</g>
+<g class="node" data-id="Components" data-label="components/" data-shape="rectangle">
+  <rect x="306.7495" y="253.8" width="116.79099999999998" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="365.145" y="272.25" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">components/</text>
+</g>
+<g class="node" data-id="Hooks" data-label="hooks/" data-shape="rectangle">
+  <rect x="463.985" y="253.8" width="82.705" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="505.33750000000003" y="272.25" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">hooks/</text>
+</g>
+<g class="node" data-id="Services" data-label="services/" data-shape="rectangle">
+  <rect x="455.834" y="338.70000000000005" width="99.007" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="505.3375" y="357.15000000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">services/</text>
+</g>
+<g class="node" data-id="Lib" data-label="lib/" data-shape="rectangle">
+  <rect x="347.58950000000004" y="338.70000000000005" width="60" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="377.58950000000004" y="357.15000000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">lib/</text>
+</g>
+</svg>

@@ -1,0 +1,42 @@
+graph LR
+    subgraph actors [Actors]
+        Student([Student])
+        Instructor([Instructor])
+        Admin([Admin])
+    end
+
+    subgraph clients [Client Layer]
+        WebApp([React SPA])
+        MobileApp([Mobile App — planned])
+    end
+
+    subgraph services [Application Layer]
+        API[Backend API — Elysia]
+        Worker[Grading Worker — Python]
+    end
+
+    subgraph data [Data Layer]
+        PG[(PostgreSQL)]
+        Redis[(Redis Stream)]
+        MinIO[(S3 Storage)]
+    end
+
+    subgraph external [External Services]
+        LLM[LLM API]
+        STT[STT API]
+    end
+
+    Student --> WebApp
+    Instructor --> WebApp
+    Admin --> WebApp
+    Student -.-> MobileApp
+
+    WebApp -->|REST| API
+    MobileApp -.->|REST| API
+
+    API --> PG
+    API --> Redis
+    API --> MinIO
+    Worker --> Redis
+    Worker --> LLM
+    Worker --> STT

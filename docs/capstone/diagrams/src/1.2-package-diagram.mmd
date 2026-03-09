@@ -1,0 +1,47 @@
+graph LR
+    subgraph backend [apps/backend]
+        direction TB
+        AppEntry[app.ts]
+        Modules[modules/]
+        Plugins[plugins/]
+        Common[common/]
+        DB[db/]
+
+        AppEntry --> Modules
+        AppEntry --> Plugins
+        Modules --> Common
+        Modules --> DB
+        Plugins --> Common
+    end
+
+    subgraph grading [apps/grading]
+        direction TB
+        Main[main.py]
+        GWorker[worker.py]
+        Pipelines[writing.py / speaking.py]
+        LLM[llm.py / stt.py]
+        Models[models.py / scoring.py]
+        Config[config.py / logger.py]
+
+        Main --> GWorker
+        Main --> Config
+        GWorker --> Pipelines
+        Pipelines --> LLM
+        Pipelines --> Models
+    end
+
+    subgraph frontend [apps/frontend]
+        direction TB
+        Routes[routes/]
+        Pages[pages/]
+        Components[components/]
+        Hooks[hooks/]
+        Services[services/]
+        Lib[lib/]
+
+        Routes --> Pages
+        Pages --> Components
+        Pages --> Hooks
+        Hooks --> Services
+        Components --> Lib
+    end

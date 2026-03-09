@@ -1,0 +1,30 @@
+sequenceDiagram
+    participant I as Instructor
+    participant B as Backend
+    participant DB as PostgreSQL
+
+    I->>B: GET /api/submissions/queue
+    B->>DB: Fetch review_pending
+    B-->>I: Paginated queue
+
+    I->>B: POST /submissions/:id/claim
+    B->>DB: Atomic claim update
+
+    alt Already claimed
+        B-->>I: 409 Conflict
+    end
+
+    B->>DB: Fetch submission + AI result
+    B-->>I: Submission with AI result
+
+    I->>B: PUT /submissions/:id/review
+    B->>DB: Set status=completed
+    B->>DB: Store human result
+
+    alt Score diff > 0.5
+        B->>DB: Set audit flag
+    end
+
+    B->>DB: Record skill score
+    B->>DB: Update progress
+    B-->>I: Final scores

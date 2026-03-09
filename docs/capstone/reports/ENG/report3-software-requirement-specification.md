@@ -64,25 +64,25 @@ The system does **not** cover:
 The context diagram below illustrates the current implemented system interfaces for the Adaptive VSTEP Preparation System. The system boundary encompasses the Web client, Mobile client, Main API Server, Grading Service, PostgreSQL, Redis, and object storage used for uploaded audio. External entities include the three user roles (Learner, Instructor, Admin) and provider-configurable AI APIs used by the grading service.
 
 ```mermaid
-flowchart TB
+graph TB
     subgraph ExternalActors ["External Actors"]
-        Learner["👤 Learner<br/>(Web / Mobile)"]
-        Instructor["👤 Instructor<br/>(Web)"]
-        Admin["👤 Admin<br/>(Web)"]
+        Learner["👤 Learner\n(Web / Mobile)"]
+        Instructor["👤 Instructor\n(Web)"]
+        Admin["👤 Admin\n(Web)"]
     end
 
     subgraph System ["Adaptive VSTEP Preparation System"]
-        WebApp["Web Application<br/>React 19 + Vite 7"]
-        MobileApp["Mobile Application<br/>Expo + React Native"]
-        Backend["Main API Server<br/>Bun + Elysia"]
-        GradingWorker["Grading Service<br/>Python + FastAPI"]
+        WebApp["Web Application\nReact 19 + Vite 7"]
+        MobileApp["Mobile Application\nExpo + React Native"]
+        Backend["Main API Server\nBun + Elysia"]
+        GradingWorker["Grading Service\nPython + FastAPI"]
         DB["PostgreSQL 17"]
-        Cache["Redis 7.2+<br/>(Streams + Cache)"]
-        Storage["Object Storage<br/>(S3-compatible)"]
+        Cache["Redis 7.2+\n(Streams + Cache)"]
+        Storage["Object Storage\n(S3-compatible)"]
     end
 
     subgraph ExternalServices ["External Services"]
-        LLMProvider["LLM / STT Provider APIs<br/>(provider-configurable)"]
+        LLMProvider["LLM / STT Provider APIs\n(provider-configurable)"]
     end
 
     Learner -->|"HTTPS"| WebApp
@@ -90,10 +90,10 @@ flowchart TB
     Instructor -->|"HTTPS"| WebApp
     Admin -->|"HTTPS"| WebApp
 
-    WebApp -->|"REST API<br/>(JSON + JWT)"| Backend
-    MobileApp -->|"REST API<br/>(JSON + JWT)"| Backend
+    WebApp -->|"REST API\n(JSON + JWT)"| Backend
+    MobileApp -->|"REST API\n(JSON + JWT)"| Backend
 
-    Backend -->|"Drizzle ORM<br/>(TCP 5432)"| DB
+    Backend -->|"Drizzle ORM\n(TCP 5432)"| DB
     Backend -->|"XADD tasks / XREAD results"| Cache
     Backend -->|"Audio upload"| Storage
 
@@ -277,45 +277,45 @@ The system provides 16 features organized in two delivery phases:
 #### 2.2.1 Use Case Diagram — Learner
 
 ```mermaid
-flowchart LR
+graph LR
     Learner(("👤 Learner"))
 
     subgraph Authentication ["Authentication"]
-        UC01["UC-01<br/>Register"]
-        UC02["UC-02<br/>Login"]
-        UC03["UC-03<br/>Logout"]
-        UC04["UC-04<br/>Refresh Token"]
+        UC01["UC-01\nRegister"]
+        UC02["UC-02\nLogin"]
+        UC03["UC-03\nLogout"]
+        UC04["UC-04\nRefresh Token"]
     end
 
     subgraph PracticeMode ["Practice Mode"]
-        UC10["UC-10<br/>Practice Listening"]
-        UC11["UC-11<br/>Practice Reading"]
-        UC12["UC-12<br/>Practice Writing"]
-        UC13["UC-13<br/>Practice Speaking"]
-        UC14["UC-14<br/>View Submission Result"]
-        UC15["UC-15<br/>View AI Feedback"]
+        UC10["UC-10\nPractice Listening"]
+        UC11["UC-11\nPractice Reading"]
+        UC12["UC-12\nPractice Writing"]
+        UC13["UC-13\nPractice Speaking"]
+        UC14["UC-14\nView Submission Result"]
+        UC15["UC-15\nView AI Feedback"]
     end
 
     subgraph ExamMode ["Mock Test Mode"]
-        UC20["UC-20<br/>List Available Exams"]
-        UC21["UC-21<br/>Start Exam Session"]
-        UC22["UC-22<br/>Answer Exam Questions"]
-        UC23["UC-23<br/>Submit Exam"]
-        UC24["UC-24<br/>View Exam Result"]
+        UC20["UC-20\nList Available Exams"]
+        UC21["UC-21\nStart Exam Session"]
+        UC22["UC-22\nAnswer Exam Questions"]
+        UC23["UC-23\nSubmit Exam"]
+        UC24["UC-24\nView Exam Result"]
     end
 
     subgraph ProgressGoals ["Progress and Goals"]
-        UC30["UC-30<br/>View Progress Overview"]
-        UC31["UC-31<br/>View Spider Chart"]
-        UC32["UC-32<br/>View Skill Detail"]
-        UC33["UC-33<br/>Set Learning Goal"]
-        UC34["UC-34<br/>View ETA Estimation"]
+        UC30["UC-30\nView Progress Overview"]
+        UC31["UC-31\nView Spider Chart"]
+        UC32["UC-32\nView Skill Detail"]
+        UC33["UC-33\nSet Learning Goal"]
+        UC34["UC-34\nView ETA Estimation"]
     end
 
     subgraph ClassEnroll ["Class"]
-        UC40["UC-40<br/>Join Class"]
-        UC41["UC-41<br/>Leave Class"]
-        UC42["UC-42<br/>View Instructor Feedback"]
+        UC40["UC-40\nJoin Class"]
+        UC41["UC-41\nLeave Class"]
+        UC42["UC-42\nView Instructor Feedback"]
     end
 
     Learner --- UC01
@@ -347,37 +347,32 @@ flowchart LR
     UC14 -.->|"includes"| UC15
     UC21 -.->|"includes"| UC22
     UC22 -.->|"includes"| UC23
-
-    classDef actor fill:#1565c0,stroke:#0d47a1,color:#fff
-    classDef uc fill:#fff,stroke:#333,color:#333
-
-    class Learner actor
 ```
 
 #### 2.2.2 Use Case Diagram — Instructor
 
 ```mermaid
-flowchart LR
+graph LR
     Instructor(("👤 Instructor"))
 
     subgraph ReviewGrading ["Review and Grading"]
-        UC50["UC-50<br/>View Review Queue"]
-        UC51["UC-51<br/>Claim Submission"]
-        UC52["UC-52<br/>Review and Grade Submission"]
-        UC53["UC-53<br/>Release Submission"]
+        UC50["UC-50\nView Review Queue"]
+        UC51["UC-51\nClaim Submission"]
+        UC52["UC-52\nReview and Grade Submission"]
+        UC53["UC-53\nRelease Submission"]
     end
 
     subgraph ExamMgmt ["Exam and Question Management"]
-        UC61["UC-61<br/>Manage Questions"]
+        UC61["UC-61\nManage Questions"]
     end
 
     subgraph ClassMgmt ["Class Management"]
-        UC70["UC-70<br/>Create Class"]
-        UC71["UC-71<br/>View Class Dashboard"]
-        UC72["UC-72<br/>View Member Progress"]
-        UC73["UC-73<br/>Give Feedback"]
-        UC74["UC-74<br/>Rotate Invite Code"]
-        UC75["UC-75<br/>Remove Member"]
+        UC70["UC-70\nCreate Class"]
+        UC71["UC-71\nView Class Dashboard"]
+        UC72["UC-72\nView Member Progress"]
+        UC73["UC-73\nGive Feedback"]
+        UC74["UC-74\nRotate Invite Code"]
+        UC75["UC-75\nRemove Member"]
     end
 
     Instructor --- UC50
@@ -394,41 +389,38 @@ flowchart LR
 
     UC51 -.->|"includes"| UC52
     UC51 -.->|"extends"| UC53
-
-    classDef actor fill:#e65100,stroke:#bf360c,color:#fff
-    class Instructor actor
 ```
 
 #### 2.2.3 Use Case Diagram — Admin
 
 ```mermaid
-flowchart LR
+graph LR
     Admin(("👤 Admin"))
 
     subgraph UserMgmt ["User Management"]
-        UC80["UC-80<br/>List Users"]
-        UC81["UC-81<br/>Change User Role"]
-        UC82["UC-82<br/>Lock/Unlock Account<br/>planned"]
-        UC83["UC-83<br/>Reset Password<br/>planned"]
-        UC84["UC-84<br/>Bulk Create Users<br/>deferred"]
+        UC80["UC-80\nList Users"]
+        UC81["UC-81\nChange User Role"]
+        UC82["UC-82\nLock/Unlock Account\nplanned"]
+        UC83["UC-83\nReset Password\nplanned"]
+        UC84["UC-84\nBulk Create Users\ndeferred"]
     end
 
     subgraph ContentMgmt ["Content Management"]
-        UC85["UC-85<br/>Manage Question Bank"]
-        UC86["UC-86<br/>Import/Export Questions<br/>planned"]
-        UC87["UC-87<br/>Manage Knowledge Points"]
-        UC88["UC-88<br/>Manage Exams"]
+        UC85["UC-85\nManage Question Bank"]
+        UC86["UC-86\nImport/Export Questions\nplanned"]
+        UC87["UC-87\nManage Knowledge Points"]
+        UC88["UC-88\nManage Exams"]
     end
 
     subgraph Operations ["Operations"]
-        UC89["UC-89<br/>Manage Review Queue"]
-        UC90["UC-90<br/>Manage Notifications"]
+        UC89["UC-89\nManage Review Queue"]
+        UC90["UC-90\nManage Notifications"]
     end
 
     subgraph Analytics ["Analytics"]
-        UC91["UC-91<br/>View Admin Dashboard<br/>planned"]
-        UC92["UC-92<br/>View System Analytics<br/>deferred"]
-        UC93["UC-93<br/>Trigger Auto-Grade<br/>planned"]
+        UC91["UC-91\nView Admin Dashboard\nplanned"]
+        UC92["UC-92\nView System Analytics\ndeferred"]
+        UC93["UC-93\nTrigger Auto-Grade\nplanned"]
     end
 
     Admin --- UC80
@@ -445,9 +437,6 @@ flowchart LR
     Admin --- UC91
     Admin --- UC92
     Admin --- UC93
-
-    classDef actor fill:#6a1b9a,stroke:#4a148c,color:#fff
-    class Admin actor
 ```
 
 #### 2.2.4 Use Case Descriptions
@@ -512,40 +501,40 @@ flowchart LR
 #### 3.1.1 Screens Flow — Learner
 
 ```mermaid
-flowchart TB
+graph TB
     Login["Login Screen"]
     Register["Register Screen"]
     Home["Home / Dashboard"]
 
     subgraph Practice ["Practice Mode"]
-        SkillSelect["Skill Selection<br/>(L/R/W/S)"]
-        QuestionView["Question View<br/>(with scaffolding)"]
+        SkillSelect["Skill Selection\n(L/R/W/S)"]
+        QuestionView["Question View\n(with scaffolding)"]
         SubmitAnswer["Submit Answer"]
         ResultView["Result / Feedback View"]
     end
 
     subgraph Exam ["Mock Test Mode"]
-        ExamList["Exam List<br/>(filter by level)"]
-        ExamDetail["Exam Detail<br/>(blueprint preview)"]
-        ExamSession["Exam Session<br/>(timed, 4 sections)"]
-        ExamResult["Exam Result<br/>(per-skill breakdown)"]
+        ExamList["Exam List\n(filter by level)"]
+        ExamDetail["Exam Detail\n(blueprint preview)"]
+        ExamSession["Exam Session\n(timed, 4 sections)"]
+        ExamResult["Exam Result\n(per-skill breakdown)"]
     end
 
     subgraph Progress ["Progress"]
-        ProgressOverview["Progress Overview<br/>(Spider Chart)"]
-        SkillDetail["Skill Detail<br/>(score history, trend)"]
-        GoalSetting["Goal Setting<br/>(target band, deadline)"]
-        ProgressHistory["Progress History<br/>(activity heatmap)"]
+        ProgressOverview["Progress Overview\n(Spider Chart)"]
+        SkillDetail["Skill Detail\n(score history, trend)"]
+        GoalSetting["Goal Setting\n(target band, deadline)"]
+        ProgressHistory["Progress History\n(activity heatmap)"]
     end
 
     subgraph Vocabulary ["Vocabulary"]
         VocabTopics["Vocabulary Topics"]
-        VocabLearn["Learn Words<br/>(flashcard view)"]
+        VocabLearn["Learn Words\n(flashcard view)"]
     end
 
     subgraph Submissions ["Submissions"]
         SubmissionList["Submission History"]
-        SubmissionDetail["Submission Detail<br/>(score, feedback)"]
+        SubmissionDetail["Submission Detail\n(score, feedback)"]
     end
 
     Profile["Profile Settings"]
@@ -577,49 +566,33 @@ flowchart TB
     SubmissionList --> SubmissionDetail
 
     ProgressOverview --> ProgressHistory
-
-    classDef auth fill:#78909c,stroke:#546e7a,color:#fff
-    classDef main fill:#1565c0,stroke:#0d47a1,color:#fff
-    classDef practice fill:#2e7d32,stroke:#1b5e20,color:#fff
-    classDef exam fill:#6a1b9a,stroke:#4a148c,color:#fff
-    classDef progress fill:#f57c00,stroke:#e65100,color:#fff
-    classDef cls fill:#00796b,stroke:#004d40,color:#fff
-    classDef vocab fill:#00695c,stroke:#004d40,color:#fff
-
-    class Login,Register auth
-    class Home,Profile main
-    class SkillSelect,QuestionView,SubmitAnswer,ResultView,SubmissionList,SubmissionDetail practice
-    class ExamList,ExamDetail,ExamSession,ExamResult exam
-    class ProgressOverview,SkillDetail,GoalSetting,ProgressHistory progress
-    class ClassList,JoinClass,FeedbackView cls
-    class VocabTopics,VocabLearn vocab
 ```
 
 #### 3.1.2 Screens Flow — Instructor
 
 ```mermaid
-flowchart TB
+graph TB
     Login["Login Screen"]
     Home["Instructor Dashboard"]
 
     subgraph Review ["Review and Grading"]
-        ReviewQueue["Review Queue<br/>(priority sorted)"]
-        ReviewDetail["Review Detail<br/>(AI result + student answer)"]
-        SubmitReview["Submit Review<br/>(score + feedback)"]
+        ReviewQueue["Review Queue\n(priority sorted)"]
+        ReviewDetail["Review Detail\n(AI result + student answer)"]
+        SubmitReview["Submit Review\n(score + feedback)"]
     end
 
     subgraph ClassMgmt ["Class Management"]
         ClassList["My Classes"]
         CreateClass["Create Class"]
-        ClassDashboard["Class Dashboard<br/>(member stats)"]
-        MemberProgress["Member Progress<br/>(individual detail)"]
+        ClassDashboard["Class Dashboard\n(member stats)"]
+        MemberProgress["Member Progress\n(individual detail)"]
         GiveFeedback["Give Feedback"]
     end
 
     subgraph Content ["Content"]
         QuestionBank["Question Bank"]
         CreateQuestion["Create/Edit Question"]
-        CreateExam["Create Exam<br/>(blueprint builder)"]
+        CreateExam["Create Exam\n(blueprint builder)"]
     end
 
     Login --> Home
@@ -633,18 +606,6 @@ flowchart TB
 
     Home --> QuestionBank --> CreateQuestion
     Home --> CreateExam
-
-    classDef auth fill:#78909c,stroke:#546e7a,color:#fff
-    classDef main fill:#e65100,stroke:#bf360c,color:#fff
-    classDef review fill:#1565c0,stroke:#0d47a1,color:#fff
-    classDef cls fill:#2e7d32,stroke:#1b5e20,color:#fff
-    classDef content fill:#6a1b9a,stroke:#4a148c,color:#fff
-
-    class Login auth
-    class Home main
-    class ReviewQueue,ReviewDetail,SubmitReview review
-    class ClassList,CreateClass,ClassDashboard,MemberProgress,GiveFeedback cls
-    class QuestionBank,CreateQuestion,CreateExam content
 ```
 
 #### 3.1.3 Screen Descriptions
@@ -1075,41 +1036,41 @@ erDiagram
 #### 3.2.6 Authentication & Token Lifecycle Diagram
 
 ```mermaid
-flowchart TB
+graph TB
     subgraph Registration ["Registration Flow"]
-        RegStart(["User submits<br/>registration form"])
-        Validate["Validate input<br/>email, password min 8, fullName"]
-        NormEmail["normalizeEmail()<br/>lowercase + trim"]
-        CheckDup{"Email<br/>exists?"}
-        DupError["409 CONFLICT<br/>Email already exists"]
-        HashPw["Bun.password.hash()<br/>Argon2id"]
-        CreateUser["INSERT users<br/>role = learner"]
-        RegDone(["Return user profile<br/>(no tokens — must login)"])
+        RegStart(["User submits\nregistration form"])
+        Validate["Validate input\nemail, password min 8, fullName"]
+        NormEmail["normalizeEmail()\nlowercase + trim"]
+        CheckDup{"Email\nexists?"}
+        DupError["409 CONFLICT\nEmail already exists"]
+        HashPw["Bun.password.hash()\nArgon2id"]
+        CreateUser["INSERT users\nrole = learner"]
+        RegDone(["Return user profile\n(no tokens — must login)"])
     end
 
     subgraph Login ["Login Flow"]
-        LoginStart(["User submits<br/>email + password"])
+        LoginStart(["User submits\nemail + password"])
         FindUser["Find user by email"]
-        VerifyPw["Bun.password.verify()<br/>Argon2id comparison"]
-        PwFail["401 UNAUTHORIZED<br/>Invalid credentials"]
-        GenAccess["SignJWT (jose)<br/>claims: sub, role, iat<br/>expiry: JWT_EXPIRES_IN"]
-        GenRefresh["crypto.randomUUID()<br/>SHA-256 hash, store in DB"]
-        DeviceInfo["Record User-Agent<br/>on refresh_tokens row"]
-        CountTokens{"Active tokens<br/>ge 3?"}
-        PruneOldest["Revoke oldest<br/>refresh token (FIFO)"]
-        LoginDone(["Return<br/>accessToken, refreshToken, user"])
+        VerifyPw["Bun.password.verify()\nArgon2id comparison"]
+        PwFail["401 UNAUTHORIZED\nInvalid credentials"]
+        GenAccess["SignJWT (jose)\nclaims: sub, role, iat\nexpiry: JWT_EXPIRES_IN"]
+        GenRefresh["crypto.randomUUID()\nSHA-256 hash, store in DB"]
+        DeviceInfo["Record User-Agent\non refresh_tokens row"]
+        CountTokens{"Active tokens\nge 3?"}
+        PruneOldest["Revoke oldest\nrefresh token (FIFO)"]
+        LoginDone(["Return\naccessToken, refreshToken, user"])
     end
 
     subgraph Refresh ["Token Refresh (Rotation)"]
-        RefreshStart(["Client sends<br/>refresh token"])
-        HashToken["hashToken()<br/>SHA-256 lookup"]
-        CheckValid{"Token valid?<br/>not revoked,<br/>not expired"}
+        RefreshStart(["Client sends\nrefresh token"])
+        HashToken["hashToken()\nSHA-256 lookup"]
+        CheckValid{"Token valid?\nnot revoked,\nnot expired"}
         InvalidToken["401 UNAUTHORIZED"]
-        CheckReplaced{"Already<br/>replaced?"}
-        ReplayDetect["REPLAY DETECTED!<br/>Revoke ALL user tokens<br/>Force re-login"]
-        RevokeOld["Revoke old token<br/>Set replacedByJti"]
-        IssueNew["Issue new pair<br/>access + refresh tokens"]
-        RefreshDone(["Return new<br/>accessToken, refreshToken"])
+        CheckReplaced{"Already\nreplaced?"}
+        ReplayDetect["REPLAY DETECTED!\nRevoke ALL user tokens\nForce re-login"]
+        RevokeOld["Revoke old token\nSet replacedByJti"]
+        IssueNew["Issue new pair\naccess + refresh tokens"]
+        RefreshDone(["Return new\naccessToken, refreshToken"])
     end
 
     RegStart --> Validate --> NormEmail --> CheckDup
@@ -1128,13 +1089,6 @@ flowchart TB
     CheckValid -->|"Valid"| CheckReplaced
     CheckReplaced -->|"Yes (reuse!)"| ReplayDetect
     CheckReplaced -->|"No"| RevokeOld --> IssueNew --> RefreshDone
-
-    classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
-    classDef error fill:#c62828,stroke:#b71c1c,color:#fff
-    classDef action fill:#2e7d32,stroke:#1b5e20,color:#fff
-
-    class RegStart,LoginStart,RefreshStart,RegDone,LoginDone,RefreshDone start
-    class DupError,PwFail,InvalidToken,ReplayDetect error
 ```
 
 ### 3.3 FE-02: Placement Test
@@ -1156,30 +1110,30 @@ flowchart TB
 #### 3.3.3 Placement Test Flow Diagram
 
 ```mermaid
-flowchart TB
-    Start(["Learner completes<br/>registration"])
+graph TB
+    Start(["Learner completes\nregistration"])
 
-    OnboardingChoice{"Onboarding<br/>method?"}
+    OnboardingChoice{"Onboarding\nmethod?"}
 
     subgraph PlacementTest ["Placement Test"]
-        SelectLevel["Select starting level<br/>(self-assessment)"]
-        TakeTest["Take placement exam<br/>Listening + Reading"]
-        GradeObjective["Auto-grade L/R<br/>via answer key"]
-        GradeSubjective["Dispatch W/S<br/>to AI grading queue"]
-        WaitResults["Wait for all<br/>skill scores"]
+        SelectLevel["Select starting level\n(self-assessment)"]
+        TakeTest["Take placement exam\nListening + Reading"]
+        GradeObjective["Auto-grade L/R\nvia answer key"]
+        GradeSubjective["Dispatch W/S\nto AI grading queue"]
+        WaitResults["Wait for all\nskill scores"]
     end
 
     subgraph SelfAssess ["Self-Assessment"]
-        RateSkills["Learner rates own<br/>proficiency per skill<br/>(B1 / B2 / C1)"]
+        RateSkills["Learner rates own\nproficiency per skill\n(B1 / B2 / C1)"]
     end
 
-    Skip["Skip onboarding<br/>Default: B1 all skills"]
+    Skip["Skip onboarding\nDefault: B1 all skills"]
 
-    InitProgress["Initialize user_progress<br/>per skill: currentLevel,<br/>scaffoldLevel = 1"]
-    InitSpider["Initialize Spider Chart<br/>with baseline scores"]
-    RecommendPath["Suggest learning pathway<br/>based on weakest skill"]
+    InitProgress["Initialize user_progress\nper skill: currentLevel,\nscaffoldLevel = 1"]
+    InitSpider["Initialize Spider Chart\nwith baseline scores"]
+    RecommendPath["Suggest learning pathway\nbased on weakest skill"]
 
-    Dashboard["Redirect to<br/>Dashboard"]
+    Dashboard["Redirect to\nDashboard"]
 
     Start --> OnboardingChoice
     OnboardingChoice -->|"Take test"| SelectLevel --> TakeTest
@@ -1193,14 +1147,6 @@ flowchart TB
     OnboardingChoice -->|"Skip"| Skip --> InitProgress
 
     InitProgress --> InitSpider --> RecommendPath --> Dashboard
-
-    classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
-    classDef process fill:#2e7d32,stroke:#1b5e20,color:#fff
-    classDef result fill:#f57c00,stroke:#e65100,color:#fff
-
-    class Start,Dashboard start
-    class SelectLevel,TakeTest,GradeObjective,GradeSubjective,WaitResults,RateSkills,Skip process
-    class InitProgress,InitSpider,RecommendPath result
 ```
 
 ### 3.4 FE-03: Practice Mode — Listening
@@ -1246,37 +1192,37 @@ flowchart TB
 #### 3.5.3 Learner Practice Flow Diagram
 
 ```mermaid
-flowchart TB
-    Start(["Learner opens<br/>Practice Mode"])
+graph TB
+    Start(["Learner opens\nPractice Mode"])
 
-    SkillSelect["Select skill<br/>Listening / Reading /<br/>Writing / Speaking"]
+    SkillSelect["Select skill\nListening / Reading /\nWriting / Speaking"]
 
-    ChooseQuestion["Browse questions<br/>filtered by level"]
+    ChooseQuestion["Browse questions\nfiltered by level"]
 
-    StartSession["Start practice session<br/>(focused full-screen)"]
+    StartSession["Start practice session\n(focused full-screen)"]
 
     subgraph AnswerPhase ["Answer Phase"]
-        ViewQuestion["View question<br/>with scaffolding applied"]
+        ViewQuestion["View question\nwith scaffolding applied"]
         SubmitAnswer["Submit answer"]
     end
 
     SkillCheck{"Skill type?"}
 
-    AutoGrade["Auto-grade immediately<br/>Compare with answer key<br/>Score calculated inline"]
+    AutoGrade["Auto-grade immediately\nCompare with answer key\nScore calculated inline"]
 
-    AIGrade["Dispatch to AI grading<br/>XADD to Redis Stream<br/>Status: processing"]
+    AIGrade["Dispatch to AI grading\nXADD to Redis Stream\nStatus: processing"]
 
-    ViewResult["View result<br/>Score, band, feedback"]
+    ViewResult["View result\nScore, band, feedback"]
 
-    WaitAI["Wait for AI result<br/>(poll for status)"]
+    WaitAI["Wait for AI result\n(poll for status)"]
 
-    ViewAIResult["View AI feedback<br/>Criteria scores,<br/>grammar errors"]
+    ViewAIResult["View AI feedback\nCriteria scores,\ngrammar errors"]
 
-    UpdateProgress["Progress updated<br/>Sliding window recalc<br/>Scaffold level check"]
+    UpdateProgress["Progress updated\nSliding window recalc\nScaffold level check"]
 
-    Continue{"Continue<br/>practicing?"}
+    Continue{"Continue\npracticing?"}
 
-    End(["Return to<br/>Practice selection"])
+    End(["Return to\nPractice selection"])
 
     Start --> SkillSelect --> ChooseQuestion --> StartSession
     StartSession --> ViewQuestion --> SubmitAnswer
@@ -1288,14 +1234,6 @@ flowchart TB
     UpdateProgress --> Continue
     Continue -->|"Yes"| SkillSelect
     Continue -->|"No"| End
-
-    classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
-    classDef action fill:#2e7d32,stroke:#1b5e20,color:#fff
-    classDef ai fill:#e65100,stroke:#bf360c,color:#fff
-
-    class Start,End start
-    class SkillSelect,ChooseQuestion,StartSession,ViewQuestion,SubmitAnswer,ViewResult,Continue action
-    class AutoGrade,AIGrade,WaitAI,ViewAIResult,UpdateProgress ai
 ```
 
 ### 3.6 FE-05: Practice Mode — Writing + AI Grading
@@ -1345,39 +1283,39 @@ flowchart TB
 #### 3.6.4 Writing/Speaking AI Grading Pipeline Diagram
 
 ```mermaid
-flowchart TB
-    Start(["Learner submits<br/>Writing/Speaking answer"])
+graph TB
+    Start(["Learner submits\nWriting/Speaking answer"])
 
-    CreateSub["Create Submission<br/>status = pending"]
-    CreateDetail["Create Submission Detail<br/>answer JSONB saved"]
-    Prepare["grading-dispatch.prepare()<br/>Set status = processing<br/>(inside DB transaction)"]
+    CreateSub["Create Submission\nstatus = pending"]
+    CreateDetail["Create Submission Detail\nanswer JSONB saved"]
+    Prepare["grading-dispatch.prepare()\nSet status = processing\n(inside DB transaction)"]
     Commit["Transaction commits"]
-    Dispatch["grading-dispatch.dispatch()<br/>XADD grading:tasks<br/>JSON payload to Redis Stream"]
+    Dispatch["grading-dispatch.dispatch()\nXADD grading:tasks\nJSON payload to Redis Stream"]
 
     subgraph GradingWorker ["Grading Service (Python + FastAPI)"]
-        Dequeue["XREADGROUP grading:tasks<br/>(consumer group poll)"]
+        Dequeue["XREADGROUP grading:tasks\n(consumer group poll)"]
         Route{"Skill?"}
-        Writing["writing.grade()<br/>Extract text + taskType<br/>Call LLM (provider-configurable)<br/>4 criteria scoring"]
-        Speaking["speaking.grade()<br/>Download audio<br/>STT transcription<br/>Transcript to LLM grading<br/>4 criteria scoring"]
-        CalcScore["Calculate overall score<br/>avg 4 criteria, snap to 0.5<br/>Determine band + confidence"]
+        Writing["writing.grade()\nExtract text + taskType\nCall LLM (provider-configurable)\n4 criteria scoring"]
+        Speaking["speaking.grade()\nDownload audio\nSTT transcription\nTranscript to LLM grading\n4 criteria scoring"]
+        CalcScore["Calculate overall score\navg 4 criteria, snap to 0.5\nDetermine band + confidence"]
         Confidence{"AI Confidence?"}
     end
 
-    HighConf["status = completed<br/>priority = null"]
-    MedConf["status = review_pending<br/>priority = medium"]
-    LowConf["status = review_pending<br/>priority = high"]
+    HighConf["status = completed\npriority = null"]
+    MedConf["status = review_pending\npriority = medium"]
+    LowConf["status = review_pending\npriority = high"]
 
-    PublishResult["XADD grading:results<br/>Publish result to Redis Stream"]
+    PublishResult["XADD grading:results\nPublish result to Redis Stream"]
 
     subgraph BackendConsumer ["Backend Consumer"]
-        ReadResult["XREADGROUP grading:results<br/>Read grading result"]
-        UpdateDB["Update submissions +<br/>submission_details in DB"]
-        RecordProgress["progress.record() + sync()<br/>Update sliding window"]
+        ReadResult["XREADGROUP grading:results\nRead grading result"]
+        UpdateDB["Update submissions +\nsubmission_details in DB"]
+        RecordProgress["progress.record() + sync()\nUpdate sliding window"]
     end
 
     End(["Done"])
 
-    ErrorPath["On failure after retries:<br/>XADD grading:results<br/>with failed marker"]
+    ErrorPath["On failure after retries:\nXADD grading:results\nwith failed marker"]
 
     Start --> CreateSub --> CreateDetail --> Prepare --> Commit --> Dispatch
     Dispatch --> Dequeue --> Route
@@ -1395,18 +1333,6 @@ flowchart TB
     PublishResult --> ReadResult --> UpdateDB --> RecordProgress --> End
 
     CalcScore -.->|"error"| ErrorPath
-
-    classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
-    classDef worker fill:#e65100,stroke:#bf360c,color:#fff
-    classDef result fill:#2e7d32,stroke:#1b5e20,color:#fff
-    classDef error fill:#c62828,stroke:#b71c1c,color:#fff
-    classDef consumer fill:#00695c,stroke:#004d40,color:#fff
-
-    class Start,End start
-    class Dequeue,Route,Writing,Speaking,CalcScore,Confidence worker
-    class HighConf,MedConf,LowConf,PublishResult result
-    class ReadResult,UpdateDB,RecordProgress consumer
-    class ErrorPath error
 ```
 
 ### 3.7 FE-06: Practice Mode — Speaking + AI Grading
@@ -1479,35 +1405,35 @@ flowchart TB
 #### 3.8.7 Exam Session Flow Diagram
 
 ```mermaid
-flowchart TB
-    Start(["Learner starts<br/>mock test"])
+graph TB
+    Start(["Learner starts\nmock test"])
 
-    ListExams["GET /api/exams<br/>List available exams<br/>Filter by level: B1/B2/C1"]
-    StartSession["POST /api/exams/:id/start<br/>Create exam_session<br/>status = in_progress"]
-    LoadQuestions["Load exam blueprint<br/>4 sections: L, R, W, S<br/>Return organized questions"]
+    ListExams["GET /api/exams\nList available exams\nFilter by level: B1/B2/C1"]
+    StartSession["POST /api/exams/:id/start\nCreate exam_session\nstatus = in_progress"]
+    LoadQuestions["Load exam blueprint\n4 sections: L, R, W, S\nReturn organized questions"]
 
     subgraph ExamTaking ["Exam Taking (Timed)"]
-        Answer["Answer questions<br/>POST /sessions/:id/answer<br/>Upsert exam_answers"]
-        AutoSave["Client auto-save<br/>every 30 seconds"]
-        Timer["Timer tracking<br/>Visual warning at 5min, 1min"]
+        Answer["Answer questions\nPOST /sessions/:id/answer\nUpsert exam_answers"]
+        AutoSave["Client auto-save\nevery 30 seconds"]
+        Timer["Timer tracking\nVisual warning at 5min, 1min"]
     end
 
-    Submit["POST /sessions/:id/submit<br/>Finalize exam"]
+    Submit["POST /sessions/:id/submit\nFinalize exam"]
 
     subgraph SubmitProcessing ["Submit Processing"]
         LoadAnswers["Load all exam_answers"]
-        GradeListening["Grade Listening<br/>Compare with answer key<br/>score = (correct/total) × 10"]
-        GradeReading["Grade Reading<br/>Compare with answer key<br/>score = (correct/total) × 10"]
-        PersistCorrect["persistCorrectness()<br/>Set isCorrect on each answer"]
-        CreateWSubs["Create Writing submissions<br/>Create Speaking submissions<br/>status = pending"]
-        DispatchWS["grading-dispatch<br/>Push W/S tasks to Redis"]
-        RecordLR["progress.record() + sync()<br/>for Listening and Reading"]
+        GradeListening["Grade Listening\nCompare with answer key\nscore = (correct/total) × 10"]
+        GradeReading["Grade Reading\nCompare with answer key\nscore = (correct/total) × 10"]
+        PersistCorrect["persistCorrectness()\nSet isCorrect on each answer"]
+        CreateWSubs["Create Writing submissions\nCreate Speaking submissions\nstatus = pending"]
+        DispatchWS["grading-dispatch\nPush W/S tasks to Redis"]
+        RecordLR["progress.record() + sync()\nfor Listening and Reading"]
     end
 
-    CheckAll{"All skills<br/>graded?"}
-    Submitted["Session status = submitted<br/>Waiting for W/S grading"]
-    Completed["Session status = completed<br/>All 4 skill scores available"]
-    Result["Exam Result<br/>Per-skill scores + bands<br/>overall = avg(4 skills)"]
+    CheckAll{"All skills\ngraded?"}
+    Submitted["Session status = submitted\nWaiting for W/S grading"]
+    Completed["Session status = completed\nAll 4 skill scores available"]
+    Result["Exam Result\nPer-skill scores + bands\noverall = avg(4 skills)"]
     End(["Done"])
 
     Start --> ListExams --> StartSession --> LoadQuestions
@@ -1531,16 +1457,6 @@ flowchart TB
     Submitted --> Result
     Completed --> Result
     Result --> End
-
-    classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
-    classDef exam fill:#6a1b9a,stroke:#4a148c,color:#fff
-    classDef process fill:#f57c00,stroke:#e65100,color:#fff
-    classDef result fill:#2e7d32,stroke:#1b5e20,color:#fff
-
-    class Start,End start
-    class Answer,AutoSave,Timer exam
-    class LoadAnswers,GradeListening,GradeReading,PersistCorrect,CreateWSubs,DispatchWS,RecordLR process
-    class Submitted,Completed,Result result
 ```
 
 ### 3.9 FE-08: Human Grading (Instructor Review)
@@ -1583,31 +1499,31 @@ flowchart TB
 #### 3.9.5 Instructor Review Workflow Diagram
 
 ```mermaid
-flowchart TB
-    Start(["Instructor opens<br/>Review Queue"])
+graph TB
+    Start(["Instructor opens\nReview Queue"])
 
-    ViewQueue["GET /api/submissions/queue<br/>Filter: status = review_pending<br/>Sort: priority high > med > low<br/>then FIFO created_at"]
+    ViewQueue["GET /api/submissions/queue\nFilter: status = review_pending\nSort: priority high > med > low\nthen FIFO created_at"]
 
-    SelectSub["Select submission<br/>to review"]
+    SelectSub["Select submission\nto review"]
 
-    Claim["POST /:id/claim<br/>Set claimed_by = instructor<br/>Set claimed_at = now<br/>Timeout: 15 min DB conditional"]
+    Claim["POST /:id/claim\nSet claimed_by = instructor\nSet claimed_at = now\nTimeout: 15 min DB conditional"]
 
-    ClaimCheck{"Already<br/>claimed?"}
-    ClaimFail["409 CONFLICT<br/>Already claimed by<br/>another instructor"]
+    ClaimCheck{"Already\nclaimed?"}
+    ClaimFail["409 CONFLICT\nAlready claimed by\nanother instructor"]
 
-    ViewAIResult["View AI grading result<br/>- 4 criteria scores<br/>- Overall score and band<br/>- Feedback text<br/>- Confidence level"]
+    ViewAIResult["View AI grading result\n- 4 criteria scores\n- Overall score and band\n- Feedback text\n- Confidence level"]
 
-    ReviewDecision{"Instructor<br/>decision"}
+    ReviewDecision{"Instructor\ndecision"}
 
-    Release["POST /:id/release<br/>Clear claimed_by<br/>Return to queue"]
+    Release["POST /:id/release\nClear claimed_by\nReturn to queue"]
 
-    SubmitReview["PUT /:id/review<br/>- overallScore 0-10<br/>- band B1/B2/C1<br/>- criteriaScores<br/>- feedback<br/>- reviewComment"]
+    SubmitReview["PUT /:id/review\n- overallScore 0-10\n- band B1/B2/C1\n- criteriaScores\n- feedback\n- reviewComment"]
 
-    UpdateSub["Update Submission<br/>status = completed<br/>gradingMode = human<br/>reviewerId = instructor<br/>auditFlag = |aiScore - humanScore| > 0.5"]
+    UpdateSub["Update Submission\nstatus = completed\ngradingMode = human\nreviewerId = instructor\nauditFlag = |aiScore - humanScore| > 0.5"]
 
-    SaveResult["Save HumanResult<br/>to submission_details.result<br/>(AI result also preserved)"]
+    SaveResult["Save HumanResult\nto submission_details.result\n(AI result also preserved)"]
 
-    Progress["progress.record() + sync()<br/>Update learner scores<br/>Recalculate sliding window"]
+    Progress["progress.record() + sync()\nUpdate learner scores\nRecalculate sliding window"]
 
     End(["Done"])
 
@@ -1620,16 +1536,6 @@ flowchart TB
     ReviewDecision -->|"Submit grade"| SubmitReview
     Release --> ViewQueue
     SubmitReview --> UpdateSub --> SaveResult --> Progress --> End
-
-    classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
-    classDef action fill:#e65100,stroke:#bf360c,color:#fff
-    classDef error fill:#c62828,stroke:#b71c1c,color:#fff
-    classDef result fill:#2e7d32,stroke:#1b5e20,color:#fff
-
-    class Start,End start
-    class ViewQueue,SelectSub,Claim,ViewAIResult,ReviewDecision action
-    class ClaimFail error
-    class SubmitReview,UpdateSub,SaveResult,Progress,Release result
 ```
 
 #### 3.9.6 Submission State Machine Diagram
@@ -1736,42 +1642,42 @@ stateDiagram-v2
 #### 3.10.6 Progress Tracking & Sliding Window Diagram
 
 ```mermaid
-flowchart TB
+graph TB
     Start(["Score input event"])
 
-    Source{"Score<br/>Source?"}
-    AutoGrade["Auto-Grade completed<br/>Listening/Reading"]
-    AIGrade["AI Grading completed<br/>Writing/Speaking"]
-    InstructorGrade["Instructor Review completed<br/>Writing/Speaking"]
+    Source{"Score\nSource?"}
+    AutoGrade["Auto-Grade completed\nListening/Reading"]
+    AIGrade["AI Grading completed\nWriting/Speaking"]
+    InstructorGrade["Instructor Review completed\nWriting/Speaking"]
 
-    Record["progress.record()<br/>INSERT INTO user_skill_scores<br/>(userId, skill, score, submissionId)"]
+    Record["progress.record()\nINSERT INTO user_skill_scores\n(userId, skill, score, submissionId)"]
 
-    Fetch["Fetch last 10 scores<br/>Per skill, DESC by created_at<br/>(Sliding Window, N=10)"]
+    Fetch["Fetch last 10 scores\nPer skill, DESC by created_at\n(Sliding Window, N=10)"]
 
-    Stats["computeStats(scores)<br/>- mean (average)<br/>- count<br/>- deviation (sample std dev)"]
+    Stats["computeStats(scores)\n- mean (average)\n- count\n- deviation (sample std dev)"]
 
-    CountCheck{"Count<br/>ge 3?"}
+    CountCheck{"Count\nge 3?"}
     Insufficient["trend = insufficient_data"]
 
-    CountCheck2{"Count<br/>ge 6?"}
+    CountCheck2{"Count\nge 6?"}
 
-    SmallWindow["3-5 scores:<br/>Check deviation only"]
-    LargeWindow["6+ scores:<br/>Compare recent 3 avg<br/>vs previous 3 avg"]
+    SmallWindow["3-5 scores:\nCheck deviation only"]
+    LargeWindow["6+ scores:\nCompare recent 3 avg\nvs previous 3 avg"]
 
-    DevCheck1{"deviation<br/>ge 1.5?"}
+    DevCheck1{"deviation\nge 1.5?"}
     Inconsistent1["trend = inconsistent"]
     Stable1["trend = stable"]
 
-    DevCheck2{"deviation<br/>ge 1.5?"}
+    DevCheck2{"deviation\nge 1.5?"}
     Inconsistent2["trend = inconsistent"]
 
     DeltaCalc["delta = avg(last 3) - avg(prev 3)"]
     DeltaCheck{"delta?"}
-    Improving["trend = improving<br/>delta ge +0.5"]
-    Declining["trend = declining<br/>delta le -0.5"]
+    Improving["trend = improving\ndelta ge +0.5"]
+    Declining["trend = declining\ndelta le -0.5"]
     Stable2["trend = stable"]
 
-    Upsert["UPSERT user_progress<br/>ON CONFLICT (user_id, skill)<br/>averageScore, latestScore,<br/>totalAttempts, currentLevel,<br/>trend, scaffoldLevel"]
+    Upsert["UPSERT user_progress\nON CONFLICT (user_id, skill)\naverageScore, latestScore,\ntotalAttempts, currentLevel,\ntrend, scaffoldLevel"]
 
     End(["Done"])
 
@@ -1796,14 +1702,6 @@ flowchart TB
     DeltaCheck -->|"otherwise"| Stable2 --> Upsert
 
     Upsert --> End
-
-    classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
-    classDef compute fill:#f57c00,stroke:#e65100,color:#fff
-    classDef trend fill:#2e7d32,stroke:#1b5e20,color:#fff
-
-    class Start,End start
-    class AutoGrade,AIGrade,InstructorGrade,Record,Fetch,Stats,CountCheck,CountCheck2 compute
-    class Insufficient,Inconsistent1,Inconsistent2,Stable1,Stable2,Improving,Declining trend
 ```
 
 ### 3.11 FE-10: Learning Path
@@ -1823,22 +1721,22 @@ flowchart TB
 #### 3.11.2 Class Management Flow Diagram
 
 ```mermaid
-flowchart TB
+graph TB
     subgraph InstructorFlow ["Instructor"]
         IStart(["Instructor creates class"])
-        CreateClass["POST /api/classes<br/>Auto-generate invite code"]
-        ShareCode["Share invite code<br/>with learners"]
-        ViewDashboard["View Class Dashboard<br/>Per-skill averages,<br/>at-risk students (avg < 5.0)"]
-        ViewMember["View Member Progress<br/>Individual scores, trends,<br/>goal status"]
-        GiveFeedback["Post feedback<br/>to specific learner"]
-        RotateCode["Rotate invite code<br/>(invalidate old code)"]
-        RemoveMember["Remove member<br/>from class"]
+        CreateClass["POST /api/classes\nAuto-generate invite code"]
+        ShareCode["Share invite code\nwith learners"]
+        ViewDashboard["View Class Dashboard\nPer-skill averages,\nat-risk students (avg < 5.0)"]
+        ViewMember["View Member Progress\nIndividual scores, trends,\ngoal status"]
+        GiveFeedback["Post feedback\nto specific learner"]
+        RotateCode["Rotate invite code\n(invalidate old code)"]
+        RemoveMember["Remove member\nfrom class"]
     end
 
     subgraph LearnerFlow ["Learner"]
-        LStart(["Learner receives<br/>invite code"])
-        JoinClass["POST /api/classes/join<br/>Enter invite code"]
-        ViewFeedback["View instructor<br/>feedback"]
+        LStart(["Learner receives\ninvite code"])
+        JoinClass["POST /api/classes/join\nEnter invite code"]
+        ViewFeedback["View instructor\nfeedback"]
         LeaveClass["Leave class"]
     end
 
@@ -1855,12 +1753,6 @@ flowchart TB
     JoinClass --> ViewFeedback
     JoinClass --> LeaveClass
     GiveFeedback --> ViewFeedback
-
-    classDef instructor fill:#e65100,stroke:#bf360c,color:#fff
-    classDef learner fill:#1565c0,stroke:#0d47a1,color:#fff
-
-    class IStart,CreateClass,ShareCode,ViewDashboard,ViewMember,GiveFeedback,RotateCode,RemoveMember instructor
-    class LStart,JoinClass,ViewFeedback,LeaveClass learner
 ```
 
 ### 3.12 FE-11: Goal Setting

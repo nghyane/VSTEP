@@ -1,0 +1,138 @@
+erDiagram
+    users ||--o{ refresh_tokens : "has"
+    users ||--o{ submissions : "creates"
+    users ||--o{ questions : "creates"
+    users ||--o{ exams : "creates"
+    users ||--o{ exam_sessions : "takes"
+    questions ||--o{ submissions : "answered in"
+    questions ||--o{ exam_answers : "included in"
+    exams ||--o{ exam_sessions : "has"
+    exam_sessions ||--o{ exam_answers : "contains"
+    exam_sessions ||--o{ exam_submissions : "produces"
+    submissions ||--|| submission_details : "has"
+    submissions ||--o{ exam_submissions : "linked from"
+    submissions ||--o{ user_skill_scores : "records"
+
+    users {
+        uuid id PK
+        varchar email UK "unique"
+        varchar password_hash "argon2id"
+        varchar full_name "nullable"
+        enum role "learner|instructor|admin"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    refresh_tokens {
+        uuid id PK
+        uuid user_id FK
+        varchar token_hash "SHA-256"
+        varchar jti UK "unique"
+        varchar replaced_by_jti "rotation"
+        text device_info "User-Agent"
+        timestamp revoked_at "nullable"
+        timestamp expires_at
+        timestamp created_at
+    }
+
+    questions {
+        uuid id PK
+        enum skill "L|R|W|S"
+        smallint part "skill part"
+        jsonb content "QuestionContent"
+        jsonb answer_key "nullable"
+        text explanation "nullable"
+        boolean is_active "soft delete"
+        uuid created_by FK
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    submissions {
+        uuid id PK
+        uuid user_id FK
+        uuid question_id FK
+        enum skill "L|R|W|S"
+        enum status "5 states"
+        numeric score "0-10 step 0.5"
+        enum band "B1|B2|C1"
+        enum review_priority "nullable"
+        enum grading_mode "nullable"
+        uuid reviewer_id FK "nullable"
+        boolean audit_flag "score diff"
+        uuid claimed_by FK "nullable"
+        timestamp claimed_at "nullable"
+        timestamp completed_at "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    submission_details {
+        uuid submission_id PK "FK"
+        jsonb answer "typed answer"
+        jsonb result "nullable"
+        varchar feedback "max 10000"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    exams {
+        uuid id PK
+        varchar title "max 255"
+        text description "nullable"
+        enum type "practice|placement|mock"
+        enum skill "nullable"
+        enum level "A2|B1|B2|C1"
+        integer duration_minutes "nullable"
+        jsonb blueprint "per-skill IDs"
+        boolean is_active "default true"
+        uuid created_by FK
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    exam_sessions {
+        uuid id PK
+        uuid user_id FK
+        uuid exam_id FK
+        enum status "4 states"
+        numeric listening_score "nullable"
+        numeric reading_score "nullable"
+        numeric writing_score "nullable"
+        numeric speaking_score "nullable"
+        numeric overall_score "nullable"
+        enum overall_band "nullable"
+        timestamp started_at
+        timestamp completed_at "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    exam_answers {
+        uuid id PK
+        uuid session_id FK
+        uuid question_id FK
+        jsonb answer "typed"
+        boolean is_correct "on submit"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    exam_submissions {
+        uuid id PK
+        uuid session_id FK
+        uuid submission_id FK
+        enum skill "W|S"
+        timestamp created_at
+    }
+
+    user_skill_scores {
+        uuid id PK
+        uuid user_id FK
+        enum skill "L|R|W|S"
+        uuid submission_id FK "nullable"
+        uuid session_id FK "nullable"
+        numeric score "0-10"
+        varchar scaffolding_type "nullable"
+        timestamp created_at
+    }

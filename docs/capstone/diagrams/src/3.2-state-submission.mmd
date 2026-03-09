@@ -1,0 +1,14 @@
+stateDiagram-v2
+    [*] --> Pending: Create submission
+
+    Pending --> Processing: Auto-grade or dispatch
+    Pending --> Failed: Validation error
+
+    Processing --> Completed: High confidence
+    Processing --> ReviewPending: Low confidence
+    Processing --> Failed: Max retries exceeded
+
+    ReviewPending --> Completed: Instructor review
+
+    Completed --> [*]
+    Failed --> [*]

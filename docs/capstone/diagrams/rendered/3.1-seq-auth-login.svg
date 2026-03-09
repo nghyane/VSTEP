@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 454.025 884" width="454.025" height="884" style="--bg:#ffffff;--fg:#1f2328;--line:#d1d9e0;--accent:#0969da;--muted:#59636e;background:var(--bg)">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap');
+  text { font-family: 'Inter', system-ui, sans-serif; }
+  svg {
+    /* Derived from --bg and --fg (overridable via --line, --accent, etc.) */
+    --_text:          var(--fg);
+    --_text-sec:      var(--muted, color-mix(in srgb, var(--fg) 60%, var(--bg)));
+    --_text-muted:    var(--muted, color-mix(in srgb, var(--fg) 40%, var(--bg)));
+    --_text-faint:    color-mix(in srgb, var(--fg) 25%, var(--bg));
+    --_line:          var(--line, color-mix(in srgb, var(--fg) 50%, var(--bg)));
+    --_arrow:         var(--accent, color-mix(in srgb, var(--fg) 85%, var(--bg)));
+    --_node-fill:     var(--surface, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+    --_node-stroke:   var(--border, color-mix(in srgb, var(--fg) 20%, var(--bg)));
+    --_group-fill:    var(--bg);
+    --_group-hdr:     color-mix(in srgb, var(--fg) 5%, var(--bg));
+    --_inner-stroke:  color-mix(in srgb, var(--fg) 12%, var(--bg));
+    --_key-badge:     color-mix(in srgb, var(--fg) 10%, var(--bg));
+  }
+</style>
+<defs>
+  <marker id="seq-arrow" markerWidth="8" markerHeight="5" refX="8" refY="2.5" orient="auto-start-reverse">
+    <polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" />
+  </marker>
+  <marker id="seq-arrow-open" markerWidth="8" markerHeight="5" refX="8" refY="2.5" orient="auto-start-reverse">
+    <polyline points="0 0, 8 2.5, 0 5" fill="none" stroke="var(--_arrow)" stroke-width="1" />
+  </marker>
+</defs>
+<g class="block" data-type="alt" data-label="User not found">
+  <rect x="30" y="268" width="243.651" height="60" rx="0" ry="0" fill="none" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="30" y="268" width="113.35000000000001" height="18" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="36" y="277" font-size="11" font-weight="600" fill="var(--_text-sec)" dy="3.8499999999999996">alt [User not found]</text>
+</g>
+<g class="block" data-type="alt" data-label="Password mismatch">
+  <rect x="30" y="406" width="243.651" height="60" rx="0" ry="0" fill="none" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="30" y="406" width="141.73000000000002" height="18" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="36" y="415" font-size="11" font-weight="600" fill="var(--_text-sec)" dy="3.8499999999999996">alt [Password mismatch]</text>
+</g>
+<g class="block" data-type="alt" data-label="tokenCount &gt;= 3">
+  <rect x="166.349" y="554" width="257.676" height="60" rx="0" ry="0" fill="none" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="166.349" y="554" width="121.27000000000001" height="18" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="172.349" y="563" font-size="11" font-weight="600" fill="var(--_text-sec)" dy="3.8499999999999996">alt [tokenCount &gt;= 3]</text>
+</g>
+<line class="lifeline" data-actor="C" x1="80" y1="70" x2="80" y2="854" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="B" x1="220" y1="70" x2="220" y2="854" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="DB" x1="360" y1="70" x2="360" y2="854" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<g class="message" data-from="C" data-to="B" data-label="POST /api/auth/login" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="80" y1="90" x2="220" y2="90" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="150" y="80" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">POST /api/auth/login</text>
+</g>
+<g class="message" data-from="B" data-to="B" data-label="Validate input" data-line-style="solid" data-arrow-head="filled" data-self="true">
+  <polyline points="220,130 250,130 250,150 220,150" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="258" y="140" font-size="11" text-anchor="start" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Validate input</text>
+</g>
+<g class="message" data-from="B" data-to="DB" data-label="Find user by email" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="220" y1="200" x2="360" y2="200" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="290" y="190" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Find user by email</text>
+</g>
+<g class="message" data-from="DB" data-to="B" data-label="User record" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+  <line x1="360" y1="240" x2="220" y2="240" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#seq-arrow)" />
+  <text x="290" y="230" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">User record</text>
+</g>
+<g class="message" data-from="B" data-to="C" data-label="401 Unauthorized" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+  <line x1="220" y1="308" x2="80" y2="308" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#seq-arrow)" />
+  <text x="150" y="298" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">401 Unauthorized</text>
+</g>
+<g class="message" data-from="B" data-to="B" data-label="Verify password" data-line-style="solid" data-arrow-head="filled" data-self="true">
+  <polyline points="220,348 250,348 250,368 220,368" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="258" y="358" font-size="11" text-anchor="start" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Verify password</text>
+</g>
+<g class="message" data-from="B" data-to="C" data-label="401 Unauthorized" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+  <line x1="220" y1="446" x2="80" y2="446" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#seq-arrow)" />
+  <text x="150" y="436" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">401 Unauthorized</text>
+</g>
+<g class="message" data-from="B" data-to="DB" data-label="Count active tokens" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="220" y1="486" x2="360" y2="486" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="290" y="476" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Count active tokens</text>
+</g>
+<g class="message" data-from="DB" data-to="B" data-label="tokenCount" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+  <line x1="360" y1="526" x2="220" y2="526" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#seq-arrow)" />
+  <text x="290" y="516" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">tokenCount</text>
+</g>
+<g class="message" data-from="B" data-to="DB" data-label="Revoke oldest token" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="220" y1="594" x2="360" y2="594" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="290" y="584" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Revoke oldest token</text>
+</g>
+<g class="message" data-from="B" data-to="B" data-label="Sign JWT access token" data-line-style="solid" data-arrow-head="filled" data-self="true">
+  <polyline points="220,634 250,634 250,654 220,654" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="258" y="644" font-size="11" text-anchor="start" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Sign JWT access token</text>
+</g>
+<g class="message" data-from="B" data-to="B" data-label="Generate refresh token" data-line-style="solid" data-arrow-head="filled" data-self="true">
+  <polyline points="220,704 250,704 250,724 220,724" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="258" y="714" font-size="11" text-anchor="start" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Generate refresh token</text>
+</g>
+<g class="message" data-from="B" data-to="DB" data-label="Store refresh token hash" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="220" y1="774" x2="360" y2="774" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="290" y="764" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Store refresh token hash</text>
+</g>
+<g class="message" data-from="B" data-to="C" data-label="200 {accessToken, refreshToken}" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+  <line x1="220" y1="814" x2="80" y2="814" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#seq-arrow)" />
+  <text x="150" y="804" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">200 {accessToken, refreshToken}</text>
+</g>
+<g class="actor" data-id="C" data-label="Client" data-type="participant">
+  <rect x="40" y="30" width="80" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="80" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">Client</text>
+</g>
+<g class="actor" data-id="B" data-label="Backend" data-type="participant">
+  <rect x="176.349" y="30" width="87.30199999999999" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="220" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">Backend</text>
+</g>
+<g class="actor" data-id="DB" data-label="PostgreSQL" data-type="participant">
+  <rect x="305.975" y="30" width="108.04999999999998" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="360" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">PostgreSQL</text>
+</g>
+</svg>

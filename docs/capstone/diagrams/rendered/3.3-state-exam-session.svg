@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 323.433 643.6" width="323.433" height="643.6" style="--bg:#ffffff;--fg:#1f2328;--line:#d1d9e0;--accent:#0969da;--muted:#59636e;background:var(--bg)">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap');
+  text { font-family: 'Inter', system-ui, sans-serif; }
+  svg {
+    /* Derived from --bg and --fg (overridable via --line, --accent, etc.) */
+    --_text:          var(--fg);
+    --_text-sec:      var(--muted, color-mix(in srgb, var(--fg) 60%, var(--bg)));
+    --_text-muted:    var(--muted, color-mix(in srgb, var(--fg) 40%, var(--bg)));
+    --_text-faint:    color-mix(in srgb, var(--fg) 25%, var(--bg));
+    --_line:          var(--line, color-mix(in srgb, var(--fg) 50%, var(--bg)));
+    --_arrow:         var(--accent, color-mix(in srgb, var(--fg) 85%, var(--bg)));
+    --_node-fill:     var(--surface, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+    --_node-stroke:   var(--border, color-mix(in srgb, var(--fg) 20%, var(--bg)));
+    --_group-fill:    var(--bg);
+    --_group-hdr:     color-mix(in srgb, var(--fg) 5%, var(--bg));
+    --_inner-stroke:  color-mix(in srgb, var(--fg) 12%, var(--bg));
+    --_key-badge:     color-mix(in srgb, var(--fg) 10%, var(--bg));
+  }
+</style>
+<defs>
+  <marker id="arrowhead" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+    <polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+  </marker>
+  <marker id="arrowhead-start" markerWidth="8" markerHeight="5" refX="1" refY="2.5" orient="auto-start-reverse">
+    <polygon points="8 0, 0 2.5, 8 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+  </marker>
+</defs>
+<polyline class="edge" data-from="_start" data-to="InProgress" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="Start exam" points="157.59699999999998,68 157.59699999999998,184.3" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="InProgress" data-to="Submitted" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="Submit exam" points="139.24333333333334,221.2 139.24333333333334,257.2 91.5,257.2 91.5,337.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="InProgress" data-to="Abandoned" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="Timeout" points="175.95066666666668,221.2 175.95066666666668,257.2 223.69400000000002,257.2 223.69400000000002,337.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Submitted" data-to="Completed" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="All scores available" points="91.5,374.4 91.5,490.70000000000005" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Completed" data-to="_end" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="91.5,527.6 91.5,575.6" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Abandoned" data-to="_end2" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="223.69400000000002,374.4 223.69400000000002,422.4" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<g class="edge-label" data-from="_start" data-to="InProgress" data-label="Start exam">
+  <rect x="124.09699999999998" y="111" width="66.952" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="157.57299999999998" y="126.15" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">Start exam</text>
+</g>
+<g class="edge-label" data-from="InProgress" data-to="Submitted" data-label="Submit exam">
+  <rect x="53.5" y="264.2" width="75.268" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="91.134" y="279.34999999999997" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">Submit exam</text>
+</g>
+<g class="edge-label" data-from="InProgress" data-to="Abandoned" data-label="Timeout">
+  <rect x="196.19400000000002" y="264.2" width="54.478" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="223.43300000000002" y="279.34999999999997" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">Timeout</text>
+</g>
+<g class="edge-label" data-from="Submitted" data-to="Completed" data-label="All scores available">
+  <rect x="36" y="417.40000000000003" width="110.31400000000002" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="91.15700000000001" y="432.55" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">All scores available</text>
+</g>
+<g class="node" data-id="_start" data-label="" data-shape="state-start">
+  <circle cx="157.59699999999998" cy="54" r="12" fill="var(--_text)" stroke="none" />
+</g>
+<g class="node" data-id="InProgress" data-label="InProgress" data-shape="rounded">
+  <rect x="102.53599999999999" y="184.3" width="110.122" height="36.900000000000006" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="157.59699999999998" y="202.75" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">InProgress</text>
+</g>
+<g class="node" data-id="Submitted" data-label="Submitted" data-shape="rounded">
+  <rect x="42.36699999999999" y="337.5" width="98.266" height="36.900000000000006" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="91.5" y="355.95" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Submitted</text>
+</g>
+<g class="node" data-id="Abandoned" data-label="Abandoned" data-shape="rounded">
+  <rect x="168.633" y="337.5" width="110.122" height="36.900000000000006" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="223.69400000000002" y="355.95" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Abandoned</text>
+</g>
+<g class="node" data-id="Completed" data-label="Completed" data-shape="rounded">
+  <rect x="40.144000000000005" y="490.70000000000005" width="102.712" height="36.900000000000006" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="91.5" y="509.15000000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Completed</text>
+</g>
+<g class="node" data-id="_end" data-label="" data-shape="state-end">
+  <circle cx="91.5" cy="589.6" r="12" fill="none" stroke="var(--_text)" stroke-width="1.5" />
+  <circle cx="91.5" cy="589.6" r="8" fill="var(--_text)" stroke="none" />
+</g>
+<g class="node" data-id="_end2" data-label="" data-shape="state-end">
+  <circle cx="223.69400000000002" cy="436.4" r="12" fill="none" stroke="var(--_text)" stroke-width="1.5" />
+  <circle cx="223.69400000000002" cy="436.4" r="8" fill="var(--_text)" stroke="none" />
+</g>
+</svg>

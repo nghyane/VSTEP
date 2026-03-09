@@ -1,0 +1,31 @@
+sequenceDiagram
+    participant T as Score Event
+    participant B as Backend
+    participant DB as PostgreSQL
+
+    T->>B: Record score
+    B->>DB: Insert skill score
+
+    T->>B: Sync progress
+    B->>DB: Fetch last 10 scores
+    DB-->>B: Score window
+
+    B->>B: Compute mean + std dev
+
+    alt count < 3
+        B->>B: trend = insufficient
+    else count 3-5
+        alt high deviation
+            B->>B: trend = inconsistent
+        else
+            B->>B: trend = stable
+        end
+    else count >= 6
+        alt high deviation
+            B->>B: trend = inconsistent
+        else
+            B->>B: Compare recent vs older
+        end
+    end
+
+    B->>DB: Upsert user_progress

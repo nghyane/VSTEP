@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 580 1048" width="580" height="1048" style="--bg:#ffffff;--fg:#1f2328;--line:#d1d9e0;--accent:#0969da;--muted:#59636e;background:var(--bg)">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap');
+  text { font-family: 'Inter', system-ui, sans-serif; }
+  svg {
+    /* Derived from --bg and --fg (overridable via --line, --accent, etc.) */
+    --_text:          var(--fg);
+    --_text-sec:      var(--muted, color-mix(in srgb, var(--fg) 60%, var(--bg)));
+    --_text-muted:    var(--muted, color-mix(in srgb, var(--fg) 40%, var(--bg)));
+    --_text-faint:    color-mix(in srgb, var(--fg) 25%, var(--bg));
+    --_line:          var(--line, color-mix(in srgb, var(--fg) 50%, var(--bg)));
+    --_arrow:         var(--accent, color-mix(in srgb, var(--fg) 85%, var(--bg)));
+    --_node-fill:     var(--surface, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+    --_node-stroke:   var(--border, color-mix(in srgb, var(--fg) 20%, var(--bg)));
+    --_group-fill:    var(--bg);
+    --_group-hdr:     color-mix(in srgb, var(--fg) 5%, var(--bg));
+    --_inner-stroke:  color-mix(in srgb, var(--fg) 12%, var(--bg));
+    --_key-badge:     color-mix(in srgb, var(--fg) 10%, var(--bg));
+  }
+</style>
+<defs>
+  <marker id="seq-arrow" markerWidth="8" markerHeight="5" refX="8" refY="2.5" orient="auto-start-reverse">
+    <polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" />
+  </marker>
+  <marker id="seq-arrow-open" markerWidth="8" markerHeight="5" refX="8" refY="2.5" orient="auto-start-reverse">
+    <polyline points="0 0, 8 2.5, 0 5" fill="none" stroke="var(--_arrow)" stroke-width="1" />
+  </marker>
+</defs>
+<g class="block" data-type="loop" data-label="Every 30s">
+  <rect x="30" y="238" width="394.025" height="140" rx="0" ry="0" fill="none" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="30" y="238" width="103.45" height="18" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="36" y="247" font-size="11" font-weight="600" fill="var(--_text-sec)" dy="3.8499999999999996">loop [Every 30s]</text>
+</g>
+<g class="block" data-type="par" data-label="Auto-grade L/R">
+  <rect x="166.349" y="466" width="107.30200000000002" height="154" rx="0" ry="0" fill="none" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="166.349" y="466" width="124.57" height="18" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="172.349" y="475" font-size="11" font-weight="600" fill="var(--_text-sec)" dy="3.8499999999999996">par [Auto-grade L/R]</text>
+  <line x1="166.349" y1="572" x2="273.651" y2="572" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+</g>
+<g class="block" data-type="par" data-label="Dispatch W/S">
+  <rect x="166.349" y="738" width="383.651" height="140" rx="0" ry="0" fill="none" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="166.349" y="738" width="114.01" height="18" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="172.349" y="747" font-size="11" font-weight="600" fill="var(--_text-sec)" dy="3.8499999999999996">par [Dispatch W/S]</text>
+</g>
+<line class="lifeline" data-actor="C" x1="80" y1="70" x2="80" y2="1018" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="B" x1="220" y1="70" x2="220" y2="1018" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="DB" x1="360" y1="70" x2="360" y2="1018" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="R" x1="500" y1="70" x2="500" y2="1018" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<g class="message" data-from="C" data-to="B" data-label="POST /api/exams/:id/start" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="80" y1="90" x2="220" y2="90" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="150" y="80" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">POST /api/exams/:id/start</text>
+</g>
+<g class="message" data-from="B" data-to="DB" data-label="Fetch exam" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="220" y1="130" x2="360" y2="130" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="290" y="120" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Fetch exam</text>
+</g>
+<g class="message" data-from="B" data-to="DB" data-label="Create session" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="220" y1="170" x2="360" y2="170" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="290" y="160" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Create session</text>
+</g>
+<g class="message" data-from="B" data-to="C" data-label="{sessionId, questions}" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+  <line x1="220" y1="210" x2="80" y2="210" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#seq-arrow)" />
+  <text x="150" y="200" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">{sessionId, questions}</text>
+</g>
+<g class="message" data-from="C" data-to="B" data-label="POST /sessions/:id/answer" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="80" y1="278" x2="220" y2="278" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="150" y="268" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">POST /sessions/:id/answer</text>
+</g>
+<g class="message" data-from="B" data-to="DB" data-label="Upsert answers" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="220" y1="318" x2="360" y2="318" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="290" y="308" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Upsert answers</text>
+</g>
+<g class="message" data-from="B" data-to="C" data-label="{saved: true}" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+  <line x1="220" y1="358" x2="80" y2="358" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#seq-arrow)" />
+  <text x="150" y="348" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">{saved: true}</text>
+</g>
+<g class="message" data-from="C" data-to="B" data-label="POST /sessions/:id/submit" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="80" y1="398" x2="220" y2="398" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="150" y="388" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">POST /sessions/:id/submit</text>
+</g>
+<g class="message" data-from="B" data-to="DB" data-label="Fetch all answers" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="220" y1="438" x2="360" y2="438" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="290" y="428" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Fetch all answers</text>
+</g>
+<g class="message" data-from="B" data-to="B" data-label="Score listening" data-line-style="solid" data-arrow-head="filled" data-self="true">
+  <polyline points="220,506 250,506 250,526 220,526" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="258" y="516" font-size="11" text-anchor="start" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Score listening</text>
+</g>
+<g class="message" data-from="B" data-to="B" data-label="Score reading" data-line-style="solid" data-arrow-head="filled" data-self="true">
+  <polyline points="220,600 250,600 250,620 220,620" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="258" y="610" font-size="11" text-anchor="start" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Score reading</text>
+</g>
+<g class="message" data-from="B" data-to="DB" data-label="Update answer correctness" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="220" y1="670" x2="360" y2="670" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="290" y="660" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Update answer correctness</text>
+</g>
+<g class="message" data-from="B" data-to="DB" data-label="Store L/R scores" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="220" y1="710" x2="360" y2="710" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="290" y="700" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Store L/R scores</text>
+</g>
+<g class="message" data-from="B" data-to="DB" data-label="Create W/S submissions" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="220" y1="778" x2="360" y2="778" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="290" y="768" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Create W/S submissions</text>
+</g>
+<g class="message" data-from="B" data-to="R" data-label="XADD writing task" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="220" y1="818" x2="500" y2="818" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="360" y="808" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">XADD writing task</text>
+</g>
+<g class="message" data-from="B" data-to="R" data-label="XADD speaking task" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="220" y1="858" x2="500" y2="858" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="360" y="848" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">XADD speaking task</text>
+</g>
+<g class="message" data-from="B" data-to="DB" data-label="Record L/R progress" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="220" y1="898" x2="360" y2="898" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="290" y="888" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Record L/R progress</text>
+</g>
+<g class="message" data-from="B" data-to="DB" data-label="Set status=submitted" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="220" y1="938" x2="360" y2="938" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="290" y="928" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Set status=submitted</text>
+</g>
+<g class="message" data-from="B" data-to="C" data-label="{listeningScore, readingScore}" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+  <line x1="220" y1="978" x2="80" y2="978" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#seq-arrow)" />
+  <text x="150" y="968" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">{listeningScore, readingScore}</text>
+</g>
+<g class="actor" data-id="C" data-label="Client" data-type="participant">
+  <rect x="40" y="30" width="80" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="80" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">Client</text>
+</g>
+<g class="actor" data-id="B" data-label="Backend" data-type="participant">
+  <rect x="176.349" y="30" width="87.30199999999999" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="220" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">Backend</text>
+</g>
+<g class="actor" data-id="DB" data-label="PostgreSQL" data-type="participant">
+  <rect x="305.975" y="30" width="108.04999999999998" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="360" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">PostgreSQL</text>
+</g>
+<g class="actor" data-id="R" data-label="Redis" data-type="participant">
+  <rect x="460" y="30" width="80" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="500" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">Redis</text>
+</g>
+</svg>

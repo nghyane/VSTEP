@@ -1,0 +1,31 @@
+sequenceDiagram
+    participant C as Client
+    participant B as Backend
+    participant DB as PostgreSQL
+
+    C->>B: POST /api/auth/login
+    B->>B: Validate input
+    B->>DB: Find user by email
+    DB-->>B: User record
+
+    alt User not found
+        B-->>C: 401 Unauthorized
+    end
+
+    B->>B: Verify password
+
+    alt Password mismatch
+        B-->>C: 401 Unauthorized
+    end
+
+    B->>DB: Count active tokens
+    DB-->>B: tokenCount
+
+    alt tokenCount >= 3
+        B->>DB: Revoke oldest token
+    end
+
+    B->>B: Sign JWT access token
+    B->>B: Generate refresh token
+    B->>DB: Store refresh token hash
+    B-->>C: 200 {accessToken, refreshToken}

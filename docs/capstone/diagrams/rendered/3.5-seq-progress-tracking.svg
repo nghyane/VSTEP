@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 447.67949999999996 912" width="447.67949999999996" height="912" style="--bg:#ffffff;--fg:#1f2328;--line:#d1d9e0;--accent:#0969da;--muted:#59636e;background:var(--bg)">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap');
+  text { font-family: 'Inter', system-ui, sans-serif; }
+  svg {
+    /* Derived from --bg and --fg (overridable via --line, --accent, etc.) */
+    --_text:          var(--fg);
+    --_text-sec:      var(--muted, color-mix(in srgb, var(--fg) 60%, var(--bg)));
+    --_text-muted:    var(--muted, color-mix(in srgb, var(--fg) 40%, var(--bg)));
+    --_text-faint:    color-mix(in srgb, var(--fg) 25%, var(--bg));
+    --_line:          var(--line, color-mix(in srgb, var(--fg) 50%, var(--bg)));
+    --_arrow:         var(--accent, color-mix(in srgb, var(--fg) 85%, var(--bg)));
+    --_node-fill:     var(--surface, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+    --_node-stroke:   var(--border, color-mix(in srgb, var(--fg) 20%, var(--bg)));
+    --_group-fill:    var(--bg);
+    --_group-hdr:     color-mix(in srgb, var(--fg) 5%, var(--bg));
+    --_inner-stroke:  color-mix(in srgb, var(--fg) 12%, var(--bg));
+    --_key-badge:     color-mix(in srgb, var(--fg) 10%, var(--bg));
+  }
+</style>
+<defs>
+  <marker id="seq-arrow" markerWidth="8" markerHeight="5" refX="8" refY="2.5" orient="auto-start-reverse">
+    <polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" />
+  </marker>
+  <marker id="seq-arrow-open" markerWidth="8" markerHeight="5" refX="8" refY="2.5" orient="auto-start-reverse">
+    <polyline points="0 0, 8 2.5, 0 5" fill="none" stroke="var(--_arrow)" stroke-width="1" />
+  </marker>
+</defs>
+<g class="block" data-type="alt" data-label="high deviation">
+  <rect x="170.00350000000003" y="446" width="107.30199999999996" height="154" rx="0" ry="0" fill="none" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="170.00350000000003" y="446" width="110.05000000000003" height="18" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="176.00350000000003" y="455" font-size="11" font-weight="600" fill="var(--_text-sec)" dy="3.8499999999999996">alt [high deviation]</text>
+  <line x1="170.00350000000003" y1="552" x2="277.3055" y2="552" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+</g>
+<g class="block" data-type="alt" data-label="high deviation">
+  <rect x="170.00350000000003" y="638" width="107.30199999999996" height="154" rx="0" ry="0" fill="none" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="170.00350000000003" y="638" width="110.05000000000003" height="18" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="176.00350000000003" y="647" font-size="11" font-weight="600" fill="var(--_text-sec)" dy="3.8499999999999996">alt [high deviation]</text>
+  <line x1="170.00350000000003" y1="744" x2="277.3055" y2="744" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+</g>
+<g class="block" data-type="alt" data-label="count &lt; 3">
+  <rect x="170.00350000000003" y="348" width="107.30199999999996" height="444" rx="0" ry="0" fill="none" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="170.00350000000003" y="348" width="84.31000000000002" height="18" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="176.00350000000003" y="357" font-size="11" font-weight="600" fill="var(--_text-sec)" dy="3.8499999999999996">alt [count &lt; 3]</text>
+  <line x1="170.00350000000003" y1="458" x2="277.3055" y2="458" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+  <text x="178.00350000000003" y="472" font-size="11" text-anchor="start" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">[count 3-5]</text>
+  <line x1="170.00350000000003" y1="650" x2="277.3055" y2="650" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+  <text x="178.00350000000003" y="664" font-size="11" text-anchor="start" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">[count &gt;= 6]</text>
+</g>
+<line class="lifeline" data-actor="T" x1="83.65450000000001" y1="70" x2="83.65450000000001" y2="882" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="B" x1="223.6545" y1="70" x2="223.6545" y2="882" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="DB" x1="363.6545" y1="70" x2="363.6545" y2="882" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<g class="message" data-from="T" data-to="B" data-label="Record score" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="83.65450000000001" y1="90" x2="223.6545" y2="90" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="153.6545" y="80" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Record score</text>
+</g>
+<g class="message" data-from="B" data-to="DB" data-label="Insert skill score" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="223.6545" y1="130" x2="363.6545" y2="130" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="293.6545" y="120" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Insert skill score</text>
+</g>
+<g class="message" data-from="T" data-to="B" data-label="Sync progress" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="83.65450000000001" y1="170" x2="223.6545" y2="170" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="153.6545" y="160" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Sync progress</text>
+</g>
+<g class="message" data-from="B" data-to="DB" data-label="Fetch last 10 scores" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="223.6545" y1="210" x2="363.6545" y2="210" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="293.6545" y="200" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Fetch last 10 scores</text>
+</g>
+<g class="message" data-from="DB" data-to="B" data-label="Score window" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+  <line x1="363.6545" y1="250" x2="223.6545" y2="250" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#seq-arrow)" />
+  <text x="293.6545" y="240" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Score window</text>
+</g>
+<g class="message" data-from="B" data-to="B" data-label="Compute mean + std dev" data-line-style="solid" data-arrow-head="filled" data-self="true">
+  <polyline points="223.6545,290 253.6545,290 253.6545,310 223.6545,310" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="261.6545" y="300" font-size="11" text-anchor="start" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Compute mean + std dev</text>
+</g>
+<g class="message" data-from="B" data-to="B" data-label="trend = insufficient" data-line-style="solid" data-arrow-head="filled" data-self="true">
+  <polyline points="223.6545,388 253.6545,388 253.6545,408 223.6545,408" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="261.6545" y="398" font-size="11" text-anchor="start" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">trend = insufficient</text>
+</g>
+<g class="message" data-from="B" data-to="B" data-label="trend = inconsistent" data-line-style="solid" data-arrow-head="filled" data-self="true">
+  <polyline points="223.6545,486 253.6545,486 253.6545,506 223.6545,506" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="261.6545" y="496" font-size="11" text-anchor="start" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">trend = inconsistent</text>
+</g>
+<g class="message" data-from="B" data-to="B" data-label="trend = stable" data-line-style="solid" data-arrow-head="filled" data-self="true">
+  <polyline points="223.6545,580 253.6545,580 253.6545,600 223.6545,600" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="261.6545" y="590" font-size="11" text-anchor="start" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">trend = stable</text>
+</g>
+<g class="message" data-from="B" data-to="B" data-label="trend = inconsistent" data-line-style="solid" data-arrow-head="filled" data-self="true">
+  <polyline points="223.6545,678 253.6545,678 253.6545,698 223.6545,698" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="261.6545" y="688" font-size="11" text-anchor="start" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">trend = inconsistent</text>
+</g>
+<g class="message" data-from="B" data-to="B" data-label="Compare recent vs older" data-line-style="solid" data-arrow-head="filled" data-self="true">
+  <polyline points="223.6545,772 253.6545,772 253.6545,792 223.6545,792" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="261.6545" y="782" font-size="11" text-anchor="start" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Compare recent vs older</text>
+</g>
+<g class="message" data-from="B" data-to="DB" data-label="Upsert user_progress" data-line-style="solid" data-arrow-head="filled" data-self="false">
+  <line x1="223.6545" y1="842" x2="363.6545" y2="842" stroke="var(--_line)" stroke-width="1" marker-end="url(#seq-arrow)" />
+  <text x="293.6545" y="832" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Upsert user_progress</text>
+</g>
+<g class="actor" data-id="T" data-label="Score Event" data-type="participant">
+  <rect x="30.000000000000007" y="30" width="107.30900000000001" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="83.65450000000001" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">Score Event</text>
+</g>
+<g class="actor" data-id="B" data-label="Backend" data-type="participant">
+  <rect x="180.00350000000003" y="30" width="87.30199999999999" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="223.6545" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">Backend</text>
+</g>
+<g class="actor" data-id="DB" data-label="PostgreSQL" data-type="participant">
+  <rect x="309.6295" y="30" width="108.04999999999998" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="363.6545" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">PostgreSQL</text>
+</g>
+</svg>

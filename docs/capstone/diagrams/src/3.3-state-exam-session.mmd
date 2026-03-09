@@ -1,0 +1,10 @@
+stateDiagram-v2
+    [*] --> InProgress: Start exam
+
+    InProgress --> Submitted: Submit exam
+    InProgress --> Abandoned: Timeout
+
+    Submitted --> Completed: All scores available
+
+    Completed --> [*]
+    Abandoned --> [*]

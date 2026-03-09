@@ -1,0 +1,29 @@
+graph LR
+    subgraph vite [Vite Dev Server]
+        Frontend([React SPA])
+    end
+
+    subgraph bun [Bun Runtime]
+        Backend[Backend API]
+    end
+
+    subgraph python [Python Runtime]
+        Worker[Grading Worker]
+    end
+
+    subgraph docker [Docker Compose]
+        PG[(PostgreSQL)]
+        Redis[(Redis)]
+        MinIO[(MinIO)]
+    end
+
+    subgraph ext [External APIs]
+        AI[AI Providers]
+    end
+
+    Frontend -->|:3000| Backend
+    Backend -->|:5432| PG
+    Backend -->|:6379| Redis
+    Backend -->|:9000| MinIO
+    Worker -->|:6379| Redis
+    Worker -->|HTTPS| AI

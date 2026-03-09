@@ -1,0 +1,39 @@
+sequenceDiagram
+    participant C as Client
+    participant B as Backend
+    participant DB as PostgreSQL
+    participant R as Redis
+    participant W as Worker
+    participant G as LLM API
+
+    C->>B: POST /api/submissions
+    B->>DB: Fetch question
+    DB-->>B: Question record
+
+    B->>DB: Insert submission
+    B->>DB: Insert details
+    B->>DB: Set status=processing
+
+    B->>R: XADD grading:tasks
+    B-->>C: 200 {submissionId}
+
+    W->>R: XREADGROUP grading:tasks
+    R-->>W: Task payload
+
+    W->>G: Grade with rubric prompt
+    G-->>W: Criteria scores + feedback
+
+    W->>W: Calc score, snap to 0.5
+    W->>R: XADD grading:results
+
+    B->>R: XREADGROUP grading:results
+
+    alt High confidence
+        B->>DB: Set status=completed
+    else Medium/low confidence
+        B->>DB: Set status=review_pending
+    end
+
+    B->>DB: Store AI result
+    B->>DB: Record skill score
+    B->>DB: Update progress

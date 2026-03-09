@@ -1,0 +1,38 @@
+sequenceDiagram
+    participant C as Client
+    participant B as Backend
+    participant DB as PostgreSQL
+    participant R as Redis
+
+    C->>B: POST /api/exams/:id/start
+    B->>DB: Fetch exam
+    B->>DB: Create session
+    B-->>C: {sessionId, questions}
+
+    loop Every 30s
+        C->>B: POST /sessions/:id/answer
+        B->>DB: Upsert answers
+        B-->>C: {saved: true}
+    end
+
+    C->>B: POST /sessions/:id/submit
+    B->>DB: Fetch all answers
+
+    par Auto-grade L/R
+        B->>B: Score listening
+    and
+        B->>B: Score reading
+    end
+
+    B->>DB: Update answer correctness
+    B->>DB: Store L/R scores
+
+    par Dispatch W/S
+        B->>DB: Create W/S submissions
+        B->>R: XADD writing task
+        B->>R: XADD speaking task
+    end
+
+    B->>DB: Record L/R progress
+    B->>DB: Set status=submitted
+    B-->>C: {listeningScore, readingScore}
