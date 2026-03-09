@@ -645,5 +645,10 @@ function estimateLevelFromSurvey(body: SkipBody): QuestionLevel {
     if (body.englishYears >= 6) return "B1";
     return "A2";
   }
-  return "A2";
+  const TARGET_TO_START: Record<string, QuestionLevel> = {
+    C1: "B2",
+    B2: "B1",
+    B1: "A2",
+  };
+  return TARGET_TO_START[body.targetBand] ?? "A2";
 }

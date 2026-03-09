@@ -24,7 +24,10 @@ export async function next(userId: string, query: PracticeNextQuery) {
       )
       .then(takeFirst),
     db
-      .selectDistinct({ id: table.userKnowledgeProgress.knowledgePointId })
+      .selectDistinct({
+        id: table.userKnowledgeProgress.knowledgePointId,
+        masteryScore: table.userKnowledgeProgress.masteryScore,
+      })
       .from(table.userKnowledgeProgress)
       .innerJoin(
         table.knowledgePoints,
