@@ -38,9 +38,8 @@ The Adaptive VSTEP Preparation System follows a **modular monorepo** architectur
 
 **Key architectural decisions:**
 
-- **Shared-DB pattern**: Both Backend and Grading Worker connect to the same PostgreSQL database. The worker writes grading results directly — no callback queue or outbox pattern needed.
+- **Shared-DB pattern**: Backend connects to PostgreSQL via Drizzle ORM. The Grading Worker communicates only through Redis Streams — it does not connect to PostgreSQL directly. The backend grading consumer reads results from the `grading:results` stream and performs all database writes.
 - **Redis Streams**: Redis Streams with `XADD`/`XREADGROUP` and consumer groups for reliable task dispatch and result consumption.
-- **JWT Auth**: Access/refresh token pair with rotation and reuse detection.
 - **JWT Auth**: Access/refresh token pair with rotation and reuse detection.
 - **Parse, Don't Validate**: All inputs validated at API boundaries via Zod/TypeBox schemas. Internal code assumes valid data.
 - **Throw, Don't Return**: All apps use typed error hierarchies. Errors are thrown, never returned as values.
@@ -858,7 +857,7 @@ erDiagram
         enum skill "listening | reading | writing | speaking"
         enum status "pending | processing | completed | review_pending | failed"
         numeric score "0.0-10.0 step 0.5"
-        enum band "A1 | A2 | B1 | B2 | C1 nullable"
+        enum band "B1 | B2 | C1 nullable"
         enum review_priority "low | medium | high nullable"
         enum grading_mode "auto | human | hybrid nullable"
         uuid reviewer_id FK "nullable"
@@ -881,7 +880,12 @@ erDiagram
 
     exams {
         uuid id PK
+        varchar title "max 255 not null"
+        text description "nullable"
+        enum type "practice | placement | mock"
+        enum skill "nullable"
         enum level "A2 | B1 | B2 | C1"
+        integer duration_minutes "nullable"
         jsonb blueprint "ExamBlueprint per-skill questionIds"
         boolean is_active "default true"
         uuid created_by FK
@@ -899,6 +903,7 @@ erDiagram
         numeric writing_score "nullable"
         numeric speaking_score "nullable"
         numeric overall_score "nullable"
+        enum overall_band "B1 | B2 | C1 nullable"
         timestamp started_at "not null"
         timestamp completed_at "nullable"
         timestamp created_at
@@ -925,7 +930,7 @@ erDiagram
 
     knowledge_points {
         uuid id PK
-        enum category "grammar | vocabulary | strategy"
+        enum category "grammar | vocabulary | strategy | topic"
         varchar name UK "unique max 200"
         timestamp created_at
         timestamp updated_at
@@ -955,6 +960,7 @@ erDiagram
         uuid user_id FK
         enum skill "listening | reading | writing | speaking"
         uuid submission_id FK "nullable"
+        uuid session_id FK "nullable"
         numeric score "0.0-10.0 not null"
         varchar scaffolding_type "max 20 nullable"
         timestamp created_at
@@ -963,8 +969,8 @@ erDiagram
     user_goals {
         uuid id PK
         uuid user_id FK
-        enum target_band "A1 | A2 | B1 | B2 | C1"
-        varchar current_estimated_band "max 10"
+        enum target_band "B1 | B2 | C1"
+        enum current_estimated_band "B1 | B2 | C1 nullable"
         timestamp deadline "nullable"
         integer daily_study_time_minutes "default 30"
         timestamp created_at
@@ -1147,13 +1153,13 @@ ExamBlueprint = {
 | `user_role` | `learner`, `instructor`, `admin` | `users.role` |
 | `skill` | `listening`, `reading`, `writing`, `speaking` | `questions`, `submissions`, `user_progress`, `user_skill_scores`, `exam_submissions`, `instructor_feedback` |
 | `question_level` | `A2`, `B1`, `B2`, `C1` | `exams.level`, `user_progress.current_level`, `user_progress.target_level` |
-| `vstep_band` | `A1`, `A2`, `B1`, `B2`, `C1` | `submissions.band`, `user_goals.target_band` |
+| `vstep_band` | `B1`, `B2`, `C1` | `submissions.band`, `user_goals.target_band`, `user_goals.current_estimated_band`, `exam_sessions.overall_band` |
 | `submission_status` | `pending`, `processing`, `completed`, `review_pending`, `failed` | `submissions.status` |
 | `review_priority` | `low`, `medium`, `high` | `submissions.review_priority` |
 | `grading_mode` | `auto`, `human`, `hybrid` | `submissions.grading_mode` |
 | `exam_status` | `in_progress`, `submitted`, `completed`, `abandoned` | `exam_sessions.status` |
 | `streak_direction` | `up`, `down`, `neutral` | `user_progress.streak_direction` |
-| `knowledge_point_category` | `grammar`, `vocabulary`, `strategy` | `knowledge_points.category` |
+| `knowledge_point_category` | `grammar`, `vocabulary`, `strategy`, `topic` | `knowledge_points.category` |
 | `notification_type` | `grading_completed`, `feedback_received`, `class_invite`, `goal_achieved`, `system` | `notifications.type` |
 | `exam_type` | `practice`, `placement`, `mock` | `exams.type` |
 | `exam_skill` | `listening`, `reading`, `writing`, `speaking`, `mixed` | `exams.skill` |
@@ -1292,7 +1298,7 @@ ExamBlueprint = {
 | **Sliding Window** | `progress/trends.ts`, `progress/service.ts` | Progress metrics computed over the N=10 most recent scores per skill. Bounded query, predictable performance. |
 | **Prepare-then-Dispatch** | `grading-dispatch.ts` | Database state updated inside transaction (`prepare`), Redis push happens after commit (`dispatch`). Prevents orphaned queue messages. |
 | **Guard-Compute-Write** | All module `service.ts` files | Function structure: validate preconditions (guard) → compute result → persist to DB (write). No interleaving of reads and writes. |
-| **Shared-DB** | Backend + Grading Worker | Both services connect to same PostgreSQL. Eliminates need for callback queues or eventual consistency patterns. |
+| **Shared-DB** | Backend + Grading Worker | Backend connects to PostgreSQL directly. Worker communicates via Redis Streams only — backend consumer handles all DB writes for grading results. |
 | **Partial Index** | Database schema | PostgreSQL partial indexes (e.g., `WHERE status = 'review_pending'`, `WHERE is_active = true`) optimize hot query paths. |
 
 ### 6.2 Error Handling Strategy

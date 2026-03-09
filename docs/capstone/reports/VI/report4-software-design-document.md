@@ -36,7 +36,7 @@ Hệ thống Luyện thi VSTEP Thích ứng tuân theo kiến trúc **monorepo d
 
 **Các quyết định kiến trúc chính:**
 
-- **Mô hình Shared-DB**: Cả Backend và Grading Worker kết nối tới cùng một cơ sở dữ liệu PostgreSQL. Worker ghi kết quả chấm điểm trực tiếp — không cần callback queue hay outbox pattern.
+- **Mô hình Shared-DB**: Backend kết nối tới PostgreSQL qua Drizzle ORM. Grading Worker chỉ giao tiếp qua Redis Streams — không kết nối trực tiếp tới PostgreSQL. Backend grading consumer đọc kết quả từ stream `grading:results` và thực hiện tất cả các thao tác ghi DB.
 - **Redis Streams**: Redis Streams với `XADD`/`XREADGROUP` và consumer group cho việc dispatch tác vụ và tiêu thụ kết quả đáng tin cậy.
 - **JWT Auth**: Cặp access/refresh token với rotation và phát hiện tái sử dụng.
 - **Parse, Don't Validate**: Tất cả đầu vào được xác thực tại biên API qua Zod/TypeBox schema. Code nội bộ mặc định dữ liệu hợp lệ.
@@ -854,7 +854,7 @@ erDiagram
         enum skill "listening | reading | writing | speaking"
         enum status "pending | processing | completed | review_pending | failed"
         numeric score "0.0-10.0 step 0.5"
-        enum band "A1 | A2 | B1 | B2 | C1 nullable"
+        enum band "B1 | B2 | C1 nullable"
         enum review_priority "low | medium | high nullable"
         enum grading_mode "auto | human | hybrid nullable"
         uuid reviewer_id FK "nullable"
@@ -877,7 +877,12 @@ erDiagram
 
     exams {
         uuid id PK
+        varchar title "max 255 not null"
+        text description "nullable"
+        enum type "practice | placement | mock"
+        enum skill "nullable"
         enum level "A2 | B1 | B2 | C1"
+        integer duration_minutes "nullable"
         jsonb blueprint "ExamBlueprint per-skill questionIds"
         boolean is_active "default true"
         uuid created_by FK
@@ -895,6 +900,7 @@ erDiagram
         numeric writing_score "nullable"
         numeric speaking_score "nullable"
         numeric overall_score "nullable"
+        enum overall_band "B1 | B2 | C1 nullable"
         timestamp started_at "not null"
         timestamp completed_at "nullable"
         timestamp created_at
@@ -921,7 +927,7 @@ erDiagram
 
     knowledge_points {
         uuid id PK
-        enum category "grammar | vocabulary | strategy"
+        enum category "grammar | vocabulary | strategy | topic"
         varchar name UK "unique max 200"
         timestamp created_at
         timestamp updated_at
@@ -951,6 +957,7 @@ erDiagram
         uuid user_id FK
         enum skill "listening | reading | writing | speaking"
         uuid submission_id FK "nullable"
+        uuid session_id FK "nullable"
         numeric score "0.0-10.0 not null"
         varchar scaffolding_type "max 20 nullable"
         timestamp created_at
@@ -959,8 +966,8 @@ erDiagram
     user_goals {
         uuid id PK
         uuid user_id FK
-        enum target_band "A1 | A2 | B1 | B2 | C1"
-        varchar current_estimated_band "max 10"
+        enum target_band "B1 | B2 | C1"
+        enum current_estimated_band "B1 | B2 | C1 nullable"
         timestamp deadline "nullable"
         integer daily_study_time_minutes "default 30"
         timestamp created_at
@@ -1143,13 +1150,13 @@ ExamBlueprint = {
 | `user_role` | `learner`, `instructor`, `admin` | `users.role` |
 | `skill` | `listening`, `reading`, `writing`, `speaking` | `questions`, `submissions`, `user_progress`, `user_skill_scores`, `exam_submissions`, `instructor_feedback` |
 | `question_level` | `A2`, `B1`, `B2`, `C1` | `exams.level`, `user_progress.current_level`, `user_progress.target_level` |
-| `vstep_band` | `A1`, `A2`, `B1`, `B2`, `C1` | `submissions.band`, `user_goals.target_band` |
+| `vstep_band` | `B1`, `B2`, `C1` | `submissions.band`, `user_goals.target_band`, `user_goals.current_estimated_band`, `exam_sessions.overall_band` |
 | `submission_status` | `pending`, `processing`, `completed`, `review_pending`, `failed` | `submissions.status` |
 | `review_priority` | `low`, `medium`, `high` | `submissions.review_priority` |
 | `grading_mode` | `auto`, `human`, `hybrid` | `submissions.grading_mode` |
 | `exam_status` | `in_progress`, `submitted`, `completed`, `abandoned` | `exam_sessions.status` |
 | `streak_direction` | `up`, `down`, `neutral` | `user_progress.streak_direction` |
-| `knowledge_point_category` | `grammar`, `vocabulary`, `strategy` | `knowledge_points.category` |
+| `knowledge_point_category` | `grammar`, `vocabulary`, `strategy`, `topic` | `knowledge_points.category` |
 | `notification_type` | `grading_completed`, `feedback_received`, `class_invite`, `goal_achieved`, `system` | `notifications.type` |
 | `exam_type` | `practice`, `placement`, `mock` | `exams.type` |
 | `exam_skill` | `listening`, `reading`, `writing`, `speaking`, `mixed` | `exams.skill` |
@@ -1284,11 +1291,11 @@ ExamBlueprint = {
 | **State Machine** | `common/state-machine.ts`, `submissions/shared.ts` | Vòng đời bài nộp được thực thi qua bản đồ chuyển trạng thái tường minh. Chuyển trạng thái không hợp lệ sẽ throw `ConflictError`. |
 | **Discriminated Union** | `db/types/grading.ts`, `db/types/answers.ts` | Các payload JSONB sử dụng trường `type` để phân biệt biến thể (AutoResult vs AIResult vs HumanResult). TypeBox schema xác thực tại biên. |
 | **Plugin Architecture** | `plugins/error.ts`, `plugins/auth.ts` | Các mối quan tâm xuyên suốt (xử lý lỗi, middleware xác thực) được triển khai dưới dạng plugin Elysia gắn vào ứng dụng. |
-| **Producer-Consumer Queue** | `grading-dispatch.ts` (producer), `worker.py` (consumer) | Tách rời việc tạo bài nộp khỏi chấm điểm AI. Redis list làm hàng đợi bền vững với DLQ cho tin nhắn lỗi. |
+| **Producer-Consumer Stream** | `grading-dispatch.ts` (producer), `worker.py` (consumer) | Tách rời việc tạo bài nộp khỏi chấm điểm AI. Redis Streams với consumer group cho việc dispatch và tiêu thụ kết quả đáng tin cậy. |
 | **Sliding Window** | `progress/trends.ts`, `progress/service.ts` | Chỉ số tiến trình được tính trên N=10 điểm gần nhất mỗi kỹ năng. Truy vấn có giới hạn, hiệu năng dự đoán được. |
 | **Prepare-then-Dispatch** | `grading-dispatch.ts` | Trạng thái cơ sở dữ liệu được cập nhật trong transaction (`prepare`), đẩy Redis xảy ra sau commit (`dispatch`). Ngăn tin nhắn mồ côi trong hàng đợi. |
 | **Guard-Compute-Write** | Tất cả file `service.ts` của module | Cấu trúc hàm: xác thực điều kiện tiên quyết (guard) → tính toán kết quả → lưu vào DB (write). Không xen kẽ đọc và ghi. |
-| **Shared-DB** | Backend + Grading Worker | Cả hai dịch vụ kết nối tới cùng PostgreSQL. Loại bỏ nhu cầu callback queue hoặc mẫu eventual consistency. |
+| **Shared-DB** | Backend + Grading Worker | Backend kết nối trực tiếp tới PostgreSQL. Worker chỉ giao tiếp qua Redis Streams — backend consumer xử lý tất cả việc ghi DB cho kết quả chấm điểm. |
 | **Partial Index** | Schema cơ sở dữ liệu | Chỉ mục partial của PostgreSQL (ví dụ: `WHERE status = 'review_pending'`, `WHERE is_active = true`) tối ưu hóa đường truy vấn nóng. |
 
 ### 6.2 Chiến Lược Xử Lý Lỗi
