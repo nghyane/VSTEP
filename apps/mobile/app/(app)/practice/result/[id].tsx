@@ -37,7 +37,7 @@ export default function PracticeResultScreen() {
 
   if (isLoading) {
     return (
-      <ScreenWrapper>
+      <ScreenWrapper noPadding>
         <View style={styles.center}>
           <ActivityIndicator size="large" color={c.primary} />
         </View>
@@ -53,7 +53,7 @@ export default function PracticeResultScreen() {
   const status = statusConfig[data.status];
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper noPadding>
       <BouncyScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Header */}
         <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>

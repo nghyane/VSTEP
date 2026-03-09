@@ -82,7 +82,7 @@ export default function RegisterScreen() {
           <Logo size="lg" />
           <Text style={[styles.heading, { color: c.foreground }]}>Tạo tài khoản mới</Text>
           <Text style={[styles.subtitle, { color: c.mutedForeground }]}>
-            Bắt đầu hành trình chinh phục Aptis
+            Bắt đầu hành trình chinh phục VSTEP
           </Text>
         </View>
 
@@ -104,7 +104,7 @@ export default function RegisterScreen() {
             <Text style={[styles.label, { color: c.foreground }]}>Email</Text>
             <TextInput
               style={[styles.input, { backgroundColor: c.card, borderColor: errors.email ? c.destructive : c.border, color: c.foreground }]}
-              placeholder="you@example.com"
+              placeholder="Hãy nhập email"
               placeholderTextColor={c.mutedForeground}
               value={email}
               onChangeText={(t) => { setEmail(t); if (errors.email) setErrors((p) => ({ ...p, email: undefined })); }}
@@ -120,7 +120,7 @@ export default function RegisterScreen() {
             <View style={[styles.inputRow, { backgroundColor: c.card, borderColor: errors.password ? c.destructive : c.border }]}>
               <TextInput
                 style={[styles.inputFlex, { color: c.foreground }]}
-                placeholder="Tối thiểu 8 ký tự"
+                placeholder="Hãy nhập mật khẩu"
                 placeholderTextColor={c.mutedForeground}
                 value={password}
                 onChangeText={(t) => { setPassword(t); if (errors.password) setErrors((p) => ({ ...p, password: undefined })); }}

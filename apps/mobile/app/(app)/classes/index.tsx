@@ -65,7 +65,7 @@ export default function ClassesScreen() {
   );
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper noPadding>
       <BouncyFlatList
         data={classes}
         keyExtractor={(item) => item.id}

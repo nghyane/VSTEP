@@ -14,6 +14,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { useCreateGoal, useProgress, useUpdateGoal } from "@/hooks/use-progress";
+import { useAuth } from "@/hooks/use-auth";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { VstepBand } from "@/types/api";
 
@@ -180,6 +181,7 @@ export default function OnboardingScreen() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { signOut } = useAuth();
   const createGoal = useCreateGoal();
   const updateGoal = useUpdateGoal();
   const progressQuery = useProgress();
@@ -352,7 +354,7 @@ export default function OnboardingScreen() {
           <>
             <StepHeader
               step={1}
-              title="Mục tiêu band điểm Aptis?"
+              title="Mục tiêu band điểm VSTEP?"
               subtitle="Hệ thống sẽ điều chỉnh bài tập phù hợp"
             />
             <View style={styles.optionList}>
@@ -475,6 +477,13 @@ export default function OnboardingScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: c.background, paddingTop: insets.top }]}>
+      {/* Logout button */}
+      <HapticTouchable
+        style={styles.logoutBtn}
+        onPress={() => { signOut(); router.replace("/(auth)/login"); }}
+      >
+        <Ionicons name="log-out-outline" size={20} color={c.mutedForeground} />
+      </HapticTouchable>
       {/* Progress bar */}
       <View style={[styles.progressTrack, { backgroundColor: c.muted }]}>
         <Animated.View
@@ -596,6 +605,13 @@ function StepHeader({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+  },
+  logoutBtn: {
+    position: "absolute",
+    top: 8,
+    right: 16,
+    zIndex: 20,
+    padding: spacing.sm,
   },
 
   // Progress bar

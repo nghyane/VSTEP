@@ -78,7 +78,7 @@ export default function HomeScreen() {
   return (
     <View style={[styles.root, { backgroundColor: c.background }]}>
       <GradientBackground />
-      <StickyHeader scrollY={scrollY} subtitle="Bạn đang học Aptis" />
+      <StickyHeader scrollY={scrollY} subtitle="Bạn đang học VSTEP" />
       <Animated.ScrollView
         style={styles.scroll}
         contentContainerStyle={[
@@ -122,7 +122,7 @@ export default function HomeScreen() {
           </View>
 
           <View style={[styles.profileCard, { backgroundColor: c.card, borderColor: c.border, marginTop: spacing.base }]}>
-            <Text style={[styles.profileTitle, { color: c.foreground }]}>Trình độ Aptis của bạn</Text>
+            <Text style={[styles.profileTitle, { color: c.foreground }]}>Trình độ VSTEP của bạn</Text>
             <View style={styles.progressTrack}>
               <View style={styles.progressNode}>
                 <View style={[styles.progressDot, { backgroundColor: c.primary + "18" }]}>

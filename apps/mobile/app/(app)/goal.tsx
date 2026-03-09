@@ -71,7 +71,7 @@ export default function GoalScreen() {
   }
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper noPadding>
       <BouncyScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Band */}
         <View style={styles.sectionGap}>
@@ -144,8 +144,10 @@ export default function GoalScreen() {
             {(updateGoal.error ?? createGoal.error)?.message}
           </Text>
         )}
+      </BouncyScrollView>
 
-        {/* Save */}
+      {/* Fixed save button at bottom */}
+      <View style={[styles.bottomBar, { borderTopColor: c.border, backgroundColor: c.background }]}>
         <HapticTouchable
           style={[styles.saveBtn, { backgroundColor: c.primary, opacity: isMutating ? 0.7 : 1 }]}
           onPress={handleSave}
@@ -155,16 +157,16 @@ export default function GoalScreen() {
             {isMutating ? "Đang lưu..." : "Lưu mục tiêu"}
           </Text>
         </HapticTouchable>
-      </BouncyScrollView>
+      </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
-  content: { padding: spacing.xl, paddingBottom: spacing["3xl"], gap: spacing.xl },
-  sectionGap: { gap: spacing.md },
-  sectionTitle: { fontSize: fontSize.lg, fontWeight: "700" },
+  content: { padding: spacing.xl, paddingBottom: spacing.xl, gap: spacing["2xl"] },
+  sectionGap: { gap: spacing.sm },
+  sectionTitle: { fontSize: fontSize.lg, fontWeight: "700", marginBottom: spacing.xs },
   optionCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -175,5 +177,10 @@ const styles = StyleSheet.create({
   },
   optionTitle: { fontSize: fontSize.base, fontWeight: "600" },
   optionSub: { fontSize: fontSize.sm, marginTop: 2 },
+  bottomBar: {
+    borderTopWidth: 1,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+  },
   saveBtn: { borderRadius: radius.lg, paddingVertical: spacing.base, alignItems: "center" },
 });

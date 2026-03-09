@@ -76,10 +76,10 @@ export default function LoginScreen() {
         <View style={styles.header}>
           <Logo size="lg" />
           <Text style={[styles.heading, { color: c.foreground }]}>
-            Đăng nhập vào Aptis
+            Tham gia vào VSTEP
           </Text>
           <Text style={[styles.subtitle, { color: c.mutedForeground }]}>
-            Nền tảng luyện thi Aptis thông minh
+            Nền tảng luyện thi thông minh
           </Text>
         </View>
 
@@ -88,7 +88,7 @@ export default function LoginScreen() {
             <Text style={[styles.label, { color: c.foreground }]}>Email</Text>
             <TextInput
               style={[styles.input, { backgroundColor: c.card, borderColor: errors.email ? c.destructive : c.border, color: c.foreground }]}
-              placeholder="you@example.com"
+              placeholder="Hãy nhập email"
               placeholderTextColor={c.mutedForeground}
               value={email}
               onChangeText={(t) => { setEmail(t); if (errors.email) setErrors((p) => ({ ...p, email: undefined })); }}
@@ -111,7 +111,7 @@ export default function LoginScreen() {
             <View style={styles.passwordContainer}>
               <TextInput
                 style={[styles.passwordInput, { backgroundColor: c.card, borderColor: errors.password ? c.destructive : c.border, color: c.foreground }]}
-                placeholder="••••••••"
+                placeholder="Hãy nhập mật khẩu"
                 placeholderTextColor={c.mutedForeground}
                 value={password}
                 onChangeText={(t) => { setPassword(t); if (errors.password) setErrors((p) => ({ ...p, password: undefined })); }}

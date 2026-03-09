@@ -28,7 +28,7 @@ export default function PracticeScreen() {
   const skills = data?.skills ?? [];
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper noPadding>
       <BouncyScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <Text style={[styles.title, { color: c.foreground }]}>Luyện tập</Text>
         <Text style={[styles.subtitle, { color: c.mutedForeground }]}>
