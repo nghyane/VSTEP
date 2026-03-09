@@ -237,7 +237,7 @@ function SpeakingRecorder({
 			</div>
 
 			{/* Action buttons */}
-			<div className="flex flex-wrap items-center gap-2">
+			<div className="flex flex-wrap items-center justify-center gap-2">
 				{phase === "idle" && (
 					<Button size="sm" onClick={handleStart}>
 						<HugeiconsIcon icon={RecordIcon} className="size-4" />
