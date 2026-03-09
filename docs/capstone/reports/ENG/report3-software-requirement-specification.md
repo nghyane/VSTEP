@@ -156,19 +156,19 @@ The system provides 16 features organized in two delivery phases:
 
 | ID | Feature | Description |
 |----|---------|-------------|
-| FE-12 | Content Management | Question bank CRUD and knowledge point management |
-| FE-13 | User Management | User listing, role assignment, and self-service password change support |
-| FE-14 | Notification System | In-app notifications and device token registration |
-| FE-15 | Mobile Support | Mobile learner flows for practice, exams, submissions, and classes |
-| FE-16 | AI Utilities | Auxiliary AI-powered language tools exposed by the backend |
+| FE-12 | Content Management | Question bank CRUD, knowledge point management, and planned import/export support within the admin scope |
+| FE-13 | User Management | User listing, role assignment, and planned admin operations such as account lock/unlock, password reset, and bulk provisioning; some items may be deferred from the current increment |
+| FE-14 | Notification System | In-app notifications and device token registration; push/email delivery remains planned beyond the MVP increment |
+| FE-15 | Mobile Support | Mobile learner flows for practice, exams, submissions, and classes, with broader platform coverage continuing beyond the current increment |
+| FE-16 | AI Utilities | Auxiliary AI-powered language tools exposed by the backend; advanced utilities may be deferred from MVP implementation |
 
 ### 1.4 User Characteristics
 
 | User Role | Characteristics | Technical Proficiency |
 |-----------|----------------|----------------------|
 | **Learner** | University students (final year) or working professionals preparing for VSTEP certification. Age range 18–35. Primary device: smartphone (Android 70%+). May have limited internet bandwidth. | Basic to intermediate. Familiar with mobile apps and web browsing. |
-| **Instructor** | English language instructors at universities or language centers. Responsible for reviewing AI-graded Writing/Speaking submissions and providing feedback. | Intermediate. Comfortable with web applications and basic data interpretation. |
-| **Admin** | System administrators managing users, question banks, and platform configuration. | Advanced. Familiar with content management systems and data administration. |
+| **Instructor** | English language instructors at universities or language centers. Responsible for reviewing AI-graded Writing/Speaking submissions, providing feedback, and participating in question/exam management within the instructor scope. | Intermediate. Comfortable with web applications and basic data interpretation. |
+| **Admin** | System administrators managing users, question banks, platform configuration, and analytics/reporting within the planned admin scope. Some operational capabilities may be delivered in later increments. | Advanced. Familiar with content management systems and data administration. |
 
 ### 1.5 Constraints
 
@@ -267,8 +267,8 @@ The system provides 16 features organized in two delivery phases:
 | # | Actor | Description |
 |---|-------|-------------|
 | 1 | **Learner** | A registered user (role = `learner`) who practices English skills, takes mock tests, views progress, sets goals, learns vocabulary, and joins classes. |
-| 2 | **Instructor** | A user (role = `instructor`) who reviews Writing/Speaking submissions, manages classes, monitors learner progress, provides feedback, and can manage questions. Inherits learner capabilities by role hierarchy. |
-| 3 | **Admin** | A user (role = `admin`) who manages users, questions, exams, knowledge points, submissions, and instructor review operations. Inherits lower-role capabilities by role hierarchy. |
+| 2 | **Instructor** | A user (role = `instructor`) who reviews Writing/Speaking submissions, manages classes, monitors learner progress, provides feedback, and participates in question/exam management. Some management capabilities may be deferred from the current increment. Inherits learner capabilities by role hierarchy. |
+| 3 | **Admin** | A user (role = `admin`) who manages users, questions, exams, knowledge points, submissions, notifications, and analytics/reporting within the planned admin scope. Some operational tools are defined in this SRS but may be delivered in later increments rather than the current implementation. |
 | 4 | **Grading Service** | An automated system actor (Python + FastAPI) that consumes grading tasks from Redis Streams, performs AI grading via external LLM/STT APIs, and publishes grading results back to Redis for the backend to persist. |
 | 5 | **AI Provider** | External provider-compatible API used for LLM inference and STT transcription. The implementation is not hard-wired to a single vendor. |
 
@@ -408,10 +408,14 @@ flowchart LR
     subgraph UserMgmt ["User Management"]
         UC80["UC-80<br/>List Users"]
         UC81["UC-81<br/>Change User Role"]
+        UC82["UC-82<br/>Lock/Unlock Account<br/>planned"]
+        UC83["UC-83<br/>Reset Password<br/>planned"]
+        UC84["UC-84<br/>Bulk Create Users<br/>deferred"]
     end
 
     subgraph ContentMgmt ["Content Management"]
         UC85["UC-85<br/>Manage Question Bank"]
+        UC86["UC-86<br/>Import/Export Questions<br/>planned"]
         UC87["UC-87<br/>Manage Knowledge Points"]
         UC88["UC-88<br/>Manage Exams"]
     end
@@ -420,21 +424,27 @@ flowchart LR
         UC89["UC-89<br/>Manage Review Queue"]
         UC90["UC-90<br/>Manage Notifications"]
     end
-    end
 
     subgraph Analytics ["Analytics"]
-        UC90["UC-90<br/>View Admin Dashboard"]
-        UC91["UC-91<br/>View System Analytics"]
-        UC92["UC-92<br/>Trigger Auto-Grade"]
+        UC91["UC-91<br/>View Admin Dashboard<br/>planned"]
+        UC92["UC-92<br/>View System Analytics<br/>deferred"]
+        UC93["UC-93<br/>Trigger Auto-Grade<br/>planned"]
     end
 
     Admin --- UC80
     Admin --- UC81
+    Admin --- UC82
+    Admin --- UC83
+    Admin --- UC84
     Admin --- UC85
+    Admin --- UC86
     Admin --- UC87
     Admin --- UC88
     Admin --- UC89
     Admin --- UC90
+    Admin --- UC91
+    Admin --- UC92
+    Admin --- UC93
 
     classDef actor fill:#6a1b9a,stroke:#4a148c,color:#fff
     class Admin actor
@@ -478,13 +488,20 @@ flowchart LR
 | UC-73 | Give Feedback | Instructor | Post feedback comment targeting a specific learner in the class. |
 | UC-74 | Rotate Invite Code | Instructor | Generate new invite code for a class (invalidates old code). |
 | UC-75 | Remove Member | Instructor | Remove a learner from the class. |
-| UC-80 | List Users | Admin | Paginated user list with filters. |
-| UC-81 | Change User Role | Admin | Change user role between learner/instructor/admin. |
-| UC-85 | Manage Question Bank | Admin | Full CRUD on questions. Deletion is hard delete in the current implementation. |
+| UC-80 | List Users | Admin | View paginated users with filters. |
+| UC-81 | Change User Role | Admin | Change a user's role between learner/instructor/admin. |
+| UC-82 | Lock/Unlock Account | Admin | Planned within the admin scope; may be delivered after the current increment. |
+| UC-83 | Reset Password | Admin | Planned admin-assisted password reset capability; self-service flows may ship first in the MVP. |
+| UC-84 | Bulk Create Users | Admin | Deferred administrative provisioning capability for batch account creation. |
+| UC-85 | Manage Question Bank | Admin | Full CRUD on questions. Import/export support is defined separately and may be delivered later. |
+| UC-86 | Import/Export Questions | Admin | Planned content-administration capability for structured bulk import/export. Deferred from the current increment if necessary. |
 | UC-87 | Manage Knowledge Points | Admin | CRUD on knowledge point taxonomy. |
 | UC-88 | Manage Exams | Admin | Create, update, and delete exams. |
 | UC-89 | Manage Review Queue | Admin | View and operate on the review workflow with elevated permissions. |
-| UC-90 | Manage Notifications | Admin | View notifications/devices and related operational data exposed by the backend. |
+| UC-90 | Manage Notifications | Admin | View notifications/device tokens and related operational data exposed by the backend. Push/email delivery administration remains planned. |
+| UC-91 | View Admin Dashboard | Admin | Planned administrative dashboard summarizing key platform metrics and operational status. |
+| UC-92 | View System Analytics | Admin | Deferred analytics/reporting capability for usage, completion, and score trends. |
+| UC-93 | Trigger Auto-Grade | Admin | Planned operational tool to manually trigger or retry grading workflows where policy allows. |
 
 ---
 
