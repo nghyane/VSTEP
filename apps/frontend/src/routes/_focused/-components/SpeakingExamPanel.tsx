@@ -84,6 +84,8 @@ function SpeakingRecorder({
 	const [timer, setTimer] = useState(0)
 	const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 	const recordStartRef = useRef(0)
+	const onRecordedRef = useRef(onRecorded)
+	onRecordedRef.current = onRecorded
 
 	const {
 		status,
@@ -95,22 +97,18 @@ function SpeakingRecorder({
 		audio: true,
 		video: false,
 		askPermissionOnMount: false,
-		onStop: (_blobUrl, blob) => {
-			const elapsed = Math.round((Date.now() - recordStartRef.current) / 1000)
+		onStop: () => {
 			setPhase("done")
-			// onRecorded will be called when mediaBlobUrl is set via effect
-			void blob
-			void elapsed
 		},
 	})
 
-	// Save answer when recording finishes
+	// Save answer when recording finishes (use ref to avoid re-trigger loop)
 	useEffect(() => {
 		if (phase === "done" && mediaBlobUrl) {
 			const elapsed = Math.round((Date.now() - recordStartRef.current) / 1000)
-			onRecorded(mediaBlobUrl, Math.max(1, elapsed))
+			onRecordedRef.current(mediaBlobUrl, Math.max(1, elapsed))
 		}
-	}, [phase, mediaBlobUrl, onRecorded])
+	}, [phase, mediaBlobUrl])
 
 	// Preparation countdown → auto-start recording
 	useEffect(() => {
