@@ -58,7 +58,7 @@
 
 - Project name (EN): An Adaptive VSTEP Preparation System with Comprehensive Skill Assessment and Personalized Learning Support
 - Project name (VN): Hệ Thống Luyện Thi VSTEP Thích Ứng Với Đánh Giá Toàn Diện Kỹ Năng Và Hỗ Trợ Học Tập Cá Nhân Hóa
-- Project code: SP26SE145
+- Project code: SP26SE146
 - Group name: GSP26SE63
 - Software type: Web Application & Mobile Application
 - Duration: 01/01/2026 – 30/04/2026
@@ -319,51 +319,49 @@ The system is designed with two main modules:
 
 ### 6.1 Major Features
 
-**Overview:** 16 features divided into 2 phases to ensure delivery within the 4-month timeline.
+**Overview:** 15 features divided into 2 phases to ensure delivery within the 4-month timeline.
 
 ---
 
-**PHASE 1 - MVP (Months 1-3): 11 Core Features**
+**PHASE 1 - MVP (Months 1-3): 9 Core Features**
 
 *Focusing on learning experience and AI Grading*
 
-FE-01: User Authentication - Registration, login, profile management with Learner/Instructor/Admin roles. Email/password authentication; OAuth (Google) is optional.
+FE-01: Placement Test - Initial proficiency assessment for four skills (Listening, Speaking, Reading, Writing). Results used to initialize Spider Chart and recommend appropriate learning pathways.
 
-FE-02: Placement Test - Initial proficiency assessment for four skills (Listening, Speaking, Reading, Writing). Results used to initialize Spider Chart and recommend appropriate learning pathways.
+FE-02: Practice Mode - Listening - Listening skill practice with Adaptive Scaffolding (Full text - Highlight - Pure audio). Including exercise types: dictation, multiple choice, content summarization.
 
-FE-03: Practice Mode - Listening - Listening skill practice with Adaptive Scaffolding (Full text - Highlight - Pure audio). Including exercise types: dictation, multiple choice, content summarization.
+FE-03: Practice Mode - Reading - Reading skill practice with VSTEP-format question types: True/False/Not Given, Multiple Choice, Matching Headings, Fill in the Blanks.
 
-FE-04: Practice Mode - Reading - Reading skill practice with VSTEP-format question types: True/False/Not Given, Multiple Choice, Matching Headings, Fill in the Blanks.
+FE-04: Practice Mode - Writing + AI Grading - Writing skill practice with fast AI feedback. Using LLM API (GPT-5.4 via OpenAI-compatible proxy, fallback: Llama 3.3 70B via Cloudflare Workers AI) to evaluate grammar, vocabulary, coherence, and task achievement according to VSTEP rubric. SLA timeout: 20 minutes.
 
-FE-05: Practice Mode - Writing + AI Grading - Writing skill practice with fast AI feedback. Using LLM API (Groq Llama 3.3 70B via LiteLLM) to evaluate grammar, vocabulary, coherence, and task achievement according to VSTEP rubric. SLA timeout: 20 minutes.
+FE-05: Practice Mode - Speaking + AI Grading - Speaking skill practice with recording and AI feedback. Integrating Speech-to-Text for transcription, then using LLM to evaluate pronunciation, fluency, and content. SLA timeout: 60 minutes.
 
-FE-06: Practice Mode - Speaking + AI Grading - Speaking skill practice with recording and AI feedback. Integrating Speech-to-Text for transcription, then using LLM to evaluate pronunciation, fluency, and content. SLA timeout: 60 minutes.
+FE-06: Mock Test Mode - Full four-skill mock test following VSTEP format and timing. Results compiled into detailed reports with scores per skill.
 
-FE-07: Mock Test Mode - Full four-skill mock test following VSTEP format and timing. Results compiled into detailed reports with scores per skill.
+FE-07: Human Grading - Instructor interface for scoring with VSTEP rubric. Instructor reviews Writing/Speaking submissions, provides detailed comments, and can override AI scores if necessary.
 
-FE-08: Human Grading - Instructor interface for scoring with VSTEP rubric. Instructor reviews Writing/Speaking submissions, provides detailed comments, and can override AI scores if necessary.
+FE-08: Progress Tracking - Spider Chart displaying four-skill competency, Sliding Window for progress tracking (average of 10 most recent exercises).
 
-FE-09: Progress Tracking - Spider Chart displaying four-skill competency, Sliding Window for progress tracking (average of 10 most recent exercises).
-
-FE-10: Learning Path - Personalized learning pathway based on Placement Test results and progress. MVP uses rule-based logic: lowest-scoring skill prioritized for exercise recommendations. Phase 2 may upgrade to AI-based (ML/Collaborative Filtering) when sufficient user data is available.
-
-FE-11: Goal Setting - Goal (B1/B2/C1) and timeline establishment. Learners set specific goals (e.g., B2 in 3 months). System displays progress toward goals and predicts achievement likelihood based on current learning pace.
+FE-09: Goal Setting - Goal (B1/B2/C1) and timeline establishment. Learners set specific goals (e.g., B2 in 3 months). System displays progress toward goals and predicts achievement likelihood based on current learning pace.
 
 ---
 
-**PHASE 2 - Enhancement (Month 4): 5 Admin & Support Features**
+**PHASE 2 - Enhancement (Month 4): 6 Admin & Support Features**
 
 *Completing administrative features after core features stabilize*
 
-FE-12: Content Management - Admin manages question bank and exam sets. Supporting import/export in standard formats (Excel, JSON). Admin can create, edit, and categorize questions by skill, topic, and difficulty level.
+FE-10: Content Management - Admin manages question bank and exam sets. Supporting import/export in standard formats (Excel, JSON). Admin can create, edit, and categorize questions by skill, topic, and difficulty level.
 
-FE-13: User Management - Admin manages accounts and permissions. Including functions: bulk account creation, account locking/unlocking, password reset, and role assignment.
+FE-11: User Management - Admin manages accounts and permissions. Including functions: bulk account creation, account locking/unlocking, password reset, and role assignment.
 
-FE-14: Analytics Dashboard - Statistical reporting for Instructors and Admin. Displaying metrics: active user count, assignment completion rate, average score by skill. Supporting time-based filtering and report export.
+FE-12: Analytics Dashboard - Statistical reporting for Instructors and Admin. Displaying metrics: active user count, assignment completion rate, average score by skill. Supporting time-based filtering and report export.
 
-FE-15: Notification System - Learning reminders and exam results notifications. Supporting push notification (mobile), email, and in-app notification.
+FE-13: Notification System - Learning reminders and exam results notifications. Supporting push notification (mobile), email, and in-app notification.
 
-FE-16: Advanced Admin Features - Advanced features: activity history viewing, automatic assignment distribution, notification frequency customization.
+FE-14: Online Payment - Online payment integration for purchasing exam sets. Supporting payment gateways (VNPay, MoMo, ZaloPay) for exam purchases. Full commercial features (subscription plans, premium content packages) will be implemented when scaling commercially.
+
+FE-15: Advanced Admin Features - Advanced features: activity history viewing, automatic assignment distribution, notification frequency customization.
 
 ### 6.2 Limitations & Exclusions
 
@@ -374,8 +372,6 @@ LI-02: AI Grading for Writing and Speaking is a supportive tool, not a complete 
 LI-03: MVP version supports only Vietnamese as the primary interface language. The primary target audience is Vietnamese VSTEP candidates, therefore Vietnamese is prioritized to reduce accessibility barriers. Multi-language support (English) will be added in subsequent versions.
 
 LI-04: Mobile App development targets Android only in the initial phase, with iOS to be added later. According to statistics, Android holds over 70% of smartphone market share in Vietnam, therefore prioritized for initial development. iOS users can still access full functionality through Progressive Web App (PWA).
-
-LI-05: The system does not integrate online payment in the MVP version. The pilot phase will apply freemium model or offline payment through partners (language centers). Payment gateway integration (VNPay, MoMo, ZaloPay) will be implemented when scaling commercially.
 
 # III. References
 
@@ -407,7 +403,76 @@ LI-05: The system does not integrate online payment in the MVP version. The pilo
 
 [^14]: VietNamNet. (2025). *Vietnam's edtech market surges with AI-driven, locally adapted platforms*. Retrieved from https://vietnamnet.vn/en/vietnam-s-edtech-market-surges-with-ai-driven-locally-adapted-platforms-2424532.html
 
-## Appendix A: Use Case Diagram
+## Appendix A: Feature Tree Diagram
+
+```mermaid
+graph LR
+    ROOT["VSTEP Adaptive<br/>Preparation System"]
+
+    ROOT --> P1["Phase 1<br/>MVP"]
+    ROOT --> P2["Phase 2<br/>Enhancement"]
+
+    P1 --> FE01["FE-01<br/>Placement Test"]
+    FE01 --> FE01a["4-Skill Assessment"]
+    FE01 --> FE01b["Spider Chart Init"]
+    FE01 --> FE01c["Path Recommendation"]
+
+    P1 --> PM["Practice Mode"]
+    PM --> FE02["FE-02<br/>Listening"]
+    FE02 --> FE02a["Adaptive Scaffolding"]
+    FE02 --> FE02b["Dictation / MCQ"]
+    PM --> FE03["FE-03<br/>Reading"]
+    FE03 --> FE03a["T/F/NG / MCQ"]
+    FE03 --> FE03b["Matching / Gap Fill"]
+    PM --> FE04["FE-04<br/>Writing + AI"]
+    FE04 --> FE04a["GPT-5.4 + Llama 3.3"]
+    FE04 --> FE04b["SLA 20 min"]
+    PM --> FE05["FE-05<br/>Speaking + AI"]
+    FE05 --> FE05a["Deepgram Nova 3 STT"]
+    FE05 --> FE05b["SLA 60 min"]
+
+    P1 --> FE06["FE-06<br/>Mock Test"]
+    FE06 --> FE06a["4-Skill Simulation"]
+    FE06 --> FE06b["VSTEP Format & Timing"]
+
+    P1 --> FE07["FE-07<br/>Human Grading"]
+    FE07 --> FE07a["Instructor Scoring"]
+    FE07 --> FE07b["AI Score Override"]
+
+    P1 --> FE08["FE-08<br/>Progress Tracking"]
+    FE08 --> FE08a["Spider Chart"]
+    FE08 --> FE08b["Sliding Window"]
+
+    P1 --> FE09["FE-09<br/>Goal Setting"]
+    FE09 --> FE09a["Target B1/B2/C1"]
+    FE09 --> FE09b["Achievement Prediction"]
+
+    P2 --> FE10["FE-10<br/>Content Mgmt"]
+    FE10 --> FE10a["Question Bank CRUD"]
+    FE10 --> FE10b["Import/Export"]
+
+    P2 --> FE11["FE-11<br/>User Mgmt"]
+    FE11 --> FE11a["Bulk Create"]
+    FE11 --> FE11b["Role Assignment"]
+
+    P2 --> FE12["FE-12<br/>Analytics"]
+    FE12 --> FE12a["Stats & Reports"]
+    FE12 --> FE12b["Report Export"]
+
+    P2 --> FE13["FE-13<br/>Notifications"]
+    FE13 --> FE13a["Push / Email"]
+    FE13 --> FE13b["In-App"]
+
+    P2 --> FE14["FE-14<br/>Online Payment"]
+    FE14 --> FE14a["VNPay / MoMo / ZaloPay"]
+    FE14 --> FE14b["Exam Purchase"]
+
+    P2 --> FE15["FE-15<br/>Advanced Admin"]
+    FE15 --> FE15a["Activity History"]
+    FE15 --> FE15b["Auto Assignment"]
+```
+
+## Appendix B: Use Case Diagram
 
 (Diagram to be added in Report 2 - SRS)
 
@@ -431,12 +496,12 @@ flowchart TB
 
     subgraph Data ["Data Layer"]
         PG["PostgreSQL 17"]
-        Redis["Redis 7.2+<br/>Queue + Locks"]
+        Redis["Redis+<br/>Queue + Locks"]
         MinIO["MinIO<br/>Object Storage (S3)"]
     end
 
     subgraph External ["External Services"]
-        Groq["Groq API<br/>Llama 3.3 70B + Whisper V3"]
+        LLMService["LLM Service<br/>GPT-5.4 (Primary) + Llama 3.3 70B (Fallback)<br/>+ Deepgram Nova 3 (STT)"]
     end
 
     WebApp --> API
@@ -447,7 +512,7 @@ flowchart TB
     API -->|"dispatch tasks"| Redis
     Worker -->|"consume tasks"| Redis
     Worker --> PG
-    Worker --> Groq
+    Worker --> LLMService
 
     classDef client fill:#1565c0,stroke:#0d47a1,color:#fff
     classDef api fill:#2e7d32,stroke:#1b5e20,color:#fff
@@ -459,7 +524,7 @@ flowchart TB
     class API api
     class Worker worker
     class PG,Redis,MinIO data
-    class Groq external
+    class LLMService external
 ```
 
 
@@ -468,9 +533,9 @@ flowchart TB
 | Task Package | Description | Start | End |
 |--------------|-------------|-------|-----|
 | TP1 | Web Application Development | 01/01/2026 | 28/02/2026 |
-| TP2 | Mobile Application Development | 15/01/2026 | 15/03/2026 |
+| TP2 | Mobile Application Development | 15/01/2026 | 07/04/2026 |
 | TP3 | Assessment Engine | 01/02/2026 | 31/03/2026 |
-| TP4 | Personalized Learning Module | 15/02/2026 | 15/04/2026 |
-| TP5 | Testing & Deployment | 01/04/2026 | 30/04/2026 |
+| TP4 | Personalized Learning Module | 15/02/2026 | 07/04/2026 |
+| TP5 | Testing & Deployment | 01/04/2026 | 20/04/2026 |
 
 (End of file)

@@ -36,9 +36,8 @@ Hệ thống Luyện thi VSTEP Thích ứng tuân theo kiến trúc **monorepo d
 
 **Các quyết định kiến trúc chính:**
 
-- **Mô hình Shared-DB**: Cả Backend và Grading Worker kết nối tới cùng một cơ sở dữ liệu PostgreSQL. Worker ghi kết quả chấm điểm trực tiếp — không cần callback queue hay outbox pattern.
-- **Redis Queue**: Redis list với `LPUSH`/`BRPOP` thay thế các message broker nặng nề. Đơn giản hơn, ít thành phần di chuyển hơn.
-- **SSE Thời gian thực**: Server-Sent Events cho cập nhật trạng thái chấm điểm một chiều tới client.
+- **Mô hình Shared-DB**: Backend kết nối tới PostgreSQL qua Drizzle ORM. Grading Worker chỉ giao tiếp qua Redis Streams — không kết nối trực tiếp tới PostgreSQL. Backend grading consumer đọc kết quả từ stream `grading:results` và thực hiện tất cả các thao tác ghi DB.
+- **Redis Streams**: Redis Streams với `XADD`/`XREADGROUP` và consumer group cho việc dispatch tác vụ và tiêu thụ kết quả đáng tin cậy.
 - **JWT Auth**: Cặp access/refresh token với rotation và phát hiện tái sử dụng.
 - **Parse, Don't Validate**: Tất cả đầu vào được xác thực tại biên API qua Zod/TypeBox schema. Code nội bộ mặc định dữ liệu hợp lệ.
 - **Throw, Don't Return**: Tất cả ứng dụng sử dụng hệ thống phân cấp lỗi có kiểu. Lỗi được throw, không bao giờ trả về dưới dạng giá trị.
@@ -68,7 +67,7 @@ flowchart TB
     end
 
     subgraph WorkerLayer ["Worker Layer — Python"]
-        Worker["Grading Worker<br/>Redis BRPOP consumer"]
+        Worker["Grading Worker<br/>Redis Streams consumer"]
         WritingPipe["Writing Pipeline<br/>LLM 4-criteria grading"]
         SpeakingPipe["Speaking Pipeline<br/>STT + LLM grading"]
     end
@@ -80,27 +79,27 @@ flowchart TB
     end
 
     subgraph External ["External Services"]
-        GroqLLM["Groq API<br/>Llama 3.3 70B<br/>LLM Grading"]
-        GroqSTT["Groq API<br/>Whisper Large V3 Turbo<br/>Speech-to-Text"]
+        LLMAPI["LLM Provider<br/>GPT-4o / Cloudflare<br/>Llama 3.3 70B"]
+        STTAPI["Cloudflare Workers AI<br/>Deepgram Nova 3<br/>Speech-to-Text"]
     end
 
-    WebApp -->|"REST + SSE<br/>JSON + JWT"| Gateway
-    MobileApp -->|"REST + SSE<br/>JSON + JWT"| Gateway
+    WebApp -->|"REST<br/>JSON + JWT"| Gateway
+    MobileApp -->|"REST<br/>JSON + JWT"| Gateway
     Gateway --> Modules
     Gateway --> HealthMod
 
-    SubMod -->|"LPUSH<br/>grading:tasks"| Redis
-    Worker -->|"BRPOP<br/>grading:tasks"| Redis
-    SubMod -->|"SET/DEL<br/>lock:review:id"| Redis
+    SubMod -->|"XADD<br/>grading:tasks"| Redis
+    Worker -->|"XREADGROUP<br/>grading:tasks"| Redis
+    SubMod -->|"XREADGROUP<br/>grading:results"| Redis
 
     Modules -->|"Drizzle ORM<br/>TCP 5432"| PG
-    Worker -->|"asyncpg<br/>TCP 5432"| PG
 
     Worker --> WritingPipe
     Worker --> SpeakingPipe
-    WritingPipe -->|"HTTPS"| GroqLLM
-    SpeakingPipe -->|"HTTPS"| GroqSTT
-    SpeakingPipe -->|"HTTPS"| GroqLLM
+    WritingPipe -->|"HTTPS"| LLMAPI
+    SpeakingPipe -->|"HTTPS"| STTAPI
+    SpeakingPipe -->|"HTTPS"| LLMAPI
+    Worker -->|"XADD<br/>grading:results"| Redis
 
     HealthMod -->|"ping"| PG
     HealthMod -->|"ping"| Redis
@@ -116,7 +115,7 @@ flowchart TB
     class Gateway,AuthMod,SubMod,ExamMod,QuestMod,ProgMod,ClassMod,UserMod,KPMod,HealthMod api
     class Worker,WritingPipe,SpeakingPipe worker
     class PG,Redis,MinIO data
-    class GroqLLM,GroqSTT external
+    class LLMAPI,STTAPI external
 ```
 
 ### 1.3 Biểu Đồ Triển Khai
@@ -131,12 +130,12 @@ flowchart TB
         end
 
         subgraph BunRuntime ["Bun Runtime"]
-            BackendAPI["Backend API Server<br/>Elysia on port 3000<br/>bun run dev"]
+            BackendAPI["Backend API Server<br/>Elysia on port 3001<br/>bun run dev"]
         end
 
         subgraph PythonRuntime ["Python Runtime"]
             GradingAPI["Grading Service<br/>FastAPI on port 8000<br/>uvicorn"]
-            GradingWorker["Grading Worker<br/>Redis BRPOP loop<br/>python -m app.worker"]
+            GradingWorker["Grading Worker<br/>Redis Streams consumer<br/>python -m app.worker"]
         end
 
         subgraph ViteDevServer ["Vite Dev Server"]
@@ -145,16 +144,15 @@ flowchart TB
     end
 
     subgraph ExternalAPIs ["External APIs"]
-        Groq["Groq Cloud API<br/>api.groq.com"]
+        AIProviders["AI Provider APIs<br/>OpenAI / Cloudflare Workers AI"]
     end
 
     BackendAPI -->|"TCP 5432"| PGContainer
     BackendAPI -->|"TCP 6379"| RedisContainer
     BackendAPI -->|"S3 API 9000"| MinIOContainer
-    GradingWorker -->|"TCP 5432"| PGContainer
     GradingWorker -->|"TCP 6379"| RedisContainer
-    GradingWorker -->|"HTTPS"| Groq
-    FrontendDev -->|"HTTP :3000"| BackendAPI
+    GradingWorker -->|"HTTPS"| AIProviders
+    FrontendDev -->|"HTTP :3001"| BackendAPI
 
     classDef container fill:#0277bd,stroke:#01579b,color:#fff
     classDef runtime fill:#2e7d32,stroke:#1b5e20,color:#fff
@@ -162,7 +160,7 @@ flowchart TB
 
     class PGContainer,RedisContainer,MinIOContainer container
     class BackendAPI,GradingAPI,GradingWorker,FrontendDev runtime
-    class Groq external
+    class AIProviders external
 ```
 
 ### 1.4 Công Nghệ Sử Dụng
@@ -175,14 +173,14 @@ flowchart TB
 | Xác thực Schema | Zod / TypeBox | latest | Xác thực đầu vào tại biên API |
 | JWT | Jose | latest | Ký, xác minh JWT và quản lý token |
 | Cơ sở dữ liệu | PostgreSQL | 17 | Kho dữ liệu quan hệ chính với hỗ trợ JSONB |
-| Cache / Hàng đợi | Redis | 7.2+ | Hàng đợi tác vụ (LPUSH/BRPOP), khóa phân tán, caching |
+| Cache / Hàng đợi | Redis | 7.2+ | Hàng đợi tác vụ (Streams XADD/XREADGROUP), khóa phân tán, caching |
 | Frontend | React | 19 | Thư viện thành phần UI |
 | Công cụ build | Vite | 7 | Build frontend, dev server, HMR |
 | Ngôn ngữ Frontend | TypeScript | 5.x | Phát triển frontend an toàn kiểu |
 | Runtime chấm điểm | Python | 3.11+ | Runtime dịch vụ chấm điểm AI |
 | Framework chấm điểm | FastAPI | latest | Health check và API quản trị cho dịch vụ chấm điểm |
-| Nhà cung cấp LLM | Groq (Llama 3.3 70B) | — | Chấm điểm Writing/Speaking bằng AI qua LLM |
-| Nhà cung cấp STT | Groq (Whisper Large V3 Turbo) | — | Chuyển đổi giọng nói thành văn bản cho Speaking |
+| Nhà cung cấp LLM | OpenAI GPT-4o + Cloudflare Llama 3.3 70B | — | Chấm điểm Writing/Speaking bằng AI qua LLM (primary + fallback) |
+| Nhà cung cấp STT | Cloudflare Workers AI (Deepgram Nova 3) | — | Chuyển đổi giọng nói thành văn bản cho Speaking |
 | Linting | Biome | latest | Định dạng code và thực thi lint |
 | Kiểm thử (Backend) | bun:test | — | Kiểm thử đơn vị và tích hợp |
 | Kiểm thử (Grading) | pytest | — | Kiểm thử đơn vị dịch vụ chấm điểm |
@@ -198,7 +196,7 @@ flowchart TB
 flowchart TB
     subgraph EntryPoint ["Entry Point"]
         AppTS["app.ts<br/>Elysia root app"]
-        IndexTS["index.ts<br/>app.listen on port 3000"]
+        IndexTS["index.ts<br/>app.listen on port 3001"]
     end
 
     subgraph Plugins ["Plugins"]
@@ -253,8 +251,8 @@ flowchart TB
 
     APIModules --> Common
     APIModules --> DBLayer
-    Submissions -->|"grading-dispatch<br/>LPUSH"| RedisExt
-    Submissions -->|"review locks<br/>SET/DEL"| RedisExt
+    Submissions -->|"grading-dispatch<br/>XADD"| RedisExt
+    Submissions -->|"XREADGROUP<br/>grading:results"| RedisExt
     DBLayer -->|"Drizzle ORM"| PG
 
     classDef entry fill:#1565c0,stroke:#0d47a1,color:#fff
@@ -278,14 +276,14 @@ flowchart TB
 flowchart TB
     subgraph Entry ["Entry Points"]
         Main["main.py<br/>FastAPI app<br/>Health + admin endpoints"]
-        WorkerPy["worker.py<br/>Redis BRPOP loop<br/>process + retry logic"]
+        WorkerPy["worker.py<br/>Redis Streams consumer<br/>process + retry logic"]
     end
 
     subgraph Core ["Core Grading"]
         Grading["grading.py<br/>grade router<br/>writing vs speaking dispatch"]
         Writing["writing.py<br/>Writing grading pipeline<br/>Extract text, call LLM,<br/>4-criteria scoring"]
         Speaking["speaking.py<br/>Speaking grading pipeline<br/>Download audio, STT,<br/>transcript to LLM"]
-        STT["stt.py<br/>Whisper STT client<br/>Audio to transcript"]
+        STT["stt.py<br/>Deepgram Nova 3 client<br/>Audio to transcript"]
         LLM["llm.py<br/>LLM client<br/>Structured output parsing"]
         Prompts["prompts.py<br/>VSTEP rubric prompts<br/>Writing + Speaking templates"]
     end
@@ -293,19 +291,17 @@ flowchart TB
     subgraph Support ["Support"]
         Models["models.py<br/>Task, Result, WritingScore,<br/>SpeakingScore, GrammarError,<br/>PermanentError"]
         ScoringPy["scoring.py<br/>Score calculation,<br/>snap to 0.5, band mapping"]
-        Config["config.py<br/>Pydantic Settings<br/>Redis URL, Groq key, etc."]
-        DB["db.py<br/>asyncpg connection<br/>save result, fail submission"]
+        Config["config.py<br/>Pydantic Settings<br/>Redis URL, AI API keys"]
         LoggerPy["logger.py<br/>structlog JSON logger"]
         HealthPy["health.py<br/>DB + Redis health probes"]
     end
 
     subgraph External ["External"]
-        RedisQ["Redis<br/>grading:tasks queue<br/>grading:dlq dead letter"]
-        PGDB["PostgreSQL<br/>submissions,<br/>submission_details"]
-        GroqAPI["Groq API<br/>LLM + STT"]
+        RedisQ["Redis<br/>grading:tasks stream<br/>grading:results stream"]
+        AIProviderAPI["AI Provider APIs<br/>LLM + STT"]
     end
 
-    WorkerPy -->|"BRPOP"| RedisQ
+    WorkerPy -->|"XREADGROUP"| RedisQ
     WorkerPy --> Grading
     Grading -->|"skill=writing"| Writing
     Grading -->|"skill=speaking"| Speaking
@@ -314,13 +310,11 @@ flowchart TB
     Speaking --> STT
     Speaking --> LLM
     Speaking --> Prompts
-    LLM --> GroqAPI
-    STT --> GroqAPI
+    LLM --> AIProviderAPI
+    STT --> AIProviderAPI
 
     Grading --> ScoringPy
-    WorkerPy --> DB
-    DB --> PGDB
-    WorkerPy -->|"DLQ on max retries"| RedisQ
+    WorkerPy -->|"XADD results"| RedisQ
 
     WorkerPy --> Models
     WorkerPy --> Config
@@ -333,8 +327,8 @@ flowchart TB
 
     class Main,WorkerPy entry
     class Grading,Writing,Speaking,STT,LLM,Prompts core
-    class Models,ScoringPy,Config,DB,LoggerPy,HealthPy support
-    class RedisQ,PGDB,GroqAPI ext
+    class Models,ScoringPy,Config,LoggerPy,HealthPy support
+    class RedisQ,AIProviderAPI ext
 ```
 
 ### 2.3 Cấu Trúc Thành Phần Frontend (Dự kiến)
@@ -425,7 +419,7 @@ flowchart TB
         end
 
         subgraph DocsPkg ["docs/"]
-            Specs["specs/<br/>20 technical spec files"]
+            Specs["specs/<br/>5 consolidated spec files"]
             Reports["capstone/reports/"]
         end
     end
@@ -501,7 +495,7 @@ sequenceDiagram
     participant DB as PostgreSQL
     participant R as Redis
     participant W as Grading Worker
-    participant G as Groq LLM API
+    participant G as LLM Provider API
 
     C->>B: POST /api/submissions<br/>{questionId, skill: "writing", answer: {text, wordCount}}
     B->>DB: SELECT question WHERE id = ? AND skill = "writing"
@@ -514,27 +508,32 @@ sequenceDiagram
         B->>DB: UPDATE submissions SET status=processing
     end
 
-    B->>R: LPUSH grading:tasks<br/>{submissionId, questionId, skill, answer}
+    B->>R: XADD grading:tasks<br/>{submissionId, questionId, skill, answer}
     B-->>C: 200 {submissionId, status: "pending"}
 
     Note over W,R: Async processing
-    W->>R: BRPOP grading:tasks (timeout 5s)
+    W->>R: XREADGROUP grading:tasks
     R-->>W: Task payload
 
     W->>G: LLM grading request<br/>VSTEP rubric prompt + student text
-    G-->>W: {taskAchievement, coherence,<br/>lexicalResource, grammaticalRange,<br/>feedback, confidence}
+    G-->>W: {taskFulfillment, organization,<br/>vocabulary, grammar,<br/>feedback, confidence}
 
     W->>W: Calculate overall score<br/>avg(4 criteria), snap to 0.5<br/>Determine band via thresholds
 
+    W->>R: XADD grading:results<br/>{overallScore, criteriaScores, confidence, feedback}
+
+    Note over B,R: Backend grading consumer
+    B->>R: XREADGROUP grading:results
+
     alt confidence = high
-        W->>DB: UPDATE submissions<br/>status=completed, score, band
+        B->>DB: UPDATE submissions<br/>status=completed, score, band
     else confidence = medium or low
-        W->>DB: UPDATE submissions<br/>status=review_pending,<br/>priority=medium or high
+        B->>DB: UPDATE submissions<br/>status=review_pending,<br/>priority=medium or high
     end
 
-    W->>DB: UPDATE submission_details.result<br/>(AIResult JSONB)
-    W->>DB: INSERT user_skill_scores
-    W->>DB: UPSERT user_progress<br/>(sliding window recalc)
+    B->>DB: UPDATE submission_details.result<br/>(AIResult JSONB)
+    B->>DB: INSERT user_skill_scores
+    B->>DB: UPSERT user_progress<br/>(sliding window recalc)
 ```
 
 ### 3.4 Biểu Đồ Tuần Tự — Luồng Phiên Thi
@@ -575,8 +574,8 @@ sequenceDiagram
         B->>DB: INSERT exam_submissions (junction)
     end
 
-    B->>R: LPUSH grading:tasks (Writing)
-    B->>R: LPUSH grading:tasks (Speaking)
+    B->>R: XADD grading:tasks (Writing)
+    B->>R: XADD grading:tasks (Speaking)
 
     B->>DB: progress.record + sync for L/R
     B->>DB: UPDATE exam_sessions status=submitted
@@ -590,7 +589,6 @@ sequenceDiagram
 sequenceDiagram
     participant I as Instructor
     participant B as Backend API
-    participant R as Redis
     participant DB as PostgreSQL
 
     I->>B: GET /api/submissions/queue
@@ -598,13 +596,12 @@ sequenceDiagram
     B-->>I: Paginated review queue
 
     I->>B: POST /api/submissions/:id/claim
-    B->>R: SET lock:review:{id} EX 900<br/>(15 min TTL)
+    B->>DB: Atomic conditional UPDATE<br/>SET claimed_by, claimed_at<br/>WHERE unclaimed OR expired (15 min)
 
     alt Already claimed by another
         B-->>I: 409 CONFLICT
     end
 
-    B->>DB: UPDATE submissions<br/>SET claimed_by=instructor, claimed_at=NOW
     B->>DB: SELECT submission + AI result
     B-->>I: Submission with AI grading result
 
@@ -617,7 +614,6 @@ sequenceDiagram
         B->>DB: SET auditFlag = true
     end
 
-    B->>R: DEL lock:review:{id}
     B->>DB: INSERT user_skill_scores
     B->>DB: UPSERT user_progress (sliding window)
     B-->>I: Updated submission with final scores
@@ -858,7 +854,7 @@ erDiagram
         enum skill "listening | reading | writing | speaking"
         enum status "pending | processing | completed | review_pending | failed"
         numeric score "0.0-10.0 step 0.5"
-        enum band "A1 | A2 | B1 | B2 | C1 nullable"
+        enum band "B1 | B2 | C1 nullable"
         enum review_priority "low | medium | high nullable"
         enum grading_mode "auto | human | hybrid nullable"
         uuid reviewer_id FK "nullable"
@@ -881,7 +877,12 @@ erDiagram
 
     exams {
         uuid id PK
+        varchar title "max 255 not null"
+        text description "nullable"
+        enum type "practice | placement | mock"
+        enum skill "nullable"
         enum level "A2 | B1 | B2 | C1"
+        integer duration_minutes "nullable"
         jsonb blueprint "ExamBlueprint per-skill questionIds"
         boolean is_active "default true"
         uuid created_by FK
@@ -899,6 +900,7 @@ erDiagram
         numeric writing_score "nullable"
         numeric speaking_score "nullable"
         numeric overall_score "nullable"
+        enum overall_band "B1 | B2 | C1 nullable"
         timestamp started_at "not null"
         timestamp completed_at "nullable"
         timestamp created_at
@@ -925,7 +927,7 @@ erDiagram
 
     knowledge_points {
         uuid id PK
-        enum category "grammar | vocabulary | strategy"
+        enum category "grammar | vocabulary | strategy | topic"
         varchar name UK "unique max 200"
         timestamp created_at
         timestamp updated_at
@@ -955,6 +957,7 @@ erDiagram
         uuid user_id FK
         enum skill "listening | reading | writing | speaking"
         uuid submission_id FK "nullable"
+        uuid session_id FK "nullable"
         numeric score "0.0-10.0 not null"
         varchar scaffolding_type "max 20 nullable"
         timestamp created_at
@@ -963,8 +966,8 @@ erDiagram
     user_goals {
         uuid id PK
         uuid user_id FK
-        enum target_band "A1 | A2 | B1 | B2 | C1"
-        varchar current_estimated_band "max 10"
+        enum target_band "B1 | B2 | C1"
+        enum current_estimated_band "B1 | B2 | C1 nullable"
         timestamp deadline "nullable"
         integer daily_study_time_minutes "default 30"
         timestamp created_at
@@ -1147,13 +1150,13 @@ ExamBlueprint = {
 | `user_role` | `learner`, `instructor`, `admin` | `users.role` |
 | `skill` | `listening`, `reading`, `writing`, `speaking` | `questions`, `submissions`, `user_progress`, `user_skill_scores`, `exam_submissions`, `instructor_feedback` |
 | `question_level` | `A2`, `B1`, `B2`, `C1` | `exams.level`, `user_progress.current_level`, `user_progress.target_level` |
-| `vstep_band` | `A1`, `A2`, `B1`, `B2`, `C1` | `submissions.band`, `user_goals.target_band` |
+| `vstep_band` | `B1`, `B2`, `C1` | `submissions.band`, `user_goals.target_band`, `user_goals.current_estimated_band`, `exam_sessions.overall_band` |
 | `submission_status` | `pending`, `processing`, `completed`, `review_pending`, `failed` | `submissions.status` |
 | `review_priority` | `low`, `medium`, `high` | `submissions.review_priority` |
 | `grading_mode` | `auto`, `human`, `hybrid` | `submissions.grading_mode` |
 | `exam_status` | `in_progress`, `submitted`, `completed`, `abandoned` | `exam_sessions.status` |
 | `streak_direction` | `up`, `down`, `neutral` | `user_progress.streak_direction` |
-| `knowledge_point_category` | `grammar`, `vocabulary`, `strategy` | `knowledge_points.category` |
+| `knowledge_point_category` | `grammar`, `vocabulary`, `strategy`, `topic` | `knowledge_points.category` |
 | `notification_type` | `grading_completed`, `feedback_received`, `class_invite`, `goal_achieved`, `system` | `notifications.type` |
 | `exam_type` | `practice`, `placement`, `mock` | `exams.type` |
 | `exam_skill` | `listening`, `reading`, `writing`, `speaking`, `mixed` | `exams.skill` |
@@ -1288,11 +1291,11 @@ ExamBlueprint = {
 | **State Machine** | `common/state-machine.ts`, `submissions/shared.ts` | Vòng đời bài nộp được thực thi qua bản đồ chuyển trạng thái tường minh. Chuyển trạng thái không hợp lệ sẽ throw `ConflictError`. |
 | **Discriminated Union** | `db/types/grading.ts`, `db/types/answers.ts` | Các payload JSONB sử dụng trường `type` để phân biệt biến thể (AutoResult vs AIResult vs HumanResult). TypeBox schema xác thực tại biên. |
 | **Plugin Architecture** | `plugins/error.ts`, `plugins/auth.ts` | Các mối quan tâm xuyên suốt (xử lý lỗi, middleware xác thực) được triển khai dưới dạng plugin Elysia gắn vào ứng dụng. |
-| **Producer-Consumer Queue** | `grading-dispatch.ts` (producer), `worker.py` (consumer) | Tách rời việc tạo bài nộp khỏi chấm điểm AI. Redis list làm hàng đợi bền vững với DLQ cho tin nhắn lỗi. |
+| **Producer-Consumer Stream** | `grading-dispatch.ts` (producer), `worker.py` (consumer) | Tách rời việc tạo bài nộp khỏi chấm điểm AI. Redis Streams với consumer group cho việc dispatch và tiêu thụ kết quả đáng tin cậy. |
 | **Sliding Window** | `progress/trends.ts`, `progress/service.ts` | Chỉ số tiến trình được tính trên N=10 điểm gần nhất mỗi kỹ năng. Truy vấn có giới hạn, hiệu năng dự đoán được. |
 | **Prepare-then-Dispatch** | `grading-dispatch.ts` | Trạng thái cơ sở dữ liệu được cập nhật trong transaction (`prepare`), đẩy Redis xảy ra sau commit (`dispatch`). Ngăn tin nhắn mồ côi trong hàng đợi. |
 | **Guard-Compute-Write** | Tất cả file `service.ts` của module | Cấu trúc hàm: xác thực điều kiện tiên quyết (guard) → tính toán kết quả → lưu vào DB (write). Không xen kẽ đọc và ghi. |
-| **Shared-DB** | Backend + Grading Worker | Cả hai dịch vụ kết nối tới cùng PostgreSQL. Loại bỏ nhu cầu callback queue hoặc mẫu eventual consistency. |
+| **Shared-DB** | Backend + Grading Worker | Backend kết nối trực tiếp tới PostgreSQL. Worker chỉ giao tiếp qua Redis Streams — backend consumer xử lý tất cả việc ghi DB cho kết quả chấm điểm. |
 | **Partial Index** | Schema cơ sở dữ liệu | Chỉ mục partial của PostgreSQL (ví dụ: `WHERE status = 'review_pending'`, `WHERE is_active = true`) tối ưu hóa đường truy vấn nóng. |
 
 ### 6.2 Chiến Lược Xử Lý Lỗi
@@ -1353,7 +1356,7 @@ flowchart TB
 | **Xác thực đầu vào** | Tất cả đầu vào được xác thực tại biên API qua TypeBox schema. Code nội bộ mặc định dữ liệu hợp lệ. |
 | **Không lưu bí mật trong code** | Biến môi trường qua file `.env` (git-ignored). Xác thực khi khởi động qua `t3-oss/env-core`. |
 | **Tương quan yêu cầu** | Header `X-Request-Id` trên tất cả phản hồi cho chuỗi kiểm toán. |
-| **Khóa phân tán** | Nhận bài đánh giá sử dụng Redis `SET ... EX 900` (TTL 15 phút) để ngăn đánh giá đồng thời cùng một bài nộp. |
+| **Nhận bài đánh giá** | Sử dụng atomic conditional UPDATE trong PostgreSQL với cửa sổ hết hạn 15 phút để ngăn đánh giá đồng thời cùng một bài nộp. |
 
 ---
 
@@ -1363,8 +1366,8 @@ flowchart TB
 
 | Dịch vụ | Nhà cung cấp | Mục đích | Tích hợp |
 |---------|----------|---------|-------------|
-| Chấm điểm LLM | Groq (Llama 3.3 70B) | Đánh giá Writing/Speaking bằng AI theo rubric VSTEP | HTTPS REST qua LiteLLM |
-| Chuyển giọng nói thành văn bản | Groq (Whisper Large V3 Turbo) | Phiên âm audio cho bài nộp Speaking | HTTPS REST qua LiteLLM |
+| Chấm điểm LLM | OpenAI (GPT-4o) + Cloudflare (Llama 3.3 70B) | Đánh giá Writing/Speaking bằng AI theo rubric VSTEP | HTTPS REST qua httpx + Cloudflare SDK |
+| Chuyển giọng nói thành văn bản | Cloudflare Workers AI (Deepgram Nova 3) | Phiên âm audio cho bài nộp Speaking | HTTPS REST qua httpx |
 | Lưu trữ đối tượng | MinIO (tương thích S3) | Lưu trữ file audio (bản ghi Speaking), avatar người dùng | S3 API qua Bun S3Client |
 | Xác thực | Tự triển khai (JWT) | Cặp access/refresh token với rotation, phát hiện tái sử dụng | Thư viện Jose (HS256) |
 | Băm mật khẩu | Bun tích hợp sẵn | Băm mật khẩu Argon2id | Bun.password API |
@@ -1388,8 +1391,8 @@ flowchart TB
 | **Mobile** | React Native | latest | TypeScript | Đa nền tảng di động (ưu tiên Android) |
 | **AI/Chấm điểm** | Python | 3.11+ | Python | Runtime dịch vụ chấm điểm |
 | | FastAPI | latest | Python | Health check và API quản trị |
-| | LiteLLM | latest | Python | Giao diện nhà cung cấp LLM/STT thống nhất |
-| | Redis (BRPOP) | — | — | Consumer hàng đợi tác vụ |
+| | httpx + Cloudflare SDK | latest | Python | HTTP client cho AI provider APIs |
+| | Redis (Streams) | — | — | Consumer hàng đợi tác vụ |
 | **Cơ sở dữ liệu** | PostgreSQL | 17 | SQL | Kho dữ liệu quan hệ chính (JSONB) |
 | | Redis | 7.2+ | — | Hàng đợi, cache, khóa phân tán |
 | **Linting** | Biome | latest | — | Định dạng code và thực thi lint |
@@ -1429,7 +1432,7 @@ flowchart TB
 | 4 | `apps/backend/src/` | Mã nguồn Backend — Bun + Elysia + Drizzle ORM |
 | 5 | `apps/grading/app/` | Mã nguồn dịch vụ chấm điểm — Python + FastAPI + Redis worker |
 | 6 | `apps/backend/drizzle/` | Database migration (Drizzle Kit) |
-| 7 | `docs/specs/` | Đặc tả kỹ thuật (20 file bao gồm domain, contracts, data, platform, ops) |
+| 7 | `docs/specs/` | Đặc tả kỹ thuật (5 file tổng hợp bao gồm architecture, domain, API contracts, database, README) |
 
 ---
 
