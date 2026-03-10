@@ -259,10 +259,10 @@ D — Do · R — Review · S — Support · I — Informed
 |----------|------|
 | Backend | Bun + Elysia + Drizzle ORM |
 | Frontend | React 19 + Vite 7 + TypeScript |
-| Grading | Python + FastAPI + LiteLLM |
+| Grading | Python + FastAPI + Redis Streams worker |
 | Database | PostgreSQL 17 |
 | Queue / Cache | Redis 7 |
-| AI Provider | Groq (Llama 3.3 70B, Whisper Large V3 Turbo) |
+| AI Provider | OpenAI GPT-4o (primary), Cloudflare Workers AI Llama 3.3 70B (fallback), Cloudflare STT (Deepgram Nova-3) |
 | IDE | Visual Studio Code, Cursor |
 | Linter | Biome (TypeScript) |
 | Testing | bun:test (backend), pytest (grading) |
