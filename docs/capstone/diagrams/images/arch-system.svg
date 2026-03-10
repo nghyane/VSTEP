@@ -1,111 +1,142 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1080" width="100%" height="100%" style="background-color: #ffffff; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1100" width="100%" height="100%" style="background-color: #ffffff; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
   <defs>
-    <marker id="arrow-solid" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    <marker id="a-sync" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#404040"/>
+    </marker>
+    <marker id="a-async" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#b91c1c"/>
     </marker>
   </defs>
 
-  <rect x="300" y="40" width="600" height="120" rx="12" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/>
-  <text x="600" y="65" fill="#94a3b8" font-size="12" font-weight="600" letter-spacing="2" text-anchor="middle">CLIENT LAYER</text>
+  <!-- CLIENT LAYER -->
+  <rect x="300" y="40" width="600" height="120" rx="6" fill="#fafafa" stroke="#d4d4d4" stroke-width="1.5"/>
+  <text x="600" y="65" fill="#a3a3a3" font-size="10" font-weight="700" letter-spacing="0.5" text-anchor="middle">CLIENT LAYER</text>
 
-  <rect x="150" y="240" width="900" height="120" rx="12" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/>
-  <text x="600" y="265" fill="#94a3b8" font-size="12" font-weight="600" letter-spacing="2" text-anchor="middle">API LAYER</text>
+  <!-- API LAYER -->
+  <rect x="150" y="240" width="900" height="120" rx="6" fill="#fafafa" stroke="#d4d4d4" stroke-width="1.5"/>
+  <text x="600" y="265" fill="#a3a3a3" font-size="10" font-weight="700" letter-spacing="0.5" text-anchor="middle">API LAYER</text>
 
-  <rect x="150" y="440" width="900" height="140" rx="12" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/>
-  <text x="600" y="465" fill="#94a3b8" font-size="12" font-weight="600" letter-spacing="2" text-anchor="middle">DATA LAYER</text>
+  <!-- DATA LAYER -->
+  <rect x="150" y="440" width="900" height="140" rx="6" fill="#fafafa" stroke="#d4d4d4" stroke-width="1.5"/>
+  <text x="600" y="465" fill="#a3a3a3" font-size="10" font-weight="700" letter-spacing="0.5" text-anchor="middle">DATA LAYER</text>
 
-  <rect x="150" y="660" width="900" height="140" rx="12" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/>
-  <text x="600" y="685" fill="#94a3b8" font-size="12" font-weight="600" letter-spacing="2" text-anchor="middle">GRADING SERVICE</text>
+  <!-- GRADING SERVICE -->
+  <rect x="150" y="660" width="900" height="140" rx="6" fill="#fafafa" stroke="#d4d4d4" stroke-width="1.5"/>
+  <text x="600" y="685" fill="#a3a3a3" font-size="10" font-weight="700" letter-spacing="0.5" text-anchor="middle">GRADING SERVICE</text>
 
-  <rect x="250" y="880" width="700" height="120" rx="12" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/>
-  <text x="600" y="905" fill="#94a3b8" font-size="12" font-weight="600" letter-spacing="2" text-anchor="middle">EXTERNAL SERVICES</text>
+  <!-- EXTERNAL SERVICES -->
+  <rect x="250" y="880" width="700" height="120" rx="6" fill="#fafafa" stroke="#d4d4d4" stroke-width="1.5"/>
+  <text x="600" y="905" fill="#a3a3a3" font-size="10" font-weight="700" letter-spacing="0.5" text-anchor="middle">EXTERNAL SERVICES</text>
 
-  <path d="M 600 160 L 600 235" fill="none" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow-solid)" />
-  <rect x="545" y="185" width="110" height="24" rx="4" fill="#ffffff" />
-  <text x="600" y="201" fill="#64748b" font-size="12" font-weight="500" text-anchor="middle">REST / JSON</text>
+  <!-- Arrow: Client → API (sync) -->
+  <path d="M 600 160 L 600 183" fill="none" stroke="#404040" stroke-width="1.8"/>
+  <text x="600" y="199" fill="#404040" font-size="11" font-weight="600" text-anchor="middle">REST / JSON</text>
+  <path d="M 600 205 L 600 235" fill="none" stroke="#404040" stroke-width="1.8" marker-end="url(#a-sync)"/>
 
-  <path d="M 310 360 L 310 435" fill="none" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow-solid)" />
-  <rect x="260" y="385" width="100" height="24" rx="4" fill="#ffffff" />
-  <text x="310" y="401" fill="#64748b" font-size="12" font-weight="500" text-anchor="middle">Drizzle ORM</text>
+  <!-- Arrow: API → PostgreSQL (sync) -->
+  <path d="M 310 360 L 310 383" fill="none" stroke="#404040" stroke-width="1.8"/>
+  <text x="310" y="399" fill="#404040" font-size="11" font-weight="600" text-anchor="middle">Drizzle ORM</text>
+  <path d="M 310 405 L 310 435" fill="none" stroke="#404040" stroke-width="1.8" marker-end="url(#a-sync)"/>
 
-  <path d="M 600 360 L 600 435" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow-solid)" />
-  <rect x="540" y="385" width="120" height="24" rx="4" fill="#ffffff" />
-  <text x="600" y="401" fill="#64748b" font-size="12" font-weight="500" text-anchor="middle">Redis Streams</text>
+  <!-- Arrow: API → Redis (async) -->
+  <path d="M 600 360 L 600 383" fill="none" stroke="#b91c1c" stroke-width="1.8" stroke-dasharray="6 4"/>
+  <text x="600" y="399" fill="#b91c1c" font-size="11" font-weight="600" text-anchor="middle">Redis Streams</text>
+  <path d="M 600 405 L 600 435" fill="none" stroke="#b91c1c" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#a-async)"/>
 
-  <path d="M 890 360 L 890 435" fill="none" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow-solid)" />
-  <rect x="840" y="385" width="100" height="24" rx="4" fill="#ffffff" />
-  <text x="890" y="401" fill="#64748b" font-size="12" font-weight="500" text-anchor="middle">S3 API</text>
+  <!-- Arrow: API → Object Storage (sync) -->
+  <path d="M 890 360 L 890 383" fill="none" stroke="#404040" stroke-width="1.8"/>
+  <text x="890" y="399" fill="#404040" font-size="11" font-weight="600" text-anchor="middle">S3 API</text>
+  <path d="M 890 405 L 890 435" fill="none" stroke="#404040" stroke-width="1.8" marker-end="url(#a-sync)"/>
 
-  <path d="M 600 580 L 600 655" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow-solid)" />
-  <rect x="520" y="605" width="160" height="24" rx="4" fill="#ffffff" />
-  <text x="600" y="621" fill="#64748b" font-size="12" font-weight="500" text-anchor="middle">Task Queue</text>
+  <!-- Arrow: Redis → Grading (async) -->
+  <path d="M 600 580 L 600 603" fill="none" stroke="#b91c1c" stroke-width="1.8" stroke-dasharray="6 4"/>
+  <text x="600" y="619" fill="#b91c1c" font-size="11" font-weight="600" text-anchor="middle">Task Queue</text>
+  <path d="M 600 625 L 600 655" fill="none" stroke="#b91c1c" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#a-async)"/>
 
-  <path d="M 600 800 L 600 840" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4" />
-  <path d="M 440 840 L 760 840" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4" />
-  <path d="M 440 840 L 440 875" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow-solid)" />
-  <path d="M 760 840 L 760 875" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow-solid)" />
-  <rect x="565" y="828" width="70" height="24" rx="4" fill="#ffffff" />
-  <text x="600" y="844" fill="#64748b" font-size="12" font-weight="500" text-anchor="middle">HTTPS</text>
+  <!-- Arrow: Grading → External (async) -->
+  <path d="M 600 800 L 600 845" fill="none" stroke="#b91c1c" stroke-width="1.8" stroke-dasharray="6 4"/>
+  <path d="M 600 845 L 440 845" fill="none" stroke="#b91c1c" stroke-width="1.8" stroke-dasharray="6 4"/>
+  <path d="M 600 845 L 760 845" fill="none" stroke="#b91c1c" stroke-width="1.8" stroke-dasharray="6 4"/>
+  <path d="M 440 845 L 440 875" fill="none" stroke="#b91c1c" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#a-async)"/>
+  <path d="M 760 845 L 760 875" fill="none" stroke="#b91c1c" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#a-async)"/>
+  <text x="600" y="838" fill="#b91c1c" font-size="11" font-weight="600" text-anchor="middle" paint-order="stroke" stroke="#ffffff" stroke-width="4" stroke-linejoin="round">HTTPS</text>
 
-  <rect x="350" y="80" width="500" height="60" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Component: Web Application -->
+  <rect x="350" y="80" width="500" height="60" rx="6" fill="#ffffff" stroke="#d4d4d4" stroke-width="1.2"/>
   <image href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original.svg" x="375" y="90" width="40" height="40"/>
-  <text x="430" y="105" fill="#334155" font-size="16" font-weight="600">Web Application</text>
-  <text x="430" y="125" fill="#64748b" font-size="13" font-weight="400">React 19 • Vite 7 • TypeScript SPA</text>
+  <text x="430" y="105" fill="#262626" font-size="15" font-weight="700">Web Application</text>
+  <text x="430" y="125" fill="#737373" font-size="13" font-weight="400">React 19 • Vite 7 • TypeScript SPA</text>
 
-  <rect x="200" y="280" width="800" height="60" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Component: Backend API Server -->
+  <rect x="200" y="280" width="800" height="60" rx="6" fill="#ffffff" stroke="#d4d4d4" stroke-width="1.2"/>
   <image href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/bun/bun-original.svg" x="225" y="290" width="40" height="40"/>
-  <text x="285" y="305" fill="#334155" font-size="16" font-weight="600">Backend API Server</text>
-  <text x="285" y="325" fill="#64748b" font-size="13" font-weight="400">Bun • Elysia • JWT Auth</text>
+  <text x="285" y="305" fill="#262626" font-size="15" font-weight="700">Backend API Server</text>
+  <text x="285" y="325" fill="#737373" font-size="13" font-weight="400">Bun • Elysia • JWT Auth</text>
 
-  <rect x="180" y="480" width="260" height="80" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Component: PostgreSQL 17 -->
+  <rect x="180" y="480" width="260" height="80" rx="6" fill="#ffffff" stroke="#d4d4d4" stroke-width="1.2"/>
   <image href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/postgresql/postgresql-original.svg" x="200" y="495" width="45" height="45"/>
-  <text x="260" y="515" fill="#334155" font-size="15" font-weight="600">PostgreSQL 17</text>
-  <text x="260" y="535" fill="#64748b" font-size="13" font-weight="400">Primary Database</text>
+  <text x="260" y="515" fill="#262626" font-size="15" font-weight="700">PostgreSQL 17</text>
+  <text x="260" y="535" fill="#737373" font-size="13" font-weight="400">Primary Database</text>
 
-  <rect x="470" y="480" width="260" height="80" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Component: Redis 7 -->
+  <rect x="470" y="480" width="260" height="80" rx="6" fill="#ffffff" stroke="#d4d4d4" stroke-width="1.2"/>
   <image href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/redis/redis-original.svg" x="490" y="495" width="45" height="45"/>
-  <text x="550" y="515" fill="#334155" font-size="15" font-weight="600">Redis 7</text>
-  <text x="550" y="535" fill="#64748b" font-size="13" font-weight="400">Streams • Cache</text>
+  <text x="550" y="515" fill="#262626" font-size="15" font-weight="700">Redis 7</text>
+  <text x="550" y="535" fill="#737373" font-size="13" font-weight="400">Streams • Cache</text>
 
-  <rect x="760" y="480" width="260" height="80" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Component: Object Storage -->
+  <rect x="760" y="480" width="260" height="80" rx="6" fill="#ffffff" stroke="#d4d4d4" stroke-width="1.2"/>
   <image href="https://upload.wikimedia.org/wikipedia/commons/b/bc/Amazon-S3-Logo.svg" x="780" y="495" width="45" height="45"/>
-  <text x="840" y="515" fill="#334155" font-size="15" font-weight="600">Object Storage</text>
-  <text x="840" y="535" fill="#64748b" font-size="13" font-weight="400">S3-compatible • Audio files</text>
+  <text x="840" y="515" fill="#262626" font-size="15" font-weight="700">Object Storage</text>
+  <text x="840" y="535" fill="#737373" font-size="13" font-weight="400">S3-compatible • Audio files</text>
 
-  <rect x="180" y="700" width="260" height="80" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Component: Grading Worker -->
+  <rect x="180" y="700" width="260" height="80" rx="6" fill="#ffffff" stroke="#d4d4d4" stroke-width="1.2"/>
   <image href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/python/python-original.svg" x="200" y="715" width="45" height="45"/>
-  <text x="260" y="735" fill="#334155" font-size="15" font-weight="600">Grading Worker</text>
-  <text x="260" y="755" fill="#64748b" font-size="13" font-weight="400">Python • FastAPI</text>
+  <text x="260" y="735" fill="#262626" font-size="15" font-weight="700">Grading Worker</text>
+  <text x="260" y="755" fill="#737373" font-size="13" font-weight="400">Python • FastAPI</text>
 
-  <rect x="470" y="700" width="260" height="80" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Component: Writing Pipeline -->
+  <rect x="470" y="700" width="260" height="80" rx="6" fill="#ffffff" stroke="#d4d4d4" stroke-width="1.2"/>
   <g transform="translate(495, 718)">
-    <path d="M2,2 L2,34 C2,36.2 3.8,38 6,38 L32,38 C34.2,38 36,36.2 36,34 L36,12 L26,2 Z" fill="none" stroke="#64748b" stroke-width="2"/>
-    <path d="M26,2 L26,12 L36,12" fill="none" stroke="#64748b" stroke-width="2"/>
-    <line x1="10" y1="18" x2="26" y2="18" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
-    <line x1="10" y1="24" x2="22" y2="24" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
-    <line x1="10" y1="30" x2="26" y2="30" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+    <path d="M2,2 L2,34 C2,36.2 3.8,38 6,38 L32,38 C34.2,38 36,36.2 36,34 L36,12 L26,2 Z" fill="none" stroke="#737373" stroke-width="2"/>
+    <path d="M26,2 L26,12 L36,12" fill="none" stroke="#737373" stroke-width="2"/>
+    <line x1="10" y1="18" x2="26" y2="18" stroke="#a3a3a3" stroke-width="2" stroke-linecap="round"/>
+    <line x1="10" y1="24" x2="22" y2="24" stroke="#a3a3a3" stroke-width="2" stroke-linecap="round"/>
+    <line x1="10" y1="30" x2="26" y2="30" stroke="#a3a3a3" stroke-width="2" stroke-linecap="round"/>
   </g>
-  <text x="550" y="735" fill="#334155" font-size="15" font-weight="600">Writing Pipeline</text>
-  <text x="550" y="755" fill="#64748b" font-size="13" font-weight="400">LLM • VSTEP Rubric</text>
+  <text x="550" y="735" fill="#262626" font-size="15" font-weight="700">Writing Pipeline</text>
+  <text x="550" y="755" fill="#737373" font-size="13" font-weight="400">LLM • VSTEP Rubric</text>
 
-  <rect x="760" y="700" width="260" height="80" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Component: Speaking Pipeline -->
+  <rect x="760" y="700" width="260" height="80" rx="6" fill="#ffffff" stroke="#d4d4d4" stroke-width="1.2"/>
   <g transform="translate(785, 715)">
     <rect x="14" y="2" width="12" height="20" rx="6" fill="#f97316"/>
     <path d="M6,14 C6,21.7 12.3,28 20,28 C27.7,28 34,21.7 34,14" fill="none" stroke="#f97316" stroke-width="3" stroke-linecap="round"/>
     <line x1="20" y1="28" x2="20" y2="36" stroke="#f97316" stroke-width="3"/>
     <line x1="12" y1="36" x2="28" y2="36" stroke="#f97316" stroke-width="3" stroke-linecap="round"/>
   </g>
-  <text x="840" y="735" fill="#334155" font-size="15" font-weight="600">Speaking Pipeline</text>
-  <text x="840" y="755" fill="#64748b" font-size="13" font-weight="400">STT + LLM • VSTEP Rubric</text>
+  <text x="840" y="735" fill="#262626" font-size="15" font-weight="700">Speaking Pipeline</text>
+  <text x="840" y="755" fill="#737373" font-size="13" font-weight="400">STT + LLM • VSTEP Rubric</text>
 
-  <rect x="300" y="920" width="280" height="60" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Component: LLM Provider -->
+  <rect x="300" y="920" width="280" height="60" rx="6" fill="#ffffff" stroke="#d4d4d4" stroke-width="1.2"/>
   <image href="https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg" x="320" y="930" width="35" height="35"/>
-  <text x="370" y="945" fill="#334155" font-size="14" font-weight="600">LLM Provider</text>
-  <text x="370" y="965" fill="#64748b" font-size="12" font-weight="500">OpenAI GPT-4o • Cloudflare AI</text>
+  <text x="370" y="945" fill="#262626" font-size="14" font-weight="700">LLM Provider</text>
+  <text x="370" y="965" fill="#737373" font-size="12" font-weight="400">OpenAI GPT-4o • Cloudflare AI</text>
 
-  <rect x="620" y="920" width="280" height="60" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <!-- Component: STT Provider -->
+  <rect x="620" y="920" width="280" height="60" rx="6" fill="#ffffff" stroke="#d4d4d4" stroke-width="1.2"/>
   <image href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/cloudflare/cloudflare-original.svg" x="640" y="930" width="40" height="40"/>
-  <text x="690" y="945" fill="#334155" font-size="14" font-weight="600">STT Provider</text>
-  <text x="690" y="965" fill="#64748b" font-size="12" font-weight="500">Cloudflare Workers AI</text>
+  <text x="690" y="945" fill="#262626" font-size="14" font-weight="700">STT Provider</text>
+  <text x="690" y="965" fill="#737373" font-size="12" font-weight="400">Cloudflare Workers AI</text>
+
+  <!-- Legend -->
+  <rect x="870" y="1020" width="280" height="55" rx="4" fill="#fafafa" stroke="#e5e5e5" stroke-width="1"/>
+  <line x1="888" y1="1040" x2="928" y2="1040" stroke="#404040" stroke-width="1.8" marker-end="url(#a-sync)"/>
+  <text x="936" y="1044" font-size="10" fill="#525252">Synchronous (HTTP, SQL)</text>
+  <line x1="888" y1="1060" x2="928" y2="1060" stroke="#b91c1c" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#a-async)"/>
+  <text x="936" y="1064" font-size="10" fill="#525252">Asynchronous (Redis Streams)</text>
 
 </svg>
