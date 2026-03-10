@@ -14,6 +14,13 @@ export async function latest(userId: string) {
 }
 
 export async function create(userId: string, body: GoalBody) {
+  const placement = await db.query.userPlacements.findFirst({
+    where: eq(table.userPlacements.userId, userId),
+  });
+  if (!placement) {
+    throw new ConflictError("Onboarding required before creating goal");
+  }
+
   const existing = await db.query.userGoals.findFirst({
     where: eq(table.userGoals.userId, userId),
   });

@@ -3,6 +3,51 @@ import { api, createTestContext, expectError } from "./helpers";
 
 const t = createTestContext();
 
+const onboardingDeadline = () =>
+  new Date(Date.now() + 90 * 86400000).toISOString();
+
+async function completeOnboardingBySkip(token: string) {
+  const result = await api.post("/api/onboarding/skip", {
+    token,
+    body: {
+      targetBand: "B2",
+      deadline: onboardingDeadline(),
+    },
+  });
+  expect(result.status).toBe(201);
+}
+
+async function completeOnboardingBySelfAssess(token: string) {
+  const result = await api.post("/api/onboarding/self-assess", {
+    token,
+    body: {
+      listening: "B1",
+      reading: "B1",
+      writing: "B1",
+      speaking: "B1",
+      targetBand: "B2",
+      deadline: onboardingDeadline(),
+    },
+  });
+  expect(result.status).toBe(201);
+}
+
+async function clearActiveGoal(token: string) {
+  const overview = await api.get("/api/progress", { token });
+  expect(overview.status).toBe(200);
+
+  const goal = overview.data.goal as { id?: string } | null;
+  if (!goal?.id) return;
+
+  const removed = await api.delete(`/api/progress/goals/${goal.id}`, { token });
+  expect(removed.status).toBe(200);
+}
+
+async function prepareOnboardedLearnerWithoutGoal(token: string) {
+  await completeOnboardingBySkip(token);
+  await clearActiveGoal(token);
+}
+
 describe("progress integration", () => {
   beforeEach(() => t.cleanup());
   afterAll(() => t.cleanup());
@@ -66,14 +111,60 @@ describe("progress integration", () => {
     }
   });
 
+  it("rejects creating goal when onboarding is incomplete", async () => {
+    const learner = await t.login({ role: "learner" });
+
+    const result = await api.post("/api/progress/goals", {
+      token: learner.accessToken,
+      body: {
+        targetBand: "B2",
+        deadline: onboardingDeadline(),
+      },
+    });
+
+    expectError(
+      result,
+      409,
+      "CONFLICT",
+      "Onboarding required before creating goal",
+    );
+  });
+
+  it("creates goal successfully in onboarding skip flow", async () => {
+    const learner = await t.login({ role: "learner" });
+
+    await completeOnboardingBySkip(learner.accessToken);
+
+    const statusResult = await api.get("/api/onboarding/status", {
+      token: learner.accessToken,
+    });
+    expect(statusResult.status).toBe(200);
+    expect(statusResult.data.completed).toBe(true);
+    expect(statusResult.data.hasGoal).toBe(true);
+  });
+
+  it("creates goal successfully in onboarding self-assess flow", async () => {
+    const learner = await t.login({ role: "learner" });
+
+    await completeOnboardingBySelfAssess(learner.accessToken);
+
+    const statusResult = await api.get("/api/onboarding/status", {
+      token: learner.accessToken,
+    });
+    expect(statusResult.status).toBe(200);
+    expect(statusResult.data.completed).toBe(true);
+    expect(statusResult.data.hasGoal).toBe(true);
+  });
+
   it("creates a learning goal", async () => {
     const learner = await t.login({ role: "learner" });
+    await prepareOnboardedLearnerWithoutGoal(learner.accessToken);
 
     const { status, data } = await api.post("/api/progress/goals", {
       token: learner.accessToken,
       body: {
         targetBand: "B2",
-        deadline: new Date(Date.now() + 90 * 86400000).toISOString(),
+        deadline: onboardingDeadline(),
         dailyStudyTimeMinutes: 60,
       },
     });
@@ -86,9 +177,11 @@ describe("progress integration", () => {
 
   it("rejects second active goal (only 1 allowed)", async () => {
     const learner = await t.login({ role: "learner" });
+    await prepareOnboardedLearnerWithoutGoal(learner.accessToken);
+
     const body = {
       targetBand: "B2",
-      deadline: new Date(Date.now() + 90 * 86400000).toISOString(),
+      deadline: onboardingDeadline(),
     };
 
     await api.post("/api/progress/goals", {
@@ -106,7 +199,8 @@ describe("progress integration", () => {
 
   it("updates a goal", async () => {
     const learner = await t.login({ role: "learner" });
-    const deadline = new Date(Date.now() + 90 * 86400000).toISOString();
+    await prepareOnboardedLearnerWithoutGoal(learner.accessToken);
+    const deadline = onboardingDeadline();
 
     const created = await api.post("/api/progress/goals", {
       token: learner.accessToken,
@@ -126,7 +220,8 @@ describe("progress integration", () => {
 
   it("deletes a goal", async () => {
     const learner = await t.login({ role: "learner" });
-    const deadline = new Date(Date.now() + 90 * 86400000).toISOString();
+    await prepareOnboardedLearnerWithoutGoal(learner.accessToken);
+    const deadline = onboardingDeadline();
 
     const created = await api.post("/api/progress/goals", {
       token: learner.accessToken,
@@ -152,7 +247,8 @@ describe("progress integration", () => {
   it("returns forbidden when updating another user's goal", async () => {
     const learnerA = await t.login({ role: "learner" });
     const learnerB = await t.login({ role: "learner" });
-    const deadline = new Date(Date.now() + 90 * 86400000).toISOString();
+    await prepareOnboardedLearnerWithoutGoal(learnerA.accessToken);
+    const deadline = onboardingDeadline();
 
     const created = await api.post("/api/progress/goals", {
       token: learnerA.accessToken,
@@ -171,7 +267,8 @@ describe("progress integration", () => {
   it("returns forbidden when deleting another user's goal", async () => {
     const learnerA = await t.login({ role: "learner" });
     const learnerB = await t.login({ role: "learner" });
-    const deadline = new Date(Date.now() + 90 * 86400000).toISOString();
+    await prepareOnboardedLearnerWithoutGoal(learnerA.accessToken);
+    const deadline = onboardingDeadline();
 
     const created = await api.post("/api/progress/goals", {
       token: learnerA.accessToken,
@@ -188,7 +285,8 @@ describe("progress integration", () => {
 
   it("overview includes the active goal", async () => {
     const learner = await t.login({ role: "learner" });
-    const deadline = new Date(Date.now() + 90 * 86400000).toISOString();
+    await prepareOnboardedLearnerWithoutGoal(learner.accessToken);
+    const deadline = onboardingDeadline();
 
     await api.post("/api/progress/goals", {
       token: learner.accessToken,
@@ -208,7 +306,8 @@ describe("progress integration", () => {
 
   it("spider chart includes the active goal", async () => {
     const learner = await t.login({ role: "learner" });
-    const deadline = new Date(Date.now() + 90 * 86400000).toISOString();
+    await prepareOnboardedLearnerWithoutGoal(learner.accessToken);
+    const deadline = onboardingDeadline();
 
     await api.post("/api/progress/goals", {
       token: learner.accessToken,
