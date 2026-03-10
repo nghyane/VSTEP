@@ -1,6 +1,6 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useThemeColors, spacing, radius, fontSize } from "@/theme";
+import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 interface Props {
   message?: string;
@@ -18,7 +18,7 @@ export function ErrorScreen({ message = "Đã xảy ra lỗi", onRetry }: Props)
           style={[styles.button, { backgroundColor: c.primary }]}
           onPress={onRetry}
         >
-          <Text style={{ color: c.primaryForeground, fontWeight: "600", fontSize: fontSize.sm }}>
+          <Text style={{ color: c.primaryForeground, fontFamily: fontFamily.semiBold, fontSize: fontSize.sm }}>
             Thử lại
           </Text>
         </TouchableOpacity>
@@ -29,6 +29,6 @@ export function ErrorScreen({ message = "Đã xảy ra lỗi", onRetry }: Props)
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", alignItems: "center", padding: spacing["2xl"] },
-  message: { fontSize: fontSize.base, marginTop: spacing.base, textAlign: "center" },
+  message: { fontSize: fontSize.base, marginTop: spacing.base, textAlign: "center", fontFamily: fontFamily.regular },
   button: { marginTop: spacing.lg, paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderRadius: radius.lg },
 });

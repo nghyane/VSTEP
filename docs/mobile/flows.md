@@ -9,9 +9,11 @@ Tài liệu mô tả các luồng hoạt động chính của ứng dụng di đ
 - [3. Luồng luyện tập](#3-luồng-luyện-tập)
 - [4. Luồng bài thi](#4-luồng-bài-thi)
 - [5. Luồng lớp học](#5-luồng-lớp-học)
-- [6. Luồng điều hướng tổng quan](#6-luồng-điều-hướng-tổng-quan)
-- [7. Luồng token tự động làm mới](#7-luồng-token-tự-động-làm-mới)
-- [8. Luồng dữ liệu](#8-luồng-dữ-liệu)
+- [6. Luồng thông báo](#6-luồng-thông-báo)
+- [7. Luồng tải audio cho bài Nói](#7-luồng-tải-audio-cho-bài-nói)
+- [8. Luồng điều hướng tổng quan](#8-luồng-điều-hướng-tổng-quan)
+- [9. Luồng token tự động làm mới](#9-luồng-token-tự-động-làm-mới)
+- [10. Luồng dữ liệu](#10-luồng-dữ-liệu)
 
 ---
 
@@ -121,7 +123,7 @@ graph TD
 
 ## 3. Luồng luyện tập
 
-Người dùng chọn kỹ năng muốn luyện tập, hệ thống tải câu hỏi tương ứng. Bài Nghe/Đọc được chấm điểm ngay lập tức, còn bài Viết/Nói được chấm bất đồng bộ qua AI (Groq LLM).
+Người dùng chọn kỹ năng muốn luyện tập, hệ thống tải câu hỏi tương ứng (adaptive). Bài Nghe/Đọc được chấm điểm ngay lập tức, còn bài Viết/Nói được chấm bất đồng bộ qua AI. Với kỹ năng Nói, file audio được tải lên server trước khi nộp bài.
 
 ```mermaid
 graph TD
@@ -131,7 +133,7 @@ graph TD
     B --> W[Viết — Writing]
     B --> S[Nói — Speaking]
 
-    L --> Q[GET /api/questions?skill=X]
+    L --> Q["GET /api/practice/next?skill=X<br/>(Adaptive question selection)"]
     R --> Q
     W --> Q
     S --> Q
@@ -139,11 +141,12 @@ graph TD
     Q --> V{Loại câu hỏi}
     V -- Nghe / Đọc --> OV[ObjectiveView<br/>Trắc nghiệm MCQ]
     V -- Viết --> WV[WritingView<br/>Nhập văn bản]
-    V -- Nói --> SV[SpeakingView<br/>Phần 1 / 2 / 3 + nhập text dự phòng]
+    V -- Nói --> SV[SpeakingView<br/>Ghi âm + tải lên audio]
 
     OV --> SUB[POST /api/submissions<br/>Gửi câu trả lời]
     WV --> SUB
-    SV --> SUB
+    SV --> UPLOAD[POST /api/uploads/audio<br/>Tải file audio lên]
+    UPLOAD --> |audioKey| SUB
 
     SUB --> RS{Loại kết quả}
     RS -- Nghe / Đọc --> IM[Hiển thị điểm ngay lập tức]
@@ -242,7 +245,72 @@ graph TD
 
 ---
 
-## 6. Luồng điều hướng tổng quan
+## 6. Luồng thông báo
+
+Người dùng nhận thông báo từ hệ thống (kết quả chấm bài, phản hồi giáo viên, lời mời lớp, v.v.). Badge trên StickyHeader hiển thị số thông báo chưa đọc, tự động cập nhật mỗi 30 giây.
+
+```mermaid
+graph TD
+    A[StickyHeader — Badge thông báo] --> B{Có thông báo chưa đọc?}
+    B -- Có --> C[Hiển thị badge đỏ với số lượng]
+    B -- Không --> D[Ẩn badge]
+    
+    A --> |Nhấn chuông| E[Màn hình thông báo]
+    E --> F[GET /api/notifications<br/>FlatList thông báo]
+    
+    F --> G{Thao tác}
+    G --> H[Nhấn thông báo → Đánh dấu đã đọc<br/>POST /api/notifications/:id/read]
+    G --> I["Nhấn 'Đánh dấu tất cả đã đọc'<br/>POST /api/notifications/read-all"]
+    G --> J[Kéo xuống → Pull-to-refresh]
+    
+    H --> K[Invalidate cache thông báo]
+    I --> K
+```
+
+### Polling tự động
+
+```mermaid
+sequenceDiagram
+    participant App as StickyHeader
+    participant RQ as React Query
+    participant API as Backend API
+    
+    loop Mỗi 30 giây
+        RQ->>API: GET /api/notifications/unread-count
+        API-->>RQ: { count: N }
+        RQ-->>App: Cập nhật badge
+    end
+```
+
+---
+
+## 7. Luồng tải audio cho bài Nói
+
+Khi luyện tập kỹ năng Nói, người dùng ghi âm trên thiết bị. File audio được tải lên server trước khi nộp bài, thay vì gửi URI nội bộ (file:///).
+
+```mermaid
+sequenceDiagram
+    participant U as Người dùng
+    participant App as Ứng dụng
+    participant S3 as Upload Service
+    participant API as Backend API
+    
+    U->>App: Ghi âm câu trả lời
+    App->>App: Lưu file audio tạm (expo-av)
+    U->>App: Nhấn "Nộp bài"
+    
+    App->>S3: POST /api/uploads/audio<br/>(FormData: audio file)
+    S3-->>App: { audioKey: "uploads/audio/xxx.m4a" }
+    
+    App->>API: POST /api/submissions<br/>{ answer: { audioUrl: audioKey, durationSeconds } }
+    API-->>App: Submission (trạng thái: đang chấm)
+    
+    App->>App: Chuyển đến màn hình kết quả
+```
+
+---
+
+## 8. Luồng điều hướng tổng quan
 
 Cấu trúc điều hướng của ứng dụng sử dụng Expo Router với các stack lồng nhau. Thanh tab dưới cùng có hiệu ứng spring animation, nút Bài thi ở giữa có biểu tượng hình tròn nổi bật.
 
@@ -278,7 +346,7 @@ graph TD
 
 ---
 
-## 7. Luồng token tự động làm mới
+## 9. Luồng token tự động làm mới
 
 Khi một yêu cầu API trả về lỗi 401, hệ thống tự động thử làm mới token. Cơ chế sử dụng một promise duy nhất (`refreshPromise`) để tránh nhiều yêu cầu làm mới chạy đồng thời.
 
@@ -325,7 +393,7 @@ sequenceDiagram
 
 ---
 
-## 8. Luồng dữ liệu
+## 10. Luồng dữ liệu
 
 Kiến trúc luồng dữ liệu trong ứng dụng tuân theo mô hình một chiều: component gọi custom hook, hook sử dụng React Query để quản lý cache và đồng bộ, API Client xử lý giao tiếp HTTP với backend.
 

@@ -1,6 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import type { PaginatedResponse, SubmissionFull } from "@/types/api";
+import type { PaginatedResponse, Submission } from "@/types/api";
+import { queryClient } from "@/lib/query-client";
 
 export function useSubmissions(params?: {
   page?: number;
@@ -15,7 +16,7 @@ export function useSubmissions(params?: {
   return useQuery({
     queryKey: ["submissions", params],
     queryFn: () =>
-      api.get<PaginatedResponse<SubmissionFull>>(
+      api.get<PaginatedResponse<Submission>>(
         `/api/submissions${qs ? `?${qs}` : ""}`,
       ),
   });
@@ -24,7 +25,18 @@ export function useSubmissions(params?: {
 export function useSubmission(id: string) {
   return useQuery({
     queryKey: ["submissions", id],
-    queryFn: () => api.get<SubmissionFull>(`/api/submissions/${id}`),
+    queryFn: () => api.get<Submission>(`/api/submissions/${id}`),
     enabled: !!id,
+  });
+}
+
+export function useCreateSubmission() {
+  return useMutation({
+    mutationFn: (body: { questionId: string; answer: unknown }) =>
+      api.post<Submission>("/api/submissions", body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["submissions"] });
+      queryClient.invalidateQueries({ queryKey: ["progress"] });
+    },
   });
 }

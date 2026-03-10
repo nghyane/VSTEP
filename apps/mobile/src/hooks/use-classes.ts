@@ -1,23 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type {
-  Class,
+  ClassItem,
   ClassMember,
-  InstructorFeedback,
+  ClassFeedback,
   PaginatedResponse,
 } from "@/types/api";
 
 export function useClasses() {
   return useQuery({
     queryKey: ["classes"],
-    queryFn: () => api.get<PaginatedResponse<Class>>("/api/classes"),
+    queryFn: () => api.get<PaginatedResponse<ClassItem>>("/api/classes"),
   });
 }
 
 export function useClassDetail(id: string) {
   return useQuery({
     queryKey: ["classes", id],
-    queryFn: () => api.get<Class & { members: ClassMember[] }>(`/api/classes/${id}`),
+    queryFn: () => api.get<ClassItem & { members: ClassMember[] }>(`/api/classes/${id}`),
     enabled: !!id,
   });
 }
@@ -48,7 +48,7 @@ export function useClassFeedback(classId: string) {
   return useQuery({
     queryKey: ["classes", classId, "feedback"],
     queryFn: () =>
-      api.get<PaginatedResponse<InstructorFeedback>>(
+      api.get<PaginatedResponse<ClassFeedback>>(
         `/api/classes/${classId}/feedback`,
       ),
     enabled: !!classId,

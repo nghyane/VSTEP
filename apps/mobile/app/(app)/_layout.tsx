@@ -13,10 +13,12 @@ export default function AppLayout() {
       }}
     >
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="account" options={{ headerShown: true, title: "Tài khoản & Bảo mật" }} />
+      <Stack.Screen name="goal" options={{ headerShown: true, title: "Mục tiêu học tập" }} />
       <Stack.Screen name="onboarding" options={{ presentation: "modal", gestureEnabled: false, headerShown: false }} />
       <Stack.Screen
         name="exam/[id]"
-        options={{ headerShown: true, title: "Chi tiết đề thi" }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="session/[id]"
@@ -40,7 +42,7 @@ export default function AppLayout() {
       />
       <Stack.Screen
         name="practice/[skill]"
-        options={{ headerShown: true, title: "Làm bài" }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="practice/result/[id]"

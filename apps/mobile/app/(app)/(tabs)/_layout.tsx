@@ -9,11 +9,20 @@ export default function TabLayout() {
       screenOptions={{ headerShown: false }}
     >
       <Tabs.Screen
+        name="explore"
+        options={{
+          title: "Khám phá",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="compass" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="index"
         options={{
-          title: "Trang chủ",
+          title: "Học tập",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
+            <Ionicons name="school" size={size} color={color} />
           ),
         }}
       />
@@ -27,6 +36,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="classes"
+        options={{
+          title: "Lớp học",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="exams"
         options={{
           title: "Bài thi",
@@ -36,11 +54,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="classes"
+        name="notifications"
         options={{
-          title: "Lớp học",
+          href: null,
+          title: "Thông báo",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people" size={size} color={color} />
+            <Ionicons name="notifications" size={size} color={color} />
           ),
         }}
       />

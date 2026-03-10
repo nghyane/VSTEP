@@ -1,14 +1,16 @@
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { BouncyFlatList } from "@/components/BouncyScrollView";
 import { ScreenWrapper } from "@/components/ScreenWrapper";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
 import { useSubmissions } from "@/hooks/use-submissions";
 import { useThemeColors, spacing, radius, fontSize } from "@/theme";
-import type { SubmissionFull, SubmissionStatus } from "@/types/api";
+import type { Submission, SubmissionStatus } from "@/types/api";
 
 const statusConfig: Record<SubmissionStatus, { label: string; color: "muted" | "success" | "destructive" }> = {
   pending: { label: "Đang chờ", color: "muted" },
@@ -30,7 +32,7 @@ export default function SubmissionsScreen() {
 
   return (
     <ScreenWrapper>
-      <FlatList
+      <BouncyFlatList
         data={submissions}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
@@ -45,7 +47,7 @@ export default function SubmissionsScreen() {
           const status = statusConfig[item.status];
           const statusColor = status.color === "success" ? c.success : status.color === "destructive" ? c.destructive : c.mutedForeground;
           return (
-            <TouchableOpacity
+            <HapticTouchable
               style={[styles.row, { backgroundColor: c.card, borderColor: c.border }]}
               onPress={() => router.push(`/(app)/submissions/${item.id}`)}
             >
@@ -62,7 +64,7 @@ export default function SubmissionsScreen() {
                 </Text>
                 <Text style={{ color: statusColor, fontSize: fontSize.xs, fontWeight: "600" }}>{status.label}</Text>
               </View>
-            </TouchableOpacity>
+            </HapticTouchable>
           );
         }}
       />

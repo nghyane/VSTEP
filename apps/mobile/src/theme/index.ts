@@ -1,6 +1,6 @@
 import { colors, type ThemeColors } from "./colors";
 
-export { colors, spacing, radius, fontSize } from "./colors";
+export { colors, spacing, radius, fontSize, fontFamily } from "./colors";
 export type { ThemeColors } from "./colors";
 
 export function useThemeColors(): ThemeColors {

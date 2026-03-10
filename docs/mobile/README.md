@@ -61,6 +61,7 @@
 | Tiến độ | Thanh tiến trình kỹ năng, biểu đồ spider, xu hướng, ETA |
 | Lớp học | Danh sách lớp, tham gia bằng mã mời, chi tiết lớp + phản hồi giảng viên |
 | Hồ sơ | Thông tin cá nhân, đổi mật khẩu, lịch sử bài nộp, đăng xuất |
+| Thông báo | Danh sách thông báo, đánh dấu đã đọc, badge đếm chưa đọc |
 
 ---
 
@@ -128,25 +129,40 @@ apps/mobile/
 │   │   ├── colors.ts                 # Bảng màu, spacing, radius, fontSize
 │   │   └── index.ts                  # useThemeColors, useSkillColor (chỉ light)
 │   ├── lib/
-│   │   ├── api.ts                    # API client: auth request + auto refresh 401
+│   │   ├── api.ts                    # API client: auth request + auto refresh 401 + upload
 │   │   ├── auth.ts                   # SecureStore: save/get/clear token + user
 │   │   └── query-client.ts           # QueryClient (staleTime: 5 phút, retry: 1)
 │   ├── hooks/
 │   │   ├── use-auth.ts               # AuthContext + useAuth hook
-│   │   ├── use-exams.ts              # useExams (danh sách)
-│   │   ├── use-exam-session.ts       # useExamDetail, useStartExam, useExamSession,
-│   │   │                             #   useSaveAnswers, useAnswerQuestion, useSubmitExam
+│   │   ├── use-exams.ts              # useExams (filter: type/skill/level), useExamDetail,
+│   │   │                             #   useExamSessions, useStartExam
+│   │   ├── use-exam-session.ts       # useExamSession, useSaveAnswers,
+│   │   │                             #   useAnswerQuestion, useSubmitExam
 │   │   ├── use-progress.ts           # useProgress, useSpiderChart, useSkillDetail,
-│   │   │                             #   useCreateGoal, useUpdateGoal, useDeleteGoal
-│   │   ├── use-submissions.ts        # useSubmissions (có filter), useSubmission
-│   │   ├── use-questions.ts          # useQuestions (có filter), useQuestion
+│   │   │                             #   useCreateGoal, useUpdateGoal, useDeleteGoal,
+│   │   │                             #   useActivity, useLearningPath
+│   │   ├── use-submissions.ts        # useSubmissions (filter), useSubmission,
+│   │   │                             #   useCreateSubmission
+│   │   ├── use-questions.ts          # useQuestions (filter), useQuestion
 │   │   ├── use-user.ts              # useUser, useUpdateUser, useChangePassword
 │   │   ├── use-classes.ts           # useClasses, useClassDetail, useJoinClass,
 │   │   │                             #   useLeaveClass, useClassFeedback
-│   │   └── use-practice.ts          # useCreateSubmission
+│   │   ├── use-practice.ts          # usePracticeNext (adaptive), useRefreshPractice,
+│   │   │                             #   useUploadAudio
+│   │   ├── use-notifications.ts     # useNotifications, useUnreadCount,
+│   │   │                             #   useMarkRead, useMarkAllRead
+│   │   ├── use-onboarding.ts        # useOnboardingStatus, useSelfAssess,
+│   │   │                             #   useStartPlacement, useSkipOnboarding
+│   │   └── use-vocabulary.ts        # useVocabularyTopics, useVocabularyTopic,
+│   │                                 #   useTopicProgress, useToggleKnown
 │   └── components/
 │       ├── CustomTabBar.tsx           # Tab bar tuỳ chỉnh với animated border frame
 │       ├── Logo.tsx                   # Logo SVG VSTEP (3 kích thước: sm/md/lg)
+│       ├── StickyHeader.tsx           # Header cố định với nút thông báo (badge đếm chưa đọc)
+│       ├── SpiderChart.tsx            # Biểu đồ mạng nhện SVG (4 kỹ năng)
+│       ├── GradientBackground.tsx     # Nền gradient SVG cho màn hình
+│       ├── HapticTouchable.tsx        # TouchableOpacity + haptic feedback
+│       ├── BouncyScrollView.tsx       # ScrollView với hiệu ứng bounce + spring
 │       ├── ScreenWrapper.tsx          # SafeArea wrapper
 │       ├── SkillIcon.tsx              # Icon + màu theo kỹ năng
 │       ├── ErrorScreen.tsx            # Màn hình lỗi
@@ -163,7 +179,7 @@ apps/mobile/
 └── .env                              # Biến môi trường (EXPO_PUBLIC_API_URL)
 ```
 
-**Thống kê**: 45 file, ~5.885 dòng mã nguồn.
+**Thống kê**: 58 file, ~7.200 dòng mã nguồn.
 
 ---
 
@@ -306,6 +322,8 @@ Route: `/(app)/onboarding` — 695 dòng. Được mở tự động từ Trang 
 
 **Tab trung tâm** (index 2 — "Bài thi") được render đặc biệt: hình tròn primary 38×38, đổ bóng (shadow), icon trắng.
 
+> **StickyHeader**: Mọi tab đều sử dụng `StickyHeader` ở đầu màn hình với nút thông báo (icon chuông). Badge đỏ hiển thị số thông báo chưa đọc, tự động cập nhật mỗi 30 giây qua `useUnreadCount` (polling).
+
 ### Màn hình chi tiết (Stack)
 
 | Màn hình | Route | Dòng mã | Mô tả |
@@ -420,7 +438,7 @@ Hai hàm request chính:
 | `request<T>(path, options)` | Fetch cơ bản, ném `ApiError` nếu `!res.ok` |
 | `authRequest<T>(path, options)` | Tự thêm `Authorization: Bearer`, tự refresh khi 401 |
 
-Đối tượng `api` export 5 phương thức:
+Đối tượng `api` export 6 phương thức:
 
 ```typescript
 api.get<T>(path)
@@ -428,6 +446,7 @@ api.post<T>(path, body?)
 api.put<T>(path, body?)
 api.patch<T>(path, body?)
 api.delete<T>(path)
+api.upload<T>(path, formData)
 ```
 
 Ngoài ra export 4 hàm không cần auth: `loginApi`, `registerApi`, `logoutApi`, `getMeApi`.
@@ -505,6 +524,51 @@ Ngoài ra export 4 hàm không cần auth: `loginApi`, `registerApi`, `logoutApi
 | POST | `/api/classes/:id/leave` | `useLeaveClass` | Chi tiết lớp |
 | GET | `/api/classes/:id/feedback` | `useClassFeedback` | Chi tiết lớp |
 
+#### Thông báo
+
+| Phương thức | Endpoint | Hook | Màn hình |
+|-------------|----------|------|----------|
+| GET | `/api/notifications` | `useNotifications` | Thông báo |
+| GET | `/api/notifications/unread-count` | `useUnreadCount` | StickyHeader (badge) |
+| POST | `/api/notifications/:id/read` | `useMarkRead` | Thông báo |
+| POST | `/api/notifications/read-all` | `useMarkAllRead` | Thông báo |
+
+#### Luyện tập (Adaptive)
+
+| Phương thức | Endpoint | Hook | Màn hình |
+|-------------|----------|------|----------|
+| GET | `/api/practice/next?skill=&part=` | `usePracticeNext` | Luyện tập |
+
+#### Hoạt động & Lộ trình
+
+| Phương thức | Endpoint | Hook | Màn hình |
+|-------------|----------|------|----------|
+| GET | `/api/progress/activity?days=` | `useActivity` | Trang chủ |
+| GET | `/api/progress/learning-path` | `useLearningPath` | (Sẵn sàng) |
+
+#### Tải lên
+
+| Phương thức | Endpoint | Hook | Màn hình |
+|-------------|----------|------|----------|
+| POST | `/api/uploads/audio` | `useUploadAudio` | Luyện tập (Nói) |
+
+#### Onboarding
+
+| Phương thức | Endpoint | Hook | Màn hình |
+|-------------|----------|------|----------|
+| GET | `/api/onboarding/status` | `useOnboardingStatus` | (Sẵn sàng) |
+| POST | `/api/onboarding/self-assess` | `useSelfAssess` | (Sẵn sàng) |
+| POST | `/api/onboarding/placement` | `useStartPlacement` | (Sẵn sàng) |
+| POST | `/api/onboarding/skip` | `useSkipOnboarding` | (Sẵn sàng) |
+
+#### Từ vựng
+
+| Phương thức | Endpoint | Hook | Màn hình |
+|-------------|----------|------|----------|
+| GET | `/api/vocabulary/topics` | `useVocabularyTopics` | (Sẵn sàng) |
+| GET | `/api/vocabulary/topics/:id` | `useVocabularyTopic` | (Sẵn sàng) |
+| GET | `/api/vocabulary/topics/:id/progress` | `useTopicProgress` | (Sẵn sàng) |
+| PUT | `/api/vocabulary/words/:id/known` | `useToggleKnown` | (Sẵn sàng) |
 ---
 
 ## Luồng xác thực
@@ -643,8 +707,10 @@ const queryClient = new QueryClient({
 | Query Key | Dữ liệu | Hook |
 |-----------|----------|------|
 | `["exams"]` | Danh sách đề thi | `useExams` |
+| `["exams", params]` | Danh sách đề thi (filter) | `useExams` |
 | `["exams", examId]` | Chi tiết đề thi | `useExamDetail` |
 | `["exam-sessions", sessionId]` | Phiên thi | `useExamSession` |
+| `["exam-sessions", params]` | Danh sách phiên thi | `useExamSessions` |
 | `["progress"]` | Tổng quan tiến độ | `useProgress` |
 | `["progress", "spider-chart"]` | Biểu đồ spider | `useSpiderChart` |
 | `["progress", skill]` | Chi tiết kỹ năng | `useSkillDetail` |
@@ -657,17 +723,29 @@ const queryClient = new QueryClient({
 | `["classes"]` | Danh sách lớp | `useClasses` |
 | `["classes", id]` | Chi tiết lớp | `useClassDetail` |
 | `["classes", id, "feedback"]` | Phản hồi lớp | `useClassFeedback` |
+| `["notifications", page, unreadOnly]` | Danh sách thông báo | `useNotifications` |
+| `["notifications-unread"]` | Số thông báo chưa đọc | `useUnreadCount` |
+| `["practice-next", skill, part]` | Câu hỏi luyện tập tiếp theo | `usePracticeNext` |
+| `["activity", days]` | Hoạt động học tập | `useActivity` |
+| `["learning-path"]` | Lộ trình học tập | `useLearningPath` |
+| `["onboarding-status"]` | Trạng thái onboarding | `useOnboardingStatus` |
+| `["vocabulary-topics", page, limit]` | Danh sách chủ đề từ vựng | `useVocabularyTopics` |
+| `["vocabulary-topic", id]` | Chi tiết chủ đề từ vựng | `useVocabularyTopic` |
+| `["vocabulary-progress", topicId]` | Tiến độ từ vựng | `useTopicProgress` |
 
 ### Invalidation sau mutation
 
 | Mutation | Invalidate |
 |----------|------------|
-| `useStartExam` | `["exams"]` |
+| `useStartExam` | `["exam-sessions"]` |
 | `useSubmitExam` | `["exam-sessions", sessionId]`, `["progress"]` |
 | `useCreateGoal`, `useUpdateGoal`, `useDeleteGoal` | `["progress"]` |
 | `useCreateSubmission` | `["submissions"]`, `["progress"]` |
 | `useUpdateUser` | `["users", userId]` |
 | `useJoinClass`, `useLeaveClass` | `["classes"]` |
+| `useMarkRead`, `useMarkAllRead` | `["notifications"]`, `["notifications-unread"]` |
+| `useSelfAssess`, `useSkipOnboarding` | `["onboarding-status"]`, `["progress"]` |
+| `useToggleKnown` | `["vocabulary-progress"]` |
 
 ---
 
