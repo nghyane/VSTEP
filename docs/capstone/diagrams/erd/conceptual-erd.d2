@@ -1,0 +1,46 @@
+direction: right
+
+users
+
+users -> refresh_tokens: "1:N"
+users -> device_tokens: "1:N"
+users -> user_placements: "1:1"
+users -> questions: "creates 1:N"
+users -> exams: "creates 1:N"
+users -> submissions: "1:N"
+users -> exam_sessions: "1:N"
+users -> user_progress: "1:N"
+users -> user_skill_scores: "1:N"
+users -> user_goals: "1:N"
+users -> user_knowledge_progress: "1:N"
+users -> tbl_classes: "owns 1:N"
+users -> class_members: "1:N"
+users -> instructor_feedback: "gives/receives 1:N"
+users -> notifications: "1:N"
+users -> user_vocabulary_progress: "1:N"
+
+questions -> submissions: "1:N"
+questions -> exam_answers: "1:N"
+questions -> question_knowledge_points: "1:N"
+
+knowledge_points -> question_knowledge_points: "1:N"
+knowledge_points -> user_knowledge_progress: "1:N"
+
+exams -> exam_sessions: "1:N"
+
+exam_sessions -> exam_answers: "1:N"
+exam_sessions -> exam_submissions: "1:N"
+exam_sessions -> user_skill_scores: "1:N"
+exam_sessions -> user_placements: "0..1"
+
+submissions -> submission_details: "1:1"
+submissions -> exam_submissions: "1:N"
+submissions -> user_skill_scores: "1:N"
+submissions -> instructor_feedback: "0:N"
+
+tbl_classes: "classes"
+tbl_classes -> class_members: "1:N"
+tbl_classes -> instructor_feedback: "1:N"
+
+vocabulary_topics -> vocabulary_words: "1:N"
+vocabulary_words -> user_vocabulary_progress: "1:N"

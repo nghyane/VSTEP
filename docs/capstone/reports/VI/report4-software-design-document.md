@@ -221,7 +221,13 @@ flowchart TB
 
 ## 2. Thiết Kế Cơ Sở Dữ Liệu
 
-### 2.1 ERD Vật Lý (Biểu Đồ Thực Thể - Quan Hệ)
+### 2.1 ERD Khái Niệm (Conceptual ERD)
+
+![Conceptual ERD](../../diagrams/erd/conceptual-erd.svg)
+
+> Source: [`docs/capstone/diagrams/erd/conceptual-erd.d2`](../../diagrams/erd/conceptual-erd.d2) — render bằng `d2 --layout=elk`
+
+### 2.2 ERD Vật Lý (Physical ERD)
 
 ![Physical ERD](../../diagrams/erd/physical-erd.svg)
 
