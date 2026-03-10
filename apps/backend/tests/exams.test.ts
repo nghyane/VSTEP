@@ -15,10 +15,10 @@ describe("exams integration", () => {
     const exam = await t.createExam();
 
     expect(exam.examId).toBeString();
-    expect(exam.questionIds.listening).toHaveLength(1);
-    expect(exam.questionIds.reading).toHaveLength(1);
-    expect(exam.questionIds.writing).toHaveLength(1);
-    expect(exam.questionIds.speaking).toHaveLength(1);
+    expect(exam.questionIds.listening).toHaveLength(3);
+    expect(exam.questionIds.reading).toHaveLength(4);
+    expect(exam.questionIds.writing).toHaveLength(2);
+    expect(exam.questionIds.speaking).toHaveLength(3);
   });
 
   it("non-admin cannot create an exam", async () => {

@@ -249,8 +249,29 @@ export async function createTestExam(
     loginTestUser({ role: "instructor", email: buildTestEmail(emailPrefix) }),
   ]);
 
+  const buildObjectiveItems = (
+    skill: "listening" | "reading",
+    part: number,
+    itemCount: number,
+  ) =>
+    Array.from({ length: itemCount }, (_, index) => ({
+      stem: `${skill} part ${part} item ${index + 1}`,
+      options: [
+        `Option A${index + 1}`,
+        `Option B${index + 1}`,
+        `Option C${index + 1}`,
+        `Option D${index + 1}`,
+      ],
+    }));
+
+  const buildObjectiveAnswerKey = (itemCount: number) => ({
+    correctAnswers: Object.fromEntries(
+      Array.from({ length: itemCount }, (_, index) => [String(index + 1), "A"]),
+    ),
+  });
+
   const createQ = async (
-    skill: string,
+    skill: "listening" | "reading" | "writing" | "speaking",
     part: number,
     content: Record<string, unknown>,
     answerKey?: Record<string, unknown>,
@@ -268,43 +289,54 @@ export async function createTestExam(
     return data.id as string;
   };
 
-  const listeningId = await createQ(
-    "listening",
-    1,
-    {
-      audioUrl: "https://example.com/audio.mp3",
-      items: [
+  const listening = await Promise.all(
+    [
+      { part: 1, itemCount: 8 },
+      { part: 2, itemCount: 12 },
+      { part: 3, itemCount: 15 },
+    ].map(({ part, itemCount }) =>
+      createQ(
+        "listening",
+        part,
         {
-          stem: "What did the speaker say?",
-          options: ["Hello", "Goodbye", "Thanks", "Sorry"],
+          audioUrl: `https://example.com/listening-part-${part}.mp3`,
+          transcript: `Listening part ${part} transcript for integration tests.`,
+          items: buildObjectiveItems("listening", part, itemCount),
         },
-      ],
-    },
-    { correctAnswers: { "1": "0" } },
+        buildObjectiveAnswerKey(itemCount),
+      ),
+    ),
   );
 
-  const readingId = await createQ(
-    "reading",
-    1,
-    {
-      passage: "Integration test passage.",
-      items: [
+  const reading = await Promise.all(
+    [1, 2, 3, 4].map((part) =>
+      createQ(
+        "reading",
+        part,
         {
-          stem: "Main idea?",
-          options: ["A", "B", "C", "D"],
+          title: `Reading part ${part}`,
+          passage: `Integration test reading passage for part ${part}.`,
+          items: buildObjectiveItems("reading", part, 10),
         },
-      ],
-    },
-    { correctAnswers: { "1": "0" } },
+        buildObjectiveAnswerKey(10),
+      ),
+    ),
   );
 
-  const writingId = await createQ("writing", 1, {
-    prompt: "Write about testing.",
-    taskType: "letter",
-    minWords: 120,
-  });
+  const writing = await Promise.all([
+    createQ("writing", 1, {
+      prompt: "Write a formal letter about test coverage improvements.",
+      taskType: "letter",
+      minWords: 120,
+    }),
+    createQ("writing", 2, {
+      prompt: "Write an essay about the impact of automated testing.",
+      taskType: "essay",
+      minWords: 250,
+    }),
+  ]);
 
-  const speakingId = await createQ("speaking", 1, {
+  const speakingPart1 = await createQ("speaking", 1, {
     topics: [
       {
         name: "Testing",
@@ -325,16 +357,41 @@ export async function createTestExam(
     ],
   });
 
+  const speakingPart2 = await createQ("speaking", 2, {
+    situation: "Your class plans an English club event this weekend.",
+    options: [
+      "Invite a guest speaker",
+      "Run a debate session",
+      "Host a role-play workshop",
+    ],
+    preparationSeconds: 60,
+    speakingSeconds: 120,
+  });
+
+  const speakingPart3 = await createQ("speaking", 3, {
+    centralIdea: "How students can improve speaking confidence",
+    suggestions: [
+      "Practice daily with peers",
+      "Join public speaking activities",
+      "Record and review responses",
+    ],
+    followUpQuestion: "Which strategy would you choose first and why?",
+    preparationSeconds: 60,
+    speakingSeconds: 300,
+  });
+
+  const speaking = [speakingPart1, speakingPart2, speakingPart3];
+
   const { data } = await api.post("/api/exams", {
     token: admin.accessToken,
     body: {
       title: "Đề thi VSTEP B2 - Test",
       level: "B2",
       blueprint: {
-        listening: { questionIds: [listeningId] },
-        reading: { questionIds: [readingId] },
-        writing: { questionIds: [writingId] },
-        speaking: { questionIds: [speakingId] },
+        listening: { questionIds: listening },
+        reading: { questionIds: reading },
+        writing: { questionIds: writing },
+        speaking: { questionIds: speaking },
       },
     },
   });
@@ -342,10 +399,10 @@ export async function createTestExam(
   return {
     examId: data.id as string,
     questionIds: {
-      listening: [listeningId],
-      reading: [readingId],
-      writing: [writingId],
-      speaking: [speakingId],
+      listening,
+      reading,
+      writing,
+      speaking,
     },
     admin,
   };
