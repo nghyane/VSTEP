@@ -1,0 +1,42 @@
+@startuml uc-instructor
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Instructor" as Instructor
+
+rectangle "Review & Grading" {
+  usecase "UC-50\nView Review Queue" as UC50
+  usecase "UC-51\nClaim Submission" as UC51
+  usecase "UC-52\nReview and Grade Submission" as UC52
+  usecase "UC-53\nRelease Submission" as UC53
+}
+
+rectangle "Exam & Question Management" {
+  usecase "UC-61\nManage Questions" as UC61
+}
+
+rectangle "Class Management" {
+  usecase "UC-70\nCreate Class" as UC70
+  usecase "UC-71\nView Class Dashboard" as UC71
+  usecase "UC-72\nView Member Progress" as UC72
+  usecase "UC-73\nGive Feedback" as UC73
+  usecase "UC-74\nRotate Invite Code" as UC74
+  usecase "UC-75\nRemove Member" as UC75
+}
+
+Instructor -- UC50
+Instructor -- UC51
+Instructor -- UC52
+Instructor -- UC53
+Instructor -- UC61
+Instructor -- UC70
+Instructor -- UC71
+Instructor -- UC72
+Instructor -- UC73
+Instructor -- UC74
+Instructor -- UC75
+
+UC51 ..> UC52 : <<include>>
+UC51 ..> UC53 : <<extend>>
+
+@enduml

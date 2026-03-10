@@ -161,175 +161,19 @@ Các quyết định kiến trúc chính:
 
 #### 2.2.1 Biểu Đồ Use Case
 
-```mermaid
-flowchart LR
-    Learner(("👤 Learner"))
+**Learner Use Cases**
 
-    subgraph Authentication ["Authentication"]
-        UC01["UC-01<br/>Register"]
-        UC02["UC-02<br/>Login"]
-        UC03["UC-03<br/>Logout"]
-        UC04["UC-04<br/>Refresh Token"]
-    end
+![Learner Use Cases](../../diagrams/usecase/uc-learner.svg)
 
-    subgraph PracticeMode ["Practice Mode"]
-        UC10["UC-10<br/>Practice Listening"]
-        UC11["UC-11<br/>Practice Reading"]
-        UC12["UC-12<br/>Practice Writing"]
-        UC13["UC-13<br/>Practice Speaking"]
-        UC14["UC-14<br/>View Submission Result"]
-        UC15["UC-15<br/>View AI Feedback"]
-    end
+**Instructor Use Cases**
 
-    subgraph ExamMode ["Mock Test Mode"]
-        UC20["UC-20<br/>List Available Exams"]
-        UC21["UC-21<br/>Start Exam Session"]
-        UC22["UC-22<br/>Answer Exam Questions"]
-        UC23["UC-23<br/>Submit Exam"]
-        UC24["UC-24<br/>View Exam Result"]
-    end
+![Instructor Use Cases](../../diagrams/usecase/uc-instructor.svg)
 
-    subgraph ProgressGoals ["Progress and Goals"]
-        UC30["UC-30<br/>View Progress Overview"]
-        UC31["UC-31<br/>View Spider Chart"]
-        UC32["UC-32<br/>View Skill Detail"]
-        UC33["UC-33<br/>Set Learning Goal"]
-        UC34["UC-34<br/>View ETA Estimation"]
-    end
+**Admin Use Cases**
 
-    subgraph ClassEnroll ["Class"]
-        UC40["UC-40<br/>Join Class"]
-        UC41["UC-41<br/>Leave Class"]
-        UC42["UC-42<br/>View Instructor Feedback"]
-    end
+![Admin Use Cases](../../diagrams/usecase/uc-admin.svg)
 
-    Learner --- UC01
-    Learner --- UC02
-    Learner --- UC03
-    Learner --- UC04
-    Learner --- UC10
-    Learner --- UC11
-    Learner --- UC12
-    Learner --- UC13
-    Learner --- UC14
-    Learner --- UC15
-    Learner --- UC20
-    Learner --- UC21
-    Learner --- UC22
-    Learner --- UC23
-    Learner --- UC24
-    Learner --- UC30
-    Learner --- UC31
-    Learner --- UC32
-    Learner --- UC33
-    Learner --- UC34
-    Learner --- UC40
-    Learner --- UC41
-    Learner --- UC42
-
-    UC12 -.->|"includes"| UC14
-    UC13 -.->|"includes"| UC14
-    UC14 -.->|"includes"| UC15
-    UC21 -.->|"includes"| UC22
-    UC22 -.->|"includes"| UC23
-
-    classDef actor fill:#1565c0,stroke:#0d47a1,color:#fff
-    classDef uc fill:#fff,stroke:#333,color:#333
-
-    class Learner actor
-```
-
-```mermaid
-flowchart LR
-    Instructor(("👤 Instructor"))
-
-    subgraph ReviewGrading ["Review and Grading"]
-        UC50["UC-50<br/>View Review Queue"]
-        UC51["UC-51<br/>Claim Submission"]
-        UC52["UC-52<br/>Review and Grade Submission"]
-        UC53["UC-53<br/>Release Submission"]
-    end
-
-    subgraph ExamMgmt ["Exam and Question Management"]
-        UC61["UC-61<br/>Manage Questions"]
-    end
-
-    subgraph ClassMgmt ["Class Management"]
-        UC70["UC-70<br/>Create Class"]
-        UC71["UC-71<br/>View Class Dashboard"]
-        UC72["UC-72<br/>View Member Progress"]
-        UC73["UC-73<br/>Give Feedback"]
-        UC74["UC-74<br/>Rotate Invite Code"]
-        UC75["UC-75<br/>Remove Member"]
-    end
-
-    Instructor --- UC50
-    Instructor --- UC51
-    Instructor --- UC52
-    Instructor --- UC53
-    Instructor --- UC61
-    Instructor --- UC70
-    Instructor --- UC71
-    Instructor --- UC72
-    Instructor --- UC73
-    Instructor --- UC74
-    Instructor --- UC75
-
-    UC51 -.->|"includes"| UC52
-    UC51 -.->|"extends"| UC53
-
-    classDef actor fill:#e65100,stroke:#bf360c,color:#fff
-    class Instructor actor
-```
-
-```mermaid
-flowchart LR
-    Admin(("👤 Admin"))
-
-    subgraph UserMgmt ["User Management"]
-        UC80["UC-80<br/>List Users"]
-        UC81["UC-81<br/>Change User Role"]
-        UC82["UC-82<br/>Lock/Unlock Account<br/>planned"]
-        UC83["UC-83<br/>Reset Password<br/>planned"]
-        UC84["UC-84<br/>Bulk Create Users<br/>deferred"]
-    end
-
-    subgraph ContentMgmt ["Content Management"]
-        UC85["UC-85<br/>Manage Question Bank"]
-        UC86["UC-86<br/>Import/Export Questions<br/>planned"]
-        UC87["UC-87<br/>Manage Knowledge Points"]
-        UC88["UC-88<br/>Manage Exams"]
-    end
-
-    subgraph Operations ["Operations"]
-        UC89["UC-89<br/>Manage Review Queue"]
-        UC90["UC-90<br/>Manage Notifications"]
-    end
-
-    subgraph Analytics ["Analytics"]
-        UC91["UC-91<br/>View Admin Dashboard<br/>planned"]
-        UC92["UC-92<br/>View System Analytics<br/>deferred"]
-        UC93["UC-93<br/>Trigger Auto-Grade<br/>planned"]
-    end
-
-    Admin --- UC80
-    Admin --- UC81
-    Admin --- UC82
-    Admin --- UC83
-    Admin --- UC84
-    Admin --- UC85
-    Admin --- UC86
-    Admin --- UC87
-    Admin --- UC88
-    Admin --- UC89
-    Admin --- UC90
-    Admin --- UC91
-    Admin --- UC92
-    Admin --- UC93
-
-    classDef actor fill:#6a1b9a,stroke:#4a148c,color:#fff
-    class Admin actor
-```
+> Source: [`docs/capstone/diagrams/usecase/`](../../diagrams/usecase/) — render bằng `plantuml -tsvg`
 
 #### 2.2.2 Mô Tả Use Case
 

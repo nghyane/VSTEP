@@ -1,0 +1,48 @@
+@startuml uc-admin
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Admin" as Admin
+
+rectangle "User Management" {
+  usecase "UC-80\nList Users" as UC80
+  usecase "UC-81\nChange User Role" as UC81
+  usecase "UC-82\nLock/Unlock Account\n(planned)" as UC82
+  usecase "UC-83\nReset Password\n(planned)" as UC83
+  usecase "UC-84\nBulk Create Users\n(deferred)" as UC84
+}
+
+rectangle "Content Management" {
+  usecase "UC-85\nManage Question Bank" as UC85
+  usecase "UC-86\nImport/Export Questions\n(planned)" as UC86
+  usecase "UC-87\nManage Knowledge Points" as UC87
+  usecase "UC-88\nManage Exams" as UC88
+}
+
+rectangle "Operations" {
+  usecase "UC-89\nManage Review Queue" as UC89
+  usecase "UC-90\nManage Notifications" as UC90
+}
+
+rectangle "Analytics" {
+  usecase "UC-91\nView Admin Dashboard\n(planned)" as UC91
+  usecase "UC-92\nView System Analytics\n(deferred)" as UC92
+  usecase "UC-93\nTrigger Auto-Grade\n(planned)" as UC93
+}
+
+Admin -- UC80
+Admin -- UC81
+Admin -- UC82
+Admin -- UC83
+Admin -- UC84
+Admin -- UC85
+Admin -- UC86
+Admin -- UC87
+Admin -- UC88
+Admin -- UC89
+Admin -- UC90
+Admin -- UC91
+Admin -- UC92
+Admin -- UC93
+
+@enduml

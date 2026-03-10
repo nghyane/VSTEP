@@ -1,0 +1,75 @@
+@startuml uc-learner
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Learner" as Learner
+
+rectangle "Authentication" {
+  usecase "UC-01\nRegister" as UC01
+  usecase "UC-02\nLogin" as UC02
+  usecase "UC-03\nLogout" as UC03
+  usecase "UC-04\nRefresh Token" as UC04
+}
+
+rectangle "Practice Mode" {
+  usecase "UC-10\nPractice Listening" as UC10
+  usecase "UC-11\nPractice Reading" as UC11
+  usecase "UC-12\nPractice Writing" as UC12
+  usecase "UC-13\nPractice Speaking" as UC13
+  usecase "UC-14\nView Submission Result" as UC14
+  usecase "UC-15\nView AI Feedback" as UC15
+}
+
+rectangle "Mock Test Mode" {
+  usecase "UC-20\nList Available Exams" as UC20
+  usecase "UC-21\nStart Exam Session" as UC21
+  usecase "UC-22\nAnswer Exam Questions" as UC22
+  usecase "UC-23\nSubmit Exam" as UC23
+  usecase "UC-24\nView Exam Result" as UC24
+}
+
+rectangle "Progress & Goals" {
+  usecase "UC-30\nView Progress Overview" as UC30
+  usecase "UC-31\nView Spider Chart" as UC31
+  usecase "UC-32\nView Skill Detail" as UC32
+  usecase "UC-33\nSet Learning Goal" as UC33
+  usecase "UC-34\nView ETA Estimation" as UC34
+}
+
+rectangle "Class" {
+  usecase "UC-40\nJoin Class" as UC40
+  usecase "UC-41\nLeave Class" as UC41
+  usecase "UC-42\nView Instructor Feedback" as UC42
+}
+
+Learner -- UC01
+Learner -- UC02
+Learner -- UC03
+Learner -- UC04
+Learner -- UC10
+Learner -- UC11
+Learner -- UC12
+Learner -- UC13
+Learner -- UC14
+Learner -- UC15
+Learner -- UC20
+Learner -- UC21
+Learner -- UC22
+Learner -- UC23
+Learner -- UC24
+Learner -- UC30
+Learner -- UC31
+Learner -- UC32
+Learner -- UC33
+Learner -- UC34
+Learner -- UC40
+Learner -- UC41
+Learner -- UC42
+
+UC12 ..> UC14 : <<include>>
+UC13 ..> UC14 : <<include>>
+UC14 ..> UC15 : <<include>>
+UC21 ..> UC22 : <<include>>
+UC22 ..> UC23 : <<include>>
+
+@enduml
