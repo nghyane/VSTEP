@@ -80,11 +80,7 @@ Hệ thống bao gồm 3 thành phần chính: Web Client (React), API Server (B
 
 #### 2.2.1 Use Case Diagrams
 
-![Learner Use Cases](../diagrams/images/uc-learner.svg)
-
-![Instructor Use Cases](../diagrams/images/uc-instructor.svg)
-
-![Admin Use Cases](../diagrams/images/uc-admin.svg)
+![Use Case Diagram](../diagrams/images/uc-overview.svg)
 
 #### 2.2.2 Use Case Descriptions
 
