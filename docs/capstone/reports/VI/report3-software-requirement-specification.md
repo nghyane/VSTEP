@@ -403,7 +403,6 @@ Các quyết định kiến trúc chính:
 #### 3.3.3 Biểu Đồ Luồng Bài Kiểm Tra Xếp Lớp
 
 ![Diagram 10](../../diagrams/srs/diagram-10.svg)
-```
 
 ### 3.4 FE-03: Chế Độ Luyện Tập — Nghe
 
@@ -639,18 +638,19 @@ Các quyết định kiến trúc chính:
 - **Mô tả**: Dữ liệu cho trực quan hóa Biểu đồ Spider bốn kỹ năng.
 - **Đầu vào**: Yêu cầu học viên đã xác thực
 - **Đầu ra**:
-  ```json
-  {
-    "skills": {
-      "listening": { "current": 7.5, "trend": "improving" },
-      "reading":   { "current": 8.2, "trend": "stable" },
-      "writing":   { "current": 6.0, "trend": "improving" },
-      "speaking":  { "current": 5.5, "trend": "declining" }
-    },
-    "goal": { "targetBand": "B2", "deadline": "2026-06-01" },
-    "eta": { "weeks": 12, "perSkill": { "listening": 8, "reading": null, "writing": 12, "speaking": 10 } }
-  }
-  ```
+
+```json
+{
+  "skills": {
+    "listening": { "current": 7.5, "trend": "improving" },
+    "reading":   { "current": 8.2, "trend": "stable" },
+    "writing":   { "current": 6.0, "trend": "improving" },
+    "speaking":  { "current": 5.5, "trend": "declining" }
+  },
+  "goal": { "targetBand": "B2", "deadline": "2026-06-01" },
+  "eta": { "weeks": 12, "perSkill": { "listening": 8, "reading": null, "writing": 12, "speaking": 10 } }
+}
+```
 
 #### 3.10.4 Xác Định Band Tổng Thể
 
