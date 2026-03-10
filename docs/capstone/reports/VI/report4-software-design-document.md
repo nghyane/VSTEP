@@ -18,8 +18,8 @@ Hệ thống Luyện thi VSTEP Thích ứng tuân theo kiến trúc **monorepo d
 | Ứng dụng | Runtime | Vai trò |
 |-------------|---------|------|
 | **Backend** (API chính) | Bun + Elysia | Máy chủ REST API xử lý tất cả yêu cầu từ client, xác thực, logic nghiệp vụ, và chấm điểm tự động cho các kỹ năng trắc nghiệm |
-| **Grading** (Worker AI) | Python + FastAPI | Worker bất đồng bộ tiêu thụ tác vụ từ Redis Streams cho việc chấm Writing/Speaking bằng AI thông qua LLM và STT |
-| **Frontend** (Web SPA) | React 19 + Vite 7 | Ứng dụng trang đơn phục vụ giao diện cho người học, giảng viên và quản trị viên |
+| **Grading** (Worker AI) | Python + FastAPI | Async worker consume task từ Redis Streams cho việc chấm Writing/Speaking bằng AI thông qua LLM và STT |
+| **Frontend** (Web SPA) | React 19 + Vite 7 | SPA phục vụ giao diện cho người học, giảng viên và quản trị viên |
 
 **Các quyết định kiến trúc chính:**
 
@@ -27,7 +27,7 @@ Hệ thống Luyện thi VSTEP Thích ứng tuân theo kiến trúc **monorepo d
 - **Redis Streams**: Redis Streams với `XADD`/`XREADGROUP` và consumer group cho việc dispatch tác vụ và tiêu thụ kết quả đáng tin cậy.
 - **JWT Auth**: Cặp access/refresh token với rotation và phát hiện tái sử dụng.
 - **Parse, Don't Validate**: Tất cả đầu vào được xác thực tại biên API qua Zod/TypeBox schema. Code nội bộ mặc định dữ liệu hợp lệ.
-- **Throw, Don't Return**: Tất cả ứng dụng sử dụng hệ thống phân cấp lỗi có kiểu. Lỗi được throw, không bao giờ trả về dưới dạng giá trị.
+- **Throw, Don't Return**: Tất cả ứng dụng sử dụng typed error hierarchy. Lỗi được throw, không bao giờ trả về dưới dạng giá trị.
 
 
 ```mermaid
@@ -148,7 +148,7 @@ flowchart TB
     class AIProviders external
 ```
 
-### 1.2 Biểu Đồ Gói (Package Diagram)
+### 1.2 Package Diagram
 
 ```mermaid
 flowchart TB
@@ -206,8 +206,8 @@ flowchart TB
 
 | # | Gói | Mô tả |
 |---|-----|-------|
-| 1 | `apps/backend/src/common/` | Tiện ích dùng chung: biến môi trường (`env.ts`), phân cấp lỗi (`errors.ts`), logging JSON (`logger.ts`), tính điểm và band (`scoring.ts`), máy trạng thái bài nộp, hàm tiện ích (`assertExists`, `assertAccess`), hằng số, kiểu xác thực và schema dùng chung |
-| 2 | `apps/backend/src/db/` | Tầng cơ sở dữ liệu: định nghĩa schema Drizzle ORM cho tất cả bảng, quan hệ giữa các bảng, kiểu TypeBox cho cột JSONB (câu trả lời, kết quả chấm điểm, nội dung câu hỏi, blueprint đề thi), instance kết nối DB và helper phân trang |
+| 1 | `apps/backend/src/common/` | Utility dùng chung: environment variables (`env.ts`), error hierarchy (`errors.ts`), JSON logging (`logger.ts`), scoring và band (`scoring.ts`), submission state machine, utility functions (`assertExists`, `assertAccess`), constants, auth types và shared schema |
+| 2 | `apps/backend/src/db/` | Database layer: định nghĩa schema Drizzle ORM cho tất cả bảng, relations giữa các bảng, kiểu TypeBox cho cột JSONB (answers, grading results, question content, exam blueprint), DB connection instance và pagination helper |
 | 3 | `apps/backend/src/modules/` | Các module chức năng theo nghiệp vụ: auth (đăng ký, đăng nhập, refresh, logout), users, questions (ngân hàng câu hỏi), submissions (CRUD, chấm tự động, dispatch chấm AI, quy trình đánh giá), exams (CRUD, phiên thi, nộp bài), progress (tổng quan, chi tiết kỹ năng, biểu đồ radar, mục tiêu), classes (CRUD, thành viên, dashboard, phản hồi), knowledge-points, health |
 | 4 | `apps/backend/src/plugins/` | Plugin Elysia xuyên suốt: middleware xác thực JWT (`auth.ts`), xử lý lỗi toàn cục (`error.ts`) chuyển AppError thành HTTP response |
 | 5 | `apps/backend/src/app.ts`, `index.ts` | Điểm khởi chạy: `app.ts` tạo Elysia root app và gắn plugin + module; `index.ts` khởi động server trên port 3000 |
@@ -246,14 +246,14 @@ flowchart TB
 | 8 | `exam_answers` | Câu trả lời trong phiên thi: liên kết session + question, câu trả lời JSONB, kết quả đúng/sai |
 | 9 | `exam_submissions` | Bảng nối phiên thi — bài nộp: liên kết exam_session với submission cho Writing/Speaking |
 | 10 | `user_progress` | Tiến trình tổng hợp: một dòng mỗi (user, skill), điểm trung bình, xu hướng, cấp độ hiện tại/mục tiêu, số lần làm bài |
-| 11 | `user_skill_scores` | Lịch sử điểm từng lần: liên kết user + skill + submission, điểm, dùng cho tính toán cửa sổ trượt |
+| 11 | `user_skill_scores` | Lịch sử điểm từng lần: liên kết user + skill + submission, điểm, dùng cho sliding window calculation |
 | 12 | `user_goals` | Mục tiêu học tập: band mục tiêu, hạn chót, band ước lượng hiện tại, ngày đạt được |
 | 13 | `user_placements` | Kết quả xếp lớp đầu vào: cấp độ từng kỹ năng, trạng thái, nguồn (tự đánh giá/placement test), độ tin cậy |
 | 14 | `user_knowledge_progress` | Tiến trình knowledge point: liên kết user + knowledge_point, mức thành thạo, số lần đúng/tổng |
 | 15 | `classes` | Lớp học: tên, mô tả, giảng viên, mã mời, trạng thái hoạt động |
 | 16 | `class_members` | Thành viên lớp: liên kết class + user, ngày tham gia |
 | 17 | `instructor_feedback` | Phản hồi giảng viên: liên kết class + giảng viên + người học, kỹ năng, nội dung phản hồi |
-| 18 | `knowledge_points` | Điểm kiến thức: tên, danh mục (grammar/vocabulary/strategy/topic), mô tả |
+| 18 | `knowledge_points` | Knowledge point: tên, danh mục (grammar/vocabulary/strategy/topic), mô tả |
 | 19 | `question_knowledge_points` | Bảng nối câu hỏi — knowledge point |
 | 20 | `notifications` | Thông báo: liên kết user, loại, tiêu đề, nội dung, trạng thái đã đọc |
 | 21 | `device_tokens` | Token thiết bị: liên kết user, token cho push notification, nền tảng |
@@ -264,9 +264,9 @@ flowchart TB
 ---
 ## 3. Thiết Kế Chi Tiết
 
-### 3.1 Biểu Đồ Thành Phần
+### 3.1 Component Diagram
 
-#### 3.1.1 Biểu Đồ Thành Phần Backend
+#### 3.1.1 Component Diagram — Backend
 
 ```mermaid
 flowchart TB
@@ -346,7 +346,7 @@ flowchart TB
     class PG,RedisExt ext
 ```
 
-#### 3.1.2 Biểu Đồ Thành Phần Dịch Vụ Chấm Điểm
+#### 3.1.2 Component Diagram — Grading Service
 
 ```mermaid
 flowchart TB
@@ -407,7 +407,7 @@ flowchart TB
     class RedisQ,AIProviderAPI ext
 ```
 
-#### 3.1.3 Cấu Trúc Thành Phần Frontend
+#### 3.1.3 Component Diagram — Frontend
 
 ```mermaid
 flowchart TB
@@ -464,9 +464,9 @@ flowchart TB
     class Layout,AuthContext,APIClient shared
 ```
 
-### 3.2 Biểu Đồ Tuần Tự
+### 3.2 Sequence Diagram
 
-#### 3.2.1 Xác Thực Người Dùng (Đăng Nhập)
+#### 3.2.1 User Authentication (Login)
 
 ```mermaid
 sequenceDiagram
@@ -554,7 +554,7 @@ sequenceDiagram
     B->>DB: UPSERT user_progress<br/>(sliding window recalc)
 ```
 
-#### 3.2.3 Luồng Phiên Thi
+#### 3.2.3 Exam Session Flow
 
 ```mermaid
 sequenceDiagram
@@ -601,7 +601,7 @@ sequenceDiagram
     B-->>C: {status: submitted,<br/>listeningScore, readingScore,<br/>writingStatus: pending,<br/>speakingStatus: pending}
 ```
 
-#### 3.2.4 Quy Trình Đánh Giá Của Giảng Viên
+#### 3.2.4 Instructor Review Flow
 
 ```mermaid
 sequenceDiagram
@@ -637,7 +637,7 @@ sequenceDiagram
     B-->>I: Updated submission with final scores
 ```
 
-#### 3.2.5 Làm Mới Token
+#### 3.2.5 Token Refresh
 
 ```mermaid
 sequenceDiagram
@@ -669,7 +669,7 @@ sequenceDiagram
     B-->>C: 200 {accessToken, refreshToken}
 ```
 
-#### 3.2.6 Theo Dõi Tiến Trình
+#### 3.2.6 Progress Tracking
 
 ```mermaid
 sequenceDiagram
