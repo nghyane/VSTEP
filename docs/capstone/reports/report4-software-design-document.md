@@ -134,6 +134,8 @@ Module Submissions quản lý lifecycle bài nộp qua state machine: `pending` 
 
 Module Exams quản lý đề thi (blueprint), phiên thi (session), và câu trả lời. Hỗ trợ auto-save mỗi 30 giây, tự động chấm Listening/Reading khi submit, và tạo submission cho Writing/Speaking để chấm AI.
 
+Trong current implementation, backend áp dụng guard cứng khi create/update exam để từ chối blueprint sai chuẩn VSTEP trước khi persist: Listening 35 items (8/12/15), Reading 40 items (10/10/10/10), Writing đúng 2 task với minWords 120/250, Speaking đủ 3 phần (mỗi phần 1 câu hỏi).
+
 #### 3.3.2 Sequence Diagram
 
 ![Exam Sequence Diagram](../diagrams/images/seq-exam.svg)

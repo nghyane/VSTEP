@@ -520,6 +520,12 @@ Hệ thống bao gồm 3 thành phần chính: Web Client (React), API Server (B
 
 1. **Trigger:** Chọn menu "Quản lý bài thi" (Instructor/Admin).
 2. **Description:** Tạo, cập nhật và xóa bài thi thử với blueprint (chọn câu hỏi theo kỹ năng).
+3. **Function Details (current implementation):**
+   - Backend validate blueprint trước khi lưu để đảm bảo đúng cấu trúc VSTEP chuẩn.
+   - Listening bắt buộc 35 items với phân phần 8/12/15.
+   - Reading bắt buộc 40 items với phân phần 10/10/10/10.
+   - Writing bắt buộc đúng 2 task (part 1/part 2), minWords tương ứng >=120 và >=250.
+   - Speaking bắt buộc đủ 3 phần, mỗi phần đúng 1 câu hỏi.
 
 ### 3.14 User Management (Admin)
 
@@ -665,6 +671,7 @@ Hệ thống bao gồm 3 thành phần chính: Web Client (React), API Server (B
 | BR-15 | Claim đánh giá: timeout 15 phút. |
 | BR-16 | ETA trả về null khi: slope ≤ 0, < 3 lần thử, hoặc > 52 tuần. |
 | BR-17 | Tất cả điểm: numeric(3,1), phạm vi 0.0–10.0, bước 0.5. |
+| BR-18 | Exam blueprint phải qua backend validation theo chuẩn VSTEP trước khi lưu (L: 8/12/15; R: 10/10/10/10; W: 2 task với minWords 120/250; S: 3 phần). |
 
 ### 5.2 Common Requirements
 
