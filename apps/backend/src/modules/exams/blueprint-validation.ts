@@ -2,7 +2,12 @@ import { BadRequestError } from "@common/errors";
 import type { ExamBlueprint } from "@db/types/exam-blueprint";
 import type { QuestionContent } from "@db/types/question-content";
 
-const REQUIRED_SKILLS = ["listening", "reading", "writing", "speaking"] as const;
+const REQUIRED_SKILLS = [
+  "listening",
+  "reading",
+  "writing",
+  "speaking",
+] as const;
 
 type Skill = (typeof REQUIRED_SKILLS)[number];
 
@@ -82,10 +87,15 @@ function assertListening(questions: BlueprintQuestion[]): void {
 
   for (const question of questions) {
     const itemsCount = getItemsCount(question.content);
-    partTotals.set(question.part, (partTotals.get(question.part) ?? 0) + itemsCount);
+    partTotals.set(
+      question.part,
+      (partTotals.get(question.part) ?? 0) + itemsCount,
+    );
   }
 
-  for (const [part, expected] of Object.entries(LISTENING_EXPECTED_PART_ITEMS)) {
+  for (const [part, expected] of Object.entries(
+    LISTENING_EXPECTED_PART_ITEMS,
+  )) {
     const partNumber = Number(part);
     const actual = partTotals.get(partNumber) ?? 0;
 
@@ -98,7 +108,9 @@ function assertListening(questions: BlueprintQuestion[]): void {
 
   const total = [...partTotals.values()].reduce((sum, value) => sum + value, 0);
   if (total !== 35) {
-    throw new BadRequestError(`Listening must contain exactly 35 items, found ${total}`);
+    throw new BadRequestError(
+      `Listening must contain exactly 35 items, found ${total}`,
+    );
   }
 }
 
@@ -107,7 +119,10 @@ function assertReading(questions: BlueprintQuestion[]): void {
 
   for (const question of questions) {
     const itemsCount = getItemsCount(question.content);
-    partTotals.set(question.part, (partTotals.get(question.part) ?? 0) + itemsCount);
+    partTotals.set(
+      question.part,
+      (partTotals.get(question.part) ?? 0) + itemsCount,
+    );
   }
 
   for (const [part, expected] of Object.entries(READING_EXPECTED_PART_ITEMS)) {
@@ -123,7 +138,9 @@ function assertReading(questions: BlueprintQuestion[]): void {
 
   const total = [...partTotals.values()].reduce((sum, value) => sum + value, 0);
   if (total !== 40) {
-    throw new BadRequestError(`Reading must contain exactly 40 items, found ${total}`);
+    throw new BadRequestError(
+      `Reading must contain exactly 40 items, found ${total}`,
+    );
   }
 }
 
@@ -138,7 +155,11 @@ function assertWriting(questions: BlueprintQuestion[]): void {
   const task1Questions = byPart.get(1) ?? [];
   const task2Questions = byPart.get(2) ?? [];
 
-  if (task1Questions.length !== 1 || task2Questions.length !== 1 || byPart.size !== 2) {
+  if (
+    task1Questions.length !== 1 ||
+    task2Questions.length !== 1 ||
+    byPart.size !== 2
+  ) {
     throw new BadRequestError(
       "Writing must contain exactly 2 tasks: part 1 (letter) and part 2 (essay)",
     );
@@ -194,10 +215,14 @@ export function validateVstepExamBlueprint(
 ): void {
   assertRequiredSkills(blueprint);
 
-  const questionsById = new Map(questions.map((question) => [question.id, question]));
+  const questionsById = new Map(
+    questions.map((question) => [question.id, question]),
+  );
   assertSkillOwnership(blueprint, questionsById);
 
-  assertListening(questions.filter((question) => question.skill === "listening"));
+  assertListening(
+    questions.filter((question) => question.skill === "listening"),
+  );
   assertReading(questions.filter((question) => question.skill === "reading"));
   assertWriting(questions.filter((question) => question.skill === "writing"));
   assertSpeaking(questions.filter((question) => question.skill === "speaking"));

@@ -8,9 +8,9 @@ import { db, paginate, table, takeFirstOrThrow } from "@db/index";
 import { SKILLS } from "@db/schema/enums";
 import type { ExamSession } from "@db/schema/exams";
 import { and, desc, eq, inArray } from "drizzle-orm";
+import { validateVstepExamBlueprint } from "./blueprint-validation";
 import type { ExamCreateBody, ExamListQuery, ExamUpdateBody } from "./schema";
 import { EXAM_COLUMNS } from "./schema";
-import { validateVstepExamBlueprint } from "./blueprint-validation";
 
 export type ExamSessionStatus = ExamSession["status"];
 

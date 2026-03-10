@@ -138,7 +138,9 @@ function makeValidDataset() {
 describe("validateVstepExamBlueprint", () => {
   it("accepts full valid VSTEP structure", () => {
     const { blueprint, questions } = makeValidDataset();
-    expect(() => validateVstepExamBlueprint(blueprint, questions)).not.toThrow();
+    expect(() =>
+      validateVstepExamBlueprint(blueprint, questions),
+    ).not.toThrow();
   });
 
   it("rejects listening total different from 35", () => {
@@ -197,11 +199,13 @@ describe("validateVstepExamBlueprint", () => {
     const { blueprint, questions } = makeValidDataset();
     blueprint.speaking = { questionIds: ["s1", "s2"] };
 
-    const selectedQuestions = questions.filter((question) => question.id !== "s3");
-
-    expect(() => validateVstepExamBlueprint(blueprint, selectedQuestions)).toThrow(
-      BadRequestError,
+    const selectedQuestions = questions.filter(
+      (question) => question.id !== "s3",
     );
+
+    expect(() =>
+      validateVstepExamBlueprint(blueprint, selectedQuestions),
+    ).toThrow(BadRequestError);
   });
 
   it("rejects when question is assigned to wrong skill bucket", () => {

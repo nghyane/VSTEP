@@ -1,40 +1,65 @@
+import { inArray } from "drizzle-orm";
 import type { DbTransaction } from "../../src/db/index";
 import type { NewExam } from "../../src/db/schema/exams";
 import { table } from "../../src/db/schema/index";
 import type { ExamBlueprint } from "../../src/db/types/exam-blueprint";
-import { logResult, logSection, SKILLS } from "../utils";
-import type { SeededQuestions } from "./02-questions";
+import { validateVstepExamBlueprint } from "../../src/modules/exams/blueprint-validation";
+import { logResult, logSection } from "../utils";
+import type { SeededQuestionRow, SeededQuestions } from "./02-questions";
 
 type Level = NewExam["level"];
 
 export interface SeededExams {
-  all: Array<{ id: string; level: string; type: string }>;
+  all: Array<{
+    id: string;
+    level: string;
+    type: string;
+    blueprint: ExamBlueprint;
+  }>;
 }
 
 export async function seedExams(
   db: DbTransaction,
   adminId: string,
-  questions: SeededQuestions["all"],
+  questions: SeededQuestions,
 ): Promise<SeededExams> {
   logSection("Exams");
+
+  const standardB1Blueprint = buildStandardBlueprint(questions.standard, "B1");
+  const standardB2Blueprint = buildStandardBlueprint(questions.standard, "B2");
+  const standardC1Blueprint = buildStandardBlueprint(questions.standard, "C1");
+
+  await validateBlueprint(db, standardB1Blueprint);
+  await validateBlueprint(db, standardB2Blueprint);
+  await validateBlueprint(db, standardC1Blueprint);
 
   const examConfigs: Array<{
     level: Level;
     title: string;
     description: string | undefined;
+    blueprint: ExamBlueprint;
     type?: NewExam["type"];
   }> = [
     {
       level: "B1",
-      title: "Đề thi thử VSTEP B1 - Đề số 1",
+      title: "[SEED][VSTEP-STD] B1 Standard Exam",
       description:
-        "Đề thi thử trình độ B1 gồm 4 kỹ năng: Nghe, Đọc, Viết, Nói. Thời gian làm bài 172 phút.",
+        "Seeded VSTEP standard exam for B1 with full 4-skill blueprint.",
+      blueprint: standardB1Blueprint,
     },
     {
       level: "B2",
-      title: "Đề thi thử VSTEP B2 - Đề số 1",
+      title: "[SEED][VSTEP-STD] B2 Standard Exam",
       description:
-        "Đề thi thử trình độ B2 gồm 4 kỹ năng: Nghe, Đọc, Viết, Nói. Thời gian làm bài 172 phút.",
+        "Seeded VSTEP standard exam for B2 with full 4-skill blueprint.",
+      blueprint: standardB2Blueprint,
+    },
+    {
+      level: "C1",
+      title: "[SEED][VSTEP-STD] C1 Standard Exam",
+      description:
+        "Seeded VSTEP standard exam for C1 with full 4-skill blueprint.",
+      blueprint: standardC1Blueprint,
     },
     {
       level: "B1",
@@ -42,6 +67,7 @@ export async function seedExams(
       title: "Bài kiểm tra xếp lớp VSTEP",
       description:
         "Bài kiểm tra đầu vào để xác định trình độ hiện tại của học viên.",
+      blueprint: standardB1Blueprint,
     },
   ];
 
@@ -51,7 +77,7 @@ export async function seedExams(
     level: config.level,
     type: config.type,
     durationMinutes: 172,
-    blueprint: buildBlueprint(questions, config.level),
+    blueprint: config.blueprint,
     isActive: true,
     createdBy: adminId,
   }));
@@ -63,6 +89,7 @@ export async function seedExams(
       id: table.exams.id,
       level: table.exams.level,
       type: table.exams.type,
+      blueprint: table.exams.blueprint,
     });
 
   for (const exam of inserted) {
@@ -74,22 +101,77 @@ export async function seedExams(
   return { all: inserted };
 }
 
-function buildBlueprint(
-  questions: SeededQuestions["all"],
-  _level: string,
+function buildStandardBlueprint(
+  questions: SeededQuestionRow[],
+  level: Level,
 ): ExamBlueprint {
-  const blueprint: ExamBlueprint = { durationMinutes: 172 };
+  const pick = (skill: string, part: number): string => {
+    const selected = questions.find(
+      (question) =>
+        question.level === level &&
+        question.skill === skill &&
+        question.part === part,
+    );
 
-  for (const skill of SKILLS) {
-    // Pick first few questions per skill for this exam
-    const ids = questions
-      .filter((q) => q.skill === skill)
-      .slice(0, 4)
-      .map((q) => q.id);
-    if (ids.length > 0) {
-      blueprint[skill] = { questionIds: ids };
+    if (!selected) {
+      throw new Error(
+        `Missing standard seed question for level ${level}, skill ${skill}, part ${part}`,
+      );
     }
-  }
 
-  return blueprint;
+    return selected.id;
+  };
+
+  return {
+    durationMinutes: 172,
+    listening: {
+      questionIds: [
+        pick("listening", 1),
+        pick("listening", 2),
+        pick("listening", 3),
+      ],
+    },
+    reading: {
+      questionIds: [
+        pick("reading", 1),
+        pick("reading", 2),
+        pick("reading", 3),
+        pick("reading", 4),
+      ],
+    },
+    writing: {
+      questionIds: [pick("writing", 1), pick("writing", 2)],
+    },
+    speaking: {
+      questionIds: [
+        pick("speaking", 1),
+        pick("speaking", 2),
+        pick("speaking", 3),
+      ],
+    },
+  };
+}
+
+async function validateBlueprint(
+  db: DbTransaction,
+  blueprint: ExamBlueprint,
+): Promise<void> {
+  const questionIds = [
+    ...(blueprint.listening?.questionIds ?? []),
+    ...(blueprint.reading?.questionIds ?? []),
+    ...(blueprint.writing?.questionIds ?? []),
+    ...(blueprint.speaking?.questionIds ?? []),
+  ];
+
+  const selectedQuestions = await db
+    .select({
+      id: table.questions.id,
+      skill: table.questions.skill,
+      part: table.questions.part,
+      content: table.questions.content,
+    })
+    .from(table.questions)
+    .where(inArray(table.questions.id, questionIds));
+
+  validateVstepExamBlueprint(blueprint, selectedQuestions);
 }

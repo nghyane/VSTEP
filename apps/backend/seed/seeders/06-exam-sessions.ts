@@ -7,9 +7,9 @@ import type {
 } from "../../src/db/schema/exams";
 import { table } from "../../src/db/schema/index";
 import type { SubmissionAnswer } from "../../src/db/types/answers";
+import type { ExamBlueprint } from "../../src/db/types/exam-blueprint";
 import { logResult, logSection } from "../utils";
 import type { SeededUsers } from "./01-users";
-import type { SeededQuestions } from "./02-questions";
 import type { SeededExams } from "./03-exams";
 import type { SeededSubmissions } from "./05-submissions";
 
@@ -17,7 +17,7 @@ function findExam(
   exams: SeededExams["all"],
   level: string,
   type?: string,
-): string {
+): SeededExams["all"][number] {
   const exam = exams.find(
     (e) => e.level === level && (!type || e.type === type),
   );
@@ -25,16 +25,7 @@ function findExam(
     throw new Error(
       `No exam found for level: ${level}${type ? `, type: ${type}` : ""}`,
     );
-  return exam.id;
-}
-
-function findQuestion(
-  questions: SeededQuestions["all"],
-  skill: string,
-): string {
-  const q = questions.find((q) => q.skill === skill);
-  if (!q) throw new Error(`No question found for skill: ${skill}`);
-  return q.id;
+  return exam;
 }
 
 function objectiveAnswer(count: number): SubmissionAnswer {
@@ -54,22 +45,21 @@ export async function seedExamSessions(
   db: DbTransaction,
   users: SeededUsers,
   exams: SeededExams,
-  questions: SeededQuestions["all"],
   submissions: SeededSubmissions,
 ): Promise<SeededSessions> {
   logSection("Exam Sessions");
 
   const learner1 = users.learners[0].id;
   const learner2 = users.learners[1].id;
-  const b2ExamId = findExam(exams.all, "B2");
-  const b1ExamId = findExam(exams.all, "B1");
-  const placementExamId = findExam(exams.all, "B1", "placement");
+  const b2Exam = findExam(exams.all, "B2");
+  const b1Exam = findExam(exams.all, "B1");
+  const placementExam = findExam(exams.all, "B1", "placement");
 
   const sessionData: NewExamSession[] = [
     // Session 1: Learner 1, B2 exam, completed
     {
       userId: learner1,
-      examId: b2ExamId,
+      examId: b2Exam.id,
       status: "completed",
       listeningScore: 7.0,
       readingScore: 7.5,
@@ -83,14 +73,14 @@ export async function seedExamSessions(
     // Session 2: Learner 1, B1 exam, in_progress
     {
       userId: learner1,
-      examId: b1ExamId,
+      examId: b1Exam.id,
       status: "in_progress",
       startedAt: new Date("2026-02-01T08:00:00Z").toISOString(),
     },
     // Session 3: Learner 2, B1 exam, completed
     {
       userId: learner2,
-      examId: b1ExamId,
+      examId: b1Exam.id,
       status: "completed",
       listeningScore: 5.0,
       readingScore: 5.5,
@@ -104,7 +94,7 @@ export async function seedExamSessions(
     // Session 4: Learner 1, placement exam, completed
     {
       userId: learner1,
-      examId: placementExamId,
+      examId: placementExam.id,
       status: "completed",
       listeningScore: 5.0,
       readingScore: 6.0,
@@ -127,28 +117,34 @@ export async function seedExamSessions(
 
   logResult("Exam sessions", sessions.length);
 
-  // Exam answers — 2-3 per session
-  const listeningQ = findQuestion(questions, "listening");
-  const readingQ = findQuestion(questions, "reading");
-  const writingQ = findQuestion(questions, "writing");
+  const b2ListeningQ = firstQuestionId(b2Exam.blueprint, "listening");
+  const b2ReadingQ = firstQuestionId(b2Exam.blueprint, "reading");
+  const b2WritingQ = firstQuestionId(b2Exam.blueprint, "writing");
+  const b1ListeningQ = firstQuestionId(b1Exam.blueprint, "listening");
+  const b1ReadingQ = firstQuestionId(b1Exam.blueprint, "reading");
+  const placementListeningQ = firstQuestionId(
+    placementExam.blueprint,
+    "listening",
+  );
+  const placementReadingQ = firstQuestionId(placementExam.blueprint, "reading");
 
   const answerData: NewExamAnswer[] = [
     // Session 1 (completed B2): listening + reading + writing answers
     {
       sessionId: sessions[0].id,
-      questionId: listeningQ,
+      questionId: b2ListeningQ,
       answer: objectiveAnswer(10),
       isCorrect: true,
     },
     {
       sessionId: sessions[0].id,
-      questionId: readingQ,
+      questionId: b2ReadingQ,
       answer: objectiveAnswer(10),
       isCorrect: true,
     },
     {
       sessionId: sessions[0].id,
-      questionId: writingQ,
+      questionId: b2WritingQ,
       answer: {
         text: "Education is the foundation of a prosperous society. This essay examines the relationship between access to education and economic development.",
       } as SubmissionAnswer,
@@ -156,37 +152,37 @@ export async function seedExamSessions(
     // Session 2 (in_progress B1): partial answers
     {
       sessionId: sessions[1].id,
-      questionId: listeningQ,
+      questionId: b1ListeningQ,
       answer: objectiveAnswer(5),
     },
     {
       sessionId: sessions[1].id,
-      questionId: readingQ,
+      questionId: b1ReadingQ,
       answer: objectiveAnswer(3),
     },
     // Session 3 (completed B1): listening + reading
     {
       sessionId: sessions[2].id,
-      questionId: listeningQ,
+      questionId: b1ListeningQ,
       answer: objectiveAnswer(10),
       isCorrect: false,
     },
     {
       sessionId: sessions[2].id,
-      questionId: readingQ,
+      questionId: b1ReadingQ,
       answer: objectiveAnswer(10),
       isCorrect: true,
     },
     // Session 4 (placement): listening + reading answers
     {
       sessionId: sessions[3].id,
-      questionId: listeningQ,
+      questionId: placementListeningQ,
       answer: objectiveAnswer(10),
       isCorrect: true,
     },
     {
       sessionId: sessions[3].id,
-      questionId: readingQ,
+      questionId: placementReadingQ,
       answer: objectiveAnswer(10),
       isCorrect: true,
     },
@@ -258,4 +254,19 @@ export async function seedExamSessions(
   logResult("Exam submissions (linked)", examSubmissionData.length);
 
   return { all: sessions };
+}
+
+function firstQuestionId(
+  blueprint: ExamBlueprint,
+  skill: keyof Pick<
+    ExamBlueprint,
+    "listening" | "reading" | "writing" | "speaking"
+  >,
+): string {
+  const questionId = blueprint[skill]?.questionIds[0];
+  if (!questionId) {
+    throw new Error(`Missing blueprint question for skill: ${skill}`);
+  }
+
+  return questionId;
 }

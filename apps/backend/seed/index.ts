@@ -28,21 +28,15 @@ async function main(): Promise<void> {
 
     // Run seeders in order — fail at any step → rollback everything
     const users = await seedUsers(tx);
-    const { all: questions } = await seedQuestions(tx, users.admin.id);
+    const questions = await seedQuestions(tx, users.admin.id);
     const exams = await seedExams(tx, users.admin.id, questions);
-    const submissions = await seedSubmissions(tx, users, questions);
-    const sessions = await seedExamSessions(
-      tx,
-      users,
-      exams,
-      questions,
-      submissions,
-    );
-    const knowledgePoints = await seedKnowledgePoints(tx, questions);
+    const submissions = await seedSubmissions(tx, users, questions.all);
+    const sessions = await seedExamSessions(tx, users, exams, submissions);
+    const knowledgePoints = await seedKnowledgePoints(tx, questions.all);
     await seedProgress(tx, users, submissions, knowledgePoints, sessions);
     await seedClasses(tx, users);
     await seedVocabulary(tx);
-    await seedPracticeExams(tx, users.admin.id, questions);
+    await seedPracticeExams(tx, users.admin.id, questions.all);
     return users;
   });
 

@@ -8,6 +8,7 @@ export const db = drizzle({
     url: env.DATABASE_URL,
     max: 10,
     idleTimeout: 30,
+    // biome-ignore lint/style/useNamingConvention: Postgres connection parameter requires `TimeZone` key.
     connection: { TimeZone: "Asia/Ho_Chi_Minh" },
   },
   schema: { ...table, ...relations },
