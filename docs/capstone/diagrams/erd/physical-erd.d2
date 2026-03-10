@@ -1,0 +1,360 @@
+auth: "Auth & Users" {
+  users: {
+    shape: sql_table
+    id: uuid {constraint: primary_key}
+    email: varchar {constraint: unique}
+    password_hash: "varchar · argon2id"
+    full_name: "varchar · nullable"
+    avatar_key: "varchar · nullable"
+    role: "enum · user_role"
+    created_at: timestamp
+    updated_at: timestamp
+  }
+
+  refresh_tokens: {
+    shape: sql_table
+    id: uuid {constraint: primary_key}
+    user_id: uuid {constraint: foreign_key}
+    token_hash: "varchar · SHA-256"
+    jti: varchar {constraint: unique}
+    replaced_by_jti: "varchar · nullable"
+    device_info: text
+    revoked_at: "timestamp · nullable"
+    expires_at: timestamp
+    created_at: timestamp
+  }
+
+  device_tokens: {
+    shape: sql_table
+    id: uuid {constraint: primary_key}
+    user_id: uuid {constraint: foreign_key}
+    token: text {constraint: unique}
+    platform: "varchar · max 10"
+    created_at: timestamp
+  }
+
+  user_placements: {
+    shape: sql_table
+    id: uuid {constraint: primary_key}
+    user_id: uuid {constraint: unique}
+    session_id: "uuid · nullable" {constraint: foreign_key}
+    status: "enum · placement_status"
+    source: "enum · placement_source"
+    confidence: "enum · placement_confidence"
+    listening_level: "enum · question_level"
+    reading_level: "enum · question_level"
+    writing_level: "enum · question_level"
+    speaking_level: "enum · question_level"
+    writing_source: "varchar · max 20"
+    speaking_source: "varchar · max 20"
+    created_at: timestamp
+    updated_at: timestamp
+  }
+
+  users.id -> refresh_tokens.user_id
+  users.id -> device_tokens.user_id
+  users.id -> user_placements.user_id
+}
+
+questions_kb: "Questions & Knowledge" {
+  questions: {
+    shape: sql_table
+    id: uuid {constraint: primary_key}
+    skill: "enum · skill"
+    level: "enum · question_level"
+    part: "smallint · 1-4"
+    content: "jsonb · QuestionContent"
+    answer_key: "jsonb · nullable"
+    explanation: "text · nullable"
+    is_active: "boolean · default true"
+    created_by: uuid {constraint: foreign_key}
+    created_at: timestamp
+    updated_at: timestamp
+  }
+
+  knowledge_points: {
+    shape: sql_table
+    id: uuid {constraint: primary_key}
+    category: "enum · kp_category"
+    name: varchar {constraint: unique}
+    created_at: timestamp
+    updated_at: timestamp
+  }
+
+  question_knowledge_points: {
+    shape: sql_table
+    question_id: uuid {constraint: [primary_key; foreign_key]}
+    knowledge_point_id: uuid {constraint: [primary_key; foreign_key]}
+  }
+
+  questions.id -> question_knowledge_points.question_id
+  knowledge_points.id -> question_knowledge_points.knowledge_point_id
+}
+
+exams_domain: "Exams & Sessions" {
+  exams: {
+    shape: sql_table
+    id: uuid {constraint: primary_key}
+    title: "varchar · max 255"
+    description: "text · nullable"
+    type: "enum · exam_type"
+    skill: "enum · nullable"
+    level: "enum · question_level"
+    duration_minutes: "integer · nullable"
+    blueprint: "jsonb · ExamBlueprint"
+    is_active: "boolean · default true"
+    created_by: uuid {constraint: foreign_key}
+    created_at: timestamp
+    updated_at: timestamp
+  }
+
+  exam_sessions: {
+    shape: sql_table
+    id: uuid {constraint: primary_key}
+    user_id: uuid {constraint: foreign_key}
+    exam_id: uuid {constraint: foreign_key}
+    status: "enum · exam_status"
+    listening_score: "numeric · nullable"
+    reading_score: "numeric · nullable"
+    writing_score: "numeric · nullable"
+    speaking_score: "numeric · nullable"
+    overall_score: "numeric · nullable"
+    overall_band: "enum · nullable"
+    started_at: timestamp
+    completed_at: "timestamp · nullable"
+    created_at: timestamp
+    updated_at: timestamp
+  }
+
+  exam_answers: {
+    shape: sql_table
+    id: uuid {constraint: primary_key}
+    session_id: uuid {constraint: foreign_key}
+    question_id: uuid {constraint: foreign_key}
+    answer: "jsonb · SubmissionAnswer"
+    is_correct: boolean
+    created_at: timestamp
+    updated_at: timestamp
+  }
+
+  exam_submissions: {
+    shape: sql_table
+    id: uuid {constraint: primary_key}
+    session_id: uuid {constraint: foreign_key}
+    submission_id: uuid {constraint: foreign_key}
+    skill: "enum · skill"
+    part: "smallint · nullable"
+    created_at: timestamp
+  }
+
+  exams.id -> exam_sessions.exam_id
+  exam_sessions.id -> exam_answers.session_id
+  exam_sessions.id -> exam_submissions.session_id
+}
+
+submissions_domain: "Submissions & Grading" {
+  submissions: {
+    shape: sql_table
+    id: uuid {constraint: primary_key}
+    user_id: uuid {constraint: foreign_key}
+    question_id: uuid {constraint: foreign_key}
+    skill: "enum · skill"
+    status: "enum · submission_status"
+    score: "numeric · 0.0-10.0"
+    band: "enum · nullable"
+    review_priority: "enum · nullable"
+    grading_mode: "enum · nullable"
+    reviewer_id: "uuid · nullable" {constraint: foreign_key}
+    audit_flag: "boolean · default false"
+    claimed_by: "uuid · nullable" {constraint: foreign_key}
+    claimed_at: "timestamp · nullable"
+    completed_at: "timestamp · nullable"
+    created_at: timestamp
+    updated_at: timestamp
+  }
+
+  submission_details: {
+    shape: sql_table
+    submission_id: uuid {constraint: [primary_key; foreign_key]}
+    answer: "jsonb · SubmissionAnswer"
+    result: "jsonb · nullable"
+    feedback: "varchar · max 10000"
+    created_at: timestamp
+    updated_at: timestamp
+  }
+
+  submissions.id -> submission_details.submission_id
+}
+
+progress_domain: "Progress & Goals" {
+  user_progress: {
+    shape: sql_table
+    id: uuid {constraint: primary_key}
+    user_id: uuid {constraint: foreign_key}
+    skill: "enum · skill"
+    current_level: "enum · question_level"
+    target_level: "enum · nullable"
+    scaffold_level: "integer · default 1"
+    streak_count: "integer · default 0"
+    streak_direction: "enum · streak_direction"
+    attempt_count: "integer · default 0"
+    created_at: timestamp
+    updated_at: timestamp
+  }
+
+  user_skill_scores: {
+    shape: sql_table
+    id: uuid {constraint: primary_key}
+    user_id: uuid {constraint: foreign_key}
+    skill: "enum · skill"
+    submission_id: "uuid · nullable" {constraint: foreign_key}
+    session_id: "uuid · nullable" {constraint: foreign_key}
+    score: "numeric · 0.0-10.0"
+    scaffolding_type: "varchar · nullable"
+    created_at: timestamp
+  }
+
+  user_goals: {
+    shape: sql_table
+    id: uuid {constraint: primary_key}
+    user_id: uuid {constraint: foreign_key}
+    target_band: "enum · vstep_band"
+    current_estimated_band: "enum · nullable"
+    deadline: "timestamp · nullable"
+    daily_study_time_minutes: "integer · default 30"
+    created_at: timestamp
+    updated_at: timestamp
+  }
+
+  user_knowledge_progress: {
+    shape: sql_table
+    id: uuid {constraint: primary_key}
+    user_id: uuid {constraint: foreign_key}
+    knowledge_point_id: uuid {constraint: foreign_key}
+    mastery_score: "numeric · 0-100"
+    total_attempted: "integer · default 0"
+    total_correct: "integer · default 0"
+    created_at: timestamp
+    updated_at: timestamp
+  }
+}
+
+classes_domain: "Classes & Feedback" {
+  tbl_classes: "classes" {
+    shape: sql_table
+    id: uuid {constraint: primary_key}
+    name: text
+    description: "text · nullable"
+    instructor_id: uuid {constraint: foreign_key}
+    invite_code: text {constraint: unique}
+    created_at: timestamp
+    updated_at: timestamp
+  }
+
+  class_members: {
+    shape: sql_table
+    id: uuid {constraint: primary_key}
+    class_id: uuid {constraint: foreign_key}
+    user_id: uuid {constraint: foreign_key}
+    joined_at: timestamp
+  }
+
+  instructor_feedback: {
+    shape: sql_table
+    id: uuid {constraint: primary_key}
+    class_id: uuid {constraint: foreign_key}
+    from_user_id: uuid {constraint: foreign_key}
+    to_user_id: uuid {constraint: foreign_key}
+    content: text
+    skill: "enum · nullable"
+    submission_id: "uuid · nullable" {constraint: foreign_key}
+    created_at: timestamp
+  }
+
+  tbl_classes.id -> class_members.class_id
+  tbl_classes.id -> instructor_feedback.class_id
+}
+
+vocabulary_domain: "Vocabulary" {
+  vocabulary_topics: {
+    shape: sql_table
+    id: uuid {constraint: primary_key}
+    name: varchar {constraint: unique}
+    description: text
+    icon_key: "varchar · nullable"
+    sort_order: "integer · default 0"
+    created_at: timestamp
+    updated_at: timestamp
+  }
+
+  vocabulary_words: {
+    shape: sql_table
+    id: uuid {constraint: primary_key}
+    topic_id: uuid {constraint: foreign_key}
+    word: "varchar · max 100"
+    phonetic: "varchar · nullable"
+    audio_url: "varchar · nullable"
+    part_of_speech: "varchar · max 20"
+    definition: text
+    explanation: text
+    examples: "jsonb · string[]"
+    sort_order: "integer · default 0"
+    created_at: timestamp
+    updated_at: timestamp
+  }
+
+  user_vocabulary_progress: {
+    shape: sql_table
+    user_id: uuid {constraint: [primary_key; foreign_key]}
+    word_id: uuid {constraint: [primary_key; foreign_key]}
+    known: "boolean · default false"
+    last_reviewed_at: "timestamp · nullable"
+    created_at: timestamp
+    updated_at: timestamp
+  }
+
+  vocabulary_topics.id -> vocabulary_words.topic_id
+  vocabulary_words.id -> user_vocabulary_progress.word_id
+}
+
+notifications_domain: "Notifications" {
+  notifications: {
+    shape: sql_table
+    id: uuid {constraint: primary_key}
+    user_id: uuid {constraint: foreign_key}
+    type: "enum · notification_type"
+    title: "varchar · max 255"
+    body: "text · nullable"
+    data: "jsonb · nullable"
+    read_at: "timestamp · nullable"
+    created_at: timestamp
+  }
+}
+
+# ── Cross-domain relationships ────────────────────────────
+
+auth.users.id -> questions_kb.questions.created_by
+auth.users.id -> submissions_domain.submissions.user_id
+auth.users.id -> exams_domain.exams.created_by
+auth.users.id -> exams_domain.exam_sessions.user_id
+auth.users.id -> progress_domain.user_progress.user_id
+auth.users.id -> progress_domain.user_skill_scores.user_id
+auth.users.id -> progress_domain.user_goals.user_id
+auth.users.id -> progress_domain.user_knowledge_progress.user_id
+auth.users.id -> classes_domain.tbl_classes.instructor_id
+auth.users.id -> classes_domain.class_members.user_id
+auth.users.id -> classes_domain.instructor_feedback.from_user_id
+auth.users.id -> classes_domain.instructor_feedback.to_user_id
+auth.users.id -> notifications_domain.notifications.user_id
+auth.users.id -> vocabulary_domain.user_vocabulary_progress.user_id
+
+questions_kb.questions.id -> submissions_domain.submissions.question_id
+questions_kb.questions.id -> exams_domain.exam_answers.question_id
+questions_kb.knowledge_points.id -> progress_domain.user_knowledge_progress.knowledge_point_id
+
+submissions_domain.submissions.id -> exams_domain.exam_submissions.submission_id
+submissions_domain.submissions.id -> progress_domain.user_skill_scores.submission_id
+submissions_domain.submissions.id -> classes_domain.instructor_feedback.submission_id
+
+exams_domain.exam_sessions.id -> progress_domain.user_skill_scores.session_id
+exams_domain.exam_sessions.id -> auth.user_placements.session_id
