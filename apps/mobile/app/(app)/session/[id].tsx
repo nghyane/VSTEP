@@ -5,22 +5,23 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
   ActivityIndicator,
 } from "react-native";
+import { BouncyScrollView } from "@/components/BouncyScrollView";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { useQueries } from "@tanstack/react-query";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
 import {
-  useExamDetail,
   useExamSession,
   useSaveAnswers,
   useSubmitExam,
 } from "@/hooks/use-exam-session";
+import { useExamDetail } from "@/hooks/use-exams";
 import { api } from "@/lib/api";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize } from "@/theme";
 import type {
@@ -28,17 +29,20 @@ import type {
   ExamSession,
   Question,
   Skill,
-  SubmissionAnswer,
-  ObjectiveAnswer,
-  WritingAnswer,
-  ListeningContent,
-  ReadingContent,
-  WritingContent,
-  SpeakingPart1Content,
-  SpeakingPart2Content,
-  SpeakingPart3Content,
-  QuestionContent,
 } from "@/types/api";
+
+// Local content/answer types for rendering
+interface QuestionItem { stem: string; options: string[]; }
+interface ListeningContent { audioUrl: string; transcript?: string; items: QuestionItem[]; }
+interface ReadingContent { passage: string; title?: string; items: QuestionItem[]; }
+interface WritingContent { prompt: string; taskType: string; instructions?: string; minWords?: number; requiredPoints?: string[]; }
+interface SpeakingPart1Content { topics: { name: string; questions: string[] }[]; }
+interface SpeakingPart2Content { situation: string; options: string[]; preparationSeconds: number; speakingSeconds: number; }
+interface SpeakingPart3Content { centralIdea: string; suggestions: string[]; followUpQuestion: string; preparationSeconds: number; speakingSeconds: number; }
+type QuestionContent = ListeningContent | ReadingContent | WritingContent | SpeakingPart1Content | SpeakingPart2Content | SpeakingPart3Content;
+interface ObjectiveAnswer { answers: Record<string, string>; }
+interface WritingAnswer { text: string; }
+type SubmissionAnswer = ObjectiveAnswer | WritingAnswer | { audioUrl: string; durationSeconds: number; transcript?: string; };
 
 const SKILL_ORDER: Skill[] = ["listening", "reading", "writing", "speaking"];
 const OPTION_LETTERS = ["A", "B", "C", "D"];
@@ -91,7 +95,7 @@ interface SectionInfo {
 function InProgress({ session, sessionId, exam }: { session: ExamSession; sessionId: string; exam: any }) {
   const c = useThemeColors();
   const bp = exam?.blueprint as ExamBlueprint | undefined;
-  const durationMinutes = bp?.durationMinutes ?? 0;
+  const durationMinutes = exam?.durationMinutes ?? 0;
   const remaining = useTimer(session.startedAt, durationMinutes);
 
   // Build sections from blueprint
@@ -256,7 +260,7 @@ function InProgress({ session, sessionId, exam }: { session: ExamSession; sessio
       </ScrollView>
 
       {/* Question area */}
-      <ScrollView style={styles.questionScroll} contentContainerStyle={styles.questionContent}>
+      <BouncyScrollView style={styles.questionScroll} contentContainerStyle={styles.questionContent}>
         {currentQuestion ? (
           <>
             <Text style={[styles.questionCounter, { color: c.mutedForeground }]}>
@@ -273,31 +277,31 @@ function InProgress({ session, sessionId, exam }: { session: ExamSession; sessio
             Không tìm thấy câu hỏi
           </Text>
         )}
-      </ScrollView>
+      </BouncyScrollView>
 
       {/* Bottom navigation */}
       <View style={[styles.navBar, { borderTopColor: c.border }]}>
-        <TouchableOpacity
+        <HapticTouchable
           style={[styles.navBtn, { opacity: questionIdx > 0 ? 1 : 0.4 }]}
           onPress={() => questionIdx > 0 && setQuestionIdx(questionIdx - 1)}
           disabled={questionIdx <= 0}
         >
           <Ionicons name="chevron-back" size={18} color={c.foreground} />
           <Text style={[styles.navBtnText, { color: c.foreground }]}>Trước</Text>
-        </TouchableOpacity>
+        </HapticTouchable>
 
         <Text style={[styles.navCounter, { color: c.mutedForeground }]}>
           {questionIdx + 1}/{currentQIds.length}
         </Text>
 
-        <TouchableOpacity
+        <HapticTouchable
           style={[styles.navBtn, { opacity: questionIdx < currentQIds.length - 1 ? 1 : 0.4 }]}
           onPress={() => questionIdx < currentQIds.length - 1 && setQuestionIdx(questionIdx + 1)}
           disabled={questionIdx >= currentQIds.length - 1}
         >
           <Text style={[styles.navBtnText, { color: c.foreground }]}>Sau</Text>
           <Ionicons name="chevron-forward" size={18} color={c.foreground} />
-        </TouchableOpacity>
+        </HapticTouchable>
       </View>
     </View>
   );
@@ -339,7 +343,7 @@ function TopBar({
           <Text style={[styles.saveLabel, { color: c.success }]}>Đã lưu</Text>
         )}
       </View>
-      <TouchableOpacity
+      <HapticTouchable
         style={[styles.submitTopBtn, { backgroundColor: c.primary }]}
         onPress={onSubmit}
         disabled={isSubmitting}
@@ -352,7 +356,7 @@ function TopBar({
             <Text style={{ color: c.primaryForeground, fontWeight: "600", fontSize: fontSize.sm }}>Nộp bài</Text>
           </>
         )}
-      </TouchableOpacity>
+      </HapticTouchable>
     </View>
   );
 }
@@ -378,7 +382,7 @@ function SkillTab({
   const borderColor = active ? skillColor : "transparent";
 
   return (
-    <TouchableOpacity
+    <HapticTouchable
       style={[styles.skillTab, { backgroundColor: bg, borderColor }]}
       onPress={onPress}
     >
@@ -389,7 +393,7 @@ function SkillTab({
       <Text style={{ color: active ? skillColor : c.mutedForeground, fontSize: 10, fontWeight: "500" }}>
         {answered}/{total}
       </Text>
-    </TouchableOpacity>
+    </HapticTouchable>
   );
 }
 
@@ -404,7 +408,7 @@ function QuestionRenderer({
   answer: SubmissionAnswer | undefined;
   onAnswer: (ans: SubmissionAnswer) => void;
 }) {
-  const kind = detectContentKind(question.content);
+  const kind = detectContentKind(question.content as QuestionContent);
 
   if (kind === "objective") {
     const objAnswer = (answer && "answers" in answer ? answer : { answers: {} }) as ObjectiveAnswer;
@@ -493,7 +497,7 @@ function ObjectiveView({
               const letter = OPTION_LETTERS[oi] ?? String(oi);
               const selected = answers[idx] === letter;
               return (
-                <TouchableOpacity
+                <HapticTouchable
                   key={oi}
                   style={[
                     styles.optionRow,
@@ -524,7 +528,7 @@ function ObjectiveView({
                     </Text>
                   </View>
                   <Text style={[styles.optionText, { color: c.foreground }]}>{opt}</Text>
-                </TouchableOpacity>
+                </HapticTouchable>
               );
             })}
           </View>
@@ -657,7 +661,7 @@ function Completed({ session, exam }: { session: ExamSession; exam: any }) {
   const statusLabel: Record<string, string> = { submitted: "Đã nộp", completed: "Hoàn thành", abandoned: "Đã hủy" };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.completedContent}>
+    <BouncyScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.completedContent}>
       <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
         <Text style={[styles.heading, { color: c.foreground }]}>Kết quả thi {exam ? `— Đề ${exam.level}` : ""}</Text>
         <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm }}>{statusLabel[session.status] ?? session.status}</Text>
@@ -676,10 +680,10 @@ function Completed({ session, exam }: { session: ExamSession; exam: any }) {
         <ScoreRow key={skill} skill={skill} score={score} colors={c} />
       ))}
 
-      <TouchableOpacity style={[styles.outlineBtn, { borderColor: c.border }]} onPress={() => router.replace("/(app)/(tabs)")}>
+      <HapticTouchable style={[styles.outlineBtn, { borderColor: c.border }]} onPress={() => router.replace("/(app)/(tabs)")}>
         <Text style={{ color: c.foreground, fontWeight: "600" }}>Về trang chủ</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      </HapticTouchable>
+    </BouncyScrollView>
   );
 }
 

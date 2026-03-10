@@ -1,4 +1,4 @@
-import type { AuthUser, LoginResponse, RegisterResponse } from "@/types/api";
+import type { AuthUser, LoginResponse } from "@/types/api";
 import { getAccessToken, getRefreshToken, saveTokens, clearTokens } from "./auth";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000";
@@ -13,10 +13,15 @@ class ApiError extends Error {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: { "Content-Type": "application/json", ...options.headers },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers: { "Content-Type": "application/json", ...options.headers },
+    });
+  } catch {
+    throw new ApiError(0, "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.");
+  }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new ApiError(res.status, body.error?.message ?? body.message ?? `Request failed: ${res.status}`);
@@ -91,6 +96,19 @@ export const api = {
       body: body ? JSON.stringify(body) : undefined,
     }),
   delete: <T>(path: string) => authRequest<T>(path, { method: "DELETE" }),
+  upload: async <T>(path: string, formData: FormData): Promise<T> => {
+    const token = await getAccessToken();
+    const res = await fetch(`${API_URL}${path}`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new ApiError(res.status, err.message ?? `Upload failed: ${res.status}`);
+    }
+    return res.json();
+  },
 };
 
 export function loginApi(email: string, password: string) {
@@ -101,7 +119,7 @@ export function loginApi(email: string, password: string) {
 }
 
 export function registerApi(email: string, password: string, fullName?: string) {
-  return request<RegisterResponse>("/api/auth/register", {
+  return request<{ user: AuthUser; message: string }>("/api/auth/register", {
     method: "POST",
     body: JSON.stringify({ email, password, fullName }),
   });

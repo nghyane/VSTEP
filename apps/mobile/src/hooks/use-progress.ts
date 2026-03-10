@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type {
+  ActivityResponse,
   Goal,
+  LearningPathResponse,
   ProgressOverview,
-  ProgressSkillDetail,
-  SpiderChartResponse,
+  SkillDetail,
+  SpiderChart,
 } from "@/types/api";
 
 export function useProgress() {
@@ -17,14 +19,14 @@ export function useProgress() {
 export function useSpiderChart() {
   return useQuery({
     queryKey: ["progress", "spider-chart"],
-    queryFn: () => api.get<SpiderChartResponse>("/api/progress/spider-chart"),
+    queryFn: () => api.get<SpiderChart>("/api/progress/spider-chart"),
   });
 }
 
 export function useSkillDetail(skill: string) {
   return useQuery({
     queryKey: ["progress", skill],
-    queryFn: () => api.get<ProgressSkillDetail>(`/api/progress/${skill}`),
+    queryFn: () => api.get<SkillDetail>(`/api/progress/${skill}`),
     enabled: !!skill,
   });
 }
@@ -69,5 +71,19 @@ export function useDeleteGoal() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["progress"] });
     },
+  });
+}
+
+export function useActivity(days = 7) {
+  return useQuery({
+    queryKey: ["activity", days],
+    queryFn: () => api.get<ActivityResponse>(`/api/progress/activity?days=${days}`),
+  });
+}
+
+export function useLearningPath() {
+  return useQuery({
+    queryKey: ["learning-path"],
+    queryFn: () => api.get<LearningPathResponse>("/api/progress/learning-path"),
   });
 }

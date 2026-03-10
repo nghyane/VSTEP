@@ -1,21 +1,21 @@
 import { useState } from "react";
 import {
-  FlatList,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
+import { BouncyFlatList } from "@/components/BouncyScrollView";
 import { ScreenWrapper } from "@/components/ScreenWrapper";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useClasses, useJoinClass } from "@/hooks/use-classes";
 import { useThemeColors, spacing, radius, fontSize } from "@/theme";
-import type { Class } from "@/types/api";
+import type { ClassItem } from "@/types/api";
 
 export default function ClassesScreen() {
   const c = useThemeColors();
@@ -44,8 +44,8 @@ export default function ClassesScreen() {
     }
   };
 
-  const renderClass = ({ item }: { item: Class }) => (
-    <TouchableOpacity
+  const renderClass = ({ item }: { item: ClassItem }) => (
+    <HapticTouchable
       style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
       onPress={() => router.push(`/(app)/classes/${item.id}`)}
     >
@@ -61,12 +61,12 @@ export default function ClassesScreen() {
         ) : null}
       </View>
       <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
-    </TouchableOpacity>
+    </HapticTouchable>
   );
 
   return (
-    <ScreenWrapper>
-      <FlatList
+    <ScreenWrapper noPadding>
+      <BouncyFlatList
         data={classes}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
@@ -98,14 +98,14 @@ export default function ClassesScreen() {
                   onChangeText={setInviteCode}
                   autoCapitalize="none"
                 />
-                <TouchableOpacity
+                <HapticTouchable
                   style={[styles.joinBtn, { backgroundColor: c.primary, opacity: joinClass.isPending ? 0.6 : 1 }]}
                   onPress={handleJoin}
                   disabled={joinClass.isPending}
                 >
                   <Ionicons name="enter" size={18} color={c.primaryForeground} />
                   <Text style={[styles.joinBtnText, { color: c.primaryForeground }]}>Tham gia</Text>
-                </TouchableOpacity>
+                </HapticTouchable>
               </View>
               {feedback && (
                 <Text

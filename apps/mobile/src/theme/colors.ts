@@ -58,3 +58,11 @@ export const fontSize = {
   "2xl": 24,
   "3xl": 32,
 } as const;
+
+export const fontFamily = {
+  regular: "Nunito-Regular",
+  medium: "Nunito-Medium",
+  semiBold: "Nunito-SemiBold",
+  bold: "Nunito-Bold",
+  extraBold: "Nunito-ExtraBold",
+} as const;

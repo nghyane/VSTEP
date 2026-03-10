@@ -1,37 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import type { Exam, ExamSession, SubmissionAnswer } from "@/types/api";
-
-export function useExamDetail(examId: string) {
-  return useQuery({
-    queryKey: ["exams", examId],
-    queryFn: () => api.get<Exam>(`/api/exams/${examId}`),
-    enabled: !!examId,
-  });
-}
-
-export function useStartExam() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (examId: string) =>
-      api.post<ExamSession>(`/api/exams/${examId}/start`),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["exams"] });
-    },
-  });
-}
+import type { ExamSession, ExamSessionDetail } from "@/types/api";
 
 export function useExamSession(sessionId: string) {
   return useQuery({
     queryKey: ["exam-sessions", sessionId],
-    queryFn: () => api.get<ExamSession>(`/api/exams/sessions/${sessionId}`),
+    queryFn: () => api.get<ExamSessionDetail>(`/api/exams/sessions/${sessionId}`),
     enabled: !!sessionId,
   });
 }
 
 export function useSaveAnswers(sessionId: string) {
   return useMutation({
-    mutationFn: (answers: { questionId: string; answer: SubmissionAnswer }[]) =>
+    mutationFn: (answers: { questionId: string; answer: unknown }[]) =>
       api.put<{ success: boolean; saved: number }>(
         `/api/exams/sessions/${sessionId}`,
         { answers },
@@ -41,7 +22,7 @@ export function useSaveAnswers(sessionId: string) {
 
 export function useAnswerQuestion(sessionId: string) {
   return useMutation({
-    mutationFn: (body: { questionId: string; answer: SubmissionAnswer }) =>
+    mutationFn: (body: { questionId: string; answer: unknown }) =>
       api.post<{ success: boolean }>(
         `/api/exams/sessions/${sessionId}/answer`,
         body,

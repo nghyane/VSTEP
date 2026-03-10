@@ -1,20 +1,21 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   Easing,
-  ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
+import { BouncyScrollView } from "@/components/BouncyScrollView";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Logo } from "@/components/Logo";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { useCreateGoal, useProgress, useUpdateGoal } from "@/hooks/use-progress";
-import { useThemeColors, spacing, radius, fontSize } from "@/theme";
+import { useAuth } from "@/hooks/use-auth";
+import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { VstepBand } from "@/types/api";
 
 const TOTAL_STEPS = 4;
@@ -33,7 +34,7 @@ interface OptionCardProps {
 function OptionCard({ icon, title, subtitle, selected, badge, onPress }: OptionCardProps) {
   const c = useThemeColors();
   return (
-    <TouchableOpacity
+    <HapticTouchable
       activeOpacity={0.7}
       onPress={onPress}
       style={[
@@ -64,7 +65,7 @@ function OptionCard({ icon, title, subtitle, selected, badge, onPress }: OptionC
       {selected && (
         <Ionicons name="checkmark-circle" size={22} color={c.primary} />
       )}
-    </TouchableOpacity>
+    </HapticTouchable>
   );
 }
 
@@ -82,7 +83,7 @@ interface BandCardProps {
 function BandCard({ band, score, description, selected, badge, onPress }: BandCardProps) {
   const c = useThemeColors();
   return (
-    <TouchableOpacity
+    <HapticTouchable
       activeOpacity={0.7}
       onPress={onPress}
       style={[
@@ -106,7 +107,71 @@ function BandCard({ band, score, description, selected, badge, onPress }: BandCa
       </View>
       <Text style={[styles.bandScore, { color: c.mutedForeground }]}>{score}</Text>
       <Text style={[styles.bandDesc, { color: c.mutedForeground }]}>{description}</Text>
-    </TouchableOpacity>
+    </HapticTouchable>
+  );
+}
+
+// ─── Cooldown Button ─────────────────────────────────────────────────────────
+
+const COOLDOWN_MS = 2000;
+
+function CooldownButton({
+  label,
+  icon,
+  onPress,
+  step,
+  full,
+}: {
+  label: string;
+  icon?: keyof typeof Ionicons.glyphMap;
+  onPress: () => void;
+  step: number;
+  full?: boolean;
+}) {
+  const c = useThemeColors();
+  const fillAnim = useRef(new Animated.Value(0)).current;
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    setReady(false);
+    fillAnim.setValue(0);
+    const anim = Animated.timing(fillAnim, {
+      toValue: 1,
+      duration: COOLDOWN_MS,
+      easing: Easing.linear,
+      useNativeDriver: false,
+    });
+    anim.start(({ finished }) => {
+      if (finished) setReady(true);
+    });
+    return () => anim.stop();
+  }, [step, fillAnim]);
+
+  return (
+    <HapticTouchable
+      activeOpacity={0.8}
+      onPress={ready ? onPress : undefined}
+      style={[full ? styles.primaryBtnFull : styles.primaryBtn, { backgroundColor: c.muted, overflow: "hidden" }]}
+    >
+      <Animated.View
+        style={[
+          styles.cooldownFill,
+          {
+            backgroundColor: c.primary,
+            width: fillAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: ["0%", "100%"],
+            }),
+          },
+        ]}
+      />
+      <Text style={[styles.btnTextPrimary, { color: ready ? c.primaryForeground : c.primaryForeground + "90" }]}>
+        {label}
+      </Text>
+      {icon && (
+        <Ionicons name={icon} size={18} color={ready ? c.primaryForeground : c.primaryForeground + "90"} />
+      )}
+    </HapticTouchable>
   );
 }
 
@@ -116,6 +181,7 @@ export default function OnboardingScreen() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { signOut } = useAuth();
   const createGoal = useCreateGoal();
   const updateGoal = useUpdateGoal();
   const progressQuery = useProgress();
@@ -218,11 +284,31 @@ export default function OnboardingScreen() {
       await progressQuery.refetch();
       router.replace("/(app)/(tabs)");
     };
+    const onError = (err: Error) => {
+      Alert.alert("Lỗi", err.message || "Không thể lưu mục tiêu");
+    };
 
     if (existingGoal) {
-      updateGoal.mutate({ id: existingGoal.id, ...payload }, { onSuccess });
+      updateGoal.mutate({ id: existingGoal.id, ...payload }, { onSuccess, onError });
     } else {
-      createGoal.mutate(payload, { onSuccess });
+      createGoal.mutate(payload, {
+        onSuccess,
+        onError: (err: Error) => {
+          // 409 = goal already exists, refetch and try update
+          if (err.message?.includes("already")) {
+            progressQuery.refetch().then(() => {
+              const goal = progressQuery.data?.goal;
+              if (goal) {
+                updateGoal.mutate({ id: goal.id, ...payload }, { onSuccess, onError });
+              } else {
+                onError(err);
+              }
+            });
+          } else {
+            onError(err);
+          }
+        },
+      });
     }
   }
 
@@ -235,14 +321,30 @@ export default function OnboardingScreen() {
       case 0:
         return (
           <View style={styles.welcomeContainer}>
-            <View style={styles.logoWrapper}>
-              <Logo size="lg" />
+            <View style={styles.illustrationArea}>
+              {/* Main circle */}
+              <View style={[styles.mainCircle, { backgroundColor: c.primary + '15' }]}>
+                <Ionicons name="school" size={56} color={c.primary} />
+              </View>
+              {/* Floating skill icons */}
+              <View style={[styles.floatingIcon, styles.floatingTopLeft, { backgroundColor: c.skillListening + '20' }]}>
+                <Ionicons name="headset" size={20} color={c.skillListening} />
+              </View>
+              <View style={[styles.floatingIcon, styles.floatingTopRight, { backgroundColor: c.skillSpeaking + '20' }]}>
+                <Ionicons name="mic" size={20} color={c.skillSpeaking} />
+              </View>
+              <View style={[styles.floatingIcon, styles.floatingBottomLeft, { backgroundColor: c.skillReading + '20' }]}>
+                <Ionicons name="book" size={20} color={c.skillReading} />
+              </View>
+              <View style={[styles.floatingIcon, styles.floatingBottomRight, { backgroundColor: c.skillWriting + '20' }]}>
+                <Ionicons name="create" size={20} color={c.skillWriting} />
+              </View>
             </View>
             <Text style={[styles.welcomeTitle, { color: c.foreground }]}>
-              Chào mừng đến với VSTEP!
+              Học thông minh hơn với AI
             </Text>
             <Text style={[styles.welcomeSubtitle, { color: c.mutedForeground }]}>
-              Hãy trả lời vài câu hỏi ngắn để chúng tôi cá nhân hóa lộ trình học tập cho bạn
+              Luyện tập Nghe, Nói, Đọc, Viết với AI chấm điểm và hướng dẫn bạn cải thiện
             </Text>
           </View>
         );
@@ -375,6 +477,13 @@ export default function OnboardingScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: c.background, paddingTop: insets.top }]}>
+      {/* Logout button */}
+      <HapticTouchable
+        style={styles.logoutBtn}
+        onPress={() => { signOut(); router.replace("/(auth)/login"); }}
+      >
+        <Ionicons name="log-out-outline" size={20} color={c.mutedForeground} />
+      </HapticTouchable>
       {/* Progress bar */}
       <View style={[styles.progressTrack, { backgroundColor: c.muted }]}>
         <Animated.View
@@ -391,7 +500,7 @@ export default function OnboardingScreen() {
         />
       </View>
 
-      <ScrollView
+      <BouncyScrollView
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
@@ -408,7 +517,7 @@ export default function OnboardingScreen() {
         >
           {renderStepContent()}
         </Animated.View>
-      </ScrollView>
+      </BouncyScrollView>
 
       {/* Bottom buttons */}
       <View
@@ -422,26 +531,20 @@ export default function OnboardingScreen() {
         ]}
       >
         {step === 0 ? (
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={[styles.primaryBtnFull, { backgroundColor: c.primary }]}
-            onPress={goForward}
-          >
-            <Text style={[styles.btnTextPrimary, { color: c.primaryForeground }]}>Bắt đầu</Text>
-          </TouchableOpacity>
+          <CooldownButton label="Bắt đầu" onPress={goForward} step={step} full />
         ) : (
           <View style={styles.btnRow}>
-            <TouchableOpacity
+            <HapticTouchable
               activeOpacity={0.7}
               style={[styles.outlineBtn, { borderColor: c.border }]}
               onPress={goBack}
             >
               <Ionicons name="chevron-back" size={18} color={c.foreground} />
               <Text style={[styles.btnTextOutline, { color: c.foreground }]}>Quay lại</Text>
-            </TouchableOpacity>
+            </HapticTouchable>
 
             {step === 3 ? (
-              <TouchableOpacity
+              <HapticTouchable
                 activeOpacity={0.8}
                 style={[
                   styles.primaryBtn,
@@ -463,25 +566,9 @@ export default function OnboardingScreen() {
                     <Ionicons name="checkmark" size={18} color={c.primaryForeground} />
                   </>
                 )}
-              </TouchableOpacity>
+              </HapticTouchable>
             ) : (
-              <TouchableOpacity
-                activeOpacity={0.8}
-                style={[
-                  styles.primaryBtn,
-                  {
-                    backgroundColor: c.primary,
-                    opacity: canContinue ? 1 : 0.5,
-                  },
-                ]}
-                onPress={goForward}
-                disabled={!canContinue}
-              >
-                <Text style={[styles.btnTextPrimary, { color: c.primaryForeground }]}>
-                  Tiếp tục
-                </Text>
-                <Ionicons name="chevron-forward" size={18} color={c.primaryForeground} />
-              </TouchableOpacity>
+              <CooldownButton label="Tiếp tục" icon="chevron-forward" onPress={goForward} step={step} />
             )}
           </View>
         )}
@@ -519,6 +606,13 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
   },
+  logoutBtn: {
+    position: "absolute",
+    top: 8,
+    right: 16,
+    zIndex: 20,
+    padding: spacing.sm,
+  },
 
   // Progress bar
   progressTrack: {
@@ -542,11 +636,46 @@ const styles = StyleSheet.create({
   // Welcome (step 0)
   welcomeContainer: {
     alignItems: "center",
-    paddingTop: spacing["3xl"],
-    gap: spacing.base,
+    paddingTop: spacing["2xl"],
+    gap: spacing.lg,
   },
-  logoWrapper: {
-    marginBottom: spacing.lg,
+  illustrationArea: {
+    width: 200,
+    height: 200,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.base,
+  },
+  mainCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  floatingIcon: {
+    position: "absolute",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  floatingTopLeft: {
+    top: 10,
+    left: 10,
+  },
+  floatingTopRight: {
+    top: 10,
+    right: 10,
+  },
+  floatingBottomLeft: {
+    bottom: 10,
+    left: 10,
+  },
+  floatingBottomRight: {
+    bottom: 10,
+    right: 10,
   },
   welcomeTitle: {
     fontSize: fontSize["2xl"],
@@ -690,5 +819,12 @@ const styles = StyleSheet.create({
   btnTextOutline: {
     fontSize: fontSize.base,
     fontWeight: "600",
+  },
+  cooldownFill: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: radius.lg,
   },
 });

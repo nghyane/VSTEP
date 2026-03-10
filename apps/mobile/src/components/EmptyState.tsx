@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useThemeColors, fontSize, spacing } from "@/theme";
+import { useThemeColors, fontSize, spacing, fontFamily } from "@/theme";
 
 interface Props {
   icon?: keyof typeof Ionicons.glyphMap;
@@ -21,6 +21,6 @@ export function EmptyState({ icon = "document-text-outline", title, subtitle }: 
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", alignItems: "center", padding: spacing["2xl"], minHeight: 200 },
-  title: { fontSize: fontSize.lg, fontWeight: "600", marginTop: spacing.base, textAlign: "center" },
-  subtitle: { fontSize: fontSize.sm, marginTop: spacing.sm, textAlign: "center" },
+  title: { fontSize: fontSize.lg, fontFamily: fontFamily.semiBold, marginTop: spacing.base, textAlign: "center" },
+  subtitle: { fontSize: fontSize.sm, marginTop: spacing.sm, textAlign: "center", fontFamily: fontFamily.regular },
 });

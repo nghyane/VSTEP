@@ -351,11 +351,11 @@ erDiagram
 
     users {
         uuid id PK
-        varchar email UK "unique not null"
+        varchar email UK "unique, not null"
         varchar password_hash "argon2id"
         varchar full_name "nullable"
-        varchar avatar_key "nullable max 512"
-        enum role "learner | instructor | admin"
+        varchar avatar_key "nullable, max 512"
+        enum role "user_role enum"
         timestamp created_at
         timestamp updated_at
     }
@@ -363,10 +363,10 @@ erDiagram
     refresh_tokens {
         uuid id PK
         uuid user_id FK
-        varchar token_hash "SHA-256 64 chars"
-        varchar jti UK "JWT ID unique"
+        varchar token_hash "SHA-256, 64 chars"
+        varchar jti UK "JWT ID, unique"
         varchar replaced_by_jti "rotation tracking"
-        text device_info "User-Agent"
+        text device_info "User-Agent string"
         timestamp revoked_at "nullable"
         timestamp expires_at "not null"
         timestamp created_at
@@ -374,13 +374,13 @@ erDiagram
 
     questions {
         uuid id PK
-        enum skill "listening | reading | writing | speaking"
-        enum level "A2 | B1 | B2 | C1"
-        smallint part "L:1-3 R:1-4 W:1-2 S:1-3"
-        jsonb content "QuestionContent 8 types"
-        jsonb answer_key "ObjectiveAnswerKey nullable"
+        enum skill "skill enum"
+        enum level "question_level enum"
+        smallint part "1-4 per skill"
+        jsonb content "QuestionContent union"
+        jsonb answer_key "nullable"
         text explanation "nullable"
-        boolean is_active "soft delete"
+        boolean is_active "default true"
         uuid created_by FK
         timestamp created_at
         timestamp updated_at
@@ -390,14 +390,14 @@ erDiagram
         uuid id PK
         uuid user_id FK
         uuid question_id FK
-        enum skill "listening | reading | writing | speaking"
-        enum status "pending | processing | completed | review_pending | failed"
-        numeric score "0.0-10.0 step 0.5"
-        enum band "B1 | B2 | C1 nullable"
-        enum review_priority "low | medium | high nullable"
-        enum grading_mode "auto | human | hybrid nullable"
+        enum skill "skill enum"
+        enum status "submission_status enum"
+        numeric score "0.0-10.0, step 0.5"
+        enum band "vstep_band, nullable"
+        enum review_priority "review_priority, nullable"
+        enum grading_mode "grading_mode, nullable"
         uuid reviewer_id FK "nullable"
-        boolean audit_flag "AI vs human diff > 0.5"
+        boolean audit_flag "default false"
         uuid claimed_by FK "nullable"
         timestamp claimed_at "nullable"
         timestamp completed_at "nullable"
@@ -406,9 +406,9 @@ erDiagram
     }
 
     submission_details {
-        uuid submission_id PK "FK to submissions"
-        jsonb answer "ObjectiveAnswer | WritingAnswer | SpeakingAnswer"
-        jsonb result "AutoResult | AIResult | HumanResult nullable"
+        uuid submission_id PK "FK submissions"
+        jsonb answer "SubmissionAnswer union"
+        jsonb result "Result union, nullable"
         varchar feedback "max 10000 chars"
         timestamp created_at
         timestamp updated_at
@@ -416,13 +416,13 @@ erDiagram
 
     exams {
         uuid id PK
-        varchar title "max 255 not null"
+        varchar title "max 255, not null"
         text description "nullable"
-        enum type "practice | placement | mock"
-        enum skill "nullable"
-        enum level "A2 | B1 | B2 | C1"
+        enum type "exam_type enum"
+        enum skill "exam_skill, nullable"
+        enum level "question_level enum"
         integer duration_minutes "nullable"
-        jsonb blueprint "ExamBlueprint per-skill questionIds"
+        jsonb blueprint "ExamBlueprint"
         boolean is_active "default true"
         uuid created_by FK
         timestamp created_at
@@ -433,13 +433,13 @@ erDiagram
         uuid id PK
         uuid user_id FK
         uuid exam_id FK
-        enum status "in_progress | submitted | completed | abandoned"
+        enum status "exam_status enum"
         numeric listening_score "nullable"
         numeric reading_score "nullable"
         numeric writing_score "nullable"
         numeric speaking_score "nullable"
         numeric overall_score "nullable"
-        enum overall_band "B1 | B2 | C1 nullable"
+        enum overall_band "vstep_band, nullable"
         timestamp started_at "not null"
         timestamp completed_at "nullable"
         timestamp created_at
@@ -460,33 +460,33 @@ erDiagram
         uuid id PK
         uuid session_id FK
         uuid submission_id FK
-        enum skill "writing | speaking"
+        enum skill "skill enum"
         smallint part "nullable"
         timestamp created_at
     }
 
     knowledge_points {
         uuid id PK
-        enum category "grammar | vocabulary | strategy | topic"
-        varchar name UK "unique max 200"
+        enum category "knowledge_point_category enum"
+        varchar name UK "unique, max 200"
         timestamp created_at
         timestamp updated_at
     }
 
     question_knowledge_points {
-        uuid question_id PK "FK to questions"
-        uuid knowledge_point_id PK "FK to knowledge_points"
+        uuid question_id PK "FK questions"
+        uuid knowledge_point_id PK "FK knowledge_points"
     }
 
     user_progress {
         uuid id PK
         uuid user_id FK
-        enum skill "listening | reading | writing | speaking"
-        enum current_level "A2 | B1 | B2 | C1"
+        enum skill "skill enum"
+        enum current_level "question_level enum"
         enum target_level "nullable"
-        integer scaffold_level "1-5 default 1"
+        integer scaffold_level "default 1"
         integer streak_count "default 0"
-        enum streak_direction "up | down | neutral"
+        enum streak_direction "streak_direction enum"
         integer attempt_count "default 0"
         timestamp created_at
         timestamp updated_at
@@ -495,19 +495,19 @@ erDiagram
     user_skill_scores {
         uuid id PK
         uuid user_id FK
-        enum skill "listening | reading | writing | speaking"
+        enum skill "skill enum"
         uuid submission_id FK "nullable"
         uuid session_id FK "nullable"
-        numeric score "0.0-10.0 not null"
-        varchar scaffolding_type "max 20 nullable"
+        numeric score "0.0-10.0, not null"
+        varchar scaffolding_type "max 20, nullable"
         timestamp created_at
     }
 
     user_goals {
         uuid id PK
         uuid user_id FK
-        enum target_band "B1 | B2 | C1"
-        enum current_estimated_band "B1 | B2 | C1 nullable"
+        enum target_band "vstep_band enum"
+        enum current_estimated_band "vstep_band, nullable"
         timestamp deadline "nullable"
         integer daily_study_time_minutes "default 30"
         timestamp created_at
@@ -518,7 +518,7 @@ erDiagram
         uuid id PK
         uuid user_id FK
         uuid knowledge_point_id FK
-        numeric mastery_score "0-100 default 0"
+        numeric mastery_score "0-100, default 0"
         integer total_attempted "default 0"
         integer total_correct "default 0"
         timestamp created_at
@@ -530,7 +530,7 @@ erDiagram
         text name "not null"
         text description "nullable"
         uuid instructor_id FK "not null"
-        text invite_code UK "unique not null"
+        text invite_code UK "unique, not null"
         timestamp created_at
         timestamp updated_at
     }
@@ -555,7 +555,7 @@ erDiagram
 
     vocabulary_topics {
         uuid id PK
-        varchar name UK "unique max 200"
+        varchar name UK "unique, max 200"
         text description "not null"
         varchar icon_key "nullable"
         integer sort_order "default 0"
@@ -566,21 +566,21 @@ erDiagram
     vocabulary_words {
         uuid id PK
         uuid topic_id FK "not null"
-        varchar word "max 100 not null"
-        varchar phonetic "max 100 nullable"
-        varchar audio_url "max 500 nullable"
-        varchar part_of_speech "max 20 not null"
+        varchar word "max 100, not null"
+        varchar phonetic "max 100, nullable"
+        varchar audio_url "max 500, nullable"
+        varchar part_of_speech "max 20, not null"
         text definition "not null"
         text explanation "not null"
-        jsonb examples "string array default []"
+        jsonb examples "string array"
         integer sort_order "default 0"
         timestamp created_at
         timestamp updated_at
     }
 
     user_vocabulary_progress {
-        uuid user_id PK "FK to users"
-        uuid word_id PK "FK to vocabulary_words"
+        uuid user_id PK "FK users"
+        uuid word_id PK "FK vocabulary_words"
         boolean known "default false"
         timestamp last_reviewed_at "nullable"
         timestamp created_at
@@ -591,7 +591,7 @@ erDiagram
         uuid id PK
         uuid user_id FK "not null"
         enum type "notification_type enum"
-        varchar title "max 255 not null"
+        varchar title "max 255, not null"
         text body "nullable"
         jsonb data "nullable"
         timestamp read_at "nullable"
@@ -600,17 +600,17 @@ erDiagram
 
     user_placements {
         uuid id PK
-        uuid user_id FK UK "unique not null"
+        uuid user_id UK "FK users, unique"
         uuid session_id FK "nullable"
-        enum status "completed | skipped"
-        enum source "self_assess | placement | skipped"
-        enum confidence "high | medium | low"
-        enum listening_level "A2 | B1 | B2 | C1"
-        enum reading_level "A2 | B1 | B2 | C1"
-        enum writing_level "A2 | B1 | B2 | C1"
-        enum speaking_level "A2 | B1 | B2 | C1"
-        varchar writing_source "max 20 not null"
-        varchar speaking_source "max 20 not null"
+        enum status "placement_status enum"
+        enum source "placement_source enum"
+        enum confidence "placement_confidence enum"
+        enum listening_level "question_level enum"
+        enum reading_level "question_level enum"
+        enum writing_level "question_level enum"
+        enum speaking_level "question_level enum"
+        varchar writing_source "max 20, not null"
+        varchar speaking_source "max 20, not null"
         timestamp created_at
         timestamp updated_at
     }
@@ -618,8 +618,8 @@ erDiagram
     device_tokens {
         uuid id PK
         uuid user_id FK "not null"
-        text token UK "unique not null"
-        varchar platform "max 10 not null"
+        text token UK "unique, not null"
+        varchar platform "max 10, not null"
         timestamp created_at
     }
 ```
@@ -1082,7 +1082,7 @@ sequenceDiagram
     B->>DB: SELECT question WHERE id = ? AND skill = "writing"
     DB-->>B: Question record
 
-    rect rgb(230, 245, 230)
+    rect rgba(46, 125, 50, 0.1)
         Note over B,DB: Database Transaction
         B->>DB: INSERT submissions (status=pending)
         B->>DB: INSERT submission_details (answer JSONB)

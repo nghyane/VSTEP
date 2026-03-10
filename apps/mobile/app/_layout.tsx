@@ -1,3 +1,4 @@
+import { useFonts } from "expo-font";
 import { useEffect, useState, useCallback } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
@@ -14,6 +15,7 @@ import {
   getStoredUser,
 } from "@/lib/auth";
 import { logoutApi } from "@/lib/api";
+import { HapticsProvider } from "@/contexts/HapticsContext";
 import type { AuthUser } from "@/types/api";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -21,6 +23,14 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 export default function RootLayout() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const [fontsLoaded] = useFonts({
+    "Nunito-Regular": require("../assets/fonts/Nunito-Regular.ttf"),
+    "Nunito-Medium": require("../assets/fonts/Nunito-Medium.ttf"),
+    "Nunito-SemiBold": require("../assets/fonts/Nunito-SemiBold.ttf"),
+    "Nunito-Bold": require("../assets/fonts/Nunito-Bold.ttf"),
+    "Nunito-ExtraBold": require("../assets/fonts/Nunito-ExtraBold.ttf"),
+  });
 
   useEffect(() => {
     (async () => {
@@ -31,10 +41,15 @@ export default function RootLayout() {
         // ignore
       } finally {
         setIsLoading(false);
-        await SplashScreen.hideAsync().catch(() => {});
       }
     })();
   }, []);
+
+  useEffect(() => {
+    if (!isLoading && fontsLoaded) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [isLoading, fontsLoaded]);
 
   const signIn = useCallback(
     async (accessToken: string, refreshToken: string, u: AuthUser) => {
@@ -62,7 +77,7 @@ export default function RootLayout() {
   const router = useRouter();
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || !fontsLoaded) return;
 
     const inAuthGroup = segments[0] === "(auth)";
 
@@ -71,18 +86,20 @@ export default function RootLayout() {
     } else if (user && inAuthGroup) {
       router.replace("/(app)/(tabs)");
     }
-  }, [user, isLoading]);
+  }, [user, isLoading, fontsLoaded]);
 
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <AuthContext.Provider value={{ user, isLoading, signIn, signOut }}>
+          <HapticsProvider>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="(auth)" />
             <Stack.Screen name="(app)" />
           </Stack>
           <StatusBar style="dark" />
+          </HapticsProvider>
         </AuthContext.Provider>
       </QueryClientProvider>
     </SafeAreaProvider>

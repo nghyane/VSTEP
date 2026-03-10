@@ -1,16 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import {
   Animated,
-  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { useThemeColors, spacing, radius } from "@/theme";
+import { useThemeColors, spacing, fontFamily } from "@/theme";
+import { useHaptics } from "@/contexts/HapticsContext";
 
-const INSET = 4;
+const HIDDEN_TABS = new Set(["notifications"]);
 
 export function CustomTabBar({
   state,
@@ -19,29 +19,30 @@ export function CustomTabBar({
   insets,
 }: BottomTabBarProps) {
   const c = useThemeColors();
-  const [barWidth, setBarWidth] = useState(0);
-  const animLeft = useRef(new Animated.Value(0)).current;
-  const didMount = useRef(false);
+  const { trigger } = useHaptics();
+  const visibleRoutes = state.routes.filter((r) => !HIDDEN_TABS.has(r.name));
+  const count = visibleRoutes.length;
 
-  const count = state.routes.length;
-  const tabW = barWidth / count;
-  const centerIdx = Math.floor(count / 2);
+  const activeVisibleIdx = visibleRoutes.findIndex(
+    (r) => r.key === state.routes[state.index].key,
+  );
+
+  const scales = useRef(
+    Array.from({ length: count }, (_, i) =>
+      new Animated.Value(i === activeVisibleIdx ? 1.25 : 1),
+    ),
+  ).current;
 
   useEffect(() => {
-    if (!barWidth) return;
-    const target = tabW * state.index + INSET;
-    if (!didMount.current) {
-      animLeft.setValue(target);
-      didMount.current = true;
-    } else {
-      Animated.spring(animLeft, {
-        toValue: target,
-        damping: 20,
-        stiffness: 200,
-        useNativeDriver: false,
+    scales.forEach((scale, i) => {
+      Animated.spring(scale, {
+        toValue: i === activeVisibleIdx ? 1.25 : 1,
+        damping: 15,
+        stiffness: 180,
+        useNativeDriver: true,
       }).start();
-    }
-  }, [state.index, barWidth, tabW, animLeft]);
+    });
+  }, [activeVisibleIdx, scales]);
 
   return (
     <View
@@ -54,31 +55,22 @@ export function CustomTabBar({
         },
       ]}
     >
-      <View
-        style={styles.row}
-        onLayout={(e) => setBarWidth(e.nativeEvent.layout.width)}
-      >
-        {/* Animated border indicator */}
-        {barWidth > 0 && (
-          <Animated.View
-            style={[
-              styles.ring,
-              {
-                left: animLeft,
-                width: tabW - INSET * 2,
-                borderColor: c.primary,
-                backgroundColor: c.primary + "08",
-              },
-            ]}
-          />
-        )}
-
-        {state.routes.map((route, index) => {
+      <View style={styles.row}>
+        {visibleRoutes.map((route, visIdx) => {
           const { options } = descriptors[route.key];
-          const focused = state.index === index;
-          const isCenter = index === centerIdx;
+          const focused = route.key === state.routes[state.index].key;
+          const color = focused ? c.primary : c.mutedForeground;
+          const icon = options.tabBarIcon?.({ focused, color, size: 22 });
+
+          const label =
+            typeof options.tabBarLabel === "string"
+              ? options.tabBarLabel
+              : typeof options.title === "string"
+                ? options.title
+                : route.name;
 
           const onPress = () => {
+            trigger();
             const event = navigation.emit({
               type: "tabPress",
               target: route.key,
@@ -89,46 +81,6 @@ export function CustomTabBar({
             }
           };
 
-          const label =
-            typeof options.tabBarLabel === "string"
-              ? options.tabBarLabel
-              : typeof options.title === "string"
-                ? options.title
-                : route.name;
-
-          if (isCenter) {
-            const icon = options.tabBarIcon?.({
-              focused,
-              color: c.primaryForeground,
-              size: 20,
-            });
-            return (
-              <TouchableOpacity
-                key={route.key}
-                onPress={onPress}
-                activeOpacity={0.7}
-                style={styles.tab}
-              >
-                <View style={[styles.centerDot, { backgroundColor: c.primary }]}>
-                  {icon}
-                </View>
-                <Text
-                  style={[
-                    styles.label,
-                    {
-                      color: focused ? c.primary : c.mutedForeground,
-                      fontWeight: "700",
-                    },
-                  ]}
-                >
-                  {label}
-                </Text>
-              </TouchableOpacity>
-            );
-          }
-
-          const color = focused ? c.primary : c.mutedForeground;
-          const icon = options.tabBarIcon?.({ focused, color, size: 20 });
           return (
             <TouchableOpacity
               key={route.key}
@@ -136,8 +88,20 @@ export function CustomTabBar({
               activeOpacity={0.7}
               style={styles.tab}
             >
-              {icon}
-              <Text style={[styles.label, { color }]}>{label}</Text>
+              <Animated.View style={{ transform: [{ scale: scales[visIdx] }] }}>
+                {icon}
+              </Animated.View>
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+                style={[
+                  styles.label,
+                  { color, fontFamily: focused ? fontFamily.bold : fontFamily.medium },
+                ]}
+              >
+                {label}
+              </Text>
             </TouchableOpacity>
           );
         })}
@@ -155,13 +119,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xs,
     paddingBottom: spacing.xs,
   },
-  ring: {
-    position: "absolute",
-    top: 2,
-    bottom: 2,
-    borderWidth: 2,
-    borderRadius: radius.md,
-  },
   tab: {
     flex: 1,
     alignItems: "center",
@@ -169,24 +126,7 @@ const styles = StyleSheet.create({
     minHeight: 50,
     gap: 3,
   },
-  centerDot: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: "center",
-    justifyContent: "center",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#4F5BD5",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-      },
-      android: { elevation: 4 },
-    }),
-  },
   label: {
     fontSize: 10,
-    fontWeight: "600",
   },
 });

@@ -1,16 +1,18 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { BouncyScrollView } from "@/components/BouncyScrollView";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { ScreenWrapper } from "@/components/ScreenWrapper";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
 import { useProgress } from "@/hooks/use-progress";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize } from "@/theme";
-import type { Skill, StreakDirection } from "@/types/api";
+import type { Skill } from "@/types/api";
 
 const SKILL_ORDER: Skill[] = ["listening", "reading", "writing", "speaking"];
 
-const TREND_MAP: Record<StreakDirection, { icon: string; label: string }> = {
+const TREND_MAP: Record<string, { icon: string; label: string }> = {
   up: { icon: "↑", label: "Tiến bộ" },
   neutral: { icon: "→", label: "Ổn định" },
   down: { icon: "↓", label: "Giảm" },
@@ -26,8 +28,8 @@ export default function PracticeScreen() {
   const skills = data?.skills ?? [];
 
   return (
-    <ScreenWrapper>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+    <ScreenWrapper noPadding>
+      <BouncyScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <Text style={[styles.title, { color: c.foreground }]}>Luyện tập</Text>
         <Text style={[styles.subtitle, { color: c.mutedForeground }]}>
           Chọn kỹ năng để bắt đầu
@@ -43,7 +45,7 @@ export default function PracticeScreen() {
             />
           ))}
         </View>
-      </ScrollView>
+      </BouncyScrollView>
     </ScreenWrapper>
   );
 }
@@ -54,15 +56,15 @@ function SkillCard({
   onPress,
 }: {
   skill: Skill;
-  progress?: { currentLevel: string | null; attemptCount: number; streakDirection: StreakDirection };
+  progress?: { currentLevel: string | null; attemptCount: number; streakCount?: number };
   onPress: () => void;
 }) {
   const c = useThemeColors();
   const skillColor = useSkillColor(skill);
-  const trend = TREND_MAP[progress?.streakDirection ?? "neutral"];
+  const trend = TREND_MAP[((progress?.streakCount ?? 0) > 0 ? "up" : "neutral")];
 
   return (
-    <TouchableOpacity
+    <HapticTouchable
       style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
       onPress={onPress}
       activeOpacity={0.7}
@@ -86,7 +88,7 @@ function SkillCard({
       <Text style={[styles.trendText, { color: c.mutedForeground }]}>
         {trend.icon} {trend.label}
       </Text>
-    </TouchableOpacity>
+    </HapticTouchable>
   );
 }
 
