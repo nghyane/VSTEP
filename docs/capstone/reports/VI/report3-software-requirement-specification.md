@@ -1167,54 +1167,54 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    Start(["Learner opens<br/>Practice Mode"])
+    Start(["Learner opens Practice Mode"])
 
-    SkillSelect["Select skill<br/>Listening / Reading /<br/>Writing / Speaking"]
+    SkillSelect["Select skill<br/>(Listening / Reading / Writing / Speaking)"]
 
-    ChooseQuestion["Browse questions<br/>filtered by level"]
+    BrowseExercise["Browse exercises<br/>filtered by topic"]
 
-    StartSession["Start practice session<br/>(focused full-screen)"]
+    StartSession["Start exercise<br/>(focused full-screen)"]
 
     subgraph AnswerPhase ["Answer Phase"]
-        ViewQuestion["View question<br/>with scaffolding applied"]
+        ViewQuestion["View question content<br/>(audio player / passage / prompt)"]
         SubmitAnswer["Submit answer"]
     end
 
-    SkillCheck{"Skill type?"}
+    SkillCheck{"Listening / Reading?"}
 
-    AutoGrade["Auto-grade immediately<br/>Compare with answer key<br/>Score calculated inline"]
+    AutoGrade["Auto-grade immediately<br/>(compare with answer key)"]
 
-    AIGrade["Dispatch to AI grading<br/>XADD to Redis stream<br/>Status: processing"]
+    AIGrade["Dispatch to AI grading<br/>(XADD to Redis stream)"]
 
-    ViewResult["View result<br/>Score, band, feedback"]
+    ViewResult["View result<br/>(score, correct/wrong indicators)"]
 
     WaitAI["Wait for AI result<br/>(poll submission status)"]
 
-    ViewAIResult["View AI feedback<br/>Criteria scores,<br/>grammar errors"]
+    ViewAIResult["View AI feedback<br/>(criteria scores, grammar errors)"]
 
-    UpdateProgress["Progress updated<br/>Sliding window recalc<br/>Scaffold level check"]
+    UpdateProgress["Progress updated<br/>(sliding window recalc)"]
 
-    Continue{"Continue<br/>practicing?"}
+    Continue{"Continue?"}
 
-    End(["Return to<br/>Practice selection"])
+    RetryOrBack(["Redo exercise or<br/>return to skill page"])
 
-    Start --> SkillSelect --> ChooseQuestion --> StartSession
+    Start --> SkillSelect --> BrowseExercise --> StartSession
     StartSession --> ViewQuestion --> SubmitAnswer
     SubmitAnswer --> SkillCheck
-    SkillCheck -->|"Listening / Reading"| AutoGrade --> ViewResult
+    SkillCheck -->|"Yes"| AutoGrade --> ViewResult
     SkillCheck -->|"Writing / Speaking"| AIGrade --> WaitAI --> ViewAIResult
     ViewResult --> UpdateProgress
     ViewAIResult --> UpdateProgress
     UpdateProgress --> Continue
     Continue -->|"Yes"| SkillSelect
-    Continue -->|"No"| End
+    Continue -->|"No"| RetryOrBack
 
     classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
     classDef action fill:#2e7d32,stroke:#1b5e20,color:#fff
     classDef ai fill:#e65100,stroke:#bf360c,color:#fff
 
-    class Start,End start
-    class SkillSelect,ChooseQuestion,StartSession,ViewQuestion,SubmitAnswer,ViewResult,Continue action
+    class Start,RetryOrBack start
+    class SkillSelect,BrowseExercise,StartSession,ViewQuestion,SubmitAnswer,ViewResult,Continue action
     class AutoGrade,AIGrade,WaitAI,ViewAIResult,UpdateProgress ai
 ```
 
