@@ -394,9 +394,18 @@ flowchart LR
 
 ```mermaid
 flowchart TB
+    Landing["Landing Page"]
     Login["Login Screen"]
     Register["Register Screen"]
     Home["Home / Dashboard"]
+
+    subgraph Onboarding ["Onboarding (First-time)"]
+        Welcome["Welcome<br/>(choose path)"]
+        SelfAssess["Self-Assess<br/>(select level A2–C1)"]
+        PlacementQuiz["Placement Quiz<br/>(10 MCQs · ~3 min)"]
+        QuizResult["Quiz Result<br/>(estimated level)"]
+        GoalSetup["Goal Setup<br/>(target band, deadline,<br/>daily study time)"]
+    end
 
     subgraph Practice ["Practice Mode"]
         SkillSelect["Skill Selection<br/>(L/R/W/S)"]
@@ -419,6 +428,12 @@ flowchart TB
         ProgressHistory["Progress History<br/>(activity heatmap)"]
     end
 
+    subgraph ClassMgmtLearner ["Classes (Learner)"]
+        ClassList["My Classes"]
+        JoinClass["Join Class<br/>(invite code)"]
+        FeedbackView["View Feedback"]
+    end
+
     subgraph Vocabulary ["Vocabulary"]
         VocabTopics["Vocabulary Topics"]
         VocabLearn["Learn Words<br/>(flashcard view)"]
@@ -431,8 +446,17 @@ flowchart TB
 
     Profile["Profile Settings"]
 
-    Login --> Home
-    Register --> Login
+    Landing -->|"Đăng nhập"| Login
+    Landing -->|"Đăng ký"| Register
+    Register -->|"auto-login"| Welcome
+    Login -->|"learner"| Home
+
+    Welcome -->|"Tự xác định"| SelfAssess
+    Welcome -->|"Làm bài kiểm tra"| PlacementQuiz
+    SelfAssess -->|"chọn level"| GoalSetup
+    PlacementQuiz --> QuizResult -->|"tiếp tục"| GoalSetup
+    GoalSetup -->|"Bắt đầu luyện tập"| ProgressOverview
+
     Home --> SkillSelect
     Home --> ExamList
     Home --> ProgressOverview
@@ -461,14 +485,16 @@ flowchart TB
 
     classDef auth fill:#78909c,stroke:#546e7a,color:#fff
     classDef main fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef onboarding fill:#0097a7,stroke:#00838f,color:#fff
     classDef practice fill:#2e7d32,stroke:#1b5e20,color:#fff
     classDef exam fill:#6a1b9a,stroke:#4a148c,color:#fff
     classDef progress fill:#f57c00,stroke:#e65100,color:#fff
     classDef cls fill:#00796b,stroke:#004d40,color:#fff
     classDef vocab fill:#00695c,stroke:#004d40,color:#fff
 
-    class Login,Register auth
+    class Landing,Login,Register auth
     class Home,Profile main
+    class Welcome,SelfAssess,PlacementQuiz,QuizResult,GoalSetup onboarding
     class SkillSelect,QuestionView,SubmitAnswer,ResultView,SubmissionList,SubmissionDetail practice
     class ExamList,ExamDetail,ExamSession,ExamResult exam
     class ProgressOverview,SkillDetail,GoalSetting,ProgressHistory progress
@@ -531,7 +557,12 @@ flowchart TB
 | # | Tính năng | Màn hình | Mô tả |
 |---|---------|--------|-------------|
 | 1 | Xác Thực | Đăng Nhập | Form email + mật khẩu. Liên kết tới Đăng Ký. Trả về cặp JWT token khi thành công. |
-| 2 | Xác Thực | Đăng Ký | Form email, mật khẩu (tối thiểu 8 ký tự), họ tên. Chuyển hướng tới Đăng Nhập khi thành công. |
+| 2 | Xác Thực | Đăng Ký | Form email, mật khẩu (tối thiểu 8 ký tự), họ tên. Tự động đăng nhập và chuyển hướng tới Onboarding khi thành công. |
+| 2a | Onboarding | Chào Mừng | Màn hình chào mừng cho người dùng mới. Hai lựa chọn: "Tự xác định trình độ" (chọn level) hoặc "Làm bài kiểm tra" (quiz đánh giá năng lực). |
+| 2b | Onboarding | Tự Đánh Giá | Chọn trình độ hiện tại từ 4 mức (A2/B1/B2/C1) với mô tả chi tiết từng mức. Chuyển sang Thiết Lập Mục Tiêu. |
+| 2c | Onboarding | Bài Kiểm Tra Đầu Vào | 10 câu trắc nghiệm ngữ pháp (A2→C1), khoảng 3 phút. Thanh tiến độ, phản hồi đúng/sai từng câu. Tự động xác định trình độ khi hoàn thành. |
+| 2d | Onboarding | Kết Quả Đánh Giá | Hiển thị trình độ ước tính (A2–C1) dựa trên kết quả quiz. Nút "Làm lại" hoặc "Tiếp tục thiết lập mục tiêu". |
+| 2e | Onboarding | Thiết Lập Mục Tiêu | Chọn band mục tiêu (B1/B2/C1), thời hạn (1–12 tháng/không giới hạn), thời gian học mỗi ngày (15p–2h/tuỳ). POST `/api/onboarding/self-assess` → chuyển hướng tới Tiến Độ. |
 | 3 | Trang Chủ | Bảng Điều Khiển | Trang đích hiển thị liên kết nhanh tới Luyện Tập, Thi Thử, Tiến Độ. Các widget tóm tắt. |
 | 4 | Luyện Tập | Chọn Kỹ Năng | Lưới 4 kỹ năng (Nghe, Đọc, Viết, Nói) với huy hiệu trình độ hiện tại. |
 | 5 | Luyện Tập | Xem Câu Hỏi | Hiển thị nội dung câu hỏi với hỗ trợ đã áp dụng. Trình phát âm thanh cho Nghe/Nói. Trình soạn thảo văn bản cho Viết. |
@@ -562,6 +593,8 @@ flowchart TB
 | Màn hình | Học viên | Giảng viên | Quản trị viên |
 |--------|---------|------------|-------|
 | Đăng Nhập / Đăng Ký | X | X | X |
+| Onboarding — Chào Mừng / Tự Đánh Giá / Quiz | X (lần đầu) | | |
+| Onboarding — Thiết Lập Mục Tiêu | X (lần đầu) | | |
 | Bảng Điều Khiển (Trang Chủ) | X | X | X |
 | Luyện Tập — Chọn Kỹ Năng | X | X | X |
 | Luyện Tập — Xem Câu Hỏi | X | X | X |
