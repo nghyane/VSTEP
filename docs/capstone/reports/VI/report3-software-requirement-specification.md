@@ -447,7 +447,7 @@ Các quyết định kiến trúc chính:
 
 #### 3.5.3 Biểu Đồ Luồng Luyện Tập Của Học Viên
 
-![Diagram 11](../../diagrams/srs/diagram-11.svg)
+![Diagram 11](../../diagrams/srs/diagram-11.png)
 
 ### 3.6 FE-05: Chế Độ Luyện Tập — Viết + Chấm Điểm AI
 
@@ -495,7 +495,7 @@ Các quyết định kiến trúc chính:
 
 #### 3.6.4 Biểu Đồ Pipeline Chấm Điểm AI Viết/Nói
 
-![Diagram 12](../../diagrams/srs/diagram-12.svg)
+![Diagram 12](../../diagrams/srs/diagram-12.png)
 
 ### 3.7 FE-06: Chế Độ Luyện Tập — Nói + Chấm Điểm AI
 
@@ -566,7 +566,7 @@ Các quyết định kiến trúc chính:
 
 #### 3.8.7 Biểu Đồ Luồng Phiên Thi
 
-![Diagram 13](../../diagrams/srs/diagram-13.svg)
+![Diagram 13](../../diagrams/srs/diagram-13.png)
 
 ### 3.9 FE-08: Đánh Giá Thủ Công (Giảng Viên Đánh Giá)
 
@@ -607,11 +607,11 @@ Các quyết định kiến trúc chính:
 
 #### 3.9.5 Biểu Đồ Quy Trình Đánh Giá Của Giảng Viên
 
-![Diagram 14](../../diagrams/srs/diagram-14.svg)
+![Diagram 14](../../diagrams/srs/diagram-14.png)
 
 #### 3.9.6 Biểu Đồ Máy Trạng Thái Bài Nộp
 
-![Diagram 15](../../diagrams/srs/diagram-15.svg)
+![Diagram 15](../../diagrams/srs/diagram-15.png)
 
 ### 3.10 FE-09: Theo Dõi Tiến Độ
 
