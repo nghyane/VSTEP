@@ -184,10 +184,14 @@ function MicTest() {
 				{status === "recording" ? (
 					<div className="flex items-center gap-2">
 						<span className="size-2 animate-pulse rounded-full bg-destructive" />
-						<span className="text-xs font-medium text-destructive">Đang thu âm... {countdown}s</span>
+						<span className="text-xs font-medium text-destructive">
+							Đang thu âm... {countdown}s
+						</span>
 					</div>
 				) : hasRecording ? (
-					<span className="text-xs text-muted-foreground">Đã thu xong — bấm "Nghe lại" để kiểm tra</span>
+					<span className="text-xs text-muted-foreground">
+						Đã thu xong — bấm "Nghe lại" để kiểm tra
+					</span>
 				) : (
 					<span className="text-xs text-muted-foreground">Đặt mic sát miệng rồi bấm "Thu âm"</span>
 				)}
@@ -226,7 +230,9 @@ function MicTest() {
 					Không thể truy cập microphone. Hãy cấp quyền trên trình duyệt.
 				</p>
 			)}
-			{hasRecording && <p className="text-xs font-medium text-emerald-600">✓ Microphone hoạt động tốt</p>}
+			{hasRecording && (
+				<p className="text-xs font-medium text-emerald-600">✓ Microphone hoạt động tốt</p>
+			)}
 
 			{/* biome-ignore lint/a11y/useMediaCaption: playback */}
 			<audio ref={playbackRef} className="hidden" />
@@ -236,7 +242,12 @@ function MicTest() {
 
 // --- Main Screen ---
 
-export function DeviceCheckScreen({ examTitle, durationMinutes, skills, onStart }: DeviceCheckScreenProps) {
+export function DeviceCheckScreen({
+	examTitle,
+	durationMinutes,
+	skills,
+	onStart,
+}: DeviceCheckScreenProps) {
 	const hasSpeaking = skills.some((s) => s.skill === "speaking")
 	const hasListening = skills.some((s) => s.skill === "listening")
 
@@ -246,7 +257,9 @@ export function DeviceCheckScreen({ examTitle, durationMinutes, skills, onStart 
 				{/* Title */}
 				<div className="space-y-1 text-center">
 					<h1 className="text-xl font-bold">{examTitle}</h1>
-					<p className="text-sm text-muted-foreground">Kiểm tra thiết bị trước khi bắt đầu làm bài</p>
+					<p className="text-sm text-muted-foreground">
+						Kiểm tra thiết bị trước khi bắt đầu làm bài
+					</p>
 				</div>
 
 				{/* 3-column cards */}
@@ -262,17 +275,21 @@ export function DeviceCheckScreen({ examTitle, durationMinutes, skills, onStart 
 						<ul className="space-y-2 text-sm">
 							{skills.map((s, i) => (
 								<li key={s.skill} className="flex items-center gap-2.5">
-									<HugeiconsIcon icon={skillMeta[s.skill].icon} className="size-4 text-muted-foreground" />
+									<HugeiconsIcon
+										icon={skillMeta[s.skill].icon}
+										className="size-4 text-muted-foreground"
+									/>
 									<span>
 										Kỹ năng {i + 1}:{" "}
-										<span className="font-semibold">{skillMeta[s.skill].label.toUpperCase()}</span>
-										{" "}&ndash; {s.sections} phần ({SKILL_DURATION[s.skill]} phút)
+										<span className="font-semibold">{skillMeta[s.skill].label.toUpperCase()}</span>{" "}
+										&ndash; {s.sections} phần ({SKILL_DURATION[s.skill]} phút)
 									</span>
 								</li>
 							))}
 						</ul>
 						<div className="rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-							Tổng thời gian: <span className="font-semibold text-foreground">{durationMinutes} phút</span>
+							Tổng thời gian:{" "}
+							<span className="font-semibold text-foreground">{durationMinutes} phút</span>
 						</div>
 					</div>
 
@@ -328,13 +345,16 @@ export function DeviceCheckScreen({ examTitle, durationMinutes, skills, onStart 
 							<li className="flex gap-2">
 								<span className="text-muted-foreground/60">&ndash;</span>
 								<span>
-									Khi hết thời gian mỗi kỹ năng, hệ thống <span className="font-medium text-foreground">tự động chuyển tiếp</span>.
+									Khi hết thời gian mỗi kỹ năng, hệ thống{" "}
+									<span className="font-medium text-foreground">tự động chuyển tiếp</span>.
 								</span>
 							</li>
 							<li className="flex gap-2">
 								<span className="text-muted-foreground/60">&ndash;</span>
 								<span>
-									Sau khi chuyển phần, <span className="font-medium text-foreground">không thể quay lại</span> phần trước.
+									Sau khi chuyển phần,{" "}
+									<span className="font-medium text-foreground">không thể quay lại</span> phần
+									trước.
 								</span>
 							</li>
 							<li className="flex gap-2">
@@ -344,7 +364,8 @@ export function DeviceCheckScreen({ examTitle, durationMinutes, skills, onStart 
 							<li className="flex gap-2">
 								<span className="text-muted-foreground/60">&ndash;</span>
 								<span>
-									Bấm "<span className="font-medium text-foreground">Phần tiếp</span>" để sang kỹ năng kế tiếp.
+									Bấm "<span className="font-medium text-foreground">Phần tiếp</span>" để sang kỹ
+									năng kế tiếp.
 								</span>
 							</li>
 						</ul>
@@ -356,7 +377,9 @@ export function DeviceCheckScreen({ examTitle, durationMinutes, skills, onStart 
 					<Button size="lg" className="w-full max-w-xs text-base" onClick={onStart}>
 						Nhận đề
 					</Button>
-					<p className="text-xs text-muted-foreground">Thời gian sẽ bắt đầu tính khi bạn bấm nút trên</p>
+					<p className="text-xs text-muted-foreground">
+						Thời gian sẽ bắt đầu tính khi bạn bấm nút trên
+					</p>
 				</div>
 			</div>
 		</div>

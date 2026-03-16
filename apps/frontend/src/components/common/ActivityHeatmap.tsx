@@ -1,6 +1,6 @@
 import { Fragment } from "react"
-import { cn } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 
 interface ActivityHeatmapProps {
 	activeDays: string[]
@@ -64,7 +64,8 @@ function buildGrid(activeDays: string[]) {
 		}
 	}
 	if (monthLabels.length > 0) {
-		monthLabels[monthLabels.length - 1].span = weeks.length - monthLabels[monthLabels.length - 1].col
+		monthLabels[monthLabels.length - 1].span =
+			weeks.length - monthLabels[monthLabels.length - 1].col
 	}
 
 	return { weeks, monthLabels }
@@ -74,9 +75,7 @@ export function ActivityHeatmap({ activeDays, className }: ActivityHeatmapProps)
 	const { weeks, monthLabels } = buildGrid(activeDays)
 	const numWeeks = weeks.length
 
-	const weeklyCounts = weeks.map((week) =>
-		week.filter((cell) => cell.active).length,
-	)
+	const weeklyCounts = weeks.map((week) => week.filter((cell) => cell.active).length)
 
 	return (
 		<Card className={cn(className)}>
@@ -102,7 +101,8 @@ export function ActivityHeatmap({ activeDays, className }: ActivityHeatmapProps)
 					}}
 				>
 					{/* Row 0: month labels */}
-					<div />{/* empty top-left corner */}
+					<div />
+					{/* empty top-left corner */}
 					{monthLabels.map((m) => (
 						<div
 							key={m.label}
@@ -132,11 +132,7 @@ export function ActivityHeatmap({ activeDays, className }: ActivityHeatmapProps)
 										title={cell.date}
 										className={cn(
 											"h-[18px] min-w-0 rounded-[3px]",
-											cell.future
-												? "bg-transparent"
-												: cell.active
-													? "bg-primary"
-													: "bg-muted",
+											cell.future ? "bg-transparent" : cell.active ? "bg-primary" : "bg-muted",
 										)}
 										style={{
 											gridColumn: wi + 2,

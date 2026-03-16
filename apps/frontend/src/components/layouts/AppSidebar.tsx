@@ -8,6 +8,7 @@ import {
 	Settings01Icon,
 	UserGroup02Icon,
 } from "@hugeicons/core-free-icons"
+import type { IconSvgElement } from "@hugeicons/react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Link } from "@tanstack/react-router"
 import { Logo } from "@/components/common/Logo"
@@ -24,15 +25,25 @@ import {
 	SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { logout } from "@/lib/api"
-import { clear, refreshToken, token } from "@/lib/auth"
+import { clear, refreshToken, token, user } from "@/lib/auth"
 
-const navItems = [
-	{ label: "Tổng quan", icon: DashboardSquare01Icon, href: "/admin" as const },
-	{ label: "Người dùng", icon: UserGroup02Icon, href: "/admin/users" as const },
-	{ label: "Đề thi", icon: DocumentValidationIcon, href: "/admin/exams" as const },
-	{ label: "Câu hỏi", icon: Book01Icon, href: "/admin/questions" as const },
-	{ label: "Điểm kiến thức", icon: BubbleChatIcon, href: "/admin/knowledge-points" as const },
-	{ label: "Bài nộp", icon: PencilEdit01Icon, href: "/admin/submissions" as const },
+interface NavItem {
+	label: string
+	icon: IconSvgElement
+	href: string
+}
+
+const adminNavItems: NavItem[] = [
+	{ label: "Tổng quan", icon: DashboardSquare01Icon, href: "/admin" },
+	{ label: "Người dùng", icon: UserGroup02Icon, href: "/admin/users" },
+	{ label: "Đề thi", icon: DocumentValidationIcon, href: "/admin/exams" },
+	{ label: "Câu hỏi", icon: Book01Icon, href: "/admin/questions" },
+	{ label: "Điểm kiến thức", icon: BubbleChatIcon, href: "/admin/knowledge-points" },
+	{ label: "Bài nộp", icon: PencilEdit01Icon, href: "/admin/submissions" },
+]
+
+const instructorNavItems: NavItem[] = [
+	{ label: "Lớp học", icon: UserGroup02Icon, href: "/dashboard" },
 ]
 
 async function handleLogout() {
@@ -47,6 +58,10 @@ async function handleLogout() {
 }
 
 export function AppSidebar() {
+	const currentUser = user()
+	const isAdmin = currentUser?.role === "admin"
+	const navItems = isAdmin ? [...adminNavItems, ...instructorNavItems] : instructorNavItems
+
 	return (
 		<Sidebar>
 			<SidebarHeader>
@@ -75,14 +90,16 @@ export function AppSidebar() {
 			</SidebarContent>
 			<SidebarFooter>
 				<SidebarMenu>
-					<SidebarMenuItem>
-						<SidebarMenuButton asChild>
-							<Link to="/admin">
-								<HugeiconsIcon icon={Settings01Icon} className="size-4" />
-								<span>Cài đặt</span>
-							</Link>
-						</SidebarMenuButton>
-					</SidebarMenuItem>
+					{isAdmin && (
+						<SidebarMenuItem>
+							<SidebarMenuButton asChild>
+								<Link to="/admin">
+									<HugeiconsIcon icon={Settings01Icon} className="size-4" />
+									<span>Cài đặt</span>
+								</Link>
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+					)}
 					<SidebarMenuItem>
 						<SidebarMenuButton onClick={handleLogout}>
 							<HugeiconsIcon icon={Logout01Icon} className="size-4" />

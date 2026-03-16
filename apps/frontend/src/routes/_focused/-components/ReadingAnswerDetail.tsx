@@ -74,8 +74,16 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 					{ text: "hơn phương Tây", color: "bg-orange-500" },
 				],
 				comparisons: [
-					{ left: "more popular in Asian countries", operator: "=", right: "especially popular in Japan and South Korea" },
-					{ left: "than in the West", operator: "→", right: "bài đọc không so sánh trực tiếp với phương Tây" },
+					{
+						left: "more popular in Asian countries",
+						operator: "=",
+						right: "especially popular in Japan and South Korea",
+					},
+					{
+						left: "than in the West",
+						operator: "→",
+						right: "bài đọc không so sánh trực tiếp với phương Tây",
+					},
 				],
 			},
 			steps: [
@@ -85,7 +93,11 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 					tags: [
 						{ text: "S + V", tagColor: "bg-green-500" },
 						{ text: "Noun Phrase", tagColor: "bg-red-500" },
-						{ text: "niềm tin về nhóm máu", tagColor: "bg-amber-700", highlightColor: "bg-amber-100 dark:bg-amber-900/30" },
+						{
+							text: "niềm tin về nhóm máu",
+							tagColor: "bg-amber-700",
+							highlightColor: "bg-amber-100 dark:bg-amber-900/30",
+						},
 					],
 					simplified: [
 						{ text: "It is", tag: "S+V", tagColor: "bg-green-500" },
@@ -102,22 +114,29 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 				{
 					number: "03",
 					title: "Read relevant information to understand (main idea + detail)",
-					quote: "This belief is especially popular in Japan and South Korea, where asking about someone's blood type is almost as common as asking about their zodiac sign.",
+					quote:
+						"This belief is especially popular in Japan and South Korea, where asking about someone's blood type is almost as common as asking about their zodiac sign.",
 					tags: [
 						{ text: "S + V", tagColor: "bg-green-500" },
 						{ text: "NP", tagColor: "bg-red-500" },
 					],
 					simplified: [
 						{ text: "This belief is", tag: "S+V", tagColor: "bg-green-500" },
-						{ text: "especially popular in Japan and South Korea", tag: "NP", tagColor: "bg-red-500" },
+						{
+							text: "especially popular in Japan and South Korea",
+							tag: "NP",
+							tagColor: "bg-red-500",
+						},
 					],
 					mainIdea: "Niềm tin về nhóm máu đặc biệt phổ biến ở Nhật Bản và Hàn Quốc (châu Á).",
 				},
 				{
 					number: "04",
 					title: "Compare meaning with meaning",
-					passageConclusion: "Niềm tin này phổ biến ở Nhật Bản và Hàn Quốc → đều là các nước châu Á.",
-					questionConclusion: "Nó phổ biến hơn ở các nước châu Á so với phương Tây → bài đọc chỉ nói phổ biến ở châu Á, không so sánh trực tiếp.",
+					passageConclusion:
+						"Niềm tin này phổ biến ở Nhật Bản và Hàn Quốc → đều là các nước châu Á.",
+					questionConclusion:
+						"Nó phổ biến hơn ở các nước châu Á so với phương Tây → bài đọc chỉ nói phổ biến ở châu Á, không so sánh trực tiếp.",
 					finalAnswer: "A",
 					finalAnswerColor: "bg-green-600",
 				},
@@ -127,15 +146,17 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 			questionNumber: 2,
 			relevantParagraphIndex: 0,
 			paraphrasing: {
-				questionHighlights: [
-					{ phrase: "theory", color: "bg-green-200 dark:bg-green-800/50" },
-				],
+				questionHighlights: [{ phrase: "theory", color: "bg-green-200 dark:bg-green-800/50" }],
 				badges: [
 					{ text: "lý thuyết", color: "bg-green-500" },
 					{ text: "tồn tại", color: "bg-blue-500" },
 				],
 				comparisons: [
-					{ left: "the theory persists", operator: "=", right: "lý thuyết vẫn tồn tại trong văn hóa đại chúng" },
+					{
+						left: "the theory persists",
+						operator: "=",
+						right: "lý thuyết vẫn tồn tại trong văn hóa đại chúng",
+					},
 				],
 			},
 			steps: [
@@ -157,7 +178,8 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 				{
 					number: "03",
 					title: "Read relevant information to understand (main idea + detail)",
-					quote: "Although it has been dismissed by the scientific community, the theory persists in popular culture.",
+					quote:
+						"Although it has been dismissed by the scientific community, the theory persists in popular culture.",
 					simplified: [
 						{ text: "the theory", tag: "S", tagColor: "bg-green-500" },
 						{ text: "persists in popular culture", tag: "VP", tagColor: "bg-red-500" },
@@ -168,7 +190,8 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 					number: "04",
 					title: "Compare meaning with meaning",
 					passageConclusion: "Lý thuyết = the idea about blood types and personality.",
-					questionConclusion: "Đáp án D (theory) chính là từ được nhắc đến trong câu cuối đoạn (A).",
+					questionConclusion:
+						"Đáp án D (theory) chính là từ được nhắc đến trong câu cuối đoạn (A).",
 					finalAnswer: "D",
 					finalAnswerColor: "bg-green-600",
 				},
@@ -187,7 +210,11 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 					{ text: "hòa hợp", color: "bg-orange-500" },
 				],
 				comparisons: [
-					{ left: "suppress their own feelings", operator: "=", right: "may suppress their own feelings" },
+					{
+						left: "suppress their own feelings",
+						operator: "=",
+						right: "may suppress their own feelings",
+					},
 					{ left: "get on well with others", operator: "=", right: "to get on well with others" },
 				],
 			},
@@ -198,7 +225,11 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 					tags: [
 						{ text: "S + V", tagColor: "bg-green-500" },
 						{ text: "Object", tagColor: "bg-red-500" },
-						{ text: "người nhóm máu A", tagColor: "bg-amber-700", highlightColor: "bg-amber-100 dark:bg-amber-900/30" },
+						{
+							text: "người nhóm máu A",
+							tagColor: "bg-amber-700",
+							highlightColor: "bg-amber-100 dark:bg-amber-900/30",
+						},
 					],
 					simplified: [
 						{ text: "They", tag: "S", tagColor: "bg-green-500" },
@@ -215,7 +246,8 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 				{
 					number: "03",
 					title: "Read relevant information to understand (main idea + detail)",
-					quote: "They tend to prioritize harmony in their relationships and may suppress their own feelings to get on well with others.",
+					quote:
+						"They tend to prioritize harmony in their relationships and may suppress their own feelings to get on well with others.",
 					simplified: [
 						{ text: "They", tag: "S", tagColor: "bg-green-500" },
 						{ text: "may suppress their own feelings", tag: "VP", tagColor: "bg-red-500" },
@@ -226,7 +258,8 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 				{
 					number: "04",
 					title: "Compare meaning with meaning",
-					passageConclusion: "Bài đọc nói Type A 'may suppress their own feelings to get on well with others'.",
+					passageConclusion:
+						"Bài đọc nói Type A 'may suppress their own feelings to get on well with others'.",
 					questionConclusion: "Đáp án B trùng khớp chính xác với nội dung trong bài đọc.",
 					finalAnswer: "B",
 					finalAnswerColor: "bg-green-600",
@@ -238,7 +271,10 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 			relevantParagraphIndex: 1,
 			paraphrasing: {
 				questionHighlights: [
-					{ phrase: "creative, passionate, and outgoing", color: "bg-green-200 dark:bg-green-800/50" },
+					{
+						phrase: "creative, passionate, and outgoing",
+						color: "bg-green-200 dark:bg-green-800/50",
+					},
 				],
 				badges: [
 					{ text: "sáng tạo", color: "bg-green-500" },
@@ -285,7 +321,10 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 			paraphrasing: {
 				questionHighlights: [
 					{ phrase: "rational", color: "bg-green-200 dark:bg-green-800/50" },
-					{ phrase: "deciphering complex situations", color: "bg-orange-200 dark:bg-orange-800/50" },
+					{
+						phrase: "deciphering complex situations",
+						color: "bg-orange-200 dark:bg-orange-800/50",
+					},
 				],
 				badges: [
 					{ text: "lý trí", color: "bg-green-500" },
@@ -313,7 +352,8 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 				{
 					number: "03",
 					title: "Read relevant information to understand (main idea + detail)",
-					quote: "Type AB people are thought to be rational and good at deciphering complex situations.",
+					quote:
+						"Type AB people are thought to be rational and good at deciphering complex situations.",
 					mainIdea: "Người nhóm máu AB được cho là lý trí và giỏi xử lý tình huống phức tạp.",
 				},
 				{
@@ -333,11 +373,13 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 				questionHighlights: [
 					{ phrase: "get on well with people", color: "bg-green-200 dark:bg-green-800/50" },
 				],
-				badges: [
-					{ text: "hòa đồng", color: "bg-green-500" },
-				],
+				badges: [{ text: "hòa đồng", color: "bg-green-500" }],
 				comparisons: [
-					{ left: "get on well with people", operator: "=", right: "Type B - get on well with people" },
+					{
+						left: "get on well with people",
+						operator: "=",
+						right: "Type B - get on well with people",
+					},
 				],
 			},
 			steps: [
@@ -346,7 +388,11 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 					title: "Read the question to understand (main idea + detail)",
 					simplified: [
 						{ text: "Which type", tag: "S", tagColor: "bg-green-500" },
-						{ text: "gets on well with people but can be selfish", tag: "VP", tagColor: "bg-red-500" },
+						{
+							text: "gets on well with people but can be selfish",
+							tag: "VP",
+							tagColor: "bg-red-500",
+						},
 					],
 				},
 				{
@@ -375,16 +421,12 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 			questionNumber: 7,
 			relevantParagraphIndex: 1,
 			paraphrasing: {
-				questionHighlights: [
-					{ phrase: "deciphering", color: "bg-green-200 dark:bg-green-800/50" },
-				],
+				questionHighlights: [{ phrase: "deciphering", color: "bg-green-200 dark:bg-green-800/50" }],
 				badges: [
 					{ text: "giải mã", color: "bg-green-500" },
 					{ text: "từ đồng nghĩa", color: "bg-blue-500" },
 				],
-				comparisons: [
-					{ left: "deciphering", operator: "=", right: "cracking (giải mã, bẻ khóa)" },
-				],
+				comparisons: [{ left: "deciphering", operator: "=", right: "cracking (giải mã, bẻ khóa)" }],
 			},
 			steps: [
 				{
@@ -404,7 +446,8 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 				{
 					number: "03",
 					title: "Read relevant information to understand (main idea + detail)",
-					quote: "Type AB people are thought to be rational and good at deciphering complex situations.",
+					quote:
+						"Type AB people are thought to be rational and good at deciphering complex situations.",
 					mainIdea: "Deciphering = giải mã, tìm hiểu, hiểu rõ → gần nghĩa nhất với 'cracking'.",
 				},
 				{
@@ -421,12 +464,8 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 			questionNumber: 8,
 			relevantParagraphIndex: 1,
 			paraphrasing: {
-				questionHighlights: [
-					{ phrase: "bura hara", color: "bg-green-200 dark:bg-green-800/50" },
-				],
-				badges: [
-					{ text: "phân biệt đối xử", color: "bg-red-500" },
-				],
+				questionHighlights: [{ phrase: "bura hara", color: "bg-green-200 dark:bg-green-800/50" }],
+				badges: [{ text: "phân biệt đối xử", color: "bg-red-500" }],
 				comparisons: [
 					{ left: "bura hara", operator: "=", right: "discrimination based on blood type" },
 				],
@@ -449,7 +488,8 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 				{
 					number: "03",
 					title: "Read relevant information to understand (main idea + detail)",
-					quote: 'In Japan, discrimination based on blood type, called "bura hara," has become a social issue.',
+					quote:
+						'In Japan, discrimination based on blood type, called "bura hara," has become a social issue.',
 					mainIdea: "Bài đọc giải thích 'bura hara' là phân biệt đối xử dựa trên nhóm máu ở Nhật.",
 				},
 				{
@@ -474,7 +514,11 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 					{ text: "sai thông tin", color: "bg-gray-500" },
 				],
 				comparisons: [
-					{ left: "unpopularity with people", operator: "><", right: "perceived as insensitive (not unpopular)" },
+					{
+						left: "unpopularity with people",
+						operator: "><",
+						right: "perceived as insensitive (not unpopular)",
+					},
 				],
 			},
 			steps: [
@@ -496,13 +540,16 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 					number: "03",
 					title: "Read relevant information to understand (main idea + detail)",
 					quote: "However, they can be perceived as insensitive.",
-					mainIdea: "Type O bị coi là vô tâm (insensitive), KHÔNG phải không được yêu thích (unpopular).",
+					mainIdea:
+						"Type O bị coi là vô tâm (insensitive), KHÔNG phải không được yêu thích (unpopular).",
 				},
 				{
 					number: "04",
 					title: "Compare meaning with meaning",
-					passageConclusion: "Bài đọc nói Type O 'perceived as insensitive' — không nói 'unpopular'.",
-					questionConclusion: "B nói 'unpopularity makes them lonely' — thông tin sai, không có trong bài.",
+					passageConclusion:
+						"Bài đọc nói Type O 'perceived as insensitive' — không nói 'unpopular'.",
+					questionConclusion:
+						"B nói 'unpopularity makes them lonely' — thông tin sai, không có trong bài.",
 					finalAnswer: "B",
 					finalAnswerColor: "bg-green-600",
 				},
@@ -512,14 +559,14 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 			questionNumber: 10,
 			relevantParagraphIndex: 0,
 			paraphrasing: {
-				questionHighlights: [
-					{ phrase: "best title", color: "bg-green-200 dark:bg-green-800/50" },
-				],
-				badges: [
-					{ text: "tiêu đề phù hợp", color: "bg-blue-500" },
-				],
+				questionHighlights: [{ phrase: "best title", color: "bg-green-200 dark:bg-green-800/50" }],
+				badges: [{ text: "tiêu đề phù hợp", color: "bg-blue-500" }],
 				comparisons: [
-					{ left: "What your blood type can tell you", operator: "=", right: "nội dung toàn bài: nhóm máu nói gì về tính cách" },
+					{
+						left: "What your blood type can tell you",
+						operator: "=",
+						right: "nội dung toàn bài: nhóm máu nói gì về tính cách",
+					},
 				],
 			},
 			steps: [
@@ -540,14 +587,16 @@ const MOCK_EXPLANATIONS: Record<string, QuestionExplanation[]> = {
 				{
 					number: "03",
 					title: "Read relevant information to understand (main idea + detail)",
-					quote: "In many Asian countries, people believe that blood types are associated with personality traits.",
+					quote:
+						"In many Asian countries, people believe that blood types are associated with personality traits.",
 					mainIdea: "Bài đọc nói về niềm tin rằng nhóm máu phản ánh tính cách con người.",
 				},
 				{
 					number: "04",
 					title: "Compare meaning with meaning",
 					passageConclusion: "Bài đọc: nhóm máu gắn liền với tính cách, mô tả từng nhóm máu.",
-					questionConclusion: "D: 'What your blood type can tell you' — phù hợp nhất với nội dung toàn bài.",
+					questionConclusion:
+						"D: 'What your blood type can tell you' — phù hợp nhất với nội dung toàn bài.",
 					finalAnswer: "D",
 					finalAnswerColor: "bg-green-600",
 				},
@@ -578,10 +627,7 @@ function WordBubble({ word }: { word: TaggedWord }) {
 		<span className="inline-flex items-center gap-1">
 			{word.tag && (
 				<span
-					className={cn(
-						"rounded px-1.5 py-0.5 text-[10px] font-bold text-white",
-						word.tagColor,
-					)}
+					className={cn("rounded px-1.5 py-0.5 text-[10px] font-bold text-white", word.tagColor)}
 				>
 					{word.tag}
 				</span>
@@ -593,13 +639,7 @@ function WordBubble({ word }: { word: TaggedWord }) {
 	)
 }
 
-function ToggleSwitch({
-	checked,
-	onChange,
-}: {
-	checked: boolean
-	onChange: (v: boolean) => void
-}) {
+function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
 	return (
 		<button
 			type="button"
@@ -702,7 +742,11 @@ function ParaphrasingSection({
 								<span
 									className={cn(
 										"shrink-0 font-bold",
-										comp.operator === "=" ? "text-green-600" : comp.operator === "><" ? "text-red-600" : "text-amber-600",
+										comp.operator === "="
+											? "text-green-600"
+											: comp.operator === "><"
+												? "text-red-600"
+												: "text-amber-600",
 									)}
 								>
 									{comp.operator === "=" ? "=" : comp.operator === "><" ? "><" : "→"}
@@ -749,7 +793,11 @@ function StepByStepSection({ steps }: { steps: ExplanationStep[] }) {
 							{step.tags && (
 								<div className="flex flex-wrap gap-1.5 pl-6">
 									{step.tags.map((tag, j) => (
-										<TagBadge key={j} text={tag.tag || tag.text} color={tag.tagColor || "bg-gray-500"} />
+										<TagBadge
+											key={j}
+											text={tag.tag || tag.text}
+											color={tag.tagColor || "bg-gray-500"}
+										/>
 									))}
 								</div>
 							)}
@@ -943,8 +991,7 @@ export function ReadingAnswerDetail({
 									cls =
 										"border-green-500 bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-400"
 								if (isUserWrong)
-									cls =
-										"border-red-500 bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400"
+									cls = "border-red-500 bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400"
 
 								return (
 									<div
@@ -1019,15 +1066,10 @@ export function ReadingAnswerDetail({
 					{currentExplanation && (
 						<>
 							{/* Paraphrasing */}
-							<ParaphrasingSection
-								explanation={currentExplanation}
-								question={currentQ}
-							/>
+							<ParaphrasingSection explanation={currentExplanation} question={currentQ} />
 
 							{/* Step-by-step (only in detailed mode) */}
-							{viewMode === "detailed" && (
-								<StepByStepSection steps={currentExplanation.steps} />
-							)}
+							{viewMode === "detailed" && <StepByStepSection steps={currentExplanation.steps} />}
 						</>
 					)}
 
@@ -1061,9 +1103,7 @@ export function ReadingAnswerDetail({
 								onClick={() => handleQuestionChange(i)}
 								className={cn(
 									"flex size-8 items-center justify-center rounded-lg text-xs font-semibold transition-all",
-									isCurrent
-										? "ring-2 ring-primary ring-offset-1"
-										: "",
+									isCurrent ? "ring-2 ring-primary ring-offset-1" : "",
 									isAnswered
 										? isCorrect
 											? "border border-green-500 bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-400"

@@ -3,9 +3,11 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { useCallback, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { useExplain, useParaphrase } from "@/hooks/use-ai"
+import { useUploadAudio } from "@/hooks/use-uploads"
 import { cn } from "@/lib/utils"
-import { skillColor, skillMeta } from "@/routes/_learner/exams/-components/skill-meta"
 import { ReadingAnswerDetail } from "@/routes/_focused/-components/ReadingAnswerDetail"
+import { skillColor, skillMeta } from "@/routes/_learner/exams/-components/skill-meta"
 import {
 	type ExamQuestion,
 	LISTENING_EXAMS,
@@ -192,6 +194,31 @@ function SpeakingFeedback() {
 	)
 }
 
+// --- Helpers ---
+
+function getExamText(exam: AnyExam, skill: string): string {
+	switch (skill) {
+		case "listening": {
+			const e = exam as ListeningExam
+			return e.sections.map((s) => s.questions.map((q) => q.questionText).join("\n")).join("\n")
+		}
+		case "reading": {
+			const e = exam as ReadingExam
+			return e.passages.map((p) => p.content).join("\n\n")
+		}
+		case "writing": {
+			const e = exam as WritingExam
+			return e.tasks.map((t) => t.prompt).join("\n\n")
+		}
+		case "speaking": {
+			const e = exam as SpeakingExam
+			return e.parts.map((p) => p.instructions).join("\n\n")
+		}
+		default:
+			return ""
+	}
+}
+
 // --- Main ---
 
 function ExercisePage() {
@@ -206,6 +233,11 @@ function ExercisePage() {
 	const [submitted, setSubmitted] = useState(false)
 	const [activeAiTool, setActiveAiTool] = useState<"paraphrase" | "explain" | null>(null)
 	const [highlightParagraphIndex, setHighlightParagraphIndex] = useState<number | null>(null)
+	const paraphrase = useParaphrase()
+	const explain = useExplain()
+	const uploadAudio = useUploadAudio()
+	const [audioFile, setAudioFile] = useState<File | null>(null)
+	const [audioUrl, setAudioUrl] = useState<string | null>(null)
 
 	const handleSelect = useCallback(
 		(questionNumber: number, letter: string) => {
@@ -228,6 +260,8 @@ function ExercisePage() {
 		setWritingTexts({})
 		setActiveAiTool(null)
 		setHighlightParagraphIndex(null)
+		setAudioFile(null)
+		setAudioUrl(null)
 		window.scrollTo({ top: 0, behavior: "smooth" })
 	}, [])
 
@@ -280,9 +314,7 @@ function ExercisePage() {
 								<div className="p-6">
 									{e.passages.map((passage) => (
 										<div key={passage.passageNumber}>
-											{passage.title && (
-												<h3 className="mb-4 text-lg font-bold">{passage.title}</h3>
-											)}
+											{passage.title && <h3 className="mb-4 text-lg font-bold">{passage.title}</h3>}
 											<div className="space-y-4">
 												{passage.content.split("\n\n").map((para, i) => (
 													<p
@@ -310,32 +342,33 @@ function ExercisePage() {
 								{!submitted ? (
 									<div className="flex-1 overflow-y-auto p-6">
 										<div className="space-y-4">
-											{e.passages.flatMap((p) => p.questions).map((q) => (
-												<div key={q.questionNumber} className="space-y-2">
-													<p className="text-sm font-medium">
-														Câu {q.questionNumber}.
-														{q.questionText ? ` ${q.questionText}` : ""}
-													</p>
-													<div className="grid grid-cols-1 gap-2">
-														{Object.entries(q.options).map(([letter, text]) => (
-															<McqOption
-																key={letter}
-																letter={letter}
-																text={text}
-																isSelected={selectedAnswers[q.questionNumber] === letter}
-																isCorrect={submitted && q.correctAnswer === letter}
-																isWrong={
-																	submitted &&
-																	selectedAnswers[q.questionNumber] === letter &&
-																	q.correctAnswer !== letter
-																}
-																submitted={submitted}
-																onSelect={() => handleSelect(q.questionNumber, letter)}
-															/>
-														))}
+											{e.passages
+												.flatMap((p) => p.questions)
+												.map((q) => (
+													<div key={q.questionNumber} className="space-y-2">
+														<p className="text-sm font-medium">
+															Câu {q.questionNumber}.{q.questionText ? ` ${q.questionText}` : ""}
+														</p>
+														<div className="grid grid-cols-1 gap-2">
+															{Object.entries(q.options).map(([letter, text]) => (
+																<McqOption
+																	key={letter}
+																	letter={letter}
+																	text={text}
+																	isSelected={selectedAnswers[q.questionNumber] === letter}
+																	isCorrect={submitted && q.correctAnswer === letter}
+																	isWrong={
+																		submitted &&
+																		selectedAnswers[q.questionNumber] === letter &&
+																		q.correctAnswer !== letter
+																	}
+																	submitted={submitted}
+																	onSelect={() => handleSelect(q.questionNumber, letter)}
+																/>
+															))}
+														</div>
 													</div>
-												</div>
-											))}
+												))}
 										</div>
 									</div>
 								) : (
@@ -469,8 +502,39 @@ function ExercisePage() {
 													<p className="text-sm text-muted-foreground">
 														Thời gian nói: {part.speakingTime} phút
 													</p>
-													<div className="rounded-xl border border-dashed p-4 text-center text-sm text-muted-foreground">
-														Chức năng ghi âm đang được phát triển
+													<div className="space-y-3">
+														<input
+															type="file"
+															accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/webm,audio/ogg"
+															className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary hover:file:bg-primary/20"
+															onChange={(e) => {
+																const file = e.target.files?.[0]
+																if (file) {
+																	setAudioFile(file)
+																	setAudioUrl(URL.createObjectURL(file))
+																}
+															}}
+															disabled={submitted}
+														/>
+														{audioUrl && (
+															<audio controls src={audioUrl} className="w-full rounded-lg">
+																<track kind="captions" />
+															</audio>
+														)}
+														{audioFile && !submitted && (
+															<Button
+																size="sm"
+																variant="outline"
+																className="w-full"
+																disabled={uploadAudio.isPending}
+																onClick={() => uploadAudio.mutate(audioFile)}
+															>
+																{uploadAudio.isPending ? "Đang tải lên..." : "Tải lên"}
+															</Button>
+														)}
+														{uploadAudio.isSuccess && (
+															<p className="text-xs text-green-600">Đã tải lên thành công</p>
+														)}
 													</div>
 												</div>
 											))}
@@ -519,12 +583,25 @@ function ExercisePage() {
 											size="sm"
 											variant={activeAiTool === "paraphrase" ? "default" : "outline"}
 											className="mt-3 w-full gap-1.5 rounded-lg text-xs"
-											onClick={() =>
-												setActiveAiTool((prev) => (prev === "paraphrase" ? null : "paraphrase"))
-											}
+											disabled={paraphrase.isPending}
+											onClick={() => {
+												if (activeAiTool === "paraphrase") {
+													setActiveAiTool(null)
+													return
+												}
+												setActiveAiTool("paraphrase")
+												const text = getExamText(exam, skill)
+												if (text) {
+													paraphrase.mutate({ text, skill: typedSkill })
+												}
+											}}
 										>
 											<HugeiconsIcon icon={Gps01Icon} className="size-3.5" />
-											{activeAiTool === "paraphrase" ? "Đang định vị" : "Định vị"}
+											{paraphrase.isPending
+												? "Đang phân tích..."
+												: activeAiTool === "paraphrase"
+													? "Ẩn"
+													: "Phân tích"}
 										</Button>
 									</div>
 
@@ -552,15 +629,85 @@ function ExercisePage() {
 											size="sm"
 											variant={activeAiTool === "explain" ? "default" : "outline"}
 											className="mt-3 w-full gap-1.5 rounded-lg text-xs"
-											onClick={() =>
-												setActiveAiTool((prev) => (prev === "explain" ? null : "explain"))
-											}
+											disabled={explain.isPending}
+											onClick={() => {
+												if (activeAiTool === "explain") {
+													setActiveAiTool(null)
+													return
+												}
+												setActiveAiTool("explain")
+												const text = getExamText(exam, skill)
+												if (text) {
+													explain.mutate({
+														text,
+														skill: typedSkill,
+														answers: Object.fromEntries(
+															Object.entries(selectedAnswers).map(([k, v]) => [String(k), v]),
+														),
+														correctAnswers: Object.fromEntries(
+															questions.map((q) => [String(q.questionNumber), q.correctAnswer]),
+														),
+													})
+												}
+											}}
 										>
 											<HugeiconsIcon icon={Gps01Icon} className="size-3.5" />
-											{activeAiTool === "explain" ? "Đang định vị" : "Định vị"}
+											{explain.isPending
+												? "Đang phân tích..."
+												: activeAiTool === "explain"
+													? "Ẩn"
+													: "Phân tích"}
 										</Button>
 									</div>
 								</div>
+
+								{/* AI Results */}
+								{paraphrase.data && activeAiTool === "paraphrase" && (
+									<div className="space-y-2 rounded-xl bg-sky-50/50 p-4 dark:bg-sky-950/10">
+										<p className="text-xs font-semibold text-sky-700 dark:text-sky-300">
+											Gợi ý paraphrase
+										</p>
+										{paraphrase.data.highlights.map((h, i) => (
+											<div key={i} className="space-y-0.5 text-sm">
+												<p className="font-medium">{h.phrase}</p>
+												<p className="text-xs text-muted-foreground">{h.note}</p>
+											</div>
+										))}
+									</div>
+								)}
+
+								{explain.data && activeAiTool === "explain" && (
+									<div className="space-y-2 rounded-xl bg-amber-50/50 p-4 dark:bg-amber-950/10">
+										<p className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+											Giải thích chi tiết
+										</p>
+										{explain.data.highlights.map((h, i) => (
+											<div key={i} className="space-y-0.5 text-sm">
+												<p className="font-medium">
+													<span className="mr-1.5 rounded bg-muted px-1.5 py-0.5 text-[10px]">
+														{h.category}
+													</span>
+													{h.phrase}
+												</p>
+												<p className="text-xs text-muted-foreground">{h.note}</p>
+											</div>
+										))}
+										{explain.data.questionExplanations?.map((qe) => (
+											<div key={qe.questionNumber} className="space-y-0.5 border-t pt-2 text-sm">
+												<p className="font-medium">
+													Câu {qe.questionNumber}: {qe.correctAnswer}
+												</p>
+												<p className="text-xs text-muted-foreground">{qe.explanation}</p>
+											</div>
+										))}
+									</div>
+								)}
+
+								{(paraphrase.isPending || explain.isPending) && (
+									<div className="flex items-center justify-center py-4">
+										<p className="text-sm text-muted-foreground">Đang phân tích...</p>
+									</div>
+								)}
 							</div>
 						</aside>
 					)}

@@ -7,7 +7,9 @@ import {
 	LanguageSkillIcon,
 	Logout01Icon,
 	Menu01Icon,
+	Notification03Icon,
 	UserCircleIcon,
+	UserGroup02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Link, Outlet } from "@tanstack/react-router"
@@ -22,6 +24,12 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+	useMarkAllRead,
+	useMarkRead,
+	useNotifications,
+	useUnreadCount,
+} from "@/hooks/use-notifications"
 import { useActivity } from "@/hooks/use-progress"
 import { useUser } from "@/hooks/use-user"
 import { logout } from "@/lib/api"
@@ -35,6 +43,13 @@ export function LearnerLayout() {
 	const { data: activity } = useActivity(7)
 	const streakCount = activity?.streak ?? 0
 	const activeDatesSet = new Set(activity?.activeDays ?? [])
+
+	const { data: unreadData } = useUnreadCount()
+	const unreadCount = unreadData?.count ?? 0
+	const { data: notificationsData } = useNotifications({ unreadOnly: false })
+	const notifications = notificationsData?.data ?? []
+	const markRead = useMarkRead()
+	const markAllRead = useMarkAllRead()
 
 	function isActiveDay(dayIndex: number): boolean {
 		const today = new Date()
@@ -78,6 +93,7 @@ export function LearnerLayout() {
 							{ label: "Từ vựng", icon: LanguageSkillIcon, href: "/vocabulary" as const },
 							{ label: "Thi thử", icon: DocumentValidationIcon, href: "/exams" as const },
 							{ label: "Tiến độ", icon: AnalyticsUpIcon, href: "/progress" as const },
+							{ label: "Lớp học", icon: UserGroup02Icon, href: "/dashboard" as const },
 						].map((item) => (
 							<Link
 								key={item.label}
@@ -133,6 +149,71 @@ export function LearnerLayout() {
 											</div>
 										))}
 									</div>
+								</div>
+							</PopoverContent>
+						</Popover>
+
+						{/* Notifications */}
+						<Popover>
+							<PopoverTrigger asChild>
+								<button
+									type="button"
+									className="relative flex items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+								>
+									<HugeiconsIcon icon={Notification03Icon} className="size-5" strokeWidth={1.75} />
+									{unreadCount > 0 && (
+										<span className="absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+											{unreadCount > 9 ? "9+" : unreadCount}
+										</span>
+									)}
+								</button>
+							</PopoverTrigger>
+							<PopoverContent align="end" className="w-80 overflow-hidden rounded-2xl p-0">
+								<div className="flex items-center justify-between border-b px-4 py-3">
+									<p className="text-sm font-semibold">Thông báo</p>
+									{unreadCount > 0 && (
+										<button
+											type="button"
+											className="text-xs text-primary hover:underline"
+											onClick={() => markAllRead.mutate()}
+										>
+											Đánh dấu tất cả đã đọc
+										</button>
+									)}
+								</div>
+								<div className="max-h-80 overflow-y-auto">
+									{notifications.length === 0 ? (
+										<p className="py-8 text-center text-sm text-muted-foreground">
+											Không có thông báo
+										</p>
+									) : (
+										notifications.slice(0, 10).map((n) => (
+											<button
+												key={n.id}
+												type="button"
+												className={cn(
+													"flex w-full flex-col gap-0.5 border-b px-4 py-3 text-left transition-colors last:border-0 hover:bg-muted/50",
+													!n.readAt && "bg-primary/5",
+												)}
+												onClick={() => {
+													if (!n.readAt) markRead.mutate(n.id)
+												}}
+											>
+												<p className={cn("text-sm", !n.readAt && "font-medium")}>{n.title}</p>
+												{n.body && (
+													<p className="text-xs text-muted-foreground line-clamp-2">{n.body}</p>
+												)}
+												<p className="text-[10px] text-muted-foreground">
+													{new Date(n.createdAt).toLocaleDateString("vi-VN", {
+														day: "2-digit",
+														month: "2-digit",
+														hour: "2-digit",
+														minute: "2-digit",
+													})}
+												</p>
+											</button>
+										))
+									)}
 								</div>
 							</PopoverContent>
 						</Popover>

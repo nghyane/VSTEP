@@ -1,4 +1,3 @@
-import { useState } from "react"
 import {
 	Book02Icon,
 	Calendar03Icon,
@@ -9,6 +8,7 @@ import {
 import type { IconSvgElement } from "@hugeicons/react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link } from "@tanstack/react-router"
+import { useState } from "react"
 import { DoughnutChart, DoughnutLegend } from "@/components/common/DoughnutChart"
 import { SpiderChart } from "@/components/common/SpiderChart"
 import { useExamSessions } from "@/hooks/use-exam-session"
@@ -73,7 +73,10 @@ function TestHistoryPage() {
 	return (
 		<div className="space-y-4">
 			{/* Back link */}
-			<Link to="/progress" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+			<Link
+				to="/progress"
+				className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+			>
 				← Tiến độ
 			</Link>
 
@@ -110,7 +113,9 @@ function TestHistoryPage() {
 
 function SpiderChartCard({
 	spiderData,
-}: { spiderData: ReturnType<typeof useSpiderChart>["data"] }) {
+}: {
+	spiderData: ReturnType<typeof useSpiderChart>["data"]
+}) {
 	const spiderSkills = spiderData
 		? SKILLS.map(({ key, label }) => ({
 				label,
@@ -133,7 +138,9 @@ function SpiderChartCard({
 
 function DoughnutChartCard({
 	progressData,
-}: { progressData: ReturnType<typeof useProgress>["data"] }) {
+}: {
+	progressData: ReturnType<typeof useProgress>["data"]
+}) {
 	const segments = SKILLS.map(({ key, label }) => {
 		const sk = progressData?.skills.find((s) => s.skill === key)
 		return {
@@ -240,10 +247,12 @@ function SessionHistory({
 function SessionCard({ session }: { session: ExamSessionWithExam }) {
 	// Find the primary skill (highest score)
 	const scores: { skill: Skill; score: number }[] = []
-	if (session.listeningScore != null) scores.push({ skill: "listening", score: session.listeningScore })
+	if (session.listeningScore != null)
+		scores.push({ skill: "listening", score: session.listeningScore })
 	if (session.readingScore != null) scores.push({ skill: "reading", score: session.readingScore })
 	if (session.writingScore != null) scores.push({ skill: "writing", score: session.writingScore })
-	if (session.speakingScore != null) scores.push({ skill: "speaking", score: session.speakingScore })
+	if (session.speakingScore != null)
+		scores.push({ skill: "speaking", score: session.speakingScore })
 	scores.sort((a, b) => b.score - a.score)
 
 	const best = scores[0]
@@ -273,7 +282,10 @@ function SessionCard({ session }: { session: ExamSessionWithExam }) {
 			<div className="min-w-0 flex-1">
 				{skillInfo && (
 					<div className="mb-0.5 flex items-center gap-1">
-						<HugeiconsIcon icon={skillInfo.icon} className={cn("size-3.5", skillColorText[best!.skill])} />
+						<HugeiconsIcon
+							icon={skillInfo.icon}
+							className={cn("size-3.5", skillColorText[best!.skill])}
+						/>
 						<span className={cn("text-xs font-medium", skillColorText[best!.skill])}>
 							{skillInfo.label}
 						</span>
@@ -290,7 +302,8 @@ function SessionCard({ session }: { session: ExamSessionWithExam }) {
 				<div className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
 					<HugeiconsIcon icon={Calendar03Icon} className="size-3.5" />
 					<span>
-						Ngày làm bài: {completedDate.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}{" "}
+						Ngày làm bài:{" "}
+						{completedDate.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}{" "}
 						{completedDate.toLocaleDateString("vi-VN")}
 					</span>
 				</div>

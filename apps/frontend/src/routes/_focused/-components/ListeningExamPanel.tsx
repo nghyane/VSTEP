@@ -1,4 +1,9 @@
-import { ArrowRight01Icon, HeadphonesIcon, PlayIcon, VolumeHighIcon } from "@hugeicons/core-free-icons"
+import {
+	ArrowRight01Icon,
+	HeadphonesIcon,
+	PlayIcon,
+	VolumeHighIcon,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -125,12 +130,13 @@ function ReadinessModal({
 
 				<div className="rounded-lg border bg-muted/50 p-3 text-center text-sm text-muted-foreground space-y-1">
 					<p>
-						Bài thi gồm <span className="font-medium text-foreground">{totalSections} phần</span> với{" "}
-						<span className="font-medium text-foreground">{totalQuestions} câu hỏi</span>.
+						Bài thi gồm <span className="font-medium text-foreground">{totalSections} phần</span>{" "}
+						với <span className="font-medium text-foreground">{totalQuestions} câu hỏi</span>.
 					</p>
 					<p>
 						Âm thanh mỗi phần chỉ phát{" "}
-						<span className="font-medium text-foreground">một lần duy nhất</span>, không thể tua lại.
+						<span className="font-medium text-foreground">một lần duy nhất</span>, không thể tua
+						lại.
 					</p>
 				</div>
 
@@ -215,7 +221,7 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 				if (i < sections.length - 1) {
 					setPlayingIdx(i + 1)
 					setActiveSectionIdx(i + 1)
-					audioRefs.current[i + 1]?.play().catch(() => { })
+					audioRefs.current[i + 1]?.play().catch(() => {})
 				}
 			}
 
@@ -223,7 +229,9 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 			cleanups.push(() => audio.removeEventListener("ended", onEnded))
 		}
 
-		return () => { for (const fn of cleanups) fn() }
+		return () => {
+			for (const fn of cleanups) fn()
+		}
 	}, [isReady, sections])
 
 	// Start audio always from section 0, snap view to it
@@ -231,7 +239,7 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 		if (isPlaying) return
 		setPlayingIdx(0)
 		setActiveSectionIdx(0)
-		audioRefs.current[0]?.play().catch(() => { })
+		audioRefs.current[0]?.play().catch(() => {})
 	}, [isPlaying])
 
 	const handleNextSection = useCallback(() => {
@@ -287,7 +295,6 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 							className="flex items-center gap-2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
 						>
 							<HugeiconsIcon icon={PlayIcon} className="size-3.5" />
-
 						</button>
 					) : (
 						<div className="flex items-center gap-2">
@@ -296,9 +303,7 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 								{formatTime(currentTime)}
 							</span>
 							{playingIdx !== activeSectionIdx && (
-								<span className="text-xs text-muted-foreground">
-									(Section {playingIdx + 1})
-								</span>
+								<span className="text-xs text-muted-foreground">(Section {playingIdx + 1})</span>
 							)}
 						</div>
 					)}
@@ -320,7 +325,9 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 						// biome-ignore lint/a11y/useMediaCaption: VSTEP listening exam audio
 						<audio
 							key={q.id}
-							ref={(el) => { audioRefs.current[i] = el }}
+							ref={(el) => {
+								audioRefs.current[i] = el
+							}}
 							src={c.audioUrl}
 							preload="metadata"
 							className="hidden"
@@ -382,9 +389,13 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 								)}
 							>
 								<span className="inline-flex items-center gap-1.5">
-									{isCurrentlyPlaying && <HugeiconsIcon icon={VolumeHighIcon} className="size-3.5 shrink-0" />}
+									{isCurrentlyPlaying && (
+										<HugeiconsIcon icon={VolumeHighIcon} className="size-3.5 shrink-0" />
+									)}
 									Section {i + 1}
-									<span className="opacity-80">{meta.answered}/{meta.total}</span>
+									<span className="opacity-80">
+										{meta.answered}/{meta.total}
+									</span>
 								</span>
 								{/* Mini progress bar */}
 								<span

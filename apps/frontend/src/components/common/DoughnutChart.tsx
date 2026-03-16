@@ -1,10 +1,10 @@
 import { useMemo } from "react"
 import { Label, Pie, PieChart } from "recharts"
 import {
+	type ChartConfig,
 	ChartContainer,
 	ChartTooltip,
 	ChartTooltipContent,
-	type ChartConfig,
 } from "@/components/ui/chart"
 import { cn } from "@/lib/utils"
 
@@ -48,10 +48,7 @@ export function DoughnutChart({
 			className={cn("mx-auto aspect-square max-h-[250px]", className)}
 		>
 			<PieChart>
-				<ChartTooltip
-					cursor={false}
-					content={<ChartTooltipContent nameKey="skill" hideLabel />}
-				/>
+				<ChartTooltip cursor={false} content={<ChartTooltipContent nameKey="skill" hideLabel />} />
 				<Pie
 					data={chartData}
 					dataKey="count"
@@ -64,12 +61,7 @@ export function DoughnutChart({
 							if (viewBox && "cx" in viewBox && "cy" in viewBox) {
 								const isSmall = innerRadius < 50
 								return (
-									<text
-										x={viewBox.cx}
-										y={viewBox.cy}
-										textAnchor="middle"
-										dominantBaseline="middle"
-									>
+									<text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
 										<tspan
 											x={viewBox.cx}
 											y={(viewBox.cy || 0) - (centerLabel && !isSmall ? 8 : 0)}
@@ -100,7 +92,10 @@ export function DoughnutChart({
 export function DoughnutLegend({
 	segments,
 	className,
-}: { segments: { label: string; value: number; color: string }[]; className?: string }) {
+}: {
+	segments: { label: string; value: number; color: string }[]
+	className?: string
+}) {
 	return (
 		<div className={cn("flex flex-wrap items-center gap-x-4 gap-y-1", className)}>
 			{segments.map((seg) => (

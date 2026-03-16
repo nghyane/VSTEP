@@ -4,7 +4,7 @@ import { useCallback, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
 import { cn } from "@/lib/utils"
-import type { VstepBand } from "@/types/api"
+import type { PlacementStarted, VstepBand } from "@/types/api"
 
 export const Route = createFileRoute("/_focused/onboarding")({
 	component: OnboardingPage,
@@ -53,7 +53,7 @@ const DAILY_TIMES = [
 
 function OnboardingPage() {
 	const navigate = useNavigate()
-	const [step, setStep] = useState<"welcome" | "self-assess" | "quiz" | "goal">("welcome")
+	const [step, setStep] = useState<"welcome" | "self-assess" | "quiz" | "goal" | "skip">("welcome")
 	const [selectedLevel, setSelectedLevel] = useState<string | null>(null)
 	const [targetBand, setTargetBand] = useState<VstepBand>("B2")
 	const [deadlineMonths, setDeadlineMonths] = useState<number | undefined>(3)
@@ -61,7 +61,9 @@ function OnboardingPage() {
 
 	// Quiz state
 	const [quizIndex, setQuizIndex] = useState(0)
-	const [quizAnswers, setQuizAnswers] = useState<(number | null)[]>(Array(QUIZ_QUESTIONS.length).fill(null))
+	const [quizAnswers, setQuizAnswers] = useState<(number | null)[]>(
+		Array(QUIZ_QUESTIONS.length).fill(null),
+	)
 	const [quizDone, setQuizDone] = useState(false)
 
 	const selfAssess = useMutation({
@@ -74,7 +76,31 @@ function OnboardingPage() {
 			deadline?: string
 			dailyStudyTimeMinutes?: number
 		}) => api.post("/api/onboarding/self-assess", body),
-		onSuccess: () => navigate({ to: "/progress" }),
+		onSuccess: () => {
+			localStorage.setItem("vstep_onboarding_done", "1")
+			navigate({ to: "/progress" })
+		},
+	})
+
+	const startPlacement = useMutation({
+		mutationFn: () => api.post<PlacementStarted>("/api/onboarding/placement"),
+		onSuccess: (data) =>
+			navigate({ to: "/practice/$sessionId", params: { sessionId: data.sessionId } }),
+	})
+
+	const skipOnboarding = useMutation({
+		mutationFn: (body: {
+			targetBand: VstepBand
+			englishYears?: number
+			previousTest?: "ielts" | "toeic" | "vstep" | "other" | "none"
+			previousScore?: string
+			deadline?: string
+			dailyStudyTimeMinutes?: number
+		}) => api.post("/api/onboarding/skip", body),
+		onSuccess: () => {
+			localStorage.setItem("vstep_onboarding_done", "1")
+			navigate({ to: "/progress" })
+		},
 	})
 
 	function handleSelectLevel(band: string) {
@@ -167,6 +193,31 @@ function OnboardingPage() {
 								</p>
 							</div>
 							<span className="text-muted-foreground">→</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => startPlacement.mutate()}
+							disabled={startPlacement.isPending}
+							className="flex w-full items-center justify-between rounded-2xl border-2 border-border bg-background px-6 py-5 text-left transition-all hover:border-primary hover:shadow-sm"
+						>
+							<div>
+								<p className="text-lg font-bold">Làm bài test đánh giá thật</p>
+								<p className="mt-1 text-sm text-muted-foreground">
+									Bài test Listening & Reading · khoảng 60 phút
+								</p>
+							</div>
+							<span className="text-muted-foreground">→</span>
+						</button>
+					</div>
+
+					<div className="text-center">
+						<button
+							type="button"
+							onClick={() => setStep("skip")}
+							className="mt-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+						>
+							Bỏ qua, tôi muốn vào học luôn →
 						</button>
 					</div>
 				</div>
@@ -316,7 +367,11 @@ function OnboardingPage() {
 					</div>
 
 					<div className="flex gap-3">
-						<Button variant="outline" onClick={() => setStep(selectedLevel && quizDone ? "quiz" : "self-assess")} className="rounded-xl">
+						<Button
+							variant="outline"
+							onClick={() => setStep(selectedLevel && quizDone ? "quiz" : "self-assess")}
+							className="rounded-xl"
+						>
 							← Quay lại
 						</Button>
 						<Button
@@ -329,6 +384,148 @@ function OnboardingPage() {
 					</div>
 				</div>
 			)}
+
+			{/* Step: Skip — minimal survey */}
+			{step === "skip" && (
+				<SkipForm
+					onSubmit={(body) => skipOnboarding.mutate(body)}
+					isPending={skipOnboarding.isPending}
+					onBack={() => setStep("welcome")}
+				/>
+			)}
+		</div>
+	)
+}
+
+// ---------------------------------------------------------------------------
+// Skip form component
+// ---------------------------------------------------------------------------
+
+const PREVIOUS_TESTS = [
+	{ value: "none", label: "Chưa từng" },
+	{ value: "vstep", label: "VSTEP" },
+	{ value: "ielts", label: "IELTS" },
+	{ value: "toeic", label: "TOEIC" },
+	{ value: "other", label: "Khác" },
+] as const
+
+function SkipForm({
+	onSubmit,
+	isPending,
+	onBack,
+}: {
+	onSubmit: (body: {
+		targetBand: VstepBand
+		englishYears?: number
+		previousTest?: "ielts" | "toeic" | "vstep" | "other" | "none"
+		previousScore?: string
+		deadline?: string
+		dailyStudyTimeMinutes?: number
+	}) => void
+	isPending: boolean
+	onBack: () => void
+}) {
+	const [targetBand, setTargetBand] = useState<VstepBand>("B2")
+	const [englishYears, setEnglishYears] = useState("")
+	const [previousTest, setPreviousTest] = useState<"ielts" | "toeic" | "vstep" | "other" | "none">(
+		"none",
+	)
+	const [previousScore, setPreviousScore] = useState("")
+
+	const toggleBtnClass = (active: boolean) =>
+		cn(
+			"rounded-xl border px-5 py-2.5 text-sm font-medium transition-colors",
+			active
+				? "border-primary bg-primary/10 text-primary"
+				: "border-border hover:border-primary/50",
+		)
+
+	function handleSubmit() {
+		onSubmit({
+			targetBand,
+			englishYears: englishYears ? Number(englishYears) : undefined,
+			previousTest,
+			previousScore: previousTest !== "none" && previousScore ? previousScore : undefined,
+		})
+	}
+
+	return (
+		<div className="space-y-6">
+			<div>
+				<h1 className="text-2xl font-bold">Thông tin nhanh</h1>
+				<p className="mt-2 text-sm text-muted-foreground">
+					Giúp chúng tôi cá nhân hoá lộ trình dù bạn bỏ qua đánh giá
+				</p>
+			</div>
+
+			<div className="space-y-5 rounded-2xl border border-border bg-background p-6">
+				<div className="space-y-2.5">
+					<p className="text-sm font-medium">Band mục tiêu</p>
+					<div className="flex gap-2">
+						{TARGET_BANDS.map((b) => (
+							<button
+								key={b}
+								type="button"
+								onClick={() => setTargetBand(b)}
+								className={toggleBtnClass(targetBand === b)}
+							>
+								{b}
+							</button>
+						))}
+					</div>
+				</div>
+
+				<div className="space-y-2.5">
+					<p className="text-sm font-medium">Số năm học tiếng Anh (tuỳ chọn)</p>
+					<input
+						type="number"
+						min={0}
+						max={50}
+						value={englishYears}
+						onChange={(e) => setEnglishYears(e.target.value)}
+						placeholder="Ví dụ: 5"
+						className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-primary"
+					/>
+				</div>
+
+				<div className="space-y-2.5">
+					<p className="text-sm font-medium">Bạn đã thi bài test nào chưa?</p>
+					<div className="flex flex-wrap gap-2">
+						{PREVIOUS_TESTS.map((t) => (
+							<button
+								key={t.value}
+								type="button"
+								onClick={() => setPreviousTest(t.value)}
+								className={toggleBtnClass(previousTest === t.value)}
+							>
+								{t.label}
+							</button>
+						))}
+					</div>
+				</div>
+
+				{previousTest !== "none" && (
+					<div className="space-y-2.5">
+						<p className="text-sm font-medium">Điểm đạt được (tuỳ chọn)</p>
+						<input
+							type="text"
+							value={previousScore}
+							onChange={(e) => setPreviousScore(e.target.value)}
+							placeholder="Ví dụ: 6.5"
+							className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-primary"
+						/>
+					</div>
+				)}
+			</div>
+
+			<div className="flex gap-3">
+				<Button variant="outline" onClick={onBack} className="rounded-xl">
+					← Quay lại
+				</Button>
+				<Button onClick={handleSubmit} disabled={isPending} className="flex-1 rounded-xl">
+					{isPending ? "Đang xử lý..." : "Bắt đầu luyện tập"}
+				</Button>
+			</div>
 		</div>
 	)
 }
@@ -455,10 +652,16 @@ function QuizView({
 			{/* Progress bar */}
 			<div className="space-y-2">
 				<div className="flex items-center justify-between text-sm text-muted-foreground">
-					<button type="button" onClick={onBack} className="hover:text-foreground transition-colors">
+					<button
+						type="button"
+						onClick={onBack}
+						className="hover:text-foreground transition-colors"
+					>
 						← Thoát
 					</button>
-					<span>Câu {index + 1}/{total}</span>
+					<span>
+						Câu {index + 1}/{total}
+					</span>
 				</div>
 				<div className="h-1.5 rounded-full bg-muted">
 					<div

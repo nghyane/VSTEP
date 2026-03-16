@@ -1,9 +1,9 @@
 import {
+	Alert02Icon,
 	ArrowRight01Icon,
 	Cancel01Icon,
 	CheckmarkCircle02Icon,
 	Clock01Icon,
-	Alert02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
@@ -26,11 +26,11 @@ import {
 import { SKILL_ORDER, skillMeta } from "@/routes/_learner/exams/-components/skill-meta"
 import { useTimer } from "@/routes/_learner/exams/-components/useTimer"
 import type { ExamSessionDetail, Skill, SubmissionAnswer } from "@/types/api"
+import { DeviceCheckScreen } from "./-components/DeviceCheckScreen"
 import { ListeningExamPanel } from "./-components/ListeningExamPanel"
 import { ReadingExamPanel } from "./-components/ReadingExamPanel"
 import { SpeakingExamPanel } from "./-components/SpeakingExamPanel"
 import { WritingExamPanel } from "./-components/WritingExamPanel"
-import { DeviceCheckScreen } from "./-components/DeviceCheckScreen"
 
 export const Route = createFileRoute("/_focused/practice/$sessionId")({
 	component: PracticePage,
@@ -178,7 +178,6 @@ function PracticePage() {
 		)
 	}
 
-
 	if (!deviceChecked) {
 		return (
 			<DeviceCheckScreen
@@ -308,9 +307,14 @@ function PracticePage() {
 						<div className="mx-auto flex size-14 items-center justify-center rounded-full bg-warning/10">
 							<HugeiconsIcon icon={Alert02Icon} className="size-7 text-warning" />
 						</div>
-						<DialogTitle>Chuyển sang phần {skillMeta[activeSkills[currentSkillIndex + 1] ?? currentSkill].label}?</DialogTitle>
+						<DialogTitle>
+							Chuyển sang phần{" "}
+							{skillMeta[activeSkills[currentSkillIndex + 1] ?? currentSkill].label}?
+						</DialogTitle>
 						<DialogDescription className="text-balance text-center">
-							Sau khi chuyển, bạn sẽ <span className="font-semibold text-foreground">không thể quay lại</span> phần {currentSkillLabel} để chỉnh sửa câu trả lời.
+							Sau khi chuyển, bạn sẽ{" "}
+							<span className="font-semibold text-foreground">không thể quay lại</span> phần{" "}
+							{currentSkillLabel} để chỉnh sửa câu trả lời.
 						</DialogDescription>
 					</DialogHeader>
 					<DialogFooter className="sm:justify-center gap-2">

@@ -23,7 +23,6 @@ import { Route as AdminKnowledgePointsRouteImport } from './routes/admin/knowled
 import { Route as AdminExamsRouteImport } from './routes/admin/exams'
 import { Route as LearnerProfileRouteImport } from './routes/_learner/profile'
 import { Route as LearnerDashboardRouteImport } from './routes/_learner/dashboard'
-import { Route as InstructorManageRouteImport } from './routes/_instructor/manage'
 import { Route as FocusedOnboardingRouteImport } from './routes/_focused/onboarding'
 import { Route as FocusedExerciseRouteImport } from './routes/_focused/exercise'
 import { Route as FocusedExamRouteImport } from './routes/_focused/exam'
@@ -42,6 +41,7 @@ import { Route as LearnerPracticeSpeakingRouteImport } from './routes/_learner/p
 import { Route as LearnerPracticeReadingRouteImport } from './routes/_learner/practice/reading'
 import { Route as LearnerPracticeListeningRouteImport } from './routes/_learner/practice/listening'
 import { Route as LearnerExamsExamIdRouteImport } from './routes/_learner/exams/$examId'
+
 import { Route as FocusedVocabularyTopicIdRouteImport } from './routes/_focused/vocabulary.$topicId'
 import { Route as FocusedPracticeSessionIdRouteImport } from './routes/_focused/practice.$sessionId'
 import { Route as LearnerExamsSessionsSessionIdRouteImport } from './routes/_learner/exams/sessions.$sessionId'
@@ -111,11 +111,6 @@ const LearnerDashboardRoute = LearnerDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => LearnerRoute,
-} as any)
-const InstructorManageRoute = InstructorManageRouteImport.update({
-  id: '/manage',
-  path: '/manage',
-  getParentRoute: () => InstructorRoute,
 } as any)
 const FocusedOnboardingRoute = FocusedOnboardingRouteImport.update({
   id: '/onboarding',
@@ -208,6 +203,7 @@ const LearnerExamsExamIdRoute = LearnerExamsExamIdRouteImport.update({
   path: '/exams/$examId',
   getParentRoute: () => LearnerRoute,
 } as any)
+
 const FocusedVocabularyTopicIdRoute =
   FocusedVocabularyTopicIdRouteImport.update({
     id: '/vocabulary/$topicId',
@@ -235,7 +231,6 @@ export interface FileRoutesByFullPath {
   '/exam': typeof FocusedExamRoute
   '/exercise': typeof FocusedExerciseRoute
   '/onboarding': typeof FocusedOnboardingRoute
-  '/manage': typeof InstructorManageRoute
   '/dashboard': typeof LearnerDashboardRoute
   '/profile': typeof LearnerProfileRoute
   '/admin/exams': typeof AdminExamsRoute
@@ -246,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/practice/$sessionId': typeof FocusedPracticeSessionIdRoute
   '/vocabulary/$topicId': typeof FocusedVocabularyTopicIdRoute
+
   '/exams/$examId': typeof LearnerExamsExamIdRoute
   '/practice/listening': typeof LearnerPracticeListeningRoute
   '/practice/reading': typeof LearnerPracticeReadingRoute
@@ -268,7 +264,6 @@ export interface FileRoutesByTo {
   '/exam': typeof FocusedExamRoute
   '/exercise': typeof FocusedExerciseRoute
   '/onboarding': typeof FocusedOnboardingRoute
-  '/manage': typeof InstructorManageRoute
   '/dashboard': typeof LearnerDashboardRoute
   '/profile': typeof LearnerProfileRoute
   '/admin/exams': typeof AdminExamsRoute
@@ -279,6 +274,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/practice/$sessionId': typeof FocusedPracticeSessionIdRoute
   '/vocabulary/$topicId': typeof FocusedVocabularyTopicIdRoute
+
   '/exams/$examId': typeof LearnerExamsExamIdRoute
   '/practice/listening': typeof LearnerPracticeListeningRoute
   '/practice/reading': typeof LearnerPracticeReadingRoute
@@ -307,7 +303,6 @@ export interface FileRoutesById {
   '/_focused/exam': typeof FocusedExamRoute
   '/_focused/exercise': typeof FocusedExerciseRoute
   '/_focused/onboarding': typeof FocusedOnboardingRoute
-  '/_instructor/manage': typeof InstructorManageRoute
   '/_learner/dashboard': typeof LearnerDashboardRoute
   '/_learner/profile': typeof LearnerProfileRoute
   '/admin/exams': typeof AdminExamsRoute
@@ -318,6 +313,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/_focused/practice/$sessionId': typeof FocusedPracticeSessionIdRoute
   '/_focused/vocabulary/$topicId': typeof FocusedVocabularyTopicIdRoute
+
   '/_learner/exams/$examId': typeof LearnerExamsExamIdRoute
   '/_learner/practice/listening': typeof LearnerPracticeListeningRoute
   '/_learner/practice/reading': typeof LearnerPracticeReadingRoute
@@ -343,7 +339,6 @@ export interface FileRouteTypes {
     | '/exam'
     | '/exercise'
     | '/onboarding'
-    | '/manage'
     | '/dashboard'
     | '/profile'
     | '/admin/exams'
@@ -354,6 +349,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/practice/$sessionId'
     | '/vocabulary/$topicId'
+    | '/dashboard/$classId'
     | '/exams/$examId'
     | '/practice/listening'
     | '/practice/reading'
@@ -376,7 +372,6 @@ export interface FileRouteTypes {
     | '/exam'
     | '/exercise'
     | '/onboarding'
-    | '/manage'
     | '/dashboard'
     | '/profile'
     | '/admin/exams'
@@ -387,6 +382,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/practice/$sessionId'
     | '/vocabulary/$topicId'
+    | '/dashboard/$classId'
     | '/exams/$examId'
     | '/practice/listening'
     | '/practice/reading'
@@ -414,7 +410,6 @@ export interface FileRouteTypes {
     | '/_focused/exam'
     | '/_focused/exercise'
     | '/_focused/onboarding'
-    | '/_instructor/manage'
     | '/_learner/dashboard'
     | '/_learner/profile'
     | '/admin/exams'
@@ -425,6 +420,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/_focused/practice/$sessionId'
     | '/_focused/vocabulary/$topicId'
+    | '/_instructor/dashboard/$classId'
     | '/_learner/exams/$examId'
     | '/_learner/practice/listening'
     | '/_learner/practice/reading'
@@ -549,13 +545,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard'
       preLoaderRoute: typeof LearnerDashboardRouteImport
       parentRoute: typeof LearnerRoute
-    }
-    '/_instructor/manage': {
-      id: '/_instructor/manage'
-      path: '/manage'
-      fullPath: '/manage'
-      preLoaderRoute: typeof InstructorManageRouteImport
-      parentRoute: typeof InstructorRoute
     }
     '/_focused/onboarding': {
       id: '/_focused/onboarding'
@@ -683,6 +672,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LearnerExamsExamIdRouteImport
       parentRoute: typeof LearnerRoute
     }
+
     '/_focused/vocabulary/$topicId': {
       id: '/_focused/vocabulary/$topicId'
       path: '/vocabulary/$topicId'
@@ -738,13 +728,9 @@ const FocusedRouteChildren: FocusedRouteChildren = {
 const FocusedRouteWithChildren =
   FocusedRoute._addFileChildren(FocusedRouteChildren)
 
-interface InstructorRouteChildren {
-  InstructorManageRoute: typeof InstructorManageRoute
-}
+interface InstructorRouteChildren {}
 
-const InstructorRouteChildren: InstructorRouteChildren = {
-  InstructorManageRoute: InstructorManageRoute,
-}
+const InstructorRouteChildren: InstructorRouteChildren = {}
 
 const InstructorRouteWithChildren = InstructorRoute._addFileChildren(
   InstructorRouteChildren,

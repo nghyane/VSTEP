@@ -1,12 +1,13 @@
-import { ArrowLeft01Icon } from "@hugeicons/core-free-icons"
+import { ArrowLeft01Icon, Book02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useVocabularyTopic } from "@/hooks/use-vocabulary"
 import { cn } from "@/lib/utils"
 import { ChallengeMode } from "@/routes/_learner/vocabulary/-components/ChallengeMode"
 import { LearningMode } from "@/routes/_learner/vocabulary/-components/LearningMode"
-import { VOCAB_TOPICS } from "@/routes/_learner/vocabulary/-components/mock-data"
 
 export const Route = createFileRoute("/_focused/vocabulary/$topicId")({
 	component: VocabularyExercisePage,
@@ -17,8 +18,26 @@ type Mode = "learning" | "challenge"
 function VocabularyExercisePage() {
 	const { topicId } = Route.useParams()
 	const [mode, setMode] = useState<Mode>("learning")
+	const { data: topic, isLoading } = useVocabularyTopic(topicId)
 
-	const topic = VOCAB_TOPICS.find((t) => t.id === topicId)
+	if (isLoading) {
+		return (
+			<div className="flex h-full flex-col">
+				<header className="flex h-12 shrink-0 items-center justify-between border-b px-4">
+					<Skeleton className="h-5 w-40" />
+					<Skeleton className="h-8 w-24" />
+				</header>
+				<div className="flex-1 p-6">
+					<div className="mx-auto max-w-3xl space-y-4">
+						<Skeleton className="h-10 w-full rounded-lg" />
+						{Array.from({ length: 4 }).map((_, i) => (
+							<Skeleton key={i} className="h-16 w-full rounded-xl" />
+						))}
+					</div>
+				</div>
+			</div>
+		)
+	}
 
 	if (!topic) {
 		return (
@@ -35,7 +54,7 @@ function VocabularyExercisePage() {
 		<div className="flex h-full flex-col">
 			<header className="flex h-12 shrink-0 items-center justify-between border-b px-4">
 				<div className="flex items-center gap-2">
-					<HugeiconsIcon icon={topic.icon} className="size-5 text-primary" />
+					<HugeiconsIcon icon={Book02Icon} className="size-5 text-primary" />
 					<span className="text-sm font-semibold">{topic.name}</span>
 				</div>
 				<Button variant="ghost" size="sm" asChild>
@@ -75,7 +94,7 @@ function VocabularyExercisePage() {
 						</button>
 					</div>
 
-					{mode === "learning" && <LearningMode words={topic.words} />}
+					{mode === "learning" && <LearningMode topicId={topicId} words={topic.words} />}
 					{mode === "challenge" && <ChallengeMode words={topic.words} />}
 				</div>
 			</div>

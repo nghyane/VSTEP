@@ -31,7 +31,6 @@ const ERROR_TRANSLATIONS: Record<string, string> = {
 	Conflict: "Dữ liệu bị trùng lặp",
 }
 
-
 // Vietnamese field names for validation errors
 const FIELD_LABELS: Record<string, string> = {
 	"/email": "Email",
@@ -59,7 +58,8 @@ function translateValidation(body: Record<string, unknown>): string | null {
 	if (msg.includes("email") && msg.includes("format")) return "Email không đúng định dạng"
 
 	// Required / missing
-	if (msg.includes("Required") || msg.includes("Expected required")) return `${field} không được để trống`
+	if (msg.includes("Required") || msg.includes("Expected required"))
+		return `${field} không được để trống`
 
 	// Fallback: field + generic
 	return `${field} không hợp lệ`

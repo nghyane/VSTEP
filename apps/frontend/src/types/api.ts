@@ -133,9 +133,33 @@ interface Goal {
 	updatedAt: string
 }
 
+interface EnrichedGoal extends Goal {
+	achieved: boolean
+	onTrack: boolean | null
+	daysRemaining: number | null
+}
+
 interface ProgressOverview {
 	skills: SkillProgress[]
-	goal: Goal | null
+	goal: EnrichedGoal | null
+}
+
+interface LearningPathSkill {
+	skill: string
+	currentLevel: string
+	targetLevel: string
+	sessionsPerWeek: number
+	focusArea: string | null
+	recommendedLevel: string
+	estimatedMinutes: number
+	weakTopics: { id: string; name: string; masteryScore: number }[]
+	priority: number
+}
+
+interface LearningPathResponse {
+	weeklyPlan: LearningPathSkill[]
+	totalMinutesPerWeek: number
+	projectedImprovement: string | null
 }
 
 // Activity (from GET /api/progress/activity)
@@ -294,6 +318,44 @@ interface ProgressSkillDetail {
 	eta: number | null
 }
 
+// Onboarding
+interface OnboardingStatus {
+	completed: boolean
+	placement: {
+		source: "self_assess" | "placement" | "skipped"
+		confidence: "low" | "medium" | "high"
+		levels: {
+			listening: QuestionLevel
+			reading: QuestionLevel
+			writing: QuestionLevel
+			speaking: QuestionLevel
+		}
+		estimatedBand: VstepBand | null
+	} | null
+	hasGoal: boolean
+	needsVerification: boolean
+}
+
+interface PlacementResult {
+	source: "self_assess" | "placement" | "skipped"
+	confidence: "low" | "medium" | "high"
+	levels: {
+		listening: QuestionLevel
+		reading: QuestionLevel
+		writing: QuestionLevel
+		speaking: QuestionLevel
+	}
+	estimatedBand: VstepBand | null
+	weakPoints: { skill: string; category: string; name: string }[]
+	needsVerification: boolean
+}
+
+interface PlacementStarted {
+	sessionId: string
+	examId: string
+	questionCount: number
+}
+
 // User (from /users/:id - without password)
 interface User {
 	id: string
@@ -373,41 +435,180 @@ interface KnowledgePoint {
 	updatedAt: string
 }
 
+interface TopicItem {
+	id: string
+	name: string
+	questionCount: number
+}
+
 // Question with knowledge points (admin view)
 interface QuestionWithKnowledgePoints extends Question {
 	knowledgePointIds: string[]
 }
 
+// Vocabulary
+interface VocabularyTopic {
+	id: string
+	name: string
+	description: string
+	iconKey: string | null
+	wordCount: number
+	sortOrder: number
+	createdAt: string
+	updatedAt: string
+}
+
+interface VocabularyWord {
+	id: string
+	word: string
+	phonetic: string | null
+	audioUrl: string | null
+	partOfSpeech: string
+	definition: string
+	explanation: string
+	examples: string[]
+	sortOrder: number
+	createdAt: string
+	updatedAt: string
+}
+
+interface VocabularyTopicDetail {
+	id: string
+	name: string
+	description: string
+	iconKey: string | null
+	sortOrder: number
+	createdAt: string
+	updatedAt: string
+	words: VocabularyWord[]
+}
+
+interface VocabularyTopicProgress {
+	knownWordIds: string[]
+	totalWords: number
+	knownCount: number
+}
+
+// Notifications
+type NotificationType = "grading_complete" | "feedback" | "class_invite" | "system"
+
+interface NotificationItem {
+	id: string
+	type: NotificationType
+	title: string
+	body: string | null
+	data: unknown
+	readAt: string | null
+	createdAt: string
+}
+
+// Practice
+interface PracticeNextResponse {
+	question: {
+		id: string
+		skill: string
+		level: string
+		part: number
+		content: unknown
+		answerKey: unknown
+		explanation: string | null
+	} | null
+	scaffoldLevel: number
+	currentLevel: string
+}
+
+// AI
+interface ParaphraseRequest {
+	text: string
+	skill: Skill
+	context?: string
+}
+
+interface ParaphraseHighlight {
+	phrase: string
+	note: string
+}
+
+interface ParaphraseResponse {
+	highlights: ParaphraseHighlight[]
+}
+
+interface ExplainRequest {
+	text: string
+	skill: Skill
+	questionNumbers?: number[]
+	answers?: Record<string, string>
+	correctAnswers?: Record<string, string>
+}
+
+interface QuestionExplanation {
+	questionNumber: number
+	correctAnswer: string
+	explanation: string
+	wrongAnswerNote?: string
+}
+
+interface ExplainHighlight {
+	phrase: string
+	note: string
+	category: "grammar" | "vocabulary" | "strategy" | "discourse"
+}
+
+interface ExplainResponse {
+	highlights: ExplainHighlight[]
+	questionExplanations?: QuestionExplanation[]
+}
+
+// Uploads
+interface UploadAudioResponse {
+	audioKey: string
+}
+
 export type {
 	AIResult,
-	AuthUser,
 	ActivityResponse,
+	AuthUser,
 	AutoResult,
+	EnrichedGoal,
 	Exam,
+	ExamAnswer,
+	ExamBlueprint,
+	ExamSession,
+	ExamSessionDetail,
+	ExamSessionWithExam,
 	ExamType,
+	ExplainHighlight,
+	ExplainRequest,
+	ExplainResponse,
+	Goal,
+	GradingMode,
 	GradingResult,
 	HumanResult,
 	KnowledgePoint,
 	KnowledgePointCategory,
-	ExamAnswer,
-	ExamBlueprint,
-	ExamSession,
-	ExamSessionWithExam,
-	SessionExamEmbed,
-	ExamSessionDetail,
-	Goal,
-	GradingMode,
+	LearningPathResponse,
+	LearningPathSkill,
 	ListeningContent,
 	LoginResponse,
 	MCQItem,
+	NotificationItem,
+	NotificationType,
 	ObjectiveAnswer,
+	OnboardingStatus,
 	PaginatedResponse,
 	PaginationMeta,
+	ParaphraseHighlight,
+	ParaphraseRequest,
+	ParaphraseResponse,
+	PlacementResult,
+	PlacementStarted,
+	PracticeNextResponse,
 	ProgressOverview,
 	ProgressRecentScore,
 	ProgressSkillDetail,
 	Question,
 	QuestionContent,
+	QuestionExplanation,
 	QuestionLevel,
 	QuestionWithKnowledgePoints,
 	ReadingContent,
@@ -415,11 +616,12 @@ export type {
 	ReadingMatchingContent,
 	ReadingTNGContent,
 	RegisterResponse,
+	SessionAnswer,
+	SessionExamEmbed,
+	SessionQuestion,
 	Skill,
 	SkillProgress,
 	SpeakingAnswer,
-	SessionAnswer,
-	SessionQuestion,
 	SpeakingPart1Content,
 	SpeakingPart2Content,
 	SpeakingPart3Content,
@@ -430,8 +632,14 @@ export type {
 	SubmissionAnswer,
 	SubmissionFull,
 	SubmissionStatus,
+	TopicItem,
 	Trend,
+	UploadAudioResponse,
 	User,
+	VocabularyTopic,
+	VocabularyTopicDetail,
+	VocabularyTopicProgress,
+	VocabularyWord,
 	VstepBand,
 	WritingAnswer,
 	WritingContent,

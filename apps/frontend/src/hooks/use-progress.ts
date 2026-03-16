@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 import type {
 	ActivityResponse,
+	LearningPathResponse,
 	ProgressOverview,
 	ProgressSkillDetail,
 	SpiderChartResponse,
@@ -33,6 +34,13 @@ function useSkillDetail(skill: string) {
 		queryKey: ["progress", skill],
 		queryFn: () => api.get<ProgressSkillDetail>(`/api/progress/${skill}`),
 		enabled: !!skill,
+	})
+}
+
+function useLearningPath() {
+	return useQuery({
+		queryKey: ["progress", "learning-path"],
+		queryFn: () => api.get<LearningPathResponse>("/api/progress/learning-path"),
 	})
 }
 
@@ -80,6 +88,7 @@ export {
 	useActivity,
 	useCreateGoal,
 	useDeleteGoal,
+	useLearningPath,
 	useProgress,
 	useSkillDetail,
 	useSpiderChart,

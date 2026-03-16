@@ -9,10 +9,10 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { useCallback, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import type { VocabWord } from "./mock-data"
+import type { VocabularyWord } from "@/types/api"
 
 interface ChallengeModeProps {
-	words: VocabWord[]
+	words: VocabularyWord[]
 }
 
 function blankWord(sentence: string, word: string): string {

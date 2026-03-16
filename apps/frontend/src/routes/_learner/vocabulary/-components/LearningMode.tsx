@@ -7,16 +7,21 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { useToggleKnown, useTopicProgress } from "@/hooks/use-vocabulary"
 import { cn } from "@/lib/utils"
-import type { VocabWord } from "./mock-data"
+import type { VocabularyWord } from "@/types/api"
 
 interface LearningModeProps {
-	words: VocabWord[]
+	topicId: string
+	words: VocabularyWord[]
 }
 
-export function LearningMode({ words }: LearningModeProps) {
+export function LearningMode({ topicId, words }: LearningModeProps) {
 	const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
-	const [knownIds, setKnownIds] = useState<Set<string>>(new Set())
+	const { data: progress } = useTopicProgress(topicId)
+	const toggleKnown = useToggleKnown()
+
+	const knownIds = new Set(progress?.knownWordIds ?? [])
 
 	function toggleExpanded(id: string) {
 		setExpandedIds((prev) => {
@@ -30,16 +35,9 @@ export function LearningMode({ words }: LearningModeProps) {
 		})
 	}
 
-	function toggleKnown(id: string) {
-		setKnownIds((prev) => {
-			const next = new Set(prev)
-			if (next.has(id)) {
-				next.delete(id)
-			} else {
-				next.add(id)
-			}
-			return next
-		})
+	function handleToggleKnown(wordId: string) {
+		const isCurrentlyKnown = knownIds.has(wordId)
+		toggleKnown.mutate({ wordId, known: !isCurrentlyKnown })
 	}
 
 	const knownCount = knownIds.size
@@ -89,7 +87,9 @@ export function LearningMode({ words }: LearningModeProps) {
 
 								<span className="font-semibold">{word.word}</span>
 
-								<span className="text-sm text-muted-foreground">{word.phonetic}</span>
+								{word.phonetic && (
+									<span className="text-sm text-muted-foreground">{word.phonetic}</span>
+								)}
 
 								<span className="rounded-md bg-muted px-2 py-0.5 text-xs">{word.partOfSpeech}</span>
 
@@ -98,7 +98,8 @@ export function LearningMode({ words }: LearningModeProps) {
 										variant={isKnown ? "default" : "outline"}
 										size="sm"
 										className="gap-1.5 text-xs"
-										onClick={() => toggleKnown(word.id)}
+										onClick={() => handleToggleKnown(word.id)}
+										disabled={toggleKnown.isPending}
 									>
 										<HugeiconsIcon icon={CheckmarkCircle02Icon} className="size-3.5" />
 										Đã thuộc

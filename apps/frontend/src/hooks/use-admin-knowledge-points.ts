@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
-import type { KnowledgePoint, KnowledgePointCategory, PaginatedResponse } from "@/types/api"
+import type {
+	KnowledgePoint,
+	KnowledgePointCategory,
+	PaginatedResponse,
+	TopicItem,
+} from "@/types/api"
 
 function useKnowledgePoints(params?: { page?: number; category?: string; search?: string }) {
 	const sp = new URLSearchParams()
@@ -51,6 +56,17 @@ function useUpdateKnowledgePoint() {
 	})
 }
 
+function useKnowledgePointTopics(skill?: string) {
+	const sp = new URLSearchParams()
+	if (skill) sp.set("skill", skill)
+	const qs = sp.toString()
+	return useQuery({
+		queryKey: ["knowledge-point-topics", skill],
+		queryFn: () =>
+			api.get<{ data: TopicItem[] }>(`/api/knowledge-points/topics${qs ? `?${qs}` : ""}`),
+	})
+}
+
 function useDeleteKnowledgePoint() {
 	const qc = useQueryClient()
 	return useMutation({
@@ -65,6 +81,7 @@ export {
 	useCreateKnowledgePoint,
 	useDeleteKnowledgePoint,
 	useKnowledgePoint,
+	useKnowledgePointTopics,
 	useKnowledgePoints,
 	useUpdateKnowledgePoint,
 }

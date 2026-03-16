@@ -1,30 +1,60 @@
-import { useState } from "react"
 import {
+	ArrowRight01Icon,
 	Book02Icon,
+	Cancel01Icon,
+	CheckmarkCircle02Icon,
 	Clock01Icon,
+	Fire02Icon,
 	HeadphonesIcon,
 	Mic01Icon,
 	PencilEdit02Icon,
+	PlusSignIcon,
 	Target02Icon,
-	Fire02Icon,
 } from "@hugeicons/core-free-icons"
 import type { IconSvgElement } from "@hugeicons/react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link } from "@tanstack/react-router"
+import { useState } from "react"
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { ActivityHeatmap } from "@/components/common/ActivityHeatmap"
 import { DoughnutChart, DoughnutLegend } from "@/components/common/DoughnutChart"
 import { SpiderChart } from "@/components/common/SpiderChart"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+	type ChartConfig,
+	ChartContainer,
+	ChartTooltip,
+	ChartTooltipContent,
+} from "@/components/ui/chart"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useActivity, useProgress, useSkillDetail, useSpiderChart } from "@/hooks/use-progress"
 import { useExamSessions } from "@/hooks/use-exam-session"
+import {
+	useActivity,
+	useCreateGoal,
+	useDeleteGoal,
+	useLearningPath,
+	useProgress,
+	useSkillDetail,
+	useSpiderChart,
+	useUpdateGoal,
+} from "@/hooks/use-progress"
 import { useUser } from "@/hooks/use-user"
 import { user as getAuthUser } from "@/lib/auth"
 import { avatarUrl, getInitials } from "@/lib/avatar"
 import { cn } from "@/lib/utils"
-import type { Skill } from "@/types/api"
+import type { EnrichedGoal, Skill, VstepBand } from "@/types/api"
 
 export const Route = createFileRoute("/_learner/progress/")({
 	component: ProgressOverviewPage,
@@ -58,14 +88,12 @@ const skillColorText: Record<Skill, string> = {
 	speaking: "text-skill-speaking",
 }
 
-
 const scoreChartConfig = {
 	listening: { label: "Listening", color: "var(--skill-listening)" },
 	reading: { label: "Reading", color: "var(--skill-reading)" },
 	writing: { label: "Writing", color: "var(--skill-writing)" },
 	speaking: { label: "Speaking", color: "var(--skill-speaking)" },
 } satisfies ChartConfig
-
 
 function ProgressOverviewPage() {
 	const currentUser = getAuthUser()
@@ -104,9 +132,7 @@ function ProgressOverviewPage() {
 						</AvatarFallback>
 					</Avatar>
 					<div>
-						<h1 className="text-2xl font-bold text-white">
-							Hi, {currentUser?.fullName ?? "Bạn"}
-						</h1>
+						<h1 className="text-2xl font-bold text-white">Hi, {currentUser?.fullName ?? "Bạn"}</h1>
 						<p className="mt-1 text-sm text-white/80">
 							Hãy tiếp tục học mỗi ngày — nỗ lực của bạn sẽ được đền đáp!
 						</p>
@@ -120,8 +146,15 @@ function ProgressOverviewPage() {
 			{/* Tabs */}
 			<Tabs defaultValue="overview">
 				<TabsList variant="line" className="w-full">
-					<TabsTrigger value="overview" className="flex-1">Tổng Quát</TabsTrigger>
-					<TabsTrigger value="test-practice" className="flex-1">Test Practice</TabsTrigger>
+					<TabsTrigger value="overview" className="flex-1">
+						Tổng Quát
+					</TabsTrigger>
+					<TabsTrigger value="test-practice" className="flex-1">
+						Test Practice
+					</TabsTrigger>
+					<TabsTrigger value="learning-path" className="flex-1">
+						Lộ trình
+					</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="overview" className="mt-6 space-y-6">
@@ -134,6 +167,10 @@ function ProgressOverviewPage() {
 
 				<TabsContent value="test-practice" className="mt-6 space-y-6">
 					<TestPracticeTab spiderData={spiderData} progressData={progressData} />
+				</TabsContent>
+
+				<TabsContent value="learning-path" className="mt-6 space-y-6">
+					<LearningPathTab />
 				</TabsContent>
 			</Tabs>
 		</div>
@@ -191,6 +228,9 @@ function OverviewTab({
 					valueColor="text-success"
 				/>
 			</div>
+
+			{/* Goal Card */}
+			<GoalCard goal={progressData?.goal ?? null} />
 
 			{/* Spider Chart + Doughnut Chart */}
 			<div className="grid gap-6 md:grid-cols-2">
@@ -289,7 +329,12 @@ function TestPracticeTab({
 							<div key={key} className="rounded-xl border bg-background p-4">
 								<div className="mb-3 flex items-center justify-between">
 									<span className="text-sm font-medium text-muted-foreground">{label}</span>
-									<div className={cn("flex size-8 items-center justify-center rounded-lg", skillColor[key])}>
+									<div
+										className={cn(
+											"flex size-8 items-center justify-center rounded-lg",
+											skillColor[key],
+										)}
+									>
 										<HugeiconsIcon icon={icon} className="size-4" />
 									</div>
 								</div>
@@ -368,7 +413,13 @@ function TestPracticeTab({
 							>
 								{visibleSkills.has(key) && (
 									<svg className="size-3 text-white" viewBox="0 0 12 12" fill="none">
-										<path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+										<path
+											d="M2 6l3 3 5-5"
+											stroke="currentColor"
+											strokeWidth="2"
+											strokeLinecap="round"
+											strokeLinejoin="round"
+										/>
 									</svg>
 								)}
 							</span>
@@ -385,16 +436,44 @@ function TestPracticeTab({
 							<YAxis domain={[0, 10]} tickLine={false} axisLine={false} tickMargin={8} />
 							<ChartTooltip content={<ChartTooltipContent />} />
 							{visibleSkills.has("listening") && (
-								<Line type="monotone" dataKey="listening" stroke="var(--color-listening)" strokeWidth={2} dot={{ r: 4 }} connectNulls />
+								<Line
+									type="monotone"
+									dataKey="listening"
+									stroke="var(--color-listening)"
+									strokeWidth={2}
+									dot={{ r: 4 }}
+									connectNulls
+								/>
 							)}
 							{visibleSkills.has("reading") && (
-								<Line type="monotone" dataKey="reading" stroke="var(--color-reading)" strokeWidth={2} dot={{ r: 4 }} connectNulls />
+								<Line
+									type="monotone"
+									dataKey="reading"
+									stroke="var(--color-reading)"
+									strokeWidth={2}
+									dot={{ r: 4 }}
+									connectNulls
+								/>
 							)}
 							{visibleSkills.has("writing") && (
-								<Line type="monotone" dataKey="writing" stroke="var(--color-writing)" strokeWidth={2} dot={{ r: 4 }} connectNulls />
+								<Line
+									type="monotone"
+									dataKey="writing"
+									stroke="var(--color-writing)"
+									strokeWidth={2}
+									dot={{ r: 4 }}
+									connectNulls
+								/>
 							)}
 							{visibleSkills.has("speaking") && (
-								<Line type="monotone" dataKey="speaking" stroke="var(--color-speaking)" strokeWidth={2} dot={{ r: 4 }} connectNulls />
+								<Line
+									type="monotone"
+									dataKey="speaking"
+									stroke="var(--color-speaking)"
+									strokeWidth={2}
+									dot={{ r: 4 }}
+									connectNulls
+								/>
 							)}
 						</LineChart>
 					</ChartContainer>
@@ -443,7 +522,10 @@ function TestPracticeTab({
 										const skillInfo = best ? SKILLS.find((s) => s.key === best.skill) : undefined
 
 										return (
-											<div key={session.id} className="flex items-center gap-3 rounded-lg border p-3">
+											<div
+												key={session.id}
+												className="flex items-center gap-3 rounded-lg border p-3"
+											>
 												{best ? (
 													<div
 														className={cn(
@@ -460,7 +542,9 @@ function TestPracticeTab({
 												)}
 												<div className="min-w-0 flex-1">
 													{skillInfo && (
-														<span className={cn("text-xs font-medium", skillColorText[best!.skill])}>
+														<span
+															className={cn("text-xs font-medium", skillColorText[best!.skill])}
+														>
 															{skillInfo.label}
 														</span>
 													)}
@@ -488,6 +572,341 @@ function TestPracticeTab({
 						Chưa có lịch sử test
 					</div>
 				)}
+			</div>
+		</>
+	)
+}
+
+// ---------- Goal Card ----------
+
+function GoalCard({ goal }: { goal: EnrichedGoal | null }) {
+	const [editing, setEditing] = useState(false)
+	const [creating, setCreating] = useState(false)
+	const deleteGoal = useDeleteGoal()
+
+	if (creating || (!goal && editing)) {
+		return (
+			<GoalForm
+				onCancel={() => {
+					setCreating(false)
+					setEditing(false)
+				}}
+			/>
+		)
+	}
+
+	if (editing && goal) {
+		return <GoalForm goal={goal} onCancel={() => setEditing(false)} />
+	}
+
+	if (!goal) {
+		return (
+			<div className="flex flex-col items-center justify-center gap-3 rounded-2xl border bg-card p-8">
+				<div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+					<HugeiconsIcon icon={Target02Icon} className="size-6" />
+				</div>
+				<p className="text-sm text-muted-foreground">Bạn chưa đặt mục tiêu học tập</p>
+				<Button size="sm" onClick={() => setCreating(true)}>
+					<HugeiconsIcon icon={PlusSignIcon} className="size-4" />
+					Đặt mục tiêu
+				</Button>
+			</div>
+		)
+	}
+
+	const deadlineDate = new Date(goal.deadline)
+	const deadlineLabel = deadlineDate.toLocaleDateString("vi-VN", {
+		day: "numeric",
+		month: "long",
+		year: "numeric",
+	})
+
+	return (
+		<div className="rounded-2xl border bg-card p-5">
+			<div className="flex items-center justify-between">
+				<div className="flex items-center gap-3">
+					<div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+						<HugeiconsIcon icon={Target02Icon} className="size-5" />
+					</div>
+					<div>
+						<h3 className="text-lg font-semibold">Mục tiêu: {goal.targetBand}</h3>
+						<p className="text-sm text-muted-foreground">
+							{goal.currentEstimatedBand && `Hiện tại: ${goal.currentEstimatedBand} · `}
+							Hạn: {deadlineLabel}
+						</p>
+					</div>
+				</div>
+				<div className="flex gap-1">
+					<Button variant="ghost" size="icon-sm" onClick={() => setEditing(true)}>
+						<HugeiconsIcon icon={PencilEdit02Icon} className="size-4" />
+					</Button>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						onClick={() => deleteGoal.mutate(goal.id)}
+						disabled={deleteGoal.isPending}
+					>
+						<HugeiconsIcon icon={Cancel01Icon} className="size-4 text-destructive" />
+					</Button>
+				</div>
+			</div>
+
+			<div className="mt-4 grid grid-cols-3 gap-4">
+				<div className="rounded-xl bg-muted/50 p-3 text-center">
+					<p className="text-xs text-muted-foreground">Thời gian học/ngày</p>
+					<p className="mt-1 text-lg font-bold">{goal.dailyStudyTimeMinutes ?? "—"} phút</p>
+				</div>
+				<div className="rounded-xl bg-muted/50 p-3 text-center">
+					<p className="text-xs text-muted-foreground">Còn lại</p>
+					<p className="mt-1 text-lg font-bold">
+						{goal.daysRemaining != null ? `${goal.daysRemaining} ngày` : "—"}
+					</p>
+				</div>
+				<div className="rounded-xl bg-muted/50 p-3 text-center">
+					<p className="text-xs text-muted-foreground">Tiến độ</p>
+					<div className="mt-1 flex items-center justify-center gap-1.5">
+						{goal.achieved ? (
+							<>
+								<HugeiconsIcon icon={CheckmarkCircle02Icon} className="size-5 text-success" />
+								<span className="text-sm font-bold text-success">Đạt</span>
+							</>
+						) : goal.onTrack === true ? (
+							<>
+								<HugeiconsIcon icon={CheckmarkCircle02Icon} className="size-5 text-primary" />
+								<span className="text-sm font-bold text-primary">Đúng tiến độ</span>
+							</>
+						) : goal.onTrack === false ? (
+							<>
+								<HugeiconsIcon icon={Clock01Icon} className="size-5 text-warning" />
+								<span className="text-sm font-bold text-warning">Cần cố gắng</span>
+							</>
+						) : (
+							<span className="text-sm font-bold text-muted-foreground">—</span>
+						)}
+					</div>
+				</div>
+			</div>
+		</div>
+	)
+}
+
+function GoalForm({ goal, onCancel }: { goal?: EnrichedGoal; onCancel: () => void }) {
+	const createGoal = useCreateGoal()
+	const updateGoal = useUpdateGoal()
+	const [targetBand, setTargetBand] = useState<string>(goal?.targetBand ?? "B2")
+	const [deadline, setDeadline] = useState(
+		goal?.deadline ? new Date(goal.deadline).toISOString().split("T")[0] : "",
+	)
+	const [dailyMinutes, setDailyMinutes] = useState(String(goal?.dailyStudyTimeMinutes ?? 60))
+
+	const isPending = createGoal.isPending || updateGoal.isPending
+
+	function handleSubmit(e: React.FormEvent) {
+		e.preventDefault()
+		if (!deadline) return
+
+		const body = {
+			targetBand,
+			deadline,
+			dailyStudyTimeMinutes: Number(dailyMinutes) || undefined,
+		}
+
+		if (goal) {
+			updateGoal.mutate({ id: goal.id, ...body }, { onSuccess: onCancel })
+		} else {
+			createGoal.mutate(body, { onSuccess: onCancel })
+		}
+	}
+
+	return (
+		<form onSubmit={handleSubmit} className="rounded-2xl border bg-card p-5">
+			<h3 className="mb-4 text-lg font-semibold">
+				{goal ? "Chỉnh sửa mục tiêu" : "Đặt mục tiêu mới"}
+			</h3>
+			<div className="grid gap-4 sm:grid-cols-3">
+				<div className="space-y-1.5">
+					<Label>Band mục tiêu</Label>
+					<Select value={targetBand} onValueChange={setTargetBand}>
+						<SelectTrigger className="w-full">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{(["B1", "B2", "C1"] as VstepBand[]).map((b) => (
+								<SelectItem key={b} value={b}>
+									{b}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+				<div className="space-y-1.5">
+					<Label>Hạn hoàn thành</Label>
+					<Input
+						type="date"
+						value={deadline}
+						onChange={(e) => setDeadline(e.target.value)}
+						required
+					/>
+				</div>
+				<div className="space-y-1.5">
+					<Label>Phút/ngày</Label>
+					<Input
+						type="number"
+						min={10}
+						max={480}
+						value={dailyMinutes}
+						onChange={(e) => setDailyMinutes(e.target.value)}
+					/>
+				</div>
+			</div>
+			<div className="mt-4 flex gap-2">
+				<Button type="submit" size="sm" disabled={isPending}>
+					{goal ? "Lưu" : "Tạo mục tiêu"}
+				</Button>
+				<Button type="button" variant="outline" size="sm" onClick={onCancel}>
+					Hủy
+				</Button>
+			</div>
+		</form>
+	)
+}
+
+// ---------- Learning Path Tab ----------
+
+function LearningPathTab() {
+	const { data, isLoading, error } = useLearningPath()
+
+	if (isLoading) {
+		return (
+			<div className="space-y-4">
+				<Skeleton className="h-16 rounded-2xl" />
+				{Array.from({ length: 4 }).map((_, i) => (
+					<Skeleton key={i} className="h-48 rounded-2xl" />
+				))}
+			</div>
+		)
+	}
+
+	if (error) {
+		return (
+			<div className="flex h-40 items-center justify-center rounded-2xl border text-muted-foreground">
+				Không thể tải lộ trình: {error.message}
+			</div>
+		)
+	}
+
+	if (!data || data.weeklyPlan.length === 0) {
+		return (
+			<div className="flex flex-col items-center justify-center gap-3 rounded-2xl border bg-card py-16">
+				<div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+					<HugeiconsIcon icon={Book02Icon} className="size-6" />
+				</div>
+				<p className="text-sm text-muted-foreground">Chưa có lộ trình học tập</p>
+				<p className="max-w-xs text-center text-xs text-muted-foreground">
+					Hãy đặt mục tiêu và luyện tập thêm để hệ thống tạo lộ trình phù hợp cho bạn.
+				</p>
+			</div>
+		)
+	}
+
+	return (
+		<>
+			{/* Summary banner */}
+			<div className="flex flex-wrap items-center gap-4 rounded-2xl border bg-card p-5">
+				{data.projectedImprovement && (
+					<div className="flex items-center gap-2">
+						<HugeiconsIcon icon={ArrowRight01Icon} className="size-5 text-primary" />
+						<span className="text-sm font-semibold">{data.projectedImprovement}</span>
+					</div>
+				)}
+				<div className="flex items-center gap-2">
+					<HugeiconsIcon icon={Clock01Icon} className="size-5 text-muted-foreground" />
+					<span className="text-sm text-muted-foreground">
+						{data.totalMinutesPerWeek} phút/tuần
+					</span>
+				</div>
+			</div>
+
+			{/* Skill cards */}
+			<div className="space-y-4">
+				{data.weeklyPlan.map((plan) => {
+					const skillInfo = SKILLS.find((s) => s.key === plan.skill)
+					const color = skillColor[plan.skill as Skill] ?? "bg-muted text-muted-foreground"
+					const textColor = skillColorText[plan.skill as Skill] ?? "text-muted-foreground"
+
+					return (
+						<div key={plan.skill} className="rounded-2xl border bg-card p-5">
+							{/* Header */}
+							<div className="flex items-center justify-between">
+								<div className="flex items-center gap-3">
+									<div className={cn("flex size-10 items-center justify-center rounded-xl", color)}>
+										{skillInfo && <HugeiconsIcon icon={skillInfo.icon} className="size-5" />}
+									</div>
+									<div>
+										<div className="flex items-center gap-2">
+											<h4 className="font-semibold">{skillInfo?.label ?? plan.skill}</h4>
+											<Badge variant="secondary" className="text-[10px]">
+												#{plan.priority}
+											</Badge>
+										</div>
+										<p className="text-sm text-muted-foreground">
+											{plan.currentLevel}
+											<span className="mx-1">→</span>
+											{plan.targetLevel}
+										</p>
+									</div>
+								</div>
+							</div>
+
+							{/* Details */}
+							<div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+								<div className="rounded-xl bg-muted/50 p-2.5 text-center">
+									<p className="text-[10px] text-muted-foreground">Buổi/tuần</p>
+									<p className="text-sm font-bold">{plan.sessionsPerWeek}</p>
+								</div>
+								<div className="rounded-xl bg-muted/50 p-2.5 text-center">
+									<p className="text-[10px] text-muted-foreground">Thời lượng</p>
+									<p className="text-sm font-bold">{plan.estimatedMinutes} phút</p>
+								</div>
+								<div className="rounded-xl bg-muted/50 p-2.5 text-center">
+									<p className="text-[10px] text-muted-foreground">Cấp độ đề xuất</p>
+									<p className="text-sm font-bold">{plan.recommendedLevel}</p>
+								</div>
+								{plan.focusArea && (
+									<div className="rounded-xl bg-muted/50 p-2.5 text-center">
+										<p className="text-[10px] text-muted-foreground">Trọng tâm</p>
+										<p className="text-sm font-bold">{plan.focusArea}</p>
+									</div>
+								)}
+							</div>
+
+							{/* Weak topics */}
+							{plan.weakTopics.length > 0 && (
+								<div className="mt-4">
+									<p className="mb-2 text-xs font-medium text-muted-foreground">
+										Chủ đề cần cải thiện
+									</p>
+									<div className="space-y-2">
+										{plan.weakTopics.map((topic) => (
+											<div key={topic.id} className="flex items-center gap-3">
+												<span className="w-28 truncate text-xs">{topic.name}</span>
+												<div className="h-1.5 flex-1 rounded-full bg-muted">
+													<div
+														className={cn("h-full rounded-full", textColor.replace("text-", "bg-"))}
+														style={{ width: `${Math.min(topic.masteryScore, 100)}%` }}
+													/>
+												</div>
+												<span className="w-8 text-right text-[10px] text-muted-foreground">
+													{topic.masteryScore}%
+												</span>
+											</div>
+										))}
+									</div>
+								</div>
+							)}
+						</div>
+					)
+				})}
 			</div>
 		</>
 	)
@@ -525,7 +944,9 @@ function StatCard({
 
 function SpiderChartCard({
 	spiderData,
-}: { spiderData: ReturnType<typeof useSpiderChart>["data"] }) {
+}: {
+	spiderData: ReturnType<typeof useSpiderChart>["data"]
+}) {
 	const spiderSkills = spiderData
 		? SKILLS.map(({ key, label }) => ({
 				label,
@@ -549,7 +970,9 @@ function SpiderChartCard({
 
 function DoughnutChartCard({
 	progressData,
-}: { progressData: ReturnType<typeof useProgress>["data"] }) {
+}: {
+	progressData: ReturnType<typeof useProgress>["data"]
+}) {
 	const segments = SKILLS.map(({ key, label }) => {
 		const sk = progressData?.skills.find((s) => s.skill === key)
 		return {
@@ -564,11 +987,7 @@ function DoughnutChartCard({
 		<div className="rounded-xl border bg-card p-5">
 			<h3 className="text-lg font-semibold">Tổng số bài test đã hoàn thành</h3>
 			<p className="mb-4 text-sm text-muted-foreground">trong Test Practice</p>
-			<DoughnutChart
-				segments={segments}
-				centerLabel="Tổng số bài test"
-				centerValue={total}
-			/>
+			<DoughnutChart segments={segments} centerLabel="Tổng số bài test" centerValue={total} />
 			<DoughnutLegend segments={segments} className="mt-4 justify-center" />
 		</div>
 	)

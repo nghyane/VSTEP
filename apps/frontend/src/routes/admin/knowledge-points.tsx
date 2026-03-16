@@ -8,6 +8,7 @@ import {
 	useCreateKnowledgePoint,
 	useDeleteKnowledgePoint,
 	useKnowledgePoints,
+	useKnowledgePointTopics,
 } from "@/hooks/use-admin-knowledge-points"
 import type { KnowledgePointCategory } from "@/types/api"
 
@@ -29,6 +30,9 @@ function KnowledgePointsPage() {
 	const [showForm, setShowForm] = useState(false)
 	const [newName, setNewName] = useState("")
 	const [newCategory, setNewCategory] = useState<KnowledgePointCategory>("grammar")
+
+	const { data: topicsData, isLoading: topicsLoading } = useKnowledgePointTopics()
+	const topics = topicsData?.data ?? []
 
 	const { data, isLoading, isError } = useKnowledgePoints({
 		category: category || undefined,
@@ -111,6 +115,25 @@ function KnowledgePointsPage() {
 					</Button>
 				))}
 			</div>
+
+			{topicsLoading ? (
+				<div className="flex flex-wrap gap-2">
+					{[1, 2, 3].map((i) => (
+						<div key={i} className="h-7 w-28 animate-pulse rounded-full bg-muted" />
+					))}
+				</div>
+			) : topics.length > 0 ? (
+				<div className="space-y-2">
+					<p className="text-sm font-medium text-muted-foreground">Topics</p>
+					<div className="flex flex-wrap gap-2">
+						{topics.map((t) => (
+							<Badge key={t.id} variant="outline">
+								{t.name} ({t.questionCount} câu hỏi)
+							</Badge>
+						))}
+					</div>
+				</div>
+			) : null}
 
 			<div className="relative">
 				<HugeiconsIcon

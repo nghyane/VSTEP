@@ -87,20 +87,15 @@ function SpeakingRecorder({
 	const onRecordedRef = useRef(onRecorded)
 	onRecordedRef.current = onRecorded
 
-	const {
-		status,
-		startRecording,
-		stopRecording,
-		mediaBlobUrl,
-		clearBlobUrl,
-	} = useReactMediaRecorder({
-		audio: true,
-		video: false,
-		askPermissionOnMount: false,
-		onStop: () => {
-			setPhase("done")
-		},
-	})
+	const { status, startRecording, stopRecording, mediaBlobUrl, clearBlobUrl } =
+		useReactMediaRecorder({
+			audio: true,
+			video: false,
+			askPermissionOnMount: false,
+			onStop: () => {
+				setPhase("done")
+			},
+		})
 
 	// Save answer when recording finishes (use ref to avoid re-trigger loop)
 	useEffect(() => {
@@ -209,9 +204,7 @@ function SpeakingRecorder({
 				)}
 			>
 				{phase === "idle" && (
-					<span className="text-sm text-muted-foreground">
-						Bấm "Bắt đầu" để chuẩn bị và ghi âm
-					</span>
+					<span className="text-sm text-muted-foreground">Bấm "Bắt đầu" để chuẩn bị và ghi âm</span>
 				)}
 				{phase === "preparing" && (
 					<div className="flex items-center gap-3">
@@ -277,9 +270,7 @@ function SpeakingRecorder({
 					Không thể truy cập microphone. Hãy cấp quyền trên trình duyệt.
 				</p>
 			)}
-			{hasDoneRecording && (
-				<p className="text-xs font-medium text-emerald-600">✓ Đã ghi âm xong</p>
-			)}
+			{hasDoneRecording && <p className="text-xs font-medium text-emerald-600">✓ Đã ghi âm xong</p>}
 
 			{/* biome-ignore lint/a11y/useMediaCaption: playback only */}
 			<audio ref={playbackRef} className="hidden" />
@@ -336,10 +327,7 @@ function Part1Content({
 				</div>
 			))}
 
-			<Part1Recorder
-				existingAudioUrl={existingAudioUrl}
-				onRecorded={onRecorded}
-			/>
+			<Part1Recorder existingAudioUrl={existingAudioUrl} onRecorded={onRecorded} />
 		</div>
 	)
 }
@@ -445,7 +433,11 @@ function Part3Content({
 
 // --- Main Panel ---
 
-export function SpeakingExamPanel({ questions, answers, onUpdateSpeaking }: SpeakingExamPanelProps) {
+export function SpeakingExamPanel({
+	questions,
+	answers,
+	onUpdateSpeaking,
+}: SpeakingExamPanelProps) {
 	const parts = useMemo(() => [...questions].sort((a, b) => a.part - b.part), [questions])
 
 	const [activePartIdx, setActivePartIdx] = useState(0)
