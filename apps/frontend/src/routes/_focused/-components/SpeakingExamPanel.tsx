@@ -67,15 +67,13 @@ interface SpeakingExamPanelProps {
 
 // --- Recorder per question ---
 
-type RecorderPhase = "idle" | "preparing" | "recording" | "done"
+type RecorderPhase = "idle" | "recording" | "done"
 
 function SpeakingRecorder({
-	preparationSeconds,
 	speakingSeconds,
 	existingAudioUrl,
 	onRecorded,
 }: {
-	preparationSeconds: number
 	speakingSeconds: number
 	existingAudioUrl: string | null
 	onRecorded: (audioUrl: string, durationSeconds: number) => void
@@ -105,29 +103,6 @@ function SpeakingRecorder({
 		}
 	}, [phase, mediaBlobUrl])
 
-	// Preparation countdown → auto-start recording
-	useEffect(() => {
-		if (phase !== "preparing") return
-		setTimer(preparationSeconds)
-
-		timerRef.current = setInterval(() => {
-			setTimer((t) => {
-				if (t <= 1) {
-					// Start recording
-					setPhase("recording")
-					recordStartRef.current = Date.now()
-					startRecording()
-					return speakingSeconds
-				}
-				return t - 1
-			})
-		}, 1000)
-
-		return () => {
-			if (timerRef.current) clearInterval(timerRef.current)
-		}
-	}, [phase, preparationSeconds, speakingSeconds, startRecording])
-
 	// Recording countdown → auto-stop
 	useEffect(() => {
 		if (phase !== "recording") return
@@ -151,14 +126,10 @@ function SpeakingRecorder({
 	}, [phase, speakingSeconds, stopRecording])
 
 	const handleStart = useCallback(() => {
-		if (preparationSeconds > 0) {
-			setPhase("preparing")
-		} else {
-			setPhase("recording")
-			recordStartRef.current = Date.now()
-			startRecording()
-		}
-	}, [preparationSeconds, startRecording])
+		setPhase("recording")
+		recordStartRef.current = Date.now()
+		startRecording()
+	}, [startRecording])
 
 	const handleStop = useCallback(() => {
 		if (timerRef.current) clearInterval(timerRef.current)
@@ -196,24 +167,13 @@ function SpeakingRecorder({
 			<div
 				className={cn(
 					"flex h-14 items-center justify-center rounded-lg border",
-					phase === "recording"
-						? "border-destructive/30 bg-destructive/5"
-						: phase === "preparing"
-							? "border-amber-400/30 bg-amber-50 dark:bg-amber-950/20"
-							: "bg-muted/30",
+					phase === "recording" ? "border-destructive/30 bg-destructive/5" : "bg-muted/30",
 				)}
 			>
 				{phase === "idle" && (
-					<span className="text-sm text-muted-foreground">Bấm "Bắt đầu" để chuẩn bị và ghi âm</span>
+					<span className="text-sm text-muted-foreground">Bấm "Bắt đầu" để ghi âm</span>
 				)}
-				{phase === "preparing" && (
-					<div className="flex items-center gap-3">
-						<span className="size-2 animate-pulse rounded-full bg-amber-500" />
-						<span className="text-sm font-medium text-amber-700 dark:text-amber-400">
-							Chuẩn bị... {formatTimer(timer)}
-						</span>
-					</div>
-				)}
+
 				{phase === "recording" && (
 					<div className="flex items-center gap-3">
 						<span className="size-2 animate-pulse rounded-full bg-destructive" />
@@ -234,9 +194,7 @@ function SpeakingRecorder({
 				{phase === "idle" && (
 					<Button size="sm" onClick={handleStart}>
 						<HugeiconsIcon icon={RecordIcon} className="size-4" />
-						{preparationSeconds > 0
-							? `Bắt đầu (chuẩn bị ${formatDuration(preparationSeconds)})`
-							: "Bắt đầu ghi âm"}
+						Bắt đầu ghi âm
 					</Button>
 				)}
 				{phase === "recording" && (
@@ -245,12 +203,7 @@ function SpeakingRecorder({
 						Dừng
 					</Button>
 				)}
-				{phase === "preparing" && (
-					<Button size="sm" variant="outline" disabled>
-						<HugeiconsIcon icon={Mic01Icon} className="size-4 animate-pulse" />
-						Đang chuẩn bị...
-					</Button>
-				)}
+
 				{hasDoneRecording && (
 					<>
 						<Button size="sm" variant="outline" onClick={handlePlayback} disabled={playingBack}>
@@ -289,7 +242,6 @@ function Part1Recorder({
 }) {
 	return (
 		<SpeakingRecorder
-			preparationSeconds={0}
 			speakingSeconds={180}
 			existingAudioUrl={existingAudioUrl}
 			onRecorded={onRecorded}
@@ -365,12 +317,10 @@ function Part2Content({
 			</div>
 
 			<div className="flex gap-4 text-xs text-muted-foreground">
-				<span>Chuẩn bị: {formatDuration(content.preparationSeconds)}</span>
 				<span>Nói: {formatDuration(content.speakingSeconds)}</span>
 			</div>
 
 			<SpeakingRecorder
-				preparationSeconds={content.preparationSeconds}
 				speakingSeconds={content.speakingSeconds}
 				existingAudioUrl={existingAudioUrl}
 				onRecorded={onRecorded}
@@ -417,12 +367,10 @@ function Part3Content({
 			</div>
 
 			<div className="flex gap-4 text-xs text-muted-foreground">
-				<span>Chuẩn bị: {formatDuration(content.preparationSeconds)}</span>
 				<span>Nói: {formatDuration(content.speakingSeconds)}</span>
 			</div>
 
 			<SpeakingRecorder
-				preparationSeconds={content.preparationSeconds}
 				speakingSeconds={content.speakingSeconds}
 				existingAudioUrl={existingAudioUrl}
 				onRecorded={onRecorded}
