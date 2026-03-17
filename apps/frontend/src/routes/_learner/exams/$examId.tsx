@@ -75,7 +75,7 @@ function ExamDetailPage() {
 
 			<h1 className="text-2xl font-bold">{exam.title || `Đề thi ${exam.level}`}</h1>
 
-			<div className="rounded-2xl bg-muted/30 p-6 space-y-5">
+			<div className="rounded-2xl bg-muted/30 p-6 space-y-5 shadow-sm">
 				{(exam.durationMinutes ?? bp.durationMinutes) && (
 					<div className="flex items-center gap-2 text-sm">
 						<HugeiconsIcon icon={Clock01Icon} className="size-4 text-muted-foreground" />

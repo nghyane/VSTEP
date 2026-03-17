@@ -41,7 +41,7 @@ interface WordCardProps {
 
 function WordCard({ word }: WordCardProps) {
 	return (
-		<div className="space-y-4 rounded-2xl bg-muted/50 p-6">
+		<div className="space-y-4 rounded-2xl bg-muted/50 p-6 shadow-sm">
 			<div className="flex items-start justify-between gap-3">
 				<div className="space-y-1">
 					<p className="text-xl font-bold">{word.word}</p>

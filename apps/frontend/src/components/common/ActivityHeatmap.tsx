@@ -78,7 +78,7 @@ export function ActivityHeatmap({ activeDays, className }: ActivityHeatmapProps)
 	const weeklyCounts = weeks.map((week) => week.filter((cell) => cell.active).length)
 
 	return (
-		<Card className={cn(className)}>
+		<Card className={cn("border-0 bg-muted/30", className)}>
 			<CardHeader className="flex-row items-center justify-between">
 				<CardTitle className="text-base">Tần suất học tập</CardTitle>
 				<div className="flex items-center gap-3 text-xs text-muted-foreground">

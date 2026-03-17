@@ -44,7 +44,7 @@ export function SessionCompleted({ session, exam }: SessionCompletedProps) {
 	return (
 		<div className="space-y-6">
 			{/* Header */}
-			<div className="rounded-2xl bg-muted/30 p-6">
+			<div className="rounded-2xl bg-muted/30 p-6 shadow-sm">
 				<h1 className="text-xl font-bold">Kết quả thi {exam ? `— Đề ${exam.level}` : ""}</h1>
 				{session.completedAt && (
 					<p className="mt-1 text-sm text-muted-foreground">
@@ -110,7 +110,7 @@ export function SessionCompleted({ session, exam }: SessionCompletedProps) {
 
 			{/* Strengths & weaknesses */}
 			{graded.length > 0 && (
-				<div className="space-y-4 rounded-2xl bg-muted/30 p-6">
+				<div className="space-y-4 rounded-2xl bg-muted/30 p-6 shadow-sm">
 					<h2 className="font-semibold">Phân tích điểm mạnh / yếu</h2>
 
 					{strong.length > 0 && (

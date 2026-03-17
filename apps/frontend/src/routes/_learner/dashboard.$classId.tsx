@@ -133,7 +133,7 @@ function ClassDetailPage() {
 			</div>
 
 			{cls.inviteCode && (
-				<div className="flex items-center gap-3 rounded-2xl bg-muted/50 px-4 py-3">
+				<div className="flex items-center gap-3 rounded-2xl bg-muted/50 px-4 py-3 shadow-sm">
 					<span className="text-sm text-muted-foreground">Mã mời:</span>
 					<span className="font-mono font-semibold">{cls.inviteCode}</span>
 					<button
@@ -232,7 +232,7 @@ function ClassDetailPage() {
 					</div>
 
 					{dashboard.atRiskLearners.length > 0 && (
-						<div className="rounded-2xl bg-muted/50 p-5">
+						<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 							<p className="text-sm font-semibold">Học viên cần hỗ trợ</p>
 							<div className="mt-3 space-y-2">
 								{dashboard.atRiskLearners.map((l) => (
@@ -251,7 +251,7 @@ function ClassDetailPage() {
 					)}
 
 					{Object.keys(dashboard.skillSummary).length > 0 && (
-						<div className="rounded-2xl bg-muted/50 p-5">
+						<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 							<p className="text-sm font-semibold">Tổng quan kỹ năng</p>
 							<div className="mt-3 space-y-2">
 								{Object.entries(dashboard.skillSummary).map(([skill, data]) => (

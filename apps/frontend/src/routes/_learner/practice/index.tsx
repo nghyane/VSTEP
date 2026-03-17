@@ -170,7 +170,7 @@ function PracticePage() {
 				{/* Right — spider chart + stats */}
 				<div className="w-full space-y-4 lg:w-[340px] lg:shrink-0">
 					{/* Spider chart */}
-					<div className="rounded-2xl bg-muted/50 p-5">
+					<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 						<p className="text-sm font-semibold">Tổng quan kỹ năng</p>
 						<SpiderChart
 							skills={spiderSkills}
@@ -179,7 +179,7 @@ function PracticePage() {
 					</div>
 
 					{/* Level & average */}
-					<div className="rounded-2xl bg-muted/50 p-5">
+					<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 						<div className="flex items-center gap-3">
 							<div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
 								<HugeiconsIcon icon={Target02Icon} className="size-5 text-primary" />

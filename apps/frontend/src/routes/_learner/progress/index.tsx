@@ -349,7 +349,7 @@ function TestPracticeTab({
 	return (
 		<>
 			{/* Section 1: Weekly Average Scores */}
-			<div className="rounded-2xl bg-muted/50 p-5">
+			<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 				<div className="mb-4">
 					<h3 className="text-lg font-semibold">Điểm trung bình hàng tuần</h3>
 					<p className="text-sm text-muted-foreground">So với tuần trước</p>
@@ -389,7 +389,7 @@ function TestPracticeTab({
 			</div>
 
 			{/* Section 2: Score Tracking Line Chart */}
-			<div className="rounded-2xl bg-muted/50 p-5">
+			<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 				<div className="mb-4 flex flex-wrap items-center justify-between gap-3">
 					<div>
 						<h3 className="text-lg font-semibold">Theo dõi điểm số</h3>
@@ -520,7 +520,7 @@ function TestPracticeTab({
 			</div>
 
 			{/* Section 3: Test Practice History */}
-			<div className="rounded-2xl bg-muted/50 p-5">
+			<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 				<div className="mb-4 flex items-center justify-between">
 					<div>
 						<h3 className="text-lg font-semibold">Lịch sử Test Practice</h3>
@@ -623,7 +623,7 @@ function GoalCard({ goal }: { goal: EnrichedGoal | null }) {
 
 	if (!goal) {
 		return (
-			<div className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-muted/50 p-8">
+			<div className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-muted/50 p-8 shadow-sm">
 				<div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
 					<HugeiconsIcon icon={Target02Icon} className="size-6" />
 				</div>
@@ -645,7 +645,7 @@ function GoalCard({ goal }: { goal: EnrichedGoal | null }) {
 	const isExpired = goal.daysRemaining != null && goal.daysRemaining <= 0
 
 	return (
-		<div className="rounded-2xl bg-muted/50 p-5">
+		<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-3">
 					<div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -737,7 +737,7 @@ function GoalForm({ onCancel }: { onCancel: () => void }) {
 	}
 
 	return (
-		<form onSubmit={handleSubmit} className="rounded-2xl bg-muted/50 p-5">
+		<form onSubmit={handleSubmit} className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 			<h3 className="mb-4 text-lg font-semibold">Đặt mục tiêu mới</h3>
 			<div className="grid gap-4 sm:grid-cols-3">
 				<div className="space-y-1.5">
@@ -828,7 +828,7 @@ function LearningPathTab() {
 	return (
 		<>
 			{/* Summary banner */}
-			<div className="flex flex-wrap items-center gap-4 rounded-2xl bg-muted/50 p-5">
+			<div className="flex flex-wrap items-center gap-4 rounded-2xl bg-muted/50 p-5 shadow-sm">
 				{data.projectedImprovement && (
 					<div className="flex items-center gap-2">
 						<HugeiconsIcon icon={ArrowRight01Icon} className="size-5 text-primary" />
@@ -851,7 +851,7 @@ function LearningPathTab() {
 					const textColor = skillColorText[plan.skill as Skill] ?? "text-muted-foreground"
 
 					return (
-						<div key={plan.skill} className="rounded-2xl bg-muted/50 p-5">
+						<div key={plan.skill} className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 							{/* Header */}
 							<div className="flex items-center justify-between">
 								<div className="flex items-center gap-3">
@@ -974,7 +974,7 @@ function SpiderChartCard({
 	if (spiderSkills.length === 0) return null
 
 	return (
-		<div className="rounded-2xl bg-muted/50 p-5">
+		<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 			<h3 className="text-lg font-semibold">Điểm trung bình theo kỹ năng</h3>
 			<p className="mb-4 text-sm text-muted-foreground">trong Test Practice</p>
 			<div className="flex justify-center">
@@ -1000,7 +1000,7 @@ function DoughnutChartCard({
 	const total = segments.reduce((s, seg) => s + seg.value, 0)
 
 	return (
-		<div className="rounded-2xl bg-muted/50 p-5">
+		<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 			<h3 className="text-lg font-semibold">Tổng số bài test đã hoàn thành</h3>
 			<p className="mb-4 text-sm text-muted-foreground">trong Test Practice</p>
 			<DoughnutChart segments={segments} centerLabel="Tổng số bài test" centerValue={total} />
