@@ -22,6 +22,11 @@ import {
 	ListeningConversationDetail,
 } from "@/routes/_focused/-components/ListeningConversationDetail"
 import { ReadingAnswerDetail } from "@/routes/_focused/-components/ReadingAnswerDetail"
+import {
+	WritingAnnotatedPanel,
+	WritingAnswerDetail,
+} from "@/routes/_focused/-components/WritingAnswerDetail"
+import { WritingTemplateEditor } from "@/routes/_focused/-components/WritingTemplateEditor"
 import { skillColor, skillMeta } from "@/routes/_learner/exams/-components/skill-meta"
 import {
 	type ExamQuestion,
@@ -128,66 +133,6 @@ function McqOption({
 			</span>
 			<span>{text}</span>
 		</button>
-	)
-}
-
-// --- Results ---
-
-function McqResults({
-	questions,
-	answers,
-}: {
-	questions: ExamQuestion[]
-	answers: Record<number, string>
-}) {
-	const correct = questions.filter((q) => answers[q.questionNumber] === q.correctAnswer).length
-
-	return (
-		<div className="rounded-2xl border border-green-200 bg-green-50/50 p-5 dark:border-green-800 dark:bg-green-950/20">
-			<h3 className="text-lg font-bold">Kết quả</h3>
-			<p className="mt-1 text-sm text-muted-foreground">
-				Bạn trả lời đúng{" "}
-				<span className="font-semibold text-green-600">
-					{correct}/{questions.length}
-				</span>{" "}
-				câu
-			</p>
-			<div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
-				<div
-					className="h-full rounded-full bg-green-500 transition-all"
-					style={{
-						width: `${questions.length > 0 ? (correct / questions.length) * 100 : 0}%`,
-					}}
-				/>
-			</div>
-		</div>
-	)
-}
-
-function WritingFeedback() {
-	return (
-		<div className="space-y-3 rounded-2xl border border-blue-200 bg-blue-50/50 p-5 dark:border-blue-800 dark:bg-blue-950/20">
-			<h3 className="text-lg font-bold">Nhận xét từ AI</h3>
-			<p className="text-2xl font-bold text-blue-600">7.5/10</p>
-			<ul className="space-y-2 text-sm">
-				<li>
-					<span className="font-medium">Task Fulfillment:</span> Bài viết đáp ứng đầy đủ yêu cầu đề
-					bài. Các ý chính được trình bày rõ ràng.
-				</li>
-				<li>
-					<span className="font-medium">Organization:</span> Cấu trúc bài viết rõ ràng, có mở bài,
-					thân bài và kết bài hợp lý.
-				</li>
-				<li>
-					<span className="font-medium">Vocabulary:</span> Sử dụng từ vựng phù hợp với ngữ cảnh, có
-					một số từ nâng cao.
-				</li>
-				<li>
-					<span className="font-medium">Grammar:</span> Ngữ pháp chính xác, ít lỗi nhỏ. Cần chú ý
-					thì và sự hòa hợp chủ-vị.
-				</li>
-			</ul>
-		</div>
 	)
 }
 
@@ -696,59 +641,82 @@ function ExercisePage() {
 						</div>
 					)
 				})()
+			) : skill === "writing" ? (
+				(() => {
+					const e = exam as WritingExam
+					const level = e.level ?? 3
+					return (
+						<div className="flex flex-1 flex-col overflow-hidden">
+							{!submitted ? (
+								level === 1 ? (
+									<WritingTemplateEditor examId={id} />
+								) : (
+									<div className="flex-1 overflow-y-auto">
+										<div className="mx-auto max-w-3xl space-y-6 p-6">
+											<div className="space-y-6">
+												{e.tasks.map((task) => {
+													const text = writingTexts[task.taskNumber] ?? ""
+													const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0
+													return (
+														<div key={task.taskNumber} className="space-y-4">
+															{task.title && (
+																<h3 className="text-sm font-semibold">{task.title}</h3>
+															)}
+															<div
+																className="rounded-xl bg-muted/10 p-4 text-sm leading-relaxed"
+																style={{ whiteSpace: "pre-wrap" }}
+															>
+																{task.prompt}
+															</div>
+															{task.instructions && (
+																<p className="text-sm text-muted-foreground">{task.instructions}</p>
+															)}
+															<textarea
+																className="min-h-[250px] w-full rounded-xl border bg-background p-4 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/30"
+																placeholder="Nhập bài viết của bạn..."
+																value={text}
+																onChange={(ev) =>
+																	setWritingTexts((prev) => ({
+																		...prev,
+																		[task.taskNumber]: ev.target.value,
+																	}))
+																}
+															/>
+															<p className="text-sm text-muted-foreground">
+																{wordCount}/{task.wordLimit} từ
+																{wordCount < task.wordLimit && (
+																	<span className="ml-1 text-orange-500">
+																		(cần tối thiểu {task.wordLimit} từ)
+																	</span>
+																)}
+															</p>
+														</div>
+													)
+												})}
+											</div>
+										</div>
+									</div>
+								)
+							) : (
+								<div className="flex flex-1 overflow-hidden">
+									{/* Left — Annotated submitted text */}
+									<div className="w-1/2 overflow-y-auto border-r">
+										<WritingAnnotatedPanel examId={id} level={level} />
+									</div>
+									{/* Right — Grading detail */}
+									<div className="flex flex-1 flex-col overflow-hidden">
+										<WritingAnswerDetail examId={id} level={level} />
+									</div>
+								</div>
+							)}
+						</div>
+					)
+				})()
 			) : (
 				<div className="flex flex-1 overflow-hidden">
 					{/* Left — exercise */}
 					<div className="flex-1 overflow-y-auto">
 						<div className="mx-auto max-w-3xl space-y-6 p-6">
-							{/* Writing */}
-							{skill === "writing" &&
-								(() => {
-									const e = exam as WritingExam
-									return (
-										<div className="space-y-6">
-											{e.tasks.map((task) => {
-												const text = writingTexts[task.taskNumber] ?? ""
-												const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0
-												return (
-													<div key={task.taskNumber} className="space-y-4">
-														{task.title && <h3 className="text-sm font-semibold">{task.title}</h3>}
-														<div
-															className="rounded-xl bg-muted/10 p-4 text-sm leading-relaxed"
-															style={{ whiteSpace: "pre-wrap" }}
-														>
-															{task.prompt}
-														</div>
-														{task.instructions && (
-															<p className="text-sm text-muted-foreground">{task.instructions}</p>
-														)}
-														<textarea
-															className="min-h-[250px] w-full rounded-xl border bg-background p-4 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/30"
-															placeholder="Nhập bài viết của bạn..."
-															value={text}
-															onChange={(e) =>
-																setWritingTexts((prev) => ({
-																	...prev,
-																	[task.taskNumber]: e.target.value,
-																}))
-															}
-															disabled={submitted}
-														/>
-														<p className="text-sm text-muted-foreground">
-															{wordCount}/{task.wordLimit} từ
-															{wordCount < task.wordLimit && (
-																<span className="ml-1 text-orange-500">
-																	(cần tối thiểu {task.wordLimit} từ)
-																</span>
-															)}
-														</p>
-													</div>
-												)
-											})}
-										</div>
-									)
-								})()}
-
 							{/* Speaking */}
 							{skill === "speaking" &&
 								(() => {
@@ -772,8 +740,8 @@ function ExercisePage() {
 															type="file"
 															accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/webm,audio/ogg"
 															className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary hover:file:bg-primary/20"
-															onChange={(e) => {
-																const file = e.target.files?.[0]
+															onChange={(ev) => {
+																const file = ev.target.files?.[0]
 																if (file) {
 																	setAudioFile(file)
 																	setAudioUrl(URL.createObjectURL(file))
@@ -813,11 +781,6 @@ function ExercisePage() {
 					{submitted && (
 						<aside className="hidden w-[320px] shrink-0 overflow-y-auto border-l lg:block">
 							<div ref={resultsRef} className="space-y-4 p-5">
-								{/* Results */}
-								{skill === "listening" && (
-									<McqResults questions={questions} answers={selectedAnswers} />
-								)}
-								{skill === "writing" && <WritingFeedback />}
 								{skill === "speaking" && <SpeakingFeedback />}
 
 								{/* AI tools */}

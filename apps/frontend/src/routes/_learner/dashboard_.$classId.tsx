@@ -78,9 +78,7 @@ function ClassDetailPage() {
 	const [cls, setCls] = useState<MockInstructorClassDetail | null>(null)
 	const [dashboard, setDashboard] = useState<MockInstructorDashboard | null>(null)
 	const [assignments, setAssignments] = useState<MockAssignment[]>([])
-	const [submissionMap, setSubmissionMap] = useState<
-		Record<string, MockAssignmentSubmission[]>
-	>({})
+	const [submissionMap, setSubmissionMap] = useState<Record<string, MockAssignmentSubmission[]>>({})
 	const [leaderboard, setLeaderboard] = useState<MockLeaderboardEntry[]>([])
 	const [feedback, setFeedback] = useState<MockFeedback[]>([])
 
@@ -428,10 +426,7 @@ function AssignmentsTab({
 				const pending = subs.filter((s) => s.status === "pending").length
 
 				return (
-					<div
-						key={asg.id}
-						className="rounded-2xl bg-muted/50 p-5 shadow-sm"
-					>
+					<div key={asg.id} className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 							<div className="space-y-1.5">
 								<p className="font-semibold">{asg.title}</p>
@@ -462,9 +457,7 @@ function AssignmentsTab({
 										{submitted} chờ chấm
 									</Badge>
 								)}
-								{pending > 0 && (
-									<Badge variant="outline">{pending} chưa nộp</Badge>
-								)}
+								{pending > 0 && <Badge variant="outline">{pending} chưa nộp</Badge>}
 							</div>
 						</div>
 
@@ -534,9 +527,7 @@ function LeaderboardTab({ leaderboard }: { leaderboard: MockLeaderboardEntry[] }
 
 function FeedbackTab({ feedback }: { feedback: MockFeedback[] }) {
 	if (feedback.length === 0) {
-		return (
-			<p className="py-8 text-center text-sm text-muted-foreground">Chưa có nhận xét nào</p>
-		)
+		return <p className="py-8 text-center text-sm text-muted-foreground">Chưa có nhận xét nào</p>
 	}
 
 	return (
@@ -573,10 +564,7 @@ function MembersTab({ members, onFeedback, onRemove }: MembersTabProps) {
 	return (
 		<div className="space-y-2">
 			{members.map((m) => (
-				<div
-					key={m.id}
-					className="flex items-center gap-3 rounded-2xl px-4 py-3 hover:bg-muted/50"
-				>
+				<div key={m.id} className="flex items-center gap-3 rounded-2xl px-4 py-3 hover:bg-muted/50">
 					<div className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
 						{(m.fullName ?? m.email)[0]?.toUpperCase()}
 					</div>

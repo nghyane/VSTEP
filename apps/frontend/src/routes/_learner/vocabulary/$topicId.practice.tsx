@@ -223,7 +223,8 @@ function PracticePage() {
 			<div
 				className={cn(
 					"mx-auto max-w-2xl rounded-2xl bg-muted/50 p-6",
-					isCorrect && "border border-green-300 bg-green-50/30 dark:border-green-800 dark:bg-green-950/10",
+					isCorrect &&
+						"border border-green-300 bg-green-50/30 dark:border-green-800 dark:bg-green-950/10",
 					isWrong && "border border-red-300 bg-red-50/30 dark:border-red-800 dark:bg-red-950/10",
 				)}
 			>

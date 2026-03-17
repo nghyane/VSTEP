@@ -93,6 +93,7 @@ export interface WritingExam {
 	id: string
 	title: string
 	topic: WritingTopic
+	level?: 1 | 2 | 3
 	tasks: {
 		taskNumber: number
 		title: string
@@ -1205,6 +1206,7 @@ export const WRITING_EXAMS: WritingExam[] = [
 		id: "write-1",
 		topic: "Thư cá nhân",
 		title: "Bài luyện viết số 1",
+		level: 1,
 		tasks: [
 			{
 				taskNumber: 1,
@@ -1220,6 +1222,7 @@ export const WRITING_EXAMS: WritingExam[] = [
 		id: "write-2",
 		topic: "Bài luận quan điểm",
 		title: "Bài luyện viết số 2",
+		level: 2,
 		tasks: [
 			{
 				taskNumber: 1,
@@ -1250,6 +1253,7 @@ export const WRITING_EXAMS: WritingExam[] = [
 		id: "write-4",
 		topic: "Bài luận xã hội",
 		title: "Bài luyện viết số 4",
+		level: 3,
 		tasks: [
 			{
 				taskNumber: 1,
