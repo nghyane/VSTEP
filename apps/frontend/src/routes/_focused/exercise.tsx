@@ -1,11 +1,22 @@
-import { ArrowLeft01Icon, BulbIcon, Gps01Icon, TextIcon } from "@hugeicons/core-free-icons"
+import {
+	ArrowLeft01Icon,
+	BulbIcon,
+	GoBackwardFiveSecIcon,
+	GoForwardFiveSecIcon,
+	Gps01Icon,
+	PauseIcon,
+	PlayIcon,
+	TextIcon,
+	VolumeHighIcon,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useExplain, useParaphrase } from "@/hooks/use-ai"
 import { useUploadAudio } from "@/hooks/use-uploads"
 import { cn } from "@/lib/utils"
+import { ListeningAnswerDetail } from "@/routes/_focused/-components/ListeningAnswerDetail"
 import { ReadingAnswerDetail } from "@/routes/_focused/-components/ReadingAnswerDetail"
 import { skillColor, skillMeta } from "@/routes/_learner/exams/-components/skill-meta"
 import {
@@ -219,6 +230,148 @@ function getExamText(exam: AnyExam, skill: string): string {
 	}
 }
 
+// --- Audio bar for listening practice (seekable, with skip ±5s) ---
+
+function formatTime(seconds: number): string {
+	if (!seconds || !Number.isFinite(seconds)) return "00:00"
+	const m = Math.floor(seconds / 60)
+	const s = Math.floor(seconds % 60)
+	return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
+}
+
+function ListeningPracticeAudioBar({ src }: { src: string }) {
+	const audioRef = useRef<HTMLAudioElement>(null)
+	const progressRef = useRef<HTMLDivElement>(null)
+	const [playing, setPlaying] = useState(false)
+	const [currentTime, setCurrentTime] = useState(0)
+	const [duration, setDuration] = useState(0)
+
+	useEffect(() => {
+		const audio = audioRef.current
+		if (!audio) return
+
+		const onTimeUpdate = () => setCurrentTime(audio.currentTime)
+		const onDurationChange = () => {
+			if (audio.duration && Number.isFinite(audio.duration)) setDuration(audio.duration)
+		}
+		const onEnded = () => setPlaying(false)
+
+		audio.addEventListener("timeupdate", onTimeUpdate)
+		audio.addEventListener("durationchange", onDurationChange)
+		audio.addEventListener("loadedmetadata", onDurationChange)
+		audio.addEventListener("ended", onEnded)
+		return () => {
+			audio.removeEventListener("timeupdate", onTimeUpdate)
+			audio.removeEventListener("durationchange", onDurationChange)
+			audio.removeEventListener("loadedmetadata", onDurationChange)
+			audio.removeEventListener("ended", onEnded)
+		}
+	}, [])
+
+	const togglePlay = useCallback(() => {
+		const audio = audioRef.current
+		if (!audio) return
+		if (audio.paused) {
+			audio.play().catch(() => {})
+			setPlaying(true)
+		} else {
+			audio.pause()
+			setPlaying(false)
+		}
+	}, [])
+
+	const skip = useCallback((delta: number) => {
+		const audio = audioRef.current
+		if (!audio) return
+		audio.currentTime = Math.max(0, Math.min(audio.currentTime + delta, audio.duration || 0))
+	}, [])
+
+	const handleSeek = useCallback(
+		(e: React.MouseEvent<HTMLDivElement>) => {
+			const bar = progressRef.current
+			const audio = audioRef.current
+			if (!bar || !audio || !duration) return
+			const rect = bar.getBoundingClientRect()
+			const ratio = Math.max(0, Math.min((e.clientX - rect.left) / rect.width, 1))
+			audio.currentTime = ratio * duration
+		},
+		[duration],
+	)
+
+	const progress = duration > 0 ? (currentTime / duration) * 100 : 0
+
+	return (
+		<div className="border-t bg-muted/10 px-4 py-2">
+			<div className="flex items-center gap-3">
+				{/* Skip backward 5s */}
+				<button
+					type="button"
+					onClick={() => skip(-5)}
+					className="flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+				>
+					<HugeiconsIcon icon={GoBackwardFiveSecIcon} className="size-4" />
+				</button>
+
+				{/* Play / Pause */}
+				<button
+					type="button"
+					onClick={togglePlay}
+					className="flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
+				>
+					<HugeiconsIcon icon={playing ? PauseIcon : PlayIcon} className="size-4" />
+				</button>
+
+				{/* Skip forward 5s */}
+				<button
+					type="button"
+					onClick={() => skip(5)}
+					className="flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+				>
+					<HugeiconsIcon icon={GoForwardFiveSecIcon} className="size-4" />
+				</button>
+
+				{/* Current time */}
+				<div className="flex items-center gap-2">
+					<HugeiconsIcon icon={VolumeHighIcon} className="size-4 text-muted-foreground" />
+					<span className="font-mono text-xs font-semibold tabular-nums text-primary">
+						{formatTime(currentTime)}
+					</span>
+				</div>
+
+				{/* Seekable progress bar */}
+				<div
+					ref={progressRef}
+					role="slider"
+					tabIndex={0}
+					aria-label="Audio progress"
+					aria-valuemin={0}
+					aria-valuemax={Math.round(duration)}
+					aria-valuenow={Math.round(currentTime)}
+					className="relative h-1.5 flex-1 cursor-pointer overflow-hidden rounded-full bg-muted"
+					onClick={handleSeek}
+					onKeyDown={(e) => {
+						if (e.key === "ArrowRight") skip(5)
+						else if (e.key === "ArrowLeft") skip(-5)
+					}}
+				>
+					<div
+						className="absolute inset-y-0 left-0 rounded-full bg-primary transition-[width] duration-150"
+						style={{ width: `${progress}%` }}
+					/>
+				</div>
+
+				{/* Duration */}
+				<span className="font-mono text-xs tabular-nums text-muted-foreground">
+					{formatTime(duration)}
+				</span>
+			</div>
+
+			{/* biome-ignore lint/a11y/useMediaCaption: VSTEP listening practice audio */}
+			<audio ref={audioRef} src={src} preload="metadata" className="hidden" />
+		</div>
+	)
+}
+
 // --- Main ---
 
 function ExercisePage() {
@@ -233,6 +386,7 @@ function ExercisePage() {
 	const [submitted, setSubmitted] = useState(false)
 	const [activeAiTool, setActiveAiTool] = useState<"paraphrase" | "explain" | null>(null)
 	const [highlightParagraphIndex, setHighlightParagraphIndex] = useState<number | null>(null)
+	const [highlightSentenceIndex, setHighlightSentenceIndex] = useState<number | null>(null)
 	const paraphrase = useParaphrase()
 	const explain = useExplain()
 	const uploadAudio = useUploadAudio()
@@ -260,6 +414,7 @@ function ExercisePage() {
 		setWritingTexts({})
 		setActiveAiTool(null)
 		setHighlightParagraphIndex(null)
+		setHighlightSentenceIndex(null)
 		setAudioFile(null)
 		setAudioUrl(null)
 		window.scrollTo({ top: 0, behavior: "smooth" })
@@ -383,20 +538,24 @@ function ExercisePage() {
 						</div>
 					)
 				})()
-			) : (
-				<div className="flex flex-1 overflow-hidden">
-					{/* Left — exercise */}
-					<div className="flex-1 overflow-y-auto">
-						<div className="mx-auto max-w-3xl space-y-6 p-6">
-							{/* Listening */}
-							{skill === "listening" &&
-								(() => {
-									const e = exam as ListeningExam
-									return (
-										<div className="space-y-6">
-											<audio controls src={e.audioUrl} className="w-full rounded-lg">
-												<track kind="captions" />
-											</audio>
+			) : skill === "listening" ? (
+				(() => {
+					const e = exam as ListeningExam
+					const transcript = e.sections
+						.map((s) => s.transcript)
+						.filter(Boolean)
+						.join(" ")
+					const sentences = transcript
+						? transcript.split(/(?<=\.)\s+/).filter((s) => s.trim().length > 0)
+						: []
+
+					return (
+						<div className="flex flex-1 flex-col overflow-hidden">
+							{!submitted ? (
+								<>
+									{/* Full-width questions */}
+									<div className="flex-1 overflow-y-auto">
+										<div className="mx-auto max-w-3xl space-y-6 p-6">
 											{e.sections.map((section) => (
 												<div key={section.partNumber} className="space-y-4">
 													{section.partTitle && (
@@ -406,24 +565,25 @@ function ExercisePage() {
 														<p className="text-sm text-muted-foreground">{section.instructions}</p>
 													)}
 													{section.questions.map((q) => (
-														<div key={q.questionNumber} className="space-y-2">
+														<div
+															key={q.questionNumber}
+															id={`question-${q.questionNumber}`}
+															className="space-y-2 rounded-xl border bg-card p-4"
+														>
 															<p className="text-sm font-medium">
-																Câu {q.questionNumber}.{q.questionText ? ` ${q.questionText}` : ""}
+																<span className="mr-1.5 text-primary">{q.questionNumber}.</span>
+																{q.questionText || ""}
 															</p>
-															<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+															<div className="grid grid-cols-1 gap-2">
 																{Object.entries(q.options).map(([letter, text]) => (
 																	<McqOption
 																		key={letter}
 																		letter={letter}
 																		text={text}
 																		isSelected={selectedAnswers[q.questionNumber] === letter}
-																		isCorrect={submitted && q.correctAnswer === letter}
-																		isWrong={
-																			submitted &&
-																			selectedAnswers[q.questionNumber] === letter &&
-																			q.correctAnswer !== letter
-																		}
-																		submitted={submitted}
+																		isCorrect={false}
+																		isWrong={false}
+																		submitted={false}
 																		onSelect={() => handleSelect(q.questionNumber, letter)}
 																	/>
 																))}
@@ -433,9 +593,92 @@ function ExercisePage() {
 												</div>
 											))}
 										</div>
-									)
-								})()}
+									</div>
 
+									{/* Audio bar */}
+									<ListeningPracticeAudioBar src={e.audioUrl} />
+
+									{/* Bottom bar: question nav + submit */}
+									<div className="flex h-14 shrink-0 items-center justify-between border-t px-4">
+										<div />
+										<div className="flex items-center gap-1.5">
+											{questions.map((q) => (
+												<button
+													key={q.questionNumber}
+													type="button"
+													className={cn(
+														"flex size-8 items-center justify-center rounded-lg border text-xs font-medium transition-colors",
+														selectedAnswers[q.questionNumber]
+															? "border-primary bg-primary text-primary-foreground"
+															: "border-border bg-background text-muted-foreground hover:border-primary/40",
+													)}
+													onClick={() => {
+														document
+															.getElementById(`question-${q.questionNumber}`)
+															?.scrollIntoView({ behavior: "smooth", block: "center" })
+													}}
+												>
+													{q.questionNumber}
+												</button>
+											))}
+										</div>
+										<Button size="lg" className="rounded-xl px-8" onClick={handleSubmit}>
+											Nộp bài
+										</Button>
+									</div>
+								</>
+							) : (
+								<>
+									<div className="flex flex-1 overflow-hidden">
+										{/* Left — Transcript (after submit) */}
+										<div className="w-1/2 overflow-y-auto border-r">
+											<div className="p-6">
+												<h3 className="mb-4 text-lg font-bold">Transcript</h3>
+												{sentences.length > 0 ? (
+													<div className="space-y-1 text-sm leading-relaxed">
+														{sentences.map((sentence, i) => (
+															<span
+																key={i}
+																className={cn(
+																	"inline transition-all duration-300",
+																	highlightSentenceIndex !== null
+																		? highlightSentenceIndex === i
+																			? "rounded bg-primary/10 px-0.5 font-medium text-primary"
+																			: "text-muted-foreground/50"
+																		: "",
+																)}
+															>
+																{sentence}{" "}
+															</span>
+														))}
+													</div>
+												) : (
+													<p className="text-sm text-muted-foreground">Không có transcript.</p>
+												)}
+											</div>
+										</div>
+										{/* Right — Answer detail */}
+										<div className="flex flex-1 flex-col overflow-hidden">
+											<ListeningAnswerDetail
+												examId={id}
+												questions={questions}
+												answers={selectedAnswers}
+												onHighlightSentence={setHighlightSentenceIndex}
+											/>
+										</div>
+									</div>
+									{/* Audio bar pinned at bottom */}
+									<ListeningPracticeAudioBar src={e.audioUrl} />
+								</>
+							)}
+						</div>
+					)
+				})()
+			) : (
+				<div className="flex flex-1 overflow-hidden">
+					{/* Left — exercise */}
+					<div className="flex-1 overflow-y-auto">
+						<div className="mx-auto max-w-3xl space-y-6 p-6">
 							{/* Writing */}
 							{skill === "writing" &&
 								(() => {
@@ -714,18 +957,28 @@ function ExercisePage() {
 				</div>
 			)}
 
-			{/* Bottom bar */}
-			<footer className="flex h-14 shrink-0 items-center justify-center border-t px-4">
-				{!submitted ? (
-					<Button size="lg" className="rounded-xl px-8" onClick={handleSubmit}>
-						Nộp bài
-					</Button>
-				) : (
+			{/* Bottom bar (not for listening — it has its own) */}
+			{skill !== "listening" && (
+				<footer className="flex h-14 shrink-0 items-center justify-center border-t px-4">
+					{!submitted ? (
+						<Button size="lg" className="rounded-xl px-8" onClick={handleSubmit}>
+							Nộp bài
+						</Button>
+					) : (
+						<Button size="lg" variant="outline" className="rounded-xl px-8" onClick={handleReset}>
+							Làm lại
+						</Button>
+					)}
+				</footer>
+			)}
+			{/* Listening: show reset in bottom bar after submit */}
+			{skill === "listening" && submitted && (
+				<footer className="flex h-14 shrink-0 items-center justify-center border-t px-4">
 					<Button size="lg" variant="outline" className="rounded-xl px-8" onClick={handleReset}>
 						Làm lại
 					</Button>
-				)}
-			</footer>
+				</footer>
+			)}
 		</div>
 	)
 }
