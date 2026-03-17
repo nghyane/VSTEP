@@ -22,9 +22,9 @@ function TopicCard({ topic, learnedCount, weakCount, isPopular }: TopicCardProps
 		<Link
 			to="/vocabulary/$topicId"
 			params={{ topicId: topic.id }}
-			className="group flex items-start gap-3 rounded-xl border px-4 py-3 transition-colors hover:bg-muted/50"
+			className="group flex items-start gap-3 rounded-2xl px-4 py-3 transition-colors hover:bg-muted/50"
 		>
-			<div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+			<div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
 				<HugeiconsIcon icon={topic.icon} className="size-4.5" />
 			</div>
 			<div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -59,7 +59,7 @@ function VocabularyPage() {
 	const popularTopics = VOCAB_TOPICS.filter((t) => POPULAR_TOPIC_IDS.has(t.id))
 
 	return (
-		<div className="space-y-8">
+		<div className="space-y-6">
 			<div>
 				<h1 className="text-2xl font-bold">Học từ vựng</h1>
 				<p className="mt-1 text-muted-foreground">Chọn chủ đề để bắt đầu học</p>

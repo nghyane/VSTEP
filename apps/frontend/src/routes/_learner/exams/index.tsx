@@ -1,10 +1,11 @@
-import { Clock01Icon, Loading03Icon } from "@hugeicons/core-free-icons"
+import { Clock01Icon, DocumentValidationIcon, Loading03Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useCallback, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useStartExam } from "@/hooks/use-exam-session"
 import { useExams } from "@/hooks/use-exams"
 import { cn } from "@/lib/utils"
@@ -58,7 +59,7 @@ function ExamListItem({
 			type="button"
 			onClick={onSelect}
 			className={cn(
-				"flex w-full flex-col gap-1.5 rounded-xl border text-left transition-all duration-200",
+				"flex w-full flex-col gap-1.5 rounded-2xl border text-left transition-all duration-200",
 				compact ? "px-3 py-2.5" : "px-4 py-4",
 				isSelected
 					? "border-primary bg-primary/5 ring-1 ring-primary/20"
@@ -155,7 +156,7 @@ function ExamDetail({
 						return (
 							<div
 								key={skill}
-								className={cn("flex items-center gap-3 rounded-xl px-4 py-3", skillColor[skill])}
+								className={cn("flex items-center gap-3 rounded-2xl px-4 py-3", skillColor[skill])}
 							>
 								<HugeiconsIcon icon={skillMeta[skill].icon} className="size-5" />
 								<span className="text-sm font-medium">{skillMeta[skill].label}</span>
@@ -213,24 +214,55 @@ function ExamListPage() {
 	const handleDeselect = useCallback(() => setSelectedId(null), [])
 
 	if (isLoading) {
-		return <p className="py-20 text-center text-muted-foreground">Đang tải...</p>
+		return (
+			<div className="space-y-6">
+				<div>
+					<h1 className="text-2xl font-bold">Thi thử</h1>
+					<p className="mt-1 text-muted-foreground">Chọn đề thi để xem chi tiết và bắt đầu</p>
+				</div>
+				<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+					{Array.from({ length: 6 }).map((_, i) => (
+						<Skeleton key={i} className="h-24 rounded-2xl" />
+					))}
+				</div>
+			</div>
+		)
 	}
 
 	if (error) {
-		return <p className="py-20 text-center text-destructive">Lỗi: {error.message}</p>
+		return (
+			<div className="space-y-6">
+				<div>
+					<h1 className="text-2xl font-bold">Thi thử</h1>
+					<p className="mt-1 text-muted-foreground">Chọn đề thi để xem chi tiết và bắt đầu</p>
+				</div>
+				<div className="rounded-2xl bg-muted/50 p-12 text-center">
+					<p className="text-lg font-semibold">Đã xảy ra lỗi</p>
+					<p className="mt-1 text-muted-foreground">{error.message}</p>
+				</div>
+			</div>
+		)
 	}
 
 	if (exams.length === 0) {
 		return (
-			<div className="py-20 text-center">
-				<h1 className="text-2xl font-bold">Thi thử</h1>
-				<p className="mt-2 text-muted-foreground">Chưa có đề thi thử nào.</p>
+			<div className="space-y-6">
+				<div>
+					<h1 className="text-2xl font-bold">Thi thử</h1>
+					<p className="mt-1 text-muted-foreground">Chọn đề thi để xem chi tiết và bắt đầu</p>
+				</div>
+				<div className="flex flex-col items-center gap-4 rounded-2xl bg-muted/50 py-16">
+					<div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+						<HugeiconsIcon icon={DocumentValidationIcon} className="size-6" />
+					</div>
+					<p className="text-muted-foreground">Chưa có đề thi thử nào</p>
+				</div>
 			</div>
 		)
 	}
 
 	return (
-		<div className="space-y-4">
+		<div className="space-y-6">
 			<div>
 				<h1 className="text-2xl font-bold">Thi thử</h1>
 				<p className="mt-1 text-muted-foreground">Chọn đề thi để xem chi tiết và bắt đầu</p>
@@ -251,7 +283,7 @@ function ExamListPage() {
 								"transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
 								hasSelection
 									? "flex flex-col gap-1"
-									: "mx-auto grid max-w-3xl gap-3 sm:grid-cols-2 xl:grid-cols-3",
+									: "mx-auto grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5",
 							)}
 						>
 							{exams.map((exam) => (
@@ -276,7 +308,7 @@ function ExamListPage() {
 				>
 					<div
 						className={cn(
-							"h-full rounded-2xl border bg-background p-6 transition-opacity duration-300",
+							"h-full rounded-2xl bg-muted/50 p-6 transition-opacity duration-300",
 							hasSelection ? "opacity-100" : "opacity-0",
 						)}
 					>

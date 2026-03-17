@@ -33,14 +33,14 @@ function Flashcard({ word, flipped, onFlip }: FlashcardProps) {
 					)}
 				>
 					{/* Front */}
-					<div className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-2xl border bg-card p-10 shadow-sm [backface-visibility:hidden]">
+					<div className="absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-2xl bg-card p-10 shadow-sm [backface-visibility:hidden]">
 						<p className="text-4xl font-bold">{word.word}</p>
 						<p className="text-xl text-muted-foreground">{word.phonetic}</p>
 						<p className="mt-4 text-sm text-muted-foreground">Nhấn để xem nghĩa</p>
 					</div>
 
 					{/* Back */}
-					<div className="absolute inset-0 flex flex-col items-center justify-center gap-5 rounded-2xl border bg-card p-10 shadow-sm [backface-visibility:hidden] [transform:rotateY(180deg)]">
+					<div className="absolute inset-0 flex flex-col items-center justify-center gap-5 rounded-2xl bg-card p-10 shadow-sm [backface-visibility:hidden] [transform:rotateY(180deg)]">
 						<p className="text-center text-base font-medium leading-relaxed">{word.definition}</p>
 						<p className="text-center text-base text-muted-foreground leading-relaxed">
 							{word.explanation}
@@ -67,7 +67,7 @@ function FlashcardsPage() {
 
 	if (!topic) {
 		return (
-			<div className="flex flex-col items-center gap-4 py-16">
+			<div className="flex flex-col items-center gap-4 rounded-2xl bg-muted/50 py-16">
 				<p className="text-muted-foreground">Không tìm thấy chủ đề.</p>
 				<Button variant="outline" asChild>
 					<Link to="/vocabulary">Quay lại</Link>
@@ -145,7 +145,7 @@ function FlashcardsPage() {
 						<HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
 						{topic.name}
 					</Link>
-					<h1 className="text-xl font-bold">Thẻ ghi nhớ</h1>
+					<h1 className="text-2xl font-bold">Thẻ ghi nhớ</h1>
 				</div>
 				<span className="text-sm font-medium text-muted-foreground">
 					{current + 1}/{words.length}

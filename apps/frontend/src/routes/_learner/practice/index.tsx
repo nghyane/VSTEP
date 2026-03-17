@@ -111,12 +111,7 @@ function PracticePage() {
 							<Link
 								key={skill}
 								to={`/practice/${skill}`}
-								className={cn(
-									"group flex items-center gap-4 rounded-2xl border p-5 transition-all hover:shadow-md",
-									weak
-										? "border-orange-300/50 bg-orange-50/30 dark:border-orange-500/20 dark:bg-orange-950/10"
-										: "hover:border-primary/30",
-								)}
+								className="group flex items-center gap-4 rounded-2xl p-5 transition-all hover:bg-muted/50"
 							>
 								<div
 									className={cn(
@@ -175,7 +170,7 @@ function PracticePage() {
 				{/* Right — spider chart + stats */}
 				<div className="w-full space-y-4 lg:w-[340px] lg:shrink-0">
 					{/* Spider chart */}
-					<div className="rounded-2xl border p-5">
+					<div className="rounded-2xl bg-muted/50 p-5">
 						<p className="text-sm font-semibold">Tổng quan kỹ năng</p>
 						<SpiderChart
 							skills={spiderSkills}
@@ -184,7 +179,7 @@ function PracticePage() {
 					</div>
 
 					{/* Level & average */}
-					<div className="rounded-2xl border p-5">
+					<div className="rounded-2xl bg-muted/50 p-5">
 						<div className="flex items-center gap-3">
 							<div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
 								<HugeiconsIcon icon={Target02Icon} className="size-5 text-primary" />
@@ -212,17 +207,17 @@ function PracticePage() {
 
 					{/* Quick stats */}
 					<div className="grid grid-cols-3 gap-3">
-						<div className="rounded-xl border p-3 text-center">
+						<div className="rounded-2xl bg-muted/50 p-3 text-center">
 							<HugeiconsIcon icon={Book02Icon} className="mx-auto size-4 text-muted-foreground" />
 							<p className="mt-1 text-lg font-bold">{totalExercises}</p>
 							<p className="text-[10px] text-muted-foreground">Bài đã làm</p>
 						</div>
-						<div className="rounded-xl border p-3 text-center">
+						<div className="rounded-2xl bg-muted/50 p-3 text-center">
 							<HugeiconsIcon icon={Time02Icon} className="mx-auto size-4 text-muted-foreground" />
 							<p className="mt-1 text-lg font-bold">{totalTimeHours}h</p>
 							<p className="text-[10px] text-muted-foreground">Thời gian học</p>
 						</div>
-						<div className="rounded-xl border p-3 text-center">
+						<div className="rounded-2xl bg-muted/50 p-3 text-center">
 							<HugeiconsIcon icon={Fire02Icon} className="mx-auto size-4 text-orange-500" />
 							<p className="mt-1 text-lg font-bold">{streakCount}</p>
 							<p className="text-[10px] text-muted-foreground">Ngày streak</p>

@@ -133,7 +133,7 @@ function ClassDetailPage() {
 			</div>
 
 			{cls.inviteCode && (
-				<div className="flex items-center gap-3 rounded-xl border bg-muted/30 px-4 py-3">
+				<div className="flex items-center gap-3 rounded-2xl bg-muted/50 px-4 py-3">
 					<span className="text-sm text-muted-foreground">Mã mời:</span>
 					<span className="font-mono font-semibold">{cls.inviteCode}</span>
 					<button
@@ -180,7 +180,7 @@ function ClassDetailPage() {
 						<p className="py-8 text-center text-sm text-muted-foreground">Chưa có thành viên nào</p>
 					) : (
 						cls.members.map((m) => (
-							<div key={m.id} className="flex items-center gap-3 rounded-xl border px-4 py-3">
+							<div key={m.id} className="flex items-center gap-3 rounded-2xl px-4 py-3 hover:bg-muted/50">
 								<div className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
 									{(m.fullName ?? m.email)[0]?.toUpperCase()}
 								</div>
@@ -217,22 +217,22 @@ function ClassDetailPage() {
 			{tab === "dashboard" && dashboard && (
 				<div className="space-y-4">
 					<div className="grid gap-4 sm:grid-cols-3">
-						<div className="rounded-xl border p-4 text-center">
+						<div className="rounded-2xl bg-muted/50 p-4 text-center">
 							<p className="text-2xl font-bold">{dashboard.memberCount}</p>
 							<p className="text-xs text-muted-foreground">Thành viên</p>
 						</div>
-						<div className="rounded-xl border p-4 text-center">
+						<div className="rounded-2xl bg-muted/50 p-4 text-center">
 							<p className="text-2xl font-bold text-orange-600">{dashboard.atRiskCount}</p>
 							<p className="text-xs text-muted-foreground">Cần hỗ trợ</p>
 						</div>
-						<div className="rounded-xl border p-4 text-center">
+						<div className="rounded-2xl bg-muted/50 p-4 text-center">
 							<p className="text-2xl font-bold">{Object.keys(dashboard.skillSummary).length}</p>
 							<p className="text-xs text-muted-foreground">Kỹ năng</p>
 						</div>
 					</div>
 
 					{dashboard.atRiskLearners.length > 0 && (
-						<div className="rounded-2xl border p-5">
+						<div className="rounded-2xl bg-muted/50 p-5">
 							<p className="text-sm font-semibold">Học viên cần hỗ trợ</p>
 							<div className="mt-3 space-y-2">
 								{dashboard.atRiskLearners.map((l) => (
@@ -251,7 +251,7 @@ function ClassDetailPage() {
 					)}
 
 					{Object.keys(dashboard.skillSummary).length > 0 && (
-						<div className="rounded-2xl border p-5">
+						<div className="rounded-2xl bg-muted/50 p-5">
 							<p className="text-sm font-semibold">Tổng quan kỹ năng</p>
 							<div className="mt-3 space-y-2">
 								{Object.entries(dashboard.skillSummary).map(([skill, data]) => (
@@ -280,7 +280,7 @@ function ClassDetailPage() {
 						<p className="py-8 text-center text-sm text-muted-foreground">Chưa có nhận xét nào</p>
 					) : (
 						feedbackList.map((fb) => (
-							<div key={fb.id} className="rounded-xl border px-4 py-3">
+							<div key={fb.id} className="rounded-2xl px-4 py-3 hover:bg-muted/50">
 								<div className="flex items-center justify-between text-xs text-muted-foreground">
 									<span>Gửi đến: {fb.toUserId}</span>
 									<span>

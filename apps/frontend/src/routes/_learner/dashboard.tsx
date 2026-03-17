@@ -97,7 +97,7 @@ function InstructorView() {
 					{classes.map((cls) => (
 						<div
 							key={cls.id}
-							className="flex flex-col rounded-2xl border bg-card p-5 transition-shadow hover:shadow-md"
+							className="flex flex-col rounded-2xl p-5 transition-colors hover:bg-muted/50"
 						>
 							<div className="flex items-start gap-3">
 								<div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -210,7 +210,7 @@ function LearnerView() {
 					{classes.map((cls) => (
 						<div
 							key={cls.id}
-							className="flex flex-col rounded-2xl border bg-card p-5 transition-shadow hover:shadow-md"
+							className="flex flex-col rounded-2xl p-5 transition-colors hover:bg-muted/50"
 						>
 							<div className="flex items-start gap-3">
 								<div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
