@@ -103,11 +103,35 @@ function ProgressOverviewPage() {
 	const error = spider.error || progress.error || activity.error
 
 	if (isLoading) {
-		return <p className="py-10 text-center text-muted-foreground">Đang tải...</p>
+		return (
+			<div className="space-y-6">
+				<div>
+					<Skeleton className="h-8 w-48" />
+					<Skeleton className="mt-1 h-5 w-72" />
+				</div>
+				<Skeleton className="h-24 rounded-2xl" />
+				<Skeleton className="h-10 rounded-lg" />
+				<div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+					{Array.from({ length: 4 }).map((_, i) => (
+						<Skeleton key={i} className="h-20 rounded-2xl" />
+					))}
+				</div>
+				<Skeleton className="h-48 rounded-2xl" />
+				<div className="grid gap-6 md:grid-cols-2">
+					<Skeleton className="h-72 rounded-2xl" />
+					<Skeleton className="h-72 rounded-2xl" />
+				</div>
+			</div>
+		)
 	}
 
 	if (error) {
-		return <p className="py-10 text-center text-destructive">Lỗi: {error.message}</p>
+		return (
+			<div className="rounded-2xl bg-muted/50 p-12 text-center">
+				<p className="text-lg font-semibold">Đã xảy ra lỗi</p>
+				<p className="mt-1 text-muted-foreground">{error.message}</p>
+			</div>
+		)
 	}
 
 	const spiderData = spider.data
@@ -119,7 +143,13 @@ function ProgressOverviewPage() {
 
 	return (
 		<div className="space-y-6">
-			{/* Profile Header */}
+			{/* Page Header */}
+			<div>
+				<h1 className="text-2xl font-bold">Tiến độ học tập</h1>
+				<p className="mt-1 text-muted-foreground">Theo dõi quá trình học và đặt mục tiêu</p>
+			</div>
+
+			{/* Profile Card */}
 			<div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary to-primary/80 px-8 py-8">
 				<div className="relative z-10 flex items-center gap-5">
 					<Avatar className="size-16 border-2 border-white/30 shadow-lg">
@@ -129,13 +159,12 @@ function ProgressOverviewPage() {
 						</AvatarFallback>
 					</Avatar>
 					<div>
-						<h1 className="text-2xl font-bold text-white">Hi, {currentUser?.fullName ?? "Bạn"}</h1>
+						<h2 className="text-2xl font-bold text-white">Hi, {currentUser?.fullName ?? "Bạn"}</h2>
 						<p className="mt-1 text-sm text-white/80">
 							Hãy tiếp tục học mỗi ngày — nỗ lực của bạn sẽ được đền đáp!
 						</p>
 					</div>
 				</div>
-				{/* Decorative circles */}
 				<div className="absolute -top-8 -right-8 size-32 rounded-full bg-white/5" />
 				<div className="absolute -bottom-4 -right-4 size-20 rounded-full bg-white/5" />
 			</div>
@@ -145,19 +174,19 @@ function ProgressOverviewPage() {
 				<TabsList variant="line" className="w-full">
 					<TabsTrigger
 						value="overview"
-						className="flex-1 data-[state=active]:!bg-transparent data-[state=active]:!text-foreground/60 data-[state=active]:!shadow-none"
+						className="flex-1 text-muted-foreground data-[state=active]:!bg-transparent data-[state=active]:!text-muted-foreground data-[state=active]:!shadow-none"
 					>
 						Tổng Quát
 					</TabsTrigger>
 					<TabsTrigger
 						value="test-practice"
-						className="flex-1 data-[state=active]:!bg-transparent data-[state=active]:!text-foreground/60 data-[state=active]:!shadow-none"
+						className="flex-1 text-muted-foreground data-[state=active]:!bg-transparent data-[state=active]:!text-muted-foreground data-[state=active]:!shadow-none"
 					>
 						Test Practice
 					</TabsTrigger>
 					<TabsTrigger
 						value="learning-path"
-						className="flex-1 data-[state=active]:!bg-transparent data-[state=active]:!text-foreground/60 data-[state=active]:!shadow-none"
+						className="flex-1 text-muted-foreground data-[state=active]:!bg-transparent data-[state=active]:!text-muted-foreground data-[state=active]:!shadow-none"
 					>
 						Lộ trình
 					</TabsTrigger>
@@ -320,7 +349,7 @@ function TestPracticeTab({
 	return (
 		<>
 			{/* Section 1: Weekly Average Scores */}
-			<div className="rounded-xl border bg-card p-5">
+			<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 				<div className="mb-4">
 					<h3 className="text-lg font-semibold">Điểm trung bình hàng tuần</h3>
 					<p className="text-sm text-muted-foreground">So với tuần trước</p>
@@ -360,7 +389,7 @@ function TestPracticeTab({
 			</div>
 
 			{/* Section 2: Score Tracking Line Chart */}
-			<div className="rounded-xl border bg-card p-5">
+			<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 				<div className="mb-4 flex flex-wrap items-center justify-between gap-3">
 					<div>
 						<h3 className="text-lg font-semibold">Theo dõi điểm số</h3>
@@ -491,7 +520,7 @@ function TestPracticeTab({
 			</div>
 
 			{/* Section 3: Test Practice History */}
-			<div className="rounded-xl border bg-card p-5">
+			<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 				<div className="mb-4 flex items-center justify-between">
 					<div>
 						<h3 className="text-lg font-semibold">Lịch sử Test Practice</h3>
@@ -594,7 +623,7 @@ function GoalCard({ goal }: { goal: EnrichedGoal | null }) {
 
 	if (!goal) {
 		return (
-			<div className="flex flex-col items-center justify-center gap-3 rounded-2xl border bg-card p-8">
+			<div className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-muted/50 p-8 shadow-sm">
 				<div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
 					<HugeiconsIcon icon={Target02Icon} className="size-6" />
 				</div>
@@ -616,7 +645,7 @@ function GoalCard({ goal }: { goal: EnrichedGoal | null }) {
 	const isExpired = goal.daysRemaining != null && goal.daysRemaining <= 0
 
 	return (
-		<div className="rounded-2xl border bg-card p-5">
+		<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-3">
 					<div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -708,7 +737,7 @@ function GoalForm({ onCancel }: { onCancel: () => void }) {
 	}
 
 	return (
-		<form onSubmit={handleSubmit} className="rounded-2xl border bg-card p-5">
+		<form onSubmit={handleSubmit} className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 			<h3 className="mb-4 text-lg font-semibold">Đặt mục tiêu mới</h3>
 			<div className="grid gap-4 sm:grid-cols-3">
 				<div className="space-y-1.5">
@@ -776,7 +805,7 @@ function LearningPathTab() {
 
 	if (error) {
 		return (
-			<div className="flex h-40 items-center justify-center rounded-2xl border text-muted-foreground">
+			<div className="flex h-40 items-center justify-center rounded-2xl bg-muted/50 text-muted-foreground">
 				Không thể tải lộ trình: {error.message}
 			</div>
 		)
@@ -784,7 +813,7 @@ function LearningPathTab() {
 
 	if (!data || data.weeklyPlan.length === 0) {
 		return (
-			<div className="flex flex-col items-center justify-center gap-3 rounded-2xl border bg-card py-16">
+			<div className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-muted/50 py-16">
 				<div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
 					<HugeiconsIcon icon={Book02Icon} className="size-6" />
 				</div>
@@ -799,7 +828,7 @@ function LearningPathTab() {
 	return (
 		<>
 			{/* Summary banner */}
-			<div className="flex flex-wrap items-center gap-4 rounded-2xl border bg-card p-5">
+			<div className="flex flex-wrap items-center gap-4 rounded-2xl bg-muted/50 p-5 shadow-sm">
 				{data.projectedImprovement && (
 					<div className="flex items-center gap-2">
 						<HugeiconsIcon icon={ArrowRight01Icon} className="size-5 text-primary" />
@@ -822,7 +851,7 @@ function LearningPathTab() {
 					const textColor = skillColorText[plan.skill as Skill] ?? "text-muted-foreground"
 
 					return (
-						<div key={plan.skill} className="rounded-2xl border bg-card p-5">
+						<div key={plan.skill} className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 							{/* Header */}
 							<div className="flex items-center justify-between">
 								<div className="flex items-center gap-3">
@@ -915,7 +944,7 @@ function StatCard({
 	valueColor: string
 }) {
 	return (
-		<div className="rounded-xl border bg-card p-4">
+		<div className="rounded-2xl bg-muted/50 p-4">
 			<div className="flex items-center gap-3">
 				<div className={cn("flex size-10 items-center justify-center rounded-xl", iconBg)}>
 					<HugeiconsIcon icon={icon} className="size-5" />
@@ -945,7 +974,7 @@ function SpiderChartCard({
 	if (spiderSkills.length === 0) return null
 
 	return (
-		<div className="rounded-xl border bg-card p-5">
+		<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 			<h3 className="text-lg font-semibold">Điểm trung bình theo kỹ năng</h3>
 			<p className="mb-4 text-sm text-muted-foreground">trong Test Practice</p>
 			<div className="flex justify-center">
@@ -971,7 +1000,7 @@ function DoughnutChartCard({
 	const total = segments.reduce((s, seg) => s + seg.value, 0)
 
 	return (
-		<div className="rounded-xl border bg-card p-5">
+		<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 			<h3 className="text-lg font-semibold">Tổng số bài test đã hoàn thành</h3>
 			<p className="mb-4 text-sm text-muted-foreground">trong Test Practice</p>
 			<DoughnutChart segments={segments} centerLabel="Tổng số bài test" centerValue={total} />

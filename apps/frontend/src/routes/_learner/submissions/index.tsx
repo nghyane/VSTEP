@@ -9,6 +9,7 @@ import type { IconSvgElement } from "@hugeicons/react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useSubmissions } from "@/hooks/use-submissions"
 import { cn } from "@/lib/utils"
 import type { Skill, SubmissionFull, SubmissionStatus } from "@/types/api"
@@ -51,7 +52,7 @@ function SubmissionRow({ submission }: { submission: SubmissionFull }) {
 		<Link
 			to="/submissions/$id"
 			params={{ id: submission.id }}
-			className="flex items-center gap-4 rounded-2xl border border-border bg-background p-4 transition-colors hover:border-primary"
+			className="flex items-center gap-4 rounded-2xl p-4 transition-colors hover:bg-muted/50"
 		>
 			<div className={cn("inline-flex shrink-0 rounded-xl p-2.5", skillColor[submission.skill])}>
 				<HugeiconsIcon icon={meta.icon} className="size-5" strokeWidth={1.75} />
@@ -86,19 +87,25 @@ function SubmissionsPage() {
 		<div className="space-y-6">
 			<div>
 				<h1 className="text-2xl font-bold">Lịch sử bài nộp</h1>
-				<p className="mt-1 text-sm text-muted-foreground">Xem lại các bài làm và kết quả</p>
+				<p className="mt-1 text-muted-foreground">Xem lại các bài làm và kết quả</p>
 			</div>
 
 			{isLoading ? (
 				<div className="space-y-3">
-					<div className="h-20 animate-pulse rounded-2xl bg-muted" />
-					<div className="h-20 animate-pulse rounded-2xl bg-muted" />
-					<div className="h-20 animate-pulse rounded-2xl bg-muted" />
+					{Array.from({ length: 3 }).map((_, i) => (
+						<Skeleton key={i} className="h-20 rounded-2xl" />
+					))}
 				</div>
 			) : isError ? (
-				<p className="text-sm text-destructive">Không thể tải dữ liệu. Vui lòng thử lại.</p>
+				<div className="rounded-2xl bg-muted/50 p-12 text-center">
+					<p className="text-lg font-semibold">Đã xảy ra lỗi</p>
+					<p className="mt-1 text-muted-foreground">Không thể tải dữ liệu. Vui lòng thử lại.</p>
+				</div>
 			) : submissions.length === 0 ? (
-				<div className="rounded-2xl border border-dashed border-border p-12 text-center">
+				<div className="flex flex-col items-center gap-4 rounded-2xl bg-muted/50 py-16">
+					<div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+						<HugeiconsIcon icon={Book02Icon} className="size-6" />
+					</div>
 					<p className="text-muted-foreground">Chưa có bài nộp nào. Hãy làm bài thi đầu tiên!</p>
 				</div>
 			) : (

@@ -51,7 +51,7 @@ function PracticePage() {
 
 	if (!topic) {
 		return (
-			<div className="flex flex-col items-center gap-4 py-16">
+			<div className="flex flex-col items-center gap-4 rounded-2xl bg-muted/50 py-16">
 				<p className="text-muted-foreground">Không tìm thấy chủ đề.</p>
 				<Button variant="outline" asChild>
 					<Link to="/vocabulary">Quay lại</Link>
@@ -169,8 +169,8 @@ function PracticePage() {
 						<HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
 						{topic.name}
 					</Link>
-					<h1 className="text-xl font-bold">Luyện điền từ</h1>
-					<p className="text-sm text-muted-foreground">
+					<h1 className="text-2xl font-bold">Luyện điền từ</h1>
+					<p className="text-muted-foreground">
 						Đọc định nghĩa và ví dụ, sau đó điền từ vào các ô bên dưới
 					</p>
 				</div>
@@ -222,9 +222,9 @@ function PracticePage() {
 			{/* Current word card */}
 			<div
 				className={cn(
-					"mx-auto max-w-2xl rounded-2xl border p-6",
-					isCorrect && "border-green-300 bg-green-50/30 dark:border-green-800 dark:bg-green-950/10",
-					isWrong && "border-red-300 bg-red-50/30 dark:border-red-800 dark:bg-red-950/10",
+					"mx-auto max-w-2xl rounded-2xl bg-muted/50 p-6",
+					isCorrect && "border border-green-300 bg-green-50/30 dark:border-green-800 dark:bg-green-950/10",
+					isWrong && "border border-red-300 bg-red-50/30 dark:border-red-800 dark:bg-red-950/10",
 				)}
 			>
 				<div className="flex items-center gap-2">

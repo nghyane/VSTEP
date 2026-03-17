@@ -191,7 +191,7 @@ function AssignmentsTab({ assignments, submissionMap }: AssignmentsTabProps) {
 				return (
 					<div
 						key={asg.id}
-						className="flex flex-col gap-3 rounded-2xl border bg-card p-5 sm:flex-row sm:items-center sm:justify-between"
+						className="flex flex-col gap-3 rounded-2xl bg-muted/50 p-5 sm:flex-row sm:items-center sm:justify-between"
 					>
 						<div className="space-y-1.5">
 							<p className="font-semibold">{asg.title}</p>
@@ -303,7 +303,7 @@ function FeedbackTab({ feedback }: FeedbackTabProps) {
 	return (
 		<div className="space-y-3">
 			{feedback.map((fb) => (
-				<div key={fb.id} className="rounded-2xl border px-5 py-4">
+				<div key={fb.id} className="rounded-2xl px-5 py-4 hover:bg-muted/50">
 					<div className="flex items-center justify-between text-xs text-muted-foreground">
 						<span>Từ: {fb.fromName}</span>
 						<span>{formatDate(fb.createdAt)}</span>
@@ -332,7 +332,7 @@ function MembersTab({ members }: MembersTabProps) {
 	return (
 		<div className="space-y-2">
 			{members.map((m) => (
-				<div key={m.id} className="flex items-center gap-3 rounded-xl border px-4 py-3">
+				<div key={m.id} className="flex items-center gap-3 rounded-2xl px-4 py-3 hover:bg-muted/50">
 					<div className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
 						{m.fullName[0]?.toUpperCase()}
 					</div>

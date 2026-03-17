@@ -610,7 +610,166 @@ function buildMemberProgress(classId: string): MockMemberProgress[] {
 	}))
 }
 
+// ── Instructor types (matching use-classes.ts) ──
+
+interface MockInstructorClass {
+	id: string
+	name: string
+	description: string | null
+	inviteCode: string
+	instructorId: string
+	createdAt: string
+	updatedAt: string
+}
+
+interface MockInstructorClassMember {
+	id: string
+	userId: string
+	fullName: string | null
+	email: string
+	joinedAt: string
+}
+
+interface MockInstructorClassDetail extends Omit<MockInstructorClass, "inviteCode"> {
+	inviteCode: string | null
+	members: MockInstructorClassMember[]
+	memberCount: number
+}
+
+interface MockInstructorDashboard {
+	memberCount: number
+	atRiskCount: number
+	atRiskLearners: {
+		userId: string
+		fullName: string | null
+		email: string
+		reasons: string[]
+	}[]
+	skillSummary: Record<
+		string,
+		{
+			avgScore: number | null
+			trendDistribution: { improving: number; stable: number; declining: number }
+		}
+	>
+}
+
+interface MockInstructorFeedback {
+	id: string
+	classId: string
+	fromUserId: string
+	toUserId: string
+	content: string
+	skill: string | null
+	submissionId: string | null
+	createdAt: string
+	updatedAt: string
+}
+
 // ── Public API ──
+
+function getMockInstructorClasses(): MockInstructorClass[] {
+	return allClasses.map((c) => ({
+		id: c.id,
+		name: c.name,
+		description: c.description,
+		inviteCode: c.inviteCode,
+		instructorId: c.instructorId,
+		createdAt: c.createdAt,
+		updatedAt: c.updatedAt,
+	}))
+}
+
+function getMockInstructorClassDetail(classId: string): MockInstructorClassDetail | null {
+	const cls = allClasses.find((c) => c.id === classId)
+	if (!cls) return null
+	const members: MockInstructorClassMember[] = (allMembers[classId] ?? []).map((m) => ({
+		id: m.id,
+		userId: m.userId,
+		fullName: m.fullName,
+		email: m.email,
+		joinedAt: m.joinedAt,
+	}))
+	return {
+		id: cls.id,
+		name: cls.name,
+		description: cls.description,
+		inviteCode: cls.inviteCode,
+		instructorId: cls.instructorId,
+		createdAt: cls.createdAt,
+		updatedAt: cls.updatedAt,
+		members,
+		memberCount: members.length,
+	}
+}
+
+function getMockInstructorDashboard(classId: string): MockInstructorDashboard {
+	const members = allMembers[classId] ?? []
+	const progress = buildMemberProgress(classId)
+
+	const atRiskLearners: MockInstructorDashboard["atRiskLearners"] = []
+	for (const mp of progress) {
+		const reasons: string[] = []
+		for (const [skill, data] of Object.entries(mp.skills)) {
+			if (data.trend === "declining") reasons.push(`${skill}: xu hướng giảm`)
+			if (data.avgScore < 5.5) reasons.push(`${skill}: điểm TB thấp (${data.avgScore.toFixed(1)})`)
+		}
+		if (reasons.length > 0) {
+			const member = members.find((m) => m.userId === mp.userId)
+			atRiskLearners.push({
+				userId: mp.userId,
+				fullName: member?.fullName ?? null,
+				email: mp.email,
+				reasons,
+			})
+		}
+	}
+
+	const skillSummary: MockInstructorDashboard["skillSummary"] = {}
+	const skills = ["listening", "reading", "writing", "speaking"]
+	for (const skill of skills) {
+		const scores: number[] = []
+		let improving = 0
+		let stable = 0
+		let declining = 0
+		for (const mp of progress) {
+			const s = mp.skills[skill]
+			if (!s) continue
+			scores.push(s.avgScore)
+			if (s.trend === "improving") improving++
+			else if (s.trend === "stable") stable++
+			else declining++
+		}
+		skillSummary[skill] = {
+			avgScore:
+				scores.length > 0
+					? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10
+					: null,
+			trendDistribution: { improving, stable, declining },
+		}
+	}
+
+	return {
+		memberCount: members.length,
+		atRiskCount: atRiskLearners.length,
+		atRiskLearners,
+		skillSummary,
+	}
+}
+
+function getMockInstructorFeedback(classId: string): MockInstructorFeedback[] {
+	return (allFeedback[classId] ?? []).map((fb) => ({
+		id: fb.id,
+		classId: fb.classId,
+		fromUserId: fb.fromUserId,
+		toUserId: fb.toUserId,
+		content: fb.content,
+		skill: fb.skill,
+		submissionId: null,
+		createdAt: fb.createdAt,
+		updatedAt: fb.createdAt,
+	}))
+}
 
 function getMockClasses(role: "instructor" | "learner"): MockClass[] {
 	if (role === "instructor") return allClasses
@@ -654,6 +813,10 @@ export {
 	getMockClassDetail,
 	getMockClasses,
 	getMockFeedback,
+	getMockInstructorClasses,
+	getMockInstructorClassDetail,
+	getMockInstructorDashboard,
+	getMockInstructorFeedback,
 	getMockLeaderboard,
 	getMockLearnerFeedback,
 	getMockMemberProgress,
@@ -664,6 +827,10 @@ export type {
 	MockAssignmentSubmission,
 	MockClass,
 	MockFeedback,
+	MockInstructorClass,
+	MockInstructorClassDetail,
+	MockInstructorDashboard,
+	MockInstructorFeedback,
 	MockLeaderboardEntry,
 	MockMember,
 	MockMemberProgress,

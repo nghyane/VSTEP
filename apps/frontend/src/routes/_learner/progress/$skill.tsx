@@ -78,7 +78,7 @@ function SkillDetailPage() {
 
 			<ScoreHistory scores={data.recentScores} skill={skill as Skill} />
 
-			<div className="rounded-xl bg-muted/30 p-5">
+			<div className="rounded-xl bg-muted/30 p-5 shadow-sm">
 				<h3 className="mb-3 font-semibold">Thống kê</h3>
 				<dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
 					<div>
@@ -124,7 +124,7 @@ function StatCard({
 
 function ScoreHistory({ scores, skill }: { scores: ProgressRecentScore[]; skill: Skill }) {
 	return (
-		<div className="rounded-xl bg-muted/30 p-5">
+		<div className="rounded-xl bg-muted/30 p-5 shadow-sm">
 			<h3 className="mb-3 font-semibold">Lịch sử điểm số</h3>
 			{scores.length === 0 ? (
 				<p className="text-sm text-muted-foreground">Chưa có dữ liệu</p>

@@ -7,7 +7,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
 	Dialog,
@@ -20,9 +20,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
-import { useClasses, useCreateClass, useDeleteClass } from "@/hooks/use-classes"
 import { user } from "@/lib/auth"
-import { getMockClasses } from "@/lib/mock-classes"
+import type { MockInstructorClass } from "@/lib/mock-classes"
+import { getMockClasses, getMockInstructorClasses } from "@/lib/mock-classes"
 
 export const Route = createFileRoute("/_learner/dashboard")({
 	component: DashboardPage,
@@ -36,27 +36,29 @@ function DashboardPage() {
 }
 
 function InstructorView() {
-	const { data, isLoading } = useClasses()
-	const createClass = useCreateClass()
-	const deleteClass = useDeleteClass()
+	const [isLoading, setIsLoading] = useState(true)
+	const [classes, setClasses] = useState<MockInstructorClass[]>([])
 	const [showCreate, setShowCreate] = useState(false)
 	const [name, setName] = useState("")
 	const [description, setDescription] = useState("")
 
-	const classes = data?.data ?? []
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setClasses(getMockInstructorClasses())
+			setIsLoading(false)
+		}, 500)
+		return () => clearTimeout(timer)
+	}, [])
 
 	function handleCreate() {
 		if (!name.trim()) return
-		createClass.mutate(
-			{ name: name.trim(), description: description.trim() || undefined },
-			{
-				onSuccess: () => {
-					setShowCreate(false)
-					setName("")
-					setDescription("")
-				},
-			},
-		)
+		setShowCreate(false)
+		setName("")
+		setDescription("")
+	}
+
+	function handleDelete(id: string) {
+		setClasses((prev) => prev.filter((c) => c.id !== id))
 	}
 
 	function handleCopyCode(code: string) {
@@ -95,9 +97,11 @@ function InstructorView() {
 			) : (
 				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 					{classes.map((cls) => (
-						<div
+						<Link
 							key={cls.id}
-							className="flex flex-col rounded-2xl border bg-card p-5 transition-shadow hover:shadow-md"
+							to="/dashboard/$classId"
+							params={{ classId: cls.id }}
+							className="flex flex-col rounded-2xl p-5 transition-colors hover:bg-muted/50"
 						>
 							<div className="flex items-start gap-3">
 								<div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -118,30 +122,33 @@ function InstructorView() {
 								<button
 									type="button"
 									className="text-muted-foreground hover:text-foreground"
-									onClick={() => handleCopyCode(cls.inviteCode)}
+									onClick={(e) => {
+										e.preventDefault()
+										handleCopyCode(cls.inviteCode)
+									}}
 								>
 									<HugeiconsIcon icon={Copy01Icon} className="size-3.5" />
 								</button>
 							</div>
 
 							<div className="mt-auto flex items-center gap-2 pt-4">
-								<Button size="sm" variant="outline" className="flex-1 gap-1.5" asChild>
-									<Link to="/dashboard/$classId" params={{ classId: cls.id }}>
-										Chi tiết
-										<HugeiconsIcon icon={ArrowRight01Icon} className="size-3.5" />
-									</Link>
-								</Button>
+								<span className="flex-1 text-sm font-medium text-muted-foreground">
+									Chi tiết
+									<HugeiconsIcon icon={ArrowRight01Icon} className="ml-1 inline size-3.5" />
+								</span>
 								<Button
 									size="sm"
 									variant="ghost"
 									className="text-destructive hover:text-destructive"
-									onClick={() => deleteClass.mutate(cls.id)}
-									disabled={deleteClass.isPending}
+									onClick={(e) => {
+										e.preventDefault()
+										handleDelete(cls.id)
+									}}
 								>
 									<HugeiconsIcon icon={Delete02Icon} className="size-4" />
 								</Button>
 							</div>
-						</div>
+						</Link>
 					))}
 				</div>
 			)}
@@ -176,8 +183,8 @@ function InstructorView() {
 						<Button variant="outline" onClick={() => setShowCreate(false)}>
 							Huỷ
 						</Button>
-						<Button onClick={handleCreate} disabled={createClass.isPending || !name.trim()}>
-							{createClass.isPending ? "Đang tạo..." : "Tạo lớp"}
+						<Button onClick={handleCreate} disabled={!name.trim()}>
+							Tạo lớp
 						</Button>
 					</DialogFooter>
 				</DialogContent>
@@ -210,7 +217,7 @@ function LearnerView() {
 					{classes.map((cls) => (
 						<div
 							key={cls.id}
-							className="flex flex-col rounded-2xl border bg-card p-5 transition-shadow hover:shadow-md"
+							className="flex flex-col rounded-2xl p-5 transition-colors hover:bg-muted/50"
 						>
 							<div className="flex items-start gap-3">
 								<div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">

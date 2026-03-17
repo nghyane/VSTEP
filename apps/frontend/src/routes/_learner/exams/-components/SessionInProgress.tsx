@@ -87,7 +87,7 @@ export function SessionInProgress({ session, sessionId, exam }: SessionInProgres
 	return (
 		<div className="space-y-6">
 			{/* Header */}
-			<div className="rounded-2xl bg-muted/30 p-6">
+			<div className="rounded-2xl bg-muted/30 p-6 shadow-sm">
 				<div className="flex items-center justify-between">
 					<h1 className="text-xl font-bold">{exam?.title || `Đề thi ${exam?.level ?? ""}`}</h1>
 					{isSaving && <span className="text-xs text-muted-foreground">Đang lưu...</span>}

@@ -41,7 +41,7 @@ interface WordCardProps {
 
 function WordCard({ word }: WordCardProps) {
 	return (
-		<div className="space-y-4 rounded-2xl border border-border bg-background p-6">
+		<div className="space-y-4 rounded-2xl bg-muted/50 p-6 shadow-sm">
 			<div className="flex items-start justify-between gap-3">
 				<div className="space-y-1">
 					<p className="text-xl font-bold">{word.word}</p>
@@ -90,8 +90,8 @@ interface StatCardProps {
 
 function StatCard({ icon, label, value }: StatCardProps) {
 	return (
-		<div className="flex items-center gap-3 rounded-xl border border-border bg-background p-4">
-			<div className="flex size-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+		<div className="flex items-center gap-3 rounded-2xl bg-muted/50 p-4">
+			<div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
 				<HugeiconsIcon icon={icon} className="size-5" />
 			</div>
 			<div>
