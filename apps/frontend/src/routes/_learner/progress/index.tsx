@@ -1,7 +1,6 @@
 import {
 	ArrowRight01Icon,
 	Book02Icon,
-	Cancel01Icon,
 	CheckmarkCircle02Icon,
 	Clock01Icon,
 	Fire02Icon,
@@ -43,12 +42,10 @@ import { useExamSessions } from "@/hooks/use-exam-session"
 import {
 	useActivity,
 	useCreateGoal,
-	useDeleteGoal,
 	useLearningPath,
 	useProgress,
 	useSkillDetail,
 	useSpiderChart,
-	useUpdateGoal,
 } from "@/hooks/use-progress"
 import { useUser } from "@/hooks/use-user"
 import { user as getAuthUser } from "@/lib/auth"
@@ -146,13 +143,22 @@ function ProgressOverviewPage() {
 			{/* Tabs */}
 			<Tabs defaultValue="overview">
 				<TabsList variant="line" className="w-full">
-					<TabsTrigger value="overview" className="flex-1 data-[state=active]:!bg-transparent data-[state=active]:!text-foreground/60 data-[state=active]:!shadow-none">
+					<TabsTrigger
+						value="overview"
+						className="flex-1 data-[state=active]:!bg-transparent data-[state=active]:!text-foreground/60 data-[state=active]:!shadow-none"
+					>
 						Tổng Quát
 					</TabsTrigger>
-					<TabsTrigger value="test-practice" className="flex-1 data-[state=active]:!bg-transparent data-[state=active]:!text-foreground/60 data-[state=active]:!shadow-none">
+					<TabsTrigger
+						value="test-practice"
+						className="flex-1 data-[state=active]:!bg-transparent data-[state=active]:!text-foreground/60 data-[state=active]:!shadow-none"
+					>
 						Test Practice
 					</TabsTrigger>
-					<TabsTrigger value="learning-path" className="flex-1 data-[state=active]:!bg-transparent data-[state=active]:!text-foreground/60 data-[state=active]:!shadow-none">
+					<TabsTrigger
+						value="learning-path"
+						className="flex-1 data-[state=active]:!bg-transparent data-[state=active]:!text-foreground/60 data-[state=active]:!shadow-none"
+					>
 						Lộ trình
 					</TabsTrigger>
 				</TabsList>
@@ -580,23 +586,10 @@ function TestPracticeTab({
 // ---------- Goal Card ----------
 
 function GoalCard({ goal }: { goal: EnrichedGoal | null }) {
-	const [editing, setEditing] = useState(false)
 	const [creating, setCreating] = useState(false)
-	const deleteGoal = useDeleteGoal()
 
-	if (creating || (!goal && editing)) {
-		return (
-			<GoalForm
-				onCancel={() => {
-					setCreating(false)
-					setEditing(false)
-				}}
-			/>
-		)
-	}
-
-	if (editing && goal) {
-		return <GoalForm goal={goal} onCancel={() => setEditing(false)} />
+	if (creating) {
+		return <GoalForm onCancel={() => setCreating(false)} />
 	}
 
 	if (!goal) {
@@ -620,6 +613,7 @@ function GoalCard({ goal }: { goal: EnrichedGoal | null }) {
 		month: "long",
 		year: "numeric",
 	})
+	const isExpired = goal.daysRemaining != null && goal.daysRemaining <= 0
 
 	return (
 		<div className="rounded-2xl border bg-card p-5">
@@ -636,19 +630,6 @@ function GoalCard({ goal }: { goal: EnrichedGoal | null }) {
 						</p>
 					</div>
 				</div>
-				<div className="flex gap-1">
-					<Button variant="ghost" size="icon-sm" onClick={() => setEditing(true)}>
-						<HugeiconsIcon icon={PencilEdit02Icon} className="size-4" />
-					</Button>
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						onClick={() => deleteGoal.mutate(goal.id)}
-						disabled={deleteGoal.isPending}
-					>
-						<HugeiconsIcon icon={Cancel01Icon} className="size-4 text-destructive" />
-					</Button>
-				</div>
 			</div>
 
 			<div className="mt-4 grid grid-cols-3 gap-4">
@@ -659,7 +640,11 @@ function GoalCard({ goal }: { goal: EnrichedGoal | null }) {
 				<div className="rounded-xl bg-muted/50 p-3 text-center">
 					<p className="text-xs text-muted-foreground">Còn lại</p>
 					<p className="mt-1 text-lg font-bold">
-						{goal.daysRemaining != null ? `${goal.daysRemaining} ngày` : "—"}
+						{isExpired
+							? "Hết hạn"
+							: goal.daysRemaining != null
+								? `${goal.daysRemaining} ngày`
+								: "—"}
 					</p>
 				</div>
 				<div className="rounded-xl bg-muted/50 p-3 text-center">
@@ -669,6 +654,11 @@ function GoalCard({ goal }: { goal: EnrichedGoal | null }) {
 							<>
 								<HugeiconsIcon icon={CheckmarkCircle02Icon} className="size-5 text-success" />
 								<span className="text-sm font-bold text-success">Đạt</span>
+							</>
+						) : isExpired ? (
+							<>
+								<HugeiconsIcon icon={Clock01Icon} className="size-5 text-muted-foreground" />
+								<span className="text-sm font-bold text-muted-foreground">Đã kết thúc</span>
 							</>
 						) : goal.onTrack === true ? (
 							<>
@@ -686,43 +676,40 @@ function GoalCard({ goal }: { goal: EnrichedGoal | null }) {
 					</div>
 				</div>
 			</div>
+
+			{isExpired && (
+				<div className="mt-4 flex items-center justify-between rounded-xl border border-dashed p-3">
+					<p className="text-sm text-muted-foreground">
+						Mục tiêu đã kết thúc. Hãy đặt mục tiêu mới!
+					</p>
+					<Button size="sm" onClick={() => setCreating(true)}>
+						<HugeiconsIcon icon={PlusSignIcon} className="size-4" />
+						Mục tiêu mới
+					</Button>
+				</div>
+			)}
 		</div>
 	)
 }
 
-function GoalForm({ goal, onCancel }: { goal?: EnrichedGoal; onCancel: () => void }) {
+function GoalForm({ onCancel }: { onCancel: () => void }) {
 	const createGoal = useCreateGoal()
-	const updateGoal = useUpdateGoal()
-	const [targetBand, setTargetBand] = useState<string>(goal?.targetBand ?? "B2")
-	const [deadline, setDeadline] = useState(
-		goal?.deadline ? new Date(goal.deadline).toISOString().split("T")[0] : "",
-	)
-	const [dailyMinutes, setDailyMinutes] = useState(String(goal?.dailyStudyTimeMinutes ?? 60))
-
-	const isPending = createGoal.isPending || updateGoal.isPending
+	const [targetBand, setTargetBand] = useState<string>("B2")
+	const [deadline, setDeadline] = useState("")
+	const [dailyMinutes, setDailyMinutes] = useState("60")
 
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault()
 		if (!deadline) return
-
-		const body = {
-			targetBand,
-			deadline,
-			dailyStudyTimeMinutes: Number(dailyMinutes) || undefined,
-		}
-
-		if (goal) {
-			updateGoal.mutate({ id: goal.id, ...body }, { onSuccess: onCancel })
-		} else {
-			createGoal.mutate(body, { onSuccess: onCancel })
-		}
+		createGoal.mutate(
+			{ targetBand, deadline, dailyStudyTimeMinutes: Number(dailyMinutes) || undefined },
+			{ onSuccess: onCancel },
+		)
 	}
 
 	return (
 		<form onSubmit={handleSubmit} className="rounded-2xl border bg-card p-5">
-			<h3 className="mb-4 text-lg font-semibold">
-				{goal ? "Chỉnh sửa mục tiêu" : "Đặt mục tiêu mới"}
-			</h3>
+			<h3 className="mb-4 text-lg font-semibold">Đặt mục tiêu mới</h3>
 			<div className="grid gap-4 sm:grid-cols-3">
 				<div className="space-y-1.5">
 					<Label>Band mục tiêu</Label>
@@ -760,8 +747,8 @@ function GoalForm({ goal, onCancel }: { goal?: EnrichedGoal; onCancel: () => voi
 				</div>
 			</div>
 			<div className="mt-4 flex gap-2">
-				<Button type="submit" size="sm" disabled={isPending}>
-					{goal ? "Lưu" : "Tạo mục tiêu"}
+				<Button type="submit" size="sm" disabled={createGoal.isPending}>
+					Tạo mục tiêu
 				</Button>
 				<Button type="button" variant="outline" size="sm" onClick={onCancel}>
 					Hủy

@@ -8,7 +8,6 @@ export const Route = createFileRoute("/_learner")({
 	beforeLoad: async () => {
 		if (!isAuthenticated()) throw redirect({ to: "/login" })
 
-		// Skip check if already marked as done
 		if (localStorage.getItem(ONBOARDING_KEY) === "1") return
 
 		try {
@@ -20,13 +19,15 @@ export const Route = createFileRoute("/_learner")({
 				const data = await res.json()
 				if (data.completed) {
 					localStorage.setItem(ONBOARDING_KEY, "1")
-				} else {
-					throw redirect({ to: "/onboarding" })
+					return
 				}
 			}
 		} catch (e) {
 			if (e && typeof e === "object" && "to" in e) throw e
-			// Network error — don't block, let user through
+		}
+
+		if (localStorage.getItem(ONBOARDING_KEY) !== "1") {
+			throw redirect({ to: "/onboarding" })
 		}
 	},
 	component: LearnerLayout,
