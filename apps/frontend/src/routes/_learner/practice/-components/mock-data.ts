@@ -68,6 +68,7 @@ export interface ListeningExam {
 	topic: ListeningTopic
 	audioUrl: string
 	isConversation?: boolean
+	level?: 1 | 2 | 3
 	sections: {
 		partNumber: number
 		partTitle: string
@@ -293,6 +294,7 @@ export const LISTENING_EXAMS: ListeningExam[] = [
 		title: "Bài luyện nghe số 3",
 		audioUrl:
 			"https://luyenthivstep.vn/assets/nhch/listening/bac3/lp3-1642953803_eb7ab6f2e8dead6de076.mp3",
+		level: 2,
 		sections: [
 			{
 				partNumber: 1,
