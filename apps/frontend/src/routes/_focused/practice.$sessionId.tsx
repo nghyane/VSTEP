@@ -26,11 +26,11 @@ import {
 import { SKILL_ORDER, skillMeta } from "@/routes/_learner/exams/-components/skill-meta"
 import { useTimer } from "@/routes/_learner/exams/-components/useTimer"
 import type { ExamSessionDetail, Skill, SubmissionAnswer } from "@/types/api"
-import { DeviceCheckScreen } from "./-components/DeviceCheckScreen"
-import { ListeningExamPanel } from "./-components/ListeningExamPanel"
-import { ReadingExamPanel } from "./-components/ReadingExamPanel"
-import { SpeakingExamPanel } from "./-components/SpeakingExamPanel"
-import { WritingExamPanel } from "./-components/WritingExamPanel"
+import { DeviceCheckScreen } from "./-components/shared/DeviceCheckScreen"
+import { ListeningExamPanel } from "./-components/listening/ListeningExamPanel"
+import { ReadingExamPanel } from "./-components/reading/ReadingExamPanel"
+import { SpeakingExamPanel } from "./-components/speaking/SpeakingExamPanel"
+import { WritingExamPanel } from "./-components/writing/WritingExamPanel"
 
 export const Route = createFileRoute("/_focused/practice/$sessionId")({
 	component: PracticePage,

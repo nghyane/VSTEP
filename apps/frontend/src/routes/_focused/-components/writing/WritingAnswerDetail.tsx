@@ -7,7 +7,6 @@ import {
 	WritingLevel1Detail,
 } from "./WritingLevel1Detail"
 import { MOCK_LEVEL2_RESULTS, WritingLevel2Detail } from "./WritingLevel2Detail"
-import { MOCK_LEVEL3_RESULTS, WritingLevel3Detail } from "./WritingLevel3Detail"
 import type { InlineError, InlineHighlight } from "./writing-grading-shared"
 
 // ═══════════════════════════════════════════════════
@@ -16,19 +15,16 @@ import type { InlineError, InlineHighlight } from "./writing-grading-shared"
 
 function getSubmittedText(examId: string, level: 1 | 2 | 3): string {
 	if (level === 1) return MOCK_LEVEL1_RESULTS[examId]?.submittedText ?? ""
-	if (level === 2) return MOCK_LEVEL2_RESULTS[examId]?.submittedText ?? ""
-	return MOCK_LEVEL3_RESULTS[examId]?.submittedText ?? ""
+	return MOCK_LEVEL2_RESULTS[examId]?.submittedText ?? ""
 }
 
 function getErrors(examId: string, level: 1 | 2 | 3): InlineError[] {
-	if (level === 2) return MOCK_LEVEL2_RESULTS[examId]?.errors ?? []
-	if (level === 3) return MOCK_LEVEL3_RESULTS[examId]?.errors ?? []
+	if (level === 2 || level === 3) return MOCK_LEVEL2_RESULTS[examId]?.errors ?? []
 	return []
 }
 
 function getHighlights(examId: string, level: 1 | 2 | 3): InlineHighlight[] {
-	if (level === 2) return MOCK_LEVEL2_RESULTS[examId]?.highlights ?? []
-	if (level === 3) return MOCK_LEVEL3_RESULTS[examId]?.highlights ?? []
+	if (level === 2 || level === 3) return MOCK_LEVEL2_RESULTS[examId]?.highlights ?? []
 	return []
 }
 
@@ -202,8 +198,7 @@ export function WritingAnswerDetail({ examId, level }: WritingAnswerDetailProps)
 				{activeTab === "result" ? (
 					<>
 						{level === 1 && <WritingLevel1Detail examId={examId} />}
-						{level === 2 && <WritingLevel2Detail examId={examId} />}
-						{level === 3 && <WritingLevel3Detail examId={examId} />}
+						{(level === 2 || level === 3) && <WritingLevel2Detail examId={examId} />}
 					</>
 				) : (
 					<div className="p-5 text-sm text-muted-foreground">
