@@ -26,9 +26,9 @@ import {
 import { SKILL_ORDER, skillMeta } from "@/routes/_learner/exams/-components/skill-meta"
 import { useTimer } from "@/routes/_learner/exams/-components/useTimer"
 import type { ExamSessionDetail, Skill, SubmissionAnswer } from "@/types/api"
-import { DeviceCheckScreen } from "./-components/shared/DeviceCheckScreen"
 import { ListeningExamPanel } from "./-components/listening/ListeningExamPanel"
 import { ReadingExamPanel } from "./-components/reading/ReadingExamPanel"
+import { DeviceCheckScreen } from "./-components/shared/DeviceCheckScreen"
 import { SpeakingExamPanel } from "./-components/speaking/SpeakingExamPanel"
 import { WritingExamPanel } from "./-components/writing/WritingExamPanel"
 

@@ -2,8 +2,8 @@ import { Book02Icon, BulbIcon, Tick02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { SpellCheckEditor, useSpellCheck } from "@/components/spell-check-editor"
 import { cn } from "@/lib/utils"
-import type { WritingExam } from "@/routes/_learner/practice/-components/mock-data"
 import { parseWritingPrompt } from "@/routes/_focused/-components/shared/exercise-shared"
+import type { WritingExam } from "@/routes/_learner/practice/-components/mock-data"
 
 interface WritingKeyword {
 	word: string
@@ -82,9 +82,7 @@ export function WritingLevel2Layout({
 	if (!task) return null
 
 	const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0
-	const usedKeywords = keywords.filter((kw) =>
-		text.toLowerCase().includes(kw.word.toLowerCase()),
-	)
+	const usedKeywords = keywords.filter((kw) => text.toLowerCase().includes(kw.word.toLowerCase()))
 
 	// Dedupe misspelled for the error list
 	const uniqueErrors = misspelled.filter(
@@ -114,7 +112,9 @@ export function WritingLevel2Layout({
 
 					{after && <div className="whitespace-pre-line text-sm leading-relaxed">{after}</div>}
 
-					{task.instructions && <p className="text-sm text-muted-foreground">{task.instructions}</p>}
+					{task.instructions && (
+						<p className="text-sm text-muted-foreground">{task.instructions}</p>
+					)}
 
 					<SpellCheckEditor
 						value={text}
@@ -146,7 +146,9 @@ export function WritingLevel2Layout({
 					{uniqueErrors.length > 0 && (
 						<div className="space-y-1.5 rounded-xl border border-red-200 bg-red-50/50 p-3 dark:border-red-800 dark:bg-red-950/20">
 							<p className="flex items-center gap-1.5 text-xs font-semibold text-red-600 dark:text-red-400">
-								<span className="flex size-4 items-center justify-center rounded-full bg-red-500 text-[9px] text-white">!</span>
+								<span className="flex size-4 items-center justify-center rounded-full bg-red-500 text-[9px] text-white">
+									!
+								</span>
 								Lỗi chính tả ({uniqueErrors.length})
 							</p>
 							{uniqueErrors.map((err, i) => (
@@ -200,7 +202,9 @@ export function WritingLevel2Layout({
 									<div className="flex items-center justify-between">
 										<span className="text-sm font-semibold">{kw.word}</span>
 										{isUsed && (
-											<span className="flex size-4 items-center justify-center rounded-full bg-green-500 text-[9px] text-white">✓</span>
+											<span className="flex size-4 items-center justify-center rounded-full bg-green-500 text-[9px] text-white">
+												✓
+											</span>
 										)}
 									</div>
 									<p className="mt-0.5 text-xs text-muted-foreground">{kw.meaning}</p>
@@ -219,8 +223,13 @@ export function WritingLevel2Layout({
 					{/* Writing structure tips */}
 					<div className="space-y-2 rounded-lg border border-dashed border-amber-300 bg-amber-50/50 p-3 dark:border-amber-700 dark:bg-amber-950/20">
 						<div className="flex items-center gap-1.5">
-							<HugeiconsIcon icon={Tick02Icon} className="size-3.5 text-amber-600 dark:text-amber-400" />
-							<p className="text-xs font-semibold text-amber-700 dark:text-amber-300">Gợi ý cấu trúc</p>
+							<HugeiconsIcon
+								icon={Tick02Icon}
+								className="size-3.5 text-amber-600 dark:text-amber-400"
+							/>
+							<p className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+								Gợi ý cấu trúc
+							</p>
 						</div>
 						<ul className="space-y-1">
 							<li className="flex items-start gap-1.5 text-[11px] text-amber-800 dark:text-amber-200">

@@ -120,7 +120,7 @@ export const MOCK_LEVEL2_RESULTS: Record<
 	"write-3": {
 		score: 6.0,
 		submittedText:
-			"Dear Mr. Johnson,\n\nI am writing to inform you about the professional development course I recently attended. The course, titled \"Effective Communication in the Workplace,\" was held at the City Conference Center from March 10 to March 12.\n\nDuring the three-day training, I learned several valuable skills, including how to deliver clear and concise presentations, manage difficult conversations with colleagues, and write professional emails more effectively. The course also covered active listening techniques and strategies for giving constructive feedback.\n\nI believe the company could greatly benefit from this training. Firstly, improved communication skills would enhance teamwork and reduce misunderstandings between departments. Secondly, the presentation skills module would be particularly useful for our sales team when meeting with clients. I would recommend that the company consider organizing a similar workshop for all employees.\n\nI would be happy to share the course materials with you and discuss this further at your convenience.\n\nYours sincerely",
+			'Dear Mr. Johnson,\n\nI am writing to inform you about the professional development course I recently attended. The course, titled "Effective Communication in the Workplace," was held at the City Conference Center from March 10 to March 12.\n\nDuring the three-day training, I learned several valuable skills, including how to deliver clear and concise presentations, manage difficult conversations with colleagues, and write professional emails more effectively. The course also covered active listening techniques and strategies for giving constructive feedback.\n\nI believe the company could greatly benefit from this training. Firstly, improved communication skills would enhance teamwork and reduce misunderstandings between departments. Secondly, the presentation skills module would be particularly useful for our sales team when meeting with clients. I would recommend that the company consider organizing a similar workshop for all employees.\n\nI would be happy to share the course materials with you and discuss this further at your convenience.\n\nYours sincerely',
 		criteria: [
 			{
 				label: "Task Fulfillment",
@@ -140,8 +140,7 @@ export const MOCK_LEVEL2_RESULTS: Record<
 				label: "Vocabulary",
 				score: 5.5,
 				maxScore: 10,
-				comment:
-					"Từ vựng phù hợp với ngữ cảnh trang trọng. Cần đa dạng hơn các cụm từ formal.",
+				comment: "Từ vựng phù hợp với ngữ cảnh trang trọng. Cần đa dạng hơn các cụm từ formal.",
 			},
 			{
 				label: "Grammar",

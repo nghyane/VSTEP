@@ -1,8 +1,6 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import type { ListeningExam } from "@/routes/_learner/practice/-components/mock-data"
-import { McqOption, type getAllQuestions } from "@/routes/_focused/-components/shared/exercise-shared"
 import { ListeningAnswerDetail } from "@/routes/_focused/-components/listening/ListeningAnswerDetail"
 import { ListeningPracticeAudioBar } from "@/routes/_focused/-components/listening/ListeningAudioBar"
 import {
@@ -10,6 +8,11 @@ import {
 	ListeningConversationDetail,
 } from "@/routes/_focused/-components/listening/ListeningConversationDetail"
 import { ListeningKeywordsPanel } from "@/routes/_focused/-components/listening/ListeningKeywordsPanel"
+import {
+	type getAllQuestions,
+	McqOption,
+} from "@/routes/_focused/-components/shared/exercise-shared"
+import type { ListeningExam } from "@/routes/_learner/practice/-components/mock-data"
 
 export function ListeningExerciseSection({
 	exam,
@@ -44,98 +47,98 @@ export function ListeningExerciseSection({
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden">
 			{!submitted ? (
-			<>
-				<div className="flex flex-1 overflow-hidden">
-					{/* Questions area */}
-					<div className="flex-1 overflow-y-auto">
-						<div className={cn("space-y-6 p-6", listeningLevel !== 2 && "mx-auto max-w-3xl")}>
-							{exam.sections.map((section) => (
-								<div key={section.partNumber} className="space-y-4">
-									{section.partTitle && (
-										<h3 className="text-sm font-semibold">{section.partTitle}</h3>
-									)}
-									{section.instructions && (
-										<p className="text-sm text-muted-foreground">{section.instructions}</p>
-									)}
-									{section.questions.map((q) => (
-										<div
-											key={q.questionNumber}
-											id={`question-${q.questionNumber}`}
-											className={cn(
-												"space-y-2 rounded-xl border bg-card p-4 transition-all",
-												listeningLevel === 2 &&
-													focusedQuestion === q.questionNumber &&
-													"ring-2 ring-sky-400/50",
-											)}
-											onClick={() => listeningLevel === 2 && setFocusedQuestion(q.questionNumber)}
-										>
-											<p className="text-sm font-medium">
-												<span className="mr-1.5 text-primary">{q.questionNumber}.</span>
-												{q.questionText || ""}
-											</p>
-											<div className="grid grid-cols-1 gap-2">
-												{Object.entries(q.options).map(([letter, text]) => (
-													<McqOption
-														key={letter}
-														letter={letter}
-														text={text}
-														isSelected={selectedAnswers[q.questionNumber] === letter}
-														isCorrect={false}
-														isWrong={false}
-														submitted={false}
-														onSelect={() => {
-															onSelect(q.questionNumber, letter)
-															if (listeningLevel === 2) setFocusedQuestion(q.questionNumber)
-														}}
-													/>
-												))}
+				<>
+					<div className="flex flex-1 overflow-hidden">
+						{/* Questions area */}
+						<div className="flex-1 overflow-y-auto">
+							<div className={cn("space-y-6 p-6", listeningLevel !== 2 && "mx-auto max-w-3xl")}>
+								{exam.sections.map((section) => (
+									<div key={section.partNumber} className="space-y-4">
+										{section.partTitle && (
+											<h3 className="text-sm font-semibold">{section.partTitle}</h3>
+										)}
+										{section.instructions && (
+											<p className="text-sm text-muted-foreground">{section.instructions}</p>
+										)}
+										{section.questions.map((q) => (
+											<div
+												key={q.questionNumber}
+												id={`question-${q.questionNumber}`}
+												className={cn(
+													"space-y-2 rounded-xl border bg-card p-4 transition-all",
+													listeningLevel === 2 &&
+														focusedQuestion === q.questionNumber &&
+														"ring-2 ring-sky-400/50",
+												)}
+												onClick={() => listeningLevel === 2 && setFocusedQuestion(q.questionNumber)}
+											>
+												<p className="text-sm font-medium">
+													<span className="mr-1.5 text-primary">{q.questionNumber}.</span>
+													{q.questionText || ""}
+												</p>
+												<div className="grid grid-cols-1 gap-2">
+													{Object.entries(q.options).map(([letter, text]) => (
+														<McqOption
+															key={letter}
+															letter={letter}
+															text={text}
+															isSelected={selectedAnswers[q.questionNumber] === letter}
+															isCorrect={false}
+															isWrong={false}
+															submitted={false}
+															onSelect={() => {
+																onSelect(q.questionNumber, letter)
+																if (listeningLevel === 2) setFocusedQuestion(q.questionNumber)
+															}}
+														/>
+													))}
+												</div>
 											</div>
-										</div>
-									))}
-								</div>
+										))}
+									</div>
+								))}
+							</div>
+						</div>
+
+						{/* Level 2: Keywords sidebar */}
+						{listeningLevel === 2 && (
+							<ListeningKeywordsPanel examId={examId} currentQuestion={focusedQuestion} />
+						)}
+					</div>
+
+					{/* Audio bar */}
+					<ListeningPracticeAudioBar src={exam.audioUrl} />
+
+					{/* Bottom bar: question nav + submit */}
+					<div className="flex h-14 shrink-0 items-center justify-between border-t px-4">
+						<div />
+						<div className="flex items-center gap-1.5">
+							{questions.map((q) => (
+								<button
+									key={q.questionNumber}
+									type="button"
+									className={cn(
+										"flex size-8 items-center justify-center rounded-lg border text-xs font-medium transition-colors",
+										selectedAnswers[q.questionNumber]
+											? "border-primary bg-primary text-primary-foreground"
+											: "border-border bg-background text-muted-foreground hover:border-primary/40",
+									)}
+									onClick={() => {
+										document
+											.getElementById(`question-${q.questionNumber}`)
+											?.scrollIntoView({ behavior: "smooth", block: "center" })
+										if (listeningLevel === 2) setFocusedQuestion(q.questionNumber)
+									}}
+								>
+									{q.questionNumber}
+								</button>
 							))}
 						</div>
+						<Button size="lg" className="rounded-xl px-8" onClick={onSubmit}>
+							Nộp bài
+						</Button>
 					</div>
-
-					{/* Level 2: Keywords sidebar */}
-					{listeningLevel === 2 && (
-						<ListeningKeywordsPanel examId={examId} currentQuestion={focusedQuestion} />
-					)}
-				</div>
-
-				{/* Audio bar */}
-				<ListeningPracticeAudioBar src={exam.audioUrl} />
-
-				{/* Bottom bar: question nav + submit */}
-				<div className="flex h-14 shrink-0 items-center justify-between border-t px-4">
-					<div />
-					<div className="flex items-center gap-1.5">
-						{questions.map((q) => (
-							<button
-								key={q.questionNumber}
-								type="button"
-								className={cn(
-									"flex size-8 items-center justify-center rounded-lg border text-xs font-medium transition-colors",
-									selectedAnswers[q.questionNumber]
-										? "border-primary bg-primary text-primary-foreground"
-										: "border-border bg-background text-muted-foreground hover:border-primary/40",
-								)}
-								onClick={() => {
-									document
-										.getElementById(`question-${q.questionNumber}`)
-										?.scrollIntoView({ behavior: "smooth", block: "center" })
-									if (listeningLevel === 2) setFocusedQuestion(q.questionNumber)
-								}}
-							>
-								{q.questionNumber}
-							</button>
-						))}
-					</div>
-					<Button size="lg" className="rounded-xl px-8" onClick={onSubmit}>
-						Nộp bài
-					</Button>
-				</div>
-			</>
+				</>
 			) : (
 				<>
 					<div className="flex flex-1 overflow-hidden">

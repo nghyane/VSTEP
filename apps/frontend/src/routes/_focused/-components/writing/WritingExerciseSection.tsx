@@ -1,4 +1,3 @@
-import type { WritingExam } from "@/routes/_learner/practice/-components/mock-data"
 import {
 	WritingAnnotatedPanel,
 	WritingAnswerDetail,
@@ -6,6 +5,7 @@ import {
 import { WritingLevel1Layout } from "@/routes/_focused/-components/writing/WritingLevel1Layout"
 import { WritingLevel2Layout } from "@/routes/_focused/-components/writing/WritingLevel2Layout"
 import { WritingTemplateEditor } from "@/routes/_focused/-components/writing/WritingTemplateEditor"
+import type { WritingExam } from "@/routes/_learner/practice/-components/mock-data"
 
 export function WritingExerciseSection({
 	exam,
@@ -45,9 +45,7 @@ export function WritingExerciseSection({
 									const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0
 									return (
 										<div key={task.taskNumber} className="space-y-4">
-											{task.title && (
-												<h3 className="text-sm font-semibold">{task.title}</h3>
-											)}
+											{task.title && <h3 className="text-sm font-semibold">{task.title}</h3>}
 											<div
 												className="rounded-xl bg-muted/10 p-4 text-sm leading-relaxed"
 												style={{ whiteSpace: "pre-wrap" }}

@@ -4,17 +4,17 @@ import { createFileRoute, Link } from "@tanstack/react-router"
 import { useCallback, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { findExam, getAllQuestions } from "@/routes/_focused/-components/shared/exercise-shared"
 import { ListeningExerciseSection } from "@/routes/_focused/-components/listening/ListeningExerciseSection"
 import { ReadingExerciseSection } from "@/routes/_focused/-components/reading/ReadingExerciseSection"
+import { findExam, getAllQuestions } from "@/routes/_focused/-components/shared/exercise-shared"
 import { SpeakingExerciseSection } from "@/routes/_focused/-components/speaking/SpeakingExerciseSection"
 import { WritingExerciseSection } from "@/routes/_focused/-components/writing/WritingExerciseSection"
 import { skillColor, skillMeta } from "@/routes/_learner/exams/-components/skill-meta"
-import {
-	type ListeningExam,
-	type ReadingExam,
-	type SpeakingExam,
-	type WritingExam,
+import type {
+	ListeningExam,
+	ReadingExam,
+	SpeakingExam,
+	WritingExam,
 } from "@/routes/_learner/practice/-components/mock-data"
 import type { Skill } from "@/types/api"
 
@@ -131,11 +131,6 @@ function ExercisePage() {
 					key={resetCounter}
 					exam={exam as SpeakingExam}
 					submitted={submitted}
-					parentExam={exam}
-					parentSkill={skill}
-					typedSkill={typedSkill}
-					questions={questions}
-					selectedAnswers={selectedAnswers}
 				/>
 			)}
 

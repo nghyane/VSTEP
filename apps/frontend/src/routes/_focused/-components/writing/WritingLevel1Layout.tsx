@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { cn } from "@/lib/utils"
-import type { WritingExam } from "@/routes/_learner/practice/-components/mock-data"
 import { parseWritingPrompt } from "@/routes/_focused/-components/shared/exercise-shared"
+import type { WritingExam } from "@/routes/_learner/practice/-components/mock-data"
 
 export function WritingLevel1Layout({
 	tasks,

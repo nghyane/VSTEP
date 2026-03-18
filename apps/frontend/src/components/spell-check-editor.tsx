@@ -123,9 +123,7 @@ export function SpellCheckEditor({
 			if (m.index > cursor) {
 				parts.push(escapeHtml(value.slice(cursor, m.index)))
 			}
-			parts.push(
-				`<mark class="spell-error">${escapeHtml(m.word)}</mark>`,
-			)
+			parts.push(`<mark class="spell-error">${escapeHtml(m.word)}</mark>`)
 			cursor = m.index + m.word.length
 		}
 

@@ -1,8 +1,11 @@
 import { useState } from "react"
 import { cn } from "@/lib/utils"
-import type { ReadingExam } from "@/routes/_learner/practice/-components/mock-data"
-import { McqOption, type getAllQuestions } from "@/routes/_focused/-components/shared/exercise-shared"
 import { ReadingAnswerDetail } from "@/routes/_focused/-components/reading/ReadingAnswerDetail"
+import {
+	type getAllQuestions,
+	McqOption,
+} from "@/routes/_focused/-components/shared/exercise-shared"
+import type { ReadingExam } from "@/routes/_learner/practice/-components/mock-data"
 
 export function ReadingExerciseSection({
 	exam,

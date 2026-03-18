@@ -122,7 +122,7 @@ export function ListeningKeywordsPanel({
 									<div className="mt-1.5 flex items-center gap-1">
 										<HugeiconsIcon icon={BulbIcon} className="size-3 text-sky-500" />
 										<span className="text-[10px] font-medium text-sky-600 dark:text-sky-400">
-										Liên quan câu {currentQuestion}
+											Liên quan câu {currentQuestion}
 										</span>
 									</div>
 								)}
@@ -134,7 +134,10 @@ export function ListeningKeywordsPanel({
 				{/* Listening tips */}
 				<div className="space-y-2 rounded-lg border border-dashed border-amber-300 bg-amber-50/50 p-3 dark:border-amber-700 dark:bg-amber-950/20">
 					<div className="flex items-center gap-1.5">
-						<HugeiconsIcon icon={Tick02Icon} className="size-3.5 text-amber-600 dark:text-amber-400" />
+						<HugeiconsIcon
+							icon={Tick02Icon}
+							className="size-3.5 text-amber-600 dark:text-amber-400"
+						/>
 						<p className="text-xs font-semibold text-amber-700 dark:text-amber-300">Mẹo nghe</p>
 					</div>
 					<ul className="space-y-1">

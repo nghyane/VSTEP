@@ -1,261 +1,307 @@
 import {
-	BulbIcon,
-	Gps01Icon,
-	TextIcon,
+	ArrowLeft01Icon,
+	ArrowRight01Icon,
+	Mic01Icon,
+	PauseIcon,
+	RecordIcon,
+	SquareIcon,
+	VolumeHighIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { useReactMediaRecorder } from "react-media-recorder"
 import { Button } from "@/components/ui/button"
-import { useExplain, useParaphrase } from "@/hooks/use-ai"
-import { useUploadAudio } from "@/hooks/use-uploads"
 import { cn } from "@/lib/utils"
-import type { SpeakingExam } from "@/routes/_learner/practice/-components/mock-data"
-import { type AnyExam, type getAllQuestions, getExamText } from "@/routes/_focused/-components/shared/exercise-shared"
 import { SpeakingFeedback } from "@/routes/_focused/-components/speaking/SpeakingFeedback"
-import type { Skill } from "@/types/api"
+import type { SpeakingExam } from "@/routes/_learner/practice/-components/mock-data"
+
+// --- Utilities ---
+
+function formatDuration(seconds: number): string {
+	if (seconds < 60) return `${seconds}s`
+	const m = Math.floor(seconds / 60)
+	const s = seconds % 60
+	return s > 0 ? `${m}m ${s}s` : `${m}m`
+}
+
+function formatTimer(seconds: number): string {
+	const m = Math.floor(seconds / 60)
+	const s = seconds % 60
+	return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
+}
+
+// --- Recorder (mirrors SpeakingExamPanel's SpeakingRecorder) ---
+
+type RecorderPhase = "idle" | "recording" | "done"
+
+function ExerciseRecorder({
+	speakingSeconds,
+	disabled,
+}: {
+	speakingSeconds: number
+	disabled?: boolean
+}) {
+	const [phase, setPhase] = useState<RecorderPhase>("idle")
+	const [timer, setTimer] = useState(0)
+	const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+	const { status, startRecording, stopRecording, mediaBlobUrl, clearBlobUrl } =
+		useReactMediaRecorder({
+			audio: true,
+			video: false,
+			askPermissionOnMount: false,
+			onStop: () => {
+				setPhase("done")
+			},
+		})
+
+	// Recording countdown → auto-stop
+	useEffect(() => {
+		if (phase !== "recording") return
+
+		setTimer(speakingSeconds)
+		if (timerRef.current) clearInterval(timerRef.current)
+
+		timerRef.current = setInterval(() => {
+			setTimer((t) => {
+				if (t <= 1) {
+					stopRecording()
+					return 0
+				}
+				return t - 1
+			})
+		}, 1000)
+
+		return () => {
+			if (timerRef.current) clearInterval(timerRef.current)
+		}
+	}, [phase, speakingSeconds, stopRecording])
+
+	const handleStart = useCallback(() => {
+		setPhase("recording")
+		startRecording()
+	}, [startRecording])
+
+	const handleStop = useCallback(() => {
+		if (timerRef.current) clearInterval(timerRef.current)
+		stopRecording()
+		setPhase("done")
+	}, [stopRecording])
+
+	const handleRetry = useCallback(() => {
+		clearBlobUrl()
+		setPhase("idle")
+		setTimer(0)
+	}, [clearBlobUrl])
+
+	// Playback
+	const playbackRef = useRef<HTMLAudioElement>(null)
+	const [playingBack, setPlayingBack] = useState(false)
+
+	const handlePlayback = useCallback(() => {
+		const audio = playbackRef.current
+		if (!audio || !mediaBlobUrl) return
+		audio.src = mediaBlobUrl
+		audio.onended = () => setPlayingBack(false)
+		audio.play().catch(() => {})
+		setPlayingBack(true)
+	}, [mediaBlobUrl])
+
+	const isError = status === "permission_denied" || status === "no_specified_media_found"
+	const hasDoneRecording = phase === "done" && mediaBlobUrl
+
+	return (
+		<div className="space-y-3 rounded-xl border bg-muted/10 p-4">
+			{/* Status bar */}
+			<div
+				className={cn(
+					"flex h-14 items-center justify-center rounded-lg border",
+					phase === "recording" ? "border-destructive/30 bg-destructive/5" : "bg-muted/30",
+				)}
+			>
+				{phase === "idle" && (
+					<span className="text-sm text-muted-foreground">
+						{disabled ? "Đã nộp bài — không thể ghi âm" : 'Bấm "Bắt đầu" để ghi âm'}
+					</span>
+				)}
+
+				{phase === "recording" && (
+					<div className="flex items-center gap-3">
+						<span className="size-2 animate-pulse rounded-full bg-destructive" />
+						<span className="text-sm font-medium text-destructive">
+							Đang ghi âm... {formatTimer(timer)}
+						</span>
+					</div>
+				)}
+				{phase === "done" && mediaBlobUrl && (
+					<span className="text-sm text-muted-foreground">
+						Đã ghi xong — bấm "Nghe lại" để kiểm tra
+					</span>
+				)}
+			</div>
+
+			{/* Action buttons */}
+			<div className="flex flex-wrap items-center justify-center gap-2">
+				{phase === "idle" && !disabled && (
+					<Button size="sm" onClick={handleStart}>
+						<HugeiconsIcon icon={RecordIcon} className="size-4" />
+						Bắt đầu ghi âm
+					</Button>
+				)}
+				{phase === "recording" && (
+					<Button size="sm" variant="destructive" onClick={handleStop}>
+						<HugeiconsIcon icon={SquareIcon} className="size-3.5" />
+						Dừng
+					</Button>
+				)}
+
+				{hasDoneRecording && (
+					<>
+						<Button size="sm" variant="outline" onClick={handlePlayback} disabled={playingBack}>
+							<HugeiconsIcon icon={playingBack ? PauseIcon : VolumeHighIcon} className="size-4" />
+							{playingBack ? "Đang phát..." : "Nghe lại"}
+						</Button>
+						{!disabled && (
+							<Button size="sm" variant="outline" onClick={handleRetry}>
+								<HugeiconsIcon icon={RecordIcon} className="size-4 text-destructive" />
+								Ghi lại
+							</Button>
+						)}
+					</>
+				)}
+			</div>
+
+			{isError && (
+				<p className="text-xs text-destructive">
+					Không thể truy cập microphone. Hãy cấp quyền trên trình duyệt.
+				</p>
+			)}
+			{hasDoneRecording && <p className="text-xs font-medium text-emerald-600">✓ Đã ghi âm xong</p>}
+
+			{/* biome-ignore lint/a11y/useMediaCaption: playback only */}
+			<audio ref={playbackRef} className="hidden" />
+		</div>
+	)
+}
+
+// --- Part Content ---
+
+function PartContent({
+	part,
+	disabled,
+}: {
+	part: SpeakingExam["parts"][number]
+	disabled?: boolean
+}) {
+	return (
+		<div className="space-y-5">
+			<div className="rounded-xl bg-muted/30 p-5">
+				<p className="whitespace-pre-line leading-relaxed">{part.instructions}</p>
+			</div>
+
+			<div className="flex gap-4 text-xs text-muted-foreground">
+				<span>Nói: {formatDuration(part.speakingTime * 60)}</span>
+			</div>
+
+			<ExerciseRecorder speakingSeconds={part.speakingTime * 60} disabled={disabled} />
+		</div>
+	)
+}
+
+// --- Main Component ---
 
 export function SpeakingExerciseSection({
 	exam,
 	submitted,
-	parentExam,
-	parentSkill,
-	typedSkill,
-	questions,
-	selectedAnswers,
 }: {
 	exam: SpeakingExam
 	submitted: boolean
-	parentExam: AnyExam
-	parentSkill: string
-	typedSkill: Skill
-	questions: ReturnType<typeof getAllQuestions>
-	selectedAnswers: Record<number, string>
 }) {
-	const resultsRef = useRef<HTMLDivElement>(null)
-	const [activeAiTool, setActiveAiTool] = useState<"paraphrase" | "explain" | null>(null)
-	const paraphrase = useParaphrase()
-	const explain = useExplain()
-	const uploadAudio = useUploadAudio()
-	const [audioFile, setAudioFile] = useState<File | null>(null)
-	const [audioUrl, setAudioUrl] = useState<string | null>(null)
+	const [activePartIdx, setActivePartIdx] = useState(0)
+	const activePart = exam.parts[activePartIdx]
+
+	const handlePrevPart = useCallback(() => {
+		setActivePartIdx((i) => Math.max(0, i - 1))
+	}, [])
+
+	const handleNextPart = useCallback(() => {
+		setActivePartIdx((i) => Math.min(i + 1, exam.parts.length - 1))
+	}, [exam.parts.length])
 
 	return (
 		<div className="flex flex-1 overflow-hidden">
-			{/* Left — exercise */}
-			<div className="flex-1 overflow-y-auto">
-				<div className="mx-auto max-w-3xl space-y-6 p-6">
-					<div className="space-y-6">
-						{exam.parts.map((part) => (
-							<div key={part.partNumber} className="space-y-3">
-								{part.title && <h3 className="text-sm font-semibold">{part.title}</h3>}
-								<div
-									className="rounded-xl bg-muted/10 p-4 text-sm leading-relaxed"
-									style={{ whiteSpace: "pre-wrap" }}
-								>
-									{part.instructions}
-								</div>
-								<p className="text-sm text-muted-foreground">
-									Thời gian nói: {part.speakingTime} phút
-								</p>
-								<div className="space-y-3">
-									<input
-										type="file"
-										accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/webm,audio/ogg"
-										className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary hover:file:bg-primary/20"
-										onChange={(ev) => {
-											const file = ev.target.files?.[0]
-											if (file) {
-												setAudioFile(file)
-												setAudioUrl(URL.createObjectURL(file))
-											}
-										}}
-										disabled={submitted}
-									/>
-									{audioUrl && (
-										<audio controls src={audioUrl} className="w-full rounded-lg">
-											<track kind="captions" />
-										</audio>
-									)}
-									{audioFile && !submitted && (
-										<Button
-											size="sm"
-											variant="outline"
-											className="w-full"
-											disabled={uploadAudio.isPending}
-											onClick={() => uploadAudio.mutate(audioFile)}
-										>
-											{uploadAudio.isPending ? "Đang tải lên..." : "Tải lên"}
-										</Button>
-									)}
-									{uploadAudio.isSuccess && (
-										<p className="text-xs text-green-600">Đã tải lên thành công</p>
-									)}
-								</div>
-							</div>
-						))}
+			{/* Left — exercise content */}
+			<div className="flex flex-1 flex-col overflow-hidden">
+				{/* Scrollable content */}
+				<div className="flex-1 overflow-y-auto">
+					<div className="mx-auto max-w-3xl space-y-6 p-6">
+						{/* Part header */}
+						<div className="flex items-center gap-3">
+							<HugeiconsIcon icon={Mic01Icon} className="size-5 text-primary" />
+							<h3 className="text-lg font-semibold">Speaking — Part {activePart.partNumber}</h3>
+							{activePart.title && (
+								<span className="rounded-full bg-primary/10 px-3 py-0.5 text-sm font-medium text-primary">
+									{activePart.title}
+								</span>
+							)}
+						</div>
+
+						{/* Part content + recorder */}
+						<PartContent key={activePartIdx} part={activePart} disabled={submitted} />
 					</div>
 				</div>
+
+				{/* Part tabs + prev/next (only when multiple parts) */}
+				{exam.parts.length > 1 && (
+					<div className="flex items-center justify-between border-t bg-muted/5 px-4 py-2.5">
+						{activePartIdx > 0 ? (
+							<Button size="sm" variant="outline" onClick={handlePrevPart}>
+								<HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
+								Part {activePartIdx}
+							</Button>
+						) : (
+							<div className="w-24" />
+						)}
+
+						<div className="flex items-center gap-1.5">
+							{exam.parts.map((p, i) => {
+								const isActive = i === activePartIdx
+								return (
+									<button
+										key={i}
+										type="button"
+										onClick={() => setActivePartIdx(i)}
+										className={cn(
+											"flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+											isActive
+												? "bg-primary text-primary-foreground"
+												: "bg-muted text-muted-foreground hover:bg-muted/80",
+										)}
+									>
+										Part {p.partNumber}
+										{p.title && <span className="hidden opacity-80 sm:inline">· {p.title}</span>}
+									</button>
+								)
+							})}
+						</div>
+
+						{activePartIdx < exam.parts.length - 1 ? (
+							<Button size="sm" onClick={handleNextPart}>
+								Part {activePartIdx + 2}
+								<HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
+							</Button>
+						) : (
+							<div className="w-24" />
+						)}
+					</div>
+				)}
 			</div>
 
 			{/* Right — AI tools sidebar (after submit) */}
 			{submitted && (
-				<aside className="hidden w-[320px] shrink-0 overflow-y-auto border-l lg:block">
-					<div ref={resultsRef} className="space-y-4 p-5">
+				<aside className="hidden w-[380px] shrink-0 overflow-y-auto border-l lg:block">
+					<div className="p-5">
 						<SpeakingFeedback />
-
-						{/* AI tools */}
-						<div className="space-y-3">
-							<p className="text-sm font-semibold">Công cụ AI</p>
-
-							{/* Paraphrasing */}
-							<div
-								className={cn(
-									"rounded-xl p-4 transition-colors",
-									activeAiTool === "paraphrase"
-										? "bg-sky-500/10 ring-1 ring-sky-500/30"
-										: "bg-muted/30",
-								)}
-							>
-								<div className="flex items-start gap-3">
-									<div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-500/15 text-sky-600 dark:text-sky-400">
-										<HugeiconsIcon icon={TextIcon} className="size-4" />
-									</div>
-									<div className="flex-1">
-										<p className="text-sm font-semibold">Paraphrasing</p>
-										<p className="mt-0.5 text-xs text-muted-foreground">
-											Tô sáng các cụm từ có thể diễn đạt lại trong bài.
-										</p>
-									</div>
-								</div>
-								<Button
-									size="sm"
-									variant={activeAiTool === "paraphrase" ? "default" : "outline"}
-									className="mt-3 w-full gap-1.5 rounded-lg text-xs"
-									disabled={paraphrase.isPending}
-									onClick={() => {
-										if (activeAiTool === "paraphrase") {
-											setActiveAiTool(null)
-											return
-										}
-										setActiveAiTool("paraphrase")
-										const text = getExamText(parentExam, parentSkill)
-										if (text) {
-											paraphrase.mutate({ text, skill: typedSkill })
-										}
-									}}
-								>
-									<HugeiconsIcon icon={Gps01Icon} className="size-3.5" />
-									{paraphrase.isPending
-										? "Đang phân tích..."
-										: activeAiTool === "paraphrase"
-											? "Ẩn"
-											: "Phân tích"}
-								</Button>
-							</div>
-
-							{/* Giải thích chi tiết */}
-							<div
-								className={cn(
-									"rounded-xl p-4 transition-colors",
-									activeAiTool === "explain"
-										? "bg-amber-500/10 ring-1 ring-amber-500/30"
-										: "bg-muted/30",
-								)}
-							>
-								<div className="flex items-start gap-3">
-									<div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400">
-										<HugeiconsIcon icon={BulbIcon} className="size-4" />
-									</div>
-									<div className="flex-1">
-										<p className="text-sm font-semibold">Giải thích chi tiết</p>
-										<p className="mt-0.5 text-xs text-muted-foreground">
-											Tô sáng ngữ pháp, từ vựng và chiến lược làm bài.
-										</p>
-									</div>
-								</div>
-								<Button
-									size="sm"
-									variant={activeAiTool === "explain" ? "default" : "outline"}
-									className="mt-3 w-full gap-1.5 rounded-lg text-xs"
-									disabled={explain.isPending}
-									onClick={() => {
-										if (activeAiTool === "explain") {
-											setActiveAiTool(null)
-											return
-										}
-										setActiveAiTool("explain")
-										const text = getExamText(parentExam, parentSkill)
-										if (text) {
-											explain.mutate({
-												text,
-												skill: typedSkill,
-												answers: Object.fromEntries(
-													Object.entries(selectedAnswers).map(([k, v]) => [String(k), v]),
-												),
-												correctAnswers: Object.fromEntries(
-													questions.map((q) => [String(q.questionNumber), q.correctAnswer]),
-												),
-											})
-										}
-									}}
-								>
-									<HugeiconsIcon icon={Gps01Icon} className="size-3.5" />
-									{explain.isPending
-										? "Đang phân tích..."
-										: activeAiTool === "explain"
-											? "Ẩn"
-											: "Phân tích"}
-								</Button>
-							</div>
-						</div>
-
-						{/* AI Results */}
-						{paraphrase.data && activeAiTool === "paraphrase" && (
-							<div className="space-y-2 rounded-xl bg-sky-50/50 p-4 dark:bg-sky-950/10">
-								<p className="text-xs font-semibold text-sky-700 dark:text-sky-300">
-									Gợi ý paraphrase
-								</p>
-								{paraphrase.data.highlights.map((h, i) => (
-									<div key={i} className="space-y-0.5 text-sm">
-										<p className="font-medium">{h.phrase}</p>
-										<p className="text-xs text-muted-foreground">{h.note}</p>
-									</div>
-								))}
-							</div>
-						)}
-
-						{explain.data && activeAiTool === "explain" && (
-							<div className="space-y-2 rounded-xl bg-amber-50/50 p-4 dark:bg-amber-950/10">
-								<p className="text-xs font-semibold text-amber-700 dark:text-amber-300">
-									Giải thích chi tiết
-								</p>
-								{explain.data.highlights.map((h, i) => (
-									<div key={i} className="space-y-0.5 text-sm">
-										<p className="font-medium">
-											<span className="mr-1.5 rounded bg-muted px-1.5 py-0.5 text-[10px]">
-												{h.category}
-											</span>
-											{h.phrase}
-										</p>
-										<p className="text-xs text-muted-foreground">{h.note}</p>
-									</div>
-								))}
-								{explain.data.questionExplanations?.map((qe) => (
-									<div key={qe.questionNumber} className="space-y-0.5 border-t pt-2 text-sm">
-										<p className="font-medium">
-											Câu {qe.questionNumber}: {qe.correctAnswer}
-										</p>
-										<p className="text-xs text-muted-foreground">{qe.explanation}</p>
-									</div>
-								))}
-							</div>
-						)}
-
-						{(paraphrase.isPending || explain.isPending) && (
-							<div className="flex items-center justify-center py-4">
-								<p className="text-sm text-muted-foreground">Đang phân tích...</p>
-							</div>
-						)}
 					</div>
 				</aside>
 			)}
