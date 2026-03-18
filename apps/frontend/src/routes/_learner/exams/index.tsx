@@ -158,7 +158,7 @@ function ExamListPage() {
 				<div
 					className={cn(
 						"shrink-0 pl-4 transition-[width] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
-						hasSelection ? "w-[340px]" : "flex-1",
+						hasSelection ? "w-[420px]" : "flex-1",
 					)}
 				>
 					<ScrollArea className="h-full pr-2">
