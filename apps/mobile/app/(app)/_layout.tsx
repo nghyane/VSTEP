@@ -1,5 +1,5 @@
 import { Stack } from "expo-router";
-import { useThemeColors } from "@/theme";
+import { useThemeColors, fontFamily } from "@/theme";
 
 export default function AppLayout() {
   const c = useThemeColors();
@@ -10,6 +10,8 @@ export default function AppLayout() {
         headerShown: false,
         headerStyle: { backgroundColor: c.card },
         headerTintColor: c.foreground,
+        headerTitleStyle: { fontFamily: fontFamily.semiBold },
+        headerBackTitleVisible: false,
       }}
     >
       <Stack.Screen name="(tabs)" />
@@ -55,6 +57,14 @@ export default function AppLayout() {
       <Stack.Screen
         name="classes/[id]"
         options={{ headerShown: true, title: "Chi tiết lớp" }}
+      />
+      <Stack.Screen
+        name="vocabulary/index"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="vocabulary/[id]"
+        options={{ headerShown: false }}
       />
     </Stack>
   );

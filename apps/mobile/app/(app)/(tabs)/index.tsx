@@ -72,7 +72,7 @@ export default function HomeScreen() {
     { title: "Luyện tập", icon: "school", color: c.primary, onPress: () => router.push("/(app)/practice") },
     { title: "Lộ trình", icon: "map-outline", color: c.primary, onPress: () => router.push("/(app)/(tabs)/progress") },
     { title: "Bài kiểm tra", icon: "document-text", color: c.primary, onPress: () => router.push("/(app)/(tabs)/exams") },
-    { title: "Xem thêm", icon: "add-circle-outline", color: c.mutedForeground, onPress: () => router.push("/(app)/submissions") },
+    { title: "Từ vựng", icon: "book-outline", color: c.primary, onPress: () => router.push("/(app)/vocabulary") },
   ];
 
   return (
