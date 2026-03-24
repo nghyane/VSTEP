@@ -8,8 +8,8 @@ use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\SubmissionResource;
 use App\Services\SubmissionService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class SubmissionController extends Controller
 {
@@ -17,7 +17,7 @@ class SubmissionController extends Controller
         private readonly SubmissionService $service,
     ) {}
 
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request)
     {
         $user = $request->user();
 
@@ -26,7 +26,7 @@ class SubmissionController extends Controller
         );
     }
 
-    public function show(Request $request, string $id): SubmissionResource
+    public function show(Request $request, string $id)
     {
         $user = $request->user();
 
