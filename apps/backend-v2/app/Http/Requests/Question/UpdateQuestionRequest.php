@@ -22,11 +22,11 @@ class UpdateQuestionRequest extends FormRequest
             'part' => ['sometimes', 'integer', 'min:1'],
             'topic' => ['nullable', 'string', 'max:100'],
             'content' => ['sometimes', 'array'],
-            'answerKey' => ['nullable', 'array'],
+            'answer_key' => ['nullable', 'array'],
             'explanation' => ['nullable', 'string'],
-            'isActive' => ['sometimes', 'boolean'],
-            'knowledgePointIds' => ['nullable', 'array'],
-            'knowledgePointIds.*' => ['uuid', 'exists:knowledge_points,id'],
+            'is_active' => ['sometimes', 'boolean'],
+            'knowledge_point_ids' => ['nullable', 'array'],
+            'knowledge_point_ids.*' => ['uuid', 'exists:knowledge_points,id'],
         ];
     }
 }

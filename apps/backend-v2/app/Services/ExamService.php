@@ -41,13 +41,8 @@ class ExamService
     public function createExam(array $data, string $userId): Exam
     {
         return Exam::create([
-            'title' => $data['title'],
-            'level' => $data['level'] ?? 'B1',
-            'type' => $data['type'] ?? 'practice',
-            'duration_minutes' => $data['durationMinutes'] ?? null,
-            'blueprint' => $data['blueprint'] ?? null,
-            'description' => $data['description'] ?? null,
-            'is_active' => $data['isActive'] ?? true,
+            ...$data,
+            'is_active' => $data['is_active'] ?? true,
             'created_by' => $userId,
         ]);
     }
@@ -107,10 +102,10 @@ class ExamService
             ->where('status', SessionStatus::InProgress)
             ->findOrFail($sessionId);
 
-        $this->assertQuestionInExam($session->exam, $data['questionId']);
+        $this->assertQuestionInExam($session->exam, $data['question_id']);
 
         ExamAnswer::updateOrCreate(
-            ['session_id' => $session->id, 'question_id' => $data['questionId']],
+            ['session_id' => $session->id, 'question_id' => $data['question_id']],
             ['answer' => $data['answer']],
         );
     }
@@ -125,9 +120,9 @@ class ExamService
         $saved = 0;
         DB::transaction(function () use ($session, $answers, &$saved) {
             foreach ($answers as $item) {
-                $this->assertQuestionInExam($session->exam, $item['questionId']);
+                $this->assertQuestionInExam($session->exam, $item['question_id']);
                 ExamAnswer::updateOrCreate(
-                    ['session_id' => $session->id, 'question_id' => $item['questionId']],
+                    ['session_id' => $session->id, 'question_id' => $item['question_id']],
                     ['answer' => $item['answer']],
                 );
                 $saved++;
@@ -160,11 +155,11 @@ class ExamService
     private function assertQuestionInExam(Exam $exam, string $questionId): void
     {
         $blueprint = $exam->blueprint ?? [];
-        $allIds = collect($blueprint)->flatMap(fn ($section) => $section['questionIds'] ?? []);
+        $allIds = collect($blueprint)->flatMap(fn ($section) => $section['question_ids'] ?? []);
 
         if (!$allIds->contains($questionId)) {
             throw ValidationException::withMessages([
-                'questionId' => ['Question does not belong to this exam.'],
+                'question_id' => ['Question does not belong to this exam.'],
             ]);
         }
     }

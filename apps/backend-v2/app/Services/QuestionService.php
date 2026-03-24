@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Question;
-use App\Support\CamelToSnake;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
@@ -39,20 +38,18 @@ class QuestionService
     public function create(array $data, ?string $userId): Question
     {
         return DB::transaction(function () use ($data, $userId) {
+            $kpIds = $data['knowledge_point_ids'] ?? null;
+            unset($data['knowledge_point_ids']);
+
             $question = Question::create([
-                'skill' => $data['skill'],
+                ...$data,
                 'level' => $data['level'] ?? 'B1',
-                'part' => $data['part'],
-                'topic' => $data['topic'] ?? null,
-                'content' => $data['content'],
-                'answer_key' => $data['answerKey'] ?? null,
-                'explanation' => $data['explanation'] ?? null,
                 'is_active' => true,
                 'created_by' => $userId,
             ]);
 
-            if (!empty($data['knowledgePointIds'])) {
-                $question->knowledgePoints()->sync($data['knowledgePointIds']);
+            if (!empty($kpIds)) {
+                $question->knowledgePoints()->sync($kpIds);
             }
 
             return $question->load('knowledgePoints');
@@ -62,15 +59,13 @@ class QuestionService
     public function update(Question $question, array $data): Question
     {
         return DB::transaction(function () use ($question, $data) {
-            $fields = CamelToSnake::auto($data, [
-                'skill', 'level', 'part', 'topic', 'content',
-                'answerKey', 'explanation', 'isActive',
-            ]);
+            $kpIds = $data['knowledge_point_ids'] ?? null;
+            unset($data['knowledge_point_ids']);
 
-            $question->update($fields);
+            $question->update($data);
 
-            if (array_key_exists('knowledgePointIds', $data)) {
-                $question->knowledgePoints()->sync($data['knowledgePointIds'] ?? []);
+            if ($kpIds !== null) {
+                $question->knowledgePoints()->sync($kpIds);
             }
 
             return $question->load('knowledgePoints');

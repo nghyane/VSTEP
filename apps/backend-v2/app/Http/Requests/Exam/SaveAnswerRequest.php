@@ -14,7 +14,7 @@ class SaveAnswerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'questionId' => ['required', 'uuid'],
+            'question_id' => ['required', 'uuid'],
             'answer' => ['required', 'array'],
         ];
     }

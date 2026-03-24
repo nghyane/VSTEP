@@ -8,7 +8,6 @@ use App\Models\ExamSession;
 use App\Models\Submission;
 use App\Models\UserGoal;
 use App\Models\UserProgress;
-use App\Support\CamelToSnake;
 use Carbon\Carbon;
 
 class ProgressService
@@ -141,23 +140,15 @@ class ProgressService
     public function createGoal(string $userId, array $data): UserGoal
     {
         return UserGoal::create([
+            ...$data,
             'user_id' => $userId,
-            'target_band' => $data['targetBand'],
-            'current_estimated_band' => $data['currentEstimatedBand'] ?? null,
-            'deadline' => $data['deadline'] ?? null,
-            'daily_study_time_minutes' => $data['dailyStudyTimeMinutes'] ?? null,
         ]);
     }
 
     public function updateGoal(string $userId, string $goalId, array $data): UserGoal
     {
         $goal = UserGoal::where('user_id', $userId)->findOrFail($goalId);
-
-        $fields = CamelToSnake::auto($data, [
-            'targetBand', 'currentEstimatedBand', 'deadline', 'dailyStudyTimeMinutes',
-        ]);
-
-        $goal->update($fields);
+        $goal->update($data);
 
         return $goal;
     }

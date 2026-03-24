@@ -20,10 +20,10 @@ class UpdateExamRequest extends FormRequest
             'title' => ['sometimes', 'string', 'max:255'],
             'level' => ['sometimes', 'string', Rule::enum(Level::class)],
             'type' => ['sometimes', 'string', Rule::enum(ExamType::class)],
-            'durationMinutes' => ['nullable', 'integer', 'min:1'],
+            'duration_minutes' => ['nullable', 'integer', 'min:1'],
             'blueprint' => ['nullable', 'array'],
             'description' => ['nullable', 'string'],
-            'isActive' => ['sometimes', 'boolean'],
+            'is_active' => ['sometimes', 'boolean'],
         ];
     }
 }

@@ -22,10 +22,10 @@ class StoreQuestionRequest extends FormRequest
             'part' => ['required', 'integer', 'min:1'],
             'topic' => ['nullable', 'string', 'max:100'],
             'content' => ['required', 'array'],
-            'answerKey' => ['nullable', 'array'],
+            'answer_key' => ['nullable', 'array'],
             'explanation' => ['nullable', 'string'],
-            'knowledgePointIds' => ['nullable', 'array'],
-            'knowledgePointIds.*' => ['uuid', 'exists:knowledge_points,id'],
+            'knowledge_point_ids' => ['nullable', 'array'],
+            'knowledge_point_ids.*' => ['uuid', 'exists:knowledge_points,id'],
         ];
     }
 }

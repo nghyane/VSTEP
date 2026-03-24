@@ -11,7 +11,6 @@ use App\Http\Resources\ExamResource;
 use App\Http\Resources\ExamSessionResource;
 use App\Models\Exam;
 use App\Services\ExamService;
-use App\Support\CamelToSnake;
 use Illuminate\Http\Request;
 
 class ExamController extends Controller
@@ -19,8 +18,6 @@ class ExamController extends Controller
     public function __construct(
         private readonly ExamService $service,
     ) {}
-
-    // --- Exams (route model binding) ---
 
     public function index(Request $request)
     {
@@ -41,17 +38,10 @@ class ExamController extends Controller
 
     public function update(UpdateExamRequest $request, Exam $exam)
     {
-        $fields = CamelToSnake::auto($request->validated(), [
-            'title', 'level', 'type', 'durationMinutes',
-            'blueprint', 'description', 'isActive',
-        ]);
-
-        $exam->update($fields);
+        $exam->update($request->validated());
 
         return new ExamResource($exam);
     }
-
-    // --- Sessions (user-scoped, no model binding) ---
 
     public function start(Request $request, Exam $exam)
     {

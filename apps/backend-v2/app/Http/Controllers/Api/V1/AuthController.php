@@ -36,16 +36,16 @@ class AuthController extends Controller
 
         return response()->json(['data' => [
             'user' => new UserResource($result['user']),
-            'accessToken' => $result['accessToken'],
-            'refreshToken' => $result['refreshToken'],
-            'expiresIn' => $result['expiresIn'],
+            'access_token' => $result['access_token'],
+            'refresh_token' => $result['refresh_token'],
+            'expires_in' => $result['expires_in'],
         ]]);
     }
 
     public function refresh(RefreshRequest $request)
     {
         $result = $this->authService->refresh(
-            $request->validated('refreshToken'),
+            $request->validated('refresh_token'),
             $request->userAgent(),
         );
 
@@ -55,7 +55,7 @@ class AuthController extends Controller
     public function logout(LogoutRequest $request)
     {
         $this->authService->logout(
-            $request->validated('refreshToken'),
+            $request->validated('refresh_token'),
             $request->user(),
         );
 

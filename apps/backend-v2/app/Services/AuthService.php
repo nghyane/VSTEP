@@ -17,7 +17,7 @@ class AuthService
     public function register(array $data): User
     {
         return User::create([
-            'full_name' => $data['fullName'] ?? null,
+            'full_name' => $data['full_name'] ?? null,
             'email' => $data['email'],
             'password' => $data['password'],
             'role' => Role::Learner,
@@ -39,9 +39,9 @@ class AuthService
 
         return [
             'user' => $user,
-            'accessToken' => $token,
-            'refreshToken' => $refreshToken->token,
-            'expiresIn' => config('jwt.ttl') * 60,
+            'access_token' => $token,
+            'refresh_token' => $refreshToken->token,
+            'expires_in' => config('jwt.ttl') * 60,
         ];
     }
 
@@ -55,7 +55,7 @@ class AuthService
             }
 
             throw ValidationException::withMessages([
-                'refreshToken' => ['Invalid or expired refresh token.'],
+                'refresh_token' => ['Invalid or expired refresh token.'],
             ]);
         }
 
@@ -66,9 +66,9 @@ class AuthService
         $accessToken = JWTAuth::fromUser($user);
 
         return [
-            'accessToken' => $accessToken,
-            'refreshToken' => $newRefreshToken->token,
-            'expiresIn' => config('jwt.ttl') * 60,
+            'access_token' => $accessToken,
+            'refresh_token' => $newRefreshToken->token,
+            'expires_in' => config('jwt.ttl') * 60,
         ];
     }
 

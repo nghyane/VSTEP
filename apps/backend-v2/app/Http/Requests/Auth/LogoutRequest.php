@@ -14,7 +14,7 @@ class LogoutRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'refreshToken' => ['required', 'string'],
+            'refresh_token' => ['required', 'string'],
         ];
     }
 }

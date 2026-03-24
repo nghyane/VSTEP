@@ -15,7 +15,7 @@ class SaveAnswersBatchRequest extends FormRequest
     {
         return [
             'answers' => ['required', 'array', 'min:1'],
-            'answers.*.questionId' => ['required', 'uuid'],
+            'answers.*.question_id' => ['required', 'uuid'],
             'answers.*.answer' => ['required', 'array'],
         ];
     }
