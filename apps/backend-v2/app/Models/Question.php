@@ -7,16 +7,12 @@ namespace App\Models;
 use App\Enums\Level;
 use App\Enums\Skill;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 #[Fillable(['skill', 'level', 'part', 'topic', 'content', 'answer_key', 'explanation', 'is_active', 'created_by'])]
-class Question extends Model
+class Question extends BaseModel
 {
-    use HasUuids;
-
     protected function casts(): array
     {
         return [
@@ -36,5 +32,32 @@ class Question extends Model
     public function knowledgePoints(): BelongsToMany
     {
         return $this->belongsToMany(KnowledgePoint::class, 'question_knowledge_point');
+    }
+
+    /**
+     * @return array{correct: int, total: int, score: float, all_correct: bool}|null
+     */
+    public function gradeObjective(array $userAnswers): ?array
+    {
+        $correctAnswers = $this->answer_key['correctAnswers'] ?? null;
+        if (! $correctAnswers) {
+            return null;
+        }
+
+        $correct = 0;
+        $total = count($correctAnswers);
+
+        foreach ($correctAnswers as $key => $expected) {
+            if (($userAnswers[$key] ?? null) === $expected) {
+                $correct++;
+            }
+        }
+
+        return [
+            'correct' => $correct,
+            'total' => $total,
+            'score' => $total > 0 ? round(($correct / $total) * 10, 1) : 0.0,
+            'all_correct' => $correct === $total,
+        ];
     }
 }

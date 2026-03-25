@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Enums\Role;
 use App\Models\RefreshToken;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
@@ -19,12 +20,7 @@ class AuthService
 
     public function register(array $data): User
     {
-        return User::create([
-            'full_name' => $data['full_name'] ?? null,
-            'email' => $data['email'],
-            'password' => $data['password'],
-            'role' => Role::Learner,
-        ]);
+        return User::create([...$data, 'role' => Role::Learner]);
     }
 
     public function login(string $email, string $password, ?string $userAgent = null): array
@@ -39,24 +35,22 @@ class AuthService
 
         /** @var User $user */
         $user = JWTAuth::user();
-        $refreshToken = $this->createRefreshToken($user, $userAgent);
+        [$refreshToken, $plainToken] = $this->createRefreshToken($user, $userAgent);
 
         return [
             'user' => $user,
             'access_token' => $token,
-            'refresh_token' => $refreshToken->token,
+            'refresh_token' => $plainToken,
             'expires_in' => config('jwt.ttl') * 60,
         ];
     }
 
-    public function refresh(string $token, ?string $userAgent = null): array
+    public function refresh(string $plainToken, ?string $userAgent = null): array
     {
-        $refreshToken = RefreshToken::where('token', $token)->first();
+        $refreshToken = $this->findRefreshToken($plainToken);
 
         if (! $refreshToken || $refreshToken->isExpired()) {
-            if ($refreshToken) {
-                RefreshToken::where('user_id', $refreshToken->user_id)->delete();
-            }
+            $refreshToken?->delete();
 
             throw ValidationException::withMessages([
                 'refresh_token' => ['Invalid or expired refresh token.'],
@@ -66,41 +60,65 @@ class AuthService
         $user = $refreshToken->user;
 
         $refreshToken->delete();
-        $newRefreshToken = $this->createRefreshToken($user, $userAgent);
+        [$newRefreshToken, $newPlainToken] = $this->createRefreshToken($user, $userAgent);
         $accessToken = JWTAuth::fromUser($user);
 
         return [
             'access_token' => $accessToken,
-            'refresh_token' => $newRefreshToken->token,
+            'refresh_token' => $newPlainToken,
             'expires_in' => config('jwt.ttl') * 60,
         ];
     }
 
-    public function logout(string $refreshTokenValue, User $user): void
+    public function logout(string $plainToken, User $user): void
     {
-        RefreshToken::where('token', $refreshTokenValue)
-            ->where('user_id', $user->id)
-            ->delete();
+        $refreshToken = $this->findRefreshToken($plainToken, $user->id);
+        $refreshToken?->delete();
 
         JWTAuth::invalidate(JWTAuth::getToken());
     }
 
-    private function createRefreshToken(User $user, ?string $userAgent): RefreshToken
+    private function findRefreshToken(string $plainToken, ?string $userId = null): ?RefreshToken
     {
-        $existing = RefreshToken::where('user_id', $user->id)
-            ->orderBy('created_at', 'asc')
-            ->get();
+        $query = RefreshToken::query()->when($userId, fn ($q, $v) => $q->where('user_id', $v));
 
-        if ($existing->count() >= self::MAX_REFRESH_TOKENS) {
-            $toDelete = $existing->take($existing->count() - self::MAX_REFRESH_TOKENS + 1);
-            RefreshToken::whereIn('id', $toDelete->pluck('id'))->delete();
+        foreach ($query->cursor() as $token) {
+            if (Hash::check($plainToken, $token->token)) {
+                return $token;
+            }
         }
 
-        return RefreshToken::create([
+        return null;
+    }
+
+    /**
+     * @return array{0: RefreshToken, 1: string}
+     */
+    private function createRefreshToken(User $user, ?string $userAgent): array
+    {
+        RefreshToken::where('user_id', $user->id)
+            ->where('expires_at', '<', now())
+            ->delete();
+
+        $keep = self::MAX_REFRESH_TOKENS - 1;
+        $staleIds = RefreshToken::where('user_id', $user->id)
+            ->orderByDesc('created_at')
+            ->skip($keep)
+            ->pluck('id');
+
+        if ($staleIds->isNotEmpty()) {
+            RefreshToken::whereIn('id', $staleIds)->delete();
+        }
+
+        $plainToken = Str::random(64);
+
+        $refreshToken = RefreshToken::create([
             'user_id' => $user->id,
-            'token' => Str::random(64),
+            'token' => Hash::make($plainToken),
             'user_agent' => $userAgent,
             'expires_at' => now()->addDays(self::REFRESH_TOKEN_DAYS),
         ]);
+
+        return [$refreshToken, $plainToken];
     }
 }

@@ -11,6 +11,7 @@ use App\Http\Requests\Auth\RefreshRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Services\AuthService;
+use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
@@ -61,7 +62,7 @@ class AuthController extends Controller
             $request->user(),
         );
 
-        return response()->json(['data' => ['message' => 'Logged out.']]);
+        return response()->json(['data' => ['success' => true]]);
     }
 
     public function me(Request $request): UserResource

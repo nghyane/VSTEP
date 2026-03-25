@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\Skill;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Progress\StoreGoalRequest;
 use App\Http\Requests\Progress\UpdateGoalRequest;
 use App\Http\Resources\GoalResource;
+use App\Http\Resources\LearningPathResource;
+use App\Http\Resources\SkillDetailResource;
 use App\Http\Resources\UserProgressResource;
+use App\Models\UserGoal;
 use App\Services\ProgressService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
 
 class ProgressController extends Controller
 {
@@ -32,14 +36,17 @@ class ProgressController extends Controller
     public function spiderChart(Request $request)
     {
         $data = $this->service->spiderChart($request->user()->id);
-        $data['goal'] = $data['goal'] ? new GoalResource($data['goal']) : null;
 
-        return response()->json(['data' => $data]);
+        return response()->json(['data' => [
+            'skills' => $data['skills'],
+            'goal' => $data['goal'] ? new GoalResource($data['goal']) : null,
+            'eta' => $data['eta'],
+        ]]);
     }
 
     public function activity(Request $request)
     {
-        $days = (int) $request->query('days', 30);
+        $days = $request->integer('days', 30);
 
         return response()->json([
             'data' => $this->service->activity($request->user()->id, $days),
@@ -48,17 +55,16 @@ class ProgressController extends Controller
 
     public function bySkill(Request $request, string $skill)
     {
-        $data = $this->service->bySkill($request->user()->id, $skill);
-        $data['progress'] = $data['progress'] ? new UserProgressResource($data['progress']) : null;
+        $data = $this->service->bySkill($request->user()->id, Skill::from($skill));
 
-        return response()->json(['data' => $data]);
+        return new SkillDetailResource($data);
     }
 
     public function learningPath(Request $request)
     {
-        return response()->json([
-            'data' => $this->service->learningPath($request->user()->id),
-        ]);
+        $skills = $this->service->learningPath($request->user()->id);
+
+        return new LearningPathResource($skills);
     }
 
     public function storeGoal(StoreGoalRequest $request)
@@ -68,17 +74,19 @@ class ProgressController extends Controller
         return (new GoalResource($goal))->response()->setStatusCode(201);
     }
 
-    public function updateGoal(UpdateGoalRequest $request, string $id)
+    #[Authorize('update', 'goal')]
+    public function updateGoal(UpdateGoalRequest $request, UserGoal $goal)
     {
-        $goal = $this->service->updateGoal($request->user()->id, $id, $request->validated());
+        $goal = $this->service->updateGoal($goal, $request->validated());
 
         return new GoalResource($goal);
     }
 
-    public function destroyGoal(Request $request, string $id)
+    #[Authorize('delete', 'goal')]
+    public function destroyGoal(UserGoal $goal)
     {
-        $this->service->deleteGoal($request->user()->id, $id);
+        $this->service->deleteGoal($goal);
 
-        return response()->json(['data' => ['id' => $id, 'deleted' => true]]);
+        return response()->json(['data' => ['success' => true]]);
     }
 }

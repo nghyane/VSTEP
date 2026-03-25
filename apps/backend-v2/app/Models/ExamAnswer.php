@@ -4,21 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ExamAnswer extends Model
+#[Fillable(['session_id', 'question_id', 'answer', 'is_correct'])]
+class ExamAnswer extends BaseModel
 {
-    use HasUuids;
-
-    protected $fillable = [
-        'session_id',
-        'question_id',
-        'answer',
-        'is_correct',
-    ];
-
     protected function casts(): array
     {
         return [

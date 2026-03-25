@@ -8,55 +8,50 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Exam\SaveAnswerRequest;
 use App\Http\Requests\Exam\SaveAnswersBatchRequest;
 use App\Http\Resources\ExamSessionResource;
-use App\Services\ExamService;
-use Illuminate\Http\JsonResponse;
+use App\Models\ExamSession;
+use App\Services\SessionService;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
 
 class SessionController extends Controller
 {
     public function __construct(
-        private readonly ExamService $service,
+        private readonly SessionService $service,
     ) {}
 
     public function index(Request $request)
     {
         return ExamSessionResource::collection(
-            $this->service->listSessions($request->user()->id, $request->query()),
+            $this->service->list($request->user()->id, $request->query('status')),
         );
     }
 
-    public function show(Request $request, string $sessionId)
+    #[Authorize('view', 'session')]
+    public function show(ExamSession $session)
     {
-        $session = $this->service->findSession($sessionId, $request->user()->id);
-
-        return new ExamSessionResource($session);
+        return new ExamSessionResource($this->service->show($session));
     }
 
-    public function saveAnswers(SaveAnswersBatchRequest $request, string $sessionId)
+    #[Authorize('update', 'session')]
+    public function saveAnswers(SaveAnswersBatchRequest $request, ExamSession $session)
     {
-        $saved = $this->service->saveAnswersBatch(
-            $sessionId,
-            $request->user()->id,
-            $request->validated('answers'),
-        );
+        $saved = $this->service->saveAnswersBatch($session, $request->validated('answers'));
 
         return response()->json(['data' => ['success' => true, 'saved' => $saved]]);
     }
 
-    public function answer(SaveAnswerRequest $request, string $sessionId)
+    #[Authorize('update', 'session')]
+    public function answer(SaveAnswerRequest $request, ExamSession $session)
     {
-        $this->service->saveAnswer(
-            $sessionId,
-            $request->user()->id,
-            $request->validated(),
-        );
+        $this->service->saveAnswer($session, $request->validated());
 
         return response()->json(['data' => ['success' => true]]);
     }
 
-    public function submit(Request $request, string $sessionId)
+    #[Authorize('update', 'session')]
+    public function submit(ExamSession $session)
     {
-        $session = $this->service->submitSession($sessionId, $request->user()->id);
+        $session = $this->service->submit($session);
 
         return new ExamSessionResource($session);
     }

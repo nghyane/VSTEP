@@ -4,22 +4,13 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class RefreshToken extends Model
+#[Fillable(['user_id', 'token', 'user_agent', 'expires_at'])]
+class RefreshToken extends BaseModel
 {
-    use HasUuids;
-
     public $timestamps = false;
-
-    protected $fillable = [
-        'user_id',
-        'token',
-        'user_agent',
-        'expires_at',
-    ];
 
     protected function casts(): array
     {

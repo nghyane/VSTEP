@@ -8,9 +8,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\KnowledgePoint\StoreKnowledgePointRequest;
 use App\Http\Requests\KnowledgePoint\UpdateKnowledgePointRequest;
 use App\Http\Resources\KnowledgePointResource;
+use App\Http\Resources\TopicResource;
 use App\Models\KnowledgePoint;
 use App\Services\KnowledgePointService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class KnowledgePointController extends Controller
@@ -21,7 +21,7 @@ class KnowledgePointController extends Controller
 
     public function index(Request $request)
     {
-        return KnowledgePointResource::collection($this->service->list($request->query()));
+        return KnowledgePointResource::collection($this->service->list($request->only(['category', 'search'])));
     }
 
     public function show(KnowledgePoint $knowledgePoint)
@@ -38,20 +38,20 @@ class KnowledgePointController extends Controller
 
     public function update(UpdateKnowledgePointRequest $request, KnowledgePoint $knowledgePoint)
     {
-        $knowledgePoint->update($request->validated());
+        $kp = $this->service->update($knowledgePoint, $request->validated());
 
-        return new KnowledgePointResource($knowledgePoint);
+        return new KnowledgePointResource($kp);
     }
 
     public function destroy(KnowledgePoint $knowledgePoint)
     {
-        $knowledgePoint->delete();
+        $this->service->delete($knowledgePoint);
 
-        return response()->json(['data' => ['id' => $knowledgePoint->id]]);
+        return response()->json(['data' => ['success' => true]]);
     }
 
     public function topics(Request $request)
     {
-        return response()->json(['data' => $this->service->topics($request->query())]);
+        return TopicResource::collection($this->service->topics($request->only(['category'])));
     }
 }

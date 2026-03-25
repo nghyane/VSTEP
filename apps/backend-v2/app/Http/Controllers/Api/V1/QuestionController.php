@@ -10,7 +10,6 @@ use App\Http\Requests\Question\UpdateQuestionRequest;
 use App\Http\Resources\QuestionResource;
 use App\Models\Question;
 use App\Services\QuestionService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class QuestionController extends Controller
@@ -21,7 +20,7 @@ class QuestionController extends Controller
 
     public function index(Request $request)
     {
-        return QuestionResource::collection($this->service->list($request->query()));
+        return QuestionResource::collection($this->service->list($request->only(['skill', 'level', 'part', 'topic', 'search'])));
     }
 
     public function show(Question $question)
@@ -47,8 +46,8 @@ class QuestionController extends Controller
 
     public function destroy(Question $question)
     {
-        $question->delete();
+        $this->service->delete($question);
 
-        return response()->json(['data' => ['id' => $question->id]]);
+        return response()->json(['data' => ['success' => true]]);
     }
 }

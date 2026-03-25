@@ -6,56 +6,31 @@ namespace App\Services;
 
 use App\Models\Question;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
 class QuestionService
 {
-    public function list(array $params): LengthAwarePaginator
+    public function list(array $filters = []): LengthAwarePaginator
     {
-        $query = Question::with('knowledgePoints');
-
-        if ($skill = $params['skill'] ?? null) {
-            $query->where('skill', $skill);
-        }
-
-        if ($level = $params['level'] ?? null) {
-            $query->where('level', $level);
-        }
-
-        if ($part = $params['part'] ?? null) {
-            $query->where('part', $part);
-        }
-
-        if ($topic = $params['topic'] ?? null) {
-            $query->where('topic', $topic);
-        }
-
-        if ($search = $params['search'] ?? null) {
-            $query->where('content', 'ilike', "%{$search}%");
-        }
-
-        return $query->orderByDesc('created_at')->paginate($params['limit'] ?? 20);
+        return Question::with('knowledgePoints')
+            ->when($filters['skill'] ?? null, fn ($q, $v) => $q->where('skill', $v))
+            ->when($filters['level'] ?? null, fn ($q, $v) => $q->where('level', $v))
+            ->when($filters['part'] ?? null, fn ($q, $v) => $q->where('part', $v))
+            ->when($filters['topic'] ?? null, fn ($q, $v) => $q->where('topic', $v))
+            ->when($filters['search'] ?? null, fn ($q, $v) => $q->where('content', 'ilike', "%{$v}%"))
+            ->orderByDesc('created_at')
+            ->paginate();
     }
 
     public function create(array $data, ?string $userId): Question
     {
         return DB::transaction(function () use ($data, $userId) {
-            $kpIds = $data['knowledge_point_ids'] ?? null;
-            unset($data['knowledge_point_ids']);
+            $kpIds = Arr::pull($data, 'knowledge_point_ids', []);
 
-            $question = Question::create([
-                'skill' => $data['skill'],
-                'level' => $data['level'] ?? 'B1',
-                'part' => $data['part'],
-                'topic' => $data['topic'] ?? null,
-                'content' => $data['content'],
-                'answer_key' => $data['answer_key'] ?? null,
-                'explanation' => $data['explanation'] ?? null,
-                'is_active' => true,
-                'created_by' => $userId,
-            ]);
+            $question = Question::create([...$data, 'created_by' => $userId]);
 
-            if (! empty($kpIds)) {
+            if ($kpIds) {
                 $question->knowledgePoints()->sync($kpIds);
             }
 
@@ -66,8 +41,7 @@ class QuestionService
     public function update(Question $question, array $data): Question
     {
         return DB::transaction(function () use ($question, $data) {
-            $kpIds = $data['knowledge_point_ids'] ?? null;
-            unset($data['knowledge_point_ids']);
+            $kpIds = Arr::pull($data, 'knowledge_point_ids');
 
             $question->update($data);
 
@@ -77,5 +51,10 @@ class QuestionService
 
             return $question->load('knowledgePoints');
         });
+    }
+
+    public function delete(Question $question): void
+    {
+        $question->delete();
     }
 }

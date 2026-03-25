@@ -32,5 +32,11 @@ class DatabaseSeeder extends Seeder
             'password' => 'password',
             'role' => Role::Learner,
         ]);
+
+        $this->call([
+            QuestionSeeder::class,
+            ExamSeeder::class,
+            VocabularySeeder::class,
+        ]);
     }
 }

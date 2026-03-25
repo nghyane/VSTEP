@@ -18,6 +18,11 @@ class User extends Authenticatable implements JWTSubject
 {
     use HasUuids;
 
+    protected function serializeDate(\DateTimeInterface $date): string
+    {
+        return $date->format(\DateTimeInterface::ATOM);
+    }
+
     protected function casts(): array
     {
         return [

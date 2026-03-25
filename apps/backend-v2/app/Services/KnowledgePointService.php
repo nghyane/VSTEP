@@ -6,22 +6,17 @@ namespace App\Services;
 
 use App\Models\KnowledgePoint;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 
 class KnowledgePointService
 {
-    public function list(array $params): LengthAwarePaginator
+    public function list(array $filters = []): LengthAwarePaginator
     {
-        $query = KnowledgePoint::query();
-
-        if ($category = $params['category'] ?? null) {
-            $query->where('category', $category);
-        }
-
-        if ($search = $params['search'] ?? null) {
-            $query->where('name', 'ilike', "%{$search}%");
-        }
-
-        return $query->orderBy('name')->paginate($params['limit'] ?? 20);
+        return KnowledgePoint::query()
+            ->when($filters['category'] ?? null, fn ($q, $v) => $q->where('category', $v))
+            ->when($filters['search'] ?? null, fn ($q, $v) => $q->where('name', 'ilike', "%{$v}%"))
+            ->orderBy('name')
+            ->paginate();
     }
 
     public function create(array $data): KnowledgePoint
@@ -29,20 +24,27 @@ class KnowledgePointService
         return KnowledgePoint::create($data);
     }
 
-    public function topics(array $params): array
+    public function update(KnowledgePoint $knowledgePoint, array $data): KnowledgePoint
     {
-        $query = KnowledgePoint::query()
-            ->select('knowledge_points.id', 'knowledge_points.name')
-            ->withCount('questions');
+        $knowledgePoint->update($data);
 
-        if ($category = $params['category'] ?? null) {
-            $query->where('category', $category);
-        }
+        return $knowledgePoint;
+    }
 
-        return $query->orderBy('name')->get()->map(fn ($kp) => [
-            'id' => $kp->id,
-            'name' => $kp->name,
-            'question_count' => $kp->questions_count,
-        ])->all();
+    public function delete(KnowledgePoint $knowledgePoint): void
+    {
+        $knowledgePoint->delete();
+    }
+
+    /**
+     * @return Collection<int, KnowledgePoint>
+     */
+    public function topics(array $filters = []): Collection
+    {
+        return KnowledgePoint::query()
+            ->withCount('questions')
+            ->when($filters['category'] ?? null, fn ($q, $v) => $q->where('category', $v))
+            ->orderBy('name')
+            ->get();
     }
 }

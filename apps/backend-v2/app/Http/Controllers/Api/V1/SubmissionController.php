@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Enums\Role;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Submission\GradeSubmissionRequest;
 use App\Http\Resources\SubmissionResource;
+use App\Models\Submission;
 use App\Services\SubmissionService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Attributes\Controllers\Authorize;
 
 class SubmissionController extends Controller
 {
@@ -19,19 +20,21 @@ class SubmissionController extends Controller
 
     public function index(Request $request)
     {
-        $user = $request->user();
-
         return SubmissionResource::collection(
-            $this->service->list($user->id, $request->query(), $user->role->is(Role::Admin)),
+            $this->service->list($request->user(), $request->only(['skill', 'status'])),
         );
     }
 
-    public function show(Request $request, string $id)
+    #[Authorize('view', 'submission')]
+    public function show(Submission $submission)
     {
-        $user = $request->user();
+        return new SubmissionResource($submission);
+    }
 
-        return new SubmissionResource(
-            $this->service->find($id, $user->id, $user->role->is(Role::Admin)),
-        );
+    public function grade(GradeSubmissionRequest $request, Submission $submission)
+    {
+        $submission = $this->service->grade($submission, $request->validated());
+
+        return new SubmissionResource($submission);
     }
 }

@@ -6,21 +6,21 @@ namespace App\Models;
 
 use App\Enums\Skill;
 use App\Enums\SubmissionStatus;
+use App\Enums\VstepBand;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['user_id', 'question_id', 'skill', 'status', 'answer', 'result', 'score', 'band', 'feedback', 'completed_at'])]
-class Submission extends Model
+class Submission extends BaseModel
 {
-    use HasUuids;
-
     protected function casts(): array
     {
         return [
             'skill' => Skill::class,
             'status' => SubmissionStatus::class,
+            'band' => VstepBand::class,
             'answer' => 'array',
             'result' => 'array',
             'score' => 'float',
@@ -36,5 +36,23 @@ class Submission extends Model
     public function question(): BelongsTo
     {
         return $this->belongsTo(Question::class);
+    }
+
+    #[Scope]
+    protected function forUser(Builder $query, string $userId): void
+    {
+        $query->where('user_id', $userId);
+    }
+
+    #[Scope]
+    protected function completed(Builder $query): void
+    {
+        $query->where('status', SubmissionStatus::Completed);
+    }
+
+    #[Scope]
+    protected function scored(Builder $query): void
+    {
+        $query->completed()->whereNotNull('score');
     }
 }

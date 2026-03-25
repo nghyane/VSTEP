@@ -11,12 +11,6 @@ class KnowledgePointResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        return [
-            'id' => $this->id,
-            'category' => $this->category,
-            'name' => $this->name,
-            'created_at' => $this->created_at->toISOString(),
-            'updated_at' => $this->updated_at->toISOString(),
-        ];
+        return parent::toArray($request);
     }
 }
