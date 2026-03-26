@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 Route::prefix('v1')->group(function () {
     Route::get('/health', function () {
@@ -139,15 +141,25 @@ Route::prefix('v1')->group(function () {
             return response()->json($response->json(), $response->status());
         })->where('action', 'paraphrase|explain');
 
-        // Uploads
-        Route::post('/uploads/audio', function (Request $request) {
-            $request->validate(['audio' => ['required', 'file', 'max:20480']]);
-            $path = $request->file('audio')->store('audio', 'public');
+        // Uploads — pre-signed URL (FE uploads directly to S3/R2)
+        Route::post('/uploads/signed-url', function (Request $request) {
+            $request->validate([
+                'filename' => ['required', 'string', 'max:255'],
+                'type' => ['required', 'string', 'in:audio,avatar'],
+            ]);
+
+            $ext = pathinfo($request->input('filename'), PATHINFO_EXTENSION) ?: 'webm';
+            $key = $request->input('type').'/'.Str::uuid().'.'.$ext;
+
+            $url = Storage::temporaryUrl($key, now()->addMinutes(15), [
+                'Content-Type' => $request->header('X-Content-Type', 'application/octet-stream'),
+            ]);
 
             return response()->json(['data' => [
-                'url' => url("storage/{$path}"),
-                'path' => $path,
-            ]], 201);
+                'key' => $key,
+                'upload_url' => $url,
+                'expires_in' => 900,
+            ]]);
         });
 
         // Devices

@@ -1,5 +1,4 @@
 import hashlib
-from pathlib import Path
 
 import httpx
 from redis.asyncio import Redis
@@ -10,20 +9,7 @@ from app.logger import logger
 CACHE_TTL = 86400
 
 
-def resolve_local_path(url: str) -> Path | None:
-    if not settings.storage_path or not "/storage/" in url:
-        return None
-    relative = url.split("/storage/", 1)[1]
-    path = Path(settings.storage_path) / relative
-    return path if path.is_file() else None
-
-
 async def load_audio(url: str) -> bytes:
-    local = resolve_local_path(url)
-    if local:
-        logger.info("reading_local", path=str(local))
-        return local.read_bytes()
-
     async with httpx.AsyncClient(timeout=120) as client:
         response = await client.get(url)
         response.raise_for_status()
@@ -53,13 +39,11 @@ async def transcribe(audio_url: str, redis: Redis) -> str:
         response.raise_for_status()
         data = response.json()
         result = data.get("result", {})
-        # Deepgram Nova format
         if "results" in result:
             transcript = (
                 result["results"]["channels"][0]["alternatives"][0]["transcript"]
             )
         else:
-            # Whisper format
             transcript = result.get("text", "")
 
     await redis.setex(key, CACHE_TTL, transcript)
