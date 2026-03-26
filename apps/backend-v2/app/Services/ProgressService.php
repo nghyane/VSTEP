@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\Level;
 use App\Enums\NotificationType;
 use App\Enums\Skill;
 use App\Enums\StreakDirection;
