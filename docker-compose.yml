@@ -58,7 +58,6 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ""
       JWT_SECRET: vstep-dev-jwt-secret-change-in-production
-      GRADING_SERVICE_URL: http://grading:8000
       FILESYSTEM_DISK: s3
       AWS_ENDPOINT: ${S3_ENDPOINT}
       AWS_BUCKET: ${S3_BUCKET:-vstep}
@@ -108,25 +107,6 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
-
-  # AI grading microservice
-  grading:
-    build: ./apps/grading
-    ports:
-      - "8001:8000"
-    env_file: ./apps/grading/.env
-    environment:
-      REDIS_URL: redis://redis:6379
-    depends_on:
-      redis:
-        condition: service_healthy
-    develop:
-      watch:
-        - action: sync
-          path: ./apps/grading/app
-          target: /app/app
-        - action: rebuild
-          path: ./apps/grading/requirements.txt
 
 volumes:
   pgdata:
