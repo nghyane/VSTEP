@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AudioController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\ExamController;
@@ -84,6 +85,9 @@ Route::prefix('v1')->group(function () {
         Route::middleware('throttle:10,1')->group(function () {
             Route::post('/uploads/presign', [SpeakingUploadController::class, 'presign']);
         });
+
+        // Audio (presigned read URL for private R2 bucket)
+        Route::get('/audio/presign', [AudioController::class, 'presignRead']);
 
         // Submissions
         Route::get('/submissions', [SubmissionController::class, 'index']);
