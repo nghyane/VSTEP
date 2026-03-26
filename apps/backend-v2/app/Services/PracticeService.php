@@ -40,6 +40,13 @@ class PracticeService
         $level = isset($options['level']) ? Level::from($options['level']) : $progress->current_level;
         $itemsCount = $options['items_count'] ?? $mode->defaultItemsCount();
 
+        // Auto-complete stale sessions of same skill+mode
+        PracticeSession::forUser($userId)
+            ->where('skill', $skill)
+            ->where('mode', $mode)
+            ->whereNull('completed_at')
+            ->each(fn (PracticeSession $s) => $this->complete($s));
+
         $session = PracticeSession::create([
             'user_id' => $userId,
             'skill' => $skill,
@@ -160,11 +167,14 @@ class PracticeService
             ->take(5)
             ->toArray();
 
+        $hasPending = $allSubmissions->contains(fn ($s) => $s->status === SubmissionStatus::Pending || $s->status === SubmissionStatus::Processing);
+
         $summary = [
             'items_completed' => $itemsCompleted,
             'items_total' => $session->itemsCount(),
             'average_score' => $bestScores->isNotEmpty() ? VstepScoring::round($bestScores->avg()) : null,
             'best_score' => $bestScores->isNotEmpty() ? $bestScores->max() : null,
+            'scores_pending' => $hasPending,
             'items' => $items,
             'weak_points' => $weakPoints,
         ];
@@ -212,12 +222,15 @@ class PracticeService
 
         $sessionQuestionIds = $session->submissions()->pluck('question_id')->unique();
 
+        // Shadowing/Drill: keep exact level (learner chose it). Free/Guided: use difficulty curve.
+        $useDifficultyCurve = in_array($session->mode, [PracticeMode::Free, PracticeMode::Guided]);
+
         $question = $this->picker->pick(
             $session->user_id,
             $session->skill,
             $session->level,
-            $sessionQuestionIds->count(),
-            $session->itemsCount(),
+            $useDifficultyCurve ? $sessionQuestionIds->count() : -1,
+            $useDifficultyCurve ? $session->itemsCount() : -1,
             $sessionQuestionIds,
             $session->config['focus_kp'] ?? null,
         );

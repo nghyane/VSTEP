@@ -46,7 +46,7 @@ class QuestionPicker
 
     public function resolveDifficulty(Level $baseLevel, int $index, int $total): Level
     {
-        if ($total <= 1) {
+        if ($index < 0 || $total <= 1) {
             return $baseLevel;
         }
 
