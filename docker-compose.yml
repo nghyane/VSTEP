@@ -59,6 +59,8 @@ services:
       JWT_SECRET: vstep-dev-jwt-secret-change-in-production
       GRADING_SERVICE_URL: http://grading:8000
       CORS_ALLOWED_ORIGINS: "*"
+    volumes:
+      - uploads:/app/storage/app/public
     depends_on:
       postgres:
         condition: service_healthy
@@ -124,3 +126,4 @@ services:
 volumes:
   pgdata:
   redisdata:
+  uploads:
