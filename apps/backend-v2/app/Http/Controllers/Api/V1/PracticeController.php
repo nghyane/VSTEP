@@ -42,34 +42,34 @@ class PracticeController extends Controller
             'session' => new PracticeSessionResource($result['session']),
             'current_item' => $result['current_item'],
             'recommendation' => $result['recommendation'],
+            'progress' => $result['progress'],
         ]], 201);
     }
 
-    #[Authorize('view', 'session')]
-    public function show(PracticeSession $session)
+    #[Authorize('view', 'practiceSession')]
+    public function show(PracticeSession $practiceSession)
     {
-        return new PracticeSessionResource($session);
+        $practiceSession->load('submissions.question');
+
+        return new PracticeSessionResource($practiceSession);
     }
 
-    #[Authorize('view', 'session')]
-    public function submit(Request $request, PracticeSession $session)
+    #[Authorize('view', 'practiceSession')]
+    public function submit(Request $request, PracticeSession $practiceSession)
     {
-        $validated = $request->validate([
+        $request->validate([
             'answer' => ['required', 'array'],
-            'is_retry' => ['nullable', 'boolean'],
         ]);
 
-        $result = $request->boolean('is_retry')
-            ? $this->service->retryItem($session, $validated['answer'])
-            : $this->service->submitItem($session, $validated['answer']);
+        $result = $this->service->submit($practiceSession, $request->validated()['answer']);
 
         return response()->json(['data' => $result]);
     }
 
-    #[Authorize('view', 'session')]
-    public function complete(PracticeSession $session)
+    #[Authorize('view', 'practiceSession')]
+    public function complete(PracticeSession $practiceSession)
     {
-        $session = $this->service->complete($session);
+        $session = $this->service->complete($practiceSession);
 
         return new PracticeSessionResource($session);
     }

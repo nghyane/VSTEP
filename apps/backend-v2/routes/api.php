@@ -136,9 +136,9 @@ Route::prefix('v1')->group(function () {
         // Practice (adaptive)
         Route::get('/practice/sessions', [PracticeController::class, 'index']);
         Route::post('/practice/sessions', [PracticeController::class, 'start']);
-        Route::get('/practice/sessions/{session}', [PracticeController::class, 'show']);
-        Route::post('/practice/sessions/{session}/submit', [PracticeController::class, 'submit']);
-        Route::post('/practice/sessions/{session}/complete', [PracticeController::class, 'complete']);
+        Route::get('/practice/sessions/{practiceSession}', [PracticeController::class, 'show']);
+        Route::post('/practice/sessions/{practiceSession}/submit', [PracticeController::class, 'submit']);
+        Route::post('/practice/sessions/{practiceSession}/complete', [PracticeController::class, 'complete']);
 
         // AI proxy → grading service
         Route::post('/ai/{action}', function (Request $request, string $action) {

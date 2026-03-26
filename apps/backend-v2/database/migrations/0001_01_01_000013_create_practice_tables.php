@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('mode');
             $table->string('level');
             $table->jsonb('config')->default('{}');
-            $table->jsonb('progress')->default('{"current_index": 0, "items": []}');
+            $table->foreignUuid('current_question_id')->nullable()->constrained('questions')->nullOnDelete();
             $table->jsonb('summary')->nullable();
             $table->timestamp('started_at');
             $table->timestamp('completed_at')->nullable();
@@ -41,10 +41,19 @@ return new class extends Migration
             $table->unique(['user_id', 'knowledge_point_id', 'skill']);
             $table->index(['user_id', 'skill', 'next_review_at']);
         });
+
+        Schema::table('submissions', function (Blueprint $table) {
+            $table->foreignUuid('practice_session_id')->nullable()->after('session_id')
+                ->constrained('practice_sessions')->nullOnDelete();
+            $table->index('practice_session_id');
+        });
     }
 
     public function down(): void
     {
+        Schema::table('submissions', function (Blueprint $table) {
+            $table->dropConstrainedForeignId('practice_session_id');
+        });
         Schema::dropIfExists('user_weak_points');
         Schema::dropIfExists('practice_sessions');
     }

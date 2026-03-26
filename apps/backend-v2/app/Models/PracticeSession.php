@@ -12,8 +12,9 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['user_id', 'skill', 'mode', 'level', 'config', 'progress', 'summary', 'started_at', 'completed_at'])]
+#[Fillable(['user_id', 'skill', 'mode', 'level', 'config', 'current_question_id', 'summary', 'started_at', 'completed_at'])]
 #[Hidden(['user_id'])]
 class PracticeSession extends BaseModel
 {
@@ -24,7 +25,6 @@ class PracticeSession extends BaseModel
             'mode' => PracticeMode::class,
             'level' => Level::class,
             'config' => 'array',
-            'progress' => 'array',
             'summary' => 'array',
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
@@ -36,16 +36,20 @@ class PracticeSession extends BaseModel
         return $this->belongsTo(User::class);
     }
 
+    public function currentQuestion(): BelongsTo
+    {
+        return $this->belongsTo(Question::class, 'current_question_id');
+    }
+
+    public function submissions(): HasMany
+    {
+        return $this->hasMany(Submission::class, 'practice_session_id');
+    }
+
     #[Scope]
     protected function forUser(Builder $query, string $userId): void
     {
         $query->where('user_id', $userId);
-    }
-
-    #[Scope]
-    protected function active(Builder $query): void
-    {
-        $query->whereNull('completed_at');
     }
 
     #[Scope]
@@ -59,23 +63,20 @@ class PracticeSession extends BaseModel
         return $this->completed_at !== null;
     }
 
-    public function currentIndex(): int
-    {
-        return $this->progress['current_index'] ?? 0;
-    }
-
-    public function items(): array
-    {
-        return $this->progress['items'] ?? [];
-    }
-
-    public function totalItems(): int
+    public function itemsCount(): int
     {
         return $this->config['items_count'] ?? 5;
     }
 
+    public function completedCount(): int
+    {
+        return $this->submissions()
+            ->distinct('question_id')
+            ->count('question_id');
+    }
+
     public function hasMoreItems(): bool
     {
-        return $this->currentIndex() < $this->totalItems();
+        return $this->completedCount() < $this->itemsCount();
     }
 }
