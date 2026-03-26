@@ -35,8 +35,9 @@ return [
         ],
     ],
 
-    'grading' => [
-        'url' => env('GRADING_SERVICE_URL', 'http://localhost:8001'),
+    'azure_speech' => [
+        'key' => env('AZURE_SPEECH_KEY'),
+        'region' => env('AZURE_SPEECH_REGION', 'southeastasia'),
     ],
 
 ];

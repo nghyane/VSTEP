@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['user_id', 'question_id', 'skill', 'status', 'answer', 'result', 'score', 'band', 'feedback', 'completed_at'])]
+#[Fillable(['user_id', 'session_id', 'question_id', 'skill', 'status', 'answer', 'result', 'score', 'band', 'feedback', 'completed_at'])]
 class Submission extends BaseModel
 {
     protected function casts(): array
@@ -36,6 +36,11 @@ class Submission extends BaseModel
     public function question(): BelongsTo
     {
         return $this->belongsTo(Question::class);
+    }
+
+    public function session(): BelongsTo
+    {
+        return $this->belongsTo(ExamSession::class, 'session_id');
     }
 
     #[Scope]

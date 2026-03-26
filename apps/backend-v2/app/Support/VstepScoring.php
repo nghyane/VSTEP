@@ -35,4 +35,25 @@ final class VstepScoring
     {
         return VstepBand::fromScore($overall);
     }
+
+    /**
+     * VSTEP Writing: (Task1 + Task2 × 2) / 3
+     * Task 2 weighs double because it's the essay (longer, harder).
+     */
+    public static function writingOverall(float $task1Score, float $task2Score): float
+    {
+        return self::round(($task1Score + $task2Score * 2) / 3);
+    }
+
+    /**
+     * VSTEP Speaking: simple average of part scores.
+     */
+    public static function speakingOverall(float ...$partScores): float
+    {
+        if (empty($partScores)) {
+            return 0.0;
+        }
+
+        return self::round(array_sum($partScores) / count($partScores));
+    }
 }

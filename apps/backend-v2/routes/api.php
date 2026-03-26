@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\ProgressController;
 use App\Http\Controllers\Api\V1\QuestionController;
 use App\Http\Controllers\Api\V1\SessionController;
 use App\Http\Controllers\Api\V1\SubmissionController;
+use App\Http\Controllers\Api\V1\UploadController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\VocabularyController;
 use Illuminate\Http\Request;
@@ -18,8 +19,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 Route::prefix('v1')->group(function () {
     Route::get('/health', function () {
@@ -81,6 +80,11 @@ Route::prefix('v1')->group(function () {
         Route::post('/sessions/{session}/answer', [SessionController::class, 'answer']);
         Route::post('/sessions/{session}/submit', [SessionController::class, 'submit']);
 
+        // Uploads (rate limited: 10/min)
+        Route::middleware('throttle:10,1')->group(function () {
+            Route::post('/uploads/presign', [UploadController::class, 'presign']);
+        });
+
         // Submissions
         Route::get('/submissions', [SubmissionController::class, 'index']);
         Route::get('/submissions/{submission}', [SubmissionController::class, 'show']);
@@ -140,27 +144,6 @@ Route::prefix('v1')->group(function () {
 
             return response()->json($response->json(), $response->status());
         })->where('action', 'paraphrase|explain');
-
-        // Uploads — pre-signed URL (FE uploads directly to S3/R2)
-        Route::post('/uploads/signed-url', function (Request $request) {
-            $request->validate([
-                'filename' => ['required', 'string', 'max:255'],
-                'type' => ['required', 'string', 'in:audio,avatar'],
-            ]);
-
-            $ext = pathinfo($request->input('filename'), PATHINFO_EXTENSION) ?: 'webm';
-            $key = $request->input('type').'/'.Str::uuid().'.'.$ext;
-
-            $url = Storage::temporaryUrl($key, now()->addMinutes(15), [
-                'Content-Type' => $request->header('X-Content-Type', 'application/octet-stream'),
-            ]);
-
-            return response()->json(['data' => [
-                'key' => $key,
-                'upload_url' => $url,
-                'expires_in' => 900,
-            ]]);
-        });
 
         // Devices
         Route::post('/devices', [DeviceController::class, 'store']);

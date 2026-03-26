@@ -6,10 +6,13 @@ namespace App\Services;
 
 use App\Enums\SessionStatus;
 use App\Enums\Skill;
+use App\Enums\SubmissionStatus;
+use App\Jobs\GradeSubmission;
 use App\Models\Exam;
 use App\Models\ExamAnswer;
 use App\Models\ExamSession;
 use App\Models\Question;
+use App\Models\Submission;
 use App\Support\VstepScoring;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -126,6 +129,7 @@ class SessionService
 
         DB::transaction(function () use ($session) {
             $this->gradeObjectiveAnswers($session);
+            $this->dispatchSubjectiveGrading($session);
             $this->calculateScores($session);
 
             $session->update([
@@ -148,6 +152,31 @@ class SessionService
             }
 
             $this->progressService->applyScore($session->user_id, $skill, $score);
+        }
+    }
+
+    /**
+     * Create Submission records for writing/speaking answers and dispatch AI grading jobs.
+     * Each GradeSubmission job, upon completion, will update session scores via updateSessionScores().
+     */
+    private function dispatchSubjectiveGrading(ExamSession $session): void
+    {
+        foreach ($session->answers as $answer) {
+            $question = $answer->question;
+            if (! $question || $question->skill->isObjective()) {
+                continue;
+            }
+
+            $submission = Submission::create([
+                'user_id' => $session->user_id,
+                'session_id' => $session->id,
+                'question_id' => $question->id,
+                'skill' => $question->skill,
+                'answer' => $answer->answer,
+                'status' => SubmissionStatus::Processing,
+            ]);
+
+            GradeSubmission::dispatch($submission->id);
         }
     }
 

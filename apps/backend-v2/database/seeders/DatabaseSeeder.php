@@ -34,6 +34,8 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call([
+            KnowledgeGraphSeeder::class,
+            GradingRubricSeeder::class,
             QuestionSeeder::class,
             ExamSeeder::class,
             VocabularySeeder::class,
