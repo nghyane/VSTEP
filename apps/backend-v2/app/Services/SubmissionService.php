@@ -20,6 +20,7 @@ class SubmissionService
     public function __construct(
         private readonly ProgressService $progressService,
         private readonly NotificationService $notificationService,
+        private readonly GradingDispatcher $gradingDispatcher,
     ) {}
 
     public function list(User $user, array $filters = []): LengthAwarePaginator
@@ -49,6 +50,8 @@ class SubmissionService
 
             if ($question->skill->isObjective()) {
                 $this->autoGrade($submission, $question);
+            } else {
+                $this->gradingDispatcher->dispatch($submission);
             }
 
             return $submission;

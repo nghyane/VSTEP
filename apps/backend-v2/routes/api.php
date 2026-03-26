@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\SessionController;
 use App\Http\Controllers\Api\V1\SubmissionController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\VocabularyController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -128,6 +129,17 @@ Route::prefix('v1')->group(function () {
         // Practice (adaptive)
         Route::get('/practice/next', [PracticeController::class, 'next']);
         Route::post('/practice/{question}/submit', [PracticeController::class, 'submit']);
+
+        // Uploads
+        Route::post('/uploads/audio', function (Request $request) {
+            $request->validate(['audio' => ['required', 'file', 'max:20480']]);
+            $path = $request->file('audio')->store('audio', 'public');
+
+            return response()->json(['data' => [
+                'url' => url("storage/{$path}"),
+                'path' => $path,
+            ]], 201);
+        });
 
         // Devices
         Route::post('/devices', [DeviceController::class, 'store']);
