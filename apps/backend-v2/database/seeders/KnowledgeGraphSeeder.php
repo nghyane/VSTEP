@@ -13,50 +13,45 @@ class KnowledgeGraphSeeder extends Seeder
 {
     public function run(): void
     {
-        // Truncate existing data (re-seedable)
-        DB::table('knowledge_point_edges')->delete();
-        DB::table('question_knowledge_point')->delete();
-        DB::table('knowledge_points')->delete();
-
-        $nodes = $this->createNodes();
-        $this->createEdges($nodes);
+        $nodes = $this->upsertNodes();
+        $this->upsertEdges($nodes);
     }
 
-    private function createNodes(): array
+    private function upsertNodes(): array
     {
         $map = [];
 
         foreach ($this->nodeDefinitions() as $def) {
-            $kp = KnowledgePoint::create([
-                'category' => $def['category'],
-                'name' => $def['name'],
-                'description' => $def['description'],
-            ]);
+            $kp = KnowledgePoint::updateOrCreate(
+                ['category' => $def['category'], 'name' => $def['name']],
+                ['description' => $def['description']],
+            );
             $map[$def['key']] = $kp->id;
         }
 
         return $map;
     }
 
-    private function createEdges(array $map): void
+    private function upsertEdges(array $map): void
     {
-        $rows = [];
-
         foreach ($this->edgeDefinitions() as $edge) {
             if (! isset($map[$edge[0]], $map[$edge[1]])) {
                 continue;
             }
-            $rows[] = [
-                'id' => (string) Str::uuid(),
-                'parent_id' => $map[$edge[0]],
-                'child_id' => $map[$edge[1]],
-                'relation' => $edge[2],
-            ];
-        }
 
-        // Bulk insert for performance
-        foreach (array_chunk($rows, 50) as $chunk) {
-            DB::table('knowledge_point_edges')->insert($chunk);
+            $exists = DB::table('knowledge_point_edges')
+                ->where('parent_id', $map[$edge[0]])
+                ->where('child_id', $map[$edge[1]])
+                ->exists();
+
+            if (! $exists) {
+                DB::table('knowledge_point_edges')->insert([
+                    'id' => (string) Str::uuid(),
+                    'parent_id' => $map[$edge[0]],
+                    'child_id' => $map[$edge[1]],
+                    'relation' => $edge[2],
+                ]);
+            }
         }
     }
 

@@ -21,7 +21,7 @@ class GradingRubricSeeder extends Seeder
 
     private function seedWritingRubric(string $level): void
     {
-        $rubric = GradingRubric::create([
+        $rubric = GradingRubric::firstOrCreate([
             'skill' => 'writing',
             'level' => $level,
         ]);
@@ -54,13 +54,16 @@ class GradingRubricSeeder extends Seeder
         ];
 
         foreach ($criteria as $i => $data) {
-            $rubric->criteria()->create([...$data, 'sort_order' => $i, 'weight' => 1.0]);
+            $rubric->criteria()->updateOrCreate(
+                ['key' => $data['key']],
+                [...$data, 'sort_order' => $i, 'weight' => 1.0],
+            );
         }
     }
 
     private function seedSpeakingRubric(string $level): void
     {
-        $rubric = GradingRubric::create([
+        $rubric = GradingRubric::firstOrCreate([
             'skill' => 'speaking',
             'level' => $level,
         ]);
@@ -99,7 +102,10 @@ class GradingRubricSeeder extends Seeder
         ];
 
         foreach ($criteria as $i => $data) {
-            $rubric->criteria()->create([...$data, 'sort_order' => $i, 'weight' => 1.0]);
+            $rubric->criteria()->updateOrCreate(
+                ['key' => $data['key']],
+                [...$data, 'sort_order' => $i, 'weight' => 1.0],
+            );
         }
     }
 
