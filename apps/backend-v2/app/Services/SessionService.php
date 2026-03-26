@@ -141,14 +141,8 @@ class SessionService
 
     private function applyScoresToProgress(ExamSession $session): void
     {
-        $scoreMap = [
-            Skill::Listening => $session->listening_score,
-            Skill::Reading => $session->reading_score,
-            Skill::Writing => $session->writing_score,
-            Skill::Speaking => $session->speaking_score,
-        ];
-
-        foreach ($scoreMap as $skill => $score) {
+        foreach (Skill::cases() as $skill) {
+            $score = $session->{$skill->scoreColumn()};
             if ($score === null) {
                 continue;
             }
@@ -204,13 +198,15 @@ class SessionService
     private function calculateScores(ExamSession $session): void
     {
         $objectiveSkills = [
-            Skill::Listening => 'listening_score',
-            Skill::Reading => 'reading_score',
+            ['skill' => Skill::Listening, 'column' => 'listening_score'],
+            ['skill' => Skill::Reading, 'column' => 'reading_score'],
         ];
 
         $update = [];
 
-        foreach ($objectiveSkills as $skill => $column) {
+        foreach ($objectiveSkills as $entry) {
+            $skill = $entry['skill'];
+            $column = $entry['column'];
             $skillAnswers = $session->answers->filter(fn ($a) => $a->question?->skill === $skill);
             if ($skillAnswers->isEmpty()) {
                 continue;
