@@ -6,7 +6,8 @@
         "topic": "Daily Routine",
         "bloom_level": null,
         "content": {
-            "prompt": "Describe your daily routine. What do you do from morning to evening?"
+            "prompt": "Describe your daily routine. What do you do from morning to evening?",
+            "reference_audio_path": "reference_audio/a2_1_daily_routine.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -24,7 +25,8 @@
         "topic": "Family",
         "bloom_level": null,
         "content": {
-            "prompt": "Tell me about your family. How many people are there? What do they do?"
+            "prompt": "Tell me about your family. How many people are there? What do they do?",
+            "reference_audio_path": "reference_audio/a2_1_family.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -42,7 +44,8 @@
         "topic": "Free Time",
         "bloom_level": "understand",
         "content": {
-            "prompt": "Describe your free time activities. What do you usually do at weekends?"
+            "prompt": "Describe your free time activities. What do you usually do at weekends?",
+            "reference_audio_path": "reference_audio/a2_1_free_time.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -60,7 +63,8 @@
         "topic": "Friends",
         "bloom_level": "remember",
         "content": {
-            "prompt": "Tell me about your best friend. What is he or she like? What do you often do together?"
+            "prompt": "Tell me about your best friend. What is he or she like? What do you often do together?",
+            "reference_audio_path": "reference_audio/a2_1_friends.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -78,7 +82,8 @@
         "topic": "Hometown",
         "bloom_level": "remember",
         "content": {
-            "prompt": "Tell me about your hometown. Where is it? What do you like about it?"
+            "prompt": "Tell me about your hometown. Where is it? What do you like about it?",
+            "reference_audio_path": "reference_audio/a2_1_hometown.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -96,7 +101,8 @@
         "topic": "Daily Routine",
         "bloom_level": "apply",
         "content": {
-            "prompt": "Describe your daily routine on a weekday. What do you usually do in the morning, afternoon, and evening? Why is this routine suitable for you?"
+            "prompt": "Describe your daily routine on a weekday. What do you usually do in the morning, afternoon, and evening? Why is this routine suitable for you?",
+            "reference_audio_path": "reference_audio/b1_1_daily_routine.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -115,7 +121,8 @@
         "topic": "Favorite Food",
         "bloom_level": "understand",
         "content": {
-            "prompt": "Talk about your favorite food. What is it? How often do you eat it? Why do you like it?"
+            "prompt": "Talk about your favorite food. What is it? How often do you eat it? Why do you like it?",
+            "reference_audio_path": "reference_audio/b1_1_favorite_food.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -134,7 +141,8 @@
         "topic": "Favorite Hobby",
         "bloom_level": null,
         "content": {
-            "prompt": "Talk about your favorite hobby or activity. How did you start it? Why do you enjoy it?"
+            "prompt": "Talk about your favorite hobby or activity. How did you start it? Why do you enjoy it?",
+            "reference_audio_path": "reference_audio/b1_1_favorite_hobby.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -153,7 +161,8 @@
         "topic": "Memorable Trip",
         "bloom_level": null,
         "content": {
-            "prompt": "Describe a memorable trip you have taken. Where did you go? What did you do? Why was it memorable?"
+            "prompt": "Describe a memorable trip you have taken. Where did you go? What did you do? Why was it memorable?",
+            "reference_audio_path": "reference_audio/b1_1_memorable_trip.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -172,7 +181,8 @@
         "topic": "Useful Mobile App",
         "bloom_level": "analyze",
         "content": {
-            "prompt": "Talk about a mobile app you often use. What is it used for? How does it help you in your daily life? Why do you think it is useful?"
+            "prompt": "Talk about a mobile app you often use. What is it used for? How does it help you in your daily life? Why do you think it is useful?",
+            "reference_audio_path": "reference_audio/b1_1_useful_mobile_app.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -191,7 +201,8 @@
         "topic": "City vs Countryside",
         "bloom_level": null,
         "content": {
-            "prompt": "Look at the two pictures. Compare and contrast life in a big city and life in the countryside. Which would you prefer to live in and why?"
+            "prompt": "Look at the two pictures. Compare and contrast life in a big city and life in the countryside. Which would you prefer to live in and why?",
+            "reference_audio_path": "reference_audio/b1_2_city_vs_countryside.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -210,7 +221,8 @@
         "topic": "Online Shopping vs Shopping in Stores",
         "bloom_level": "analyze",
         "content": {
-            "prompt": "Compare shopping online and shopping in stores. What are the advantages and disadvantages of each?"
+            "prompt": "Compare shopping online and shopping in stores. What are the advantages and disadvantages of each?",
+            "reference_audio_path": "reference_audio/b1_2_online_shopping_vs_shopping_in_stores.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -229,7 +241,8 @@
         "topic": "Reading Printed Books vs E-books",
         "bloom_level": "apply",
         "content": {
-            "prompt": "Compare reading printed books and reading e-books. Which do you think is better for students and why?"
+            "prompt": "Compare reading printed books and reading e-books. Which do you think is better for students and why?",
+            "reference_audio_path": "reference_audio/b1_2_reading_printed_books_vs_e-books.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -248,7 +261,8 @@
         "topic": "Study Methods",
         "bloom_level": null,
         "content": {
-            "prompt": "Compare studying alone and studying in a group. What are the advantages and disadvantages of each?"
+            "prompt": "Compare studying alone and studying in a group. What are the advantages and disadvantages of each?",
+            "reference_audio_path": "reference_audio/b1_2_study_methods.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -267,7 +281,8 @@
         "topic": "Travelling by Car vs Travelling by Bus",
         "bloom_level": "understand",
         "content": {
-            "prompt": "Look at the two pictures. Compare travelling by car and travelling by bus. Which would you choose for a long trip and why?"
+            "prompt": "Look at the two pictures. Compare travelling by car and travelling by bus. Which would you choose for a long trip and why?",
+            "reference_audio_path": "reference_audio/b1_2_travelling_by_car_vs_travelling_by_bus.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -286,7 +301,8 @@
         "topic": "Media Influence",
         "bloom_level": null,
         "content": {
-            "prompt": "Compare the roles of traditional media and social media in modern society. How do they influence public opinion differently?"
+            "prompt": "Compare the roles of traditional media and social media in modern society. How do they influence public opinion differently?",
+            "reference_audio_path": "reference_audio/b2_2_media_influence.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -305,7 +321,8 @@
         "topic": "Online Learning",
         "bloom_level": "analyze",
         "content": {
-            "prompt": "Compare online learning and face-to-face learning for university students. How do they affect students’ motivation and learning outcomes differently?"
+            "prompt": "Compare online learning and face-to-face learning for university students. How do they affect students’ motivation and learning outcomes differently?",
+            "reference_audio_path": "reference_audio/b2_2_online_learning.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -324,7 +341,8 @@
         "topic": "Place to Live",
         "bloom_level": "analyze",
         "content": {
-            "prompt": "Compare living in the city and living in the countryside. How do these two environments influence young people’s lifestyle and future opportunities differently?"
+            "prompt": "Compare living in the city and living in the countryside. How do these two environments influence young people’s lifestyle and future opportunities differently?",
+            "reference_audio_path": "reference_audio/b2_2_place_to_live.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -343,7 +361,8 @@
         "topic": "Student Employment",
         "bloom_level": "apply",
         "content": {
-            "prompt": "Compare doing a part-time job and focusing only on study while at university. How can students choose the more suitable option for their own situation?"
+            "prompt": "Compare doing a part-time job and focusing only on study while at university. How can students choose the more suitable option for their own situation?",
+            "reference_audio_path": "reference_audio/b2_2_student_employment.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -362,7 +381,8 @@
         "topic": "Urban Transport",
         "bloom_level": "evaluate",
         "content": {
-            "prompt": "Compare public transport and private vehicles in big cities. Which is a better solution for daily travel, and why?"
+            "prompt": "Compare public transport and private vehicles in big cities. Which is a better solution for daily travel, and why?",
+            "reference_audio_path": "reference_audio/b2_2_urban_transport.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -381,7 +401,8 @@
         "topic": "Free University Education",
         "bloom_level": null,
         "content": {
-            "prompt": "Should university education be free for all students? Present arguments for both sides and give your opinion."
+            "prompt": "Should university education be free for all students? Present arguments for both sides and give your opinion.",
+            "reference_audio_path": "reference_audio/b2_3_free_university_education.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -400,7 +421,8 @@
         "topic": "Online Learning",
         "bloom_level": "apply",
         "content": {
-            "prompt": "How can online learning be made more effective for university students? Give reasons and examples."
+            "prompt": "How can online learning be made more effective for university students? Give reasons and examples.",
+            "reference_audio_path": "reference_audio/b2_3_online_learning.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -419,7 +441,8 @@
         "topic": "Part-Time Jobs for Students",
         "bloom_level": "analyze",
         "content": {
-            "prompt": "Some people think that university students should have part-time jobs, while others believe they should focus only on studying. Discuss both views and give your opinion."
+            "prompt": "Some people think that university students should have part-time jobs, while others believe they should focus only on studying. Discuss both views and give your opinion.",
+            "reference_audio_path": "reference_audio/b2_3_part-time_jobs_for_students.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -438,7 +461,8 @@
         "topic": "Public Transport",
         "bloom_level": "evaluate",
         "content": {
-            "prompt": "Do you think public transport should be improved to encourage more people to use it? Give reasons and examples."
+            "prompt": "Do you think public transport should be improved to encourage more people to use it? Give reasons and examples.",
+            "reference_audio_path": "reference_audio/b2_3_public_transport.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -457,7 +481,8 @@
         "topic": "Youth Freedom",
         "bloom_level": null,
         "content": {
-            "prompt": "Some people say that young people today have too much freedom. Do you agree or disagree? Give reasons and examples."
+            "prompt": "Some people say that young people today have too much freedom. Do you agree or disagree? Give reasons and examples.",
+            "reference_audio_path": "reference_audio/b2_3_youth_freedom.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -476,7 +501,8 @@
         "topic": "Artificial Intelligence in Education",
         "bloom_level": "analyze",
         "content": {
-            "prompt": "Analyze the impact of artificial intelligence on higher education. Consider its effects on teaching methods, student learning, and academic integrity."
+            "prompt": "Analyze the impact of artificial intelligence on higher education. Consider its effects on teaching methods, student learning, and academic integrity.",
+            "reference_audio_path": "reference_audio/c1_3_artificial_intelligence_in_education.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -495,7 +521,8 @@
         "topic": "Future Workplace Skills",
         "bloom_level": "create",
         "content": {
-            "prompt": "Propose a strategy for universities to prepare students for the skills required in the future workplace. Explain which abilities should be prioritized and how they can be developed effectively."
+            "prompt": "Propose a strategy for universities to prepare students for the skills required in the future workplace. Explain which abilities should be prioritized and how they can be developed effectively.",
+            "reference_audio_path": "reference_audio/c1_3_future_workplace_skills.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -514,7 +541,8 @@
         "topic": "Genetic Engineering Ethics",
         "bloom_level": null,
         "content": {
-            "prompt": "Discuss the ethical implications of genetic engineering in humans. Consider the scientific, social, and moral dimensions of this issue."
+            "prompt": "Discuss the ethical implications of genetic engineering in humans. Consider the scientific, social, and moral dimensions of this issue.",
+            "reference_audio_path": "reference_audio/c1_3_genetic_engineering_ethics.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -533,7 +561,8 @@
         "topic": "Global Inequality",
         "bloom_level": null,
         "content": {
-            "prompt": "Evaluate the role of international organizations in addressing global inequality. How effective have they been, and what changes would you recommend?"
+            "prompt": "Evaluate the role of international organizations in addressing global inequality. How effective have they been, and what changes would you recommend?",
+            "reference_audio_path": "reference_audio/c1_3_global_inequality.wav"
         },
         "answer_key": null,
         "knowledge_points": [
@@ -552,7 +581,8 @@
         "topic": "Sustainable Urban Development",
         "bloom_level": "evaluate",
         "content": {
-            "prompt": "Evaluate the effectiveness of sustainable urban development strategies in improving quality of life in large cities. What are the main challenges, and which solutions seem most practical?"
+            "prompt": "Evaluate the effectiveness of sustainable urban development strategies in improving quality of life in large cities. What are the main challenges, and which solutions seem most practical?",
+            "reference_audio_path": "reference_audio/c1_3_sustainable_urban_development.wav"
         },
         "answer_key": null,
         "knowledge_points": [

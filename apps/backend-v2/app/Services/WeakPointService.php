@@ -125,6 +125,7 @@ class WeakPointService
      */
     public function getRecommendation(string $userId, Skill $skill): array
     {
+        $totalSubmissions = Submission::forUser($userId)->where('skill', $skill)->count();
         $dueCount = UserWeakPoint::forUser($userId)
             ->where('skill', $skill)
             ->dueForReview()
@@ -134,6 +135,7 @@ class WeakPointService
         $topWeakness = array_key_first($patterns);
 
         return [
+            'is_first_time' => $totalSubmissions === 0,
             'review_due' => $dueCount,
             'top_patterns' => $patterns,
             'suggested_focus' => $topWeakness,

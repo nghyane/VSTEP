@@ -46,6 +46,7 @@ class ShadowingHandler implements PracticeModeHandler
     {
         return [
             'reference_text' => $question->content['prompt'] ?? '',
+            'reference_audio_path' => $question->content['reference_audio_path'] ?? null,
         ];
     }
 }

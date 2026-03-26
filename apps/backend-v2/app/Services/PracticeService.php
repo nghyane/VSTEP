@@ -129,14 +129,44 @@ class PracticeService
             return $session;
         }
 
-        $submissions = $session->submissions()->scored()->get();
-        $scores = $submissions->groupBy('question_id')->map(fn ($group) => $group->max('score'));
+        $allSubmissions = $session->submissions()->with('question')->get();
+        $byQuestion = $allSubmissions->groupBy('question_id');
+        $itemsCompleted = $byQuestion->count();
+
+        // Best score per question (scored or not)
+        $bestScores = $byQuestion->map(fn ($group) => $group->max('score'))->filter();
+
+        // Per-item breakdown
+        $items = $byQuestion->map(function ($group) {
+            $best = $group->sortByDesc('score')->first();
+
+            return [
+                'question_id' => $best->question_id,
+                'topic' => $best->question?->topic,
+                'best_score' => $best->score,
+                'attempts' => $group->count(),
+                'status' => $best->status->value,
+            ];
+        })->values()->toArray();
+
+        // Weak KPs from this session
+        $weakPoints = $allSubmissions
+            ->pluck('result.knowledge_gaps')
+            ->filter()
+            ->flatten(1)
+            ->pluck('name')
+            ->countBy()
+            ->sortDesc()
+            ->take(5)
+            ->toArray();
 
         $summary = [
-            'items_completed' => $scores->count(),
+            'items_completed' => $itemsCompleted,
             'items_total' => $session->itemsCount(),
-            'average_score' => $scores->isNotEmpty() ? VstepScoring::round($scores->avg()) : null,
-            'best_score' => $scores->isNotEmpty() ? $scores->max() : null,
+            'average_score' => $bestScores->isNotEmpty() ? VstepScoring::round($bestScores->avg()) : null,
+            'best_score' => $bestScores->isNotEmpty() ? $bestScores->max() : null,
+            'items' => $items,
+            'weak_points' => $weakPoints,
         ];
 
         // Compare with last session of same type
@@ -164,6 +194,7 @@ class PracticeService
     public function list(string $userId, ?Skill $skill = null): LengthAwarePaginator
     {
         return PracticeSession::forUser($userId)
+            ->withCount('submissions')
             ->when($skill, fn ($q, $v) => $q->where('skill', $v))
             ->orderByDesc('started_at')
             ->paginate();

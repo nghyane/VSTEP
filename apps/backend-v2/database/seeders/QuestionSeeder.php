@@ -31,7 +31,7 @@ class QuestionSeeder extends Seeder
             $count = 0;
 
             foreach ($questions as $data) {
-                $question = Question::firstOrCreate(
+                $question = Question::updateOrCreate(
                     [
                         'skill' => Skill::from($data['skill']),
                         'level' => Level::from($data['level']),
