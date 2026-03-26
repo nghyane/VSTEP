@@ -8,6 +8,7 @@
     "require": {
         "php": "^8.3",
         "laravel/framework": "^13.0",
+        "laravel/horizon": "^5.45",
         "laravel/tinker": "^3.0",
         "league/flysystem-aws-s3-v3": "^3.32",
         "php-open-source-saver/jwt-auth": "^2.9"

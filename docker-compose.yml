@@ -86,10 +86,10 @@ services:
         - action: rebuild
           path: ./apps/backend-v2/composer.json
 
-  # Laravel queue worker — processes grading results
-  queue:
+  # Laravel Horizon — queue dashboard + worker management
+  horizon:
     build: ./apps/backend-v2
-    command: php artisan queue:work redis --sleep=3 --tries=3 --max-jobs=500 --max-time=3600
+    command: php artisan horizon
     environment:
       APP_ENV: local
       DB_CONNECTION: pgsql
