@@ -37,7 +37,6 @@ return [
 
     'grading' => [
         'url' => env('GRADING_SERVICE_URL', 'http://localhost:8001'),
-        'internal_backend_url' => env('INTERNAL_BACKEND_URL'),
     ],
 
 ];

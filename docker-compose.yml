@@ -58,7 +58,6 @@ services:
       REDIS_PASSWORD: ""
       JWT_SECRET: vstep-dev-jwt-secret-change-in-production
       GRADING_SERVICE_URL: http://grading:8000
-      INTERNAL_BACKEND_URL: http://backend:8000
       CORS_ALLOWED_ORIGINS: "*"
     volumes:
       - storage:/app/storage
@@ -113,6 +112,9 @@ services:
     env_file: ./apps/grading/.env
     environment:
       REDIS_URL: redis://redis:6379
+      STORAGE_PATH: /storage
+    volumes:
+      - storage:/storage:ro
     depends_on:
       redis:
         condition: service_healthy

@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     grading_queue: str = "grading:tasks"
     max_retries: int = 3
 
+    storage_path: str | None = None
+
     log_level: str = "INFO"
 
 
