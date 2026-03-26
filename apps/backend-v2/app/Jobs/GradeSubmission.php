@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 #[Backoff([5, 15, 60])]
-class ProcessGradingResult implements ShouldQueue
+class GradeSubmission implements ShouldQueue
 {
     use Queueable;
 
@@ -33,22 +33,23 @@ class ProcessGradingResult implements ShouldQueue
     public function handle(ProgressService $progressService, NotificationService $notificationService): void
     {
         $submission = Submission::findOrFail($this->submissionId);
-        $submission->loadMissing('question');
 
-        $response = Http::timeout(90)
-            ->post(config('services.grading.url').'/grade', [
+        if ($submission->status === SubmissionStatus::Completed) {
+            return;
+        }
+
+        $response = Http::timeout(90)->post(
+            config('services.grading.url').'/grade',
+            [
                 'submissionId' => $submission->id,
                 'questionId' => $submission->question_id,
                 'skill' => $submission->skill->value,
                 'answer' => $submission->answer,
                 'dispatchedAt' => now()->toAtomString(),
-            ]);
+            ],
+        );
 
         if ($response->failed()) {
-            Log::error('grading_http_failed', [
-                'submission_id' => $submission->id,
-                'status' => $response->status(),
-            ]);
             throw new \RuntimeException("Grading service returned {$response->status()}");
         }
 
@@ -81,6 +82,24 @@ class ProcessGradingResult implements ShouldQueue
             ['submission_id' => $submission->id, 'score' => $score],
         );
 
-        Log::info('grading_completed', ['submission_id' => $submission->id, 'score' => $score]);
+        Log::info('graded', ['submission_id' => $submission->id, 'score' => $score]);
+    }
+
+    public function failed(\Throwable $e): void
+    {
+        $submission = Submission::find($this->submissionId);
+        $submission?->update(['status' => SubmissionStatus::Failed]);
+
+        if ($submission) {
+            app(NotificationService::class)->send(
+                $submission->user_id,
+                NotificationType::System,
+                'Chấm điểm thất bại',
+                "Bài {$submission->skill->value} không thể chấm. Vui lòng thử lại.",
+                ['submission_id' => $submission->id],
+            );
+        }
+
+        Log::error('grading_failed', ['submission_id' => $this->submissionId, 'error' => $e->getMessage()]);
     }
 }

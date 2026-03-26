@@ -7,7 +7,7 @@ namespace App\Services;
 use App\Enums\NotificationType;
 use App\Enums\Role;
 use App\Enums\SubmissionStatus;
-use App\Jobs\ProcessGradingResult;
+use App\Jobs\GradeSubmission;
 use App\Models\Question;
 use App\Models\Submission;
 use App\Models\User;
@@ -52,7 +52,7 @@ class SubmissionService
                 $this->autoGrade($submission, $question);
             } else {
                 $submission->update(['status' => SubmissionStatus::Processing]);
-                ProcessGradingResult::dispatch($submission->id);
+                GradeSubmission::dispatch($submission->id);
             }
 
             return $submission;

@@ -1,10 +1,8 @@
-import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from redis.asyncio import Redis
 
-from app import worker
 from app.ai_routes import ai_router
 from app.config import settings
 from app.grading import grade_router
@@ -25,10 +23,8 @@ async def get_redis() -> Redis:
 async def lifespan(app: FastAPI):
     global _redis
     _redis = Redis.from_url(settings.redis_url, decode_responses=True)
-    task = asyncio.create_task(worker.run())
     logger.info("started")
     yield
-    task.cancel()
     if _redis:
         await _redis.aclose()
 
