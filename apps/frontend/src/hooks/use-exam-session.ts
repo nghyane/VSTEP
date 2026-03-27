@@ -8,17 +8,45 @@ import type {
 	SubmissionAnswer,
 } from "@/types/api"
 
+// BE ExamSessionDetailResource returns nested { session, exam, questions, answers, ... }
+// FE expects flat ExamSessionDetail (session fields + questions + answers at top level)
+interface SessionDetailResponse {
+	session: Record<string, unknown>
+	exam?: Record<string, unknown>
+	questions?: unknown[]
+	answers?: unknown[]
+	submissions?: unknown[]
+	progress?: { answered: number; total: number }
+}
+
+function flattenSessionDetail(raw: unknown): ExamSessionDetail {
+	const res = raw as SessionDetailResponse
+	if (res?.session) {
+		return {
+			...res.session,
+			questions: res.questions ?? [],
+			answers: res.answers ?? [],
+		} as unknown as ExamSessionDetail
+	}
+	// Already flat (shouldn't happen, but safe fallback)
+	return raw as ExamSessionDetail
+}
+
 function useExamDetail(examId: string) {
 	return useQuery({
 		queryKey: ["exams", examId],
 		queryFn: () => api.get<import("@/types/api").Exam>(`/api/exams/${examId}`),
+		enabled: !!examId,
 	})
 }
 
 function useStartExam() {
 	const qc = useQueryClient()
 	return useMutation({
-		mutationFn: (examId: string) => api.post<ExamSession>(`/api/exams/${examId}/start`),
+		mutationFn: async (examId: string) => {
+			const raw = await api.post<unknown>(`/api/exams/${examId}/start`)
+			return flattenSessionDetail(raw) as unknown as ExamSession
+		},
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: ["exams"] })
 		},
@@ -28,7 +56,10 @@ function useStartExam() {
 function useExamSession(sessionId: string) {
 	return useQuery({
 		queryKey: ["exam-sessions", sessionId],
-		queryFn: () => api.get<ExamSessionDetail>(`/api/exams/sessions/${sessionId}`),
+		queryFn: async () => {
+			const raw = await api.get<unknown>(`/api/sessions/${sessionId}`)
+			return flattenSessionDetail(raw)
+		},
 	})
 }
 
@@ -47,28 +78,31 @@ function useExamSessions(params: UseExamSessionsParams = {}) {
 
 	return useQuery({
 		queryKey: ["exam-sessions", { page, limit, status }],
-		queryFn: () => api.get<PaginatedResponse<ExamSessionWithExam>>(`/api/exams/sessions?${search}`),
+		queryFn: () => api.get<PaginatedResponse<ExamSessionWithExam>>(`/api/sessions?${search}`),
 	})
 }
 
 function useSaveAnswers(sessionId: string) {
 	return useMutation({
 		mutationFn: (answers: { questionId: string; answer: SubmissionAnswer }[]) =>
-			api.put<{ success: boolean; saved: number }>(`/api/exams/sessions/${sessionId}`, { answers }),
+			api.put<{ success: boolean; saved: number }>(`/api/sessions/${sessionId}`, { answers }),
 	})
 }
 
 function useAnswerQuestion(sessionId: string) {
 	return useMutation({
 		mutationFn: (body: { questionId: string; answer: SubmissionAnswer }) =>
-			api.post<{ success: boolean }>(`/api/exams/sessions/${sessionId}/answer`, body),
+			api.post<{ success: boolean }>(`/api/sessions/${sessionId}/answer`, body),
 	})
 }
 
 function useSubmitExam(sessionId: string) {
 	const qc = useQueryClient()
 	return useMutation({
-		mutationFn: () => api.post<ExamSession>(`/api/exams/sessions/${sessionId}/submit`),
+		mutationFn: async () => {
+			const raw = await api.post<unknown>(`/api/sessions/${sessionId}/submit`)
+			return flattenSessionDetail(raw) as unknown as ExamSession
+		},
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: ["exam-sessions", sessionId] })
 			qc.invalidateQueries({ queryKey: ["progress"] })

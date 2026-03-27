@@ -47,6 +47,24 @@ export function getSmartTag(
 	return null
 }
 
+// BE returns `sections` array instead of `blueprint` object.
+// Map sections → ExamBlueprint for backward compat with FE components.
 export function getBlueprint(exam: Exam): ExamBlueprint {
-	return exam.blueprint as ExamBlueprint
+	// If blueprint exists (legacy), use it directly
+	if (exam.blueprint && typeof exam.blueprint === "object") {
+		const bp = exam.blueprint as ExamBlueprint
+		if (bp.listening || bp.reading || bp.writing || bp.speaking) return bp
+	}
+
+	// Map sections array → blueprint object
+	const sections = (exam as unknown as Record<string, unknown>).sections as
+		| { skill: Skill; questionIds: string[]; questionCount: number }[]
+		| undefined
+	if (!sections) return {} as ExamBlueprint
+
+	const bp: ExamBlueprint = { durationMinutes: exam.durationMinutes ?? undefined }
+	for (const s of sections) {
+		bp[s.skill as Skill] = { questionIds: s.questionIds ?? [] }
+	}
+	return bp
 }

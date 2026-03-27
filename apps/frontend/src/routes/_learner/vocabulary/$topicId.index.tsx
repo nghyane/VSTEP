@@ -10,16 +10,16 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useTopicProgress, useVocabularyTopic } from "@/hooks/use-vocabulary"
 import { cn } from "@/lib/utils"
-import type { PartOfSpeech, VocabWord } from "./-components/mock-data"
-import { getMockTopic } from "./-components/mock-data"
-import { useVocabProgress } from "./-components/use-vocab-progress"
+import type { VocabularyWord } from "@/types/api"
 
 export const Route = createFileRoute("/_learner/vocabulary/$topicId/")({
 	component: VocabTopicDetailPage,
 })
 
-const posLabels: Record<PartOfSpeech, string> = {
+const posLabels: Record<string, string> = {
 	noun: "Danh từ",
 	verb: "Động từ",
 	adjective: "Tính từ",
@@ -27,7 +27,7 @@ const posLabels: Record<PartOfSpeech, string> = {
 	phrase: "Cụm từ",
 }
 
-const posColors: Record<PartOfSpeech, string> = {
+const posColors: Record<string, string> = {
 	noun: "bg-blue-100 text-blue-700",
 	verb: "bg-green-100 text-green-700",
 	adjective: "bg-amber-100 text-amber-700",
@@ -36,7 +36,7 @@ const posColors: Record<PartOfSpeech, string> = {
 }
 
 interface WordCardProps {
-	word: VocabWord
+	word: VocabularyWord
 }
 
 function WordCard({ word }: WordCardProps) {
@@ -45,11 +45,14 @@ function WordCard({ word }: WordCardProps) {
 			<div className="flex items-start justify-between gap-3">
 				<div className="space-y-1">
 					<p className="text-xl font-bold">{word.word}</p>
-					<p className="text-sm text-muted-foreground">{word.phonetic}</p>
+					{word.phonetic && <p className="text-sm text-muted-foreground">{word.phonetic}</p>}
 				</div>
 				<div className="flex items-center gap-2">
-					<Badge variant="secondary" className={cn("text-xs", posColors[word.partOfSpeech])}>
-						{posLabels[word.partOfSpeech]}
+					<Badge
+						variant="secondary"
+						className={cn("text-xs", posColors[word.partOfSpeech] ?? "bg-muted text-muted-foreground")}
+					>
+						{posLabels[word.partOfSpeech] ?? word.partOfSpeech}
 					</Badge>
 					<Button variant="ghost" size="icon-sm" aria-label="Phát âm">
 						<HugeiconsIcon icon={VolumeHighIcon} className="size-4" />
@@ -62,10 +65,12 @@ function WordCard({ word }: WordCardProps) {
 					<span className="font-medium text-foreground">EN: </span>
 					{word.definition}
 				</p>
-				<p className="text-sm">
-					<span className="font-medium text-foreground">VI: </span>
-					<span className="text-muted-foreground">{word.explanation}</span>
-				</p>
+				{word.explanation && (
+					<p className="text-sm">
+						<span className="font-medium text-foreground">VI: </span>
+						<span className="text-muted-foreground">{word.explanation}</span>
+					</p>
+				)}
 			</div>
 
 			{word.examples.length > 0 && (
@@ -104,10 +109,28 @@ function StatCard({ icon, label, value }: StatCardProps) {
 
 function VocabTopicDetailPage() {
 	const { topicId } = Route.useParams()
-	const topic = getMockTopic(topicId)
-	const progress = useVocabProgress()
+	const { data: topic, isLoading, error } = useVocabularyTopic(topicId)
+	const { data: progressData } = useTopicProgress(topicId)
 
-	if (!topic) {
+	if (isLoading) {
+		return (
+			<div className="space-y-6">
+				<Skeleton className="h-8 w-48" />
+				<div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+					{Array.from({ length: 4 }).map((_, i) => (
+						<Skeleton key={i} className="h-20 rounded-2xl" />
+					))}
+				</div>
+				<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+					{Array.from({ length: 4 }).map((_, i) => (
+						<Skeleton key={i} className="h-40 rounded-2xl" />
+					))}
+				</div>
+			</div>
+		)
+	}
+
+	if (error || !topic) {
 		return (
 			<div className="space-y-6">
 				<Link
@@ -120,7 +143,7 @@ function VocabTopicDetailPage() {
 				<div className="py-12 text-center">
 					<p className="text-lg font-medium">Không tìm thấy chủ đề</p>
 					<p className="mt-1 text-sm text-muted-foreground">
-						Chủ đề từ vựng này không tồn tại hoặc đã bị xoá.
+						{error?.message ?? "Chủ đề từ vựng này không tồn tại hoặc đã bị xoá."}
 					</p>
 					<Button asChild variant="outline" className="mt-4">
 						<Link to="/vocabulary">Quay lại danh sách</Link>
@@ -130,11 +153,8 @@ function VocabTopicDetailPage() {
 		)
 	}
 
-	const tp = progress[topicId]
 	const totalWords = topic.words.length
-	const learnedCount = tp?.learned.length ?? 0
-	const weakCount = tp?.weak.length ?? 0
-	const memorizedCount = Math.max(0, learnedCount - weakCount)
+	const knownCount = progressData?.knownCount ?? 0
 
 	return (
 		<div className="space-y-6">
@@ -167,9 +187,9 @@ function VocabTopicDetailPage() {
 
 			<div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
 				<StatCard icon={Book02Icon} label="Tổng số từ" value={totalWords} />
-				<StatCard icon={CheckmarkCircle02Icon} label="Đã học" value={learnedCount} />
-				<StatCard icon={BrainIcon} label="Đã nhớ" value={memorizedCount} />
-				<StatCard icon={RepeatIcon} label="Cần ôn tập" value={weakCount} />
+				<StatCard icon={CheckmarkCircle02Icon} label="Đã học" value={knownCount} />
+				<StatCard icon={BrainIcon} label="Đã nhớ" value={knownCount} />
+				<StatCard icon={RepeatIcon} label="Cần ôn tập" value={Math.max(0, totalWords - knownCount)} />
 			</div>
 
 			<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

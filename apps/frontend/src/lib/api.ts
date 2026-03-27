@@ -33,12 +33,28 @@ function toSnakeCase(obj: unknown): unknown {
 }
 
 // Unwrap Laravel's { data: ... } wrapper for single-resource responses.
-// Paginated responses ({ data: [...], meta, links }) are kept as-is.
+// Paginated responses ({ data: [...], meta, links }) are kept as-is but meta is normalized.
 function unwrapData(obj: unknown): unknown {
 	if (obj && typeof obj === "object" && !Array.isArray(obj)) {
-		const keys = Object.keys(obj)
+		const rec = obj as Record<string, unknown>
+		const keys = Object.keys(rec)
+
+		// Single-resource: { data: ... } → unwrap
 		if (keys.length === 1 && keys[0] === "data") {
-			return (obj as Record<string, unknown>).data
+			return rec.data
+		}
+
+		// Paginated: { data: [...], meta: { current_page, per_page, ... }, links }
+		// Normalize Laravel meta → FE PaginationMeta { page, limit, total, totalPages }
+		if (Array.isArray(rec.data) && rec.meta && typeof rec.meta === "object") {
+			const m = rec.meta as Record<string, unknown>
+			rec.meta = {
+				page: m.current_page ?? m.page,
+				limit: m.per_page ?? m.limit,
+				total: m.total,
+				totalPages: m.last_page ?? m.totalPages,
+			}
+			delete rec.links
 		}
 	}
 	return obj
@@ -127,10 +143,17 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 	if (!res.ok) {
 		const errorBody = await res.json().catch(() => ({}))
+		const serverMessage: string | undefined = errorBody?.error?.message ?? errorBody?.message
+
+		// Backend returns 500 "Route [login] not defined" when unauthenticated (missing 401 handler)
+		// Treat as 401 so the refresh/redirect logic kicks in
+		if (res.status === 500 && serverMessage && /route \[login\] not defined/i.test(serverMessage)) {
+			throw new ApiError(401, STATUS_MESSAGES[401])
+		}
+
 		const validation = parseLaravelErrors(errorBody)
 		if (validation) throw new ApiError(res.status, validation)
 		const fallback = STATUS_MESSAGES[res.status] ?? "Đã có lỗi xảy ra"
-		const serverMessage: string | undefined = errorBody?.error?.message ?? errorBody?.message
 		const translated = serverMessage ? (ERROR_TRANSLATIONS[serverMessage] ?? fallback) : fallback
 		throw new ApiError(res.status, translated)
 	}
