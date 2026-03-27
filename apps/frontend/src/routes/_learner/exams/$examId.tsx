@@ -12,7 +12,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { Button } from "@/components/ui/button"
 import { useExamDetail, useStartExam } from "@/hooks/use-exam-session"
 import { cn } from "@/lib/utils"
-import type { ExamBlueprint, Skill } from "@/types/api"
+import type { Skill } from "@/types/api"
 
 export const Route = createFileRoute("/_learner/exams/$examId")({
 	component: ExamDetailPage,
@@ -52,7 +52,13 @@ function ExamDetailPage() {
 		)
 	}
 
-	const bp = exam.blueprint as ExamBlueprint
+	// BE returns sections: [{ skill, questionIds, questionCount, ... }] instead of blueprint
+	const sections = ((exam as unknown as Record<string, unknown>).sections ?? []) as {
+		skill: Skill
+		questionCount: number
+		questionIds: string[]
+	}[]
+	const sectionsBySkill = new Map(sections.map((s) => [s.skill, s]))
 
 	function handleStart() {
 		startExam.mutate(examId, {
@@ -76,16 +82,16 @@ function ExamDetailPage() {
 			<h1 className="text-2xl font-bold">{exam.title || `Đề thi ${exam.level}`}</h1>
 
 			<div className="rounded-2xl bg-muted/30 p-6 space-y-5 shadow-sm">
-				{(exam.durationMinutes ?? bp.durationMinutes) && (
+				{exam.durationMinutes && (
 					<div className="flex items-center gap-2 text-sm">
 						<HugeiconsIcon icon={Clock01Icon} className="size-4 text-muted-foreground" />
-						<span>Thời gian: {exam.durationMinutes ?? bp.durationMinutes} phút</span>
+						<span>Thời gian: {exam.durationMinutes} phút</span>
 					</div>
 				)}
 
 				<div className="grid grid-cols-2 gap-3">
 					{SKILL_ORDER.map((skill) => {
-						const section = bp[skill]
+						const section = sectionsBySkill.get(skill)
 						if (!section || section.questionIds.length === 0) return null
 						const meta = skillMeta[skill]
 

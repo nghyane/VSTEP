@@ -1,0 +1,450 @@
+[
+    {
+        "skill": "reading",
+        "level": "A2",
+        "part": 1,
+        "topic": "Greenfield Primary School — Spring Fair",
+        "bloom_level": null,
+        "content": {
+            "passage": "Greenfield Primary School — Spring Fair\n\nDear Parents and Students,\n\nWe are delighted to announce our annual Spring Fair on Saturday, 15 March, from 10:00 AM to 3:00 PM at the school playground. The event is free for all families. There will be games, food stalls, a book sale, and a talent show. The principal, Mrs. Johnson, invites everyone to come and enjoy the day. If you would like to help or need more information, please send an email to springfair@greenfield.edu. We look forward to seeing you there!",
+            "title": "Greenfield Primary School — Spring Fair",
+            "items": [
+                {
+                    "stem": "How much does the activity cost?",
+                    "options": [
+                        "It is free",
+                        "$5",
+                        "$10",
+                        "$20"
+                    ]
+                },
+                {
+                    "stem": "What should interested people do?",
+                    "options": [
+                        "Call the office",
+                        "Send an email",
+                        "Visit the website",
+                        "Come to the school"
+                    ]
+                },
+                {
+                    "stem": "According to the text, when does the event start?",
+                    "options": [
+                        "Monday",
+                        "Wednesday",
+                        "Friday",
+                        "Saturday"
+                    ]
+                },
+                {
+                    "stem": "Who wrote this notice?",
+                    "options": [
+                        "A student",
+                        "A teacher",
+                        "A parent",
+                        "The principal"
+                    ]
+                },
+                {
+                    "stem": "What is the passage mainly about?",
+                    "options": [
+                        "A family vacation",
+                        "A cooking recipe",
+                        "A school event",
+                        "A job advertisement"
+                    ]
+                },
+                {
+                    "stem": "The word \"delighted\" in line 3 is closest in meaning to...",
+                    "options": [
+                        "Sad",
+                        "Happy",
+                        "Angry",
+                        "Confused"
+                    ]
+                }
+            ]
+        },
+        "answer_key": {
+            "correctAnswers": {
+                "1": "A",
+                "2": "B",
+                "3": "D",
+                "4": "D",
+                "5": "C",
+                "6": "B"
+            }
+        },
+        "knowledge_points": []
+    },
+    {
+        "skill": "reading",
+        "level": "B1",
+        "part": 1,
+        "topic": "Eating Well on a Student Budget",
+        "bloom_level": null,
+        "content": {
+            "passage": "Eating Well on a Student Budget\n\nMany students struggle to eat healthily because of their busy schedules and limited budgets. However, making small changes can have a big impact on your health. According to nutritionists, the most important step is to reduce processed food and eat more fresh vegetables and fruits. Cooking simple meals at home is not only cheaper but also more nutritious than eating out. Some students believe that organic food can cure diseases, but this is not supported by scientific evidence. The detrimental effects of a poor diet include low energy, difficulty concentrating, and long-term health problems. Exercise and good sleep also play important roles in staying healthy. This advice comes from a popular health magazine aimed at young adults.",
+            "title": "Eating Well on a Student Budget",
+            "items": [
+                {
+                    "stem": "What is the author's main purpose?",
+                    "options": [
+                        "To entertain readers",
+                        "To give advice on healthy eating",
+                        "To advertise a product",
+                        "To describe a scientific experiment"
+                    ]
+                },
+                {
+                    "stem": "What does the author suggest readers do?",
+                    "options": [
+                        "Avoid all sugar",
+                        "Eat more protein",
+                        "Reduce processed food",
+                        "Skip breakfast"
+                    ]
+                },
+                {
+                    "stem": "According to the passage, which food is recommended?",
+                    "options": [
+                        "Fast food",
+                        "Processed snacks",
+                        "Fresh vegetables",
+                        "Canned soup"
+                    ]
+                },
+                {
+                    "stem": "The passage is most likely from...",
+                    "options": [
+                        "A novel",
+                        "A health magazine",
+                        "A textbook",
+                        "A research paper"
+                    ]
+                },
+                {
+                    "stem": "Which statement is NOT supported by the text?",
+                    "options": [
+                        "Vegetables are nutritious",
+                        "Exercise is important",
+                        "Sleep affects health",
+                        "Organic food cures diseases"
+                    ]
+                },
+                {
+                    "stem": "The word \"detrimental\" in paragraph 2 means...",
+                    "options": [
+                        "Helpful",
+                        "Harmful",
+                        "Important",
+                        "Unusual"
+                    ]
+                }
+            ]
+        },
+        "answer_key": {
+            "correctAnswers": {
+                "1": "B",
+                "2": "C",
+                "3": "C",
+                "4": "B",
+                "5": "D",
+                "6": "B"
+            }
+        },
+        "knowledge_points": []
+    },
+    {
+        "skill": "reading",
+        "level": "B1",
+        "part": 2,
+        "topic": "Traffic Congestion in Modern Cities",
+        "bloom_level": null,
+        "content": {
+            "passage": "Traffic Congestion in Modern Cities\n\nTraffic congestion has become one of the most serious problems affecting the quality of life in many cities. The primary cause is the rapid increase in car ownership, as more families can now afford private vehicles. The author takes a critical view of the current situation, arguing that governments have failed to act quickly enough. One promising solution is investing in public transport systems such as metro lines and bus rapid transit. Research shows that improving public transport can alleviate congestion by encouraging people to leave their cars at home. While no city has found a perfect solution, experts agree that the problem will only get worse without significant action. Some cities have already seen positive results from expanding their public transport networks.",
+            "title": "Traffic Congestion in Modern Cities",
+            "items": [
+                {
+                    "stem": "The author's attitude toward the current situation is...",
+                    "options": [
+                        "Supportive",
+                        "Critical",
+                        "Neutral",
+                        "Humorous"
+                    ]
+                },
+                {
+                    "stem": "According to the author, what is the primary cause?",
+                    "options": [
+                        "Poor road design",
+                        "Increasing car ownership",
+                        "Lack of buses",
+                        "Bad weather"
+                    ]
+                },
+                {
+                    "stem": "Which is implied but not directly stated?",
+                    "options": [
+                        "The problem will get worse without action",
+                        "People prefer buses to trains",
+                        "The government has enough money",
+                        "All cities have the same problem"
+                    ]
+                },
+                {
+                    "stem": "What is the main idea of the passage?",
+                    "options": [
+                        "Traffic congestion affects quality of life",
+                        "Public transport should be free",
+                        "Cars should be banned from cities",
+                        "Cycling is the best transport"
+                    ]
+                },
+                {
+                    "stem": "What solution does the text propose?",
+                    "options": [
+                        "Building more roads",
+                        "Investing in public transport",
+                        "Banning private cars",
+                        "Reducing speed limits"
+                    ]
+                },
+                {
+                    "stem": "The word \"alleviate\" is closest in meaning to...",
+                    "options": [
+                        "Worsen",
+                        "Create",
+                        "Reduce",
+                        "Ignore"
+                    ]
+                }
+            ]
+        },
+        "answer_key": {
+            "correctAnswers": {
+                "1": "B",
+                "2": "B",
+                "3": "A",
+                "4": "A",
+                "5": "B",
+                "6": "C"
+            }
+        },
+        "knowledge_points": []
+    },
+    {
+        "skill": "reading",
+        "level": "B2",
+        "part": 2,
+        "topic": "The Remote Work Revolution",
+        "bloom_level": null,
+        "content": {
+            "passage": "The Remote Work Revolution\n\nThe shift to remote work, accelerated by the global pandemic, has fundamentally transformed the modern workplace. Research cited by leading business schools indicates that remote workers generally report higher job satisfaction compared to their office-based counterparts, largely due to greater flexibility and reduced commuting time.\n\nHowever, the transition has proven to be a double-edged sword. While companies benefit from reduced overhead costs and access to a global talent pool, concerns about employee isolation and diminished team cohesion have emerged. Several studies acknowledge that remote work increases isolation, particularly for workers living alone.\n\nLooking ahead, most analysts predict that hybrid models will become standard, combining the flexibility of remote work with the collaborative benefits of office time. The word 'paramount' in describing work-life balance reflects its essential importance in this new paradigm. Organizations that fail to adapt risk losing their most talented employees to more progressive competitors.",
+            "title": "The Remote Work Revolution",
+            "items": [
+                {
+                    "stem": "The author uses the phrase \"double-edged sword\" to suggest that...",
+                    "options": [
+                        "Remote work has both advantages and disadvantages",
+                        "Technology is unreliable",
+                        "Companies save money at employees' expense",
+                        "The trend will reverse"
+                    ]
+                },
+                {
+                    "stem": "What can be inferred about the future of work?",
+                    "options": [
+                        "All jobs will be remote",
+                        "Hybrid models will become standard",
+                        "Offices will disappear entirely",
+                        "Remote work is a temporary trend"
+                    ]
+                },
+                {
+                    "stem": "The passage primarily discusses...",
+                    "options": [
+                        "The economic impact of remote work",
+                        "The history of telecommuting",
+                        "Management strategies for virtual teams",
+                        "Technology infrastructure requirements"
+                    ]
+                },
+                {
+                    "stem": "Which counterargument does the author acknowledge?",
+                    "options": [
+                        "Remote work increases isolation",
+                        "Technology costs are prohibitive",
+                        "Not all jobs can be done remotely",
+                        "Productivity always decreases"
+                    ]
+                },
+                {
+                    "stem": "The word \"paramount\" in paragraph 4 is closest in meaning to...",
+                    "options": [
+                        "Optional",
+                        "Interesting",
+                        "Essential",
+                        "Difficult"
+                    ]
+                },
+                {
+                    "stem": "According to the research cited, remote workers...",
+                    "options": [
+                        "Are less productive than office workers",
+                        "Report higher job satisfaction",
+                        "Earn more than office counterparts",
+                        "Have fewer career advancement opportunities"
+                    ]
+                }
+            ]
+        },
+        "answer_key": {
+            "correctAnswers": {
+                "1": "A",
+                "2": "B",
+                "3": "A",
+                "4": "A",
+                "5": "C",
+                "6": "B"
+            }
+        },
+        "knowledge_points": []
+    },
+    {
+        "skill": "reading",
+        "level": "B2",
+        "part": 3,
+        "topic": "Rethinking Education: Lessons from Finland",
+        "bloom_level": null,
+        "content": {
+            "passage": "Rethinking Education: Lessons from Finland\n\nFinland's education system has been widely praised as one of the most successful in the world. Unlike many countries that rely heavily on standardized testing, Finland takes a fundamentally different approach. Students rarely take exams before the age of sixteen, and homework is kept to a minimum. Instead, the emphasis is on collaborative learning, creative thinking, and student well-being.\n\nCritics of the traditional testing model argue that standardized assessments have significant limitations. These tests often fail to measure creativity, critical thinking, and social skills — qualities that are equally important for success in life. In many education systems, the pressure to perform well on exams has led to a narrow curriculum focused on test preparation rather than genuine learning.\n\nSome education experts describe the conventional approach as a \"one-size-fits-all\" method — a universal but inflexible solution that ignores the diverse needs and talents of individual students. Finland's success suggests that when teachers are given more autonomy and students are trusted to take responsibility for their own learning, outcomes improve dramatically.\n\nHowever, implementing such reforms requires significant investment in teacher training and a cultural shift in how society views education. Technology should complement traditional teaching methods, not replace them entirely. While Finland's model offers valuable insights, more research is needed to understand how these principles can be adapted to different cultural and economic contexts.",
+            "title": "Rethinking Education: Lessons from Finland",
+            "items": [
+                {
+                    "stem": "The author uses the example of Finland to illustrate...",
+                    "options": [
+                        "Economic growth",
+                        "Educational reform success",
+                        "Political stability",
+                        "Cultural diversity"
+                    ]
+                },
+                {
+                    "stem": "What does the author mean by \"one-size-fits-all approach\"?",
+                    "options": [
+                        "A flexible method",
+                        "A universal but inflexible solution",
+                        "A custom-made strategy",
+                        "An expensive program"
+                    ]
+                },
+                {
+                    "stem": "Which statement best summarizes the final paragraph?",
+                    "options": [
+                        "Technology solves all problems",
+                        "Balance is needed in policy-making",
+                        "Tradition is always better",
+                        "Research is unreliable"
+                    ]
+                },
+                {
+                    "stem": "The conclusion implies that...",
+                    "options": [
+                        "More research is needed",
+                        "The current system works well",
+                        "Change is impossible",
+                        "Students don't care about education"
+                    ]
+                },
+                {
+                    "stem": "The passage suggests that standardized testing...",
+                    "options": [
+                        "Accurately measures intelligence",
+                        "Is the best assessment method",
+                        "Has significant limitations",
+                        "Should be abolished entirely"
+                    ]
+                }
+            ]
+        },
+        "answer_key": {
+            "correctAnswers": {
+                "1": "B",
+                "2": "B",
+                "3": "B",
+                "4": "A",
+                "5": "C"
+            }
+        },
+        "knowledge_points": []
+    },
+    {
+        "skill": "reading",
+        "level": "C1",
+        "part": 4,
+        "topic": "Cross-Cultural Dimensions of Decision-Making",
+        "bloom_level": null,
+        "content": {
+            "passage": "Cross-Cultural Dimensions of Decision-Making\n\nThe researcher's primary argument is that cultural context shapes decision-making processes in ways that traditional economic models fail to capture. Drawing on interdisciplinary perspectives from psychology, anthropology, and behavioral economics, the study challenges the assumption that cognitive biases operate uniformly across populations.\n\nThe study's methodology has been criticized for relying on self-reported data, which may be subject to social desirability bias and cultural differences in response patterns. Nevertheless, the findings offer compelling evidence that what constitutes 'rational' decision-making varies significantly across cultures.\n\nThe term 'epistemic humility' as used in the text refers to acknowledging the limits of one's knowledge — a quality the author argues is essential for cross-cultural research. What distinguishes the author's approach from earlier studies is that it incorporates interdisciplinary perspectives, moving beyond the narrow lens of any single academic discipline.\n\nThe passage implies that future research should explore cross-cultural dimensions more thoroughly, particularly in non-Western contexts that remain underrepresented in the literature.",
+            "title": "Cross-Cultural Dimensions of Decision-Making",
+            "items": [
+                {
+                    "stem": "The passage implies that future research should...",
+                    "options": [
+                        "Replicate existing studies",
+                        "Explore cross-cultural dimensions more thoroughly",
+                        "Focus exclusively on economic outcomes",
+                        "Abandon qualitative approaches"
+                    ]
+                },
+                {
+                    "stem": "The researcher's primary argument is that...",
+                    "options": [
+                        "Cognitive biases are universal and unavoidable",
+                        "Cultural context shapes decision-making processes",
+                        "Economic models accurately predict behavior",
+                        "Individual differences are negligible"
+                    ]
+                },
+                {
+                    "stem": "The term \"epistemic humility\" as used in the text refers to...",
+                    "options": [
+                        "Acknowledging the limits of one's knowledge",
+                        "Being modest about achievements",
+                        "Questioning established theories",
+                        "Accepting criticism gracefully"
+                    ]
+                },
+                {
+                    "stem": "What distinguishes the author's approach from earlier studies?",
+                    "options": [
+                        "It employs mixed methods",
+                        "It focuses on developing countries",
+                        "It uses a longitudinal design",
+                        "It incorporates interdisciplinary perspectives"
+                    ]
+                },
+                {
+                    "stem": "The study's methodology has been criticized for...",
+                    "options": [
+                        "Using too small a sample size",
+                        "Relying on self-reported data",
+                        "Ignoring demographic variables",
+                        "Not being replicable"
+                    ]
+                }
+            ]
+        },
+        "answer_key": {
+            "correctAnswers": {
+                "1": "B",
+                "2": "B",
+                "3": "A",
+                "4": "D",
+                "5": "B"
+            }
+        },
+        "knowledge_points": []
+    }
+]

@@ -1,0 +1,50 @@
+{
+    "metadata": {
+        "skill": "speaking",
+        "level": "B1",
+        "part": 1,
+        "generated_at": "2026-03-26T13:55:21+00:00",
+        "count": 3
+    },
+    "questions": [
+        {
+            "topic": "Favorite Teacher",
+            "bloom_level": "understand",
+            "prompt": "Talk about a teacher who has influenced you. Who is this person? What did he or she teach you? Why is this teacher important to you?",
+            "knowledge_points": [
+                "Compound Sentences",
+                "Basic Tenses",
+                "General Vocabulary",
+                "Word Stress",
+                "Sentence Stress",
+                "Self-Correction"
+            ]
+        },
+        {
+            "topic": "Special Celebration",
+            "bloom_level": "apply",
+            "prompt": "Describe a special celebration you enjoyed. What was the occasion? Who did you celebrate with? Why was it special for you?",
+            "knowledge_points": [
+                "Simple Sentences",
+                "Basic Tenses",
+                "Topic-Specific Vocabulary",
+                "Linking Words & Transitions",
+                "Intonation",
+                "Elaboration"
+            ]
+        },
+        {
+            "topic": "Useful Place in Your City",
+            "bloom_level": "analyze",
+            "prompt": "Describe a place in your city that you often go to. What is this place like? What do you usually do there? Why do you think it is useful or important?",
+            "knowledge_points": [
+                "Complex Sentences",
+                "Prepositions",
+                "General Vocabulary",
+                "Topic-Specific Vocabulary",
+                "Sentence Stress",
+                "Paraphrasing"
+            ]
+        }
+    ]
+}

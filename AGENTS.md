@@ -6,11 +6,12 @@ VSTEP exam practice platform with AI grading and adaptive learning. Capstone pro
 
 ```
 apps/
-  backend/    # Bun + Elysia + Drizzle + PostgreSQL (REST API)
-  frontend/   # React 19 + Vite 7 + TypeScript (SPA, skeleton)
-  grading/    # Python + FastAPI + Redis Streams (AI grading microservice)
-docs/         # Project documentation, specs, design docs
-scripts/      # Utility scripts
+  backend-v2/   # PHP 8.4 · Laravel 13 · PostgreSQL · Redis (REST API + AI Grading Agent)
+  frontend/     # React 19 + Vite 7 + TypeScript (SPA)
+  mobile/       # Mobile app
+  _deprecated/  # Old backend-v1 (Bun+Elysia) and grading-python (FastAPI) — replaced
+docs/           # Project documentation, specs, design docs
+scripts/        # Utility scripts
 docker-compose.yml  # Local dev services (PostgreSQL, Redis)
 ```
 
@@ -18,25 +19,23 @@ docker-compose.yml  # Local dev services (PostgreSQL, Redis)
 
 | App | Language | Run Dev | Run Tests | Lint/Format |
 |-----|----------|---------|-----------|-------------|
-| backend | TypeScript (Bun) | `bun run dev` | `bun test` | `bun run check` |
+| backend-v2 | PHP 8.4 (Laravel 13) | `php artisan serve` | `php artisan test` | `./vendor/bin/pint` |
 | frontend | TypeScript (Vite) | `bun run dev` | -- | -- |
-| grading | Python (FastAPI) | `uvicorn app.main:app --reload` | `pytest` | -- |
 
 ## Global Rules
 
-- **Bun, not Node** for all TypeScript apps. `bun run`, `bun install`, `bun test`.
-- **No dotenv** -- Bun auto-loads `.env`, Vite uses `VITE_*` prefix, Python uses Pydantic Settings.
 - **No secrets in code or logs.** Use `.env` files (git-ignored).
-- **Structured JSON logging** in all services. Never `console.log` (backend) or `print()` (grading).
+- **Structured JSON logging** in all services. Use `Log` facade, never `console.log` or `print()`.
 - **Throw errors, don't return them.** All apps use typed error hierarchies.
 - **YAGNI** -- no speculative code. No consumer = no commit.
 
 ## Cross-App Communication
 
 - Frontend calls Backend at `VITE_API_URL` (default `http://localhost:3000`) via REST.
-- Backend communicates with Grading service via Redis Streams (grading:tasks → grading:results).
+- AI Grading runs inside Laravel Queue Jobs (no separate service). Uses `laravel/ai` SDK with tool calling.
+- Speaking pronunciation assessment via Azure Speech API (F0 free tier).
+- Audio upload via presigned URL to R2 (S3-compatible storage).
 - Auth: JWT Bearer tokens (issued by backend, validated on each request).
-- Shared types: Backend is source of truth. Frontend will sync via `bun run sync-types` (planned).
 
 ## Git Rules
 

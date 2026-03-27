@@ -10,9 +10,9 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useVocabularyTopic } from "@/hooks/use-vocabulary"
 import { cn } from "@/lib/utils"
-import { getMockTopic } from "./-components/mock-data"
-import { markWeak, removeWeak } from "./-components/use-vocab-progress"
 
 export const Route = createFileRoute("/_learner/vocabulary/$topicId/practice")({
 	component: PracticePage,
@@ -25,19 +25,13 @@ function blankWord(sentence: string, word: string): string {
 
 function PracticePage() {
 	const { topicId } = Route.useParams()
-	const topic = getMockTopic(topicId)
+	const { data: topic, isLoading, error } = useVocabularyTopic(topicId)
 
 	const [current, setCurrent] = useState(0)
-	const [letters, setLetters] = useState<Record<string, string[]>>(() => {
-		if (!topic) return {}
-		const init: Record<string, string[]> = {}
-		for (const w of topic.words) {
-			init[w.id] = Array.from<string>({ length: w.word.length }).fill("")
-		}
-		return init
-	})
+	const [letters, setLetters] = useState<Record<string, string[]>>({})
 	const [hints, setHints] = useState<Set<string>>(new Set())
 	const [checked, setChecked] = useState<Record<string, boolean>>({})
+	const [initialized, setInitialized] = useState(false)
 	const inputRefs = useRef<Map<string, HTMLInputElement[]>>(new Map())
 
 	const setRef = useCallback((wordId: string, index: number, el: HTMLInputElement | null) => {
@@ -49,18 +43,36 @@ function PracticePage() {
 		refs[index] = el
 	}, [])
 
-	if (!topic) {
+	// Initialize letter slots when topic loads
+	const words = topic?.words ?? []
+	if (topic && !initialized && words.length > 0) {
+		const init: Record<string, string[]> = {}
+		for (const w of words) {
+			init[w.id] = Array.from<string>({ length: w.word.length }).fill("")
+		}
+		setLetters(init)
+		setInitialized(true)
+	}
+
+	if (isLoading) {
+		return (
+			<div className="space-y-6">
+				<Skeleton className="h-8 w-48" />
+				<Skeleton className="h-64 w-full rounded-2xl" />
+			</div>
+		)
+	}
+
+	if (error || !topic || words.length === 0) {
 		return (
 			<div className="flex flex-col items-center gap-4 rounded-2xl bg-muted/50 py-16">
-				<p className="text-muted-foreground">Không tìm thấy chủ đề.</p>
+				<p className="text-muted-foreground">{error?.message ?? "Không tìm thấy chủ đề."}</p>
 				<Button variant="outline" asChild>
 					<Link to="/vocabulary">Quay lại</Link>
 				</Button>
 			</div>
 		)
 	}
-
-	const words = topic.words
 	const word = words[current]
 	const totalCount = words.length
 	const isFirst = current === 0
@@ -81,11 +93,6 @@ function PracticePage() {
 		if (!w) return
 		const correct = answer === w.word.toLowerCase()
 		setChecked((prev) => ({ ...prev, [wordId]: correct }))
-		if (correct) {
-			removeWeak(topicId, wordId)
-		} else {
-			markWeak(topicId, wordId)
-		}
 	}
 
 	function handleLetterChange(wordId: string, index: number, value: string) {
@@ -154,6 +161,7 @@ function PracticePage() {
 		setHints(new Set())
 		setChecked({})
 		setCurrent(0)
+		inputRefs.current.clear()
 	}
 
 	return (

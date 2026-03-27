@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_learner")({
 
 		try {
 			const res = await fetch(
-				`${import.meta.env.VITE_API_URL ?? "http://localhost:3000"}/api/onboarding/status`,
+				`${import.meta.env.VITE_API_URL ?? "http://localhost:8000"}/api/v1/onboarding/status`,
 				{ headers: { Authorization: `Bearer ${token()}` } },
 			)
 			if (res.ok) {
@@ -21,13 +21,14 @@ export const Route = createFileRoute("/_learner")({
 					localStorage.setItem(ONBOARDING_KEY, "1")
 					return
 				}
+				throw redirect({ to: "/onboarding" })
 			}
+			// API error (401, 500, etc.) — skip onboarding check to avoid redirect loop
+			return
 		} catch (e) {
 			if (e && typeof e === "object" && "to" in e) throw e
-		}
-
-		if (localStorage.getItem(ONBOARDING_KEY) !== "1") {
-			throw redirect({ to: "/onboarding" })
+			// Network/fetch error — skip onboarding check
+			return
 		}
 	},
 	component: LearnerLayout,

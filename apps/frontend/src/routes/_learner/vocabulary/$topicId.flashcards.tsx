@@ -3,17 +3,17 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useToggleKnown, useVocabularyTopic } from "@/hooks/use-vocabulary"
 import { cn } from "@/lib/utils"
-import type { VocabWord } from "./-components/mock-data"
-import { getMockTopic } from "./-components/mock-data"
-import { markLearned } from "./-components/use-vocab-progress"
+import type { VocabularyWord } from "@/types/api"
 
 export const Route = createFileRoute("/_learner/vocabulary/$topicId/flashcards")({
 	component: FlashcardsPage,
 })
 
 interface FlashcardProps {
-	word: VocabWord
+	word: VocabularyWord
 	flipped: boolean
 	onFlip: () => void
 }
@@ -60,26 +60,16 @@ function Flashcard({ word, flipped, onFlip }: FlashcardProps) {
 
 function FlashcardsPage() {
 	const { topicId } = Route.useParams()
-	const topic = getMockTopic(topicId)
+	const { data: topic, isLoading, error } = useVocabularyTopic(topicId)
+	const toggleKnown = useToggleKnown()
 	const [current, setCurrent] = useState(0)
 	const [flipped, setFlipped] = useState(false)
 	const [completed, setCompleted] = useState(false)
 
-	if (!topic) {
-		return (
-			<div className="flex flex-col items-center gap-4 rounded-2xl bg-muted/50 py-16">
-				<p className="text-muted-foreground">Không tìm thấy chủ đề.</p>
-				<Button variant="outline" asChild>
-					<Link to="/vocabulary">Quay lại</Link>
-				</Button>
-			</div>
-		)
-	}
-
-	const words = topic.words
+	const words = topic?.words ?? []
 	const word = words[current]
 	const isFirst = current === 0
-	const isLast = current === words.length - 1
+	const isLast = words.length > 0 && current === words.length - 1
 
 	function goNext() {
 		if (!isLast) {
@@ -96,9 +86,10 @@ function FlashcardsPage() {
 	}
 
 	function handleFlip() {
+		if (!word) return
 		setFlipped((f) => {
 			if (!f) {
-				markLearned(topicId, word.id)
+				toggleKnown.mutate({ wordId: word.id, known: true })
 				if (isLast) setCompleted(true)
 			}
 			return !f
@@ -126,6 +117,26 @@ function FlashcardsPage() {
 		window.addEventListener("keydown", onKeyDown)
 		return () => window.removeEventListener("keydown", onKeyDown)
 	}, [])
+
+	if (isLoading) {
+		return (
+			<div className="space-y-6">
+				<Skeleton className="h-8 w-48" />
+				<Skeleton className="h-96 w-full rounded-2xl" />
+			</div>
+		)
+	}
+
+	if (error || !topic || !word) {
+		return (
+			<div className="flex flex-col items-center gap-4 rounded-2xl bg-muted/50 py-16">
+				<p className="text-muted-foreground">{error?.message ?? "Không tìm thấy chủ đề."}</p>
+				<Button variant="outline" asChild>
+					<Link to="/vocabulary">Quay lại</Link>
+				</Button>
+			</div>
+		)
+	}
 
 	function handleReset() {
 		setCurrent(0)

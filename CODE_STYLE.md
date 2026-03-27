@@ -1,6 +1,8 @@
 # Code Style — VSTEP
 
-Áp dụng cho TypeScript (backend/frontend) và Python (grading).
+Áp dụng cho PHP (backend-v2) và TypeScript (frontend).
+
+Xem thêm `apps/backend-v2/AGENTS.md` cho Laravel-specific conventions.
 
 ## 5 Luật
 
@@ -14,129 +16,67 @@
 
 ### Module = namespace, tên không lặp
 
-```python
-# app/writing.py
-def grade(task): ...        # writing.grade(task)
-def prompt(text): ...       # writing.prompt(text)
+```php
+// app/Services/SubmissionService.php
+public function submit(): ...   // SubmissionService::submit()
+public function grade(): ...    // SubmissionService::grade()
 
-# app/scoring.py
-def to_band(score): ...     # scoring.to_band(8.5)
-def snap(score): ...        # scoring.snap(7.3) — snap to 0.5 grid
-
-# app/db.py
-def save(task, result): ... # db.save(task, result)
-def fail(id): ...           # db.fail(submission_id)
-```
-
-Import qualified khi cần context:
-
-```python
-from app import writing, scoring, db
-result = await writing.grade(task)
-band = scoring.to_band(result.score)
-await db.save(task, result)
+// app/Support/VstepScoring.php
+public static function round(): ...  // VstepScoring::round()
+public static function band(): ...   // VstepScoring::band()
 ```
 
 ### Bỏ noise words
 
 | Noise | Clean | Lý do |
 |-------|-------|-------|
-| ~~build~~Prompt | `prompt()` | compose, không "build" |
-| ~~save~~Result | `save(result)` | parameter nói rồi |
-| ~~AI~~GradeResult | `Result` | AI là implementation detail |
+| ~~create~~Submission | `create()` | class name cung cấp context |
 | ~~get~~User | `find(id)` | get là mặc định |
 | ~~handle~~Error | throw luôn | handle = nói mà không nói gì |
 | ~~process~~Task | `grade(task)` | domain verb |
-
-### Types — domain noun, không prefix
-
-```python
-class Task: ...          # not GradingTask
-class Result: ...        # not AIGradeResult  
-class WritingScore: ...  # qualifier chỉ khi cần phân biệt
-class SpeakingScore: ...
-```
 
 ### Convention
 
 | Ngữ cảnh | Style | Ví dụ |
 |-----------|-------|-------|
-| Functions | verb (module cung cấp noun) | `grade()`, `save()`, `prompt()` |
-| Variables | noun | `score`, `transcript`, `user` |
-| Types | PascalCase domain noun | `Task`, `Result`, `Session` |
-| Files (TS) | kebab-case | `grading-dispatch.ts` |
-| Files (Python) | snake_case | `grading.py` |
+| Classes | PascalCase | `GradeSubmission`, `WritingGrader` |
+| Methods | camelCase | `applySubmission()`, `expandKnowledgeScope()` |
+| Variables | camelCase | `$overallScore`, `$knowledgeScope` |
+| Files (PHP) | PascalCase | `GradeSubmission.php` |
+| Files (TS) | kebab-case | `submission-service.ts` |
+| DB columns | snake_case | `created_at`, `knowledge_gaps` |
 
-**Cấm:** prefix (~~raw_~~, ~~final_~~, ~~temp_~~), context repetition (~~result.resultScore~~), generic names (~~data~~, ~~info~~, ~~item~~, ~~process~~).
+**Cấm:** generic names (`$data`, `$info`, `$item`), prefix repetition (`$result->resultScore`).
 
 ## Comments
 
 WHY only. Cần section dividers → tách file.
 
-```
-// round to 0.5 to match VSTEP band thresholds     WHY
-// Get user by ID                                   WHAT — cấm
-// Step 1: Validate                                 numbered step — cấm
-// ═══════════════                                  divider — cấm
-```
-
 ## Function
 
-guard → compute → write. Không xen kẽ. Không two-phase writes.
-
-```typescript
-async function submitExam(sessionId: string, actor: Actor) {
-  // guard
-  const session = assertExists(await getSession(sessionId), "Session");
-  assertAccess(session.userId, actor, "Not your session");
-
-  // compute
-  const scores = calculateScores(session.answers);
-  const band = scoreToBand(computeOverall(scores));
-
-  // write
-  return db.transaction(async (tx) => {
-    await tx.update(examSessions).set({ status: "completed", ...scores, band });
-  });
-}
-```
+guard → compute → write. Không xen kẽ.
 
 ## File
 
-1 file = 1 concern. Tách khi > 200 dòng hoặc 2+ concerns. Split theo subdomain (~~helpers.ts~~ → `scoring.ts`).
+1 file = 1 concern. Tách khi > 200 dòng hoặc 2+ concerns.
 
 ## Error
 
-Throw, never return. TS: `AppError` subclasses. Python: `PermanentError`.
-
-## I/O
-
-Parallel reads. Atomic writes.
-
-```typescript
-const [user, exam] = await Promise.all([getUser(id), getExam(id)]);
-await db.transaction(async (tx) => { /* all writes */ });
-```
+Throw, never return. PHP: exceptions. Laravel auto-handles validation 422, not found 404.
 
 ## Cấm
 
 | | |
 |---|---|
-| Trivial wrappers | Inline `new Date().toISOString()` |
 | Speculative code | Không consumer = không commit |
-| Clever abstractions | `user.name` not `getField(user, "name")` |
-| Loose types | `Literal["high", "medium", "low"]` not `string` |
-| `any` / `as any` | Type properly |
-| `console.log` / `print` | `logger` only |
-| Direct env access | `env.X` (TS) / `settings.x` (Python) |
+| `console.log` / `dd()` | `Log` facade only |
+| Raw strings for fixed values | Use enums |
+| `??` on validated data | FormRequest already handles nullability |
 
 ## Commit
 
+- [ ] `./vendor/bin/pint` pass
 - [ ] guard → compute → write
-- [ ] No numbered steps, no dividers
-- [ ] Module = namespace, no noise words, no prefix
 - [ ] WHY-only comments
-- [ ] 1 file, 1 concern, < 200 lines
+- [ ] 1 file, 1 concern
 - [ ] Errors thrown, not returned
-- [ ] Parallel reads, atomic writes
-- [ ] `bun run check` / `pytest` pass
