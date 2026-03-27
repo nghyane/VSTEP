@@ -24,7 +24,6 @@ import { Route as LearnerProfileRouteImport } from './routes/_learner/profile'
 import { Route as LearnerDashboardRouteImport } from './routes/_learner/dashboard'
 import { Route as FocusedOnboardingRouteImport } from './routes/_focused/onboarding'
 import { Route as FocusedExerciseRouteImport } from './routes/_focused/exercise'
-import { Route as FocusedExamRouteImport } from './routes/_focused/exam'
 import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as LearnerVocabularyIndexRouteImport } from './routes/_learner/vocabulary/index'
@@ -43,7 +42,7 @@ import { Route as LearnerPracticeListeningRouteImport } from './routes/_learner/
 import { Route as LearnerExamsExamIdRouteImport } from './routes/_learner/exams/$examId'
 import { Route as LearnerDashboardClassIdRouteImport } from './routes/_learner/dashboard_.$classId'
 import { Route as LearnerClassesClassIdRouteImport } from './routes/_learner/classes.$classId'
-import { Route as FocusedPracticeSessionIdRouteImport } from './routes/_focused/practice.$sessionId'
+import { Route as FocusedExamSessionIdRouteImport } from './routes/_focused/exam.$sessionId'
 import { Route as LearnerVocabularyTopicIdIndexRouteImport } from './routes/_learner/vocabulary/$topicId.index'
 import { Route as LearnerVocabularySentencesTopicIdRouteImport } from './routes/_learner/vocabulary/sentences.$topicId'
 import { Route as LearnerVocabularyTopicIdPracticeRouteImport } from './routes/_learner/vocabulary/$topicId.practice'
@@ -120,11 +119,6 @@ const FocusedOnboardingRoute = FocusedOnboardingRouteImport.update({
 const FocusedExerciseRoute = FocusedExerciseRouteImport.update({
   id: '/exercise',
   path: '/exercise',
-  getParentRoute: () => FocusedRoute,
-} as any)
-const FocusedExamRoute = FocusedExamRouteImport.update({
-  id: '/exam',
-  path: '/exam',
   getParentRoute: () => FocusedRoute,
 } as any)
 const AuthRegisterRoute = AuthRegisterRouteImport.update({
@@ -219,12 +213,11 @@ const LearnerClassesClassIdRoute = LearnerClassesClassIdRouteImport.update({
   path: '/classes/$classId',
   getParentRoute: () => LearnerRoute,
 } as any)
-const FocusedPracticeSessionIdRoute =
-  FocusedPracticeSessionIdRouteImport.update({
-    id: '/practice/$sessionId',
-    path: '/practice/$sessionId',
-    getParentRoute: () => FocusedRoute,
-  } as any)
+const FocusedExamSessionIdRoute = FocusedExamSessionIdRouteImport.update({
+  id: '/exam/$sessionId',
+  path: '/exam/$sessionId',
+  getParentRoute: () => FocusedRoute,
+} as any)
 const LearnerVocabularyTopicIdIndexRoute =
   LearnerVocabularyTopicIdIndexRouteImport.update({
     id: '/',
@@ -261,7 +254,6 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
-  '/exam': typeof FocusedExamRoute
   '/exercise': typeof FocusedExerciseRoute
   '/onboarding': typeof FocusedOnboardingRoute
   '/dashboard': typeof LearnerDashboardRoute
@@ -272,7 +264,7 @@ export interface FileRoutesByFullPath {
   '/admin/submissions': typeof AdminSubmissionsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/': typeof AdminIndexRoute
-  '/practice/$sessionId': typeof FocusedPracticeSessionIdRoute
+  '/exam/$sessionId': typeof FocusedExamSessionIdRoute
   '/classes/$classId': typeof LearnerClassesClassIdRoute
   '/dashboard/$classId': typeof LearnerDashboardClassIdRoute
   '/exams/$examId': typeof LearnerExamsExamIdRoute
@@ -299,7 +291,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
-  '/exam': typeof FocusedExamRoute
   '/exercise': typeof FocusedExerciseRoute
   '/onboarding': typeof FocusedOnboardingRoute
   '/dashboard': typeof LearnerDashboardRoute
@@ -310,7 +301,7 @@ export interface FileRoutesByTo {
   '/admin/submissions': typeof AdminSubmissionsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin': typeof AdminIndexRoute
-  '/practice/$sessionId': typeof FocusedPracticeSessionIdRoute
+  '/exam/$sessionId': typeof FocusedExamSessionIdRoute
   '/classes/$classId': typeof LearnerClassesClassIdRoute
   '/dashboard/$classId': typeof LearnerDashboardClassIdRoute
   '/exams/$examId': typeof LearnerExamsExamIdRoute
@@ -341,7 +332,6 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/register': typeof AuthRegisterRoute
-  '/_focused/exam': typeof FocusedExamRoute
   '/_focused/exercise': typeof FocusedExerciseRoute
   '/_focused/onboarding': typeof FocusedOnboardingRoute
   '/_learner/dashboard': typeof LearnerDashboardRoute
@@ -352,7 +342,7 @@ export interface FileRoutesById {
   '/admin/submissions': typeof AdminSubmissionsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/': typeof AdminIndexRoute
-  '/_focused/practice/$sessionId': typeof FocusedPracticeSessionIdRoute
+  '/_focused/exam/$sessionId': typeof FocusedExamSessionIdRoute
   '/_learner/classes/$classId': typeof LearnerClassesClassIdRoute
   '/_learner/dashboard_/$classId': typeof LearnerDashboardClassIdRoute
   '/_learner/exams/$examId': typeof LearnerExamsExamIdRoute
@@ -382,7 +372,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/register'
-    | '/exam'
     | '/exercise'
     | '/onboarding'
     | '/dashboard'
@@ -393,7 +382,7 @@ export interface FileRouteTypes {
     | '/admin/submissions'
     | '/admin/users'
     | '/admin/'
-    | '/practice/$sessionId'
+    | '/exam/$sessionId'
     | '/classes/$classId'
     | '/dashboard/$classId'
     | '/exams/$examId'
@@ -420,7 +409,6 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
-    | '/exam'
     | '/exercise'
     | '/onboarding'
     | '/dashboard'
@@ -431,7 +419,7 @@ export interface FileRouteTypes {
     | '/admin/submissions'
     | '/admin/users'
     | '/admin'
-    | '/practice/$sessionId'
+    | '/exam/$sessionId'
     | '/classes/$classId'
     | '/dashboard/$classId'
     | '/exams/$examId'
@@ -461,7 +449,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/_auth/login'
     | '/_auth/register'
-    | '/_focused/exam'
     | '/_focused/exercise'
     | '/_focused/onboarding'
     | '/_learner/dashboard'
@@ -472,7 +459,7 @@ export interface FileRouteTypes {
     | '/admin/submissions'
     | '/admin/users'
     | '/admin/'
-    | '/_focused/practice/$sessionId'
+    | '/_focused/exam/$sessionId'
     | '/_learner/classes/$classId'
     | '/_learner/dashboard_/$classId'
     | '/_learner/exams/$examId'
@@ -611,13 +598,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FocusedExerciseRouteImport
       parentRoute: typeof FocusedRoute
     }
-    '/_focused/exam': {
-      id: '/_focused/exam'
-      path: '/exam'
-      fullPath: '/exam'
-      preLoaderRoute: typeof FocusedExamRouteImport
-      parentRoute: typeof FocusedRoute
-    }
     '/_auth/register': {
       id: '/_auth/register'
       path: '/register'
@@ -744,11 +724,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LearnerClassesClassIdRouteImport
       parentRoute: typeof LearnerRoute
     }
-    '/_focused/practice/$sessionId': {
-      id: '/_focused/practice/$sessionId'
-      path: '/practice/$sessionId'
-      fullPath: '/practice/$sessionId'
-      preLoaderRoute: typeof FocusedPracticeSessionIdRouteImport
+    '/_focused/exam/$sessionId': {
+      id: '/_focused/exam/$sessionId'
+      path: '/exam/$sessionId'
+      fullPath: '/exam/$sessionId'
+      preLoaderRoute: typeof FocusedExamSessionIdRouteImport
       parentRoute: typeof FocusedRoute
     }
     '/_learner/vocabulary/$topicId/': {
@@ -802,17 +782,15 @@ const AuthRouteChildren: AuthRouteChildren = {
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface FocusedRouteChildren {
-  FocusedExamRoute: typeof FocusedExamRoute
   FocusedExerciseRoute: typeof FocusedExerciseRoute
   FocusedOnboardingRoute: typeof FocusedOnboardingRoute
-  FocusedPracticeSessionIdRoute: typeof FocusedPracticeSessionIdRoute
+  FocusedExamSessionIdRoute: typeof FocusedExamSessionIdRoute
 }
 
 const FocusedRouteChildren: FocusedRouteChildren = {
-  FocusedExamRoute: FocusedExamRoute,
   FocusedExerciseRoute: FocusedExerciseRoute,
   FocusedOnboardingRoute: FocusedOnboardingRoute,
-  FocusedPracticeSessionIdRoute: FocusedPracticeSessionIdRoute,
+  FocusedExamSessionIdRoute: FocusedExamSessionIdRoute,
 }
 
 const FocusedRouteWithChildren =

@@ -85,7 +85,7 @@ function OnboardingPage() {
 	const startPlacement = useMutation({
 		mutationFn: () => api.post<PlacementStarted>("/api/onboarding/placement"),
 		onSuccess: (data) =>
-			navigate({ to: "/practice/$sessionId", params: { sessionId: data.sessionId } }),
+			navigate({ to: "/exam/$sessionId", params: { sessionId: data.sessionId } }),
 	})
 
 	const skipOnboarding = useMutation({
