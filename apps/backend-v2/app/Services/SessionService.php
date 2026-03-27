@@ -81,6 +81,11 @@ class SessionService
 
         $session->setRelation('questions', $questions);
 
+        // Load submission results (AI feedback) for completed sessions
+        if ($session->status !== SessionStatus::InProgress) {
+            $session->load(['submissions' => fn ($q) => $q->with('question:id,skill,part')]);
+        }
+
         return $session;
     }
 
