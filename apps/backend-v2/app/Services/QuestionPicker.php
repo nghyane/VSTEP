@@ -29,8 +29,8 @@ class QuestionPicker
     ): ?Question {
         $excludeIds = $this->buildExcludeIds($userId, $skill, $sessionQuestionIds);
 
-        // Every 3rd item → try review from weak points
-        if ($currentIndex > 0 && $currentIndex % 3 === 0) {
+        // Every 3rd item → try review from weak points (skip if learner chose a focus KP)
+        if (! $focusKp && $currentIndex > 0 && $currentIndex % 3 === 0) {
             $review = $this->pickReviewItem($userId, $skill, $excludeIds);
             if ($review) {
                 return $review;
@@ -39,8 +39,10 @@ class QuestionPicker
 
         $level = $this->resolveDifficulty($baseLevel, $currentIndex, $totalItems);
 
+        // Progressively relax constraints: level → excludeIds → focusKp
         return $this->findQuestion($skill, $level, $excludeIds, $focusKp)
             ?? $this->findQuestion($skill, $baseLevel, $excludeIds, $focusKp)
+            ?? $this->findQuestion($skill, $baseLevel, collect(), $focusKp)
             ?? $this->findQuestion($skill, $baseLevel, collect());
     }
 

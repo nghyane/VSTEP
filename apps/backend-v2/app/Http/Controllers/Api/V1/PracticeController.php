@@ -49,19 +49,39 @@ class PracticeController extends Controller
     #[Authorize('view', 'practiceSession')]
     public function show(PracticeSession $practiceSession)
     {
-        $practiceSession->load('submissions.question');
+        $result = $this->service->show($practiceSession);
 
-        return new PracticeSessionResource($practiceSession);
+        return response()->json(['data' => [
+            'session' => new PracticeSessionResource($result['session']),
+            'current_item' => $result['current_item'] ?? null,
+            'progress' => $result['progress'] ?? null,
+        ]]);
     }
 
     #[Authorize('view', 'practiceSession')]
     public function submit(Request $request, PracticeSession $practiceSession)
     {
-        $request->validate([
-            'answer' => ['required', 'array'],
-        ]);
+        $rules = ['answer' => ['required', 'array']];
 
-        $result = $this->service->submit($practiceSession, $request->validated()['answer']);
+        $mode = $practiceSession->mode;
+        $skill = $practiceSession->skill;
+
+        if ($mode === PracticeMode::Shadowing || $mode === PracticeMode::Drill) {
+            $rules['answer.audio_path'] = ['required', 'string'];
+        } elseif ($mode === PracticeMode::Guided) {
+            $rules['answer.text'] = ['required', 'string'];
+        } elseif ($mode === PracticeMode::Free) {
+            if ($skill->isObjective()) {
+                $rules['answer.answers'] = ['required', 'array'];
+            } else {
+                $rules['answer.text'] = ['required_without:answer.audio_path', 'nullable', 'string'];
+                $rules['answer.audio_path'] = ['required_without:answer.text', 'nullable', 'string'];
+            }
+        }
+
+        $validated = $request->validate($rules);
+
+        $result = $this->service->submit($practiceSession, $validated['answer']);
 
         return response()->json(['data' => $result]);
     }

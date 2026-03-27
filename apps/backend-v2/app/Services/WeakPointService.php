@@ -9,52 +9,73 @@ use App\Models\KnowledgePoint;
 use App\Models\Submission;
 use App\Models\UserWeakPoint;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class WeakPointService
 {
     /**
      * Record knowledge gaps from a graded submission.
      * New gaps → create weak points. Existing gaps → reset schedule.
-     * KPs NOT in gaps → progress (learner improved on those).
+     * KPs covered by question but NOT in gaps → progress (learner improved).
      */
+    private const SCORE_PASS_THRESHOLD = 5.0;
+
+    private const SCORE_QUALITY_MAP = [
+        8.0 => 5,
+        6.5 => 4,
+    ];
+
     public function recordFromSubmission(Submission $submission): void
     {
-        $gaps = $submission->result['knowledge_gaps'] ?? [];
-        $gapNames = collect($gaps)->pluck('name')->toArray();
-        $gapKpIds = KnowledgePoint::whereIn('name', $gapNames)->pluck('id')->toArray();
+        DB::transaction(function () use ($submission) {
+            $gaps = $submission->result['knowledge_gaps'] ?? [];
+            $gapNames = collect($gaps)->pluck('name')->toArray();
+            $gapKpIds = KnowledgePoint::whereIn('name', $gapNames)->pluck('id')->toArray();
 
-        // Create/reset weak points for gaps
-        foreach ($gapKpIds as $kpId) {
-            $wp = UserWeakPoint::firstOrCreate(
-                ['user_id' => $submission->user_id, 'knowledge_point_id' => $kpId, 'skill' => $submission->skill],
-                ['next_review_at' => now(), 'ease_factor' => 2.5],
-            );
+            foreach ($gapKpIds as $kpId) {
+                $wp = UserWeakPoint::firstOrCreate(
+                    ['user_id' => $submission->user_id, 'knowledge_point_id' => $kpId, 'skill' => $submission->skill],
+                    ['next_review_at' => now(), 'ease_factor' => 2.5],
+                );
 
-            if (! $wp->wasRecentlyCreated) {
-                $wp->update([
-                    'repetition_count' => 0,
-                    'interval_days' => 1,
-                    'next_review_at' => now(),
-                    'is_mastered' => false,
-                ]);
+                if (! $wp->wasRecentlyCreated) {
+                    $wp->update([
+                        'repetition_count' => 0,
+                        'interval_days' => 1,
+                        'next_review_at' => now(),
+                        'is_mastered' => false,
+                    ]);
+                }
+            }
+
+            if ($submission->score !== null && $submission->score >= self::SCORE_PASS_THRESHOLD) {
+                $submission->loadMissing('question.knowledgePoints');
+                $questionKpIds = $submission->question?->knowledgePoints->pluck('id')->toArray() ?? [];
+                $improvedKpIds = array_diff($questionKpIds, $gapKpIds);
+
+                if (! empty($improvedKpIds)) {
+                    $quality = $this->mapScoreToQuality($submission->score);
+
+                    UserWeakPoint::forUser($submission->user_id)
+                        ->where('skill', $submission->skill)
+                        ->where('is_mastered', false)
+                        ->whereIn('knowledge_point_id', $improvedKpIds)
+                        ->get()
+                        ->each(fn (UserWeakPoint $wp) => $this->updateAfterPractice($wp, $quality));
+                }
+            }
+        });
+    }
+
+    private function mapScoreToQuality(float $score): int
+    {
+        foreach (self::SCORE_QUALITY_MAP as $threshold => $quality) {
+            if ($score >= $threshold) {
+                return $quality;
             }
         }
 
-        // Progress weak points for KPs NOT in gaps (learner did well)
-        if ($submission->score !== null && $submission->score >= 5.0) {
-            $quality = match (true) {
-                $submission->score >= 8.0 => 5,
-                $submission->score >= 6.5 => 4,
-                default => 3,
-            };
-
-            UserWeakPoint::forUser($submission->user_id)
-                ->where('skill', $submission->skill)
-                ->where('is_mastered', false)
-                ->whereNotIn('knowledge_point_id', $gapKpIds)
-                ->get()
-                ->each(fn (UserWeakPoint $wp) => $this->updateAfterPractice($wp, $quality));
-        }
+        return 3;
     }
 
     /**
@@ -109,7 +130,7 @@ class WeakPointService
      */
     public function detectPatterns(string $userId, Skill $skill): array
     {
-        $recentGaps = Submission::forUser($userId)
+        return Submission::forUser($userId)
             ->where('skill', $skill)
             ->whereNotNull('result')
             ->orderByDesc('created_at')
@@ -123,8 +144,6 @@ class WeakPointService
             ->sortDesc()
             ->take(5)
             ->toArray();
-
-        return $recentGaps;
     }
 
     /**

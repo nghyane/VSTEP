@@ -17,6 +17,7 @@ use App\Services\NotificationService;
 use App\Services\ProgressService;
 use App\Services\PronunciationService;
 use App\Services\SessionService;
+use App\Services\SpeakingUploadService;
 use App\Services\WeakPointService;
 use App\Support\VstepScoring;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -66,6 +67,10 @@ class GradeSubmission implements ShouldQueue
 
         $pronunciationData = null;
         if ($submission->skill === Skill::Speaking) {
+            app(SpeakingUploadService::class)->verifyAudioOwnership(
+                $submission->answer['audio_path'],
+                $submission->user_id,
+            );
             $pronunciationData = $pronunciation->assessPronunciation($submission->answer['audio_path']);
             $result = $this->gradeSpeaking($submission, $rubric, $knowledgeScope, $pronunciationData);
         } else {
@@ -112,6 +117,8 @@ class GradeSubmission implements ShouldQueue
             if ($status === SubmissionStatus::Completed) {
                 $progressService->applySubmission($submission);
             }
+
+            app(WeakPointService::class)->recordFromSubmission($submission->fresh());
         });
 
         $notificationMessage = $status === SubmissionStatus::Completed
@@ -128,10 +135,7 @@ class GradeSubmission implements ShouldQueue
 
         Log::info('graded', ['submission_id' => $submission->id, 'score' => $overall, 'confidence' => $confidence]);
 
-        // Record knowledge gaps for spaced repetition
-        app(WeakPointService::class)->recordFromSubmission($submission->fresh());
-
-        if ($submission->session_id) {
+        if ($submission->session) {
             app(SessionService::class)->updateSubjectiveScores($submission);
         }
     }

@@ -70,13 +70,20 @@ class PracticeSession extends BaseModel
 
     public function completedCount(): int
     {
-        return $this->submissions()
+        return $this->cachedCompletedCount ??= $this->submissions()
             ->distinct('question_id')
             ->count('question_id');
+    }
+
+    public function clearCompletedCountCache(): void
+    {
+        $this->cachedCompletedCount = null;
     }
 
     public function hasMoreItems(): bool
     {
         return $this->completedCount() < $this->itemsCount();
     }
+
+    private ?int $cachedCompletedCount = null;
 }
