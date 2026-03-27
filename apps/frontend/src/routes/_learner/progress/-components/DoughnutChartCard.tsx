@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router"
 import { DoughnutChart, DoughnutLegend } from "@/components/common/DoughnutChart"
 import type { useProgress } from "@/hooks/use-progress"
 import { SKILL_COLORS, SKILLS } from "./progress-constants"
@@ -23,6 +24,18 @@ export function DoughnutChartCard({
 			<p className="mb-4 text-sm text-muted-foreground">trong Test Practice</p>
 			<DoughnutChart segments={segments} centerLabel="Tổng số bài test" centerValue={total} />
 			<DoughnutLegend segments={segments} className="mt-4 justify-center" />
+			<div className="mt-3 flex flex-wrap justify-center gap-2">
+				{SKILLS.map(({ key, label }) => (
+					<Link
+						key={key}
+						to="/progress/$skill"
+						params={{ skill: key }}
+						className="text-xs text-primary hover:underline"
+					>
+						{label} chi tiết →
+					</Link>
+				))}
+			</div>
 		</div>
 	)
 }

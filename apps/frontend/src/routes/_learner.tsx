@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_learner")({
 
 		try {
 			const res = await fetch(
-				`${import.meta.env.VITE_API_URL ?? "http://localhost:3000"}/api/onboarding/status`,
+				`${import.meta.env.VITE_API_URL ?? "http://localhost:8000"}/api/v1/onboarding/status`,
 				{ headers: { Authorization: `Bearer ${token()}` } },
 			)
 			if (res.ok) {

@@ -95,7 +95,7 @@ export function TestPracticeTab({
 						const hasData = score != null && score > 0
 
 						return (
-							<div key={key} className="rounded-xl border bg-background p-4">
+							<Link key={key} to="/progress/$skill" params={{ skill: key }} className="rounded-xl border bg-background p-4 transition-colors hover:border-primary/30">
 								<div className="mb-3 flex items-center justify-between">
 									<span className="text-sm font-medium text-muted-foreground">{label}</span>
 									<div
@@ -113,7 +113,7 @@ export function TestPracticeTab({
 								<p className="mt-1 text-xs text-muted-foreground">
 									{hasData ? `${attempts ?? 0} bài test đã hoàn thành` : "Không có dữ liệu"}
 								</p>
-							</div>
+							</Link>
 						)
 					})}
 				</div>

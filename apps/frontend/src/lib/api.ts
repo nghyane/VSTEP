@@ -1,6 +1,57 @@
 import type { AuthUser, LoginResponse, RegisterResponse } from "@/types/api"
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000"
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000"
+
+// ---------------------------------------------------------------------------
+// snake_case ↔ camelCase transforms (for Laravel ↔ React convention bridge)
+// ---------------------------------------------------------------------------
+
+function snakeToCamel(str: string): string {
+	return str.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())
+}
+
+function camelToSnake(str: string): string {
+	return str.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`)
+}
+
+function transformKeys(obj: unknown, fn: (key: string) => string): unknown {
+	if (Array.isArray(obj)) return obj.map((item) => transformKeys(item, fn))
+	if (obj !== null && typeof obj === "object" && !(obj instanceof Date)) {
+		return Object.fromEntries(
+			Object.entries(obj as Record<string, unknown>).map(([k, v]) => [fn(k), transformKeys(v, fn)]),
+		)
+	}
+	return obj
+}
+
+function toCamelCase<T>(obj: unknown): T {
+	return transformKeys(obj, snakeToCamel) as T
+}
+
+function toSnakeCase(obj: unknown): unknown {
+	return transformKeys(obj, camelToSnake)
+}
+
+// Unwrap Laravel's { data: ... } wrapper for single-resource responses.
+// Paginated responses ({ data: [...], meta, links }) are kept as-is.
+function unwrapData(obj: unknown): unknown {
+	if (obj && typeof obj === "object" && !Array.isArray(obj)) {
+		const keys = Object.keys(obj)
+		if (keys.length === 1 && keys[0] === "data") {
+			return (obj as Record<string, unknown>).data
+		}
+	}
+	return obj
+}
+
+// Auto-prefix /api/ → /api/v1/ for Laravel backend-v2
+function buildUrl(path: string): string {
+	return `${API_URL}${path.replace(/^\/api\//, "/api/v1/")}`
+}
+
+// ---------------------------------------------------------------------------
+// Error handling
+// ---------------------------------------------------------------------------
 
 const STATUS_MESSAGES: Record<number, string> = {
 	400: "Dữ liệu không hợp lệ",
@@ -15,6 +66,7 @@ const STATUS_MESSAGES: Record<number, string> = {
 const ERROR_TRANSLATIONS: Record<string, string> = {
 	// Auth
 	"Invalid credentials": "Email hoặc mật khẩu không đúng",
+	"Invalid credentials.": "Email hoặc mật khẩu không đúng",
 	"Invalid refresh token": "Phiên đăng nhập không hợp lệ",
 	// Users
 	"Current password is incorrect": "Mật khẩu hiện tại không đúng",
@@ -31,56 +83,16 @@ const ERROR_TRANSLATIONS: Record<string, string> = {
 	Conflict: "Dữ liệu bị trùng lặp",
 }
 
-// Vietnamese field names for validation errors
-const FIELD_LABELS: Record<string, string> = {
-	"/email": "Email",
-	"/password": "Mật khẩu",
-	"/fullName": "Họ tên",
-	"/refreshToken": "Token",
-}
-
-// Map Elysia/TypeBox validation messages to Vietnamese
-function translateValidation(body: Record<string, unknown>): string | null {
-	if (body?.type !== "validation" || typeof body.property !== "string") return null
-
-	const field = FIELD_LABELS[body.property] ?? body.property
-	const msg = typeof body.message === "string" ? body.message : ""
-
-	// "Expected string length greater or equal to N"
-	const minLen = msg.match(/string length greater or equal to (\d+)/)
-	if (minLen) return `${field} phải có ít nhất ${minLen[1]} ký tự`
-
-	// "Expected string length less or equal to N"
-	const maxLen = msg.match(/string length less or equal to (\d+)/)
-	if (maxLen) return `${field} không được quá ${maxLen[1]} ký tự`
-
-	// "Expected string to match 'email' format"
-	if (msg.includes("email") && msg.includes("format")) return "Email không đúng định dạng"
-
-	// Required / missing
-	if (msg.includes("Required") || msg.includes("Expected required"))
-		return `${field} không được để trống`
-
-	// Fallback: field + generic
-	return `${field} không hợp lệ`
-}
-
-// Internal: raw fetch with JSON headers
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-	const res = await fetch(`${API_URL}${path}`, {
-		...options,
-		headers: { "Content-Type": "application/json", ...options.headers },
-	})
-	if (!res.ok) {
-		const body = await res.json().catch(() => ({}))
-		const validation = translateValidation(body)
-		if (validation) throw new ApiError(res.status, validation)
-		const fallback = STATUS_MESSAGES[res.status] ?? "Đã có lỗi xảy ra"
-		const serverMessage: string | undefined = body?.error?.message ?? body?.message
-		const translated = serverMessage ? (ERROR_TRANSLATIONS[serverMessage] ?? fallback) : fallback
-		throw new ApiError(res.status, translated)
+// Parse Laravel validation errors: { message, errors: { field: ["msg", ...] } }
+function parseLaravelErrors(body: Record<string, unknown>): string | null {
+	if (body?.errors && typeof body.errors === "object" && !Array.isArray(body.errors)) {
+		const errors = body.errors as Record<string, string[]>
+		const firstField = Object.keys(errors)[0]
+		if (firstField && errors[firstField]?.[0]) {
+			return errors[firstField][0]
+		}
 	}
-	return res.json()
+	return null
 }
 
 class ApiError extends Error {
@@ -92,11 +104,56 @@ class ApiError extends Error {
 	}
 }
 
+// ---------------------------------------------------------------------------
+// Core request function
+// ---------------------------------------------------------------------------
+
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+	// Transform JSON request body: camelCase → snake_case
+	let body = options.body
+	if (body && typeof body === "string") {
+		try {
+			body = JSON.stringify(toSnakeCase(JSON.parse(body)))
+		} catch {
+			// not JSON, keep as-is
+		}
+	}
+
+	const res = await fetch(buildUrl(path), {
+		...options,
+		body,
+		headers: { "Content-Type": "application/json", ...options.headers },
+	})
+
+	if (!res.ok) {
+		const errorBody = await res.json().catch(() => ({}))
+		const validation = parseLaravelErrors(errorBody)
+		if (validation) throw new ApiError(res.status, validation)
+		const fallback = STATUS_MESSAGES[res.status] ?? "Đã có lỗi xảy ra"
+		const serverMessage: string | undefined = errorBody?.error?.message ?? errorBody?.message
+		const translated = serverMessage ? (ERROR_TRANSLATIONS[serverMessage] ?? fallback) : fallback
+		throw new ApiError(res.status, translated)
+	}
+
+	// Transform response: unwrap { data } wrapper + snake_case → camelCase
+	const json = await res.json()
+	return toCamelCase<T>(unwrapData(json))
+}
+
+// ---------------------------------------------------------------------------
 // Authenticated request — injects Bearer token, handles 401 refresh
+// ---------------------------------------------------------------------------
+
 let refreshPromise: Promise<void> | null = null
 
 async function authRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
-	const { token, refreshToken: storedRefresh, save, handleAuthError } = await import("@/lib/auth")
+	const {
+		token,
+		refreshToken: storedRefresh,
+		save,
+		user: getUser,
+		handleAuthError,
+	} = await import("@/lib/auth")
 
 	const accessToken = token()
 	if (!accessToken) {
@@ -122,12 +179,14 @@ async function authRequest<T>(path: string, options: RequestInit = {}): Promise<
 		}
 
 		if (!refreshPromise) {
-			refreshPromise = request<LoginResponse>("/api/auth/refresh", {
+			refreshPromise = request<{ accessToken: string; refreshToken: string }>("/api/auth/refresh", {
 				method: "POST",
 				body: JSON.stringify({ refreshToken: refresh }),
 			})
 				.then((res) => {
-					save(res.accessToken, res.refreshToken, res.user)
+					// Refresh response doesn't include user — keep existing user data
+					const currentUser = getUser()
+					if (currentUser) save(res.accessToken, res.refreshToken, currentUser)
 				})
 				.catch(() => {
 					handleAuthError()
@@ -149,6 +208,10 @@ async function authRequest<T>(path: string, options: RequestInit = {}): Promise<
 	}
 }
 
+// ---------------------------------------------------------------------------
+// File upload (multipart — no JSON transform)
+// ---------------------------------------------------------------------------
+
 async function uploadFile<T>(path: string, formData: FormData): Promise<T> {
 	const { token: getToken, handleAuthError } = await import("@/lib/auth")
 
@@ -158,30 +221,34 @@ async function uploadFile<T>(path: string, formData: FormData): Promise<T> {
 		throw new ApiError(401, "Not authenticated")
 	}
 
-	const res = await fetch(`${API_URL}${path}`, {
+	const res = await fetch(buildUrl(path), {
 		method: "POST",
 		headers: { Authorization: `Bearer ${accessToken}` },
 		body: formData,
 	})
 
 	if (!res.ok) {
-		const body = await res.json().catch(() => ({}))
+		const errorBody = await res.json().catch(() => ({}))
 		if (res.status === 401) {
 			handleAuthError()
 			throw new ApiError(401, "Session expired")
 		}
-		const validation = translateValidation(body)
+		const validation = parseLaravelErrors(errorBody)
 		if (validation) throw new ApiError(res.status, validation)
 		const fallback = STATUS_MESSAGES[res.status] ?? "Đã có lỗi xảy ra"
-		const serverMessage: string | undefined = body?.error?.message ?? body?.message
+		const serverMessage: string | undefined = errorBody?.error?.message ?? errorBody?.message
 		const translated = serverMessage ? (ERROR_TRANSLATIONS[serverMessage] ?? fallback) : fallback
 		throw new ApiError(res.status, translated)
 	}
 
-	return res.json()
+	const json = await res.json()
+	return toCamelCase<T>(unwrapData(json))
 }
 
-// Public API
+// ---------------------------------------------------------------------------
+// Public API object (used by hooks)
+// ---------------------------------------------------------------------------
+
 const api = {
 	get: <T>(path: string) => authRequest<T>(path),
 	post: <T>(path: string, body?: unknown) =>
@@ -194,7 +261,10 @@ const api = {
 	upload: <T>(path: string, formData: FormData) => uploadFile<T>(path, formData),
 }
 
-// Auth endpoints (no auth header needed)
+// ---------------------------------------------------------------------------
+// Auth endpoints (public — no Bearer token needed)
+// ---------------------------------------------------------------------------
+
 function login(email: string, password: string) {
 	return request<LoginResponse>("/api/auth/login", {
 		method: "POST",
@@ -210,7 +280,7 @@ function register(email: string, password: string, fullName?: string) {
 }
 
 function logout(refreshToken: string, accessToken: string) {
-	return request<{ message: string }>("/api/auth/logout", {
+	return request<{ success: boolean }>("/api/auth/logout", {
 		method: "POST",
 		body: JSON.stringify({ refreshToken }),
 		headers: { Authorization: `Bearer ${accessToken}` },
@@ -218,7 +288,7 @@ function logout(refreshToken: string, accessToken: string) {
 }
 
 function getMe(accessToken: string) {
-	return request<{ user: AuthUser }>("/api/auth/me", {
+	return request<AuthUser>("/api/auth/me", {
 		headers: { Authorization: `Bearer ${accessToken}` },
 	})
 }
