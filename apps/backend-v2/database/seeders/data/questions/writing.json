@@ -36,10 +36,9 @@
             "minWords": 80,
             "instructions": [],
             "requiredPoints": [
-                "the date",
-                "time",
-                "place",
-                "what you will do"
+                "the date and time of the party",
+                "the location of the party",
+                "activities you plan to do"
             ]
         },
         "answer_key": null,
@@ -139,7 +138,10 @@
             "taskType": "letter",
             "minWords": 120,
             "instructions": [],
-            "requiredPoints": []
+            "requiredPoints": [
+                "explain why you were absent",
+                "ask about the homework you missed"
+            ]
         },
         "answer_key": null,
         "knowledge_points": [
@@ -163,8 +165,9 @@
             "minWords": 120,
             "instructions": [],
             "requiredPoints": [
-                "whether you can attend",
-                "a reason"
+                "explain whether you can attend",
+                "give a reason for your decision",
+                "ask for details about the party"
             ]
         },
         "answer_key": null,
@@ -188,7 +191,10 @@
             "taskType": "letter",
             "minWords": 120,
             "instructions": [],
-            "requiredPoints": []
+            "requiredPoints": [
+                "describe the library facilities",
+                "explain how it will help you with your studies"
+            ]
         },
         "answer_key": null,
         "knowledge_points": [
@@ -211,7 +217,10 @@
             "taskType": "letter",
             "minWords": 120,
             "instructions": [],
-            "requiredPoints": []
+            "requiredPoints": [
+                "describe your new neighborhood",
+                "share your feelings about the move"
+            ]
         },
         "answer_key": null,
         "knowledge_points": [
@@ -234,7 +243,11 @@
             "taskType": "letter",
             "minWords": 120,
             "instructions": [],
-            "requiredPoints": []
+            "requiredPoints": [
+                "suggest some places to visit",
+                "explain why they are interesting",
+                "give advice about the best way to travel around"
+            ]
         },
         "answer_key": null,
         "knowledge_points": [
@@ -522,8 +535,8 @@
             "minWords": 250,
             "instructions": [],
             "requiredPoints": [
-                "discuss arguments for the view",
-                "your opinion",
+                "discuss advantages of city life",
+                "discuss advantages of countryside life",
                 "give your own opinion with reasons"
             ]
         },
@@ -574,8 +587,9 @@
             "minWords": 250,
             "instructions": [],
             "requiredPoints": [
-                "reasons",
-                "your answer"
+                "discuss the benefits of part-time jobs while studying",
+                "discuss the drawbacks",
+                "give reasons and examples"
             ]
         },
         "answer_key": null,
@@ -625,9 +639,9 @@
             "minWords": 250,
             "instructions": [],
             "requiredPoints": [
-                "discuss arguments for the view",
-                "your opinion",
-                "give your own opinion with reasons"
+                "discuss ways technology has made life easier",
+                "discuss problems technology has created",
+                "give your own opinion"
             ]
         },
         "answer_key": null,
@@ -652,7 +666,10 @@
             "minWords": 300,
             "instructions": [],
             "requiredPoints": [
-                "the ethical"
+                "discuss the ethical implications of AI",
+                "discuss the economic implications",
+                "discuss the social implications",
+                "state your position on the extent of regulation"
             ]
         },
         "answer_key": null,
@@ -677,8 +694,9 @@
             "minWords": 300,
             "instructions": [],
             "requiredPoints": [
-                "the claim that globalization has done more harm than good for developing nations",
-                "your argument with specific examples"
+                "evaluate positive effects of globalization on developing nations",
+                "evaluate negative effects",
+                "support your argument with specific examples"
             ]
         },
         "answer_key": null,
@@ -703,8 +721,10 @@
             "minWords": 300,
             "instructions": [],
             "requiredPoints": [
-                "the extent to which remote work has transformed employees’ productivity",
-                "your discussion with relevant examples in a well-structured essay"
+                "analyze impact on productivity",
+                "analyze impact on work-life balance",
+                "analyze impact on professional connection",
+                "support with relevant examples"
             ]
         },
         "answer_key": null,
@@ -729,8 +749,9 @@
             "minWords": 300,
             "instructions": [],
             "requiredPoints": [
-                "the impact of social media on the quality of interpersonal communication among young adults",
-                "your argument with specific examples"
+                "evaluate positive impacts on interpersonal communication",
+                "evaluate negative impacts",
+                "support with specific examples"
             ]
         },
         "answer_key": null,
@@ -755,8 +776,9 @@
             "minWords": 300,
             "instructions": [],
             "requiredPoints": [
-                "how universities can become more sustainable while still meeting students’ academic",
-                "practical measures"
+                "propose practical sustainability measures for universities",
+                "explain how to meet academic and social needs",
+                "discuss potential benefits of each measure"
             ]
         },
         "answer_key": null,
