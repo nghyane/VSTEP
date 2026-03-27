@@ -17,7 +17,31 @@ import {
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { getObjectiveAnswer } from "@/routes/_learner/exams/-components/questions/useExamAnswers"
-import type { ExamSessionDetail, ListeningContent, SubmissionAnswer } from "@/types/api"
+import type { ExamSessionDetail, SubmissionAnswer } from "@/types/api"
+
+// Normalize BE individual MCQ → grouped ListeningContent format
+function normalizeOptions(options: unknown): string[] {
+	if (Array.isArray(options)) return options
+	if (typeof options === "object" && options !== null) {
+		return Object.keys(options)
+			.sort()
+			.map((k) => (options as Record<string, string>)[k])
+	}
+	return []
+}
+
+
+interface VirtualSectionItem {
+	questionId: string
+	stem: string
+	options: string[]
+}
+
+interface VirtualSection {
+	part: number
+	audioUrl: string
+	items: VirtualSectionItem[]
+}
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -153,8 +177,26 @@ function ReadinessModal({
 // --- Main Panel ---
 
 export function ListeningExamPanel({ questions, answers, onSelectMCQ }: ListeningExamPanelProps) {
-	// Each question object = one section/part, sorted by part number
-	const sections = useMemo(() => [...questions].sort((a, b) => a.part - b.part), [questions])
+	const sections = useMemo(() => {
+		const sorted = [...questions].sort((a, b) => a.part - b.part)
+		const grouped = new Map<number, VirtualSection>()
+		for (const q of sorted) {
+			const raw = q.content as unknown as Record<string, unknown>
+			if (!grouped.has(q.part)) {
+				grouped.set(q.part, {
+					part: q.part,
+					audioUrl: ((raw.audioUrl ?? raw.audioPath ?? "") as string),
+					items: [],
+				})
+			}
+			grouped.get(q.part)!.items.push({
+				questionId: q.id,
+				stem: (raw.stem as string) ?? "",
+				options: normalizeOptions(raw.options),
+			})
+		}
+		return [...grouped.values()]
+	}, [questions])
 
 	const [activeSectionIdx, setActiveSectionIdx] = useState(0)
 	const [isReady, setIsReady] = useState(false)
@@ -165,24 +207,18 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 
 	const isPlaying = playingIdx >= 0
 
-	const activeQuestion = sections[activeSectionIdx]
-	const content = activeQuestion?.content as ListeningContent | undefined
-
-	// Current section's saved answers
-	const currentAnswers = useMemo(
-		() => getObjectiveAnswer(answers, activeQuestion?.id ?? ""),
-		[answers, activeQuestion?.id],
-	)
+	const activeSection = sections[activeSectionIdx]
 
 	// Per-section metadata for tabs
 	const sectionsMeta = useMemo(
 		() =>
-			sections.map((q) => {
-				const c = q.content as ListeningContent
-				const total = c.items?.length ?? 0
-				const obj = getObjectiveAnswer(answers, q.id)
-				const answered = Object.keys(obj).length
-				return { part: q.part, total, answered }
+			sections.map((section) => {
+				const total = section.items.length
+				let answered = 0
+				for (const item of section.items) {
+					if (getObjectiveAnswer(answers, item.questionId)["1"] != null) answered++
+				}
+				return { part: section.part, total, answered }
 			}),
 		[sections, answers],
 	)
@@ -252,7 +288,7 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 			?.scrollIntoView({ behavior: "smooth", block: "center" })
 	}, [])
 
-	if (!activeQuestion || !content) return null
+	if (!activeSection) return null
 
 	const progress = duration > 0 ? (currentTime / duration) * 100 : 0
 
@@ -269,19 +305,22 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 			{/* ---- Questions area (scrollable) ---- */}
 			<div className="flex-1 overflow-y-auto">
 				<div className="mx-auto max-w-3xl space-y-6 p-6">
-					{content.items.map((item, index) => (
-						<div key={`${activeQuestion.id}-${index}`} id={`listening-item-${index}`}>
+				{activeSection.items.map((item, index) => {
+					const itemAnswer = getObjectiveAnswer(answers, item.questionId)
+					return (
+						<div key={item.questionId} id={`listening-item-${index}`}>
 							<ListeningMCQItem
 								index={index}
 								stem={item.stem}
 								options={item.options}
-								selectedOption={currentAnswers[String(index + 1)] ?? null}
+								selectedOption={itemAnswer["1"] ?? null}
 								onSelect={(optionIndex) =>
-									onSelectMCQ(activeQuestion.id, currentAnswers, index, optionIndex)
+									onSelectMCQ(item.questionId, itemAnswer, 0, optionIndex)
 								}
 							/>
 						</div>
-					))}
+					)
+				})}
 				</div>
 			</div>
 
@@ -319,30 +358,27 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 				</div>
 
 				{/* Hidden audio elements — one per section, play independently */}
-				{sections.map((q, i) => {
-					const c = q.content as ListeningContent
-					return (
-						// biome-ignore lint/a11y/useMediaCaption: VSTEP listening exam audio
-						<audio
-							key={q.id}
-							ref={(el) => {
-								audioRefs.current[i] = el
-							}}
-							src={c.audioUrl}
-							preload="metadata"
-							className="hidden"
-						/>
-					)
-				})}
+				{sections.map((section, i) => (
+					// biome-ignore lint/a11y/useMediaCaption: VSTEP listening exam audio
+					<audio
+						key={`audio-${section.part}`}
+						ref={(el) => {
+							audioRefs.current[i] = el
+						}}
+						src={section.audioUrl}
+						preload="metadata"
+						className="hidden"
+					/>
+				))}
 			</div>
 
 			{/* ---- Question numbers row ---- */}
 			<div className="flex flex-wrap justify-center gap-1.5 border-t px-4 py-2.5">
-				{content.items.map((_, i) => {
-					const isAnswered = currentAnswers[String(i + 1)] != null
+				{activeSection.items.map((item, i) => {
+					const isAnswered = getObjectiveAnswer(answers, item.questionId)["1"] != null
 					return (
 						<button
-							key={i}
+							key={item.questionId}
 							type="button"
 							onClick={() => handleJumpToItem(i)}
 							className={cn(
