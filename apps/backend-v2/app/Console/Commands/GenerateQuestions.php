@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use App\Ai\Agents\QuestionGenerator;
+use App\Ai\Agents\ContentGenerator;
 use App\Enums\BloomLevel;
 use App\Enums\Level;
 use App\Enums\Skill;
 use App\Models\KnowledgePoint;
 use App\Models\Question;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\File;
 use RuntimeException;
 
 class GenerateQuestions extends Command
@@ -21,7 +20,7 @@ class GenerateQuestions extends Command
         {--level= : A2, B1, B2, or C1}
         {--part= : Part number (1, 2, or 3)}
         {--count=5 : Number of questions to generate}
-        {--save : Save directly to DB instead of JSON}';
+        {--dry-run : Print results without saving}';
 
     protected $description = 'Generate VSTEP questions using AI with coverage-based constraints';
 
@@ -38,16 +37,16 @@ class GenerateQuestions extends Command
         $coverage = $this->buildCoverage($skill, $level, $part);
         $this->displayCoverage($coverage);
 
-        // Step 2: Build constraints for agent
-        $constraints = $this->buildConstraints($skill, $level, $part, $count, $coverage);
+        // Step 2: Build prompt for agent
+        $prompt = $this->buildPrompt($skill, $level, $part, $count, $coverage);
 
         // Step 3: Run agent
-        $this->info('Running QuestionGenerator agent...');
-        $agent = new QuestionGenerator($constraints);
+        $this->info('Running ContentGenerator agent...');
+        $agent = new ContentGenerator($prompt);
         $agent->prompt("Generate {$count} {$skill->value} questions for VSTEP {$level->value}, Part {$part}.");
 
         $questions = $agent->getResult()
-            ?? throw new RuntimeException('QuestionGenerator did not call SubmitQuestions tool.');
+            ?? throw new RuntimeException('Agent did not call SubmitContent tool.');
 
         // Step 4: Validate
         $validated = $this->validate($questions, $skill, $level, $part, $coverage);
@@ -60,14 +59,14 @@ class GenerateQuestions extends Command
 
         $this->info(count($validated).' / '.count($questions).' questions passed validation.');
 
-        // Step 5: Output
-        if ($this->option('save')) {
-            $this->saveToDB($validated, $skill, $level, $part);
-        } else {
-            $path = $this->saveToJson($validated, $skill, $level, $part);
-            $this->info("Output: {$path}");
-            $this->info('Review the file, then run: php artisan questions:import '.$path);
+        // Step 5: Save
+        if ($this->option('dry-run')) {
+            $this->info('Dry run — not saving.');
+
+            return self::SUCCESS;
         }
+
+        $this->saveToDB($validated, $skill, $level, $part);
 
         return self::SUCCESS;
     }
@@ -101,7 +100,7 @@ class GenerateQuestions extends Command
         );
     }
 
-    private function buildConstraints(Skill $skill, Level $level, int $part, int $count, array $coverage): string
+    private function buildPrompt(Skill $skill, Level $level, int $part, int $count, array $coverage): string
     {
         $bloomTargets = collect(BloomLevel::forLevel($level))->map(fn ($b) => $b->value)->toArray();
 
@@ -173,12 +172,10 @@ class GenerateQuestions extends Command
                 $errors[] = "invalid bloom_level: {$q['bloom_level']}";
             }
 
-            // Check topic similarity with existing
             if (in_array(mb_strtolower(trim($q['topic'] ?? '')), $existingTopics)) {
                 $errors[] = "duplicate topic: {$q['topic']}";
             }
 
-            // Validate KP names
             $kpNames = $q['knowledge_points'] ?? [];
             $invalidKps = [];
             foreach ($kpNames as $name) {
@@ -198,7 +195,6 @@ class GenerateQuestions extends Command
             if (! empty($errors)) {
                 $this->warn('  Q'.($i + 1).' REJECTED: '.implode('; ', $errors));
             } else {
-                // Normalize KP names (strip category suffix)
                 $q['knowledge_points'] = array_map(
                     fn ($name) => trim(preg_replace('/\s*\([^)]*\)\s*$/', '', $name)),
                     $kpNames,
@@ -238,28 +234,6 @@ class GenerateQuestions extends Command
         }
 
         $this->info("Saved {$saved} questions to DB.");
-    }
-
-    private function saveToJson(array $questions, Skill $skill, Level $level, int $part): string
-    {
-        $dir = database_path('seeders/data');
-        File::ensureDirectoryExists($dir);
-
-        $filename = "{$skill->value}_{$level->value}_part{$part}_".now()->format('Ymd_His').'.json';
-        $path = "{$dir}/{$filename}";
-
-        File::put($path, json_encode([
-            'metadata' => [
-                'skill' => $skill->value,
-                'level' => $level->value,
-                'part' => $part,
-                'generated_at' => now()->toAtomString(),
-                'count' => count($questions),
-            ],
-            'questions' => $questions,
-        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-
-        return $path;
     }
 
     private function partsForSkill(Skill $skill): array

@@ -11,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 
 class AudioController extends Controller
 {
-    private const ALLOWED_PREFIXES = ['listening/', 'reference_audio/'];
+    private const ALLOWED_PREFIXES = ['listening/', 'reference_audio/', 'audio/'];
 
     private const PRESIGN_SECONDS = 3600; // 1 hour
 

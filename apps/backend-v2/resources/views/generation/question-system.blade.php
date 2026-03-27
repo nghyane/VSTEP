@@ -62,4 +62,4 @@ Distribute evenly. Match the cognitive depth you see in the examples.
 4. No sensitive topics (politics, religion, violence).
 5. knowledge_points must be EXACT names from the pool above.
 
-Call the SubmitQuestions tool with your questions.
+Call the SubmitContent tool with your questions.

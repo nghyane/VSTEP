@@ -38,7 +38,6 @@ class DatabaseSeeder extends Seeder
             GradingRubricSeeder::class,
             QuestionSeeder::class,
             ExamSeeder::class,
-            VocabularySeeder::class,
         ]);
     }
 }

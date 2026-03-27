@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\OnboardingController;
 use App\Http\Controllers\Api\V1\PracticeController;
 use App\Http\Controllers\Api\V1\ProgressController;
 use App\Http\Controllers\Api\V1\QuestionController;
+use App\Http\Controllers\Api\V1\SentenceController;
 use App\Http\Controllers\Api\V1\SessionController;
 use App\Http\Controllers\Api\V1\SpeakingUploadController;
 use App\Http\Controllers\Api\V1\SubmissionController;
@@ -112,6 +113,12 @@ Route::prefix('v1')->group(function () {
         Route::get('/vocabulary/topics/{topic}', [VocabularyController::class, 'showTopic']);
         Route::get('/vocabulary/topics/{topic}/progress', [VocabularyController::class, 'topicProgress']);
         Route::put('/vocabulary/words/{word}/known', [VocabularyController::class, 'toggleKnown']);
+
+        // Sentences
+        Route::get('/sentences/topics', [SentenceController::class, 'topics']);
+        Route::get('/sentences/topics/{topic}', [SentenceController::class, 'showTopic']);
+        Route::get('/sentences/topics/{topic}/progress', [SentenceController::class, 'topicProgress']);
+        Route::put('/sentences/{sentence}/mastered', [SentenceController::class, 'toggleMastered']);
 
         // Users
         Route::get('/users/{user}', [UserController::class, 'show']);

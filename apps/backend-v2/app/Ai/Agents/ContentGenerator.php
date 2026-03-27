@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Ai\Agents;
 
-use App\Ai\Tools\SubmitQuestions;
+use App\Ai\Tools\SubmitContent;
 use Laravel\Ai\Attributes\MaxSteps;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Attributes\Model;
@@ -18,23 +18,23 @@ use Stringable;
 #[Provider('local')]
 #[Model('gpt-5.4')]
 #[MaxSteps(3)]
-#[MaxTokens(4096)]
+#[MaxTokens(8192)]
 #[Timeout(120)]
-class QuestionGenerator implements Agent, HasTools
+class ContentGenerator implements Agent, HasTools
 {
     use Promptable;
 
-    private SubmitQuestions $submitTool;
+    private SubmitContent $submitTool;
 
     public function __construct(
-        private readonly string $constraints,
+        private readonly string $systemPrompt,
     ) {
-        $this->submitTool = new SubmitQuestions;
+        $this->submitTool = new SubmitContent;
     }
 
     public function instructions(): Stringable|string
     {
-        return $this->constraints;
+        return $this->systemPrompt;
     }
 
     public function tools(): iterable
