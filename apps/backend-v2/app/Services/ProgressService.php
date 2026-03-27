@@ -262,14 +262,16 @@ class ProgressService
         foreach (Skill::cases() as $skill) {
             $fromPractice = $practiceScores
                 ->where('skill', $skill)
-                ->map(fn ($s) => ['score' => $s->score, 'at' => $s->completed_at ?? $s->created_at]);
+                ->map(fn ($s) => ['score' => $s->score, 'at' => $s->completed_at ?? $s->created_at])
+                ->values();
 
             $column = $skill->scoreColumn();
             $fromExam = $examSessions
                 ->whereNotNull($column)
-                ->map(fn ($s) => ['score' => $s->{$column}, 'at' => $s->completed_at]);
+                ->map(fn ($s) => ['score' => $s->{$column}, 'at' => $s->completed_at])
+                ->values();
 
-            $result[$skill->value] = $fromPractice->merge($fromExam)
+            $result[$skill->value] = $fromPractice->toBase()->merge($fromExam)
                 ->sortByDesc('at')
                 ->take(20)
                 ->pluck('score')
@@ -295,7 +297,8 @@ class ProgressService
             ->map(fn (Submission $s) => [
                 'score' => $s->score,
                 'created_at' => $s->completed_at ?? $s->created_at,
-            ]);
+            ])
+            ->values();
 
         $scoreColumn = $skill->scoreColumn();
         $examScores = ExamSession::forUser($userId)
@@ -307,9 +310,10 @@ class ProgressService
             ->map(fn (ExamSession $s) => [
                 'score' => $s->{$scoreColumn},
                 'created_at' => $s->completed_at,
-            ]);
+            ])
+            ->values();
 
-        return $practiceScores->merge($examScores)
+        return $practiceScores->toBase()->merge($examScores)
             ->sortByDesc('created_at')
             ->take(20)
             ->values();
