@@ -1,9 +1,24 @@
-import { memo } from "react"
+import { memo, useMemo } from "react"
 import type { ListeningContent, QuestionContent, SessionQuestion } from "@/types/api"
 import { MCQItemRenderer } from "./MCQItemRenderer"
 
 function isListeningContent(content: QuestionContent): content is ListeningContent {
 	return "audioUrl" in content && "items" in content
+}
+
+// BE individual MCQ format: {stem, options: {A,B,C,D}, script?, audioPath?}
+function isSimpleMCQ(content: QuestionContent): boolean {
+	return "stem" in content && "options" in content && !("items" in content)
+}
+
+function normalizeOptions(options: unknown): string[] {
+	if (Array.isArray(options)) return options
+	if (typeof options === "object" && options !== null) {
+		return Object.keys(options)
+			.sort()
+			.map((k) => (options as Record<string, string>)[k])
+	}
+	return []
 }
 
 interface ListeningQuestionProps {
@@ -23,36 +38,53 @@ export const ListeningQuestion = memo(function ListeningQuestion({
 	onSelectAnswer,
 }: ListeningQuestionProps) {
 	const content = question.content
-	if (!isListeningContent(content)) return null
+	const isGrouped = isListeningContent(content)
+	const isSimple = !isGrouped && isSimpleMCQ(content)
+
+	const audioSrc = useMemo(() => {
+		if (isGrouped) return content.audioUrl
+		const raw = content as unknown as Record<string, unknown>
+		return (raw.audioUrl ?? raw.audioPath ?? "") as string
+	}, [content, isGrouped])
+
+	if (!isGrouped && !isSimple) return null
 
 	return (
 		<div id={question.id} className="space-y-6">
 			<h2 className="text-lg font-semibold">Listening — Part {question.part}</h2>
 
-			<div className="rounded-xl bg-muted/30 p-4">
-				{/* biome-ignore lint/a11y/useMediaCaption: VSTEP listening exam audio */}
-				<audio
-					controls
-					controlsList="nodownload"
-					preload="metadata"
-					className="w-full"
-					src={content.audioUrl}
-				/>
-			</div>
+			{audioSrc && (
+				<div className="rounded-xl bg-muted/30 p-4">
+					{/* biome-ignore lint/a11y/useMediaCaption: VSTEP listening exam audio */}
+					<audio controls controlsList="nodownload" preload="metadata" className="w-full" src={audioSrc} />
+				</div>
+			)}
 
 			<div className="space-y-6">
-				{content.items.map((item, index) => (
+				{isGrouped ? (
+					content.items.map((item, index) => (
+						<MCQItemRenderer
+							key={`item-${index}`}
+							index={index}
+							stem={item.stem}
+							options={item.options}
+							selectedOption={currentAnswers[String(index + 1)] ?? null}
+							onSelect={(itemIndex, optionIndex) =>
+								onSelectAnswer(question.id, currentAnswers, itemIndex, optionIndex)
+							}
+						/>
+					))
+				) : (
 					<MCQItemRenderer
-						key={`item-${index}`}
-						index={index}
-						stem={item.stem}
-						options={item.options}
-						selectedOption={currentAnswers[String(index + 1)] ?? null}
+						index={0}
+						stem={(content as unknown as Record<string, unknown>).stem as string}
+						options={normalizeOptions((content as unknown as Record<string, unknown>).options)}
+						selectedOption={currentAnswers["1"] ?? null}
 						onSelect={(itemIndex, optionIndex) =>
 							onSelectAnswer(question.id, currentAnswers, itemIndex, optionIndex)
 						}
 					/>
-				))}
+				)}
 			</div>
 		</div>
 	)
@@ -69,13 +101,7 @@ export function AudioPlayerSection({
 		<div className="space-y-4">
 			<div className="rounded-xl bg-muted/30 p-4">
 				{/* biome-ignore lint/a11y/useMediaCaption: VSTEP listening exam audio */}
-				<audio
-					controls
-					controlsList="nodownload"
-					preload="metadata"
-					className="w-full"
-					src={audioUrl}
-				/>
+				<audio controls controlsList="nodownload" preload="metadata" className="w-full" src={audioUrl} />
 			</div>
 			{transcript && (
 				<div className="rounded-xl bg-muted/30 p-4">
@@ -85,3 +111,4 @@ export function AudioPlayerSection({
 		</div>
 	)
 }
+

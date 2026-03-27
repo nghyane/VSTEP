@@ -1,11 +1,22 @@
-import { AlertCircleIcon, BulbIcon, CheckmarkCircle01Icon } from "@hugeicons/core-free-icons"
+import { AlertCircleIcon, BulbIcon, Cancel01Icon, CheckmarkCircle01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Link } from "@tanstack/react-router"
+import { useMemo, useState } from "react"
 import { SpiderChart } from "@/components/common/SpiderChart"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import type { Exam, ExamSessionDetail, Skill } from "@/types/api"
-import { skillColor, skillMeta } from "./skill-meta"
+import type { Exam, ExamSessionDetail, MCQItem, SessionAnswer, SessionQuestion, Skill } from "@/types/api"
+import { SKILL_ORDER, skillColor, skillMeta } from "./skill-meta"
+
+function normalizeOptions(options: unknown): string[] {
+	if (Array.isArray(options)) return options
+	if (typeof options === "object" && options !== null) {
+		return Object.keys(options)
+			.sort()
+			.map((k) => (options as Record<string, string>)[k])
+	}
+	return []
+}
 
 interface SessionCompletedProps {
 	session: ExamSessionDetail
@@ -156,6 +167,9 @@ export function SessionCompleted({ session, exam }: SessionCompletedProps) {
 				</div>
 			)}
 
+			{/* Answer Review — objective skills */}
+			<AnswerReview session={session} />
+
 			{/* CTA buttons */}
 			<div className="flex flex-wrap gap-3">
 				{weakest && (
@@ -167,6 +181,158 @@ export function SessionCompleted({ session, exam }: SessionCompletedProps) {
 					<Button variant="outline">Về trang Luyện tập</Button>
 				</Link>
 			</div>
+		</div>
+	)
+}
+
+const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+function AnswerReview({ session }: { session: ExamSessionDetail }) {
+	const [openSkill, setOpenSkill] = useState<Skill | null>(null)
+
+	const answerMap = useMemo(() => {
+		const map = new Map<string, SessionAnswer>()
+		for (const a of session.answers) map.set(a.questionId, a)
+		return map
+	}, [session.answers])
+
+	const questionsBySkill = useMemo(() => {
+		const map = new Map<Skill, SessionQuestion[]>()
+		for (const q of session.questions) {
+			if (q.skill !== "listening" && q.skill !== "reading") continue
+			const list = map.get(q.skill) ?? []
+			list.push(q)
+			map.set(q.skill, list)
+		}
+		return map
+	}, [session.questions])
+
+	const objectiveSkills = SKILL_ORDER.filter((s) => (questionsBySkill.get(s)?.length ?? 0) > 0)
+
+	if (objectiveSkills.length === 0) return null
+
+	return (
+		<div className="space-y-3">
+			<h2 className="font-semibold">Xem lại đáp án</h2>
+			{objectiveSkills.map((skill) => {
+				const questions = questionsBySkill.get(skill) ?? []
+				const correct = questions.filter((q) => answerMap.get(q.id)?.isCorrect === true).length
+				const isOpen = openSkill === skill
+
+				return (
+					<div key={skill} className="rounded-2xl bg-muted/30 shadow-sm">
+						<button
+							type="button"
+							className="flex w-full items-center gap-3 p-5"
+							onClick={() => setOpenSkill(isOpen ? null : skill)}
+						>
+							<HugeiconsIcon icon={skillMeta[skill].icon} className="size-5" />
+							<span className="font-medium">{skillMeta[skill].label}</span>
+							<span className="ml-auto text-sm text-muted-foreground">
+								{correct}/{questions.length} câu đúng
+							</span>
+							<span className={cn("text-xs transition-transform", isOpen && "rotate-180")}>▼</span>
+						</button>
+
+						{isOpen && (
+							<div className="space-y-4 border-t px-5 pb-5 pt-4">
+								{questions.map((q, qi) => (
+									<ReviewQuestion
+										key={q.id}
+										question={q}
+										index={qi}
+										answer={answerMap.get(q.id) ?? null}
+									/>
+								))}
+							</div>
+						)}
+					</div>
+				)
+			})}
+		</div>
+	)
+}
+
+function ReviewQuestion({
+	question,
+	index,
+	answer,
+}: {
+	question: SessionQuestion
+	index: number
+	answer: SessionAnswer | null
+}) {
+	const raw = question.content as unknown as Record<string, unknown>
+	const hasItems = "items" in raw && Array.isArray(raw.items)
+	const items: MCQItem[] = hasItems
+		? (raw.items as MCQItem[])
+		: "stem" in raw && "options" in raw
+			? [{ stem: raw.stem as string, options: normalizeOptions(raw.options) }]
+			: []
+	const userAnswers: Record<string, string> =
+		answer?.answer && "answers" in answer.answer ? answer.answer.answers : {}
+	// Normalize answerKey: BE returns {correctAnswers: ["A"]} for individual questions
+	// FE grouped format uses {"1": "A", "2": "B"}
+	const rawKey = question.answerKey as Record<string, unknown> | null | undefined
+	let correctAnswers: Record<string, string> = {}
+	if (rawKey) {
+		if (Array.isArray(rawKey.correctAnswers)) {
+			correctAnswers = Object.fromEntries(
+				(rawKey.correctAnswers as string[]).map((v, i) => [String(i + 1), v]),
+			)
+		} else {
+			correctAnswers = rawKey as unknown as Record<string, string>
+		}
+	}
+	const isCorrect = answer?.isCorrect
+
+	return (
+		<div className="space-y-2">
+			<div className="flex items-center gap-2">
+				{isCorrect === true && (
+					<HugeiconsIcon icon={CheckmarkCircle01Icon} className="size-4 text-emerald-500" />
+				)}
+				{isCorrect === false && (
+					<HugeiconsIcon icon={Cancel01Icon} className="size-4 text-destructive" />
+				)}
+				<span className="text-sm font-medium">Câu {index + 1} — Part {question.part}</span>
+			</div>
+
+			{items.map((item, i) => {
+				const key = String(i + 1)
+				const userPick = userAnswers[key]
+				const correctPick = correctAnswers[key]
+
+				return (
+					<div key={key} className="rounded-lg bg-muted/30 p-3">
+						<p className="mb-2 text-sm">{item.stem}</p>
+						<div className="space-y-1">
+							{item.options.map((opt, oi) => {
+								const letter = LETTERS[oi]
+								const isUser = userPick === letter
+								const isAnswer = correctPick === letter
+								const wrong = isUser && !isAnswer
+
+								return (
+									<div
+										key={letter}
+										className={cn(
+											"flex items-center gap-2 rounded-md px-3 py-1.5 text-sm",
+											isAnswer && "bg-emerald-500/10 font-medium text-emerald-700 dark:text-emerald-400",
+											wrong && "bg-destructive/10 text-destructive line-through",
+										)}
+									>
+										<span className="w-5 shrink-0 font-semibold">{letter}</span>
+										<span>{opt}</span>
+										{isAnswer && <span className="ml-auto text-xs">✓</span>}
+										{wrong && <span className="ml-auto text-xs">✗</span>}
+									</div>
+								)
+							})}
+						</div>
+					</div>
+				)
+			})}
 		</div>
 	)
 }

@@ -1,6 +1,6 @@
 import { Book02Icon, HeadphonesIcon, Mic01Icon, PencilEdit02Icon } from "@hugeicons/core-free-icons"
 import type { IconSvgElement } from "@hugeicons/react"
-import type { Exam, ExamBlueprint, Skill, Trend } from "@/types/api"
+import type { Exam, ExamBlueprint, ExamBlueprintSection, Skill, Trend } from "@/types/api"
 
 export const SKILL_ORDER: Skill[] = ["listening", "reading", "writing", "speaking"]
 
@@ -48,5 +48,19 @@ export function getSmartTag(
 }
 
 export function getBlueprint(exam: Exam): ExamBlueprint {
-	return exam.blueprint as ExamBlueprint
+	const raw = exam.blueprint
+	if (Array.isArray(raw)) {
+		const result: ExamBlueprint = {}
+		for (const section of raw as ExamBlueprintSection[]) {
+			const skill = section.skill as Skill
+			if (skill && section.questionIds) {
+				result[skill] = { questionIds: section.questionIds }
+			}
+		}
+		return result
+	}
+	if (raw && typeof raw === "object") {
+		return raw as ExamBlueprint
+	}
+	return {}
 }

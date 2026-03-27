@@ -38,6 +38,11 @@ type Skill = "listening" | "reading" | "writing" | "speaking"
 type QuestionLevel = "A2" | "B1" | "B2" | "C1"
 type VstepBand = "B1" | "B2" | "C1"
 
+interface ExamBlueprintSection {
+	skill: Skill
+	questionIds: string[]
+}
+
 interface ExamBlueprint {
 	listening?: { questionIds: string[] }
 	reading?: { questionIds: string[] }
@@ -52,7 +57,7 @@ interface Exam {
 	level: QuestionLevel
 	type: ExamType
 	durationMinutes: number | null
-	blueprint: ExamBlueprint
+	blueprint: ExamBlueprint | ExamBlueprintSection[] | unknown
 	isActive: boolean
 	createdBy: string | null
 	createdAt: string
@@ -87,20 +92,24 @@ interface ExamSessionWithExam extends ExamSession {
 	exam: SessionExamEmbed | null
 }
 
-// Session detail (from GET /api/exams/sessions/:id — includes questions + answers)
+// Session detail (from GET /api/sessions/:id — includes questions + answers)
 interface SessionQuestion {
 	id: string
 	skill: Skill
 	part: number
 	content: QuestionContent
+	answerKey?: Record<string, string> | null
+	explanation?: string | null
 }
 
 interface SessionAnswer {
 	questionId: string
 	answer: SubmissionAnswer
+	isCorrect: boolean | null
 }
 
 interface ExamSessionDetail extends ExamSession {
+	exam: SessionExamEmbed | null
 	questions: SessionQuestion[]
 	answers: SessionAnswer[]
 }
@@ -573,6 +582,7 @@ export type {
 	Exam,
 	ExamAnswer,
 	ExamBlueprint,
+	ExamBlueprintSection,
 	ExamSession,
 	ExamSessionDetail,
 	ExamSessionWithExam,

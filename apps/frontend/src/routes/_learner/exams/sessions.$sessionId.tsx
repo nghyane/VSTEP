@@ -1,9 +1,9 @@
 import { ArrowLeft02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { createFileRoute, Link } from "@tanstack/react-router"
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router"
 import { useExamDetail, useExamSession } from "@/hooks/use-exam-session"
 import { SessionCompleted } from "./-components/SessionCompleted"
-import { SessionInProgress } from "./-components/SessionInProgress"
+
 
 export const Route = createFileRoute("/_learner/exams/sessions/$sessionId")({
 	component: ExamSessionPage,
@@ -32,15 +32,15 @@ function ExamSessionPage() {
 	return (
 		<div className="mx-auto max-w-4xl space-y-6">
 			<Link
-				to="/practice"
+				to="/exams"
 				className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
 			>
 				<HugeiconsIcon icon={ArrowLeft02Icon} className="size-4" />
-				Về trang Luyện tập
+				Về danh sách bài thi
 			</Link>
 
 			{isActive ? (
-				<SessionInProgress session={session} sessionId={sessionId} exam={exam ?? null} />
+				<Navigate to="/exam/$sessionId" params={{ sessionId }} />
 			) : (
 				<SessionCompleted session={session} exam={exam ?? null} />
 			)}

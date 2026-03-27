@@ -28,7 +28,7 @@ function useStartExam() {
 function useExamSession(sessionId: string) {
 	return useQuery({
 		queryKey: ["exam-sessions", sessionId],
-		queryFn: () => api.get<ExamSessionDetail>(`/api/exams/sessions/${sessionId}`),
+		queryFn: () => api.get<ExamSessionDetail>(`/api/sessions/${sessionId}`),
 	})
 }
 
@@ -47,28 +47,28 @@ function useExamSessions(params: UseExamSessionsParams = {}) {
 
 	return useQuery({
 		queryKey: ["exam-sessions", { page, limit, status }],
-		queryFn: () => api.get<PaginatedResponse<ExamSessionWithExam>>(`/api/exams/sessions?${search}`),
+		queryFn: () => api.get<PaginatedResponse<ExamSessionWithExam>>(`/api/sessions?${search}`),
 	})
 }
 
 function useSaveAnswers(sessionId: string) {
 	return useMutation({
 		mutationFn: (answers: { questionId: string; answer: SubmissionAnswer }[]) =>
-			api.put<{ success: boolean; saved: number }>(`/api/exams/sessions/${sessionId}`, { answers }),
+			api.put<{ success: boolean; saved: number }>(`/api/sessions/${sessionId}`, { answers }),
 	})
 }
 
 function useAnswerQuestion(sessionId: string) {
 	return useMutation({
 		mutationFn: (body: { questionId: string; answer: SubmissionAnswer }) =>
-			api.post<{ success: boolean }>(`/api/exams/sessions/${sessionId}/answer`, body),
+			api.post<{ success: boolean }>(`/api/sessions/${sessionId}/answer`, body),
 	})
 }
 
 function useSubmitExam(sessionId: string) {
 	const qc = useQueryClient()
 	return useMutation({
-		mutationFn: () => api.post<ExamSession>(`/api/exams/sessions/${sessionId}/submit`),
+		mutationFn: () => api.post<ExamSession>(`/api/sessions/${sessionId}/submit`),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: ["exam-sessions", sessionId] })
 			qc.invalidateQueries({ queryKey: ["progress"] })

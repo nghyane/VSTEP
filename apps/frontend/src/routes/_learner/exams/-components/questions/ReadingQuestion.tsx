@@ -9,6 +9,21 @@ import type {
 } from "@/types/api"
 import { MCQItemRenderer } from "./MCQItemRenderer"
 
+// BE individual MCQ format: {stem, options: {A,B,C,D}, passage?}
+function isSimpleMCQ(c: QuestionContent): boolean {
+	return "stem" in c && "options" in c && !("items" in c) && !("paragraphs" in c) && !("textWithGaps" in c)
+}
+
+function normalizeOptions(options: unknown): string[] {
+	if (Array.isArray(options)) return options
+	if (typeof options === "object" && options !== null) {
+		return Object.keys(options)
+			.sort()
+			.map((k) => (options as Record<string, string>)[k])
+	}
+	return []
+}
+
 interface ReadingQuestionProps {
 	question: SessionQuestion
 	currentAnswers: Record<string, string>
@@ -38,12 +53,31 @@ export const ReadingQuestion = memo(function ReadingQuestion({
 	onSelectAnswer,
 }: ReadingQuestionProps) {
 	const content = question.content
+	const simple = isSimpleMCQ(content)
 
 	const handleSelect = (itemIndex: number, optionIndex: number) => {
 		onSelectAnswer(question.id, currentAnswers, itemIndex, optionIndex)
 	}
 
 	const title = "title" in content ? (content as { title?: string }).title : undefined
+
+	if (simple) {
+		const raw = content as unknown as Record<string, unknown>
+		const passage = (raw.passage as string) ?? undefined
+		return (
+			<div id={question.id} className="space-y-6">
+				<h3 className="text-lg font-semibold">Reading — Part {question.part}</h3>
+				{passage && <PassageSection passage={passage} />}
+				<MCQItemRenderer
+					index={0}
+					stem={raw.stem as string}
+					options={normalizeOptions(raw.options)}
+					selectedOption={currentAnswers["1"] ?? null}
+					onSelect={handleSelect}
+				/>
+			</div>
+		)
+	}
 
 	return (
 		<div id={question.id} className="space-y-6">

@@ -87,7 +87,7 @@ function ExamListPage() {
 		setStartingId(selectedExam.id)
 		try {
 			const session = await startExam.mutateAsync(selectedExam.id)
-			navigate({ to: "/practice/$sessionId", params: { sessionId: session.id } })
+			navigate({ to: "/exam/$sessionId", params: { sessionId: session.id } })
 		} catch {
 			setStartingId(null)
 		}

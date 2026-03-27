@@ -38,7 +38,7 @@ export function SpiderChartCard({
 						<HugeiconsIcon icon={icon} className={cn("size-4", skillColorText[key])} />
 						<span>{label}</span>
 						<span className="ml-auto text-xs text-muted-foreground tabular-nums">
-						{spiderData?.skills[key]?.current?.toFixed(1) ?? "—"}
+							{spiderData?.skills[key]?.current?.toFixed(1) ?? "—"}
 						</span>
 					</Link>
 				))}

@@ -1,38 +1,18 @@
 import {
 	ArrowLeft01Icon,
-	Book02Icon,
 	Clock01Icon,
-	HeadphonesIcon,
-	Mic01Icon,
-	PencilEdit02Icon,
 } from "@hugeicons/core-free-icons"
-import type { IconSvgElement } from "@hugeicons/react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { Button } from "@/components/ui/button"
 import { useExamDetail, useStartExam } from "@/hooks/use-exam-session"
 import { cn } from "@/lib/utils"
-import type { ExamBlueprint, Skill } from "@/types/api"
+import { getBlueprint, SKILL_ORDER, skillColor, skillMeta } from "./-components/skill-meta"
 
 export const Route = createFileRoute("/_learner/exams/$examId")({
 	component: ExamDetailPage,
 })
 
-const skillMeta: Record<Skill, { label: string; icon: IconSvgElement }> = {
-	listening: { label: "Listening", icon: HeadphonesIcon },
-	reading: { label: "Reading", icon: Book02Icon },
-	writing: { label: "Writing", icon: PencilEdit02Icon },
-	speaking: { label: "Speaking", icon: Mic01Icon },
-}
-
-const skillColor: Record<Skill, string> = {
-	listening: "bg-skill-listening/15 text-skill-listening",
-	reading: "bg-skill-reading/15 text-skill-reading",
-	writing: "bg-skill-writing/15 text-skill-writing",
-	speaking: "bg-skill-speaking/15 text-skill-speaking",
-}
-
-const SKILL_ORDER: Skill[] = ["listening", "reading", "writing", "speaking"]
 
 function ExamDetailPage() {
 	const { examId } = Route.useParams()
@@ -52,12 +32,12 @@ function ExamDetailPage() {
 		)
 	}
 
-	const bp = exam.blueprint as ExamBlueprint
+	const bp = getBlueprint(exam)
 
 	function handleStart() {
 		startExam.mutate(examId, {
 			onSuccess: (session) => {
-				navigate({ to: "/exams/sessions/$sessionId", params: { sessionId: session.id } })
+				navigate({ to: "/exam/$sessionId", params: { sessionId: session.id } })
 			},
 		})
 	}
