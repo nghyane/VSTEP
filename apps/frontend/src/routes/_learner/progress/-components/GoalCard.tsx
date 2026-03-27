@@ -1,6 +1,7 @@
 import {
 	CheckmarkCircle02Icon,
 	Clock01Icon,
+	Delete02Icon,
 	PlusSignIcon,
 	Target02Icon,
 } from "@hugeicons/core-free-icons"
@@ -16,14 +17,20 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select"
-import { useCreateGoal } from "@/hooks/use-progress"
+import { useCreateGoal, useDeleteGoal, useUpdateGoal } from "@/hooks/use-progress"
 import type { EnrichedGoal, VstepBand } from "@/types/api"
 
 export function GoalCard({ goal }: { goal: EnrichedGoal | null }) {
 	const [creating, setCreating] = useState(false)
+	const [editing, setEditing] = useState(false)
+	const deleteGoal = useDeleteGoal()
 
 	if (creating) {
 		return <GoalForm onCancel={() => setCreating(false)} />
+	}
+
+	if (editing && goal) {
+		return <GoalEditForm goal={goal} onCancel={() => setEditing(false)} />
 	}
 
 	if (!goal) {
@@ -63,6 +70,25 @@ export function GoalCard({ goal }: { goal: EnrichedGoal | null }) {
 							Hạn: {deadlineLabel}
 						</p>
 					</div>
+				</div>
+				<div className="flex gap-1">
+					<Button type="button" variant="ghost" size="sm" onClick={() => setEditing(true)}>
+						Chỉnh sửa
+					</Button>
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						className="text-destructive"
+						onClick={() => {
+							if (confirm("Bạn có chắc muốn xóa mục tiêu này?")) {
+								deleteGoal.mutate(goal.id)
+							}
+						}}
+					>
+						<HugeiconsIcon icon={Delete02Icon} className="size-4" />
+						Xóa
+					</Button>
 				</div>
 			</div>
 
@@ -131,12 +157,18 @@ function GoalForm({ onCancel }: { onCancel: () => void }) {
 	const [targetBand, setTargetBand] = useState<string>("B2")
 	const [deadline, setDeadline] = useState("")
 	const [dailyMinutes, setDailyMinutes] = useState("60")
+	const [currentEstimatedBand, setCurrentEstimatedBand] = useState<string>("")
 
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault()
 		if (!deadline) return
 		createGoal.mutate(
-			{ targetBand, deadline, dailyStudyTimeMinutes: Number(dailyMinutes) || undefined },
+			{
+				targetBand,
+				deadline,
+				dailyStudyTimeMinutes: Number(dailyMinutes) || undefined,
+				...(currentEstimatedBand && currentEstimatedBand !== "none" ? { currentEstimatedBand } : {}),
+			},
 			{ onSuccess: onCancel },
 		)
 	}
@@ -144,7 +176,7 @@ function GoalForm({ onCancel }: { onCancel: () => void }) {
 	return (
 		<form onSubmit={handleSubmit} className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 			<h3 className="mb-4 text-lg font-semibold">Đặt mục tiêu mới</h3>
-			<div className="grid gap-4 sm:grid-cols-3">
+			<div className="grid gap-4 sm:grid-cols-2">
 				<div className="space-y-1.5">
 					<Label>Band mục tiêu</Label>
 					<Select value={targetBand} onValueChange={setTargetBand}>
@@ -153,6 +185,22 @@ function GoalForm({ onCancel }: { onCancel: () => void }) {
 						</SelectTrigger>
 						<SelectContent>
 							{(["B1", "B2", "C1"] as VstepBand[]).map((b) => (
+								<SelectItem key={b} value={b}>
+									{b}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+				<div className="space-y-1.5">
+					<Label>Band hiện tại (ước lượng)</Label>
+					<Select value={currentEstimatedBand} onValueChange={setCurrentEstimatedBand}>
+						<SelectTrigger className="w-full">
+							<SelectValue placeholder="Không chọn" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="none">Không chọn</SelectItem>
+							{(["A2", "B1", "B2", "C1"] as VstepBand[]).map((b) => (
 								<SelectItem key={b} value={b}>
 									{b}
 								</SelectItem>
@@ -183,6 +231,95 @@ function GoalForm({ onCancel }: { onCancel: () => void }) {
 			<div className="mt-4 flex gap-2">
 				<Button type="submit" size="sm" disabled={createGoal.isPending}>
 					Tạo mục tiêu
+				</Button>
+				<Button type="button" variant="outline" size="sm" onClick={onCancel}>
+					Hủy
+				</Button>
+			</div>
+		</form>
+	)
+}
+
+function GoalEditForm({ goal, onCancel }: { goal: EnrichedGoal; onCancel: () => void }) {
+	const updateGoal = useUpdateGoal()
+	const [targetBand, setTargetBand] = useState<string>(goal.targetBand)
+	const [deadline, setDeadline] = useState(goal.deadline.slice(0, 10))
+	const [dailyMinutes, setDailyMinutes] = useState(String(goal.dailyStudyTimeMinutes ?? 60))
+	const [currentEstimatedBand, setCurrentEstimatedBand] = useState<string>(goal.currentEstimatedBand ?? "")
+
+	function handleSubmit(e: React.FormEvent) {
+		e.preventDefault()
+		if (!deadline) return
+		updateGoal.mutate(
+			{
+				id: goal.id,
+				targetBand,
+				deadline,
+				dailyStudyTimeMinutes: Number(dailyMinutes) || undefined,
+				...(currentEstimatedBand && currentEstimatedBand !== "none" ? { currentEstimatedBand } : {}),
+			},
+			{ onSuccess: onCancel },
+		)
+	}
+
+	return (
+		<form onSubmit={handleSubmit} className="rounded-2xl bg-muted/50 p-5 shadow-sm">
+			<h3 className="mb-4 text-lg font-semibold">Chỉnh sửa mục tiêu</h3>
+			<div className="grid gap-4 sm:grid-cols-2">
+				<div className="space-y-1.5">
+					<Label>Band mục tiêu</Label>
+					<Select value={targetBand} onValueChange={setTargetBand}>
+						<SelectTrigger className="w-full">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{(["B1", "B2", "C1"] as VstepBand[]).map((b) => (
+								<SelectItem key={b} value={b}>
+									{b}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+				<div className="space-y-1.5">
+					<Label>Band hiện tại (ước lượng)</Label>
+					<Select value={currentEstimatedBand || "none"} onValueChange={(v) => setCurrentEstimatedBand(v === "none" ? "" : v)}>
+						<SelectTrigger className="w-full">
+							<SelectValue placeholder="Không chọn" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="none">Không chọn</SelectItem>
+							{(["A2", "B1", "B2", "C1"] as VstepBand[]).map((b) => (
+								<SelectItem key={b} value={b}>
+									{b}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+				<div className="space-y-1.5">
+					<Label>Hạn hoàn thành</Label>
+					<Input
+						type="date"
+						value={deadline}
+						onChange={(e) => setDeadline(e.target.value)}
+						required
+					/>
+				</div>
+				<div className="space-y-1.5">
+					<Label>Phút/ngày</Label>
+					<Input
+						type="number"
+						min={10}
+						max={480}
+						value={dailyMinutes}
+						onChange={(e) => setDailyMinutes(e.target.value)}
+					/>
+				</div>
+			</div>
+			<div className="mt-4 flex gap-2">
+				<Button type="submit" size="sm" disabled={updateGoal.isPending}>
+					Lưu
 				</Button>
 				<Button type="button" variant="outline" size="sm" onClick={onCancel}>
 					Hủy
