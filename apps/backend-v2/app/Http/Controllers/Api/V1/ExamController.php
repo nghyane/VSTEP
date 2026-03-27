@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Exam\StoreExamRequest;
 use App\Http\Requests\Exam\UpdateExamRequest;
 use App\Http\Resources\ExamResource;
+use App\Http\Resources\ExamSessionDetailResource;
 use App\Http\Resources\ExamSessionResource;
 use App\Models\Exam;
 use App\Services\ExamService;
@@ -56,6 +57,6 @@ class ExamController extends Controller
     {
         $session = $this->sessionService->start($exam, $request->user()->id);
 
-        return (new ExamSessionResource($session))->response()->setStatusCode(201);
+        return (new ExamSessionDetailResource($this->sessionService->show($session)))->response()->setStatusCode(201);
     }
 }

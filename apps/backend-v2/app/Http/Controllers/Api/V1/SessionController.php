@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Exam\SaveAnswerRequest;
 use App\Http\Requests\Exam\SaveAnswersBatchRequest;
+use App\Http\Resources\ExamSessionDetailResource;
 use App\Http\Resources\ExamSessionResource;
 use App\Models\ExamSession;
 use App\Services\SessionService;
@@ -29,7 +30,7 @@ class SessionController extends Controller
     #[Authorize('view', 'session')]
     public function show(ExamSession $session)
     {
-        return new ExamSessionResource($this->service->show($session));
+        return new ExamSessionDetailResource($this->service->show($session));
     }
 
     #[Authorize('update', 'session')]
@@ -53,6 +54,6 @@ class SessionController extends Controller
     {
         $session = $this->service->submit($session);
 
-        return new ExamSessionResource($session);
+        return new ExamSessionDetailResource($this->service->show($session));
     }
 }
