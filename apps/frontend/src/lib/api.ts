@@ -122,7 +122,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 	const res = await fetch(buildUrl(path), {
 		...options,
 		body,
-		headers: { "Content-Type": "application/json", ...options.headers },
+		headers: { "Content-Type": "application/json", Accept: "application/json", ...options.headers },
 	})
 
 	if (!res.ok) {
@@ -223,7 +223,7 @@ async function uploadFile<T>(path: string, formData: FormData): Promise<T> {
 
 	const res = await fetch(buildUrl(path), {
 		method: "POST",
-		headers: { Authorization: `Bearer ${accessToken}` },
+		headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
 		body: formData,
 	})
 
