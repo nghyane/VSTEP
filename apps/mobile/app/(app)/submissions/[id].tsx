@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { BouncyScrollView } from "@/components/BouncyScrollView";
 import { HapticTouchable } from "@/components/HapticTouchable";
@@ -7,8 +7,10 @@ import { useLocalSearchParams } from "expo-router";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
-import { useSubmission } from "@/hooks/use-submissions";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import { useExplain, type ExplainResponse } from "@/hooks/use-ai";
+import type { Submission } from "@/types/api";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { Skill, SubmissionStatus } from "@/types/api";
 
@@ -37,17 +39,15 @@ const statusConfig: Record<SubmissionStatus, { label: string }> = {
 export default function SubmissionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const c = useThemeColors();
-  const { data, isLoading, error, refetch } = useSubmission(id!);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    if (data?.status === "pending" || data?.status === "processing") {
-      intervalRef.current = setInterval(() => refetch(), 5000);
-    }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [data?.status, refetch]);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["submissions", id],
+    queryFn: () => api.get<Submission>(`/api/submissions/${id}`),
+    enabled: !!id,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === "pending" || status === "processing" ? 5000 : false;
+    },
+  });
 
   if (isLoading) return <LoadingScreen />;
   if (error || !data) return <ErrorScreen message={error?.message ?? "Không tìm thấy bài nộp"} />;

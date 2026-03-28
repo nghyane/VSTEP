@@ -532,6 +532,8 @@ export default function OnboardingScreen() {
         englishYears: englishYears ? Number(englishYears) : undefined,
         previousTest,
         previousScore: previousTest !== "none" && previousScore ? previousScore : undefined,
+        deadline: null,
+        dailyStudyTimeMinutes: null,
       },
       { onSuccess, onError },
     );
@@ -541,7 +543,7 @@ export default function OnboardingScreen() {
     if (isMutating) return;
     startPlacement.mutate(undefined, {
       onSuccess: (data) => {
-        router.push({ pathname: "/(app)/practice/[sessionId]", params: { sessionId: data.sessionId } });
+        router.push({ pathname: "/(app)/session/[id]", params: { id: data.sessionId } });
       },
       onError: (err: Error) => {
         Alert.alert("Lỗi", err.message || "Không thể bắt đầu bài test");

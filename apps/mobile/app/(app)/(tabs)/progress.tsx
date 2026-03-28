@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
+import { useFadeIn } from "@/hooks/use-fade-in";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BouncyScrollView } from "@/components/BouncyScrollView";
 import { HapticTouchable } from "@/components/HapticTouchable";
@@ -33,23 +34,6 @@ function avgScore(skills: Record<Skill, { current: number; trend: string }>): nu
   const vals = Object.values(skills).map((s) => s.current);
   if (vals.length === 0) return 0;
   return vals.reduce((a, b) => a + b, 0) / vals.length;
-}
-
-function useFadeIn(delay = 0) {
-  const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(20)).current;
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      Animated.parallel([
-        Animated.timing(opacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-        Animated.spring(translateY, { toValue: 0, damping: 18, stiffness: 120, useNativeDriver: true }),
-      ]).start();
-    }, delay);
-    return () => clearTimeout(timer);
-  }, [delay, opacity, translateY]);
-
-  return { opacity, transform: [{ translateY }] };
 }
 
 export default function ProgressScreen() {

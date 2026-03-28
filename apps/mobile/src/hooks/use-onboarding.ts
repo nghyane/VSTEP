@@ -41,8 +41,8 @@ export function useSkipOnboarding() {
       englishYears?: number;
       previousTest?: string;
       previousScore?: string;
-      deadline?: string;
-      dailyStudyTimeMinutes?: number;
+      deadline?: string | null;
+      dailyStudyTimeMinutes?: number | null;
     }) => api.post<PlacementResult>("/api/onboarding/skip", body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["onboarding-status"] });

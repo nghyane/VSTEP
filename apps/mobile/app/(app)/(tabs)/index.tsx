@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Animated, Platform, StyleSheet, Text, View } from "react-native";
+import { useFadeIn } from "@/hooks/use-fade-in";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -10,8 +11,10 @@ import { GradientBackground } from "@/components/GradientBackground";
 import { StickyHeader, HEADER_H } from "@/components/StickyHeader";
 import { useAuth } from "@/hooks/use-auth";
 import { useProgress, useActivity, useLearningPath } from "@/hooks/use-progress";
+import { useExamSessions } from "@/hooks/use-exam-session";
 import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
-import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
+import type { Skill, ExamSessionWithExam } from "@/types/api";
 
 type QuickAction = {
   title: string;
@@ -21,23 +24,6 @@ type QuickAction = {
 };
 
 
-function useFadeIn(delay = 0) {
-  const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(20)).current;
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      Animated.parallel([
-        Animated.timing(opacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-        Animated.spring(translateY, { toValue: 0, damping: 18, stiffness: 120, useNativeDriver: true }),
-      ]).start();
-    }, delay);
-    return () => clearTimeout(timer);
-  }, [delay, opacity, translateY]);
-
-  return { opacity, transform: [{ translateY }] };
-}
-
 export default function HomeScreen() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
@@ -46,6 +32,7 @@ export default function HomeScreen() {
   const progress = useProgress();
   const { data: activityData, isLoading: activityLoading } = useActivity(7);
   const { data: learningPath } = useLearningPath();
+  const { data: recentSessions } = useExamSessions({ status: "completed", limit: 5 });
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const fade0 = useFadeIn(0);
@@ -53,6 +40,7 @@ export default function HomeScreen() {
   const fade2 = useFadeIn(200);
   const fade3 = useFadeIn(300);
   const fade4 = useFadeIn(400);
+  const fade5 = useFadeIn(500);
 
   useEffect(() => {
     if (!progress.isLoading && progress.data && !progress.data.goal) {
@@ -186,6 +174,20 @@ export default function HomeScreen() {
           </View>
         </Animated.View>
 
+        {/* ── Recent Sessions ── */}
+        {recentSessions?.data && recentSessions.data.length > 0 && (
+          <Animated.View style={fade5}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: c.foreground }]}>Phiên thi gần đây</Text>
+            </View>
+            <View style={{ gap: spacing.sm, marginTop: spacing.base }}>
+              {recentSessions.data.map((session) => (
+                <SessionCard key={session.id} session={session} />
+              ))}
+            </View>
+          </Animated.View>
+        )}
+
         {/* ── Study Plan ── */}
         <Animated.View style={fade3}>
           <View style={styles.sectionHeader}>
@@ -265,6 +267,66 @@ export default function HomeScreen() {
           </Animated.View>
         )}
       </Animated.ScrollView>
+    </View>
+  );
+}
+
+// ── Session History Card ──
+
+function SessionCard({ session }: { session: ExamSessionWithExam }) {
+  const c = useThemeColors();
+  const router = useRouter();
+  const examTitle = session.exam?.title ?? `Đề ${session.exam?.level ?? ""}`;
+  const date = new Date(session.completedAt ?? session.createdAt).toLocaleDateString("vi-VN");
+  const skills: { skill: Skill; score: number | null }[] = [
+    { skill: "listening", score: session.listeningScore },
+    { skill: "reading", score: session.readingScore },
+    { skill: "writing", score: session.writingScore },
+    { skill: "speaking", score: session.speakingScore },
+  ].filter((s) => s.score !== null && s.score !== undefined);
+
+  return (
+    <HapticTouchable
+      style={[styles.sessionCard, { backgroundColor: c.card, borderColor: c.border }]}
+      onPress={() => router.push(`/(app)/session/${session.id}`)}
+      activeOpacity={0.7}
+    >
+      <View style={styles.sessionHeader}>
+        <Text style={{ color: c.foreground, fontWeight: "600", fontSize: fontSize.sm, flex: 1 }} numberOfLines={1}>
+          {examTitle}
+        </Text>
+        <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs }}>{date}</Text>
+      </View>
+      {session.overallScore != null && (
+        <View style={styles.sessionScoreRow}>
+          <Text style={{ color: c.primary, fontWeight: "700", fontSize: fontSize.lg }}>
+            {session.overallScore}/10
+          </Text>
+          {session.overallBand && (
+            <View style={[styles.sessionBand, { borderColor: c.primary }]}>
+              <Text style={{ color: c.primary, fontWeight: "700", fontSize: fontSize.xs }}>{session.overallBand}</Text>
+            </View>
+          )}
+        </View>
+      )}
+      {skills.length > 0 && (
+        <View style={styles.sessionSkills}>
+          {skills.map(({ skill, score }) => (
+            <SessionSkillChip key={skill} skill={skill} score={score!} />
+          ))}
+        </View>
+      )}
+    </HapticTouchable>
+  );
+}
+
+function SessionSkillChip({ skill, score }: { skill: Skill; score: number }) {
+  const c = useThemeColors();
+  const color = useSkillColor(skill);
+  return (
+    <View style={[styles.sessionSkillChip, { backgroundColor: color + "15" }]}>
+      <Ionicons name={skill === "listening" ? "headset" : skill === "reading" ? "book" : skill === "writing" ? "create" : "mic"} size={10} color={color} />
+      <Text style={{ color, fontSize: 10, fontWeight: "600" }}>{score}/10</Text>
     </View>
   );
 }
@@ -392,5 +454,42 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.bold,
     textAlign: "center",
     marginTop: spacing.sm,
+  },
+
+  // Session history
+  sessionCard: {
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: spacing.base,
+    gap: spacing.sm,
+  },
+  sessionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  sessionScoreRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  sessionBand: {
+    borderWidth: 1.5,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 1,
+  },
+  sessionSkills: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+  },
+  sessionSkillChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
 });

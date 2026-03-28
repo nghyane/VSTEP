@@ -24,7 +24,7 @@ export default function AppLayout() {
       />
       <Stack.Screen
         name="session/[id]"
-        options={{ headerShown: true, title: "Phiên thi" }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="skill/[name]"

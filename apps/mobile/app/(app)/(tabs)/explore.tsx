@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { GradientBackground } from "@/components/GradientBackground";
 import { StickyHeader, HEADER_H } from "@/components/StickyHeader";
+import { useFadeIn } from "@/hooks/use-fade-in";
 import { useProgress } from "@/hooks/use-progress";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { Skill, VstepBand } from "@/types/api";
@@ -104,25 +105,6 @@ const TESTIMONIALS = [
     initials: "ĐH",
   },
 ];
-
-// ─── Fade-in hook ────────────────────────────────────────────────────────────
-
-function useFadeIn(delay = 0) {
-  const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(24)).current;
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      Animated.parallel([
-        Animated.timing(opacity, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.spring(translateY, { toValue: 0, damping: 18, stiffness: 120, useNativeDriver: true }),
-      ]).start();
-    }, delay);
-    return () => clearTimeout(timer);
-  }, [delay, opacity, translateY]);
-
-  return { opacity, transform: [{ translateY }] };
-}
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 

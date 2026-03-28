@@ -8,41 +8,44 @@ import {
   View,
   ActivityIndicator,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BouncyScrollView } from "@/components/BouncyScrollView";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { HapticTouchable } from "@/components/HapticTouchable";
-import { useQueries } from "@tanstack/react-query";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { LoadingScreen } from "@/components/LoadingScreen";
-import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
+import { SkillIcon, SKILL_ICONS, SKILL_LABELS } from "@/components/SkillIcon";
+import { AudioPlayer } from "@/components/AudioPlayer";
 import {
   useExamSession,
   useSaveAnswers,
   useSubmitExam,
+  type FlatSessionDetail,
 } from "@/hooks/use-exam-session";
-import { useExamDetail } from "@/hooks/use-exams";
-import { api } from "@/lib/api";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize } from "@/theme";
 import type {
-  ExamBlueprint,
   ExamSession,
-  Question,
+  SessionQuestion,
   Skill,
 } from "@/types/api";
-
-// Local content/answer types for rendering
-interface QuestionItem { stem: string; options: string[]; }
-interface ListeningContent { audioUrl: string; transcript?: string; items: QuestionItem[]; }
-interface ReadingContent { passage: string; title?: string; items: QuestionItem[]; }
-interface WritingContent { prompt: string; taskType: string; instructions?: string; minWords?: number; requiredPoints?: string[]; }
-interface SpeakingPart1Content { topics: { name: string; questions: string[] }[]; }
-interface SpeakingPart2Content { situation: string; options: string[]; preparationSeconds: number; speakingSeconds: number; }
-interface SpeakingPart3Content { centralIdea: string; suggestions: string[]; followUpQuestion: string; preparationSeconds: number; speakingSeconds: number; }
-type QuestionContent = ListeningContent | ReadingContent | WritingContent | SpeakingPart1Content | SpeakingPart2Content | SpeakingPart3Content;
-interface ObjectiveAnswer { answers: Record<string, string>; }
-interface WritingAnswer { text: string; }
-type SubmissionAnswer = ObjectiveAnswer | WritingAnswer | { audioUrl: string; durationSeconds: number; transcript?: string; };
+import {
+  detectContentKind as detectKind,
+  isReadingGapFillContent,
+  isReadingMatchingContent,
+  type QuestionContent,
+  type ListeningContent,
+  type ReadingContent,
+  type ReadingGapFillContent,
+  type ReadingMatchingContent,
+  type WritingContent,
+  type SpeakingPart1Content,
+  type SpeakingPart2Content,
+  type SpeakingPart3Content,
+  type ObjectiveAnswer,
+  type WritingAnswer,
+  type SubmissionAnswer,
+} from "@/types/content";
 
 const SKILL_ORDER: Skill[] = ["listening", "reading", "writing", "speaking"];
 const OPTION_LETTERS = ["A", "B", "C", "D"];
@@ -52,30 +55,24 @@ const AUTO_SAVE_INTERVAL = 30_000;
 
 export default function SessionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: session, isLoading, error } = useExamSession(id!);
-  const examQuery = useExamDetail(session?.examId ?? "");
+  const { data: detail, isLoading, error } = useExamSession(id!);
 
   if (isLoading) return <LoadingScreen />;
-  if (error || !session) return <ErrorScreen message={error?.message ?? "Không tìm thấy phiên thi"} />;
+  if (error || !detail) return <ErrorScreen message={error?.message ?? "Không tìm thấy phiên thi"} />;
 
-  const exam = examQuery.data ?? null;
-  const isActive = session.status === "in_progress";
+  const isActive = detail.status === "in_progress";
 
   return isActive ? (
-    <InProgress session={session} sessionId={id!} exam={exam} />
+    <InProgress detail={detail} sessionId={id!} />
   ) : (
-    <Completed session={session} exam={exam} />
+    <Completed session={detail} exam={detail.exam} />
   );
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-type ContentKind = "objective" | "writing" | "speaking";
-
-function detectContentKind(content: QuestionContent): ContentKind {
-  if ("items" in content) return "objective";
-  if ("prompt" in content) return "writing";
-  return "speaking";
+function detectContentKind(content: QuestionContent) {
+  return detectKind(content);
 }
 
 function isAnswerNonEmpty(ans: SubmissionAnswer | undefined): boolean {
@@ -89,50 +86,47 @@ function isAnswerNonEmpty(ans: SubmissionAnswer | undefined): boolean {
 
 interface SectionInfo {
   skill: Skill;
-  questionIds: string[];
+  questions: SessionQuestion[];
 }
 
-function InProgress({ session, sessionId, exam }: { session: ExamSession; sessionId: string; exam: any }) {
+function InProgress({ detail, sessionId }: { detail: FlatSessionDetail; sessionId: string }) {
   const c = useThemeColors();
-  const bp = exam?.blueprint as ExamBlueprint | undefined;
-  const durationMinutes = exam?.durationMinutes ?? 0;
-  const remaining = useTimer(session.startedAt, durationMinutes);
+  const insets = useSafeAreaInsets();
+  const exam = detail.exam as Record<string, unknown> | null;
+  const durationMinutes = (exam?.durationMinutes as number) ?? 0;
+  const remaining = useTimer(detail.startedAt, durationMinutes);
 
-  // Build sections from blueprint
+  // Group questions by skill from session response (NOT from blueprint)
   const sections: SectionInfo[] = useMemo(() => {
-    if (!bp) return [];
+    const questions = detail.questions ?? [];
+    const grouped: Partial<Record<Skill, SessionQuestion[]>> = {};
+    for (const q of questions) {
+      const sk = q.skill as Skill;
+      if (!grouped[sk]) grouped[sk] = [];
+      grouped[sk]!.push(q);
+    }
     return SKILL_ORDER
-      .filter((sk) => bp[sk]?.questionIds.length)
-      .map((sk) => ({ skill: sk, questionIds: bp[sk]!.questionIds }));
-  }, [bp]);
+      .filter((sk) => grouped[sk] && grouped[sk]!.length > 0)
+      .map((sk) => ({ skill: sk, questions: grouped[sk]! }));
+  }, [detail.questions]);
 
-  // Collect all question IDs
-  const allQuestionIds = useMemo(() => sections.flatMap((s) => s.questionIds), [sections]);
-
-  // Fetch all questions in parallel
-  const questionQueries = useQueries({
-    queries: allQuestionIds.map((qId) => ({
-      queryKey: ["questions", qId],
-      queryFn: () => api.get<Question>(`/api/questions/${qId}`),
-      staleTime: Infinity,
-    })),
-  });
-
-  const questionsLoading = questionQueries.some((q) => q.isLoading);
-  const questionsMap = useMemo(() => {
-    const map: Record<string, Question> = {};
-    questionQueries.forEach((q) => {
-      if (q.data) map[q.data.id] = q.data;
-    });
+  // Prefill answers from session response
+  const initialAnswers = useMemo(() => {
+    const map: Record<string, SubmissionAnswer> = {};
+    for (const a of (detail.answers ?? [])) {
+      if (a.questionId && a.answer != null) {
+        map[a.questionId] = a.answer as SubmissionAnswer;
+      }
+    }
     return map;
-  }, [questionQueries]);
+  }, [detail.answers]);
 
   // Navigation state
   const [activeSection, setActiveSection] = useState(0);
   const [questionIdx, setQuestionIdx] = useState(0);
 
-  // Answer tracking
-  const [answersMap, setAnswersMap] = useState<Record<string, SubmissionAnswer>>({});
+  // Answer tracking — seed from server answers
+  const [answersMap, setAnswersMap] = useState<Record<string, SubmissionAnswer>>(initialAnswers);
   const dirtyRef = useRef(false);
 
   // Auto-save
@@ -179,9 +173,8 @@ function InProgress({ session, sessionId, exam }: { session: ExamSession; sessio
 
   // Derived
   const currentSection = sections[activeSection];
-  const currentQIds = currentSection?.questionIds ?? [];
-  const currentQId = currentQIds[questionIdx];
-  const currentQuestion = currentQId ? questionsMap[currentQId] : undefined;
+  const currentQuestions = currentSection?.questions ?? [];
+  const currentQuestion = currentQuestions[questionIdx];
 
   // When switching sections, save + reset question index
   const switchSection = useCallback(
@@ -202,7 +195,6 @@ function InProgress({ session, sessionId, exam }: { session: ExamSession; sessio
         text: "Nộp bài",
         style: "destructive",
         onPress: () => {
-          // Save remaining answers first, then submit
           const entries = Object.entries(answersMap);
           if (entries.length > 0) {
             saveAnswers.mutate(
@@ -221,53 +213,42 @@ function InProgress({ session, sessionId, exam }: { session: ExamSession; sessio
   const sectionCounts = useMemo(
     () =>
       sections.map((s) => {
-        const answered = s.questionIds.filter((qId) => isAnswerNonEmpty(answersMap[qId])).length;
-        return { total: s.questionIds.length, answered };
+        const answered = s.questions.filter((q) => isAnswerNonEmpty(answersMap[q.id])).length;
+        return { total: s.questions.length, answered };
       }),
     [sections, answersMap],
   );
 
-  // Loading state while questions fetch
-  if (questionsLoading) {
-    return (
-      <View style={[styles.container, { backgroundColor: c.background }]}>
-        <TopBar remaining={remaining} durationMinutes={durationMinutes} saveStatus={saveStatus} onSubmit={handleSubmit} isSubmitting={submitExam.isPending} />
-        <View style={styles.loadingCenter}>
-          <ActivityIndicator size="large" color={c.primary} />
-          <Text style={{ color: c.mutedForeground, marginTop: spacing.md }}>Đang tải câu hỏi...</Text>
-        </View>
-      </View>
-    );
-  }
-
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
       {/* Top bar */}
-      <TopBar remaining={remaining} durationMinutes={durationMinutes} saveStatus={saveStatus} onSubmit={handleSubmit} isSubmitting={submitExam.isPending} />
+      <TopBar remaining={remaining} durationMinutes={durationMinutes} saveStatus={saveStatus} onSubmit={handleSubmit} isSubmitting={submitExam.isPending} topInset={insets.top} />
 
       {/* Skill tabs */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsRow}>
-        {sections.map((sec, i) => (
-          <SkillTab
-            key={sec.skill}
-            skill={sec.skill}
-            active={i === activeSection}
-            answered={sectionCounts[i].answered}
-            total={sectionCounts[i].total}
-            onPress={() => switchSection(i)}
-          />
-        ))}
-      </ScrollView>
+      <View style={[styles.tabsWrapper, { borderBottomColor: c.border }]}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsRow}>
+          {sections.map((sec, i) => (
+            <SkillTab
+              key={sec.skill}
+              skill={sec.skill}
+              active={i === activeSection}
+              answered={sectionCounts[i].answered}
+              total={sectionCounts[i].total}
+              onPress={() => switchSection(i)}
+            />
+          ))}
+        </ScrollView>
+      </View>
 
       {/* Question area */}
       <BouncyScrollView style={styles.questionScroll} contentContainerStyle={styles.questionContent}>
         {currentQuestion ? (
           <>
             <Text style={[styles.questionCounter, { color: c.mutedForeground }]}>
-              Câu {questionIdx + 1} / {currentQIds.length}
+              Câu {questionIdx + 1} / {currentQuestions.length}
             </Text>
             <QuestionRenderer
-              question={currentQuestion}
+              question={currentQuestion as any}
               answer={answersMap[currentQuestion.id]}
               onAnswer={(ans) => updateAnswer(currentQuestion.id, ans)}
             />
@@ -291,13 +272,13 @@ function InProgress({ session, sessionId, exam }: { session: ExamSession; sessio
         </HapticTouchable>
 
         <Text style={[styles.navCounter, { color: c.mutedForeground }]}>
-          {questionIdx + 1}/{currentQIds.length}
+          {questionIdx + 1}/{currentQuestions.length}
         </Text>
 
         <HapticTouchable
-          style={[styles.navBtn, { opacity: questionIdx < currentQIds.length - 1 ? 1 : 0.4 }]}
-          onPress={() => questionIdx < currentQIds.length - 1 && setQuestionIdx(questionIdx + 1)}
-          disabled={questionIdx >= currentQIds.length - 1}
+          style={[styles.navBtn, { opacity: questionIdx < currentQuestions.length - 1 ? 1 : 0.4 }]}
+          onPress={() => questionIdx < currentQuestions.length - 1 && setQuestionIdx(questionIdx + 1)}
+          disabled={questionIdx >= currentQuestions.length - 1}
         >
           <Text style={[styles.navBtnText, { color: c.foreground }]}>Sau</Text>
           <Ionicons name="chevron-forward" size={18} color={c.foreground} />
@@ -315,18 +296,20 @@ function TopBar({
   saveStatus,
   onSubmit,
   isSubmitting,
+  topInset,
 }: {
   remaining: number;
   durationMinutes: number;
   saveStatus: "idle" | "saving" | "saved";
   onSubmit: () => void;
   isSubmitting: boolean;
+  topInset: number;
 }) {
   const c = useThemeColors();
   const urgent = remaining > 0 && remaining <= 300;
 
   return (
-    <View style={[styles.topBar, { backgroundColor: c.card, borderBottomColor: c.border }]}>
+    <View style={[styles.topBar, { backgroundColor: c.card, borderBottomColor: c.border, paddingTop: topInset + spacing.sm }]}>
       <View style={styles.timerArea}>
         {durationMinutes > 0 && (
           <>
@@ -386,7 +369,7 @@ function SkillTab({
       style={[styles.skillTab, { backgroundColor: bg, borderColor }]}
       onPress={onPress}
     >
-      <SkillIcon skill={skill} size={14} />
+      <Ionicons name={SKILL_ICONS[skill]} size={14} color={active ? skillColor : c.foreground} />
       <Text style={{ color: active ? skillColor : c.foreground, fontWeight: "600", fontSize: fontSize.xs }}>
         {SKILL_LABELS[skill]}
       </Text>
@@ -461,32 +444,65 @@ function ObjectiveView({
   answers,
   onSelect,
 }: {
-  content: ListeningContent | ReadingContent;
+  content: ListeningContent | ReadingContent | ReadingGapFillContent | ReadingMatchingContent;
   skill: Skill;
   answers: Record<string, string>;
   onSelect: (idx: string, val: string) => void;
 }) {
   const c = useThemeColors();
 
+  // Extract items from content (standard reading/listening have .items)
+  const items = "items" in content ? content.items : [];
+
   return (
     <View style={styles.section}>
+      {/* Audio player for listening */}
+      {skill === "listening" && "audioUrl" in content && (content as ListeningContent).audioUrl && (
+        <AudioPlayer audioUrl={(content as ListeningContent).audioUrl} seekable={false} />
+      )}
+
+      {/* Standard passage (reading / TNG) */}
       {"passage" in content && (
         <View style={[styles.passageBox, { backgroundColor: c.muted }]}>
           {"title" in content && content.title && (
             <Text style={[styles.passageTitle, { color: c.foreground }]}>{content.title}</Text>
           )}
-          <Text style={[styles.passageText, { color: c.foreground }]}>{content.passage}</Text>
+          <Text style={[styles.passageText, { color: c.foreground }]}>
+            {(content as ReadingContent).passage}
+          </Text>
         </View>
       )}
 
-      {skill === "listening" && (
-        <View style={[styles.audioLabel, { backgroundColor: c.muted }]}>
-          <Ionicons name="headset" size={20} color={c.primary} />
-          <Text style={{ color: c.foreground, fontSize: fontSize.sm, fontWeight: "600" }}>Bài nghe</Text>
+      {/* Gap-fill reading */}
+      {isReadingGapFillContent(content) && (
+        <View style={[styles.passageBox, { backgroundColor: c.muted }]}>
+          {content.title && <Text style={[styles.passageTitle, { color: c.foreground }]}>{content.title}</Text>}
+          <Text style={[styles.passageText, { color: c.foreground }]}>{content.textWithGaps}</Text>
         </View>
       )}
 
-      {content.items.map((item, i) => {
+      {/* Matching reading */}
+      {isReadingMatchingContent(content) && (
+        <View style={{ gap: spacing.sm }}>
+          {content.title && <Text style={[styles.passageTitle, { color: c.foreground }]}>{content.title}</Text>}
+          {content.paragraphs.map((p, i) => (
+            <View key={i} style={[styles.passageBox, { backgroundColor: c.muted }]}>
+              <Text style={{ color: c.primary, fontWeight: "700", fontSize: fontSize.sm }}>{p.label}</Text>
+              <Text style={[styles.passageText, { color: c.foreground }]}>{p.text}</Text>
+            </View>
+          ))}
+          <View style={[styles.passageBox, { backgroundColor: c.muted }]}>
+            <Text style={{ color: c.foreground, fontWeight: "600", fontSize: fontSize.sm, marginBottom: spacing.xs }}>Tiêu đề:</Text>
+            {content.headings.map((h, i) => (
+              <Text key={i} style={{ color: c.foreground, fontSize: fontSize.sm }}>
+                {OPTION_LETTERS[i] ?? String(i)}. {h}
+              </Text>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {items.map((item, i) => {
         const idx = String(i);
         return (
           <View key={idx} style={styles.itemBlock}>
@@ -559,6 +575,14 @@ function WritingView({
         {content.instructions && (
           <Text style={[styles.instructionText, { color: c.mutedForeground }]}>{content.instructions}</Text>
         )}
+        {content.requiredPoints && content.requiredPoints.length > 0 && (
+          <View style={{ marginTop: spacing.xs }}>
+            <Text style={{ color: c.foreground, fontSize: fontSize.sm, fontWeight: "600" }}>Yêu cầu:</Text>
+            {content.requiredPoints.map((pt, i) => (
+              <Text key={i} style={[styles.metaLine, { color: c.mutedForeground }]}>• {pt}</Text>
+            ))}
+          </View>
+        )}
         {content.minWords && (
           <Text style={[styles.metaLine, { color: c.mutedForeground }]}>Tối thiểu: {content.minWords} từ</Text>
         )}
@@ -625,6 +649,13 @@ function SpeakingView({
             {(content as SpeakingPart3Content).suggestions.map((s, i) => (
               <Text key={i} style={[styles.metaLine, { color: c.mutedForeground }]}>• {s}</Text>
             ))}
+            {(content as SpeakingPart3Content).followUpQuestion && (
+              <View style={{ marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: c.border }}>
+                <Text style={{ color: c.foreground, fontSize: fontSize.sm, fontWeight: "600" }}>
+                  Câu hỏi thêm: {(content as SpeakingPart3Content).followUpQuestion}
+                </Text>
+              </View>
+            )}
             <Text style={[styles.metaLine, { color: c.mutedForeground }]}>
               Chuẩn bị: {(content as SpeakingPart3Content).preparationSeconds}s · Nói:{" "}
               {(content as SpeakingPart3Content).speakingSeconds}s
@@ -753,15 +784,24 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
 
-  // Tabs
-  tabsRow: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, gap: spacing.xs },
+  // Tabs — fixed height wrapper prevents expansion
+  tabsWrapper: {
+    borderBottomWidth: 1,
+  },
+  tabsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+  },
   skillTab: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    borderRadius: radius.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderWidth: 1.5,
   },
 

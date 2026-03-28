@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Aptis",
-    "slug": "aptis-mobile",
+    "name": "VSTEP",
+    "slug": "vstep-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "aptis",
+    "scheme": "vstep",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
