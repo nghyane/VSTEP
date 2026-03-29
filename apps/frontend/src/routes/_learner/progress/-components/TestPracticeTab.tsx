@@ -22,13 +22,12 @@ export function TestPracticeTab({
 	spiderData: ReturnType<typeof useSpiderChart>["data"]
 	progressData: ReturnType<typeof useProgress>["data"]
 }) {
-	const listeningDetail = useSkillDetail("listening")
-	const readingDetail = useSkillDetail("reading")
-	const writingDetail = useSkillDetail("writing")
-	const speakingDetail = useSkillDetail("speaking")
-	const sessions = useExamSessions({ status: "completed", limit: 10 })
-
 	const [mode, setMode] = useState<"practice" | "exam">("practice")
+	const listeningDetail = useSkillDetail("listening", mode)
+	const readingDetail = useSkillDetail("reading", mode)
+	const writingDetail = useSkillDetail("writing", mode)
+	const speakingDetail = useSkillDetail("speaking", mode)
+	const sessions = useExamSessions({ status: "completed", limit: 10 })
 	const [visibleSkills, setVisibleSkills] = useState(
 		new Set(["listening", "reading", "writing", "speaking"]),
 	)

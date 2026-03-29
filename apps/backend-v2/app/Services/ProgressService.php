@@ -39,18 +39,13 @@ class ProgressService
      */
     public function spiderChart(string $userId): array
     {
-        $skills = UserProgress::where('user_id', $userId)->get()->keyBy(
-            fn (UserProgress $p) => $p->skill->value,
-        );
-
         $allScores = $this->recentScoresBySkill($userId);
 
         $result = [];
         foreach (Skill::cases() as $skill) {
-            $progress = $skills->get($skill->value);
             $scoreValues = $allScores->get($skill->value, collect());
             $result[$skill->value] = [
-                'current' => $progress ? $progress->current_level->score() : 0,
+                'current' => $scoreValues->isNotEmpty() ? round($scoreValues->avg(), 1) : 0,
                 'trend' => $this->computeTrend($scoreValues),
             ];
         }
