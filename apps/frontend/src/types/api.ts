@@ -39,10 +39,10 @@ type QuestionLevel = "A2" | "B1" | "B2" | "C1"
 type VstepBand = "B1" | "B2" | "C1"
 
 interface ExamBlueprint {
-	listening?: { questionIds: string[] }
-	reading?: { questionIds: string[] }
-	writing?: { questionIds: string[] }
-	speaking?: { questionIds: string[] }
+	listening?: { questionIds: string[]; questionCount?: number }
+	reading?: { questionIds: string[]; questionCount?: number }
+	writing?: { questionIds: string[]; questionCount?: number }
+	speaking?: { questionIds: string[]; questionCount?: number }
 	durationMinutes?: number
 }
 

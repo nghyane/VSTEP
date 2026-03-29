@@ -64,7 +64,10 @@ export function getBlueprint(exam: Exam): ExamBlueprint {
 
 	const bp: ExamBlueprint = { durationMinutes: exam.durationMinutes ?? undefined }
 	for (const s of sections) {
-		bp[s.skill as Skill] = { questionIds: s.questionIds ?? [] }
+		bp[s.skill as Skill] = {
+			questionIds: s.questionIds ?? [],
+			questionCount: s.questionCount ?? undefined,
+		}
 	}
 	return bp
 }

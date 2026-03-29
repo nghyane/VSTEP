@@ -10,9 +10,15 @@ function getExamSkills(exam: Exam): Skill[] {
 	return SKILL_ORDER.filter((s) => (bp[s]?.questionIds.length ?? 0) > 0)
 }
 
+function getSkillQuestionCount(bp: ReturnType<typeof getBlueprint>, s: Skill): number {
+	const section = bp[s]
+	if (!section) return 0
+	return section.questionCount ?? section.questionIds.length
+}
+
 function getTotalQuestions(exam: Exam): number {
 	const bp = getBlueprint(exam)
-	return SKILL_ORDER.reduce((sum, s) => sum + (bp[s]?.questionIds.length ?? 0), 0)
+	return SKILL_ORDER.reduce((sum, s) => sum + getSkillQuestionCount(bp, s), 0)
 }
 
 function getDuration(exam: Exam): number | undefined {
@@ -78,4 +84,4 @@ function ExamListItem({
 	)
 }
 
-export { ExamListItem, getExamSkills, getTotalQuestions, getDuration }
+export { ExamListItem, getExamSkills, getSkillQuestionCount, getTotalQuestions, getDuration }

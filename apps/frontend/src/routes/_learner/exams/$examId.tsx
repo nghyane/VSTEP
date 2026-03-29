@@ -94,6 +94,7 @@ function ExamDetailPage() {
 						const section = sectionsBySkill.get(skill)
 						if (!section || section.questionIds.length === 0) return null
 						const meta = skillMeta[skill]
+						const count = section.questionCount ?? section.questionIds.length
 
 						return (
 							<div
@@ -103,7 +104,7 @@ function ExamDetailPage() {
 								<HugeiconsIcon icon={meta.icon} className="size-5" />
 								<div>
 									<p className="text-sm font-medium">{meta.label}</p>
-									<p className="text-xs opacity-80">{section.questionIds.length} câu</p>
+									<p className="text-xs opacity-80">{count} câu</p>
 								</div>
 							</div>
 						)
