@@ -13,7 +13,7 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router"
 import { type MotionValue, motion, useScroll, useSpring, useTransform } from "motion/react"
 import { useEffect, useRef, useState } from "react"
 import { Logo } from "@/components/common/Logo"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { isAuthenticated } from "@/lib/auth"
 import { cn } from "@/lib/utils"
@@ -119,7 +119,7 @@ const STEPS = [
 		desc: "Chọn đề thi VSTEP đầy đủ 4 kỹ năng hoặc luyện riêng từng phần. Bắt đầu chỉ trong 30 giây.",
 		icon: CheckmarkCircle01Icon,
 		accent: "from-sky-400/30 to-sky-400/10",
-		image: "/images/step1.jpg",
+		image: "/images/buoc1.jpg",
 	},
 	{
 		num: "2",
@@ -127,7 +127,7 @@ const STEPS = [
 		desc: "Hệ thống AI phân tích bài Writing & Speaking theo rubric chuẩn VSTEP, trả kết quả trong vài phút.",
 		icon: Target02Icon,
 		accent: "from-sky-400/30 to-sky-400/10",
-		image: "/images/step2.jpg",
+		image: "/images/buoc2.jpg",
 	},
 	{
 		num: "3",
@@ -135,7 +135,7 @@ const STEPS = [
 		desc: "Nhận phân tích điểm mạnh / yếu và bài tập được gợi ý riêng theo trình độ của bạn.",
 		icon: Fire02Icon,
 		accent: "from-sky-400/30 to-sky-400/10",
-		image: "/images/step3.jpg",
+		image: "/images/buoc3.jpg",
 	},
 ]
 
@@ -177,6 +177,8 @@ const TESTIMONIALS = [
 			"Mình từ B1 lên B2 sau 2 tháng luyện tập. AI chấm Writing rất chi tiết, chỉ ra đúng lỗi cần sửa.",
 		score: "B1 → B2",
 		initials: "MA",
+		avatar: "https://i.pravatar.cc/150?img=32",
+		stars: 5,
 	},
 	{
 		name: "Thanh Hà",
@@ -185,6 +187,8 @@ const TESTIMONIALS = [
 			"Giao diện dễ dùng, luyện 15 phút mỗi ngày trên điện thoại. Tiết kiệm thời gian hơn đi học trung tâm.",
 		score: "B2 → C1",
 		initials: "TH",
+		avatar: "https://i.pravatar.cc/150?img=47",
+		stars: 5,
 	},
 	{
 		name: "Đức Huy",
@@ -193,6 +197,8 @@ const TESTIMONIALS = [
 			"Đề thi sát chuẩn VSTEP, phù hợp để giới thiệu cho sinh viên luyện tập thêm ngoài giờ học.",
 		score: "Đề xuất cho SV",
 		initials: "ĐH",
+		avatar: "https://i.pravatar.cc/150?img=11",
+		stars: 4,
 	},
 ]
 
@@ -389,7 +395,7 @@ function HowItWorksSection() {
 			{/* Scroll runway — height drives the album-stack scroll distance */}
 			<div
 				ref={containerRef}
-				className="mx-auto mt-8 max-w-[1800px] px-4 sm:mt-12 sm:px-6 md:px-10 lg:px-16 2xl:px-24 min-[2200px]:max-w-[1400px] h-[120vh] sm:h-[150vh]"
+				className="mx-auto mt-8 max-w-[1800px] px-4 sm:mt-12 sm:px-6 md:px-10 lg:px-16 2xl:px-24 min-[2200px]:max-w-[1400px] h-[220vh] sm:h-[280vh]"
 			>
 				<div className="sticky top-16 sm:top-20">
 					<div className="relative">
@@ -421,11 +427,15 @@ function StepCard({
 	scrollProgress: MotionValue<number>
 }) {
 	const isLast = index === total - 1
+	// Each card occupies its own scroll segment sequentially.
+	// Only cards that can peel off (not the last) get animated.
+	// animated = total - 1 (number of cards that peel away)
 	const animated = total - 1
-	const segStart = index / animated
-	const segEnd = (index + 0.5) / animated
+	const segStart = animated > 0 ? index / animated : 0
+	const segEnd = animated > 0 ? (index + 1) / animated : 1
+	// Card stays fully visible until segStart, then peels off by segEnd
 	const rawY = useTransform(scrollProgress, [segStart, segEnd], [0, -120])
-	const springY = useSpring(rawY, { stiffness: 300, damping: 35, mass: 0.5 })
+	const springY = useSpring(rawY, { stiffness: 300, damping: 40, mass: 0.5 })
 	const y = useTransform(springY, (v) => `${v}%`)
 
 	return (
@@ -449,32 +459,26 @@ function StepCard({
 				Bước {step.num}
 			</p>
 
-			{/* Illustration — absolutely centered on right half */}
-			<div className="pointer-events-none absolute inset-y-0 right-8 hidden w-[45%] items-center lg:flex lg:right-10">
-				<div className="flex h-[70%] w-full items-center justify-center overflow-hidden rounded-2xl bg-white/[0.06] backdrop-blur-sm">
-					{step.image ? (
-						<img src={step.image} alt={step.title} className="size-full object-cover" />
-					) : (
-						<HugeiconsIcon icon={step.icon} className="size-16 text-white/25" />
-					)}
-				</div>
-			</div>
-
-			{/* Text content — flows naturally on mobile, pinned bottom-left on lg */}
-			<div className="relative mt-4 lg:absolute lg:bottom-10 lg:left-10 lg:mt-0 lg:max-w-[45%] 2xl:bottom-14 2xl:left-14">
-				<div className="space-y-2 sm:space-y-3">
+			{/* Content: text + image side by side on lg, stacked on mobile */}
+			<div className="relative mt-4 flex flex-1 flex-col gap-4 sm:mt-6 lg:flex-row lg:items-center lg:gap-8">
+				{/* Text */}
+				<div className="space-y-2 sm:space-y-3 lg:w-[45%]">
 					<h3 className="text-lg font-bold text-white sm:text-xl lg:text-2xl">{step.title}</h3>
 					<p className="text-sm leading-relaxed text-white/65 sm:text-base">{step.desc}</p>
 				</div>
-			</div>
 
-			{/* Mobile illustration fallback */}
-			<div className="mt-4 flex flex-1 items-center justify-center overflow-hidden rounded-2xl bg-white/[0.06] backdrop-blur-sm sm:mt-6 sm:flex-1 lg:hidden">
-				{step.image ? (
-					<img src={step.image} alt={step.title} className="size-full object-cover" />
-				) : (
-					<HugeiconsIcon icon={step.icon} className="size-16 text-white/25" />
-				)}
+				{/* Image — centered in frame */}
+				<div className="flex flex-1 items-center justify-center overflow-hidden rounded-2xl bg-white/[0.06] backdrop-blur-sm">
+					<div className="aspect-video w-full">
+						{step.image ? (
+							<img src={step.image} alt={step.title} className="size-full rounded-2xl object-cover" />
+						) : (
+							<div className="flex size-full items-center justify-center">
+								<HugeiconsIcon icon={step.icon} className="size-16 text-white/25" />
+							</div>
+						)}
+					</div>
+				</div>
 			</div>
 		</motion.div>
 	)
@@ -483,11 +487,9 @@ function StepCard({
 /* ── roadmap ── */
 
 function RoadmapSection() {
-	const offsets = ["lg:ml-[10%]", "lg:ml-[24%]", "lg:ml-[38%]"] as const
-
 	return (
 		<section className="overflow-hidden bg-muted/20">
-			<div className="mx-auto max-w-5xl px-6 py-20">
+			<div className="mx-auto max-w-2xl px-6 py-20">
 				<AnimSection>
 					<Heading
 						title="Lộ trình rõ ràng"
@@ -495,39 +497,50 @@ function RoadmapSection() {
 					/>
 				</AnimSection>
 
-				<div className="mt-16 flex flex-col gap-6">
-					{BANDS.map((b, i) => (
-						<AnimSection key={b.level} delay={i * 200}>
-							<div className={cn("max-w-lg", offsets[i])}>
-								<div className={cn("rounded-2xl border-l-4 bg-card p-6", b.border)}>
-									<div className="flex items-start gap-4">
-										<div
-											className={cn(
-												"flex size-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-lg font-bold text-white",
-												b.gradient,
-											)}
-										>
+				<div className="relative mt-16">
+					{/* Main vertical branch line */}
+					<div className="absolute left-5 top-0 bottom-0 w-0.5 bg-border" />
+
+					<div className="flex flex-col gap-0">
+						{BANDS.map((b, i) => (
+							<AnimSection key={b.level} delay={i * 200}>
+								<div className="relative flex items-stretch">
+									{/* Branch node: dot + connector */}
+									<div className="relative z-10 flex w-10 shrink-0 flex-col items-center">
+										{/* Dot on the line */}
+										<div className="mt-6 flex size-10 items-center justify-center rounded-full border-2 border-foreground/20 bg-background text-sm font-bold">
 											{b.level}
 										</div>
-										<div className="min-w-0 flex-1">
-											<p className="text-lg font-bold">{b.label}</p>
-											<p className="mt-1 text-sm leading-relaxed text-muted-foreground">{b.desc}</p>
-											<div className="mt-3 flex flex-wrap gap-2">
-												{b.skills.map((s) => (
-													<span
-														key={s}
-														className={cn("rounded-full px-3 py-1 text-xs font-medium", b.tag)}
-													>
-														{s}
-													</span>
-												))}
-											</div>
+										{/* Vertical segment between nodes */}
+										{i < BANDS.length - 1 && (
+											<div className="flex-1" />
+										)}
+									</div>
+
+									{/* Horizontal branch connector */}
+									<div className="mt-10 w-6 border-t-2 border-dashed border-foreground/15" />
+
+									{/* Card */}
+									<div className="mb-6 flex-1 rounded-xl border bg-card p-5">
+										<p className="font-bold">{b.label}</p>
+										<p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+											{b.desc}
+										</p>
+										<div className="mt-3 flex flex-wrap gap-1.5">
+											{b.skills.map((s) => (
+												<span
+													key={s}
+													className="rounded-md border px-2.5 py-1 text-xs text-muted-foreground"
+												>
+													{s}
+												</span>
+											))}
 										</div>
 									</div>
 								</div>
-							</div>
-						</AnimSection>
-					))}
+							</AnimSection>
+						))}
+					</div>
 				</div>
 			</div>
 		</section>
@@ -547,7 +560,8 @@ function TestimonialsSection() {
 					<AnimSection key={t.name} delay={i * 120}>
 						<div className="rounded-2xl bg-muted/30 p-6">
 							<div className="flex items-center gap-3">
-								<Avatar>
+								<Avatar size="lg">
+									<AvatarImage src={t.avatar} alt={t.name} />
 									<AvatarFallback className="bg-primary/10 text-primary">
 										{t.initials}
 									</AvatarFallback>
@@ -555,9 +569,25 @@ function TestimonialsSection() {
 								<div>
 									<p className="text-sm font-bold">{t.name}</p>
 									<p className="text-xs text-muted-foreground">{t.role}</p>
+									{/* Star rating */}
+									<div className="mt-0.5 flex gap-0.5">
+										{Array.from({ length: 5 }).map((_, si) => (
+											<svg
+												key={`star-${t.name}-${si.toString()}`}
+												className={cn("size-3", si < t.stars ? "text-amber-400" : "text-muted-foreground/25")}
+												viewBox="0 0 20 20"
+												fill="currentColor"
+												aria-hidden="true"
+												role="img"
+											>
+												<title>Star</title>
+												<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+											</svg>
+										))}
+									</div>
 								</div>
 							</div>
-							<p className="mt-4 text-sm leading-relaxed text-muted-foreground">{t.quote}</p>
+							<p className="mt-4 text-sm leading-relaxed text-muted-foreground italic">"{t.quote}"</p>
 							<div className="mt-4">
 								<span className="rounded-full bg-success/10 px-3 py-1 text-xs font-bold text-success">
 									{t.score}
