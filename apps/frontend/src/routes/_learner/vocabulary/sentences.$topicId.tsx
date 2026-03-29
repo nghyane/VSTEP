@@ -12,6 +12,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { usePronounce } from "@/hooks/use-pronounce"
 import { useSentenceTopic } from "@/hooks/use-sentences"
 import { cn } from "@/lib/utils"
 import type { SentenceItemData } from "@/types/api"
@@ -55,6 +56,7 @@ function getLeadingPunct(w: string): string {
 function SentencePracticePage() {
 	const { topicId } = Route.useParams()
 	const { data: topic, isLoading, error } = useSentenceTopic(topicId)
+	const { speak, supported: speechSupported } = usePronounce()
 
 	const sentences = topic?.sentences ?? []
 	const totalCount = sentences.length
@@ -80,6 +82,12 @@ function SentencePracticePage() {
 	const [checked, setChecked] = useState<Record<string, boolean>>({})
 	const [hints, setHints] = useState<Set<string>>(new Set())
 	const inputRefs = useRef<Map<string, HTMLInputElement[]>>(new Map())
+
+	// Auto-speak when switching sentence or first load
+	useEffect(() => {
+		const s = sentences[current]
+		if (s && speechSupported) speak(s.sentence)
+	}, [current, sentences, speechSupported, speak])
 
 	const sentence = sentences[current] as SentenceItemData | undefined
 	const sentenceId = sentence?.id ?? ""
@@ -347,8 +355,10 @@ function SentencePracticePage() {
 				<div className="flex flex-col items-center gap-3">
 					<button
 						type="button"
-						className="flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+						className="flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/20 disabled:opacity-40"
 						aria-label="Phát âm"
+						disabled={!speechSupported}
+						onClick={() => speak(sentence.sentence)}
 					>
 						<HugeiconsIcon icon={VolumeHighIcon} className="size-7" />
 					</button>

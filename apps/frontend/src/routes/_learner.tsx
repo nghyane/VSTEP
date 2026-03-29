@@ -1,14 +1,13 @@
 import { createFileRoute, redirect } from "@tanstack/react-router"
 import { LearnerLayout } from "@/components/layouts/LearnerLayout"
-import { isAuthenticated, token } from "@/lib/auth"
-
-const ONBOARDING_KEY = "vstep_onboarding_done"
+import { isAuthenticated, isOnboardingDone, markOnboardingDone, token } from "@/lib/auth"
 
 export const Route = createFileRoute("/_learner")({
 	beforeLoad: async () => {
 		if (!isAuthenticated()) throw redirect({ to: "/login" })
 
-		if (localStorage.getItem(ONBOARDING_KEY) === "1") return
+		// Per-user localStorage fast-path — avoids API call on every navigation
+		if (isOnboardingDone()) return
 
 		try {
 			const res = await fetch(
@@ -18,7 +17,7 @@ export const Route = createFileRoute("/_learner")({
 			if (res.ok) {
 				const data = await res.json()
 				if (data.completed) {
-					localStorage.setItem(ONBOARDING_KEY, "1")
+					markOnboardingDone()
 					return
 				}
 				throw redirect({ to: "/onboarding" })

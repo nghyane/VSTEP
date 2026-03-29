@@ -52,10 +52,21 @@ class Exam extends BaseModel
         $query->where('is_active', true);
     }
 
+    /**
+     * Count total MCQ items across all sections (not question groups).
+     */
     public function questionCount(): int
     {
-        return collect($this->blueprint)
+        $questionIds = collect($this->blueprint)
             ->flatMap(fn ($section) => $section['question_ids'] ?? [])
-            ->count();
+            ->all();
+
+        if (empty($questionIds)) {
+            return 0;
+        }
+
+        return Question::whereIn('id', $questionIds)
+            ->get(['id', 'content'])
+            ->sum(fn (Question $q) => count($q->content['items'] ?? []));
     }
 }

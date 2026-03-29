@@ -1,4 +1,5 @@
 import { memo } from "react"
+import { usePresignedUrl } from "@/lib/storage"
 import type { ListeningContent, QuestionContent, SessionQuestion } from "@/types/api"
 import { MCQItemRenderer } from "./MCQItemRenderer"
 
@@ -23,6 +24,9 @@ export const ListeningQuestion = memo(function ListeningQuestion({
 	onSelectAnswer,
 }: ListeningQuestionProps) {
 	const content = question.content
+	const audioKey = isListeningContent(content) ? content.audioUrl : undefined
+	const { data: audioSrc } = usePresignedUrl(audioKey)
+
 	if (!isListeningContent(content)) return null
 
 	return (
@@ -36,7 +40,7 @@ export const ListeningQuestion = memo(function ListeningQuestion({
 					controlsList="nodownload"
 					preload="metadata"
 					className="w-full"
-					src={content.audioUrl}
+					src={audioSrc ?? ""}
 				/>
 			</div>
 
@@ -65,6 +69,8 @@ export function AudioPlayerSection({
 	audioUrl: string
 	transcript?: string
 }) {
+	const { data: audioSrc } = usePresignedUrl(audioUrl)
+
 	return (
 		<div className="space-y-4">
 			<div className="rounded-xl bg-muted/30 p-4">
@@ -74,7 +80,7 @@ export function AudioPlayerSection({
 					controlsList="nodownload"
 					preload="metadata"
 					className="w-full"
-					src={audioUrl}
+					src={audioSrc ?? ""}
 				/>
 			</div>
 			{transcript && (

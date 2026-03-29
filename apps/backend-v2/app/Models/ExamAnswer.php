@@ -7,7 +7,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['session_id', 'question_id', 'answer', 'is_correct'])]
+#[Fillable(['session_id', 'question_id', 'answer', 'is_correct', 'raw_ratio'])]
 class ExamAnswer extends BaseModel
 {
     protected function casts(): array
@@ -15,6 +15,7 @@ class ExamAnswer extends BaseModel
         return [
             'answer' => 'array',
             'is_correct' => 'boolean',
+            'raw_ratio' => 'float',
         ];
     }
 

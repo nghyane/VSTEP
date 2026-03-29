@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class SpeakingUploadService
@@ -21,6 +20,10 @@ class SpeakingUploadService
 
     private const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
+    public function __construct(
+        private readonly AudioStorageService $storage,
+    ) {}
+
     public function presignAudioUpload(string $userId, string $contentType): array
     {
         $ext = self::ALLOWED_TYPES[$contentType]
@@ -28,11 +31,7 @@ class SpeakingUploadService
 
         $audioPath = "speaking/{$userId}/".Str::uuid().".{$ext}";
 
-        $uploadUrl = Storage::disk('s3')->temporaryUploadUrl(
-            $audioPath,
-            now()->addSeconds(self::PRESIGN_EXPIRES_SECONDS),
-            ['ContentType' => $contentType],
-        );
+        $uploadUrl = $this->storage->temporaryUploadUrl($audioPath, $contentType, self::PRESIGN_EXPIRES_SECONDS);
 
         return [
             'upload_url' => $uploadUrl['url'],
@@ -48,7 +47,7 @@ class SpeakingUploadService
             throw new \InvalidArgumentException('Audio path does not belong to this user.');
         }
 
-        if (! Storage::disk('s3')->exists($audioPath)) {
+        if (! $this->storage->exists($audioPath)) {
             throw new \InvalidArgumentException('Audio file not found. Please upload again.');
         }
     }

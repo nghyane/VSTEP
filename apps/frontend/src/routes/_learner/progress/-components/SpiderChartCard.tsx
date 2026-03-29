@@ -20,10 +20,17 @@ export function SpiderChartCard({
 
 	if (spiderSkills.length === 0) return null
 
+	// All skills have insufficient data → scores are estimated from placement, not real tests
+	const isEstimated =
+		spiderData != null &&
+		SKILLS.every((s) => spiderData.skills[s.key]?.trend === "insufficient_data")
+
 	return (
 		<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 			<h3 className="text-lg font-semibold">Điểm trung bình theo kỹ năng</h3>
-			<p className="mb-4 text-sm text-muted-foreground">trong Test Practice</p>
+			<p className="mb-4 text-sm text-muted-foreground">
+				{isEstimated ? "Ước lượng từ đánh giá ban đầu" : "trong Test Practice"}
+			</p>
 			<div className="flex justify-center">
 				<SpiderChart skills={spiderSkills} className="size-64" />
 			</div>
@@ -38,7 +45,7 @@ export function SpiderChartCard({
 						<HugeiconsIcon icon={icon} className={cn("size-4", skillColorText[key])} />
 						<span>{label}</span>
 						<span className="ml-auto text-xs text-muted-foreground tabular-nums">
-						{spiderData?.skills[key]?.current?.toFixed(1) ?? "—"}
+							{spiderData?.skills[key]?.current?.toFixed(1) ?? "—"}
 						</span>
 					</Link>
 				))}

@@ -144,6 +144,9 @@ class SessionService
             ]);
 
             $this->applyScoresToProgress($session);
+
+            // Auto-update assignment submission if linked
+            app(ClassroomService::class)->onExamSessionCompleted($session);
         });
 
         return $session->fresh();
@@ -199,9 +202,6 @@ class SessionService
 
     private function gradeObjectiveAnswers(ExamSession $session): void
     {
-        $correctIds = [];
-        $incorrectIds = [];
-
         foreach ($session->answers as $answer) {
             $question = $answer->question;
             if (! $question || ! $question->skill->isObjective()) {
@@ -214,19 +214,8 @@ class SessionService
             }
 
             $answer->is_correct = $result['all_correct'];
-
-            if ($result['all_correct']) {
-                $correctIds[] = $answer->id;
-            } else {
-                $incorrectIds[] = $answer->id;
-            }
-        }
-
-        if ($correctIds) {
-            ExamAnswer::whereIn('id', $correctIds)->update(['is_correct' => true]);
-        }
-        if ($incorrectIds) {
-            ExamAnswer::whereIn('id', $incorrectIds)->update(['is_correct' => false]);
+            $answer->raw_ratio = $result['raw_ratio'];
+            $answer->save();
         }
     }
 
@@ -247,9 +236,11 @@ class SessionService
                 continue;
             }
 
-            $correct = $skillAnswers->where('is_correct', true)->count();
             $total = $skillAnswers->count();
-            $update[$column] = $total > 0 ? VstepScoring::score($correct / $total) : 0.0;
+            $rawRatio = $total > 0
+                ? $skillAnswers->sum(fn ($answer) => $answer->raw_ratio ?? (($answer->is_correct ?? false) ? 1.0 : 0.0)) / $total
+                : 0.0;
+            $update[$column] = VstepScoring::score($rawRatio);
         }
 
         $scores = array_filter([

@@ -48,7 +48,9 @@ interface ClassFeedback {
 	id: string
 	classId: string
 	fromUserId: string
+	fromUserName: string | null
 	toUserId: string
+	toUserName: string | null
 	content: string
 	skill: string | null
 	submissionId: string | null
@@ -196,20 +198,231 @@ function useClassFeedback(classId: string, params?: { page?: number; skill?: str
 	})
 }
 
+// ── Assignments ──
+
+interface ClassAssignment {
+	id: string
+	classroomId: string
+	title: string
+	description: string | null
+	content: string | null
+	audioUrl: string | null
+	skill: string | null
+	type: "practice" | "exam"
+	examId: string | null
+	dueDate: string | null
+	allowRetry: boolean
+	createdAt: string
+	submissionCount?: number
+	gradedCount?: number
+	submittedCount?: number
+	pendingCount?: number
+	submissions?: ClassAssignmentSubmission[]
+}
+
+interface ExamSessionSummary {
+	id: string
+	status: string
+	overallScore: number | null
+	overallBand: string | null
+	listeningScore: number | null
+	readingScore: number | null
+	writingScore: number | null
+	speakingScore: number | null
+	completedAt: string | null
+}
+
+interface ClassAssignmentSubmission {
+	id: string
+	assignmentId: string
+	userId: string
+	examSessionId: string | null
+	fullName: string | null
+	email: string | null
+	answer: string | null
+	status: "pending" | "submitted" | "graded"
+	score: string | null
+	feedback: string | null
+	submittedAt: string | null
+	lateMinutes: number | null
+	createdAt: string
+	examSession?: ExamSessionSummary
+}
+
+function useAssignments(classId: string) {
+	return useQuery({
+		queryKey: ["classes", classId, "assignments"],
+		queryFn: () => api.get<ClassAssignment[]>(`/api/classes/${classId}/assignments`),
+		enabled: !!classId,
+	})
+}
+
+function useAssignment(classId: string, assignmentId: string) {
+	return useQuery({
+		queryKey: ["classes", classId, "assignments", assignmentId],
+		queryFn: () =>
+			api.get<ClassAssignment>(`/api/classes/${classId}/assignments/${assignmentId}`),
+		enabled: !!classId && !!assignmentId,
+	})
+}
+
+function useCreateAssignment() {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: ({
+			classId,
+			...body
+		}: {
+			classId: string
+			title: string
+			description?: string
+			content?: string
+			audioUrl?: string
+			skill?: string
+			type?: string
+			examId?: string
+			dueDate?: string
+			allowRetry?: boolean
+		}) => api.post<ClassAssignment>(`/api/classes/${classId}/assignments`, body),
+		onSuccess: (_data, vars) => {
+			qc.invalidateQueries({ queryKey: ["classes", vars.classId, "assignments"] })
+		},
+	})
+}
+
+function useDeleteAssignment() {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: ({ classId, assignmentId }: { classId: string; assignmentId: string }) =>
+			api.delete<{ id: string }>(`/api/classes/${classId}/assignments/${assignmentId}`),
+		onSuccess: (_data, vars) => {
+			qc.invalidateQueries({ queryKey: ["classes", vars.classId, "assignments"] })
+		},
+	})
+}
+
+function useStartAssignment() {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: ({ classId, assignmentId }: { classId: string; assignmentId: string }) =>
+			api.post<ClassAssignmentSubmission>(
+				`/api/classes/${classId}/assignments/${assignmentId}/start`,
+			),
+		onSuccess: (_data, vars) => {
+			qc.invalidateQueries({ queryKey: ["classes", vars.classId, "assignments"] })
+		},
+	})
+}
+
+function useSubmitAnswer() {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: ({
+			classId,
+			assignmentId,
+			answer,
+		}: {
+			classId: string
+			assignmentId: string
+			answer: string
+		}) =>
+			api.post<ClassAssignmentSubmission>(
+				`/api/classes/${classId}/assignments/${assignmentId}/submit-answer`,
+				{ answer },
+			),
+		onSuccess: (_data, vars) => {
+			qc.invalidateQueries({ queryKey: ["classes", vars.classId, "assignments"] })
+		},
+	})
+}
+
+function useShowSubmission(classId: string, submissionId: string) {
+	return useQuery({
+		queryKey: ["classes", classId, "submissions", submissionId],
+		queryFn: () =>
+			api.get<ClassAssignmentSubmission>(
+				`/api/classes/${classId}/submissions/${submissionId}`,
+			),
+		enabled: !!classId && !!submissionId,
+	})
+}
+
+function useGradeSubmission() {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: ({
+			classId,
+			submissionId,
+			score,
+			feedback,
+		}: {
+			classId: string
+			submissionId: string
+			score: number
+			feedback?: string
+		}) =>
+			api.post<ClassAssignmentSubmission>(
+				`/api/classes/${classId}/submissions/${submissionId}/grade`,
+				{ score, feedback },
+			),
+		onSuccess: (_data, vars) => {
+			qc.invalidateQueries({ queryKey: ["classes", vars.classId, "assignments"] })
+		},
+	})
+}
+
+// ── Leaderboard ──
+
+interface LeaderboardEntry {
+	rank: number
+	userId: string
+	fullName: string
+	avgScore: number
+	totalAttempts: number
+	streak: number
+}
+
+function useLeaderboard(classId: string) {
+	return useQuery({
+		queryKey: ["classes", classId, "leaderboard"],
+		queryFn: () => api.get<LeaderboardEntry[]>(`/api/classes/${classId}/leaderboard`),
+		enabled: !!classId,
+	})
+}
+
 export {
+	useAssignment,
+	useAssignments,
 	useClass,
 	useClassDashboard,
 	useClassFeedback,
 	useClasses,
+	useCreateAssignment,
 	useCreateClass,
+	useDeleteAssignment,
 	useDeleteClass,
+	useGradeSubmission,
 	useJoinClass,
+	useLeaderboard,
 	useLeaveClass,
 	useMemberProgress,
 	useRemoveMember,
 	useRotateCode,
 	useSendFeedback,
+	useShowSubmission,
+	useStartAssignment,
+	useSubmitAnswer,
 	useUpdateClass,
 }
 
-export type { Class, ClassDashboard, ClassDetail, ClassFeedback, ClassMember }
+export type {
+	Class,
+	ClassAssignment,
+	ClassAssignmentSubmission,
+	ClassDashboard,
+	ClassDetail,
+	ClassFeedback,
+	ClassMember,
+	ExamSessionSummary,
+	LeaderboardEntry,
+}

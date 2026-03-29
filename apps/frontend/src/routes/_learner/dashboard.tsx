@@ -7,7 +7,8 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
 	Dialog,
@@ -20,9 +21,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
+import { useClasses, useCreateClass, useDeleteClass, useJoinClass } from "@/hooks/use-classes"
 import { user } from "@/lib/auth"
-import type { MockInstructorClass } from "@/lib/mock-classes"
-import { getMockClasses, getMockInstructorClasses } from "@/lib/mock-classes"
 
 export const Route = createFileRoute("/_learner/dashboard")({
 	component: DashboardPage,
@@ -36,33 +36,47 @@ function DashboardPage() {
 }
 
 function InstructorView() {
-	const [isLoading, setIsLoading] = useState(true)
-	const [classes, setClasses] = useState<MockInstructorClass[]>([])
+	const { data, isLoading } = useClasses()
+	const createClass = useCreateClass()
+	const deleteClass = useDeleteClass()
+
+	const classes = data?.data ?? []
+
 	const [showCreate, setShowCreate] = useState(false)
 	const [name, setName] = useState("")
 	const [description, setDescription] = useState("")
 
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			setClasses(getMockInstructorClasses())
-			setIsLoading(false)
-		}, 500)
-		return () => clearTimeout(timer)
-	}, [])
-
 	function handleCreate() {
-		if (!name.trim()) return
-		setShowCreate(false)
-		setName("")
-		setDescription("")
+		if (!name.trim()) { toast.error("Vui lòng nhập tên lớp"); return }
+		createClass.mutate(
+			{ name: name.trim(), description: description.trim() || undefined },
+			{
+				onSuccess: () => {
+					setShowCreate(false)
+					setName("")
+					setDescription("")
+					toast.success("Tạo lớp học thành công")
+				},
+				onError: () => toast.error("Không thể tạo lớp học. Vui lòng thử lại."),
+			},
+		)
 	}
 
-	function handleDelete(id: string) {
-		setClasses((prev) => prev.filter((c) => c.id !== id))
+	function handleDelete(e: React.MouseEvent, id: string) {
+		e.preventDefault()
+		if (confirm("Bạn có chắc muốn xóa lớp học này?")) {
+			deleteClass.mutate(id, {
+				onSuccess: () => toast.success("Đã xóa lớp học"),
+				onError: () => toast.error("Không thể xóa lớp học"),
+			})
+		}
 	}
 
-	function handleCopyCode(code: string) {
+	function handleCopyCode(e: React.MouseEvent, code: string) {
+		e.preventDefault()
 		navigator.clipboard.writeText(code)
+			.then(() => toast.success("Đã sao chép mã mời"))
+			.catch(() => toast.error("Không thể sao chép"))
 	}
 
 	return (
@@ -122,10 +136,7 @@ function InstructorView() {
 								<button
 									type="button"
 									className="text-muted-foreground hover:text-foreground"
-									onClick={(e) => {
-										e.preventDefault()
-										handleCopyCode(cls.inviteCode)
-									}}
+									onClick={(e) => handleCopyCode(e, cls.inviteCode)}
 								>
 									<HugeiconsIcon icon={Copy01Icon} className="size-3.5" />
 								</button>
@@ -140,10 +151,7 @@ function InstructorView() {
 									size="sm"
 									variant="ghost"
 									className="text-destructive hover:text-destructive"
-									onClick={(e) => {
-										e.preventDefault()
-										handleDelete(cls.id)
-									}}
+									onClick={(e) => handleDelete(e, cls.id)}
 								>
 									<HugeiconsIcon icon={Delete02Icon} className="size-4" />
 								</Button>
@@ -183,8 +191,8 @@ function InstructorView() {
 						<Button variant="outline" onClick={() => setShowCreate(false)}>
 							Huỷ
 						</Button>
-						<Button onClick={handleCreate} disabled={!name.trim()}>
-							Tạo lớp
+						<Button onClick={handleCreate} disabled={!name.trim() || createClass.isPending}>
+							{createClass.isPending ? "Đang tạo..." : "Tạo lớp"}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
@@ -194,7 +202,33 @@ function InstructorView() {
 }
 
 function LearnerView() {
-	const classes = getMockClasses("learner")
+	const { data, isLoading } = useClasses()
+	const joinClass = useJoinClass()
+	const classes = data?.data ?? []
+
+	const [showJoin, setShowJoin] = useState(false)
+	const [inviteCode, setInviteCode] = useState("")
+	const [joinError, setJoinError] = useState("")
+
+	function handleJoin() {
+		if (!inviteCode.trim()) { toast.error("Vui lòng nhập mã mời"); return }
+		setJoinError("")
+		joinClass.mutate(
+			{ inviteCode: inviteCode.trim() },
+			{
+				onSuccess: () => {
+					setShowJoin(false)
+					setInviteCode("")
+					toast.success("Tham gia lớp học thành công!")
+				},
+				onError: (err) => {
+					const msg = err instanceof Error ? err.message : "Mã mời không hợp lệ"
+					setJoinError(msg)
+					toast.error(msg)
+				},
+			},
+		)
+	}
 
 	return (
 		<div className="space-y-6">
@@ -203,9 +237,19 @@ function LearnerView() {
 					<h1 className="text-2xl font-bold">Lớp học của tôi</h1>
 					<p className="mt-1 text-muted-foreground">Xem các lớp học bạn đã tham gia</p>
 				</div>
+				<Button className="gap-1.5" onClick={() => setShowJoin(true)}>
+					<HugeiconsIcon icon={Add01Icon} className="size-4" />
+					Tham gia lớp
+				</Button>
 			</div>
 
-			{classes.length === 0 ? (
+			{isLoading ? (
+				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+					{Array.from({ length: 3 }).map((_, i) => (
+						<Skeleton key={`skeleton-${i.toString()}`} className="h-36 rounded-2xl" />
+					))}
+				</div>
+			) : classes.length === 0 ? (
 				<div className="flex flex-col items-center gap-4 py-16">
 					<div className="flex size-16 items-center justify-center rounded-2xl bg-muted">
 						<HugeiconsIcon icon={UserGroup02Icon} className="size-8 text-muted-foreground" />
@@ -245,6 +289,38 @@ function LearnerView() {
 					))}
 				</div>
 			)}
+
+			<Dialog open={showJoin} onOpenChange={setShowJoin}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Tham gia lớp học</DialogTitle>
+					</DialogHeader>
+					<div className="space-y-4">
+						<div className="space-y-1.5">
+							<Label htmlFor="inviteCode">Mã mời</Label>
+							<Input
+								id="inviteCode"
+								placeholder="Nhập mã mời từ giảng viên"
+								value={inviteCode}
+								onChange={(e) => setInviteCode(e.target.value)}
+								onKeyDown={(e) => e.key === "Enter" && handleJoin()}
+							/>
+						</div>
+						{joinError && <p className="text-sm text-destructive">{joinError}</p>}
+					</div>
+					<DialogFooter>
+						<Button variant="outline" onClick={() => setShowJoin(false)}>
+							Huỷ
+						</Button>
+						<Button
+							onClick={handleJoin}
+							disabled={!inviteCode.trim() || joinClass.isPending}
+						>
+							{joinClass.isPending ? "Đang tham gia..." : "Tham gia"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	)
 }

@@ -101,6 +101,10 @@ class GradeSubmission implements ShouldQueue
                 'graded_at' => now()->toAtomString(),
             ];
 
+            if ($submission->practiceSession?->mode) {
+                $resultData['scaffolding_type'] = $submission->practiceSession->mode->value;
+            }
+
             if ($pronunciationData) {
                 $resultData['pronunciation'] = $pronunciationData;
             }

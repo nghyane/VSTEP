@@ -7,7 +7,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
 	Dialog,
@@ -68,6 +68,17 @@ function PracticePage() {
 	const [confirmingNextSkill, setConfirmingNextSkill] = useState(false)
 	const [deviceChecked, setDeviceChecked] = useState(false)
 
+	// Warn user before leaving (F5, reload, close tab) during active exam
+	useEffect(() => {
+		if (!session || session.status !== "in_progress") return
+
+		const handler = (e: BeforeUnloadEvent) => {
+			e.preventDefault()
+		}
+		window.addEventListener("beforeunload", handler)
+		return () => window.removeEventListener("beforeunload", handler)
+	}, [session])
+
 	// Group questions by skill
 	const questionsBySkill = useMemo(() => {
 		if (!session) return new Map<Skill, ExamSessionDetail["questions"]>()
@@ -85,13 +96,12 @@ function PracticePage() {
 		[questionsBySkill],
 	)
 
-	// Build skill info for device check screen
+	// Build skill info for device check screen — count questions (each = 1 passage/section)
 	const skillInfoForCheck = useMemo(
 		() =>
 			activeSkills.map((skill) => {
 				const qs = questionsBySkill.get(skill) ?? []
-				const parts = new Set(qs.map((q) => q.part))
-				return { skill, sections: parts.size }
+				return { skill, sections: qs.length }
 			}),
 		[activeSkills, questionsBySkill],
 	)
@@ -138,13 +148,17 @@ function PracticePage() {
 		setCurrentSkillIndex((i) => Math.min(activeSkills.length - 1, i + 1))
 	}, [activeSkills.length])
 
-	// Submit
-	function handleSubmit() {
-		flush()
+	// Submit — await flush to ensure all answers are saved before grading
+	async function handleSubmit() {
+		await flush()
 		submitExam.mutate(undefined, {
 			onSuccess: () => {
 				setConfirming(false)
-				navigate({ to: "/exams/sessions/$sessionId", params: { sessionId } })
+				if (exam?.type === "placement") {
+					navigate({ to: "/onboarding", search: { session: sessionId } })
+				} else {
+					navigate({ to: "/exams/sessions/$sessionId", params: { sessionId } })
+				}
 			},
 		})
 	}
@@ -170,9 +184,15 @@ function PracticePage() {
 			<div className="flex h-full flex-col items-center justify-center gap-4">
 				<p className="text-muted-foreground">Phiên thi đã kết thúc.</p>
 				<Button asChild variant="outline">
-					<Link to="/exams/sessions/$sessionId" params={{ sessionId }}>
-						Xem kết quả
-					</Link>
+					{exam?.type === "placement" ? (
+						<Link to="/onboarding" search={{ session: sessionId }}>
+							Xem kết quả
+						</Link>
+					) : (
+						<Link to="/exams/sessions/$sessionId" params={{ sessionId }}>
+							Xem kết quả
+						</Link>
+					)}
 				</Button>
 			</div>
 		)

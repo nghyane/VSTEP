@@ -108,13 +108,13 @@ class ProgressService
     /**
      * @return array{progress: UserProgress|null, recent_scores: BaseCollection, trend: string, window_avg: float|null, window_deviation: float|null}
      */
-    public function bySkill(string $userId, Skill $skill): array
+    public function bySkill(string $userId, Skill $skill, ?string $source = null): array
     {
         $progress = UserProgress::where('user_id', $userId)
             ->where('skill', $skill)
             ->first();
 
-        $recentScores = $this->recentScoresForSkill($userId, $skill);
+        $recentScores = $this->recentScoresForSkill($userId, $skill, $source);
         $scoreValues = $recentScores->pluck('score');
         $deviation = $this->computeDeviation($scoreValues);
 
@@ -286,34 +286,41 @@ class ProgressService
      *
      * @return BaseCollection<int, array{score: float, created_at: Carbon}>
      */
-    private function recentScoresForSkill(string $userId, Skill $skill): BaseCollection
+    private function recentScoresForSkill(string $userId, Skill $skill, ?string $source = null): BaseCollection
     {
-        $practiceScores = Submission::forUser($userId)
-            ->scored()
-            ->where('skill', $skill)
-            ->orderByDesc('created_at')
-            ->limit(20)
-            ->get()
-            ->map(fn (Submission $s) => [
-                'score' => $s->score,
-                'created_at' => $s->completed_at ?? $s->created_at,
-            ])
-            ->values();
+        $practiceScores = collect();
+        if ($source !== 'exam') {
+            $practiceScores = Submission::forUser($userId)
+                ->scored()
+                ->where('skill', $skill)
+                ->orderByDesc('created_at')
+                ->limit(20)
+                ->get()
+                ->map(fn (Submission $s) => [
+                    'score' => $s->score,
+                    'created_at' => $s->completed_at ?? $s->created_at,
+                ])
+                ->values();
+        }
 
-        $scoreColumn = $skill->scoreColumn();
-        $examScores = ExamSession::forUser($userId)
-            ->completed()
-            ->whereNotNull($scoreColumn)
-            ->orderByDesc('completed_at')
-            ->limit(20)
-            ->get()
-            ->map(fn (ExamSession $s) => [
-                'score' => $s->{$scoreColumn},
-                'created_at' => $s->completed_at,
-            ])
-            ->values();
+        $examScores = collect();
+        if ($source !== 'practice') {
+            $scoreColumn = $skill->scoreColumn();
+            $examScores = ExamSession::forUser($userId)
+                ->completed()
+                ->whereNotNull($scoreColumn)
+                ->orderByDesc('completed_at')
+                ->limit(20)
+                ->get()
+                ->map(fn (ExamSession $s) => [
+                    'score' => $s->{$scoreColumn},
+                    'created_at' => $s->completed_at,
+                ])
+                ->values();
+        }
 
-        return $practiceScores->toBase()->merge($examScores)
+        return $practiceScores->toBase()
+            ->merge($examScores)
             ->sortByDesc('created_at')
             ->take(20)
             ->values();

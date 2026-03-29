@@ -15,6 +15,7 @@ use App\Models\GradingCriterion;
 use App\Models\GradingRubric;
 use App\Models\KnowledgePoint;
 use App\Models\Notification;
+use App\Models\PracticeSession;
 use App\Models\Question;
 use App\Models\Submission;
 use App\Models\User;
@@ -266,6 +267,44 @@ class GradeSubmissionTest extends TestCase
 
         // Weighted: (10*0.4 + 5*0.2 + 5*0.2 + 5*0.2) / (0.4+0.2+0.2+0.2) = 7.0
         $this->assertSame(7.0, $submission->score);
+    }
+
+    #[Test]
+    public function it_persists_scaffolding_type_in_practice_grading_result(): void
+    {
+        $practiceSession = PracticeSession::create([
+            'user_id' => $this->user->id,
+            'skill' => Skill::Writing,
+            'mode' => 'guided',
+            'level' => Level::B2,
+            'config' => ['items_count' => 3],
+            'started_at' => now(),
+        ]);
+
+        $submission = Submission::create([
+            'user_id' => $this->user->id,
+            'practice_session_id' => $practiceSession->id,
+            'question_id' => $this->question->id,
+            'skill' => Skill::Writing,
+            'answer' => ['text' => 'This is a guided writing response.'],
+            'status' => SubmissionStatus::Pending,
+        ]);
+
+        $this->runGradeJob($submission, [
+            'criteria_scores' => [
+                'task_fulfillment' => 7.0,
+                'organization' => 7.0,
+                'vocabulary' => 7.0,
+                'grammar' => 7.0,
+            ],
+            'feedback' => 'Structured response.',
+            'knowledge_gaps' => [],
+            'confidence' => 'high',
+        ]);
+
+        $submission->refresh();
+
+        $this->assertSame('guided', $submission->result['scaffolding_type']);
     }
 
     // --- Helpers ---

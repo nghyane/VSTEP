@@ -46,9 +46,9 @@ function useExamAnswers(sessionId: string, initialAnswers: SessionAnswer[]) {
 	const answersRef = useRef(answers)
 	answersRef.current = answers
 
-	const flushDirty = useCallback(() => {
+	const flushDirty = useCallback((): Promise<void> => {
 		const dirty = dirtyRef.current
-		if (dirty.size === 0) return
+		if (dirty.size === 0) return Promise.resolve()
 		const current = answersRef.current
 		const payload: { questionId: string; answer: SubmissionAnswer }[] = []
 		for (const qId of dirty) {
@@ -57,16 +57,17 @@ function useExamAnswers(sessionId: string, initialAnswers: SessionAnswer[]) {
 		}
 		dirty.clear()
 		if (payload.length > 0) {
-			saveMutation.mutate(payload)
+			return saveMutation.mutateAsync(payload).then(() => {})
 		}
+		return Promise.resolve()
 	}, [saveMutation])
 
-	const flush = useCallback(() => {
+	const flush = useCallback((): Promise<void> => {
 		if (timerRef.current) {
 			clearTimeout(timerRef.current)
 			timerRef.current = null
 		}
-		flushDirty()
+		return flushDirty()
 	}, [flushDirty])
 
 	const updateAnswer = useCallback(

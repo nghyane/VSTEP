@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AudioController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\ClassroomController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\ExamController;
 use App\Http\Controllers\Api\V1\KnowledgePointController;
@@ -158,6 +159,29 @@ Route::prefix('v1')->group(function () {
 
             return response()->json($response->json(), $response->status());
         })->where('action', 'paraphrase|explain');
+
+        // Classes
+        Route::get('/classes', [ClassroomController::class, 'index']);
+        Route::post('/classes', [ClassroomController::class, 'store']);
+        Route::post('/classes/join', [ClassroomController::class, 'join']);
+        Route::get('/classes/{classroom}', [ClassroomController::class, 'show']);
+        Route::patch('/classes/{classroom}', [ClassroomController::class, 'update']);
+        Route::delete('/classes/{classroom}', [ClassroomController::class, 'destroy']);
+        Route::post('/classes/{classroom}/rotate-code', [ClassroomController::class, 'rotateCode']);
+        Route::post('/classes/{classroom}/leave', [ClassroomController::class, 'leave']);
+        Route::delete('/classes/{classroom}/members/{userId}', [ClassroomController::class, 'removeMember']);
+        Route::get('/classes/{classroom}/dashboard', [ClassroomController::class, 'dashboard']);
+        Route::post('/classes/{classroom}/feedback', [ClassroomController::class, 'sendFeedback']);
+        Route::get('/classes/{classroom}/feedback', [ClassroomController::class, 'listFeedback']);
+        Route::get('/classes/{classroom}/assignments', [ClassroomController::class, 'listAssignments']);
+        Route::post('/classes/{classroom}/assignments', [ClassroomController::class, 'storeAssignment']);
+        Route::get('/classes/{classroom}/assignments/{assignment}', [ClassroomController::class, 'showAssignment']);
+        Route::delete('/classes/{classroom}/assignments/{assignment}', [ClassroomController::class, 'destroyAssignment']);
+        Route::post('/classes/{classroom}/assignments/{assignment}/start', [ClassroomController::class, 'startAssignment']);
+        Route::post('/classes/{classroom}/assignments/{assignment}/submit-answer', [ClassroomController::class, 'submitAnswer']);
+        Route::post('/classes/{classroom}/submissions/{submission}/grade', [ClassroomController::class, 'gradeSubmission']);
+        Route::get('/classes/{classroom}/submissions/{submission}', [ClassroomController::class, 'showSubmission']);
+        Route::get('/classes/{classroom}/leaderboard', [ClassroomController::class, 'leaderboard']);
 
         // Devices
         Route::post('/devices', [DeviceController::class, 'store']);

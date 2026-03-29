@@ -11,6 +11,7 @@ import { createFileRoute, Link } from "@tanstack/react-router"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { usePronounce } from "@/hooks/use-pronounce"
 import { useTopicProgress, useVocabularyTopic } from "@/hooks/use-vocabulary"
 import { cn } from "@/lib/utils"
 import type { VocabularyWord } from "@/types/api"
@@ -40,6 +41,8 @@ interface WordCardProps {
 }
 
 function WordCard({ word }: WordCardProps) {
+	const { speak, supported } = usePronounce()
+
 	return (
 		<div className="space-y-4 rounded-2xl bg-muted/50 p-6 shadow-sm">
 			<div className="flex items-start justify-between gap-3">
@@ -50,13 +53,23 @@ function WordCard({ word }: WordCardProps) {
 				<div className="flex items-center gap-2">
 					<Badge
 						variant="secondary"
-						className={cn("text-xs", posColors[word.partOfSpeech] ?? "bg-muted text-muted-foreground")}
+						className={cn(
+							"text-xs",
+							posColors[word.partOfSpeech] ?? "bg-muted text-muted-foreground",
+						)}
 					>
 						{posLabels[word.partOfSpeech] ?? word.partOfSpeech}
 					</Badge>
-					<Button variant="ghost" size="icon-sm" aria-label="Phát âm">
-						<HugeiconsIcon icon={VolumeHighIcon} className="size-4" />
-					</Button>
+					{supported && (
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							aria-label="Phát âm"
+							onClick={() => speak(word.word)}
+						>
+							<HugeiconsIcon icon={VolumeHighIcon} className="size-4" />
+						</Button>
+					)}
 				</div>
 			</div>
 
@@ -189,7 +202,11 @@ function VocabTopicDetailPage() {
 				<StatCard icon={Book02Icon} label="Tổng số từ" value={totalWords} />
 				<StatCard icon={CheckmarkCircle02Icon} label="Đã học" value={knownCount} />
 				<StatCard icon={BrainIcon} label="Đã nhớ" value={knownCount} />
-				<StatCard icon={RepeatIcon} label="Cần ôn tập" value={Math.max(0, totalWords - knownCount)} />
+				<StatCard
+					icon={RepeatIcon}
+					label="Cần ôn tập"
+					value={Math.max(0, totalWords - knownCount)}
+				/>
 			</div>
 
 			<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

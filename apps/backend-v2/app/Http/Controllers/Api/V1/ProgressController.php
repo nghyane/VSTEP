@@ -54,7 +54,11 @@ class ProgressController extends Controller
 
     public function bySkill(Request $request, string $skill)
     {
-        $data = $this->service->bySkill($request->user()->id, Skill::from($skill));
+        $source = $request->validate([
+            'source' => ['nullable', 'string', 'in:practice,exam'],
+        ])['source'] ?? null;
+
+        $data = $this->service->bySkill($request->user()->id, Skill::from($skill), $source);
 
         return new SkillDetailResource($data);
     }

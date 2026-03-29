@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Services\AudioStorageService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class AudioController extends Controller
@@ -14,6 +14,10 @@ class AudioController extends Controller
     private const ALLOWED_PREFIXES = ['listening/', 'reference_audio/', 'audio/'];
 
     private const PRESIGN_SECONDS = 3600; // 1 hour
+
+    public function __construct(
+        private readonly AudioStorageService $storage,
+    ) {}
 
     public function presignRead(Request $request)
     {
@@ -27,13 +31,13 @@ class AudioController extends Controller
             ]);
         }
 
-        if (! Storage::disk('s3')->exists($path)) {
+        if (! $this->storage->exists($path)) {
             throw ValidationException::withMessages([
                 'path' => ['File not found.'],
             ]);
         }
 
-        $url = Storage::disk('s3')->temporaryUrl($path, now()->addSeconds(self::PRESIGN_SECONDS));
+        $url = $this->storage->temporaryUrl($path, self::PRESIGN_SECONDS);
 
         return response()->json(['data' => [
             'url' => $url,
