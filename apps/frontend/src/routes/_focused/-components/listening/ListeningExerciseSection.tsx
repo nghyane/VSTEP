@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { usePresignedUrl } from "@/lib/storage"
 import { cn } from "@/lib/utils"
 import { ListeningAnswerDetail } from "@/routes/_focused/-components/listening/ListeningAnswerDetail"
 import { ListeningPracticeAudioBar } from "@/routes/_focused/-components/listening/ListeningAudioBar"
@@ -31,6 +32,7 @@ export function ListeningExerciseSection({
 	onSelect: (questionNumber: number, letter: string) => void
 	onSubmit: () => void
 }) {
+	const { data: resolvedAudioUrl } = usePresignedUrl(exam.audioUrl)
 	const [focusedQuestion, setFocusedQuestion] = useState<number | null>(null)
 	const [highlightSentenceIndex, setHighlightSentenceIndex] = useState<number | null>(null)
 	const [highlightMessageIndex, setHighlightMessageIndex] = useState<number | null>(null)
@@ -107,7 +109,7 @@ export function ListeningExerciseSection({
 					</div>
 
 					{/* Audio bar */}
-					<ListeningPracticeAudioBar src={exam.audioUrl} />
+					<ListeningPracticeAudioBar src={resolvedAudioUrl ?? ""} />
 
 					{/* Bottom bar: question nav + submit */}
 					<div className="flex h-14 shrink-0 items-center justify-between border-t px-4">
@@ -196,7 +198,7 @@ export function ListeningExerciseSection({
 						</div>
 					</div>
 					{/* Audio bar pinned at bottom */}
-					<ListeningPracticeAudioBar src={exam.audioUrl} />
+					<ListeningPracticeAudioBar src={resolvedAudioUrl ?? ""} />
 				</>
 			)}
 		</div>

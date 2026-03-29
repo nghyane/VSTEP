@@ -15,6 +15,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog"
+import { usePresignedUrls } from "@/lib/storage"
 import { cn } from "@/lib/utils"
 import { getObjectiveAnswer } from "@/routes/_learner/exams/-components/questions/useExamAnswers"
 import type { ExamSessionDetail, ListeningContent, SubmissionAnswer } from "@/types/api"
@@ -155,6 +156,13 @@ function ReadinessModal({
 export function ListeningExamPanel({ questions, answers, onSelectMCQ }: ListeningExamPanelProps) {
 	// Each question object = one section/part, sorted by part number
 	const sections = useMemo(() => [...questions].sort((a, b) => a.part - b.part), [questions])
+
+	// Resolve all audio URLs via presigned endpoint
+	const audioKeys = useMemo(
+		() => sections.map((q) => (q.content as ListeningContent).audioUrl),
+		[sections],
+	)
+	const { urlMap: audioUrlMap } = usePresignedUrls(audioKeys)
 
 	const [activeSectionIdx, setActiveSectionIdx] = useState(0)
 	const [isReady, setIsReady] = useState(false)
@@ -328,7 +336,7 @@ export function ListeningExamPanel({ questions, answers, onSelectMCQ }: Listenin
 							ref={(el) => {
 								audioRefs.current[i] = el
 							}}
-							src={c.audioUrl}
+							src={audioUrlMap.get(c.audioUrl) ?? ""}
 							preload="metadata"
 							className="hidden"
 						/>
