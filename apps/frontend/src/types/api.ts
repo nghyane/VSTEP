@@ -93,16 +93,21 @@ interface SessionQuestion {
 	skill: Skill
 	part: number
 	content: QuestionContent
+	answerKey?: { correctAnswers: Record<string, string> | string[] } | null
+	explanation?: string | null
 }
 
 interface SessionAnswer {
 	questionId: string
 	answer: SubmissionAnswer
+	isCorrect: boolean | null
+	rawRatio: number | null
 }
 
 interface ExamSessionDetail extends ExamSession {
 	questions: SessionQuestion[]
 	answers: SessionAnswer[]
+	submissions: SubmissionFull[]
 }
 
 // Progress
@@ -267,7 +272,7 @@ interface Question {
 	level: QuestionLevel
 	part: number
 	content: QuestionContent
-	answerKey?: { correctAnswers: Record<string, string> } | null
+	answerKey?: { correctAnswers: Record<string, string> | string[] } | null
 	explanation?: string | null
 	isActive: boolean
 	createdBy: string | null
@@ -277,7 +282,7 @@ interface Question {
 
 // Answer types
 interface ObjectiveAnswer {
-	answers: Record<string, string>
+	answers: Record<string, string> | string[]
 }
 
 interface WritingAnswer {

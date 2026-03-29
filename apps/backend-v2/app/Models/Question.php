@@ -49,11 +49,17 @@ class Question extends BaseModel
             return null;
         }
 
-        $correct = 0;
-        $total = count($correctAnswers);
+        // Normalize both to 0-indexed arrays so comparison is positional.
+        // correctAnswers may be {"1":"A","2":"B"} (1-indexed) or ["A","B"] (0-indexed).
+        // userAnswers may be {"1":"A","2":"B"} (1-indexed from FE) or [0=>"A",1=>"B"].
+        $expected = array_values((array) $correctAnswers);
+        $given = array_values((array) $userAnswers);
 
-        foreach ($correctAnswers as $key => $expected) {
-            if (($userAnswers[$key] ?? null) === $expected) {
+        $correct = 0;
+        $total = count($expected);
+
+        for ($i = 0; $i < $total; $i++) {
+            if (($given[$i] ?? null) === $expected[$i]) {
                 $correct++;
             }
         }

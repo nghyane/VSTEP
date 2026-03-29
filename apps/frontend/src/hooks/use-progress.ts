@@ -29,10 +29,11 @@ function useSpiderChart() {
 	})
 }
 
-function useSkillDetail(skill: string) {
+function useSkillDetail(skill: string, source?: "practice" | "exam") {
+	const search = source ? `?source=${source}` : ""
 	return useQuery({
-		queryKey: ["progress", skill],
-		queryFn: () => api.get<ProgressSkillDetail>(`/api/progress/${skill}`),
+		queryKey: ["progress", skill, source ?? "all"],
+		queryFn: () => api.get<ProgressSkillDetail>(`/api/progress/${skill}${search}`),
 		enabled: !!skill,
 	})
 }
