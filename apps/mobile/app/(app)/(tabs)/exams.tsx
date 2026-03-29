@@ -125,11 +125,8 @@ function AnimatedExamCard({
 }) {
   const fade = useFadeIn(100 + index * 80);
   const levelStyle = LEVEL_COLORS[exam.level] ?? LEVEL_COLORS.B1;
-  const bp = exam.blueprint;
-  const totalQuestions = bp ? SKILL_ORDER.reduce((sum, s) => {
-    const section = (bp as any)[s];
-    return sum + (section?.questionIds?.length ?? 0);
-  }, 0) : null;
+  const sections = exam.sections ?? [];
+  const totalQuestions = sections.reduce((sum, s) => sum + (s.questionCount ?? 0), 0) || null;
 
   return (
     <Animated.View style={fade}>
@@ -167,14 +164,15 @@ function AnimatedExamCard({
 
           {/* Skills grid */}
           <View style={styles.skillsGrid}>
-            {bp && SKILL_ORDER.map((skill) => {
-              const section = (bp as any)[skill];
-              if (!section || !section.questionIds || section.questionIds.length === 0) return null;
+            {sections.length > 0 && SKILL_ORDER.map((skill) => {
+              const matched = sections.filter((s) => s.skill === skill);
+              const count = matched.reduce((sum, s) => sum + (s.questionCount ?? 0), 0);
+              if (count === 0) return null;
               return (
                 <SkillChip
                   key={skill}
                   skill={skill}
-                  count={section.questionIds.length}
+                  count={count}
                   colors={c}
                 />
               );

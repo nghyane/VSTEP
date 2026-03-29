@@ -65,6 +65,16 @@ export interface User {
 
 export type ExamBlueprint = Record<string, { questionIds: string[] } | undefined>;
 
+export interface ExamSection {
+  skill: Skill | null;
+  part: number;
+  title: string | null;
+  instructions: string | null;
+  questionCount: number;
+  questionIds: string[];
+  order: number;
+}
+
 export interface Exam {
   id: string;
   level: QuestionLevel;
@@ -74,6 +84,7 @@ export interface Exam {
   skill: ExamSkill | null;
   durationMinutes: number | null;
   blueprint: ExamBlueprint;
+  sections: ExamSection[];
   isActive: boolean;
   createdBy: string | null;
   createdAt: string;
