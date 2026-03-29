@@ -50,7 +50,10 @@ function WordCard({ word }: WordCardProps) {
 				<div className="flex items-center gap-2">
 					<Badge
 						variant="secondary"
-						className={cn("text-xs", posColors[word.partOfSpeech] ?? "bg-muted text-muted-foreground")}
+						className={cn(
+							"text-xs",
+							posColors[word.partOfSpeech] ?? "bg-muted text-muted-foreground",
+						)}
 					>
 						{posLabels[word.partOfSpeech] ?? word.partOfSpeech}
 					</Badge>
@@ -189,7 +192,11 @@ function VocabTopicDetailPage() {
 				<StatCard icon={Book02Icon} label="Tổng số từ" value={totalWords} />
 				<StatCard icon={CheckmarkCircle02Icon} label="Đã học" value={knownCount} />
 				<StatCard icon={BrainIcon} label="Đã nhớ" value={knownCount} />
-				<StatCard icon={RepeatIcon} label="Cần ôn tập" value={Math.max(0, totalWords - knownCount)} />
+				<StatCard
+					icon={RepeatIcon}
+					label="Cần ôn tập"
+					value={Math.max(0, totalWords - knownCount)}
+				/>
 			</div>
 
 			<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

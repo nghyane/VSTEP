@@ -47,8 +47,12 @@ function useLearningPath() {
 function useCreateGoal() {
 	const qc = useQueryClient()
 	return useMutation({
-		mutationFn: (body: { targetBand: string; deadline: string; dailyStudyTimeMinutes?: number; currentEstimatedBand?: string }) =>
-			api.post<import("@/types/api").Goal>("/api/progress/goals", body),
+		mutationFn: (body: {
+			targetBand: string
+			deadline: string
+			dailyStudyTimeMinutes?: number
+			currentEstimatedBand?: string
+		}) => api.post<import("@/types/api").Goal>("/api/progress/goals", body),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: ["progress"] })
 		},

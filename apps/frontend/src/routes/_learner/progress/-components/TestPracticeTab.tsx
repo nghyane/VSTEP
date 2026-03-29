@@ -95,7 +95,12 @@ export function TestPracticeTab({
 						const hasData = score != null && score > 0
 
 						return (
-							<Link key={key} to="/progress/$skill" params={{ skill: key }} className="rounded-xl border bg-background p-4 transition-colors hover:border-primary/30">
+							<Link
+								key={key}
+								to="/progress/$skill"
+								params={{ skill: key }}
+								className="rounded-xl border bg-background p-4 transition-colors hover:border-primary/30"
+							>
 								<div className="mb-3 flex items-center justify-between">
 									<span className="text-sm font-medium text-muted-foreground">{label}</span>
 									<div

@@ -167,7 +167,9 @@ function GoalForm({ onCancel }: { onCancel: () => void }) {
 				targetBand,
 				deadline,
 				dailyStudyTimeMinutes: Number(dailyMinutes) || undefined,
-				...(currentEstimatedBand && currentEstimatedBand !== "none" ? { currentEstimatedBand } : {}),
+				...(currentEstimatedBand && currentEstimatedBand !== "none"
+					? { currentEstimatedBand }
+					: {}),
 			},
 			{ onSuccess: onCancel },
 		)
@@ -245,7 +247,9 @@ function GoalEditForm({ goal, onCancel }: { goal: EnrichedGoal; onCancel: () => 
 	const [targetBand, setTargetBand] = useState<string>(goal.targetBand)
 	const [deadline, setDeadline] = useState(goal.deadline.slice(0, 10))
 	const [dailyMinutes, setDailyMinutes] = useState(String(goal.dailyStudyTimeMinutes ?? 60))
-	const [currentEstimatedBand, setCurrentEstimatedBand] = useState<string>(goal.currentEstimatedBand ?? "")
+	const [currentEstimatedBand, setCurrentEstimatedBand] = useState<string>(
+		goal.currentEstimatedBand ?? "",
+	)
 
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault()
@@ -256,7 +260,9 @@ function GoalEditForm({ goal, onCancel }: { goal: EnrichedGoal; onCancel: () => 
 				targetBand,
 				deadline,
 				dailyStudyTimeMinutes: Number(dailyMinutes) || undefined,
-				...(currentEstimatedBand && currentEstimatedBand !== "none" ? { currentEstimatedBand } : {}),
+				...(currentEstimatedBand && currentEstimatedBand !== "none"
+					? { currentEstimatedBand }
+					: {}),
 			},
 			{ onSuccess: onCancel },
 		)
@@ -283,7 +289,10 @@ function GoalEditForm({ goal, onCancel }: { goal: EnrichedGoal; onCancel: () => 
 				</div>
 				<div className="space-y-1.5">
 					<Label>Band hiện tại (ước lượng)</Label>
-					<Select value={currentEstimatedBand || "none"} onValueChange={(v) => setCurrentEstimatedBand(v === "none" ? "" : v)}>
+					<Select
+						value={currentEstimatedBand || "none"}
+						onValueChange={(v) => setCurrentEstimatedBand(v === "none" ? "" : v)}
+					>
 						<SelectTrigger className="w-full">
 							<SelectValue placeholder="Không chọn" />
 						</SelectTrigger>
