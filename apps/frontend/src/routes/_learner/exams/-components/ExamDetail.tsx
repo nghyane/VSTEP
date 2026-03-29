@@ -66,7 +66,7 @@ function ExamDetail({
 							>
 								<HugeiconsIcon icon={skillMeta[skill].icon} className="size-5" />
 								<span className="text-sm font-medium">{skillMeta[skill].label}</span>
-								<span className="ml-auto text-sm font-bold tabular-nums">{count} câu</span>
+								<span className="ml-auto shrink-0 text-sm font-bold tabular-nums">{count} câu</span>
 							</div>
 						)
 					})}
