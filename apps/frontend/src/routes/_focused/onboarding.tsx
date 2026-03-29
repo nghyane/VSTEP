@@ -1,8 +1,18 @@
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
+import { markOnboardingDone } from "@/lib/auth"
+import {
+	DAILY_TIMES,
+	DEADLINES,
+	getGoalConstraints,
+	isDailyTimeAllowed,
+	isDeadlineAllowed,
+	LEVEL_ORDER,
+	TARGET_BANDS,
+} from "@/lib/goal-constraints"
 import { cn } from "@/lib/utils"
 import type { ExamSession, PlacementStarted, VstepBand } from "@/types/api"
 
@@ -40,75 +50,6 @@ const LEVELS = [
 	},
 ] as const
 
-const TARGET_BANDS: VstepBand[] = ["B1", "B2", "C1"]
-
-const DEADLINES = [
-	{ label: "1 tháng", months: 1 },
-	{ label: "3 tháng", months: 3 },
-	{ label: "6 tháng", months: 6 },
-	{ label: "1 năm", months: 12 },
-	{ label: "Không giới hạn", months: undefined },
-] as const
-
-const DAILY_TIMES = [
-	{ label: "15 phút", minutes: 15 },
-	{ label: "30 phút", minutes: 30 },
-	{ label: "1 giờ", minutes: 60 },
-	{ label: "2 giờ", minutes: 120 },
-	{ label: "Tuỳ tôi", minutes: undefined },
-] as const
-
-// ---------------------------------------------------------------------------
-// Goal constraints: realistic deadline & daily-time based on level gap
-// ---------------------------------------------------------------------------
-
-const LEVEL_ORDER: Record<string, number> = { A2: 0, B1: 1, B2: 2, C1: 3 }
-
-/**
- * Each level jump requires ~3 months at 30 min/day minimum.
- * Shorter deadline → must increase daily study time proportionally.
- * "Không giới hạn" and "Tuỳ tôi" are always allowed.
- */
-function getGoalConstraints(
-	currentLevel: string | null,
-	targetBand: VstepBand,
-): {
-	minDeadlineMonths: number
-	minDailyMinutes: number
-	hint: string | null
-} {
-	const current = LEVEL_ORDER[currentLevel ?? "A2"] ?? 0
-	const target = LEVEL_ORDER[targetBand] ?? 0
-	const gap = Math.max(0, target - current)
-
-	if (gap === 0) {
-		return { minDeadlineMonths: 1, minDailyMinutes: 15, hint: null }
-	}
-
-	// gap=1 → 3 months / 15 min, gap=2 → 6 months / 30 min, gap=3 → 12 months / 60 min
-	const minDeadlineMonths = gap === 1 ? 3 : gap === 2 ? 6 : 12
-	const minDailyMinutes = gap === 1 ? 15 : gap === 2 ? 30 : 60
-
-	const hint =
-		gap >= 3
-			? `Từ ${currentLevel} lên ${targetBand} cần ít nhất 12 tháng và 1 giờ/ngày`
-			: gap === 2
-				? `Từ ${currentLevel} lên ${targetBand} cần ít nhất 6 tháng và 30 phút/ngày`
-				: `Từ ${currentLevel} lên ${targetBand} cần ít nhất 3 tháng và 15 phút/ngày`
-
-	return { minDeadlineMonths, minDailyMinutes, hint }
-}
-
-function isDeadlineAllowed(months: number | undefined, minDeadlineMonths: number): boolean {
-	if (months === undefined) return true // "Không giới hạn" always ok
-	return months >= minDeadlineMonths
-}
-
-function isDailyTimeAllowed(minutes: number | undefined, minDailyMinutes: number): boolean {
-	if (minutes === undefined) return true // "Tuỳ tôi" always ok
-	return minutes >= minDailyMinutes
-}
-
 // ---------------------------------------------------------------------------
 // Derive level from VSTEP 10-point score (mirrors backend Level::fromScore)
 // ---------------------------------------------------------------------------
@@ -123,6 +64,7 @@ function levelFromScore(score: number | null): string {
 
 function OnboardingPage() {
 	const navigate = useNavigate()
+	const qc = useQueryClient()
 	const { session: placementSessionId } = Route.useSearch()
 
 	const [step, setStep] = useState<
@@ -175,6 +117,12 @@ function OnboardingPage() {
 		}
 	}, [placementSession.data, targetBand])
 
+	const onOnboardingDone = () => {
+		markOnboardingDone()
+		qc.invalidateQueries({ queryKey: ["progress"] })
+		navigate({ to: "/progress" })
+	}
+
 	const selfAssess = useMutation({
 		mutationFn: (body: {
 			listening: string
@@ -185,10 +133,7 @@ function OnboardingPage() {
 			deadline?: string
 			dailyStudyTimeMinutes?: number
 		}) => api.post("/api/onboarding/self-assess", body),
-		onSuccess: () => {
-			localStorage.setItem("vstep_onboarding_done", "1")
-			navigate({ to: "/progress" })
-		},
+		onSuccess: onOnboardingDone,
 	})
 
 	const completePlacement = useMutation({
@@ -197,10 +142,7 @@ function OnboardingPage() {
 			deadline?: string
 			dailyStudyTimeMinutes?: number
 		}) => api.post(`/api/onboarding/sessions/${placementSessionId}/complete-placement`, body),
-		onSuccess: () => {
-			localStorage.setItem("vstep_onboarding_done", "1")
-			navigate({ to: "/progress" })
-		},
+		onSuccess: onOnboardingDone,
 	})
 
 	const startPlacement = useMutation({
@@ -218,10 +160,7 @@ function OnboardingPage() {
 			deadline?: string
 			dailyStudyTimeMinutes?: number
 		}) => api.post("/api/onboarding/skip", body),
-		onSuccess: () => {
-			localStorage.setItem("vstep_onboarding_done", "1")
-			navigate({ to: "/progress" })
-		},
+		onSuccess: onOnboardingDone,
 	})
 
 	function handleSelectLevel(band: string) {

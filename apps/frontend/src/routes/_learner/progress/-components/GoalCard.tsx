@@ -6,31 +6,54 @@ import {
 	Target02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select"
 import { useCreateGoal, useDeleteGoal, useUpdateGoal } from "@/hooks/use-progress"
+import {
+	DAILY_TIMES,
+	DEADLINES,
+	deadlineToMonths,
+	getGoalConstraints,
+	isDailyTimeAllowed,
+	isDeadlineAllowed,
+	LEVEL_ORDER,
+	minutesToPreset,
+	monthsToDeadline,
+	TARGET_BANDS,
+} from "@/lib/goal-constraints"
+import { cn } from "@/lib/utils"
 import type { EnrichedGoal, VstepBand } from "@/types/api"
 
-export function GoalCard({ goal }: { goal: EnrichedGoal | null }) {
+const toggleBtnClass = (active: boolean, disabled?: boolean) =>
+	cn(
+		"rounded-xl border px-4 py-2 text-sm font-medium transition-colors",
+		disabled && "cursor-not-allowed opacity-40",
+		active
+			? "border-primary bg-primary/10 text-primary"
+			: disabled
+				? "border-border"
+				: "border-border hover:border-primary/50",
+	)
+
+export function GoalCard({
+	goal,
+	currentLevel,
+}: {
+	goal: EnrichedGoal | null
+	currentLevel: string | null
+}) {
 	const [creating, setCreating] = useState(false)
 	const [editing, setEditing] = useState(false)
 	const deleteGoal = useDeleteGoal()
 
 	if (creating) {
-		return <GoalForm onCancel={() => setCreating(false)} />
+		return <GoalForm currentLevel={currentLevel} onCancel={() => setCreating(false)} />
 	}
 
 	if (editing && goal) {
-		return <GoalEditForm goal={goal} onCancel={() => setEditing(false)} />
+		return (
+			<GoalEditForm goal={goal} currentLevel={currentLevel} onCancel={() => setEditing(false)} />
+		)
 	}
 
 	if (!goal) {
@@ -152,188 +175,292 @@ export function GoalCard({ goal }: { goal: EnrichedGoal | null }) {
 	)
 }
 
-function GoalForm({ onCancel }: { onCancel: () => void }) {
-	const createGoal = useCreateGoal()
-	const [targetBand, setTargetBand] = useState<string>("B2")
-	const [deadline, setDeadline] = useState("")
-	const [dailyMinutes, setDailyMinutes] = useState("60")
-	const [currentEstimatedBand, setCurrentEstimatedBand] = useState<string>("")
+// ---------------------------------------------------------------------------
+// GoalForm — create new goal with constraints (matches onboarding UX)
+// ---------------------------------------------------------------------------
 
-	function handleSubmit(e: React.FormEvent) {
-		e.preventDefault()
-		if (!deadline) return
+function GoalForm({
+	currentLevel,
+	onCancel,
+}: {
+	currentLevel: string | null
+	onCancel: () => void
+}) {
+	const createGoal = useCreateGoal()
+
+	// Default target: one level above current
+	const currentIdx = LEVEL_ORDER[currentLevel ?? "A2"] ?? 0
+	const defaultTarget = currentIdx === 0 ? "B1" : currentIdx === 1 ? "B2" : "C1"
+
+	const [targetBand, setTargetBand] = useState<VstepBand>(defaultTarget as VstepBand)
+	const [deadlineMonths, setDeadlineMonths] = useState<number | undefined>(3)
+	const [dailyMinutes, setDailyMinutes] = useState<number | undefined>(30)
+
+	const constraints = useMemo(
+		() => getGoalConstraints(currentLevel, targetBand),
+		[currentLevel, targetBand],
+	)
+
+	// Auto-adjust when constraints change
+	if (
+		deadlineMonths !== undefined &&
+		!isDeadlineAllowed(deadlineMonths, constraints.minDeadlineMonths)
+	) {
+		setDeadlineMonths(constraints.minDeadlineMonths)
+	}
+	if (
+		dailyMinutes !== undefined &&
+		!isDailyTimeAllowed(dailyMinutes, constraints.minDailyMinutes)
+	) {
+		setDailyMinutes(constraints.minDailyMinutes)
+	}
+
+	function handleSubmit() {
 		createGoal.mutate(
 			{
 				targetBand,
-				deadline,
-				dailyStudyTimeMinutes: Number(dailyMinutes) || undefined,
-				...(currentEstimatedBand && currentEstimatedBand !== "none"
-					? { currentEstimatedBand }
-					: {}),
+				deadline:
+					monthsToDeadline(deadlineMonths) ??
+					new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+				dailyStudyTimeMinutes: dailyMinutes,
+				currentEstimatedBand: currentLevel ?? undefined,
 			},
 			{ onSuccess: onCancel },
 		)
 	}
 
 	return (
-		<form onSubmit={handleSubmit} className="rounded-2xl bg-muted/50 p-5 shadow-sm">
-			<h3 className="mb-4 text-lg font-semibold">Đặt mục tiêu mới</h3>
-			<div className="grid gap-4 sm:grid-cols-2">
-				<div className="space-y-1.5">
-					<Label>Band mục tiêu</Label>
-					<Select value={targetBand} onValueChange={setTargetBand}>
-						<SelectTrigger className="w-full">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{(["B1", "B2", "C1"] as VstepBand[]).map((b) => (
-								<SelectItem key={b} value={b}>
+		<div className="space-y-5 rounded-2xl bg-muted/50 p-5 shadow-sm">
+			<h3 className="text-lg font-semibold">Đặt mục tiêu mới</h3>
+
+			{currentLevel && (
+				<p className="text-sm text-muted-foreground">
+					Trình độ hiện tại: <span className="font-semibold text-foreground">{currentLevel}</span>
+				</p>
+			)}
+
+			{constraints.hint && (
+				<div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
+					{constraints.hint}
+				</div>
+			)}
+
+			<div className="space-y-4">
+				<div className="space-y-2.5">
+					<p className="text-sm font-medium">Band mục tiêu</p>
+					<div className="flex gap-2">
+						{TARGET_BANDS.map((b) => {
+							const disabled = (LEVEL_ORDER[b] ?? 0) <= currentIdx
+							return (
+								<button
+									key={b}
+									type="button"
+									disabled={disabled}
+									onClick={() => !disabled && setTargetBand(b)}
+									className={toggleBtnClass(targetBand === b, disabled)}
+								>
 									{b}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
+								</button>
+							)
+						})}
+					</div>
 				</div>
-				<div className="space-y-1.5">
-					<Label>Band hiện tại (ước lượng)</Label>
-					<Select value={currentEstimatedBand} onValueChange={setCurrentEstimatedBand}>
-						<SelectTrigger className="w-full">
-							<SelectValue placeholder="Không chọn" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="none">Không chọn</SelectItem>
-							{(["A2", "B1", "B2", "C1"] as VstepBand[]).map((b) => (
-								<SelectItem key={b} value={b}>
-									{b}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
+
+				<div className="space-y-2.5">
+					<p className="text-sm font-medium">Thời hạn</p>
+					<div className="flex flex-wrap gap-2">
+						{DEADLINES.map((d) => {
+							const disabled = !isDeadlineAllowed(d.months, constraints.minDeadlineMonths)
+							return (
+								<button
+									key={d.label}
+									type="button"
+									disabled={disabled}
+									onClick={() => !disabled && setDeadlineMonths(d.months)}
+									className={toggleBtnClass(deadlineMonths === d.months, disabled)}
+								>
+									{d.label}
+								</button>
+							)
+						})}
+					</div>
 				</div>
-				<div className="space-y-1.5">
-					<Label>Hạn hoàn thành</Label>
-					<Input
-						type="date"
-						value={deadline}
-						onChange={(e) => setDeadline(e.target.value)}
-						required
-					/>
-				</div>
-				<div className="space-y-1.5">
-					<Label>Phút/ngày</Label>
-					<Input
-						type="number"
-						min={10}
-						max={480}
-						value={dailyMinutes}
-						onChange={(e) => setDailyMinutes(e.target.value)}
-					/>
+
+				<div className="space-y-2.5">
+					<p className="text-sm font-medium">Thời gian học mỗi ngày</p>
+					<div className="flex flex-wrap gap-2">
+						{DAILY_TIMES.map((t) => {
+							const disabled = !isDailyTimeAllowed(t.minutes, constraints.minDailyMinutes)
+							return (
+								<button
+									key={t.label}
+									type="button"
+									disabled={disabled}
+									onClick={() => !disabled && setDailyMinutes(t.minutes)}
+									className={toggleBtnClass(dailyMinutes === t.minutes, disabled)}
+								>
+									{t.label}
+								</button>
+							)
+						})}
+					</div>
 				</div>
 			</div>
-			<div className="mt-4 flex gap-2">
-				<Button type="submit" size="sm" disabled={createGoal.isPending}>
-					Tạo mục tiêu
+
+			<div className="flex gap-2">
+				<Button size="sm" onClick={handleSubmit} disabled={createGoal.isPending}>
+					{createGoal.isPending ? "Đang tạo..." : "Tạo mục tiêu"}
 				</Button>
 				<Button type="button" variant="outline" size="sm" onClick={onCancel}>
 					Hủy
 				</Button>
 			</div>
-		</form>
+		</div>
 	)
 }
 
-function GoalEditForm({ goal, onCancel }: { goal: EnrichedGoal; onCancel: () => void }) {
+// ---------------------------------------------------------------------------
+// GoalEditForm — edit existing goal with same constraints
+// ---------------------------------------------------------------------------
+
+function GoalEditForm({
+	goal,
+	currentLevel,
+	onCancel,
+}: {
+	goal: EnrichedGoal
+	currentLevel: string | null
+	onCancel: () => void
+}) {
 	const updateGoal = useUpdateGoal()
-	const [targetBand, setTargetBand] = useState<string>(goal.targetBand)
-	const [deadline, setDeadline] = useState(goal.deadline.slice(0, 10))
-	const [dailyMinutes, setDailyMinutes] = useState(String(goal.dailyStudyTimeMinutes ?? 60))
-	const [currentEstimatedBand, setCurrentEstimatedBand] = useState<string>(
-		goal.currentEstimatedBand ?? "",
+	const currentIdx = LEVEL_ORDER[currentLevel ?? "A2"] ?? 0
+
+	const [targetBand, setTargetBand] = useState<VstepBand>(goal.targetBand as VstepBand)
+	const [deadlineMonths, setDeadlineMonths] = useState<number | undefined>(
+		deadlineToMonths(goal.deadline),
+	)
+	const [dailyMinutes, setDailyMinutes] = useState<number | undefined>(
+		minutesToPreset(goal.dailyStudyTimeMinutes),
 	)
 
-	function handleSubmit(e: React.FormEvent) {
-		e.preventDefault()
-		if (!deadline) return
+	const constraints = useMemo(
+		() => getGoalConstraints(currentLevel, targetBand),
+		[currentLevel, targetBand],
+	)
+
+	// Auto-adjust when constraints change
+	if (
+		deadlineMonths !== undefined &&
+		!isDeadlineAllowed(deadlineMonths, constraints.minDeadlineMonths)
+	) {
+		setDeadlineMonths(constraints.minDeadlineMonths)
+	}
+	if (
+		dailyMinutes !== undefined &&
+		!isDailyTimeAllowed(dailyMinutes, constraints.minDailyMinutes)
+	) {
+		setDailyMinutes(constraints.minDailyMinutes)
+	}
+
+	function handleSubmit() {
 		updateGoal.mutate(
 			{
 				id: goal.id,
 				targetBand,
-				deadline,
-				dailyStudyTimeMinutes: Number(dailyMinutes) || undefined,
-				...(currentEstimatedBand && currentEstimatedBand !== "none"
-					? { currentEstimatedBand }
-					: {}),
+				deadline: monthsToDeadline(deadlineMonths) ?? goal.deadline,
+				dailyStudyTimeMinutes: dailyMinutes,
+				currentEstimatedBand: currentLevel,
 			},
 			{ onSuccess: onCancel },
 		)
 	}
 
 	return (
-		<form onSubmit={handleSubmit} className="rounded-2xl bg-muted/50 p-5 shadow-sm">
-			<h3 className="mb-4 text-lg font-semibold">Chỉnh sửa mục tiêu</h3>
-			<div className="grid gap-4 sm:grid-cols-2">
-				<div className="space-y-1.5">
-					<Label>Band mục tiêu</Label>
-					<Select value={targetBand} onValueChange={setTargetBand}>
-						<SelectTrigger className="w-full">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{(["B1", "B2", "C1"] as VstepBand[]).map((b) => (
-								<SelectItem key={b} value={b}>
+		<div className="space-y-5 rounded-2xl bg-muted/50 p-5 shadow-sm">
+			<h3 className="text-lg font-semibold">Chỉnh sửa mục tiêu</h3>
+
+			{currentLevel && (
+				<p className="text-sm text-muted-foreground">
+					Trình độ hiện tại: <span className="font-semibold text-foreground">{currentLevel}</span>
+				</p>
+			)}
+
+			{constraints.hint && (
+				<div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
+					{constraints.hint}
+				</div>
+			)}
+
+			<div className="space-y-4">
+				<div className="space-y-2.5">
+					<p className="text-sm font-medium">Band mục tiêu</p>
+					<div className="flex gap-2">
+						{TARGET_BANDS.map((b) => {
+							const disabled = (LEVEL_ORDER[b] ?? 0) <= currentIdx
+							return (
+								<button
+									key={b}
+									type="button"
+									disabled={disabled}
+									onClick={() => !disabled && setTargetBand(b)}
+									className={toggleBtnClass(targetBand === b, disabled)}
+								>
 									{b}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
+								</button>
+							)
+						})}
+					</div>
 				</div>
-				<div className="space-y-1.5">
-					<Label>Band hiện tại (ước lượng)</Label>
-					<Select
-						value={currentEstimatedBand || "none"}
-						onValueChange={(v) => setCurrentEstimatedBand(v === "none" ? "" : v)}
-					>
-						<SelectTrigger className="w-full">
-							<SelectValue placeholder="Không chọn" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="none">Không chọn</SelectItem>
-							{(["A2", "B1", "B2", "C1"] as VstepBand[]).map((b) => (
-								<SelectItem key={b} value={b}>
-									{b}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
+
+				<div className="space-y-2.5">
+					<p className="text-sm font-medium">Thời hạn</p>
+					<div className="flex flex-wrap gap-2">
+						{DEADLINES.map((d) => {
+							const disabled = !isDeadlineAllowed(d.months, constraints.minDeadlineMonths)
+							return (
+								<button
+									key={d.label}
+									type="button"
+									disabled={disabled}
+									onClick={() => !disabled && setDeadlineMonths(d.months)}
+									className={toggleBtnClass(deadlineMonths === d.months, disabled)}
+								>
+									{d.label}
+								</button>
+							)
+						})}
+					</div>
 				</div>
-				<div className="space-y-1.5">
-					<Label>Hạn hoàn thành</Label>
-					<Input
-						type="date"
-						value={deadline}
-						onChange={(e) => setDeadline(e.target.value)}
-						required
-					/>
-				</div>
-				<div className="space-y-1.5">
-					<Label>Phút/ngày</Label>
-					<Input
-						type="number"
-						min={10}
-						max={480}
-						value={dailyMinutes}
-						onChange={(e) => setDailyMinutes(e.target.value)}
-					/>
+
+				<div className="space-y-2.5">
+					<p className="text-sm font-medium">Thời gian học mỗi ngày</p>
+					<div className="flex flex-wrap gap-2">
+						{DAILY_TIMES.map((t) => {
+							const disabled = !isDailyTimeAllowed(t.minutes, constraints.minDailyMinutes)
+							return (
+								<button
+									key={t.label}
+									type="button"
+									disabled={disabled}
+									onClick={() => !disabled && setDailyMinutes(t.minutes)}
+									className={toggleBtnClass(dailyMinutes === t.minutes, disabled)}
+								>
+									{t.label}
+								</button>
+							)
+						})}
+					</div>
 				</div>
 			</div>
-			<div className="mt-4 flex gap-2">
-				<Button type="submit" size="sm" disabled={updateGoal.isPending}>
-					Lưu
+
+			<div className="flex gap-2">
+				<Button size="sm" onClick={handleSubmit} disabled={updateGoal.isPending}>
+					{updateGoal.isPending ? "Đang lưu..." : "Lưu"}
 				</Button>
 				<Button type="button" variant="outline" size="sm" onClick={onCancel}>
 					Hủy
 				</Button>
 			</div>
-		</form>
+		</div>
 	)
 }
