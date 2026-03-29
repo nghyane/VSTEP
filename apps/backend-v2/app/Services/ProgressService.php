@@ -93,7 +93,7 @@ class ProgressService
         $streak = $this->computeStreak($activeDays);
 
         $totalMinutes = $sessions->sum(
-            fn ($s) => $s->completed_at?->diffInMinutes($s->started_at) ?? 0,
+            fn ($s) => $s->completed_at?->diffInMinutes($s->started_at, absolute: true) ?? 0,
         );
 
         return [

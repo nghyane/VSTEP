@@ -16,7 +16,7 @@ export function OverviewTab({
 	activityData: ReturnType<typeof useActivity>["data"]
 }) {
 	const totalTests = progressData?.skills.reduce((s, sk) => s + sk.attemptCount, 0) ?? 0
-	const studyMinutes = activityData?.totalStudyTimeMinutes ?? 0
+	const studyMinutes = Math.max(0, Math.round(activityData?.totalStudyTimeMinutes ?? 0))
 	const studyLabel =
 		studyMinutes >= 60
 			? `${Math.floor(studyMinutes / 60)} giờ ${studyMinutes % 60 > 0 ? `${studyMinutes % 60} phút` : ""}`

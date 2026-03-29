@@ -1,13 +1,16 @@
-import { Book02Icon, CheckmarkCircle02Icon, Fire02Icon } from "@hugeicons/core-free-icons"
+import {
+	Book02Icon,
+	CheckmarkCircle02Icon,
+	Fire02Icon,
+	NotebookText,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useVocabularyTopics } from "@/hooks/use-vocabulary"
+import { useSentenceTopics } from "@/hooks/use-sentences"
+import { useTopicsProgress, useVocabularyTopics } from "@/hooks/use-vocabulary"
 import { cn } from "@/lib/utils"
-import type { VocabularyTopic } from "@/types/api"
-import type { SentenceTopic } from "./-components/sentence-mock-data"
-import { SENTENCE_TOPICS } from "./-components/sentence-mock-data"
-import { useVocabProgress } from "./-components/use-vocab-progress"
+import type { SentenceTopic, VocabularyTopic } from "@/types/api"
 
 export const Route = createFileRoute("/_learner/vocabulary/")({
 	component: VocabularyPage,
@@ -69,7 +72,7 @@ function SentenceTopicCard({ topic }: SentenceTopicCardProps) {
 			className="group flex items-start gap-3 rounded-2xl px-4 py-3 transition-colors hover:bg-muted/50"
 		>
 			<div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
-				<HugeiconsIcon icon={topic.icon} className="size-4.5" />
+				<HugeiconsIcon icon={NotebookText} className="size-4.5" />
 			</div>
 			<div className="flex min-w-0 flex-1 flex-col gap-1">
 				<div className="flex items-center justify-between">
@@ -84,9 +87,11 @@ function SentenceTopicCard({ topic }: SentenceTopicCardProps) {
 }
 
 function VocabularyPage() {
-	const progress = useVocabProgress()
 	const { data, isLoading, error } = useVocabularyTopics(1, 50)
+	const { data: sentenceData, isLoading: sentenceLoading } = useSentenceTopics(1, 50)
 	const topics = data?.data ?? []
+	const sentenceTopics = sentenceData?.data ?? []
+	const progressMap = useTopicsProgress(topics.map((t) => t.id))
 	// First 4 topics as popular
 	const popularTopicIds = new Set(topics.slice(0, 4).map((t) => t.id))
 
@@ -133,13 +138,13 @@ function VocabularyPage() {
 					</div>
 					<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
 						{topics.slice(0, 4).map((topic) => {
-							const tp = progress[topic.id]
+							const tp = progressMap[topic.id]
 							return (
 								<TopicCard
 									key={topic.id}
 									topic={topic}
-									learnedCount={tp?.learned.length ?? 0}
-									weakCount={tp?.weak.length ?? 0}
+									learnedCount={tp?.knownCount ?? 0}
+									weakCount={0}
 									isPopular
 								/>
 							)
@@ -152,13 +157,13 @@ function VocabularyPage() {
 				<h2 className="font-semibold">Tất cả chủ đề</h2>
 				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
 					{topics.map((topic) => {
-						const tp = progress[topic.id]
+						const tp = progressMap[topic.id]
 						return (
 							<TopicCard
 								key={topic.id}
 								topic={topic}
-								learnedCount={tp?.learned.length ?? 0}
-								weakCount={tp?.weak.length ?? 0}
+								learnedCount={tp?.knownCount ?? 0}
+								weakCount={0}
 								isPopular={popularTopicIds.has(topic.id)}
 							/>
 						)
@@ -174,11 +179,19 @@ function VocabularyPage() {
 			</div>
 
 			<section className="space-y-3">
-				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-					{SENTENCE_TOPICS.map((topic) => (
-						<SentenceTopicCard key={topic.id} topic={topic} />
-					))}
-				</div>
+				{sentenceLoading ? (
+					<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+						{Array.from({ length: 4 }).map((_, i) => (
+							<Skeleton key={i} className="h-16 rounded-2xl" />
+						))}
+					</div>
+				) : (
+					<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+						{sentenceTopics.map((topic) => (
+							<SentenceTopicCard key={topic.id} topic={topic} />
+						))}
+					</div>
+				)}
 			</section>
 		</div>
 	)

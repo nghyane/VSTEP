@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useVocabularyTopic } from "@/hooks/use-vocabulary"
 import { cn } from "@/lib/utils"
-import { markWeak, removeWeak } from "./-components/use-vocab-progress"
 
 export const Route = createFileRoute("/_learner/vocabulary/$topicId/practice")({
 	component: PracticePage,
@@ -94,11 +93,6 @@ function PracticePage() {
 		if (!w) return
 		const correct = answer === w.word.toLowerCase()
 		setChecked((prev) => ({ ...prev, [wordId]: correct }))
-		if (correct) {
-			removeWeak(topicId, wordId)
-		} else {
-			markWeak(topicId, wordId)
-		}
 	}
 
 	function handleLetterChange(wordId: string, index: number, value: string) {

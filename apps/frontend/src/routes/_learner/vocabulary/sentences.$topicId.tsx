@@ -4,6 +4,7 @@ import {
 	BulbIcon,
 	Cancel01Icon,
 	CheckmarkCircle02Icon,
+	Loading03Icon,
 	Refresh01Icon,
 	VolumeHighIcon,
 } from "@hugeicons/core-free-icons"
@@ -11,21 +12,21 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { useSentenceTopic } from "@/hooks/use-sentences"
 import { cn } from "@/lib/utils"
-import type { SentenceItem } from "./-components/sentence-mock-data"
-import { getSentenceTopic } from "./-components/sentence-mock-data"
+import type { SentenceItemData } from "@/types/api"
 
 export const Route = createFileRoute("/_learner/vocabulary/sentences/$topicId")({
 	component: SentencePracticePage,
 })
 
-const DIFFICULTY_LABELS: Record<SentenceItem["difficulty"], string> = {
+const DIFFICULTY_LABELS: Record<SentenceItemData["difficulty"], string> = {
 	easy: "Dễ",
 	medium: "Trung bình",
 	hard: "Khó",
 }
 
-const DIFFICULTY_COLORS: Record<SentenceItem["difficulty"], string> = {
+const DIFFICULTY_COLORS: Record<SentenceItemData["difficulty"], string> = {
 	easy: "bg-green-100 text-green-700",
 	medium: "bg-amber-100 text-amber-700",
 	hard: "bg-red-100 text-red-700",
@@ -53,25 +54,34 @@ function getLeadingPunct(w: string): string {
 
 function SentencePracticePage() {
 	const { topicId } = Route.useParams()
-	const topic = getSentenceTopic(topicId)
+	const { data: topic, isLoading, error } = useSentenceTopic(topicId)
 
 	const sentences = topic?.sentences ?? []
 	const totalCount = sentences.length
 
 	const [current, setCurrent] = useState(0)
-	const [words, setWords] = useState<Record<string, string[]>>(() => {
-		const init: Record<string, string[]> = {}
-		for (const s of sentences) {
-			const count = getWordSlots(s.sentence).length
-			init[s.id] = Array.from<string>({ length: count }).fill("")
-		}
-		return init
-	})
+	const [words, setWords] = useState<Record<string, string[]>>({})
+	// Initialize word slots when sentences load
+	useEffect(() => {
+		if (sentences.length === 0) return
+		setWords((prev) => {
+			// Only init slots that don't already exist
+			const next = { ...prev }
+			for (const s of sentences) {
+				if (!(s.id in next)) {
+					const count = getWordSlots(s.sentence).length
+					next[s.id] = Array.from<string>({ length: count }).fill("")
+				}
+			}
+			return next
+		})
+	}, [sentences])
+
 	const [checked, setChecked] = useState<Record<string, boolean>>({})
 	const [hints, setHints] = useState<Set<string>>(new Set())
 	const inputRefs = useRef<Map<string, HTMLInputElement[]>>(new Map())
 
-	const sentence = sentences[current] as SentenceItem | undefined
+	const sentence = sentences[current] as SentenceItemData | undefined
 	const sentenceId = sentence?.id ?? ""
 	const isChecked = sentenceId in checked
 	const allChecked = Object.keys(checked).length === totalCount && totalCount > 0
@@ -127,10 +137,21 @@ function SentencePracticePage() {
 		return () => window.removeEventListener("keydown", onEnter)
 	}, [isChecked, allChecked, hasInput, sentenceId, checkSentence])
 
-	if (!topic || !sentence) {
+	if (isLoading) {
 		return (
 			<div className="flex flex-col items-center gap-4 rounded-2xl bg-muted/50 py-16">
-				<p className="text-muted-foreground">Không tìm thấy chủ đề.</p>
+				<HugeiconsIcon icon={Loading03Icon} className="size-6 animate-spin text-muted-foreground" />
+				<p className="text-muted-foreground">Đang tải...</p>
+			</div>
+		)
+	}
+
+	if (error || !topic || !sentence) {
+		return (
+			<div className="flex flex-col items-center gap-4 rounded-2xl bg-muted/50 py-16">
+				<p className="text-muted-foreground">
+					{error ? `Lỗi: ${error.message}` : "Không tìm thấy chủ đề."}
+				</p>
 				<Button variant="outline" asChild>
 					<Link to="/vocabulary">Quay lại</Link>
 				</Button>

@@ -489,6 +489,49 @@ interface VocabularyTopicProgress {
 	knownCount: number
 }
 
+// Sentences
+interface SentenceTopic {
+	id: string
+	name: string
+	description: string
+	iconKey: string | null
+	sentenceCount: number
+	sortOrder: number
+	createdAt: string
+	updatedAt: string
+}
+
+interface SentenceItemData {
+	id: string
+	topicId: string
+	sentence: string
+	audioUrl: string | null
+	translation: string
+	explanation: string
+	writingUsage: string
+	difficulty: "easy" | "medium" | "hard"
+	sortOrder: number
+	createdAt: string
+	updatedAt: string
+}
+
+interface SentenceTopicDetail {
+	id: string
+	name: string
+	description: string
+	iconKey: string | null
+	sortOrder: number
+	createdAt: string
+	updatedAt: string
+	sentences: SentenceItemData[]
+}
+
+interface SentenceTopicProgress {
+	masteredSentenceIds: string[]
+	totalSentences: number
+	masteredCount: number
+}
+
 // Notifications
 type NotificationType = "grading_complete" | "feedback" | "class_invite" | "system"
 
@@ -636,6 +679,10 @@ export type {
 	Trend,
 	UploadAudioResponse,
 	User,
+	SentenceItemData,
+	SentenceTopic,
+	SentenceTopicDetail,
+	SentenceTopicProgress,
 	VocabularyTopic,
 	VocabularyTopicDetail,
 	VocabularyTopicProgress,

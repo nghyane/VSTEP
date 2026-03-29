@@ -7,7 +7,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useToggleKnown, useVocabularyTopic } from "@/hooks/use-vocabulary"
 import { cn } from "@/lib/utils"
 import type { VocabularyWord } from "@/types/api"
-import { markLearned } from "./-components/use-vocab-progress"
 
 export const Route = createFileRoute("/_learner/vocabulary/$topicId/flashcards")({
 	component: FlashcardsPage,
@@ -90,7 +89,6 @@ function FlashcardsPage() {
 		if (!word) return
 		setFlipped((f) => {
 			if (!f) {
-				markLearned(topicId, word.id)
 				toggleKnown.mutate({ wordId: word.id, known: true })
 				if (isLast) setCompleted(true)
 			}

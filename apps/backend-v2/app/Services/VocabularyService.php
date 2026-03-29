@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\UserKnownWord;
 use App\Models\VocabularyTopic;
+use App\Models\VocabularyWord;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class VocabularyService
