@@ -54,14 +54,23 @@ function useStartExam() {
 	})
 }
 
+const GRADING_POLL_MS = 5_000
+
+function hasGradingInProgress(data: ExamSessionDetail | undefined): boolean {
+	if (!data?.submissions?.length) return false
+	return data.submissions.some((s) => s.status === "pending" || s.status === "processing")
+}
+
 function useExamSession(sessionId: string) {
-	return useQuery({
+	const result = useQuery({
 		queryKey: ["exam-sessions", sessionId],
 		queryFn: async () => {
 			const raw = await api.get<unknown>(`/api/sessions/${sessionId}`)
 			return flattenSessionDetail(raw)
 		},
+		refetchInterval: (query) => (hasGradingInProgress(query.state.data) ? GRADING_POLL_MS : false),
 	})
+	return result
 }
 
 interface UseExamSessionsParams {
