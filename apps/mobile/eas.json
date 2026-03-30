@@ -13,7 +13,10 @@
         "buildType": "apk",
         "credentialsSource": "local"
       },
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://5.223.87.142:3000"
+      }
     },
     "production": {}
   },

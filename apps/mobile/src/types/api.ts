@@ -68,8 +68,12 @@ export type ExamBlueprint = Record<string, { questionIds: string[] } | undefined
 export interface ExamSection {
   skill: Skill | null;
   part: number;
+  sectionType: "objective_group" | "writing_task" | "speaking_part";
   title: string | null;
   instructions: string | null;
+  objectiveItemCount: number;
+  entryCount: number;
+  bankEntryIds: string[];
   questionCount: number;
   questionIds: string[];
   order: number;
