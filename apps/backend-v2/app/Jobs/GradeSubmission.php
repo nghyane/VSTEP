@@ -67,11 +67,12 @@ class GradeSubmission implements ShouldQueue
 
         $pronunciationData = null;
         if ($submission->skill === Skill::Speaking) {
+            $audioPath = $this->extractSpeakingAudioPath($submission);
             app(SpeakingUploadService::class)->verifyAudioOwnership(
-                $submission->answer['audio_path'],
+                $audioPath,
                 $submission->user_id,
             );
-            $pronunciationData = $pronunciation->assessPronunciation($submission->answer['audio_path']);
+            $pronunciationData = $pronunciation->assessPronunciation($audioPath);
             $result = $this->gradeSpeaking($submission, $rubric, $knowledgeScope, $pronunciationData);
         } else {
             $result = $this->gradeWriting($submission, $rubric, $knowledgeScope);
@@ -267,6 +268,18 @@ class GradeSubmission implements ShouldQueue
         $normalized = mb_strtolower(trim($raw));
 
         return in_array($normalized, ['high', 'medium', 'low']) ? $normalized : 'medium';
+    }
+
+    private function extractSpeakingAudioPath(Submission $submission): string
+    {
+        $answer = $submission->answer;
+        $audioPath = $answer['audio_path'] ?? $answer['audioPath'] ?? $answer['audio_url'] ?? null;
+
+        if (! is_string($audioPath) || $audioPath === '' || str_starts_with($audioPath, 'blob:')) {
+            throw new RuntimeException('Speaking submission is missing an uploaded audio path.');
+        }
+
+        return $audioPath;
     }
 
     /**
