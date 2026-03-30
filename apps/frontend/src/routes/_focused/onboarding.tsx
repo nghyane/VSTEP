@@ -3,7 +3,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
-import { markOnboardingDone } from "@/lib/auth"
 import {
 	DAILY_TIMES,
 	DEADLINES,
@@ -14,6 +13,7 @@ import {
 	TARGET_BANDS,
 } from "@/lib/goal-constraints"
 import { cn } from "@/lib/utils"
+import { onboardingStatusQueryKey } from "@/routes/_learner"
 import type { ExamSession, PlacementStarted, VstepBand } from "@/types/api"
 
 interface OnboardingSearch {
@@ -118,7 +118,7 @@ function OnboardingPage() {
 	}, [placementSession.data, targetBand])
 
 	const onOnboardingDone = () => {
-		markOnboardingDone()
+		qc.invalidateQueries({ queryKey: onboardingStatusQueryKey })
 		qc.invalidateQueries({ queryKey: ["progress"] })
 		navigate({ to: "/progress" })
 	}

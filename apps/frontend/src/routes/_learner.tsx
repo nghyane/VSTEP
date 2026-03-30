@@ -1,33 +1,33 @@
 import { createFileRoute, redirect } from "@tanstack/react-router"
 import { LearnerLayout } from "@/components/layouts/LearnerLayout"
-import { isAuthenticated, isOnboardingDone, markOnboardingDone, token } from "@/lib/auth"
+import { api } from "@/lib/api"
+import { isAuthenticated } from "@/lib/auth"
+import { queryClient } from "@/lib/query-client"
+
+interface OnboardingStatus {
+	completed: boolean
+}
+
+export const onboardingStatusQueryKey = ["onboarding-status"] as const
 
 export const Route = createFileRoute("/_learner")({
 	beforeLoad: async () => {
 		if (!isAuthenticated()) throw redirect({ to: "/login" })
 
-		// Per-user localStorage fast-path — avoids API call on every navigation
-		if (isOnboardingDone()) return
-
 		try {
-			const res = await fetch(
-				`${import.meta.env.VITE_API_URL ?? "http://localhost:8000"}/api/v1/onboarding/status`,
-				{ headers: { Authorization: `Bearer ${token()}` } },
-			)
-			if (res.ok) {
-				const data = await res.json()
-				if (data.completed) {
-					markOnboardingDone()
-					return
-				}
+			const status = await queryClient.fetchQuery({
+				queryKey: onboardingStatusQueryKey,
+				queryFn: () => api.get<OnboardingStatus>("/api/onboarding/status"),
+				staleTime: 1000 * 60 * 5,
+			})
+
+			if (!status.completed) {
 				throw redirect({ to: "/onboarding" })
 			}
-			// API error (401, 500, etc.) — skip onboarding check to avoid redirect loop
-			return
 		} catch (e) {
+			// Re-throw redirects
 			if (e && typeof e === "object" && "to" in e) throw e
-			// Network/fetch error — skip onboarding check
-			return
+			// API/network error — fail-open to avoid blocking learner area
 		}
 	},
 	component: LearnerLayout,
