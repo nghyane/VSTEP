@@ -134,10 +134,10 @@ function PracticePage() {
 		[updateAnswer],
 	)
 
-	// Speaking handler
+	// Speaking handler — audioPath is an R2 storage path (not blob URL)
 	const handleSpeakingUpdate = useCallback(
-		(questionId: string, audioUrl: string, durationSeconds: number) => {
-			updateAnswer(questionId, { audioUrl, durationSeconds } as SubmissionAnswer)
+		(questionId: string, audioPath: string, durationSeconds: number) => {
+			updateAnswer(questionId, { audioPath, durationSeconds } as SubmissionAnswer)
 		},
 		[updateAnswer],
 	)

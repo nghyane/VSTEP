@@ -189,7 +189,7 @@ function SubmissionDetailPage() {
 						<div className="rounded-xl bg-muted/30 p-4 text-sm">
 							{"text" in data.answer ? (
 								<p className="leading-relaxed whitespace-pre-wrap">{data.answer.text}</p>
-							) : "audioUrl" in data.answer ? (
+							) : "audioPath" in data.answer ? (
 								<div className="space-y-1">
 									<p>Audio: {data.answer.durationSeconds}s</p>
 								</div>

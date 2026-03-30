@@ -13,12 +13,27 @@ function buildInitialMap(initial: SessionAnswer[]): Map<string, SubmissionAnswer
 	return map
 }
 
+/**
+ * Normalize answer data to 1-indexed Record<string, string>.
+ * API may return array (0-indexed) or object (1-indexed).
+ */
+function normalizeAnswers(data: Record<string, string> | string[]): Record<string, string> {
+	if (Array.isArray(data)) {
+		const out: Record<string, string> = {}
+		for (let i = 0; i < data.length; i++) {
+			out[String(i + 1)] = data[i]
+		}
+		return out
+	}
+	return data
+}
+
 function getObjectiveAnswer(
 	answers: Map<string, SubmissionAnswer>,
 	questionId: string,
 ): Record<string, string> {
 	const entry = answers.get(questionId)
-	if (entry && "answers" in entry) return entry.answers
+	if (entry && "answers" in entry) return normalizeAnswers(entry.answers)
 	return {}
 }
 

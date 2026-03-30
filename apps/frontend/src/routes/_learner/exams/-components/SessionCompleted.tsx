@@ -5,6 +5,7 @@ import { SpiderChart } from "@/components/common/SpiderChart"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { Exam, ExamSessionDetail, Skill } from "@/types/api"
+import { AnswerReview } from "./AnswerReview"
 import { skillColor, skillMeta } from "./skill-meta"
 
 interface SessionCompletedProps {
@@ -155,6 +156,9 @@ export function SessionCompleted({ session, exam }: SessionCompletedProps) {
 					)}
 				</div>
 			)}
+
+			{/* Answer review (per-question correct/incorrect) */}
+			{session.questions.length > 0 && <AnswerReview session={session} />}
 
 			{/* CTA buttons */}
 			<div className="flex flex-wrap gap-3">

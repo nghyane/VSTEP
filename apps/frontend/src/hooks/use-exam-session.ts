@@ -26,6 +26,7 @@ function flattenSessionDetail(raw: unknown): ExamSessionDetail {
 			...res.session,
 			questions: res.questions ?? [],
 			answers: res.answers ?? [],
+			submissions: res.submissions ?? [],
 		} as unknown as ExamSessionDetail
 	}
 	// Already flat (shouldn't happen, but safe fallback)

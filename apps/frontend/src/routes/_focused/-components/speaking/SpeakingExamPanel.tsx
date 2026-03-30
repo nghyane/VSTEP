@@ -1,6 +1,7 @@
 import {
 	ArrowLeft01Icon,
 	ArrowRight01Icon,
+	Loading03Icon,
 	Mic01Icon,
 	PauseIcon,
 	RecordIcon,
@@ -11,6 +12,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useReactMediaRecorder } from "react-media-recorder"
 import { Button } from "@/components/ui/button"
+import { useUploadSpeakingAudio } from "@/hooks/use-uploads"
 import { cn } from "@/lib/utils"
 import type {
 	ExamSessionDetail,
@@ -62,7 +64,7 @@ function formatTimer(seconds: number): string {
 interface SpeakingExamPanelProps {
 	questions: ExamSessionDetail["questions"]
 	answers: Map<string, SubmissionAnswer>
-	onUpdateSpeaking: (questionId: string, audioUrl: string, durationSeconds: number) => void
+	onUpdateSpeaking: (questionId: string, audioPath: string, durationSeconds: number) => void
 }
 
 // --- Recorder per question ---
@@ -76,7 +78,7 @@ function SpeakingRecorder({
 }: {
 	speakingSeconds: number
 	existingAudioUrl: string | null
-	onRecorded: (audioUrl: string, durationSeconds: number) => void
+	onRecorded: (audioPath: string, durationSeconds: number) => void
 }) {
 	const [phase, setPhase] = useState<RecorderPhase>(existingAudioUrl ? "done" : "idle")
 	const [timer, setTimer] = useState(0)
@@ -85,23 +87,42 @@ function SpeakingRecorder({
 	const onRecordedRef = useRef(onRecorded)
 	onRecordedRef.current = onRecorded
 
+	const uploadAudio = useUploadSpeakingAudio()
+	const [uploading, setUploading] = useState(false)
+	const [uploadError, setUploadError] = useState<string | null>(null)
+
 	const { status, startRecording, stopRecording, mediaBlobUrl, clearBlobUrl } =
 		useReactMediaRecorder({
 			audio: true,
 			video: false,
+			mediaRecorderOptions: { mimeType: "audio/ogg;codecs=opus" },
 			askPermissionOnMount: false,
 			onStop: () => {
 				setPhase("done")
 			},
 		})
 
-	// Save answer when recording finishes (use ref to avoid re-trigger loop)
+	// Upload to R2 when recording finishes
 	useEffect(() => {
-		if (phase === "done" && mediaBlobUrl) {
-			const elapsed = Math.round((Date.now() - recordStartRef.current) / 1000)
-			onRecordedRef.current(mediaBlobUrl, Math.max(1, elapsed))
-		}
-	}, [phase, mediaBlobUrl])
+		if (phase !== "done" || !mediaBlobUrl || uploading || uploadAudio.isSuccess) return
+
+		const elapsed = Math.round((Date.now() - recordStartRef.current) / 1000)
+		const duration = Math.max(1, elapsed)
+
+		setUploading(true)
+		setUploadError(null)
+
+		uploadAudio.mutate(mediaBlobUrl, {
+			onSuccess: (audioPath) => {
+				onRecordedRef.current(audioPath, duration)
+				setUploading(false)
+			},
+			onError: (err) => {
+				setUploadError(err instanceof Error ? err.message : "Upload thất bại")
+				setUploading(false)
+			},
+		})
+	}, [phase, mediaBlobUrl, uploading, uploadAudio])
 
 	// Recording countdown → auto-stop
 	useEffect(() => {
@@ -127,6 +148,7 @@ function SpeakingRecorder({
 
 	const handleStart = useCallback(() => {
 		setPhase("recording")
+		setUploadError(null)
 		recordStartRef.current = Date.now()
 		startRecording()
 	}, [startRecording])
@@ -139,9 +161,12 @@ function SpeakingRecorder({
 
 	const handleRetry = useCallback(() => {
 		clearBlobUrl()
+		uploadAudio.reset()
 		setPhase("idle")
 		setTimer(0)
-	}, [clearBlobUrl])
+		setUploading(false)
+		setUploadError(null)
+	}, [clearBlobUrl, uploadAudio])
 
 	// Playback
 	const playbackRef = useRef<HTMLAudioElement>(null)
@@ -158,8 +183,9 @@ function SpeakingRecorder({
 	}, [mediaBlobUrl, existingAudioUrl])
 
 	const isError = status === "permission_denied" || status === "no_specified_media_found"
-	const audioUrl = mediaBlobUrl ?? existingAudioUrl
-	const hasDoneRecording = phase === "done" && audioUrl
+	const localAudio = mediaBlobUrl ?? existingAudioUrl
+	const hasDoneRecording = phase === "done" && (localAudio || uploadAudio.isSuccess)
+	const isUploaded = uploadAudio.isSuccess
 
 	return (
 		<div className="space-y-3 rounded-xl border bg-muted/10 p-4">
@@ -167,7 +193,11 @@ function SpeakingRecorder({
 			<div
 				className={cn(
 					"flex h-14 items-center justify-center rounded-lg border",
-					phase === "recording" ? "border-destructive/30 bg-destructive/5" : "bg-muted/30",
+					phase === "recording"
+						? "border-destructive/30 bg-destructive/5"
+						: uploading
+							? "border-primary/30 bg-primary/5"
+							: "bg-muted/30",
 				)}
 			>
 				{phase === "idle" && (
@@ -182,10 +212,22 @@ function SpeakingRecorder({
 						</span>
 					</div>
 				)}
-				{phase === "done" && audioUrl && (
+
+				{phase === "done" && uploading && (
+					<div className="flex items-center gap-2">
+						<HugeiconsIcon icon={Loading03Icon} className="size-4 animate-spin text-primary" />
+						<span className="text-sm text-primary">Đang tải lên...</span>
+					</div>
+				)}
+
+				{phase === "done" && !uploading && isUploaded && (
 					<span className="text-sm text-muted-foreground">
 						Đã ghi xong — bấm "Nghe lại" để kiểm tra
 					</span>
+				)}
+
+				{phase === "done" && !uploading && !isUploaded && !uploadError && localAudio && (
+					<span className="text-sm text-muted-foreground">Đang xử lý...</span>
 				)}
 			</div>
 
@@ -204,12 +246,14 @@ function SpeakingRecorder({
 					</Button>
 				)}
 
-				{hasDoneRecording && (
+				{hasDoneRecording && !uploading && (
 					<>
-						<Button size="sm" variant="outline" onClick={handlePlayback} disabled={playingBack}>
-							<HugeiconsIcon icon={playingBack ? PauseIcon : VolumeHighIcon} className="size-4" />
-							{playingBack ? "Đang phát..." : "Nghe lại"}
-						</Button>
+						{localAudio && (
+							<Button size="sm" variant="outline" onClick={handlePlayback} disabled={playingBack}>
+								<HugeiconsIcon icon={playingBack ? PauseIcon : VolumeHighIcon} className="size-4" />
+								{playingBack ? "Đang phát..." : "Nghe lại"}
+							</Button>
+						)}
 						<Button size="sm" variant="outline" onClick={handleRetry}>
 							<HugeiconsIcon icon={RecordIcon} className="size-4 text-destructive" />
 							Ghi lại
@@ -223,7 +267,10 @@ function SpeakingRecorder({
 					Không thể truy cập microphone. Hãy cấp quyền trên trình duyệt.
 				</p>
 			)}
-			{hasDoneRecording && <p className="text-xs font-medium text-emerald-600">✓ Đã ghi âm xong</p>}
+			{uploadError && <p className="text-xs text-destructive">Lỗi tải lên: {uploadError}</p>}
+			{isUploaded && !uploading && (
+				<p className="text-xs font-medium text-emerald-600">✓ Đã ghi âm và tải lên thành công</p>
+			)}
 
 			{/* biome-ignore lint/a11y/useMediaCaption: playback only */}
 			<audio ref={playbackRef} className="hidden" />
@@ -401,19 +448,17 @@ export function SpeakingExamPanel({
 		setActivePartIdx((i) => Math.min(i + 1, parts.length - 1))
 	}, [parts.length])
 
-	// Get existing audio URL for the active question
-	const getExistingAudioUrl = useCallback(
-		(questionId: string): string | null => {
-			const entry = answers.get(questionId)
-			if (entry && "audioUrl" in entry) return entry.audioUrl
-			return null
-		},
-		[answers],
-	)
+	// Get existing audio blob URL for playback (local blob only)
+	const getExistingAudioUrl = useCallback((_questionId: string): string | null => {
+		// After upload, we only store audioPath (R2 path), not blob URL
+		// Playback of previously uploaded audio would require presigned read URL
+		// For now, playback only works for current session's recordings via mediaBlobUrl
+		return null
+	}, [])
 
 	const handleRecorded = useCallback(
-		(questionId: string) => (audioUrl: string, durationSeconds: number) => {
-			onUpdateSpeaking(questionId, audioUrl, durationSeconds)
+		(questionId: string) => (audioPath: string, durationSeconds: number) => {
+			onUpdateSpeaking(questionId, audioPath, durationSeconds)
 		},
 		[onUpdateSpeaking],
 	)
@@ -473,30 +518,31 @@ export function SpeakingExamPanel({
 					<div className="w-24" />
 				)}
 
-				{/* Center: part tabs */}
-				<div className="flex items-center gap-1.5">
-					{parts.map((q, i) => {
-						const isActive = i === activePartIdx
-						const label = getPartLabel(q.content)
-						const hasRecording = getExistingAudioUrl(q.id) != null
-						return (
-							<button
-								key={i}
-								type="button"
-								onClick={() => setActivePartIdx(i)}
-								className={cn(
-									"flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-									isActive
-										? "bg-primary text-primary-foreground"
-										: "bg-muted text-muted-foreground hover:bg-muted/80",
-								)}
-							>
-								{hasRecording && <span className="text-emerald-400">✓</span>}
-								Part {i + 1}
-								<span className="hidden opacity-80 sm:inline">· {label}</span>
-							</button>
-						)
-					})}
+				{/* Center: part tabs (scrollable when many parts) */}
+				<div className="flex min-w-0 flex-1 items-center justify-center overflow-x-auto px-2">
+					<div className="flex items-center gap-1.5">
+						{parts.map((q, i) => {
+							const isActive = i === activePartIdx
+							const entry = answers.get(q.id)
+							const hasRecording = entry != null && "audioPath" in entry
+							return (
+								<button
+									key={i}
+									type="button"
+									onClick={() => setActivePartIdx(i)}
+									className={cn(
+										"flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+										isActive
+											? "bg-primary text-primary-foreground"
+											: "bg-muted text-muted-foreground hover:bg-muted/80",
+									)}
+								>
+									{hasRecording && <span className="text-emerald-400">✓</span>}
+									{i + 1}
+								</button>
+							)
+						})}
+					</div>
 				</div>
 
 				{/* Right: next part */}
