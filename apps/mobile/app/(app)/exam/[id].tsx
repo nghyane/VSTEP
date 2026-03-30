@@ -81,7 +81,7 @@ export default function ExamDetailScreen() {
   const [completedIds, setCompletedIds] = useState<Set<number>>(() => new Set());
 
   const levels = useMemo(() => {
-    if (!exam) return [];
+    if (!exam || !exam.blueprint) return [];
     return buildLevels(exam.blueprint as ExamBlueprint, completedIds);
   }, [exam, completedIds]);
 
@@ -114,6 +114,8 @@ export default function ExamDetailScreen() {
   if (isLoading) return <LoadingScreen />;
   if (error || !exam) return <ErrorScreen message={error?.message ?? "Không tìm thấy bài thi"} />;
 
+  const hasBlueprint = levels.length > 0;
+
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
       {/* Progress header */}
@@ -125,32 +127,53 @@ export default function ExamDetailScreen() {
           </HapticTouchable>
           <View style={{ flex: 1 }}>
             <Text style={[styles.examTitle, { color: c.foreground }]}>Đề thi {exam.level}</Text>
-            <Text style={[styles.examSub, { color: c.mutedForeground }]}>
-              {completedCount}/{totalCount} hoàn thành
-            </Text>
+            {hasBlueprint && (
+              <Text style={[styles.examSub, { color: c.mutedForeground }]}>
+                {completedCount}/{totalCount} hoàn thành
+              </Text>
+            )}
           </View>
-          <ProgressRing completed={completedCount} total={totalCount} />
+          {hasBlueprint && <ProgressRing completed={completedCount} total={totalCount} />}
         </View>
 
         {/* Progress bar */}
-        <View style={[styles.progressTrack, { backgroundColor: c.muted }]}>
-          <View
-            style={[
-              styles.progressFill,
-              {
-                backgroundColor: c.success,
-                width: totalCount > 0 ? `${(completedCount / totalCount) * 100}%` : "0%",
-              },
-            ]}
-          />
-        </View>
+        {hasBlueprint && (
+          <View style={[styles.progressTrack, { backgroundColor: c.muted }]}>
+            <View
+              style={[
+                styles.progressFill,
+                {
+                  backgroundColor: c.success,
+                  width: totalCount > 0 ? `${(completedCount / totalCount) * 100}%` : "0%",
+                },
+              ]}
+            />
+          </View>
+        )}
       </View>
 
-      {/* Learning path */}
-      <LearningPath levels={levels} onNodePress={handleNodePress} />
+      {/* Learning path or direct start */}
+      {hasBlueprint ? (
+        <LearningPath levels={levels} onNodePress={handleNodePress} />
+      ) : (
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: spacing.xl, gap: spacing.md }}>
+          <Ionicons name="document-text-outline" size={48} color={c.mutedForeground} />
+          <Text style={{ color: c.foreground, fontSize: fontSize.lg, fontWeight: "600", textAlign: "center" }}>
+            {exam.title}
+          </Text>
+          {exam.description ? (
+            <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm, textAlign: "center" }}>
+              {exam.description}
+            </Text>
+          ) : null}
+          <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm, textAlign: "center" }}>
+            {exam.durationMinutes ? `${exam.durationMinutes} phút` : "Không giới hạn thời gian"}
+          </Text>
+        </View>
+      )}
 
-      {/* Start full exam button (pinned bottom) */}
-      {completedCount >= totalCount && (
+      {/* Start exam button — always show when no blueprint, or when learning path completed */}
+      {(!hasBlueprint || completedCount >= totalCount) && (
         <View style={[styles.bottomBar, { backgroundColor: c.card, borderTopColor: c.border }]}>
           <HapticTouchable
             style={[styles.examBtn, { backgroundColor: c.primary, opacity: startExam.isPending ? 0.6 : 1 }]}
@@ -163,7 +186,7 @@ export default function ExamDetailScreen() {
           >
             <Ionicons name="rocket" size={18} color={c.primaryForeground} />
             <Text style={[styles.examBtnText, { color: c.primaryForeground }]}>
-              {startExam.isPending ? "Đang bắt đầu..." : "Thi thật"}
+              {startExam.isPending ? "Đang bắt đầu..." : "Bắt đầu thi"}
             </Text>
           </HapticTouchable>
           {startExam.error && (

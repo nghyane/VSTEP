@@ -1,36 +1,93 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { queryClient } from "@/lib/query-client";
-import type { PracticeNextResponse, Skill } from "@/types/api";
+import type {
+  PaginatedResponse,
+  PracticeMode,
+  PracticeSession,
+  PracticeShowResponse,
+  PracticeStartResponse,
+  PracticeSubmitResult,
+  Skill,
+} from "@/types/api";
 
-export function usePracticeNext(skill: Skill, part?: number) {
-  const search = new URLSearchParams();
-  search.set("skill", skill);
-  if (part) search.set("part", String(part));
+// ---------------------------------------------------------------------------
+// Start a new practice session
+// POST /api/practice/sessions
+// ---------------------------------------------------------------------------
 
-  return useQuery({
-    queryKey: ["practice-next", skill, part],
-    queryFn: () => api.get<PracticeNextResponse>(`/api/practice/next?${search.toString()}`),
-    enabled: !!skill,
+export function useStartPractice() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: {
+      skill: Skill;
+      mode: PracticeMode;
+      level?: string;
+      itemsCount?: number;
+      focusKp?: string;
+    }) => api.post<PracticeStartResponse>("/api/practice/sessions", body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["practice-sessions"] });
+    },
   });
 }
 
-export function useRefreshPractice() {
-  return {
-    refresh: (skill: Skill) => queryClient.invalidateQueries({ queryKey: ["practice-next", skill] }),
-  };
+// ---------------------------------------------------------------------------
+// Show practice session state
+// GET /api/practice/sessions/:id
+// ---------------------------------------------------------------------------
+
+export function usePracticeSession(sessionId: string) {
+  return useQuery({
+    queryKey: ["practice-sessions", sessionId],
+    queryFn: () => api.get<PracticeShowResponse>(`/api/practice/sessions/${sessionId}`),
+    enabled: !!sessionId,
+  });
 }
 
-export function useUploadAudio() {
+// ---------------------------------------------------------------------------
+// Submit answer within practice session
+// POST /api/practice/sessions/:id/submit
+// ---------------------------------------------------------------------------
+
+export function useSubmitPractice(sessionId: string) {
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (file: { uri: string; name: string; type: string }) => {
-      const formData = new FormData();
-      formData.append("audio", {
-        uri: file.uri,
-        name: file.name,
-        type: file.type,
-      } as any);
-      return api.upload<{ audioKey: string }>("/api/uploads/audio", formData);
+    mutationFn: (body: { answer: Record<string, unknown> }) =>
+      api.post<PracticeSubmitResult>(`/api/practice/sessions/${sessionId}/submit`, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["practice-sessions", sessionId] });
+      qc.invalidateQueries({ queryKey: ["progress"] });
     },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Complete practice session
+// POST /api/practice/sessions/:id/complete
+// ---------------------------------------------------------------------------
+
+export function useCompletePractice(sessionId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      api.post<PracticeSession>(`/api/practice/sessions/${sessionId}/complete`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["practice-sessions", sessionId] });
+      qc.invalidateQueries({ queryKey: ["practice-sessions"] });
+      qc.invalidateQueries({ queryKey: ["progress"] });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// List practice sessions
+// GET /api/practice/sessions
+// ---------------------------------------------------------------------------
+
+export function usePracticeSessions(skill?: Skill) {
+  const qs = skill ? `?skill=${skill}` : "";
+  return useQuery({
+    queryKey: ["practice-sessions", { skill }],
+    queryFn: () => api.get<PaginatedResponse<PracticeSession>>(`/api/practice/sessions${qs}`),
   });
 }

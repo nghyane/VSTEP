@@ -10,6 +10,7 @@ export type SubmissionStatus = "pending" | "processing" | "completed" | "review_
 export type ExamType = "practice" | "placement" | "mock";
 export type ExamSkill = "listening" | "reading" | "writing" | "speaking" | "mixed";
 export type NotificationType = "grading_completed" | "feedback_received" | "class_invite" | "goal_achieved" | "system";
+export type PracticeMode = "free" | "shadowing" | "drill" | "guided";
 
 // ============================================================
 // Auth
@@ -64,6 +65,16 @@ export interface User {
 
 export type ExamBlueprint = Record<string, { questionIds: string[] } | undefined>;
 
+export interface ExamSection {
+  skill: Skill | null;
+  part: number;
+  title: string | null;
+  instructions: string | null;
+  questionCount: number;
+  questionIds: string[];
+  order: number;
+}
+
 export interface Exam {
   id: string;
   level: QuestionLevel;
@@ -73,6 +84,7 @@ export interface Exam {
   skill: ExamSkill | null;
   durationMinutes: number | null;
   blueprint: ExamBlueprint;
+  sections: ExamSection[];
   isActive: boolean;
   createdBy: string | null;
   createdAt: string;
@@ -119,6 +131,7 @@ export interface SessionAnswer {
 export interface ExamSessionDetail extends ExamSession {
   questions: SessionQuestion[];
   answers: SessionAnswer[];
+  submissions: Submission[];
 }
 
 // ============================================================
@@ -262,23 +275,93 @@ export interface LearningPathResponse {
 }
 
 // ============================================================
-// Practice
+// Practice (session-based adaptive)
 // ============================================================
 
-export interface PracticeQuestion {
+export interface PracticeSession {
   id: string;
-  skill: string;
-  level: string;
-  part: number;
-  content: unknown;
-  answerKey: unknown | null;
-  explanation: string | null;
+  skill: Skill;
+  mode: PracticeMode;
+  level: QuestionLevel;
+  config: {
+    itemsCount: number;
+    focusKp: string | null;
+  };
+  currentQuestionId: string | null;
+  summary: PracticeSummary | null;
+  startedAt: string;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface PracticeNextResponse {
-  question: PracticeQuestion | null;
-  scaffoldLevel: number;
-  currentLevel: string;
+export interface PracticeSummary {
+  itemsCompleted: number;
+  itemsTotal: number;
+  averageScore: number | null;
+  bestScore: number | null;
+  scoresPending: boolean;
+  items: {
+    questionId: string;
+    topic: string | null;
+    bestScore: number | null;
+    attempts: number;
+    status: string;
+  }[];
+  weakPoints: Record<string, number>;
+  improvement: number | null;
+}
+
+export interface PracticeCurrentItem {
+  question: Question;
+  difficulty: QuestionLevel;
+  isReview: boolean;
+  referenceText?: string;
+  referenceAudioPath?: string;
+  targetText?: string;
+  writingHints?: unknown;
+}
+
+export interface PracticeProgress {
+  current: number;
+  total: number;
+  hasMore: boolean;
+}
+
+export interface PracticeStartResponse {
+  session: PracticeSession;
+  currentItem: PracticeCurrentItem | null;
+  recommendation: unknown;
+  progress: PracticeProgress;
+}
+
+export interface PracticeShowResponse {
+  session: PracticeSession;
+  currentItem: PracticeCurrentItem | null;
+  progress: PracticeProgress | null;
+}
+
+export interface PracticeSubmitResult {
+  result: unknown;
+  submissionId: string;
+  canRetry: boolean;
+  isRetry: boolean;
+  previousScore: number | null;
+  improvement: number | null;
+  attemptNumber: number;
+  currentItem: PracticeCurrentItem | null;
+  progress: PracticeProgress;
+}
+
+// ============================================================
+// Uploads (presigned URL flow)
+// ============================================================
+
+export interface PresignResponse {
+  uploadUrl: string;
+  headers: Record<string, string>;
+  audioPath: string;
+  expiresIn: number;
 }
 
 // ============================================================
@@ -335,6 +418,52 @@ export interface TopicProgress {
 }
 
 // ============================================================
+// Sentences
+// ============================================================
+
+export interface SentenceTopic {
+  id: string;
+  name: string;
+  description: string;
+  iconKey: string | null;
+  sentenceCount: number;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SentenceItem {
+  id: string;
+  topicId: string;
+  sentence: string;
+  audioUrl: string | null;
+  translation: string;
+  explanation: string;
+  writingUsage: string;
+  difficulty: "easy" | "medium" | "hard";
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SentenceTopicDetail {
+  id: string;
+  name: string;
+  description: string;
+  iconKey: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  sentences: SentenceItem[];
+}
+
+export interface SentenceTopicProgress {
+  masteredSentenceIds: string[];
+  totalSentences: number;
+  masteredCount: number;
+}
+
+// ============================================================
 // Onboarding
 // ============================================================
 
@@ -384,21 +513,21 @@ export interface ClassItem {
   name: string;
   description: string | null;
   inviteCode: string;
-  createdBy: string;
-  maxMembers: number | null;
-  isActive: boolean;
+  instructorId: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface ClassMember {
+  id: string;
   userId: string;
-  role: string;
+  fullName: string | null;
+  email: string;
   joinedAt: string;
-  user?: { id: string; fullName: string | null; email: string };
 }
 
-export interface ClassDetail extends ClassItem {
+export interface ClassDetail extends Omit<ClassItem, "inviteCode"> {
+  inviteCode: string | null;
   members: ClassMember[];
   memberCount: number;
 }
@@ -406,8 +535,55 @@ export interface ClassDetail extends ClassItem {
 export interface ClassFeedback {
   id: string;
   classId: string;
-  userId: string;
-  instructorId: string;
+  fromUserId: string;
+  fromUserName: string | null;
+  toUserId: string;
+  toUserName: string | null;
   content: string;
+  skill: string | null;
+  submissionId: string | null;
   createdAt: string;
+  updatedAt: string;
+}
+
+export interface ClassAssignment {
+  id: string;
+  classroomId: string;
+  title: string;
+  description: string | null;
+  content: string | null;
+  skill: string | null;
+  type: "practice" | "exam";
+  dueDate: string | null;
+  allowRetry: boolean;
+  createdAt: string;
+  submissionCount?: number;
+  gradedCount?: number;
+  submittedCount?: number;
+  pendingCount?: number;
+  submissions?: ClassAssignmentSubmission[];
+}
+
+export interface ClassAssignmentSubmission {
+  id: string;
+  assignmentId: string;
+  userId: string;
+  fullName: string | null;
+  email: string | null;
+  answer: string | null;
+  status: "pending" | "submitted" | "graded";
+  score: string | null;
+  feedback: string | null;
+  submittedAt: string | null;
+  lateMinutes: number | null;
+  createdAt: string;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  userId: string;
+  fullName: string;
+  avgScore: number;
+  totalAttempts: number;
+  streak: number;
 }

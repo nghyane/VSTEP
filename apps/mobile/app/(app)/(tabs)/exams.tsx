@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
+import { useFadeIn } from "@/hooks/use-fade-in";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -33,23 +34,6 @@ const LEVEL_COLORS: Record<string, { bg: [string, string]; text: string }> = {
   B2: { bg: ["#4F5BD5", "#3F49B5"], text: "#fff" },
   C1: { bg: ["#9B59D0", "#7C45A8"], text: "#fff" },
 };
-
-function useFadeIn(delay = 0) {
-  const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(20)).current;
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      Animated.parallel([
-        Animated.timing(opacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-        Animated.spring(translateY, { toValue: 0, damping: 18, stiffness: 120, useNativeDriver: true }),
-      ]).start();
-    }, delay);
-    return () => clearTimeout(timer);
-  }, [delay, opacity, translateY]);
-
-  return { opacity, transform: [{ translateY }] };
-}
 
 export default function ExamsScreen() {
   const c = useThemeColors();
@@ -141,11 +125,8 @@ function AnimatedExamCard({
 }) {
   const fade = useFadeIn(100 + index * 80);
   const levelStyle = LEVEL_COLORS[exam.level] ?? LEVEL_COLORS.B1;
-  const bp = exam.blueprint;
-  const totalQuestions = bp ? SKILL_ORDER.reduce((sum, s) => {
-    const section = (bp as any)[s];
-    return sum + (section?.questionIds?.length ?? 0);
-  }, 0) : null;
+  const sections = exam.sections ?? [];
+  const totalQuestions = sections.reduce((sum, s) => sum + (s.questionCount ?? 0), 0) || null;
 
   return (
     <Animated.View style={fade}>
@@ -183,14 +164,15 @@ function AnimatedExamCard({
 
           {/* Skills grid */}
           <View style={styles.skillsGrid}>
-            {SKILL_ORDER.map((skill) => {
-              const section = bp[skill];
-              if (!section || section.questionIds.length === 0) return null;
+            {sections.length > 0 && SKILL_ORDER.map((skill) => {
+              const matched = sections.filter((s) => s.skill === skill);
+              const count = matched.reduce((sum, s) => sum + (s.questionCount ?? 0), 0);
+              if (count === 0) return null;
               return (
                 <SkillChip
                   key={skill}
                   skill={skill}
-                  count={section.questionIds.length}
+                  count={count}
                   colors={c}
                 />
               );

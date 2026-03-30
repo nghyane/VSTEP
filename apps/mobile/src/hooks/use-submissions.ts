@@ -1,7 +1,11 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type { PaginatedResponse, Submission } from "@/types/api";
-import { queryClient } from "@/lib/query-client";
+
+// ---------------------------------------------------------------------------
+// Submissions are created through session/practice flows — NOT directly.
+// These hooks are read-only.
+// ---------------------------------------------------------------------------
 
 export function useSubmissions(params?: {
   page?: number;
@@ -27,16 +31,5 @@ export function useSubmission(id: string) {
     queryKey: ["submissions", id],
     queryFn: () => api.get<Submission>(`/api/submissions/${id}`),
     enabled: !!id,
-  });
-}
-
-export function useCreateSubmission() {
-  return useMutation({
-    mutationFn: (body: { questionId: string; answer: unknown }) =>
-      api.post<Submission>("/api/submissions", body),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["submissions"] });
-      queryClient.invalidateQueries({ queryKey: ["progress"] });
-    },
   });
 }

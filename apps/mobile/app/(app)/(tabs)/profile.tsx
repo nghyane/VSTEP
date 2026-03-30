@@ -1,5 +1,7 @@
 import {
+  ActivityIndicator,
   Alert,
+  Image,
   StyleSheet,
   Switch,
   Text,
@@ -10,11 +12,14 @@ import { HapticTouchable } from "@/components/HapticTouchable";
 import { ScreenWrapper } from "@/components/ScreenWrapper";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useAuth } from "@/hooks/use-auth";
-import { useUser } from "@/hooks/use-user";
+import { useUser, useUploadAvatar } from "@/hooks/use-user";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 import { useHaptics } from "@/contexts/HapticsContext";
+
+const STORAGE_URL = process.env.EXPO_PUBLIC_STORAGE_URL ?? "";
 
 function showComingSoon() {
   Alert.alert("Thông báo", "Tính năng đang phát triển");
@@ -25,6 +30,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user: authUser, signOut } = useAuth();
   const { data: userData, isLoading } = useUser(authUser?.id ?? "");
+  const uploadAvatar = useUploadAvatar(authUser?.id ?? "");
   const { enabled: hapticsEnabled, setEnabled: setHapticsEnabled, trigger } = useHaptics();
 
   if (isLoading) return <LoadingScreen />;
@@ -38,6 +44,32 @@ export default function ProfileScreen() {
     .slice(0, 2)
     .join("")
     .toUpperCase();
+
+  const avatarUri = userData?.avatarKey && STORAGE_URL
+    ? `${STORAGE_URL}/${userData.avatarKey}`
+    : null;
+
+  async function handlePickAvatar() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Quyền truy cập", "Cần quyền truy cập thư viện ảnh để đổi avatar");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (result.canceled || !result.assets[0]) return;
+    const asset = result.assets[0];
+    const ext = asset.uri.split(".").pop() ?? "jpg";
+    uploadAvatar.mutate({
+      uri: asset.uri,
+      name: `avatar.${ext}`,
+      type: asset.mimeType ?? `image/${ext}`,
+    });
+  }
 
   function handleLogout() {
     Alert.alert("Đăng xuất", "Bạn có chắc muốn đăng xuất?", [
@@ -53,9 +85,24 @@ export default function ProfileScreen() {
 
       {/* Avatar */}
       <View style={styles.avatarSection}>
-        <View style={[styles.avatar, { backgroundColor: c.primary + "18" }]}>
-          <Text style={[styles.avatarText, { color: c.primary }]}>{initials}</Text>
-        </View>
+        <HapticTouchable onPress={handlePickAvatar} activeOpacity={0.7}>
+          <View style={[styles.avatarWrap, { backgroundColor: c.primary + "18" }]}>
+            {avatarUri ? (
+              <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+            ) : (
+              <Text style={[styles.avatarText, { color: c.primary }]}>{initials}</Text>
+            )}
+            {uploadAvatar.isPending ? (
+              <View style={styles.avatarOverlay}>
+                <ActivityIndicator size="small" color="#fff" />
+              </View>
+            ) : (
+              <View style={[styles.avatarBadge, { backgroundColor: c.primary }]}>
+                <Ionicons name="camera" size={14} color={c.primaryForeground} />
+              </View>
+            )}
+          </View>
+        </HapticTouchable>
         <Text style={[styles.name, { color: c.foreground }]}>{u.fullName ?? "Chưa đặt tên"}</Text>
         <Text style={[styles.email, { color: c.mutedForeground }]}>{u.email}</Text>
       </View>
@@ -168,8 +215,11 @@ const styles = StyleSheet.create({
   content: { padding: spacing.xl, paddingBottom: spacing["3xl"] },
   title: { fontSize: fontSize["2xl"], fontFamily: fontFamily.bold, textAlign: "center", marginTop: spacing.sm, marginBottom: spacing.sm },
   avatarSection: { alignItems: "center", gap: spacing.sm },
-  avatar: { width: 90, height: 90, borderRadius: 45, justifyContent: "center", alignItems: "center" },
+  avatarWrap: { width: 90, height: 90, borderRadius: 45, justifyContent: "center", alignItems: "center" },
+  avatarImage: { width: 90, height: 90, borderRadius: 45 },
   avatarText: { fontSize: fontSize["3xl"], fontFamily: fontFamily.bold },
+  avatarOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center", borderRadius: 45 },
+  avatarBadge: { position: "absolute", bottom: 0, right: 0, width: 28, height: 28, borderRadius: 14, justifyContent: "center", alignItems: "center", borderWidth: 2, borderColor: "#fff" },
   name: { fontSize: fontSize.xl, fontFamily: fontFamily.bold },
   email: { fontSize: fontSize.sm, fontFamily: fontFamily.regular, marginBottom: spacing.sm },
   section: { gap: spacing.sm, marginTop: spacing.lg },

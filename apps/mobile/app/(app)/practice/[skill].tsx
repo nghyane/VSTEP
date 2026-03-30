@@ -16,29 +16,27 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { EmptyState } from "@/components/EmptyState";
 import { SKILL_LABELS } from "@/components/SkillIcon";
-import { usePracticeNext, useRefreshPractice, useUploadAudio } from "@/hooks/use-practice";
-import { useCreateSubmission } from "@/hooks/use-submissions";
+import { AudioPlayer } from "@/components/AudioPlayer";
+import { useStartPractice, useSubmitPractice, useCompletePractice } from "@/hooks/use-practice";
+import { usePresignUpload, uploadToPresignedUrl } from "@/hooks/use-uploads";
 import { useThemeColors, spacing, radius, fontSize } from "@/theme";
-import type { Skill } from "@/types/api";
+import type { Skill, PracticeStartResponse, PracticeCurrentItem, PracticeProgress } from "@/types/api";
 import type { ThemeColors } from "@/theme/colors";
-
-// ─── Content types ───────────────────────────────────────────────────────────
-
-interface QuestionItem { stem: string; options: string[]; }
-interface ListeningContent { audioUrl: string; transcript?: string; items: QuestionItem[]; }
-interface ReadingContent { passage: string; title?: string; items: QuestionItem[]; }
-interface WritingContent { prompt: string; taskType: string; instructions?: string; minWords?: number; requiredPoints?: string[]; }
-interface SpeakingPart1Content { topics: { name: string; questions: string[] }[]; }
-interface SpeakingPart2Content { situation: string; options: string[]; preparationSeconds: number; speakingSeconds: number; }
-interface SpeakingPart3Content { centralIdea: string; suggestions: string[]; followUpQuestion: string; preparationSeconds: number; speakingSeconds: number; }
-type QuestionContent = ListeningContent | ReadingContent | WritingContent | SpeakingPart1Content | SpeakingPart2Content | SpeakingPart3Content;
-type ContentKind = "objective" | "writing" | "speaking";
-
-function detectContentKind(content: QuestionContent): ContentKind {
-  if ("items" in content) return "objective";
-  if ("prompt" in content) return "writing";
-  return "speaking";
-}
+import {
+  detectContentKind,
+  isReadingGapFillContent,
+  isReadingMatchingContent,
+  type QuestionContent,
+  type QuestionItem,
+  type ListeningContent,
+  type ReadingContent,
+  type ReadingGapFillContent,
+  type ReadingMatchingContent,
+  type WritingContent,
+  type SpeakingPart1Content,
+  type SpeakingPart2Content,
+  type SpeakingPart3Content,
+} from "@/types/content";
 
 // ─── State reducer ───────────────────────────────────────────────────────────
 
@@ -95,27 +93,49 @@ export default function PracticeQuestionScreen() {
   const { skill } = useLocalSearchParams<{ skill: string }>();
   const c = useThemeColors();
   const router = useRouter();
-  const { data, isLoading, error, refetch } = usePracticeNext(skill as Skill);
-  const { refresh } = useRefreshPractice();
-  const submitMutation = useCreateSubmission();
-  const uploadAudio = useUploadAudio();
 
-  const question = data?.question ?? null;
-  const currentLevel = data?.currentLevel ?? "A2";
+  // Session-based practice flow
+  const startMutation = useStartPractice();
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [currentItem, setCurrentItem] = useState<PracticeCurrentItem | null>(null);
+  const [progress, setProgress] = useState<PracticeProgress | null>(null);
+  const [currentLevel, setCurrentLevel] = useState("A2");
+
+  const submitMutation = useSubmitPractice(sessionId ?? "");
+  const completeMutation = useCompletePractice(sessionId ?? "");
+  const presignMutation = usePresignUpload();
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const [state, dispatch] = useReducer(reducer, initialState);
   const [passageVisible, setPassageVisible] = useState(true);
 
-  // Reset state when question changes
-  const questionId = question?.id;
+  // Auto-start practice session on mount
+  useEffect(() => {
+    if (!skill || sessionId) return;
+    startMutation.mutate(
+      { skill: skill as Skill, mode: "free" },
+      {
+        onSuccess: (data: PracticeStartResponse) => {
+          setSessionId(data.session.id);
+          setCurrentItem(data.currentItem);
+          setProgress(data.progress);
+          setCurrentLevel(data.session.level);
+        },
+      },
+    );
+  }, [skill]);
+
+  // Reset answer state when current question changes
+  const questionId = currentItem?.question?.id;
   useEffect(() => {
     dispatch({ type: "RESET" });
     setPassageVisible(true);
   }, [questionId]);
 
-  if (isLoading) return <LoadingScreen />;
-  if (error) return <ErrorScreen message={error.message} onRetry={() => refetch()} />;
-  if (!question) {
+  if (startMutation.isPending) return <LoadingScreen />;
+  if (startMutation.isError) return <ErrorScreen message={startMutation.error.message} onRetry={() => startMutation.reset()} />;
+  if (!currentItem || !currentItem.question) {
     return (
       <ScreenWrapper>
         <View style={styles.headerRow}>
@@ -135,23 +155,31 @@ export default function PracticeQuestionScreen() {
         <View style={{ padding: spacing.xl }}>
           <HapticTouchable
             style={[styles.primaryBtn, { backgroundColor: c.primary }]}
-            onPress={() => { refresh(skill as Skill); refetch(); }}
+            onPress={() => {
+              if (sessionId) {
+                completeMutation.mutate(undefined, {
+                  onSuccess: () => router.replace("/(app)/practice"),
+                });
+              } else {
+                router.back();
+              }
+            }}
           >
-            <Ionicons name="refresh" size={18} color={c.primaryForeground} />
-            <Text style={[styles.btnLabel, { color: c.primaryForeground }]}>Thử lại</Text>
+            <Ionicons name="checkmark-done" size={18} color={c.primaryForeground} />
+            <Text style={[styles.btnLabel, { color: c.primaryForeground }]}>Hoàn thành</Text>
           </HapticTouchable>
         </View>
       </ScreenWrapper>
     );
   }
 
+  const question = currentItem.question;
   const content = question.content as QuestionContent;
-  const kind = detectContentKind(content);
+  const kind = detectContentKind(content, skill);
   const items: QuestionItem[] = "items" in content ? (content as ListeningContent | ReadingContent).items : [];
   const totalItems = kind === "objective" ? items.length : 1;
-  const currentItem = kind === "objective" ? items[state.currentItemIndex] ?? null : null;
+  const objItem = kind === "objective" ? items[state.currentItemIndex] ?? null : null;
   const isLastItem = state.currentItemIndex >= totalItems - 1;
-  const isUploading = uploadAudio.isPending;
 
   const allAnswered =
     kind === "objective"
@@ -160,36 +188,54 @@ export default function PracticeQuestionScreen() {
         ? state.text.trim().length > 0
         : state.audioUri !== null;
 
-  const canSubmit = allAnswered && !submitMutation.isPending && !isUploading;
+  const isBusy = submitMutation.isPending || isUploading;
+  const canSubmit = allAnswered && !isBusy;
 
   async function handleSubmit() {
-    if (!canSubmit) return;
+    if (!canSubmit || !sessionId) return;
+    setUploadError(null);
 
-    let answer;
+    let answer: Record<string, unknown>;
     if (kind === "objective") {
       answer = { answers: state.answers };
-    } else if (kind === "speaking") {
+    } else if (kind === "speaking" && state.audioUri) {
+      setIsUploading(true);
       try {
-        const ext = state.audioUri!.split(".").pop() || "m4a";
-        const result = await uploadAudio.mutateAsync({
-          uri: state.audioUri!,
-          name: `recording.${ext}`,
-          type: `audio/${ext === "m4a" ? "mp4" : ext}`,
-        });
-        answer = { audioUrl: result.audioKey, durationSeconds: Math.round(state.audioDuration / 1000) };
-      } catch {
+        const fileSize = await getFileSize(state.audioUri);
+        const uploadContentType = "audio/wav";
+        const presign = await presignMutation.mutateAsync({ contentType: uploadContentType, fileSize });
+        await uploadToPresignedUrl(presign.uploadUrl, state.audioUri, uploadContentType, presign.headers);
+        answer = { audioPath: presign.audioPath };
+      } catch (err) {
+        setIsUploading(false);
+        setUploadError(err instanceof Error ? err.message : "Tải âm thanh thất bại, vui lòng thử lại");
         return;
       }
+      setIsUploading(false);
     } else {
       answer = { text: state.text.trim() };
     }
 
     submitMutation.mutate(
-      { questionId: question!.id, answer },
+      { answer },
       {
-        onSuccess: (sub) => {
-          refresh(skill as Skill);
-          router.replace(`/(app)/practice/result/${sub.id}`);
+        onSuccess: (result) => {
+          // Update progress and move to next question
+          setProgress(result.progress);
+          if (result.currentItem) {
+            setCurrentItem(result.currentItem);
+          } else {
+            // No more questions — complete session and show result
+            completeMutation.mutate(undefined, {
+              onSuccess: () => {
+                if (result.submissionId) {
+                  router.replace(`/(app)/practice/result/${result.submissionId}`);
+                } else {
+                  router.replace("/(app)/practice");
+                }
+              },
+            });
+          }
         },
       },
     );
@@ -210,18 +256,18 @@ export default function PracticeQuestionScreen() {
         </View>
       </View>
 
-      {/* Progress bar */}
-      {kind === "objective" && totalItems > 1 && (
-        <ProgressBar current={state.currentItemIndex} total={totalItems} colors={c} />
+      {/* Session progress */}
+      {progress && (
+        <ProgressBar current={progress.current} total={progress.total} colors={c} />
       )}
 
       {/* Content */}
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        {kind === "objective" && currentItem && (
+        {kind === "objective" && objItem && (
           <ObjectiveItemView
             content={content as ListeningContent | ReadingContent}
             skill={skill as Skill}
-            item={currentItem}
+            item={objItem}
             itemIndex={state.currentItemIndex}
             selectedAnswer={state.answers[String(state.currentItemIndex)]}
             onSelect={(val) => dispatch({ type: "ANSWER", idx: String(state.currentItemIndex), value: val })}
@@ -252,14 +298,14 @@ export default function PracticeQuestionScreen() {
           />
         )}
 
-        {(submitMutation.isError || uploadAudio.isError) && (
+        {(submitMutation.isError || presignMutation.isError || uploadError) && (
           <Text style={[styles.errorText, { color: c.destructive }]}>
-            {uploadAudio.error?.message ?? submitMutation.error?.message ?? "Lỗi khi nộp bài"}
+            {uploadError ?? presignMutation.error?.message ?? submitMutation.error?.message ?? "Lỗi khi nộp bài"}
           </Text>
         )}
       </ScrollView>
 
-      {/* Item pills */}
+      {/* Item pills (for multi-item objective questions) */}
       {kind === "objective" && totalItems > 1 && (
         <ItemPills
           total={totalItems}
@@ -285,11 +331,11 @@ export default function PracticeQuestionScreen() {
 
             {isLastItem && allAnswered ? (
               <HapticTouchable
-                style={[styles.primaryBtn, { backgroundColor: c.primary, opacity: submitMutation.isPending || isUploading ? 0.7 : 1 }]}
+                style={[styles.primaryBtn, { backgroundColor: c.primary, opacity: isBusy ? 0.7 : 1 }]}
                 onPress={handleSubmit}
-                disabled={submitMutation.isPending || isUploading}
+                disabled={isBusy}
               >
-                {submitMutation.isPending || isUploading ? (
+                {isBusy ? (
                   <ActivityIndicator size="small" color={c.primaryForeground} />
                 ) : (
                   <>
@@ -311,11 +357,11 @@ export default function PracticeQuestionScreen() {
           </View>
         ) : (
           <HapticTouchable
-            style={[styles.primaryBtn, { backgroundColor: allAnswered ? c.primary : c.muted, opacity: submitMutation.isPending || isUploading ? 0.7 : 1 }]}
+            style={[styles.primaryBtn, { backgroundColor: allAnswered ? c.primary : c.muted, opacity: isBusy ? 0.7 : 1 }]}
             onPress={handleSubmit}
             disabled={!canSubmit}
           >
-            {submitMutation.isPending || isUploading ? (
+            {isBusy ? (
               <ActivityIndicator size="small" color={c.primaryForeground} />
             ) : (
               <>
@@ -405,12 +451,25 @@ function ItemPills({
 
 const OPTION_LETTERS = ["A", "B", "C", "D"];
 
+async function getFileSize(uri: string): Promise<number> {
+  return new Promise((resolve) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("HEAD", uri);
+    xhr.onload = () => {
+      const len = xhr.getResponseHeader("Content-Length");
+      resolve(len ? parseInt(len, 10) : 100000);
+    };
+    xhr.onerror = () => resolve(100000);
+    xhr.send();
+  });
+}
+
 function ObjectiveItemView({
   content, skill, item, itemIndex, selectedAnswer, onSelect, passageVisible, onTogglePassage, colors: c,
 }: {
-  content: ListeningContent | ReadingContent;
+  content: ListeningContent | ReadingContent | ReadingGapFillContent | ReadingMatchingContent;
   skill: Skill;
-  item: QuestionItem;
+  item: QuestionItem | null;
   itemIndex: number;
   selectedAnswer?: string;
   onSelect: (val: string) => void;
@@ -420,15 +479,12 @@ function ObjectiveItemView({
 }) {
   return (
     <View style={styles.section}>
-      {/* Audio label for listening */}
-      {skill === "listening" && (
-        <View style={[styles.audioLabel, { backgroundColor: c.muted }]}>
-          <Ionicons name="headset" size={20} color={c.primary} />
-          <Text style={{ color: c.foreground, fontSize: fontSize.sm, fontWeight: "600" }}>Bài nghe</Text>
-        </View>
+      {/* Audio player for listening */}
+      {skill === "listening" && "audioUrl" in content && content.audioUrl && (
+        <AudioPlayer audioUrl={content.audioUrl} seekable />
       )}
 
-      {/* Passage for reading */}
+      {/* Passage for standard reading */}
       {"passage" in content && (
         <View>
           <HapticTouchable
@@ -446,54 +502,92 @@ function ObjectiveItemView({
               {"title" in content && content.title && (
                 <Text style={[styles.passageTitle, { color: c.foreground }]}>{content.title}</Text>
               )}
-              <Text style={[styles.passageText, { color: c.foreground }]}>{content.passage}</Text>
+              <Text style={[styles.passageText, { color: c.foreground }]}>
+                {(content as ReadingContent).passage}
+              </Text>
             </View>
           )}
         </View>
       )}
 
-      {/* Single question item */}
-      <View style={styles.itemBlock}>
-        <Text style={[styles.stem, { color: c.foreground }]}>
-          Câu {itemIndex + 1}. {item.stem}
-        </Text>
-        {item.options.map((opt, oi) => {
-          const letter = OPTION_LETTERS[oi] ?? String(oi);
-          const selected = selectedAnswer === letter;
-          return (
-            <HapticTouchable
-              key={oi}
-              style={[
-                styles.optionRow,
-                {
-                  backgroundColor: selected ? c.primary + "15" : c.card,
-                  borderColor: selected ? c.primary : c.border,
-                },
-              ]}
-              onPress={() => onSelect(letter)}
-            >
-              <View
+      {/* Gap-fill reading: text with gaps */}
+      {isReadingGapFillContent(content) && (
+        <View style={[styles.passageBox, { backgroundColor: c.muted }]}>
+          {content.title && <Text style={[styles.passageTitle, { color: c.foreground }]}>{content.title}</Text>}
+          <Text style={[styles.passageText, { color: c.foreground }]}>{content.textWithGaps}</Text>
+        </View>
+      )}
+
+      {/* Matching reading: paragraphs + headings */}
+      {isReadingMatchingContent(content) && (
+        <View style={{ gap: spacing.sm }}>
+          {content.title && <Text style={[styles.passageTitle, { color: c.foreground }]}>{content.title}</Text>}
+          <Text style={[styles.metaLine, { color: c.mutedForeground }]}>Nối đoạn văn với tiêu đề phù hợp:</Text>
+          {content.paragraphs.map((p, i) => (
+            <View key={i} style={[styles.passageBox, { backgroundColor: c.muted }]}>
+              <Text style={{ color: c.primary, fontWeight: "700", fontSize: fontSize.sm }}>
+                {p.label}
+              </Text>
+              <Text style={[styles.passageText, { color: c.foreground }]}>{p.text}</Text>
+            </View>
+          ))}
+          <View style={[styles.passageBox, { backgroundColor: c.muted }]}>
+            <Text style={{ color: c.foreground, fontWeight: "600", fontSize: fontSize.sm, marginBottom: spacing.xs }}>
+              Tiêu đề:
+            </Text>
+            {content.headings.map((h, i) => (
+              <Text key={i} style={{ color: c.foreground, fontSize: fontSize.sm }}>
+                {OPTION_LETTERS[i] ?? String(i)}. {h}
+              </Text>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Single question item (MCQ) */}
+      {item && (
+        <View style={styles.itemBlock}>
+          <Text style={[styles.stem, { color: c.foreground }]}>
+            Câu {itemIndex + 1}. {item.stem}
+          </Text>
+          {item.options.map((opt, oi) => {
+            const letter = OPTION_LETTERS[oi] ?? String(oi);
+            const selected = selectedAnswer === letter;
+            return (
+              <HapticTouchable
+                key={oi}
                 style={[
-                  styles.optionCircle,
+                  styles.optionRow,
                   {
-                    backgroundColor: selected ? c.primary : "transparent",
+                    backgroundColor: selected ? c.primary + "15" : c.card,
                     borderColor: selected ? c.primary : c.border,
                   },
                 ]}
+                onPress={() => onSelect(letter)}
               >
-                <Text style={{
-                  color: selected ? c.primaryForeground : c.mutedForeground,
-                  fontSize: fontSize.xs,
-                  fontWeight: "700",
-                }}>
-                  {letter}
-                </Text>
-              </View>
-              <Text style={[styles.optionText, { color: c.foreground }]}>{opt}</Text>
-            </HapticTouchable>
-          );
-        })}
-      </View>
+                <View
+                  style={[
+                    styles.optionCircle,
+                    {
+                      backgroundColor: selected ? c.primary : "transparent",
+                      borderColor: selected ? c.primary : c.border,
+                    },
+                  ]}
+                >
+                  <Text style={{
+                    color: selected ? c.primaryForeground : c.mutedForeground,
+                    fontSize: fontSize.xs,
+                    fontWeight: "700",
+                  }}>
+                    {letter}
+                  </Text>
+                </View>
+                <Text style={[styles.optionText, { color: c.foreground }]}>{opt}</Text>
+              </HapticTouchable>
+            );
+          })}
+        </View>
+      )}
     </View>
   );
 }
@@ -512,6 +606,14 @@ function WritingView({
         <Text style={[styles.promptText, { color: c.foreground }]}>{content.prompt}</Text>
         {content.instructions && (
           <Text style={[styles.instructionText, { color: c.mutedForeground }]}>{content.instructions}</Text>
+        )}
+        {content.requiredPoints && content.requiredPoints.length > 0 && (
+          <View style={{ marginTop: spacing.xs }}>
+            <Text style={{ color: c.foreground, fontSize: fontSize.sm, fontWeight: "600" }}>Yêu cầu:</Text>
+            {content.requiredPoints.map((pt, i) => (
+              <Text key={i} style={[styles.metaLine, { color: c.mutedForeground }]}>• {pt}</Text>
+            ))}
+          </View>
         )}
         {content.minWords && (
           <Text style={[styles.metaLine, { color: c.mutedForeground }]}>Tối thiểu: {content.minWords} từ</Text>
@@ -560,7 +662,28 @@ function SpeakingView({
   async function startRecording() {
     await Audio.requestPermissionsAsync();
     await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-    const { recording: rec } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+    const { recording: rec } = await Audio.Recording.createAsync({
+      android: {
+        extension: ".wav",
+        outputFormat: 6,
+        audioEncoder: 0,
+        sampleRate: 16000,
+        numberOfChannels: 1,
+        bitRate: 256000,
+      },
+      ios: {
+        extension: ".wav",
+        outputFormat: 0x6C696E65,
+        audioQuality: 96,
+        sampleRate: 16000,
+        numberOfChannels: 1,
+        bitRate: 256000,
+        linearPCMBitDepth: 16,
+        linearPCMIsBigEndian: false,
+        linearPCMIsFloat: false,
+      },
+      web: { mimeType: "audio/wav", bitsPerSecond: 256000 },
+    });
     setRecording(rec);
     setIsRecording(true);
     setElapsed(0);
@@ -619,6 +742,13 @@ function SpeakingView({
             {(content as SpeakingPart3Content).suggestions.map((s, i) => (
               <Text key={i} style={[styles.metaLine, { color: c.mutedForeground }]}>• {s}</Text>
             ))}
+            {(content as SpeakingPart3Content).followUpQuestion && (
+              <View style={{ marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: c.border }}>
+                <Text style={{ color: c.foreground, fontSize: fontSize.sm, fontWeight: "600" }}>
+                  Câu hỏi thêm: {(content as SpeakingPart3Content).followUpQuestion}
+                </Text>
+              </View>
+            )}
             <Text style={[styles.metaLine, { color: c.mutedForeground }]}>
               Chuẩn bị: {(content as SpeakingPart3Content).preparationSeconds}s · Nói: {(content as SpeakingPart3Content).speakingSeconds}s
             </Text>

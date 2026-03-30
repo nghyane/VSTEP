@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import type { Exam, ExamSession, ExamSessionWithExam, ExamSessionDetail, PaginatedResponse, ExamType, ExamSkill, QuestionLevel } from "@/types/api";
+import type { Exam, PaginatedResponse, ExamType, ExamSkill, QuestionLevel } from "@/types/api";
 import { queryClient } from "@/lib/query-client";
 
 interface UseExamsParams {
@@ -34,28 +34,24 @@ export function useExamDetail(id: string) {
   });
 }
 
-interface UseExamSessionsParams {
-  status?: string;
-  page?: number;
-  limit?: number;
-}
+// useExamSessions lives in use-exam-session.ts (uses correct /api/sessions path)
 
-export function useExamSessions(params: UseExamSessionsParams = {}) {
-  const search = new URLSearchParams();
-  if (params.status) search.set("status", params.status);
-  if (params.limit) search.set("limit", String(params.limit));
-  if (params.page) search.set("page", String(params.page));
-  const qs = search.toString();
-
-  return useQuery({
-    queryKey: ["exam-sessions", params],
-    queryFn: () => api.get<PaginatedResponse<ExamSessionWithExam>>(`/api/exams/sessions${qs ? `?${qs}` : ""}`),
-  });
+// Backend returns ExamSessionDetailResource (nested { session, exam, questions, answers })
+// Extract session.id so caller can navigate
+interface StartExamResult {
+  session: { id: string; [key: string]: unknown };
+  exam: unknown;
+  questions: unknown[];
+  answers: unknown[];
 }
 
 export function useStartExam() {
   return useMutation({
-    mutationFn: (examId: string) => api.post<ExamSession>(`/api/exams/${examId}/start`, {}),
+    mutationFn: async (examId: string) => {
+      const res = await api.post<StartExamResult>(`/api/exams/${examId}/start`, {});
+      // Return the nested session object with id accessible at top level
+      return { id: res.session.id, ...res.session } as { id: string; [key: string]: unknown };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["exam-sessions"] });
     },

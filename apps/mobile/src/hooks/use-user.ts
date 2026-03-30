@@ -2,6 +2,24 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type { User } from "@/types/api";
 
+export function useUploadAvatar(userId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (file: { uri: string; name: string; type: string }) => {
+      const formData = new FormData();
+      formData.append("avatar", {
+        uri: file.uri,
+        name: file.name,
+        type: file.type,
+      } as any);
+      return api.upload<{ avatarKey: string }>(`/api/users/${userId}/avatar`, formData);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["users", userId] });
+    },
+  });
+}
+
 export function useUser(userId: string) {
   return useQuery({
     queryKey: ["users", userId],

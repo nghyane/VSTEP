@@ -1,13 +1,32 @@
-import { StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { BouncyScrollView } from "@/components/BouncyScrollView";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
-import { useSubmission } from "@/hooks/use-submissions";
-import { useThemeColors, spacing, radius, fontSize } from "@/theme";
-import type { SubmissionStatus } from "@/types/api";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { useExplain, type ExplainResponse } from "@/hooks/use-ai";
+import type { Submission } from "@/types/api";
+import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+import type { Skill, SubmissionStatus } from "@/types/api";
+
+const WRITING_CRITERIA: Record<string, string> = {
+  taskFulfillment: "Task Fulfillment",
+  organization: "Organization",
+  vocabulary: "Vocabulary",
+  grammar: "Grammar",
+};
+
+const SPEAKING_CRITERIA: Record<string, string> = {
+  fluencyOrganization: "Fluency & Organization",
+  grammar: "Grammar",
+  pronunciation: "Pronunciation",
+  vocabulary: "Vocabulary",
+};
 
 const statusConfig: Record<SubmissionStatus, { label: string }> = {
   pending: { label: "Đang chờ" },
@@ -20,12 +39,23 @@ const statusConfig: Record<SubmissionStatus, { label: string }> = {
 export default function SubmissionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const c = useThemeColors();
-  const { data, isLoading, error } = useSubmission(id!);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["submissions", id],
+    queryFn: () => api.get<Submission>(`/api/submissions/${id}`),
+    enabled: !!id,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === "pending" || status === "processing" ? 5000 : false;
+    },
+  });
 
   if (isLoading) return <LoadingScreen />;
   if (error || !data) return <ErrorScreen message={error?.message ?? "Không tìm thấy bài nộp"} />;
 
   const status = statusConfig[data.status];
+  const result = data.result as { type?: string; criteriaScores?: Record<string, number> } | null;
+  const criteriaLabels = data.skill === "writing" ? WRITING_CRITERIA : data.skill === "speaking" ? SPEAKING_CRITERIA : null;
+  const criteriaScores = result?.criteriaScores;
 
   return (
     <BouncyScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content}>
@@ -55,6 +85,27 @@ export default function SubmissionDetailScreen() {
           <Text style={{ color: c.mutedForeground, fontSize: fontSize.lg }}>Đang chấm</Text>
         )}
       </View>
+
+      {/* Criteria Scores */}
+      {criteriaLabels && criteriaScores && (
+        <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+          <Text style={[styles.sectionTitle, { color: c.foreground }]}>Điểm thành phần</Text>
+          {Object.entries(criteriaLabels).map(([key, label]) => {
+            const score = criteriaScores[key] ?? 0;
+            return (
+              <View key={key} style={styles.criteriaRow}>
+                <View style={styles.criteriaHeader}>
+                  <Text style={{ color: c.foreground, fontSize: fontSize.sm }}>{label}</Text>
+                  <Text style={{ color: c.foreground, fontSize: fontSize.sm, fontWeight: "700", fontVariant: ["tabular-nums"] }}>{score}/10</Text>
+                </View>
+                <View style={[styles.progressTrack, { backgroundColor: c.muted }]}>
+                  <View style={[styles.progressFill, { width: `${score * 10}%`, backgroundColor: c.primary }]} />
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
 
       {/* Dates */}
       <View style={styles.dateRow}>
@@ -99,7 +150,111 @@ export default function SubmissionDetailScreen() {
           ) : null}
         </View>
       )}
+
+      {/* AI Explain */}
+      {data.status === "completed" && (
+        <AIExplainSection
+          skill={data.skill}
+          answer={data.answer}
+          feedback={data.feedback}
+          colors={c}
+        />
+      )}
     </BouncyScrollView>
+  );
+}
+
+const CATEGORY_LABELS: Record<string, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string }> = {
+  grammar: { label: "Ngữ pháp", icon: "construct-outline", color: "#4B7BF5" },
+  vocabulary: { label: "Từ vựng", icon: "book-outline", color: "#34B279" },
+  strategy: { label: "Chiến lược", icon: "bulb-outline", color: "#E5A817" },
+  discourse: { label: "Liên kết", icon: "git-merge-outline", color: "#9B59D0" },
+};
+
+function AIExplainSection({
+  skill,
+  answer,
+  feedback,
+  colors: c,
+}: {
+  skill: Skill;
+  answer: unknown;
+  feedback: string | null;
+  colors: ReturnType<typeof useThemeColors>;
+}) {
+  const explain = useExplain();
+  const [result, setResult] = useState<ExplainResponse | null>(null);
+
+  const answerText = answer && typeof answer === "object" && "text" in (answer as any)
+    ? String((answer as any).text)
+    : feedback ?? "";
+
+  if (!answerText) return null;
+
+  function handleExplain() {
+    explain.mutate(
+      { text: answerText, skill },
+      { onSuccess: (data) => setResult(data) },
+    );
+  }
+
+  if (!result) {
+    return (
+      <HapticTouchable
+        style={[styles.aiBtn, { backgroundColor: c.primary + "12", borderColor: c.primary + "40" }]}
+        onPress={handleExplain}
+        disabled={explain.isPending}
+      >
+        {explain.isPending ? (
+          <ActivityIndicator size="small" color={c.primary} />
+        ) : (
+          <Ionicons name="sparkles" size={20} color={c.primary} />
+        )}
+        <Text style={[styles.aiBtnText, { color: c.primary }]}>
+          {explain.isPending ? "Đang phân tích..." : "AI Giải thích"}
+        </Text>
+      </HapticTouchable>
+    );
+  }
+
+  return (
+    <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+      <View style={styles.aiHeader}>
+        <Ionicons name="sparkles" size={18} color={c.primary} />
+        <Text style={[styles.sectionTitle, { color: c.foreground }]}>AI Giải thích</Text>
+      </View>
+
+      {result.highlights.map((h, i) => {
+        const cat = CATEGORY_LABELS[h.category] ?? CATEGORY_LABELS.grammar;
+        return (
+          <View key={i} style={[styles.highlightCard, { backgroundColor: cat.color + "10" }]}>
+            <View style={styles.highlightHeader}>
+              <Ionicons name={cat.icon} size={14} color={cat.color} />
+              <Text style={[styles.highlightCategory, { color: cat.color }]}>{cat.label}</Text>
+            </View>
+            <Text style={[styles.highlightPhrase, { color: c.foreground }]}>"{h.phrase}"</Text>
+            <Text style={[styles.highlightNote, { color: c.foreground }]}>{h.note}</Text>
+          </View>
+        );
+      })}
+
+      {result.questionExplanations && result.questionExplanations.length > 0 && (
+        <View style={{ gap: spacing.sm, marginTop: spacing.sm }}>
+          <Text style={[styles.sectionTitle, { color: c.foreground }]}>Giải thích câu hỏi</Text>
+          {result.questionExplanations.map((qe) => (
+            <View key={qe.questionNumber} style={[styles.highlightCard, { backgroundColor: c.muted }]}>
+              <Text style={[styles.highlightPhrase, { color: c.foreground }]}>
+                Câu {qe.questionNumber}: {qe.correctAnswer}
+              </Text>
+              <Text style={[styles.highlightNote, { color: c.foreground }]}>{qe.explanation}</Text>
+              {qe.wrongAnswerNote && (
+                <Text style={[styles.highlightNote, { color: c.destructive }]}>{qe.wrongAnswerNote}</Text>
+              )}
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -116,4 +271,19 @@ const styles = StyleSheet.create({
   dateRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   section: { borderWidth: 1, borderRadius: radius.xl, padding: spacing.base, gap: spacing.sm },
   sectionTitle: { fontWeight: "700", fontSize: fontSize.base },
+  criteriaRow: { gap: spacing.xs },
+  criteriaHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  progressTrack: { height: 6, borderRadius: radius.full, overflow: "hidden" },
+  progressFill: { height: 6, borderRadius: radius.full },
+  aiBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm,
+    borderWidth: 1, borderRadius: radius.xl, paddingVertical: spacing.md,
+  },
+  aiBtnText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
+  aiHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  highlightCard: { borderRadius: radius.lg, padding: spacing.md, gap: spacing.xs },
+  highlightHeader: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  highlightCategory: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
+  highlightPhrase: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
+  highlightNote: { fontSize: fontSize.sm, fontFamily: fontFamily.regular, lineHeight: 20 },
 });
