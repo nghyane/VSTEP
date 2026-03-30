@@ -15,7 +15,7 @@ use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Promptable;
 use Stringable;
 
-#[Provider('local')]
+#[Provider('openai')]
 #[Model('gpt-5.4')]
 #[MaxSteps(3)]
 #[MaxTokens(8192)]

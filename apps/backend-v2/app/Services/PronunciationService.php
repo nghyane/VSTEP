@@ -21,6 +21,7 @@ class PronunciationService
     private const SUPPORTED_FORMATS = [
         'wav' => 'audio/wav; codecs=audio/pcm; samplerate=16000',
         'ogg' => 'audio/ogg; codecs=opus',
+        'webm' => 'audio/webm; codecs=opus',
     ];
 
     public function __construct()
@@ -111,10 +112,10 @@ class PronunciationService
     {
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
         $mime = $finfo->buffer($content);
-        $allowed = ['audio/x-wav', 'audio/wav', 'audio/ogg', 'application/ogg'];
+        $allowed = ['audio/x-wav', 'audio/wav', 'audio/ogg', 'application/ogg', 'audio/webm'];
 
         if (! in_array($mime, $allowed)) {
-            throw new RuntimeException("Invalid audio MIME type: {$mime}. Only WAV and OGG are supported.");
+            throw new RuntimeException("Invalid audio MIME type: {$mime}. Only WAV, OGG, and WebM are supported.");
         }
     }
 

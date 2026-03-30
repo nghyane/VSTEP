@@ -69,4 +69,34 @@ class AudioStorageFailureTest extends TestCase
                 'message' => 'Audio storage is temporarily unavailable.',
             ]);
     }
+
+    #[Test]
+    public function it_accepts_webm_upload_presign_requests(): void
+    {
+        $user = User::create([
+            'full_name' => 'Learner',
+            'email' => 'audio-webm@example.com',
+            'password' => 'password',
+            'role' => 'learner',
+        ]);
+
+        $this->actingAs($user, 'api');
+        $this->app->bind(AudioStorageService::class, fn () => new class extends AudioStorageService
+        {
+            public function temporaryUploadUrl(string $path, string $contentType, int $expiresInSeconds): array
+            {
+                return [
+                    'url' => 'https://example.com/upload',
+                    'headers' => ['Content-Type' => $contentType],
+                ];
+            }
+        });
+
+        $this->postJson('/api/v1/uploads/presign', [
+            'content_type' => 'audio/webm',
+            'file_size' => 1024,
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.audio_path', fn (string $path) => str_ends_with($path, '.webm'));
+    }
 }
