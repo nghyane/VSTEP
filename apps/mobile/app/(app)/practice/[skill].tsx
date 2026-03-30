@@ -201,14 +201,11 @@ export default function PracticeQuestionScreen() {
     } else if (kind === "speaking" && state.audioUri) {
       setIsUploading(true);
       try {
-        const ext = state.audioUri.split(".").pop() || "m4a";
-        const contentType = `audio/${ext === "m4a" ? "mp4" : ext}`;
-        const presign = await presignMutation.mutateAsync({
-          filename: `recording.${ext}`,
-          contentType,
-        });
-        await uploadToPresignedUrl(presign.url, state.audioUri, contentType);
-        answer = { audioPath: presign.key };
+        const fileSize = await getFileSize(state.audioUri);
+        const uploadContentType = "audio/wav";
+        const presign = await presignMutation.mutateAsync({ contentType: uploadContentType, fileSize });
+        await uploadToPresignedUrl(presign.uploadUrl, state.audioUri, uploadContentType, presign.headers);
+        answer = { audioPath: presign.audioPath };
       } catch (err) {
         setIsUploading(false);
         setUploadError(err instanceof Error ? err.message : "Tải âm thanh thất bại, vui lòng thử lại");
@@ -454,6 +451,19 @@ function ItemPills({
 
 const OPTION_LETTERS = ["A", "B", "C", "D"];
 
+async function getFileSize(uri: string): Promise<number> {
+  return new Promise((resolve) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("HEAD", uri);
+    xhr.onload = () => {
+      const len = xhr.getResponseHeader("Content-Length");
+      resolve(len ? parseInt(len, 10) : 100000);
+    };
+    xhr.onerror = () => resolve(100000);
+    xhr.send();
+  });
+}
+
 function ObjectiveItemView({
   content, skill, item, itemIndex, selectedAnswer, onSelect, passageVisible, onTogglePassage, colors: c,
 }: {
@@ -652,7 +662,28 @@ function SpeakingView({
   async function startRecording() {
     await Audio.requestPermissionsAsync();
     await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-    const { recording: rec } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+    const { recording: rec } = await Audio.Recording.createAsync({
+      android: {
+        extension: ".wav",
+        outputFormat: 6,
+        audioEncoder: 0,
+        sampleRate: 16000,
+        numberOfChannels: 1,
+        bitRate: 256000,
+      },
+      ios: {
+        extension: ".wav",
+        outputFormat: 0x6C696E65,
+        audioQuality: 96,
+        sampleRate: 16000,
+        numberOfChannels: 1,
+        bitRate: 256000,
+        linearPCMBitDepth: 16,
+        linearPCMIsBigEndian: false,
+        linearPCMIsFloat: false,
+      },
+      web: { mimeType: "audio/wav", bitsPerSecond: 256000 },
+    });
     setRecording(rec);
     setIsRecording(true);
     setElapsed(0);

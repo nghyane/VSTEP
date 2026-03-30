@@ -131,6 +131,7 @@ export interface SessionAnswer {
 export interface ExamSessionDetail extends ExamSession {
   questions: SessionQuestion[];
   answers: SessionAnswer[];
+  submissions: Submission[];
 }
 
 // ============================================================
@@ -357,9 +358,10 @@ export interface PracticeSubmitResult {
 // ============================================================
 
 export interface PresignResponse {
-  url: string;
-  key: string;
-  expiresAt: string;
+  uploadUrl: string;
+  headers: Record<string, string>;
+  audioPath: string;
+  expiresIn: number;
 }
 
 // ============================================================

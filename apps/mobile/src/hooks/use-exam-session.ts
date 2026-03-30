@@ -28,9 +28,10 @@ function flattenSessionDetail(raw: unknown): FlatSessionDetail {
       exam: res.exam ?? null,
       questions: res.questions ?? [],
       answers: res.answers ?? [],
+      submissions: res.submissions ?? [],
     } as unknown as FlatSessionDetail;
   }
-  return { ...(raw as any), exam: null } as FlatSessionDetail;
+  return { ...(raw as any), exam: null, submissions: [] } as FlatSessionDetail;
 }
 
 // ---------------------------------------------------------------------------

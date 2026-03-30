@@ -4,14 +4,14 @@ import type { PresignResponse } from "@/types/api";
 
 // ---------------------------------------------------------------------------
 // Presigned upload flow for speaking audio
-// 1. POST /api/uploads/presign → get { url, key, expiresAt }
-// 2. PUT file directly to presigned URL (R2/S3)
-// 3. Use the returned `key` in the answer body
+// 1. POST /api/uploads/presign → get { uploadUrl, headers, audioPath, expiresIn }
+// 2. PUT file directly to presigned URL (R2/S3) using XMLHttpRequest (RN compatible)
+// 3. Use the returned `audioPath` in the answer body
 // ---------------------------------------------------------------------------
 
 export function usePresignUpload() {
   return useMutation({
-    mutationFn: (body: { filename: string; contentType: string }) =>
+    mutationFn: (body: { contentType: string; fileSize: number }) =>
       api.post<PresignResponse>("/api/uploads/presign", body),
   });
 }
@@ -20,19 +20,40 @@ export async function uploadToPresignedUrl(
   presignedUrl: string,
   fileUri: string,
   contentType: string,
+  headers?: Record<string, string>,
 ): Promise<void> {
-  const response = await fetch(fileUri);
-  const blob = await response.blob();
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", presignedUrl);
+    xhr.setRequestHeader("Content-Type", contentType);
+    if (headers) {
+      for (const [key, value] of Object.entries(headers)) {
+        xhr.setRequestHeader(key, value);
+      }
+    }
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve();
+      } else {
+        reject(new Error(`Upload failed: ${xhr.status}`));
+      }
+    };
+    xhr.onerror = () => reject(new Error("Network error during upload"));
 
-  const uploadRes = await fetch(presignedUrl, {
-    method: "PUT",
-    headers: { "Content-Type": contentType },
-    body: blob,
+    // React Native: fetch file as blob via XHR
+    const fileXhr = new XMLHttpRequest();
+    fileXhr.open("GET", fileUri);
+    fileXhr.responseType = "blob";
+    fileXhr.onload = () => {
+      if (fileXhr.status === 200 || fileXhr.status === 0) {
+        xhr.send(fileXhr.response);
+      } else {
+        reject(new Error(`Failed to read audio file: ${fileXhr.status}`));
+      }
+    };
+    fileXhr.onerror = () => reject(new Error("Failed to read audio file"));
+    fileXhr.send();
   });
-
-  if (!uploadRes.ok) {
-    throw new Error(`Upload failed: ${uploadRes.status}`);
-  }
 }
 
 // Avatar upload lives in use-user.ts (useUploadAvatar)

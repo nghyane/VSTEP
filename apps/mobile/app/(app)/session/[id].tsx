@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Audio } from "expo-av";
 import { BouncyScrollView } from "@/components/BouncyScrollView";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -17,6 +18,7 @@ import { ErrorScreen } from "@/components/ErrorScreen";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { SkillIcon, SKILL_ICONS, SKILL_LABELS } from "@/components/SkillIcon";
 import { AudioPlayer } from "@/components/AudioPlayer";
+import { usePresignUpload, uploadToPresignedUrl } from "@/hooks/use-uploads";
 import {
   useExamSession,
   useSaveAnswers,
@@ -49,6 +51,19 @@ import {
 
 const SKILL_ORDER: Skill[] = ["listening", "reading", "writing", "speaking"];
 const OPTION_LETTERS = ["A", "B", "C", "D"];
+
+async function getFileSize(uri: string): Promise<number> {
+  return new Promise((resolve) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("HEAD", uri);
+    xhr.onload = () => {
+      const len = xhr.getResponseHeader("Content-Length");
+      resolve(len ? parseInt(len, 10) : 100000);
+    };
+    xhr.onerror = () => resolve(100000); // fallback 100KB
+    xhr.send();
+  });
+}
 const AUTO_SAVE_INTERVAL = 30_000;
 
 // ─── Root ────────────────────────────────────────────────────────────────────
@@ -422,16 +437,12 @@ function QuestionRenderer({
     );
   }
 
-  // speaking — text fallback
-  const textAnswer = (answer && "text" in answer ? answer.text : "");
+  // speaking — audio recording + presign upload
   return (
-    <SpeakingView
+    <SpeakingRecordView
       content={question.content as SpeakingPart1Content | SpeakingPart2Content | SpeakingPart3Content}
-      text={textAnswer}
-      onChangeText={(t) => {
-        const next: WritingAnswer = { text: t };
-        onAnswer(next);
-      }}
+      answer={answer}
+      onAnswer={onAnswer}
     />
   );
 }
@@ -503,7 +514,7 @@ function ObjectiveView({
       )}
 
       {items.map((item, i) => {
-        const idx = String(i);
+        const idx = String(i + 1); // 1-indexed keys to match frontend convention
         return (
           <View key={idx} style={styles.itemBlock}>
             <Text style={[styles.stem, { color: c.foreground }]}>
@@ -605,6 +616,186 @@ function WritingView({
 
 // ─── SpeakingView ────────────────────────────────────────────────────────────
 
+// ─── SpeakingRecordView (real mic recording for exam) ─────────────────────────
+
+function SpeakingRecordView({
+  content,
+  answer,
+  onAnswer,
+}: {
+  content: SpeakingPart1Content | SpeakingPart2Content | SpeakingPart3Content;
+  answer: SubmissionAnswer | undefined;
+  onAnswer: (ans: SubmissionAnswer) => void;
+}) {
+  const c = useThemeColors();
+  const presignMutation = usePresignUpload();
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioUri, setAudioUri] = useState<string | null>(null);
+  const [audioDurationMs, setAudioDurationMs] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadedPath, setUploadedPath] = useState<string | null>(
+    answer && "audioPath" in answer ? (answer as any).audioPath : null,
+  );
+
+  async function startRecording() {
+    try {
+      const perm = await Audio.requestPermissionsAsync();
+      if (!perm.granted) {
+        setUploadError("Cần quyền truy cập micro để ghi âm");
+        return;
+      }
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+      const { recording: rec } = await Audio.Recording.createAsync({
+        android: {
+          extension: ".wav",
+          outputFormat: 6, // DEFAULT (PCM)
+          audioEncoder: 0, // DEFAULT
+          sampleRate: 16000,
+          numberOfChannels: 1,
+          bitRate: 256000,
+        },
+        ios: {
+          extension: ".wav",
+          outputFormat: 0x6C696E65, // kAudioFormatLinearPCM
+          audioQuality: 96,
+          sampleRate: 16000,
+          numberOfChannels: 1,
+          bitRate: 256000,
+          linearPCMBitDepth: 16,
+          linearPCMIsBigEndian: false,
+          linearPCMIsFloat: false,
+        },
+        web: { mimeType: "audio/wav", bitsPerSecond: 256000 },
+      });
+      setRecording(rec);
+      setIsRecording(true);
+      setUploadError(null);
+    } catch {
+      setUploadError("Không thể bắt đầu ghi âm");
+    }
+  }
+
+  async function stopRecording() {
+    if (!recording) return;
+    setIsRecording(false);
+    await recording.stopAndUnloadAsync();
+    const uri = recording.getURI();
+    const status = await recording.getStatusAsync();
+    setRecording(null);
+    if (uri) {
+      setAudioUri(uri);
+      setAudioDurationMs(status.durationMillis ?? 0);
+      // Auto-upload
+      await uploadAudio(uri, status.durationMillis ?? 0);
+    }
+  }
+
+  async function uploadAudio(uri: string, durationMs: number) {
+    setIsUploading(true);
+    setUploadError(null);
+    try {
+      // Get file size from XHR HEAD (RN compatible)
+      const fileSize = await getFileSize(uri);
+      const uploadContentType = "audio/wav";
+      const presign = await presignMutation.mutateAsync({ contentType: uploadContentType, fileSize });
+      await uploadToPresignedUrl(presign.uploadUrl, uri, uploadContentType, presign.headers);
+      setUploadedPath(presign.audioPath);
+      onAnswer({ audioPath: presign.audioPath, durationSeconds: Math.round(durationMs / 1000) } as any);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Tải âm thanh thất bại, vui lòng thử lại");
+    }
+    setIsUploading(false);
+  }
+
+  function clearRecording() {
+    setAudioUri(null);
+    setUploadedPath(null);
+    setAudioDurationMs(0);
+  }
+
+  return (
+    <View style={styles.section}>
+      {/* Prompt display — reuse same layout as SpeakingView */}
+      <View style={[styles.promptBox, { backgroundColor: c.muted }]}>
+        {"topics" in content &&
+          (content as SpeakingPart1Content).topics.map((topic, i) => (
+            <View key={i} style={{ marginBottom: spacing.sm }}>
+              <Text style={[styles.promptText, { color: c.foreground }]}>{topic.name}</Text>
+              {topic.questions.map((q, qi) => (
+                <Text key={qi} style={[styles.metaLine, { color: c.mutedForeground }]}>• {q}</Text>
+              ))}
+            </View>
+          ))}
+        {"situation" in content && (
+          <>
+            <Text style={[styles.promptText, { color: c.foreground }]}>{(content as SpeakingPart2Content).situation}</Text>
+            <Text style={[styles.metaLine, { color: c.mutedForeground }]}>
+              Chuẩn bị: {(content as SpeakingPart2Content).preparationSeconds}s · Nói: {(content as SpeakingPart2Content).speakingSeconds}s
+            </Text>
+          </>
+        )}
+        {"centralIdea" in content && (
+          <>
+            <Text style={[styles.promptText, { color: c.foreground }]}>{(content as SpeakingPart3Content).centralIdea}</Text>
+            {(content as SpeakingPart3Content).suggestions.map((s, i) => (
+              <Text key={i} style={[styles.metaLine, { color: c.mutedForeground }]}>• {s}</Text>
+            ))}
+            {(content as SpeakingPart3Content).followUpQuestion && (
+              <View style={{ marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: c.border }}>
+                <Text style={{ color: c.foreground, fontSize: fontSize.sm, fontWeight: "600" }}>
+                  Câu hỏi thêm: {(content as SpeakingPart3Content).followUpQuestion}
+                </Text>
+              </View>
+            )}
+            <Text style={[styles.metaLine, { color: c.mutedForeground }]}>
+              Chuẩn bị: {(content as SpeakingPart3Content).preparationSeconds}s · Nói: {(content as SpeakingPart3Content).speakingSeconds}s
+            </Text>
+          </>
+        )}
+      </View>
+
+      {/* Recorder */}
+      <View style={[styles.recorderBox, { backgroundColor: c.card, borderColor: c.border }]}>
+        {uploadedPath ? (
+          <View style={{ alignItems: "center", gap: spacing.sm }}>
+            <Ionicons name="checkmark-circle" size={32} color={c.success} />
+            <Text style={{ color: c.success, fontWeight: "600", fontSize: fontSize.sm }}>Đã ghi âm ({Math.round(audioDurationMs / 1000)}s)</Text>
+            {audioUri && <AudioPlayer audioUrl={audioUri} seekable />}
+            <HapticTouchable onPress={clearRecording} style={[styles.outlineBtn, { borderColor: c.border }]}>
+              <Ionicons name="refresh" size={16} color={c.foreground} />
+              <Text style={{ color: c.foreground, fontSize: fontSize.xs }}>Ghi lại</Text>
+            </HapticTouchable>
+          </View>
+        ) : isUploading ? (
+          <View style={{ alignItems: "center", gap: spacing.sm }}>
+            <ActivityIndicator size="small" color={c.primary} />
+            <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm }}>Đang tải lên...</Text>
+          </View>
+        ) : (
+          <View style={{ alignItems: "center", gap: spacing.md }}>
+            <HapticTouchable
+              onPress={isRecording ? stopRecording : startRecording}
+              style={[styles.micBtn, { backgroundColor: isRecording ? c.destructive : c.primary }]}
+            >
+              <Ionicons name={isRecording ? "stop" : "mic"} size={28} color="#fff" />
+            </HapticTouchable>
+            <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs }}>
+              {isRecording ? "Đang ghi âm... Nhấn để dừng" : "Nhấn để ghi âm"}
+            </Text>
+          </View>
+        )}
+        {uploadError && (
+          <Text style={{ color: c.destructive, fontSize: fontSize.xs, textAlign: "center", marginTop: spacing.xs }}>{uploadError}</Text>
+        )}
+      </View>
+    </View>
+  );
+}
+
+// ─── SpeakingView (text-only, kept for writing-like fallback) ─────────────────
+
 function SpeakingView({
   content,
   text,
@@ -678,7 +869,7 @@ function SpeakingView({
 
 // ─── Completed ───────────────────────────────────────────────────────────────
 
-function Completed({ session, exam }: { session: ExamSession; exam: any }) {
+function Completed({ session, exam }: { session: FlatSessionDetail; exam: any }) {
   const c = useThemeColors();
   const router = useRouter();
 
@@ -689,31 +880,163 @@ function Completed({ session, exam }: { session: ExamSession; exam: any }) {
     { skill: "speaking", score: session.speakingScore },
   ];
 
-  const statusLabel: Record<string, string> = { submitted: "Đã nộp", completed: "Hoàn thành", abandoned: "Đã hủy" };
+  const activeScores = scores.filter((s) => s.score != null);
+  const weakest = activeScores.length > 0
+    ? activeScores.reduce((min, s) => (s.score! < min.score! ? s : min))
+    : null;
+
+  // Group questions by skill for answer review
+  const questionsBySkill = useMemo(() => {
+    const map: Partial<Record<Skill, typeof session.questions>> = {};
+    for (const q of session.questions ?? []) {
+      const sk = q.skill as Skill;
+      if (!map[sk]) map[sk] = [];
+      map[sk]!.push(q);
+    }
+    return map;
+  }, [session.questions]);
+
+  const answersMap = useMemo(() => {
+    const map: Record<string, unknown> = {};
+    for (const a of session.answers ?? []) {
+      map[a.questionId] = a.answer;
+    }
+    return map;
+  }, [session.answers]);
+
+  const [expandedSkill, setExpandedSkill] = useState<Skill | null>(null);
 
   return (
     <BouncyScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.completedContent}>
+      {/* Header */}
       <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
-        <Text style={[styles.heading, { color: c.foreground }]}>Kết quả thi {exam ? `— Đề ${exam.level}` : ""}</Text>
-        <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm }}>{statusLabel[session.status] ?? session.status}</Text>
+        <Text style={[styles.heading, { color: c.foreground }]}>Kết quả thi {exam ? `— ${exam.title ?? `Đề ${exam.level}`}` : ""}</Text>
+        {session.completedAt && (
+          <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs }}>
+            Hoàn thành: {new Date(session.completedAt).toLocaleString("vi-VN")}
+          </Text>
+        )}
       </View>
 
-      {session.overallScore !== null && (
+      {/* Overall score + band */}
+      {session.overallScore != null && (
         <View style={[styles.overallBox, { backgroundColor: c.primary + "18" }]}>
           <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm, fontWeight: "500" }}>Điểm tổng</Text>
           <Text style={[styles.overallScore, { color: c.primary }]}>
             {session.overallScore}<Text style={{ fontSize: fontSize.lg, color: c.mutedForeground }}>/10</Text>
           </Text>
+          {session.overallBand && (
+            <View style={[styles.bandBadge, { borderColor: c.primary }]}>
+              <Text style={{ color: c.primary, fontWeight: "700", fontSize: fontSize.base }}>{session.overallBand}</Text>
+            </View>
+          )}
         </View>
       )}
 
+      {/* Per-skill scores */}
       {scores.map(({ skill, score }) => (
         <ScoreRow key={skill} skill={skill} score={score} colors={c} />
       ))}
 
-      <HapticTouchable style={[styles.outlineBtn, { borderColor: c.border }]} onPress={() => router.replace("/(app)/(tabs)")}>
-        <Text style={{ color: c.foreground, fontWeight: "600" }}>Về trang chủ</Text>
-      </HapticTouchable>
+      {/* Strength / weakness */}
+      {weakest && weakest.score != null && weakest.score < 7 && (
+        <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+          <Text style={{ color: c.foreground, fontWeight: "600", fontSize: fontSize.sm }}>
+            💡 Gợi ý: Kỹ năng yếu nhất là {SKILL_LABELS[weakest.skill]} ({weakest.score}/10)
+          </Text>
+          <HapticTouchable
+            style={[styles.weakBtn, { backgroundColor: c.primary }]}
+            onPress={() => router.push(`/(app)/practice/${weakest.skill}` as any)}
+          >
+            <Ionicons name="fitness" size={16} color={c.primaryForeground} />
+            <Text style={{ color: c.primaryForeground, fontWeight: "600", fontSize: fontSize.sm }}>Luyện {SKILL_LABELS[weakest.skill]}</Text>
+          </HapticTouchable>
+        </View>
+      )}
+
+      {/* Answer review per skill */}
+      {(session.questions ?? []).length > 0 && (
+        <View style={{ gap: spacing.sm }}>
+          <Text style={[styles.heading, { color: c.foreground }]}>Xem lại bài làm</Text>
+          {SKILL_ORDER.filter((sk) => questionsBySkill[sk]).map((skill) => {
+            const questions = questionsBySkill[skill]!;
+            const expanded = expandedSkill === skill;
+            return (
+              <View key={skill}>
+                <HapticTouchable
+                  style={[styles.reviewSkillHeader, { backgroundColor: c.card, borderColor: c.border }]}
+                  onPress={() => setExpandedSkill(expanded ? null : skill)}
+                >
+                  <SkillIcon skill={skill} size={16} />
+                  <Text style={{ flex: 1, color: c.foreground, fontWeight: "600", fontSize: fontSize.sm }}>
+                    {SKILL_LABELS[skill]} ({questions.length} câu)
+                  </Text>
+                  <Ionicons name={expanded ? "chevron-up" : "chevron-down"} size={18} color={c.mutedForeground} />
+                </HapticTouchable>
+                {expanded && questions.map((q, qi) => {
+                  const userAnswer = answersMap[q.id] as Record<string, unknown> | undefined;
+                  const content = q.content as Record<string, unknown>;
+                  const isObjective = skill === "listening" || skill === "reading";
+                  return (
+                    <View key={q.id} style={[styles.reviewItem, { borderColor: c.border }]}>
+                      <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs, fontWeight: "600" }}>Câu {qi + 1}</Text>
+                      {isObjective && userAnswer && typeof userAnswer === "object" && "answers" in userAnswer && (
+                        <View style={{ gap: 2 }}>
+                          {Object.entries((userAnswer as any).answers ?? {}).map(([key, val]) => (
+                            <Text key={key} style={{ color: c.foreground, fontSize: fontSize.xs }}>
+                              Item {key}: {String(val)}
+                            </Text>
+                          ))}
+                        </View>
+                      )}
+                      {!isObjective && userAnswer && typeof userAnswer === "object" && "text" in userAnswer && (
+                        <Text style={{ color: c.foreground, fontSize: fontSize.sm }} numberOfLines={3}>
+                          {String((userAnswer as any).text)}
+                        </Text>
+                      )}
+                      {!userAnswer && (
+                        <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs, fontStyle: "italic" }}>Chưa trả lời</Text>
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+            );
+          })}
+        </View>
+      )}
+
+      {/* Submissions (AI grading results) */}
+      {(session.submissions ?? []).length > 0 && (
+        <View style={{ gap: spacing.sm }}>
+          <Text style={[styles.heading, { color: c.foreground }]}>Kết quả chấm AI</Text>
+          {(session.submissions ?? []).map((sub: any) => (
+            <HapticTouchable
+              key={sub.id}
+              style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+              onPress={() => router.push(`/(app)/submissions/${sub.id}`)}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+                <SkillIcon skill={sub.skill} size={16} />
+                <Text style={{ flex: 1, color: c.foreground, fontWeight: "600", fontSize: fontSize.sm }}>{SKILL_LABELS[sub.skill as Skill]}</Text>
+                <Text style={{ color: sub.status === "completed" ? c.success : c.mutedForeground, fontWeight: "700", fontSize: fontSize.sm }}>
+                  {sub.score != null ? `${sub.score}/10` : sub.status === "processing" ? "Đang chấm..." : "Chờ chấm"}
+                </Text>
+              </View>
+              {sub.feedback && (
+                <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs }} numberOfLines={2}>{sub.feedback}</Text>
+              )}
+            </HapticTouchable>
+          ))}
+        </View>
+      )}
+
+      {/* CTA buttons */}
+      <View style={{ gap: spacing.sm }}>
+        <HapticTouchable style={[styles.outlineBtn, { borderColor: c.border }]} onPress={() => router.replace("/(app)/(tabs)")}>
+          <Text style={{ color: c.foreground, fontWeight: "600" }}>Về trang chủ</Text>
+        </HapticTouchable>
+      </View>
     </BouncyScrollView>
   );
 }
@@ -870,4 +1193,10 @@ const styles = StyleSheet.create({
   overallScore: { fontSize: fontSize["3xl"], fontWeight: "800" },
   skillRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, borderRadius: radius.lg, padding: spacing.md },
   outlineBtn: { borderWidth: 1, borderRadius: radius.lg, paddingVertical: spacing.md, alignItems: "center" },
+  bandBadge: { borderWidth: 2, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: 2, marginTop: spacing.xs },
+  weakBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, borderRadius: radius.md, paddingVertical: spacing.sm, marginTop: spacing.sm },
+  reviewSkillHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm, borderWidth: 1, borderRadius: radius.lg, padding: spacing.md },
+  reviewItem: { borderBottomWidth: 1, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, gap: 2 },
+  recorderBox: { borderWidth: 1, borderRadius: radius.xl, padding: spacing.xl, alignItems: "center" },
+  micBtn: { width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center" },
 });

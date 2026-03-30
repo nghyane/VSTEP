@@ -23,10 +23,11 @@ export function useSpiderChart() {
   });
 }
 
-export function useSkillDetail(skill: string) {
+export function useSkillDetail(skill: string, source?: "practice" | "exam") {
+  const search = source ? `?source=${source}` : "";
   return useQuery({
-    queryKey: ["progress", skill],
-    queryFn: () => api.get<SkillDetail>(`/api/progress/${skill}`),
+    queryKey: ["progress", skill, source ?? "all"],
+    queryFn: () => api.get<SkillDetail>(`/api/progress/${skill}${search}`),
     enabled: !!skill,
   });
 }
