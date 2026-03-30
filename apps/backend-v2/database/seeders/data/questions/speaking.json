@@ -436,6 +436,64 @@
     },
     {
         "skill": "speaking",
+        "level": "B1",
+        "part": 3,
+        "topic": "Should Teenagers Use Smartphones at School?",
+        "bloom_level": null,
+        "content": {
+            "centralIdea": "Some people think teenagers should be allowed to use smartphones at school, while others think phones should be banned during class time. Discuss both views and give your opinion.",
+            "suggestions": [
+                "Think about learning benefits and classroom distractions",
+                "Consider communication with parents and safety",
+                "Discuss whether rules should depend on the lesson"
+            ],
+            "followUpQuestion": "What rules about smartphone use at school would you introduce if you were a principal?",
+            "preparationSeconds": 60,
+            "speakingSeconds": 180
+        },
+        "answer_key": null,
+        "knowledge_points": [
+            "Compound Sentences",
+            "Linking Words & Transitions",
+            "Topic-Specific Vocabulary",
+            "Sentence Stress",
+            "Intonation",
+            "Paraphrasing"
+        ]
+    },
+    {
+        "skill": "speaking",
+        "level": "B2",
+        "part": 1,
+        "topic": "A Skill You Want to Improve",
+        "bloom_level": null,
+        "content": {
+            "topics": [
+                {
+                    "name": "A Skill You Want to Improve",
+                    "questions": [
+                        "Describe a skill you want to improve in the future. Why is it important to you, and how are you planning to improve it?",
+                        "What makes this skill difficult to learn?",
+                        "Who could help you improve it?",
+                        "How would your life change if you became very good at this skill?"
+                    ]
+                }
+            ],
+            "preparationSeconds": 30,
+            "speakingSeconds": 90
+        },
+        "answer_key": null,
+        "knowledge_points": [
+            "Complex Sentences",
+            "Topic-Specific Vocabulary",
+            "Word Stress",
+            "Sentence Stress",
+            "Connected Speech",
+            "Elaboration"
+        ]
+    },
+    {
+        "skill": "speaking",
         "level": "B2",
         "part": 2,
         "topic": "Media Influence",

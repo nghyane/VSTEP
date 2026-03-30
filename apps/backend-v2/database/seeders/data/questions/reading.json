@@ -235,6 +235,48 @@
     },
     {
         "skill": "reading",
+        "level": "B1",
+        "part": 3,
+        "topic": "The Benefits of Community Service",
+        "bloom_level": null,
+        "content": {
+            "passage": "The Benefits of Community Service\n\nCommunity service has become an important part of many school and university programs. Supporters argue that volunteering helps young people develop a stronger sense of responsibility while also benefiting society. Students who take part in community projects often report improved communication skills and greater confidence when working with different groups of people. In addition, volunteering can help students explore future career interests by giving them practical experience in real-world situations. Some critics claim that compulsory service reduces motivation because students may participate only to satisfy academic requirements. Nevertheless, educators point out that even required service can lead to meaningful personal growth when activities are well designed and connected to students' interests. For this reason, many institutions continue to include community engagement in their programs.",
+            "title": "The Benefits of Community Service",
+            "items": [
+                {"stem": "What is the main idea of the passage?", "options": ["Community service can benefit both students and society", "Schools should remove volunteer programs", "Young people dislike helping others", "Volunteering is only useful for job applications"]},
+                {"stem": "According to the passage, volunteering can help students...", "options": ["avoid academic work", "develop communication skills", "earn a salary", "travel abroad"]},
+                {"stem": "What criticism of compulsory service is mentioned?", "options": ["It costs too much money", "It reduces motivation", "It makes students less confident", "It damages career prospects"]},
+                {"stem": "The word \"meaningful\" in the final paragraph is closest in meaning to...", "options": ["Unimportant", "Valuable", "Temporary", "Difficult"]},
+                {"stem": "What can students gain from community projects?", "options": ["Practical experience", "Guaranteed jobs", "Higher exam scores", "More free time"]},
+                {"stem": "Why do many institutions continue these programs?", "options": ["They are cheaper than normal classes", "They can support personal growth", "Parents require them", "They replace all other activities"]}
+            ]
+        },
+        "answer_key": {"correctAnswers": {"1": "A", "2": "B", "3": "B", "4": "B", "5": "A", "6": "B"}},
+        "knowledge_points": []
+    },
+    {
+        "skill": "reading",
+        "level": "B1",
+        "part": 4,
+        "topic": "Why Urban Parks Matter",
+        "bloom_level": null,
+        "content": {
+            "passage": "Why Urban Parks Matter\n\nUrban parks play a significant role in improving the quality of life in large cities. They provide residents with space for exercise, relaxation, and social interaction. Researchers have found that access to green spaces is associated with lower stress levels and better mental health. Parks also contribute to environmental sustainability by reducing heat and improving air quality. However, maintaining public parks requires long-term investment, and some local authorities struggle to balance this need against other budget priorities. Although critics argue that parks are underused in some neighborhoods, planners note that usage increases when parks are safe, accessible, and equipped with suitable facilities. As cities continue to grow, the question is not whether parks are necessary but how they should be designed to meet the needs of different communities.",
+            "title": "Why Urban Parks Matter",
+            "items": [
+                {"stem": "What is the author's main point?", "options": ["Urban parks are unnecessary in modern cities", "Urban parks improve city life in many ways", "Parks should only be built in rich areas", "Most city parks are badly designed"]},
+                {"stem": "According to the passage, green spaces are linked to...", "options": ["Higher transport costs", "Lower stress levels", "More traffic congestion", "Reduced social contact"]},
+                {"stem": "What challenge is mentioned in relation to parks?", "options": ["Lack of visitors from other cities", "Long-term maintenance costs", "Insufficient scientific evidence", "Too many environmental regulations"]},
+                {"stem": "The word \"equipped\" in the passage is closest in meaning to...", "options": ["Decorated", "Provided", "Closed", "Protected"]},
+                {"stem": "Why do planners say some parks are underused?", "options": ["They are too large", "They are only open at night", "They may not be safe or accessible enough", "They are too expensive to enter"]},
+                {"stem": "The final sentence suggests that cities should...", "options": ["Stop building new parks", "Design parks for different community needs", "Use parks mainly for tourism", "Replace parks with housing projects"]}
+            ]
+        },
+        "answer_key": {"correctAnswers": {"1": "B", "2": "B", "3": "B", "4": "B", "5": "C", "6": "B"}},
+        "knowledge_points": []
+    },
+    {
+        "skill": "reading",
         "level": "B2",
         "part": 2,
         "topic": "The Remote Work Revolution",
@@ -314,6 +356,26 @@
     {
         "skill": "reading",
         "level": "B2",
+        "part": 1,
+        "topic": "The Rise of Digital Minimalism",
+        "bloom_level": null,
+        "content": {
+            "passage": "The Rise of Digital Minimalism\n\nIn recent years, digital minimalism has emerged as a response to the growing sense of overload caused by constant connectivity. Advocates of this lifestyle argue that people should use technology more intentionally rather than allowing apps and notifications to control their attention. Instead of rejecting digital tools completely, digital minimalists recommend identifying which technologies genuinely support personal values and eliminating unnecessary distractions. Studies suggest that reducing screen time can improve concentration, sleep quality, and emotional well-being. Critics, however, point out that digital devices are deeply embedded in work and education, making complete disengagement unrealistic. Even so, supporters maintain that moderation, rather than total avoidance, is the key principle. The broader appeal of digital minimalism lies in its promise to restore a sense of autonomy in a world increasingly shaped by algorithms and online habits.",
+            "title": "The Rise of Digital Minimalism",
+            "items": [
+                {"stem": "What is digital minimalism mainly presented as?", "options": ["A rejection of all modern technology", "A response to digital overload", "A trend limited to students", "A method of improving internet speed"]},
+                {"stem": "What do supporters recommend?", "options": ["Deleting every social media account", "Using technology more intentionally", "Avoiding online learning completely", "Replacing phones with printed materials"]},
+                {"stem": "According to the passage, reducing screen time may improve...", "options": ["sleep quality", "driving ability", "public transport access", "economic productivity"]},
+                {"stem": "What criticism of digital minimalism is mentioned?", "options": ["It is too expensive to follow", "It ignores the role of devices in work and study", "It has no scientific support", "It encourages unhealthy isolation"]},
+                {"stem": "The word \"autonomy\" in the final sentence is closest in meaning to...", "options": ["Popularity", "Independence", "Security", "Efficiency"]}
+            ]
+        },
+        "answer_key": {"correctAnswers": {"1": "B", "2": "B", "3": "A", "4": "B", "5": "B"}},
+        "knowledge_points": []
+    },
+    {
+        "skill": "reading",
+        "level": "B2",
         "part": 3,
         "topic": "Rethinking Education: Lessons from Finland",
         "bloom_level": null,
@@ -377,6 +439,26 @@
                 "5": "C"
             }
         },
+        "knowledge_points": []
+    },
+    {
+        "skill": "reading",
+        "level": "B2",
+        "part": 4,
+        "topic": "The Ethics of Consumer Data",
+        "bloom_level": null,
+        "content": {
+            "passage": "The Ethics of Consumer Data\n\nCompanies now collect vast amounts of consumer data in order to personalize services, predict behavior, and improve advertising efficiency. Proponents claim that this practice creates more convenient user experiences because people receive content and recommendations tailored to their preferences. Nevertheless, critics warn that the scale of data collection raises serious ethical concerns, particularly when users do not fully understand how their information is being used. One major issue is informed consent: agreeing to lengthy terms and conditions does not necessarily mean that people have made a meaningful or informed decision. Another concern is the possibility that personal data may be used to manipulate choices or reinforce existing social inequalities. Supporters of stronger regulation argue that transparency alone is insufficient and that companies should be legally required to limit data collection. The debate therefore centers not on whether data has value, but on who controls it and under what conditions.",
+            "title": "The Ethics of Consumer Data",
+            "items": [
+                {"stem": "What is the central issue discussed in the passage?", "options": ["How companies can sell more products", "The ethics of collecting consumer data", "Why users dislike online services", "How advertising became popular"]},
+                {"stem": "What benefit of data collection do supporters mention?", "options": ["Lower electricity use", "More personalized services", "Fewer online accounts", "Guaranteed privacy protection"]},
+                {"stem": "Why is informed consent described as a major issue?", "options": ["Users often refuse to read anything online", "Long agreements may not lead to meaningful understanding", "Companies never ask for permission", "Governments ban all privacy policies"]},
+                {"stem": "The passage suggests that personal data could be used to...", "options": ["improve weather forecasts", "manipulate choices", "replace all human workers", "increase face-to-face communication"]},
+                {"stem": "What do supporters of stronger regulation believe?", "options": ["Transparency alone is not enough", "Data should be free for all companies", "Users are fully responsible for privacy", "Advertising should be banned worldwide"]}
+            ]
+        },
+        "answer_key": {"correctAnswers": {"1": "B", "2": "B", "3": "B", "4": "B", "5": "A"}},
         "knowledge_points": []
     },
     {
