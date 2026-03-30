@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "VSTEP",
-    "slug": "vstep-mobile",
+    "slug": "aptis-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -28,7 +28,13 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-system-ui"
+      "expo-system-ui",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Cho phép VSTEP ghi âm bài speaking"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
