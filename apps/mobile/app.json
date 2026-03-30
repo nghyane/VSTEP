@@ -23,7 +23,8 @@
         "backgroundColor": "#013396"
       },
       "package": "com.aptis.mobile",
-      "softwareKeyboardLayoutMode": "pan"
+      "softwareKeyboardLayoutMode": "pan",
+      "usesCleartextTraffic": true
     },
     "plugins": [
       "expo-router",

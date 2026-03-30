@@ -25,6 +25,7 @@ import {
   useSubmitExam,
   type FlatSessionDetail,
 } from "@/hooks/use-exam-session";
+import { useCompletePlacement } from "@/hooks/use-onboarding";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize } from "@/theme";
 import type {
   ExamSession,
@@ -872,6 +873,26 @@ function SpeakingView({
 function Completed({ session, exam }: { session: FlatSessionDetail; exam: any }) {
   const c = useThemeColors();
   const router = useRouter();
+  const completePlacement = useCompletePlacement();
+  const isPlacement = exam?.type === "placement";
+  const [placementDone, setPlacementDone] = useState(!isPlacement);
+
+  // Auto-complete placement onboarding when session is from placement test
+  useEffect(() => {
+    if (!isPlacement || placementDone) return;
+    completePlacement.mutate(
+      {
+        sessionId: session.id,
+        targetBand: "B2" as any,
+        deadline: null,
+        dailyStudyTimeMinutes: null,
+      },
+      {
+        onSuccess: () => setPlacementDone(true),
+        onError: () => setPlacementDone(true), // continue even if fails (might already be completed)
+      },
+    );
+  }, [isPlacement]);
 
   const scores: { skill: Skill; score: number | null }[] = [
     { skill: "listening", score: session.listeningScore },
