@@ -51,8 +51,19 @@ class GradeSubmission implements ShouldQueue
             ->where('status', SubmissionStatus::Pending)
             ->update(['status' => SubmissionStatus::Processing]);
 
+        // Recover stale claims: if a previous worker was killed mid-processing,
+        // the submission stays in Processing forever. Reset and re-claim.
         if (! $claimed) {
-            return;
+            $staleClaimed = Submission::where('id', $this->submissionId)
+                ->where('status', SubmissionStatus::Processing)
+                ->where('updated_at', '<', now()->subSeconds($this->timeout + 30))
+                ->update(['status' => SubmissionStatus::Processing, 'updated_at' => now()]);
+
+            if (! $staleClaimed) {
+                return;
+            }
+
+            Log::warning('grading_stale_claim_recovered', ['submission_id' => $this->submissionId]);
         }
 
         $submission = Submission::with('question.knowledgePoints')->findOrFail($this->submissionId);
