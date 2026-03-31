@@ -330,6 +330,10 @@ class GradeSubmission implements ShouldQueue
             $submission->update(['status' => SubmissionStatus::Failed]);
         }
 
+        if ($submission?->session) {
+            app(SessionService::class)->updateSubjectiveScores($submission);
+        }
+
         if ($submission) {
             app(NotificationService::class)->send(
                 $submission->user_id,
