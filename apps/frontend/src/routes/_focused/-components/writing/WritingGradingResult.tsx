@@ -3,6 +3,8 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import type { SubmissionFull, WritingContent, WritingTier } from "@/types/api"
+import { AnnotatedEssay } from "./AnnotatedEssay"
+import { MarkdownFeedback } from "./MarkdownFeedback"
 import { CriterionBar, type CriterionScore } from "./writing-grading-shared"
 
 const TIER_BADGE: Record<WritingTier, { label: string; className: string }> = {
@@ -85,10 +87,11 @@ export function WritingGradingResult({
 	const gaps = parseKnowledgeGaps(submission.result)
 	const wordCount = submittedText.trim() ? submittedText.trim().split(/\s+/).length : 0
 	const isFailed = submission.status === "failed"
+	const feedback = submission.feedback ?? ""
 
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
-			{/* Left — Submitted text */}
+			{/* Left — Submitted text with error annotations */}
 			<div className="w-full shrink-0 overflow-y-auto border-b p-6 lg:w-1/2 lg:border-b-0 lg:border-r">
 				<div className="mb-4 flex items-center justify-between">
 					<h3 className="text-lg font-bold">Bài viết đã nộp</h3>
@@ -99,9 +102,15 @@ export function WritingGradingResult({
 						<span className="text-xs text-muted-foreground">{wordCount} từ</span>
 					</div>
 				</div>
-				<div className="whitespace-pre-wrap rounded-xl bg-muted/10 p-4 text-sm leading-relaxed">
-					{submittedText}
-				</div>
+
+				{/* Annotated essay — highlights errors extracted from feedback */}
+				{feedback && submittedText ? (
+					<AnnotatedEssay essayText={submittedText} feedback={feedback} />
+				) : (
+					<div className="whitespace-pre-wrap rounded-xl bg-muted/10 p-4 text-sm leading-relaxed">
+						{submittedText}
+					</div>
+				)}
 
 				{content && (
 					<div className="mt-6">
@@ -149,12 +158,12 @@ export function WritingGradingResult({
 							</div>
 						)}
 
-						{/* Feedback */}
-						{submission.feedback && (
+						{/* Feedback — rendered as markdown */}
+						{feedback && (
 							<div className="space-y-2">
 								<h4 className="text-sm font-semibold">Nhận xét chi tiết</h4>
-								<div className="whitespace-pre-wrap rounded-xl bg-muted/30 p-4 text-sm leading-relaxed">
-									{submission.feedback}
+								<div className="rounded-xl bg-muted/30 p-4">
+									<MarkdownFeedback feedback={feedback} />
 								</div>
 							</div>
 						)}
