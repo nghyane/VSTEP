@@ -13,7 +13,7 @@ class DrillHandler extends AbstractPronunciationHandler
         return 'drill';
     }
 
-    public function enrichItem(Question $question): array
+    public function enrichItem(Question $question, ?int $writingTier = null): array
     {
         return [
             'target_text' => self::extractText($question->content),

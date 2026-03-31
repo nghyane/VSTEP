@@ -65,6 +65,7 @@ class PracticeController extends Controller
             'current_item' => $result['current_item'],
             'recommendation' => $result['recommendation'],
             'progress' => $result['progress'],
+            'writing_tier' => $result['writing_tier'],
         ]], 201);
     }
 
@@ -73,10 +74,13 @@ class PracticeController extends Controller
     {
         $result = $this->service->show($practiceSession);
 
+        $session = $result['session'];
+
         return response()->json(['data' => [
-            'session' => new PracticeSessionResource($result['session']),
+            'session' => new PracticeSessionResource($session),
             'current_item' => $result['current_item'] ?? null,
             'progress' => $result['progress'] ?? null,
+            'writing_tier' => $session->config['writing_tier'] ?? null,
         ]]);
     }
 

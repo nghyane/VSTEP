@@ -13,7 +13,7 @@ class ShadowingHandler extends AbstractPronunciationHandler
         return 'shadowing';
     }
 
-    public function enrichItem(Question $question): array
+    public function enrichItem(Question $question, ?int $writingTier = null): array
     {
         return [
             'reference_text' => self::extractText($question->content),

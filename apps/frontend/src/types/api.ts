@@ -619,11 +619,14 @@ interface PracticeRecommendation {
 	suggestedFocus: string | null
 }
 
+type WritingTier = 1 | 2 | 3
+
 interface PracticeStartResponse {
 	session: PracticeSession
 	currentItem: PracticeItem
 	recommendation: PracticeRecommendation
 	progress: { current: number; total: number; hasMore: boolean }
+	writingTier: WritingTier | null
 }
 
 interface PracticeSubmitResponse {
@@ -776,4 +779,5 @@ export type {
 	WritingAnswer,
 	WritingContent,
 	WritingHints,
+	WritingTier,
 }

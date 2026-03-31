@@ -30,9 +30,14 @@ class FreeModeHandler implements PracticeModeHandler
         return false;
     }
 
-    public function enrichItem(Question $question): array
+    public function enrichItem(Question $question, ?int $writingTier = null): array
     {
         if ($question->skill === Skill::Writing) {
+            // Tier 3 (freeform): no scaffolding
+            if ($writingTier === 3) {
+                return [];
+            }
+
             return [
                 'writing_hints' => WritingHints::forQuestion(
                     $question->content,

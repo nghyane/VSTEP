@@ -484,17 +484,33 @@ function TemplateSectionCard({
 // ═══════════════════════════════════════════════════
 
 interface WritingTemplateEditorProps {
-	examId: string
+	examId?: string
+	template?: TemplateSection[] | null
+	filledBlanks?: Record<string, string>
+	onBlankChange?: (id: string, value: string) => void
 }
 
-export function WritingTemplateEditor({ examId }: WritingTemplateEditorProps) {
-	const template = MOCK_TEMPLATES[examId]
-	const [filledBlanks, setFilledBlanks] = useState<Record<string, string>>({})
+export function WritingTemplateEditor({
+	examId,
+	template: externalTemplate,
+	filledBlanks: externalBlanks,
+	onBlankChange: externalOnChange,
+}: WritingTemplateEditorProps) {
+	const template = externalTemplate ?? (examId ? MOCK_TEMPLATES[examId] : null)
+	const [internalBlanks, setInternalBlanks] = useState<Record<string, string>>({})
 	const [targetLevel, setTargetLevel] = useState<TargetLevel>("b1")
 
-	const handleBlankChange = useCallback((id: string, value: string) => {
-		setFilledBlanks((prev) => ({ ...prev, [id]: value }))
-	}, [])
+	const filledBlanks = externalBlanks ?? internalBlanks
+	const handleBlankChange = useCallback(
+		(id: string, value: string) => {
+			if (externalOnChange) {
+				externalOnChange(id, value)
+			} else {
+				setInternalBlanks((prev) => ({ ...prev, [id]: value }))
+			}
+		},
+		[externalOnChange],
+	)
 
 	// Count blanks
 	const allBlanks = useMemo(() => {

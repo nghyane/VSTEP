@@ -15,29 +15,28 @@ import type {
 	ReadingExam,
 	SpeakingExam,
 } from "@/routes/_learner/practice/-components/mock-data"
-import type { QuestionLevel, Skill } from "@/types/api"
+import type { Skill } from "@/types/api"
 
 export const Route = createFileRoute("/_focused/exercise")({
 	component: ExercisePage,
 	validateSearch: (search: Record<string, unknown>) => ({
 		skill: (search.skill as string) || "",
 		id: (search.id as string) || "",
-		level: (search.level as string) || "",
 	}),
 })
 
 function ExercisePage() {
-	const { skill, id, level } = Route.useSearch()
+	const { skill, id } = Route.useSearch()
 
 	// Writing uses real API — skip mock lookup
 	if (skill === "writing" && id) {
-		return <WritingExercisePage questionId={id} level={(level as QuestionLevel) || "B1"} />
+		return <WritingExercisePage questionId={id} />
 	}
 
 	return <MockExercisePage skill={skill} id={id} />
 }
 
-function WritingExercisePage({ questionId, level }: { questionId: string; level: QuestionLevel }) {
+function WritingExercisePage({ questionId }: { questionId: string }) {
 	const meta = skillMeta.writing
 
 	return (
@@ -59,7 +58,7 @@ function WritingExercisePage({ questionId, level }: { questionId: string; level:
 				</Button>
 			</header>
 
-			<WritingPracticeFlow questionId={questionId} questionLevel={level} />
+			<WritingPracticeFlow questionId={questionId} />
 		</div>
 	)
 }

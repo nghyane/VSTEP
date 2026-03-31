@@ -49,6 +49,10 @@ class PracticeService
             ->where('started_at', '<', now()->subHours(2))
             ->each(fn (PracticeSession $s) => $this->complete($s));
 
+        $writingTier = $skill === Skill::Writing
+            ? $progress->writingTier()->value
+            : null;
+
         $session = PracticeSession::create([
             'user_id' => $userId,
             'skill' => $skill,
@@ -57,6 +61,7 @@ class PracticeService
             'config' => [
                 'items_count' => $itemsCount,
                 'focus_kp' => $options['focus_kp'] ?? null,
+                'writing_tier' => $writingTier,
             ],
             'started_at' => now(),
         ]);
@@ -69,6 +74,7 @@ class PracticeService
             'current_item' => $firstQuestion ? $this->buildItem($session, $firstQuestion) : null,
             'recommendation' => $recommendation,
             'progress' => $this->buildProgress($session),
+            'writing_tier' => $writingTier,
         ];
     }
 
@@ -229,6 +235,7 @@ class PracticeService
     {
         $question->makeHidden(['answer_key', 'explanation']);
         $handler = $this->resolveHandler($session->mode);
+        $writingTier = $session->config['writing_tier'] ?? null;
 
         return [
             'question' => $question->toArray(),
@@ -238,7 +245,7 @@ class PracticeService
                 $session->itemsCount(),
             )->value,
             'is_review' => false,
-            ...$handler->enrichItem($question),
+            ...$handler->enrichItem($question, $writingTier),
         ];
     }
 

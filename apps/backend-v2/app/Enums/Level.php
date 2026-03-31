@@ -44,6 +44,19 @@ enum Level: string
         };
     }
 
+    /**
+     * Initial scaffold_level for a user placed at this level.
+     * A2 = 0 (Tier 1: template), B1 = 1 (Tier 2: guided), B2/C1 = 2 (Tier 3: freeform).
+     */
+    public function initialScaffoldLevel(): int
+    {
+        return match ($this) {
+            self::A2 => 0,
+            self::B1 => 1,
+            self::B2, self::C1 => 2,
+        };
+    }
+
     public static function fromScore(?float $score): self
     {
         return match (true) {

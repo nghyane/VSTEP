@@ -20,6 +20,7 @@ interface PracticeModeHandler
 
     /**
      * Build mode-specific data for the current item (e.g., reference audio for shadowing).
+     * Writing handlers use $writingTier to branch scaffolding (1=template, 2=guided, 3=free).
      */
-    public function enrichItem(Question $question): array;
+    public function enrichItem(Question $question, ?int $writingTier = null): array;
 }

@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enums\Level;
 use App\Enums\Skill;
 use App\Enums\StreakDirection;
+use App\Enums\WritingTier;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -31,6 +32,11 @@ class UserProgress extends BaseModel
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function writingTier(): WritingTier
+    {
+        return WritingTier::fromScaffoldLevel($this->scaffold_level);
     }
 
     public static function findOrInitialize(string $userId, Skill|string $skill): self

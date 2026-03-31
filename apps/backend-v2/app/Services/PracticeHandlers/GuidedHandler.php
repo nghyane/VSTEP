@@ -23,8 +23,15 @@ class GuidedHandler implements PracticeModeHandler
         return false;
     }
 
-    public function enrichItem(Question $question): array
+    public function enrichItem(Question $question, ?int $writingTier = null): array
     {
+        // Tier 3 (freeform): no scaffolding
+        if ($writingTier === 3) {
+            return [];
+        }
+
+        // Tier 1 (template) and Tier 2 (guided): return hints
+        // Tier 1 template is generated client-side via AI proxy
         return [
             'writing_hints' => WritingHints::forQuestion(
                 $question->content,

@@ -416,7 +416,7 @@ class ProgressService
         } else {
             $progress->streak_direction = $progress->streak_count > 0 ? StreakDirection::Down : StreakDirection::Neutral;
             $progress->streak_count = 0;
-            $progress->scaffold_level--;
+            $progress->scaffold_level = max(0, $progress->scaffold_level - 1);
         }
 
         $progress->save();

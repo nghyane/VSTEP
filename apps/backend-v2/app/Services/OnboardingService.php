@@ -145,12 +145,14 @@ class OnboardingService
             $targetBand = $goalData['target_band'];
 
             foreach ($levels as $skill => $level) {
+                $levelEnum = $level instanceof Level ? $level : Level::from($level);
+
                 UserProgress::updateOrCreate(
                     ['user_id' => $userId, 'skill' => $skill],
                     [
                         'current_level' => $level,
                         'target_level' => $targetBand,
-                        'scaffold_level' => 0,
+                        'scaffold_level' => $levelEnum->initialScaffoldLevel(),
                         'streak_count' => 0,
                         'streak_direction' => StreakDirection::Neutral,
                         'attempt_count' => 0,

@@ -1,15 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from "react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { useStartPractice, useSubmission, useSubmitPracticeAnswer } from "@/hooks/use-practice"
+import { Skeleton } from "@/components/ui/skeleton"
+import {
+	useGenerateTemplate,
+	useStartPractice,
+	useSubmission,
+	useSubmitPracticeAnswer,
+} from "@/hooks/use-practice"
 import type {
 	PracticeItem,
 	PracticeSession,
 	PracticeStartResponse,
-	QuestionLevel,
 	WritingContent,
 	WritingHints,
+	WritingTier,
 } from "@/types/api"
 import { WritingGradingResult } from "./WritingGradingResult"
+import { WritingTemplateEditor } from "./WritingTemplateEditor"
 
 // ═══════════════════════════════════════════════════
 // Type guards
@@ -20,21 +28,40 @@ function isWritingContent(c: unknown): c is WritingContent {
 }
 
 // ═══════════════════════════════════════════════════
+// Tier labels
+// ═══════════════════════════════════════════════════
+
+const TIER_META: Record<number, { label: string; color: string }> = {
+	1: {
+		label: "Cấp 1 — Trợ nhiệt tình",
+		color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+	},
+	2: {
+		label: "Cấp 2 — Gợi ý khung",
+		color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+	},
+	3: {
+		label: "Cấp 3 — Thực chiến",
+		color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+	},
+}
+
+// ═══════════════════════════════════════════════════
 // Props
 // ═══════════════════════════════════════════════════
 
 interface WritingPracticeFlowProps {
 	questionId?: string
-	questionLevel: QuestionLevel
 }
 
 // ═══════════════════════════════════════════════════
 // Main component
 // ═══════════════════════════════════════════════════
 
-export function WritingPracticeFlow({ questionLevel }: WritingPracticeFlowProps) {
+export function WritingPracticeFlow(_props: WritingPracticeFlowProps) {
 	const [session, setSession] = useState<PracticeSession | null>(null)
 	const [item, setItem] = useState<PracticeItem | null>(null)
+	const [tier, setTier] = useState<WritingTier>(3)
 	const [writingText, setWritingText] = useState("")
 	const [submissionId, setSubmissionId] = useState<string | null>(null)
 	const [phase, setPhase] = useState<"loading" | "writing" | "submitting" | "grading" | "result">(
@@ -45,17 +72,17 @@ export function WritingPracticeFlow({ questionLevel }: WritingPracticeFlowProps)
 	const startMutation = useStartPractice()
 	const hasStartedRef = useRef(false)
 
-	// Auto-start practice session on mount
 	useEffect(() => {
 		if (hasStartedRef.current) return
 		hasStartedRef.current = true
 
 		startMutation.mutate(
-			{ skill: "writing", mode: "guided", level: questionLevel, itemsCount: 1 },
+			{ skill: "writing", mode: "guided", itemsCount: 1 },
 			{
 				onSuccess: (data: PracticeStartResponse) => {
 					setSession(data.session)
 					setItem(data.currentItem)
+					setTier(data.writingTier ?? 3)
 					setPhase("writing")
 				},
 				onError: (err) => {
@@ -64,7 +91,7 @@ export function WritingPracticeFlow({ questionLevel }: WritingPracticeFlowProps)
 				},
 			},
 		)
-	}, [questionLevel, startMutation])
+	}, [startMutation])
 
 	const content = item
 		? isWritingContent(item.question.content)
@@ -97,20 +124,45 @@ export function WritingPracticeFlow({ questionLevel }: WritingPracticeFlowProps)
 			)}
 
 			{phase === "writing" && content && session && item && (
-				<WritingEditor
-					content={content}
-					hints={hints}
-					text={writingText}
-					onTextChange={setWritingText}
-					sessionId={session.id}
-					questionId={item.question.id}
-					onSubmitted={(subId) => {
-						setSubmissionId(subId)
-						setPhase("grading")
-					}}
-					onSubmitting={() => setPhase("submitting")}
-					onError={(msg) => setError(msg)}
-				/>
+				<>
+					{/* Tier badge */}
+					<div className="flex shrink-0 items-center gap-2 border-b px-4 py-2">
+						<Badge variant="secondary" className={TIER_META[tier]?.color}>
+							{TIER_META[tier]?.label}
+						</Badge>
+					</div>
+
+					{tier === 1 ? (
+						<TemplateEditorWithApi
+							questionId={item.question.id}
+							content={content}
+							hints={hints}
+							sessionId={session.id}
+							onSubmitted={(subId, text) => {
+								setWritingText(text)
+								setSubmissionId(subId)
+								setPhase("grading")
+							}}
+							onSubmitting={() => setPhase("submitting")}
+							onError={(msg) => setError(msg)}
+						/>
+					) : (
+						<WritingEditor
+							content={content}
+							hints={tier === 2 ? hints : null}
+							text={writingText}
+							onTextChange={setWritingText}
+							sessionId={session.id}
+							questionId={item.question.id}
+							onSubmitted={(subId) => {
+								setSubmissionId(subId)
+								setPhase("grading")
+							}}
+							onSubmitting={() => setPhase("submitting")}
+							onError={(msg) => setError(msg)}
+						/>
+					)}
+				</>
 			)}
 
 			{phase === "submitting" && (
@@ -132,7 +184,180 @@ export function WritingPracticeFlow({ questionLevel }: WritingPracticeFlowProps)
 }
 
 // ═══════════════════════════════════════════════════
-// Writing editor sub-component
+// Level 1 — Template editor with async AI generation
+// ═══════════════════════════════════════════════════
+
+interface TemplateEditorWithApiProps {
+	questionId: string
+	content: WritingContent
+	hints: WritingHints | null
+	sessionId: string
+	onSubmitted: (submissionId: string, assembledText: string) => void
+	onSubmitting: () => void
+	onError: (msg: string) => void
+}
+
+function TemplateEditorWithApi({
+	questionId,
+	content,
+	hints,
+	sessionId,
+	onSubmitted,
+	onSubmitting,
+	onError,
+}: TemplateEditorWithApiProps) {
+	const { data, isLoading, isError } = useGenerateTemplate(questionId)
+	const submitMutation = useSubmitPracticeAnswer(sessionId)
+	const [filledBlanks, setFilledBlanks] = useState<Record<string, string>>({})
+	const [fallbackText, setFallbackText] = useState("")
+
+	const template = data?.template ?? null
+
+	const assembleText = useCallback(() => {
+		if (!template) return ""
+		return template
+			.map((section) =>
+				section.parts
+					.map((part) => {
+						if (part.type === "text") return part.content ?? ""
+						return filledBlanks[part.id ?? ""] ?? ""
+					})
+					.join(""),
+			)
+			.join("\n\n")
+	}, [template, filledBlanks])
+
+	const handleSubmit = useCallback(() => {
+		const text = assembleText()
+		if (!text.trim()) return
+
+		submitMutation.mutate(
+			{ questionId, answer: { text } },
+			{
+				onSuccess: (result) => onSubmitted(result.submissionId, text),
+				onError: (err) => onError(err.message),
+			},
+		)
+	}, [assembleText, questionId, submitMutation, onSubmitted, onError])
+
+	if (isLoading) {
+		return (
+			<div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
+				<div className="w-full shrink-0 overflow-y-auto border-b p-6 lg:w-[420px] lg:border-b-0 lg:border-r">
+					<PromptPanel content={content} hints={hints} />
+				</div>
+				<div className="flex flex-1 flex-col items-center justify-center gap-3 p-6">
+					<Skeleton className="h-6 w-48" />
+					<Skeleton className="h-40 w-full max-w-md" />
+					<Skeleton className="h-40 w-full max-w-md" />
+					<p className="text-sm text-muted-foreground">Đang tạo bài mẫu điền từ...</p>
+				</div>
+			</div>
+		)
+	}
+
+	// Template generation failed → fallback to freeform textarea with hints
+	if (isError || !template) {
+		return (
+			<WritingEditor
+				content={content}
+				hints={hints}
+				text={fallbackText}
+				onTextChange={setFallbackText}
+				sessionId={sessionId}
+				questionId={questionId}
+				onSubmitted={(subId) => onSubmitted(subId, fallbackText)}
+				onSubmitting={onSubmitting}
+				onError={onError}
+			/>
+		)
+	}
+
+	return (
+		<div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
+			<div className="w-full shrink-0 overflow-y-auto border-b p-6 lg:w-[420px] lg:border-b-0 lg:border-r">
+				<PromptPanel content={content} hints={hints} />
+			</div>
+			<div className="flex flex-1 flex-col overflow-hidden">
+				<WritingTemplateEditor
+					template={template}
+					filledBlanks={filledBlanks}
+					onBlankChange={(id, value) => setFilledBlanks((prev) => ({ ...prev, [id]: value }))}
+				/>
+				<div className="flex shrink-0 items-center justify-end border-t px-5 py-3">
+					<Button onClick={handleSubmit} disabled={submitMutation.isPending}>
+						{submitMutation.isPending ? "Đang nộp..." : "Nộp bài"}
+					</Button>
+				</div>
+			</div>
+		</div>
+	)
+}
+
+// ═══════════════════════════════════════════════════
+// Shared prompt panel
+// ═══════════════════════════════════════════════════
+
+function PromptPanel({ content, hints }: { content: WritingContent; hints: WritingHints | null }) {
+	return (
+		<div className="space-y-4">
+			<div>
+				<span className="inline-block rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+					{content.taskType === "letter" ? "Viết thư" : "Viết luận"}
+				</span>
+			</div>
+
+			<div className="whitespace-pre-wrap rounded-xl bg-muted/30 p-4 text-sm leading-relaxed">
+				{content.prompt}
+			</div>
+
+			{content.requiredPoints && content.requiredPoints.length > 0 && (
+				<div className="space-y-2">
+					<p className="text-xs font-semibold text-muted-foreground">Yêu cầu:</p>
+					<ul className="space-y-1 pl-4 text-sm">
+						{content.requiredPoints.map((point) => (
+							<li key={point} className="list-disc text-muted-foreground">
+								{point}
+							</li>
+						))}
+					</ul>
+				</div>
+			)}
+
+			{hints && (
+				<div className="space-y-3 rounded-xl border border-dashed border-primary/30 bg-primary/5 p-4">
+					<p className="text-xs font-semibold text-primary">Gợi ý dàn bài</p>
+					<ol className="space-y-1 pl-4 text-sm">
+						{hints.outline.map((line) => (
+							<li key={line} className="list-decimal text-muted-foreground">
+								{line}
+							</li>
+						))}
+					</ol>
+
+					<p className="text-xs font-semibold text-primary">Mẫu câu gợi ý</p>
+					<div className="flex flex-wrap gap-1.5">
+						{hints.starters.map((s) => (
+							<span
+								key={s}
+								className="inline-block rounded-md bg-background px-2 py-0.5 text-xs text-muted-foreground"
+							>
+								{s}
+							</span>
+						))}
+					</div>
+
+					<p className="text-xs text-muted-foreground">
+						Số từ yêu cầu: <strong>{hints.wordCount}</strong>
+					</p>
+				</div>
+			)}
+		</div>
+	)
+}
+
+// ═══════════════════════════════════════════════════
+// Level 2 & 3 — Textarea editor
 // ═══════════════════════════════════════════════════
 
 interface WritingEditorProps {
@@ -179,75 +404,10 @@ function WritingEditor({
 
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
-			{/* Left — Prompt + hints */}
 			<div className="w-full shrink-0 overflow-y-auto border-b p-6 lg:w-[420px] lg:border-b-0 lg:border-r">
-				<div className="space-y-4">
-					<div>
-						<span className="inline-block rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-							{content.taskType === "letter" ? "Viết thư" : "Viết luận"}
-						</span>
-					</div>
-
-					<div className="whitespace-pre-wrap rounded-xl bg-muted/30 p-4 text-sm leading-relaxed">
-						{content.prompt}
-					</div>
-
-					{content.requiredPoints && content.requiredPoints.length > 0 && (
-						<div className="space-y-2">
-							<p className="text-xs font-semibold text-muted-foreground">Yêu cầu:</p>
-							<ul className="space-y-1 pl-4 text-sm">
-								{content.requiredPoints.map((point) => (
-									<li key={point} className="list-disc text-muted-foreground">
-										{point}
-									</li>
-								))}
-							</ul>
-						</div>
-					)}
-
-					{content.instructions && content.instructions.length > 0 && (
-						<div className="space-y-1">
-							<p className="text-xs font-semibold text-muted-foreground">Hướng dẫn:</p>
-							{content.instructions.map((instr) => (
-								<p key={instr} className="text-sm text-muted-foreground">
-									{instr}
-								</p>
-							))}
-						</div>
-					)}
-
-					{hints && (
-						<div className="space-y-3 rounded-xl border border-dashed border-primary/30 bg-primary/5 p-4">
-							<p className="text-xs font-semibold text-primary">Gợi ý dàn bài</p>
-							<ol className="space-y-1 pl-4 text-sm">
-								{hints.outline.map((line) => (
-									<li key={line} className="list-decimal text-muted-foreground">
-										{line}
-									</li>
-								))}
-							</ol>
-
-							<p className="text-xs font-semibold text-primary">Mẫu câu gợi ý</p>
-							<div className="flex flex-wrap gap-1.5">
-								{hints.starters.map((s) => (
-									<span
-										key={s}
-										className="inline-block rounded-md bg-background px-2 py-0.5 text-xs text-muted-foreground"
-									>
-										{s}
-									</span>
-								))}
-							</div>
-
-							<p className="text-xs text-muted-foreground">
-								Số từ yêu cầu: <strong>{hints.wordCount}</strong>
-							</p>
-						</div>
-					)}
-				</div>
+				<PromptPanel content={content} hints={hints} />
 			</div>
 
-			{/* Right — Textarea */}
 			<div className="flex flex-1 flex-col p-6">
 				<textarea
 					className="min-h-[300px] flex-1 resize-none rounded-xl border bg-background p-4 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -272,7 +432,7 @@ function WritingEditor({
 }
 
 // ═══════════════════════════════════════════════════
-// Grading poller sub-component
+// Grading poller
 // ═══════════════════════════════════════════════════
 
 interface GradingPollerProps {

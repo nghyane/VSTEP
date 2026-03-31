@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\V1\SpeakingUploadController;
 use App\Http\Controllers\Api\V1\SubmissionController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\VocabularyController;
+use App\Http\Controllers\Api\V1\WritingTemplateController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -144,6 +145,9 @@ Route::prefix('v1')->group(function () {
         Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
         Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
         Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+
+        // Writing template generation (AI)
+        Route::post('/practice/generate-template', [WritingTemplateController::class, 'generate']);
 
         // Practice (adaptive)
         Route::get('/practice/questions', [PracticeController::class, 'questions']);
