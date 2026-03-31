@@ -1,7 +1,16 @@
+import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { Link, useNavigate } from "@tanstack/react-router"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { useStartPractice, useSubmission, useSubmitPracticeAnswer } from "@/hooks/use-practice"
+import {
+	useCompletePractice,
+	usePracticeSession,
+	useStartPractice,
+	useSubmission,
+	useSubmitPracticeAnswer,
+} from "@/hooks/use-practice"
 import type {
 	PracticeMode,
 	PracticeItem,
@@ -17,17 +26,9 @@ import type {
 import { WritingGradingResult } from "./WritingGradingResult"
 import { WritingTemplateEditor } from "./WritingTemplateEditor"
 
-// ═══════════════════════════════════════════════════
-// Type guards
-// ═══════════════════════════════════════════════════
-
 function isWritingContent(c: unknown): c is WritingContent {
 	return c !== null && typeof c === "object" && "prompt" in (c as Record<string, unknown>)
 }
-
-// ═══════════════════════════════════════════════════
-// Tier labels
-// ═══════════════════════════════════════════════════
 
 const TIER_META: Record<number, { label: string; color: string }> = {
 	1: {
@@ -61,19 +62,18 @@ const SCAFFOLD_META: Record<WritingScaffoldType, { label: string; description: s
 	},
 }
 
-// ═══════════════════════════════════════════════════
-// Props
-// ═══════════════════════════════════════════════════
-
 interface WritingPracticeFlowProps {
-	questionId?: string
+	part?: number
+	resumeSessionId?: string
 }
 
-// ═══════════════════════════════════════════════════
-// Main component
-// ═══════════════════════════════════════════════════
+function persistSessionToUrl(sessionId: string) {
+	const url = new URL(window.location.href)
+	url.searchParams.set("session", sessionId)
+	window.history.replaceState(null, "", url.toString())
+}
 
-export function WritingPracticeFlow(_props: WritingPracticeFlowProps) {
+export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFlowProps) {
 	const [session, setSession] = useState<PracticeSession | null>(null)
 	const [item, setItem] = useState<PracticeItem | null>(null)
 	const [tier, setTier] = useState<WritingTier>(3)
@@ -83,30 +83,61 @@ export function WritingPracticeFlow(_props: WritingPracticeFlowProps) {
 		"loading",
 	)
 	const [error, setError] = useState<string | null>(null)
+	const [sessionCompleted, setSessionCompleted] = useState(false)
 
+	const navigate = useNavigate()
 	const startMutation = useStartPractice()
-	const hasStartedRef = useRef(false)
+	const hasInitRef = useRef(false)
+	const submitMutation = useSubmitPracticeAnswer(session?.id ?? "")
+
+	const {
+		data: resumeData,
+		isError: resumeFailed,
+		isLoading: resumeLoading,
+	} = usePracticeSession(resumeSessionId && !session ? resumeSessionId : null)
 
 	useEffect(() => {
-		if (hasStartedRef.current) return
-		hasStartedRef.current = true
+		if (hasInitRef.current || session) return
+		if (resumeSessionId && resumeLoading) return
 
-		startMutation.mutate(
-			{ skill: "writing", mode: WRITING_PRACTICE_MODE, itemsCount: 1 },
-			{
-				onSuccess: (data: PracticeStartResponse) => {
-					setSession(data.session)
-					setItem(data.currentItem)
-					setTier(data.writingTier ?? 3)
-					setPhase("writing")
+		if (resumeData && !resumeData.session.completedAt) {
+			hasInitRef.current = true
+			const resumedSession = resumeData.session
+			setSession(resumedSession)
+			setItem(resumeData.currentItem)
+			setTier(resumeData.writingTier ?? resumedSession.config.writingTier ?? 3)
+			setPhase(resumeData.currentItem ? "writing" : "loading")
+			return
+		}
+
+		if (!resumeSessionId || resumeFailed || resumeData?.session.completedAt) {
+			hasInitRef.current = true
+			startMutation.mutate(
+				{ skill: "writing", mode: WRITING_PRACTICE_MODE, itemsCount: 1, part },
+				{
+					onSuccess: (data: PracticeStartResponse) => {
+						setSession(data.session)
+						setItem(data.currentItem)
+						setTier(data.writingTier ?? 3)
+						setPhase("writing")
+						persistSessionToUrl(data.session.id)
+					},
+					onError: (err) => {
+						setError(err.message)
+						setPhase("loading")
+					},
 				},
-				onError: (err) => {
-					setError(err.message)
-					setPhase("loading")
-				},
-			},
-		)
-	}, [startMutation])
+			)
+		}
+	}, [startMutation, part, resumeSessionId, resumeFailed, resumeData, resumeLoading, session])
+
+	const completeMutation = useCompletePractice(session?.id ?? "")
+	useEffect(() => {
+		if (phase === "result" && session && !sessionCompleted) {
+			setSessionCompleted(true)
+			completeMutation.mutate()
+		}
+	}, [phase, session, sessionCompleted, completeMutation])
 
 	const content = item
 		? isWritingContent(item.question.content)
@@ -116,6 +147,45 @@ export function WritingPracticeFlow(_props: WritingPracticeFlowProps) {
 	const scaffold = item?.writingScaffold ?? null
 	const scaffoldType = scaffold?.type ?? "freeform"
 	const hints = scaffold?.type === "guided" ? (scaffold.payload as WritingHints) : null
+
+	const handleSubmitText = useCallback(
+		(text: string, questionId: string) => {
+			if (!text.trim()) return
+			setWritingText(text)
+			setPhase("submitting")
+
+			submitMutation.mutate(
+				{ questionId, answer: { text } },
+				{
+					onSuccess: (data) => {
+						setSubmissionId(data.submissionId)
+						setPhase("grading")
+					},
+					onError: (err) => {
+						setError(err.message)
+						setPhase("writing")
+					},
+				},
+			)
+		},
+		[submitMutation],
+	)
+
+	const handlePracticeAgain = useCallback(() => {
+		navigate({
+			to: "/exercise",
+			search: { skill: "writing", id: "", part: part ? String(part) : "", session: "" },
+			replace: true,
+		})
+		setSession(null)
+		setItem(null)
+		setWritingText("")
+		setSubmissionId(null)
+		setPhase("loading")
+		setError(null)
+		setSessionCompleted(false)
+		hasInitRef.current = false
+	}, [navigate, part])
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
@@ -132,7 +202,7 @@ export function WritingPracticeFlow(_props: WritingPracticeFlowProps) {
 						variant="outline"
 						onClick={() => {
 							setError(null)
-							hasStartedRef.current = false
+							setPhase("writing")
 						}}
 					>
 						Thử lại
@@ -142,7 +212,6 @@ export function WritingPracticeFlow(_props: WritingPracticeFlowProps) {
 
 			{phase === "writing" && content && session && item && (
 				<>
-					{/* Tier badge */}
 					<div className="flex shrink-0 items-center gap-2 border-b px-4 py-2">
 						<Badge variant="secondary" className={TIER_META[tier]?.color}>
 							{TIER_META[tier]?.label}
@@ -155,14 +224,8 @@ export function WritingPracticeFlow(_props: WritingPracticeFlowProps) {
 						<TemplateEditorWithApi
 							content={content}
 							scaffold={scaffold}
-							sessionId={session.id}
-							onSubmitted={(subId, text) => {
-								setWritingText(text)
-								setSubmissionId(subId)
-								setPhase("grading")
-							}}
-							onSubmitting={() => setPhase("submitting")}
-							onError={(msg) => setError(msg)}
+							onSubmit={handleSubmitText}
+							isSubmitting={submitMutation.isPending}
 						/>
 					) : (
 						<WritingEditor
@@ -170,20 +233,14 @@ export function WritingPracticeFlow(_props: WritingPracticeFlowProps) {
 							hints={scaffoldType === "guided" ? hints : null}
 							text={writingText}
 							onTextChange={setWritingText}
-							sessionId={session.id}
-							questionId={scaffold?.questionId ?? item.question.id}
-							onSubmitted={(subId) => {
-								setSubmissionId(subId)
-								setPhase("grading")
-							}}
-							onSubmitting={() => setPhase("submitting")}
-							onError={(msg) => setError(msg)}
+							onSubmit={(text) => handleSubmitText(text, scaffold?.questionId ?? item.question.id)}
+							isSubmitting={submitMutation.isPending}
 						/>
 					)}
 				</>
 			)}
 
-			{phase === "submitting" && (
+			{phase === "submitting" && !error && (
 				<div className="flex flex-1 items-center justify-center">
 					<p className="text-sm text-muted-foreground">Đang nộp bài...</p>
 				</div>
@@ -194,35 +251,37 @@ export function WritingPracticeFlow(_props: WritingPracticeFlowProps) {
 					submissionId={submissionId}
 					submittedText={writingText}
 					content={content}
+					tier={tier}
 					onCompleted={() => setPhase("result")}
 				/>
+			)}
+
+			{phase === "result" && (
+				<footer className="flex shrink-0 items-center justify-center gap-3 border-t px-4 py-3">
+					<Button variant="outline" asChild>
+						<Link to="/practice/writing">
+							<HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
+							Quay lại
+						</Link>
+					</Button>
+					<Button onClick={handlePracticeAgain}>
+						Luyện bài khác
+						<HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
+					</Button>
+				</footer>
 			)}
 		</div>
 	)
 }
 
-// ═══════════════════════════════════════════════════
-// Level 1 — Template editor with async AI generation
-// ═══════════════════════════════════════════════════
-
 interface TemplateEditorWithApiProps {
 	content: WritingContent
 	scaffold: WritingScaffold | null
-	sessionId: string
-	onSubmitted: (submissionId: string, assembledText: string) => void
-	onSubmitting: () => void
-	onError: (msg: string) => void
+	onSubmit: (text: string, questionId: string) => void
+	isSubmitting: boolean
 }
 
-function TemplateEditorWithApi({
-	content,
-	scaffold,
-	sessionId,
-	onSubmitted,
-	onSubmitting,
-	onError,
-}: TemplateEditorWithApiProps) {
-	const submitMutation = useSubmitPracticeAnswer(sessionId)
+function TemplateEditorWithApi({ content, scaffold, onSubmit, isSubmitting }: TemplateEditorWithApiProps) {
 	const [filledBlanks, setFilledBlanks] = useState<Record<string, string>>({})
 	const [fallbackText, setFallbackText] = useState("")
 	const template =
@@ -247,18 +306,12 @@ function TemplateEditorWithApi({
 
 	const handleSubmit = useCallback(() => {
 		const text = assembleText()
-		if (!text.trim()) return
 		const questionId = scaffold?.questionId
-		if (!questionId) return
 
-		submitMutation.mutate(
-			{ questionId, answer: { text } },
-			{
-				onSuccess: (result) => onSubmitted(result.submissionId, text),
-				onError: (err) => onError(err.message),
-			},
-		)
-	}, [assembleText, scaffold?.questionId, submitMutation, onSubmitted, onError])
+		if (!text.trim() || !questionId) return
+
+		onSubmit(text, questionId)
+	}, [assembleText, onSubmit, scaffold?.questionId])
 
 	if (!template) {
 		return (
@@ -267,11 +320,12 @@ function TemplateEditorWithApi({
 				hints={hints}
 				text={fallbackText}
 				onTextChange={setFallbackText}
-				sessionId={sessionId}
-				questionId={scaffold?.questionId ?? ""}
-				onSubmitted={(subId) => onSubmitted(subId, fallbackText)}
-				onSubmitting={onSubmitting}
-				onError={onError}
+				onSubmit={(text) => {
+					const questionId = scaffold?.questionId
+					if (!questionId) return
+					onSubmit(text, questionId)
+				}}
+				isSubmitting={isSubmitting}
 			/>
 		)
 	}
@@ -288,18 +342,14 @@ function TemplateEditorWithApi({
 					onBlankChange={(id, value) => setFilledBlanks((prev) => ({ ...prev, [id]: value }))}
 				/>
 				<div className="flex shrink-0 items-center justify-end border-t px-5 py-3">
-					<Button onClick={handleSubmit} disabled={submitMutation.isPending}>
-						{submitMutation.isPending ? "Đang nộp..." : "Nộp bài"}
+					<Button onClick={handleSubmit} disabled={isSubmitting}>
+						{isSubmitting ? "Đang nộp..." : "Nộp bài"}
 					</Button>
 				</div>
 			</div>
 		</div>
 	)
 }
-
-// ═══════════════════════════════════════════════════
-// Shared prompt panel
-// ═══════════════════════════════════════════════════
 
 function PromptPanel({ content, hints }: { content: WritingContent; hints: WritingHints | null }) {
 	return (
@@ -340,12 +390,12 @@ function PromptPanel({ content, hints }: { content: WritingContent; hints: Writi
 
 					<p className="text-xs font-semibold text-primary">Mẫu câu gợi ý</p>
 					<div className="flex flex-wrap gap-1.5">
-						{hints.starters.map((s) => (
+						{hints.starters.map((starter) => (
 							<span
-								key={s}
+								key={starter}
 								className="inline-block rounded-md bg-background px-2 py-0.5 text-xs text-muted-foreground"
 							>
-								{s}
+								{starter}
 							</span>
 						))}
 					</div>
@@ -359,20 +409,13 @@ function PromptPanel({ content, hints }: { content: WritingContent; hints: Writi
 	)
 }
 
-// ═══════════════════════════════════════════════════
-// Level 2 & 3 — Textarea editor
-// ═══════════════════════════════════════════════════
-
 interface WritingEditorProps {
 	content: WritingContent
 	hints: WritingHints | null
 	text: string
 	onTextChange: (text: string) => void
-	sessionId: string
-	questionId: string
-	onSubmitted: (submissionId: string) => void
-	onSubmitting: () => void
-	onError: (msg: string) => void
+	onSubmit: (text: string) => void
+	isSubmitting: boolean
 }
 
 function WritingEditor({
@@ -380,30 +423,15 @@ function WritingEditor({
 	hints,
 	text,
 	onTextChange,
-	sessionId,
-	questionId,
-	onSubmitted,
-	onSubmitting,
-	onError,
+	onSubmit,
+	isSubmitting,
 }: WritingEditorProps) {
-	const submitMutation = useSubmitPracticeAnswer(sessionId)
 	const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0
 
 	const handleSubmit = useCallback(() => {
 		if (!text.trim()) return
-		onSubmitting()
-		submitMutation.mutate(
-			{ questionId, answer: { text } },
-			{
-				onSuccess: (data) => {
-					onSubmitted(data.submissionId)
-				},
-				onError: (err) => {
-					onError(err.message)
-				},
-			},
-		)
-	}, [text, questionId, submitMutation, onSubmitted, onSubmitting, onError])
+		onSubmit(text)
+	}, [text, onSubmit])
 
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
@@ -416,7 +444,7 @@ function WritingEditor({
 					className="min-h-[300px] flex-1 resize-none rounded-xl border bg-background p-4 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/30"
 					placeholder="Nhập bài viết của bạn..."
 					value={text}
-					onChange={(ev) => onTextChange(ev.target.value)}
+					onChange={(event) => onTextChange(event.target.value)}
 				/>
 				<div className="mt-3 flex items-center justify-between">
 					<p className="text-sm text-muted-foreground">
@@ -425,8 +453,8 @@ function WritingEditor({
 							<span className="ml-1 text-orange-500">(cần tối thiểu {content.minWords} từ)</span>
 						)}
 					</p>
-					<Button onClick={handleSubmit} disabled={!text.trim() || submitMutation.isPending}>
-						{submitMutation.isPending ? "Đang nộp..." : "Nộp bài"}
+					<Button onClick={handleSubmit} disabled={!text.trim() || isSubmitting}>
+						{isSubmitting ? "Đang nộp..." : "Nộp bài"}
 					</Button>
 				</div>
 			</div>
@@ -434,18 +462,15 @@ function WritingEditor({
 	)
 }
 
-// ═══════════════════════════════════════════════════
-// Grading poller
-// ═══════════════════════════════════════════════════
-
 interface GradingPollerProps {
 	submissionId: string
 	submittedText: string
 	content: WritingContent | null
+	tier: WritingTier
 	onCompleted: () => void
 }
 
-function GradingPoller({ submissionId, submittedText, content, onCompleted }: GradingPollerProps) {
+function GradingPoller({ submissionId, submittedText, content, tier, onCompleted }: GradingPollerProps) {
 	const { data: submission } = useSubmission(submissionId)
 	const notifiedRef = useRef(false)
 
@@ -466,7 +491,12 @@ function GradingPoller({ submissionId, submittedText, content, onCompleted }: Gr
 	}
 
 	return (
-		<WritingGradingResult submission={submission} submittedText={submittedText} content={content} />
+		<WritingGradingResult
+			submission={submission}
+			submittedText={submittedText}
+			content={content}
+			tier={tier}
+		/>
 	)
 }
 

@@ -40,6 +40,8 @@ function useStartPractice() {
 			mode: PracticeMode
 			level?: QuestionLevel
 			itemsCount?: number
+			part?: number
+			topic?: string
 		}) => api.post<PracticeStartResponse>("/api/practice/sessions", params),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: ["practice", "sessions"] })
@@ -65,6 +67,21 @@ function useCompletePractice(sessionId: string) {
 	})
 }
 
+interface PracticeSessionShowResponse {
+	session: import("@/types/api").PracticeSession
+	currentItem: import("@/types/api").PracticeItem | null
+	progress: { current: number; total: number; hasMore: boolean }
+	writingTier: import("@/types/api").WritingTier | null
+}
+
+function usePracticeSession(sessionId: string | null) {
+	return useQuery({
+		queryKey: ["practice", "sessions", sessionId],
+		queryFn: () => api.get<PracticeSessionShowResponse>(`/api/practice/sessions/${sessionId}`),
+		enabled: !!sessionId,
+	})
+}
+
 const GRADING_POLL_MS = 5_000
 
 function useSubmission(submissionId: string | null) {
@@ -83,6 +100,7 @@ function useSubmission(submissionId: string | null) {
 export {
 	useCompletePractice,
 	usePracticeQuestions,
+	usePracticeSession,
 	useStartPractice,
 	useSubmission,
 	useSubmitPracticeAnswer,

@@ -9,7 +9,6 @@ use App\Http\Requests\Exam\StoreExamRequest;
 use App\Http\Requests\Exam\UpdateExamRequest;
 use App\Http\Resources\ExamResource;
 use App\Http\Resources\ExamSessionDetailResource;
-use App\Http\Resources\ExamSessionResource;
 use App\Models\Exam;
 use App\Services\ExamService;
 use App\Services\SessionService;

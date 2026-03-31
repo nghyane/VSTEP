@@ -2,13 +2,29 @@ import { AlertCircleIcon, CheckmarkCircle02Icon } from "@hugeicons/core-free-ico
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import type { SubmissionFull, WritingContent } from "@/types/api"
+import type { SubmissionFull, WritingContent, WritingTier } from "@/types/api"
 import { CriterionBar, type CriterionScore } from "./writing-grading-shared"
+
+const TIER_BADGE: Record<WritingTier, { label: string; className: string }> = {
+	1: {
+		label: "Trợ nhiệt tình",
+		className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+	},
+	2: {
+		label: "Gợi ý khung",
+		className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+	},
+	3: {
+		label: "Thực chiến",
+		className: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+	},
+}
 
 interface WritingGradingResultProps {
 	submission: SubmissionFull
 	submittedText: string
 	content: WritingContent | null
+	tier?: WritingTier
 }
 
 interface AICriteria {
@@ -63,6 +79,7 @@ export function WritingGradingResult({
 	submission,
 	submittedText,
 	content,
+	tier = 3,
 }: WritingGradingResultProps) {
 	const criteria = parseCriteria(submission.result)
 	const gaps = parseKnowledgeGaps(submission.result)
@@ -76,11 +93,8 @@ export function WritingGradingResult({
 				<div className="mb-4 flex items-center justify-between">
 					<h3 className="text-lg font-bold">Bài viết đã nộp</h3>
 					<div className="flex items-center gap-2">
-						<Badge
-							variant="secondary"
-							className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
-						>
-							Thực chiến
+						<Badge variant="secondary" className={TIER_BADGE[tier].className}>
+							{TIER_BADGE[tier].label}
 						</Badge>
 						<span className="text-xs text-muted-foreground">{wordCount} từ</span>
 					</div>

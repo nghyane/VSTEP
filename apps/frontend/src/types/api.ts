@@ -590,7 +590,13 @@ interface PracticeSession {
 	skill: Skill
 	mode: PracticeMode
 	level: QuestionLevel
-	config: { focusKp: string | null; itemsCount: number }
+	config: {
+		focusKp: string | null
+		itemsCount: number
+		writingTier: WritingTier | null
+		topic: string | null
+		part: number | null
+	}
 	currentQuestionId: string | null
 	summary: unknown | null
 	startedAt: string

@@ -22,21 +22,28 @@ export const Route = createFileRoute("/_focused/exercise")({
 	validateSearch: (search: Record<string, unknown>) => ({
 		skill: (search.skill as string) || "",
 		id: (search.id as string) || "",
+		part: (search.part as string) || "",
+		session: (search.session as string) || "",
 	}),
 })
 
 function ExercisePage() {
-	const { skill, id } = Route.useSearch()
+	const { skill, id, part, session } = Route.useSearch()
 
-	// Writing uses real API — skip mock lookup
-	if (skill === "writing" && id) {
-		return <WritingExercisePage questionId={id} />
+	// Writing uses real API — adaptive session flow
+	if (skill === "writing") {
+		return (
+			<WritingExercisePage
+				part={part ? Number(part) : undefined}
+				sessionId={session || undefined}
+			/>
+		)
 	}
 
 	return <MockExercisePage skill={skill} id={id} />
 }
 
-function WritingExercisePage({ questionId }: { questionId: string }) {
+function WritingExercisePage({ part, sessionId }: { part?: number; sessionId?: string }) {
 	const meta = skillMeta.writing
 
 	return (
@@ -58,7 +65,7 @@ function WritingExercisePage({ questionId }: { questionId: string }) {
 				</Button>
 			</header>
 
-			<WritingPracticeFlow questionId={questionId} />
+			<WritingPracticeFlow part={part} resumeSessionId={sessionId} />
 		</div>
 	)
 }

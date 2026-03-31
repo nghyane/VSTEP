@@ -194,7 +194,7 @@ function QuestionCard({ question, skill }: { question: Question; skill: Skill })
 				{question.level && <span>{question.level}</span>}
 			</div>
 			<Button size="sm" className="mt-auto w-full rounded-xl" asChild>
-				<Link to="/exercise" search={{ skill, id: question.id }}>
+				<Link to="/exercise" search={{ skill, id: question.id, part: "", session: "" }}>
 					Luyện tập ngay
 				</Link>
 			</Button>
