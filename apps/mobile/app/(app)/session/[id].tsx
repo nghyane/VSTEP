@@ -939,8 +939,8 @@ function Completed({ session, exam }: { session: FlatSessionDetail; exam: any })
         )}
       </View>
 
-      {/* Overall score + band */}
-      {session.overallScore != null && (
+      {/* Overall score + band — or grading indicator */}
+      {session.overallScore != null ? (
         <View style={[styles.overallBox, { backgroundColor: c.primary + "18" }]}>
           <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm, fontWeight: "500" }}>Điểm tổng</Text>
           <Text style={[styles.overallScore, { color: c.primary }]}>
@@ -952,7 +952,17 @@ function Completed({ session, exam }: { session: FlatSessionDetail; exam: any })
             </View>
           )}
         </View>
-      )}
+      ) : session.status === "submitted" ? (
+        <View style={[styles.overallBox, { backgroundColor: c.warning + "18" }]}>
+          <ActivityIndicator size="small" color={c.warning} />
+          <Text style={{ color: c.warning, fontWeight: "600", fontSize: fontSize.sm }}>
+            AI đang chấm bài writing/speaking...
+          </Text>
+          <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs, textAlign: "center" }}>
+            Điểm tổng sẽ cập nhật khi tất cả bài đã được chấm
+          </Text>
+        </View>
+      ) : null}
 
       {/* Per-skill scores */}
       {scores.map(({ skill, score }) => (
