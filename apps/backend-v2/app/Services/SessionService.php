@@ -82,7 +82,7 @@ class SessionService
         $session->setRelation('questions', $questions);
 
         // Load submission results (AI feedback) for completed sessions
-        if ($session->status !== SessionStatus::InProgress) {
+        if (in_array($session->status, [SessionStatus::Submitted, SessionStatus::Completed], true)) {
             $session->load(['submissions' => fn ($q) => $q->with('question:id,skill,part')]);
         }
 
@@ -138,12 +138,18 @@ class SessionService
             $this->dispatchSubjectiveGrading($session);
             $this->calculateScores($session);
 
+            $hasPendingSubjective = $session->submissions()->exists();
+
             $session->update([
-                'status' => SessionStatus::Completed,
+                'status' => $hasPendingSubjective ? SessionStatus::Submitted : SessionStatus::Completed,
                 'completed_at' => now(),
+                'overall_score' => $hasPendingSubjective ? null : $session->overall_score,
+                'overall_band' => $hasPendingSubjective ? null : $session->overall_band,
             ]);
 
-            $this->applyScoresToProgress($session);
+            if (! $hasPendingSubjective) {
+                $this->applyScoresToProgress($session);
+            }
 
             // Auto-update assignment submission if linked
             app(ClassroomService::class)->onExamSessionCompleted($session);
@@ -291,54 +297,116 @@ class SessionService
      */
     public function updateSubjectiveScores(Submission $submission): void
     {
-        $sessionSubmissions = Submission::with('question')
-            ->where('session_id', $submission->session_id)
-            ->where('skill', $submission->skill)
-            ->get();
-
-        if ($sessionSubmissions->contains(fn ($s) => $s->score === null)) {
+        if (! $submission->session_id) {
             return;
         }
 
-        $session = $submission->session;
-
-        if ($submission->skill === Skill::Writing) {
-            $task1 = $sessionSubmissions->first(fn ($s) => $s->question->part === 1);
-            $task2 = $sessionSubmissions->first(fn ($s) => $s->question->part === 2);
-
-            if ($task1?->score !== null && $task2?->score !== null) {
-                $session->update([
-                    'writing_score' => VstepScoring::writingOverall($task1->score, $task2->score),
-                ]);
-            } elseif ($sessionSubmissions->count() === 1) {
-                $session->update(['writing_score' => $sessionSubmissions->first()->score]);
-            }
+        $session = $submission->session()->with(['submissions.question', 'exam'])->first();
+        if (! $session) {
+            return;
         }
 
-        if ($submission->skill === Skill::Speaking) {
-            $partScores = $sessionSubmissions->pluck('score')->filter()->toArray();
+        $this->reconcileSessionResult($session);
+    }
+
+    public function reconcileSessionResult(ExamSession $session): void
+    {
+        $session->loadMissing(['submissions.question', 'exam']);
+        $subjectiveSubmissions = $session->submissions;
+
+        if ($subjectiveSubmissions->isEmpty()) {
+            if ($session->status !== SessionStatus::Completed) {
+                $session->update(['status' => SessionStatus::Completed]);
+                $this->applyScoresToProgress($session->fresh());
+            }
+
+            return;
+        }
+
+        if ($subjectiveSubmissions->contains(fn ($s) => in_array($s->status, [SubmissionStatus::Pending, SubmissionStatus::Processing], true))) {
+            $session->update([
+                'status' => SessionStatus::Submitted,
+                'overall_score' => null,
+                'overall_band' => null,
+            ]);
+
+            return;
+        }
+
+        $update = [];
+
+        foreach ([Skill::Writing, Skill::Speaking] as $skill) {
+            $skillSubmissions = $subjectiveSubmissions->where('skill', $skill)->values();
+            if ($skillSubmissions->isEmpty()) {
+                continue;
+            }
+
+            $column = $skill->scoreColumn();
+            $hasFailed = $skillSubmissions->contains(fn ($s) => $s->status === SubmissionStatus::Failed);
+
+            if ($hasFailed) {
+                $update[$column] = null;
+
+                continue;
+            }
+
+            if ($skill === Skill::Writing) {
+                $task1 = $skillSubmissions->first(fn ($s) => $s->question->part === 1);
+                $task2 = $skillSubmissions->first(fn ($s) => $s->question->part === 2);
+
+                if ($task1?->score !== null && $task2?->score !== null) {
+                    $update[$column] = VstepScoring::writingOverall($task1->score, $task2->score);
+                } elseif ($skillSubmissions->count() === 1 && $skillSubmissions->first()?->score !== null) {
+                    $update[$column] = $skillSubmissions->first()->score;
+                }
+
+                continue;
+            }
+
+            $partScores = $skillSubmissions
+                ->pluck('score')
+                ->filter(fn ($score) => $score !== null)
+                ->values()
+                ->all();
 
             if (! empty($partScores)) {
-                $session->update([
-                    'speaking_score' => VstepScoring::speakingOverall(...$partScores),
-                ]);
+                $update[$column] = VstepScoring::speakingOverall(...$partScores);
             }
         }
 
-        $session->refresh();
-        $scores = array_filter([
-            $session->listening_score,
-            $session->reading_score,
-            $session->writing_score,
-            $session->speaking_score,
-        ], fn ($v) => $v !== null);
+        $requiredSkillColumns = collect($session->exam->blueprint ?? [])
+            ->pluck('skill')
+            ->filter()
+            ->unique()
+            ->mapWithKeys(fn ($skill) => [$skill => Skill::from($skill)->scoreColumn()]);
 
-        if (count($scores) > 0) {
+        $session->fill($update);
+
+        $allRequiredScoresAvailable = $requiredSkillColumns
+            ->every(fn (string $column) => $session->{$column} !== null);
+
+        if ($allRequiredScoresAvailable) {
+            $scores = $requiredSkillColumns
+                ->map(fn (string $column) => $session->{$column})
+                ->all();
+
             $overall = VstepScoring::round(array_sum($scores) / count($scores));
-            $session->update([
-                'overall_score' => $overall,
-                'overall_band' => VstepBand::fromScore($overall),
-            ]);
+            $update['overall_score'] = $overall;
+            $update['overall_band'] = VstepBand::fromScore($overall);
+        } else {
+            $update['overall_score'] = null;
+            $update['overall_band'] = null;
+        }
+
+        $wasCompleted = $session->status === SessionStatus::Completed;
+
+        $session->update([
+            ...$update,
+            'status' => SessionStatus::Completed,
+        ]);
+
+        if (! $wasCompleted && $allRequiredScoresAvailable && ! $subjectiveSubmissions->contains(fn ($s) => $s->status === SubmissionStatus::ReviewPending)) {
+            $this->applyScoresToProgress($session->fresh());
         }
     }
 

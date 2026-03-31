@@ -11,10 +11,11 @@ class GradingRubricSeeder extends Seeder
 {
     public function run(): void
     {
-        $levels = ['B1', 'B2', 'C1'];
-
-        foreach ($levels as $level) {
+        foreach (['A2', 'B1', 'B2', 'C1'] as $level) {
             $this->seedWritingRubric($level);
+        }
+
+        foreach (['B1', 'B2', 'C1'] as $level) {
             $this->seedSpeakingRubric($level);
         }
     }
@@ -115,8 +116,15 @@ class GradingRubricSeeder extends Seeder
     private function writingBands(string $criterion, string $level): array
     {
         $bands = [
-            'task_fulfillment' => [
-                'B1' => [
+                'task_fulfillment' => [
+                    'A2' => [
+                        '9-10' => 'Đáp ứng tốt yêu cầu cơ bản của đề bài. Nội dung rõ ràng, liên quan và đủ ý chính với ngôn ngữ đơn giản.',
+                        '7-8' => 'Đáp ứng phần lớn yêu cầu. Nội dung nhìn chung đúng hướng nhưng phát triển còn ngắn và đơn giản.',
+                        '5-6' => 'Đáp ứng được yêu cầu tối thiểu. Nội dung cơ bản nhưng còn thiếu ý hoặc diễn đạt chưa rõ.',
+                        '3-4' => 'Chỉ đáp ứng một phần nhỏ yêu cầu. Nội dung rất ngắn hoặc còn lạc ý.',
+                        '1-2' => 'Hầu như không đáp ứng yêu cầu. Nội dung quá ít hoặc không liên quan.',
+                    ],
+                    'B1' => [
                     '9-10' => 'Đáp ứng hoàn toàn yêu cầu đề bài, nội dung rõ ràng dù chủ đề quen thuộc. Phát triển ý đầy đủ với ví dụ đơn giản.',
                     '7-8' => 'Đáp ứng phần lớn yêu cầu, nội dung liên quan. Phát triển ý khá tốt nhưng đôi chỗ còn chung chung.',
                     '5-6' => 'Đáp ứng cơ bản yêu cầu đề bài. Nội dung đúng hướng nhưng thiếu phát triển, ví dụ hạn chế.',
@@ -138,8 +146,15 @@ class GradingRubricSeeder extends Seeder
                     '1-2' => 'Không đáp ứng yêu cầu. Nội dung sơ sài.',
                 ],
             ],
-            'organization' => [
-                'B1' => [
+                'organization' => [
+                    'A2' => [
+                        '9-10' => 'Bài viết có bố cục cơ bản rõ ràng. Các ý được sắp xếp hợp lý với từ nối đơn giản.',
+                        '7-8' => 'Bố cục nhìn chung rõ. Có một số liên kết cơ bản nhưng đôi chỗ còn rời rạc.',
+                        '5-6' => 'Có mở đầu và ý chính, nhưng bố cục còn đơn giản và chuyển ý chưa tốt.',
+                        '3-4' => 'Ý sắp xếp thiếu rõ ràng. Ít liên kết giữa các câu.',
+                        '1-2' => 'Bài viết rời rạc, gần như không có tổ chức.',
+                    ],
+                    'B1' => [
                     '9-10' => 'Bố cục rõ ràng: mở bài, thân bài, kết luận. Từ nối đơn giản nhưng hiệu quả. Ý tưởng được sắp xếp logic.',
                     '7-8' => 'Bố cục khá rõ ràng, phân đoạn hợp lý. Sử dụng được một số từ nối cơ bản.',
                     '5-6' => 'Có bố cục cơ bản nhưng đôi chỗ chưa rõ ràng. Từ nối hạn chế, lặp lại.',
@@ -161,8 +176,15 @@ class GradingRubricSeeder extends Seeder
                     '1-2' => 'Không có tổ chức phù hợp.',
                 ],
             ],
-            'vocabulary' => [
-                'B1' => [
+                'vocabulary' => [
+                    'A2' => [
+                        '9-10' => 'Dùng được từ vựng quen thuộc phù hợp chủ đề. Hầu hết từ ngữ đúng và dễ hiểu.',
+                        '7-8' => 'Từ vựng cơ bản phù hợp. Có lặp lại nhưng vẫn truyền đạt được ý.',
+                        '5-6' => 'Vốn từ hạn chế nhưng đủ cho nội dung đơn giản. Có một số chỗ dùng từ chưa đúng.',
+                        '3-4' => 'Từ vựng rất hạn chế, lặp lại nhiều và có lỗi làm giảm độ rõ.',
+                        '1-2' => 'Không đủ từ vựng để diễn đạt ý cơ bản.',
+                    ],
+                    'B1' => [
                     '9-10' => 'Từ vựng đủ cho chủ đề quen thuộc, dùng đúng. Có một số collocations tốt.',
                     '7-8' => 'Từ vựng phù hợp, đôi chỗ lặp lại. Collocations cơ bản đúng.',
                     '5-6' => 'Từ vựng hạn chế nhưng đủ truyền đạt ý. Lặp lại nhiều, đôi chỗ dùng sai.',
@@ -184,8 +206,15 @@ class GradingRubricSeeder extends Seeder
                     '1-2' => 'Từ vựng không phù hợp trình độ.',
                 ],
             ],
-            'grammar' => [
-                'B1' => [
+                'grammar' => [
+                    'A2' => [
+                        '9-10' => 'Câu đơn và cấu trúc cơ bản phần lớn đúng. Lỗi nhỏ không ảnh hưởng nhiều đến ý nghĩa.',
+                        '7-8' => 'Dùng được cấu trúc quen thuộc tương đối chính xác. Có lỗi nhưng vẫn hiểu rõ.',
+                        '5-6' => 'Ngữ pháp còn đơn giản và có nhiều lỗi, nhưng vẫn truyền đạt được ý chính.',
+                        '3-4' => 'Lỗi ngữ pháp thường xuyên, làm câu khó hiểu ở nhiều chỗ.',
+                        '1-2' => 'Lỗi nghiêm trọng, rất khó hiểu hoặc gần như không diễn đạt được.',
+                    ],
+                    'B1' => [
                     '9-10' => 'Sử dụng đúng các cấu trúc cơ bản, có thể dùng một số câu phức đơn giản. Ít lỗi.',
                     '7-8' => 'Cấu trúc cơ bản chính xác. Thử dùng câu phức nhưng đôi chỗ sai.',
                     '5-6' => 'Cấu trúc đơn giản phần lớn đúng. Lỗi khi dùng câu phức nhưng nghĩa vẫn rõ.',
