@@ -8,8 +8,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Question;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+
+use function Laravel\Ai\AI;
 
 class WritingTemplateController extends Controller
 {
@@ -46,23 +47,29 @@ class WritingTemplateController extends Controller
         $systemPrompt = $this->buildSystemPrompt($taskType, $level, $minWords);
         $userMessage = $this->buildUserMessage($prompt, $requiredPoints);
 
-        $gatewayUrl = config('services.grading.url', 'http://localhost:8001');
-
         try {
-            $response = Http::timeout(60)->post("{$gatewayUrl}/ai/generate-template", [
-                'system' => $systemPrompt,
-                'user' => $userMessage,
-            ]);
+            $response = AI()
+                ->using('local')
+                ->withInstructions($systemPrompt)
+                ->text($userMessage);
 
-            if ($response->successful()) {
-                $data = $response->json();
+            $text = trim($response->text);
 
-                return $data['template'] ?? $data['data']['template'] ?? $data;
+            // Strip markdown code fences if present
+            if (str_starts_with($text, '```')) {
+                $text = preg_replace('/^```(?:json)?\s*/', '', $text);
+                $text = preg_replace('/\s*```$/', '', $text);
             }
 
-            Log::warning('Template generation failed', [
+            $decoded = json_decode($text, true);
+
+            if (is_array($decoded) && count($decoded) > 0) {
+                return $decoded;
+            }
+
+            Log::warning('Template generation: invalid JSON from AI', [
                 'question_id' => $question->id,
-                'status' => $response->status(),
+                'raw' => mb_substr($text, 0, 500),
             ]);
         } catch (\Throwable $e) {
             Log::warning('Template generation error', [
