@@ -112,7 +112,7 @@ class PronunciationService
     {
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
         $mime = $finfo->buffer($content);
-        $allowed = ['audio/x-wav', 'audio/wav', 'audio/ogg', 'application/ogg', 'audio/webm'];
+        $allowed = ['audio/x-wav', 'audio/wav', 'audio/ogg', 'application/ogg', 'audio/webm', 'video/webm'];
 
         if (! in_array($mime, $allowed)) {
             throw new RuntimeException("Invalid audio MIME type: {$mime}. Only WAV, OGG, and WebM are supported.");
