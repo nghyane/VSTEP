@@ -143,6 +143,8 @@ class SessionService
             $session->update([
                 'status' => $hasPendingSubjective ? SessionStatus::Submitted : SessionStatus::Completed,
                 'completed_at' => now(),
+                'overall_score' => $hasPendingSubjective ? null : $session->overall_score,
+                'overall_band' => $hasPendingSubjective ? null : $session->overall_band,
             ]);
 
             if (! $hasPendingSubjective) {
@@ -322,9 +324,11 @@ class SessionService
         }
 
         if ($subjectiveSubmissions->contains(fn ($s) => in_array($s->status, [SubmissionStatus::Pending, SubmissionStatus::Processing], true))) {
-            if ($session->status !== SessionStatus::Submitted) {
-                $session->update(['status' => SessionStatus::Submitted]);
-            }
+            $session->update([
+                'status' => SessionStatus::Submitted,
+                'overall_score' => null,
+                'overall_band' => null,
+            ]);
 
             return;
         }
