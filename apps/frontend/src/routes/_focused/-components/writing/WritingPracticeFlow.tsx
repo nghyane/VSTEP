@@ -1,19 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
-import {
-	useGenerateTemplate,
-	useStartPractice,
-	useSubmission,
-	useSubmitPracticeAnswer,
-} from "@/hooks/use-practice"
+import { useStartPractice, useSubmission, useSubmitPracticeAnswer } from "@/hooks/use-practice"
 import type {
+	PracticeMode,
 	PracticeItem,
 	PracticeSession,
 	PracticeStartResponse,
 	WritingContent,
 	WritingHints,
+	WritingScaffold,
+	WritingScaffoldSection,
+	WritingScaffoldType,
 	WritingTier,
 } from "@/types/api"
 import { WritingGradingResult } from "./WritingGradingResult"
@@ -43,6 +41,23 @@ const TIER_META: Record<number, { label: string; color: string }> = {
 	3: {
 		label: "Cấp 3 — Thực chiến",
 		color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+	},
+}
+
+const WRITING_PRACTICE_MODE: PracticeMode = "guided"
+
+const SCAFFOLD_META: Record<WritingScaffoldType, { label: string; description: string }> = {
+	template: {
+		label: "Điền theo khung",
+		description: "Hoàn thành các chỗ trống để tạo bài viết.",
+	},
+	guided: {
+		label: "Viết có gợi ý",
+		description: "Dùng dàn ý và mẫu câu để tự viết bài.",
+	},
+	freeform: {
+		label: "Tự viết",
+		description: "Viết bài hoàn chỉnh mà không cần scaffold.",
 	},
 }
 
@@ -77,7 +92,7 @@ export function WritingPracticeFlow(_props: WritingPracticeFlowProps) {
 		hasStartedRef.current = true
 
 		startMutation.mutate(
-			{ skill: "writing", mode: "guided", itemsCount: 1 },
+			{ skill: "writing", mode: WRITING_PRACTICE_MODE, itemsCount: 1 },
 			{
 				onSuccess: (data: PracticeStartResponse) => {
 					setSession(data.session)
@@ -98,7 +113,9 @@ export function WritingPracticeFlow(_props: WritingPracticeFlowProps) {
 			? item.question.content
 			: null
 		: null
-	const hints = item?.writingHints ?? null
+	const scaffold = item?.writingScaffold ?? null
+	const scaffoldType = scaffold?.type ?? "freeform"
+	const hints = scaffold?.type === "guided" ? (scaffold.payload as WritingHints) : null
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
@@ -130,13 +147,14 @@ export function WritingPracticeFlow(_props: WritingPracticeFlowProps) {
 						<Badge variant="secondary" className={TIER_META[tier]?.color}>
 							{TIER_META[tier]?.label}
 						</Badge>
+						<Badge variant="outline">{SCAFFOLD_META[scaffoldType].label}</Badge>
+						<p className="text-xs text-muted-foreground">{SCAFFOLD_META[scaffoldType].description}</p>
 					</div>
 
-					{tier === 1 ? (
+					{scaffoldType === "template" ? (
 						<TemplateEditorWithApi
-							questionId={item.question.id}
 							content={content}
-							hints={hints}
+							scaffold={scaffold}
 							sessionId={session.id}
 							onSubmitted={(subId, text) => {
 								setWritingText(text)
@@ -149,11 +167,11 @@ export function WritingPracticeFlow(_props: WritingPracticeFlowProps) {
 					) : (
 						<WritingEditor
 							content={content}
-							hints={tier === 2 ? hints : null}
+							hints={scaffoldType === "guided" ? hints : null}
 							text={writingText}
 							onTextChange={setWritingText}
 							sessionId={session.id}
-							questionId={item.question.id}
+							questionId={scaffold?.questionId ?? item.question.id}
 							onSubmitted={(subId) => {
 								setSubmissionId(subId)
 								setPhase("grading")
@@ -188,9 +206,8 @@ export function WritingPracticeFlow(_props: WritingPracticeFlowProps) {
 // ═══════════════════════════════════════════════════
 
 interface TemplateEditorWithApiProps {
-	questionId: string
 	content: WritingContent
-	hints: WritingHints | null
+	scaffold: WritingScaffold | null
 	sessionId: string
 	onSubmitted: (submissionId: string, assembledText: string) => void
 	onSubmitting: () => void
@@ -198,20 +215,21 @@ interface TemplateEditorWithApiProps {
 }
 
 function TemplateEditorWithApi({
-	questionId,
 	content,
-	hints,
+	scaffold,
 	sessionId,
 	onSubmitted,
 	onSubmitting,
 	onError,
 }: TemplateEditorWithApiProps) {
-	const { data, isLoading, isError } = useGenerateTemplate(questionId)
 	const submitMutation = useSubmitPracticeAnswer(sessionId)
 	const [filledBlanks, setFilledBlanks] = useState<Record<string, string>>({})
 	const [fallbackText, setFallbackText] = useState("")
-
-	const template = data?.template ?? null
+	const template =
+		scaffold?.type === "template"
+			? ((scaffold.payload as { sections: WritingScaffoldSection[] } | null)?.sections ?? null)
+			: null
+	const hints = scaffold?.type === "guided" ? (scaffold.payload as WritingHints) : null
 
 	const assembleText = useCallback(() => {
 		if (!template) return ""
@@ -230,6 +248,8 @@ function TemplateEditorWithApi({
 	const handleSubmit = useCallback(() => {
 		const text = assembleText()
 		if (!text.trim()) return
+		const questionId = scaffold?.questionId
+		if (!questionId) return
 
 		submitMutation.mutate(
 			{ questionId, answer: { text } },
@@ -238,26 +258,9 @@ function TemplateEditorWithApi({
 				onError: (err) => onError(err.message),
 			},
 		)
-	}, [assembleText, questionId, submitMutation, onSubmitted, onError])
+	}, [assembleText, scaffold?.questionId, submitMutation, onSubmitted, onError])
 
-	if (isLoading) {
-		return (
-			<div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
-				<div className="w-full shrink-0 overflow-y-auto border-b p-6 lg:w-[420px] lg:border-b-0 lg:border-r">
-					<PromptPanel content={content} hints={hints} />
-				</div>
-				<div className="flex flex-1 flex-col items-center justify-center gap-3 p-6">
-					<Skeleton className="h-6 w-48" />
-					<Skeleton className="h-40 w-full max-w-md" />
-					<Skeleton className="h-40 w-full max-w-md" />
-					<p className="text-sm text-muted-foreground">Đang tạo bài mẫu điền từ...</p>
-				</div>
-			</div>
-		)
-	}
-
-	// Template generation failed → fallback to freeform textarea with hints
-	if (isError || !template) {
+	if (!template) {
 		return (
 			<WritingEditor
 				content={content}
@@ -265,7 +268,7 @@ function TemplateEditorWithApi({
 				text={fallbackText}
 				onTextChange={setFallbackText}
 				sessionId={sessionId}
-				questionId={questionId}
+				questionId={scaffold?.questionId ?? ""}
 				onSubmitted={(subId) => onSubmitted(subId, fallbackText)}
 				onSubmitting={onSubmitting}
 				onError={onError}

@@ -605,11 +605,43 @@ interface WritingHints {
 	wordCount: string
 }
 
+interface WritingScaffoldBlankHints {
+	b1: string[]
+	b2: string[]
+}
+
+interface WritingScaffoldPart {
+	type: "text" | "blank"
+	content?: string
+	id?: string
+	label?: string
+	variant?: "transition" | "content"
+	hints?: WritingScaffoldBlankHints
+}
+
+interface WritingScaffoldSection {
+	title: string
+	parts: WritingScaffoldPart[]
+}
+
+interface WritingTemplateScaffoldPayload {
+	sections: WritingScaffoldSection[]
+}
+
+type WritingScaffoldType = "template" | "guided" | "freeform"
+
+interface WritingScaffold {
+	questionId: string
+	tier: WritingTier
+	type: WritingScaffoldType
+	payload: WritingTemplateScaffoldPayload | WritingHints | null
+}
+
 interface PracticeItem {
 	question: Question
 	difficulty: string
 	isReview: boolean
-	writingHints?: WritingHints
+	writingScaffold?: WritingScaffold
 }
 
 interface PracticeRecommendation {
@@ -778,6 +810,10 @@ export type {
 	VstepBand,
 	WritingAnswer,
 	WritingContent,
+	WritingScaffold,
+	WritingScaffoldPart,
+	WritingScaffoldSection,
+	WritingScaffoldType,
 	WritingHints,
 	WritingTier,
 }

@@ -80,38 +80,10 @@ function useSubmission(submissionId: string | null) {
 	})
 }
 
-interface TemplatePart {
-	type: "text" | "blank"
-	content?: string
-	id?: string
-	label?: string
-	variant?: "transition" | "content"
-	hints?: { b1: string[]; b2: string[] }
-}
-
-interface TemplateSection {
-	title: string
-	parts: TemplatePart[]
-}
-
-function useGenerateTemplate(questionId: string | null) {
-	return useQuery({
-		queryKey: ["practice", "template", questionId],
-		queryFn: () =>
-			api.post<{ template: TemplateSection[] }>("/api/practice/generate-template", { questionId }),
-		enabled: !!questionId,
-		staleTime: 24 * 60 * 60 * 1000, // 24h — templates are stable per question
-		retry: 1,
-	})
-}
-
 export {
 	useCompletePractice,
-	useGenerateTemplate,
 	usePracticeQuestions,
 	useStartPractice,
 	useSubmission,
 	useSubmitPracticeAnswer,
 }
-
-export type { TemplatePart, TemplateSection }
