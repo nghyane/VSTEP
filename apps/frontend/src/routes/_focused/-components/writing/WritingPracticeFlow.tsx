@@ -91,50 +91,51 @@ export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFl
 	const hasInitRef = useRef(false)
 
 	// Resume existing session
-	const { data: resumeData, isError: resumeFailed } = usePracticeSession(
-		resumeSessionId && !session ? resumeSessionId : null,
-	)
+	const {
+		data: resumeData,
+		isError: resumeFailed,
+		isLoading: resumeLoading,
+	} = usePracticeSession(resumeSessionId && !session ? resumeSessionId : null)
 
-	// Handle resume response
+	// Single init effect: resume or start new
 	useEffect(() => {
-		if (!resumeData || session) return
+		if (hasInitRef.current || session) return
 
-		const s = resumeData.session
-		if (s.completedAt) {
-			// Session already completed — start fresh
-			hasInitRef.current = false
+		// Still loading resume data — wait
+		if (resumeSessionId && resumeLoading) return
+
+		// Resume succeeded and session is still active
+		if (resumeData && !resumeData.session.completedAt) {
+			hasInitRef.current = true
+			const s = resumeData.session
+			setSession(s)
+			setItem(resumeData.currentItem)
+			setTier(resumeData.writingTier ?? (s.config.writingTier as WritingTier) ?? 3)
+			setPhase(resumeData.currentItem ? "writing" : "loading")
 			return
 		}
 
-		setSession(s)
-		setItem(resumeData.currentItem)
-		setTier(resumeData.writingTier ?? (s.config.writingTier as WritingTier) ?? 3)
-		setPhase(resumeData.currentItem ? "writing" : "loading")
-	}, [resumeData, session])
-
-	// Start new session (if not resuming)
-	useEffect(() => {
-		if (hasInitRef.current) return
-		if (resumeSessionId && !resumeFailed && !resumeData?.session.completedAt) return
-		hasInitRef.current = true
-
-		startMutation.mutate(
-			{ skill: "writing", mode: "guided", itemsCount: 1, part },
-			{
-				onSuccess: (data: PracticeStartResponse) => {
-					setSession(data.session)
-					setItem(data.currentItem)
-					setTier(data.writingTier ?? 3)
-					setPhase("writing")
-					persistSessionToUrl(data.session.id)
+		// No resume, or resume failed, or session completed — start fresh
+		if (!resumeSessionId || resumeFailed || resumeData?.session.completedAt) {
+			hasInitRef.current = true
+			startMutation.mutate(
+				{ skill: "writing", mode: "guided", itemsCount: 1, part },
+				{
+					onSuccess: (data: PracticeStartResponse) => {
+						setSession(data.session)
+						setItem(data.currentItem)
+						setTier(data.writingTier ?? 3)
+						setPhase("writing")
+						persistSessionToUrl(data.session.id)
+					},
+					onError: (err) => {
+						setError(err.message)
+						setPhase("loading")
+					},
 				},
-				onError: (err) => {
-					setError(err.message)
-					setPhase("loading")
-				},
-			},
-		)
-	}, [startMutation, part, resumeSessionId, resumeFailed, resumeData])
+			)
+		}
+	}, [startMutation, part, resumeSessionId, resumeFailed, resumeData, resumeLoading, session])
 
 	// Auto-complete session when grading finishes
 	const completeMutation = useCompletePractice(session?.id ?? "")
@@ -213,7 +214,10 @@ export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFl
 								setPhase("grading")
 							}}
 							onSubmitting={() => setPhase("submitting")}
-							onError={(msg) => setError(msg)}
+							onError={(msg) => {
+								setError(msg)
+								setPhase("writing")
+							}}
 						/>
 					) : (
 						<WritingEditor
@@ -228,13 +232,16 @@ export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFl
 								setPhase("grading")
 							}}
 							onSubmitting={() => setPhase("submitting")}
-							onError={(msg) => setError(msg)}
+							onError={(msg) => {
+								setError(msg)
+								setPhase("writing")
+							}}
 						/>
 					)}
 				</>
 			)}
 
-			{phase === "submitting" && (
+			{phase === "submitting" && !error && (
 				<div className="flex flex-1 items-center justify-center">
 					<p className="text-sm text-muted-foreground">Đang nộp bài...</p>
 				</div>

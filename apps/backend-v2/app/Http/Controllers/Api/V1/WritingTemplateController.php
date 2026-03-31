@@ -25,9 +25,15 @@ class WritingTemplateController extends Controller
         // Cache template per question (24h) — same template for all users
         $cacheKey = "writing_template:{$question->id}";
 
-        $template = Cache::remember($cacheKey, 86400, function () use ($question) {
-            return $this->generateTemplate($question);
-        });
+        $template = Cache::get($cacheKey);
+
+        if ($template === null) {
+            $template = $this->generateTemplate($question);
+
+            if ($template !== null) {
+                Cache::put($cacheKey, $template, 86400);
+            }
+        }
 
         if ($template === null) {
             return response()->json(['data' => ['error' => 'Template generation failed.']], 503);
