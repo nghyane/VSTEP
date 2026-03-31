@@ -15,21 +15,19 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        $this->app->resolving(AiManager::class, function (AiManager $ai, $app): void {
+            $ai->extend('local', function ($app, array $config) {
+                return new OpenAiProvider(
+                    new LocalOpenAiGateway($app['events']),
+                    $config,
+                    $app->make(Dispatcher::class),
+                );
+            });
+        });
     }
 
     public function boot(): void
     {
         Model::shouldBeStrict(! app()->isProduction());
-
-        /** @var AiManager $ai */
-        $ai = $this->app->make(AiManager::class);
-        $ai->extend('local', function ($app, array $config) {
-            return new OpenAiProvider(
-                new LocalOpenAiGateway($app['events']),
-                $config,
-                $app->make(Dispatcher::class),
-            );
-        });
     }
 }

@@ -1,4 +1,5 @@
 import {
+	ArrowDown01Icon,
 	Book02Icon,
 	CheckmarkCircle01Icon,
 	Fire02Icon,
@@ -248,9 +249,44 @@ function LandingPage() {
 			<HowItWorksSection />
 			<RoadmapSection />
 			<TestimonialsSection />
-			<CtaSection />
+			<MascotSection />
 			<Footer />
 		</div>
+	)
+}
+
+function MascotSection() {
+	return (
+		<section className="relative overflow-hidden rounded-t-3xl bg-muted/30 pt-5 pb-1 sm:pt-7 sm:pb-1 lg:pt-9 lg:pb-1">
+			<div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-px bg-background" />
+			<div className="mx-auto max-w-5xl px-6 text-center">
+				<div className="relative z-10">
+					<AnimSection className="relative z-10 mx-auto mt-10 max-w-3xl sm:mt-12 lg:mt-14">
+						<h2 className="text-2xl font-bold tracking-tight text-foreground lg:text-4xl">
+							Bắt đầu luyện ngay hôm nay — hoàn toàn miễn phí
+						</h2>
+						<p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-foreground/75 sm:text-base">
+							Không cần thẻ tín dụng. Tạo tài khoản trong 30 giây và làm bài thi thử đầu tiên với lộ
+							trình rõ ràng, phản hồi AI chi tiết và trải nghiệm học bớt áp lực hơn.
+						</p>
+						<Button size="lg" className="mt-6 rounded-xl px-8 text-base" asChild>
+							<Link to="/register">Tạo tài khoản miễn phí</Link>
+						</Button>
+						<p className="mt-4 text-sm text-muted-foreground">10,000+ học viên đã tham gia</p>
+					</AnimSection>
+
+					<AnimSection delay={100} className="-mt-4 sm:-mt-6 lg:-mt-8">
+						<div className="relative left-1/2 w-screen max-w-none -translate-x-1/2 px-0">
+							<img
+								src="/images/home-mascot.png"
+								alt="Mascot VSTEP đang luyện đề cùng sách và máy chấm bài"
+								className="mx-auto -mb-2 w-screen max-w-none origin-bottom object-contain sm:-mb-3 lg:-mb-4 [filter:drop-shadow(0_2px_0_#000)_drop-shadow(0_-1px_0_#000)_drop-shadow(1px_0_0_#000)_drop-shadow(-1px_0_0_#000)_drop-shadow(1px_1px_0_#000)_drop-shadow(-1px_-1px_0_#000)_drop-shadow(1px_-1px_0_#000)_drop-shadow(-1px_1px_0_#000)]"
+							/>
+						</div>
+					</AnimSection>
+				</div>
+			</div>
+		</section>
 	)
 }
 
@@ -287,7 +323,7 @@ function Header() {
 
 function Hero() {
 	return (
-		<section className="relative overflow-hidden bg-gradient-to-b from-[oklch(0.35_0.18_258)] via-[oklch(0.45_0.2_258)] to-[oklch(0.50_0.2_258)]">
+		<section className="relative overflow-hidden rounded-b-3xl bg-gradient-to-b from-[oklch(0.35_0.18_258)] via-[oklch(0.45_0.2_258)] to-[oklch(0.50_0.2_258)]">
 			{/* Decorative background elements */}
 			<div className="pointer-events-none absolute inset-0">
 				{/* Large radial glow */}
@@ -381,6 +417,18 @@ function HowItWorksSection() {
 		offset: ["start start", "end end"],
 	})
 
+	function goToStep(stepIndex: number) {
+		const container = containerRef.current
+		if (!container) return
+
+		const rect = container.getBoundingClientRect()
+		const maxScrollable = Math.max(container.offsetHeight - window.innerHeight, 0)
+		const progress = STEPS.length > 1 ? stepIndex / (STEPS.length - 1) : 0
+		const targetTop = window.scrollY + rect.top + maxScrollable * progress
+
+		window.scrollTo({ top: targetTop, behavior: "smooth" })
+	}
+
 	return (
 		<section id="how-it-works" className="py-12 sm:py-20">
 			<div className="mx-auto max-w-5xl px-6">
@@ -395,9 +443,9 @@ function HowItWorksSection() {
 			{/* Scroll runway — height drives the album-stack scroll distance */}
 			<div
 				ref={containerRef}
-				className="mx-auto mt-8 max-w-[1800px] px-4 sm:mt-12 sm:px-6 md:px-10 lg:px-16 2xl:px-24 min-[2200px]:max-w-[1400px] h-[220vh] sm:h-[280vh]"
+				className="mx-auto mt-8 h-[190vh] max-w-[1800px] px-4 sm:mt-12 sm:h-[240vh] sm:px-6 md:px-10 lg:px-16 2xl:px-24 min-[2200px]:max-w-[1400px]"
 			>
-				<div className="sticky top-16 sm:top-20">
+				<div className="sticky top-14 sm:top-16">
 					<div className="relative">
 						{STEPS.map((step, i) => (
 							<StepCard
@@ -406,6 +454,7 @@ function HowItWorksSection() {
 								index={i}
 								total={STEPS.length}
 								scrollProgress={scrollYProgress}
+								onNext={i < STEPS.length - 1 ? () => goToStep(i + 1) : undefined}
 							/>
 						))}
 					</div>
@@ -420,11 +469,13 @@ function StepCard({
 	index,
 	total,
 	scrollProgress,
+	onNext,
 }: {
 	step: (typeof STEPS)[number]
 	index: number
 	total: number
 	scrollProgress: MotionValue<number>
+	onNext?: () => void
 }) {
 	const isLast = index === total - 1
 	// Each card occupies its own scroll segment sequentially.
@@ -442,7 +493,7 @@ function StepCard({
 		<motion.div
 			className={cn(
 				index === 0 ? "relative" : "absolute inset-0",
-				"flex flex-col overflow-hidden rounded-2xl bg-gradient-to-b from-[#001656] from-[7%] to-[#0172FA] p-5 min-h-[calc(100svh-100px)] sm:min-h-[calc(100vh-120px)] sm:p-8 lg:rounded-3xl lg:p-10 2xl:rounded-[32px] 2xl:p-14",
+				"flex flex-col overflow-hidden rounded-2xl bg-gradient-to-b from-[#001656] from-[7%] to-[#0172FA] p-4 min-h-[calc(100svh-140px)] sm:min-h-[calc(100vh-180px)] sm:p-6 lg:rounded-3xl lg:p-8 2xl:rounded-[32px] 2xl:p-10",
 			)}
 			style={{ y: isLast ? undefined : y, zIndex: total - index }}
 		>
@@ -455,16 +506,16 @@ function StepCard({
 			/>
 
 			{/* Large watermark step number */}
-			<p className="relative text-4xl font-bold text-[#0071F9]/25 sm:text-6xl lg:text-8xl">
+			<p className="relative text-3xl font-bold text-[#0071F9]/25 sm:text-5xl lg:text-7xl">
 				Bước {step.num}
 			</p>
 
 			{/* Content: text + image side by side on lg, stacked on mobile */}
-			<div className="relative mt-4 flex flex-1 flex-col gap-4 sm:mt-6 lg:flex-row lg:items-center lg:gap-8">
+			<div className="relative mt-3 flex flex-1 flex-col gap-3 sm:mt-5 lg:flex-row lg:items-center lg:gap-6">
 				{/* Text */}
-				<div className="space-y-2 sm:space-y-3 lg:w-[45%]">
-					<h3 className="text-lg font-bold text-white sm:text-xl lg:text-2xl">{step.title}</h3>
-					<p className="text-sm leading-relaxed text-white/65 sm:text-base">{step.desc}</p>
+				<div className="space-y-2 sm:space-y-3 lg:w-[42%]">
+					<h3 className="text-base font-bold text-white sm:text-lg lg:text-xl">{step.title}</h3>
+					<p className="text-sm leading-relaxed text-white/65">{step.desc}</p>
 				</div>
 
 				{/* Image — centered in frame */}
@@ -484,6 +535,19 @@ function StepCard({
 					</div>
 				</div>
 			</div>
+
+			{onNext ? (
+				<div className="relative mt-4 flex justify-center sm:mt-6">
+					<button
+						type="button"
+						onClick={onNext}
+						className="inline-flex items-center justify-center p-1 text-white/85 transition hover:text-white"
+						aria-label={`Xem bước ${index + 2}`}
+					>
+						<HugeiconsIcon icon={ArrowDown01Icon} className="size-6" strokeWidth={2} />
+					</button>
+				</div>
+			) : null}
 		</motion.div>
 	)
 }
@@ -602,29 +666,6 @@ function TestimonialsSection() {
 					</AnimSection>
 				))}
 			</div>
-		</section>
-	)
-}
-
-/* ── cta ── */
-
-function CtaSection() {
-	return (
-		<section className="mx-auto max-w-5xl px-6 py-20">
-			<AnimSection>
-				<div className="rounded-3xl bg-primary/5 px-6 py-16 text-center">
-					<h2 className="text-2xl font-bold lg:text-3xl">
-						Bắt đầu luyện thi ngay hôm nay — hoàn toàn miễn phí
-					</h2>
-					<p className="mx-auto mt-3 max-w-md text-muted-foreground">
-						Không cần thẻ tín dụng. Tạo tài khoản trong 30 giây và làm bài thi thử đầu tiên.
-					</p>
-					<Button size="lg" className="mt-8 rounded-xl px-10 text-base" asChild>
-						<Link to="/register">Tạo tài khoản miễn phí</Link>
-					</Button>
-					<p className="mt-4 text-sm text-muted-foreground">10,000+ học viên đã tham gia</p>
-				</div>
-			</AnimSection>
 		</section>
 	)
 }

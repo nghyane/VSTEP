@@ -5,7 +5,7 @@ import {
 	PencilEdit01Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Outlet } from "@tanstack/react-router"
+import { Link, Outlet } from "@tanstack/react-router"
 import { Logo } from "@/components/common/Logo"
 
 const features = [
@@ -35,7 +35,9 @@ export function AuthLayout() {
 	return (
 		<div className="grid min-h-screen lg:grid-cols-2">
 			<div className="hidden bg-muted p-12 lg:flex lg:flex-col lg:justify-between">
-				<Logo size="lg" />
+				<Link to="/" className="w-fit" aria-label="Về trang chủ">
+					<Logo size="lg" />
+				</Link>
 				<div className="space-y-3">
 					<h1 className="text-2xl font-semibold tracking-tight">Luyện thi VSTEP hiệu quả</h1>
 					<p className="text-muted-foreground">
@@ -55,7 +57,9 @@ export function AuthLayout() {
 			</div>
 			<div className="flex flex-col items-center justify-center p-6">
 				<div className="mb-8 lg:hidden">
-					<Logo size="lg" />
+					<Link to="/" className="w-fit" aria-label="Về trang chủ">
+						<Logo size="lg" />
+					</Link>
 				</div>
 				<div className="w-full max-w-sm">
 					<Outlet />
