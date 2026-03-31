@@ -34,6 +34,29 @@ export function useStartPlacement() {
   });
 }
 
+export function useCompletePlacement() {
+  return useMutation({
+    mutationFn: (body: {
+      sessionId: string;
+      targetBand: VstepBand;
+      deadline?: string | null;
+      dailyStudyTimeMinutes?: number | null;
+    }) =>
+      api.post<PlacementResult>(
+        `/api/onboarding/sessions/${body.sessionId}/complete-placement`,
+        {
+          targetBand: body.targetBand,
+          deadline: body.deadline,
+          dailyStudyTimeMinutes: body.dailyStudyTimeMinutes,
+        },
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["onboarding-status"] });
+      queryClient.invalidateQueries({ queryKey: ["progress"] });
+    },
+  });
+}
+
 export function useSkipOnboarding() {
   return useMutation({
     mutationFn: (body: {

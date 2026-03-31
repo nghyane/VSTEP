@@ -38,6 +38,13 @@ function flattenSessionDetail(raw: unknown): FlatSessionDetail {
 // Hooks — all paths use /api/sessions (NOT /api/exams/sessions)
 // ---------------------------------------------------------------------------
 
+const GRADING_POLL_MS = 5_000;
+
+function hasGradingInProgress(data: FlatSessionDetail | undefined): boolean {
+  if (!data?.submissions?.length) return false;
+  return data.submissions.some((s: any) => s.status === "pending" || s.status === "processing");
+}
+
 export function useExamSession(sessionId: string) {
   return useQuery({
     queryKey: ["exam-sessions", sessionId],
@@ -46,6 +53,7 @@ export function useExamSession(sessionId: string) {
       return flattenSessionDetail(raw);
     },
     enabled: !!sessionId,
+    refetchInterval: (query) => (hasGradingInProgress(query.state.data) ? GRADING_POLL_MS : false),
   });
 }
 

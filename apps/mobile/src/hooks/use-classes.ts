@@ -62,6 +62,34 @@ export function useClassFeedback(classId: string) {
   });
 }
 
+export function useSendFeedback() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      classId,
+      content,
+      skill,
+      submissionId,
+      toUserId,
+    }: {
+      classId: string;
+      content: string;
+      skill?: string;
+      submissionId?: string;
+      toUserId?: string;
+    }) =>
+      api.post<ClassFeedback>(`/api/classes/${classId}/feedback`, {
+        content,
+        skill,
+        submissionId,
+        toUserId,
+      }),
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ["classes", vars.classId, "feedback"] });
+    },
+  });
+}
+
 // ─── Assignments ─────────────────────────────────────────────────────────────
 
 export function useAssignments(classId: string) {

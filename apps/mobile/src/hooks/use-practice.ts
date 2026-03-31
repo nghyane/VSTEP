@@ -7,6 +7,7 @@ import type {
   PracticeShowResponse,
   PracticeStartResponse,
   PracticeSubmitResult,
+  Question,
   Skill,
 } from "@/types/api";
 
@@ -89,5 +90,34 @@ export function usePracticeSessions(skill?: Skill) {
   return useQuery({
     queryKey: ["practice-sessions", { skill }],
     queryFn: () => api.get<PaginatedResponse<PracticeSession>>(`/api/practice/sessions${qs}`),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Browse practice questions (answer_key hidden for learners)
+// GET /api/practice/questions?skill=&level=&part=&topic=&search=
+// ---------------------------------------------------------------------------
+
+export function usePracticeQuestions(params?: {
+  skill?: Skill;
+  level?: string;
+  part?: number;
+  topic?: string;
+  search?: string;
+  page?: number;
+}) {
+  const search = new URLSearchParams();
+  if (params?.skill) search.set("skill", params.skill);
+  if (params?.level) search.set("level", params.level);
+  if (params?.part) search.set("part", String(params.part));
+  if (params?.topic) search.set("topic", params.topic);
+  if (params?.search) search.set("search", params.search);
+  if (params?.page) search.set("page", String(params.page));
+  const qs = search.toString();
+
+  return useQuery({
+    queryKey: ["practice-questions", params],
+    queryFn: () =>
+      api.get<PaginatedResponse<Question>>(`/api/practice/questions${qs ? `?${qs}` : ""}`),
   });
 }

@@ -25,6 +25,7 @@ import {
   useSubmitExam,
   type FlatSessionDetail,
 } from "@/hooks/use-exam-session";
+import { useCompletePlacement } from "@/hooks/use-onboarding";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize } from "@/theme";
 import type {
   ExamSession,
@@ -872,6 +873,26 @@ function SpeakingView({
 function Completed({ session, exam }: { session: FlatSessionDetail; exam: any }) {
   const c = useThemeColors();
   const router = useRouter();
+  const completePlacement = useCompletePlacement();
+  const isPlacement = exam?.type === "placement";
+  const [placementDone, setPlacementDone] = useState(!isPlacement);
+
+  // Auto-complete placement onboarding when session is from placement test
+  useEffect(() => {
+    if (!isPlacement || placementDone) return;
+    completePlacement.mutate(
+      {
+        sessionId: session.id,
+        targetBand: "B2" as any,
+        deadline: null,
+        dailyStudyTimeMinutes: null,
+      },
+      {
+        onSuccess: () => setPlacementDone(true),
+        onError: () => setPlacementDone(true), // continue even if fails (might already be completed)
+      },
+    );
+  }, [isPlacement]);
 
   const scores: { skill: Skill; score: number | null }[] = [
     { skill: "listening", score: session.listeningScore },
@@ -918,8 +939,8 @@ function Completed({ session, exam }: { session: FlatSessionDetail; exam: any })
         )}
       </View>
 
-      {/* Overall score + band */}
-      {session.overallScore != null && (
+      {/* Overall score + band — or grading indicator */}
+      {session.overallScore != null ? (
         <View style={[styles.overallBox, { backgroundColor: c.primary + "18" }]}>
           <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm, fontWeight: "500" }}>Điểm tổng</Text>
           <Text style={[styles.overallScore, { color: c.primary }]}>
@@ -931,7 +952,17 @@ function Completed({ session, exam }: { session: FlatSessionDetail; exam: any })
             </View>
           )}
         </View>
-      )}
+      ) : session.status === "submitted" ? (
+        <View style={[styles.overallBox, { backgroundColor: c.warning + "18" }]}>
+          <ActivityIndicator size="small" color={c.warning} />
+          <Text style={{ color: c.warning, fontWeight: "600", fontSize: fontSize.sm }}>
+            AI đang chấm bài writing/speaking...
+          </Text>
+          <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs, textAlign: "center" }}>
+            Điểm tổng sẽ cập nhật khi tất cả bài đã được chấm
+          </Text>
+        </View>
+      ) : null}
 
       {/* Per-skill scores */}
       {scores.map(({ skill, score }) => (
