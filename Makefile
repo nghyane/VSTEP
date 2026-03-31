@@ -12,7 +12,7 @@ API_PORT := 3000
 deploy: deploy-backend deploy-frontend
 
 deploy-backend:
-	ssh $(SERVER) 'cd /opt/vstep && git pull && cd $(APP_DIR) && composer install --no-dev --optimize-autoloader --no-interaction && php artisan migrate --force && systemctl restart vstep-api vstep-horizon'
+	ssh $(SERVER) 'cd /opt/vstep && git pull && cd $(APP_DIR) && composer install --no-dev --optimize-autoloader --no-interaction && php artisan migrate --force && php artisan storage:link && systemctl restart vstep-api vstep-horizon'
 
 deploy-frontend:
 	ssh $(SERVER) 'cd /opt/vstep && git pull && cd $(FE_DIR) && printf "%s\n%s\n" "VITE_API_URL=http://5.223.87.142:$(API_PORT)" "VITE_STORAGE_URL=$${VITE_STORAGE_URL:-}" > .env.production && export BUN_INSTALL="$$HOME/.bun" && export PATH="$$BUN_INSTALL/bin:$$PATH" && bun install --frozen-lockfile && bun run build && systemctl restart vstep-frontend'
