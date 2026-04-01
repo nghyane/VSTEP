@@ -63,6 +63,7 @@ class Submission extends BaseModel
     #[Scope]
     protected function scored(Builder $query): void
     {
-        $query->completed()->whereNotNull('score');
+        $query->whereIn('status', [SubmissionStatus::Completed, SubmissionStatus::ReviewPending])
+            ->whereNotNull('score');
     }
 }

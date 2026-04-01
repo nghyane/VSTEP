@@ -46,12 +46,13 @@ export function SpiderChart({ skills, className }: SpiderChartProps) {
 		.concat(" Z")
 
 	return (
-		<div className={cn("relative", className)}>
+		<div className={cn("relative", className)} style={{ overflow: "visible" }}>
 			<svg
 				viewBox={`0 0 ${SIZE} ${SIZE}`}
-				className="h-full w-full"
-				aria-label="Bi\u1ec3u \u0111\u1ed3 k\u1ef9 n\u0103ng"
+				className="h-full w-full overflow-visible"
+				aria-label="Biểu đồ kỹ năng"
 				role="img"
+				style={{ overflow: "visible" }}
 			>
 				{[1, 2, 3, 4, 5].map((level) => (
 					<path
@@ -101,25 +102,76 @@ export function SpiderChart({ skills, className }: SpiderChartProps) {
 						/>
 					)
 				})}
+
+				{skills.map((s, i) => {
+					const rawY = polarToXY(i * angleStep, RADIUS).y
+					const isLeftRight = Math.abs(rawY - CENTER) < 15
+
+					const labelR = isLeftRight ? RADIUS + 46 : RADIUS + 20
+					const { x, y } = polarToXY(i * angleStep, labelR)
+					const yOff = y - CENTER
+
+					let labelX = x
+					let valueX = x
+					let labelY: number
+					let valueY: number
+					let labelAnchor: "start" | "end" | "middle"
+					let valueAnchor: "start" | "end" | "middle"
+					let labelBaseline: "middle" | "auto" | "hanging"
+					let valueBaseline: "middle" | "auto" | "hanging"
+
+					if (isLeftRight) {
+						labelAnchor = "middle"
+						valueAnchor = "middle"
+						labelY = y - 12
+						valueY = y + 9
+						labelBaseline = "middle"
+						valueBaseline = "middle"
+					} else if (yOff < -15) {
+						labelAnchor = "middle"
+						valueAnchor = "middle"
+						labelY = y - 17
+						valueY = y
+						labelBaseline = "auto"
+						valueBaseline = "auto"
+					} else {
+						labelAnchor = "middle"
+						valueAnchor = "middle"
+						labelY = y
+						valueY = y + 18
+						labelBaseline = "hanging"
+						valueBaseline = "hanging"
+					}
+
+					return (
+						<g key={`label-${s.label}`}>
+							<text
+								x={labelX}
+								y={labelY}
+								textAnchor={labelAnchor}
+								dominantBaseline={labelBaseline}
+								fontSize={14}
+								fontWeight={600}
+								fill="currentColor"
+								className={s.color}
+							>
+								{s.label}
+							</text>
+							<text
+								x={valueX}
+								y={valueY}
+								textAnchor={valueAnchor}
+								dominantBaseline={valueBaseline}
+								fontSize={13}
+								fill="currentColor"
+								className="text-muted-foreground"
+							>
+								{s.value}/10
+							</text>
+						</g>
+					)
+				})}
 			</svg>
-
-			{skills.map((s, i) => {
-				const labelR = RADIUS + 32
-				const { x, y } = polarToXY(i * angleStep, labelR)
-				const pctLeft = (x / SIZE) * 100
-				const pctTop = (y / SIZE) * 100
-
-				return (
-					<div
-						key={s.label}
-						className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5"
-						style={{ left: `${pctLeft}%`, top: `${pctTop}%` }}
-					>
-						<span className={cn("text-xs font-bold", s.color)}>{s.label}</span>
-						<span className="text-[11px] tabular-nums text-muted-foreground">{s.value}/10</span>
-					</div>
-				)
-			})}
 		</div>
 	)
 }

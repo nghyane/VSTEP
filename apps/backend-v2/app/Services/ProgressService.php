@@ -376,7 +376,9 @@ class ProgressService
 
     public function applySubmission(Submission $submission): void
     {
-        if ($submission->status !== SubmissionStatus::Completed || $submission->score === null) {
+        $scoreable = [SubmissionStatus::Completed, SubmissionStatus::ReviewPending];
+
+        if (! in_array($submission->status, $scoreable) || $submission->score === null) {
             return;
         }
 

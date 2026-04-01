@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import type { SubmissionFull, WritingContent, WritingTier } from "@/types/api"
 import { AnnotatedEssay } from "./AnnotatedEssay"
 import { MarkdownFeedback } from "./MarkdownFeedback"
-import type { CriterionScore } from "./writing-grading-shared"
+import { CriterionBar, type CriterionScore } from "./writing-grading-shared"
 
 const TIER_BADGE: Record<WritingTier, { label: string; className: string }> = {
 	1: {
@@ -44,7 +44,13 @@ const criteriaLabelFallback: Record<string, string> = {
 	grammar: "Ngữ pháp",
 }
 
-// Màu cho từng tiêu chí theo thứ tự — dùng làm Tailwind text class trong SpiderChart
+const criteriaShortLabel: Record<string, string> = {
+	"Hoàn thành yêu cầu": "Hoàn thành",
+	"Tổ chức bài viết": "Tổ chức",
+	"Từ vựng": "Từ vựng",
+	"Ngữ pháp": "Ngữ pháp",
+}
+
 const CRITERION_COLORS = [
 	"text-orange-500",
 	"text-blue-500",
@@ -58,7 +64,6 @@ function parseCriteria(result: unknown): CriterionScore[] {
 	if (!result || typeof result !== "object") return []
 	const r = result as Record<string, unknown>
 
-	// BE returns { criteria: [{key, name, score, band_label}] }
 	if (Array.isArray(r.criteria)) {
 		return (r.criteria as AICriteria[]).map((c) => ({
 			label: c.name || criteriaLabelFallback[c.key] || c.key,
@@ -68,7 +73,6 @@ function parseCriteria(result: unknown): CriterionScore[] {
 		}))
 	}
 
-	// Fallback: { criteriaScores: { key: score } }
 	if (r.criteriaScores && typeof r.criteriaScores === "object") {
 		return Object.entries(r.criteriaScores as Record<string, number>).map(([key, score]) => ({
 			label: criteriaLabelFallback[key] || key,
@@ -102,7 +106,6 @@ export function WritingGradingResult({
 
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
-			{/* Left — Submitted text with error annotations */}
 			<div className="w-full shrink-0 overflow-y-auto border-b p-6 lg:w-1/2 lg:border-b-0 lg:border-r">
 				<div className="mb-4 flex items-center justify-between">
 					<h3 className="text-lg font-bold">Bài viết đã nộp</h3>
@@ -114,7 +117,6 @@ export function WritingGradingResult({
 					</div>
 				</div>
 
-				{/* Annotated essay — highlights errors extracted from feedback */}
 				{feedback && submittedText ? (
 					<AnnotatedEssay essayText={submittedText} feedback={feedback} />
 				) : (
@@ -133,7 +135,6 @@ export function WritingGradingResult({
 				)}
 			</div>
 
-			{/* Right — Grading result */}
 			<div className="flex-1 overflow-y-auto p-6">
 				{isFailed ? (
 					<div className="flex flex-col items-center justify-center gap-3 py-10">
@@ -145,7 +146,6 @@ export function WritingGradingResult({
 					</div>
 				) : (
 					<div className="space-y-6">
-						{/* Overall score */}
 						{submission.score !== null && (
 							<div className="rounded-2xl bg-primary/10 p-5 text-center">
 								<p className="text-sm font-medium text-muted-foreground">Điểm tổng</p>
@@ -159,16 +159,13 @@ export function WritingGradingResult({
 							</div>
 						)}
 
-					{/* Criteria scores — spider chart */}
 					{criteria.length > 0 && (
 						<div className="space-y-4">
 							<h4 className="text-sm font-semibold">Điểm từng tiêu chí</h4>
-
-							{/* Spider chart */}
 							<div className="flex justify-center">
 								<SpiderChart
 									skills={criteria.map((c, i) => ({
-										label: c.label,
+										label: criteriaShortLabel[c.label] ?? c.label,
 										value: c.score,
 										color: CRITERION_COLORS[i % CRITERION_COLORS.length],
 									}))}
@@ -176,47 +173,14 @@ export function WritingGradingResult({
 								/>
 							</div>
 
-							{/* Legend — điểm + nhận xét ngắn từng tiêu chí */}
-							<div className="divide-y divide-border rounded-xl border">
-								{criteria.map((c, i) => {
-									const color = CRITERION_COLORS[i % CRITERION_COLORS.length]
-									const pct = (c.score / c.maxScore) * 100
-									const scoreColor =
-										pct >= 80
-											? "text-green-600 dark:text-green-400"
-											: pct >= 60
-												? "text-amber-600 dark:text-amber-400"
-												: "text-red-600 dark:text-red-400"
-									return (
-										<div key={c.label} className="flex items-start gap-3 px-4 py-3">
-											<span
-												className={cn(
-													"mt-0.5 size-2.5 shrink-0 rounded-full",
-													color.replace("text-", "bg-"),
-												)}
-											/>
-											<div className="flex-1 min-w-0">
-												<div className="flex items-center justify-between gap-2">
-													<span className="text-sm font-medium">{c.label}</span>
-													<span className={cn("shrink-0 text-sm font-bold tabular-nums", scoreColor)}>
-														{c.score}
-														<span className="text-xs font-normal text-muted-foreground">
-															/{c.maxScore}
-														</span>
-													</span>
-												</div>
-												{c.comment && (
-													<p className="mt-0.5 text-xs text-muted-foreground">{c.comment}</p>
-												)}
-											</div>
-										</div>
-									)
-								})}
+							<div className="space-y-3">
+								{criteria.map((c) => (
+									<CriterionBar key={c.label} criterion={c} />
+								))}
 							</div>
 						</div>
 					)}
 
-						{/* Feedback — rendered as markdown */}
 						{feedback && (
 							<div className="space-y-2">
 								<h4 className="text-sm font-semibold">Nhận xét chi tiết</h4>
@@ -226,7 +190,6 @@ export function WritingGradingResult({
 							</div>
 						)}
 
-						{/* Knowledge gaps */}
 						{gaps.length > 0 && (
 							<div className="space-y-2">
 								<h4 className="text-sm font-semibold">Kiến thức cần cải thiện</h4>
@@ -253,7 +216,6 @@ export function WritingGradingResult({
 							</div>
 						)}
 
-						{/* Confidence indicator */}
 						{submission.result &&
 							typeof submission.result === "object" &&
 							"confidence" in submission.result && (

@@ -130,9 +130,7 @@ class GradeSubmission implements ShouldQueue
                 'completed_at' => $status === SubmissionStatus::Completed ? now() : null,
             ]);
 
-            if ($status === SubmissionStatus::Completed) {
-                $progressService->applySubmission($submission);
-            }
+            $progressService->applySubmission($submission);
 
             app(WeakPointService::class)->recordFromSubmission($submission->fresh());
         });
