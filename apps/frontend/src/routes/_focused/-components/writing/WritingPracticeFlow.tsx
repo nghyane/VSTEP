@@ -1,9 +1,11 @@
-import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons"
+import { ArrowLeft01Icon, ArrowRight01Icon, PencilEdit02Icon, Tick01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { cn } from "@/lib/utils"
 import {
 	useCompletePractice,
 	usePracticeSession,
@@ -197,19 +199,24 @@ export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFl
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
 			{phase === "loading" && !error && (
-				<div className="flex flex-1 items-center justify-center">
-					<p className="text-sm text-muted-foreground">Đang tạo phiên luyện tập...</p>
-				</div>
+				<SessionCreatingLoader />
 			)}
 
 			{error && (
-				<div className="flex flex-1 flex-col items-center justify-center gap-3">
-					<p className="text-sm text-destructive">{error}</p>
+				<div className="flex flex-1 flex-col items-center justify-center gap-4 px-6">
+					<div className="flex size-12 items-center justify-center rounded-full bg-destructive/10">
+						<span className="text-xl">⚠️</span>
+					</div>
+					<div className="space-y-1 text-center">
+						<p className="font-semibold text-destructive">Không thể tạo phiên luyện tập</p>
+						<p className="text-sm text-muted-foreground">{error}</p>
+					</div>
 					<Button
 						variant="outline"
 						onClick={() => {
 							setError(null)
-							setPhase("writing")
+							hasInitRef.current = false
+							setPhase("loading")
 						}}
 					>
 						Thử lại
@@ -248,8 +255,17 @@ export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFl
 			)}
 
 			{phase === "submitting" && !error && (
-				<div className="flex flex-1 items-center justify-center">
-					<p className="text-sm text-muted-foreground">Đang nộp bài...</p>
+				<div className="flex flex-1 flex-col items-center justify-center gap-5">
+					<div className="relative flex items-center justify-center">
+						<span className="absolute inline-flex size-14 animate-ping rounded-full bg-primary/20" />
+						<div className="relative flex size-12 items-center justify-center rounded-xl bg-primary/10">
+							<HugeiconsIcon icon={Tick01Icon} className="size-6 text-primary" />
+						</div>
+					</div>
+					<div className="space-y-1 text-center">
+						<p className="font-semibold">Đang nộp bài...</p>
+						<p className="text-sm text-muted-foreground">Vui lòng không đóng trang</p>
+					</div>
 				</div>
 			)}
 
@@ -504,6 +520,72 @@ function GradingPoller({ submissionId, submittedText, content, tier, onCompleted
 			content={content}
 			tier={tier}
 		/>
+	)
+}
+
+// ─────────────────────────────────────────────────────────────
+// Session creating loader
+// ─────────────────────────────────────────────────────────────
+
+const CREATION_STEPS = [
+	"Phân tích trình độ của bạn...",
+	"Chọn đề phù hợp...",
+	"Chuẩn bị gợi ý và khung bài...",
+	"Sắp xong rồi...",
+]
+
+function SessionCreatingLoader() {
+	const [stepIndex, setStepIndex] = useState(0)
+
+	useEffect(() => {
+		const id = setInterval(() => {
+			setStepIndex((prev) => (prev < CREATION_STEPS.length - 1 ? prev + 1 : prev))
+		}, 1200)
+		return () => clearInterval(id)
+	}, [])
+
+	return (
+		<div className="flex flex-1 flex-col items-center justify-center gap-8 px-6">
+			{/* Animated icon */}
+			<div className="relative flex items-center justify-center">
+				<span className="absolute inline-flex size-16 animate-ping rounded-full bg-primary/20" />
+				<div className="relative flex size-14 items-center justify-center rounded-2xl bg-primary/10">
+					<HugeiconsIcon icon={PencilEdit02Icon} className="size-7 text-primary" />
+				</div>
+			</div>
+
+			{/* Title + animated step text */}
+			<div className="space-y-2 text-center">
+				<h3 className="text-base font-semibold">Đang tạo phiên luyện tập</h3>
+				<p className="text-sm text-muted-foreground transition-all duration-500">
+					{CREATION_STEPS[stepIndex]}
+				</p>
+			</div>
+
+			{/* Step dots */}
+			<div className="flex items-center gap-2">
+				{CREATION_STEPS.map((_, i) => (
+					<span
+						key={i}
+						className={cn(
+							"size-2 rounded-full transition-all duration-300",
+							i <= stepIndex ? "bg-primary scale-110" : "bg-muted",
+						)}
+					/>
+				))}
+			</div>
+
+			{/* Skeleton preview — giúp user hình dung layout sắp hiện */}
+			<div className="w-full max-w-2xl space-y-3 rounded-2xl border border-dashed border-muted-foreground/20 p-5">
+				<div className="flex items-center gap-2">
+					<Skeleton className="h-5 w-16 rounded-full" />
+					<Skeleton className="h-5 w-20 rounded-full" />
+				</div>
+				<Skeleton className="h-4 w-3/4" />
+				<Skeleton className="h-4 w-1/2" />
+				<Skeleton className="mt-2 h-28 w-full rounded-xl" />
+			</div>
+		</div>
 	)
 }
 
