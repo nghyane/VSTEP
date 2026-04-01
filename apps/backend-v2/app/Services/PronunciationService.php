@@ -73,19 +73,45 @@ class PronunciationService
             ->post($endpoint);
 
         if ($response->failed()) {
-            Log::error('pronunciation_assessment_failed', [
+            Log::error('azure_speech_http_failed', [
                 'status' => $response->status(),
                 'audio_path' => $audioPath,
+                'body' => $response->body(),
             ]);
-            throw new RuntimeException("Azure Speech API returned {$response->status()}");
+            throw new RuntimeException("Azure Speech API returned HTTP {$response->status()}");
         }
 
-        return $this->parseResponse($response->json());
+        $json = $response->json();
+
+        Log::info('azure_speech_raw_response', [
+            'audio_path' => $audioPath,
+            'recognition_status' => $json['RecognitionStatus'] ?? 'missing',
+            'display_text' => $json['DisplayText'] ?? '',
+            'n_best_count' => count($json['NBest'] ?? []),
+        ]);
+
+        return $this->parseResponse($json);
     }
 
     private function parseResponse(array $data): array
     {
+        $status = $data['RecognitionStatus'] ?? 'Unknown';
+
+        if ($status !== 'Success') {
+            Log::warning('azure_speech_no_recognition', [
+                'recognition_status' => $status,
+                'display_text' => $data['DisplayText'] ?? '',
+            ]);
+            throw new RuntimeException("Azure Speech recognition failed. Status: {$status}");
+        }
+
         $nBest = $data['NBest'][0] ?? [];
+
+        $transcript = $nBest['Display'] ?? $data['DisplayText'] ?? '';
+
+        if ($transcript === '') {
+            throw new RuntimeException('Azure Speech returned empty transcript despite successful recognition.');
+        }
 
         $wordErrors = [];
         foreach ($nBest['Words'] ?? [] as $word) {
@@ -100,7 +126,7 @@ class PronunciationService
         }
 
         return [
-            'transcript' => $nBest['Display'] ?? $data['DisplayText'] ?? '',
+            'transcript' => $transcript,
             'accuracy_score' => (float) ($nBest['AccuracyScore'] ?? $nBest['PronunciationAssessment']['AccuracyScore'] ?? 0),
             'fluency_score' => (float) ($nBest['FluencyScore'] ?? $nBest['PronunciationAssessment']['FluencyScore'] ?? 0),
             'prosody_score' => (float) ($nBest['ProsodyScore'] ?? $nBest['PronunciationAssessment']['ProsodyScore'] ?? 0),

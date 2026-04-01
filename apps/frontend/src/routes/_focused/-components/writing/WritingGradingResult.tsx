@@ -1,5 +1,6 @@
 import { AlertCircleIcon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { SpiderChart } from "@/components/common/SpiderChart"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import type { SubmissionFull, WritingContent, WritingTier } from "@/types/api"
@@ -43,11 +44,26 @@ const criteriaLabelFallback: Record<string, string> = {
 	grammar: "Ngữ pháp",
 }
 
+const criteriaShortLabel: Record<string, string> = {
+	"Hoàn thành yêu cầu": "Hoàn thành",
+	"Tổ chức bài viết": "Tổ chức",
+	"Từ vựng": "Từ vựng",
+	"Ngữ pháp": "Ngữ pháp",
+}
+
+const CRITERION_COLORS = [
+	"text-orange-500",
+	"text-blue-500",
+	"text-amber-500",
+	"text-rose-500",
+	"text-emerald-500",
+	"text-purple-500",
+]
+
 function parseCriteria(result: unknown): CriterionScore[] {
 	if (!result || typeof result !== "object") return []
 	const r = result as Record<string, unknown>
 
-	// BE returns { criteria: [{key, name, score, band_label}] }
 	if (Array.isArray(r.criteria)) {
 		return (r.criteria as AICriteria[]).map((c) => ({
 			label: c.name || criteriaLabelFallback[c.key] || c.key,
@@ -57,7 +73,6 @@ function parseCriteria(result: unknown): CriterionScore[] {
 		}))
 	}
 
-	// Fallback: { criteriaScores: { key: score } }
 	if (r.criteriaScores && typeof r.criteriaScores === "object") {
 		return Object.entries(r.criteriaScores as Record<string, number>).map(([key, score]) => ({
 			label: criteriaLabelFallback[key] || key,
@@ -91,7 +106,6 @@ export function WritingGradingResult({
 
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
-			{/* Left — Submitted text with error annotations */}
 			<div className="w-full shrink-0 overflow-y-auto border-b p-6 lg:w-1/2 lg:border-b-0 lg:border-r">
 				<div className="mb-4 flex items-center justify-between">
 					<h3 className="text-lg font-bold">Bài viết đã nộp</h3>
@@ -103,7 +117,6 @@ export function WritingGradingResult({
 					</div>
 				</div>
 
-				{/* Annotated essay — highlights errors extracted from feedback */}
 				{feedback && submittedText ? (
 					<AnnotatedEssay essayText={submittedText} feedback={feedback} />
 				) : (
@@ -122,7 +135,6 @@ export function WritingGradingResult({
 				)}
 			</div>
 
-			{/* Right — Grading result */}
 			<div className="flex-1 overflow-y-auto p-6">
 				{isFailed ? (
 					<div className="flex flex-col items-center justify-center gap-3 py-10">
@@ -134,7 +146,6 @@ export function WritingGradingResult({
 					</div>
 				) : (
 					<div className="space-y-6">
-						{/* Overall score */}
 						{submission.score !== null && (
 							<div className="rounded-2xl bg-primary/10 p-5 text-center">
 								<p className="text-sm font-medium text-muted-foreground">Điểm tổng</p>
@@ -148,17 +159,28 @@ export function WritingGradingResult({
 							</div>
 						)}
 
-						{/* Criteria scores */}
-						{criteria.length > 0 && (
+					{criteria.length > 0 && (
+						<div className="space-y-4">
+							<h4 className="text-sm font-semibold">Điểm từng tiêu chí</h4>
+							<div className="flex justify-center">
+								<SpiderChart
+									skills={criteria.map((c, i) => ({
+										label: criteriaShortLabel[c.label] ?? c.label,
+										value: c.score,
+										color: CRITERION_COLORS[i % CRITERION_COLORS.length],
+									}))}
+									className="size-60"
+								/>
+							</div>
+
 							<div className="space-y-3">
-								<h4 className="text-sm font-semibold">Điểm từng tiêu chí</h4>
 								{criteria.map((c) => (
 									<CriterionBar key={c.label} criterion={c} />
 								))}
 							</div>
-						)}
+						</div>
+					)}
 
-						{/* Feedback — rendered as markdown */}
 						{feedback && (
 							<div className="space-y-2">
 								<h4 className="text-sm font-semibold">Nhận xét chi tiết</h4>
@@ -168,7 +190,6 @@ export function WritingGradingResult({
 							</div>
 						)}
 
-						{/* Knowledge gaps */}
 						{gaps.length > 0 && (
 							<div className="space-y-2">
 								<h4 className="text-sm font-semibold">Kiến thức cần cải thiện</h4>
@@ -195,7 +216,6 @@ export function WritingGradingResult({
 							</div>
 						)}
 
-						{/* Confidence indicator */}
 						{submission.result &&
 							typeof submission.result === "object" &&
 							"confidence" in submission.result && (

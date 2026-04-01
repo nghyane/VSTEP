@@ -1,9 +1,16 @@
-import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons"
+import {
+	ArrowLeft01Icon,
+	ArrowRight01Icon,
+	PencilEdit02Icon,
+	Tick01Icon,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Link, useNavigate } from "@tanstack/react-router"
+import { AnimatePresence, motion } from "motion/react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
 	useCompletePractice,
 	usePracticeSession,
@@ -11,9 +18,10 @@ import {
 	useSubmission,
 	useSubmitPracticeAnswer,
 } from "@/hooks/use-practice"
+import { cn } from "@/lib/utils"
 import type {
-	PracticeMode,
 	PracticeItem,
+	PracticeMode,
 	PracticeSession,
 	PracticeStartResponse,
 	WritingContent,
@@ -73,6 +81,12 @@ function persistSessionToUrl(sessionId: string) {
 	window.history.replaceState(null, "", url.toString())
 }
 
+function clearSessionFromUrl() {
+	const url = new URL(window.location.href)
+	url.searchParams.delete("session")
+	window.history.replaceState(null, "", url.toString())
+}
+
 export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFlowProps) {
 	const [session, setSession] = useState<PracticeSession | null>(null)
 	const [item, setItem] = useState<PracticeItem | null>(null)
@@ -101,17 +115,29 @@ export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFl
 		if (resumeSessionId && resumeLoading) return
 
 		if (resumeData && !resumeData.session.completedAt) {
+			if (!resumeData.currentItem) {
+				clearSessionFromUrl()
+				setError(
+					"Phiên luyện tập này không còn câu hỏi hợp lệ. Vui lòng tạo phiên mới hoặc quay lại chọn bài khác.",
+				)
+				setPhase("loading")
+				return
+			}
+
 			hasInitRef.current = true
 			const resumedSession = resumeData.session
 			setSession(resumedSession)
 			setItem(resumeData.currentItem)
 			setTier(resumeData.writingTier ?? resumedSession.config.writingTier ?? 3)
-			setPhase(resumeData.currentItem ? "writing" : "loading")
+			setPhase("writing")
 			return
 		}
 
 		if (!resumeSessionId || resumeFailed || resumeData?.session.completedAt) {
 			hasInitRef.current = true
+			if (resumeFailed) {
+				clearSessionFromUrl()
+			}
 			startMutation.mutate(
 				{ skill: "writing", mode: WRITING_PRACTICE_MODE, itemsCount: 1, part },
 				{
@@ -119,6 +145,13 @@ export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFl
 						setSession(data.session)
 						setItem(data.currentItem)
 						setTier(data.writingTier ?? 3)
+						if (!data.currentItem) {
+							setError(
+								"Hiện chưa có bài tập phù hợp với trình độ của bạn. Vui lòng thử lại sau hoặc liên hệ quản trị viên.",
+							)
+							setPhase("loading")
+							return
+						}
 						setPhase("writing")
 						persistSessionToUrl(data.session.id)
 					},
@@ -189,20 +222,28 @@ export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFl
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
-			{phase === "loading" && !error && (
-				<div className="flex flex-1 items-center justify-center">
-					<p className="text-sm text-muted-foreground">Đang tạo phiên luyện tập...</p>
-				</div>
-			)}
+			{phase === "loading" && !error && <SessionCreatingLoader />}
 
 			{error && (
-				<div className="flex flex-1 flex-col items-center justify-center gap-3">
-					<p className="text-sm text-destructive">{error}</p>
+				<div className="flex flex-1 flex-col items-center justify-center gap-4 px-6">
+					<div className="flex size-12 items-center justify-center rounded-full bg-destructive/10">
+						<span className="text-xl">⚠️</span>
+					</div>
+					<div className="space-y-1 text-center">
+						<p className="font-semibold text-destructive">Không thể tạo phiên luyện tập</p>
+						<p className="text-sm text-muted-foreground">{error}</p>
+					</div>
 					<Button
 						variant="outline"
 						onClick={() => {
+							if (resumeSessionId) {
+								clearSessionFromUrl()
+							}
 							setError(null)
-							setPhase("writing")
+							setSession(null)
+							setItem(null)
+							hasInitRef.current = false
+							setPhase("loading")
 						}}
 					>
 						Thử lại
@@ -217,7 +258,9 @@ export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFl
 							{TIER_META[tier]?.label}
 						</Badge>
 						<Badge variant="outline">{SCAFFOLD_META[scaffoldType].label}</Badge>
-						<p className="text-xs text-muted-foreground">{SCAFFOLD_META[scaffoldType].description}</p>
+						<p className="text-xs text-muted-foreground">
+							{SCAFFOLD_META[scaffoldType].description}
+						</p>
 					</div>
 
 					{scaffoldType === "template" ? (
@@ -241,9 +284,41 @@ export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFl
 			)}
 
 			{phase === "submitting" && !error && (
-				<div className="flex flex-1 items-center justify-center">
-					<p className="text-sm text-muted-foreground">Đang nộp bài...</p>
-				</div>
+				<motion.div
+					className="flex flex-1 flex-col items-center justify-center gap-5"
+					initial={{ opacity: 0, scale: 0.95 }}
+					animate={{ opacity: 1, scale: 1 }}
+					transition={{ duration: 0.3 }}
+				>
+					<div className="relative flex items-center justify-center">
+						{[1, 1.6].map((scale, i) => (
+							<motion.span
+								key={i}
+								className="absolute rounded-full bg-primary/10"
+								style={{ width: 48, height: 48 }}
+								animate={{ scale, opacity: 0.8 - i * 0.4 }}
+								transition={{
+									duration: 1.4,
+									repeat: Infinity,
+									repeatType: "loop",
+									ease: "easeOut",
+									delay: i * 0.25,
+								}}
+							/>
+						))}
+						<motion.div
+							className="relative flex size-12 items-center justify-center rounded-xl bg-primary/10"
+							animate={{ scale: [1, 1.08, 1] }}
+							transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+						>
+							<HugeiconsIcon icon={Tick01Icon} className="size-6 text-primary" />
+						</motion.div>
+					</div>
+					<div className="space-y-1 text-center">
+						<p className="font-semibold">Đang nộp bài...</p>
+						<p className="text-sm text-muted-foreground">Vui lòng không đóng trang</p>
+					</div>
+				</motion.div>
 			)}
 
 			{(phase === "grading" || phase === "result") && submissionId && (
@@ -281,7 +356,12 @@ interface TemplateEditorWithApiProps {
 	isSubmitting: boolean
 }
 
-function TemplateEditorWithApi({ content, scaffold, onSubmit, isSubmitting }: TemplateEditorWithApiProps) {
+function TemplateEditorWithApi({
+	content,
+	scaffold,
+	onSubmit,
+	isSubmitting,
+}: TemplateEditorWithApiProps) {
 	const [filledBlanks, setFilledBlanks] = useState<Record<string, string>>({})
 	const [fallbackText, setFallbackText] = useState("")
 	const template =
@@ -293,14 +373,17 @@ function TemplateEditorWithApi({ content, scaffold, onSubmit, isSubmitting }: Te
 	const assembleText = useCallback(() => {
 		if (!template) return ""
 		return template
-			.map((section) =>
-				section.parts
-					.map((part) => {
-						if (part.type === "text") return part.content ?? ""
-						return filledBlanks[part.id ?? ""] ?? ""
-					})
-					.join(""),
-			)
+			.map((section) => {
+				const parts = section.parts.map((part) =>
+					part.type === "text" ? (part.content ?? "") : (filledBlanks[part.id ?? ""] ?? ""),
+				)
+				return parts.reduce((acc, curr) => {
+					if (!acc) return curr
+					if (!curr) return acc
+					const needsSpace = !acc.endsWith(" ") && !curr.startsWith(" ") && !/^[.,;:!?]/.test(curr)
+					return acc + (needsSpace ? " " : "") + curr
+				}, "")
+			})
 			.join("\n\n")
 	}, [template, filledBlanks])
 
@@ -470,7 +553,13 @@ interface GradingPollerProps {
 	onCompleted: () => void
 }
 
-function GradingPoller({ submissionId, submittedText, content, tier, onCompleted }: GradingPollerProps) {
+function GradingPoller({
+	submissionId,
+	submittedText,
+	content,
+	tier,
+	onCompleted,
+}: GradingPollerProps) {
 	const { data: submission } = useSubmission(submissionId)
 	const notifiedRef = useRef(false)
 
@@ -497,6 +586,121 @@ function GradingPoller({ submissionId, submittedText, content, tier, onCompleted
 			content={content}
 			tier={tier}
 		/>
+	)
+}
+
+const CREATION_STEPS = [
+	{ label: "Phân tích trình độ của bạn", detail: "Đang xem xét lịch sử luyện tập..." },
+	{ label: "Chọn đề phù hợp", detail: "Tìm bài viết đúng cấp độ..." },
+	{ label: "Chuẩn bị khung bài & gợi ý", detail: "Tạo scaffold cá nhân hoá..." },
+	{ label: "Sắp xong rồi!", detail: "Hoàn tất phiên luyện tập..." },
+]
+
+function SessionCreatingLoader() {
+	const [stepIndex, setStepIndex] = useState(0)
+
+	useEffect(() => {
+		const id = setInterval(() => {
+			setStepIndex((prev) => (prev < CREATION_STEPS.length - 1 ? prev + 1 : prev))
+		}, 1400)
+		return () => clearInterval(id)
+	}, [])
+
+	return (
+		<motion.div
+			className="flex flex-1 flex-col items-center justify-center gap-8 px-6"
+			initial={{ opacity: 0, y: 10 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.4, ease: "easeOut" }}
+		>
+			<div className="relative flex items-center justify-center">
+				{[1, 1.6, 2.2].map((scale, i) => (
+					<motion.span
+						key={i}
+						className="absolute rounded-full bg-primary/10"
+						style={{ width: 56, height: 56 }}
+						animate={{ scale, opacity: 1 - i * 0.3 }}
+						transition={{
+							duration: 1.8,
+							repeat: Infinity,
+							repeatType: "loop",
+							ease: "easeOut",
+							delay: i * 0.3,
+						}}
+					/>
+				))}
+				<motion.div
+					className="relative flex size-14 items-center justify-center rounded-2xl bg-primary/10"
+					animate={{ rotate: [0, -8, 8, -4, 4, 0] }}
+					transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+				>
+					<HugeiconsIcon icon={PencilEdit02Icon} className="size-7 text-primary" />
+				</motion.div>
+			</div>
+
+			<div className="space-y-2 text-center">
+				<h3 className="text-base font-semibold">Đang tạo phiên luyện tập</h3>
+				<div className="h-9 overflow-hidden">
+					<AnimatePresence mode="wait">
+						<motion.div
+							key={stepIndex}
+							initial={{ y: 16, opacity: 0 }}
+							animate={{ y: 0, opacity: 1 }}
+							exit={{ y: -16, opacity: 0 }}
+							transition={{ duration: 0.3, ease: "easeInOut" }}
+							className="space-y-0.5"
+						>
+							<p className="text-sm font-medium text-foreground">
+								{CREATION_STEPS[stepIndex].label}
+							</p>
+							<p className="text-xs text-muted-foreground">{CREATION_STEPS[stepIndex].detail}</p>
+						</motion.div>
+					</AnimatePresence>
+				</div>
+			</div>
+
+			<div className="flex items-center gap-2">
+				{CREATION_STEPS.map((_, i) => (
+					<motion.span
+						key={i}
+						className={cn("rounded-full bg-muted", i === stepIndex ? "bg-primary" : "")}
+						animate={{
+							width: i === stepIndex ? 20 : 8,
+							height: 8,
+						}}
+						transition={{ duration: 0.3, ease: "easeInOut" }}
+					/>
+				))}
+			</div>
+
+			<motion.div
+				className="w-full max-w-2xl overflow-hidden rounded-2xl border border-dashed border-muted-foreground/20"
+				initial={{ opacity: 0, scale: 0.97 }}
+				animate={{ opacity: 1, scale: 1 }}
+				transition={{ delay: 0.2, duration: 0.4 }}
+			>
+				<div className="flex divide-x divide-dashed divide-muted-foreground/20">
+					<div className="w-2/5 space-y-3 p-5">
+						<Skeleton className="h-5 w-16 rounded-full" />
+						<Skeleton className="h-3 w-full" />
+						<Skeleton className="h-3 w-5/6" />
+						<Skeleton className="h-3 w-4/6" />
+						<div className="mt-3 space-y-1.5 rounded-xl border border-dashed border-muted-foreground/20 p-3">
+							<Skeleton className="h-3 w-20" />
+							<Skeleton className="h-3 w-full" />
+							<Skeleton className="h-3 w-4/5" />
+						</div>
+					</div>
+					<div className="flex-1 space-y-3 p-5">
+						<Skeleton className="h-32 w-full rounded-xl" />
+						<div className="flex justify-between">
+							<Skeleton className="h-4 w-16" />
+							<Skeleton className="h-8 w-20 rounded-lg" />
+						</div>
+					</div>
+				</div>
+			</motion.div>
+		</motion.div>
 	)
 }
 

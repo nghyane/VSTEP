@@ -84,6 +84,13 @@ class GradeSubmission implements ShouldQueue
                 $submission->user_id,
             );
             $pronunciationData = $pronunciation->assessPronunciation($audioPath);
+            Log::info('pronunciation_transcript_ready', [
+                'submission_id' => $submission->id,
+                'transcript_length' => strlen($pronunciationData['transcript']),
+                'transcript_preview' => substr($pronunciationData['transcript'], 0, 120),
+                'accuracy_score' => $pronunciationData['accuracy_score'],
+                'fluency_score' => $pronunciationData['fluency_score'],
+            ]);
             $result = $this->gradeSpeaking($submission, $rubric, $knowledgeScope, $pronunciationData);
         } else {
             $result = $this->gradeWriting($submission, $rubric, $knowledgeScope);
@@ -130,9 +137,7 @@ class GradeSubmission implements ShouldQueue
                 'completed_at' => $status === SubmissionStatus::Completed ? now() : null,
             ]);
 
-            if ($status === SubmissionStatus::Completed) {
-                $progressService->applySubmission($submission);
-            }
+            $progressService->applySubmission($submission);
 
             app(WeakPointService::class)->recordFromSubmission($submission->fresh());
         });

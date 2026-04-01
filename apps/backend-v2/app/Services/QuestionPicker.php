@@ -41,11 +41,16 @@ class QuestionPicker
 
         $level = $this->resolveDifficulty($baseLevel, $currentIndex, $totalItems);
 
-        // Progressively relax constraints: level → excludeIds → focusKp
+        // Progressively relax constraints: level → excludeIds → focusKp → nearby levels → drop part
         return $this->findQuestion($skill, $level, $excludeIds, $focusKp, $topic, $part)
             ?? $this->findQuestion($skill, $baseLevel, $excludeIds, $focusKp, $topic, $part)
             ?? $this->findQuestion($skill, $baseLevel, collect(), $focusKp, $topic, $part)
-            ?? $this->findQuestion($skill, $baseLevel, collect(), null, $topic, $part);
+            ?? $this->findQuestion($skill, $baseLevel, collect(), null, $topic, $part)
+            // Relax level (try one level up) while keeping part — serves B1 to A2 users when no A2+part exists
+            ?? ($part !== null ? $this->findQuestion($skill, $baseLevel->next() ?? $baseLevel, collect(), null, $topic, $part) : null)
+            ?? ($part !== null ? $this->findQuestion($skill, $baseLevel->next()?->next() ?? $baseLevel, collect(), null, $topic, $part) : null)
+            // Last resort: drop part filter entirely
+            ?? $this->findQuestion($skill, $baseLevel, collect(), null, $topic, null);
     }
 
     public function resolveDifficulty(Level $baseLevel, int $index, int $total): Level

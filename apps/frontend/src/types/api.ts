@@ -661,7 +661,7 @@ type WritingTier = 1 | 2 | 3
 
 interface PracticeStartResponse {
 	session: PracticeSession
-	currentItem: PracticeItem
+	currentItem: PracticeItem | null
 	recommendation: PracticeRecommendation
 	progress: { current: number; total: number; hasMore: boolean }
 	writingTier: WritingTier | null

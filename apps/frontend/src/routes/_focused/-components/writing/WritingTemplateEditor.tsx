@@ -29,253 +29,6 @@ interface TemplateSection {
 type TargetLevel = "b1" | "b2"
 
 // ═══════════════════════════════════════════════════
-// Mock templates
-// ═══════════════════════════════════════════════════
-
-const MOCK_TEMPLATES: Record<string, TemplateSection[]> = {
-	"write-1": [
-		{
-			title: "Lời mở đầu",
-			parts: [
-				{ type: "text", content: "Dear Brianna,\n\nThank you so much for " },
-				{
-					type: "blank",
-					id: "greeting_thanks",
-					label: "lời cảm ơn",
-					variant: "content",
-					hints: {
-						b1: ["helping me", "your help", "taking care of my house"],
-						b2: [
-							"agreeing to look after my house",
-							"being kind enough to help me out",
-							"offering to take care of everything",
-						],
-					},
-				},
-				{ type: "text", content: ". I " },
-				{
-					type: "blank",
-					id: "greeting_feeling",
-					label: "cảm xúc",
-					variant: "content",
-					hints: {
-						b1: ["am very happy", "really like it", "thank you a lot"],
-						b2: [
-							"really appreciate your kindness",
-							"am truly grateful for your support",
-							"cannot thank you enough",
-						],
-					},
-				},
-				{ type: "text", content: "." },
-			],
-		},
-		{
-			title: "Thông tin chuyến đi",
-			parts: [
-				{
-					type: "blank",
-					id: "travel_transition",
-					label: "từ nối",
-					variant: "transition",
-					hints: {
-						b1: ["First", "First of all"],
-						b2: ["To begin with", "Before anything else"],
-					},
-				},
-				{ type: "text", content: ", I will be leaving for Dubai on " },
-				{
-					type: "blank",
-					id: "travel_departure",
-					label: "ngày đi",
-					variant: "content",
-					hints: {
-						b1: ["Monday", "next Friday", "December 15"],
-						b2: ["the 15th of December", "Monday, December 15th"],
-					},
-				},
-				{ type: "text", content: " and I plan to return on " },
-				{
-					type: "blank",
-					id: "travel_return",
-					label: "ngày về",
-					variant: "content",
-					hints: {
-						b1: ["Sunday", "next week", "December 22"],
-						b2: ["the 22nd of December", "the following Sunday"],
-					},
-				},
-				{ type: "text", content: ". So I will be away for about " },
-				{
-					type: "blank",
-					id: "travel_duration",
-					label: "thời gian",
-					variant: "content",
-					hints: {
-						b1: ["one week", "7 days"],
-						b2: ["approximately a week", "roughly seven days"],
-					},
-				},
-				{ type: "text", content: "." },
-			],
-		},
-		{
-			title: "Hướng dẫn chăm sóc thú cưng",
-			parts: [
-				{
-					type: "blank",
-					id: "pet_transition",
-					label: "từ nối",
-					variant: "transition",
-					hints: {
-						b1: ["About", "Now about"],
-						b2: ["Regarding", "As for", "With regard to"],
-					},
-				},
-				{ type: "text", content: " my pet, I have " },
-				{
-					type: "blank",
-					id: "pet_desc",
-					label: "mô tả thú cưng",
-					variant: "content",
-					hints: {
-						b1: ["a cat", "a small dog", "a fish"],
-						b2: [
-							"a lovely cat named Mimi",
-							"an adorable puppy called Max",
-							"a golden retriever named Buddy",
-						],
-					},
-				},
-				{ type: "text", content: ". She needs to be " },
-				{
-					type: "blank",
-					id: "pet_care",
-					label: "cách chăm sóc",
-					variant: "content",
-					hints: {
-						b1: ["fed two times a day", "given food every morning and evening"],
-						b2: [
-							"fed twice a day — once in the morning and once in the evening",
-							"provided with meals at 8 a.m. and 6 p.m.",
-						],
-					},
-				},
-				{ type: "text", content: ". " },
-				{
-					type: "blank",
-					id: "pet_extra_transition",
-					label: "từ nối",
-					variant: "transition",
-					hints: {
-						b1: ["Also", "And"],
-						b2: ["In addition", "Furthermore", "On top of that"],
-					},
-				},
-				{ type: "text", content: ", please make sure " },
-				{
-					type: "blank",
-					id: "pet_extra",
-					label: "yêu cầu thêm",
-					variant: "content",
-					hints: {
-						b1: ["she has water", "to give her water every day"],
-						b2: ["she always has fresh water in her bowl", "her water bowl is refilled daily"],
-					},
-				},
-				{ type: "text", content: "." },
-			],
-		},
-		{
-			title: "Công việc nhà",
-			parts: [
-				{
-					type: "blank",
-					id: "house_transition",
-					label: "từ nối",
-					variant: "transition",
-					hints: {
-						b1: ["About", "For"],
-						b2: ["As for", "Regarding", "When it comes to"],
-					},
-				},
-				{ type: "text", content: " the house, could you please " },
-				{
-					type: "blank",
-					id: "house_duty1",
-					label: "công việc nhà 1",
-					variant: "content",
-					hints: {
-						b1: ["water the plants", "clean the house"],
-						b2: [
-							"water the plants in the living room every two days",
-							"take care of the indoor plants by watering them regularly",
-						],
-					},
-				},
-				{ type: "text", content: "? " },
-				{
-					type: "blank",
-					id: "house_extra_transition",
-					label: "từ nối",
-					variant: "transition",
-					hints: {
-						b1: ["Also", "And"],
-						b2: ["Furthermore", "In addition", "Moreover"],
-					},
-				},
-				{ type: "text", content: ", please " },
-				{
-					type: "blank",
-					id: "house_duty2",
-					label: "công việc nhà 2",
-					variant: "content",
-					hints: {
-						b1: ["check the mail", "lock the door at night"],
-						b2: [
-							"check the mailbox daily and keep any letters for me",
-							"ensure all doors and windows are locked before going to bed",
-						],
-					},
-				},
-				{ type: "text", content: "." },
-			],
-		},
-		{
-			title: "Lời kết",
-			parts: [
-				{
-					type: "blank",
-					id: "closing_transition",
-					label: "từ nối",
-					variant: "transition",
-					hints: {
-						b1: ["Thank you", "Thanks again"],
-						b2: ["Last but not least", "Once again", "Finally"],
-					},
-				},
-				{ type: "text", content: ", thank you again for your help. " },
-				{
-					type: "blank",
-					id: "closing_wish",
-					label: "lời chúc / kết thúc",
-					variant: "content",
-					hints: {
-						b1: ["I hope you will be fine", "Have a good time"],
-						b2: [
-							"I hope you and Mimi will get along well!",
-							"I truly appreciate everything you are doing for me.",
-							"Please do not hesitate to contact me if you have any questions.",
-						],
-					},
-				},
-				{ type: "text", content: "\n\nBest regards" },
-			],
-		},
-	],
-}
-
-// ═══════════════════════════════════════════════════
 // Auto-sizing inline input
 // ═══════════════════════════════════════════════════
 
@@ -484,19 +237,17 @@ function TemplateSectionCard({
 // ═══════════════════════════════════════════════════
 
 interface WritingTemplateEditorProps {
-	examId?: string
 	template?: TemplateSection[] | null
 	filledBlanks?: Record<string, string>
 	onBlankChange?: (id: string, value: string) => void
 }
 
 export function WritingTemplateEditor({
-	examId,
 	template: externalTemplate,
 	filledBlanks: externalBlanks,
 	onBlankChange: externalOnChange,
 }: WritingTemplateEditorProps) {
-	const template = externalTemplate ?? (examId ? MOCK_TEMPLATES[examId] : null)
+	const template = externalTemplate ?? null
 	const [internalBlanks, setInternalBlanks] = useState<Record<string, string>>({})
 	const [targetLevel, setTargetLevel] = useState<TargetLevel>("b1")
 
@@ -529,9 +280,7 @@ export function WritingTemplateEditor({
 	if (!template) {
 		return (
 			<div className="flex flex-1 items-center justify-center p-6">
-				<p className="text-sm text-muted-foreground">
-					Chưa có template cho bài này. Vui lòng chọn bài luyện viết số 1.
-				</p>
+				<p className="text-sm text-muted-foreground">Chưa có template cho bài này.</p>
 			</div>
 		)
 	}
