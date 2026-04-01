@@ -56,3 +56,29 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## FrankenPHP + Octane
+
+This backend is configured to run on Laravel Octane with FrankenPHP.
+
+### Local development
+
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+composer run dev
+```
+
+The HTTP app server runs via FrankenPHP on `http://127.0.0.1:8000`.
+
+### Direct server start
+
+```bash
+php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000
+```
+
+### Docker
+
+The included `Dockerfile` uses the `dunglas/frankenphp` base image and starts Laravel through Octane + FrankenPHP.
