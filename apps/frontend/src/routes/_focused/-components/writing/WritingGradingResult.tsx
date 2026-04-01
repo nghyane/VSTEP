@@ -1,11 +1,12 @@
 import { AlertCircleIcon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { SpiderChart } from "@/components/common/SpiderChart"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import type { SubmissionFull, WritingContent, WritingTier } from "@/types/api"
 import { AnnotatedEssay } from "./AnnotatedEssay"
 import { MarkdownFeedback } from "./MarkdownFeedback"
-import { CriterionBar, type CriterionScore } from "./writing-grading-shared"
+import type { CriterionScore } from "./writing-grading-shared"
 
 const TIER_BADGE: Record<WritingTier, { label: string; className: string }> = {
 	1: {
@@ -42,6 +43,16 @@ const criteriaLabelFallback: Record<string, string> = {
 	vocabulary: "Từ vựng",
 	grammar: "Ngữ pháp",
 }
+
+// Màu cho từng tiêu chí theo thứ tự — dùng làm Tailwind text class trong SpiderChart
+const CRITERION_COLORS = [
+	"text-orange-500",
+	"text-blue-500",
+	"text-amber-500",
+	"text-rose-500",
+	"text-emerald-500",
+	"text-purple-500",
+]
 
 function parseCriteria(result: unknown): CriterionScore[] {
 	if (!result || typeof result !== "object") return []
@@ -148,15 +159,62 @@ export function WritingGradingResult({
 							</div>
 						)}
 
-						{/* Criteria scores */}
-						{criteria.length > 0 && (
-							<div className="space-y-3">
-								<h4 className="text-sm font-semibold">Điểm từng tiêu chí</h4>
-								{criteria.map((c) => (
-									<CriterionBar key={c.label} criterion={c} />
-								))}
+					{/* Criteria scores — spider chart */}
+					{criteria.length > 0 && (
+						<div className="space-y-4">
+							<h4 className="text-sm font-semibold">Điểm từng tiêu chí</h4>
+
+							{/* Spider chart */}
+							<div className="flex justify-center">
+								<SpiderChart
+									skills={criteria.map((c, i) => ({
+										label: c.label,
+										value: c.score,
+										color: CRITERION_COLORS[i % CRITERION_COLORS.length],
+									}))}
+									className="size-60"
+								/>
 							</div>
-						)}
+
+							{/* Legend — điểm + nhận xét ngắn từng tiêu chí */}
+							<div className="divide-y divide-border rounded-xl border">
+								{criteria.map((c, i) => {
+									const color = CRITERION_COLORS[i % CRITERION_COLORS.length]
+									const pct = (c.score / c.maxScore) * 100
+									const scoreColor =
+										pct >= 80
+											? "text-green-600 dark:text-green-400"
+											: pct >= 60
+												? "text-amber-600 dark:text-amber-400"
+												: "text-red-600 dark:text-red-400"
+									return (
+										<div key={c.label} className="flex items-start gap-3 px-4 py-3">
+											<span
+												className={cn(
+													"mt-0.5 size-2.5 shrink-0 rounded-full",
+													color.replace("text-", "bg-"),
+												)}
+											/>
+											<div className="flex-1 min-w-0">
+												<div className="flex items-center justify-between gap-2">
+													<span className="text-sm font-medium">{c.label}</span>
+													<span className={cn("shrink-0 text-sm font-bold tabular-nums", scoreColor)}>
+														{c.score}
+														<span className="text-xs font-normal text-muted-foreground">
+															/{c.maxScore}
+														</span>
+													</span>
+												</div>
+												{c.comment && (
+													<p className="mt-0.5 text-xs text-muted-foreground">{c.comment}</p>
+												)}
+											</div>
+										</div>
+									)
+								})}
+							</div>
+						</div>
+					)}
 
 						{/* Feedback — rendered as markdown */}
 						{feedback && (
