@@ -1,4 +1,9 @@
-import { ArrowLeft01Icon, ArrowRight01Icon, PencilEdit02Icon, Tick01Icon } from "@hugeicons/core-free-icons"
+import {
+	ArrowLeft01Icon,
+	ArrowRight01Icon,
+	PencilEdit02Icon,
+	Tick01Icon,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { AnimatePresence, motion } from "motion/react"
@@ -6,7 +11,6 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
 import {
 	useCompletePractice,
 	usePracticeSession,
@@ -14,9 +18,10 @@ import {
 	useSubmission,
 	useSubmitPracticeAnswer,
 } from "@/hooks/use-practice"
+import { cn } from "@/lib/utils"
 import type {
-	PracticeMode,
 	PracticeItem,
+	PracticeMode,
 	PracticeSession,
 	PracticeStartResponse,
 	WritingContent,
@@ -76,6 +81,12 @@ function persistSessionToUrl(sessionId: string) {
 	window.history.replaceState(null, "", url.toString())
 }
 
+function clearSessionFromUrl() {
+	const url = new URL(window.location.href)
+	url.searchParams.delete("session")
+	window.history.replaceState(null, "", url.toString())
+}
+
 export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFlowProps) {
 	const [session, setSession] = useState<PracticeSession | null>(null)
 	const [item, setItem] = useState<PracticeItem | null>(null)
@@ -104,38 +115,50 @@ export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFl
 		if (resumeSessionId && resumeLoading) return
 
 		if (resumeData && !resumeData.session.completedAt) {
+			if (!resumeData.currentItem) {
+				clearSessionFromUrl()
+				setError(
+					"Phiên luyện tập này không còn câu hỏi hợp lệ. Vui lòng tạo phiên mới hoặc quay lại chọn bài khác.",
+				)
+				setPhase("loading")
+				return
+			}
+
 			hasInitRef.current = true
 			const resumedSession = resumeData.session
 			setSession(resumedSession)
 			setItem(resumeData.currentItem)
 			setTier(resumeData.writingTier ?? resumedSession.config.writingTier ?? 3)
-			setPhase(resumeData.currentItem ? "writing" : "loading")
+			setPhase("writing")
 			return
 		}
 
 		if (!resumeSessionId || resumeFailed || resumeData?.session.completedAt) {
 			hasInitRef.current = true
+			if (resumeFailed) {
+				clearSessionFromUrl()
+			}
 			startMutation.mutate(
 				{ skill: "writing", mode: WRITING_PRACTICE_MODE, itemsCount: 1, part },
 				{
-				onSuccess: (data: PracticeStartResponse) => {
-					setSession(data.session)
-					setItem(data.currentItem)
-					setTier(data.writingTier ?? 3)
-					if (!data.currentItem) {
-						setError(
-							"Hiện chưa có bài tập phù hợp với trình độ của bạn. Vui lòng thử lại sau hoặc liên hệ quản trị viên.",
-						)
+					onSuccess: (data: PracticeStartResponse) => {
+						setSession(data.session)
+						setItem(data.currentItem)
+						setTier(data.writingTier ?? 3)
+						if (!data.currentItem) {
+							setError(
+								"Hiện chưa có bài tập phù hợp với trình độ của bạn. Vui lòng thử lại sau hoặc liên hệ quản trị viên.",
+							)
+							setPhase("loading")
+							return
+						}
+						setPhase("writing")
+						persistSessionToUrl(data.session.id)
+					},
+					onError: (err) => {
+						setError(err.message)
 						setPhase("loading")
-						return
-					}
-					setPhase("writing")
-					persistSessionToUrl(data.session.id)
-				},
-				onError: (err) => {
-					setError(err.message)
-					setPhase("loading")
-				},
+					},
 				},
 			)
 		}
@@ -199,9 +222,7 @@ export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFl
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
-			{phase === "loading" && !error && (
-				<SessionCreatingLoader />
-			)}
+			{phase === "loading" && !error && <SessionCreatingLoader />}
 
 			{error && (
 				<div className="flex flex-1 flex-col items-center justify-center gap-4 px-6">
@@ -215,7 +236,12 @@ export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFl
 					<Button
 						variant="outline"
 						onClick={() => {
+							if (resumeSessionId) {
+								clearSessionFromUrl()
+							}
 							setError(null)
+							setSession(null)
+							setItem(null)
 							hasInitRef.current = false
 							setPhase("loading")
 						}}
@@ -232,7 +258,9 @@ export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFl
 							{TIER_META[tier]?.label}
 						</Badge>
 						<Badge variant="outline">{SCAFFOLD_META[scaffoldType].label}</Badge>
-						<p className="text-xs text-muted-foreground">{SCAFFOLD_META[scaffoldType].description}</p>
+						<p className="text-xs text-muted-foreground">
+							{SCAFFOLD_META[scaffoldType].description}
+						</p>
 					</div>
 
 					{scaffoldType === "template" ? (
@@ -269,7 +297,13 @@ export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFl
 								className="absolute rounded-full bg-primary/10"
 								style={{ width: 48, height: 48 }}
 								animate={{ scale, opacity: 0.8 - i * 0.4 }}
-								transition={{ duration: 1.4, repeat: Infinity, repeatType: "loop", ease: "easeOut", delay: i * 0.25 }}
+								transition={{
+									duration: 1.4,
+									repeat: Infinity,
+									repeatType: "loop",
+									ease: "easeOut",
+									delay: i * 0.25,
+								}}
 							/>
 						))}
 						<motion.div
@@ -322,7 +356,12 @@ interface TemplateEditorWithApiProps {
 	isSubmitting: boolean
 }
 
-function TemplateEditorWithApi({ content, scaffold, onSubmit, isSubmitting }: TemplateEditorWithApiProps) {
+function TemplateEditorWithApi({
+	content,
+	scaffold,
+	onSubmit,
+	isSubmitting,
+}: TemplateEditorWithApiProps) {
 	const [filledBlanks, setFilledBlanks] = useState<Record<string, string>>({})
 	const [fallbackText, setFallbackText] = useState("")
 	const template =
@@ -341,8 +380,7 @@ function TemplateEditorWithApi({ content, scaffold, onSubmit, isSubmitting }: Te
 				return parts.reduce((acc, curr) => {
 					if (!acc) return curr
 					if (!curr) return acc
-					const needsSpace =
-						!acc.endsWith(" ") && !curr.startsWith(" ") && !/^[.,;:!?]/.test(curr)
+					const needsSpace = !acc.endsWith(" ") && !curr.startsWith(" ") && !/^[.,;:!?]/.test(curr)
 					return acc + (needsSpace ? " " : "") + curr
 				}, "")
 			})
@@ -515,7 +553,13 @@ interface GradingPollerProps {
 	onCompleted: () => void
 }
 
-function GradingPoller({ submissionId, submittedText, content, tier, onCompleted }: GradingPollerProps) {
+function GradingPoller({
+	submissionId,
+	submittedText,
+	content,
+	tier,
+	onCompleted,
+}: GradingPollerProps) {
 	const { data: submission } = useSubmission(submissionId)
 	const notifiedRef = useRef(false)
 
@@ -609,9 +653,7 @@ function SessionCreatingLoader() {
 							<p className="text-sm font-medium text-foreground">
 								{CREATION_STEPS[stepIndex].label}
 							</p>
-							<p className="text-xs text-muted-foreground">
-								{CREATION_STEPS[stepIndex].detail}
-							</p>
+							<p className="text-xs text-muted-foreground">{CREATION_STEPS[stepIndex].detail}</p>
 						</motion.div>
 					</AnimatePresence>
 				</div>

@@ -70,11 +70,17 @@ class PracticeService
         ]);
 
         $firstQuestion = $this->pickNextQuestion($session);
+        if (! $firstQuestion) {
+            $session->delete();
+
+            $this->throwNoQuestionAvailable($skill, $level, $options['part'] ?? null);
+        }
+
         $recommendation = $this->weakPointService->getRecommendation($userId, $skill);
 
         return [
             'session' => $session->fresh(),
-            'current_item' => $firstQuestion ? $this->buildItem($session, $firstQuestion) : null,
+            'current_item' => $this->buildItem($session, $firstQuestion),
             'recommendation' => $recommendation,
             'progress' => $this->buildProgress($session),
             'writing_tier' => $writingTier,
@@ -105,6 +111,9 @@ class PracticeService
         }
 
         $question = $session->currentQuestion;
+        if (! $question && $session->hasMoreItems()) {
+            $this->throwNoQuestionAvailable($session->skill, $session->level, $session->config['part'] ?? null);
+        }
 
         return [
             'session' => $session,
@@ -363,5 +372,14 @@ class PracticeService
         if ($session->isCompleted()) {
             throw ValidationException::withMessages(['session' => ['Session is already completed.']]);
         }
+    }
+
+    private function throwNoQuestionAvailable(Skill $skill, Level $level, ?int $part = null): never
+    {
+        $partLabel = $part !== null ? " part {$part}" : '';
+
+        throw ValidationException::withMessages([
+            'session' => ["No practice question available for {$skill->value}{$partLabel} at level {$level->value}."],
+        ]);
     }
 }

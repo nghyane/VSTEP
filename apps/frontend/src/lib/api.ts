@@ -97,6 +97,8 @@ const ERROR_TRANSLATIONS: Record<string, string> = {
 	"Not found": "Không tìm thấy",
 	Unauthorized: "Chưa xác thực",
 	Conflict: "Dữ liệu bị trùng lặp",
+	"No practice question available for writing part 1 at level C1.":
+		"Hiện chưa có đề luyện viết Part 1 ở mức C1.",
 }
 
 // Parse Laravel validation errors: { message, errors: { field: ["msg", ...] } }
