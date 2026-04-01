@@ -14,6 +14,14 @@ class QuestionPicker
 {
     private const RECENT_EXCLUDE = 50;
 
+    /**
+     * Writing banks are sparse at lower levels, so we may relax the requested
+     * part after exhausting same-part fallbacks. C1 keeps part strict.
+     *
+     * @var list<Level>
+     */
+    private const PART_RELAXABLE_LEVELS = [Level::A2, Level::B1, Level::B2];
+
     public function __construct(
         private readonly WeakPointService $weakPointService,
     ) {}
@@ -41,15 +49,22 @@ class QuestionPicker
 
         $level = $this->resolveDifficulty($baseLevel, $currentIndex, $totalItems);
 
-        // Progressively relax constraints while NEVER reusing questions already excluded for this session.
-        return $this->findQuestion($skill, $level, $excludeIds, $focusKp, $topic, $part)
-            ?? $this->findQuestion($skill, $baseLevel, $excludeIds, $focusKp, $topic, $part)
-            ?? $this->findQuestion($skill, $baseLevel, $excludeIds, null, $topic, $part)
-            // Relax level (try one level up) while keeping part — serves B1 to A2 users when no A2+part exists
-            ?? ($part !== null ? $this->findQuestion($skill, $baseLevel->next() ?? $baseLevel, $excludeIds, null, $topic, $part) : null)
-            ?? ($part !== null ? $this->findQuestion($skill, $baseLevel->next()?->next() ?? $baseLevel, $excludeIds, null, $topic, $part) : null)
-            // Last resort: drop part filter entirely
-            ?? $this->findQuestion($skill, $baseLevel, $excludeIds, null, $topic, null);
+        foreach ($this->buildCandidates($skill, $baseLevel, $level, $excludeIds, $focusKp, $topic, $part) as $candidate) {
+            $question = $this->findQuestion(
+                $skill,
+                $candidate['level'],
+                $candidate['exclude_ids'],
+                $candidate['focus_kp'],
+                $candidate['topic'],
+                $candidate['part'],
+            );
+
+            if ($question) {
+                return $question;
+            }
+        }
+
+        return null;
     }
 
     public function resolveDifficulty(Level $baseLevel, int $index, int $total): Level
@@ -83,6 +98,106 @@ class QuestionPicker
             ->whereHas('knowledgePoints', fn ($q) => $q->where('knowledge_points.id', $dueWp->knowledge_point_id))
             ->inRandomOrder()
             ->first();
+    }
+
+    /**
+     * @return list<array{level: Level, exclude_ids: Collection<int, string>, focus_kp: ?string, topic: ?string, part: ?int}>
+     */
+    private function buildCandidates(
+        Skill $skill,
+        Level $baseLevel,
+        Level $resolvedLevel,
+        Collection $excludeIds,
+        ?string $focusKp,
+        ?string $topic,
+        ?int $part,
+    ): array {
+        $candidates = [
+            $this->candidate($resolvedLevel, $excludeIds, $focusKp, $topic, $part),
+            $this->candidate($baseLevel, $excludeIds, $focusKp, $topic, $part),
+            $this->candidate($baseLevel, $excludeIds, null, $topic, $part),
+        ];
+
+        foreach ($this->buildLevelRelaxationLevels($baseLevel, $part) as $relaxedLevel) {
+            $candidates[] = $this->candidate($relaxedLevel, $excludeIds, null, $topic, $part);
+        }
+
+        if ($this->shouldRelaxPart($skill, $baseLevel, $part)) {
+            $candidates[] = $this->candidate($baseLevel, $excludeIds, null, $topic, null);
+        }
+
+        return $this->uniqueCandidates($candidates);
+    }
+
+    /**
+     * @return list<Level>
+     */
+    private function buildLevelRelaxationLevels(Level $baseLevel, ?int $part): array
+    {
+        if ($part === null) {
+            return [];
+        }
+
+        $levels = [];
+        $current = $baseLevel->next();
+
+        while ($current !== null) {
+            $levels[] = $current;
+            $current = $current->next();
+        }
+
+        return $levels;
+    }
+
+    private function shouldRelaxPart(Skill $skill, Level $baseLevel, ?int $part): bool
+    {
+        return $skill === Skill::Writing
+            && $part !== null
+            && in_array($baseLevel, self::PART_RELAXABLE_LEVELS, true);
+    }
+
+    /**
+     * @param  Collection<int, string>  $excludeIds
+     * @return array{level: Level, exclude_ids: Collection<int, string>, focus_kp: ?string, topic: ?string, part: ?int}
+     */
+    private function candidate(Level $level, Collection $excludeIds, ?string $focusKp, ?string $topic, ?int $part): array
+    {
+        return [
+            'level' => $level,
+            'exclude_ids' => $excludeIds,
+            'focus_kp' => $focusKp,
+            'topic' => $topic,
+            'part' => $part,
+        ];
+    }
+
+    /**
+     * @param  list<array{level: Level, exclude_ids: Collection<int, string>, focus_kp: ?string, topic: ?string, part: ?int}>  $candidates
+     * @return list<array{level: Level, exclude_ids: Collection<int, string>, focus_kp: ?string, topic: ?string, part: ?int}>
+     */
+    private function uniqueCandidates(array $candidates): array
+    {
+        $unique = [];
+        $seen = [];
+
+        foreach ($candidates as $candidate) {
+            $key = implode('|', [
+                $candidate['level']->value,
+                $candidate['exclude_ids']->isEmpty() ? 'no_exclude' : 'exclude',
+                $candidate['focus_kp'] ?? 'no_focus',
+                $candidate['topic'] ?? 'no_topic',
+                $candidate['part'] !== null ? (string) $candidate['part'] : 'no_part',
+            ]);
+
+            if (isset($seen[$key])) {
+                continue;
+            }
+
+            $seen[$key] = true;
+            $unique[] = $candidate;
+        }
+
+        return $unique;
     }
 
     private function findQuestion(Skill $skill, Level $level, Collection $excludeIds, ?string $focusKp = null, ?string $topic = null, ?int $part = null): ?Question

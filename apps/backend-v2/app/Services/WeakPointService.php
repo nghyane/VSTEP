@@ -20,9 +20,12 @@ class WeakPointService
      */
     private const SCORE_PASS_THRESHOLD = 5.0;
 
+    /**
+     * @var list<array{threshold: float, quality: int}>
+     */
     private const SCORE_QUALITY_MAP = [
-        8.0 => 5,
-        6.5 => 4,
+        ['threshold' => 8.0, 'quality' => 5],
+        ['threshold' => 6.5, 'quality' => 4],
     ];
 
     public function recordFromSubmission(Submission $submission): void
@@ -69,9 +72,9 @@ class WeakPointService
 
     private function mapScoreToQuality(float $score): int
     {
-        foreach (self::SCORE_QUALITY_MAP as $threshold => $quality) {
-            if ($score >= $threshold) {
-                return $quality;
+        foreach (self::SCORE_QUALITY_MAP as $mapping) {
+            if ($score >= $mapping['threshold']) {
+                return $mapping['quality'];
             }
         }
 

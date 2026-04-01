@@ -131,6 +131,44 @@ class PracticeStartConstraintsTest extends TestCase
         $this->assertDatabaseCount('practice_sessions', 0);
     }
 
+    #[Test]
+    public function it_relaxes_writing_part_for_lower_levels_when_same_part_bank_is_missing(): void
+    {
+        $user = $this->makeLearner();
+
+        UserProgress::create([
+            'user_id' => $user->id,
+            'skill' => Skill::Writing,
+            'current_level' => Level::A2,
+            'target_level' => Level::B1,
+            'scaffold_level' => 0,
+            'streak_count' => 0,
+            'streak_direction' => 'neutral',
+            'attempt_count' => 0,
+        ]);
+
+        $fallback = Question::create([
+            'skill' => Skill::Writing,
+            'level' => Level::A2,
+            'part' => 1,
+            'topic' => 'Letter fallback',
+            'content' => ['prompt' => 'Write a letter', 'taskType' => 'letter'],
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user, 'api')
+            ->postJson('/api/v1/practice/sessions', [
+                'skill' => Skill::Writing->value,
+                'mode' => PracticeMode::Guided->value,
+                'items_count' => 1,
+                'part' => 2,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.current_item.question.id', $fallback->id)
+            ->assertJsonPath('data.current_item.question.part', 1)
+            ->assertJsonPath('data.session.config.part', 2);
+    }
+
     private function makeLearner(): User
     {
         return User::create([
