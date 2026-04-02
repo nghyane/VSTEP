@@ -115,16 +115,15 @@ class QuestionPicker
         $candidates = [
             $this->candidate($resolvedLevel, $excludeIds, $focusKp, $topic, $part),
             $this->candidate($baseLevel, $excludeIds, $focusKp, $topic, $part),
-            $this->candidate($baseLevel, collect(), $focusKp, $topic, $part),
-            $this->candidate($baseLevel, collect(), null, $topic, $part),
+            $this->candidate($baseLevel, $excludeIds, null, $topic, $part),
         ];
 
         foreach ($this->buildLevelRelaxationLevels($baseLevel, $part) as $relaxedLevel) {
-            $candidates[] = $this->candidate($relaxedLevel, collect(), null, $topic, $part);
+            $candidates[] = $this->candidate($relaxedLevel, $excludeIds, null, $topic, $part);
         }
 
         if ($this->shouldRelaxPart($skill, $baseLevel, $part)) {
-            $candidates[] = $this->candidate($baseLevel, collect(), null, $topic, null);
+            $candidates[] = $this->candidate($baseLevel, $excludeIds, null, $topic, null);
         }
 
         return $this->uniqueCandidates($candidates);

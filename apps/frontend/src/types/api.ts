@@ -668,7 +668,7 @@ interface PracticeStartResponse {
 }
 
 interface PracticeSubmitResponse {
-	result: { type: string; status: string }
+	result: { type: string; status?: string; score?: number; correct?: boolean }
 	submissionId: string
 	canRetry: boolean
 	isRetry: boolean

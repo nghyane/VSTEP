@@ -5,17 +5,13 @@ import { useCallback, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { ListeningExerciseSection } from "@/routes/_focused/-components/listening/ListeningExerciseSection"
-import { ReadingExerciseSection } from "@/routes/_focused/-components/reading/ReadingExerciseSection"
+import { ReadingPracticeFlow } from "@/routes/_focused/-components/reading/ReadingPracticeFlow"
 import { findExam, getAllQuestions } from "@/routes/_focused/-components/shared/exercise-shared"
 import { SpeakingExerciseSection } from "@/routes/_focused/-components/speaking/SpeakingExerciseSection"
 import { WritingPracticeFlow } from "@/routes/_focused/-components/writing/WritingPracticeFlow"
 import { skillColor, skillMeta } from "@/routes/_learner/exams/-components/skill-meta"
-import type {
-	ListeningExam,
-	ReadingExam,
-	SpeakingExam,
-} from "@/routes/_learner/practice/-components/mock-data"
-import type { Skill } from "@/types/api"
+import type { ListeningExam, SpeakingExam } from "@/routes/_learner/practice/-components/mock-data"
+import type { QuestionLevel, Skill } from "@/types/api"
 
 export const Route = createFileRoute("/_focused/exercise")({
 	component: ExercisePage,
@@ -23,18 +19,29 @@ export const Route = createFileRoute("/_focused/exercise")({
 		skill: (search.skill as string) || "",
 		id: (search.id as string) || "",
 		part: (search.part as string) || "",
+		level: (search.level as string) || "",
 		session: (search.session as string) || "",
 	}),
 })
 
 function ExercisePage() {
-	const { skill, id, part, session } = Route.useSearch()
+	const { skill, id, part, level, session } = Route.useSearch()
 
 	// Writing uses real API — adaptive session flow
 	if (skill === "writing") {
 		return (
 			<WritingExercisePage
 				part={part ? Number(part) : undefined}
+				sessionId={session || undefined}
+			/>
+		)
+	}
+
+	if (skill === "reading") {
+		return (
+			<ReadingExercisePage
+				part={part ? Number(part) : undefined}
+				level={level ? (level as QuestionLevel) : undefined}
 				sessionId={session || undefined}
 			/>
 		)
@@ -70,8 +77,43 @@ function WritingExercisePage({ part, sessionId }: { part?: number; sessionId?: s
 	)
 }
 
+function ReadingExercisePage({
+	part,
+	level,
+	sessionId,
+}: {
+	part?: number
+	level?: QuestionLevel
+	sessionId?: string
+}) {
+	const meta = skillMeta.reading
+
+	return (
+		<div className="flex h-full flex-col">
+			<header className="flex h-12 shrink-0 items-center justify-between border-b px-4">
+				<div className="flex items-center gap-2">
+					<div
+						className={cn("flex size-7 items-center justify-center rounded-lg", skillColor.reading)}
+					>
+						<HugeiconsIcon icon={meta.icon} className="size-4" />
+					</div>
+					<span className="text-sm font-semibold">Luyện đọc</span>
+				</div>
+				<Button variant="ghost" size="sm" asChild>
+					<Link to="/practice/reading">
+						<HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
+						Quay lại
+					</Link>
+				</Button>
+			</header>
+
+			<ReadingPracticeFlow part={part} level={level} resumeSessionId={sessionId} />
+		</div>
+	)
+}
+
 function MockExercisePage({ skill, id }: { skill: string; id: string }) {
-	const validSkill = ["listening", "reading", "speaking"].includes(skill)
+	const validSkill = ["listening", "speaking"].includes(skill)
 	const exam = validSkill ? findExam(skill, id) : null
 
 	const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({})
@@ -136,17 +178,7 @@ function MockExercisePage({ skill, id }: { skill: string; id: string }) {
 			</header>
 
 			{/* Content — each section manages its own skill-specific state */}
-			{skill === "reading" ? (
-				<ReadingExerciseSection
-					key={resetCounter}
-					exam={exam as ReadingExam}
-					examId={id}
-					questions={questions}
-					selectedAnswers={selectedAnswers}
-					submitted={submitted}
-					onSelect={handleSelect}
-				/>
-			) : skill === "listening" ? (
+			{skill === "listening" ? (
 				<ListeningExerciseSection
 					key={resetCounter}
 					exam={exam as ListeningExam}

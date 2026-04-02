@@ -131,7 +131,7 @@ function WritingPracticePage() {
 						<Link
 							key={card.part}
 							to="/exercise"
-							search={{ skill: "writing", id: "", part: String(card.part), session: "" }}
+							search={{ skill: "writing", id: "", part: String(card.part), level: "", session: "" }}
 							className={cn(
 								"group flex flex-col justify-between rounded-2xl border-2 p-6 transition-all",
 								card.accent,

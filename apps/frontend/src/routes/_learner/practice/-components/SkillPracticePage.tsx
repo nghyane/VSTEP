@@ -106,19 +106,36 @@ export function SkillPracticePage({ skill }: { skill: Skill }) {
 	const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
 
 	const questions = data?.data ?? []
+	const readingEntries = useMemo(() => {
+		if (skill !== "reading") return []
+
+		return categoriesFromQuestions(questions, skill).map(([category, count]) => {
+			const sample = questions.find((q) => getCategory(q, skill) === category)
+			const levels = [
+				...new Set(questions.filter((q) => q.part === sample?.part).map((q) => q.level)),
+			]
+
+			return {
+				key: category,
+				title: category,
+				badge: `Part ${sample?.part ?? 1}`,
+				description: `${count} bài đọc trong ngân hàng câu hỏi`,
+				meta: levels.join(" · "),
+				part: sample?.part ?? 1,
+			}
+		})
+	}, [questions, skill])
 
 	const categories = useMemo(() => {
-		const seen = new Map<string, number>()
-		for (const q of questions) {
-			const cat = getCategory(q, skill)
-			seen.set(cat, (seen.get(cat) ?? 0) + 1)
-		}
-		return [...seen.entries()].sort(([a], [b]) => a.localeCompare(b))
+		return categoriesFromQuestions(questions, skill)
 	}, [questions, skill])
 
 	const filtered = selectedCategory
 		? questions.filter((q) => getCategory(q, skill) === selectedCategory)
 		: questions
+	const filteredReadingEntries = selectedCategory
+		? readingEntries.filter((entry) => entry.key === selectedCategory)
+		: readingEntries
 
 	if (isLoading) {
 		return (
@@ -156,11 +173,23 @@ export function SkillPracticePage({ skill }: { skill: Skill }) {
 
 				<div className="flex-1">
 					<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-						{filtered.map((question) => (
-							<QuestionCard key={question.id} question={question} skill={skill} />
-						))}
+						{skill === "reading"
+							? filteredReadingEntries.map((entry) => (
+									<ReadingPracticeCard
+										key={entry.key}
+										title={entry.title}
+										badge={entry.badge}
+										description={entry.description}
+										meta={entry.meta}
+										part={entry.part}
+									/>
+								))
+							: filtered.map((question) => (
+									<QuestionCard key={question.id} question={question} skill={skill} />
+								))}
 
-						{filtered.length === 0 && (
+						{((skill === "reading" && filteredReadingEntries.length === 0) ||
+							(skill !== "reading" && filtered.length === 0)) && (
 							<div className="col-span-full py-8 text-center text-sm text-muted-foreground">
 								Không có bài luyện tập nào cho chủ đề này.
 							</div>
@@ -170,6 +199,15 @@ export function SkillPracticePage({ skill }: { skill: Skill }) {
 			</div>
 		</div>
 	)
+}
+
+function categoriesFromQuestions(questions: Question[], skill: Skill): [string, number][] {
+	const seen = new Map<string, number>()
+	for (const q of questions) {
+		const cat = getCategory(q, skill)
+		seen.set(cat, (seen.get(cat) ?? 0) + 1)
+	}
+	return [...seen.entries()].sort(([a], [b]) => a.localeCompare(b))
 }
 
 // ─── Question card ──────────────────────────────────
@@ -194,7 +232,44 @@ function QuestionCard({ question, skill }: { question: Question; skill: Skill })
 				{question.level && <span>{question.level}</span>}
 			</div>
 			<Button size="sm" className="mt-auto w-full rounded-xl" asChild>
-				<Link to="/exercise" search={{ skill, id: question.id, part: "", session: "" }}>
+				<Link to="/exercise" search={{ skill, id: question.id, part: "", level: "", session: "" }}>
+					Luyện tập ngay
+				</Link>
+			</Button>
+		</div>
+	)
+}
+
+function ReadingPracticeCard({
+	title,
+	badge,
+	description,
+	meta,
+	part,
+}: {
+	title: string
+	badge: string
+	description: string
+	meta: string
+	part: number
+}) {
+	return (
+		<div className="flex flex-col gap-3 rounded-xl bg-muted/30 p-5 transition-colors hover:bg-muted/50">
+			<div className="flex items-start justify-between gap-2">
+				<span className="text-sm font-semibold leading-snug">{title}</span>
+				<span className="shrink-0 rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+					{badge}
+				</span>
+			</div>
+			<div className="space-y-1 text-xs text-muted-foreground">
+				<p>{description}</p>
+				{meta && <p>{meta}</p>}
+			</div>
+			<Button size="sm" className="mt-auto w-full rounded-xl" asChild>
+				<Link
+					to="/exercise"
+					search={{ skill: "reading", id: "", part: String(part), level: "", session: "" }}
+				>
 					Luyện tập ngay
 				</Link>
 			</Button>

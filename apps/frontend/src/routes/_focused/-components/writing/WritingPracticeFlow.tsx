@@ -207,7 +207,7 @@ export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFl
 	const handlePracticeAgain = useCallback(() => {
 		navigate({
 			to: "/exercise",
-			search: { skill: "writing", id: "", part: part ? String(part) : "", session: "" },
+			search: { skill: "writing", id: "", part: part ? String(part) : "", level: "", session: "" },
 			replace: true,
 		})
 		setSession(null)
