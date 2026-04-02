@@ -12,6 +12,8 @@ import {
 	useSubmitPracticeAnswer,
 } from "@/hooks/use-practice"
 import { cn } from "@/lib/utils"
+import { ReadingAnswerDetail } from "@/routes/_focused/-components/reading/ReadingAnswerDetail"
+import type { ExamQuestion } from "@/routes/_learner/practice/-components/mock-data"
 import type {
 	PracticeItem,
 	PracticeSession,
@@ -88,6 +90,20 @@ function getPassageBody(content: QuestionContent): string[] {
 	}
 
 	return []
+}
+
+function buildMockReviewQuestions(content: QuestionContent): ExamQuestion[] {
+	return Array.from({ length: getItemCount(content) }, (_, index) => ({
+		questionNumber: index + 1,
+		questionText: getItemStem(content, index),
+		options: Object.fromEntries(
+			getItemOptions(content, index).map((option, optionIndex) => [
+				String.fromCharCode(65 + optionIndex),
+				option,
+			]),
+		),
+		correctAnswer: "A",
+	}))
 }
 
 interface ReadingPracticeFlowProps {
@@ -288,23 +304,57 @@ export function ReadingPracticeFlow({ part, level, resumeSessionId }: ReadingPra
 	}
 
 	if (phase === "completed") {
+		const mockQuestions = buildMockReviewQuestions(content)
+		const estimatedCorrectCount = latestScore !== null ? Math.round((latestScore / 10) * itemCount) : 0
+		const practiceAnswers = Object.fromEntries(
+			Object.entries(selectedAnswers).map(([key, value]) => [Number(key), value]),
+		)
+
 		return (
-			<div className="flex flex-1 flex-col items-center justify-center gap-5 px-6 text-center">
-				<div className="space-y-2">
-					<h2 className="text-2xl font-semibold">Hoàn thành phiên luyện đọc</h2>
-					<p className="text-sm text-muted-foreground">
-						Bạn đã hoàn thành {progress?.current ?? progress?.total ?? 0}/{progress?.total ?? 0} bài
-						đọc.
-					</p>
-					{latestScore !== null && (
+			<div className="flex h-full flex-col overflow-hidden">
+				<div className="flex items-center justify-between border-b px-4 py-3">
+					<div className="space-y-1">
+						<p className="text-base font-semibold">Hoàn thành phiên luyện đọc</p>
 						<p className="text-sm text-muted-foreground">
-							Điểm bài gần nhất: {latestScore.toFixed(1)}/10
+							Bạn đã hoàn thành {progress?.current ?? progress?.total ?? 0}/{progress?.total ?? 0} bài đọc.
 						</p>
-					)}
+					</div>
+					<Button asChild>
+						<Link to="/practice/reading">Quay lại phòng luyện đọc</Link>
+					</Button>
 				</div>
-				<Button asChild>
-					<Link to="/practice/reading">Quay lại phòng luyện đọc</Link>
-				</Button>
+
+				<div className="flex flex-1 overflow-hidden">
+					<div className="w-1/2 overflow-y-auto border-r bg-muted/5 p-6">
+						{"title" in content && content.title ? (
+							<h3 className="mb-4 text-lg font-bold">{content.title}</h3>
+						) : null}
+						<div className="space-y-4">
+							{getPassageBody(content).map((para, index) => (
+								<p
+									key={`${item.question.id}-completed-${index}`}
+									className="whitespace-pre-wrap text-sm leading-relaxed"
+								>
+									{para}
+								</p>
+							))}
+						</div>
+					</div>
+
+					<div className="flex-1 overflow-hidden">
+						<ReadingAnswerDetail
+							examId="read-1"
+							questions={mockQuestions}
+							answers={practiceAnswers}
+							onHighlightParagraph={() => {}}
+							summaryOverride={{
+								score: latestScore,
+								correct: estimatedCorrectCount,
+								total: itemCount,
+							}}
+						/>
+					</div>
+				</div>
 			</div>
 		)
 	}

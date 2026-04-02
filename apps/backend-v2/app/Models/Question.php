@@ -40,7 +40,7 @@ class Question extends BaseModel
     }
 
     /**
-     * @return array{correct: int, total: int, score: float, all_correct: bool}|null
+     * @return array{correct: int, total: int, raw_ratio: float, all_correct: bool, user_answers: array<string, mixed>, correct_answers: array<string, mixed>, items: list<array{question_number: int, user_answer: mixed, correct_answer: mixed, is_correct: bool}>}|null
      */
     public function gradeObjective(array $userAnswers): ?array
     {
@@ -54,12 +54,29 @@ class Question extends BaseModel
         // userAnswers may be {"1":"A","2":"B"} (1-indexed from FE) or [0=>"A",1=>"B"].
         $expected = array_values((array) $correctAnswers);
         $given = array_values((array) $userAnswers);
+        $normalizedExpected = [];
+        $normalizedGiven = [];
+        $items = [];
 
         $correct = 0;
         $total = count($expected);
 
         for ($i = 0; $i < $total; $i++) {
-            if (($given[$i] ?? null) === $expected[$i]) {
+            $questionNumber = $i + 1;
+            $givenAnswer = $given[$i] ?? null;
+            $expectedAnswer = $expected[$i];
+            $isCorrect = $givenAnswer === $expectedAnswer;
+
+            $normalizedExpected[(string) $questionNumber] = $expectedAnswer;
+            $normalizedGiven[(string) $questionNumber] = $givenAnswer;
+            $items[] = [
+                'question_number' => $questionNumber,
+                'user_answer' => $givenAnswer,
+                'correct_answer' => $expectedAnswer,
+                'is_correct' => $isCorrect,
+            ];
+
+            if ($isCorrect) {
                 $correct++;
             }
         }
@@ -69,6 +86,9 @@ class Question extends BaseModel
             'total' => $total,
             'raw_ratio' => $total > 0 ? $correct / $total : 0.0,
             'all_correct' => $correct === $total,
+            'user_answers' => $normalizedGiven,
+            'correct_answers' => $normalizedExpected,
+            'items' => $items,
         ];
     }
 }

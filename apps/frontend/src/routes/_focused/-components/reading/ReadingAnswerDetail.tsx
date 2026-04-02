@@ -897,6 +897,11 @@ interface ReadingAnswerDetailProps {
 	questions: ExamQuestion[]
 	answers: Record<number, string>
 	onHighlightParagraph: (index: number | null) => void
+	summaryOverride?: {
+		score?: number | null
+		correct?: number | null
+		total?: number | null
+	}
 }
 
 export function ReadingAnswerDetail({
@@ -904,6 +909,7 @@ export function ReadingAnswerDetail({
 	questions,
 	answers,
 	onHighlightParagraph,
+	summaryOverride,
 }: ReadingAnswerDetailProps) {
 	const [currentQIdx, setCurrentQIdx] = useState(0)
 	const [viewMode, setViewMode] = useState<"brief" | "detailed">("detailed")
@@ -914,7 +920,10 @@ export function ReadingAnswerDetail({
 	if (!currentQ) return null
 
 	const currentExplanation = explanations.find((e) => e.questionNumber === currentQ.questionNumber)
-	const correct = questions.filter((q) => answers[q.questionNumber] === q.correctAnswer).length
+	const correct =
+		summaryOverride?.correct ?? questions.filter((q) => answers[q.questionNumber] === q.correctAnswer).length
+	const totalQuestions = summaryOverride?.total ?? questions.length
+	const percentage = totalQuestions > 0 ? Math.round((correct / totalQuestions) * 100) : 0
 	const userAnswer = answers[currentQ.questionNumber]
 	const isCorrectAnswer = userAnswer === currentQ.correctAnswer
 
@@ -945,23 +954,33 @@ export function ReadingAnswerDetail({
 						<div className="flex items-center justify-between">
 							<div>
 								<p className="text-sm font-semibold">Kết quả</p>
-								<p className="mt-0.5 text-xs text-muted-foreground">
-									Bạn trả lời đúng{" "}
-									<span className="font-semibold text-green-600">
-										{correct}/{questions.length}
-									</span>{" "}
-									câu
-								</p>
+								{summaryOverride?.score !== undefined ? (
+									<>
+										<p className="mt-0.5 text-xs text-muted-foreground">Điểm từ API hiện tại</p>
+										<p className="mt-1 text-2xl font-bold text-green-600">
+											{summaryOverride.score !== null ? `${summaryOverride.score.toFixed(1)}/10` : "--"}
+										</p>
+										<p className="mt-1 text-xs text-muted-foreground">
+											Mock review bên dưới, score là dữ liệu thật.
+										</p>
+									</>
+								) : (
+									<p className="mt-0.5 text-xs text-muted-foreground">
+										Bạn trả lời đúng{" "}
+										<span className="font-semibold text-green-600">
+											{correct}/{totalQuestions}
+										</span>{" "}
+										câu
+									</p>
+								)}
 							</div>
-							<span className="text-2xl font-bold text-green-600">
-								{Math.round((correct / questions.length) * 100)}%
-							</span>
+							<span className="text-2xl font-bold text-green-600">{percentage}%</span>
 						</div>
 						<div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
 							<div
 								className="h-full rounded-full bg-green-500 transition-all"
 								style={{
-									width: `${questions.length > 0 ? (correct / questions.length) * 100 : 0}%`,
+									width: `${totalQuestions > 0 ? (correct / totalQuestions) * 100 : 0}%`,
 								}}
 							/>
 						</div>

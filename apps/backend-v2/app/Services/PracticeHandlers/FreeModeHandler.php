@@ -47,6 +47,7 @@ class FreeModeHandler implements PracticeModeHandler
 
         return [
             'type' => 'objective',
+            ...($result ?? []),
             'correct' => $result['all_correct'] ?? false,
             'score' => $score,
         ];
