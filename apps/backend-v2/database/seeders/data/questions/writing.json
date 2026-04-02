@@ -790,5 +790,266 @@
             "Elaboration",
             "Register & Tone"
         ]
+    },
+
+    {
+        "skill": "writing",
+        "level": "A2",
+        "part": 2,
+        "topic": "My Family",
+        "bloom_level": "remember",
+        "content": {
+            "prompt": "Write a short essay (80-100 words) about your family. Describe who is in your family, what each person does, and why you love your family.",
+            "taskType": "essay",
+            "minWords": 80,
+            "instructions": [],
+            "requiredPoints": [
+                "who is in your family",
+                "what each person does",
+                "why you love your family"
+            ]
+        },
+        "answer_key": null,
+        "knowledge_points": [
+            "Simple Sentences",
+            "Basic Tenses",
+            "General Vocabulary",
+            "Coherence"
+        ]
+    },
+    {
+        "skill": "writing",
+        "level": "A2",
+        "part": 2,
+        "topic": "My School",
+        "bloom_level": "remember",
+        "content": {
+            "prompt": "Write a short essay (80-100 words) about your school. Describe your school, your favourite subject, and what you like most about going to school.",
+            "taskType": "essay",
+            "minWords": 80,
+            "instructions": [],
+            "requiredPoints": [
+                "describe your school",
+                "your favourite subject",
+                "what you like most about going to school"
+            ]
+        },
+        "answer_key": null,
+        "knowledge_points": [
+            "Simple Sentences",
+            "Basic Tenses",
+            "General Vocabulary",
+            "Coherence"
+        ]
+    },
+    {
+        "skill": "writing",
+        "level": "A2",
+        "part": 2,
+        "topic": "My Hobby",
+        "bloom_level": "understand",
+        "content": {
+            "prompt": "Write a short essay (80-100 words) about your hobby. Explain what your hobby is, how often you do it, and why you enjoy it.",
+            "taskType": "essay",
+            "minWords": 80,
+            "instructions": [],
+            "requiredPoints": [
+                "what your hobby is",
+                "how often you do it",
+                "why you enjoy it"
+            ]
+        },
+        "answer_key": null,
+        "knowledge_points": [
+            "Simple Sentences",
+            "Basic Tenses",
+            "Topic-Specific Vocabulary",
+            "Coherence"
+        ]
+    },
+    {
+        "skill": "writing",
+        "level": "A2",
+        "part": 2,
+        "topic": "My Daily Routine",
+        "bloom_level": "remember",
+        "content": {
+            "prompt": "Write a short essay (80-100 words) about your daily routine. Describe what you do in the morning, in the afternoon, and in the evening.",
+            "taskType": "essay",
+            "minWords": 80,
+            "instructions": [],
+            "requiredPoints": [
+                "what you do in the morning",
+                "what you do in the afternoon",
+                "what you do in the evening"
+            ]
+        },
+        "answer_key": null,
+        "knowledge_points": [
+            "Simple Sentences",
+            "Basic Tenses",
+            "General Vocabulary",
+            "Linking Words & Transitions"
+        ]
+    },
+    {
+        "skill": "writing",
+        "level": "A2",
+        "part": 2,
+        "topic": "My Hometown",
+        "bloom_level": "understand",
+        "content": {
+            "prompt": "Write a short essay (80-100 words) about your hometown. Describe where it is, what it is famous for, and why you like living there.",
+            "taskType": "essay",
+            "minWords": 80,
+            "instructions": [],
+            "requiredPoints": [
+                "where your hometown is",
+                "what it is famous for",
+                "why you like living there"
+            ]
+        },
+        "answer_key": null,
+        "knowledge_points": [
+            "Simple Sentences",
+            "Basic Tenses",
+            "Topic-Specific Vocabulary",
+            "Coherence"
+        ]
+    },
+
+    {
+        "skill": "writing",
+        "level": "C1",
+        "part": 1,
+        "topic": "Complaint About Service Quality",
+        "bloom_level": "evaluate",
+        "content": {
+            "prompt": "Write a formal letter (200-250 words) to the manager of a hotel to complain about the poor service you experienced during a recent stay. Describe the problems you encountered, explain the impact on your trip, and state what resolution you expect.",
+            "taskType": "letter",
+            "minWords": 200,
+            "instructions": [],
+            "requiredPoints": [
+                "the problems you encountered",
+                "the impact on your trip",
+                "what resolution you expect"
+            ]
+        },
+        "answer_key": null,
+        "knowledge_points": [
+            "Complex Sentences",
+            "Participial Clauses",
+            "Academic Vocabulary",
+            "Register & Tone",
+            "Coherence",
+            "Elaboration"
+        ]
+    },
+    {
+        "skill": "writing",
+        "level": "C1",
+        "part": 1,
+        "topic": "Inquiry About Scholarship Programme",
+        "bloom_level": "apply",
+        "content": {
+            "prompt": "Write a formal letter (200-250 words) to a university's international office inquiring about a scholarship programme. Ask about the eligibility criteria, the application process, and any additional documents required.",
+            "taskType": "letter",
+            "minWords": 200,
+            "instructions": [],
+            "requiredPoints": [
+                "the eligibility criteria",
+                "the application process",
+                "any additional documents required"
+            ]
+        },
+        "answer_key": null,
+        "knowledge_points": [
+            "Complex Sentences",
+            "Conditional Clauses",
+            "Academic Vocabulary",
+            "Register & Tone",
+            "Coherence"
+        ]
+    },
+    {
+        "skill": "writing",
+        "level": "C1",
+        "part": 1,
+        "topic": "Proposal for Community Project",
+        "bloom_level": "create",
+        "content": {
+            "prompt": "Write a formal letter (200-250 words) to the local government proposing a community environmental project. Outline the project's objectives, describe the planned activities, and explain the expected benefits for the community.",
+            "taskType": "letter",
+            "minWords": 200,
+            "instructions": [],
+            "requiredPoints": [
+                "the project's objectives",
+                "the planned activities",
+                "the expected benefits for the community"
+            ]
+        },
+        "answer_key": null,
+        "knowledge_points": [
+            "Complex Sentences",
+            "Gerunds & Infinitives",
+            "Academic Vocabulary",
+            "Register & Tone",
+            "Elaboration",
+            "Coherence"
+        ]
+    },
+    {
+        "skill": "writing",
+        "level": "C1",
+        "part": 1,
+        "topic": "Request for Flexible Work Arrangement",
+        "bloom_level": "apply",
+        "content": {
+            "prompt": "Write a formal letter (200-250 words) to your company's HR department requesting a flexible work arrangement. Explain why you need flexibility, propose a specific schedule, and describe how it would maintain your productivity.",
+            "taskType": "letter",
+            "minWords": 200,
+            "instructions": [],
+            "requiredPoints": [
+                "why you need flexibility",
+                "a specific proposed schedule",
+                "how it would maintain your productivity"
+            ]
+        },
+        "answer_key": null,
+        "knowledge_points": [
+            "Complex Sentences",
+            "Modal Verbs",
+            "Topic-Specific Vocabulary",
+            "Register & Tone",
+            "Coherence",
+            "Argument Development"
+        ]
+    },
+    {
+        "skill": "writing",
+        "level": "C1",
+        "part": 1,
+        "topic": "Response to Customer Feedback",
+        "bloom_level": "evaluate",
+        "content": {
+            "prompt": "Write a formal letter (200-250 words) as a customer service manager responding to a customer's negative feedback about a product. Acknowledge the issue, explain the steps being taken to resolve it, and offer appropriate compensation.",
+            "taskType": "letter",
+            "minWords": 200,
+            "instructions": [],
+            "requiredPoints": [
+                "acknowledge the issue",
+                "steps being taken to resolve it",
+                "appropriate compensation offered"
+            ]
+        },
+        "answer_key": null,
+        "knowledge_points": [
+            "Complex Sentences",
+            "Passive Voice",
+            "Academic Vocabulary",
+            "Register & Tone",
+            "Coherence",
+            "Elaboration"
+        ]
     }
 ]

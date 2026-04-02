@@ -59,7 +59,7 @@ class QuestionPicker
                 $candidate['part'],
             );
 
-            if ($question) {
+            if ($question && ! $sessionQuestionIds->contains($question->id)) {
                 return $question;
             }
         }

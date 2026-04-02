@@ -15,8 +15,8 @@ use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Promptable;
 use Stringable;
 
-#[Provider('local')]
-#[Model('gpt-5.4')]
+#[Provider("local")]
+#[Model("gpt-5.4-mini")]
 #[MaxSteps(3)]
 #[MaxTokens(8192)]
 #[Timeout(120)]
@@ -26,10 +26,9 @@ class ContentGenerator implements Agent, HasTools
 
     private SubmitContent $submitTool;
 
-    public function __construct(
-        private readonly string $systemPrompt,
-    ) {
-        $this->submitTool = new SubmitContent;
+    public function __construct(private readonly string $systemPrompt)
+    {
+        $this->submitTool = new SubmitContent();
     }
 
     public function instructions(): Stringable|string

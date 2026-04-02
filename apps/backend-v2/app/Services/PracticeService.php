@@ -199,7 +199,13 @@ class PracticeService
         if (! $isRetry) {
             $session->clearCompletedCountCache();
             $nextQuestion = $this->pickNextQuestion($session);
-            $nextItem = $nextQuestion ? $this->buildItem($session, $nextQuestion) : null;
+
+            if ($nextQuestion) {
+                $nextItem = $this->buildItem($session, $nextQuestion);
+            } elseif ($session->hasMoreItems()) {
+                // No unique question available — auto-complete to avoid stuck session
+                $this->complete($session);
+            }
         }
 
         return [
