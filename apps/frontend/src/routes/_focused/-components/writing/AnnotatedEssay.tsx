@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
+import type { InlineError } from "./writing-grading-shared"
 
 // ═══════════════════════════════════════════════════
 // AnnotatedEssay — Highlights errors in submitted text
@@ -17,6 +18,7 @@ import { cn } from "@/lib/utils"
 interface ErrorAnnotation {
 	original: string
 	correction: string
+	explanation?: string
 }
 
 /**
@@ -198,6 +200,9 @@ function ErrorHighlight({ segment }: { segment: TextSegment & { type: "error" } 
 							{annotation.correction}
 						</span>
 					</div>
+					{annotation.explanation ? (
+						<p className="text-xs text-muted-foreground">{annotation.explanation}</p>
+					) : null}
 				</div>
 			</PopoverContent>
 		</Popover>
@@ -211,11 +216,27 @@ function ErrorHighlight({ segment }: { segment: TextSegment & { type: "error" } 
 interface AnnotatedEssayProps {
 	essayText: string
 	feedback: string
+	corrections?: InlineError[]
 	className?: string
 }
 
-export function AnnotatedEssay({ essayText, feedback, className }: AnnotatedEssayProps) {
-	const errors = useMemo(() => extractErrors(feedback), [feedback])
+export function AnnotatedEssay({
+	essayText,
+	feedback,
+	corrections,
+	className,
+}: AnnotatedEssayProps) {
+	const errors = useMemo(() => {
+		if (corrections && corrections.length > 0) {
+			return corrections.map((item) => ({
+				original: item.original,
+				correction: item.correction,
+				explanation: item.explanation,
+			}))
+		}
+
+		return extractErrors(feedback)
+	}, [feedback, corrections])
 	const segments = useMemo(() => buildSegments(essayText, errors), [essayText, errors])
 
 	return (

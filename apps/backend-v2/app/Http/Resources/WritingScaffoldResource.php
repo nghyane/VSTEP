@@ -14,8 +14,11 @@ class WritingScaffoldResource extends JsonResource
         return [
             'question_id' => $this['question_id'],
             'tier' => $this['tier'],
+            'requested_tier' => $this['requested_tier'] ?? $this['tier'],
+            'effective_tier' => $this['effective_tier'] ?? $this['tier'],
             'type' => $this['type'],
             'payload' => $this['payload'],
+            'fallback_reason' => $this['fallback_reason'] ?? null,
         ];
     }
 }

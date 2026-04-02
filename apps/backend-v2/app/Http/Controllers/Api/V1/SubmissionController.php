@@ -28,6 +28,9 @@ class SubmissionController extends Controller
     #[Authorize('view', 'submission')]
     public function show(Submission $submission)
     {
+        $submission->load(['question', 'practiceSession']);
+        $submission->question?->makeHidden(['answer_key', 'explanation']);
+
         return new SubmissionResource($submission);
     }
 

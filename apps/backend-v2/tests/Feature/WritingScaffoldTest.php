@@ -64,7 +64,10 @@ class WritingScaffoldTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.question_id', $question->id)
             ->assertJsonPath('data.tier', 1)
+            ->assertJsonPath('data.requested_tier', 1)
+            ->assertJsonPath('data.effective_tier', 1)
             ->assertJsonPath('data.type', 'template')
+            ->assertJsonPath('data.fallback_reason', null)
             ->assertJsonPath('data.payload.sections.0.title', 'Lời mở đầu')
             ->assertJsonPath('data.payload.sections.0.parts.0.type', 'text')
             ->assertJsonPath('data.payload.sections.0.parts.1.type', 'blank');
@@ -86,7 +89,10 @@ class WritingScaffoldTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.question_id', $question->id)
             ->assertJsonPath('data.tier', 2)
+            ->assertJsonPath('data.requested_tier', 2)
+            ->assertJsonPath('data.effective_tier', 2)
             ->assertJsonPath('data.type', 'guided')
+            ->assertJsonPath('data.fallback_reason', null)
             ->assertJsonPath('data.payload.word_count', '150-180 words');
 
         WritingTemplateGenerator::assertNeverPrompted();
@@ -112,7 +118,10 @@ class WritingScaffoldTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.question_id', $question->id)
             ->assertJsonPath('data.tier', 1)
+            ->assertJsonPath('data.requested_tier', 1)
+            ->assertJsonPath('data.effective_tier', 2)
             ->assertJsonPath('data.type', 'guided')
+            ->assertJsonPath('data.fallback_reason', 'template_unavailable')
             ->assertJsonPath('data.payload.word_count', '80-100 words');
     }
 
@@ -132,7 +141,10 @@ class WritingScaffoldTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.question_id', $question->id)
             ->assertJsonPath('data.tier', 3)
+            ->assertJsonPath('data.requested_tier', 3)
+            ->assertJsonPath('data.effective_tier', 3)
             ->assertJsonPath('data.type', 'freeform')
+            ->assertJsonPath('data.fallback_reason', null)
             ->assertJsonPath('data.payload', null);
 
         WritingTemplateGenerator::assertNeverPrompted();
@@ -169,7 +181,10 @@ class WritingScaffoldTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('data.current_item.question.id', $question->id)
             ->assertJsonPath('data.current_item.writing_scaffold.tier', 2)
+            ->assertJsonPath('data.current_item.writing_scaffold.requested_tier', 2)
+            ->assertJsonPath('data.current_item.writing_scaffold.effective_tier', 2)
             ->assertJsonPath('data.current_item.writing_scaffold.type', 'guided')
+            ->assertJsonPath('data.current_item.writing_scaffold.fallback_reason', null)
             ->assertJsonPath('data.current_item.writing_scaffold.payload.word_count', '150-180 words');
 
         WritingTemplateGenerator::assertNeverPrompted();

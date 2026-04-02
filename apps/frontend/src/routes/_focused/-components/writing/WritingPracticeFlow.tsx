@@ -15,7 +15,6 @@ import {
 	useCompletePractice,
 	usePracticeSession,
 	useStartPractice,
-	useSubmission,
 	useSubmitPracticeAnswer,
 } from "@/hooks/use-practice"
 import { cn } from "@/lib/utils"
@@ -31,7 +30,6 @@ import type {
 	WritingScaffoldType,
 	WritingTier,
 } from "@/types/api"
-import { WritingGradingResult } from "./WritingGradingResult"
 import { WritingTemplateEditor } from "./WritingTemplateEditor"
 
 function isWritingContent(c: unknown): c is WritingContent {
@@ -51,6 +49,12 @@ const TIER_META: Record<number, { label: string; color: string }> = {
 		label: "Cấp 3 — Thực chiến",
 		color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
 	},
+}
+
+const SCAFFOLD_DISPLAY_TIER: Record<WritingScaffoldType, WritingTier> = {
+	template: 1,
+	guided: 2,
+	freeform: 3,
 }
 
 const WRITING_PRACTICE_MODE: PracticeMode = "guided"
@@ -93,9 +97,7 @@ export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFl
 	const [tier, setTier] = useState<WritingTier>(3)
 	const [writingText, setWritingText] = useState("")
 	const [submissionId, setSubmissionId] = useState<string | null>(null)
-	const [phase, setPhase] = useState<"loading" | "writing" | "submitting" | "grading" | "result">(
-		"loading",
-	)
+	const [phase, setPhase] = useState<"loading" | "writing" | "submitting" | "submitted">("loading")
 	const [error, setError] = useState<string | null>(null)
 	const [sessionCompleted, setSessionCompleted] = useState(false)
 
@@ -166,7 +168,7 @@ export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFl
 
 	const completeMutation = useCompletePractice(session?.id ?? "")
 	useEffect(() => {
-		if (phase === "result" && session && !sessionCompleted) {
+		if (phase === "submitted" && session && !sessionCompleted) {
 			setSessionCompleted(true)
 			completeMutation.mutate()
 		}
@@ -179,7 +181,14 @@ export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFl
 		: null
 	const scaffold = item?.writingScaffold ?? null
 	const scaffoldType = scaffold?.type ?? "freeform"
+	const requestedTier = scaffold?.requestedTier ?? tier
+	const effectiveTier = scaffold?.effectiveTier ?? SCAFFOLD_DISPLAY_TIER[scaffoldType] ?? tier
+	const displayTier = effectiveTier
 	const hints = scaffold?.type === "guided" ? (scaffold.payload as WritingHints) : null
+	const fallbackNotice =
+		scaffold?.fallbackReason === "template_unavailable" && requestedTier !== effectiveTier
+			? `Không thể tải mẫu Cấp ${requestedTier}. Hệ thống đã tạm chuyển sang Cấp ${effectiveTier} để bạn tiếp tục làm bài.`
+			: null
 
 	const handleSubmitText = useCallback(
 		(text: string, questionId: string) => {
@@ -192,7 +201,7 @@ export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFl
 				{
 					onSuccess: (data) => {
 						setSubmissionId(data.submissionId)
-						setPhase("grading")
+						setPhase("submitted")
 					},
 					onError: (err) => {
 						setError(err.message)
@@ -254,14 +263,20 @@ export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFl
 			{phase === "writing" && content && session && item && (
 				<>
 					<div className="flex shrink-0 items-center gap-2 border-b px-4 py-2">
-						<Badge variant="secondary" className={TIER_META[tier]?.color}>
-							{TIER_META[tier]?.label}
+						<Badge variant="secondary" className={TIER_META[displayTier]?.color}>
+							{TIER_META[displayTier]?.label}
 						</Badge>
 						<Badge variant="outline">{SCAFFOLD_META[scaffoldType].label}</Badge>
 						<p className="text-xs text-muted-foreground">
 							{SCAFFOLD_META[scaffoldType].description}
 						</p>
 					</div>
+
+					{fallbackNotice ? (
+						<div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">
+							{fallbackNotice}
+						</div>
+					) : null}
 
 					{scaffoldType === "template" ? (
 						<TemplateEditorWithApi
@@ -321,17 +336,9 @@ export function WritingPracticeFlow({ part, resumeSessionId }: WritingPracticeFl
 				</motion.div>
 			)}
 
-			{(phase === "grading" || phase === "result") && submissionId && (
-				<GradingPoller
-					submissionId={submissionId}
-					submittedText={writingText}
-					content={content}
-					tier={tier}
-					onCompleted={() => setPhase("result")}
-				/>
-			)}
+			{phase === "submitted" && submissionId && <SubmissionSuccess submissionId={submissionId} />}
 
-			{phase === "result" && (
+			{phase === "submitted" && (
 				<footer className="flex shrink-0 items-center justify-center gap-3 border-t px-4 py-3">
 					<Button variant="outline" asChild>
 						<Link to="/practice/writing">
@@ -545,50 +552,6 @@ function WritingEditor({
 	)
 }
 
-interface GradingPollerProps {
-	submissionId: string
-	submittedText: string
-	content: WritingContent | null
-	tier: WritingTier
-	onCompleted: () => void
-}
-
-function GradingPoller({
-	submissionId,
-	submittedText,
-	content,
-	tier,
-	onCompleted,
-}: GradingPollerProps) {
-	const { data: submission } = useSubmission(submissionId)
-	const notifiedRef = useRef(false)
-
-	const isTerminal =
-		submission?.status === "completed" ||
-		submission?.status === "review_pending" ||
-		submission?.status === "failed"
-
-	useEffect(() => {
-		if (isTerminal && !notifiedRef.current) {
-			notifiedRef.current = true
-			onCompleted()
-		}
-	}, [isTerminal, onCompleted])
-
-	if (!isTerminal) {
-		return <GradingPending />
-	}
-
-	return (
-		<WritingGradingResult
-			submission={submission}
-			submittedText={submittedText}
-			content={content}
-			tier={tier}
-		/>
-	)
-}
-
 const CREATION_STEPS = [
 	{ label: "Phân tích trình độ của bạn", detail: "Đang xem xét lịch sử luyện tập..." },
 	{ label: "Chọn đề phù hợp", detail: "Tìm bài viết đúng cấp độ..." },
@@ -704,19 +667,29 @@ function SessionCreatingLoader() {
 	)
 }
 
-function GradingPending() {
+function SubmissionSuccess({ submissionId }: { submissionId: string }) {
 	return (
 		<div className="flex flex-1 flex-col items-center justify-center gap-4">
-			<div className="flex items-center gap-3">
-				<span className="relative flex size-3">
-					<span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-500 opacity-75" />
-					<span className="relative inline-flex size-3 rounded-full bg-amber-500" />
-				</span>
-				<p className="font-semibold text-amber-700 dark:text-amber-400">Đang chấm bài...</p>
+			<div className="flex size-14 items-center justify-center rounded-full bg-primary/10">
+				<HugeiconsIcon icon={Tick01Icon} className="size-7 text-primary" />
 			</div>
-			<p className="max-w-sm text-center text-sm text-muted-foreground">
-				AI đang phân tích bài viết của bạn. Quá trình này thường mất 30-60 giây.
-			</p>
+			<div className="space-y-1 text-center">
+				<p className="font-semibold">Nộp bài thành công</p>
+				<p className="max-w-md text-sm text-muted-foreground">
+					Bài viết đã được đưa vào hàng đợi chấm điểm. Khi có kết quả, hệ thống sẽ gửi thông báo để
+					bạn mở lại bài đã nộp.
+				</p>
+			</div>
+			<div className="flex flex-wrap items-center justify-center gap-3">
+				<Button asChild>
+					<Link to="/writing-result/$id" params={{ id: submissionId }}>
+						Xem bài đã nộp
+					</Link>
+				</Button>
+				<Button variant="outline" asChild>
+					<Link to="/submissions">Mở lịch sử bài nộp</Link>
+				</Button>
+			</div>
 		</div>
 	)
 }

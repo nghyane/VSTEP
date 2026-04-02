@@ -12,7 +12,7 @@ import {
 	UserGroup02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Link, Outlet } from "@tanstack/react-router"
+import { Link, Outlet, useNavigate } from "@tanstack/react-router"
 import { Logo } from "@/components/common/Logo"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -40,6 +40,7 @@ import { cn } from "@/lib/utils"
 const DAYS_OF_WEEK = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
 
 export function LearnerLayout() {
+	const navigate = useNavigate()
 	const { data: activity } = useActivity(7)
 	const streakCount = activity?.streak ?? 0
 	const activeDatesSet = new Set(activity?.activeDays ?? [])
@@ -68,6 +69,27 @@ export function LearnerLayout() {
 	const { data: userData } = useUser(currentUser?.id ?? "")
 	const initials = getInitials(currentUser?.fullName, currentUser?.email)
 	const avatarSrc = avatarUrl(userData?.avatarKey, currentUser?.fullName)
+
+	function handleNotificationClick(notification: (typeof notifications)[number]) {
+		if (!notification.readAt) {
+			markRead.mutate(notification.id)
+		}
+
+		if (notification.url) {
+			window.location.href = notification.url
+			return
+		}
+
+		if (notification.data?.submissionId) {
+			if (notification.data.skill === "writing") {
+				navigate({ to: "/writing-result/$id", params: { id: notification.data.submissionId } })
+				return
+			}
+
+			navigate({ to: "/submissions/$id", params: { id: notification.data.submissionId } })
+			return
+		}
+	}
 
 	async function handleLogout() {
 		try {
@@ -196,7 +218,7 @@ export function LearnerLayout() {
 													!n.readAt && "bg-primary/5",
 												)}
 												onClick={() => {
-													if (!n.readAt) markRead.mutate(n.id)
+													handleNotificationClick(n)
 												}}
 											>
 												<p className={cn("text-sm", !n.readAt && "font-medium")}>{n.title}</p>

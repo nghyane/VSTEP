@@ -30,6 +30,8 @@ services:
   # Laravel API — serves on :3000 for FE
   backend:
     build: ./apps/backend-v2
+    env_file:
+      - ./apps/backend-v2/.env
     command: >
       sh -c "
         php artisan key:generate --force --no-interaction &&
@@ -88,6 +90,8 @@ services:
   # Laravel Horizon — queue dashboard + worker management
   horizon:
     build: ./apps/backend-v2
+    env_file:
+      - ./apps/backend-v2/.env
     command: php artisan horizon
     environment:
       APP_ENV: local

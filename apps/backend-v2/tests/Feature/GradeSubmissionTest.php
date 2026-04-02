@@ -71,6 +71,28 @@ class GradeSubmissionTest extends TestCase
             'feedback' => 'Bài viết tốt, cần cải thiện từ vựng.',
             'knowledge_gaps' => ['Subject-Verb Agreement'],
             'confidence' => 'high',
+            'annotations' => [
+                'strength_quotes' => [
+                    [
+                        'phrase' => 'I am writing to explain why I was absent from class last week.',
+                        'note' => 'Mở bài rõ mục đích.',
+                        'type' => 'structure',
+                    ],
+                ],
+                'corrections' => [
+                    [
+                        'original' => 'I was get sick suddenly',
+                        'correction' => 'I got sick suddenly',
+                        'type' => 'grammar',
+                        'explanation' => 'Sai dạng động từ.',
+                    ],
+                ],
+                'rewrite_suggestion' => [
+                    'original' => 'I was get sick suddenly.',
+                    'correction' => 'I suddenly got sick.',
+                    'note' => 'Viết lại tự nhiên hơn.',
+                ],
+            ],
         ]);
 
         $submission->refresh();
@@ -86,6 +108,12 @@ class GradeSubmissionTest extends TestCase
         $this->assertSame('ai_agent', $submission->result['type']);
         $this->assertCount(4, $submission->result['criteria']);
         $this->assertSame('high', $submission->result['confidence']);
+        $this->assertSame(
+            'I am writing to explain why I was absent from class last week.',
+            $submission->result['annotations']['strength_quotes'][0]['phrase']
+        );
+        $this->assertSame('I got sick suddenly', $submission->result['annotations']['corrections'][0]['correction']);
+        $this->assertSame('I suddenly got sick.', $submission->result['annotations']['rewrite_suggestion']['correction']);
 
         // Criteria enriched with names and normalized scores
         $criteria = collect($submission->result['criteria']);
@@ -126,6 +154,11 @@ class GradeSubmissionTest extends TestCase
             'feedback' => 'Bài viết quá ngắn.',
             'knowledge_gaps' => [],
             'confidence' => 'low',
+            'annotations' => [
+                'strength_quotes' => [],
+                'corrections' => [],
+                'rewrite_suggestion' => null,
+            ],
         ]);
 
         $submission->refresh();

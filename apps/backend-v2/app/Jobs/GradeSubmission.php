@@ -66,98 +66,109 @@ class GradeSubmission implements ShouldQueue
             Log::warning('grading_stale_claim_recovered', ['submission_id' => $this->submissionId]);
         }
 
-        $submission = Submission::with('question.knowledgePoints')->findOrFail($this->submissionId);
+        try {
+            $submission = Submission::with('question.knowledgePoints')->findOrFail($this->submissionId);
 
-        $rubric = GradingRubric::with('criteria')
-            ->where('skill', $submission->skill)
-            ->where('level', $submission->question->level)
-            ->where('is_active', true)
-            ->firstOrFail();
+            $rubric = GradingRubric::with('criteria')
+                ->where('skill', $submission->skill)
+                ->where('level', $submission->question->level)
+                ->where('is_active', true)
+                ->firstOrFail();
 
-        $knowledgeScope = $this->expandKnowledgeScope($submission->question->knowledgePoints, $submission->skill);
+            $knowledgeScope = $this->expandKnowledgeScope($submission->question->knowledgePoints, $submission->skill);
 
-        $pronunciationData = null;
-        if ($submission->skill === Skill::Speaking) {
-            $audioPath = $this->extractSpeakingAudioPath($submission);
-            app(SpeakingUploadService::class)->verifyAudioOwnership(
-                $audioPath,
+            $pronunciationData = null;
+            if ($submission->skill === Skill::Speaking) {
+                $audioPath = $this->extractSpeakingAudioPath($submission);
+                app(SpeakingUploadService::class)->verifyAudioOwnership(
+                    $audioPath,
+                    $submission->user_id,
+                );
+                $pronunciationData = $pronunciation->assessPronunciation($audioPath);
+                Log::info('pronunciation_transcript_ready', [
+                    'submission_id' => $submission->id,
+                    'transcript_length' => strlen($pronunciationData['transcript']),
+                    'transcript_preview' => substr($pronunciationData['transcript'], 0, 120),
+                    'accuracy_score' => $pronunciationData['accuracy_score'],
+                    'fluency_score' => $pronunciationData['fluency_score'],
+                ]);
+                $result = $this->gradeSpeaking($submission, $rubric, $knowledgeScope, $pronunciationData);
+            } else {
+                $result = $this->gradeWriting($submission, $rubric, $knowledgeScope);
+            }
+
+            $this->validateAgentResult($result, $rubric);
+
+            $criteriaScores = $this->normalizeScores($result['criteria_scores']);
+            $overall = $this->calculateOverall($rubric, $criteriaScores);
+            $validGaps = $this->validateGaps($result['knowledge_gaps'], $knowledgeScope);
+            $confidence = $this->parseConfidence($result['confidence']);
+            $annotations = $this->normalizeAnnotations($result['annotations'] ?? []);
+
+            $status = $confidence === 'low'
+                ? SubmissionStatus::ReviewPending
+                : SubmissionStatus::Completed;
+
+            $enrichedCriteria = $this->enrichCriteria($rubric, $criteriaScores);
+            $enrichedGaps = KnowledgePoint::enrichGaps($validGaps);
+
+            DB::transaction(function () use ($submission, $status, $overall, $enrichedCriteria, $enrichedGaps, $confidence, $result, $annotations, $pronunciationData, $progressService) {
+                $resultData = [
+                    'type' => 'ai_agent',
+                    'criteria' => $enrichedCriteria,
+                    'knowledge_gaps' => $enrichedGaps,
+                    'annotations' => $annotations,
+                    'confidence' => $confidence,
+                    'graded_at' => now()->toAtomString(),
+                ];
+
+                if ($submission->practiceSession?->mode) {
+                    $resultData['scaffolding_type'] = $submission->practiceSession->mode->value;
+                }
+
+                if ($pronunciationData) {
+                    $resultData['pronunciation'] = $pronunciationData;
+                }
+
+                $submission->update([
+                    'status' => $status,
+                    'score' => $overall,
+                    'band' => VstepBand::fromScore($overall),
+                    'result' => $resultData,
+                    'feedback' => $result['feedback'],
+                    'completed_at' => $status === SubmissionStatus::Completed ? now() : null,
+                ]);
+
+                $progressService->applySubmission($submission);
+
+                app(WeakPointService::class)->recordFromSubmission($submission->fresh());
+            });
+
+            $notificationMessage = $status === SubmissionStatus::Completed
+                ? "Bạn đạt {$overall}/10 cho bài {$submission->skill->value}."
+                : "Bài {$submission->skill->value} đã được chấm ({$overall}/10) và đang chờ review.";
+
+            $notificationService->send(
                 $submission->user_id,
+                NotificationType::GradingComplete,
+                'Bài làm đã được chấm điểm',
+                $notificationMessage,
+                ['submission_id' => $submission->id, 'score' => $overall, 'skill' => $submission->skill->value],
             );
-            $pronunciationData = $pronunciation->assessPronunciation($audioPath);
-            Log::info('pronunciation_transcript_ready', [
-                'submission_id' => $submission->id,
-                'transcript_length' => strlen($pronunciationData['transcript']),
-                'transcript_preview' => substr($pronunciationData['transcript'], 0, 120),
-                'accuracy_score' => $pronunciationData['accuracy_score'],
-                'fluency_score' => $pronunciationData['fluency_score'],
-            ]);
-            $result = $this->gradeSpeaking($submission, $rubric, $knowledgeScope, $pronunciationData);
-        } else {
-            $result = $this->gradeWriting($submission, $rubric, $knowledgeScope);
-        }
 
-        $this->validateAgentResult($result, $rubric);
+            Log::info('graded', ['submission_id' => $submission->id, 'score' => $overall, 'confidence' => $confidence]);
 
-        $criteriaScores = $this->normalizeScores($result['criteria_scores']);
-        $overall = $this->calculateOverall($rubric, $criteriaScores);
-        $validGaps = $this->validateGaps($result['knowledge_gaps'], $knowledgeScope);
-        $confidence = $this->parseConfidence($result['confidence']);
+            if ($submission->session) {
+                app(SessionService::class)->updateSubjectiveScores($submission);
+            }
+        } catch (\Throwable $e) {
+            $submission = Submission::find($this->submissionId);
 
-        $status = $confidence === 'low'
-            ? SubmissionStatus::ReviewPending
-            : SubmissionStatus::Completed;
-
-        $enrichedCriteria = $this->enrichCriteria($rubric, $criteriaScores);
-        $enrichedGaps = KnowledgePoint::enrichGaps($validGaps);
-
-        // Wrap finalization in transaction so progress + submission are atomic
-        DB::transaction(function () use ($submission, $status, $overall, $enrichedCriteria, $enrichedGaps, $confidence, $result, $pronunciationData, $progressService) {
-            $resultData = [
-                'type' => 'ai_agent',
-                'criteria' => $enrichedCriteria,
-                'knowledge_gaps' => $enrichedGaps,
-                'confidence' => $confidence,
-                'graded_at' => now()->toAtomString(),
-            ];
-
-            if ($submission->practiceSession?->mode) {
-                $resultData['scaffolding_type'] = $submission->practiceSession->mode->value;
+            if ($submission && $submission->status === SubmissionStatus::Processing && $this->attempts() < $this->tries) {
+                $submission->update(['status' => SubmissionStatus::Pending]);
             }
 
-            if ($pronunciationData) {
-                $resultData['pronunciation'] = $pronunciationData;
-            }
-
-            $submission->update([
-                'status' => $status,
-                'score' => $overall,
-                'band' => VstepBand::fromScore($overall),
-                'result' => $resultData,
-                'feedback' => $result['feedback'],
-                'completed_at' => $status === SubmissionStatus::Completed ? now() : null,
-            ]);
-
-            $progressService->applySubmission($submission);
-
-            app(WeakPointService::class)->recordFromSubmission($submission->fresh());
-        });
-
-        $notificationMessage = $status === SubmissionStatus::Completed
-            ? "Bạn đạt {$overall}/10 cho bài {$submission->skill->value}."
-            : "Bài {$submission->skill->value} đã được chấm ({$overall}/10) và đang chờ review.";
-
-        $notificationService->send(
-            $submission->user_id,
-            NotificationType::GradingComplete,
-            'Bài làm đã được chấm điểm',
-            $notificationMessage,
-            ['submission_id' => $submission->id, 'score' => $overall],
-        );
-
-        Log::info('graded', ['submission_id' => $submission->id, 'score' => $overall, 'confidence' => $confidence]);
-
-        if ($submission->session) {
-            app(SessionService::class)->updateSubjectiveScores($submission);
+            throw $e;
         }
     }
 
@@ -236,6 +247,63 @@ class GradeSubmission implements ShouldQueue
         if (empty($result['feedback'])) {
             throw new RuntimeException('Agent returned empty feedback.');
         }
+    }
+
+    private function normalizeAnnotations(array $annotations): array
+    {
+        $strengthQuotes = collect($annotations['strength_quotes'] ?? [])
+            ->filter(fn ($item) => is_array($item))
+            ->map(function (array $item) {
+                $type = in_array($item['type'] ?? null, ['structure', 'collocation', 'transition'], true)
+                    ? $item['type']
+                    : 'structure';
+
+                return [
+                    'phrase' => trim((string) ($item['phrase'] ?? '')),
+                    'note' => trim((string) ($item['note'] ?? '')),
+                    'type' => $type,
+                ];
+            })
+            ->filter(fn (array $item) => $item['phrase'] !== '' && $item['note'] !== '')
+            ->values()
+            ->toArray();
+
+        $corrections = collect($annotations['corrections'] ?? [])
+            ->filter(fn ($item) => is_array($item))
+            ->map(function (array $item) {
+                $type = in_array($item['type'] ?? null, ['grammar', 'vocabulary', 'spelling'], true)
+                    ? $item['type']
+                    : 'grammar';
+
+                return [
+                    'original' => trim((string) ($item['original'] ?? '')),
+                    'correction' => trim((string) ($item['correction'] ?? '')),
+                    'type' => $type,
+                    'explanation' => trim((string) ($item['explanation'] ?? '')),
+                ];
+            })
+            ->filter(fn (array $item) => $item['original'] !== '' && $item['correction'] !== '')
+            ->values()
+            ->toArray();
+
+        $rewriteSuggestion = null;
+        if (is_array($annotations['rewrite_suggestion'] ?? null)) {
+            $candidate = [
+                'original' => trim((string) ($annotations['rewrite_suggestion']['original'] ?? '')),
+                'correction' => trim((string) ($annotations['rewrite_suggestion']['correction'] ?? '')),
+                'note' => trim((string) ($annotations['rewrite_suggestion']['note'] ?? '')),
+            ];
+
+            if ($candidate['original'] !== '' && $candidate['correction'] !== '') {
+                $rewriteSuggestion = $candidate;
+            }
+        }
+
+        return [
+            'strength_quotes' => $strengthQuotes,
+            'corrections' => $corrections,
+            'rewrite_suggestion' => $rewriteSuggestion,
+        ];
     }
 
     private function normalizeScores(array $scores): array
@@ -340,13 +408,13 @@ class GradeSubmission implements ShouldQueue
         }
 
         if ($submission) {
-            app(NotificationService::class)->send(
-                $submission->user_id,
-                NotificationType::System,
-                'Chấm điểm thất bại',
-                "Bài {$submission->skill->value} không thể chấm. Vui lòng thử lại.",
-                ['submission_id' => $submission->id],
-            );
+                app(NotificationService::class)->send(
+                    $submission->user_id,
+                    NotificationType::System,
+                    'Chấm điểm thất bại',
+                    "Bài {$submission->skill->value} không thể chấm. Vui lòng thử lại.",
+                    ['submission_id' => $submission->id, 'skill' => $submission->skill->value],
+                );
         }
 
         Log::error('grading_failed', ['submission_id' => $this->submissionId, 'error' => $e->getMessage()]);

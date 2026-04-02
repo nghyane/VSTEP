@@ -23,6 +23,7 @@ export interface InlineError {
 	original: string
 	correction: string
 	type: "grammar" | "vocabulary" | "spelling"
+	explanation?: string
 }
 
 export interface InlineHighlight {
@@ -141,6 +142,9 @@ export function ErrorList({ errors }: { errors: InlineError[] }) {
 								<span className="font-medium text-green-600 dark:text-green-400">
 									{err.correction}
 								</span>
+								{err.explanation ? (
+									<p className="mt-1 text-xs text-muted-foreground">{err.explanation}</p>
+								) : null}
 							</div>
 						</div>
 					)

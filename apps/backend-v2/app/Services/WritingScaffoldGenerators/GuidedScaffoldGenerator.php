@@ -15,8 +15,11 @@ class GuidedScaffoldGenerator implements WritingScaffoldGenerator
         return [
             'question_id' => $question->id,
             'tier' => $tier,
+            'requested_tier' => $tier,
+            'effective_tier' => $tier,
             'type' => WritingScaffoldType::Guided->value,
             'payload' => WritingHints::forQuestion($question->content, $question->level, $question->part),
+            'fallback_reason' => null,
         ];
     }
 }

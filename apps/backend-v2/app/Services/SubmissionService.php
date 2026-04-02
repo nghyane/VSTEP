@@ -80,7 +80,7 @@ class SubmissionService
                 NotificationType::GradingComplete,
                 'Bài làm đã được chấm điểm',
                 "Bạn đạt {$submission->score}/10 cho bài {$submission->skill->value}.",
-                ['submission_id' => $submission->id, 'score' => $submission->score],
+                ['submission_id' => $submission->id, 'score' => $submission->score, 'skill' => $submission->skill->value],
             );
 
             return $submission;

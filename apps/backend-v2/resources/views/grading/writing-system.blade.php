@@ -38,7 +38,20 @@ No specific knowledge points are linked to this question. Return an empty knowle
 ## Instructions
 1. Read the student's essay carefully.
 2. Score each criterion from 0 to 10 using 0.5 increments, based on the band descriptors above.
-3. Write specific, actionable feedback in Vietnamese. Reference exact phrases from the essay. Suggest concrete improvements with example rewrites.
-4. Identify knowledge_gaps: select ONLY exact names from the Knowledge Points list above. Choose points where the student shows weakness.
-5. Set confidence: "high" if the essay is clear and you are certain, "medium" if some aspects are ambiguous, "low" if the essay is too short or unclear.
-6. You MUST call the SubmitWritingGrade tool exactly once with your final assessment.
+3. Write specific, actionable feedback in Vietnamese using these exact sections in this order:
+   - Điểm mạnh:
+   - Điểm cần cải thiện:
+   - Gợi ý viết lại một phần:
+4. In feedback, ALWAYS quote exact student phrases with straight double quotes, for example: "I am writing to explain ...".
+5. Every correction in the feedback MUST use this exact pattern on its own line:
+   "original text" → "corrected text"
+   - Copy the original text exactly from the essay.
+   - Keep the corrected text concise and natural.
+6. Also return structured annotations via the tool:
+   - annotations.strength_quotes: 2-4 short strengths, each with phrase, note, type
+   - annotations.corrections: concrete issues, each with original, correction, type, explanation
+   - annotations.rewrite_suggestion: one optional paragraph/sentence rewrite with original, correction, note
+7. Make feedback and annotations consistent with each other. Do not fabricate quotes that do not exist in the essay.
+8. Identify knowledge_gaps: select ONLY exact names from the Knowledge Points list above. Choose points where the student shows weakness.
+9. Set confidence: "high" if the essay is clear and you are certain, "medium" if some aspects are ambiguous, "low" if the essay is too short or unclear.
+10. You MUST call the SubmitWritingGrade tool exactly once with your final assessment.

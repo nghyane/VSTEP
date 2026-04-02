@@ -14,8 +14,11 @@ class FreeformScaffoldGenerator implements WritingScaffoldGenerator
         return [
             'question_id' => $question->id,
             'tier' => $tier,
+            'requested_tier' => $tier,
+            'effective_tier' => $tier,
             'type' => WritingScaffoldType::Freeform->value,
             'payload' => null,
+            'fallback_reason' => null,
         ];
     }
 }

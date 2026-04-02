@@ -20,7 +20,7 @@ class TemplateScaffoldGenerator implements WritingScaffoldGenerator
 
     public function generate(Question $question, int $tier): array
     {
-        $cacheKey = "writing_scaffold:v2:{$question->id}:tier{$tier}";
+        $cacheKey = "writing_scaffold:v3:{$question->id}:tier{$tier}";
         $cached = Cache::get($cacheKey);
 
         if (is_array($cached)) {
@@ -50,7 +50,7 @@ class TemplateScaffoldGenerator implements WritingScaffoldGenerator
             $sections = $this->normalizeSections($response->structured['sections'] ?? null);
 
             if ($sections !== []) {
-                return $this->wrap($question, $tier, WritingScaffoldType::Template, [
+                return $this->wrap($question, $tier, $tier, WritingScaffoldType::Template, [
                     'sections' => $sections,
                 ]);
             }
@@ -66,11 +66,11 @@ class TemplateScaffoldGenerator implements WritingScaffoldGenerator
 
     private function fallback(Question $question, int $tier): array
     {
-        return $this->wrap($question, $tier, WritingScaffoldType::Guided, [
+        return $this->wrap($question, $tier, 2, WritingScaffoldType::Guided, [
             'outline' => WritingHints::forQuestion($question->content, $question->level, $question->part)['outline'],
             'starters' => WritingHints::forQuestion($question->content, $question->level, $question->part)['starters'],
             'word_count' => WritingHints::forQuestion($question->content, $question->level, $question->part)['word_count'],
-        ]);
+        ], 'template_unavailable');
     }
 
     private function normalizeSections(mixed $sections): array
@@ -160,13 +160,23 @@ class TemplateScaffoldGenerator implements WritingScaffoldGenerator
         }, $value)));
     }
 
-    private function wrap(Question $question, int $tier, WritingScaffoldType $type, mixed $payload): array
+    private function wrap(
+        Question $question,
+        int $requestedTier,
+        int $effectiveTier,
+        WritingScaffoldType $type,
+        mixed $payload,
+        ?string $fallbackReason = null,
+    ): array
     {
         return [
             'question_id' => $question->id,
-            'tier' => $tier,
+            'tier' => $requestedTier,
+            'requested_tier' => $requestedTier,
+            'effective_tier' => $effectiveTier,
             'type' => $type->value,
             'payload' => $payload,
+            'fallback_reason' => $fallbackReason,
         ];
     }
 }

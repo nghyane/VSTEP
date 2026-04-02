@@ -30,6 +30,11 @@ class SubmitWritingGrade implements Tool
             'feedback' => (string) $request['feedback'],
             'knowledge_gaps' => (array) $request['knowledge_gaps'],
             'confidence' => (string) $request['confidence'],
+            'annotations' => [
+                'strength_quotes' => array_values((array) data_get($request, 'annotations.strength_quotes', [])),
+                'corrections' => array_values((array) data_get($request, 'annotations.corrections', [])),
+                'rewrite_suggestion' => data_get($request, 'annotations.rewrite_suggestion'),
+            ],
         ];
 
         return 'Grade submitted successfully.';
@@ -45,6 +50,28 @@ class SubmitWritingGrade implements Tool
             'feedback' => $schema->string()->required(),
             'knowledge_gaps' => $schema->array()->items($schema->string())->required(),
             'confidence' => $schema->string()->required(),
+            'annotations' => $schema->object([
+                'strength_quotes' => $schema->array()->items(
+                    $schema->object([
+                        'phrase' => $schema->string()->required(),
+                        'note' => $schema->string()->required(),
+                        'type' => $schema->string()->enum(['structure', 'collocation', 'transition'])->required(),
+                    ])->withoutAdditionalProperties()
+                )->required(),
+                'corrections' => $schema->array()->items(
+                    $schema->object([
+                        'original' => $schema->string()->required(),
+                        'correction' => $schema->string()->required(),
+                        'type' => $schema->string()->enum(['grammar', 'vocabulary', 'spelling'])->required(),
+                        'explanation' => $schema->string()->required(),
+                    ])->withoutAdditionalProperties()
+                )->required(),
+                'rewrite_suggestion' => $schema->object([
+                    'original' => $schema->string()->required(),
+                    'correction' => $schema->string()->required(),
+                    'note' => $schema->string()->required(),
+                ])->withoutAdditionalProperties()->nullable()->required(),
+            ])->withoutAdditionalProperties()->required(),
         ];
     }
 

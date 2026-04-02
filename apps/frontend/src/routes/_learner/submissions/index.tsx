@@ -34,13 +34,33 @@ const skillColor: Record<string, string> = {
 
 const statusConfig: Record<
 	SubmissionStatus,
-	{ label: string; variant: "default" | "secondary" | "destructive" | "outline" }
+	{ label: string; variant: "default" | "secondary" | "destructive" | "outline"; className: string }
 > = {
-	pending: { label: "Đang chờ", variant: "secondary" },
-	processing: { label: "Đang xử lý", variant: "secondary" },
-	completed: { label: "Hoàn thành", variant: "outline" },
-	review_pending: { label: "Chờ chấm", variant: "secondary" },
-	failed: { label: "Lỗi", variant: "destructive" },
+	pending: {
+		label: "Đang chờ",
+		variant: "secondary",
+		className: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200",
+	},
+	processing: {
+		label: "Đang xử lý",
+		variant: "secondary",
+		className: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+	},
+	completed: {
+		label: "Hoàn thành",
+		variant: "outline",
+		className: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300",
+	},
+	review_pending: {
+		label: "Chờ chấm",
+		variant: "secondary",
+		className: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+	},
+	failed: {
+		label: "Lỗi",
+		variant: "destructive",
+		className: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
+	},
 }
 
 function SubmissionRow({ submission }: { submission: SubmissionFull }) {
@@ -50,7 +70,7 @@ function SubmissionRow({ submission }: { submission: SubmissionFull }) {
 
 	return (
 		<Link
-			to="/submissions/$id"
+			to={submission.skill === "writing" ? "/writing-result/$id" : "/submissions/$id"}
 			params={{ id: submission.id }}
 			className="flex items-center gap-4 rounded-2xl p-4 transition-colors hover:bg-muted/50"
 		>
@@ -68,12 +88,18 @@ function SubmissionRow({ submission }: { submission: SubmissionFull }) {
 				<p
 					className={cn(
 						"text-lg font-bold tabular-nums",
-						submission.status === "completed" ? "text-foreground" : "text-muted-foreground",
+						submission.status === "completed"
+							? "text-emerald-600 dark:text-emerald-400"
+							: submission.status === "failed"
+								? "text-red-600 dark:text-red-400"
+								: "text-muted-foreground",
 					)}
 				>
 					{submission.score != null ? `${submission.score}/10` : "Đang chấm"}
 				</p>
-				<Badge variant={status.variant}>{status.label}</Badge>
+				<Badge variant={status.variant} className={status.className}>
+					{status.label}
+				</Badge>
 			</div>
 		</Link>
 	)

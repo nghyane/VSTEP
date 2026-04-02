@@ -1,13 +1,20 @@
 import { AlertCircleIcon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Suspense, lazy } from "react"
+import { lazy, Suspense } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import type { SubmissionFull, WritingContent, WritingTier } from "@/types/api"
 import { AnnotatedEssay } from "./AnnotatedEssay"
 import { MarkdownFeedback } from "./MarkdownFeedback"
-import { CriterionBar, type CriterionScore } from "./writing-grading-shared"
+import {
+	CriterionBar,
+	type CriterionScore,
+	ErrorList,
+	HighlightList,
+	type InlineError,
+	type InlineHighlight,
+} from "./writing-grading-shared"
 
 const SpiderChart = lazy(() =>
 	import("@/components/common/SpiderChart").then((module) => ({ default: module.SpiderChart })),
@@ -40,6 +47,25 @@ interface AICriteria {
 	name: string
 	score: number
 	bandLabel?: string
+}
+
+interface AIWritingAnnotations {
+	strengthQuotes?: {
+		phrase?: string
+		note?: string
+		type?: "structure" | "collocation" | "transition"
+	}[]
+	corrections?: {
+		original?: string
+		correction?: string
+		type?: "grammar" | "vocabulary" | "spelling"
+		explanation?: string
+	}[]
+	rewriteSuggestion?: {
+		original?: string
+		correction?: string
+		note?: string
+	} | null
 }
 
 const criteriaLabelFallback: Record<string, string> = {
@@ -97,6 +123,49 @@ function parseKnowledgeGaps(result: unknown): { name: string; category: string }
 	return (r.knowledgeGaps as { name: string; category: string }[]).filter((g) => g.name)
 }
 
+function parseAnnotations(result: unknown): {
+	highlights: InlineHighlight[]
+	corrections: InlineError[]
+	rewriteSuggestion: { original: string; correction: string; note: string } | null
+} {
+	if (!result || typeof result !== "object") {
+		return { highlights: [], corrections: [], rewriteSuggestion: null }
+	}
+
+	const annotations = (result as { annotations?: AIWritingAnnotations }).annotations
+	if (!annotations) {
+		return { highlights: [], corrections: [], rewriteSuggestion: null }
+	}
+
+	const highlights = (annotations.strengthQuotes ?? [])
+		.filter((item) => item?.phrase && item?.note)
+		.map((item) => ({
+			phrase: item.phrase ?? "",
+			note: item.note ?? "",
+			type: item.type ?? "structure",
+		}))
+
+	const corrections = (annotations.corrections ?? [])
+		.filter((item) => item?.original && item?.correction)
+		.map((item) => ({
+			original: item.original ?? "",
+			correction: item.correction ?? "",
+			type: item.type ?? "grammar",
+			explanation: item.explanation ?? "",
+		}))
+
+	const rewriteSuggestion =
+		annotations.rewriteSuggestion?.original && annotations.rewriteSuggestion?.correction
+			? {
+					original: annotations.rewriteSuggestion.original,
+					correction: annotations.rewriteSuggestion.correction,
+					note: annotations.rewriteSuggestion.note ?? "",
+				}
+			: null
+
+	return { highlights, corrections, rewriteSuggestion }
+}
+
 export function WritingGradingResult({
 	submission,
 	submittedText,
@@ -108,6 +177,7 @@ export function WritingGradingResult({
 	const wordCount = submittedText.trim() ? submittedText.trim().split(/\s+/).length : 0
 	const isFailed = submission.status === "failed"
 	const feedback = submission.feedback ?? ""
+	const { highlights, corrections, rewriteSuggestion } = parseAnnotations(submission.result)
 
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
@@ -123,7 +193,7 @@ export function WritingGradingResult({
 				</div>
 
 				{feedback && submittedText ? (
-					<AnnotatedEssay essayText={submittedText} feedback={feedback} />
+					<AnnotatedEssay essayText={submittedText} feedback={feedback} corrections={corrections} />
 				) : (
 					<div className="whitespace-pre-wrap rounded-xl bg-muted/10 p-4 text-sm leading-relaxed">
 						{submittedText}
@@ -164,29 +234,51 @@ export function WritingGradingResult({
 							</div>
 						)}
 
-					{criteria.length > 0 && (
-						<div className="space-y-4">
-							<h4 className="text-sm font-semibold">Điểm từng tiêu chí</h4>
-							<div className="flex justify-center">
-								<Suspense fallback={<Skeleton className="size-60 rounded-2xl" />}>
-									<SpiderChart
-										skills={criteria.map((c, i) => ({
-											label: criteriaShortLabel[c.label] ?? c.label,
-											value: c.score,
-											color: CRITERION_COLORS[i % CRITERION_COLORS.length],
-										}))}
-										className="size-60"
-									/>
-								</Suspense>
-							</div>
+						{criteria.length > 0 && (
+							<div className="space-y-4">
+								<h4 className="text-sm font-semibold">Điểm từng tiêu chí</h4>
+								<div className="flex justify-center">
+									<Suspense fallback={<Skeleton className="size-60 rounded-2xl" />}>
+										<SpiderChart
+											skills={criteria.map((c, i) => ({
+												label: criteriaShortLabel[c.label] ?? c.label,
+												value: c.score,
+												color: CRITERION_COLORS[i % CRITERION_COLORS.length],
+											}))}
+											className="size-60"
+										/>
+									</Suspense>
+								</div>
 
-							<div className="space-y-3">
-								{criteria.map((c) => (
-									<CriterionBar key={c.label} criterion={c} />
-								))}
+								<div className="space-y-3">
+									{criteria.map((c) => (
+										<CriterionBar key={c.label} criterion={c} />
+									))}
+								</div>
 							</div>
-						</div>
-					)}
+						)}
+
+						<HighlightList highlights={highlights} />
+						<ErrorList errors={corrections} />
+
+						{rewriteSuggestion ? (
+							<div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50/40 p-4 dark:border-amber-800/40 dark:bg-amber-950/10">
+								<h4 className="text-sm font-semibold text-amber-700 dark:text-amber-300">
+									Gợi ý viết lại một phần
+								</h4>
+								<div className="space-y-2 text-sm">
+									<p className="rounded-lg bg-background/80 p-3 text-muted-foreground line-through decoration-red-400 dark:bg-background/20">
+										{rewriteSuggestion.original}
+									</p>
+									<p className="rounded-lg bg-background/80 p-3 font-medium text-green-700 dark:bg-background/20 dark:text-green-400">
+										{rewriteSuggestion.correction}
+									</p>
+									{rewriteSuggestion.note ? (
+										<p className="text-xs text-muted-foreground">{rewriteSuggestion.note}</p>
+									) : null}
+								</div>
+							</div>
+						) : null}
 
 						{feedback && (
 							<div className="space-y-2">
