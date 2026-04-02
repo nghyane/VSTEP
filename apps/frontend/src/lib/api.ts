@@ -1,3 +1,4 @@
+import { handleAuthError, refreshToken as storedRefresh, save, token, user as getUser } from "@/lib/auth"
 import type { AuthUser, LoginResponse, RegisterResponse } from "@/types/api"
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000"
@@ -172,14 +173,6 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 let refreshPromise: Promise<void> | null = null
 
 async function authRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
-	const {
-		token,
-		refreshToken: storedRefresh,
-		save,
-		user: getUser,
-		handleAuthError,
-	} = await import("@/lib/auth")
-
 	const accessToken = token()
 	if (!accessToken) {
 		handleAuthError()
@@ -238,9 +231,7 @@ async function authRequest<T>(path: string, options: RequestInit = {}): Promise<
 // ---------------------------------------------------------------------------
 
 async function uploadFile<T>(path: string, formData: FormData): Promise<T> {
-	const { token: getToken, handleAuthError } = await import("@/lib/auth")
-
-	const accessToken = getToken()
+	const accessToken = token()
 	if (!accessToken) {
 		handleAuthError()
 		throw new ApiError(401, "Not authenticated")
