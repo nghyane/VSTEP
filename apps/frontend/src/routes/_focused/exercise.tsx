@@ -5,14 +5,15 @@ import { lazy, Suspense, useCallback, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
-import { findExam, getAllQuestions } from "@/routes/_focused/-components/shared/exercise-shared"
+import { findExam } from "@/routes/_focused/-components/shared/exercise-shared"
+import { SpeakingExerciseSection } from "@/routes/_focused/-components/speaking/SpeakingExerciseSection"
 import { skillColor, skillMeta } from "@/routes/_learner/exams/-components/skill-meta"
-import type { ListeningExam } from "@/routes/_learner/practice/-components/mock-data"
+import type { SpeakingExam } from "@/routes/_learner/practice/-components/mock-data"
 import type { QuestionLevel, Skill } from "@/types/api"
 
-const ListeningExerciseSection = lazy(() =>
-	import("@/routes/_focused/-components/listening/ListeningExerciseSection").then((module) => ({
-		default: module.ListeningExerciseSection,
+const ListeningPracticeFlow = lazy(() =>
+	import("@/routes/_focused/-components/listening/ListeningPracticeFlow").then((module) => ({
+		default: module.ListeningPracticeFlow,
 	})),
 )
 
@@ -64,6 +65,18 @@ function ExercisePage() {
 		return (
 			<Suspense fallback={<ExerciseShellSkeleton />}>
 				<ReadingExercisePage
+					part={part ? Number(part) : undefined}
+					level={level ? (level as QuestionLevel) : undefined}
+					sessionId={session || undefined}
+				/>
+			</Suspense>
+		)
+	}
+
+	if (skill === "listening") {
+		return (
+			<Suspense fallback={<ExerciseShellSkeleton />}>
+				<ListeningExercisePage
 					part={part ? Number(part) : undefined}
 					level={level ? (level as QuestionLevel) : undefined}
 					sessionId={session || undefined}
@@ -180,6 +193,44 @@ function ReadingExercisePage({
 	)
 }
 
+function ListeningExercisePage({
+	part,
+	level,
+	sessionId,
+}: {
+	part?: number
+	level?: QuestionLevel
+	sessionId?: string
+}) {
+	const meta = skillMeta.listening
+
+	return (
+		<div className="flex h-full flex-col">
+			<header className="flex h-12 shrink-0 items-center justify-between border-b px-4">
+				<div className="flex items-center gap-2">
+					<div
+						className={cn(
+							"flex size-7 items-center justify-center rounded-lg",
+							skillColor.listening,
+						)}
+					>
+						<HugeiconsIcon icon={meta.icon} className="size-4" />
+					</div>
+					<span className="text-sm font-semibold">Luyện nghe</span>
+				</div>
+				<Button variant="ghost" size="sm" asChild>
+					<Link to="/practice/listening">
+						<HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
+						Quay lại
+					</Link>
+				</Button>
+			</header>
+
+			<ListeningPracticeFlow part={part} level={level} resumeSessionId={sessionId} />
+		</div>
+	)
+}
+
 function SpeakingExercisePage({ part, sessionId }: { part?: number; sessionId?: string }) {
 	const meta = skillMeta.speaking
 
@@ -211,20 +262,11 @@ function SpeakingExercisePage({ part, sessionId }: { part?: number; sessionId?: 
 }
 
 function MockExercisePage({ skill, id }: { skill: string; id: string }) {
-	const validSkill = skill === "listening"
+	const validSkill = skill === "speaking"
 	const exam = validSkill ? findExam(skill, id) : null
 
-	const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({})
 	const [submitted, setSubmitted] = useState(false)
 	const [resetCounter, setResetCounter] = useState(0)
-
-	const handleSelect = useCallback(
-		(questionNumber: number, letter: string) => {
-			if (submitted) return
-			setSelectedAnswers((prev) => ({ ...prev, [questionNumber]: letter }))
-		},
-		[submitted],
-	)
 
 	const handleSubmit = useCallback(() => {
 		setSubmitted(true)
@@ -232,7 +274,6 @@ function MockExercisePage({ skill, id }: { skill: string; id: string }) {
 
 	const handleReset = useCallback(() => {
 		setSubmitted(false)
-		setSelectedAnswers({})
 		setResetCounter((c) => c + 1)
 		window.scrollTo({ top: 0, behavior: "smooth" })
 	}, [])
@@ -250,7 +291,6 @@ function MockExercisePage({ skill, id }: { skill: string; id: string }) {
 
 	const typedSkill = skill as Skill
 	const meta = skillMeta[typedSkill]
-	const questions = getAllQuestions(exam, skill)
 
 	return (
 		<div className="flex h-full flex-col">
@@ -276,24 +316,23 @@ function MockExercisePage({ skill, id }: { skill: string; id: string }) {
 			</header>
 
 			{/* Content */}
-			<ListeningExerciseSection
+			<SpeakingExerciseSection
 				key={resetCounter}
-				exam={exam as ListeningExam}
-				examId={id}
-				questions={questions}
-				selectedAnswers={selectedAnswers}
+				exam={exam as SpeakingExam}
 				submitted={submitted}
-				onSelect={handleSelect}
-				onSubmit={handleSubmit}
 			/>
 
-			{submitted && (
-				<footer className="flex h-14 shrink-0 items-center justify-center border-t px-4">
+			<footer className="flex h-14 shrink-0 items-center justify-center border-t px-4">
+				{!submitted ? (
+					<Button size="lg" className="rounded-xl px-8" onClick={handleSubmit}>
+						Nộp bài
+					</Button>
+				) : (
 					<Button size="lg" variant="outline" className="rounded-xl px-8" onClick={handleReset}>
 						Làm lại
 					</Button>
-				</footer>
-			)}
+				)}
+			</footer>
 		</div>
 	)
 }

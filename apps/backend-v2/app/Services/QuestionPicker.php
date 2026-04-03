@@ -126,6 +126,16 @@ class QuestionPicker
             $candidates[] = $this->candidate($baseLevel, $excludeIds, null, $topic, null);
         }
 
+        // Last resort: retry the same levels but allow recently-done questions.
+        // This prevents "no question available" when the bank is small.
+        $noExclude = collect();
+        $candidates[] = $this->candidate($resolvedLevel, $noExclude, null, $topic, $part);
+        $candidates[] = $this->candidate($baseLevel, $noExclude, null, $topic, $part);
+
+        foreach ($this->buildLevelRelaxationLevels($baseLevel, $part) as $relaxedLevel) {
+            $candidates[] = $this->candidate($relaxedLevel, $noExclude, null, $topic, $part);
+        }
+
         return $this->uniqueCandidates($candidates);
     }
 
