@@ -20,7 +20,7 @@ class TemplateScaffoldGenerator implements WritingScaffoldGenerator
 
     public function generate(Question $question, int $tier): array
     {
-        $cacheKey = "writing_scaffold:v3:{$question->id}:tier{$tier}";
+        $cacheKey = "writing_scaffold:v4:{$question->id}:tier{$tier}";
         $cached = Cache::get($cacheKey);
 
         if (is_array($cached)) {
