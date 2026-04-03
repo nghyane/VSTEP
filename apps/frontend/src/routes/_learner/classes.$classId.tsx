@@ -10,14 +10,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { useState } from "react"
-import { toast } from "sonner"
-import { AudioRecorder } from "@/components/features/assignments/AudioRecorder"
-import { MCQAnswerForm } from "@/components/features/assignments/MCQAnswerForm"
-import {
-	type AssignmentContent,
-	isMCQContent,
-	parseContent,
-} from "@/components/features/assignments/types"
+
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -30,20 +23,13 @@ import {
 	TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Textarea } from "@/components/ui/textarea"
 import type {
 	ClassAssignment,
 	ClassFeedback,
 	ClassMember,
 	LeaderboardEntry,
 } from "@/hooks/use-classes"
-import {
-	useAssignments,
-	useClass,
-	useClassFeedback,
-	useLeaderboard,
-	useSubmitAnswer,
-} from "@/hooks/use-classes"
+import { useAssignments, useClass, useClassFeedback, useLeaderboard } from "@/hooks/use-classes"
 import { user } from "@/lib/auth"
 import { cn } from "@/lib/utils"
 
@@ -172,77 +158,9 @@ function LearnerAssignmentsTab({
 	currentUserId: string
 }) {
 	const qc = useQueryClient()
-	const submitAnswer = useSubmitAnswer()
-	const [openId, setOpenId] = useState<string | null>(null)
-	const [essayAnswer, setEssayAnswer] = useState("")
-	const [mcqAnswers, setMcqAnswers] = useState<number[]>([])
-	const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
 
 	if (assignments.length === 0) {
 		return <p className="py-8 text-center text-sm text-muted-foreground">Chưa có bài tập nào</p>
-	}
-
-	function openAssignment(asg: ClassAssignment) {
-		setOpenId(asg.id)
-		setEssayAnswer("")
-		setAudioBlob(null)
-		const parsed = parseContent(asg.content, asg.skill)
-		if (parsed && isMCQContent(parsed)) {
-			setMcqAnswers(new Array(parsed.questions.length).fill(-1))
-		} else {
-			setMcqAnswers([])
-		}
-	}
-
-	async function handleSubmit(asg: ClassAssignment) {
-		const parsed = parseContent(asg.content, asg.skill)
-		let answerStr = ""
-
-		if (asg.skill === "writing") {
-			answerStr = essayAnswer.trim()
-		} else if (asg.skill === "speaking" && audioBlob) {
-			// Convert audio blob to base64 data URL
-			answerStr = await new Promise<string>((resolve) => {
-				const reader = new FileReader()
-				reader.onloadend = () => resolve(reader.result as string)
-				reader.readAsDataURL(audioBlob)
-			})
-		} else if (parsed && isMCQContent(parsed)) {
-			answerStr = JSON.stringify({ answers: mcqAnswers })
-		}
-
-		if (!answerStr) return
-
-		// Warn if past due
-		if (asg.dueDate && new Date(asg.dueDate) < new Date()) {
-			const lateMs = Date.now() - new Date(asg.dueDate).getTime()
-			const lateMins = Math.ceil(lateMs / 60000)
-			if (!confirm(`Bài tập đã quá hạn ${lateMins} phút. Bạn vẫn muốn nộp?`)) return
-		}
-
-		submitAnswer.mutate(
-			{ classId, assignmentId: asg.id, answer: answerStr },
-			{
-				onSuccess: () => {
-					setOpenId(null)
-					setEssayAnswer("")
-					setMcqAnswers([])
-					setAudioBlob(null)
-					toast.success("Nộp bài thành công!")
-				},
-				onError: (err) => {
-					toast.error(err instanceof Error ? err.message : "Không thể nộp bài. Vui lòng thử lại.")
-				},
-			},
-		)
-	}
-
-	function canSubmit(asg: ClassAssignment): boolean {
-		const parsed = parseContent(asg.content, asg.skill)
-		if (asg.skill === "writing") return essayAnswer.trim().length > 0
-		if (asg.skill === "speaking") return audioBlob !== null
-		if (parsed && isMCQContent(parsed)) return mcqAnswers.every((a) => a >= 0)
-		return false
 	}
 
 	return (
@@ -260,7 +178,6 @@ function LearnerAssignmentsTab({
 			</div>
 			{assignments.map((asg) => {
 				const mySub = asg.submissions?.find((s) => s.userId === currentUserId)
-				const isOpen = openId === asg.id
 				const hasContent = !!asg.content
 				const canRetry = asg.allowRetry && mySub?.status !== "pending"
 
@@ -296,8 +213,13 @@ function LearnerAssignmentsTab({
 											Đã chấm — {mySub.score} điểm
 										</Badge>
 										{canRetry && (
-											<Button size="sm" variant="outline" onClick={() => openAssignment(asg)}>
-												Làm lại
+											<Button size="sm" variant="outline" asChild>
+												<Link
+													to="/classes/$classId/do/$assignmentId"
+													params={{ classId, assignmentId: asg.id }}
+												>
+													Làm lại
+												</Link>
 											</Button>
 										)}
 									</>
@@ -317,12 +239,13 @@ function LearnerAssignmentsTab({
 										)}
 									</>
 								) : hasContent ? (
-									<Button
-										size="sm"
-										className="gap-1.5"
-										onClick={() => (isOpen ? setOpenId(null) : openAssignment(asg))}
-									>
-										{isOpen ? "Thu gọn" : "Làm bài"}
+									<Button size="sm" className="gap-1.5" asChild>
+										<Link
+											to="/classes/$classId/do/$assignmentId"
+											params={{ classId, assignmentId: asg.id }}
+										>
+											Làm bài
+										</Link>
 									</Button>
 								) : (
 									<Badge variant="outline">Chưa có đề</Badge>
@@ -337,109 +260,9 @@ function LearnerAssignmentsTab({
 								<p className="whitespace-pre-wrap text-sm">{mySub.feedback}</p>
 							</div>
 						)}
-
-						{/* Skill-specific content + answer form */}
-						{isOpen && hasContent && (
-							<SkillAnswerForm
-								assignment={asg}
-								essayAnswer={essayAnswer}
-								onEssayChange={setEssayAnswer}
-								mcqAnswers={mcqAnswers}
-								onMcqChange={setMcqAnswers}
-								onAudioRecorded={setAudioBlob}
-								onSubmit={() => handleSubmit(asg)}
-								onCancel={() => setOpenId(null)}
-								canSubmit={canSubmit(asg)}
-								isPending={submitAnswer.isPending}
-							/>
-						)}
 					</div>
 				)
 			})}
-		</div>
-	)
-}
-
-function SkillAnswerForm({
-	assignment,
-	essayAnswer,
-	onEssayChange,
-	mcqAnswers,
-	onMcqChange,
-	onAudioRecorded,
-	onSubmit,
-	onCancel,
-	canSubmit: canSubmitProp,
-	isPending,
-}: {
-	assignment: ClassAssignment
-	essayAnswer: string
-	onEssayChange: (v: string) => void
-	mcqAnswers: number[]
-	onMcqChange: (v: number[]) => void
-	onAudioRecorded: (blob: Blob) => void
-	onSubmit: () => void
-	onCancel: () => void
-	canSubmit: boolean
-	isPending: boolean
-}) {
-	const parsed = parseContent(assignment.content, assignment.skill) as AssignmentContent | null
-	if (!parsed) return null
-
-	return (
-		<div className="border-t px-5 pb-5 pt-4 space-y-4">
-			{/* Listening/Reading: MCQ */}
-			{isMCQContent(parsed) && (
-				<MCQAnswerForm content={parsed} answers={mcqAnswers} onChange={onMcqChange} />
-			)}
-
-			{/* Writing: prompt + essay */}
-			{assignment.skill === "writing" && "prompt" in parsed && (
-				<>
-					<div className="rounded-lg bg-muted/50 p-4">
-						<p className="mb-2 text-xs font-medium text-muted-foreground">Đề bài:</p>
-						<p className="whitespace-pre-wrap text-sm leading-relaxed">
-							{(parsed as { prompt: string }).prompt}
-						</p>
-					</div>
-					<Textarea
-						placeholder="Viết bài luận của bạn..."
-						value={essayAnswer}
-						onChange={(e) => onEssayChange(e.target.value)}
-						rows={12}
-					/>
-				</>
-			)}
-
-			{/* Speaking: topic + audio recorder */}
-			{assignment.skill === "speaking" && "prompt" in parsed && (
-				<>
-					<div className="rounded-lg bg-muted/50 p-4">
-						<p className="mb-2 text-xs font-medium text-muted-foreground">Chủ đề:</p>
-						<p className="whitespace-pre-wrap text-sm leading-relaxed">
-							{(parsed as { prompt: string }).prompt}
-						</p>
-					</div>
-					{(parsed as { audioUrl?: string }).audioUrl && (
-						<div className="rounded-lg bg-muted/50 p-4">
-							<p className="mb-2 text-xs font-medium text-muted-foreground">Audio mẫu:</p>
-							<audio controls className="w-full" src={(parsed as { audioUrl: string }).audioUrl}>
-								<track kind="captions" />
-							</audio>
-						</div>
-					)}
-					<AudioRecorder onRecorded={onAudioRecorded} />
-				</>
-			)}
-
-			<div className="flex justify-end gap-2">
-				<Button variant="outline" onClick={onCancel}>
-					Huỷ
-				</Button>
-				<Button onClick={onSubmit} disabled={!canSubmitProp || isPending}>
-					{isPending ? "Đang nộp..." : "Nộp bài"}
-				</Button>
-			</div>
 		</div>
 	)
 }

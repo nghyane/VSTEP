@@ -118,4 +118,37 @@ function writeString(view: DataView, offset: number, str: string) {
 	}
 }
 
-export { useUploadSpeakingAudio }
+/**
+ * Upload an audio File to R2 via presigned URL.
+ * Converts to WAV PCM 16kHz mono (same as speaking upload) so the backend accepts it.
+ * Returns the R2 storage path.
+ */
+function useUploadAudioFile() {
+	return useMutation({
+		mutationFn: async (file: File): Promise<string> => {
+			const wavBlob = await convertToWav(file)
+
+			const presign = await api.post<PresignResponse>("/api/uploads/presign", {
+				contentType: "audio/wav",
+				fileSize: wavBlob.size,
+			})
+
+			const uploadRes = await fetch(presign.uploadUrl, {
+				method: "PUT",
+				headers: {
+					"Content-Type": "audio/wav",
+					...presign.headers,
+				},
+				body: wavBlob,
+			})
+
+			if (!uploadRes.ok) {
+				throw new Error(`Upload failed: ${uploadRes.status}`)
+			}
+
+			return presign.audioPath
+		},
+	})
+}
+
+export { useUploadAudioFile, useUploadSpeakingAudio }
