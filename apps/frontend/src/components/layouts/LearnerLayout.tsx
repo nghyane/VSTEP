@@ -257,6 +257,16 @@ export function LearnerLayout() {
 										Hồ sơ
 									</Link>
 								</DropdownMenuItem>
+								<DropdownMenuItem asChild>
+									<Link to="/submissions">
+										<HugeiconsIcon
+											icon={CheckmarkCircle01Icon}
+											className="size-4"
+											strokeWidth={1.75}
+										/>
+										Lịch sử bài nộp
+									</Link>
+								</DropdownMenuItem>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem onClick={handleLogout}>
 									<HugeiconsIcon icon={Logout01Icon} className="size-4" strokeWidth={1.75} />

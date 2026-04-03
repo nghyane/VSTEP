@@ -8,9 +8,13 @@ import {
 import type { IconSvgElement } from "@hugeicons/react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link } from "@tanstack/react-router"
+import Markdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 import { Badge } from "@/components/ui/badge"
 import { useSubmission } from "@/hooks/use-submissions"
+import { usePresignedUrl } from "@/lib/storage"
 import { cn } from "@/lib/utils"
+import { MarkdownFeedback } from "@/routes/_focused/-components/writing/MarkdownFeedback"
 import type { GradingResult, Skill, SubmissionStatus } from "@/types/api"
 
 export const Route = createFileRoute("/_learner/submissions/$id")({
@@ -176,8 +180,12 @@ function SubmissionDetailPage() {
 				{data.feedback && (
 					<div className="space-y-2">
 						<p className="text-sm font-medium">Nhận xét</p>
-						<div className="rounded-xl bg-muted/30 p-4 text-sm leading-relaxed whitespace-pre-wrap">
-							{data.feedback}
+						<div className="rounded-xl bg-muted/30 p-4">
+							{data.skill === "writing" ? (
+								<MarkdownFeedback feedback={data.feedback} />
+							) : (
+								<SimpleFeedback feedback={data.feedback} />
+							)}
 						</div>
 					</div>
 				)}
@@ -190,8 +198,13 @@ function SubmissionDetailPage() {
 							{"text" in data.answer ? (
 								<p className="leading-relaxed whitespace-pre-wrap">{data.answer.text}</p>
 							) : "audioPath" in data.answer ? (
-								<div className="space-y-1">
-									<p>Audio: {data.answer.durationSeconds}s</p>
+								<div className="space-y-2">
+									{data.answer.durationSeconds && (
+										<p className="text-muted-foreground">
+											Thời lượng: {data.answer.durationSeconds}s
+										</p>
+									)}
+									<SpeakingAudioPlayer audioPath={data.answer.audioPath} />
 								</div>
 							) : "answers" in data.answer ? (
 								<div className="space-y-1">
@@ -207,5 +220,77 @@ function SubmissionDetailPage() {
 				)}
 			</div>
 		</div>
+	)
+}
+
+function SimpleFeedback({ feedback }: { feedback: string }) {
+	return (
+		<Markdown
+			remarkPlugins={[remarkGfm]}
+			components={{
+				p({ children }) {
+					return (
+						<p className="mb-3 text-sm leading-relaxed text-muted-foreground last:mb-0">
+							{children}
+						</p>
+					)
+				},
+				strong({ children }) {
+					return <strong className="font-semibold text-foreground">{children}</strong>
+				},
+				em({ children }) {
+					return <em className="font-medium text-primary not-italic">{children}</em>
+				},
+				ol({ children }) {
+					return <ol className="mb-3 list-decimal space-y-1.5 pl-5 text-sm">{children}</ol>
+				},
+				ul({ children }) {
+					return <ul className="mb-3 list-disc space-y-1.5 pl-5 text-sm">{children}</ul>
+				},
+				li({ children }) {
+					return <li className="leading-relaxed text-muted-foreground">{children}</li>
+				},
+				h1({ children }) {
+					return <h3 className="mb-2 mt-4 text-sm font-bold first:mt-0">{children}</h3>
+				},
+				h2({ children }) {
+					return <h4 className="mb-2 mt-3 text-sm font-bold first:mt-0">{children}</h4>
+				},
+				h3({ children }) {
+					return <h5 className="mb-1.5 mt-3 text-sm font-semibold first:mt-0">{children}</h5>
+				},
+				blockquote({ children }) {
+					return (
+						<blockquote className="my-3 rounded-lg border-l-2 border-primary/30 bg-primary/5 p-3 text-sm text-muted-foreground">
+							{children}
+						</blockquote>
+					)
+				},
+				hr() {
+					return <hr className="my-4 border-border/50" />
+				},
+			}}
+		>
+			{feedback}
+		</Markdown>
+	)
+}
+
+function SpeakingAudioPlayer({ audioPath }: { audioPath: string }) {
+	const { data: audioSrc } = usePresignedUrl(audioPath)
+
+	if (!audioSrc) {
+		return <p className="text-xs text-muted-foreground">Đang tải audio...</p>
+	}
+
+	return (
+		/* biome-ignore lint/a11y/useMediaCaption: speaking review playback */
+		<audio
+			controls
+			controlsList="nodownload"
+			preload="metadata"
+			className="w-full"
+			src={audioSrc}
+		/>
 	)
 }

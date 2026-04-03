@@ -53,7 +53,12 @@ function useSubmitPracticeAnswer(sessionId: string) {
 	return useMutation({
 		mutationFn: (body: {
 			questionId: string
-			answer: { text?: string; answers?: Record<string, string>; audioPath?: string }
+			answer: {
+				text?: string
+				answers?: Record<string, string>
+				audioPath?: string
+				durationSeconds?: number
+			}
 		}) => api.post<PracticeSubmitResponse>(`/api/practice/sessions/${sessionId}/submit`, body),
 	})
 }

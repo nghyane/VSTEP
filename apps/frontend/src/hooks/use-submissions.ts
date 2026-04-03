@@ -15,11 +15,20 @@ function useSubmissions(params?: { page?: number; skill?: string; status?: strin
 	})
 }
 
+const GRADING_POLL_MS = 5_000
+
 function useSubmission(id: string) {
 	return useQuery({
 		queryKey: ["submissions", id],
 		queryFn: () => api.get<SubmissionFull>(`/api/submissions/${id}`),
 		enabled: !!id,
+		refetchInterval: (query) => {
+			const status = query.state.data?.status
+			if (!status) return GRADING_POLL_MS
+			return status === "pending" || status === "processing" || status === "review_pending"
+				? GRADING_POLL_MS
+				: false
+		},
 	})
 }
 
