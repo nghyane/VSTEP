@@ -17,6 +17,8 @@ import { ErrorScreen } from "@/components/ErrorScreen";
 import { EmptyState } from "@/components/EmptyState";
 import { SKILL_LABELS } from "@/components/SkillIcon";
 import { AudioPlayer } from "@/components/AudioPlayer";
+import { ObjectiveResultView } from "@/components/ObjectiveResultView";
+import { WritingAnnotationsView } from "@/components/WritingAnnotationsView";
 import { useStartPractice, useSubmitPractice, useCompletePractice } from "@/hooks/use-practice";
 import { usePresignUpload, uploadToPresignedUrl } from "@/hooks/use-uploads";
 import { useThemeColors, spacing, radius, fontSize } from "@/theme";
@@ -109,6 +111,8 @@ export default function PracticeQuestionScreen() {
 
   const [state, dispatch] = useReducer(reducer, initialState);
   const [passageVisible, setPassageVisible] = useState(true);
+  const [reviewResult, setReviewResult] = useState<import("@/types/api").PracticeSubmitResult | null>(null);
+  const [nextItem, setNextItem] = useState<PracticeCurrentItem | null>(null);
 
   // Auto-start practice session on mount
   useEffect(() => {
@@ -219,25 +223,110 @@ export default function PracticeQuestionScreen() {
     submitMutation.mutate(
       { answer },
       {
-        onSuccess: (result) => {
-          // Update progress and move to next question
-          setProgress(result.progress);
-          if (result.currentItem) {
-            setCurrentItem(result.currentItem);
-          } else {
-            // No more questions — complete session and show result
-            completeMutation.mutate(undefined, {
-              onSuccess: () => {
-                if (result.submissionId) {
-                  router.replace(`/(app)/practice/result/${result.submissionId}`);
-                } else {
-                  router.replace("/(app)/practice");
-                }
-              },
-            });
-          }
+        onSuccess: (submitResult) => {
+          setProgress(submitResult.progress);
+          // Store result for review phase + next item for later
+          setReviewResult(submitResult);
+          setNextItem(submitResult.currentItem);
         },
       },
+    );
+  }
+
+  function handleNextAfterReview() {
+    if (nextItem) {
+      setCurrentItem(nextItem);
+      setNextItem(null);
+      setReviewResult(null);
+    } else {
+      // No more questions — complete session
+      completeMutation.mutate(undefined, {
+        onSuccess: () => {
+          if (reviewResult?.submissionId) {
+            router.replace(`/(app)/practice/result/${reviewResult.submissionId}`);
+          } else {
+            router.replace("/(app)/practice");
+          }
+        },
+      });
+    }
+  }
+
+  // ─── Review phase — show result after submit ─────────────────────────
+  if (reviewResult) {
+    const gr = reviewResult.result;
+    const isObj = kind === "objective";
+    return (
+      <ScreenWrapper>
+        <View style={styles.headerRow}>
+          <HapticTouchable onPress={handleNextAfterReview}>
+            <Ionicons name="arrow-back" size={24} color={c.foreground} />
+          </HapticTouchable>
+          <Text style={[styles.headerTitle, { color: c.foreground }]}>Kết quả</Text>
+          <View style={{ width: 24 }} />
+        </View>
+
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.xl, gap: spacing.base, paddingBottom: spacing["3xl"] }}>
+          {/* Score summary */}
+          {gr?.score != null && (
+            <View style={[styles.reviewScoreBox, { backgroundColor: c.primary + "15" }]}>
+              <Text style={{ color: c.primary, fontSize: 36, fontWeight: "800" }}>{gr.score}/10</Text>
+              {gr.band && <Text style={{ color: c.primary, fontWeight: "600" }}>{gr.band}</Text>}
+            </View>
+          )}
+
+          {/* Objective breakdown */}
+          {isObj && gr?.items && gr.items.length > 0 && (
+            <ObjectiveResultView
+              items={gr.items}
+              userAnswers={gr.userAnswers}
+              correctAnswers={gr.correctAnswers}
+            />
+          )}
+
+          {/* Writing/Speaking annotations */}
+          {gr?.annotations && <WritingAnnotationsView annotations={gr.annotations} />}
+
+          {/* Criteria scores */}
+          {gr?.criteria && gr.criteria.length > 0 && (
+            <View style={{ gap: spacing.sm }}>
+              <Text style={{ color: c.foreground, fontWeight: "700", fontSize: fontSize.base }}>Điểm thành phần</Text>
+              {gr.criteria.map((cr) => (
+                <View key={cr.key} style={{ gap: 2 }}>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                    <Text style={{ color: c.foreground, fontSize: fontSize.sm }}>{cr.name}</Text>
+                    <Text style={{ color: c.foreground, fontSize: fontSize.sm, fontWeight: "700" }}>{cr.score}/10</Text>
+                  </View>
+                  <View style={{ height: 4, backgroundColor: c.muted, borderRadius: 2 }}>
+                    <View style={{ height: 4, backgroundColor: c.primary, borderRadius: 2, width: `${cr.score * 10}%` as any }} />
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Feedback text */}
+          {gr?.feedback && (
+            <View style={{ gap: spacing.xs }}>
+              <Text style={{ color: c.foreground, fontWeight: "700", fontSize: fontSize.base }}>Nhận xét</Text>
+              <Text style={{ color: c.foreground, fontSize: fontSize.sm, lineHeight: 22 }}>{gr.feedback}</Text>
+            </View>
+          )}
+        </ScrollView>
+
+        {/* Next button */}
+        <View style={{ padding: spacing.xl, borderTopWidth: 1, borderTopColor: c.border }}>
+          <HapticTouchable
+            style={[styles.primaryBtn, { backgroundColor: c.primary }]}
+            onPress={handleNextAfterReview}
+          >
+            <Text style={[styles.btnLabel, { color: c.primaryForeground }]}>
+              {nextItem ? "Câu tiếp theo" : "Hoàn thành"}
+            </Text>
+            <Ionicons name={nextItem ? "arrow-forward" : "checkmark"} size={18} color={c.primaryForeground} />
+          </HapticTouchable>
+        </View>
+      </ScreenWrapper>
     );
   }
 
@@ -960,5 +1049,11 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
+  },
+  reviewScoreBox: {
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    alignItems: "center",
+    gap: spacing.xs,
   },
 });

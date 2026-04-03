@@ -159,6 +159,58 @@ export interface Question {
 // Submissions
 // ============================================================
 
+export interface AnnotationHighlight {
+  phrase: string;
+  note: string;
+  type: "structure" | "collocation" | "transition";
+}
+
+export interface AnnotationCorrection {
+  original: string;
+  correction: string;
+  type: "grammar" | "vocabulary" | "spelling";
+  explanation: string;
+}
+
+export interface AnnotationRewrite {
+  original: string;
+  correction: string;
+  note: string;
+}
+
+export interface GradingAnnotations {
+  strengthQuotes: AnnotationHighlight[];
+  corrections: AnnotationCorrection[];
+  rewriteSuggestion: AnnotationRewrite | null;
+}
+
+export interface GradingResult {
+  type: string;
+  overallScore?: number;
+  band?: VstepBand;
+  criteriaScores?: Record<string, number>;
+  criteria?: { key: string; name: string; score: number; bandLabel: string }[];
+  feedback?: string;
+  annotations?: GradingAnnotations;
+  confidence?: "high" | "medium" | "low";
+  gradedAt?: string;
+  // Objective fields
+  correct?: number;
+  total?: number;
+  rawRatio?: number;
+  allCorrect?: boolean;
+  userAnswers?: Record<string, string | null>;
+  correctAnswers?: Record<string, string | null>;
+  items?: ObjectiveItemResult[];
+}
+
+export interface ObjectiveItemResult {
+  questionNumber: number;
+  userAnswer: string | null;
+  correctAnswer: string | null;
+  isCorrect: boolean;
+}
+
 export interface Submission {
   id: string;
   userId: string;
@@ -169,8 +221,9 @@ export interface Submission {
   band: VstepBand | null;
   part: number | null;
   answer: unknown | null;
-  result: unknown | null;
+  result: GradingResult | null;
   feedback: string | null;
+  question?: Question;
   createdAt: string;
   updatedAt: string;
 }
@@ -346,7 +399,7 @@ export interface PracticeShowResponse {
 }
 
 export interface PracticeSubmitResult {
-  result: unknown;
+  result: GradingResult | null;
   submissionId: string;
   canRetry: boolean;
   isRetry: boolean;

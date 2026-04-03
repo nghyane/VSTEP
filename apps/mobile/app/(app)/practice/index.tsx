@@ -45,6 +45,20 @@ export default function PracticeScreen() {
             />
           ))}
         </View>
+
+        {/* Browse questions */}
+        <HapticTouchable
+          style={[styles.browseBtn, { backgroundColor: c.card, borderColor: c.border }]}
+          onPress={() => router.push("/(app)/practice/browse")}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="search-outline" size={20} color={c.primary} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: c.foreground, fontWeight: "600", fontSize: fontSize.sm }}>Chọn câu hỏi cụ thể</Text>
+            <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs }}>Lọc theo Part, Level, dạng bài</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
+        </HapticTouchable>
       </BouncyScrollView>
     </ScreenWrapper>
   );
@@ -123,4 +137,13 @@ const styles = StyleSheet.create({
   cardMeta: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   metaText: { fontSize: fontSize.xs },
   trendText: { fontSize: fontSize.xs },
+  browseBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    borderWidth: 1,
+    borderRadius: radius.xl,
+    padding: spacing.base,
+    marginTop: spacing.md,
+  },
 });

@@ -10,7 +10,9 @@ import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useExplain, type ExplainResponse } from "@/hooks/use-ai";
-import type { Submission } from "@/types/api";
+import { ObjectiveResultView } from "@/components/ObjectiveResultView";
+import { WritingAnnotationsView } from "@/components/WritingAnnotationsView";
+import type { Submission, GradingResult } from "@/types/api";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { Skill, SubmissionStatus } from "@/types/api";
 
@@ -53,7 +55,7 @@ export default function SubmissionDetailScreen() {
   if (error || !data) return <ErrorScreen message={error?.message ?? "Không tìm thấy bài nộp"} />;
 
   const status = statusConfig[data.status];
-  const result = data.result as { type?: string; criteriaScores?: Record<string, number> } | null;
+  const result = data.result as GradingResult | null;
   const criteriaLabels = data.skill === "writing" ? WRITING_CRITERIA : data.skill === "speaking" ? SPEAKING_CRITERIA : null;
   const criteriaScores = result?.criteriaScores;
 
@@ -121,6 +123,23 @@ export default function SubmissionDetailScreen() {
             Hoàn thành: {new Date((data as any).completedAt).toLocaleString("vi-VN")}
           </Text>
         </View>
+      )}
+
+      {/* Objective per-item breakdown (reading/listening) */}
+      {result?.items && result.items.length > 0 && (
+        <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+          <Text style={[styles.sectionTitle, { color: c.foreground }]}>Chi tiết từng câu</Text>
+          <ObjectiveResultView
+            items={result.items}
+            userAnswers={result.userAnswers}
+            correctAnswers={result.correctAnswers}
+          />
+        </View>
+      )}
+
+      {/* Writing annotations (strength quotes, corrections, rewrite suggestion) */}
+      {result?.annotations && (
+        <WritingAnnotationsView annotations={result.annotations} />
       )}
 
       {/* Feedback */}
