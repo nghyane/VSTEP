@@ -43,6 +43,10 @@ export default function AppLayout() {
         options={{ headerShown: true, title: "Luyện tập" }}
       />
       <Stack.Screen
+        name="practice/browse"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
         name="practice/[skill]"
         options={{ headerShown: false }}
       />

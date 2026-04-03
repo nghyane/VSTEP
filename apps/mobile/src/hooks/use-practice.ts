@@ -25,6 +25,8 @@ export function useStartPractice() {
       level?: string;
       itemsCount?: number;
       focusKp?: string;
+      part?: number;
+      topic?: string;
     }) => api.post<PracticeStartResponse>("/api/practice/sessions", body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["practice-sessions"] });

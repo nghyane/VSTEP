@@ -1,6 +1,8 @@
 import { useEffect, useReducer, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -92,7 +94,7 @@ function reducer(state: State, action: Action): State {
 // ─── Main screen ─────────────────────────────────────────────────────────────
 
 export default function PracticeQuestionScreen() {
-  const { skill } = useLocalSearchParams<{ skill: string }>();
+  const { skill, level: levelParam, part: partParam } = useLocalSearchParams<{ skill: string; level?: string; part?: string }>();
   const c = useThemeColors();
   const router = useRouter();
 
@@ -118,7 +120,14 @@ export default function PracticeQuestionScreen() {
   useEffect(() => {
     if (!skill || sessionId) return;
     startMutation.mutate(
-      { skill: skill as Skill, mode: "free" },
+      {
+        skill: skill as Skill,
+        mode: "free",
+        level: levelParam || undefined,
+        itemsCount: undefined,
+        focusKp: undefined,
+        part: partParam ? Number(partParam) : undefined,
+      },
       {
         onSuccess: (data: PracticeStartResponse) => {
           setSessionId(data.session.id);
@@ -138,7 +147,51 @@ export default function PracticeQuestionScreen() {
   }, [questionId]);
 
   if (startMutation.isPending) return <LoadingScreen />;
-  if (startMutation.isError) return <ErrorScreen message={startMutation.error.message} onRetry={() => startMutation.reset()} />;
+  if (startMutation.isError) {
+    const errMsg = startMutation.error.message;
+    const isNoQuestion = /no practice question|không tìm thấy/i.test(errMsg);
+    return (
+      <ScreenWrapper>
+        <View style={styles.headerRow}>
+          <HapticTouchable onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color={c.foreground} />
+          </HapticTouchable>
+          <Text style={[styles.headerTitle, { color: c.foreground }]}>
+            {SKILL_LABELS[skill as Skill] ?? skill}
+          </Text>
+          <View style={{ width: 24 }} />
+        </View>
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: spacing.xl, gap: spacing.md }}>
+          <Ionicons name={isNoQuestion ? "library-outline" : "alert-circle-outline"} size={48} color={isNoQuestion ? c.mutedForeground : c.destructive} />
+          <Text style={{ color: c.foreground, fontWeight: "600", fontSize: fontSize.base, textAlign: "center" }}>
+            {isNoQuestion ? `Chưa có câu hỏi ${SKILL_LABELS[skill as Skill]} ở trình độ ${currentLevel}` : errMsg}
+          </Text>
+          {isNoQuestion && (
+            <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm, textAlign: "center" }}>
+              Thử chọn câu hỏi cụ thể ở level khác
+            </Text>
+          )}
+        </View>
+        <View style={{ padding: spacing.xl, gap: spacing.sm, paddingBottom: spacing["3xl"] }}>
+          {isNoQuestion && (
+            <HapticTouchable
+              style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, borderRadius: radius.lg, paddingVertical: spacing.md, backgroundColor: c.primary }}
+              onPress={() => router.replace({ pathname: "/(app)/practice/browse" as any, params: { skill } })}
+            >
+              <Ionicons name="search-outline" size={18} color={c.primaryForeground} />
+              <Text style={[styles.btnLabel, { color: c.primaryForeground }]}>Chọn câu hỏi</Text>
+            </HapticTouchable>
+          )}
+          <HapticTouchable
+            style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, borderRadius: radius.lg, paddingVertical: spacing.md, backgroundColor: c.muted }}
+            onPress={() => router.back()}
+          >
+            <Text style={[styles.btnLabel, { color: c.foreground }]}>Quay lại</Text>
+          </HapticTouchable>
+        </View>
+      </ScreenWrapper>
+    );
+  }
   if (!currentItem || !currentItem.question) {
     return (
       <ScreenWrapper>
@@ -256,6 +309,48 @@ export default function PracticeQuestionScreen() {
   if (reviewResult) {
     const gr = reviewResult.result;
     const isObj = kind === "objective";
+    const hasResult = gr && (gr.score != null || (gr.items && gr.items.length > 0));
+    const isSubjective = kind === "writing" || kind === "speaking";
+
+    // Writing/Speaking: AI chấm async → result null → navigate to submission detail (polling)
+    if (isSubjective && !hasResult && reviewResult.submissionId) {
+      return (
+        <ScreenWrapper>
+          <View style={styles.headerRow}>
+            <HapticTouchable onPress={handleNextAfterReview}>
+              <Ionicons name="arrow-back" size={24} color={c.foreground} />
+            </HapticTouchable>
+            <Text style={[styles.headerTitle, { color: c.foreground }]}>Kết quả</Text>
+            <View style={{ width: 24 }} />
+          </View>
+          <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: spacing.xl, gap: spacing.md }}>
+            <ActivityIndicator size="large" color={c.primary} />
+            <Text style={{ color: c.foreground, fontWeight: "600", fontSize: fontSize.base }}>
+              AI đang chấm bài...
+            </Text>
+            <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm, textAlign: "center" }}>
+              Quá trình chấm {kind === "writing" ? "bài viết" : "bài nói"} mất 1-3 phút. Bạn có thể xem kết quả sau.
+            </Text>
+          </View>
+          <View style={{ padding: spacing.xl, gap: spacing.sm }}>
+            <HapticTouchable
+              style={[styles.primaryBtn, { backgroundColor: c.primary }]}
+              onPress={() => router.push(`/(app)/submissions/${reviewResult.submissionId}`)}
+            >
+              <Ionicons name="eye-outline" size={18} color={c.primaryForeground} />
+              <Text style={[styles.btnLabel, { color: c.primaryForeground }]}>Xem chi tiết bài chấm</Text>
+            </HapticTouchable>
+            <HapticTouchable
+              style={[styles.primaryBtn, { backgroundColor: c.muted }]}
+              onPress={handleNextAfterReview}
+            >
+              <Text style={[styles.btnLabel, { color: c.foreground }]}>{nextItem ? "Câu tiếp theo" : "Hoàn thành"}</Text>
+            </HapticTouchable>
+          </View>
+        </ScreenWrapper>
+      );
+    }
+
     return (
       <ScreenWrapper>
         <View style={styles.headerRow}>
@@ -332,6 +427,7 @@ export default function PracticeQuestionScreen() {
 
   return (
     <ScreenWrapper>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}>
       {/* Header */}
       <View style={styles.headerRow}>
         <HapticTouchable onPress={() => router.back()}>
@@ -351,7 +447,7 @@ export default function PracticeQuestionScreen() {
       )}
 
       {/* Content */}
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
         {kind === "objective" && objItem && (
           <ObjectiveItemView
             content={content as ListeningContent | ReadingContent}
@@ -461,6 +557,7 @@ export default function PracticeQuestionScreen() {
           </HapticTouchable>
         )}
       </View>
+      </KeyboardAvoidingView>
     </ScreenWrapper>
   );
 }

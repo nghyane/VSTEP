@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScreenWrapper } from "@/components/ScreenWrapper";
 import { BouncyFlatList } from "@/components/BouncyScrollView";
 import { HapticTouchable } from "@/components/HapticTouchable";
@@ -47,8 +48,10 @@ function groupByPart(questions: Question[]): QuestionGroup[] {
 export default function BrowseQuestionsScreen() {
   const c = useThemeColors();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { skill: initialSkill } = useLocalSearchParams<{ skill?: string }>();
 
-  const [skill, setSkill] = useState<Skill>("listening");
+  const [skill, setSkill] = useState<Skill>((initialSkill as Skill) || "listening");
   const [levelFilter, setLevelFilter] = useState<string | null>(null);
 
   const { data, isLoading } = usePracticeQuestions({
@@ -66,22 +69,19 @@ export default function BrowseQuestionsScreen() {
 
   const handleStartWithQuestion = useCallback(
     (group: QuestionGroup) => {
-      startMutation.mutate(
-        { skill, mode: "free", level: group.level, part: group.part },
-        {
-          onSuccess: (res) => {
-            router.push(`/(app)/practice/${skill}`);
-          },
-        },
-      );
+      // Navigate directly — practice/[skill] will start session with these params
+      router.push({
+        pathname: `/(app)/practice/${skill}` as any,
+        params: { level: group.level, part: String(group.part) },
+      });
     },
-    [skill, startMutation, router],
+    [skill, router],
   );
 
   return (
     <ScreenWrapper noPadding>
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: c.border }]}>
+      <View style={[styles.header, { borderBottomColor: c.border, paddingTop: insets.top + spacing.sm }]}>
         <Text style={[styles.title, { color: c.foreground }]}>Chọn câu hỏi</Text>
         <Text style={[styles.subtitle, { color: c.mutedForeground }]}>Chọn dạng bài muốn luyện</Text>
       </View>

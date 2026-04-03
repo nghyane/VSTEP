@@ -150,6 +150,17 @@ export default function SubmissionDetailScreen() {
         </View>
       )}
 
+      {/* Question explanation (if backend returns it) */}
+      {data.question?.explanation && (
+        <View style={[styles.section, { backgroundColor: c.primary + "08", borderColor: c.primary + "30" }]}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+            <Ionicons name="bulb-outline" size={16} color={c.primary} />
+            <Text style={[styles.sectionTitle, { color: c.primary }]}>Giải thích</Text>
+          </View>
+          <Text style={{ color: c.foreground, fontSize: fontSize.sm, lineHeight: 22 }}>{data.question.explanation}</Text>
+        </View>
+      )}
+
       {/* Answer */}
       {data.answer && (
         <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
