@@ -1,7 +1,7 @@
 import type { AuthUser, LoginResponse } from "@/types/api";
 import { getAccessToken, getRefreshToken, saveTokens, clearTokens } from "./auth";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://5.223.87.142:3000";
 
 // ---------------------------------------------------------------------------
 // snake_case ↔ camelCase transforms (for Laravel ↔ React Native convention bridge)
