@@ -88,24 +88,66 @@ export default function SubmissionDetailScreen() {
         )}
       </View>
 
-      {/* Criteria Scores */}
-      {criteriaLabels && criteriaScores && (
+      {/* Criteria Scores — prefer enriched criteria array, fallback to criteriaScores map */}
+      {(result?.criteria || criteriaScores) && (
         <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
           <Text style={[styles.sectionTitle, { color: c.foreground }]}>Điểm thành phần</Text>
-          {Object.entries(criteriaLabels).map(([key, label]) => {
-            const score = criteriaScores[key] ?? 0;
-            return (
-              <View key={key} style={styles.criteriaRow}>
-                <View style={styles.criteriaHeader}>
-                  <Text style={{ color: c.foreground, fontSize: fontSize.sm }}>{label}</Text>
-                  <Text style={{ color: c.foreground, fontSize: fontSize.sm, fontWeight: "700", fontVariant: ["tabular-nums"] }}>{score}/10</Text>
+          {result?.criteria && result.criteria.length > 0
+            ? result.criteria.map((cr) => {
+                const pct = (cr.score / 10) * 100;
+                const barColor = pct >= 80 ? "#10b981" : pct >= 60 ? "#f59e0b" : "#ef4444";
+                return (
+                  <View key={cr.key} style={styles.criteriaRow}>
+                    <View style={styles.criteriaHeader}>
+                      <Text style={{ color: c.foreground, fontSize: fontSize.sm, fontWeight: "500", flex: 1 }}>{cr.name}</Text>
+                      <Text style={{ color: c.foreground, fontSize: fontSize.sm, fontWeight: "700", fontVariant: ["tabular-nums"] }}>{cr.score}/10</Text>
+                    </View>
+                    <View style={[styles.progressTrack, { backgroundColor: c.muted }]}>
+                      <View style={[styles.progressFill, { width: `${pct}%`, backgroundColor: barColor }]} />
+                    </View>
+                    {cr.bandLabel ? (
+                      <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs }}>{cr.bandLabel}</Text>
+                    ) : null}
+                  </View>
+                );
+              })
+            : criteriaLabels && criteriaScores
+              ? Object.entries(criteriaLabels).map(([key, label]) => {
+                  const score = criteriaScores[key] ?? 0;
+                  const pct = score * 10;
+                  const barColor = pct >= 80 ? "#10b981" : pct >= 60 ? "#f59e0b" : "#ef4444";
+                  return (
+                    <View key={key} style={styles.criteriaRow}>
+                      <View style={styles.criteriaHeader}>
+                        <Text style={{ color: c.foreground, fontSize: fontSize.sm, flex: 1 }}>{label}</Text>
+                        <Text style={{ color: c.foreground, fontSize: fontSize.sm, fontWeight: "700", fontVariant: ["tabular-nums"] }}>{score}/10</Text>
+                      </View>
+                      <View style={[styles.progressTrack, { backgroundColor: c.muted }]}>
+                        <View style={[styles.progressFill, { width: `${pct}%`, backgroundColor: barColor }]} />
+                      </View>
+                    </View>
+                  );
+                })
+              : null}
+        </View>
+      )}
+
+      {/* Knowledge Gaps */}
+      {result?.knowledgeGaps && (result.knowledgeGaps as any[]).length > 0 && (
+        <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+          <Text style={[styles.sectionTitle, { color: c.foreground }]}>Điểm cần cải thiện</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.xs }}>
+            {(result.knowledgeGaps as { name: string; category: string }[]).map((gap, i) => {
+              const gapColors: Record<string, string> = { grammar: "#ef4444", vocabulary: "#f59e0b", spelling: "#3b82f6", discourse: "#8b5cf6" };
+              const color = gapColors[gap.category] ?? c.mutedForeground;
+              return (
+                <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: color + "12", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: color }} />
+                  <Text style={{ color, fontSize: fontSize.xs, fontWeight: "600" }}>{gap.name}</Text>
                 </View>
-                <View style={[styles.progressTrack, { backgroundColor: c.muted }]}>
-                  <View style={[styles.progressFill, { width: `${score * 10}%`, backgroundColor: c.primary }]} />
-                </View>
-              </View>
-            );
-          })}
+              );
+            })}
+          </View>
         </View>
       )}
 
@@ -224,26 +266,38 @@ function AIExplainSection({
   function handleExplain() {
     explain.mutate(
       { text: answerText, skill },
-      { onSuccess: (data) => setResult(data) },
+      {
+        onSuccess: (data) => setResult(data),
+        onError: () => {
+          /* handled below */
+        },
+      },
     );
   }
 
   if (!result) {
     return (
-      <HapticTouchable
-        style={[styles.aiBtn, { backgroundColor: c.primary + "12", borderColor: c.primary + "40" }]}
-        onPress={handleExplain}
-        disabled={explain.isPending}
-      >
-        {explain.isPending ? (
-          <ActivityIndicator size="small" color={c.primary} />
-        ) : (
-          <Ionicons name="sparkles" size={20} color={c.primary} />
+      <View style={{ gap: spacing.sm }}>
+        <HapticTouchable
+          style={[styles.aiBtn, { backgroundColor: c.primary + "12", borderColor: c.primary + "40" }]}
+          onPress={handleExplain}
+          disabled={explain.isPending}
+        >
+          {explain.isPending ? (
+            <ActivityIndicator size="small" color={c.primary} />
+          ) : (
+            <Ionicons name="sparkles" size={20} color={c.primary} />
+          )}
+          <Text style={[styles.aiBtnText, { color: c.primary }]}>
+            {explain.isPending ? "Đang phân tích..." : "AI Giải thích"}
+          </Text>
+        </HapticTouchable>
+        {explain.isError && (
+          <Text style={{ color: c.destructive, fontSize: fontSize.xs, textAlign: "center" }}>
+            Tính năng AI giải thích tạm thời không khả dụng
+          </Text>
         )}
-        <Text style={[styles.aiBtnText, { color: c.primary }]}>
-          {explain.isPending ? "Đang phân tích..." : "AI Giải thích"}
-        </Text>
-      </HapticTouchable>
+      </View>
     );
   }
 

@@ -1,6 +1,7 @@
 import { useEffect, useReducer, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -21,9 +22,14 @@ import { SKILL_LABELS } from "@/components/SkillIcon";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { ObjectiveResultView } from "@/components/ObjectiveResultView";
 import { WritingAnnotationsView } from "@/components/WritingAnnotationsView";
+import { WritingTier1View, assembleTemplateText } from "@/components/writing/WritingTier1View";
+import { WritingTier2View } from "@/components/writing/WritingTier2View";
+import type { WritingScaffold, WritingTemplatePayload, WritingGuidedPayload, WritingScaffoldSection } from "@/types/api";
 import { useStartPractice, useSubmitPractice, useCompletePractice } from "@/hooks/use-practice";
 import { usePresignUpload, uploadToPresignedUrl } from "@/hooks/use-uploads";
 import { useThemeColors, spacing, radius, fontSize } from "@/theme";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import type { Skill, PracticeStartResponse, PracticeCurrentItem, PracticeProgress } from "@/types/api";
 import type { ThemeColors } from "@/theme/colors";
 import {
@@ -115,6 +121,7 @@ export default function PracticeQuestionScreen() {
   const [passageVisible, setPassageVisible] = useState(true);
   const [reviewResult, setReviewResult] = useState<import("@/types/api").PracticeSubmitResult | null>(null);
   const [nextItem, setNextItem] = useState<PracticeCurrentItem | null>(null);
+  const [filledBlanks, setFilledBlanks] = useState<Record<string, string>>({});
 
   // Auto-start practice session on mount
   useEffect(() => {
@@ -144,9 +151,19 @@ export default function PracticeQuestionScreen() {
   useEffect(() => {
     dispatch({ type: "RESET" });
     setPassageVisible(true);
+    setFilledBlanks({});
   }, [questionId]);
 
-  if (startMutation.isPending) return <LoadingScreen />;
+  if (startMutation.isPending) {
+    const loadingTexts: Record<string, string[]> = {
+      writing: ["Đang phân tích trình độ...", "Đang chọn đề bài phù hợp...", "Đang tạo hướng dẫn viết..."],
+      speaking: ["Đang phân tích trình độ...", "Đang chọn chủ đề nói..."],
+      listening: ["Đang tải bài nghe..."],
+      reading: ["Đang tải bài đọc..."],
+    };
+    const texts = loadingTexts[skill as string] ?? ["Đang tải..."];
+    return <PracticeLoadingScreen texts={texts} />;
+  }
   if (startMutation.isError) {
     const errMsg = startMutation.error.message;
     const isNoQuestion = /no practice question|không tìm thấy/i.test(errMsg);
@@ -238,12 +255,18 @@ export default function PracticeQuestionScreen() {
   const objItem = kind === "objective" ? items[state.currentItemIndex] ?? null : null;
   const isLastItem = state.currentItemIndex >= totalItems - 1;
 
-  const allAnswered =
-    kind === "objective"
-      ? Object.keys(state.answers).length >= totalItems
-      : kind === "writing"
-        ? state.text.trim().length > 0
-        : state.audioUri !== null;
+  const allAnswered = (() => {
+    if (kind === "objective") return Object.keys(state.answers).length >= totalItems;
+    if (kind === "writing") {
+      const scaffold = currentItem?.writingScaffold;
+      if (scaffold?.type === "template" && scaffold.payload && "sections" in scaffold.payload) {
+        // Tier 1: at least 1 blank filled
+        return Object.values(filledBlanks).some((v) => v.trim().length > 0);
+      }
+      return state.text.trim().length > 0;
+    }
+    return state.audioUri !== null;
+  })();
 
   const isBusy = submitMutation.isPending || isUploading;
   const canSubmit = allAnswered && !isBusy;
@@ -270,7 +293,14 @@ export default function PracticeQuestionScreen() {
       }
       setIsUploading(false);
     } else {
-      answer = { text: state.text.trim() };
+      // Writing: assemble from template blanks (tier 1) or textarea (tier 2/3)
+      const scaffold = currentItem?.writingScaffold;
+      if (scaffold?.type === "template" && scaffold.payload && "sections" in scaffold.payload) {
+        const assembled = assembleTemplateText((scaffold.payload as WritingTemplatePayload).sections, filledBlanks);
+        answer = { text: assembled };
+      } else {
+        answer = { text: state.text.trim() };
+      }
     }
 
     submitMutation.mutate(
@@ -312,43 +342,9 @@ export default function PracticeQuestionScreen() {
     const hasResult = gr && (gr.score != null || (gr.items && gr.items.length > 0));
     const isSubjective = kind === "writing" || kind === "speaking";
 
-    // Writing/Speaking: AI chấm async → result null → navigate to submission detail (polling)
+    // Writing/Speaking: AI chấm async → poll submission status → auto-navigate when done
     if (isSubjective && !hasResult && reviewResult.submissionId) {
-      return (
-        <ScreenWrapper>
-          <View style={styles.headerRow}>
-            <HapticTouchable onPress={handleNextAfterReview}>
-              <Ionicons name="arrow-back" size={24} color={c.foreground} />
-            </HapticTouchable>
-            <Text style={[styles.headerTitle, { color: c.foreground }]}>Kết quả</Text>
-            <View style={{ width: 24 }} />
-          </View>
-          <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: spacing.xl, gap: spacing.md }}>
-            <ActivityIndicator size="large" color={c.primary} />
-            <Text style={{ color: c.foreground, fontWeight: "600", fontSize: fontSize.base }}>
-              AI đang chấm bài...
-            </Text>
-            <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm, textAlign: "center" }}>
-              Quá trình chấm {kind === "writing" ? "bài viết" : "bài nói"} mất 1-3 phút. Bạn có thể xem kết quả sau.
-            </Text>
-          </View>
-          <View style={{ padding: spacing.xl, gap: spacing.sm }}>
-            <HapticTouchable
-              style={[styles.primaryBtn, { backgroundColor: c.primary }]}
-              onPress={() => router.push(`/(app)/submissions/${reviewResult.submissionId}`)}
-            >
-              <Ionicons name="eye-outline" size={18} color={c.primaryForeground} />
-              <Text style={[styles.btnLabel, { color: c.primaryForeground }]}>Xem chi tiết bài chấm</Text>
-            </HapticTouchable>
-            <HapticTouchable
-              style={[styles.primaryBtn, { backgroundColor: c.muted }]}
-              onPress={handleNextAfterReview}
-            >
-              <Text style={[styles.btnLabel, { color: c.foreground }]}>{nextItem ? "Câu tiếp theo" : "Hoàn thành"}</Text>
-            </HapticTouchable>
-          </View>
-        </ScreenWrapper>
-      );
+      return <WaitingForGrading submissionId={reviewResult.submissionId} kind={kind} nextItem={nextItem} onNext={handleNextAfterReview} />;
     }
 
     return (
@@ -462,15 +458,44 @@ export default function PracticeQuestionScreen() {
           />
         )}
 
-        {kind === "writing" && (
-          <WritingView
-            content={content as WritingContent}
-            text={state.text}
-            onChangeText={(t) => dispatch({ type: "SET_TEXT", text: t })}
-            wordCount={state.text.trim().split(/\s+/).filter(Boolean).length}
-            colors={c}
-          />
-        )}
+        {kind === "writing" && (() => {
+          const scaffold = currentItem?.writingScaffold;
+          const scaffoldType = scaffold?.type ?? "freeform";
+          const wContent = content as WritingContent;
+
+          if (scaffoldType === "template" && scaffold?.payload && "sections" in scaffold.payload) {
+            return (
+              <WritingTier1View
+                sections={(scaffold.payload as WritingTemplatePayload).sections}
+                filledBlanks={filledBlanks}
+                onBlankChange={(id, val) => setFilledBlanks((prev) => ({ ...prev, [id]: val }))}
+                onAssembleText={() => assembleTemplateText((scaffold.payload as WritingTemplatePayload).sections, filledBlanks)}
+              />
+            );
+          }
+
+          if (scaffoldType === "guided" && scaffold?.payload && "outline" in scaffold.payload) {
+            return (
+              <WritingTier2View
+                content={wContent}
+                hints={scaffold.payload as WritingGuidedPayload}
+                text={state.text}
+                onChangeText={(t) => dispatch({ type: "SET_TEXT", text: t })}
+              />
+            );
+          }
+
+          // Tier 3 freeform — existing WritingView
+          return (
+            <WritingView
+              content={wContent}
+              text={state.text}
+              onChangeText={(t) => dispatch({ type: "SET_TEXT", text: t })}
+              wordCount={state.text.trim().split(/\s+/).filter(Boolean).length}
+              colors={c}
+            />
+          );
+        })()}
 
         {kind === "speaking" && (
           <SpeakingView
@@ -542,12 +567,24 @@ export default function PracticeQuestionScreen() {
           </View>
         ) : (
           <HapticTouchable
-            style={[styles.primaryBtn, { backgroundColor: allAnswered ? c.primary : c.muted, opacity: isBusy ? 0.7 : 1 }]}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: spacing.sm,
+              borderRadius: radius.lg,
+              paddingVertical: spacing.md,
+              backgroundColor: allAnswered ? c.primary : c.muted,
+              opacity: isBusy ? 0.7 : 1,
+            }}
             onPress={handleSubmit}
             disabled={!canSubmit}
           >
             {isBusy ? (
-              <ActivityIndicator size="small" color={c.primaryForeground} />
+              <>
+                <ActivityIndicator size="small" color={c.primaryForeground} />
+                <Text style={[styles.btnLabel, { color: c.primaryForeground }]}>Đang nộp bài...</Text>
+              </>
             ) : (
               <>
                 <Ionicons name="send" size={18} color={allAnswered ? c.primaryForeground : c.mutedForeground} />
@@ -558,6 +595,269 @@ export default function PracticeQuestionScreen() {
         )}
       </View>
       </KeyboardAvoidingView>
+    </ScreenWrapper>
+  );
+}
+
+// ─── Progress bar ────────────────────────────────────────────────────────────
+
+// ─── Practice loading screen (animated steps + pulse) ────────────────────────
+
+function PracticeLoadingScreen({ texts }: { texts: string[] }) {
+  const c = useThemeColors();
+  const [step, setStep] = useState(0);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const progressAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Pulse animation on the icon
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.15, duration: 800, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+      ]),
+    ).start();
+  }, [pulseAnim]);
+
+  useEffect(() => {
+    if (texts.length <= 1) return;
+    const interval = setInterval(() => {
+      setStep((prev) => {
+        const next = prev < texts.length - 1 ? prev + 1 : prev;
+        Animated.timing(progressAnim, {
+          toValue: (next + 1) / texts.length,
+          duration: 400,
+          useNativeDriver: false,
+        }).start();
+        return next;
+      });
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [texts.length, progressAnim]);
+
+  const SKILL_ICONS: Record<string, { icon: string; bg: string }> = {
+    "Đang tải bài nghe...": { icon: "headset", bg: "#6366f1" },
+    "Đang tải bài đọc...": { icon: "book", bg: "#10b981" },
+    "Đang phân tích trình độ...": { icon: "analytics", bg: "#6366f1" },
+    "Đang chọn đề bài phù hợp...": { icon: "document-text", bg: "#f59e0b" },
+    "Đang tạo hướng dẫn viết...": { icon: "create", bg: "#8b5cf6" },
+    "Đang chọn chủ đề nói...": { icon: "mic", bg: "#ef4444" },
+  };
+
+  const currentIcon = SKILL_ICONS[texts[step]] ?? { icon: "sparkles", bg: c.primary };
+
+  return (
+    <ScreenWrapper>
+      <View style={loadingStyles.container}>
+        {/* Animated icon */}
+        <Animated.View style={[loadingStyles.iconRing, { borderColor: currentIcon.bg + "30", transform: [{ scale: pulseAnim }] }]}>
+          <View style={[loadingStyles.iconInner, { backgroundColor: currentIcon.bg + "15" }]}>
+            <Ionicons name={currentIcon.icon as any} size={32} color={currentIcon.bg} />
+          </View>
+        </Animated.View>
+
+        {/* Progress bar */}
+        <View style={[loadingStyles.progressTrack, { backgroundColor: c.muted }]}>
+          <Animated.View
+            style={[
+              loadingStyles.progressFill,
+              {
+                backgroundColor: currentIcon.bg,
+                width: progressAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ["5%", "100%"],
+                }),
+              },
+            ]}
+          />
+        </View>
+
+        {/* Steps */}
+        <View style={loadingStyles.stepsContainer}>
+          {texts.map((text, i) => {
+            const isDone = i < step;
+            const isCurrent = i === step;
+            const stepColor = isDone ? "#10b981" : isCurrent ? currentIcon.bg : c.mutedForeground;
+
+            return (
+              <Animated.View
+                key={i}
+                style={[
+                  loadingStyles.stepRow,
+                  { opacity: i <= step ? 1 : 0.35 },
+                ]}
+              >
+                <View style={[loadingStyles.stepDot, { backgroundColor: isDone ? "#10b981" : isCurrent ? currentIcon.bg : c.border }]}>
+                  {isDone ? (
+                    <Ionicons name="checkmark" size={10} color="#fff" />
+                  ) : isCurrent ? (
+                    <ActivityIndicator size={8} color="#fff" />
+                  ) : (
+                    <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: c.mutedForeground }} />
+                  )}
+                </View>
+                {i < texts.length - 1 && (
+                  <View style={[loadingStyles.stepLine, { backgroundColor: isDone ? "#10b981" : c.border }]} />
+                )}
+                <Text style={{ color: stepColor, fontSize: fontSize.sm, fontWeight: isCurrent ? "600" : "400", flex: 1 }}>
+                  {text}
+                </Text>
+              </Animated.View>
+            );
+          })}
+        </View>
+
+        {/* Tip */}
+        <View style={[loadingStyles.tipBox, { backgroundColor: c.muted }]}>
+          <Ionicons name="bulb-outline" size={14} color={c.mutedForeground} />
+          <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs, flex: 1 }}>
+            AI đang chuẩn bị bài phù hợp với trình độ của bạn
+          </Text>
+        </View>
+      </View>
+    </ScreenWrapper>
+  );
+}
+
+const loadingStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.xl,
+    gap: spacing["2xl"],
+  },
+  iconRing: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    borderWidth: 3,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconInner: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  progressTrack: {
+    width: "80%",
+    height: 4,
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: 4,
+    borderRadius: 2,
+  },
+  stepsContainer: {
+    width: "100%",
+    paddingHorizontal: spacing.xl,
+    gap: spacing.md,
+  },
+  stepRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  stepDot: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepLine: {
+    position: "absolute",
+    left: 9,
+    top: 20,
+    width: 2,
+    height: spacing.md,
+  },
+  tipBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    width: "100%",
+  },
+});
+
+// ─── Waiting for AI grading (polls submission, auto-navigates) ───────────────
+
+function WaitingForGrading({
+  submissionId,
+  kind,
+  nextItem,
+  onNext,
+}: {
+  submissionId: string;
+  kind: string;
+  nextItem: PracticeCurrentItem | null;
+  onNext: () => void;
+}) {
+  const c = useThemeColors();
+  const router = useRouter();
+  const { data: sub } = useQuery({
+    queryKey: ["submissions", submissionId],
+    queryFn: () => api.get<import("@/types/api").Submission>(`/api/submissions/${submissionId}`),
+    refetchInterval: (query) => {
+      const s = query.state.data?.status;
+      return s === "pending" || s === "processing" ? 5000 : false;
+    },
+  });
+
+  // Auto-navigate when grading is done
+  useEffect(() => {
+    if (sub?.status === "completed" || sub?.status === "failed") {
+      router.replace(`/(app)/submissions/${submissionId}`);
+    }
+  }, [sub?.status]);
+
+  const isDone = sub?.status === "completed" || sub?.status === "failed";
+
+  return (
+    <ScreenWrapper>
+      <View style={styles.headerRow}>
+        <HapticTouchable onPress={onNext}>
+          <Ionicons name="arrow-back" size={24} color={c.foreground} />
+        </HapticTouchable>
+        <Text style={[styles.headerTitle, { color: c.foreground }]}>Kết quả</Text>
+        <View style={{ width: 24 }} />
+      </View>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: spacing.xl, gap: spacing.md }}>
+        {isDone ? (
+          <Ionicons name="checkmark-circle" size={48} color={c.success} />
+        ) : (
+          <ActivityIndicator size="large" color={c.primary} />
+        )}
+        <Text style={{ color: c.foreground, fontWeight: "600", fontSize: fontSize.base }}>
+          {isDone ? "Đã chấm xong!" : "AI đang chấm bài..."}
+        </Text>
+        <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm, textAlign: "center" }}>
+          {isDone
+            ? "Đang chuyển sang kết quả..."
+            : `Quá trình chấm ${kind === "writing" ? "bài viết" : "bài nói"} mất 1-3 phút`}
+        </Text>
+      </View>
+      <View style={{ padding: spacing.xl, gap: spacing.sm, paddingBottom: spacing["3xl"] }}>
+        <HapticTouchable
+          style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, borderRadius: radius.lg, paddingVertical: spacing.md, backgroundColor: c.primary }}
+          onPress={() => router.push(`/(app)/submissions/${submissionId}`)}
+        >
+          <Ionicons name="eye-outline" size={18} color={c.primaryForeground} />
+          <Text style={[styles.btnLabel, { color: c.primaryForeground }]}>Xem chi tiết bài chấm</Text>
+        </HapticTouchable>
+        <HapticTouchable
+          style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, borderRadius: radius.lg, paddingVertical: spacing.md, backgroundColor: c.muted }}
+          onPress={onNext}
+        >
+          <Text style={[styles.btnLabel, { color: c.foreground }]}>{nextItem ? "Câu tiếp theo" : "Hoàn thành"}</Text>
+        </HapticTouchable>
+      </View>
     </ScreenWrapper>
   );
 }

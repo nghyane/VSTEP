@@ -192,8 +192,10 @@ export interface GradingResult {
   criteria?: { key: string; name: string; score: number; bandLabel: string }[];
   feedback?: string;
   annotations?: GradingAnnotations;
+  knowledgeGaps?: { name: string; category: string }[];
   confidence?: "high" | "medium" | "low";
   gradedAt?: string;
+  scaffoldingType?: string;
   // Objective fields
   correct?: number;
   total?: number;
@@ -343,6 +345,7 @@ export interface PracticeSession {
   config: {
     itemsCount: number;
     focusKp: string | null;
+    writingTier?: WritingTier;
   };
   currentQuestionId: string | null;
   summary: PracticeSummary | null;
@@ -369,6 +372,50 @@ export interface PracticeSummary {
   improvement: number | null;
 }
 
+// ── Writing Scaffold types ───────────────────────────────────────
+
+export type WritingTier = 1 | 2 | 3;
+export type WritingScaffoldType = "template" | "guided" | "freeform";
+
+export interface WritingScaffoldBlankHints {
+  b1: string[];
+  b2: string[];
+}
+
+export interface WritingScaffoldPart {
+  type: "text" | "blank";
+  content?: string;
+  id?: string;
+  label?: string;
+  variant?: "transition" | "content";
+  hints?: WritingScaffoldBlankHints;
+}
+
+export interface WritingScaffoldSection {
+  title: string;
+  parts: WritingScaffoldPart[];
+}
+
+export interface WritingTemplatePayload {
+  sections: WritingScaffoldSection[];
+}
+
+export interface WritingGuidedPayload {
+  outline: string[];
+  starters: string[];
+  wordCount: string;
+}
+
+export interface WritingScaffold {
+  questionId: string;
+  tier: WritingTier;
+  requestedTier?: WritingTier;
+  effectiveTier?: WritingTier;
+  type: WritingScaffoldType;
+  payload: WritingTemplatePayload | WritingGuidedPayload | null;
+  fallbackReason?: "template_unavailable" | null;
+}
+
 export interface PracticeCurrentItem {
   question: Question;
   difficulty: QuestionLevel;
@@ -376,7 +423,7 @@ export interface PracticeCurrentItem {
   referenceText?: string;
   referenceAudioPath?: string;
   targetText?: string;
-  writingHints?: unknown;
+  writingScaffold?: WritingScaffold;
 }
 
 export interface PracticeProgress {
