@@ -35,6 +35,14 @@
         {
           "microphonePermission": "Cho phép VSTEP ghi âm bài speaking"
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
       ]
     ],
     "experiments": {
