@@ -18,7 +18,6 @@
     "@tanstack/react-query": "^5.62.0",
     "expo": "~54.0.0",
     "expo-av": "^16.0.8",
-    "expo-build-properties": "~1.0.10",
     "expo-constants": "~18.0.13",
     "expo-device": "^55.0.10",
     "expo-file-system": "~19.0.21",
