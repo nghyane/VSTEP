@@ -375,6 +375,17 @@ export default function PracticeQuestionScreen() {
             />
           )}
 
+          {/* Question explanation (static field from DB, if available) */}
+          {question?.explanation && (
+            <View style={[styles.reviewScoreBox, { backgroundColor: c.primary + "08" }]}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+                <Ionicons name="bulb-outline" size={16} color={c.primary} />
+                <Text style={{ color: c.primary, fontWeight: "700", fontSize: fontSize.sm }}>Giải thích</Text>
+              </View>
+              <Text style={{ color: c.foreground, fontSize: fontSize.sm, lineHeight: 22 }}>{question.explanation}</Text>
+            </View>
+          )}
+
           {/* Writing/Speaking annotations */}
           {gr?.annotations && <WritingAnnotationsView annotations={gr.annotations} />}
 
