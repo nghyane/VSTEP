@@ -193,6 +193,13 @@ export interface GradingResult {
   feedback?: string;
   annotations?: GradingAnnotations;
   knowledgeGaps?: { name: string; category: string }[];
+  pronunciation?: {
+    transcript: string;
+    accuracyScore: number;
+    fluencyScore: number;
+    prosodyScore: number;
+    wordErrors?: { word: string; errorType: string; accuracyScore: number }[];
+  };
   confidence?: "high" | "medium" | "low";
   gradedAt?: string;
   scaffoldingType?: string;

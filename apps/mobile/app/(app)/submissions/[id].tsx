@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { BouncyScrollView } from "@/components/BouncyScrollView";
 import { HapticTouchable } from "@/components/HapticTouchable";
@@ -12,6 +12,8 @@ import { api } from "@/lib/api";
 import { useExplain, type ExplainResponse } from "@/hooks/use-ai";
 import { ObjectiveResultView } from "@/components/ObjectiveResultView";
 import { WritingAnnotationsView } from "@/components/WritingAnnotationsView";
+import { RichFeedback, AnnotatedAnswer } from "@/components/RichFeedback";
+import { AudioPlayer } from "@/components/AudioPlayer";
 import type { Submission, GradingResult } from "@/types/api";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { Skill, SubmissionStatus } from "@/types/api";
@@ -54,6 +56,7 @@ export default function SubmissionDetailScreen() {
   if (isLoading) return <LoadingScreen />;
   if (error || !data) return <ErrorScreen message={error?.message ?? "Không tìm thấy bài nộp"} />;
 
+  const answerRef = useRef<View>(null);
   const status = statusConfig[data.status];
   const result = data.result as GradingResult | null;
   const criteriaLabels = data.skill === "writing" ? WRITING_CRITERIA : data.skill === "speaking" ? SPEAKING_CRITERIA : null;
@@ -167,6 +170,28 @@ export default function SubmissionDetailScreen() {
         </View>
       )}
 
+      {/* Speaking: Pronunciation Assessment (Azure data) */}
+      {result?.pronunciation && (
+        <PronunciationSection pronunciation={result.pronunciation as any} />
+      )}
+
+      {/* Speaking: Audio playback */}
+      {(() => {
+        if (!data.answer || typeof data.answer !== "object") return null;
+        const ans = data.answer as Record<string, unknown>;
+        const audioKey = (ans.audioPath ?? ans.audioUrl ?? ans.audio_path ?? ans.audio_url) as string | undefined;
+        if (!audioKey) return null;
+        return (
+          <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+              <Ionicons name="mic-outline" size={16} color={c.primary} />
+              <Text style={[styles.sectionTitle, { color: c.foreground }]}>Bản ghi âm</Text>
+            </View>
+            <AudioPlayer audioUrl={audioKey} seekable />
+          </View>
+        );
+      })()}
+
       {/* Objective per-item breakdown (reading/listening) */}
       {result?.items && result.items.length > 0 && (
         <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
@@ -184,11 +209,15 @@ export default function SubmissionDetailScreen() {
         <WritingAnnotationsView annotations={result.annotations} />
       )}
 
-      {/* Feedback */}
+      {/* Feedback — rich rendering with corrections + quoted highlights */}
       {data.feedback && (
         <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
           <Text style={[styles.sectionTitle, { color: c.foreground }]}>Nhận xét</Text>
-          <Text style={{ color: c.foreground, fontSize: fontSize.sm, lineHeight: 22 }}>{data.feedback}</Text>
+          <RichFeedback
+            feedback={data.feedback}
+            annotations={result?.annotations}
+            scrollToAnswer={answerRef.current ? () => answerRef.current?.measureLayout?.(undefined as any, (_x, y) => {}) : undefined}
+          />
         </View>
       )}
 
@@ -203,12 +232,19 @@ export default function SubmissionDetailScreen() {
         </View>
       )}
 
-      {/* Answer */}
+      {/* Answer — with inline error highlights from corrections */}
       {data.answer && (
-        <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View ref={answerRef} style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
           <Text style={[styles.sectionTitle, { color: c.foreground }]}>Câu trả lời đã nộp</Text>
           {data.answer && typeof data.answer === "object" && "text" in (data.answer as Record<string, unknown>) ? (
-            <Text style={{ color: c.foreground, fontSize: fontSize.sm, lineHeight: 22 }}>{String((data.answer as any).text)}</Text>
+            result?.annotations?.corrections && result.annotations.corrections.length > 0 ? (
+              <AnnotatedAnswer
+                text={String((data.answer as any).text)}
+                corrections={result.annotations.corrections}
+              />
+            ) : (
+              <Text style={{ color: c.foreground, fontSize: fontSize.sm, lineHeight: 22 }}>{String((data.answer as any).text)}</Text>
+            )
           ) : data.answer && typeof data.answer === "object" && "audioUrl" in (data.answer as Record<string, unknown>) ? (
             <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm }}>Audio: {(data.answer as any).durationSeconds}s</Text>
           ) : data.answer && typeof data.answer === "object" && "answers" in (data.answer as Record<string, unknown>) ? (
@@ -341,6 +377,121 @@ function AIExplainSection({
     </View>
   );
 }
+
+// ─── Pronunciation Assessment (Speaking only) ────────────────────────────────
+
+interface PronunciationData {
+  transcript: string;
+  accuracyScore: number;
+  fluencyScore: number;
+  prosodyScore: number;
+  wordErrors?: { word: string; errorType: string; accuracyScore: number }[];
+}
+
+function PronunciationSection({ pronunciation }: { pronunciation: PronunciationData }) {
+  const c = useThemeColors();
+
+  const scores = [
+    { label: "Độ chính xác", score: pronunciation.accuracyScore, icon: "checkmark-circle" as const, color: "#3b82f6" },
+    { label: "Độ trôi chảy", score: pronunciation.fluencyScore, icon: "water" as const, color: "#10b981" },
+    { label: "Ngữ điệu", score: pronunciation.prosodyScore, icon: "musical-notes" as const, color: "#8b5cf6" },
+  ];
+
+  const wordErrors = pronunciation.wordErrors ?? [];
+  const errorTypeLabels: Record<string, { label: string; color: string }> = {
+    Mispronunciation: { label: "Phát âm sai", color: "#ef4444" },
+    Omission: { label: "Bỏ sót", color: "#f59e0b" },
+    Insertion: { label: "Thêm thừa", color: "#3b82f6" },
+  };
+
+  return (
+    <View style={{ gap: spacing.base }}>
+      {/* Pronunciation scores (0-100 scale) */}
+      <View style={[pronStyles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+          <Ionicons name="mic" size={16} color={c.primary} />
+          <Text style={{ color: c.foreground, fontWeight: "700", fontSize: fontSize.base }}>Đánh giá phát âm</Text>
+        </View>
+
+        <View style={pronStyles.scoresGrid}>
+          {scores.map((s) => {
+            const pct = s.score;
+            const barColor = pct >= 80 ? "#10b981" : pct >= 60 ? "#f59e0b" : "#ef4444";
+            return (
+              <View key={s.label} style={pronStyles.scoreItem}>
+                <View style={pronStyles.scoreHeader}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                    <Ionicons name={s.icon} size={14} color={s.color} />
+                    <Text style={{ color: c.foreground, fontSize: fontSize.xs, fontWeight: "500" }}>{s.label}</Text>
+                  </View>
+                  <Text style={{ color: barColor, fontWeight: "800", fontSize: fontSize.sm }}>{Math.round(pct)}</Text>
+                </View>
+                <View style={[pronStyles.bar, { backgroundColor: c.muted }]}>
+                  <View style={[pronStyles.barFill, { width: `${pct}%` as any, backgroundColor: barColor }]} />
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* Transcript */}
+      {pronunciation.transcript && (
+        <View style={[pronStyles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+            <Ionicons name="document-text-outline" size={16} color={c.primary} />
+            <Text style={{ color: c.foreground, fontWeight: "700", fontSize: fontSize.base }}>Nội dung ghi nhận</Text>
+          </View>
+          <Text style={{ color: c.foreground, fontSize: fontSize.sm, lineHeight: 22, fontStyle: "italic" }}>
+            "{pronunciation.transcript}"
+          </Text>
+        </View>
+      )}
+
+      {/* Word-level errors */}
+      {wordErrors.length > 0 && (
+        <View style={[pronStyles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+            <Ionicons name="warning-outline" size={16} color="#f59e0b" />
+            <Text style={{ color: c.foreground, fontWeight: "700", fontSize: fontSize.base }}>Lỗi phát âm từng từ</Text>
+            <View style={{ backgroundColor: "#ef444418", borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
+              <Text style={{ color: "#ef4444", fontSize: 10, fontWeight: "700" }}>{wordErrors.length} lỗi</Text>
+            </View>
+          </View>
+          {wordErrors.map((err, i) => {
+            const config = errorTypeLabels[err.errorType] ?? { label: err.errorType, color: c.mutedForeground };
+            return (
+              <View key={i} style={[pronStyles.wordError, { borderColor: config.color + "30", backgroundColor: config.color + "08" }]}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+                  <Text style={{ color: config.color, fontWeight: "700", fontSize: fontSize.sm }}>"{err.word}"</Text>
+                  <View style={{ backgroundColor: config.color + "18", borderRadius: 999, paddingHorizontal: 6, paddingVertical: 1 }}>
+                    <Text style={{ color: config.color, fontSize: 9, fontWeight: "700" }}>{config.label}</Text>
+                  </View>
+                </View>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
+                  <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs }}>Accuracy:</Text>
+                  <Text style={{ color: err.accuracyScore >= 60 ? "#10b981" : "#ef4444", fontSize: fontSize.xs, fontWeight: "700" }}>
+                    {Math.round(err.accuracyScore)}%
+                  </Text>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
+    </View>
+  );
+}
+
+const pronStyles = StyleSheet.create({
+  card: { borderWidth: 1, borderRadius: radius.xl, padding: spacing.base, gap: spacing.md },
+  scoresGrid: { gap: spacing.md },
+  scoreItem: { gap: spacing.xs },
+  scoreHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  bar: { height: 6, borderRadius: 3, overflow: "hidden" },
+  barFill: { height: 6, borderRadius: 3 },
+  wordError: { borderWidth: 1, borderRadius: radius.lg, padding: spacing.md, gap: spacing.xs },
+});
 
 const styles = StyleSheet.create({
   container: { flex: 1 },

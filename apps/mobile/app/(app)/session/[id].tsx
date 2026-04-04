@@ -648,28 +648,9 @@ function SpeakingRecordView({
         return;
       }
       await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-      const { recording: rec } = await Audio.Recording.createAsync({
-        android: {
-          extension: ".wav",
-          outputFormat: 6, // DEFAULT (PCM)
-          audioEncoder: 0, // DEFAULT
-          sampleRate: 16000,
-          numberOfChannels: 1,
-          bitRate: 256000,
-        },
-        ios: {
-          extension: ".wav",
-          outputFormat: 0x6C696E65, // kAudioFormatLinearPCM
-          audioQuality: 96,
-          sampleRate: 16000,
-          numberOfChannels: 1,
-          bitRate: 256000,
-          linearPCMBitDepth: 16,
-          linearPCMIsBigEndian: false,
-          linearPCMIsFloat: false,
-        },
-        web: { mimeType: "audio/wav", bitsPerSecond: 256000 },
-      });
+      const { recording: rec } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY,
+      );
       setRecording(rec);
       setIsRecording(true);
       setUploadError(null);
