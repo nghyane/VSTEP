@@ -1,4 +1,10 @@
-import { handleAuthError, refreshToken as storedRefresh, save, token, user as getUser } from "@/lib/auth"
+import {
+	user as getUser,
+	handleAuthError,
+	save,
+	refreshToken as storedRefresh,
+	token,
+} from "@/lib/auth"
 import type { AuthUser, LoginResponse, RegisterResponse } from "@/types/api"
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000"

@@ -111,8 +111,8 @@ export function SpiderChart({ skills, className }: SpiderChartProps) {
 					const { x, y } = polarToXY(i * angleStep, labelR)
 					const yOff = y - CENTER
 
-					let labelX = x
-					let valueX = x
+					const labelX = x
+					const valueX = x
 					let labelY: number
 					let valueY: number
 					let labelAnchor: "start" | "end" | "middle"

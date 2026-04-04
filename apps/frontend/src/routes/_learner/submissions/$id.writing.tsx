@@ -37,7 +37,10 @@ function WritingSubmissionDetailPage() {
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center justify-between">
-				<Link to="/submissions" className="inline-flex text-sm text-muted-foreground hover:text-foreground">
+				<Link
+					to="/submissions"
+					className="inline-flex text-sm text-muted-foreground hover:text-foreground"
+				>
 					← Quay lại
 				</Link>
 			</div>

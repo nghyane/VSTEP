@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\AssignmentSubmissionStatus;
+use App\Enums\NotificationType;
 use App\Models\ClassAssignment;
 use App\Models\ClassAssignmentSubmission;
 use App\Models\ClassFeedback;
@@ -21,6 +22,10 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class ClassroomService
 {
+    public function __construct(
+        private readonly NotificationService $notificationService,
+    ) {}
+
     public function list(User $user): LengthAwarePaginator
     {
         return Classroom::query()
@@ -269,6 +274,16 @@ class ClassroomService
             'late_minutes' => $lateMinutes,
         ]);
 
+        // Notify instructor
+        $instructorId = $assignment->classroom->instructor_id;
+        $this->notificationService->send(
+            $instructorId,
+            NotificationType::System,
+            "{$user->full_name} đã nộp bài \"{$assignment->title}\"",
+            $lateMinutes ? "Nộp trễ {$lateMinutes} phút" : null,
+            ['class_id' => $assignment->classroom_id, 'assignment_id' => $assignment->id],
+        );
+
         return $submission;
     }
 
@@ -284,6 +299,16 @@ class ClassroomService
         }
 
         $submission->update($data);
+
+        // Notify learner
+        $assignment = $submission->assignment;
+        $this->notificationService->send(
+            $submission->user_id,
+            NotificationType::GradingComplete,
+            "Bài tập \"{$assignment->title}\" đã được chấm: {$score} điểm",
+            $feedback,
+            ['class_id' => $assignment->classroom_id, 'assignment_id' => $assignment->id],
+        );
 
         return $submission;
     }

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useVocabularyTopic } from "@/hooks/use-vocabulary"
 import { cn } from "@/lib/utils"
+import type { VocabularyTopicDetail } from "@/types/api"
 
 export const Route = createFileRoute("/_learner/vocabulary/$topicId/practice")({
 	component: PracticePage,
@@ -27,11 +28,41 @@ function PracticePage() {
 	const { topicId } = Route.useParams()
 	const { data: topic, isLoading, error } = useVocabularyTopic(topicId)
 
+	if (isLoading) {
+		return (
+			<div className="space-y-6">
+				<Skeleton className="h-8 w-48" />
+				<Skeleton className="h-64 w-full rounded-2xl" />
+			</div>
+		)
+	}
+
+	if (error || !topic || topic.words.length === 0) {
+		return (
+			<div className="flex flex-col items-center gap-4 rounded-2xl bg-muted/50 py-16">
+				<p className="text-muted-foreground">{error?.message ?? "Không tìm thấy chủ đề."}</p>
+				<Button variant="outline" asChild>
+					<Link to="/vocabulary">Quay lại</Link>
+				</Button>
+			</div>
+		)
+	}
+
+	return <PracticeContent topic={topic} topicId={topicId} />
+}
+
+function PracticeContent({ topic, topicId }: { topic: VocabularyTopicDetail; topicId: string }) {
+	const words = topic.words
 	const [current, setCurrent] = useState(0)
-	const [letters, setLetters] = useState<Record<string, string[]>>({})
+	const [letters, setLetters] = useState<Record<string, string[]>>(() => {
+		const init: Record<string, string[]> = {}
+		for (const w of words) {
+			init[w.id] = Array.from<string>({ length: w.word.length }).fill("")
+		}
+		return init
+	})
 	const [hints, setHints] = useState<Set<string>>(new Set())
 	const [checked, setChecked] = useState<Record<string, boolean>>({})
-	const [initialized, setInitialized] = useState(false)
 	const inputRefs = useRef<Map<string, HTMLInputElement[]>>(new Map())
 
 	const setRef = useCallback((wordId: string, index: number, el: HTMLInputElement | null) => {
@@ -43,36 +74,6 @@ function PracticePage() {
 		refs[index] = el
 	}, [])
 
-	// Initialize letter slots when topic loads
-	const words = topic?.words ?? []
-	if (topic && !initialized && words.length > 0) {
-		const init: Record<string, string[]> = {}
-		for (const w of words) {
-			init[w.id] = Array.from<string>({ length: w.word.length }).fill("")
-		}
-		setLetters(init)
-		setInitialized(true)
-	}
-
-	if (isLoading) {
-		return (
-			<div className="space-y-6">
-				<Skeleton className="h-8 w-48" />
-				<Skeleton className="h-64 w-full rounded-2xl" />
-			</div>
-		)
-	}
-
-	if (error || !topic || words.length === 0) {
-		return (
-			<div className="flex flex-col items-center gap-4 rounded-2xl bg-muted/50 py-16">
-				<p className="text-muted-foreground">{error?.message ?? "Không tìm thấy chủ đề."}</p>
-				<Button variant="outline" asChild>
-					<Link to="/vocabulary">Quay lại</Link>
-				</Button>
-			</div>
-		)
-	}
 	const word = words[current]
 	const totalCount = words.length
 	const isFirst = current === 0
@@ -86,14 +87,17 @@ function PracticePage() {
 	const isWrong = checked[word.id] === false
 	const correctCount = Object.values(checked).filter(Boolean).length
 
-	function checkWord(wordId: string) {
-		if (wordId in checked) return
-		const answer = (letters[wordId] ?? []).join("").toLowerCase()
-		const w = words.find((x) => x.id === wordId)
-		if (!w) return
-		const correct = answer === w.word.toLowerCase()
-		setChecked((prev) => ({ ...prev, [wordId]: correct }))
-	}
+	const checkWord = useCallback(
+		(wordId: string) => {
+			if (wordId in checked) return
+			const answer = (letters[wordId] ?? []).join("").toLowerCase()
+			const w = words.find((x) => x.id === wordId)
+			if (!w) return
+			const correct = answer === w.word.toLowerCase()
+			setChecked((prev) => ({ ...prev, [wordId]: correct }))
+		},
+		[checked, letters, words],
+	)
 
 	function handleLetterChange(wordId: string, index: number, value: string) {
 		if (isChecked) return
@@ -116,7 +120,7 @@ function PracticePage() {
 			const refs = inputRefs.current.get(word.id)
 			refs?.[0]?.focus()
 		}
-	}, [current, word.id, isChecked])
+	}, [word.id, isChecked])
 
 	useEffect(() => {
 		function onEnter(e: KeyboardEvent) {
@@ -130,7 +134,7 @@ function PracticePage() {
 		}
 		window.addEventListener("keydown", onEnter)
 		return () => window.removeEventListener("keydown", onEnter)
-	}, [isChecked, allChecked, wordLetters, word.id])
+	}, [isChecked, allChecked, wordLetters, word.id, checkWord])
 
 	function handleKeyDown(wordId: string, index: number, e: React.KeyboardEvent) {
 		if (isChecked) return

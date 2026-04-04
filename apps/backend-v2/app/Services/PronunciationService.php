@@ -16,12 +16,12 @@ class PronunciationService
     private string $region;
 
     /**
-     * Azure short-audio REST pronunciation assessment only supports these formats.
+     * Azure short-audio REST API only supports WAV (PCM 16kHz) and OGG (Opus).
+     * WebM is NOT supported — must be converted before sending.
      */
-    private const SUPPORTED_FORMATS = [
+    private const AZURE_CONTENT_TYPES = [
         'wav' => 'audio/wav; codecs=audio/pcm; samplerate=16000',
         'ogg' => 'audio/ogg; codecs=opus',
-        'webm' => 'audio/webm; codecs=opus',
     ];
 
     public function __construct()
@@ -46,9 +46,9 @@ class PronunciationService
         $this->validateAudioMime($audioContent);
         $this->validateSize($audioContent);
 
-        $ext = strtolower(pathinfo($audioPath, PATHINFO_EXTENSION));
-        $contentType = self::SUPPORTED_FORMATS[$ext]
-            ?? throw new RuntimeException("Unsupported audio format: {$ext}");
+        $detectedFormat = $this->detectFormat($audioContent);
+        $contentType = self::AZURE_CONTENT_TYPES[$detectedFormat]
+            ?? throw new RuntimeException("Audio format '{$detectedFormat}' is not supported by Azure Speech API. Only WAV (PCM 16kHz) and OGG (Opus) are accepted.");
 
         $endpoint = "https://{$this->region}.stt.speech.microsoft.com"
             .'/speech/recognition/conversation/cognitiveservices/v1'
@@ -134,6 +134,23 @@ class PronunciationService
         ];
     }
 
+    /**
+     * Detect actual audio format from file content, ignoring file extension.
+     * Browser MediaRecorder often produces WebM even when frontend claims WAV.
+     */
+    private function detectFormat(string $content): string
+    {
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->buffer($content);
+
+        return match ($mime) {
+            'audio/x-wav', 'audio/wav' => 'wav',
+            'audio/ogg', 'application/ogg' => 'ogg',
+            'audio/webm', 'video/webm' => 'webm',
+            default => throw new RuntimeException("Cannot detect audio format. MIME: {$mime}"),
+        };
+    }
+
     private function validateAudioMime(string $content): void
     {
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
@@ -155,6 +172,6 @@ class PronunciationService
 
     public static function supportedExtensions(): array
     {
-        return array_keys(self::SUPPORTED_FORMATS);
+        return ['wav', 'ogg', 'webm'];
     }
 }

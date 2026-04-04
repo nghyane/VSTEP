@@ -1,23 +1,20 @@
 import {
 	CheckmarkCircle02Icon,
 	Clock01Icon,
-	Delete02Icon,
 	PlusSignIcon,
 	Target02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { useCreateGoal, useDeleteGoal, useUpdateGoal } from "@/hooks/use-progress"
+import { useCreateGoal } from "@/hooks/use-progress"
 import {
 	DAILY_TIMES,
 	DEADLINES,
-	deadlineToMonths,
 	getGoalConstraints,
 	isDailyTimeAllowed,
 	isDeadlineAllowed,
 	LEVEL_ORDER,
-	minutesToPreset,
 	monthsToDeadline,
 	TARGET_BANDS,
 } from "@/lib/goal-constraints"
@@ -43,17 +40,9 @@ export function GoalCard({
 	currentLevel: string | null
 }) {
 	const [creating, setCreating] = useState(false)
-	const [editing, setEditing] = useState(false)
-	const deleteGoal = useDeleteGoal()
 
 	if (creating) {
 		return <GoalForm currentLevel={currentLevel} onCancel={() => setCreating(false)} />
-	}
-
-	if (editing && goal) {
-		return (
-			<GoalEditForm goal={goal} currentLevel={currentLevel} onCancel={() => setEditing(false)} />
-		)
 	}
 
 	if (!goal) {
@@ -95,23 +84,11 @@ export function GoalCard({
 					</div>
 				</div>
 				<div className="flex gap-1">
-					<Button type="button" variant="ghost" size="sm" onClick={() => setEditing(true)}>
-						Chỉnh sửa
-					</Button>
-					<Button
-						type="button"
-						variant="ghost"
-						size="sm"
-						className="text-destructive"
-						onClick={() => {
-							if (confirm("Bạn có chắc muốn xóa mục tiêu này?")) {
-								deleteGoal.mutate(goal.id)
-							}
-						}}
-					>
-						<HugeiconsIcon icon={Delete02Icon} className="size-4" />
-						Xóa
-					</Button>
+					{goal.daysRemaining != null && goal.daysRemaining <= 0 && (
+						<Button type="button" variant="ghost" size="sm" onClick={() => setCreating(true)}>
+							Đặt mục tiêu mới
+						</Button>
+					)}
 				</div>
 			</div>
 
@@ -310,152 +287,6 @@ function GoalForm({
 			<div className="flex gap-2">
 				<Button size="sm" onClick={handleSubmit} disabled={createGoal.isPending}>
 					{createGoal.isPending ? "Đang tạo..." : "Tạo mục tiêu"}
-				</Button>
-				<Button type="button" variant="outline" size="sm" onClick={onCancel}>
-					Hủy
-				</Button>
-			</div>
-		</div>
-	)
-}
-
-// ---------------------------------------------------------------------------
-// GoalEditForm — edit existing goal with same constraints
-// ---------------------------------------------------------------------------
-
-function GoalEditForm({
-	goal,
-	currentLevel,
-	onCancel,
-}: {
-	goal: EnrichedGoal
-	currentLevel: string | null
-	onCancel: () => void
-}) {
-	const updateGoal = useUpdateGoal()
-	const currentIdx = LEVEL_ORDER[currentLevel ?? "A2"] ?? 0
-
-	const [targetBand, setTargetBand] = useState<VstepBand>(goal.targetBand as VstepBand)
-	const [deadlineMonths, setDeadlineMonths] = useState<number | undefined>(
-		deadlineToMonths(goal.deadline),
-	)
-	const [dailyMinutes, setDailyMinutes] = useState<number | undefined>(
-		minutesToPreset(goal.dailyStudyTimeMinutes),
-	)
-
-	const constraints = useMemo(
-		() => getGoalConstraints(currentLevel, targetBand),
-		[currentLevel, targetBand],
-	)
-
-	// Auto-adjust when constraints change
-	if (
-		deadlineMonths !== undefined &&
-		!isDeadlineAllowed(deadlineMonths, constraints.minDeadlineMonths)
-	) {
-		setDeadlineMonths(constraints.minDeadlineMonths)
-	}
-	if (
-		dailyMinutes !== undefined &&
-		!isDailyTimeAllowed(dailyMinutes, constraints.minDailyMinutes)
-	) {
-		setDailyMinutes(constraints.minDailyMinutes)
-	}
-
-	function handleSubmit() {
-		updateGoal.mutate(
-			{
-				id: goal.id,
-				targetBand,
-				deadline: monthsToDeadline(deadlineMonths) ?? goal.deadline,
-				dailyStudyTimeMinutes: dailyMinutes,
-				currentEstimatedBand: currentLevel,
-			},
-			{ onSuccess: onCancel },
-		)
-	}
-
-	return (
-		<div className="space-y-5 rounded-2xl bg-muted/50 p-5 shadow-sm">
-			<h3 className="text-lg font-semibold">Chỉnh sửa mục tiêu</h3>
-
-			{currentLevel && (
-				<p className="text-sm text-muted-foreground">
-					Trình độ hiện tại: <span className="font-semibold text-foreground">{currentLevel}</span>
-				</p>
-			)}
-
-			{constraints.hint && (
-				<div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
-					{constraints.hint}
-				</div>
-			)}
-
-			<div className="space-y-4">
-				<div className="space-y-2.5">
-					<p className="text-sm font-medium">Band mục tiêu</p>
-					<div className="flex gap-2">
-						{TARGET_BANDS.map((b) => {
-							const disabled = (LEVEL_ORDER[b] ?? 0) <= currentIdx
-							return (
-								<button
-									key={b}
-									type="button"
-									disabled={disabled}
-									onClick={() => !disabled && setTargetBand(b)}
-									className={toggleBtnClass(targetBand === b, disabled)}
-								>
-									{b}
-								</button>
-							)
-						})}
-					</div>
-				</div>
-
-				<div className="space-y-2.5">
-					<p className="text-sm font-medium">Thời hạn</p>
-					<div className="flex flex-wrap gap-2">
-						{DEADLINES.map((d) => {
-							const disabled = !isDeadlineAllowed(d.months, constraints.minDeadlineMonths)
-							return (
-								<button
-									key={d.label}
-									type="button"
-									disabled={disabled}
-									onClick={() => !disabled && setDeadlineMonths(d.months)}
-									className={toggleBtnClass(deadlineMonths === d.months, disabled)}
-								>
-									{d.label}
-								</button>
-							)
-						})}
-					</div>
-				</div>
-
-				<div className="space-y-2.5">
-					<p className="text-sm font-medium">Thời gian học mỗi ngày</p>
-					<div className="flex flex-wrap gap-2">
-						{DAILY_TIMES.map((t) => {
-							const disabled = !isDailyTimeAllowed(t.minutes, constraints.minDailyMinutes)
-							return (
-								<button
-									key={t.label}
-									type="button"
-									disabled={disabled}
-									onClick={() => !disabled && setDailyMinutes(t.minutes)}
-									className={toggleBtnClass(dailyMinutes === t.minutes, disabled)}
-								>
-									{t.label}
-								</button>
-							)
-						})}
-					</div>
-				</div>
-			</div>
-
-			<div className="flex gap-2">
-				<Button size="sm" onClick={handleSubmit} disabled={updateGoal.isPending}>
-					{updateGoal.isPending ? "Đang lưu..." : "Lưu"}
 				</Button>
 				<Button type="button" variant="outline" size="sm" onClick={onCancel}>
 					Hủy

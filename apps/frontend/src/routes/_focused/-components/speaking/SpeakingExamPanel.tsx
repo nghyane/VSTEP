@@ -118,6 +118,9 @@ function SpeakingRecorder({
 			},
 		})
 
+	const stopRecordingRef = useRef(stopRecording)
+	stopRecordingRef.current = stopRecording
+
 	// Upload to R2 when recording finishes and blob is ready
 	// Uses refs to avoid re-triggering on mutation object identity changes
 	useEffect(() => {
@@ -155,7 +158,7 @@ function SpeakingRecorder({
 		timerRef.current = setInterval(() => {
 			setTimer((t) => {
 				if (t <= 1) {
-					stopRecording()
+					stopRecordingRef.current()
 					return 0
 				}
 				return t - 1
@@ -165,7 +168,7 @@ function SpeakingRecorder({
 		return () => {
 			if (timerRef.current) clearInterval(timerRef.current)
 		}
-	}, [phase, speakingSeconds, stopRecording])
+	}, [phase, speakingSeconds])
 
 	const handleStart = useCallback(() => {
 		setPhase("recording")
@@ -537,6 +540,7 @@ export function SpeakingExamPanel({
 			</div>
 
 			{/* ---- Part tabs + prev/next buttons ---- */}
+			{parts.length > 1 && (
 			<div className="flex items-center justify-between border-t bg-muted/5 px-4 py-2.5">
 				{/* Left: prev part */}
 				{activePartIdx > 0 ? (
@@ -585,6 +589,7 @@ export function SpeakingExamPanel({
 					<div className="w-24" />
 				)}
 			</div>
+			)}
 		</div>
 	)
 }

@@ -16,12 +16,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { Fragment, useState } from "react"
 import { toast } from "sonner"
-import { MCQBuilder } from "@/components/features/assignments/MCQBuilder"
-import {
-	isMCQContent,
-	type MCQQuestion,
-	parseContent,
-} from "@/components/features/assignments/types"
+import { isMCQContent, parseContent } from "@/components/features/assignments/types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -33,13 +28,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select"
+
 import { Skeleton } from "@/components/ui/skeleton"
 import {
 	Table,
@@ -63,7 +52,6 @@ import {
 	useClass,
 	useClassDashboard,
 	useClassFeedback,
-	useCreateAssignment,
 	useDeleteAssignment,
 	useGradeSubmission,
 	useLeaderboard,
@@ -380,22 +368,8 @@ function AssignmentsTab({
 	assignments: ClassAssignment[]
 }) {
 	const qc = useQueryClient()
-	const createAssignment = useCreateAssignment()
 	const deleteAssignment = useDeleteAssignment()
 	const gradeSubmission = useGradeSubmission()
-
-	const [showCreate, setShowCreate] = useState(false)
-	const [title, setTitle] = useState("")
-	const [description, setDescription] = useState("")
-	const [skill, setSkill] = useState<string>("")
-	const [dueDate, setDueDate] = useState("")
-	const [allowRetry, setAllowRetry] = useState(false)
-
-	// Skill-specific content state
-	const [passage, setPassage] = useState("")
-	const [audioUrl, setAudioUrl] = useState("")
-	const [prompt, setPrompt] = useState("")
-	const [questions, setQuestions] = useState<MCQQuestion[]>([])
 
 	// Drill-down state
 	const [selectedAsg, setSelectedAsg] = useState<ClassAssignment | null>(null)
@@ -403,76 +377,6 @@ function AssignmentsTab({
 	const [gradeScore, setGradeScore] = useState("")
 	const [gradeFeedback, setGradeFeedback] = useState("")
 	const [viewAnswer, setViewAnswer] = useState<string | null>(null)
-
-	function buildContent(): string | undefined {
-		if (skill === "listening") {
-			return JSON.stringify({ audioUrl, questions })
-		}
-		if (skill === "reading") {
-			return JSON.stringify({ passage, questions })
-		}
-		if (skill === "writing") {
-			return JSON.stringify({ prompt })
-		}
-		if (skill === "speaking") {
-			return JSON.stringify({ prompt, audioUrl: audioUrl || undefined })
-		}
-		return undefined
-	}
-
-	function validateCreate(): string | null {
-		if (!title.trim()) return "Vui lòng nhập tiêu đề"
-		if (!skill) return "Vui lòng chọn kỹ năng"
-		if (skill === "listening" && !audioUrl.trim()) return "Vui lòng nhập link audio"
-		if (skill === "reading" && !passage.trim()) return "Vui lòng nhập đoạn văn"
-		if (skill === "writing" && !prompt.trim()) return "Vui lòng nhập đề bài"
-		if (skill === "speaking" && !prompt.trim()) return "Vui lòng nhập chủ đề"
-		if ((skill === "listening" || skill === "reading") && questions.length === 0)
-			return "Vui lòng thêm ít nhất 1 câu hỏi"
-		if (
-			(skill === "listening" || skill === "reading") &&
-			questions.some((q) => !q.question.trim() || q.options.some((o) => !o.trim()))
-		)
-			return "Vui lòng điền đầy đủ nội dung và đáp án cho tất cả câu hỏi"
-		if (dueDate && new Date(dueDate) <= new Date())
-			return "Hạn nộp phải là thời điểm trong tương lai"
-		return null
-	}
-
-	function handleCreate() {
-		const error = validateCreate()
-		if (error) {
-			toast.error(error)
-			return
-		}
-		createAssignment.mutate(
-			{
-				classId,
-				title: title.trim(),
-				description: description.trim() || undefined,
-				content: buildContent(),
-				skill: skill || undefined,
-				dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
-				allowRetry,
-			},
-			{
-				onSuccess: () => {
-					setShowCreate(false)
-					setTitle("")
-					setDescription("")
-					setSkill("")
-					setPassage("")
-					setAudioUrl("")
-					setPrompt("")
-					setQuestions([])
-					setDueDate("")
-					setAllowRetry(false)
-					toast.success("Tạo bài tập thành công")
-				},
-				onError: () => toast.error("Không thể tạo bài tập. Vui lòng thử lại."),
-			},
-		)
-	}
 
 	function handleGrade() {
 		const score = Number.parseFloat(gradeScore)
@@ -696,9 +600,11 @@ function AssignmentsTab({
 					<HugeiconsIcon icon={RefreshIcon} className="size-3.5" />
 					Tải lại
 				</Button>
-				<Button size="sm" className="gap-1.5" onClick={() => setShowCreate(true)}>
-					<HugeiconsIcon icon={Add01Icon} className="size-3.5" />
-					Tạo bài tập
+				<Button size="sm" className="gap-1.5" asChild>
+					<Link to="/assignments/new/$classId" params={{ classId }}>
+						<HugeiconsIcon icon={Add01Icon} className="size-3.5" />
+						Tạo bài tập
+					</Link>
 				</Button>
 			</div>
 
@@ -776,150 +682,6 @@ function AssignmentsTab({
 					</button>
 				))
 			)}
-
-			<Dialog open={showCreate} onOpenChange={setShowCreate}>
-				<DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
-					<DialogHeader>
-						<DialogTitle>Tạo bài tập mới</DialogTitle>
-					</DialogHeader>
-					<div className="space-y-4">
-						<div className="space-y-1.5">
-							<Label htmlFor="asgTitle">Tiêu đề</Label>
-							<Input
-								id="asgTitle"
-								placeholder="Ví dụ: Listening Practice Week 1"
-								value={title}
-								onChange={(e) => setTitle(e.target.value)}
-							/>
-						</div>
-						<div className="space-y-1.5">
-							<Label htmlFor="asgDesc">Mô tả (tuỳ chọn)</Label>
-							<Textarea
-								id="asgDesc"
-								value={description}
-								onChange={(e) => setDescription(e.target.value)}
-								rows={2}
-							/>
-						</div>
-						<div className="space-y-1.5">
-							<Label>Kỹ năng</Label>
-							<Select
-								value={skill}
-								onValueChange={(v) => {
-									setSkill(v)
-									setQuestions([])
-									setPassage("")
-									setPrompt("")
-									setAudioUrl("")
-								}}
-							>
-								<SelectTrigger>
-									<SelectValue placeholder="Chọn kỹ năng" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="listening">Listening</SelectItem>
-									<SelectItem value="reading">Reading</SelectItem>
-									<SelectItem value="writing">Writing</SelectItem>
-									<SelectItem value="speaking">Speaking</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
-
-						{/* Listening: audio URL + MCQ builder */}
-						{skill === "listening" && (
-							<>
-								<div className="space-y-1.5">
-									<Label>Link audio</Label>
-									<Input
-										placeholder="https://..."
-										value={audioUrl}
-										onChange={(e) => setAudioUrl(e.target.value)}
-									/>
-								</div>
-								<MCQBuilder questions={questions} onChange={setQuestions} />
-							</>
-						)}
-
-						{/* Reading: passage + MCQ builder */}
-						{skill === "reading" && (
-							<>
-								<div className="space-y-1.5">
-									<Label>Đoạn văn</Label>
-									<Textarea
-										placeholder="Nhập đoạn văn cho học sinh đọc..."
-										value={passage}
-										onChange={(e) => setPassage(e.target.value)}
-										rows={6}
-									/>
-								</div>
-								<MCQBuilder questions={questions} onChange={setQuestions} />
-							</>
-						)}
-
-						{/* Writing: prompt */}
-						{skill === "writing" && (
-							<div className="space-y-1.5">
-								<Label>Đề bài</Label>
-								<Textarea
-									placeholder="Ví dụ: Write an essay about the advantages and disadvantages of..."
-									value={prompt}
-									onChange={(e) => setPrompt(e.target.value)}
-									rows={5}
-								/>
-							</div>
-						)}
-
-						{/* Speaking: topic + optional audio */}
-						{skill === "speaking" && (
-							<>
-								<div className="space-y-1.5">
-									<Label>Đề bài / Chủ đề</Label>
-									<Textarea
-										placeholder="Ví dụ: Describe your favorite place to visit..."
-										value={prompt}
-										onChange={(e) => setPrompt(e.target.value)}
-										rows={4}
-									/>
-								</div>
-								<div className="space-y-1.5">
-									<Label>Link audio mẫu (tuỳ chọn)</Label>
-									<Input
-										placeholder="https://..."
-										value={audioUrl}
-										onChange={(e) => setAudioUrl(e.target.value)}
-									/>
-								</div>
-							</>
-						)}
-						<div className="space-y-1.5">
-							<Label htmlFor="asgDue">Hạn nộp (tuỳ chọn)</Label>
-							<Input
-								id="asgDue"
-								type="datetime-local"
-								value={dueDate}
-								onChange={(e) => setDueDate(e.target.value)}
-							/>
-						</div>
-						<label className="flex items-center gap-2 text-sm">
-							<input
-								type="checkbox"
-								checked={allowRetry}
-								onChange={(e) => setAllowRetry(e.target.checked)}
-								className="rounded"
-							/>
-							Cho phép làm lại
-						</label>
-					</div>
-					<DialogFooter>
-						<Button variant="outline" onClick={() => setShowCreate(false)}>
-							Huỷ
-						</Button>
-						<Button onClick={handleCreate} disabled={!title.trim() || createAssignment.isPending}>
-							{createAssignment.isPending ? "Đang tạo..." : "Tạo bài tập"}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
 		</div>
 	)
 }

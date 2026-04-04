@@ -99,7 +99,13 @@ function ScoreRing({ score, size = 72 }: { score: number; size?: number }) {
 
 	return (
 		<div className="relative" style={{ width: size, height: size }}>
-			<svg width={size} height={size} className="-rotate-90">
+			<svg
+				width={size}
+				height={size}
+				className="-rotate-90"
+				role="img"
+				aria-label={`Score ${score.toFixed(1)} out of 10`}
+			>
 				<circle
 					cx={size / 2}
 					cy={size / 2}

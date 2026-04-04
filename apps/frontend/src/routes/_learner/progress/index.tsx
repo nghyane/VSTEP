@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { Suspense, lazy } from "react"
+import { lazy, Suspense } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"

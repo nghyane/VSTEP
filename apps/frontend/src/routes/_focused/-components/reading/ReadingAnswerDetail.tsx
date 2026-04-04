@@ -921,7 +921,8 @@ export function ReadingAnswerDetail({
 
 	const currentExplanation = explanations.find((e) => e.questionNumber === currentQ.questionNumber)
 	const correct =
-		summaryOverride?.correct ?? questions.filter((q) => answers[q.questionNumber] === q.correctAnswer).length
+		summaryOverride?.correct ??
+		questions.filter((q) => answers[q.questionNumber] === q.correctAnswer).length
 	const totalQuestions = summaryOverride?.total ?? questions.length
 	const percentage = totalQuestions > 0 ? Math.round((correct / totalQuestions) * 100) : 0
 	const userAnswer = answers[currentQ.questionNumber]
@@ -958,7 +959,9 @@ export function ReadingAnswerDetail({
 									<>
 										<p className="mt-0.5 text-xs text-muted-foreground">Điểm từ API hiện tại</p>
 										<p className="mt-1 text-2xl font-bold text-green-600">
-											{summaryOverride.score !== null ? `${summaryOverride.score.toFixed(1)}/10` : "--"}
+											{summaryOverride.score !== null
+												? `${summaryOverride.score.toFixed(1)}/10`
+												: "--"}
 										</p>
 										<p className="mt-1 text-xs text-muted-foreground">
 											Mock review bên dưới, score là dữ liệu thật.

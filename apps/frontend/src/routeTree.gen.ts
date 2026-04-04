@@ -51,6 +51,8 @@ import { Route as LearnerVocabularyTopicIdPracticeRouteImport } from './routes/_
 import { Route as LearnerVocabularyTopicIdFlashcardsRouteImport } from './routes/_learner/vocabulary/$topicId.flashcards'
 import { Route as LearnerSubmissionsIdWritingRouteImport } from './routes/_learner/submissions/$id.writing'
 import { Route as LearnerExamsSessionsSessionIdRouteImport } from './routes/_learner/exams/sessions.$sessionId'
+import { Route as LearnerAssignmentsNewClassIdRouteImport } from './routes/_learner/assignments_.new.$classId'
+import { Route as LearnerClassesClassIdDoAssignmentIdRouteImport } from './routes/_learner/classes_.$classId.do.$assignmentId'
 
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
@@ -268,6 +270,18 @@ const LearnerExamsSessionsSessionIdRoute =
     path: '/exams/sessions/$sessionId',
     getParentRoute: () => LearnerRoute,
   } as any)
+const LearnerAssignmentsNewClassIdRoute =
+  LearnerAssignmentsNewClassIdRouteImport.update({
+    id: '/assignments_/new/$classId',
+    path: '/assignments/new/$classId',
+    getParentRoute: () => LearnerRoute,
+  } as any)
+const LearnerClassesClassIdDoAssignmentIdRoute =
+  LearnerClassesClassIdDoAssignmentIdRouteImport.update({
+    id: '/classes_/$classId/do/$assignmentId',
+    path: '/classes/$classId/do/$assignmentId',
+    getParentRoute: () => LearnerRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -303,12 +317,14 @@ export interface FileRoutesByFullPath {
   '/progress/': typeof LearnerProgressIndexRoute
   '/submissions/': typeof LearnerSubmissionsIndexRoute
   '/vocabulary/': typeof LearnerVocabularyIndexRoute
+  '/assignments/new/$classId': typeof LearnerAssignmentsNewClassIdRoute
   '/exams/sessions/$sessionId': typeof LearnerExamsSessionsSessionIdRoute
   '/submissions/$id/writing': typeof LearnerSubmissionsIdWritingRoute
   '/vocabulary/$topicId/flashcards': typeof LearnerVocabularyTopicIdFlashcardsRoute
   '/vocabulary/$topicId/practice': typeof LearnerVocabularyTopicIdPracticeRoute
   '/vocabulary/sentences/$topicId': typeof LearnerVocabularySentencesTopicIdRoute
   '/vocabulary/$topicId/': typeof LearnerVocabularyTopicIdIndexRoute
+  '/classes/$classId/do/$assignmentId': typeof LearnerClassesClassIdDoAssignmentIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -342,12 +358,14 @@ export interface FileRoutesByTo {
   '/progress': typeof LearnerProgressIndexRoute
   '/submissions': typeof LearnerSubmissionsIndexRoute
   '/vocabulary': typeof LearnerVocabularyIndexRoute
+  '/assignments/new/$classId': typeof LearnerAssignmentsNewClassIdRoute
   '/exams/sessions/$sessionId': typeof LearnerExamsSessionsSessionIdRoute
   '/submissions/$id/writing': typeof LearnerSubmissionsIdWritingRoute
   '/vocabulary/$topicId/flashcards': typeof LearnerVocabularyTopicIdFlashcardsRoute
   '/vocabulary/$topicId/practice': typeof LearnerVocabularyTopicIdPracticeRoute
   '/vocabulary/sentences/$topicId': typeof LearnerVocabularySentencesTopicIdRoute
   '/vocabulary/$topicId': typeof LearnerVocabularyTopicIdIndexRoute
+  '/classes/$classId/do/$assignmentId': typeof LearnerClassesClassIdDoAssignmentIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -387,12 +405,14 @@ export interface FileRoutesById {
   '/_learner/progress/': typeof LearnerProgressIndexRoute
   '/_learner/submissions/': typeof LearnerSubmissionsIndexRoute
   '/_learner/vocabulary/': typeof LearnerVocabularyIndexRoute
+  '/_learner/assignments_/new/$classId': typeof LearnerAssignmentsNewClassIdRoute
   '/_learner/exams/sessions/$sessionId': typeof LearnerExamsSessionsSessionIdRoute
   '/_learner/submissions/$id/writing': typeof LearnerSubmissionsIdWritingRoute
   '/_learner/vocabulary/$topicId/flashcards': typeof LearnerVocabularyTopicIdFlashcardsRoute
   '/_learner/vocabulary/$topicId/practice': typeof LearnerVocabularyTopicIdPracticeRoute
   '/_learner/vocabulary/sentences/$topicId': typeof LearnerVocabularySentencesTopicIdRoute
   '/_learner/vocabulary/$topicId/': typeof LearnerVocabularyTopicIdIndexRoute
+  '/_learner/classes_/$classId/do/$assignmentId': typeof LearnerClassesClassIdDoAssignmentIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -430,12 +450,14 @@ export interface FileRouteTypes {
     | '/progress/'
     | '/submissions/'
     | '/vocabulary/'
+    | '/assignments/new/$classId'
     | '/exams/sessions/$sessionId'
     | '/submissions/$id/writing'
     | '/vocabulary/$topicId/flashcards'
     | '/vocabulary/$topicId/practice'
     | '/vocabulary/sentences/$topicId'
     | '/vocabulary/$topicId/'
+    | '/classes/$classId/do/$assignmentId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -469,12 +491,14 @@ export interface FileRouteTypes {
     | '/progress'
     | '/submissions'
     | '/vocabulary'
+    | '/assignments/new/$classId'
     | '/exams/sessions/$sessionId'
     | '/submissions/$id/writing'
     | '/vocabulary/$topicId/flashcards'
     | '/vocabulary/$topicId/practice'
     | '/vocabulary/sentences/$topicId'
     | '/vocabulary/$topicId'
+    | '/classes/$classId/do/$assignmentId'
   id:
     | '__root__'
     | '/'
@@ -513,12 +537,14 @@ export interface FileRouteTypes {
     | '/_learner/progress/'
     | '/_learner/submissions/'
     | '/_learner/vocabulary/'
+    | '/_learner/assignments_/new/$classId'
     | '/_learner/exams/sessions/$sessionId'
     | '/_learner/submissions/$id/writing'
     | '/_learner/vocabulary/$topicId/flashcards'
     | '/_learner/vocabulary/$topicId/practice'
     | '/_learner/vocabulary/sentences/$topicId'
     | '/_learner/vocabulary/$topicId/'
+    | '/_learner/classes_/$classId/do/$assignmentId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -825,6 +851,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LearnerExamsSessionsSessionIdRouteImport
       parentRoute: typeof LearnerRoute
     }
+    '/_learner/assignments_/new/$classId': {
+      id: '/_learner/assignments_/new/$classId'
+      path: '/assignments/new/$classId'
+      fullPath: '/assignments/new/$classId'
+      preLoaderRoute: typeof LearnerAssignmentsNewClassIdRouteImport
+      parentRoute: typeof LearnerRoute
+    }
+    '/_learner/classes_/$classId/do/$assignmentId': {
+      id: '/_learner/classes_/$classId/do/$assignmentId'
+      path: '/classes/$classId/do/$assignmentId'
+      fullPath: '/classes/$classId/do/$assignmentId'
+      preLoaderRoute: typeof LearnerClassesClassIdDoAssignmentIdRouteImport
+      parentRoute: typeof LearnerRoute
+    }
   }
 }
 
@@ -909,8 +949,10 @@ interface LearnerRouteChildren {
   LearnerProgressIndexRoute: typeof LearnerProgressIndexRoute
   LearnerSubmissionsIndexRoute: typeof LearnerSubmissionsIndexRoute
   LearnerVocabularyIndexRoute: typeof LearnerVocabularyIndexRoute
+  LearnerAssignmentsNewClassIdRoute: typeof LearnerAssignmentsNewClassIdRoute
   LearnerExamsSessionsSessionIdRoute: typeof LearnerExamsSessionsSessionIdRoute
   LearnerVocabularySentencesTopicIdRoute: typeof LearnerVocabularySentencesTopicIdRoute
+  LearnerClassesClassIdDoAssignmentIdRoute: typeof LearnerClassesClassIdDoAssignmentIdRoute
 }
 
 const LearnerRouteChildren: LearnerRouteChildren = {
@@ -932,9 +974,12 @@ const LearnerRouteChildren: LearnerRouteChildren = {
   LearnerProgressIndexRoute: LearnerProgressIndexRoute,
   LearnerSubmissionsIndexRoute: LearnerSubmissionsIndexRoute,
   LearnerVocabularyIndexRoute: LearnerVocabularyIndexRoute,
+  LearnerAssignmentsNewClassIdRoute: LearnerAssignmentsNewClassIdRoute,
   LearnerExamsSessionsSessionIdRoute: LearnerExamsSessionsSessionIdRoute,
   LearnerVocabularySentencesTopicIdRoute:
     LearnerVocabularySentencesTopicIdRoute,
+  LearnerClassesClassIdDoAssignmentIdRoute:
+    LearnerClassesClassIdDoAssignmentIdRoute,
 }
 
 const LearnerRouteWithChildren =

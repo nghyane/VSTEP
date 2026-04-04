@@ -7,7 +7,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { Suspense, lazy } from "react"
+import { lazy, Suspense } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useActivity, useProgress, useSpiderChart } from "@/hooks/use-progress"
 import { cn } from "@/lib/utils"
@@ -176,7 +176,11 @@ function PracticePage() {
 					{/* Spider chart */}
 					<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 						<p className="text-sm font-semibold">Tổng quan kỹ năng</p>
-						<Suspense fallback={<Skeleton className="mx-auto mt-2 aspect-square w-full max-w-[260px] rounded-2xl" />}>
+						<Suspense
+							fallback={
+								<Skeleton className="mx-auto mt-2 aspect-square w-full max-w-[260px] rounded-2xl" />
+							}
+						>
 							<SpiderChart
 								skills={spiderSkills}
 								className="mx-auto aspect-square w-full max-w-[260px]"

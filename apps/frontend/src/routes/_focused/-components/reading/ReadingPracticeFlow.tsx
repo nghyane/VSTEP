@@ -236,9 +236,9 @@ export function ReadingPracticeFlow({ part, level, resumeSessionId }: ReadingPra
 					const nextItem = data.currentItem
 					const isDuplicateNextItem = nextItem?.question.id === item.question.id
 
-							setLatestScore(data.result.score ?? null)
-							setSubmitResult(data.result)
-							setProgress(data.progress)
+					setLatestScore(data.result.score ?? null)
+					setSubmitResult(data.result)
+					setProgress(data.progress)
 					setPendingNextItem(isDuplicateNextItem ? null : nextItem)
 
 					if (isDuplicateNextItem) {
@@ -328,7 +328,8 @@ export function ReadingPracticeFlow({ part, level, resumeSessionId }: ReadingPra
 					<div className="space-y-1">
 						<p className="text-base font-semibold">Hoàn thành phiên luyện đọc</p>
 						<p className="text-sm text-muted-foreground">
-							Bạn đã hoàn thành {progress?.current ?? progress?.total ?? 0}/{progress?.total ?? 0} bài đọc.
+							Bạn đã hoàn thành {progress?.current ?? progress?.total ?? 0}/{progress?.total ?? 0}{" "}
+							bài đọc.
 						</p>
 					</div>
 					<Button asChild>

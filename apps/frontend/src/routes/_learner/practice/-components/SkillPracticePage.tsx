@@ -5,6 +5,7 @@ import { useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { usePracticeQuestions } from "@/hooks/use-practice"
+import { useProgress } from "@/hooks/use-progress"
 import { cn } from "@/lib/utils"
 import { skillColor, skillMeta } from "@/routes/_learner/exams/-components/skill-meta"
 import type {
@@ -103,9 +104,11 @@ function getDescription(q: Question, skill: Skill): string {
 
 export function SkillPracticePage({ skill }: { skill: Skill }) {
 	const { data, isLoading, isError, error } = usePracticeQuestions({ skill })
+	const { data: progressData } = useProgress()
 	const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
 
 	const questions = data?.data ?? []
+	const userLevel = progressData?.skills?.find((s) => s.skill === skill)?.currentLevel ?? null
 	const readingEntries = useMemo(() => {
 		if (skill !== "reading") return []
 
@@ -120,11 +123,34 @@ export function SkillPracticePage({ skill }: { skill: Skill }) {
 				title: category,
 				badge: `Part ${sample?.part ?? 1}`,
 				description: `${count} bài đọc trong ngân hàng câu hỏi`,
-				meta: levels.join(" · "),
+				meta: userLevel ? `${levels.join(" · ")} · Bạn: ${userLevel}` : levels.join(" · "),
 				part: sample?.part ?? 1,
 			}
 		})
-	}, [questions, skill])
+	}, [questions, skill, userLevel])
+
+	const listeningEntries = useMemo(() => {
+		if (skill !== "listening") return []
+
+		return categoriesFromQuestions(questions, skill).map(([category, count]) => {
+			const sample = questions.find((q) => getCategory(q, skill) === category)
+			const partQuestions = questions.filter((q) => q.part === sample?.part)
+			const levels = [...new Set(partQuestions.map((q) => q.level))]
+			const totalItems = partQuestions.reduce((sum, q) => {
+				const c = q.content as ListeningContent
+				return sum + (c.items?.length ?? 0)
+			}, 0)
+
+			return {
+				key: category,
+				title: category,
+				badge: `Part ${sample?.part ?? 1}`,
+				description: `${count} bài nghe · ${totalItems} câu hỏi`,
+				meta: userLevel ? `${levels.join(" · ")} · Bạn: ${userLevel}` : levels.join(" · "),
+				part: sample?.part ?? 1,
+			}
+		})
+	}, [questions, skill, userLevel])
 
 	const categories = useMemo(() => {
 		return categoriesFromQuestions(questions, skill)
@@ -136,6 +162,9 @@ export function SkillPracticePage({ skill }: { skill: Skill }) {
 	const filteredReadingEntries = selectedCategory
 		? readingEntries.filter((entry) => entry.key === selectedCategory)
 		: readingEntries
+	const filteredListeningEntries = selectedCategory
+		? listeningEntries.filter((entry) => entry.key === selectedCategory)
+		: listeningEntries
 
 	if (isLoading) {
 		return (
@@ -184,12 +213,24 @@ export function SkillPracticePage({ skill }: { skill: Skill }) {
 										part={entry.part}
 									/>
 								))
-							: filtered.map((question) => (
-									<QuestionCard key={question.id} question={question} skill={skill} />
-								))}
+							: skill === "listening"
+								? filteredListeningEntries.map((entry) => (
+										<ListeningPracticeCard
+											key={entry.key}
+											title={entry.title}
+											badge={entry.badge}
+											description={entry.description}
+											meta={entry.meta}
+											part={entry.part}
+										/>
+									))
+								: filtered.map((question) => (
+										<QuestionCard key={question.id} question={question} skill={skill} />
+									))}
 
 						{((skill === "reading" && filteredReadingEntries.length === 0) ||
-							(skill !== "reading" && filtered.length === 0)) && (
+							(skill === "listening" && filteredListeningEntries.length === 0) ||
+							(skill !== "reading" && skill !== "listening" && filtered.length === 0)) && (
 							<div className="col-span-full py-8 text-center text-sm text-muted-foreground">
 								Không có bài luyện tập nào cho chủ đề này.
 							</div>
@@ -269,6 +310,43 @@ function ReadingPracticeCard({
 				<Link
 					to="/exercise"
 					search={{ skill: "reading", id: "", part: String(part), level: "", session: "" }}
+				>
+					Luyện tập ngay
+				</Link>
+			</Button>
+		</div>
+	)
+}
+
+function ListeningPracticeCard({
+	title,
+	badge,
+	description,
+	meta,
+	part,
+}: {
+	title: string
+	badge: string
+	description: string
+	meta: string
+	part: number
+}) {
+	return (
+		<div className="flex flex-col gap-3 rounded-xl bg-muted/30 p-5 transition-colors hover:bg-muted/50">
+			<div className="flex items-start justify-between gap-2">
+				<span className="text-sm font-semibold leading-snug">{title}</span>
+				<span className="shrink-0 rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+					{badge}
+				</span>
+			</div>
+			<div className="space-y-1 text-xs text-muted-foreground">
+				<p>{description}</p>
+				{meta && <p>{meta}</p>}
+			</div>
+			<Button size="sm" className="mt-auto w-full rounded-xl" asChild>
+				<Link
+					to="/exercise"
+					search={{ skill: "listening", id: "", part: String(part), level: "", session: "" }}
 				>
 					Luyện tập ngay
 				</Link>

@@ -72,7 +72,19 @@ export function ListeningExerciseSection({
 														focusedQuestion === q.questionNumber &&
 														"ring-2 ring-sky-400/50",
 												)}
-												onClick={() => listeningLevel === 2 && setFocusedQuestion(q.questionNumber)}
+												{...(listeningLevel === 2
+													? {
+															role: "button",
+															tabIndex: 0,
+															onClick: () => setFocusedQuestion(q.questionNumber),
+															onKeyDown: (e: React.KeyboardEvent) => {
+																if (e.key === "Enter" || e.key === " ") {
+																	e.preventDefault()
+																	setFocusedQuestion(q.questionNumber)
+																}
+															},
+														}
+													: {})}
 											>
 												<p className="text-sm font-medium">
 													<span className="mr-1.5 text-primary">{q.questionNumber}.</span>

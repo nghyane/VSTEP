@@ -49,7 +49,8 @@ const statusConfig: Record<
 	completed: {
 		label: "Hoàn thành",
 		variant: "outline",
-		className: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300",
+		className:
+			"border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300",
 	},
 	review_pending: {
 		label: "Chờ chấm",

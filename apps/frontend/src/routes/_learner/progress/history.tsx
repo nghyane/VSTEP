@@ -8,7 +8,7 @@ import {
 import type { IconSvgElement } from "@hugeicons/react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { Suspense, lazy, useState } from "react"
+import { lazy, Suspense, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useExamSessions } from "@/hooks/use-exam-session"
 import { useProgress, useSpiderChart } from "@/hooks/use-progress"
@@ -24,7 +24,9 @@ const DoughnutChart = lazy(() =>
 )
 
 const DoughnutLegend = lazy(() =>
-	import("@/components/common/DoughnutChart").then((module) => ({ default: module.DoughnutLegend })),
+	import("@/components/common/DoughnutChart").then((module) => ({
+		default: module.DoughnutLegend,
+	})),
 )
 
 export const Route = createFileRoute("/_learner/progress/history")({
@@ -179,7 +181,15 @@ function DoughnutChartCard({
 						/>
 					</Suspense>
 				</div>
-				<Suspense fallback={<div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-4 w-28" />)}</div>}>
+				<Suspense
+					fallback={
+						<div className="space-y-2">
+							{Array.from({ length: 4 }).map((_, i) => (
+								<Skeleton key={i} className="h-4 w-28" />
+							))}
+						</div>
+					}
+				>
 					<DoughnutLegend segments={segments} className="flex-col items-start" />
 				</Suspense>
 			</div>
@@ -301,9 +311,9 @@ function SessionCard({ session }: { session: ExamSessionWithExam }) {
 					<div className="mb-0.5 flex items-center gap-1">
 						<HugeiconsIcon
 							icon={skillInfo.icon}
-							className={cn("size-3.5", skillColorText[best!.skill])}
+							className={cn("size-3.5", best && skillColorText[best.skill])}
 						/>
-						<span className={cn("text-xs font-medium", skillColorText[best!.skill])}>
+						<span className={cn("text-xs font-medium", best && skillColorText[best.skill])}>
 							{skillInfo.label}
 						</span>
 					</div>

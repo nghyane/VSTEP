@@ -51,8 +51,7 @@ export function useSpellCheck(text: string, debounceMs = 350) {
 			const results: MisspelledWord[] = []
 			const seen = new Set<string>()
 			const re = /\b[a-zA-Z']+\b/g
-			let match: RegExpExecArray | null
-			while ((match = re.exec(text)) !== null) {
+			for (let match = re.exec(text); match !== null; match = re.exec(text)) {
 				const word = match[0]
 				if (word.length < 2) continue
 				if (seen.has(word.toLowerCase())) {
@@ -145,6 +144,7 @@ export function SpellCheckEditor({
 				)}
 				style={{ minHeight: `${minHeight}px` }}
 				aria-hidden
+				// biome-ignore lint/security/noDangerouslySetInnerHtml: highlight backdrop uses sanitized HTML from escapeHtml() — no user-generated raw HTML
 				dangerouslySetInnerHTML={{ __html: highlightedHtml }}
 			/>
 

@@ -1,5 +1,7 @@
-import { Add01Icon, Delete02Icon } from "@hugeicons/core-free-icons"
+import { Add01Icon, Delete02Icon, TextIcon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { useCallback, useState } from "react"
+import { toast } from "sonner"
 import type { MCQQuestion } from "@/components/features/assignments/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,6 +13,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { parseDocumentToAssignment } from "./parse-document"
 
 interface MCQBuilderProps {
 	questions: MCQQuestion[]
@@ -24,6 +28,9 @@ const EMPTY_QUESTION: MCQQuestion = {
 }
 
 export function MCQBuilder({ questions, onChange }: MCQBuilderProps) {
+	const [bulkOpen, setBulkOpen] = useState(false)
+	const [bulkText, setBulkText] = useState("")
+
 	function addQuestion() {
 		onChange([...questions, { ...EMPTY_QUESTION, options: ["", "", "", ""] }])
 	}
@@ -50,19 +57,103 @@ export function MCQBuilder({ questions, onChange }: MCQBuilderProps) {
 
 	function updateCorrectAnswer(qIndex: number, value: string) {
 		const updated = [...questions]
-		updated[qIndex] = { ...updated[qIndex], correctAnswer: Number.parseInt(value) }
+		updated[qIndex] = { ...updated[qIndex], correctAnswer: Number.parseInt(value, 10) }
 		onChange(updated)
 	}
+
+	const handleBulkImport = useCallback(() => {
+		if (!bulkText.trim()) {
+			toast.error("Vui lòng nhập nội dung câu hỏi")
+			return
+		}
+
+		const parsed = parseDocumentToAssignment(bulkText)
+
+		if (parsed.questions.length === 0) {
+			toast.error("Không tìm thấy câu hỏi nào. Kiểm tra lại định dạng.")
+			return
+		}
+
+		const shouldReplace =
+			questions.length === 0 ||
+			window.confirm(
+				`Đã có ${questions.length} câu hỏi. Thêm ${parsed.questions.length} câu mới hay thay thế tất cả?\n\nOK = Thay thế  |  Cancel = Thêm vào cuối`,
+			)
+
+		if (shouldReplace) {
+			onChange(parsed.questions)
+		} else {
+			onChange([...questions, ...parsed.questions])
+		}
+
+		const msg = parsed.missingAnswers
+			? `Đã thêm ${parsed.questions.length} câu hỏi (một số chưa có đáp án, vui lòng kiểm tra)`
+			: `Đã thêm ${parsed.questions.length} câu hỏi`
+		toast.success(msg)
+
+		setBulkText("")
+		setBulkOpen(false)
+	}, [bulkText, questions, onChange])
 
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center justify-between">
 				<Label>Câu hỏi ({questions.length})</Label>
-				<Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={addQuestion}>
-					<HugeiconsIcon icon={Add01Icon} className="size-3.5" />
-					Thêm câu hỏi
-				</Button>
+				<div className="flex gap-2">
+					<Button
+						type="button"
+						size="sm"
+						variant="outline"
+						className="gap-1.5"
+						onClick={() => setBulkOpen(!bulkOpen)}
+					>
+						<HugeiconsIcon icon={TextIcon} className="size-3.5" />
+						Dán hàng loạt
+					</Button>
+					<Button
+						type="button"
+						size="sm"
+						variant="outline"
+						className="gap-1.5"
+						onClick={addQuestion}
+					>
+						<HugeiconsIcon icon={Add01Icon} className="size-3.5" />
+						Thêm câu hỏi
+					</Button>
+				</div>
 			</div>
+
+			{/* Bulk paste panel */}
+			{bulkOpen && (
+				<div className="space-y-3 rounded-xl border border-dashed border-primary/30 bg-primary/5 p-4">
+					<p className="text-xs text-muted-foreground">
+						Dán câu hỏi vào đây. Hỗ trợ format có hoặc không đánh số, đáp án A/B/C/D, và Answer Key
+						ở cuối.
+					</p>
+					<Textarea
+						value={bulkText}
+						onChange={(e) => setBulkText(e.target.value)}
+						rows={10}
+						placeholder={`1. What is the main idea?\nA. Option one\nB. Option two\nC. Option three\nD. Option four\nAnswer: B\n\n2. ...`}
+					/>
+					<div className="flex items-center justify-end gap-2">
+						<Button
+							type="button"
+							size="sm"
+							variant="ghost"
+							onClick={() => {
+								setBulkOpen(false)
+								setBulkText("")
+							}}
+						>
+							Huỷ
+						</Button>
+						<Button type="button" size="sm" onClick={handleBulkImport}>
+							Nhập câu hỏi
+						</Button>
+					</div>
+				</div>
+			)}
 
 			{questions.map((q, qi) => (
 				<div key={`q-${qi.toString()}`} className="space-y-3 rounded-xl border p-4">
@@ -117,9 +208,9 @@ export function MCQBuilder({ questions, onChange }: MCQBuilderProps) {
 				</div>
 			))}
 
-			{questions.length === 0 && (
+			{questions.length === 0 && !bulkOpen && (
 				<p className="py-4 text-center text-sm text-muted-foreground">
-					Chưa có câu hỏi nào. Bấm "Thêm câu hỏi" để bắt đầu.
+					Chưa có câu hỏi nào. Bấm "Thêm câu hỏi" hoặc "Dán hàng loạt" để bắt đầu.
 				</p>
 			)}
 		</div>

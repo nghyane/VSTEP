@@ -1,7 +1,7 @@
 import { AlertCircleIcon, BulbIcon, CheckmarkCircle01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Link } from "@tanstack/react-router"
-import { Suspense, lazy } from "react"
+import { lazy, Suspense } from "react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
@@ -33,8 +33,8 @@ export function SessionCompleted({ session, exam }: SessionCompletedProps) {
 	]
 
 	const graded = scores.filter((s) => s.score !== null)
-	const strong = graded.filter((s) => s.score! >= 7)
-	const weak = graded.filter((s) => s.score! < 7)
+	const strong = graded.filter((s) => (s.score ?? 0) >= 7)
+	const weak = graded.filter((s) => (s.score ?? 0) < 7)
 	const weakest = [...graded].sort((a, b) => (a.score ?? 0) - (b.score ?? 0))[0] as
 		| (typeof scores)[number]
 		| undefined
@@ -93,8 +93,13 @@ export function SessionCompleted({ session, exam }: SessionCompletedProps) {
 
 			{/* Spider chart + Skill scores */}
 			<div className="grid items-center gap-6 lg:grid-cols-2">
-				<Suspense fallback={<Skeleton className="mx-auto aspect-square w-full max-w-[320px] rounded-2xl" />}>
-					<SpiderChart skills={spiderSkills} className="mx-auto aspect-square w-full max-w-[320px]" />
+				<Suspense
+					fallback={<Skeleton className="mx-auto aspect-square w-full max-w-[320px] rounded-2xl" />}
+				>
+					<SpiderChart
+						skills={spiderSkills}
+						className="mx-auto aspect-square w-full max-w-[320px]"
+					/>
 				</Suspense>
 
 				<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">

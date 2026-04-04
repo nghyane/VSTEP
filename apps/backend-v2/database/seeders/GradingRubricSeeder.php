@@ -15,7 +15,7 @@ class GradingRubricSeeder extends Seeder
             $this->seedWritingRubric($level);
         }
 
-        foreach (['B1', 'B2', 'C1'] as $level) {
+        foreach (['A2', 'B1', 'B2', 'C1'] as $level) {
             $this->seedSpeakingRubric($level);
         }
     }
@@ -245,6 +245,13 @@ class GradingRubricSeeder extends Seeder
     {
         $bands = [
             'fluency_coherence' => [
+                'A2' => [
+                    '9-10' => 'Nói được câu ngắn, đơn giản về chủ đề quen thuộc. Ngập ngừng có nhưng vẫn truyền đạt được ý chính.',
+                    '7-8' => 'Nói được câu đơn giản, ngập ngừng đôi chỗ khi tìm từ. Liên kết ý cơ bản bằng "and", "but".',
+                    '5-6' => 'Nói được nhưng ngập ngừng nhiều. Chủ yếu câu rời rạc, ít liên kết.',
+                    '3-4' => 'Ngập ngừng rất nhiều, dừng lâu. Chỉ nói được vài từ hoặc cụm từ rời rạc.',
+                    '1-2' => 'Hầu như không thể duy trì bài nói. Dừng liên tục, không liên kết.',
+                ],
                 'B1' => [
                     '9-10' => 'Nói trôi chảy về chủ đề quen thuộc. Ngập ngừng ít, tự sửa lỗi được. Liên kết ý cơ bản tốt.',
                     '7-8' => 'Khá trôi chảy, đôi chỗ ngập ngừng khi tìm từ. Liên kết ý cơ bản.',
@@ -268,6 +275,13 @@ class GradingRubricSeeder extends Seeder
                 ],
             ],
             'vocabulary' => [
+                'A2' => [
+                    '9-10' => 'Dùng được từ vựng cơ bản, quen thuộc phù hợp chủ đề hàng ngày. Hầu hết từ ngữ đúng.',
+                    '7-8' => 'Từ vựng cơ bản đủ dùng. Có lặp lại nhưng truyền đạt được ý.',
+                    '5-6' => 'Vốn từ hạn chế, lặp lại nhiều. Đủ cho nội dung rất đơn giản.',
+                    '3-4' => 'Từ vựng rất hạn chế, thường xuyên thiếu từ để diễn đạt.',
+                    '1-2' => 'Không đủ từ vựng để giao tiếp cơ bản.',
+                ],
                 'B1' => [
                     '9-10' => 'Từ vựng đủ cho chủ đề quen thuộc. Dùng đúng, ít lỗi.',
                     '7-8' => 'Từ vựng cơ bản phù hợp. Đôi chỗ thiếu từ, paraphrase được.',
@@ -291,6 +305,13 @@ class GradingRubricSeeder extends Seeder
                 ],
             ],
             'grammar' => [
+                'A2' => [
+                    '9-10' => 'Câu đơn và cấu trúc cơ bản phần lớn đúng. Lỗi nhỏ không ảnh hưởng đến ý nghĩa.',
+                    '7-8' => 'Dùng được cấu trúc quen thuộc tương đối chính xác. Có lỗi nhưng vẫn hiểu được.',
+                    '5-6' => 'Ngữ pháp đơn giản, có nhiều lỗi nhưng truyền đạt được ý chính.',
+                    '3-4' => 'Lỗi ngữ pháp thường xuyên, câu khó hiểu ở nhiều chỗ.',
+                    '1-2' => 'Lỗi nghiêm trọng, rất khó hiểu.',
+                ],
                 'B1' => [
                     '9-10' => 'Cấu trúc cơ bản chính xác. Thử dùng câu phức đơn giản.',
                     '7-8' => 'Cấu trúc cơ bản phần lớn đúng. Lỗi nhỏ khi dùng câu phức.',
@@ -314,6 +335,13 @@ class GradingRubricSeeder extends Seeder
                 ],
             ],
             'pronunciation' => [
+                'A2' => [
+                    '9-10' => 'Phát âm đủ rõ để người nghe hiểu được. Âm quen thuộc phần lớn đúng.',
+                    '7-8' => 'Phát âm khá rõ, đôi chỗ sai âm nhưng không cản trở giao tiếp cơ bản.',
+                    '5-6' => 'Phát âm chịu ảnh hưởng nhiều bởi tiếng mẹ đẻ. Đôi chỗ khó hiểu.',
+                    '3-4' => 'Phát âm khó hiểu, lỗi âm thường xuyên. Người nghe phải đoán nhiều.',
+                    '1-2' => 'Phát âm rất khó hiểu, gần như không thể giao tiếp.',
+                ],
                 'B1' => [
                     '9-10' => 'Phát âm rõ ràng, dễ hiểu. Trọng âm từ cơ bản đúng. Ngữ điệu tương đối tự nhiên.',
                     '7-8' => 'Phát âm khá rõ, đôi chỗ sai âm nhưng không ảnh hưởng giao tiếp. Trọng âm cơ bản đúng.',
@@ -337,6 +365,13 @@ class GradingRubricSeeder extends Seeder
                 ],
             ],
             'task_fulfillment' => [
+                'A2' => [
+                    '9-10' => 'Trả lời đúng câu hỏi đơn giản. Nội dung rõ ràng, phù hợp chủ đề quen thuộc.',
+                    '7-8' => 'Trả lời đúng hướng, nội dung cơ bản phù hợp. Phát triển ý còn ngắn.',
+                    '5-6' => 'Trả lời được nhưng nội dung rất ngắn, thiếu phát triển.',
+                    '3-4' => 'Trả lời lạc đề hoặc quá ngắn. Nội dung sơ sài.',
+                    '1-2' => 'Không trả lời được câu hỏi hoặc hoàn toàn lạc đề.',
+                ],
                 'B1' => [
                     '9-10' => 'Trả lời đúng, đầy đủ câu hỏi. Phát triển ý phù hợp ngữ cảnh. Nội dung liên quan.',
                     '7-8' => 'Trả lời đúng hướng, phát triển ý khá. Đôi chỗ chưa đầy đủ.',
