@@ -10,7 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { ScreenWrapper } from "@/components/ScreenWrapper";
 import { LoadingScreen } from "@/components/LoadingScreen";
-import { useProgress, useUpdateGoal, useCreateGoal } from "@/hooks/use-progress";
+import { useProgress, useCreateGoal } from "@/hooks/use-progress";
 import { useThemeColors, spacing, radius, fontSize } from "@/theme";
 import type { VstepBand } from "@/types/api";
 
@@ -38,10 +38,9 @@ export default function GoalScreen() {
   const c = useThemeColors();
   const router = useRouter();
   const progressQuery = useProgress();
-  const updateGoal = useUpdateGoal();
   const createGoal = useCreateGoal();
   const existingGoal = progressQuery.data?.goal ?? null;
-  const isMutating = updateGoal.isPending || createGoal.isPending;
+  const isMutating = createGoal.isPending;
 
   const [targetBand, setTargetBand] = useState<VstepBand>(existingGoal?.targetBand ?? "B2");
   const [dailyMinutes, setDailyMinutes] = useState(existingGoal?.dailyStudyTimeMinutes ?? 30);
@@ -64,10 +63,47 @@ export default function GoalScreen() {
     };
 
     if (existingGoal) {
-      updateGoal.mutate({ id: existingGoal.id, ...payload }, { onSuccess });
-    } else {
-      createGoal.mutate(payload, { onSuccess });
+      // Goal already exists — adaptive system manages it, don't allow manual edit
+      router.back();
+      return;
     }
+    createGoal.mutate(payload, { onSuccess });
+  }
+
+  // If goal already exists — show read-only info (adaptive system manages it)
+  if (existingGoal) {
+    return (
+      <ScreenWrapper noPadding>
+        <BouncyScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+          <View style={{ alignItems: "center", gap: spacing.md, paddingVertical: spacing.xl }}>
+            <Ionicons name="flag" size={48} color={c.primary} />
+            <Text style={{ color: c.foreground, fontWeight: "700", fontSize: fontSize.xl }}>Mục tiêu: {existingGoal.targetBand}</Text>
+            {existingGoal.deadline && (
+              <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm }}>
+                Deadline: {new Date(existingGoal.deadline).toLocaleDateString("vi-VN")}
+              </Text>
+            )}
+            {existingGoal.dailyStudyTimeMinutes && (
+              <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm }}>
+                Luyện tập: {existingGoal.dailyStudyTimeMinutes} phút/ngày
+              </Text>
+            )}
+          </View>
+          <View style={[styles.infoBox, { backgroundColor: c.primary + "08", borderColor: c.primary + "30" }]}>
+            <Ionicons name="sparkles" size={16} color={c.primary} />
+            <Text style={{ color: c.foreground, fontSize: fontSize.sm, flex: 1, lineHeight: 20 }}>
+              Hệ thống tự động điều chỉnh lộ trình học dựa trên kết quả luyện tập của bạn. Mục tiêu được quản lý tự động.
+            </Text>
+          </View>
+          <HapticTouchable
+            style={[styles.saveBtn, { backgroundColor: c.primary }]}
+            onPress={() => router.back()}
+          >
+            <Text style={{ color: c.primaryForeground, fontWeight: "600" }}>Quay lại</Text>
+          </HapticTouchable>
+        </BouncyScrollView>
+      </ScreenWrapper>
+    );
   }
 
   return (
@@ -183,4 +219,5 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   saveBtn: { borderRadius: radius.lg, paddingVertical: spacing.base, alignItems: "center" },
+  infoBox: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, borderWidth: 1, borderRadius: radius.xl, padding: spacing.base },
 });

@@ -64,17 +64,6 @@ export function useUpdateGoal() {
   });
 }
 
-export function useDeleteGoal() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) =>
-      api.delete<{ id: string; deleted: boolean }>(`/api/progress/goals/${id}`),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["progress"] });
-    },
-  });
-}
-
 export function useActivity(days = 7) {
   return useQuery({
     queryKey: ["activity", days],

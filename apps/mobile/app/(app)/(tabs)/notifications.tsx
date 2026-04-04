@@ -12,18 +12,22 @@ import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { Notification, NotificationType } from "@/types/api";
 
 const TYPE_ICONS: Record<NotificationType, keyof typeof Ionicons.glyphMap> = {
-  grading_completed: "checkmark-circle",
-  feedback_received: "chatbubble",
-  class_invite: "people",
+  grading_complete: "checkmark-circle",
   goal_achieved: "trophy",
+  streak_milestone: "flame",
+  session_abandoned: "alert-circle",
+  feedback: "chatbubble",
+  class_invite: "people",
   system: "information-circle",
 };
 
 const TYPE_COLORS: Record<NotificationType, string> = {
-  grading_completed: "#30A46C",
-  feedback_received: "#4B7BF5",
-  class_invite: "#9B59D0",
+  grading_complete: "#30A46C",
   goal_achieved: "#E5A817",
+  streak_milestone: "#F97316",
+  session_abandoned: "#6C6F7F",
+  feedback: "#4B7BF5",
+  class_invite: "#9B59D0",
   system: "#6C6F7F",
 };
 

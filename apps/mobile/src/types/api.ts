@@ -9,7 +9,7 @@ export type ExamStatus = "in_progress" | "submitted" | "completed" | "abandoned"
 export type SubmissionStatus = "pending" | "processing" | "completed" | "review_pending" | "failed";
 export type ExamType = "practice" | "placement" | "mock";
 export type ExamSkill = "listening" | "reading" | "writing" | "speaking" | "mixed";
-export type NotificationType = "grading_completed" | "feedback_received" | "class_invite" | "goal_achieved" | "system";
+export type NotificationType = "grading_complete" | "goal_achieved" | "streak_milestone" | "session_abandoned" | "feedback" | "class_invite" | "system";
 export type PracticeMode = "free" | "shadowing" | "drill" | "guided";
 
 // ============================================================
