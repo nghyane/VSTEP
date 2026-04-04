@@ -36,7 +36,7 @@
           "microphonePermission": "Cho phép VSTEP ghi âm bài speaking"
         }
       ],
-
+      "./plugins/withCleartextTraffic"
     ],
     "experiments": {
       "typedRoutes": true
