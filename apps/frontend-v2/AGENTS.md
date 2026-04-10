@@ -43,8 +43,9 @@ This is both the user learning path AND the build priority. Do not build later m
 
 ## Constraints
 
-- Backend is Laravel 13 REST API at `VITE_API_URL` (default `http://localhost:8000`). Frontend is a client that calls this API.
-- No server functions for business logic. Server functions only for: proxying external APIs, hiding secrets.
+- Backend is Laravel 13 REST API at `VITE_API_URL` (default `http://localhost:8000`). Frontend is a **SPA** (client-side only) that calls this API.
+- SPA mode enabled in `vite.config.ts` (`spa: { enabled: true }`). Build outputs static `/_shell.html` -- deploy to any CDN, no Node.js server needed.
+- No server functions, no SSR, no server components. All rendering is client-side.
 - Use `bun` to run scripts, `bunx` to execute packages. Never `npm`, `npx`, `yarn`, `pnpm`.
 - UI language is Vietnamese. Code and comments in English.
 
