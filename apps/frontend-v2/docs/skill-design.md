@@ -102,6 +102,24 @@ shadow-md   ← hover state / elevated card
 - `mx-auto max-w-6xl px-6 py-8`
 - Không dùng sidebar dạng fixed — layout là **top nav + content**, không có sidebar bên trái
 
+### Main content width rule (v2)
+- Các trang feature/list page **không được full width sát mép**. Luôn phải có khoảng thở hai bên.
+- Default container cho page nội dung: `mx-auto w-full max-w-5xl`
+- Với page hẹp hơn (form, writing, session nhỏ): có thể dùng `max-w-4xl` hoặc `max-w-3xl`
+- Chỉ dùng full width khi thật sự cần split layout/phân tích dữ liệu rộng (ví dụ bảng lớn, chart lớn).
+
+**Ví dụ đúng:**
+```tsx
+<div className="mx-auto w-full max-w-5xl space-y-6 pb-10">
+```
+
+**Ví dụ sai:**
+```tsx
+<div className="w-full space-y-6">
+```
+
+Lý do: full width làm accordion/card bị dàn sát hai bên, mất visual balance và khác hẳn spacing pattern của các trang còn lại.
+
 > **Lưu ý cho v2:** Frontend cũ dùng top nav, không có sidebar. Frontend prototype HTML dùng sidebar là adapt từ Prep UI. Khi implement React v2, nên theo pattern top nav của frontend cũ.
 
 ---

@@ -27,8 +27,16 @@ import { Route as AppLuyenTapKyNangNgheRouteImport } from './routes/_app.luyen-t
 import { Route as AppLuyenTapKyNangDocRouteImport } from './routes/_app.luyen-tap.ky-nang.doc'
 import { Route as AppLuyenTapNenTangTuVungIndexRouteImport } from './routes/_app.luyen-tap.nen-tang.tu-vung.index'
 import { Route as AppLuyenTapNenTangNguPhapIndexRouteImport } from './routes/_app.luyen-tap.nen-tang.ngu-phap.index'
+import { Route as AppLuyenTapKyNangVietIndexRouteImport } from './routes/_app.luyen-tap.ky-nang.viet.index'
+import { Route as AppLuyenTapKyNangNoiIndexRouteImport } from './routes/_app.luyen-tap.ky-nang.noi.index'
+import { Route as AppLuyenTapKyNangNgheIndexRouteImport } from './routes/_app.luyen-tap.ky-nang.nghe.index'
+import { Route as AppLuyenTapKyNangDocIndexRouteImport } from './routes/_app.luyen-tap.ky-nang.doc.index'
 import { Route as AppLuyenTapNenTangTuVungTopicIdRouteImport } from './routes/_app.luyen-tap.nen-tang.tu-vung.$topicId'
 import { Route as AppLuyenTapNenTangNguPhapPointIdRouteImport } from './routes/_app.luyen-tap.nen-tang.ngu-phap.$pointId'
+import { Route as AppLuyenTapKyNangVietExerciseIdRouteImport } from './routes/_app.luyen-tap.ky-nang.viet.$exerciseId'
+import { Route as AppLuyenTapKyNangNoiExerciseIdRouteImport } from './routes/_app.luyen-tap.ky-nang.noi.$exerciseId'
+import { Route as AppLuyenTapKyNangNgheExerciseIdRouteImport } from './routes/_app.luyen-tap.ky-nang.nghe.$exerciseId'
+import { Route as AppLuyenTapKyNangDocExerciseIdRouteImport } from './routes/_app.luyen-tap.ky-nang.doc.$exerciseId'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -123,6 +131,30 @@ const AppLuyenTapNenTangNguPhapIndexRoute =
     path: '/',
     getParentRoute: () => AppLuyenTapNenTangNguPhapRoute,
   } as any)
+const AppLuyenTapKyNangVietIndexRoute =
+  AppLuyenTapKyNangVietIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AppLuyenTapKyNangVietRoute,
+  } as any)
+const AppLuyenTapKyNangNoiIndexRoute =
+  AppLuyenTapKyNangNoiIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AppLuyenTapKyNangNoiRoute,
+  } as any)
+const AppLuyenTapKyNangNgheIndexRoute =
+  AppLuyenTapKyNangNgheIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AppLuyenTapKyNangNgheRoute,
+  } as any)
+const AppLuyenTapKyNangDocIndexRoute =
+  AppLuyenTapKyNangDocIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AppLuyenTapKyNangDocRoute,
+  } as any)
 const AppLuyenTapNenTangTuVungTopicIdRoute =
   AppLuyenTapNenTangTuVungTopicIdRouteImport.update({
     id: '/$topicId',
@@ -135,6 +167,30 @@ const AppLuyenTapNenTangNguPhapPointIdRoute =
     path: '/$pointId',
     getParentRoute: () => AppLuyenTapNenTangNguPhapRoute,
   } as any)
+const AppLuyenTapKyNangVietExerciseIdRoute =
+  AppLuyenTapKyNangVietExerciseIdRouteImport.update({
+    id: '/$exerciseId',
+    path: '/$exerciseId',
+    getParentRoute: () => AppLuyenTapKyNangVietRoute,
+  } as any)
+const AppLuyenTapKyNangNoiExerciseIdRoute =
+  AppLuyenTapKyNangNoiExerciseIdRouteImport.update({
+    id: '/$exerciseId',
+    path: '/$exerciseId',
+    getParentRoute: () => AppLuyenTapKyNangNoiRoute,
+  } as any)
+const AppLuyenTapKyNangNgheExerciseIdRoute =
+  AppLuyenTapKyNangNgheExerciseIdRouteImport.update({
+    id: '/$exerciseId',
+    path: '/$exerciseId',
+    getParentRoute: () => AppLuyenTapKyNangNgheRoute,
+  } as any)
+const AppLuyenTapKyNangDocExerciseIdRoute =
+  AppLuyenTapKyNangDocExerciseIdRouteImport.update({
+    id: '/$exerciseId',
+    path: '/$exerciseId',
+    getParentRoute: () => AppLuyenTapKyNangDocRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -144,16 +200,24 @@ export interface FileRoutesByFullPath {
   '/luyen-tap/ky-nang': typeof AppLuyenTapKyNangRouteWithChildren
   '/luyen-tap/nen-tang': typeof AppLuyenTapNenTangRouteWithChildren
   '/luyen-tap/': typeof AppLuyenTapIndexRoute
-  '/luyen-tap/ky-nang/doc': typeof AppLuyenTapKyNangDocRoute
-  '/luyen-tap/ky-nang/nghe': typeof AppLuyenTapKyNangNgheRoute
-  '/luyen-tap/ky-nang/noi': typeof AppLuyenTapKyNangNoiRoute
-  '/luyen-tap/ky-nang/viet': typeof AppLuyenTapKyNangVietRoute
+  '/luyen-tap/ky-nang/doc': typeof AppLuyenTapKyNangDocRouteWithChildren
+  '/luyen-tap/ky-nang/nghe': typeof AppLuyenTapKyNangNgheRouteWithChildren
+  '/luyen-tap/ky-nang/noi': typeof AppLuyenTapKyNangNoiRouteWithChildren
+  '/luyen-tap/ky-nang/viet': typeof AppLuyenTapKyNangVietRouteWithChildren
   '/luyen-tap/nen-tang/ngu-phap': typeof AppLuyenTapNenTangNguPhapRouteWithChildren
   '/luyen-tap/nen-tang/tu-vung': typeof AppLuyenTapNenTangTuVungRouteWithChildren
   '/luyen-tap/ky-nang/': typeof AppLuyenTapKyNangIndexRoute
   '/luyen-tap/nen-tang/': typeof AppLuyenTapNenTangIndexRoute
+  '/luyen-tap/ky-nang/doc/$exerciseId': typeof AppLuyenTapKyNangDocExerciseIdRoute
+  '/luyen-tap/ky-nang/nghe/$exerciseId': typeof AppLuyenTapKyNangNgheExerciseIdRoute
+  '/luyen-tap/ky-nang/noi/$exerciseId': typeof AppLuyenTapKyNangNoiExerciseIdRoute
+  '/luyen-tap/ky-nang/viet/$exerciseId': typeof AppLuyenTapKyNangVietExerciseIdRoute
   '/luyen-tap/nen-tang/ngu-phap/$pointId': typeof AppLuyenTapNenTangNguPhapPointIdRoute
   '/luyen-tap/nen-tang/tu-vung/$topicId': typeof AppLuyenTapNenTangTuVungTopicIdRoute
+  '/luyen-tap/ky-nang/doc/': typeof AppLuyenTapKyNangDocIndexRoute
+  '/luyen-tap/ky-nang/nghe/': typeof AppLuyenTapKyNangNgheIndexRoute
+  '/luyen-tap/ky-nang/noi/': typeof AppLuyenTapKyNangNoiIndexRoute
+  '/luyen-tap/ky-nang/viet/': typeof AppLuyenTapKyNangVietIndexRoute
   '/luyen-tap/nen-tang/ngu-phap/': typeof AppLuyenTapNenTangNguPhapIndexRoute
   '/luyen-tap/nen-tang/tu-vung/': typeof AppLuyenTapNenTangTuVungIndexRoute
 }
@@ -162,14 +226,18 @@ export interface FileRoutesByTo {
   '/overview': typeof AppOverviewRoute
   '/thi-thu': typeof AppThiThuRoute
   '/luyen-tap': typeof AppLuyenTapIndexRoute
-  '/luyen-tap/ky-nang/doc': typeof AppLuyenTapKyNangDocRoute
-  '/luyen-tap/ky-nang/nghe': typeof AppLuyenTapKyNangNgheRoute
-  '/luyen-tap/ky-nang/noi': typeof AppLuyenTapKyNangNoiRoute
-  '/luyen-tap/ky-nang/viet': typeof AppLuyenTapKyNangVietRoute
   '/luyen-tap/ky-nang': typeof AppLuyenTapKyNangIndexRoute
   '/luyen-tap/nen-tang': typeof AppLuyenTapNenTangIndexRoute
+  '/luyen-tap/ky-nang/doc/$exerciseId': typeof AppLuyenTapKyNangDocExerciseIdRoute
+  '/luyen-tap/ky-nang/nghe/$exerciseId': typeof AppLuyenTapKyNangNgheExerciseIdRoute
+  '/luyen-tap/ky-nang/noi/$exerciseId': typeof AppLuyenTapKyNangNoiExerciseIdRoute
+  '/luyen-tap/ky-nang/viet/$exerciseId': typeof AppLuyenTapKyNangVietExerciseIdRoute
   '/luyen-tap/nen-tang/ngu-phap/$pointId': typeof AppLuyenTapNenTangNguPhapPointIdRoute
   '/luyen-tap/nen-tang/tu-vung/$topicId': typeof AppLuyenTapNenTangTuVungTopicIdRoute
+  '/luyen-tap/ky-nang/doc': typeof AppLuyenTapKyNangDocIndexRoute
+  '/luyen-tap/ky-nang/nghe': typeof AppLuyenTapKyNangNgheIndexRoute
+  '/luyen-tap/ky-nang/noi': typeof AppLuyenTapKyNangNoiIndexRoute
+  '/luyen-tap/ky-nang/viet': typeof AppLuyenTapKyNangVietIndexRoute
   '/luyen-tap/nen-tang/ngu-phap': typeof AppLuyenTapNenTangNguPhapIndexRoute
   '/luyen-tap/nen-tang/tu-vung': typeof AppLuyenTapNenTangTuVungIndexRoute
 }
@@ -183,16 +251,24 @@ export interface FileRoutesById {
   '/_app/luyen-tap/ky-nang': typeof AppLuyenTapKyNangRouteWithChildren
   '/_app/luyen-tap/nen-tang': typeof AppLuyenTapNenTangRouteWithChildren
   '/_app/luyen-tap/': typeof AppLuyenTapIndexRoute
-  '/_app/luyen-tap/ky-nang/doc': typeof AppLuyenTapKyNangDocRoute
-  '/_app/luyen-tap/ky-nang/nghe': typeof AppLuyenTapKyNangNgheRoute
-  '/_app/luyen-tap/ky-nang/noi': typeof AppLuyenTapKyNangNoiRoute
-  '/_app/luyen-tap/ky-nang/viet': typeof AppLuyenTapKyNangVietRoute
+  '/_app/luyen-tap/ky-nang/doc': typeof AppLuyenTapKyNangDocRouteWithChildren
+  '/_app/luyen-tap/ky-nang/nghe': typeof AppLuyenTapKyNangNgheRouteWithChildren
+  '/_app/luyen-tap/ky-nang/noi': typeof AppLuyenTapKyNangNoiRouteWithChildren
+  '/_app/luyen-tap/ky-nang/viet': typeof AppLuyenTapKyNangVietRouteWithChildren
   '/_app/luyen-tap/nen-tang/ngu-phap': typeof AppLuyenTapNenTangNguPhapRouteWithChildren
   '/_app/luyen-tap/nen-tang/tu-vung': typeof AppLuyenTapNenTangTuVungRouteWithChildren
   '/_app/luyen-tap/ky-nang/': typeof AppLuyenTapKyNangIndexRoute
   '/_app/luyen-tap/nen-tang/': typeof AppLuyenTapNenTangIndexRoute
+  '/_app/luyen-tap/ky-nang/doc/$exerciseId': typeof AppLuyenTapKyNangDocExerciseIdRoute
+  '/_app/luyen-tap/ky-nang/nghe/$exerciseId': typeof AppLuyenTapKyNangNgheExerciseIdRoute
+  '/_app/luyen-tap/ky-nang/noi/$exerciseId': typeof AppLuyenTapKyNangNoiExerciseIdRoute
+  '/_app/luyen-tap/ky-nang/viet/$exerciseId': typeof AppLuyenTapKyNangVietExerciseIdRoute
   '/_app/luyen-tap/nen-tang/ngu-phap/$pointId': typeof AppLuyenTapNenTangNguPhapPointIdRoute
   '/_app/luyen-tap/nen-tang/tu-vung/$topicId': typeof AppLuyenTapNenTangTuVungTopicIdRoute
+  '/_app/luyen-tap/ky-nang/doc/': typeof AppLuyenTapKyNangDocIndexRoute
+  '/_app/luyen-tap/ky-nang/nghe/': typeof AppLuyenTapKyNangNgheIndexRoute
+  '/_app/luyen-tap/ky-nang/noi/': typeof AppLuyenTapKyNangNoiIndexRoute
+  '/_app/luyen-tap/ky-nang/viet/': typeof AppLuyenTapKyNangVietIndexRoute
   '/_app/luyen-tap/nen-tang/ngu-phap/': typeof AppLuyenTapNenTangNguPhapIndexRoute
   '/_app/luyen-tap/nen-tang/tu-vung/': typeof AppLuyenTapNenTangTuVungIndexRoute
 }
@@ -214,8 +290,16 @@ export interface FileRouteTypes {
     | '/luyen-tap/nen-tang/tu-vung'
     | '/luyen-tap/ky-nang/'
     | '/luyen-tap/nen-tang/'
+    | '/luyen-tap/ky-nang/doc/$exerciseId'
+    | '/luyen-tap/ky-nang/nghe/$exerciseId'
+    | '/luyen-tap/ky-nang/noi/$exerciseId'
+    | '/luyen-tap/ky-nang/viet/$exerciseId'
     | '/luyen-tap/nen-tang/ngu-phap/$pointId'
     | '/luyen-tap/nen-tang/tu-vung/$topicId'
+    | '/luyen-tap/ky-nang/doc/'
+    | '/luyen-tap/ky-nang/nghe/'
+    | '/luyen-tap/ky-nang/noi/'
+    | '/luyen-tap/ky-nang/viet/'
     | '/luyen-tap/nen-tang/ngu-phap/'
     | '/luyen-tap/nen-tang/tu-vung/'
   fileRoutesByTo: FileRoutesByTo
@@ -224,14 +308,18 @@ export interface FileRouteTypes {
     | '/overview'
     | '/thi-thu'
     | '/luyen-tap'
+    | '/luyen-tap/ky-nang'
+    | '/luyen-tap/nen-tang'
+    | '/luyen-tap/ky-nang/doc/$exerciseId'
+    | '/luyen-tap/ky-nang/nghe/$exerciseId'
+    | '/luyen-tap/ky-nang/noi/$exerciseId'
+    | '/luyen-tap/ky-nang/viet/$exerciseId'
+    | '/luyen-tap/nen-tang/ngu-phap/$pointId'
+    | '/luyen-tap/nen-tang/tu-vung/$topicId'
     | '/luyen-tap/ky-nang/doc'
     | '/luyen-tap/ky-nang/nghe'
     | '/luyen-tap/ky-nang/noi'
     | '/luyen-tap/ky-nang/viet'
-    | '/luyen-tap/ky-nang'
-    | '/luyen-tap/nen-tang'
-    | '/luyen-tap/nen-tang/ngu-phap/$pointId'
-    | '/luyen-tap/nen-tang/tu-vung/$topicId'
     | '/luyen-tap/nen-tang/ngu-phap'
     | '/luyen-tap/nen-tang/tu-vung'
   id:
@@ -252,8 +340,16 @@ export interface FileRouteTypes {
     | '/_app/luyen-tap/nen-tang/tu-vung'
     | '/_app/luyen-tap/ky-nang/'
     | '/_app/luyen-tap/nen-tang/'
+    | '/_app/luyen-tap/ky-nang/doc/$exerciseId'
+    | '/_app/luyen-tap/ky-nang/nghe/$exerciseId'
+    | '/_app/luyen-tap/ky-nang/noi/$exerciseId'
+    | '/_app/luyen-tap/ky-nang/viet/$exerciseId'
     | '/_app/luyen-tap/nen-tang/ngu-phap/$pointId'
     | '/_app/luyen-tap/nen-tang/tu-vung/$topicId'
+    | '/_app/luyen-tap/ky-nang/doc/'
+    | '/_app/luyen-tap/ky-nang/nghe/'
+    | '/_app/luyen-tap/ky-nang/noi/'
+    | '/_app/luyen-tap/ky-nang/viet/'
     | '/_app/luyen-tap/nen-tang/ngu-phap/'
     | '/_app/luyen-tap/nen-tang/tu-vung/'
   fileRoutesById: FileRoutesById
@@ -391,6 +487,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLuyenTapNenTangNguPhapIndexRouteImport
       parentRoute: typeof AppLuyenTapNenTangNguPhapRoute
     }
+    '/_app/luyen-tap/ky-nang/viet/': {
+      id: '/_app/luyen-tap/ky-nang/viet/'
+      path: '/'
+      fullPath: '/luyen-tap/ky-nang/viet/'
+      preLoaderRoute: typeof AppLuyenTapKyNangVietIndexRouteImport
+      parentRoute: typeof AppLuyenTapKyNangVietRoute
+    }
+    '/_app/luyen-tap/ky-nang/noi/': {
+      id: '/_app/luyen-tap/ky-nang/noi/'
+      path: '/'
+      fullPath: '/luyen-tap/ky-nang/noi/'
+      preLoaderRoute: typeof AppLuyenTapKyNangNoiIndexRouteImport
+      parentRoute: typeof AppLuyenTapKyNangNoiRoute
+    }
+    '/_app/luyen-tap/ky-nang/nghe/': {
+      id: '/_app/luyen-tap/ky-nang/nghe/'
+      path: '/'
+      fullPath: '/luyen-tap/ky-nang/nghe/'
+      preLoaderRoute: typeof AppLuyenTapKyNangNgheIndexRouteImport
+      parentRoute: typeof AppLuyenTapKyNangNgheRoute
+    }
+    '/_app/luyen-tap/ky-nang/doc/': {
+      id: '/_app/luyen-tap/ky-nang/doc/'
+      path: '/'
+      fullPath: '/luyen-tap/ky-nang/doc/'
+      preLoaderRoute: typeof AppLuyenTapKyNangDocIndexRouteImport
+      parentRoute: typeof AppLuyenTapKyNangDocRoute
+    }
     '/_app/luyen-tap/nen-tang/tu-vung/$topicId': {
       id: '/_app/luyen-tap/nen-tang/tu-vung/$topicId'
       path: '/$topicId'
@@ -405,22 +529,106 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLuyenTapNenTangNguPhapPointIdRouteImport
       parentRoute: typeof AppLuyenTapNenTangNguPhapRoute
     }
+    '/_app/luyen-tap/ky-nang/viet/$exerciseId': {
+      id: '/_app/luyen-tap/ky-nang/viet/$exerciseId'
+      path: '/$exerciseId'
+      fullPath: '/luyen-tap/ky-nang/viet/$exerciseId'
+      preLoaderRoute: typeof AppLuyenTapKyNangVietExerciseIdRouteImport
+      parentRoute: typeof AppLuyenTapKyNangVietRoute
+    }
+    '/_app/luyen-tap/ky-nang/noi/$exerciseId': {
+      id: '/_app/luyen-tap/ky-nang/noi/$exerciseId'
+      path: '/$exerciseId'
+      fullPath: '/luyen-tap/ky-nang/noi/$exerciseId'
+      preLoaderRoute: typeof AppLuyenTapKyNangNoiExerciseIdRouteImport
+      parentRoute: typeof AppLuyenTapKyNangNoiRoute
+    }
+    '/_app/luyen-tap/ky-nang/nghe/$exerciseId': {
+      id: '/_app/luyen-tap/ky-nang/nghe/$exerciseId'
+      path: '/$exerciseId'
+      fullPath: '/luyen-tap/ky-nang/nghe/$exerciseId'
+      preLoaderRoute: typeof AppLuyenTapKyNangNgheExerciseIdRouteImport
+      parentRoute: typeof AppLuyenTapKyNangNgheRoute
+    }
+    '/_app/luyen-tap/ky-nang/doc/$exerciseId': {
+      id: '/_app/luyen-tap/ky-nang/doc/$exerciseId'
+      path: '/$exerciseId'
+      fullPath: '/luyen-tap/ky-nang/doc/$exerciseId'
+      preLoaderRoute: typeof AppLuyenTapKyNangDocExerciseIdRouteImport
+      parentRoute: typeof AppLuyenTapKyNangDocRoute
+    }
   }
 }
 
+interface AppLuyenTapKyNangDocRouteChildren {
+  AppLuyenTapKyNangDocExerciseIdRoute: typeof AppLuyenTapKyNangDocExerciseIdRoute
+  AppLuyenTapKyNangDocIndexRoute: typeof AppLuyenTapKyNangDocIndexRoute
+}
+
+const AppLuyenTapKyNangDocRouteChildren: AppLuyenTapKyNangDocRouteChildren = {
+  AppLuyenTapKyNangDocExerciseIdRoute: AppLuyenTapKyNangDocExerciseIdRoute,
+  AppLuyenTapKyNangDocIndexRoute: AppLuyenTapKyNangDocIndexRoute,
+}
+
+const AppLuyenTapKyNangDocRouteWithChildren =
+  AppLuyenTapKyNangDocRoute._addFileChildren(AppLuyenTapKyNangDocRouteChildren)
+
+interface AppLuyenTapKyNangNgheRouteChildren {
+  AppLuyenTapKyNangNgheExerciseIdRoute: typeof AppLuyenTapKyNangNgheExerciseIdRoute
+  AppLuyenTapKyNangNgheIndexRoute: typeof AppLuyenTapKyNangNgheIndexRoute
+}
+
+const AppLuyenTapKyNangNgheRouteChildren: AppLuyenTapKyNangNgheRouteChildren = {
+  AppLuyenTapKyNangNgheExerciseIdRoute: AppLuyenTapKyNangNgheExerciseIdRoute,
+  AppLuyenTapKyNangNgheIndexRoute: AppLuyenTapKyNangNgheIndexRoute,
+}
+
+const AppLuyenTapKyNangNgheRouteWithChildren =
+  AppLuyenTapKyNangNgheRoute._addFileChildren(
+    AppLuyenTapKyNangNgheRouteChildren,
+  )
+
+interface AppLuyenTapKyNangNoiRouteChildren {
+  AppLuyenTapKyNangNoiExerciseIdRoute: typeof AppLuyenTapKyNangNoiExerciseIdRoute
+  AppLuyenTapKyNangNoiIndexRoute: typeof AppLuyenTapKyNangNoiIndexRoute
+}
+
+const AppLuyenTapKyNangNoiRouteChildren: AppLuyenTapKyNangNoiRouteChildren = {
+  AppLuyenTapKyNangNoiExerciseIdRoute: AppLuyenTapKyNangNoiExerciseIdRoute,
+  AppLuyenTapKyNangNoiIndexRoute: AppLuyenTapKyNangNoiIndexRoute,
+}
+
+const AppLuyenTapKyNangNoiRouteWithChildren =
+  AppLuyenTapKyNangNoiRoute._addFileChildren(AppLuyenTapKyNangNoiRouteChildren)
+
+interface AppLuyenTapKyNangVietRouteChildren {
+  AppLuyenTapKyNangVietExerciseIdRoute: typeof AppLuyenTapKyNangVietExerciseIdRoute
+  AppLuyenTapKyNangVietIndexRoute: typeof AppLuyenTapKyNangVietIndexRoute
+}
+
+const AppLuyenTapKyNangVietRouteChildren: AppLuyenTapKyNangVietRouteChildren = {
+  AppLuyenTapKyNangVietExerciseIdRoute: AppLuyenTapKyNangVietExerciseIdRoute,
+  AppLuyenTapKyNangVietIndexRoute: AppLuyenTapKyNangVietIndexRoute,
+}
+
+const AppLuyenTapKyNangVietRouteWithChildren =
+  AppLuyenTapKyNangVietRoute._addFileChildren(
+    AppLuyenTapKyNangVietRouteChildren,
+  )
+
 interface AppLuyenTapKyNangRouteChildren {
-  AppLuyenTapKyNangDocRoute: typeof AppLuyenTapKyNangDocRoute
-  AppLuyenTapKyNangNgheRoute: typeof AppLuyenTapKyNangNgheRoute
-  AppLuyenTapKyNangNoiRoute: typeof AppLuyenTapKyNangNoiRoute
-  AppLuyenTapKyNangVietRoute: typeof AppLuyenTapKyNangVietRoute
+  AppLuyenTapKyNangDocRoute: typeof AppLuyenTapKyNangDocRouteWithChildren
+  AppLuyenTapKyNangNgheRoute: typeof AppLuyenTapKyNangNgheRouteWithChildren
+  AppLuyenTapKyNangNoiRoute: typeof AppLuyenTapKyNangNoiRouteWithChildren
+  AppLuyenTapKyNangVietRoute: typeof AppLuyenTapKyNangVietRouteWithChildren
   AppLuyenTapKyNangIndexRoute: typeof AppLuyenTapKyNangIndexRoute
 }
 
 const AppLuyenTapKyNangRouteChildren: AppLuyenTapKyNangRouteChildren = {
-  AppLuyenTapKyNangDocRoute: AppLuyenTapKyNangDocRoute,
-  AppLuyenTapKyNangNgheRoute: AppLuyenTapKyNangNgheRoute,
-  AppLuyenTapKyNangNoiRoute: AppLuyenTapKyNangNoiRoute,
-  AppLuyenTapKyNangVietRoute: AppLuyenTapKyNangVietRoute,
+  AppLuyenTapKyNangDocRoute: AppLuyenTapKyNangDocRouteWithChildren,
+  AppLuyenTapKyNangNgheRoute: AppLuyenTapKyNangNgheRouteWithChildren,
+  AppLuyenTapKyNangNoiRoute: AppLuyenTapKyNangNoiRouteWithChildren,
+  AppLuyenTapKyNangVietRoute: AppLuyenTapKyNangVietRouteWithChildren,
   AppLuyenTapKyNangIndexRoute: AppLuyenTapKyNangIndexRoute,
 }
 

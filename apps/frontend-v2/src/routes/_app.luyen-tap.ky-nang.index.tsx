@@ -1,21 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
-import {
-	ArrowLeft,
-	BookOpenText,
-	Headphones,
-	Lightbulb,
-	type LucideIcon,
-	Mic,
-	PencilLine,
-} from "lucide-react"
-import { useSyncExternalStore } from "react"
-import { Label } from "#/components/ui/label"
-import { Switch } from "#/components/ui/switch"
-import {
-	getSupportMode,
-	SUPPORT_MODE_STORAGE_KEY,
-	setSupportMode,
-} from "#/lib/practice/support-mode"
+import { ArrowLeft, BookOpenText, Headphones, type LucideIcon, Mic, PencilLine } from "lucide-react"
 import { cn } from "#/lib/utils"
 
 export const Route = createFileRoute("/_app/luyen-tap/ky-nang/")({
@@ -80,10 +64,8 @@ const SKILLS: readonly SkillCardData[] = [
 ]
 
 function KyNangHubPage() {
-	const supportMode = useSupportMode()
-
 	return (
-		<div className="mx-auto w-full max-w-5xl">
+		<div className="mx-auto w-full max-w-5xl pb-10">
 			<Link
 				to="/luyen-tap"
 				search={{ tab: "overview" }}
@@ -97,43 +79,11 @@ function KyNangHubPage() {
 				<p className="mt-1 text-sm text-muted-foreground">Chọn kỹ năng bạn muốn luyện đề.</p>
 			</div>
 
-			<SupportModeToggle enabled={supportMode} onToggle={setSupportMode} />
-
 			<div className="mt-6 grid gap-4 md:grid-cols-2">
 				{SKILLS.map((skill) => (
 					<SkillCard key={skill.key} skill={skill} />
 				))}
 			</div>
-		</div>
-	)
-}
-
-function SupportModeToggle({
-	enabled,
-	onToggle,
-}: {
-	enabled: boolean
-	onToggle: (v: boolean) => void
-}) {
-	return (
-		<div className="mt-6 flex items-start gap-4 rounded-2xl bg-muted/50 p-5 shadow-sm">
-			<Lightbulb
-				className={cn("size-6 shrink-0", enabled ? "text-primary" : "text-muted-foreground")}
-			/>
-			<div className="min-w-0 flex-1">
-				<Label htmlFor="support-mode" className="cursor-pointer text-base font-semibold">
-					Bật/tắt chế độ hỗ trợ
-				</Label>
-				<p className="mt-0.5 text-sm text-muted-foreground">
-					Khi bật, hệ thống gợi ý cụm từ và từ vựng trong khi làm bài. Tắt để tự thử sức.
-				</p>
-			</div>
-			<Switch
-				id="support-mode"
-				checked={enabled}
-				onCheckedChange={onToggle}
-				aria-label="Chế độ hỗ trợ"
-			/>
 		</div>
 	)
 }
@@ -153,26 +103,4 @@ function SkillCard({ skill }: { skill: SkillCardData }) {
 			<p className="text-sm text-muted-foreground">{skill.description}</p>
 		</Link>
 	)
-}
-
-// ─── Support mode hook ─────────────────────────────────────────────
-
-function useSupportMode(): boolean {
-	return useSyncExternalStore(
-		subscribeToSupportMode,
-		getSupportMode,
-		() => false, // SSR default — không có window
-	)
-}
-
-function subscribeToSupportMode(callback: () => void): () => void {
-	function handler(e: StorageEvent) {
-		if (e.key === SUPPORT_MODE_STORAGE_KEY) callback()
-	}
-	window.addEventListener("storage", handler)
-	window.addEventListener("vstep:support-mode-change", callback)
-	return () => {
-		window.removeEventListener("storage", handler)
-		window.removeEventListener("vstep:support-mode-change", callback)
-	}
 }

@@ -3,6 +3,7 @@ export interface MockUser {
 	fullName: string
 	email: string
 	initials: string
+	unreadNotifications: number
 	entryLevel: string
 	predictedLevel: string
 	targetLevel: string
@@ -15,6 +16,7 @@ export const MOCK_USER: MockUser = {
 	fullName: "Nguyễn Phát",
 	email: "nguyen.phat@vstep.vn",
 	initials: "NP",
+	unreadNotifications: 2,
 	entryLevel: "A1",
 	predictedLevel: "A1",
 	targetLevel: "C1",

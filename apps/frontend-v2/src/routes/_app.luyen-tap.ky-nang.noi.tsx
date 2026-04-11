@@ -1,10 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router"
-import { ComingSoon } from "#/components/common/ComingSoon"
+import { createFileRoute, Outlet } from "@tanstack/react-router"
 
+// Layout cho /luyen-tap/ky-nang/noi/*.
 export const Route = createFileRoute("/_app/luyen-tap/ky-nang/noi")({
-	component: SpeakingPage,
+	component: NoiLayout,
 })
 
-function SpeakingPage() {
-	return <ComingSoon backTo="/luyen-tap/ky-nang" backLabel="4 kỹ năng" title="Luyện Nói" />
+function NoiLayout() {
+	return <Outlet />
 }

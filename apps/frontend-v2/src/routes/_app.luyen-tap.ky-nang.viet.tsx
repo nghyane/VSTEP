@@ -1,10 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router"
-import { ComingSoon } from "#/components/common/ComingSoon"
+import { createFileRoute, Outlet } from "@tanstack/react-router"
 
+// Layout cho /luyen-tap/ky-nang/viet/*. Index = list đề, $exerciseId = session.
 export const Route = createFileRoute("/_app/luyen-tap/ky-nang/viet")({
-	component: WritingPage,
+	component: VietLayout,
 })
 
-function WritingPage() {
-	return <ComingSoon backTo="/luyen-tap/ky-nang" backLabel="4 kỹ năng" title="Luyện Viết" />
+function VietLayout() {
+	return <Outlet />
 }

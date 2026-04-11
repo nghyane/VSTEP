@@ -2,10 +2,10 @@ import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-rout
 import {
 	Bell,
 	BookOpen,
-	ChevronLeft,
 	FileText,
 	LayoutDashboard,
 	LogOut,
+	type LucideIcon,
 	UserRound,
 } from "lucide-react"
 import { Logo } from "#/components/common/Logo"
@@ -30,82 +30,156 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 	SidebarProvider,
-	SidebarTrigger,
 	useSidebar,
 } from "#/components/ui/sidebar"
 import { MOCK_USER } from "#/lib/mock/user"
+import { cn } from "#/lib/utils"
+
+const NOTIFICATION_GIF_SRC = "/notification-active.gif"
 
 export const Route = createFileRoute("/_app")({
 	component: AppLayout,
 })
 
-const NAV_ITEMS = [
-	{ label: "Overview", to: "/overview", icon: LayoutDashboard },
-	{ label: "Luyện tập", to: "/luyen-tap", icon: BookOpen },
-	{ label: "Thi thử", to: "/thi-thu", icon: FileText },
-] as const
+type OverviewLink = { to: "/overview"; search: { tab: "overview" | "focus" } }
+type PlainLink = { to: "/luyen-tap" | "/thi-thu" }
 
-// ─── Sidebar nội dung ───────────────────────────────────────────────
+interface NavItem {
+	label: string
+	icon: LucideIcon
+	link: OverviewLink | PlainLink
+}
+
+const NAV_ITEMS: readonly NavItem[] = [
+	{
+		label: "Tổng quan",
+		icon: LayoutDashboard,
+		link: { to: "/overview", search: { tab: "overview" } },
+	},
+	{ label: "Luyện tập", icon: BookOpen, link: { to: "/luyen-tap" } },
+	{ label: "Thi thử", icon: FileText, link: { to: "/thi-thu" } },
+]
+
+// ─── Sidebar nội dung ──────────────────────────────────────────────
+
 function AppSidebar() {
-	const { state } = useSidebar()
+	const { state, setOpen } = useSidebar()
 	const collapsed = state === "collapsed"
 
 	return (
-		<Sidebar collapsible="icon">
-			{/* Logo */}
-			<SidebarHeader className="h-14 justify-center border-b px-4">
+		<Sidebar
+			collapsible="icon"
+			onMouseEnter={() => setOpen(true)}
+			onMouseLeave={() => setOpen(false)}
+		>
+			<SidebarHeader className="px-4 py-5">
 				<Link to="/overview" search={{ tab: "overview" }} className="flex items-center">
 					<Logo size="sm" variant={collapsed ? "mark" : "full"} />
 				</Link>
 			</SidebarHeader>
 
-			{/* Nav */}
-			<SidebarContent>
-				<SidebarGroup>
+			<SidebarContent className="px-2">
+				<SidebarGroup className="px-0">
 					<SidebarGroupContent>
-						<SidebarMenu>
-							{NAV_ITEMS.map(({ label, to, icon: Icon }) => (
-								<SidebarMenuItem key={to}>
-									<SidebarMenuButton asChild tooltip={collapsed ? label : undefined}>
-										<Link
-											to={to}
-											activeProps={{
-												className: "bg-sidebar-accent text-sidebar-accent-foreground font-semibold",
-											}}
-											inactiveProps={{
-												className:
-													"text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50",
-											}}
-											className="flex items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium transition-colors"
-										>
-											<Icon className="size-4 shrink-0" />
-											<span>{label}</span>
-										</Link>
-									</SidebarMenuButton>
-								</SidebarMenuItem>
+						<SidebarMenu className="gap-0.5">
+							{NAV_ITEMS.map((item) => (
+								<NavLinkItem key={item.label} item={item} collapsed={collapsed} />
 							))}
 						</SidebarMenu>
 					</SidebarGroupContent>
 				</SidebarGroup>
 			</SidebarContent>
 
-			{/* Footer */}
-			<SidebarFooter className="border-t">
-				<SidebarMenu>
-					<SidebarMenuItem>
-						<SidebarMenuButton asChild tooltip={collapsed ? "Trở về trang chủ" : undefined}>
-							<Link
-								to="/"
-								className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-							>
-								<ChevronLeft className="size-4 shrink-0" />
-								<span>Trở về trang chủ</span>
-							</Link>
-						</SidebarMenuButton>
-					</SidebarMenuItem>
-				</SidebarMenu>
-			</SidebarFooter>
+			<UserFooter collapsed={collapsed} />
 		</Sidebar>
+	)
+}
+
+function NavLinkItem({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
+	const Icon = item.icon
+	// Tailwind v4: class strings phải literal để scanner nhận ra.
+	// Active indicator = ::before bar bên trái + bg-primary/5.
+	const baseClass =
+		"group/nav relative flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors"
+	const activeClass =
+		"bg-primary/5 font-semibold text-foreground before:absolute before:left-0 before:top-1/2 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-r before:bg-primary"
+	const inactiveClass = "font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+
+	return (
+		<SidebarMenuItem>
+			<SidebarMenuButton
+				asChild
+				tooltip={collapsed ? item.label : undefined}
+				className="h-9 p-0 hover:bg-transparent data-[active=true]:bg-transparent"
+			>
+				{item.link.to === "/overview" ? (
+					<Link
+						to="/overview"
+						search={item.link.search}
+						className={baseClass}
+						activeProps={{ className: activeClass }}
+						inactiveProps={{ className: inactiveClass }}
+					>
+						<NavRowContent icon={Icon} label={item.label} />
+					</Link>
+				) : (
+					<Link
+						to={item.link.to}
+						className={baseClass}
+						activeProps={{ className: activeClass }}
+						inactiveProps={{ className: inactiveClass }}
+					>
+						<NavRowContent icon={Icon} label={item.label} />
+					</Link>
+				)}
+			</SidebarMenuButton>
+		</SidebarMenuItem>
+	)
+}
+
+function NavRowContent({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
+	return (
+		<>
+			<Icon className="size-4 shrink-0" />
+			<span className="flex-1 truncate">{label}</span>
+		</>
+	)
+}
+
+function UserFooter({ collapsed }: { collapsed: boolean }) {
+	const navigate = useNavigate()
+	const handleLogout = () => navigate({ to: "/" })
+
+	return (
+		<SidebarFooter className="gap-1 p-2">
+			<div
+				className={cn("flex items-center gap-2.5 rounded-lg p-2", collapsed && "justify-center")}
+			>
+				<Avatar className="size-8 shrink-0">
+					<AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+						{MOCK_USER.initials}
+					</AvatarFallback>
+				</Avatar>
+				{!collapsed && (
+					<div className="min-w-0 flex-1">
+						<p className="truncate text-xs font-semibold text-foreground">{MOCK_USER.fullName}</p>
+						<p className="truncate text-[11px] text-muted-foreground">Học viên</p>
+					</div>
+				)}
+			</div>
+			<button
+				type="button"
+				onClick={handleLogout}
+				aria-label="Đăng xuất"
+				className={cn(
+					"flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive",
+					collapsed && "justify-center",
+				)}
+			>
+				<LogOut className="size-4 shrink-0" />
+				{!collapsed && <span>Đăng xuất</span>}
+			</button>
+		</SidebarFooter>
 	)
 }
 
@@ -119,22 +193,11 @@ function AppTopbar() {
 
 	return (
 		<header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b bg-background px-4">
-			{/* Sidebar toggle */}
-			<SidebarTrigger className="text-muted-foreground hover:text-foreground" />
-
-			{/* Spacer */}
 			<div className="flex-1" />
 
 			{/* Right: streak + bell + avatar */}
 			<StreakButton />
-			<Button
-				variant="ghost"
-				size="icon-sm"
-				className="text-muted-foreground"
-				aria-label="Thông báo"
-			>
-				<Bell className="size-4" />
-			</Button>
+			<NotificationButton unreadCount={MOCK_USER.unreadNotifications} />
 
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
@@ -170,19 +233,59 @@ function AppTopbar() {
 	)
 }
 
+function NotificationButton({ unreadCount }: { unreadCount: number }) {
+	const hasUnread = unreadCount > 0
+
+	return (
+		<Button
+			variant="ghost"
+			size="icon-sm"
+			className="relative text-muted-foreground"
+			aria-label={hasUnread ? `${unreadCount} thông báo chưa đọc` : "Thông báo"}
+		>
+			{hasUnread ? (
+				<img
+					src={NOTIFICATION_GIF_SRC}
+					alt=""
+					className="size-5 object-contain mix-blend-multiply dark:mix-blend-screen"
+				/>
+			) : (
+				<Bell className="size-4" />
+			)}
+			{hasUnread && (
+				<span className="absolute -top-0.5 -right-0.5 flex min-w-3.5 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-semibold leading-3.5 text-destructive-foreground">
+					{unreadCount > 9 ? "9+" : unreadCount}
+				</span>
+			)}
+		</Button>
+	)
+}
+
 // ─── Layout chính ──────────────────────────────────────────────────
 function AppLayout() {
 	return (
-		<SidebarProvider defaultOpen>
-			<div className="flex min-h-screen w-full">
-				<AppSidebar />
-				<div className="flex flex-1 flex-col overflow-hidden">
-					<AppTopbar />
-					<main className="flex-1 overflow-y-auto p-6">
-						<Outlet />
-					</main>
-				</div>
-			</div>
+		<SidebarProvider defaultOpen={false}>
+			<LayoutShell />
 		</SidebarProvider>
+	)
+}
+
+function LayoutShell() {
+	const { state } = useSidebar()
+	const dockLeft = state === "collapsed" ? "3rem" : "16rem"
+
+	return (
+		<div className="flex min-h-screen w-full">
+			<AppSidebar />
+			<div
+				style={{ "--dock-left": dockLeft } as React.CSSProperties}
+				className="flex flex-1 flex-col overflow-hidden"
+			>
+				<AppTopbar />
+				<main className="flex-1 overflow-y-auto p-6">
+					<Outlet />
+				</main>
+			</div>
+		</div>
 	)
 }

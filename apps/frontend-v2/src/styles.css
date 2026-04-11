@@ -185,3 +185,18 @@ body {
 		@apply bg-background text-foreground;
 	}
 }
+
+/* Divider ngang full-width: phá khỏi max-w container bằng pseudo-element,
+   dùng ở footer nav/submit bar các trang luyện bài để kẻ line hết màn hình. */
+.border-t-full {
+	@apply relative;
+}
+.border-t-full::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: calc(50% - 50vw);
+	right: calc(50% - 50vw);
+	height: 1px;
+	background-color: var(--color-border);
+}
