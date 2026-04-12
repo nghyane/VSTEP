@@ -93,7 +93,7 @@ function SkillCard({ skill }: { skill: SkillCardData }) {
 	return (
 		<Link
 			to={skill.to}
-			className="group flex flex-col gap-4 rounded-2xl bg-muted/50 p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+			className="group flex flex-col gap-4 rounded-2xl border bg-card p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
 		>
 			<Icon className={cn("size-10", skill.colorClass)} />
 			<div>

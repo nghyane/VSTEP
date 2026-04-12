@@ -74,6 +74,10 @@ shadow-md   ← hover state / elevated card
 - `rounded-2xl bg-muted/50 p-5 shadow-sm` — card nội dung chính (NO border, nền muted)
 - `rounded-lg border bg-background p-4` — card dạng item trong list (CÓ border, nền trắng)
 
+**Rule 0.2 — Hub card ở top-level page dùng `border bg-card`.** Các card điều hướng lớn ở trang hub (ví dụ `/luyen-tap` ModeCard, `/luyen-tap/ky-nang` SkillCard) phải dùng `rounded-2xl border bg-card p-6 shadow-sm` để đồng bộ, KHÔNG dùng `bg-muted/50` (gây cảm giác đục, lệch với card cha).
+
+**Rule 0.3 — Hover không đổi màu border.** Hover của card chỉ được nâng nhẹ (`hover:-translate-y-0.5`) và tăng shadow (`hover:shadow-md`). KHÔNG dùng `hover:border-primary/30` hay border màu primary trên hover vì tạo viền xanh lệch với style card cha. Giữ border luôn trung tính.
+
 ---
 
 ## 2. Layout Shell
@@ -100,7 +104,7 @@ shadow-md   ← hover state / elevated card
 
 ### Main (`LearnerLayout.tsx`)
 - `mx-auto max-w-6xl px-6 py-8`
-- Không dùng sidebar dạng fixed — layout là **top nav + content**, không có sidebar bên trái
+- **Update cho frontend-v2 hiện tại:** app đang dùng sidebar trái + topbar, không còn theo top-nav-only như frontend cũ. Các token/spacing vẫn tham chiếu từ source cũ, nhưng shell layout phải bám implementation hiện tại.
 
 ### Main content width rule (v2)
 - Các trang feature/list page **không được full width sát mép**. Luôn phải có khoảng thở hai bên.
@@ -120,7 +124,7 @@ shadow-md   ← hover state / elevated card
 
 Lý do: full width làm accordion/card bị dàn sát hai bên, mất visual balance và khác hẳn spacing pattern của các trang còn lại.
 
-> **Lưu ý cho v2:** Frontend cũ dùng top nav, không có sidebar. Frontend prototype HTML dùng sidebar là adapt từ Prep UI. Khi implement React v2, nên theo pattern top nav của frontend cũ.
+> **Lưu ý:** phần token, card style, typography, spacing vẫn derive từ frontend cũ; riêng shell layout thì frontend-v2 đang dùng sidebar trái + topbar nên phải theo implementation hiện tại.
 
 ---
 
@@ -179,10 +183,8 @@ ProgressOverviewPage
 // Container:
 <div className="rounded-2xl bg-muted/50 p-4">
 
-// Icon wrap:
-<div className="flex size-10 items-center justify-center rounded-xl {iconBg}">
-  <Icon className="size-5" />
-</div>
+// Icon:
+<Icon className="size-6 {valueColor}" />
 
 // Text:
 <p className="text-sm text-muted-foreground">{label}</p>
@@ -191,17 +193,17 @@ ProgressOverviewPage
 
 **Spec:**
 - Container: `rounded-2xl bg-muted/50 p-4` — **KHÔNG có border, KHÔNG có shadow**
-- Icon wrap: `size-10 rounded-xl` (40×40px, radius 12px)
+- Icon render trần, **không bọc background** (theo Rule 0.1)
 - Label: `text-sm text-muted-foreground`
 - Value: `text-lg font-bold` + màu tuỳ stat
 
 **Các stat và màu:**
-| Stat | Icon | iconBg | valueColor |
-|------|------|--------|------------|
-| Tổng thời lượng | Clock01Icon | `bg-primary/10 text-primary` | `text-primary` |
-| Tổng bài tập | Target02Icon | `bg-warning/10 text-warning` | `text-warning` |
-| Tổng số bài test | PencilEdit02Icon | `bg-destructive/10 text-destructive` | `text-destructive` |
-| Streak | Fire02Icon | `bg-success/10 text-success` | `text-success` |
+| Stat | Icon | valueColor |
+|------|------|------------|
+| Tổng thời lượng | Clock01Icon | `text-primary` |
+| Tổng bài tập | Target02Icon | `text-warning` |
+| Tổng số bài test | PencilEdit02Icon | `text-destructive` |
+| Streak | Fire02Icon | `text-success` |
 
 **Grid layout:** `grid grid-cols-2 gap-4 lg:grid-cols-4`
 
@@ -247,9 +249,7 @@ ProgressOverviewPage
 **Empty state:**
 ```tsx
 <div className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-muted/50 p-8 shadow-sm">
-  <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-    <Icon className="size-6" />
-  </div>
+  <Icon className="size-6 text-primary" />
   <p className="text-sm text-muted-foreground">Bạn chưa đặt mục tiêu học tập</p>
   <Button size="sm">Đặt mục tiêu</Button>
 </div>
@@ -485,8 +485,8 @@ Gap charts: gap-6
 
 | Context | Size |
 |---------|------|
-| Stat card icon | `size-5` (20px) trong wrap `size-10` (40px) |
-| Card header icon | `size-6` (24px) trong wrap `size-12` (48px) |
+| Stat card icon | `size-5` hoặc `size-6` render trần |
+| Card header icon | `size-6` render trần |
 | Skill row icon | `size-4` (16px) |
 | Timeline dot | `size-3` (12px) |
 | Button icon | `size-4` (16px) |

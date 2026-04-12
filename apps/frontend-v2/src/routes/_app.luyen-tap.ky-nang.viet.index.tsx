@@ -1,6 +1,13 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { ArrowLeft, Clock, FileText, PencilLine } from "lucide-react"
+import {
+	ArrowLeft,
+	Clock,
+	FileText,
+	MessageSquareText,
+	NotebookPen,
+	PencilLine,
+} from "lucide-react"
 import { Suspense } from "react"
 import {
 	Accordion,
@@ -11,6 +18,7 @@ import {
 import { Skeleton } from "#/components/ui/skeleton"
 import { WRITING_PART_LABELS, type WritingExercise, type WritingPart } from "#/lib/mock/writing"
 import { writingListQueryOptions } from "#/lib/queries/writing"
+import { writingSentenceTopicsQueryOptions } from "#/lib/queries/writing-sentences"
 
 export const Route = createFileRoute("/_app/luyen-tap/ky-nang/viet/")({
 	loader: ({ context: { queryClient } }) => queryClient.ensureQueryData(writingListQueryOptions()),
@@ -39,15 +47,18 @@ function PartAccordion() {
 	const parts: WritingPart[] = [1, 2]
 
 	return (
-		<div className="space-y-5">
-			<PageHeader count={exercises.length} />
-			<Accordion type="multiple" defaultValue={["part-1"]} className="space-y-3">
-				{parts.map((part) => {
-					const list = grouped.get(part) ?? []
-					if (list.length === 0) return null
-					return <PartSection key={part} part={part} exercises={list} />
-				})}
-			</Accordion>
+		<div className="space-y-6">
+			<div className="space-y-5">
+				<PageHeader count={exercises.length} />
+				<Accordion type="multiple" defaultValue={["part-1"]} className="space-y-3">
+					{parts.map((part) => {
+						const list = grouped.get(part) ?? []
+						if (list.length === 0) return null
+						return <PartSection key={part} part={part} exercises={list} />
+					})}
+				</Accordion>
+			</div>
+			<SentencePracticeSection />
 		</div>
 	)
 }
@@ -72,7 +83,7 @@ function PartSection({
 	exercises: readonly WritingExercise[]
 }) {
 	return (
-		<AccordionItem value={`part-${part}`} className="rounded-2xl bg-muted/40 shadow-sm">
+		<AccordionItem value={`part-${part}`} className="rounded-2xl border bg-card shadow-sm">
 			<AccordionTrigger className="px-5 py-4 hover:no-underline">
 				<div className="flex w-full items-center justify-between gap-3 pr-2">
 					<span className="text-base font-semibold">{WRITING_PART_LABELS[part]}</span>
@@ -129,6 +140,57 @@ function groupByPart(exercises: readonly WritingExercise[]): Map<WritingPart, Wr
 		map.set(ex.part, list)
 	}
 	return map
+}
+
+function SentencePracticeSection() {
+	const { data: topics } = useSuspenseQuery(writingSentenceTopicsQueryOptions())
+
+	return (
+		<div className="space-y-5">
+			<div className="flex items-center gap-3">
+				<MessageSquareText className="size-7 text-skill-writing" />
+				<div>
+					<h2 className="text-xl font-bold">Luyện theo câu</h2>
+					<p className="text-sm text-muted-foreground">{topics.length} chủ đề</p>
+				</div>
+			</div>
+			<Accordion type="multiple" defaultValue={["sentence-practice"]} className="space-y-3">
+				<AccordionItem value="sentence-practice" className="rounded-2xl border bg-card shadow-sm">
+					<AccordionTrigger className="px-5 py-4 hover:no-underline">
+						<div className="flex w-full items-center justify-between gap-3 pr-2">
+							<span className="text-base font-semibold">Chủ đề</span>
+							<span className="shrink-0 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+								{topics.length} chủ đề
+							</span>
+						</div>
+					</AccordionTrigger>
+					<AccordionContent className="px-2 pb-2">
+						<ul className="flex flex-col gap-1">
+							{topics.map((topic) => (
+								<li key={topic.id}>
+									<Link
+										to="/luyen-tap/ky-nang/viet/cau/$topicId"
+										params={{ topicId: topic.id }}
+										className="group flex items-center gap-4 rounded-lg px-3 py-3 transition-colors hover:bg-muted/60"
+									>
+										<NotebookPen className="size-5 shrink-0 text-skill-writing" />
+										<div className="min-w-0 flex-1">
+											<p className="truncate text-sm font-semibold group-hover:text-foreground">
+												{topic.name}
+											</p>
+										</div>
+										<div className="hidden shrink-0 items-center gap-3 text-xs text-muted-foreground sm:flex">
+											<span>{topic.sentenceCount} câu</span>
+										</div>
+									</Link>
+								</li>
+							))}
+						</ul>
+					</AccordionContent>
+				</AccordionItem>
+			</Accordion>
+		</div>
+	)
 }
 
 function ListSkeleton() {

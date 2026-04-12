@@ -3,6 +3,7 @@
 // Không gắn với từng skill — caller truyền items + onComplete callback để lưu progress.
 
 import { useCallback, useMemo, useState } from "react"
+import { toast } from "sonner"
 import { useSupportMode } from "./use-support-mode"
 
 export type McqPhase = "answering" | "submitted"
@@ -58,6 +59,10 @@ export function useMcqSession({ items, onComplete }: Params): McqSession {
 	const submit = useCallback(() => {
 		if (!canSubmit) return
 		setPhase("submitted")
+		const pct = total > 0 ? Math.round((score / total) * 100) : 0
+		if (pct >= 80) toast.success(`Xuất sắc! Đúng ${score}/${total} câu`)
+		else if (pct >= 50) toast.success(`Đúng ${score}/${total} câu`)
+		else toast.warning(`Đúng ${score}/${total} câu — cần ôn lại`)
 		onComplete?.({ score, total })
 	}, [canSubmit, score, total, onComplete])
 

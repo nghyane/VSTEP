@@ -13,8 +13,31 @@ export interface WritingExercise {
 	requiredPoints: readonly string[]
 	keywords: readonly string[]
 	sentenceStarters: readonly string[]
+	/** Dàn ý 3 đoạn (mở bài, thân bài, kết bài). Dùng cho support level "outline". */
+	outline?: readonly WritingOutlineSection[]
+	/** Khung bài với các chỗ trống. Dùng cho support level "template". */
+	template?: readonly WritingTemplateSection[]
 	sampleAnswer: string
 	estimatedMinutes: number
+}
+
+export interface WritingOutlineSection {
+	readonly title: string
+	readonly bullets: readonly string[]
+}
+
+export interface WritingTemplatePart {
+	readonly type: "text" | "blank"
+	/** Cho type=text: nội dung chữ. Cho type=blank: id + label placeholder + hints. */
+	readonly content?: string
+	readonly id?: string
+	readonly label?: string
+	readonly hints?: readonly string[]
+}
+
+export interface WritingTemplateSection {
+	readonly title: string
+	readonly parts: readonly WritingTemplatePart[]
 }
 
 export const WRITING_PART_LABELS: Record<WritingPart, string> = {
@@ -46,6 +69,118 @@ const P1_APOLOGY: WritingExercise = {
 		"To make it up to you, I would like to...",
 		"Once again, I am truly sorry.",
 		"Best wishes, [Your name]",
+	],
+	outline: [
+		{
+			title: "Mở đầu",
+			bullets: ["Chào hỏi (Dear ...)", "Nêu lý do viết thư: xin lỗi vì lỡ hẹn sinh nhật"],
+		},
+		{
+			title: "Nội dung",
+			bullets: [
+				"Giải thích nguyên nhân không đến được (gia đình có việc khẩn)",
+				"Thể hiện cảm xúc hối tiếc, chân thành",
+				"Đề xuất cách bù đắp: mời đi ăn/tặng quà bù",
+			],
+		},
+		{
+			title: "Kết thúc",
+			bullets: ["Xin lỗi lần nữa, mong được thông cảm", "Chào kết + ký tên"],
+		},
+	],
+	template: [
+		{
+			title: "Mở đầu",
+			parts: [
+				{ type: "text", content: "Dear " },
+				{
+					type: "blank",
+					id: "greet-name",
+					label: "tên bạn",
+					hints: ["Minh", "Lan", "Huy", "John"],
+				},
+				{ type: "text", content: ",\n\nI am writing to apologize for " },
+				{
+					type: "blank",
+					id: "reason-open",
+					label: "sự việc",
+					hints: [
+						"missing your birthday party last Saturday",
+						"not being able to attend your party",
+						"letting you down last weekend",
+					],
+				},
+				{ type: "text", content: "." },
+			],
+		},
+		{
+			title: "Nội dung",
+			parts: [
+				{ type: "text", content: "\n\nUnfortunately, " },
+				{
+					type: "blank",
+					id: "reason-detail",
+					label: "lý do chi tiết",
+					hints: [
+						"my grandmother suddenly fell ill that morning",
+						"my family had an emergency and I had to rush home",
+						"I was involved in a minor accident on the way",
+					],
+				},
+				{ type: "text", content: ", so I " },
+				{
+					type: "blank",
+					id: "consequence",
+					label: "hệ quả",
+					hints: [
+						"could not even send you a message",
+						"had no time to inform you",
+						"was unable to come as planned",
+					],
+				},
+				{ type: "text", content: ". I feel terrible about letting you down." },
+			],
+		},
+		{
+			title: "Đề xuất",
+			parts: [
+				{ type: "text", content: "\n\nTo make it up to you, I would love to " },
+				{
+					type: "blank",
+					id: "makeup-plan",
+					label: "kế hoạch bù đắp",
+					hints: [
+						"take you out for dinner this weekend",
+						"throw a small celebration just for us",
+						"give you the present I bought and treat you to coffee",
+					],
+				},
+				{ type: "text", content: "." },
+			],
+		},
+		{
+			title: "Kết thúc",
+			parts: [
+				{ type: "text", content: "\n\nOnce again, I am truly sorry. " },
+				{
+					type: "blank",
+					id: "closing-line",
+					label: "câu xin lỗi cuối",
+					hints: [
+						"Please forgive me",
+						"I hope you can understand",
+						"I promise I will make it up to you",
+					],
+				},
+				{ type: "text", content: ".\n\nBest wishes,\n" },
+				{
+					type: "blank",
+					id: "sign-name",
+					label: "tên bạn",
+					hints: ["Lan", "Minh", "Huy"],
+				},
+			],
+		},
 	],
 	sampleAnswer: `Dear Minh,
 

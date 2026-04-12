@@ -9,13 +9,19 @@ import {
 	AccordionTrigger,
 } from "#/components/ui/accordion"
 import { Skeleton } from "#/components/ui/skeleton"
-import { SPEAKING_PART_LABELS, type SpeakingExercise, type SpeakingPart } from "#/lib/mock/speaking"
+import {
+	SPEAKING_LEVEL_LABELS,
+	type SpeakingExercise,
+	type SpeakingLevel,
+} from "#/lib/mock/speaking"
 import { speakingListQueryOptions } from "#/lib/queries/speaking"
 
 export const Route = createFileRoute("/_app/luyen-tap/ky-nang/noi/")({
 	loader: ({ context: { queryClient } }) => queryClient.ensureQueryData(speakingListQueryOptions()),
 	component: SpeakingListPage,
 })
+
+const LEVELS: readonly SpeakingLevel[] = ["A2", "B1", "B2", "C1"]
 
 function SpeakingListPage() {
 	return (
@@ -27,25 +33,29 @@ function SpeakingListPage() {
 				<ArrowLeft className="size-4" />4 kỹ năng
 			</Link>
 			<Suspense fallback={<ListSkeleton />}>
-				<PartAccordion />
+				<LevelAccordion />
 			</Suspense>
 		</div>
 	)
 }
 
-function PartAccordion() {
+function LevelAccordion() {
 	const { data: exercises } = useSuspenseQuery(speakingListQueryOptions())
-	const grouped = groupByPart(exercises)
-	const parts: SpeakingPart[] = [1, 2, 3]
+	const grouped = groupByLevel(exercises)
+	const firstLevel = LEVELS.find((lv) => (grouped.get(lv) ?? []).length > 0)
 
 	return (
 		<div className="space-y-5">
 			<PageHeader count={exercises.length} />
-			<Accordion type="multiple" defaultValue={["part-1"]} className="space-y-3">
-				{parts.map((part) => {
-					const list = grouped.get(part) ?? []
+			<Accordion
+				type="multiple"
+				defaultValue={firstLevel ? [`level-${firstLevel}`] : []}
+				className="space-y-3"
+			>
+				{LEVELS.map((level) => {
+					const list = grouped.get(level) ?? []
 					if (list.length === 0) return null
-					return <PartSection key={part} part={part} exercises={list} />
+					return <LevelSection key={level} level={level} exercises={list} />
 				})}
 			</Accordion>
 		</div>
@@ -58,24 +68,26 @@ function PageHeader({ count }: { count: number }) {
 			<Mic className="size-7 text-skill-speaking" />
 			<div>
 				<h1 className="text-xl font-bold">Nói</h1>
-				<p className="text-sm text-muted-foreground">{count} bài luyện tập</p>
+				<p className="text-sm text-muted-foreground">
+					{count} bài · Dictation & Shadowing tương tác
+				</p>
 			</div>
 		</div>
 	)
 }
 
-function PartSection({
-	part,
+function LevelSection({
+	level,
 	exercises,
 }: {
-	part: SpeakingPart
+	level: SpeakingLevel
 	exercises: readonly SpeakingExercise[]
 }) {
 	return (
-		<AccordionItem value={`part-${part}`} className="rounded-2xl bg-muted/40 shadow-sm">
+		<AccordionItem value={`level-${level}`} className="rounded-2xl border bg-card shadow-sm">
 			<AccordionTrigger className="px-5 py-4 hover:no-underline">
 				<div className="flex w-full items-center justify-between gap-3 pr-2">
-					<span className="text-base font-semibold">{SPEAKING_PART_LABELS[part]}</span>
+					<span className="text-base font-semibold">{SPEAKING_LEVEL_LABELS[level]}</span>
 					<span className="shrink-0 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
 						{exercises.length} bài
 					</span>
@@ -109,9 +121,7 @@ function ExerciseRow({ exercise }: { exercise: SpeakingExercise }) {
 				<p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{exercise.description}</p>
 			</div>
 			<div className="hidden shrink-0 items-center gap-3 text-xs text-muted-foreground sm:flex">
-				<span>
-					{exercise.prepSeconds}s chuẩn bị · {exercise.speakSeconds}s nói
-				</span>
+				<span>{exercise.sentences.length} câu</span>
 				<span className="inline-flex items-center gap-1">
 					<Clock className="size-3.5" />
 					{exercise.estimatedMinutes} phút
@@ -121,14 +131,16 @@ function ExerciseRow({ exercise }: { exercise: SpeakingExercise }) {
 	)
 }
 
-function groupByPart(
+// ─── Helpers ───────────────────────────────────────────────────────
+
+function groupByLevel(
 	exercises: readonly SpeakingExercise[],
-): Map<SpeakingPart, SpeakingExercise[]> {
-	const map = new Map<SpeakingPart, SpeakingExercise[]>()
+): Map<SpeakingLevel, SpeakingExercise[]> {
+	const map = new Map<SpeakingLevel, SpeakingExercise[]>()
 	for (const ex of exercises) {
-		const list = map.get(ex.part) ?? []
+		const list = map.get(ex.level) ?? []
 		list.push(ex)
-		map.set(ex.part, list)
+		map.set(ex.level, list)
 	}
 	return map
 }

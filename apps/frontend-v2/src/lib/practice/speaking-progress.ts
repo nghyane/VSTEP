@@ -1,17 +1,21 @@
 // Speaking progress — localStorage wrapper.
 
-export type SpeakingStatus = "not_started" | "completed"
+export type SpeakingStatus = "not_started" | "in_progress" | "completed"
 
 export interface SpeakingProgress {
 	status: SpeakingStatus
-	recordedSeconds: number
+	dictationAccuracy: number // best accuracy so far (0..1)
+	shadowingDone: number // số câu đã shadow
+	sentencesTotal: number
 	lastAttemptAt: number
 }
 
-const PREFIX = "vstep.speaking.v1.progress."
+const PREFIX = "vstep.speaking.v2.progress."
 const EMPTY: SpeakingProgress = {
 	status: "not_started",
-	recordedSeconds: 0,
+	dictationAccuracy: 0,
+	shadowingDone: 0,
+	sentencesTotal: 0,
 	lastAttemptAt: 0,
 }
 

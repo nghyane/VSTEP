@@ -6,8 +6,11 @@ import {
 	LayoutDashboard,
 	LogOut,
 	type LucideIcon,
+	Menu,
 	UserRound,
 } from "lucide-react"
+import { useState } from "react"
+import { FloatingChatDock } from "#/components/ai-chat/FloatingChatDock"
 import { Logo } from "#/components/common/Logo"
 import { StreakButton } from "#/components/common/StreakButton"
 import { Avatar, AvatarFallback } from "#/components/ui/avatar"
@@ -32,6 +35,7 @@ import {
 	SidebarProvider,
 	useSidebar,
 } from "#/components/ui/sidebar"
+import { useRaiseChatDock } from "#/lib/ai-chat/use-raise-chat-dock"
 import { MOCK_USER } from "#/lib/mock/user"
 import { cn } from "#/lib/utils"
 
@@ -64,18 +68,43 @@ const NAV_ITEMS: readonly NavItem[] = [
 
 function AppSidebar() {
 	const { state, setOpen } = useSidebar()
+	const [pinned, setPinned] = useState(false)
 	const collapsed = state === "collapsed"
 
 	return (
 		<Sidebar
 			collapsible="icon"
-			onMouseEnter={() => setOpen(true)}
-			onMouseLeave={() => setOpen(false)}
+			onMouseEnter={() => !pinned && setOpen(true)}
+			onMouseLeave={() => !pinned && setOpen(false)}
 		>
 			<SidebarHeader className="px-4 py-5">
-				<Link to="/overview" search={{ tab: "overview" }} className="flex items-center">
-					<Logo size="sm" variant={collapsed ? "mark" : "full"} />
-				</Link>
+				<div className="group/header flex items-center gap-2">
+					<Link
+						to="/overview"
+						search={{ tab: "overview" }}
+						className="flex min-w-0 flex-1 items-center"
+					>
+						<Logo size="sm" variant={collapsed ? "mark" : "full"} />
+					</Link>
+					{!collapsed && (
+						<button
+							type="button"
+							onClick={() => {
+								const next = !pinned
+								setPinned(next)
+								setOpen(next)
+							}}
+							aria-label={pinned ? "Bỏ ghim sidebar" : "Ghim sidebar"}
+							aria-pressed={pinned}
+							className={cn(
+								"inline-flex size-8 shrink-0 items-center justify-center rounded-md text-foreground transition-colors hover:bg-muted",
+								pinned && "bg-muted",
+							)}
+						>
+							<Menu className="size-4" />
+						</button>
+					)}
+				</div>
 			</SidebarHeader>
 
 			<SidebarContent className="px-2">
@@ -273,6 +302,7 @@ function AppLayout() {
 function LayoutShell() {
 	const { state } = useSidebar()
 	const dockLeft = state === "collapsed" ? "3rem" : "16rem"
+	useRaiseChatDock()
 
 	return (
 		<div className="flex min-h-screen w-full">
@@ -286,6 +316,7 @@ function LayoutShell() {
 					<Outlet />
 				</main>
 			</div>
+			<FloatingChatDock />
 		</div>
 	)
 }

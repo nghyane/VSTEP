@@ -2,7 +2,7 @@
 // Đọc/ghi qua lib/practice/support-mode, broadcast qua CustomEvent nên
 // tất cả consumer `useSyncExternalStore` tự rerender.
 
-import { ChatGptIcon } from "#/components/common/ChatGptIcon"
+import { Lightbulb } from "lucide-react"
 import { Label } from "#/components/ui/label"
 import { Switch } from "#/components/ui/switch"
 import { setSupportMode } from "#/lib/practice/support-mode"
@@ -21,15 +21,15 @@ export function SupportModeSwitch() {
 				enabled ? "border-primary/30 bg-primary/5" : "border-border bg-background",
 			)}
 		>
-			<ChatGptIcon className={cn("size-4", enabled ? "text-primary" : "text-muted-foreground")} />
+			<Lightbulb className={cn("size-4", enabled ? "text-primary" : "text-muted-foreground")} />
 			<Label htmlFor={INPUT_ID} className="cursor-pointer text-xs font-medium select-none">
-				Hỗ trợ AI
+				Chế độ hỗ trợ
 			</Label>
 			<Switch
 				id={INPUT_ID}
 				checked={enabled}
 				onCheckedChange={setSupportMode}
-				aria-label="Bật/tắt chế độ hỗ trợ AI"
+				aria-label="Bật/tắt chế độ hỗ trợ"
 			/>
 		</div>
 	)

@@ -72,7 +72,7 @@ function PartSection({
 	exercises: readonly ReadingExercise[]
 }) {
 	return (
-		<AccordionItem value={`part-${part}`} className="rounded-2xl bg-muted/40 shadow-sm">
+		<AccordionItem value={`part-${part}`} className="rounded-2xl border bg-card shadow-sm">
 			<AccordionTrigger className="px-5 py-4 hover:no-underline">
 				<div className="flex w-full items-center justify-between gap-3 pr-2">
 					<span className="text-base font-semibold">{READING_PART_LABELS[part]}</span>

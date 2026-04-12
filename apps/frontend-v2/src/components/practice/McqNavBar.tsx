@@ -12,7 +12,7 @@ interface Props {
 
 export function McqNavBar({ total, selectedAnswers, submitted, isCorrect }: Props) {
 	return (
-		<div className="flex flex-wrap justify-center gap-1.5 py-2">
+		<div className="flex flex-wrap items-center gap-1.5">
 			{Array.from({ length: total }).map((_, index) => (
 				<NavPill
 					key={index}

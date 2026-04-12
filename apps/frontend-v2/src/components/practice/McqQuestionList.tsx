@@ -1,8 +1,12 @@
 // McqQuestionList — tất cả câu của 1 đề hiện cùng lúc, scroll trả lời.
 // Dùng chung cho Listening + Reading session.
+//
+// Hai chức năng tách biệt:
+// 1. Nút "Hỏi AI" (Sparkles): luôn hiện, click → mở FloatingChatDock và prefill câu hỏi.
+// 2. Giải thích tĩnh: chỉ hiện khi supportMode=true + đã submit (không cần toggle).
 
-import { useState } from "react"
 import { ChatGptIcon } from "#/components/common/ChatGptIcon"
+import { askExplainQuestion } from "#/lib/ai-chat/store"
 import { cn } from "#/lib/utils"
 
 export interface McqItem {
@@ -17,7 +21,7 @@ interface Props {
 	items: readonly McqItem[]
 	selectedAnswers: Record<number, number>
 	submitted: boolean
-	showAiExplain: boolean
+	showExplanation: boolean
 	onSelect: (itemIndex: number, optionIndex: number) => void
 }
 
@@ -25,7 +29,7 @@ export function McqQuestionList({
 	items,
 	selectedAnswers,
 	submitted,
-	showAiExplain,
+	showExplanation,
 	onSelect,
 }: Props) {
 	return (
@@ -37,7 +41,7 @@ export function McqQuestionList({
 					index={index}
 					selected={selectedAnswers[index] ?? null}
 					submitted={submitted}
-					showAiExplain={showAiExplain}
+					showExplanation={showExplanation}
 					onSelect={(optIdx) => onSelect(index, optIdx)}
 				/>
 			))}
@@ -50,7 +54,7 @@ interface QuestionBlockProps {
 	index: number
 	selected: number | null
 	submitted: boolean
-	showAiExplain: boolean
+	showExplanation: boolean
 	onSelect: (optionIndex: number) => void
 }
 
@@ -59,10 +63,9 @@ function QuestionBlock({
 	index,
 	selected,
 	submitted,
-	showAiExplain,
+	showExplanation,
 	onSelect,
 }: QuestionBlockProps) {
-	const [showExplanation, setShowExplanation] = useState(false)
 	return (
 		<div id={`mcq-item-${index}`} className="space-y-3">
 			<div className="flex items-start justify-between gap-3">
@@ -70,12 +73,17 @@ function QuestionBlock({
 					<span className="mr-1.5 text-primary">{index + 1}.</span>
 					{item.question}
 				</p>
-				{showAiExplain && (
-					<AiExplainButton
-						expanded={showExplanation}
-						onClick={() => setShowExplanation((v) => !v)}
-					/>
-				)}
+				<AskAiButton
+					onClick={() =>
+						askExplainQuestion({
+							question: item.question,
+							options: item.options,
+							correctIndex: item.correctIndex,
+							userIndex: selected,
+							submitted,
+						})
+					}
+				/>
 			</div>
 			<div className="grid gap-2 sm:grid-cols-2">
 				{item.options.map((option, optIdx) => (
@@ -91,24 +99,18 @@ function QuestionBlock({
 					/>
 				))}
 			</div>
-			{showAiExplain && showExplanation && <Explanation text={item.explanation} />}
+			{showExplanation && submitted && <Explanation text={item.explanation} />}
 		</div>
 	)
 }
 
-function AiExplainButton({ expanded, onClick }: { expanded: boolean; onClick: () => void }) {
+function AskAiButton({ onClick }: { onClick: () => void }) {
 	return (
 		<button
 			type="button"
 			onClick={onClick}
-			aria-expanded={expanded}
-			aria-label="Giải thích bằng AI"
-			className={cn(
-				"inline-flex size-8 shrink-0 items-center justify-center rounded-full border transition-colors",
-				expanded
-					? "border-primary bg-primary/10 text-primary"
-					: "border-border text-muted-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-primary",
-			)}
+			aria-label="Hỏi trợ lý AI về câu này"
+			className="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
 		>
 			<ChatGptIcon className="size-4" />
 		</button>
@@ -127,7 +129,7 @@ interface OptionButtonProps {
 
 function OptionButton(props: OptionButtonProps) {
 	const { option, letter, isSelected, isCorrectOption, isWrongSelected, disabled, onClick } = props
-	const baseClass = "border-border hover:border-primary/40"
+	const baseClass = "border-border hover:bg-muted/50"
 	const selectedClass = "border-primary bg-primary/5 ring-1 ring-primary/20"
 	const correctClass = "border-success bg-success/10 text-foreground"
 	const wrongClass = "border-destructive bg-destructive/10 text-foreground"
@@ -174,10 +176,9 @@ function OptionButton(props: OptionButtonProps) {
 
 function Explanation({ text }: { text: string }) {
 	return (
-		<div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-xs">
-			<p className="mb-1 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary">
-				<ChatGptIcon className="size-3" />
-				Giải thích từ AI
+		<div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+			<p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-primary">
+				Giải thích
 			</p>
 			<p className="text-sm leading-relaxed text-foreground/90">{text}</p>
 		</div>
