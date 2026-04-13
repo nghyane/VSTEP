@@ -28,8 +28,8 @@ export function ExamCard({ id, isPro = false }: ExamCardProps) {
 								</span>
 							</span>
 						) : (
-							<span className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-slate-600">
-								<span className="text-[10px] font-semibold leading-none uppercase tracking-wider">
+							<span className="inline-flex h-6 min-w-[52px] items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-2 text-slate-600">
+								<span className="text-[10px] font-semibold leading-none uppercase tracking-wider translate-y-[0.5px]">
 									Free
 								</span>
 							</span>
