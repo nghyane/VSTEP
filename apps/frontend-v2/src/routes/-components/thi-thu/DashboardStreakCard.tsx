@@ -101,7 +101,7 @@ export function DashboardStreakCard() {
 						<div className="flex gap-[16px] min-w-max pr-4">
 							{monthsData.map((month, mIdx) => (
 								<div key={mIdx} className="flex flex-col gap-[8px]">
-									<div className="flex h-[16px] items-end text-xs text-muted-foreground">
+									<div className="flex h-[16px] w-full items-end justify-center text-xs text-muted-foreground">
 										{month.label}
 									</div>
 									<div className="flex gap-[4px]">
