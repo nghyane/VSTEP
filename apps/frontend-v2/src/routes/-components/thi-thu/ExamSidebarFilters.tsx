@@ -1,11 +1,13 @@
 import { Crown, Search } from "lucide-react"
-import { useState } from "react"
 
-type ExamType = "all" | "pro" | "free"
+export type ExamType = "all" | "pro" | "free"
 
-export function ExamSidebarFilters() {
-	const [selectedType, setSelectedType] = useState<ExamType>("free")
+interface ExamSidebarFiltersProps {
+	selectedType: ExamType
+	onTypeChange: (type: ExamType) => void
+}
 
+export function ExamSidebarFilters({ selectedType, onTypeChange }: ExamSidebarFiltersProps) {
 	return (
 		<aside className="sticky top-[88px] w-full shrink-0 space-y-8 md:w-64">
 			<div className="space-y-3">
@@ -15,7 +17,7 @@ export function ExamSidebarFilters() {
 				<div className="flex w-full items-center justify-between rounded-full bg-slate-100 p-1">
 					<button
 						type="button"
-						onClick={() => setSelectedType("all")}
+						onClick={() => onTypeChange("all")}
 						className={`flex flex-1 items-center justify-center rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
 							selectedType === "all"
 								? "bg-white text-primary shadow-sm"
@@ -26,7 +28,7 @@ export function ExamSidebarFilters() {
 					</button>
 					<button
 						type="button"
-						onClick={() => setSelectedType("pro")}
+						onClick={() => onTypeChange("pro")}
 						className={`flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
 							selectedType === "pro"
 								? "bg-gradient-to-r from-amber-400 to-amber-500 text-white shadow-sm ring-1 ring-amber-500/50"
@@ -38,7 +40,7 @@ export function ExamSidebarFilters() {
 					</button>
 					<button
 						type="button"
-						onClick={() => setSelectedType("free")}
+						onClick={() => onTypeChange("free")}
 						className={`flex flex-1 items-center justify-center rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
 							selectedType === "free"
 								? "bg-white text-primary shadow-sm"
