@@ -1,14 +1,31 @@
-import { BookOpen, Clock, Users } from "lucide-react"
+import { BookOpen, Clock, Crown, Users } from "lucide-react"
 import { Button } from "#/components/ui/button"
 
 interface ExamCardProps {
 	id: number
+	isPro?: boolean
 }
 
-export function ExamCard({ id }: ExamCardProps) {
+export function ExamCard({ id, isPro = false }: ExamCardProps) {
 	return (
-		<div className="group flex flex-col justify-between rounded-xl border bg-card p-4 transition-all hover:-translate-y-0.5 hover:shadow-md">
+		<div className="group flex flex-col justify-between rounded-xl border bg-card p-4 transition-all hover:-translate-y-0.5 hover:shadow-md relative overflow-hidden">
 			<div>
+				<div className="mb-2 flex items-end">
+					{isPro ? (
+						<span className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-2 py-0.5 text-white shadow-sm">
+							<Crown className="size-3.5 mr-1" />
+							<span className="text-[10px] font-bold uppercase tracking-wider leading-none translate-y-[1px]">
+								Pro
+							</span>
+						</span>
+					) : (
+						<span className="inline-flex items-center justify-center rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-slate-500">
+							<span className="text-[10px] font-semibold uppercase tracking-wider leading-none">
+								Free
+							</span>
+						</span>
+					)}
+				</div>
 				<h3 className="line-clamp-2 text-lg font-semibold leading-tight text-foreground transition-colors group-hover:text-primary">
 					Đề thi VSTEP HNUE 08/02/2026 #{id}
 				</h3>

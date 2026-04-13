@@ -34,7 +34,7 @@ function ThiThuPage() {
 					{/* Grid Exam Cards */}
 					<div className="grid gap-4 sm:grid-cols-2">
 						{[1, 2, 3, 4, 5, 6].map((i) => (
-							<ExamCard key={i} id={i} />
+							<ExamCard key={i} id={i} isPro={i % 2 === 0} />
 						))}
 					</div>
 				</div>

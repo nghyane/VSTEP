@@ -1,8 +1,55 @@
-import { Search } from "lucide-react"
+import { Crown, Search } from "lucide-react"
+import { useState } from "react"
+
+type ExamType = "all" | "pro" | "free"
 
 export function ExamSidebarFilters() {
+	const [selectedType, setSelectedType] = useState<ExamType>("free")
+
 	return (
 		<aside className="sticky top-[88px] w-full shrink-0 space-y-8 md:w-64">
+			<div className="space-y-3">
+				<h3 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+					LOẠI ĐỀ THI
+				</h3>
+				<div className="flex w-full items-center justify-between rounded-full bg-slate-100 p-1">
+					<button
+						type="button"
+						onClick={() => setSelectedType("all")}
+						className={`flex flex-1 items-center justify-center rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
+							selectedType === "all"
+								? "bg-white text-primary shadow-sm"
+								: "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+						}`}
+					>
+						Tất cả
+					</button>
+					<button
+						type="button"
+						onClick={() => setSelectedType("pro")}
+						className={`flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
+							selectedType === "pro"
+								? "bg-gradient-to-r from-amber-400 to-amber-500 text-white shadow-sm ring-1 ring-amber-500/50"
+								: "text-slate-500 hover:text-amber-600 hover:bg-slate-200/50"
+						}`}
+					>
+						<Crown className="size-3.5" />
+						Pro
+					</button>
+					<button
+						type="button"
+						onClick={() => setSelectedType("free")}
+						className={`flex flex-1 items-center justify-center rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
+							selectedType === "free"
+								? "bg-white text-primary shadow-sm"
+								: "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+						}`}
+					>
+						Miễn phí
+					</button>
+				</div>
+			</div>
+
 			<div className="space-y-3">
 				<h3 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
 					TÌM KIẾM
@@ -12,7 +59,7 @@ export function ExamSidebarFilters() {
 					<input
 						type="text"
 						placeholder="Nhập tên đề thi..."
-						className="w-full rounded-lg border bg-background py-2 pl-9 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+						className="w-full rounded-md border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm shadow-[0_1px_2px_rgba(0,0,0,0.02)] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
 					/>
 				</div>
 			</div>
