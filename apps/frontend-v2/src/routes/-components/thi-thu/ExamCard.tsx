@@ -1,4 +1,5 @@
 import { BookOpen, Clock, Users } from "lucide-react"
+import { Button } from "#/components/ui/button"
 
 interface ExamCardProps {
 	id: number
@@ -8,7 +9,7 @@ export function ExamCard({ id }: ExamCardProps) {
 	return (
 		<div className="group flex flex-col justify-between rounded-xl border bg-card p-4 transition-all hover:-translate-y-0.5 hover:shadow-md">
 			<div>
-				<h3 className="text-lg font-semibold leading-tight text-foreground transition-colors group-hover:text-primary">
+				<h3 className="line-clamp-2 text-lg font-semibold leading-tight text-foreground transition-colors group-hover:text-primary">
 					Đề thi VSTEP HNUE 08/02/2026 #{id}
 				</h3>
 
@@ -27,10 +28,10 @@ export function ExamCard({ id }: ExamCardProps) {
 
 				{/* Tags */}
 				<div className="mt-4 flex flex-wrap gap-2">
-					<span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+					<span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
 						#FullTest
 					</span>
-					<span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+					<span className="inline-flex items-center rounded-md bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
 						#HNUE
 					</span>
 				</div>
@@ -38,15 +39,15 @@ export function ExamCard({ id }: ExamCardProps) {
 
 			{/* Footer action */}
 			<div className="mt-5 flex items-center justify-between border-t pt-4">
-				<span className="text-xs font-medium text-muted-foreground">
-					Trạng thái: <span className="text-foreground">Chưa làm</span>
+				<span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+					Trạng thái:
+					<span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
+						Chưa làm
+					</span>
 				</span>
-				<button
-					type="button"
-					className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-				>
+				<Button size="sm" className="font-medium">
 					Vào thi
-				</button>
+				</Button>
 			</div>
 		</div>
 	)
