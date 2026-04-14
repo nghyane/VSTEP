@@ -31,8 +31,8 @@ export function ExamCard({ id, isPro = false }: ExamCardProps) {
 								</span>
 							</span>
 						) : (
-							<span className="inline-flex h-6 min-w-[52px] items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-2 text-slate-600">
-								<span className="text-[10px] font-semibold leading-none uppercase tracking-wider translate-y-[0.5px]">
+							<span className="inline-flex rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-slate-600">
+								<span className="text-[10px] font-semibold leading-none uppercase tracking-wider">
 									Free
 								</span>
 							</span>
