@@ -104,16 +104,18 @@ function MockSpeakingRecorder({
 	const remainingSeconds = Math.max(0, speakingSeconds - Math.round(recorder.elapsedMs / 1000))
 
 	return (
-		<div className="space-y-3 rounded-xl border bg-muted/10 p-4">
+		<div className="space-y-3 rounded-xl border border-b-2 border-b-border/60 bg-card p-4 shadow-sm">
 			{/* Status bar */}
 			<div
 				className={cn(
 					"flex h-14 items-center justify-center rounded-lg border",
 					phase === "recording"
-						? "border-destructive/30 bg-destructive/5"
+						? "border-destructive/40 bg-destructive/5"
 						: phase === "processing"
 							? "border-primary/30 bg-primary/5"
-							: "bg-muted/30",
+							: phase === "done"
+								? "border-emerald-300 bg-emerald-50"
+								: "bg-muted/30",
 				)}
 			>
 				{phase === "idle" && (
@@ -121,8 +123,8 @@ function MockSpeakingRecorder({
 				)}
 				{phase === "recording" && (
 					<div className="flex items-center gap-3">
-						<span className="size-2 animate-pulse rounded-full bg-destructive" />
-						<span className="text-sm font-medium text-destructive">
+						<span className="size-2.5 animate-pulse rounded-full bg-destructive" />
+						<span className="text-sm font-semibold text-destructive">
 							Đang ghi âm... {fmt(remainingSeconds)}
 						</span>
 					</div>
@@ -134,9 +136,12 @@ function MockSpeakingRecorder({
 					</div>
 				)}
 				{phase === "done" && (
-					<span className="text-sm text-muted-foreground">
-						Đã ghi xong ✓ — bấm "Ghi lại" nếu muốn thử lại
-					</span>
+					<div className="flex items-center gap-2">
+						<span className="size-2 rounded-full bg-emerald-500" />
+						<span className="text-sm font-medium text-emerald-700">
+							Đã ghi âm xong — bấm "Ghi lại" nếu muốn thử
+						</span>
+					</div>
 				)}
 			</div>
 
@@ -174,7 +179,7 @@ function MockSpeakingRecorder({
 			)}
 
 			{phase === "done" && (
-				<p className="text-xs font-medium text-emerald-600">✓ Đã ghi âm thành công</p>
+				<p className="text-xs font-semibold text-emerald-600">✓ Đã ghi âm thành công</p>
 			)}
 		</div>
 	)
@@ -428,9 +433,9 @@ export function SpeakingExamPanel({ parts, doneParts, storageKey, onPartDone }: 
 				</div>
 			</div>
 
-			{/* Part tabs + prev/next */}
-			{sorted.length > 1 && (
-				<div className="flex items-center justify-between border-t bg-muted/5 px-4 py-2.5">
+		{/* Part tabs + prev/next */}
+		{sorted.length > 1 && (
+			<div className="flex items-center justify-between border-t bg-card px-4 py-2.5">
 					{activeIdx > 0 ? (
 						<Button size="sm" variant="outline" onClick={handlePrev}>
 							<ChevronLeft className="size-4" />
@@ -448,15 +453,21 @@ export function SpeakingExamPanel({ parts, doneParts, storageKey, onPartDone }: 
 									key={p.id}
 									type="button"
 									onClick={() => setActiveIdx(i)}
-									className={cn(
-										"flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-										isActive
-											? "bg-primary text-primary-foreground"
+						className={cn(
+									"flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+									isActive
+										? "bg-primary text-primary-foreground"
+										: doneParts.has(p.id)
+											? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
 											: "bg-muted text-muted-foreground hover:bg-muted/80",
-									)}
-								>
-									{doneParts.has(p.id) && <span className="text-emerald-400">✓</span>}
-									Part {i + 1}
+								)}
+							>
+								{doneParts.has(p.id) && (
+									<span className={isActive ? "text-primary-foreground/80" : "text-emerald-500"}>
+										✓
+									</span>
+								)}
+								Part {i + 1}
 								</button>
 							)
 						})}

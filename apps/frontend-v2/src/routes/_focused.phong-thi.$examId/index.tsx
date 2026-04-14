@@ -57,6 +57,13 @@ const SKILL_LABEL: Record<ExamSkillKey, string> = {
 	speaking: "Nói",
 }
 
+const SKILL_DOT_COLOR: Record<ExamSkillKey, string> = {
+	listening: "bg-skill-listening",
+	reading: "bg-skill-reading",
+	writing: "bg-skill-writing",
+	speaking: "bg-skill-speaking",
+}
+
 // ─── Timer hook ───────────────────────────────────────────────────────────────
 
 function useCountdown(
@@ -203,33 +210,34 @@ function ExamPage() {
 
 	return (
 		<div className="flex h-screen flex-col">
-			{/* Header */}
-			<header className="z-40 flex h-12 shrink-0 items-center justify-between border-b px-4">
-				<div className="flex items-center gap-2">
-					<div
-						className={cn(
-							"flex items-center gap-1.5 rounded-full px-3 py-1",
-							remaining !== null && remaining <= 300
-								? "bg-destructive/10 text-destructive"
-								: "bg-muted",
-						)}
-					>
-						<Clock className="size-3.5" />
-						<span className="text-sm font-semibold tabular-nums">{formatTime(remaining)}</span>
-					</div>
+		{/* Header */}
+		<header className="z-40 flex h-12 shrink-0 items-center justify-between border-b-2 bg-card px-4 shadow-sm">
+			<div className="flex items-center gap-2">
+				<div
+					className={cn(
+						"flex items-center gap-1.5 rounded-full px-3 py-1",
+						remaining !== null && remaining <= 300
+							? "bg-destructive/10 text-destructive"
+							: "bg-muted",
+					)}
+				>
+					<Clock className="size-3.5" />
+					<span className="text-sm font-semibold tabular-nums">{formatTime(remaining)}</span>
 				</div>
+			</div>
 
-				<span className="text-sm text-muted-foreground">
-					{answeredItems}/{totalItems} đã trả lời
-				</span>
+			<div className="flex items-center gap-1 text-sm">
+				<span className="font-bold tabular-nums text-foreground">{answeredItems}</span>
+				<span className="text-muted-foreground">/{totalItems} đã trả lời</span>
+			</div>
 
-				<Button variant="ghost" size="sm" asChild>
-					<Link to="/thi-thu">
-						<X className="size-4" />
-						<span className="hidden sm:inline">Thoát</span>
-					</Link>
-				</Button>
-			</header>
+			<Button variant="ghost" size="sm" asChild>
+				<Link to="/thi-thu">
+					<X className="size-4" />
+					<span className="hidden sm:inline">Thoát</span>
+				</Link>
+			</Button>
+		</header>
 
 			{/* Body — skill panel */}
 			{currentSkill === "listening" && (
@@ -262,26 +270,33 @@ function ExamPage() {
 				/>
 			)}
 
-			{/* Footer */}
-			<footer className="z-40 flex h-12 shrink-0 items-center justify-between border-t px-4">
-				<div className="w-24" />
+		{/* Footer */}
+		<footer className="z-40 flex h-12 shrink-0 items-center justify-between border-t-2 bg-card px-4">
+			<div className="w-24" />
 
-				<span className="text-sm font-medium">
-					{currentSkill ? SKILL_LABEL[currentSkill] : ""} ({currentSkillIdx + 1}/
-					{activeSkills.length})
-				</span>
+			{currentSkill && (
+				<div className="flex items-center gap-1.5">
+					<span
+						className={cn("size-2 shrink-0 rounded-full", SKILL_DOT_COLOR[currentSkill])}
+					/>
+					<span className="text-sm font-semibold">{SKILL_LABEL[currentSkill]}</span>
+					<span className="text-xs text-muted-foreground">
+						({currentSkillIdx + 1}/{activeSkills.length})
+					</span>
+				</div>
+			)}
 
-				{isLastSkill ? (
-					<Button size="sm" onClick={() => setConfirming(true)}>
-						<CheckCircle2 className="size-4" />
-						Nộp bài
-					</Button>
-				) : (
-					<Button variant="outline" size="sm" onClick={() => setConfirmingNext(true)}>
-						<span className="hidden sm:inline">Phần tiếp</span>→
-					</Button>
-				)}
-			</footer>
+			{isLastSkill ? (
+				<Button size="sm" onClick={() => setConfirming(true)}>
+					<CheckCircle2 className="size-4" />
+					Nộp bài
+				</Button>
+			) : (
+				<Button variant="outline" size="sm" onClick={() => setConfirmingNext(true)}>
+					<span className="hidden sm:inline">Phần tiếp</span>→
+				</Button>
+			)}
+		</footer>
 
 			{/* Confirm submit dialog */}
 			<Dialog open={confirming} onOpenChange={setConfirming}>

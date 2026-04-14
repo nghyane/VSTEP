@@ -80,29 +80,45 @@ export function WritingExamPanel({ tasks, answers, onAnswer }: Props) {
 			<textarea
 				value={currentText}
 				onChange={(e) => onAnswer(activeTask.id, e.target.value)}
-				className="w-full flex-1 resize-none rounded-xl border border-border p-4 text-sm leading-relaxed focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+				className="w-full flex-1 resize-none rounded-xl border border-border bg-card p-4 text-sm leading-relaxed shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
 				placeholder="Viết bài của bạn tại đây..."
 			/>
-			<p
-				className={cn(
-					"text-sm",
-					wordCount >= activeTask.minWords ? "text-emerald-600" : "text-muted-foreground",
-				)}
-			>
-				{wordCount}/{activeTask.minWords} từ
-			</p>
+			<div className="space-y-1.5">
+				<div className="h-1.5 overflow-hidden rounded-full bg-muted">
+					<div
+						className={cn(
+							"h-full rounded-full transition-[width] duration-300",
+							wordCount >= activeTask.minWords ? "bg-emerald-500" : "bg-primary/60",
+						)}
+						style={{
+							width: `${Math.min(100, activeTask.minWords > 0 ? (wordCount / activeTask.minWords) * 100 : 0)}%`,
+						}}
+					/>
+				</div>
+				<p
+					className={cn(
+						"text-sm",
+						wordCount >= activeTask.minWords
+							? "font-medium text-emerald-600"
+							: "text-muted-foreground",
+					)}
+				>
+					{wordCount}/{activeTask.minWords} từ
+					{wordCount >= activeTask.minWords && " ✓"}
+				</p>
+			</div>
 		</div>
 	)
 
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden">
-			{/* Desktop: split layout */}
-			<div className="hidden flex-1 overflow-hidden lg:flex">
-				<div className="w-2/5 overflow-y-auto border-r bg-muted/5 p-6">
-					<WritingPrompt task={activeTask} />
-				</div>
-				<div className="flex flex-1 flex-col overflow-y-auto p-6">{editorContent}</div>
+		{/* Desktop: split layout */}
+		<div className="hidden flex-1 overflow-hidden lg:flex">
+			<div className="w-2/5 overflow-y-auto border-r bg-muted/10 p-6">
+				<WritingPrompt task={activeTask} />
 			</div>
+			<div className="flex flex-1 flex-col overflow-y-auto p-6">{editorContent}</div>
+		</div>
 
 			{/* Mobile: tabbed layout */}
 			<div className="flex flex-1 flex-col overflow-hidden lg:hidden">
@@ -128,8 +144,8 @@ export function WritingExamPanel({ tasks, answers, onAnswer }: Props) {
 				</div>
 			</div>
 
-			{/* Task tabs + prev/next */}
-			<div className="flex items-center justify-between border-t bg-muted/5 px-4 py-2.5">
+		{/* Task tabs + prev/next */}
+		<div className="flex items-center justify-between border-t bg-card px-4 py-2.5">
 				{activeIdx > 0 ? (
 					<Button size="sm" variant="outline" onClick={handlePrev}>
 						<ChevronLeft className="size-4" />

@@ -189,11 +189,11 @@ export function DeviceCheckScreen({ session, isUnlimited, onStart }: Props) {
 	}
 
 	return (
-		<div className="flex h-full flex-col items-center overflow-y-auto bg-muted/30">
+		<div className="flex h-full flex-col items-center overflow-y-auto bg-muted/20">
 			<div className="w-full max-w-4xl space-y-6 p-6 py-10">
 				{/* Title */}
-				<div className="space-y-1 text-center">
-					<h1 className="text-xl font-bold">{session.title}</h1>
+				<div className="space-y-1.5 text-center">
+					<h1 className="text-2xl font-bold">{session.title}</h1>
 					<p className="text-sm text-muted-foreground">
 						Kiểm tra thiết bị trước khi bắt đầu làm bài
 					</p>
@@ -202,7 +202,7 @@ export function DeviceCheckScreen({ session, isUnlimited, onStart }: Props) {
 				{/* 3 cards */}
 				<div className="grid gap-4 md:grid-cols-3">
 					{/* Card 1: Exam structure */}
-					<div className="space-y-4 rounded-xl border bg-background p-5">
+					<div className="space-y-4 rounded-xl border border-b-2 border-b-border/60 bg-card p-5 shadow-sm">
 						<div className="flex items-center gap-2.5">
 							<span className="flex size-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
 								1
@@ -231,7 +231,7 @@ export function DeviceCheckScreen({ session, isUnlimited, onStart }: Props) {
 					</div>
 
 					{/* Card 2: Audio & Mic check */}
-					<div className="space-y-4 rounded-xl border bg-background p-5">
+					<div className="space-y-4 rounded-xl border border-b-2 border-b-border/60 bg-card p-5 shadow-sm">
 						<div className="flex items-center gap-2.5">
 							<span className="flex size-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
 								2
@@ -269,7 +269,7 @@ export function DeviceCheckScreen({ session, isUnlimited, onStart }: Props) {
 					</div>
 
 					{/* Card 3: Notes */}
-					<div className="space-y-4 rounded-xl border bg-background p-5">
+					<div className="space-y-4 rounded-xl border border-b-2 border-b-border/60 bg-card p-5 shadow-sm">
 						<div className="flex items-center gap-2.5">
 							<span className="flex size-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
 								3
@@ -284,7 +284,7 @@ export function DeviceCheckScreen({ session, isUnlimited, onStart }: Props) {
 								'Bấm "Nộp bài" khi đã hoàn thành tất cả phần.',
 							].map((note) => (
 								<li key={note} className="flex gap-2">
-									<span className="shrink-0 text-muted-foreground/60">–</span>
+									<span className="shrink-0 font-medium text-primary/60">·</span>
 									<span>{note}</span>
 								</li>
 							))}
@@ -294,7 +294,11 @@ export function DeviceCheckScreen({ session, isUnlimited, onStart }: Props) {
 
 				{/* Start button */}
 				<div className="flex flex-col items-center gap-3 pt-2">
-					<Button size="lg" className="w-full max-w-xs text-base" onClick={onStart}>
+					<Button
+						size="lg"
+						className="w-full max-w-xs border-b-4 border-b-primary/70 text-base font-bold shadow-md active:border-b-0 active:translate-y-0.5"
+						onClick={onStart}
+					>
 						Nhận đề &amp; bắt đầu
 					</Button>
 					<p className="text-xs text-muted-foreground">

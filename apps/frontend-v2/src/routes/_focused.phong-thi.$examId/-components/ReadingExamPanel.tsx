@@ -31,27 +31,27 @@ function MCQItem({
 					const letter = LETTERS[oi] ?? String(oi + 1)
 					const isSelected = selected === letter
 					return (
-						<button
-							key={`${index}-${oi}`}
-							type="button"
-							onClick={() => onSelect(letter)}
+					<button
+						key={`${index}-${oi}`}
+						type="button"
+						onClick={() => onSelect(letter)}
+						className={cn(
+							"flex items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-sm transition-all",
+							isSelected
+								? "border-primary border-b-2 border-b-primary/60 bg-primary/5 shadow-sm"
+								: "border-border hover:border-primary/40 hover:bg-muted/30",
+						)}
+					>
+						<span
 							className={cn(
-								"flex items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-sm transition-all",
-								isSelected
-									? "border-primary bg-primary/5 ring-1 ring-primary/20"
-									: "border-border hover:border-primary/40",
+								"flex size-6 shrink-0 items-center justify-center rounded-lg text-xs font-semibold",
+								isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
 							)}
 						>
-							<span
-								className={cn(
-									"flex size-6 shrink-0 items-center justify-center rounded-lg text-xs font-semibold",
-									isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
-								)}
-							>
-								{letter}
-							</span>
-							<span>{opt}</span>
-						</button>
+							{letter}
+						</span>
+						<span>{opt}</span>
+					</button>
 					)
 				})}
 			</div>
@@ -128,11 +128,11 @@ export function ReadingExamPanel({ passages, answers, onAnswer }: Props) {
 
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden">
-			{/* Desktop: split layout */}
-			<div className="hidden flex-1 overflow-hidden lg:flex">
-				<div className="w-1/2 overflow-y-auto border-r bg-muted/5 p-6">{passageContent}</div>
-				<div className="flex-1 overflow-y-auto p-6">{questionsContent}</div>
-			</div>
+		{/* Desktop: split layout */}
+		<div className="hidden flex-1 overflow-hidden lg:flex">
+			<div className="w-1/2 overflow-y-auto border-r bg-muted/10 p-6">{passageContent}</div>
+			<div className="flex-1 overflow-y-auto p-6">{questionsContent}</div>
+		</div>
 
 			{/* Mobile: tabbed layout */}
 			<div className="flex flex-1 flex-col overflow-hidden lg:hidden">
@@ -158,30 +158,30 @@ export function ReadingExamPanel({ passages, answers, onAnswer }: Props) {
 				</div>
 			</div>
 
-			{/* Question number buttons */}
-			<div className="flex flex-wrap justify-center gap-1.5 border-t px-4 py-2.5">
-				{activePassage.items.map((_, i) => {
-					const isAnswered = currentAnswers[String(i + 1)] != null
-					return (
-						<button
-							key={i}
-							type="button"
-							onClick={() => handleJump(i)}
-							className={cn(
-								"flex size-8 items-center justify-center rounded-lg border text-sm font-medium transition-colors",
-								isAnswered
-									? "border-primary bg-primary text-primary-foreground"
-									: "border-border bg-background text-muted-foreground hover:bg-accent",
-							)}
-						>
-							{i + 1}
-						</button>
-					)
-				})}
-			</div>
+		{/* Question number buttons */}
+		<div className="flex flex-wrap justify-center gap-1.5 border-t px-4 py-2.5">
+			{activePassage.items.map((_, i) => {
+				const isAnswered = currentAnswers[String(i + 1)] != null
+				return (
+					<button
+						key={i}
+						type="button"
+						onClick={() => handleJump(i)}
+						className={cn(
+							"flex size-8 items-center justify-center rounded-lg border text-sm font-medium transition-all",
+							isAnswered
+								? "border-primary border-b-2 border-b-primary/60 bg-primary text-primary-foreground shadow-sm"
+								: "border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-accent",
+						)}
+					>
+						{i + 1}
+					</button>
+				)
+			})}
+		</div>
 
-			{/* Passage tabs + prev/next */}
-			<div className="flex items-center justify-between border-t bg-muted/5 px-4 py-2.5">
+		{/* Passage tabs + prev/next */}
+		<div className="flex items-center justify-between border-t bg-card px-4 py-2.5">
 				{activeIdx > 0 ? (
 					<Button size="sm" variant="outline" onClick={handlePrev}>
 						<ChevronLeft className="size-4" />
