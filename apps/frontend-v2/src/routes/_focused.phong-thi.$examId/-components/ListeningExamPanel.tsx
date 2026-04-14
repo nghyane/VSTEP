@@ -1,4 +1,5 @@
 import { ChevronRight, Headphones, Play, Volume2 } from "lucide-react"
+import { motion } from "motion/react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "#/components/ui/button"
 import {
@@ -93,17 +94,19 @@ function MCQItem({
 					const letter = LETTERS[oi] ?? String(oi + 1)
 					const isSelected = selected === letter
 					return (
-					<button
-						key={`${index}-${oi}`}
-						type="button"
-						onClick={() => onSelect(letter)}
-						className={cn(
-							"flex items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-sm transition-all",
-							isSelected
-								? "border-primary border-b-2 border-b-primary/60 bg-primary/5 shadow-sm"
-								: "border-border hover:border-primary/40 hover:bg-muted/30",
-						)}
-					>
+				<motion.button
+					key={`${index}-${oi}`}
+					type="button"
+					onClick={() => onSelect(letter)}
+					whileTap={{ scale: 0.97 }}
+					transition={{ type: "spring", stiffness: 450, damping: 25 }}
+					className={cn(
+						"flex items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-sm transition-colors",
+						isSelected
+							? "border-primary border-b-2 border-b-primary/60 bg-primary/5 shadow-sm"
+							: "border-border hover:border-primary/40 hover:bg-muted/30",
+					)}
+				>
 						<span
 							className={cn(
 								"flex size-6 shrink-0 items-center justify-center rounded-lg text-xs font-semibold",
@@ -113,7 +116,7 @@ function MCQItem({
 							{letter}
 						</span>
 						<span>{opt}</span>
-					</button>
+					</motion.button>
 					)
 				})}
 			</div>
@@ -250,15 +253,17 @@ export function ListeningExamPanel({ sections, answers, onAnswer }: Props) {
 		{/* Audio progress bar */}
 		<div className="border-t-2 bg-card px-4 py-2">
 				<div className="flex items-center gap-3">
-					{!isPlaying ? (
-						<button
-							type="button"
-							onClick={handleStartAudio}
-							className="flex items-center gap-2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-						>
-							<Play className="size-3.5" />
-							Phát audio
-						</button>
+				{!isPlaying ? (
+					<motion.button
+						type="button"
+						onClick={handleStartAudio}
+						whileTap={{ scale: 0.94 }}
+						transition={{ type: "spring", stiffness: 450, damping: 25 }}
+						className="flex items-center gap-2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+					>
+						<Play className="size-3.5" />
+						Phát audio
+					</motion.button>
 					) : (
 						<div className="flex items-center gap-2">
 							<Headphones className="size-4 text-muted-foreground" />
@@ -301,19 +306,21 @@ export function ListeningExamPanel({ sections, answers, onAnswer }: Props) {
 			{activeSection.items.map((_, i) => {
 				const isAnswered = currentAnswers[String(i + 1)] != null
 				return (
-					<button
+					<motion.button
 						key={i}
 						type="button"
 						onClick={() => handleJumpToItem(i)}
+						whileTap={{ scale: 0.88 }}
+						transition={{ type: "spring", stiffness: 500, damping: 30 }}
 						className={cn(
-							"flex size-8 items-center justify-center rounded-lg border text-sm font-medium transition-all",
+							"flex size-8 items-center justify-center rounded-lg border text-sm font-medium transition-colors",
 							isAnswered
 								? "border-primary border-b-2 border-b-primary/60 bg-primary text-primary-foreground shadow-sm"
 								: "border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-accent",
 						)}
 					>
 						{i + 1}
-					</button>
+					</motion.button>
 				)
 			})}
 		</div>

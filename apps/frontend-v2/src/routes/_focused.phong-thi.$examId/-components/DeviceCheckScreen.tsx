@@ -1,4 +1,5 @@
 import { Headphones, Mic, Pause, Play, Square, Volume2 } from "lucide-react"
+import { motion } from "motion/react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "#/components/ui/button"
 import type { ExamSkillKey, MockExamSession } from "#/lib/mock/exam-session"
@@ -71,13 +72,15 @@ function AudioTestPlayer() {
 	return (
 		<div className="space-y-2">
 			<div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2">
-				<button
-					type="button"
-					onClick={toggle}
-					className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
-				>
-					{playing ? <Pause className="size-4" /> : <Play className="size-4" />}
-				</button>
+		<motion.button
+				type="button"
+				onClick={toggle}
+				whileTap={{ scale: 0.9 }}
+				transition={{ type: "spring", stiffness: 500, damping: 30 }}
+				className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
+			>
+			{playing ? <Pause className="size-4" /> : <Play className="size-4" />}
+			</motion.button>
 				<span className="font-mono text-xs tabular-nums text-muted-foreground">
 					{fmt(currentTime)} / {fmt(duration)}
 				</span>
@@ -294,13 +297,19 @@ export function DeviceCheckScreen({ session, isUnlimited, onStart }: Props) {
 
 				{/* Start button */}
 				<div className="flex flex-col items-center gap-3 pt-2">
-					<Button
-						size="lg"
-						className="w-full max-w-xs border-b-4 border-b-primary/70 text-base font-bold shadow-md active:border-b-0 active:translate-y-0.5"
-						onClick={onStart}
+					<motion.div
+						whileTap={{ scale: 0.97, y: 2 }}
+						transition={{ type: "spring", stiffness: 400, damping: 20 }}
+						className="w-full max-w-xs"
 					>
-						Nhận đề &amp; bắt đầu
-					</Button>
+						<Button
+							size="lg"
+							className="w-full border-b-4 border-b-primary/70 text-base font-bold shadow-md"
+							onClick={onStart}
+						>
+							Nhận đề &amp; bắt đầu
+						</Button>
+					</motion.div>
 					<p className="text-xs text-muted-foreground">
 						{isUnlimited
 							? "Bài thi này không giới hạn thời gian. Bạn có thể làm với nhịp độ riêng."

@@ -57,12 +57,6 @@ const SKILL_LABEL: Record<ExamSkillKey, string> = {
 	speaking: "Nói",
 }
 
-const SKILL_DOT_COLOR: Record<ExamSkillKey, string> = {
-	listening: "bg-skill-listening",
-	reading: "bg-skill-reading",
-	writing: "bg-skill-writing",
-	speaking: "bg-skill-speaking",
-}
 
 // ─── Timer hook ───────────────────────────────────────────────────────────────
 
@@ -275,10 +269,7 @@ function ExamPage() {
 			<div className="w-24" />
 
 			{currentSkill && (
-				<div className="flex items-center gap-1.5">
-					<span
-						className={cn("size-2 shrink-0 rounded-full", SKILL_DOT_COLOR[currentSkill])}
-					/>
+				<div className="flex items-center gap-1">
 					<span className="text-sm font-semibold">{SKILL_LABEL[currentSkill]}</span>
 					<span className="text-xs text-muted-foreground">
 						({currentSkillIdx + 1}/{activeSkills.length})

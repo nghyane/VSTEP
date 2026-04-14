@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight, Loader2, Mic, Square } from "lucide-react"
+import { motion } from "motion/react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "#/components/ui/button"
 import type { MockSpeakingPart, SpeakingDoneSet } from "#/lib/mock/exam-session"
@@ -446,14 +447,16 @@ export function SpeakingExamPanel({ parts, doneParts, storageKey, onPartDone }: 
 					)}
 
 					<div className="flex items-center gap-1.5">
-						{sorted.map((p, i) => {
-							const isActive = i === activeIdx
-							return (
-								<button
-									key={p.id}
-									type="button"
-									onClick={() => setActiveIdx(i)}
-						className={cn(
+					{sorted.map((p, i) => {
+						const isActive = i === activeIdx
+						return (
+							<motion.button
+								key={p.id}
+								type="button"
+								onClick={() => setActiveIdx(i)}
+								whileTap={{ scale: 0.93 }}
+								transition={{ type: "spring", stiffness: 450, damping: 25 }}
+								className={cn(
 									"flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
 									isActive
 										? "bg-primary text-primary-foreground"
@@ -467,9 +470,9 @@ export function SpeakingExamPanel({ parts, doneParts, storageKey, onPartDone }: 
 										✓
 									</span>
 								)}
-								Part {i + 1}
-								</button>
-							)
+							Part {i + 1}
+							</motion.button>
+						)
 						})}
 					</div>
 
