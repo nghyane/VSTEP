@@ -1,5 +1,7 @@
-import { BookOpen, Clock, Crown, Users } from "lucide-react"
+import { Clock, Crown, Users } from "lucide-react"
 import { Button } from "#/components/ui/button"
+import { cn } from "#/lib/utils"
+import { EXAM_SKILLS } from "./exam-skill-meta"
 
 interface ExamCardProps {
 	id: number
@@ -17,7 +19,7 @@ export function ExamCard({ id, isPro = false }: ExamCardProps) {
 				}
 			/>
 
-			<div className="relative flex h-full flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 transition-all group-hover:-translate-x-[2px] group-hover:-translate-y-[2px] group-hover:shadow-md">
+			<div className="relative flex h-full flex-col justify-between rounded-xl border border-border bg-background p-4 transition-all group-hover:-translate-x-[2px] group-hover:-translate-y-[2px] group-hover:shadow-md">
 				<div>
 					<div className="mb-2 flex items-end">
 						{isPro ? (
@@ -47,13 +49,25 @@ export function ExamCard({ id, isPro = false }: ExamCardProps) {
 						<span className="flex items-center gap-1.5">
 							<Users className="size-4" /> 1.2k lượt thi
 						</span>
-						<span className="flex items-center gap-1.5">
-							<BookOpen className="size-4" /> 4 kỹ năng
-						</span>
+					</div>
+
+					<div className="mt-4 flex flex-nowrap items-center gap-2.5 overflow-x-auto pb-1">
+						{EXAM_SKILLS.map((skill) => (
+							<span
+								key={skill.key}
+								className={cn(
+									"inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap",
+									skill.chipClass,
+									skill.textClass,
+								)}
+							>
+								{skill.label}
+							</span>
+						))}
 					</div>
 
 					<div className="mt-4 flex flex-wrap gap-2">
-						<span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+						<span className="inline-flex items-center rounded-md bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
 							#FullTest
 						</span>
 						<span className="inline-flex items-center rounded-md bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
@@ -62,10 +76,10 @@ export function ExamCard({ id, isPro = false }: ExamCardProps) {
 					</div>
 				</div>
 
-				<div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
+				<div className="mt-5 flex items-center justify-between border-t border-border/60 pt-4">
 					<span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
 						Trạng thái:
-						<span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
+						<span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
 							Chưa làm
 						</span>
 					</span>
