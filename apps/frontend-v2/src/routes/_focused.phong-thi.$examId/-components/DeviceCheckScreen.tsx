@@ -10,13 +10,6 @@ import { cn } from "#/lib/utils"
 const TEST_AUDIO_URL =
 	"https://luyenthivstep.vn/assets/nhch/listening/bac3/lp1-1642953803_eb7ab6f2e8dead6de076.mp3"
 
-const SKILL_DURATION: Record<ExamSkillKey, number> = {
-	listening: 40,
-	reading: 60,
-	writing: 60,
-	speaking: 12,
-}
-
 const SKILL_LABEL: Record<ExamSkillKey, string> = {
 	listening: "Nghe",
 	reading: "Đọc",
@@ -171,12 +164,13 @@ function MicTest() {
 
 interface Props {
 	session: MockExamSession
+	isUnlimited: boolean
 	onStart: () => void
 }
 
 const SKILL_ORDER: ExamSkillKey[] = ["listening", "reading", "writing", "speaking"]
 
-export function DeviceCheckScreen({ session, onStart }: Props) {
+export function DeviceCheckScreen({ session, isUnlimited, onStart }: Props) {
 	const activeSkills = SKILL_ORDER.filter((sk) => {
 		if (sk === "listening") return session.listening.length > 0
 		if (sk === "reading") return session.reading.length > 0
@@ -187,6 +181,12 @@ export function DeviceCheckScreen({ session, onStart }: Props) {
 
 	const hasSpeaking = activeSkills.includes("speaking")
 	const hasListening = activeSkills.includes("listening")
+	const skillDurationMinutes: Record<ExamSkillKey, number> = {
+		listening: session.listening.reduce((sum, section) => sum + section.durationMinutes, 0),
+		reading: session.reading.reduce((sum, passage) => sum + passage.durationMinutes, 0),
+		writing: session.writing.reduce((sum, task) => sum + task.durationMinutes, 0),
+		speaking: session.speaking.reduce((sum, part) => sum + part.durationMinutes, 0),
+	}
 
 	return (
 		<div className="flex h-full flex-col items-center overflow-y-auto bg-muted/30">
@@ -217,14 +217,16 @@ export function DeviceCheckScreen({ session, onStart }: Props) {
 									</span>
 									<span>
 										<span className="font-semibold">{SKILL_LABEL[sk].toUpperCase()}</span> &ndash;{" "}
-										{SKILL_DURATION[sk]} phút
+										{skillDurationMinutes[sk]} phút
 									</span>
 								</li>
 							))}
 						</ul>
 						<div className="rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
 							Tổng thời gian:{" "}
-							<span className="font-semibold text-foreground">{session.durationMinutes} phút</span>
+							<span className="font-semibold text-foreground">
+								{isUnlimited ? "Không giới hạn" : `${session.durationMinutes} phút`}
+							</span>
 						</div>
 					</div>
 
@@ -296,7 +298,9 @@ export function DeviceCheckScreen({ session, onStart }: Props) {
 						Nhận đề &amp; bắt đầu
 					</Button>
 					<p className="text-xs text-muted-foreground">
-						Thời gian sẽ bắt đầu tính khi bạn bấm nút trên
+						{isUnlimited
+							? "Bài thi này không giới hạn thời gian. Bạn có thể làm với nhịp độ riêng."
+							: "Thời gian sẽ bắt đầu tính khi bạn bấm nút trên"}
 					</p>
 				</div>
 			</div>

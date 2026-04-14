@@ -1,30 +1,36 @@
 import { useNavigate } from "@tanstack/react-router"
 import { ArrowRight, Clock, LayoutGrid, Timer } from "lucide-react"
 import { useRef, useState } from "react"
+import { toast } from "sonner"
 import { Button } from "#/components/ui/button"
 import type { ExamSection } from "#/lib/mock/thi-thu"
 import { cn } from "#/lib/utils"
 
+type ExamDurationSelection = number | "unlimited" | null
+
 interface TimePreset {
 	label: string
-	value: number | null
+	value: number | "unlimited"
 	ariaLabel?: string
 }
 
 const TIME_PRESETS: TimePreset[] = [
-	{ label: "∞", value: null, ariaLabel: "Không giới hạn" },
+	{ label: "∞", value: "unlimited", ariaLabel: "Không giới hạn" },
 	{ label: "10p", value: 10 },
 	{ label: "20p", value: 20 },
 	{ label: "30p", value: 30 },
 	{ label: "45p", value: 45 },
 ]
 
+const CUSTOM_MINUTES_MIN = 1
+const CUSTOM_MINUTES_MAX = 300
+
 interface Props {
 	examId: number
 	sections: readonly ExamSection[]
 	selected: Set<string>
-	customMinutes: number | null
-	onCustomMinutesChange: (minutes: number | null) => void
+	customMinutes: ExamDurationSelection
+	onCustomMinutesChange: (minutes: ExamDurationSelection) => void
 }
 
 export function BottomActionBar({
@@ -44,31 +50,59 @@ export function BottomActionBar({
 	const naturalMinutes = selectedSections.reduce((sum, s) => sum + s.durationMinutes, 0)
 	const fullMinutes = sections.reduce((sum, s) => sum + s.durationMinutes, 0)
 
-	const isChipActive = (value: number | null) => !showCustomInput && customMinutes === value
+	const isChipActive = (value: number | "unlimited") => !showCustomInput && customMinutes === value
 	const isCustomSelected =
 		!showCustomInput &&
-		customMinutes !== null &&
+		typeof customMinutes === "number" &&
 		!TIME_PRESETS.some((p) => p.value === customMinutes)
+	const isUnlimited = customMinutes === "unlimited"
 
-	const timeLabel = customMinutes !== null ? `${customMinutes} phút` : `~${naturalMinutes} phút`
+	const timeLabel = isUnlimited
+		? "Không giới hạn"
+		: typeof customMinutes === "number"
+			? `${customMinutes} phút`
+			: `~${naturalMinutes} phút`
 
-	function handleSelectPreset(value: number | null) {
+	function handleSelectPreset(value: number | "unlimited") {
 		setShowCustomInput(false)
 		onCustomMinutesChange(value)
 	}
 
 	function handleOpenCustom() {
 		setShowCustomInput(true)
-		setCustomDraft(isCustomSelected && customMinutes !== null ? String(customMinutes) : "")
+		setCustomDraft(isCustomSelected ? String(customMinutes) : "")
 		setTimeout(() => inputRef.current?.focus(), 50)
 	}
 
 	function handleCustomConfirm() {
 		const parsed = parseInt(customDraft, 10)
-		if (!Number.isNaN(parsed) && parsed >= 1) {
-			onCustomMinutesChange(Math.min(parsed, naturalMinutes > 0 ? naturalMinutes : parsed))
+		if (
+			!Number.isNaN(parsed) &&
+			Number.isInteger(parsed) &&
+			parsed >= CUSTOM_MINUTES_MIN &&
+			parsed <= CUSTOM_MINUTES_MAX
+		) {
+			onCustomMinutesChange(parsed)
 		}
 		setShowCustomInput(false)
+	}
+
+	function handleCustomDraftChange(value: string) {
+		const digitsOnly = value.replace(/\D/g, "")
+		if (!digitsOnly) {
+			setCustomDraft("")
+			return
+		}
+
+		const parsed = parseInt(digitsOnly.slice(0, 3), 10)
+		if (parsed < CUSTOM_MINUTES_MIN && customDraft !== String(CUSTOM_MINUTES_MIN)) {
+			toast.info("Tối thiểu 1 phút nhé")
+		}
+		if (parsed > CUSTOM_MINUTES_MAX && customDraft !== String(CUSTOM_MINUTES_MAX)) {
+			toast.warning("Tối đa 300 phút thôi nhé")
+		}
+		const bounded = Math.min(Math.max(parsed, CUSTOM_MINUTES_MIN), CUSTOM_MINUTES_MAX)
+		setCustomDraft(String(bounded))
 	}
 
 	function handleStartExam() {
@@ -78,9 +112,10 @@ export function BottomActionBar({
 			search: isFullTest
 				? {}
 				: {
-						minutes: customMinutes ?? undefined,
-						sections: selectedSections.map((section) => section.id).join(","),
-					},
+					durationMode: isUnlimited ? "unlimited" : undefined,
+					minutes: typeof customMinutes === "number" ? customMinutes : undefined,
+					sections: selectedSections.map((section) => section.id).join(","),
+				},
 		})
 	}
 
@@ -145,17 +180,29 @@ export function BottomActionBar({
 									{showCustomInput ? (
 										<input
 											ref={inputRef}
-											type="number"
-											min={1}
-											max={naturalMinutes || undefined}
+											type="text"
+											inputMode="numeric"
+											autoComplete="off"
+											minLength={1}
+											maxLength={3}
 											value={customDraft}
-											onChange={(e) => setCustomDraft(e.target.value)}
+											onChange={(e) => handleCustomDraftChange(e.target.value)}
 											onKeyDown={(e) => {
 												if (e.key === "Enter") handleCustomConfirm()
 												if (e.key === "Escape") setShowCustomInput(false)
+												if (
+													!/[0-9]/.test(e.key) &&
+													e.key !== "Backspace" &&
+													e.key !== "Delete" &&
+													e.key !== "ArrowLeft" &&
+													e.key !== "ArrowRight" &&
+													e.key !== "Tab"
+												) {
+													e.preventDefault()
+												}
 											}}
 											onBlur={handleCustomConfirm}
-											aria-label="Nhập số phút tùy chỉnh"
+											aria-label="Nhập số phút tùy chỉnh từ 1 đến 300"
 											className="w-16 rounded-full border border-primary bg-background px-2 py-0.5 text-center text-xs font-medium outline-none focus:ring-1 focus:ring-primary"
 											placeholder="phút"
 										/>

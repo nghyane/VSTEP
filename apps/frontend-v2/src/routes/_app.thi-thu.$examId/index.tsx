@@ -8,6 +8,8 @@ import { BottomActionBar } from "./-components/BottomActionBar"
 import { ExamDetailHeader } from "./-components/ExamDetailHeader"
 import { SectionSelector } from "./-components/SectionSelector"
 
+type ExamDurationSelection = number | "unlimited" | null
+
 export const Route = createFileRoute("/_app/thi-thu/$examId/")({
 	loader: ({ context: { queryClient }, params }) =>
 		queryClient.ensureQueryData(examDetailQueryOptions(Number(params.examId))),
@@ -17,7 +19,7 @@ export const Route = createFileRoute("/_app/thi-thu/$examId/")({
 function ExamDetailPage() {
 	const { examId } = Route.useParams()
 	const [selected, setSelected] = useState<Set<string>>(new Set())
-	const [customMinutes, setCustomMinutes] = useState<number | null>(null)
+	const [customMinutes, setCustomMinutes] = useState<ExamDurationSelection>(null)
 
 	function handleToggleSection(id: string) {
 		setSelected((prev) => {
@@ -68,8 +70,8 @@ function ExamDetailPage() {
 interface ContentProps {
 	examId: number
 	selected: Set<string>
-	customMinutes: number | null
-	onCustomMinutesChange: (minutes: number | null) => void
+	customMinutes: ExamDurationSelection
+	onCustomMinutesChange: (minutes: ExamDurationSelection) => void
 	onToggleSection: (id: string) => void
 	onToggleSkill: (skill: string, sectionIds: string[]) => void
 }

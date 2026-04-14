@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { AlertTriangle, CheckCircle2, Clock, X } from "lucide-react"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Button } from "#/components/ui/button"
 import {
 	Dialog,
@@ -29,11 +29,13 @@ import { WritingExamPanel } from "./-components/WritingExamPanel"
 interface Search {
 	sections?: string
 	minutes?: number
+	durationMode?: "unlimited"
 }
 
 export const Route = createFileRoute("/_focused/phong-thi/$examId/")({
 	validateSearch: (search: Record<string, unknown>): Search => ({
 		sections: typeof search.sections === "string" ? search.sections : undefined,
+		durationMode: search.durationMode === "unlimited" ? "unlimited" : undefined,
 		minutes:
 			typeof search.minutes === "number"
 				? search.minutes
@@ -57,21 +59,33 @@ const SKILL_LABEL: Record<ExamSkillKey, string> = {
 
 // ─── Timer hook ───────────────────────────────────────────────────────────────
 
-function useCountdown(durationMinutes: number, started: boolean): number {
-	const [remaining, setRemaining] = useState(durationMinutes * 60)
-	const startedRef = useRef(started)
-	startedRef.current = started
+function useCountdown(
+	durationMinutes: number,
+	started: boolean,
+	isUnlimited: boolean,
+): number | null {
+	const [remaining, setRemaining] = useState<number | null>(
+		isUnlimited ? null : durationMinutes * 60,
+	)
 
 	useEffect(() => {
-		if (!started) return
-		const id = setInterval(() => setRemaining((r) => Math.max(0, r - 1)), 1000)
+		setRemaining(isUnlimited ? null : durationMinutes * 60)
+	}, [durationMinutes, isUnlimited])
+
+	useEffect(() => {
+		if (!started || isUnlimited) return
+		const id = setInterval(
+			() => setRemaining((r) => (r === null ? durationMinutes * 60 : Math.max(0, r - 1))),
+			1000,
+		)
 		return () => clearInterval(id)
-	}, [started])
+	}, [durationMinutes, started, isUnlimited])
 
 	return remaining
 }
 
-function formatTime(seconds: number): string {
+function formatTime(seconds: number | null): string {
+	if (seconds === null) return "∞"
 	if (seconds <= 0) return "00:00"
 	const m = Math.floor(seconds / 60)
 	const s = seconds % 60
@@ -90,10 +104,11 @@ function parseSelectedSectionIds(sections?: string): string[] {
 
 function ExamPage() {
 	const { examId } = Route.useParams()
-	const { sections, minutes } = Route.useSearch()
+	const { sections, minutes, durationMode } = Route.useSearch()
 	const navigate = useNavigate()
 	const selectedSectionIds = parseSelectedSectionIds(sections)
 	const speakingRecordingStorageKey = `focused-exam:speaking:${examId}:${sections ?? "full"}`
+	const isUnlimited = durationMode === "unlimited"
 	const session = mockGetExamSession(Number(examId), {
 		sectionIds: selectedSectionIds,
 		durationMinutes: minutes ?? null,
@@ -119,7 +134,7 @@ function ExamPage() {
 	const [writingAnswers, setWritingAnswers] = useState<WritingAnswerMap>(new Map())
 	const [speakingDone, setSpeakingDone] = useState<SpeakingDoneSet>(new Set())
 
-	const remaining = useCountdown(session.durationMinutes, deviceChecked)
+	const remaining = useCountdown(session.durationMinutes, deviceChecked, isUnlimited)
 
 	// Block navigation while exam is active
 	useEffect(() => {
@@ -175,7 +190,13 @@ function ExamPage() {
 	// ─── DeviceCheckScreen ────────────────────────────────────────────────────
 
 	if (!deviceChecked) {
-		return <DeviceCheckScreen session={session} onStart={() => setDeviceChecked(true)} />
+		return (
+			<DeviceCheckScreen
+				session={session}
+				isUnlimited={isUnlimited}
+				onStart={() => setDeviceChecked(true)}
+			/>
+		)
 	}
 
 	// ─── Exam shell ───────────────────────────────────────────────────────────
@@ -188,7 +209,9 @@ function ExamPage() {
 					<div
 						className={cn(
 							"flex items-center gap-1.5 rounded-full px-3 py-1",
-							remaining <= 300 ? "bg-destructive/10 text-destructive" : "bg-muted",
+							remaining !== null && remaining <= 300
+								? "bg-destructive/10 text-destructive"
+								: "bg-muted",
 						)}
 					>
 						<Clock className="size-3.5" />

@@ -14,7 +14,11 @@ function RootComponent() {
 	return (
 		<>
 			<Outlet />
-			<Toaster position="top-right" />
+			<Toaster
+				position="top-right"
+				offset={{ top: 72, right: 16 }}
+				mobileOffset={{ top: 72, right: 12, left: 12 }}
+			/>
 		</>
 	)
 }
