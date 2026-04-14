@@ -25,6 +25,9 @@ Sau (đúng):
 - Avatar (có nền vì chứa chữ cái initials)
 - Button icon-only (nền nút chính là nền icon)
 - Chip/pill badge text+icon dạng inline-flex (nền là của cả chip)
+- **Step number bubble** — vòng tròn chứa số thứ tự bước (`<span class="size-7 rounded-full bg-primary">1</span>`), phổ biến trong gamification flow (DeviceCheckScreen, wizard)
+- **MCQ option badge** — ô chữ cái A/B/C/D trong câu hỏi trắc nghiệm (`<span class="size-6 rounded-lg bg-muted/bg-primary">A</span>`), badge này mang nghĩa "answer key", không phải icon wrapper
+- **Icon trong dialog header** — icon minh hoạ ở giữa dialog để tạo visual anchor (`<div class="size-16 rounded-full bg-primary/10"><Icon /></div>`), chấp nhận vì đây là intentional empty state / confirmation pattern, không phải inline icon
 
 ---
 
@@ -68,7 +71,17 @@ rounded-full            ← dùng cho dot, avatar
 ```
 shadow-sm   ← mặc định cho card (bg-muted/50 không dùng border, dùng shadow-sm)
 shadow-md   ← hover state / elevated card
+shadow-lg   ← gamification: toast, 3D button, dialog elevated, focused-mode card nổi
 ```
+
+**Gamification "3D button" effect** — Pattern signature của UI gamification (kiểu Duolingo). Dùng `border-2 border-b-4` kết hợp bottom border đậm hơn top/sides để tạo cảm giác nổi khối:
+
+```tsx
+// Button / card gamification — viền trên nhạt, viền dưới đậm = hiệu ứng 3D
+className="rounded-2xl border-2 border-b-4 border-emerald-300 border-b-emerald-500 shadow-lg"
+```
+
+Rule: `border-b-*` color PHẢI đậm hơn 2 bậc so với `border-*` (ví dụ `border-emerald-300` + `border-b-emerald-500`).
 
 **Quan trọng:** Frontend cũ phân chia 2 loại card rõ ràng:
 - `rounded-2xl bg-muted/50 p-5 shadow-sm` — card nội dung chính (NO border, nền muted)
@@ -76,7 +89,9 @@ shadow-md   ← hover state / elevated card
 
 **Rule 0.2 — Hub card ở top-level page dùng `border bg-card`.** Các card điều hướng lớn ở trang hub (ví dụ `/luyen-tap` ModeCard, `/luyen-tap/ky-nang` SkillCard) phải dùng `rounded-2xl border bg-card p-6 shadow-sm` để đồng bộ, KHÔNG dùng `bg-muted/50` (gây cảm giác đục, lệch với card cha).
 
-**Rule 0.3 — Hover không đổi màu border.** Hover của card chỉ được nâng nhẹ (`hover:-translate-y-0.5`) và tăng shadow (`hover:shadow-md`). KHÔNG dùng `hover:border-primary/30` hay border màu primary trên hover vì tạo viền xanh lệch với style card cha. Giữ border luôn trung tính.
+**Rule 0.3 — Hover không đổi màu border (trừ interactive list item).** Hover của card chính chỉ được nâng nhẹ (`hover:-translate-y-0.5`) và tăng shadow (`hover:shadow-md`). KHÔNG dùng `hover:border-primary/30` trên hub card lớn vì tạo viền xanh lệch với style card cha.
+
+**Ngoại lệ cho interactive list item** (`rounded-xl border bg-background p-4` pattern): Các row item nhỏ dạng link/button trong list (như Weekly Score Card, exam row) có thể dùng `hover:border-primary/30` vì đây là affordance click rõ ràng, không phải card hub. Quy tắc: card hub → **giữ border trung tính**; list item clickable → **có thể dùng hover border primary nhẹ**.
 
 **Rule 0.4 — `icon + text` trong badge/chip/tab/button phải canh cùng đáy trước, không tin tuyệt đối vào `items-center`.** Với các UI compact như badge `PRO`, segmented control, filter pill, stat chip..., icon và text rất dễ nhìn lệch dù technically đang ở giữa container. Mặc định ưu tiên canh theo cùng đáy/baseline để mắt nhìn thấy icon và chữ “ngồi” trên một hàng ổn định.
 
@@ -104,6 +119,24 @@ Không nên mặc định dùng:
   <span className="translate-y-px">Pro</span>
 </span>
 ```
+
+**Rule 0.5 — Toast dùng gamification style: solid color + 3D border + shadow-lg.** UI hiện tại theo hướng gamification nên toast phải đủ nổi bật — **không dùng màu opacity mờ, không dùng backdrop-blur**. Toast là feedback trực tiếp, cần nổi khối rõ ràng để người dùng nhìn thấy ngay.
+
+**Guideline thực thi:**
+- Toast base: `rounded-2xl border-2 border-b-4 shadow-lg font-medium` — áp dụng 3D button pattern
+- Màu bottom border PHẢI đậm hơn border thường 2 bậc (tạo hiệu ứng nổi khối)
+- **Không dùng** `backdrop-blur`, `/95` opacity, `/35` dark opacity — những thứ này làm toast "chìm"
+- `shadow-lg` là đúng cho toast gamification (khác với card thông thường dùng `shadow-sm`/`shadow-md`)
+- Icon toast: `size-5` (lớn hơn `size-4` của icon thường để dễ nhìn)
+- Nếu alert nằm gần sticky header/top bar, điều chỉnh `offset` thay vì giảm shadow
+
+**Màu nền toast (solid, không opacity):**
+- Success: `bg-emerald-50 border-emerald-300 border-b-emerald-500` / dark: `bg-emerald-950/80 border-emerald-700 border-b-emerald-500`
+- Info: `bg-sky-50 border-sky-300 border-b-sky-500` / dark: `bg-sky-950/80 border-sky-700 border-b-sky-500`
+- Warning: `bg-amber-50 border-amber-300 border-b-amber-500` / dark: `bg-amber-950/80 border-amber-700 border-b-amber-500`
+- Error: `bg-rose-50 border-rose-300 border-b-rose-500` / dark: `bg-rose-950/80 border-rose-700 border-b-rose-500`
+
+Tinh thần là **nổi như một thẻ gamification**: đủ bold để người dùng nhìn thấy ngay, nhưng không lan rộng như modal hay banner full-width.
 
 ---
 
@@ -399,12 +432,10 @@ Dùng **Recharts** `PieChart` + `Pie` (không phải SVG thuần):
 ### 4.8 TestPracticeTab — Weekly Score Cards
 
 ```tsx
-<Link className="rounded-xl border bg-background p-4 transition-colors hover:border-primary/30">
+<Link className="rounded-xl border bg-background p-4 transition-colors hover:border-primary/30 hover:-translate-y-0.5 hover:shadow-md">
   <div className="mb-3 flex items-center justify-between">
     <span className="text-sm font-medium text-muted-foreground">{label}</span>
-    <div className="flex size-8 items-center justify-center rounded-lg {skillColor[key]}">
-      <Icon className="size-4" />
-    </div>
+    <Icon className="size-5 {skillColorText[key]}" />
   </div>
   <p className="text-3xl font-bold tabular-nums">{score ?? "—.—"}</p>
   <p className="mt-1 text-xs text-muted-foreground">{attempts} bài test đã hoàn thành</p>
@@ -412,6 +443,8 @@ Dùng **Recharts** `PieChart` + `Pie` (không phải SVG thuần):
 ```
 
 **Container:** `rounded-xl border bg-background p-4` — **CÓ border**, nền trắng (ngược với stat card)
+
+> **Cập nhật so với spec v1:** Icon không còn bọc trong colored box (`size-8 bg-{skillColor}`) — vi phạm Rule 0.1. Icon render trần với `text-{skillColor}`. Hover dùng `hover:-translate-y-0.5 hover:shadow-md` thay vì chỉ `hover:border-primary/30`.
 
 ---
 
@@ -639,4 +672,134 @@ src/
       progress.ts              ← queryOptions factory
     mock/
       progress.ts              ← mock data
+```
+
+---
+
+## 11. Gamification UI Patterns
+
+> Section này document các pattern đặc trưng của UI gamification (Duolingo-inspired) được áp dụng từ phong-thi trở đi. Tất cả component mới theo hướng gamification phải follow section này.
+
+### 11.1 3D Button / Card Effect
+
+Pattern tạo cảm giác "nổi khối" — signature của gamification UI. Nguyên tắc: `border-b` đậm hơn `border` thường tạo hiệu ứng chiều sâu.
+
+```tsx
+// Cấu trúc cơ bản:
+className="rounded-2xl border-2 border-b-4 shadow-lg"
+
+// Với màu typed (ví dụ success):
+className="rounded-2xl border-2 border-b-4 shadow-lg border-emerald-300 border-b-emerald-500 bg-emerald-50"
+```
+
+**Rule:** `border-b-{color}` PHẢI dùng shade đậm hơn `border-{color}` 2 bậc:
+| Top/sides | Bottom |
+|-----------|--------|
+| `emerald-300` | `emerald-500` |
+| `sky-300` | `sky-500` |
+| `amber-300` | `amber-500` |
+| `rose-300` | `rose-500` |
+| `border-border` (neutral) | `border-slate-400` |
+
+---
+
+### 11.2 Step Number Bubble
+
+Dùng trong wizard/flow nhiều bước (DeviceCheckScreen, onboarding...). Là exception của Rule 0.1 (xem exceptions list).
+
+```tsx
+// Step active (current / completed):
+<span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+  1
+</span>
+
+// Step inactive:
+<span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+  2
+</span>
+```
+
+---
+
+### 11.3 MCQ Answer Option
+
+Dùng trong câu hỏi trắc nghiệm (Listening, Reading panel). Badge chữ cái A/B/C/D là exception của Rule 0.1.
+
+```tsx
+// Unselected:
+<button className="flex items-center gap-2.5 rounded-xl border border-border px-3 py-2 text-sm hover:border-primary/40">
+  <span className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-semibold text-muted-foreground">
+    A
+  </span>
+  <span>{optionText}</span>
+</button>
+
+// Selected:
+<button className="flex items-center gap-2.5 rounded-xl border border-primary bg-primary/5 ring-1 ring-primary/20 px-3 py-2 text-sm">
+  <span className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-primary text-xs font-semibold text-primary-foreground">
+    A
+  </span>
+  <span>{optionText}</span>
+</button>
+```
+
+---
+
+### 11.4 Dialog Icon Header
+
+Dùng để visual anchor cho confirmation / warning dialog. Exception của Rule 0.1 vì icon ở đây đóng vai trò "illustration", không phải inline icon.
+
+```tsx
+// Warning dialog:
+<div className="mx-auto flex size-14 items-center justify-center rounded-full bg-amber-500/10">
+  <AlertTriangle className="size-7 text-amber-500" />
+</div>
+
+// Info dialog:
+<div className="mx-auto flex size-16 items-center justify-center rounded-full bg-primary/10">
+  <Headphones className="size-8 text-primary" />
+</div>
+```
+
+**Rule:** Chỉ dùng pattern này trong `<DialogHeader>`, không dùng inline trong card body hay list item.
+
+---
+
+### 11.5 Focused Mode Shell (phong-thi)
+
+Layout cho trang làm bài tập / thi có focused mode (không có sidebar, topbar tối giản):
+
+```
+┌─────────────────────────────────────────┐
+│  HEADER  h-12  border-b  (timer + exit) │
+├─────────────────────────────────────────┤
+│                                         │
+│  SKILL PANEL  flex-1 overflow-y-auto    │
+│                                         │
+├─────────────────────────────────────────┤
+│  FOOTER  h-12  border-t  (prev/next)    │
+└─────────────────────────────────────────┘
+```
+
+```tsx
+<div className="flex h-screen flex-col">
+  <header className="z-40 flex h-12 shrink-0 items-center justify-between border-b px-4" />
+  {/* skill panel — flex-1 overflow */}
+  <footer className="z-40 flex h-12 shrink-0 items-center justify-between border-t px-4" />
+</div>
+```
+
+**Timer chip** trong header:
+```tsx
+// Normal state:
+<div className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1">
+  <Clock className="size-3.5" />
+  <span className="text-sm font-semibold tabular-nums">45:00</span>
+</div>
+
+// Warning state (≤ 5 phút):
+<div className="flex items-center gap-1.5 rounded-full bg-destructive/10 text-destructive px-3 py-1">
+  <Clock className="size-3.5" />
+  <span className="text-sm font-semibold tabular-nums">04:59</span>
+</div>
 ```
