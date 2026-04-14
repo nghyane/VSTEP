@@ -11,6 +11,7 @@ export interface MockListeningSection {
 	id: string
 	part: number
 	partTitle: string
+	durationMinutes: number
 	audioUrl: string
 	items: MCQItem[]
 }
@@ -19,6 +20,7 @@ export interface MockReadingPassage {
 	id: string
 	part: number
 	title: string
+	durationMinutes: number
 	passage: string
 	items: MCQItem[]
 }
@@ -27,6 +29,7 @@ export interface MockWritingTask {
 	id: string
 	part: number
 	taskType: "letter" | "essay"
+	durationMinutes: number
 	prompt: string
 	minWords: number
 	instructions: string[]
@@ -36,6 +39,7 @@ export interface MockSpeakingPart {
 	id: string
 	part: number
 	type: "social" | "solution" | "development"
+	durationMinutes: number
 	speakingSeconds: number
 	// Part 1 – Social Interaction
 	topics?: { name: string; questions: string[] }[]
@@ -58,11 +62,16 @@ export interface MockExamSession {
 	speaking: MockSpeakingPart[]
 }
 
+export interface MockExamSessionOptions {
+	sectionIds?: readonly string[]
+	durationMinutes?: number | null
+}
+
 // ─── Answer types ─────────────────────────────────────────────────────────────
 
 export type MCQAnswerMap = Map<string, Record<string, string>> // sectionId → { itemIndex → letter }
-export type WritingAnswerMap = Map<string, string>             // taskId → text
-export type SpeakingDoneSet = Set<string>                      // set of recorded partIds
+export type WritingAnswerMap = Map<string, string> // taskId → text
+export type SpeakingDoneSet = Set<string> // set of recorded partIds
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -83,13 +92,43 @@ function mcq(n: number, topic: string): MCQItem[] {
 		`What solution is proposed in the ${topic}?`,
 	]
 	const OPTIONS = [
-		["To inform people about a schedule change", "To advertise a new service", "To announce a promotion", "To give safety instructions"],
-		["The event starts at 9 AM", "Registration is required", "Attendance is free of charge", "The venue has changed"],
-		["People should arrive early", "The deadline has been extended", "More details will follow", "Participants must register online"],
-		["It provides historical context", "It focuses on practical advice", "It presents two opposing views", "It describes a personal experience"],
-		["The speaker is satisfied with the result", "The project will be delayed", "A new policy will take effect", "Costs are lower than expected"],
+		[
+			"To inform people about a schedule change",
+			"To advertise a new service",
+			"To announce a promotion",
+			"To give safety instructions",
+		],
+		[
+			"The event starts at 9 AM",
+			"Registration is required",
+			"Attendance is free of charge",
+			"The venue has changed",
+		],
+		[
+			"People should arrive early",
+			"The deadline has been extended",
+			"More details will follow",
+			"Participants must register online",
+		],
+		[
+			"It provides historical context",
+			"It focuses on practical advice",
+			"It presents two opposing views",
+			"It describes a personal experience",
+		],
+		[
+			"The speaker is satisfied with the result",
+			"The project will be delayed",
+			"A new policy will take effect",
+			"Costs are lower than expected",
+		],
 		["Enthusiastic", "Concerned", "Indifferent", "Optimistic"],
-		["Another meeting will be held", "The decision will be announced", "A survey will be conducted", "The project will resume"],
+		[
+			"Another meeting will be held",
+			"The decision will be announced",
+			"A survey will be conducted",
+			"The project will resume",
+		],
 		["The opening time", "The location", "The admission fee", "The parking facilities"],
 		["Lack of funding", "Poor communication", "Technical difficulties", "Staff shortage"],
 		["Hire more staff", "Increase the budget", "Extend the deadline", "Change the approach"],
@@ -104,23 +143,26 @@ function mcq(n: number, topic: string): MCQItem[] {
 
 const MOCK_LISTENING: MockListeningSection[] = [
 	{
-		id: "L1",
+		id: "listening-1",
 		part: 1,
 		partTitle: "Part 1 — Thông báo ngắn",
+		durationMinutes: 7,
 		audioUrl: AUDIO_URL,
 		items: mcq(8, "announcement"),
 	},
 	{
-		id: "L2",
+		id: "listening-2",
 		part: 2,
 		partTitle: "Part 2 — Hội thoại",
+		durationMinutes: 13,
 		audioUrl: AUDIO_URL,
 		items: mcq(12, "conversation"),
 	},
 	{
-		id: "L3",
+		id: "listening-3",
 		part: 3,
 		partTitle: "Part 3 — Bài giảng",
+		durationMinutes: 20,
 		audioUrl: AUDIO_URL,
 		items: mcq(15, "lecture"),
 	},
@@ -128,9 +170,10 @@ const MOCK_LISTENING: MockListeningSection[] = [
 
 const MOCK_READING: MockReadingPassage[] = [
 	{
-		id: "R1",
+		id: "reading-1",
 		part: 1,
 		title: "The Impact of Technology on Modern Education",
+		durationMinutes: 15,
 		passage: `Technology has fundamentally transformed the way students learn and teachers instruct. The integration of digital tools into classrooms has opened up new possibilities for personalised learning, allowing students to progress at their own pace. Online platforms and educational applications provide instant feedback, enabling learners to identify their weaknesses and address them proactively.
 
 However, the rapid adoption of technology also presents challenges. Not all students have equal access to devices and reliable internet connections, creating a digital divide that can exacerbate existing inequalities. Teachers must also adapt their pedagogical approaches to leverage technology effectively, which requires ongoing professional development.
@@ -139,9 +182,10 @@ Despite these challenges, research consistently shows that well-implemented tech
 		items: mcq(10, "passage"),
 	},
 	{
-		id: "R2",
+		id: "reading-2",
 		part: 2,
 		title: "Urban Green Spaces and Mental Health",
+		durationMinutes: 15,
 		passage: `The relationship between urban green spaces and mental health has attracted increasing attention from researchers and city planners alike. Studies conducted across multiple countries have found that regular exposure to parks, gardens, and tree-lined streets is associated with reduced levels of stress, anxiety, and depression among urban residents.
 
 One compelling explanation for this phenomenon is the Attention Restoration Theory, which proposes that natural environments provide a form of effortless attention that allows the directed attention used in daily tasks to recover. Unlike the built environment, which demands constant cognitive engagement, nature offers a restorative experience that replenishes mental resources.
@@ -150,9 +194,10 @@ City planners are beginning to incorporate these findings into urban design. Gre
 		items: mcq(10, "passage"),
 	},
 	{
-		id: "R3",
+		id: "reading-3",
 		part: 3,
 		title: "The Future of Remote Work",
+		durationMinutes: 15,
 		passage: `The COVID-19 pandemic forced millions of workers worldwide to shift to remote work almost overnight, accelerating a trend that had been gradually gaining momentum. For many organisations, this experiment proved surprisingly successful: productivity remained stable or even improved in numerous sectors, and employees reported greater satisfaction with their work-life balance.
 
 Nevertheless, remote work is not without its drawbacks. Isolation, difficulties in collaboration, and the blurring of boundaries between professional and personal life have emerged as significant concerns. Junior employees, in particular, may miss out on the informal learning and mentorship opportunities that come with physical presence in the workplace.
@@ -161,9 +206,10 @@ Many companies are now adopting hybrid models that combine remote and in-office 
 		items: mcq(10, "passage"),
 	},
 	{
-		id: "R4",
+		id: "reading-4",
 		part: 4,
 		title: "Renewable Energy Transition",
+		durationMinutes: 15,
 		passage: `The global transition to renewable energy sources represents one of the most significant economic and technological shifts of the twenty-first century. Solar and wind power have become increasingly cost-competitive with fossil fuels, driven by rapid advances in technology and dramatic reductions in the cost of manufacturing solar panels and wind turbines.
 
 Governments around the world are setting ambitious targets for renewable energy adoption, motivated both by climate concerns and economic opportunities. The renewable energy sector has become a major source of employment, with millions of jobs created in manufacturing, installation, and maintenance of clean energy infrastructure.
@@ -175,9 +221,10 @@ However, the transition also poses challenges. The intermittent nature of solar 
 
 const MOCK_WRITING: MockWritingTask[] = [
 	{
-		id: "W1",
+		id: "writing-1",
 		part: 1,
 		taskType: "letter",
+		durationMinutes: 20,
 		prompt: `You recently stayed at a hotel during a business trip. You were not satisfied with some aspects of your stay.
 
 Write a letter to the hotel manager. In your letter:
@@ -192,9 +239,10 @@ Write a letter to the hotel manager. In your letter:
 		],
 	},
 	{
-		id: "W2",
+		id: "writing-2",
 		part: 2,
 		taskType: "essay",
+		durationMinutes: 40,
 		prompt: `Some people believe that universities should focus on providing students with academic knowledge and theoretical skills. Others argue that universities should place greater emphasis on preparing students for the practical demands of the workplace.
 
 Discuss both views and give your own opinion.`,
@@ -209,9 +257,10 @@ Discuss both views and give your own opinion.`,
 
 const MOCK_SPEAKING: MockSpeakingPart[] = [
 	{
-		id: "S1",
+		id: "speaking-1",
 		part: 1,
 		type: "social",
+		durationMinutes: 4,
 		speakingSeconds: 180,
 		topics: [
 			{
@@ -233,9 +282,10 @@ const MOCK_SPEAKING: MockSpeakingPart[] = [
 		],
 	},
 	{
-		id: "S2",
+		id: "speaking-2",
 		part: 2,
 		type: "solution",
+		durationMinutes: 4,
 		speakingSeconds: 120,
 		situation:
 			"A local community centre wants to attract more young people aged 18–25 to use its facilities. The centre currently offers a gym, a library, meeting rooms, and a café. It has a limited budget for improvements or new programmes.",
@@ -247,9 +297,10 @@ const MOCK_SPEAKING: MockSpeakingPart[] = [
 		],
 	},
 	{
-		id: "S3",
+		id: "speaking-3",
 		part: 3,
 		type: "development",
+		durationMinutes: 4,
 		speakingSeconds: 120,
 		centralIdea:
 			"The use of social media has had both positive and negative effects on communication among young people.",
@@ -273,11 +324,56 @@ export const MOCK_EXAM_SESSION: MockExamSession = {
 	speaking: MOCK_SPEAKING,
 }
 
-export function mockGetExamSession(examId: number): MockExamSession {
+function filterSessionParts<T extends { id: string }>(
+	parts: readonly T[],
+	selectedIds: ReadonlySet<string>,
+): T[] {
+	if (selectedIds.size === 0) return [...parts]
+	return parts.filter((part) => selectedIds.has(part.id))
+}
+
+function calculateDurationMinutes(
+	session: Pick<MockExamSession, "listening" | "reading" | "writing" | "speaking">,
+): number {
+	const listening = session.listening.reduce((sum, section) => sum + section.durationMinutes, 0)
+	const reading = session.reading.reduce((sum, passage) => sum + passage.durationMinutes, 0)
+	const writing = session.writing.reduce((sum, task) => sum + task.durationMinutes, 0)
+	const speaking = session.speaking.reduce((sum, part) => sum + part.durationMinutes, 0)
+	return listening + reading + writing + speaking
+}
+
+export function mockGetExamSession(
+	examId: number,
+	options: MockExamSessionOptions = {},
+): MockExamSession {
+	const selectedIds = new Set(options.sectionIds ?? [])
+	const filteredListening = filterSessionParts(MOCK_LISTENING, selectedIds)
+	const filteredReading = filterSessionParts(MOCK_READING, selectedIds)
+	const filteredWriting = filterSessionParts(MOCK_WRITING, selectedIds)
+	const filteredSpeaking = filterSessionParts(MOCK_SPEAKING, selectedIds)
+	const hasMatchedSections =
+		filteredListening.length +
+			filteredReading.length +
+			filteredWriting.length +
+			filteredSpeaking.length >
+		0
+	const listening =
+		selectedIds.size > 0 && !hasMatchedSections ? [...MOCK_LISTENING] : filteredListening
+	const reading = selectedIds.size > 0 && !hasMatchedSections ? [...MOCK_READING] : filteredReading
+	const writing = selectedIds.size > 0 && !hasMatchedSections ? [...MOCK_WRITING] : filteredWriting
+	const speaking =
+		selectedIds.size > 0 && !hasMatchedSections ? [...MOCK_SPEAKING] : filteredSpeaking
+	const naturalDurationMinutes = calculateDurationMinutes({ listening, reading, writing, speaking })
+
 	return {
 		...MOCK_EXAM_SESSION,
 		id: examId,
 		title: `Đề thi VSTEP HNUE 08/02/2026 #${examId}`,
+		durationMinutes: options.durationMinutes ?? naturalDurationMinutes,
+		listening,
+		reading,
+		writing,
+		speaking,
 	}
 }
 

@@ -72,7 +72,16 @@ export function BottomActionBar({
 	}
 
 	function handleStartExam() {
-		navigate({ to: "/phong-thi/$examId", params: { examId: String(examId) } })
+		navigate({
+			to: "/phong-thi/$examId",
+			params: { examId: String(examId) },
+			search: isFullTest
+				? {}
+				: {
+						minutes: customMinutes ?? undefined,
+						sections: selectedSections.map((section) => section.id).join(","),
+					},
+		})
 	}
 
 	return (

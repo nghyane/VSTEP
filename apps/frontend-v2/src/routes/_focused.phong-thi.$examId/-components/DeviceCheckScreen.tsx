@@ -1,7 +1,8 @@
-import { Headphones, Mic, Play, Pause, Square, Volume2 } from "lucide-react"
+import { Headphones, Mic, Pause, Play, Square, Volume2 } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "#/components/ui/button"
 import type { ExamSkillKey, MockExamSession } from "#/lib/mock/exam-session"
+import { useVoiceRecorder } from "#/lib/practice/use-voice-recorder"
 import { cn } from "#/lib/utils"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -105,69 +106,61 @@ function AudioTestPlayer() {
 // ─── Mic test (simulated) ─────────────────────────────────────────────────────
 
 function MicTest() {
-	type Phase = "idle" | "recording" | "done"
-	const [phase, setPhase] = useState<Phase>("idle")
-	const [countdown, setCountdown] = useState(0)
+	const recorder = useVoiceRecorder(5)
+	const isRecording = recorder.state === "recording"
 
-	useEffect(() => {
-		if (phase !== "recording") return
-		setCountdown(5)
-		const id = setInterval(() => {
-			setCountdown((c) => {
-				if (c <= 1) {
-					setPhase("done")
-					return 0
-				}
-				return c - 1
-			})
-		}, 1000)
-		return () => clearInterval(id)
-	}, [phase])
+	const handleRecord = useCallback(() => {
+		if (isRecording) recorder.stop()
+		else void recorder.start()
+	}, [isRecording, recorder])
 
 	return (
 		<div className="space-y-3">
 			<div
 				className={cn(
 					"flex h-12 items-center justify-center rounded-lg border",
-					phase === "recording" ? "border-destructive/30 bg-destructive/5" : "bg-muted/30",
+					isRecording ? "border-destructive/30 bg-destructive/5" : "bg-muted/30",
 				)}
 			>
-				{phase === "idle" && (
+				{recorder.state !== "recording" && recorder.audioUrl === null && (
 					<span className="text-xs text-muted-foreground">Đặt mic sát miệng rồi bấm "Thu âm"</span>
 				)}
-				{phase === "recording" && (
+				{isRecording && (
 					<div className="flex items-center gap-2">
 						<span className="size-2 animate-pulse rounded-full bg-destructive" />
 						<span className="text-xs font-medium text-destructive">
-							Đang thu âm... {countdown}s
+							Đang thu âm... {Math.round(recorder.elapsedMs / 1000)}s
 						</span>
 					</div>
 				)}
-				{phase === "done" && (
+				{!isRecording && recorder.audioUrl !== null && (
 					<span className="text-xs text-muted-foreground">Đã thu xong — microphone hoạt động</span>
 				)}
 			</div>
 			<div className="flex flex-wrap items-center gap-2">
-				{phase === "idle" && (
-					<Button size="sm" variant="destructive" onClick={() => setPhase("recording")}>
+				{!isRecording && (
+					<Button size="sm" variant="destructive" onClick={handleRecord}>
 						<Mic className="size-4" />
-						Thu âm
+						{recorder.audioUrl ? "Thu lại" : "Thu âm"}
 					</Button>
 				)}
-				{phase === "recording" && (
-					<Button size="sm" variant="outline" onClick={() => setPhase("done")}>
+				{isRecording && (
+					<Button size="sm" variant="outline" onClick={handleRecord}>
 						<Square className="size-3.5" />
 						Dừng
 					</Button>
 				)}
-				{phase === "done" && (
-					<Button size="sm" variant="outline" onClick={() => setPhase("idle")}>
-						<Mic className="size-4 text-destructive" />
-						Thu lại
-					</Button>
-				)}
 			</div>
-			{phase === "done" && (
+			{recorder.error && <p className="text-xs text-destructive">{recorder.error}</p>}
+			{recorder.audioUrl && (
+				<div className="space-y-2 rounded-lg border bg-background p-3">
+					<p className="text-xs font-medium text-muted-foreground">Nghe lại bản ghi của bạn</p>
+					<audio src={recorder.audioUrl} controls className="h-9 w-full">
+						<track kind="captions" />
+					</audio>
+				</div>
+			)}
+			{recorder.audioUrl && (
 				<p className="text-xs font-medium text-emerald-600">✓ Microphone hoạt động tốt</p>
 			)}
 		</div>
@@ -223,8 +216,8 @@ export function DeviceCheckScreen({ session, onStart }: Props) {
 										{i + 1}
 									</span>
 									<span>
-										<span className="font-semibold">{SKILL_LABEL[sk].toUpperCase()}</span>{" "}
-										&ndash; {SKILL_DURATION[sk]} phút
+										<span className="font-semibold">{SKILL_LABEL[sk].toUpperCase()}</span> &ndash;{" "}
+										{SKILL_DURATION[sk]} phút
 									</span>
 								</li>
 							))}

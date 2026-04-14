@@ -11,13 +11,13 @@ import {
 	DialogTitle,
 } from "#/components/ui/dialog"
 import {
-	type ExamSkillKey,
-	type MCQAnswerMap,
-	type SpeakingDoneSet,
-	type WritingAnswerMap,
 	countAnswered,
 	countTotalItems,
+	type ExamSkillKey,
+	type MCQAnswerMap,
 	mockGetExamSession,
+	type SpeakingDoneSet,
+	type WritingAnswerMap,
 } from "#/lib/mock/exam-session"
 import { cn } from "#/lib/utils"
 import { DeviceCheckScreen } from "./-components/DeviceCheckScreen"
@@ -26,7 +26,21 @@ import { ReadingExamPanel } from "./-components/ReadingExamPanel"
 import { SpeakingExamPanel } from "./-components/SpeakingExamPanel"
 import { WritingExamPanel } from "./-components/WritingExamPanel"
 
+interface Search {
+	sections?: string
+	minutes?: number
+}
+
 export const Route = createFileRoute("/_focused/phong-thi/$examId/")({
+	validateSearch: (search: Record<string, unknown>): Search => ({
+		sections: typeof search.sections === "string" ? search.sections : undefined,
+		minutes:
+			typeof search.minutes === "number"
+				? search.minutes
+				: typeof search.minutes === "string" && !Number.isNaN(Number(search.minutes))
+					? Number(search.minutes)
+					: undefined,
+	}),
 	component: ExamPage,
 })
 
@@ -64,12 +78,26 @@ function formatTime(seconds: number): string {
 	return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
 }
 
+function parseSelectedSectionIds(sections?: string): string[] {
+	if (!sections) return []
+	return sections
+		.split(",")
+		.map((sectionId) => sectionId.trim())
+		.filter(Boolean)
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 function ExamPage() {
 	const { examId } = Route.useParams()
+	const { sections, minutes } = Route.useSearch()
 	const navigate = useNavigate()
-	const session = mockGetExamSession(Number(examId))
+	const selectedSectionIds = parseSelectedSectionIds(sections)
+	const speakingRecordingStorageKey = `focused-exam:speaking:${examId}:${sections ?? "full"}`
+	const session = mockGetExamSession(Number(examId), {
+		sectionIds: selectedSectionIds,
+		durationMinutes: minutes ?? null,
+	})
 
 	// Determine which skills are present in this session
 	const activeSkills = SKILL_ORDER.filter((sk) => {
@@ -105,17 +133,14 @@ function ExamPage() {
 
 	// ─── Handlers ─────────────────────────────────────────────────────────────
 
-	const handleMCQAnswer = useCallback(
-		(sectionId: string, itemIndex: number, letter: string) => {
-			setMcqAnswers((prev) => {
-				const next = new Map(prev)
-				const existing = next.get(sectionId) ?? {}
-				next.set(sectionId, { ...existing, [String(itemIndex + 1)]: letter })
-				return next
-			})
-		},
-		[],
-	)
+	const handleMCQAnswer = useCallback((sectionId: string, itemIndex: number, letter: string) => {
+		setMcqAnswers((prev) => {
+			const next = new Map(prev)
+			const existing = next.get(sectionId) ?? {}
+			next.set(sectionId, { ...existing, [String(itemIndex + 1)]: letter })
+			return next
+		})
+	}, [])
 
 	const handleWritingAnswer = useCallback((taskId: string, text: string) => {
 		setWritingAnswers((prev) => {
@@ -209,6 +234,7 @@ function ExamPage() {
 				<SpeakingExamPanel
 					parts={session.speaking}
 					doneParts={speakingDone}
+					storageKey={speakingRecordingStorageKey}
 					onPartDone={handleSpeakingDone}
 				/>
 			)}
@@ -229,8 +255,7 @@ function ExamPage() {
 					</Button>
 				) : (
 					<Button variant="outline" size="sm" onClick={() => setConfirmingNext(true)}>
-						<span className="hidden sm:inline">Phần tiếp</span>
-						→
+						<span className="hidden sm:inline">Phần tiếp</span>→
 					</Button>
 				)}
 			</footer>
@@ -266,9 +291,7 @@ function ExamPage() {
 						<div className="mx-auto flex size-14 items-center justify-center rounded-full bg-amber-500/10">
 							<AlertTriangle className="size-7 text-amber-500" />
 						</div>
-						<DialogTitle>
-							Chuyển sang phần {nextSkill ? SKILL_LABEL[nextSkill] : ""}?
-						</DialogTitle>
+						<DialogTitle>Chuyển sang phần {nextSkill ? SKILL_LABEL[nextSkill] : ""}?</DialogTitle>
 						<DialogDescription className="text-balance text-center">
 							Sau khi chuyển, bạn sẽ{" "}
 							<span className="font-semibold text-foreground">không thể quay lại</span> phần{" "}
@@ -279,9 +302,7 @@ function ExamPage() {
 						<Button variant="outline" onClick={() => setConfirmingNext(false)}>
 							Ở lại
 						</Button>
-						<Button onClick={handleConfirmNext}>
-							Chuyển phần →
-						</Button>
+						<Button onClick={handleConfirmNext}>Chuyển phần →</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
