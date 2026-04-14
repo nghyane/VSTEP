@@ -1,6 +1,6 @@
+import { useNavigate } from "@tanstack/react-router"
 import { ArrowRight, Clock, LayoutGrid, Timer } from "lucide-react"
 import { useRef, useState } from "react"
-import { toast } from "sonner"
 import { Button } from "#/components/ui/button"
 import type { ExamSection } from "#/lib/mock/thi-thu"
 import { cn } from "#/lib/utils"
@@ -20,13 +20,21 @@ const TIME_PRESETS: TimePreset[] = [
 ]
 
 interface Props {
+	examId: number
 	sections: readonly ExamSection[]
 	selected: Set<string>
 	customMinutes: number | null
 	onCustomMinutesChange: (minutes: number | null) => void
 }
 
-export function BottomActionBar({ sections, selected, customMinutes, onCustomMinutesChange }: Props) {
+export function BottomActionBar({
+	examId,
+	sections,
+	selected,
+	customMinutes,
+	onCustomMinutesChange,
+}: Props) {
+	const navigate = useNavigate()
 	const [showCustomInput, setShowCustomInput] = useState(false)
 	const [customDraft, setCustomDraft] = useState("")
 	const inputRef = useRef<HTMLInputElement>(null)
@@ -38,7 +46,9 @@ export function BottomActionBar({ sections, selected, customMinutes, onCustomMin
 
 	const isChipActive = (value: number | null) => !showCustomInput && customMinutes === value
 	const isCustomSelected =
-		!showCustomInput && customMinutes !== null && !TIME_PRESETS.some((p) => p.value === customMinutes)
+		!showCustomInput &&
+		customMinutes !== null &&
+		!TIME_PRESETS.some((p) => p.value === customMinutes)
 
 	const timeLabel = customMinutes !== null ? `${customMinutes} phút` : `~${naturalMinutes} phút`
 
@@ -62,9 +72,7 @@ export function BottomActionBar({ sections, selected, customMinutes, onCustomMin
 	}
 
 	function handleStartExam() {
-		toast.info("Tính năng đang phát triển", {
-			description: "Phiên làm bài sẽ sớm ra mắt!",
-		})
+		navigate({ to: "/phong-thi/$examId", params: { examId: String(examId) } })
 	}
 
 	return (
@@ -77,7 +85,9 @@ export function BottomActionBar({ sections, selected, customMinutes, onCustomMin
 					<div className="flex items-center justify-between gap-4">
 						<div>
 							<p className="text-sm font-semibold">Làm full test</p>
-							<p className="text-xs text-muted-foreground">Toàn bộ 4 kỹ năng · {fullMinutes} phút</p>
+							<p className="text-xs text-muted-foreground">
+								Toàn bộ 4 kỹ năng · {fullMinutes} phút
+							</p>
 						</div>
 						<Button className="shrink-0 gap-2" onClick={handleStartExam}>
 							Làm full test

@@ -11,7 +11,14 @@ interface Props {
 
 const SKILL_META: Record<
 	ExamSkillKey,
-	{ label: string; accent: string; selectedBg: string; checkBg: string; checkBorder: string; textColor: string }
+	{
+		label: string
+		accent: string
+		selectedBg: string
+		checkBg: string
+		checkBorder: string
+		textColor: string
+	}
 > = {
 	listening: {
 		label: "Nghe",
@@ -63,9 +70,7 @@ export function SectionSelector({ sections, selected, onToggleSection, onToggleS
 			<div className="flex items-center justify-between">
 				<h2 className="text-lg font-semibold">Chọn phần luyện tập</h2>
 				<p className="text-xs text-muted-foreground">
-					{selected.size === 0
-						? "Chưa chọn — sẽ làm full test"
-						: `${selected.size} phần đã chọn`}
+					{selected.size === 0 ? "Chưa chọn — sẽ làm full test" : `${selected.size} phần đã chọn`}
 				</p>
 			</div>
 
@@ -88,9 +93,7 @@ export function SectionSelector({ sections, selected, onToggleSection, onToggleS
 							<div className="flex items-center gap-3">
 								<div className={cn("h-5 w-1 rounded-full", meta.accent)} />
 								<div>
-									<span className={cn("text-sm font-semibold", meta.textColor)}>
-										{meta.label}
-									</span>
+									<span className={cn("text-sm font-semibold", meta.textColor)}>{meta.label}</span>
 									<span className="ml-2 text-xs text-muted-foreground tabular-nums">
 										{totalMinutes} phút · {totalCount} {unit}
 									</span>
@@ -120,18 +123,22 @@ export function SectionSelector({ sections, selected, onToggleSection, onToggleS
 								const isLast = idx === skillSections.length - 1
 
 								return (
-									<button
+									<label
 										key={section.id}
-										type="button"
-										role="checkbox"
-										aria-checked={isSelected}
-										onClick={() => onToggleSection(section.id)}
 										className={cn(
-											"flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
+											"flex w-full cursor-pointer items-center gap-3 px-4 py-3 transition-colors",
 											!isLast && "border-b border-border/40",
 											isSelected ? meta.selectedBg : "hover:bg-muted/40",
 										)}
 									>
+										<input
+											type="checkbox"
+											className="sr-only"
+											checked={isSelected}
+											onChange={() => onToggleSection(section.id)}
+											aria-label={section.title}
+										/>
+
 										{/* Visual checkbox */}
 										<div
 											className={cn(
@@ -143,10 +150,11 @@ export function SectionSelector({ sections, selected, onToggleSection, onToggleS
 										</div>
 
 										{/* Label */}
-										<div className="flex-1 min-w-0">
+										<div className="min-w-0 flex-1">
 											<span className="text-sm font-medium">{section.title}</span>
 											<span className="text-sm text-muted-foreground">
-												{" "}— {section.description}
+												{" "}
+												— {section.description}
 											</span>
 										</div>
 
@@ -157,7 +165,7 @@ export function SectionSelector({ sections, selected, onToggleSection, onToggleS
 											</span>
 											<span className="ml-2">~{section.durationMinutes} phút</span>
 										</div>
-									</button>
+									</label>
 								)
 							})}
 						</div>

@@ -28,12 +28,15 @@ function ExamDetailPage() {
 		})
 	}
 
-	function handleToggleSkill(skill: string, sectionIds: string[]) {
+	function handleToggleSkill(_skill: string, sectionIds: string[]) {
 		setSelected((prev) => {
 			const next = new Set(prev)
 			const allSelected = sectionIds.every((id) => next.has(id))
-			if (allSelected) sectionIds.forEach((id) => next.delete(id))
-			else sectionIds.forEach((id) => next.add(id))
+			if (allSelected) {
+				for (const id of sectionIds) next.delete(id)
+			} else {
+				for (const id of sectionIds) next.add(id)
+			}
 			return next
 		})
 	}
@@ -93,6 +96,7 @@ function ExamDetailContent({
 				/>
 			</div>
 			<BottomActionBar
+				examId={examId}
 				sections={exam.sections}
 				selected={selected}
 				customMinutes={customMinutes}
