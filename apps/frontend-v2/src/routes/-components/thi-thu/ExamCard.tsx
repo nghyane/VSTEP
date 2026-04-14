@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router"
 import { Clock, Crown, Users } from "lucide-react"
 import { Button } from "#/components/ui/button"
 import { cn } from "#/lib/utils"
@@ -23,9 +24,9 @@ export function ExamCard({ id, isPro = false }: ExamCardProps) {
 				<div>
 					<div className="mb-2 flex items-end">
 						{isPro ? (
-							<span className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-2 py-0.5 text-white shadow-sm">
-								<Crown className="mr-1 size-3.5" />
-								<span className="translate-y-[1px] text-[10px] font-bold leading-none uppercase tracking-wider">
+							<span className="inline-flex items-end gap-1 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-2.5 py-0.5 text-white shadow-sm">
+								<Crown className="mb-px size-3 shrink-0" />
+								<span className="text-[10px] font-bold leading-none uppercase tracking-wider">
 									Pro
 								</span>
 							</span>
@@ -83,8 +84,10 @@ export function ExamCard({ id, isPro = false }: ExamCardProps) {
 							Chưa làm
 						</span>
 					</span>
-					<Button size="sm" className="font-medium">
-						Vào thi
+					<Button size="sm" className="font-medium" asChild>
+						<Link to="/thi-thu/$examId" params={{ examId: String(id) }}>
+							Xem đề
+						</Link>
 					</Button>
 				</div>
 			</div>

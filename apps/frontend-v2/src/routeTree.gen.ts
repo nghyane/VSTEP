@@ -14,9 +14,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppThiThuRouteImport } from './routes/_app.thi-thu'
 import { Route as AppOverviewRouteImport } from './routes/_app.overview'
 import { Route as AppLuyenTapRouteImport } from './routes/_app.luyen-tap'
+import { Route as AppThiThuIndexRouteImport } from './routes/_app.thi-thu.index'
 import { Route as AppLuyenTapIndexRouteImport } from './routes/_app.luyen-tap.index'
 import { Route as AppLuyenTapNenTangRouteImport } from './routes/_app.luyen-tap.nen-tang'
 import { Route as AppLuyenTapKyNangRouteImport } from './routes/_app.luyen-tap.ky-nang'
+import { Route as AppThiThuExamIdIndexRouteImport } from './routes/_app.thi-thu.$examId/index'
 import { Route as AppLuyenTapNenTangIndexRouteImport } from './routes/_app.luyen-tap.nen-tang.index'
 import { Route as AppLuyenTapKyNangIndexRouteImport } from './routes/_app.luyen-tap.ky-nang.index'
 import { Route as AppLuyenTapNenTangTuVungRouteImport } from './routes/_app.luyen-tap.nen-tang.tu-vung'
@@ -65,6 +67,11 @@ const AppLuyenTapRoute = AppLuyenTapRouteImport.update({
   path: '/luyen-tap',
   getParentRoute: () => AppRoute,
 } as any)
+const AppThiThuIndexRoute = AppThiThuIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppThiThuRoute,
+} as any)
 const AppLuyenTapIndexRoute = AppLuyenTapIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -79,6 +86,11 @@ const AppLuyenTapKyNangRoute = AppLuyenTapKyNangRouteImport.update({
   id: '/ky-nang',
   path: '/ky-nang',
   getParentRoute: () => AppLuyenTapRoute,
+} as any)
+const AppThiThuExamIdIndexRoute = AppThiThuExamIdIndexRouteImport.update({
+  id: '/$examId/',
+  path: '/$examId/',
+  getParentRoute: () => AppThiThuRoute,
 } as any)
 const AppLuyenTapNenTangIndexRoute = AppLuyenTapNenTangIndexRouteImport.update({
   id: '/',
@@ -217,10 +229,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/luyen-tap': typeof AppLuyenTapRouteWithChildren
   '/overview': typeof AppOverviewRoute
-  '/thi-thu': typeof AppThiThuRoute
+  '/thi-thu': typeof AppThiThuRouteWithChildren
   '/luyen-tap/ky-nang': typeof AppLuyenTapKyNangRouteWithChildren
   '/luyen-tap/nen-tang': typeof AppLuyenTapNenTangRouteWithChildren
   '/luyen-tap/': typeof AppLuyenTapIndexRoute
+  '/thi-thu/': typeof AppThiThuIndexRoute
   '/luyen-tap/ky-nang/doc': typeof AppLuyenTapKyNangDocRouteWithChildren
   '/luyen-tap/ky-nang/nghe': typeof AppLuyenTapKyNangNgheRouteWithChildren
   '/luyen-tap/ky-nang/noi': typeof AppLuyenTapKyNangNoiRouteWithChildren
@@ -229,6 +242,7 @@ export interface FileRoutesByFullPath {
   '/luyen-tap/nen-tang/tu-vung': typeof AppLuyenTapNenTangTuVungRouteWithChildren
   '/luyen-tap/ky-nang/': typeof AppLuyenTapKyNangIndexRoute
   '/luyen-tap/nen-tang/': typeof AppLuyenTapNenTangIndexRoute
+  '/thi-thu/$examId/': typeof AppThiThuExamIdIndexRoute
   '/luyen-tap/nen-tang/tu-vung/$topicId': typeof AppLuyenTapNenTangTuVungTopicIdRoute
   '/luyen-tap/ky-nang/doc/': typeof AppLuyenTapKyNangDocIndexRoute
   '/luyen-tap/ky-nang/nghe/': typeof AppLuyenTapKyNangNgheIndexRoute
@@ -248,10 +262,11 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/overview': typeof AppOverviewRoute
-  '/thi-thu': typeof AppThiThuRoute
   '/luyen-tap': typeof AppLuyenTapIndexRoute
+  '/thi-thu': typeof AppThiThuIndexRoute
   '/luyen-tap/ky-nang': typeof AppLuyenTapKyNangIndexRoute
   '/luyen-tap/nen-tang': typeof AppLuyenTapNenTangIndexRoute
+  '/thi-thu/$examId': typeof AppThiThuExamIdIndexRoute
   '/luyen-tap/nen-tang/tu-vung/$topicId': typeof AppLuyenTapNenTangTuVungTopicIdRoute
   '/luyen-tap/ky-nang/doc': typeof AppLuyenTapKyNangDocIndexRoute
   '/luyen-tap/ky-nang/nghe': typeof AppLuyenTapKyNangNgheIndexRoute
@@ -274,10 +289,11 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/_app/luyen-tap': typeof AppLuyenTapRouteWithChildren
   '/_app/overview': typeof AppOverviewRoute
-  '/_app/thi-thu': typeof AppThiThuRoute
+  '/_app/thi-thu': typeof AppThiThuRouteWithChildren
   '/_app/luyen-tap/ky-nang': typeof AppLuyenTapKyNangRouteWithChildren
   '/_app/luyen-tap/nen-tang': typeof AppLuyenTapNenTangRouteWithChildren
   '/_app/luyen-tap/': typeof AppLuyenTapIndexRoute
+  '/_app/thi-thu/': typeof AppThiThuIndexRoute
   '/_app/luyen-tap/ky-nang/doc': typeof AppLuyenTapKyNangDocRouteWithChildren
   '/_app/luyen-tap/ky-nang/nghe': typeof AppLuyenTapKyNangNgheRouteWithChildren
   '/_app/luyen-tap/ky-nang/noi': typeof AppLuyenTapKyNangNoiRouteWithChildren
@@ -286,6 +302,7 @@ export interface FileRoutesById {
   '/_app/luyen-tap/nen-tang/tu-vung': typeof AppLuyenTapNenTangTuVungRouteWithChildren
   '/_app/luyen-tap/ky-nang/': typeof AppLuyenTapKyNangIndexRoute
   '/_app/luyen-tap/nen-tang/': typeof AppLuyenTapNenTangIndexRoute
+  '/_app/thi-thu/$examId/': typeof AppThiThuExamIdIndexRoute
   '/_app/luyen-tap/nen-tang/tu-vung/$topicId': typeof AppLuyenTapNenTangTuVungTopicIdRoute
   '/_app/luyen-tap/ky-nang/doc/': typeof AppLuyenTapKyNangDocIndexRoute
   '/_app/luyen-tap/ky-nang/nghe/': typeof AppLuyenTapKyNangNgheIndexRoute
@@ -312,6 +329,7 @@ export interface FileRouteTypes {
     | '/luyen-tap/ky-nang'
     | '/luyen-tap/nen-tang'
     | '/luyen-tap/'
+    | '/thi-thu/'
     | '/luyen-tap/ky-nang/doc'
     | '/luyen-tap/ky-nang/nghe'
     | '/luyen-tap/ky-nang/noi'
@@ -320,6 +338,7 @@ export interface FileRouteTypes {
     | '/luyen-tap/nen-tang/tu-vung'
     | '/luyen-tap/ky-nang/'
     | '/luyen-tap/nen-tang/'
+    | '/thi-thu/$examId/'
     | '/luyen-tap/nen-tang/tu-vung/$topicId'
     | '/luyen-tap/ky-nang/doc/'
     | '/luyen-tap/ky-nang/nghe/'
@@ -339,10 +358,11 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/overview'
-    | '/thi-thu'
     | '/luyen-tap'
+    | '/thi-thu'
     | '/luyen-tap/ky-nang'
     | '/luyen-tap/nen-tang'
+    | '/thi-thu/$examId'
     | '/luyen-tap/nen-tang/tu-vung/$topicId'
     | '/luyen-tap/ky-nang/doc'
     | '/luyen-tap/ky-nang/nghe'
@@ -368,6 +388,7 @@ export interface FileRouteTypes {
     | '/_app/luyen-tap/ky-nang'
     | '/_app/luyen-tap/nen-tang'
     | '/_app/luyen-tap/'
+    | '/_app/thi-thu/'
     | '/_app/luyen-tap/ky-nang/doc'
     | '/_app/luyen-tap/ky-nang/nghe'
     | '/_app/luyen-tap/ky-nang/noi'
@@ -376,6 +397,7 @@ export interface FileRouteTypes {
     | '/_app/luyen-tap/nen-tang/tu-vung'
     | '/_app/luyen-tap/ky-nang/'
     | '/_app/luyen-tap/nen-tang/'
+    | '/_app/thi-thu/$examId/'
     | '/_app/luyen-tap/nen-tang/tu-vung/$topicId'
     | '/_app/luyen-tap/ky-nang/doc/'
     | '/_app/luyen-tap/ky-nang/nghe/'
@@ -435,6 +457,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLuyenTapRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/thi-thu/': {
+      id: '/_app/thi-thu/'
+      path: '/'
+      fullPath: '/thi-thu/'
+      preLoaderRoute: typeof AppThiThuIndexRouteImport
+      parentRoute: typeof AppThiThuRoute
+    }
     '/_app/luyen-tap/': {
       id: '/_app/luyen-tap/'
       path: '/'
@@ -455,6 +484,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/luyen-tap/ky-nang'
       preLoaderRoute: typeof AppLuyenTapKyNangRouteImport
       parentRoute: typeof AppLuyenTapRoute
+    }
+    '/_app/thi-thu/$examId/': {
+      id: '/_app/thi-thu/$examId/'
+      path: '/$examId'
+      fullPath: '/thi-thu/$examId/'
+      preLoaderRoute: typeof AppThiThuExamIdIndexRouteImport
+      parentRoute: typeof AppThiThuRoute
     }
     '/_app/luyen-tap/nen-tang/': {
       id: '/_app/luyen-tap/nen-tang/'
@@ -772,16 +808,30 @@ const AppLuyenTapRouteWithChildren = AppLuyenTapRoute._addFileChildren(
   AppLuyenTapRouteChildren,
 )
 
+interface AppThiThuRouteChildren {
+  AppThiThuIndexRoute: typeof AppThiThuIndexRoute
+  AppThiThuExamIdIndexRoute: typeof AppThiThuExamIdIndexRoute
+}
+
+const AppThiThuRouteChildren: AppThiThuRouteChildren = {
+  AppThiThuIndexRoute: AppThiThuIndexRoute,
+  AppThiThuExamIdIndexRoute: AppThiThuExamIdIndexRoute,
+}
+
+const AppThiThuRouteWithChildren = AppThiThuRoute._addFileChildren(
+  AppThiThuRouteChildren,
+)
+
 interface AppRouteChildren {
   AppLuyenTapRoute: typeof AppLuyenTapRouteWithChildren
   AppOverviewRoute: typeof AppOverviewRoute
-  AppThiThuRoute: typeof AppThiThuRoute
+  AppThiThuRoute: typeof AppThiThuRouteWithChildren
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppLuyenTapRoute: AppLuyenTapRouteWithChildren,
   AppOverviewRoute: AppOverviewRoute,
-  AppThiThuRoute: AppThiThuRoute,
+  AppThiThuRoute: AppThiThuRouteWithChildren,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

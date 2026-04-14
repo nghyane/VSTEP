@@ -78,6 +78,33 @@ shadow-md   ← hover state / elevated card
 
 **Rule 0.3 — Hover không đổi màu border.** Hover của card chỉ được nâng nhẹ (`hover:-translate-y-0.5`) và tăng shadow (`hover:shadow-md`). KHÔNG dùng `hover:border-primary/30` hay border màu primary trên hover vì tạo viền xanh lệch với style card cha. Giữ border luôn trung tính.
 
+**Rule 0.4 — `icon + text` trong badge/chip/tab/button phải canh cùng đáy trước, không tin tuyệt đối vào `items-center`.** Với các UI compact như badge `PRO`, segmented control, filter pill, stat chip..., icon và text rất dễ nhìn lệch dù technically đang ở giữa container. Mặc định ưu tiên canh theo cùng đáy/baseline để mắt nhìn thấy icon và chữ “ngồi” trên một hàng ổn định.
+
+**Guideline thực thi:**
+- Wrapper: ưu tiên `inline-flex items-end gap-1` hoặc `inline-flex items-baseline gap-1`
+- Text: dùng `leading-none` cho label ngắn (`Pro`, `Free`, `AI`, `New`...)
+- Icon: thêm `shrink-0`; nếu icon hơi tụt xuống dưới hoặc nổi lên trên thì chỉnh rất nhẹ bằng `mb-px` / `mt-px`
+- Tránh lạm dụng `translate-y-*` trên text như fix mặc định; chỉ dùng khi đã thử align bằng layout mà vẫn lệch
+- Luôn check bằng mắt ở size thật của component, vì icon font metrics và chữ uppercase thường lệch thị giác
+
+Ví dụ nên dùng:
+```tsx
+<span className="inline-flex items-end gap-1 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-2.5 py-0.5 text-white shadow-sm">
+  <Crown className="mb-px size-3 shrink-0" />
+  <span className="text-[10px] font-bold leading-none uppercase tracking-wider">
+    Pro
+  </span>
+</span>
+```
+
+Không nên mặc định dùng:
+```tsx
+<span className="inline-flex items-center gap-1 ...">
+  <Crown className="size-3" />
+  <span className="translate-y-px">Pro</span>
+</span>
+```
+
 ---
 
 ## 2. Layout Shell
