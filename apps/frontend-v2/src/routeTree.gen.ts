@@ -23,6 +23,8 @@ import { Route as FocusedPhongThiExamIdIndexRouteImport } from './routes/_focuse
 import { Route as AppThiThuExamIdIndexRouteImport } from './routes/_app.thi-thu.$examId/index'
 import { Route as AppLuyenTapNenTangIndexRouteImport } from './routes/_app.luyen-tap.nen-tang.index'
 import { Route as AppLuyenTapKyNangIndexRouteImport } from './routes/_app.luyen-tap.ky-nang.index'
+import { Route as FocusedPhongThiExamIdKetQuaRouteImport } from './routes/_focused.phong-thi.$examId.ket-qua'
+import { Route as FocusedPhongThiExamIdChiTietRouteImport } from './routes/_focused.phong-thi.$examId.chi-tiet'
 import { Route as AppLuyenTapNenTangTuVungRouteImport } from './routes/_app.luyen-tap.nen-tang.tu-vung'
 import { Route as AppLuyenTapNenTangNguPhapRouteImport } from './routes/_app.luyen-tap.nen-tang.ngu-phap'
 import { Route as AppLuyenTapKyNangVietRouteImport } from './routes/_app.luyen-tap.ky-nang.viet'
@@ -114,6 +116,18 @@ const AppLuyenTapKyNangIndexRoute = AppLuyenTapKyNangIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppLuyenTapKyNangRoute,
 } as any)
+const FocusedPhongThiExamIdKetQuaRoute =
+  FocusedPhongThiExamIdKetQuaRouteImport.update({
+    id: '/phong-thi/$examId/ket-qua',
+    path: '/phong-thi/$examId/ket-qua',
+    getParentRoute: () => FocusedRoute,
+  } as any)
+const FocusedPhongThiExamIdChiTietRoute =
+  FocusedPhongThiExamIdChiTietRouteImport.update({
+    id: '/phong-thi/$examId/chi-tiet',
+    path: '/phong-thi/$examId/chi-tiet',
+    getParentRoute: () => FocusedRoute,
+  } as any)
 const AppLuyenTapNenTangTuVungRoute =
   AppLuyenTapNenTangTuVungRouteImport.update({
     id: '/tu-vung',
@@ -252,6 +266,8 @@ export interface FileRoutesByFullPath {
   '/luyen-tap/ky-nang/viet': typeof AppLuyenTapKyNangVietRouteWithChildren
   '/luyen-tap/nen-tang/ngu-phap': typeof AppLuyenTapNenTangNguPhapRouteWithChildren
   '/luyen-tap/nen-tang/tu-vung': typeof AppLuyenTapNenTangTuVungRouteWithChildren
+  '/phong-thi/$examId/chi-tiet': typeof FocusedPhongThiExamIdChiTietRoute
+  '/phong-thi/$examId/ket-qua': typeof FocusedPhongThiExamIdKetQuaRoute
   '/luyen-tap/ky-nang/': typeof AppLuyenTapKyNangIndexRoute
   '/luyen-tap/nen-tang/': typeof AppLuyenTapNenTangIndexRoute
   '/thi-thu/$examId/': typeof AppThiThuExamIdIndexRoute
@@ -277,6 +293,8 @@ export interface FileRoutesByTo {
   '/overview': typeof AppOverviewRoute
   '/luyen-tap': typeof AppLuyenTapIndexRoute
   '/thi-thu': typeof AppThiThuIndexRoute
+  '/phong-thi/$examId/chi-tiet': typeof FocusedPhongThiExamIdChiTietRoute
+  '/phong-thi/$examId/ket-qua': typeof FocusedPhongThiExamIdKetQuaRoute
   '/luyen-tap/ky-nang': typeof AppLuyenTapKyNangIndexRoute
   '/luyen-tap/nen-tang': typeof AppLuyenTapNenTangIndexRoute
   '/thi-thu/$examId': typeof AppThiThuExamIdIndexRoute
@@ -315,6 +333,8 @@ export interface FileRoutesById {
   '/_app/luyen-tap/ky-nang/viet': typeof AppLuyenTapKyNangVietRouteWithChildren
   '/_app/luyen-tap/nen-tang/ngu-phap': typeof AppLuyenTapNenTangNguPhapRouteWithChildren
   '/_app/luyen-tap/nen-tang/tu-vung': typeof AppLuyenTapNenTangTuVungRouteWithChildren
+  '/_focused/phong-thi/$examId/chi-tiet': typeof FocusedPhongThiExamIdChiTietRoute
+  '/_focused/phong-thi/$examId/ket-qua': typeof FocusedPhongThiExamIdKetQuaRoute
   '/_app/luyen-tap/ky-nang/': typeof AppLuyenTapKyNangIndexRoute
   '/_app/luyen-tap/nen-tang/': typeof AppLuyenTapNenTangIndexRoute
   '/_app/thi-thu/$examId/': typeof AppThiThuExamIdIndexRoute
@@ -352,6 +372,8 @@ export interface FileRouteTypes {
     | '/luyen-tap/ky-nang/viet'
     | '/luyen-tap/nen-tang/ngu-phap'
     | '/luyen-tap/nen-tang/tu-vung'
+    | '/phong-thi/$examId/chi-tiet'
+    | '/phong-thi/$examId/ket-qua'
     | '/luyen-tap/ky-nang/'
     | '/luyen-tap/nen-tang/'
     | '/thi-thu/$examId/'
@@ -377,6 +399,8 @@ export interface FileRouteTypes {
     | '/overview'
     | '/luyen-tap'
     | '/thi-thu'
+    | '/phong-thi/$examId/chi-tiet'
+    | '/phong-thi/$examId/ket-qua'
     | '/luyen-tap/ky-nang'
     | '/luyen-tap/nen-tang'
     | '/thi-thu/$examId'
@@ -414,6 +438,8 @@ export interface FileRouteTypes {
     | '/_app/luyen-tap/ky-nang/viet'
     | '/_app/luyen-tap/nen-tang/ngu-phap'
     | '/_app/luyen-tap/nen-tang/tu-vung'
+    | '/_focused/phong-thi/$examId/chi-tiet'
+    | '/_focused/phong-thi/$examId/ket-qua'
     | '/_app/luyen-tap/ky-nang/'
     | '/_app/luyen-tap/nen-tang/'
     | '/_app/thi-thu/$examId/'
@@ -540,6 +566,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/luyen-tap/ky-nang/'
       preLoaderRoute: typeof AppLuyenTapKyNangIndexRouteImport
       parentRoute: typeof AppLuyenTapKyNangRoute
+    }
+    '/_focused/phong-thi/$examId/ket-qua': {
+      id: '/_focused/phong-thi/$examId/ket-qua'
+      path: '/phong-thi/$examId/ket-qua'
+      fullPath: '/phong-thi/$examId/ket-qua'
+      preLoaderRoute: typeof FocusedPhongThiExamIdKetQuaRouteImport
+      parentRoute: typeof FocusedRoute
+    }
+    '/_focused/phong-thi/$examId/chi-tiet': {
+      id: '/_focused/phong-thi/$examId/chi-tiet'
+      path: '/phong-thi/$examId/chi-tiet'
+      fullPath: '/phong-thi/$examId/chi-tiet'
+      preLoaderRoute: typeof FocusedPhongThiExamIdChiTietRouteImport
+      parentRoute: typeof FocusedRoute
     }
     '/_app/luyen-tap/nen-tang/tu-vung': {
       id: '/_app/luyen-tap/nen-tang/tu-vung'
@@ -872,10 +912,14 @@ const AppRouteChildren: AppRouteChildren = {
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface FocusedRouteChildren {
+  FocusedPhongThiExamIdChiTietRoute: typeof FocusedPhongThiExamIdChiTietRoute
+  FocusedPhongThiExamIdKetQuaRoute: typeof FocusedPhongThiExamIdKetQuaRoute
   FocusedPhongThiExamIdIndexRoute: typeof FocusedPhongThiExamIdIndexRoute
 }
 
 const FocusedRouteChildren: FocusedRouteChildren = {
+  FocusedPhongThiExamIdChiTietRoute: FocusedPhongThiExamIdChiTietRoute,
+  FocusedPhongThiExamIdKetQuaRoute: FocusedPhongThiExamIdKetQuaRoute,
   FocusedPhongThiExamIdIndexRoute: FocusedPhongThiExamIdIndexRoute,
 }
 

@@ -19,6 +19,7 @@ import {
 	type SpeakingDoneSet,
 	type WritingAnswerMap,
 } from "#/lib/mock/exam-session"
+import { buildResultFromSession, savePhongThiResult } from "#/lib/practice/phong-thi-result"
 import { cn } from "#/lib/utils"
 import { DeviceCheckScreen } from "./-components/DeviceCheckScreen"
 import { ListeningExamPanel } from "./-components/ListeningExamPanel"
@@ -56,7 +57,6 @@ const SKILL_LABEL: Record<ExamSkillKey, string> = {
 	writing: "Viết",
 	speaking: "Nói",
 }
-
 
 // ─── Timer hook ───────────────────────────────────────────────────────────────
 
@@ -177,8 +177,9 @@ function ExamPage() {
 
 	const handleSubmit = useCallback(() => {
 		setConfirming(false)
-		navigate({ to: "/thi-thu" })
-	}, [navigate])
+		savePhongThiResult(buildResultFromSession(examId, session, mcqAnswers, writingAnswers, speakingDone))
+		navigate({ to: "/phong-thi/$examId/ket-qua", params: { examId } })
+	}, [navigate, examId, session, mcqAnswers, writingAnswers, speakingDone])
 
 	// ─── Derived values ───────────────────────────────────────────────────────
 
@@ -204,34 +205,34 @@ function ExamPage() {
 
 	return (
 		<div className="flex h-screen flex-col">
-		{/* Header */}
-		<header className="z-40 flex h-12 shrink-0 items-center justify-between border-b-2 bg-card px-4 shadow-sm">
-			<div className="flex items-center gap-2">
-				<div
-					className={cn(
-						"flex items-center gap-1.5 rounded-full px-3 py-1",
-						remaining !== null && remaining <= 300
-							? "bg-destructive/10 text-destructive"
-							: "bg-muted",
-					)}
-				>
-					<Clock className="size-3.5" />
-					<span className="text-sm font-semibold tabular-nums">{formatTime(remaining)}</span>
+			{/* Header */}
+			<header className="z-40 flex h-12 shrink-0 items-center justify-between border-b-2 bg-card px-4 shadow-sm">
+				<div className="flex items-center gap-2">
+					<div
+						className={cn(
+							"flex items-center gap-1.5 rounded-full px-3 py-1",
+							remaining !== null && remaining <= 300
+								? "bg-destructive/10 text-destructive"
+								: "bg-muted",
+						)}
+					>
+						<Clock className="size-3.5" />
+						<span className="text-sm font-semibold tabular-nums">{formatTime(remaining)}</span>
+					</div>
 				</div>
-			</div>
 
-			<div className="flex items-center gap-1 text-sm">
-				<span className="font-bold tabular-nums text-foreground">{answeredItems}</span>
-				<span className="text-muted-foreground">/{totalItems} đã trả lời</span>
-			</div>
+				<div className="flex items-center gap-1 text-sm">
+					<span className="font-bold tabular-nums text-foreground">{answeredItems}</span>
+					<span className="text-muted-foreground">/{totalItems} đã trả lời</span>
+				</div>
 
-			<Button variant="ghost" size="sm" asChild>
-				<Link to="/thi-thu">
-					<X className="size-4" />
-					<span className="hidden sm:inline">Thoát</span>
-				</Link>
-			</Button>
-		</header>
+				<Button variant="ghost" size="sm" asChild>
+					<Link to="/thi-thu">
+						<X className="size-4" />
+						<span className="hidden sm:inline">Thoát</span>
+					</Link>
+				</Button>
+			</header>
 
 			{/* Body — skill panel */}
 			{currentSkill === "listening" && (
@@ -264,30 +265,30 @@ function ExamPage() {
 				/>
 			)}
 
-		{/* Footer */}
-		<footer className="z-40 flex h-12 shrink-0 items-center justify-between border-t-2 bg-card px-4">
-			<div className="w-24" />
+			{/* Footer */}
+			<footer className="z-40 flex h-12 shrink-0 items-center justify-between border-t-2 bg-card px-4">
+				<div className="w-24" />
 
-			{currentSkill && (
-				<div className="flex items-center gap-1">
-					<span className="text-sm font-semibold">{SKILL_LABEL[currentSkill]}</span>
-					<span className="text-xs text-muted-foreground">
-						({currentSkillIdx + 1}/{activeSkills.length})
-					</span>
-				</div>
-			)}
+				{currentSkill && (
+					<div className="flex items-center gap-1">
+						<span className="text-sm font-semibold">{SKILL_LABEL[currentSkill]}</span>
+						<span className="text-xs text-muted-foreground">
+							({currentSkillIdx + 1}/{activeSkills.length})
+						</span>
+					</div>
+				)}
 
-			{isLastSkill ? (
-				<Button size="sm" onClick={() => setConfirming(true)}>
-					<CheckCircle2 className="size-4" />
-					Nộp bài
-				</Button>
-			) : (
-				<Button variant="outline" size="sm" onClick={() => setConfirmingNext(true)}>
-					<span className="hidden sm:inline">Phần tiếp</span>→
-				</Button>
-			)}
-		</footer>
+				{isLastSkill ? (
+					<Button size="sm" onClick={() => setConfirming(true)}>
+						<CheckCircle2 className="size-4" />
+						Nộp bài
+					</Button>
+				) : (
+					<Button variant="outline" size="sm" onClick={() => setConfirmingNext(true)}>
+						<span className="hidden sm:inline">Phần tiếp</span>→
+					</Button>
+				)}
+			</footer>
 
 			{/* Confirm submit dialog */}
 			<Dialog open={confirming} onOpenChange={setConfirming}>
