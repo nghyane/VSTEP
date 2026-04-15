@@ -49,28 +49,36 @@ export function BottomActionBar({
 	const selectedSections = sections.filter((s) => selected.has(s.id))
 	const naturalMinutes = selectedSections.reduce((sum, s) => sum + s.durationMinutes, 0)
 	const fullMinutes = sections.reduce((sum, s) => sum + s.durationMinutes, 0)
+	const recommendedMinutes = naturalMinutes
 
 	const isChipActive = (value: number | "unlimited") => !showCustomInput && customMinutes === value
+	const isRecommendedActive = !showCustomInput && customMinutes === null
 	const isCustomSelected =
 		!showCustomInput &&
 		typeof customMinutes === "number" &&
 		!TIME_PRESETS.some((p) => p.value === customMinutes)
 	const isUnlimited = customMinutes === "unlimited"
+	const shouldShowRecommendationHint = !isRecommendedActive && recommendedMinutes > 0
 
 	const timeLabel = isUnlimited
 		? "Không giới hạn"
 		: typeof customMinutes === "number"
 			? `${customMinutes} phút`
-			: `~${naturalMinutes} phút`
+			: `Gợi ý ~${recommendedMinutes} phút`
 
 	function handleSelectPreset(value: number | "unlimited") {
 		setShowCustomInput(false)
 		onCustomMinutesChange(value)
 	}
 
+	function handleSelectRecommended() {
+		setShowCustomInput(false)
+		onCustomMinutesChange(null)
+	}
+
 	function handleOpenCustom() {
 		setShowCustomInput(true)
-		setCustomDraft(isCustomSelected ? String(customMinutes) : "")
+		setCustomDraft(isCustomSelected ? String(customMinutes) : String(recommendedMinutes))
 		setTimeout(() => inputRef.current?.focus(), 50)
 	}
 
@@ -112,10 +120,10 @@ export function BottomActionBar({
 			search: isFullTest
 				? {}
 				: {
-					durationMode: isUnlimited ? "unlimited" : undefined,
-					minutes: typeof customMinutes === "number" ? customMinutes : undefined,
-					sections: selectedSections.map((section) => section.id).join(","),
-				},
+						durationMode: isUnlimited ? "unlimited" : undefined,
+						minutes: typeof customMinutes === "number" ? customMinutes : undefined,
+						sections: selectedSections.map((section) => section.id).join(","),
+					},
 		})
 	}
 
@@ -160,6 +168,20 @@ export function BottomActionBar({
 									Thời gian:
 								</span>
 								<div className="flex flex-wrap items-center gap-1">
+									<button
+										type="button"
+										onClick={handleSelectRecommended}
+										aria-label={`Dùng thời gian gợi ý ${recommendedMinutes} phút`}
+										className={cn(
+											"rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors",
+											isRecommendedActive
+												? "bg-primary text-primary-foreground"
+												: "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+										)}
+									>
+										Gợi ý {recommendedMinutes}p
+									</button>
+
 									{TIME_PRESETS.map((preset) => (
 										<button
 											key={preset.label}
@@ -221,6 +243,11 @@ export function BottomActionBar({
 										</button>
 									)}
 								</div>
+								{shouldShowRecommendationHint ? (
+									<p className="text-xs text-muted-foreground">
+										Theo phần đã chọn: ~{recommendedMinutes} phút
+									</p>
+								) : null}
 							</div>
 						</div>
 

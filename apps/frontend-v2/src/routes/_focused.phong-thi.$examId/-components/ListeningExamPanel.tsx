@@ -1,4 +1,4 @@
-import { ChevronRight, Headphones, Play, Volume2 } from "lucide-react"
+import { ChevronRight, Headphones, Play } from "lucide-react"
 import { motion } from "motion/react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "#/components/ui/button"
@@ -50,13 +50,13 @@ function ReadinessModal({
 				</DialogHeader>
 				<div className="space-y-1 rounded-lg border bg-muted/50 p-3 text-center text-sm text-muted-foreground">
 					<p>
-						Bài thi gồm{" "}
-						<span className="font-medium text-foreground">{totalSections} phần</span> với{" "}
-						<span className="font-medium text-foreground">{totalQuestions} câu hỏi</span>.
+						Bài thi gồm <span className="font-medium text-foreground">{totalSections} phần</span>{" "}
+						với <span className="font-medium text-foreground">{totalQuestions} câu hỏi</span>.
 					</p>
 					<p>
 						Âm thanh mỗi phần chỉ phát{" "}
-						<span className="font-medium text-foreground">một lần duy nhất</span>, không thể tua lại.
+						<span className="font-medium text-foreground">một lần duy nhất</span>, không thể tua
+						lại.
 					</p>
 				</div>
 				<DialogFooter className="sm:justify-center">
@@ -94,29 +94,31 @@ function MCQItem({
 					const letter = LETTERS[oi] ?? String(oi + 1)
 					const isSelected = selected === letter
 					return (
-				<motion.button
-					key={`${index}-${oi}`}
-					type="button"
-					onClick={() => onSelect(letter)}
-					whileTap={{ scale: 0.97 }}
-					transition={{ type: "spring", stiffness: 450, damping: 25 }}
-					className={cn(
-						"flex items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-sm transition-colors",
-						isSelected
-							? "border-primary border-b-2 border-b-primary/60 bg-primary/5 shadow-sm"
-							: "border-border hover:border-primary/40 hover:bg-muted/30",
-					)}
-				>
-						<span
+						<motion.button
+							key={`${index}-${oi}`}
+							type="button"
+							onClick={() => onSelect(letter)}
+							whileTap={{ scale: 0.97 }}
+							transition={{ type: "spring", stiffness: 450, damping: 25 }}
 							className={cn(
-								"flex size-6 shrink-0 items-center justify-center rounded-lg text-xs font-semibold",
-								isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+								"flex items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-sm transition-colors",
+								isSelected
+									? "border-primary border-b-2 border-b-primary/60 bg-primary/5 shadow-sm"
+									: "border-border hover:border-primary/40 hover:bg-muted/30",
 							)}
 						>
-							{letter}
-						</span>
-						<span>{opt}</span>
-					</motion.button>
+							<span
+								className={cn(
+									"flex size-6 shrink-0 items-center justify-center rounded-lg text-xs font-semibold",
+									isSelected
+										? "bg-primary text-primary-foreground"
+										: "bg-muted text-muted-foreground",
+								)}
+							>
+								{letter}
+							</span>
+							<span>{opt}</span>
+						</motion.button>
 					)
 				})}
 			</div>
@@ -183,7 +185,11 @@ export function ListeningExamPanel({ sections, answers, onAnswer }: Props) {
 			audio.addEventListener("ended", onEnded)
 			cleanups.push(() => audio.removeEventListener("ended", onEnded))
 		}
-		return () => cleanups.forEach((fn) => fn())
+		return () => {
+			cleanups.forEach((fn) => {
+				fn()
+			})
+		}
 	}, [isReady, sorted])
 
 	const handleStartAudio = useCallback(() => {
@@ -250,20 +256,20 @@ export function ListeningExamPanel({ sections, answers, onAnswer }: Props) {
 				</div>
 			</div>
 
-		{/* Audio progress bar */}
-		<div className="border-t-2 bg-card px-4 py-2">
+			{/* Audio progress bar */}
+			<div className="border-t-2 bg-card px-4 py-2">
 				<div className="flex items-center gap-3">
-				{!isPlaying ? (
-					<motion.button
-						type="button"
-						onClick={handleStartAudio}
-						whileTap={{ scale: 0.94 }}
-						transition={{ type: "spring", stiffness: 450, damping: 25 }}
-						className="flex items-center gap-2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-					>
-						<Play className="size-3.5" />
-						Phát audio
-					</motion.button>
+					{!isPlaying ? (
+						<motion.button
+							type="button"
+							onClick={handleStartAudio}
+							whileTap={{ scale: 0.94 }}
+							transition={{ type: "spring", stiffness: 450, damping: 25 }}
+							className="flex items-center gap-2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+						>
+							<Play className="size-3.5" />
+							Phát audio
+						</motion.button>
 					) : (
 						<div className="flex items-center gap-2">
 							<Headphones className="size-4 text-muted-foreground" />
@@ -301,32 +307,32 @@ export function ListeningExamPanel({ sections, answers, onAnswer }: Props) {
 				))}
 			</div>
 
-		{/* Question number buttons */}
-		<div className="flex flex-wrap justify-center gap-1.5 border-t px-4 py-2.5">
-			{activeSection.items.map((_, i) => {
-				const isAnswered = currentAnswers[String(i + 1)] != null
-				return (
-					<motion.button
-						key={i}
-						type="button"
-						onClick={() => handleJumpToItem(i)}
-						whileTap={{ scale: 0.88 }}
-						transition={{ type: "spring", stiffness: 500, damping: 30 }}
-						className={cn(
-							"flex size-8 items-center justify-center rounded-lg border text-sm font-medium transition-colors",
-							isAnswered
-								? "border-primary border-b-2 border-b-primary/60 bg-primary text-primary-foreground shadow-sm"
-								: "border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-accent",
-						)}
-					>
-						{i + 1}
-					</motion.button>
-				)
-			})}
-		</div>
+			{/* Question number buttons */}
+			<div className="flex flex-wrap justify-center gap-1.5 border-t px-4 py-2.5">
+				{activeSection.items.map((_, i) => {
+					const isAnswered = currentAnswers[String(i + 1)] != null
+					return (
+						<motion.button
+							key={i}
+							type="button"
+							onClick={() => handleJumpToItem(i)}
+							whileTap={{ scale: 0.88 }}
+							transition={{ type: "spring", stiffness: 500, damping: 30 }}
+							className={cn(
+								"flex size-8 items-center justify-center rounded-lg border text-sm font-medium transition-colors",
+								isAnswered
+									? "border-primary border-b-2 border-b-primary/60 bg-primary text-primary-foreground shadow-sm"
+									: "border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-accent",
+							)}
+						>
+							{i + 1}
+						</motion.button>
+					)
+				})}
+			</div>
 
-		{/* Section tabs + next button */}
-		<div className="flex items-center justify-between border-t bg-card px-4 py-2.5">
+			{/* Section tabs + next button */}
+			<div className="flex items-center justify-between border-t bg-card px-4 py-2.5">
 				<div className="flex items-center gap-2">
 					<Headphones className="size-4" />
 					<span className="text-sm font-medium">Part {activeSectionIdx + 1}</span>
@@ -354,7 +360,6 @@ export function ListeningExamPanel({ sections, answers, onAnswer }: Props) {
 								)}
 							>
 								<span className="inline-flex items-center gap-1.5">
-									{isCurrentlyPlaying && <Volume2 className="size-3.5 shrink-0" />}
 									Part {i + 1}
 									<span className="opacity-80">
 										{meta.answered}/{meta.total}
@@ -362,8 +367,16 @@ export function ListeningExamPanel({ sections, answers, onAnswer }: Props) {
 								</span>
 								<span
 									className={cn(
-										"absolute inset-x-1 bottom-0.5 h-0.5 overflow-hidden rounded-full",
-										isActive ? "bg-primary-foreground/30" : "bg-border",
+										"absolute inset-x-1 bottom-0.5 overflow-hidden rounded-full transition-all",
+										isCurrentlyPlaying && "h-1 animate-pulse",
+										!isCurrentlyPlaying && "h-0.5",
+										isCurrentlyPlaying
+											? isActive
+												? "bg-primary-foreground/45"
+												: "bg-primary/20"
+											: isActive
+												? "bg-primary-foreground/30"
+												: "bg-border",
 									)}
 								>
 									<span
