@@ -10,7 +10,7 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { GradientBackground } from "@/components/GradientBackground";
 import { StickyHeader, HEADER_H } from "@/components/StickyHeader";
 import { useAuth } from "@/hooks/use-auth";
-import { useProgress, useActivity, useLearningPath } from "@/hooks/use-progress";
+import { useProgress, useActivity, usePracticeTrack } from "@/hooks/use-progress";
 import { useExamSessions } from "@/hooks/use-exam-session";
 import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
@@ -31,7 +31,7 @@ export default function HomeScreen() {
   const { user } = useAuth();
   const progress = useProgress();
   const { data: activityData, isLoading: activityLoading } = useActivity(7);
-  const { data: learningPath } = useLearningPath();
+  const { data: practiceTrack } = usePracticeTrack();
   const { data: recentSessions } = useExamSessions({ status: "completed", limit: 5 });
   const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -66,7 +66,7 @@ export default function HomeScreen() {
 
   const quickActions: QuickAction[] = [
     { title: "Luyện tập", icon: "school", color: c.primary, onPress: () => router.push("/(app)/practice") },
-    { title: "Lộ trình", icon: "map-outline", color: c.primary, onPress: () => router.push("/(app)/(tabs)/progress") },
+    { title: "Luyện tập", icon: "bar-chart-outline", color: c.primary, onPress: () => router.push("/(app)/(tabs)/progress") },
     { title: "Bài kiểm tra", icon: "document-text", color: c.primary, onPress: () => router.push("/(app)/(tabs)/exams") },
     { title: "Từ vựng", icon: "book-outline", color: c.primary, onPress: () => router.push("/(app)/vocabulary") },
   ];
@@ -232,21 +232,21 @@ export default function HomeScreen() {
           )}
         </Animated.View>
 
-        {/* ── Learning Path ── */}
-        {learningPath?.weeklyPlan && learningPath.weeklyPlan.length > 0 && (
+        {/* ── Practice Track Score Cards ── */}
+        {practiceTrack && (
           <Animated.View style={fade4}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: c.foreground }]}>Lộ trình tuần này</Text>
+              <Text style={[styles.sectionTitle, { color: c.foreground }]}>Điểm trung bình</Text>
               <HapticTouchable onPress={() => router.push("/(app)/(tabs)/progress")}>
                 <Text style={[styles.sectionLink, { color: c.primary }]}>Xem chi tiết</Text>
               </HapticTouchable>
             </View>
 
-            <View style={{ gap: spacing.sm, marginTop: spacing.base }}>
-              {learningPath.weeklyPlan.slice(0, 4).map((item) => (
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.base }}>
+              {practiceTrack.skills.map((item) => (
                 <View
                   key={item.skill}
-                  style={[styles.lpCard, { backgroundColor: c.card, borderColor: c.border }]}
+                  style={[styles.lpCard, { backgroundColor: c.card, borderColor: c.border, width: "48%" }]}
                 >
                   <View style={styles.lpRow}>
                     <SkillIcon skill={item.skill as any} size={20} />
@@ -254,21 +254,15 @@ export default function HomeScreen() {
                       {SKILL_LABELS[item.skill as keyof typeof SKILL_LABELS] ?? item.skill}
                     </Text>
                   </View>
-                  <Text style={[styles.lpMeta, { color: c.mutedForeground }]}>
-                    {item.sessionsPerWeek} sessions/week · {item.estimatedMinutes} phút
+                  <Text style={{ fontSize: 24, fontWeight: "700", color: c.foreground, marginTop: 4 }}>
+                    {item.averageScore > 0 ? item.averageScore.toFixed(1) : "—.—"}
                   </Text>
-                  {item.weakTopics.length > 0 && (
-                    <Text style={[styles.lpFocus, { color: c.warning }]}>
-                      Cần tập trung: {item.weakTopics[0].name}
-                    </Text>
-                  )}
+                  <Text style={[styles.lpMeta, { color: c.mutedForeground }]}>
+                    {item.attemptCount} bài test
+                  </Text>
                 </View>
               ))}
             </View>
-
-            <Text style={[styles.lpTotal, { color: c.mutedForeground }]}>
-              {learningPath.totalMinutesPerWeek} phút/tuần
-            </Text>
           </Animated.View>
         )}
       </Animated.ScrollView>

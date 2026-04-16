@@ -94,9 +94,12 @@ export const MOCK_LEARNING_PATH: LearningPathResponse = {
 // ─── Exams ────────────────────────────────────────────────────────
 
 export const MOCK_EXAMS: Exam[] = [
-  { id: "exam-1", title: "VSTEP Mock Test 1", type: "mock", level: "B1", isActive: true, questionCount: 80, duration: 150, blueprint: { listening: { questionIds: ["q1"] }, reading: { questionIds: ["q2"] }, writing: { questionIds: ["q3"] }, speaking: { questionIds: ["q4"] } } },
-  { id: "exam-2", title: "VSTEP Mock Test 2", type: "mock", level: "B2", isActive: true, questionCount: 80, duration: 150, blueprint: { listening: { questionIds: ["q5"] }, reading: { questionIds: ["q6"] }, writing: { questionIds: ["q7"] }, speaking: { questionIds: ["q8"] } } },
-  { id: "exam-3", title: "VSTEP Practice B1", type: "practice", level: "B1", isActive: true, questionCount: 40, duration: 60, blueprint: { listening: { questionIds: ["q9"] }, reading: { questionIds: ["q10"] }, writing: { questionIds: [] }, speaking: { questionIds: [] } } },
+  { id: "exam-1", title: "Đề thi VSTEP HNUE 08/02/2026 #1", type: "mock", level: "B1", isActive: true, questionCount: 80, duration: 150, blueprint: { listening: { questionIds: ["q1"] }, reading: { questionIds: ["q2"] }, writing: { questionIds: ["q3"] }, speaking: { questionIds: ["q4"] } } },
+  { id: "exam-2", title: "Đề thi VSTEP HNUE 08/02/2026 #2", type: "mock", level: "B2", isActive: true, questionCount: 80, duration: 150, blueprint: { listening: { questionIds: ["q5"] }, reading: { questionIds: ["q6"] }, writing: { questionIds: ["q7"] }, speaking: { questionIds: ["q8"] } } },
+  { id: "exam-3", title: "Đề thi VSTEP ĐHQG 15/03/2026 #3", type: "mock", level: "B1", isActive: true, questionCount: 80, duration: 150, blueprint: { listening: { questionIds: ["q9"] }, reading: { questionIds: ["q10"] }, writing: { questionIds: ["q11"] }, speaking: { questionIds: ["q12"] } } },
+  { id: "exam-4", title: "Đề thi VSTEP ĐHQG 15/03/2026 #4", type: "mock", level: "B2", isActive: true, questionCount: 80, duration: 150, blueprint: { listening: { questionIds: ["q13"] }, reading: { questionIds: ["q14"] }, writing: { questionIds: ["q15"] }, speaking: { questionIds: ["q16"] } } },
+  { id: "exam-5", title: "Đề thi VSTEP ĐH Ngoại ngữ #5", type: "mock", level: "B1", isActive: true, questionCount: 40, duration: 60, blueprint: { listening: { questionIds: ["q17"] }, reading: { questionIds: ["q18"] }, writing: { questionIds: [] }, speaking: { questionIds: [] } } },
+  { id: "exam-6", title: "Đề thi VSTEP ĐH Ngoại ngữ #6", type: "mock", level: "C1", isActive: true, questionCount: 80, duration: 172, blueprint: { listening: { questionIds: ["q19"] }, reading: { questionIds: ["q20"] }, writing: { questionIds: ["q21"] }, speaking: { questionIds: ["q22"] } } },
 ] as any;
 
 export const MOCK_SESSIONS: ExamSessionWithExam[] = [
@@ -159,3 +162,49 @@ export const MOCK_CLASSES: ClassItem[] = [] as any;
 // ─── Sentences ────────────────────────────────────────────────────
 
 export const MOCK_SENTENCE_TOPICS: SentenceTopic[] = [] as any;
+
+// ─── Practice Track (aligned with frontend-v2 PracticeTrackView) ──
+
+export interface ScoreEntry { score: number; }
+export interface TestSession {
+  id: string;
+  examId: string;
+  listeningScore: number | null;
+  readingScore: number | null;
+  writingScore: number | null;
+  speakingScore: number | null;
+  completedAt: string;
+}
+export interface PracticeTrackData {
+  spider: Record<string, { current: number; trend: string }>;
+  skills: { skill: string; currentLevel: string; attemptCount: number; averageScore: number }[];
+  recentScores: Record<string, ScoreEntry[]>;
+  testSessions: TestSession[];
+}
+
+export const MOCK_PRACTICE_TRACK: PracticeTrackData = {
+  spider: {
+    listening: { current: 6.2, trend: "up" },
+    reading: { current: 7.1, trend: "stable" },
+    writing: { current: 5.4, trend: "down" },
+    speaking: { current: 5.8, trend: "up" },
+  },
+  skills: [
+    { skill: "listening", currentLevel: "B1", attemptCount: 12, averageScore: 6.2 },
+    { skill: "reading", currentLevel: "B1", attemptCount: 15, averageScore: 7.1 },
+    { skill: "writing", currentLevel: "A2", attemptCount: 8, averageScore: 5.4 },
+    { skill: "speaking", currentLevel: "A2", attemptCount: 6, averageScore: 5.8 },
+  ],
+  recentScores: {
+    listening: [{ score: 5.8 }, { score: 6.0 }, { score: 5.5 }, { score: 6.2 }, { score: 6.5 }, { score: 6.1 }, { score: 6.3 }, { score: 6.0 }, { score: 6.2 }, { score: 6.4 }],
+    reading: [{ score: 6.8 }, { score: 7.0 }, { score: 6.5 }, { score: 7.2 }, { score: 7.0 }, { score: 7.1 }, { score: 7.3 }, { score: 7.0 }, { score: 7.1 }, { score: 7.2 }],
+    writing: [{ score: 5.0 }, { score: 5.2 }, { score: 4.8 }, { score: 5.5 }, { score: 5.3 }, { score: 5.4 }, { score: 5.6 }, { score: 5.2 }, { score: 5.3 }, { score: 5.4 }],
+    speaking: [{ score: 5.2 }, { score: 5.5 }, { score: 5.8 }, { score: 5.4 }, { score: 5.6 }, { score: 5.9 }, { score: 5.7 }, { score: 5.8 }, { score: 5.6 }, { score: 5.8 }],
+  },
+  testSessions: [
+    { id: "sess-001", examId: "exam-a1b2c3", listeningScore: 6.5, readingScore: 7.2, writingScore: 5.5, speakingScore: 5.8, completedAt: new Date(Date.now() - 1 * 86400000).toISOString() },
+    { id: "sess-002", examId: "exam-d4e5f6", listeningScore: 6.2, readingScore: 7.0, writingScore: null, speakingScore: null, completedAt: new Date(Date.now() - 2 * 86400000).toISOString() },
+    { id: "sess-003", examId: "exam-g7h8i9", listeningScore: 6.0, readingScore: 7.1, writingScore: 5.3, speakingScore: 5.6, completedAt: new Date(Date.now() - 5 * 86400000).toISOString() },
+    { id: "sess-004", examId: "exam-j0k1l2", listeningScore: 5.8, readingScore: 6.8, writingScore: 5.0, speakingScore: null, completedAt: new Date(Date.now() - 7 * 86400000).toISOString() },
+  ],
+};

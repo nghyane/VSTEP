@@ -1,5 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { MOCK_PROGRESS, MOCK_SPIDER, MOCK_ACTIVITY, MOCK_LEARNING_PATH } from "@/lib/mock";
+import { MOCK_PROGRESS, MOCK_SPIDER, MOCK_ACTIVITY, MOCK_LEARNING_PATH, MOCK_PRACTICE_TRACK } from "@/lib/mock";
+import type { PracticeTrackData } from "@/lib/mock";
 import type { ActivityResponse, Goal, LearningPathResponse, ProgressOverview, SpiderChart } from "@/types/api";
 
 export function useProgress() {
@@ -28,4 +29,8 @@ export function useActivity(days = 7) {
 
 export function useLearningPath() {
   return useQuery({ queryKey: ["learning-path"], queryFn: async (): Promise<LearningPathResponse> => MOCK_LEARNING_PATH });
+}
+
+export function usePracticeTrack() {
+  return useQuery({ queryKey: ["practice-track"], queryFn: async (): Promise<PracticeTrackData> => MOCK_PRACTICE_TRACK });
 }
