@@ -14,7 +14,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { Link, useRouter } from "expo-router";
 import { useAuth } from "@/hooks/use-auth";
-import { loginApi } from "@/lib/api";
 import { Logo } from "@/components/Logo";
 import { useThemeColors, spacing, radius, fontSize } from "@/theme";
 
@@ -45,20 +44,14 @@ export default function LoginScreen() {
   }, [email, password]);
 
   async function handleLogin() {
-    if (!validate()) return;
     setErrors({});
     setLoading(true);
     try {
-      const res = await loginApi(email.trim(), password);
-      await signIn(res.accessToken, res.refreshToken, res.user);
+      const mockUser = { id: "mock-user-1", email: email.trim() || "demo@vstep.vn", role: "learner", fullName: "Nguyễn Phát" };
+      await signIn("mock-access-token", "mock-refresh-token", mockUser);
       router.replace("/");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Đăng nhập thất bại";
-      if (message.toLowerCase().includes("invalid email or password")) {
-        setErrors({ general: "Email hoặc mật khẩu không đúng" });
-      } else {
-        setErrors({ general: message });
-      }
+    } catch {
+      setErrors({ general: "Đăng nhập thất bại" });
     } finally {
       setLoading(false);
     }

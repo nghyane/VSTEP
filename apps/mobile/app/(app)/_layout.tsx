@@ -27,6 +27,10 @@ export default function AppLayout() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
+        name="exam-result/[id]"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
         name="skill/[name]"
         options={{ headerShown: true, title: "Chi tiết kỹ năng" }}
       />

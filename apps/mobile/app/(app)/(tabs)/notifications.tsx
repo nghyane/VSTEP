@@ -22,13 +22,13 @@ const TYPE_ICONS: Record<NotificationType, keyof typeof Ionicons.glyphMap> = {
 };
 
 const TYPE_COLORS: Record<NotificationType, string> = {
-  grading_complete: "#30A46C",
-  goal_achieved: "#E5A817",
+  grading_complete: "#22C55E",
+  goal_achieved: "#F59E0B",
   streak_milestone: "#F97316",
-  session_abandoned: "#6C6F7F",
-  feedback: "#4B7BF5",
-  class_invite: "#9B59D0",
-  system: "#6C6F7F",
+  session_abandoned: "#6B7280",
+  feedback: "#3B82F6",
+  class_invite: "#8B5CF6",
+  system: "#6B7280",
 };
 
 function timeAgo(dateStr: string): string {

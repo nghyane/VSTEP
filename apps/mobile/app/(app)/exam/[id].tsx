@@ -1,269 +1,260 @@
-import { useCallback, useMemo, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ErrorScreen } from "@/components/ErrorScreen";
 import { LoadingScreen } from "@/components/LoadingScreen";
-import { LearningPath, type LevelNode, type NodeStatus } from "@/components/LearningPath";
-import { SKILL_LABELS } from "@/components/SkillIcon";
-import { useExamDetail, useStartExam } from "@/hooks/use-exams";
-import { useThemeColors, useSkillColor, spacing, radius, fontSize } from "@/theme";
+import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
+import { useExamDetail } from "@/hooks/use-exams";
+import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import type { ExamBlueprint, Skill } from "@/types/api";
+import type { Skill } from "@/types/api";
 
-// ---------------------------------------------------------------------------
-// Level generation from exam blueprint
-// ---------------------------------------------------------------------------
+// ─── Mock exam sections (aligned with frontend-v2 thi-thu) ───────
 
-const LEVEL_TEMPLATES: { skill: Skill; title: string }[] = [
-  { skill: "listening", title: "Nghe hiểu cơ bản" },
-  { skill: "reading", title: "Đọc hiểu đoạn văn" },
-  { skill: "writing", title: "Viết đoạn ngắn" },
-  { skill: "speaking", title: "Phát âm & trả lời" },
-  { skill: "listening", title: "Nghe hội thoại" },
-  { skill: "reading", title: "Đọc hiểu bài dài" },
-  { skill: "writing", title: "Viết bài luận" },
-  { skill: "speaking", title: "Thảo luận chủ đề" },
-  { skill: "listening", title: "Nghe bài giảng" },
-  { skill: "reading", title: "Tổng ôn tập" },
-];
-
-function buildLevels(bp: ExamBlueprint, completedSet: Set<number>): LevelNode[] {
-  // Determine which skills this exam actually has
-  const available = new Set<Skill>();
-  for (const s of ["listening", "reading", "writing", "speaking"] as Skill[]) {
-    if (bp[s] && bp[s]!.questionIds.length > 0) available.add(s);
-  }
-
-  // Filter templates to only include available skills, take first 10
-  const filtered = LEVEL_TEMPLATES.filter((t) => available.has(t.skill)).slice(0, 10);
-  // If we got fewer than the available templates, pad by cycling
-  while (filtered.length < 10 && available.size > 0) {
-    const skills = [...available];
-    const idx = filtered.length % skills.length;
-    filtered.push({
-      skill: skills[idx],
-      title: `${SKILL_LABELS[skills[idx]]} ${Math.ceil((filtered.length + 1) / skills.length)}`,
-    });
-  }
-
-  // Find the first non-completed to mark as current
-  let foundCurrent = false;
-  return filtered.map((t, i) => {
-    const id = i + 1;
-    let status: NodeStatus;
-    if (completedSet.has(id)) {
-      status = "completed";
-    } else if (!foundCurrent) {
-      status = "current";
-      foundCurrent = true;
-    } else {
-      status = "locked";
-    }
-    return { id, skill: t.skill, title: t.title, status };
-  });
+interface ExamSection {
+  id: string;
+  skill: Skill;
+  part: number;
+  title: string;
+  description: string;
+  questionCount: number;
+  unit: string;
+  durationMinutes: number;
 }
 
-// ---------------------------------------------------------------------------
-// Screen
-// ---------------------------------------------------------------------------
+const VSTEP_SECTIONS: ExamSection[] = [
+  { id: "listening-1", skill: "listening", part: 1, title: "Phần 1", description: "Thông báo ngắn", questionCount: 8, unit: "câu", durationMinutes: 7 },
+  { id: "listening-2", skill: "listening", part: 2, title: "Phần 2", description: "Hội thoại", questionCount: 12, unit: "câu", durationMinutes: 13 },
+  { id: "listening-3", skill: "listening", part: 3, title: "Phần 3", description: "Bài giảng", questionCount: 15, unit: "câu", durationMinutes: 20 },
+  { id: "reading-1", skill: "reading", part: 1, title: "Phần 1", description: "Bài đọc 1", questionCount: 10, unit: "câu", durationMinutes: 15 },
+  { id: "reading-2", skill: "reading", part: 2, title: "Phần 2", description: "Bài đọc 2", questionCount: 10, unit: "câu", durationMinutes: 15 },
+  { id: "reading-3", skill: "reading", part: 3, title: "Phần 3", description: "Bài đọc 3", questionCount: 10, unit: "câu", durationMinutes: 15 },
+  { id: "reading-4", skill: "reading", part: 4, title: "Phần 4", description: "Bài đọc 4", questionCount: 10, unit: "câu", durationMinutes: 15 },
+  { id: "writing-1", skill: "writing", part: 1, title: "Phần 1", description: "Viết thư (~120 từ)", questionCount: 1, unit: "bài", durationMinutes: 20 },
+  { id: "writing-2", skill: "writing", part: 2, title: "Phần 2", description: "Viết luận (~250 từ)", questionCount: 1, unit: "bài", durationMinutes: 40 },
+  { id: "speaking-1", skill: "speaking", part: 1, title: "Phần 1", description: "Tương tác xã hội", questionCount: 1, unit: "phần", durationMinutes: 4 },
+  { id: "speaking-2", skill: "speaking", part: 2, title: "Phần 2", description: "Thảo luận giải pháp", questionCount: 1, unit: "phần", durationMinutes: 4 },
+  { id: "speaking-3", skill: "speaking", part: 3, title: "Phần 3", description: "Phát triển chủ đề", questionCount: 1, unit: "phần", durationMinutes: 4 },
+];
+
+const SKILL_ORDER: Skill[] = ["listening", "reading", "writing", "speaking"];
+const SKILL_VN: Record<Skill, string> = { listening: "Nghe", reading: "Đọc", writing: "Viết", speaking: "Nói" };
 
 export default function ExamDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const c = useThemeColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data: exam, isLoading, error } = useExamDetail(id!);
-  const startExam = useStartExam();
+  const { data: exam, isLoading } = useExamDetail(id!);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  // Track completed levels locally (demo — persists within session only)
-  const [completedIds, setCompletedIds] = useState<Set<number>>(() => new Set());
+  if (isLoading || !exam) return <LoadingScreen />;
 
-  const levels = useMemo(() => {
-    if (!exam || !exam.blueprint) return [];
-    return buildLevels(exam.blueprint as ExamBlueprint, completedIds);
-  }, [exam, completedIds]);
+  const totalMinutes = VSTEP_SECTIONS.reduce((s, sec) => s + sec.durationMinutes, 0);
 
-  const completedCount = completedIds.size;
-  const totalCount = levels.length;
+  function toggleSection(sectionId: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(sectionId)) next.delete(sectionId);
+      else next.add(sectionId);
+      return next;
+    });
+  }
 
-  const handleNodePress = useCallback(
-    (level: LevelNode) => {
-      if (level.status === "locked") return;
-
-      if (level.status === "completed") {
-        // Already completed — let user review (navigate to practice)
-        router.push(`/(app)/practice/${level.skill}`);
-        return;
-      }
-
-      // Current node — mark as completed to advance the path
-      setCompletedIds((prev) => {
-        const next = new Set(prev);
-        next.add(level.id);
-        return next;
-      });
-
-      // Navigate to practice for this skill
-      router.push(`/(app)/practice/${level.skill}`);
-    },
-    [router],
-  );
-
-  if (isLoading) return <LoadingScreen />;
-  if (error || !exam) return <ErrorScreen message={error?.message ?? "Không tìm thấy bài thi"} />;
-
-  const hasBlueprint = levels.length > 0;
+  function toggleSkill(skill: Skill) {
+    const ids = VSTEP_SECTIONS.filter((s) => s.skill === skill).map((s) => s.id);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      const allSelected = ids.every((id) => next.has(id));
+      for (const sid of ids) allSelected ? next.delete(sid) : next.add(sid);
+      return next;
+    });
+  }
 
   return (
-    <View style={[styles.container, { backgroundColor: c.background }]}>
-      {/* Progress header */}
-      <View style={[styles.header, { backgroundColor: c.card, borderBottomColor: c.border, paddingTop: insets.top + spacing.sm }]}>
-        {/* Back + title row */}
-        <View style={styles.headerTop}>
-          <HapticTouchable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
-            <Ionicons name="chevron-back" size={24} color={c.foreground} />
-          </HapticTouchable>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.examTitle, { color: c.foreground }]}>Đề thi {exam.level}</Text>
-            {hasBlueprint && (
-              <Text style={[styles.examSub, { color: c.mutedForeground }]}>
-                {completedCount}/{totalCount} hoàn thành
-              </Text>
-            )}
-          </View>
-          {hasBlueprint && <ProgressRing completed={completedCount} total={totalCount} />}
+    <View style={[styles.root, { backgroundColor: c.background }]}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: insets.top + spacing.base }]}>
+        {/* Back */}
+        <HapticTouchable onPress={() => router.back()} style={styles.backRow} hitSlop={8}>
+          <Ionicons name="chevron-back" size={20} color={c.mutedForeground} />
+          <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm }}>Thư viện đề thi</Text>
+        </HapticTouchable>
+
+        {/* Header */}
+        <Text style={[styles.title, { color: c.foreground }]}>{exam.title}</Text>
+        <View style={styles.metaRow}>
+          <Ionicons name="time-outline" size={16} color={c.mutedForeground} />
+          <Text style={[styles.metaText, { color: c.mutedForeground }]}>{totalMinutes} phút</Text>
         </View>
 
-        {/* Progress bar */}
-        {hasBlueprint && (
-          <View style={[styles.progressTrack, { backgroundColor: c.muted }]}>
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  backgroundColor: c.success,
-                  width: totalCount > 0 ? `${(completedCount / totalCount) * 100}%` : "0%",
-                },
-              ]}
+        {/* Skill chips */}
+        <View style={styles.chipRow}>
+          {SKILL_ORDER.map((skill) => (
+            <SkillChip key={skill} skill={skill} />
+          ))}
+        </View>
+
+        {/* Skill stats grid */}
+        <View style={[styles.statsGrid, { borderColor: c.border, backgroundColor: c.muted + "50" }]}>
+          {SKILL_ORDER.map((skill) => {
+            const secs = VSTEP_SECTIONS.filter((s) => s.skill === skill);
+            const mins = secs.reduce((s, sec) => s + sec.durationMinutes, 0);
+            const count = secs.reduce((s, sec) => s + sec.questionCount, 0);
+            const unit = secs[0]?.unit ?? "câu";
+            return (
+              <View key={skill} style={styles.statCell}>
+                <Text style={[styles.statLabel, { color: c.mutedForeground }]}>{SKILL_VN[skill]}</Text>
+                <Text style={[styles.statValue, { color: c.foreground }]}>{mins} phút</Text>
+                <Text style={[styles.statSub, { color: c.mutedForeground }]}>{count} {unit}</Text>
+              </View>
+            );
+          })}
+        </View>
+
+        {/* Section selector */}
+        <Text style={[styles.sectionTitle, { color: c.foreground }]}>Chọn phần luyện tập</Text>
+        <Text style={[styles.sectionHint, { color: c.mutedForeground }]}>
+          {selected.size === 0 ? "Chưa chọn — sẽ làm full test" : `${selected.size} phần đã chọn`}
+        </Text>
+
+        {SKILL_ORDER.map((skill) => {
+          const secs = VSTEP_SECTIONS.filter((s) => s.skill === skill);
+          const ids = secs.map((s) => s.id);
+          const allSelected = ids.every((id) => selected.has(id));
+          return (
+            <SkillGroup
+              key={skill}
+              skill={skill}
+              sections={secs}
+              selected={selected}
+              allSelected={allSelected}
+              onToggleSection={toggleSection}
+              onToggleSkill={() => toggleSkill(skill)}
             />
-          </View>
-        )}
+          );
+        })}
+
+        <View style={{ height: 120 }} />
+      </ScrollView>
+
+      {/* Bottom action bar */}
+      <View style={[styles.bottomBar, { backgroundColor: c.card, borderTopColor: c.border, paddingBottom: insets.bottom + spacing.base }]}>
+        <HapticTouchable
+          style={[styles.startBtn, { backgroundColor: c.primary }]}
+          onPress={() => router.push(`/(app)/session/mock-session-${id}`)}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="play" size={18} color={c.primaryForeground} />
+          <Text style={[styles.startBtnText, { color: c.primaryForeground }]}>
+            {selected.size === 0 ? "Bắt đầu Full Test" : `Bắt đầu (${selected.size} phần)`}
+          </Text>
+        </HapticTouchable>
+      </View>
+    </View>
+  );
+}
+
+// ─── Sub-components ───────────────────────────────────────────────
+
+function SkillChip({ skill }: { skill: Skill }) {
+  const color = useSkillColor(skill);
+  return (
+    <View style={[styles.chip, { backgroundColor: color + "18" }]}>
+      <Text style={[styles.chipText, { color }]}>{SKILL_LABELS[skill]}</Text>
+    </View>
+  );
+}
+
+function SkillGroup({ skill, sections, selected, allSelected, onToggleSection, onToggleSkill }: {
+  skill: Skill; sections: ExamSection[]; selected: Set<string>; allSelected: boolean;
+  onToggleSection: (id: string) => void; onToggleSkill: () => void;
+}) {
+  const c = useThemeColors();
+  const color = useSkillColor(skill);
+  const totalMins = sections.reduce((s, sec) => s + sec.durationMinutes, 0);
+  const totalCount = sections.reduce((s, sec) => s + sec.questionCount, 0);
+  const unit = sections[0]?.unit ?? "câu";
+
+  return (
+    <View style={[styles.groupCard, { borderColor: c.border, backgroundColor: c.card }]}>
+      {/* Group header */}
+      <View style={styles.groupHeader}>
+        <View style={styles.groupHeaderLeft}>
+          <View style={[styles.skillBar, { backgroundColor: color }]} />
+          <Text style={[styles.groupSkillLabel, { color }]}>{SKILL_VN[skill]}</Text>
+          <Text style={[styles.groupMeta, { color: c.mutedForeground }]}>{totalMins} phút · {totalCount} {unit}</Text>
+        </View>
+        <HapticTouchable
+          style={[styles.selectAllBtn, allSelected ? { backgroundColor: color } : { backgroundColor: c.muted }]}
+          onPress={onToggleSkill}
+        >
+          <Text style={[styles.selectAllText, { color: allSelected ? "#fff" : c.mutedForeground }]}>
+            {allSelected ? "Bỏ chọn" : "Chọn tất cả"}
+          </Text>
+        </HapticTouchable>
       </View>
 
-      {/* Learning path or direct start */}
-      {hasBlueprint ? (
-        <LearningPath levels={levels} onNodePress={handleNodePress} />
-      ) : (
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: spacing.xl, gap: spacing.md }}>
-          <Ionicons name="document-text-outline" size={48} color={c.mutedForeground} />
-          <Text style={{ color: c.foreground, fontSize: fontSize.lg, fontWeight: "600", textAlign: "center" }}>
-            {exam.title}
-          </Text>
-          {exam.description ? (
-            <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm, textAlign: "center" }}>
-              {exam.description}
-            </Text>
-          ) : null}
-          <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm, textAlign: "center" }}>
-            {exam.durationMinutes ? `${exam.durationMinutes} phút` : "Không giới hạn thời gian"}
-          </Text>
-        </View>
-      )}
-
-      {/* Start exam button — always show when no blueprint, or when learning path completed */}
-      {(!hasBlueprint || completedCount >= totalCount) && (
-        <View style={[styles.bottomBar, { backgroundColor: c.card, borderTopColor: c.border }]}>
+      {/* Section rows */}
+      {sections.map((sec, idx) => {
+        const isSelected = selected.has(sec.id);
+        return (
           <HapticTouchable
-            style={[styles.examBtn, { backgroundColor: c.primary, opacity: startExam.isPending ? 0.6 : 1 }]}
-            onPress={() =>
-              startExam.mutate(exam.id, {
-                onSuccess: (session) => router.replace(`/(app)/session/${session.id}`),
-              })
-            }
-            disabled={startExam.isPending}
+            key={sec.id}
+            style={[
+              styles.sectionRow,
+              idx < sections.length - 1 && { borderBottomWidth: 1, borderBottomColor: c.border + "66" },
+              isSelected && { backgroundColor: color + "0D" },
+            ]}
+            onPress={() => onToggleSection(sec.id)}
+            activeOpacity={0.7}
           >
-            <Ionicons name="rocket" size={18} color={c.primaryForeground} />
-            <Text style={[styles.examBtnText, { color: c.primaryForeground }]}>
-              {startExam.isPending ? "Đang bắt đầu..." : "Bắt đầu thi"}
-            </Text>
+            <View style={[styles.checkbox, isSelected ? { backgroundColor: color, borderColor: color } : { borderColor: c.border }]}>
+              {isSelected && <Ionicons name="checkmark" size={12} color="#fff" />}
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.sectionName, { color: c.foreground }]}>{sec.title} — {sec.description}</Text>
+            </View>
+            <Text style={[styles.sectionMeta, { color: c.mutedForeground }]}>{sec.questionCount} {sec.unit} · {sec.durationMinutes}p</Text>
           </HapticTouchable>
-          {startExam.error && (
-            <Text style={{ color: c.destructive, fontSize: fontSize.xs, marginTop: spacing.xs }}>
-              {startExam.error.message}
-            </Text>
-          )}
-        </View>
-      )}
+        );
+      })}
     </View>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Progress ring (mini)
-// ---------------------------------------------------------------------------
-
-function ProgressRing({ completed, total }: { completed: number; total: number }) {
-  const c = useThemeColors();
-  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
-  return (
-    <View style={[styles.ring, { borderColor: c.muted }]}>
-      <Text style={[styles.ringText, { color: c.primary }]}>{pct}%</Text>
-    </View>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
+// ─── Styles ───────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.md, // overridden inline with insets.top
-    paddingBottom: spacing.base,
-    borderBottomWidth: 1,
-    gap: spacing.sm,
-  },
-  headerTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  backBtn: { marginRight: spacing.sm },
-  examTitle: { fontSize: fontSize.lg, fontWeight: "700" },
-  examSub: { fontSize: fontSize.xs, marginTop: 2 },
-  progressTrack: {
-    height: 6,
-    borderRadius: 3,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: 3,
-  },
-  ring: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 3,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  ringText: { fontSize: fontSize.xs, fontWeight: "700" },
-  bottomBar: {
-    padding: spacing.xl,
-    borderTopWidth: 1,
-  },
-  examBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-    borderRadius: radius.lg,
-  },
-  examBtnText: { fontSize: fontSize.base, fontWeight: "700" },
+  root: { flex: 1 },
+  scroll: { paddingHorizontal: spacing.xl },
+  backRow: { flexDirection: "row", alignItems: "center", gap: 4, marginBottom: spacing.base },
+  title: { fontSize: fontSize["2xl"], fontFamily: fontFamily.bold },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: spacing.sm },
+  metaText: { fontSize: fontSize.sm },
+  chipRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.base },
+  chip: { paddingHorizontal: spacing.md, paddingVertical: 4, borderRadius: radius.full },
+  chipText: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
+  statsGrid: { flexDirection: "row", borderWidth: 1, borderRadius: radius.md, marginTop: spacing.base, overflow: "hidden" },
+  statCell: { flex: 1, alignItems: "center", paddingVertical: spacing.md },
+  statLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
+  statValue: { fontSize: fontSize.sm, fontFamily: fontFamily.bold, marginTop: 2 },
+  statSub: { fontSize: 11, marginTop: 1 },
+  sectionTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.semiBold, marginTop: spacing.xl },
+  sectionHint: { fontSize: fontSize.xs, marginTop: 4, marginBottom: spacing.base },
+  groupCard: { borderWidth: 1, borderRadius: radius.xl, marginBottom: spacing.base, overflow: "hidden" },
+  groupHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.base, paddingVertical: spacing.md },
+  groupHeaderLeft: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  skillBar: { width: 4, height: 20, borderRadius: 2 },
+  groupSkillLabel: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
+  groupMeta: { fontSize: fontSize.xs },
+  selectAllBtn: { paddingHorizontal: spacing.md, paddingVertical: 4, borderRadius: radius.full },
+  selectAllText: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },
+  sectionRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.base, paddingVertical: spacing.md },
+  checkbox: { width: 20, height: 20, borderRadius: 4, borderWidth: 2, alignItems: "center", justifyContent: "center" },
+  sectionName: { fontSize: fontSize.sm, fontFamily: fontFamily.medium },
+  sectionMeta: { fontSize: fontSize.xs },
+  bottomBar: { position: "absolute", bottom: 0, left: 0, right: 0, borderTopWidth: 1, paddingHorizontal: spacing.xl, paddingTop: spacing.base },
+  startBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, paddingVertical: spacing.md, borderRadius: radius.lg },
+  startBtnText: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
 });

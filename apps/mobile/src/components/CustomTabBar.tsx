@@ -10,7 +10,7 @@ import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useThemeColors, spacing, fontFamily } from "@/theme";
 import { useHaptics } from "@/contexts/HapticsContext";
 
-const HIDDEN_TABS = new Set(["notifications"]);
+const HIDDEN_TABS = new Set(["notifications", "classes"]);
 
 export function CustomTabBar({
   state,

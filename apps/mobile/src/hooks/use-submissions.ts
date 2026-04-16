@@ -1,35 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { MOCK_SUBMISSIONS } from "@/lib/mock";
 import type { PaginatedResponse, Submission } from "@/types/api";
 
-// ---------------------------------------------------------------------------
-// Submissions are created through session/practice flows — NOT directly.
-// These hooks are read-only.
-// ---------------------------------------------------------------------------
-
-export function useSubmissions(params?: {
-  page?: number;
-  skill?: string;
-  status?: string;
-}) {
-  const searchParams = new URLSearchParams();
-  if (params?.page) searchParams.set("page", String(params.page));
-  if (params?.skill) searchParams.set("skill", params.skill);
-  if (params?.status) searchParams.set("status", params.status);
-  const qs = searchParams.toString();
-  return useQuery({
-    queryKey: ["submissions", params],
-    queryFn: () =>
-      api.get<PaginatedResponse<Submission>>(
-        `/api/submissions${qs ? `?${qs}` : ""}`,
-      ),
-  });
+export function useSubmissions(_params?: { page?: number; skill?: string; status?: string }) {
+  return useQuery({ queryKey: ["submissions", _params], queryFn: async (): Promise<PaginatedResponse<Submission>> => ({ data: MOCK_SUBMISSIONS, meta: { page: 1, limit: 20, total: 0, totalPages: 0 } }) });
 }
 
 export function useSubmission(id: string) {
-  return useQuery({
-    queryKey: ["submissions", id],
-    queryFn: () => api.get<Submission>(`/api/submissions/${id}`),
-    enabled: !!id,
-  });
+  return useQuery({ queryKey: ["submissions", id], queryFn: async () => MOCK_SUBMISSIONS.find((s) => (s as any).id === id) ?? null, enabled: !!id });
 }

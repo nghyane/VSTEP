@@ -7,7 +7,7 @@ export function GradientBackground() {
   return (
     <View style={styles.container} pointerEvents="none">
       <LinearGradient
-        colors={["#E8EEFF", "#F0F4FF", "#FAFBFF"]}
+        colors={["#EBF2FF", "#F2F6FF", "#FAFAFA"]}
         locations={[0, 0.25, 0.35]}
         style={styles.gradient}
       />

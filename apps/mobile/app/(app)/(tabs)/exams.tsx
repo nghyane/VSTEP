@@ -29,10 +29,10 @@ const SKILL_ICONS: Record<Skill, keyof typeof Ionicons.glyphMap> = {
   speaking: "mic",
 };
 const LEVEL_COLORS: Record<string, { bg: [string, string]; text: string }> = {
-  A2: { bg: ["#34B279", "#2D9D6A"], text: "#fff" },
-  B1: { bg: ["#4B7BF5", "#3D65D4"], text: "#fff" },
-  B2: { bg: ["#4F5BD5", "#3F49B5"], text: "#fff" },
-  C1: { bg: ["#9B59D0", "#7C45A8"], text: "#fff" },
+  A2: { bg: ["#10B981", "#059669"], text: "#fff" },
+  B1: { bg: ["#3B82F6", "#2563EB"], text: "#fff" },
+  B2: { bg: ["#1a6ef5", "#1559CC"], text: "#fff" },
+  C1: { bg: ["#8B5CF6", "#7C3AED"], text: "#fff" },
 };
 
 export default function ExamsScreen() {

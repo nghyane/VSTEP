@@ -13,7 +13,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { Link, useRouter } from "expo-router";
 import { useAuth } from "@/hooks/use-auth";
-import { loginApi, registerApi } from "@/lib/api";
 import { Logo } from "@/components/Logo";
 import { useThemeColors, spacing, radius, fontSize } from "@/theme";
 export default function RegisterScreen() {
@@ -49,21 +48,14 @@ export default function RegisterScreen() {
   }, [fullName, email, password]);
 
   async function handleRegister() {
-    if (!validate()) return;
     setErrors({});
     setLoading(true);
     try {
-      await registerApi(email.trim(), password, fullName.trim() || undefined);
-      const res = await loginApi(email.trim(), password);
-      await signIn(res.accessToken, res.refreshToken, res.user);
+      const mockUser = { id: "mock-user-1", email: email.trim() || "demo@vstep.vn", role: "learner", fullName: fullName.trim() || "Nguyễn Phát" };
+      await signIn("mock-access-token", "mock-refresh-token", mockUser);
       router.replace("/");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Đã xảy ra lỗi";
-      if (message.toLowerCase().includes("email already registered")) {
-        setErrors({ email: "Email này đã được sử dụng" });
-      } else {
-        setErrors({ general: message });
-      }
+    } catch {
+      setErrors({ general: "Đăng ký thất bại" });
     } finally {
       setLoading(false);
     }

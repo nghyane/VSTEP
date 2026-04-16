@@ -3,7 +3,6 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { Audio } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { useThemeColors, spacing, radius, fontSize } from "@/theme";
 
@@ -23,10 +22,7 @@ function usePresignedUrl(storageKey: string | undefined) {
     queryFn: async () => {
       if (!storageKey) return "";
       if (isFullUrl(storageKey)) return storageKey;
-      const res = await api.get<{ url: string; expiresIn: number }>(
-        `/api/audio/presign?path=${encodeURIComponent(storageKey)}`,
-      );
-      return res.url;
+      return storageKey; // mock: use key as URL directly
     },
     enabled: !!storageKey,
     staleTime: 50 * 60 * 1000, // 50 min cache (URL valid 60 min)

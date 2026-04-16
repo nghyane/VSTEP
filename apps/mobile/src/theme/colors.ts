@@ -1,29 +1,45 @@
+// Design tokens aligned with frontend-v2 (apps/frontend-v2/src/styles.css)
+// oklch values converted to hex for React Native
+
 export const colors = {
   light: {
-    primary: "#4F5BD5",
+    // Primary — VSTEP blue (frontend-v2: oklch(0.55 0.2 258) ≈ #1a6ef5)
+    primary: "#1a6ef5",
     primaryForeground: "#FAFAFA",
-    background: "#FAFBFF",
-    foreground: "#171723",
-    card: "#FAFBFF",
-    cardForeground: "#171723",
-    muted: "#F2F3F7",
-    mutedForeground: "#6C6F7F",
-    secondary: "#E4E8FA",
+
+    // Base
+    background: "#FAFAFA",
+    foreground: "#1a1a2e",
+    card: "#FFFFFF",
+    cardForeground: "#1a1a2e",
+
+    // Muted
+    muted: "#F3F4F6",
+    mutedForeground: "#6B7280",
+
+    // Secondary
+    secondary: "#EEF0FA",
     secondaryForeground: "#3D4A8A",
-    accent: "#F2F3F7",
-    accentForeground: "#171723",
-    destructive: "#E5484D",
-    border: "#E2E4ED",
-    input: "#E2E4ED",
-    ring: "#4F5BD5",
-    success: "#30A46C",
+
+    // Accent
+    accent: "#F3F4F6",
+    accentForeground: "#1a1a2e",
+
+    // Semantic
+    destructive: "#EF4444",
+    border: "#E5E7EB",
+    input: "#E5E7EB",
+    ring: "#1a6ef5",
+    success: "#22C55E",
     successForeground: "#FAFAFA",
-    warning: "#E5A700",
-    warningForeground: "#171723",
-    skillListening: "#4B7BF5",
-    skillReading: "#34B279",
-    skillWriting: "#9B59D0",
-    skillSpeaking: "#E5A817",
+    warning: "#F59E0B",
+    warningForeground: "#1a1a2e",
+
+    // Skill colors (frontend-v2: oklch(0.65 0.18 hue))
+    skillListening: "#3B82F6",
+    skillReading: "#10B981",
+    skillWriting: "#8B5CF6",
+    skillSpeaking: "#F59E0B",
   },
 } as const;
 

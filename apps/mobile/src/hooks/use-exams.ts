@@ -1,7 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { MOCK_EXAMS } from "@/lib/mock";
 import type { Exam, PaginatedResponse, ExamType, ExamSkill, QuestionLevel } from "@/types/api";
-import { queryClient } from "@/lib/query-client";
 
 interface UseExamsParams {
   type?: ExamType;
@@ -11,49 +10,14 @@ interface UseExamsParams {
   page?: number;
 }
 
-export function useExams(params: UseExamsParams = {}) {
-  const search = new URLSearchParams();
-  if (params.type) search.set("type", params.type);
-  if (params.skill) search.set("skill", params.skill);
-  if (params.level) search.set("level", params.level);
-  if (params.limit) search.set("limit", String(params.limit));
-  if (params.page) search.set("page", String(params.page));
-  const qs = search.toString();
-
-  return useQuery({
-    queryKey: ["exams", params],
-    queryFn: () => api.get<PaginatedResponse<Exam>>(`/api/exams${qs ? `?${qs}` : ""}`),
-  });
+export function useExams(_params: UseExamsParams = {}) {
+  return useQuery({ queryKey: ["exams", _params], queryFn: async (): Promise<PaginatedResponse<Exam>> => ({ data: MOCK_EXAMS, meta: { page: 1, limit: 20, total: MOCK_EXAMS.length, totalPages: 1 } }) });
 }
 
 export function useExamDetail(id: string) {
-  return useQuery({
-    queryKey: ["exams", id],
-    queryFn: () => api.get<Exam>(`/api/exams/${id}`),
-    enabled: !!id,
-  });
-}
-
-// useExamSessions lives in use-exam-session.ts (uses correct /api/sessions path)
-
-// Backend returns ExamSessionDetailResource (nested { session, exam, questions, answers })
-// Extract session.id so caller can navigate
-interface StartExamResult {
-  session: { id: string; [key: string]: unknown };
-  exam: unknown;
-  questions: unknown[];
-  answers: unknown[];
+  return useQuery({ queryKey: ["exams", id], queryFn: async () => MOCK_EXAMS.find((e) => e.id === id) ?? MOCK_EXAMS[0], enabled: !!id });
 }
 
 export function useStartExam() {
-  return useMutation({
-    mutationFn: async (examId: string) => {
-      const res = await api.post<StartExamResult>(`/api/exams/${examId}/start`, {});
-      // Return the nested session object with id accessible at top level
-      return { id: res.session.id, ...res.session } as { id: string; [key: string]: unknown };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["exam-sessions"] });
-    },
-  });
+  return useMutation({ mutationFn: async (_examId: string) => ({ id: "mock-session-new", status: "in_progress" } as any) });
 }

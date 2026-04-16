@@ -19,10 +19,10 @@ const SKILLS_META: { key: Skill; label: string }[] = [
 ];
 
 const SKILL_COLORS: Record<Skill, string> = {
-  listening: "#4B7BF5",
-  reading: "#34B279",
-  writing: "#9B59D0",
-  speaking: "#E5A817",
+  listening: "#3B82F6",
+  reading: "#10B981",
+  writing: "#8B5CF6",
+  speaking: "#F59E0B",
 };
 
 const AXIS_COUNT = SKILLS_META.length;

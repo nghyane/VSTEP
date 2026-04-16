@@ -10,11 +10,8 @@ import { queryClient } from "@/lib/query-client";
 import {
   saveTokens,
   clearTokens,
-  getAccessToken,
-  getRefreshToken,
   getStoredUser,
 } from "@/lib/auth";
-import { logoutApi } from "@/lib/api";
 import { HapticsProvider } from "@/contexts/HapticsContext";
 import type { AuthUser } from "@/types/api";
 
@@ -60,17 +57,9 @@ export default function RootLayout() {
   );
 
   const signOut = useCallback(async () => {
-    try {
-      const at = await getAccessToken();
-      const rt = await getRefreshToken();
-      if (at && rt) await logoutApi(rt, at);
-    } catch {
-      // ignore
-    } finally {
-      await clearTokens();
-      setUser(null);
-      queryClient.clear();
-    }
+    await clearTokens();
+    setUser(null);
+    queryClient.clear();
   }, []);
 
   const segments = useSegments();

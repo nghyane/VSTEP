@@ -1,75 +1,23 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { api } from "@/lib/api";
-import { queryClient } from "@/lib/query-client";
-import type { OnboardingStatus, PlacementResult, PlacementStarted, QuestionLevel, VstepBand } from "@/types/api";
+import { MOCK_ONBOARDING_STATUS } from "@/lib/mock";
+import type { OnboardingStatus, PlacementResult, QuestionLevel, VstepBand } from "@/types/api";
 
 export function useOnboardingStatus() {
-  return useQuery({
-    queryKey: ["onboarding-status"],
-    queryFn: () => api.get<OnboardingStatus>("/api/onboarding/status"),
-  });
+  return useQuery({ queryKey: ["onboarding-status"], queryFn: async (): Promise<OnboardingStatus> => MOCK_ONBOARDING_STATUS });
 }
 
 export function useSelfAssess() {
-  return useMutation({
-    mutationFn: (body: {
-      listening: QuestionLevel;
-      reading: QuestionLevel;
-      writing: QuestionLevel;
-      speaking: QuestionLevel;
-      targetBand: VstepBand;
-      deadline?: string;
-      dailyStudyTimeMinutes?: number;
-    }) => api.post<PlacementResult>("/api/onboarding/self-assess", body),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["onboarding-status"] });
-      queryClient.invalidateQueries({ queryKey: ["progress"] });
-    },
-  });
+  return useMutation({ mutationFn: async (_body: { listening: QuestionLevel; reading: QuestionLevel; writing: QuestionLevel; speaking: QuestionLevel; targetBand: VstepBand; deadline?: string; dailyStudyTimeMinutes?: number }) => ({} as PlacementResult) });
 }
 
 export function useStartPlacement() {
-  return useMutation({
-    mutationFn: () => api.post<PlacementStarted>("/api/onboarding/placement", {}),
-  });
+  return useMutation({ mutationFn: async () => ({ sessionId: "mock-placement", examId: "exam-1", questionCount: 40 }) });
 }
 
 export function useCompletePlacement() {
-  return useMutation({
-    mutationFn: (body: {
-      sessionId: string;
-      targetBand: VstepBand;
-      deadline?: string | null;
-      dailyStudyTimeMinutes?: number | null;
-    }) =>
-      api.post<PlacementResult>(
-        `/api/onboarding/sessions/${body.sessionId}/complete-placement`,
-        {
-          targetBand: body.targetBand,
-          deadline: body.deadline,
-          dailyStudyTimeMinutes: body.dailyStudyTimeMinutes,
-        },
-      ),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["onboarding-status"] });
-      queryClient.invalidateQueries({ queryKey: ["progress"] });
-    },
-  });
+  return useMutation({ mutationFn: async (_body: { sessionId: string; targetBand: VstepBand; deadline?: string | null; dailyStudyTimeMinutes?: number | null }) => ({} as PlacementResult) });
 }
 
 export function useSkipOnboarding() {
-  return useMutation({
-    mutationFn: (body: {
-      targetBand: VstepBand;
-      englishYears?: number;
-      previousTest?: string;
-      previousScore?: string;
-      deadline?: string | null;
-      dailyStudyTimeMinutes?: number | null;
-    }) => api.post<PlacementResult>("/api/onboarding/skip", body),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["onboarding-status"] });
-      queryClient.invalidateQueries({ queryKey: ["progress"] });
-    },
-  });
+  return useMutation({ mutationFn: async (_body: { targetBand: VstepBand; englishYears?: number; previousTest?: string; previousScore?: string; deadline?: string | null; dailyStudyTimeMinutes?: number | null }) => ({} as PlacementResult) });
 }

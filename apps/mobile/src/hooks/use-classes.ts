@@ -1,155 +1,35 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
-import type {
-  ClassItem,
-  ClassDetail,
-  ClassFeedback,
-  ClassAssignment,
-  ClassAssignmentSubmission,
-  LeaderboardEntry,
-  PaginatedResponse,
-} from "@/types/api";
-
-// ─── Class list & detail ─────────────────────────────────────────────────────
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { MOCK_CLASSES } from "@/lib/mock";
+import type { ClassItem, ClassDetail, ClassFeedback, ClassAssignment, ClassAssignmentSubmission, LeaderboardEntry, PaginatedResponse } from "@/types/api";
 
 export function useClasses() {
-  return useQuery({
-    queryKey: ["classes"],
-    queryFn: () => api.get<PaginatedResponse<ClassItem>>("/api/classes"),
-  });
+  return useQuery({ queryKey: ["classes"], queryFn: async (): Promise<PaginatedResponse<ClassItem>> => ({ data: MOCK_CLASSES, meta: { page: 1, limit: 20, total: 0, totalPages: 0 } }) });
 }
 
 export function useClassDetail(id: string) {
-  return useQuery({
-    queryKey: ["classes", id],
-    queryFn: () => api.get<ClassDetail>(`/api/classes/${id}`),
-    enabled: !!id,
-  });
+  return useQuery({ queryKey: ["classes", id], queryFn: async () => ({} as ClassDetail), enabled: !!id });
 }
 
-// ─── Join / Leave ────────────────────────────────────────────────────────────
-
-export function useJoinClass() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (inviteCode: string) =>
-      api.post<{ classId: string; className: string }>("/api/classes/join", { inviteCode }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["classes"] });
-    },
-  });
-}
-
-export function useLeaveClass() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (classId: string) =>
-      api.post<{ id: string }>(`/api/classes/${classId}/leave`),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["classes"] });
-    },
-  });
-}
-
-// ─── Feedback ────────────────────────────────────────────────────────────────
+export function useJoinClass() { return useMutation({ mutationFn: async (_code: string) => ({ classId: "", className: "" }) }); }
+export function useLeaveClass() { return useMutation({ mutationFn: async (_id: string) => ({ id: _id }) }); }
 
 export function useClassFeedback(classId: string) {
-  return useQuery({
-    queryKey: ["classes", classId, "feedback"],
-    queryFn: () =>
-      api.get<PaginatedResponse<ClassFeedback>>(`/api/classes/${classId}/feedback`),
-    enabled: !!classId,
-  });
+  return useQuery({ queryKey: ["classes", classId, "feedback"], queryFn: async (): Promise<PaginatedResponse<ClassFeedback>> => ({ data: [], meta: { page: 1, limit: 20, total: 0, totalPages: 0 } }), enabled: !!classId });
 }
 
-export function useSendFeedback() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      classId,
-      content,
-      skill,
-      submissionId,
-      toUserId,
-    }: {
-      classId: string;
-      content: string;
-      skill?: string;
-      submissionId?: string;
-      toUserId?: string;
-    }) =>
-      api.post<ClassFeedback>(`/api/classes/${classId}/feedback`, {
-        content,
-        skill,
-        submissionId,
-        toUserId,
-      }),
-    onSuccess: (_d, vars) => {
-      qc.invalidateQueries({ queryKey: ["classes", vars.classId, "feedback"] });
-    },
-  });
-}
-
-// ─── Assignments ─────────────────────────────────────────────────────────────
+export function useSendFeedback() { return useMutation({ mutationFn: async (_body: any) => ({} as ClassFeedback) }); }
 
 export function useAssignments(classId: string) {
-  return useQuery({
-    queryKey: ["classes", classId, "assignments"],
-    queryFn: () => api.get<ClassAssignment[]>(`/api/classes/${classId}/assignments`),
-    enabled: !!classId,
-  });
+  return useQuery({ queryKey: ["classes", classId, "assignments"], queryFn: async (): Promise<ClassAssignment[]> => [], enabled: !!classId });
 }
 
 export function useAssignment(classId: string, assignmentId: string) {
-  return useQuery({
-    queryKey: ["classes", classId, "assignments", assignmentId],
-    queryFn: () =>
-      api.get<ClassAssignment>(`/api/classes/${classId}/assignments/${assignmentId}`),
-    enabled: !!classId && !!assignmentId,
-  });
+  return useQuery({ queryKey: ["classes", classId, "assignments", assignmentId], queryFn: async () => ({} as ClassAssignment), enabled: !!classId && !!assignmentId });
 }
 
-export function useStartAssignment() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ classId, assignmentId }: { classId: string; assignmentId: string }) =>
-      api.post<ClassAssignmentSubmission>(
-        `/api/classes/${classId}/assignments/${assignmentId}/start`,
-      ),
-    onSuccess: (_d, vars) => {
-      qc.invalidateQueries({ queryKey: ["classes", vars.classId, "assignments"] });
-    },
-  });
-}
-
-export function useSubmitAnswer() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      classId,
-      assignmentId,
-      answer,
-    }: {
-      classId: string;
-      assignmentId: string;
-      answer: string;
-    }) =>
-      api.post<ClassAssignmentSubmission>(
-        `/api/classes/${classId}/assignments/${assignmentId}/submit-answer`,
-        { answer },
-      ),
-    onSuccess: (_d, vars) => {
-      qc.invalidateQueries({ queryKey: ["classes", vars.classId, "assignments"] });
-    },
-  });
-}
-
-// ─── Leaderboard ─────────────────────────────────────────────────────────────
+export function useStartAssignment() { return useMutation({ mutationFn: async (_body: any) => ({} as ClassAssignmentSubmission) }); }
+export function useSubmitAnswer() { return useMutation({ mutationFn: async (_body: any) => ({} as ClassAssignmentSubmission) }); }
 
 export function useLeaderboard(classId: string) {
-  return useQuery({
-    queryKey: ["classes", classId, "leaderboard"],
-    queryFn: () => api.get<LeaderboardEntry[]>(`/api/classes/${classId}/leaderboard`),
-    enabled: !!classId,
-  });
+  return useQuery({ queryKey: ["classes", classId, "leaderboard"], queryFn: async (): Promise<LeaderboardEntry[]> => [], enabled: !!classId });
 }

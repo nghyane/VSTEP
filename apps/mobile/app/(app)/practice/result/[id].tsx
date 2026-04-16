@@ -8,7 +8,6 @@ import { useQuery } from "@tanstack/react-query";
 import { ScreenWrapper } from "@/components/ScreenWrapper";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
-import { api } from "@/lib/api";
 import { useThemeColors, spacing, radius, fontSize } from "@/theme";
 import type { Submission, SubmissionStatus } from "@/types/api";
 
@@ -27,7 +26,7 @@ export default function PracticeResultScreen() {
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["submissions", id],
-    queryFn: () => api.get<Submission>(`/api/submissions/${id}`),
+    queryFn: () => (Promise.resolve({} as any)),
     enabled: !!id,
     refetchInterval: (query) => {
       const status = query.state.data?.status;
