@@ -2,7 +2,6 @@
 
 import { useCallback, useMemo, useState } from "react"
 import type { WritingExercise } from "#/lib/mock/writing"
-import { useResetSupportModeOnMount } from "#/lib/practice/use-support-mode"
 import { saveWritingProgress } from "#/lib/practice/writing-progress"
 
 export type WritingPhase = "writing" | "submitted"
@@ -35,7 +34,6 @@ export interface WritingSessionApi {
 }
 
 export function useWritingSession(exercise: WritingExercise): WritingSessionApi {
-	useResetSupportModeOnMount()
 	const [phase, setPhase] = useState<WritingPhase>("writing")
 	const [text, setText] = useState("")
 

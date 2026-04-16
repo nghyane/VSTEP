@@ -4,7 +4,6 @@
 
 import { useCallback, useMemo, useState } from "react"
 import { toast } from "sonner"
-import { useSupportMode } from "./use-support-mode"
 
 export type McqPhase = "answering" | "submitted"
 
@@ -20,7 +19,6 @@ export interface McqSessionResult {
 
 export interface McqSession {
 	phase: McqPhase
-	supportMode: boolean
 	selectedAnswers: Record<number, number>
 	answeredCount: number
 	canSubmit: boolean
@@ -38,7 +36,6 @@ interface Params {
 }
 
 export function useMcqSession({ items, onComplete }: Params): McqSession {
-	const supportMode = useSupportMode()
 	const [phase, setPhase] = useState<McqPhase>("answering")
 	const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({})
 
@@ -83,7 +80,6 @@ export function useMcqSession({ items, onComplete }: Params): McqSession {
 
 	return {
 		phase,
-		supportMode,
 		selectedAnswers,
 		answeredCount,
 		canSubmit,
