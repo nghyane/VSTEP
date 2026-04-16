@@ -1,15 +1,18 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { BarChart3, Flame, Target } from "lucide-react"
-import { Suspense } from "react"
+import { Suspense, useState } from "react"
+import { OnboardingDialog } from "#/components/onboarding/OnboardingDialog"
 import { Skeleton } from "#/components/ui/skeleton"
 import type { OverviewData } from "#/lib/mock/overview"
+import type { OnboardingData } from "#/lib/onboarding/types"
 import { overviewQueryOptions } from "#/lib/queries/overview"
 import { cn } from "#/lib/utils"
 import { ActivityHeatmap } from "./_app.overview/-components/ActivityHeatmap"
 import { DoughnutChartCard } from "./_app.overview/-components/DoughnutChartCard"
 import { GoalCard } from "./_app.overview/-components/GoalCard"
 import { NextActionCard } from "./_app.overview/-components/NextActionCard"
+import { OnboardingBanner } from "./_app.overview/-components/OnboardingBanner"
 import { ProfileBanner } from "./_app.overview/-components/ProfileBanner"
 import { SpiderChartCard } from "./_app.overview/-components/SpiderChartCard"
 import { StatGrid } from "./_app.overview/-components/StatGrid"
@@ -30,11 +33,24 @@ export const Route = createFileRoute("/_app/overview")({
 
 function OverviewPage() {
 	const { tab } = Route.useSearch()
+	const [showOnboarding, setShowOnboarding] = useState(false)
+
+	function handleOnboardingComplete(data: OnboardingData) {
+		// TODO: gọi API lưu onboarding data
+		console.log("Onboarding completed:", data)
+		setShowOnboarding(false)
+	}
+
 	return (
 		<div className="mx-auto w-full max-w-5xl space-y-6">
 			<Suspense fallback={<OverviewSkeleton tab={tab} />}>
-				<OverviewContent tab={tab} />
+				<OverviewContent tab={tab} onStartOnboarding={() => setShowOnboarding(true)} />
 			</Suspense>
+			<OnboardingDialog
+				open={showOnboarding}
+				onClose={() => setShowOnboarding(false)}
+				onComplete={handleOnboardingComplete}
+			/>
 		</div>
 	)
 }
@@ -81,7 +97,7 @@ function TabLink({
 
 // ─── Content ───────────────────────────────────────────────────────
 
-function OverviewContent({ tab }: { tab: Tab }) {
+function OverviewContent({ tab, onStartOnboarding }: { tab: Tab; onStartOnboarding: () => void }) {
 	const { data } = useSuspenseQuery(overviewQueryOptions())
 	return (
 		<div className="space-y-6">
@@ -92,7 +108,11 @@ function OverviewContent({ tab }: { tab: Tab }) {
 			<TabBar active={tab} />
 
 			{/* Nội dung theo tab */}
-			{tab === "focus" ? <FocusView data={data} /> : <DetailsView data={data} />}
+			{tab === "focus" ? (
+				<FocusView data={data} />
+			) : (
+				<DetailsView data={data} onStartOnboarding={onStartOnboarding} />
+			)}
 		</div>
 	)
 }
@@ -118,10 +138,25 @@ function FocusFooter({ streak }: { streak: number }) {
 	)
 }
 
-function DetailsView({ data }: { data: OverviewData }) {
+function DetailsView({
+	data,
+	onStartOnboarding,
+}: {
+	data: OverviewData
+	onStartOnboarding: () => void
+}) {
 	const totalTests = data.skills.reduce((acc, s) => acc + s.attemptCount, 0)
+
+	// Show onboarding banner when user has no goal and no skill data
+	const hasNoGoal = !data.goal
+	const hasNoSkillData = !data.skills.length || data.skills.every((s) => s.attemptCount === 0)
+	const needsOnboarding = hasNoGoal && hasNoSkillData
+
 	return (
 		<div className="space-y-6">
+			{/* Onboarding reminder banner */}
+			{needsOnboarding && <OnboardingBanner onStart={onStartOnboarding} />}
+
 			<StatGrid activity={data.activity} totalTests={totalTests} />
 			<ActivityHeatmap activityByDay={data.activity.activityByDay} />
 			<GoalCard goal={data.goal} />
@@ -151,6 +186,7 @@ function OverviewSkeleton({ tab }: { tab: Tab }) {
 	return (
 		<div className="space-y-6">
 			<Skeleton className="h-36 rounded-2xl" />
+			<Skeleton className="h-24 rounded-2xl" />
 			<div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
 				{Array.from({ length: 4 }).map((_, i) => (
 					<Skeleton key={i} className="h-20 rounded-2xl" />
