@@ -1,0 +1,8 @@
+node_modules
+.DS_Store
+dist
+.output
+*.local
+.env
+__unconfig*
+imagefix/

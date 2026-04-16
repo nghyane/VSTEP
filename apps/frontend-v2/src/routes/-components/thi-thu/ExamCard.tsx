@@ -1,0 +1,96 @@
+import { Link } from "@tanstack/react-router"
+import { Clock, Crown, Users } from "lucide-react"
+import { Button } from "#/components/ui/button"
+import { cn } from "#/lib/utils"
+import { EXAM_SKILLS } from "./exam-skill-meta"
+
+interface ExamCardProps {
+	id: number
+	isPro?: boolean
+}
+
+export function ExamCard({ id, isPro = false }: ExamCardProps) {
+	return (
+		<div className="group relative h-full">
+			<div
+				className={
+					isPro
+						? "absolute inset-0 translate-x-[4px] translate-y-[4px] rounded-xl bg-gradient-to-br from-amber-300 via-amber-400 to-orange-400 transition-transform group-hover:translate-x-[6px] group-hover:translate-y-[6px]"
+						: "absolute inset-0 translate-x-[4px] translate-y-[4px] rounded-xl bg-gradient-to-br from-slate-100 via-slate-200 to-blue-100 transition-transform group-hover:translate-x-[6px] group-hover:translate-y-[6px]"
+				}
+			/>
+
+			<div className="relative flex h-full flex-col justify-between rounded-xl border border-border bg-background p-4 transition-all group-hover:-translate-x-[2px] group-hover:-translate-y-[2px] group-hover:shadow-md">
+				<div>
+					<div className="mb-2 flex items-end">
+						{isPro ? (
+							<span className="inline-flex items-end gap-1 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-2.5 py-0.5 text-white shadow-sm">
+								<Crown className="mb-px size-3 shrink-0" />
+								<span className="text-[10px] font-bold leading-none uppercase tracking-wider">
+									Pro
+								</span>
+							</span>
+						) : (
+							<span className="inline-flex rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-slate-600">
+								<span className="text-[10px] font-semibold leading-none uppercase tracking-wider">
+									Free
+								</span>
+							</span>
+						)}
+					</div>
+
+					<h3 className="line-clamp-2 text-lg font-semibold leading-tight text-foreground transition-colors group-hover:text-primary">
+						Đề thi VSTEP HNUE 08/02/2026 #{id}
+					</h3>
+
+					<div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+						<span className="flex items-center gap-1.5">
+							<Clock className="size-4" /> 120 phút
+						</span>
+						<span className="flex items-center gap-1.5">
+							<Users className="size-4" /> 1.2k lượt thi
+						</span>
+					</div>
+
+					<div className="mt-4 flex flex-nowrap items-center gap-2.5 overflow-x-auto pb-1">
+						{EXAM_SKILLS.map((skill) => (
+							<span
+								key={skill.key}
+								className={cn(
+									"inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap",
+									skill.chipClass,
+									skill.textClass,
+								)}
+							>
+								{skill.label}
+							</span>
+						))}
+					</div>
+
+					<div className="mt-4 flex flex-wrap gap-2">
+						<span className="inline-flex items-center rounded-md bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
+							#FullTest
+						</span>
+						<span className="inline-flex items-center rounded-md bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+							#HNUE
+						</span>
+					</div>
+				</div>
+
+				<div className="mt-5 flex items-center justify-between border-t border-border/60 pt-4">
+					<span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+						Trạng thái:
+						<span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+							Chưa làm
+						</span>
+					</span>
+					<Button size="sm" className="font-medium" asChild>
+						<Link to="/thi-thu/$examId" params={{ examId: String(id) }}>
+							Xem đề
+						</Link>
+					</Button>
+				</div>
+			</div>
+		</div>
+	)
+}
