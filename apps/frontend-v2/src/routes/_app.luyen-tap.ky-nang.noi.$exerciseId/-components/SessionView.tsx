@@ -1,12 +1,8 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
+import { Link, useNavigate } from "@tanstack/react-router"
 import {
-	Check,
 	ChevronDown,
-	ChevronLeft,
 	ChevronRight,
-	Eye,
-	Headphones,
 	Mic,
 	Pause,
 	Play,
@@ -23,9 +19,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs"
 import { SPEAKING_LEVEL_LABELS, type SpeakingExercise } from "#/lib/mock/speaking"
-import type { DictationToken } from "#/lib/practice/dictation-diff"
 import { saveSpeakingResult } from "#/lib/practice/result-storage"
 import { cancelSpeak } from "#/lib/practice/speak-sentence"
 import { useVoiceRecorder } from "#/lib/practice/use-voice-recorder"
@@ -40,63 +34,59 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 	const { data: exercise } = useSuspenseQuery(speakingExerciseQueryOptions(exerciseId))
 	const session = useSpeakingSession(exercise)
 	const navigate = useNavigate()
+	const submitted = session.phase === "submitted"
 
 	const handleSubmit = () => {
 		session.saveSnapshot()
 		saveSpeakingResult({
 			exerciseId,
-			mode: session.mode,
-			dictationAccuracy: session.dictationAccuracy,
-			sentencesDone:
-				session.mode === "dictation"
-					? session.dictation.filter((d) => d.checked).length
-					: session.shadowingDone,
+			mode: "shadowing",
+			dictationAccuracy: 0,
+			sentencesDone: session.shadowingDone,
 			sentencesTotal: exercise.sentences.length,
 			submittedAt: Date.now(),
 		})
-		toast.success("Đã lưu kết quả")
+		toast.success("Đã nộp bài")
 		void navigate({ to: "/luyen-tap/ky-nang/noi/$exerciseId/ket-qua", params: { exerciseId } })
 	}
 
 	return (
-		<div className="mt-4 space-y-6 pb-28">
+		<div className="mt-4 space-y-6">
 			<Header exercise={exercise} />
-			<Tabs value={session.mode} onValueChange={(v) => session.setMode(v as typeof session.mode)}>
-				<TabsList className="w-full max-w-md">
-					<TabsTrigger value="dictation" className="flex-1 gap-2">
-						<Headphones className="size-4" /> Dictation
-					</TabsTrigger>
-					<TabsTrigger value="shadowing" className="flex-1 gap-2">
-						<Mic className="size-4" /> Shadowing
-					</TabsTrigger>
-				</TabsList>
-				<TabsContent value="dictation" className="mt-4">
-					<SentenceNav
-						total={exercise.sentences.length}
-						current={session.currentIndex}
-						onChange={session.setCurrentIndex}
-						markers={session.dictation.map((d) => d.checked)}
-					/>
-					<DictationPanel exercise={exercise} session={session} />
-				</TabsContent>
-				<TabsContent value="shadowing" className="mt-4">
-					<SentenceNav
-						total={exercise.sentences.length}
-						current={session.currentIndex}
-						onChange={session.setCurrentIndex}
-						markers={session.shadowing.map((s) => s.audioUrl !== null)}
-					/>
-					<ShadowingPanel exercise={exercise} session={session} />
-				</TabsContent>
-			</Tabs>
-			<footer
+			<ShadowingPanel exercise={exercise} session={session} />
+			<div aria-hidden className="h-24" />
+			<div
 				data-session-footer
-				className="fixed right-0 bottom-0 left-[var(--dock-left)] z-20 flex items-center justify-end border-t bg-background px-6 py-4"
+				className="fixed right-0 bottom-0 left-[var(--dock-left)] z-20 border-t bg-background px-6 py-3"
 			>
-				<Button size="lg" className="rounded-xl px-8" onClick={handleSubmit}>
-					Kết thúc & xem tổng kết
-				</Button>
-			</footer>
+				<div className="flex items-center gap-4">
+					<div className="shrink-0">
+						<SpeakingStatusText
+							phase={session.phase}
+							done={session.shadowingDone}
+							total={session.total}
+						/>
+					</div>
+					<div className="min-w-0 flex-1 overflow-x-auto">
+						<div className="flex justify-center">
+							<SpeakingNavBar
+								total={session.total}
+								markers={session.shadowing.map((s) => s.audioUrl !== null)}
+								submitted={submitted}
+								onChange={session.setCurrentIndex}
+							/>
+						</div>
+					</div>
+					<div className="shrink-0">
+						<SpeakingSubmitAction
+							phase={session.phase}
+							canSubmit={session.canSubmit}
+							onSubmit={handleSubmit}
+							onReset={session.reset}
+						/>
+					</div>
+				</div>
+			</div>
 		</div>
 	)
 }
@@ -122,55 +112,117 @@ function Header({ exercise }: { exercise: SpeakingExercise }) {
 	)
 }
 
-// ─── Sentence nav ──────────────────────────────────────────────────
+// ─── Footer: Status text ───────────────────────────────────────────
 
-function SentenceNav({
+function SpeakingStatusText({
+	phase,
+	done,
 	total,
-	current,
-	onChange,
+}: {
+	phase: "practicing" | "submitted"
+	done: number
+	total: number
+}) {
+	if (phase === "submitted") {
+		return (
+			<p className="text-sm text-muted-foreground">
+				Kết quả:{" "}
+				<strong className="text-foreground">
+					{done}/{total}
+				</strong>{" "}
+				câu đã ghi âm
+			</p>
+		)
+	}
+	return (
+		<p className="text-sm text-muted-foreground">
+			Đã ghi âm{" "}
+			<strong className="text-foreground">
+				{done}/{total}
+			</strong>{" "}
+			câu
+		</p>
+	)
+}
+
+// ─── Footer: Nav pills ────────────────────────────────────────────
+
+function SpeakingNavBar({
+	total,
 	markers,
+	submitted,
+	onChange,
 }: {
 	total: number
-	current: number
-	onChange: (i: number) => void
 	markers: readonly boolean[]
+	submitted: boolean
+	onChange: (i: number) => void
 }) {
 	return (
-		<div className="flex items-center gap-2 rounded-xl bg-muted/50 p-2">
-			<Button
-				size="icon"
-				variant="ghost"
-				disabled={current === 0}
-				onClick={() => onChange(current - 1)}
-			>
-				<ChevronLeft className="size-4" />
-			</Button>
-			<div className="flex flex-1 flex-wrap justify-center gap-1.5">
-				{Array.from({ length: total }, (_, i) => (
+		<div className="flex flex-wrap items-center gap-1.5">
+			{Array.from({ length: total }, (_, i) => {
+				const done = markers[i]
+				let pillClass = "border-border bg-background text-muted-foreground hover:bg-accent"
+				if (submitted) {
+					pillClass = done
+						? "border-success bg-success/10 text-success"
+						: "border-destructive bg-destructive/10 text-destructive"
+				} else if (done) {
+					pillClass = "border-primary bg-primary text-primary-foreground"
+				}
+				return (
 					<button
 						key={i}
 						type="button"
 						onClick={() => onChange(i)}
 						className={cn(
-							"flex size-8 items-center justify-center rounded-md text-xs font-semibold transition-colors",
-							i === current
-								? "bg-skill-speaking text-white"
-								: markers[i]
-									? "bg-success/15 text-success hover:bg-success/25"
-									: "bg-background hover:bg-muted",
+							"flex size-8 items-center justify-center rounded-lg border text-sm font-medium transition-colors",
+							pillClass,
 						)}
+						aria-label={`Câu ${i + 1}`}
 					>
 						{i + 1}
 					</button>
-				))}
-			</div>
+				)
+			})}
+		</div>
+	)
+}
+
+// ─── Footer: Submit action ─────────────────────────────────────────
+
+function SpeakingSubmitAction({
+	phase,
+	canSubmit,
+	onSubmit,
+	onReset,
+}: {
+	phase: "practicing" | "submitted"
+	canSubmit: boolean
+	onSubmit: () => void
+	onReset: () => void
+}) {
+	if (phase === "practicing") {
+		return (
 			<Button
-				size="icon"
-				variant="ghost"
-				disabled={current >= total - 1}
-				onClick={() => onChange(current + 1)}
+				type="button"
+				size="lg"
+				className="rounded-xl px-8"
+				onClick={onSubmit}
+				disabled={!canSubmit}
 			>
-				<ChevronRight className="size-4" />
+				Nộp bài
+			</Button>
+		)
+	}
+	return (
+		<div className="flex gap-2">
+			<Button type="button" variant="outline" onClick={onReset}>
+				<RotateCcw className="size-4" />
+				Làm lại
+			</Button>
+			<Button asChild>
+				<Link to="/luyen-tap/ky-nang/noi">Về danh sách đề nói</Link>
 			</Button>
 		</div>
 	)
@@ -297,93 +349,6 @@ function AudioBar({
 	)
 }
 
-// ─── Dictation ─────────────────────────────────────────────────────
-
-function DictationPanel({
-	exercise,
-	session,
-}: {
-	exercise: SpeakingExercise
-	session: ReturnType<typeof useSpeakingSession>
-}) {
-	const i = session.currentIndex
-	const sentence = exercise.sentences[i]
-	const state = session.dictation[i]
-	const [speed, setSpeed] = useState<Speed>(1)
-	if (!sentence || !state) return null
-
-	return (
-		<div className="mt-4 space-y-4 rounded-2xl bg-muted/50 p-5 shadow-sm">
-			<div className="flex items-center justify-between gap-3">
-				<span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-					Câu {i + 1} / {exercise.sentences.length}
-				</span>
-			</div>
-
-			<AudioBar
-				text={sentence.text}
-				isPlaying={session.isPlaying}
-				speed={speed}
-				onSpeedChange={setSpeed}
-				onPlay={() => void session.playCurrent(speed)}
-				onStop={cancelSpeak}
-			/>
-
-			<textarea
-				value={state.typed}
-				onChange={(e) => session.setDictationTyped(i, e.target.value)}
-				placeholder="Nghe và gõ lại câu bạn nghe được…"
-				rows={3}
-				className="w-full resize-none rounded-xl border bg-background p-3 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-skill-speaking/40"
-			/>
-
-			<div className="flex flex-wrap items-center gap-2">
-				<Button onClick={() => session.checkDictation(i)} disabled={state.typed.trim() === ""}>
-					<Check className="size-4" /> Kiểm tra
-				</Button>
-				<Button variant="outline" onClick={() => session.revealDictation(i)}>
-					<Eye className="size-4" /> Xem đáp án
-				</Button>
-				{sentence.translation && (
-					<span className="ml-auto text-xs italic text-muted-foreground">
-						{sentence.translation}
-					</span>
-				)}
-			</div>
-
-			{state.checked && state.result && (
-				<div className="space-y-2 rounded-xl bg-background p-3">
-					<p className="text-xs font-semibold text-muted-foreground">
-						Kết quả: {Math.round(state.result.accuracy * 100)}% đúng ({state.result.correct}/
-						{state.result.total} từ)
-					</p>
-					<DictationDiff tokens={state.result.tokens} />
-				</div>
-			)}
-		</div>
-	)
-}
-
-function DictationDiff({ tokens }: { tokens: readonly DictationToken[] }) {
-	return (
-		<p className="text-sm leading-relaxed">
-			{tokens.map((t, idx) => (
-				<span
-					key={`${t.expected}-${idx}`}
-					className={cn(
-						"mr-1 inline-block rounded px-1",
-						t.status === "correct" && "bg-success/15 text-success",
-						t.status === "wrong" && "bg-destructive/15 text-destructive line-through",
-						t.status === "missing" && "bg-warning/15 text-warning italic",
-					)}
-				>
-					{t.expected}
-				</span>
-			))}
-		</p>
-	)
-}
-
 // ─── Shadowing ─────────────────────────────────────────────────────
 
 function ShadowingPanel({
@@ -417,7 +382,7 @@ function ShadowingPanel({
 	const isRecording = recorder.state === "recording"
 
 	return (
-		<div className="mt-4 space-y-4 rounded-2xl bg-muted/50 p-5 shadow-sm">
+		<div className="space-y-4 rounded-2xl bg-muted/50 p-5 shadow-sm">
 			<div className="flex items-center justify-between gap-3">
 				<span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
 					Câu {i + 1} / {exercise.sentences.length}
@@ -487,6 +452,17 @@ function ShadowingPanel({
 					/>
 					<PlaybackRow label="Bản ghi của bạn" audioUrl={state.audioUrl} />
 				</div>
+			)}
+
+			{/* Câu tiếp */}
+			{state.audioUrl && !isRecording && i < exercise.sentences.length - 1 && (
+				<button
+					type="button"
+					onClick={() => session.setCurrentIndex(i + 1)}
+					className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+				>
+					Câu tiếp theo <ChevronRight className="size-4" />
+				</button>
 			)}
 		</div>
 	)
