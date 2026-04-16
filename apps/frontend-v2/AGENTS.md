@@ -138,7 +138,39 @@ Hiện chưa có test trong `src/`. Khi bắt đầu viết test:
 70. **Frontend không phải security layer.** Validate ở FE để cải thiện UX. Backend validate thật.
 71. **Sanitize URL** trước khi render làm `href`. Reject `javascript:` scheme.
 
-## XIV. Definition of done
+## XIV. RFC-first workflow for non-trivial changes
+
+72. **RFC first for non-trivial frontend changes.** Trước khi propose implementation hoặc sửa code cho thay đổi lớn, agent phải tự kiểm tra xem bài có thuộc loại non-trivial không. Một thay đổi được xem là non-trivial nếu rơi vào ít nhất một trường hợp:
+    - ảnh hưởng architecture, shared pattern, hoặc rule nền tảng của app;
+    - thay đổi routing, auth flow, data fetching pattern, query key strategy, search params contract, hoặc state model;
+    - thay đổi design system/shared UI primitives;
+    - đụng từ 3 module/file responsibility trở lên;
+    - có từ 2 phương án hợp lý trở lên và cần chọn trade-off.
+73. **Nếu chưa có RFC cho bài non-trivial, không nhảy vào code ngay.** Agent phải dừng ở bước planning, tạo hoặc đề xuất một RFC ngắn trước. Chỉ được implement sau khi RFC đã được user/team chấp thuận rõ ràng.
+74. **RFC là nguồn sự thật cho implementation.** Khi đã có RFC, agent phải dùng RFC để:
+    - chốt problem, goals, non-goals;
+    - breakdown task/checklist implementation;
+    - giữ scope, từ chối scope creep ngoài RFC;
+    - review implementation/PR theo decision đã chốt.
+75. **RFC format tối thiểu.** Nếu agent cần draft RFC, dùng đúng khung sau:
+    - Problem
+    - Goals
+    - Non-goals
+    - Proposed solution
+    - Alternatives considered
+    - Risks / trade-offs
+    - Rollout plan
+    - Implementation plan
+    Với frontend work, phải nghĩ tới thêm: user flow, loading/error/empty states, accessibility, analytics nếu có.
+76. **Làm việc theo RFC.** Sau khi RFC được approve, agent phải chuyển RFC thành execution plan theo thứ tự:
+    - breakdown phase/task;
+    - xác định file/module bị ảnh hưởng;
+    - implement từng phần đúng goals và non-goals;
+    - verify theo Definition of Done;
+    - nếu implementation lệch materially khỏi RFC, phải cập nhật RFC hoặc xin chốt lại trước khi tiếp tục.
+77. **Không biến RFC thành thủ tục hình thức.** Không yêu cầu RFC cho bug nhỏ, UI tweak nhỏ, text change, styling nhỏ, hoặc refactor hẹp không đổi behavior. Với bài trivial, agent có thể làm trực tiếp nhưng vẫn phải nêu scope ngắn gọn trước khi sửa.
+
+## XV. Definition of done
 
 Feature chưa done nếu chưa đủ:
 

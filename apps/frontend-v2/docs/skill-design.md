@@ -9,6 +9,8 @@ Mỗi spec đều có truy xuất về file gốc. Dùng tài liệu này để 
 
 **Rule 0.1 — Không bọc background cho icon.** Icon (lucide, SVG, GIF) phải render trần, không đặt trong khung vuông/tròn có `bg-*` riêng. Chỉ dùng `text-*` cho màu icon. Lý do: reduce noise, icon tự nó đã đủ visual weight; background wrap làm rối layout và che mất trọng tâm text.
 
+**Rule 0.1b — Không bọc riêng cụm icon + text chỉ để tạo mảng màu trang trí.** Với row/header/meta có icon đi cùng chữ, ưu tiên render icon trần + text trần trên chính container hiện có. Không tạo thêm pill/wrap `bg-*` riêng chỉ để chứa cụm icon + text nếu cụm đó không phải chip, badge, button, hay trạng thái cần semantic background rõ ràng. Mục tiêu là giảm thêm một lớp visual noise và tránh các “miếng màu” không cần thiết.
+
 Trước (không được):
 ```tsx
 <div className="flex size-10 rounded-xl bg-primary/10 text-primary">
@@ -21,10 +23,27 @@ Sau (đúng):
 <Icon className="size-6 text-primary" />
 ```
 
+Trước (không được):
+```tsx
+<div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-primary">
+  <Icon className="size-4" />
+  <span>Listening</span>
+</div>
+```
+
+Sau (đúng):
+```tsx
+<div className="flex items-center gap-2">
+  <Icon className="size-4 text-primary" />
+  <span className="text-sm font-medium">Listening</span>
+</div>
+```
+
 **Ngoại lệ được phép:**
 - Avatar (có nền vì chứa chữ cái initials)
 - Button icon-only (nền nút chính là nền icon)
 - Chip/pill badge text+icon dạng inline-flex (nền là của cả chip)
+- Nhãn trạng thái/semantic badge thật sự cần nền để convey state (success/warning/destructive/filter active)
 
 ---
 
