@@ -22,7 +22,7 @@ function ResultPage() {
 	return (
 		<div className="mx-auto w-full max-w-5xl space-y-6 pb-10">
 			<Link
-				to="/luyen-tap/ky-nang/noi"
+				to="/luyen-tap/ky-nang/noi" search={{} as never}
 				className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
 			>
 				<ArrowLeft className="size-4" />
@@ -80,7 +80,7 @@ function ResultBody({ exerciseId }: { exerciseId: string }) {
 					Luyện lại
 				</Button>
 				<Button asChild>
-					<Link to="/luyen-tap/ky-nang/noi">Về danh sách đề nói</Link>
+					<Link to="/luyen-tap/ky-nang/noi" search={{} as never}>Về danh sách đề nói</Link>
 				</Button>
 			</footer>
 		</div>

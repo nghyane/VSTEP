@@ -1,13 +1,13 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { ArrowLeft, Clock, FileText, Mic } from "lucide-react"
+import { ArrowLeft, Mic } from "lucide-react"
 import { Suspense } from "react"
 import {
-	Accordion,
-	AccordionContent,
-	AccordionItem,
-	AccordionTrigger,
-} from "#/components/ui/accordion"
+	ExerciseCard,
+	ITEMS_PER_PAGE,
+	Pagination,
+	SkillSidebar,
+} from "#/components/practice/SkillPageLayout"
 import { Skeleton } from "#/components/ui/skeleton"
 import {
 	SPEAKING_LEVEL_LABELS,
@@ -16,122 +16,109 @@ import {
 } from "#/lib/mock/speaking"
 import { speakingListQueryOptions } from "#/lib/queries/speaking"
 
+const LEVELS: readonly SpeakingLevel[] = ["A2", "B1", "B2", "C1"]
+
+interface Search {
+	level: SpeakingLevel
+	page: number
+}
+
 export const Route = createFileRoute("/_app/luyen-tap/ky-nang/noi/")({
+	validateSearch: (s: Record<string, unknown>): Search => ({
+		level: (LEVELS as readonly string[]).includes(s.level as string)
+			? (s.level as SpeakingLevel)
+			: "A2",
+		page: typeof s.page === "number" && s.page >= 1 ? Math.floor(s.page) : 1,
+	}),
 	loader: ({ context: { queryClient } }) => queryClient.ensureQueryData(speakingListQueryOptions()),
 	component: SpeakingListPage,
 })
 
-const LEVELS: readonly SpeakingLevel[] = ["A2", "B1", "B2", "C1"]
-
 function SpeakingListPage() {
 	return (
-		<div className="mx-auto w-full max-w-5xl space-y-6 pb-10">
+		<div className="mx-auto w-full max-w-6xl space-y-4 pb-10">
 			<Link
 				to="/luyen-tap/ky-nang"
 				className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
 			>
 				<ArrowLeft className="size-4" />4 kỹ năng
 			</Link>
+			<div className="flex items-center gap-3">
+				<Mic className="size-7 text-skill-speaking" />
+				<h1 className="text-xl font-bold">Nói</h1>
+			</div>
 			<Suspense fallback={<ListSkeleton />}>
-				<LevelAccordion />
+				<ListContent />
 			</Suspense>
 		</div>
 	)
 }
 
-function LevelAccordion() {
+function ListContent() {
+	const { level, page } = Route.useSearch()
+	const navigate = Route.useNavigate()
 	const { data: exercises } = useSuspenseQuery(speakingListQueryOptions())
 	const grouped = groupByLevel(exercises)
-	const firstLevel = LEVELS.find((lv) => (grouped.get(lv) ?? []).length > 0)
+
+	const sidebarItems = LEVELS
+		.map((lv) => ({
+			key: lv,
+			label: SPEAKING_LEVEL_LABELS[lv],
+			count: (grouped.get(lv) ?? []).length,
+		}))
+		.filter((i) => i.count > 0)
+
+	const currentList = grouped.get(level) ?? []
+	const totalPages = Math.max(1, Math.ceil(currentList.length / ITEMS_PER_PAGE))
+	const safePage = Math.min(page, totalPages)
+	const pageItems = currentList.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
 
 	return (
-		<div className="space-y-5">
-			<PageHeader count={exercises.length} />
-			<Accordion
-				type="multiple"
-				defaultValue={firstLevel ? [`level-${firstLevel}`] : []}
-				className="space-y-3"
-			>
-				{LEVELS.map((level) => {
-					const list = grouped.get(level) ?? []
-					if (list.length === 0) return null
-					return <LevelSection key={level} level={level} exercises={list} />
-				})}
-			</Accordion>
-		</div>
-	)
-}
-
-function PageHeader({ count }: { count: number }) {
-	return (
-		<div className="flex items-center gap-3">
-			<Mic className="size-7 text-skill-speaking" />
-			<div>
-				<h1 className="text-xl font-bold">Nói</h1>
-				<p className="text-sm text-muted-foreground">
-					{count} bài · Dictation & Shadowing tương tác
+		<div className="grid gap-6 lg:grid-cols-[220px_1fr]">
+			<SkillSidebar
+				items={sidebarItems}
+				activeKey={level}
+				onSelect={(key) =>
+					navigate({ search: { level: key as SpeakingLevel, page: 1 } })
+				}
+				colorClass="bg-skill-speaking/10 text-skill-speaking"
+			/>
+			<div className="space-y-6">
+				<p className="text-sm font-medium text-muted-foreground">
+					{SPEAKING_LEVEL_LABELS[level]} · {currentList.length} bài
 				</p>
-			</div>
-		</div>
-	)
-}
-
-function LevelSection({
-	level,
-	exercises,
-}: {
-	level: SpeakingLevel
-	exercises: readonly SpeakingExercise[]
-}) {
-	return (
-		<AccordionItem value={`level-${level}`} className="rounded-2xl border bg-card shadow-sm">
-			<AccordionTrigger className="px-5 py-4 hover:no-underline">
-				<div className="flex w-full items-center justify-between gap-3 pr-2">
-					<span className="text-base font-semibold">{SPEAKING_LEVEL_LABELS[level]}</span>
-					<span className="shrink-0 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-						{exercises.length} bài
-					</span>
-				</div>
-			</AccordionTrigger>
-			<AccordionContent className="px-2 pb-2">
-				<ul className="flex flex-col gap-1">
-					{exercises.map((exercise) => (
-						<li key={exercise.id}>
-							<ExerciseRow exercise={exercise} />
-						</li>
+				<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+					{pageItems.map((ex) => (
+						<ExerciseCard
+							key={ex.id}
+							title={ex.title}
+							description={ex.description}
+							meta={`${ex.sentences.length} câu · ${ex.estimatedMinutes} phút`}
+							colorClass="bg-skill-speaking"
+							href={
+								<Link
+									to="/luyen-tap/ky-nang/noi/$exerciseId"
+									params={{ exerciseId: ex.id }}
+									className="absolute inset-0 rounded-xl"
+								/>
+							}
+						/>
 					))}
-				</ul>
-			</AccordionContent>
-		</AccordionItem>
+				</div>
+				{pageItems.length === 0 && (
+					<p className="py-12 text-center text-sm text-muted-foreground">
+						Chưa có bài tập cho cấp độ này.
+					</p>
+				)}
+				<Pagination
+					page={safePage}
+					totalPages={totalPages}
+					onPageChange={(p) => navigate({ search: { level, page: p } })}
+				/>
+			</div>
+		</div>
 	)
 }
-
-function ExerciseRow({ exercise }: { exercise: SpeakingExercise }) {
-	return (
-		<Link
-			to="/luyen-tap/ky-nang/noi/$exerciseId"
-			params={{ exerciseId: exercise.id }}
-			className="group flex items-center gap-4 rounded-lg px-3 py-3 transition-colors hover:bg-muted/60"
-		>
-			<FileText className="size-5 shrink-0 text-skill-speaking" />
-			<div className="min-w-0 flex-1">
-				<p className="truncate text-sm font-semibold group-hover:text-foreground">
-					{exercise.title}
-				</p>
-				<p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{exercise.description}</p>
-			</div>
-			<div className="hidden shrink-0 items-center gap-3 text-xs text-muted-foreground sm:flex">
-				<span>{exercise.sentences.length} câu</span>
-				<span className="inline-flex items-center gap-1">
-					<Clock className="size-3.5" />
-					{exercise.estimatedMinutes} phút
-				</span>
-			</div>
-		</Link>
-	)
-}
-
-// ─── Helpers ───────────────────────────────────────────────────────
 
 function groupByLevel(
 	exercises: readonly SpeakingExercise[],
@@ -147,11 +134,15 @@ function groupByLevel(
 
 function ListSkeleton() {
 	return (
-		<div className="space-y-5">
-			<Skeleton className="h-10 w-48" />
-			<div className="space-y-3">
-				{Array.from({ length: 3 }).map((_, i) => (
-					<Skeleton key={i} className="h-16 rounded-xl" />
+		<div className="grid gap-6 lg:grid-cols-[220px_1fr]">
+			<div className="space-y-2">
+				{Array.from({ length: 4 }, (_, i) => (
+					<Skeleton key={i} className="h-10 rounded-lg" />
+				))}
+			</div>
+			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+				{Array.from({ length: 6 }, (_, i) => (
+					<Skeleton key={i} className="h-32 rounded-xl" />
 				))}
 			</div>
 		</div>

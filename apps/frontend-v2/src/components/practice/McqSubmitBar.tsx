@@ -57,7 +57,7 @@ export function SubmitAction({
 				Làm lại
 			</Button>
 			<Button asChild>
-				<Link to={backTo}>{backLabel}</Link>
+				<Link to={backTo} search={{} as never}>{backLabel}</Link>
 			</Button>
 		</div>
 	)
@@ -87,7 +87,7 @@ export function McqSubmitBar(props: Props) {
 						Làm lại
 					</Button>
 					<Button asChild>
-						<Link to={backTo}>{backLabel}</Link>
+						<Link to={backTo} search={{} as never}>{backLabel}</Link>
 					</Button>
 				</div>
 			)}
