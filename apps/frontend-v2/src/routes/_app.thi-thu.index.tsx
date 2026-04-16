@@ -1,7 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { useState } from "react"
-import { DashboardGoalCard } from "./-components/thi-thu/DashboardGoalCard"
-import { DashboardStreakCard } from "./-components/thi-thu/DashboardStreakCard"
 import { ExamCard } from "./-components/thi-thu/ExamCard"
 import { ExamSidebarFilters, type ExamType } from "./-components/thi-thu/ExamSidebarFilters"
 
@@ -31,11 +29,6 @@ function ThiThuPage() {
 					Luyện tập với hàng trăm đề thi bám sát cấu trúc thật.
 				</p>
 			</div>
-
-			<section className="grid gap-4 md:grid-cols-2">
-				<DashboardGoalCard />
-				<DashboardStreakCard />
-			</section>
 
 			<section className="flex flex-col gap-8 md:flex-row md:items-start">
 				<ExamSidebarFilters selectedType={typeFilter} onTypeChange={setTypeFilter} />

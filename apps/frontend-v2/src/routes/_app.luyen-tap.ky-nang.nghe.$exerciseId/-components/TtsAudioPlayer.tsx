@@ -1,14 +1,14 @@
 // TTS audio player — Web Speech API + UI tương tự v1 ListeningAudioBar.
 // Ước lượng duration từ word count (~135 wpm khi rate 0.9), track elapsed qua interval.
 
-import { Pause, Play, RotateCcw } from "lucide-react"
+import { ChevronDown, FileText, Pause, Play, RotateCcw } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { SpeakerIcon } from "#/components/common/SpeakerIcon"
 import { cn } from "#/lib/utils"
 
 interface Props {
 	transcript: string
-	maxPlays: number | null
+	showTranscript?: boolean
 }
 
 type PlayState = "idle" | "playing" | "paused" | "ended"
@@ -16,7 +16,7 @@ type PlayState = "idle" | "playing" | "paused" | "ended"
 const WORDS_PER_SECOND = 2.25 // 135 wpm / 60
 const TICK_MS = 200
 
-export function TtsAudioPlayer({ transcript, maxPlays }: Props) {
+export function TtsAudioPlayer({ transcript, showTranscript }: Props) {
 	const durationSec = estimateDuration(transcript)
 	const [state, setState] = useState<PlayState>("idle")
 	const [playCount, setPlayCount] = useState(0)
@@ -30,8 +30,7 @@ export function TtsAudioPlayer({ transcript, maxPlays }: Props) {
 	useCleanupOnUnmount()
 	useTickInterval(state, startRef, accumulatedRef, setElapsedMs)
 
-	const canPlay = maxPlays === null || playCount < maxPlays
-	const reachedLimit = maxPlays !== null && playCount >= maxPlays
+	const canPlay = true
 	const currentSec = Math.min(Math.floor(elapsedMs / 1000), durationSec)
 
 	const handlePlay = useCallback(() => {
@@ -91,7 +90,7 @@ export function TtsAudioPlayer({ transcript, maxPlays }: Props) {
 					<SpeakerIcon active={state === "playing"} className="size-4" />
 					Nghe bài
 				</div>
-				<PlayCountBadge playCount={playCount} maxPlays={maxPlays} reachedLimit={reachedLimit} />
+				<PlayCountBadge playCount={playCount} />
 			</div>
 
 			<div className="flex items-center gap-3">
@@ -111,6 +110,8 @@ export function TtsAudioPlayer({ transcript, maxPlays }: Props) {
 			{!voice && state === "idle" && (
 				<p className="mt-2 text-xs text-muted-foreground">Đang tải giọng đọc…</p>
 			)}
+
+			{showTranscript && <TranscriptReveal transcript={transcript} />}
 		</div>
 	)
 }
@@ -198,32 +199,36 @@ function TimeDisplay({ seconds, primary }: { seconds: number; primary?: boolean 
 	)
 }
 
-function PlayCountBadge({
-	playCount,
-	maxPlays,
-	reachedLimit,
-}: {
-	playCount: number
-	maxPlays: number | null
-	reachedLimit: boolean
-}) {
-	if (maxPlays === null) {
-		return (
-			<span className="text-xs text-muted-foreground tabular-nums">
-				Đã nghe {playCount} lần · không giới hạn
-			</span>
-		)
-	}
+function PlayCountBadge({ playCount }: { playCount: number }) {
 	return (
-		<span
-			className={cn(
-				"text-xs tabular-nums",
-				reachedLimit ? "font-semibold text-destructive" : "text-muted-foreground",
-			)}
-		>
-			Đã nghe {playCount}/{maxPlays} lần
-			{reachedLimit && " · hết lượt"}
+		<span className="text-xs text-muted-foreground tabular-nums">
+			Đã nghe {playCount} lần
 		</span>
+	)
+}
+
+// ─── Transcript reveal ─────────────────────────────────────────────
+
+function TranscriptReveal({ transcript }: { transcript: string }) {
+	const [open, setOpen] = useState(false)
+	return (
+		<div className="mt-3 border-t pt-3">
+			<button
+				type="button"
+				onClick={() => setOpen((v) => !v)}
+				aria-expanded={open}
+				className="flex w-full items-center gap-2 text-left text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+			>
+				<FileText className="size-3.5" />
+				<span className="flex-1">Xem nội dung bài nghe</span>
+				<ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} />
+			</button>
+			{open && (
+				<p className="mt-2 rounded-lg bg-muted/50 p-3 text-sm leading-relaxed text-foreground/90">
+					{transcript}
+				</p>
+			)}
+		</div>
 	)
 }
 

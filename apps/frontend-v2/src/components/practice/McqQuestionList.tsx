@@ -1,9 +1,6 @@
 // McqQuestionList — tất cả câu của 1 đề hiện cùng lúc, scroll trả lời.
 // Dùng chung cho Listening + Reading session.
-//
-// Hai chức năng tách biệt:
-// 1. Nút "Hỏi AI" (Sparkles): luôn hiện, click → mở FloatingChatDock và prefill câu hỏi.
-// 2. Giải thích tĩnh: chỉ hiện khi supportMode=true + đã submit (không cần toggle).
+// Giải thích hiện tự động sau khi submit.
 
 import { ChatGptIcon } from "#/components/common/ChatGptIcon"
 import { askExplainQuestion } from "#/lib/ai-chat/store"
@@ -21,7 +18,6 @@ interface Props {
 	items: readonly McqItem[]
 	selectedAnswers: Record<number, number>
 	submitted: boolean
-	showExplanation: boolean
 	onSelect: (itemIndex: number, optionIndex: number) => void
 }
 
@@ -29,7 +25,6 @@ export function McqQuestionList({
 	items,
 	selectedAnswers,
 	submitted,
-	showExplanation,
 	onSelect,
 }: Props) {
 	return (
@@ -41,7 +36,6 @@ export function McqQuestionList({
 					index={index}
 					selected={selectedAnswers[index] ?? null}
 					submitted={submitted}
-					showExplanation={showExplanation}
 					onSelect={(optIdx) => onSelect(index, optIdx)}
 				/>
 			))}
@@ -54,7 +48,6 @@ interface QuestionBlockProps {
 	index: number
 	selected: number | null
 	submitted: boolean
-	showExplanation: boolean
 	onSelect: (optionIndex: number) => void
 }
 
@@ -63,7 +56,6 @@ function QuestionBlock({
 	index,
 	selected,
 	submitted,
-	showExplanation,
 	onSelect,
 }: QuestionBlockProps) {
 	return (
@@ -99,7 +91,7 @@ function QuestionBlock({
 					/>
 				))}
 			</div>
-			{showExplanation && submitted && <Explanation text={item.explanation} />}
+			{submitted && <Explanation text={item.explanation} />}
 		</div>
 	)
 }
