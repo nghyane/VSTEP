@@ -170,6 +170,9 @@ export interface OverviewStats {
   totalTests: number;
   avgScore: number;
   weakestSkill: "listening" | "reading" | "writing" | "speaking" | null;
+  estimatedBand: string;
+  bandGap: number;
+  trend: "up" | "down" | "stable";
 }
 
 export const MOCK_OVERVIEW_STATS: OverviewStats = {
@@ -177,6 +180,9 @@ export const MOCK_OVERVIEW_STATS: OverviewStats = {
   totalTests: 23,
   avgScore: 5.8,
   weakestSkill: "writing",
+  estimatedBand: "5.8",
+  bandGap: 1.2,
+  trend: "up",
 };
 
 // ─── Sentences ────────────────────────────────────────────────────

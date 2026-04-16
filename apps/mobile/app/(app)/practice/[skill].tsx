@@ -231,7 +231,15 @@ function WritingSession({ data, skill }: { data: ExerciseData; skill: Skill }) {
   const color = useSkillColor(skill);
   const [text, setText] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [supportLevel, setSupportLevel] = useState<"off" | "hints" | "outline" | "template">("off");
   const wc = text.trim().split(/\s+/).filter(Boolean).length;
+
+  const SUPPORT_LEVELS = [
+    { key: "off" as const, label: "Tắt", desc: "Tự viết hoàn toàn" },
+    { key: "hints" as const, label: "Gợi ý", desc: "Từ khóa + câu mở đầu" },
+    { key: "outline" as const, label: "Dàn ý", desc: "Dàn ý 3 đoạn + bài mẫu" },
+    { key: "template" as const, label: "Mẫu", desc: "Khung bài có sẵn" },
+  ];
 
   return (
     <View style={[s.root, { backgroundColor: c.background }]}>
@@ -242,6 +250,49 @@ function WritingSession({ data, skill }: { data: ExerciseData; skill: Skill }) {
           <Text style={[s.promptLabel, { color: c.mutedForeground }]}>ĐỀ BÀI</Text>
           <Text style={[s.passageText, { color: c.foreground }]}>{data.prompt}</Text>
         </View>
+
+        {/* Support level picker */}
+        <View style={s.supportRow}>
+          <HapticTouchable
+            style={[s.supportBtn, { borderColor: supportLevel !== "off" ? color + "4D" : c.border, backgroundColor: supportLevel !== "off" ? color + "0D" : "transparent" }]}
+            onPress={() => {
+              const keys = SUPPORT_LEVELS.map((l) => l.key);
+              const idx = keys.indexOf(supportLevel);
+              setSupportLevel(keys[(idx + 1) % keys.length]);
+            }}
+          >
+            <Ionicons name="bulb-outline" size={14} color={supportLevel !== "off" ? color : c.mutedForeground} />
+            <Text style={{ color: supportLevel !== "off" ? color : c.mutedForeground, fontSize: fontSize.xs, fontFamily: fontFamily.medium }}>
+              {SUPPORT_LEVELS.find((l) => l.key === supportLevel)?.label ?? "Tắt"}
+            </Text>
+          </HapticTouchable>
+        </View>
+
+        {/* Support content */}
+        {supportLevel === "hints" && (
+          <View style={[s.supportCard, { borderColor: c.border }]}>
+            <Text style={[s.supportCardTitle, { color: c.foreground }]}>Từ khóa gợi ý</Text>
+            <Text style={[s.supportCardText, { color: c.mutedForeground }]}>apologize, explain, make up for, sincerely, inconvenience</Text>
+            <Text style={[s.supportCardTitle, { color: c.foreground, marginTop: spacing.sm }]}>Câu mở đầu</Text>
+            <Text style={[s.supportCardText, { color: c.mutedForeground }]}>• I am writing to apologize for...</Text>
+            <Text style={[s.supportCardText, { color: c.mutedForeground }]}>• The reason for my absence was...</Text>
+          </View>
+        )}
+        {supportLevel === "outline" && (
+          <View style={[s.supportCard, { borderColor: c.border }]}>
+            <Text style={[s.supportCardTitle, { color: c.foreground }]}>Dàn ý</Text>
+            <Text style={[s.supportCardText, { color: c.mutedForeground }]}>1. Mở đầu: Lý do viết thư, xin lỗi</Text>
+            <Text style={[s.supportCardText, { color: c.mutedForeground }]}>2. Nội dung: Giải thích lý do, hậu quả</Text>
+            <Text style={[s.supportCardText, { color: c.mutedForeground }]}>3. Kết: Đề xuất khắc phục, mong được thông cảm</Text>
+          </View>
+        )}
+        {supportLevel === "template" && (
+          <View style={[s.supportCard, { borderColor: c.border }]}>
+            <Text style={[s.supportCardTitle, { color: c.foreground }]}>Khung bài mẫu</Text>
+            <Text style={[s.supportCardText, { color: c.mutedForeground }]}>Dear [name],{"\n\n"}I am writing to sincerely apologize for [reason].{"\n\n"}The reason was [explanation]. I understand this caused [consequence].{"\n\n"}To make up for this, I would like to [suggestion].{"\n\n"}Yours sincerely,{"\n"}[Your name]</Text>
+          </View>
+        )}
+
         {!submitted ? (
           <>
             <TextInput style={[s.writingInput, { borderColor: c.border, color: c.foreground, backgroundColor: c.card }]} multiline placeholder="Viết bài tại đây..." placeholderTextColor={c.mutedForeground} value={text} onChangeText={setText} textAlignVertical="top" />
@@ -371,6 +422,10 @@ const s = StyleSheet.create({
   skillLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold, textTransform: "uppercase", letterSpacing: 1 },
   metaText: { fontSize: fontSize.xs },
   supportRow: { flexDirection: "row", justifyContent: "flex-end", marginVertical: spacing.sm },
+  supportBtn: { flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: 6 },
+  supportCard: { borderWidth: 1, borderRadius: radius.xl, padding: spacing.base, gap: spacing.xs, marginBottom: spacing.sm },
+  supportCardTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
+  supportCardText: { fontSize: fontSize.xs, lineHeight: 18 },
   // Audio
   audioBox: { borderWidth: 1, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md, marginTop: spacing.base },
   audioHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },

@@ -31,6 +31,7 @@ export function SegmentedTabs({ tabs, activeKey, onTabChange }: Props) {
             activeOpacity={0.7}
           >
             <Text
+              numberOfLines={1}
               style={[
                 styles.label,
                 { color: active ? c.foreground : c.mutedForeground, fontFamily: active ? fontFamily.semiBold : fontFamily.medium },

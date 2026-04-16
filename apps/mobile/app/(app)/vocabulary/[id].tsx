@@ -19,7 +19,8 @@ interface Word {
 
 interface McqExercise { kind: "mcq"; id: string; prompt: string; options: string[]; correctIndex: number; explanation: string; }
 interface FillBlankExercise { kind: "fill-blank"; id: string; sentence: string; acceptedAnswers: string[]; explanation: string; }
-type Exercise = McqExercise | FillBlankExercise;
+interface WordFormExercise { kind: "word-form"; id: string; instruction: string; sentence: string; rootWord: string; acceptedAnswers: string[]; explanation: string; }
+type Exercise = McqExercise | FillBlankExercise | WordFormExercise;
 
 interface TopicData { name: string; description: string; words: Word[]; exercises: Exercise[]; }
 
@@ -36,6 +37,7 @@ const ALL_TOPICS: Record<string, TopicData> = {
     exercises: [
       { kind: "mcq", id: "ex1", prompt: "My ___ live in the countryside.", options: ["relatives", "relations", "relationships", "relators"], correctIndex: 0, explanation: "'Relatives' là danh từ chỉ người thân." },
       { kind: "fill-blank", id: "ex2", sentence: "Parents should ___ their children with love.", acceptedAnswers: ["nurture"], explanation: "'Nurture' nghĩa là nuôi dưỡng." },
+      { kind: "word-form", id: "ex3", instruction: "Điền dạng đúng của từ trong ngoặc.", sentence: "The ___ (relate) between parents and children is important.", rootWord: "relate", acceptedAnswers: ["relationship"], explanation: "'Relate' (v) → 'relationship' (n) = mối quan hệ." },
     ],
   },
   "daily-life": {
@@ -230,7 +232,7 @@ function PracticeTab({ exercises }: { exercises: Exercise[] }) {
     setSubmitted(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (ex.kind === "mcq" && selected === ex.correctIndex) setCorrect((c) => c + 1);
-    if (ex.kind === "fill-blank" && ex.acceptedAnswers.some((a) => a.toLowerCase() === fillAnswer.trim().toLowerCase())) setCorrect((c) => c + 1);
+    if ((ex.kind === "fill-blank" || ex.kind === "word-form") && (ex as any).acceptedAnswers.some((a: string) => a.toLowerCase() === fillAnswer.trim().toLowerCase())) setCorrect((c) => c + 1);
   }, [ex, selected, fillAnswer]);
 
   if (done) {
@@ -248,7 +250,7 @@ function PracticeTab({ exercises }: { exercises: Exercise[] }) {
   }
 
   const isCorrectMcq = ex.kind === "mcq" && selected === ex.correctIndex;
-  const isCorrectFill = ex.kind === "fill-blank" && ex.acceptedAnswers.some((a) => a.toLowerCase() === fillAnswer.trim().toLowerCase());
+  const isCorrectFill = (ex.kind === "fill-blank" || ex.kind === "word-form") && (ex as any).acceptedAnswers.some((a: string) => a.toLowerCase() === fillAnswer.trim().toLowerCase());
 
   return (
     <View style={styles.practiceWrap}>
@@ -299,6 +301,26 @@ function PracticeTab({ exercises }: { exercises: Exercise[] }) {
             <TextInput
               style={[styles.fillInput, { borderColor: submitted ? (isCorrectFill ? c.success : c.destructive) : c.border, color: c.foreground, backgroundColor: c.card }]}
               placeholder="Nhập đáp án..."
+              placeholderTextColor={c.mutedForeground}
+              value={fillAnswer}
+              onChangeText={setFillAnswer}
+              editable={!submitted}
+              autoCapitalize="none"
+            />
+          </View>
+        )}
+
+        {ex.kind === "word-form" && (
+          <View style={{ gap: spacing.md }}>
+            <View style={styles.kindBadgeRow}>
+              <Text style={[styles.kindBadge, { color: c.skillWriting, backgroundColor: c.skillWriting + "15" }]}>Biến đổi từ</Text>
+            </View>
+            <Text style={[styles.prompt, { color: c.mutedForeground }]}>{ex.instruction}</Text>
+            <Text style={[styles.prompt, { color: c.foreground }]}>{ex.sentence}</Text>
+            <Text style={[{ color: c.primary, fontSize: fontSize.xs, fontFamily: fontFamily.semiBold }]}>Từ gốc: {ex.rootWord}</Text>
+            <TextInput
+              style={[styles.fillInput, { borderColor: submitted ? (isCorrectFill ? c.success : c.destructive) : c.border, color: c.foreground, backgroundColor: c.card }]}
+              placeholder="Nhập dạng đúng..."
               placeholderTextColor={c.mutedForeground}
               value={fillAnswer}
               onChangeText={setFillAnswer}

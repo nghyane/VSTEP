@@ -14,7 +14,9 @@ interface Example { en: string; vi: string; note?: string; }
 interface Mistake { wrong: string; correct: string; explanation: string; }
 interface McqEx { kind: "mcq"; id: string; prompt: string; options: string[]; correctIndex: number; explanation: string; }
 interface FillEx { kind: "fill-blank"; id: string; template: string; acceptedAnswers: string[]; explanation: string; }
-type Exercise = McqEx | FillEx;
+interface ErrorCorrectionEx { kind: "error-correction"; id: string; sentence: string; correction: string; explanation: string; }
+interface RewriteEx { kind: "rewrite"; id: string; instruction: string; original: string; acceptedAnswers: string[]; explanation: string; }
+type Exercise = McqEx | FillEx | ErrorCorrectionEx | RewriteEx;
 
 interface VstepTip { task: string; tip: string; example: string; }
 
@@ -47,6 +49,8 @@ const ALL_POINTS: Record<string, PointData> = {
       { kind: "mcq", id: "ps-1", prompt: "She ___ to work by bus every day.", options: ["go", "goes", "going", "gone"], correctIndex: 1, explanation: "Ngôi thứ 3 số ít → goes." },
       { kind: "mcq", id: "ps-2", prompt: "They ___ coffee in the morning.", options: ["drinks", "drink", "drinking", "drank"], correctIndex: 1, explanation: "They → không thêm -s." },
       { kind: "fill-blank", id: "ps-3", template: "The sun ___ in the east.", acceptedAnswers: ["rises"], explanation: "Sự thật hiển nhiên → rises." },
+      { kind: "error-correction", id: "ps-4", sentence: "She go to school every day.", correction: "She goes to school every day.", explanation: "Ngôi thứ 3 số ít phải thêm -s/-es." },
+      { kind: "rewrite", id: "ps-5", instruction: "Viết lại câu ở dạng phủ định.", original: "He likes spicy food.", acceptedAnswers: ["He doesn't like spicy food.", "He does not like spicy food."], explanation: "Phủ định ngôi thứ 3: doesn't + V nguyên mẫu." },
     ],
   },
   "present-perfect": {
@@ -232,6 +236,8 @@ function PracticeTab({ exercises }: { exercises: Exercise[] }) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (ex.kind === "mcq" && selected === ex.correctIndex) setCorrect((c) => c + 1);
     if (ex.kind === "fill-blank" && ex.acceptedAnswers.some((a) => a.toLowerCase() === fillAnswer.trim().toLowerCase())) setCorrect((c) => c + 1);
+    if (ex.kind === "error-correction" && fillAnswer.trim().toLowerCase() === ex.correction.toLowerCase()) setCorrect((c) => c + 1);
+    if (ex.kind === "rewrite" && ex.acceptedAnswers.some((a) => a.toLowerCase() === fillAnswer.trim().toLowerCase())) setCorrect((c) => c + 1);
   }, [ex, selected, fillAnswer]);
 
   if (done) {
@@ -248,7 +254,9 @@ function PracticeTab({ exercises }: { exercises: Exercise[] }) {
   }
 
   const isCorrectMcq = ex.kind === "mcq" && selected === ex.correctIndex;
-  const isCorrectFill = ex.kind === "fill-blank" && ex.acceptedAnswers.some((a) => a.toLowerCase() === fillAnswer.trim().toLowerCase());
+  const isCorrectFill = (ex.kind === "fill-blank" && ex.acceptedAnswers.some((a) => a.toLowerCase() === fillAnswer.trim().toLowerCase()))
+    || (ex.kind === "error-correction" && fillAnswer.trim().toLowerCase() === ex.correction.toLowerCase())
+    || (ex.kind === "rewrite" && ex.acceptedAnswers.some((a) => a.toLowerCase() === fillAnswer.trim().toLowerCase()));
   const isCorrect = ex.kind === "mcq" ? isCorrectMcq : isCorrectFill;
 
   return (
@@ -285,6 +293,24 @@ function PracticeTab({ exercises }: { exercises: Exercise[] }) {
 
         {ex.kind === "fill-blank" && (
           <TextInput style={[styles.fillInput, { borderColor: submitted ? (isCorrectFill ? c.success : c.destructive) : c.border, color: c.foreground }]} placeholder="Nhập đáp án..." placeholderTextColor={c.mutedForeground} value={fillAnswer} onChangeText={setFillAnswer} editable={!submitted} autoCapitalize="none" />
+        )}
+
+        {ex.kind === "error-correction" && (
+          <View style={{ gap: spacing.md }}>
+            <View style={styles.kindRow}><Text style={[styles.kindBadge, { color: c.destructive, backgroundColor: c.destructive + "15" }]}>Sửa lỗi</Text></View>
+            <Text style={[styles.prompt, { color: c.foreground }]}>{ex.sentence}</Text>
+            <TextInput style={[styles.fillInput, { borderColor: submitted ? (isCorrectFill ? c.success : c.destructive) : c.border, color: c.foreground }]} placeholder="Viết lại câu đúng..." placeholderTextColor={c.mutedForeground} value={fillAnswer} onChangeText={setFillAnswer} editable={!submitted} autoCapitalize="none" />
+            {submitted && !isCorrectFill && <Text style={{ color: c.success, fontSize: fontSize.sm }}>Đáp án: {ex.correction}</Text>}
+          </View>
+        )}
+
+        {ex.kind === "rewrite" && (
+          <View style={{ gap: spacing.md }}>
+            <View style={styles.kindRow}><Text style={[styles.kindBadge, { color: c.skillWriting, backgroundColor: c.skillWriting + "15" }]}>Viết lại câu</Text></View>
+            <Text style={[styles.prompt, { color: c.mutedForeground }]}>{ex.instruction}</Text>
+            <Text style={[styles.prompt, { color: c.foreground }]}>{ex.original}</Text>
+            <TextInput style={[styles.fillInput, { borderColor: submitted ? (isCorrectFill ? c.success : c.destructive) : c.border, color: c.foreground }]} placeholder="Viết lại câu..." placeholderTextColor={c.mutedForeground} value={fillAnswer} onChangeText={setFillAnswer} editable={!submitted} autoCapitalize="none" />
+          </View>
         )}
 
         {submitted && (

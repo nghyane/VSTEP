@@ -195,6 +195,14 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
           </HapticTouchable>
           <HapticTouchable
+            style={styles.row}
+            onPress={() => router.push("/(app)/onboarding")}
+          >
+            <Ionicons name="navigate-outline" size={20} color={c.primary} />
+            <Text style={[styles.rowText, { color: c.primary }]}>Đặt lại mục tiêu học tập</Text>
+            <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
+          </HapticTouchable>
+          <HapticTouchable
             style={[styles.row, styles.rowLast]}
             onPress={handleLogout}
           >

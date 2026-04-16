@@ -1,494 +1,333 @@
-import { useEffect, useRef } from "react";
-import { Animated, Platform, StyleSheet, Text, View } from "react-native";
-import { useFadeIn } from "@/hooks/use-fade-in";
+import { useEffect, useMemo, useState } from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
+import { LinearGradient } from "expo-linear-gradient";
 import { HapticTouchable } from "@/components/HapticTouchable";
-import { LoadingScreen } from "@/components/LoadingScreen";
-import { GradientBackground } from "@/components/GradientBackground";
-import { StickyHeader, HEADER_H } from "@/components/StickyHeader";
+import { SegmentedTabs } from "@/components/SegmentedTabs";
+import { SpiderChart } from "@/components/SpiderChart";
+import { ActivityHeatmap } from "@/components/ActivityHeatmap";
+import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
 import { useAuth } from "@/hooks/use-auth";
 import { useProgress, useActivity, usePracticeTrack } from "@/hooks/use-progress";
-import { useExamSessions } from "@/hooks/use-exam-session";
-import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
-import type { Skill, ExamSessionWithExam } from "@/types/api";
+import type { Skill } from "@/types/api";
+import { MOCK_OVERVIEW_STATS, MOCK_PRACTICE_TRACK } from "@/lib/mock";
 
-type QuickAction = {
-  title: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string;
-  onPress: () => void;
-};
+type Tab = "overview" | "track";
 
-
-export default function HomeScreen() {
+export default function OverviewScreen() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const { user } = useAuth();
-  const progress = useProgress();
-  const { data: activityData, isLoading: activityLoading } = useActivity(7);
-  const { data: practiceTrack } = usePracticeTrack();
-  const { data: recentSessions } = useExamSessions({ status: "completed", limit: 5 });
-  const scrollY = useRef(new Animated.Value(0)).current;
+  const [tab, setTab] = useState<Tab>("overview");
+  const { data: progress } = useProgress();
+  const { data: activity } = useActivity(90);
 
-  const fade0 = useFadeIn(0);
-  const fade1 = useFadeIn(100);
-  const fade2 = useFadeIn(200);
-  const fade3 = useFadeIn(300);
-  const fade4 = useFadeIn(400);
-  const fade5 = useFadeIn(500);
+  const fullName = user?.fullName ?? "Học viên";
+  const initials = fullName.split(" ").map((w) => w[0]).join("").slice(-2).toUpperCase();
+  const stats = MOCK_OVERVIEW_STATS;
+
+  return (
+    <ScrollView style={[s.root, { backgroundColor: c.background }]} contentContainerStyle={[s.scroll, { paddingTop: insets.top }]}>
+      {/* ── Profile Banner ── */}
+      <LinearGradient colors={["#1a6ef5", "#1a6ef5CC"]} style={s.banner}>
+        <View style={s.bannerRow}>
+          <View style={s.avatar}><Text style={s.avatarText}>{initials}</Text></View>
+          <View style={{ flex: 1 }}>
+            <Text style={s.greeting}>Hi, {fullName}</Text>
+            <Text style={s.greetingSub}>Còn <Text style={{ fontFamily: fontFamily.bold }}>{stats.daysLeft} ngày</Text> diễn ra kỳ thi. Giữ vững tập trung nhé!</Text>
+          </View>
+        </View>
+        {/* Level track */}
+        <View style={s.levelTrack}>
+          <LevelDot label="Đầu vào" value="A2" variant="done" />
+          <View style={s.levelLine} />
+          <LevelDot label="Dự đoán" value="B1" variant="active" />
+          <View style={s.levelLine} />
+          <LevelDot label="Mục tiêu" value="B2" variant="target" />
+        </View>
+        {/* Goal button — absolute top-right */}
+        <HapticTouchable style={s.goalBtn} onPress={() => router.push("/(app)/onboarding")}>
+          <Ionicons name="navigate-outline" size={16} color="#fff" />
+        </HapticTouchable>
+      </LinearGradient>
+
+      {/* ── Tab Bar ── */}
+      <View style={{ paddingHorizontal: spacing.xl, marginTop: spacing.base }}>
+        <SegmentedTabs tabs={[{ key: "overview", label: "Tổng quan" }, { key: "track", label: "Lộ trình" }]} activeKey={tab} onTabChange={(k) => setTab(k as Tab)} />
+      </View>
+
+      {/* ── Tab Content ── */}
+      <View style={{ paddingHorizontal: spacing.xl, marginTop: spacing.base }}>
+        {tab === "overview" ? <OverviewTab stats={stats} /> : <PracticeTrackTab />}
+      </View>
+
+      <View style={{ height: insets.bottom + 40 }} />
+    </ScrollView>
+  );
+}
+
+function LevelDot({ label, value, variant }: { label: string; value: string; variant: "done" | "active" | "target" }) {
+  return (
+    <View style={s.levelDotWrap}>
+      <Text style={s.levelLabel}>{label}</Text>
+      <View style={[s.levelDot, variant === "done" && s.levelDotDone, variant === "active" && s.levelDotActive, variant === "target" && s.levelDotTarget]} />
+      <Text style={[s.levelValue, variant === "active" && { color: "#93C5FD" }]}>{value}</Text>
+    </View>
+  );
+}
+
+// ─── Overview Tab ─────────────────────────────────────────────────
+
+function OverviewTab({ stats }: { stats: typeof MOCK_OVERVIEW_STATS }) {
+  const c = useThemeColors();
+  const { data: progress } = useProgress();
+  const skills = progress?.skills ?? [];
+  const spider = {
+    listening: { current: 6.2, trend: "up" },
+    reading: { current: 7.1, trend: "stable" },
+    writing: { current: 5.4, trend: "down" },
+    speaking: { current: 5.8, trend: "up" },
+  } as Record<Skill, { current: number; trend: string }>;
+
+  const weakLabel: Record<string, string> = { listening: "Listening", reading: "Reading", writing: "Writing", speaking: "Speaking" };
+
+  const trendLabel: Record<string, string> = { up: "Cải thiện", stable: "Ổn định", down: "Cần cải thiện" };
+  const trendColor: Record<string, string> = { up: c.success, stable: c.warning, down: c.destructive };
+
+  return (
+    <View style={{ gap: spacing.base }}>
+      {/* Stat Grid */}
+      <View style={s.statGrid}>
+        <StatCard icon="scale-outline" label="Band còn thiếu" value={stats.avgScore > 0 ? `+${stats.bandGap.toFixed(1)}` : "—"} color={c.primary} />
+        <StatCard icon={stats.trend === "up" ? "trending-up-outline" : stats.trend === "down" ? "trending-down-outline" : "swap-horizontal-outline"} label="Xu hướng" value={trendLabel[stats.trend] ?? "—"} color={trendColor[stats.trend] ?? c.mutedForeground} />
+        <StatCard icon="checkmark-done-outline" label="Tổng bài test" value={String(stats.totalTests)} color={c.success} />
+        <StatCard icon="alert-circle-outline" label="Kỹ năng yếu" value={stats.weakestSkill ? weakLabel[stats.weakestSkill] ?? "—" : "—"} color={c.foreground} />
+      </View>
+
+      {/* Exam Countdown */}
+      <ExamCountdown daysLeft={stats.daysLeft} />
+
+      {/* Spider Chart */}
+      <View style={[s.card, { backgroundColor: c.muted + "80" }]}>
+        <Text style={[s.cardTitle, { color: c.foreground }]}>Biểu đồ kỹ năng</Text>
+        <SpiderChart skills={spider} />
+      </View>
+
+      {/* Doughnut Chart */}
+      <View style={[s.card, { backgroundColor: c.muted + "80" }]}>
+        <Text style={[s.cardTitle, { color: c.foreground }]}>Phân bố bài tập</Text>
+        <View style={s.doughnutRow}>
+          {(["listening", "reading", "writing", "speaking"] as Skill[]).map((sk) => {
+            const info = skills.find((si: any) => si.skill === sk);
+            const count = info?.attemptCount ?? 0;
+            const total = skills.reduce((sum: number, si: any) => sum + (si.attemptCount ?? 0), 0) || 1;
+            const pct = Math.round((count / total) * 100);
+            const color = useSkillColor(sk);
+            return (
+              <View key={sk} style={s.doughnutItem}>
+                <View style={[s.doughnutBar, { backgroundColor: c.muted }]}>
+                  <View style={[s.doughnutFill, { backgroundColor: color, height: `${Math.max(pct, 5)}%` }]} />
+                </View>
+                <Text style={[s.doughnutLabel, { color: c.mutedForeground }]}>{SKILL_LABELS[sk]}</Text>
+                <Text style={[s.doughnutPct, { color }]}>{pct}%</Text>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* Activity Heatmap */}
+      <ActivityHeatmap />
+    </View>
+  );
+}
+
+function StatCard({ icon, label, value, color }: { icon: string; label: string; value: string; color: string }) {
+  const c = useThemeColors();
+  return (
+    <View style={[s.statCard, { backgroundColor: c.muted + "80" }]}>
+      <Ionicons name={icon as any} size={22} color={color} />
+      <Text style={[s.statLabel, { color: c.mutedForeground }]}>{label}</Text>
+      <Text style={[s.statValue, { color }]}>{value}</Text>
+    </View>
+  );
+}
+
+function ExamCountdown({ daysLeft }: { daysLeft: number }) {
+  const c = useThemeColors();
+  const deadline = useMemo(() => new Date(Date.now() + daysLeft * 86400000).toISOString(), [daysLeft]);
+  const [time, setTime] = useState({ d: daysLeft, h: 0, m: 0, sec: 0 });
 
   useEffect(() => {
-    if (!progress.isLoading && progress.data && !progress.data.goal) {
-      router.replace("/(app)/onboarding");
-    }
-  }, [progress.isLoading, progress.data, router]);
+    const tick = () => {
+      const diff = Math.max(0, new Date(deadline).getTime() - Date.now());
+      const totalSec = Math.floor(diff / 1000);
+      setTime({ d: Math.floor(totalSec / 86400), h: Math.floor((totalSec % 86400) / 3600), m: Math.floor((totalSec % 3600) / 60), sec: totalSec % 60 });
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [deadline]);
 
-  if (progress.isLoading) return <LoadingScreen />;
-
-  const skills = progress.data?.skills ?? [];
-  const goal = progress.data?.goal;
-  const totalAttempts = skills.reduce((sum, s) => sum + s.attemptCount, 0);
-
-  const currentAvg = (() => {
-    if (skills.length === 0) return "—";
-    const levelScores: Record<string, number> = { A2: 1, B1: 2, B2: 3, C1: 4 };
-    const scoreBands: [number, string][] = [[3.5, "C1"], [2.5, "B2"], [1.5, "B1"], [0, "A2"]];
-    const levels = skills.map((s) => s.currentLevel).filter(Boolean);
-    if (levels.length === 0) return "—";
-    const avg = levels.reduce((sum, l) => sum + (levelScores[l] ?? 1), 0) / levels.length;
-    return scoreBands.find(([min]) => avg >= min)?.[1] ?? "A2";
-  })();
-
-  const quickActions: QuickAction[] = [
-    { title: "Luyện tập", icon: "school", color: c.primary, onPress: () => router.push("/(app)/practice") },
-    { title: "Tiến độ", icon: "bar-chart-outline", color: c.primary, onPress: () => router.push("/(app)/(tabs)/progress") },
-    { title: "Bài kiểm tra", icon: "document-text", color: c.primary, onPress: () => router.push("/(app)/(tabs)/exams") },
-    { title: "Từ vựng", icon: "book-outline", color: c.primary, onPress: () => router.push("/(app)/vocabulary") },
-  ];
+  const pad = (n: number) => String(n).padStart(2, "0");
 
   return (
-    <View style={[styles.root, { backgroundColor: c.background }]}>
-      <GradientBackground />
-      <StickyHeader scrollY={scrollY} subtitle="Bạn đang học VSTEP" />
-      <Animated.ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[
-          styles.content,
-          { paddingTop: HEADER_H + insets.top + 8, paddingBottom: insets.bottom + 100 },
-        ]}
-        showsVerticalScrollIndicator={false}
-        scrollEventThrottle={16}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: false },
-        )}
-      >
-        {/* ── Quick Actions ── */}
-        <Animated.View style={fade0}>
-          <Text style={[styles.sectionTitle, { color: c.foreground }]}>Dành cho bạn</Text>
-          <View style={[styles.actionGrid, { marginTop: spacing.base }]}>
-            {quickActions.map((action) => (
-              <HapticTouchable
-                key={action.title}
-                style={[styles.actionCard, { backgroundColor: c.card, borderColor: c.border }]}
-                onPress={action.onPress}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.actionIconWrap, { backgroundColor: action.color + "18" }]}>
-                  <Ionicons name={action.icon} size={24} color={action.color} />
-                </View>
-                <Text style={[styles.actionTitle, { color: c.foreground }]}>{action.title}</Text>
-              </HapticTouchable>
-            ))}
-          </View>
-        </Animated.View>
-
-        {/* ── Learning Profile ── */}
-        <Animated.View style={fade1}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: c.foreground }]}>Learning Profile</Text>
-            <HapticTouchable onPress={() => router.push("/(app)/(tabs)/progress")}>
-              <Text style={[styles.sectionLink, { color: c.primary }]}>Xem tất cả</Text>
-            </HapticTouchable>
-          </View>
-
-          <View style={[styles.profileCard, { backgroundColor: c.card, borderColor: c.border, marginTop: spacing.base }]}>
-            <Text style={[styles.profileTitle, { color: c.foreground }]}>Trình độ VSTEP của bạn</Text>
-            <View style={styles.progressTrack}>
-              <View style={styles.progressNode}>
-                <View style={[styles.progressDot, { backgroundColor: c.primary + "18" }]}>
-                  <View style={[styles.dotInner, { backgroundColor: c.primary }]} />
-                </View>
-                <Text style={[styles.progressLabel, { color: c.mutedForeground }]}>Đầu vào</Text>
-                <Text style={[styles.progressValue, { color: c.foreground }]}>
-                  {goal?.currentEstimatedBand ?? "—"}
-                </Text>
-              </View>
-              <View style={[styles.progressLine, { borderColor: c.border }]} />
-              <View style={styles.progressNode}>
-                <View style={[styles.progressDot, { backgroundColor: c.primary + "18" }]}>
-                  <View style={[styles.dotInner, { backgroundColor: c.primary }]} />
-                </View>
-                <Text style={[styles.progressLabel, { color: c.mutedForeground }]}>Dự đoán</Text>
-                <Text style={[styles.progressValue, { color: c.primary }]}>{currentAvg}</Text>
-              </View>
-              <View style={[styles.progressLine, { borderColor: c.border }]} />
-              <View style={styles.progressNode}>
-                <View style={[styles.progressDot, { backgroundColor: c.success + "18" }]}>
-                  <Ionicons name="locate" size={14} color={c.success} />
-                </View>
-                <Text style={[styles.progressLabel, { color: c.mutedForeground }]}>Mục tiêu</Text>
-                <Text style={[styles.progressValue, { color: c.success }]}>
-                  {goal?.targetBand ?? "—"}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </Animated.View>
-
-        {/* ── Stats Grid ── */}
-        <Animated.View style={fade2}>
-          <View style={styles.statsGrid}>
-            <View style={[styles.statCard, { borderColor: c.border }]}>
-              <Text style={styles.statEmoji}>⏱</Text>
-              <Text style={[styles.statLabel, { color: c.mutedForeground }]}>Tổng thời lượng</Text>
-              <Text style={[styles.statValue, { color: c.primary }]}>
-                {activityLoading ? "—" : (activityData?.totalStudyTimeMinutes ?? 0) >= 60 ? `${Math.round((activityData?.totalStudyTimeMinutes ?? 0) / 60 * 10) / 10} giờ` : `${Math.round(activityData?.totalStudyTimeMinutes ?? 0)} phút`}
-              </Text>
-            </View>
-            <View style={[styles.statCard, { borderColor: c.border }]}>
-              <Text style={styles.statEmoji}>🏆</Text>
-              <Text style={[styles.statLabel, { color: c.mutedForeground }]}>Chuỗi ngày học</Text>
-              <Text style={[styles.statValue, { color: c.warning }]}>{activityLoading ? "—" : activityData?.streak ?? 0}</Text>
-            </View>
-            <View style={[styles.statCard, { borderColor: c.border }]}>
-              <Text style={styles.statEmoji}>📝</Text>
-              <Text style={[styles.statLabel, { color: c.mutedForeground }]}>Số bài test đã làm</Text>
-              <Text style={[styles.statValue, { color: c.primary }]}>{activityLoading ? "—" : activityData?.totalExercises ?? 0}</Text>
-            </View>
-            <View style={[styles.statCard, { borderColor: c.border }]}>
-              <Text style={styles.statEmoji}>📚</Text>
-              <Text style={[styles.statLabel, { color: c.mutedForeground }]}>Số bài đã học</Text>
-              <Text style={[styles.statValue, { color: c.primary }]}>{activityLoading ? "—" : activityData?.total ?? 0}</Text>
-            </View>
-          </View>
-        </Animated.View>
-
-        {/* ── Recent Sessions ── */}
-        {recentSessions?.data && recentSessions.data.length > 0 && (
-          <Animated.View style={fade5}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: c.foreground }]}>Phiên thi gần đây</Text>
-            </View>
-            <View style={{ gap: spacing.sm, marginTop: spacing.base }}>
-              {recentSessions.data.map((session) => (
-                <SessionCard key={session.id} session={session} />
-              ))}
-            </View>
-          </Animated.View>
-        )}
-
-        {/* ── Study Plan ── */}
-        <Animated.View style={fade3}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: c.foreground }]}>Study Plan</Text>
-            <HapticTouchable onPress={() => router.push("/(app)/goal")}>
-              <Text style={[styles.sectionLink, { color: c.primary }]}>Xem tất cả</Text>
-            </HapticTouchable>
-          </View>
-
-          {goal ? (
-            <View style={[styles.goalCard, { backgroundColor: c.card, borderColor: c.border, marginTop: spacing.base }]}>
-              <View style={styles.goalRow}>
-                <Ionicons name="flag" size={16} color={c.primary} />
-                <Text style={[styles.goalTitle, { color: c.foreground }]}>Mục tiêu học tập</Text>
-              </View>
-              <Text style={[styles.goalMeta, { color: c.mutedForeground }]}>
-                Band {goal.targetBand}
-                {goal.deadline
-                  ? ` · Hạn: ${new Date(goal.deadline).toLocaleDateString("vi-VN")}`
-                  : ""}
-                {goal.dailyStudyTimeMinutes ? ` · ${goal.dailyStudyTimeMinutes} phút/ngày` : ""}
-              </Text>
-            </View>
-          ) : (
-            <HapticTouchable
-              style={[styles.goalCard, { backgroundColor: c.card, borderColor: c.border, marginTop: spacing.base }]}
-              onPress={() => router.push("/(app)/onboarding")}
-            >
-              <View style={styles.goalRow}>
-                <Ionicons name="add-circle-outline" size={16} color={c.primary} />
-                <Text style={[styles.goalTitle, { color: c.primary }]}>Thiết lập mục tiêu</Text>
-              </View>
-              <Text style={[styles.goalMeta, { color: c.mutedForeground }]}>
-                Đặt mục tiêu để theo dõi tiến độ học tập
-              </Text>
-            </HapticTouchable>
-          )}
-        </Animated.View>
-
-        {/* ── Practice Track Score Cards ── */}
-        {practiceTrack && (
-          <Animated.View style={fade4}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: c.foreground }]}>Điểm trung bình</Text>
-              <HapticTouchable onPress={() => router.push("/(app)/(tabs)/progress")}>
-                <Text style={[styles.sectionLink, { color: c.primary }]}>Xem chi tiết</Text>
-              </HapticTouchable>
-            </View>
-
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.base }}>
-              {practiceTrack.skills.map((item) => (
-                <View
-                  key={item.skill}
-                  style={[styles.lpCard, { backgroundColor: c.card, borderColor: c.border, width: "48%" }]}
-                >
-                  <View style={styles.lpRow}>
-                    <SkillIcon skill={item.skill as any} size={20} />
-                    <Text style={[styles.lpSkill, { color: c.foreground }]}>
-                      {SKILL_LABELS[item.skill as keyof typeof SKILL_LABELS] ?? item.skill}
-                    </Text>
-                  </View>
-                  <Text style={{ fontSize: 24, fontWeight: "700", color: c.foreground, marginTop: 4 }}>
-                    {item.averageScore > 0 ? item.averageScore.toFixed(1) : "—.—"}
-                  </Text>
-                  <Text style={[styles.lpMeta, { color: c.mutedForeground }]}>
-                    {item.attemptCount} bài test
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </Animated.View>
-        )}
-      </Animated.ScrollView>
-    </View>
-  );
-}
-
-// ── Session History Card ──
-
-function SessionCard({ session }: { session: ExamSessionWithExam }) {
-  const c = useThemeColors();
-  const router = useRouter();
-  const examTitle = session.exam?.title ?? `Đề ${session.exam?.level ?? ""}`;
-  const date = new Date(session.completedAt ?? session.createdAt).toLocaleDateString("vi-VN");
-  const skills: { skill: Skill; score: number | null }[] = [
-    { skill: "listening", score: session.listeningScore },
-    { skill: "reading", score: session.readingScore },
-    { skill: "writing", score: session.writingScore },
-    { skill: "speaking", score: session.speakingScore },
-  ].filter((s) => s.score !== null && s.score !== undefined);
-
-  return (
-    <HapticTouchable
-      style={[styles.sessionCard, { backgroundColor: c.card, borderColor: c.border }]}
-      onPress={() => router.push(`/(app)/session/${session.id}`)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.sessionHeader}>
-        <Text style={{ color: c.foreground, fontWeight: "600", fontSize: fontSize.sm, flex: 1 }} numberOfLines={1}>
-          {examTitle}
-        </Text>
-        <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs }}>{date}</Text>
+    <View style={[s.countdownCard, { borderColor: c.border }]}>
+      <View style={s.countdownHeader}>
+        <Ionicons name="calendar" size={18} color={c.primary} />
+        <Text style={[s.countdownTitle, { color: c.foreground }]}>Đếm ngày thi</Text>
       </View>
-      {session.overallScore != null && (
-        <View style={styles.sessionScoreRow}>
-          <Text style={{ color: c.primary, fontWeight: "700", fontSize: fontSize.lg }}>
-            {session.overallScore}/10
-          </Text>
-          {session.overallBand && (
-            <View style={[styles.sessionBand, { borderColor: c.primary }]}>
-              <Text style={{ color: c.primary, fontWeight: "700", fontSize: fontSize.xs }}>{session.overallBand}</Text>
+      <View style={s.countdownRow}>
+        {[{ v: pad(time.d), l: "Ngày" }, { v: pad(time.h), l: "Giờ" }, { v: pad(time.m), l: "Phút" }, { v: pad(time.sec), l: "Giây" }].map((b, i) => (
+          <View key={b.l} style={s.countdownBlockWrap}>
+            {i > 0 && <Text style={[s.countdownColon, { color: c.mutedForeground }]}>:</Text>}
+            <View style={s.countdownBlockInner}>
+              <View style={[s.countdownBlock, { backgroundColor: c.primary }]}>
+                <Text style={s.countdownNum}>{b.v}</Text>
+              </View>
+              <Text style={[s.countdownLabel, { color: c.mutedForeground }]}>{b.l}</Text>
             </View>
-          )}
-        </View>
-      )}
-      {skills.length > 0 && (
-        <View style={styles.sessionSkills}>
-          {skills.map(({ skill, score }) => (
-            <SessionSkillChip key={skill} skill={skill} score={score!} />
-          ))}
-        </View>
-      )}
-    </HapticTouchable>
-  );
-}
-
-function SessionSkillChip({ skill, score }: { skill: Skill; score: number }) {
-  const c = useThemeColors();
-  const color = useSkillColor(skill);
-  return (
-    <View style={[styles.sessionSkillChip, { backgroundColor: color + "15" }]}>
-      <Ionicons name={skill === "listening" ? "headset" : skill === "reading" ? "book" : skill === "writing" ? "create" : "mic"} size={10} color={color} />
-      <Text style={{ color, fontSize: 10, fontWeight: "600" }}>{score}/10</Text>
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+// ─── Practice Track Tab ───────────────────────────────────────────
+
+function PracticeTrackTab() {
+  const c = useThemeColors();
+  const data = MOCK_PRACTICE_TRACK;
+  const SKILLS: Skill[] = ["listening", "reading", "writing", "speaking"];
+
+  return (
+    <View style={{ gap: spacing.base }}>
+      {/* Score cards */}
+      <View style={[s.card, { backgroundColor: c.muted + "80" }]}>
+        <Text style={[s.cardTitle, { color: c.foreground }]}>Điểm trung bình hàng tuần</Text>
+        <View style={s.scoreGrid}>
+          {SKILLS.map((sk) => {
+            const info = data.skills.find((s) => s.skill === sk);
+            const score = data.spider[sk]?.current ?? 0;
+            const color = useSkillColor(sk);
+            return (
+              <View key={sk} style={[s.scoreCard, { borderColor: c.border, backgroundColor: c.card }]}>
+                <View style={s.scoreCardHeader}>
+                  <Text style={[s.scoreCardLabel, { color: c.mutedForeground }]}>{SKILL_LABELS[sk]}</Text>
+                  <SkillIcon skill={sk} size={16} />
+                </View>
+                <Text style={[s.scoreCardValue, { color: c.foreground }]}>{score > 0 ? score.toFixed(1) : "—.—"}</Text>
+                <Text style={[s.scoreCardMeta, { color: c.mutedForeground }]}>{info?.attemptCount ?? 0} bài test</Text>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* Test history */}
+      <View style={[s.card, { backgroundColor: c.muted + "80" }]}>
+        <Text style={[s.cardTitle, { color: c.foreground }]}>Lịch sử Test Practice</Text>
+        {data.testSessions.length === 0 ? (
+          <Text style={[s.emptyText, { color: c.mutedForeground }]}>Chưa có lịch sử test</Text>
+        ) : (
+          <View style={{ gap: spacing.sm }}>
+            {data.testSessions.map((sess) => {
+              const scores = [
+                sess.listeningScore != null && { skill: "listening" as Skill, score: sess.listeningScore },
+                sess.readingScore != null && { skill: "reading" as Skill, score: sess.readingScore },
+                sess.writingScore != null && { skill: "writing" as Skill, score: sess.writingScore },
+                sess.speakingScore != null && { skill: "speaking" as Skill, score: sess.speakingScore },
+              ].filter(Boolean) as { skill: Skill; score: number }[];
+              const best = scores.sort((a, b) => b.score - a.score)[0];
+              const bestColor = best ? useSkillColor(best.skill) : c.muted;
+              const dateStr = new Date(sess.completedAt).toLocaleDateString("vi-VN", { day: "numeric", month: "short" });
+
+              return (
+                <View key={sess.id} style={[s.historyRow, { borderColor: c.border, backgroundColor: c.card }]}>
+                  <View style={[s.historyScore, { backgroundColor: bestColor + "20" }]}>
+                    <Text style={[s.historyScoreText, { color: bestColor }]}>{best?.score.toFixed(1) ?? "—"}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    {best && <Text style={[s.historySkill, { color: bestColor }]}>{SKILL_LABELS[best.skill]}</Text>}
+                    <Text style={[s.historyId, { color: c.foreground }]}>Bài test #{sess.examId.slice(-6).toUpperCase()}</Text>
+                  </View>
+                  <Text style={[s.historyDate, { color: c.mutedForeground }]}>{dateStr}</Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
+
+// ─── Styles ───────────────────────────────────────────────────────
+
+const s = StyleSheet.create({
   root: { flex: 1 },
-  scroll: { flex: 1 },
-  content: { paddingHorizontal: spacing.xl, gap: spacing.base },
-
-  // Section
-  sectionTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.bold },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  sectionLink: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
-
-  // Quick Actions
-  actionGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  actionCard: {
-    width: "48.5%" as any,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.base,
-    ...Platform.select({
-      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3 },
-      android: { elevation: 1 },
-    }),
-  },
-  actionIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.full,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  actionTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold, flexShrink: 1 },
-
-  // Learning Profile
-  profileCard: {
-    borderWidth: 1,
-    borderRadius: radius.xl,
-    padding: spacing.base,
-    gap: spacing.lg,
-  },
-  profileTitle: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
-  progressTrack: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: spacing.xs,
-  },
-  progressNode: { alignItems: "center", gap: spacing.xs },
-  progressDot: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.full,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  dotInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  progressLine: {
-    flex: 1,
-    height: 0,
-    borderTopWidth: 1,
-    borderStyle: "dashed",
-    marginHorizontal: spacing.xs,
-  },
-  progressLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.regular },
-  progressValue: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
-
-  // Stats
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  statCard: {
-    width: "48.5%" as any,
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.base,
-    gap: spacing.xs,
-  },
-  statEmoji: { fontSize: fontSize.lg },
-  statLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.regular },
-  statValue: { fontSize: fontSize.xl, fontFamily: fontFamily.bold },
-
-  // Goal
-  goalCard: {
-    borderWidth: 1,
-    borderRadius: radius.xl,
-    padding: spacing.base,
-    gap: spacing.xs,
-  },
-  goalRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  goalTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
-  goalMeta: { fontSize: fontSize.xs, fontFamily: fontFamily.regular },
-
-  // Learning Path
-  lpCard: {
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.base,
-    gap: spacing.xs,
-  },
-  lpRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  lpSkill: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
-  lpMeta: { fontSize: fontSize.xs, fontFamily: fontFamily.regular },
-  lpFocus: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
-  lpTotal: {
-    fontSize: fontSize.sm,
-    fontFamily: fontFamily.bold,
-    textAlign: "center",
-    marginTop: spacing.sm,
-  },
-
-  // Session history
-  sessionCard: {
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.base,
-    gap: spacing.sm,
-  },
-  sessionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  sessionScoreRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  sessionBand: {
-    borderWidth: 1.5,
-    borderRadius: radius.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 1,
-  },
-  sessionSkills: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-  },
-  sessionSkillChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
+  scroll: { paddingBottom: spacing["3xl"] },
+  // Banner
+  banner: { marginHorizontal: spacing.xl, borderRadius: radius["2xl"], padding: spacing.xl, gap: spacing.lg, marginTop: spacing.base },
+  goalBtn: { position: "absolute", top: spacing.base, right: spacing.base, width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: "rgba(255,255,255,0.3)", backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" },
+  bannerRow: { flexDirection: "row", alignItems: "center", gap: spacing.base },
+  avatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" },
+  avatarText: { color: "#fff", fontSize: fontSize.xl, fontFamily: fontFamily.bold },
+  greeting: { color: "#fff", fontSize: fontSize.xl, fontFamily: fontFamily.bold },
+  greetingSub: { color: "rgba(255,255,255,0.85)", fontSize: fontSize.sm, marginTop: 2 },
+  // Level track
+  levelTrack: { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.15)", borderRadius: radius.xl, paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
+  levelDotWrap: { alignItems: "center", gap: 4, minWidth: 50 },
+  levelLabel: { color: "rgba(255,255,255,0.7)", fontSize: 10 },
+  levelDot: { width: 12, height: 12, borderRadius: 6, borderWidth: 2, borderColor: "#fff" },
+  levelDotDone: { backgroundColor: "#fff" },
+  levelDotActive: { backgroundColor: "#fff", shadowColor: "#fff", shadowOpacity: 0.4, shadowRadius: 6 },
+  levelDotTarget: { backgroundColor: "transparent" },
+  levelValue: { color: "#fff", fontSize: fontSize.sm, fontFamily: fontFamily.bold },
+  levelLine: { height: 1, flex: 1, backgroundColor: "rgba(255,255,255,0.3)", marginHorizontal: 4 },
+  // Stat grid
+  statGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+  statCard: { width: "48%", borderRadius: radius["2xl"], padding: spacing.base, gap: 4 },
+  statLabel: { fontSize: fontSize.xs },
+  statValue: { fontSize: fontSize.lg, fontFamily: fontFamily.bold },
+  // Card
+  card: { borderRadius: radius["2xl"], padding: spacing.lg, gap: spacing.base },
+  cardTitle: { fontSize: fontSize.base, fontFamily: fontFamily.semiBold },
+  // Doughnut
+  doughnutRow: { flexDirection: "row", justifyContent: "space-around", alignItems: "flex-end", height: 120, paddingTop: spacing.sm },
+  doughnutItem: { alignItems: "center", gap: 4, flex: 1 },
+  doughnutBar: { width: 28, height: 80, borderRadius: 4, justifyContent: "flex-end", overflow: "hidden" },
+  doughnutFill: { width: "100%", borderRadius: 4 },
+  doughnutLabel: { fontSize: 10 },
+  doughnutPct: { fontSize: 11, fontFamily: fontFamily.bold },
+  // Countdown
+  countdownCard: { borderWidth: 1, borderRadius: radius["2xl"], padding: spacing.lg, gap: spacing.base },
+  countdownHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  countdownTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
+  countdownRow: { flexDirection: "row", justifyContent: "center", alignItems: "flex-start" },
+  countdownBlockWrap: { flexDirection: "row", alignItems: "flex-start" },
+  countdownColon: { fontSize: fontSize.lg, fontFamily: fontFamily.bold, marginTop: spacing.sm, marginHorizontal: 4 },
+  countdownBlockInner: { alignItems: "center", gap: 4 },
+  countdownBlock: { width: 52, height: 48, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
+  countdownNum: { color: "#fff", fontSize: fontSize.lg, fontFamily: fontFamily.bold, fontVariant: ["tabular-nums"] },
+  countdownLabel: { fontSize: 9, fontFamily: fontFamily.semiBold, textTransform: "uppercase", minWidth: 40, textAlign: "center" },
+  // Score grid
+  scoreGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+  scoreCard: { width: "48%", borderWidth: 1, borderRadius: radius.xl, padding: spacing.base },
+  scoreCardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.sm },
+  scoreCardLabel: { fontSize: fontSize.sm },
+  scoreCardValue: { fontSize: fontSize["2xl"], fontFamily: fontFamily.bold, fontVariant: ["tabular-nums"] },
+  scoreCardMeta: { fontSize: fontSize.xs, marginTop: 2 },
+  // History
+  historyRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, borderWidth: 1, borderRadius: radius.lg, padding: spacing.md },
+  historyScore: { width: 40, height: 40, borderRadius: radius.sm, alignItems: "center", justifyContent: "center" },
+  historyScoreText: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
+  historySkill: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },
+  historyId: { fontSize: fontSize.sm, fontFamily: fontFamily.medium },
+  historyDate: { fontSize: fontSize.xs },
+  emptyText: { fontSize: fontSize.sm, textAlign: "center", paddingVertical: spacing["2xl"] },
 });
