@@ -5,8 +5,8 @@ import { Suspense, useState } from "react"
 import { OnboardingDialog } from "#/components/onboarding/OnboardingDialog"
 import { Skeleton } from "#/components/ui/skeleton"
 import type { OverviewData } from "#/lib/mock/overview"
-import type { OnboardingData } from "#/lib/onboarding/types"
-import { saveOnboardingData, useMockGoal } from "#/lib/onboarding/useMockGoal"
+import type { Level, OnboardingData } from "#/lib/onboarding/types"
+import { loadOnboardingData, saveOnboardingData, useMockGoal } from "#/lib/onboarding/useMockGoal"
 import { overviewQueryOptions } from "#/lib/queries/overview"
 import { cn } from "#/lib/utils"
 import { ActivityHeatmap } from "./_app.overview/-components/ActivityHeatmap"
@@ -31,6 +31,32 @@ export const Route = createFileRoute("/_app/overview")({
 	component: OverviewPage,
 })
 
+// Tính predictedLevel: nội suy giữa entry và target theo tỷ lệ progress
+const LEVELS: Level[] = ["A1", "A2", "B1", "B2", "C1"]
+
+function computePredictedLevel(
+	entry: Level,
+	target: Level,
+	progressDays: number,
+	totalDays: number,
+): Level {
+	const entryIdx = LEVELS.indexOf(entry)
+	const targetIdx = LEVELS.indexOf(target)
+	const ratio = totalDays > 0 ? Math.min(1, Math.max(0, progressDays / totalDays)) : 0
+	const predictedIdx = Math.round(entryIdx + (targetIdx - entryIdx) * ratio)
+	const clamped = Math.min(Math.max(predictedIdx, 0), LEVELS.length - 1)
+	return LEVELS[clamped] as Level
+}
+
+function formatExamDate(date: Date | null): string {
+	if (!date) return "—"
+	return new Date(date).toLocaleDateString("vi-VN", {
+		day: "numeric",
+		month: "long",
+		year: "numeric",
+	})
+}
+
 function OverviewPage() {
 	const { tab } = Route.useSearch()
 	const [showOnboarding, setShowOnboarding] = useState(false)
@@ -41,6 +67,25 @@ function OverviewPage() {
 		setShowOnboarding(false)
 	}
 
+	// Đọc onboarding data để lấy entryLevel + targetBand cho ProfileBanner
+	const onboardingData = loadOnboardingData()
+	const progressDays = mockGoal?.progressDays ?? 0
+	const totalDays = mockGoal?.totalDays ?? 180
+
+	const levelTrack = onboardingData
+		? {
+				entryLevel: onboardingData.entryLevel,
+				predictedLevel: computePredictedLevel(
+					onboardingData.entryLevel,
+					onboardingData.targetBand,
+					progressDays,
+					totalDays,
+				),
+				targetLevel: onboardingData.targetBand,
+				examDate: formatExamDate(onboardingData.examDate),
+			}
+		: null
+
 	return (
 		<div className="mx-auto w-full max-w-5xl space-y-6">
 			<Suspense fallback={<OverviewSkeleton tab={tab} />}>
@@ -48,6 +93,7 @@ function OverviewPage() {
 					tab={tab}
 					onStartOnboarding={() => setShowOnboarding(true)}
 					mockGoal={mockGoal}
+					levelTrack={levelTrack}
 				/>
 			</Suspense>
 			<OnboardingDialog
@@ -105,16 +151,27 @@ function OverviewContent({
 	tab,
 	onStartOnboarding,
 	mockGoal,
+	levelTrack,
 }: {
 	tab: Tab
 	onStartOnboarding: () => void
 	mockGoal: ReturnType<typeof useMockGoal>
+	levelTrack: {
+		entryLevel: Level
+		predictedLevel: Level
+		targetLevel: Level
+		examDate: string
+	} | null
 }) {
 	const { data } = useSuspenseQuery(overviewQueryOptions())
 	return (
 		<div className="space-y-6">
 			{/* Banner chung — luôn hiện ở cả 2 tab */}
-			<ProfileBanner user={data.user} onStartOnboarding={onStartOnboarding} />
+			<ProfileBanner
+				user={data.user}
+				onStartOnboarding={onStartOnboarding}
+				levelTrack={levelTrack}
+			/>
 
 			{/* Tab bar nằm dưới banner */}
 			<TabBar active={tab} />

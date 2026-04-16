@@ -5,13 +5,22 @@
 import { Route } from "lucide-react"
 import { Button } from "#/components/ui/button"
 import type { OverviewData } from "#/lib/mock/overview"
+import type { Level } from "#/lib/onboarding/types"
+
+interface LevelTrack {
+	entryLevel: Level
+	predictedLevel: Level
+	targetLevel: Level
+	examDate: string
+}
 
 interface Props {
 	user: OverviewData["user"]
 	onStartOnboarding: () => void
+	levelTrack: LevelTrack | null
 }
 
-export function ProfileBanner({ user, onStartOnboarding }: Props) {
+export function ProfileBanner({ user, onStartOnboarding, levelTrack }: Props) {
 	return (
 		<div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary to-primary/80 px-6 py-6 md:px-8 md:py-8">
 			{/* Decorative circles */}
@@ -49,14 +58,30 @@ export function ProfileBanner({ user, onStartOnboarding }: Props) {
 					<div className="flex flex-col gap-1">
 						<p className="text-xs font-semibold text-white/80">Trình độ của bạn</p>
 						<div className="flex items-center gap-0 rounded-xl bg-white/15 px-4 py-2.5">
-							<LevelItem label="Đầu vào" value={user.entryLevel} variant="done" />
+							<LevelItem
+								label="Đầu vào"
+								value={levelTrack ? levelTrack.entryLevel : user.entryLevel}
+								variant="done"
+							/>
 							<LevelConnector />
-							<LevelItem label="Dự đoán" value={user.predictedLevel} variant="active" highlight />
+							<LevelItem
+								label="Dự đoán"
+								value={levelTrack ? levelTrack.predictedLevel : user.predictedLevel}
+								variant="active"
+								highlight
+							/>
 							<LevelConnector />
-							<LevelItem label="Mục tiêu" value={user.targetLevel} variant="target" />
+							<LevelItem
+								label="Mục tiêu"
+								value={levelTrack ? levelTrack.targetLevel : user.targetLevel}
+								variant="target"
+							/>
 						</div>
 						<p className="text-right text-[10px] text-white/60">
-							Ngày thi dự kiến: <strong className="text-white/80">{user.examDate}</strong>
+							Ngày thi dự kiến:{" "}
+							<strong className="text-white/80">
+								{levelTrack ? levelTrack.examDate : user.examDate}
+							</strong>
 						</p>
 					</div>
 				</div>
@@ -101,5 +126,5 @@ function LevelItem({
 }
 
 function LevelConnector() {
-	return <div className="mx-1 mb-5 h-px w-6 bg-white/30" />
+	return <div className="mx-1 self-center h-px w-6 bg-white/30" />
 }
