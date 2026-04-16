@@ -8,6 +8,7 @@ export type RecorderState = "idle" | "requesting" | "recording" | "stopped" | "d
 export interface VoiceRecorder {
 	state: RecorderState
 	elapsedMs: number
+	audioBlob: Blob | null
 	audioUrl: string | null
 	error: string | null
 	start: () => Promise<void>
@@ -20,6 +21,7 @@ const TICK_MS = 100
 export function useVoiceRecorder(maxSeconds: number): VoiceRecorder {
 	const [state, setState] = useState<RecorderState>("idle")
 	const [elapsedMs, setElapsedMs] = useState(0)
+	const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
 	const [audioUrl, setAudioUrl] = useState<string | null>(null)
 	const [error, setError] = useState<string | null>(null)
 
@@ -73,6 +75,7 @@ export function useVoiceRecorder(maxSeconds: number): VoiceRecorder {
 			recorder.onstop = () => {
 				const blob = new Blob(chunksRef.current, { type: mimeType ?? "audio/webm" })
 				if (audioUrl) URL.revokeObjectURL(audioUrl)
+				setAudioBlob(blob)
 				setAudioUrl(URL.createObjectURL(blob))
 				setState("stopped")
 			}
@@ -106,6 +109,7 @@ export function useVoiceRecorder(maxSeconds: number): VoiceRecorder {
 		startedAtRef.current = null
 		recorderRef.current = null
 		setElapsedMs(0)
+		setAudioBlob(null)
 		setAudioUrl(null)
 		setError(null)
 		setState("idle")
@@ -129,7 +133,7 @@ export function useVoiceRecorder(maxSeconds: number): VoiceRecorder {
 		}
 	}, [audioUrl])
 
-	return { state, elapsedMs, audioUrl, error, start, stop, reset }
+	return { state, elapsedMs, audioBlob, audioUrl, error, start, stop, reset }
 }
 
 function pickMimeType(): string | null {

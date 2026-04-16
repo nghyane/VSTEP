@@ -1,5 +1,4 @@
 import { Crown, Search } from "lucide-react"
-
 export type ExamType = "all" | "pro" | "free"
 
 interface ExamSidebarFiltersProps {
@@ -35,8 +34,10 @@ export function ExamSidebarFilters({ selectedType, onTypeChange }: ExamSidebarFi
 								: "text-slate-500 hover:text-amber-600 hover:bg-slate-200/50"
 						}`}
 					>
-						<Crown className="size-3.5" />
-						Pro
+						<span className="inline-flex items-end gap-1">
+							<Crown className="mb-px size-3.5 shrink-0" />
+							<span className="leading-none">Pro</span>
+						</span>
 					</button>
 					<button
 						type="button"
