@@ -117,11 +117,15 @@ export const MOCK_VOCAB_TOPICS: VocabularyTopic[] = [
 ] as any;
 
 export const MOCK_VOCAB_WORDS = [
-  { id: "w1", word: "family", pronunciation: "/ˈfæm.əl.i/", meaning: "gia đình", example: "My family is very supportive.", topicId: "vt-1", sortOrder: 1 },
-  { id: "w2", word: "sibling", pronunciation: "/ˈsɪb.lɪŋ/", meaning: "anh chị em", example: "I have two siblings.", topicId: "vt-1", sortOrder: 2 },
-  { id: "w3", word: "relative", pronunciation: "/ˈrel.ə.tɪv/", meaning: "họ hàng", example: "We visit our relatives during holidays.", topicId: "vt-1", sortOrder: 3 },
-  { id: "w4", word: "childhood", pronunciation: "/ˈtʃaɪld.hʊd/", meaning: "thời thơ ấu", example: "She had a happy childhood.", topicId: "vt-1", sortOrder: 4 },
-  { id: "w5", word: "upbringing", pronunciation: "/ˈʌp.brɪŋ.ɪŋ/", meaning: "sự nuôi dạy", example: "His upbringing shaped his character.", topicId: "vt-1", sortOrder: 5 },
+  { id: "w1", word: "family", pronunciation: "/ˈfæm.əl.i/", meaning: "gia đình", example: "My family is very supportive.", examples: ["My family is very supportive."], topicId: "vt-1", sortOrder: 1 },
+  { id: "w2", word: "sibling", pronunciation: "/ˈsɪb.lɪŋ/", meaning: "anh chị em", example: "I have two siblings.", examples: ["I have two siblings."], topicId: "vt-1", sortOrder: 2 },
+  { id: "w3", word: "relative", pronunciation: "/ˈrel.ə.tɪv/", meaning: "họ hàng", example: "We visit our relatives during holidays.", examples: ["We visit our relatives during holidays."], topicId: "vt-1", sortOrder: 3 },
+  { id: "w4", word: "childhood", pronunciation: "/ˈtʃaɪld.hʊd/", meaning: "thời thơ ấu", example: "She had a happy childhood.", examples: ["She had a happy childhood."], topicId: "vt-1", sortOrder: 4 },
+  { id: "w5", word: "upbringing", pronunciation: "/ˈʌp.brɪŋ.ɪŋ/", meaning: "sự nuôi dạy", example: "His upbringing shaped his character.", examples: ["His upbringing shaped his character."], topicId: "vt-1", sortOrder: 5 },
+  { id: "w6", word: "curriculum", pronunciation: "/kəˈrɪk.jə.ləm/", meaning: "chương trình học", example: "The curriculum includes science.", examples: ["The curriculum includes science."], topicId: "vt-2", sortOrder: 1 },
+  { id: "w7", word: "scholarship", pronunciation: "/ˈskɒl.ə.ʃɪp/", meaning: "học bổng", example: "She won a scholarship.", examples: ["She won a scholarship."], topicId: "vt-2", sortOrder: 2 },
+  { id: "w8", word: "symptom", pronunciation: "/ˈsɪmp.təm/", meaning: "triệu chứng", example: "Fever is a common symptom.", examples: ["Fever is a common symptom."], topicId: "vt-3", sortOrder: 1 },
+  { id: "w9", word: "innovation", pronunciation: "/ˌɪn.əˈveɪ.ʃən/", meaning: "sự đổi mới", example: "Innovation drives progress.", examples: ["Innovation drives progress."], topicId: "vt-4", sortOrder: 1 },
 ];
 
 // ─── Notifications ────────────────────────────────────────────────
@@ -158,6 +162,22 @@ export const MOCK_SUBMISSIONS: Submission[] = [] as any;
 // ─── Classes ──────────────────────────────────────────────────────
 
 export const MOCK_CLASSES: ClassItem[] = [] as any;
+
+// ─── Overview Stats (aligned with frontend-v2 commit 94ac2b9) ─────
+
+export interface OverviewStats {
+  daysLeft: number;
+  totalTests: number;
+  avgScore: number;
+  weakestSkill: "listening" | "reading" | "writing" | "speaking" | null;
+}
+
+export const MOCK_OVERVIEW_STATS: OverviewStats = {
+  daysLeft: 16,
+  totalTests: 23,
+  avgScore: 5.8,
+  weakestSkill: "writing",
+};
 
 // ─── Sentences ────────────────────────────────────────────────────
 

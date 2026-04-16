@@ -66,7 +66,7 @@ export default function HomeScreen() {
 
   const quickActions: QuickAction[] = [
     { title: "Luyện tập", icon: "school", color: c.primary, onPress: () => router.push("/(app)/practice") },
-    { title: "Luyện tập", icon: "bar-chart-outline", color: c.primary, onPress: () => router.push("/(app)/(tabs)/progress") },
+    { title: "Tiến độ", icon: "bar-chart-outline", color: c.primary, onPress: () => router.push("/(app)/(tabs)/progress") },
     { title: "Bài kiểm tra", icon: "document-text", color: c.primary, onPress: () => router.push("/(app)/(tabs)/exams") },
     { title: "Từ vựng", icon: "book-outline", color: c.primary, onPress: () => router.push("/(app)/vocabulary") },
   ];

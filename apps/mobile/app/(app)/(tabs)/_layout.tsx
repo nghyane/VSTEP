@@ -9,52 +9,29 @@ export default function TabLayout() {
       screenOptions={{ headerShown: false }}
     >
       <Tabs.Screen
-        name="explore"
-        options={{
-          title: "Khám phá",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="compass" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="index"
         options={{
-          title: "Học tập",
+          title: "Tổng quan",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="school" size={size} color={color} />
+            <Ionicons name="grid" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="progress"
+        name="practice"
         options={{
-          title: "Tiến độ",
+          title: "Luyện tập",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="analytics" size={size} color={color} />
+            <Ionicons name="book" size={size} color={color} />
           ),
         }}
-      />
-      <Tabs.Screen
-        name="classes"
-        options={{ href: null }}
       />
       <Tabs.Screen
         name="exams"
         options={{
-          title: "Bài thi",
+          title: "Thi thử",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="document-text" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="notifications"
-        options={{
-          href: null,
-          title: "Thông báo",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="notifications" size={size} color={color} />
           ),
         }}
       />
@@ -67,6 +44,11 @@ export default function TabLayout() {
           ),
         }}
       />
+      {/* Hidden tabs — keep files but remove from nav */}
+      <Tabs.Screen name="explore" options={{ href: null }} />
+      <Tabs.Screen name="progress" options={{ href: null }} />
+      <Tabs.Screen name="classes" options={{ href: null }} />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
     </Tabs>
   );
 }
