@@ -40,6 +40,33 @@ export interface NextAction {
 	targetUrl: "/luyen-tap/nen-tang/tu-vung" | "/luyen-tap/nen-tang/ngu-phap" | "/thi-thu"
 }
 
+// ── Learning Path types ───────────────────────────────────────────
+type Skill = "listening" | "reading" | "writing" | "speaking"
+
+export interface WeakTopic {
+	id: string
+	name: string
+	masteryScore: number // 0–100
+}
+
+export interface WeeklyPlanItem {
+	skill: Skill
+	currentLevel: string
+	targetLevel: string
+	priority: number
+	sessionsPerWeek: number
+	estimatedMinutes: number
+	recommendedLevel: string
+	focusArea: string | null
+	weakTopics: WeakTopic[]
+}
+
+export interface LearningPathData {
+	projectedImprovement: string
+	totalMinutesPerWeek: number
+	weeklyPlan: WeeklyPlanItem[]
+}
+
 export interface OverviewData {
 	user: {
 		fullName: string
@@ -112,6 +139,72 @@ export const MOCK_OVERVIEW: OverviewData = {
 		writing: { current: 0, trend: "insufficient_data" },
 		speaking: { current: 0, trend: "insufficient_data" },
 	},
+}
+
+// ── Mock LearningPath data ─────────────────────────────────────────
+export const MOCK_LEARNING_PATH: LearningPathData = {
+	projectedImprovement: "Cải thiện 0.5 band sau 4 tuần",
+	totalMinutesPerWeek: 180,
+	weeklyPlan: [
+		{
+			skill: "listening",
+			currentLevel: "A2",
+			targetLevel: "B1",
+			priority: 1,
+			sessionsPerWeek: 3,
+			estimatedMinutes: 30,
+			recommendedLevel: "B1",
+			focusArea: "Nghe tin tức",
+			weakTopics: [
+				{ id: "t1", name: "Từ vựng học thuật", masteryScore: 35 },
+				{ id: "t2", name: "Cấu trúc câu phức", masteryScore: 50 },
+				{ id: "t3", name: "Inference", masteryScore: 28 },
+			],
+		},
+		{
+			skill: "reading",
+			currentLevel: "A2",
+			targetLevel: "B1",
+			priority: 2,
+			sessionsPerWeek: 2,
+			estimatedMinutes: 25,
+			recommendedLevel: "B1",
+			focusArea: "Đọc bài báo",
+			weakTopics: [
+				{ id: "t4", name: "Skimming & Scanning", masteryScore: 60 },
+				{ id: "t5", name: "Paraphrasing", masteryScore: 42 },
+			],
+		},
+		{
+			skill: "writing",
+			currentLevel: "A1",
+			targetLevel: "B1",
+			priority: 3,
+			sessionsPerWeek: 2,
+			estimatedMinutes: 40,
+			recommendedLevel: "B1",
+			focusArea: "Essay Task 1",
+			weakTopics: [
+				{ id: "t6", name: "Linking words", masteryScore: 25 },
+				{ id: "t7", name: "Grammar accuracy", masteryScore: 38 },
+				{ id: "t8", name: "Word count", masteryScore: 70 },
+			],
+		},
+		{
+			skill: "speaking",
+			currentLevel: "A1",
+			targetLevel: "B1",
+			priority: 4,
+			sessionsPerWeek: 2,
+			estimatedMinutes: 30,
+			recommendedLevel: "B1",
+			focusArea: "Part 3 Discussion",
+			weakTopics: [
+				{ id: "t9", name: "Fluency", masteryScore: 30 },
+				{ id: "t10", name: "Pronunciation", masteryScore: 55 },
+			],
+		},
+	],
 }
 
 // ── Mock fetch (giả async như API thật) ───────────────────────────
