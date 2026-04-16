@@ -1,10 +1,11 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { BarChart3, Flame, Target } from "lucide-react"
+import { BarChart3, Target } from "lucide-react"
 import { Suspense, useState } from "react"
 import { OnboardingDialog } from "#/components/onboarding/OnboardingDialog"
 import { Skeleton } from "#/components/ui/skeleton"
 import type { OverviewData } from "#/lib/mock/overview"
+import { MOCK_LEARNING_PATH } from "#/lib/mock/overview"
 import type { Level, OnboardingData } from "#/lib/onboarding/types"
 import { loadOnboardingData, saveOnboardingData, useMockGoal } from "#/lib/onboarding/useMockGoal"
 import { overviewQueryOptions } from "#/lib/queries/overview"
@@ -12,12 +13,12 @@ import { cn } from "#/lib/utils"
 import { ActivityHeatmap } from "./_app.overview/-components/ActivityHeatmap"
 import { DoughnutChartCard } from "./_app.overview/-components/DoughnutChartCard"
 import { ExamCountdown } from "./_app.overview/-components/ExamCountdown"
-import { NextActionCard } from "./_app.overview/-components/NextActionCard"
+import { LearningPathView } from "./_app.overview/-components/LearningPathView"
 import { ProfileBanner } from "./_app.overview/-components/ProfileBanner"
 import { SpiderChartCard } from "./_app.overview/-components/SpiderChartCard"
 import { StatGrid } from "./_app.overview/-components/StatGrid"
 
-type Tab = "overview" | "focus"
+type Tab = "overview" | "learning_path"
 
 interface Search {
 	tab: Tab
@@ -25,7 +26,7 @@ interface Search {
 
 export const Route = createFileRoute("/_app/overview")({
 	validateSearch: (search: Record<string, unknown>): Search => ({
-		tab: search.tab === "focus" ? "focus" : "overview",
+		tab: search.tab === "learning_path" ? "learning_path" : "overview",
 	}),
 	loader: ({ context: { queryClient } }) => queryClient.ensureQueryData(overviewQueryOptions()),
 	component: OverviewPage,
@@ -111,7 +112,7 @@ function TabBar({ active }: { active: Tab }) {
 	return (
 		<div className="flex gap-1 rounded-xl bg-muted p-1">
 			<TabLink tab="overview" active={active} icon={BarChart3} label="Tổng quan" />
-			<TabLink tab="focus" active={active} icon={Target} label="Tập trung" />
+			<TabLink tab="learning_path" active={active} icon={Target} label="Lộ trình" />
 		</div>
 	)
 }
@@ -177,32 +178,11 @@ function OverviewContent({
 			<TabBar active={tab} />
 
 			{/* Nội dung theo tab */}
-			{tab === "focus" ? (
-				<FocusView data={data} />
+			{tab === "learning_path" ? (
+				<LearningPathView data={MOCK_LEARNING_PATH} />
 			) : (
 				<DetailsView data={data} mockGoal={mockGoal} />
 			)}
-		</div>
-	)
-}
-
-function FocusView({ data }: { data: OverviewData }) {
-	return (
-		<div className="space-y-6 pt-2">
-			<NextActionCard action={data.nextAction} />
-			<FocusFooter streak={data.activity.streak} />
-		</div>
-	)
-}
-
-function FocusFooter({ streak }: { streak: number }) {
-	if (streak <= 0) return null
-	return (
-		<div className="flex items-center justify-center pt-2">
-			<span className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
-				<Flame className="size-4 text-skill-speaking" />
-				{streak} ngày liên tiếp
-			</span>
 		</div>
 	)
 }
@@ -234,15 +214,13 @@ function DetailsView({
 // ─── Skeleton ──────────────────────────────────────────────────────
 
 function OverviewSkeleton({ tab }: { tab: Tab }) {
-	if (tab === "focus") {
+	if (tab === "learning_path") {
 		return (
-			<div className="space-y-8">
-				<div className="flex flex-col items-center gap-4 py-8">
-					<Skeleton className="h-6 w-40" />
-					<Skeleton className="h-28 w-40" />
-					<Skeleton className="h-5 w-48" />
-				</div>
-				<Skeleton className="mx-auto h-52 max-w-2xl rounded-3xl" />
+			<div className="space-y-5">
+				<Skeleton className="h-24 rounded-2xl" />
+				{Array.from({ length: 4 }).map((_, i) => (
+					<Skeleton key={i} className="h-52 rounded-2xl" />
+				))}
 			</div>
 		)
 	}
