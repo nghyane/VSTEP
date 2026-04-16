@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { ArrowLeft, Headphones } from "lucide-react"
-import { Suspense } from "react"
+import { Suspense, useMemo } from "react"
 import {
 	ExerciseCard,
 	ITEMS_PER_PAGE,
@@ -10,6 +10,7 @@ import {
 } from "#/components/practice/SkillPageLayout"
 import { Skeleton } from "#/components/ui/skeleton"
 import { type ListeningExercise, type ListeningPart, PART_LABELS } from "#/lib/mock/listening"
+import { getListeningProgress } from "#/lib/practice/listening-progress"
 import { listeningListQueryOptions } from "#/lib/queries/listening"
 
 interface Search {
@@ -54,6 +55,10 @@ function ListContent() {
 	const navigate = Route.useNavigate()
 	const { data: exercises } = useSuspenseQuery(listeningListQueryOptions())
 	const grouped = groupByPart(exercises)
+	const progress = useMemo(
+		() => Object.fromEntries(exercises.map((ex) => [ex.id, getListeningProgress(ex.id)])),
+		[exercises],
+	)
 	const parts: ListeningPart[] = [1, 2, 3]
 
 	const sidebarItems = parts
@@ -86,21 +91,27 @@ function ListContent() {
 					</p>
 				</div>
 				<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-					{pageItems.map((ex) => (
-						<ExerciseCard
-							key={ex.id}
-							title={ex.title}
-							description={ex.description}
-							meta={`${ex.items.length} câu · ${ex.estimatedMinutes} phút`}
-							href={
-								<Link
-									to="/luyen-tap/ky-nang/nghe/$exerciseId"
-									params={{ exerciseId: ex.id }}
-									className="absolute inset-0 rounded-xl"
-								/>
-							}
-						/>
-					))}
+					{pageItems.map((ex) => {
+						const p = progress[ex.id]
+						return (
+							<ExerciseCard
+								key={ex.id}
+								title={ex.title}
+								description={ex.description}
+								meta={`${ex.estimatedMinutes} phút`}
+								status={p?.status}
+								score={p?.score}
+								total={ex.items.length}
+								href={
+									<Link
+										to="/luyen-tap/ky-nang/nghe/$exerciseId"
+										params={{ exerciseId: ex.id }}
+										className="absolute inset-0 rounded-xl"
+									/>
+								}
+							/>
+						)
+					})}
 				</div>
 				{pageItems.length === 0 && (
 					<p className="py-12 text-center text-sm text-muted-foreground">

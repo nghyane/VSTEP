@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { ArrowLeft, Mic } from "lucide-react"
-import { Suspense } from "react"
+import { Suspense, useMemo } from "react"
 import {
 	ExerciseCard,
 	ITEMS_PER_PAGE,
@@ -15,6 +15,7 @@ import {
 	type SpeakingLevel,
 } from "#/lib/mock/speaking"
 import { speakingListQueryOptions } from "#/lib/queries/speaking"
+import { getSpeakingProgress } from "#/lib/practice/speaking-progress"
 
 const LEVELS: readonly SpeakingLevel[] = ["A2", "B1", "B2", "C1"]
 
@@ -59,6 +60,10 @@ function ListContent() {
 	const navigate = Route.useNavigate()
 	const { data: exercises } = useSuspenseQuery(speakingListQueryOptions())
 	const grouped = groupByLevel(exercises)
+	const progress = useMemo(
+		() => Object.fromEntries(exercises.map((ex) => [ex.id, getSpeakingProgress(ex.id)])),
+		[exercises],
+	)
 
 	const sidebarItems = LEVELS
 		.map((lv) => ({
@@ -88,21 +93,27 @@ function ListContent() {
 					{SPEAKING_LEVEL_LABELS[level]} · {currentList.length} bài
 				</p>
 				<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-					{pageItems.map((ex) => (
-						<ExerciseCard
-							key={ex.id}
-							title={ex.title}
-							description={ex.description}
-							meta={`${ex.sentences.length} câu · ${ex.estimatedMinutes} phút`}
-							href={
-								<Link
-									to="/luyen-tap/ky-nang/noi/$exerciseId"
-									params={{ exerciseId: ex.id }}
-									className="absolute inset-0 rounded-xl"
-								/>
-							}
-						/>
-					))}
+					{pageItems.map((ex) => {
+						const p = progress[ex.id]
+						return (
+							<ExerciseCard
+								key={ex.id}
+								title={ex.title}
+								description={ex.description}
+								meta={`${ex.estimatedMinutes} phút`}
+								status={p?.status}
+								score={p?.shadowingDone}
+								total={ex.sentences.length}
+								href={
+									<Link
+										to="/luyen-tap/ky-nang/noi/$exerciseId"
+										params={{ exerciseId: ex.id }}
+										className="absolute inset-0 rounded-xl"
+									/>
+								}
+							/>
+						)
+					})}
 				</div>
 				{pageItems.length === 0 && (
 					<p className="py-12 text-center text-sm text-muted-foreground">
