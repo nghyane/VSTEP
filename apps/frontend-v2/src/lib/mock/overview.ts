@@ -14,6 +14,10 @@ export interface OverviewStats {
 	totalTests: number // tổng bài test đã làm
 	avgScore: number // điểm TB toàn phần (0–10)
 	weakestSkill: "listening" | "reading" | "writing" | "speaking" | null
+	// Các trường mới cho 2 phương án stat grid
+	estimatedBand: string // "B1" | "B1.5" | "B2" …
+	bandGap: number // band còn thiếu (target - estimated)
+	trend: "up" | "down" | "stable"
 }
 
 export interface SkillProgress {
@@ -162,6 +166,9 @@ export const MOCK_OVERVIEW: OverviewData = {
 		totalTests: 23,
 		avgScore: 5.8,
 		weakestSkill: "writing",
+		estimatedBand: "5.8",
+		bandGap: 1.2,
+		trend: "up",
 	},
 	skills: [
 		{ skill: "listening", currentLevel: "B1", attemptCount: 12, averageScore: 6.2 },

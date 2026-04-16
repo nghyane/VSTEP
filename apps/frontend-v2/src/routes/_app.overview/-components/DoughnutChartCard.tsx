@@ -1,6 +1,6 @@
 // DoughnutChartCard — tổng số bài test per kỹ năng
 // Spec: rounded-2xl bg-muted/50 p-5 shadow-sm
-// Dùng inline SVG (không cần recharts, giảm bundle)
+// Dùng inline SVG, CSS layout giống frontend-v1
 
 import type { OverviewData } from "#/lib/mock/overview"
 import { cn } from "#/lib/utils"
@@ -33,7 +33,6 @@ function DoughnutSVG({ skills }: Props) {
 	const circumference = 2 * Math.PI * R
 	const strokeWidth = 28
 
-	// Build stroke-dasharray segments
 	let offset = 0
 	const paths = segments.map((seg) => {
 		const pct = total > 0 ? seg.value / total : 0
@@ -49,61 +48,53 @@ function DoughnutSVG({ skills }: Props) {
 	})
 
 	return (
-		<svg viewBox="0 0 200 200" width={180} height={180} aria-label="Doughnut chart bài test">
-			{/* Base ring */}
-			<circle
-				cx={CX}
-				cy={CY}
-				r={R}
-				fill="none"
-				stroke="hsl(var(--muted))"
-				strokeWidth={strokeWidth}
-			/>
+		<div className="mx-auto aspect-square max-h-[250px]">
+			<svg viewBox="0 0 200 200" aria-label="Doughnut chart bài test" className="h-full w-full">
+				<circle
+					cx={CX}
+					cy={CY}
+					r={R}
+					fill="none"
+					stroke="hsl(var(--muted))"
+					strokeWidth={strokeWidth}
+				/>
 
-			{total === 0
-				? null
-				: paths.map((seg) =>
-						seg.value === 0 ? null : (
-							<circle
-								key={seg.key}
-								cx={CX}
-								cy={CY}
-								r={R}
-								fill="none"
-								stroke={seg.color}
-								strokeWidth={strokeWidth}
-								strokeDasharray={`${seg.dash} ${seg.gap}`}
-								strokeDashoffset={0}
-								transform={`rotate(${seg.offsetDeg - 90} ${CX} ${CY})`}
-							/>
-						),
-					)}
+				{total === 0
+					? null
+					: paths.map((seg) =>
+							seg.value === 0 ? null : (
+								<circle
+									key={seg.key}
+									cx={CX}
+									cy={CY}
+									r={R}
+									fill="none"
+									stroke={seg.color}
+									strokeWidth={strokeWidth}
+									strokeDasharray={`${seg.dash} ${seg.gap}`}
+									strokeDashoffset={0}
+									transform={`rotate(${seg.offsetDeg - 90} ${CX} ${CY})`}
+								/>
+							),
+						)}
 
-			{/* Center text */}
-			<text
-				x={CX}
-				y={CY - 8}
-				textAnchor="middle"
-				className="fill-foreground text-3xl font-bold"
-				fontSize={28}
-				fontWeight={800}
-			>
-				{total}
-			</text>
-			<text
-				x={CX}
-				y={CY + 14}
-				textAnchor="middle"
-				className="fill-muted-foreground text-xs"
-				fontSize={10}
-			>
-				Tổng số bài test
-			</text>
-		</svg>
+				<text
+					x={CX}
+					y={CY}
+					textAnchor="middle"
+					dominantBaseline="central"
+					className="fill-foreground text-3xl font-bold"
+					fontSize={28}
+					fontWeight={800}
+				>
+					{total}
+				</text>
+			</svg>
+		</div>
 	)
 }
 
-// ─── Card ────────────────────────────────────────────────────────
+// ─── Card ───────────────────────────────────────────────────────
 
 export function DoughnutChartCard({ skills }: Props) {
 	const segments = SKILL_CONFIG.map((c) => {
@@ -116,11 +107,8 @@ export function DoughnutChartCard({ skills }: Props) {
 			<h3 className="text-lg font-semibold">Tổng số bài test đã hoàn thành</h3>
 			<p className="mb-4 text-sm text-muted-foreground">trong Test Practice</p>
 
-			<div className="flex justify-center">
-				<DoughnutSVG skills={skills} />
-			</div>
+			<DoughnutSVG skills={skills} />
 
-			{/* Legend */}
 			<div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1">
 				{segments.map((seg) => (
 					<span key={seg.key} className="flex items-center gap-1.5 text-sm">
@@ -134,7 +122,6 @@ export function DoughnutChartCard({ skills }: Props) {
 				))}
 			</div>
 
-			{/* Detail links */}
 			<div className="mt-3 flex flex-wrap justify-center gap-2">
 				{SKILL_CONFIG.map((c) => (
 					<span key={c.key} className={cn("cursor-pointer text-xs text-primary hover:underline")}>
