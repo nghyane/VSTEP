@@ -1,8 +1,10 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
+import { useEffect, useRef } from "react"
 import { SupportModeSwitch } from "#/components/common/SupportModeSwitch"
 import { KeywordsPills } from "#/components/practice/KeywordsPills"
 import { McqNavBar } from "#/components/practice/McqNavBar"
 import { McqQuestionList } from "#/components/practice/McqQuestionList"
+import { McqResultSummary } from "#/components/practice/McqResultSummary"
 import { StatusText, SubmitAction } from "#/components/practice/McqSubmitBar"
 import { READING_PART_LABELS } from "#/lib/mock/reading"
 import type { McqSession } from "#/lib/practice/use-mcq-session"
@@ -16,9 +18,14 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 	const session = useReadingSession(exercise)
 	const submitted = session.phase === "submitted"
 	const supportMode = useSupportMode()
+	const topRef = useRef<HTMLDivElement>(null)
+
+	useEffect(() => {
+		if (submitted) topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+	}, [submitted])
 
 	return (
-		<div className="mt-4 space-y-6">
+		<div ref={topRef} className="mt-4 space-y-6">
 			<header>
 				<div className="flex items-start justify-between gap-3">
 					<p className="text-xs font-semibold uppercase tracking-wide text-skill-reading">
@@ -41,6 +48,8 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 					</div>
 				)}
 			</header>
+
+			{submitted && <McqResultSummary score={session.score} total={session.total} />}
 
 			<div className="grid gap-6 lg:grid-cols-2">
 				<PassagePanel exercise={exercise} showTranslation={supportMode} />

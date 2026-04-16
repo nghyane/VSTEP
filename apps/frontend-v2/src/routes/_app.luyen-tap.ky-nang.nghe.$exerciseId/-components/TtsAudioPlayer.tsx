@@ -1,13 +1,14 @@
 // TTS audio player — Web Speech API + UI tương tự v1 ListeningAudioBar.
 // Ước lượng duration từ word count (~135 wpm khi rate 0.9), track elapsed qua interval.
 
-import { ChevronDown, FileText, Pause, Play, RotateCcw } from "lucide-react"
+import { ChevronDown, FileText, Languages, Pause, Play, RotateCcw } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { SpeakerIcon } from "#/components/common/SpeakerIcon"
 import { cn } from "#/lib/utils"
 
 interface Props {
 	transcript: string
+	vietnameseTranscript?: string
 	showTranscript?: boolean
 }
 
@@ -16,7 +17,7 @@ type PlayState = "idle" | "playing" | "paused" | "ended"
 const WORDS_PER_SECOND = 2.25 // 135 wpm / 60
 const TICK_MS = 200
 
-export function TtsAudioPlayer({ transcript, showTranscript }: Props) {
+export function TtsAudioPlayer({ transcript, vietnameseTranscript, showTranscript }: Props) {
 	const durationSec = estimateDuration(transcript)
 	const [state, setState] = useState<PlayState>("idle")
 	const [playCount, setPlayCount] = useState(0)
@@ -111,7 +112,7 @@ export function TtsAudioPlayer({ transcript, showTranscript }: Props) {
 				<p className="mt-2 text-xs text-muted-foreground">Đang tải giọng đọc…</p>
 			)}
 
-			{showTranscript && <TranscriptReveal transcript={transcript} />}
+			{showTranscript && <TranscriptReveal transcript={transcript} vietnameseTranscript={vietnameseTranscript} />}
 		</div>
 	)
 }
@@ -209,8 +210,9 @@ function PlayCountBadge({ playCount }: { playCount: number }) {
 
 // ─── Transcript reveal ─────────────────────────────────────────────
 
-function TranscriptReveal({ transcript }: { transcript: string }) {
+function TranscriptReveal({ transcript, vietnameseTranscript }: { transcript: string; vietnameseTranscript?: string }) {
 	const [open, setOpen] = useState(false)
+	const [showVi, setShowVi] = useState(false)
 	return (
 		<div className="mt-3 border-t pt-3">
 			<button
@@ -224,9 +226,26 @@ function TranscriptReveal({ transcript }: { transcript: string }) {
 				<ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} />
 			</button>
 			{open && (
-				<p className="mt-2 rounded-lg bg-muted/50 p-3 text-sm leading-relaxed text-foreground/90">
-					{transcript}
-				</p>
+				<div className="mt-2 space-y-2">
+					<p className="rounded-lg bg-muted/50 p-3 text-sm leading-relaxed text-foreground/90">
+						{transcript}
+					</p>
+					{vietnameseTranscript && (
+						<button
+							type="button"
+							onClick={() => setShowVi((v) => !v)}
+							className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+						>
+							<Languages className="size-3.5" />
+							{showVi ? "Ẩn bản dịch" : "Xem bản dịch tiếng Việt"}
+						</button>
+					)}
+					{vietnameseTranscript && showVi && (
+						<p className="rounded-lg bg-muted/50 p-3 text-sm leading-relaxed italic text-muted-foreground">
+							{vietnameseTranscript}
+						</p>
+					)}
+				</div>
 			)}
 		</div>
 	)

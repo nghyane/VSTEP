@@ -1,8 +1,10 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
+import { useEffect, useRef } from "react"
 import { SupportModeSwitch } from "#/components/common/SupportModeSwitch"
 import { KeywordsPills } from "#/components/practice/KeywordsPills"
 import { McqNavBar } from "#/components/practice/McqNavBar"
 import { McqQuestionList } from "#/components/practice/McqQuestionList"
+import { McqResultSummary } from "#/components/practice/McqResultSummary"
 import { StatusText, SubmitAction } from "#/components/practice/McqSubmitBar"
 import { PART_LABELS } from "#/lib/mock/listening"
 import type { McqSession } from "#/lib/practice/use-mcq-session"
@@ -16,9 +18,14 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 	const session = useListeningSession(exercise)
 	const submitted = session.phase === "submitted"
 	const supportMode = useSupportMode()
+	const topRef = useRef<HTMLDivElement>(null)
+
+	useEffect(() => {
+		if (submitted) topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+	}, [submitted])
 
 	return (
-		<div className="mt-4 space-y-6">
+		<div ref={topRef} className="mt-4 space-y-6">
 			<header>
 				<div className="flex items-start justify-between gap-3">
 					<p className="text-xs font-semibold uppercase tracking-wide text-skill-listening">
@@ -42,7 +49,9 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 				)}
 			</header>
 
-			<TtsAudioPlayer transcript={exercise.transcript} showTranscript={supportMode} />
+			{submitted && <McqResultSummary score={session.score} total={session.total} />}
+
+			<TtsAudioPlayer transcript={exercise.transcript} vietnameseTranscript={exercise.vietnameseTranscript} showTranscript={supportMode} />
 
 			<McqQuestionList
 				items={exercise.items}
