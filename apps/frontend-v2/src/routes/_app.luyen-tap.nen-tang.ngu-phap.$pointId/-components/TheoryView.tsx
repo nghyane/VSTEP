@@ -7,7 +7,6 @@ interface Props {
 export function TheoryView({ point }: Props) {
 	return (
 		<div className="space-y-6">
-			{/* Khi nào dùng */}
 			<section className="rounded-2xl border bg-card p-6 shadow-sm">
 				<h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
 					Khi nào dùng
@@ -15,7 +14,6 @@ export function TheoryView({ point }: Props) {
 				<p className="mt-2 text-sm leading-relaxed text-foreground/90">{point.whenToUse}</p>
 			</section>
 
-			{/* Cấu trúc */}
 			<section className="rounded-2xl border bg-card p-6 shadow-sm">
 				<h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
 					Cấu trúc
@@ -32,7 +30,6 @@ export function TheoryView({ point }: Props) {
 				</ul>
 			</section>
 
-			{/* Ví dụ */}
 			<section className="rounded-2xl border bg-card p-6 shadow-sm">
 				<h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">Ví dụ</h2>
 				<ul className="mt-3 space-y-3">
@@ -47,6 +44,23 @@ export function TheoryView({ point }: Props) {
 					))}
 				</ul>
 			</section>
+
+			{point.commonMistakes.length > 0 && (
+				<section className="rounded-2xl border bg-card p-6 shadow-sm">
+					<h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+						Lỗi thường gặp
+					</h2>
+					<ul className="mt-3 space-y-4">
+						{point.commonMistakes.map((mistake) => (
+							<li key={mistake.wrong} className="space-y-1">
+								<p className="text-sm text-destructive line-through">{mistake.wrong}</p>
+								<p className="text-sm font-medium text-success">✓ {mistake.correct}</p>
+								<p className="text-xs text-muted-foreground">{mistake.explanation}</p>
+							</li>
+						))}
+					</ul>
+				</section>
+			)}
 		</div>
 	)
 }
