@@ -3,7 +3,7 @@
 // Source: apps/frontend/src/routes/_learner/progress/-components/TestPracticeTab.tsx
 
 import { BookOpen, Headphones, Mic, PencilLine } from "lucide-react"
-import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "#/components/ui/chart"
 import type { PracticeTrackData, TestSession } from "#/lib/mock/overview"
 import { cn } from "#/lib/utils"
@@ -44,12 +44,18 @@ const skillColor: Record<Skill, string> = {
 	speaking: "bg-skill-speaking/15 text-skill-speaking",
 }
 
+const scoreChartConfig = {
+	listening: { label: "Listening", color: "var(--skill-listening)" },
+	reading: { label: "Reading", color: "var(--skill-reading)" },
+	writing: { label: "Writing", color: "var(--skill-writing)" },
+	speaking: { label: "Speaking", color: "var(--skill-speaking)" },
+} satisfies Record<string, { label: string; color: string }>
+
 interface Props {
 	data: PracticeTrackData
 }
 
 export function PracticeTrackView({ data }: Props) {
-	// Group sessions by date
 	const groupedSessions = groupSessionsByDate(data.testSessions)
 
 	return (
@@ -91,25 +97,23 @@ export function PracticeTrackView({ data }: Props) {
 				</div>
 			</div>
 
-			{/* Section 2: Bar chart — 4 skills on X-axis, score on Y-axis */}
+			{/* Section 2: Stacked bar — mỗi thanh = 1 bài test, 4 phần màu = 4 kỹ năng */}
 			<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 				<div className="mb-4">
-					<h3 className="text-lg font-semibold">Biểu đồ điểm số</h3>
-					<p className="text-sm text-muted-foreground">So sánh điểm trung bình giữa các kỹ năng</p>
+					<h3 className="text-lg font-semibold">Điểm qua 10 bài test gần nhất</h3>
+					<p className="text-sm text-muted-foreground">
+						Mỗi thanh là 1 bài test, chia theo 4 kỹ năng
+					</p>
 				</div>
 
-				<ChartContainer config={{}} className="aspect-auto h-[280px] w-full">
+				<ChartContainer config={scoreChartConfig} className="aspect-auto h-[280px] w-full">
 					<BarChart
-						data={SKILLS.map((s) => ({
-							skill: s.label,
-							score: data.spider[s.key].current,
-							fill: s.colorVar,
-						}))}
-						margin={{ left: -10, right: 12, top: 24, bottom: 0 }}
-						barCategoryGap="30%"
+						data={buildBarData(data.recentScores)}
+						margin={{ left: -10, right: 12, top: 12, bottom: 0 }}
+						barCategoryGap="20%"
 					>
 						<CartesianGrid vertical={false} strokeDasharray="3 3" />
-						<XAxis dataKey="skill" tickLine={false} axisLine={false} tickMargin={10} />
+						<XAxis dataKey="index" tickLine={false} axisLine={false} tickMargin={10} />
 						<YAxis
 							domain={[0, 10]}
 							tickLine={false}
@@ -118,11 +122,32 @@ export function PracticeTrackView({ data }: Props) {
 							tickCount={6}
 						/>
 						<ChartTooltip content={<ChartTooltipContent />} />
-						<Bar dataKey="score" radius={[6, 6, 0, 0]}>
-							<LabelList dataKey="score" position="top" />
-						</Bar>
+						<Bar
+							dataKey="listening"
+							stackId="score"
+							fill="var(--skill-listening)"
+							radius={[0, 0, 4, 4]}
+						/>
+						<Bar dataKey="reading" stackId="score" fill="var(--skill-reading)" radius={0} />
+						<Bar dataKey="writing" stackId="score" fill="var(--skill-writing)" radius={0} />
+						<Bar
+							dataKey="speaking"
+							stackId="score"
+							fill="var(--skill-speaking)"
+							radius={[4, 4, 0, 0]}
+						/>
 					</BarChart>
 				</ChartContainer>
+
+				{/* Legend */}
+				<div className="mt-3 flex flex-wrap items-center justify-center gap-4">
+					{SKILLS.map(({ key, label, colorVar }) => (
+						<span key={key} className="flex items-center gap-2 text-sm">
+							<span className="size-2.5 rounded-sm" style={{ backgroundColor: colorVar }} />
+							{label}
+						</span>
+					))}
+				</div>
 			</div>
 
 			{/* Section 3: Test history */}
@@ -161,6 +186,24 @@ export function PracticeTrackView({ data }: Props) {
 }
 
 // ─── Helpers ────────────────────────────────────────────────────
+
+function buildBarData(recentScores: Record<Skill, { score: number }[]>): {
+	index: string
+	listening: number
+	reading: number
+	writing: number
+	speaking: number
+}[] {
+	const maxLen = Math.max(...SKILLS.map((s) => recentScores[s.key]?.length ?? 0))
+	return Array.from({ length: maxLen }, (_, i) => {
+		const entry: Record<string, string | number> = { index: `#${i + 1}` }
+		for (const s of SKILLS) {
+			const scores = [...(recentScores[s.key] ?? [])].reverse()
+			entry[s.key] = scores[i]?.score ?? 0
+		}
+		return entry as ReturnType<typeof buildBarData>[number]
+	})
+}
 
 function groupSessionsByDate(sessions: TestSession[]): Record<string, TestSession[]> {
 	return sessions.reduce(
