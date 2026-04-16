@@ -3,34 +3,18 @@
 
 // ─── Taxonomy ──────────────────────────────────────────────────
 
+export type { GrammarFunction, VstepLevel, VstepTask } from "#/lib/types/vstep"
+export { LEVEL_LABELS, TASK_LABELS } from "#/lib/types/vstep"
+
+import type { GrammarFunction, VstepLevel, VstepTask } from "#/lib/types/vstep"
+
 export type GrammarCategory = "foundation" | "sentence" | "task" | "error-clinic"
-
-export type VstepLevel = "B1" | "B2" | "C1"
-
-export type VstepTask = "WT1" | "WT2" | "SP1" | "SP2" | "SP3" | "READ"
-
-export type GrammarFunction = "accuracy" | "range" | "coherence" | "register"
 
 export const CATEGORY_LABELS: Record<GrammarCategory, string> = {
 	foundation: "Nền chính xác",
 	sentence: "Xây câu & mở rộng ý",
 	task: "Grammar theo bài thi",
 	"error-clinic": "Phòng khám lỗi",
-}
-
-export const LEVEL_LABELS: Record<VstepLevel, string> = {
-	B1: "Nền tảng B1",
-	B2: "Nâng cao B2",
-	C1: "Tinh chỉnh C1",
-}
-
-export const TASK_LABELS: Record<VstepTask, string> = {
-	WT1: "Writing Task 1",
-	WT2: "Writing Task 2",
-	SP1: "Speaking Part 1",
-	SP2: "Speaking Part 2",
-	SP3: "Speaking Part 3",
-	READ: "Reading",
 }
 
 // ─── Content types ─────────────────────────────────────────────

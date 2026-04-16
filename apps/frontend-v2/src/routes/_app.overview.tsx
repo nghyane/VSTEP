@@ -194,11 +194,11 @@ function DetailsView({
 	data: OverviewData
 	mockGoal: ReturnType<typeof useMockGoal>
 }) {
-	const totalTests = data.skills.reduce((acc, s) => acc + s.attemptCount, 0)
+	const stats = data.overviewStats
 
 	return (
 		<div className="space-y-6">
-			<StatGrid activity={data.activity} totalTests={totalTests} />
+			<StatGrid stats={stats} />
 			<ActivityHeatmap activityByDay={data.activity.activityByDay} />
 			{mockGoal ? (
 				<ExamCountdown deadline={mockGoal.deadline} daysRemaining={mockGoal.daysRemaining} />

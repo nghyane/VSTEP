@@ -8,6 +8,14 @@ export interface ActivityData {
 	streak: number
 }
 
+// 4 stat cards cho tab Tổng quan
+export interface OverviewStats {
+	daysLeft: number // số ngày còn lại đến ngày thi
+	totalTests: number // tổng bài test đã làm
+	avgScore: number // điểm TB toàn phần (0–10)
+	weakestSkill: "listening" | "reading" | "writing" | "speaking" | null
+}
+
 export interface SkillProgress {
 	skill: "listening" | "reading" | "writing" | "speaking"
 	currentLevel: string
@@ -101,6 +109,7 @@ export interface OverviewData {
 		progressPct: number // 0–100, ước tính mức hoàn thành lộ trình
 	}
 	activity: ActivityData
+	overviewStats: OverviewStats
 	skills: SkillProgress[]
 	goal: EnrichedGoal | null
 	spider: Record<"listening" | "reading" | "writing" | "speaking", SpiderSkillData>
@@ -148,18 +157,24 @@ export const MOCK_OVERVIEW: OverviewData = {
 		totalExercises: 0,
 		streak: 7,
 	},
+	overviewStats: {
+		daysLeft: 16,
+		totalTests: 23,
+		avgScore: 5.8,
+		weakestSkill: "writing",
+	},
 	skills: [
-		{ skill: "listening", currentLevel: "A1", attemptCount: 0, averageScore: 0 },
-		{ skill: "reading", currentLevel: "A1", attemptCount: 0, averageScore: 0 },
-		{ skill: "writing", currentLevel: "A1", attemptCount: 0, averageScore: 0 },
-		{ skill: "speaking", currentLevel: "A1", attemptCount: 0, averageScore: 0 },
+		{ skill: "listening", currentLevel: "B1", attemptCount: 12, averageScore: 6.2 },
+		{ skill: "reading",   currentLevel: "B1", attemptCount: 15, averageScore: 7.1 },
+		{ skill: "writing",   currentLevel: "A2", attemptCount: 8,  averageScore: 5.4 },
+		{ skill: "speaking",  currentLevel: "A2", attemptCount: 6,  averageScore: 5.8 },
 	],
 	goal: null, // null = hiện empty state GoalCard
 	spider: {
-		listening: { current: 0, trend: "insufficient_data" },
-		reading: { current: 0, trend: "insufficient_data" },
-		writing: { current: 0, trend: "insufficient_data" },
-		speaking: { current: 0, trend: "insufficient_data" },
+		listening: { current: 6.2, trend: "up" },
+		reading:   { current: 7.1, trend: "stable" },
+		writing:   { current: 5.4, trend: "down" },
+		speaking:  { current: 5.8, trend: "up" },
 	},
 }
 
