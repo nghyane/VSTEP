@@ -50,7 +50,7 @@ docker compose up -d          # Start PostgreSQL + Redis
 - **Structured JSON logging** in all services. Use `Log` facade (backend), never `console.log` or `print()`.
 - **Throw errors, don't return them.** All apps use typed error hierarchies.
 - **YAGNI** -- no speculative code. No consumer = no commit.
-- **Git:** Never rebase without asking. Never force push. Never `git reset --hard`.
+- **Git:** Never rebase without asking. Never force push. Never `git reset --hard`. Chỉ commit khi user yêu cầu.
 - **Lint after every edit.** Thứ tự bắt buộc sau mỗi thay đổi:
   1. `mcp__ide__getDiagnostics` — verify ngay, không đoán
   2. Nếu lỗi → fix → verify lại → `mcp__ide__getDiagnostics` lần cuối
