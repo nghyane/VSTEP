@@ -131,25 +131,81 @@ export function Pagination({
 
 // ─── Exercise Card ─────────────────────────────────────────────────
 
+export type CardStatus = "not_started" | "in_progress" | "completed"
+
 export function ExerciseCard({
 	title,
 	description,
 	meta,
 	href,
+	status = "not_started",
+	score,
+	total,
 }: {
 	title: string
 	description: string
 	meta: string
 	href: React.ReactNode
+	status?: CardStatus
+	/** Score (correct answers / shadowing done) */
+	score?: number
+	/** Total questions / sentences */
+	total?: number
 }) {
+	const pct = total && total > 0 && score !== undefined ? Math.round((score / total) * 100) : 0
+	const hasProgress = status !== "not_started" && total && total > 0
+
 	return (
 		<div className="group relative flex flex-col rounded-xl border bg-card p-4 shadow-sm transition-colors hover:border-border/80 hover:shadow-md">
-			<p className="text-sm font-semibold leading-snug">{title}</p>
+			<div className="flex items-start justify-between gap-2">
+				<p className="min-w-0 text-sm font-semibold leading-snug">{title}</p>
+				<StatusBadge status={status} />
+			</div>
 			<p className="mt-1 line-clamp-2 flex-1 text-xs text-muted-foreground">{description}</p>
-			<p className="mt-3 text-xs text-muted-foreground">{meta}</p>
-			{/* Overlay link */}
+			<div className="mt-3 flex items-center justify-between gap-2">
+				<span className="text-xs text-muted-foreground">{meta}</span>
+				{total !== undefined && total > 0 && (
+					<span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+						{total} câu
+					</span>
+				)}
+			</div>
+			{hasProgress && (
+				<div className="mt-2.5">
+					<div className="flex items-center justify-between text-[11px] tabular-nums text-muted-foreground">
+						<span>{score}/{total} đúng</span>
+						<span>{pct}%</span>
+					</div>
+					<div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+						<div
+							className={cn(
+								"h-full rounded-full transition-all",
+								pct >= 80 ? "bg-success" : pct >= 50 ? "bg-primary" : "bg-warning",
+							)}
+							style={{ width: `${pct}%` }}
+						/>
+					</div>
+				</div>
+			)}
 			{href}
 		</div>
+	)
+}
+
+function StatusBadge({ status }: { status: CardStatus }) {
+	if (status === "not_started") return null
+	const isCompleted = status === "completed"
+	return (
+		<span
+			className={cn(
+				"shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium",
+				isCompleted
+					? "bg-success/10 text-success"
+					: "bg-warning/10 text-warning",
+			)}
+		>
+			{isCompleted ? "Hoàn thành" : "Đang làm"}
+		</span>
 	)
 }
 

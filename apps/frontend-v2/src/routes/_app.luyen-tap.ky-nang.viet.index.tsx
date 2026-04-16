@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { ArrowLeft, PencilLine } from "lucide-react"
-import { Suspense } from "react"
+import { Suspense, useMemo } from "react"
 import {
 	ExerciseCard,
 	ITEMS_PER_PAGE,
@@ -10,6 +10,7 @@ import {
 } from "#/components/practice/SkillPageLayout"
 import { Skeleton } from "#/components/ui/skeleton"
 import { WRITING_PART_LABELS, type WritingExercise, type WritingPart } from "#/lib/mock/writing"
+import { getWritingProgress } from "#/lib/practice/writing-progress"
 import { writingListQueryOptions } from "#/lib/queries/writing"
 import { writingSentenceTopicsQueryOptions } from "#/lib/queries/writing-sentences"
 
@@ -59,6 +60,10 @@ function ListContent() {
 	const { data: exercises } = useSuspenseQuery(writingListQueryOptions())
 	const { data: topics } = useSuspenseQuery(writingSentenceTopicsQueryOptions())
 	const grouped = groupByPart(exercises)
+	const progress = useMemo(
+		() => Object.fromEntries(exercises.map((ex) => [ex.id, getWritingProgress(ex.id)])),
+		[exercises],
+	)
 
 	const sidebarItems = [
 		{ key: "part-1" as const, label: WRITING_PART_LABELS[1], count: (grouped.get(1) ?? []).length },
@@ -103,12 +108,15 @@ function ListContent() {
 									}
 								/>
 							))
-						: currentList.slice(start, start + ITEMS_PER_PAGE).map((ex) => (
+						: currentList.slice(start, start + ITEMS_PER_PAGE).map((ex) => {
+							const p = progress[ex.id]
+							return (
 								<ExerciseCard
 									key={ex.id}
 									title={ex.title}
 									description={ex.description}
 									meta={`${ex.minWords}-${ex.maxWords} từ · ${ex.estimatedMinutes} phút`}
+									status={p?.status}
 									href={
 										<Link
 											to="/luyen-tap/ky-nang/viet/$exerciseId"
@@ -117,7 +125,8 @@ function ListContent() {
 										/>
 									}
 								/>
-							))}
+							)
+						})}
 				</div>
 				{totalItems === 0 && (
 					<p className="py-12 text-center text-sm text-muted-foreground">
