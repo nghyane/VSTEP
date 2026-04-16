@@ -9,36 +9,116 @@ import {
 	Target,
 } from "lucide-react"
 import { type MotionValue, motion, useScroll, useSpring, useTransform } from "motion/react"
-import { useRef } from "react"
+import { useEffect, useRef, useState } from "react"
+import { AuthDialog } from "#/components/auth/AuthDialog"
 import { Logo } from "#/components/common/Logo"
 import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar"
 import { Button } from "#/components/ui/button"
 import { cn } from "#/lib/utils"
+
+/* ── hooks ── */
+
+function useInView(threshold = 0.15) {
+	const ref = useRef<HTMLDivElement>(null)
+	const [visible, setVisible] = useState(false)
+	useEffect(() => {
+		const el = ref.current
+		if (!el) return
+		const obs = new IntersectionObserver(([e]) => e.isIntersecting && setVisible(true), {
+			threshold,
+		})
+		obs.observe(el)
+		return () => obs.disconnect()
+	}, [threshold])
+	return { ref, visible }
+}
+
+function useTilt(intensity = 8) {
+	const ref = useRef<HTMLDivElement>(null)
+	useEffect(() => {
+		const el = ref.current
+		if (!el) return
+		const onMove = (e: MouseEvent) => {
+			const rect = el.getBoundingClientRect()
+			const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2
+			const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2
+			el.style.transform = `perspective(600px) rotateY(${x * intensity}deg) rotateX(${-y * intensity}deg) scale(1.02)`
+		}
+		const onLeave = () => {
+			el.style.transform = ""
+		}
+		el.addEventListener("mousemove", onMove)
+		el.addEventListener("mouseleave", onLeave)
+		return () => {
+			el.removeEventListener("mousemove", onMove)
+			el.removeEventListener("mouseleave", onLeave)
+		}
+	}, [intensity])
+	return ref
+}
+
+/* ── shared ── */
+
+function AnimSection({
+	children,
+	className,
+	delay = 0,
+}: {
+	children: React.ReactNode
+	className?: string
+	delay?: number
+}) {
+	const { ref, visible } = useInView()
+	return (
+		<div
+			ref={ref}
+			className={cn(
+				"transition-all duration-700 ease-out",
+				visible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0",
+				className,
+			)}
+			style={{ transitionDelay: `${delay}ms` }}
+		>
+			{children}
+		</div>
+	)
+}
+
+function TiltCard({ children, className }: { children: React.ReactNode; className?: string }) {
+	const ref = useTilt(5)
+	return (
+		<div ref={ref} className={cn("transition-transform duration-200 ease-out", className)}>
+			{children}
+		</div>
+	)
+}
+
+/* ── data ── */
 
 const SKILLS = [
 	{
 		label: "Listening",
 		desc: "Luyện nghe hội thoại và bài giảng thực tế",
 		icon: Headphones,
-		color: "text-skill-listening",
+		color: "bg-skill-listening/12 text-skill-listening",
 	},
 	{
 		label: "Reading",
 		desc: "Phân tích đoạn văn và trả lời câu hỏi trọng tâm",
 		icon: BookOpenText,
-		color: "text-skill-reading",
+		color: "bg-skill-reading/12 text-skill-reading",
 	},
 	{
 		label: "Writing",
 		desc: "Viết thư, luận và nhận phản hồi từ AI",
 		icon: PencilLine,
-		color: "text-skill-writing",
+		color: "bg-skill-writing/12 text-skill-writing",
 	},
 	{
 		label: "Speaking",
 		desc: "Luyện nói theo chủ đề và nghe bài mẫu tham khảo",
 		icon: Mic,
-		color: "text-skill-speaking",
+		color: "bg-skill-speaking/12 text-skill-speaking",
 	},
 ] as const
 
@@ -72,6 +152,7 @@ const TESTIMONIALS = [
 		badge: "B1 → B2",
 		avatar: "https://i.pravatar.cc/150?img=32",
 		initials: "MA",
+		stars: 5,
 	},
 	{
 		name: "Thanh Hà",
@@ -81,6 +162,7 @@ const TESTIMONIALS = [
 		badge: "B2 → C1",
 		avatar: "https://i.pravatar.cc/150?img=47",
 		initials: "TH",
+		stars: 5,
 	},
 	{
 		name: "Đức Huy",
@@ -90,25 +172,31 @@ const TESTIMONIALS = [
 		badge: "Đề xuất cho SV",
 		avatar: "https://i.pravatar.cc/150?img=11",
 		initials: "ĐH",
+		stars: 4,
 	},
 ] as const
 
+/* ── page ── */
+
 export function LandingPage() {
+	const [isAuthOpen, setIsAuthOpen] = useState(false)
+
 	return (
 		<div className="min-h-screen bg-background text-foreground">
-			<LandingHeader />
-			<HeroSection />
+			<LandingHeader onOpenAuth={() => setIsAuthOpen(true)} />
+			<HeroSection onOpenAuth={() => setIsAuthOpen(true)} />
 			<SkillsSection />
 			<HowItWorksSection />
 			<RoadmapSection />
 			<TestimonialsSection />
-			<MascotSection />
+			<MascotSection onOpenAuth={() => setIsAuthOpen(true)} />
 			<LandingFooter />
+			<AuthDialog open={isAuthOpen} onOpenChange={setIsAuthOpen} />
 		</div>
 	)
 }
 
-function LandingHeader() {
+function LandingHeader({ onOpenAuth }: { onOpenAuth: () => void }) {
 	return (
 		<header className="absolute inset-x-0 top-0 z-50">
 			<div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
@@ -129,9 +217,9 @@ function LandingHeader() {
 					<Button
 						size="sm"
 						className="rounded-full bg-white px-6 font-bold text-primary hover:bg-white/90"
-						asChild
+						onClick={onOpenAuth}
 					>
-						<Link to="/luyen-tap">Bắt đầu</Link>
+						Bắt đầu
 					</Button>
 				</div>
 			</div>
@@ -139,41 +227,75 @@ function LandingHeader() {
 	)
 }
 
-function HeroSection() {
+function HeroSection({ onOpenAuth }: { onOpenAuth: () => void }) {
 	return (
-		<section className="relative overflow-hidden rounded-b-3xl bg-gradient-to-b from-primary to-primary/80">
-			<div className="pointer-events-none absolute inset-0">
-				<div className="absolute left-1/2 top-1/2 size-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/5" />
-				<div className="absolute left-1/2 top-1/2 size-[460px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10" />
-				<div className="absolute bottom-20 left-[10%] size-4 rounded-full bg-white/20" />
-				<div className="absolute right-[16%] top-14 size-8 rounded-full bg-warning/80" />
-			</div>
+		<section className="relative overflow-hidden rounded-b-3xl bg-[#0047B3]">
+			<div className="relative mx-auto flex max-w-4xl flex-col items-center px-5 pb-16 pt-20 text-center sm:px-6 sm:pb-32 sm:pt-28">
+				<AnimSection>
+					<h1 className="text-4xl font-bold leading-[1.2] tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl">
+						Nền tảng Học
+						<br />
+						và Luyện thi
+						<br />
+						thông minh
+					</h1>
+				</AnimSection>
 
-			<div className="relative mx-auto flex max-w-4xl flex-col items-center px-6 pb-24 pt-28 text-center">
-				<h1 className="text-4xl font-bold leading-tight text-white sm:text-5xl lg:text-6xl">
-					Nền tảng luyện thi <span className="text-warning">VSTEP</span> thông minh
-				</h1>
-				<p className="mt-5 max-w-2xl text-base leading-relaxed text-white/80 sm:text-lg">
-					AI chấm Writing và Speaking theo rubric chuẩn — lộ trình cá nhân hóa từ B1 đến C1, học
-					theo nhịp độ của bạn.
-				</p>
-				<div className="mt-8 flex flex-col gap-3 sm:flex-row">
-					<Button
-						size="lg"
-						className="rounded-full bg-white px-10 text-base font-bold text-primary hover:bg-white/90"
-						asChild
-					>
-						<Link to="/luyen-tap">Bắt đầu ngay</Link>
-					</Button>
-					<Button
-						variant="ghost"
-						size="lg"
-						className="rounded-full border border-white/30 bg-transparent px-10 text-base font-bold text-white hover:bg-white/10 hover:text-white"
-						asChild
-					>
-						<a href="#how-it-works">Xem cách hoạt động</a>
-					</Button>
-				</div>
+				<AnimSection delay={200}>
+					<div className="relative mt-8 flex justify-center sm:mt-12">
+						{/* Ripple effects behind button */}
+						<div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+							<div
+								className="absolute h-[100px] w-[280px] animate-[ripple_0.8s_ease-out_forwards] rounded-full bg-white/[0.12] opacity-0"
+								style={{ animationDelay: "0ms" }}
+							/>
+							<div
+								className="absolute h-[150px] w-[390px] animate-[ripple_0.8s_ease-out_forwards] rounded-full bg-white/[0.10] opacity-0"
+								style={{ animationDelay: "80ms" }}
+							/>
+							<div
+								className="absolute h-[205px] w-[510px] animate-[ripple_0.8s_ease-out_forwards] rounded-full bg-white/[0.08] opacity-0"
+								style={{ animationDelay: "160ms" }}
+							/>
+							<div
+								className="absolute h-[265px] w-[640px] animate-[ripple_0.8s_ease-out_forwards] rounded-full bg-white/[0.07] opacity-0"
+								style={{ animationDelay: "240ms" }}
+							/>
+							<div
+								className="absolute h-[330px] w-[780px] animate-[ripple_0.8s_ease-out_forwards] rounded-full bg-white/[0.06] opacity-0"
+								style={{ animationDelay: "320ms" }}
+							/>
+							<div
+								className="absolute h-[400px] w-[930px] animate-[ripple_0.8s_ease-out_forwards] rounded-full bg-white/[0.04] opacity-0"
+								style={{ animationDelay: "400ms" }}
+							/>
+							<div
+								className="absolute h-[475px] w-[1090px] animate-[ripple_0.8s_ease-out_forwards] rounded-full bg-white/[0.03] opacity-0"
+								style={{ animationDelay: "480ms" }}
+							/>
+							<div
+								className="absolute h-[555px] w-[1260px] animate-[ripple_0.8s_ease-out_forwards] rounded-full bg-white/[0.025] opacity-0"
+								style={{ animationDelay: "560ms" }}
+							/>
+							<div
+								className="absolute h-[640px] w-[1440px] animate-[ripple_0.8s_ease-out_forwards] rounded-full bg-white/[0.018] opacity-0"
+								style={{ animationDelay: "640ms" }}
+							/>
+							<div
+								className="absolute h-[730px] w-[1630px] animate-[ripple_0.8s_ease-out_forwards] rounded-full bg-white/[0.012] opacity-0"
+								style={{ animationDelay: "720ms" }}
+							/>
+						</div>
+
+						<Button
+							size="lg"
+							className="relative z-10 rounded-full bg-white px-10 py-6 text-base font-bold text-[#0052CC] shadow-lg shadow-white/20 hover:bg-white/90"
+							onClick={onOpenAuth}
+						>
+							KHÁM PHÁ NGAY
+						</Button>
+					</div>
+				</AnimSection>
 			</div>
 		</section>
 	)
@@ -183,19 +305,23 @@ function SkillsSection() {
 	return (
 		<section className="bg-muted/20">
 			<div className="mx-auto w-full max-w-5xl px-6 py-20">
-				<SectionHeading
-					title="4 kỹ năng, một nền tảng"
-					subtitle="Luyện tập toàn diện Nghe – Đọc – Viết – Nói"
-				/>
+				<AnimSection>
+					<SectionHeading
+						title="4 kỹ năng, một nền tảng"
+						subtitle="Luyện tập toàn diện Nghe – Đọc – Viết – Nói"
+					/>
+				</AnimSection>
 				<div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-					{SKILLS.map((skill) => {
+					{SKILLS.map((skill, i) => {
 						const Icon = skill.icon
 						return (
-							<div key={skill.label} className="rounded-2xl bg-muted/50 p-5 shadow-sm">
-								<Icon className={cn("size-6", skill.color)} />
-								<h3 className="mt-4 text-lg font-semibold">{skill.label}</h3>
-								<p className="mt-2 text-sm leading-relaxed text-muted-foreground">{skill.desc}</p>
-							</div>
+							<AnimSection key={skill.label} delay={i * 100}>
+								<TiltCard className="rounded-2xl bg-muted/30 p-6 transition-colors hover:bg-muted/50">
+									<Icon className={cn("mb-4 size-6", skill.color.split(" ")[1])} />
+									<h3 className="font-bold">{skill.label}</h3>
+									<p className="mt-2 text-sm leading-relaxed text-muted-foreground">{skill.desc}</p>
+								</TiltCard>
+							</AnimSection>
 						)
 					})}
 				</div>
@@ -214,10 +340,12 @@ function HowItWorksSection() {
 	return (
 		<section id="how-it-works" className="py-12 sm:py-20">
 			<div className="mx-auto w-full max-w-5xl px-6">
-				<SectionHeading
-					title="Tối ưu hành trình luyện thi VSTEP"
-					subtitle="3 bước đơn giản để chinh phục VSTEP cùng AI"
-				/>
+				<AnimSection>
+					<SectionHeading
+						title="Tối ưu hành trình luyện thi VSTEP"
+						subtitle="3 bước đơn giản để chinh phục VSTEP cùng AI"
+					/>
+				</AnimSection>
 			</div>
 
 			<div
@@ -296,59 +424,201 @@ function StepCard({
 }
 
 function RoadmapSection() {
+	const { ref, visible } = useInView()
+	const levels = [
+		{
+			level: "B1",
+			label: "Trung cấp",
+			desc: "Giao tiếp trong công việc và đời sống hàng ngày",
+			items: ["Nghe hiểu hội thoại", "Viết thư cơ bản", "Đọc hiểu văn bản ngắn"],
+		},
+		{
+			level: "B2",
+			label: "Trung cấp cao",
+			desc: "Tự tin trong môi trường học thuật và chuyên môn",
+			items: ["Nghe bài giảng dài", "Viết luận có cấu trúc", "Nói trôi chảy"],
+		},
+		{
+			level: "C1",
+			label: "Nâng cao",
+			desc: "Sử dụng tiếng Anh linh hoạt trong mọi tình huống phức tạp",
+			items: ["Nghe mọi ngữ cảnh", "Viết học thuật", "Thuyết trình chuyên sâu"],
+		},
+	]
+
 	return (
-		<section className="bg-muted/20">
-			<div className="mx-auto w-full max-w-3xl px-6 py-20">
-				<SectionHeading
-					title="Lộ trình rõ ràng"
-					subtitle="Từ B1 đến C1 — mỗi cấp độ là một bước tiến cụ thể"
-				/>
-				<div className="relative mt-14 pl-10">
-					<div className="absolute left-5 top-0 bottom-0 w-px bg-border" />
-					{[
-						{
-							level: "B1",
-							label: "Trung cấp",
-							desc: "Giao tiếp trong công việc và đời sống hàng ngày.",
-							items: ["Nghe hiểu hội thoại", "Viết thư cơ bản", "Đọc hiểu văn bản ngắn"],
-						},
-						{
-							level: "B2",
-							label: "Trung cấp cao",
-							desc: "Tự tin trong môi trường học thuật và chuyên môn.",
-							items: ["Nghe bài giảng dài", "Viết luận có cấu trúc", "Nói trôi chảy"],
-						},
-						{
-							level: "C1",
-							label: "Nâng cao",
-							desc: "Sử dụng tiếng Anh linh hoạt trong mọi tình huống phức tạp.",
-							items: ["Nghe mọi ngữ cảnh", "Viết học thuật", "Thuyết trình chuyên sâu"],
-						},
-					].map((band) => (
-						<div key={band.level} className="relative mb-6">
-							<div className="absolute -left-[1.875rem] top-5 size-4 rounded-full bg-background ring-4 ring-background">
-								<div className="size-4 rounded-full border border-primary/30 bg-primary/10" />
-							</div>
-							<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
-								<div className="flex items-center gap-3">
-									<span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-										{band.level}
-									</span>
-									<h3 className="text-lg font-semibold">{band.label}</h3>
+		<section ref={ref} className="py-20">
+			<div className="mx-auto w-full max-w-5xl px-6">
+				<AnimSection>
+					<SectionHeading
+						title="Lộ trình rõ ràng"
+						subtitle="Từ B1 đến C1 — mỗi cấp độ là một bước tiến cụ thể"
+					/>
+				</AnimSection>
+
+				<AnimSection>
+					<div className="relative mt-16">
+						{/* Vertical trunk with animation */}
+						<div className="absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2 overflow-hidden bg-border/30">
+							{visible && (
+								<div
+									className="h-full w-full animate-[grow-line_1.2s_ease-out_forwards] bg-border"
+									style={{ transformOrigin: "top" }}
+								/>
+							)}
+						</div>
+
+						<div className="space-y-12">
+							{levels.map((band, i) => {
+								const isLeft = i % 2 === 0
+								return (
+									<div
+										key={band.level}
+										className="relative grid grid-cols-1 md:grid-cols-[1fr_auto_1fr]"
+									>
+										{/* Left side */}
+										{isLeft ? (
+											<div className="md:pr-8 md:text-right">
+												{visible && (
+													<div
+														className="animate-[fade-slide_0.6s_ease-out_forwards] opacity-0"
+														style={{ animationDelay: `${i * 400 + 200}ms` }}
+													>
+														<LevelCard band={band} align="right" />
+													</div>
+												)}
+											</div>
+										) : (
+											<div />
+										)}
+
+										{/* Center - branch line only */}
+										<div className="absolute left-1/2 top-6 -translate-x-1/2 md:relative md:left-0 md:top-0 md:translate-x-0">
+											{visible && (
+												<div
+													className={`absolute top-1/2 hidden h-px w-8 -translate-y-1/2 animate-[grow-branch_0.3s_ease-out_forwards] bg-border opacity-0 md:block ${isLeft ? "right-full origin-right" : "left-full origin-left"}`}
+													style={{ animationDelay: `${i * 400 + 100}ms` }}
+												/>
+											)}
+										</div>
+
+										{/* Right side */}
+										{!isLeft ? (
+											<div className="md:pl-8">
+												{visible && (
+													<div
+														className="animate-[fade-slide_0.6s_ease-out_forwards] opacity-0"
+														style={{ animationDelay: `${i * 400 + 200}ms` }}
+													>
+														<LevelCard band={band} align="left" />
+													</div>
+												)}
+											</div>
+										) : (
+											<div />
+										)}
+									</div>
+								)
+							})}
+						</div>
+					</div>
+				</AnimSection>
+			</div>
+		</section>
+	)
+}
+
+function LevelCard({
+	band,
+	align,
+}: {
+	band: { level: string; label: string; desc: string; items: string[] }
+	align: "left" | "right"
+}) {
+	return (
+		<div className="inline-block rounded-2xl bg-muted/50 p-5 text-left shadow-sm md:max-w-sm">
+			<div className={`flex items-center gap-2 ${align === "right" ? "md:justify-end" : ""}`}>
+				<span className="rounded-lg bg-primary px-2.5 py-1 text-sm font-bold text-primary-foreground">
+					{band.level}
+				</span>
+			</div>
+			<h3 className="mt-2 text-lg font-semibold">{band.label}</h3>
+			<p className="mt-1 text-sm text-muted-foreground">{band.desc}</p>
+			<div className="mt-3 flex flex-wrap gap-1.5">
+				{band.items.map((item) => (
+					<span key={item} className="rounded-md border bg-background px-2.5 py-1 text-xs">
+						{item}
+					</span>
+				))}
+			</div>
+		</div>
+	)
+}
+
+function TestimonialsSection() {
+	return (
+		<section className="py-20">
+			<div className="mx-auto w-full max-w-6xl px-6">
+				<AnimSection>
+					<SectionHeading
+						title="Học viên nói gì?"
+						subtitle="Hàng nghìn người đã cải thiện điểm VSTEP"
+					/>
+				</AnimSection>
+				<div className="mt-12 grid gap-6 md:grid-cols-3">
+					{TESTIMONIALS.map((item, i) => (
+						<AnimSection key={item.name} delay={i * 120}>
+							<div className="rounded-2xl bg-card p-6 shadow-sm">
+								{/* Quote icon */}
+								<div className="mb-4 text-primary/20">
+									<svg className="size-8" fill="currentColor" viewBox="0 0 24 24">
+										<path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
+									</svg>
 								</div>
-								<p className="mt-2 text-sm text-muted-foreground">{band.desc}</p>
-								<div className="mt-3 flex flex-wrap gap-1.5">
-									{band.items.map((item) => (
-										<span
-											key={item}
-											className="rounded-md border bg-background px-2.5 py-1 text-xs text-muted-foreground"
+
+								{/* Quote text */}
+								<p className="text-sm leading-relaxed text-foreground">{item.quote}</p>
+
+								{/* Divider */}
+								<div className="my-4 h-px bg-border" />
+
+								{/* Author info */}
+								<div className="flex items-center justify-between">
+									<div className="flex items-center gap-3">
+										<Avatar>
+											<AvatarImage src={item.avatar} alt={item.name} />
+											<AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+												{item.initials}
+											</AvatarFallback>
+										</Avatar>
+										<div>
+											<p className="text-sm font-semibold">{item.name}</p>
+											<p className="text-xs text-muted-foreground">{item.role}</p>
+										</div>
+									</div>
+									<span className="rounded-lg bg-success/10 px-2.5 py-1 text-xs font-bold text-success">
+										{item.badge}
+									</span>
+								</div>
+
+								{/* Stars */}
+								<div className="mt-3 flex gap-0.5">
+									{Array.from({ length: 5 }).map((_, si) => (
+										<svg
+											key={si}
+											className={cn(
+												"size-4",
+												si < item.stars ? "text-amber-400" : "text-muted-foreground/25",
+											)}
+											viewBox="0 0 20 20"
+											fill="currentColor"
 										>
-											{item}
-										</span>
+											<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+										</svg>
 									))}
 								</div>
 							</div>
-						</div>
+						</AnimSection>
 					))}
 				</div>
 			</div>
@@ -356,67 +626,61 @@ function RoadmapSection() {
 	)
 }
 
-function TestimonialsSection() {
+function MascotSection({ onOpenAuth }: { onOpenAuth: () => void }) {
 	return (
-		<section className="mx-auto w-full max-w-5xl px-6 py-20">
-			<SectionHeading
-				title="Học viên nói gì?"
-				subtitle="Hàng nghìn người đã cải thiện điểm VSTEP"
-			/>
-			<div className="mt-12 grid gap-4 sm:grid-cols-3">
-				{TESTIMONIALS.map((item) => (
-					<div key={item.name} className="rounded-2xl bg-muted/50 p-5 shadow-sm">
-						<div className="flex items-center gap-3">
-							<Avatar size="lg">
-								<AvatarImage src={item.avatar} alt={item.name} />
-								<AvatarFallback className="bg-primary/10 text-primary">
-									{item.initials}
-								</AvatarFallback>
-							</Avatar>
-							<div>
-								<p className="text-sm font-bold">{item.name}</p>
-								<p className="text-xs text-muted-foreground">{item.role}</p>
+		<section className="relative overflow-hidden py-20">
+			{/* Background decorations */}
+			<div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-primary/10" />
+
+			<div className="relative mx-auto w-full max-w-4xl px-6">
+				<AnimSection>
+					<div className="relative overflow-hidden rounded-3xl border bg-card shadow-lg">
+						{/* Mascot background */}
+						<div className="relative min-h-[200px] pt-3">
+							<img
+								src="/images/home-mascot.png"
+								alt=""
+								className="h-full w-full object-contain object-bottom [filter:drop-shadow(2px_0_0_#000)_drop-shadow(-2px_0_0_#000)_drop-shadow(0_2px_0_#000)_drop-shadow(0_-2px_0_#000)]"
+							/>
+
+							{/* Content overlay */}
+							<div className="absolute inset-0 flex flex-col justify-between p-0">
+								{/* Top text */}
+								<div className="pt-3 text-center">
+									<h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+										Bắt đầu luyện ngay hôm nay
+									</h2>
+									<p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+										Không cần thẻ tín dụng. Tạo tài khoản trong 30 giây và làm bài thi thử đầu tiên
+										với lộ trình rõ ràng, phản hồi AI chi tiết.
+									</p>
+								</div>
+
+								{/* Bottom CTA */}
+								<div className="flex flex-col items-center pb-3 text-center">
+									<Button
+										size="lg"
+										className="rounded-full bg-white px-8 text-base text-foreground shadow-lg hover:bg-white/90"
+										onClick={onOpenAuth}
+									>
+										Bắt đầu miễn phí
+									</Button>
+
+									<div className="mt-3 flex flex-wrap items-center justify-center gap-3 text-sm text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] sm:gap-4">
+										<div className="flex items-center gap-2">
+											<CheckCircle2 className="size-4 text-success" />
+											<span className="font-semibold">Hoàn toàn miễn phí</span>
+										</div>
+										<div className="flex items-center gap-2">
+											<CheckCircle2 className="size-4 text-success" />
+											<span className="font-semibold">10,000+ học viên</span>
+										</div>
+									</div>
+								</div>
 							</div>
 						</div>
-						<p className="mt-4 text-sm leading-relaxed text-muted-foreground italic">
-							“{item.quote}”
-						</p>
-						<span className="mt-4 inline-flex rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success">
-							{item.badge}
-						</span>
 					</div>
-				))}
-			</div>
-		</section>
-	)
-}
-
-function MascotSection() {
-	return (
-		<section className="relative overflow-hidden rounded-t-3xl bg-muted/30 pt-5 pb-1 sm:pt-7 lg:pt-9">
-			<div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-px bg-background" />
-			<div className="mx-auto w-full max-w-5xl px-6 text-center">
-				<div className="relative z-10 mx-auto mt-10 max-w-3xl sm:mt-12 lg:mt-14">
-					<h2 className="text-2xl font-bold tracking-tight text-foreground lg:text-4xl">
-						Bắt đầu luyện ngay hôm nay — hoàn toàn miễn phí
-					</h2>
-					<p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-foreground/75 sm:text-base">
-						Không cần thẻ tín dụng. Tạo tài khoản trong 30 giây và làm bài thi thử đầu tiên với lộ
-						trình rõ ràng, phản hồi AI chi tiết và trải nghiệm học bớt áp lực hơn.
-					</p>
-					<Button size="lg" className="mt-6 rounded-xl px-8 text-base" asChild>
-						<Link to="/luyen-tap">Bắt đầu luyện tập</Link>
-					</Button>
-					<p className="mt-4 text-sm text-muted-foreground">10,000+ học viên đã tham gia</p>
-				</div>
-
-				<div className="relative left-1/2 z-10 -mt-4 w-screen max-w-none -translate-x-1/2 px-0 sm:-mt-6 lg:-mt-8">
-					<img
-						src="/images/home-mascot.png"
-						alt="Mascot VSTEP đang luyện đề cùng sách và máy chấm bài"
-						className="mx-auto -mb-2 w-screen max-w-none object-contain sm:-mb-3 lg:-mb-4 [filter:drop-shadow(0_2px_0_#000)_drop-shadow(0_-1px_0_#000)_drop-shadow(1px_0_0_#000)_drop-shadow(-1px_0_0_#000)_drop-shadow(1px_1px_0_#000)_drop-shadow(-1px_-1px_0_#000)_drop-shadow(1px_-1px_0_#000)_drop-shadow(-1px_1px_0_#000)]"
-					/>
-				</div>
+				</AnimSection>
 			</div>
 		</section>
 	)
