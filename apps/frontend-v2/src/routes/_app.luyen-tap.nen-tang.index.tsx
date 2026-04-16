@@ -11,6 +11,7 @@ interface SubModuleCardProps {
 	title: string
 	description: string
 	to: "/luyen-tap/nen-tang/tu-vung" | "/luyen-tap/nen-tang/ngu-phap"
+	search: { view: "level" }
 	cta: string
 }
 
@@ -36,6 +37,7 @@ function NenTangHubPage() {
 					title="Luyện từ vựng"
 					description="Học từ theo chủ đề với hệ thống lặp lại cách quãng (SRS) kiểu Anki — từ nào khó sẽ lặp lại sớm, từ nào dễ lặp lại thưa dần."
 					to="/luyen-tap/nen-tang/tu-vung"
+					search={{ view: "level" } as const}
 					cta="Bắt đầu học từ vựng"
 				/>
 				<SubModuleCard
@@ -43,6 +45,7 @@ function NenTangHubPage() {
 					title="Luyện ngữ pháp"
 					description="Học lý thuyết ngữ pháp có cấu trúc cùng bộ câu mẫu, rồi luyện bằng bài tập trắc nghiệm có giải thích."
 					to="/luyen-tap/nen-tang/ngu-phap"
+					search={{ view: "level" } as const}
 					cta="Bắt đầu học ngữ pháp"
 				/>
 			</div>
@@ -50,10 +53,11 @@ function NenTangHubPage() {
 	)
 }
 
-function SubModuleCard({ icon: Icon, title, description, to, cta }: SubModuleCardProps) {
+function SubModuleCard({ icon: Icon, title, description, to, search, cta }: SubModuleCardProps) {
 	return (
 		<Link
 			to={to}
+			search={search}
 			className={cn(
 				"group flex flex-col overflow-hidden rounded-3xl border bg-card shadow-sm transition",
 				"cursor-pointer hover:-translate-y-0.5 hover:shadow-md",

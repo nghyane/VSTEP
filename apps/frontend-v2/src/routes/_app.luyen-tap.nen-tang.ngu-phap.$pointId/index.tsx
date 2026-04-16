@@ -3,7 +3,8 @@ import { createFileRoute, Link } from "@tanstack/react-router"
 import { ArrowLeft, BookOpen, Lightbulb, Target } from "lucide-react"
 import { Suspense } from "react"
 import { Skeleton } from "#/components/ui/skeleton"
-import { CATEGORY_LABELS, type GrammarPoint, TASK_LABELS } from "#/lib/mock/grammar"
+import { accuracyPercent, computeLevel, getMastery } from "#/lib/grammar/mastery"
+import { CATEGORY_LABELS, type GrammarPoint, LEVEL_LABELS, TASK_LABELS } from "#/lib/mock/grammar"
 import { grammarPointQueryOptions } from "#/lib/queries/grammar"
 import { cn } from "#/lib/utils"
 import { PracticeSession } from "./-components/PracticeSession"
@@ -61,6 +62,7 @@ function GrammarPointContent({ pointId }: { pointId: string }) {
 				<h1 className="mt-1 text-3xl font-bold tracking-tight md:text-4xl">{point.name}</h1>
 				<p className="mt-1 text-sm text-muted-foreground md:text-base">{point.vietnameseName}</p>
 				<p className="mt-3 text-sm text-foreground/80">{point.summary}</p>
+				<PointMeta point={point} />
 			</header>
 
 			<div className="flex gap-1 rounded-xl bg-muted p-1">
@@ -90,8 +92,45 @@ function GrammarPointContent({ pointId }: { pointId: string }) {
 			</div>
 
 			{tab === "theory" && <TheoryView point={point} />}
-			{tab === "practice" && <PracticeSession point={point} />}
+			{tab === "practice" && <PracticeSession key={pointId} point={point} />}
 			{tab === "vstep-tips" && <VstepTipsView point={point} />}
+		</div>
+	)
+}
+
+function PointMeta({ point }: { point: GrammarPoint }) {
+	const mastery = getMastery(point.id)
+	const level = computeLevel(mastery)
+	const accuracy = accuracyPercent(mastery)
+	return (
+		<div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+			<div className="flex items-center gap-1.5">
+				{point.levels.map((lv) => (
+					<span
+						key={lv}
+						className="rounded-full border px-2.5 py-0.5 text-xs font-semibold text-foreground"
+					>
+						{LEVEL_LABELS[lv]}
+					</span>
+				))}
+			</div>
+			<div className="flex items-center gap-1.5">
+				{point.tasks.map((task) => (
+					<span
+						key={task}
+						className="rounded-full border border-primary/30 px-2.5 py-0.5 text-xs font-medium text-primary"
+					>
+						{TASK_LABELS[task]}
+					</span>
+				))}
+			</div>
+			{mastery.attempts > 0 && (
+				<span className="text-xs tabular-nums text-muted-foreground">
+					{level === "mastered"
+						? "✓ Đã thuộc"
+						: `${mastery.correct}/${mastery.attempts} đúng · ${accuracy}%`}
+				</span>
+			)}
 		</div>
 	)
 }
@@ -100,20 +139,19 @@ function VstepTipsView({ point }: { point: GrammarPoint }) {
 	if (point.vstepTips.length === 0) {
 		return <p className="text-sm text-muted-foreground">Chưa có mẹo thi cho điểm ngữ pháp này.</p>
 	}
-
 	return (
 		<div className="space-y-4">
 			{point.vstepTips.map((tip) => (
 				<div key={`${tip.task}-${tip.tip}`} className="rounded-2xl border bg-card p-5 shadow-sm">
-					<p className="mb-3 text-xs font-semibold uppercase tracking-wide text-primary">
+					<span className="rounded-full border border-primary/30 px-2.5 py-0.5 text-xs font-semibold text-primary">
 						{TASK_LABELS[tip.task]}
-					</p>
-					<p className="text-sm text-foreground/90">{tip.tip}</p>
-					<div className="mt-3 rounded-lg bg-muted/50 px-4 py-3">
-						<p className="text-sm italic text-muted-foreground">
-							<span className="not-italic font-medium text-foreground">Ví dụ: </span>
-							{tip.example}
+					</span>
+					<p className="mt-3 text-sm text-foreground/90">{tip.tip}</p>
+					<div className="mt-3 border-l-2 border-primary/40 pl-4">
+						<p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+							Ví dụ
 						</p>
+						<p className="text-sm text-foreground">{tip.example}</p>
 					</div>
 				</div>
 			))}
@@ -128,6 +166,7 @@ function DetailSkeleton() {
 				<Skeleton className="h-4 w-24" />
 				<Skeleton className="h-10 w-2/3" />
 				<Skeleton className="h-4 w-3/4" />
+				<Skeleton className="h-6 w-1/2" />
 			</div>
 			<Skeleton className="h-12 rounded-xl" />
 			<div className="space-y-4">

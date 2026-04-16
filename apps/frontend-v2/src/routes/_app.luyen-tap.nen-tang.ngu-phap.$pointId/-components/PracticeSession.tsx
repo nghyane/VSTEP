@@ -1,5 +1,5 @@
 import { CheckCircle2, RotateCcw, XCircle } from "lucide-react"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Button } from "#/components/ui/button"
 import { recordAnswer } from "#/lib/grammar/mastery"
 import type {
@@ -20,6 +20,13 @@ interface SessionResult {
 	correct: number
 	total: number
 }
+
+const KIND_LABELS = {
+	mcq: "Trắc nghiệm",
+	"error-correction": "Sửa lỗi",
+	"fill-blank": "Điền từ",
+	rewrite: "Viết lại",
+} as const
 
 export function PracticeSession({ point }: Props) {
 	const [index, setIndex] = useState(0)
@@ -75,13 +82,17 @@ export function PracticeSession({ point }: Props) {
 	if (result) {
 		return <SessionSummary result={result} onReset={handleReset} />
 	}
-
 	if (!current) return null
 
 	return (
 		<div className="space-y-6">
 			<SessionProgress current={index + 1} total={total} correct={sessionCorrect} />
-			<ExerciseCard exercise={current} answered={answered} onAnswer={handleAnswer} />
+			<ExerciseCard
+				key={current.id}
+				exercise={current}
+				answered={answered}
+				onAnswer={handleAnswer}
+			/>
 			{answered && <NextButton onNext={handleNext} isLast={index + 1 === total} />}
 		</div>
 	)
@@ -116,6 +127,16 @@ function SessionProgress({
 				/>
 			</div>
 		</div>
+	)
+}
+
+// ─── Kind badge ────────────────────────────────────────────────
+
+function KindBadge({ kind }: { kind: keyof typeof KIND_LABELS }) {
+	return (
+		<span className="shrink-0 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+			{KIND_LABELS[kind]}
+		</span>
 	)
 }
 
@@ -155,19 +176,15 @@ function McqCard({
 }) {
 	const [selected, setSelected] = useState<number | null>(null)
 
-	// Reset when exercise changes
-	const prevId = useRef(exercise.id)
-	if (prevId.current !== exercise.id) {
-		prevId.current = exercise.id
-		setSelected(null)
-	}
-
 	useEffect(() => {
 		if (answered) return
 		function handler(e: KeyboardEvent) {
 			if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
 			const n = Number(e.key)
-			if (n >= 1 && n <= 4) onAnswer(n - 1 === exercise.correctIndex)
+			if (n >= 1 && n <= 4) {
+				setSelected(n - 1)
+				onAnswer(n - 1 === exercise.correctIndex)
+			}
 		}
 		window.addEventListener("keydown", handler)
 		return () => window.removeEventListener("keydown", handler)
@@ -180,9 +197,12 @@ function McqCard({
 	}
 
 	return (
-		<div className="rounded-3xl border bg-card p-8 shadow-sm">
+		<div className="rounded-3xl border bg-card p-6 shadow-sm">
+			<div className="mb-4 flex justify-end">
+				<KindBadge kind="mcq" />
+			</div>
 			<p className="text-xl font-semibold leading-snug">{exercise.prompt}</p>
-			<div className="mt-6 grid gap-3">
+			<div className="mt-5 grid gap-3">
 				{exercise.options.map((option, i) => {
 					const letter = String.fromCharCode(65 + i)
 					const isOpt = selected === i
@@ -194,7 +214,7 @@ function McqCard({
 							disabled={answered}
 							onClick={() => handleSelect(i)}
 							className={cn(
-								"flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-left text-sm font-medium transition",
+								"flex items-center gap-3 rounded-xl border-2 px-4 py-3.5 text-left text-sm font-medium transition",
 								!answered &&
 									"border-border bg-background hover:border-primary/60 hover:bg-primary/5",
 								answered && isCorrectOpt && "border-success bg-success/10",
@@ -249,19 +269,20 @@ function ErrorCorrectionCard({
 	}
 
 	return (
-		<div className="rounded-3xl border bg-card p-8 shadow-sm space-y-5">
-			<div>
-				<p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-					Sửa lỗi trong câu sau
+		<div className="space-y-5 rounded-3xl border bg-card p-6 shadow-sm">
+			<div className="flex items-start justify-between gap-3">
+				<p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+					Phần gạch chân có lỗi. Nhập từ/cụm đúng vào ô bên dưới.
 				</p>
-				<p className="text-base leading-relaxed">
-					{before}
-					<span className="rounded bg-destructive/15 px-1 text-destructive line-through">
-						{errorText}
-					</span>
-					{after}
-				</p>
+				<KindBadge kind="error-correction" />
 			</div>
+			<p className="text-base leading-relaxed">
+				{before}
+				<span className="font-medium text-destructive underline decoration-destructive decoration-2">
+					{errorText}
+				</span>
+				{after}
+			</p>
 			<div className="space-y-2">
 				<label htmlFor={`ec-${exercise.id}`} className="text-sm font-medium">
 					Sửa thành:
@@ -320,21 +341,22 @@ function FillBlankCard({
 	}
 
 	return (
-		<div className="rounded-3xl border bg-card p-8 shadow-sm space-y-5">
-			<div>
-				<p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+		<div className="space-y-5 rounded-3xl border bg-card p-6 shadow-sm">
+			<div className="flex items-start justify-between gap-3">
+				<p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
 					Điền vào chỗ trống
 				</p>
-				<p className="text-base leading-relaxed">
-					{parts[0]}
-					<span className="inline-block min-w-[80px] border-b-2 border-primary px-2 text-center font-semibold text-primary">
-						{answered
-							? (exercise.acceptedAnswers[0] ?? "")
-							: value || "\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0"}
-					</span>
-					{parts[1]}
-				</p>
+				<KindBadge kind="fill-blank" />
 			</div>
+			<p className="text-base leading-relaxed">
+				{parts[0]}
+				<span className="inline-block min-w-[80px] border-b-2 border-primary px-2 text-center font-semibold text-primary">
+					{answered
+						? (exercise.acceptedAnswers[0] ?? "")
+						: value || "\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0"}
+				</span>
+				{parts[1]}
+			</p>
 			{!answered && (
 				<div className="flex gap-2">
 					<input
@@ -390,13 +412,12 @@ function RewriteCard({
 	}
 
 	return (
-		<div className="rounded-3xl border bg-card p-8 shadow-sm space-y-5">
-			<div>
-				<p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-					{exercise.instruction}
-				</p>
-				<p className="rounded-xl bg-muted/50 px-4 py-3 text-sm italic">{exercise.original}</p>
+		<div className="space-y-5 rounded-3xl border bg-card p-6 shadow-sm">
+			<div className="flex items-start justify-between gap-3">
+				<p className="text-sm font-semibold text-foreground">{exercise.instruction}</p>
+				<KindBadge kind="rewrite" />
 			</div>
+			<p className="rounded-xl bg-muted/50 px-4 py-3 text-sm italic">{exercise.original}</p>
 			{!answered ? (
 				<div className="space-y-2">
 					<label htmlFor={`rw-${exercise.id}`} className="text-sm font-medium">
@@ -406,9 +427,9 @@ function RewriteCard({
 						id={`rw-${exercise.id}`}
 						value={value}
 						onChange={(e) => setValue(e.target.value)}
-						rows={2}
+						rows={3}
 						placeholder="Nhập câu viết lại..."
-						className="w-full rounded-xl border bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/40 resize-none"
+						className="w-full resize-none rounded-xl border bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/40"
 					/>
 					<Button type="button" onClick={handleSubmit} disabled={!value.trim()} className="w-full">
 						Kiểm tra
@@ -471,10 +492,22 @@ function SessionSummary({ result, onReset }: { result: SessionResult; onReset: (
 	const pct = Math.round((result.correct / result.total) * 100)
 	return (
 		<div className="flex flex-col items-center gap-4 rounded-3xl border bg-card p-12 text-center shadow-sm">
-			<div className="text-5xl font-bold text-primary tabular-nums">{pct}%</div>
+			<div className="text-5xl font-bold tabular-nums text-primary">{pct}%</div>
 			<p className="text-lg font-bold">
 				Bạn trả lời đúng {result.correct}/{result.total} câu
 			</p>
+			<div className="w-full max-w-xs">
+				<div className="h-2 overflow-hidden rounded-full bg-muted">
+					<div
+						className="h-full rounded-full bg-primary transition-all"
+						style={{ width: `${pct}%` }}
+					/>
+				</div>
+				<div className="mt-1.5 flex justify-between text-xs tabular-nums text-muted-foreground">
+					<span>{result.correct} đúng</span>
+					<span>{result.total - result.correct} sai</span>
+				</div>
+			</div>
 			<p className="max-w-md text-sm text-muted-foreground">
 				{pct >= 85
 					? "Xuất sắc! Bạn đã nắm vững điểm ngữ pháp này."
