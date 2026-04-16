@@ -222,7 +222,7 @@ function SpeakingSubmitAction({
 				Làm lại
 			</Button>
 			<Button asChild>
-				<Link to="/luyen-tap/ky-nang/noi" search={{} as never}>Về danh sách đề nói</Link>
+				<Link to="/luyen-tap/ky-nang" search={{ skill: "noi", category: "", page: 1 }}>Về danh sách đề nói</Link>
 			</Button>
 		</div>
 	)
@@ -439,18 +439,15 @@ function ShadowingPanel({
 
 			{recorder.error && <p className="text-center text-xs text-destructive">{recorder.error}</p>}
 
-			{/* Compare */}
+			{/* Bản ghi */}
 			{state.audioUrl && (
-				<div className="space-y-3 rounded-xl bg-background p-4">
-					<p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-						So sánh
+				<div className="rounded-xl bg-background p-4">
+					<p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+						Bản ghi của bạn
 					</p>
-					<PlaybackRow
-						label="Audio mẫu"
-						onPlay={() => void session.playCurrent(speed)}
-						playing={session.isPlaying}
-					/>
-					<PlaybackRow label="Bản ghi của bạn" audioUrl={state.audioUrl} />
+					<audio src={state.audioUrl} controls className="h-9 w-full">
+						<track kind="captions" />
+					</audio>
 				</div>
 			)}
 
@@ -463,33 +460,6 @@ function ShadowingPanel({
 				>
 					Câu tiếp theo <ChevronRight className="size-4" />
 				</button>
-			)}
-		</div>
-	)
-}
-
-function PlaybackRow({
-	label,
-	audioUrl,
-	onPlay,
-	playing,
-}: {
-	label: string
-	audioUrl?: string
-	onPlay?: () => void
-	playing?: boolean
-}) {
-	return (
-		<div className="flex items-center gap-3">
-			<span className="w-32 shrink-0 text-xs font-medium text-muted-foreground">{label}</span>
-			{audioUrl ? (
-				<audio src={audioUrl} controls className="h-9 flex-1">
-					<track kind="captions" />
-				</audio>
-			) : (
-				<Button size="sm" variant="outline" onClick={onPlay} disabled={playing}>
-					{playing ? <Pause className="size-3.5" /> : <Play className="size-3.5" />} Phát
-				</Button>
 			)}
 		</div>
 	)

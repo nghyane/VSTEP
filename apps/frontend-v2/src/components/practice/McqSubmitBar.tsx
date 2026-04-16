@@ -4,19 +4,14 @@ import { Link } from "@tanstack/react-router"
 import { RotateCcw } from "lucide-react"
 import { Button } from "#/components/ui/button"
 
-export type McqBackRoute =
-	| "/luyen-tap/ky-nang/nghe"
-	| "/luyen-tap/ky-nang/doc"
-	| "/luyen-tap/ky-nang/viet"
-	| "/luyen-tap/ky-nang/noi"
-
 interface Props {
 	phase: "answering" | "submitted"
 	answeredCount: number
 	total: number
 	canSubmit: boolean
 	score: number
-	backTo: McqBackRoute
+	backTo: string
+	backSearch: Record<string, unknown>
 	backLabel: string
 	onSubmit: () => void
 	onReset: () => void
@@ -26,13 +21,15 @@ export function SubmitAction({
 	phase,
 	canSubmit,
 	backTo,
+	backSearch,
 	backLabel,
 	onSubmit,
 	onReset,
 }: {
 	phase: "answering" | "submitted"
 	canSubmit: boolean
-	backTo: McqBackRoute
+	backTo: string
+	backSearch: Record<string, unknown>
 	backLabel: string
 	onSubmit: () => void
 	onReset: () => void
@@ -57,14 +54,14 @@ export function SubmitAction({
 				Làm lại
 			</Button>
 			<Button asChild>
-				<Link to={backTo} search={{} as never}>{backLabel}</Link>
+				<Link to={backTo} search={backSearch as never}>{backLabel}</Link>
 			</Button>
 		</div>
 	)
 }
 
 export function McqSubmitBar(props: Props) {
-	const { phase, answeredCount, total, canSubmit, score, backTo, backLabel, onSubmit, onReset } =
+	const { phase, answeredCount, total, canSubmit, score, backTo, backSearch, backLabel, onSubmit, onReset } =
 		props
 
 	return (
@@ -87,7 +84,7 @@ export function McqSubmitBar(props: Props) {
 						Làm lại
 					</Button>
 					<Button asChild>
-						<Link to={backTo} search={{} as never}>{backLabel}</Link>
+						<Link to={backTo} search={backSearch as never}>{backLabel}</Link>
 					</Button>
 				</div>
 			)}

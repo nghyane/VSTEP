@@ -16,7 +16,7 @@ function WritingSessionPage() {
 	return (
 		<div className="mx-auto w-full max-w-5xl">
 			<Link
-				to="/luyen-tap/ky-nang/viet" search={{} as never}
+				to="/luyen-tap/ky-nang" search={{ skill: "viet", category: "", page: 1 }}
 				className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
 			>
 				<ArrowLeft className="size-4" />

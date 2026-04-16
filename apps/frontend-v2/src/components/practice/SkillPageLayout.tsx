@@ -1,10 +1,8 @@
-// SkillPageLayout — 2-column layout dùng chung cho trang danh sách 4 kỹ năng.
-// Sidebar trái: danh sách Part/Level. Content phải: grid bài tập + pagination.
+// SkillPageLayout — shared components cho trang danh sách 4 kỹ năng.
 
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, FileText } from "lucide-react"
 import { Button } from "#/components/ui/button"
 import { cn } from "#/lib/utils"
-
 
 // ─── Sidebar ───────────────────────────────────────────────────────
 
@@ -18,48 +16,47 @@ export function SkillSidebar({
 	items,
 	activeKey,
 	onSelect,
-	colorClass,
 }: {
 	items: readonly SidebarItem[]
 	activeKey: string
 	onSelect: (key: string) => void
-	colorClass: string
 }) {
 	return (
 		<>
-			{/* Desktop: vertical sidebar */}
+			{/* Desktop */}
 			<nav className="hidden lg:block">
-				<ul className="sticky top-24 space-y-1">
-					{items.map((item) => (
-						<li key={item.key}>
-							<button
-								type="button"
-								onClick={() => onSelect(item.key)}
-								className={cn(
-									"flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition-colors",
-									activeKey === item.key
-										? `${colorClass} font-semibold`
-										: "text-muted-foreground hover:bg-muted hover:text-foreground",
-								)}
-							>
-								<span className="truncate">{item.label}</span>
-								<span
-									className={cn(
-										"ml-2 shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
-										activeKey === item.key
-											? "bg-background/60"
-											: "bg-muted text-muted-foreground",
-									)}
-								>
-									{item.count}
-								</span>
-							</button>
-						</li>
-					))}
-				</ul>
+				<div className="sticky top-24 rounded-2xl bg-muted/50 p-3 shadow-sm">
+					<p className="px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+						Loại câu hỏi
+					</p>
+					<ul className="space-y-0.5">
+						{items.map((item) => {
+							const active = activeKey === item.key
+							return (
+								<li key={item.key}>
+									<button
+										type="button"
+										onClick={() => onSelect(item.key)}
+										className={cn(
+											"flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors",
+											active
+												? "bg-background font-semibold text-foreground shadow-sm"
+												: "text-muted-foreground hover:bg-background/50 hover:text-foreground",
+										)}
+									>
+										<span className="truncate">{item.label}</span>
+										<span className="ml-2 shrink-0 text-[11px] tabular-nums text-muted-foreground">
+											{item.count}
+										</span>
+									</button>
+								</li>
+							)
+						})}
+					</ul>
+				</div>
 			</nav>
 
-			{/* Mobile: horizontal tabs */}
+			{/* Mobile */}
 			<div className="flex gap-2 overflow-x-auto pb-1 lg:hidden">
 				{items.map((item) => (
 					<button
@@ -69,7 +66,7 @@ export function SkillSidebar({
 						className={cn(
 							"shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
 							activeKey === item.key
-								? `${colorClass} border-current`
+								? "border-primary bg-primary/5 font-semibold text-primary"
 								: "border-border text-muted-foreground hover:text-foreground",
 						)}
 					>
@@ -95,33 +92,25 @@ export function Pagination({
 	if (totalPages <= 1) return null
 
 	return (
-		<div className="flex items-center justify-center gap-1.5">
+		<div className="flex items-center justify-center gap-2 pt-2">
 			<Button
 				size="icon"
-				variant="ghost"
+				variant="outline"
 				disabled={page <= 1}
 				onClick={() => onPageChange(page - 1)}
-				className="size-8"
+				className="size-8 rounded-lg"
 			>
 				<ChevronLeft className="size-4" />
 			</Button>
-			{Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-				<Button
-					key={p}
-					size="icon"
-					variant={p === page ? "default" : "ghost"}
-					onClick={() => onPageChange(p)}
-					className="size-8 text-xs"
-				>
-					{p}
-				</Button>
-			))}
+			<span className="text-sm tabular-nums text-muted-foreground">
+				{page} / {totalPages}
+			</span>
 			<Button
 				size="icon"
-				variant="ghost"
+				variant="outline"
 				disabled={page >= totalPages}
 				onClick={() => onPageChange(page + 1)}
-				className="size-8"
+				className="size-8 rounded-lg"
 			>
 				<ChevronRight className="size-4" />
 			</Button>
@@ -146,47 +135,58 @@ export function ExerciseCard({
 	description: string
 	meta: string
 	href: React.ReactNode
+	accentClass?: string
 	status?: CardStatus
-	/** Score (correct answers / shadowing done) */
 	score?: number
-	/** Total questions / sentences */
 	total?: number
 }) {
-	const pct = total && total > 0 && score !== undefined ? Math.round((score / total) * 100) : 0
+	const pct = total && total > 0 && score !== undefined
+		? Math.round((score / total) * 100)
+		: 0
 	const hasProgress = status !== "not_started" && total && total > 0
 
 	return (
-		<div className="group relative flex flex-col rounded-xl border bg-card p-4 shadow-sm transition-colors hover:border-border/80 hover:shadow-md">
-			<div className="flex items-start justify-between gap-2">
-				<p className="min-w-0 text-sm font-semibold leading-snug">{title}</p>
-				<StatusBadge status={status} />
-			</div>
-			<p className="mt-1 line-clamp-2 flex-1 text-xs text-muted-foreground">{description}</p>
-			<div className="mt-3 flex items-center justify-between gap-2">
-				<span className="text-xs text-muted-foreground">{meta}</span>
-				{total !== undefined && total > 0 && (
-					<span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
-						{total} câu
-					</span>
-				)}
-			</div>
-			{hasProgress && (
-				<div className="mt-2.5">
-					<div className="flex items-center justify-between text-[11px] tabular-nums text-muted-foreground">
-						<span>{score}/{total} đúng</span>
-						<span>{pct}%</span>
-					</div>
-					<div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
-						<div
-							className={cn(
-								"h-full rounded-full transition-all",
-								pct >= 80 ? "bg-success" : pct >= 50 ? "bg-primary" : "bg-warning",
-							)}
-							style={{ width: `${pct}%` }}
-						/>
-					</div>
+		<div className="group relative flex flex-col rounded-xl border bg-background p-4 transition hover:-translate-y-0.5 hover:shadow-md">
+			{/* Header: icon + title + status */}
+			<div className="flex items-start gap-3">
+				<FileText className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
+				<div className="min-w-0 flex-1">
+					<p className="text-sm font-semibold leading-snug">{title}</p>
+					<p className="mt-0.5 text-xs text-muted-foreground">{meta}</p>
 				</div>
-			)}
+				{status !== "not_started" && <StatusBadge status={status} />}
+			</div>
+
+			{/* Description — flex-1 pushes bottom content down */}
+			<p className="mt-2 line-clamp-2 flex-1 text-xs leading-relaxed text-muted-foreground">
+				{description}
+			</p>
+
+			{/* Bottom area — always pinned to bottom */}
+			<div className="mt-3 space-y-2">
+				{hasProgress && (
+					<div>
+						<div className="flex items-center justify-between text-[11px] tabular-nums text-muted-foreground">
+							<span>{score}/{total} đúng</span>
+							<span>{pct}%</span>
+						</div>
+						<div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+							<div
+								className={cn(
+									"h-full rounded-full transition-all",
+									pct >= 80 ? "bg-success" : pct >= 50 ? "bg-primary" : "bg-warning",
+								)}
+								style={{ width: `${pct}%` }}
+							/>
+						</div>
+					</div>
+				)}
+				<Button size="sm" variant={status === "not_started" ? "default" : "outline"} className="pointer-events-none h-8 rounded-lg text-xs">
+					{status === "completed" ? "Làm lại" : status === "in_progress" ? "Tiếp tục" : "Bắt đầu"}
+				</Button>
+			</div>
+
+			{/* Overlay link */}
 			{href}
 		</div>
 	)
