@@ -608,6 +608,216 @@ const activity = useActivity(90)     // GET /progress/activity?days=90
 
 ---
 
+## 11. Gamification — Trang Thi & Phòng Thi
+
+Spec này derive trực tiếp từ `apps/frontend-v2/src/routes/_app.thi-thu/` và `_focused.phong-thi.$examId/`.
+
+### 11.1 Layout Pattern — 3D Card Effect
+
+ExamCard (sảnh thi) và KetQuaCard (kết quả) dùng **3D shadow offset** thay vì border thường:
+
+```tsx
+// ExamCard — offset shadow bên dưới-phải
+<div className={
+  isPro
+    ? "absolute inset-0 translate-x-[4px] translate-y-[4px] rounded-xl bg-gradient-to-br from-amber-300 via-amber-400 to-orange-400"
+    : "absolute inset-0 translate-x-[4px] translate-y-[4px] rounded-xl bg-gradient-to-br from-slate-100 via-slate-200 to-blue-100"
+} />
+<div className="relative ... group-hover:-translate-x-[2px] group-hover:-translate-y-[2px] group-hover:shadow-md">
+
+// KetQuaCard — border-2 + border-b-4 (khác độ dày top/bottom)
+<div className="rounded-2xl border-2 border-b-4 border-border border-b-slate-400 bg-card shadow-lg">
+```
+
+**Token:** `translate-x-[4px] translate-y-[4px]` cho shadow offset; `border-b-4` cho độ dày bottom border.
+
+---
+
+### 11.2 Sảnh Thi — `thi-thu/index.tsx` + `thi-thu.$examId/`
+
+**Layout:**
+```
+DashboardGoalCard + DashboardStreakCard    ← gamification cards (grid 2 cols)
+ExamSidebarFilters + ExamCard grid         ← layout ngang (filter + cards)
+```
+
+**DashboardGoalCard** (đếm ngày thi):
+```tsx
+// Gradient background + countdown blocks
+<div className="rounded-[24px] border border-slate-200 bg-gradient-to-br from-[#F8FAFC] to-[#F1F5F9] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+  // Header: CalendarDays icon + "Đếm ngày thi"
+  // Countdown: 4 blocks (days/hours/minutes/seconds) — mỗi block:
+  //   <div className="flex h-[52px] w-[56px] items-center justify-center rounded-xl bg-primary text-2xl font-bold text-primary-foreground shadow-sm">
+  // Progress streak bar: FireIcon + progress bar
+```
+
+**DashboardStreakCard** (hành trình streak):
+```tsx
+// Lưới ngày 4 tháng gần nhất, mỗi ngày = size-[12px] rounded-full
+// Hover: scale-125 + ring-2 ring-primary/50
+// Tooltip: bg-[#1e293b] text-[#f8fafc]
+// Legend: 5 mức độ (0=muted → 4=primary)
+```
+
+**ExamCard** (grid exam):
+- 3D shadow offset (xem 11.1)
+- Pro badge: gradient `from-amber-400 to-amber-500` + Crown icon
+- Free badge: `border border-slate-200 bg-slate-100`
+- Hover: `-translate-x-[2px] -translate-y-[2px] shadow-md`
+- Skill chips: `inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-semibold`
+- Status pill: `inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs`
+
+**ExamDetailHeader** (`thi-thu.$examId/-components/ExamDetailHeader.tsx`):
+```tsx
+// Pro/Free badge + tags row
+// Title: text-2xl font-bold leading-tight
+// Meta row: Clock + Users icons (icon trần, không wrap bg)
+// Last attempt pill: rounded-full bg-muted px-2.5 py-0.5
+// Skill chips: rounded-full px-3 py-1 text-xs font-semibold
+// Summary bar: grid-cols-4 divide-x divide-border rounded-xl border bg-muted/30
+```
+
+**SectionSelector** (chọn phần thi):
+```tsx
+// Skill group: rounded-2xl border bg-card shadow-sm
+// Header row: h-5 w-1 rounded-full (accent bar) + skill label + "Chọn tất cả" toggle
+// Section rows: border-t border-border/50
+//   Checkbox visual: size-5 rounded border-2 (dùng <input className="sr-only"> + visual div)
+//   Active state: bg-skill-{skill}/8
+//   Accent bar: bg-skill-{skill}
+```
+
+**BottomActionBar** (thanh cố định dưới):
+```tsx
+// fixed bottom-0 z-20 shadow-[0_-4px_24px_rgba(0,0,0,0.06)] backdrop-blur-sm
+// Left: selection summary (LayoutGrid + Clock icons)
+// Right: Time picker chips + Start button
+// Full test mode: full-width layout
+```
+
+---
+
+### 11.3 Phòng Thi — `_focused/phong-thi.$examId/` (Focused Layout)
+
+**Shell:** `flex h-screen flex-col` — header fixed, body flex-1 overflow-hidden, footer fixed.
+
+**Header (h-12 = 48px):**
+```tsx
+// border-b-2 (không phải border-b)
+// Left: Timer pill (Clock icon) — red khi <= 5 phút
+// Center: answered count (bold số)
+// Right: Exit button (X icon, variant="ghost")
+```
+
+**Footer (h-12 = 48px):**
+```tsx
+// border-t-2
+// Left: current skill label
+// Center: skill progress dots/tabs
+// Right: "Nộp bài" (last) | "Phần tiếp →" (others)
+```
+
+**DeviceCheckScreen** (pre-exam check):
+```tsx
+// bg-muted/20 (nền nhẹ, không phải bg-muted)
+// 3-column grid (md:grid-cols-3) — structure, audio check, notes
+// Each card: rounded-xl border border-b-2 border-b-border/60 bg-card p-5 shadow-sm
+// Number badge: size-7 rounded-full bg-primary text-xs font-bold text-primary-foreground
+```
+
+**ReadinessModal** (Listening only — countdown 3s):
+```tsx
+// Dialog with countdown button
+// Countdown > 0: disabled, label "Sẵn sàng (${countdown}s)"
+// Countdown === 0: enabled, label "Bắt đầu làm bài"
+```
+
+**ListeningExamPanel:**
+```tsx
+// Audio bar: border-t-2 bg-card
+//   Play button: rounded-full bg-primary text-primary-foreground (no border)
+//   Progress: h-1.5 rounded-full bg-muted + inner bg-primary
+// Question buttons: size-8 rounded-lg — answered: border-primary border-b-2 bg-primary
+// Section tabs: rounded-full px-3 py-1.5 — progress bar bottom
+```
+
+**SpeakingExamPanel:**
+```tsx
+// Part tabs: rounded-full px-3 py-1.5
+//   doneParts: bg-emerald-50 text-emerald-700 + ✓ icon
+// Recorder status: h-14 rounded-lg border (idle/recording/processing/done states)
+// Recording border colors: destructive (recording), primary (processing), emerald-300 (done)
+```
+
+**ReadingExamPanel:**
+```tsx
+// Desktop: w-1/2 split (passage | questions) — no border between
+// bg-muted/10 for passage panel
+// Mobile: tabbed (Đoạn văn | Trả lời) — border-b-2 for active tab
+```
+
+---
+
+### 11.4 Kết Quả — `ket-qua.tsx`
+
+**ResultPageLayout:**
+```tsx
+// Gradient background (CSS gradient, không phải SVG)
+// Stars decorations (absolute positioned SVG stars)
+// Z-index layering: bg(0) → stars(10) → content(10)
+```
+
+**KetQuaCard:**
+```tsx
+// 3D border: border-2 border-b-4 border-border border-b-slate-400
+// BullMascotCoin: mix-blend-multiply (loại nền trắng ảnh gốc)
+// Score overlay: absolute positioned tại tâm đồng xu
+// ScorePill: border-2 border-b-[3px] — khác border top/bottom tạo depth
+// items-baseline: value number + label nằm trên cùng baseline
+```
+
+---
+
+### 11.5 Animations
+
+- **Button tap:** `whileTap={{ scale: 0.97 }} transition={{ type: "spring", stiffness: 450, damping: 25 }}`
+- **Card hover:** `group-hover:-translate-x-[2px] group-hover:-translate-y-[2px] group-hover:shadow-md`
+- **Pulsing recording dot:** `animate-pulse rounded-full bg-destructive`
+- **Audio play button:** `whileTap={{ scale: 0.94 }}`
+
+---
+
+### 11.6 Skill Color Tokens cho Exam UI
+
+```tsx
+// SKILL_META cho SectionSelector + ExamPanel
+const SKILL_META: Record<Skill, {
+  label: string
+  accent: string        // "bg-skill-{skill}"
+  selectedBg: string    // "bg-skill-{skill}/8"
+  checkBg: string       // "bg-skill-{skill} border-skill-{skill}"
+  checkBorder: string   // "border-skill-{skill}/40"
+  textColor: string     // "text-skill-{skill}"
+}>
+```
+
+### 11.7 Quick Reference — Exam UI Patterns
+
+| Pattern | Class | Dùng ở |
+|---------|-------|---------|
+| 3D shadow offset | `translate-x-[4px] translate-y-[4px] rounded-xl` | ExamCard background |
+| 3D border | `border-2 border-b-4 border-border border-b-slate-400` | KetQuaCard |
+| Timer pill (normal) | `rounded-full bg-muted px-3 py-1` | ExamPage header |
+| Timer pill (warning) | `rounded-full bg-destructive/10 text-destructive` | ExamPage < 5min |
+| Skill chip (selector) | `rounded-full px-3 py-1 text-xs font-semibold` | ExamDetailHeader |
+| Skill accent bar | `h-5 w-1 rounded-full` (trần, không bg wrap) | SectionSelector |
+| Audio play button | `rounded-full bg-primary text-primary-foreground` | ListeningExamPanel |
+| Recording status | `h-14 rounded-lg border` + màu theo phase | SpeakingExamPanel |
+| Countdown block | `h-[52px] w-[56px] rounded-xl bg-primary text-2xl font-bold text-primary-foreground shadow-sm` | DashboardGoalCard |
+| Heatmap cell | `size-[12px] rounded-full` | DashboardStreakCard |
+
+---
+
 ## 10. File Structure Đề Xuất cho v2
 
 ```
