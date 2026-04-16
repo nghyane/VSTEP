@@ -111,6 +111,38 @@ const P1_CAFE: ListeningExercise = {
 	],
 }
 
+// ─── Part 1: Extra exercises for pagination test ───────────────────
+
+function makeP1Extra(idx: number, title: string, desc: string): ListeningExercise {
+	return {
+		id: `l1-extra-${idx}`,
+		title,
+		part: 1,
+		description: desc,
+		transcript: "This is a sample conversation for testing purposes. Two people are talking about everyday topics.",
+		vietnameseTranscript: "Đây là đoạn hội thoại mẫu để kiểm thử. Hai người đang nói về các chủ đề hàng ngày.",
+		keywords: ["sample", "conversation", "everyday"],
+		estimatedMinutes: 2,
+		items: [
+			q(`l1-e${idx}-1`, "What is the conversation about?", ["Weather", "Food", "Everyday topics", "Sports"], 2, "Sample explanation."),
+			q(`l1-e${idx}-2`, "How many people are talking?", ["One", "Two", "Three", "Four"], 1, "Two people are talking."),
+		],
+	}
+}
+
+const P1_EXTRAS: ListeningExercise[] = [
+	makeP1Extra(1, "Đặt phòng khách sạn", "Khách gọi điện đặt phòng khách sạn cho kỳ nghỉ."),
+	makeP1Extra(2, "Mua vé xe buýt", "Hành khách hỏi mua vé xe buýt đi liên tỉnh."),
+	makeP1Extra(3, "Hỏi giờ mở cửa", "Khách hỏi giờ mở cửa của thư viện thành phố."),
+	makeP1Extra(4, "Gọi taxi", "Khách gọi taxi từ sân bay về khách sạn."),
+	makeP1Extra(5, "Mua thuốc ở hiệu thuốc", "Khách mô tả triệu chứng và mua thuốc."),
+	makeP1Extra(6, "Đổi tiền ở ngân hàng", "Khách hỏi tỷ giá và đổi ngoại tệ."),
+	makeP1Extra(7, "Hỏi thông tin chuyến bay", "Hành khách hỏi giờ bay và cổng lên máy bay."),
+	makeP1Extra(8, "Mua sắm ở siêu thị", "Hai người bạn bàn về danh sách mua sắm."),
+	makeP1Extra(9, "Đăng ký thẻ thư viện", "Sinh viên đăng ký thẻ thư viện mới."),
+	makeP1Extra(10, "Hỏi đường đến bệnh viện", "Người đi đường hỏi đường đến bệnh viện gần nhất."),
+]
+
 // ─── Part 2: Longer conversations ──────────────────────────────────
 
 const P2_JOB_INTERVIEW: ListeningExercise = {
@@ -367,6 +399,7 @@ const P3_CLIMATE: ListeningExercise = {
 export const MOCK_LISTENING: readonly ListeningExercise[] = [
 	P1_DIRECTIONS,
 	P1_CAFE,
+	...P1_EXTRAS,
 	P2_JOB_INTERVIEW,
 	P2_TRAVEL_PLAN,
 	P3_SLEEP,

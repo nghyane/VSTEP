@@ -94,7 +94,6 @@ function ListContent() {
 							title={ex.title}
 							description={ex.description}
 							meta={`${ex.sentences.length} câu · ${ex.estimatedMinutes} phút`}
-							colorClass="bg-skill-speaking"
 							href={
 								<Link
 									to="/luyen-tap/ky-nang/noi/$exerciseId"

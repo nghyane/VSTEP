@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "#/components/ui/button"
 import { cn } from "#/lib/utils"
 
+
 // ─── Sidebar ───────────────────────────────────────────────────────
 
 interface SidebarItem {
@@ -135,17 +136,14 @@ export function ExerciseCard({
 	description,
 	meta,
 	href,
-	colorClass,
 }: {
 	title: string
 	description: string
 	meta: string
 	href: React.ReactNode
-	colorClass: string
 }) {
 	return (
 		<div className="group relative flex flex-col rounded-xl border bg-card p-4 shadow-sm transition-colors hover:border-border/80 hover:shadow-md">
-			<div className={cn("mb-2 size-2 rounded-full", colorClass)} />
 			<p className="text-sm font-semibold leading-snug">{title}</p>
 			<p className="mt-1 line-clamp-2 flex-1 text-xs text-muted-foreground">{description}</p>
 			<p className="mt-3 text-xs text-muted-foreground">{meta}</p>

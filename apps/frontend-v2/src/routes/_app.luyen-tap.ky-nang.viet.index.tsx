@@ -94,7 +94,6 @@ function ListContent() {
 									title={topic.name}
 									description={`${topic.sentenceCount} câu luyện tập`}
 									meta={`${topic.sentenceCount} câu`}
-									colorClass="bg-skill-writing"
 									href={
 										<Link
 											to="/luyen-tap/ky-nang/viet/cau/$topicId"
@@ -110,7 +109,6 @@ function ListContent() {
 									title={ex.title}
 									description={ex.description}
 									meta={`${ex.minWords}-${ex.maxWords} từ · ${ex.estimatedMinutes} phút`}
-									colorClass="bg-skill-writing"
 									href={
 										<Link
 											to="/luyen-tap/ky-nang/viet/$exerciseId"
