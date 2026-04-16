@@ -1,28 +1,27 @@
-// TTS audio player — Web Speech API + UI tương tự v1 ListeningAudioBar.
-// Ước lượng duration từ word count (~135 wpm khi rate 0.9), track elapsed qua interval.
+// TTS audio player — Web Speech API. Subtitle mode highlights spoken words.
 
-import { ChevronDown, FileText, Languages, Pause, Play, RotateCcw } from "lucide-react"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { Captions, CaptionsOff, Pause, Play, RotateCcw } from "lucide-react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { SpeakerIcon } from "#/components/common/SpeakerIcon"
 import { cn } from "#/lib/utils"
 
 interface Props {
 	transcript: string
-	vietnameseTranscript?: string
-	showTranscript?: boolean
 }
 
 type PlayState = "idle" | "playing" | "paused" | "ended"
 
-const WORDS_PER_SECOND = 2.25 // 135 wpm / 60
+const WORDS_PER_SECOND = 2.25
 const TICK_MS = 200
 
-export function TtsAudioPlayer({ transcript, vietnameseTranscript, showTranscript }: Props) {
+export function TtsAudioPlayer({ transcript }: Props) {
 	const durationSec = estimateDuration(transcript)
 	const [state, setState] = useState<PlayState>("idle")
 	const [playCount, setPlayCount] = useState(0)
 	const [elapsedMs, setElapsedMs] = useState(0)
 	const [voice, setVoice] = useState<SpeechSynthesisVoice | null>(null)
+	const [spokenCharIndex, setSpokenCharIndex] = useState(-1)
+	const [showSub, setShowSub] = useState(false)
 
 	const startRef = useRef<number | null>(null)
 	const accumulatedRef = useRef(0)
@@ -31,14 +30,15 @@ export function TtsAudioPlayer({ transcript, vietnameseTranscript, showTranscrip
 	useCleanupOnUnmount()
 	useTickInterval(state, startRef, accumulatedRef, setElapsedMs)
 
-	const canPlay = true
 	const currentSec = Math.min(Math.floor(elapsedMs / 1000), durationSec)
 
 	const handlePlay = useCallback(() => {
-		if (!canPlay) return
 		const utterance = new SpeechSynthesisUtterance(transcript)
 		if (voice) utterance.voice = voice
 		utterance.rate = 0.9
+		utterance.onboundary = (e) => {
+			if (e.name === "word") setSpokenCharIndex(e.charIndex)
+		}
 		utterance.onend = () => {
 			setState("ended")
 			startRef.current = null
@@ -55,9 +55,10 @@ export function TtsAudioPlayer({ transcript, vietnameseTranscript, showTranscrip
 		accumulatedRef.current = 0
 		startRef.current = Date.now()
 		setElapsedMs(0)
+		setSpokenCharIndex(-1)
 		setState("playing")
 		setPlayCount((c) => c + 1)
-	}, [canPlay, transcript, voice, durationSec])
+	}, [transcript, voice, durationSec])
 
 	const handlePause = useCallback(() => {
 		if (startRef.current !== null) {
@@ -79,16 +80,18 @@ export function TtsAudioPlayer({ transcript, vietnameseTranscript, showTranscrip
 		startRef.current = null
 		accumulatedRef.current = 0
 		setElapsedMs(0)
+		setSpokenCharIndex(-1)
 		setState("idle")
 	}, [])
 
 	const progressPct = durationSec > 0 ? (currentSec / durationSec) * 100 : 0
+	const isPlaying = state === "playing"
 
 	return (
 		<div className="rounded-2xl border bg-card p-4 shadow-sm">
 			<div className="flex items-center justify-between pb-3">
 				<div className="inline-flex items-center gap-2 text-sm font-semibold">
-					<SpeakerIcon active={state === "playing"} className="size-4" />
+					<SpeakerIcon active={isPlaying} className="size-4" />
 					Nghe bài
 				</div>
 				<PlayCountBadge playCount={playCount} />
@@ -97,7 +100,6 @@ export function TtsAudioPlayer({ transcript, vietnameseTranscript, showTranscrip
 			<div className="flex items-center gap-3">
 				<PlayButton
 					state={state}
-					canPlay={canPlay}
 					onPlay={handlePlay}
 					onResume={handleResume}
 					onPause={handlePause}
@@ -106,13 +108,19 @@ export function TtsAudioPlayer({ transcript, vietnameseTranscript, showTranscrip
 				<ProgressBar percent={progressPct} />
 				<TimeDisplay seconds={durationSec} />
 				<StopButton disabled={state === "idle"} onStop={handleStop} />
+				<SubButton active={showSub} onToggle={() => setShowSub((v) => !v)} />
 			</div>
 
 			{!voice && state === "idle" && (
 				<p className="mt-2 text-xs text-muted-foreground">Đang tải giọng đọc…</p>
 			)}
 
-			{showTranscript && <TranscriptReveal transcript={transcript} vietnameseTranscript={vietnameseTranscript} />}
+			{showSub && spokenCharIndex >= 0 && (
+				<SubtitleLine
+					transcript={transcript}
+					charIndex={spokenCharIndex}
+				/>
+			)}
 		</div>
 	)
 }
@@ -121,13 +129,11 @@ export function TtsAudioPlayer({ transcript, vietnameseTranscript, showTranscrip
 
 function PlayButton({
 	state,
-	canPlay,
 	onPlay,
 	onPause,
 	onResume,
 }: {
 	state: PlayState
-	canPlay: boolean
 	onPlay: () => void
 	onPause: () => void
 	onResume: () => void
@@ -135,20 +141,13 @@ function PlayButton({
 	const isPlaying = state === "playing"
 	const isPaused = state === "paused"
 	const handleClick = isPlaying ? onPause : isPaused ? onResume : onPlay
-	const disabled = !canPlay && state !== "playing" && state !== "paused"
 
 	return (
 		<button
 			type="button"
 			onClick={handleClick}
-			disabled={disabled}
 			aria-label={isPlaying ? "Tạm dừng" : "Phát"}
-			className={cn(
-				"flex size-10 items-center justify-center rounded-full text-primary-foreground transition-colors",
-				disabled
-					? "cursor-not-allowed bg-muted text-muted-foreground"
-					: "bg-primary hover:bg-primary/90",
-			)}
+			className="flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
 		>
 			{isPlaying ? <Pause className="size-4" /> : <Play className="size-4" />}
 		</button>
@@ -165,6 +164,24 @@ function StopButton({ disabled, onStop }: { disabled: boolean; onStop: () => voi
 			className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
 		>
 			<RotateCcw className="size-4" />
+		</button>
+	)
+}
+
+function SubButton({ active, onToggle }: { active: boolean; onToggle: () => void }) {
+	return (
+		<button
+			type="button"
+			onClick={onToggle}
+			aria-label={active ? "Tắt phụ đề" : "Bật phụ đề"}
+			className={cn(
+				"flex size-8 items-center justify-center rounded-full transition-colors",
+				active
+					? "text-primary"
+					: "text-muted-foreground hover:text-foreground",
+			)}
+		>
+			{active ? <Captions className="size-4" /> : <CaptionsOff className="size-4" />}
 		</button>
 	)
 }
@@ -202,51 +219,58 @@ function TimeDisplay({ seconds, primary }: { seconds: number; primary?: boolean 
 
 function PlayCountBadge({ playCount }: { playCount: number }) {
 	return (
-		<span className="text-xs text-muted-foreground tabular-nums">
+		<span className="text-xs tabular-nums text-muted-foreground">
 			Đã nghe {playCount} lần
 		</span>
 	)
 }
 
-// ─── Transcript reveal ─────────────────────────────────────────────
+// ─── Subtitle line ─────────────────────────────────────────────────
 
-function TranscriptReveal({ transcript, vietnameseTranscript }: { transcript: string; vietnameseTranscript?: string }) {
-	const [open, setOpen] = useState(false)
-	const [showVi, setShowVi] = useState(false)
+function SubtitleLine({ transcript, charIndex }: { transcript: string; charIndex: number }) {
+	// Split into sentences by . ? !
+	const sentences = useMemo(() => {
+		const result: { text: string; start: number; end: number }[] = []
+		const regex = /[^.!?]+[.!?]+/g
+		let match: RegExpExecArray | null = null
+		while ((match = regex.exec(transcript)) !== null) {
+			result.push({ text: match[0].trim(), start: match.index, end: match.index + match[0].length })
+		}
+		// If no sentence-ending punctuation, treat whole transcript as one sentence
+		if (result.length === 0 && transcript.trim()) {
+			result.push({ text: transcript.trim(), start: 0, end: transcript.length })
+		}
+		return result
+	}, [transcript])
+
+	// Find current sentence
+	const current = charIndex >= 0
+		? sentences.find((s) => charIndex >= s.start && charIndex < s.end)
+		: null
+
+	if (!current) {
+		return <div className="mt-3 h-10 border-t pt-3" />
+	}
+
+	// Split current sentence into words, highlight spoken ones
+	const words = current.text.split(/(\s+)/)
+	const relativeIndex = charIndex - current.start
+
 	return (
 		<div className="mt-3 border-t pt-3">
-			<button
-				type="button"
-				onClick={() => setOpen((v) => !v)}
-				aria-expanded={open}
-				className="flex w-full items-center gap-2 text-left text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-			>
-				<FileText className="size-3.5" />
-				<span className="flex-1">Xem nội dung bài nghe</span>
-				<ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} />
-			</button>
-			{open && (
-				<div className="mt-2 space-y-2">
-					<p className="rounded-lg bg-muted/50 p-3 text-sm leading-relaxed text-foreground/90">
-						{transcript}
-					</p>
-					{vietnameseTranscript && (
-						<button
-							type="button"
-							onClick={() => setShowVi((v) => !v)}
-							className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-						>
-							<Languages className="size-3.5" />
-							{showVi ? "Ẩn bản dịch" : "Xem bản dịch tiếng Việt"}
-						</button>
-					)}
-					{vietnameseTranscript && showVi && (
-						<p className="rounded-lg bg-muted/50 p-3 text-sm leading-relaxed italic text-muted-foreground">
-							{vietnameseTranscript}
-						</p>
-					)}
-				</div>
-			)}
+			<p className="text-center text-sm leading-relaxed">
+				{words.map((segment, i) => {
+					if (/^\s+$/.test(segment)) return <span key={i}> </span>
+					// Find this word's position in the original sentence
+					const pos = current.text.indexOf(segment, i > 0 ? current.text.indexOf(words[i - 2] ?? "") + 1 : 0)
+					const spoken = relativeIndex >= pos
+					return (
+						<span key={i} className={spoken ? "font-semibold text-foreground" : "text-muted-foreground/40"}>
+							{segment}
+						</span>
+					)
+				})}
+			</p>
 		</div>
 	)
 }

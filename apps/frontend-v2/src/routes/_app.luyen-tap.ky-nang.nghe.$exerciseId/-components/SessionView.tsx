@@ -1,14 +1,11 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { useEffect, useRef } from "react"
-import { SupportModeSwitch } from "#/components/common/SupportModeSwitch"
-import { KeywordsPills } from "#/components/practice/KeywordsPills"
 import { McqNavBar } from "#/components/practice/McqNavBar"
 import { McqQuestionList } from "#/components/practice/McqQuestionList"
 import { McqResultSummary } from "#/components/practice/McqResultSummary"
 import { StatusText, SubmitAction } from "#/components/practice/McqSubmitBar"
 import { PART_LABELS } from "#/lib/mock/listening"
 import type { McqSession } from "#/lib/practice/use-mcq-session"
-import { useSupportMode } from "#/lib/practice/use-support-mode"
 import { listeningExerciseQueryOptions } from "#/lib/queries/listening"
 import { TtsAudioPlayer } from "./TtsAudioPlayer"
 import { useListeningSession } from "./useListeningSession"
@@ -17,7 +14,6 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 	const { data: exercise } = useSuspenseQuery(listeningExerciseQueryOptions(exerciseId))
 	const session = useListeningSession(exercise)
 	const submitted = session.phase === "submitted"
-	const supportMode = useSupportMode()
 	const topRef = useRef<HTMLDivElement>(null)
 
 	useEffect(() => {
@@ -27,12 +23,9 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 	return (
 		<div ref={topRef} className="mt-4 space-y-6">
 			<header>
-				<div className="flex items-start justify-between gap-3">
-					<p className="text-xs font-semibold uppercase tracking-wide text-skill-listening">
-						{PART_LABELS[exercise.part]}
-					</p>
-					<SupportModeSwitch />
-				</div>
+				<p className="text-xs font-semibold uppercase tracking-wide text-skill-listening">
+					{PART_LABELS[exercise.part]}
+				</p>
 				<div className="mt-1 flex flex-wrap items-start justify-between gap-3">
 					<div>
 						<h1 className="text-2xl font-bold">{exercise.title}</h1>
@@ -42,16 +35,11 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 						{exercise.items.length} câu · {exercise.estimatedMinutes} phút
 					</p>
 				</div>
-				{supportMode && (
-					<div className="mt-3">
-						<KeywordsPills keywords={exercise.keywords} />
-					</div>
-				)}
 			</header>
 
 			{submitted && <McqResultSummary score={session.score} total={session.total} />}
 
-			<TtsAudioPlayer transcript={exercise.transcript} vietnameseTranscript={exercise.vietnameseTranscript} showTranscript={supportMode} />
+			<TtsAudioPlayer transcript={exercise.transcript} />
 
 			<McqQuestionList
 				items={exercise.items}
@@ -94,7 +82,8 @@ function FooterBar({ session, submitted }: { session: McqSession; submitted: boo
 					<SubmitAction
 						phase={session.phase}
 						canSubmit={session.canSubmit}
-						backTo="/luyen-tap/ky-nang/nghe"
+						backTo="/luyen-tap/ky-nang"
+						backSearch={{ skill: "nghe", category: "", page: 1 }}
 						backLabel="Về danh sách đề nghe"
 						onSubmit={session.submit}
 						onReset={session.reset}
