@@ -222,7 +222,7 @@ function SpeakingSubmitAction({
 				Làm lại
 			</Button>
 			<Button asChild>
-				<Link to="/luyen-tap/ky-nang/noi">Về danh sách đề nói</Link>
+				<Link to="/luyen-tap/ky-nang/noi" search={{} as never}>Về danh sách đề nói</Link>
 			</Button>
 		</div>
 	)

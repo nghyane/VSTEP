@@ -1,8 +1,15 @@
 import { CheckCircle2, RotateCcw, XCircle } from "lucide-react"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "#/components/ui/button"
 import { recordAnswer } from "#/lib/grammar/mastery"
-import type { GrammarMCQ, GrammarPoint } from "#/lib/mock/grammar"
+import type {
+	GrammarErrorCorrection,
+	GrammarExercise,
+	GrammarFillBlank,
+	GrammarMCQ,
+	GrammarPoint,
+	GrammarRewrite,
+} from "#/lib/mock/grammar"
 import { cn } from "#/lib/utils"
 
 interface Props {
@@ -16,7 +23,7 @@ interface SessionResult {
 
 export function PracticeSession({ point }: Props) {
 	const [index, setIndex] = useState(0)
-	const [selected, setSelected] = useState<number | null>(null)
+	const [answered, setAnswered] = useState(false)
 	const [result, setResult] = useState<SessionResult | null>(null)
 	const [sessionCorrect, setSessionCorrect] = useState(0)
 
@@ -24,41 +31,46 @@ export function PracticeSession({ point }: Props) {
 	const current = exercises[index]
 	const total = exercises.length
 
-	const handleSelect = useCallback(
-		(optionIndex: number) => {
-			if (selected !== null || !current) return
-			setSelected(optionIndex)
-			const isCorrect = optionIndex === current.correctIndex
-			recordAnswer(point.id, isCorrect)
-			if (isCorrect) setSessionCorrect((c) => c + 1)
+	const handleAnswer = useCallback(
+		(correct: boolean) => {
+			if (answered || !current) return
+			setAnswered(true)
+			recordAnswer(point.id, correct)
+			if (correct) setSessionCorrect((c) => c + 1)
 		},
-		[selected, current, point.id],
+		[answered, current, point.id],
 	)
 
 	const handleNext = useCallback(() => {
-		if (selected === null) return
+		if (!answered) return
 		const nextIndex = index + 1
 		if (nextIndex >= total) {
 			setResult({ correct: sessionCorrect, total })
 			return
 		}
 		setIndex(nextIndex)
-		setSelected(null)
-	}, [selected, index, total, sessionCorrect])
+		setAnswered(false)
+	}, [answered, index, total, sessionCorrect])
 
 	const handleReset = useCallback(() => {
 		setIndex(0)
-		setSelected(null)
+		setAnswered(false)
 		setSessionCorrect(0)
 		setResult(null)
 	}, [])
 
-	useKeyboardShortcuts({
-		hasCurrent: current !== undefined && !result,
-		selected,
-		onSelect: handleSelect,
-		onNext: handleNext,
-	})
+	useEffect(() => {
+		if (!current || result) return
+		function handler(e: KeyboardEvent) {
+			if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+			if (answered && (e.key === "Enter" || e.key === " ")) {
+				e.preventDefault()
+				handleNext()
+			}
+		}
+		window.addEventListener("keydown", handler)
+		return () => window.removeEventListener("keydown", handler)
+	}, [current, result, answered, handleNext])
 
 	if (result) {
 		return <SessionSummary result={result} onReset={handleReset} />
@@ -69,13 +81,13 @@ export function PracticeSession({ point }: Props) {
 	return (
 		<div className="space-y-6">
 			<SessionProgress current={index + 1} total={total} correct={sessionCorrect} />
-			<ExerciseCard exercise={current} selected={selected} onSelect={handleSelect} />
-			{selected !== null && <NextButton onNext={handleNext} isLast={index + 1 === total} />}
+			<ExerciseCard exercise={current} answered={answered} onAnswer={handleAnswer} />
+			{answered && <NextButton onNext={handleNext} isLast={index + 1 === total} />}
 		</div>
 	)
 }
 
-// ─── Progress header ───────────────────────────────────────────────
+// ─── Progress ──────────────────────────────────────────────────
 
 function SessionProgress({
 	current,
@@ -107,104 +119,339 @@ function SessionProgress({
 	)
 }
 
-// ─── Exercise card ─────────────────────────────────────────────────
+// ─── Exercise router ───────────────────────────────────────────
 
 function ExerciseCard({
 	exercise,
-	selected,
-	onSelect,
+	answered,
+	onAnswer,
+}: {
+	exercise: GrammarExercise
+	answered: boolean
+	onAnswer: (correct: boolean) => void
+}) {
+	switch (exercise.kind) {
+		case "mcq":
+			return <McqCard exercise={exercise} answered={answered} onAnswer={onAnswer} />
+		case "error-correction":
+			return <ErrorCorrectionCard exercise={exercise} answered={answered} onAnswer={onAnswer} />
+		case "fill-blank":
+			return <FillBlankCard exercise={exercise} answered={answered} onAnswer={onAnswer} />
+		case "rewrite":
+			return <RewriteCard exercise={exercise} answered={answered} onAnswer={onAnswer} />
+	}
+}
+
+// ─── MCQ card ──────────────────────────────────────────────────
+
+function McqCard({
+	exercise,
+	answered,
+	onAnswer,
 }: {
 	exercise: GrammarMCQ
-	selected: number | null
-	onSelect: (i: number) => void
+	answered: boolean
+	onAnswer: (correct: boolean) => void
 }) {
-	const answered = selected !== null
+	const [selected, setSelected] = useState<number | null>(null)
+
+	// Reset when exercise changes
+	const prevId = useRef(exercise.id)
+	if (prevId.current !== exercise.id) {
+		prevId.current = exercise.id
+		setSelected(null)
+	}
+
+	useEffect(() => {
+		if (answered) return
+		function handler(e: KeyboardEvent) {
+			if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+			const n = Number(e.key)
+			if (n >= 1 && n <= 4) onAnswer(n - 1 === exercise.correctIndex)
+		}
+		window.addEventListener("keydown", handler)
+		return () => window.removeEventListener("keydown", handler)
+	}, [answered, exercise.correctIndex, onAnswer])
+
+	function handleSelect(i: number) {
+		if (answered) return
+		setSelected(i)
+		onAnswer(i === exercise.correctIndex)
+	}
+
 	return (
 		<div className="rounded-3xl border bg-card p-8 shadow-sm">
 			<p className="text-xl font-semibold leading-snug">{exercise.prompt}</p>
 			<div className="mt-6 grid gap-3">
-				{exercise.options.map((option, i) => (
-					<OptionButton
-						key={option}
-						label={option}
-						index={i}
-						isCorrect={i === exercise.correctIndex}
-						isSelected={selected === i}
-						answered={answered}
-						onClick={() => onSelect(i)}
-					/>
-				))}
+				{exercise.options.map((option, i) => {
+					const letter = String.fromCharCode(65 + i)
+					const isOpt = selected === i
+					const isCorrectOpt = i === exercise.correctIndex
+					return (
+						<button
+							key={option}
+							type="button"
+							disabled={answered}
+							onClick={() => handleSelect(i)}
+							className={cn(
+								"flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-left text-sm font-medium transition",
+								!answered &&
+									"border-border bg-background hover:border-primary/60 hover:bg-primary/5",
+								answered && isCorrectOpt && "border-success bg-success/10",
+								answered && !isCorrectOpt && isOpt && "border-destructive bg-destructive/10",
+								answered && !isCorrectOpt && !isOpt && "border-border/50 opacity-60",
+							)}
+						>
+							<span
+								className={cn(
+									"flex size-7 shrink-0 items-center justify-center rounded-full border text-xs font-bold",
+									!answered && "border-border text-muted-foreground",
+									answered && isCorrectOpt && "border-success bg-success text-white",
+									answered &&
+										!isCorrectOpt &&
+										isOpt &&
+										"border-destructive bg-destructive text-white",
+								)}
+							>
+								{letter}
+							</span>
+							{option}
+						</button>
+					)
+				})}
 			</div>
 			{answered && (
-				<div className="mt-5 rounded-xl border border-primary/20 bg-primary/5 p-4">
-					<p className="flex items-center gap-2 text-sm font-semibold">
-						{selected === exercise.correctIndex ? (
-							<>
-								<CheckCircle2 className="size-4 text-success" />
-								<span className="text-success">Đáp án chính xác!</span>
-							</>
-						) : (
-							<>
-								<XCircle className="size-4 text-destructive" />
-								<span className="text-destructive">Chưa đúng</span>
-							</>
-						)}
+				<ExplanationBox correct={selected === exercise.correctIndex} text={exercise.explanation} />
+			)}
+		</div>
+	)
+}
+
+// ─── Error correction card ─────────────────────────────────────
+
+function ErrorCorrectionCard({
+	exercise,
+	answered,
+	onAnswer,
+}: {
+	exercise: GrammarErrorCorrection
+	answered: boolean
+	onAnswer: (correct: boolean) => void
+}) {
+	const [value, setValue] = useState("")
+	const before = exercise.sentence.slice(0, exercise.errorStart)
+	const errorText = exercise.sentence.slice(exercise.errorStart, exercise.errorEnd)
+	const after = exercise.sentence.slice(exercise.errorEnd)
+
+	function handleSubmit() {
+		if (answered || !value.trim()) return
+		onAnswer(value.trim().toLowerCase() === exercise.correction.toLowerCase())
+	}
+
+	return (
+		<div className="rounded-3xl border bg-card p-8 shadow-sm space-y-5">
+			<div>
+				<p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+					Sửa lỗi trong câu sau
+				</p>
+				<p className="text-base leading-relaxed">
+					{before}
+					<span className="rounded bg-destructive/15 px-1 text-destructive line-through">
+						{errorText}
+					</span>
+					{after}
+				</p>
+			</div>
+			<div className="space-y-2">
+				<label htmlFor={`ec-${exercise.id}`} className="text-sm font-medium">
+					Sửa thành:
+				</label>
+				<div className="flex gap-2">
+					<input
+						id={`ec-${exercise.id}`}
+						type="text"
+						value={value}
+						onChange={(e) => setValue(e.target.value)}
+						onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+						disabled={answered}
+						placeholder="Nhập từ/cụm đúng..."
+						className="flex-1 rounded-xl border bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-60"
+					/>
+					{!answered && (
+						<Button type="button" onClick={handleSubmit} disabled={!value.trim()}>
+							Kiểm tra
+						</Button>
+					)}
+				</div>
+			</div>
+			{answered && (
+				<>
+					<p className="text-sm">
+						Đáp án đúng: <span className="font-semibold text-success">{exercise.correction}</span>
 					</p>
-					<p className="mt-1 text-sm text-muted-foreground">{exercise.explanation}</p>
+					<ExplanationBox
+						correct={value.trim().toLowerCase() === exercise.correction.toLowerCase()}
+						text={exercise.explanation}
+					/>
+				</>
+			)}
+		</div>
+	)
+}
+
+// ─── Fill blank card ───────────────────────────────────────────
+
+function FillBlankCard({
+	exercise,
+	answered,
+	onAnswer,
+}: {
+	exercise: GrammarFillBlank
+	answered: boolean
+	onAnswer: (correct: boolean) => void
+}) {
+	const [value, setValue] = useState("")
+	const parts = exercise.template.split("___")
+
+	function handleSubmit() {
+		if (answered || !value.trim()) return
+		const normalized = value.trim().toLowerCase()
+		onAnswer(exercise.acceptedAnswers.some((a) => a.toLowerCase() === normalized))
+	}
+
+	return (
+		<div className="rounded-3xl border bg-card p-8 shadow-sm space-y-5">
+			<div>
+				<p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+					Điền vào chỗ trống
+				</p>
+				<p className="text-base leading-relaxed">
+					{parts[0]}
+					<span className="inline-block min-w-[80px] border-b-2 border-primary px-2 text-center font-semibold text-primary">
+						{answered
+							? (exercise.acceptedAnswers[0] ?? "")
+							: value || "\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0"}
+					</span>
+					{parts[1]}
+				</p>
+			</div>
+			{!answered && (
+				<div className="flex gap-2">
+					<input
+						type="text"
+						value={value}
+						onChange={(e) => setValue(e.target.value)}
+						onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+						placeholder="Nhập câu trả lời..."
+						className="flex-1 rounded-xl border bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+					/>
+					<Button type="button" onClick={handleSubmit} disabled={!value.trim()}>
+						Kiểm tra
+					</Button>
+				</div>
+			)}
+			{answered && (
+				<ExplanationBox
+					correct={exercise.acceptedAnswers.some(
+						(a) => a.toLowerCase() === value.trim().toLowerCase(),
+					)}
+					text={exercise.explanation}
+				/>
+			)}
+		</div>
+	)
+}
+
+// ─── Rewrite card ──────────────────────────────────────────────
+
+function RewriteCard({
+	exercise,
+	answered,
+	onAnswer,
+}: {
+	exercise: GrammarRewrite
+	answered: boolean
+	onAnswer: (correct: boolean) => void
+}) {
+	const [value, setValue] = useState("")
+
+	function normalize(s: string) {
+		return s
+			.trim()
+			.toLowerCase()
+			.replace(/\s+/g, " ")
+			.replace(/[.,!?]$/, "")
+	}
+
+	function handleSubmit() {
+		if (answered || !value.trim()) return
+		const n = normalize(value)
+		onAnswer(exercise.acceptedAnswers.some((a) => normalize(a) === n))
+	}
+
+	return (
+		<div className="rounded-3xl border bg-card p-8 shadow-sm space-y-5">
+			<div>
+				<p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+					{exercise.instruction}
+				</p>
+				<p className="rounded-xl bg-muted/50 px-4 py-3 text-sm italic">{exercise.original}</p>
+			</div>
+			{!answered ? (
+				<div className="space-y-2">
+					<label htmlFor={`rw-${exercise.id}`} className="text-sm font-medium">
+						Viết lại:
+					</label>
+					<textarea
+						id={`rw-${exercise.id}`}
+						value={value}
+						onChange={(e) => setValue(e.target.value)}
+						rows={2}
+						placeholder="Nhập câu viết lại..."
+						className="w-full rounded-xl border bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/40 resize-none"
+					/>
+					<Button type="button" onClick={handleSubmit} disabled={!value.trim()} className="w-full">
+						Kiểm tra
+					</Button>
+				</div>
+			) : (
+				<div className="space-y-3">
+					<p className="text-sm text-muted-foreground">
+						Câu mẫu:{" "}
+						<span className="font-medium text-foreground">{exercise.acceptedAnswers[0]}</span>
+					</p>
+					<ExplanationBox
+						correct={exercise.acceptedAnswers.some((a) => normalize(a) === normalize(value))}
+						text={exercise.explanation}
+					/>
 				</div>
 			)}
 		</div>
 	)
 }
 
-function OptionButton({
-	label,
-	index,
-	isCorrect,
-	isSelected,
-	answered,
-	onClick,
-}: {
-	label: string
-	index: number
-	isCorrect: boolean
-	isSelected: boolean
-	answered: boolean
-	onClick: () => void
-}) {
-	const letter = String.fromCharCode(65 + index) // A, B, C, D
+// ─── Shared ────────────────────────────────────────────────────
+
+function ExplanationBox({ correct, text }: { correct: boolean; text: string }) {
 	return (
-		<button
-			type="button"
-			disabled={answered}
-			onClick={onClick}
-			className={cn(
-				"flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-left text-sm font-medium transition",
-				!answered && "border-border bg-background hover:border-primary/60 hover:bg-primary/5",
-				answered && isCorrect && "border-success bg-success/10 text-foreground",
-				answered &&
-					!isCorrect &&
-					isSelected &&
-					"border-destructive bg-destructive/10 text-foreground",
-				answered && !isCorrect && !isSelected && "border-border/50 opacity-60",
-			)}
-		>
-			<span
-				className={cn(
-					"flex size-7 shrink-0 items-center justify-center rounded-full border text-xs font-bold",
-					!answered && "border-border text-muted-foreground",
-					answered && isCorrect && "border-success bg-success text-white",
-					answered && !isCorrect && isSelected && "border-destructive bg-destructive text-white",
+		<div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
+			<p className="flex items-center gap-2 text-sm font-semibold">
+				{correct ? (
+					<>
+						<CheckCircle2 className="size-4 text-success" />
+						<span className="text-success">Đáp án chính xác!</span>
+					</>
+				) : (
+					<>
+						<XCircle className="size-4 text-destructive" />
+						<span className="text-destructive">Chưa đúng</span>
+					</>
 				)}
-			>
-				{letter}
-			</span>
-			{label}
-		</button>
+			</p>
+			<p className="mt-1 text-sm text-muted-foreground">{text}</p>
+		</div>
 	)
 }
-
-// ─── Next / summary ────────────────────────────────────────────────
 
 function NextButton({ onNext, isLast }: { onNext: () => void; isLast: boolean }) {
 	return (
@@ -241,38 +488,4 @@ function SessionSummary({ result, onReset }: { result: SessionResult; onReset: (
 			</Button>
 		</div>
 	)
-}
-
-// ─── Keyboard ──────────────────────────────────────────────────────
-
-function useKeyboardShortcuts({
-	hasCurrent,
-	selected,
-	onSelect,
-	onNext,
-}: {
-	hasCurrent: boolean
-	selected: number | null
-	onSelect: (i: number) => void
-	onNext: () => void
-}) {
-	useEffect(() => {
-		if (!hasCurrent) return
-		function handler(e: KeyboardEvent) {
-			if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-			if (selected === null) {
-				if (e.key === "1") onSelect(0)
-				else if (e.key === "2") onSelect(1)
-				else if (e.key === "3") onSelect(2)
-				else if (e.key === "4") onSelect(3)
-				return
-			}
-			if (e.key === "Enter" || e.key === " ") {
-				e.preventDefault()
-				onNext()
-			}
-		}
-		window.addEventListener("keydown", handler)
-		return () => window.removeEventListener("keydown", handler)
-	}, [hasCurrent, selected, onSelect, onNext])
 }

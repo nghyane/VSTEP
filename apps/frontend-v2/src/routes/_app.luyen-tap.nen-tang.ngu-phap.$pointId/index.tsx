@@ -1,15 +1,15 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { ArrowLeft, BookOpen, Target } from "lucide-react"
+import { ArrowLeft, BookOpen, Lightbulb, Target } from "lucide-react"
 import { Suspense } from "react"
 import { Skeleton } from "#/components/ui/skeleton"
-import { CATEGORY_LABELS } from "#/lib/mock/grammar"
+import { CATEGORY_LABELS, type GrammarPoint, TASK_LABELS } from "#/lib/mock/grammar"
 import { grammarPointQueryOptions } from "#/lib/queries/grammar"
 import { cn } from "#/lib/utils"
 import { PracticeSession } from "./-components/PracticeSession"
 import { TheoryView } from "./-components/TheoryView"
 
-type Tab = "theory" | "practice"
+type Tab = "theory" | "practice" | "vstep-tips"
 
 interface Search {
 	tab: Tab
@@ -17,7 +17,12 @@ interface Search {
 
 export const Route = createFileRoute("/_app/luyen-tap/nen-tang/ngu-phap/$pointId/")({
 	validateSearch: (search: Record<string, unknown>): Search => ({
-		tab: search.tab === "practice" ? "practice" : "theory",
+		tab:
+			search.tab === "practice"
+				? "practice"
+				: search.tab === "vstep-tips"
+					? "vstep-tips"
+					: "theory",
 	}),
 	loader: ({ context: { queryClient }, params }) =>
 		queryClient.ensureQueryData(grammarPointQueryOptions(params.pointId)),
@@ -30,6 +35,7 @@ function GrammarPointPage() {
 		<div className="mx-auto w-full max-w-3xl">
 			<Link
 				to="/luyen-tap/nen-tang/ngu-phap"
+				search={{ view: "level" }}
 				className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
 			>
 				<ArrowLeft className="size-4" />
@@ -57,51 +63,61 @@ function GrammarPointContent({ pointId }: { pointId: string }) {
 				<p className="mt-3 text-sm text-foreground/80">{point.summary}</p>
 			</header>
 
-			<TabBar active={tab} pointId={pointId} />
+			<div className="flex gap-1 rounded-xl bg-muted p-1">
+				{(
+					[
+						{ key: "theory" as Tab, icon: BookOpen, label: "Lý thuyết" },
+						{ key: "practice" as Tab, icon: Target, label: "Luyện tập" },
+						{ key: "vstep-tips" as Tab, icon: Lightbulb, label: "Mẹo thi" },
+					] as const
+				).map(({ key, icon: Icon, label }) => (
+					<Link
+						key={key}
+						to="/luyen-tap/nen-tang/ngu-phap/$pointId"
+						params={{ pointId }}
+						search={{ tab: key }}
+						className={cn(
+							"flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors",
+							tab === key
+								? "bg-card text-foreground shadow-sm"
+								: "text-muted-foreground hover:text-foreground",
+						)}
+					>
+						<Icon className="size-4" />
+						{label}
+					</Link>
+				))}
+			</div>
 
-			{tab === "theory" ? <TheoryView point={point} /> : <PracticeSession point={point} />}
+			{tab === "theory" && <TheoryView point={point} />}
+			{tab === "practice" && <PracticeSession point={point} />}
+			{tab === "vstep-tips" && <VstepTipsView point={point} />}
 		</div>
 	)
 }
 
-function TabBar({ active, pointId }: { active: Tab; pointId: string }) {
-	return (
-		<div className="flex gap-1 rounded-xl bg-muted p-1">
-			<TabLink tab="theory" active={active} pointId={pointId} icon={BookOpen} label="Lý thuyết" />
-			<TabLink tab="practice" active={active} pointId={pointId} icon={Target} label="Luyện tập" />
-		</div>
-	)
-}
+function VstepTipsView({ point }: { point: GrammarPoint }) {
+	if (point.vstepTips.length === 0) {
+		return <p className="text-sm text-muted-foreground">Chưa có mẹo thi cho điểm ngữ pháp này.</p>
+	}
 
-function TabLink({
-	tab,
-	active,
-	pointId,
-	icon: Icon,
-	label,
-}: {
-	tab: Tab
-	active: Tab
-	pointId: string
-	icon: typeof BookOpen
-	label: string
-}) {
-	const isActive = active === tab
 	return (
-		<Link
-			to="/luyen-tap/nen-tang/ngu-phap/$pointId"
-			params={{ pointId }}
-			search={{ tab }}
-			className={cn(
-				"flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors",
-				isActive
-					? "bg-card text-foreground shadow-sm"
-					: "text-muted-foreground hover:text-foreground",
-			)}
-		>
-			<Icon className="size-4" />
-			{label}
-		</Link>
+		<div className="space-y-4">
+			{point.vstepTips.map((tip) => (
+				<div key={`${tip.task}-${tip.tip}`} className="rounded-2xl border bg-card p-5 shadow-sm">
+					<p className="mb-3 text-xs font-semibold uppercase tracking-wide text-primary">
+						{TASK_LABELS[tip.task]}
+					</p>
+					<p className="text-sm text-foreground/90">{tip.tip}</p>
+					<div className="mt-3 rounded-lg bg-muted/50 px-4 py-3">
+						<p className="text-sm italic text-muted-foreground">
+							<span className="not-italic font-medium text-foreground">Ví dụ: </span>
+							{tip.example}
+						</p>
+					</div>
+				</div>
+			))}
+		</div>
 	)
 }
 

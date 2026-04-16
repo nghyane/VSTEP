@@ -5,7 +5,7 @@ import { Suspense, useState } from "react"
 import { OnboardingDialog } from "#/components/onboarding/OnboardingDialog"
 import { Skeleton } from "#/components/ui/skeleton"
 import type { OverviewData } from "#/lib/mock/overview"
-import { MOCK_LEARNING_PATH } from "#/lib/mock/overview"
+import { MOCK_PRACTICE_TRACK } from "#/lib/mock/overview"
 import type { Level, OnboardingData } from "#/lib/onboarding/types"
 import { loadOnboardingData, saveOnboardingData, useMockGoal } from "#/lib/onboarding/useMockGoal"
 import { overviewQueryOptions } from "#/lib/queries/overview"
@@ -13,7 +13,7 @@ import { cn } from "#/lib/utils"
 import { ActivityHeatmap } from "./_app.overview/-components/ActivityHeatmap"
 import { DoughnutChartCard } from "./_app.overview/-components/DoughnutChartCard"
 import { ExamCountdown } from "./_app.overview/-components/ExamCountdown"
-import { LearningPathView } from "./_app.overview/-components/LearningPathView"
+import { PracticeTrackView } from "./_app.overview/-components/PracticeTrackView"
 import { ProfileBanner } from "./_app.overview/-components/ProfileBanner"
 import { SpiderChartCard } from "./_app.overview/-components/SpiderChartCard"
 import { StatGrid } from "./_app.overview/-components/StatGrid"
@@ -179,7 +179,7 @@ function OverviewContent({
 
 			{/* Nội dung theo tab */}
 			{tab === "learning_path" ? (
-				<LearningPathView data={MOCK_LEARNING_PATH} />
+				<PracticeTrackView data={MOCK_PRACTICE_TRACK} />
 			) : (
 				<DetailsView data={data} mockGoal={mockGoal} />
 			)}
@@ -216,11 +216,10 @@ function DetailsView({
 function OverviewSkeleton({ tab }: { tab: Tab }) {
 	if (tab === "learning_path") {
 		return (
-			<div className="space-y-5">
-				<Skeleton className="h-24 rounded-2xl" />
-				{Array.from({ length: 4 }).map((_, i) => (
-					<Skeleton key={i} className="h-52 rounded-2xl" />
-				))}
+			<div className="space-y-6">
+				<Skeleton className="h-36 rounded-2xl" />
+				<Skeleton className="h-80 rounded-2xl" />
+				<Skeleton className="h-64 rounded-2xl" />
 			</div>
 		)
 	}

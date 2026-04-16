@@ -1,7 +1,9 @@
 // McqQuestionList — tất cả câu của 1 đề hiện cùng lúc, scroll trả lời.
 // Dùng chung cho Listening + Reading session.
-// Giải thích hiện tự động sau khi submit.
+// Sau submit: câu sai hiện giải thích luôn, câu đúng có nút toggle.
 
+import { ChevronDown } from "lucide-react"
+import { useState } from "react"
 import { ChatGptIcon } from "#/components/common/ChatGptIcon"
 import { askExplainQuestion } from "#/lib/ai-chat/store"
 import { cn } from "#/lib/utils"
@@ -58,6 +60,8 @@ function QuestionBlock({
 	submitted,
 	onSelect,
 }: QuestionBlockProps) {
+	const isWrong = submitted && selected !== null && selected !== item.correctIndex
+
 	return (
 		<div id={`mcq-item-${index}`} className="space-y-3">
 			<div className="flex items-start justify-between gap-3">
@@ -91,7 +95,8 @@ function QuestionBlock({
 					/>
 				))}
 			</div>
-			{submitted && <Explanation text={item.explanation} />}
+			{submitted && isWrong && <Explanation text={item.explanation} variant="wrong" />}
+			{submitted && !isWrong && <CollapsibleExplanation text={item.explanation} />}
 		</div>
 	)
 }
@@ -166,13 +171,47 @@ function OptionButton(props: OptionButtonProps) {
 	)
 }
 
-function Explanation({ text }: { text: string }) {
+function Explanation({ text, variant }: { text: string; variant: "wrong" | "correct" }) {
+	const isWrong = variant === "wrong"
 	return (
-		<div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
-			<p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-primary">
+		<div
+			className={cn(
+				"rounded-lg border px-4 py-3",
+				isWrong
+					? "border-destructive/20 bg-destructive/5"
+					: "border-primary/20 bg-primary/5",
+			)}
+		>
+			<p
+				className={cn(
+					"mb-1 text-[11px] font-semibold uppercase tracking-wider",
+					isWrong ? "text-destructive" : "text-primary",
+				)}
+			>
 				Giải thích
 			</p>
 			<p className="text-sm leading-relaxed text-foreground/90">{text}</p>
+		</div>
+	)
+}
+
+function CollapsibleExplanation({ text }: { text: string }) {
+	const [open, setOpen] = useState(false)
+	return (
+		<div>
+			<button
+				type="button"
+				onClick={() => setOpen((v) => !v)}
+				className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+			>
+				<ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} />
+				{open ? "Ẩn giải thích" : "Xem giải thích"}
+			</button>
+			{open && (
+				<div className="mt-2">
+					<Explanation text={text} variant="correct" />
+				</div>
+			)}
 		</div>
 	)
 }

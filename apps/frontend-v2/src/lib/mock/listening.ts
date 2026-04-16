@@ -17,6 +17,7 @@ export interface ListeningExercise {
 	part: ListeningPart
 	description: string
 	transcript: string // TTS sẽ đọc text này
+	vietnameseTranscript: string // bản dịch tiếng Việt
 	keywords: readonly string[] // support mode hints
 	estimatedMinutes: number
 	items: ListeningItem[]
@@ -49,6 +50,8 @@ const P1_DIRECTIONS: ListeningExercise = {
 	description: "Một người lạ hỏi đường đến bưu điện gần nhất.",
 	transcript:
 		"Excuse me, could you tell me how to get to the nearest post office? Sure. Go straight for two blocks, then turn left at the traffic light. The post office is on your right, next to a bakery. Thank you so much! You're welcome.",
+	vietnameseTranscript:
+		"Xin lỗi, bạn có thể chỉ cho tôi đường đến bưu điện gần nhất không? Được chứ. Đi thẳng hai dãy nhà, rồi rẽ trái ở đèn giao thông. Bưu điện ở bên phải bạn, cạnh tiệm bánh. Cảm ơn bạn rất nhiều! Không có gì.",
 	keywords: ["post office", "two blocks", "turn left", "traffic light", "next to a bakery"],
 	estimatedMinutes: 2,
 	items: [
@@ -81,6 +84,8 @@ const P1_CAFE: ListeningExercise = {
 	description: "Khách hàng gọi đồ uống và bánh ngọt tại quầy cà phê.",
 	transcript:
 		"Hi, what can I get for you? I'd like a large cappuccino and a chocolate croissant, please. For here or to go? To go, please. That'll be seven dollars fifty. Here's ten dollars. Thanks, and here's your change.",
+	vietnameseTranscript:
+		"Xin chào, bạn muốn gọi gì? Cho tôi một ly cappuccino lớn và một bánh sừng bò sô-cô-la. Dùng tại đây hay mang đi? Mang đi ạ. Tổng cộng bảy đô la năm mươi. Đây là mười đô la. Cảm ơn, đây là tiền thối lại.",
 	keywords: ["large cappuccino", "chocolate croissant", "to go", "seven dollars fifty"],
 	estimatedMinutes: 2,
 	items: [
@@ -106,6 +111,38 @@ const P1_CAFE: ListeningExercise = {
 	],
 }
 
+// ─── Part 1: Extra exercises for pagination test ───────────────────
+
+function makeP1Extra(idx: number, title: string, desc: string): ListeningExercise {
+	return {
+		id: `l1-extra-${idx}`,
+		title,
+		part: 1,
+		description: desc,
+		transcript: "This is a sample conversation for testing purposes. Two people are talking about everyday topics.",
+		vietnameseTranscript: "Đây là đoạn hội thoại mẫu để kiểm thử. Hai người đang nói về các chủ đề hàng ngày.",
+		keywords: ["sample", "conversation", "everyday"],
+		estimatedMinutes: 2,
+		items: [
+			q(`l1-e${idx}-1`, "What is the conversation about?", ["Weather", "Food", "Everyday topics", "Sports"], 2, "Sample explanation."),
+			q(`l1-e${idx}-2`, "How many people are talking?", ["One", "Two", "Three", "Four"], 1, "Two people are talking."),
+		],
+	}
+}
+
+const P1_EXTRAS: ListeningExercise[] = [
+	makeP1Extra(1, "Đặt phòng khách sạn", "Khách gọi điện đặt phòng khách sạn cho kỳ nghỉ."),
+	makeP1Extra(2, "Mua vé xe buýt", "Hành khách hỏi mua vé xe buýt đi liên tỉnh."),
+	makeP1Extra(3, "Hỏi giờ mở cửa", "Khách hỏi giờ mở cửa của thư viện thành phố."),
+	makeP1Extra(4, "Gọi taxi", "Khách gọi taxi từ sân bay về khách sạn."),
+	makeP1Extra(5, "Mua thuốc ở hiệu thuốc", "Khách mô tả triệu chứng và mua thuốc."),
+	makeP1Extra(6, "Đổi tiền ở ngân hàng", "Khách hỏi tỷ giá và đổi ngoại tệ."),
+	makeP1Extra(7, "Hỏi thông tin chuyến bay", "Hành khách hỏi giờ bay và cổng lên máy bay."),
+	makeP1Extra(8, "Mua sắm ở siêu thị", "Hai người bạn bàn về danh sách mua sắm."),
+	makeP1Extra(9, "Đăng ký thẻ thư viện", "Sinh viên đăng ký thẻ thư viện mới."),
+	makeP1Extra(10, "Hỏi đường đến bệnh viện", "Người đi đường hỏi đường đến bệnh viện gần nhất."),
+]
+
 // ─── Part 2: Longer conversations ──────────────────────────────────
 
 const P2_JOB_INTERVIEW: ListeningExercise = {
@@ -115,6 +152,8 @@ const P2_JOB_INTERVIEW: ListeningExercise = {
 	description: "Một ứng viên trả lời câu hỏi phỏng vấn cho vị trí marketing.",
 	transcript:
 		"So, tell me about your previous experience. Well, I worked as a marketing assistant for three years at a small company in Hanoi. I was in charge of running social media campaigns and organizing events. That sounds interesting. What made you apply for this position? I'm looking for a bigger challenge. Your company has a strong international presence, and I want to develop my skills in global marketing. Great. What about your strengths and weaknesses? My strength is creativity, I love brainstorming new ideas. My weakness is that I sometimes focus too much on details, but I'm working on it. Very good. Do you have any questions for me? Yes, what does a typical day look like for someone in this role?",
+	vietnameseTranscript:
+		"Vậy, hãy kể cho tôi về kinh nghiệm trước đây của bạn. Tôi đã làm trợ lý marketing ba năm tại một công ty nhỏ ở Hà Nội. Tôi phụ trách chạy chiến dịch mạng xã hội và tổ chức sự kiện. Nghe thú vị đấy. Điều gì khiến bạn ứng tuyển vị trí này? Tôi đang tìm kiếm thử thách lớn hơn. Công ty của bạn có sự hiện diện quốc tế mạnh mẽ, và tôi muốn phát triển kỹ năng marketing toàn cầu. Tốt. Còn điểm mạnh và điểm yếu của bạn? Điểm mạnh của tôi là sáng tạo, tôi thích động não ý tưởng mới. Điểm yếu là đôi khi tôi quá tập trung vào chi tiết, nhưng tôi đang cải thiện. Rất tốt. Bạn có câu hỏi nào cho tôi không? Có, một ngày làm việc điển hình của vị trí này trông như thế nào?",
 	keywords: [
 		"marketing assistant",
 		"three years",
@@ -174,6 +213,8 @@ const P2_TRAVEL_PLAN: ListeningExercise = {
 	description: "Hai người bạn bàn về chuyến du lịch cuối tuần.",
 	transcript:
 		"Have you decided where to go for the long weekend? I was thinking Da Lat. The weather is cool, and there are beautiful flower gardens this time of year. Sounds lovely. How are you planning to get there? I'll take the night bus from Saigon. It's cheaper than flying and gets in early morning. How many days are you staying? Three days, two nights. On the first day I want to visit the flower park and the old train station. Day two, maybe a waterfall. And day three, just relaxing at a café before the bus back. What about accommodation? I booked a small homestay for about twelve dollars a night. Very reasonable. Can I come along? Of course, the more the merrier.",
+	vietnameseTranscript:
+		"Bạn đã quyết định đi đâu vào kỳ nghỉ dài chưa? Tôi đang nghĩ đến Đà Lạt. Thời tiết mát mẻ, và có những vườn hoa đẹp vào thời điểm này trong năm. Nghe tuyệt đấy. Bạn định đi bằng gì? Tôi sẽ đi xe buýt đêm từ Sài Gòn. Rẻ hơn máy bay và đến vào sáng sớm. Bạn ở bao nhiêu ngày? Ba ngày hai đêm. Ngày đầu tôi muốn thăm vườn hoa và ga xe lửa cũ. Ngày hai, có lẽ đi thác nước. Ngày ba, chỉ thư giãn ở quán cà phê trước khi bắt xe về. Còn chỗ ở? Tôi đã đặt một homestay nhỏ khoảng mười hai đô la một đêm. Rất hợp lý. Tôi đi cùng được không? Tất nhiên, càng đông càng vui.",
 	keywords: [
 		"Da Lat",
 		"long weekend",
@@ -226,6 +267,8 @@ const P3_SLEEP: ListeningExercise = {
 	description: "Bài thuyết trình ngắn về tầm quan trọng của giấc ngủ.",
 	transcript:
 		"Good morning everyone. Today we'll talk about why sleep matters. Most adults need between seven and nine hours of sleep every night, yet studies show that nearly one third of people sleep less than six hours. Lack of sleep is linked to serious problems. It weakens the immune system, makes us more likely to get sick. It affects memory and learning, because the brain uses sleep to store new information. It also raises the risk of heart disease, diabetes, and depression. So how can we sleep better? First, keep a regular schedule, go to bed and wake up at the same time every day, even on weekends. Second, avoid caffeine after lunch, and don't use phones or computers in bed. The blue light from screens delays sleep hormones. Finally, make your bedroom cool, quiet, and dark. Small changes like these can dramatically improve your rest, and your health overall.",
+	vietnameseTranscript:
+		"Chào buổi sáng mọi người. Hôm nay chúng ta sẽ nói về tại sao giấc ngủ quan trọng. Hầu hết người lớn cần từ bảy đến chín giờ ngủ mỗi đêm, nhưng nghiên cứu cho thấy gần một phần ba số người ngủ ít hơn sáu giờ. Thiếu ngủ liên quan đến các vấn đề nghiêm trọng. Nó làm suy yếu hệ miễn dịch, khiến chúng ta dễ bị bệnh hơn. Nó ảnh hưởng đến trí nhớ và việc học, vì não sử dụng giấc ngủ để lưu trữ thông tin mới. Nó cũng làm tăng nguy cơ bệnh tim, tiểu đường và trầm cảm. Vậy làm sao để ngủ ngon hơn? Thứ nhất, giữ lịch trình đều đặn, đi ngủ và thức dậy cùng giờ mỗi ngày, kể cả cuối tuần. Thứ hai, tránh caffeine sau bữa trưa, và không dùng điện thoại hay máy tính trên giường. Ánh sáng xanh từ màn hình làm chậm hormone giấc ngủ. Cuối cùng, giữ phòng ngủ mát mẻ, yên tĩnh và tối. Những thay đổi nhỏ như vậy có thể cải thiện đáng kể giấc nghỉ và sức khỏe tổng thể của bạn.",
 	keywords: [
 		"seven to nine hours",
 		"one third sleep less than six",
@@ -288,6 +331,8 @@ const P3_CLIMATE: ListeningExercise = {
 	description: "Bài giảng về nguyên nhân và tác động của biến đổi khí hậu.",
 	transcript:
 		"Climate change is one of the biggest challenges of our century. The main cause is human activity, especially burning fossil fuels like coal, oil, and gas. These activities release carbon dioxide and other greenhouse gases into the atmosphere. Since the year 1900, the average global temperature has risen by about one point one degrees Celsius. That may sound small, but the effects are huge. Glaciers are melting, sea levels are rising, and extreme weather events like hurricanes, droughts, and floods are becoming more frequent. Developing countries, especially those near the equator, suffer the most, even though they produce fewer emissions. The good news is there are solutions. Switching to renewable energy such as solar and wind, using public transport, reducing meat consumption, and protecting forests can all make a difference. But governments, businesses, and individuals must act together. The decisions we make in the next ten years will shape the planet for generations to come.",
+	vietnameseTranscript:
+		"Biến đổi khí hậu là một trong những thách thức lớn nhất của thế kỷ chúng ta. Nguyên nhân chính là hoạt động của con người, đặc biệt là đốt nhiên liệu hóa thạch như than, dầu và khí đốt. Các hoạt động này thải ra carbon dioxide và các khí nhà kính khác vào khí quyển. Kể từ năm 1900, nhiệt độ trung bình toàn cầu đã tăng khoảng 1,1 độ C. Nghe có vẻ nhỏ, nhưng tác động rất lớn. Sông băng đang tan chảy, mực nước biển đang dâng, và các hiện tượng thời tiết cực đoan như bão, hạn hán và lũ lụt ngày càng thường xuyên hơn. Các nước đang phát triển, đặc biệt gần xích đạo, chịu ảnh hưởng nặng nhất, dù họ thải ít khí hơn. Tin tốt là có giải pháp. Chuyển sang năng lượng tái tạo như mặt trời và gió, sử dụng giao thông công cộng, giảm tiêu thụ thịt và bảo vệ rừng đều có thể tạo ra sự khác biệt. Nhưng chính phủ, doanh nghiệp và cá nhân phải cùng hành động. Những quyết định chúng ta đưa ra trong mười năm tới sẽ định hình hành tinh cho các thế hệ mai sau.",
 	keywords: [
 		"fossil fuels",
 		"carbon dioxide",
@@ -354,6 +399,7 @@ const P3_CLIMATE: ListeningExercise = {
 export const MOCK_LISTENING: readonly ListeningExercise[] = [
 	P1_DIRECTIONS,
 	P1_CAFE,
+	...P1_EXTRAS,
 	P2_JOB_INTERVIEW,
 	P2_TRAVEL_PLAN,
 	P3_SLEEP,

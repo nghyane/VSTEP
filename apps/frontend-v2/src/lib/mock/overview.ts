@@ -67,6 +67,28 @@ export interface LearningPathData {
 	weeklyPlan: WeeklyPlanItem[]
 }
 
+// ── Practice Track types ────────────────────────────────────────
+export interface ScoreEntry {
+	score: number
+}
+
+export interface TestSession {
+	id: string
+	examId: string
+	listeningScore: number | null
+	readingScore: number | null
+	writingScore: number | null
+	speakingScore: number | null
+	completedAt: string // ISO
+}
+
+export interface PracticeTrackData {
+	spider: Record<Skill, SpiderSkillData>
+	skills: SkillProgress[]
+	recentScores: Record<Skill, ScoreEntry[]>
+	testSessions: TestSession[]
+}
+
 export interface OverviewData {
 	user: {
 		fullName: string
@@ -203,6 +225,110 @@ export const MOCK_LEARNING_PATH: LearningPathData = {
 				{ id: "t9", name: "Fluency", masteryScore: 30 },
 				{ id: "t10", name: "Pronunciation", masteryScore: 55 },
 			],
+		},
+	],
+}
+
+// ── Mock PracticeTrack data ─────────────────────────────────────────
+export const MOCK_PRACTICE_TRACK: PracticeTrackData = {
+	spider: {
+		listening: { current: 6.2, trend: "up" },
+		reading: { current: 7.1, trend: "stable" },
+		writing: { current: 5.4, trend: "down" },
+		speaking: { current: 5.8, trend: "up" },
+	},
+	skills: [
+		{ skill: "listening", currentLevel: "B1", attemptCount: 12, averageScore: 6.2 },
+		{ skill: "reading", currentLevel: "B1", attemptCount: 15, averageScore: 7.1 },
+		{ skill: "writing", currentLevel: "A2", attemptCount: 8, averageScore: 5.4 },
+		{ skill: "speaking", currentLevel: "A2", attemptCount: 6, averageScore: 5.8 },
+	],
+	recentScores: {
+		listening: [
+			{ score: 5.8 },
+			{ score: 6.0 },
+			{ score: 5.5 },
+			{ score: 6.2 },
+			{ score: 6.5 },
+			{ score: 6.1 },
+			{ score: 6.3 },
+			{ score: 6.0 },
+			{ score: 6.2 },
+			{ score: 6.4 },
+		],
+		reading: [
+			{ score: 6.8 },
+			{ score: 7.0 },
+			{ score: 6.5 },
+			{ score: 7.2 },
+			{ score: 7.0 },
+			{ score: 7.1 },
+			{ score: 7.3 },
+			{ score: 7.0 },
+			{ score: 7.1 },
+			{ score: 7.2 },
+		],
+		writing: [
+			{ score: 5.0 },
+			{ score: 5.2 },
+			{ score: 4.8 },
+			{ score: 5.5 },
+			{ score: 5.3 },
+			{ score: 5.4 },
+			{ score: 5.6 },
+			{ score: 5.2 },
+			{ score: 5.3 },
+			{ score: 5.4 },
+		],
+		speaking: [
+			{ score: 5.2 },
+			{ score: 5.5 },
+			{ score: 5.8 },
+			{ score: 5.4 },
+			{ score: 5.6 },
+			{ score: 5.9 },
+			{ score: 5.7 },
+			{ score: 5.8 },
+			{ score: 5.6 },
+			{ score: 5.8 },
+		],
+	},
+	testSessions: [
+		{
+			id: "sess-001",
+			examId: "exam-a1b2c3",
+			listeningScore: 6.5,
+			readingScore: 7.2,
+			writingScore: 5.5,
+			speakingScore: 5.8,
+			completedAt: new Date(Date.now() - 1 * 86400000).toISOString(),
+		},
+		{
+			id: "sess-002",
+			examId: "exam-d4e5f6",
+			listeningScore: 6.2,
+			readingScore: 7.0,
+			writingScore: null,
+			speakingScore: null,
+			completedAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+		},
+		{
+			id: "sess-003",
+			examId: "exam-g7h8i9",
+			listeningScore: 6.0,
+			readingScore: 7.1,
+			writingScore: 5.3,
+			speakingScore: 5.6,
+			completedAt: new Date(Date.now() - 5 * 86400000).toISOString(),
+		},
+		{
+			id: "sess-004",
+			examId: "exam-j0k1l2",
+			listeningScore: 5.8,
+			readingScore: 6.8,
+			writingScore: 5.0,
+			speakingScore: null,
+			completedAt: new Date(Date.now() - 7 * 86400000).toISOString(),
 		},
 	],
 }
