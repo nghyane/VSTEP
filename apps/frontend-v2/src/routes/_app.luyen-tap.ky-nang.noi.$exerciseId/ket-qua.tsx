@@ -1,11 +1,15 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { ArrowLeft, Headphones, Mic, RotateCcw } from "lucide-react"
+import { ArrowLeft, Check, Mic, RotateCcw, Star, X } from "lucide-react"
 import { Suspense, useMemo } from "react"
+import { AiGradingCard } from "#/components/practice/AiGradingCard"
 import { Button } from "#/components/ui/button"
 import { Skeleton } from "#/components/ui/skeleton"
-import { loadSpeakingResult } from "#/lib/practice/result-storage"
+import { type SpeakingExercise, SPEAKING_LEVEL_LABELS } from "#/lib/mock/speaking"
+import { buildMockSpeakingGrading } from "#/lib/practice/mock-ai-grading"
+import { loadSpeakingResult, type StoredSpeakingResult } from "#/lib/practice/result-storage"
 import { speakingExerciseQueryOptions } from "#/lib/queries/speaking"
+import { cn } from "#/lib/utils"
 
 export const Route = createFileRoute("/_app/luyen-tap/ky-nang/noi/$exerciseId/ket-qua")({
 	loader: ({ context: { queryClient }, params }) =>
@@ -16,13 +20,13 @@ export const Route = createFileRoute("/_app/luyen-tap/ky-nang/noi/$exerciseId/ke
 function ResultPage() {
 	const { exerciseId } = Route.useParams()
 	return (
-		<div className="mx-auto w-full max-w-3xl space-y-6 pb-10">
+		<div className="mx-auto w-full max-w-5xl space-y-6 pb-10">
 			<Link
 				to="/luyen-tap/ky-nang/noi"
 				className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
 			>
 				<ArrowLeft className="size-4" />
-				Danh sách bài
+				Danh sách đề
 			</Link>
 			<Suspense fallback={<ResultSkeleton />}>
 				<ResultBody exerciseId={exerciseId} />
@@ -35,61 +39,38 @@ function ResultBody({ exerciseId }: { exerciseId: string }) {
 	const navigate = useNavigate()
 	const { data: exercise } = useSuspenseQuery(speakingExerciseQueryOptions(exerciseId))
 	const stored = useMemo(() => loadSpeakingResult(exerciseId), [exerciseId])
+	const aiResult = useMemo(
+		() => (stored ? buildMockSpeakingGrading(stored.sentencesDone / stored.sentencesTotal) : null),
+		[stored],
+	)
 
-	if (!stored) return <EmptyResult exerciseId={exerciseId} />
-
-	const pct = Math.round(stored.dictationAccuracy * 100)
+	if (!stored || !aiResult) return <EmptyResult exerciseId={exerciseId} />
 
 	return (
 		<div className="space-y-6">
 			<header>
 				<p className="text-xs font-semibold uppercase tracking-wide text-skill-speaking">
-					Tổng kết · {exercise.title}
+					Kết quả · {SPEAKING_LEVEL_LABELS[exercise.level]}
 				</p>
-				<h1 className="mt-1 text-2xl font-bold">
-					Bạn đã hoàn thành {stored.sentencesDone}/{stored.sentencesTotal} câu
-				</h1>
+				<h1 className="mt-1 text-2xl font-bold">{exercise.title}</h1>
 				<p className="mt-1 text-sm text-muted-foreground">
-					Chế độ cuối: {stored.mode === "dictation" ? "Dictation" : "Shadowing"} · Nộp lúc{" "}
-					{formatTime(stored.submittedAt)}
+					Nộp lúc {formatTime(stored.submittedAt)}
 				</p>
 			</header>
 
-			<div className="grid gap-4 sm:grid-cols-2">
-				<StatCard
-					icon={<Headphones className="size-5" />}
-					label="Độ chính xác Dictation"
-					value={`${pct}%`}
-					hint={
-						pct >= 80
-							? "Xuất sắc!"
-							: pct >= 60
-								? "Khá ổn, luyện thêm chút."
-								: "Hãy nghe lại và thử lại."
-					}
-				/>
-				<StatCard
-					icon={<Mic className="size-5" />}
-					label="Câu đã hoàn thành"
-					value={`${stored.sentencesDone}/${stored.sentencesTotal}`}
-					hint="Tiếp tục luyện các câu còn lại để cải thiện nhịp nói."
-				/>
-			</div>
+			<AiGradingCard result={aiResult} />
 
-			<div className="rounded-2xl bg-muted/50 p-5">
-				<h3 className="text-sm font-semibold">Gợi ý tiếp theo</h3>
-				<ul className="mt-2 space-y-1.5 text-sm text-muted-foreground">
-					<li>· Quay lại bài này và luyện chế độ còn lại.</li>
-					<li>· Tập trung vào các câu dài, phát âm chậm 0.75x trước khi tăng tốc.</li>
-					<li>· Đọc to lại câu mẫu 3 lần trước khi record để cảm nhận nhịp.</li>
-				</ul>
-			</div>
+			<QuickFeedback stored={stored} />
 
+			<SentenceReview exercise={exercise} stored={stored} />
+
+			<div aria-hidden className="h-24" />
 			<footer
 				data-session-footer
 				className="fixed right-0 bottom-0 left-[var(--dock-left)] z-20 flex flex-wrap items-center justify-between gap-3 border-t bg-background px-6 py-4"
 			>
 				<Button
+					type="button"
 					variant="outline"
 					onClick={() =>
 						navigate({ to: "/luyen-tap/ky-nang/noi/$exerciseId", params: { exerciseId } })
@@ -99,36 +80,134 @@ function ResultBody({ exerciseId }: { exerciseId: string }) {
 					Luyện lại
 				</Button>
 				<Button asChild>
-					<Link to="/luyen-tap/ky-nang/noi">Về danh sách bài</Link>
+					<Link to="/luyen-tap/ky-nang/noi">Về danh sách đề nói</Link>
 				</Button>
 			</footer>
-			<div aria-hidden className="h-24" />
 		</div>
 	)
 }
 
-function StatCard({
-	icon,
-	label,
-	value,
-	hint,
-}: {
-	icon: React.ReactNode
-	label: string
-	value: string
-	hint: string
-}) {
+// ─── Quick feedback (rule-based) ───────────────────────────────────
+
+function QuickFeedback({ stored }: { stored: StoredSpeakingResult }) {
+	const pct = Math.round((stored.sentencesDone / stored.sentencesTotal) * 100)
+	const stars = pct >= 100 ? 5 : pct >= 80 ? 4 : pct >= 60 ? 3 : pct >= 40 ? 2 : 1
+
 	return (
-		<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
-			<div className="flex items-center gap-2 text-skill-speaking">
-				{icon}
-				<span className="text-xs font-semibold uppercase tracking-wider">{label}</span>
+		<div className="rounded-2xl border bg-card p-5 shadow-sm">
+			<div className="flex items-center justify-between">
+				<h3 className="text-lg font-semibold">Đánh giá nhanh</h3>
+				<div className="flex items-center gap-0.5">
+					{Array.from({ length: 5 }).map((_, i) => (
+						<Star
+							key={i}
+							className={cn(
+								"size-5",
+								i < stars ? "fill-warning text-warning" : "text-muted-foreground/40",
+							)}
+						/>
+					))}
+				</div>
 			</div>
-			<p className="mt-3 text-3xl font-bold tabular-nums">{value}</p>
-			<p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+			<ul className="mt-4 space-y-2 text-sm">
+				<CheckRow
+					ok={stored.sentencesDone === stored.sentencesTotal}
+					label={`Hoàn thành ${stored.sentencesDone}/${stored.sentencesTotal} câu (${pct}%)`}
+				/>
+				<CheckRow
+					ok={pct >= 80}
+					label={pct >= 80 ? "Tỉ lệ hoàn thành tốt (≥80%)" : "Tỉ lệ hoàn thành chưa đạt (<80%)"}
+				/>
+				<CheckRow
+					ok={stored.sentencesDone === stored.sentencesTotal}
+					label={
+						stored.sentencesDone === stored.sentencesTotal
+							? "Đã luyện tất cả các câu"
+							: `Còn ${stored.sentencesTotal - stored.sentencesDone} câu chưa ghi âm`
+					}
+				/>
+			</ul>
 		</div>
 	)
 }
+
+function CheckRow({ ok, label }: { ok: boolean; label: string }) {
+	return (
+		<li className="flex items-start gap-2">
+			{ok ? (
+				<Check className="mt-0.5 size-4 shrink-0 text-success" />
+			) : (
+				<X className="mt-0.5 size-4 shrink-0 text-destructive" />
+			)}
+			<span className={cn("text-foreground/90", !ok && "text-muted-foreground")}>{label}</span>
+		</li>
+	)
+}
+
+// ─── Sentence review ───────────────────────────────────────────────
+
+function SentenceReview({
+	exercise,
+	stored,
+}: {
+	exercise: SpeakingExercise
+	stored: StoredSpeakingResult
+}) {
+	return (
+		<div className="rounded-2xl border bg-card p-5 shadow-sm">
+			<h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+				Chi tiết từng câu
+			</h3>
+			<div className="space-y-3">
+				{exercise.sentences.map((s, i) => {
+					const done = i < stored.sentencesDone
+					return (
+						<div
+							key={s.id}
+							className={cn(
+								"flex items-start gap-3 rounded-xl p-3",
+								done ? "bg-success/5" : "bg-muted/50",
+							)}
+						>
+							<div
+								className={cn(
+									"flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+									done
+										? "bg-success/15 text-success"
+										: "bg-muted text-muted-foreground",
+								)}
+							>
+								{done ? <Mic className="size-3.5" /> : i + 1}
+							</div>
+							<div className="min-w-0 flex-1">
+								<p className={cn("text-sm font-medium", !done && "text-muted-foreground")}>
+									{s.text}
+								</p>
+								{s.translation && (
+									<p className="mt-0.5 text-xs italic text-muted-foreground">
+										{s.translation}
+									</p>
+								)}
+							</div>
+							<span
+								className={cn(
+									"shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
+									done
+										? "bg-success/10 text-success"
+										: "bg-muted text-muted-foreground",
+								)}
+							>
+								{done ? "Đã ghi" : "Chưa ghi"}
+							</span>
+						</div>
+					)
+				})}
+			</div>
+		</div>
+	)
+}
+
+// ─── Shared ────────────────────────────────────────────────────────
 
 function EmptyResult({ exerciseId }: { exerciseId: string }) {
 	return (
@@ -150,6 +229,7 @@ function ResultSkeleton() {
 		<div className="space-y-4">
 			<Skeleton className="h-10 w-64" />
 			<Skeleton className="h-48 rounded-2xl" />
+			<Skeleton className="h-32 rounded-2xl" />
 		</div>
 	)
 }
