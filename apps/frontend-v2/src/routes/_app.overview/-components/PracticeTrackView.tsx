@@ -3,8 +3,7 @@
 // Source: apps/frontend/src/routes/_learner/progress/-components/TestPracticeTab.tsx
 
 import { BookOpen, Headphones, Mic, PencilLine } from "lucide-react"
-import { useState } from "react"
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
+import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "#/components/ui/chart"
 import type { PracticeTrackData, TestSession } from "#/lib/mock/overview"
 import { cn } from "#/lib/utils"
@@ -38,13 +37,6 @@ const SKILLS: { key: Skill; label: string; icon: React.ReactNode; colorVar: stri
 	},
 ]
 
-const scoreChartConfig = {
-	listening: { label: "Listening", color: "var(--skill-listening)" },
-	reading: { label: "Reading", color: "var(--skill-reading)" },
-	writing: { label: "Writing", color: "var(--skill-writing)" },
-	speaking: { label: "Speaking", color: "var(--skill-speaking)" },
-} satisfies Record<string, { label: string; color: string }>
-
 const skillColor: Record<Skill, string> = {
 	listening: "bg-skill-listening/15 text-skill-listening",
 	reading: "bg-skill-reading/15 text-skill-reading",
@@ -57,33 +49,16 @@ interface Props {
 }
 
 export function PracticeTrackView({ data }: Props) {
-	const [mode, setMode] = useState<"practice" | "exam">("practice")
-	const [visibleSkills, setVisibleSkills] = useState<Set<Skill>>(
-		new Set(["listening", "reading", "writing", "speaking"]),
-	)
-
-	// Build line chart data
-	const lineData = buildLineData(data.recentScores)
-
 	// Group sessions by date
 	const groupedSessions = groupSessionsByDate(data.testSessions)
-
-	function toggleSkill(skill: Skill) {
-		setVisibleSkills((prev) => {
-			const next = new Set(prev)
-			if (next.has(skill)) next.delete(skill)
-			else next.add(skill)
-			return next
-		})
-	}
 
 	return (
 		<div className="space-y-6">
 			{/* Section 1: Average scores by skill */}
 			<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
 				<div className="mb-4">
-					<h3 className="text-lg font-semibold">Điểm trung bình hàng tuần</h3>
-					<p className="text-sm text-muted-foreground">So với tuần trước</p>
+					<h3 className="text-lg font-semibold">Điểm trung bình từng kỹ năng</h3>
+					<p className="text-sm text-muted-foreground">Thang điểm VSTEP (0–10)</p>
 				</div>
 				<div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
 					{SKILLS.map(({ key, label, icon }) => {
@@ -114,116 +89,40 @@ export function PracticeTrackView({ data }: Props) {
 						)
 					})}
 				</div>
-				<p className="mt-4 text-center text-xs text-muted-foreground">
-					Điểm số được tính trên thang điểm VSTEP
-				</p>
 			</div>
 
-			{/* Section 2: Score tracking line chart */}
+			{/* Section 2: Bar chart — 4 skills on X-axis, score on Y-axis */}
 			<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
-				<div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-					<div>
-						<h3 className="text-lg font-semibold">Theo dõi điểm số</h3>
-						<p className="text-sm text-muted-foreground">Dựa trên 10 bài test gần nhất</p>
-					</div>
-					<div className="flex gap-2">
-						<button
-							type="button"
-							onClick={() => setMode("practice")}
-							className={cn(
-								"rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-								mode === "practice"
-									? "bg-primary text-primary-foreground"
-									: "border text-muted-foreground hover:bg-muted",
-							)}
-						>
-							Chế độ luyện tập
-						</button>
-						<button
-							type="button"
-							onClick={() => setMode("exam")}
-							className={cn(
-								"rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-								mode === "exam"
-									? "bg-primary text-primary-foreground"
-									: "border text-muted-foreground hover:bg-muted",
-							)}
-						>
-							Chế độ phòng thi
-						</button>
-					</div>
+				<div className="mb-4">
+					<h3 className="text-lg font-semibold">Biểu đồ điểm số</h3>
+					<p className="text-sm text-muted-foreground">So sánh điểm trung bình giữa các kỹ năng</p>
 				</div>
 
-				{/* Skill toggle checkboxes */}
-				<div className="mb-4 flex flex-wrap gap-4">
-					{SKILLS.map(({ key, label }) => {
-						const checked = visibleSkills.has(key)
-						return (
-							<label key={key} className="flex cursor-pointer items-center gap-2 text-sm">
-								<input
-									type="checkbox"
-									checked={checked}
-									onChange={() => toggleSkill(key)}
-									className="sr-only"
-								/>
-								<span
-									className={cn(
-										"flex size-4 items-center justify-center rounded border-2 transition-colors",
-										checked ? "border-transparent" : "border-muted-foreground/30 bg-transparent",
-									)}
-									style={
-										checked
-											? {
-													backgroundColor: SKILLS.find((s) => s.key === key)?.colorVar,
-													borderColor: SKILLS.find((s) => s.key === key)?.colorVar,
-												}
-											: undefined
-									}
-								>
-									{checked && (
-										<svg className="size-3 text-white" viewBox="0 0 12 12" fill="none">
-											<title>Đã chọn</title>
-											<path
-												d="M2 6l3 3 5-5"
-												stroke="currentColor"
-												strokeWidth="2"
-												strokeLinecap="round"
-												strokeLinejoin="round"
-											/>
-										</svg>
-									)}
-								</span>
-								{label}
-							</label>
-						)
-					})}
-				</div>
-
-				{lineData.length > 0 ? (
-					<ChartContainer config={scoreChartConfig} className="aspect-auto h-[280px] w-full">
-						<LineChart data={lineData} margin={{ left: 12, right: 12, top: 12, bottom: 0 }}>
-							<CartesianGrid vertical={false} strokeDasharray="3 3" />
-							<XAxis dataKey="index" tickLine={false} axisLine={false} tickMargin={8} />
-							<YAxis domain={[0, 10]} tickLine={false} axisLine={false} tickMargin={8} />
-							<ChartTooltip content={<ChartTooltipContent />} />
-							{SKILLS.filter((s) => visibleSkills.has(s.key)).map((s) => (
-								<Line
-									key={s.key}
-									type="monotone"
-									dataKey={s.key}
-									stroke={s.colorVar}
-									strokeWidth={2}
-									dot={{ r: 4 }}
-									connectNulls
-								/>
-							))}
-						</LineChart>
-					</ChartContainer>
-				) : (
-					<div className="flex h-[280px] items-center justify-center text-muted-foreground">
-						Không có dữ liệu
-					</div>
-				)}
+				<ChartContainer config={{}} className="aspect-auto h-[280px] w-full">
+					<BarChart
+						data={SKILLS.map((s) => ({
+							skill: s.label,
+							score: data.spider[s.key].current,
+							fill: s.colorVar,
+						}))}
+						margin={{ left: -10, right: 12, top: 24, bottom: 0 }}
+						barCategoryGap="30%"
+					>
+						<CartesianGrid vertical={false} strokeDasharray="3 3" />
+						<XAxis dataKey="skill" tickLine={false} axisLine={false} tickMargin={10} />
+						<YAxis
+							domain={[0, 10]}
+							tickLine={false}
+							axisLine={false}
+							tickMargin={8}
+							tickCount={6}
+						/>
+						<ChartTooltip content={<ChartTooltipContent />} />
+						<Bar dataKey="score" radius={[6, 6, 0, 0]}>
+							<LabelList dataKey="score" position="top" />
+						</Bar>
+					</BarChart>
+				</ChartContainer>
 			</div>
 
 			{/* Section 3: Test history */}
@@ -262,25 +161,6 @@ export function PracticeTrackView({ data }: Props) {
 }
 
 // ─── Helpers ────────────────────────────────────────────────────
-
-function buildLineData(recentScores: Record<Skill, ScoreEntry[]>): {
-	index: string
-	listening: number | null
-	reading: number | null
-	writing: number | null
-	speaking: number | null
-}[] {
-	const maxLen = Math.max(...SKILLS.map((s) => recentScores[s.key]?.length ?? 0))
-	return Array.from({ length: maxLen }, (_, i) => {
-		const entry = { index: `#${i + 1}` }
-		for (const s of SKILLS) {
-			const scores = [...(recentScores[s.key] ?? [])].reverse()
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			;(entry as any)[s.key] = scores[i]?.score ?? null
-		}
-		return entry
-	})
-}
 
 function groupSessionsByDate(sessions: TestSession[]): Record<string, TestSession[]> {
 	return sessions.reduce(
