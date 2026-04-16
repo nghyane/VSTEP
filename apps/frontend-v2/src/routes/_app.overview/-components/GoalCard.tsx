@@ -13,7 +13,13 @@ interface Props {
 
 export function GoalCard({ goal }: Props) {
 	if (!goal) {
-		return null
+		return (
+			<div className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-muted/50 p-8 shadow-sm">
+				<Target className="size-6 text-primary" />
+				<p className="text-sm text-muted-foreground">Bạn chưa đặt mục tiêu học tập</p>
+				<Button size="sm">Đặt mục tiêu</Button>
+			</div>
+		)
 	}
 
 	const deadlineLabel = new Date(goal.deadline).toLocaleDateString("vi-VN", {
