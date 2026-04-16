@@ -6,13 +6,13 @@ import { OnboardingDialog } from "#/components/onboarding/OnboardingDialog"
 import { Skeleton } from "#/components/ui/skeleton"
 import type { OverviewData } from "#/lib/mock/overview"
 import type { OnboardingData } from "#/lib/onboarding/types"
+import { saveOnboardingData, useMockGoal } from "#/lib/onboarding/useMockGoal"
 import { overviewQueryOptions } from "#/lib/queries/overview"
 import { cn } from "#/lib/utils"
 import { ActivityHeatmap } from "./_app.overview/-components/ActivityHeatmap"
 import { DoughnutChartCard } from "./_app.overview/-components/DoughnutChartCard"
-import { GoalCard } from "./_app.overview/-components/GoalCard"
+import { ExamCountdown } from "./_app.overview/-components/ExamCountdown"
 import { NextActionCard } from "./_app.overview/-components/NextActionCard"
-import { OnboardingBanner } from "./_app.overview/-components/OnboardingBanner"
 import { ProfileBanner } from "./_app.overview/-components/ProfileBanner"
 import { SpiderChartCard } from "./_app.overview/-components/SpiderChartCard"
 import { StatGrid } from "./_app.overview/-components/StatGrid"
@@ -34,17 +34,21 @@ export const Route = createFileRoute("/_app/overview")({
 function OverviewPage() {
 	const { tab } = Route.useSearch()
 	const [showOnboarding, setShowOnboarding] = useState(false)
+	const mockGoal = useMockGoal()
 
 	function handleOnboardingComplete(data: OnboardingData) {
-		// TODO: gọi API lưu onboarding data
-		console.log("Onboarding completed:", data)
+		saveOnboardingData(data)
 		setShowOnboarding(false)
 	}
 
 	return (
 		<div className="mx-auto w-full max-w-5xl space-y-6">
 			<Suspense fallback={<OverviewSkeleton tab={tab} />}>
-				<OverviewContent tab={tab} onStartOnboarding={() => setShowOnboarding(true)} />
+				<OverviewContent
+					tab={tab}
+					onStartOnboarding={() => setShowOnboarding(true)}
+					mockGoal={mockGoal}
+				/>
 			</Suspense>
 			<OnboardingDialog
 				open={showOnboarding}
@@ -97,12 +101,20 @@ function TabLink({
 
 // ─── Content ───────────────────────────────────────────────────────
 
-function OverviewContent({ tab, onStartOnboarding }: { tab: Tab; onStartOnboarding: () => void }) {
+function OverviewContent({
+	tab,
+	onStartOnboarding,
+	mockGoal,
+}: {
+	tab: Tab
+	onStartOnboarding: () => void
+	mockGoal: ReturnType<typeof useMockGoal>
+}) {
 	const { data } = useSuspenseQuery(overviewQueryOptions())
 	return (
 		<div className="space-y-6">
 			{/* Banner chung — luôn hiện ở cả 2 tab */}
-			<ProfileBanner user={data.user} />
+			<ProfileBanner user={data.user} onStartOnboarding={onStartOnboarding} />
 
 			{/* Tab bar nằm dưới banner */}
 			<TabBar active={tab} />
@@ -111,7 +123,7 @@ function OverviewContent({ tab, onStartOnboarding }: { tab: Tab; onStartOnboardi
 			{tab === "focus" ? (
 				<FocusView data={data} />
 			) : (
-				<DetailsView data={data} onStartOnboarding={onStartOnboarding} />
+				<DetailsView data={data} mockGoal={mockGoal} />
 			)}
 		</div>
 	)
@@ -140,26 +152,20 @@ function FocusFooter({ streak }: { streak: number }) {
 
 function DetailsView({
 	data,
-	onStartOnboarding,
+	mockGoal,
 }: {
 	data: OverviewData
-	onStartOnboarding: () => void
+	mockGoal: ReturnType<typeof useMockGoal>
 }) {
 	const totalTests = data.skills.reduce((acc, s) => acc + s.attemptCount, 0)
 
-	// Show onboarding banner when user has no goal and no skill data
-	const hasNoGoal = !data.goal
-	const hasNoSkillData = !data.skills.length || data.skills.every((s) => s.attemptCount === 0)
-	const needsOnboarding = hasNoGoal && hasNoSkillData
-
 	return (
 		<div className="space-y-6">
-			{/* Onboarding reminder banner */}
-			{needsOnboarding && <OnboardingBanner onStart={onStartOnboarding} />}
-
 			<StatGrid activity={data.activity} totalTests={totalTests} />
 			<ActivityHeatmap activityByDay={data.activity.activityByDay} />
-			<GoalCard goal={data.goal} />
+			{mockGoal ? (
+				<ExamCountdown deadline={mockGoal.deadline} daysRemaining={mockGoal.daysRemaining} />
+			) : null}
 			<div className="grid gap-6 md:grid-cols-2">
 				<SpiderChartCard spider={data.spider} />
 				<DoughnutChartCard skills={data.skills} />

@@ -2,16 +2,16 @@
 // Spec: rounded-2xl bg-gradient-to-r from-primary to-primary/80 px-8 py-8
 // Source: progress/index.tsx ProfileCard + Prep UI level track
 
-import { Link } from "@tanstack/react-router"
-import { Pencil } from "lucide-react"
+import { Route } from "lucide-react"
 import { Button } from "#/components/ui/button"
 import type { OverviewData } from "#/lib/mock/overview"
 
 interface Props {
 	user: OverviewData["user"]
+	onStartOnboarding: () => void
 }
 
-export function ProfileBanner({ user }: Props) {
+export function ProfileBanner({ user, onStartOnboarding }: Props) {
 	return (
 		<div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary to-primary/80 px-6 py-6 md:px-8 md:py-8">
 			{/* Decorative circles */}
@@ -39,12 +39,10 @@ export function ProfileBanner({ user }: Props) {
 						variant="ghost"
 						size="sm"
 						className="h-7 gap-1.5 rounded-full border border-white/30 bg-white/15 px-3 text-xs font-semibold text-white hover:bg-white/25 hover:text-white"
-						asChild
+						onClick={onStartOnboarding}
 					>
-						<Link to="/overview" search={{ tab: "overview" }}>
-							<Pencil className="size-3" />
-							Chỉnh sửa hồ sơ
-						</Link>
+						<Route className="size-3" />
+						Đặt mục tiêu
 					</Button>
 
 					{/* Level track */}
