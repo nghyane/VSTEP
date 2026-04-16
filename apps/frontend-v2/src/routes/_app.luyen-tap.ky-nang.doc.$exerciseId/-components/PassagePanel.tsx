@@ -8,9 +8,10 @@ import { cn } from "#/lib/utils"
 
 interface Props {
 	exercise: ReadingExercise
+	showTranslation?: boolean
 }
 
-export function PassagePanel({ exercise }: Props) {
+export function PassagePanel({ exercise, showTranslation }: Props) {
 	const paragraphs = exercise.passage.split(/\n\n+/).filter((p) => p.trim().length > 0)
 	return (
 		<div className="rounded-2xl border bg-card p-6 shadow-sm">
@@ -22,7 +23,7 @@ export function PassagePanel({ exercise }: Props) {
 					</p>
 				))}
 			</div>
-			<TranslationReveal translation={exercise.vietnameseTranslation} />
+			{showTranslation && <TranslationReveal translation={exercise.vietnameseTranslation} />}
 		</div>
 	)
 }

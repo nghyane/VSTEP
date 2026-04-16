@@ -8,6 +8,7 @@ import { cn } from "#/lib/utils"
 
 interface Props {
 	transcript: string
+	showTranscript?: boolean
 }
 
 type PlayState = "idle" | "playing" | "paused" | "ended"
@@ -15,7 +16,7 @@ type PlayState = "idle" | "playing" | "paused" | "ended"
 const WORDS_PER_SECOND = 2.25 // 135 wpm / 60
 const TICK_MS = 200
 
-export function TtsAudioPlayer({ transcript }: Props) {
+export function TtsAudioPlayer({ transcript, showTranscript }: Props) {
 	const durationSec = estimateDuration(transcript)
 	const [state, setState] = useState<PlayState>("idle")
 	const [playCount, setPlayCount] = useState(0)
@@ -110,7 +111,7 @@ export function TtsAudioPlayer({ transcript }: Props) {
 				<p className="mt-2 text-xs text-muted-foreground">Đang tải giọng đọc…</p>
 			)}
 
-			<TranscriptReveal transcript={transcript} />
+			{showTranscript && <TranscriptReveal transcript={transcript} />}
 		</div>
 	)
 }

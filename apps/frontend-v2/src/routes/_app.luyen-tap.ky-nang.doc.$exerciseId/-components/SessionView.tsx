@@ -1,10 +1,12 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
+import { SupportModeSwitch } from "#/components/common/SupportModeSwitch"
 import { KeywordsPills } from "#/components/practice/KeywordsPills"
 import { McqNavBar } from "#/components/practice/McqNavBar"
 import { McqQuestionList } from "#/components/practice/McqQuestionList"
 import { StatusText, SubmitAction } from "#/components/practice/McqSubmitBar"
 import { READING_PART_LABELS } from "#/lib/mock/reading"
 import type { McqSession } from "#/lib/practice/use-mcq-session"
+import { useSupportMode } from "#/lib/practice/use-support-mode"
 import { readingExerciseQueryOptions } from "#/lib/queries/reading"
 import { PassagePanel } from "./PassagePanel"
 import { useReadingSession } from "./useReadingSession"
@@ -13,13 +15,17 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 	const { data: exercise } = useSuspenseQuery(readingExerciseQueryOptions(exerciseId))
 	const session = useReadingSession(exercise)
 	const submitted = session.phase === "submitted"
+	const supportMode = useSupportMode()
 
 	return (
 		<div className="mt-4 space-y-6">
 			<header>
-				<p className="text-xs font-semibold uppercase tracking-wide text-skill-reading">
-					{READING_PART_LABELS[exercise.part]}
-				</p>
+				<div className="flex items-start justify-between gap-3">
+					<p className="text-xs font-semibold uppercase tracking-wide text-skill-reading">
+						{READING_PART_LABELS[exercise.part]}
+					</p>
+					<SupportModeSwitch />
+				</div>
 				<div className="mt-1 flex flex-wrap items-start justify-between gap-3">
 					<div>
 						<h1 className="text-2xl font-bold">{exercise.title}</h1>
@@ -29,13 +35,15 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 						{exercise.items.length} câu · {exercise.estimatedMinutes} phút
 					</p>
 				</div>
-				<div className="mt-3">
-					<KeywordsPills keywords={exercise.keywords} />
-				</div>
+				{supportMode && (
+					<div className="mt-3">
+						<KeywordsPills keywords={exercise.keywords} />
+					</div>
+				)}
 			</header>
 
 			<div className="grid gap-6 lg:grid-cols-2">
-				<PassagePanel exercise={exercise} />
+				<PassagePanel exercise={exercise} showTranslation={supportMode} />
 				<div className="space-y-4">
 					<McqQuestionList
 						items={exercise.items}
