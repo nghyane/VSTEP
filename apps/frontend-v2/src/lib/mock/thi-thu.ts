@@ -168,9 +168,6 @@ export async function mockFetchExamDetail(id: number): Promise<ExamDetail> {
 		totalDurationMinutes: 172,
 		sections: VSTEP_SECTIONS,
 		attemptCount: 1522,
-		lastAttempt:
-			id === 1
-				? { date: "26/11/2024", score: "0/10", durationSeconds: 110 }
-				: null,
+		lastAttempt: id === 1 ? { date: "26/11/2024", score: "0/10", durationSeconds: 110 } : null,
 	}
 }

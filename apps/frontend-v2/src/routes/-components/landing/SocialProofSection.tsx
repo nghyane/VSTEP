@@ -21,7 +21,10 @@ export function SocialProofSection() {
 							{ value: "10,000+", label: "Học viên" },
 							{ value: "92%", label: "Tăng ít nhất 1 band" },
 						].map((s) => (
-							<div key={s.label} className="rounded-2xl bg-white/10 px-4 py-5 text-center backdrop-blur-sm">
+							<div
+								key={s.label}
+								className="rounded-2xl bg-white/10 px-4 py-5 text-center backdrop-blur-sm"
+							>
 								<p className="text-2xl font-bold text-white sm:text-3xl">{s.value}</p>
 								<p className="mt-1 text-sm text-white/60">{s.label}</p>
 							</div>
@@ -39,10 +42,7 @@ export function SocialProofSection() {
 					{/* Testimonials */}
 					<div className="mt-10 grid gap-4 sm:grid-cols-3">
 						{TESTIMONIALS.map((item) => (
-							<div
-								key={item.name}
-								className="rounded-2xl bg-white/10 p-5 backdrop-blur-sm"
-							>
+							<div key={item.name} className="rounded-2xl bg-white/10 p-5 backdrop-blur-sm">
 								<div className="flex items-center gap-3">
 									<Avatar size="lg">
 										<AvatarImage src={item.avatar} alt={item.name} />
@@ -60,9 +60,7 @@ export function SocialProofSection() {
 										<Star key={i} className="size-3.5 fill-warning text-warning" />
 									))}
 								</div>
-								<p className="mt-3 text-sm italic leading-relaxed text-white/80">
-									"{item.quote}"
-								</p>
+								<p className="mt-3 text-sm italic leading-relaxed text-white/80">"{item.quote}"</p>
 								<span className="mt-3 inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white">
 									{item.badge}
 								</span>

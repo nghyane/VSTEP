@@ -58,12 +58,19 @@ export function BentoFeaturesSection() {
 								key={skill.label}
 								className="rounded-2xl border bg-card p-5 transition hover:-translate-y-0.5 hover:shadow-md"
 							>
-								<div className={cn("inline-flex size-10 items-center justify-center rounded-xl", skill.bg)}>
+								<div
+									className={cn(
+										"inline-flex size-10 items-center justify-center rounded-xl",
+										skill.bg,
+									)}
+								>
 									<Icon className={cn("size-5", skill.color)} />
 								</div>
 								<h3 className="mt-3 font-semibold">{skill.label}</h3>
 								<p className="text-sm text-muted-foreground">{skill.desc}</p>
-								<p className="mt-2 text-xs leading-relaxed text-muted-foreground/70">{skill.detail}</p>
+								<p className="mt-2 text-xs leading-relaxed text-muted-foreground/70">
+									{skill.detail}
+								</p>
 							</div>
 						)
 					})}

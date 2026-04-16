@@ -1,7 +1,10 @@
 import { Link } from "@tanstack/react-router"
 import { CheckCircle2, XCircle } from "lucide-react"
-import type { QuestionItemResult, QuestionTypeResult } from "#/lib/practice/phong-thi-result"
-import type { PhongThiResult } from "#/lib/practice/phong-thi-result"
+import type {
+	PhongThiResult,
+	QuestionItemResult,
+	QuestionTypeResult,
+} from "#/lib/practice/phong-thi-result"
 import { cn } from "#/lib/utils"
 
 interface ChiTietCardProps {
@@ -89,7 +92,9 @@ function McqItemRow({ item }: { item: QuestionItemResult }) {
 			{correct ? (
 				<CheckCircle2 className="size-4 shrink-0 text-success" />
 			) : (
-				<XCircle className={cn("size-4 shrink-0", answered ? "text-destructive" : "text-muted-foreground")} />
+				<XCircle
+					className={cn("size-4 shrink-0", answered ? "text-destructive" : "text-muted-foreground")}
+				/>
 			)}
 
 			<span className="font-medium text-foreground">Câu {item.no}</span>

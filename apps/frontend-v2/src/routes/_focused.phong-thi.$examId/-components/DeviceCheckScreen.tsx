@@ -72,15 +72,15 @@ function AudioTestPlayer() {
 	return (
 		<div className="space-y-2">
 			<div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2">
-		<motion.button
-				type="button"
-				onClick={toggle}
-				whileTap={{ scale: 0.9 }}
-				transition={{ type: "spring", stiffness: 500, damping: 30 }}
-				className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
-			>
-			{playing ? <Pause className="size-4" /> : <Play className="size-4" />}
-			</motion.button>
+				<motion.button
+					type="button"
+					onClick={toggle}
+					whileTap={{ scale: 0.9 }}
+					transition={{ type: "spring", stiffness: 500, damping: 30 }}
+					className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
+				>
+					{playing ? <Pause className="size-4" /> : <Play className="size-4" />}
+				</motion.button>
 				<span className="font-mono text-xs tabular-nums text-muted-foreground">
 					{fmt(currentTime)} / {fmt(duration)}
 				</span>

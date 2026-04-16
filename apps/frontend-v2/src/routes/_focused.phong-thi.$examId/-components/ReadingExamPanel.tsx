@@ -32,29 +32,31 @@ function MCQItem({
 					const letter = LETTERS[oi] ?? String(oi + 1)
 					const isSelected = selected === letter
 					return (
-				<motion.button
-					key={`${index}-${oi}`}
-					type="button"
-					onClick={() => onSelect(letter)}
-					whileTap={{ scale: 0.97 }}
-					transition={{ type: "spring", stiffness: 450, damping: 25 }}
-					className={cn(
-						"flex items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-sm transition-colors",
-						isSelected
-							? "border-primary border-b-2 border-b-primary/60 bg-primary/5 shadow-sm"
-							: "border-border hover:border-primary/40 hover:bg-muted/30",
-					)}
-				>
-					<span
-						className={cn(
-							"flex size-6 shrink-0 items-center justify-center rounded-lg text-xs font-semibold",
-							isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
-						)}
-					>
-						{letter}
-					</span>
-					<span>{opt}</span>
-				</motion.button>
+						<motion.button
+							key={`${index}-${oi}`}
+							type="button"
+							onClick={() => onSelect(letter)}
+							whileTap={{ scale: 0.97 }}
+							transition={{ type: "spring", stiffness: 450, damping: 25 }}
+							className={cn(
+								"flex items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-sm transition-colors",
+								isSelected
+									? "border-primary border-b-2 border-b-primary/60 bg-primary/5 shadow-sm"
+									: "border-border hover:border-primary/40 hover:bg-muted/30",
+							)}
+						>
+							<span
+								className={cn(
+									"flex size-6 shrink-0 items-center justify-center rounded-lg text-xs font-semibold",
+									isSelected
+										? "bg-primary text-primary-foreground"
+										: "bg-muted text-muted-foreground",
+								)}
+							>
+								{letter}
+							</span>
+							<span>{opt}</span>
+						</motion.button>
 					)
 				})}
 			</div>
@@ -131,11 +133,11 @@ export function ReadingExamPanel({ passages, answers, onAnswer }: Props) {
 
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden">
-		{/* Desktop: split layout */}
-		<div className="hidden flex-1 overflow-hidden lg:flex">
-			<div className="w-1/2 overflow-y-auto border-r bg-muted/10 p-6">{passageContent}</div>
-			<div className="flex-1 overflow-y-auto p-6">{questionsContent}</div>
-		</div>
+			{/* Desktop: split layout */}
+			<div className="hidden flex-1 overflow-hidden lg:flex">
+				<div className="w-1/2 overflow-y-auto border-r bg-muted/10 p-6">{passageContent}</div>
+				<div className="flex-1 overflow-y-auto p-6">{questionsContent}</div>
+			</div>
 
 			{/* Mobile: tabbed layout */}
 			<div className="flex flex-1 flex-col overflow-hidden lg:hidden">
@@ -161,32 +163,32 @@ export function ReadingExamPanel({ passages, answers, onAnswer }: Props) {
 				</div>
 			</div>
 
-		{/* Question number buttons */}
-		<div className="flex flex-wrap justify-center gap-1.5 border-t px-4 py-2.5">
-			{activePassage.items.map((_, i) => {
-				const isAnswered = currentAnswers[String(i + 1)] != null
-				return (
-					<motion.button
-						key={i}
-						type="button"
-						onClick={() => handleJump(i)}
-						whileTap={{ scale: 0.88 }}
-						transition={{ type: "spring", stiffness: 500, damping: 30 }}
-						className={cn(
-							"flex size-8 items-center justify-center rounded-lg border text-sm font-medium transition-colors",
-							isAnswered
-								? "border-primary border-b-2 border-b-primary/60 bg-primary text-primary-foreground shadow-sm"
-								: "border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-accent",
-						)}
-					>
-						{i + 1}
-					</motion.button>
-				)
-			})}
-		</div>
+			{/* Question number buttons */}
+			<div className="flex flex-wrap justify-center gap-1.5 border-t px-4 py-2.5">
+				{activePassage.items.map((_, i) => {
+					const isAnswered = currentAnswers[String(i + 1)] != null
+					return (
+						<motion.button
+							key={i}
+							type="button"
+							onClick={() => handleJump(i)}
+							whileTap={{ scale: 0.88 }}
+							transition={{ type: "spring", stiffness: 500, damping: 30 }}
+							className={cn(
+								"flex size-8 items-center justify-center rounded-lg border text-sm font-medium transition-colors",
+								isAnswered
+									? "border-primary border-b-2 border-b-primary/60 bg-primary text-primary-foreground shadow-sm"
+									: "border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-accent",
+							)}
+						>
+							{i + 1}
+						</motion.button>
+					)
+				})}
+			</div>
 
-		{/* Passage tabs + prev/next */}
-		<div className="flex items-center justify-between border-t bg-card px-4 py-2.5">
+			{/* Passage tabs + prev/next */}
+			<div className="flex items-center justify-between border-t bg-card px-4 py-2.5">
 				{activeIdx > 0 ? (
 					<Button size="sm" variant="outline" onClick={handlePrev}>
 						<ChevronLeft className="size-4" />

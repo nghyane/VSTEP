@@ -112,13 +112,13 @@ export function WritingExamPanel({ tasks, answers, onAnswer }: Props) {
 
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden">
-		{/* Desktop: split layout */}
-		<div className="hidden flex-1 overflow-hidden lg:flex">
-			<div className="w-2/5 overflow-y-auto border-r bg-muted/10 p-6">
-				<WritingPrompt task={activeTask} />
+			{/* Desktop: split layout */}
+			<div className="hidden flex-1 overflow-hidden lg:flex">
+				<div className="w-2/5 overflow-y-auto border-r bg-muted/10 p-6">
+					<WritingPrompt task={activeTask} />
+				</div>
+				<div className="flex flex-1 flex-col overflow-y-auto p-6">{editorContent}</div>
 			</div>
-			<div className="flex flex-1 flex-col overflow-y-auto p-6">{editorContent}</div>
-		</div>
 
 			{/* Mobile: tabbed layout */}
 			<div className="flex flex-1 flex-col overflow-hidden lg:hidden">
@@ -144,8 +144,8 @@ export function WritingExamPanel({ tasks, answers, onAnswer }: Props) {
 				</div>
 			</div>
 
-		{/* Task tabs + prev/next */}
-		<div className="flex items-center justify-between border-t bg-card px-4 py-2.5">
+			{/* Task tabs + prev/next */}
+			<div className="flex items-center justify-between border-t bg-card px-4 py-2.5">
 				{activeIdx > 0 ? (
 					<Button size="sm" variant="outline" onClick={handlePrev}>
 						<ChevronLeft className="size-4" />
@@ -158,7 +158,8 @@ export function WritingExamPanel({ tasks, answers, onAnswer }: Props) {
 				<div className="flex items-center gap-1.5">
 					{tasksMeta.map((meta, i) => {
 						const isActive = i === activeIdx
-						const pct = meta.minWords > 0 ? Math.min(100, (meta.wordCount / meta.minWords) * 100) : 0
+						const pct =
+							meta.minWords > 0 ? Math.min(100, (meta.wordCount / meta.minWords) * 100) : 0
 						return (
 							<button
 								key={i}

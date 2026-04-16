@@ -434,9 +434,9 @@ export function SpeakingExamPanel({ parts, doneParts, storageKey, onPartDone }: 
 				</div>
 			</div>
 
-		{/* Part tabs + prev/next */}
-		{sorted.length > 1 && (
-			<div className="flex items-center justify-between border-t bg-card px-4 py-2.5">
+			{/* Part tabs + prev/next */}
+			{sorted.length > 1 && (
+				<div className="flex items-center justify-between border-t bg-card px-4 py-2.5">
 					{activeIdx > 0 ? (
 						<Button size="sm" variant="outline" onClick={handlePrev}>
 							<ChevronLeft className="size-4" />
@@ -447,32 +447,32 @@ export function SpeakingExamPanel({ parts, doneParts, storageKey, onPartDone }: 
 					)}
 
 					<div className="flex items-center gap-1.5">
-					{sorted.map((p, i) => {
-						const isActive = i === activeIdx
-						return (
-							<motion.button
-								key={p.id}
-								type="button"
-								onClick={() => setActiveIdx(i)}
-								whileTap={{ scale: 0.93 }}
-								transition={{ type: "spring", stiffness: 450, damping: 25 }}
-								className={cn(
-									"flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-									isActive
-										? "bg-primary text-primary-foreground"
-										: doneParts.has(p.id)
-											? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-											: "bg-muted text-muted-foreground hover:bg-muted/80",
-								)}
-							>
-								{doneParts.has(p.id) && (
-									<span className={isActive ? "text-primary-foreground/80" : "text-emerald-500"}>
-										✓
-									</span>
-								)}
-							Part {i + 1}
-							</motion.button>
-						)
+						{sorted.map((p, i) => {
+							const isActive = i === activeIdx
+							return (
+								<motion.button
+									key={p.id}
+									type="button"
+									onClick={() => setActiveIdx(i)}
+									whileTap={{ scale: 0.93 }}
+									transition={{ type: "spring", stiffness: 450, damping: 25 }}
+									className={cn(
+										"flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+										isActive
+											? "bg-primary text-primary-foreground"
+											: doneParts.has(p.id)
+												? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+												: "bg-muted text-muted-foreground hover:bg-muted/80",
+									)}
+								>
+									{doneParts.has(p.id) && (
+										<span className={isActive ? "text-primary-foreground/80" : "text-emerald-500"}>
+											✓
+										</span>
+									)}
+									Part {i + 1}
+								</motion.button>
+							)
 						})}
 					</div>
 

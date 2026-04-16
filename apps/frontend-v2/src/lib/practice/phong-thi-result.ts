@@ -118,10 +118,7 @@ function makeQT(
 	}
 }
 
-function makeNonMcqItems(
-	ids: string[],
-	doneSet: ReadonlySet<string> | null,
-): QuestionItemResult[] {
+function makeNonMcqItems(ids: string[], doneSet: ReadonlySet<string> | null): QuestionItemResult[] {
 	return ids.map((id, i) => {
 		const done = doneSet ? doneSet.has(id) : false
 		return { no: i + 1, answered: done, correct: done, userLetter: "", correctLetter: "" }
@@ -144,7 +141,9 @@ export function buildResultFromSession(
 	for (const sec of session.listening) {
 		const answered = mcqAnswers.get(sec.id) ?? {}
 		const graded = gradeMcq(sec.id, answered, sec.items.length)
-		questionTypes.push(makeQT(`Nghe · ${sec.partTitle}`, sec.items.length, graded.correct, graded.items))
+		questionTypes.push(
+			makeQT(`Nghe · ${sec.partTitle}`, sec.items.length, graded.correct, graded.items),
+		)
 		totalCorrect += graded.correct
 		totalAnswered += graded.answered
 		totalQuestions += sec.items.length
@@ -153,7 +152,9 @@ export function buildResultFromSession(
 	for (const passage of session.reading) {
 		const answered = mcqAnswers.get(passage.id) ?? {}
 		const graded = gradeMcq(passage.id, answered, passage.items.length)
-		questionTypes.push(makeQT(`Đọc · ${passage.title}`, passage.items.length, graded.correct, graded.items))
+		questionTypes.push(
+			makeQT(`Đọc · ${passage.title}`, passage.items.length, graded.correct, graded.items),
+		)
 		totalCorrect += graded.correct
 		totalAnswered += graded.answered
 		totalQuestions += passage.items.length
@@ -162,7 +163,9 @@ export function buildResultFromSession(
 	if (session.writing.length > 0) {
 		const writingIds = session.writing.map((t) => t.id)
 		const writingDoneSet = new Set(
-			session.writing.filter((t) => (writingAnswers.get(t.id) ?? "").trim().length > 0).map((t) => t.id),
+			session.writing
+				.filter((t) => (writingAnswers.get(t.id) ?? "").trim().length > 0)
+				.map((t) => t.id),
 		)
 		const items = makeNonMcqItems(writingIds, writingDoneSet)
 		const done = writingDoneSet.size

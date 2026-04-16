@@ -3,7 +3,7 @@ import { Logo } from "#/components/common/Logo"
 import { Button } from "#/components/ui/button"
 import { HERO_STATS } from "./constants"
 
-export function HeroSection() {
+export function HeroSection({ onOpenAuth }: { onOpenAuth: () => void }) {
 	return (
 		<section aria-label="Hero">
 			<div className="relative overflow-hidden bg-gradient-to-b from-primary to-primary/80">
@@ -34,9 +34,9 @@ export function HeroSection() {
 							<Button
 								size="sm"
 								className="rounded-full bg-white px-6 font-bold text-primary hover:bg-white/90"
-								asChild
+								onClick={onOpenAuth}
 							>
-								<Link to="/luyen-tap">Bắt đầu</Link>
+								Bắt đầu
 							</Button>
 						</div>
 					</div>
@@ -46,20 +46,19 @@ export function HeroSection() {
 				<div className="relative mx-auto grid max-w-6xl gap-8 px-6 pb-16 pt-8 sm:pb-20 sm:pt-12 lg:grid-cols-[1.2fr_1fr] lg:items-center lg:gap-12 lg:pb-24">
 					<div>
 						<h1 className="animate-fade-in-up text-4xl font-bold leading-tight text-white sm:text-5xl lg:text-6xl">
-							Nền tảng luyện thi{" "}
-							<span className="text-warning">VSTEP</span> thông minh
+							Nền tảng luyện thi <span className="text-warning">VSTEP</span> thông minh
 						</h1>
 						<p className="mt-5 max-w-xl animate-fade-in-up text-base leading-relaxed text-white/80 animation-delay-200 sm:text-lg">
-							AI chấm Writing và Speaking theo rubric chuẩn — lộ trình cá nhân hóa từ B1 đến
-							C1, học theo nhịp độ của bạn.
+							AI chấm Writing và Speaking theo rubric chuẩn — lộ trình cá nhân hóa từ B1 đến C1, học
+							theo nhịp độ của bạn.
 						</p>
 						<div className="mt-8 flex animate-fade-in-up flex-col gap-3 animation-delay-400 sm:flex-row">
 							<Button
 								size="lg"
 								className="rounded-full bg-white px-10 text-base font-bold text-primary hover:bg-white/90"
-								asChild
+								onClick={onOpenAuth}
 							>
-								<Link to="/luyen-tap">Bắt đầu ngay — Miễn phí</Link>
+								Bắt đầu ngay — Miễn phí
 							</Button>
 						</div>
 

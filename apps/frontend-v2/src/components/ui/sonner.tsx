@@ -18,17 +18,18 @@ function Toaster(props: ToasterProps) {
 				error: <OctagonXIcon className="size-5 text-rose-600" />,
 				loading: <Loader2Icon className="size-5 animate-spin text-primary" />,
 			}}
-		style={
-			{
-				"--normal-bg": "var(--card)",
-				"--normal-text": "var(--card-foreground)",
-				"--normal-border": "var(--border)",
-			} as React.CSSProperties
-		}
-		toastOptions={{
-			classNames: {
-				// Base: rounded-2xl + border dày dưới (hiệu ứng 3D gamification kiểu Duolingo)
-				toast: "!rounded-2xl !border-2 !border-b-4 !shadow-lg !font-medium !w-fit !min-w-48 !max-w-sm",
+			style={
+				{
+					"--normal-bg": "var(--card)",
+					"--normal-text": "var(--card-foreground)",
+					"--normal-border": "var(--border)",
+				} as React.CSSProperties
+			}
+			toastOptions={{
+				classNames: {
+					// Base: rounded-2xl + border dày dưới (hiệu ứng 3D gamification kiểu Duolingo)
+					toast:
+						"!rounded-2xl !border-2 !border-b-4 !shadow-lg !font-medium !w-fit !min-w-48 !max-w-sm",
 					title: "!font-bold",
 					description: "!text-xs !opacity-75",
 					success:
@@ -36,7 +37,8 @@ function Toaster(props: ToasterProps) {
 					info: "!border-sky-300 !border-b-sky-500 !bg-sky-50 !text-sky-900 dark:!border-sky-700 dark:!border-b-sky-500 dark:!bg-sky-950/80 dark:!text-sky-100",
 					warning:
 						"!border-amber-300 !border-b-amber-500 !bg-amber-50 !text-amber-900 dark:!border-amber-700 dark:!border-b-amber-500 dark:!bg-amber-950/80 dark:!text-amber-100",
-					error: "!border-rose-300 !border-b-rose-500 !bg-rose-50 !text-rose-900 dark:!border-rose-700 dark:!border-b-rose-500 dark:!bg-rose-950/80 dark:!text-rose-100",
+					error:
+						"!border-rose-300 !border-b-rose-500 !bg-rose-50 !text-rose-900 dark:!border-rose-700 dark:!border-b-rose-500 dark:!bg-rose-950/80 dark:!text-rose-100",
 				},
 			}}
 			{...props}

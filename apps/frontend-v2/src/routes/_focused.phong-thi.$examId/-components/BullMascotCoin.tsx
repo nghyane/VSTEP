@@ -2,7 +2,6 @@
 // Dùng mix-blend-multiply + isolation để loại bỏ nền trắng của ảnh gốc,
 // cùng kỹ thuật với FireIcon.tsx (xem FireIcon.tsx để tham khảo).
 
-
 import { cn } from "#/lib/utils"
 
 const BULL_MASCOT_SRC = "/Gemini_Generated_Image_s3cjsls3cjsls3cj.png"

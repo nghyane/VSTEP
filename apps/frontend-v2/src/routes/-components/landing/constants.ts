@@ -163,7 +163,8 @@ export const TESTIMONIALS: readonly Testimonial[] = [
 	{
 		name: "Minh Anh",
 		role: "Sinh viên ĐH Bách Khoa",
-		quote: "Mình từ B1 lên B2 sau 2 tháng luyện tập. AI chấm Writing rất chi tiết, chỉ ra đúng lỗi cần sửa.",
+		quote:
+			"Mình từ B1 lên B2 sau 2 tháng luyện tập. AI chấm Writing rất chi tiết, chỉ ra đúng lỗi cần sửa.",
 		badge: "B1 → B2",
 		avatar: "https://i.pravatar.cc/150?img=32",
 		initials: "MA",
@@ -171,7 +172,8 @@ export const TESTIMONIALS: readonly Testimonial[] = [
 	{
 		name: "Thanh Hà",
 		role: "Nhân viên văn phòng",
-		quote: "Giao diện dễ dùng, luyện 15 phút mỗi ngày trên điện thoại. Tiết kiệm thời gian hơn đi học trung tâm.",
+		quote:
+			"Giao diện dễ dùng, luyện 15 phút mỗi ngày trên điện thoại. Tiết kiệm thời gian hơn đi học trung tâm.",
 		badge: "B2 → C1",
 		avatar: "https://i.pravatar.cc/150?img=47",
 		initials: "TH",
@@ -179,7 +181,8 @@ export const TESTIMONIALS: readonly Testimonial[] = [
 	{
 		name: "Đức Huy",
 		role: "Giảng viên tiếng Anh",
-		quote: "Đề thi sát chuẩn VSTEP, phù hợp để giới thiệu cho sinh viên luyện tập thêm ngoài giờ học.",
+		quote:
+			"Đề thi sát chuẩn VSTEP, phù hợp để giới thiệu cho sinh viên luyện tập thêm ngoài giờ học.",
 		badge: "Đề xuất cho SV",
 		avatar: "https://i.pravatar.cc/150?img=11",
 		initials: "ĐH",

@@ -177,7 +177,9 @@ function ExamPage() {
 
 	const handleSubmit = useCallback(() => {
 		setConfirming(false)
-		savePhongThiResult(buildResultFromSession(examId, session, mcqAnswers, writingAnswers, speakingDone))
+		savePhongThiResult(
+			buildResultFromSession(examId, session, mcqAnswers, writingAnswers, speakingDone),
+		)
 		navigate({ to: "/phong-thi/$examId/ket-qua", params: { examId } })
 	}, [navigate, examId, session, mcqAnswers, writingAnswers, speakingDone])
 
