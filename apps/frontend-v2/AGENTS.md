@@ -170,7 +170,11 @@ Hiện chưa có test trong `src/`. Khi bắt đầu viết test:
     - nếu implementation lệch materially khỏi RFC, phải cập nhật RFC hoặc xin chốt lại trước khi tiếp tục.
 77. **Không biến RFC thành thủ tục hình thức.** Không yêu cầu RFC cho bug nhỏ, UI tweak nhỏ, text change, styling nhỏ, hoặc refactor hẹp không đổi behavior. Với bài trivial, agent có thể làm trực tiếp nhưng vẫn phải nêu scope ngắn gọn trước khi sửa.
 
-## XV. Definition of done
+## XV. Post-edit check (bắt buộc)
+
+78. **Luôn chạy biome check & lint sau mỗi lần sửa code.** Sau khi hoàn thành thay đổi, agent phải chạy `npx biome check --write .` rồi `npx biome lint .` trong `apps/frontend-v2/`. Nếu có lỗi, phải sửa trước khi commit hoặc báo kết quả.
+
+## XVI. Definition of done
 
 Feature chưa done nếu chưa đủ:
 

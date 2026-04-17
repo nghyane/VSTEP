@@ -11,6 +11,7 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 import { FloatingChatDock } from "#/components/ai-chat/FloatingChatDock"
+import { CoinButton } from "#/components/common/CoinButton"
 import { Logo } from "#/components/common/Logo"
 import { StreakButton } from "#/components/common/StreakButton"
 import { Avatar, AvatarFallback } from "#/components/ui/avatar"
@@ -45,7 +46,7 @@ export const Route = createFileRoute("/_app")({
 	component: AppLayout,
 })
 
-type OverviewLink = { to: "/overview"; search: { tab: "overview" | "focus" } }
+type OverviewLink = { to: "/overview"; search: { tab: "overview" | "learning_path" } }
 type PlainLink = { to: "/luyen-tap" | "/thi-thu" }
 
 interface NavItem {
@@ -224,7 +225,8 @@ function AppTopbar() {
 		<header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b bg-background px-4">
 			<div className="flex-1" />
 
-			{/* Right: streak + bell + avatar */}
+			{/* Right: coin + streak + bell + avatar */}
+			<CoinButton />
 			<StreakButton />
 			<NotificationButton unreadCount={MOCK_USER.unreadNotifications} />
 
