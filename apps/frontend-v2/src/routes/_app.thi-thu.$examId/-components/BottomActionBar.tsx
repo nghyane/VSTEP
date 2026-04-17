@@ -2,8 +2,10 @@ import { useNavigate } from "@tanstack/react-router"
 import { ArrowRight, Clock, LayoutGrid, Timer } from "lucide-react"
 import { useRef, useState } from "react"
 import { toast } from "sonner"
+import { CoinIcon } from "#/components/common/CoinIcon"
 import { Button } from "#/components/ui/button"
-import type { ExamSection } from "#/lib/mock/thi-thu"
+import { computeSessionCost, useCoins } from "#/lib/coins/coin-store"
+import type { ExamSection, ExamSkillKey } from "#/lib/mock/thi-thu"
 import { cn } from "#/lib/utils"
 
 type ExamDurationSelection = number | "unlimited" | null
@@ -44,12 +46,18 @@ export function BottomActionBar({
 	const [showCustomInput, setShowCustomInput] = useState(false)
 	const [customDraft, setCustomDraft] = useState("")
 	const inputRef = useRef<HTMLInputElement>(null)
+	const coins = useCoins()
 
 	const isFullTest = selected.size === 0
 	const selectedSections = sections.filter((s) => selected.has(s.id))
 	const naturalMinutes = selectedSections.reduce((sum, s) => sum + s.durationMinutes, 0)
 	const fullMinutes = sections.reduce((sum, s) => sum + s.durationMinutes, 0)
 	const recommendedMinutes = naturalMinutes
+	const selectedSkills: Set<ExamSkillKey> = isFullTest
+		? new Set()
+		: new Set(selectedSections.map((s) => s.skill))
+	const sessionCost = computeSessionCost(selectedSkills)
+	const insufficientCoins = coins < sessionCost
 
 	const isChipActive = (value: number | "unlimited") => !showCustomInput && customMinutes === value
 	const isRecommendedActive = !showCustomInput && customMinutes === null
@@ -114,6 +122,12 @@ export function BottomActionBar({
 	}
 
 	function handleStartExam() {
+		if (insufficientCoins) {
+			toast.error("Không đủ xu để bắt đầu", {
+				description: `Cần ${sessionCost} xu, bạn còn ${coins} xu.`,
+			})
+			return
+		}
 		navigate({
 			to: "/phong-thi/$examId",
 			params: { examId: String(examId) },
@@ -141,10 +155,13 @@ export function BottomActionBar({
 								Toàn bộ 4 kỹ năng · {fullMinutes} phút
 							</p>
 						</div>
-						<Button className="shrink-0 gap-2" onClick={handleStartExam}>
-							Làm full test
-							<ArrowRight className="size-4" />
-						</Button>
+						<div className="flex items-center gap-2">
+							<CostBadge cost={sessionCost} insufficient={insufficientCoins} />
+							<Button className="shrink-0 gap-2" onClick={handleStartExam}>
+								Làm full test
+								<ArrowRight className="size-4" />
+							</Button>
+						</div>
 					</div>
 				) : (
 					<div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
@@ -251,13 +268,33 @@ export function BottomActionBar({
 							</div>
 						</div>
 
-						<Button className="shrink-0 gap-2" onClick={handleStartExam}>
-							Bắt đầu luyện tập
-							<ArrowRight className="size-4" />
-						</Button>
+						<div className="flex items-center gap-2">
+							<CostBadge cost={sessionCost} insufficient={insufficientCoins} />
+							<Button className="shrink-0 gap-2" onClick={handleStartExam}>
+								Bắt đầu luyện tập
+								<ArrowRight className="size-4" />
+							</Button>
+						</div>
 					</div>
 				)}
 			</div>
 		</div>
+	)
+}
+
+function CostBadge({ cost, insufficient }: { cost: number; insufficient: boolean }) {
+	return (
+		<output
+			className={cn(
+				"inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs font-bold whitespace-nowrap",
+				insufficient
+					? "bg-rose-50 text-rose-700 ring-1 ring-rose-300 dark:bg-rose-950/40 dark:text-rose-200"
+					: "bg-gradient-to-r from-amber-400 to-amber-500 text-white shadow-sm",
+			)}
+			aria-label={`Cần ${cost} xu để bắt đầu`}
+		>
+			<CoinIcon size={16} className={insufficient ? "opacity-60 grayscale" : undefined} />
+			<span className="leading-none">{cost} xu</span>
+		</output>
 	)
 }

@@ -1,10 +1,9 @@
 import { Link } from "@tanstack/react-router"
 import { Clock, Users } from "lucide-react"
 import { Button } from "#/components/ui/button"
+import { FULL_TEST_COST } from "#/lib/coins/coin-store"
 import { cn } from "#/lib/utils"
 import { EXAM_SKILLS } from "./exam-skill-meta"
-
-const COIN_COST = 25
 
 interface ExamCardProps {
 	id: number
@@ -72,7 +71,7 @@ export function ExamCard({ id }: ExamCardProps) {
 									className="block size-5 shrink-0 object-contain -translate-y-px"
 								/>
 							</span>
-							<span className="text-xs leading-none font-bold">{COIN_COST} xu</span>
+							<span className="text-xs leading-none font-bold">{FULL_TEST_COST} xu</span>
 						</span>
 						<Button size="sm" className="font-medium" asChild>
 							<Link to="/thi-thu/$examId" params={{ examId: String(id) }}>

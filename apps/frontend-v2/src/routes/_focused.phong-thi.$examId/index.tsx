@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { AlertTriangle, CheckCircle2, Clock, X } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
+import { toast } from "sonner"
 import { Button } from "#/components/ui/button"
 import {
 	Dialog,
@@ -10,6 +11,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "#/components/ui/dialog"
+import { computeSessionCost, getCoins, spendCoins } from "#/lib/coins/coin-store"
 import {
 	countAnswered,
 	countTotalItems,
@@ -124,6 +126,11 @@ function ExamPage() {
 		return false
 	})
 
+	// Cost = full test (no sections filter) hoặc per-skill cho section-only.
+	const sessionCost = computeSessionCost(
+		selectedSectionIds.length === 0 ? new Set() : new Set(activeSkills),
+	)
+
 	// ─── State ────────────────────────────────────────────────────────────────
 	const [deviceChecked, setDeviceChecked] = useState(false)
 	const [currentSkillIdx, setCurrentSkillIdx] = useState(0)
@@ -193,12 +200,25 @@ function ExamPage() {
 
 	// ─── DeviceCheckScreen ────────────────────────────────────────────────────
 
+	const handleStartExam = () => {
+		if (!spendCoins(sessionCost)) {
+			toast.error("Không đủ xu để bắt đầu bài thi", {
+				description: `Cần ${sessionCost} xu, bạn còn ${getCoins()} xu. Hãy nạp thêm xu để tiếp tục.`,
+			})
+			navigate({ to: "/thi-thu" })
+			return
+		}
+		toast.success(`Đã trừ ${sessionCost} xu`)
+		setDeviceChecked(true)
+	}
+
 	if (!deviceChecked) {
 		return (
 			<DeviceCheckScreen
 				session={session}
 				isUnlimited={isUnlimited}
-				onStart={() => setDeviceChecked(true)}
+				sessionCost={sessionCost}
+				onStart={handleStartExam}
 			/>
 		)
 	}

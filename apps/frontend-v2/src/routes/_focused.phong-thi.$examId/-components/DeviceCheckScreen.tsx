@@ -1,7 +1,9 @@
 import { Headphones, Mic, Pause, Play, Square, Volume2 } from "lucide-react"
 import { motion } from "motion/react"
 import { useCallback, useEffect, useRef, useState } from "react"
+import { CoinIcon } from "#/components/common/CoinIcon"
 import { Button } from "#/components/ui/button"
+import { useCoins } from "#/lib/coins/coin-store"
 import type { ExamSkillKey, MockExamSession } from "#/lib/mock/exam-session"
 import { useVoiceRecorder } from "#/lib/practice/use-voice-recorder"
 import { cn } from "#/lib/utils"
@@ -168,12 +170,15 @@ function MicTest() {
 interface Props {
 	session: MockExamSession
 	isUnlimited: boolean
+	sessionCost: number
 	onStart: () => void
 }
 
 const SKILL_ORDER: ExamSkillKey[] = ["listening", "reading", "writing", "speaking"]
 
-export function DeviceCheckScreen({ session, isUnlimited, onStart }: Props) {
+export function DeviceCheckScreen({ session, isUnlimited, sessionCost, onStart }: Props) {
+	const coins = useCoins()
+	const canAfford = coins >= sessionCost
 	const activeSkills = SKILL_ORDER.filter((sk) => {
 		if (sk === "listening") return session.listening.length > 0
 		if (sk === "reading") return session.reading.length > 0
@@ -297,23 +302,35 @@ export function DeviceCheckScreen({ session, isUnlimited, onStart }: Props) {
 
 				{/* Start button */}
 				<div className="flex flex-col items-center gap-3 pt-2">
+					<div className="flex items-center gap-2 text-xs">
+						<span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-amber-50 px-3 font-semibold text-amber-700 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:ring-amber-800/60">
+							<span className="flex size-4 shrink-0 items-center justify-center">
+								<CoinIcon size={16} className="-translate-y-px" />
+							</span>
+							<span className="leading-none">Phí bài thi: {sessionCost} xu</span>
+						</span>
+						<span className="leading-none text-muted-foreground">Số dư: {coins} xu</span>
+					</div>
 					<motion.div
-						whileTap={{ scale: 0.97, y: 2 }}
+						whileTap={canAfford ? { scale: 0.97, y: 2 } : undefined}
 						transition={{ type: "spring", stiffness: 400, damping: 20 }}
 						className="w-full max-w-xs"
 					>
 						<Button
 							size="lg"
+							disabled={!canAfford}
 							className="w-full border-b-4 border-b-primary/70 text-base font-bold shadow-md"
 							onClick={onStart}
 						>
-							Nhận đề &amp; bắt đầu
+							{canAfford ? "Nhận đề & bắt đầu" : "Không đủ xu"}
 						</Button>
 					</motion.div>
 					<p className="text-xs text-muted-foreground">
-						{isUnlimited
-							? "Bài thi này không giới hạn thời gian. Bạn có thể làm với nhịp độ riêng."
-							: "Thời gian sẽ bắt đầu tính khi bạn bấm nút trên"}
+						{!canAfford
+							? `Cần thêm ${sessionCost - coins} xu để bắt đầu bài thi này.`
+							: isUnlimited
+								? "Bài thi này không giới hạn thời gian. Bạn có thể làm với nhịp độ riêng."
+								: "Thời gian sẽ bắt đầu tính khi bạn bấm nút trên"}
 					</p>
 				</div>
 			</div>
