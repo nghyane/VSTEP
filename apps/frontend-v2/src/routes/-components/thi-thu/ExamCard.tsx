@@ -1,42 +1,27 @@
 import { Link } from "@tanstack/react-router"
-import { Clock, Crown, Users } from "lucide-react"
+import { Clock, Users } from "lucide-react"
 import { Button } from "#/components/ui/button"
 import { cn } from "#/lib/utils"
 import { EXAM_SKILLS } from "./exam-skill-meta"
 
+const COIN_COST = 25
+
 interface ExamCardProps {
 	id: number
-	isPro?: boolean
 }
 
-export function ExamCard({ id, isPro = false }: ExamCardProps) {
+export function ExamCard({ id }: ExamCardProps) {
 	return (
 		<div className="group relative h-full">
-			<div
-				className={
-					isPro
-						? "absolute inset-0 translate-x-[4px] translate-y-[4px] rounded-xl bg-gradient-to-br from-amber-300 via-amber-400 to-orange-400 transition-transform group-hover:translate-x-[6px] group-hover:translate-y-[6px]"
-						: "absolute inset-0 translate-x-[4px] translate-y-[4px] rounded-xl bg-gradient-to-br from-slate-100 via-slate-200 to-blue-100 transition-transform group-hover:translate-x-[6px] group-hover:translate-y-[6px]"
-				}
-			/>
+			<div className="absolute inset-0 translate-x-[4px] translate-y-[4px] rounded-xl bg-gradient-to-br from-amber-300 via-amber-400 to-orange-400 transition-transform group-hover:translate-x-[6px] group-hover:translate-y-[6px]" />
 
 			<div className="relative flex h-full flex-col justify-between rounded-xl border border-border bg-background p-4 transition-all group-hover:-translate-x-[2px] group-hover:-translate-y-[2px] group-hover:shadow-md">
 				<div>
 					<div className="mb-2 flex items-end">
-						{isPro ? (
-							<span className="inline-flex items-end gap-1 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-2.5 py-0.5 text-white shadow-sm">
-								<Crown className="mb-px size-3 shrink-0" />
-								<span className="text-[10px] font-bold leading-none uppercase tracking-wider">
-									Pro
-								</span>
-							</span>
-						) : (
-							<span className="inline-flex rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-slate-600">
-								<span className="text-[10px] font-semibold leading-none uppercase tracking-wider">
-									Free
-								</span>
-							</span>
-						)}
+						<span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-2.5 py-0.5 text-white shadow-sm">
+							<img src="/image copy.png" alt="coin" className="mb-px size-3 shrink-0" />
+							<span className="text-[10px] font-bold leading-none">{COIN_COST} xu</span>
+						</span>
 					</div>
 
 					<h3 className="line-clamp-2 text-lg font-semibold leading-tight text-foreground transition-colors group-hover:text-primary">

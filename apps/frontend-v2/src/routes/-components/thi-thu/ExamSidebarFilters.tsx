@@ -1,58 +1,13 @@
-import { Crown, Search } from "lucide-react"
-export type ExamType = "all" | "pro" | "free"
+import { Search } from "lucide-react"
 
 interface ExamSidebarFiltersProps {
-	selectedType: ExamType
-	onTypeChange: (type: ExamType) => void
+	searchQuery: string
+	onSearchChange: (query: string) => void
 }
 
-export function ExamSidebarFilters({ selectedType, onTypeChange }: ExamSidebarFiltersProps) {
+export function ExamSidebarFilters({ searchQuery, onSearchChange }: ExamSidebarFiltersProps) {
 	return (
 		<aside className="sticky top-[88px] w-full shrink-0 space-y-8 md:w-64">
-			<div className="space-y-3">
-				<h3 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-					LOẠI ĐỀ THI
-				</h3>
-				<div className="flex w-full items-center justify-between rounded-full bg-slate-100 p-1">
-					<button
-						type="button"
-						onClick={() => onTypeChange("all")}
-						className={`flex flex-1 items-center justify-center rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
-							selectedType === "all"
-								? "bg-white text-primary shadow-sm"
-								: "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
-						}`}
-					>
-						Tất cả
-					</button>
-					<button
-						type="button"
-						onClick={() => onTypeChange("pro")}
-						className={`flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
-							selectedType === "pro"
-								? "bg-gradient-to-r from-amber-400 to-amber-500 text-white shadow-sm ring-1 ring-amber-500/50"
-								: "text-slate-500 hover:text-amber-600 hover:bg-slate-200/50"
-						}`}
-					>
-						<span className="inline-flex items-end gap-1">
-							<Crown className="mb-px size-3.5 shrink-0" />
-							<span className="leading-none">Pro</span>
-						</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => onTypeChange("free")}
-						className={`flex flex-1 items-center justify-center rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
-							selectedType === "free"
-								? "bg-white text-primary shadow-sm"
-								: "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
-						}`}
-					>
-						Miễn phí
-					</button>
-				</div>
-			</div>
-
 			<div className="space-y-3">
 				<h3 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
 					TÌM KIẾM
@@ -61,6 +16,8 @@ export function ExamSidebarFilters({ selectedType, onTypeChange }: ExamSidebarFi
 					<Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 					<input
 						type="text"
+						value={searchQuery}
+						onChange={(e) => onSearchChange(e.target.value)}
 						placeholder="Nhập tên đề thi..."
 						className="w-full rounded-md border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm shadow-[0_1px_2px_rgba(0,0,0,0.02)] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
 					/>

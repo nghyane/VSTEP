@@ -1,24 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { useState } from "react"
 import { ExamCard } from "./-components/thi-thu/ExamCard"
-import { ExamSidebarFilters, type ExamType } from "./-components/thi-thu/ExamSidebarFilters"
+import { ExamSidebarFilters } from "./-components/thi-thu/ExamSidebarFilters"
 
 export const Route = createFileRoute("/_app/thi-thu/")({
 	component: ThiThuPage,
 })
 
+const ALL_EXAMS = [1, 2, 3, 4, 5, 6].map((i) => ({ id: i }))
+
 function ThiThuPage() {
-	const [typeFilter, setTypeFilter] = useState<ExamType>("all")
+	const [searchQuery, setSearchQuery] = useState("")
 
-	const allExams = [1, 2, 3, 4, 5, 6].map((i) => ({
-		id: i,
-		isPro: i % 2 === 0,
-	}))
-
-	const filteredExams = allExams.filter((exam) => {
-		if (typeFilter === "pro") return exam.isPro
-		if (typeFilter === "free") return !exam.isPro
-		return true
+	const filteredExams = ALL_EXAMS.filter((exam) => {
+		if (!searchQuery.trim()) return true
+		return `Đề thi VSTEP HNUE 08/02/2026 #${exam.id}`
+			.toLowerCase()
+			.includes(searchQuery.toLowerCase())
 	})
 
 	return (
@@ -31,12 +29,12 @@ function ThiThuPage() {
 			</div>
 
 			<section className="flex flex-col gap-8 md:flex-row md:items-start">
-				<ExamSidebarFilters selectedType={typeFilter} onTypeChange={setTypeFilter} />
+				<ExamSidebarFilters searchQuery={searchQuery} onSearchChange={setSearchQuery} />
 
 				<div className="flex-1 space-y-4">
 					<div className="grid gap-4 sm:grid-cols-2">
 						{filteredExams.map((exam) => (
-							<ExamCard key={exam.id} id={exam.id} isPro={exam.isPro} />
+							<ExamCard key={exam.id} id={exam.id} />
 						))}
 					</div>
 
