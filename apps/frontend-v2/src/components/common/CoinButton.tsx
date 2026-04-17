@@ -54,7 +54,7 @@ export function CoinButton() {
 				<span className="flex h-5 items-center text-sm font-semibold leading-none tabular-nums">
 					<span className="translate-y-[1px]">{coins}</span>
 				</span>
-				<span className="flex size-5 shrink-0 items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
+				<span className="flex size-3 shrink-0 items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
 					<Plus className="size-3 text-muted-foreground" />
 				</span>
 			</button>

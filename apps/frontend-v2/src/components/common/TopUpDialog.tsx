@@ -325,14 +325,16 @@ function PackCard({
 			<p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
 				Gói {pack.name}
 			</p>
-			<div className="flex items-baseline gap-1.5">
-				<span className="flex size-5 items-center justify-center">
-					<CoinIcon size={18} className="-translate-y-px" />
+			<div className="flex items-center gap-1.5">
+				<span className="flex size-5 shrink-0 items-center justify-center">
+					<CoinIcon size={18} className="translate-y-[1px]" />
 				</span>
-				<span className="text-xl font-extrabold leading-none text-foreground">
-					{formatCoins(pack.coins)}
+				<span className="inline-block translate-y-[2px] leading-none">
+					<span className="text-xl font-extrabold tabular-nums text-foreground">
+						{formatCoins(pack.coins)}
+					</span>{" "}
+					<span className="text-xs font-semibold text-muted-foreground">xu</span>
 				</span>
-				<span className="text-xs font-semibold text-muted-foreground">xu</span>
 			</div>
 			<p className="text-base font-bold text-foreground">{formatVnd(pack.priceVnd)}</p>
 			{savingsPct > 0 ? (
