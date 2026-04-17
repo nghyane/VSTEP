@@ -8,6 +8,7 @@ import { AnimatedCoinIcon } from "#/components/common/AnimatedCoinIcon"
 import { CoinIcon } from "#/components/common/CoinIcon"
 import { Button } from "#/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "#/components/ui/dialog"
+import { ScrollArea } from "#/components/ui/scroll-area"
 import { refundCoins, useCoins } from "#/lib/coins/coin-store"
 import { pushNotification } from "#/lib/notifications/store"
 import { cn } from "#/lib/utils"
@@ -74,19 +75,21 @@ export function TopUpDialog({ open, onOpenChange }: Props) {
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-h-[92vh] overflow-y-auto p-0 sm:max-w-5xl sm:rounded-3xl">
+			<DialogContent className="max-h-[92vh] overflow-y-auto p-0 md:overflow-hidden sm:max-w-5xl sm:rounded-3xl">
 				<DialogTitle className="sr-only">Nạp xu</DialogTitle>
 				<DialogDescription className="sr-only">
 					Chọn gói xu phù hợp để tiếp tục luyện tập và thi thử
 				</DialogDescription>
-				<div className="grid md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.4fr)]">
+				<div className="grid md:max-h-[92vh] md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.4fr)]">
 					<LeftPanel isEmpty={isEmpty} coins={coins} onClose={() => onOpenChange(false)} />
-					<RightPanel
-						selectedId={selectedId}
-						onSelect={setSelectedId}
-						onBuy={handleBuy}
-						selectedPack={selected}
-					/>
+					<ScrollArea className="md:h-[92vh]">
+						<RightPanel
+							selectedId={selectedId}
+							onSelect={setSelectedId}
+							onBuy={handleBuy}
+							selectedPack={selected}
+						/>
+					</ScrollArea>
 				</div>
 			</DialogContent>
 		</Dialog>
