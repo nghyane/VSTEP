@@ -74,7 +74,12 @@ function DayCell({ cell, now }: { cell: DayCellData; now: number }) {
 
 	const s = cell.session
 	return (
-		<div className={cn("min-h-24 p-2", isPast ? "bg-muted/40" : "bg-primary/5")}>
+		<div
+			className={cn(
+				"min-h-24 p-2 transition-colors",
+				isPast ? "bg-muted/40 hover:bg-muted/60" : "bg-primary/5 hover:bg-primary/15",
+			)}
+		>
 			<div className="flex items-baseline justify-between">
 				<span
 					className={cn(
