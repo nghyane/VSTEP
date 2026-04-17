@@ -164,6 +164,42 @@ KHONG dung full width sat mep. Luon dung:
 Default: `max-w-5xl`. Form/page hep: `max-w-4xl` hoac `max-w-3xl`.
 Chi dung full width khi that su can split layout rong.
 
+**Rule 0.5 -- Can chinh inline: icon / text / icon phai cung tam ngang.**
+Khi co nhieu phan tu khac loai (coin icon PNG, text, lucide icon) dat ben nhau
+tren cung 1 dong, KHONG dua vao `items-center` mac dinh — font metrics + PNG
+padding + SVG viewBox se lech tam.
+
+Pattern bat buoc:
+1. Bao moi phan tu trong wrapper **cung height** voi `flex items-center justify-center`.
+2. Text dung `leading-none` + boc them 1 span `translate-y-[1px]` neu glyph
+   ngoi lech len top (xay ra voi font `din-round`).
+3. PNG coin (lech do padding asymmetric) dung `-translate-y-px` de keo len.
+
+```tsx
+// Dung
+<div className="flex h-5 items-center gap-1">
+  <span className="flex size-5 items-center justify-center">
+    <CoinIcon size={20} className="-translate-y-px" />
+  </span>
+  <span className="flex h-5 items-center text-sm leading-none tabular-nums">
+    <span className="translate-y-[1px]">{value}</span>
+  </span>
+  <span className="flex size-5 items-center justify-center">
+    <Plus className="size-3" />
+  </span>
+</div>
+
+// Sai (dua vao items-center, khong bu glyph offset)
+<div className="flex items-center gap-1">
+  <CoinIcon size={20} />
+  <span className="text-sm">{value}</span>
+  <Plus className="size-3" />
+</div>
+```
+
+Kiem chung bang DevTools: chon span chua glyph, xem box hinh chu nhat. Neu glyph
+khong nam chinh giua hop thi phai bu `translate-y`.
+
 **Card style patterns:**
 
 | Pattern | Class | Dung khi |
