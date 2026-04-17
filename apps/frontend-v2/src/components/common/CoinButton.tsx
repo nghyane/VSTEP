@@ -1,5 +1,6 @@
 import Lottie, { type LottieRefCurrentProps } from "lottie-react"
 import { useRef, useState } from "react"
+import { CoinIcon } from "./CoinIcon"
 
 const COIN_COUNT = 100
 
@@ -20,19 +21,20 @@ export function CoinButton() {
 	}
 
 	return (
-		<div
+		<output
+			aria-label={`${COIN_COUNT} xu`}
 			className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-sm font-semibold text-amber-600 transition-colors hover:bg-muted cursor-default"
 			onMouseEnter={handleMouseEnter}
 			onMouseLeave={() => setHovered(false)}
 		>
-			<div className="flex size-5 shrink-0 items-center justify-center overflow-hidden">
+			<span className="flex size-5 shrink-0 items-center justify-center overflow-hidden">
 				{hovered && animData ? (
 					<Lottie lottieRef={lottieRef} animationData={animData} loop autoplay className="size-5" />
 				) : (
-					<img src="/image.png" alt="coin" className="size-5" />
+					<CoinIcon size={20} />
 				)}
-			</div>
-			<span>{COIN_COUNT}</span>
-		</div>
+			</span>
+			<span className="text-sm font-semibold leading-none">{COIN_COUNT}</span>
+		</output>
 	)
 }

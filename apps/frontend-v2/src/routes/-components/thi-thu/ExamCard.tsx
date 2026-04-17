@@ -17,13 +17,6 @@ export function ExamCard({ id }: ExamCardProps) {
 
 			<div className="relative flex h-full flex-col justify-between rounded-xl border border-border bg-background p-4 transition-all group-hover:-translate-x-[2px] group-hover:-translate-y-[2px] group-hover:shadow-md">
 				<div>
-					<div className="mb-2 flex items-end">
-						<span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-2.5 py-0.5 text-white shadow-sm">
-							<img src="/image copy.png" alt="coin" className="mb-px size-3 shrink-0" />
-							<span className="text-[10px] font-bold leading-none">{COIN_COST} xu</span>
-						</span>
-					</div>
-
 					<h3 className="line-clamp-2 text-lg font-semibold leading-tight text-foreground transition-colors group-hover:text-primary">
 						Đề thi VSTEP HNUE 08/02/2026 #{id}
 					</h3>
@@ -69,11 +62,24 @@ export function ExamCard({ id }: ExamCardProps) {
 							Chưa làm
 						</span>
 					</span>
-					<Button size="sm" className="font-medium" asChild>
-						<Link to="/thi-thu/$examId" params={{ examId: String(id) }}>
-							Xem đề
-						</Link>
-					</Button>
+					<div className="flex items-center gap-2">
+						<span className="inline-flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-md bg-gradient-to-r from-amber-400 to-amber-500 px-3 text-white shadow-sm">
+							<span className="flex size-5 shrink-0 items-center justify-center">
+								<img
+									src="/image.png"
+									alt=""
+									aria-hidden="true"
+									className="block size-5 shrink-0 object-contain -translate-y-px"
+								/>
+							</span>
+							<span className="text-xs leading-none font-bold">{COIN_COST} xu</span>
+						</span>
+						<Button size="sm" className="font-medium" asChild>
+							<Link to="/thi-thu/$examId" params={{ examId: String(id) }}>
+								Xem đề
+							</Link>
+						</Button>
+					</div>
 				</div>
 			</div>
 		</div>

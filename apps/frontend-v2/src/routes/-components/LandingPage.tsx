@@ -24,9 +24,15 @@ function useInView(threshold = 0.15) {
 	useEffect(() => {
 		const el = ref.current
 		if (!el) return
-		const obs = new IntersectionObserver(([e]) => e.isIntersecting && setVisible(true), {
-			threshold,
-		})
+		const obs = new IntersectionObserver(
+			(entries) => {
+				const entry = entries[0]
+				if (entry?.isIntersecting) {
+					setVisible(true)
+				}
+			},
+			{ threshold },
+		)
 		obs.observe(el)
 		return () => obs.disconnect()
 	}, [threshold])
@@ -571,7 +577,12 @@ function TestimonialsSection() {
 							<div className="rounded-2xl bg-card p-6 shadow-sm">
 								{/* Quote icon */}
 								<div className="mb-4 text-primary/20">
-									<svg className="size-8" fill="currentColor" viewBox="0 0 24 24">
+									<svg
+										aria-hidden="true"
+										className="size-8"
+										fill="currentColor"
+										viewBox="0 0 24 24"
+									>
 										<path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
 									</svg>
 								</div>
@@ -605,6 +616,7 @@ function TestimonialsSection() {
 								<div className="mt-3 flex gap-0.5">
 									{Array.from({ length: 5 }).map((_, si) => (
 										<svg
+											aria-hidden="true"
 											key={si}
 											className={cn(
 												"size-4",
