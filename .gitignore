@@ -42,6 +42,7 @@ opencode.json.*.bak
 # Local AI/dev tooling folders
 .agent
 .agents
+!apps/frontend-v2/.agents/
 .claude
 .cline
 .codebuddy
@@ -67,4 +68,5 @@ opencode.json.*.bak
 .qoder
 .qwen
 skills
+!apps/frontend-v2/.agents/skills/
 
