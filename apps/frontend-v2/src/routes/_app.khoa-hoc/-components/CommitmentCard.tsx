@@ -1,6 +1,5 @@
-// Card hiển thị tiến độ cam kết kỷ luật trong trang chi tiết khóa (user đã mua).
-// 4 state: practice / exam / fulfilled / violated.
-// Render countdown + progress bar + CTA "Vào phòng thi".
+// Card hiển thị tiến độ cam kết kỷ luật cho học viên đã mua khóa.
+// 3 state: active / fulfilled / violated. 1 progress bar + 1 countdown (nếu còn hạn).
 
 import { Link } from "@tanstack/react-router"
 import {
@@ -13,7 +12,6 @@ import {
 } from "lucide-react"
 import { useEffect, useRef } from "react"
 import type { CommitmentStatus } from "#/lib/courses/commitment"
-import { commitmentPhaseLabel } from "#/lib/courses/commitment"
 import type { Enrollment } from "#/lib/courses/enrollment-store"
 import type { Course } from "#/lib/mock/courses"
 import { pushNotification } from "#/lib/notifications/store"
@@ -29,35 +27,28 @@ export function CommitmentCard({ course, enrollment, status }: Props) {
 	useCommitmentNotifications(course, enrollment, status)
 
 	const progressPct = Math.min(100, Math.round((status.completed / status.required) * 100))
-	const phaseTone = PHASE_TONE[status.phase]
-	const PhaseIcon = phaseTone.Icon
+	const tone = pickTone(status)
+	const Icon = tone.Icon
 
 	return (
-		<section
-			className={cn("rounded-2xl border p-5 shadow-sm", phaseTone.cardBg, phaseTone.cardBorder)}
-		>
+		<section className={cn("rounded-2xl border p-5 shadow-sm", tone.cardBg, tone.cardBorder)}>
 			<div className="flex items-start justify-between gap-3">
 				<div className="min-w-0 flex-1">
 					<div className="flex items-center gap-2">
-						<span className={cn("flex size-5 items-center justify-center", phaseTone.iconColor)}>
-							<PhaseIcon className="size-4" />
+						<span className={cn("flex size-5 items-center justify-center", tone.iconColor)}>
+							<Icon className="size-4" />
 						</span>
-						<h2 className={cn("text-sm font-bold", phaseTone.titleColor)}>
-							{commitmentPhaseLabel(status.phase)}
-						</h2>
+						<h2 className={cn("text-sm font-bold", tone.titleColor)}>{tone.title}</h2>
 					</div>
 					<p className="mt-1.5 text-sm leading-relaxed text-foreground">
-						<PhaseDescription status={status} required={status.required} />
+						<Description status={status} windowDays={course.commitmentWindowDays} />
 					</p>
 				</div>
 
-				{/* Counter badge */}
+				{/* Counter */}
 				<div className="flex shrink-0 flex-col items-end">
 					<span
-						className={cn(
-							"text-2xl font-extrabold leading-none tabular-nums",
-							phaseTone.counterColor,
-						)}
+						className={cn("text-2xl font-extrabold leading-none tabular-nums", tone.counterColor)}
 					>
 						{status.completed}
 						<span className="text-base font-semibold text-muted-foreground">
@@ -73,15 +64,15 @@ export function CommitmentCard({ course, enrollment, status }: Props) {
 			{/* Progress bar */}
 			<div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-muted">
 				<div
-					className={cn("h-full rounded-full transition-all", phaseTone.barFill)}
+					className={cn("h-full rounded-full transition-all", tone.barFill)}
 					style={{ width: `${progressPct}%` }}
 				/>
 			</div>
 
-			{/* Countdown / CTA row */}
+			{/* Footer: countdown + CTA */}
 			<div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-				<CountdownHint status={status} />
-				{status.phase !== "fulfilled" && status.phase !== "violated" && (
+				<FooterHint status={status} />
+				{status.phase === "active" && (
 					<Link
 						to="/thi-thu"
 						className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
@@ -116,40 +107,33 @@ export function CommitmentViolatedBanner({ course }: { course: Course }) {
 
 // ─── Pieces ──────────────────────────────────────────────────────────────────
 
-function PhaseDescription({ status, required }: { status: CommitmentStatus; required: number }) {
+function Description({ status, windowDays }: { status: CommitmentStatus; windowDays: number }) {
 	switch (status.phase) {
-		case "practice":
+		case "active":
 			return (
 				<>
-					Giai đoạn luyện tập tự do. Giai đoạn thi bắt buộc bắt đầu sau{" "}
-					<strong>{formatDaysUntil(status.examPhaseStartMs)}</strong>. Bạn có thể bắt đầu làm bài
-					sớm để nhẹ nhàng về sau.
-				</>
-			)
-		case "exam":
-			return (
-				<>
-					Còn <strong>{status.remaining}</strong> bài thi nữa để đủ cam kết. Hãy hoàn thành trước
-					hạn.
+					Hoàn thành <strong>{status.required} bài thi full-test</strong> trong{" "}
+					<strong>{windowDays} ngày đầu</strong> của khóa để giữ cam kết đầu ra.
 				</>
 			)
 		case "fulfilled":
 			return (
 				<>
-					Đã hoàn thành đủ {required} bài thi full-test — cam kết được giữ. Tiếp tục luyện tập để
-					đạt điểm cao nhất.
+					Đã hoàn thành đủ {status.required} bài thi — cam kết được giữ. Tiếp tục luyện tập để đạt
+					điểm cao nhất.
 				</>
 			)
 		case "violated":
 			return (
 				<>
-					Đã quá hạn mà chưa đủ {required} bài. Khóa học của bạn đã bị khóa theo điều khoản kỷ luật.
+					Đã quá hạn mà chưa đủ {status.required} bài. Khóa học của bạn đã bị khóa theo điều khoản
+					kỷ luật.
 				</>
 			)
 	}
 }
 
-function CountdownHint({ status }: { status: CommitmentStatus }) {
+function FooterHint({ status }: { status: CommitmentStatus }) {
 	if (status.phase === "fulfilled") {
 		return (
 			<span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
@@ -166,7 +150,8 @@ function CountdownHint({ status }: { status: CommitmentStatus }) {
 			</span>
 		)
 	}
-	const urgent = status.daysUntilDeadline <= 3
+	const days = Math.max(0, status.daysUntilDeadline)
+	const urgent = days <= 3
 	return (
 		<span
 			className={cn(
@@ -175,34 +160,64 @@ function CountdownHint({ status }: { status: CommitmentStatus }) {
 			)}
 		>
 			<Clock className="size-3.5" />
-			Còn {Math.max(0, status.daysUntilDeadline)} ngày tới deadline
+			Còn {days} ngày — cần thêm {status.remaining} bài
 		</span>
 	)
 }
 
-function formatDaysUntil(ms: number): string {
-	const diff = ms - Date.now()
-	const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
-	if (days <= 0) return "hôm nay"
-	if (days === 1) return "1 ngày nữa"
-	return `${days} ngày nữa`
+// ─── Visual tone ─────────────────────────────────────────────────────────────
+
+interface Tone {
+	title: string
+	cardBg: string
+	cardBorder: string
+	iconColor: string
+	titleColor: string
+	counterColor: string
+	barFill: string
+	Icon: LucideIcon
 }
 
-// ─── Phase visual tone ───────────────────────────────────────────────────────
-
-const PHASE_TONE: Record<
-	CommitmentStatus["phase"],
-	{
-		cardBg: string
-		cardBorder: string
-		iconColor: string
-		titleColor: string
-		counterColor: string
-		barFill: string
-		Icon: LucideIcon
+function pickTone(status: CommitmentStatus): Tone {
+	if (status.phase === "fulfilled") {
+		return {
+			title: "Đã hoàn thành cam kết",
+			cardBg: "bg-emerald-50 dark:bg-emerald-950/20",
+			cardBorder: "border-emerald-300 dark:border-emerald-900",
+			iconColor: "text-emerald-700 dark:text-emerald-400",
+			titleColor: "text-emerald-800 dark:text-emerald-300",
+			counterColor: "text-emerald-700 dark:text-emerald-400",
+			barFill: "bg-emerald-500",
+			Icon: CheckCircle2,
+		}
 	}
-> = {
-	practice: {
+	if (status.phase === "violated") {
+		return {
+			title: "Vi phạm cam kết",
+			cardBg: "bg-destructive/5",
+			cardBorder: "border-destructive/40",
+			iconColor: "text-destructive",
+			titleColor: "text-destructive",
+			counterColor: "text-destructive",
+			barFill: "bg-destructive",
+			Icon: AlertTriangle,
+		}
+	}
+	// active — urgent hóa khi sắp hết hạn.
+	if (status.daysUntilDeadline <= 3) {
+		return {
+			title: "Sắp hết hạn cam kết",
+			cardBg: "bg-amber-50 dark:bg-amber-950/20",
+			cardBorder: "border-amber-300 dark:border-amber-900",
+			iconColor: "text-amber-700 dark:text-amber-400",
+			titleColor: "text-amber-800 dark:text-amber-300",
+			counterColor: "text-amber-700 dark:text-amber-400",
+			barFill: "bg-amber-500",
+			Icon: Clock,
+		}
+	}
+	return {
+		title: "Đang trong thời hạn cam kết",
 		cardBg: "bg-card",
 		cardBorder: "border-border",
 		iconColor: "text-primary",
@@ -210,38 +225,10 @@ const PHASE_TONE: Record<
 		counterColor: "text-foreground",
 		barFill: "bg-primary",
 		Icon: ShieldCheck,
-	},
-	exam: {
-		cardBg: "bg-amber-50 dark:bg-amber-950/20",
-		cardBorder: "border-amber-300 dark:border-amber-900",
-		iconColor: "text-amber-700 dark:text-amber-400",
-		titleColor: "text-amber-800 dark:text-amber-300",
-		counterColor: "text-amber-700 dark:text-amber-400",
-		barFill: "bg-amber-500",
-		Icon: Clock,
-	},
-	fulfilled: {
-		cardBg: "bg-emerald-50 dark:bg-emerald-950/20",
-		cardBorder: "border-emerald-300 dark:border-emerald-900",
-		iconColor: "text-emerald-700 dark:text-emerald-400",
-		titleColor: "text-emerald-800 dark:text-emerald-300",
-		counterColor: "text-emerald-700 dark:text-emerald-400",
-		barFill: "bg-emerald-500",
-		Icon: CheckCircle2,
-	},
-	violated: {
-		cardBg: "bg-destructive/5",
-		cardBorder: "border-destructive/40",
-		iconColor: "text-destructive",
-		titleColor: "text-destructive",
-		counterColor: "text-destructive",
-		barFill: "bg-destructive",
-		Icon: AlertTriangle,
-	},
+	}
 }
 
 // ─── Notifications ───────────────────────────────────────────────────────────
-// Push khi state chuyển sang cần chú ý. Dedup theo id → idempotent.
 
 function useCommitmentNotifications(
 	course: Course,
@@ -250,23 +237,21 @@ function useCommitmentNotifications(
 ) {
 	const lastKey = useRef<string | null>(null)
 	useEffect(() => {
-		const key = `${course.id}:${enrollment.purchasedAt}:${status.phase}:${status.remaining}:${clampDays(status.daysUntilDeadline)}`
+		const key = `${course.id}:${enrollment.purchasedAt}:${status.phase}:${clampDays(status.daysUntilDeadline)}`
 		if (lastKey.current === key) return
 		lastKey.current = key
 
-		if (status.phase === "fulfilled" || status.phase === "violated") {
-			if (status.phase === "violated") {
-				pushNotification({
-					id: `course:violated:${course.id}`,
-					title: `Khóa học "${course.title}" đã bị khóa`,
-					body: `Bạn chưa hoàn thành đủ ${course.requiredFullTests} bài thi full-test theo cam kết.`,
-					iconKey: "trophy",
-				})
-			}
+		if (status.phase === "violated") {
+			pushNotification({
+				id: `course:violated:${course.id}`,
+				title: `Khóa học "${course.title}" đã bị khóa`,
+				body: `Bạn chưa hoàn thành đủ ${course.requiredFullTests} bài thi full-test theo cam kết.`,
+				iconKey: "trophy",
+			})
 			return
 		}
 
-		if (status.phase === "exam" && status.remaining > 0) {
+		if (status.phase === "active" && status.remaining > 0) {
 			const days = status.daysUntilDeadline
 			if (days <= 1) {
 				pushNotification({
@@ -281,13 +266,6 @@ function useCommitmentNotifications(
 					title: `Còn ${days} ngày — cần làm thêm ${status.remaining} bài thi`,
 					body: `Hoàn thành ngay để không vi phạm cam kết khóa "${course.title}".`,
 					iconKey: "fire",
-				})
-			} else {
-				pushNotification({
-					id: `course:exam-phase-start:${course.id}`,
-					title: `Đến giai đoạn thi của khóa "${course.title}"`,
-					body: `Cần hoàn thành ${status.remaining}/${status.required} bài full-test trong ${days} ngày tới.`,
-					iconKey: "trophy",
 				})
 			}
 		}

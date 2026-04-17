@@ -140,10 +140,9 @@ export function CoursePurchaseDialog({ course, open, onOpenChange }: Props) {
 							</p>
 							<p className="text-xs leading-relaxed text-amber-900 dark:text-amber-200">
 								Để giữ cam kết đầu ra, bạn cần hoàn thành tối thiểu{" "}
-								<strong>{course.requiredFullTests} bài thi full-test</strong> trong phòng thi từ
-								ngày thứ <strong>{course.practicePhaseDays + 1}</strong> đến ngày thứ{" "}
-								<strong>{course.examPhaseDays}</strong> của khóa. Vi phạm sẽ dẫn tới việc{" "}
-								<strong>khóa quyền truy cập khóa học</strong>.
+								<strong>{course.requiredFullTests} bài thi full-test</strong> trong{" "}
+								<strong>{course.commitmentWindowDays} ngày đầu</strong> của khóa. Vi phạm sẽ dẫn tới
+								việc <strong>khóa quyền truy cập khóa học</strong>.
 							</p>
 							<label
 								htmlFor="course-commitment-ack"

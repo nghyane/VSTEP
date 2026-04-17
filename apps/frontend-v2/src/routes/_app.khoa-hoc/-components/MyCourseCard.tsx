@@ -144,8 +144,7 @@ function CommitmentChip({
 	required: number
 }) {
 	const tone: Record<typeof phase, string> = {
-		practice: "bg-muted text-muted-foreground",
-		exam: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300",
+		active: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300",
 		fulfilled: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
 		violated: "bg-destructive/10 text-destructive",
 	}
