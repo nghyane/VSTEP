@@ -1,5 +1,6 @@
-// Mock translate â€” hardcode tá»« phá»• biáº¿n, fallback message.
-// Thay báº±ng API tháº­t sau.
+// Mock translate — hardcode t? ph? bi?n, fallback null khi không tìm th?y.
+// TODO(backend): Thay b?ng POST /api/v1/translate { text } ? { translation: string }
+// Khi có API: xóa DICT + mockTranslate(), import apiFetchTranslate() vào caller.
 
 const DICT: Record<string, string> = {
 	"post office": "bÆ°u Ä‘iá»‡n",

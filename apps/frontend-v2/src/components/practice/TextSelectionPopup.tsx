@@ -11,7 +11,7 @@ interface PopupState {
 	y: number
 }
 
-export function TextSelectionPopup({ children }: { children: React.ReactNode }) {
+export function TextSelectionPopup({ children, promptTemplate }: { children: React.ReactNode; promptTemplate?: (text: string) => string }) {
 	const containerRef = useRef<HTMLDivElement>(null)
 	const [popup, setPopup] = useState<PopupState | null>(null)
 
@@ -47,14 +47,14 @@ export function TextSelectionPopup({ children }: { children: React.ReactNode }) 
 		<div ref={containerRef} onMouseUp={handleMouseUp} onTouchEnd={handleMouseUp}>
 			{children}
 			{popup && createPortal(
-				<AskAiButton text={popup.text} x={popup.x} y={popup.y} onClose={() => setPopup(null)} />,
+				<AskAiButton text={popup.text} x={popup.x} y={popup.y} onClose={() => setPopup(null)} promptTemplate={promptTemplate} />,
 				document.body,
 			)}
 		</div>
 	)
 }
 
-function AskAiButton({ text, x, y, onClose }: { text: string; x: number; y: number; onClose: () => void }) {
+function AskAiButton({ text, x, y, onClose, promptTemplate }: { text: string; x: number; y: number; onClose: () => void; promptTemplate?: (text: string) => string }) {
 	const ref = useRef<HTMLButtonElement>(null)
 	const [pos, setPos] = useState({ left: x, top: y })
 
@@ -71,9 +71,10 @@ function AskAiButton({ text, x, y, onClose }: { text: string; x: number; y: numb
 
 	function handleClick() {
 		createSession()
-		void sendMessage(
-			`Giải thích nghĩa của "${text}" trong ngữ cảnh bài đọc tiếng Anh. Dịch sang tiếng Việt và cho ví dụ.`,
-		)
+		const prompt = promptTemplate
+			? promptTemplate(text)
+			: `Giải thích nghĩa của "${text}" trong ngữ cảnh bài đọc tiếng Anh. Dịch sang tiếng Việt và cho ví dụ.`
+		void sendMessage(prompt)
 		onClose()
 	}
 

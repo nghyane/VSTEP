@@ -11,14 +11,23 @@ export interface ListeningItem {
 	explanation: string
 }
 
+export interface WordTimestamp {
+	word: string
+	start: number // seconds
+	end: number   // seconds
+}
+
 export interface ListeningExercise {
 	id: string
 	title: string
 	part: ListeningPart
 	description: string
-	transcript: string // TTS sẽ đọc text này
-	vietnameseTranscript: string // bản dịch tiếng Việt
-	keywords: readonly string[] // support mode hints
+	audioUrl?: string
+	transcript: string
+	/** Word-level timestamps from Whisper. If present, subtitle syncs precisely. */
+	wordTimestamps?: readonly WordTimestamp[]
+	vietnameseTranscript: string
+	keywords: readonly string[]
 	estimatedMinutes: number
 	items: ListeningItem[]
 }
@@ -391,6 +400,59 @@ const P3_CLIMATE: ListeningExercise = {
 			2,
 			"'The decisions we make in the next ten years will shape the planet'.",
 		),
+	],
+}
+
+// ─── VSTEP Listening Part 1 — data shape example cho backend ──────
+// Backend đọc ví dụ này để biết cần trả về gì: audioUrl + transcript + wordTimestamps
+
+export const VSTEP_P1_EXAMPLE: ListeningExercise = {
+	id: "vstep-p1-real",
+	title: "VSTEP Listening Part 1",
+	part: 1,
+	description: "Đề thi VSTEP thật — Part 1: 8 đoạn ghi âm ngắn với audio thật.",
+	audioUrl: "/listening.mp3",
+	transcript: `This is the Vietnamese Standardized Test of English Proficiency, Listening Comprehension Test. You will listen to a number of different recordings, and you will have to answer questions based on what you hear. There will be time for you to read the questions and check your work. All the recordings will be played once only.
+
+Part 1: In this part, you will hear eight short recordings. The recordings will be played once only. There is one question following each recording. For each question, choose the right answer A, B, C, or D.
+
+Now, let's listen to the example. On the recording, you might hear, Hello, this is the travel agency returning your call. You left a message about the holiday you've booked, asking which meals are included in the cost during your stay at Sunny Hotel. Lunch and dinner are free, but if you wish to have breakfast in the hotel, you will need to pay an extra amount of money, depending on what you order. Let me know if I can help you with any other information. Goodbye. You will read: Which meal is not included in the price of the holiday? A. Breakfast B. Lunch C. Dinner D. All. The correct answer is A. Breakfast.
+
+First, you will have some time to look at questions 1 to 8.
+
+Now, we're ready to start. Listen, and answer questions 1 to 8.
+
+Question 1: This is your captain speaking. At this time, we request that all mobile phones, pagers, radios, and remote-controlled toys be turned off for the rest of the flight, as these items might interfere with the navigational and communication equipment on this aircraft. We are landing in Amsterdam in 10 minutes. It is now 4:40 local time.
+
+Question 2: If you do not know the exact course information, you may search by subject, course level, course number, and even section number, and place courses on your preferred sections list. First, you must select the term each time you enter this page. For example, this term's code is 1-5-F-A-C-A-S. Then enter up to five subjects. You may also enter course levels, course numbers, and even section numbers.
+
+Question 3: Thank you for calling Dragon Restaurant. You have reached the automatic call-in service of our restaurant. To find out about our menu, press 1. To reserve a table, press 2. To ask about our other services, press 3. To speak to the staff, press 0. Thank you, and have a good day.
+
+Question 4: Well, the fact that swimming doesn't interest you does not mean it's a boring form of exercise. It just means it's not suitable for you. I myself find jogging or riding a bike very boring. Swimming is great, but it's just not for everybody. It involves a lot of skills like breathing and shaping your body. At first, these skills may take some time to learn. But when you're used to them, like me, there's nothing to compare with slipping through the water. It's like flying.
+
+Question 5: Wash and rinse the rice really well until the water is clear. Place the rice in a saucepan with double the amount of water and a little salt and stir. Bring to a boil. Then turn the heat way down and cover the pan tightly with a lid. Cook on the lowest heat possible for 10 to 15 minutes without uncovering the pan.
+
+Question 6: If the camera charging light is not lit, the battery is still charging as long as it is connected to the wall outlet. If some trouble occurs while using the camera battery charger, immediately shut off the power by disconnecting the plug from the wall outlet.
+
+Question 7: Buses display route numbers, names, and final destinations in lighted signs above the windshield. If you'd like the bus operator to stop for you, just stand up and give a friendly wave as the bus approaches. Be sure to stay on the curb, though. Please catch your bus at any official Capital Metro bus stop while the route is on detour. Alert your bus operator by waving as the vehicle approaches and prior to boarding, confirm route name and number by checking the digital marquee.
+
+Question 8: The address of Buckingham Palace is Buckingham Palace, London SW1A1AA. You can get there by several different types of public transportation. If you go by train, stop at London Victoria. If you go by underground, stop at Victoria, Green Park, and Hyde Park Corner. If you go by bus, take numbers 11, 211, C1, or C10 and stop at Buckingham Palace Road. If you go by coach, stop at Victoria Coach Station. It is a 10-minute walk away from the palace.
+
+Now you will have some time to review questions 1 to 8.
+
+That is the end of part 1.`,
+	vietnameseTranscript: "",
+	keywords: ["VSTEP", "listening", "part 1", "announcement", "captain", "restaurant", "swimming", "rice", "camera", "bus", "Buckingham Palace"],
+	estimatedMinutes: 12,
+	items: [
+		q("vstep-p1-1", "What are passengers asked to do?", ["Fasten seatbelts", "Turn off electronic devices", "Open window shades", "Return to seats"], 1, "Captain requests all mobile phones, pagers, radios be turned off."),
+		q("vstep-p1-2", "What must you select first when searching for courses?", ["Subject", "Course level", "The term", "Section number"], 2, "'First, you must select the term each time you enter this page.'"),
+		q("vstep-p1-3", "What should you press to reserve a table?", ["1", "2", "3", "0"], 1, "'To reserve a table, press 2.'"),
+		q("vstep-p1-4", "What does the speaker think about swimming?", ["It's boring", "It's like flying", "It's easy to learn", "It's not exercise"], 1, "'there's nothing to compare with slipping through the water. It's like flying.'"),
+		q("vstep-p1-5", "How long should you cook the rice?", ["5 to 10 minutes", "10 to 15 minutes", "15 to 20 minutes", "20 to 25 minutes"], 1, "'Cook on the lowest heat possible for 10 to 15 minutes.'"),
+		q("vstep-p1-6", "What should you do if trouble occurs with the charger?", ["Replace the battery", "Disconnect the plug", "Call customer service", "Wait 10 minutes"], 1, "'immediately shut off the power by disconnecting the plug from the wall outlet.'"),
+		q("vstep-p1-7", "How should you signal a bus to stop?", ["Press a button", "Wave at the driver", "Stand at the curb", "Shout"], 1, "'just stand up and give a friendly wave as the bus approaches.'"),
+		q("vstep-p1-8", "How can you get to Buckingham Palace by underground?", ["Stop at London Victoria", "Stop at Victoria, Green Park, or Hyde Park Corner", "Take bus C1", "Stop at Victoria Coach Station"], 1, "'If you go by underground, stop at Victoria, Green Park, and Hyde Park Corner.'"),
 	],
 }
 

@@ -144,6 +144,11 @@ export function renameSession(id: string, title: string) {
 }
 
 // ─── Messaging ─────────────────────────────────────────────────────
+// TODO(backend): Thay mockAiReply() bằng POST /api/v1/ai/chat
+// Request:  { session_id, message, image_url? }
+// Response: { content: string } (streaming SSE hoặc JSON đơn)
+// Image:    upload lên R2 trước (presigned URL) → gửi image_url thay base64
+// Auth:     Bearer token (đã có middleware)
 
 function ensureActiveSession(): string {
 	if (state.activeId) return state.activeId

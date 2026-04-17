@@ -1,6 +1,8 @@
 // InteractivePassage — render passage text với từng từ có thể hover/tap.
-// Hover (desktop) hoặc tap (mobile) hiện WordTooltip.
-// Không chặn text selection — khi drag thì disable tooltip.
+// Hover (desktop) hoặc tap (mobile) → WordTooltipCard nếu từ có trong mock-dictionary.
+// Mọi từ đều có thể hover — chỉ highlight khi có entry trong dict.
+// TODO(backend): Thay lookupWord() bằng GET /api/v1/dictionary?word=...
+// Khi có API: từ không có trong dict vẫn lookup được → bỏ điều kiện hasEntry.
 
 import { Volume2 } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -20,7 +22,7 @@ export function InteractivePassage({ text }: { text: string }) {
 		}
 	}, [])
 
-	// Close tooltip on scroll or click outside
+	// Close tooltip on scroll
 	useEffect(() => {
 		if (!tooltip) return
 		function close() { setTooltip(null) }
@@ -32,16 +34,14 @@ export function InteractivePassage({ text }: { text: string }) {
 		if (isDragging.current) return
 		clearTimer()
 		const entry = lookupWord(word)
-		if (!entry) return
+		if (!entry) return // từ không có trong dict — khi có API thật thì fetch ở đây
 		hoverTimer.current = window.setTimeout(() => {
 			const rect = el.getBoundingClientRect()
 			setTooltip({ entry, x: rect.left + rect.width / 2, y: rect.top })
 		}, 300)
 	}
 
-	function handleWordLeave() {
-		clearTimer()
-	}
+	function handleWordLeave() { clearTimer() }
 
 	function handleWordClick(word: string, el: HTMLElement) {
 		const entry = lookupWord(word)
@@ -52,24 +52,20 @@ export function InteractivePassage({ text }: { text: string }) {
 		)
 	}
 
-	// Track drag to avoid showing tooltip during selection
+	// Track drag để không hiện tooltip khi user đang tô text
 	function handleMouseDown() { isDragging.current = false }
 	function handleMouseMove() { isDragging.current = true }
 	function handleMouseUp() {
-		// If was dragging (selecting text), don't show tooltip
 		setTimeout(() => { isDragging.current = false }, 50)
 	}
 
 	const words = text.split(/(\s+)/)
 
 	return (
-		<span
-			onMouseDown={handleMouseDown}
-			onMouseMove={handleMouseMove}
-			onMouseUp={handleMouseUp}
-		>
+		<span onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}>
 			{words.map((segment, i) => {
 				if (/^\s+$/.test(segment)) return <span key={i}>{segment}</span>
+				// Chỉ highlight từ có trong dict. Khi có API thật: highlight tất cả từ hợp lệ.
 				const hasEntry = lookupWord(segment) !== null
 				return (
 					<span
@@ -97,17 +93,13 @@ export function InteractivePassage({ text }: { text: string }) {
 }
 
 // ─── Tooltip card ──────────────────────────────────────────────────
+// TODO(backend): WordEntry đến từ GET /api/v1/dictionary?word=...
+// Shape giữ nguyên: { word, ipa, pos, meaning }
 
 function WordTooltipCard({
-	entry,
-	x,
-	y,
-	onClose,
+	entry, x, y, onClose,
 }: {
-	entry: WordEntry
-	x: number
-	y: number
-	onClose: () => void
+	entry: WordEntry; x: number; y: number; onClose: () => void
 }) {
 	const ref = useRef<HTMLDivElement>(null)
 	const [pos, setPos] = useState({ left: x, top: y })
@@ -118,11 +110,9 @@ function WordTooltipCard({
 		const rect = el.getBoundingClientRect()
 		let left = x - rect.width / 2
 		let top = y - rect.height - 6
-
 		if (left < 8) left = 8
 		if (left + rect.width > window.innerWidth - 8) left = window.innerWidth - rect.width - 8
 		if (top < 8) top = y + 24
-
 		setPos({ left, top })
 	}, [x, y])
 

@@ -7,7 +7,7 @@ import { StatusText, SubmitAction } from "#/components/practice/McqSubmitBar"
 import { PART_LABELS } from "#/lib/mock/listening"
 import type { McqSession } from "#/lib/practice/use-mcq-session"
 import { listeningExerciseQueryOptions } from "#/lib/queries/listening"
-import { TtsAudioPlayer } from "./TtsAudioPlayer"
+import { AudioSubtitlePlayer } from "#/components/practice/AudioSubtitlePlayer"
 import { useListeningSession } from "./useListeningSession"
 
 export function SessionView({ exerciseId }: { exerciseId: string }) {
@@ -39,7 +39,7 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 
 			{submitted && <McqResultSummary score={session.score} total={session.total} />}
 
-			<TtsAudioPlayer transcript={exercise.transcript} />
+			<AudioSubtitlePlayer audioUrl={exercise.audioUrl} transcript={exercise.transcript} wordTimestamps={exercise.wordTimestamps} />
 
 			<McqQuestionList
 				items={exercise.items}
