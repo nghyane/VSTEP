@@ -3,6 +3,7 @@
 // Source: apps/frontend/src/routes/_learner/progress/-components/TestPracticeTab.tsx
 
 import { BookOpen, Headphones, Mic, PencilLine } from "lucide-react"
+import { useMemo, useState } from "react"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "#/components/ui/chart"
 import type { PracticeTrackData, TestSession } from "#/lib/mock/overview"
@@ -97,58 +98,8 @@ export function PracticeTrackView({ data }: Props) {
 				</div>
 			</div>
 
-			{/* Section 2: Stacked bar — mỗi thanh = 1 bài test, 4 phần màu = 4 kỹ năng */}
-			<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
-				<div className="mb-4">
-					<h3 className="text-lg font-semibold">Điểm qua 10 bài test gần nhất</h3>
-					<p className="text-sm text-muted-foreground">
-						Mỗi thanh là 1 bài test, chia theo 4 kỹ năng
-					</p>
-				</div>
-
-				<ChartContainer config={scoreChartConfig} className="aspect-auto h-[280px] w-full">
-					<BarChart
-						data={buildBarData(data.recentScores)}
-						margin={{ left: -10, right: 12, top: 12, bottom: 0 }}
-						barCategoryGap="20%"
-					>
-						<CartesianGrid vertical={false} strokeDasharray="3 3" />
-						<XAxis dataKey="index" tickLine={false} axisLine={false} tickMargin={10} />
-						<YAxis
-							domain={[0, 10]}
-							tickLine={false}
-							axisLine={false}
-							tickMargin={8}
-							tickCount={6}
-						/>
-						<ChartTooltip content={<ChartTooltipContent />} />
-						<Bar
-							dataKey="listening"
-							stackId="score"
-							fill="var(--skill-listening)"
-							radius={[0, 0, 4, 4]}
-						/>
-						<Bar dataKey="reading" stackId="score" fill="var(--skill-reading)" radius={0} />
-						<Bar dataKey="writing" stackId="score" fill="var(--skill-writing)" radius={0} />
-						<Bar
-							dataKey="speaking"
-							stackId="score"
-							fill="var(--skill-speaking)"
-							radius={[4, 4, 0, 0]}
-						/>
-					</BarChart>
-				</ChartContainer>
-
-				{/* Legend */}
-				<div className="mt-3 flex flex-wrap items-center justify-center gap-4">
-					{SKILLS.map(({ key, label, colorVar }) => (
-						<span key={key} className="flex items-center gap-2 text-sm">
-							<span className="size-2.5 rounded-sm" style={{ backgroundColor: colorVar }} />
-							{label}
-						</span>
-					))}
-				</div>
-			</div>
+			{/* Section 2: Stacked column chart với checkbox legend */}
+			<ScoreChart recentScores={data.recentScores} />
 
 			{/* Section 3: Test history */}
 			<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
@@ -185,7 +136,119 @@ export function PracticeTrackView({ data }: Props) {
 	)
 }
 
-// ─── Helpers ────────────────────────────────────────────────────
+// ─── Score chart with toggleable skills ────────────────────────────
+
+function ScoreChart({ recentScores }: { recentScores: Record<Skill, { score: number }[]> }) {
+	const [visible, setVisible] = useState<Record<Skill, boolean>>({
+		listening: true,
+		reading: true,
+		writing: true,
+		speaking: true,
+	})
+
+	function toggle(key: Skill) {
+		setVisible((v) => ({ ...v, [key]: !v[key] }))
+	}
+
+	// Build chart data — zero out hidden skills
+	const chartData = useMemo(() => {
+		const raw = buildBarData(recentScores)
+		return raw.map((row) => {
+			const entry = { ...row }
+			for (const s of SKILLS) {
+				if (!visible[s.key]) entry[s.key] = 0
+			}
+			return entry
+		})
+	}, [recentScores, visible])
+
+	return (
+		<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
+			<div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+				<div>
+					<h3 className="text-lg font-semibold">Điểm qua 10 bài test gần nhất</h3>
+					<p className="text-sm text-muted-foreground">
+						Mỗi cột là 1 bài test, chia theo 4 kỹ năng — bấm để ẩn/hiện
+					</p>
+				</div>
+			</div>
+
+			<ChartContainer config={scoreChartConfig} className="aspect-auto h-[280px] w-full">
+				<BarChart
+					data={chartData}
+					margin={{ left: -10, right: 12, top: 12, bottom: 0 }}
+					barCategoryGap="25%"
+				>
+					<CartesianGrid vertical={false} strokeDasharray="3 3" />
+					<XAxis dataKey="index" tickLine={false} axisLine={false} tickMargin={10} />
+					<YAxis
+						domain={[0, 10]}
+						tickLine={false}
+						axisLine={false}
+						tickMargin={8}
+						tickCount={6}
+						allowDecimals={false}
+					/>
+					<ChartTooltip content={<ChartTooltipContent />} />
+					{SKILLS.map((s, idx) => {
+						const isFirst = idx === 0
+						const isLast = idx === SKILLS.length - 1
+						return (
+							<Bar
+								key={s.key}
+								dataKey={s.key}
+								stackId="score"
+								fill={visible[s.key] ? s.colorVar : "transparent"}
+								radius={[
+									isLast ? 4 : 0,
+									isLast ? 4 : 0,
+									isFirst ? 4 : 0,
+									isFirst ? 4 : 0,
+								]}
+							/>
+						)
+					})}
+				</BarChart>
+			</ChartContainer>
+
+			{/* Interactive legend with checkboxes */}
+			<div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+				{SKILLS.map(({ key, label, colorVar }) => {
+					const active = visible[key]
+					return (
+						<button
+							key={key}
+							type="button"
+							onClick={() => toggle(key)}
+							aria-pressed={active}
+							className={cn(
+								"inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm transition-all",
+								active
+									? "border-border bg-background"
+									: "border-transparent bg-transparent opacity-50",
+							)}
+						>
+							<span
+								className={cn(
+									"flex size-4 shrink-0 items-center justify-center rounded border-2",
+									active ? "border-transparent" : "border-muted-foreground/30",
+								)}
+								style={active ? { backgroundColor: colorVar } : undefined}
+							>
+								{active && (
+									<svg viewBox="0 0 12 12" className="size-3 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+										<polyline points="2.5 6.5 5 9 9.5 3.5" />
+									</svg>
+								)}
+							</span>
+							<span className={active ? "font-medium" : "text-muted-foreground"}>{label}</span>
+						</button>
+					)
+				})}
+			</div>
+		</div>
+	)
+}
 
 function buildBarData(recentScores: Record<Skill, { score: number }[]>): {
 	index: string

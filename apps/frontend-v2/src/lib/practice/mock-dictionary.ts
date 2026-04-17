@@ -1,5 +1,7 @@
-// Mock word dictionary â€” IPA + pos + meaning cho tá»« phá»• biáº¿n trong bÃ i Ä‘á»c.
-// Thay báº±ng API tá»« Ä‘iá»ƒn tháº­t sau.
+// Mock word dictionary — IPA + pos + meaning cho t? ph? bi?n.
+// TODO(backend): Thay b?ng GET /api/v1/dictionary?word=... ? WordEntry | null
+// Backend có th? dùng b?ng vocabulary_words (dã có) ho?c external API.
+// Khi có API: xóa ENTRIES + INDEX + lookupWord(), import apiFetchWordEntry() vào caller.
 
 export interface WordEntry {
 	word: string

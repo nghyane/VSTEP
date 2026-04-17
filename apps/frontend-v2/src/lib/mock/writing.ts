@@ -1,4 +1,8 @@
 // Mock writing data — 6 đề chia 2 Part: 3 letters (Part 1) + 3 essays (Part 2).
+// TODO(backend): Khi connect API, WritingExercise map sang Question (skill=writing).
+// - sampleMarkers lưu trong Question.content.sampleMarkers[] (jsonb)
+// - match/occurrence dùng text-based lookup, KHÔNG dùng character offset (fragile)
+// - Admin nhập markers bằng visual picker (bôi đen text → popup) ở question editor
 
 export type WritingPart = 1 | 2
 
@@ -13,12 +17,44 @@ export interface WritingExercise {
 	requiredPoints: readonly string[]
 	keywords: readonly string[]
 	sentenceStarters: readonly string[]
-	/** Dàn ý 3 đoạn (mở bài, thân bài, kết bài). Dùng cho support level "outline". */
 	outline?: readonly WritingOutlineSection[]
-	/** Khung bài với các chỗ trống. Dùng cho support level "template". */
 	template?: readonly WritingTemplateSection[]
 	sampleAnswer: string
+	/**
+	 * Markers chú thích cho bài mẫu.
+	 * Mỗi marker dùng `match` string để locate vị trí — không hardcode offset.
+	 * Backend lưu trong Question.content.sampleMarkers[].
+	 * Xem SampleMarkerDef ở writing-sample-markers.ts.
+	 */
+	sampleMarkers?: readonly SampleMarkerDef[]
 	estimatedMinutes: number
+}
+
+/**
+ * Marker chú thích cho bài mẫu. Dùng match-string thay vì character offset.
+ *
+ * Backend contract (Question.content.sampleMarkers[]):
+ * {
+ *   id: string           — unique trong bài
+ *   match: string        — đoạn text cần highlight (phải tồn tại trong sampleAnswer)
+ *   occurrence: number   — lần xuất hiện thứ mấy (1-based, default 1)
+ *   side: "left"|"right" — sticker hiển thị bên nào
+ *   color: "yellow"|"blue"|"pink"
+ *   label: string        — tiêu đề sticker
+ *   detail?: string      — giải thích ngắn
+ * }
+ *
+ * Admin nhập: bôi đen text trong preview → popup điền label/color/side.
+ * Frontend: tự tính { start, end } bằng matchToRange() trong writing-sample-markers.ts.
+ */
+export interface SampleMarkerDef {
+	readonly id: string
+	readonly match: string
+	readonly occurrence?: number
+	readonly side: "left" | "right"
+	readonly color: "yellow" | "blue" | "pink"
+	readonly label: string
+	readonly detail?: string
 }
 
 export interface WritingOutlineSection {
@@ -194,6 +230,53 @@ Once again, I am truly sorry. Please forgive me.
 
 Best wishes,
 Lan`,
+	sampleMarkers: [
+		{
+			id: "greeting",
+			match: "Dear Minh,",
+			occurrence: 1,
+			side: "left",
+			color: "yellow",
+			label: "Lời chào",
+			detail: "Mở đầu thân mật, đúng tone thư bạn bè",
+		},
+		{
+			id: "writing-to",
+			match: "I am writing to apologize",
+			occurrence: 1,
+			side: "right",
+			color: "blue",
+			label: "Cấu trúc B1",
+			detail: "I am writing to + V — câu mở đầu thư formal",
+		},
+		{
+			id: "unfortunately",
+			match: "Unfortunately",
+			occurrence: 1,
+			side: "left",
+			color: "pink",
+			label: "Từ nối",
+			detail: "Chuyển đoạn mượt, tạo tone đồng cảm",
+		},
+		{
+			id: "would-love",
+			match: "I would love to take you out",
+			occurrence: 1,
+			side: "right",
+			color: "blue",
+			label: "Nâng cấp B2",
+			detail: "would love to + V — lịch sự hơn 'want to'",
+		},
+		{
+			id: "closing",
+			match: "Once again, I am truly sorry.",
+			occurrence: 1,
+			side: "left",
+			color: "yellow",
+			label: "Kết thư",
+			detail: "Nhắc lại lời xin lỗi + chào kết đúng format",
+		},
+	],
 	estimatedMinutes: 20,
 }
 

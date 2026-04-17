@@ -24,7 +24,7 @@ function useInView(threshold = 0.15) {
 	useEffect(() => {
 		const el = ref.current
 		if (!el) return
-		const obs = new IntersectionObserver(([e]) => e.isIntersecting && setVisible(true), {
+		const obs = new IntersectionObserver(([e]) => e?.isIntersecting && setVisible(true), {
 			threshold,
 		})
 		obs.observe(el)
