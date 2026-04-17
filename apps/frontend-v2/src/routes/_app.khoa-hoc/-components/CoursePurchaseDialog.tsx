@@ -97,7 +97,7 @@ export function CoursePurchaseDialog({ course, open, onOpenChange }: Props) {
 						<div className="flex items-center justify-between">
 							<span className="text-xs text-muted-foreground">Giá niêm yết</span>
 							<span className="flex items-center gap-2">
-								<span className="text-xs leading-none text-muted-foreground line-through tabular-nums">
+								<span className="relative inline-block text-base leading-none text-muted-foreground tabular-nums before:absolute before:inset-x-0 before:top-[45%] before:h-px before:-translate-y-1/2 before:bg-current before:content-['']">
 									{formatVnd(course.originalPriceVnd)}
 								</span>
 								<span className="inline-flex items-center rounded-md bg-destructive/10 px-1.5 py-0.5 text-[11px] font-bold text-destructive tabular-nums">
