@@ -20,7 +20,6 @@ import { useEnrollments } from "#/lib/courses/enrollment-store"
 import {
 	COURSE_LEVEL_LABELS,
 	type Course,
-	type CourseSession,
 	discountPercent,
 	hasDiscount,
 	isCourseEnded,
@@ -29,18 +28,13 @@ import {
 	savedVnd,
 } from "#/lib/mock/courses"
 import { courseDetailQueryOptions } from "#/lib/queries/courses"
-import { cn } from "#/lib/utils"
 import {
 	CommitmentCard,
 	CommitmentViolatedBanner,
 } from "./_app.khoa-hoc/-components/CommitmentCard"
 import { CoursePurchaseDialog } from "./_app.khoa-hoc/-components/CoursePurchaseDialog"
-import {
-	formatCoins,
-	formatDateShort,
-	formatDateVi,
-	formatVnd,
-} from "./_app.khoa-hoc/-components/course-utils"
+import { CourseSchedule } from "./_app.khoa-hoc/-components/CourseSchedule"
+import { formatCoins, formatDateVi, formatVnd } from "./_app.khoa-hoc/-components/course-utils"
 
 export const Route = createFileRoute("/_app/khoa-hoc/$courseId")({
 	loader: ({ context: { queryClient }, params }) =>
@@ -89,7 +83,7 @@ function CourseDetailPage() {
 
 			<InstructorCard course={course} />
 
-			<SessionsCard course={course} />
+			<CourseSchedule course={course} />
 
 			<GuaranteeCard />
 		</div>
@@ -329,52 +323,6 @@ function InstructorCard({ course }: { course: Course }) {
 				</div>
 			</div>
 		</section>
-	)
-}
-
-// ─── Sessions ─────────────────────────────────────────────────────────────────
-
-function SessionsCard({ course }: { course: Course }) {
-	const now = Date.now()
-
-	return (
-		<section className="rounded-2xl bg-muted/50 p-5 shadow-sm">
-			<div className="flex items-center justify-between">
-				<h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-					Lịch học chi tiết
-				</h2>
-				<span className="text-xs text-muted-foreground">{course.sessions.length} buổi</span>
-			</div>
-			<ul className="mt-3 divide-y divide-border overflow-hidden rounded-xl border bg-background">
-				{course.sessions.map((s) => (
-					<SessionRow key={s.id} session={s} past={new Date(s.date).getTime() < now} />
-				))}
-			</ul>
-		</section>
-	)
-}
-
-function SessionRow({ session, past }: { session: CourseSession; past: boolean }) {
-	return (
-		<li
-			className={cn("flex items-center gap-3 px-4 py-3 text-sm", past && "text-muted-foreground")}
-		>
-			<span
-				className={cn(
-					"flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums",
-					past ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary",
-				)}
-			>
-				{String(session.sessionNumber).padStart(2, "0")}
-			</span>
-			<div className="min-w-0 flex-1">
-				<p className={cn("font-medium", past ? "line-through" : "text-foreground")}>
-					{formatDateShort(session.date)} · {session.startTime}–{session.endTime}
-				</p>
-				<p className="text-xs text-muted-foreground">Chủ đề: {session.topic}</p>
-			</div>
-			{past && <span className="text-[11px] font-medium text-muted-foreground">Đã qua</span>}
-		</li>
 	)
 }
 
