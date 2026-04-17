@@ -36,11 +36,13 @@ Popover hiện tại đã hiện streak + tuần học. Thêm:
 
 ### 3. Daily coin reward (mock)
 
-Thêm cơ chế mock: khi `recordPracticeCompletion()` trả về `reachedGoal: true` (đạt 3 bài/ngày):
+**Cập nhật 2026-04-18:** Streak chỉ tính từ luồng thi thử (phong-thi). Luyện tập không tính.
+
+Thêm cơ chế mock: khi `recordPracticeCompletion()` trả về `reachedGoal: true` (đạt 3 đề thi thử/ngày):
 - `refundCoins(10)` — thưởng 10 xu
 - Toast: "+10 xu — Hoàn thành mục tiêu hôm nay!"
 
-Đây là vòng lặp bền vững: luyện tập hàng ngày → kiếm xu → dùng xu thi thử.
+Đây là vòng lặp bền vững: thi thử hàng ngày → giữ streak → nhận thưởng xu → dùng xu mở đề mới.
 
 ### 4. Hiện coin reward trên session completion
 

@@ -82,7 +82,7 @@ export function StreakDialog({ open, onOpenChange, streak }: Props) {
 								todayRemaining === 0 ? "text-emerald-600" : "text-amber-600",
 							)}
 						>
-							{todayDone}/{DAILY_GOAL} bài
+							{todayDone}/{DAILY_GOAL} đề thi thử
 						</span>
 					</div>
 					<div className="h-2 w-full overflow-hidden rounded-full bg-slate-200/70 dark:bg-slate-700/60">
@@ -99,7 +99,7 @@ export function StreakDialog({ open, onOpenChange, streak }: Props) {
 					<p className="flex items-center gap-1.5 text-xs text-muted-foreground">
 						{todayRemaining === 0
 							? "Hoàn thành! Streak được giữ hôm nay."
-							: `Còn ${todayRemaining} bài nữa để giữ streak`}
+							: `Còn ${todayRemaining} đề thi thử nữa để giữ streak`}
 					</p>
 				</div>
 
@@ -129,7 +129,7 @@ export function StreakDialog({ open, onOpenChange, streak }: Props) {
 					</p>
 					<ol className="space-y-1.5 text-xs text-foreground">
 						{[
-							`Hoàn thành ít nhất ${DAILY_GOAL} bài tập mỗi ngày`,
+							`Hoàn thành ít nhất ${DAILY_GOAL} đề thi thử mỗi ngày`,
 							"Không bỏ ngày nào để giữ streak",
 							...STREAK_MILESTONES.map((m) => `Đạt mốc ${m.days} ngày → nhận ${m.coins} xu`),
 						].map((note, i) => (

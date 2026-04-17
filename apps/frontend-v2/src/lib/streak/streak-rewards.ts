@@ -16,7 +16,7 @@ export const STREAK_MILESTONES: readonly StreakMilestone[] = [
 	{ days: 30, coins: 500 },
 ] as const
 
-export const DAILY_GOAL = 3 // bài/ngày để giữ streak
+export const DAILY_GOAL = 3 // đề thi thử/ngày để giữ streak
 
 const STORAGE_KEY = "vstep:streak-claimed:v1"
 const EVENT = "vstep:streak-claimed-change"
@@ -101,8 +101,9 @@ export function scanUnlockedMilestones(currentStreak: number) {
 }
 
 // ─── Today progress (local counter) ──────────────────────────────────────────
-// Đếm số bài luyện tập / đề thi đã hoàn thành TRONG NGÀY, reset tự động khi
-// đổi ngày. Nguồn dữ liệu: các completion hook gọi `recordPracticeCompletion()`.
+// Đếm số đề thi thử đã hoàn thành TRONG NGÀY, reset tự động khi đổi ngày.
+// Nguồn dữ liệu: duy nhất luồng phong-thi gọi `recordPracticeCompletion()`.
+// Luồng luyện tập (nghe/đọc/nói/viết) KHÔNG tính streak.
 
 const PROGRESS_KEY = "vstep:streak-progress:v1"
 const PROGRESS_EVENT = "vstep:streak-progress-change"
@@ -168,7 +169,8 @@ export function useTodayProgress(): number {
 }
 
 /**
- * Ghi nhận user vừa hoàn thành 1 bài (luyện tập hoặc đề thi).
+ * Ghi nhận user vừa hoàn thành 1 đề thi thử.
+ * Chỉ gọi từ luồng phong-thi — luyện tập không tính streak.
  * Trả về `{ reachedGoal: true }` nếu cú này là cú vừa chạm DAILY_GOAL
  * (để caller hiển thị toast "đã giữ streak hôm nay").
  */
@@ -182,7 +184,7 @@ export function recordPracticeCompletion(): { reachedGoal: boolean } {
 	if (reachedGoal) {
 		pushNotification({
 			id: `streak:goal:${today}`,
-			title: `Đã giữ streak hôm nay (${DAILY_GOAL}/${DAILY_GOAL} bài)`,
+			title: `Đã giữ streak hôm nay (${DAILY_GOAL}/${DAILY_GOAL} đề thi thử)`,
 			body: "Quay lại mai để nâng chuỗi học lên một ngày nữa!",
 			iconKey: "fire",
 		})

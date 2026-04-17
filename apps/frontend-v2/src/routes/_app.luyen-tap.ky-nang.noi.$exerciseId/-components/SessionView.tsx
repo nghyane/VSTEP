@@ -16,7 +16,6 @@ import { saveSpeakingResult } from "#/lib/practice/result-storage"
 import { cancelSpeak } from "#/lib/practice/speak-sentence"
 import { useVoiceRecorder } from "#/lib/practice/use-voice-recorder"
 import { speakingExerciseQueryOptions } from "#/lib/queries/speaking"
-import { recordPracticeCompletion } from "#/lib/streak/streak-rewards"
 import { cn } from "#/lib/utils"
 import { useSpeakingSession } from "./useSpeakingSession"
 
@@ -39,7 +38,6 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 			sentencesTotal: exercise.sentences.length,
 			submittedAt: Date.now(),
 		})
-		recordPracticeCompletion()
 		toast.success("Đã nộp bài")
 		void navigate({ to: "/luyen-tap/ky-nang/noi/$exerciseId/ket-qua", params: { exerciseId } })
 	}

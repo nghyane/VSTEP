@@ -9,7 +9,6 @@ import { Button } from "#/components/ui/button"
 import { WRITING_PART_LABELS } from "#/lib/mock/writing"
 import { saveWritingResult } from "#/lib/practice/result-storage"
 import { writingExerciseQueryOptions } from "#/lib/queries/writing"
-import { recordPracticeCompletion } from "#/lib/streak/streak-rewards"
 import { cn } from "#/lib/utils"
 import { useWritingSession } from "./useWritingSession"
 
@@ -49,7 +48,6 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 			stars: feedback.stars,
 			submittedAt: Date.now(),
 		})
-		recordPracticeCompletion()
 		void navigate({ to: "/luyen-tap/ky-nang/viet/$exerciseId/ket-qua", params: { exerciseId } })
 	}
 

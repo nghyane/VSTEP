@@ -45,15 +45,9 @@ Logic "bài tiếp theo": Lấy exercise list từ cùng category, tìm exercise
 
 ### 3. Streak toast sau submit
 
-Hiện tại `recordPracticeCompletion()` đã push notification khi đạt daily goal, nhưng:
-- Chỉ gọi ở Viết, Nói, Thi thử — **thiếu Nghe, Đọc, Ngữ pháp, Từ vựng**
-- Toast hiện qua notification system, không phải inline celebration
+**Cập nhật 2026-04-18:** Streak chỉ tính từ luồng thi thử (phong-thi). Luyện tập (nghe/đọc/nói/viết) và nền tảng (ngữ pháp/từ vựng) KHÔNG gọi `recordPracticeCompletion()`.
 
-Thêm `recordPracticeCompletion()` vào:
-- `_app.luyen-tap.ky-nang.nghe.$exerciseId/-components/SessionView.tsx` → trong submit handler
-- `_app.luyen-tap.ky-nang.doc.$exerciseId/-components/SessionView.tsx` → trong submit handler
-- `_app.luyen-tap.nen-tang.ngu-phap.$pointId/-components/PracticeSession.tsx` → khi result != null
-- `_app.luyen-tap.nen-tang.tu-vung.$topicId.tsx` → khi hoàn thành flashcard queue
+Lý do: streak = commitment tới thi thử (sản phẩm chính), không bị pha loãng bởi practice nhẹ.
 
 ### 4. Back navigation từ kết quả
 
@@ -63,18 +57,15 @@ Hiện tại trang kết quả Viết/Nói back về "Danh sách đề" (skip se
 
 | File | Change |
 |---|---|
-| `ky-nang/nghe/$exerciseId/-components/SessionView.tsx` | Add "Bài tiếp theo" + `recordPracticeCompletion` |
-| `ky-nang/doc/$exerciseId/-components/SessionView.tsx` | Add "Bài tiếp theo" + `recordPracticeCompletion` |
+| `ky-nang/nghe/$exerciseId/-components/SessionView.tsx` | Add "Bài tiếp theo" |
+| `ky-nang/doc/$exerciseId/-components/SessionView.tsx` | Add "Bài tiếp theo" |
 | `ky-nang/viet/$exerciseId/ket-qua.tsx` | Add "Bài tiếp theo" + "Xem tiến độ" |
 | `ky-nang/noi/$exerciseId/ket-qua.tsx` | Add "Bài tiếp theo" + "Xem tiến độ" |
 | `_focused.phong-thi.$examId.ket-qua.tsx` | Add "Làm đề khác" + "Xem tiến độ" |
-| `nen-tang/ngu-phap/$pointId/-components/PracticeSession.tsx` | Add `recordPracticeCompletion` |
-| `nen-tang/tu-vung/$topicId.tsx` | Add `recordPracticeCompletion` |
 | `McqSubmitBar.tsx` | Extend props to accept optional `nextHref` |
 
 ## Implementation status
 
-- [ ] Add `recordPracticeCompletion()` to Nghe, Đọc, Ngữ pháp, Từ vựng sessions
 - [ ] Add "Bài tiếp theo" to MCQ session footer (Nghe/Đọc)
 - [ ] Add "Bài tiếp theo" to Viết/Nói result pages
 - [ ] Add "Làm đề khác" to Thi thử result page
