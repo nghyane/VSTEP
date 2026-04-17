@@ -140,6 +140,7 @@ React 19, TypeScript, TanStack Router, Tailwind v4, shadcn/ui. Mọi PR phải p
 ## XV. Post-edit check (bắt buộc)
 
 78. **Luôn chạy biome check & lint sau mỗi lần sửa code.**
+79. **Không tự ý commit.** Agent không được chạy `git commit` trừ khi user yêu cầu rõ ràng.
 
 ## XVI. Definition of done
 
