@@ -9,6 +9,7 @@ import { CoinIcon } from "#/components/common/CoinIcon"
 import { Button } from "#/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "#/components/ui/dialog"
 import { refundCoins, useCoins } from "#/lib/coins/coin-store"
+import { pushNotification } from "#/lib/notifications/store"
 import { cn } from "#/lib/utils"
 
 interface Props {
@@ -62,6 +63,12 @@ export function TopUpDialog({ open, onOpenChange }: Props) {
 		toast.success(`Nạp thành công +${formatCoins(selected.coins)} xu`, {
 			description: `Gói "${selected.name}" · ${formatVnd(selected.priceVnd)}`,
 		})
+		pushNotification({
+			id: `topup:${Date.now()}`,
+			title: `+${formatCoins(selected.coins)} xu từ gói ${selected.name}`,
+			body: `Đã thanh toán ${formatVnd(selected.priceVnd)} · Xu không bao giờ hết hạn.`,
+			iconKey: "coin",
+		})
 		onOpenChange(false)
 	}
 
@@ -100,8 +107,27 @@ function LeftPanel({
 	return (
 		<div className="flex flex-col items-center justify-between gap-6 bg-muted/40 p-8 md:py-10">
 			<div className="flex flex-col items-center gap-4">
-				<div className="flex size-24 items-center justify-center">
-					<AnimatedCoinIcon size={88} />
+				<div className="relative flex size-24 items-center justify-center">
+					{isEmpty && (
+						<>
+							<span
+								aria-hidden
+								className="pointer-events-none absolute inset-0 animate-ping rounded-full bg-slate-300/50 [animation-duration:2.4s]"
+							/>
+							<span
+								aria-hidden
+								className="pointer-events-none absolute -inset-2 animate-pulse rounded-full bg-gradient-to-br from-slate-200 via-slate-300 to-slate-400 opacity-40 blur-xl"
+							/>
+						</>
+					)}
+					<div
+						className={cn(
+							"relative transition-[filter] duration-500",
+							isEmpty && "brightness-110 [filter:grayscale(1)_brightness(1.1)]",
+						)}
+					>
+						<AnimatedCoinIcon size={88} />
+					</div>
 				</div>
 				<div className="space-y-1.5 text-center">
 					<h2 className="text-balance text-2xl font-extrabold tracking-tight text-foreground">

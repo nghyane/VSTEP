@@ -2,6 +2,7 @@ import { Headphones, Mic, Pause, Play, Square, Volume2 } from "lucide-react"
 import { motion } from "motion/react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { CoinIcon } from "#/components/common/CoinIcon"
+import { TopUpDialog } from "#/components/common/TopUpDialog"
 import { Button } from "#/components/ui/button"
 import { useCoins } from "#/lib/coins/coin-store"
 import type { ExamSkillKey, MockExamSession } from "#/lib/mock/exam-session"
@@ -179,6 +180,7 @@ const SKILL_ORDER: ExamSkillKey[] = ["listening", "reading", "writing", "speakin
 export function DeviceCheckScreen({ session, isUnlimited, sessionCost, onStart }: Props) {
 	const coins = useCoins()
 	const canAfford = coins >= sessionCost
+	const [topUpOpen, setTopUpOpen] = useState(false)
 	const activeSkills = SKILL_ORDER.filter((sk) => {
 		if (sk === "listening") return session.listening.length > 0
 		if (sk === "reading") return session.reading.length > 0
@@ -312,18 +314,29 @@ export function DeviceCheckScreen({ session, isUnlimited, sessionCost, onStart }
 						<span className="leading-none text-muted-foreground">Số dư: {coins} xu</span>
 					</div>
 					<motion.div
-						whileTap={canAfford ? { scale: 0.97, y: 2 } : undefined}
+						whileTap={{ scale: 0.97, y: 2 }}
 						transition={{ type: "spring", stiffness: 400, damping: 20 }}
 						className="w-full max-w-xs"
 					>
-						<Button
-							size="lg"
-							disabled={!canAfford}
-							className="w-full border-b-4 border-b-primary/70 text-base font-bold shadow-md"
-							onClick={onStart}
-						>
-							{canAfford ? "Nhận đề & bắt đầu" : "Không đủ xu"}
-						</Button>
+						{canAfford ? (
+							<Button
+								size="lg"
+								className="w-full border-b-4 border-b-primary/70 text-base font-bold shadow-md"
+								onClick={onStart}
+							>
+								Nhận đề & bắt đầu
+							</Button>
+						) : (
+							<Button
+								size="lg"
+								variant="secondary"
+								className="w-full border-b-4 border-b-amber-600/70 bg-amber-500 text-base font-bold text-white shadow-md hover:bg-amber-500/90"
+								onClick={() => setTopUpOpen(true)}
+							>
+								<CoinIcon size={18} className="-translate-y-px" />
+								Nạp thêm xu
+							</Button>
+						)}
 					</motion.div>
 					<p className="text-xs text-muted-foreground">
 						{!canAfford
@@ -334,6 +347,8 @@ export function DeviceCheckScreen({ session, isUnlimited, sessionCost, onStart }
 					</p>
 				</div>
 			</div>
+
+			<TopUpDialog open={topUpOpen} onOpenChange={setTopUpOpen} />
 		</div>
 	)
 }

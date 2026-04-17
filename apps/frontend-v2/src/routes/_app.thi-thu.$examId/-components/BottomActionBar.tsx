@@ -3,6 +3,7 @@ import { ArrowRight, Clock, LayoutGrid, Timer } from "lucide-react"
 import { useRef, useState } from "react"
 import { toast } from "sonner"
 import { CoinIcon } from "#/components/common/CoinIcon"
+import { TopUpDialog } from "#/components/common/TopUpDialog"
 import { Button } from "#/components/ui/button"
 import { computeSessionCost, useCoins } from "#/lib/coins/coin-store"
 import type { ExamSection, ExamSkillKey } from "#/lib/mock/thi-thu"
@@ -45,6 +46,7 @@ export function BottomActionBar({
 	const navigate = useNavigate()
 	const [showCustomInput, setShowCustomInput] = useState(false)
 	const [customDraft, setCustomDraft] = useState("")
+	const [topUpOpen, setTopUpOpen] = useState(false)
 	const inputRef = useRef<HTMLInputElement>(null)
 	const coins = useCoins()
 
@@ -123,9 +125,7 @@ export function BottomActionBar({
 
 	function handleStartExam() {
 		if (insufficientCoins) {
-			toast.error("Không đủ xu để bắt đầu", {
-				description: `Cần ${sessionCost} xu, bạn còn ${coins} xu.`,
-			})
+			setTopUpOpen(true)
 			return
 		}
 		navigate({
@@ -157,10 +157,21 @@ export function BottomActionBar({
 						</div>
 						<div className="flex items-center gap-2">
 							<CostBadge cost={sessionCost} insufficient={insufficientCoins} />
-							<Button className="shrink-0 gap-2" onClick={handleStartExam}>
-								Làm full test
-								<ArrowRight className="size-4" />
-							</Button>
+							{insufficientCoins ? (
+								<Button
+									variant="secondary"
+									className="shrink-0 gap-2 bg-amber-500 text-white hover:bg-amber-500/90"
+									onClick={handleStartExam}
+								>
+									<CoinIcon size={16} className="-translate-y-px" />
+									Nạp thêm xu
+								</Button>
+							) : (
+								<Button className="shrink-0 gap-2" onClick={handleStartExam}>
+									Làm full test
+									<ArrowRight className="size-4" />
+								</Button>
+							)}
 						</div>
 					</div>
 				) : (
@@ -270,14 +281,26 @@ export function BottomActionBar({
 
 						<div className="flex items-center gap-2">
 							<CostBadge cost={sessionCost} insufficient={insufficientCoins} />
-							<Button className="shrink-0 gap-2" onClick={handleStartExam}>
-								Bắt đầu luyện tập
-								<ArrowRight className="size-4" />
-							</Button>
+							{insufficientCoins ? (
+								<Button
+									variant="secondary"
+									className="shrink-0 gap-2 bg-amber-500 text-white hover:bg-amber-500/90"
+									onClick={handleStartExam}
+								>
+									<CoinIcon size={16} className="-translate-y-px" />
+									Nạp thêm xu
+								</Button>
+							) : (
+								<Button className="shrink-0 gap-2" onClick={handleStartExam}>
+									Bắt đầu luyện tập
+									<ArrowRight className="size-4" />
+								</Button>
+							)}
 						</div>
 					</div>
 				)}
 			</div>
+			<TopUpDialog open={topUpOpen} onOpenChange={setTopUpOpen} />
 		</div>
 	)
 }
