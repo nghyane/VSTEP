@@ -22,8 +22,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => CheckRole::class,
         ]);
 
-        $middleware->redirectGuestsTo(fn (Request $request) => $request->is('api/*') ? null : route('login'));
-
         $middleware->append(JsonUtf8::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
