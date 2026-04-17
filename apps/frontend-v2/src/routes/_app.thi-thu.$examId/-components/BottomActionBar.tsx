@@ -18,7 +18,6 @@ interface TimePreset {
 }
 
 const TIME_PRESETS: TimePreset[] = [
-	{ label: "∞", value: "unlimited", ariaLabel: "Không giới hạn" },
 	{ label: "10p", value: 10 },
 	{ label: "20p", value: 20 },
 	{ label: "30p", value: 30 },
