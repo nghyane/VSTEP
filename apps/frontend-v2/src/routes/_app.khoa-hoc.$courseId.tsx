@@ -171,7 +171,7 @@ function PurchasePanel({
 
 			{hasDiscount(course) && (
 				<div className="mt-2 flex items-center justify-center gap-2">
-					<span className="text-sm text-muted-foreground line-through decoration-[1.5px] tabular-nums">
+					<span className="text-xs leading-none text-muted-foreground line-through tabular-nums">
 						{formatVnd(course.originalPriceVnd)}
 					</span>
 					<span className="inline-flex items-center rounded-md bg-destructive/10 px-1.5 py-0.5 text-[11px] font-bold text-destructive tabular-nums">

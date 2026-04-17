@@ -94,10 +94,10 @@ export function CoursePurchaseDialog({ course, open, onOpenChange }: Props) {
 					<div className="h-px w-full bg-border" />
 
 					{hasDiscount(course) && (
-						<div className="flex items-baseline justify-between">
+						<div className="flex items-center justify-between">
 							<span className="text-xs text-muted-foreground">Giá niêm yết</span>
 							<span className="flex items-center gap-2">
-								<span className="text-sm text-muted-foreground line-through tabular-nums">
+								<span className="text-xs leading-none text-muted-foreground line-through tabular-nums">
 									{formatVnd(course.originalPriceVnd)}
 								</span>
 								<span className="inline-flex items-center rounded-md bg-destructive/10 px-1.5 py-0.5 text-[11px] font-bold text-destructive tabular-nums">
