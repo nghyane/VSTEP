@@ -103,13 +103,16 @@ function ExploreTab() {
 function MineTab() {
 	const enrollments = useEnrollments()
 
-	// Lookup từ enrollments → course, giữ thứ tự mua mới nhất trước.
-	const myCourses: Course[] = [...enrollments]
+	// Ghép (enrollment, course) theo thứ tự mua mới nhất trước; skip nếu course bị xóa.
+	const items = [...enrollments]
 		.sort((a, b) => b.purchasedAt - a.purchasedAt)
-		.map((e) => MOCK_COURSES.find((c) => c.id === e.courseId))
-		.filter((c): c is Course => c !== undefined)
+		.map((enrollment) => {
+			const course = MOCK_COURSES.find((c) => c.id === enrollment.courseId)
+			return course ? { enrollment, course } : null
+		})
+		.filter((x): x is { enrollment: (typeof enrollments)[number]; course: Course } => x !== null)
 
-	if (myCourses.length === 0) {
+	if (items.length === 0) {
 		return (
 			<EmptyState
 				title="Chưa có khóa học nào"
@@ -122,8 +125,8 @@ function MineTab() {
 
 	return (
 		<div className="grid gap-4 sm:grid-cols-2">
-			{myCourses.map((course) => (
-				<MyCourseCard key={course.id} course={course} />
+			{items.map(({ course, enrollment }) => (
+				<MyCourseCard key={course.id} course={course} enrollment={enrollment} />
 			))}
 		</div>
 	)

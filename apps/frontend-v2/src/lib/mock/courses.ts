@@ -37,6 +37,12 @@ export interface Course {
 	soldSlots: number
 	startDate: string
 	endDate: string
+	/** Cam kết kỷ luật: số bài full-test tối thiểu học viên phải hoàn thành trong thời hạn khóa. */
+	requiredFullTests: number
+	/** Số ngày kể từ `startDate` được phép luyện tập tự do (trước khi bắt đầu giai đoạn thi bắt buộc). */
+	practicePhaseDays: number
+	/** Số ngày kể từ `startDate` là deadline cuối cùng phải hoàn thành `requiredFullTests` bài thi. */
+	examPhaseDays: number
 	instructor: CourseInstructor
 	livestreamUrl: string
 	sessions: readonly CourseSession[]
@@ -100,6 +106,9 @@ const K94_B1: Course = {
 	priceVnd: 1_300_000,
 	originalPriceVnd: 2_900_000,
 	bonusCoins: 4000,
+	requiredFullTests: 3,
+	practicePhaseDays: 5,
+	examPhaseDays: 10,
 	maxSlots: 20,
 	soldSlots: 20,
 	startDate: "2026-04-08",
@@ -129,6 +138,9 @@ const K83_B1: Course = {
 	priceVnd: 1_300_000,
 	originalPriceVnd: 2_900_000,
 	bonusCoins: 4000,
+	requiredFullTests: 3,
+	practicePhaseDays: 5,
+	examPhaseDays: 10,
 	maxSlots: 20,
 	soldSlots: 17,
 	startDate: "2026-04-22",
@@ -158,6 +170,9 @@ const K101_B1: Course = {
 	priceVnd: 1_300_000,
 	originalPriceVnd: 2_900_000,
 	bonusCoins: 4000,
+	requiredFullTests: 3,
+	practicePhaseDays: 5,
+	examPhaseDays: 10,
 	maxSlots: 20,
 	soldSlots: 12,
 	startDate: "2026-05-05",
@@ -186,6 +201,9 @@ const K64_B2: Course = {
 	priceVnd: 1_800_000,
 	originalPriceVnd: 3_800_000,
 	bonusCoins: 5000,
+	requiredFullTests: 4,
+	practicePhaseDays: 7,
+	examPhaseDays: 14,
 	maxSlots: 15,
 	soldSlots: 11,
 	startDate: "2026-04-28",
@@ -257,4 +275,22 @@ export function discountPercent(course: Course): number {
 /** True nếu khóa có giảm giá (original > current). */
 export function hasDiscount(course: Course): boolean {
 	return course.originalPriceVnd > course.priceVnd
+}
+
+// ─── Commitment phases ────────────────────────────────────────────────────────
+
+function addDays(iso: string, days: number): number {
+	const d = new Date(iso)
+	d.setDate(d.getDate() + days)
+	return d.getTime()
+}
+
+/** Timestamp: thời điểm giai đoạn luyện tập kết thúc (bắt đầu giai đoạn thi bắt buộc). */
+export function practicePhaseEndMs(course: Course): number {
+	return addDays(course.startDate, course.practicePhaseDays)
+}
+
+/** Timestamp: deadline cuối cùng phải hoàn thành `requiredFullTests`. */
+export function examDeadlineMs(course: Course): number {
+	return addDays(course.startDate, course.examPhaseDays)
 }

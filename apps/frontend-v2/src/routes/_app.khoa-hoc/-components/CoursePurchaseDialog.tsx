@@ -2,11 +2,12 @@
 // Sau khi thanh toán thành công: lưu enrollment + cộng xu bonus tặng kèm.
 
 import { useQueryClient } from "@tanstack/react-query"
-import { Building2, QrCode, Wallet } from "lucide-react"
+import { ShieldAlert } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 import { CoinIcon } from "#/components/common/CoinIcon"
 import { Button } from "#/components/ui/button"
+import { Checkbox } from "#/components/ui/checkbox"
 import {
 	Dialog,
 	DialogContent,
@@ -19,7 +20,6 @@ import { enrollInCourse } from "#/lib/courses/enrollment-store"
 import { type Course, discountPercent, hasDiscount, savedVnd } from "#/lib/mock/courses"
 import { pushNotification } from "#/lib/notifications/store"
 import { courseKeys } from "#/lib/queries/courses"
-import { cn } from "#/lib/utils"
 import { formatCoins, formatVnd } from "./course-utils"
 
 interface Props {
@@ -28,23 +28,10 @@ interface Props {
 	onOpenChange: (open: boolean) => void
 }
 
-type PaymentMethod = "qr" | "banking" | "momo"
-
-const PAYMENT_METHODS: readonly {
-	id: PaymentMethod
-	label: string
-	sublabel: string
-	icon: React.ComponentType<{ className?: string }>
-}[] = [
-	{ id: "qr", label: "VietQR", sublabel: "Quét mã bằng app ngân hàng", icon: QrCode },
-	{ id: "banking", label: "Chuyển khoản", sublabel: "Qua Internet Banking", icon: Building2 },
-	{ id: "momo", label: "Ví MoMo", sublabel: "Thanh toán qua MoMo", icon: Wallet },
-]
-
 export function CoursePurchaseDialog({ course, open, onOpenChange }: Props) {
 	const queryClient = useQueryClient()
-	const [method, setMethod] = useState<PaymentMethod>("qr")
 	const [processing, setProcessing] = useState(false)
+	const [acknowledged, setAcknowledged] = useState(false)
 
 	function handleConfirm() {
 		// Mock payment — giả lập call API 600ms rồi success.
@@ -68,13 +55,14 @@ export function CoursePurchaseDialog({ course, open, onOpenChange }: Props) {
 				iconKey: "coin",
 			})
 			setProcessing(false)
+			setAcknowledged(false)
 			onOpenChange(false)
 		}, 600)
 	}
 
 	return (
 		<Dialog open={open} onOpenChange={(v) => !processing && onOpenChange(v)}>
-			<DialogContent className="sm:max-w-md">
+			<DialogContent className="max-h-[calc(100vh-4rem)] overflow-y-auto sm:max-w-lg md:max-w-xl lg:max-w-2xl">
 				<DialogHeader>
 					<DialogTitle>Đăng ký khóa học</DialogTitle>
 					<DialogDescription>
@@ -142,20 +130,36 @@ export function CoursePurchaseDialog({ course, open, onOpenChange }: Props) {
 					)}
 				</div>
 
-				{/* Payment methods */}
-				<div className="space-y-2">
-					<p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-						Phương thức thanh toán
-					</p>
-					<div className="grid gap-2">
-						{PAYMENT_METHODS.map((m) => (
-							<MethodRow
-								key={m.id}
-								method={m}
-								selected={method === m.id}
-								onSelect={() => setMethod(m.id)}
-							/>
-						))}
+				{/* Commitment notice */}
+				<div className="rounded-xl border border-amber-300 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/30">
+					<div className="flex items-start gap-2">
+						<ShieldAlert className="mt-0.5 size-4 shrink-0 text-amber-700 dark:text-amber-400" />
+						<div className="min-w-0 flex-1 space-y-1.5">
+							<p className="text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300">
+								Cam kết kỷ luật
+							</p>
+							<p className="text-xs leading-relaxed text-amber-900 dark:text-amber-200">
+								Để giữ cam kết đầu ra, bạn cần hoàn thành tối thiểu{" "}
+								<strong>{course.requiredFullTests} bài thi full-test</strong> trong phòng thi từ
+								ngày thứ <strong>{course.practicePhaseDays + 1}</strong> đến ngày thứ{" "}
+								<strong>{course.examPhaseDays}</strong> của khóa. Vi phạm sẽ dẫn tới việc{" "}
+								<strong>khóa quyền truy cập khóa học</strong>.
+							</p>
+							<label
+								htmlFor="course-commitment-ack"
+								className="flex cursor-pointer items-center gap-2 pt-1"
+							>
+								<Checkbox
+									id="course-commitment-ack"
+									checked={acknowledged}
+									onCheckedChange={(v) => setAcknowledged(v === true)}
+									disabled={processing}
+								/>
+								<span className="text-xs font-medium leading-none text-amber-900 dark:text-amber-200">
+									Tôi đã đọc và đồng ý với điều khoản kỷ luật của khóa học.
+								</span>
+							</label>
+						</div>
 					</div>
 				</div>
 
@@ -163,65 +167,11 @@ export function CoursePurchaseDialog({ course, open, onOpenChange }: Props) {
 					<Button variant="outline" onClick={() => onOpenChange(false)} disabled={processing}>
 						Hủy
 					</Button>
-					<Button onClick={handleConfirm} disabled={processing}>
+					<Button onClick={handleConfirm} disabled={processing || !acknowledged}>
 						{processing ? "Đang xử lý…" : `Thanh toán ${formatVnd(course.priceVnd)}`}
 					</Button>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>
-	)
-}
-
-function MethodRow({
-	method,
-	selected,
-	onSelect,
-}: {
-	method: {
-		id: PaymentMethod
-		label: string
-		sublabel: string
-		icon: React.ComponentType<{ className?: string }>
-	}
-	selected: boolean
-	onSelect: () => void
-}) {
-	const Icon = method.icon
-	return (
-		<button
-			type="button"
-			onClick={onSelect}
-			aria-pressed={selected}
-			className={cn(
-				"flex items-center gap-3 rounded-xl border-2 bg-card p-3 text-left transition-all",
-				selected
-					? "border-primary shadow-sm ring-4 ring-primary/10"
-					: "border-border hover:border-foreground/20",
-			)}
-		>
-			<span
-				className={cn(
-					"flex size-9 shrink-0 items-center justify-center rounded-lg",
-					selected ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
-				)}
-			>
-				<Icon className="size-4" />
-			</span>
-			<div className="min-w-0 flex-1">
-				<p className="text-sm font-semibold text-foreground">{method.label}</p>
-				<p className="text-[11px] text-muted-foreground">{method.sublabel}</p>
-			</div>
-			<span
-				className={cn(
-					"size-4 shrink-0 rounded-full border-2",
-					selected ? "border-primary bg-primary" : "border-border",
-				)}
-				aria-hidden
-			>
-				{selected && (
-					<span className="block size-full rounded-full border-[3px] border-background" />
-				)}
-			</span>
-		</button>
 	)
 }

@@ -12,6 +12,7 @@ import {
 	DialogTitle,
 } from "#/components/ui/dialog"
 import { computeSessionCost, getCoins, spendCoins } from "#/lib/coins/coin-store"
+import { recordExamCompletion } from "#/lib/courses/completion-log"
 import {
 	countAnswered,
 	countTotalItems,
@@ -189,8 +190,18 @@ function ExamPage() {
 			buildResultFromSession(examId, session, mcqAnswers, writingAnswers, speakingDone),
 		)
 		recordPracticeCompletion()
+		// Full-test khi user không filter sections — dùng để tính commitment khóa học.
+		recordExamCompletion(examId, selectedSectionIds.length === 0)
 		navigate({ to: "/phong-thi/$examId/ket-qua", params: { examId } })
-	}, [navigate, examId, session, mcqAnswers, writingAnswers, speakingDone])
+	}, [
+		navigate,
+		examId,
+		session,
+		mcqAnswers,
+		writingAnswers,
+		speakingDone,
+		selectedSectionIds.length,
+	])
 
 	// ─── Derived values ───────────────────────────────────────────────────────
 

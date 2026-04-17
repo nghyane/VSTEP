@@ -14,6 +14,8 @@ import { useState } from "react"
 import { CoinIcon } from "#/components/common/CoinIcon"
 import { Avatar, AvatarFallback } from "#/components/ui/avatar"
 import { Button } from "#/components/ui/button"
+import { computeCommitment } from "#/lib/courses/commitment"
+import { useExamCompletions } from "#/lib/courses/completion-log"
 import { useEnrollments } from "#/lib/courses/enrollment-store"
 import {
 	COURSE_LEVEL_LABELS,
@@ -28,6 +30,10 @@ import {
 } from "#/lib/mock/courses"
 import { courseDetailQueryOptions } from "#/lib/queries/courses"
 import { cn } from "#/lib/utils"
+import {
+	CommitmentCard,
+	CommitmentViolatedBanner,
+} from "./_app.khoa-hoc/-components/CommitmentCard"
 import { CoursePurchaseDialog } from "./_app.khoa-hoc/-components/CoursePurchaseDialog"
 import {
 	formatCoins,
@@ -46,9 +52,15 @@ function CourseDetailPage() {
 	const { courseId } = Route.useParams()
 	const { data: course } = useSuspenseQuery(courseDetailQueryOptions(courseId))
 	const enrollments = useEnrollments()
-	const enrolled = enrollments.some((e) => e.courseId === courseId)
+	const enrollment = enrollments.find((e) => e.courseId === courseId)
+	const enrolled = enrollment !== undefined
 	const ended = isCourseEnded(course)
 	const full = isCourseFull(course)
+
+	// Subscribe vào completion log để re-render khi user làm bài mới.
+	useExamCompletions()
+	const commitment = enrollment ? computeCommitment(course, enrollment) : null
+	const violated = commitment?.phase === "violated"
 
 	return (
 		<div className="mx-auto w-full max-w-5xl space-y-6 pb-10">
@@ -61,7 +73,17 @@ function CourseDetailPage() {
 				Khóa học
 			</Link>
 
-			<HeroPanel course={course} enrolled={enrolled} ended={ended} full={full} />
+			<HeroPanel
+				course={course}
+				enrolled={enrolled}
+				ended={ended}
+				full={full}
+				violated={violated}
+			/>
+
+			{enrollment && commitment && (
+				<CommitmentCard course={course} enrollment={enrollment} status={commitment} />
+			)}
 
 			<DescriptionCard course={course} />
 
@@ -69,7 +91,7 @@ function CourseDetailPage() {
 
 			<SessionsCard course={course} />
 
-			<CommitmentCard />
+			<GuaranteeCard />
 		</div>
 	)
 }
@@ -81,11 +103,13 @@ function HeroPanel({
 	enrolled,
 	ended,
 	full,
+	violated,
 }: {
 	course: Course
 	enrolled: boolean
 	ended: boolean
 	full: boolean
+	violated: boolean
 }) {
 	const [purchaseOpen, setPurchaseOpen] = useState(false)
 
@@ -97,9 +121,14 @@ function HeroPanel({
 						<span className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
 							{COURSE_LEVEL_LABELS[course.level]}
 						</span>
-						{enrolled && (
+						{enrolled && !violated && (
 							<span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
 								Đã mua
+							</span>
+						)}
+						{violated && (
+							<span className="inline-flex items-center rounded-full bg-destructive/10 px-2.5 py-0.5 text-[11px] font-semibold text-destructive">
+								Tài khoản bị khóa
 							</span>
 						)}
 						{ended && (
@@ -132,7 +161,9 @@ function HeroPanel({
 
 				{/* Right: CTA panel */}
 				<div className="w-full shrink-0 md:w-64">
-					{enrolled ? (
+					{violated ? (
+						<CommitmentViolatedBanner course={course} />
+					) : enrolled ? (
 						<EnrolledPanel course={course} ended={ended} />
 					) : (
 						<PurchasePanel
@@ -349,7 +380,7 @@ function SessionRow({ session, past }: { session: CourseSession; past: boolean }
 
 // ─── Commitment ───────────────────────────────────────────────────────────────
 
-function CommitmentCard() {
+function GuaranteeCard() {
 	const items = [
 		"Tỉ lệ đạt trên 98% với học viên học đúng lộ trình.",
 		"Miễn phí học lại nếu chưa đạt mục tiêu sau khóa.",

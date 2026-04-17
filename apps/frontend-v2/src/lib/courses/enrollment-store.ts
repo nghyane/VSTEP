@@ -15,6 +15,8 @@ export interface Enrollment {
 	pricePaidVnd: number
 	/** Xu bonus đã nhận khi mua khóa (snapshot). */
 	bonusCoinsReceived: number
+	/** Cam kết kỷ luật user đã tick lúc mua (snapshot). */
+	acknowledgedCommitment: boolean
 }
 
 const STORAGE_KEY = "vstep:course-enrollments:v1"
@@ -29,15 +31,24 @@ function loadInitial(): Enrollment[] {
 		if (!raw) return []
 		const parsed = JSON.parse(raw) as unknown
 		if (!Array.isArray(parsed)) return []
-		return parsed.filter(
-			(e): e is Enrollment =>
-				e !== null &&
-				typeof e === "object" &&
-				typeof (e as Enrollment).courseId === "string" &&
-				typeof (e as Enrollment).purchasedAt === "number" &&
-				typeof (e as Enrollment).pricePaidVnd === "number" &&
-				typeof (e as Enrollment).bonusCoinsReceived === "number",
-		)
+		return parsed
+			.filter(
+				(e): e is Partial<Enrollment> & Pick<Enrollment, "courseId"> =>
+					e !== null &&
+					typeof e === "object" &&
+					typeof (e as Enrollment).courseId === "string" &&
+					typeof (e as Enrollment).purchasedAt === "number" &&
+					typeof (e as Enrollment).pricePaidVnd === "number" &&
+					typeof (e as Enrollment).bonusCoinsReceived === "number",
+			)
+			.map((e) => ({
+				courseId: e.courseId,
+				purchasedAt: e.purchasedAt ?? 0,
+				pricePaidVnd: e.pricePaidVnd ?? 0,
+				bonusCoinsReceived: e.bonusCoinsReceived ?? 0,
+				// Migrate enrollments cũ chưa có field này — coi như đã đồng ý.
+				acknowledgedCommitment: e.acknowledgedCommitment ?? true,
+			}))
 	} catch {
 		return []
 	}
@@ -93,6 +104,7 @@ export function enrollInCourse(course: Course): void {
 			purchasedAt: Date.now(),
 			pricePaidVnd: course.priceVnd,
 			bonusCoinsReceived: course.bonusCoins,
+			acknowledgedCommitment: true,
 		},
 	]
 	enrollments = next

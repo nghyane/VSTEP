@@ -1,28 +1,36 @@
 // Card khóa đã mua ở tab "Khóa của tôi".
-// Rule 0.2 style, hiển thị buổi tiếp theo + Zoom link.
+// Rule 0.2 style, hiển thị buổi tiếp theo + Zoom link + progress cam kết.
 
 import { Link } from "@tanstack/react-router"
-import { ArrowRight, CalendarDays, Video } from "lucide-react"
+import { AlertTriangle, ArrowRight, CalendarDays, Video } from "lucide-react"
 import { Button } from "#/components/ui/button"
+import { commitmentPhaseLabel, computeCommitment } from "#/lib/courses/commitment"
+import { useExamCompletions } from "#/lib/courses/completion-log"
+import type { Enrollment } from "#/lib/courses/enrollment-store"
 import { type Course, isCourseEnded } from "#/lib/mock/courses"
 import { cn } from "#/lib/utils"
 import { formatDateVi } from "./course-utils"
 
 interface Props {
 	course: Course
+	enrollment: Enrollment
 }
 
-export function MyCourseCard({ course }: Props) {
+export function MyCourseCard({ course, enrollment }: Props) {
 	const ended = isCourseEnded(course)
 	const now = Date.now()
 	const upcoming = course.sessions.find((s) => new Date(s.date).getTime() >= now)
+
+	useExamCompletions()
+	const commitment = computeCommitment(course, enrollment)
+	const violated = commitment.phase === "violated"
 
 	return (
 		<div
 			className={cn(
 				"group relative flex h-full flex-col gap-4 rounded-2xl border bg-card p-6 shadow-sm transition-all",
-				!ended && "hover:-translate-y-0.5 hover:shadow-md",
-				ended && "opacity-80",
+				!ended && !violated && "hover:-translate-y-0.5 hover:shadow-md",
+				(ended || violated) && "opacity-80",
 			)}
 		>
 			{/* Badge trạng thái */}
@@ -30,13 +38,20 @@ export function MyCourseCard({ course }: Props) {
 				<span
 					className={cn(
 						"inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-						ended
-							? "bg-muted text-muted-foreground"
-							: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
+						violated
+							? "bg-destructive/10 text-destructive"
+							: ended
+								? "bg-muted text-muted-foreground"
+								: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
 					)}
 				>
-					{ended ? "Đã kết thúc" : "Đang học"}
+					{violated ? "Bị khóa" : ended ? "Đã kết thúc" : "Đang học"}
 				</span>
+				<CommitmentChip
+					phase={commitment.phase}
+					completed={commitment.completed}
+					required={commitment.required}
+				/>
 			</div>
 
 			{/* Title + dates */}
@@ -47,9 +62,16 @@ export function MyCourseCard({ course }: Props) {
 				</p>
 			</div>
 
-			{/* Next session info */}
+			{/* Next session hoặc violation hint */}
 			<div className="rounded-xl border bg-background p-3 text-sm">
-				{ended ? (
+				{violated ? (
+					<div className="flex items-start gap-2">
+						<AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+						<p className="text-destructive">
+							Chưa đủ {commitment.required} bài thi — khóa học đã bị khóa.
+						</p>
+					</div>
+				) : ended ? (
 					<p className="text-muted-foreground">
 						Khóa học đã kết thúc ngày {formatDateVi(course.endDate)}
 					</p>
@@ -75,7 +97,7 @@ export function MyCourseCard({ course }: Props) {
 
 			{/* Actions */}
 			<div className="flex items-center gap-2">
-				{!ended && (
+				{!ended && !violated && (
 					<Button asChild size="sm" className="flex-1">
 						<a
 							href={course.livestreamUrl}
@@ -93,7 +115,7 @@ export function MyCourseCard({ course }: Props) {
 					params={{ courseId: course.id }}
 					className={cn(
 						"inline-flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:underline",
-						ended ? "flex-1 justify-start" : "",
+						(ended || violated) && "flex-1 justify-start",
 					)}
 				>
 					Chi tiết
@@ -109,5 +131,33 @@ export function MyCourseCard({ course }: Props) {
 				aria-label={`Vào ${course.title}`}
 			/>
 		</div>
+	)
+}
+
+function CommitmentChip({
+	phase,
+	completed,
+	required,
+}: {
+	phase: ReturnType<typeof computeCommitment>["phase"]
+	completed: number
+	required: number
+}) {
+	const tone: Record<typeof phase, string> = {
+		practice: "bg-muted text-muted-foreground",
+		exam: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300",
+		fulfilled: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
+		violated: "bg-destructive/10 text-destructive",
+	}
+	return (
+		<span
+			className={cn(
+				"inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums",
+				tone[phase],
+			)}
+			title={commitmentPhaseLabel(phase)}
+		>
+			{completed}/{required} bài thi
+		</span>
 	)
 }
