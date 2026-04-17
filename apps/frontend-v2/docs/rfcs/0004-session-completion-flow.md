@@ -5,68 +5,65 @@
 | Status | Draft |
 | Created | 2025-07-14 |
 | Updated | 2025-07-14 |
-| Superseded by | — |
 
 ## Summary
 
-Mọi session luyện tập hiện kết thúc bằng dead-end: hiện score rồi chỉ có nút "Về danh sách". Không có gợi ý bài tiếp, không có celebration, không có link về Overview. RFC này chốt flow sau khi hoàn thành bài.
-
-## Motivation
-
-- User hoàn thành bài → chỉ thấy "Về danh sách đề" → phải tự chọn bài tiếp
-- Không có celebration moment (confetti, badge, streak update visible)
-- Không có "Bài tiếp theo" / "Bài tương tự"
-- Không có link "Xem tiến độ" về Overview
-- Kết quả bài làm không tích lũy vào đâu (chấp nhận vì mock, nhưng UI nên thể hiện flow)
+Mọi session kết thúc bằng dead-end. Cần: "Bài tiếp theo", link về Overview, và Lesson Complete screen theo Duolingo pattern (RFC 0000).
 
 ## Changes
 
-### 1. Thêm "Bài tiếp theo" vào footer sau submit
+### 1. Lesson Complete screen (Duolingo pattern)
 
-Áp dụng cho tất cả session types:
+Thay `McqResultSummary` (score circle) bằng Duolingo-style 3 stat cards:
 
-**Nghe/Đọc** (inline result): Footer sau submit thêm nút "Bài tiếp theo →" bên cạnh "Về danh sách".
-
-**Viết/Nói** (trang kết quả riêng): Footer thêm nút "Bài tiếp theo →" bên cạnh "Về danh sách đề viết/nói".
-
-**Thi thử** (trang kết quả): Nút "Làm đề khác" bên cạnh "Hoàn thành".
-
-Logic "bài tiếp theo": Lấy exercise list từ cùng category, tìm exercise tiếp theo theo thứ tự. Nếu là bài cuối → hiện "Hoàn thành tất cả" thay vì "Bài tiếp theo".
-
-### 2. Thêm link "Xem tiến độ" về Overview
-
-Ở mọi trang kết quả, thêm link secondary:
-
-```tsx
-<Link to="/overview" search={{ tab: "overview" }} className="text-sm text-muted-foreground ...">
-  Xem tiến độ tổng quan
-</Link>
+```
+┌─────────────────────────────────────┐
+│          "Hoàn thành!"              │
+│                                     │
+│  ┌──────┐  ┌──────┐  ┌──────┐      │
+│  │ Điểm │  │Thời  │  │Chính │      │
+│  │ 8/10 │  │ 5:20 │  │ 80%  │      │
+│  └──────┘  └──────┘  └──────┘      │
+│  primary    muted     success       │
+│                                     │
+│  [Xem lại bài]      [Tiếp tục →]   │
+└─────────────────────────────────────┘
 ```
 
-### 3. Streak toast sau submit
+Mỗi stat card: `border-2 border-{color}` header + `bg-card text-{color}` body.
 
-**Cập nhật 2026-04-18:** Streak chỉ tính từ luồng thi thử (phong-thi). Luyện tập (nghe/đọc/nói/viết) và nền tảng (ngữ pháp/từ vựng) KHÔNG gọi `recordPracticeCompletion()`.
+Áp dụng cho: Nghe/Đọc (inline sau submit), Viết/Nói (trang kết quả).
 
-Lý do: streak = commitment tới thi thử (sản phẩm chính), không bị pha loãng bởi practice nhẹ.
+### 2. "Bài tiếp theo" button
 
-### 4. Back navigation từ kết quả
+Tất cả session footers thêm nút "Bài tiếp theo →" (primary CTA, Duolingo-style `border-b-4`).
 
-Hiện tại trang kết quả Viết/Nói back về "Danh sách đề" (skip session page). Đây là OK vì user đã submit xong, không cần quay lại session. Giữ nguyên.
+Logic: exercise tiếp theo trong cùng category. Bài cuối → "Hoàn thành tất cả".
 
-## Files affected
+### 3. Link "Xem tiến độ" về Overview
+
+Mọi trang kết quả thêm link secondary: `Xem tiến độ tổng quan`
+
+### 4. `recordPracticeCompletion()` — mở rộng
+
+Thêm vào: Nghe, Đọc, Ngữ pháp, Từ vựng sessions (hiện chỉ có Viết, Nói, Thi thử).
+
+## Files
 
 | File | Change |
 |---|---|
-| `ky-nang/nghe/$exerciseId/-components/SessionView.tsx` | Add "Bài tiếp theo" |
-| `ky-nang/doc/$exerciseId/-components/SessionView.tsx` | Add "Bài tiếp theo" |
-| `ky-nang/viet/$exerciseId/ket-qua.tsx` | Add "Bài tiếp theo" + "Xem tiến độ" |
-| `ky-nang/noi/$exerciseId/ket-qua.tsx` | Add "Bài tiếp theo" + "Xem tiến độ" |
-| `_focused.phong-thi.$examId.ket-qua.tsx` | Add "Làm đề khác" + "Xem tiến độ" |
-| `McqSubmitBar.tsx` | Extend props to accept optional `nextHref` |
+| `McqResultSummary.tsx` | Refactor → Duolingo 3-stat-card pattern |
+| `nghe/SessionView.tsx` | + "Bài tiếp theo" + `recordPracticeCompletion` |
+| `doc/SessionView.tsx` | + "Bài tiếp theo" + `recordPracticeCompletion` |
+| `viet/ket-qua.tsx` | + "Bài tiếp theo" + "Xem tiến độ" |
+| `noi/ket-qua.tsx` | + "Bài tiếp theo" + "Xem tiến độ" |
+| `phong-thi/ket-qua.tsx` | + "Làm đề khác" + "Xem tiến độ" |
+| `ngu-phap/PracticeSession.tsx` | + `recordPracticeCompletion` |
+| `tu-vung/$topicId.tsx` | + `recordPracticeCompletion` |
 
-## Implementation status
+## Checklist
 
-- [ ] Add "Bài tiếp theo" to MCQ session footer (Nghe/Đọc)
-- [ ] Add "Bài tiếp theo" to Viết/Nói result pages
-- [ ] Add "Làm đề khác" to Thi thử result page
-- [ ] Add "Xem tiến độ" link to all result pages
+- [ ] Duolingo-style Lesson Complete component
+- [ ] "Bài tiếp theo" in all session footers
+- [ ] "Xem tiến độ" link in all result pages
+- [ ] `recordPracticeCompletion()` in Nghe, Đọc, Ngữ pháp, Từ vựng

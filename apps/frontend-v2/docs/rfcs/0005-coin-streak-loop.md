@@ -5,69 +5,52 @@
 | Status | Draft |
 | Created | 2025-07-14 |
 | Updated | 2025-07-14 |
-| Superseded by | — |
 
 ## Summary
 
-Hệ thống Coin và Streak hiện diện trên header (CoinButton, StreakButton) nhưng user không hiểu chúng hoạt động thế nào. Coin chỉ tốn (thi thử) mà gần như không kiếm được. Streak chỉ đếm ở 3/7 loại bài. RFC này chốt cách làm cho coin/streak loop rõ ràng trên UI.
-
-## Motivation
-
-- `CoinButton` hiện số xu, bấm vào không có gì — user không biết xu dùng để làm gì, kiếm ở đâu
-- `StreakButton` popover hiện streak + tuần học — nhưng không link đến StreakDialog (nơi claim xu milestone)
-- Streak milestones (7/14/30 ngày) là one-time rewards, claim xong hết — không có vòng lặp
-- Luyện tập 4 kỹ năng + nền tảng hoàn toàn không ảnh hưởng coin/streak trên UI
+Coin/Streak hiện diện trên header nhưng user không hiểu cách hoạt động. Cần popover giải thích + daily reward + simplify StreakDialog theo Duolingo (RFC 0000).
 
 ## Changes
 
-### 1. CoinButton popover — giải thích coin economy
+### 1. CoinButton popover
 
-Bấm `CoinButton` → hiện popover (giống StreakButton):
+Bấm → popover:
 - Số xu hiện tại
 - "Xu dùng để mở đề thi thử (8–25 xu/đề)"
 - "Cách kiếm xu: Giữ streak liên tục"
-- Link "Xem streak →" mở StreakDialog hoặc navigate đến Overview
+- Link "Xem streak →"
 
-### 2. StreakButton popover → thêm link đến milestones
+### 2. StreakButton popover → thêm milestone preview
 
-Popover hiện tại đã hiện streak + tuần học. Thêm:
-- Dòng "Mốc tiếp theo: X ngày → +Y xu" (nếu còn milestone chưa claim)
-- Nút "Xem phần thưởng" → mở StreakDialog (hiện chỉ mở được từ ExamCountdown)
+Thêm: "Mốc tiếp theo: X ngày → +Y xu" + nút "Xem phần thưởng"
 
-### 3. Daily coin reward (mock)
+### 3. StreakDialog — simplify theo Duolingo
 
-**Cập nhật 2026-04-18:** Streak chỉ tính từ luồng thi thử (phong-thi). Luyện tập không tính.
+Theo RFC 0000: chỉ 2 hue (streak orange + neutral).
 
-Thêm cơ chế mock: khi `recordPracticeCompletion()` trả về `reachedGoal: true` (đạt 3 đề thi thử/ngày):
-- `refundCoins(10)` — thưởng 10 xu
+- Streak number: `text-skill-speaking` — giữ
+- Progress bar: `bg-primary` solid, không gradient
+- Milestones: `bg-muted/50` cards, claimed = `opacity-60` + check
+- **Bỏ**: emerald/amber/slate gradients, multi-hue borders
+
+### 4. Daily coin reward
+
+Khi `recordPracticeCompletion()` → `reachedGoal: true`:
+- `refundCoins(10)`
 - Toast: "+10 xu — Hoàn thành mục tiêu hôm nay!"
 
-Đây là vòng lặp bền vững: thi thử hàng ngày → giữ streak → nhận thưởng xu → dùng xu mở đề mới.
-
-### 4. Hiện coin reward trên session completion
-
-Khi user hoàn thành bài và nhận xu (daily goal), hiện inline badge trên footer/result page:
-```
-🪙 +10 xu
-```
-
-Không cần phức tạp — chỉ cần toast từ sonner là đủ cho mock.
-
-## Scope note
-
-Đây là mock UI/UX — không cần backend. Tất cả state lưu localStorage. Mục tiêu là user **nhìn thấy** vòng lặp coin/streak hoạt động khi tương tác với app.
-
-## Files affected
+## Files
 
 | File | Change |
 |---|---|
-| `CoinButton.tsx` | Add popover with coin explanation |
-| `StreakButton.tsx` | Add milestone preview + link to StreakDialog |
-| `streak-rewards.ts` → `recordPracticeCompletion()` | Add `refundCoins(10)` when daily goal reached |
+| `CoinButton.tsx` | Add popover |
+| `StreakButton.tsx` | Add milestone preview |
+| `StreakDialog.tsx` | Simplify colors theo Duolingo |
+| `streak-rewards.ts` | Add `refundCoins(10)` on daily goal |
 
-## Implementation status
+## Checklist
 
 - [ ] CoinButton popover
 - [ ] StreakButton milestone preview
-- [ ] Daily coin reward in `recordPracticeCompletion()`
-- [ ] Verify toast shows on daily goal completion
+- [ ] StreakDialog color simplification
+- [ ] Daily coin reward
