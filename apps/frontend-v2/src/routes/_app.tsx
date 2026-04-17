@@ -2,6 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-rout
 import {
 	BookOpen,
 	FileText,
+	GraduationCap,
 	LayoutDashboard,
 	LogOut,
 	type LucideIcon,
@@ -44,12 +45,13 @@ export const Route = createFileRoute("/_app")({
 })
 
 type OverviewLink = { to: "/overview"; search: { tab: "overview" | "learning_path" } }
+type KhoaHocLink = { to: "/khoa-hoc"; search: { tab: "explore" | "mine" } }
 type PlainLink = { to: "/luyen-tap" | "/thi-thu" }
 
 interface NavItem {
 	label: string
 	icon: LucideIcon
-	link: OverviewLink | PlainLink
+	link: OverviewLink | KhoaHocLink | PlainLink
 }
 
 const NAV_ITEMS: readonly NavItem[] = [
@@ -60,6 +62,11 @@ const NAV_ITEMS: readonly NavItem[] = [
 	},
 	{ label: "Luyện tập", icon: BookOpen, link: { to: "/luyen-tap" } },
 	{ label: "Thi thử", icon: FileText, link: { to: "/thi-thu" } },
+	{
+		label: "Khóa học",
+		icon: GraduationCap,
+		link: { to: "/khoa-hoc", search: { tab: "explore" } },
+	},
 ]
 
 // ─── Sidebar nội dung ──────────────────────────────────────────────
@@ -142,6 +149,16 @@ function NavLinkItem({ item, collapsed }: { item: NavItem; collapsed: boolean })
 				{item.link.to === "/overview" ? (
 					<Link
 						to="/overview"
+						search={item.link.search}
+						className={baseClass}
+						activeProps={{ className: activeClass }}
+						inactiveProps={{ className: inactiveClass }}
+					>
+						<NavRowContent icon={Icon} label={item.label} />
+					</Link>
+				) : item.link.to === "/khoa-hoc" ? (
+					<Link
+						to="/khoa-hoc"
 						search={item.link.search}
 						className={baseClass}
 						activeProps={{ className: activeClass }}

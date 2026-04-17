@@ -15,10 +15,13 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppThiThuRouteImport } from './routes/_app.thi-thu'
 import { Route as AppOverviewRouteImport } from './routes/_app.overview'
 import { Route as AppLuyenTapRouteImport } from './routes/_app.luyen-tap'
+import { Route as AppKhoaHocRouteImport } from './routes/_app.khoa-hoc'
 import { Route as AppThiThuIndexRouteImport } from './routes/_app.thi-thu.index'
 import { Route as AppLuyenTapIndexRouteImport } from './routes/_app.luyen-tap.index'
+import { Route as AppKhoaHocIndexRouteImport } from './routes/_app.khoa-hoc.index'
 import { Route as AppLuyenTapNenTangRouteImport } from './routes/_app.luyen-tap.nen-tang'
 import { Route as AppLuyenTapKyNangRouteImport } from './routes/_app.luyen-tap.ky-nang'
+import { Route as AppKhoaHocCourseIdRouteImport } from './routes/_app.khoa-hoc.$courseId'
 import { Route as FocusedPhongThiExamIdIndexRouteImport } from './routes/_focused.phong-thi.$examId/index'
 import { Route as AppThiThuExamIdIndexRouteImport } from './routes/_app.thi-thu.$examId/index'
 import { Route as AppLuyenTapNenTangIndexRouteImport } from './routes/_app.luyen-tap.nen-tang.index'
@@ -75,6 +78,11 @@ const AppLuyenTapRoute = AppLuyenTapRouteImport.update({
   path: '/luyen-tap',
   getParentRoute: () => AppRoute,
 } as any)
+const AppKhoaHocRoute = AppKhoaHocRouteImport.update({
+  id: '/khoa-hoc',
+  path: '/khoa-hoc',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppThiThuIndexRoute = AppThiThuIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -85,6 +93,11 @@ const AppLuyenTapIndexRoute = AppLuyenTapIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppLuyenTapRoute,
 } as any)
+const AppKhoaHocIndexRoute = AppKhoaHocIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppKhoaHocRoute,
+} as any)
 const AppLuyenTapNenTangRoute = AppLuyenTapNenTangRouteImport.update({
   id: '/nen-tang',
   path: '/nen-tang',
@@ -94,6 +107,11 @@ const AppLuyenTapKyNangRoute = AppLuyenTapKyNangRouteImport.update({
   id: '/ky-nang',
   path: '/ky-nang',
   getParentRoute: () => AppLuyenTapRoute,
+} as any)
+const AppKhoaHocCourseIdRoute = AppKhoaHocCourseIdRouteImport.update({
+  id: '/$courseId',
+  path: '/$courseId',
+  getParentRoute: () => AppKhoaHocRoute,
 } as any)
 const FocusedPhongThiExamIdIndexRoute =
   FocusedPhongThiExamIdIndexRouteImport.update({
@@ -253,11 +271,14 @@ const AppLuyenTapKyNangVietCauTopicIdIndexRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/khoa-hoc': typeof AppKhoaHocRouteWithChildren
   '/luyen-tap': typeof AppLuyenTapRouteWithChildren
   '/overview': typeof AppOverviewRoute
   '/thi-thu': typeof AppThiThuRouteWithChildren
+  '/khoa-hoc/$courseId': typeof AppKhoaHocCourseIdRoute
   '/luyen-tap/ky-nang': typeof AppLuyenTapKyNangRouteWithChildren
   '/luyen-tap/nen-tang': typeof AppLuyenTapNenTangRouteWithChildren
+  '/khoa-hoc/': typeof AppKhoaHocIndexRoute
   '/luyen-tap/': typeof AppLuyenTapIndexRoute
   '/thi-thu/': typeof AppThiThuIndexRoute
   '/luyen-tap/ky-nang/doc': typeof AppLuyenTapKyNangDocRouteWithChildren
@@ -291,6 +312,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/overview': typeof AppOverviewRoute
+  '/khoa-hoc/$courseId': typeof AppKhoaHocCourseIdRoute
+  '/khoa-hoc': typeof AppKhoaHocIndexRoute
   '/luyen-tap': typeof AppLuyenTapIndexRoute
   '/thi-thu': typeof AppThiThuIndexRoute
   '/phong-thi/$examId/chi-tiet': typeof FocusedPhongThiExamIdChiTietRoute
@@ -320,11 +343,14 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/_focused': typeof FocusedRouteWithChildren
+  '/_app/khoa-hoc': typeof AppKhoaHocRouteWithChildren
   '/_app/luyen-tap': typeof AppLuyenTapRouteWithChildren
   '/_app/overview': typeof AppOverviewRoute
   '/_app/thi-thu': typeof AppThiThuRouteWithChildren
+  '/_app/khoa-hoc/$courseId': typeof AppKhoaHocCourseIdRoute
   '/_app/luyen-tap/ky-nang': typeof AppLuyenTapKyNangRouteWithChildren
   '/_app/luyen-tap/nen-tang': typeof AppLuyenTapNenTangRouteWithChildren
+  '/_app/khoa-hoc/': typeof AppKhoaHocIndexRoute
   '/_app/luyen-tap/': typeof AppLuyenTapIndexRoute
   '/_app/thi-thu/': typeof AppThiThuIndexRoute
   '/_app/luyen-tap/ky-nang/doc': typeof AppLuyenTapKyNangDocRouteWithChildren
@@ -359,11 +385,14 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/khoa-hoc'
     | '/luyen-tap'
     | '/overview'
     | '/thi-thu'
+    | '/khoa-hoc/$courseId'
     | '/luyen-tap/ky-nang'
     | '/luyen-tap/nen-tang'
+    | '/khoa-hoc/'
     | '/luyen-tap/'
     | '/thi-thu/'
     | '/luyen-tap/ky-nang/doc'
@@ -397,6 +426,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/overview'
+    | '/khoa-hoc/$courseId'
+    | '/khoa-hoc'
     | '/luyen-tap'
     | '/thi-thu'
     | '/phong-thi/$examId/chi-tiet'
@@ -425,11 +456,14 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/_focused'
+    | '/_app/khoa-hoc'
     | '/_app/luyen-tap'
     | '/_app/overview'
     | '/_app/thi-thu'
+    | '/_app/khoa-hoc/$courseId'
     | '/_app/luyen-tap/ky-nang'
     | '/_app/luyen-tap/nen-tang'
+    | '/_app/khoa-hoc/'
     | '/_app/luyen-tap/'
     | '/_app/thi-thu/'
     | '/_app/luyen-tap/ky-nang/doc'
@@ -511,6 +545,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLuyenTapRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/khoa-hoc': {
+      id: '/_app/khoa-hoc'
+      path: '/khoa-hoc'
+      fullPath: '/khoa-hoc'
+      preLoaderRoute: typeof AppKhoaHocRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/thi-thu/': {
       id: '/_app/thi-thu/'
       path: '/'
@@ -525,6 +566,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLuyenTapIndexRouteImport
       parentRoute: typeof AppLuyenTapRoute
     }
+    '/_app/khoa-hoc/': {
+      id: '/_app/khoa-hoc/'
+      path: '/'
+      fullPath: '/khoa-hoc/'
+      preLoaderRoute: typeof AppKhoaHocIndexRouteImport
+      parentRoute: typeof AppKhoaHocRoute
+    }
     '/_app/luyen-tap/nen-tang': {
       id: '/_app/luyen-tap/nen-tang'
       path: '/nen-tang'
@@ -538,6 +586,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/luyen-tap/ky-nang'
       preLoaderRoute: typeof AppLuyenTapKyNangRouteImport
       parentRoute: typeof AppLuyenTapRoute
+    }
+    '/_app/khoa-hoc/$courseId': {
+      id: '/_app/khoa-hoc/$courseId'
+      path: '/$courseId'
+      fullPath: '/khoa-hoc/$courseId'
+      preLoaderRoute: typeof AppKhoaHocCourseIdRouteImport
+      parentRoute: typeof AppKhoaHocRoute
     }
     '/_focused/phong-thi/$examId/': {
       id: '/_focused/phong-thi/$examId/'
@@ -731,6 +786,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppKhoaHocRouteChildren {
+  AppKhoaHocCourseIdRoute: typeof AppKhoaHocCourseIdRoute
+  AppKhoaHocIndexRoute: typeof AppKhoaHocIndexRoute
+}
+
+const AppKhoaHocRouteChildren: AppKhoaHocRouteChildren = {
+  AppKhoaHocCourseIdRoute: AppKhoaHocCourseIdRoute,
+  AppKhoaHocIndexRoute: AppKhoaHocIndexRoute,
+}
+
+const AppKhoaHocRouteWithChildren = AppKhoaHocRoute._addFileChildren(
+  AppKhoaHocRouteChildren,
+)
+
 interface AppLuyenTapKyNangDocRouteChildren {
   AppLuyenTapKyNangDocIndexRoute: typeof AppLuyenTapKyNangDocIndexRoute
   AppLuyenTapKyNangDocExerciseIdIndexRoute: typeof AppLuyenTapKyNangDocExerciseIdIndexRoute
@@ -898,12 +967,14 @@ const AppThiThuRouteWithChildren = AppThiThuRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppKhoaHocRoute: typeof AppKhoaHocRouteWithChildren
   AppLuyenTapRoute: typeof AppLuyenTapRouteWithChildren
   AppOverviewRoute: typeof AppOverviewRoute
   AppThiThuRoute: typeof AppThiThuRouteWithChildren
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppKhoaHocRoute: AppKhoaHocRouteWithChildren,
   AppLuyenTapRoute: AppLuyenTapRouteWithChildren,
   AppOverviewRoute: AppOverviewRoute,
   AppThiThuRoute: AppThiThuRouteWithChildren,

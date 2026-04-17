@@ -7,6 +7,7 @@
 | 0003 | [Overview Actionability](./0003-overview-actionability.md) | Draft | P1 — flow chính |
 | 0004 | [Session Completion Flow](./0004-session-completion-flow.md) | Draft | P1 — flow chính |
 | 0005 | [Coin & Streak Loop](./0005-coin-streak-loop.md) | Draft | P2 — polish |
+| 0006 | [Khóa học cấp tốc (Phase 1)](./0006-khoa-hoc-flow.md) | Draft | P1 — luồng mới |
 
 ## Thứ tự implement đề xuất
 
@@ -14,3 +15,4 @@
 2. **0003**: Kết nối Overview với phần còn lại — render components đã có sẵn.
 3. **0004**: Hoàn thiện flow sau khi hoàn thành bài — thêm "bài tiếp theo" + streak tracking.
 4. **0005**: Polish coin/streak loop — thêm popover + daily reward.
+5. **0006**: Luồng khóa học cấp tốc — list/detail/mua + Zoom link tĩnh (phase 1, không booking).
