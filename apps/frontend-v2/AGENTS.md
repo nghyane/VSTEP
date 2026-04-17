@@ -49,12 +49,7 @@ React 19, TypeScript, TanStack Router, Tailwind v4, shadcn/ui. Mọi PR phải p
 
 ## Skills
 
-Load the relevant skill when working in that area:
-
-- **`rfc`** — Creating, updating, or implementing RFCs. Load when change is cross-cutting.
-- **`design-system`** — Design tokens, Tailwind classes, card patterns, spacing, colors. Load when working on UI/styling.
-- **`tanstack-query`** — Query patterns, data fetching, cache invalidation. Load when working with server state.
-- **`typescript`** — Type patterns, naming conventions, code style. Load when reviewing or writing complex types.
+Khi gặp pattern/convention mới chưa có trong skill: **dừng lại**, báo user và đề xuất. Chỉ cập nhật skill file khi user đồng ý.
 
 ## Definition of done
 
