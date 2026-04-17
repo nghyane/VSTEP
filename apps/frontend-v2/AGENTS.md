@@ -25,6 +25,12 @@ React 19, TypeScript, TanStack Router, Tailwind v4, shadcn/ui. Mọi PR phải p
 - **Stage only files related to the current change.**
 - **No `git commit` unless user explicitly asks.**
 - **Always run `biome check` after editing code.**
+- **Audit before add.** Grep for existing components/patterns before creating new ones. Nhiều lần "component thiếu" thực ra đã code nhưng chưa render.
+
+## Workflow
+
+- **Plan before edit.** Change touching >3 files hoặc introducing new patterns: viết RFC trước, confirm, rồi implement. Không nhảy vào `Edit` khi user mới chỉ nói hướng.
+- **Evidence-first design.** Design/architecture decisions phải reference pattern đã chứng minh (Duolingo, shadcn, Laravel docs). Search reference trước khi propose — không tự chế quy tắc.
 
 ## Hard limits
 
