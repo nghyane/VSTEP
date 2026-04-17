@@ -1,14 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { Link, useNavigate } from "@tanstack/react-router"
-import {
-	ChevronDown,
-	ChevronRight,
-	Mic,
-	Pause,
-	Play,
-	RotateCcw,
-	Square,
-} from "lucide-react"
+import { ChevronDown, ChevronRight, Mic, Pause, Play, RotateCcw, Square } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 import { SpeakerIcon } from "#/components/common/SpeakerIcon"
@@ -24,6 +16,7 @@ import { saveSpeakingResult } from "#/lib/practice/result-storage"
 import { cancelSpeak } from "#/lib/practice/speak-sentence"
 import { useVoiceRecorder } from "#/lib/practice/use-voice-recorder"
 import { speakingExerciseQueryOptions } from "#/lib/queries/speaking"
+import { recordPracticeCompletion } from "#/lib/streak/streak-rewards"
 import { cn } from "#/lib/utils"
 import { useSpeakingSession } from "./useSpeakingSession"
 
@@ -46,6 +39,7 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 			sentencesTotal: exercise.sentences.length,
 			submittedAt: Date.now(),
 		})
+		recordPracticeCompletion()
 		toast.success("Đã nộp bài")
 		void navigate({ to: "/luyen-tap/ky-nang/noi/$exerciseId/ket-qua", params: { exerciseId } })
 	}
@@ -222,7 +216,9 @@ function SpeakingSubmitAction({
 				Làm lại
 			</Button>
 			<Button asChild>
-				<Link to="/luyen-tap/ky-nang" search={{ skill: "noi", category: "", page: 1 }}>Về danh sách đề nói</Link>
+				<Link to="/luyen-tap/ky-nang" search={{ skill: "noi", category: "", page: 1 }}>
+					Về danh sách đề nói
+				</Link>
 			</Button>
 		</div>
 	)

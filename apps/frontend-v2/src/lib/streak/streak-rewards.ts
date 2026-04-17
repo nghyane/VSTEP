@@ -3,6 +3,7 @@
 
 import { useSyncExternalStore } from "react"
 import { refundCoins } from "#/lib/coins/coin-store"
+import { pushNotification } from "#/lib/notifications/store"
 
 export interface StreakMilestone {
 	days: number
@@ -72,14 +73,119 @@ export function claimMilestone(days: number): boolean {
 	claimed = next
 	emit()
 	refundCoins(milestone.coins)
+	pushNotification({
+		id: `streak:claimed:${days}`,
+		title: `+${milestone.coins} xu từ mốc ${days} ngày`,
+		body: "Chúc mừng bạn đã nhận thưởng streak!",
+		iconKey: "coin",
+	})
 	return true
 }
 
-export function todayCompletedCount(
-	activityByDay: Record<string, number>,
-	now: number = Date.now(),
-): number {
+/**
+ * Quét các mốc đã đủ điều kiện nhưng chưa claim và push notification
+ * (idempotent — mỗi mốc chỉ notify 1 lần nhờ dedup theo id).
+ * Gọi khi app mount hoặc khi streak thay đổi.
+ */
+export function scanUnlockedMilestones(currentStreak: number) {
+	for (const m of STREAK_MILESTONES) {
+		if (currentStreak < m.days) continue
+		if (claimed.has(m.days)) continue
+		pushNotification({
+			id: `streak:unlocked:${m.days}`,
+			title: `Đã mở khoá mốc ${m.days} ngày streak`,
+			body: `Vào overview để nhận +${m.coins} xu.`,
+			iconKey: "trophy",
+		})
+	}
+}
+
+// ─── Today progress (local counter) ──────────────────────────────────────────
+// Đếm số bài luyện tập / đề thi đã hoàn thành TRONG NGÀY, reset tự động khi
+// đổi ngày. Nguồn dữ liệu: các completion hook gọi `recordPracticeCompletion()`.
+
+const PROGRESS_KEY = "vstep:streak-progress:v1"
+const PROGRESS_EVENT = "vstep:streak-progress-change"
+
+interface ProgressState {
+	date: string // YYYY-MM-DD
+	count: number
+}
+
+function todayKey(now: number = Date.now()): string {
 	const d = new Date(now)
-	const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
-	return activityByDay[key] ?? 0
+	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+
+let progress: ProgressState = loadProgress()
+
+function loadProgress(): ProgressState {
+	const fallback: ProgressState = { date: todayKey(), count: 0 }
+	if (typeof window === "undefined") return fallback
+	try {
+		const raw = localStorage.getItem(PROGRESS_KEY)
+		if (!raw) return fallback
+		const parsed = JSON.parse(raw) as Partial<ProgressState>
+		if (typeof parsed.date !== "string" || typeof parsed.count !== "number") return fallback
+		// Nếu đã sang ngày mới → reset counter, giữ entry mới.
+		if (parsed.date !== todayKey()) return { date: todayKey(), count: 0 }
+		return { date: parsed.date, count: parsed.count }
+	} catch {
+		return fallback
+	}
+}
+
+function persistProgress() {
+	try {
+		localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress))
+	} catch {
+		// ignore
+	}
+}
+
+function emitProgress() {
+	persistProgress()
+	window.dispatchEvent(new CustomEvent(PROGRESS_EVENT))
+}
+
+function subscribeProgress(callback: () => void): () => void {
+	window.addEventListener(PROGRESS_EVENT, callback)
+	return () => window.removeEventListener(PROGRESS_EVENT, callback)
+}
+
+function getProgressCount(): number {
+	// Rollover nếu sang ngày mới khi đọc.
+	const today = todayKey()
+	if (progress.date !== today) {
+		progress = { date: today, count: 0 }
+		persistProgress()
+	}
+	return progress.count
+}
+
+export function useTodayProgress(): number {
+	return useSyncExternalStore(subscribeProgress, getProgressCount, () => 0)
+}
+
+/**
+ * Ghi nhận user vừa hoàn thành 1 bài (luyện tập hoặc đề thi).
+ * Trả về `{ reachedGoal: true }` nếu cú này là cú vừa chạm DAILY_GOAL
+ * (để caller hiển thị toast "đã giữ streak hôm nay").
+ */
+export function recordPracticeCompletion(): { reachedGoal: boolean } {
+	const today = todayKey()
+	const was = progress.date === today ? progress.count : 0
+	const next = was + 1
+	progress = { date: today, count: next }
+	emitProgress()
+	const reachedGoal = was < DAILY_GOAL && next >= DAILY_GOAL
+	if (reachedGoal) {
+		pushNotification({
+			id: `streak:goal:${today}`,
+			title: `Đã giữ streak hôm nay (${DAILY_GOAL}/${DAILY_GOAL} bài)`,
+			body: "Quay lại mai để nâng chuỗi học lên một ngày nữa!",
+			iconKey: "fire",
+		})
+	}
+	return { reachedGoal }
 }

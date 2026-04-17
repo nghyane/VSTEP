@@ -3,6 +3,7 @@
 import type { ReadingExercise } from "#/lib/mock/reading"
 import { saveReadingProgress } from "#/lib/practice/reading-progress"
 import { type McqSession, useMcqSession } from "#/lib/practice/use-mcq-session"
+import { recordPracticeCompletion } from "#/lib/streak/streak-rewards"
 
 export function useReadingSession(exercise: ReadingExercise): McqSession {
 	return useMcqSession({
@@ -14,6 +15,7 @@ export function useReadingSession(exercise: ReadingExercise): McqSession {
 				total,
 				lastAttemptAt: Date.now(),
 			})
+			recordPracticeCompletion()
 		},
 	})
 }

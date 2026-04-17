@@ -28,8 +28,7 @@ function Toaster(props: ToasterProps) {
 			toastOptions={{
 				classNames: {
 					// Base: rounded-2xl + border dày dưới (hiệu ứng 3D gamification kiểu Duolingo)
-					toast:
-						"!rounded-2xl !border-2 !border-b-4 !shadow-lg !font-medium !w-fit !min-w-48 !max-w-sm",
+					toast: "!rounded-2xl !border-2 !border-b-4 !shadow-lg !font-medium !w-fit !max-w-sm",
 					title: "!font-bold",
 					description: "!text-xs !opacity-75",
 					success:

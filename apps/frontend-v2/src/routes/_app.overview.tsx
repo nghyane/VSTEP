@@ -205,7 +205,6 @@ function DetailsView({
 					deadline={mockGoal.deadline}
 					daysRemaining={mockGoal.daysRemaining}
 					streak={data.activity.streak}
-					activityByDay={data.activity.activityByDay}
 				/>
 			) : null}
 			<div className="grid gap-6 md:grid-cols-2">

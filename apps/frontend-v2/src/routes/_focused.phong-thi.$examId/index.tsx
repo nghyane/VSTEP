@@ -22,6 +22,7 @@ import {
 	type WritingAnswerMap,
 } from "#/lib/mock/exam-session"
 import { buildResultFromSession, savePhongThiResult } from "#/lib/practice/phong-thi-result"
+import { recordPracticeCompletion } from "#/lib/streak/streak-rewards"
 import { cn } from "#/lib/utils"
 import { DeviceCheckScreen } from "./-components/DeviceCheckScreen"
 import { ListeningExamPanel } from "./-components/ListeningExamPanel"
@@ -187,6 +188,7 @@ function ExamPage() {
 		savePhongThiResult(
 			buildResultFromSession(examId, session, mcqAnswers, writingAnswers, speakingDone),
 		)
+		recordPracticeCompletion()
 		navigate({ to: "/phong-thi/$examId/ket-qua", params: { examId } })
 	}, [navigate, examId, session, mcqAnswers, writingAnswers, speakingDone])
 

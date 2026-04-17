@@ -12,7 +12,6 @@ interface Props {
 	deadline: string // ISO date string
 	daysRemaining: number | null
 	streak: number
-	activityByDay: Record<string, number>
 }
 
 interface TimeLeft {
@@ -38,7 +37,7 @@ function pad(n: number) {
 	return n.toString().padStart(2, "0")
 }
 
-export function ExamCountdown({ deadline, daysRemaining, streak, activityByDay }: Props) {
+export function ExamCountdown({ deadline, daysRemaining, streak }: Props) {
 	const [time, setTime] = useState<TimeLeft>(() => computeTimeLeft(deadline))
 	const [streakOpen, setStreakOpen] = useState(false)
 
@@ -138,12 +137,7 @@ export function ExamCountdown({ deadline, daysRemaining, streak, activityByDay }
 				</button>
 			)}
 
-			<StreakDialog
-				open={streakOpen}
-				onOpenChange={setStreakOpen}
-				streak={streak}
-				activityByDay={activityByDay}
-			/>
+			<StreakDialog open={streakOpen} onOpenChange={setStreakOpen} streak={streak} />
 		</div>
 	)
 }

@@ -1,6 +1,5 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router"
 import {
-	Bell,
 	BookOpen,
 	FileText,
 	LayoutDashboard,
@@ -13,9 +12,9 @@ import { useState } from "react"
 import { FloatingChatDock } from "#/components/ai-chat/FloatingChatDock"
 import { CoinButton } from "#/components/common/CoinButton"
 import { Logo } from "#/components/common/Logo"
+import { NotificationButton } from "#/components/common/NotificationButton"
 import { StreakButton } from "#/components/common/StreakButton"
 import { Avatar, AvatarFallback } from "#/components/ui/avatar"
-import { Button } from "#/components/ui/button"
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -39,8 +38,6 @@ import {
 import { useRaiseChatDock } from "#/lib/ai-chat/use-raise-chat-dock"
 import { MOCK_USER } from "#/lib/mock/user"
 import { cn } from "#/lib/utils"
-
-const NOTIFICATION_GIF_SRC = "/notification-active.gif"
 
 export const Route = createFileRoute("/_app")({
 	component: AppLayout,
@@ -228,7 +225,7 @@ function AppTopbar() {
 			{/* Right: coin + streak + bell + avatar */}
 			<CoinButton />
 			<StreakButton />
-			<NotificationButton unreadCount={MOCK_USER.unreadNotifications} />
+			<NotificationButton />
 
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
@@ -261,34 +258,6 @@ function AppTopbar() {
 				</DropdownMenuContent>
 			</DropdownMenu>
 		</header>
-	)
-}
-
-function NotificationButton({ unreadCount }: { unreadCount: number }) {
-	const hasUnread = unreadCount > 0
-
-	return (
-		<Button
-			variant="ghost"
-			size="icon-sm"
-			className="relative text-muted-foreground"
-			aria-label={hasUnread ? `${unreadCount} thông báo chưa đọc` : "Thông báo"}
-		>
-			{hasUnread ? (
-				<img
-					src={NOTIFICATION_GIF_SRC}
-					alt=""
-					className="size-5 object-contain mix-blend-multiply dark:mix-blend-screen"
-				/>
-			) : (
-				<Bell className="size-4" />
-			)}
-			{hasUnread && (
-				<span className="absolute -top-0.5 -right-0.5 flex min-w-3.5 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-semibold leading-3.5 text-destructive-foreground">
-					{unreadCount > 9 ? "9+" : unreadCount}
-				</span>
-			)}
-		</Button>
 	)
 }
 

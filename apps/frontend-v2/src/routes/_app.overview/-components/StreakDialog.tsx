@@ -19,8 +19,8 @@ import {
 	DAILY_GOAL,
 	STREAK_MILESTONES,
 	type StreakMilestone,
-	todayCompletedCount,
 	useClaimedMilestones,
+	useTodayProgress,
 } from "#/lib/streak/streak-rewards"
 import { cn } from "#/lib/utils"
 
@@ -28,12 +28,12 @@ interface Props {
 	open: boolean
 	onOpenChange: (open: boolean) => void
 	streak: number
-	activityByDay: Record<string, number>
 }
 
-export function StreakDialog({ open, onOpenChange, streak, activityByDay }: Props) {
+export function StreakDialog({ open, onOpenChange, streak }: Props) {
 	const claimed = useClaimedMilestones()
-	const todayDone = Math.min(DAILY_GOAL, todayCompletedCount(activityByDay))
+	const rawToday = useTodayProgress()
+	const todayDone = Math.min(DAILY_GOAL, rawToday)
 	const todayRemaining = Math.max(0, DAILY_GOAL - todayDone)
 	const todayPct = Math.round((todayDone / DAILY_GOAL) * 100)
 

@@ -9,6 +9,7 @@ import { Button } from "#/components/ui/button"
 import { WRITING_PART_LABELS } from "#/lib/mock/writing"
 import { saveWritingResult } from "#/lib/practice/result-storage"
 import { writingExerciseQueryOptions } from "#/lib/queries/writing"
+import { recordPracticeCompletion } from "#/lib/streak/streak-rewards"
 import { cn } from "#/lib/utils"
 import { useWritingSession } from "./useWritingSession"
 
@@ -27,9 +28,13 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 			return
 		}
 		if (feedback.wordCount < exercise.minWords) {
-			toast.warning(`Bài viết đang thiếu ${exercise.minWords - feedback.wordCount} từ so với yêu cầu (${exercise.minWords}-${exercise.maxWords} từ)`)
+			toast.warning(
+				`Bài viết đang thiếu ${exercise.minWords - feedback.wordCount} từ so với yêu cầu (${exercise.minWords}-${exercise.maxWords} từ)`,
+			)
 		} else if (feedback.wordCount > exercise.maxWords) {
-			toast.warning(`Bài viết vượt ${feedback.wordCount - exercise.maxWords} từ so với yêu cầu (${exercise.minWords}-${exercise.maxWords} từ)`)
+			toast.warning(
+				`Bài viết vượt ${feedback.wordCount - exercise.maxWords} từ so với yêu cầu (${exercise.minWords}-${exercise.maxWords} từ)`,
+			)
 		} else {
 			toast.success("Đã nộp bài thành công")
 		}
@@ -44,6 +49,7 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 			stars: feedback.stars,
 			submittedAt: Date.now(),
 		})
+		recordPracticeCompletion()
 		void navigate({ to: "/luyen-tap/ky-nang/viet/$exerciseId/ket-qua", params: { exerciseId } })
 	}
 
@@ -53,8 +59,12 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 
 			{/* Prompt card */}
 			<div className="mx-auto w-full max-w-3xl rounded-2xl bg-muted/50 p-5 shadow-sm">
-				<h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Đề bài</h2>
-				<p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{exercise.prompt}</p>
+				<h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+					Đề bài
+				</h2>
+				<p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+					{exercise.prompt}
+				</p>
 			</div>
 
 			{/* Zen Focus Toggle — dưới đề bài */}
@@ -112,7 +122,13 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 				<span className="text-sm tabular-nums text-muted-foreground">
 					{session.wordCount} / {exercise.minWords}-{exercise.maxWords} từ
 				</span>
-				<Button type="button" size="lg" className="rounded-full px-8" onClick={handleSubmit} disabled={!session.canSubmit}>
+				<Button
+					type="button"
+					size="lg"
+					className="rounded-full px-8"
+					onClick={handleSubmit}
+					disabled={!session.canSubmit}
+				>
 					Nộp bài
 				</Button>
 			</footer>
@@ -123,7 +139,9 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 function Header({ title, part, description }: { title: string; part: 1 | 2; description: string }) {
 	return (
 		<header>
-			<p className="text-xs font-semibold uppercase tracking-wide text-skill-writing">{WRITING_PART_LABELS[part]}</p>
+			<p className="text-xs font-semibold uppercase tracking-wide text-skill-writing">
+				{WRITING_PART_LABELS[part]}
+			</p>
 			<div className="mt-1">
 				<h1 className="text-2xl font-bold">{title}</h1>
 				<p className="mt-1 text-sm text-muted-foreground">{description}</p>
