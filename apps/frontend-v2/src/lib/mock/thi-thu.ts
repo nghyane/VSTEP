@@ -19,13 +19,11 @@ export interface ExamAttempt {
 
 export interface ExamListItem {
 	id: number
-	isPro: boolean
 }
 
 export interface ExamDetail {
 	id: number
 	title: string
-	isPro: boolean
 	source: string
 	tags: string[]
 	totalDurationMinutes: number
@@ -162,7 +160,6 @@ export async function mockFetchExamDetail(id: number): Promise<ExamDetail> {
 	return {
 		id,
 		title: `Đề thi VSTEP HNUE 08/02/2026 #${id}`,
-		isPro: id % 2 === 0,
 		source: "HNUE",
 		tags: ["#FullTest", "#HNUE"],
 		totalDurationMinutes: 172,

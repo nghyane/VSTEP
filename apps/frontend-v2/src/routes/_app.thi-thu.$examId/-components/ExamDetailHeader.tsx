@@ -1,4 +1,4 @@
-import { Clock, Crown, Users } from "lucide-react"
+import { Clock, Users } from "lucide-react"
 import type { ExamDetail } from "#/lib/mock/thi-thu"
 import { cn } from "#/lib/utils"
 
@@ -51,28 +51,18 @@ export function ExamDetailHeader({ exam }: Props) {
 		<div className="space-y-4">
 			{/* Title row */}
 			<div className="space-y-2">
-				<div className="flex items-center gap-2">
-					{exam.isPro ? (
-						<span className="inline-flex items-end gap-1 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-2.5 py-0.5 text-white shadow-sm">
-							<Crown className="mb-px size-3 shrink-0" />
-							<span className="text-[10px] font-bold leading-none uppercase tracking-wider">
-								Pro
+				{exam.tags.length > 0 && (
+					<div className="flex items-center gap-2">
+						{exam.tags.map((tag) => (
+							<span
+								key={tag}
+								className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+							>
+								{tag}
 							</span>
-						</span>
-					) : (
-						<span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-							Free
-						</span>
-					)}
-					{exam.tags.map((tag) => (
-						<span
-							key={tag}
-							className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
-						>
-							{tag}
-						</span>
-					))}
-				</div>
+						))}
+					</div>
+				)}
 
 				<h1 className="text-2xl font-bold leading-tight">{exam.title}</h1>
 			</div>
