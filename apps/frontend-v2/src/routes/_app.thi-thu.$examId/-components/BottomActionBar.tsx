@@ -286,7 +286,7 @@ function CostBadge({ cost, insufficient }: { cost: number; insufficient: boolean
 	return (
 		<output
 			className={cn(
-				"inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-xs font-bold whitespace-nowrap",
+				"inline-flex h-9 shrink-0 items-center gap-2 rounded-md px-4 text-sm font-bold whitespace-nowrap",
 				insufficient
 					? "bg-rose-50 text-rose-700 ring-1 ring-rose-300 dark:bg-rose-950/40 dark:text-rose-200"
 					: "bg-gradient-to-r from-amber-400 to-amber-500 text-white shadow-sm",
@@ -294,7 +294,7 @@ function CostBadge({ cost, insufficient }: { cost: number; insufficient: boolean
 			aria-label={`Cần ${cost} xu để bắt đầu`}
 		>
 			<CoinIcon size={16} className={insufficient ? "opacity-60 grayscale" : undefined} />
-			<span className="leading-none">{cost} xu</span>
+			<span className="leading-none tabular-nums">{cost} xu</span>
 		</output>
 	)
 }

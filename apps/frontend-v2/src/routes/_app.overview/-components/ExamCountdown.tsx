@@ -6,10 +6,13 @@ import { CalendarDays } from "lucide-react"
 import { useEffect, useState } from "react"
 import { FireIcon } from "#/components/common/FireIcon"
 import { cn } from "#/lib/utils"
+import { StreakDialog } from "./StreakDialog"
 
 interface Props {
 	deadline: string // ISO date string
 	daysRemaining: number | null
+	streak: number
+	activityByDay: Record<string, number>
 }
 
 interface TimeLeft {
@@ -35,8 +38,9 @@ function pad(n: number) {
 	return n.toString().padStart(2, "0")
 }
 
-export function ExamCountdown({ deadline, daysRemaining }: Props) {
+export function ExamCountdown({ deadline, daysRemaining, streak, activityByDay }: Props) {
 	const [time, setTime] = useState<TimeLeft>(() => computeTimeLeft(deadline))
+	const [streakOpen, setStreakOpen] = useState(false)
 
 	useEffect(() => {
 		const id = setInterval(() => setTime(computeTimeLeft(deadline)), 1000)
@@ -93,13 +97,23 @@ export function ExamCountdown({ deadline, daysRemaining }: Props) {
 				</div>
 			</div>
 
-			{/* Progress line */}
+			{/* Progress line — click để mở streak dialog */}
 			{daysRemaining != null && (
-				<div className="mt-auto flex items-center gap-3 rounded-xl border border-dashed border-slate-300 bg-white/60 p-3">
-					<FireIcon active={true} sizeClass="size-4" />
+				<button
+					type="button"
+					onClick={() => setStreakOpen(true)}
+					aria-label={`Xem streak ${streak} ngày và phần thưởng`}
+					className="group mt-auto flex items-center gap-3 rounded-xl border border-dashed border-slate-300 bg-white/60 p-3 text-left transition-all hover:border-skill-speaking/50 hover:bg-white hover:shadow-sm dark:border-slate-600 dark:bg-slate-900/40 dark:hover:bg-slate-900/70"
+				>
+					<FireIcon active={streak > 0} sizeClass="size-4" />
 					<div className="flex flex-1 flex-col gap-1.5">
 						<div className="flex items-center justify-between text-[10px] font-semibold text-muted-foreground">
-							<span>TIẾN ĐỘ</span>
+							<span className="flex items-center gap-1.5">
+								TIẾN ĐỘ
+								<span className="rounded-full bg-skill-speaking/10 px-1.5 py-0.5 text-skill-speaking">
+									{streak} ngày streak
+								</span>
+							</span>
 							<span
 								className={cn(
 									"font-bold",
@@ -121,8 +135,15 @@ export function ExamCountdown({ deadline, daysRemaining }: Props) {
 							/>
 						</div>
 					</div>
-				</div>
+				</button>
 			)}
+
+			<StreakDialog
+				open={streakOpen}
+				onOpenChange={setStreakOpen}
+				streak={streak}
+				activityByDay={activityByDay}
+			/>
 		</div>
 	)
 }

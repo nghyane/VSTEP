@@ -201,7 +201,12 @@ function DetailsView({
 			<StatGrid stats={stats} />
 			<ActivityHeatmap activityByDay={data.activity.activityByDay} />
 			{mockGoal ? (
-				<ExamCountdown deadline={mockGoal.deadline} daysRemaining={mockGoal.daysRemaining} />
+				<ExamCountdown
+					deadline={mockGoal.deadline}
+					daysRemaining={mockGoal.daysRemaining}
+					streak={data.activity.streak}
+					activityByDay={data.activity.activityByDay}
+				/>
 			) : null}
 			<div className="grid gap-6 md:grid-cols-2">
 				<SpiderChartCard spider={data.spider} />
