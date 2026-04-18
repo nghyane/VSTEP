@@ -25,6 +25,7 @@ class SpeakingPracticeService
 {
     public function __construct(
         private readonly PracticeSessionService $sessionService,
+        private readonly GradingService $gradingService,
     ) {}
 
     /**
@@ -154,7 +155,7 @@ class SpeakingPracticeService
 
         $this->sessionService->complete($session);
 
-        // Grading job dispatch sẽ wire ở Slice 8.
+        $this->gradingService->enqueueSpeakingGrading('practice_speaking', $submission->id);
 
         return $submission;
     }

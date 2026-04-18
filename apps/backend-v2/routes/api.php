@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ExamController;
+use App\Http\Controllers\Api\V1\GradingController;
 use App\Http\Controllers\Api\V1\GrammarController;
 use App\Http\Controllers\Api\V1\McqPracticeController;
 use App\Http\Controllers\Api\V1\ProfileController;
@@ -112,5 +113,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/exams/{examId}/sessions', [ExamController::class, 'startSession']);
         Route::get('/exam-sessions/{sessionId}', [ExamController::class, 'showSession']);
         Route::post('/exam-sessions/{sessionId}/submit', [ExamController::class, 'submit']);
+
+        // Grading.
+        Route::get('/grading/jobs/{id}', [GradingController::class, 'showJob']);
+        Route::get('/grading/writing/{submissionType}/{submissionId}', [GradingController::class, 'writingResult']);
+        Route::get('/grading/speaking/{submissionType}/{submissionId}', [GradingController::class, 'speakingResult']);
     });
 });

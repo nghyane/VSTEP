@@ -18,6 +18,7 @@ class WritingPracticeService
 {
     public function __construct(
         private readonly PracticeSessionService $sessionService,
+        private readonly GradingService $gradingService,
     ) {}
 
     /**
@@ -82,7 +83,7 @@ class WritingPracticeService
 
         $this->sessionService->complete($session);
 
-        // Grading dispatch sẽ wire ở Slice 8.
+        $this->gradingService->enqueueWritingGrading('practice_writing', $submission->id);
 
         return $submission;
     }
