@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\GrammarController;
+use App\Http\Controllers\Api\V1\McqPracticeController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\VocabController;
 use App\Http\Controllers\Api\V1\WalletController;
@@ -72,5 +73,17 @@ Route::prefix('v1')->group(function () {
         Route::get('/grammar/points', [GrammarController::class, 'points']);
         Route::get('/grammar/points/{id}', [GrammarController::class, 'pointDetail']);
         Route::post('/grammar/exercises/{id}/attempt', [GrammarController::class, 'attemptExercise']);
+
+        // Practice MCQ skills (listening, reading). Path uses {skill} placeholder.
+        Route::get('/practice/{skill}/exercises', [McqPracticeController::class, 'listExercises'])
+            ->whereIn('skill', ['listening', 'reading']);
+        Route::get('/practice/{skill}/exercises/{id}', [McqPracticeController::class, 'showExercise'])
+            ->whereIn('skill', ['listening', 'reading']);
+        Route::post('/practice/{skill}/sessions', [McqPracticeController::class, 'startSession'])
+            ->whereIn('skill', ['listening', 'reading']);
+        Route::post('/practice/{skill}/sessions/{sessionId}/support', [McqPracticeController::class, 'useSupport'])
+            ->whereIn('skill', ['listening', 'reading']);
+        Route::post('/practice/{skill}/sessions/{sessionId}/submit', [McqPracticeController::class, 'submit'])
+            ->whereIn('skill', ['listening', 'reading']);
     });
 });
