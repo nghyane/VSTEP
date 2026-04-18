@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CourseController;
 use App\Http\Controllers\Api\V1\ExamController;
 use App\Http\Controllers\Api\V1\GradingController;
 use App\Http\Controllers\Api\V1\GrammarController;
 use App\Http\Controllers\Api\V1\McqPracticeController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OverviewController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\SpeakingPracticeController;
@@ -123,5 +125,17 @@ Route::prefix('v1')->group(function () {
         // Overview & progress.
         Route::get('/overview', [OverviewController::class, 'overview']);
         Route::get('/streak', [OverviewController::class, 'streak']);
+
+        // Courses.
+        Route::get('/courses', [CourseController::class, 'index']);
+        Route::get('/courses/{id}', [CourseController::class, 'show']);
+        Route::post('/courses/{id}/enroll', [CourseController::class, 'enroll']);
+        Route::post('/courses/{courseId}/bookings', [CourseController::class, 'bookSlot']);
+
+        // Notifications.
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::post('/notifications/read-all', [NotificationController::class, 'readAll']);
+        Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
     });
 });
