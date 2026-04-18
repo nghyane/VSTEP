@@ -59,8 +59,8 @@ function SubModuleCard({ icon: Icon, title, description, to, search, cta }: SubM
 			to={to}
 			search={search}
 			className={cn(
-				"group flex flex-col overflow-hidden rounded-3xl border bg-card shadow-sm transition",
-				"cursor-pointer hover:-translate-y-0.5 hover:shadow-md",
+				"group flex flex-col overflow-hidden rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card transition-all",
+				"cursor-pointer hover:shadow-md",
 			)}
 		>
 			<div className="px-8 pt-8 pb-6">
@@ -73,7 +73,7 @@ function SubModuleCard({ icon: Icon, title, description, to, search, cta }: SubM
 				<p className="mt-4 text-sm leading-relaxed text-muted-foreground">{description}</p>
 			</div>
 			<div className="mt-auto px-8 pt-6 pb-8">
-				<div className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-base font-semibold text-primary-foreground transition-colors group-hover:bg-primary/90">
+				<div className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border-2 border-[oklch(0.48_0.2_258)] border-b-4 border-b-[oklch(0.35_0.2_258)] bg-primary text-base font-bold text-primary-foreground transition-all group-active:translate-y-[3px] group-active:border-b group-active:pb-[3px]">
 					{cta}
 					<ArrowRight className="size-4" />
 				</div>

@@ -1,4 +1,4 @@
-// ActivityHeatmap — GitHub-style contribution graph
+﻿// ActivityHeatmap — GitHub-style contribution graph
 // 5 mức đậm nhạt dựa trên số hoạt động/ngày, có tooltip giải thích.
 
 import { Fragment } from "react"
@@ -123,7 +123,7 @@ export function ActivityHeatmap({ activityByDay }: Props) {
 	)
 
 	return (
-		<Card className="border-0 bg-muted/30">
+		<Card>
 			<CardHeader className="flex-row items-center justify-between pb-2">
 				<div>
 					<CardTitle className="text-base">Tần suất học tập</CardTitle>

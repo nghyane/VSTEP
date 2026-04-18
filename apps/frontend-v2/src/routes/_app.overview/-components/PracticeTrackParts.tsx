@@ -210,7 +210,7 @@ export function SessionRow({ session }: { session: TestSession }) {
 	const best = scores[0]
 	const skillInfo = best ? SKILLS.find((s) => s.key === best.skill) : undefined
 	return (
-		<div className="flex items-center gap-3 rounded-lg border p-3">
+		<div className="flex items-center gap-3 rounded-lg border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-3">
 			{best ? (
 				<div
 					className={cn(

@@ -1,4 +1,4 @@
-// DeviceTestWidgets — AudioTestPlayer + MicTest cho device check screen.
+﻿// DeviceTestWidgets — AudioTestPlayer + MicTest cho device check screen.
 
 import { Mic, Pause, Play, Square, Volume2 } from "lucide-react"
 import { motion } from "motion/react"
@@ -56,7 +56,7 @@ export function AudioTestPlayer() {
 	const progress = duration > 0 ? (currentTime / duration) * 100 : 0
 	return (
 		<div className="space-y-2">
-			<div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2">
+			<div className="flex items-center gap-3 rounded-lg border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card px-3 py-2">
 				<motion.button
 					type="button"
 					onClick={toggle}
@@ -95,8 +95,8 @@ export function MicTest() {
 		<div className="space-y-3">
 			<div
 				className={cn(
-					"flex h-12 items-center justify-center rounded-lg border",
-					isRecording ? "border-destructive/30 bg-destructive/5" : "bg-muted/30",
+					"flex h-12 items-center justify-center rounded-lg border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card",
+					isRecording ? "border-destructive/30 border-b-destructive/50 bg-destructive/5" : "",
 				)}
 			>
 				{recorder.state !== "recording" && recorder.audioUrl === null && (
@@ -114,7 +114,7 @@ export function MicTest() {
 					<span className="text-xs text-muted-foreground">Đã thu xong — microphone hoạt động</span>
 				)}
 			</div>
-			<div className="flex flex-wrap items-center gap-2">
+			<div className="flex flex-wrap items-center justify-center gap-2">
 				{!isRecording && (
 					<Button size="sm" variant="destructive" onClick={handleRecord}>
 						<Mic className="size-4" />
@@ -130,7 +130,7 @@ export function MicTest() {
 			</div>
 			{recorder.error && <p className="text-xs text-destructive">{recorder.error}</p>}
 			{recorder.audioUrl && (
-				<div className="space-y-2 rounded-lg border bg-background p-3">
+				<div className="space-y-2 rounded-lg border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-3">
 					<p className="text-xs font-medium text-muted-foreground">Nghe lại bản ghi của bạn</p>
 					<audio src={recorder.audioUrl} controls className="h-9 w-full">
 						<track kind="captions" />

@@ -149,7 +149,7 @@ function PageHeader() {
 
 function ModeCard({ data }: { data: ModeData }) {
 	const cardClass =
-		"group flex flex-col overflow-hidden rounded-3xl border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+		"group flex flex-col overflow-hidden rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card transition-all hover:shadow-md"
 	const body = (
 		<>
 			<ModeCardHeader data={data} />
@@ -158,7 +158,7 @@ function ModeCard({ data }: { data: ModeData }) {
 				<StatRow stats={data.stats} />
 			</div>
 			<div className="px-8 pb-8">
-				<div className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-base font-semibold text-primary-foreground transition-colors group-hover:bg-primary/90">
+				<div className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border-2 border-[oklch(0.48_0.2_258)] border-b-4 border-b-[oklch(0.35_0.2_258)] bg-primary text-base font-bold text-primary-foreground transition-all group-active:translate-y-[3px] group-active:border-b group-active:pb-[3px]">
 					{data.cta}
 					<ArrowRight className="size-4" />
 				</div>
@@ -248,9 +248,9 @@ function StatRow({ stats }: { stats: Stat[] }) {
 	return (
 		<div className="grid grid-cols-3 gap-3">
 			{stats.map((s) => (
-				<div key={s.label} className="rounded-xl bg-muted/50 px-3 py-2.5 text-center">
+				<div key={s.label} className="rounded-xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card px-3 py-2.5 text-center">
 					<p className="text-lg font-bold tabular-nums">{s.value}</p>
-					<p className="text-[11px] text-muted-foreground">{s.label}</p>
+					<p className="text-xs text-muted-foreground">{s.label}</p>
 				</div>
 			))}
 		</div>

@@ -39,7 +39,7 @@ function ThiThuPage() {
 					</div>
 
 					{filteredExams.length === 0 && (
-						<div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-12 text-center">
+						<div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card py-12 text-center">
 							<p className="text-sm font-medium text-muted-foreground">
 								Không tìm thấy đề thi phù hợp
 							</p>

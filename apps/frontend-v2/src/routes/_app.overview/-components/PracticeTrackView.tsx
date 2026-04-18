@@ -35,7 +35,7 @@ export function PracticeTrackView({ data }: Props) {
 						const hasData = score > 0
 
 						return (
-							<div key={key} className="rounded-xl border bg-background p-4">
+							<div key={key} className="rounded-xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-4">
 								<div className="mb-3 flex items-center justify-between">
 									<span className="text-sm font-medium text-muted-foreground">{label}</span>
 									<div

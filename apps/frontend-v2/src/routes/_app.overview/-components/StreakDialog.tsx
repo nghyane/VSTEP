@@ -170,7 +170,7 @@ function MilestoneRow({
 	return (
 		<div
 			className={cn(
-				"space-y-2 rounded-xl border bg-card p-3 transition-colors",
+				"space-y-2 rounded-xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-3 transition-colors",
 				canClaim && "border-amber-300 bg-amber-50/60",
 				isClaimed && "opacity-60",
 			)}
