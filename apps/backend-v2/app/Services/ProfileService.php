@@ -5,9 +5,17 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Events\ProfileCreated;
+use App\Models\PracticeGrammarAttempt;
+use App\Models\PracticeSession;
+use App\Models\PracticeVocabExerciseAttempt;
+use App\Models\PracticeVocabReview;
 use App\Models\Profile;
+use App\Models\ProfileDailyActivity;
+use App\Models\ProfileGrammarMastery;
 use App\Models\ProfileOnboardingResponse;
 use App\Models\ProfileResetEvent;
+use App\Models\ProfileStreakState;
+use App\Models\ProfileVocabSrsState;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -86,9 +94,27 @@ class ProfileService
      */
     public function reset(Profile $profile, ?string $reason, array $snapshot = []): ProfileResetEvent
     {
-        return DB::transaction(function () use ($profile, $reason, $snapshot) {
-            // Phase 1: learning state tables chưa tồn tại. Khi có, wipe ở đây.
-            // Ví dụ: profile_vocab_srs_states, profile_grammar_mastery, profile_daily_activity, profile_streak_state, profile_chart_cache.
+        return DB::transaction(function () use ($profile, $reason) {
+            // Count before wipe for audit snapshot.
+            $snapshot = [
+                'srs_states' => ProfileVocabSrsState::query()->where('profile_id', $profile->id)->count(),
+                'vocab_reviews' => PracticeVocabReview::query()->where('profile_id', $profile->id)->count(),
+                'vocab_exercise_attempts' => PracticeVocabExerciseAttempt::query()->where('profile_id', $profile->id)->count(),
+                'grammar_mastery' => ProfileGrammarMastery::query()->where('profile_id', $profile->id)->count(),
+                'grammar_attempts' => PracticeGrammarAttempt::query()->where('profile_id', $profile->id)->count(),
+                'practice_sessions' => PracticeSession::query()->where('profile_id', $profile->id)->count(),
+                'daily_activity' => ProfileDailyActivity::query()->where('profile_id', $profile->id)->count(),
+            ];
+
+            // Wipe learning state. Wallet + enrollments preserved (rule #14).
+            ProfileVocabSrsState::query()->where('profile_id', $profile->id)->delete();
+            PracticeVocabReview::query()->where('profile_id', $profile->id)->delete();
+            PracticeVocabExerciseAttempt::query()->where('profile_id', $profile->id)->delete();
+            ProfileGrammarMastery::query()->where('profile_id', $profile->id)->delete();
+            PracticeGrammarAttempt::query()->where('profile_id', $profile->id)->delete();
+            PracticeSession::query()->where('profile_id', $profile->id)->delete();
+            ProfileDailyActivity::query()->where('profile_id', $profile->id)->delete();
+            ProfileStreakState::query()->where('profile_id', $profile->id)->delete();
 
             return ProfileResetEvent::create([
                 'profile_id' => $profile->id,

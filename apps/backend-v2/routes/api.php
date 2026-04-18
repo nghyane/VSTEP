@@ -117,6 +117,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/exams/{examId}/sessions', [ExamController::class, 'startSession']);
         Route::get('/exam-sessions/{sessionId}', [ExamController::class, 'showSession']);
         Route::post('/exam-sessions/{sessionId}/submit', [ExamController::class, 'submit']);
+        Route::post('/exam-sessions/{sessionId}/listening-played', [ExamController::class, 'logListeningPlayed']);
 
         // Grading.
         Route::get('/grading/jobs/{id}', [GradingController::class, 'showJob']);

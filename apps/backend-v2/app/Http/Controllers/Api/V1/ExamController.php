@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\ExamListeningPlayLog;
 use App\Models\ExamSession;
 use App\Models\ExamVersion;
 use App\Models\Profile;
@@ -95,6 +96,34 @@ class ExamController extends Controller
         }
 
         return response()->json(['data' => $session]);
+    }
+
+    public function logListeningPlayed(Request $request, string $sessionId): JsonResponse
+    {
+        $request->validate(['section_id' => ['required', 'uuid']]);
+        /** @var ExamSession $session */
+        $session = ExamSession::query()->findOrFail($sessionId);
+        if ($session->profile_id !== $this->profile($request)->id) {
+            abort(403);
+        }
+
+        $exists = ExamListeningPlayLog::query()
+            ->where('session_id', $session->id)
+            ->where('section_id', $request->input('section_id'))
+            ->exists();
+
+        if ($exists) {
+            return response()->json(['data' => ['already_played' => true]], 409);
+        }
+
+        ExamListeningPlayLog::create([
+            'session_id' => $session->id,
+            'section_id' => $request->input('section_id'),
+            'played_at' => now(),
+            'client_ip' => $request->ip(),
+        ]);
+
+        return response()->json(['data' => ['played_at' => now()]]);
     }
 
     private function profile(Request $request): Profile
