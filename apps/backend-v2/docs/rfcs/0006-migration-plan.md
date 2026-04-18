@@ -512,7 +512,7 @@ Khi start, track per-slice progress trong `docs/rfcs/0006-migration-plan.md` b�
 - [x] Slice 3 — Vocabulary
 - [x] Slice 4 — Grammar
 - [x] Slice 5 — Listening/Reading
-- [ ] Slice 6 — Writing/Speaking Drill
+- [x] Slice 6 — Writing/Speaking Drill
 - [ ] Slice 7 — Exam
 - [ ] Slice 8 — Grading Pipeline
 - [ ] Slice 9 — Progress & Overview

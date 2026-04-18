@@ -4,8 +4,10 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\GrammarController;
 use App\Http\Controllers\Api\V1\McqPracticeController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\SpeakingPracticeController;
 use App\Http\Controllers\Api\V1\VocabController;
 use App\Http\Controllers\Api\V1\WalletController;
+use App\Http\Controllers\Api\V1\WritingPracticeController;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -85,5 +87,22 @@ Route::prefix('v1')->group(function () {
             ->whereIn('skill', ['listening', 'reading']);
         Route::post('/practice/{skill}/sessions/{sessionId}/submit', [McqPracticeController::class, 'submit'])
             ->whereIn('skill', ['listening', 'reading']);
+
+        // Practice Writing.
+        Route::get('/practice/writing/prompts', [WritingPracticeController::class, 'listPrompts']);
+        Route::get('/practice/writing/prompts/{id}', [WritingPracticeController::class, 'showPrompt']);
+        Route::post('/practice/writing/sessions', [WritingPracticeController::class, 'startSession']);
+        Route::post('/practice/writing/sessions/{sessionId}/support', [WritingPracticeController::class, 'useSupport']);
+        Route::post('/practice/writing/sessions/{sessionId}/submit', [WritingPracticeController::class, 'submit']);
+
+        // Practice Speaking — drill + VSTEP.
+        Route::get('/practice/speaking/drills', [SpeakingPracticeController::class, 'listDrills']);
+        Route::get('/practice/speaking/drills/{id}', [SpeakingPracticeController::class, 'showDrill']);
+        Route::get('/practice/speaking/tasks', [SpeakingPracticeController::class, 'listTasks']);
+        Route::get('/practice/speaking/tasks/{id}', [SpeakingPracticeController::class, 'showTask']);
+        Route::post('/practice/speaking/drill-sessions', [SpeakingPracticeController::class, 'startDrillSession']);
+        Route::post('/practice/speaking/vstep-sessions', [SpeakingPracticeController::class, 'startVstepSession']);
+        Route::post('/practice/speaking/drill-sessions/{sessionId}/attempt', [SpeakingPracticeController::class, 'drillAttempt']);
+        Route::post('/practice/speaking/vstep-sessions/{sessionId}/submit', [SpeakingPracticeController::class, 'submitVstep']);
     });
 });
