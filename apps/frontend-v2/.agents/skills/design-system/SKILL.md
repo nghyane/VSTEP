@@ -8,9 +8,7 @@ description: "Design tokens, Tailwind classes, card patterns, spacing, colors, r
 ## Source of truth
 
 - `src/styles.css` — CSS variables (tokens)
-- `docs/rfcs/0000-design-direction.md` — aesthetic north star (Duolingo gamification)
-- `docs/rfcs/0001-design-token-consistency.md` — token mapping rules
-- `docs/rfcs/0002-layout-spacing-consistency.md` — layout rules
+- `docs/rfcs/0002-design-system.md` — design system (tokens, layout, gamification)
 
 ## Colors — use tokens, never hardcode
 

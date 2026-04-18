@@ -1,4 +1,4 @@
-# RFC 0006 — Khóa học cấp tốc (Phase 1 UI)
+# RFC 0005 — Khóa học cấp tốc (Phase 1 UI)
 
 | Field | Value |
 |---|---|

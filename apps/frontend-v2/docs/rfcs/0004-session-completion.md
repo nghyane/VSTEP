@@ -8,9 +8,9 @@
 
 ## Summary
 
-Mọi session kết thúc bằng dead-end. Cần: "Bài tiếp theo", link về Overview, và Lesson Complete screen theo Duolingo pattern (RFC 0000).
+Mọi session kết thúc bằng dead-end. Cần: "Bài tiếp theo", link về Overview, và Lesson Complete screen theo Duolingo pattern (RFC 0002).
 
-**Cập nhật 2026-04-17:** Nghe/Đọc đã có `McqResultSummary` (score circle) từ commit `392039d` (4/16), nhưng chưa refactor sang Duolingo 3-stat-card. `recordPracticeCompletion` từng được wire vào luyện tập (commit `77939ac` 4/17) nhưng **đã revert** sang "chỉ đếm phong-thi" trong commit `69225bf` (4/18) — xem RFC 0005. Nghĩa là luyện tập không còn drive streak → item 4 RFC này cần re-thinking.
+**Cập nhật 2026-04-17:** Nghe/Đọc đã có `McqResultSummary` (score circle) từ commit `392039d` (4/16), nhưng chưa refactor sang Duolingo 3-stat-card. `recordPracticeCompletion` từng được wire vào luyện tập (commit `77939ac` 4/17) nhưng **đã revert** sang "chỉ đếm phong-thi" trong commit `69225bf` (4/18) — xem RFC 0005 (archived, đã ship). Nghĩa là luyện tập không còn drive streak → item 4 RFC này cần re-thinking.
 
 ## Changes
 
