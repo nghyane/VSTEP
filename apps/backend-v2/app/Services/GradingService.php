@@ -6,24 +6,41 @@ namespace App\Services;
 
 use App\Models\GradingJob;
 use App\Models\PracticeSpeakingSubmission;
+use App\Models\PracticeWritingSubmission;
 use App\Models\SpeakingGradingResult;
 use App\Models\WritingGradingResult;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 /**
- * Grading pipeline orchestration.
+ * Grading pipeline — 2 layers:
  *
- * Phase 1: enqueue job → mock AI result (no real AI call).
- * Phase 2: wire laravel/ai SDK + Azure Speech.
+ * Layer 1: LanguageTool (grammar detection, offset-level, deterministic)
+ * Layer 2: LLM via Ollama OpenAI-compat (rubric scoring + narrative feedback)
  *
- * Versioning: deactivate previous active result, create new with version++.
+ * Architecture:
+ *   text → LanguageTool → annotations[]
+ *   text + annotations context → LLM → rubric_scores + strengths + improvements + rewrites
+ *   merge → writing_grading_results
  */
 class GradingService
 {
     public function __construct(
         private readonly SpeechToTextService $sttService,
         private readonly AudioStorageService $audioService,
+        private readonly LanguageToolService $languageTool,
     ) {}
+
+    private function ollamaUrl(): string
+    {
+        return rtrim(env('OLLAMA_URL', 'http://localhost:11434'), '/');
+    }
+
+    private function ollamaModel(): string
+    {
+        return env('OLLAMA_GRADING_MODEL', 'gemini-3-flash-preview');
+    }
 
     public function enqueueWritingGrading(string $submissionType, string $submissionId): GradingJob
     {
@@ -33,7 +50,6 @@ class GradingService
             'status' => 'pending',
         ]);
 
-        // Phase 1: process synchronously with mock result.
         $this->processWritingJob($job);
 
         return $job->refresh();
@@ -57,6 +73,21 @@ class GradingService
         DB::transaction(function () use ($job) {
             $job->update(['status' => 'processing', 'started_at' => now(), 'attempts' => $job->attempts + 1]);
 
+            $submission = $this->loadWritingSubmission($job);
+            $text = $submission?->text ?? '';
+            $promptText = $submission?->prompt?->prompt ?? '';
+
+            // Layer 1: LanguageTool grammar detection.
+            $ltMatches = $this->languageTool->check($text);
+            $annotations = $this->languageTool->toAnnotations($text, $ltMatches);
+
+            // Layer 2: LLM rubric scoring + feedback.
+            $llmResult = $this->callLlmWritingGrading($text, $promptText, $ltMatches);
+
+            // Merge: LLM rewrites/improvements + LanguageTool annotations.
+            $mergedAnnotations = array_merge($annotations, $llmResult['annotations'] ?? []);
+
+            // Versioning.
             $version = WritingGradingResult::query()
                 ->where('submission_type', $job->submission_type)
                 ->where('submission_id', $job->submission_id)
@@ -74,19 +105,12 @@ class GradingService
                 'submission_id' => $job->submission_id,
                 'version' => $version + 1,
                 'is_active' => true,
-                'rubric_scores' => [
-                    'task_achievement' => 3.0, 'coherence' => 3.0,
-                    'lexical' => 2.5, 'grammar' => 2.5,
-                ],
-                'overall_band' => 5.5,
-                'strengths' => ['Clear structure', 'Good vocabulary range'],
-                'improvements' => [
-                    ['message' => 'Improve coherence', 'explanation' => 'Use more linking words'],
-                ],
-                'rewrites' => [
-                    ['original' => 'Despite I tried', 'improved' => 'Despite trying', 'reason' => 'Grammar'],
-                ],
-                'annotations' => [],
+                'rubric_scores' => $llmResult['rubric_scores'],
+                'overall_band' => $llmResult['overall_band'],
+                'strengths' => $llmResult['strengths'],
+                'improvements' => $llmResult['improvements'],
+                'rewrites' => $llmResult['rewrites'],
+                'annotations' => $mergedAnnotations,
                 'paragraph_feedback' => [],
             ]);
 
@@ -99,18 +123,21 @@ class GradingService
         DB::transaction(function () use ($job) {
             $job->update(['status' => 'processing', 'started_at' => now(), 'attempts' => $job->attempts + 1]);
 
-            // STT: transcribe audio from R2 via Azure Speech.
             $submission = $this->loadSpeakingSubmission($job);
-            $sttResult = null;
             $transcript = 'Transcript unavailable.';
+            $pronunciationScore = 0;
+
             if ($submission !== null && $submission->audio_url) {
                 $sttResult = $this->sttService->transcribeFromStorage($submission->audio_url, $this->audioService);
                 if ($sttResult !== null) {
                     $transcript = $sttResult['text'];
-                    // Persist transcript back to submission.
+                    $pronunciationScore = (int) ($sttResult['confidence'] * 100);
                     $submission->update(['transcript' => $transcript]);
                 }
             }
+
+            // LLM grading on transcript.
+            $llmResult = $this->callLlmSpeakingGrading($transcript);
 
             $version = SpeakingGradingResult::query()
                 ->where('submission_type', $job->submission_type)
@@ -129,21 +156,162 @@ class GradingService
                 'submission_id' => $job->submission_id,
                 'version' => $version + 1,
                 'is_active' => true,
-                'rubric_scores' => [
-                    'fluency' => 3.0, 'pronunciation' => 2.5,
-                    'content' => 3.0, 'vocab' => 2.5, 'grammar' => 2.5,
-                ],
-                'overall_band' => 5.0,
-                'strengths' => ['Good fluency', 'Clear pronunciation'],
-                'improvements' => [
-                    ['message' => 'Expand vocabulary', 'explanation' => 'Use more varied expressions'],
-                ],
-                'pronunciation_report' => $sttResult ? ['accuracy_score' => (int) ($sttResult['confidence'] * 100)] : ['accuracy_score' => 0],
+                'rubric_scores' => $llmResult['rubric_scores'],
+                'overall_band' => $llmResult['overall_band'],
+                'strengths' => $llmResult['strengths'],
+                'improvements' => $llmResult['improvements'],
+                'pronunciation_report' => ['accuracy_score' => $pronunciationScore],
                 'transcript' => $transcript,
             ]);
 
             $job->update(['status' => 'ready', 'completed_at' => now()]);
         });
+    }
+
+    /**
+     * @param  array<int,array<string,mixed>>  $grammarErrors  from LanguageTool
+     * @return array{rubric_scores: array, overall_band: float, strengths: array, improvements: array, rewrites: array, annotations: array}
+     */
+    private function callLlmWritingGrading(string $text, string $promptText, array $grammarErrors): array
+    {
+        $errorContext = '';
+        if (! empty($grammarErrors)) {
+            $errorSummary = array_map(fn ($e) => "- \"{$e['message']}\" (offset {$e['offset']})", array_slice($grammarErrors, 0, 10));
+            $errorContext = "\n\nGrammar errors detected by automated checker:\n".implode("\n", $errorSummary);
+        }
+
+        $systemPrompt = <<<'PROMPT'
+You are a VSTEP writing examiner. Grade the student's writing using the Vietnamese MOE rubric.
+
+Rubric (each criterion scored 0-4):
+- Task Achievement: covers required points, appropriate format/tone, sufficient development
+- Coherence & Cohesion: logical organization, paragraph structure, linking devices
+- Lexical Resource: vocabulary range, accuracy, appropriateness
+- Grammatical Range & Accuracy: sentence variety, error frequency, complexity
+
+Overall band = (sum of 4 scores / 16) × 10, rounded to 0.5.
+
+Return ONLY valid JSON (no markdown, no explanation outside JSON):
+{
+  "rubric_scores": {"task_achievement": X.X, "coherence": X.X, "lexical": X.X, "grammar": X.X},
+  "overall_band": X.X,
+  "strengths": ["strength 1", "strength 2"],
+  "improvements": [{"message": "what to improve", "explanation": "how to improve it"}],
+  "rewrites": [{"original": "original sentence", "improved": "better version", "reason": "why"}],
+  "annotations": []
+}
+PROMPT;
+
+        $userMessage = "Task prompt: {$promptText}\n\nStudent's writing:\n{$text}\n\nWord count: ".str_word_count($text).$errorContext;
+
+        return $this->callOllama($systemPrompt, $userMessage, $this->defaultWritingResult());
+    }
+
+    /**
+     * @return array{rubric_scores: array, overall_band: float, strengths: array, improvements: array}
+     */
+    private function callLlmSpeakingGrading(string $transcript): array
+    {
+        $systemPrompt = <<<'PROMPT'
+You are a VSTEP speaking examiner. Grade the student's spoken response (transcript from speech-to-text) using the Vietnamese MOE rubric.
+
+Rubric (each criterion scored 0-4):
+- Fluency & Coherence: natural flow, hesitation, logical development
+- Pronunciation: clarity (assessed separately by audio analysis, use transcript quality as proxy)
+- Lexical Resource: vocabulary range, accuracy
+- Grammatical Range & Accuracy: sentence variety, error frequency
+- Content & Task Fulfillment: relevance, development of ideas
+
+Overall band = (sum of 5 scores / 20) × 10, rounded to 0.5.
+
+Return ONLY valid JSON:
+{
+  "rubric_scores": {"fluency": X.X, "pronunciation": X.X, "content": X.X, "vocab": X.X, "grammar": X.X},
+  "overall_band": X.X,
+  "strengths": ["strength 1"],
+  "improvements": [{"message": "what to improve", "explanation": "how"}]
+}
+PROMPT;
+
+        $result = $this->callOllama($systemPrompt, "Transcript:\n{$transcript}", $this->defaultSpeakingResult());
+
+        return $result;
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private function callOllama(string $systemPrompt, string $userMessage, array $fallback): array
+    {
+        try {
+            $response = Http::timeout(60)->post($this->ollamaUrl().'/v1/chat/completions', [
+                'model' => $this->ollamaModel(),
+                'messages' => [
+                    ['role' => 'system', 'content' => $systemPrompt],
+                    ['role' => 'user', 'content' => $userMessage],
+                ],
+                'temperature' => 0.1,
+            ]);
+
+            if (! $response->successful()) {
+                Log::error('Ollama grading call failed', ['status' => $response->status()]);
+
+                return $fallback;
+            }
+
+            $content = $response->json('choices.0.message.content', '');
+            $parsed = json_decode($content, true);
+
+            if (! is_array($parsed) || ! isset($parsed['rubric_scores'])) {
+                // Try extract JSON from markdown code block.
+                if (preg_match('/```json\s*(.*?)\s*```/s', $content, $m)) {
+                    $parsed = json_decode($m[1], true);
+                }
+            }
+
+            if (is_array($parsed) && isset($parsed['rubric_scores'])) {
+                return array_merge($fallback, $parsed);
+            }
+
+            Log::warning('Ollama grading: could not parse JSON', ['content' => substr($content, 0, 500)]);
+
+            return $fallback;
+        } catch (\Throwable $e) {
+            Log::error('Ollama grading exception', ['error' => $e->getMessage()]);
+
+            return $fallback;
+        }
+    }
+
+    private function defaultWritingResult(): array
+    {
+        return [
+            'rubric_scores' => ['task_achievement' => 2.0, 'coherence' => 2.0, 'lexical' => 2.0, 'grammar' => 2.0],
+            'overall_band' => 5.0,
+            'strengths' => ['Submitted on time'],
+            'improvements' => [['message' => 'AI grading unavailable', 'explanation' => 'Please try again later.']],
+            'rewrites' => [],
+            'annotations' => [],
+        ];
+    }
+
+    private function defaultSpeakingResult(): array
+    {
+        return [
+            'rubric_scores' => ['fluency' => 2.0, 'pronunciation' => 2.0, 'content' => 2.0, 'vocab' => 2.0, 'grammar' => 2.0],
+            'overall_band' => 5.0,
+            'strengths' => ['Completed the task'],
+            'improvements' => [['message' => 'AI grading unavailable', 'explanation' => 'Please try again later.']],
+        ];
+    }
+
+    private function loadWritingSubmission(GradingJob $job): ?PracticeWritingSubmission
+    {
+        if ($job->submission_type === 'practice_writing') {
+            return PracticeWritingSubmission::query()->with('prompt')->find($job->submission_id);
+        }
+
+        return null;
     }
 
     private function loadSpeakingSubmission(GradingJob $job): ?PracticeSpeakingSubmission

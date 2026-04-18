@@ -112,6 +112,22 @@ services:
       - backend
     restart: unless-stopped
 
+  # LanguageTool — grammar checker (rule-based, deterministic)
+  languagetool:
+    image: erikvl87/languagetool:latest
+    ports:
+      - "8081:8010"
+    environment:
+      langtool_languageModel: ""
+      Java_Xms: 256m
+      Java_Xmx: 512m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8010/v2/languages"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
 volumes:
   pgdata:
   redisdata:
