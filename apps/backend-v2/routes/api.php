@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\VocabController;
 use App\Http\Controllers\Api\V1\WalletController;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -58,5 +59,12 @@ Route::prefix('v1')->group(function () {
         Route::post('/wallet/topup', [WalletController::class, 'createTopup']);
         Route::post('/wallet/topup/{orderId}/confirm', [WalletController::class, 'confirmTopup']);
         Route::post('/wallet/promo-redeem', [WalletController::class, 'redeemPromo']);
+
+        // Vocabulary foundation.
+        Route::get('/vocab/topics', [VocabController::class, 'topics']);
+        Route::get('/vocab/topics/{id}', [VocabController::class, 'topicDetail']);
+        Route::get('/vocab/srs/queue', [VocabController::class, 'srsQueue']);
+        Route::post('/vocab/srs/review', [VocabController::class, 'review']);
+        Route::post('/vocab/exercises/{id}/attempt', [VocabController::class, 'attemptExercise']);
     });
 });
