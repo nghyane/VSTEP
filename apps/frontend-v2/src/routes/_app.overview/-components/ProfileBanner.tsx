@@ -3,9 +3,9 @@
 // Source: progress/index.tsx ProfileCard + Prep UI level track
 
 import { Route } from "lucide-react"
-import { Button } from "#/components/ui/button"
-import type { OverviewData } from "#/lib/mock/overview"
-import type { Level } from "#/lib/onboarding/types"
+import type { Level } from "#/features/onboarding/lib/types"
+import type { OverviewData } from "#/mocks/overview"
+import { Button } from "#/shared/ui/button"
 
 interface LevelTrack {
 	entryLevel: Level
@@ -24,13 +24,13 @@ export function ProfileBanner({ user, onStartOnboarding, levelTrack }: Props) {
 	return (
 		<div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary to-primary/80 px-6 py-6 md:px-8 md:py-8">
 			{/* Decorative circles */}
-			<div className="absolute -top-8 -right-8 size-32 rounded-full bg-white/5" />
-			<div className="absolute -bottom-4 -right-4 size-20 rounded-full bg-white/5" />
+			<div className="absolute -top-8 -right-8 size-32 rounded-full bg-card/5" />
+			<div className="absolute -bottom-4 -right-4 size-20 rounded-full bg-card/5" />
 
 			<div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
 				{/* Left: avatar + greeting — căn giữa theo chiều dọc của cột trái */}
 				<div className="flex items-center gap-5">
-					<div className="flex size-16 shrink-0 items-center justify-center rounded-full bg-white/20 text-xl font-bold text-white">
+					<div className="flex size-16 shrink-0 items-center justify-center rounded-full bg-card/20 text-xl font-bold text-white">
 						{user.initials}
 					</div>
 					<div>
@@ -47,7 +47,7 @@ export function ProfileBanner({ user, onStartOnboarding, levelTrack }: Props) {
 					<Button
 						variant="ghost"
 						size="sm"
-						className="h-7 gap-1.5 rounded-full border border-white/30 bg-white/15 px-3 text-xs font-semibold text-white hover:bg-white/25 hover:text-white"
+						className="h-7 gap-1.5 rounded-full border border-white/30 bg-card/15 px-3 text-xs font-semibold text-white hover:bg-card/25 hover:text-white"
 						onClick={onStartOnboarding}
 					>
 						<Route className="size-3" />
@@ -57,7 +57,7 @@ export function ProfileBanner({ user, onStartOnboarding, levelTrack }: Props) {
 					{/* Level track */}
 					<div className="flex flex-col gap-1">
 						<p className="text-xs font-semibold text-white/80">Trình độ của bạn</p>
-						<div className="flex items-center gap-0 rounded-xl bg-white/15 px-4 py-2.5">
+						<div className="flex items-center gap-0 rounded-xl bg-card/15 px-4 py-2.5">
 							<LevelItem
 								label="Đầu vào"
 								value={levelTrack ? levelTrack.entryLevel : user.entryLevel}
@@ -77,7 +77,7 @@ export function ProfileBanner({ user, onStartOnboarding, levelTrack }: Props) {
 								variant="target"
 							/>
 						</div>
-						<p className="text-right text-[10px] text-white/60">
+						<p className="text-right text-xs text-white/60">
 							Ngày thi dự kiến:{" "}
 							<strong className="text-white/80">
 								{levelTrack ? levelTrack.examDate : user.examDate}
@@ -107,13 +107,13 @@ function LevelItem({
 }) {
 	return (
 		<div className="flex min-w-[56px] flex-col items-center gap-1 text-center">
-			<span className="text-[10px] text-white/70">{label}</span>
+			<span className="text-xs text-white/70">{label}</span>
 			<div
 				className={[
 					"size-3 rounded-full border-2",
-					variant === "done" ? "border-white bg-white" : "",
+					variant === "done" ? "border-white bg-card" : "",
 					variant === "active"
-						? "border-white bg-white shadow-[0_0_0_3px_rgba(255,255,255,0.25)]"
+						? "border-white bg-card shadow-[0_0_0_3px_rgba(255,255,255,0.25)]"
 						: "",
 					variant === "target" ? "border-white bg-transparent" : "",
 				].join(" ")}
@@ -126,5 +126,5 @@ function LevelItem({
 }
 
 function LevelConnector() {
-	return <div className="mx-1 self-center h-px w-6 bg-white/30" />
+	return <div className="mx-1 self-center h-px w-6 bg-card/30" />
 }

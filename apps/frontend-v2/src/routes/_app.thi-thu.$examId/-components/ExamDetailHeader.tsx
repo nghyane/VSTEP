@@ -1,6 +1,6 @@
 import { Clock, Users } from "lucide-react"
-import type { ExamDetail } from "#/lib/mock/thi-thu"
-import { cn } from "#/lib/utils"
+import type { ExamDetail } from "#/mocks/thi-thu"
+import { cn } from "#/shared/lib/utils"
 
 interface Props {
 	exam: ExamDetail
@@ -113,7 +113,7 @@ export function ExamDetailHeader({ exam }: Props) {
 						<div key={skill} className="py-3">
 							<p className="text-xs font-semibold text-muted-foreground">{meta.shortLabel}</p>
 							<p className="mt-0.5 text-sm font-bold">{minutes} phút</p>
-							<p className="text-[11px] text-muted-foreground">
+							<p className="text-xs text-muted-foreground">
 								{count} {unit}
 							</p>
 						</div>

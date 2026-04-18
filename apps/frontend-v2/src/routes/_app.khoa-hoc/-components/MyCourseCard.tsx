@@ -3,12 +3,12 @@
 
 import { Link } from "@tanstack/react-router"
 import { AlertTriangle, ArrowRight, CalendarDays, Video } from "lucide-react"
-import { Button } from "#/components/ui/button"
-import { commitmentPhaseLabel, computeCommitment } from "#/lib/courses/commitment"
-import { useExamCompletions } from "#/lib/courses/completion-log"
-import type { Enrollment } from "#/lib/courses/enrollment-store"
-import { type Course, isCourseEnded } from "#/lib/mock/courses"
-import { cn } from "#/lib/utils"
+import { commitmentPhaseLabel, computeCommitment } from "#/features/course/lib/commitment"
+import { useExamCompletions } from "#/features/course/lib/completion-log"
+import type { Enrollment } from "#/features/course/lib/enrollment-store"
+import { type Course, isCourseEnded } from "#/mocks/courses"
+import { cn } from "#/shared/lib/utils"
+import { Button } from "#/shared/ui/button"
 import { formatDateVi } from "./course-utils"
 
 interface Props {
@@ -37,12 +37,12 @@ export function MyCourseCard({ course, enrollment }: Props) {
 			<div className="flex items-center justify-between gap-2">
 				<span
 					className={cn(
-						"inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+						"inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
 						violated
 							? "bg-destructive/10 text-destructive"
 							: ended
 								? "bg-muted text-muted-foreground"
-								: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
+								: "bg-success/10 text-success",
 					)}
 				>
 					{violated ? "Bị khóa" : ended ? "Đã kết thúc" : "Đang học"}
@@ -144,14 +144,14 @@ function CommitmentChip({
 	required: number
 }) {
 	const tone: Record<typeof phase, string> = {
-		active: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300",
-		fulfilled: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
+		active: "bg-amber-100 text-amber-800",
+		fulfilled: "bg-success/10 text-success",
 		violated: "bg-destructive/10 text-destructive",
 	}
 	return (
 		<span
 			className={cn(
-				"inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums",
+				"inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums",
 				tone[phase],
 			)}
 			title={commitmentPhaseLabel(phase)}

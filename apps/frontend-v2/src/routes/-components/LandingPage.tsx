@@ -10,11 +10,11 @@ import {
 } from "lucide-react"
 import { type MotionValue, motion, useScroll, useSpring, useTransform } from "motion/react"
 import { useEffect, useRef, useState } from "react"
-import { AuthDialog } from "#/components/auth/AuthDialog"
-import { Logo } from "#/components/common/Logo"
-import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar"
-import { Button } from "#/components/ui/button"
-import { cn } from "#/lib/utils"
+import { AuthDialog } from "#/features/auth/components/AuthDialog"
+import { cn } from "#/shared/lib/utils"
+import { Avatar, AvatarFallback, AvatarImage } from "#/shared/ui/avatar"
+import { Button } from "#/shared/ui/button"
+import { Logo } from "#/shared/ui/Logo"
 
 /* ── hooks ── */
 

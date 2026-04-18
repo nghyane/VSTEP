@@ -4,8 +4,8 @@ import type {
 	PhongThiResult,
 	QuestionItemResult,
 	QuestionTypeResult,
-} from "#/lib/practice/phong-thi-result"
-import { cn } from "#/lib/utils"
+} from "#/features/practice/lib/phong-thi-result"
+import { cn } from "#/shared/lib/utils"
 
 interface ChiTietCardProps {
 	result: PhongThiResult
@@ -119,7 +119,7 @@ function McqItemRow({ item }: { item: QuestionItemResult }) {
 				{/* Mũi tên + đáp án đúng — chỉ hiện khi sai hoặc chưa trả lời */}
 				{!correct && (
 					<>
-						<span className="text-[10px] text-muted-foreground">→</span>
+						<span className="text-xs text-muted-foreground">→</span>
 						<span
 							className="inline-flex size-6 items-center justify-center rounded-md border border-emerald-200 bg-success/10 text-xs font-bold text-success"
 							title="Đáp án đúng"

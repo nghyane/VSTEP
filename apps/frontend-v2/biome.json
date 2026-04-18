@@ -43,7 +43,7 @@
 	},
 	"overrides": [
 		{
-			"includes": ["src/components/ui/**", "src/hooks/use-mobile.ts"],
+			"includes": ["src/shared/ui/**", "src/shared/hooks/use-mobile.ts"],
 			"linter": {
 				"rules": {
 					"a11y": {

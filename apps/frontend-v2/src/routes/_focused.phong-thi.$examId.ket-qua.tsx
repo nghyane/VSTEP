@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { CheckCircle2 } from "lucide-react"
-import { Button } from "#/components/ui/button"
-import { buildMockResult, loadPhongThiResult } from "#/lib/practice/phong-thi-result"
+import { buildMockResult, loadPhongThiResult } from "#/features/practice/lib/phong-thi-result"
+import { Button } from "#/shared/ui/button"
 import { KetQuaCard } from "./_focused.phong-thi.$examId/-components/KetQuaCard"
 import { ResultPageLayout } from "./_focused.phong-thi.$examId/-components/ResultPageLayout"
 

@@ -2,7 +2,7 @@
 // Dùng mix-blend-multiply + isolation để loại bỏ nền trắng của ảnh gốc,
 // cùng kỹ thuật với FireIcon.tsx (xem FireIcon.tsx để tham khảo).
 
-import { cn } from "#/lib/utils"
+import { cn } from "#/shared/lib/utils"
 
 const BULL_MASCOT_SRC = "/Gemini_Generated_Image_s3cjsls3cjsls3cj.png"
 
@@ -30,7 +30,7 @@ export function BullMascotCoin({ score, sizeClass = "w-52", className }: BullMas
 				<img
 					src={BULL_MASCOT_SRC}
 					alt="Mascot trâu VSTEP"
-					className="w-full object-contain mix-blend-multiply dark:mix-blend-screen"
+					className="w-full object-contain mix-blend-multiply"
 				/>
 			</div>
 

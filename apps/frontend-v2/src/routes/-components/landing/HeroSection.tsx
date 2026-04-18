@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router"
-import { Logo } from "#/components/common/Logo"
-import { Button } from "#/components/ui/button"
+import { Button } from "#/shared/ui/button"
+import { Logo } from "#/shared/ui/Logo"
 import { HERO_STATS } from "./constants"
 
 export function HeroSection({ onOpenAuth }: { onOpenAuth: () => void }) {

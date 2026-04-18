@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { ArrowLeft } from "lucide-react"
-import { buildMockResult, loadPhongThiResult } from "#/lib/practice/phong-thi-result"
+import { buildMockResult, loadPhongThiResult } from "#/features/practice/lib/phong-thi-result"
 import { ChiTietCard } from "./_focused.phong-thi.$examId/-components/ChiTietCard"
 import { ResultPageLayout } from "./_focused.phong-thi.$examId/-components/ResultPageLayout"
 

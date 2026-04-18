@@ -3,8 +3,8 @@
 // Source: apps/frontend/src/routes/_learner/progress/-components/LearningPathTab.tsx
 
 import { ArrowRight, BookOpen, Clock, Headphones, ListChecks, Mic, PencilLine } from "lucide-react"
-import type { LearningPathData, WeeklyPlanItem } from "#/lib/mock/overview"
-import { cn } from "#/lib/utils"
+import type { LearningPathData, WeeklyPlanItem } from "#/mocks/overview"
+import { cn } from "#/shared/lib/utils"
 
 type Skill = "listening" | "reading" | "writing" | "speaking"
 
@@ -102,7 +102,7 @@ function SkillPlanCard({ plan }: { plan: WeeklyPlanItem }) {
 					<div>
 						<div className="flex items-center gap-2">
 							<h4 className="font-semibold">{info.label}</h4>
-							<span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+							<span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
 								#{plan.priority}
 							</span>
 						</div>
@@ -134,12 +134,12 @@ function SkillPlanCard({ plan }: { plan: WeeklyPlanItem }) {
 				/>
 				{plan.focusArea ? (
 					<div className="rounded-xl bg-muted/50 p-2.5 text-center">
-						<p className="text-[10px] text-muted-foreground">Trọng tâm</p>
+						<p className="text-xs text-muted-foreground">Trọng tâm</p>
 						<p className="mt-1 text-sm font-bold">{plan.focusArea}</p>
 					</div>
 				) : (
 					<div className="rounded-xl bg-muted/50 p-2.5 text-center">
-						<p className="text-[10px] text-muted-foreground">Trọng tâm</p>
+						<p className="text-xs text-muted-foreground">Trọng tâm</p>
 						<p className="mt-1 text-sm font-bold text-muted-foreground">—</p>
 					</div>
 				)}
@@ -159,7 +159,7 @@ function SkillPlanCard({ plan }: { plan: WeeklyPlanItem }) {
 										style={{ width: `${Math.min(topic.masteryScore, 100)}%` }}
 									/>
 								</div>
-								<span className="w-8 text-right text-[10px] text-muted-foreground">
+								<span className="w-8 text-right text-xs text-muted-foreground">
 									{topic.masteryScore}%
 								</span>
 							</div>
@@ -175,7 +175,7 @@ function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string
 	return (
 		<div className="rounded-xl bg-muted/50 p-2.5 text-center">
 			<div className="mb-1 flex justify-center">{icon}</div>
-			<p className="text-[10px] text-muted-foreground">{label}</p>
+			<p className="text-xs text-muted-foreground">{label}</p>
 			<p className="text-sm font-bold">{value}</p>
 		</div>
 	)

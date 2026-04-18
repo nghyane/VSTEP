@@ -11,11 +11,11 @@ import {
 	ShieldCheck,
 } from "lucide-react"
 import { useEffect, useRef } from "react"
-import type { CommitmentStatus } from "#/lib/courses/commitment"
-import type { Enrollment } from "#/lib/courses/enrollment-store"
-import type { Course } from "#/lib/mock/courses"
-import { pushNotification } from "#/lib/notifications/store"
-import { cn } from "#/lib/utils"
+import type { CommitmentStatus } from "#/features/course/lib/commitment"
+import type { Enrollment } from "#/features/course/lib/enrollment-store"
+import { pushNotification } from "#/features/notification/lib/store"
+import type { Course } from "#/mocks/courses"
+import { cn } from "#/shared/lib/utils"
 
 interface Props {
 	course: Course
@@ -55,7 +55,7 @@ export function CommitmentCard({ course, enrollment, status }: Props) {
 							/{status.required}
 						</span>
 					</span>
-					<span className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+					<span className="mt-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
 						Bài thi full-test
 					</span>
 				</div>
@@ -136,7 +136,7 @@ function Description({ status, windowDays }: { status: CommitmentStatus; windowD
 function FooterHint({ status }: { status: CommitmentStatus }) {
 	if (status.phase === "fulfilled") {
 		return (
-			<span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+			<span className="inline-flex items-center gap-1.5 text-xs font-semibold text-success">
 				<CheckCircle2 className="size-3.5" />
 				Đã đủ yêu cầu
 			</span>
@@ -156,7 +156,7 @@ function FooterHint({ status }: { status: CommitmentStatus }) {
 		<span
 			className={cn(
 				"inline-flex items-center gap-1.5 text-xs font-semibold tabular-nums",
-				urgent ? "text-destructive" : "text-amber-700 dark:text-amber-400",
+				urgent ? "text-destructive" : "text-amber-700",
 			)}
 		>
 			<Clock className="size-3.5" />
@@ -182,12 +182,12 @@ function pickTone(status: CommitmentStatus): Tone {
 	if (status.phase === "fulfilled") {
 		return {
 			title: "Đã hoàn thành cam kết",
-			cardBg: "bg-emerald-50 dark:bg-emerald-950/20",
-			cardBorder: "border-emerald-300 dark:border-emerald-900",
-			iconColor: "text-emerald-700 dark:text-emerald-400",
-			titleColor: "text-emerald-800 dark:text-emerald-300",
-			counterColor: "text-emerald-700 dark:text-emerald-400",
-			barFill: "bg-emerald-500",
+			cardBg: "bg-success/5",
+			cardBorder: "border-success/30",
+			iconColor: "text-success",
+			titleColor: "text-success",
+			counterColor: "text-success",
+			barFill: "bg-success/50",
 			Icon: CheckCircle2,
 		}
 	}
@@ -207,11 +207,11 @@ function pickTone(status: CommitmentStatus): Tone {
 	if (status.daysUntilDeadline <= 3) {
 		return {
 			title: "Sắp hết hạn cam kết",
-			cardBg: "bg-amber-50 dark:bg-amber-950/20",
-			cardBorder: "border-amber-300 dark:border-amber-900",
-			iconColor: "text-amber-700 dark:text-amber-400",
-			titleColor: "text-amber-800 dark:text-amber-300",
-			counterColor: "text-amber-700 dark:text-amber-400",
+			cardBg: "bg-amber-50",
+			cardBorder: "border-amber-300",
+			iconColor: "text-amber-700",
+			titleColor: "text-amber-800",
+			counterColor: "text-amber-700",
 			barFill: "bg-amber-500",
 			Icon: Clock,
 		}

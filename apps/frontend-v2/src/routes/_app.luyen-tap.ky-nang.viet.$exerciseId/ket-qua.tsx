@@ -2,16 +2,16 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { ArrowLeft, RotateCcw } from "lucide-react"
 import { Suspense, useMemo } from "react"
-import { AiGradingCard } from "#/components/practice/AiGradingCard"
-import { AnnotatedFeedbackView } from "#/components/practice/writing/AnnotatedFeedbackView"
-import { Button } from "#/components/ui/button"
-import { Skeleton } from "#/components/ui/skeleton"
+import { AiGradingCard } from "#/features/practice/components/AiGradingCard"
+import { AnnotatedFeedbackView } from "#/features/practice/components/writing/AnnotatedFeedbackView"
 import {
 	buildAnnotatedWritingFeedback,
 	buildMockWritingGrading,
-} from "#/lib/practice/mock-ai-grading"
-import { loadWritingResult } from "#/lib/practice/result-storage"
-import { writingExerciseQueryOptions } from "#/lib/queries/writing"
+} from "#/features/practice/lib/mock-ai-grading"
+import { writingExerciseQueryOptions } from "#/features/practice/lib/queries-writing"
+import { loadWritingResult } from "#/features/practice/lib/result-storage"
+import { Button } from "#/shared/ui/button"
+import { Skeleton } from "#/shared/ui/skeleton"
 
 export const Route = createFileRoute("/_app/luyen-tap/ky-nang/viet/$exerciseId/ket-qua")({
 	loader: ({ context: { queryClient }, params }) =>

@@ -7,6 +7,10 @@
 		"baseUrl": ".",
 		"paths": {
 			"#/*": ["./src/*"],
+			"#/app/*": ["./src/app/*"],
+			"#/shared/*": ["./src/shared/*"],
+			"#/features/*": ["./src/features/*"],
+			"#/mocks/*": ["./src/mocks/*"],
 			"@/*": ["./src/*"]
 		},
 		"lib": ["ES2022", "DOM", "DOM.Iterable"],

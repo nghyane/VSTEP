@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router"
-import { Button } from "#/components/ui/button"
-import type { PhongThiResult } from "#/lib/practice/phong-thi-result"
-import { cn } from "#/lib/utils"
+import type { PhongThiResult } from "#/features/practice/lib/phong-thi-result"
+import { cn } from "#/shared/lib/utils"
+import { Button } from "#/shared/ui/button"
 import { BullMascotCoin } from "./BullMascotCoin"
 import { PerformanceTable } from "./PerformanceTable"
 

@@ -3,8 +3,8 @@
 // Mỗi cell ngày học: primary bg + số buổi + giờ + chủ đề.
 // Mỗi cell không học: muted, chỉ hiện số ngày để user biết bối cảnh.
 
-import type { Course, CourseSession } from "#/lib/mock/courses"
-import { cn } from "#/lib/utils"
+import type { Course, CourseSession } from "#/mocks/courses"
+import { cn } from "#/shared/lib/utils"
 
 interface Props {
 	course: Course
@@ -32,7 +32,7 @@ export function CourseSchedule({ course }: Props) {
 					{WEEKDAY_LABELS.map((label) => (
 						<div
 							key={label}
-							className="py-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground"
+							className="py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground"
 						>
 							{label}
 						</div>
@@ -83,19 +83,19 @@ function DayCell({ cell, now }: { cell: DayCellData; now: number }) {
 			<div className="flex items-baseline justify-between">
 				<span
 					className={cn(
-						"text-[10px] font-bold uppercase tracking-wider tabular-nums",
+						"text-xs font-bold uppercase tracking-wider tabular-nums",
 						isPast ? "text-muted-foreground" : "text-primary",
 					)}
 				>
 					Buổi {String(s.sessionNumber).padStart(2, "0")}
 				</span>
-				<span className="text-[11px] font-medium text-muted-foreground tabular-nums">
+				<span className="text-xs font-medium text-muted-foreground tabular-nums">
 					{String(cell.dayOfMonth).padStart(2, "0")}
 				</span>
 			</div>
 			<p
 				className={cn(
-					"mt-1 text-[11px] font-semibold leading-tight tabular-nums",
+					"mt-1 text-xs font-semibold leading-tight tabular-nums",
 					isPast && "line-through",
 				)}
 			>
@@ -103,7 +103,7 @@ function DayCell({ cell, now }: { cell: DayCellData; now: number }) {
 			</p>
 			<p
 				className={cn(
-					"mt-0.5 text-[11px] leading-tight",
+					"mt-0.5 text-xs leading-tight",
 					isPast ? "text-muted-foreground" : "text-foreground",
 				)}
 			>

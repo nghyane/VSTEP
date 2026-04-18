@@ -1,4 +1,4 @@
-import { cn } from "#/lib/utils"
+import { cn } from "#/shared/lib/utils"
 import { BENTO_FEATURES, SKILLS } from "./constants"
 
 export function BentoFeaturesSection() {

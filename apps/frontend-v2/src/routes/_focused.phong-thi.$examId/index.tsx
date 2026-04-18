@@ -1,18 +1,14 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
+﻿import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { AlertTriangle, CheckCircle2, Clock, X } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
-import { Button } from "#/components/ui/button"
+import { computeSessionCost, getCoins, spendCoins } from "#/features/coin/lib/coin-store"
+import { recordExamCompletion } from "#/features/course/lib/completion-log"
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "#/components/ui/dialog"
-import { computeSessionCost, getCoins, spendCoins } from "#/lib/coins/coin-store"
-import { recordExamCompletion } from "#/lib/courses/completion-log"
+	buildResultFromSession,
+	savePhongThiResult,
+} from "#/features/practice/lib/phong-thi-result"
+import { recordPracticeCompletion } from "#/features/streak/lib/streak-rewards"
 import {
 	countAnswered,
 	countTotalItems,
@@ -21,10 +17,17 @@ import {
 	mockGetExamSession,
 	type SpeakingDoneSet,
 	type WritingAnswerMap,
-} from "#/lib/mock/exam-session"
-import { buildResultFromSession, savePhongThiResult } from "#/lib/practice/phong-thi-result"
-import { recordPracticeCompletion } from "#/lib/streak/streak-rewards"
-import { cn } from "#/lib/utils"
+} from "#/mocks/exam-session"
+import { cn } from "#/shared/lib/utils"
+import { Button } from "#/shared/ui/button"
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "#/shared/ui/dialog"
 import { DeviceCheckScreen } from "./-components/DeviceCheckScreen"
 import { ListeningExamPanel } from "./-components/ListeningExamPanel"
 import { ReadingExamPanel } from "./-components/ReadingExamPanel"
@@ -62,48 +65,7 @@ const SKILL_LABEL: Record<ExamSkillKey, string> = {
 	speaking: "Nói",
 }
 
-// ─── Timer hook ───────────────────────────────────────────────────────────────
-
-function useCountdown(
-	durationMinutes: number,
-	started: boolean,
-	isUnlimited: boolean,
-): number | null {
-	const [remaining, setRemaining] = useState<number | null>(
-		isUnlimited ? null : durationMinutes * 60,
-	)
-
-	useEffect(() => {
-		setRemaining(isUnlimited ? null : durationMinutes * 60)
-	}, [durationMinutes, isUnlimited])
-
-	useEffect(() => {
-		if (!started || isUnlimited) return
-		const id = setInterval(
-			() => setRemaining((r) => (r === null ? durationMinutes * 60 : Math.max(0, r - 1))),
-			1000,
-		)
-		return () => clearInterval(id)
-	}, [durationMinutes, started, isUnlimited])
-
-	return remaining
-}
-
-function formatTime(seconds: number | null): string {
-	if (seconds === null) return "∞"
-	if (seconds <= 0) return "00:00"
-	const m = Math.floor(seconds / 60)
-	const s = seconds % 60
-	return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
-}
-
-function parseSelectedSectionIds(sections?: string): string[] {
-	if (!sections) return []
-	return sections
-		.split(",")
-		.map((sectionId) => sectionId.trim())
-		.filter(Boolean)
-}
+import { formatTime, parseSelectedSectionIds, useCountdown } from "./-components/exam-helpers"
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 

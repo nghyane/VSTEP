@@ -1,8 +1,8 @@
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useCallback, useMemo, useState } from "react"
-import { Button } from "#/components/ui/button"
-import type { MockWritingTask, WritingAnswerMap } from "#/lib/mock/exam-session"
-import { cn } from "#/lib/utils"
+import type { MockWritingTask, WritingAnswerMap } from "#/mocks/exam-session"
+import { cn } from "#/shared/lib/utils"
+import { Button } from "#/shared/ui/button"
 
 // ─── Prompt display ───────────────────────────────────────────────────────────
 
@@ -88,7 +88,7 @@ export function WritingExamPanel({ tasks, answers, onAnswer }: Props) {
 					<div
 						className={cn(
 							"h-full rounded-full transition-[width] duration-300",
-							wordCount >= activeTask.minWords ? "bg-emerald-500" : "bg-primary/60",
+							wordCount >= activeTask.minWords ? "bg-success/50" : "bg-primary/60",
 						)}
 						style={{
 							width: `${Math.min(100, activeTask.minWords > 0 ? (wordCount / activeTask.minWords) * 100 : 0)}%`,

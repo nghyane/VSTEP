@@ -2,9 +2,9 @@
 // 5 mức đậm nhạt dựa trên số hoạt động/ngày, có tooltip giải thích.
 
 import { Fragment } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "#/components/ui/tooltip"
-import { cn } from "#/lib/utils"
+import { cn } from "#/shared/lib/utils"
+import { Card, CardContent, CardHeader, CardTitle } from "#/shared/ui/card"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "#/shared/ui/tooltip"
 
 interface Props {
 	activityByDay: Record<string, number> // "YYYY-MM-DD" → số hoạt động
@@ -169,7 +169,7 @@ export function ActivityHeatmap({ activityByDay }: Props) {
 						{DAY_LABELS.map((dayLabel, dayIdx) => (
 							<Fragment key={dayLabel}>
 								<div
-									className="flex items-center pr-1 text-[11px] text-muted-foreground"
+									className="flex items-center pr-1 text-xs text-muted-foreground"
 									style={{ gridColumn: 1, gridRow: dayIdx + 2 }}
 								>
 									{dayLabel}

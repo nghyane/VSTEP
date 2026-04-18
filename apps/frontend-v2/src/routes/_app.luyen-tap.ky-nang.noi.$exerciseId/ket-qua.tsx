@@ -2,14 +2,17 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { ArrowLeft, Check, Mic, RotateCcw, Star, X } from "lucide-react"
 import { Suspense, useMemo } from "react"
-import { AiGradingCard } from "#/components/practice/AiGradingCard"
-import { Button } from "#/components/ui/button"
-import { Skeleton } from "#/components/ui/skeleton"
-import { type SpeakingExercise, SPEAKING_LEVEL_LABELS } from "#/lib/mock/speaking"
-import { buildMockSpeakingGrading } from "#/lib/practice/mock-ai-grading"
-import { loadSpeakingResult, type StoredSpeakingResult } from "#/lib/practice/result-storage"
-import { speakingExerciseQueryOptions } from "#/lib/queries/speaking"
-import { cn } from "#/lib/utils"
+import { AiGradingCard } from "#/features/practice/components/AiGradingCard"
+import { buildMockSpeakingGrading } from "#/features/practice/lib/mock-ai-grading"
+import { speakingExerciseQueryOptions } from "#/features/practice/lib/queries-speaking"
+import {
+	loadSpeakingResult,
+	type StoredSpeakingResult,
+} from "#/features/practice/lib/result-storage"
+import { SPEAKING_LEVEL_LABELS, type SpeakingExercise } from "#/mocks/speaking"
+import { cn } from "#/shared/lib/utils"
+import { Button } from "#/shared/ui/button"
+import { Skeleton } from "#/shared/ui/skeleton"
 
 export const Route = createFileRoute("/_app/luyen-tap/ky-nang/noi/$exerciseId/ket-qua")({
 	loader: ({ context: { queryClient }, params }) =>
@@ -22,7 +25,8 @@ function ResultPage() {
 	return (
 		<div className="mx-auto w-full max-w-5xl space-y-6 pb-10">
 			<Link
-				to="/luyen-tap/ky-nang" search={{ skill: "noi", category: "", page: 1 }}
+				to="/luyen-tap/ky-nang"
+				search={{ skill: "noi", category: "", page: 1 }}
 				className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
 			>
 				<ArrowLeft className="size-4" />
@@ -80,7 +84,9 @@ function ResultBody({ exerciseId }: { exerciseId: string }) {
 					Luyện lại
 				</Button>
 				<Button asChild>
-					<Link to="/luyen-tap/ky-nang" search={{ skill: "noi", category: "", page: 1 }}>Về danh sách đề nói</Link>
+					<Link to="/luyen-tap/ky-nang" search={{ skill: "noi", category: "", page: 1 }}>
+						Về danh sách đề nói
+					</Link>
 				</Button>
 			</footer>
 		</div>
@@ -172,9 +178,7 @@ function SentenceReview({
 							<div
 								className={cn(
 									"flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
-									done
-										? "bg-success/15 text-success"
-										: "bg-muted text-muted-foreground",
+									done ? "bg-success/15 text-success" : "bg-muted text-muted-foreground",
 								)}
 							>
 								{done ? <Mic className="size-3.5" /> : i + 1}
@@ -184,17 +188,13 @@ function SentenceReview({
 									{s.text}
 								</p>
 								{s.translation && (
-									<p className="mt-0.5 text-xs italic text-muted-foreground">
-										{s.translation}
-									</p>
+									<p className="mt-0.5 text-xs italic text-muted-foreground">{s.translation}</p>
 								)}
 							</div>
 							<span
 								className={cn(
 									"shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
-									done
-										? "bg-success/10 text-success"
-										: "bg-muted text-muted-foreground",
+									done ? "bg-success/10 text-success" : "bg-muted text-muted-foreground",
 								)}
 							>
 								{done ? "Đã ghi" : "Chưa ghi"}

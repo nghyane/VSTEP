@@ -2,12 +2,12 @@ import { useNavigate } from "@tanstack/react-router"
 import { ArrowRight, Clock, LayoutGrid, Timer } from "lucide-react"
 import { useRef, useState } from "react"
 import { toast } from "sonner"
-import { CoinIcon } from "#/components/common/CoinIcon"
-import { TopUpDialog } from "#/components/common/TopUpDialog"
-import { Button } from "#/components/ui/button"
-import { computeSessionCost, useCoins } from "#/lib/coins/coin-store"
-import type { ExamSection, ExamSkillKey } from "#/lib/mock/thi-thu"
-import { cn } from "#/lib/utils"
+import { CoinIcon } from "#/features/coin/components/CoinIcon"
+import { TopUpDialog } from "#/features/coin/components/TopUpDialog"
+import { computeSessionCost, useCoins } from "#/features/coin/lib/coin-store"
+import type { ExamSection, ExamSkillKey } from "#/mocks/thi-thu"
+import { cn } from "#/shared/lib/utils"
+import { Button } from "#/shared/ui/button"
 
 type ExamDurationSelection = number | "unlimited" | null
 
@@ -310,8 +310,8 @@ function CostBadge({ cost, insufficient }: { cost: number; insufficient: boolean
 			className={cn(
 				"inline-flex h-9 shrink-0 items-center gap-2 rounded-md px-4 text-sm font-bold whitespace-nowrap",
 				insufficient
-					? "bg-rose-50 text-rose-700 ring-1 ring-rose-300 dark:bg-rose-950/40 dark:text-rose-200"
-					: "bg-gradient-to-r from-amber-400 to-amber-500 text-white shadow-sm",
+					? "bg-destructive/10 text-destructive ring-1 ring-destructive/30"
+					: "bg-amber-500 border-2 border-amber-600 border-b-4 border-b-amber-800 text-white shadow-sm",
 			)}
 			aria-label={`Cần ${cost} xu để bắt đầu`}
 		>

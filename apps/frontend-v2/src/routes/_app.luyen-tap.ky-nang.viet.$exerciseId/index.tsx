@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { ArrowLeft } from "lucide-react"
 import { Suspense } from "react"
-import { writingExerciseQueryOptions } from "#/lib/queries/writing"
+import { writingExerciseQueryOptions } from "#/features/practice/lib/queries-writing"
 import { SessionSkeleton } from "./-components/SessionSkeleton"
 import { SessionView } from "./-components/SessionView"
 
@@ -16,7 +16,8 @@ function WritingSessionPage() {
 	return (
 		<div className="mx-auto w-full max-w-5xl">
 			<Link
-				to="/luyen-tap/ky-nang" search={{ skill: "viet", category: "", page: 1 }}
+				to="/luyen-tap/ky-nang"
+				search={{ skill: "viet", category: "", page: 1 }}
 				className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
 			>
 				<ArrowLeft className="size-4" />

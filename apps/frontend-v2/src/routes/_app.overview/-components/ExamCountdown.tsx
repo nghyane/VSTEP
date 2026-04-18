@@ -4,8 +4,8 @@
 
 import { CalendarDays } from "lucide-react"
 import { useEffect, useState } from "react"
-import { FireIcon } from "#/components/common/FireIcon"
-import { cn } from "#/lib/utils"
+import { FireIcon } from "#/features/streak/components/FireIcon"
+import { cn } from "#/shared/lib/utils"
 import { StreakDialog } from "./StreakDialog"
 
 interface Props {
@@ -52,7 +52,7 @@ export function ExamCountdown({ deadline, daysRemaining, streak }: Props) {
 			: 60
 
 	return (
-		<div className="relative flex flex-col gap-5 overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100 p-5 shadow-sm dark:border-slate-700 dark:from-slate-800 dark:to-slate-900">
+		<div className="relative flex flex-col gap-5 overflow-hidden rounded-2xl border border-border bg-muted/50 p-5 shadow-sm">
 			{/* Header */}
 			<div className="flex items-center gap-2">
 				<CalendarDays className="size-5 text-primary" />
@@ -65,7 +65,7 @@ export function ExamCountdown({ deadline, daysRemaining, streak }: Props) {
 					<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-xl font-bold tracking-tight text-primary-foreground shadow-sm">
 						{pad(time.days)}
 					</div>
-					<span className="text-[10px] font-semibold uppercase text-muted-foreground">Ngày</span>
+					<span className="text-xs font-semibold uppercase text-muted-foreground">Ngày</span>
 				</div>
 				<div className="flex h-12 items-center">
 					<span className="text-lg font-bold text-muted-foreground">:</span>
@@ -74,7 +74,7 @@ export function ExamCountdown({ deadline, daysRemaining, streak }: Props) {
 					<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-xl font-bold tracking-tight text-primary-foreground shadow-sm">
 						{pad(time.hours)}
 					</div>
-					<span className="text-[10px] font-semibold uppercase text-muted-foreground">Giờ</span>
+					<span className="text-xs font-semibold uppercase text-muted-foreground">Giờ</span>
 				</div>
 				<div className="flex h-12 items-center">
 					<span className="text-lg font-bold text-muted-foreground">:</span>
@@ -83,7 +83,7 @@ export function ExamCountdown({ deadline, daysRemaining, streak }: Props) {
 					<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-xl font-bold tracking-tight text-primary-foreground shadow-sm">
 						{pad(time.minutes)}
 					</div>
-					<span className="text-[10px] font-semibold uppercase text-muted-foreground">Phút</span>
+					<span className="text-xs font-semibold uppercase text-muted-foreground">Phút</span>
 				</div>
 				<div className="flex h-12 items-center">
 					<span className="text-lg font-bold text-muted-foreground">:</span>
@@ -92,7 +92,7 @@ export function ExamCountdown({ deadline, daysRemaining, streak }: Props) {
 					<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-xl font-bold tracking-tight text-primary-foreground shadow-sm">
 						{pad(time.seconds)}
 					</div>
-					<span className="text-[10px] font-semibold uppercase text-muted-foreground">Giây</span>
+					<span className="text-xs font-semibold uppercase text-muted-foreground">Giây</span>
 				</div>
 			</div>
 
@@ -102,11 +102,11 @@ export function ExamCountdown({ deadline, daysRemaining, streak }: Props) {
 					type="button"
 					onClick={() => setStreakOpen(true)}
 					aria-label={`Xem streak ${streak} ngày và phần thưởng`}
-					className="group mt-auto flex items-center gap-3 rounded-xl border border-dashed border-slate-300 bg-white/60 p-3 text-left transition-all hover:border-skill-speaking/50 hover:bg-white hover:shadow-sm dark:border-slate-600 dark:bg-slate-900/40 dark:hover:bg-slate-900/70"
+					className="group mt-auto flex items-center gap-3 rounded-xl border border-dashed border-border bg-card/60 p-3 text-left transition-all hover:border-skill-speaking/50 hover:bg-card hover:shadow-sm"
 				>
 					<FireIcon active={streak > 0} sizeClass="size-4" />
 					<div className="flex flex-1 flex-col gap-1.5">
-						<div className="flex items-center justify-between text-[10px] font-semibold text-muted-foreground">
+						<div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
 							<span className="flex items-center gap-1.5">
 								TIẾN ĐỘ
 								<span className="rounded-full bg-skill-speaking/10 px-1.5 py-0.5 text-skill-speaking">
@@ -122,7 +122,7 @@ export function ExamCountdown({ deadline, daysRemaining, streak }: Props) {
 								{daysRemaining} ngày còn lại
 							</span>
 						</div>
-						<div className="h-1.5 w-full rounded-full bg-slate-200/60">
+						<div className="h-1.5 w-full rounded-full bg-muted">
 							<div
 								className={cn(
 									"h-full rounded-full transition-all",

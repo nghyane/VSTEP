@@ -3,9 +3,9 @@
 // Source: GoalCard.tsx
 
 import { CircleCheck, Clock, Plus, Target } from "lucide-react"
-import { Button } from "#/components/ui/button"
-import type { EnrichedGoal } from "#/lib/mock/overview"
-import { cn } from "#/lib/utils"
+import type { EnrichedGoal } from "#/mocks/overview"
+import { cn } from "#/shared/lib/utils"
+import { Button } from "#/shared/ui/button"
 
 interface Props {
 	goal: EnrichedGoal | null

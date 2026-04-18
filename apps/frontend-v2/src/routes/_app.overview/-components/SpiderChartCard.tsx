@@ -3,8 +3,8 @@
 // SVG: viewBox 280x280, CENTER=140, RADIUS=88, LEVELS=5
 
 import { BookOpen, Headphones, Mic, PencilLine } from "lucide-react"
-import type { OverviewData } from "#/lib/mock/overview"
-import { cn } from "#/lib/utils"
+import type { OverviewData } from "#/mocks/overview"
+import { cn } from "#/shared/lib/utils"
 
 type Skill = "listening" | "reading" | "writing" | "speaking"
 

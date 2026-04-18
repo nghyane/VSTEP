@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { ArrowLeft } from "lucide-react"
 import { Suspense } from "react"
-import { listeningExerciseQueryOptions } from "#/lib/queries/listening"
+import { listeningExerciseQueryOptions } from "#/features/practice/lib/queries-listening"
 import { SessionSkeleton } from "./-components/SessionSkeleton"
 import { SessionView } from "./-components/SessionView"
 
@@ -16,7 +16,8 @@ function ListeningSessionPage() {
 	return (
 		<div className="mx-auto w-full max-w-3xl">
 			<Link
-				to="/luyen-tap/ky-nang" search={{ skill: "nghe", category: "", page: 1 }}
+				to="/luyen-tap/ky-nang"
+				search={{ skill: "nghe", category: "", page: 1 }}
 				className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
 			>
 				<ArrowLeft className="size-4" />

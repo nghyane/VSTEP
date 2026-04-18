@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { AuthDialog } from "#/components/auth/AuthDialog"
+import { AuthDialog } from "#/features/auth/components/AuthDialog"
 import { BentoFeaturesSection } from "./BentoFeaturesSection"
 import { CtaSection } from "./CtaSection"
 import { Footer } from "./Footer"

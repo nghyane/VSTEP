@@ -5,9 +5,13 @@ import { useQueryClient } from "@tanstack/react-query"
 import { ShieldAlert } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
-import { CoinIcon } from "#/components/common/CoinIcon"
-import { Button } from "#/components/ui/button"
-import { Checkbox } from "#/components/ui/checkbox"
+import { CoinIcon } from "#/features/coin/components/CoinIcon"
+import { enrollInCourse } from "#/features/course/lib/enrollment-store"
+import { courseKeys } from "#/features/course/lib/queries"
+import { pushNotification } from "#/features/notification/lib/store"
+import { type Course, discountPercent, hasDiscount, savedVnd } from "#/mocks/courses"
+import { Button } from "#/shared/ui/button"
+import { Checkbox } from "#/shared/ui/checkbox"
 import {
 	Dialog,
 	DialogContent,
@@ -15,11 +19,7 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-} from "#/components/ui/dialog"
-import { enrollInCourse } from "#/lib/courses/enrollment-store"
-import { type Course, discountPercent, hasDiscount, savedVnd } from "#/lib/mock/courses"
-import { pushNotification } from "#/lib/notifications/store"
-import { courseKeys } from "#/lib/queries/courses"
+} from "#/shared/ui/dialog"
 import { formatCoins, formatVnd } from "./course-utils"
 
 interface Props {
@@ -88,7 +88,7 @@ export function CoursePurchaseDialog({ course, open, onOpenChange }: Props) {
 								<span className="relative inline-block text-base leading-none text-muted-foreground tabular-nums before:absolute before:inset-x-0 before:top-[45%] before:h-px before:-translate-y-1/2 before:bg-current before:content-['']">
 									{formatVnd(course.originalPriceVnd)}
 								</span>
-								<span className="inline-flex items-center rounded-md bg-destructive/10 px-1.5 py-0.5 text-[11px] font-bold text-destructive tabular-nums">
+								<span className="inline-flex items-center rounded-md bg-destructive/10 px-1.5 py-0.5 text-xs font-bold text-destructive tabular-nums">
 									-{discountPercent(course)}%
 								</span>
 							</span>
@@ -103,22 +103,18 @@ export function CoursePurchaseDialog({ course, open, onOpenChange }: Props) {
 					</div>
 
 					{hasDiscount(course) && (
-						<div className="flex items-baseline justify-between rounded-lg bg-emerald-100 px-3 py-2 dark:bg-emerald-950/40">
-							<span className="text-xs font-medium text-emerald-800 dark:text-emerald-300">
-								Bạn tiết kiệm
-							</span>
-							<span className="text-xs font-bold text-emerald-800 tabular-nums dark:text-emerald-300">
+						<div className="flex items-baseline justify-between rounded-lg bg-success/10 px-3 py-2">
+							<span className="text-xs font-medium text-success">Bạn tiết kiệm</span>
+							<span className="text-xs font-bold text-success tabular-nums">
 								{formatVnd(savedVnd(course))}
 							</span>
 						</div>
 					)}
 
 					{course.bonusCoins > 0 && (
-						<div className="flex items-center justify-between rounded-lg bg-amber-100 px-3 py-2 dark:bg-amber-950/40">
-							<span className="text-xs font-medium text-amber-800 dark:text-amber-300">
-								Xu tặng kèm
-							</span>
-							<span className="flex items-center gap-1 text-xs font-bold text-amber-800 dark:text-amber-300">
+						<div className="flex items-center justify-between rounded-lg bg-amber-100 px-3 py-2">
+							<span className="text-xs font-medium text-amber-800">Xu tặng kèm</span>
+							<span className="flex items-center gap-1 text-xs font-bold text-amber-800">
 								<span className="flex size-4 items-center justify-center">
 									<CoinIcon size={14} className="-translate-y-px" />
 								</span>
@@ -131,14 +127,14 @@ export function CoursePurchaseDialog({ course, open, onOpenChange }: Props) {
 				</div>
 
 				{/* Commitment notice */}
-				<div className="rounded-xl border border-amber-300 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/30">
+				<div className="rounded-xl border border-amber-300 bg-amber-50 p-3">
 					<div className="flex items-start gap-2">
-						<ShieldAlert className="mt-0.5 size-4 shrink-0 text-amber-700 dark:text-amber-400" />
+						<ShieldAlert className="mt-0.5 size-4 shrink-0 text-amber-700" />
 						<div className="min-w-0 flex-1 space-y-1.5">
-							<p className="text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300">
+							<p className="text-xs font-bold uppercase tracking-wider text-amber-800">
 								Cam kết kỷ luật
 							</p>
-							<p className="text-xs leading-relaxed text-amber-900 dark:text-amber-200">
+							<p className="text-xs leading-relaxed text-amber-900">
 								Để giữ cam kết đầu ra, bạn cần hoàn thành tối thiểu{" "}
 								<strong>{course.requiredFullTests} bài thi full-test</strong> trong{" "}
 								<strong>{course.commitmentWindowDays} ngày đầu</strong> của khóa. Vi phạm sẽ dẫn tới
@@ -154,7 +150,7 @@ export function CoursePurchaseDialog({ course, open, onOpenChange }: Props) {
 									onCheckedChange={(v) => setAcknowledged(v === true)}
 									disabled={processing}
 								/>
-								<span className="text-xs font-medium leading-none text-amber-900 dark:text-amber-200">
+								<span className="text-xs font-medium leading-none text-amber-900">
 									Tôi đã đọc và đồng ý với điều khoản kỷ luật của khóa học.
 								</span>
 							</label>

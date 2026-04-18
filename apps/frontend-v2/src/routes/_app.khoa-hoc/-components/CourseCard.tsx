@@ -4,7 +4,7 @@
 
 import { Link } from "@tanstack/react-router"
 import { ArrowRight, CalendarDays, GraduationCap, Users } from "lucide-react"
-import { CoinIcon } from "#/components/common/CoinIcon"
+import { CoinIcon } from "#/features/coin/components/CoinIcon"
 import {
 	COURSE_LEVEL_LABELS,
 	type Course,
@@ -12,8 +12,8 @@ import {
 	hasDiscount,
 	isCourseFull,
 	remainingSlots,
-} from "#/lib/mock/courses"
-import { cn } from "#/lib/utils"
+} from "#/mocks/courses"
+import { cn } from "#/shared/lib/utils"
 import { formatCoins, formatDateVi, formatVnd } from "./course-utils"
 
 interface Props {
@@ -93,7 +93,7 @@ export function CourseCard({ course, enrolled }: Props) {
 							<span className="text-xs leading-none text-muted-foreground line-through tabular-nums">
 								{formatVnd(course.originalPriceVnd)}
 							</span>
-							<span className="inline-flex items-center rounded-md bg-destructive/10 px-1.5 py-0.5 text-[10px] font-bold text-destructive tabular-nums">
+							<span className="inline-flex items-center rounded-md bg-destructive/10 px-1.5 py-0.5 text-xs font-bold text-destructive tabular-nums">
 								-{discountPercent(course)}%
 							</span>
 						</div>
@@ -102,7 +102,7 @@ export function CourseCard({ course, enrolled }: Props) {
 						{formatVnd(course.priceVnd)}
 					</p>
 					{course.bonusCoins > 0 && (
-						<span className="inline-flex h-5 items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+						<span className="inline-flex h-5 items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
 							<span className="flex size-3.5 items-center justify-center">
 								<CoinIcon size={12} className="-translate-y-px" />
 							</span>
@@ -157,14 +157,14 @@ function Badge({ children, tone }: { children: React.ReactNode; tone: BadgeTone 
 	const toneClass: Record<BadgeTone, string> = {
 		outline: "border border-border bg-background text-foreground",
 		info: "bg-primary/10 text-primary",
-		amber: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300",
+		amber: "bg-amber-100 text-amber-800",
 		muted: "bg-muted text-muted-foreground",
-		success: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
+		success: "bg-success/10 text-success",
 	}
 	return (
 		<span
 			className={cn(
-				"inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+				"inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
 				toneClass[tone],
 			)}
 		>

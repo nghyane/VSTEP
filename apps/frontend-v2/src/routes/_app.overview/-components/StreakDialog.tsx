@@ -3,18 +3,9 @@
 
 import { Check, Lock } from "lucide-react"
 import { toast } from "sonner"
-import { AnimatedCoinIcon } from "#/components/common/AnimatedCoinIcon"
-import { CoinIcon } from "#/components/common/CoinIcon"
-import { FireIcon } from "#/components/common/FireIcon"
-import { Button } from "#/components/ui/button"
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "#/components/ui/dialog"
-import { ScrollArea } from "#/components/ui/scroll-area"
+import { AnimatedCoinIcon } from "#/features/coin/components/AnimatedCoinIcon"
+import { CoinIcon } from "#/features/coin/components/CoinIcon"
+import { FireIcon } from "#/features/streak/components/FireIcon"
 import {
 	claimMilestone,
 	DAILY_GOAL,
@@ -22,8 +13,17 @@ import {
 	type StreakMilestone,
 	useClaimedMilestones,
 	useTodayProgress,
-} from "#/lib/streak/streak-rewards"
-import { cn } from "#/lib/utils"
+} from "#/features/streak/lib/streak-rewards"
+import { cn } from "#/shared/lib/utils"
+import { Button } from "#/shared/ui/button"
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "#/shared/ui/dialog"
+import { ScrollArea } from "#/shared/ui/scroll-area"
 
 interface Props {
 	open: boolean
@@ -62,7 +62,7 @@ export function StreakDialog({ open, onOpenChange, streak }: Props) {
 									<FireIcon active={streak > 0} sizeClass="size-7" />
 								</div>
 								<div>
-									<p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+									<p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
 										Streak của bạn
 									</p>
 									<p className="text-3xl font-extrabold leading-tight text-skill-speaking">
@@ -82,13 +82,13 @@ export function StreakDialog({ open, onOpenChange, streak }: Props) {
 								<span
 									className={cn(
 										"font-bold tabular-nums",
-										todayRemaining === 0 ? "text-emerald-600" : "text-amber-600",
+										todayRemaining === 0 ? "text-success" : "text-amber-600",
 									)}
 								>
 									{todayDone}/{DAILY_GOAL} đề thi thử
 								</span>
 							</div>
-							<div className="h-2 w-full overflow-hidden rounded-full bg-slate-200/70 dark:bg-slate-700/60">
+							<div className="h-2 w-full overflow-hidden rounded-full bg-muted">
 								<div
 									className={cn(
 										"h-full rounded-full transition-all",
@@ -137,7 +137,7 @@ export function StreakDialog({ open, onOpenChange, streak }: Props) {
 									...STREAK_MILESTONES.map((m) => `Đạt mốc ${m.days} ngày → nhận ${m.coins} xu`),
 								].map((note, i) => (
 									<li key={note} className="flex gap-2">
-										<span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+										<span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
 											{i + 1}
 										</span>
 										<span className="flex-1">{note}</span>
@@ -171,7 +171,7 @@ function MilestoneRow({
 		<div
 			className={cn(
 				"space-y-2 rounded-xl border bg-card p-3 transition-colors",
-				canClaim && "border-amber-300 bg-amber-50/60 dark:border-amber-700 dark:bg-amber-950/30",
+				canClaim && "border-amber-300 bg-amber-50/60",
 				isClaimed && "opacity-60",
 			)}
 		>
@@ -180,9 +180,9 @@ function MilestoneRow({
 					className={cn(
 						"flex size-9 shrink-0 items-center justify-center rounded-full",
 						canClaim
-							? "bg-amber-100 text-amber-600 dark:bg-amber-900/50 dark:text-amber-300"
+							? "bg-amber-100 text-amber-600"
 							: isClaimed
-								? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-300"
+								? "bg-success/10 text-success"
 								: "bg-muted text-muted-foreground",
 					)}
 				>
@@ -195,7 +195,7 @@ function MilestoneRow({
 					)}
 				</span>
 				<div className="min-w-0 flex-1">
-					<p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+					<p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
 						{milestone.days} ngày streak
 					</p>
 					<p className="text-sm font-bold text-foreground">
@@ -209,7 +209,7 @@ function MilestoneRow({
 				</div>
 				<div className="shrink-0 text-right">
 					{isClaimed ? (
-						<span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200">
+						<span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-bold uppercase text-success">
 							<Check className="size-3" strokeWidth={3} />
 							Đã nhận
 						</span>
@@ -218,7 +218,7 @@ function MilestoneRow({
 							Nhận xu
 						</Button>
 					) : (
-						<span className="text-[11px] font-bold tabular-nums text-muted-foreground">
+						<span className="text-xs font-bold tabular-nums text-muted-foreground">
 							{progress}/{milestone.days}
 						</span>
 					)}

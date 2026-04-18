@@ -10,19 +10,22 @@ import {
 	UserRound,
 } from "lucide-react"
 import { useState } from "react"
-import { FloatingChatDock } from "#/components/ai-chat/FloatingChatDock"
-import { CoinButton } from "#/components/common/CoinButton"
-import { Logo } from "#/components/common/Logo"
-import { NotificationButton } from "#/components/common/NotificationButton"
-import { StreakButton } from "#/components/common/StreakButton"
-import { Avatar, AvatarFallback } from "#/components/ui/avatar"
+import { FloatingChatDock } from "#/features/ai-chat/components/FloatingChatDock"
+import { useRaiseChatDock } from "#/features/ai-chat/lib/use-raise-chat-dock"
+import { CoinButton } from "#/features/coin/components/CoinButton"
+import { NotificationButton } from "#/features/notification/components/NotificationButton"
+import { StreakButton } from "#/features/streak/components/StreakButton"
+import { MOCK_USER } from "#/mocks/user"
+import { cn } from "#/shared/lib/utils"
+import { Avatar, AvatarFallback } from "#/shared/ui/avatar"
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
-} from "#/components/ui/dropdown-menu"
+} from "#/shared/ui/dropdown-menu"
+import { Logo } from "#/shared/ui/Logo"
 import {
 	Sidebar,
 	SidebarContent,
@@ -35,10 +38,7 @@ import {
 	SidebarMenuItem,
 	SidebarProvider,
 	useSidebar,
-} from "#/components/ui/sidebar"
-import { useRaiseChatDock } from "#/lib/ai-chat/use-raise-chat-dock"
-import { MOCK_USER } from "#/lib/mock/user"
-import { cn } from "#/lib/utils"
+} from "#/shared/ui/sidebar"
 
 export const Route = createFileRoute("/_app")({
 	component: AppLayout,
