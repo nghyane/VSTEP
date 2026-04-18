@@ -7,6 +7,7 @@ import { HapticTouchable } from "@/components/HapticTouchable";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { SegmentedTabs } from "@/components/SegmentedTabs";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { depthNeutral } from "@/theme/depth";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 
@@ -364,7 +365,7 @@ const styles = StyleSheet.create({
   counter: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },
   // Flashcard
   flashcardWrap: { marginTop: spacing.xl, gap: spacing.base },
-  card: { borderWidth: 1, borderRadius: radius["2xl"], padding: spacing["2xl"], minHeight: 200, justifyContent: "center", alignItems: "center" },
+  card: { ...depthNeutral, borderRadius: radius["2xl"], padding: spacing["2xl"], minHeight: 200, backgroundColor: "#FFF", justifyContent: "center", alignItems: "center" },
   cardFront: { alignItems: "center", gap: spacing.sm },
   cardBack: { alignItems: "center", gap: spacing.sm },
   wordText: { fontSize: fontSize["3xl"], fontFamily: fontFamily.bold },
@@ -389,14 +390,14 @@ const styles = StyleSheet.create({
   practiceHeader: { flexDirection: "row", justifyContent: "space-between" },
   progressTrack: { height: 4, borderRadius: 2, overflow: "hidden" },
   progressFill: { height: 4, borderRadius: 2 },
-  exerciseCard: { borderWidth: 1, borderRadius: radius["2xl"], padding: spacing.xl, gap: spacing.base },
+  exerciseCard: { ...depthNeutral, backgroundColor: "#FFF", borderRadius: radius["2xl"], padding: spacing.xl, gap: spacing.base },
   kindBadgeRow: { flexDirection: "row" },
   kindBadge: { fontSize: 11, fontFamily: fontFamily.semiBold, paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.sm, overflow: "hidden" },
   prompt: { fontSize: fontSize.base, fontFamily: fontFamily.medium, lineHeight: 24 },
-  optionBtn: { flexDirection: "row", alignItems: "center", gap: spacing.md, borderWidth: 1, borderRadius: radius.lg, padding: spacing.md },
+  optionBtn: { flexDirection: "row", alignItems: "center", gap: spacing.md, ...depthNeutral, borderRadius: radius.lg, padding: spacing.md },
   optionLetter: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   optionText: { flex: 1, fontSize: fontSize.sm },
-  fillInput: { borderWidth: 1, borderRadius: radius.lg, paddingHorizontal: spacing.base, paddingVertical: spacing.md, fontSize: fontSize.base },
+  fillInput: { ...depthNeutral, backgroundColor: "#FFF", borderRadius: radius.lg, paddingHorizontal: spacing.base, paddingVertical: spacing.md, fontSize: fontSize.base },
   explanationBox: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg },
   explanationText: { flex: 1, fontSize: fontSize.sm, lineHeight: 20 },
   submitBtn: { alignItems: "center", paddingVertical: spacing.md, borderRadius: radius.lg },

@@ -6,6 +6,7 @@ import { ScreenHeader } from "@/components/ScreenHeader";
 import { SegmentedTabs } from "@/components/SegmentedTabs";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { depthNeutral } from "@/theme/depth";
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -186,7 +187,7 @@ const styles = StyleSheet.create({
   sectionCount: { fontSize: fontSize.xs },
   grid: { gap: spacing.sm },
   // Card
-  card: { borderWidth: 1, borderRadius: radius["2xl"], padding: spacing.lg, gap: spacing.sm },
+  card: { ...depthNeutral, borderRadius: radius["2xl"], padding: spacing.lg, gap: spacing.sm },
   cardTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: spacing.sm },
   cardName: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
   cardVn: { fontSize: fontSize.xs, marginTop: 1 },

@@ -7,6 +7,7 @@ import { HapticTouchable } from "@/components/HapticTouchable";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { SkillIcon } from "@/components/SkillIcon";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { depthNeutral } from "@/theme/depth";
 import type { Skill } from "@/types/api";
 
 // ─── Mock exercises ───────────────────────────────────────────────
@@ -241,7 +242,7 @@ const styles = StyleSheet.create({
   grid: { gap: spacing.sm },
   empty: { textAlign: "center", paddingVertical: spacing["3xl"], fontSize: fontSize.sm },
   // Card
-  card: { borderWidth: 1, borderRadius: radius.xl, padding: spacing.base, gap: spacing.xs },
+  card: { ...depthNeutral, borderRadius: radius.xl, padding: spacing.base, gap: spacing.xs },
   cardTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: spacing.sm },
   cardTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold, flex: 1 },
   statusBadge: { borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: 2 },

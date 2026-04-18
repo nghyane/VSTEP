@@ -7,6 +7,7 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
 import { useExamDetail } from "@/hooks/use-exams";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { depthNeutral } from "@/theme/depth";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Skill } from "@/types/api";
 import { GameIcon } from "@/components/GameIcon";
@@ -268,14 +269,14 @@ const styles = StyleSheet.create({
   chipRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.base },
   chip: { paddingHorizontal: spacing.md, paddingVertical: 4, borderRadius: radius.full },
   chipText: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
-  statsGrid: { flexDirection: "row", borderWidth: 1, borderRadius: radius.md, marginTop: spacing.base, overflow: "hidden" },
+  statsGrid: { flexDirection: "row", ...depthNeutral, borderRadius: radius.md, marginTop: spacing.base, overflow: "hidden", backgroundColor: "#FFF" },
   statCell: { flex: 1, alignItems: "center", paddingVertical: spacing.md },
   statLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
   statValue: { fontSize: fontSize.sm, fontFamily: fontFamily.bold, marginTop: 2 },
   statSub: { fontSize: 11, marginTop: 1 },
   sectionTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.semiBold, marginTop: spacing.xl },
   sectionHint: { fontSize: fontSize.xs, marginTop: 4, marginBottom: spacing.base },
-  groupCard: { borderWidth: 1, borderRadius: radius.xl, marginBottom: spacing.base, overflow: "hidden" },
+  groupCard: { ...depthNeutral, borderRadius: radius.xl, marginBottom: spacing.base, overflow: "hidden", backgroundColor: "#FFF" },
   groupHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.base, paddingVertical: spacing.md },
   groupHeaderLeft: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   skillBar: { width: 4, height: 20, borderRadius: 2 },

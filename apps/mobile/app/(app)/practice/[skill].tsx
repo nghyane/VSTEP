@@ -10,6 +10,7 @@ import { HapticTouchable } from "@/components/HapticTouchable";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { SupportModeToggle } from "@/components/SupportModeToggle";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { depthNeutral } from "@/theme/depth";
 import type { Skill } from "@/types/api";
 
 // ─── Types ────────────────────────────────────────────────────────
@@ -423,17 +424,17 @@ const s = StyleSheet.create({
   metaText: { fontSize: fontSize.xs },
   supportRow: { flexDirection: "row", justifyContent: "flex-end", marginVertical: spacing.sm },
   supportBtn: { flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: 6 },
-  supportCard: { borderWidth: 1, borderRadius: radius.xl, padding: spacing.base, gap: spacing.xs, marginBottom: spacing.sm },
+  supportCard: { ...depthNeutral, backgroundColor: "#FFF", borderRadius: radius.xl, padding: spacing.base, gap: spacing.xs, marginBottom: spacing.sm },
   supportCardTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   supportCardText: { fontSize: fontSize.xs, lineHeight: 18 },
   // Audio
-  audioBox: { borderWidth: 1, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md, marginTop: spacing.base },
+  audioBox: { ...depthNeutral, backgroundColor: "#FFF", borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md, marginTop: spacing.base },
   audioHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   audioLabel: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   playBtn: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   transcriptText: { fontSize: fontSize.sm, lineHeight: 22, marginTop: spacing.sm },
   // Passage
-  passageBox: { borderWidth: 1, borderRadius: radius.xl, padding: spacing.lg, marginTop: spacing.base },
+  passageBox: { ...depthNeutral, backgroundColor: "#FFF", borderRadius: radius.xl, padding: spacing.lg, marginTop: spacing.base },
   passageText: { fontSize: fontSize.sm, lineHeight: 22 },
   promptLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold, textTransform: "uppercase", letterSpacing: 1, marginBottom: spacing.sm, },
   // Keywords
@@ -444,7 +445,7 @@ const s = StyleSheet.create({
   qBlock: { marginTop: spacing.xl, gap: spacing.sm },
   qNum: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
   qText: { fontSize: fontSize.base, fontFamily: fontFamily.medium },
-  opt: { flexDirection: "row", alignItems: "center", gap: spacing.md, borderWidth: 1, borderRadius: radius.lg, padding: spacing.md },
+  opt: { flexDirection: "row", alignItems: "center", gap: spacing.md, ...depthNeutral, borderRadius: radius.lg, padding: spacing.md },
   optDot: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   optLabel: { flex: 1, fontSize: fontSize.sm },
   expl: { padding: spacing.md, borderRadius: radius.lg },
@@ -453,17 +454,17 @@ const s = StyleSheet.create({
   resultScore: { fontSize: fontSize.base, fontFamily: fontFamily.semiBold },
   resultPct: { fontSize: fontSize.xl, fontFamily: fontFamily.bold },
   // Writing
-  writingInput: { borderWidth: 1, borderRadius: radius.xl, padding: spacing.base, minHeight: 200, fontSize: fontSize.sm, lineHeight: 22, marginTop: spacing.base },
+  writingInput: { ...depthNeutral, backgroundColor: "#FFF", borderRadius: radius.xl, padding: spacing.base, minHeight: 200, fontSize: fontSize.sm, lineHeight: 22, marginTop: spacing.base },
   wcText: { fontSize: fontSize.xs, textAlign: "right", marginTop: spacing.xs },
   // Speaking
   counter: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, letterSpacing: 1 },
-  sentenceBox: { borderWidth: 1, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },
+  sentenceBox: { ...depthNeutral, backgroundColor: "#FFF", borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },
   sentenceText: { fontSize: fontSize.lg, fontFamily: fontFamily.medium },
   sentenceTrans: { fontSize: fontSize.sm, fontStyle: "italic" },
   recordBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, paddingVertical: spacing.base, borderRadius: radius.full },
   recordBtnT: { color: "#fff", fontSize: fontSize.base, fontFamily: fontFamily.bold },
   recordHint: { fontSize: fontSize.xs, textAlign: "center" },
-  playbackRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderWidth: 1, borderRadius: radius.xl, padding: spacing.md },
+  playbackRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", ...depthNeutral, backgroundColor: "#FFF", borderRadius: radius.xl, padding: spacing.md },
   playbackLabel: { fontSize: fontSize.sm, fontFamily: fontFamily.medium },
   playbackBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.lg },
   playbackBtnT: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
