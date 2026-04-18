@@ -1,4 +1,4 @@
-// StreakDialog — hiển thị streak, tiến độ hôm nay, milestone thưởng xu.
+﻿// StreakDialog — hiển thị streak, tiến độ hôm nay, milestone thưởng xu.
 // Mở khi click thanh tiến độ trong ExamCountdown.
 
 import { Check, Lock } from "lucide-react"
@@ -74,7 +74,7 @@ export function StreakDialog({ open, onOpenChange, streak }: Props) {
 						</DialogHeader>
 
 						{/* Today progress */}
-						<div className="space-y-2 rounded-xl bg-muted/50 p-4">
+						<div className="space-y-2 rounded-xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-4">
 							<div className="flex items-center justify-between text-xs">
 								<span className="font-semibold uppercase tracking-wide text-muted-foreground">
 									Tiến độ hôm nay
@@ -170,7 +170,7 @@ function MilestoneRow({
 	return (
 		<div
 			className={cn(
-				"space-y-2 rounded-xl border bg-card p-3 transition-colors",
+				"space-y-2 rounded-xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-3 transition-colors",
 				canClaim && "border-amber-300 bg-amber-50/60",
 				isClaimed && "opacity-60",
 			)}

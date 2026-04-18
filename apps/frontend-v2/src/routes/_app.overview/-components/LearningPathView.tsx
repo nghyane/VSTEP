@@ -1,5 +1,5 @@
-// LearningPathView — lộ trình học tập theo tuần, port từ frontend-v1 LearningPathTab
-// Spec: rounded-2xl bg-muted/50 p-5 shadow-sm (skill cards)
+﻿// LearningPathView — lộ trình học tập theo tuần, port từ frontend-v1 LearningPathTab
+// Spec: rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5 (skill cards)
 // Source: apps/frontend/src/routes/_learner/progress/-components/LearningPathTab.tsx
 
 import { ArrowRight, BookOpen, Clock, Headphones, ListChecks, Mic, PencilLine } from "lucide-react"
@@ -60,7 +60,7 @@ export function LearningPathView({ data }: Props) {
 	return (
 		<div className="space-y-5">
 			{/* Summary banner */}
-			<div className="flex flex-wrap items-center gap-4 rounded-2xl bg-muted/50 p-5 shadow-sm">
+			<div className="flex flex-wrap items-center gap-4 rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5">
 				{data.projectedImprovement && (
 					<div className="flex items-center gap-2">
 						<ArrowRight className="size-5 text-primary" />
@@ -92,7 +92,7 @@ function SkillPlanCard({ plan }: { plan: WeeklyPlanItem }) {
 	const barColorClass = info.colorClass.replace("text-", "bg-")
 
 	return (
-		<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
+		<div className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5">
 			{/* Header */}
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-3">
@@ -133,12 +133,12 @@ function SkillPlanCard({ plan }: { plan: WeeklyPlanItem }) {
 					value={plan.recommendedLevel}
 				/>
 				{plan.focusArea ? (
-					<div className="rounded-xl bg-muted/50 p-2.5 text-center">
+					<div className="rounded-xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-2.5 text-center">
 						<p className="text-xs text-muted-foreground">Trọng tâm</p>
 						<p className="mt-1 text-sm font-bold">{plan.focusArea}</p>
 					</div>
 				) : (
-					<div className="rounded-xl bg-muted/50 p-2.5 text-center">
+					<div className="rounded-xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-2.5 text-center">
 						<p className="text-xs text-muted-foreground">Trọng tâm</p>
 						<p className="mt-1 text-sm font-bold text-muted-foreground">—</p>
 					</div>
@@ -173,7 +173,7 @@ function SkillPlanCard({ plan }: { plan: WeeklyPlanItem }) {
 
 function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
 	return (
-		<div className="rounded-xl bg-muted/50 p-2.5 text-center">
+		<div className="rounded-xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-2.5 text-center">
 			<div className="mb-1 flex justify-center">{icon}</div>
 			<p className="text-xs text-muted-foreground">{label}</p>
 			<p className="text-sm font-bold">{value}</p>

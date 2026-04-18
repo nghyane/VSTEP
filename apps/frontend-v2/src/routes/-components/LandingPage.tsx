@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router"
+﻿import { Link } from "@tanstack/react-router"
 import {
 	BookOpenText,
 	CheckCircle2,
@@ -295,7 +295,8 @@ function HeroSection({ onOpenAuth }: { onOpenAuth: () => void }) {
 
 						<Button
 							size="lg"
-							className="relative z-10 rounded-full bg-white px-10 py-6 text-base font-bold text-[#0052CC] shadow-lg shadow-white/20 hover:bg-white/90"
+							variant="ghost"
+							className="relative z-10 h-14 rounded-full border-2 border-white/30 border-b-4 border-b-white/50 bg-white px-10 text-base font-bold text-primary hover:brightness-105 active:translate-y-[3px] active:border-b active:pb-[3px]"
 							onClick={onOpenAuth}
 						>
 							KHÁM PHÁ NGAY
@@ -542,7 +543,7 @@ function LevelCard({
 	align: "left" | "right"
 }) {
 	return (
-		<div className="inline-block rounded-2xl bg-muted/50 p-5 text-left shadow-sm md:max-w-sm">
+		<div className="inline-block rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5 text-left shadow-sm md:max-w-sm">
 			<div className={`flex items-center gap-2 ${align === "right" ? "md:justify-end" : ""}`}>
 				<span className="rounded-lg bg-primary px-2.5 py-1 text-sm font-bold text-primary-foreground">
 					{band.level}
@@ -574,7 +575,7 @@ function TestimonialsSection() {
 				<div className="mt-12 grid gap-6 md:grid-cols-3">
 					{TESTIMONIALS.map((item, i) => (
 						<AnimSection key={item.name} delay={i * 120}>
-							<div className="rounded-2xl bg-card p-6 shadow-sm">
+							<div className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-6">
 								{/* Quote icon */}
 								<div className="mb-4 text-primary/20">
 									<svg
@@ -646,7 +647,7 @@ function MascotSection({ onOpenAuth }: { onOpenAuth: () => void }) {
 
 			<div className="relative mx-auto w-full max-w-4xl px-6">
 				<AnimSection>
-					<div className="relative overflow-hidden rounded-3xl border bg-card shadow-lg">
+					<div className="relative overflow-hidden rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card">
 						{/* Mascot background */}
 						<div className="relative min-h-[200px] pt-3">
 							<img

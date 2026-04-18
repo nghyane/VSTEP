@@ -1,4 +1,4 @@
-import { STEPS } from "./constants"
+﻿import { STEPS } from "./constants"
 
 export function HowItWorksSection() {
 	return (
@@ -28,7 +28,7 @@ export function HowItWorksSection() {
 									<h3 className="text-xl font-bold lg:text-2xl">{step.title}</h3>
 									<p className="leading-relaxed text-muted-foreground">{step.desc}</p>
 								</div>
-								<div className="flex-1 overflow-hidden rounded-2xl border bg-card shadow-sm">
+								<div className="flex-1 overflow-hidden rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card">
 									<img
 										src={step.image}
 										alt={step.title}

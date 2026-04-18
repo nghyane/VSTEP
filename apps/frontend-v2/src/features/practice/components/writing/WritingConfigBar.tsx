@@ -1,4 +1,4 @@
-// WritingConfigBar — header config: chọn target level + toggle mode.
+﻿// WritingConfigBar — header config: chọn target level + toggle mode.
 
 import { PencilLine, Sparkles } from "lucide-react"
 import type { TargetLevel } from "#/features/practice/lib/writing-structures"
@@ -22,7 +22,7 @@ export function WritingConfigBar({
 	onSmartModeChange,
 }: Props) {
 	return (
-		<div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-muted/50 p-4 shadow-sm">
+		<div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-4 shadow-sm">
 			{/* Target level picker */}
 			<div className="flex items-center gap-3">
 				<span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">

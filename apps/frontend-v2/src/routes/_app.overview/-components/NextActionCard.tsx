@@ -1,4 +1,4 @@
-// NextActionCard — 1 CTA lớn duy nhất trong Focus tab. "Làm gì tiếp theo?"
+﻿// NextActionCard — 1 CTA lớn duy nhất trong Focus tab. "Làm gì tiếp theo?"
 
 import { Link } from "@tanstack/react-router"
 import { ArrowRight, BookType, Clock, Languages, type LucideIcon, Target } from "lucide-react"
@@ -21,7 +21,7 @@ export function NextActionCard({ action }: Props) {
 	return (
 		<Link
 			to={action.targetUrl}
-			className="group mx-auto flex w-full max-w-2xl flex-col gap-5 rounded-2xl border bg-card p-8 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+			className="group mx-auto flex w-full max-w-2xl flex-col gap-5 rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-8 transition hover:-translate-y-0.5 hover:shadow-md"
 		>
 			<div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
 				<Icon className="size-4" />

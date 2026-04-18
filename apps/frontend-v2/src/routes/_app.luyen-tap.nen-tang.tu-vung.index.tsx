@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from "@tanstack/react-query"
+﻿import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import {
 	ArrowLeft,
@@ -203,7 +203,7 @@ function TopicCard({ topic, now }: { topic: VocabTopic; now: number }) {
 			to="/luyen-tap/nen-tang/tu-vung/$topicId"
 			params={{ topicId: topic.id }}
 			search={{ tab: "flashcard" }}
-			className="group flex flex-col rounded-2xl border bg-card p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+			className="group flex flex-col rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5 transition hover:-translate-y-0.5 hover:shadow-md"
 		>
 			<div className="flex items-start gap-3">
 				<Icon className="size-6 shrink-0 text-primary" />

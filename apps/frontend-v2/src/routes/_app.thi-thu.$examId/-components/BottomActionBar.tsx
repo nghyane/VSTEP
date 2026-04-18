@@ -142,7 +142,7 @@ export function BottomActionBar({
 
 	return (
 		<div
-			className="fixed bottom-0 right-0 z-20 border-t bg-background/95 shadow-[0_-4px_24px_rgba(0,0,0,0.06)] backdrop-blur-sm"
+			className="fixed bottom-0 right-0 z-20 border-t-2 border-t-primary/20 bg-background/95 backdrop-blur-sm"
 			style={{ left: "var(--dock-left)", transition: "left 0.2s ease" }}
 		>
 			<div className="mx-auto max-w-5xl px-4 py-3">
@@ -308,10 +308,8 @@ function CostBadge({ cost, insufficient }: { cost: number; insufficient: boolean
 	return (
 		<output
 			className={cn(
-				"inline-flex h-9 shrink-0 items-center gap-2 rounded-md px-4 text-sm font-bold whitespace-nowrap",
-				insufficient
-					? "bg-destructive/10 text-destructive ring-1 ring-destructive/30"
-					: "bg-amber-500 border-2 border-amber-600 border-b-4 border-b-amber-800 text-white shadow-sm",
+				"inline-flex h-7 shrink-0 items-center gap-1.5 px-1 text-sm font-bold whitespace-nowrap",
+				insufficient ? "text-destructive" : "text-amber-600",
 			)}
 			aria-label={`Cần ${cost} xu để bắt đầu`}
 		>

@@ -44,7 +44,7 @@ export function AnnotatedFeedbackView({ text, feedback }: Props) {
 	return (
 		<div className="space-y-6">
 			<StickerLayer paths={paths} containerRef={containerRef}>
-				<div className="rounded-2xl border bg-card p-5">
+				<div className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5">
 					<h3 className="mb-4 text-lg font-semibold">Bài viết đã chấm</h3>
 					<div className="space-y-4">
 						{paragraphs.map((para, pIdx) => {

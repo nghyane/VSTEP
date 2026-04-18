@@ -98,7 +98,7 @@ function ResultBody({ exerciseId }: { exerciseId: string }) {
 
 function EmptyResult({ exerciseId }: { exerciseId: string }) {
 	return (
-		<div className="rounded-2xl bg-muted/50 p-12 text-center">
+		<div className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-12 text-center">
 			<p className="text-sm text-muted-foreground">
 				Không tìm thấy kết quả. Có thể bạn đã reload trang hoặc chưa nộp bài.
 			</p>

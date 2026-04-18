@@ -105,7 +105,7 @@ export function ExamDetailHeader({ exam }: Props) {
 			</div>
 
 			{/* Full test summary bar */}
-			<div className="grid grid-cols-4 divide-x divide-border rounded-xl border bg-muted/30 text-center">
+			<div className="grid grid-cols-4 divide-x divide-border rounded-xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card text-center">
 				{skillStats.map(({ skill, minutes, count, unit }) => {
 					const meta = SKILL_CHIP[skill]
 					if (!meta) return null

@@ -1,4 +1,4 @@
-import { cn } from "#/shared/lib/utils"
+﻿import { cn } from "#/shared/lib/utils"
 import { BENTO_FEATURES, SKILLS } from "./constants"
 
 export function BentoFeaturesSection() {
@@ -21,7 +21,7 @@ export function BentoFeaturesSection() {
 							<div
 								key={f.title}
 								className={cn(
-									"group rounded-2xl border bg-card p-6 transition hover:shadow-md",
+									"group rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-6 transition hover:shadow-md",
 									isLarge && "sm:col-span-2 sm:row-span-2 sm:p-8",
 								)}
 							>
@@ -56,7 +56,7 @@ export function BentoFeaturesSection() {
 						return (
 							<div
 								key={skill.label}
-								className="rounded-2xl border bg-card p-5 transition hover:-translate-y-0.5 hover:shadow-md"
+								className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5 transition hover:-translate-y-0.5 hover:shadow-md"
 							>
 								<div
 									className={cn(

@@ -1,4 +1,4 @@
-// SmartWritingEditor — Zen focus textarea với ghost text autocomplete.
+﻿// SmartWritingEditor — Zen focus textarea với ghost text autocomplete.
 
 import { Sparkles } from "lucide-react"
 import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from "react"
@@ -70,7 +70,7 @@ export function SmartWritingEditor({
 	}
 
 	return (
-		<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
+		<div className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5 shadow-sm">
 			{/* Autocomplete hint */}
 			{enableAutocomplete && suggestion && (
 				<div className="mb-3 flex items-center gap-1.5 text-xs text-primary">
