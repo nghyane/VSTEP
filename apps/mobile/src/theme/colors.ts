@@ -1,45 +1,57 @@
-// Design tokens aligned with frontend-v2 (apps/frontend-v2/src/styles.css)
-// oklch values converted to hex for React Native
+// Design tokens aligned with frontend-v2 RFC 0002 (Duolingo Gamification)
+// oklch values from src/styles.css converted to hex for React Native
+// 3D Depth pattern: border-top lighter, border-bottom darker
 
 export const colors = {
   light: {
-    // Primary — VSTEP blue (frontend-v2: oklch(0.55 0.2 258) ≈ #1a6ef5)
-    primary: "#1a6ef5",
+    // Primary — VSTEP blue (oklch 0.55 0.2 258)
+    primary: "#2563EB",
     primaryForeground: "#FAFAFA",
 
     // Base
-    background: "#FAFAFA",
-    foreground: "#1a1a2e",
+    background: "#FAFBFC",
+    foreground: "#1A1A2E",
     card: "#FFFFFF",
-    cardForeground: "#1a1a2e",
+    cardForeground: "#1A1A2E",
 
     // Muted
     muted: "#F3F4F6",
     mutedForeground: "#6B7280",
 
     // Secondary
-    secondary: "#EEF0FA",
-    secondaryForeground: "#3D4A8A",
+    secondary: "#EEF2FF",
+    secondaryForeground: "#3730A3",
 
     // Accent
     accent: "#F3F4F6",
-    accentForeground: "#1a1a2e",
+    accentForeground: "#1A1A2E",
 
     // Semantic
-    destructive: "#EF4444",
+    destructive: "#E53935",
+    destructiveForeground: "#FAFAFA",
+    success: "#1DB954",
+    successForeground: "#FAFAFA",
+    warning: "#F5A623",
+    warningForeground: "#1A1A2E",
+
+    // Border
     border: "#E5E7EB",
     input: "#E5E7EB",
-    ring: "#1a6ef5",
-    success: "#22C55E",
-    successForeground: "#FAFAFA",
-    warning: "#F59E0B",
-    warningForeground: "#1a1a2e",
+    ring: "#2563EB",
 
-    // Skill colors (frontend-v2: oklch(0.65 0.18 hue))
-    skillListening: "#3B82F6",
-    skillReading: "#10B981",
-    skillWriting: "#8B5CF6",
-    skillSpeaking: "#F59E0B",
+    // 3D Depth borders (Duolingo signature)
+    depthBorderLight: "#D4D6DB",
+    depthBorderDark: "#ABABBA",
+
+    // Skill colors (oklch 0.65 0.18 hue — Duolingo-bright)
+    skillListening: "#4F8EF7",
+    skillReading: "#22B573",
+    skillWriting: "#9B5DE5",
+    skillSpeaking: "#E5A020",
+
+    // Coin (amber exception)
+    coin: "#F59E0B",
+    coinDark: "#D97706",
   },
 } as const;
 

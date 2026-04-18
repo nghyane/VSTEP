@@ -14,6 +14,9 @@ import { useProgress, useActivity, usePracticeTrack } from "@/hooks/use-progress
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { Skill } from "@/types/api";
 import { MOCK_OVERVIEW_STATS, MOCK_PRACTICE_TRACK } from "@/lib/mock";
+import { GameIcon } from "@/components/GameIcon";
+import { useCoins } from "@/features/coin/coin-store";
+import { TopUpDialog } from "@/features/coin/TopUpDialog";
 
 type Tab = "overview" | "track";
 
@@ -21,7 +24,10 @@ export default function OverviewScreen() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>("overview");
+  const [topUpVisible, setTopUpVisible] = useState(false);
+  const coins = useCoins();
   const { data: progress } = useProgress();
   const { data: activity } = useActivity(90);
 
@@ -32,14 +38,26 @@ export default function OverviewScreen() {
   return (
     <ScrollView style={[s.root, { backgroundColor: c.background }]} contentContainerStyle={[s.scroll, { paddingTop: insets.top }]}>
       {/* ── Profile Banner ── */}
-      <LinearGradient colors={["#1a6ef5", "#1a6ef5CC"]} style={s.banner}>
+      <LinearGradient colors={["#2563EB", "#3B82F6"]} style={s.banner}>
+        {/* Decorative circles */}
+        <View style={s.decoCircle1} />
+        <View style={s.decoCircle2} />
+
+        {/* Greeting row: avatar + text + coin */}
         <View style={s.bannerRow}>
           <View style={s.avatar}><Text style={s.avatarText}>{initials}</Text></View>
           <View style={{ flex: 1 }}>
-            <Text style={s.greeting}>Hi, {fullName}</Text>
-            <Text style={s.greetingSub}>Còn <Text style={{ fontFamily: fontFamily.bold }}>{stats.daysLeft} ngày</Text> diễn ra kỳ thi. Giữ vững tập trung nhé!</Text>
+            <View style={s.nameRow}>
+              <Text style={s.greeting} numberOfLines={1}>Hi, {fullName}</Text>
+              <HapticTouchable style={s.coinBadge} onPress={() => setTopUpVisible(true)}>
+                <GameIcon name="coin" size={16} />
+                <Text style={s.coinBadgeText}>{coins}</Text>
+              </HapticTouchable>
+            </View>
+            <Text style={s.greetingSub}>Còn <Text style={{ fontFamily: fontFamily.bold }}>{stats.daysLeft} ngày</Text> diễn ra kỳ thi</Text>
           </View>
         </View>
+
         {/* Level track */}
         <View style={s.levelTrack}>
           <LevelDot label="Đầu vào" value="A2" variant="done" />
@@ -47,11 +65,10 @@ export default function OverviewScreen() {
           <LevelDot label="Dự đoán" value="B1" variant="active" />
           <View style={s.levelLine} />
           <LevelDot label="Mục tiêu" value="B2" variant="target" />
+          <HapticTouchable style={s.goalBtn} onPress={() => router.push("/(app)/onboarding")}>
+            <Ionicons name="create-outline" size={14} color="rgba(255,255,255,0.8)" />
+          </HapticTouchable>
         </View>
-        {/* Goal button — absolute top-right */}
-        <HapticTouchable style={s.goalBtn} onPress={() => router.push("/(app)/onboarding")}>
-          <Ionicons name="navigate-outline" size={16} color="#fff" />
-        </HapticTouchable>
       </LinearGradient>
 
       {/* ── Tab Bar ── */}
@@ -65,6 +82,7 @@ export default function OverviewScreen() {
       </View>
 
       <View style={{ height: insets.bottom + 40 }} />
+      <TopUpDialog visible={topUpVisible} onClose={() => setTopUpVisible(false)} />
     </ScrollView>
   );
 }
@@ -125,14 +143,14 @@ function OverviewTab({ stats }: { stats: typeof MOCK_OVERVIEW_STATS }) {
             const count = info?.attemptCount ?? 0;
             const total = skills.reduce((sum: number, si: any) => sum + (si.attemptCount ?? 0), 0) || 1;
             const pct = Math.round((count / total) * 100);
-            const color = useSkillColor(sk);
+            const skColor = c[`skill${sk.charAt(0).toUpperCase() + sk.slice(1)}` as keyof typeof c] ?? c.primary;
             return (
               <View key={sk} style={s.doughnutItem}>
                 <View style={[s.doughnutBar, { backgroundColor: c.muted }]}>
-                  <View style={[s.doughnutFill, { backgroundColor: color, height: `${Math.max(pct, 5)}%` }]} />
+                  <View style={[s.doughnutFill, { backgroundColor: skColor, height: `${Math.max(pct, 5)}%` }]} />
                 </View>
                 <Text style={[s.doughnutLabel, { color: c.mutedForeground }]}>{SKILL_LABELS[sk]}</Text>
-                <Text style={[s.doughnutPct, { color }]}>{pct}%</Text>
+                <Text style={[s.doughnutPct, { color: skColor }]}>{pct}%</Text>
               </View>
             );
           })}
@@ -158,19 +176,24 @@ function StatCard({ icon, label, value, color }: { icon: string; label: string; 
 
 function ExamCountdown({ daysLeft }: { daysLeft: number }) {
   const c = useThemeColors();
-  const deadline = useMemo(() => new Date(Date.now() + daysLeft * 86400000).toISOString(), [daysLeft]);
   const [time, setTime] = useState({ d: daysLeft, h: 0, m: 0, sec: 0 });
+  const deadlineMs = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + daysLeft);
+    d.setHours(8, 0, 0, 0);
+    return d.getTime();
+  }, [daysLeft]);
 
   useEffect(() => {
     const tick = () => {
-      const diff = Math.max(0, new Date(deadline).getTime() - Date.now());
+      const diff = Math.max(0, deadlineMs - Date.now());
       const totalSec = Math.floor(diff / 1000);
       setTime({ d: Math.floor(totalSec / 86400), h: Math.floor((totalSec % 86400) / 3600), m: Math.floor((totalSec % 3600) / 60), sec: totalSec % 60 });
     };
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [deadline]);
+  }, [deadlineMs]);
 
   const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -272,16 +295,21 @@ const s = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingBottom: spacing["3xl"] },
   // Banner
-  banner: { marginHorizontal: spacing.xl, borderRadius: radius["2xl"], padding: spacing.xl, gap: spacing.lg, marginTop: spacing.base },
-  goalBtn: { position: "absolute", top: spacing.base, right: spacing.base, width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: "rgba(255,255,255,0.3)", backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" },
-  bannerRow: { flexDirection: "row", alignItems: "center", gap: spacing.base },
-  avatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" },
-  avatarText: { color: "#fff", fontSize: fontSize.xl, fontFamily: fontFamily.bold },
+  banner: { marginHorizontal: spacing.xl, borderRadius: radius["2xl"], padding: spacing.xl, gap: spacing.base, marginTop: spacing.base, overflow: "hidden" },
+  decoCircle1: { position: "absolute", top: -32, right: -32, width: 128, height: 128, borderRadius: 64, backgroundColor: "rgba(255,255,255,0.05)" },
+  decoCircle2: { position: "absolute", bottom: -16, right: -16, width: 80, height: 80, borderRadius: 40, backgroundColor: "rgba(255,255,255,0.05)" },
+  bannerRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" },
+  avatarText: { color: "#fff", fontSize: fontSize.lg, fontFamily: fontFamily.bold },
   greeting: { color: "#fff", fontSize: fontSize.xl, fontFamily: fontFamily.bold },
+  coinBadge: { flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: "rgba(255,255,255,0.2)", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 },
+  coinBadgeText: { color: "#FFF", fontSize: 12, fontFamily: "Nunito-Bold" },
   greetingSub: { color: "rgba(255,255,255,0.85)", fontSize: fontSize.sm, marginTop: 2 },
+  goalBtn: { marginLeft: "auto", width: 28, height: 28, borderRadius: 14, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" },
   // Level track
   levelTrack: { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.15)", borderRadius: radius.xl, paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
-  levelDotWrap: { alignItems: "center", gap: 4, minWidth: 50 },
+  levelDotWrap: { alignItems: "center", gap: 4, flex: 1 },
   levelLabel: { color: "rgba(255,255,255,0.7)", fontSize: 10 },
   levelDot: { width: 12, height: 12, borderRadius: 6, borderWidth: 2, borderColor: "#fff" },
   levelDotDone: { backgroundColor: "#fff" },

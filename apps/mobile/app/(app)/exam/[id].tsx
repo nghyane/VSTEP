@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -9,6 +9,9 @@ import { useExamDetail } from "@/hooks/use-exams";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Skill } from "@/types/api";
+import { GameIcon } from "@/components/GameIcon";
+import { computeSessionCost, spendCoins, useCoins } from "@/features/coin/coin-store";
+import { TopUpDialog } from "@/features/coin/TopUpDialog";
 
 // ─── Mock exam sections (aligned with frontend-v2 thi-thu) ───────
 
@@ -138,19 +141,8 @@ export default function ExamDetailScreen() {
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* Bottom action bar */}
-      <View style={[styles.bottomBar, { backgroundColor: c.card, borderTopColor: c.border, paddingBottom: insets.bottom + spacing.base }]}>
-        <HapticTouchable
-          style={[styles.startBtn, { backgroundColor: c.primary }]}
-          onPress={() => router.push(`/(app)/session/mock-session-${id}`)}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="play" size={18} color={c.primaryForeground} />
-          <Text style={[styles.startBtnText, { color: c.primaryForeground }]}>
-            {selected.size === 0 ? "Bắt đầu Full Test" : `Bắt đầu (${selected.size} phần)`}
-          </Text>
-        </HapticTouchable>
-      </View>
+      {/* Bottom action bar with coin cost */}
+      <ExamBottomBar selected={selected} insets={insets} onStart={() => router.push(`/(app)/session/mock-session-${id}`)} />
     </View>
   );
 }
@@ -225,6 +217,47 @@ function SkillGroup({ skill, sections, selected, allSelected, onToggleSection, o
 
 // ─── Styles ───────────────────────────────────────────────────────
 
+
+function ExamBottomBar({ selected, insets, onStart }: { selected: Set<string>; insets: any; onStart: () => void }) {
+  const c = useThemeColors();
+  const coins = useCoins();
+  const [topUpVisible, setTopUpVisible] = useState(false);
+  const skillCount = new Set(VSTEP_SECTIONS.filter(s => selected.has(s.id)).map(s => s.skill)).size;
+  const cost = computeSessionCost(skillCount);
+
+  function handleStart() {
+    if (!spendCoins(cost)) {
+      Alert.alert("Không đủ xu", "Bạn cần nạp thêm xu để làm bài.", [
+        { text: "Nạp xu", onPress: () => setTopUpVisible(true) },
+        { text: "Hủy", style: "cancel" },
+      ]);
+      return;
+    }
+    onStart();
+  }
+
+  return (
+    <View style={[styles.bottomBar, { backgroundColor: c.card, borderTopColor: c.border, paddingBottom: insets.bottom + spacing.base }]}>
+      <View style={styles.costRow}>
+        <GameIcon name="coin" size={18} />
+        <Text style={[styles.costText, { color: c.coinDark }]}>{cost} xu</Text>
+        <Text style={[styles.balanceText, { color: c.mutedForeground }]}>({coins} xu còn lại)</Text>
+      </View>
+      <HapticTouchable
+        style={[styles.startBtn, { backgroundColor: c.primary }]}
+        onPress={handleStart}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="play" size={18} color={c.primaryForeground} />
+        <Text style={[styles.startBtnText, { color: c.primaryForeground }]}>
+          {selected.size === 0 ? "Bắt đầu Full Test" : `Bắt đầu (${selected.size} phần)`}
+        </Text>
+      </HapticTouchable>
+      <TopUpDialog visible={topUpVisible} onClose={() => setTopUpVisible(false)} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingHorizontal: spacing.xl },
@@ -255,6 +288,9 @@ const styles = StyleSheet.create({
   sectionName: { fontSize: fontSize.sm, fontFamily: fontFamily.medium },
   sectionMeta: { fontSize: fontSize.xs },
   bottomBar: { position: "absolute", bottom: 0, left: 0, right: 0, borderTopWidth: 1, paddingHorizontal: spacing.xl, paddingTop: spacing.base },
+  costRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 },
+  costText: { fontSize: 14, fontFamily: "Nunito-Bold" },
+  balanceText: { fontSize: 12 },
   startBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, paddingVertical: spacing.md, borderRadius: radius.lg },
   startBtnText: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
 });

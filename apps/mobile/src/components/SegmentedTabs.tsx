@@ -31,11 +31,12 @@ export function SegmentedTabs({ tabs, activeKey, onTabChange }: Props) {
             activeOpacity={0.7}
           >
             <Text
-              numberOfLines={1}
               style={[
                 styles.label,
                 { color: active ? c.foreground : c.mutedForeground, fontFamily: active ? fontFamily.semiBold : fontFamily.medium },
               ]}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
             >
               {tab.label}
             </Text>
@@ -57,10 +58,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.base,
     borderRadius: radius.sm,
   },
   label: {
     fontSize: fontSize.sm,
+    textAlign: "center",
   },
 });
