@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\ExamController;
 use App\Http\Controllers\Api\V1\GrammarController;
 use App\Http\Controllers\Api\V1\McqPracticeController;
 use App\Http\Controllers\Api\V1\ProfileController;
@@ -104,5 +105,12 @@ Route::prefix('v1')->group(function () {
         Route::post('/practice/speaking/vstep-sessions', [SpeakingPracticeController::class, 'startVstepSession']);
         Route::post('/practice/speaking/drill-sessions/{sessionId}/attempt', [SpeakingPracticeController::class, 'drillAttempt']);
         Route::post('/practice/speaking/vstep-sessions/{sessionId}/submit', [SpeakingPracticeController::class, 'submitVstep']);
+
+        // Exams (mock test).
+        Route::get('/exams', [ExamController::class, 'index']);
+        Route::get('/exams/{id}', [ExamController::class, 'show']);
+        Route::post('/exams/{examId}/sessions', [ExamController::class, 'startSession']);
+        Route::get('/exam-sessions/{sessionId}', [ExamController::class, 'showSession']);
+        Route::post('/exam-sessions/{sessionId}/submit', [ExamController::class, 'submit']);
     });
 });
