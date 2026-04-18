@@ -128,6 +128,20 @@ services:
       retries: 5
     restart: unless-stopped
 
+  # NLP Sidecar — GECToR + CEFR Classifier (Python FastAPI)
+  nlp-sidecar:
+    build: ./apps/nlp-sidecar
+    ports:
+      - "8082:8000"
+    environment:
+      MODELS_DIR: /app/models
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
 volumes:
   pgdata:
   redisdata:

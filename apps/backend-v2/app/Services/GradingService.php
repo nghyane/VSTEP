@@ -30,6 +30,7 @@ class GradingService
         private readonly SpeechToTextService $sttService,
         private readonly AudioStorageService $audioService,
         private readonly LanguageToolService $languageTool,
+        private readonly NlpSidecarService $nlpSidecar,
     ) {}
 
     private function ollamaUrl(): string
@@ -77,12 +78,20 @@ class GradingService
             $text = $submission?->text ?? '';
             $promptText = $submission?->prompt?->prompt ?? '';
 
-            // Layer 1: LanguageTool grammar detection.
+            // Layer 1A: LanguageTool grammar detection (rule-based, deterministic).
             $ltMatches = $this->languageTool->check($text);
             $annotations = $this->languageTool->toAnnotations($text, $ltMatches);
 
+            // Layer 1B: GECToR (ML sequence tagging, learner-specific errors).
+            $gectorErrors = $this->nlpSidecar->grammarCheck($text);
+            $gectorAnnotations = $this->gectorToAnnotations($gectorErrors);
+            $annotations = array_merge($annotations, $gectorAnnotations);
+
+            // Layer 1C: CEFR level prediction (cross-validation for LLM score).
+            $cefrResult = $this->nlpSidecar->predictCefrLevel($text);
+
             // Layer 2: LLM rubric scoring + feedback.
-            $llmResult = $this->callLlmWritingGrading($text, $promptText, $ltMatches);
+            $llmResult = $this->callLlmWritingGrading($text, $promptText, $ltMatches, $gectorErrors, $cefrResult);
 
             // Merge: LLM rewrites/improvements + LanguageTool annotations.
             $mergedAnnotations = array_merge($annotations, $llmResult['annotations'] ?? []);
@@ -170,14 +179,24 @@ class GradingService
 
     /**
      * @param  array<int,array<string,mixed>>  $grammarErrors  from LanguageTool
+     * @param  array<int,array<string,mixed>>  $gectorErrors  from GECToR
+     * @param  array{predicted_level:string,confidence:float}|null  $cefrResult
      * @return array{rubric_scores: array, overall_band: float, strengths: array, improvements: array, rewrites: array, annotations: array}
      */
-    private function callLlmWritingGrading(string $text, string $promptText, array $grammarErrors): array
+    private function callLlmWritingGrading(string $text, string $promptText, array $grammarErrors, array $gectorErrors = [], ?array $cefrResult = null): array
     {
         $errorContext = '';
         if (! empty($grammarErrors)) {
             $errorSummary = array_map(fn ($e) => "- \"{$e['message']}\" (offset {$e['offset']})", array_slice($grammarErrors, 0, 10));
             $errorContext = "\n\nGrammar errors detected by automated checker:\n".implode("\n", $errorSummary);
+        }
+        if (! empty($gectorErrors)) {
+            $gectorSummary = array_map(fn ($e) => "- token \"{$e['token']}\" → {$e['error_type']}: {$e['correction']}", array_slice($gectorErrors, 0, 10));
+            $errorContext .= "\n\nML-detected errors (GECToR):\n".implode("\n", $gectorSummary);
+        }
+        if ($cefrResult !== null) {
+            $errorContext .= "\n\nAutomated CEFR level assessment: {$cefrResult['predicted_level']} (confidence: {$cefrResult['confidence']})";
+            $errorContext .= "\nUse this as reference when assigning overall band — significant deviation should be justified.";
         }
 
         $systemPrompt = <<<'PROMPT'
@@ -321,5 +340,24 @@ PROMPT;
         }
 
         return null;
+    }
+
+    /**
+     * Convert GECToR errors to annotation format.
+     * GECToR returns token-level, not char-offset. We approximate.
+     *
+     * @param  array<int,array<string,mixed>>  $errors
+     * @return array<int,array{start:int,end:int,severity:string,category:string,message:string,suggestion:string|null}>
+     */
+    private function gectorToAnnotations(array $errors): array
+    {
+        return array_map(fn (array $e) => [
+            'start' => ($e['position'] ?? 0) * 5, // approximate char offset from token position
+            'end' => (($e['position'] ?? 0) + 1) * 5,
+            'severity' => 'error',
+            'category' => 'grammar_ml_'.($e['error_type'] ?? 'unknown'),
+            'message' => "GECToR: {$e['token']} → ".($e['correction'] ?? $e['tag'] ?? 'fix needed'),
+            'suggestion' => $e['correction'] ?? null,
+        ], $errors);
     }
 }
