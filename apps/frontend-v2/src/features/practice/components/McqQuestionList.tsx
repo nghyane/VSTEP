@@ -115,10 +115,10 @@ interface OptionButtonProps {
 
 function OptionButton(props: OptionButtonProps) {
 	const { option, letter, isSelected, isCorrectOption, isWrongSelected, disabled, onClick } = props
-	const baseClass = "border-border hover:bg-muted/50"
-	const selectedClass = "border-primary bg-primary/5 ring-1 ring-primary/20"
-	const correctClass = "border-success bg-success/10 text-foreground"
-	const wrongClass = "border-destructive bg-destructive/10 text-foreground"
+	const baseClass = "border-[oklch(0.88_0.005_260)] border-b-[oklch(0.75_0.01_260)] hover:bg-muted/50"
+	const selectedClass = "border-primary/40 border-b-primary/60 bg-primary/5"
+	const correctClass = "border-success/30 border-b-success/50 bg-success/10"
+	const wrongClass = "border-destructive/30 border-b-destructive/50 bg-destructive/10"
 
 	const optionClass = isCorrectOption
 		? correctClass
@@ -142,14 +142,14 @@ function OptionButton(props: OptionButtonProps) {
 			onClick={onClick}
 			disabled={disabled}
 			className={cn(
-				"flex items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-sm transition-all",
+				"flex items-center gap-2.5 rounded-xl border-2 border-b-4 px-3 py-2.5 text-left text-sm font-medium transition-all active:translate-y-[3px] active:border-b active:pb-[3px]",
 				optionClass,
 				disabled && !isCorrectOption && !isWrongSelected && "cursor-not-allowed opacity-80",
 			)}
 		>
 			<span
 				className={cn(
-					"flex size-6 shrink-0 items-center justify-center rounded-lg text-xs font-semibold",
+					"flex size-6 shrink-0 items-center justify-center rounded-lg text-xs font-bold",
 					letterBgClass,
 				)}
 			>

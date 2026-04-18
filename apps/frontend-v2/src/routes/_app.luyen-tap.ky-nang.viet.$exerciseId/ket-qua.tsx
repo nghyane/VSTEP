@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from "@tanstack/react-query"
+﻿import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { ArrowLeft, RotateCcw } from "lucide-react"
 import { Suspense, useMemo } from "react"
@@ -58,7 +58,7 @@ function ResultBody({ exerciseId }: { exerciseId: string }) {
 	return (
 		<div className="space-y-6">
 			<header>
-				<p className="text-xs font-semibold uppercase tracking-wide text-skill-writing">
+				<p className="text-xs font-bold uppercase tracking-wide text-skill-writing">
 					Kết quả · {exercise.title}
 				</p>
 				<h1 className="mt-1 text-2xl font-bold">Bài viết đã nộp</h1>
@@ -74,7 +74,7 @@ function ResultBody({ exerciseId }: { exerciseId: string }) {
 			<div aria-hidden className="h-24" />
 			<footer
 				data-session-footer
-				className="fixed right-0 bottom-0 left-[var(--dock-left)] z-20 flex flex-wrap items-center justify-between gap-3 border-t bg-background px-6 py-4"
+				className="fixed right-0 bottom-0 left-[var(--dock-left)] z-20 flex flex-wrap items-center justify-between gap-3 border-t border-t-skill-writing/30 bg-background px-6 py-4"
 			>
 				<Button
 					type="button"

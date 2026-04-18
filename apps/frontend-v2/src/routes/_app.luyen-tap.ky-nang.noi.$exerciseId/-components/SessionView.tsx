@@ -1,12 +1,14 @@
-﻿import { useSuspenseQuery } from "@tanstack/react-query"
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { RotateCcw } from "lucide-react"
 import { toast } from "sonner"
+import { SessionProgressBar } from "#/features/practice/components/SessionProgressBar"
+import { SkillStepChips } from "#/features/practice/components/SkillStepChips"
 import { speakingExerciseQueryOptions } from "#/features/practice/lib/queries-speaking"
 import { saveSpeakingResult } from "#/features/practice/lib/result-storage"
-import { SPEAKING_LEVEL_LABELS, type SpeakingExercise } from "#/mocks/speaking"
-import { cn } from "#/shared/lib/utils"
+import { SPEAKING_LEVEL_LABELS } from "#/mocks/speaking"
 import { Button } from "#/shared/ui/button"
+import { ShadowingPanel } from "./ShadowingPanel"
 import { useSpeakingSession } from "./useSpeakingSession"
 
 export function SessionView({ exerciseId }: { exerciseId: string }) {
@@ -31,182 +33,68 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 
 	return (
 		<div className="mt-4 space-y-6">
-			<Header exercise={exercise} />
+			<header>
+				<p className="text-xs font-bold uppercase tracking-wide text-skill-speaking">
+					{SPEAKING_LEVEL_LABELS[exercise.level]}
+				</p>
+				<div className="mt-1 flex flex-wrap items-start justify-between gap-3">
+					<div>
+						<h1 className="text-2xl font-bold">{exercise.title}</h1>
+						<p className="mt-1 text-sm text-muted-foreground">{exercise.description}</p>
+					</div>
+					<p className="shrink-0 text-sm text-muted-foreground">
+						{exercise.sentences.length} câu · {exercise.estimatedMinutes} phút
+					</p>
+				</div>
+			</header>
+
+			<SessionProgressBar
+				current={session.shadowingDone}
+				total={session.total}
+				accentClass="bg-skill-speaking"
+			/>
+
 			<ShadowingPanel exercise={exercise} session={session} />
+
 			<div aria-hidden className="h-24" />
 			<div
 				data-session-footer
-				className="fixed right-0 bottom-0 left-[var(--dock-left)] z-20 border-t bg-background px-6 py-3"
+				className="fixed right-0 bottom-0 left-[var(--dock-left)] z-20 border-t border-t-skill-speaking/30 bg-background px-6 py-3"
 			>
 				<div className="flex items-center gap-4">
-					<div className="shrink-0">
-						<SpeakingStatusText
-							phase={session.phase}
-							done={session.shadowingDone}
-							total={session.total}
-						/>
+					<div className="shrink-0 text-sm text-muted-foreground">
+						<span className="font-bold text-foreground">{session.shadowingDone}</span>/{session.total} câu
 					</div>
 					<div className="min-w-0 flex-1 overflow-x-auto">
 						<div className="flex justify-center">
-							<SpeakingNavBar
+							<SkillStepChips
 								total={session.total}
-								markers={session.shadowing.map((s) => s.audioUrl !== null)}
+								answered={session.shadowing.map((s) => s.audioUrl !== null)}
 								submitted={submitted}
-								onChange={session.setCurrentIndex}
+								accentClass="bg-skill-speaking"
 							/>
 						</div>
 					</div>
 					<div className="shrink-0">
-						<SpeakingSubmitAction
-							phase={session.phase}
-							canSubmit={session.canSubmit}
-							onSubmit={handleSubmit}
-							onReset={session.reset}
-						/>
+						{session.phase === "practicing" ? (
+							<Button type="button" onClick={handleSubmit} disabled={!session.canSubmit}>
+								Nộp bài
+							</Button>
+						) : (
+							<div className="flex gap-2">
+								<Button type="button" variant="outline" onClick={session.reset}>
+									<RotateCcw className="size-4" /> Làm lại
+								</Button>
+								<Button asChild>
+									<Link to="/luyen-tap/ky-nang" search={{ skill: "noi", category: "", page: 1 }}>
+										Về danh sách
+									</Link>
+								</Button>
+							</div>
+						)}
 					</div>
 				</div>
 			</div>
 		</div>
 	)
 }
-
-// ─── Header ────────────────────────────────────────────────────────
-
-function Header({ exercise }: { exercise: SpeakingExercise }) {
-	return (
-		<header>
-			<p className="text-xs font-semibold uppercase tracking-wide text-skill-speaking">
-				{SPEAKING_LEVEL_LABELS[exercise.level]}
-			</p>
-			<div className="mt-1 flex flex-wrap items-start justify-between gap-3">
-				<div>
-					<h1 className="text-2xl font-bold">{exercise.title}</h1>
-					<p className="mt-1 text-sm text-muted-foreground">{exercise.description}</p>
-				</div>
-				<p className="shrink-0 text-sm text-muted-foreground">
-					{exercise.sentences.length} câu · {exercise.estimatedMinutes} phút
-				</p>
-			</div>
-		</header>
-	)
-}
-
-// ─── Footer: Status text ───────────────────────────────────────────
-
-function SpeakingStatusText({
-	phase,
-	done,
-	total,
-}: {
-	phase: "practicing" | "submitted"
-	done: number
-	total: number
-}) {
-	if (phase === "submitted") {
-		return (
-			<p className="text-sm text-muted-foreground">
-				Kết quả:{" "}
-				<strong className="text-foreground">
-					{done}/{total}
-				</strong>{" "}
-				câu đã ghi âm
-			</p>
-		)
-	}
-	return (
-		<p className="text-sm text-muted-foreground">
-			Đã ghi âm{" "}
-			<strong className="text-foreground">
-				{done}/{total}
-			</strong>{" "}
-			câu
-		</p>
-	)
-}
-
-// ─── Footer: Nav pills ────────────────────────────────────────────
-
-function SpeakingNavBar({
-	total,
-	markers,
-	submitted,
-	onChange,
-}: {
-	total: number
-	markers: readonly boolean[]
-	submitted: boolean
-	onChange: (i: number) => void
-}) {
-	return (
-		<div className="flex flex-wrap items-center gap-1.5">
-			{Array.from({ length: total }, (_, i) => {
-				const done = markers[i]
-				let pillClass = "border-border bg-background text-muted-foreground hover:bg-accent"
-				if (submitted) {
-					pillClass = done
-						? "border-success bg-success/10 text-success"
-						: "border-destructive bg-destructive/10 text-destructive"
-				} else if (done) {
-					pillClass = "border-primary bg-primary text-primary-foreground"
-				}
-				return (
-					<button
-						key={i}
-						type="button"
-						onClick={() => onChange(i)}
-						className={cn(
-							"flex size-8 items-center justify-center rounded-lg border text-sm font-medium transition-colors",
-							pillClass,
-						)}
-						aria-label={`Câu ${i + 1}`}
-					>
-						{i + 1}
-					</button>
-				)
-			})}
-		</div>
-	)
-}
-
-// ─── Footer: Submit action ─────────────────────────────────────────
-
-function SpeakingSubmitAction({
-	phase,
-	canSubmit,
-	onSubmit,
-	onReset,
-}: {
-	phase: "practicing" | "submitted"
-	canSubmit: boolean
-	onSubmit: () => void
-	onReset: () => void
-}) {
-	if (phase === "practicing") {
-		return (
-			<Button
-				type="button"
-				size="lg"
-				className="rounded-xl px-8"
-				onClick={onSubmit}
-				disabled={!canSubmit}
-			>
-				Nộp bài
-			</Button>
-		)
-	}
-	return (
-		<div className="flex gap-2">
-			<Button type="button" variant="outline" onClick={onReset}>
-				<RotateCcw className="size-4" />
-				Làm lại
-			</Button>
-			<Button asChild>
-				<Link to="/luyen-tap/ky-nang" search={{ skill: "noi", category: "", page: 1 }}>
-					Về danh sách đề nói
-				</Link>
-			</Button>
-		</div>
-	)
-}
-
-import { ShadowingPanel } from "./ShadowingPanel"

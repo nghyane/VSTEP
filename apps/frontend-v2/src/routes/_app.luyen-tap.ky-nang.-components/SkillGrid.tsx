@@ -8,6 +8,7 @@ export function SkillGrid({
 	onSelect,
 	headerLabel,
 	totalCount,
+	accentClass,
 	children,
 }: {
 	sidebarItems: { key: string; label: string; count: number }[]
@@ -15,11 +16,12 @@ export function SkillGrid({
 	onSelect: (key: string) => void
 	headerLabel: string
 	totalCount: number
+	accentClass?: string
 	children: React.ReactNode
 }) {
 	return (
 		<div className="grid gap-6 lg:grid-cols-[220px_1fr]">
-			<SkillSidebar items={sidebarItems} activeKey={activeKey} onSelect={onSelect} />
+			<SkillSidebar items={sidebarItems} activeKey={activeKey} onSelect={onSelect} accentClass={accentClass} />
 			<div className="space-y-4">
 				<div className="flex items-center justify-between">
 					<p className="text-sm font-medium">{headerLabel}</p>

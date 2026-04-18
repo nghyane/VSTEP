@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from "@tanstack/react-query"
+﻿import { useSuspenseQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { useMemo } from "react"
 import { ExerciseCard, ITEMS_PER_PAGE } from "#/features/practice/components/SkillPageLayout"
@@ -47,6 +47,7 @@ export function SpeakingContent({
 	const items = list.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
 	return (
 		<SkillGrid
+			accentClass="bg-skill-speaking/10 text-skill-speaking"
 			sidebarItems={sidebarItems}
 			activeKey={activeLevel}
 			onSelect={(key) => onNavigate({ category: key, page: 1 })}

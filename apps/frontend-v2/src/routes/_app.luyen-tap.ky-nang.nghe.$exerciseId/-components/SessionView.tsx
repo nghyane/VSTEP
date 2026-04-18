@@ -1,13 +1,16 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { useEffect, useRef } from "react"
 import { AudioSubtitlePlayer } from "#/features/practice/components/AudioSubtitlePlayer"
-import { McqNavBar } from "#/features/practice/components/McqNavBar"
+import { CelebrationCard } from "#/features/practice/components/CelebrationCard"
+import { SessionProgressBar } from "#/features/practice/components/SessionProgressBar"
+import { SkillStepChips } from "#/features/practice/components/SkillStepChips"
 import { McqQuestionList } from "#/features/practice/components/McqQuestionList"
-import { McqResultSummary } from "#/features/practice/components/McqResultSummary"
-import { StatusText, SubmitAction } from "#/features/practice/components/McqSubmitBar"
+import { SubmitAction } from "#/features/practice/components/McqSubmitBar"
 import { listeningExerciseQueryOptions } from "#/features/practice/lib/queries-listening"
 import type { McqSession } from "#/features/practice/lib/use-mcq-session"
 import { PART_LABELS } from "#/mocks/listening"
+import { Button } from "#/shared/ui/button"
+import { Link } from "@tanstack/react-router"
 import { useListeningSession } from "./useListeningSession"
 
 export function SessionView({ exerciseId }: { exerciseId: string }) {
@@ -23,7 +26,7 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 	return (
 		<div ref={topRef} className="mt-4 space-y-6">
 			<header>
-				<p className="text-xs font-semibold uppercase tracking-wide text-skill-listening">
+				<p className="text-xs font-bold uppercase tracking-wide text-skill-listening">
 					{PART_LABELS[exercise.part]}
 				</p>
 				<div className="mt-1 flex flex-wrap items-start justify-between gap-3">
@@ -37,12 +40,34 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 				</div>
 			</header>
 
-			{submitted && <McqResultSummary score={session.score} total={session.total} />}
+			{submitted && (
+				<CelebrationCard
+					score={session.score}
+					total={session.total}
+					accentClass="border-b-skill-listening/50"
+					onReset={session.reset}
+					backHref={
+						<Button variant="outline" asChild>
+							<Link to="/luyen-tap/ky-nang" search={{ skill: "nghe", category: "", page: 1 }}>
+								Về danh sách
+							</Link>
+						</Button>
+					}
+				/>
+			)}
 
+			{/* Audio player */}
 			<AudioSubtitlePlayer
 				audioUrl={exercise.audioUrl}
 				transcript={exercise.transcript}
 				wordTimestamps={exercise.wordTimestamps}
+			/>
+
+			{/* Progress */}
+			<SessionProgressBar
+				current={session.answeredCount}
+				total={session.total}
+				accentClass="bg-skill-listening"
 			/>
 
 			<McqQuestionList
@@ -51,6 +76,7 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 				submitted={submitted}
 				onSelect={session.select}
 			/>
+
 			<div aria-hidden className="h-24" />
 			<FooterBar session={session} submitted={submitted} />
 		</div>
@@ -58,27 +84,26 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 }
 
 function FooterBar({ session, submitted }: { session: McqSession; submitted: boolean }) {
+	const answered = Array.from({ length: session.total }, (_, i) => session.selectedAnswers[i] != null)
+	const correctArr = submitted ? Array.from({ length: session.total }, (_, i) => session.isCorrect(i)) : undefined
+
 	return (
 		<div
 			data-session-footer
-			className="fixed right-0 bottom-0 left-[var(--dock-left)] z-20 border-t bg-background px-6 py-3"
+			className="fixed right-0 bottom-0 left-[var(--dock-left)] z-20 border-t border-t-skill-listening/30 bg-background px-6 py-3"
 		>
 			<div className="flex items-center gap-4">
-				<div className="shrink-0">
-					<StatusText
-						phase={session.phase}
-						answeredCount={session.answeredCount}
-						total={session.total}
-						score={session.score}
-					/>
+				<div className="shrink-0 text-sm text-muted-foreground">
+					<span className="font-bold text-foreground">{session.answeredCount}</span>/{session.total} câu
 				</div>
 				<div className="min-w-0 flex-1 overflow-x-auto">
 					<div className="flex justify-center">
-						<McqNavBar
+						<SkillStepChips
 							total={session.total}
-							selectedAnswers={session.selectedAnswers}
+							answered={answered}
 							submitted={submitted}
-							isCorrect={session.isCorrect}
+							isCorrect={correctArr}
+							accentClass="bg-skill-listening"
 						/>
 					</div>
 				</div>

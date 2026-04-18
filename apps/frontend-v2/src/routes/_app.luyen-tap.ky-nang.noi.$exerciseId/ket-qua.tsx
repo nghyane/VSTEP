@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from "@tanstack/react-query"
+﻿import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { ArrowLeft, Check, Mic, RotateCcw, Star, X } from "lucide-react"
 import { Suspense, useMemo } from "react"
@@ -53,7 +53,7 @@ function ResultBody({ exerciseId }: { exerciseId: string }) {
 	return (
 		<div className="space-y-6">
 			<header>
-				<p className="text-xs font-semibold uppercase tracking-wide text-skill-speaking">
+				<p className="text-xs font-bold uppercase tracking-wide text-skill-speaking">
 					Kết quả · {SPEAKING_LEVEL_LABELS[exercise.level]}
 				</p>
 				<h1 className="mt-1 text-2xl font-bold">{exercise.title}</h1>
@@ -71,7 +71,7 @@ function ResultBody({ exerciseId }: { exerciseId: string }) {
 			<div aria-hidden className="h-24" />
 			<footer
 				data-session-footer
-				className="fixed right-0 bottom-0 left-[var(--dock-left)] z-20 flex flex-wrap items-center justify-between gap-3 border-t bg-background px-6 py-4"
+				className="fixed right-0 bottom-0 left-[var(--dock-left)] z-20 flex flex-wrap items-center justify-between gap-3 border-t border-t-skill-speaking/30 bg-background px-6 py-4"
 			>
 				<Button
 					type="button"
@@ -100,7 +100,7 @@ function QuickFeedback({ stored }: { stored: StoredSpeakingResult }) {
 	const stars = pct >= 100 ? 5 : pct >= 80 ? 4 : pct >= 60 ? 3 : pct >= 40 ? 2 : 1
 
 	return (
-		<div className="rounded-2xl border bg-card p-5 shadow-sm">
+		<div className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5">
 			<div className="flex items-center justify-between">
 				<h3 className="text-lg font-semibold">Đánh giá nhanh</h3>
 				<div className="flex items-center gap-0.5">
@@ -160,7 +160,7 @@ function SentenceReview({
 	stored: StoredSpeakingResult
 }) {
 	return (
-		<div className="rounded-2xl border bg-card p-5 shadow-sm">
+		<div className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5">
 			<h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
 				Chi tiết từng câu
 			</h3>
