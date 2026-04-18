@@ -52,6 +52,7 @@ export default function ExamDetailScreen() {
   const insets = useSafeAreaInsets();
   const { data: exam, isLoading } = useExamDetail(id!);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [duration, setDuration] = useState<number | null>(null); // null = default
 
   if (isLoading || !exam) return <LoadingScreen />;
 
@@ -117,6 +118,19 @@ export default function ExamDetailScreen() {
         </View>
 
         {/* Section selector */}
+        {/* Time picker */}
+        <Text style={[styles.sectionTitle, { color: c.foreground }]}>Thời gian làm bài</Text>
+        <View style={styles.timeChips}>
+          {[null, 10, 20, 30, 45].map((mins) => {
+            const active = duration === mins;
+            return (
+              <HapticTouchable key={String(mins)} style={[styles.timeChip, { borderColor: active ? c.primary : c.depthBorderLight, borderBottomColor: active ? c.primary + "80" : c.depthBorderDark, backgroundColor: active ? c.primary + "0D" : c.card }]} onPress={() => setDuration(mins)}>
+                <Text style={[styles.timeChipText, { color: active ? c.primary : c.foreground }]}>{mins === null ? "Mặc định" : `${mins} phút`}</Text>
+              </HapticTouchable>
+            );
+          })}
+        </View>
+
         <Text style={[styles.sectionTitle, { color: c.foreground }]}>Chọn phần luyện tập</Text>
         <Text style={[styles.sectionHint, { color: c.mutedForeground }]}>
           {selected.size === 0 ? "Chưa chọn — sẽ làm full test" : `${selected.size} phần đã chọn`}
@@ -274,6 +288,9 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
   statValue: { fontSize: fontSize.sm, fontFamily: fontFamily.bold, marginTop: 2 },
   statSub: { fontSize: 11, marginTop: 1 },
+  timeChips: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.sm },
+  timeChip: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, paddingHorizontal: spacing.base, paddingVertical: spacing.sm },
+  timeChipText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   sectionTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.semiBold, marginTop: spacing.xl },
   sectionHint: { fontSize: fontSize.xs, marginTop: 4, marginBottom: spacing.base },
   groupCard: { ...depthNeutral, borderRadius: radius.xl, marginBottom: spacing.base, overflow: "hidden", backgroundColor: "#FFF" },

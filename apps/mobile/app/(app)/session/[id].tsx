@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HapticTouchable } from "@/components/HapticTouchable";
+import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
 import { depthNeutral } from "@/theme/depth";
 import type { Skill } from "@/types/api";
@@ -174,6 +175,20 @@ export default function FocusedExamRoom() {
         </HapticTouchable>
       </View>
 
+      {/* Skill tabs */}
+      <View style={[styles.skillTabs, { backgroundColor: c.card, borderBottomColor: c.border }]}>
+        {activeSkills.map((sk, i) => {
+          const active = i === skillIdx;
+          const skColor = c[(`skill${sk.charAt(0).toUpperCase() + sk.slice(1)}`) as keyof typeof c] ?? c.primary;
+          return (
+            <View key={sk} style={[styles.skillTab, active && { borderBottomColor: skColor, borderBottomWidth: 3 }]}>
+              <SkillIcon skill={sk} size={16} />
+              <Text style={[styles.skillTabText, { color: active ? skColor : c.mutedForeground }]}>{SKILL_VN[sk]}</Text>
+            </View>
+          );
+        })}
+      </View>
+
       {/* Body */}
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
         {currentSkill === "listening" && <McqPanel items={session.listening} answers={mcqAnswers} onAnswer={(id, val) => setMcqAnswers((p) => ({ ...p, [id]: val }))} />}
@@ -316,6 +331,9 @@ const styles = StyleSheet.create({
   timerText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold, fontVariant: ["tabular-nums"] },
   answeredText: { fontSize: fontSize.sm },
   // Body
+  skillTabs: { flexDirection: "row", borderBottomWidth: 1, paddingHorizontal: spacing.base },
+  skillTab: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4, paddingVertical: spacing.md, borderBottomWidth: 3, borderBottomColor: "transparent" },
+  skillTabText: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
   body: { flex: 1 },
   bodyContent: { padding: spacing.xl, paddingBottom: 100 },
   // Footer
