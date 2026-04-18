@@ -16,27 +16,43 @@ interface Props {
 
 const DEBOUNCE_MS = 500
 
-export function SmartWritingEditor({ value, onChange, maxWords, wordCount, enableAutocomplete, placeholder }: Props) {
+export function SmartWritingEditor({
+	value,
+	onChange,
+	maxWords,
+	wordCount,
+	enableAutocomplete,
+	placeholder,
+}: Props) {
 	const taRef = useRef<HTMLTextAreaElement>(null)
 	const mirrorRef = useRef<HTMLDivElement>(null)
 	const [suggestion, setSuggestion] = useState<string | null>(null)
 	const timerRef = useRef<number | null>(null)
 
 	const clearTimer = useCallback(() => {
-		if (timerRef.current !== null) { window.clearTimeout(timerRef.current); timerRef.current = null }
+		if (timerRef.current !== null) {
+			window.clearTimeout(timerRef.current)
+			timerRef.current = null
+		}
 	}, [])
 
 	useEffect(() => {
-		if (!enableAutocomplete) { setSuggestion(null); return }
+		if (!enableAutocomplete) {
+			setSuggestion(null)
+			return
+		}
 		clearTimer()
 		timerRef.current = window.setTimeout(() => setSuggestion(suggestNextPhrase(value)), DEBOUNCE_MS)
 		return clearTimer
 	}, [value, enableAutocomplete, clearTimer])
 
 	useEffect(() => {
-		const ta = taRef.current; const mirror = mirrorRef.current
+		const ta = taRef.current
+		const mirror = mirrorRef.current
 		if (!ta || !mirror) return
-		const sync = () => { mirror.scrollTop = ta.scrollTop }
+		const sync = () => {
+			mirror.scrollTop = ta.scrollTop
+		}
 		ta.addEventListener("scroll", sync)
 		return () => ta.removeEventListener("scroll", sync)
 	}, [])
@@ -44,9 +60,13 @@ export function SmartWritingEditor({ value, onChange, maxWords, wordCount, enabl
 	function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
 		if (!suggestion) return
 		if (e.key === "Tab" || (e.key === "ArrowRight" && isAtEnd(e.currentTarget))) {
-			e.preventDefault(); onChange(value + suggestion); setSuggestion(null); return
+			e.preventDefault()
+			onChange(value + suggestion)
+			setSuggestion(null)
+			return
 		}
-		if (e.key !== "Shift" && e.key !== "Control" && e.key !== "Alt" && e.key !== "Meta") setSuggestion(null)
+		if (e.key !== "Shift" && e.key !== "Control" && e.key !== "Alt" && e.key !== "Meta")
+			setSuggestion(null)
 	}
 
 	return (
@@ -81,9 +101,7 @@ export function SmartWritingEditor({ value, onChange, maxWords, wordCount, enabl
 			</div>
 
 			{wordCount > maxWords && (
-				<p className="mt-3 text-xs text-warning">
-					Bài viết đang vượt giới hạn {maxWords} từ.
-				</p>
+				<p className="mt-3 text-xs text-warning">Bài viết đang vượt giới hạn {maxWords} từ.</p>
 			)}
 		</div>
 	)

@@ -1,9 +1,9 @@
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { motion } from "motion/react"
 import { useCallback, useMemo, useState } from "react"
-import { Button } from "#/components/ui/button"
-import type { MCQAnswerMap, MockReadingPassage } from "#/lib/mock/exam-session"
-import { cn } from "#/lib/utils"
+import type { MCQAnswerMap, MockReadingPassage } from "#/mocks/exam-session"
+import { cn } from "#/shared/lib/utils"
+import { Button } from "#/shared/ui/button"
 
 const LETTERS = "ABCD"
 

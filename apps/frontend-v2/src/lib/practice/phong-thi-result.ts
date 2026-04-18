@@ -6,7 +6,7 @@ import type {
 	MockExamSession,
 	SpeakingDoneSet,
 	WritingAnswerMap,
-} from "#/lib/mock/exam-session"
+} from "#/mocks/exam-session"
 
 export interface QuestionItemResult {
 	readonly no: number

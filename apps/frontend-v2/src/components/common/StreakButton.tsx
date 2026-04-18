@@ -4,9 +4,9 @@
 import { useQuery } from "@tanstack/react-query"
 import { Check } from "lucide-react"
 import { FireIcon } from "#/components/common/FireIcon"
-import { Popover, PopoverContent, PopoverTrigger } from "#/components/ui/popover"
 import { overviewQueryOptions } from "#/lib/queries/overview"
-import { cn } from "#/lib/utils"
+import { cn } from "#/shared/lib/utils"
+import { Popover, PopoverContent, PopoverTrigger } from "#/shared/ui/popover"
 
 export function StreakButton() {
 	const { data } = useQuery(overviewQueryOptions())

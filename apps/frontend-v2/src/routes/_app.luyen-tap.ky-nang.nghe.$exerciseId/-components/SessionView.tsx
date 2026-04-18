@@ -1,13 +1,13 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { useEffect, useRef } from "react"
+import { AudioSubtitlePlayer } from "#/components/practice/AudioSubtitlePlayer"
 import { McqNavBar } from "#/components/practice/McqNavBar"
 import { McqQuestionList } from "#/components/practice/McqQuestionList"
 import { McqResultSummary } from "#/components/practice/McqResultSummary"
 import { StatusText, SubmitAction } from "#/components/practice/McqSubmitBar"
-import { PART_LABELS } from "#/lib/mock/listening"
 import type { McqSession } from "#/lib/practice/use-mcq-session"
 import { listeningExerciseQueryOptions } from "#/lib/queries/listening"
-import { AudioSubtitlePlayer } from "#/components/practice/AudioSubtitlePlayer"
+import { PART_LABELS } from "#/mocks/listening"
 import { useListeningSession } from "./useListeningSession"
 
 export function SessionView({ exerciseId }: { exerciseId: string }) {
@@ -39,7 +39,11 @@ export function SessionView({ exerciseId }: { exerciseId: string }) {
 
 			{submitted && <McqResultSummary score={session.score} total={session.total} />}
 
-			<AudioSubtitlePlayer audioUrl={exercise.audioUrl} transcript={exercise.transcript} wordTimestamps={exercise.wordTimestamps} />
+			<AudioSubtitlePlayer
+				audioUrl={exercise.audioUrl}
+				transcript={exercise.transcript}
+				wordTimestamps={exercise.wordTimestamps}
+			/>
 
 			<McqQuestionList
 				items={exercise.items}

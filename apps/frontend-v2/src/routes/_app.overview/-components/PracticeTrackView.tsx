@@ -5,9 +5,9 @@
 import { BookOpen, Headphones, Mic, PencilLine } from "lucide-react"
 import { useMemo, useState } from "react"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "#/components/ui/chart"
-import type { PracticeTrackData, TestSession } from "#/lib/mock/overview"
-import { cn } from "#/lib/utils"
+import type { PracticeTrackData, TestSession } from "#/mocks/overview"
+import { cn } from "#/shared/lib/utils"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "#/shared/ui/chart"
 
 type Skill = "listening" | "reading" | "writing" | "speaking"
 
@@ -199,12 +199,7 @@ function ScoreChart({ recentScores }: { recentScores: Record<Skill, { score: num
 								dataKey={s.key}
 								stackId="score"
 								fill={visible[s.key] ? s.colorVar : "transparent"}
-								radius={[
-									isLast ? 4 : 0,
-									isLast ? 4 : 0,
-									isFirst ? 4 : 0,
-									isFirst ? 4 : 0,
-								]}
+								radius={[isLast ? 4 : 0, isLast ? 4 : 0, isFirst ? 4 : 0, isFirst ? 4 : 0]}
 							/>
 						)
 					})}
@@ -236,7 +231,16 @@ function ScoreChart({ recentScores }: { recentScores: Record<Skill, { score: num
 								style={active ? { backgroundColor: colorVar } : undefined}
 							>
 								{active && (
-									<svg viewBox="0 0 12 12" className="size-3 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+									<svg
+										aria-hidden="true"
+										viewBox="0 0 12 12"
+										className="size-3 text-white"
+										fill="none"
+										stroke="currentColor"
+										strokeWidth="2.5"
+										strokeLinecap="round"
+										strokeLinejoin="round"
+									>
 										<polyline points="2.5 6.5 5 9 9.5 3.5" />
 									</svg>
 								)}

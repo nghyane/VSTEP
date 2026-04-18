@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query"
-import { mockFetchWriting, mockFetchWritingExercise } from "#/lib/mock/writing"
+import { mockFetchWriting, mockFetchWritingExercise } from "#/mocks/writing"
 
 export const writingKeys = {
 	all: ["writing"] as const,

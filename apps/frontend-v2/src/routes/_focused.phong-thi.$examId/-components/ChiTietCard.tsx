@@ -5,7 +5,7 @@ import type {
 	QuestionItemResult,
 	QuestionTypeResult,
 } from "#/lib/practice/phong-thi-result"
-import { cn } from "#/lib/utils"
+import { cn } from "#/shared/lib/utils"
 
 interface ChiTietCardProps {
 	result: PhongThiResult

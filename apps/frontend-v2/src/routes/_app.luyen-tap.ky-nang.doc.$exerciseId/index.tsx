@@ -16,7 +16,8 @@ function ReadingSessionPage() {
 	return (
 		<div className="mx-auto w-full max-w-6xl">
 			<Link
-				to="/luyen-tap/ky-nang" search={{ skill: "doc", category: "", page: 1 }}
+				to="/luyen-tap/ky-nang"
+				search={{ skill: "doc", category: "", page: 1 }}
 				className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
 			>
 				<ArrowLeft className="size-4" />

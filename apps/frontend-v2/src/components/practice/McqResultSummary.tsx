@@ -1,6 +1,6 @@
 // McqResultSummary — card tổng kết hiện ở đầu trang sau khi submit MCQ.
 
-import { cn } from "#/lib/utils"
+import { cn } from "#/shared/lib/utils"
 
 interface Props {
 	score: number
@@ -18,12 +18,18 @@ export function McqResultSummary({ score, total }: Props) {
 				<div className="min-w-0 flex-1">
 					<p className="text-lg font-bold">Kết quả</p>
 					<p className="mt-1 text-sm text-muted-foreground">
-						Đúng <strong className="text-foreground">{score}/{total}</strong> câu
+						Đúng{" "}
+						<strong className="text-foreground">
+							{score}/{total}
+						</strong>{" "}
+						câu
 					</p>
-					<p className={cn(
-						"mt-1 text-sm font-medium",
-						pct >= 80 ? "text-success" : pct >= 50 ? "text-primary" : "text-warning",
-					)}>
+					<p
+						className={cn(
+							"mt-1 text-sm font-medium",
+							pct >= 80 ? "text-success" : pct >= 50 ? "text-primary" : "text-warning",
+						)}
+					>
 						{label}
 					</p>
 				</div>
@@ -38,7 +44,7 @@ function ScoreCircle({ score, total, pct }: { score: number; total: number; pct:
 
 	return (
 		<div className="relative flex size-20 shrink-0 items-center justify-center">
-			<svg viewBox="0 0 36 36" className="size-20 -rotate-90">
+			<svg viewBox="0 0 36 36" className="size-20 -rotate-90" aria-hidden="true">
 				<circle cx="18" cy="18" r="15.5" className="fill-none stroke-muted" strokeWidth="3" />
 				<circle
 					cx="18"

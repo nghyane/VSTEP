@@ -6,12 +6,12 @@ import { useState } from "react"
 import { toast } from "sonner"
 import { AnimatedCoinIcon } from "#/components/common/AnimatedCoinIcon"
 import { CoinIcon } from "#/components/common/CoinIcon"
-import { Button } from "#/components/ui/button"
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "#/components/ui/dialog"
-import { ScrollArea } from "#/components/ui/scroll-area"
 import { refundCoins, useCoins } from "#/lib/coins/coin-store"
 import { pushNotification } from "#/lib/notifications/store"
-import { cn } from "#/lib/utils"
+import { cn } from "#/shared/lib/utils"
+import { Button } from "#/shared/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "#/shared/ui/dialog"
+import { ScrollArea } from "#/shared/ui/scroll-area"
 
 interface Props {
 	open: boolean

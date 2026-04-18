@@ -2,17 +2,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { AlertTriangle, CheckCircle2, Clock, X } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
-import { Button } from "#/components/ui/button"
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "#/components/ui/dialog"
 import { computeSessionCost, getCoins, spendCoins } from "#/lib/coins/coin-store"
 import { recordExamCompletion } from "#/lib/courses/completion-log"
+import { buildResultFromSession, savePhongThiResult } from "#/lib/practice/phong-thi-result"
+import { recordPracticeCompletion } from "#/lib/streak/streak-rewards"
 import {
 	countAnswered,
 	countTotalItems,
@@ -21,10 +14,17 @@ import {
 	mockGetExamSession,
 	type SpeakingDoneSet,
 	type WritingAnswerMap,
-} from "#/lib/mock/exam-session"
-import { buildResultFromSession, savePhongThiResult } from "#/lib/practice/phong-thi-result"
-import { recordPracticeCompletion } from "#/lib/streak/streak-rewards"
-import { cn } from "#/lib/utils"
+} from "#/mocks/exam-session"
+import { cn } from "#/shared/lib/utils"
+import { Button } from "#/shared/ui/button"
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "#/shared/ui/dialog"
 import { DeviceCheckScreen } from "./-components/DeviceCheckScreen"
 import { ListeningExamPanel } from "./-components/ListeningExamPanel"
 import { ReadingExamPanel } from "./-components/ReadingExamPanel"

@@ -2,10 +2,10 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { CircleCheck, CircleX, Lightbulb, RotateCcw } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { SpeakerIcon } from "#/components/common/SpeakerIcon"
-import { Button } from "#/components/ui/button"
-import type { WritingSentenceItem } from "#/lib/mock/writing-sentences"
 import { writingSentenceTopicQueryOptions } from "#/lib/queries/writing-sentences"
-import { cn } from "#/lib/utils"
+import type { WritingSentenceItem } from "#/mocks/writing-sentences"
+import { cn } from "#/shared/lib/utils"
+import { Button } from "#/shared/ui/button"
 
 const DIFFICULTY_STYLE = {
 	easy: "bg-success/10 text-success",

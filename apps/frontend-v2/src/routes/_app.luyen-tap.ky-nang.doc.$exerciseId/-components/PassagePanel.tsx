@@ -2,7 +2,7 @@
 
 import { InteractivePassage } from "#/components/practice/InteractivePassage"
 import { TextSelectionPopup } from "#/components/practice/TextSelectionPopup"
-import type { ReadingExercise } from "#/lib/mock/reading"
+import type { ReadingExercise } from "#/mocks/reading"
 
 export function PassagePanel({ exercise }: { exercise: ReadingExercise }) {
 	const paragraphs = exercise.passage.split(/\n\n+/).filter((p) => p.trim().length > 0)

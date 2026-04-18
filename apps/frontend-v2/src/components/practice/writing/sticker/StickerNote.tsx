@@ -1,7 +1,7 @@
 // StickerNote — card chú thích ở lề, tone variants (teach/warn/ok/info).
 // Rule 0.1: icon render trần, không bọc bg.
 
-import { cn } from "#/lib/utils"
+import { cn } from "#/shared/lib/utils"
 import type { StickerSide, StickerTone } from "./useConnectorGeometry"
 
 const TONE_STYLES: Record<StickerTone, string> = {
@@ -20,12 +20,23 @@ interface Props {
 	registerRef?: (id: string, el: HTMLElement | null, tone: StickerTone, side: StickerSide) => void
 }
 
-export function StickerNote({ id, tone = "teach", side = "left", className, children, registerRef }: Props) {
+export function StickerNote({
+	id,
+	tone = "teach",
+	side = "left",
+	className,
+	children,
+	registerRef,
+}: Props) {
 	return (
 		<div
 			ref={(el) => registerRef?.(id, el, tone, side)}
 			data-sticker-note={id}
-			className={cn("rounded-xl border p-2.5 text-xs leading-relaxed", TONE_STYLES[tone], className)}
+			className={cn(
+				"rounded-xl border p-2.5 text-xs leading-relaxed",
+				TONE_STYLES[tone],
+				className,
+			)}
 		>
 			{children}
 		</div>

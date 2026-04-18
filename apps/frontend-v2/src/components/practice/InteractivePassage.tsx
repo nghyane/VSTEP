@@ -7,8 +7,8 @@
 import { Volume2 } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import { type WordEntry, lookupWord } from "#/lib/practice/mock-dictionary"
-import { cn } from "#/lib/utils"
+import { lookupWord, type WordEntry } from "#/lib/practice/mock-dictionary"
+import { cn } from "#/shared/lib/utils"
 
 export function InteractivePassage({ text }: { text: string }) {
 	const [tooltip, setTooltip] = useState<{ entry: WordEntry; x: number; y: number } | null>(null)
@@ -25,7 +25,9 @@ export function InteractivePassage({ text }: { text: string }) {
 	// Close tooltip on scroll
 	useEffect(() => {
 		if (!tooltip) return
-		function close() { setTooltip(null) }
+		function close() {
+			setTooltip(null)
+		}
 		window.addEventListener("scroll", close, true)
 		return () => window.removeEventListener("scroll", close, true)
 	}, [tooltip])
@@ -41,53 +43,79 @@ export function InteractivePassage({ text }: { text: string }) {
 		}, 300)
 	}
 
-	function handleWordLeave() { clearTimer() }
+	function handleWordLeave() {
+		clearTimer()
+	}
 
 	function handleWordClick(word: string, el: HTMLElement) {
 		const entry = lookupWord(word)
-		if (!entry) { setTooltip(null); return }
+		if (!entry) {
+			setTooltip(null)
+			return
+		}
 		const rect = el.getBoundingClientRect()
 		setTooltip((prev) =>
-			prev?.entry.word === entry.word ? null : { entry, x: rect.left + rect.width / 2, y: rect.top },
+			prev?.entry.word === entry.word
+				? null
+				: { entry, x: rect.left + rect.width / 2, y: rect.top },
 		)
 	}
 
 	// Track drag để không hiện tooltip khi user đang tô text
-	function handleMouseDown() { isDragging.current = false }
-	function handleMouseMove() { isDragging.current = true }
+	function handleMouseDown() {
+		isDragging.current = false
+	}
+	function handleMouseMove() {
+		isDragging.current = true
+	}
 	function handleMouseUp() {
-		setTimeout(() => { isDragging.current = false }, 50)
+		setTimeout(() => {
+			isDragging.current = false
+		}, 50)
 	}
 
 	const words = text.split(/(\s+)/)
 
 	return (
+		// biome-ignore lint/a11y/noStaticElementInteractions: word hover/click for dictionary lookup
 		<span onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}>
 			{words.map((segment, i) => {
 				if (/^\s+$/.test(segment)) return <span key={i}>{segment}</span>
 				// Chỉ highlight từ có trong dict. Khi có API thật: highlight tất cả từ hợp lệ.
 				const hasEntry = lookupWord(segment) !== null
 				return (
+					// biome-ignore lint/a11y/noStaticElementInteractions: dictionary word lookup
+					// biome-ignore lint/a11y/useKeyWithClickEvents: mouse-only word lookup by design
 					<span
 						key={i}
 						onMouseEnter={hasEntry ? (e) => handleWordEnter(segment, e.currentTarget) : undefined}
 						onMouseLeave={hasEntry ? handleWordLeave : undefined}
-						onClick={hasEntry ? (e) => { e.stopPropagation(); handleWordClick(segment, e.currentTarget) } : undefined}
-						className={cn(hasEntry && "cursor-pointer rounded-sm transition-colors hover:bg-primary/10")}
+						onClick={
+							hasEntry
+								? (e) => {
+										e.stopPropagation()
+										handleWordClick(segment, e.currentTarget)
+									}
+								: undefined
+						}
+						className={cn(
+							hasEntry && "cursor-pointer rounded-sm transition-colors hover:bg-primary/10",
+						)}
 					>
 						{segment}
 					</span>
 				)
 			})}
-			{tooltip && createPortal(
-				<WordTooltipCard
-					entry={tooltip.entry}
-					x={tooltip.x}
-					y={tooltip.y}
-					onClose={() => setTooltip(null)}
-				/>,
-				document.body,
-			)}
+			{tooltip &&
+				createPortal(
+					<WordTooltipCard
+						entry={tooltip.entry}
+						x={tooltip.x}
+						y={tooltip.y}
+						onClose={() => setTooltip(null)}
+					/>,
+					document.body,
+				)}
 		</span>
 	)
 }
@@ -97,9 +125,15 @@ export function InteractivePassage({ text }: { text: string }) {
 // Shape giữ nguyên: { word, ipa, pos, meaning }
 
 function WordTooltipCard({
-	entry, x, y, onClose,
+	entry,
+	x,
+	y,
+	onClose,
 }: {
-	entry: WordEntry; x: number; y: number; onClose: () => void
+	entry: WordEntry
+	x: number
+	y: number
+	onClose: () => void
 }) {
 	const ref = useRef<HTMLDivElement>(null)
 	const [pos, setPos] = useState({ left: x, top: y })
@@ -117,7 +151,9 @@ function WordTooltipCard({
 	}, [x, y])
 
 	useEffect(() => {
-		function handleKey(e: KeyboardEvent) { if (e.key === "Escape") onClose() }
+		function handleKey(e: KeyboardEvent) {
+			if (e.key === "Escape") onClose()
+		}
 		function handleClick(e: MouseEvent) {
 			if (ref.current && !ref.current.contains(e.target as Node)) onClose()
 		}

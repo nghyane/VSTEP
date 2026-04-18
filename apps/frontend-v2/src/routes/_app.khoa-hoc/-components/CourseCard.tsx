@@ -12,8 +12,8 @@ import {
 	hasDiscount,
 	isCourseFull,
 	remainingSlots,
-} from "#/lib/mock/courses"
-import { cn } from "#/lib/utils"
+} from "#/mocks/courses"
+import { cn } from "#/shared/lib/utils"
 import { formatCoins, formatDateVi, formatVnd } from "./course-utils"
 
 interface Props {

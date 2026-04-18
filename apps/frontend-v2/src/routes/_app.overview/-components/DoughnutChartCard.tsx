@@ -2,8 +2,8 @@
 // Spec: rounded-2xl bg-muted/50 p-5 shadow-sm
 // Dùng inline SVG, CSS layout giống frontend-v1
 
-import type { OverviewData } from "#/lib/mock/overview"
-import { cn } from "#/lib/utils"
+import type { OverviewData } from "#/mocks/overview"
+import { cn } from "#/shared/lib/utils"
 
 type Skill = "listening" | "reading" | "writing" | "speaking"
 

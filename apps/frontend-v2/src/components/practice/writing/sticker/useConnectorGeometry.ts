@@ -34,26 +34,40 @@ export function useConnectorGeometry() {
 	const entriesRef = useRef<Map<string, RefEntry>>(new Map())
 	const [paths, setPaths] = useState<ConnectorPath[]>([])
 
-	const ensureEntry = (id: string, tone: StickerTone = "teach", side: StickerSide = "left"): RefEntry => {
-		let e = entriesRef.current.get(id)
-		if (!e) {
-			e = { id, tone, side, noteEl: null, anchorEl: null }
-			entriesRef.current.set(id, e)
-		}
-		e.tone = tone
-		e.side = side
-		return e
-	}
+	const ensureEntry = useCallback(
+		(id: string, tone: StickerTone = "teach", side: StickerSide = "left"): RefEntry => {
+			let e = entriesRef.current.get(id)
+			if (!e) {
+				e = { id, tone, side, noteEl: null, anchorEl: null }
+				entriesRef.current.set(id, e)
+			}
+			e.tone = tone
+			e.side = side
+			return e
+		},
+		[],
+	)
 
-	const registerNote = useCallback((id: string, el: HTMLElement | null, tone: StickerTone = "teach", side: StickerSide = "left") => {
-		ensureEntry(id, tone, side).noteEl = el
-	}, [])
+	const registerNote = useCallback(
+		(
+			id: string,
+			el: HTMLElement | null,
+			tone: StickerTone = "teach",
+			side: StickerSide = "left",
+		) => {
+			ensureEntry(id, tone, side).noteEl = el
+		},
+		[ensureEntry],
+	)
 
-	const registerAnchor = useCallback((id: string, el: HTMLElement | null) => {
-		const entry = entriesRef.current.get(id)
-		if (entry) entry.anchorEl = el
-		else ensureEntry(id).anchorEl = el
-	}, [])
+	const registerAnchor = useCallback(
+		(id: string, el: HTMLElement | null) => {
+			const entry = entriesRef.current.get(id)
+			if (entry) entry.anchorEl = el
+			else ensureEntry(id).anchorEl = el
+		},
+		[ensureEntry],
+	)
 
 	const recompute = useCallback(() => {
 		const container = containerRef.current

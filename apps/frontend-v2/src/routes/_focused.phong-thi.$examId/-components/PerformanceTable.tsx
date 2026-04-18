@@ -1,5 +1,5 @@
 import type { QuestionTypeResult } from "#/lib/practice/phong-thi-result"
-import { cn } from "#/lib/utils"
+import { cn } from "#/shared/lib/utils"
 
 interface PerformanceTableProps {
 	rows: readonly QuestionTypeResult[]

@@ -5,7 +5,7 @@
 // Annotations trong response dùng { start, end } char offset từ AI — không cần match-string.
 
 import type { AiGradingResult } from "#/components/practice/AiGradingCard"
-import type { WritingExercise } from "#/lib/mock/writing"
+import type { WritingExercise } from "#/mocks/writing"
 
 export interface WritingAnnotation {
 	start: number
@@ -43,7 +43,10 @@ export interface AnnotatedWritingFeedback {
  * Build annotations bằng heuristic đơn giản — quét lỗi phổ biến trong text.
  * Thay bằng AI API sau.
  */
-export function buildAnnotatedWritingFeedback(text: string, exercise?: WritingExercise): AnnotatedWritingFeedback {
+export function buildAnnotatedWritingFeedback(
+	text: string,
+	exercise?: WritingExercise,
+): AnnotatedWritingFeedback {
 	const annotations: WritingAnnotation[] = []
 	const lower = text.toLowerCase()
 
@@ -134,16 +137,19 @@ export function buildAnnotatedWritingFeedback(text: string, exercise?: WritingEx
 				}
 			: {
 					message: "Tăng sự đa dạng của cấu trúc câu",
-					explanation: "Bài chủ yếu dùng câu đơn, nên kết hợp câu phức (although, because, despite + V-ing).",
+					explanation:
+						"Bài chủ yếu dùng câu đơn, nên kết hợp câu phức (although, because, despite + V-ing).",
 				},
 		{
 			message: "Mở rộng vốn từ",
-			explanation: "Thay các từ phổ thông (good, bad, big) bằng từ cụ thể hơn (beneficial, detrimental, substantial).",
+			explanation:
+				"Thay các từ phổ thông (good, bad, big) bằng từ cụ thể hơn (beneficial, detrimental, substantial).",
 		},
 		suggestionCount > 0
 			? {
 					message: `${suggestionCount} gợi ý cải thiện`,
-					explanation: "Các đoạn highlight màu vàng là gợi ý — không phải lỗi nhưng có thể diễn đạt tốt hơn.",
+					explanation:
+						"Các đoạn highlight màu vàng là gợi ý — không phải lỗi nhưng có thể diễn đạt tốt hơn.",
 				}
 			: {
 					message: "Dùng từ nối đa dạng hơn",
@@ -165,8 +171,8 @@ export function buildAnnotatedWritingFeedback(text: string, exercise?: WritingEx
 	const numSections = exercise?.outline?.length ?? Math.max(paras.length, 3)
 	const totalMin = exercise?.minWords ?? 120
 	const totalMax = exercise?.maxWords ?? 280
-	const perParaMin = Math.round(totalMin / numSections * 0.6)
-	const perParaMax = Math.round(totalMax / numSections * 1.4)
+	const perParaMin = Math.round((totalMin / numSections) * 0.6)
+	const perParaMax = Math.round((totalMax / numSections) * 1.4)
 	const requiredPoints = exercise?.requiredPoints ?? []
 
 	const paragraphs: ParagraphFeedback[] = paras.map((p, i) => {
@@ -174,25 +180,59 @@ export function buildAnnotatedWritingFeedback(text: string, exercise?: WritingEx
 		const lowerP = p.toLowerCase()
 		const checklist = requiredPoints.map((rp) => ({
 			point: rp,
-			covered: rp.toLowerCase().split(/\s+/).some((w) => lowerP.includes(w)),
+			covered: rp
+				.toLowerCase()
+				.split(/\s+/)
+				.some((w) => lowerP.includes(w)),
 		}))
 		const notes: string[] = []
-		if (wc < perParaMin) notes.push(`Đoạn hơi ngắn — thử thêm ví dụ hoặc chi tiết (gợi ý ${perParaMin}-${perParaMax} từ)`)
-		if (!/however|moreover|furthermore|in addition|on the other hand|firstly|secondly|therefore|as a result/i.test(p) && i > 0) {
+		if (wc < perParaMin)
+			notes.push(
+				`Đoạn hơi ngắn — thử thêm ví dụ hoặc chi tiết (gợi ý ${perParaMin}-${perParaMax} từ)`,
+			)
+		if (
+			!/however|moreover|furthermore|in addition|on the other hand|firstly|secondly|therefore|as a result/i.test(
+				p,
+			) &&
+			i > 0
+		) {
 			notes.push("Thiếu từ nối mở đầu đoạn")
 		}
 		const status = wc < perParaMin ? "warn" : notes.length > 1 ? "warn" : "good"
-		return { index: i, wordCount: wc, suggestedWordRange: { min: perParaMin, max: perParaMax }, status, checklist, notes }
+		return {
+			index: i,
+			wordCount: wc,
+			suggestedWordRange: { min: perParaMin, max: perParaMax },
+			status,
+			checklist,
+			notes,
+		}
 	})
 
 	// ─── Cohesion hints ───────────────────────────────────────────────
-	const CONNECTORS = ["However,", "Moreover,", "Furthermore,", "In addition,", "On the other hand,", "Nevertheless,", "As a result,", "Therefore,"]
+	const CONNECTORS = [
+		"However,",
+		"Moreover,",
+		"Furthermore,",
+		"In addition,",
+		"On the other hand,",
+		"Nevertheless,",
+		"As a result,",
+		"Therefore,",
+	]
 	const cohesionHints: CohesionHint[] = []
 	for (let i = 0; i < paras.length - 1; i++) {
 		const nextPara = paras[i + 1] ?? ""
-		const hasConnector = CONNECTORS.some((c) => nextPara.trimStart().startsWith(c) || nextPara.trimStart().toLowerCase().startsWith(c.toLowerCase()))
+		const hasConnector = CONNECTORS.some(
+			(c) =>
+				nextPara.trimStart().startsWith(c) ||
+				nextPara.trimStart().toLowerCase().startsWith(c.toLowerCase()),
+		)
 		if (!hasConnector && i < 3) {
-			const suggestion = i === 0 ? "Thử thêm 'Firstly,' hoặc 'To begin with,' ở đầu đoạn sau" : `Thử thêm '${CONNECTORS[i % CONNECTORS.length]}' ở đầu đoạn sau`
+			const suggestion =
+				i === 0
+					? "Thử thêm 'Firstly,' hoặc 'To begin with,' ở đầu đoạn sau"
+					: `Thử thêm '${CONNECTORS[i % CONNECTORS.length]}' ở đầu đoạn sau`
 			cohesionHints.push({ afterParagraphIndex: i, suggestion })
 		}
 	}
@@ -203,13 +243,20 @@ export function buildAnnotatedWritingFeedback(text: string, exercise?: WritingEx
 		annotationIdx: i < annotations.length ? i : undefined,
 	}))
 
-	return { annotations, paragraphs, cohesionHints, strengths, improvements: linkedImprovements, rewrites }
+	return {
+		annotations,
+		paragraphs,
+		cohesionHints,
+		strengths,
+		improvements: linkedImprovements,
+		rewrites,
+	}
 }
 
 function findAll(text: string, regex: RegExp, callback: (m: RegExpExecArray) => void) {
 	let match: RegExpExecArray | null
 	regex.lastIndex = 0
-	while ((match = regex.exec(text)) !== null) {
+	for (match = regex.exec(text); match !== null; match = regex.exec(text)) {
 		callback(match)
 		if (match.index === regex.lastIndex) regex.lastIndex += 1
 	}

@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query"
-import { mockFetchExamDetail } from "#/lib/mock/thi-thu"
+import { mockFetchExamDetail } from "#/mocks/thi-thu"
 
 export const examDetailQueryOptions = (id: number) =>
 	queryOptions({

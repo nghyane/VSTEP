@@ -2,7 +2,7 @@
 
 import { Link } from "@tanstack/react-router"
 import { ArrowRight, BookType, Clock, Languages, type LucideIcon, Target } from "lucide-react"
-import type { NextAction, NextActionCategory } from "#/lib/mock/overview"
+import type { NextAction, NextActionCategory } from "#/mocks/overview"
 
 interface Props {
 	action: NextAction

@@ -1,7 +1,7 @@
 // queryOptions factory cho reading.
 
 import { queryOptions } from "@tanstack/react-query"
-import { mockFetchReading, mockFetchReadingExercise } from "#/lib/mock/reading"
+import { mockFetchReading, mockFetchReadingExercise } from "#/mocks/reading"
 
 export const readingKeys = {
 	all: ["reading"] as const,

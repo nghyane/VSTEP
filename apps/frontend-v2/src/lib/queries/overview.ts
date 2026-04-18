@@ -5,7 +5,7 @@
 //   3. Xóa import mock
 
 import { queryOptions } from "@tanstack/react-query"
-import { mockFetchOverview } from "#/lib/mock/overview"
+import { mockFetchOverview } from "#/mocks/overview"
 
 export const overviewQueryOptions = () =>
 	queryOptions({

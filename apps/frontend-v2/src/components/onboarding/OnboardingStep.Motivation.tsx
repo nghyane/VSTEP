@@ -13,7 +13,7 @@ import {
 	PencilLine,
 } from "lucide-react"
 import type { Motivation, OnboardingData, Skill } from "#/lib/onboarding/types"
-import { cn } from "#/lib/utils"
+import { cn } from "#/shared/lib/utils"
 
 interface Props {
 	data: Pick<OnboardingData, "weaknesses" | "motivation">
@@ -26,11 +26,11 @@ const SKILLS: {
 	Icon: React.ComponentType<{ className?: string }>
 	color: string
 }[] = [
-		{ key: "listening", label: "Listening", Icon: Headphones, color: "text-skill-listening" },
-		{ key: "reading", label: "Reading", Icon: BookOpen, color: "text-skill-reading" },
-		{ key: "writing", label: "Writing", Icon: PencilLine, color: "text-skill-writing" },
-		{ key: "speaking", label: "Speaking", Icon: Mic, color: "text-skill-speaking" },
-	]
+	{ key: "listening", label: "Listening", Icon: Headphones, color: "text-skill-listening" },
+	{ key: "reading", label: "Reading", Icon: BookOpen, color: "text-skill-reading" },
+	{ key: "writing", label: "Writing", Icon: PencilLine, color: "text-skill-writing" },
+	{ key: "speaking", label: "Speaking", Icon: Mic, color: "text-skill-speaking" },
+]
 
 const MOTIVATIONS: {
 	key: Motivation
@@ -38,31 +38,31 @@ const MOTIVATIONS: {
 	description: string
 	Icon: React.ComponentType<{ className?: string }>
 }[] = [
-		{
-			key: "graduation",
-			label: "Thi tốt nghiệp",
-			description: "Chuẩn đầu ra bắt buộc",
-			Icon: GraduationCap,
-		},
-		{
-			key: "job_requirement",
-			label: "Công việc",
-			description: "CV & thăng tiến",
-			Icon: Briefcase,
-		},
-		{
-			key: "scholarship",
-			label: "Học bổng",
-			description: "Du học & phát triển",
-			Icon: Globe,
-		},
-		{
-			key: "personal",
-			label: "Bản thân",
-			description: "Tự tin giao tiếp",
-			Icon: Dumbbell,
-		},
-	]
+	{
+		key: "graduation",
+		label: "Thi tốt nghiệp",
+		description: "Chuẩn đầu ra bắt buộc",
+		Icon: GraduationCap,
+	},
+	{
+		key: "job_requirement",
+		label: "Công việc",
+		description: "CV & thăng tiến",
+		Icon: Briefcase,
+	},
+	{
+		key: "scholarship",
+		label: "Học bổng",
+		description: "Du học & phát triển",
+		Icon: Globe,
+	},
+	{
+		key: "personal",
+		label: "Bản thân",
+		description: "Tự tin giao tiếp",
+		Icon: Dumbbell,
+	},
+]
 
 export function MotivationStep({ data, onChange }: Props) {
 	function toggleSkill(skill: Skill) {

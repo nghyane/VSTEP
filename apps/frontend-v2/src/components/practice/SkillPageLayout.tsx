@@ -1,8 +1,8 @@
 // SkillPageLayout — shared components cho trang danh sách 4 kỹ năng.
 
 import { ChevronLeft, ChevronRight, FileText } from "lucide-react"
-import { Button } from "#/components/ui/button"
-import { cn } from "#/lib/utils"
+import { cn } from "#/shared/lib/utils"
+import { Button } from "#/shared/ui/button"
 
 // ─── Sidebar ───────────────────────────────────────────────────────
 
@@ -140,9 +140,7 @@ export function ExerciseCard({
 	score?: number
 	total?: number
 }) {
-	const pct = total && total > 0 && score !== undefined
-		? Math.round((score / total) * 100)
-		: 0
+	const pct = total && total > 0 && score !== undefined ? Math.round((score / total) * 100) : 0
 	const hasProgress = status !== "not_started" && total && total > 0
 
 	return (
@@ -167,7 +165,9 @@ export function ExerciseCard({
 				{hasProgress && (
 					<div>
 						<div className="flex items-center justify-between text-[11px] tabular-nums text-muted-foreground">
-							<span>{score}/{total} đúng</span>
+							<span>
+								{score}/{total} đúng
+							</span>
 							<span>{pct}%</span>
 						</div>
 						<div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
@@ -181,7 +181,11 @@ export function ExerciseCard({
 						</div>
 					</div>
 				)}
-				<Button size="sm" variant={status === "not_started" ? "default" : "outline"} className="pointer-events-none h-8 rounded-lg text-xs">
+				<Button
+					size="sm"
+					variant={status === "not_started" ? "default" : "outline"}
+					className="pointer-events-none h-8 rounded-lg text-xs"
+				>
 					{status === "completed" ? "Làm lại" : status === "in_progress" ? "Tiếp tục" : "Bắt đầu"}
 				</Button>
 			</div>
@@ -199,9 +203,7 @@ function StatusBadge({ status }: { status: CardStatus }) {
 		<span
 			className={cn(
 				"shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium",
-				isCompleted
-					? "bg-success/10 text-success"
-					: "bg-warning/10 text-warning",
+				isCompleted ? "bg-success/10 text-success" : "bg-warning/10 text-warning",
 			)}
 		>
 			{isCompleted ? "Hoàn thành" : "Đang làm"}

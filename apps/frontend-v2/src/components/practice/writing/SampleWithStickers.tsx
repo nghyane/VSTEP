@@ -4,9 +4,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { TextSelectionPopup } from "#/components/practice/TextSelectionPopup"
-import type { SampleMarkerDef } from "#/lib/mock/writing"
-import { resolveMarkers, type ResolvedMarker } from "#/lib/practice/writing-sample-markers"
-import { cn } from "#/lib/utils"
+import { type ResolvedMarker, resolveMarkers } from "#/lib/practice/writing-sample-markers"
+import type { SampleMarkerDef } from "#/mocks/writing"
+import { cn } from "#/shared/lib/utils"
 
 interface Props {
 	sampleAnswer: string
@@ -26,7 +26,10 @@ const DOT_BG: Record<ResolvedMarker["color"], string> = {
 	pink: "bg-pink-400",
 }
 
-interface Line { id: string; d: string }
+interface Line {
+	id: string
+	d: string
+}
 
 export function SampleWithStickers({ sampleAnswer, sampleMarkers }: Props) {
 	const containerRef = useRef<HTMLDivElement>(null)
@@ -47,11 +50,17 @@ export function SampleWithStickers({ sampleAnswer, sampleMarkers }: Props) {
 		const segs: { type: "text" | "anchor"; content: string; markerId?: string }[] = []
 		let cursor = 0
 		for (const m of sorted) {
-			if (m.range.start > cursor) segs.push({ type: "text", content: sampleAnswer.slice(cursor, m.range.start) })
-			segs.push({ type: "anchor", content: sampleAnswer.slice(m.range.start, m.range.end), markerId: m.id })
+			if (m.range.start > cursor)
+				segs.push({ type: "text", content: sampleAnswer.slice(cursor, m.range.start) })
+			segs.push({
+				type: "anchor",
+				content: sampleAnswer.slice(m.range.start, m.range.end),
+				markerId: m.id,
+			})
 			cursor = m.range.end
 		}
-		if (cursor < sampleAnswer.length) segs.push({ type: "text", content: sampleAnswer.slice(cursor) })
+		if (cursor < sampleAnswer.length)
+			segs.push({ type: "text", content: sampleAnswer.slice(cursor) })
 		return segs
 	}, [sampleAnswer, markers])
 
@@ -90,15 +99,29 @@ export function SampleWithStickers({ sampleAnswer, sampleMarkers }: Props) {
 	useEffect(() => {
 		const t = setTimeout(computeLines, 100)
 		window.addEventListener("resize", computeLines)
-		return () => { clearTimeout(t); window.removeEventListener("resize", computeLines) }
+		return () => {
+			clearTimeout(t)
+			window.removeEventListener("resize", computeLines)
+		}
 	}, [computeLines])
 
 	return (
 		<div ref={containerRef} className="relative">
 			{/* SVG connector overlay — z-index cao hơn card */}
-			<svg aria-hidden className="pointer-events-none absolute inset-0 size-full overflow-visible" style={{ zIndex: 10 }}>
+			<svg
+				aria-hidden="true"
+				className="pointer-events-none absolute inset-0 size-full overflow-visible"
+				style={{ zIndex: 10 }}
+			>
 				{lines.map((l) => (
-					<path key={l.id} d={l.d} fill="none" stroke="#d4d4d8" strokeWidth={1.5} strokeDasharray="5 4" />
+					<path
+						key={l.id}
+						d={l.d}
+						fill="none"
+						stroke="#d4d4d8"
+						strokeWidth={1.5}
+						strokeDasharray="5 4"
+					/>
 				))}
 			</svg>
 
@@ -136,7 +159,10 @@ export function SampleWithStickers({ sampleAnswer, sampleMarkers }: Props) {
 				>
 					<div className="flex items-center justify-end gap-2">
 						<span className="text-xs font-semibold text-foreground">{m.label}</span>
-						<span data-sticker={m.id} className={cn("inline-block size-2.5 shrink-0 rounded-full", DOT_BG[m.color])} />
+						<span
+							data-sticker={m.id}
+							className={cn("inline-block size-2.5 shrink-0 rounded-full", DOT_BG[m.color])}
+						/>
 					</div>
 					{m.detail && <p className="mt-1 text-xs text-muted-foreground">{m.detail}</p>}
 				</div>
@@ -150,7 +176,10 @@ export function SampleWithStickers({ sampleAnswer, sampleMarkers }: Props) {
 					style={{ top: `${i * 100 + 16}px` }}
 				>
 					<div className="flex items-center gap-2">
-						<span data-sticker={m.id} className={cn("inline-block size-2.5 shrink-0 rounded-full", DOT_BG[m.color])} />
+						<span
+							data-sticker={m.id}
+							className={cn("inline-block size-2.5 shrink-0 rounded-full", DOT_BG[m.color])}
+						/>
 						<span className="text-xs font-semibold text-foreground">{m.label}</span>
 					</div>
 					{m.detail && <p className="mt-1 text-xs text-muted-foreground">{m.detail}</p>}

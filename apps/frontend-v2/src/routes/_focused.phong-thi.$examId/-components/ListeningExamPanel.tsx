@@ -1,7 +1,9 @@
 import { ChevronRight, Headphones, Play } from "lucide-react"
 import { motion } from "motion/react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { Button } from "#/components/ui/button"
+import type { MCQAnswerMap, MockListeningSection } from "#/mocks/exam-session"
+import { cn } from "#/shared/lib/utils"
+import { Button } from "#/shared/ui/button"
 import {
 	Dialog,
 	DialogContent,
@@ -9,9 +11,7 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-} from "#/components/ui/dialog"
-import type { MCQAnswerMap, MockListeningSection } from "#/lib/mock/exam-session"
-import { cn } from "#/lib/utils"
+} from "#/shared/ui/dialog"
 
 const LETTERS = "ABCD"
 

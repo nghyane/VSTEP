@@ -1,7 +1,7 @@
 // FireIcon — shared component cho 2 GIF ngọn lửa streak (đỏ = active, xanh = inactive).
 // Dùng ở StreakButton (header) và ActivityHeatmap (overview).
 
-import { cn } from "#/lib/utils"
+import { cn } from "#/shared/lib/utils"
 
 const FIRE_ACTIVE_SRC = "/streak-fire-active.gif"
 const FIRE_INACTIVE_SRC = "/streak-fire-inactive.gif"

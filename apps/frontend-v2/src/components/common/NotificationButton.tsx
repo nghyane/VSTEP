@@ -5,8 +5,6 @@ import { useQuery } from "@tanstack/react-query"
 import { Bell, BellRing, Flame, Sparkles, Trash2, Trophy } from "lucide-react"
 import { useEffect, useState } from "react"
 import { CoinIcon } from "#/components/common/CoinIcon"
-import { Button } from "#/components/ui/button"
-import { Popover, PopoverContent, PopoverTrigger } from "#/components/ui/popover"
 import {
 	type AppNotification,
 	clearNotifications,
@@ -17,7 +15,9 @@ import {
 } from "#/lib/notifications/store"
 import { overviewQueryOptions } from "#/lib/queries/overview"
 import { scanUnlockedMilestones } from "#/lib/streak/streak-rewards"
-import { cn } from "#/lib/utils"
+import { cn } from "#/shared/lib/utils"
+import { Button } from "#/shared/ui/button"
+import { Popover, PopoverContent, PopoverTrigger } from "#/shared/ui/popover"
 
 const NOTIFICATION_GIF_SRC = "/notification-active.gif"
 

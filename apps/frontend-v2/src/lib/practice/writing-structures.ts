@@ -126,7 +126,9 @@ export const WRITING_STRUCTURES: Record<TargetLevel, readonly StructureEntry[]> 
 	],
 }
 
-export function findStructureById(id: string): (StructureEntry & { level: TargetLevel }) | undefined {
+export function findStructureById(
+	id: string,
+): (StructureEntry & { level: TargetLevel }) | undefined {
 	for (const level of ["B1", "B2", "C1"] as const) {
 		const entry = WRITING_STRUCTURES[level].find((s) => s.id === id)
 		if (entry) return { ...entry, level }
@@ -141,8 +143,8 @@ const COMMON_COMPLETIONS: Record<string, string[]> = {
 	"i would like to": ["apply for", "inform you that", "express my interest in"],
 	"thank you for": ["your consideration", "your time", "your attention to this matter"],
 	"i hope": ["to hear from you soon", "this letter finds you well", "you understand my situation"],
-	"despite": ["the difficulties", "the rain", "the challenges"],
-	"however": [", I believe that", ", it is important to note that"],
+	despite: ["the difficulties", "the rain", "the challenges"],
+	however: [", I believe that", ", it is important to note that"],
 	"in conclusion": [", I strongly believe that", ", the advantages outweigh the disadvantages"],
 	"on the one hand": [", technology makes our lives easier"],
 	"on the other hand": [", it can cause social isolation"],
@@ -150,9 +152,9 @@ const COMMON_COMPLETIONS: Record<string, string[]> = {
 	"it is important": ["to note that", "for us to"],
 	"first of all": [", we should consider"],
 	"in addition": [", there are other factors to consider"],
-	"furthermore": [", studies have shown that"],
+	furthermore: [", studies have shown that"],
 	"as a result": [", many people are"],
-	"dear": ["Sir or Madam,", "Mr. Smith,"],
+	dear: ["Sir or Madam,", "Mr. Smith,"],
 	"best regards": [","],
 	"yours sincerely": [","],
 	"i look forward": ["to hearing from you", "to your reply"],

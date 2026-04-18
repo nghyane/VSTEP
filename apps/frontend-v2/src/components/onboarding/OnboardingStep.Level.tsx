@@ -3,7 +3,7 @@
 
 import { Check } from "lucide-react"
 import type { Level } from "#/lib/onboarding/types"
-import { cn } from "#/lib/utils"
+import { cn } from "#/shared/lib/utils"
 
 interface Props {
 	value: Level

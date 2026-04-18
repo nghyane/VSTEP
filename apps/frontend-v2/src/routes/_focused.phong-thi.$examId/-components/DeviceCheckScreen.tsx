@@ -3,11 +3,11 @@ import { motion } from "motion/react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { CoinIcon } from "#/components/common/CoinIcon"
 import { TopUpDialog } from "#/components/common/TopUpDialog"
-import { Button } from "#/components/ui/button"
 import { useCoins } from "#/lib/coins/coin-store"
-import type { ExamSkillKey, MockExamSession } from "#/lib/mock/exam-session"
 import { useVoiceRecorder } from "#/lib/practice/use-voice-recorder"
-import { cn } from "#/lib/utils"
+import type { ExamSkillKey, MockExamSession } from "#/mocks/exam-session"
+import { cn } from "#/shared/lib/utils"
+import { Button } from "#/shared/ui/button"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 

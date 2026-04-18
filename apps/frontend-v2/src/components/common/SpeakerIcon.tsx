@@ -1,4 +1,4 @@
-import { cn } from "#/lib/utils"
+import { cn } from "#/shared/lib/utils"
 
 // Icons8 icon từ link user chọn: https://icons8.com/icon/8O7kATLLDxiR/voice
 // Dùng PNG tĩnh khi idle + GIF khi đang phát để chỉ animate lúc speaking.

@@ -2,8 +2,8 @@
 // Band còn thiếu · Xu hướng · Tổng bài test · Kỹ năng yếu
 
 import { Scale, Target, TrendingDown, TrendingUp } from "lucide-react"
-import type { OverviewStats } from "#/lib/mock/overview"
-import { cn } from "#/lib/utils"
+import type { OverviewStats } from "#/mocks/overview"
+import { cn } from "#/shared/lib/utils"
 
 const WEAK_SKILL_LABEL: Record<string, string> = {
 	listening: "Listening",
@@ -36,7 +36,8 @@ interface Props {
 }
 
 export function StatGrid({ stats }: Props) {
-	const trendIcon = stats.trend === "up" ? TrendingUp : stats.trend === "down" ? TrendingDown : Scale
+	const trendIcon =
+		stats.trend === "up" ? TrendingUp : stats.trend === "down" ? TrendingDown : Scale
 
 	const items = [
 		{
@@ -49,7 +50,9 @@ export function StatGrid({ stats }: Props) {
 			label: "Xu hướng",
 			value: stats.trend ? (TREND_LABEL[stats.trend] ?? "—") : "—",
 			icon: trendIcon,
-			color: stats.trend ? (TREND_COLOR[stats.trend] ?? "text-muted-foreground") : "text-muted-foreground",
+			color: stats.trend
+				? (TREND_COLOR[stats.trend] ?? "text-muted-foreground")
+				: "text-muted-foreground",
 		},
 		{
 			label: "Tổng bài test",

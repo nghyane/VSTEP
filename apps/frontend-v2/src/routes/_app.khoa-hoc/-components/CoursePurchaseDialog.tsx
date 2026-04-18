@@ -6,8 +6,12 @@ import { ShieldAlert } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 import { CoinIcon } from "#/components/common/CoinIcon"
-import { Button } from "#/components/ui/button"
-import { Checkbox } from "#/components/ui/checkbox"
+import { enrollInCourse } from "#/lib/courses/enrollment-store"
+import { pushNotification } from "#/lib/notifications/store"
+import { courseKeys } from "#/lib/queries/courses"
+import { type Course, discountPercent, hasDiscount, savedVnd } from "#/mocks/courses"
+import { Button } from "#/shared/ui/button"
+import { Checkbox } from "#/shared/ui/checkbox"
 import {
 	Dialog,
 	DialogContent,
@@ -15,11 +19,7 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-} from "#/components/ui/dialog"
-import { enrollInCourse } from "#/lib/courses/enrollment-store"
-import { type Course, discountPercent, hasDiscount, savedVnd } from "#/lib/mock/courses"
-import { pushNotification } from "#/lib/notifications/store"
-import { courseKeys } from "#/lib/queries/courses"
+} from "#/shared/ui/dialog"
 import { formatCoins, formatVnd } from "./course-utils"
 
 interface Props {

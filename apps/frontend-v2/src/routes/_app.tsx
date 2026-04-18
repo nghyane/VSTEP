@@ -15,14 +15,17 @@ import { CoinButton } from "#/components/common/CoinButton"
 import { Logo } from "#/components/common/Logo"
 import { NotificationButton } from "#/components/common/NotificationButton"
 import { StreakButton } from "#/components/common/StreakButton"
-import { Avatar, AvatarFallback } from "#/components/ui/avatar"
+import { useRaiseChatDock } from "#/lib/ai-chat/use-raise-chat-dock"
+import { MOCK_USER } from "#/mocks/user"
+import { cn } from "#/shared/lib/utils"
+import { Avatar, AvatarFallback } from "#/shared/ui/avatar"
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
-} from "#/components/ui/dropdown-menu"
+} from "#/shared/ui/dropdown-menu"
 import {
 	Sidebar,
 	SidebarContent,
@@ -35,10 +38,7 @@ import {
 	SidebarMenuItem,
 	SidebarProvider,
 	useSidebar,
-} from "#/components/ui/sidebar"
-import { useRaiseChatDock } from "#/lib/ai-chat/use-raise-chat-dock"
-import { MOCK_USER } from "#/lib/mock/user"
-import { cn } from "#/lib/utils"
+} from "#/shared/ui/sidebar"
 
 export const Route = createFileRoute("/_app")({
 	component: AppLayout,

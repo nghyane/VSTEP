@@ -3,7 +3,7 @@
 import { Captions, CaptionsOff, Pause, Play, RotateCcw } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { SpeakerIcon } from "#/components/common/SpeakerIcon"
-import { cn } from "#/lib/utils"
+import { cn } from "#/shared/lib/utils"
 
 interface Props {
 	transcript: string
@@ -116,10 +116,7 @@ export function TtsAudioPlayer({ transcript }: Props) {
 			)}
 
 			{showSub && spokenCharIndex >= 0 && (
-				<SubtitleLine
-					transcript={transcript}
-					charIndex={spokenCharIndex}
-				/>
+				<SubtitleLine transcript={transcript} charIndex={spokenCharIndex} />
 			)}
 		</div>
 	)
@@ -176,9 +173,7 @@ function SubButton({ active, onToggle }: { active: boolean; onToggle: () => void
 			aria-label={active ? "Tắt phụ đề" : "Bật phụ đề"}
 			className={cn(
 				"flex size-8 items-center justify-center rounded-full transition-colors",
-				active
-					? "text-primary"
-					: "text-muted-foreground hover:text-foreground",
+				active ? "text-primary" : "text-muted-foreground hover:text-foreground",
 			)}
 		>
 			{active ? <Captions className="size-4" /> : <CaptionsOff className="size-4" />}
@@ -218,11 +213,7 @@ function TimeDisplay({ seconds, primary }: { seconds: number; primary?: boolean 
 }
 
 function PlayCountBadge({ playCount }: { playCount: number }) {
-	return (
-		<span className="text-xs tabular-nums text-muted-foreground">
-			Đã nghe {playCount} lần
-		</span>
-	)
+	return <span className="text-xs tabular-nums text-muted-foreground">Đã nghe {playCount} lần</span>
 }
 
 // ─── Subtitle line ─────────────────────────────────────────────────
@@ -233,6 +224,7 @@ function SubtitleLine({ transcript, charIndex }: { transcript: string; charIndex
 		const result: { text: string; start: number; end: number }[] = []
 		const regex = /[^.!?]+[.!?]+/g
 		let match: RegExpExecArray | null = null
+		// biome-ignore lint/suspicious/noAssignInExpressions: idiomatic regex exec loop
 		while ((match = regex.exec(transcript)) !== null) {
 			result.push({ text: match[0].trim(), start: match.index, end: match.index + match[0].length })
 		}
@@ -244,9 +236,8 @@ function SubtitleLine({ transcript, charIndex }: { transcript: string; charIndex
 	}, [transcript])
 
 	// Find current sentence
-	const current = charIndex >= 0
-		? sentences.find((s) => charIndex >= s.start && charIndex < s.end)
-		: null
+	const current =
+		charIndex >= 0 ? sentences.find((s) => charIndex >= s.start && charIndex < s.end) : null
 
 	if (!current) {
 		return <div className="mt-3 h-10 border-t pt-3" />
@@ -262,10 +253,16 @@ function SubtitleLine({ transcript, charIndex }: { transcript: string; charIndex
 				{words.map((segment, i) => {
 					if (/^\s+$/.test(segment)) return <span key={i}> </span>
 					// Find this word's position in the original sentence
-					const pos = current.text.indexOf(segment, i > 0 ? current.text.indexOf(words[i - 2] ?? "") + 1 : 0)
+					const pos = current.text.indexOf(
+						segment,
+						i > 0 ? current.text.indexOf(words[i - 2] ?? "") + 1 : 0,
+					)
 					const spoken = relativeIndex >= pos
 					return (
-						<span key={i} className={spoken ? "font-semibold text-foreground" : "text-muted-foreground/40"}>
+						<span
+							key={i}
+							className={spoken ? "font-semibold text-foreground" : "text-muted-foreground/40"}
+						>
 							{segment}
 						</span>
 					)

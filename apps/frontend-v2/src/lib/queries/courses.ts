@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query"
-import { mockFetchCourse, mockFetchCourses } from "#/lib/mock/courses"
+import { mockFetchCourse, mockFetchCourses } from "#/mocks/courses"
 
 export const courseKeys = {
 	all: ["courses"] as const,

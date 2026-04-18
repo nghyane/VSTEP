@@ -12,11 +12,7 @@ export function StickerAnchor({ id, children, className, registerRef }: Props) {
 	const isInline = className?.includes("inline")
 	const Tag = isInline ? "span" : "div"
 	return (
-		<Tag
-			ref={(el) => registerRef?.(id, el)}
-			data-sticker-anchor={id}
-			className={className}
-		>
+		<Tag ref={(el) => registerRef?.(id, el)} data-sticker-anchor={id} className={className}>
 			{children}
 		</Tag>
 	)

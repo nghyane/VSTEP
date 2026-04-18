@@ -5,7 +5,7 @@
 import { CalendarDays } from "lucide-react"
 import { useEffect, useState } from "react"
 import { FireIcon } from "#/components/common/FireIcon"
-import { cn } from "#/lib/utils"
+import { cn } from "#/shared/lib/utils"
 import { StreakDialog } from "./StreakDialog"
 
 interface Props {

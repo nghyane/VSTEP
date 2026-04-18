@@ -6,7 +6,7 @@ import { ChevronDown } from "lucide-react"
 import { useState } from "react"
 import { ChatGptIcon } from "#/components/common/ChatGptIcon"
 import { askExplainQuestion } from "#/lib/ai-chat/store"
-import { cn } from "#/lib/utils"
+import { cn } from "#/shared/lib/utils"
 
 export interface McqItem {
 	readonly id: string
@@ -23,12 +23,7 @@ interface Props {
 	onSelect: (itemIndex: number, optionIndex: number) => void
 }
 
-export function McqQuestionList({
-	items,
-	selectedAnswers,
-	submitted,
-	onSelect,
-}: Props) {
+export function McqQuestionList({ items, selectedAnswers, submitted, onSelect }: Props) {
 	return (
 		<div className="space-y-6">
 			{items.map((item, index) => (
@@ -53,13 +48,7 @@ interface QuestionBlockProps {
 	onSelect: (optionIndex: number) => void
 }
 
-function QuestionBlock({
-	item,
-	index,
-	selected,
-	submitted,
-	onSelect,
-}: QuestionBlockProps) {
+function QuestionBlock({ item, index, selected, submitted, onSelect }: QuestionBlockProps) {
 	const isWrong = submitted && selected !== null && selected !== item.correctIndex
 
 	return (
@@ -177,9 +166,7 @@ function Explanation({ text, variant }: { text: string; variant: "wrong" | "corr
 		<div
 			className={cn(
 				"rounded-lg border px-4 py-3",
-				isWrong
-					? "border-destructive/20 bg-destructive/5"
-					: "border-primary/20 bg-primary/5",
+				isWrong ? "border-destructive/20 bg-destructive/5" : "border-primary/20 bg-primary/5",
 			)}
 		>
 			<p

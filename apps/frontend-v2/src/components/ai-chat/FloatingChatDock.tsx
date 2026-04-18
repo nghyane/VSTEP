@@ -4,7 +4,6 @@
 import { ImagePlus, MessageSquarePlus, Mic, MicOff, PanelLeft, Send, Trash2, X } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { ChatGptIcon } from "#/components/common/ChatGptIcon"
-import { Button } from "#/components/ui/button"
 import {
 	type ChatMessage,
 	type ChatSession,
@@ -16,7 +15,8 @@ import {
 	toggleChat,
 } from "#/lib/ai-chat/store"
 import { useAiChat } from "#/lib/ai-chat/use-ai-chat"
-import { cn } from "#/lib/utils"
+import { cn } from "#/shared/lib/utils"
+import { Button } from "#/shared/ui/button"
 
 export function FloatingChatDock() {
 	const { isOpen, sessions, activeId, pending, bottomOffset } = useAiChat()
@@ -77,7 +77,7 @@ function ChatWindow({
 
 	useEffect(() => {
 		scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
-	}, [messages.length, pending])
+	}, [])
 
 	return (
 		<div
@@ -364,7 +364,7 @@ function ChatInput({ disabled }: { disabled: boolean }) {
 			for (let i = event.resultIndex; i < event.results.length; i++) {
 				transcript += event.results[i]?.[0]?.transcript ?? ""
 			}
-			setValue((baseTextRef.current ? baseTextRef.current + " " : "") + transcript)
+			setValue((baseTextRef.current ? `${baseTextRef.current} ` : "") + transcript)
 		}
 		rec.onend = () => {
 			setRecording(false)

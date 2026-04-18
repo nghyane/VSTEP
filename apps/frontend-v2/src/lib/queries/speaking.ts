@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query"
-import { mockFetchSpeaking, mockFetchSpeakingExercise } from "#/lib/mock/speaking"
+import { mockFetchSpeaking, mockFetchSpeakingExercise } from "#/mocks/speaking"
 
 export const speakingKeys = {
 	all: ["speaking"] as const,

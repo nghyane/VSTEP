@@ -4,19 +4,19 @@ import { ChevronDown, ChevronRight, Mic, Pause, Play, RotateCcw, Square } from "
 import { useCallback, useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 import { SpeakerIcon } from "#/components/common/SpeakerIcon"
-import { Button } from "#/components/ui/button"
+import { saveSpeakingResult } from "#/lib/practice/result-storage"
+import { cancelSpeak } from "#/lib/practice/speak-sentence"
+import { useVoiceRecorder } from "#/lib/practice/use-voice-recorder"
+import { speakingExerciseQueryOptions } from "#/lib/queries/speaking"
+import { SPEAKING_LEVEL_LABELS, type SpeakingExercise } from "#/mocks/speaking"
+import { cn } from "#/shared/lib/utils"
+import { Button } from "#/shared/ui/button"
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
-} from "#/components/ui/dropdown-menu"
-import { SPEAKING_LEVEL_LABELS, type SpeakingExercise } from "#/lib/mock/speaking"
-import { saveSpeakingResult } from "#/lib/practice/result-storage"
-import { cancelSpeak } from "#/lib/practice/speak-sentence"
-import { useVoiceRecorder } from "#/lib/practice/use-voice-recorder"
-import { speakingExerciseQueryOptions } from "#/lib/queries/speaking"
-import { cn } from "#/lib/utils"
+} from "#/shared/ui/dropdown-menu"
 import { useSpeakingSession } from "./useSpeakingSession"
 
 const SPEEDS = [0.75, 1, 1.25] as const

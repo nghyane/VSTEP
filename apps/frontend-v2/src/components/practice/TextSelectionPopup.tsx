@@ -11,7 +11,13 @@ interface PopupState {
 	y: number
 }
 
-export function TextSelectionPopup({ children, promptTemplate }: { children: React.ReactNode; promptTemplate?: (text: string) => string }) {
+export function TextSelectionPopup({
+	children,
+	promptTemplate,
+}: {
+	children: React.ReactNode
+	promptTemplate?: (text: string) => string
+}) {
 	const containerRef = useRef<HTMLDivElement>(null)
 	const [popup, setPopup] = useState<PopupState | null>(null)
 
@@ -44,17 +50,37 @@ export function TextSelectionPopup({ children, promptTemplate }: { children: Rea
 	}, [popup])
 
 	return (
+		// biome-ignore lint/a11y/noStaticElementInteractions: text selection for AI ask
 		<div ref={containerRef} onMouseUp={handleMouseUp} onTouchEnd={handleMouseUp}>
 			{children}
-			{popup && createPortal(
-				<AskAiButton text={popup.text} x={popup.x} y={popup.y} onClose={() => setPopup(null)} promptTemplate={promptTemplate} />,
-				document.body,
-			)}
+			{popup &&
+				createPortal(
+					<AskAiButton
+						text={popup.text}
+						x={popup.x}
+						y={popup.y}
+						onClose={() => setPopup(null)}
+						promptTemplate={promptTemplate}
+					/>,
+					document.body,
+				)}
 		</div>
 	)
 }
 
-function AskAiButton({ text, x, y, onClose, promptTemplate }: { text: string; x: number; y: number; onClose: () => void; promptTemplate?: (text: string) => string }) {
+function AskAiButton({
+	text,
+	x,
+	y,
+	onClose,
+	promptTemplate,
+}: {
+	text: string
+	x: number
+	y: number
+	onClose: () => void
+	promptTemplate?: (text: string) => string
+}) {
 	const ref = useRef<HTMLButtonElement>(null)
 	const [pos, setPos] = useState({ left: x, top: y })
 

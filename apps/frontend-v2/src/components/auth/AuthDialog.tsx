@@ -1,9 +1,9 @@
 import { ChevronLeft, X } from "lucide-react"
 import { useState } from "react"
 import { Logo } from "#/components/common/Logo"
-import { Button } from "#/components/ui/button"
-import { Dialog, DialogContent } from "#/components/ui/dialog"
-import { Input } from "#/components/ui/input"
+import { Button } from "#/shared/ui/button"
+import { Dialog, DialogContent } from "#/shared/ui/dialog"
+import { Input } from "#/shared/ui/input"
 
 interface AuthDialogProps {
 	open: boolean

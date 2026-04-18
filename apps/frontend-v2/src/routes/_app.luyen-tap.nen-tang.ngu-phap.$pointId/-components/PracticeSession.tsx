@@ -1,6 +1,5 @@
 import { CheckCircle2, RotateCcw, XCircle } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
-import { Button } from "#/components/ui/button"
 import { recordAnswer } from "#/lib/grammar/mastery"
 import type {
 	GrammarErrorCorrection,
@@ -9,8 +8,9 @@ import type {
 	GrammarMCQ,
 	GrammarPoint,
 	GrammarRewrite,
-} from "#/lib/mock/grammar"
-import { cn } from "#/lib/utils"
+} from "#/mocks/grammar"
+import { cn } from "#/shared/lib/utils"
+import { Button } from "#/shared/ui/button"
 
 interface Props {
 	point: GrammarPoint

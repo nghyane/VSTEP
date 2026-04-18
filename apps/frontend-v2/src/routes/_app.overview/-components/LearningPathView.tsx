@@ -3,8 +3,8 @@
 // Source: apps/frontend/src/routes/_learner/progress/-components/LearningPathTab.tsx
 
 import { ArrowRight, BookOpen, Clock, Headphones, ListChecks, Mic, PencilLine } from "lucide-react"
-import type { LearningPathData, WeeklyPlanItem } from "#/lib/mock/overview"
-import { cn } from "#/lib/utils"
+import type { LearningPathData, WeeklyPlanItem } from "#/mocks/overview"
+import { cn } from "#/shared/lib/utils"
 
 type Skill = "listening" | "reading" | "writing" | "speaking"
 

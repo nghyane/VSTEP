@@ -4,7 +4,7 @@
 import { BookOpen, Calendar, Flag, Headphones, Mic, PencilLine, Rocket, Target } from "lucide-react"
 import { Fragment } from "react"
 import type { Level, Motivation, OnboardingData, Skill } from "#/lib/onboarding/types"
-import { cn } from "#/lib/utils"
+import { cn } from "#/shared/lib/utils"
 
 interface Props {
 	data: OnboardingData
