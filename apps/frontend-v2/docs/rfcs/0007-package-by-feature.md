@@ -361,8 +361,8 @@ Lý do bỏ:
 - [x] Phase 1: Shared layer
 - [x] Phase 2: Biome clean + dead code
 - [x] Phase 3.1: landing
-- [ ] Phase 3.2: auth
-- [ ] Phase 3.3: notification
+- [x] Phase 3.2: auth
+- [x] Phase 3.3: notification
 - [ ] Phase 3.4: coin
 - [ ] Phase 3.5: streak
 - [ ] Phase 3.6: onboarding

@@ -12,7 +12,7 @@ import {
 	type NotificationIcon,
 	useNotifications,
 	useUnreadCount,
-} from "#/lib/notifications/store"
+} from "../lib/store"
 import { overviewQueryOptions } from "#/lib/queries/overview"
 import { scanUnlockedMilestones } from "#/lib/streak/streak-rewards"
 import { cn } from "#/shared/lib/utils"
