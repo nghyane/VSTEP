@@ -1,4 +1,4 @@
-// SentenceCards — UI components cho SentencePracticeView.
+﻿// SentenceCards — UI components cho SentencePracticeView.
 
 import { CircleCheck, CircleX, Lightbulb, RotateCcw } from "lucide-react"
 import type { WritingSentenceItem } from "#/mocks/writing-sentences"
@@ -45,7 +45,7 @@ export function ProgressDots(props: {
 export function ResultBanner({ correctCount, total }: { correctCount: number; total: number }) {
 	const pct = total > 0 ? (correctCount / total) * 100 : 0
 	return (
-		<div className="rounded-2xl bg-muted/50 p-5">
+		<div className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5">
 			<h3 className="text-lg font-semibold">Kết quả</h3>
 			<p className="mt-1 text-sm text-muted-foreground">
 				Bạn trả lời đúng{" "}
@@ -97,7 +97,7 @@ export function PracticeCard(props: {
 		setInputRef,
 	} = props
 	return (
-		<div className="mx-auto max-w-3xl space-y-5 rounded-2xl bg-muted/50 p-5">
+		<div className="mx-auto max-w-3xl space-y-5 rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5">
 			<div className="flex items-center justify-between">
 				<span
 					className={cn(

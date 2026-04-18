@@ -1,4 +1,4 @@
-// McqResultSummary — card tổng kết hiện ở đầu trang sau khi submit MCQ.
+﻿// McqResultSummary — card tổng kết hiện ở đầu trang sau khi submit MCQ.
 
 import { cn } from "#/shared/lib/utils"
 
@@ -12,7 +12,7 @@ export function McqResultSummary({ score, total }: Props) {
 	const label = pct >= 80 ? "Xuất sắc!" : pct >= 50 ? "Khá ổn, luyện thêm nhé." : "Cần ôn lại."
 
 	return (
-		<div className="rounded-2xl border bg-card p-6 shadow-sm">
+		<div className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-6 shadow-sm">
 			<div className="flex items-center gap-6">
 				<ScoreCircle score={score} total={total} pct={pct} />
 				<div className="min-w-0 flex-1">

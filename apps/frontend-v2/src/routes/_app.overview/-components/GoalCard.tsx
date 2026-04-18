@@ -1,5 +1,5 @@
-// GoalCard — empty state + filled state
-// Spec: rounded-2xl bg-muted/50 p-8 shadow-sm (empty) / p-5 (filled)
+﻿// GoalCard — empty state + filled state
+// Spec: rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-8 (empty) / p-5 (filled)
 // Source: GoalCard.tsx
 
 import { CircleCheck, Clock, Plus, Target } from "lucide-react"
@@ -14,7 +14,7 @@ interface Props {
 export function GoalCard({ goal }: Props) {
 	if (!goal) {
 		return (
-			<div className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-muted/50 p-8 shadow-sm">
+			<div className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-8">
 				<Target className="size-6 text-primary" />
 				<p className="text-sm text-muted-foreground">Bạn chưa đặt mục tiêu học tập</p>
 				<Button size="sm">Đặt mục tiêu</Button>
@@ -30,7 +30,7 @@ export function GoalCard({ goal }: Props) {
 	const isExpired = goal.daysRemaining != null && goal.daysRemaining <= 0
 
 	return (
-		<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
+		<div className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5">
 			{/* Header */}
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-3">
@@ -52,11 +52,11 @@ export function GoalCard({ goal }: Props) {
 
 			{/* 3 mini stats */}
 			<div className="mt-4 grid grid-cols-3 gap-4">
-				<div className="rounded-xl bg-muted/50 p-3 text-center">
+				<div className="rounded-xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-3 text-center">
 					<p className="text-xs text-muted-foreground">Thời gian học/ngày</p>
 					<p className="mt-1 text-lg font-bold">{goal.dailyStudyTimeMinutes ?? "—"} phút</p>
 				</div>
-				<div className="rounded-xl bg-muted/50 p-3 text-center">
+				<div className="rounded-xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-3 text-center">
 					<p className="text-xs text-muted-foreground">Còn lại</p>
 					<p className="mt-1 text-lg font-bold">
 						{isExpired
@@ -66,7 +66,7 @@ export function GoalCard({ goal }: Props) {
 								: "—"}
 					</p>
 				</div>
-				<div className="rounded-xl bg-muted/50 p-3 text-center">
+				<div className="rounded-xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-3 text-center">
 					<p className="text-xs text-muted-foreground">Tiến độ</p>
 					<div className="mt-1 flex items-center justify-center gap-1.5">
 						<GoalStatus goal={goal} isExpired={isExpired} />

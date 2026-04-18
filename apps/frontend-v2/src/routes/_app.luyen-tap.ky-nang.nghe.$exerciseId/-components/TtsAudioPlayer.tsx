@@ -1,4 +1,4 @@
-// TTS audio player — Web Speech API. Subtitle mode highlights spoken words.
+﻿// TTS audio player — Web Speech API. Subtitle mode highlights spoken words.
 
 import { Captions, CaptionsOff, Pause, Play, RotateCcw } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -88,7 +88,7 @@ export function TtsAudioPlayer({ transcript }: Props) {
 	const isPlaying = state === "playing"
 
 	return (
-		<div className="rounded-2xl border bg-card p-4 shadow-sm">
+		<div className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-4 shadow-sm">
 			<div className="flex items-center justify-between pb-3">
 				<div className="inline-flex items-center gap-2 text-sm font-semibold">
 					<SpeakerIcon active={isPlaying} className="size-4" />

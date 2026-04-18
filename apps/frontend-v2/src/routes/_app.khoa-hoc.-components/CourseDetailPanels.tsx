@@ -1,4 +1,4 @@
-// CourseDetailPanels — HeroPanel, PurchasePanel, EnrolledPanel, DescriptionCard, InstructorCard, GuaranteeCard.
+﻿// CourseDetailPanels — HeroPanel, PurchasePanel, EnrolledPanel, DescriptionCard, InstructorCard, GuaranteeCard.
 
 import { Link } from "@tanstack/react-router"
 import {
@@ -116,7 +116,7 @@ function PurchasePanel({
 }) {
 	const left = remainingSlots(course)
 	return (
-		<div className="flex flex-col items-center rounded-xl bg-muted/50 p-4 text-center">
+		<div className="flex flex-col items-center rounded-xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-4 text-center">
 			<p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
 				Học phí
 			</p>
@@ -169,7 +169,7 @@ function PurchasePanel({
 function EnrolledPanel({ course, ended }: { course: Course; ended: boolean }) {
 	if (ended)
 		return (
-			<div className="rounded-xl bg-muted/50 p-4 text-sm text-muted-foreground">
+			<div className="rounded-xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-4 text-sm text-muted-foreground">
 				Khóa học đã kết thúc ngày {formatDateVi(course.endDate)}.
 			</div>
 		)
@@ -191,7 +191,7 @@ function EnrolledPanel({ course, ended }: { course: Course; ended: boolean }) {
 
 export function DescriptionCard({ course }: { course: Course }) {
 	return (
-		<section className="rounded-2xl bg-muted/50 p-5">
+		<section className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5">
 			<h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
 				Mô tả khóa học
 			</h2>
@@ -216,7 +216,7 @@ export function InstructorCard({ course }: { course: Course }) {
 		.join("")
 		.toUpperCase()
 	return (
-		<section className="rounded-2xl bg-muted/50 p-5">
+		<section className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5">
 			<h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
 				Giáo viên phụ trách
 			</h2>
@@ -246,7 +246,7 @@ export function GuaranteeCard() {
 		"Giảng viên dạy sát định dạng đề và tiêu chí chấm điểm VSTEP.",
 	]
 	return (
-		<section className="rounded-2xl bg-muted/50 p-5">
+		<section className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5">
 			<h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
 				Cam kết từ LUYỆN THI VSTEP
 			</h2>

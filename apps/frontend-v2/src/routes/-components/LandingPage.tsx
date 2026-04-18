@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router"
+﻿import { Link } from "@tanstack/react-router"
 import {
 	BookOpenText,
 	CheckCircle2,
@@ -542,7 +542,7 @@ function LevelCard({
 	align: "left" | "right"
 }) {
 	return (
-		<div className="inline-block rounded-2xl bg-muted/50 p-5 text-left shadow-sm md:max-w-sm">
+		<div className="inline-block rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5 text-left shadow-sm md:max-w-sm">
 			<div className={`flex items-center gap-2 ${align === "right" ? "md:justify-end" : ""}`}>
 				<span className="rounded-lg bg-primary px-2.5 py-1 text-sm font-bold text-primary-foreground">
 					{band.level}
@@ -574,7 +574,7 @@ function TestimonialsSection() {
 				<div className="mt-12 grid gap-6 md:grid-cols-3">
 					{TESTIMONIALS.map((item, i) => (
 						<AnimSection key={item.name} delay={i * 120}>
-							<div className="rounded-2xl bg-card p-6 shadow-sm">
+							<div className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-6">
 								{/* Quote icon */}
 								<div className="mb-4 text-primary/20">
 									<svg

@@ -1,4 +1,4 @@
-// PracticeTrackParts — ScoreChart + SessionRow cho PracticeTrackView.
+﻿// PracticeTrackParts — ScoreChart + SessionRow cho PracticeTrackView.
 
 import { BookOpen, Headphones, Mic, PencilLine } from "lucide-react"
 import { useMemo, useState } from "react"
@@ -110,7 +110,7 @@ export function ScoreChart({ recentScores }: { recentScores: Record<Skill, { sco
 		})
 	}, [recentScores, visible])
 	return (
-		<div className="rounded-2xl bg-muted/50 p-5">
+		<div className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5">
 			<div className="mb-4 flex flex-wrap items-start justify-between gap-3">
 				<div>
 					<h3 className="text-lg font-semibold">Điểm qua 10 bài test gần nhất</h3>

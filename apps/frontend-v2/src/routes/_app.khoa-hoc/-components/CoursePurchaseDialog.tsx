@@ -1,4 +1,4 @@
-// Dialog mua khóa học bằng tiền thật (VND). Mock payment — BE sẽ xử lý sau.
+﻿// Dialog mua khóa học bằng tiền thật (VND). Mock payment — BE sẽ xử lý sau.
 // Sau khi thanh toán thành công: lưu enrollment + cộng xu bonus tặng kèm.
 
 import { useQueryClient } from "@tanstack/react-query"
@@ -71,7 +71,7 @@ export function CoursePurchaseDialog({ course, open, onOpenChange }: Props) {
 				</DialogHeader>
 
 				{/* Course summary */}
-				<div className="space-y-3 rounded-xl bg-muted/50 p-4">
+				<div className="space-y-3 rounded-xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-4">
 					<div>
 						<p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
 							Khóa học

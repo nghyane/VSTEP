@@ -23,7 +23,7 @@ export function PracticeTrackView({ data }: Props) {
 	return (
 		<div className="space-y-6">
 			{/* Section 1: Average scores by skill */}
-			<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
+			<div className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5">
 				<div className="mb-4">
 					<h3 className="text-lg font-semibold">Điểm trung bình từng kỹ năng</h3>
 					<p className="text-sm text-muted-foreground">Thang điểm VSTEP (0–10)</p>
@@ -63,7 +63,7 @@ export function PracticeTrackView({ data }: Props) {
 			<ScoreChart recentScores={data.recentScores} />
 
 			{/* Section 3: Test history */}
-			<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
+			<div className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5">
 				<div className="mb-4 flex items-center justify-between">
 					<div>
 						<h3 className="text-lg font-semibold">Lịch sử Test Practice</h3>

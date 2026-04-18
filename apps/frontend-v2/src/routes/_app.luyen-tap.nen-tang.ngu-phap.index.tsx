@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from "@tanstack/react-query"
+﻿import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { ArrowLeft, CheckCircle2, Circle, CircleDot, Sparkles } from "lucide-react"
 import { Suspense, useMemo } from "react"
@@ -220,7 +220,7 @@ function PointCard({
 			to="/luyen-tap/nen-tang/ngu-phap/$pointId"
 			params={{ pointId: point.id }}
 			search={{ tab: "theory" }}
-			className="group flex flex-col gap-2 rounded-2xl border bg-card p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+			className="group flex flex-col gap-2 rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
 		>
 			<div className="flex items-start justify-between gap-3">
 				<div className="min-w-0 flex-1">

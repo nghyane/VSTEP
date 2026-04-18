@@ -1,4 +1,4 @@
-import { Check } from "lucide-react"
+﻿import { Check } from "lucide-react"
 import type { ExamSection, ExamSkillKey } from "#/mocks/thi-thu"
 import { cn } from "#/shared/lib/utils"
 
@@ -87,7 +87,7 @@ export function SectionSelector({ sections, selected, onToggleSection, onToggleS
 				const unit = skillSections[0]?.unit ?? "câu"
 
 				return (
-					<div key={skill} className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+					<div key={skill} className="overflow-hidden rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card shadow-sm">
 						{/* Skill group header */}
 						<div className="flex items-center justify-between px-4 py-3">
 							<div className="flex items-center gap-3">

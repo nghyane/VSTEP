@@ -1,4 +1,4 @@
-import type { GrammarPoint } from "#/mocks/grammar"
+﻿import type { GrammarPoint } from "#/mocks/grammar"
 
 interface Props {
 	point: GrammarPoint
@@ -8,7 +8,7 @@ export function TheoryView({ point }: Props) {
 	return (
 		<div className="space-y-6">
 			{/* Khi nào dùng + Cấu trúc — gộp 1 block */}
-			<section className="rounded-2xl border bg-card p-6 shadow-sm space-y-5">
+			<section className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-6 space-y-5">
 				<div>
 					<h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
 						Khi nào dùng
@@ -33,7 +33,7 @@ export function TheoryView({ point }: Props) {
 			</section>
 
 			{/* Ví dụ */}
-			<section className="rounded-2xl border bg-card p-6 shadow-sm">
+			<section className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-6">
 				<h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
 					Ví dụ
 				</h2>
@@ -50,7 +50,7 @@ export function TheoryView({ point }: Props) {
 
 			{/* Lỗi thường gặp */}
 			{point.commonMistakes.length > 0 && (
-				<section className="rounded-2xl border bg-card p-6 shadow-sm">
+				<section className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-6">
 					<h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
 						Lỗi thường gặp
 					</h2>

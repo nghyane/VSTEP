@@ -1,4 +1,4 @@
-// Card khóa đã mua ở tab "Khóa của tôi".
+﻿// Card khóa đã mua ở tab "Khóa của tôi".
 // Rule 0.2 style, hiển thị buổi tiếp theo + Zoom link + progress cam kết.
 
 import { Link } from "@tanstack/react-router"
@@ -28,7 +28,7 @@ export function MyCourseCard({ course, enrollment }: Props) {
 	return (
 		<div
 			className={cn(
-				"group relative flex h-full flex-col gap-4 rounded-2xl border bg-card p-6 shadow-sm transition-all",
+				"group relative flex h-full flex-col gap-4 rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-6 transition-all",
 				!ended && !violated && "hover:-translate-y-0.5 hover:shadow-md",
 				(ended || violated) && "opacity-80",
 			)}

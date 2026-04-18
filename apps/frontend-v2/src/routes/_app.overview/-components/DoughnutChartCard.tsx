@@ -1,5 +1,5 @@
-// DoughnutChartCard — tổng số bài test per kỹ năng
-// Spec: rounded-2xl bg-muted/50 p-5 shadow-sm
+﻿// DoughnutChartCard — tổng số bài test per kỹ năng
+// Spec: rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5
 // Dùng inline SVG, CSS layout giống frontend-v1
 
 import type { OverviewData } from "#/mocks/overview"
@@ -103,7 +103,7 @@ export function DoughnutChartCard({ skills }: Props) {
 	})
 
 	return (
-		<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
+		<div className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5">
 			<h3 className="text-lg font-semibold">Tổng số bài test đã hoàn thành</h3>
 			<p className="mb-4 text-sm text-muted-foreground">trong Test Practice</p>
 

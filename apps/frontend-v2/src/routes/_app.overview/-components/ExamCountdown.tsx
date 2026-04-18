@@ -1,4 +1,4 @@
-// ExamCountdown — đồng hồ đếm ngược đến ngày thi (adapt từ DashboardGoalCard)
+﻿// ExamCountdown — đồng hồ đếm ngược đến ngày thi (adapt từ DashboardGoalCard)
 // Dùng khi user đã hoàn thành onboarding (mockGoal != null)
 // Source: DashboardGoalCard.tsx (thi-thu route)
 
@@ -52,7 +52,7 @@ export function ExamCountdown({ deadline, daysRemaining, streak }: Props) {
 			: 60
 
 	return (
-		<div className="relative flex flex-col gap-5 overflow-hidden rounded-2xl border border-border bg-muted/50 p-5 shadow-sm">
+		<div className="relative flex flex-col gap-5 overflow-hidden rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5">
 			{/* Header */}
 			<div className="flex items-center gap-2">
 				<CalendarDays className="size-5 text-primary" />
@@ -102,7 +102,7 @@ export function ExamCountdown({ deadline, daysRemaining, streak }: Props) {
 					type="button"
 					onClick={() => setStreakOpen(true)}
 					aria-label={`Xem streak ${streak} ngày và phần thưởng`}
-					className="group mt-auto flex items-center gap-3 rounded-xl border border-dashed border-border bg-card/60 p-3 text-left transition-all hover:border-skill-speaking/50 hover:bg-card hover:shadow-sm"
+					className="group mt-auto flex items-center gap-3 rounded-xl border-2 border-dashed border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-3 text-left transition-all hover:border-skill-speaking/50 hover:bg-card hover:shadow-sm"
 				>
 					<FireIcon active={streak > 0} sizeClass="size-4" />
 					<div className="flex flex-1 flex-col gap-1.5">

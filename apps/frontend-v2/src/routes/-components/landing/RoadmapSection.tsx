@@ -1,4 +1,4 @@
-import { ROADMAP_BANDS } from "./constants"
+﻿import { ROADMAP_BANDS } from "./constants"
 
 export function RoadmapSection() {
 	return (
@@ -17,7 +17,7 @@ export function RoadmapSection() {
 							<div className="absolute -left-[1.875rem] top-5 size-4 rounded-full bg-background ring-4 ring-background">
 								<div className="size-4 rounded-full border border-primary/30 bg-primary/10" />
 							</div>
-							<div className="rounded-2xl border bg-card p-5 shadow-sm">
+							<div className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5">
 								<div className="flex items-center gap-3">
 									<span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
 										{band.level}

@@ -1,5 +1,5 @@
-// SpiderChartCard — port từ frontend-v1 SpiderChartCard.tsx + SpiderChart.tsx
-// Spec: rounded-2xl bg-muted/50 p-5 shadow-sm
+﻿// SpiderChartCard — port từ frontend-v1 SpiderChartCard.tsx + SpiderChart.tsx
+// Spec: rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5
 // SVG: viewBox 280x280, CENTER=140, RADIUS=88, LEVELS=5
 
 import { BookOpen, Headphones, Mic, PencilLine } from "lucide-react"
@@ -208,7 +208,7 @@ export function SpiderChartCard({ spider }: Props) {
 	const isEstimated = SKILLS.every((s) => spider[s.key].trend === "insufficient_data")
 
 	return (
-		<div className="rounded-2xl bg-muted/50 p-5 shadow-sm">
+		<div className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5">
 			<h3 className="text-lg font-semibold">Điểm trung bình theo kỹ năng</h3>
 			<p className="mb-4 text-sm text-muted-foreground">
 				{isEstimated ? "Ước lượng từ đánh giá ban đầu" : "trong Test Practice"}

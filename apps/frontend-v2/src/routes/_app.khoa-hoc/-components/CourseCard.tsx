@@ -1,5 +1,5 @@
-// Card khóa học ở tab "Khám phá". 3 state: còn chỗ / hết chỗ / đã mua.
-// Rule 0.2: rounded-2xl border bg-card p-6 shadow-sm.
+﻿// Card khóa học ở tab "Khám phá". 3 state: còn chỗ / hết chỗ / đã mua.
+// Rule 0.2: rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-6.
 // Rule 0.3: hover chỉ nâng nhẹ, không đổi border.
 
 import { Link } from "@tanstack/react-router"
@@ -41,7 +41,7 @@ export function CourseCard({ course, enrolled }: Props) {
 	return (
 		<div
 			className={cn(
-				"group relative flex h-full flex-col gap-4 rounded-2xl border bg-card p-6 shadow-sm transition-all",
+				"group relative flex h-full flex-col gap-4 rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-6 transition-all",
 				!ctaDisabled && "hover:-translate-y-0.5 hover:shadow-md",
 				ctaDisabled && "opacity-75",
 			)}

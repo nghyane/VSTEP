@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from "@tanstack/react-query"
+﻿import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { ArrowLeft, BookOpen, Lightbulb, Target } from "lucide-react"
 import { Suspense } from "react"
@@ -142,7 +142,7 @@ function VstepTipsView({ point }: { point: GrammarPoint }) {
 	return (
 		<div className="space-y-4">
 			{point.vstepTips.map((tip) => (
-				<div key={`${tip.task}-${tip.tip}`} className="rounded-2xl border bg-card p-5 shadow-sm">
+				<div key={`${tip.task}-${tip.tip}`} className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5">
 					<span className="rounded-full border border-primary/30 px-2.5 py-0.5 text-xs font-semibold text-primary">
 						{TASK_LABELS[tip.task]}
 					</span>

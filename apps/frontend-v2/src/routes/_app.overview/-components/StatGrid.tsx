@@ -1,4 +1,4 @@
-// StatGrid — stat cards trên tab Tổng quan
+﻿// StatGrid — stat cards trên tab Tổng quan
 // Band còn thiếu · Xu hướng · Tổng bài test · Kỹ năng yếu
 
 import { Scale, Target, TrendingDown, TrendingUp } from "lucide-react"
@@ -74,7 +74,7 @@ export function StatGrid({ stats }: Props) {
 			{items.map((item) => {
 				const Icon = item.icon
 				return (
-					<div key={item.label} className="rounded-2xl bg-muted/50 p-4">
+					<div key={item.label} className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-4">
 						<div className="flex items-center gap-3">
 							<Icon className={cn("size-6 shrink-0", item.color)} />
 							<div className="min-w-0">
