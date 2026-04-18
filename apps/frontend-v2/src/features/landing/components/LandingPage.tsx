@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { AuthDialog } from "#/components/auth/AuthDialog"
+import { AuthDialog } from "#/features/auth"
 import { Footer } from "./Footer"
 import { HeroHeader, HeroSection } from "./HeroSection"
 import { HowItWorksSection } from "./HowItWorksSection"
