@@ -510,7 +510,7 @@ Khi start, track per-slice progress trong `docs/rfcs/0006-migration-plan.md` b�
 - [x] Slice 1 — Auth & Profile
 - [x] Slice 2 — Coin Wallet
 - [x] Slice 3 — Vocabulary
-- [ ] Slice 4 — Grammar
+- [x] Slice 4 — Grammar
 - [ ] Slice 5 — Listening/Reading
 - [ ] Slice 6 — Writing/Speaking Drill
 - [ ] Slice 7 — Exam

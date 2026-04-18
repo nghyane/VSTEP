@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\GrammarController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\VocabController;
 use App\Http\Controllers\Api\V1\WalletController;
@@ -66,5 +67,10 @@ Route::prefix('v1')->group(function () {
         Route::get('/vocab/srs/queue', [VocabController::class, 'srsQueue']);
         Route::post('/vocab/srs/review', [VocabController::class, 'review']);
         Route::post('/vocab/exercises/{id}/attempt', [VocabController::class, 'attemptExercise']);
+
+        // Grammar foundation.
+        Route::get('/grammar/points', [GrammarController::class, 'points']);
+        Route::get('/grammar/points/{id}', [GrammarController::class, 'pointDetail']);
+        Route::post('/grammar/exercises/{id}/attempt', [GrammarController::class, 'attemptExercise']);
     });
 });
