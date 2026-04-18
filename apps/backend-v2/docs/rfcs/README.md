@@ -8,6 +8,7 @@
 | 0004 | [Auth, JWT Claims & Active Profile](./0004-auth-active-profile.md) | Draft | 2026-04-18 |
 | 0005 | [Grading Pipeline](./0005-grading-pipeline.md) | Draft | 2026-04-18 |
 | 0006 | [Migration Plan & Implementation Phases](./0006-migration-plan.md) | Draft | 2026-04-18 |
+| 0007 | [AI Grading Pipeline — Layer Architecture](./0007-grading-layers.md) | Accepted | 2026-04-18 |
 
 ## Implement order
 
