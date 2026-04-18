@@ -8,6 +8,7 @@ use App\Enums\Role;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
@@ -16,6 +17,7 @@ use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 #[Hidden(['password'])]
 class User extends Authenticatable implements JWTSubject
 {
+    use HasFactory;
     use HasUuids;
 
     protected function serializeDate(\DateTimeInterface $date): string
@@ -36,6 +38,20 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(RefreshToken::class);
     }
 
+    /**
+     * Profiles owned by this account. Only learners have profiles.
+     * Admin/teacher users return empty collection.
+     */
+    public function profiles(): HasMany
+    {
+        return $this->hasMany(Profile::class, 'account_id');
+    }
+
+    public function initialProfile(): ?Profile
+    {
+        return $this->profiles()->where('is_initial_profile', true)->first();
+    }
+
     public function getJWTIdentifier(): mixed
     {
         return $this->getKey();
@@ -43,6 +59,9 @@ class User extends Authenticatable implements JWTSubject
 
     public function getJWTCustomClaims(): array
     {
-        return ['role' => $this->role->value];
+        return [
+            'role' => $this->role->value,
+            'active_profile_id' => null,
+        ];
     }
 }

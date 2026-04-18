@@ -507,7 +507,7 @@ Grading trước exam. Bỏ: exam vừa cần grading vừa có MCQ sync. Làm e
 
 Khi start, track per-slice progress trong `docs/rfcs/0006-migration-plan.md` bằng checkboxes.
 
-- [ ] Slice 1 — Auth & Profile
+- [x] Slice 1 — Auth & Profile
 - [ ] Slice 2 — Coin Wallet
 - [ ] Slice 3 — Vocabulary
 - [ ] Slice 4 — Grammar

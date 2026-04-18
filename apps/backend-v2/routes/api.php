@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\ProfileController;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -32,9 +33,19 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/refresh', [AuthController::class, 'refresh']);
     });
 
-    // Protected
+    // Auth (protected, no active profile required — admin/teacher fit here)
     Route::middleware('auth:api')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
+        Route::post('/auth/switch-profile', [AuthController::class, 'switchProfile']);
         Route::get('/auth/me', [AuthController::class, 'me']);
+
+        // Profile CRUD — scoped by authenticated account.
+        Route::get('/profiles', [ProfileController::class, 'index']);
+        Route::post('/profiles', [ProfileController::class, 'store']);
+        Route::get('/profiles/{id}', [ProfileController::class, 'show']);
+        Route::patch('/profiles/{id}', [ProfileController::class, 'update']);
+        Route::delete('/profiles/{id}', [ProfileController::class, 'destroy']);
+        Route::post('/profiles/{id}/reset', [ProfileController::class, 'reset']);
+        Route::post('/profiles/{id}/onboarding', [ProfileController::class, 'onboarding']);
     });
 });
