@@ -200,6 +200,10 @@ export default function ProfileScreen() {
           >
             <Ionicons name="navigate-outline" size={20} color={c.primary} />
             <Text style={[styles.rowText, { color: c.primary }]}>Đặt lại mục tiêu học tập</Text>
+          </HapticTouchable>
+          <HapticTouchable style={[styles.row, { borderBottomColor: c.border }]} onPress={() => router.push("/(app)/courses/" as any)}>
+            <Ionicons name="school-outline" size={20} color={c.primary} />
+            <Text style={[styles.rowText, { color: c.primary }]}>Khóa học cấp tốc</Text>
             <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
           </HapticTouchable>
           <HapticTouchable

@@ -243,8 +243,11 @@ function WritingSession({ data, skill }: { data: ExerciseData; skill: Skill }) {
   const color = useSkillColor(skill);
   const [text, setText] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [mode, setMode] = useState<"write" | "study">("write");
   const [supportLevel, setSupportLevel] = useState<"off" | "hints" | "outline" | "template">("off");
+  const startTime = useRef(Date.now());
   const wc = text.trim().split(/\s+/).filter(Boolean).length;
+  const minW = data.minWords ?? 100;
 
   const SUPPORT_LEVELS = [
     { key: "off" as const, label: "Tắt", desc: "Tự viết hoàn toàn" },
@@ -307,17 +310,47 @@ function WritingSession({ data, skill }: { data: ExerciseData; skill: Skill }) {
 
         {!submitted ? (
           <>
-            <TextInput style={[s.writingInput, { borderColor: c.border, color: c.foreground, backgroundColor: c.card }]} multiline placeholder="Viết bài tại đây..." placeholderTextColor={c.mutedForeground} value={text} onChangeText={setText} textAlignVertical="top" />
-            <Text style={[s.wcText, { color: wc >= (data.minWords ?? 0) ? c.success : c.mutedForeground }]}>{wc}/{data.minWords ?? 0} từ</Text>
-            <HapticTouchable style={[s.actionBtn, { backgroundColor: color, opacity: wc > 0 ? 1 : 0.5 }]} onPress={() => setSubmitted(true)} disabled={wc === 0}>
-              <Text style={s.actionBtnT}>Nộp bài</Text>
-            </HapticTouchable>
+            {/* Write / Study toggle */}
+            <View style={s.modeToggle}>
+              <HapticTouchable style={[s.modeBtn, mode === "write" && { backgroundColor: color + "15" }]} onPress={() => setMode("write")}>
+                <Ionicons name="create-outline" size={16} color={mode === "write" ? color : c.mutedForeground} />
+                <Text style={[s.modeBtnText, { color: mode === "write" ? color : c.mutedForeground }]}>Viết bài</Text>
+              </HapticTouchable>
+              <HapticTouchable style={[s.modeBtn, mode === "study" && { backgroundColor: color + "15" }]} onPress={() => setMode("study")}>
+                <Ionicons name="book-outline" size={16} color={mode === "study" ? color : c.mutedForeground} />
+                <Text style={[s.modeBtnText, { color: mode === "study" ? color : c.mutedForeground }]}>Bài mẫu</Text>
+              </HapticTouchable>
+            </View>
+
+            {mode === "write" ? (
+              <>
+                <TextInput style={[s.writingInput, { borderColor: c.border, color: c.foreground, backgroundColor: c.card }]} multiline placeholder="Viết bài tại đây..." placeholderTextColor={c.mutedForeground} value={text} onChangeText={setText} textAlignVertical="top" />
+                {/* Word count milestones */}
+                <View style={s.wcBar}>
+                  <View style={[s.wcTrack, { backgroundColor: c.muted }]}>
+                    <View style={[s.wcFill, { backgroundColor: wc >= minW ? c.success : color, width: `${Math.min(100, (wc / (minW * 1.4)) * 100)}%` }]} />
+                  </View>
+                  <View style={s.wcMarkers}>
+                    <Text style={[s.wcMarker, { color: wc >= minW ? c.success : c.mutedForeground }]}>{minW} từ (tối thiểu)</Text>
+                    <Text style={[s.wcCurrent, { color: wc >= minW ? c.success : c.foreground }]}>{wc} từ</Text>
+                  </View>
+                </View>
+                <HapticTouchable style={[s.actionBtn, { backgroundColor: color, opacity: wc > 0 ? 1 : 0.5 }]} onPress={() => setSubmitted(true)} disabled={wc === 0}>
+                  <Text style={s.actionBtnT}>Nộp bài</Text>
+                </HapticTouchable>
+              </>
+            ) : (
+              <View style={[s.sampleCard, { backgroundColor: c.muted + "50" }]}>
+                <Text style={[s.sampleLabel, { color: c.mutedForeground }]}>BÀI MẪU THAM KHẢO</Text>
+                <Text style={[s.sampleText, { color: c.foreground }]}>Dear Minh,{"\n"}{"\n"}I am writing to sincerely apologize for not being able to attend your birthday party last Saturday. I feel terrible about missing such an important occasion.{"\n"}{"\n"}The reason for my absence was a family emergency. My grandmother was suddenly taken to the hospital, and I had to accompany my parents to take care of her. It all happened so quickly that I did not have time to inform you beforehand.{"\n"}{"\n"}To make it up to you, I would like to invite you to dinner at your favorite restaurant this weekend. It would be my treat, and we can celebrate your birthday together.{"\n"}{"\n"}Once again, I am truly sorry for missing your party. I hope you had a wonderful time with everyone.{"\n"}{"\n"}Best wishes,{"\n"}[Your name]</Text>
+              </View>
+            )}
           </>
         ) : (
           <LessonComplete
             score={wc}
-            total={data.minWords ?? 120}
-            durationSeconds={0}
+            total={minW}
+            durationSeconds={Math.floor((Date.now() - startTime.current) / 1000)}
             onNext={() => router.back()}
             nextLabel="Quay lại"
           />
@@ -469,6 +502,18 @@ const s = StyleSheet.create({
   resultPct: { fontSize: fontSize.xl, fontFamily: fontFamily.bold },
   // Writing
   writingInput: { ...depthNeutral, backgroundColor: "#FFF", borderRadius: radius.xl, padding: spacing.base, minHeight: 200, fontSize: fontSize.sm, lineHeight: 22, marginTop: spacing.base },
+  modeToggle: { flexDirection: "row", gap: 8, marginVertical: 8 },
+  modeBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, borderRadius: 12 },
+  modeBtnText: { fontSize: 14, fontFamily: "Nunito-SemiBold" },
+  wcBar: { marginTop: 8 },
+  wcTrack: { height: 6, borderRadius: 3, overflow: "hidden" },
+  wcFill: { height: "100%", borderRadius: 3 },
+  wcMarkers: { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
+  wcMarker: { fontSize: 11 },
+  wcCurrent: { fontSize: 11, fontFamily: "Nunito-Bold" },
+  sampleCard: { borderRadius: 16, padding: 16, marginTop: 8 },
+  sampleLabel: { fontSize: 11, fontFamily: "Nunito-Bold", letterSpacing: 1, marginBottom: 8 },
+  sampleText: { fontSize: 14, lineHeight: 22 },
   wcText: { fontSize: fontSize.xs, textAlign: "right", marginTop: spacing.xs },
   // Speaking
   counter: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, letterSpacing: 1 },
