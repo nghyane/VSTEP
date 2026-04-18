@@ -18,6 +18,7 @@ import { MOCK_OVERVIEW_STATS, MOCK_PRACTICE_TRACK } from "@/lib/mock";
 import { GameIcon } from "@/components/GameIcon";
 import { useCoins } from "@/features/coin/coin-store";
 import { StreakButton } from "@/features/streak/StreakButton";
+import { NotificationButton } from "@/features/notification/NotificationButton";
 import { TopUpDialog } from "@/features/coin/TopUpDialog";
 
 type Tab = "overview" | "track";
@@ -48,6 +49,7 @@ export default function OverviewScreen() {
             <GameIcon name="coin" size={16} />
             <Text style={[s.coinBadgeText, { color: c.coinDark }]}>{coins}</Text>
           </HapticTouchable>
+          <NotificationButton />
           <HapticTouchable style={[s.topBarBtn, { backgroundColor: c.muted }]} onPress={() => router.push("/(app)/onboarding")}>
             <Ionicons name="settings-outline" size={18} color={c.mutedForeground} />
           </HapticTouchable>

@@ -16,6 +16,7 @@ import { HapticsProvider } from "@/contexts/HapticsContext";
 import type { AuthUser } from "@/types/api";
 import { loadCoins } from "@/features/coin/coin-store";
 import { loadStreakData } from "@/features/streak/streak-store";
+import { loadNotifications } from "@/features/notification/notification-store";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -37,6 +38,7 @@ export default function RootLayout() {
         const stored = await getStoredUser();
         await loadCoins();
         await loadStreakData();
+        await loadNotifications();
         if (stored) setUser(stored);
       } catch {
         // ignore

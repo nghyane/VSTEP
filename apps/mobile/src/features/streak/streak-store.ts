@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import * as SecureStore from "expo-secure-store";
 import { refundCoins } from "@/features/coin/coin-store";
+import { pushNotification } from "@/features/notification/notification-store";
 
 export interface StreakMilestone { days: number; coins: number }
 
@@ -58,6 +59,12 @@ export function claimMilestone(days: number): boolean {
   claimed.add(days);
   emitClaimed();
   refundCoins(m.coins);
+  pushNotification({
+    id: `streak:claimed:${days}`,
+    title: `+${m.coins} xu từ mốc ${days} ngày`,
+    body: "Chúc mừng bạn đã nhận thưởng streak!",
+    iconKey: "coin",
+  });
   return true;
 }
 
@@ -95,5 +102,14 @@ export function recordExamCompletion(): boolean {
   const was = progress.date === today ? progress.count : 0;
   progress = { date: today, count: was + 1 };
   emitProgress();
-  return was < DAILY_GOAL && progress.count >= DAILY_GOAL;
+  const reachedGoal = was < DAILY_GOAL && progress.count >= DAILY_GOAL;
+  if (reachedGoal) {
+    pushNotification({
+      id: `streak:goal:${today}`,
+      title: `Đã giữ streak hôm nay (${DAILY_GOAL}/${DAILY_GOAL} đề thi)`,
+      body: "Quay lại mai để nâng chuỗi học lên một ngày nữa!",
+      iconKey: "fire",
+    });
+  }
+  return reachedGoal;
 }
