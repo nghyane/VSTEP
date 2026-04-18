@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { depthNeutral } from "@/theme/depth";
 import type { Skill } from "@/types/api";
 
 // ─── Types & mock data ────────────────────────────────────────────
@@ -327,17 +328,17 @@ const styles = StyleSheet.create({
   // MCQ
   qNum: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, textTransform: "uppercase" },
   qText: { fontSize: fontSize.base, fontFamily: fontFamily.medium },
-  optionRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, borderWidth: 1, borderRadius: radius.md, padding: spacing.md },
+  optionRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, ...depthNeutral, borderRadius: radius.md, padding: spacing.md, backgroundColor: "#FFF" },
   optionDot: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, alignItems: "center", justifyContent: "center" },
   optionText: { flex: 1, fontSize: fontSize.sm },
   // Writing
   promptCard: { borderRadius: radius.xl, padding: spacing.lg },
   promptLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold, textTransform: "uppercase", letterSpacing: 1, marginBottom: spacing.sm },
   promptText: { fontSize: fontSize.sm, lineHeight: 22 },
-  writingInput: { borderWidth: 1, borderRadius: radius.xl, padding: spacing.base, minHeight: 200, fontSize: fontSize.sm, lineHeight: 22 },
+  writingInput: { ...depthNeutral, borderRadius: radius.xl, padding: spacing.base, minHeight: 200, fontSize: fontSize.sm, lineHeight: 22, backgroundColor: "#FFF" },
   wordCount: { fontSize: fontSize.xs, textAlign: "right" },
   // Speaking
-  speakingCard: { borderWidth: 1, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },
+  speakingCard: { ...depthNeutral, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm, backgroundColor: "#FFF" },
   speakingTitle: { fontSize: fontSize.base, fontFamily: fontFamily.semiBold },
   speakingPrompt: { fontSize: fontSize.sm, lineHeight: 20 },
   speakingBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, paddingVertical: spacing.md, borderRadius: radius.lg, marginTop: spacing.sm },

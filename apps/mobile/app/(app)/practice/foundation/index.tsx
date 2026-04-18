@@ -5,6 +5,7 @@ import { ScreenWrapper } from "@/components/ScreenWrapper";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { depthNeutral } from "@/theme/depth";
 
 export default function FoundationHubScreen() {
   const c = useThemeColors();
@@ -51,7 +52,7 @@ export default function FoundationHubScreen() {
 const styles = StyleSheet.create({
   content: { padding: spacing.xl, gap: spacing.base },
   desc: { fontSize: fontSize.sm, lineHeight: 20, marginBottom: spacing.sm },
-  card: { flexDirection: "row", alignItems: "center", gap: spacing.base, borderWidth: 1, borderRadius: radius["2xl"], padding: spacing.lg },
+  card: { flexDirection: "row", alignItems: "center", gap: spacing.base, ...depthNeutral, borderRadius: radius["2xl"], padding: spacing.lg, backgroundColor: "#FFF" },
   cardTitle: { fontSize: fontSize.base, fontFamily: fontFamily.semiBold },
   cardDesc: { fontSize: fontSize.xs, marginTop: 2 },
 });

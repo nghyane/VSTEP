@@ -7,6 +7,7 @@ import { HapticTouchable } from "@/components/HapticTouchable";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { SegmentedTabs } from "@/components/SegmentedTabs";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { depthNeutral } from "@/theme/depth";
 
 // ─── Mock data ────────────────────────────────────────────────────
 
@@ -400,14 +401,14 @@ const styles = StyleSheet.create({
   counter: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },
   progressTrack: { height: 4, borderRadius: 2, overflow: "hidden" },
   progressFill: { height: 4, borderRadius: 2 },
-  exerciseCard: { borderWidth: 1, borderRadius: radius["2xl"], padding: spacing.xl, gap: spacing.md },
+  exerciseCard: { ...depthNeutral, backgroundColor: "#FFF", borderRadius: radius["2xl"], padding: spacing.xl, gap: spacing.md },
   kindRow: { flexDirection: "row" },
   kindBadge: { fontSize: 11, fontFamily: fontFamily.semiBold, paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.sm, overflow: "hidden" },
   prompt: { fontSize: fontSize.base, fontFamily: fontFamily.medium, lineHeight: 24 },
-  optionBtn: { flexDirection: "row", alignItems: "center", gap: spacing.md, borderWidth: 1, borderRadius: radius.lg, padding: spacing.md },
+  optionBtn: { flexDirection: "row", alignItems: "center", gap: spacing.md, ...depthNeutral, borderRadius: radius.lg, padding: spacing.md },
   optLetter: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   optText: { flex: 1, fontSize: fontSize.sm },
-  fillInput: { borderWidth: 1, borderRadius: radius.lg, paddingHorizontal: spacing.base, paddingVertical: spacing.md, fontSize: fontSize.base },
+  fillInput: { ...depthNeutral, backgroundColor: "#FFF", borderRadius: radius.lg, paddingHorizontal: spacing.base, paddingVertical: spacing.md, fontSize: fontSize.base },
   explBox: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg },
   explText: { flex: 1, fontSize: fontSize.sm, lineHeight: 20 },
   actionBtn: { alignItems: "center", paddingVertical: spacing.md, borderRadius: radius.lg },
@@ -417,7 +418,7 @@ const styles = StyleSheet.create({
   doneTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.bold },
   doneScore: { fontSize: fontSize.base },
   // Mistakes
-  mistakeCard: { borderWidth: 1, borderRadius: radius.xl, padding: spacing.base, gap: spacing.sm },
+  mistakeCard: { ...depthNeutral, backgroundColor: "#FFF", borderRadius: radius.xl, padding: spacing.base, gap: spacing.sm },
   mistakeRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   mistakeWrong: { fontSize: fontSize.sm, textDecorationLine: "line-through" },
   mistakeCorrect: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },

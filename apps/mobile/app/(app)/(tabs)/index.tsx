@@ -12,6 +12,7 @@ import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
 import { useAuth } from "@/hooks/use-auth";
 import { useProgress, useActivity, usePracticeTrack } from "@/hooks/use-progress";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { depthNeutral, depthSemantic } from "@/theme/depth";
 import type { Skill } from "@/types/api";
 import { MOCK_OVERVIEW_STATS, MOCK_PRACTICE_TRACK } from "@/lib/mock";
 import { GameIcon } from "@/components/GameIcon";
@@ -131,13 +132,13 @@ function OverviewTab({ stats }: { stats: typeof MOCK_OVERVIEW_STATS }) {
       <ExamCountdown daysLeft={stats.daysLeft} />
 
       {/* Spider Chart */}
-      <View style={[s.card, { backgroundColor: c.muted + "80" }]}>
+      <View style={[s.card, { }]}>
         <Text style={[s.cardTitle, { color: c.foreground }]}>Biểu đồ kỹ năng</Text>
         <SpiderChart skills={spider} />
       </View>
 
       {/* Doughnut Chart */}
-      <View style={[s.card, { backgroundColor: c.muted + "80" }]}>
+      <View style={[s.card, { }]}>
         <Text style={[s.cardTitle, { color: c.foreground }]}>Phân bố bài tập</Text>
         <View style={s.doughnutRow}>
           {(["listening", "reading", "writing", "speaking"] as Skill[]).map((sk) => {
@@ -168,7 +169,7 @@ function OverviewTab({ stats }: { stats: typeof MOCK_OVERVIEW_STATS }) {
 function StatCard({ icon, label, value, color }: { icon: string; label: string; value: string; color: string }) {
   const c = useThemeColors();
   return (
-    <View style={[s.statCard, { backgroundColor: c.muted + "80" }]}>
+    <View style={[s.statCard, { }]}>
       <Ionicons name={icon as any} size={22} color={color} />
       <Text style={[s.statLabel, { color: c.mutedForeground }]}>{label}</Text>
       <Text style={[s.statValue, { color }]}>{value}</Text>
@@ -233,7 +234,7 @@ function PracticeTrackTab() {
   return (
     <View style={{ gap: spacing.base }}>
       {/* Score cards */}
-      <View style={[s.card, { backgroundColor: c.muted + "80" }]}>
+      <View style={[s.card, { }]}>
         <Text style={[s.cardTitle, { color: c.foreground }]}>Điểm trung bình hàng tuần</Text>
         <View style={s.scoreGrid}>
           {SKILLS.map((sk) => {
@@ -255,7 +256,7 @@ function PracticeTrackTab() {
       </View>
 
       {/* Test history */}
-      <View style={[s.card, { backgroundColor: c.muted + "80" }]}>
+      <View style={[s.card, { }]}>
         <Text style={[s.cardTitle, { color: c.foreground }]}>Lịch sử Test Practice</Text>
         {data.testSessions.length === 0 ? (
           <Text style={[s.emptyText, { color: c.mutedForeground }]}>Chưa có lịch sử test</Text>
@@ -326,11 +327,11 @@ const s = StyleSheet.create({
   levelLine: { height: 1, flex: 1, backgroundColor: "rgba(255,255,255,0.3)", marginHorizontal: 4 },
   // Stat grid
   statGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  statCard: { width: "48%", borderRadius: radius["2xl"], padding: spacing.base, gap: 4 },
+  statCard: { width: "48%", borderRadius: radius["2xl"], padding: spacing.base, gap: 4, ...depthNeutral, backgroundColor: "#FFF" },
   statLabel: { fontSize: fontSize.xs },
   statValue: { fontSize: fontSize.lg, fontFamily: fontFamily.bold },
   // Card
-  card: { borderRadius: radius["2xl"], padding: spacing.lg, gap: spacing.base },
+  card: { borderRadius: radius["2xl"], padding: spacing.lg, gap: spacing.base, ...depthNeutral, backgroundColor: "#FFF" },
   cardTitle: { fontSize: fontSize.base, fontFamily: fontFamily.semiBold },
   // Doughnut
   doughnutRow: { flexDirection: "row", justifyContent: "space-around", alignItems: "flex-end", height: 120, paddingTop: spacing.sm },
@@ -340,7 +341,7 @@ const s = StyleSheet.create({
   doughnutLabel: { fontSize: 10 },
   doughnutPct: { fontSize: 11, fontFamily: fontFamily.bold },
   // Countdown
-  countdownCard: { borderWidth: 1, borderRadius: radius["2xl"], padding: spacing.lg, gap: spacing.base },
+  countdownCard: { ...depthNeutral, borderRadius: radius["2xl"], padding: spacing.lg, gap: spacing.base, backgroundColor: "#FFF" },
   countdownHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   countdownTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   countdownRow: { flexDirection: "row", justifyContent: "center", alignItems: "flex-start" },
@@ -352,13 +353,13 @@ const s = StyleSheet.create({
   countdownLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.medium, textAlign: "center" },
   // Score grid
   scoreGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  scoreCard: { width: "48%", borderWidth: 1, borderRadius: radius.xl, padding: spacing.base },
+  scoreCard: { width: "48%", ...depthNeutral, borderRadius: radius.xl, padding: spacing.base, backgroundColor: "#FFF" },
   scoreCardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.sm },
   scoreCardLabel: { fontSize: fontSize.sm },
   scoreCardValue: { fontSize: fontSize["2xl"], fontFamily: fontFamily.bold, fontVariant: ["tabular-nums"] },
   scoreCardMeta: { fontSize: fontSize.xs, marginTop: 2 },
   // History
-  historyRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, borderWidth: 1, borderRadius: radius.lg, padding: spacing.md },
+  historyRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, ...depthNeutral, borderRadius: radius.lg, padding: spacing.md, backgroundColor: "#FFF" },
   historyScore: { width: 40, height: 40, borderRadius: radius.sm, alignItems: "center", justifyContent: "center" },
   historyScoreText: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
   historySkill: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },

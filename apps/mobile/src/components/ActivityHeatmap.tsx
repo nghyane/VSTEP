@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { depthNeutral } from "@/theme/depth";
 import { MOCK_ACTIVITY } from "@/lib/mock";
 
 const DAYS = 90;
@@ -27,7 +28,7 @@ export function ActivityHeatmap() {
   }
 
   return (
-    <View style={[styles.card, { backgroundColor: c.muted + "80" }]}>
+    <View style={styles.card}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: c.foreground }]}>Hoạt động 90 ngày</Text>
         <Text style={[styles.streak, { color: c.primary }]}>🔥 {MOCK_ACTIVITY.streak} ngày liên tiếp</Text>
@@ -49,7 +50,7 @@ export function ActivityHeatmap() {
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: radius["2xl"], padding: spacing.lg, gap: spacing.sm },
+  card: { ...depthNeutral, borderRadius: radius["2xl"], padding: spacing.lg, gap: spacing.sm, backgroundColor: "#FFF" },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   title: { fontSize: fontSize.base, fontFamily: fontFamily.semiBold },
   streak: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },

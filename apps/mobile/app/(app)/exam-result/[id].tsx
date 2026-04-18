@@ -7,6 +7,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { recordExamCompletion } from "@/features/streak/streak-store";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { depthNeutral } from "@/theme/depth";
 import { LinearGradient } from "expo-linear-gradient";
 
 // ─── Types ────────────────────────────────────────────────────────
@@ -251,7 +252,7 @@ const styles = StyleSheet.create({
   doneBtnText: { color: "#fff", fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
   scroll: { padding: spacing.xl },
   // Card
-  card: { borderWidth: 1, borderRadius: radius["2xl"], padding: spacing.xl, alignItems: "center", gap: spacing.sm, marginTop: -spacing.xl },
+  card: { ...depthNeutral, borderRadius: radius["2xl"], padding: spacing.xl, alignItems: "center", gap: spacing.sm, marginTop: -spacing.xl, backgroundColor: "#FFF" },
   congrats: { fontSize: fontSize.sm, fontFamily: fontFamily.medium },
   userName: { fontSize: fontSize["2xl"], fontFamily: fontFamily.bold },
   examName: { fontSize: fontSize.sm, textAlign: "center" },
@@ -271,7 +272,7 @@ const styles = StyleSheet.create({
   tabBtn: { flex: 1, alignItems: "center", paddingVertical: spacing.sm, borderRadius: radius.sm },
   tabText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   // Table
-  table: { borderWidth: 1, borderRadius: radius.xl, overflow: "hidden" },
+  table: { ...depthNeutral, borderRadius: radius.xl, overflow: "hidden", backgroundColor: "#FFF" },
   tableHeader: { flexDirection: "row", paddingVertical: spacing.md, paddingHorizontal: spacing.md },
   tableRow: { flexDirection: "row", paddingVertical: spacing.md, paddingHorizontal: spacing.md, alignItems: "center" },
   th: { fontSize: 11, fontFamily: fontFamily.semiBold, textTransform: "uppercase" },
@@ -281,7 +282,7 @@ const styles = StyleSheet.create({
   badge: { flex: 1, alignItems: "center", borderWidth: 1, borderRadius: radius.sm, paddingVertical: 2, marginLeft: 4 },
   badgeText: { fontSize: 11, fontFamily: fontFamily.bold },
   // Detail
-  detailSection: { borderWidth: 1, borderRadius: radius.xl, overflow: "hidden" },
+  detailSection: { ...depthNeutral, borderRadius: radius.xl, overflow: "hidden", backgroundColor: "#FFF" },
   detailHeader: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: spacing.base, paddingVertical: spacing.md },
   detailLabel: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   detailCount: { fontSize: fontSize.xs },

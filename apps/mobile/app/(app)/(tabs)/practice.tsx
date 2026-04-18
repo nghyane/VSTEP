@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { depthNeutral } from "@/theme/depth";
 
 export default function PracticeHubScreen() {
   const c = useThemeColors();
@@ -76,7 +77,7 @@ const styles = StyleSheet.create({
   title: { fontSize: fontSize["2xl"], fontFamily: fontFamily.bold },
   subtitle: { fontSize: fontSize.sm, marginTop: spacing.xs, marginBottom: spacing.xl },
   // Branch card
-  branchCard: { borderWidth: 1, borderRadius: radius["2xl"], padding: spacing.xl, gap: spacing.sm },
+  branchCard: { ...depthNeutral, borderRadius: radius["2xl"], padding: spacing.xl, gap: spacing.sm, backgroundColor: "#FFF" },
   branchTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.bold },
   branchSub: { fontSize: fontSize.sm, lineHeight: 20 },
   branchChips: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.xs },
