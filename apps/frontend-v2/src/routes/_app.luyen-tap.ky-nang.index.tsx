@@ -8,6 +8,11 @@ import {
 	Pagination,
 	SkillSidebar,
 } from "#/components/practice/SkillPageLayout"
+import { Skeleton } from "#/components/ui/skeleton"
+import { type ListeningPart, PART_LABELS as L_PART_LABELS } from "#/lib/mock/listening"
+import { type ReadingPart, READING_PART_LABELS } from "#/lib/mock/reading"
+import { type SpeakingLevel, SPEAKING_LEVEL_LABELS } from "#/lib/mock/speaking"
+import { WRITING_PART_LABELS, type WritingPart } from "#/lib/mock/writing"
 import { getListeningProgress } from "#/lib/practice/listening-progress"
 import { getReadingProgress } from "#/lib/practice/reading-progress"
 import { getSpeakingProgress } from "#/lib/practice/speaking-progress"
@@ -17,12 +22,7 @@ import { readingListQueryOptions } from "#/lib/queries/reading"
 import { speakingListQueryOptions } from "#/lib/queries/speaking"
 import { writingListQueryOptions } from "#/lib/queries/writing"
 import { writingSentenceTopicsQueryOptions } from "#/lib/queries/writing-sentences"
-import { PART_LABELS as L_PART_LABELS, type ListeningPart } from "#/mocks/listening"
-import { READING_PART_LABELS, type ReadingPart } from "#/mocks/reading"
-import { SPEAKING_LEVEL_LABELS, type SpeakingLevel } from "#/mocks/speaking"
-import { WRITING_PART_LABELS, type WritingPart } from "#/mocks/writing"
-import { cn } from "#/shared/lib/utils"
-import { Skeleton } from "#/shared/ui/skeleton"
+import { cn } from "#/lib/utils"
 
 // ─── Types ─────────────────────────────────────────────────────────
 
@@ -58,34 +58,10 @@ interface SkillTab {
 }
 
 const SKILL_TABS: readonly SkillTab[] = [
-	{
-		key: "nghe",
-		label: "Nghe",
-		icon: Headphones,
-		colorClass: "text-skill-listening",
-		bgClass: "bg-skill-listening",
-	},
-	{
-		key: "doc",
-		label: "Đọc",
-		icon: BookOpenText,
-		colorClass: "text-skill-reading",
-		bgClass: "bg-skill-reading",
-	},
-	{
-		key: "noi",
-		label: "Nói",
-		icon: Mic,
-		colorClass: "text-skill-speaking",
-		bgClass: "bg-skill-speaking",
-	},
-	{
-		key: "viet",
-		label: "Viết",
-		icon: PencilLine,
-		colorClass: "text-skill-writing",
-		bgClass: "bg-skill-writing",
-	},
+	{ key: "nghe", label: "Nghe", icon: Headphones, colorClass: "text-skill-listening", bgClass: "bg-skill-listening" },
+	{ key: "doc", label: "Đọc", icon: BookOpenText, colorClass: "text-skill-reading", bgClass: "bg-skill-reading" },
+	{ key: "noi", label: "Nói", icon: Mic, colorClass: "text-skill-speaking", bgClass: "bg-skill-speaking" },
+	{ key: "viet", label: "Viết", icon: PencilLine, colorClass: "text-skill-writing", bgClass: "bg-skill-writing" },
 ]
 
 // ─── Page ──────────────────────────────────────────────────────────
@@ -119,14 +95,19 @@ function SkillHubPage() {
 							onClick={() => navigate({ search: { skill: tab.key, category: "", page: 1 } })}
 							className={cn(
 								"relative inline-flex shrink-0 items-center gap-2 px-4 py-3 text-sm font-medium transition-colors",
-								active ? tab.colorClass : "text-muted-foreground hover:text-foreground",
+								active
+									? tab.colorClass
+									: "text-muted-foreground hover:text-foreground",
 							)}
 						>
 							<Icon className="size-4" />
 							{tab.label}
 							{active && (
 								<span
-									className={cn("absolute inset-x-0 bottom-0 h-0.5 rounded-full", tab.bgClass)}
+									className={cn(
+										"absolute inset-x-0 bottom-0 h-0.5 rounded-full",
+										tab.bgClass,
+									)}
 								/>
 							)}
 						</button>
@@ -196,13 +177,7 @@ function ListeningContent() {
 						status={p?.status}
 						score={p?.score}
 						total={ex.items.length}
-						href={
-							<Link
-								to="/luyen-tap/ky-nang/nghe/$exerciseId"
-								params={{ exerciseId: ex.id }}
-								className="absolute inset-0 rounded-xl"
-							/>
-						}
+						href={<Link to="/luyen-tap/ky-nang/nghe/$exerciseId" params={{ exerciseId: ex.id }} className="absolute inset-0 rounded-xl" />}
 					/>
 				)
 			})}
@@ -241,11 +216,7 @@ function ReadingContent() {
 	const parts: ReadingPart[] = [1, 2, 3]
 	const activePart = (Number(category) || 1) as ReadingPart
 	const sidebarItems = parts
-		.map((p) => ({
-			key: String(p),
-			label: READING_PART_LABELS[p],
-			count: (grouped.get(p) ?? []).length,
-		}))
+		.map((p) => ({ key: String(p), label: READING_PART_LABELS[p], count: (grouped.get(p) ?? []).length }))
 		.filter((i) => i.count > 0)
 
 	const list = grouped.get(activePart) ?? []
@@ -272,13 +243,7 @@ function ReadingContent() {
 						status={p?.status}
 						score={p?.score}
 						total={ex.items.length}
-						href={
-							<Link
-								to="/luyen-tap/ky-nang/doc/$exerciseId"
-								params={{ exerciseId: ex.id }}
-								className="absolute inset-0 rounded-xl"
-							/>
-						}
+						href={<Link to="/luyen-tap/ky-nang/doc/$exerciseId" params={{ exerciseId: ex.id }} className="absolute inset-0 rounded-xl" />}
 					/>
 				)
 			})}
@@ -339,23 +304,15 @@ function WritingContent() {
 			totalCount={totalItems}
 		>
 			{isSentences
-				? topics
-						.slice(start, start + ITEMS_PER_PAGE)
-						.map((topic) => (
-							<ExerciseCard
-								key={topic.id}
-								title={topic.name}
-								description={`${topic.sentenceCount} câu luyện tập`}
-								meta={`${topic.sentenceCount} câu`}
-								href={
-									<Link
-										to="/luyen-tap/ky-nang/viet/cau/$topicId"
-										params={{ topicId: topic.id }}
-										className="absolute inset-0 rounded-xl"
-									/>
-								}
-							/>
-						))
+				? topics.slice(start, start + ITEMS_PER_PAGE).map((topic) => (
+						<ExerciseCard
+							key={topic.id}
+							title={topic.name}
+							description={`${topic.sentenceCount} câu luyện tập`}
+							meta={`${topic.sentenceCount} câu`}
+							href={<Link to="/luyen-tap/ky-nang/viet/cau/$topicId" params={{ topicId: topic.id }} className="absolute inset-0 rounded-xl" />}
+						/>
+					))
 				: currentList.slice(start, start + ITEMS_PER_PAGE).map((ex) => {
 						const p = progress[ex.id]
 						return (
@@ -365,13 +322,7 @@ function WritingContent() {
 								description={ex.description}
 								meta={`${ex.minWords}-${ex.maxWords} từ · ${ex.estimatedMinutes} phút`}
 								status={p?.status}
-								href={
-									<Link
-										to="/luyen-tap/ky-nang/viet/$exerciseId"
-										params={{ exerciseId: ex.id }}
-										className="absolute inset-0 rounded-xl"
-									/>
-								}
+								href={<Link to="/luyen-tap/ky-nang/viet/$exerciseId" params={{ exerciseId: ex.id }} className="absolute inset-0 rounded-xl" />}
 							/>
 						)
 					})}
@@ -408,15 +359,9 @@ function SpeakingContent() {
 	)
 
 	const levels: SpeakingLevel[] = ["A2", "B1", "B2", "C1"]
-	const activeLevel = (
-		levels.includes(category as SpeakingLevel) ? category : "A2"
-	) as SpeakingLevel
+	const activeLevel = (levels.includes(category as SpeakingLevel) ? category : "A2") as SpeakingLevel
 	const sidebarItems = levels
-		.map((lv) => ({
-			key: lv,
-			label: SPEAKING_LEVEL_LABELS[lv],
-			count: (grouped.get(lv) ?? []).length,
-		}))
+		.map((lv) => ({ key: lv, label: SPEAKING_LEVEL_LABELS[lv], count: (grouped.get(lv) ?? []).length }))
 		.filter((i) => i.count > 0)
 
 	const list = grouped.get(activeLevel) ?? []
@@ -443,13 +388,7 @@ function SpeakingContent() {
 						status={p?.status}
 						score={p?.shadowingDone}
 						total={ex.sentences.length}
-						href={
-							<Link
-								to="/luyen-tap/ky-nang/noi/$exerciseId"
-								params={{ exerciseId: ex.id }}
-								className="absolute inset-0 rounded-xl"
-							/>
-						}
+						href={<Link to="/luyen-tap/ky-nang/noi/$exerciseId" params={{ exerciseId: ex.id }} className="absolute inset-0 rounded-xl" />}
 					/>
 				)
 			})}
@@ -488,7 +427,9 @@ function SkillGrid({
 					<p className="text-sm font-medium">{headerLabel}</p>
 					<p className="text-xs text-muted-foreground">{totalCount} bài</p>
 				</div>
-				<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{children}</div>
+				<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+					{children}
+				</div>
 			</div>
 		</div>
 	)

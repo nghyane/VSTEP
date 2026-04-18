@@ -1,7 +1,7 @@
 // McqNavBar — pills ở footer, click smooth-scroll tới câu tương ứng.
 // Dùng chung cho Listening/Reading session. McqQuestionList gắn id `mcq-item-{idx}`.
 
-import { cn } from "#/shared/lib/utils"
+import { cn } from "#/lib/utils"
 
 interface Props {
 	total: number

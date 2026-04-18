@@ -6,7 +6,7 @@
 
 import { useSyncExternalStore } from "react"
 import { refundCoins } from "#/lib/coins/coin-store"
-import type { Course } from "#/mocks/courses"
+import type { Course } from "#/lib/mock/courses"
 
 export interface Enrollment {
 	courseId: string

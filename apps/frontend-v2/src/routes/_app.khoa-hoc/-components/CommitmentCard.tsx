@@ -13,9 +13,9 @@ import {
 import { useEffect, useRef } from "react"
 import type { CommitmentStatus } from "#/lib/courses/commitment"
 import type { Enrollment } from "#/lib/courses/enrollment-store"
-import { pushNotification } from "#/features/notification"
-import type { Course } from "#/mocks/courses"
-import { cn } from "#/shared/lib/utils"
+import type { Course } from "#/lib/mock/courses"
+import { pushNotification } from "#/lib/notifications/store"
+import { cn } from "#/lib/utils"
 
 interface Props {
 	course: Course

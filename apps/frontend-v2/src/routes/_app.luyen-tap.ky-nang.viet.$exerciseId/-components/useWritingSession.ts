@@ -1,8 +1,8 @@
 // Writing session state — phase writing/submitted, text state, rule-based feedback.
 
 import { useCallback, useMemo, useState } from "react"
+import type { WritingExercise } from "#/lib/mock/writing"
 import { saveWritingProgress } from "#/lib/practice/writing-progress"
-import type { WritingExercise } from "#/mocks/writing"
 
 export type WritingPhase = "writing" | "submitted"
 

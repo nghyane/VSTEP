@@ -1,8 +1,8 @@
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useCallback, useMemo, useState } from "react"
-import type { MockWritingTask, WritingAnswerMap } from "#/mocks/exam-session"
-import { cn } from "#/shared/lib/utils"
-import { Button } from "#/shared/ui/button"
+import { Button } from "#/components/ui/button"
+import type { MockWritingTask, WritingAnswerMap } from "#/lib/mock/exam-session"
+import { cn } from "#/lib/utils"
 
 // ─── Prompt display ───────────────────────────────────────────────────────────
 

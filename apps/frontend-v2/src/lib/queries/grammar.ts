@@ -2,7 +2,7 @@
 // Khi có API thật: thay queryFn → apiFetchGrammarPoints/Point, xóa mock imports.
 
 import { queryOptions } from "@tanstack/react-query"
-import { mockFetchGrammarPoint, mockFetchGrammarPoints } from "#/mocks/grammar"
+import { mockFetchGrammarPoint, mockFetchGrammarPoints } from "#/lib/mock/grammar"
 
 export const grammarKeys = {
 	all: ["grammar"] as const,

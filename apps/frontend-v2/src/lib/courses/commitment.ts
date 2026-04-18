@@ -4,7 +4,7 @@
 
 import { countFullTestsInWindow } from "#/lib/courses/completion-log"
 import type { Enrollment } from "#/lib/courses/enrollment-store"
-import { type Course, commitmentDeadlineMs } from "#/mocks/courses"
+import { type Course, commitmentDeadlineMs } from "#/lib/mock/courses"
 
 export type CommitmentPhase =
 	| "active" // Còn hạn, chưa đủ bài — đang trong cửa sổ cam kết

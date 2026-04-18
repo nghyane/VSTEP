@@ -1,6 +1,6 @@
 import { Check } from "lucide-react"
-import type { ExamSection, ExamSkillKey } from "#/mocks/thi-thu"
-import { cn } from "#/shared/lib/utils"
+import type { ExamSection, ExamSkillKey } from "#/lib/mock/thi-thu"
+import { cn } from "#/lib/utils"
 
 interface Props {
 	sections: readonly ExamSection[]

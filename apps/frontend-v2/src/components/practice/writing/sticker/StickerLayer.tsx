@@ -1,7 +1,7 @@
 // StickerLayer — container relative + SVG overlay vẽ connector lines.
 
-import { cn } from "#/shared/lib/utils"
-import { type ConnectorPath, TONE_COLORS } from "./useConnectorGeometry"
+import { cn } from "#/lib/utils"
+import { TONE_COLORS, type ConnectorPath } from "./useConnectorGeometry"
 
 interface Props {
 	paths: ConnectorPath[]
@@ -17,7 +17,7 @@ export function StickerLayer({ paths, containerRef, className, style, children }
 			{children}
 			{paths.length > 0 && (
 				<svg
-					aria-hidden="true"
+					aria-hidden
 					className="pointer-events-none absolute inset-0 size-full overflow-visible"
 				>
 					{paths.map((p) => (

@@ -12,10 +12,11 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 import { CoinIcon } from "#/components/common/CoinIcon"
+import { Avatar, AvatarFallback } from "#/components/ui/avatar"
+import { Button } from "#/components/ui/button"
 import { computeCommitment } from "#/lib/courses/commitment"
 import { useExamCompletions } from "#/lib/courses/completion-log"
 import { useEnrollments } from "#/lib/courses/enrollment-store"
-import { courseDetailQueryOptions } from "#/lib/queries/courses"
 import {
 	COURSE_LEVEL_LABELS,
 	type Course,
@@ -25,9 +26,8 @@ import {
 	isCourseFull,
 	remainingSlots,
 	savedVnd,
-} from "#/mocks/courses"
-import { Avatar, AvatarFallback } from "#/shared/ui/avatar"
-import { Button } from "#/shared/ui/button"
+} from "#/lib/mock/courses"
+import { courseDetailQueryOptions } from "#/lib/queries/courses"
 import {
 	CommitmentCard,
 	CommitmentViolatedBanner,

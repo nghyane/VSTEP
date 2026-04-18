@@ -3,7 +3,7 @@
 // Source: skill-design.md §4.7
 
 import { ArrowRight, Sparkles } from "lucide-react"
-import { Button } from "#/shared/ui/button"
+import { Button } from "#/components/ui/button"
 
 interface Props {
 	onStart: () => void

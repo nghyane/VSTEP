@@ -6,6 +6,15 @@ import { toast } from "sonner"
 import { AnimatedCoinIcon } from "#/components/common/AnimatedCoinIcon"
 import { CoinIcon } from "#/components/common/CoinIcon"
 import { FireIcon } from "#/components/common/FireIcon"
+import { Button } from "#/components/ui/button"
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "#/components/ui/dialog"
+import { ScrollArea } from "#/components/ui/scroll-area"
 import {
 	claimMilestone,
 	DAILY_GOAL,
@@ -14,16 +23,7 @@ import {
 	useClaimedMilestones,
 	useTodayProgress,
 } from "#/lib/streak/streak-rewards"
-import { cn } from "#/shared/lib/utils"
-import { Button } from "#/shared/ui/button"
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "#/shared/ui/dialog"
-import { ScrollArea } from "#/shared/ui/scroll-area"
+import { cn } from "#/lib/utils"
 
 interface Props {
 	open: boolean

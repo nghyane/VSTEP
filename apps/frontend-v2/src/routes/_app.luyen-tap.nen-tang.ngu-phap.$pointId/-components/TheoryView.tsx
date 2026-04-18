@@ -1,4 +1,4 @@
-import type { GrammarPoint } from "#/mocks/grammar"
+import type { GrammarPoint } from "#/lib/mock/grammar"
 
 interface Props {
 	point: GrammarPoint

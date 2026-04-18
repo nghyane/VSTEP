@@ -1,9 +1,9 @@
 // useSpeakingSession — state cho bài luyện Nói (Shadowing).
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import type { SpeakingExercise } from "#/lib/mock/speaking"
 import { cancelSpeak, speakSentence } from "#/lib/practice/speak-sentence"
 import { saveSpeakingProgress } from "#/lib/practice/speaking-progress"
-import type { SpeakingExercise } from "#/mocks/speaking"
 
 export type SpeakingPhase = "practicing" | "submitted"
 

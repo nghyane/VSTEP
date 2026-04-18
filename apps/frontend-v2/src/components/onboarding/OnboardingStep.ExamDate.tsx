@@ -2,7 +2,7 @@
 // Spec: year → month → day picker, content scrollable, summary at bottom
 
 import { useState } from "react"
-import { cn } from "#/shared/lib/utils"
+import { cn } from "#/lib/utils"
 
 interface Props {
 	value: Date | null

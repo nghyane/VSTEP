@@ -11,13 +11,13 @@ import {
 	Sun,
 } from "lucide-react"
 import { Suspense, useMemo } from "react"
+import { Skeleton } from "#/components/ui/skeleton"
+import type { VocabTopic } from "#/lib/mock/vocabulary"
 import { vocabularyTopicsQueryOptions } from "#/lib/queries/vocabulary"
 import { buildQueue, countMastered, queueCounts } from "#/lib/srs/queue"
 import { getAllStates } from "#/lib/srs/storage"
 import { LEVEL_LABELS, TASK_LABELS, type VstepLevel, type VstepTask } from "#/lib/types/vstep"
-import type { VocabTopic } from "#/mocks/vocabulary"
-import { cn } from "#/shared/lib/utils"
-import { Skeleton } from "#/shared/ui/skeleton"
+import { cn } from "#/lib/utils"
 
 type VocabView = "level" | "task" | "all"
 

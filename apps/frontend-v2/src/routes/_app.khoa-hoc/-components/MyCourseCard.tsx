@@ -3,12 +3,12 @@
 
 import { Link } from "@tanstack/react-router"
 import { AlertTriangle, ArrowRight, CalendarDays, Video } from "lucide-react"
+import { Button } from "#/components/ui/button"
 import { commitmentPhaseLabel, computeCommitment } from "#/lib/courses/commitment"
 import { useExamCompletions } from "#/lib/courses/completion-log"
 import type { Enrollment } from "#/lib/courses/enrollment-store"
-import { type Course, isCourseEnded } from "#/mocks/courses"
-import { cn } from "#/shared/lib/utils"
-import { Button } from "#/shared/ui/button"
+import { type Course, isCourseEnded } from "#/lib/mock/courses"
+import { cn } from "#/lib/utils"
 import { formatDateVi } from "./course-utils"
 
 interface Props {

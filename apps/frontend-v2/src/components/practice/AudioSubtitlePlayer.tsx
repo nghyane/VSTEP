@@ -5,8 +5,8 @@
 import { Captions, CaptionsOff, Pause, Play, RotateCcw } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { SpeakerIcon } from "#/components/common/SpeakerIcon"
-import type { WordTimestamp } from "#/mocks/listening"
-import { cn } from "#/shared/lib/utils"
+import type { WordTimestamp } from "#/lib/mock/listening"
+import { cn } from "#/lib/utils"
 
 interface Props {
 	audioUrl?: string
@@ -35,11 +35,7 @@ export function AudioSubtitlePlayer({ audioUrl, transcript, wordTimestamps }: Pr
 		const synth = window.speechSynthesis
 		function load() {
 			const voices = synth.getVoices()
-			setVoice(
-				voices.find((v) => v.lang === "en-US") ??
-					voices.find((v) => v.lang.startsWith("en")) ??
-					null,
-			)
+			setVoice(voices.find((v) => v.lang === "en-US") ?? voices.find((v) => v.lang.startsWith("en")) ?? null)
 		}
 		load()
 		synth.addEventListener("voiceschanged", load)
@@ -75,9 +71,7 @@ export function AudioSubtitlePlayer({ audioUrl, transcript, wordTimestamps }: Pr
 			const u = new SpeechSynthesisUtterance(transcript)
 			if (voice) u.voice = voice
 			u.rate = 0.9
-			u.onboundary = (e) => {
-				if (e.name === "word") setTtsCharIndex(e.charIndex)
-			}
+			u.onboundary = (e) => { if (e.name === "word") setTtsCharIndex(e.charIndex) }
 			u.onend = () => setState("ended")
 			setDuration(transcript.split(/\s+/).length / 2.25)
 			window.speechSynthesis.cancel()
@@ -112,24 +106,13 @@ export function AudioSubtitlePlayer({ audioUrl, transcript, wordTimestamps }: Pr
 
 	const handleStop = useCallback(() => {
 		if (useTts) window.speechSynthesis.cancel()
-		else {
-			const el = audioRef.current
-			if (el) {
-				el.pause()
-				el.currentTime = 0
-			}
-		}
+		else { const el = audioRef.current; if (el) { el.pause(); el.currentTime = 0 } }
 		setCurrentTime(0)
 		setTtsCharIndex(-1)
 		setState("idle")
 	}, [useTts])
 
-	useEffect(
-		() => () => {
-			window.speechSynthesis.cancel()
-		},
-		[],
-	)
+	useEffect(() => () => { window.speechSynthesis.cancel() }, [])
 
 	const isPlaying = state === "playing"
 	const pct = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0
@@ -137,11 +120,7 @@ export function AudioSubtitlePlayer({ audioUrl, transcript, wordTimestamps }: Pr
 
 	return (
 		<div className="rounded-2xl border bg-card p-4 shadow-sm">
-			{!useTts && (
-				<audio ref={audioRef} src={audioUrl} preload="metadata">
-					<track kind="captions" />
-				</audio>
-			)}
+			{!useTts && <audio ref={audioRef} src={audioUrl} preload="metadata"><track kind="captions" /></audio>}
 
 			<div className="flex items-center justify-between pb-3">
 				<div className="inline-flex items-center gap-2 text-sm font-semibold">
@@ -151,68 +130,34 @@ export function AudioSubtitlePlayer({ audioUrl, transcript, wordTimestamps }: Pr
 			</div>
 
 			<div className="flex items-center gap-3">
-				<button
-					type="button"
-					onClick={isPlaying ? handlePause : state === "paused" ? handleResume : handlePlay}
-					aria-label={isPlaying ? "Tạm dừng" : "Phát"}
-					className="flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-				>
+				<button type="button" onClick={isPlaying ? handlePause : state === "paused" ? handleResume : handlePlay} aria-label={isPlaying ? "Tạm dừng" : "Phát"} className="flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90">
 					{isPlaying ? <Pause className="size-4" /> : <Play className="size-4" />}
 				</button>
-				<span className="font-mono text-xs font-semibold tabular-nums text-primary">
-					{fmt(currentTime)}
-				</span>
+				<span className="font-mono text-xs font-semibold tabular-nums text-primary">{fmt(currentTime)}</span>
 				<div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-					<div
-						className="absolute inset-y-0 left-0 rounded-full bg-primary transition-[width] duration-150"
-						style={{ width: `${pct}%` }}
-					/>
+					<div className="absolute inset-y-0 left-0 rounded-full bg-primary transition-[width] duration-150" style={{ width: `${pct}%` }} />
 				</div>
-				<span className="font-mono text-xs tabular-nums text-muted-foreground">
-					{fmt(duration)}
-				</span>
-				<button
-					type="button"
-					onClick={handleStop}
-					disabled={state === "idle"}
-					aria-label="Dừng"
-					className="flex size-8 items-center justify-center rounded-full text-muted-foreground hover:text-foreground disabled:opacity-40"
-				>
+				<span className="font-mono text-xs tabular-nums text-muted-foreground">{fmt(duration)}</span>
+				<button type="button" onClick={handleStop} disabled={state === "idle"} aria-label="Dừng" className="flex size-8 items-center justify-center rounded-full text-muted-foreground hover:text-foreground disabled:opacity-40">
 					<RotateCcw className="size-4" />
 				</button>
-				<button
-					type="button"
-					onClick={() => setShowSub((v) => !v)}
-					aria-label="Phụ đề"
-					className={cn(
-						"flex size-8 items-center justify-center rounded-full",
-						showSub ? "text-primary" : "text-muted-foreground hover:text-foreground",
-					)}
-				>
+				<button type="button" onClick={() => setShowSub((v) => !v)} aria-label="Phụ đề" className={cn("flex size-8 items-center justify-center rounded-full", showSub ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
 					{showSub ? <Captions className="size-4" /> : <CaptionsOff className="size-4" />}
 				</button>
 			</div>
 
-			{showSub &&
-				hasPlayed &&
-				(wordTimestamps && wordTimestamps.length > 0 ? (
-					<TimestampSubtitle words={wordTimestamps} currentTime={currentTime} />
-				) : (
-					<TtsSubtitle transcript={transcript} charIndex={ttsCharIndex} />
-				))}
+			{showSub && hasPlayed && (
+				wordTimestamps && wordTimestamps.length > 0
+					? <TimestampSubtitle words={wordTimestamps} currentTime={currentTime} />
+					: <TtsSubtitle transcript={transcript} charIndex={ttsCharIndex} />
+			)}
 		</div>
 	)
 }
 
 // ─── Timestamp-based subtitle (Whisper) ────────────────────────────
 
-function TimestampSubtitle({
-	words,
-	currentTime,
-}: {
-	words: readonly WordTimestamp[]
-	currentTime: number
-}) {
+function TimestampSubtitle({ words, currentTime }: { words: readonly WordTimestamp[]; currentTime: number }) {
 	// Group words into sentences (split at . ? !)
 	const sentences = useMemo(() => {
 		const result: { words: readonly WordTimestamp[]; startTime: number; endTime: number }[] = []
@@ -229,19 +174,14 @@ function TimestampSubtitle({
 			}
 		}
 		if (buf.length > 0) {
-			result.push({
-				words: buf,
-				startTime: buf[0]?.start ?? 0,
-				endTime: buf[buf.length - 1]?.end ?? 0,
-			})
+			result.push({ words: buf, startTime: buf[0]?.start ?? 0, endTime: buf[buf.length - 1]?.end ?? 0 })
 		}
 		return result
 	}, [words])
 
 	// Find current sentence
-	const current =
-		sentences.find((s) => currentTime >= s.startTime && currentTime < s.endTime + 0.5) ??
-		(currentTime > 0 ? [...sentences].reverse().find((s) => currentTime >= s.startTime) : null)
+	const current = sentences.find((s) => currentTime >= s.startTime && currentTime < s.endTime + 0.5)
+		?? (currentTime > 0 ? [...sentences].reverse().find((s) => currentTime >= s.startTime) : null)
 
 	if (!current) return null
 
@@ -249,12 +189,7 @@ function TimestampSubtitle({
 		<div className="mt-3 border-t pt-3">
 			<p className="text-center text-sm leading-relaxed">
 				{current.words.map((w) => (
-					<span
-						key={w.start}
-						className={
-							currentTime >= w.start ? "font-semibold text-foreground" : "text-muted-foreground/40"
-						}
-					>
+					<span key={w.start} className={currentTime >= w.start ? "font-semibold text-foreground" : "text-muted-foreground/40"}>
 						{w.word}{" "}
 					</span>
 				))}
@@ -270,7 +205,6 @@ function TtsSubtitle({ transcript, charIndex }: { transcript: string; charIndex:
 		const result: { text: string; start: number; end: number }[] = []
 		const regex = /[^.!?]+[.!?]+/g
 		let m: RegExpExecArray | null = null
-		// biome-ignore lint/suspicious/noAssignInExpressions: idiomatic regex exec loop
 		while ((m = regex.exec(transcript)) !== null) {
 			result.push({ text: m[0].trim(), start: m.index, end: m.index + m[0].length })
 		}
@@ -280,8 +214,7 @@ function TtsSubtitle({ transcript, charIndex }: { transcript: string; charIndex:
 		return result
 	}, [transcript])
 
-	const current =
-		charIndex >= 0 ? sentences.find((s) => charIndex >= s.start && charIndex < s.end) : null
+	const current = charIndex >= 0 ? sentences.find((s) => charIndex >= s.start && charIndex < s.end) : null
 	if (!current) return null
 
 	const words = current.text.split(/(\s+)/)
@@ -292,15 +225,9 @@ function TtsSubtitle({ transcript, charIndex }: { transcript: string; charIndex:
 			<p className="text-center text-sm leading-relaxed">
 				{words.map((seg, i) => {
 					if (/^\s+$/.test(seg)) return <span key={i}> </span>
-					const pos = current.text.indexOf(
-						seg,
-						i > 0 ? current.text.indexOf(words[i - 2] ?? "") + 1 : 0,
-					)
+					const pos = current.text.indexOf(seg, i > 0 ? current.text.indexOf(words[i - 2] ?? "") + 1 : 0)
 					return (
-						<span
-							key={i}
-							className={rel >= pos ? "font-semibold text-foreground" : "text-muted-foreground/40"}
-						>
+						<span key={i} className={rel >= pos ? "font-semibold text-foreground" : "text-muted-foreground/40"}>
 							{seg}
 						</span>
 					)

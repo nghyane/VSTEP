@@ -3,7 +3,7 @@
 
 import { useSyncExternalStore } from "react"
 import { refundCoins } from "#/lib/coins/coin-store"
-import { pushNotification } from "#/features/notification"
+import { pushNotification } from "#/lib/notifications/store"
 
 export interface StreakMilestone {
 	days: number

@@ -3,8 +3,8 @@
 // SVG: viewBox 280x280, CENTER=140, RADIUS=88, LEVELS=5
 
 import { BookOpen, Headphones, Mic, PencilLine } from "lucide-react"
-import type { OverviewData } from "#/mocks/overview"
-import { cn } from "#/shared/lib/utils"
+import type { OverviewData } from "#/lib/mock/overview"
+import { cn } from "#/lib/utils"
 
 type Skill = "listening" | "reading" | "writing" | "speaking"
 
@@ -54,24 +54,27 @@ function polarToXY(angle: number, radius: number) {
 function gridPath(skills: { key: Skill }[], level: number): string {
 	const r = (RADIUS / LEVELS) * level
 	const step = 360 / skills.length
-	return `${skills
-		.map((_, i) => {
-			const { x, y } = polarToXY(i * step, r)
-			return `${i === 0 ? "M" : "L"} ${x} ${y}`
-		})
-		.join(" ")} Z`
+	return (
+		skills
+			.map((_, i) => {
+				const { x, y } = polarToXY(i * step, r)
+				return `${i === 0 ? "M" : "L"} ${x} ${y}`
+			})
+			.join(" ") + " Z"
+	)
 }
 
 function SpiderChart({ spider }: Props) {
 	const count = SKILLS.length
 	const step = 360 / count
 
-	const dataPath = `${SKILLS.map((s, i) => {
-		const value = spider[s.key].current
-		const r = (value / 10) * RADIUS
-		const { x, y } = polarToXY(i * step, r)
-		return `${i === 0 ? "M" : "L"} ${x} ${y}`
-	}).join(" ")} Z`
+	const dataPath =
+		SKILLS.map((s, i) => {
+			const value = spider[s.key].current
+			const r = (value / 10) * RADIUS
+			const { x, y } = polarToXY(i * step, r)
+			return `${i === 0 ? "M" : "L"} ${x} ${y}`
+		}).join(" ") + " Z"
 
 	const isAllZero = SKILLS.every((s) => spider[s.key].current === 0)
 

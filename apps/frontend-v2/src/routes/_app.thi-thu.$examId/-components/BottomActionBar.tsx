@@ -4,10 +4,10 @@ import { useRef, useState } from "react"
 import { toast } from "sonner"
 import { CoinIcon } from "#/components/common/CoinIcon"
 import { TopUpDialog } from "#/components/common/TopUpDialog"
+import { Button } from "#/components/ui/button"
 import { computeSessionCost, useCoins } from "#/lib/coins/coin-store"
-import type { ExamSection, ExamSkillKey } from "#/mocks/thi-thu"
-import { cn } from "#/shared/lib/utils"
-import { Button } from "#/shared/ui/button"
+import type { ExamSection, ExamSkillKey } from "#/lib/mock/thi-thu"
+import { cn } from "#/lib/utils"
 
 type ExamDurationSelection = number | "unlimited" | null
 

@@ -2,7 +2,7 @@
 
 import { Link } from "@tanstack/react-router"
 import { RotateCcw } from "lucide-react"
-import { Button } from "#/shared/ui/button"
+import { Button } from "#/components/ui/button"
 
 interface Props {
 	phase: "answering" | "submitted"
@@ -54,27 +54,15 @@ export function SubmitAction({
 				Làm lại
 			</Button>
 			<Button asChild>
-				<Link to={backTo} search={backSearch as never}>
-					{backLabel}
-				</Link>
+				<Link to={backTo} search={backSearch as never}>{backLabel}</Link>
 			</Button>
 		</div>
 	)
 }
 
 export function McqSubmitBar(props: Props) {
-	const {
-		phase,
-		answeredCount,
-		total,
-		canSubmit,
-		score,
-		backTo,
-		backSearch,
-		backLabel,
-		onSubmit,
-		onReset,
-	} = props
+	const { phase, answeredCount, total, canSubmit, score, backTo, backSearch, backLabel, onSubmit, onReset } =
+		props
 
 	return (
 		<footer className="flex min-h-12 shrink-0 flex-wrap items-center gap-3">
@@ -96,9 +84,7 @@ export function McqSubmitBar(props: Props) {
 						Làm lại
 					</Button>
 					<Button asChild>
-						<Link to={backTo} search={backSearch as never}>
-							{backLabel}
-						</Link>
+						<Link to={backTo} search={backSearch as never}>{backLabel}</Link>
 					</Button>
 				</div>
 			)}

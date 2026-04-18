@@ -9,7 +9,7 @@
 //
 // Backend contract: Question.content.sampleMarkers[] — xem SampleMarkerDef trong writing.ts.
 
-import type { SampleMarkerDef } from "#/mocks/writing"
+import type { SampleMarkerDef } from "#/lib/mock/writing"
 
 /** Marker đã resolve ra position thật để render. */
 export interface ResolvedMarker extends SampleMarkerDef {
@@ -54,7 +54,9 @@ export function resolveMarkers(
 			// Match không tìm thấy — có thể sampleAnswer đã bị sửa.
 			// Backend sẽ validate và báo lỗi khi admin save.
 			if (process.env.NODE_ENV !== "production") {
-				console.warn(`[SampleMarker] match không tìm thấy: "${def.match}" (id=${def.id})`)
+				console.warn(
+					`[SampleMarker] match không tìm thấy: "${def.match}" (id=${def.id})`,
+				)
 			}
 			continue
 		}

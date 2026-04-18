@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { ArrowLeft, ArrowRight, BookType, Languages, type LucideIcon } from "lucide-react"
-import { cn } from "#/shared/lib/utils"
+import { cn } from "#/lib/utils"
 
 export const Route = createFileRoute("/_app/luyen-tap/nen-tang/")({
 	component: NenTangHubPage,

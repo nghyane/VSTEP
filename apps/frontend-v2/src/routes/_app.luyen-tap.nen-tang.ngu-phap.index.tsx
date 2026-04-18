@@ -2,17 +2,17 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { ArrowLeft, CheckCircle2, Circle, CircleDot, Sparkles } from "lucide-react"
 import { Suspense, useMemo } from "react"
+import { Skeleton } from "#/components/ui/skeleton"
 import { accuracyPercent, computeLevel, getMastery, type MasteryLevel } from "#/lib/grammar/mastery"
-import { grammarPointsQueryOptions } from "#/lib/queries/grammar"
 import {
 	type GrammarPoint,
 	LEVEL_LABELS,
 	TASK_LABELS,
 	type VstepLevel,
 	type VstepTask,
-} from "#/mocks/grammar"
-import { cn } from "#/shared/lib/utils"
-import { Skeleton } from "#/shared/ui/skeleton"
+} from "#/lib/mock/grammar"
+import { grammarPointsQueryOptions } from "#/lib/queries/grammar"
+import { cn } from "#/lib/utils"
 
 type GrammarView = "level" | "task" | "errors"
 

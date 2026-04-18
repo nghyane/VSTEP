@@ -2,13 +2,8 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { ArrowLeft, BookOpen, CheckCircle2, RotateCcw, Target, XCircle } from "lucide-react"
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react"
-import { vocabularyTopicQueryOptions } from "#/lib/queries/vocabulary"
-import { DEFAULT_SRS_CONFIG } from "#/lib/srs/defaults"
-import { formatInterval } from "#/lib/srs/format"
-import { buildQueue, nextFromQueue, queueCounts } from "#/lib/srs/queue"
-import { nextState, previewIntervals } from "#/lib/srs/scheduler"
-import { getAllStates, resetTopicProgress, upsertCardState } from "#/lib/srs/storage"
-import type { CardState, Rating } from "#/lib/srs/types"
+import { Button } from "#/components/ui/button"
+import { Skeleton } from "#/components/ui/skeleton"
 import type {
 	VocabExercise,
 	VocabFillBlank,
@@ -16,10 +11,15 @@ import type {
 	VocabTopic,
 	VocabWord,
 	VocabWordForm,
-} from "#/mocks/vocabulary"
-import { cn } from "#/shared/lib/utils"
-import { Button } from "#/shared/ui/button"
-import { Skeleton } from "#/shared/ui/skeleton"
+} from "#/lib/mock/vocabulary"
+import { vocabularyTopicQueryOptions } from "#/lib/queries/vocabulary"
+import { DEFAULT_SRS_CONFIG } from "#/lib/srs/defaults"
+import { formatInterval } from "#/lib/srs/format"
+import { buildQueue, nextFromQueue, queueCounts } from "#/lib/srs/queue"
+import { nextState, previewIntervals } from "#/lib/srs/scheduler"
+import { getAllStates, resetTopicProgress, upsertCardState } from "#/lib/srs/storage"
+import type { CardState, Rating } from "#/lib/srs/types"
+import { cn } from "#/lib/utils"
 
 type Tab = "flashcard" | "practice"
 

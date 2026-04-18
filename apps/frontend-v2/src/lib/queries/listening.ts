@@ -2,7 +2,7 @@
 // Khi có API thật: thay queryFn → apiFetchListening, xóa mock imports.
 
 import { queryOptions } from "@tanstack/react-query"
-import { mockFetchListening, mockFetchListeningExercise } from "#/mocks/listening"
+import { mockFetchListening, mockFetchListeningExercise } from "#/lib/mock/listening"
 
 export const listeningKeys = {
 	all: ["listening"] as const,

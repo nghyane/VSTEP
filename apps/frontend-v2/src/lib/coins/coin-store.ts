@@ -2,7 +2,7 @@
 // Pattern: giống ai-chat store — CustomEvent broadcast cho useSyncExternalStore.
 
 import { useSyncExternalStore } from "react"
-import type { ExamSkillKey } from "#/mocks/thi-thu"
+import type { ExamSkillKey } from "#/lib/mock/thi-thu"
 
 const STORAGE_KEY = "vstep:coins:v1"
 const EVENT = "vstep:coins-change"

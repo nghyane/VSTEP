@@ -1,10 +1,10 @@
 import { ChevronLeft, ChevronRight, Loader2, Mic, Square } from "lucide-react"
 import { motion } from "motion/react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { Button } from "#/components/ui/button"
+import type { MockSpeakingPart, SpeakingDoneSet } from "#/lib/mock/exam-session"
 import { useVoiceRecorder } from "#/lib/practice/use-voice-recorder"
-import type { MockSpeakingPart, SpeakingDoneSet } from "#/mocks/exam-session"
-import { cn } from "#/shared/lib/utils"
-import { Button } from "#/shared/ui/button"
+import { cn } from "#/lib/utils"
 
 // ─── Mock recorder ────────────────────────────────────────────────────────────
 

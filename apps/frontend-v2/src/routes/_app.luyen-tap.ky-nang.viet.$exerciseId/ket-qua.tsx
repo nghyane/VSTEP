@@ -4,14 +4,14 @@ import { ArrowLeft, RotateCcw } from "lucide-react"
 import { Suspense, useMemo } from "react"
 import { AiGradingCard } from "#/components/practice/AiGradingCard"
 import { AnnotatedFeedbackView } from "#/components/practice/writing/AnnotatedFeedbackView"
+import { Button } from "#/components/ui/button"
+import { Skeleton } from "#/components/ui/skeleton"
 import {
 	buildAnnotatedWritingFeedback,
 	buildMockWritingGrading,
 } from "#/lib/practice/mock-ai-grading"
 import { loadWritingResult } from "#/lib/practice/result-storage"
 import { writingExerciseQueryOptions } from "#/lib/queries/writing"
-import { Button } from "#/shared/ui/button"
-import { Skeleton } from "#/shared/ui/skeleton"
 
 export const Route = createFileRoute("/_app/luyen-tap/ky-nang/viet/$exerciseId/ket-qua")({
 	loader: ({ context: { queryClient }, params }) =>

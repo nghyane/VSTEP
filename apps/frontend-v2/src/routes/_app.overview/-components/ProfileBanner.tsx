@@ -3,9 +3,9 @@
 // Source: progress/index.tsx ProfileCard + Prep UI level track
 
 import { Route } from "lucide-react"
+import { Button } from "#/components/ui/button"
+import type { OverviewData } from "#/lib/mock/overview"
 import type { Level } from "#/lib/onboarding/types"
-import type { OverviewData } from "#/mocks/overview"
-import { Button } from "#/shared/ui/button"
 
 interface LevelTrack {
 	entryLevel: Level

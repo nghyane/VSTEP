@@ -1,14 +1,7 @@
 // AnnotatedFeedbackView — bài viết có highlight lỗi + margin stickers + connector lines.
 // Layout 2-cột: paragraph stickers (trái) | bài viết annotated (phải).
 
-import {
-	AlertTriangle,
-	ArrowRight,
-	Check,
-	CheckCircle2,
-	Lightbulb,
-	MessageSquare,
-} from "lucide-react"
+import { AlertTriangle, ArrowRight, Check, CheckCircle2, Lightbulb, MessageSquare } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import type {
 	AnnotatedWritingFeedback,
@@ -16,7 +9,7 @@ import type {
 	ParagraphFeedback,
 	WritingAnnotation,
 } from "#/lib/practice/mock-ai-grading"
-import { cn } from "#/shared/lib/utils"
+import { cn } from "#/lib/utils"
 import { StickerAnchor } from "./sticker/StickerAnchor"
 import { StickerLayer } from "./sticker/StickerLayer"
 import { StickerNote } from "./sticker/StickerNote"
@@ -169,22 +162,17 @@ function ParagraphStatusIcon({ status }: { status: ParagraphFeedback["status"] }
 	return <AlertTriangle className="size-3.5 text-warning" />
 }
 
-function ParagraphStickerContent({
-	feedback,
-	index,
-}: {
-	feedback: ParagraphFeedback
-	index: number
-}) {
+function ParagraphStickerContent({ feedback, index }: { feedback: ParagraphFeedback; index: number }) {
 	return (
 		<div className="space-y-1.5 text-[11px]">
 			<div className="flex items-center gap-1.5">
 				<ParagraphStatusIcon status={feedback.status} />
-				<span className="font-semibold">Đoạn {index + 1}</span>
+				<span className="font-semibold">
+					Đoạn {index + 1}
+				</span>
 			</div>
 			<p className="text-muted-foreground">
-				{feedback.wordCount} từ (gợi ý {feedback.suggestedWordRange.min}-
-				{feedback.suggestedWordRange.max})
+				{feedback.wordCount} từ (gợi ý {feedback.suggestedWordRange.min}-{feedback.suggestedWordRange.max})
 			</p>
 			{feedback.checklist.some((c) => !c.covered) && (
 				<div className="space-y-0.5">
@@ -201,9 +189,7 @@ function ParagraphStickerContent({
 				</div>
 			)}
 			{feedback.notes.map((n) => (
-				<p key={n} className="text-warning">
-					{n}
-				</p>
+				<p key={n} className="text-warning">{n}</p>
 			))}
 		</div>
 	)
@@ -241,8 +227,8 @@ function AnnotatedParagraph({
 	const paras = fullText.split(/\n\n+/).filter((p) => p.trim().length > 0)
 	let searchFrom = 0
 	for (let i = 0; i < paraIndex; i++) {
-		const idx = fullText.indexOf(paras[i] ?? "", searchFrom)
-		if (idx >= 0) searchFrom = idx + (paras[i]?.length ?? 0)
+		const idx = fullText.indexOf(paras[i]!, searchFrom)
+		if (idx >= 0) searchFrom = idx + paras[i]!.length
 	}
 	const paraStart = fullText.indexOf(para, searchFrom)
 	const paraEnd = paraStart + para.length
@@ -286,7 +272,11 @@ function AnnotatedParagraph({
 		segments.push(<span key="t-end">{para.slice(cursor)}</span>)
 	}
 
-	return <p className="whitespace-pre-wrap text-sm leading-loose text-foreground/90">{segments}</p>
+	return (
+		<p className="whitespace-pre-wrap text-sm leading-loose text-foreground/90">
+			{segments}
+		</p>
+	)
 }
 
 // ─── Annotation detail sticker ─────────────────────────────────────
@@ -308,12 +298,7 @@ function AnnotationDetail({
 		>
 			<div className="flex items-start justify-between gap-3">
 				<div className="flex-1">
-					<p
-						className={cn(
-							"text-xs font-semibold uppercase tracking-wider",
-							isError ? "text-destructive" : "text-warning",
-						)}
-					>
+					<p className={cn("text-xs font-semibold uppercase tracking-wider", isError ? "text-destructive" : "text-warning")}>
 						{annotation.category}
 					</p>
 					<p className="mt-1 text-sm text-foreground">{annotation.message}</p>
@@ -371,10 +356,7 @@ function SummaryCard({
 								{item.annotationIdx !== undefined && onItemClick && (
 									<button
 										type="button"
-										onClick={() =>
-											// biome-ignore lint/style/noNonNullAssertion: guarded by !== undefined check above
-											onItemClick(item.annotationIdx!)
-										}
+										onClick={() => onItemClick(item.annotationIdx!)}
 										className="mt-0.5 shrink-0 text-primary hover:text-primary/80"
 										aria-label="Xem vị trí lỗi"
 									>
@@ -382,7 +364,9 @@ function SummaryCard({
 									</button>
 								)}
 							</div>
-							{item.detail && <p className="mt-0.5 text-xs text-muted-foreground">{item.detail}</p>}
+							{item.detail && (
+								<p className="mt-0.5 text-xs text-muted-foreground">{item.detail}</p>
+							)}
 						</li>
 					))}
 				</ul>

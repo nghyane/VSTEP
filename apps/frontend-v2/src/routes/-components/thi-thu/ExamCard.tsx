@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router"
 import { Clock, Users } from "lucide-react"
+import { Button } from "#/components/ui/button"
 import { FULL_TEST_COST } from "#/lib/coins/coin-store"
-import { cn } from "#/shared/lib/utils"
-import { Button } from "#/shared/ui/button"
+import { cn } from "#/lib/utils"
 import { EXAM_SKILLS } from "./exam-skill-meta"
 
 interface ExamCardProps {

@@ -4,7 +4,7 @@
 import { Rocket, X } from "lucide-react"
 import { useState } from "react"
 import type { OnboardingData } from "#/lib/onboarding/types"
-import { cn } from "#/shared/lib/utils"
+import { cn } from "#/lib/utils"
 import { ConfirmationStep } from "./OnboardingStep.Confirmation"
 import { ExamDateStep } from "./OnboardingStep.ExamDate"
 import { GoalBandStep } from "./OnboardingStep.GoalBand"

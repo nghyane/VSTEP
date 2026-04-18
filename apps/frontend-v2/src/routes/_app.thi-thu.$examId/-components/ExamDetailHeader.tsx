@@ -1,6 +1,6 @@
 import { Clock, Users } from "lucide-react"
-import type { ExamDetail } from "#/mocks/thi-thu"
-import { cn } from "#/shared/lib/utils"
+import type { ExamDetail } from "#/lib/mock/thi-thu"
+import { cn } from "#/lib/utils"
 
 interface Props {
 	exam: ExamDetail

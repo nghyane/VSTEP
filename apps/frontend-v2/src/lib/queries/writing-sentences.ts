@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query"
 import {
 	mockFetchWritingSentenceTopic,
 	mockFetchWritingSentenceTopics,
-} from "#/mocks/writing-sentences"
+} from "#/lib/mock/writing-sentences"
 
 export const writingSentenceKeys = {
 	all: ["writing-sentences"] as const,

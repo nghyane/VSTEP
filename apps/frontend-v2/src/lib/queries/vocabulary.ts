@@ -2,7 +2,7 @@
 // Khi nối API thật: thay queryFn → apiFetchTopics/apiFetchTopic, xóa mock imports.
 
 import { queryOptions } from "@tanstack/react-query"
-import { mockFetchTopic, mockFetchTopics } from "#/mocks/vocabulary"
+import { mockFetchTopic, mockFetchTopics } from "#/lib/mock/vocabulary"
 
 export const vocabularyKeys = {
 	all: ["vocabulary"] as const,

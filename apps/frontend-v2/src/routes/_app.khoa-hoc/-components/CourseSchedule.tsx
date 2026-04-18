@@ -3,8 +3,8 @@
 // Mỗi cell ngày học: primary bg + số buổi + giờ + chủ đề.
 // Mỗi cell không học: muted, chỉ hiện số ngày để user biết bối cảnh.
 
-import type { Course, CourseSession } from "#/mocks/courses"
-import { cn } from "#/shared/lib/utils"
+import type { Course, CourseSession } from "#/lib/mock/courses"
+import { cn } from "#/lib/utils"
 
 interface Props {
 	course: Course
@@ -122,9 +122,7 @@ function buildWeeks(sessions: readonly CourseSession[]): DayCellData[][] {
 	for (const s of sessions) byDate.set(s.date, s)
 
 	const sorted = [...sessions].sort((a, b) => a.date.localeCompare(b.date))
-	// biome-ignore lint/style/noNonNullAssertion: sorted is non-empty
 	const firstDate = new Date(sorted[0]!.date)
-	// biome-ignore lint/style/noNonNullAssertion: sorted is non-empty
 	const lastDate = new Date(sorted[sorted.length - 1]!.date)
 
 	const gridStart = snapToMonday(firstDate)

@@ -1,10 +1,10 @@
 // WritingConfigBar — header config: chọn target level + toggle mode.
 
 import { PencilLine, Sparkles } from "lucide-react"
+import { Label } from "#/components/ui/label"
+import { Switch } from "#/components/ui/switch"
 import type { TargetLevel } from "#/lib/practice/writing-structures"
-import { cn } from "#/shared/lib/utils"
-import { Label } from "#/shared/ui/label"
-import { Switch } from "#/shared/ui/switch"
+import { cn } from "#/lib/utils"
 
 interface Props {
 	targetLevel: TargetLevel
@@ -57,10 +57,7 @@ export function WritingConfigBar({
 				) : (
 					<PencilLine className="size-4 text-muted-foreground" />
 				)}
-				<Label
-					htmlFor="writing-smart-mode"
-					className="cursor-pointer text-sm font-medium select-none"
-				>
+				<Label htmlFor="writing-smart-mode" className="cursor-pointer text-sm font-medium select-none">
 					{smartMode ? "Hỗ trợ thông minh" : "Tự do"}
 				</Label>
 				<Switch

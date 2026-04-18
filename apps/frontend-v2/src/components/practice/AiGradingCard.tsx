@@ -4,7 +4,7 @@
 
 import { CircleCheck, Lightbulb, TriangleAlert } from "lucide-react"
 import { ChatGptIcon } from "#/components/common/ChatGptIcon"
-import { cn } from "#/shared/lib/utils"
+import { cn } from "#/lib/utils"
 
 export interface AiGradingCriterion {
 	readonly label: string
@@ -63,7 +63,7 @@ function ScoreCircle({ value }: { value: number }) {
 	const color = value >= 7.5 ? "text-success" : value >= 5 ? "text-primary" : "text-warning"
 	return (
 		<div className="relative flex size-16 items-center justify-center">
-			<svg viewBox="0 0 36 36" className="size-16 -rotate-90" aria-hidden="true">
+			<svg viewBox="0 0 36 36" className="size-16 -rotate-90">
 				<circle cx="18" cy="18" r="15.5" className="fill-none stroke-muted" strokeWidth="3" />
 				<circle
 					cx="18"

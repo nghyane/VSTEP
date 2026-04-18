@@ -1,8 +1,8 @@
 // useReadingSession — wrapper mỏng quanh useMcqSession, lưu reading progress.
 
+import type { ReadingExercise } from "#/lib/mock/reading"
 import { saveReadingProgress } from "#/lib/practice/reading-progress"
 import { type McqSession, useMcqSession } from "#/lib/practice/use-mcq-session"
-import type { ReadingExercise } from "#/mocks/reading"
 
 export function useReadingSession(exercise: ReadingExercise): McqSession {
 	return useMcqSession({

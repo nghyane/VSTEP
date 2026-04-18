@@ -4,7 +4,7 @@
 |---|---|
 | Status | Draft |
 | Created | 2026-04-18 |
-| Updated | 2026-04-19 |
+| Updated | 2026-04-18 |
 | Supersedes | — (bundles action plan cho 0000, 0001, 0002) |
 
 ## Summary
@@ -357,12 +357,12 @@ Lý do bỏ:
 
 ## Implementation status
 
-- [x] Phase 0: Chuẩn bị
-- [x] Phase 1: Shared layer
-- [x] Phase 2: Biome clean + dead code
-- [x] Phase 3.1: landing
-- [x] Phase 3.2: auth
-- [x] Phase 3.3: notification
+- [ ] Phase 0: Chuẩn bị
+- [ ] Phase 1: Shared layer
+- [ ] Phase 2: Biome clean + dead code
+- [ ] Phase 3.1: landing
+- [ ] Phase 3.2: auth
+- [ ] Phase 3.3: notification
 - [ ] Phase 3.4: coin
 - [ ] Phase 3.5: streak
 - [ ] Phase 3.6: onboarding
