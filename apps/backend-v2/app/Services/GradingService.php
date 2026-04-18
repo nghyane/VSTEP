@@ -30,7 +30,7 @@ class GradingService
         private readonly SpeechToTextService $sttService,
         private readonly AudioStorageService $audioService,
         private readonly LanguageToolService $languageTool,
-        private readonly NlpSidecarService $nlpSidecar,
+        private readonly RuleBasedScoringService $ruleScoring,
     ) {}
 
     private function ollamaUrl(): string
@@ -78,22 +78,25 @@ class GradingService
             $text = $submission?->text ?? '';
             $promptText = $submission?->prompt?->prompt ?? '';
 
-            // Layer 1A: LanguageTool grammar detection (rule-based, deterministic).
+            // Layer 1: LanguageTool grammar detection (rule-based, deterministic).
             $ltMatches = $this->languageTool->check($text);
             $annotations = $this->languageTool->toAnnotations($text, $ltMatches);
 
-            // Layer 1B: GECToR (ML sequence tagging, learner-specific errors).
-            $gectorErrors = $this->nlpSidecar->grammarCheck($text);
-            $gectorAnnotations = $this->gectorToAnnotations($gectorErrors);
-            $annotations = array_merge($annotations, $gectorAnnotations);
+            // Layer 2: Rule-based scoring caps (deterministic, 0ms).
+            $ruleAnalysis = $this->ruleScoring->analyze($text, $ltMatches);
 
-            // Layer 1C: CEFR level prediction (cross-validation for LLM score).
-            $cefrResult = $this->nlpSidecar->predictCefrLevel($text);
+            // Layer 3: LLM rubric scoring + feedback.
+            $llmResult = $this->callLlmWritingGrading($text, $promptText, $ltMatches, $ruleAnalysis);
 
-            // Layer 2: LLM rubric scoring + feedback.
-            $llmResult = $this->callLlmWritingGrading($text, $promptText, $ltMatches, $gectorErrors, $cefrResult);
+            // Layer 4: Score reconciliation — cap LLM when too generous.
+            $reconciledScores = $this->ruleScoring->reconcile(
+                $llmResult['rubric_scores'],
+                $ruleAnalysis['caps'],
+            );
+            $llmResult['rubric_scores'] = $reconciledScores;
+            $llmResult['overall_band'] = $this->computeOverallBand($reconciledScores);
 
-            // Merge: LLM rewrites/improvements + LanguageTool annotations.
+            // Merge: LLM feedback + LanguageTool annotations + rule metrics.
             $mergedAnnotations = array_merge($annotations, $llmResult['annotations'] ?? []);
 
             // Versioning.
@@ -179,24 +182,30 @@ class GradingService
 
     /**
      * @param  array<int,array<string,mixed>>  $grammarErrors  from LanguageTool
-     * @param  array<int,array<string,mixed>>  $gectorErrors  from GECToR
-     * @param  array{predicted_level:string,confidence:float}|null  $cefrResult
+     * @param  array{caps: array, metrics: array, flags: string[]}  $ruleAnalysis
      * @return array{rubric_scores: array, overall_band: float, strengths: array, improvements: array, rewrites: array, annotations: array}
      */
-    private function callLlmWritingGrading(string $text, string $promptText, array $grammarErrors, array $gectorErrors = [], ?array $cefrResult = null): array
+    private function callLlmWritingGrading(string $text, string $promptText, array $grammarErrors, array $ruleAnalysis): array
     {
         $errorContext = '';
         if (! empty($grammarErrors)) {
             $errorSummary = array_map(fn ($e) => "- \"{$e['message']}\" (offset {$e['offset']})", array_slice($grammarErrors, 0, 10));
             $errorContext = "\n\nGrammar errors detected by automated checker:\n".implode("\n", $errorSummary);
         }
-        if (! empty($gectorErrors)) {
-            $gectorSummary = array_map(fn ($e) => "- token \"{$e['token']}\" → {$e['error_type']}: {$e['correction']}", array_slice($gectorErrors, 0, 10));
-            $errorContext .= "\n\nML-detected errors (GECToR):\n".implode("\n", $gectorSummary);
-        }
-        if ($cefrResult !== null) {
-            $errorContext .= "\n\nAutomated CEFR level assessment: {$cefrResult['predicted_level']} (confidence: {$cefrResult['confidence']})";
-            $errorContext .= "\nUse this as reference when assigning overall band — significant deviation should be justified.";
+
+        $metrics = $ruleAnalysis['metrics'];
+        $caps = $ruleAnalysis['caps'];
+        $errorContext .= "\n\nText metrics:";
+        $errorContext .= "\n- Words: {$metrics['word_count']}, Sentences: {$metrics['sentence_count']}, Paragraphs: {$metrics['paragraph_count']}";
+        $errorContext .= "\n- Errors/sentence: {$metrics['errors_per_sentence']}, Unique word ratio: {$metrics['unique_ratio']}";
+        $errorContext .= "\n- Linking words found: {$metrics['linking_word_count']}";
+
+        $capContext = array_filter($caps, fn ($v) => $v !== null);
+        if (! empty($capContext)) {
+            $errorContext .= "\n\nScore constraints (do NOT exceed these):";
+            foreach ($capContext as $criterion => $cap) {
+                $errorContext .= "\n- {$criterion} max: {$cap}";
+            }
         }
 
         $systemPrompt = <<<'PROMPT'
@@ -343,21 +352,18 @@ PROMPT;
     }
 
     /**
-     * Convert GECToR errors to annotation format.
-     * GECToR returns token-level, not char-offset. We approximate.
-     *
-     * @param  array<int,array<string,mixed>>  $errors
-     * @return array<int,array{start:int,end:int,severity:string,category:string,message:string,suggestion:string|null}>
+     * @param  array<string,float>  $scores
      */
-    private function gectorToAnnotations(array $errors): array
+    private function computeOverallBand(array $scores): float
     {
-        return array_map(fn (array $e) => [
-            'start' => ($e['position'] ?? 0) * 5, // approximate char offset from token position
-            'end' => (($e['position'] ?? 0) + 1) * 5,
-            'severity' => 'error',
-            'category' => 'grammar_ml_'.($e['error_type'] ?? 'unknown'),
-            'message' => "GECToR: {$e['token']} → ".($e['correction'] ?? $e['tag'] ?? 'fix needed'),
-            'suggestion' => $e['correction'] ?? null,
-        ], $errors);
+        $sum = array_sum($scores);
+        $count = count($scores);
+        if ($count === 0) {
+            return 5.0;
+        }
+
+        $raw = ($sum / ($count * 4)) * 10;
+
+        return round($raw * 2) / 2; // Round to nearest 0.5
     }
 }
