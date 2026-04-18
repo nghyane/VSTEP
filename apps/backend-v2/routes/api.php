@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\ExamController;
 use App\Http\Controllers\Api\V1\GradingController;
 use App\Http\Controllers\Api\V1\GrammarController;
 use App\Http\Controllers\Api\V1\McqPracticeController;
+use App\Http\Controllers\Api\V1\OverviewController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\SpeakingPracticeController;
 use App\Http\Controllers\Api\V1\VocabController;
@@ -118,5 +119,9 @@ Route::prefix('v1')->group(function () {
         Route::get('/grading/jobs/{id}', [GradingController::class, 'showJob']);
         Route::get('/grading/writing/{submissionType}/{submissionId}', [GradingController::class, 'writingResult']);
         Route::get('/grading/speaking/{submissionType}/{submissionId}', [GradingController::class, 'speakingResult']);
+
+        // Overview & progress.
+        Route::get('/overview', [OverviewController::class, 'overview']);
+        Route::get('/streak', [OverviewController::class, 'streak']);
     });
 });
