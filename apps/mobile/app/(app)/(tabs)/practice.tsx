@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HapticTouchable } from "@/components/HapticTouchable";
+import { GameIcon } from "@/components/GameIcon";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 import { depthNeutral } from "@/theme/depth";
 
@@ -24,7 +25,16 @@ export default function PracticeHubScreen() {
       >
         <Ionicons name="school" size={32} color={c.primary} />
         <Text style={[styles.branchTitle, { color: c.foreground }]}>Luyện tập nền tảng</Text>
-        <Text style={[styles.branchSub, { color: c.mutedForeground }]}>Từ vựng và ngữ pháp — nền móng cho mọi kỹ năng VSTEP</Text>
+        <Text style={[styles.branchSub, { color: c.mutedForeground }]}>Học theo tốc độ riêng. Từ vựng và ngữ pháp — gốc rễ của mọi kỹ năng VSTEP.</Text>
+        <View style={styles.featureList}>
+          <FeatureRow icon="book" text="Từ vựng theo chủ đề với hệ thống SRS" />
+          <FeatureRow icon="graduation" text="Ngữ pháp có cấu trúc, từ cơ bản đến nâng cao" />
+        </View>
+        <View style={styles.statRow}>
+          <StatPill value="60+" label="chủ đề" />
+          <StatPill value="200+" label="điểm ngữ pháp" />
+          <StatPill value="SRS" label="lặp lại" />
+        </View>
         <View style={styles.branchChips}>
           <Chip label="Từ vựng" color={c.primary} />
           <Chip label="Ngữ pháp" color={c.primary} />
@@ -44,7 +54,16 @@ export default function PracticeHubScreen() {
       >
         <Ionicons name="fitness" size={32} color={c.skillListening} />
         <Text style={[styles.branchTitle, { color: c.foreground }]}>Luyện tập 4 kỹ năng</Text>
-        <Text style={[styles.branchSub, { color: c.mutedForeground }]}>Nghe, Đọc, Viết, Nói — luyện đề theo từng kỹ năng VSTEP</Text>
+        <Text style={[styles.branchSub, { color: c.mutedForeground }]}>Luyện đủ bốn kỹ năng VSTEP. Bật hỗ trợ khi cần, tắt khi muốn tự thử sức.</Text>
+        <View style={styles.featureList}>
+          <FeatureRow icon="lightning" text="Bật/tắt chế độ hỗ trợ linh hoạt" />
+          <FeatureRow icon="star" text="Chấm điểm chi tiết, giải thích từng câu" />
+        </View>
+        <View style={styles.statRow}>
+          <StatPill value="4" label="kỹ năng" />
+          <StatPill value="2" label="chế độ" />
+          <StatPill value="AI" label="chấm điểm" />
+        </View>
         <View style={styles.branchChips}>
           <Chip label="Nghe" color={c.skillListening} />
           <Chip label="Đọc" color={c.skillReading} />
@@ -59,6 +78,26 @@ export default function PracticeHubScreen() {
 
       <View style={{ height: insets.bottom + 40 }} />
     </ScrollView>
+  );
+}
+
+function FeatureRow({ icon, text }: { icon: any; text: string }) {
+  const c = useThemeColors();
+  return (
+    <View style={styles.featureRow}>
+      <GameIcon name={icon} size={18} />
+      <Text style={[styles.featureText, { color: c.mutedForeground }]}>{text}</Text>
+    </View>
+  );
+}
+
+function StatPill({ value, label }: { value: string; label: string }) {
+  const c = useThemeColors();
+  return (
+    <View style={[styles.statPill, { backgroundColor: c.muted }]}>
+      <Text style={[styles.statPillValue, { color: c.foreground }]}>{value}</Text>
+      <Text style={[styles.statPillLabel, { color: c.mutedForeground }]}>{label}</Text>
+    </View>
   );
 }
 
@@ -80,6 +119,13 @@ const styles = StyleSheet.create({
   branchCard: { ...depthNeutral, borderRadius: radius["2xl"], padding: spacing.xl, gap: spacing.sm, backgroundColor: "#FFF" },
   branchTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.bold },
   branchSub: { fontSize: fontSize.sm, lineHeight: 20 },
+  featureList: { gap: spacing.sm, marginTop: spacing.sm },
+  featureRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  featureText: { fontSize: fontSize.xs, flex: 1, lineHeight: 18 },
+  statRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm },
+  statPill: { flex: 1, alignItems: "center", paddingVertical: spacing.sm, borderRadius: radius.lg },
+  statPillValue: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
+  statPillLabel: { fontSize: 10 },
   branchChips: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.xs },
   chip: { paddingHorizontal: spacing.md, paddingVertical: 4, borderRadius: radius.full },
   chipText: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },

@@ -7,6 +7,7 @@ import * as Speech from "expo-speech";
 import { Audio } from "expo-av";
 import * as Haptics from "expo-haptics";
 import { HapticTouchable } from "@/components/HapticTouchable";
+import { LessonComplete } from "@/components/LessonComplete";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { SupportModeToggle } from "@/components/SupportModeToggle";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
@@ -140,6 +141,7 @@ function McqSession({ data, skill }: { data: ExerciseData; skill: Skill }) {
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [submitted, setSubmitted] = useState(false);
   const [supportMode, setSupportMode] = useState(false);
+  const startTime = useRef(Date.now());
   const score = submitted ? data.items.filter((i) => answers[i.id] === i.correctIndex).length : 0;
 
   return (
@@ -150,6 +152,12 @@ function McqSession({ data, skill }: { data: ExerciseData; skill: Skill }) {
           <Text style={[s.skillLabel, { color }]}>{data.description}</Text>
           <Text style={[s.metaText, { color: c.mutedForeground }]}>{data.items.length} câu · {data.estimatedMinutes} phút</Text>
         </View>
+
+        {/* Progress bar */}
+        <View style={[s.progressTrack, { backgroundColor: c.muted }]}>
+          <View style={[s.progressFill, { backgroundColor: color, width: `${Math.round((Object.keys(answers).length / data.items.length) * 100)}%` }]} />
+        </View>
+        <Text style={[s.progressText, { color: c.mutedForeground }]}>{Object.keys(answers).length}/{data.items.length} câu đã trả lời</Text>
 
         {/* Audio player for listening */}
         {skill === "listening" && data.transcript && (
@@ -208,16 +216,19 @@ function McqSession({ data, skill }: { data: ExerciseData; skill: Skill }) {
           </View>
         ))}
 
-        {submitted && (
-          <View style={[s.resultCard, { backgroundColor: c.muted }]}>
-            <Text style={[s.resultScore, { color: c.foreground }]}>{score}/{data.items.length} câu đúng</Text>
-            <Text style={[s.resultPct, { color: score / data.items.length >= 0.7 ? c.success : c.warning }]}>{Math.round((score / data.items.length) * 100)}%</Text>
-          </View>
+        {submitted ? (
+          <LessonComplete
+            score={score}
+            total={data.items.length}
+            durationSeconds={Math.floor((Date.now() - startTime.current) / 1000)}
+            onNext={() => router.back()}
+            nextLabel="Quay lại"
+          />
+        ) : (
+          <HapticTouchable style={[s.actionBtn, { backgroundColor: color }]} onPress={() => setSubmitted(true)}>
+            <Text style={s.actionBtnT}>Nộp bài</Text>
+          </HapticTouchable>
         )}
-
-        <HapticTouchable style={[s.actionBtn, { backgroundColor: submitted ? c.muted : color }]} onPress={() => submitted ? router.back() : setSubmitted(true)}>
-          <Text style={[s.actionBtnT, { color: submitted ? c.foreground : "#fff" }]}>{submitted ? "← Quay lại" : "Nộp bài"}</Text>
-        </HapticTouchable>
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>
@@ -303,13 +314,13 @@ function WritingSession({ data, skill }: { data: ExerciseData; skill: Skill }) {
             </HapticTouchable>
           </>
         ) : (
-          <View style={s.doneWrap}>
-            <Ionicons name="checkmark-circle" size={48} color={c.success} />
-            <Text style={[s.doneTitle, { color: c.foreground }]}>Đã nộp bài! ({wc} từ)</Text>
-            <HapticTouchable style={[s.actionBtn, { backgroundColor: c.muted }]} onPress={() => router.back()}>
-              <Text style={[s.actionBtnT, { color: c.foreground }]}>← Quay lại</Text>
-            </HapticTouchable>
-          </View>
+          <LessonComplete
+            score={wc}
+            total={data.minWords ?? 120}
+            durationSeconds={0}
+            onNext={() => router.back()}
+            nextLabel="Quay lại"
+          />
         )}
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -400,13 +411,13 @@ function SpeakingSession({ data, skill }: { data: ExerciseData; skill: Skill }) 
             </View>
           </View>
         ) : (
-          <View style={s.doneWrap}>
-            <Ionicons name="trophy" size={48} color={c.warning} />
-            <Text style={[s.doneTitle, { color: c.foreground }]}>Hoàn thành! {done.size}/{sentences.length} câu</Text>
-            <HapticTouchable style={[s.actionBtn, { backgroundColor: c.muted }]} onPress={() => router.back()}>
-              <Text style={[s.actionBtnT, { color: c.foreground }]}>← Quay lại</Text>
-            </HapticTouchable>
-          </View>
+          <LessonComplete
+            score={done.size}
+            total={sentences.length}
+            durationSeconds={0}
+            onNext={() => router.back()}
+            nextLabel="Quay lại"
+          />
         )}
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -422,6 +433,9 @@ const s = StyleSheet.create({
   metaRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   skillLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold, textTransform: "uppercase", letterSpacing: 1 },
   metaText: { fontSize: fontSize.xs },
+  progressTrack: { height: 6, borderRadius: 3, overflow: "hidden", marginTop: spacing.md },
+  progressFill: { height: "100%", borderRadius: 3 },
+  progressText: { fontSize: 11, marginTop: 4, textAlign: "right" },
   supportRow: { flexDirection: "row", justifyContent: "flex-end", marginVertical: spacing.sm },
   supportBtn: { flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: 6 },
   supportCard: { ...depthNeutral, backgroundColor: "#FFF", borderRadius: radius.xl, padding: spacing.base, gap: spacing.xs, marginBottom: spacing.sm },
