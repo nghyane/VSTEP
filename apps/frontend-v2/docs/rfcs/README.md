@@ -9,11 +9,12 @@
 | 0004 | [Session Completion Flow](./0004-session-completion-flow.md) | Draft | P1 — flow |
 | 0005 | [Coin & Streak Loop](./0005-coin-streak-loop.md) | Accepted | P2 — polish (lõi đã ship) |
 | 0006 | [Khóa học cấp tốc (Phase 1)](./0006-khoa-hoc-flow.md) | Draft | P1 — luồng mới |
+| 0007 | [Package-by-Feature Migration](./0007-package-by-feature.md) | Draft | P0 — kiến trúc, đọc trước refactor |
 
 ## Implement order
 
 ```
-0000 (confirm) → 0001 + 0002 (parallel) → 0003 → 0004 → 0005 → 0006
+0000 (confirm) → 0007 (arch) → 0001 + 0002 (merged into 0007 per-feature) → 0003 → 0004 → 0005 → 0006
 ```
 
 ## Template
