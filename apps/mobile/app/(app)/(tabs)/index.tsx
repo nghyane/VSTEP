@@ -16,6 +16,7 @@ import type { Skill } from "@/types/api";
 import { MOCK_OVERVIEW_STATS, MOCK_PRACTICE_TRACK } from "@/lib/mock";
 import { GameIcon } from "@/components/GameIcon";
 import { useCoins } from "@/features/coin/coin-store";
+import { StreakButton } from "@/features/streak/StreakButton";
 import { TopUpDialog } from "@/features/coin/TopUpDialog";
 
 type Tab = "overview" | "track";
@@ -37,37 +38,38 @@ export default function OverviewScreen() {
 
   return (
     <ScrollView style={[s.root, { backgroundColor: c.background }]} contentContainerStyle={[s.scroll, { paddingTop: insets.top }]}>
+      {/* ── Topbar: coin + actions ── */}
+      <View style={s.topBar}>
+        <Text style={[s.topBarTitle, { color: c.foreground }]}>Tổng quan</Text>
+        <View style={s.topBarRight}>
+          <StreakButton streak={activity?.streak ?? 0} activityByDay={(activity as any)?.activityByDay ?? {}} />
+          <HapticTouchable style={[s.coinBadge, { backgroundColor: c.coin + "15" }]} onPress={() => setTopUpVisible(true)}>
+            <GameIcon name="coin" size={16} />
+            <Text style={[s.coinBadgeText, { color: c.coinDark }]}>{coins}</Text>
+          </HapticTouchable>
+          <HapticTouchable style={[s.topBarBtn, { backgroundColor: c.muted }]} onPress={() => router.push("/(app)/onboarding")}>
+            <Ionicons name="settings-outline" size={18} color={c.mutedForeground} />
+          </HapticTouchable>
+        </View>
+      </View>
+
       {/* ── Profile Banner ── */}
       <LinearGradient colors={["#2563EB", "#3B82F6"]} style={s.banner}>
-        {/* Decorative circles */}
         <View style={s.decoCircle1} />
         <View style={s.decoCircle2} />
-
-        {/* Greeting row: avatar + text + coin */}
         <View style={s.bannerRow}>
           <View style={s.avatar}><Text style={s.avatarText}>{initials}</Text></View>
           <View style={{ flex: 1 }}>
-            <View style={s.nameRow}>
-              <Text style={s.greeting} numberOfLines={1}>Hi, {fullName}</Text>
-              <HapticTouchable style={s.coinBadge} onPress={() => setTopUpVisible(true)}>
-                <GameIcon name="coin" size={16} />
-                <Text style={s.coinBadgeText}>{coins}</Text>
-              </HapticTouchable>
-            </View>
-            <Text style={s.greetingSub}>Còn <Text style={{ fontFamily: fontFamily.bold }}>{stats.daysLeft} ngày</Text> diễn ra kỳ thi</Text>
+            <Text style={s.greeting}>Hi, {fullName}</Text>
+            <Text style={s.greetingSub}>Còn <Text style={{ fontFamily: fontFamily.bold }}>{stats.daysLeft} ngày</Text> diễn ra kỳ thi. Giữ vững nhé!</Text>
           </View>
         </View>
-
-        {/* Level track */}
         <View style={s.levelTrack}>
           <LevelDot label="Đầu vào" value="A2" variant="done" />
           <View style={s.levelLine} />
           <LevelDot label="Dự đoán" value="B1" variant="active" />
           <View style={s.levelLine} />
           <LevelDot label="Mục tiêu" value="B2" variant="target" />
-          <HapticTouchable style={s.goalBtn} onPress={() => router.push("/(app)/onboarding")}>
-            <Ionicons name="create-outline" size={14} color="rgba(255,255,255,0.8)" />
-          </HapticTouchable>
         </View>
       </LinearGradient>
 
@@ -176,24 +178,25 @@ function StatCard({ icon, label, value, color }: { icon: string; label: string; 
 
 function ExamCountdown({ daysLeft }: { daysLeft: number }) {
   const c = useThemeColors();
-  const [time, setTime] = useState({ d: daysLeft, h: 0, m: 0, sec: 0 });
-  const deadlineMs = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + daysLeft);
-    d.setHours(8, 0, 0, 0);
-    return d.getTime();
+  // Countdown to midnight of exam day (daysLeft from now)
+  const targetMs = useMemo(() => {
+    const t = new Date();
+    t.setDate(t.getDate() + daysLeft + 1); // +1 vì đếm nguyên ngày
+    t.setHours(0, 0, 0, 0);
+    return t.getTime();
   }, [daysLeft]);
+  const [time, setTime] = useState({ d: daysLeft, h: 0, m: 0, sec: 0 });
 
   useEffect(() => {
     const tick = () => {
-      const diff = Math.max(0, deadlineMs - Date.now());
+      const diff = Math.max(0, targetMs - Date.now());
       const totalSec = Math.floor(diff / 1000);
       setTime({ d: Math.floor(totalSec / 86400), h: Math.floor((totalSec % 86400) / 3600), m: Math.floor((totalSec % 3600) / 60), sec: totalSec % 60 });
     };
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [deadlineMs]);
+  }, [targetMs]);
 
   const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -204,7 +207,7 @@ function ExamCountdown({ daysLeft }: { daysLeft: number }) {
         <Text style={[s.countdownTitle, { color: c.foreground }]}>Đếm ngày thi</Text>
       </View>
       <View style={s.countdownRow}>
-        {[{ v: pad(time.d), l: "Ngày" }, { v: pad(time.h), l: "Giờ" }, { v: pad(time.m), l: "Phút" }, { v: pad(time.sec), l: "Giây" }].map((b, i) => (
+        {[{ v: pad(time.d), l: "ngày" }, { v: pad(time.h), l: "giờ" }, { v: pad(time.m), l: "phút" }, { v: pad(time.sec), l: "giây" }].map((b, i) => (
           <View key={b.l} style={s.countdownBlockWrap}>
             {i > 0 && <Text style={[s.countdownColon, { color: c.mutedForeground }]}>:</Text>}
             <View style={s.countdownBlockInner}>
@@ -295,18 +298,22 @@ const s = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingBottom: spacing["3xl"] },
   // Banner
-  banner: { marginHorizontal: spacing.xl, borderRadius: radius["2xl"], padding: spacing.xl, gap: spacing.base, marginTop: spacing.base, overflow: "hidden" },
+  // Topbar
+  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.xl, marginBottom: spacing.sm },
+  topBarTitle: { flex: 1, fontSize: fontSize.xl, fontFamily: fontFamily.bold },
+  topBarRight: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  coinBadge: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 14 },
+  coinBadgeText: { fontSize: 13, fontFamily: fontFamily.bold },
+  topBarBtn: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
+  // Banner
+  banner: { marginHorizontal: spacing.xl, borderRadius: radius["2xl"], padding: spacing.lg, gap: spacing.md, overflow: "hidden" },
   decoCircle1: { position: "absolute", top: -32, right: -32, width: 128, height: 128, borderRadius: 64, backgroundColor: "rgba(255,255,255,0.05)" },
   decoCircle2: { position: "absolute", bottom: -16, right: -16, width: 80, height: 80, borderRadius: 40, backgroundColor: "rgba(255,255,255,0.05)" },
   bannerRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  nameRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" },
-  avatarText: { color: "#fff", fontSize: fontSize.lg, fontFamily: fontFamily.bold },
-  greeting: { color: "#fff", fontSize: fontSize.xl, fontFamily: fontFamily.bold },
-  coinBadge: { flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: "rgba(255,255,255,0.2)", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 },
-  coinBadgeText: { color: "#FFF", fontSize: 12, fontFamily: "Nunito-Bold" },
-  greetingSub: { color: "rgba(255,255,255,0.85)", fontSize: fontSize.sm, marginTop: 2 },
-  goalBtn: { marginLeft: "auto", width: 28, height: 28, borderRadius: 14, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" },
+  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" },
+  avatarText: { color: "#fff", fontSize: fontSize.base, fontFamily: fontFamily.bold },
+  greeting: { color: "#fff", fontSize: fontSize.lg, fontFamily: fontFamily.bold },
+  greetingSub: { color: "rgba(255,255,255,0.85)", fontSize: fontSize.xs, marginTop: 2 },
   // Level track
   levelTrack: { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.15)", borderRadius: radius.xl, paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
   levelDotWrap: { alignItems: "center", gap: 4, flex: 1 },
@@ -338,11 +345,11 @@ const s = StyleSheet.create({
   countdownTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   countdownRow: { flexDirection: "row", justifyContent: "center", alignItems: "flex-start" },
   countdownBlockWrap: { flexDirection: "row", alignItems: "flex-start" },
-  countdownColon: { fontSize: fontSize.lg, fontFamily: fontFamily.bold, marginTop: spacing.sm, marginHorizontal: 4 },
+  countdownColon: { fontSize: fontSize.xl, fontFamily: fontFamily.bold, marginTop: spacing.md, marginHorizontal: 2 },
   countdownBlockInner: { alignItems: "center", gap: 4 },
-  countdownBlock: { width: 52, height: 48, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
-  countdownNum: { color: "#fff", fontSize: fontSize.lg, fontFamily: fontFamily.bold, fontVariant: ["tabular-nums"] },
-  countdownLabel: { fontSize: 9, fontFamily: fontFamily.semiBold, textTransform: "uppercase", minWidth: 40, textAlign: "center" },
+  countdownBlock: { width: 56, height: 48, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
+  countdownNum: { color: "#fff", fontSize: fontSize.xl, fontFamily: fontFamily.bold, fontVariant: ["tabular-nums"] },
+  countdownLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.medium, textAlign: "center" },
   // Score grid
   scoreGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   scoreCard: { width: "48%", borderWidth: 1, borderRadius: radius.xl, padding: spacing.base },

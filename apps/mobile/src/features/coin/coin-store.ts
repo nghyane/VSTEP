@@ -58,6 +58,12 @@ export function refundCoins(amount: number): void {
   emit();
 }
 
+/** Dev only — reset balance to initial */
+export function resetCoins(): void {
+  balance = INITIAL_BALANCE;
+  emit();
+}
+
 export function computeSessionCost(skillCount: number): number {
   if (skillCount === 0 || skillCount >= 4) return FULL_TEST_COST;
   return Math.min(FULL_TEST_COST, COST_PER_SKILL * skillCount);
