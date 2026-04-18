@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Events\ProfileCreated;
 use App\Models\Profile;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -25,6 +26,13 @@ class ProfileFactory extends Factory
             'entry_level' => fake()->randomElement(['A1', 'A2', 'B1']),
             'is_initial_profile' => false,
         ];
+    }
+
+    public function configure(): static
+    {
+        return $this->afterCreating(function (Profile $profile): void {
+            ProfileCreated::dispatch($profile);
+        });
     }
 
     public function initial(): static

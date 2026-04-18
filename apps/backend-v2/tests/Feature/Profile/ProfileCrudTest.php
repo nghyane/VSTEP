@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Profile;
 
+use App\Enums\CoinTransactionType;
+use App\Models\CoinTransaction;
 use App\Models\Profile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -34,6 +36,15 @@ class ProfileCrudTest extends TestCase
         $response->assertCreated();
         $response->assertJsonPath('data.is_initial_profile', false);
         $response->assertJsonPath('data.target_level', 'C1');
+
+        // Profile thứ 2 KHÔNG nhận onboarding bonus.
+        $newProfile = Profile::where('nickname', 'second-profile')->first();
+        $this->assertNotNull($newProfile);
+        $bonus = CoinTransaction::query()
+            ->where('profile_id', $newProfile->id)
+            ->where('type', CoinTransactionType::OnboardingBonus)
+            ->first();
+        $this->assertNull($bonus);
     }
 
     public function test_nickname_must_be_unique_within_account(): void

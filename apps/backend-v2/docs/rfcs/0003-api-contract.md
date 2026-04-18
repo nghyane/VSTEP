@@ -112,13 +112,18 @@ Response: `{ data: [{id, type, delta, balance_after, source_type, source_id, met
 List gói nạp active.
 
 ### `POST /api/v1/wallet/topup` — jwt
-Tạo topup order, trả checkout info.
+Tạo topup order status pending.
 
-Request: `{ package_id, payment_provider }`
-Response: `{ order_id, payment_url, amount_vnd, coins_to_credit, status }`
+Request: `{ package_id, payment_provider? }`
+Response: `{ data: { id, amount_vnd, coins_to_credit, status, provider_ref, ... } }`
+
+### `POST /api/v1/wallet/topup/{orderId}/confirm` — jwt
+Mock confirm payment. Idempotent. Real gateway sẽ dùng callback riêng (phase 2).
+
+Response: `{ data: { id, status: 'paid', paid_at, ... } }`
 
 ### `POST /api/v1/wallet/topup/callback` — public (signed)
-Payment gateway webhook.
+Payment gateway webhook (phase 2, chưa implement).
 
 ### `POST /api/v1/wallet/promo-redeem` — jwt
 Redeem promo code.

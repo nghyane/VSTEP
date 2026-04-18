@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\WalletController;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -47,5 +48,15 @@ Route::prefix('v1')->group(function () {
         Route::delete('/profiles/{id}', [ProfileController::class, 'destroy']);
         Route::post('/profiles/{id}/reset', [ProfileController::class, 'reset']);
         Route::post('/profiles/{id}/onboarding', [ProfileController::class, 'onboarding']);
+    });
+
+    // Learner routes requiring active profile context.
+    Route::middleware(['auth:api', 'active-profile'])->group(function () {
+        Route::get('/wallet/balance', [WalletController::class, 'balance']);
+        Route::get('/wallet/transactions', [WalletController::class, 'transactions']);
+        Route::get('/wallet/topup-packages', [WalletController::class, 'topupPackages']);
+        Route::post('/wallet/topup', [WalletController::class, 'createTopup']);
+        Route::post('/wallet/topup/{orderId}/confirm', [WalletController::class, 'confirmTopup']);
+        Route::post('/wallet/promo-redeem', [WalletController::class, 'redeemPromo']);
     });
 });

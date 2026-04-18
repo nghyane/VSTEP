@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Events\ProfileCreated;
 use App\Models\Profile;
 use App\Models\ProfileOnboardingResponse;
 use App\Models\ProfileResetEvent;
@@ -126,14 +127,16 @@ class ProfileService
             $isInitial = false;
         }
 
-        return Profile::create([
+        return tap(Profile::create([
             'account_id' => $user->id,
             'nickname' => $data['nickname'],
             'target_level' => $data['target_level'],
             'target_deadline' => $data['target_deadline'],
             'entry_level' => $data['entry_level'] ?? null,
             'is_initial_profile' => $isInitial,
-        ]);
+        ]), function (Profile $profile): void {
+            ProfileCreated::dispatch($profile);
+        });
     }
 
     private function assertNicknameUnique(string $accountId, ?string $nickname, ?string $exceptId = null): void

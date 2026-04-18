@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Auth;
 
+use App\Enums\CoinTransactionType;
+use App\Models\CoinTransaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -38,7 +40,17 @@ class RegisterTest extends TestCase
         $user = User::where('email', 'phat@example.com')->first();
         $this->assertNotNull($user);
         $this->assertCount(1, $user->profiles);
-        $this->assertTrue($user->profiles->first()->is_initial_profile);
+        $profile = $user->profiles->first();
+        $this->assertTrue($profile->is_initial_profile);
+
+        // Onboarding bonus 100 xu cấp tự động.
+        $bonus = CoinTransaction::query()
+            ->where('profile_id', $profile->id)
+            ->where('type', CoinTransactionType::OnboardingBonus)
+            ->first();
+        $this->assertNotNull($bonus);
+        $this->assertSame(100, $bonus->delta);
+        $this->assertSame(100, $bonus->balance_after);
     }
 
     public function test_register_rejects_duplicate_email(): void
