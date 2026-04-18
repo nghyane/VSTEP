@@ -17,6 +17,7 @@ import type { AuthUser } from "@/types/api";
 import { loadCoins } from "@/features/coin/coin-store";
 import { loadStreakData } from "@/features/streak/streak-store";
 import { loadNotifications } from "@/features/notification/notification-store";
+import { loadEnrollments } from "@/features/course/course-store";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -39,6 +40,7 @@ export default function RootLayout() {
         await loadCoins();
         await loadStreakData();
         await loadNotifications();
+        await loadEnrollments();
         if (stored) setUser(stored);
       } catch {
         // ignore

@@ -36,6 +36,7 @@ export default function AppLayout() {
       <Stack.Screen name="classes/[id]" options={{ href: null } as any} />
       <Stack.Screen name="vocabulary/index" options={{ headerShown: false }} />
       <Stack.Screen name="vocabulary/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="courses/index" options={{ headerShown: false }} />
     </Stack>
   );
 }
