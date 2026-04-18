@@ -1,4 +1,4 @@
-// AiGradingCard — hiển thị mock kết quả AI chấm điểm cho bài Viết/Nói.
+﻿// AiGradingCard — hiển thị mock kết quả AI chấm điểm cho bài Viết/Nói.
 // Điểm theo 4 tiêu chí VSTEP: Task / Coherence / Lexical / Grammar (Writing)
 // hoặc Task / Pronunciation / Lexical / Grammar (Speaking).
 
@@ -24,7 +24,7 @@ export interface AiGradingResult {
 
 export function AiGradingCard({ result }: { result: AiGradingResult }) {
 	return (
-		<section className="rounded-2xl border bg-card p-5 shadow-sm">
+		<section className="rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5">
 			<Header overall={result.overall} band={result.band} summary={result.summary} />
 			<CriteriaGrid criteria={result.criteria} />
 			<FeedbackLists
@@ -96,7 +96,7 @@ function CriteriaGrid({ criteria }: { criteria: readonly AiGradingCriterion[] })
 function CriterionRow({ criterion }: { criterion: AiGradingCriterion }) {
 	const pct = Math.max(0, Math.min(100, (criterion.score / 10) * 100))
 	return (
-		<div className="rounded-xl bg-muted/50 p-3">
+		<div className="rounded-xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-3">
 			<div className="flex items-baseline justify-between gap-2">
 				<p className="text-sm font-semibold">{criterion.label}</p>
 				<p className="text-sm font-bold tabular-nums text-primary">
@@ -150,7 +150,7 @@ interface FeedbackListProps {
 function FeedbackList({ title, items, Icon, iconClass }: FeedbackListProps) {
 	if (items.length === 0) return null
 	return (
-		<div className="rounded-xl bg-muted/50 p-3">
+		<div className="rounded-xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-3">
 			<p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
 				<Icon className={cn("size-3.5", iconClass)} />
 				{title}

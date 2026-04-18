@@ -163,13 +163,13 @@ export function ShadowingPanel({
 	const isRecording = recorder.state === "recording"
 
 	return (
-		<div className="space-y-4 rounded-2xl bg-muted/50 p-5">
+		<div className="space-y-4 rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5">
 			<div className="flex items-center justify-between gap-3">
 				<span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
 					Câu {i + 1} / {exercise.sentences.length}
 				</span>
 			</div>
-			<div className="rounded-xl bg-background p-5">
+			<div className="rounded-xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-5">
 				<p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
 					Câu mẫu
 				</p>
@@ -213,7 +213,7 @@ export function ShadowingPanel({
 			</div>
 			{recorder.error && <p className="text-center text-xs text-destructive">{recorder.error}</p>}
 			{state.audioUrl && (
-				<div className="rounded-xl bg-background p-4">
+				<div className="rounded-xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-4">
 					<p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
 						Bản ghi của bạn
 					</p>
@@ -223,13 +223,14 @@ export function ShadowingPanel({
 				</div>
 			)}
 			{state.audioUrl && !isRecording && i < exercise.sentences.length - 1 && (
-				<button
+				<Button
 					type="button"
+					variant="outline"
 					onClick={() => session.setCurrentIndex(i + 1)}
-					className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+					className="w-full"
 				>
 					Câu tiếp theo <ChevronRight className="size-4" />
-				</button>
+				</Button>
 			)}
 		</div>
 	)

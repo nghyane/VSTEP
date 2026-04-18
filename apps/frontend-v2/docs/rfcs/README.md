@@ -1,4 +1,4 @@
-# RFCs
+﻿# RFCs
 
 | # | Title | Status | Priority |
 |---|---|---|---|
@@ -9,6 +9,8 @@
 | 0005 | [Khóa học](./0005-khoa-hoc.md) | Draft | P2 — luồng mới |
 | 0006 | [Routes directory-based](./0006-routes-directory-based.md) | Withdrawn | — |
 | 0007 | [Design Token Enforcement](./0007-design-token-enforcement.md) | Withdrawn | — absorbed vào 0002 v3 |
+| 0008 | [Redesign 4 Skills Flow](./0008-redesign-4-skills-flow.md) | Draft | P0 — apply RFC 0002 vào luồng luyện tập |
+| 0009 | [Depth Border Remaining Pages](./0009-depth-border-remaining-pages.md) | Draft | P0 — apply depth border toàn bộ trang còn lại |
 
 ## Implement order
 

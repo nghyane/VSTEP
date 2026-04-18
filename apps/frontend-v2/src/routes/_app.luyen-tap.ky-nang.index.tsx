@@ -31,39 +31,14 @@ interface SkillTab {
 	key: Skill
 	label: string
 	icon: LucideIcon
-	colorClass: string
 	bgClass: string
 }
 
 const SKILL_TABS: readonly SkillTab[] = [
-	{
-		key: "nghe",
-		label: "Nghe",
-		icon: Headphones,
-		colorClass: "text-skill-listening",
-		bgClass: "bg-skill-listening",
-	},
-	{
-		key: "doc",
-		label: "Đọc",
-		icon: BookOpenText,
-		colorClass: "text-skill-reading",
-		bgClass: "bg-skill-reading",
-	},
-	{
-		key: "noi",
-		label: "Nói",
-		icon: Mic,
-		colorClass: "text-skill-speaking",
-		bgClass: "bg-skill-speaking",
-	},
-	{
-		key: "viet",
-		label: "Viết",
-		icon: PencilLine,
-		colorClass: "text-skill-writing",
-		bgClass: "bg-skill-writing",
-	},
+	{ key: "nghe", label: "Nghe", icon: Headphones, bgClass: "bg-skill-listening" },
+	{ key: "doc", label: "Đọc", icon: BookOpenText, bgClass: "bg-skill-reading" },
+	{ key: "noi", label: "Nói", icon: Mic, bgClass: "bg-skill-speaking" },
+	{ key: "viet", label: "Viết", icon: PencilLine, bgClass: "bg-skill-writing" },
 ]
 
 function SkillHubPage() {
@@ -87,7 +62,7 @@ function SkillHubPage() {
 
 			<h1 className="text-2xl font-bold">Luyện tập kỹ năng</h1>
 
-			<div className="flex gap-1 overflow-x-auto border-b">
+			<div className="flex gap-2 overflow-x-auto">
 				{SKILL_TABS.map((tab) => {
 					const Icon = tab.icon
 					const active = skill === tab.key
@@ -97,17 +72,14 @@ function SkillHubPage() {
 							type="button"
 							onClick={() => void navigate({ search: { skill: tab.key, category: "", page: 1 } })}
 							className={cn(
-								"relative inline-flex shrink-0 items-center gap-2 px-4 py-3 text-sm font-medium transition-colors",
-								active ? tab.colorClass : "text-muted-foreground hover:text-foreground",
+								"inline-flex shrink-0 items-center gap-2 rounded-lg border-2 border-b-4 px-4 py-2.5 text-sm font-bold transition-all",
+								active
+									? `${tab.bgClass} border-transparent text-white`
+									: "border-[oklch(0.88_0.005_260)] border-b-[oklch(0.75_0.01_260)] bg-card text-muted-foreground hover:text-foreground",
 							)}
 						>
 							<Icon className="size-4" />
 							{tab.label}
-							{active && (
-								<span
-									className={cn("absolute inset-x-0 bottom-0 h-0.5 rounded-full", tab.bgClass)}
-								/>
-							)}
 						</button>
 					)
 				})}

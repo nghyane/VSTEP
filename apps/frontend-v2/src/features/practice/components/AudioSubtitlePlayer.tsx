@@ -12,11 +12,12 @@ interface Props {
 	audioUrl?: string
 	transcript: string
 	wordTimestamps?: readonly WordTimestamp[]
+	className?: string
 }
 
 type PlayState = "idle" | "playing" | "paused" | "ended"
 
-export function AudioSubtitlePlayer({ audioUrl, transcript, wordTimestamps }: Props) {
+export function AudioSubtitlePlayer({ audioUrl, transcript, wordTimestamps, className }: Props) {
 	const audioRef = useRef<HTMLAudioElement>(null)
 	const [state, setState] = useState<PlayState>("idle")
 	const [currentTime, setCurrentTime] = useState(0)
@@ -136,7 +137,7 @@ export function AudioSubtitlePlayer({ audioUrl, transcript, wordTimestamps }: Pr
 	const hasPlayed = ttsCharIndex >= 0 || currentTime > 0
 
 	return (
-		<div className="rounded-2xl border bg-card p-4 shadow-sm">
+		<div className={cn("rounded-2xl border-2 border-[oklch(0.88_0.005_260)] border-b-4 border-b-[oklch(0.75_0.01_260)] bg-card p-4", className)}>
 			{!useTts && (
 				<audio ref={audioRef} src={audioUrl} preload="metadata">
 					<track kind="captions" />
