@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AudioController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CourseController;
 use App\Http\Controllers\Api\V1\ExamController;
@@ -121,6 +122,10 @@ Route::prefix('v1')->group(function () {
         Route::get('/grading/jobs/{id}', [GradingController::class, 'showJob']);
         Route::get('/grading/writing/{submissionType}/{submissionId}', [GradingController::class, 'writingResult']);
         Route::get('/grading/speaking/{submissionType}/{submissionId}', [GradingController::class, 'speakingResult']);
+
+        // Audio presigned URLs (R2).
+        Route::post('/audio/presign-upload', [AudioController::class, 'presignUpload']);
+        Route::post('/audio/presign-download', [AudioController::class, 'presignDownload']);
 
         // Overview & progress.
         Route::get('/overview', [OverviewController::class, 'overview']);

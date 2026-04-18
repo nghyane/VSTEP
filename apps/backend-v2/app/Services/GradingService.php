@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\GradingJob;
+use App\Models\PracticeSpeakingSubmission;
 use App\Models\SpeakingGradingResult;
 use App\Models\WritingGradingResult;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,11 @@ use Illuminate\Support\Facades\DB;
  */
 class GradingService
 {
+    public function __construct(
+        private readonly SpeechToTextService $sttService,
+        private readonly AudioStorageService $audioService,
+    ) {}
+
     public function enqueueWritingGrading(string $submissionType, string $submissionId): GradingJob
     {
         $job = GradingJob::create([
@@ -93,6 +99,19 @@ class GradingService
         DB::transaction(function () use ($job) {
             $job->update(['status' => 'processing', 'started_at' => now(), 'attempts' => $job->attempts + 1]);
 
+            // STT: transcribe audio from R2 via Azure Speech.
+            $submission = $this->loadSpeakingSubmission($job);
+            $sttResult = null;
+            $transcript = 'Transcript unavailable.';
+            if ($submission !== null && $submission->audio_url) {
+                $sttResult = $this->sttService->transcribeFromStorage($submission->audio_url, $this->audioService);
+                if ($sttResult !== null) {
+                    $transcript = $sttResult['text'];
+                    // Persist transcript back to submission.
+                    $submission->update(['transcript' => $transcript]);
+                }
+            }
+
             $version = SpeakingGradingResult::query()
                 ->where('submission_type', $job->submission_type)
                 ->where('submission_id', $job->submission_id)
@@ -119,11 +138,20 @@ class GradingService
                 'improvements' => [
                     ['message' => 'Expand vocabulary', 'explanation' => 'Use more varied expressions'],
                 ],
-                'pronunciation_report' => ['accuracy_score' => 75],
-                'transcript' => 'Mock transcript from STT.',
+                'pronunciation_report' => $sttResult ? ['accuracy_score' => (int) ($sttResult['confidence'] * 100)] : ['accuracy_score' => 0],
+                'transcript' => $transcript,
             ]);
 
             $job->update(['status' => 'ready', 'completed_at' => now()]);
         });
+    }
+
+    private function loadSpeakingSubmission(GradingJob $job): ?PracticeSpeakingSubmission
+    {
+        if ($job->submission_type === 'practice_speaking') {
+            return PracticeSpeakingSubmission::query()->find($job->submission_id);
+        }
+
+        return null;
     }
 }
