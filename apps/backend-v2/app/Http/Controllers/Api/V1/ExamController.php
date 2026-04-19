@@ -6,9 +6,12 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\ExamListeningPlayLog;
+use App\Models\ExamMcqAnswer;
 use App\Models\ExamSession;
 use App\Models\ExamVersion;
 use App\Models\Profile;
+use App\Models\SpeakingGradingResult;
+use App\Models\WritingGradingResult;
 use App\Services\ExamService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -96,9 +99,51 @@ class ExamController extends Controller
             ->where('status', 'submitted')
             ->orderByDesc('submitted_at')
             ->limit(10)
-            ->get(['id', 'exam_version_id', 'mode', 'is_full_test', 'started_at', 'submitted_at', 'status']);
+            ->get(['id', 'exam_version_id', 'mode', 'is_full_test', 'started_at', 'submitted_at']);
 
-        return response()->json(['data' => $sessions]);
+        $data = $sessions->map(function (ExamSession $session) {
+            // MCQ scores (listening + reading)
+            $mcqAnswers = ExamMcqAnswer::query()
+                ->where('session_id', $session->id)
+                ->get();
+            $listeningCorrect = $mcqAnswers->where('item_ref_type', 'listening')->where('is_correct', true)->count();
+            $listeningTotal = $mcqAnswers->where('item_ref_type', 'listening')->count();
+            $readingCorrect = $mcqAnswers->where('item_ref_type', 'reading')->where('is_correct', true)->count();
+            $readingTotal = $mcqAnswers->where('item_ref_type', 'reading')->count();
+
+            // Writing grading band
+            $writingBand = WritingGradingResult::query()
+                ->where('submission_type', 'exam_writing')
+                ->whereIn('submission_id', function ($q) use ($session) {
+                    $q->select('id')->from('exam_writing_submissions')->where('session_id', $session->id);
+                })
+                ->where('is_active', true)
+                ->avg('overall_band');
+
+            // Speaking grading band
+            $speakingBand = SpeakingGradingResult::query()
+                ->where('submission_type', 'exam_speaking')
+                ->whereIn('submission_id', function ($q) use ($session) {
+                    $q->select('id')->from('exam_speaking_submissions')->where('session_id', $session->id);
+                })
+                ->where('is_active', true)
+                ->avg('overall_band');
+
+            return [
+                'id' => $session->id,
+                'mode' => $session->mode,
+                'is_full_test' => $session->is_full_test,
+                'submitted_at' => $session->submitted_at,
+                'scores' => [
+                    'listening' => $listeningTotal > 0 ? round($listeningCorrect / $listeningTotal * 10, 1) : null,
+                    'reading' => $readingTotal > 0 ? round($readingCorrect / $readingTotal * 10, 1) : null,
+                    'writing' => $writingBand ? round((float) $writingBand, 1) : null,
+                    'speaking' => $speakingBand ? round((float) $speakingBand, 1) : null,
+                ],
+            ];
+        });
+
+        return response()->json(['data' => $data]);
     }
 
     public function showSession(Request $request, string $sessionId): JsonResponse
