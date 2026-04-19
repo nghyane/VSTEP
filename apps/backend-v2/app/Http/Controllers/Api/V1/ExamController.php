@@ -87,6 +87,20 @@ class ExamController extends Controller
         ]]);
     }
 
+    public function mySessions(Request $request): JsonResponse
+    {
+        $profile = $this->profile($request);
+
+        $sessions = ExamSession::query()
+            ->where('profile_id', $profile->id)
+            ->where('status', 'submitted')
+            ->orderByDesc('submitted_at')
+            ->limit(10)
+            ->get(['id', 'exam_version_id', 'mode', 'is_full_test', 'started_at', 'submitted_at', 'status']);
+
+        return response()->json(['data' => $sessions]);
+    }
+
     public function showSession(Request $request, string $sessionId): JsonResponse
     {
         /** @var ExamSession $session */
