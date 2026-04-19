@@ -13,10 +13,12 @@
 	"dependencies": {
 		"@tanstack/react-query": "5.99.2",
 		"@tanstack/react-router": "1.168.23",
+		"clsx": "^2.1.1",
 		"ky": "2.0.1",
 		"react": "19.2.5",
 		"react-dom": "19.2.5",
-		"recharts": "3.8.1"
+		"recharts": "3.8.1",
+		"tailwind-merge": "^3.5.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.4.12",
@@ -29,6 +31,7 @@
 		"@vitejs/plugin-react": "6.0.1",
 		"tailwindcss": "4.2.2",
 		"typescript": "5.8.3",
-		"vite": "8.0.8"
+		"vite": "8.0.8",
+		"vite-plugin-svgr": "5.2.0"
 	}
 }

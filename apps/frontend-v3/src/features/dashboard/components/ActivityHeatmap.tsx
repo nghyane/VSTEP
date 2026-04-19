@@ -1,4 +1,5 @@
 import { useMemo } from "react"
+import { cn } from "#/lib/utils"
 
 const WEEKS = 12
 const DAYS = 7
@@ -33,7 +34,7 @@ export function ActivityHeatmap() {
 				<div className="flex items-center gap-1.5 text-xs text-subtle">
 					<span>Ít</span>
 					{LEVELS.map((cls) => (
-						<span key={cls} className={`w-3.5 h-3.5 rounded ${cls}`} />
+						<span key={cls} className={cn("w-3.5 h-3.5 rounded", cls)} />
 					))}
 					<span>Nhiều</span>
 				</div>
@@ -53,7 +54,10 @@ export function ActivityHeatmap() {
 							<div
 								// biome-ignore lint/suspicious/noArrayIndexKey: static mock data
 								key={i}
-								className={`h-4 rounded ${LEVELS[lv]} hover:ring-1 hover:ring-border cursor-pointer transition`}
+								className={cn(
+									"h-4 rounded hover:ring-1 hover:ring-border cursor-pointer transition",
+									LEVELS[lv],
+								)}
 							/>
 						))}
 					</div>

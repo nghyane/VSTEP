@@ -5,6 +5,7 @@ import challengeIcon from "#/assets/icons/monthly-challenge-medium.svg"
 import moreIcon from "#/assets/icons/more-small.svg"
 import targetIcon from "#/assets/icons/target-small.svg"
 import weightsIcon from "#/assets/icons/weights-small.svg"
+import { cn } from "#/lib/utils"
 
 const NAV_ITEMS = [
 	{ label: "Tổng quan", icon: houseIcon, to: "/" as const },
@@ -32,9 +33,10 @@ export function Sidebar() {
 						<Link
 							key={item.to}
 							to={item.to}
-							className={`flex items-center gap-4 px-4 py-3 rounded-xl font-bold ${
-								active ? "bg-primary-tint text-primary" : "text-muted hover:bg-background"
-							}`}
+							className={cn(
+								"flex items-center gap-4 px-4 py-3 rounded-xl font-bold",
+								active ? "bg-primary-tint text-primary" : "text-muted hover:bg-background",
+							)}
 						>
 							<img src={item.icon} className="w-7 h-7" alt="" />
 							<span className="text-base">{item.label}</span>

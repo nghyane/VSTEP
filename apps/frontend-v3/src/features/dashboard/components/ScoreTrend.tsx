@@ -1,3 +1,5 @@
+import { cn } from "#/lib/utils"
+
 const TESTS = [
 	{ date: "01/03", L: 5, R: 6, W: 4, S: 0, avg: 3.75 },
 	{ date: "10/03", L: 5.5, R: 6, W: 4.5, S: 0, avg: 4.0 },
@@ -51,9 +53,13 @@ export function ScoreTrend() {
 					<button
 						type="button"
 						key={s.key}
-						className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full ${s.bg} ${s.text} text-xs font-bold`}
+						className={cn(
+							"inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold",
+							s.bg,
+							s.text,
+						)}
 					>
-						<span className={`w-2 h-2 rounded-full`} style={{ background: s.color }} />
+						<span className="w-2 h-2 rounded-full" style={{ background: s.color }} />
 						{s.label}
 					</button>
 				))}

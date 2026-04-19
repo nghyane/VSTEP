@@ -7,7 +7,7 @@ const ITEMS = [
 		meta: "12 / 28 chủ đề",
 		progress: 0.43,
 		to: "/luyen-tap/tu-vung",
-		color: "bg-skill-writing",
+		color: "var(--color-skill-writing)",
 	},
 	{
 		label: "Ngữ pháp",
@@ -15,7 +15,7 @@ const ITEMS = [
 		meta: "45 / 120 điểm",
 		progress: 0.38,
 		to: "/luyen-tap/ngu-phap",
-		color: "bg-skill-reading",
+		color: "var(--color-skill-reading)",
 	},
 ] as const
 
@@ -37,8 +37,8 @@ export function FoundationSection() {
 						</div>
 						<div className="h-2 bg-border rounded-full overflow-hidden">
 							<div
-								className={`h-full ${item.color} rounded-full transition-all`}
-								style={{ width: `${item.progress * 100}%` }}
+								className="h-full rounded-full transition-all"
+								style={{ width: `${item.progress * 100}%`, background: item.color }}
 							/>
 						</div>
 					</Link>

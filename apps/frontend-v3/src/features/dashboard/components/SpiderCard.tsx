@@ -1,17 +1,13 @@
-const SKILLS = [
-	{ key: "listening", label: "Nghe", current: 5.5, color: "#1CB0F6" },
-	{ key: "reading", label: "Đọc", current: 6.0, color: "#7850C8" },
-	{ key: "writing", label: "Viết", current: 4.5, color: "#58CC02" },
-	{ key: "speaking", label: "Nói", current: 0, color: "#DCAA00" },
-] as const
+import type { OverviewChart } from "#/features/dashboard/queries"
+import { SKILL_CONFIG, type SkillKey } from "#/lib/skills"
 
+const SKILL_KEYS: SkillKey[] = ["listening", "reading", "writing", "speaking"]
 const TARGET = 6.0
 const R = 88
 const CX = 140
 const CY = 140
 
 function toXY(index: number, value: number) {
-	// 4 axes: top, right, bottom, left
 	const dirs = [
 		{ dx: 0, dy: -1 },
 		{ dx: 1, dy: 0 },
@@ -24,44 +20,48 @@ function toXY(index: number, value: number) {
 }
 
 function polygon(values: number[]) {
-	return values
-		.map((v, i) => {
-			const { x, y } = toXY(i, v)
-			return `${x},${y}`
-		})
-		.join(" ")
+	return values.map((v, i) => `${toXY(i, v).x},${toXY(i, v).y}`).join(" ")
 }
 
-export function SpiderCard() {
+interface Props {
+	chart: OverviewChart | null
+	minTests: number
+	totalTests: number
+}
+
+export function SpiderCard({ chart, minTests, totalTests }: Props) {
+	const values = SKILL_KEYS.map((k) => chart?.[k] ?? 0)
+	const hasData = chart !== null
 	const targetPoly = polygon([TARGET, TARGET, TARGET, TARGET])
-	const currentPoly = polygon(SKILLS.map((s) => s.current))
+	const currentPoly = polygon(values)
 
 	return (
 		<div className="card p-6">
 			<h3 className="font-extrabold text-lg text-foreground">Năng lực 4 kỹ năng</h3>
-			<p className="text-sm text-subtle mt-1">Trung bình từ 3 bài thi thử gần nhất</p>
+			<p className="text-sm text-subtle mt-1">
+				{hasData
+					? `Trung bình từ ${chart.sample_size} bài thi thử gần nhất`
+					: `Cần thêm ${minTests - totalTests} bài thi để hiện biểu đồ`}
+			</p>
 
 			<div className="flex items-center justify-center py-4">
 				<svg
 					viewBox="0 0 280 280"
+					className="w-full max-w-[320px] overflow-visible"
 					role="img"
 					aria-label="Spider chart"
-					className="w-full max-w-[320px] overflow-visible"
 				>
-					{/* Grid */}
 					<g fill="none" stroke="var(--color-border)" strokeWidth="1">
 						{[1, 2, 3, 4, 5].map((lv) => (
 							<polygon key={lv} points={polygon([lv * 2, lv * 2, lv * 2, lv * 2])} />
 						))}
 					</g>
-					{/* Axes */}
 					<g stroke="var(--color-border)" strokeWidth="1">
 						<line x1={CX} y1={CY} x2={CX} y2={CY - R} />
 						<line x1={CX} y1={CY} x2={CX + R} y2={CY} />
 						<line x1={CX} y1={CY} x2={CX} y2={CY + R} />
 						<line x1={CX} y1={CY} x2={CX - R} y2={CY} />
 					</g>
-					{/* Target */}
 					<polygon
 						points={targetPoly}
 						fill="var(--color-destructive)"
@@ -71,32 +71,32 @@ export function SpiderCard() {
 						strokeDasharray="4 3"
 						strokeLinejoin="round"
 					/>
-					{/* Current */}
-					<polygon
-						points={currentPoly}
-						fill="var(--color-primary)"
-						fillOpacity={0.15}
-						stroke="var(--color-primary)"
-						strokeWidth={2.5}
-						strokeLinejoin="round"
-					/>
-					{/* Dots */}
-					{SKILLS.map((s, i) => {
-						const { x, y } = toXY(i, s.current)
+					{hasData && (
+						<polygon
+							points={currentPoly}
+							fill="var(--color-primary)"
+							fillOpacity={0.15}
+							stroke="var(--color-primary)"
+							strokeWidth={2.5}
+							strokeLinejoin="round"
+						/>
+					)}
+					{SKILL_KEYS.map((k, i) => {
+						const v = values[i]
+						const { x, y } = toXY(i, v)
 						return (
 							<circle
-								key={s.key}
+								key={k}
 								cx={x}
 								cy={y}
 								r={5}
-								fill={s.current > 0 ? s.color : "var(--color-placeholder)"}
+								fill={v > 0 ? SKILL_CONFIG[k].color : "var(--color-placeholder)"}
 								stroke="white"
 								strokeWidth={2.5}
 							/>
 						)
 					})}
-					{/* Labels */}
-					{SKILLS.map((s, i) => {
+					{SKILL_KEYS.map((k, i) => {
 						const positions = [
 							{ x: CX, y: 44, anchor: "middle" as const },
 							{ x: 244, y: CY + 4, anchor: "start" as const },
@@ -106,15 +106,15 @@ export function SpiderCard() {
 						const pos = positions[i] ?? positions[0]
 						return (
 							<text
-								key={s.key}
+								key={k}
 								x={pos.x}
 								y={pos.y}
 								textAnchor={pos.anchor}
 								fontSize={13}
 								fontWeight={700}
-								fill={s.color}
+								fill={SKILL_CONFIG[k].color}
 							>
-								{s.label}
+								{SKILL_CONFIG[k].label}
 							</text>
 						)
 					})}
