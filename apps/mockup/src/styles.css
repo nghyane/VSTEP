@@ -1,0 +1,158 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════
+   VSTEP Design Tokens
+   Single source of truth — chỉ sửa ở đây
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── FONTS ─────────────────────────────────────────── */
+
+@font-face {
+  font-family: "Duolingo Sans";
+  src: url("/fonts/DuolingoSans-VF.otf") format("opentype-variations"),
+       url("/fonts/DuolingoSans-VF.otf") format("opentype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Feather";
+  src: url("/fonts/Feather-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ─── TOKENS ───────────────────────────────────────── */
+
+@theme {
+  /* ═══ Fonts ═══ */
+  --font-sans: "Duolingo Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Feather", "Duolingo Sans", sans-serif;
+
+  /* ═══ BRAND ═══
+     Primary brand color — dùng cho logo, CTA, sidebar active, banner */
+  --color-brand: #58cc02;
+  --color-brand-light: #79d634;
+  --color-brand-dark: #478700;
+  --color-brand-tint: #e6f8d4;
+  --color-brand-ice: #f5fce8;
+
+  /* ═══ SEMANTIC ═══
+     Success = brand (green Duo universal)
+     Error, Warning, Info, Streak */
+  --color-success: #58cc02;
+  --color-success-dark: #478700;
+  --color-success-tint: #e6f8d4;
+
+  --color-error: #ea4335;
+  --color-error-dark: #c92a1c;
+  --color-error-tint: #ffe6e4;
+
+  --color-warning: #ff9b00;
+  --color-warning-tint: #fff0dc;
+
+  --color-info: #1cb0f6;
+  --color-info-dark: #1899d6;
+  --color-info-tint: #ddf4ff;
+
+  /* ═══ ACCENT ═══
+     Streak (orange flame), Coins (gold gem) */
+  --color-streak: #ff7800;
+  --color-streak-tint: #fff0dc;
+
+  --color-coin: #ffc800;
+  --color-coin-dark: #dcaa00;
+  --color-coin-tint: #fff5d2;
+
+  /* ═══ SKILL COLORS ═══
+     Mỗi kỹ năng VSTEP có màu riêng */
+  --color-skill-listening: #1cb0f6;  /* blue */
+  --color-skill-reading: #7850c8;    /* purple */
+  --color-skill-writing: #58cc02;    /* green (= brand) */
+  --color-skill-speaking: #ffc800;   /* gold */
+
+  /* ═══ NEUTRALS ═══ */
+  --color-ink-900: #1e1e28;
+  --color-ink-700: #4b4b5a;
+  --color-ink-500: #8c8c9b;
+  --color-ink-300: #afafaf;
+  --color-ink-200: #e5e5e5;
+  --color-ink-100: #f7f7fa;
+  --color-ink-50: #fafafc;
+
+  /* ═══ RADIUS ═══ */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-duo: 13px;   /* Duo default button/input */
+  --radius-lg: 16px;    /* Card */
+  --radius-xl: 20px;    /* Banner */
+  --radius-2xl: 24px;   /* Hero banner */
+}
+
+/* ─── BASE ─────────────────────────────────────────── */
+
+@layer base {
+  html, body {
+    font-family: var(--font-sans);
+    background: var(--color-ink-100);
+    color: var(--color-ink-900);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* ─── COMPONENTS ──────────────────────────────────── */
+
+@layer components {
+  /* Buttons — Duo style: pill + border-bottom press */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-duo);
+    padding: 0.625rem 1.25rem;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    transition: transform 0.1s, box-shadow 0.1s;
+    cursor: pointer;
+  }
+  .btn:active {
+    transform: translateY(2px);
+  }
+  .btn-primary {
+    background: var(--color-brand);
+    color: white;
+    box-shadow: 0 4px 0 var(--color-brand-dark);
+  }
+  .btn-primary:active {
+    box-shadow: 0 2px 0 var(--color-brand-dark);
+  }
+  .btn-secondary {
+    background: white;
+    color: var(--color-ink-900);
+    box-shadow: 0 2px 0 var(--color-ink-200), inset 0 0 0 2px var(--color-ink-200);
+  }
+
+  /* Cards — Duo style with thick bottom border */
+  .card {
+    background: white;
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--color-ink-200);
+    border-bottom-width: 4px;
+  }
+  .card-interactive {
+    background: white;
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--color-ink-200);
+    border-bottom-width: 4px;
+    transition: transform 0.15s;
+    cursor: pointer;
+  }
+  .card-interactive:hover {
+    transform: translateY(-2px);
+  }
+}

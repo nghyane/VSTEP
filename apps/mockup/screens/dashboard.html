@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — VSTEP</title>
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
+<body class="bg-ink-100 text-ink-900">
+  <div class="flex min-h-screen">
+
+    <!-- ════════ SIDEBAR (260px fixed) ════════ -->
+    <aside class="w-[260px] shrink-0 bg-white border-r border-ink-200 flex flex-col sticky top-0 h-screen">
+      <!-- Logo -->
+      <div class="px-7 py-7">
+        <h1 class="font-display text-3xl text-brand">VSTEP</h1>
+      </div>
+
+      <!-- Nav -->
+      <nav class="flex-1 px-4 py-2 space-y-1">
+        <!-- Active: Tổng quan -->
+        <a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl bg-brand-tint text-brand font-bold">
+          <img src="/src/icons/house-small.svg" class="w-7 h-7" alt="" />
+          <span class="text-base">Tổng quan</span>
+        </a>
+        <a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-ink-100 text-ink-700 font-bold">
+          <img src="/src/icons/weights-small.svg" class="w-7 h-7" alt="" />
+          <span class="text-base">Luyện tập</span>
+        </a>
+        <a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-ink-100 text-ink-700 font-bold">
+          <img src="/src/icons/target-small.svg" class="w-7 h-7" alt="" />
+          <span class="text-base">Thi thử</span>
+        </a>
+        <a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-ink-100 text-ink-700 font-bold">
+          <img src="/src/icons/monthly-challenge-medium.svg" class="w-7 h-7" alt="" />
+          <span class="text-base">Khóa học</span>
+        </a>
+        <a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-ink-100 text-ink-700 font-bold">
+          <img src="/src/icons/face-small.svg" class="w-7 h-7" alt="" />
+          <span class="text-base">Hồ sơ</span>
+        </a>
+
+        <div class="h-px bg-ink-200 my-3 mx-4"></div>
+
+        <a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-ink-100 text-ink-700 font-bold">
+          <img src="/src/icons/more-small.svg" class="w-7 h-7" alt="" />
+          <span class="text-base">Xem thêm</span>
+        </a>
+      </nav>
+
+      <!-- User footer -->
+      <div class="p-4">
+        <div class="flex items-center gap-3 p-3 rounded-xl bg-ink-100">
+          <div class="w-10 h-10 rounded-full bg-brand flex items-center justify-center text-white font-display text-base">N</div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-bold text-ink-900 truncate">Nghĩa</p>
+            <p class="text-xs text-ink-500 truncate">Học viên</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ════════ MAIN CONTENT ════════ -->
+    <main class="flex-1 min-w-0">
+
+      <!-- Top-right bar (coin/streak/bell/avatar inline) -->
+      <div class="sticky top-0 z-10 bg-ink-100 px-10 pt-8 pb-5 flex items-center justify-between">
+        <h2 class="font-extrabold text-2xl text-ink-900">Tổng quan</h2>
+
+        <div class="flex items-center gap-6">
+          <!-- Coin -->
+          <div class="flex items-center gap-2">
+            <img src="/src/icons/gem-small.svg" class="h-7 w-auto" alt="" />
+            <span class="font-bold text-base text-coin-dark">80</span>
+          </div>
+          <!-- Streak -->
+          <div class="flex items-center gap-2">
+            <img src="/src/icons/streak-small.svg" class="h-7 w-auto" alt="" />
+            <span class="font-bold text-base text-streak">7</span>
+          </div>
+          <!-- Avatar (with notification dot) -->
+          <button class="relative w-10 h-10 rounded-full bg-brand text-white font-display text-base flex items-center justify-center hover:ring-2 hover:ring-brand/40 transition">
+            N
+            <span class="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-error border-2 border-ink-100"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Content area -->
+      <div class="px-10 pb-12 space-y-8">
+
+        <!-- 1. Profile Banner -->
+        <section class="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-brand-light via-brand to-brand-dark p-8 md:p-10">
+          <div class="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-white/10"></div>
+          <div class="absolute -bottom-6 right-24 w-20 h-20 rounded-full bg-white/[0.08]"></div>
+
+          <div class="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div class="flex items-center gap-5">
+              <div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-white font-display text-3xl">N</div>
+              <div>
+                <h3 class="font-extrabold text-3xl text-white">Hi, Nghĩa</h3>
+                <p class="text-white/85 text-lg mt-1">Còn <strong class="font-bold">45 ngày</strong> đến kỳ thi ĐH Văn Lang — giữ vững tập trung!</p>
+              </div>
+            </div>
+
+            <!-- Level track -->
+            <div class="bg-white/15 rounded-2xl p-4 min-w-[260px]">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-white/70 font-semibold">Đầu vào</span>
+                <span class="text-xs text-white/70 font-semibold">Dự đoán</span>
+                <span class="text-xs text-white/70 font-semibold">Mục tiêu</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-white text-lg">A2</span>
+                <div class="flex-1 h-px bg-white/30 mx-3"></div>
+                <span class="font-display text-2xl text-info-tint">B1</span>
+                <div class="flex-1 h-px bg-white/30 mx-3"></div>
+                <span class="font-bold text-white text-lg">B2</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. Next Action CTA -->
+        <section class="card p-5 flex items-center gap-5">
+          <img src="/src/icons/weights-small.svg" class="w-10 h-auto shrink-0" alt="" />
+          <div class="flex-1 min-w-0">
+            <h4 class="font-bold text-base text-ink-900">Bạn chưa luyện tập hôm nay!</h4>
+            <p class="text-sm text-ink-500 mt-0.5">Gợi ý: Luyện Viết · 15 phút · Giữ streak 8 ngày</p>
+          </div>
+          <button class="btn btn-primary shrink-0">Bắt đầu</button>
+        </section>
+
+        <!-- 3. Stats -->
+        <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="card p-4">
+            <div class="flex items-center gap-3">
+              <img src="/src/icons/streak-medium.svg" class="w-10 h-10 object-contain" alt="" />
+              <div class="min-w-0">
+                <p class="text-sm text-ink-500">Streak hiện tại</p>
+                <p class="font-extrabold text-2xl text-ink-900">7 ngày</p>
+              </div>
+            </div>
+          </div>
+          <div class="card p-4">
+            <div class="flex items-center gap-3">
+              <img src="/src/icons/timer-medium.svg" class="w-10 h-10 object-contain" alt="" />
+              <div class="min-w-0">
+                <p class="text-sm text-ink-500">Thời gian luyện tập</p>
+                <p class="font-extrabold text-2xl text-ink-900">7h 20m</p>
+              </div>
+            </div>
+          </div>
+          <div class="card p-4">
+            <div class="flex items-center gap-3">
+              <img src="/src/icons/target-medium.svg" class="w-10 h-10 object-contain" alt="" />
+              <div class="min-w-0">
+                <p class="text-sm text-ink-500">Bài thi thử</p>
+                <p class="font-extrabold text-2xl text-ink-900">3 <span class="text-sm text-ink-500 font-sans font-normal">/ 5</span></p>
+              </div>
+            </div>
+          </div>
+          <div class="card p-4">
+            <div class="flex items-center gap-3">
+              <img src="/src/icons/trophy-small.svg" class="w-10 h-10 object-contain" alt="" />
+              <div class="min-w-0">
+                <p class="text-sm text-ink-500">Band ước tính</p>
+                <p class="font-extrabold text-2xl text-ink-500">—</p>
+                <p class="text-xs text-ink-300">Cần 5 bài thi</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. Spider + Gap Analysis (1 row, 2 cards) -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          <!-- Spider chart -->
+          <div class="card p-6">
+            <h3 class="font-extrabold text-lg text-ink-900">Năng lực 4 kỹ năng</h3>
+            <p class="text-sm text-ink-500 mt-1">Trung bình từ 3 bài thi thử gần nhất</p>
+
+            <div class="flex items-center justify-center py-4">
+              <svg viewBox="0 0 280 280" class="w-full max-w-[320px] overflow-visible" role="img" aria-label="Spider chart năng lực vs mục tiêu">
+                <!-- Grid rings (5 levels, step = 2 points) -->
+                <g fill="none" stroke="#E5E5E5" stroke-width="1">
+                  <polygon points="140,80 200,140 140,200 80,140" />
+                  <polygon points="140,92 188,140 140,188 92,140" />
+                  <polygon points="140,104 176,140 140,176 104,140" />
+                  <polygon points="140,116 164,140 140,164 116,140" />
+                  <polygon points="140,128 152,140 140,152 128,140" />
+                </g>
+                <!-- Axes -->
+                <g stroke="#E5E5E5" stroke-width="1">
+                  <line x1="140" y1="140" x2="140" y2="52" />
+                  <line x1="140" y1="140" x2="228" y2="140" />
+                  <line x1="140" y1="140" x2="140" y2="228" />
+                  <line x1="140" y1="140" x2="52" y2="140" />
+                </g>
+
+                <!-- TARGET polygon: B2 = 6.0 cho cả 4 kỹ năng -->
+                <!-- All 4 axes at 6.0/10 = 52.8 from center -->
+                <polygon
+                  points="140,87.2 192.8,140 140,192.8 87.2,140"
+                  fill="#EA4335"
+                  fill-opacity="0.05"
+                  stroke="#EA4335"
+                  stroke-width="1.5"
+                  stroke-dasharray="4 3"
+                  stroke-linejoin="round"
+                />
+
+                <!-- CURRENT polygon: L=5.5, R=6.0, W=4.5, S=0 -->
+                <polygon
+                  points="140,91.6 192.8,140 140,179.6 140,140"
+                  fill="#58CC02"
+                  fill-opacity="0.15"
+                  stroke="#58CC02"
+                  stroke-width="2.5"
+                  stroke-linejoin="round"
+                />
+                <!-- Current dots -->
+                <circle cx="140" cy="91.6" r="5" fill="#1CB0F6" stroke="white" stroke-width="2.5" />
+                <circle cx="192.8" cy="140" r="5" fill="#7850C8" stroke="white" stroke-width="2.5" />
+                <circle cx="140" cy="179.6" r="5" fill="#58CC02" stroke="white" stroke-width="2.5" />
+                <circle cx="140" cy="140" r="5" fill="#AFAFAF" stroke="white" stroke-width="2.5" />
+
+                <!-- Axis labels -->
+                <text x="140" y="44" text-anchor="middle" font-size="13" font-weight="700" fill="#1CB0F6">Nghe</text>
+                <text x="244" y="144" text-anchor="start" font-size="13" font-weight="700" fill="#7850C8" dominant-baseline="middle">Đọc</text>
+                <text x="140" y="256" text-anchor="middle" font-size="13" font-weight="700" fill="#58CC02">Viết</text>
+                <text x="36" y="144" text-anchor="end" font-size="13" font-weight="700" fill="#DCAA00" dominant-baseline="middle">Nói</text>
+              </svg>
+            </div>
+
+            <!-- Legend -->
+            <div class="flex items-center justify-center gap-5 text-xs text-ink-500 mb-4">
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-2 rounded-sm bg-brand/30 border border-brand"></span>
+                Hiện tại
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-0.5 border-t border-dashed border-error"></span>
+                Mục tiêu B2
+              </div>
+            </div>
+          </div>
+
+          <!-- Gap Analysis + Focus CTA -->
+          <div class="card p-6">
+            <h3 class="font-extrabold text-lg text-ink-900">Khoảng cách mục tiêu</h3>
+            <p class="text-sm text-ink-500 mt-1">Mục tiêu <strong class="text-brand-dark">B2 (6.0)</strong> cho mỗi kỹ năng</p>
+
+            <!-- Skill gap analysis -->
+            <div class="space-y-3 mt-5">
+              <!-- Nghe -->
+              <div class="flex items-center gap-3 text-sm">
+                <span class="w-2 h-2 rounded-full bg-skill-listening shrink-0"></span>
+                <span class="text-ink-700 w-12 font-semibold">Nghe</span>
+                <div class="flex-1 flex items-center gap-2">
+                  <span class="font-extrabold text-base text-ink-900">5.5</span>
+                  <span class="text-ink-300 text-xs">/ 6.0</span>
+                </div>
+                <span class="text-sm font-bold text-warning">-0.5</span>
+              </div>
+              <!-- Đọc -->
+              <div class="flex items-center gap-3 text-sm">
+                <span class="w-2 h-2 rounded-full bg-skill-reading shrink-0"></span>
+                <span class="text-ink-700 w-12 font-semibold">Đọc</span>
+                <div class="flex-1 flex items-center gap-2">
+                  <span class="font-extrabold text-base text-ink-900">6.0</span>
+                  <span class="text-ink-300 text-xs">/ 6.0</span>
+                </div>
+                <span class="text-sm font-bold text-success">✓ Đạt</span>
+              </div>
+              <!-- Viết -->
+              <div class="flex items-center gap-3 text-sm">
+                <span class="w-2 h-2 rounded-full bg-skill-writing shrink-0"></span>
+                <span class="text-ink-700 w-12 font-semibold">Viết</span>
+                <div class="flex-1 flex items-center gap-2">
+                  <span class="font-extrabold text-base text-error">4.5</span>
+                  <span class="text-ink-300 text-xs">/ 6.0</span>
+                </div>
+                <span class="text-sm font-bold text-error">-1.5</span>
+              </div>
+              <!-- Nói -->
+              <div class="flex items-center gap-3 text-sm">
+                <span class="w-2 h-2 rounded-full bg-skill-speaking shrink-0"></span>
+                <span class="text-ink-700 w-12 font-semibold">Nói</span>
+                <div class="flex-1 flex items-center gap-2">
+                  <span class="font-extrabold text-base text-ink-500">—</span>
+                  <span class="text-ink-300 text-xs">/ 6.0</span>
+                </div>
+                <span class="text-sm font-bold text-ink-500">Chưa thi</span>
+              </div>
+            </div>
+
+            <!-- Focus CTA -->
+            <a href="#" class="flex items-center gap-3 mt-4 p-3 rounded-xl bg-ink-100 hover:bg-ink-200/60 transition">
+              <img src="/src/icons/weights-small.svg" class="w-8 h-auto shrink-0" alt="" />
+              <div class="flex-1 min-w-0">
+                <p class="text-sm text-ink-500">Tập trung kỹ năng yếu nhất</p>
+                <p class="font-bold text-sm text-ink-900">Viết · cách mục tiêu 1.5 band</p>
+              </div>
+              <span class="text-ink-700 font-bold">→</span>
+            </a>
+          </div>
+
+          <!-- Bar chart — Điểm qua các lần thi (full width, separate section) -->
+        </section>
+
+        <section>
+          <div class="card p-6">
+            <div class="flex items-start justify-between mb-1">
+              <div>
+                <h3 class="font-extrabold text-lg text-ink-900">Điểm qua các lần thi</h3>
+                <p class="text-sm text-ink-500 mt-1">5 bài thi gần nhất · bấm để ẩn/hiện kỹ năng</p>
+              </div>
+            </div>
+
+            <!-- Skill toggle pills -->
+            <div class="flex flex-wrap gap-2 mt-3 mb-4">
+              <button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-info/10 text-skill-listening text-xs font-bold hover:bg-skill-listening/20 transition">
+                <span class="w-2 h-2 rounded-full bg-skill-listening"></span>
+                Nghe
+              </button>
+              <button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-skill-reading/10 text-skill-reading text-xs font-bold hover:bg-skill-reading/20 transition">
+                <span class="w-2 h-2 rounded-full bg-skill-reading"></span>
+                Đọc
+              </button>
+              <button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-skill-writing/10 text-skill-writing text-xs font-bold hover:bg-skill-writing/20 transition">
+                <span class="w-2 h-2 rounded-full bg-skill-writing"></span>
+                Viết
+              </button>
+              <button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-coin-tint text-coin-dark text-xs font-bold hover:bg-gold/20 transition">
+                <span class="w-2 h-2 rounded-full bg-skill-speaking"></span>
+                Nói
+              </button>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-brand-dark">
+                <span class="w-4 h-0.5 bg-brand-dark rounded"></span>
+                Trung bình
+              </span>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-error">
+                <span class="w-4 h-0.5 border-t-2 border-dashed border-error"></span>
+                Mục tiêu
+              </span>
+            </div>
+
+            <!-- Bar chart SVG — 5 tests -->
+            <svg viewBox="0 0 600 220" class="w-full" role="img" aria-label="Điểm qua các lần thi">
+              <!-- Y-axis grid & labels -->
+              <g font-size="10" fill="#AFAFAF" font-family="inherit">
+                <line x1="36" y1="20" x2="590" y2="20" stroke="#F7F7FA" stroke-width="1" />
+                <line x1="36" y1="60" x2="590" y2="60" stroke="#F7F7FA" stroke-width="1" />
+                <line x1="36" y1="100" x2="590" y2="100" stroke="#F7F7FA" stroke-width="1" />
+                <line x1="36" y1="140" x2="590" y2="140" stroke="#F7F7FA" stroke-width="1" />
+                <line x1="36" y1="180" x2="590" y2="180" stroke="#E5E5E5" stroke-width="1" />
+                <text x="30" y="24" text-anchor="end">10</text>
+                <text x="30" y="64" text-anchor="end">7.5</text>
+                <text x="30" y="104" text-anchor="end">5</text>
+                <text x="30" y="144" text-anchor="end">2.5</text>
+                <text x="30" y="184" text-anchor="end">0</text>
+              </g>
+
+              <!-- Test 1 (01/03) — L:5, R:6, W:4, S:— -->
+              <g>
+                <rect x="50" y="100" width="14" height="80" fill="#1CB0F6" rx="3" opacity="0.65" />
+                <rect x="66" y="84" width="14" height="96" fill="#7850C8" rx="3" opacity="0.65" />
+                <rect x="82" y="116" width="14" height="64" fill="#58CC02" rx="3" opacity="0.65" />
+                <rect x="98" y="180" width="14" height="0" fill="#FFC800" rx="3" opacity="0.65" />
+                <text x="78" y="198" text-anchor="middle" font-size="10" fill="#8C8C9B">01/03</text>
+              </g>
+
+              <!-- Test 2 (10/03) — L:5.5, R:6, W:4.5, S:— -->
+              <g>
+                <rect x="148" y="92" width="14" height="88" fill="#1CB0F6" rx="3" opacity="0.65" />
+                <rect x="164" y="84" width="14" height="96" fill="#7850C8" rx="3" opacity="0.65" />
+                <rect x="180" y="108" width="14" height="72" fill="#58CC02" rx="3" opacity="0.65" />
+                <rect x="196" y="180" width="14" height="0" fill="#FFC800" rx="3" opacity="0.65" />
+                <text x="176" y="198" text-anchor="middle" font-size="10" fill="#8C8C9B">10/03</text>
+              </g>
+
+              <!-- Test 3 (18/03) — L:6, R:6.5, W:5, S:5 -->
+              <g>
+                <rect x="246" y="84" width="14" height="96" fill="#1CB0F6" rx="3" opacity="0.65" />
+                <rect x="262" y="76" width="14" height="104" fill="#7850C8" rx="3" opacity="0.65" />
+                <rect x="278" y="100" width="14" height="80" fill="#58CC02" rx="3" opacity="0.65" />
+                <rect x="294" y="100" width="14" height="80" fill="#FFC800" rx="3" opacity="0.65" />
+                <text x="274" y="198" text-anchor="middle" font-size="10" fill="#8C8C9B">18/03</text>
+              </g>
+
+              <!-- Test 4 (28/03) — L:6, R:7, W:5.5, S:5.5 -->
+              <g>
+                <rect x="344" y="84" width="14" height="96" fill="#1CB0F6" rx="3" opacity="0.65" />
+                <rect x="360" y="68" width="14" height="112" fill="#7850C8" rx="3" opacity="0.65" />
+                <rect x="376" y="92" width="14" height="88" fill="#58CC02" rx="3" opacity="0.65" />
+                <rect x="392" y="92" width="14" height="88" fill="#FFC800" rx="3" opacity="0.65" />
+                <text x="372" y="198" text-anchor="middle" font-size="10" fill="#8C8C9B">28/03</text>
+              </g>
+
+              <!-- Test 5 (05/04) — L:6.5, R:7, W:6, S:6 -->
+              <g>
+                <rect x="442" y="76" width="14" height="104" fill="#1CB0F6" rx="3" opacity="0.65" />
+                <rect x="458" y="68" width="14" height="112" fill="#7850C8" rx="3" opacity="0.65" />
+                <rect x="474" y="84" width="14" height="96" fill="#58CC02" rx="3" opacity="0.65" />
+                <rect x="490" y="84" width="14" height="96" fill="#FFC800" rx="3" opacity="0.65" />
+                <text x="470" y="198" text-anchor="middle" font-size="10" fill="#8C8C9B">05/04</text>
+              </g>
+
+              <!-- Target line (B2 = 6.0) -->
+              <line x1="36" y1="84" x2="590" y2="84" stroke="#EA4335" stroke-width="1.5" stroke-dasharray="4 4" />
+              <text x="590" y="80" text-anchor="end" font-size="10" font-weight="700" fill="#EA4335">B2 = 6.0</text>
+
+              <!-- Overall average trend line -->
+              <!-- T1:avg(5,6,4,0)=3.75→y120  T2:avg(5.5,6,4.5,0)=4→y116  T3:avg(6,6.5,5,5)=5.6→y90  T4:avg(6,7,5.5,5.5)=6→y84  T5:avg(6.5,7,6,6)=6.4→y78 -->
+              <polyline points="78,120 176,116 274,90 372,84 470,78" fill="none" stroke="#478700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              <circle cx="78" cy="120" r="4" fill="white" stroke="#478700" stroke-width="2" />
+              <circle cx="176" cy="116" r="4" fill="white" stroke="#478700" stroke-width="2" />
+              <circle cx="274" cy="90" r="4" fill="white" stroke="#478700" stroke-width="2" />
+              <circle cx="372" cy="84" r="4" fill="white" stroke="#478700" stroke-width="2" />
+              <circle cx="470" cy="78" r="4" fill="white" stroke="#478700" stroke-width="2" />
+              <!-- Avg labels -->
+              <text x="78" y="134" text-anchor="middle" font-size="10" font-weight="700" fill="#4B4B5A">3.8</text>
+              <text x="176" y="130" text-anchor="middle" font-size="10" font-weight="700" fill="#4B4B5A">4.0</text>
+              <text x="274" y="82" text-anchor="middle" font-size="10" font-weight="700" fill="#4B4B5A">5.6</text>
+              <text x="372" y="78" text-anchor="middle" font-size="10" font-weight="700" fill="#4B4B5A">6.0</text>
+              <text x="470" y="72" text-anchor="middle" font-size="10" font-weight="700" fill="#4B4B5A">6.4</text>
+            </svg>
+          </div>
+
+        </section>
+
+        <!-- 6. Activity Heatmap -->
+        <section class="card p-6">
+          <div class="flex items-start justify-between mb-5">
+            <div>
+              <h3 class="font-extrabold text-lg text-ink-900">Hoạt động luyện tập</h3>
+              <p class="text-sm text-ink-500 mt-1">12 tuần qua · chỉ tính luyện tập</p>
+            </div>
+            <div class="flex items-center gap-1.5 text-xs text-ink-500">
+              <span>Ít</span>
+              <span class="w-3.5 h-3.5 rounded bg-ink-200"></span>
+              <span class="w-3.5 h-3.5 rounded bg-brand/25"></span>
+              <span class="w-3.5 h-3.5 rounded bg-brand/50"></span>
+              <span class="w-3.5 h-3.5 rounded bg-brand/75"></span>
+              <span class="w-3.5 h-3.5 rounded bg-brand"></span>
+              <span>Nhiều</span>
+            </div>
+          </div>
+
+          <div class="flex gap-1">
+            <!-- Day labels -->
+            <div class="flex flex-col gap-1 pt-5 pr-2 shrink-0">
+              <div class="h-4 text-xs text-ink-500 leading-4">T2</div>
+              <div class="h-4 text-xs text-ink-500 leading-4">T3</div>
+              <div class="h-4 text-xs text-ink-500 leading-4">T4</div>
+              <div class="h-4 text-xs text-ink-500 leading-4">T5</div>
+              <div class="h-4 text-xs text-ink-500 leading-4">T6</div>
+              <div class="h-4 text-xs text-ink-500 leading-4">T7</div>
+              <div class="h-4 text-xs text-ink-500 leading-4">CN</div>
+            </div>
+
+            <!-- Grid area -->
+            <div class="flex-1 min-w-0">
+              <!-- Month labels -->
+              <div class="flex mb-1 text-xs text-ink-500" id="heatmap-months"></div>
+              <!-- Cells grid -->
+              <div class="grid grid-rows-7 grid-flow-col gap-1" id="heatmap"></div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Month labels — distribute across 12 weeks
+    const monthsEl = document.getElementById('heatmap-months');
+    const months = [
+      { label: 'Thg 1', span: 5 },
+      { label: 'Thg 2', span: 4 },
+      { label: 'Thg 3', span: 3 },
+    ];
+    months.forEach(m => {
+      const span = document.createElement('span');
+      span.style.flex = m.span;
+      span.textContent = m.label;
+      monthsEl.appendChild(span);
+    });
+
+    // Heatmap cells: 12 weeks × 7 days
+    const heatmap = document.getElementById('heatmap');
+    const levels = ['bg-ink-200', 'bg-brand/25', 'bg-brand/50', 'bg-brand/75', 'bg-brand'];
+
+    for (let i = 0; i < 84; i++) {
+      const d = i % 7;
+      const isWeekend = d >= 5;
+      const r = Math.random();
+      let lv;
+      if (isWeekend) { lv = r > 0.7 ? 2 : r > 0.4 ? 1 : 0; }
+      else { lv = r > 0.8 ? 4 : r > 0.5 ? 3 : r > 0.25 ? 2 : r > 0.1 ? 1 : 0; }
+
+      const cell = document.createElement('div');
+      cell.className = `h-4 rounded ${levels[lv]} hover:ring-1 hover:ring-ink-300 cursor-pointer transition`;
+      heatmap.appendChild(cell);
+    }
+  </script>
+</body>
+</html>
