@@ -1,12 +1,11 @@
 import { useForm } from "@tanstack/react-form"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { useState } from "react"
+import { useAuth } from "#/features/auth/AuthProvider"
 import { inputClass } from "#/features/auth/styles"
-import { type ApiResponse, api } from "#/lib/api"
-import { tokenStorage } from "#/lib/token-storage"
-import type { Profile, User } from "#/types/auth"
 
 export function RegisterForm() {
+	const { register } = useAuth()
 	const navigate = useNavigate()
 	const [step, setStep] = useState<1 | 2>(1)
 
@@ -19,18 +18,7 @@ export function RegisterForm() {
 			target_deadline: "",
 		},
 		onSubmit: async ({ value }) => {
-			const { data } = await api.post("auth/register", { json: value }).json<
-				ApiResponse<{
-					access_token: string
-					refresh_token: string
-					account: User
-					active_profile: Profile | null
-				}>
-			>()
-			tokenStorage.setAccess(data.access_token)
-			tokenStorage.setRefresh(data.refresh_token)
-			tokenStorage.setUser(data.account)
-			tokenStorage.setProfile(data.active_profile)
+			await register(value)
 			navigate({ to: "/dashboard" })
 		},
 	})

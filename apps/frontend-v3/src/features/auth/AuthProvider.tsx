@@ -16,6 +16,13 @@ interface AuthValue {
 	profile: Profile | null
 	isAuthenticated: boolean
 	login: (email: string, password: string) => Promise<void>
+	register: (data: {
+		email: string
+		password: string
+		nickname: string
+		target_level: string
+		target_deadline: string
+	}) => Promise<void>
 	logout: () => void
 }
 
@@ -27,19 +34,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	const [user, setUser] = useState<User | null>(() => tokenStorage.getUser())
 	const [profile, setProfile] = useState<Profile | null>(() => tokenStorage.getProfile())
 
-	const login = useCallback(async (email: string, password: string) => {
-		const { data } = await api
-			.post("auth/login", { json: { email, password } })
-			.json<ApiResponse<LoginResponse>>()
-
+	const storeAuth = useCallback((data: LoginResponse) => {
 		tokenStorage.setAccess(data.access_token)
 		tokenStorage.setRefresh(data.refresh_token)
 		tokenStorage.setUser(data.account)
 		tokenStorage.setProfile(data.active_profile)
-
 		setUser(data.account)
 		setProfile(data.active_profile)
 	}, [])
+
+	const login = useCallback(
+		async (email: string, password: string) => {
+			const { data } = await api
+				.post("auth/login", { json: { email, password } })
+				.json<ApiResponse<LoginResponse>>()
+			storeAuth(data)
+		},
+		[storeAuth],
+	)
+
+	const register = useCallback(
+		async (input: {
+			email: string
+			password: string
+			nickname: string
+			target_level: string
+			target_deadline: string
+		}) => {
+			const { data } = await api.post("auth/register", { json: input }).json<ApiResponse<LoginResponse>>()
+			storeAuth(data)
+		},
+		[storeAuth],
+	)
 
 	const logout = useCallback(() => {
 		tokenStorage.clear()
@@ -48,8 +74,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	}, [])
 
 	const value = useMemo<AuthValue>(
-		() => ({ user, profile, isAuthenticated: user !== null, login, logout }),
-		[user, profile, login, logout],
+		() => ({ user, profile, isAuthenticated: user !== null, login, register, logout }),
+		[user, profile, login, register, logout],
 	)
 
 	return <Provider value={value}>{children}</Provider>
