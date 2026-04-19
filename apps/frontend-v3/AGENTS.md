@@ -12,6 +12,13 @@ Commands: `bun run dev` · `bun run build` · `bun run lint`.
 - Icons = `assets/icons/*.svg` (Duo SVG). Fonts = `public/fonts/` (Duolingo Sans + Feather).
 - Mockup (`apps/mockup/`) là source of truth cho UI.
 
+## Code rules
+
+- **No inline helpers.** Formatting, rounding, date — dùng `lib/utils.ts`. Không viết function cục bộ trong component.
+- **No hardcode values.** Colors dùng `SKILL_CONFIG` hoặc CSS variables. Không hex trong components.
+- **No mock data trong components.** Data từ API (TanStack Query). Nếu API chưa có → tạo endpoint trước.
+- **Shared trước, inline sau.** Trước khi viết helper/type/constant → grep `lib/` và `types/` xem đã có chưa.
+
 ## Data rules (bất di bất dịch)
 
 - Chart/spider = **chỉ exam** (graded). Drill score không vào chart.

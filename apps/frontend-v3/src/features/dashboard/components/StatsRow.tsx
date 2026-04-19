@@ -3,15 +3,10 @@ import targetIcon from "#/assets/icons/target-medium.svg"
 import timerIcon from "#/assets/icons/timer-medium.svg"
 import trophyIcon from "#/assets/icons/trophy-small.svg"
 import type { OverviewStats } from "#/features/dashboard/queries"
+import { formatMinutes } from "#/lib/utils"
 
 interface Props {
 	stats: OverviewStats
-}
-
-function formatMinutes(m: number): string {
-	const h = Math.floor(m / 60)
-	const min = m % 60
-	return h > 0 ? `${h}h ${min}m` : `${min}m`
 }
 
 export function StatsRow({ stats }: Props) {

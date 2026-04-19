@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query"
 import { type ApiResponse, api } from "#/lib/api"
+import type { SkillKey } from "#/lib/skills"
 
 export interface OverviewProfile {
 	nickname: string
@@ -46,4 +47,17 @@ export interface StreakData {
 export const streakQuery = queryOptions({
 	queryKey: ["streak"],
 	queryFn: () => api.get("streak").json<ApiResponse<StreakData>>(),
+})
+
+export interface ExamSessionResult {
+	id: string
+	mode: string
+	is_full_test: boolean
+	submitted_at: string
+	scores: Record<SkillKey, number | null>
+}
+
+export const examSessionsQuery = queryOptions({
+	queryKey: ["exam-sessions"],
+	queryFn: () => api.get("exam-sessions").json<ApiResponse<ExamSessionResult[]>>(),
 })
