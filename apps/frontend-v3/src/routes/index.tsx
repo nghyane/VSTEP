@@ -45,7 +45,7 @@ function LandingPage() {
 	const [showLogin, setShowLogin] = useState(false)
 
 	if (isAuthenticated) {
-		navigate({ to: "/_app" })
+		navigate({ to: "/dashboard" })
 		return null
 	}
 

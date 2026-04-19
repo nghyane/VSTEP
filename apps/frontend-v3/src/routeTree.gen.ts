@@ -10,47 +10,57 @@
 
 import { Route as rootRouteImport } from "./routes/__root"
 import { Route as AppRouteImport } from "./routes/_app"
-import { Route as AppIndexRouteImport } from "./routes/_app/index"
+import { Route as IndexRouteImport } from "./routes/index"
 import { Route as AppLuyenTapRouteImport } from "./routes/_app/luyen-tap"
+import { Route as AppDashboardRouteImport } from "./routes/_app/dashboard"
 
 const AppRoute = AppRouteImport.update({
   id: "/_app",
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppIndexRoute = AppIndexRouteImport.update({
+const IndexRoute = IndexRouteImport.update({
   id: "/",
   path: "/",
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppLuyenTapRoute = AppLuyenTapRouteImport.update({
   id: "/luyen-tap",
   path: "/luyen-tap",
   getParentRoute: () => AppRoute,
 } as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: "/dashboard",
+  path: "/dashboard",
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
-  "/": typeof AppIndexRoute
+  "/": typeof IndexRoute
+  "/dashboard": typeof AppDashboardRoute
   "/luyen-tap": typeof AppLuyenTapRoute
 }
 export interface FileRoutesByTo {
+  "/": typeof IndexRoute
+  "/dashboard": typeof AppDashboardRoute
   "/luyen-tap": typeof AppLuyenTapRoute
-  "/": typeof AppIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  "/": typeof IndexRoute
   "/_app": typeof AppRouteWithChildren
+  "/_app/dashboard": typeof AppDashboardRoute
   "/_app/luyen-tap": typeof AppLuyenTapRoute
-  "/_app/": typeof AppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/" | "/luyen-tap"
+  fullPaths: "/" | "/dashboard" | "/luyen-tap"
   fileRoutesByTo: FileRoutesByTo
-  to: "/luyen-tap" | "/"
-  id: "__root__" | "/_app" | "/_app/luyen-tap" | "/_app/"
+  to: "/" | "/dashboard" | "/luyen-tap"
+  id: "__root__" | "/" | "/_app" | "/_app/dashboard" | "/_app/luyen-tap"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
 }
 
@@ -63,12 +73,12 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    "/_app/": {
-      id: "/_app/"
+    "/": {
+      id: "/"
       path: "/"
       fullPath: "/"
-      preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     "/_app/luyen-tap": {
       id: "/_app/luyen-tap"
@@ -77,22 +87,30 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AppLuyenTapRouteImport
       parentRoute: typeof AppRoute
     }
+    "/_app/dashboard": {
+      id: "/_app/dashboard"
+      path: "/dashboard"
+      fullPath: "/dashboard"
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppDashboardRoute: typeof AppDashboardRoute
   AppLuyenTapRoute: typeof AppLuyenTapRoute
-  AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppDashboardRoute: AppDashboardRoute,
   AppLuyenTapRoute: AppLuyenTapRoute,
-  AppIndexRoute: AppIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
 }
 export const routeTree = rootRouteImport

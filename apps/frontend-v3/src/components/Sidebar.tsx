@@ -8,7 +8,7 @@ import weightsIcon from "#/assets/icons/weights-small.svg"
 import { cn } from "#/lib/utils"
 
 const NAV_ITEMS = [
-	{ label: "Tổng quan", icon: houseIcon, to: "/" as const },
+	{ label: "Tổng quan", icon: houseIcon, to: "/dashboard" as const },
 	{ label: "Luyện tập", icon: weightsIcon, to: "/luyen-tap" as const },
 	{ label: "Thi thử", icon: targetIcon, to: "/thi-thu" as const },
 	{ label: "Khóa học", icon: challengeIcon, to: "/khoa-hoc" as const },
@@ -21,7 +21,7 @@ export function Sidebar() {
 	return (
 		<aside className="w-[260px] shrink-0 bg-surface border-r border-border flex flex-col sticky top-0 h-screen">
 			<div className="px-7 py-7">
-				<Link to="/" className="font-display text-3xl text-primary">
+				<Link to="/dashboard" className="font-display text-3xl text-primary">
 					VSTEP
 				</Link>
 			</div>

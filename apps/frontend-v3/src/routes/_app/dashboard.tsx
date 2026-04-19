@@ -10,7 +10,7 @@ import { SpiderCard } from "#/features/dashboard/components/SpiderCard"
 import { StatsRow } from "#/features/dashboard/components/StatsRow"
 import { overviewQuery } from "#/features/dashboard/queries"
 
-export const Route = createFileRoute("/_app/")({
+export const Route = createFileRoute("/_app/dashboard")({
 	loader: ({ context: { queryClient } }) => {
 		queryClient.prefetchQuery(overviewQuery)
 	},
