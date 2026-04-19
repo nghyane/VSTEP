@@ -1,7 +1,8 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router"
+import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router"
 import { Sidebar } from "#/components/Sidebar"
 import { useAuth } from "#/features/auth/AuthProvider"
-import { LoginPage } from "#/features/auth/LoginPage"
+import { AuthShell } from "#/features/auth/AuthShell"
+import { LoginForm } from "#/features/auth/LoginForm"
 
 export const Route = createFileRoute("/_app")({
 	component: AppLayout,
@@ -9,9 +10,14 @@ export const Route = createFileRoute("/_app")({
 
 function AppLayout() {
 	const { isAuthenticated } = useAuth()
+	const navigate = useNavigate()
 
 	if (!isAuthenticated) {
-		return <LoginPage />
+		return (
+			<AuthShell onClose={() => navigate({ to: "/" })}>
+				<LoginForm />
+			</AuthShell>
+		)
 	}
 
 	return (

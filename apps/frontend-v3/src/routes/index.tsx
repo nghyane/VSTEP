@@ -1,49 +1,58 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { useState } from "react"
+import { AuthChoose } from "#/features/auth/AuthChoose"
 import { useAuth } from "#/features/auth/AuthProvider"
-import { LoginPage } from "#/features/auth/LoginPage"
+import { AuthShell } from "#/features/auth/AuthShell"
+import { LoginForm } from "#/features/auth/LoginForm"
+import { RegisterForm } from "#/features/auth/RegisterForm"
 import { LandingCTA, LandingFeatures, LandingHero, LandingSkills } from "#/features/landing/sections"
 
+type AuthParam = "choose" | "login" | "register" | undefined
+
 export const Route = createFileRoute("/")({
+	validateSearch: (search: Record<string, unknown>): { auth?: AuthParam } => ({
+		auth: ["choose", "login", "register"].includes(search.auth as string)
+			? (search.auth as AuthParam)
+			: undefined,
+	}),
 	component: LandingPage,
 })
 
 function LandingPage() {
 	const { isAuthenticated } = useAuth()
 	const navigate = useNavigate()
-	const [showLogin, setShowLogin] = useState(false)
+	const { auth } = Route.useSearch()
 
 	if (isAuthenticated) {
 		navigate({ to: "/dashboard" })
 		return null
 	}
 
-	const openLogin = () => setShowLogin(true)
+	function closeAuth() {
+		navigate({ to: "/", search: {} })
+	}
 
 	return (
 		<div className="min-h-screen bg-surface">
-			<nav className="flex items-center justify-between px-8 py-5 max-w-6xl mx-auto">
+			<nav className="flex items-center px-8 py-5 max-w-6xl mx-auto">
 				<span className="font-display text-3xl text-primary">VSTEP</span>
-				<div className="flex items-center gap-3">
-					<button type="button" onClick={openLogin} className="btn btn-secondary">
-						Đăng nhập
-					</button>
-					<button type="button" onClick={openLogin} className="btn btn-primary">
-						Bắt đầu miễn phí
-					</button>
-				</div>
 			</nav>
 
-			<LandingHero onLogin={openLogin} />
+			<LandingHero />
 			<LandingSkills />
 			<LandingFeatures />
-			<LandingCTA onLogin={openLogin} />
+			<LandingCTA />
 
 			<footer className="border-t border-border py-8 text-center text-sm text-subtle">
 				© 2025 VSTEP · Luyện thi chứng chỉ tiếng Anh quốc gia
 			</footer>
 
-			{showLogin && <LoginPage onClose={() => setShowLogin(false)} />}
+			{auth && (
+				<AuthShell onClose={closeAuth}>
+					{auth === "login" && <LoginForm />}
+					{auth === "register" && <RegisterForm />}
+					{auth === "choose" && <AuthChoose />}
+				</AuthShell>
+			)}
 		</div>
 	)
 }

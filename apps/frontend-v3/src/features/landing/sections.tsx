@@ -1,10 +1,7 @@
+import { Link } from "@tanstack/react-router"
 import { Icon, StaticIcon } from "#/components/Icon"
 
-interface Props {
-	onLogin: () => void
-}
-
-export function LandingHero({ onLogin }: Props) {
+export function LandingHero() {
 	return (
 		<section className="max-w-6xl mx-auto px-8 pt-16 pb-20 flex flex-col items-center text-center">
 			<div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-tint text-primary text-sm font-bold mb-6">
@@ -18,9 +15,18 @@ export function LandingHero({ onLogin }: Props) {
 				Luyện 4 kỹ năng. Thi thử chuẩn format. AI chấm bài theo rubric Bộ Giáo dục. Theo dõi tiến độ đến ngày
 				thi.
 			</p>
-			<button type="button" onClick={onLogin} className="btn btn-primary text-base px-10 py-3.5 mt-8">
-				Bắt đầu miễn phí
-			</button>
+			<div className="flex flex-col sm:flex-row gap-3 mt-8">
+				<Link to="/" search={{ auth: "register" }} className="btn btn-primary text-base px-10 py-3.5">
+					Bắt đầu miễn phí
+				</Link>
+				<Link
+					to="/"
+					search={{ auth: "login" }}
+					className="btn btn-secondary text-primary text-base px-10 py-3.5"
+				>
+					Tôi đã có tài khoản
+				</Link>
+			</div>
 		</section>
 	)
 }
@@ -87,14 +93,14 @@ export function LandingFeatures() {
 	)
 }
 
-export function LandingCTA({ onLogin }: Props) {
+export function LandingCTA() {
 	return (
 		<section className="max-w-6xl mx-auto px-8 py-20 text-center">
 			<h2 className="font-extrabold text-3xl text-foreground mb-4">Sẵn sàng đạt mục tiêu?</h2>
 			<p className="text-muted text-lg mb-8">Đăng ký miễn phí, nhận 100 xu, bắt đầu luyện tập ngay.</p>
-			<button type="button" onClick={onLogin} className="btn btn-primary text-base px-10 py-3.5">
+			<Link to="/" search={{ auth: "register" }} className="btn btn-primary text-base px-10 py-3.5">
 				Đăng ký ngay
-			</button>
+			</Link>
 		</section>
 	)
 }
