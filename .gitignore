@@ -69,4 +69,6 @@ opencode.json.*.bak
 .qwen
 skills
 !apps/frontend-v2/.agents/skills/
+!apps/frontend-v3/.agents/
+!apps/frontend-v3/.agents/skills/
 
