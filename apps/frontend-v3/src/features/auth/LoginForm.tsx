@@ -1,24 +1,20 @@
 import { useForm } from "@tanstack/react-form"
 import { Link } from "@tanstack/react-router"
-import { useState } from "react"
 import { useAuth } from "#/features/auth/AuthProvider"
 import { inputClass } from "#/features/auth/styles"
 
 export function LoginForm() {
 	const { login } = useAuth()
-	const [error, setError] = useState("")
 
 	const form = useForm({
 		defaultValues: { email: "", password: "" },
 		onSubmit: async ({ value }) => {
-			setError("")
-			try {
-				await login(value.email, value.password)
-			} catch {
-				setError("Email hoặc mật khẩu không đúng")
-			}
+			await login(value.email, value.password)
 		},
+		onSubmitInvalid: () => {},
 	})
+
+	const submitError = form.state.submissionAttempts > 0 && form.state.errors.length > 0
 
 	return (
 		<>
@@ -26,7 +22,7 @@ export function LoginForm() {
 			<form
 				onSubmit={(e) => {
 					e.preventDefault()
-					form.handleSubmit()
+					form.handleSubmit().catch(() => {})
 				}}
 				className="space-y-3"
 			>
@@ -54,7 +50,9 @@ export function LoginForm() {
 						/>
 					)}
 				</form.Field>
-				{error && <p className="text-sm text-destructive font-bold">{error}</p>}
+				{form.state.errorMap.onSubmit && (
+					<p className="text-sm text-destructive font-bold">Email hoặc mật khẩu không đúng</p>
+				)}
 				<button
 					type="submit"
 					disabled={form.state.isSubmitting}

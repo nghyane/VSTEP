@@ -6,12 +6,9 @@ import { type ApiResponse, api } from "#/lib/api"
 import { tokenStorage } from "#/lib/token-storage"
 import type { Profile, User } from "#/types/auth"
 
-const LEVELS = ["A2", "B1", "B2", "C1"] as const
-
 export function RegisterForm() {
 	const navigate = useNavigate()
 	const [step, setStep] = useState<1 | 2>(1)
-	const [error, setError] = useState("")
 
 	const form = useForm({
 		defaultValues: {
@@ -22,24 +19,19 @@ export function RegisterForm() {
 			target_deadline: "",
 		},
 		onSubmit: async ({ value }) => {
-			setError("")
-			try {
-				const { data } = await api.post("auth/register", { json: value }).json<
-					ApiResponse<{
-						access_token: string
-						refresh_token: string
-						account: User
-						active_profile: Profile | null
-					}>
-				>()
-				tokenStorage.setAccess(data.access_token)
-				tokenStorage.setRefresh(data.refresh_token)
-				tokenStorage.setUser(data.account)
-				tokenStorage.setProfile(data.active_profile)
-				navigate({ to: "/dashboard" })
-			} catch {
-				setError("Không thể đăng ký. Email có thể đã được sử dụng.")
-			}
+			const { data } = await api.post("auth/register", { json: value }).json<
+				ApiResponse<{
+					access_token: string
+					refresh_token: string
+					account: User
+					active_profile: Profile | null
+				}>
+			>()
+			tokenStorage.setAccess(data.access_token)
+			tokenStorage.setRefresh(data.refresh_token)
+			tokenStorage.setUser(data.account)
+			tokenStorage.setProfile(data.active_profile)
+			navigate({ to: "/dashboard" })
 		},
 	})
 
@@ -114,7 +106,7 @@ export function RegisterForm() {
 			<form
 				onSubmit={(e) => {
 					e.preventDefault()
-					form.handleSubmit()
+					form.handleSubmit().catch(() => {})
 				}}
 				className="space-y-4"
 			>
@@ -123,20 +115,34 @@ export function RegisterForm() {
 					<form.Field name="target_level">
 						{(field) => (
 							<div className="grid grid-cols-4 gap-2">
-								{LEVELS.map((lv) => (
-									<button
-										key={lv}
-										type="button"
-										onClick={() => field.handleChange(lv)}
-										className={`h-12 rounded-(--radius-button) font-bold text-base transition ${
-											field.state.value === lv
-												? "bg-primary text-primary-foreground"
-												: "bg-surface border-2 border-border text-foreground hover:border-primary"
-										}`}
-									>
-										{lv}
-									</button>
-								))}
+								<button
+									type="button"
+									onClick={() => field.handleChange("A2")}
+									className={`h-12 rounded-(--radius-button) font-bold text-base transition ${field.state.value === "A2" ? "bg-primary text-primary-foreground" : "bg-surface border-2 border-border text-foreground hover:border-primary"}`}
+								>
+									A2
+								</button>
+								<button
+									type="button"
+									onClick={() => field.handleChange("B1")}
+									className={`h-12 rounded-(--radius-button) font-bold text-base transition ${field.state.value === "B1" ? "bg-primary text-primary-foreground" : "bg-surface border-2 border-border text-foreground hover:border-primary"}`}
+								>
+									B1
+								</button>
+								<button
+									type="button"
+									onClick={() => field.handleChange("B2")}
+									className={`h-12 rounded-(--radius-button) font-bold text-base transition ${field.state.value === "B2" ? "bg-primary text-primary-foreground" : "bg-surface border-2 border-border text-foreground hover:border-primary"}`}
+								>
+									B2
+								</button>
+								<button
+									type="button"
+									onClick={() => field.handleChange("C1")}
+									className={`h-12 rounded-(--radius-button) font-bold text-base transition ${field.state.value === "C1" ? "bg-primary text-primary-foreground" : "bg-surface border-2 border-border text-foreground hover:border-primary"}`}
+								>
+									C1
+								</button>
 							</div>
 						)}
 					</form.Field>
@@ -155,7 +161,11 @@ export function RegisterForm() {
 						)}
 					</form.Field>
 				</div>
-				{error && <p className="text-sm text-destructive font-bold">{error}</p>}
+				{form.state.errorMap.onSubmit && (
+					<p className="text-sm text-destructive font-bold">
+						Không thể đăng ký. Email có thể đã được sử dụng.
+					</p>
+				)}
 				<button
 					type="submit"
 					disabled={form.state.isSubmitting}
@@ -166,10 +176,7 @@ export function RegisterForm() {
 			</form>
 			<button
 				type="button"
-				onClick={() => {
-					setStep(1)
-					setError("")
-				}}
+				onClick={() => setStep(1)}
 				className="text-sm font-bold text-primary hover:underline mt-4"
 			>
 				← Quay lại
