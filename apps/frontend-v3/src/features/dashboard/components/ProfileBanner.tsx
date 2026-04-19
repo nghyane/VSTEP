@@ -1,6 +1,6 @@
 export function ProfileBanner() {
 	return (
-		<section className="relative overflow-hidden rounded-[--radius-banner] bg-gradient-to-br from-primary-light via-primary to-primary-dark p-8 md:p-10">
+		<section className="relative overflow-hidden rounded-(--radius-banner) bg-gradient-to-br from-primary-light via-primary to-primary-dark p-8 md:p-10">
 			<div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-white/10" />
 			<div className="absolute -bottom-6 right-24 w-20 h-20 rounded-full bg-white/[0.08]" />
 
