@@ -18,7 +18,7 @@ export const Route = createFileRoute("/")({
 })
 
 function LandingPage() {
-	const { isAuthenticated } = useAuth()
+	const isAuthenticated = useAuth((s) => s.isAuthenticated)
 	const navigate = useNavigate()
 	const { auth } = Route.useSearch()
 

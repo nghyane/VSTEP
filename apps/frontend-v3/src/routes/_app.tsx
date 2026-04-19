@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_app")({
 })
 
 function AppLayout() {
-	const { isAuthenticated } = useAuth()
+	const isAuthenticated = useAuth((s) => s.isAuthenticated)
 	const navigate = useNavigate()
 
 	if (!isAuthenticated) {

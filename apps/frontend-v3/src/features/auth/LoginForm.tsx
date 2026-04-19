@@ -4,7 +4,7 @@ import { inputClass } from "#/features/auth/styles"
 import { useAuth } from "#/lib/auth-store"
 
 export function LoginForm() {
-	const { login } = useAuth()
+	const login = useAuth((s) => s.login)
 
 	const form = useForm({
 		defaultValues: { email: "", password: "" },
@@ -22,7 +22,7 @@ export function LoginForm() {
 			<form
 				onSubmit={(e) => {
 					e.preventDefault()
-					form.handleSubmit().catch(() => {})
+					void form.handleSubmit()
 				}}
 				className="space-y-3"
 			>

@@ -5,7 +5,7 @@ import { createContext, type Provider, useContext } from "react"
  * Throw error rõ ràng nếu dùng hook ngoài Provider.
  *
  * Usage:
- *   const [AuthProvider, useAuth] = createStrictContext<AuthValue>("Auth")
+ *   const [Provider, useValue] = createStrictContext<MyValue>("MyName")
  */
 export function createStrictContext<T>(name: string): [Provider<T>, () => T] {
 	const Ctx = createContext<T | undefined>(undefined)

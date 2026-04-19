@@ -17,13 +17,13 @@ const [FormCtx, useRegisterForm] =
 	createStrictContext<ReturnType<typeof useForm<RegisterValues>>>("RegisterForm")
 
 export function RegisterFormProvider({ children }: { children: ReactNode }) {
-	const { register } = useAuth()
+	const register = useAuth((s) => s.register)
 
 	const form = useForm<RegisterValues>({
 		defaultValues: { nickname: "", email: "", password: "", target_level: "B2", target_deadline: "" },
 		onSubmit: async ({ value }) => {
 			await register(value)
-			window.location.replace("/dashboard")
+			navigate({ to: "/dashboard" })
 		},
 	})
 
@@ -107,7 +107,7 @@ export function RegisterStep2() {
 			<form
 				onSubmit={(e) => {
 					e.preventDefault()
-					form.handleSubmit().catch(() => {})
+					void form.handleSubmit()
 				}}
 				className="space-y-4"
 			>

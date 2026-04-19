@@ -13,7 +13,8 @@ const NAV_ITEMS: { label: string; icon: IconName; to: string }[] = [
 
 export function Sidebar() {
 	const matchRoute = useMatchRoute()
-	const { profile, user } = useAuth()
+	const profile = useAuth((s) => s.profile)
+	const user = useAuth((s) => s.user)
 	const initial = profile?.nickname?.charAt(0).toUpperCase() ?? "?"
 	const displayName = profile?.nickname ?? user?.email ?? "User"
 

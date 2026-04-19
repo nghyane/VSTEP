@@ -9,7 +9,7 @@ interface Props {
 }
 
 export function Header({ title }: Props) {
-	const { profile } = useAuth()
+	const profile = useAuth((s) => s.profile)
 	const { data: walletData } = useQuery(walletBalanceQuery)
 	const { data: streakData } = useQuery(streakQuery)
 
