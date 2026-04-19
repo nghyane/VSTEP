@@ -13,20 +13,21 @@
 /* ─── FONTS ─────────────────────────────────────────── */
 
 @font-face {
-  font-family: "Duolingo Sans";
-  src: url("/fonts/DuolingoSans-VF.otf") format("opentype-variations"),
-       url("/fonts/DuolingoSans-VF.otf") format("opentype");
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
+	font-family: "Duolingo Sans";
+	src:
+		url("/fonts/DuolingoSans-VF.otf") format("opentype-variations"),
+		url("/fonts/DuolingoSans-VF.otf") format("opentype");
+	font-weight: 100 900;
+	font-style: normal;
+	font-display: swap;
 }
 
 @font-face {
-  font-family: "Feather";
-  src: url("/fonts/Feather-Bold.otf") format("opentype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
+	font-family: "Feather";
+	src: url("/fonts/Feather-Bold.otf") format("opentype");
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
 }
 
 /* ─── TOKENS ───────────────────────────────────────── */
@@ -84,63 +85,68 @@
 /* ─── BASE ─────────────────────────────────────────── */
 
 @layer base {
-  html, body {
-    font-family: var(--font-sans);
-    background: var(--color-background);
-    color: var(--color-foreground);
-    -webkit-font-smoothing: antialiased;
-  }
+	html,
+	body {
+		font-family: var(--font-sans);
+		background: var(--color-background);
+		color: var(--color-foreground);
+		-webkit-font-smoothing: antialiased;
+	}
 }
 
 /* ─── COMPONENTS ──────────────────────────────────── */
 
 @layer components {
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    border-radius: var(--radius-button);
-    padding: 0.625rem 1.25rem;
-    font-weight: 700;
-    font-size: 14px;
-    letter-spacing: -0.01em;
-    text-transform: uppercase;
-    transition: transform 0.1s, box-shadow 0.1s;
-    cursor: pointer;
-  }
-  .btn:active {
-    transform: translateY(2px);
-  }
-  .btn-primary {
-    background: var(--color-primary);
-    color: var(--color-primary-foreground);
-    box-shadow: 0 4px 0 var(--color-primary-dark);
-  }
-  .btn-primary:active {
-    box-shadow: 0 2px 0 var(--color-primary-dark);
-  }
-  .btn-secondary {
-    background: var(--color-surface);
-    color: var(--color-foreground);
-    box-shadow: 0 2px 0 var(--color-border), inset 0 0 0 2px var(--color-border);
-  }
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		border-radius: var(--radius-button);
+		padding: 0.625rem 1.25rem;
+		font-weight: 700;
+		font-size: 14px;
+		letter-spacing: -0.01em;
+		text-transform: uppercase;
+		transition:
+			transform 0.1s,
+			box-shadow 0.1s;
+		cursor: pointer;
+	}
+	.btn:active {
+		transform: translateY(2px);
+	}
+	.btn-primary {
+		background: var(--color-primary);
+		color: var(--color-primary-foreground);
+		box-shadow: 0 4px 0 var(--color-primary-dark);
+	}
+	.btn-primary:active {
+		box-shadow: 0 2px 0 var(--color-primary-dark);
+	}
+	.btn-secondary {
+		background: var(--color-surface);
+		color: var(--color-foreground);
+		box-shadow:
+			0 2px 0 var(--color-border),
+			inset 0 0 0 2px var(--color-border);
+	}
 
-  .card {
-    background: var(--color-surface);
-    border-radius: var(--radius-card);
-    border: 2px solid var(--color-border);
-    border-bottom-width: 4px;
-  }
-  .card-interactive {
-    background: var(--color-surface);
-    border-radius: var(--radius-card);
-    border: 2px solid var(--color-border);
-    border-bottom-width: 4px;
-    transition: transform 0.15s;
-    cursor: pointer;
-  }
-  .card-interactive:hover {
-    transform: translateY(-2px);
-  }
+	.card {
+		background: var(--color-surface);
+		border-radius: var(--radius-card);
+		border: 2px solid var(--color-border);
+		border-bottom-width: 4px;
+	}
+	.card-interactive {
+		background: var(--color-surface);
+		border-radius: var(--radius-card);
+		border: 2px solid var(--color-border);
+		border-bottom-width: 4px;
+		transition: transform 0.15s;
+		cursor: pointer;
+	}
+	.card-interactive:hover {
+		transform: translateY(-2px);
+	}
 }
