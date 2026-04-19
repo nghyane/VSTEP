@@ -1,18 +1,7 @@
 import { type ReactNode, useCallback, useMemo, useState } from "react"
 import { type ApiResponse, api } from "#/lib/api"
 import { createStrictContext } from "#/lib/create-strict-context"
-
-interface User {
-	id: string
-	email: string
-	role: string
-}
-
-interface Profile {
-	id: string
-	nickname: string
-	target_level: string | null
-}
+import type { Profile, User } from "#/types/auth"
 
 interface LoginResponse {
 	access_token: string
