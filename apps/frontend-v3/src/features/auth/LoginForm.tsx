@@ -1,7 +1,7 @@
 import { useForm } from "@tanstack/react-form"
 import { Link } from "@tanstack/react-router"
-import { useAuth } from "#/features/auth/AuthProvider"
 import { inputClass } from "#/features/auth/styles"
+import { useAuth } from "#/lib/auth-store"
 
 export function LoginForm() {
 	const { login } = useAuth()

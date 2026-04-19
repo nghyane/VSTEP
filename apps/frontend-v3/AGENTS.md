@@ -7,9 +7,17 @@ Commands: `bun run dev` · `bun run build` · `bun run lint`.
 ## Architecture
 
 - Route → Component → Hook → Lib. Không vòng.
-- Server state = TanStack Query. UI state = useState/context.
+- Server state = TanStack Query. Client state = Zustand (auth, UI). Form state = @tanstack/react-form.
 - No UI library (shadcn, MUI). Custom components theo design tokens.
 - Icons = `assets/icons/*.svg` (Duo SVG). Fonts = `public/fonts/` (Duolingo Sans + Feather).
+
+## State management
+
+- **Server data**: TanStack Query (`useQuery` + `select`). Không prop drill.
+- **Auth**: Zustand store (`lib/auth-store.ts`). Không Context/Provider.
+- **Forms**: @tanstack/react-form (`useForm`). Không useState per field.
+- **URL state**: TanStack Router search params. Không useState cho modal/tab/step.
+- **Khi gặp case mới**: đánh giá trước — nếu state cần share > 1 component → Zustand. Nếu chỉ 1 component → useState OK. Nếu URL-representable → search params.
 - Mockup (`apps/mockup/`) là source of truth cho UI.
 
 ## Code rules

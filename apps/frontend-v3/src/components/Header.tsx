@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query"
 import { StaticIcon } from "#/components/Icon"
-import { useAuth } from "#/features/auth/AuthProvider"
 import { streakQuery } from "#/features/dashboard/queries"
 import { walletBalanceQuery } from "#/features/wallet/queries"
+import { useAuth } from "#/lib/auth-store"
 
 interface Props {
 	title: string

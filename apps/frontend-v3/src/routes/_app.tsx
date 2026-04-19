@@ -1,8 +1,8 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router"
 import { Sidebar } from "#/components/Sidebar"
-import { useAuth } from "#/features/auth/AuthProvider"
 import { AuthShell } from "#/features/auth/AuthShell"
 import { LoginForm } from "#/features/auth/LoginForm"
+import { useAuth } from "#/lib/auth-store"
 
 export const Route = createFileRoute("/_app")({
 	component: AppLayout,

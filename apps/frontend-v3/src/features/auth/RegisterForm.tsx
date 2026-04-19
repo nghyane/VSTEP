@@ -1,91 +1,104 @@
 import { useForm } from "@tanstack/react-form"
-import { Link, useNavigate } from "@tanstack/react-router"
-import { useState } from "react"
-import { useAuth } from "#/features/auth/AuthProvider"
+import { Link } from "@tanstack/react-router"
+import type { ReactNode } from "react"
 import { inputClass } from "#/features/auth/styles"
+import { useAuth } from "#/lib/auth-store"
+import { createStrictContext } from "#/lib/create-strict-context"
 
-export function RegisterForm() {
+interface RegisterValues {
+	nickname: string
+	email: string
+	password: string
+	target_level: string
+	target_deadline: string
+}
+
+const [FormCtx, useRegisterForm] =
+	createStrictContext<ReturnType<typeof useForm<RegisterValues>>>("RegisterForm")
+
+export function RegisterFormProvider({ children }: { children: ReactNode }) {
 	const { register } = useAuth()
-	const navigate = useNavigate()
-	const [step, setStep] = useState<1 | 2>(1)
 
-	const form = useForm({
-		defaultValues: {
-			nickname: "",
-			email: "",
-			password: "",
-			target_level: "B2",
-			target_deadline: "",
-		},
+	const form = useForm<RegisterValues>({
+		defaultValues: { nickname: "", email: "", password: "", target_level: "B2", target_deadline: "" },
 		onSubmit: async ({ value }) => {
 			await register(value)
-			navigate({ to: "/dashboard" })
+			window.location.replace("/dashboard")
 		},
 	})
 
-	if (step === 1) {
-		return (
-			<>
-				<h1 className="font-extrabold text-2xl text-foreground mb-2">Tạo tài khoản</h1>
-				<p className="text-sm text-subtle mb-8">Bước 1/2 · Thông tin đăng nhập</p>
-				<div className="space-y-3">
-					<form.Field name="nickname">
-						{(field) => (
-							<input
-								type="text"
-								placeholder="Nickname"
-								required
-								value={field.state.value}
-								onChange={(e) => field.handleChange(e.target.value)}
-								className={inputClass}
-							/>
-						)}
-					</form.Field>
-					<form.Field name="email">
-						{(field) => (
-							<input
-								type="email"
-								placeholder="Email"
-								required
-								value={field.state.value}
-								onChange={(e) => field.handleChange(e.target.value)}
-								className={inputClass}
-							/>
-						)}
-					</form.Field>
-					<form.Field name="password">
-						{(field) => (
-							<input
-								type="password"
-								placeholder="Mật khẩu"
-								required
-								value={field.state.value}
-								onChange={(e) => field.handleChange(e.target.value)}
-								className={inputClass}
-							/>
-						)}
-					</form.Field>
-					<button
-						type="button"
-						onClick={() => {
-							const v = form.state.values
-							if (v.nickname && v.email && v.password) setStep(2)
-						}}
-						className="btn btn-primary w-full h-12 text-base"
-					>
-						Tiếp tục
-					</button>
-				</div>
+	return <FormCtx value={form}>{children}</FormCtx>
+}
+
+export function RegisterStep1() {
+	const form = useRegisterForm()
+
+	return (
+		<>
+			<h1 className="font-extrabold text-2xl text-foreground mb-2">Tạo tài khoản</h1>
+			<p className="text-sm text-subtle mb-8">Bước 1/2 · Thông tin đăng nhập</p>
+			<div className="space-y-3">
+				<form.Field name="nickname">
+					{(field) => (
+						<input
+							type="text"
+							placeholder="Nickname"
+							required
+							value={field.state.value}
+							onChange={(e) => field.handleChange(e.target.value)}
+							className={inputClass}
+						/>
+					)}
+				</form.Field>
+				<form.Field name="email">
+					{(field) => (
+						<input
+							type="email"
+							placeholder="Email"
+							required
+							value={field.state.value}
+							onChange={(e) => field.handleChange(e.target.value)}
+							className={inputClass}
+						/>
+					)}
+				</form.Field>
+				<form.Field name="password">
+					{(field) => (
+						<input
+							type="password"
+							placeholder="Mật khẩu"
+							required
+							value={field.state.value}
+							onChange={(e) => field.handleChange(e.target.value)}
+							className={inputClass}
+						/>
+					)}
+				</form.Field>
 				<Link
 					to="/"
-					search={{ auth: "choose" }}
-					className="text-sm font-bold text-primary hover:underline mt-4 inline-block"
+					search={{ auth: "register-target" }}
+					onClick={(e) => {
+						const v = form.state.values
+						if (!v.nickname || !v.email || !v.password) e.preventDefault()
+					}}
+					className="btn btn-primary w-full h-12 text-base"
 				>
-					← Quay lại
+					Tiếp tục
 				</Link>
-			</>
-		)
-	}
+			</div>
+			<Link
+				to="/"
+				search={{ auth: "choose" }}
+				className="text-sm font-bold text-primary hover:underline mt-4 inline-block"
+			>
+				← Quay lại
+			</Link>
+		</>
+	)
+}
+
+export function RegisterStep2() {
+	const form = useRegisterForm()
 
 	return (
 		<>
@@ -162,13 +175,13 @@ export function RegisterForm() {
 					{form.state.isSubmitting ? "Đang tạo tài khoản..." : "Hoàn tất đăng ký"}
 				</button>
 			</form>
-			<button
-				type="button"
-				onClick={() => setStep(1)}
-				className="text-sm font-bold text-primary hover:underline mt-4"
+			<Link
+				to="/"
+				search={{ auth: "register" }}
+				className="text-sm font-bold text-primary hover:underline mt-4 inline-block"
 			>
 				← Quay lại
-			</button>
+			</Link>
 		</>
 	)
 }
