@@ -1,25 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useState } from "react"
-import bookIcon from "#/assets/icons/book-default.svg"
 import checkIcon from "#/assets/icons/check-small.svg"
-import micIcon from "#/assets/icons/microphone-small.svg"
-import pencilIcon from "#/assets/icons/pencil-small.svg"
 import streakIcon from "#/assets/icons/streak-medium.svg"
 import targetIcon from "#/assets/icons/target-medium.svg"
-import volumeIcon from "#/assets/icons/volume-small.svg"
 import { useAuth } from "#/features/auth/AuthProvider"
 import { LoginPage } from "#/features/auth/LoginPage"
+import { skills } from "#/lib/skills"
 
 export const Route = createFileRoute("/")({
 	component: LandingPage,
 })
-
-const SKILLS = [
-	{ icon: volumeIcon, label: "Nghe", desc: "3 phần · nghe hiểu" },
-	{ icon: bookIcon, label: "Đọc", desc: "4 đoạn văn · đọc hiểu" },
-	{ icon: pencilIcon, label: "Viết", desc: "Thư + luận · AI chấm" },
-	{ icon: micIcon, label: "Nói", desc: "3 phần · ghi âm + AI" },
-]
 
 const FEATURES = [
 	{
@@ -89,9 +79,9 @@ function LandingPage() {
 			{/* 4 Skills */}
 			<section className="max-w-6xl mx-auto px-8 pb-20">
 				<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-					{SKILLS.map((s) => (
-						<div key={s.label} className="card p-5 text-center">
-							<img src={s.icon} className="h-10 w-auto mx-auto mb-3" alt="" />
+					{skills.map((s) => (
+						<div key={s.key} className="card p-5 text-center">
+							<s.Icon className="h-10 w-auto mx-auto mb-3" style={{ color: s.color }} />
 							<h3 className="font-bold text-base text-foreground">{s.label}</h3>
 							<p className="text-sm text-subtle mt-1">{s.desc}</p>
 						</div>

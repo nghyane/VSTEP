@@ -1,16 +1,15 @@
 import { useQuery } from "@tanstack/react-query"
-import { type ExamSessionResult, examSessionsQuery } from "#/features/dashboard/queries"
-import { SKILL_CONFIG, type SkillKey } from "#/lib/skills"
+import { examSessionsQuery } from "#/features/dashboard/queries"
+import { skillByKey, skills } from "#/lib/skills"
 import { formatShortDate, round } from "#/lib/utils"
 
-const SKILL_KEYS: SkillKey[] = ["listening", "reading", "writing", "speaking"]
 const TARGET = 6.0
 const Y_MAX = 180
 const Y_MIN = 20
 const bandToY = (v: number) => Y_MAX - (v / 10) * (Y_MAX - Y_MIN)
 
-function computeAvg(scores: Record<SkillKey, number | null>): number {
-	const vals = SKILL_KEYS.map((k) => scores[k]).filter((v): v is number => v !== null)
+function computeAvg(scores: Record<string, number | null>): number {
+	const vals = skills.map((s) => scores[s.key]).filter((v): v is number => v !== null)
 	return vals.length > 0 ? round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0
 }
 
@@ -44,26 +43,20 @@ export function ScoreTrend() {
 	return (
 		<section className="card p-6">
 			<h3 className="font-extrabold text-lg text-foreground">Điểm qua các lần thi</h3>
-			<p className="text-sm text-subtle mt-1">{tests.length} bài thi gần nhất · bấm để ẩn/hiện kỹ năng</p>
+			<p className="text-sm text-subtle mt-1">{tests.length} bài thi gần nhất</p>
 
 			<div className="flex flex-wrap gap-2 mt-3 mb-4">
-				{SKILL_KEYS.map((key) => {
-					const config = SKILL_CONFIG[key]
-					return (
-						<button
-							type="button"
-							key={key}
-							className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
-							style={{
-								color: config.color,
-								background: `color-mix(in srgb, ${config.color} 10%, transparent)`,
-							}}
-						>
-							<span className="w-2 h-2 rounded-full" style={{ background: config.color }} />
-							{config.label}
-						</button>
-					)
-				})}
+				{skills.map((s) => (
+					<button
+						type="button"
+						key={s.key}
+						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
+						style={{ color: s.color, background: `color-mix(in srgb, ${s.color} 10%, transparent)` }}
+					>
+						<span className="w-2 h-2 rounded-full" style={{ background: s.color }} />
+						{s.label}
+					</button>
+				))}
 				<span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-primary-dark">
 					<span className="w-4 h-0.5 bg-primary-dark rounded" />
 					Trung bình
@@ -97,17 +90,16 @@ export function ScoreTrend() {
 					const cx = centers[ti] ?? 0
 					return (
 						<g key={test.id}>
-							{SKILL_KEYS.map((key, si) => {
-								const v = test.scores[key] ?? 0
-								const config = SKILL_CONFIG[key]
+							{skills.map((s, si) => {
+								const v = test.scores[s.key] ?? 0
 								return (
 									<rect
-										key={key}
+										key={s.key}
 										x={cx - 30 + si * 16}
 										y={bandToY(v)}
 										width={14}
 										height={Math.max(0, Y_MAX - bandToY(v))}
-										fill={config.color}
+										fill={s.color}
 										rx={3}
 										opacity={0.65}
 									/>

@@ -1,20 +1,27 @@
 import type { OverviewChart } from "#/features/dashboard/queries"
-import { SKILL_CONFIG, type SkillKey } from "#/lib/skills"
+import { type SkillKey, skills } from "#/lib/skills"
 
-const SKILL_KEYS: SkillKey[] = ["listening", "reading", "writing", "speaking"]
 const TARGET = 6.0
 const R = 88
 const CX = 140
 const CY = 140
 
+const DIRS = [
+	{ dx: 0, dy: -1 },
+	{ dx: 1, dy: 0 },
+	{ dx: 0, dy: 1 },
+	{ dx: -1, dy: 0 },
+]
+
+const LABEL_POS = [
+	{ x: CX, y: 44, anchor: "middle" as const },
+	{ x: 244, y: CY + 4, anchor: "start" as const },
+	{ x: CX, y: 256, anchor: "middle" as const },
+	{ x: 36, y: CY + 4, anchor: "end" as const },
+]
+
 function toXY(index: number, value: number) {
-	const dirs = [
-		{ dx: 0, dy: -1 },
-		{ dx: 1, dy: 0 },
-		{ dx: 0, dy: 1 },
-		{ dx: -1, dy: 0 },
-	]
-	const d = dirs[index] ?? dirs[0]
+	const d = DIRS[index] ?? DIRS[0]
 	const r = (value / 10) * R
 	return { x: CX + d.dx * r, y: CY + d.dy * r }
 }
@@ -30,7 +37,7 @@ interface Props {
 }
 
 export function SpiderCard({ chart, minTests, totalTests }: Props) {
-	const values = SKILL_KEYS.map((k) => chart?.[k] ?? 0)
+	const values = skills.map((s) => chart?.[s.key] ?? 0)
 	const hasData = chart !== null
 	const targetPoly = polygon([TARGET, TARGET, TARGET, TARGET])
 	const currentPoly = polygon(values)
@@ -57,10 +64,9 @@ export function SpiderCard({ chart, minTests, totalTests }: Props) {
 						))}
 					</g>
 					<g stroke="var(--color-border)" strokeWidth="1">
-						<line x1={CX} y1={CY} x2={CX} y2={CY - R} />
-						<line x1={CX} y1={CY} x2={CX + R} y2={CY} />
-						<line x1={CX} y1={CY} x2={CX} y2={CY + R} />
-						<line x1={CX} y1={CY} x2={CX - R} y2={CY} />
+						{DIRS.map((d, i) => (
+							<line key={`axis-${skills[i]?.key}`} x1={CX} y1={CY} x2={CX + d.dx * R} y2={CY + d.dy * R} />
+						))}
 					</g>
 					<polygon
 						points={targetPoly}
@@ -81,40 +87,34 @@ export function SpiderCard({ chart, minTests, totalTests }: Props) {
 							strokeLinejoin="round"
 						/>
 					)}
-					{SKILL_KEYS.map((k, i) => {
-						const v = values[i]
+					{skills.map((s, i) => {
+						const v = values[i] ?? 0
 						const { x, y } = toXY(i, v)
 						return (
 							<circle
-								key={k}
+								key={s.key}
 								cx={x}
 								cy={y}
 								r={5}
-								fill={v > 0 ? SKILL_CONFIG[k].color : "var(--color-placeholder)"}
+								fill={v > 0 ? s.color : "var(--color-placeholder)"}
 								stroke="white"
 								strokeWidth={2.5}
 							/>
 						)
 					})}
-					{SKILL_KEYS.map((k, i) => {
-						const positions = [
-							{ x: CX, y: 44, anchor: "middle" as const },
-							{ x: 244, y: CY + 4, anchor: "start" as const },
-							{ x: CX, y: 256, anchor: "middle" as const },
-							{ x: 36, y: CY + 4, anchor: "end" as const },
-						]
-						const pos = positions[i] ?? positions[0]
+					{skills.map((s, i) => {
+						const pos = LABEL_POS[i] ?? LABEL_POS[0]
 						return (
 							<text
-								key={k}
+								key={s.key}
 								x={pos.x}
 								y={pos.y}
 								textAnchor={pos.anchor}
 								fontSize={13}
 								fontWeight={700}
-								fill={SKILL_CONFIG[k].color}
+								fill={s.color}
 							>
-								{SKILL_CONFIG[k].label}
+								{s.label}
 							</text>
 						)
 					})}

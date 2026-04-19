@@ -1,8 +1,8 @@
 import type { ComponentType, SVGProps } from "react"
-import VolumeIcon from "#/assets/icons/volume-small.svg?react"
 import BookIcon from "#/assets/icons/book-default.svg?react"
-import PencilIcon from "#/assets/icons/pencil-small.svg?react"
 import MicIcon from "#/assets/icons/microphone-small.svg?react"
+import PencilIcon from "#/assets/icons/pencil-small.svg?react"
+import VolumeIcon from "#/assets/icons/volume-small.svg?react"
 
 export type SkillKey = "listening" | "reading" | "writing" | "speaking"
 
