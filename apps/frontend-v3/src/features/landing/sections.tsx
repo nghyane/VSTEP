@@ -1,5 +1,4 @@
 import { Icon, StaticIcon } from "#/components/Icon"
-import { skills } from "#/lib/skills"
 
 interface Props {
 	onLogin: () => void
@@ -30,13 +29,26 @@ export function LandingSkills() {
 	return (
 		<section className="max-w-6xl mx-auto px-8 pb-20">
 			<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-				{skills.map((s) => (
-					<div key={s.key} className="card p-5 text-center">
-						<Icon name={s.icon} size="lg" className="mx-auto mb-3" style={{ color: s.color }} />
-						<h3 className="font-bold text-base text-foreground">{s.label}</h3>
-						<p className="text-sm text-subtle mt-1">{s.desc}</p>
-					</div>
-				))}
+				<div className="card p-5 text-center">
+					<Icon name="volume" size="lg" className="mx-auto mb-3 text-skill-listening" />
+					<h3 className="font-bold text-base text-foreground">Nghe</h3>
+					<p className="text-sm text-subtle mt-1">3 phần · nghe hiểu</p>
+				</div>
+				<div className="card p-5 text-center">
+					<Icon name="book" size="lg" className="mx-auto mb-3 text-skill-reading" />
+					<h3 className="font-bold text-base text-foreground">Đọc</h3>
+					<p className="text-sm text-subtle mt-1">4 đoạn văn · đọc hiểu</p>
+				</div>
+				<div className="card p-5 text-center">
+					<Icon name="pencil" size="lg" className="mx-auto mb-3 text-skill-writing" />
+					<h3 className="font-bold text-base text-foreground">Viết</h3>
+					<p className="text-sm text-subtle mt-1">Thư + luận · AI chấm</p>
+				</div>
+				<div className="card p-5 text-center">
+					<Icon name="mic" size="lg" className="mx-auto mb-3 text-skill-speaking" />
+					<h3 className="font-bold text-base text-foreground">Nói</h3>
+					<p className="text-sm text-subtle mt-1">3 phần · ghi âm + AI</p>
+				</div>
 			</div>
 		</section>
 	)
