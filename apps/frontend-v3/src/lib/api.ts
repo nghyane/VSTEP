@@ -5,14 +5,14 @@ export const api = ky.create({
 	prefix: import.meta.env.VITE_API_URL || "http://localhost:8010/api/v1",
 	hooks: {
 		beforeRequest: [
-			(req) => {
+			({ request }) => {
 				const token = tokenStorage.getAccess()
-				if (token) req.headers.set("Authorization", `Bearer ${token}`)
+				if (token) request.headers.set("Authorization", `Bearer ${token}`)
 			},
 		],
 		afterResponse: [
-			(_req, _opts, res) => {
-				if (res.status === 401) {
+			({ response }) => {
+				if (response.status === 401) {
 					tokenStorage.clear()
 					window.location.replace("/")
 				}

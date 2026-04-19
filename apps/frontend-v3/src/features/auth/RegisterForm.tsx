@@ -1,9 +1,10 @@
 import { useForm } from "@tanstack/react-form"
-import { Link } from "@tanstack/react-router"
+import { Link, useNavigate } from "@tanstack/react-router"
 import type { ReactNode } from "react"
 import { inputClass } from "#/features/auth/styles"
 import { useAuth } from "#/lib/auth-store"
 import { createStrictContext } from "#/lib/create-strict-context"
+import { cn } from "#/lib/utils"
 
 interface RegisterValues {
 	nickname: string
@@ -18,6 +19,7 @@ const [FormCtx, useRegisterForm] =
 
 export function RegisterFormProvider({ children }: { children: ReactNode }) {
 	const register = useAuth((s) => s.register)
+	const navigate = useNavigate()
 
 	const form = useForm<RegisterValues>({
 		defaultValues: { nickname: "", email: "", password: "", target_level: "B2", target_deadline: "" },
@@ -28,6 +30,31 @@ export function RegisterFormProvider({ children }: { children: ReactNode }) {
 	})
 
 	return <FormCtx value={form}>{children}</FormCtx>
+}
+
+function LevelButton({
+	value,
+	current,
+	onChange,
+}: {
+	value: string
+	current: string
+	onChange: (v: string) => void
+}) {
+	return (
+		<button
+			type="button"
+			onClick={() => onChange(value)}
+			className={cn(
+				"h-12 rounded-(--radius-button) font-bold text-base transition",
+				current === value
+					? "bg-primary text-primary-foreground"
+					: "bg-surface border-2 border-border text-foreground hover:border-primary",
+			)}
+		>
+			{value}
+		</button>
+	)
 }
 
 export function RegisterStep1() {
@@ -116,34 +143,10 @@ export function RegisterStep2() {
 					<form.Field name="target_level">
 						{(field) => (
 							<div className="grid grid-cols-4 gap-2">
-								<button
-									type="button"
-									onClick={() => field.handleChange("A2")}
-									className={`h-12 rounded-(--radius-button) font-bold text-base transition ${field.state.value === "A2" ? "bg-primary text-primary-foreground" : "bg-surface border-2 border-border text-foreground hover:border-primary"}`}
-								>
-									A2
-								</button>
-								<button
-									type="button"
-									onClick={() => field.handleChange("B1")}
-									className={`h-12 rounded-(--radius-button) font-bold text-base transition ${field.state.value === "B1" ? "bg-primary text-primary-foreground" : "bg-surface border-2 border-border text-foreground hover:border-primary"}`}
-								>
-									B1
-								</button>
-								<button
-									type="button"
-									onClick={() => field.handleChange("B2")}
-									className={`h-12 rounded-(--radius-button) font-bold text-base transition ${field.state.value === "B2" ? "bg-primary text-primary-foreground" : "bg-surface border-2 border-border text-foreground hover:border-primary"}`}
-								>
-									B2
-								</button>
-								<button
-									type="button"
-									onClick={() => field.handleChange("C1")}
-									className={`h-12 rounded-(--radius-button) font-bold text-base transition ${field.state.value === "C1" ? "bg-primary text-primary-foreground" : "bg-surface border-2 border-border text-foreground hover:border-primary"}`}
-								>
-									C1
-								</button>
+								<LevelButton value="A2" current={field.state.value} onChange={field.handleChange} />
+								<LevelButton value="B1" current={field.state.value} onChange={field.handleChange} />
+								<LevelButton value="B2" current={field.state.value} onChange={field.handleChange} />
+								<LevelButton value="C1" current={field.state.value} onChange={field.handleChange} />
 							</div>
 						)}
 					</form.Field>

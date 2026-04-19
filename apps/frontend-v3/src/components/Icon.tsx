@@ -1,5 +1,3 @@
-import type { ComponentType, SVGProps } from "react"
-
 // ?react imports — vite-plugin-svgr
 import BackIcon from "#/assets/icons/back-small.svg?react"
 // Static imports (multi-tone, not currentColor)
@@ -30,6 +28,7 @@ import TrashIcon from "#/assets/icons/trash-small.svg?react"
 import trophySmall from "#/assets/icons/trophy-small.svg"
 import VolumeIcon from "#/assets/icons/volume-small.svg?react"
 import WeightsIcon from "#/assets/icons/weights-small.svg?react"
+import { cn } from "#/lib/utils"
 
 /** Mono-color icons (use currentColor, support dynamic color via style/className) */
 export const icons = {
@@ -95,7 +94,7 @@ export function Icon({
 	style?: React.CSSProperties
 }) {
 	const Comp = icons[name]
-	return <Comp className={`${SIZES[size]} ${className ?? ""}`} style={style} />
+	return <Comp className={cn(SIZES[size], className)} style={style} />
 }
 
 /** Multi-tone static icon (img tag) */
@@ -108,5 +107,5 @@ export function StaticIcon({
 	size?: IconSize
 	className?: string
 }) {
-	return <img src={staticIcons[name]} className={`${SIZES[size]} ${className ?? ""}`} alt="" />
+	return <img src={staticIcons[name]} className={cn(SIZES[size], className)} alt="" />
 }

@@ -1,23 +1,5 @@
 import { Link } from "@tanstack/react-router"
-
-const ITEMS = [
-	{
-		label: "Từ vựng",
-		desc: "Flashcard SRS · 60+ chủ đề theo level",
-		meta: "12 / 28 chủ đề",
-		progress: 0.43,
-		to: "/luyen-tap/tu-vung",
-		color: "var(--color-skill-writing)",
-	},
-	{
-		label: "Ngữ pháp",
-		desc: "Cấu trúc câu gắn level A2–C1",
-		meta: "45 / 120 điểm",
-		progress: 0.38,
-		to: "/luyen-tap/ngu-phap",
-		color: "var(--color-skill-reading)",
-	},
-] as const
+import { Icon } from "#/components/Icon"
 
 export function FoundationSection() {
 	return (
@@ -26,23 +8,25 @@ export function FoundationSection() {
 			<p className="text-sm text-subtle mb-5">Từ vựng và ngữ pháp — gốc rễ mọi kỹ năng</p>
 
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-				{ITEMS.map((item) => (
-					<Link key={item.label} to={item.to} className="card-interactive p-5">
-						<div className="flex items-start justify-between mb-3">
-							<div>
-								<h4 className="font-bold text-lg text-foreground">{item.label}</h4>
-								<p className="text-sm text-subtle mt-0.5">{item.desc}</p>
-							</div>
-							<span className="text-sm font-bold text-muted">{item.meta}</span>
+				<Link to="/luyen-tap/tu-vung" className="card-interactive p-5">
+					<div className="flex items-start gap-4">
+						<Icon name="book" size="lg" className="text-skill-writing shrink-0" />
+						<div>
+							<h4 className="font-bold text-lg text-foreground">Từ vựng</h4>
+							<p className="text-sm text-subtle mt-0.5">Flashcard SRS · 60+ chủ đề theo level</p>
 						</div>
-						<div className="h-2 bg-border rounded-full overflow-hidden">
-							<div
-								className="h-full rounded-full transition-all"
-								style={{ width: `${item.progress * 100}%`, background: item.color }}
-							/>
+					</div>
+				</Link>
+
+				<Link to="/luyen-tap/ngu-phap" className="card-interactive p-5">
+					<div className="flex items-start gap-4">
+						<Icon name="pencil" size="lg" className="text-skill-reading shrink-0" />
+						<div>
+							<h4 className="font-bold text-lg text-foreground">Ngữ pháp</h4>
+							<p className="text-sm text-subtle mt-0.5">Cấu trúc câu gắn level A2–C1</p>
 						</div>
-					</Link>
-				))}
+					</div>
+				</Link>
 			</div>
 		</section>
 	)

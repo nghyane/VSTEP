@@ -14,8 +14,6 @@ export function LoginForm() {
 		onSubmitInvalid: () => {},
 	})
 
-	const submitError = form.state.submissionAttempts > 0 && form.state.errors.length > 0
-
 	return (
 		<>
 			<h1 className="font-extrabold text-2xl text-foreground mb-8">Đăng nhập</h1>

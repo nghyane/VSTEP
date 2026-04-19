@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { StaticIcon } from "#/components/Icon"
 import { overviewQuery } from "#/features/dashboard/queries"
-import { formatMinutes } from "#/lib/utils"
-import { getTargetBand } from "#/lib/vstep"
+import { cn, formatMinutes } from "#/lib/utils"
 
 function selectStatsView(raw: {
 	data: {
@@ -69,7 +68,10 @@ export function StatsRow() {
 					<div className="min-w-0">
 						<p className="text-sm text-subtle">Band ước tính</p>
 						<p
-							className={`font-extrabold text-2xl ${stats.avgBand !== null ? "text-foreground" : "text-subtle"}`}
+							className={cn(
+								"font-extrabold text-2xl",
+								stats.avgBand !== null ? "text-foreground" : "text-subtle",
+							)}
 						>
 							{stats.avgBand ?? "—"}
 						</p>
