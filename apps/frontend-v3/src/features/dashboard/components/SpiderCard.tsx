@@ -1,7 +1,7 @@
-import type { OverviewChart } from "#/features/dashboard/queries"
-import { type SkillKey, skills } from "#/lib/skills"
+import { useQuery } from "@tanstack/react-query"
+import { overviewQuery, selectSpider } from "#/features/dashboard/queries"
+import { skills } from "#/lib/skills"
 
-const TARGET = 6.0
 const R = 88
 const CX = 140
 const CY = 140
@@ -30,17 +30,13 @@ function polygon(values: number[]) {
 	return values.map((v, i) => `${toXY(i, v).x},${toXY(i, v).y}`).join(" ")
 }
 
-interface Props {
-	chart: OverviewChart | null
-	minTests: number
-	totalTests: number
-}
+export function SpiderCard() {
+	const { data } = useQuery({ ...overviewQuery, select: selectSpider })
+	if (!data) return null
 
-export function SpiderCard({ chart, minTests, totalTests }: Props) {
+	const { chart, targetBand, minTests, totalTests } = data
 	const values = skills.map((s) => chart?.[s.key] ?? 0)
 	const hasData = chart !== null
-	const targetPoly = polygon([TARGET, TARGET, TARGET, TARGET])
-	const currentPoly = polygon(values)
 
 	return (
 		<div className="card p-6">
@@ -69,7 +65,7 @@ export function SpiderCard({ chart, minTests, totalTests }: Props) {
 						))}
 					</g>
 					<polygon
-						points={targetPoly}
+						points={polygon([targetBand, targetBand, targetBand, targetBand])}
 						fill="var(--color-destructive)"
 						fillOpacity={0.05}
 						stroke="var(--color-destructive)"
@@ -79,7 +75,7 @@ export function SpiderCard({ chart, minTests, totalTests }: Props) {
 					/>
 					{hasData && (
 						<polygon
-							points={currentPoly}
+							points={polygon(values)}
 							fill="var(--color-primary)"
 							fillOpacity={0.15}
 							stroke="var(--color-primary)"

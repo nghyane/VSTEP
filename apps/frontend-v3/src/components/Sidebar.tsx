@@ -5,6 +5,7 @@ import challengeIcon from "#/assets/icons/monthly-challenge-medium.svg"
 import moreIcon from "#/assets/icons/more-small.svg"
 import targetIcon from "#/assets/icons/target-small.svg"
 import weightsIcon from "#/assets/icons/weights-small.svg"
+import { useAuth } from "#/features/auth/AuthProvider"
 import { cn } from "#/lib/utils"
 
 const NAV_ITEMS = [
@@ -17,6 +18,9 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
 	const matchRoute = useMatchRoute()
+	const { profile, user } = useAuth()
+	const initial = profile?.nickname?.charAt(0).toUpperCase() ?? "?"
+	const displayName = profile?.nickname ?? user?.email ?? "User"
 
 	return (
 		<aside className="w-[260px] shrink-0 bg-surface border-r border-border flex flex-col sticky top-0 h-screen">
@@ -58,10 +62,10 @@ export function Sidebar() {
 			<div className="p-4">
 				<div className="flex items-center gap-3 p-3 rounded-xl bg-background">
 					<div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-display text-base">
-						N
+						{initial}
 					</div>
 					<div className="flex-1 min-w-0">
-						<p className="text-sm font-bold text-foreground truncate">Nghĩa</p>
+						<p className="text-sm font-bold text-foreground truncate">{displayName}</p>
 						<p className="text-xs text-subtle truncate">Học viên</p>
 					</div>
 				</div>

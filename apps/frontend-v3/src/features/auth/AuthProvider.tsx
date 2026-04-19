@@ -1,6 +1,7 @@
 import { type ReactNode, useCallback, useMemo, useState } from "react"
 import { type ApiResponse, api } from "#/lib/api"
 import { createStrictContext } from "#/lib/create-strict-context"
+import { tokenStorage } from "#/lib/token-storage"
 import type { Profile, User } from "#/types/auth"
 
 interface LoginResponse {
@@ -18,36 +19,30 @@ interface AuthValue {
 	logout: () => void
 }
 
-const STORAGE_KEYS = ["access_token", "refresh_token", "user", "profile"] as const
-
 const [Provider, useAuth] = createStrictContext<AuthValue>("Auth")
 
 export { useAuth }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-	const [user, setUser] = useState<User | null>(() => {
-		const s = localStorage.getItem("user")
-		return s ? JSON.parse(s) : null
-	})
-	const [profile, setProfile] = useState<Profile | null>(() => {
-		const s = localStorage.getItem("profile")
-		return s ? JSON.parse(s) : null
-	})
+	const [user, setUser] = useState<User | null>(() => tokenStorage.getUser())
+	const [profile, setProfile] = useState<Profile | null>(() => tokenStorage.getProfile())
 
 	const login = useCallback(async (email: string, password: string) => {
 		const { data } = await api
 			.post("auth/login", { json: { email, password } })
 			.json<ApiResponse<LoginResponse>>()
-		localStorage.setItem("access_token", data.access_token)
-		localStorage.setItem("refresh_token", data.refresh_token)
-		localStorage.setItem("user", JSON.stringify(data.account))
-		localStorage.setItem("profile", JSON.stringify(data.active_profile))
+
+		tokenStorage.setAccess(data.access_token)
+		tokenStorage.setRefresh(data.refresh_token)
+		tokenStorage.setUser(data.account)
+		tokenStorage.setProfile(data.active_profile)
+
 		setUser(data.account)
 		setProfile(data.active_profile)
 	}, [])
 
 	const logout = useCallback(() => {
-		for (const key of STORAGE_KEYS) localStorage.removeItem(key)
+		tokenStorage.clear()
 		setUser(null)
 		setProfile(null)
 	}, [])

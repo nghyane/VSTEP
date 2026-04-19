@@ -1,15 +1,15 @@
+import { useQuery } from "@tanstack/react-query"
 import streakIcon from "#/assets/icons/streak-medium.svg"
 import targetIcon from "#/assets/icons/target-medium.svg"
 import timerIcon from "#/assets/icons/timer-medium.svg"
 import trophyIcon from "#/assets/icons/trophy-small.svg"
-import type { OverviewStats } from "#/features/dashboard/queries"
+import { overviewQuery, selectStats } from "#/features/dashboard/queries"
 import { formatMinutes } from "#/lib/utils"
 
-interface Props {
-	stats: OverviewStats
-}
+export function StatsRow() {
+	const { data: stats } = useQuery({ ...overviewQuery, select: selectStats })
+	if (!stats) return null
 
-export function StatsRow({ stats }: Props) {
 	return (
 		<section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 			<div className="card p-4">

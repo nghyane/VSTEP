@@ -1,9 +1,8 @@
+import { useQuery } from "@tanstack/react-query"
 import weightsIcon from "#/assets/icons/weights-small.svg"
-import type { OverviewChart } from "#/features/dashboard/queries"
-import { skillByKey, skills } from "#/lib/skills"
+import { overviewQuery, selectGap } from "#/features/dashboard/queries"
+import { skills } from "#/lib/skills"
 import { round } from "#/lib/utils"
-
-const TARGET = 6.0
 
 const STATUS_CLASS = {
 	gap: "text-warning",
@@ -12,14 +11,15 @@ const STATUS_CLASS = {
 	none: "text-subtle",
 } as const
 
-interface Props {
-	chart: OverviewChart | null
-}
+export function GapAnalysis() {
+	const { data } = useQuery({ ...overviewQuery, select: selectGap })
+	if (!data) return null
 
-export function GapAnalysis({ chart }: Props) {
+	const { chart, targetBand, targetLevel } = data
+
 	const gaps = skills.map((s) => {
 		const current = chart?.[s.key] ?? null
-		const gap = current !== null ? round(current - TARGET) : null
+		const gap = current !== null ? round(current - targetBand) : null
 		const status =
 			current === null ? "none" : gap !== null && gap >= 0 ? "pass" : (gap ?? 0) < -1 ? "fail" : "gap"
 		return { ...s, current, gap, status } as const
@@ -33,7 +33,11 @@ export function GapAnalysis({ chart }: Props) {
 		<div className="card p-6">
 			<h3 className="font-extrabold text-lg text-foreground">Khoảng cách mục tiêu</h3>
 			<p className="text-sm text-subtle mt-1">
-				Mục tiêu <strong className="text-primary-dark">B2 ({TARGET})</strong> cho mỗi kỹ năng
+				Mục tiêu{" "}
+				<strong className="text-primary-dark">
+					{targetLevel ?? "B2"} ({targetBand})
+				</strong>{" "}
+				cho mỗi kỹ năng
 			</p>
 
 			<div className="space-y-3 mt-5">
@@ -53,7 +57,7 @@ export function GapAnalysis({ chart }: Props) {
 							>
 								{s.current ?? "—"}
 							</span>
-							<span className="text-placeholder text-xs">/ {TARGET}</span>
+							<span className="text-placeholder text-xs">/ {targetBand}</span>
 						</div>
 						<span className={`text-sm font-bold ${STATUS_CLASS[s.status]}`}>
 							{s.status === "none" ? "Chưa thi" : s.status === "pass" ? "✓ Đạt" : `${s.gap?.toFixed(1)}`}

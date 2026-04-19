@@ -1,10 +1,10 @@
-import type { OverviewProfile } from "#/features/dashboard/queries"
+import { useQuery } from "@tanstack/react-query"
+import { overviewQuery, selectProfile } from "#/features/dashboard/queries"
 
-interface Props {
-	profile: OverviewProfile
-}
+export function ProfileBanner() {
+	const { data: profile } = useQuery({ ...overviewQuery, select: selectProfile })
+	if (!profile) return null
 
-export function ProfileBanner({ profile }: Props) {
 	return (
 		<section className="relative overflow-hidden rounded-(--radius-banner) bg-gradient-to-br from-primary-light via-primary to-primary-dark p-8 md:p-10">
 			<div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-white/10" />

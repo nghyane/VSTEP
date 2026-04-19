@@ -1,9 +1,8 @@
 import { useQuery } from "@tanstack/react-query"
-import { examSessionsQuery } from "#/features/dashboard/queries"
-import { skillByKey, skills } from "#/lib/skills"
+import { examSessionsQuery, overviewQuery, selectTargetBand } from "#/features/dashboard/queries"
+import { skills } from "#/lib/skills"
 import { formatShortDate, round } from "#/lib/utils"
 
-const TARGET = 6.0
 const Y_MAX = 180
 const Y_MIN = 20
 const bandToY = (v: number) => Y_MAX - (v / 10) * (Y_MAX - Y_MIN)
@@ -14,8 +13,10 @@ function computeAvg(scores: Record<string, number | null>): number {
 }
 
 export function ScoreTrend() {
+	const { data: targetBand } = useQuery({ ...overviewQuery, select: selectTargetBand })
 	const { data, isLoading } = useQuery(examSessionsQuery)
 	const sessions = data?.data ?? []
+	const target = targetBand ?? 6.0
 
 	if (isLoading) {
 		return (
@@ -114,22 +115,22 @@ export function ScoreTrend() {
 
 				<line
 					x1="36"
-					y1={bandToY(TARGET)}
+					y1={bandToY(target)}
 					x2="590"
-					y2={bandToY(TARGET)}
+					y2={bandToY(target)}
 					stroke="var(--color-destructive)"
 					strokeWidth={1.5}
 					strokeDasharray="4 4"
 				/>
 				<text
 					x="590"
-					y={bandToY(TARGET) - 4}
+					y={bandToY(target) - 4}
 					textAnchor="end"
 					fontSize="10"
 					fontWeight="700"
 					fill="var(--color-destructive)"
 				>
-					B2 = {TARGET}
+					B2 = {target}
 				</text>
 
 				<polyline

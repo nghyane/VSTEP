@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { Header } from "#/components/Header"
 import { ActivityHeatmap } from "#/features/dashboard/components/ActivityHeatmap"
@@ -18,42 +17,16 @@ export const Route = createFileRoute("/_app/dashboard")({
 })
 
 function DashboardPage() {
-	const { data, isLoading, error } = useQuery(overviewQuery)
-
-	if (isLoading) {
-		return (
-			<>
-				<Header title="Tổng quan" />
-				<div className="px-10 py-20 text-center text-subtle">Đang tải...</div>
-			</>
-		)
-	}
-
-	if (error || !data) {
-		return (
-			<>
-				<Header title="Tổng quan" />
-				<div className="px-10 py-20 text-center text-destructive">Không thể tải dữ liệu</div>
-			</>
-		)
-	}
-
-	const overview = data.data
-
 	return (
 		<>
 			<Header title="Tổng quan" />
 			<div className="px-10 pb-12 space-y-8">
-				<ProfileBanner profile={overview.profile} />
-				<NextAction streak={overview.stats.streak} />
-				<StatsRow stats={overview.stats} />
+				<ProfileBanner />
+				<NextAction />
+				<StatsRow />
 				<section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-					<SpiderCard
-						chart={overview.chart}
-						minTests={overview.stats.min_tests_required}
-						totalTests={overview.stats.total_tests}
-					/>
-					<GapAnalysis chart={overview.chart} />
+					<SpiderCard />
+					<GapAnalysis />
 				</section>
 				<ScoreTrend />
 				<ActivityHeatmap />

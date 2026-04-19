@@ -1,6 +1,9 @@
 import { queryOptions } from "@tanstack/react-query"
 import { type ApiResponse, api } from "#/lib/api"
 import type { SkillKey } from "#/lib/skills"
+import { getTargetBand } from "#/lib/vstep"
+
+// ─── Raw API types ───
 
 export interface OverviewProfile {
 	nickname: string
@@ -31,11 +34,6 @@ export interface OverviewData {
 	chart: OverviewChart | null
 }
 
-export const overviewQuery = queryOptions({
-	queryKey: ["overview"],
-	queryFn: () => api.get("overview").json<ApiResponse<OverviewData>>(),
-})
-
 export interface StreakData {
 	current_streak: number
 	longest_streak: number
@@ -44,20 +42,10 @@ export interface StreakData {
 	last_active_date: string | null
 }
 
-export const streakQuery = queryOptions({
-	queryKey: ["streak"],
-	queryFn: () => api.get("streak").json<ApiResponse<StreakData>>(),
-})
-
 export interface ActivityDay {
 	date: string
 	minutes: number
 }
-
-export const activityHeatmapQuery = queryOptions({
-	queryKey: ["activity-heatmap"],
-	queryFn: () => api.get("activity-heatmap").json<ApiResponse<ActivityDay[]>>(),
-})
 
 export interface ExamSessionResult {
 	id: string
@@ -67,7 +55,57 @@ export interface ExamSessionResult {
 	scores: Record<SkillKey, number | null>
 }
 
+// ─── Queries ───
+
+export const overviewQuery = queryOptions({
+	queryKey: ["overview"],
+	queryFn: () => api.get("overview").json<ApiResponse<OverviewData>>(),
+})
+
+export const streakQuery = queryOptions({
+	queryKey: ["streak"],
+	queryFn: () => api.get("streak").json<ApiResponse<StreakData>>(),
+})
+
+export const activityHeatmapQuery = queryOptions({
+	queryKey: ["activity-heatmap"],
+	queryFn: () => api.get("activity-heatmap").json<ApiResponse<ActivityDay[]>>(),
+})
+
 export const examSessionsQuery = queryOptions({
 	queryKey: ["exam-sessions"],
 	queryFn: () => api.get("exam-sessions").json<ApiResponse<ExamSessionResult[]>>(),
 })
+
+// ─── Selectors (for useQuery select option) ───
+
+export function selectProfile(raw: ApiResponse<OverviewData>) {
+	return raw.data.profile
+}
+
+export function selectStats(raw: ApiResponse<OverviewData>) {
+	return raw.data.stats
+}
+
+export function selectSpider(raw: ApiResponse<OverviewData>) {
+	const d = raw.data
+	return {
+		chart: d.chart,
+		targetBand: getTargetBand(d.profile.target_level),
+		minTests: d.stats.min_tests_required,
+		totalTests: d.stats.total_tests,
+	}
+}
+
+export function selectGap(raw: ApiResponse<OverviewData>) {
+	const d = raw.data
+	return {
+		chart: d.chart,
+		targetBand: getTargetBand(d.profile.target_level),
+		targetLevel: d.profile.target_level,
+	}
+}
+
+export function selectTargetBand(raw: ApiResponse<OverviewData>) {
+	return getTargetBand(raw.data.profile.target_level)
+}
