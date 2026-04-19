@@ -128,6 +128,29 @@ class ProgressService
         ];
     }
 
+    /**
+     * Activity heatmap — drill duration per day for last N weeks.
+     *
+     * @return array<int, array{date: string, minutes: int}>
+     */
+    public function getActivityHeatmap(Profile $profile, int $weeks = 12): array
+    {
+        $tz = SystemConfig::get('streak.timezone') ?? 'Asia/Ho_Chi_Minh';
+        $endDate = Carbon::now($tz)->toDateString();
+        $startDate = Carbon::now($tz)->subWeeks($weeks)->startOfWeek(Carbon::MONDAY)->toDateString();
+
+        return ProfileDailyActivity::query()
+            ->where('profile_id', $profile->id)
+            ->whereBetween('date_local', [$startDate, $endDate])
+            ->orderBy('date_local')
+            ->get(['date_local', 'drill_duration_seconds'])
+            ->map(fn ($row) => [
+                'date' => $row->date_local,
+                'minutes' => (int) round($row->drill_duration_seconds / 60),
+            ])
+            ->all();
+    }
+
     private function updateStreak(string $profileId, string $dateLocal): void
     {
         $dailyGoal = (int) (SystemConfig::get('streak.daily_goal') ?? 1);

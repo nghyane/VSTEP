@@ -30,6 +30,13 @@ class OverviewController extends Controller
         ]);
     }
 
+    public function activityHeatmap(Request $request): JsonResponse
+    {
+        return response()->json([
+            'data' => $this->progressService->getActivityHeatmap($this->profile($request)),
+        ]);
+    }
+
     private function profile(Request $request): Profile
     {
         return $request->attributes->get('active_profile');

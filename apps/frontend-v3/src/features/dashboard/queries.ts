@@ -49,6 +49,16 @@ export const streakQuery = queryOptions({
 	queryFn: () => api.get("streak").json<ApiResponse<StreakData>>(),
 })
 
+export interface ActivityDay {
+	date: string
+	minutes: number
+}
+
+export const activityHeatmapQuery = queryOptions({
+	queryKey: ["activity-heatmap"],
+	queryFn: () => api.get("activity-heatmap").json<ApiResponse<ActivityDay[]>>(),
+})
+
 export interface ExamSessionResult {
 	id: string
 	mode: string

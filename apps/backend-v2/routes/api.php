@@ -132,6 +132,7 @@ Route::prefix('v1')->group(function () {
         // Overview & progress.
         Route::get('/overview', [OverviewController::class, 'overview']);
         Route::get('/streak', [OverviewController::class, 'streak']);
+        Route::get('/activity-heatmap', [OverviewController::class, 'activityHeatmap']);
 
         // Courses.
         Route::get('/courses', [CourseController::class, 'index']);

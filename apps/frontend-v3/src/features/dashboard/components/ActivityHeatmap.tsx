@@ -1,39 +1,62 @@
-import { useMemo } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { type ActivityDay, activityHeatmapQuery } from "#/features/dashboard/queries"
 import { cn } from "#/lib/utils"
 
 const WEEKS = 12
 const DAYS = 7
-const LEVELS = ["bg-border", "bg-primary/25", "bg-primary/50", "bg-primary/75", "bg-primary"]
 const DAY_LABELS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
 
-function generateMockData() {
-	const cells: number[] = []
-	for (let i = 0; i < WEEKS * DAYS; i++) {
-		const d = i % DAYS
-		const isWeekend = d >= 5
-		const r = Math.random()
-		if (isWeekend) {
-			cells.push(r > 0.7 ? 2 : r > 0.4 ? 1 : 0)
-		} else {
-			cells.push(r > 0.8 ? 4 : r > 0.5 ? 3 : r > 0.25 ? 2 : r > 0.1 ? 1 : 0)
+function toLevel(minutes: number): number {
+	if (minutes <= 0) return 0
+	if (minutes < 30) return 1
+	if (minutes < 60) return 2
+	if (minutes < 90) return 3
+	return 4
+}
+
+const LEVEL_CLASSES = ["bg-border", "bg-primary/25", "bg-primary/50", "bg-primary/75", "bg-primary"]
+
+function buildGrid(data: ActivityDay[]): number[][] {
+	const map = new Map(data.map((d) => [d.date, d.minutes]))
+	const today = new Date()
+	const start = new Date(today)
+	start.setDate(start.getDate() - WEEKS * DAYS)
+	// Align to Monday
+	const dow = (start.getDay() + 6) % 7
+	start.setDate(start.getDate() - dow)
+
+	const weeks: number[][] = []
+	const cursor = new Date(start)
+	for (let w = 0; w < WEEKS; w++) {
+		const week: number[] = []
+		for (let d = 0; d < DAYS; d++) {
+			const key = cursor.toISOString().slice(0, 10)
+			week.push(toLevel(map.get(key) ?? 0))
+			cursor.setDate(cursor.getDate() + 1)
 		}
+		weeks.push(week)
 	}
-	return cells
+	return weeks
 }
 
 export function ActivityHeatmap() {
-	const cells = useMemo(generateMockData, [])
+	const { data, isLoading } = useQuery(activityHeatmapQuery)
+	const activityData = data?.data ?? []
+	const weeks = buildGrid(activityData)
+	const totalDays = activityData.filter((d) => d.minutes > 0).length
 
 	return (
 		<section className="card p-6">
 			<div className="flex items-start justify-between mb-5">
 				<div>
-					<h3 className="font-extrabold text-lg text-foreground">Hoạt động luyện tập</h3>
-					<p className="text-sm text-subtle mt-1">12 tuần qua · chỉ tính luyện tập</p>
+					<h3 className="font-extrabold text-lg text-foreground">
+						{isLoading ? "Đang tải..." : "Hoạt động luyện tập"}
+					</h3>
+					<p className="text-sm text-subtle mt-1">{totalDays} ngày có luyện tập trong 12 tuần qua</p>
 				</div>
 				<div className="flex items-center gap-1.5 text-xs text-subtle">
 					<span>Ít</span>
-					{LEVELS.map((cls) => (
+					{LEVEL_CLASSES.map((cls) => (
 						<span key={cls} className={cn("w-3.5 h-3.5 rounded", cls)} />
 					))}
 					<span>Nhiều</span>
@@ -50,13 +73,13 @@ export function ActivityHeatmap() {
 				</div>
 				<div className="flex-1 min-w-0">
 					<div className="grid grid-rows-7 grid-flow-col gap-1">
-						{cells.map((lv, i) => (
+						{weeks.flat().map((lv, i) => (
 							<div
-								// biome-ignore lint/suspicious/noArrayIndexKey: static mock data
+								// biome-ignore lint/suspicious/noArrayIndexKey: static grid, stable order
 								key={i}
 								className={cn(
 									"h-4 rounded hover:ring-1 hover:ring-border cursor-pointer transition",
-									LEVELS[lv],
+									LEVEL_CLASSES[lv],
 								)}
 							/>
 						))}
