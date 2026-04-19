@@ -1,8 +1,4 @@
-import type { ComponentType, SVGProps } from "react"
-import BookIcon from "#/assets/icons/book-default.svg?react"
-import MicIcon from "#/assets/icons/microphone-small.svg?react"
-import PencilIcon from "#/assets/icons/pencil-small.svg?react"
-import VolumeIcon from "#/assets/icons/volume-small.svg?react"
+import type { IconName } from "#/components/Icon"
 
 export type SkillKey = "listening" | "reading" | "writing" | "speaking"
 
@@ -11,7 +7,7 @@ export interface Skill {
 	label: string
 	en: string
 	desc: string
-	Icon: ComponentType<SVGProps<SVGSVGElement>>
+	icon: IconName
 	color: string
 	route: string
 }
@@ -22,7 +18,7 @@ export const skills: readonly Skill[] = [
 		label: "Nghe",
 		en: "Listening",
 		desc: "3 phần · nghe hiểu",
-		Icon: VolumeIcon,
+		icon: "volume",
 		color: "var(--color-skill-listening)",
 		route: "/luyen-tap/nghe",
 	},
@@ -31,7 +27,7 @@ export const skills: readonly Skill[] = [
 		label: "Đọc",
 		en: "Reading",
 		desc: "4 đoạn văn · đọc hiểu",
-		Icon: BookIcon,
+		icon: "book",
 		color: "var(--color-skill-reading)",
 		route: "/luyen-tap/doc",
 	},
@@ -40,7 +36,7 @@ export const skills: readonly Skill[] = [
 		label: "Viết",
 		en: "Writing",
 		desc: "Thư + luận · AI chấm",
-		Icon: PencilIcon,
+		icon: "pencil",
 		color: "var(--color-skill-writing)",
 		route: "/luyen-tap/viet",
 	},
@@ -49,10 +45,8 @@ export const skills: readonly Skill[] = [
 		label: "Nói",
 		en: "Speaking",
 		desc: "3 phần · ghi âm + AI",
-		Icon: MicIcon,
+		icon: "mic",
 		color: "var(--color-skill-speaking)",
 		route: "/luyen-tap/noi",
 	},
 ]
-
-export const skillByKey = Object.fromEntries(skills.map((s) => [s.key, s])) as Record<SkillKey, Skill>

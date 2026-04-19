@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { type ActivityDay, activityHeatmapQuery } from "#/features/dashboard/queries"
 import { cn } from "#/lib/utils"
+import { heatmapLevels } from "#/lib/vstep"
 
 const WEEKS = 12
 const DAYS = 7
@@ -8,10 +9,10 @@ const DAY_LABELS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
 
 function toLevel(minutes: number): number {
 	if (minutes <= 0) return 0
-	if (minutes < 30) return 1
-	if (minutes < 60) return 2
-	if (minutes < 90) return 3
-	return 4
+	for (let i = heatmapLevels.length - 1; i >= 0; i--) {
+		if (minutes >= heatmapLevels[i]) return i + 1
+	}
+	return 1
 }
 
 const LEVEL_CLASSES = ["bg-border", "bg-primary/25", "bg-primary/50", "bg-primary/75", "bg-primary"]

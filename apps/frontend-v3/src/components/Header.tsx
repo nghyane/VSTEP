@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import gemIcon from "#/assets/icons/gem-small.svg"
-import streakIcon from "#/assets/icons/streak-small.svg"
+import { StaticIcon } from "#/components/Icon"
 import { useAuth } from "#/features/auth/AuthProvider"
 import { streakQuery } from "#/features/dashboard/queries"
 import { walletBalanceQuery } from "#/features/wallet/queries"
@@ -24,11 +23,11 @@ export function Header({ title }: Props) {
 
 			<div className="flex items-center gap-6">
 				<div className="flex items-center gap-2">
-					<img src={gemIcon} className="h-7 w-auto" alt="Xu" />
+					<StaticIcon name="gem-color" size="sm" />
 					<span className="font-bold text-base text-coin-dark">{balance}</span>
 				</div>
 				<div className="flex items-center gap-2">
-					<img src={streakIcon} className="h-7 w-auto" alt="Streak" />
+					<StaticIcon name="streak-sm" size="sm" />
 					<span className="font-bold text-base text-streak">{streak}</span>
 				</div>
 				<button

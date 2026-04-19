@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query"
-import weightsIcon from "#/assets/icons/weights-small.svg"
+import { Icon } from "#/components/Icon"
 import { overviewQuery, selectGap } from "#/features/dashboard/queries"
 import { skills } from "#/lib/skills"
-import { round } from "#/lib/utils"
+import { cn, round } from "#/lib/utils"
 
 const STATUS_CLASS = {
 	gap: "text-warning",
@@ -59,7 +59,7 @@ export function GapAnalysis() {
 							</span>
 							<span className="text-placeholder text-xs">/ {targetBand}</span>
 						</div>
-						<span className={`text-sm font-bold ${STATUS_CLASS[s.status]}`}>
+						<span className={cn("text-sm font-bold", STATUS_CLASS[s.status])}>
 							{s.status === "none" ? "Chưa thi" : s.status === "pass" ? "✓ Đạt" : `${s.gap?.toFixed(1)}`}
 						</span>
 					</div>
@@ -71,7 +71,7 @@ export function GapAnalysis() {
 					href={weakest.route}
 					className="flex items-center gap-3 mt-4 p-3 rounded-xl bg-background hover:bg-border/60 transition"
 				>
-					<img src={weightsIcon} className="w-8 h-auto shrink-0" alt="" />
+					<Icon name="weights" size="md" />
 					<div className="flex-1 min-w-0">
 						<p className="text-sm text-subtle">Tập trung kỹ năng yếu nhất</p>
 						<p className="font-bold text-sm text-foreground">

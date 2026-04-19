@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router"
+import { Icon } from "#/components/Icon"
 import { skills } from "#/lib/skills"
 
 // TODO: replace with API data from GET /api/v1/practice-progress
@@ -21,8 +22,8 @@ export function SkillsSection() {
 					const pct = Math.round((progress.completed / progress.total) * 100)
 					return (
 						<Link key={s.key} to={s.route} className="card-interactive p-5">
-							<s.Icon className="h-10 w-auto mb-3" style={{ color: s.color }} />
-							<h4 className="font-bold text-base text-foreground">{s.label}</h4>
+							<Icon name={s.icon} size="lg" style={{ color: s.color }} />
+							<h4 className="font-bold text-base text-foreground mt-3">{s.label}</h4>
 							<p className="text-xs text-subtle mt-0.5">{s.en}</p>
 							<p className="text-sm text-muted mt-2">{s.desc}</p>
 

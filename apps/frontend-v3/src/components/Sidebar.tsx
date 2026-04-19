@@ -1,19 +1,14 @@
 import { Link, useMatchRoute } from "@tanstack/react-router"
-import faceIcon from "#/assets/icons/face-small.svg"
-import houseIcon from "#/assets/icons/house-small.svg"
-import challengeIcon from "#/assets/icons/monthly-challenge-medium.svg"
-import moreIcon from "#/assets/icons/more-small.svg"
-import targetIcon from "#/assets/icons/target-small.svg"
-import weightsIcon from "#/assets/icons/weights-small.svg"
+import { Icon, type IconName } from "#/components/Icon"
 import { useAuth } from "#/features/auth/AuthProvider"
 import { cn } from "#/lib/utils"
 
-const NAV_ITEMS = [
-	{ label: "Tổng quan", icon: houseIcon, to: "/dashboard" as const },
-	{ label: "Luyện tập", icon: weightsIcon, to: "/luyen-tap" as const },
-	{ label: "Thi thử", icon: targetIcon, to: "/thi-thu" as const },
-	{ label: "Khóa học", icon: challengeIcon, to: "/khoa-hoc" as const },
-	{ label: "Hồ sơ", icon: faceIcon, to: "/ho-so" as const },
+const NAV_ITEMS: { label: string; icon: IconName; to: string }[] = [
+	{ label: "Tổng quan", icon: "house", to: "/dashboard" },
+	{ label: "Luyện tập", icon: "weights", to: "/luyen-tap" },
+	{ label: "Thi thử", icon: "target", to: "/thi-thu" },
+	{ label: "Khóa học", icon: "book", to: "/khoa-hoc" },
+	{ label: "Hồ sơ", icon: "face", to: "/ho-so" },
 ]
 
 export function Sidebar() {
@@ -42,7 +37,7 @@ export function Sidebar() {
 								active ? "bg-primary-tint text-primary" : "text-muted hover:bg-background",
 							)}
 						>
-							<img src={item.icon} className="w-7 h-7" alt="" />
+							<Icon name={item.icon} size="sm" />
 							<span className="text-base">{item.label}</span>
 						</Link>
 					)
@@ -52,9 +47,11 @@ export function Sidebar() {
 
 				<button
 					type="button"
-					className="flex items-center gap-4 px-4 py-3 rounded-xl text-muted font-bold hover:bg-background w-full"
+					className="flex items-center gap-4 px-4 py-3 rounded-xl text-muted font-bold w-full opacity-50 cursor-not-allowed"
+					disabled
+					title="Sắp ra mắt"
 				>
-					<img src={moreIcon} className="w-7 h-7" alt="" />
+					<Icon name="more" size="sm" />
 					<span className="text-base">Xem thêm</span>
 				</button>
 			</nav>

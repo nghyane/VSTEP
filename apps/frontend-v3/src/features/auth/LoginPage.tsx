@@ -1,5 +1,5 @@
 import { useState } from "react"
-import closeIcon from "#/assets/icons/close-small.svg"
+import { Icon } from "#/components/Icon"
 import { useAuth } from "#/features/auth/AuthProvider"
 
 interface Props {
@@ -31,12 +31,12 @@ export function LoginPage({ onClose }: Props) {
 			<div className="flex items-center justify-between px-6 py-4">
 				{onClose ? (
 					<button type="button" onClick={onClose} className="p-2 hover:opacity-70">
-						<img src={closeIcon} className="w-5 h-5" alt="Đóng" />
+						<Icon name="close" size="xs" />
 					</button>
 				) : (
 					<div className="w-9" />
 				)}
-				<button type="button" className="btn btn-secondary text-xs">
+				<button type="button" className="btn btn-secondary text-xs" disabled title="Sắp ra mắt">
 					Đăng ký
 				</button>
 			</div>
