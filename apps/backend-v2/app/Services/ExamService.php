@@ -10,7 +10,9 @@ use App\Models\ExamMcqAnswer;
 use App\Models\ExamSession;
 use App\Models\ExamVersion;
 use App\Models\Profile;
+use App\Models\SpeakingGradingResult;
 use App\Models\SystemConfig;
+use App\Models\WritingGradingResult;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -195,5 +197,56 @@ class ExamService
         }
 
         return $map;
+    }
+
+    /**
+     * Compute per-skill band scores for a graded exam session.
+     *
+     * Listening/Reading: MCQ correct ratio → band 0-10 (phase 1: linear).
+     * Writing/Speaking: avg overall_band from active grading results.
+     *
+     * @return array{listening: ?float, reading: ?float, writing: ?float, speaking: ?float}
+     */
+    public function getSessionScores(ExamSession $session): array
+    {
+        return [
+            'listening' => $this->mcqBand($session, 'listening'),
+            'reading' => $this->mcqBand($session, 'reading'),
+            'writing' => $this->gradingBand('exam_writing', 'exam_writing_submissions', $session),
+            'speaking' => $this->gradingBand('exam_speaking', 'exam_speaking_submissions', $session),
+        ];
+    }
+
+    private function mcqBand(ExamSession $session, string $skill): ?float
+    {
+        $answers = ExamMcqAnswer::query()
+            ->where('session_id', $session->id)
+            ->where('item_ref_type', $skill)
+            ->get(['is_correct']);
+
+        if ($answers->isEmpty()) {
+            return null;
+        }
+
+        $correct = $answers->where('is_correct', true)->count();
+
+        return round($correct / $answers->count() * 10, 1);
+    }
+
+    private function gradingBand(string $submissionType, string $submissionTable, ExamSession $session): ?float
+    {
+        $model = $submissionType === 'exam_writing'
+            ? WritingGradingResult::class
+            : SpeakingGradingResult::class;
+
+        $band = $model::query()
+            ->where('submission_type', $submissionType)
+            ->whereIn('submission_id', function ($q) use ($submissionTable, $session) {
+                $q->select('id')->from($submissionTable)->where('session_id', $session->id);
+            })
+            ->where('is_active', true)
+            ->avg('overall_band');
+
+        return $band !== null ? round((float) $band, 1) : null;
     }
 }
