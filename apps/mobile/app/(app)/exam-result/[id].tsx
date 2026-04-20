@@ -5,7 +5,6 @@ import Svg, { Circle } from "react-native-svg";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { recordExamCompletion } from "@/features/streak/streak-store";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 import { depthNeutral } from "@/theme/depth";
 import { LinearGradient } from "expo-linear-gradient";
@@ -62,7 +61,6 @@ function buildMockResult(examId: string): ExamResult {
 type Tab = "summary" | "detail";
 
 export default function ExamResultScreen() {
-  useEffect(() => { recordExamCompletion(); }, []);
   const { id } = useLocalSearchParams<{ id: string }>();
   const c = useThemeColors();
   const router = useRouter();

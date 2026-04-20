@@ -1,25 +1,47 @@
-// NotificationButton — bell icon + unread badge, opens notification sheet
+// NotificationButton — bell icon, reads from server API
 import { useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BottomSheet } from "@/components/BottomSheet";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { GameIcon } from "@/components/GameIcon";
-import {
-  type AppNotification,
-  clearNotifications, formatRelative, markAllRead,
-  useNotifications, useUnreadCount,
-} from "@/features/notification/notification-store";
+import { type ApiResponse, api } from "@/lib/api";
 import { fontSize, fontFamily, radius, spacing, useThemeColors } from "@/theme";
+
+interface Notification {
+  id: string;
+  title: string;
+  body: string | null;
+  type: string;
+  read_at: string | null;
+  created_at: string;
+}
+
+const notificationsQuery = {
+  queryKey: ["notifications"],
+  queryFn: () => api.get<ApiResponse<Notification[]>>("notifications"),
+  staleTime: 30_000,
+};
+
+const unreadCountQuery = {
+  queryKey: ["notifications", "unread-count"],
+  queryFn: () => api.get<ApiResponse<{ count: number }>>("notifications/unread-count"),
+  staleTime: 30_000,
+};
 
 export function NotificationButton() {
   const c = useThemeColors();
   const [visible, setVisible] = useState(false);
-  const unread = useUnreadCount();
+  const { data: unreadRes } = useQuery(unreadCountQuery);
+  const unread = unreadRes?.data.count ?? 0;
+  const qc = useQueryClient();
 
   function handleOpen() {
     setVisible(true);
-    if (unread > 0) markAllRead();
+    if (unread > 0) {
+      api.post("notifications/read-all").then(() => qc.invalidateQueries({ queryKey: ["notifications"] }));
+    }
   }
 
   return (
@@ -39,26 +61,21 @@ export function NotificationButton() {
 
 function NotificationSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const c = useThemeColors();
-  const notifications = useNotifications();
+  const { data: res } = useQuery(notificationsQuery);
+  const notifications = res?.data ?? [];
 
   return (
     <BottomSheet visible={visible} onClose={onClose}>
       <View style={styles.content}>
-        {/* Header */}
         <View style={[styles.header, { borderBottomColor: c.border }]}>
           <Text style={[styles.title, { color: c.foreground }]}>Thông báo</Text>
-          {notifications.length > 0 && (
-            <HapticTouchable onPress={() => { clearNotifications(); onClose(); }}>
-              <Text style={[styles.clearBtn, { color: c.destructive }]}>Xoá tất cả</Text>
-            </HapticTouchable>
-          )}
         </View>
 
         {notifications.length === 0 ? (
           <View style={styles.empty}>
-            <Ionicons name="sparkles-outline" size={32} color={c.subtle + "60"} />
+            <Ionicons name="sparkles-outline" size={32} color={c.placeholder} />
             <Text style={[styles.emptyTitle, { color: c.foreground }]}>Chưa có thông báo nào</Text>
-            <Text style={[styles.emptyBody, { color: c.subtle }]}>Hoàn thành bài thi để nhận thông báo streak và thưởng xu.</Text>
+            <Text style={[styles.emptyBody, { color: c.subtle }]}>Hoàn thành bài thi để nhận thông báo.</Text>
           </View>
         ) : (
           <FlatList
@@ -74,26 +91,16 @@ function NotificationSheet({ visible, onClose }: { visible: boolean; onClose: ()
   );
 }
 
-const ICON_MAP: Record<string, { name: "fire" | "trophy" | "coin"; bg: string }> = {
-  fire: { name: "fire", bg: "#E5A02015" },
-  trophy: { name: "trophy", bg: "#F59E0B15" },
-  coin: { name: "coin", bg: "#F59E0B15" },
-};
-
-function NotificationRow({ notification }: { notification: AppNotification }) {
+function NotificationRow({ notification }: { notification: Notification }) {
   const c = useThemeColors();
-  const isUnread = notification.readAt === null;
-  const icon = ICON_MAP[notification.iconKey] ?? ICON_MAP.fire;
+  const isUnread = notification.read_at === null;
 
   return (
-    <View style={[styles.row, isUnread && { backgroundColor: c.primary + "08" }]}>
-      <View style={[styles.iconWrap, { backgroundColor: icon.bg }]}>
-        <GameIcon name={icon.name} size={20} />
-      </View>
+    <View style={[styles.row, isUnread && { backgroundColor: c.primaryTint }]}>
+      <GameIcon name="fire" size={20} />
       <View style={{ flex: 1 }}>
         <Text style={[styles.rowTitle, { color: c.foreground }]}>{notification.title}</Text>
         {notification.body && <Text style={[styles.rowBody, { color: c.subtle }]}>{notification.body}</Text>}
-        <Text style={[styles.rowTime, { color: c.subtle }]}>{formatRelative(notification.createdAt)}</Text>
       </View>
       {isUnread && <View style={[styles.dot, { backgroundColor: c.primary }]} />}
     </View>
@@ -107,15 +114,12 @@ const styles = StyleSheet.create({
   content: { paddingBottom: spacing["2xl"] },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderBottomWidth: 1 },
   title: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
-  clearBtn: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },
   empty: { alignItems: "center", gap: spacing.sm, paddingVertical: spacing["3xl"], paddingHorizontal: spacing.xl },
   emptyTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   emptyBody: { fontSize: fontSize.xs, textAlign: "center" },
   sep: { height: 1 },
-  row: { flexDirection: "row", gap: spacing.md, paddingHorizontal: spacing.xl, paddingVertical: spacing.md },
-  iconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
-  rowTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold, lineHeight: 18 },
-  rowBody: { fontSize: fontSize.xs, marginTop: 2, lineHeight: 16 },
-  rowTime: { fontSize: 10, fontFamily: fontFamily.medium, marginTop: 4, textTransform: "uppercase", letterSpacing: 0.5 },
-  dot: { width: 8, height: 8, borderRadius: 4, marginTop: 6 },
+  row: { flexDirection: "row", gap: spacing.md, paddingHorizontal: spacing.xl, paddingVertical: spacing.md, alignItems: "center" },
+  rowTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
+  rowBody: { fontSize: fontSize.xs, marginTop: 2 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
 });

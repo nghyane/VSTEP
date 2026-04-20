@@ -8,9 +8,6 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useAuth } from "@/lib/auth-store";
 import { queryClient } from "@/lib/query-client";
 import { HapticsProvider } from "@/contexts/HapticsContext";
-import { loadStreakData } from "@/features/streak/streak-store";
-import { loadNotifications } from "@/features/notification/notification-store";
-import { loadEnrollments } from "@/features/course/course-store";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -28,9 +25,6 @@ export default function RootLayout() {
   useEffect(() => {
     (async () => {
       await init();
-      await loadStreakData();
-      await loadNotifications();
-      await loadEnrollments();
     })();
   }, []);
 

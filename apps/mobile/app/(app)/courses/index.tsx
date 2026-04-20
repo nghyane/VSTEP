@@ -2,41 +2,29 @@
 import { useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DepthCard } from "@/components/DepthCard";
 import { DepthButton } from "@/components/DepthButton";
 import { GameIcon } from "@/components/GameIcon";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { ScreenHeader } from "@/components/ScreenHeader";
-import {
-  type Course, MOCK_COURSES, discountPercent, formatVnd,
-  isCourseFull, isCourseEnded, enrollInCourse, isEnrolled, useEnrollments,
-} from "@/features/course/course-store";
+import { type Course, useCourses, enrollCourse, discountPercent, formatVnd, isCourseFull, isCourseEnded } from "@/features/course/queries";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 import { depthNeutral } from "@/theme/depth";
 
 export default function CoursesScreen() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
-  const enrollments = useEnrollments();
-  const myCourses = MOCK_COURSES.filter((co) => enrollments.some((e) => e.courseId === co.id));
-  const exploreCourses = MOCK_COURSES.filter((co) => !enrollments.some((e) => e.courseId === co.id));
-
+    const { data: courses } = useCourses();
+  
   return (
     <View style={[styles.root, { backgroundColor: c.background }]}>
       <ScreenHeader title="Khóa học cấp tốc" />
       <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 40 }]}>
-        {myCourses.length > 0 && (
-          <>
-            <Text style={[styles.section, { color: c.foreground }]}>Khóa của tôi</Text>
-            {myCourses.map((co) => <MyCourseCard key={co.id} course={co} />)}
-          </>
-        )}
 
         <Text style={[styles.section, { color: c.foreground }]}>Đang tuyển sinh</Text>
-        {exploreCourses.length === 0 && <Text style={[styles.empty, { color: c.subtle }]}>Không có khóa nào đang mở.</Text>}
-        {exploreCourses.map((co) => <CourseCard key={co.id} course={co} />)}
+        {courses.length === 0 && <Text style={[styles.empty, { color: c.subtle }]}>Không có khóa nào đang mở.</Text>}
+        {courses.map((co) => <CourseCard key={co.id} course={co} />)}
       </ScrollView>
     </View>
   );
@@ -49,9 +37,9 @@ function CourseCard({ course }: { course: Course }) {
   const ended = isCourseEnded(course);
 
   function handleEnroll() {
-    Alert.alert("Xác nhận đăng ký", `${course.title}\nGiá: ${formatVnd(course.priceVnd)}\nBạn sẽ nhận ${course.bonusCoins} xu bonus.`, [
+    Alert.alert("Xác nhận đăng ký", `${course.title}\nGiá: ${formatVnd(course.price_vnd)}\nBạn sẽ nhận ${course.bonus_coins} xu bonus.`, [
       { text: "Hủy", style: "cancel" },
-      { text: "Đăng ký", onPress: () => enrollInCourse(course) },
+      { text: "Đăng ký", onPress: () => enrollCourse(course.id) },
     ]);
   }
 
@@ -63,7 +51,7 @@ function CourseCard({ course }: { course: Course }) {
       </View>
 
       <Text style={[styles.cardTitle, { color: c.foreground }]}>{course.title}</Text>
-      <Text style={[styles.cardTarget, { color: c.subtle }]}>{course.targetExam}</Text>
+      <Text style={[styles.cardTarget, { color: c.subtle }]}>{course.target_exam}</Text>
       <Text style={[styles.cardDesc, { color: c.subtle }]}>{course.description}</Text>
 
       {/* Highlights */}
@@ -78,8 +66,8 @@ function CourseCard({ course }: { course: Course }) {
       <View style={styles.instrRow}>
         <GameIcon name="graduation" size={20} />
         <View>
-          <Text style={[styles.instrName, { color: c.foreground }]}>{course.instructorName}</Text>
-          <Text style={[styles.instrTitle, { color: c.subtle }]}>{course.instructorTitle}</Text>
+          <Text style={[styles.instrName, { color: c.foreground }]}>{course.instructor_name}</Text>
+          <Text style={[styles.instrTitle, { color: c.subtle }]}>{course.instructor_title}</Text>
         </View>
       </View>
 
@@ -87,18 +75,18 @@ function CourseCard({ course }: { course: Course }) {
       <View style={[styles.priceRow, { borderTopColor: c.border }]}>
         <View>
           <View style={styles.priceInline}>
-            <Text style={[styles.price, { color: c.destructive }]}>{formatVnd(course.priceVnd)}</Text>
-            {disc > 0 && <Text style={[styles.origPrice, { color: c.subtle }]}>{formatVnd(course.originalPriceVnd)}</Text>}
+            <Text style={[styles.price, { color: c.destructive }]}>{formatVnd(course.price_vnd)}</Text>
+            {disc > 0 && <Text style={[styles.origPrice, { color: c.subtle }]}>{formatVnd(course.original_price_vnd)}</Text>}
           </View>
           {disc > 0 && <Text style={[styles.discount, { color: c.success }]}>Giảm {disc}%</Text>}
           <View style={styles.bonusRow}>
             <GameIcon name="coin" size={14} />
-            <Text style={[styles.bonusText, { color: c.coinDark }]}>+{course.bonusCoins} xu</Text>
+            <Text style={[styles.bonusText, { color: c.coinDark }]}>+{course.bonus_coins} xu</Text>
           </View>
         </View>
         <View style={{ alignItems: "flex-end" }}>
           <Text style={[styles.slots, { color: full ? c.destructive : c.subtle }]}>
-            {full ? "Hết chỗ" : `Còn ${course.maxSlots - course.soldSlots}/${course.maxSlots} chỗ`}
+            {full ? "Hết chỗ" : `Còn ${course.max_slots - course.sold_slots}/${course.max_slots} chỗ`}
           </Text>
           {!full && !ended && <DepthButton variant="primary" size="sm" onPress={handleEnroll}>Đăng ký</DepthButton>}
           {ended && <Text style={[styles.endedBadge, { color: c.subtle }]}>Đã kết thúc</Text>}
@@ -108,43 +96,7 @@ function CourseCard({ course }: { course: Course }) {
   );
 }
 
-function MyCourseCard({ course }: { course: Course }) {
-  const c = useThemeColors();
-  const ended = isCourseEnded(course);
 
-  return (
-    <DepthCard variant={ended ? "neutral" : "primary"} style={styles.card}>
-      <View style={styles.myHeader}>
-        <Text style={[styles.cardTitle, { color: c.foreground, flex: 1 }]}>{course.title}</Text>
-        {ended ? (
-          <View style={[styles.statusBadge, { backgroundColor: c.background }]}><Text style={[styles.statusText, { color: c.subtle }]}>Đã kết thúc</Text></View>
-        ) : (
-          <View style={[styles.statusBadge, { backgroundColor: c.success + "15" }]}><Text style={[styles.statusText, { color: c.success }]}>Đang học</Text></View>
-        )}
-      </View>
-      <Text style={[styles.cardTarget, { color: c.subtle }]}>{course.targetExam}</Text>
-
-      {/* Schedule preview */}
-      <Text style={[styles.schedLabel, { color: c.foreground }]}>Lịch học</Text>
-      {course.sessions.slice(0, 3).map((s) => (
-        <View key={s.id} style={styles.schedRow}>
-          <Text style={[styles.schedNum, { color: c.primary }]}>Buổi {s.sessionNumber}</Text>
-          <Text style={[styles.schedDate, { color: c.subtle }]}>{s.date} · {s.startTime}–{s.endTime}</Text>
-          <Text style={[styles.schedTopic, { color: c.foreground }]}>{s.topic}</Text>
-        </View>
-      ))}
-      {course.sessions.length > 3 && <Text style={[styles.schedMore, { color: c.primary }]}>+{course.sessions.length - 3} buổi nữa</Text>}
-
-      {/* Zoom link */}
-      {!ended && (
-        <View style={[styles.zoomRow, { backgroundColor: c.primary + "0D" }]}>
-          <Ionicons name="videocam" size={16} color={c.primary} />
-          <Text style={[styles.zoomText, { color: c.primary }]} numberOfLines={1}>{course.livestreamUrl}</Text>
-        </View>
-      )}
-    </DepthCard>
-  );
-}
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
