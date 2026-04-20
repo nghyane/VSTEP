@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-04-20T00:00:00.000Z" agent="VSTEP-capstone" version="24.0.0">
+  <diagram id="grammar" name="Grammar">
+    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="gp" value="GrammarPoint" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=14;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="700" y="40" width="160" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="prof" value="Profile" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=14;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="1540" y="40" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- child entities -->
+        <mxCell id="struct" value="GrammarStructure" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=13;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="340" width="170" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ex" value="GrammarExample" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=13;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="240" y="340" width="170" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="mistake" value="GrammarCommonMistake" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=11;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="440" y="340" width="210" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="tip" value="GrammarVstepTip" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=13;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="680" y="340" width="170" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="gex" value="GrammarExercise" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=13;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="880" y="340" width="170" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="attempt" value="PracticeGrammarAttempt" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=12;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="1260" y="340" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="mastery" value="ProfileGrammarMastery" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=12;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="1520" y="340" width="210" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- relationships from GrammarPoint -->
+        <mxCell id="rHStruct" value="HasStructure" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=11;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="60" y="170" width="130" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="rHEx" value="HasExample" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=11;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="260" y="170" width="130" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="rHMistake" value="HasMistake" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=11;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="480" y="170" width="130" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="rHTip" value="HasTip" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=12;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="700" y="170" width="130" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="rHExcer" value="HasExercise" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=11;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="900" y="170" width="130" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Profile relationships -->
+        <mxCell id="rAttempts" value="Attempts" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=12;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="1320" y="170" width="120" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="rMasters" value="Masters" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=12;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="1560" y="170" width="120" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Cross diamonds -->
+        <mxCell id="rOfEx" value="OfExercise" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=11;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="470" width="130" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="rFor" value="For" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=12;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="1400" y="600" width="120" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- edges -->
+        <mxCell id="g1" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="gp" target="rHStruct"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg1" value="1" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g1"><mxGeometry x="-0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+        <mxCell id="g2" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="rHStruct" target="struct"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg2" value="M" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g2"><mxGeometry x="0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+
+        <mxCell id="g3" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="gp" target="rHEx"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg3" value="1" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g3"><mxGeometry x="-0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+        <mxCell id="g4" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="rHEx" target="ex"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg4" value="M" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g4"><mxGeometry x="0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+
+        <mxCell id="g5" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="gp" target="rHMistake"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg5" value="1" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g5"><mxGeometry x="-0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+        <mxCell id="g6" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="rHMistake" target="mistake"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg6" value="M" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g6"><mxGeometry x="0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+
+        <mxCell id="g7" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="gp" target="rHTip"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg7" value="1" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g7"><mxGeometry x="-0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+        <mxCell id="g8" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="rHTip" target="tip"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg8" value="M" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g8"><mxGeometry x="0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+
+        <mxCell id="g9" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="gp" target="rHExcer"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg9" value="1" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g9"><mxGeometry x="-0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+        <mxCell id="g10" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="rHExcer" target="gex"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg10" value="M" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g10"><mxGeometry x="0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+
+        <mxCell id="g11" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="prof" target="rAttempts"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg11" value="1" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g11"><mxGeometry x="-0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+        <mxCell id="g12" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="rAttempts" target="attempt"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg12" value="M" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g12"><mxGeometry x="0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+
+        <mxCell id="g13" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="prof" target="rMasters"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg13" value="1" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g13"><mxGeometry x="-0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+        <mxCell id="g14" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="rMasters" target="mastery"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg14" value="M" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g14"><mxGeometry x="0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+
+        <!-- Attempt -N- OfExercise -1- GrammarExercise -->
+        <mxCell id="g15" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="attempt" target="rOfEx"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg15" value="M" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g15"><mxGeometry x="-0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+        <mxCell id="g16" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="rOfEx" target="gex"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg16" value="1" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g16"><mxGeometry x="0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+
+        <!-- Mastery -N- For -1- GrammarPoint -->
+        <mxCell id="g17" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="mastery" target="rFor"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg17" value="M" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g17"><mxGeometry x="-0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+        <mxCell id="g18" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="rFor" target="gp"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg18" value="1" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g18"><mxGeometry x="0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+
+        <!-- Junction tables: GrammarPointLevel, GrammarPointTask, GrammarPointFunction (migration 21) -->
+        <mxCell id="gpLevel" value="GrammarPointLevel" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=12;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="720" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="gpTask" value="GrammarPointTask" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=12;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="280" y="720" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="gpFunc" value="GrammarPointFunction" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=11;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="520" y="720" width="210" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rHasLevel" value="HasLevel" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=11;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="70" y="590" width="130" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="rHasTask" value="HasTask" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=11;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="310" y="590" width="130" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="rHasFunction" value="HasFunction" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=11;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="560" y="590" width="140" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="g19" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="gp" target="rHasLevel"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg19" value="1" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g19"><mxGeometry x="-0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+        <mxCell id="g20" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="rHasLevel" target="gpLevel"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg20" value="M" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g20"><mxGeometry x="0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+
+        <mxCell id="g21" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="gp" target="rHasTask"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg21" value="1" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g21"><mxGeometry x="-0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+        <mxCell id="g22" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="rHasTask" target="gpTask"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg22" value="M" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g22"><mxGeometry x="0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+
+        <mxCell id="g23" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="gp" target="rHasFunction"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg23" value="1" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g23"><mxGeometry x="-0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+        <mxCell id="g24" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="rHasFunction" target="gpFunc"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lg24" value="M" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="g24"><mxGeometry x="0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
