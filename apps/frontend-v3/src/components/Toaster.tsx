@@ -1,4 +1,4 @@
-import { useToast } from "#/lib/toast-store"
+import { useToast } from "#/lib/toast"
 
 export function Toaster() {
 	const toasts = useToast((s) => s.toasts)

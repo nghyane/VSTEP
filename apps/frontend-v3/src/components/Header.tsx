@@ -4,7 +4,7 @@ import { ProfileDropdown } from "#/components/ProfileDropdown"
 import { streakQuery } from "#/features/dashboard/queries"
 import { unreadCountQuery } from "#/features/notifications/queries"
 import { walletBalanceQuery } from "#/features/wallet/queries"
-import { useAuth } from "#/lib/auth-store"
+import { useAuth } from "#/lib/auth"
 
 interface Props {
 	title: string
@@ -12,9 +12,10 @@ interface Props {
 
 export function Header({ title }: Props) {
 	const profile = useAuth((s) => s.profile)
-	const { data: walletData } = useQuery(walletBalanceQuery)
-	const { data: streakData } = useQuery(streakQuery)
-	const { data: unreadData } = useQuery(unreadCountQuery)
+	const hasProfile = !!profile
+	const { data: walletData } = useQuery({ ...walletBalanceQuery, enabled: hasProfile })
+	const { data: streakData } = useQuery({ ...streakQuery, enabled: hasProfile })
+	const { data: unreadData } = useQuery({ ...unreadCountQuery, enabled: hasProfile })
 
 	const balance = walletData?.data.balance ?? 0
 	const streak = streakData?.data.current_streak ?? 0

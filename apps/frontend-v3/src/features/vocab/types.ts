@@ -27,6 +27,19 @@ export interface SrsState {
 	kind: "new" | "learning" | "review" | "relearning"
 }
 
+export type SrsRating = 1 | 2 | 3 | 4
+
+export interface ReviewResponse {
+	state: SrsState
+	review_id: string
+}
+
+export interface AttemptResponse {
+	attempt_id: string
+	is_correct: boolean
+	explanation: string | null
+}
+
 export interface SrsQueueResponse {
 	new_count: number
 	learning_count: number

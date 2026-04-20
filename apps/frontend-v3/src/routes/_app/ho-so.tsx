@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { Header } from "#/components/Header"
-import { useAuth } from "#/lib/auth-store"
+import { useAuth } from "#/lib/auth"
 
 export const Route = createFileRoute("/_app/ho-so")({
 	component: ProfilePage,

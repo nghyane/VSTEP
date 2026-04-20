@@ -4,7 +4,7 @@ import { AuthShell } from "#/features/auth/AuthShell"
 import { LoginForm } from "#/features/auth/LoginForm"
 import { RegisterForm } from "#/features/auth/RegisterForm"
 import { LandingCTA, LandingFeatures, LandingHero, LandingSkills } from "#/features/landing/sections"
-import { useAuth } from "#/lib/auth-store"
+import { useAuth } from "#/lib/auth"
 
 type AuthParam = "login" | "register" | undefined
 
@@ -24,10 +24,6 @@ function LandingPage() {
 		if (isAuthenticated) navigate({ to: "/dashboard" })
 	}, [isAuthenticated, navigate])
 
-	function closeAuth() {
-		navigate({ to: "/", search: {} })
-	}
-
 	return (
 		<div className="min-h-screen bg-surface">
 			<nav className="flex items-center px-8 py-5 max-w-6xl mx-auto">
@@ -44,7 +40,7 @@ function LandingPage() {
 			</footer>
 
 			{auth && (
-				<AuthShell onClose={closeAuth}>
+				<AuthShell onClose={() => navigate({ to: "/", search: {} })}>
 					{auth === "login" && <LoginForm />}
 					{auth === "register" && <RegisterForm />}
 				</AuthShell>

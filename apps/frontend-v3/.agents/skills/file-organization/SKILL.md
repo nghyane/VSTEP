@@ -8,8 +8,30 @@ description: >
 
 # File Organization
 
-- Feature folder: `src/features/{name}/` with components/, queries.ts, types.ts
-- Shared utils: `src/lib/` — shared types: `src/types/`
-- Colocate types first, promote to `types/` when shared cross-feature
+## Folder structure
+
+- `src/lib/` — shared modules, flat, short names: `api.ts`, `auth.ts`, `toast.ts`
+- `src/features/{name}/` — `types.ts`, `queries.ts`, `actions.ts`, `components/`
+- `src/types/` — shared types used cross-feature
+- `src/assets/icons/` — SVG icons
+- `src/routes/` — TanStack Router file-based routes
+
+## Naming
+
+- Files: kebab-case, no suffix (`-store`, `-handler`, `-service`, `-utils`)
+- Hooks: `use-*.ts`
+- Exports: functions `camelCase`, types `PascalCase`, constants `UPPER_SNAKE`
+- Components: `PascalCase.tsx`
+- Routes: Vietnamese no-diacritics kebab-case (`luyen-tap`, `tu-vung`)
+
+## Route conventions
+
+- Layout: `name.tsx` renders `<Outlet />`, content in `name/index.tsx`
+- Dynamic: `$paramName.tsx`
+- Pathless layout: `_name.tsx` (e.g. `_app.tsx`, `_focused.tsx`)
+
+## Rules
+
 - Named exports only. No default exports (except route components). No barrel files.
-- Reference: `src/features/dashboard/` as canonical example
+- Colocate types first, promote to `types/` when shared cross-feature.
+- Reference: `src/features/dashboard/` as canonical example.

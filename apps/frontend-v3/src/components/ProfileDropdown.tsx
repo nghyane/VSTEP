@@ -3,7 +3,7 @@ import { useRef, useState } from "react"
 import { Icon, StaticIcon, type StaticIconName } from "#/components/Icon"
 import { notificationsQuery, unreadCountQuery, type Notification } from "#/features/notifications/queries"
 import { api } from "#/lib/api"
-import { useAuth } from "#/lib/auth-store"
+import { useAuth } from "#/lib/auth"
 import { useClickOutside } from "#/lib/use-click-outside"
 
 const NOTIF_ICON: Record<string, StaticIconName> = {

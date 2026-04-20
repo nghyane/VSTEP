@@ -1,14 +1,12 @@
-import { api } from "#/lib/api"
+import { api, type ApiResponse } from "#/lib/api"
+import type { AttemptResponse, ReviewResponse, SrsRating } from "#/features/vocab/types"
 
-// Anki ratings: 1=Again, 2=Hard, 3=Good, 4=Easy
-export type SrsRating = 1 | 2 | 3 | 4
+export type { SrsRating } from "#/features/vocab/types"
 
 export async function reviewWord(wordId: string, rating: SrsRating) {
-	return api.post("vocab/srs/review", { json: { word_id: wordId, rating } }).json()
+	return api.post("vocab/srs/review", { json: { word_id: wordId, rating } }).json<ApiResponse<ReviewResponse>>()
 }
 
 export async function attemptExercise(exerciseId: string, answer: Record<string, unknown>) {
-	return api.post(`vocab/exercises/${exerciseId}/attempt`, { json: { answer } }).json<{
-		data: { attempt_id: string; is_correct: boolean; explanation: string | null }
-	}>()
+	return api.post(`vocab/exercises/${exerciseId}/attempt`, { json: { answer } }).json<ApiResponse<AttemptResponse>>()
 }

@@ -2,7 +2,7 @@ import { useForm } from "@tanstack/react-form"
 import { Link } from "@tanstack/react-router"
 import { GoogleButton } from "#/features/auth/GoogleButton"
 import { inputClass } from "#/features/auth/styles"
-import { useAuth } from "#/lib/auth-store"
+import { useAuth } from "#/lib/auth"
 
 export function RegisterForm() {
 	const register = useAuth((s) => s.register)

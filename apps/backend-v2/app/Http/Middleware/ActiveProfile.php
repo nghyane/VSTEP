@@ -32,14 +32,14 @@ class ActiveProfile
         $profileId = $payload->get('active_profile_id');
 
         if (! is_string($profileId) || $profileId === '') {
-            abort(401, 'Active profile context missing.');
+            abort(403, 'Active profile context missing.');
         }
 
         /** @var Profile|null $profile */
         $profile = Profile::query()->find($profileId);
 
         if ($profile === null) {
-            abort(401, 'Active profile not found.');
+            abort(403, 'Active profile not found.');
         }
 
         if ($profile->account_id !== $request->user()?->id) {

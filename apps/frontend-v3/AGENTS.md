@@ -14,7 +14,7 @@ Commands: `bun run dev` · `bun run build` · `bun run lint`.
 ## State management
 
 - **Server data**: TanStack Query (`useQuery` + `select`). Không prop drill.
-- **Auth**: Zustand store (`lib/auth-store.ts`). Không Context/Provider.
+- **Auth**: Zustand store (`lib/auth.ts`). Không Context/Provider.
 - **Forms**: @tanstack/react-form (`useForm`). Không useState per field.
 - **URL state**: TanStack Router search params. Không useState cho modal/tab/step.
 - **Khi gặp case mới**: đánh giá trước — nếu state cần share > 1 component → Zustand. Nếu chỉ 1 component → useState OK. Nếu URL-representable → search params.

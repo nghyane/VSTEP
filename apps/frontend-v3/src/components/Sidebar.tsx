@@ -1,6 +1,6 @@
 import { Link, useMatchRoute } from "@tanstack/react-router"
 import { Icon, type IconName } from "#/components/Icon"
-import { useAuth } from "#/lib/auth-store"
+import { useAuth } from "#/lib/auth"
 import { cn } from "#/lib/utils"
 
 const NAV_ITEMS: { label: string; icon: IconName; to: string }[] = [

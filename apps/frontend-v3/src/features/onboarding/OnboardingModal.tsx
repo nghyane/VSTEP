@@ -1,7 +1,7 @@
 import { useForm } from "@tanstack/react-form"
 import { inputClass } from "#/features/auth/styles"
 import { api } from "#/lib/api"
-import { useAuth } from "#/lib/auth-store"
+import { useAuth } from "#/lib/auth"
 import { cn } from "#/lib/utils"
 
 function LevelButton({ value, current, onChange }: { value: string; current: string; onChange: (v: string) => void }) {

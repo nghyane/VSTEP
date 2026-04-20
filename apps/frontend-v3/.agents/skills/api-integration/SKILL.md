@@ -8,21 +8,32 @@ description: >
 
 # API Integration
 
-- Client: `src/lib/api.ts` — ky v2 with JWT interceptor
-- Auth store: `src/lib/auth-store.ts` — Zustand, not Context/Provider
-- Query example: `src/features/dashboard/queries.ts`
-- Response type: `ApiResponse<T>` in `lib/api.ts`
+## API Client
 
-## Error handling
+- `src/lib/api.ts` — ky instance with JWT token interceptor
+- Token persistence: `src/lib/tokens.ts`
+- Only responsibility: attach token to requests
+- No error handling, no toast, no redirect in api.ts
 
-- Global toast via ky `beforeError` hook in `api.ts` — all API errors auto-show toast
-- Components NEVER try/catch API calls for toast — just `await` and let it throw
-- Error parser: `src/lib/api-error.ts` reads `error.data` (ky pre-parsed body)
-- Backend returns Vietnamese error messages (Laravel `lang/vi/`)
+## Response Types
 
-## Auth redirects
+- Backend always returns `{ data: T }` — use `ApiResponse<T>` from `lib/api.ts`
+- Feature types in `features/{name}/types.ts` — never inline in `.json<>()`
+- Queries: `api.get("url").json<ApiResponse<T>>()`
+- Mutations: `api.post("url", { json: body }).json<ApiResponse<T>>()`
 
-- Use `useEffect` watching `isAuthenticated` — never `navigate()` in render body
+## Error Handling
+
+- Global handler: `src/lib/on-error.ts`
+- Registered on QueryClient caches in `main.tsx` — covers all queries + mutations
+- 401 → `useAuth.getState().logout()` (triggers redirect via useEffect)
+- Other errors → toast with `response.message` from backend
+- Components NEVER try/catch API calls for toast
+- Auth store NEVER handles errors — just throws
+
+## Auth Redirects
+
+- `useEffect` watching `isAuthenticated` — never navigate() in render body
 - Landing (`/`): redirect to `/dashboard` when authenticated
 - App layout (`/_app`): redirect to `/?auth=login` when not authenticated
-- 401 responses: `afterResponse` hook clears tokens + `window.location.replace("/")`
+- `_app.tsx` guard order: `!isAuthenticated` → null, `!profile` → OnboardingModal, else → Outlet
