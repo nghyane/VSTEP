@@ -2,7 +2,6 @@
 // SecureStore persist, event emitter for hooks
 import { useEffect, useState } from "react";
 import * as SecureStore from "expo-secure-store";
-import { refundCoins } from "@/features/coin/coin-store";
 import { pushNotification } from "@/features/notification/notification-store";
 
 export interface StreakMilestone { days: number; coins: number }
@@ -58,7 +57,7 @@ export function claimMilestone(days: number): boolean {
   if (!m || claimed.has(days)) return false;
   claimed.add(days);
   emitClaimed();
-  refundCoins(m.coins);
+  // Backend grants coins on claim
   pushNotification({
     id: `streak:claimed:${days}`,
     title: `+${m.coins} xu từ mốc ${days} ngày`,

@@ -1,7 +1,6 @@
 // Course mock data + enrollment store — aligned with frontend-v2 mocks/courses.ts
 import { useEffect, useState } from "react";
 import * as SecureStore from "expo-secure-store";
-import { refundCoins } from "@/features/coin/coin-store";
 
 // ─── Types ───────────────────────────────────────────────────────
 export interface CourseSession {
@@ -104,5 +103,5 @@ export function enrollInCourse(course: Course): void {
   if (isEnrolled(course.id)) return;
   enrollments = [...enrollments, { courseId: course.id, purchasedAt: Date.now() }];
   emitEnroll();
-  refundCoins(course.bonusCoins);
+  // Backend grants bonus coins on enrollment
 }

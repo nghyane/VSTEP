@@ -15,7 +15,7 @@ import { skills } from "@/lib/skills";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
 import { depthNeutral, depthSemantic } from "@/theme/depth";
 import { GameIcon } from "@/components/GameIcon";
-import { useCoins } from "@/features/coin/coin-store";
+import { useWalletBalance } from "@/features/wallet/queries";
 import { StreakButton } from "@/features/streak/StreakButton";
 import { NotificationButton } from "@/features/notification/NotificationButton";
 import { TopUpDialog } from "@/features/coin/TopUpDialog";
@@ -29,7 +29,7 @@ export default function OverviewScreen() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("overview");
   const [topUpVisible, setTopUpVisible] = useState(false);
-  const coins = useCoins();
+  const coins = useWalletBalance();
   const { data: apiProfile } = useQuery({ ...overviewQuery, select: selectProfile });
   const { data: stats } = useQuery({ ...overviewQuery, select: selectStats });
   const { data: spider } = useQuery({ ...overviewQuery, select: selectSpider });

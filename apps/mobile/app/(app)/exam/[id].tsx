@@ -11,7 +11,7 @@ import { depthNeutral } from "@/theme/depth";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Skill } from "@/types/api";
 import { GameIcon } from "@/components/GameIcon";
-import { computeSessionCost, spendCoins, useCoins } from "@/features/coin/coin-store";
+import { useWalletBalance, useInvalidateWallet } from "@/features/wallet/queries";
 import { TopUpDialog } from "@/features/coin/TopUpDialog";
 
 // ─── Mock exam sections (aligned with frontend-v2 thi-thu) ───────
@@ -235,19 +235,20 @@ function SkillGroup({ skill, sections, selected, allSelected, onToggleSection, o
 
 function ExamBottomBar({ selected, insets, onStart }: { selected: Set<string>; insets: any; onStart: () => void }) {
   const c = useThemeColors();
-  const coins = useCoins();
+  const coins = useWalletBalance();
+  const invalidateWallet = useInvalidateWallet();
   const [topUpVisible, setTopUpVisible] = useState(false);
-  const skillCount = new Set(VSTEP_SECTIONS.filter(s => selected.has(s.id)).map(s => s.skill)).size;
-  const cost = computeSessionCost(skillCount);
+  const cost = 25;
 
   function handleStart() {
-    if (!spendCoins(cost)) {
+    if (coins < cost) {
       Alert.alert("Không đủ xu", "Bạn cần nạp thêm xu để làm bài.", [
         { text: "Nạp xu", onPress: () => setTopUpVisible(true) },
         { text: "Hủy", style: "cancel" },
       ]);
       return;
     }
+    invalidateWallet();
     onStart();
   }
 

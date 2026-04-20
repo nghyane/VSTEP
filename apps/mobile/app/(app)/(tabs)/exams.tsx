@@ -9,7 +9,6 @@ import { GameIcon } from "@/components/GameIcon";
 import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
 import { CoinButton } from "@/features/coin/CoinButton";
 import { TopUpDialog } from "@/features/coin/TopUpDialog";
-import { FULL_TEST_COST } from "@/features/coin/coin-store";
 import { useExams } from "@/hooks/use-exams";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
@@ -78,7 +77,7 @@ function ExamCard({ exam, onPress }: { exam: Exam; onPress: () => void }) {
         <View style={[s.cardFooter, { borderTopColor: c.border }]}>
           <View style={s.coinCost}>
             <GameIcon name="coin" size={16} />
-            <Text style={[s.coinText, { color: c.coinDark }]}>{FULL_TEST_COST} xu</Text>
+            <Text style={[s.coinText, { color: c.coinDark }]}>{25} xu</Text>
           </View>
           <View style={[s.ctaBtn, { backgroundColor: c.primary }]}>
             <Text style={s.ctaBtnText}>Làm bài</Text>
