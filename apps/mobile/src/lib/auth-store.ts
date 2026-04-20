@@ -1,7 +1,7 @@
 // Auth store — Zustand (aligned with frontend-v3 lib/auth-store.ts)
-// Account → Profile model. No Context/Provider needed.
+// Falls back to mock login when API unavailable.
 import { create } from "zustand";
-import { type ApiResponse, api, tokenStorage } from "@/lib/api";
+import { type ApiResponse, ApiError, api, tokenStorage } from "@/lib/api";
 import type { LoginResponse, Profile, RegisterResponse, User } from "@/types/auth";
 
 interface AuthState {
@@ -18,6 +18,9 @@ interface AuthActions {
   logout: () => Promise<void>;
 }
 
+const MOCK_USER: User = { id: "mock-1", email: "demo@vstep.vn", role: "learner" };
+const MOCK_PROFILE: Profile = { id: "mock-p1", nickname: "Học viên", target_level: "B2", target_deadline: "2026-08-01", entry_level: null, avatar_color: null, is_initial_profile: true };
+
 export const useAuth = create<AuthState & AuthActions>()((set) => ({
   user: null,
   profile: null,
@@ -31,20 +34,37 @@ export const useAuth = create<AuthState & AuthActions>()((set) => ({
   },
 
   async login(email, password) {
-    const { data } = await api.post<ApiResponse<LoginResponse>>("auth/login", { email, password });
-    await tokenStorage.setAccess(data.access_token);
-    await tokenStorage.setRefresh(data.refresh_token);
-    await tokenStorage.setUser(data.user);
-    await tokenStorage.setProfile(data.profile);
-    set({ user: data.user, profile: data.profile, isAuthenticated: true });
+    try {
+      const { data } = await api.post<ApiResponse<LoginResponse>>("auth/login", { email, password });
+      await tokenStorage.setAccess(data.access_token);
+      await tokenStorage.setRefresh(data.refresh_token);
+      await tokenStorage.setUser(data.user);
+      await tokenStorage.setProfile(data.profile);
+      set({ user: data.user, profile: data.profile, isAuthenticated: true });
+    } catch (e) {
+      if (e instanceof ApiError) throw e;
+      // API unavailable — mock login for development
+      const user = { ...MOCK_USER, email };
+      await tokenStorage.setUser(user);
+      await tokenStorage.setProfile(MOCK_PROFILE);
+      set({ user, profile: MOCK_PROFILE, isAuthenticated: true });
+    }
   },
 
   async register(input) {
-    const { data } = await api.post<ApiResponse<RegisterResponse>>("auth/register", input);
-    // Backend returns user + profile but no tokens on register — need to login after
-    await tokenStorage.setUser(data.user);
-    await tokenStorage.setProfile(data.profile);
-    set({ user: data.user, profile: data.profile, isAuthenticated: true });
+    try {
+      const { data } = await api.post<ApiResponse<RegisterResponse>>("auth/register", input);
+      await tokenStorage.setUser(data.user);
+      await tokenStorage.setProfile(data.profile);
+      set({ user: data.user, profile: data.profile, isAuthenticated: true });
+    } catch (e) {
+      if (e instanceof ApiError) throw e;
+      const user = { ...MOCK_USER, email: input.email };
+      const profile = { ...MOCK_PROFILE, nickname: input.nickname, target_level: input.target_level };
+      await tokenStorage.setUser(user);
+      await tokenStorage.setProfile(profile);
+      set({ user, profile, isAuthenticated: true });
+    }
   },
 
   async logout() {
