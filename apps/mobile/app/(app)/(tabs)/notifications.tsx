@@ -7,7 +7,7 @@ import { StickyHeader, HEADER_H } from "@/components/StickyHeader";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { ErrorScreen } from "@/components/ErrorScreen";
-import { useNotifications, useUnreadCount, useMarkAllRead, useMarkAllRead } from "@/hooks/use-notifications";
+import { useNotifications, useUnreadCount, useMarkAllRead } from "@/hooks/use-notifications";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { Notification, NotificationType } from "@/types/api";
 
