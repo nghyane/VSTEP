@@ -29,13 +29,14 @@ class AuthController extends Controller
     {
         $result = $this->authService->register(
             $request->accountData(),
-            $request->profileData(),
         );
 
         return response()->json(['data' => [
             'user' => new UserResource($result['user']),
-            'profile' => new ProfileResource($result['profile']),
-            'message' => 'Registration successful.',
+            'profile' => null,
+            'access_token' => $result['access_token'],
+            'refresh_token' => $result['refresh_token'],
+            'expires_in' => $result['expires_in'],
         ]], 201);
     }
 
