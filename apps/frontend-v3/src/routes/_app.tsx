@@ -1,7 +1,6 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router"
 import { useEffect } from "react"
 import { Sidebar } from "#/components/Sidebar"
-import { OnboardingModal } from "#/features/onboarding/OnboardingModal"
 import { useAuth } from "#/lib/auth"
 
 export const Route = createFileRoute("/_app")({
@@ -10,7 +9,6 @@ export const Route = createFileRoute("/_app")({
 
 function AppLayout() {
 	const isAuthenticated = useAuth((s) => s.isAuthenticated)
-	const profile = useAuth((s) => s.profile)
 	const navigate = useNavigate()
 
 	useEffect(() => {
@@ -18,7 +16,6 @@ function AppLayout() {
 	}, [isAuthenticated, navigate])
 
 	if (!isAuthenticated) return null
-	if (!profile) return <OnboardingModal />
 
 	return (
 		<div className="flex min-h-screen">

@@ -3,12 +3,30 @@ import { Link } from "@tanstack/react-router"
 import { GoogleButton } from "#/features/auth/GoogleButton"
 import { inputClass } from "#/features/auth/styles"
 import { useAuth } from "#/lib/auth"
+import { cn } from "#/lib/utils"
+
+function LevelButton({ value, current, onChange }: { value: string; current: string; onChange: (v: string) => void }) {
+	return (
+		<button
+			type="button"
+			onClick={() => onChange(value)}
+			className={cn(
+				"h-12 rounded-(--radius-button) font-bold text-base transition",
+				current === value
+					? "bg-primary text-primary-foreground"
+					: "bg-surface border-2 border-border text-foreground hover:border-primary",
+			)}
+		>
+			{value}
+		</button>
+	)
+}
 
 export function RegisterForm() {
 	const register = useAuth((s) => s.register)
 
 	const form = useForm({
-		defaultValues: { email: "", password: "" },
+		defaultValues: { email: "", password: "", nickname: "", target_level: "B2", target_deadline: "" },
 		onSubmit: async ({ value }) => {
 			await register(value)
 		},
@@ -30,6 +48,18 @@ export function RegisterForm() {
 				}}
 				className="space-y-2.5"
 			>
+				<form.Field name="nickname">
+					{(field) => (
+						<input
+							type="text"
+							placeholder="Nickname"
+							required
+							value={field.state.value}
+							onChange={(e) => field.handleChange(e.target.value)}
+							className={inputClass}
+						/>
+					)}
+				</form.Field>
 				<form.Field name="email">
 					{(field) => (
 						<input
@@ -54,6 +84,32 @@ export function RegisterForm() {
 						/>
 					)}
 				</form.Field>
+				<div>
+					<p className="text-sm font-bold text-foreground mb-2 text-left">Mục tiêu trình độ</p>
+					<form.Field name="target_level">
+						{(field) => (
+							<div className="grid grid-cols-3 gap-2">
+								<LevelButton value="B1" current={field.state.value} onChange={field.handleChange} />
+								<LevelButton value="B2" current={field.state.value} onChange={field.handleChange} />
+								<LevelButton value="C1" current={field.state.value} onChange={field.handleChange} />
+							</div>
+						)}
+					</form.Field>
+				</div>
+				<div>
+					<p className="text-sm font-bold text-foreground mb-2 text-left">Ngày thi dự kiến</p>
+					<form.Field name="target_deadline">
+						{(field) => (
+							<input
+								type="date"
+								required
+								value={field.state.value}
+								onChange={(e) => field.handleChange(e.target.value)}
+								className={inputClass}
+							/>
+						)}
+					</form.Field>
+				</div>
 				<button
 					type="submit"
 					disabled={form.state.isSubmitting}

@@ -1,20 +1,18 @@
 import { HTTPError } from "ky"
-import { useToast } from "#/lib/toast"
 import { useAuth } from "#/lib/auth"
+import { useToast } from "#/lib/toast"
 
-async function extractMessage(error: unknown): Promise<string> {
-	if (error instanceof HTTPError) {
-		const body = await error.response.clone().json().catch(() => null)
-		if (body && typeof body === "object" && "message" in body) return body.message as string
+export async function onError(error: unknown) {
+	if (!(error instanceof HTTPError)) {
+		useToast.getState().add("Đã có lỗi xảy ra.")
+		return
 	}
-	return "Đã có lỗi xảy ra."
-}
 
-export async function handleApiError(error: unknown) {
-	if (error instanceof HTTPError && error.response.status === 401) {
+	if (error.response.status === 401) {
 		useAuth.getState().logout()
 		return
 	}
-	const message = await extractMessage(error)
-	useToast.getState().add(message)
+
+	const body: { message?: string } | null = await error.response.clone().json().catch(() => null)
+	useToast.getState().add(body?.message ?? "Đã có lỗi xảy ra.")
 }

@@ -3,7 +3,7 @@ import { useRef, useState } from "react"
 import { Icon, StaticIcon, type StaticIconName } from "#/components/Icon"
 import { notificationsQuery, unreadCountQuery, type Notification } from "#/features/notifications/queries"
 import { api } from "#/lib/api"
-import { useAuth } from "#/lib/auth"
+import { useAuth, useProfile, useUser } from "#/lib/auth"
 import { useClickOutside } from "#/lib/use-click-outside"
 
 const NOTIF_ICON: Record<string, StaticIconName> = {
@@ -53,8 +53,8 @@ interface Props {
 }
 
 export function ProfileDropdown({ unread, initial }: Props) {
-	const profile = useAuth((s) => s.profile)
-	const user = useAuth((s) => s.user)
+	const profile = useProfile()
+	const user = useUser()
 	const logout = useAuth((s) => s.logout)
 	const { data: notifsData } = useQuery({ ...notificationsQuery, enabled: false })
 	const [open, setOpen] = useState(false)
@@ -95,10 +95,10 @@ export function ProfileDropdown({ unread, initial }: Props) {
 									{initial}
 								</div>
 								<div className="min-w-0">
-									<p className="text-sm font-bold text-foreground truncate">{profile?.nickname ?? "User"}</p>
+									<p className="text-sm font-bold text-foreground truncate">{profile.nickname}</p>
 									<p className="text-xs text-subtle truncate">{user?.email}</p>
 								</div>
-								{profile?.target_level && (
+								{profile.target_level && (
 									<span className="ml-auto text-xs font-bold text-primary bg-primary-tint px-2.5 py-1 rounded-full">{profile.target_level}</span>
 								)}
 							</div>

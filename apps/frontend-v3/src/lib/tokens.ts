@@ -5,7 +5,7 @@ const KEYS = {
 	profile: "vstep_profile",
 } as const
 
-export const tokenStorage = {
+export const tokens = {
 	getAccess: () => localStorage.getItem(KEYS.access),
 	setAccess: (token: string) => localStorage.setItem(KEYS.access, token),
 

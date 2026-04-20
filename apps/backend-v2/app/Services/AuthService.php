@@ -28,18 +28,22 @@ class AuthService
      * Register account + initial profile in single transaction.
      *
      * @param  array{email:string,password:string}  $accountData
-     * @return array{user:User,access_token:string,refresh_token:string,expires_in:int}
+     * @param  array{nickname:string,target_level:string,target_deadline:string}  $profileData
+     * @return array{user:User,profile:Profile,access_token:string,refresh_token:string,expires_in:int}
      */
-    public function register(array $accountData): array
+    public function register(array $accountData, array $profileData): array
     {
-        return DB::transaction(function () use ($accountData) {
+        return DB::transaction(function () use ($accountData, $profileData) {
             $user = User::create([...$accountData, 'role' => Role::Learner]);
 
-            $accessToken = $this->issueAccessToken($user, null);
+            $profile = $this->profileService->createInitialProfile($user, $profileData);
+
+            $accessToken = $this->issueAccessToken($user, $profile);
             [, $plainToken] = $this->createRefreshToken($user, null);
 
             return [
                 'user' => $user,
+                'profile' => $profile,
                 'access_token' => $accessToken,
                 'refresh_token' => $plainToken,
                 'expires_in' => config('jwt.ttl') * 60,

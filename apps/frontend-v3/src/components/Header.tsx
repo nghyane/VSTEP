@@ -4,23 +4,22 @@ import { ProfileDropdown } from "#/components/ProfileDropdown"
 import { streakQuery } from "#/features/dashboard/queries"
 import { unreadCountQuery } from "#/features/notifications/queries"
 import { walletBalanceQuery } from "#/features/wallet/queries"
-import { useAuth } from "#/lib/auth"
+import { useProfile } from "#/lib/auth"
 
 interface Props {
 	title: string
 }
 
 export function Header({ title }: Props) {
-	const profile = useAuth((s) => s.profile)
-	const hasProfile = !!profile
-	const { data: walletData } = useQuery({ ...walletBalanceQuery, enabled: hasProfile })
-	const { data: streakData } = useQuery({ ...streakQuery, enabled: hasProfile })
-	const { data: unreadData } = useQuery({ ...unreadCountQuery, enabled: hasProfile })
+	const profile = useProfile()
+	const { data: walletData } = useQuery(walletBalanceQuery)
+	const { data: streakData } = useQuery(streakQuery)
+	const { data: unreadData } = useQuery(unreadCountQuery)
 
 	const balance = walletData?.data.balance ?? 0
 	const streak = streakData?.data.current_streak ?? 0
 	const unread = unreadData?.data.count ?? 0
-	const initial = profile?.nickname?.charAt(0).toUpperCase() ?? "?"
+	const initial = profile.nickname.charAt(0).toUpperCase()
 
 	return (
 		<div className="sticky top-0 z-10 bg-background px-10 pt-8 pb-5 flex items-center justify-between">

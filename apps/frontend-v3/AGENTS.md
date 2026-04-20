@@ -29,6 +29,9 @@ Commands: `bun run dev` · `bun run build` · `bun run lint`.
 
 ## Data rules (bất di bất dịch)
 
+- 1 User → nhiều Profile. 1 Profile = 1 Target (level + deadline). Không đổi target, tạo profile mới.
+- Profile = đơn vị tính tiền. Mỗi profile là 1 "khóa học".
+- Không test đầu vào. User tự chọn target.
 - Chart/spider = **chỉ exam** (graded). Drill score không vào chart.
 - Study time + streak = **chỉ drill**. Exam không cộng.
 - SRS adaptive **chỉ vocab**. Exam = đề cố định.

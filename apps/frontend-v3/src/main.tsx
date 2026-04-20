@@ -2,19 +2,19 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { createRouter, RouterProvider } from "@tanstack/react-router"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
-import { handleApiError } from "#/lib/on-error"
+import { onError } from "#/lib/on-error"
 import { routeTree } from "./routeTree.gen"
 import "./styles.css"
 
 const queryClient = new QueryClient({
 	defaultOptions: {
 		queries: { staleTime: 1000 * 60 * 5, retry: false },
-		mutations: { onError: handleApiError },
+		mutations: { onError },
 	},
 })
 
-queryClient.getQueryCache().config.onError = handleApiError
-queryClient.getMutationCache().config.onError = handleApiError
+queryClient.getQueryCache().config.onError = onError
+queryClient.getMutationCache().config.onError = onError
 
 const router = createRouter({
 	routeTree,
