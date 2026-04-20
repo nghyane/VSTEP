@@ -1,5 +1,4 @@
-// 3D Depth Button — Duolingo press effect (RFC 0002)
-// Active: translateY + border-bottom shrinks → "pressed in" illusion
+// DepthButton — V3 Duolingo button (box-shadow bottom simulated via border-b)
 import { useRef, type ReactNode } from "react";
 import { Animated, Pressable, StyleSheet, Text, type ViewStyle } from "react-native";
 import * as Haptics from "expo-haptics";
@@ -17,27 +16,18 @@ interface DepthButtonProps {
   style?: ViewStyle;
 }
 
-export function DepthButton({
-  children,
-  variant = "primary",
-  size = "md",
-  onPress,
-  disabled = false,
-  style,
-}: DepthButtonProps) {
+export function DepthButton({ children, variant = "primary", size = "md", onPress, disabled = false, style }: DepthButtonProps) {
   const c = useThemeColors();
   const translateY = useRef(new Animated.Value(0)).current;
-  const { bg, borderTop, borderBottom, text } = getVariantColors(variant, c);
+  const { bg, shadow, text } = getVariantColors(variant, c);
   const sizeStyle = SIZE_MAP[size];
 
   function handlePressIn() {
-    Animated.timing(translateY, { toValue: 3, duration: 50, useNativeDriver: true }).start();
+    Animated.timing(translateY, { toValue: 2, duration: 50, useNativeDriver: true }).start();
   }
-
   function handlePressOut() {
     Animated.timing(translateY, { toValue: 0, duration: 100, useNativeDriver: true }).start();
   }
-
   function handlePress() {
     if (disabled) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -45,31 +35,18 @@ export function DepthButton({
   }
 
   return (
-    <Pressable
-      onPress={handlePress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      disabled={disabled}
-    >
+    <Pressable onPress={handlePress} onPressIn={handlePressIn} onPressOut={handlePressOut} disabled={disabled}>
       <Animated.View
         style={[
           styles.button,
           sizeStyle,
-          {
-            backgroundColor: bg,
-            borderColor: borderTop,
-            borderBottomColor: borderBottom,
-            opacity: disabled ? 0.5 : 1,
-            transform: [{ translateY }],
-          },
+          { backgroundColor: bg, borderBottomColor: shadow, opacity: disabled ? 0.5 : 1, transform: [{ translateY }] },
           style,
         ]}
       >
         {typeof children === "string" ? (
           <Text style={[styles.text, { color: text, fontSize: sizeStyle.fontSize }]}>{children}</Text>
-        ) : (
-          children
-        )}
+        ) : children}
       </Animated.View>
     </Pressable>
   );
@@ -78,15 +55,15 @@ export function DepthButton({
 function getVariantColors(variant: Variant, c: ReturnType<typeof useThemeColors>) {
   switch (variant) {
     case "secondary":
-      return { bg: c.card, borderTop: c.depthBorderLight, borderBottom: c.depthBorderDark, text: c.foreground };
+      return { bg: c.surface, shadow: c.border, text: c.foreground };
     case "success":
-      return { bg: c.success, borderTop: "#16A34A", borderBottom: "#0D7A3A", text: c.successForeground };
+      return { bg: c.success, shadow: "#3D8C00", text: "#FFFFFF" };
     case "destructive":
-      return { bg: c.destructive, borderTop: "#C62828", borderBottom: "#8E1C1C", text: c.destructiveForeground };
+      return { bg: c.destructive, shadow: "#B71C1C", text: "#FFFFFF" };
     case "coin":
-      return { bg: c.coin, borderTop: c.coinDark, borderBottom: "#92400E", text: "#FFFFFF" };
+      return { bg: c.coin, shadow: c.coinDark, text: "#FFFFFF" };
     default:
-      return { bg: c.primary, borderTop: "#1D4ED8", borderBottom: "#1E3A8A", text: c.primaryForeground };
+      return { bg: c.primary, shadow: c.primaryDark, text: c.primaryForeground };
   }
 }
 
@@ -98,9 +75,8 @@ const SIZE_MAP = {
 
 const styles = StyleSheet.create({
   button: {
-    borderWidth: 2,
     borderBottomWidth: 4,
-    borderRadius: radius.lg,
+    borderRadius: radius.button,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
@@ -108,5 +84,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontFamily: fontFamily.bold,
+    textTransform: "uppercase",
+    letterSpacing: -0.2,
   },
 });

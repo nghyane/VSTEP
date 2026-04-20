@@ -119,7 +119,7 @@ export default function VocabularyTopicDetailScreen() {
     <View style={[styles.root, { backgroundColor: c.background }]}>
       <ScreenHeader title={topic.name} />
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={[styles.desc, { color: c.mutedForeground }]}>{topic.description}</Text>
+        <Text style={[styles.desc, { color: c.subtle }]}>{topic.description}</Text>
         <SegmentedTabs
           tabs={[{ key: "flashcard", label: "Flashcard" }, { key: "practice", label: "Luyện tập" }]}
           activeKey={tab}
@@ -174,23 +174,23 @@ function FlashcardTab({ words }: { words: Word[] }) {
 
   return (
     <View style={styles.flashcardWrap}>
-      <Text style={[styles.counter, { color: c.mutedForeground }]}>Câu {index + 1} / {words.length}</Text>
+      <Text style={[styles.counter, { color: c.subtle }]}>Câu {index + 1} / {words.length}</Text>
 
-      <HapticTouchable style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]} onPress={() => setFlipped(!flipped)} activeOpacity={0.9}>
+      <HapticTouchable style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]} onPress={() => setFlipped(!flipped)} activeOpacity={0.9}>
         {!flipped ? (
           <View style={styles.cardFront}>
             <Text style={[styles.wordText, { color: c.foreground }]}>{word.word}</Text>
-            <Text style={[styles.phoneticText, { color: c.mutedForeground }]}>{word.phonetic}</Text>
+            <Text style={[styles.phoneticText, { color: c.subtle }]}>{word.phonetic}</Text>
             <Text style={[styles.posText, { color: c.primary }]}>{word.partOfSpeech}</Text>
-            <Text style={[styles.tapHint, { color: c.mutedForeground }]}>Nhấn để xem nghĩa</Text>
+            <Text style={[styles.tapHint, { color: c.subtle }]}>Nhấn để xem nghĩa</Text>
           </View>
         ) : (
           <View style={styles.cardBack}>
             <Text style={[styles.wordTextSmall, { color: c.foreground }]}>{word.word}</Text>
             <Text style={[styles.defText, { color: c.foreground }]}>{word.definition}</Text>
-            <Text style={[styles.exampleText, { color: c.mutedForeground }]}>"{word.example}"</Text>
+            <Text style={[styles.exampleText, { color: c.subtle }]}>"{word.example}"</Text>
             {word.synonyms.length > 0 && (
-              <Text style={[styles.synText, { color: c.mutedForeground }]}>≈ {word.synonyms.join(", ")}</Text>
+              <Text style={[styles.synText, { color: c.subtle }]}>≈ {word.synonyms.join(", ")}</Text>
             )}
           </View>
         )}
@@ -241,7 +241,7 @@ function PracticeTab({ exercises }: { exercises: Exercise[] }) {
       <View style={styles.doneWrap}>
         <Ionicons name="trophy" size={48} color={c.warning} />
         <Text style={[styles.doneTitle, { color: c.foreground }]}>Hoàn thành!</Text>
-        <Text style={[styles.doneScore, { color: c.mutedForeground }]}>Đúng: {correct}/{exercises.length}</Text>
+        <Text style={[styles.doneScore, { color: c.subtle }]}>Đúng: {correct}/{exercises.length}</Text>
         <HapticTouchable style={[styles.resetBtn, { backgroundColor: c.primary }]} onPress={() => { setIndex(0); setCorrect(0); }}>
           <Ionicons name="refresh" size={16} color="#fff" />
           <Text style={styles.resetBtnText}>Làm lại</Text>
@@ -256,14 +256,14 @@ function PracticeTab({ exercises }: { exercises: Exercise[] }) {
   return (
     <View style={styles.practiceWrap}>
       <View style={styles.practiceHeader}>
-        <Text style={[styles.counter, { color: c.mutedForeground }]}>Câu {index + 1} / {exercises.length}</Text>
+        <Text style={[styles.counter, { color: c.subtle }]}>Câu {index + 1} / {exercises.length}</Text>
         <Text style={[styles.counter, { color: c.foreground }]}>Đúng: {correct}</Text>
       </View>
-      <View style={[styles.progressTrack, { backgroundColor: c.muted }]}>
+      <View style={[styles.progressTrack, { backgroundColor: c.background }]}>
         <View style={[styles.progressFill, { backgroundColor: c.primary, width: `${((index) / exercises.length) * 100}%` }]} />
       </View>
 
-      <View style={[styles.exerciseCard, { backgroundColor: c.card, borderColor: c.border }]}>
+      <View style={[styles.exerciseCard, { backgroundColor: c.surface, borderColor: c.border }]}>
         {ex.kind === "mcq" && (
           <View style={{ gap: spacing.md }}>
             <View style={styles.kindBadgeRow}>
@@ -282,7 +282,7 @@ function PracticeTab({ exercises }: { exercises: Exercise[] }) {
                   disabled={submitted}
                 >
                   <View style={[styles.optionLetter, { backgroundColor: showCorrect ? c.success : showWrong ? c.destructive : isSelected ? c.primary : c.muted }]}>
-                    <Text style={{ color: (isSelected || showCorrect || showWrong) ? "#fff" : c.mutedForeground, fontSize: 12, fontFamily: fontFamily.bold }}>
+                    <Text style={{ color: (isSelected || showCorrect || showWrong) ? "#fff" : c.subtle, fontSize: 12, fontFamily: fontFamily.bold }}>
                       {String.fromCharCode(65 + i)}
                     </Text>
                   </View>
@@ -300,9 +300,9 @@ function PracticeTab({ exercises }: { exercises: Exercise[] }) {
             </View>
             <Text style={[styles.prompt, { color: c.foreground }]}>{ex.sentence}</Text>
             <TextInput
-              style={[styles.fillInput, { borderColor: submitted ? (isCorrectFill ? c.success : c.destructive) : c.border, color: c.foreground, backgroundColor: c.card }]}
+              style={[styles.fillInput, { borderColor: submitted ? (isCorrectFill ? c.success : c.destructive) : c.border, color: c.foreground, backgroundColor: c.surface }]}
               placeholder="Nhập đáp án..."
-              placeholderTextColor={c.mutedForeground}
+              placeholderTextColor={c.subtle}
               value={fillAnswer}
               onChangeText={setFillAnswer}
               editable={!submitted}
@@ -316,13 +316,13 @@ function PracticeTab({ exercises }: { exercises: Exercise[] }) {
             <View style={styles.kindBadgeRow}>
               <Text style={[styles.kindBadge, { color: c.skillWriting, backgroundColor: c.skillWriting + "15" }]}>Biến đổi từ</Text>
             </View>
-            <Text style={[styles.prompt, { color: c.mutedForeground }]}>{ex.instruction}</Text>
+            <Text style={[styles.prompt, { color: c.subtle }]}>{ex.instruction}</Text>
             <Text style={[styles.prompt, { color: c.foreground }]}>{ex.sentence}</Text>
             <Text style={[{ color: c.primary, fontSize: fontSize.xs, fontFamily: fontFamily.semiBold }]}>Từ gốc: {ex.rootWord}</Text>
             <TextInput
-              style={[styles.fillInput, { borderColor: submitted ? (isCorrectFill ? c.success : c.destructive) : c.border, color: c.foreground, backgroundColor: c.card }]}
+              style={[styles.fillInput, { borderColor: submitted ? (isCorrectFill ? c.success : c.destructive) : c.border, color: c.foreground, backgroundColor: c.surface }]}
               placeholder="Nhập dạng đúng..."
-              placeholderTextColor={c.mutedForeground}
+              placeholderTextColor={c.subtle}
               value={fillAnswer}
               onChangeText={setFillAnswer}
               editable={!submitted}

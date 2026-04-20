@@ -23,22 +23,22 @@ export default function HistoryScreen() {
     <ScreenWrapper>
       <View style={styles.header}>
         <Text style={[styles.title, { color: c.foreground }]}>Lịch sử</Text>
-        <Text style={[styles.subtitle, { color: c.mutedForeground }]}>Xem lại bài thi và kết quả chấm</Text>
+        <Text style={[styles.subtitle, { color: c.subtle }]}>Xem lại bài thi và kết quả chấm</Text>
       </View>
       <View style={styles.tabRow}>
         <HapticTouchable
           style={[styles.tabBtn, tab === "sessions" && { backgroundColor: c.primary + "15", borderColor: c.primary }]}
           onPress={() => setTab("sessions")}
         >
-          <Ionicons name="document-text-outline" size={14} color={tab === "sessions" ? c.primary : c.mutedForeground} />
-          <Text style={{ color: tab === "sessions" ? c.primary : c.mutedForeground, fontSize: fontSize.xs, fontWeight: "600" }}>Phiên thi</Text>
+          <Ionicons name="document-text-outline" size={14} color={tab === "sessions" ? c.primary : c.subtle} />
+          <Text style={{ color: tab === "sessions" ? c.primary : c.subtle, fontSize: fontSize.xs, fontWeight: "600" }}>Phiên thi</Text>
         </HapticTouchable>
         <HapticTouchable
           style={[styles.tabBtn, tab === "submissions" && { backgroundColor: c.primary + "15", borderColor: c.primary }]}
           onPress={() => setTab("submissions")}
         >
-          <Ionicons name="create-outline" size={14} color={tab === "submissions" ? c.primary : c.mutedForeground} />
-          <Text style={{ color: tab === "submissions" ? c.primary : c.mutedForeground, fontSize: fontSize.xs, fontWeight: "600" }}>Bài chấm AI</Text>
+          <Ionicons name="create-outline" size={14} color={tab === "submissions" ? c.primary : c.subtle} />
+          <Text style={{ color: tab === "submissions" ? c.primary : c.subtle, fontSize: fontSize.xs, fontWeight: "600" }}>Bài chấm AI</Text>
         </HapticTouchable>
       </View>
       {tab === "sessions" ? <SessionsList /> : <SubmissionsList />}
@@ -74,7 +74,7 @@ function SessionsList() {
 
         return (
           <HapticTouchable
-            style={[styles.row, { backgroundColor: c.card, borderColor: c.border }]}
+            style={[styles.row, { backgroundColor: c.surface, borderColor: c.border }]}
             onPress={() => router.push(`/(app)/session/${item.id}`)}
           >
             <View style={[styles.iconBox, { backgroundColor: c.primary + "15" }]}>
@@ -82,7 +82,7 @@ function SessionsList() {
             </View>
             <View style={styles.rowInfo}>
               <Text style={[styles.rowTitle, { color: c.foreground }]} numberOfLines={1}>{title}</Text>
-              <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs }}>{date}</Text>
+              <Text style={{ color: c.subtle, fontSize: fontSize.xs }}>{date}</Text>
               {skills.length > 0 && (
                 <View style={styles.skillChips}>
                   {skills.map(({ skill, score }) => (
@@ -141,21 +141,21 @@ function SubmissionsList() {
       ListEmptyComponent={<EmptyState title="Chưa có bài chấm AI" subtitle="Bài writing/speaking sẽ hiện ở đây sau khi AI chấm" />}
       renderItem={({ item }: { item: Submission }) => {
         const status = statusConfig[item.status];
-        const statusColor = status.color === "success" ? c.success : status.color === "destructive" ? c.destructive : c.mutedForeground;
+        const statusColor = status.color === "success" ? c.success : status.color === "destructive" ? c.destructive : c.subtle;
         return (
           <HapticTouchable
-            style={[styles.row, { backgroundColor: c.card, borderColor: c.border }]}
+            style={[styles.row, { backgroundColor: c.surface, borderColor: c.border }]}
             onPress={() => router.push(`/(app)/submissions/${item.id}`)}
           >
             <SkillIcon skill={item.skill} />
             <View style={styles.rowInfo}>
               <Text style={[styles.rowTitle, { color: c.foreground }]}>{SKILL_LABELS[item.skill]}</Text>
-              <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs }}>
+              <Text style={{ color: c.subtle, fontSize: fontSize.xs }}>
                 {new Date(item.createdAt).toLocaleDateString("vi-VN")}
               </Text>
             </View>
             <View style={styles.rowRight}>
-              <Text style={[styles.score, { color: item.status === "completed" ? c.foreground : c.mutedForeground }]}>
+              <Text style={[styles.score, { color: item.status === "completed" ? c.foreground : c.subtle }]}>
                 {item.score != null ? `${item.score}/10` : "—"}
               </Text>
               <Text style={{ color: statusColor, fontSize: fontSize.xs, fontWeight: "600" }}>{status.label}</Text>

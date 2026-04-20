@@ -267,7 +267,7 @@ function PathNode({
       <Text
         style={[
           styles.nodeLabel,
-          { color: isLocked ? c.mutedForeground : c.foreground },
+          { color: isLocked ? c.subtle : c.foreground },
         ]}
         numberOfLines={1}
       >

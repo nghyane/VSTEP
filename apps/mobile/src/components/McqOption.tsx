@@ -61,7 +61,7 @@ function getStateColors(state: State, c: ReturnType<typeof useThemeColors>) {
     case "wrong":
       return { bg: c.destructive + "1A", borderTop: c.destructive + "40", borderBottom: c.destructive + "80", textColor: c.destructive };
     default:
-      return { bg: c.card, borderTop: c.depthBorderLight, borderBottom: c.depthBorderDark, textColor: c.foreground };
+      return { bg: c.surface, borderTop: c.depthBorderLight, borderBottom: c.depthBorderDark, textColor: c.foreground };
   }
 }
 

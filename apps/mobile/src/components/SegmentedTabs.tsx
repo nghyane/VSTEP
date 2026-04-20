@@ -17,7 +17,7 @@ export function SegmentedTabs({ tabs, activeKey, onTabChange }: Props) {
   const c = useThemeColors();
 
   return (
-    <View style={[styles.container, { backgroundColor: c.muted }]}>
+    <View style={[styles.container, { backgroundColor: c.background }]}>
       {tabs.map((tab) => {
         const active = tab.key === activeKey;
         return (
@@ -25,7 +25,7 @@ export function SegmentedTabs({ tabs, activeKey, onTabChange }: Props) {
             key={tab.key}
             style={[
               styles.tab,
-              active && { backgroundColor: c.card, shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 2 },
+              active && { backgroundColor: c.surface, shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 2 },
             ]}
             onPress={() => onTabChange(tab.key)}
             activeOpacity={0.7}
@@ -33,7 +33,7 @@ export function SegmentedTabs({ tabs, activeKey, onTabChange }: Props) {
             <Text
               style={[
                 styles.label,
-                { color: active ? c.foreground : c.mutedForeground, fontFamily: active ? fontFamily.semiBold : fontFamily.medium },
+                { color: active ? c.foreground : c.subtle, fontFamily: active ? fontFamily.semiBold : fontFamily.medium },
               ]}
               adjustsFontSizeToFit
               minimumFontScale={0.8}

@@ -63,7 +63,7 @@ export default function SubmissionDetailScreen() {
   return (
     <BouncyScrollView style={[styles.container, { backgroundColor: c.background }]} contentContainerStyle={styles.content}>
       {/* Header */}
-      <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+      <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
         <View style={styles.headerRow}>
           <SkillIcon skill={data.skill} />
           <View style={{ flex: 1 }}>
@@ -74,24 +74,24 @@ export default function SubmissionDetailScreen() {
               </View>
             )}
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: c.muted }]}>
-            <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs, fontWeight: "600" }}>{status.label}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: c.background }]}>
+            <Text style={{ color: c.subtle, fontSize: fontSize.xs, fontWeight: "600" }}>{status.label}</Text>
           </View>
         </View>
       </View>
 
       {/* Score */}
-      <View style={[styles.scoreBox, { backgroundColor: c.muted }]}>
+      <View style={[styles.scoreBox, { backgroundColor: c.background }]}>
         {data.score != null ? (
           <Text style={[styles.scoreBig, { color: c.foreground }]}>{data.score}/10</Text>
         ) : (
-          <Text style={{ color: c.mutedForeground, fontSize: fontSize.lg }}>Đang chấm</Text>
+          <Text style={{ color: c.subtle, fontSize: fontSize.lg }}>Đang chấm</Text>
         )}
       </View>
 
       {/* Criteria Scores — prefer enriched criteria array, fallback to criteriaScores map */}
       {(result?.criteria || criteriaScores) && (
-        <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View style={[styles.section, { backgroundColor: c.surface, borderColor: c.border }]}>
           <Text style={[styles.sectionTitle, { color: c.foreground }]}>Điểm thành phần</Text>
           {result?.criteria && result.criteria.length > 0
             ? result.criteria.map((cr) => {
@@ -103,11 +103,11 @@ export default function SubmissionDetailScreen() {
                       <Text style={{ color: c.foreground, fontSize: fontSize.sm, fontWeight: "500", flex: 1 }}>{cr.name}</Text>
                       <Text style={{ color: c.foreground, fontSize: fontSize.sm, fontWeight: "700", fontVariant: ["tabular-nums"] }}>{cr.score}/10</Text>
                     </View>
-                    <View style={[styles.progressTrack, { backgroundColor: c.muted }]}>
+                    <View style={[styles.progressTrack, { backgroundColor: c.background }]}>
                       <View style={[styles.progressFill, { width: `${pct}%`, backgroundColor: barColor }]} />
                     </View>
                     {cr.bandLabel ? (
-                      <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs }}>{cr.bandLabel}</Text>
+                      <Text style={{ color: c.subtle, fontSize: fontSize.xs }}>{cr.bandLabel}</Text>
                     ) : null}
                   </View>
                 );
@@ -123,7 +123,7 @@ export default function SubmissionDetailScreen() {
                         <Text style={{ color: c.foreground, fontSize: fontSize.sm, flex: 1 }}>{label}</Text>
                         <Text style={{ color: c.foreground, fontSize: fontSize.sm, fontWeight: "700", fontVariant: ["tabular-nums"] }}>{score}/10</Text>
                       </View>
-                      <View style={[styles.progressTrack, { backgroundColor: c.muted }]}>
+                      <View style={[styles.progressTrack, { backgroundColor: c.background }]}>
                         <View style={[styles.progressFill, { width: `${pct}%`, backgroundColor: barColor }]} />
                       </View>
                     </View>
@@ -135,12 +135,12 @@ export default function SubmissionDetailScreen() {
 
       {/* Knowledge Gaps */}
       {result?.knowledgeGaps && (result.knowledgeGaps as any[]).length > 0 && (
-        <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View style={[styles.section, { backgroundColor: c.surface, borderColor: c.border }]}>
           <Text style={[styles.sectionTitle, { color: c.foreground }]}>Điểm cần cải thiện</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.xs }}>
             {(result.knowledgeGaps as { name: string; category: string }[]).map((gap, i) => {
               const gapColors: Record<string, string> = { grammar: "#ef4444", vocabulary: "#f59e0b", spelling: "#3b82f6", discourse: "#8b5cf6" };
-              const color = gapColors[gap.category] ?? c.mutedForeground;
+              const color = gapColors[gap.category] ?? c.subtle;
               return (
                 <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: color + "12", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
                   <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: color }} />
@@ -154,15 +154,15 @@ export default function SubmissionDetailScreen() {
 
       {/* Dates */}
       <View style={styles.dateRow}>
-        <Ionicons name="time-outline" size={16} color={c.mutedForeground} />
-        <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm }}>
+        <Ionicons name="time-outline" size={16} color={c.subtle} />
+        <Text style={{ color: c.subtle, fontSize: fontSize.sm }}>
           Nộp: {new Date(data.createdAt).toLocaleString("vi-VN")}
         </Text>
       </View>
       {(data as any).completedAt && (
         <View style={styles.dateRow}>
-          <Ionicons name="checkmark-circle-outline" size={16} color={c.mutedForeground} />
-          <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm }}>
+          <Ionicons name="checkmark-circle-outline" size={16} color={c.subtle} />
+          <Text style={{ color: c.subtle, fontSize: fontSize.sm }}>
             Hoàn thành: {new Date((data as any).completedAt).toLocaleString("vi-VN")}
           </Text>
         </View>
@@ -180,7 +180,7 @@ export default function SubmissionDetailScreen() {
         const audioKey = (ans.audioPath ?? ans.audioUrl ?? ans.audio_path ?? ans.audio_url) as string | undefined;
         if (!audioKey) return null;
         return (
-          <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+          <View style={[styles.section, { backgroundColor: c.surface, borderColor: c.border }]}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
               <Ionicons name="mic-outline" size={16} color={c.primary} />
               <Text style={[styles.sectionTitle, { color: c.foreground }]}>Bản ghi âm</Text>
@@ -192,7 +192,7 @@ export default function SubmissionDetailScreen() {
 
       {/* Objective per-item breakdown (reading/listening) */}
       {result?.items && result.items.length > 0 && (
-        <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View style={[styles.section, { backgroundColor: c.surface, borderColor: c.border }]}>
           <Text style={[styles.sectionTitle, { color: c.foreground }]}>Chi tiết từng câu</Text>
           <ObjectiveResultView
             items={result.items}
@@ -209,7 +209,7 @@ export default function SubmissionDetailScreen() {
 
       {/* Feedback — rich rendering with corrections + quoted highlights */}
       {data.feedback && (
-        <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View style={[styles.section, { backgroundColor: c.surface, borderColor: c.border }]}>
           <Text style={[styles.sectionTitle, { color: c.foreground }]}>Nhận xét</Text>
           <RichFeedback
             feedback={data.feedback}
@@ -232,7 +232,7 @@ export default function SubmissionDetailScreen() {
 
       {/* Answer — with inline error highlights from corrections */}
       {data.answer && (
-        <View ref={answerRef} style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View ref={answerRef} style={[styles.section, { backgroundColor: c.surface, borderColor: c.border }]}>
           <Text style={[styles.sectionTitle, { color: c.foreground }]}>Câu trả lời đã nộp</Text>
           {data.answer && typeof data.answer === "object" && "text" in (data.answer as Record<string, unknown>) ? (
             result?.annotations?.corrections && result.annotations.corrections.length > 0 ? (
@@ -244,7 +244,7 @@ export default function SubmissionDetailScreen() {
               <Text style={{ color: c.foreground, fontSize: fontSize.sm, lineHeight: 22 }}>{String((data.answer as any).text)}</Text>
             )
           ) : data.answer && typeof data.answer === "object" && "audioUrl" in (data.answer as Record<string, unknown>) ? (
-            <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm }}>Audio: {(data.answer as any).durationSeconds}s</Text>
+            <Text style={{ color: c.subtle, fontSize: fontSize.sm }}>Audio: {(data.answer as any).durationSeconds}s</Text>
           ) : data.answer && typeof data.answer === "object" && "answers" in (data.answer as Record<string, unknown>) ? (
             <View style={{ gap: spacing.xs }}>
               {Object.entries((data.answer as any).answers).map(([key, val]: [string, any]) => (
@@ -336,7 +336,7 @@ function AIExplainSection({
   }
 
   return (
-    <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+    <View style={[styles.section, { backgroundColor: c.surface, borderColor: c.border }]}>
       <View style={styles.aiHeader}>
         <Ionicons name="sparkles" size={18} color={c.primary} />
         <Text style={[styles.sectionTitle, { color: c.foreground }]}>AI Giải thích</Text>
@@ -360,7 +360,7 @@ function AIExplainSection({
         <View style={{ gap: spacing.sm, marginTop: spacing.sm }}>
           <Text style={[styles.sectionTitle, { color: c.foreground }]}>Giải thích câu hỏi</Text>
           {result.questionExplanations.map((qe) => (
-            <View key={qe.questionNumber} style={[styles.highlightCard, { backgroundColor: c.muted }]}>
+            <View key={qe.questionNumber} style={[styles.highlightCard, { backgroundColor: c.background }]}>
               <Text style={[styles.highlightPhrase, { color: c.foreground }]}>
                 Câu {qe.questionNumber}: {qe.correctAnswer}
               </Text>
@@ -405,7 +405,7 @@ function PronunciationSection({ pronunciation }: { pronunciation: PronunciationD
   return (
     <View style={{ gap: spacing.base }}>
       {/* Pronunciation scores (0-100 scale) */}
-      <View style={[pronStyles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+      <View style={[pronStyles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
           <Ionicons name="mic" size={16} color={c.primary} />
           <Text style={{ color: c.foreground, fontWeight: "700", fontSize: fontSize.base }}>Đánh giá phát âm</Text>
@@ -424,7 +424,7 @@ function PronunciationSection({ pronunciation }: { pronunciation: PronunciationD
                   </View>
                   <Text style={{ color: barColor, fontWeight: "800", fontSize: fontSize.sm }}>{Math.round(pct)}</Text>
                 </View>
-                <View style={[pronStyles.bar, { backgroundColor: c.muted }]}>
+                <View style={[pronStyles.bar, { backgroundColor: c.background }]}>
                   <View style={[pronStyles.barFill, { width: `${pct}%` as any, backgroundColor: barColor }]} />
                 </View>
               </View>
@@ -435,7 +435,7 @@ function PronunciationSection({ pronunciation }: { pronunciation: PronunciationD
 
       {/* Transcript */}
       {pronunciation.transcript && (
-        <View style={[pronStyles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View style={[pronStyles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
             <Ionicons name="document-text-outline" size={16} color={c.primary} />
             <Text style={{ color: c.foreground, fontWeight: "700", fontSize: fontSize.base }}>Nội dung ghi nhận</Text>
@@ -448,7 +448,7 @@ function PronunciationSection({ pronunciation }: { pronunciation: PronunciationD
 
       {/* Word-level errors */}
       {wordErrors.length > 0 && (
-        <View style={[pronStyles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View style={[pronStyles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
             <Ionicons name="warning-outline" size={16} color="#f59e0b" />
             <Text style={{ color: c.foreground, fontWeight: "700", fontSize: fontSize.base }}>Lỗi phát âm từng từ</Text>
@@ -457,7 +457,7 @@ function PronunciationSection({ pronunciation }: { pronunciation: PronunciationD
             </View>
           </View>
           {wordErrors.map((err, i) => {
-            const config = errorTypeLabels[err.errorType] ?? { label: err.errorType, color: c.mutedForeground };
+            const config = errorTypeLabels[err.errorType] ?? { label: err.errorType, color: c.subtle };
             return (
               <View key={i} style={[pronStyles.wordError, { borderColor: config.color + "30", backgroundColor: config.color + "08" }]}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
@@ -467,7 +467,7 @@ function PronunciationSection({ pronunciation }: { pronunciation: PronunciationD
                   </View>
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
-                  <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs }}>Accuracy:</Text>
+                  <Text style={{ color: c.subtle, fontSize: fontSize.xs }}>Accuracy:</Text>
                   <Text style={{ color: err.accuracyScore >= 60 ? "#10b981" : "#ef4444", fontSize: fontSize.xs, fontWeight: "700" }}>
                     {Math.round(err.accuracyScore)}%
                   </Text>

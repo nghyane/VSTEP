@@ -84,10 +84,10 @@ export default function ExamResultScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll}>
         {/* Score card */}
-        <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
-          <Text style={[styles.congrats, { color: c.mutedForeground }]}>Chúc mừng!</Text>
+        <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
+          <Text style={[styles.congrats, { color: c.subtle }]}>Chúc mừng!</Text>
           <Text style={[styles.userName, { color: c.foreground }]}>{result.userName}</Text>
-          <Text style={[styles.examName, { color: c.mutedForeground }]}>đã hoàn thành {result.examTitle}</Text>
+          <Text style={[styles.examName, { color: c.subtle }]}>đã hoàn thành {result.examTitle}</Text>
 
           {/* Score circle */}
           <ScoreCircle score={result.score} />
@@ -100,12 +100,12 @@ export default function ExamResultScreen() {
         </View>
 
         {/* Tab switcher */}
-        <View style={[styles.tabRow, { backgroundColor: c.muted }]}>
-          <HapticTouchable style={[styles.tabBtn, tab === "summary" && { backgroundColor: c.card }]} onPress={() => setTab("summary")}>
-            <Text style={[styles.tabText, { color: tab === "summary" ? c.foreground : c.mutedForeground }]}>Performance</Text>
+        <View style={[styles.tabRow, { backgroundColor: c.background }]}>
+          <HapticTouchable style={[styles.tabBtn, tab === "summary" && { backgroundColor: c.surface }]} onPress={() => setTab("summary")}>
+            <Text style={[styles.tabText, { color: tab === "summary" ? c.foreground : c.subtle }]}>Performance</Text>
           </HapticTouchable>
-          <HapticTouchable style={[styles.tabBtn, tab === "detail" && { backgroundColor: c.card }]} onPress={() => setTab("detail")}>
-            <Text style={[styles.tabText, { color: tab === "detail" ? c.foreground : c.mutedForeground }]}>Chi tiết</Text>
+          <HapticTouchable style={[styles.tabBtn, tab === "detail" && { backgroundColor: c.surface }]} onPress={() => setTab("detail")}>
+            <Text style={[styles.tabText, { color: tab === "detail" ? c.foreground : c.subtle }]}>Chi tiết</Text>
           </HapticTouchable>
         </View>
 
@@ -142,7 +142,7 @@ function ScoreCircle({ score }: { score: number }) {
       </Svg>
       <View style={styles.circleInner}>
         <Text style={[styles.scoreNum, { color }]}>{score.toFixed(1)}</Text>
-        <Text style={[styles.scoreMax, { color: c.mutedForeground }]}>/10</Text>
+        <Text style={[styles.scoreMax, { color: c.subtle }]}>/10</Text>
       </View>
     </View>
   );
@@ -157,7 +157,7 @@ function ScorePill({ value, total, label, color }: { value: number; total: numbe
       <View style={[styles.pillBox, { borderColor: color + "40", backgroundColor: color + "0D" }]}>
         <Text style={[styles.pillValue, { color }]}>{value}/{total}</Text>
       </View>
-      <Text style={[styles.pillLabel, { color: c.mutedForeground }]}>{label}</Text>
+      <Text style={[styles.pillLabel, { color: c.subtle }]}>{label}</Text>
     </View>
   );
 }
@@ -168,19 +168,19 @@ function PerformanceTable({ types }: { types: QuestionType[] }) {
   const c = useThemeColors();
   return (
     <View style={[styles.table, { borderColor: c.border }]}>
-      <View style={[styles.tableHeader, { backgroundColor: c.muted }]}>
-        <Text style={[styles.th, styles.thLabel, { color: c.mutedForeground }]}>Loại</Text>
-        <Text style={[styles.th, styles.thNum, { color: c.mutedForeground }]}>Tổng</Text>
-        <Text style={[styles.th, styles.thNum, { color: c.mutedForeground }]}>Đúng</Text>
-        <Text style={[styles.th, styles.thNum, { color: c.mutedForeground }]}>Sai</Text>
-        <Text style={[styles.th, styles.thNum, { color: c.mutedForeground }]}>Tỷ lệ</Text>
+      <View style={[styles.tableHeader, { backgroundColor: c.background }]}>
+        <Text style={[styles.th, styles.thLabel, { color: c.subtle }]}>Loại</Text>
+        <Text style={[styles.th, styles.thNum, { color: c.subtle }]}>Tổng</Text>
+        <Text style={[styles.th, styles.thNum, { color: c.subtle }]}>Đúng</Text>
+        <Text style={[styles.th, styles.thNum, { color: c.subtle }]}>Sai</Text>
+        <Text style={[styles.th, styles.thNum, { color: c.subtle }]}>Tỷ lệ</Text>
       </View>
       {types.map((qt, idx) => (
-        <View key={qt.label} style={[styles.tableRow, idx % 2 === 0 ? { backgroundColor: c.card } : { backgroundColor: c.muted + "30" }, idx < types.length - 1 && { borderBottomWidth: 1, borderBottomColor: c.border + "66" }]}>
+        <View key={qt.label} style={[styles.tableRow, idx % 2 === 0 ? { backgroundColor: c.surface } : { backgroundColor: c.muted + "30" }, idx < types.length - 1 && { borderBottomWidth: 1, borderBottomColor: c.border + "66" }]}>
           <Text style={[styles.td, styles.thLabel, { color: c.foreground, fontFamily: fontFamily.medium }]}>{qt.label}</Text>
-          <Text style={[styles.td, styles.thNum, { color: c.mutedForeground }]}>{qt.total}</Text>
-          <Text style={[styles.td, styles.thNum, { color: qt.correct > 0 ? c.success : c.mutedForeground, fontFamily: fontFamily.semiBold }]}>{qt.correct}</Text>
-          <Text style={[styles.td, styles.thNum, { color: qt.wrong > 0 ? c.destructive : c.mutedForeground }]}>{qt.wrong}</Text>
+          <Text style={[styles.td, styles.thNum, { color: c.subtle }]}>{qt.total}</Text>
+          <Text style={[styles.td, styles.thNum, { color: qt.correct > 0 ? c.success : c.subtle, fontFamily: fontFamily.semiBold }]}>{qt.correct}</Text>
+          <Text style={[styles.td, styles.thNum, { color: qt.wrong > 0 ? c.destructive : c.subtle }]}>{qt.wrong}</Text>
           <AccuracyBadge pct={qt.accuracyPct} />
         </View>
       ))}
@@ -205,25 +205,25 @@ function DetailView({ types }: { types: QuestionType[] }) {
   return (
     <View style={{ gap: spacing.base }}>
       {types.map((qt) => (
-        <View key={qt.label} style={[styles.detailSection, { borderColor: c.border, backgroundColor: c.card }]}>
+        <View key={qt.label} style={[styles.detailSection, { borderColor: c.border, backgroundColor: c.surface }]}>
           <View style={styles.detailHeader}>
             <Text style={[styles.detailLabel, { color: c.foreground }]}>{qt.label}</Text>
-            <Text style={[styles.detailCount, { color: c.mutedForeground }]}>{qt.correct}/{qt.total} đúng</Text>
+            <Text style={[styles.detailCount, { color: c.subtle }]}>{qt.correct}/{qt.total} đúng</Text>
           </View>
           {qt.items.map((item) => {
             const isMcq = item.correctLetter !== "";
             return (
               <View key={item.no} style={[styles.itemRow, { borderTopColor: c.border + "40", backgroundColor: item.correct ? c.success + "08" : item.answered ? c.destructive + "08" : c.muted + "30" }]}>
-                <Ionicons name={item.correct ? "checkmark-circle" : "close-circle"} size={16} color={item.correct ? c.success : item.answered ? c.destructive : c.mutedForeground} />
+                <Ionicons name={item.correct ? "checkmark-circle" : "close-circle"} size={16} color={item.correct ? c.success : item.answered ? c.destructive : c.subtle} />
                 <Text style={[styles.itemNo, { color: c.foreground }]}>{isMcq ? `Câu ${item.no}` : `Phần ${item.no}`}</Text>
                 {isMcq ? (
                   <View style={styles.itemAnswers}>
                     <View style={[styles.letterBox, { borderColor: item.correct ? c.success + "40" : !item.answered ? c.border : c.destructive + "40", backgroundColor: item.correct ? c.success + "15" : !item.answered ? c.muted : c.destructive + "15" }]}>
-                      <Text style={[styles.letterText, { color: item.correct ? c.success : !item.answered ? c.mutedForeground : c.destructive }]}>{item.userLetter}</Text>
+                      <Text style={[styles.letterText, { color: item.correct ? c.success : !item.answered ? c.subtle : c.destructive }]}>{item.userLetter}</Text>
                     </View>
                     {!item.correct && (
                       <>
-                        <Text style={{ color: c.mutedForeground, fontSize: 10 }}>→</Text>
+                        <Text style={{ color: c.subtle, fontSize: 10 }}>→</Text>
                         <View style={[styles.letterBox, { borderColor: c.success + "40", backgroundColor: c.success + "15" }]}>
                           <Text style={[styles.letterText, { color: c.success }]}>{item.correctLetter}</Text>
                         </View>
@@ -231,7 +231,7 @@ function DetailView({ types }: { types: QuestionType[] }) {
                     )}
                   </View>
                 ) : (
-                  <Text style={[styles.itemStatus, { color: item.correct ? c.success : c.mutedForeground }]}>{item.correct ? "Hoàn thành" : "Chưa làm"}</Text>
+                  <Text style={[styles.itemStatus, { color: item.correct ? c.success : c.subtle }]}>{item.correct ? "Hoàn thành" : "Chưa làm"}</Text>
                 )}
               </View>
             );

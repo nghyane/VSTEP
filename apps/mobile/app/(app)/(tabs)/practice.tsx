@@ -15,17 +15,17 @@ export default function PracticeHubScreen() {
   return (
     <ScrollView style={[styles.root, { backgroundColor: c.background }]} contentContainerStyle={[styles.scroll, { paddingTop: insets.top + spacing.xl }]}>
       <Text style={[styles.title, { color: c.foreground }]}>Luyện tập</Text>
-      <Text style={[styles.subtitle, { color: c.mutedForeground }]}>Chọn chế độ phù hợp với bạn</Text>
+      <Text style={[styles.subtitle, { color: c.subtle }]}>Chọn chế độ phù hợp với bạn</Text>
 
       {/* Branch 1: Foundation */}
       <HapticTouchable
-        style={[styles.branchCard, { backgroundColor: c.card, borderColor: c.border }]}
+        style={[styles.branchCard, { backgroundColor: c.surface, borderColor: c.border }]}
         onPress={() => router.push("/(app)/practice/foundation")}
         activeOpacity={0.7}
       >
         <Ionicons name="school" size={32} color={c.primary} />
         <Text style={[styles.branchTitle, { color: c.foreground }]}>Luyện tập nền tảng</Text>
-        <Text style={[styles.branchSub, { color: c.mutedForeground }]}>Học theo tốc độ riêng. Từ vựng và ngữ pháp — gốc rễ của mọi kỹ năng VSTEP.</Text>
+        <Text style={[styles.branchSub, { color: c.subtle }]}>Học theo tốc độ riêng. Từ vựng và ngữ pháp — gốc rễ của mọi kỹ năng VSTEP.</Text>
         <View style={styles.featureList}>
           <FeatureRow icon="book" text="Từ vựng theo chủ đề với hệ thống SRS" />
           <FeatureRow icon="graduation" text="Ngữ pháp có cấu trúc, từ cơ bản đến nâng cao" />
@@ -48,13 +48,13 @@ export default function PracticeHubScreen() {
       {/* Branch 2: Skills */}
       {/* Skills section — navigate to unified hub */}
       <HapticTouchable
-        style={[styles.branchCard, { backgroundColor: c.card, borderColor: c.border }]}
+        style={[styles.branchCard, { backgroundColor: c.surface, borderColor: c.border }]}
         onPress={() => router.push("/(app)/practice/skills")}
         activeOpacity={0.7}
       >
         <Ionicons name="fitness" size={32} color={c.skillListening} />
         <Text style={[styles.branchTitle, { color: c.foreground }]}>Luyện tập 4 kỹ năng</Text>
-        <Text style={[styles.branchSub, { color: c.mutedForeground }]}>Luyện đủ bốn kỹ năng VSTEP. Bật hỗ trợ khi cần, tắt khi muốn tự thử sức.</Text>
+        <Text style={[styles.branchSub, { color: c.subtle }]}>Luyện đủ bốn kỹ năng VSTEP. Bật hỗ trợ khi cần, tắt khi muốn tự thử sức.</Text>
         <View style={styles.featureList}>
           <FeatureRow icon="lightning" text="Bật/tắt chế độ hỗ trợ linh hoạt" />
           <FeatureRow icon="star" text="Chấm điểm chi tiết, giải thích từng câu" />
@@ -86,7 +86,7 @@ function FeatureRow({ icon, text }: { icon: any; text: string }) {
   return (
     <View style={styles.featureRow}>
       <GameIcon name={icon} size={18} />
-      <Text style={[styles.featureText, { color: c.mutedForeground }]}>{text}</Text>
+      <Text style={[styles.featureText, { color: c.subtle }]}>{text}</Text>
     </View>
   );
 }
@@ -94,9 +94,9 @@ function FeatureRow({ icon, text }: { icon: any; text: string }) {
 function StatPill({ value, label }: { value: string; label: string }) {
   const c = useThemeColors();
   return (
-    <View style={[styles.statPill, { backgroundColor: c.muted }]}>
+    <View style={[styles.statPill, { backgroundColor: c.background }]}>
       <Text style={[styles.statPillValue, { color: c.foreground }]}>{value}</Text>
-      <Text style={[styles.statPillLabel, { color: c.mutedForeground }]}>{label}</Text>
+      <Text style={[styles.statPillLabel, { color: c.subtle }]}>{label}</Text>
     </View>
   );
 }

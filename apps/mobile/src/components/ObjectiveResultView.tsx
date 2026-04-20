@@ -43,11 +43,11 @@ export function ObjectiveResultView({ items, userAnswers, correctAnswers }: Prop
                 </Text>
               </View>
             ) : (
-              <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs, fontStyle: "italic" }}>—</Text>
+              <Text style={{ color: c.subtle, fontSize: fontSize.xs, fontStyle: "italic" }}>—</Text>
             )}
             {!item.isCorrect && item.correctAnswer && (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
-                <Ionicons name="arrow-forward" size={10} color={c.mutedForeground} />
+                <Ionicons name="arrow-forward" size={10} color={c.subtle} />
                 <View style={[styles.answerBadge, { backgroundColor: "#10b98115" }]}>
                   <Text style={{ color: "#10b981", fontWeight: "700", fontSize: fontSize.xs }}>
                     {item.correctAnswer}

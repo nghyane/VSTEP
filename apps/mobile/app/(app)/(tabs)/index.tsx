@@ -50,14 +50,14 @@ export default function OverviewScreen() {
             <Text style={[s.coinBadgeText, { color: c.coinDark }]}>{coins}</Text>
           </HapticTouchable>
           <NotificationButton />
-          <HapticTouchable style={[s.topBarBtn, { backgroundColor: c.muted }]} onPress={() => router.push("/(app)/onboarding")}>
-            <Ionicons name="settings-outline" size={18} color={c.mutedForeground} />
+          <HapticTouchable style={[s.topBarBtn, { backgroundColor: c.background }]} onPress={() => router.push("/(app)/onboarding")}>
+            <Ionicons name="settings-outline" size={18} color={c.subtle} />
           </HapticTouchable>
         </View>
       </View>
 
       {/* ── Profile Banner ── */}
-      <LinearGradient colors={["#2563EB", "#3B82F6"]} style={s.banner}>
+      <LinearGradient colors={["#58CC02", "#79D634"]} style={s.banner}>
         <View style={s.decoCircle1} />
         <View style={s.decoCircle2} />
         <View style={s.bannerRow}>
@@ -125,7 +125,7 @@ function OverviewTab({ stats }: { stats: typeof MOCK_OVERVIEW_STATS }) {
       {/* Stat Grid */}
       <View style={s.statGrid}>
         <StatCard icon="scale-outline" label="Band còn thiếu" value={stats.avgScore > 0 ? `+${stats.bandGap.toFixed(1)}` : "—"} color={c.primary} />
-        <StatCard icon={stats.trend === "up" ? "trending-up-outline" : stats.trend === "down" ? "trending-down-outline" : "swap-horizontal-outline"} label="Xu hướng" value={trendLabel[stats.trend] ?? "—"} color={trendColor[stats.trend] ?? c.mutedForeground} />
+        <StatCard icon={stats.trend === "up" ? "trending-up-outline" : stats.trend === "down" ? "trending-down-outline" : "swap-horizontal-outline"} label="Xu hướng" value={trendLabel[stats.trend] ?? "—"} color={trendColor[stats.trend] ?? c.subtle} />
         <StatCard icon="checkmark-done-outline" label="Tổng bài test" value={String(stats.totalTests)} color={c.success} />
         <StatCard icon="alert-circle-outline" label="Kỹ năng yếu" value={stats.weakestSkill ? weakLabel[stats.weakestSkill] ?? "—" : "—"} color={c.foreground} />
       </View>
@@ -151,10 +151,10 @@ function OverviewTab({ stats }: { stats: typeof MOCK_OVERVIEW_STATS }) {
             const skColor = c[`skill${sk.charAt(0).toUpperCase() + sk.slice(1)}` as keyof typeof c] ?? c.primary;
             return (
               <View key={sk} style={s.doughnutItem}>
-                <View style={[s.doughnutBar, { backgroundColor: c.muted }]}>
+                <View style={[s.doughnutBar, { backgroundColor: c.background }]}>
                   <View style={[s.doughnutFill, { backgroundColor: skColor, height: `${Math.max(pct, 5)}%` }]} />
                 </View>
-                <Text style={[s.doughnutLabel, { color: c.mutedForeground }]}>{SKILL_LABELS[sk]}</Text>
+                <Text style={[s.doughnutLabel, { color: c.subtle }]}>{SKILL_LABELS[sk]}</Text>
                 <Text style={[s.doughnutPct, { color: skColor }]}>{pct}%</Text>
               </View>
             );
@@ -173,7 +173,7 @@ function StatCard({ icon, label, value, color }: { icon: string; label: string; 
   return (
     <View style={[s.statCard, { }]}>
       <Ionicons name={icon as any} size={22} color={color} />
-      <Text style={[s.statLabel, { color: c.mutedForeground }]}>{label}</Text>
+      <Text style={[s.statLabel, { color: c.subtle }]}>{label}</Text>
       <Text style={[s.statValue, { color }]}>{value}</Text>
     </View>
   );
@@ -212,12 +212,12 @@ function ExamCountdown({ daysLeft }: { daysLeft: number }) {
       <View style={s.countdownRow}>
         {[{ v: pad(time.d), l: "ngày" }, { v: pad(time.h), l: "giờ" }, { v: pad(time.m), l: "phút" }, { v: pad(time.sec), l: "giây" }].map((b, i) => (
           <View key={b.l} style={s.countdownBlockWrap}>
-            {i > 0 && <Text style={[s.countdownColon, { color: c.mutedForeground }]}>:</Text>}
+            {i > 0 && <Text style={[s.countdownColon, { color: c.subtle }]}>:</Text>}
             <View style={s.countdownBlockInner}>
               <View style={[s.countdownBlock, { backgroundColor: c.primary }]}>
                 <Text style={s.countdownNum}>{b.v}</Text>
               </View>
-              <Text style={[s.countdownLabel, { color: c.mutedForeground }]}>{b.l}</Text>
+              <Text style={[s.countdownLabel, { color: c.subtle }]}>{b.l}</Text>
             </View>
           </View>
         ))}
@@ -244,13 +244,13 @@ function PracticeTrackTab() {
             const score = data.spider[sk]?.current ?? 0;
             const color = useSkillColor(sk);
             return (
-              <View key={sk} style={[s.scoreCard, { borderColor: c.border, backgroundColor: c.card }]}>
+              <View key={sk} style={[s.scoreCard, { borderColor: c.border, backgroundColor: c.surface }]}>
                 <View style={s.scoreCardHeader}>
-                  <Text style={[s.scoreCardLabel, { color: c.mutedForeground }]}>{SKILL_LABELS[sk]}</Text>
+                  <Text style={[s.scoreCardLabel, { color: c.subtle }]}>{SKILL_LABELS[sk]}</Text>
                   <SkillIcon skill={sk} size={16} />
                 </View>
                 <Text style={[s.scoreCardValue, { color: c.foreground }]}>{score > 0 ? score.toFixed(1) : "—.—"}</Text>
-                <Text style={[s.scoreCardMeta, { color: c.mutedForeground }]}>{info?.attemptCount ?? 0} bài test</Text>
+                <Text style={[s.scoreCardMeta, { color: c.subtle }]}>{info?.attemptCount ?? 0} bài test</Text>
               </View>
             );
           })}
@@ -261,7 +261,7 @@ function PracticeTrackTab() {
       <View style={[s.card, { }]}>
         <Text style={[s.cardTitle, { color: c.foreground }]}>Lịch sử Test Practice</Text>
         {data.testSessions.length === 0 ? (
-          <Text style={[s.emptyText, { color: c.mutedForeground }]}>Chưa có lịch sử test</Text>
+          <Text style={[s.emptyText, { color: c.subtle }]}>Chưa có lịch sử test</Text>
         ) : (
           <View style={{ gap: spacing.sm }}>
             {data.testSessions.map((sess) => {
@@ -276,7 +276,7 @@ function PracticeTrackTab() {
               const dateStr = new Date(sess.completedAt).toLocaleDateString("vi-VN", { day: "numeric", month: "short" });
 
               return (
-                <View key={sess.id} style={[s.historyRow, { borderColor: c.border, backgroundColor: c.card }]}>
+                <View key={sess.id} style={[s.historyRow, { borderColor: c.border, backgroundColor: c.surface }]}>
                   <View style={[s.historyScore, { backgroundColor: bestColor + "20" }]}>
                     <Text style={[s.historyScoreText, { color: bestColor }]}>{best?.score.toFixed(1) ?? "—"}</Text>
                   </View>
@@ -284,7 +284,7 @@ function PracticeTrackTab() {
                     {best && <Text style={[s.historySkill, { color: bestColor }]}>{SKILL_LABELS[best.skill]}</Text>}
                     <Text style={[s.historyId, { color: c.foreground }]}>Bài test #{sess.examId.slice(-6).toUpperCase()}</Text>
                   </View>
-                  <Text style={[s.historyDate, { color: c.mutedForeground }]}>{dateStr}</Text>
+                  <Text style={[s.historyDate, { color: c.subtle }]}>{dateStr}</Text>
                 </View>
               );
             })}

@@ -24,8 +24,8 @@ export function NotificationButton() {
 
   return (
     <>
-      <HapticTouchable style={[styles.btn, { backgroundColor: c.muted }]} onPress={handleOpen}>
-        <Ionicons name={unread > 0 ? "notifications" : "notifications-outline"} size={18} color={unread > 0 ? c.primary : c.mutedForeground} />
+      <HapticTouchable style={[styles.btn, { backgroundColor: c.background }]} onPress={handleOpen}>
+        <Ionicons name={unread > 0 ? "notifications" : "notifications-outline"} size={18} color={unread > 0 ? c.primary : c.subtle} />
         {unread > 0 && (
           <View style={[styles.badge, { backgroundColor: c.destructive }]}>
             <Text style={styles.badgeText}>{unread > 9 ? "9+" : unread}</Text>
@@ -56,9 +56,9 @@ function NotificationSheet({ visible, onClose }: { visible: boolean; onClose: ()
 
         {notifications.length === 0 ? (
           <View style={styles.empty}>
-            <Ionicons name="sparkles-outline" size={32} color={c.mutedForeground + "60"} />
+            <Ionicons name="sparkles-outline" size={32} color={c.subtle + "60"} />
             <Text style={[styles.emptyTitle, { color: c.foreground }]}>Chưa có thông báo nào</Text>
-            <Text style={[styles.emptyBody, { color: c.mutedForeground }]}>Hoàn thành bài thi để nhận thông báo streak và thưởng xu.</Text>
+            <Text style={[styles.emptyBody, { color: c.subtle }]}>Hoàn thành bài thi để nhận thông báo streak và thưởng xu.</Text>
           </View>
         ) : (
           <FlatList
@@ -92,8 +92,8 @@ function NotificationRow({ notification }: { notification: AppNotification }) {
       </View>
       <View style={{ flex: 1 }}>
         <Text style={[styles.rowTitle, { color: c.foreground }]}>{notification.title}</Text>
-        {notification.body && <Text style={[styles.rowBody, { color: c.mutedForeground }]}>{notification.body}</Text>}
-        <Text style={[styles.rowTime, { color: c.mutedForeground }]}>{formatRelative(notification.createdAt)}</Text>
+        {notification.body && <Text style={[styles.rowBody, { color: c.subtle }]}>{notification.body}</Text>}
+        <Text style={[styles.rowTime, { color: c.subtle }]}>{formatRelative(notification.createdAt)}</Text>
       </View>
       {isUnread && <View style={[styles.dot, { backgroundColor: c.primary }]} />}
     </View>

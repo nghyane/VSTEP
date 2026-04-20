@@ -15,34 +15,34 @@ export default function FoundationHubScreen() {
     <ScreenWrapper>
       <ScreenHeader title="Luyện tập nền tảng" />
       <View style={styles.content}>
-        <Text style={[styles.desc, { color: c.mutedForeground }]}>
+        <Text style={[styles.desc, { color: c.subtle }]}>
           Học từ vựng và ngữ pháp có hệ thống — nền móng cho cả bốn kỹ năng VSTEP.
         </Text>
 
         <HapticTouchable
-          style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+          style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}
           onPress={() => router.push("/(app)/vocabulary")}
           activeOpacity={0.7}
         >
           <Ionicons name="language" size={32} color={c.primary} />
           <View style={{ flex: 1 }}>
             <Text style={[styles.cardTitle, { color: c.foreground }]}>Luyện từ vựng</Text>
-            <Text style={[styles.cardDesc, { color: c.mutedForeground }]}>Học từ theo chủ đề với hệ thống SRS</Text>
+            <Text style={[styles.cardDesc, { color: c.subtle }]}>Học từ theo chủ đề với hệ thống SRS</Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
+          <Ionicons name="chevron-forward" size={20} color={c.subtle} />
         </HapticTouchable>
 
         <HapticTouchable
-          style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+          style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}
           onPress={() => router.push("/(app)/practice/grammar")}
           activeOpacity={0.7}
         >
           <Ionicons name="book" size={32} color={c.primary} />
           <View style={{ flex: 1 }}>
             <Text style={[styles.cardTitle, { color: c.foreground }]}>Luyện ngữ pháp</Text>
-            <Text style={[styles.cardDesc, { color: c.mutedForeground }]}>Lý thuyết + bài tập trắc nghiệm</Text>
+            <Text style={[styles.cardDesc, { color: c.subtle }]}>Lý thuyết + bài tập trắc nghiệm</Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color={c.mutedForeground} />
+          <Ionicons name="chevron-forward" size={20} color={c.subtle} />
         </HapticTouchable>
       </View>
     </ScreenWrapper>

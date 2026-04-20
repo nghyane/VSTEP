@@ -1,57 +1,51 @@
-// Design tokens aligned with frontend-v2 RFC 0002 (Duolingo Gamification)
-// oklch values from src/styles.css converted to hex for React Native
-// 3D Depth pattern: border-top lighter, border-bottom darker
+// Design tokens — aligned with frontend-v3 styles.css @theme
+// Primary = Duolingo green (#58cc02), not blue
 
 export const colors = {
   light: {
-    // Primary — VSTEP blue (oklch 0.55 0.2 258)
-    primary: "#2563EB",
-    primaryForeground: "#FAFAFA",
-
-    // Base
-    background: "#FAFBFC",
-    foreground: "#1A1A2E",
-    card: "#FFFFFF",
-    cardForeground: "#1A1A2E",
-
-    // Muted
-    muted: "#F3F4F6",
-    mutedForeground: "#6B7280",
-
-    // Secondary
-    secondary: "#EEF2FF",
-    secondaryForeground: "#3730A3",
-
-    // Accent
-    accent: "#F3F4F6",
-    accentForeground: "#1A1A2E",
+    // Primary — Duolingo green
+    primary: "#58CC02",
+    primaryForeground: "#FFFFFF",
+    primaryDark: "#478700",
+    primaryLight: "#79D634",
+    primaryTint: "#E6F8D4",
 
     // Semantic
-    destructive: "#E53935",
-    destructiveForeground: "#FAFAFA",
-    success: "#1DB954",
-    successForeground: "#FAFAFA",
-    warning: "#F5A623",
-    warningForeground: "#1A1A2E",
+    destructive: "#EA4335",
+    destructiveTint: "#FFE6E4",
+    warning: "#FF9B00",
+    warningTint: "#FFF0DC",
+    success: "#58CC02",
+    info: "#1CB0F6",
+    infoTint: "#DDF4FF",
 
-    // Border
-    border: "#E5E7EB",
-    input: "#E5E7EB",
-    ring: "#2563EB",
+    // Neutrals
+    foreground: "#1E1E28",
+    muted: "#4B4B5A",
+    subtle: "#8C8C9B",
+    placeholder: "#AFAFAF",
+    border: "#E5E5E5",
+    surface: "#FFFFFF",
+    background: "#F7F7FA",
 
-    // 3D Depth borders (Duolingo signature)
-    depthBorderLight: "#D4D6DB",
-    depthBorderDark: "#ABABBA",
+    // Domain — skills
+    skillListening: "#1CB0F6",
+    skillReading: "#7850C8",
+    skillWriting: "#58CC02",
+    skillSpeaking: "#FFC800",
 
-    // Skill colors (oklch 0.65 0.18 hue — Duolingo-bright)
-    skillListening: "#4F8EF7",
-    skillReading: "#22B573",
-    skillWriting: "#9B5DE5",
-    skillSpeaking: "#E5A020",
+    // Domain — streak
+    streak: "#FF7800",
+    streakTint: "#FFF0DC",
 
-    // Coin (amber exception)
-    coin: "#F59E0B",
-    coinDark: "#D97706",
+    // Domain — coin
+    coin: "#FFC800",
+    coinDark: "#DCAA00",
+    coinTint: "#FFF5D2",
+
+    // Depth borders (card: border-2 border-b-4 with border color)
+    depthBorderLight: "#E5E5E5",
+    depthBorderDark: "#CCCCCC",
   },
 } as const;
 
@@ -69,6 +63,9 @@ export const spacing = {
 } as const;
 
 export const radius = {
+  button: 13,
+  card: 16,
+  banner: 24,
   sm: 8,
   md: 12,
   lg: 16,

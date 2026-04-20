@@ -68,7 +68,7 @@ export default function GrammarScreen() {
     <View style={[styles.root, { backgroundColor: c.background }]}>
       <ScreenHeader title="Luyện ngữ pháp" />
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={[styles.desc, { color: c.mutedForeground }]}>
+        <Text style={[styles.desc, { color: c.subtle }]}>
           Học lý thuyết, luyện bài tập đa dạng, và nắm mẹo dùng ngữ pháp đúng trong từng phần thi VSTEP.
         </Text>
         <SegmentedTabs tabs={VIEWS} activeKey={view} onTabChange={(k) => setView(k as ViewMode)} />
@@ -97,7 +97,7 @@ function LevelView({ onPress }: { onPress: (id: string) => void }) {
           <View key={level}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: c.foreground }]}>{LEVEL_LABELS[level]}</Text>
-              <Text style={[styles.sectionCount, { color: c.mutedForeground }]}>{points.length} điểm ngữ pháp</Text>
+              <Text style={[styles.sectionCount, { color: c.subtle }]}>{points.length} điểm ngữ pháp</Text>
             </View>
             <PointGrid points={points} onPress={onPress} />
           </View>
@@ -119,7 +119,7 @@ function TaskView({ onPress }: { onPress: (id: string) => void }) {
           <View key={task}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: c.foreground }]}>{TASK_LABELS[task]}</Text>
-              <Text style={[styles.sectionCount, { color: c.mutedForeground }]}>{points.length} điểm ngữ pháp</Text>
+              <Text style={[styles.sectionCount, { color: c.subtle }]}>{points.length} điểm ngữ pháp</Text>
             </View>
             <PointGrid points={points} onPress={onPress} />
           </View>
@@ -153,23 +153,23 @@ function PointCard({ point, onPress, showMistakes }: { point: GrammarPointMock; 
   const info = MASTERY_INFO[point.mastery];
 
   return (
-    <HapticTouchable style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]} onPress={onPress} activeOpacity={0.7}>
+    <HapticTouchable style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.cardTop}>
         <View style={{ flex: 1 }}>
           <Text style={[styles.cardName, { color: c.foreground }]} numberOfLines={1}>{point.name}</Text>
-          <Text style={[styles.cardVn, { color: c.mutedForeground }]}>{point.vietnameseName}</Text>
+          <Text style={[styles.cardVn, { color: c.subtle }]}>{point.vietnameseName}</Text>
         </View>
         <View style={styles.masteryBadge}>
           <Ionicons name={info.icon} size={14} color={info.color} />
           <Text style={[styles.masteryLabel, { color: info.color }]}>{info.label}</Text>
         </View>
       </View>
-      <Text style={[styles.cardSummary, { color: c.mutedForeground }]} numberOfLines={2}>{point.summary}</Text>
+      <Text style={[styles.cardSummary, { color: c.subtle }]} numberOfLines={2}>{point.summary}</Text>
       <View style={styles.cardBottom}>
-        <Text style={[styles.cardMeta, { color: c.mutedForeground }]}>
+        <Text style={[styles.cardMeta, { color: c.subtle }]}>
           {showMistakes ? `${point.commonMistakeCount} lỗi thường gặp` : `${point.exerciseCount} bài tập`}
         </Text>
-        {point.accuracy ? <Text style={[styles.cardMeta, { color: c.mutedForeground }]}>{point.accuracy}</Text> : null}
+        {point.accuracy ? <Text style={[styles.cardMeta, { color: c.subtle }]}>{point.accuracy}</Text> : null}
       </View>
     </HapticTouchable>
   );

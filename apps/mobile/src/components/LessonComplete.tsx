@@ -24,11 +24,11 @@ export function LessonComplete({ score, total, durationSeconds, onNext, onReview
     <View style={styles.container}>
       <GameIcon name="trophy" size={48} />
       <Text style={[styles.title, { color: c.foreground }]}>Hoàn thành!</Text>
-      <Text style={[styles.subtitle, { color: c.mutedForeground }]}>{getEncouragement(pct)}</Text>
+      <Text style={[styles.subtitle, { color: c.subtle }]}>{getEncouragement(pct)}</Text>
 
       <View style={styles.statsRow}>
         <StatCard label="Điểm" value={`${score}/${total}`} color={c.primary} />
-        <StatCard label="Thời gian" value={timeStr} color={c.mutedForeground} />
+        <StatCard label="Thời gian" value={timeStr} color={c.subtle} />
         <StatCard label="Chính xác" value={`${pct}%`} color={pct >= 70 ? c.success : c.warning} />
       </View>
 
@@ -45,7 +45,7 @@ function StatCard({ label, value, color }: { label: string; value: string; color
   return (
     <View style={[styles.stat, { borderColor: color + "25", borderBottomColor: color + "66" }]}>
       <Text style={[styles.statValue, { color }]}>{value}</Text>
-      <Text style={[styles.statLabel, { color: c.mutedForeground }]}>{label}</Text>
+      <Text style={[styles.statLabel, { color: c.subtle }]}>{label}</Text>
     </View>
   );
 }

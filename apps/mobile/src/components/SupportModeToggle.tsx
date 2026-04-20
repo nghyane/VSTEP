@@ -23,11 +23,11 @@ export function SupportModeToggle({ enabled, onToggle }: Props) {
       onPress={() => onToggle(!enabled)}
       activeOpacity={0.7}
     >
-      <Ionicons name="bulb-outline" size={14} color={enabled ? c.primary : c.mutedForeground} />
+      <Ionicons name="bulb-outline" size={14} color={enabled ? c.primary : c.subtle} />
       <Text
         style={[
           styles.label,
-          { color: enabled ? c.primary : c.mutedForeground },
+          { color: enabled ? c.primary : c.subtle },
         ]}
       >
         {enabled ? "Hỗ trợ: Bật" : "Hỗ trợ: Tắt"}

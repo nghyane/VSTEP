@@ -35,7 +35,7 @@ export default function CoursesScreen() {
         )}
 
         <Text style={[styles.section, { color: c.foreground }]}>Đang tuyển sinh</Text>
-        {exploreCourses.length === 0 && <Text style={[styles.empty, { color: c.mutedForeground }]}>Không có khóa nào đang mở.</Text>}
+        {exploreCourses.length === 0 && <Text style={[styles.empty, { color: c.subtle }]}>Không có khóa nào đang mở.</Text>}
         {exploreCourses.map((co) => <CourseCard key={co.id} course={co} />)}
       </ScrollView>
     </View>
@@ -63,8 +63,8 @@ function CourseCard({ course }: { course: Course }) {
       </View>
 
       <Text style={[styles.cardTitle, { color: c.foreground }]}>{course.title}</Text>
-      <Text style={[styles.cardTarget, { color: c.mutedForeground }]}>{course.targetExam}</Text>
-      <Text style={[styles.cardDesc, { color: c.mutedForeground }]}>{course.description}</Text>
+      <Text style={[styles.cardTarget, { color: c.subtle }]}>{course.targetExam}</Text>
+      <Text style={[styles.cardDesc, { color: c.subtle }]}>{course.description}</Text>
 
       {/* Highlights */}
       {course.highlights.map((h) => (
@@ -79,7 +79,7 @@ function CourseCard({ course }: { course: Course }) {
         <GameIcon name="graduation" size={20} />
         <View>
           <Text style={[styles.instrName, { color: c.foreground }]}>{course.instructorName}</Text>
-          <Text style={[styles.instrTitle, { color: c.mutedForeground }]}>{course.instructorTitle}</Text>
+          <Text style={[styles.instrTitle, { color: c.subtle }]}>{course.instructorTitle}</Text>
         </View>
       </View>
 
@@ -88,7 +88,7 @@ function CourseCard({ course }: { course: Course }) {
         <View>
           <View style={styles.priceInline}>
             <Text style={[styles.price, { color: c.destructive }]}>{formatVnd(course.priceVnd)}</Text>
-            {disc > 0 && <Text style={[styles.origPrice, { color: c.mutedForeground }]}>{formatVnd(course.originalPriceVnd)}</Text>}
+            {disc > 0 && <Text style={[styles.origPrice, { color: c.subtle }]}>{formatVnd(course.originalPriceVnd)}</Text>}
           </View>
           {disc > 0 && <Text style={[styles.discount, { color: c.success }]}>Giảm {disc}%</Text>}
           <View style={styles.bonusRow}>
@@ -97,11 +97,11 @@ function CourseCard({ course }: { course: Course }) {
           </View>
         </View>
         <View style={{ alignItems: "flex-end" }}>
-          <Text style={[styles.slots, { color: full ? c.destructive : c.mutedForeground }]}>
+          <Text style={[styles.slots, { color: full ? c.destructive : c.subtle }]}>
             {full ? "Hết chỗ" : `Còn ${course.maxSlots - course.soldSlots}/${course.maxSlots} chỗ`}
           </Text>
           {!full && !ended && <DepthButton variant="primary" size="sm" onPress={handleEnroll}>Đăng ký</DepthButton>}
-          {ended && <Text style={[styles.endedBadge, { color: c.mutedForeground }]}>Đã kết thúc</Text>}
+          {ended && <Text style={[styles.endedBadge, { color: c.subtle }]}>Đã kết thúc</Text>}
         </View>
       </View>
     </DepthCard>
@@ -117,19 +117,19 @@ function MyCourseCard({ course }: { course: Course }) {
       <View style={styles.myHeader}>
         <Text style={[styles.cardTitle, { color: c.foreground, flex: 1 }]}>{course.title}</Text>
         {ended ? (
-          <View style={[styles.statusBadge, { backgroundColor: c.muted }]}><Text style={[styles.statusText, { color: c.mutedForeground }]}>Đã kết thúc</Text></View>
+          <View style={[styles.statusBadge, { backgroundColor: c.background }]}><Text style={[styles.statusText, { color: c.subtle }]}>Đã kết thúc</Text></View>
         ) : (
           <View style={[styles.statusBadge, { backgroundColor: c.success + "15" }]}><Text style={[styles.statusText, { color: c.success }]}>Đang học</Text></View>
         )}
       </View>
-      <Text style={[styles.cardTarget, { color: c.mutedForeground }]}>{course.targetExam}</Text>
+      <Text style={[styles.cardTarget, { color: c.subtle }]}>{course.targetExam}</Text>
 
       {/* Schedule preview */}
       <Text style={[styles.schedLabel, { color: c.foreground }]}>Lịch học</Text>
       {course.sessions.slice(0, 3).map((s) => (
         <View key={s.id} style={styles.schedRow}>
           <Text style={[styles.schedNum, { color: c.primary }]}>Buổi {s.sessionNumber}</Text>
-          <Text style={[styles.schedDate, { color: c.mutedForeground }]}>{s.date} · {s.startTime}–{s.endTime}</Text>
+          <Text style={[styles.schedDate, { color: c.subtle }]}>{s.date} · {s.startTime}–{s.endTime}</Text>
           <Text style={[styles.schedTopic, { color: c.foreground }]}>{s.topic}</Text>
         </View>
       ))}

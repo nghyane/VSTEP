@@ -51,16 +51,16 @@ export default function OnboardingScreen() {
     <View style={[s.root, { backgroundColor: c.background, paddingTop: insets.top }]}>
       {/* Header */}
       <View style={s.header}>
-        <Text style={[s.stepCount, { color: c.mutedForeground }]}>Bước {step + 1} / {total}</Text>
+        <Text style={[s.stepCount, { color: c.subtle }]}>Bước {step + 1} / {total}</Text>
         <HapticTouchable onPress={() => router.back()}>
-          <Ionicons name="close" size={20} color={c.mutedForeground} />
+          <Ionicons name="close" size={20} color={c.subtle} />
         </HapticTouchable>
       </View>
       <Text style={[s.stepTitle, { color: c.foreground }]}>{STEPS[step].label}</Text>
-      <Text style={[s.stepDesc, { color: c.mutedForeground }]}>{STEPS[step].description}</Text>
+      <Text style={[s.stepDesc, { color: c.subtle }]}>{STEPS[step].description}</Text>
 
       {/* Progress bar */}
-      <View style={[s.progressTrack, { backgroundColor: c.muted }]}>
+      <View style={[s.progressTrack, { backgroundColor: c.background }]}>
         <View style={[s.progressFill, { backgroundColor: c.primary, width: `${((step + 1) / total) * 100}%` }]} />
       </View>
 
@@ -76,7 +76,7 @@ export default function OnboardingScreen() {
       {/* Footer nav */}
       <View style={[s.footer, { borderTopColor: c.border, paddingBottom: insets.bottom + spacing.base }]}>
         <HapticTouchable onPress={() => setStep((s) => Math.max(0, s - 1))} disabled={!canBack} style={{ opacity: canBack ? 1 : 0.4 }}>
-          <Text style={[s.backBtn, { color: c.mutedForeground }]}>← Quay lại</Text>
+          <Text style={[s.backBtn, { color: c.subtle }]}>← Quay lại</Text>
         </HapticTouchable>
 
         {/* Dots */}
@@ -123,7 +123,7 @@ function LevelStep({ value, onChange }: { value: Level; onChange: (v: Level) => 
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[s.optionTitle, { color: c.foreground }]}>{lv.title}</Text>
-            <Text style={[s.optionDesc, { color: c.mutedForeground }]}>{lv.desc}</Text>
+            <Text style={[s.optionDesc, { color: c.subtle }]}>{lv.desc}</Text>
           </View>
         </HapticTouchable>
       ))}
@@ -171,7 +171,7 @@ function GoalBandStep({ value, entry, onChange }: { value: Level; entry: Level; 
   return (
     <View style={{ gap: spacing.sm }}>
       <Text style={[s.questionText, { color: c.foreground }]}>Mục tiêu band VSTEP của bạn?</Text>
-      <Text style={[s.hintText, { color: c.mutedForeground }]}>Trình độ hiện tại: {entry}</Text>
+      <Text style={[s.hintText, { color: c.subtle }]}>Trình độ hiện tại: {entry}</Text>
       {BANDS.map((band) => (
         <HapticTouchable key={band} style={[s.optionCard, { borderColor: value === band ? c.primary : c.border, backgroundColor: value === band ? c.primary + "0D" : "transparent" }]} onPress={() => onChange(band)}>
           <View style={[s.radio, value === band ? { borderColor: c.primary, backgroundColor: c.primary } : { borderColor: c.border }]}>
@@ -207,14 +207,14 @@ function MotivationStep({ data, onChange }: { data: OnboardingData; onChange: (p
     <View style={{ gap: spacing.xl }}>
       <View style={{ gap: spacing.sm }}>
         <Text style={[s.questionText, { color: c.foreground }]}>Kỹ năng nào bạn cần cải thiện?</Text>
-        <Text style={[s.hintText, { color: c.mutedForeground }]}>Có thể chọn nhiều</Text>
+        <Text style={[s.hintText, { color: c.subtle }]}>Có thể chọn nhiều</Text>
         <View style={s.chipGrid}>
           {WEAKNESSES.map((w) => {
             const sel = data.weaknesses.includes(w.key);
             return (
               <HapticTouchable key={w.key} style={[s.chipBtn, { borderColor: sel ? c.primary : c.border, backgroundColor: sel ? c.primary + "0D" : "transparent" }]} onPress={() => onChange({ weaknesses: sel ? data.weaknesses.filter((k) => k !== w.key) : [...data.weaknesses, w.key] })}>
-                <Ionicons name={w.icon as any} size={20} color={sel ? c.primary : c.mutedForeground} />
-                <Text style={[s.chipLabel, { color: sel ? c.primary : c.mutedForeground }]}>{w.label}</Text>
+                <Ionicons name={w.icon as any} size={20} color={sel ? c.primary : c.subtle} />
+                <Text style={[s.chipLabel, { color: sel ? c.primary : c.subtle }]}>{w.label}</Text>
               </HapticTouchable>
             );
           })}
@@ -227,7 +227,7 @@ function MotivationStep({ data, onChange }: { data: OnboardingData; onChange: (p
             const sel = data.motivation === m.key;
             return (
               <HapticTouchable key={m.key} style={[s.chipBtn, { borderColor: sel ? c.primary : c.border, backgroundColor: sel ? c.primary + "0D" : "transparent" }]} onPress={() => onChange({ motivation: sel ? null : m.key })}>
-                <Text style={[s.chipLabel, { color: sel ? c.primary : c.mutedForeground }]}>{m.label}</Text>
+                <Text style={[s.chipLabel, { color: sel ? c.primary : c.subtle }]}>{m.label}</Text>
               </HapticTouchable>
             );
           })}
@@ -245,7 +245,7 @@ function ConfirmationStep({ data }: { data: OnboardingData }) {
     <View style={{ gap: spacing.base, alignItems: "center" }}>
       <Ionicons name="rocket" size={48} color={c.primary} />
       <Text style={[s.confirmTitle, { color: c.foreground }]}>Sẵn sàng chinh phục!</Text>
-      <View style={[s.confirmCard, { backgroundColor: c.muted }]}>
+      <View style={[s.confirmCard, { backgroundColor: c.background }]}>
         <ConfirmRow label="Trình độ" value={data.entryLevel} />
         <ConfirmRow label="Mục tiêu" value={`Band ${data.targetBand}`} />
         <ConfirmRow label="Ngày thi" value={data.examDate ? new Date(data.examDate).toLocaleDateString("vi-VN") : "Chưa xác định"} />
@@ -260,7 +260,7 @@ function ConfirmRow({ label, value }: { label: string; value: string }) {
   const c = useThemeColors();
   return (
     <View style={s.confirmRow}>
-      <Text style={[s.confirmLabel, { color: c.mutedForeground }]}>{label}</Text>
+      <Text style={[s.confirmLabel, { color: c.subtle }]}>{label}</Text>
       <Text style={[s.confirmValue, { color: c.foreground }]}>{value}</Text>
     </View>
   );

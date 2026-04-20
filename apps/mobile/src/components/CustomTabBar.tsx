@@ -49,7 +49,7 @@ export function CustomTabBar({
       style={[
         styles.outer,
         {
-          backgroundColor: c.card,
+          backgroundColor: c.surface,
           borderTopColor: c.border,
           paddingBottom: Math.max(insets.bottom, 8),
         },
@@ -59,7 +59,7 @@ export function CustomTabBar({
         {visibleRoutes.map((route, visIdx) => {
           const { options } = descriptors[route.key];
           const focused = route.key === state.routes[state.index].key;
-          const color = focused ? c.primary : c.mutedForeground;
+          const color = focused ? c.primary : c.subtle;
           const icon = options.tabBarIcon?.({ focused, color, size: 22 });
 
           const label =

@@ -43,7 +43,7 @@ export function WritingAnnotationsView({ annotations }: { annotations: GradingAn
                     <Text style={{ color: config.color, fontSize: 9, fontWeight: "700" }}>{config.label}</Text>
                   </View>
                 </View>
-                {h.note ? <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs }}>{h.note}</Text> : null}
+                {h.note ? <Text style={{ color: c.subtle, fontSize: fontSize.xs }}>{h.note}</Text> : null}
               </View>
             );
           })}
@@ -69,11 +69,11 @@ export function WritingAnnotationsView({ annotations }: { annotations: GradingAn
                 </View>
                 <View style={styles.correctionRow}>
                   <Text style={[styles.originalText, { color: "#ef4444" }]}>{err.original}</Text>
-                  <Ionicons name="arrow-forward" size={12} color={c.mutedForeground} />
+                  <Ionicons name="arrow-forward" size={12} color={c.subtle} />
                   <Text style={{ color: "#10b981", fontWeight: "700", fontSize: fontSize.sm }}>{err.correction}</Text>
                 </View>
                 {err.explanation ? (
-                  <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs }}>{err.explanation}</Text>
+                  <Text style={{ color: c.subtle, fontSize: fontSize.xs }}>{err.explanation}</Text>
                 ) : null}
               </View>
             );
@@ -92,7 +92,7 @@ export function WritingAnnotationsView({ annotations }: { annotations: GradingAn
             <Text style={{ color: "#10b981", fontWeight: "600", fontSize: fontSize.sm }}>{annotations.rewriteSuggestion.correction}</Text>
           </View>
           {annotations.rewriteSuggestion.note ? (
-            <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs }}>{annotations.rewriteSuggestion.note}</Text>
+            <Text style={{ color: c.subtle, fontSize: fontSize.xs }}>{annotations.rewriteSuggestion.note}</Text>
           ) : null}
         </View>
       )}

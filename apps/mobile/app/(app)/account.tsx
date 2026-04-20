@@ -44,7 +44,7 @@ function UpdateInfoSection({ userId, fullName: initName, email: initEmail, color
   }
 
   return (
-    <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+    <View style={[styles.section, { backgroundColor: c.surface, borderColor: c.border }]}>
       <Text style={[styles.sectionTitle, { color: c.foreground }]}>Cập nhật thông tin</Text>
       <View style={styles.field}>
         <Text style={[styles.label, { color: c.foreground }]}>Họ và tên</Text>
@@ -80,7 +80,7 @@ function ChangePasswordSection({ userId, colors: c }: { userId: string; colors: 
   }
 
   return (
-    <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+    <View style={[styles.section, { backgroundColor: c.surface, borderColor: c.border }]}>
       <Text style={[styles.sectionTitle, { color: c.foreground }]}>Đổi mật khẩu</Text>
       <View style={styles.field}>
         <Text style={[styles.label, { color: c.foreground }]}>Mật khẩu hiện tại</Text>

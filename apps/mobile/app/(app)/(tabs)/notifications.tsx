@@ -75,14 +75,14 @@ export default function NotificationsScreen() {
   const renderItem = ({ item }: { item: Notification }) => {
     const isUnread = !item.readAt;
     const iconName = TYPE_ICONS[item.type] ?? "information-circle";
-    const iconColor = TYPE_COLORS[item.type] ?? c.mutedForeground;
+    const iconColor = TYPE_COLORS[item.type] ?? c.subtle;
 
     return (
       <HapticTouchable
         style={[
           styles.card,
           {
-            backgroundColor: isUnread ? c.primary + "08" : c.card,
+            backgroundColor: isUnread ? c.primary + "08" : c.surface,
             borderColor: c.border,
           },
         ]}
@@ -107,13 +107,13 @@ export default function NotificationsScreen() {
           </View>
           {item.body ? (
             <Text
-              style={[styles.cardBody, { color: c.mutedForeground }]}
+              style={[styles.cardBody, { color: c.subtle }]}
               numberOfLines={2}
             >
               {item.body}
             </Text>
           ) : null}
-          <Text style={[styles.cardTime, { color: c.mutedForeground }]}>
+          <Text style={[styles.cardTime, { color: c.subtle }]}>
             {timeAgo(item.createdAt)}
           </Text>
         </View>
@@ -165,12 +165,12 @@ export default function NotificationsScreen() {
             <Ionicons
               name="notifications-off-outline"
               size={64}
-              color={c.mutedForeground}
+              color={c.subtle}
             />
             <Text style={[styles.emptyTitle, { color: c.foreground }]}>
               Chưa có thông báo
             </Text>
-            <Text style={[styles.emptySub, { color: c.mutedForeground }]}>
+            <Text style={[styles.emptySub, { color: c.subtle }]}>
               Thông báo mới sẽ hiển thị ở đây
             </Text>
           </View>

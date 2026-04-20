@@ -55,7 +55,7 @@ export default function PracticeResultScreen() {
     <ScreenWrapper noPadding>
       <BouncyScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Header */}
-        <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
           <View style={styles.headerRow}>
             <SkillIcon skill={data.skill} />
             <View style={{ flex: 1 }}>
@@ -63,9 +63,9 @@ export default function PracticeResultScreen() {
                 {SKILL_LABELS[data.skill]}
               </Text>
             </View>
-            <View style={[styles.statusBadge, { backgroundColor: c.muted }]}>
-              <Ionicons name={status.icon} size={14} color={c.mutedForeground} />
-              <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs, fontWeight: "600" }}>
+            <View style={[styles.statusBadge, { backgroundColor: c.background }]}>
+              <Ionicons name={status.icon} size={14} color={c.subtle} />
+              <Text style={{ color: c.subtle, fontSize: fontSize.xs, fontWeight: "600" }}>
                 {status.label}
               </Text>
             </View>
@@ -73,14 +73,14 @@ export default function PracticeResultScreen() {
         </View>
 
         {/* Score */}
-        <View style={[styles.scoreBox, { backgroundColor: c.muted }]}>
+        <View style={[styles.scoreBox, { backgroundColor: c.background }]}>
           {isGrading && (
             <View style={styles.gradingContainer}>
               <ActivityIndicator size="large" color={c.primary} />
-              <Text style={[styles.gradingText, { color: c.mutedForeground }]}>
+              <Text style={[styles.gradingText, { color: c.subtle }]}>
                 Đang chấm bài...
               </Text>
-              <Text style={[styles.gradingHint, { color: c.mutedForeground }]}>
+              <Text style={[styles.gradingHint, { color: c.subtle }]}>
                 Kết quả sẽ tự động cập nhật
               </Text>
             </View>
@@ -98,13 +98,13 @@ export default function PracticeResultScreen() {
             </>
           )}
           {!isGrading && data.score == null && (
-            <Text style={{ color: c.mutedForeground, fontSize: fontSize.lg }}>Chưa có điểm</Text>
+            <Text style={{ color: c.subtle, fontSize: fontSize.lg }}>Chưa có điểm</Text>
           )}
         </View>
 
         {/* Feedback */}
         {data.feedback && (
-          <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+          <View style={[styles.section, { backgroundColor: c.surface, borderColor: c.border }]}>
             <Text style={[styles.sectionTitle, { color: c.foreground }]}>Nhận xét</Text>
             <Text style={{ color: c.foreground, fontSize: fontSize.sm, lineHeight: 22 }}>
               {data.feedback}
@@ -114,11 +114,11 @@ export default function PracticeResultScreen() {
 
         {/* Result details */}
         {data.result != null && typeof data.result === "object" && Object.keys(data.result as Record<string, unknown>).length > 0 ? (
-          <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+          <View style={[styles.section, { backgroundColor: c.surface, borderColor: c.border }]}>
             <Text style={[styles.sectionTitle, { color: c.foreground }]}>Chi tiết kết quả</Text>
             {Object.entries(data.result as Record<string, unknown>).map(([key, value]) => (
               <View key={key} style={styles.resultRow}>
-                <Text style={[styles.resultKey, { color: c.mutedForeground }]}>{key}</Text>
+                <Text style={[styles.resultKey, { color: c.subtle }]}>{key}</Text>
                 <Text style={[styles.resultValue, { color: c.foreground }]}>
                   {String(value)}
                 </Text>

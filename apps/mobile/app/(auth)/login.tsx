@@ -71,7 +71,7 @@ export default function LoginScreen() {
           <Text style={[styles.heading, { color: c.foreground }]}>
             Tham gia vào VSTEP
           </Text>
-          <Text style={[styles.subtitle, { color: c.mutedForeground }]}>
+          <Text style={[styles.subtitle, { color: c.subtle }]}>
             Nền tảng luyện thi thông minh
           </Text>
         </View>
@@ -80,9 +80,9 @@ export default function LoginScreen() {
           <View style={styles.field}>
             <Text style={[styles.label, { color: c.foreground }]}>Email</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: c.card, borderColor: errors.email ? c.destructive : c.border, color: c.foreground }]}
+              style={[styles.input, { backgroundColor: c.surface, borderColor: errors.email ? c.destructive : c.border, color: c.foreground }]}
               placeholder="Hãy nhập email"
-              placeholderTextColor={c.mutedForeground}
+              placeholderTextColor={c.subtle}
               value={email}
               onChangeText={(t) => { setEmail(t); if (errors.email) setErrors((p) => ({ ...p, email: undefined })); }}
               keyboardType="email-address"
@@ -103,9 +103,9 @@ export default function LoginScreen() {
             </View>
             <View style={styles.passwordContainer}>
               <TextInput
-                style={[styles.passwordInput, { backgroundColor: c.card, borderColor: errors.password ? c.destructive : c.border, color: c.foreground }]}
+                style={[styles.passwordInput, { backgroundColor: c.surface, borderColor: errors.password ? c.destructive : c.border, color: c.foreground }]}
                 placeholder="Hãy nhập mật khẩu"
-                placeholderTextColor={c.mutedForeground}
+                placeholderTextColor={c.subtle}
                 value={password}
                 onChangeText={(t) => { setPassword(t); if (errors.password) setErrors((p) => ({ ...p, password: undefined })); }}
                 secureTextEntry={!showPassword}
@@ -117,7 +117,7 @@ export default function LoginScreen() {
                 <Ionicons
                   name={showPassword ? "eye-off" : "eye"}
                   size={fontSize.xl}
-                  color={c.mutedForeground}
+                  color={c.subtle}
                 />
               </HapticTouchable>
             </View>
@@ -142,14 +142,14 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.footerRow}>
-          <Text style={[styles.footerText, { color: c.mutedForeground }]}>Bạn chưa có tài khoản? </Text>
+          <Text style={[styles.footerText, { color: c.subtle }]}>Bạn chưa có tài khoản? </Text>
           <Link href="/(auth)/register" asChild>
             <HapticTouchable>
               <Text style={[styles.footerLink, { color: c.primary }]}>Đăng ký</Text>
             </HapticTouchable>
           </Link>
         </View>
-        <Text style={[styles.version, { color: c.mutedForeground }]}>Phiên bản 1.0.0</Text>
+        <Text style={[styles.version, { color: c.subtle }]}>Phiên bản 1.0.0</Text>
       </BouncyScrollView>
     </KeyboardAvoidingView>
   );

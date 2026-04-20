@@ -150,18 +150,18 @@ function McqSession({ data, skill }: { data: ExerciseData; skill: Skill }) {
       <ScrollView contentContainerStyle={s.scroll}>
         <View style={s.metaRow}>
           <Text style={[s.skillLabel, { color }]}>{data.description}</Text>
-          <Text style={[s.metaText, { color: c.mutedForeground }]}>{data.items.length} câu · {data.estimatedMinutes} phút</Text>
+          <Text style={[s.metaText, { color: c.subtle }]}>{data.items.length} câu · {data.estimatedMinutes} phút</Text>
         </View>
 
         {/* Progress bar */}
-        <View style={[s.progressTrack, { backgroundColor: c.muted }]}>
+        <View style={[s.progressTrack, { backgroundColor: c.background }]}>
           <View style={[s.progressFill, { backgroundColor: color, width: `${Math.round((Object.keys(answers).length / data.items.length) * 100)}%` }]} />
         </View>
-        <Text style={[s.progressText, { color: c.mutedForeground }]}>{Object.keys(answers).length}/{data.items.length} câu đã trả lời</Text>
+        <Text style={[s.progressText, { color: c.subtle }]}>{Object.keys(answers).length}/{data.items.length} câu đã trả lời</Text>
 
         {/* Audio player for listening */}
         {skill === "listening" && data.transcript && (
-          <View style={[s.audioBox, { backgroundColor: c.card, borderColor: c.border }]}>
+          <View style={[s.audioBox, { backgroundColor: c.surface, borderColor: c.border }]}>
             <View style={s.audioHeader}>
               <Ionicons name="volume-high" size={16} color={c.foreground} />
               <Text style={[s.audioLabel, { color: c.foreground }]}>Nghe bài</Text>
@@ -169,13 +169,13 @@ function McqSession({ data, skill }: { data: ExerciseData; skill: Skill }) {
             <HapticTouchable style={[s.playBtn, { backgroundColor: color }]} onPress={() => tts.playing ? tts.stop() : tts.speak(data.transcript!)}>
               <Ionicons name={tts.playing ? "pause" : "play"} size={20} color="#fff" />
             </HapticTouchable>
-            {supportMode && <Text style={[s.transcriptText, { color: c.mutedForeground }]}>{data.transcript}</Text>}
+            {supportMode && <Text style={[s.transcriptText, { color: c.subtle }]}>{data.transcript}</Text>}
           </View>
         )}
 
         {/* Passage for reading */}
         {skill === "reading" && data.passage && (
-          <View style={[s.passageBox, { backgroundColor: c.card, borderColor: c.border }]}>
+          <View style={[s.passageBox, { backgroundColor: c.surface, borderColor: c.border }]}>
             <Text style={[s.passageText, { color: c.foreground }]}>{data.passage}</Text>
           </View>
         )}
@@ -206,7 +206,7 @@ function McqSession({ data, skill }: { data: ExerciseData; skill: Skill }) {
               return (
                 <HapticTouchable key={opt} style={[s.opt, { borderColor: ok ? c.success : bad ? c.destructive : sel ? color : c.border }]} onPress={() => !submitted && setAnswers((p) => ({ ...p, [item.id]: i }))} disabled={submitted}>
                   <View style={[s.optDot, { backgroundColor: ok ? c.success : bad ? c.destructive : sel ? color : c.muted }]}>
-                    <Text style={{ color: (sel || ok || bad) ? "#fff" : c.mutedForeground, fontSize: 11, fontFamily: fontFamily.bold }}>{String.fromCharCode(65 + i)}</Text>
+                    <Text style={{ color: (sel || ok || bad) ? "#fff" : c.subtle, fontSize: 11, fontFamily: fontFamily.bold }}>{String.fromCharCode(65 + i)}</Text>
                   </View>
                   <Text style={[s.optLabel, { color: c.foreground }]}>{opt}</Text>
                 </HapticTouchable>
@@ -261,8 +261,8 @@ function WritingSession({ data, skill }: { data: ExerciseData; skill: Skill }) {
       <ScreenHeader title={data.title} />
       <ScrollView contentContainerStyle={s.scroll}>
         <Text style={[s.skillLabel, { color }]}>{data.description}</Text>
-        <View style={[s.passageBox, { backgroundColor: c.muted, borderColor: c.border }]}>
-          <Text style={[s.promptLabel, { color: c.mutedForeground }]}>ĐỀ BÀI</Text>
+        <View style={[s.passageBox, { backgroundColor: c.background, borderColor: c.border }]}>
+          <Text style={[s.promptLabel, { color: c.subtle }]}>ĐỀ BÀI</Text>
           <Text style={[s.passageText, { color: c.foreground }]}>{data.prompt}</Text>
         </View>
 
@@ -276,8 +276,8 @@ function WritingSession({ data, skill }: { data: ExerciseData; skill: Skill }) {
               setSupportLevel(keys[(idx + 1) % keys.length]);
             }}
           >
-            <Ionicons name="bulb-outline" size={14} color={supportLevel !== "off" ? color : c.mutedForeground} />
-            <Text style={{ color: supportLevel !== "off" ? color : c.mutedForeground, fontSize: fontSize.xs, fontFamily: fontFamily.medium }}>
+            <Ionicons name="bulb-outline" size={14} color={supportLevel !== "off" ? color : c.subtle} />
+            <Text style={{ color: supportLevel !== "off" ? color : c.subtle, fontSize: fontSize.xs, fontFamily: fontFamily.medium }}>
               {SUPPORT_LEVELS.find((l) => l.key === supportLevel)?.label ?? "Tắt"}
             </Text>
           </HapticTouchable>
@@ -287,24 +287,24 @@ function WritingSession({ data, skill }: { data: ExerciseData; skill: Skill }) {
         {supportLevel === "hints" && (
           <View style={[s.supportCard, { borderColor: c.border }]}>
             <Text style={[s.supportCardTitle, { color: c.foreground }]}>Từ khóa gợi ý</Text>
-            <Text style={[s.supportCardText, { color: c.mutedForeground }]}>apologize, explain, make up for, sincerely, inconvenience</Text>
+            <Text style={[s.supportCardText, { color: c.subtle }]}>apologize, explain, make up for, sincerely, inconvenience</Text>
             <Text style={[s.supportCardTitle, { color: c.foreground, marginTop: spacing.sm }]}>Câu mở đầu</Text>
-            <Text style={[s.supportCardText, { color: c.mutedForeground }]}>• I am writing to apologize for...</Text>
-            <Text style={[s.supportCardText, { color: c.mutedForeground }]}>• The reason for my absence was...</Text>
+            <Text style={[s.supportCardText, { color: c.subtle }]}>• I am writing to apologize for...</Text>
+            <Text style={[s.supportCardText, { color: c.subtle }]}>• The reason for my absence was...</Text>
           </View>
         )}
         {supportLevel === "outline" && (
           <View style={[s.supportCard, { borderColor: c.border }]}>
             <Text style={[s.supportCardTitle, { color: c.foreground }]}>Dàn ý</Text>
-            <Text style={[s.supportCardText, { color: c.mutedForeground }]}>1. Mở đầu: Lý do viết thư, xin lỗi</Text>
-            <Text style={[s.supportCardText, { color: c.mutedForeground }]}>2. Nội dung: Giải thích lý do, hậu quả</Text>
-            <Text style={[s.supportCardText, { color: c.mutedForeground }]}>3. Kết: Đề xuất khắc phục, mong được thông cảm</Text>
+            <Text style={[s.supportCardText, { color: c.subtle }]}>1. Mở đầu: Lý do viết thư, xin lỗi</Text>
+            <Text style={[s.supportCardText, { color: c.subtle }]}>2. Nội dung: Giải thích lý do, hậu quả</Text>
+            <Text style={[s.supportCardText, { color: c.subtle }]}>3. Kết: Đề xuất khắc phục, mong được thông cảm</Text>
           </View>
         )}
         {supportLevel === "template" && (
           <View style={[s.supportCard, { borderColor: c.border }]}>
             <Text style={[s.supportCardTitle, { color: c.foreground }]}>Khung bài mẫu</Text>
-            <Text style={[s.supportCardText, { color: c.mutedForeground }]}>Dear [name],{"\n\n"}I am writing to sincerely apologize for [reason].{"\n\n"}The reason was [explanation]. I understand this caused [consequence].{"\n\n"}To make up for this, I would like to [suggestion].{"\n\n"}Yours sincerely,{"\n"}[Your name]</Text>
+            <Text style={[s.supportCardText, { color: c.subtle }]}>Dear [name],{"\n\n"}I am writing to sincerely apologize for [reason].{"\n\n"}The reason was [explanation]. I understand this caused [consequence].{"\n\n"}To make up for this, I would like to [suggestion].{"\n\n"}Yours sincerely,{"\n"}[Your name]</Text>
           </View>
         )}
 
@@ -313,25 +313,25 @@ function WritingSession({ data, skill }: { data: ExerciseData; skill: Skill }) {
             {/* Write / Study toggle */}
             <View style={s.modeToggle}>
               <HapticTouchable style={[s.modeBtn, mode === "write" && { backgroundColor: color + "15" }]} onPress={() => setMode("write")}>
-                <Ionicons name="create-outline" size={16} color={mode === "write" ? color : c.mutedForeground} />
-                <Text style={[s.modeBtnText, { color: mode === "write" ? color : c.mutedForeground }]}>Viết bài</Text>
+                <Ionicons name="create-outline" size={16} color={mode === "write" ? color : c.subtle} />
+                <Text style={[s.modeBtnText, { color: mode === "write" ? color : c.subtle }]}>Viết bài</Text>
               </HapticTouchable>
               <HapticTouchable style={[s.modeBtn, mode === "study" && { backgroundColor: color + "15" }]} onPress={() => setMode("study")}>
-                <Ionicons name="book-outline" size={16} color={mode === "study" ? color : c.mutedForeground} />
-                <Text style={[s.modeBtnText, { color: mode === "study" ? color : c.mutedForeground }]}>Bài mẫu</Text>
+                <Ionicons name="book-outline" size={16} color={mode === "study" ? color : c.subtle} />
+                <Text style={[s.modeBtnText, { color: mode === "study" ? color : c.subtle }]}>Bài mẫu</Text>
               </HapticTouchable>
             </View>
 
             {mode === "write" ? (
               <>
-                <TextInput style={[s.writingInput, { borderColor: c.border, color: c.foreground, backgroundColor: c.card }]} multiline placeholder="Viết bài tại đây..." placeholderTextColor={c.mutedForeground} value={text} onChangeText={setText} textAlignVertical="top" />
+                <TextInput style={[s.writingInput, { borderColor: c.border, color: c.foreground, backgroundColor: c.surface }]} multiline placeholder="Viết bài tại đây..." placeholderTextColor={c.subtle} value={text} onChangeText={setText} textAlignVertical="top" />
                 {/* Word count milestones */}
                 <View style={s.wcBar}>
-                  <View style={[s.wcTrack, { backgroundColor: c.muted }]}>
+                  <View style={[s.wcTrack, { backgroundColor: c.background }]}>
                     <View style={[s.wcFill, { backgroundColor: wc >= minW ? c.success : color, width: `${Math.min(100, (wc / (minW * 1.4)) * 100)}%` }]} />
                   </View>
                   <View style={s.wcMarkers}>
-                    <Text style={[s.wcMarker, { color: wc >= minW ? c.success : c.mutedForeground }]}>{minW} từ (tối thiểu)</Text>
+                    <Text style={[s.wcMarker, { color: wc >= minW ? c.success : c.subtle }]}>{minW} từ (tối thiểu)</Text>
                     <Text style={[s.wcCurrent, { color: wc >= minW ? c.success : c.foreground }]}>{wc} từ</Text>
                   </View>
                 </View>
@@ -340,8 +340,8 @@ function WritingSession({ data, skill }: { data: ExerciseData; skill: Skill }) {
                 </HapticTouchable>
               </>
             ) : (
-              <View style={[s.sampleCard, { backgroundColor: c.muted + "50" }]}>
-                <Text style={[s.sampleLabel, { color: c.mutedForeground }]}>BÀI MẪU THAM KHẢO</Text>
+              <View style={[s.sampleCard, { backgroundColor: c.background }]}>
+                <Text style={[s.sampleLabel, { color: c.subtle }]}>BÀI MẪU THAM KHẢO</Text>
                 <Text style={[s.sampleText, { color: c.foreground }]}>Dear Minh,{"\n"}{"\n"}I am writing to sincerely apologize for not being able to attend your birthday party last Saturday. I feel terrible about missing such an important occasion.{"\n"}{"\n"}The reason for my absence was a family emergency. My grandmother was suddenly taken to the hospital, and I had to accompany my parents to take care of her. It all happened so quickly that I did not have time to inform you beforehand.{"\n"}{"\n"}To make it up to you, I would like to invite you to dinner at your favorite restaurant this weekend. It would be my treat, and we can celebrate your birthday together.{"\n"}{"\n"}Once again, I am truly sorry for missing your party. I hope you had a wonderful time with everyone.{"\n"}{"\n"}Best wishes,{"\n"}[Your name]</Text>
               </View>
             )}
@@ -391,22 +391,22 @@ function SpeakingSession({ data, skill }: { data: ExerciseData; skill: Skill }) 
       <ScrollView contentContainerStyle={s.scroll}>
         <View style={s.metaRow}>
           <Text style={[s.skillLabel, { color }]}>{data.description}</Text>
-          <Text style={[s.metaText, { color: c.mutedForeground }]}>{sentences.length} câu · {data.estimatedMinutes} phút</Text>
+          <Text style={[s.metaText, { color: c.subtle }]}>{sentences.length} câu · {data.estimatedMinutes} phút</Text>
         </View>
 
         {!allDone && current ? (
           <View style={{ gap: spacing.lg }}>
-            <Text style={[s.counter, { color: c.mutedForeground }]}>CÂU {idx + 1} / {sentences.length}</Text>
+            <Text style={[s.counter, { color: c.subtle }]}>CÂU {idx + 1} / {sentences.length}</Text>
 
             {/* Model sentence */}
-            <View style={[s.sentenceBox, { backgroundColor: c.card, borderColor: c.border }]}>
-              <Text style={[s.promptLabel, { color: c.mutedForeground }]}>CÂU MẪU</Text>
+            <View style={[s.sentenceBox, { backgroundColor: c.surface, borderColor: c.border }]}>
+              <Text style={[s.promptLabel, { color: c.subtle }]}>CÂU MẪU</Text>
               <Text style={[s.sentenceText, { color: c.foreground }]}>{current.text}</Text>
-              <Text style={[s.sentenceTrans, { color: c.mutedForeground }]}>{current.translation}</Text>
+              <Text style={[s.sentenceTrans, { color: c.subtle }]}>{current.translation}</Text>
             </View>
 
             {/* Listen button */}
-            <View style={[s.audioBox, { backgroundColor: c.card, borderColor: c.border }]}>
+            <View style={[s.audioBox, { backgroundColor: c.surface, borderColor: c.border }]}>
               <View style={s.audioHeader}>
                 <Ionicons name="volume-high" size={16} color={c.foreground} />
                 <Text style={[s.audioLabel, { color: c.foreground }]}>Nghe câu</Text>
@@ -421,13 +421,13 @@ function SpeakingSession({ data, skill }: { data: ExerciseData; skill: Skill }) 
               <Ionicons name={recorder.isRecording ? "stop" : "mic"} size={22} color="#fff" />
               <Text style={s.recordBtnT}>{recorder.isRecording ? "Dừng ghi" : "Bắt đầu nhại"}</Text>
             </HapticTouchable>
-            <Text style={[s.recordHint, { color: c.mutedForeground }]}>Nghe mẫu vài lần, sau đó bấm để nhại theo</Text>
+            <Text style={[s.recordHint, { color: c.subtle }]}>Nghe mẫu vài lần, sau đó bấm để nhại theo</Text>
 
             {/* Playback */}
             {recorder.uri && !recorder.isRecording && (
               <View style={[s.playbackRow, { borderColor: c.border }]}>
                 <Text style={[s.playbackLabel, { color: c.foreground }]}>Bản ghi của bạn</Text>
-                <HapticTouchable style={[s.playbackBtn, { backgroundColor: c.muted }]} onPress={recorder.playback}>
+                <HapticTouchable style={[s.playbackBtn, { backgroundColor: c.background }]} onPress={recorder.playback}>
                   <Ionicons name="play" size={16} color={color} />
                   <Text style={[s.playbackBtnT, { color }]}>Nghe lại</Text>
                 </HapticTouchable>
@@ -438,7 +438,7 @@ function SpeakingSession({ data, skill }: { data: ExerciseData; skill: Skill }) 
             <View style={s.navRow}>
               {sentences.map((_, i) => (
                 <HapticTouchable key={i} style={[s.navPill, { backgroundColor: i === idx ? color : done.has(sentences[i].id) ? c.success : c.muted }]} onPress={() => setIdx(i)}>
-                  <Text style={{ color: i === idx || done.has(sentences[i].id) ? "#fff" : c.mutedForeground, fontSize: 12, fontFamily: fontFamily.bold }}>{i + 1}</Text>
+                  <Text style={{ color: i === idx || done.has(sentences[i].id) ? "#fff" : c.subtle, fontSize: 12, fontFamily: fontFamily.bold }}>{i + 1}</Text>
                 </HapticTouchable>
               ))}
             </View>

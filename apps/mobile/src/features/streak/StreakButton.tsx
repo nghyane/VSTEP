@@ -26,7 +26,7 @@ export function StreakButton({ streak, activityByDay = {} }: StreakButtonProps) 
     <>
       <HapticTouchable style={[styles.btn, { backgroundColor: isActive ? c.skillSpeaking + "15" : c.muted }]} onPress={() => setVisible(true)}>
         <GameIcon name="fire" size={18} />
-        <Text style={[styles.btnText, { color: isActive ? c.skillSpeaking : c.mutedForeground }]}>{streak}</Text>
+        <Text style={[styles.btnText, { color: isActive ? c.skillSpeaking : c.subtle }]}>{streak}</Text>
       </HapticTouchable>
       <StreakDialog visible={visible} onClose={() => setVisible(false)} streak={streak} activityByDay={activityByDay} />
     </>
@@ -50,7 +50,7 @@ function StreakDialog({ visible, onClose, streak, activityByDay }: {
             <GameIcon name="fire" size={32} />
             <Text style={[styles.streakNum, { color: c.skillSpeaking }]}>{streak} ngày streak</Text>
           </View>
-          <Text style={[styles.headerSub, { color: c.mutedForeground }]}>
+          <Text style={[styles.headerSub, { color: c.subtle }]}>
             {streak > 0 ? "Tiếp tục học mỗi ngày nhé!" : "Bắt đầu chuỗi học ngay hôm nay!"}
           </Text>
         </View>
@@ -59,10 +59,10 @@ function StreakDialog({ visible, onClose, streak, activityByDay }: {
         <View style={styles.weekRow}>
           {weekDays.map((day) => (
             <View key={day.label} style={styles.weekDay}>
-              <Text style={[styles.weekLabel, { color: c.mutedForeground }]}>{day.label}</Text>
+              <Text style={[styles.weekLabel, { color: c.subtle }]}>{day.label}</Text>
               <View style={[
                 styles.weekCircle,
-                day.active ? { borderColor: c.skillSpeaking, backgroundColor: c.skillSpeaking + "1A" } : { backgroundColor: c.muted },
+                day.active ? { borderColor: c.skillSpeaking, backgroundColor: c.skillSpeaking + "1A" } : { backgroundColor: c.background },
                 day.isToday && !day.active && { borderColor: c.skillSpeaking + "66", borderWidth: 2 },
                 day.isFuture && { opacity: 0.4 },
               ]}>
@@ -73,7 +73,7 @@ function StreakDialog({ visible, onClose, streak, activityByDay }: {
         </View>
 
         {/* Today progress */}
-        <View style={[styles.progressRow, { backgroundColor: c.muted }]}>
+        <View style={[styles.progressRow, { backgroundColor: c.background }]}>
           <Text style={[styles.progressLabel, { color: c.foreground }]}>Hôm nay</Text>
           <Text style={[styles.progressValue, { color: todayCount >= DAILY_GOAL ? c.success : c.primary }]}>
             {todayCount}/{DAILY_GOAL} đề thi
@@ -96,7 +96,7 @@ function StreakDialog({ visible, onClose, streak, activityByDay }: {
                   <DepthButton variant="coin" size="sm" onPress={() => claimMilestone(m.days)}>Nhận</DepthButton>
                 )}
                 {isClaimed && <Ionicons name="checkmark-circle" size={24} color={c.success} />}
-                {!unlocked && <Text style={[styles.msLocked, { color: c.mutedForeground }]}>{m.days - streak} ngày nữa</Text>}
+                {!unlocked && <Text style={[styles.msLocked, { color: c.subtle }]}>{m.days - streak} ngày nữa</Text>}
               </View>
             );
           })}

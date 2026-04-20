@@ -30,7 +30,7 @@ export function TopUpDialog({ visible, onClose }: TopUpDialogProps) {
 
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <View style={[styles.content, { backgroundColor: c.card }]}>
+      <View style={[styles.content, { backgroundColor: c.surface }]}>
         {/* Header */}
         <View style={styles.header}>
           <GameIcon name="coin" size={24} />
@@ -38,8 +38,8 @@ export function TopUpDialog({ visible, onClose }: TopUpDialogProps) {
         </View>
 
         {/* Balance */}
-        <View style={[styles.balanceRow, { backgroundColor: c.muted }]}>
-          <Text style={[styles.balanceLabel, { color: c.mutedForeground }]}>Số dư hiện tại</Text>
+        <View style={[styles.balanceRow, { backgroundColor: c.background }]}>
+          <Text style={[styles.balanceLabel, { color: c.subtle }]}>Số dư hiện tại</Text>
           <Text style={[styles.balanceValue, { color: c.coin }]}>{currentCoins} xu</Text>
         </View>
 
@@ -55,7 +55,7 @@ export function TopUpDialog({ visible, onClose }: TopUpDialogProps) {
               {pack.popular && <View style={[styles.badge, { backgroundColor: c.coin }]}><Text style={styles.badgeText}>Phổ biến</Text></View>}
               <GameIcon name="coin" size={28} />
               <Text style={[styles.packCoins, { color: c.foreground }]}>{pack.coins} xu</Text>
-              <Text style={[styles.packPrice, { color: c.mutedForeground }]}>{pack.price}</Text>
+              <Text style={[styles.packPrice, { color: c.subtle }]}>{pack.price}</Text>
             </HapticTouchable>
           ))}
         </View>

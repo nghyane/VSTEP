@@ -39,11 +39,11 @@ export function ActivityHeatmap() {
         ))}
       </View>
       <View style={styles.legend}>
-        <Text style={[styles.legendText, { color: c.mutedForeground }]}>Ít</Text>
+        <Text style={[styles.legendText, { color: c.subtle }]}>Ít</Text>
         {[0, 2, 5, 8, 12].map((n) => (
           <View key={n} style={[styles.legendCell, { backgroundColor: cellColor(n) }]} />
         ))}
-        <Text style={[styles.legendText, { color: c.mutedForeground }]}>Nhiều</Text>
+        <Text style={[styles.legendText, { color: c.subtle }]}>Nhiều</Text>
       </View>
     </View>
   );

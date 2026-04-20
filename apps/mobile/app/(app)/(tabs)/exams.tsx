@@ -33,7 +33,7 @@ export default function ExamsScreen() {
       <View style={s.headerRow}>
         <View>
           <Text style={[s.title, { color: c.foreground }]}>Thi thử VSTEP</Text>
-          <Text style={[s.subtitle, { color: c.mutedForeground }]}>Luyện đề bám sát cấu trúc thật</Text>
+          <Text style={[s.subtitle, { color: c.subtle }]}>Luyện đề bám sát cấu trúc thật</Text>
         </View>
         <CoinButton onPress={() => setTopUpVisible(true)} />
       </View>
@@ -61,10 +61,10 @@ function ExamCard({ exam, onPress }: { exam: Exam; onPress: () => void }) {
 
         {/* Meta */}
         <View style={s.metaRow}>
-          <Ionicons name="time-outline" size={14} color={c.mutedForeground} />
-          <Text style={[s.metaText, { color: c.mutedForeground }]}>172 phút</Text>
-          <Ionicons name="help-circle-outline" size={14} color={c.mutedForeground} style={{ marginLeft: spacing.md }} />
-          <Text style={[s.metaText, { color: c.mutedForeground }]}>80 câu</Text>
+          <Ionicons name="time-outline" size={14} color={c.subtle} />
+          <Text style={[s.metaText, { color: c.subtle }]}>172 phút</Text>
+          <Ionicons name="help-circle-outline" size={14} color={c.subtle} style={{ marginLeft: spacing.md }} />
+          <Text style={[s.metaText, { color: c.subtle }]}>80 câu</Text>
         </View>
 
         {/* Skill chips */}

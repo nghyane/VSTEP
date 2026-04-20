@@ -82,15 +82,15 @@ export default function ExamDetailScreen() {
       <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: insets.top + spacing.base }]}>
         {/* Back */}
         <HapticTouchable onPress={() => router.back()} style={styles.backRow} hitSlop={8}>
-          <Ionicons name="chevron-back" size={20} color={c.mutedForeground} />
-          <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm }}>Thư viện đề thi</Text>
+          <Ionicons name="chevron-back" size={20} color={c.subtle} />
+          <Text style={{ color: c.subtle, fontSize: fontSize.sm }}>Thư viện đề thi</Text>
         </HapticTouchable>
 
         {/* Header */}
         <Text style={[styles.title, { color: c.foreground }]}>{exam.title}</Text>
         <View style={styles.metaRow}>
-          <Ionicons name="time-outline" size={16} color={c.mutedForeground} />
-          <Text style={[styles.metaText, { color: c.mutedForeground }]}>{totalMinutes} phút</Text>
+          <Ionicons name="time-outline" size={16} color={c.subtle} />
+          <Text style={[styles.metaText, { color: c.subtle }]}>{totalMinutes} phút</Text>
         </View>
 
         {/* Skill chips */}
@@ -101,7 +101,7 @@ export default function ExamDetailScreen() {
         </View>
 
         {/* Skill stats grid */}
-        <View style={[styles.statsGrid, { borderColor: c.border, backgroundColor: c.muted + "50" }]}>
+        <View style={[styles.statsGrid, { borderColor: c.border, backgroundColor: c.background }]}>
           {SKILL_ORDER.map((skill) => {
             const secs = VSTEP_SECTIONS.filter((s) => s.skill === skill);
             const mins = secs.reduce((s, sec) => s + sec.durationMinutes, 0);
@@ -109,9 +109,9 @@ export default function ExamDetailScreen() {
             const unit = secs[0]?.unit ?? "câu";
             return (
               <View key={skill} style={styles.statCell}>
-                <Text style={[styles.statLabel, { color: c.mutedForeground }]}>{SKILL_VN[skill]}</Text>
+                <Text style={[styles.statLabel, { color: c.subtle }]}>{SKILL_VN[skill]}</Text>
                 <Text style={[styles.statValue, { color: c.foreground }]}>{mins} phút</Text>
-                <Text style={[styles.statSub, { color: c.mutedForeground }]}>{count} {unit}</Text>
+                <Text style={[styles.statSub, { color: c.subtle }]}>{count} {unit}</Text>
               </View>
             );
           })}
@@ -124,7 +124,7 @@ export default function ExamDetailScreen() {
           {[null, 10, 20, 30, 45].map((mins) => {
             const active = duration === mins;
             return (
-              <HapticTouchable key={String(mins)} style={[styles.timeChip, { borderColor: active ? c.primary : c.depthBorderLight, borderBottomColor: active ? c.primary + "80" : c.depthBorderDark, backgroundColor: active ? c.primary + "0D" : c.card }]} onPress={() => setDuration(mins)}>
+              <HapticTouchable key={String(mins)} style={[styles.timeChip, { borderColor: active ? c.primary : c.depthBorderLight, borderBottomColor: active ? c.primary + "80" : c.depthBorderDark, backgroundColor: active ? c.primary + "0D" : c.surface }]} onPress={() => setDuration(mins)}>
                 <Text style={[styles.timeChipText, { color: active ? c.primary : c.foreground }]}>{mins === null ? "Mặc định" : `${mins} phút`}</Text>
               </HapticTouchable>
             );
@@ -132,7 +132,7 @@ export default function ExamDetailScreen() {
         </View>
 
         <Text style={[styles.sectionTitle, { color: c.foreground }]}>Chọn phần luyện tập</Text>
-        <Text style={[styles.sectionHint, { color: c.mutedForeground }]}>
+        <Text style={[styles.sectionHint, { color: c.subtle }]}>
           {selected.size === 0 ? "Chưa chọn — sẽ làm full test" : `${selected.size} phần đã chọn`}
         </Text>
 
@@ -184,19 +184,19 @@ function SkillGroup({ skill, sections, selected, allSelected, onToggleSection, o
   const unit = sections[0]?.unit ?? "câu";
 
   return (
-    <View style={[styles.groupCard, { borderColor: c.border, backgroundColor: c.card }]}>
+    <View style={[styles.groupCard, { borderColor: c.border, backgroundColor: c.surface }]}>
       {/* Group header */}
       <View style={styles.groupHeader}>
         <View style={styles.groupHeaderLeft}>
           <View style={[styles.skillBar, { backgroundColor: color }]} />
           <Text style={[styles.groupSkillLabel, { color }]}>{SKILL_VN[skill]}</Text>
-          <Text style={[styles.groupMeta, { color: c.mutedForeground }]}>{totalMins} phút · {totalCount} {unit}</Text>
+          <Text style={[styles.groupMeta, { color: c.subtle }]}>{totalMins} phút · {totalCount} {unit}</Text>
         </View>
         <HapticTouchable
-          style={[styles.selectAllBtn, allSelected ? { backgroundColor: color } : { backgroundColor: c.muted }]}
+          style={[styles.selectAllBtn, allSelected ? { backgroundColor: color } : { backgroundColor: c.background }]}
           onPress={onToggleSkill}
         >
-          <Text style={[styles.selectAllText, { color: allSelected ? "#fff" : c.mutedForeground }]}>
+          <Text style={[styles.selectAllText, { color: allSelected ? "#fff" : c.subtle }]}>
             {allSelected ? "Bỏ chọn" : "Chọn tất cả"}
           </Text>
         </HapticTouchable>
@@ -222,7 +222,7 @@ function SkillGroup({ skill, sections, selected, allSelected, onToggleSection, o
             <View style={{ flex: 1 }}>
               <Text style={[styles.sectionName, { color: c.foreground }]}>{sec.title} — {sec.description}</Text>
             </View>
-            <Text style={[styles.sectionMeta, { color: c.mutedForeground }]}>{sec.questionCount} {sec.unit} · {sec.durationMinutes}p</Text>
+            <Text style={[styles.sectionMeta, { color: c.subtle }]}>{sec.questionCount} {sec.unit} · {sec.durationMinutes}p</Text>
           </HapticTouchable>
         );
       })}
@@ -252,11 +252,11 @@ function ExamBottomBar({ selected, insets, onStart }: { selected: Set<string>; i
   }
 
   return (
-    <View style={[styles.bottomBar, { backgroundColor: c.card, borderTopColor: c.border, paddingBottom: insets.bottom + spacing.base }]}>
+    <View style={[styles.bottomBar, { backgroundColor: c.surface, borderTopColor: c.border, paddingBottom: insets.bottom + spacing.base }]}>
       <View style={styles.costRow}>
         <GameIcon name="coin" size={18} />
         <Text style={[styles.costText, { color: c.coinDark }]}>{cost} xu</Text>
-        <Text style={[styles.balanceText, { color: c.mutedForeground }]}>({coins} xu còn lại)</Text>
+        <Text style={[styles.balanceText, { color: c.subtle }]}>({coins} xu còn lại)</Text>
       </View>
       <HapticTouchable
         style={[styles.startBtn, { backgroundColor: c.primary }]}

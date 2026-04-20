@@ -56,7 +56,7 @@ export default function VocabularyScreen() {
     <View style={[styles.root, { backgroundColor: c.background }]}>
       <ScreenHeader title="Luyện từ vựng" />
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={[styles.desc, { color: c.mutedForeground }]}>
+        <Text style={[styles.desc, { color: c.subtle }]}>
           Học từ theo chủ đề với hệ thống lặp lại cách quãng (SRS) và bài tập vận dụng gắn với VSTEP.
         </Text>
 
@@ -86,7 +86,7 @@ function LevelView({ onPress }: { onPress: (id: string) => void }) {
           <View key={level}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: c.foreground }]}>{LEVEL_LABELS[level]}</Text>
-              <Text style={[styles.sectionCount, { color: c.mutedForeground }]}>{topics.length} chủ đề</Text>
+              <Text style={[styles.sectionCount, { color: c.subtle }]}>{topics.length} chủ đề</Text>
             </View>
             <View style={styles.grid}>
               {topics.map((t) => <TopicCard key={t.id} topic={t} onPress={() => onPress(t.id)} />)}
@@ -110,7 +110,7 @@ function TaskView({ onPress }: { onPress: (id: string) => void }) {
           <View key={task}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: c.foreground }]}>{TASK_LABELS[task]}</Text>
-              <Text style={[styles.sectionCount, { color: c.mutedForeground }]}>{topics.length} chủ đề</Text>
+              <Text style={[styles.sectionCount, { color: c.subtle }]}>{topics.length} chủ đề</Text>
             </View>
             <View style={styles.grid}>
               {topics.map((t) => <TopicCard key={t.id} topic={t} onPress={() => onPress(t.id)} />)}
@@ -139,12 +139,12 @@ function TopicCard({ topic, onPress }: { topic: VocabTopicMock; onPress: () => v
   const pct = Math.round((topic.masteredCount / topic.wordCount) * 100);
 
   return (
-    <HapticTouchable style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]} onPress={onPress} activeOpacity={0.7}>
+    <HapticTouchable style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.cardTop}>
         <Ionicons name="book-outline" size={20} color={c.primary} />
         <View style={{ flex: 1 }}>
           <Text style={[styles.cardName, { color: c.foreground }]} numberOfLines={1}>{topic.name}</Text>
-          <Text style={[styles.cardWordCount, { color: c.mutedForeground }]}>{topic.wordCount} từ</Text>
+          <Text style={[styles.cardWordCount, { color: c.subtle }]}>{topic.wordCount} từ</Text>
         </View>
         {topic.dueCount > 0 && (
           <View style={[styles.dueBadge, { backgroundColor: c.primary + "15" }]}>
@@ -152,12 +152,12 @@ function TopicCard({ topic, onPress }: { topic: VocabTopicMock; onPress: () => v
           </View>
         )}
       </View>
-      <Text style={[styles.cardDesc, { color: c.mutedForeground }]} numberOfLines={2}>{topic.description}</Text>
+      <Text style={[styles.cardDesc, { color: c.subtle }]} numberOfLines={2}>{topic.description}</Text>
       <View style={styles.cardBottom}>
-        <Text style={[styles.masteredText, { color: c.mutedForeground }]}>{topic.masteredCount}/{topic.wordCount} đã thuộc</Text>
-        <Text style={[styles.masteredPct, { color: pct > 0 ? c.primary : c.mutedForeground }]}>{pct}%</Text>
+        <Text style={[styles.masteredText, { color: c.subtle }]}>{topic.masteredCount}/{topic.wordCount} đã thuộc</Text>
+        <Text style={[styles.masteredPct, { color: pct > 0 ? c.primary : c.subtle }]}>{pct}%</Text>
       </View>
-      <View style={[styles.progressTrack, { backgroundColor: c.muted }]}>
+      <View style={[styles.progressTrack, { backgroundColor: c.background }]}>
         <View style={[styles.progressFill, { backgroundColor: c.primary, width: `${pct}%` }]} />
       </View>
     </HapticTouchable>

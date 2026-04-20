@@ -61,13 +61,13 @@ export function StickyHeader({ scrollY, subtitle }: StickyHeaderProps) {
             Xin chào, {user?.email ?? "bạn"}
           </Text>
           {subtitle ? (
-            <Text style={[styles.headerSub, { color: c.mutedForeground }]} numberOfLines={1}>
+            <Text style={[styles.headerSub, { color: c.subtle }]} numberOfLines={1}>
               {subtitle}
             </Text>
           ) : null}
         </View>
         <TouchableOpacity
-          style={[styles.bellBtn, { backgroundColor: c.muted }]}
+          style={[styles.bellBtn, { backgroundColor: c.background }]}
           onPress={() => router.push("/(app)/(tabs)/notifications")}
           activeOpacity={0.7}
         >

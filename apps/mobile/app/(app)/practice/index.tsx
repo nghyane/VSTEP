@@ -31,7 +31,7 @@ export default function PracticeScreen() {
     <ScreenWrapper noPadding>
       <BouncyScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <Text style={[styles.title, { color: c.foreground }]}>Luyện tập</Text>
-        <Text style={[styles.subtitle, { color: c.mutedForeground }]}>
+        <Text style={[styles.subtitle, { color: c.subtle }]}>
           Chọn kỹ năng để bắt đầu
         </Text>
 
@@ -48,16 +48,16 @@ export default function PracticeScreen() {
 
         {/* Browse questions */}
         <HapticTouchable
-          style={[styles.browseBtn, { backgroundColor: c.card, borderColor: c.border }]}
+          style={[styles.browseBtn, { backgroundColor: c.surface, borderColor: c.border }]}
           onPress={() => router.push("/(app)/practice/browse")}
           activeOpacity={0.7}
         >
           <Ionicons name="search-outline" size={20} color={c.primary} />
           <View style={{ flex: 1 }}>
             <Text style={{ color: c.foreground, fontWeight: "600", fontSize: fontSize.sm }}>Chọn câu hỏi cụ thể</Text>
-            <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs }}>Lọc theo Part, Level, dạng bài</Text>
+            <Text style={{ color: c.subtle, fontSize: fontSize.xs }}>Lọc theo Part, Level, dạng bài</Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
+          <Ionicons name="chevron-forward" size={18} color={c.subtle} />
         </HapticTouchable>
       </BouncyScrollView>
     </ScreenWrapper>
@@ -79,7 +79,7 @@ function SkillCard({
 
   return (
     <HapticTouchable
-      style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+      style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}
       onPress={onPress}
       activeOpacity={0.7}
     >
@@ -93,13 +93,13 @@ function SkillCard({
       <Text style={[styles.cardTitle, { color: c.foreground }]}>{SKILL_LABELS[skill]}</Text>
 
       <View style={styles.cardMeta}>
-        <Ionicons name="repeat-outline" size={14} color={c.mutedForeground} />
-        <Text style={[styles.metaText, { color: c.mutedForeground }]}>
+        <Ionicons name="repeat-outline" size={14} color={c.subtle} />
+        <Text style={[styles.metaText, { color: c.subtle }]}>
           {progress?.attemptCount ?? 0} lần
         </Text>
       </View>
 
-      <Text style={[styles.trendText, { color: c.mutedForeground }]}>
+      <Text style={[styles.trendText, { color: c.subtle }]}>
         {trend.icon} {trend.label}
       </Text>
     </HapticTouchable>

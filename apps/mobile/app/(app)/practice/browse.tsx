@@ -83,7 +83,7 @@ export default function BrowseQuestionsScreen() {
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: c.border, paddingTop: insets.top + spacing.sm }]}>
         <Text style={[styles.title, { color: c.foreground }]}>Chọn câu hỏi</Text>
-        <Text style={[styles.subtitle, { color: c.mutedForeground }]}>Chọn dạng bài muốn luyện</Text>
+        <Text style={[styles.subtitle, { color: c.subtle }]}>Chọn dạng bài muốn luyện</Text>
       </View>
 
       {/* Skill tabs */}
@@ -102,7 +102,7 @@ export default function BrowseQuestionsScreen() {
                 onPress={() => { setSkill(sk); setLevelFilter(null); }}
               >
                 <SkillIcon skill={sk} size={14} />
-                <Text style={{ color: active ? color : c.mutedForeground, fontSize: fontSize.xs, fontWeight: "600" }}>
+                <Text style={{ color: active ? color : c.subtle, fontSize: fontSize.xs, fontWeight: "600" }}>
                   {SKILL_LABELS[sk]}
                 </Text>
               </HapticTouchable>
@@ -117,7 +117,7 @@ export default function BrowseQuestionsScreen() {
           style={[styles.filterChip, { backgroundColor: !levelFilter ? c.primary + "18" : c.muted, borderColor: !levelFilter ? c.primary : "transparent" }]}
           onPress={() => setLevelFilter(null)}
         >
-          <Text style={{ color: !levelFilter ? c.primary : c.mutedForeground, fontSize: fontSize.xs, fontWeight: "600" }}>Tất cả</Text>
+          <Text style={{ color: !levelFilter ? c.primary : c.subtle, fontSize: fontSize.xs, fontWeight: "600" }}>Tất cả</Text>
         </HapticTouchable>
         {LEVELS.map((lv) => (
           <HapticTouchable
@@ -125,7 +125,7 @@ export default function BrowseQuestionsScreen() {
             style={[styles.filterChip, { backgroundColor: levelFilter === lv ? c.primary + "18" : c.muted, borderColor: levelFilter === lv ? c.primary : "transparent" }]}
             onPress={() => setLevelFilter(levelFilter === lv ? null : lv)}
           >
-            <Text style={{ color: levelFilter === lv ? c.primary : c.mutedForeground, fontSize: fontSize.xs, fontWeight: "600" }}>{lv}</Text>
+            <Text style={{ color: levelFilter === lv ? c.primary : c.subtle, fontSize: fontSize.xs, fontWeight: "600" }}>{lv}</Text>
           </HapticTouchable>
         ))}
       </View>
@@ -185,7 +185,7 @@ function QuestionGroupCard({
 
   return (
     <HapticTouchable
-      style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+      style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}
       onPress={onStart}
       disabled={isStarting}
       activeOpacity={0.7}
@@ -194,7 +194,7 @@ function QuestionGroupCard({
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={{ color: c.foreground, fontWeight: "700", fontSize: fontSize.sm }}>{partLabel}</Text>
           {description && (
-            <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs }} numberOfLines={2}>{description}</Text>
+            <Text style={{ color: c.subtle, fontSize: fontSize.xs }} numberOfLines={2}>{description}</Text>
           )}
         </View>
         <Ionicons name="play-circle" size={28} color={skillColor} />
@@ -204,13 +204,13 @@ function QuestionGroupCard({
         <View style={[styles.badge, { backgroundColor: skillColor + "15" }]}>
           <Text style={{ color: skillColor, fontSize: 10, fontWeight: "700" }}>{group.level}</Text>
         </View>
-        <View style={[styles.badge, { backgroundColor: c.muted }]}>
-          <Ionicons name="list-outline" size={10} color={c.mutedForeground} />
-          <Text style={{ color: c.mutedForeground, fontSize: 10, fontWeight: "600" }}>{group.itemCount} câu</Text>
+        <View style={[styles.badge, { backgroundColor: c.background }]}>
+          <Ionicons name="list-outline" size={10} color={c.subtle} />
+          <Text style={{ color: c.subtle, fontSize: 10, fontWeight: "600" }}>{group.itemCount} câu</Text>
         </View>
-        <View style={[styles.badge, { backgroundColor: c.muted }]}>
-          <Ionicons name="documents-outline" size={10} color={c.mutedForeground} />
-          <Text style={{ color: c.mutedForeground, fontSize: 10, fontWeight: "600" }}>{group.questions.length} bài</Text>
+        <View style={[styles.badge, { backgroundColor: c.background }]}>
+          <Ionicons name="documents-outline" size={10} color={c.subtle} />
+          <Text style={{ color: c.subtle, fontSize: 10, fontWeight: "600" }}>{group.questions.length} bài</Text>
         </View>
       </View>
     </HapticTouchable>

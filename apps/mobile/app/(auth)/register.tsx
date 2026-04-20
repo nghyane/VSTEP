@@ -79,7 +79,7 @@ export default function RegisterScreen() {
         <View style={styles.header}>
           <Logo size="lg" />
           <Text style={[styles.heading, { color: c.foreground }]}>Tạo tài khoản mới</Text>
-          <Text style={[styles.subtitle, { color: c.mutedForeground }]}>
+          <Text style={[styles.subtitle, { color: c.subtle }]}>
             Bắt đầu hành trình chinh phục VSTEP
           </Text>
         </View>
@@ -88,9 +88,9 @@ export default function RegisterScreen() {
           <View style={styles.field}>
             <Text style={[styles.label, { color: c.foreground }]}>Họ và tên</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: c.card, borderColor: errors.fullName ? c.destructive : c.border, color: c.foreground }]}
+              style={[styles.input, { backgroundColor: c.surface, borderColor: errors.fullName ? c.destructive : c.border, color: c.foreground }]}
               placeholder="Nguyễn Văn A"
-              placeholderTextColor={c.mutedForeground}
+              placeholderTextColor={c.subtle}
               value={fullName}
               onChangeText={(t) => { setFullName(t); if (errors.fullName) setErrors((p) => ({ ...p, fullName: undefined })); }}
               autoComplete="name"
@@ -101,9 +101,9 @@ export default function RegisterScreen() {
           <View style={styles.field}>
             <Text style={[styles.label, { color: c.foreground }]}>Email</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: c.card, borderColor: errors.email ? c.destructive : c.border, color: c.foreground }]}
+              style={[styles.input, { backgroundColor: c.surface, borderColor: errors.email ? c.destructive : c.border, color: c.foreground }]}
               placeholder="Hãy nhập email"
-              placeholderTextColor={c.mutedForeground}
+              placeholderTextColor={c.subtle}
               value={email}
               onChangeText={(t) => { setEmail(t); if (errors.email) setErrors((p) => ({ ...p, email: undefined })); }}
               keyboardType="email-address"
@@ -115,11 +115,11 @@ export default function RegisterScreen() {
 
           <View style={styles.field}>
             <Text style={[styles.label, { color: c.foreground }]}>Mật khẩu</Text>
-            <View style={[styles.inputRow, { backgroundColor: c.card, borderColor: errors.password ? c.destructive : c.border }]}>
+            <View style={[styles.inputRow, { backgroundColor: c.surface, borderColor: errors.password ? c.destructive : c.border }]}>
               <TextInput
                 style={[styles.inputFlex, { color: c.foreground }]}
                 placeholder="Hãy nhập mật khẩu"
-                placeholderTextColor={c.mutedForeground}
+                placeholderTextColor={c.subtle}
                 value={password}
                 onChangeText={(t) => { setPassword(t); if (errors.password) setErrors((p) => ({ ...p, password: undefined })); }}
                 secureTextEntry={!showPassword}
@@ -128,7 +128,7 @@ export default function RegisterScreen() {
                 <Ionicons
                   name={showPassword ? "eye-off" : "eye"}
                   size={20}
-                  color={c.mutedForeground}
+                  color={c.subtle}
                 />
               </HapticTouchable>
             </View>
@@ -153,7 +153,7 @@ export default function RegisterScreen() {
         </View>
 
         <View style={styles.footerRow}>
-          <Text style={[styles.footerText, { color: c.mutedForeground }]}>Đã có tài khoản? </Text>
+          <Text style={[styles.footerText, { color: c.subtle }]}>Đã có tài khoản? </Text>
           <Link href="/(auth)/login" asChild>
             <HapticTouchable>
               <Text style={[styles.footerLink, { color: c.primary }]}>Đăng nhập</Text>
@@ -161,7 +161,7 @@ export default function RegisterScreen() {
           </Link>
         </View>
 
-        <Text style={[styles.version, { color: c.mutedForeground }]}>Phiên bản 1.0.0</Text>
+        <Text style={[styles.version, { color: c.subtle }]}>Phiên bản 1.0.0</Text>
       </BouncyScrollView>
     </KeyboardAvoidingView>
   );
