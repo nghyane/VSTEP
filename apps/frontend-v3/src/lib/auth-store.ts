@@ -6,8 +6,8 @@ import type { Profile, User } from "#/types/auth"
 interface AuthResponse {
 	access_token: string
 	refresh_token: string
-	account: User
-	active_profile: Profile | null
+	user: User
+	profile: Profile | null
 }
 
 interface AuthState {
@@ -17,13 +17,7 @@ interface AuthState {
 
 interface AuthActions {
 	login: (email: string, password: string) => Promise<void>
-	register: (data: {
-		email: string
-		password: string
-		nickname: string
-		target_level: string
-		target_deadline: string
-	}) => Promise<void>
+	register: (data: { email: string; password: string }) => Promise<void>
 	logout: () => void
 }
 
@@ -38,9 +32,9 @@ export const useAuth = create<AuthStore>()((set) => {
 	function authenticate(res: AuthResponse) {
 		tokenStorage.setAccess(res.access_token)
 		tokenStorage.setRefresh(res.refresh_token)
-		tokenStorage.setUser(res.account)
-		tokenStorage.setProfile(res.active_profile)
-		set({ user: res.account, profile: res.active_profile, isAuthenticated: true })
+		tokenStorage.setUser(res.user)
+		tokenStorage.setProfile(res.profile)
+		set({ user: res.user, profile: res.profile, isAuthenticated: true })
 	}
 
 	return {

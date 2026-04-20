@@ -1,18 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { AuthChoose } from "#/features/auth/AuthChoose"
 import { AuthShell } from "#/features/auth/AuthShell"
 import { LoginForm } from "#/features/auth/LoginForm"
-import { RegisterFormProvider, RegisterStep1, RegisterStep2 } from "#/features/auth/RegisterForm"
+import { RegisterForm } from "#/features/auth/RegisterForm"
 import { LandingCTA, LandingFeatures, LandingHero, LandingSkills } from "#/features/landing/sections"
 import { useAuth } from "#/lib/auth-store"
 
-type AuthParam = "choose" | "login" | "register" | "register-target" | undefined
+type AuthParam = "login" | "register" | undefined
 
 export const Route = createFileRoute("/")({
 	validateSearch: (search: Record<string, unknown>): { auth?: AuthParam } => ({
-		auth: ["choose", "login", "register", "register-target"].includes(search.auth as string)
-			? (search.auth as AuthParam)
-			: undefined,
+		auth: ["login", "register"].includes(search.auth as string) ? (search.auth as AuthParam) : undefined,
 	}),
 	component: LandingPage,
 })
@@ -48,14 +45,8 @@ function LandingPage() {
 
 			{auth && (
 				<AuthShell onClose={closeAuth}>
-					{auth === "choose" && <AuthChoose />}
 					{auth === "login" && <LoginForm />}
-					{(auth === "register" || auth === "register-target") && (
-						<RegisterFormProvider>
-							{auth === "register" && <RegisterStep1 />}
-							{auth === "register-target" && <RegisterStep2 />}
-						</RegisterFormProvider>
-					)}
+					{auth === "register" && <RegisterForm />}
 				</AuthShell>
 			)}
 		</div>

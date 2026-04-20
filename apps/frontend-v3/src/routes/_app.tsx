@@ -1,7 +1,6 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router"
 import { Sidebar } from "#/components/Sidebar"
-import { AuthShell } from "#/features/auth/AuthShell"
-import { LoginForm } from "#/features/auth/LoginForm"
+import { OnboardingModal } from "#/features/onboarding/OnboardingModal"
 import { useAuth } from "#/lib/auth-store"
 
 export const Route = createFileRoute("/_app")({
@@ -10,14 +9,12 @@ export const Route = createFileRoute("/_app")({
 
 function AppLayout() {
 	const isAuthenticated = useAuth((s) => s.isAuthenticated)
+	const profile = useAuth((s) => s.profile)
 	const navigate = useNavigate()
 
 	if (!isAuthenticated) {
-		return (
-			<AuthShell onClose={() => navigate({ to: "/" })}>
-				<LoginForm />
-			</AuthShell>
-		)
+		navigate({ to: "/", search: { auth: "login" } })
+		return null
 	}
 
 	return (
@@ -26,6 +23,7 @@ function AppLayout() {
 			<main className="flex-1 min-w-0">
 				<Outlet />
 			</main>
+			{!profile && <OnboardingModal />}
 		</div>
 	)
 }
