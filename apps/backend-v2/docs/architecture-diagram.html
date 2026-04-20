@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VSTEP — Architecture Diagram</title>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;1,600;1,700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#fff;font-family:'Inter',sans-serif;overflow:hidden}
+svg{width:100vw;height:100vh;display:block}
+#toolbar{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:100;display:flex;gap:6px;background:#fff;border:2.5px solid #333638;border-radius:10px;padding:5px 10px;box-shadow:6px 6px 0 rgba(51,54,56,0.2)}
+#toolbar button{font-family:'Nunito',sans-serif;font-weight:600;font-style:italic;text-transform:uppercase;font-size:11px;color:#333638;background:#F2F2F3;border:2px solid #333638;border-radius:6px;padding:5px 12px;cursor:pointer;transition:.15s}
+#toolbar button:hover,#toolbar button.active{background:#333638;color:#F9FAFA}
+#tip{position:fixed;pointer-events:none;z-index:200;background:#333638;color:#F9FAFA;font-size:11px;padding:8px 12px;border-radius:8px;max-width:260px;box-shadow:4px 4px 0 rgba(0,0,0,.2);display:none;line-height:1.5}
+.node-g{cursor:pointer}
+.node-g:hover .card{filter:brightness(.95)}
+.card{transition:filter .12s}
+.lbl{font-family:'Nunito',sans-serif;font-weight:600;font-style:italic;text-transform:uppercase;fill:#333638;font-size:13px;text-anchor:middle}
+.sub{font-family:'Inter',sans-serif;fill:#A0A3A7;font-size:10px;text-anchor:middle}
+.clbl{font-family:'Nunito',sans-serif;font-weight:700;font-style:italic;text-transform:uppercase;font-size:12px}
+</style>
+</head>
+<body>
+<div id="toolbar">
+  <button onclick="show('sys')" id="b1" class="active">System Architecture</button>
+  <button onclick="show('ctx')" id="b2">Bounded Contexts</button>
+  <button onclick="fit()">Fit View</button>
+</div>
+<div id="tip"></div>
+<svg id="c"></svg>
+<script>
+const C={
+  blue:{bg:'#EBF0FC',bd:'#4B7BE5',tx:'#4B7BE5'},
+  red:{bg:'#FCEBED',bd:'#E05555',tx:'#E05555'},
+  yellow:{bg:'#FDF5EB',bd:'#E5A84B',tx:'#E5A84B'},
+  green:{bg:'#EDFCF2',bd:'#4BC77F',tx:'#4BC77F'},
+  purple:{bg:'#F1EDFC',bd:'#8B5CF6',tx:'#8B5CF6'},
+  gray:{bg:'#F2F2F3',bd:'#4A4F51',tx:'#4A4F51'},
+  dark:{bg:'#F9FAFA',bd:'#333638',tx:'#333638'},
+};
+
+// ---- ICONS as tiny SVG path data ----
+const ICONS={
+  lock:'M8 11V7a4 4 0 118 0v4m-9 0h10a2 2 0 012 2v5a2 2 0 01-2 2H7a2 2 0 01-2-2v-5a2 2 0 012-2z',
+  wallet:'M3 7h18v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7zm0 4h18M17 14h.01',
+  clipboard:'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5h6M9 14l2 2 4-4',
+  target:'M12 8a4 4 0 100 8 4 4 0 000-8zM12 2v4m0 12v4M2 12h4m12 0h4',
+  chart:'M3 20h18M6 16v4M10 12v8M14 8v12M18 4v16',
+  school:'M2 7l10 5 10-5-10-5-10 5zM4 9v6c0 2 3.5 4 8 4s8-2 8-4V9',
+  file:'M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2zM8 10h8M8 14h5',
+  bell:'M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0',
+  queue:'M4 12h16m-4-4l4 4-4 4',
+  brain:'M12 2a7 7 0 017 7c0 2.5-1.3 4.7-3.3 6H8.3C6.3 13.7 5 11.5 5 9a7 7 0 017-7zM9 17v2a3 3 0 006 0v-2',
+  layers:'M12 2L2 7l10 5 10-5-10-5zM2 12l10 5 10-5M2 17l10 5 10-5',
+  db:'M12 3c4.42 0 8 1.34 8 3s-3.58 3-8 3-8-1.34-8-3 3.58-3 8-3zM4 6v6c0 1.66 3.58 3 8 3s8-1.34 8-3V6M4 12v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6',
+  cloud:'M20 16.58A5 5 0 0018 7h-1.26A8 8 0 104 15.25M8 16l4-4 4 4M12 12v9',
+  laptop:'M2 5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zM1 19h22',
+  phone:'M7 2h10a2 2 0 012 2v16a2 2 0 01-2 2H7a2 2 0 01-2-2V4a2 2 0 012-2zM12 18h.01',
+  api:'M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2zM2 8h20M8 12h3m2 0h3M8 15h8',
+  mic:'M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3zM19 10v2a7 7 0 01-14 0v-2M12 19v4',
+  check:'M9 12l2 2 4-4m5 2a9 9 0 11-18 0 9 9 0 0118 0z',
+};
+
+function iconSvg(name,x,y,sz=20,col='#333638'){
+  return `<g transform="translate(${x},${y})"><path d="${ICONS[name]||ICONS.check}" fill="none" stroke="${col}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" transform="scale(${sz/24})"/></g>`;
+}
+
+// ---- DATA ----
+const SYS_N=[
+  {id:'web',l:'Web App',s:'React 19 · TS',c:'dark',cl:'clients',ic:'laptop',t:'TanStack Start · Tailwind v4 · shadcn/ui'},
+  {id:'mob',l:'Mobile',s:'React Native',c:'dark',cl:'clients',ic:'phone',t:'Mobile app (planned)'},
+  {id:'api',l:'REST API',s:'JWT · 96 routes',c:'blue',cl:'gateway',ic:'api',t:'/api/v1/* · 4 roles\nLearner(0) → Teacher(1) → Staff(2) → Admin(3)\nRate limiting · CORS'},
+  {id:'auth',l:'Auth',s:'JWT · Roles · Profile',c:'dark',cl:'backend',ic:'lock',t:'4 roles level-based\nRegister · Login · Switch Profile\nRefresh token rotation'},
+  {id:'wallet',l:'Wallet',s:'Coins · Topup · Promo',c:'dark',cl:'backend',ic:'wallet',t:'Append-only ledger\nAtomic spend (SELECT FOR UPDATE)\nCoinSourceType enum whitelist'},
+  {id:'exam',l:'Exam',s:'Sessions · Timer',c:'dark',cl:'backend',ic:'clipboard',t:'Custom + Full VSTEP mode\nServer-authoritative timer\nMCQ chấm sync'},
+  {id:'prac',l:'Practice',s:'L · R · W · S',c:'dark',cl:'backend',ic:'target',t:'Listening · Reading · Writing · Speaking\nDrill + Custom VSTEP tier\nSupport levels (tốn xu)'},
+  {id:'prog',l:'Progress',s:'SRS · Streak',c:'dark',cl:'backend',ic:'chart',t:'Vocab SRS (Anki)\nGrammar mastery\nStreak from drills · Chart from exams'},
+  {id:'crs',l:'Course',s:'Enroll · Booking',c:'dark',cl:'backend',ic:'school',t:'Mua bằng xu\nCommitment gate → unlock booking\nTeacher slots 1-1'},
+  {id:'cnt',l:'Content',s:'Vocab · Grammar',c:'dark',cl:'backend',ic:'file',t:'~25 tables\nPractice ≠ Exam (tách hoàn toàn)\nStaff draft → Admin publish'},
+  {id:'ntf',l:'Notify',s:'Unified Inbox',c:'dark',cl:'backend',ic:'bell',t:'14 notification types\nEvent-driven fan-out'},
+  {id:'q',l:'Horizon',s:'Redis Queue',c:'yellow',cl:'mq',ic:'queue',t:'Laravel Horizon\nGrading jobs · Notifications\nRetry 3x exponential backoff'},
+  {id:'l0',l:'L0: Heuristic',s:'PHP sync',c:'dark',cl:'grading',ic:'check',t:'Word count · keyword coverage\nBasic regex · 0ms'},
+  {id:'l1',l:'L1: LangTool',s:'Grammar check',c:'dark',cl:'grading',ic:'check',t:'Grammar + spelling errors'},
+  {id:'l2',l:'L2: Gemini',s:'Rubric scoring',c:'dark',cl:'grading',ic:'brain',t:'laravel/ai SDK\nRubric Bộ Giáo dục\nstrengths → improvements → rewrites'},
+  {id:'az',l:'Azure Speech',s:'STT · Pronun.',c:'dark',cl:'grading',ic:'mic',t:'Speaking only\nAzure Speech API F0\nPronunciation assessment'},
+  {id:'pg',l:'PostgreSQL',s:'71 tables',c:'dark',cl:'data',ic:'db',t:'7 bounded contexts\nUUID PKs · CASCADE\nNo soft deletes'},
+  {id:'rd',l:'Redis',s:'Cache · Queue',c:'dark',cl:'data',ic:'layers',t:'Queue broker (Horizon)\nCache · JWT blacklist'},
+  {id:'r2',l:'Cloudflare R2',s:'Audio (S3)',c:'dark',cl:'data',ic:'cloud',t:'S3-compatible\nPresigned URLs\nSpeaking audio'},
+];
+const SYS_E=[
+  {f:'web',t:'api',l:'HTTPS'},{f:'mob',t:'api',l:'HTTPS'},
+  {f:'api',t:'auth'},{f:'api',t:'wallet'},{f:'api',t:'exam'},{f:'api',t:'prac'},
+  {f:'api',t:'prog'},{f:'api',t:'crs'},{f:'api',t:'cnt'},{f:'api',t:'ntf'},
+  {f:'exam',t:'q',l:'W/S'},{f:'prac',t:'q',l:'W/S'},
+  {f:'q',t:'l0'},{f:'l0',t:'l1'},{f:'l1',t:'l2'},{f:'l2',t:'az',l:'Speaking'},
+  {f:'auth',t:'pg'},{f:'wallet',t:'pg'},{f:'exam',t:'pg'},{f:'prac',t:'pg'},
+  {f:'prog',t:'pg'},{f:'crs',t:'pg'},{f:'cnt',t:'pg'},{f:'ntf',t:'pg'},
+  {f:'q',t:'rd'},{f:'prac',t:'r2',l:'Audio'},
+];
+const SYS_CL=[
+  {id:'clients',l:'Clients',c:'gray'},
+  {id:'gateway',l:'API Gateway',c:'blue'},
+  {id:'backend',l:'Laravel 13 Backend · PHP 8.4',c:'blue'},
+  {id:'mq',l:'Message Queue',c:'yellow'},
+  {id:'grading',l:'AI Grading Pipeline',c:'red'},
+  {id:'data',l:'Data Layer',c:'yellow'},
+];
+
+const CTX_N=[
+  {id:'c1',l:'Identity & Profile',s:'5 tables',c:'blue',cl:'dom',ic:'lock',t:'users, profiles, onboarding,\nreset_events, refresh_tokens'},
+  {id:'c2',l:'Economy',s:'5 tables',c:'yellow',cl:'dom',ic:'wallet',t:'coin_transactions, topup_packages,\ntopup_orders, promo_codes, redemptions\n\nAppend-only ledger · Polymorphic source_type'},
+  {id:'c3',l:'Authoring',s:'~25 tables',c:'gray',cl:'dom',ic:'file',t:'Vocab · Grammar · Practice · Exam\nPractice ≠ Exam (tách hoàn toàn)\nStaff draft → Admin publish'},
+  {id:'c4',l:'Execution',s:'~10 tables',c:'blue',cl:'dom',ic:'clipboard',t:'practice_sessions, exam_sessions,\nmcq_answers, submissions\nServer timer · Support levels'},
+  {id:'c5',l:'Grading',s:'4 tables',c:'red',cl:'dom',ic:'brain',t:'grading_jobs, writing/speaking_results,\nteacher_reviews\n3-layer pipeline · Retry 3x'},
+  {id:'c6',l:'Progress',s:'5 tables',c:'green',cl:'dom',ic:'chart',t:'vocab_srs_states, grammar_mastery,\ndaily_activity, streak_state\nSRS (Anki) · Streak from drills'},
+  {id:'c7',l:'Commerce',s:'6 tables',c:'purple',cl:'dom',ic:'school',t:'courses, enrollments, schedule_items,\nteacher_slots, teacher_bookings\nCommitment gate → unlock booking'},
+  {id:'n1',l:'Notifications',s:'Cross-cutting',c:'gray',cl:'cc',ic:'bell',t:'14 types · Unified inbox\nEvent-driven fan-out'},
+  {id:'n2',l:'System Config',s:'Cross-cutting',c:'gray',cl:'cc',ic:'layers',t:'Admin-tunable params\nExam costs, streak goals, chart thresholds'},
+];
+const CTX_E=[
+  {f:'c1',t:'c2',l:'profile.created',ec:'blue'},
+  {f:'c1',t:'c6',l:'profile.reset',ec:'blue'},
+  {f:'c3',t:'c4',l:'content read',ec:'gray'},
+  {f:'c4',t:'c5',l:'submission',ec:'blue'},
+  {f:'c4',t:'c6',l:'session.done',ec:'blue'},
+  {f:'c4',t:'c7',l:'exam.graded',ec:'blue'},
+  {f:'c5',t:'c6',l:'grading.done',ec:'red'},
+  {f:'c5',t:'n1',l:'notify',ec:'red'},
+  {f:'c7',t:'c2',l:'purchase',ec:'purple'},
+];
+const CTX_CL=[
+  {id:'dom',l:'7 Bounded Contexts',c:'blue'},
+  {id:'cc',l:'Cross-Cutting',c:'gray'},
+];
+
+// ---- RENDER ----
+const svg=d3.select('#c'), g=svg.append('g'), tip=d3.select('#tip');
+const zm=d3.zoom().scaleExtent([.15,3]).on('zoom',e=>g.attr('transform',e.transform));
+svg.call(zm);
+
+function fit(){
+  const b=g.node().getBBox();
+  if(!b.width)return;
+  const vw=window.innerWidth,vh=window.innerHeight;
+  const s=Math.min(vw/(b.width+100),vh/(b.height+100),.95);
+  const tx=vw/2-(b.x+b.width/2)*s, ty=vh/2-(b.y+b.height/2)*s;
+  svg.transition().duration(400).call(zm.transform,d3.zoomIdentity.translate(tx,ty).scale(s));
+}
+
+function layout(nodes,edges,clusters){
+  const G=new dagre.graphlib.Graph({compound:true});
+  G.setGraph({rankdir:'LR',ranksep:70,nodesep:25,marginx:30,marginy:30});
+  G.setDefaultEdgeLabel(()=>({}));
+  clusters.forEach(c=>G.setNode(c.id,{label:c.l,width:0,height:0}));
+  nodes.forEach(n=>{G.setNode(n.id,{width:130,height:62});if(n.cl)G.setParent(n.id,n.cl)});
+  edges.forEach(e=>G.setEdge(e.f,e.t,{label:e.l||'',width:e.l?e.l.length*5.5:0,height:e.l?14:0}));
+  dagre.layout(G);
+  return G;
+}
+
+function render(nodes,edges,clusters){
+  g.selectAll('*').remove();
+  const G=layout(nodes,edges,clusters);
+  const nmap={};nodes.forEach(n=>nmap[n.id]=n);
+
+  // Arrows
+  const defs=g.append('defs');
+  Object.entries(C).forEach(([k,v])=>{
+    defs.append('marker').attr('id','a-'+k).attr('viewBox','0 0 10 7')
+      .attr('refX',8).attr('refY',3.5).attr('markerWidth',10).attr('markerHeight',7).attr('orient','auto')
+      .append('path').attr('d','M0,0 L10,3.5 L0,7 L2,3.5 Z').attr('fill',v.bd);
+  });
+
+  // Clusters
+  clusters.forEach(c=>{
+    const i=G.node(c.id);if(!i||!i.width)return;
+    const col=C[c.c];
+    const cg=g.append('g');
+    cg.append('rect').attr('x',i.x-i.width/2-16).attr('y',i.y-i.height/2-16)
+      .attr('width',i.width+32).attr('height',i.height+32).attr('rx',10)
+      .attr('fill',col.bg).attr('stroke',col.bd).attr('stroke-width',2.5).attr('stroke-dasharray','8 4').attr('opacity',.85);
+    cg.append('text').attr('x',i.x-i.width/2-8).attr('y',i.y-i.height/2-22)
+      .attr('class','clbl').attr('fill',col.tx).text(c.l);
+  });
+
+  // Edges — orthogonal routing
+  edges.forEach(e=>{
+    const ei=G.edge(e.f,e.t);if(!ei||!ei.points)return;
+    const ck=e.ec||'dark';const col=C[ck].bd;
+    const pts=ei.points;
+    // Build orthogonal path: step through points with right-angle segments
+    let d='M'+pts[0].x+','+pts[0].y;
+    for(let i=1;i<pts.length;i++){
+      const p=pts[i-1],c=pts[i];
+      const mx=(p.x+c.x)/2;
+      d+=' L'+mx+','+p.y+' L'+mx+','+c.y+' L'+c.x+','+c.y;
+    }
+    g.append('path').attr('d',d)
+      .attr('fill','none').attr('stroke',col).attr('stroke-width',1.8)
+      .attr('stroke-linejoin','round').attr('stroke-linecap','round')
+      .attr('marker-end',`url(#a-${ck})`);
+    if(e.l){
+      const mi=Math.floor(pts.length/2);
+      const m=pts[mi];
+      const tw=e.l.length*5.5+10;
+      g.append('rect').attr('x',m.x-tw/2).attr('y',m.y-10).attr('width',tw).attr('height',18)
+        .attr('rx',4).attr('fill','#fff').attr('stroke',col).attr('stroke-width',1);
+      g.append('text').attr('x',m.x).attr('y',m.y+3).attr('text-anchor','middle')
+        .attr('font-family','Inter').attr('font-size',9).attr('font-weight',500).attr('fill',col).text(e.l);
+    }
+  });
+
+  // Nodes
+  nodes.forEach(n=>{
+    const i=G.node(n.id);if(!i)return;
+    const col=C[n.c];const x=i.x-i.width/2,y=i.y-i.height/2;
+    const ng=g.append('g').attr('class','node-g').attr('transform',`translate(${x},${y})`);
+    // Shadow
+    ng.append('rect').attr('x',5).attr('y',5).attr('width',i.width).attr('height',i.height)
+      .attr('rx',10).attr('fill','#EBEBEB');
+    // Card
+    ng.append('rect').attr('class','card').attr('width',i.width).attr('height',i.height)
+      .attr('rx',10).attr('fill',col.bg).attr('stroke',col.bd).attr('stroke-width',2.5);
+    // Icon
+    const icX=i.width/2-10, icY=6;
+    ng.node().insertAdjacentHTML('beforeend',iconSvg(n.ic,icX,icY,20,col.bd));
+    // Label
+    ng.append('text').attr('x',i.width/2).attr('y',38).attr('class','lbl').attr('font-size',11).text(n.l);
+    // Sub
+    ng.append('text').attr('x',i.width/2).attr('y',52).attr('class','sub').text(n.s);
+    // Tooltip
+    if(n.t){
+      ng.on('mouseenter',ev=>{
+        tip.style('display','block').html(`<b>${n.l}</b><br>${n.t.replace(/\n/g,'<br>')}`)
+          .style('left',(ev.clientX+14)+'px').style('top',(ev.clientY-6)+'px');
+      }).on('mousemove',ev=>{
+        tip.style('left',(ev.clientX+14)+'px').style('top',(ev.clientY-6)+'px');
+      }).on('mouseleave',()=>tip.style('display','none'));
+    }
+  });
+}
+
+let cur='sys';
+function show(p){
+  cur=p;
+  document.getElementById('b1').classList.toggle('active',p==='sys');
+  document.getElementById('b2').classList.toggle('active',p==='ctx');
+  if(p==='sys')render(SYS_N,SYS_E,SYS_CL);
+  else render(CTX_N,CTX_E,CTX_CL);
+  setTimeout(fit,50);
+}
+show('sys');
+window.addEventListener('resize',()=>setTimeout(fit,100));
+</script>
+</body>
+</html>

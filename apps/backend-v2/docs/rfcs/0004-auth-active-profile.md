@@ -11,7 +11,7 @@ Superseded by: —
 
 ## Summary
 
-Cụ thể hóa cơ chế auth 3-role (learner/admin/teacher) + active profile context trong JWT + middleware chain cho từng role.
+Cụ thể hóa cơ chế auth 4-role (learner/teacher/staff/admin) + active profile context trong JWT + middleware chain cho từng role.
 
 ## Motivation
 
@@ -28,7 +28,7 @@ Backend-v2 đã có `jwt-auth` setup với role đơn giản. Cần mở rộng:
 ```json
 {
   "sub": "<account_id>",
-  "role": "learner | admin | teacher",
+  "role": "learner | teacher | staff | admin",
   "active_profile_id": "<profile_id>",  // null nếu admin/teacher
   "iat": ...,
   "exp": ...,
@@ -67,7 +67,7 @@ Không revoke JWT cũ (short TTL). Client update token storage.
 ### Register flow
 
 ```
-POST /auth/register { email, password, nickname, target_level, target_deadline, entry_level? }
+POST /auth/register { email, password, nickname, target_level, target_deadline }
   DB transaction:
     → create account (role=learner)
     → create profile (is_initial_profile=true)
@@ -75,7 +75,7 @@ POST /auth/register { email, password, nickname, target_level, target_deadline, 
   → event listener:
     → create coin_transaction (type=onboarding_bonus, delta=100) — system_configs['onboarding.initial_coins']
   → issue tokens
-  → return
+  → return { access_token, refresh_token, user, profile }
 ```
 
 ### Middleware chain
@@ -85,8 +85,9 @@ Route::middleware(['auth:api', 'active-profile'])  // learner routes
   → auth:api: verify JWT
   → active-profile: ensure active_profile_id exists + load into request context
 
-Route::middleware(['auth:api', 'role:admin'])  // admin routes
 Route::middleware(['auth:api', 'role:teacher'])  // teacher routes
+Route::middleware(['auth:api', 'role:staff'])    // staff routes
+Route::middleware(['auth:api', 'role:admin'])     // admin routes
 ```
 
 Middleware `active-profile`:
@@ -96,9 +97,9 @@ Middleware `active-profile`:
 - Cache trong request lifecycle
 
 Middleware `role`:
-- Đọc `role` claim
-- So sánh với arg (`admin`/`teacher`)
-- Dùng `Role::is()` để check hierarchy (admin > teacher > learner)
+- Đọc `role` từ user model
+- Dùng `Role::is()` để check hierarchy: admin (3) > staff (2) > teacher (1) > learner (0)
+- Level-based: role có level >= required là pass
 
 ### Profile ownership check
 
@@ -124,17 +125,20 @@ public function authorize(): bool
 
 ```
 admin:
-  - mọi quyền
-  - truy cập admin panel
+  - mọi quyền (level 3)
+  - quản lý users, system configs, exam publish/delete
+  - không có profile
+
+staff:
+  - quản lý content, courses, scheduling (level 2)
   - không có profile
 
 teacher:
-  - truy cập teacher panel
-  - quản lý slots, bookings của mình
+  - xem lịch, xin nghỉ, chấm bài (level 1)
   - không có profile
 
 learner:
-  - truy cập learner API
+  - truy cập learner API (level 0)
   - có 1 hoặc nhiều profile
 ```
 

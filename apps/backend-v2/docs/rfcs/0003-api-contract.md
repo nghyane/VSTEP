@@ -19,8 +19,9 @@ Toàn bộ endpoint REST của backend-v2. Bao gồm: verb + path, auth level, p
 - Auth:
   - `public` — không cần token
   - `jwt` — learner access, JWT chứa `account_id + active_profile_id`
-  - `jwt:admin` — role admin
-  - `jwt:teacher` — role teacher
+  - `jwt:teacher` — role teacher (level ≥ 1)
+  - `jwt:staff` — role staff (level ≥ 2)
+  - `jwt:admin` — role admin (level ≥ 3)
 - Response shape: `{ "data": ..., "meta": { ... } }` theo Laravel API Resource default.
 - Pagination: `?page=1&per_page=20`, response `meta: { current_page, total, per_page, last_page }`.
 - Error: HTTP status + `{ "message": "...", "errors": {...} }`.
@@ -38,8 +39,8 @@ Chia theo 10 nhóm endpoint tương ứng business module.
 ### `POST /api/v1/auth/register` — public
 Tạo account + profile đầu + cấp 100 xu.
 
-Request: `{ email, password, nickname, target_level, target_deadline, entry_level? }`
-Response: `{ access_token, refresh_token, account, active_profile }`
+Request: `{ email, password, nickname, target_level, target_deadline }`
+Response: `{ access_token, refresh_token, user, profile }`
 
 ### `POST /api/v1/auth/login` — public
 Login, mặc định active profile = profile đầu của account.
@@ -391,62 +392,44 @@ Recent messages.
 
 Under `/api/v1/admin`, auth `jwt:admin`.
 
-### Content CRUD (mirror Authoring)
-- `GET/POST/PATCH/DELETE /admin/vocab/topics`
-- `GET/POST/PATCH/DELETE /admin/vocab/words`
-- `GET/POST/PATCH/DELETE /admin/vocab/exercises`
-- `GET/POST/PATCH/DELETE /admin/grammar/points` + children
-- `GET/POST/PATCH/DELETE /admin/grammar/exercises`
-- `GET/POST/PATCH/DELETE /admin/practice/listening-exercises` + questions
-- `GET/POST/PATCH/DELETE /admin/practice/reading-exercises` + questions
-- `GET/POST/PATCH/DELETE /admin/practice/writing-prompts` + children
-- `GET/POST/PATCH/DELETE /admin/practice/speaking-drills` + sentences
-- `GET/POST/PATCH/DELETE /admin/practice/speaking-tasks`
-- `GET/POST/PATCH/DELETE /admin/exams` + versions + sections/passages/tasks/parts
+> **Updated**: Admin panel được tách thành Staff + Admin theo RFC 0011.
+> Staff quản lý content/courses/scheduling. Admin quản lý users/system/exam publish.
+> Xem RFC 0011 cho chi tiết endpoints.
 
-### Commerce
-- `GET/POST/PATCH/DELETE /admin/courses` + schedule
-- `GET/POST/PATCH/DELETE /admin/teacher-slots`
-- `GET /admin/bookings` — all bookings
-- `GET /admin/enrollments` — all enrollments
+### Staff (`/api/v1/staff/*`, auth `jwt:staff`)
+- Content CRUD: vocab, grammar, practice exercises, exam drafts
+- Commerce: CRUD courses + schedule, slots, leave requests
+- Operations: enrollments, promo codes, notifications
 
-### Config
-- `GET /admin/configs`
-- `PATCH /admin/configs/{key}`
-- `GET/POST/PATCH/DELETE /admin/topup-packages`
-- `GET/POST/PATCH/DELETE /admin/promo-codes`
-
-### Wallet admin
-- `POST /admin/wallet/grant` — admin_grant xu cho profile
-  - Request: `{ profile_id, amount, reason }`
-
-### Reports
-- `GET /admin/reports/wallet-daily`
-- `GET /admin/reports/active-users`
-- `GET /admin/reports/grading-jobs`
-
-### Accounts
-- `GET /admin/accounts` — list paginated
-- `PATCH /admin/accounts/{id}/role`
-- `POST /admin/accounts/{id}/teacher-grant` — nâng role learner → teacher
+### Admin (`/api/v1/admin/*`, auth `jwt:admin`)
+- CRUD users (tạo teacher/staff)
+- System configs, topup packages/orders
+- Exam publish/unpublish/delete (approval flow)
+- Dashboard stats, reports
+- Wallet admin grant
 
 ---
 
 ## 13. Teacher panel
 
+> **Updated**: Teacher không tự set lịch (trung tâm quản lý). Xem RFC 0011.
+
 Under `/api/v1/teacher`, auth `jwt:teacher`.
 
-### `GET /api/v1/teacher/courses` — teacher courses được gán
-### `GET /api/v1/teacher/slots` — my slots
-### `POST /api/v1/teacher/slots` — open slot mới
-### `PATCH /api/v1/teacher/slots/{id}` — cancel slot
-### `GET /api/v1/teacher/bookings` — my bookings
-### `PATCH /api/v1/teacher/bookings/{id}` — paste meet_url, mark completed
+### `GET /api/v1/teacher/slots` — xem lịch dạy của mình
+### `GET /api/v1/teacher/bookings` — danh sách booking học viên
+### `PATCH /api/v1/teacher/bookings/{id}` — cập nhật meet_url, ghi chú
 ### `POST /api/v1/teacher/bookings/{id}/review` — submit teacher_review
 
 Request: `{ content, visible_to_student }`
 
 ### `GET /api/v1/teacher/bookings/{id}/submission` — xem submission nếu attach
+### `GET /api/v1/teacher/exams` — xem đề thi published (read-only)
+### `GET /api/v1/teacher/grading-queue` — bài cần chấm
+### `POST /api/v1/teacher/grading/{submission_id}` — chấm bài thủ công
+### `POST /api/v1/teacher/leave-requests` — xin nghỉ
+### `GET /api/v1/teacher/leave-requests` — xem request nghỉ của mình
+### `GET /api/v1/teacher/reviews` — xem review từ học viên
 
 ---
 
