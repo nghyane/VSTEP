@@ -9,9 +9,15 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\LogoutRequest;
 use App\Http\Requests\Auth\RefreshRequest;
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\SwitchProfileRequest;
+use App\Http\Resources\ProfileResource;
 use App\Http\Resources\UserResource;
+use App\Models\Profile;
+use App\Models\User;
 use App\Services\AuthService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
@@ -19,17 +25,21 @@ class AuthController extends Controller
         private readonly AuthService $authService,
     ) {}
 
-    public function register(RegisterRequest $request)
+    public function register(RegisterRequest $request): JsonResponse
     {
-        $user = $this->authService->register($request->validated());
+        $result = $this->authService->register(
+            $request->accountData(),
+            $request->profileData(),
+        );
 
         return response()->json(['data' => [
-            'user' => new UserResource($user),
+            'user' => new UserResource($result['user']),
+            'profile' => new ProfileResource($result['profile']),
             'message' => 'Registration successful.',
         ]], 201);
     }
 
-    public function login(LoginRequest $request)
+    public function login(LoginRequest $request): JsonResponse
     {
         $result = $this->authService->login(
             $request->validated('email'),
@@ -39,23 +49,46 @@ class AuthController extends Controller
 
         return response()->json(['data' => [
             'user' => new UserResource($result['user']),
+            'profile' => $result['profile'] ? new ProfileResource($result['profile']) : null,
             'access_token' => $result['access_token'],
             'refresh_token' => $result['refresh_token'],
             'expires_in' => $result['expires_in'],
         ]]);
     }
 
-    public function refresh(RefreshRequest $request)
+    public function refresh(RefreshRequest $request): JsonResponse
     {
         $result = $this->authService->refresh(
             $request->validated('refresh_token'),
             $request->userAgent(),
         );
 
-        return response()->json(['data' => $result]);
+        return response()->json(['data' => [
+            'access_token' => $result['access_token'],
+            'refresh_token' => $result['refresh_token'],
+            'expires_in' => $result['expires_in'],
+            'profile' => $result['profile'] ? new ProfileResource($result['profile']) : null,
+        ]]);
     }
 
-    public function logout(LogoutRequest $request)
+    public function switchProfile(SwitchProfileRequest $request): JsonResponse
+    {
+        $result = $this->authService->switchProfile(
+            $request->user(),
+            $request->validated('profile_id'),
+            $request->validated('refresh_token'),
+            $request->userAgent(),
+        );
+
+        return response()->json(['data' => [
+            'access_token' => $result['access_token'],
+            'refresh_token' => $result['refresh_token'],
+            'expires_in' => $result['expires_in'],
+            'profile' => new ProfileResource($result['profile']),
+        ]]);
+    }
+
+    public function logout(LogoutRequest $request): JsonResponse
     {
         $this->authService->logout(
             $request->validated('refresh_token'),
@@ -65,8 +98,24 @@ class AuthController extends Controller
         return response()->json(['data' => ['success' => true]]);
     }
 
-    public function me(Request $request): UserResource
+    public function me(Request $request): JsonResponse
     {
-        return new UserResource($request->user());
+        /** @var User $user */
+        $user = $request->user();
+        $payload = JWTAuth::parseToken()->getPayload();
+        $profileId = $payload->get('active_profile_id');
+
+        $profile = null;
+        if (is_string($profileId) && $profileId !== '') {
+            $candidate = Profile::query()->find($profileId);
+            if ($candidate !== null && $candidate->account_id === $user->id) {
+                $profile = $candidate;
+            }
+        }
+
+        return response()->json(['data' => [
+            'user' => new UserResource($user),
+            'profile' => $profile ? new ProfileResource($profile) : null,
+        ]]);
     }
 }

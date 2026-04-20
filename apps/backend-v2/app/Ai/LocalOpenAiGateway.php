@@ -10,9 +10,9 @@ use Illuminate\Support\Facades\Http;
 use Laravel\Ai\Gateway\OpenAi\OpenAiGateway;
 use Laravel\Ai\Gateway\TextGenerationOptions;
 use Laravel\Ai\Providers\Provider;
+use Laravel\Ai\Responses\Data\Meta;
 use Laravel\Ai\Responses\StructuredTextResponse;
 use Laravel\Ai\Responses\TextResponse;
-use Laravel\Ai\Responses\Data\Meta;
 
 class LocalOpenAiGateway extends OpenAiGateway
 {

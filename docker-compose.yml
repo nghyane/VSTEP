@@ -112,6 +112,37 @@ services:
       - backend
     restart: unless-stopped
 
+  # LanguageTool — grammar checker (rule-based, deterministic)
+  languagetool:
+    image: erikvl87/languagetool:latest
+    ports:
+      - "8081:8010"
+    environment:
+      langtool_languageModel: ""
+      Java_Xms: 256m
+      Java_Xmx: 512m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8010/v2/languages"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # NLP Sidecar — GECToR + CEFR Classifier (optional, phase 2)
+  # Uncomment when models downloaded and accuracy verified.
+  # nlp-sidecar:
+  #   build: ./apps/nlp-sidecar
+  #   ports:
+  #     - "8082:8000"
+  #   environment:
+  #     MODELS_DIR: /app/models
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   restart: unless-stopped
+
 volumes:
   pgdata:
   redisdata:

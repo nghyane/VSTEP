@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════
+   VSTEP Design Tokens — Single source of truth
+   
+   Naming convention:
+   - Semantic: primary, destructive, warning, success
+   - Neutrals: foreground, muted, subtle, border, surface, background
+   - Domain: skill-*, streak, coin
+   - Components dùng semantic names, KHÔNG hardcode hex
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── FONTS ─────────────────────────────────────────── */
+
+@font-face {
+  font-family: "Duolingo Sans";
+  src: url("/fonts/DuolingoSans-VF.otf") format("opentype-variations"),
+       url("/fonts/DuolingoSans-VF.otf") format("opentype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Feather";
+  src: url("/fonts/Feather-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ─── TOKENS ───────────────────────────────────────── */
+
+@theme {
+  /* ═══ Fonts ═══ */
+  --font-sans: "Duolingo Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Feather", "Duolingo Sans", sans-serif;
+
+  /* ═══ Semantic — dùng trong components ═══ */
+  --color-primary: #58cc02;
+  --color-primary-foreground: #ffffff;
+  --color-primary-dark: #478700;
+  --color-primary-light: #79d634;
+  --color-primary-tint: #e6f8d4;
+
+  --color-destructive: #ea4335;
+  --color-destructive-tint: #ffe6e4;
+
+  --color-warning: #ff9b00;
+  --color-warning-tint: #fff0dc;
+
+  --color-success: #58cc02;
+  --color-info: #1cb0f6;
+  --color-info-tint: #ddf4ff;
+
+  /* ═══ Neutrals — text, borders, backgrounds ═══ */
+  --color-foreground: #1e1e28;
+  --color-muted: #4b4b5a;
+  --color-subtle: #8c8c9b;
+  --color-placeholder: #afafaf;
+  --color-border: #e5e5e5;
+  --color-surface: #ffffff;
+  --color-background: #f7f7fa;
+
+  /* ═══ Domain — VSTEP specific ═══ */
+  --color-skill-listening: #1cb0f6;
+  --color-skill-reading: #7850c8;
+  --color-skill-writing: #58cc02;
+  --color-skill-speaking: #ffc800;
+
+  --color-streak: #ff7800;
+  --color-streak-tint: #fff0dc;
+
+  --color-coin: #ffc800;
+  --color-coin-dark: #dcaa00;
+  --color-coin-tint: #fff5d2;
+
+  /* ═══ Radius ═══ */
+  --radius-button: 13px;
+  --radius-card: 16px;
+  --radius-banner: 24px;
+}
+
+/* ─── BASE ─────────────────────────────────────────── */
+
+@layer base {
+  html, body {
+    font-family: var(--font-sans);
+    background: var(--color-background);
+    color: var(--color-foreground);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* ─── COMPONENTS ──────────────────────────────────── */
+
+@layer components {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-button);
+    padding: 0.625rem 1.25rem;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    transition: transform 0.1s, box-shadow 0.1s;
+    cursor: pointer;
+  }
+  .btn:active {
+    transform: translateY(2px);
+  }
+  .btn-primary {
+    background: var(--color-primary);
+    color: var(--color-primary-foreground);
+    box-shadow: 0 4px 0 var(--color-primary-dark);
+  }
+  .btn-primary:active {
+    box-shadow: 0 2px 0 var(--color-primary-dark);
+  }
+  .btn-secondary {
+    background: var(--color-surface);
+    color: var(--color-foreground);
+    box-shadow: 0 2px 0 var(--color-border), inset 0 0 0 2px var(--color-border);
+  }
+
+  .card {
+    background: var(--color-surface);
+    border-radius: var(--radius-card);
+    border: 2px solid var(--color-border);
+    border-bottom-width: 4px;
+  }
+  .card-interactive {
+    background: var(--color-surface);
+    border-radius: var(--radius-card);
+    border: 2px solid var(--color-border);
+    border-bottom-width: 4px;
+    transition: transform 0.15s;
+    cursor: pointer;
+  }
+  .card-interactive:hover {
+    transform: translateY(-2px);
+  }
+}

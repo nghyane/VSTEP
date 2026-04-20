@@ -1,0 +1,25 @@
+import { type ClassValue, clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+	return twMerge(clsx(inputs))
+}
+
+/** Round to N decimal places. Matches backend `round($value, $precision)`. */
+export function round(value: number, precision = 1): number {
+	const factor = 10 ** precision
+	return Math.round(value * factor) / factor
+}
+
+/** Format minutes → "7h 20m" or "45m". */
+export function formatMinutes(m: number): string {
+	const h = Math.floor(m / 60)
+	const min = m % 60
+	return h > 0 ? `${h}h ${min}m` : `${min}m`
+}
+
+/** Format ISO date → "05/04". */
+export function formatShortDate(iso: string): string {
+	const d = new Date(iso)
+	return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`
+}
