@@ -7,16 +7,14 @@ const NAV_ITEMS: { label: string; icon: IconName; to: string }[] = [
 	{ label: "Tổng quan", icon: "house", to: "/dashboard" },
 	{ label: "Luyện tập", icon: "weights", to: "/luyen-tap" },
 	{ label: "Thi thử", icon: "target", to: "/thi-thu" },
-	{ label: "Khóa học", icon: "book", to: "/khoa-hoc" },
-	{ label: "Hồ sơ", icon: "face", to: "/ho-so" },
+	{ label: "Khóa học", icon: "guidebook", to: "/khoa-hoc" },
 ]
 
 export function Sidebar() {
 	const matchRoute = useMatchRoute()
 	const profile = useAuth((s) => s.profile)
-	const user = useAuth((s) => s.user)
 	const initial = profile?.nickname?.charAt(0).toUpperCase() ?? "?"
-	const displayName = profile?.nickname ?? user?.email ?? "User"
+	const profileActive = matchRoute({ to: "/ho-so", fuzzy: true })
 
 	return (
 		<aside className="w-[260px] shrink-0 bg-surface border-r border-border flex flex-col sticky top-0 h-screen">
@@ -38,13 +36,33 @@ export function Sidebar() {
 								active ? "bg-primary-tint text-primary" : "text-muted hover:bg-background",
 							)}
 						>
-							<Icon name={item.icon} size="sm" />
+							<span className="w-8 h-6 flex items-center justify-center shrink-0">
+								<Icon name={item.icon} size="sm" />
+							</span>
 							<span className="text-base">{item.label}</span>
 						</Link>
 					)
 				})}
 
-				<div className="h-px bg-border my-3 mx-4" />
+				<Link
+					to="/ho-so"
+					className={cn(
+						"flex items-center gap-4 px-4 py-3 rounded-xl font-bold",
+						profileActive ? "bg-primary-tint text-primary" : "text-muted hover:bg-background",
+					)}
+				>
+					<span className="w-8 h-6 flex items-center justify-center shrink-0">
+						<span
+							className={cn(
+								"w-7 h-7 rounded-full border-2 border-dashed flex items-center justify-center font-display text-sm",
+								profileActive ? "border-primary text-primary" : "border-subtle text-subtle",
+							)}
+						>
+							{initial}
+						</span>
+					</span>
+					<span className="text-base">Hồ sơ</span>
+				</Link>
 
 				<button
 					type="button"
@@ -52,22 +70,12 @@ export function Sidebar() {
 					disabled
 					title="Sắp ra mắt"
 				>
-					<Icon name="more" size="sm" />
+					<span className="w-8 h-6 flex items-center justify-center shrink-0">
+						<Icon name="more" size="sm" className="text-more" />
+					</span>
 					<span className="text-base">Xem thêm</span>
 				</button>
 			</nav>
-
-			<div className="p-4">
-				<div className="flex items-center gap-3 p-3 rounded-xl bg-background">
-					<div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-display text-base">
-						{initial}
-					</div>
-					<div className="flex-1 min-w-0">
-						<p className="text-sm font-bold text-foreground truncate">{displayName}</p>
-						<p className="text-xs text-subtle truncate">Học viên</p>
-					</div>
-				</div>
-			</div>
 		</aside>
 	)
 }

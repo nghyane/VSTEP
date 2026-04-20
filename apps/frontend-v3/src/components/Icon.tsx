@@ -5,18 +5,23 @@ import bellSmall from "#/assets/icons/bell-small.svg"
 import BookIcon from "#/assets/icons/book-default.svg?react"
 import CheckIcon from "#/assets/icons/check-small.svg?react"
 import chestMedium from "#/assets/icons/chest-medium.svg"
+import ClipboardIcon from "#/assets/icons/clipboard-small.svg?react"
 import CloseIcon from "#/assets/icons/close-small.svg?react"
 import FaceIcon from "#/assets/icons/face-small.svg?react"
 import flagSmall from "#/assets/icons/flag-small.svg"
 import gemMedium from "#/assets/icons/gem-medium.svg"
 import gemSmall from "#/assets/icons/gem-small.svg"
 import GemSmallIcon from "#/assets/icons/gem-small.svg?react"
+import GraduationIcon from "#/assets/icons/graduation-small.svg?react"
+import GuidebookIcon from "#/assets/icons/guidebook-small.svg?react"
 import HouseIcon from "#/assets/icons/house-small.svg?react"
 import LightningIcon from "#/assets/icons/lightning-small.svg?react"
+import LogoutIcon from "#/assets/icons/logout-small.svg?react"
 import MicIcon from "#/assets/icons/microphone-small.svg?react"
 import challengeMedium from "#/assets/icons/monthly-challenge-medium.svg"
 import MoreIcon from "#/assets/icons/more-small.svg?react"
 import PencilIcon from "#/assets/icons/pencil-small.svg?react"
+import SearchIcon from "#/assets/icons/search-small.svg?react"
 import streakLarge from "#/assets/icons/streak-large.svg"
 import streakMedium from "#/assets/icons/streak-medium.svg"
 import streakSmall from "#/assets/icons/streak-small.svg"
@@ -35,14 +40,19 @@ export const icons = {
 	back: BackIcon,
 	book: BookIcon,
 	check: CheckIcon,
+	clipboard: ClipboardIcon,
 	close: CloseIcon,
 	face: FaceIcon,
 	"gem-mono": GemSmallIcon,
+	graduation: GraduationIcon,
+	guidebook: GuidebookIcon,
 	house: HouseIcon,
 	lightning: LightningIcon,
+	logout: LogoutIcon,
 	mic: MicIcon,
 	more: MoreIcon,
 	pencil: PencilIcon,
+	search: SearchIcon,
 	target: TargetSmallIcon,
 	timer: TimerSmallIcon,
 	trash: TrashIcon,
