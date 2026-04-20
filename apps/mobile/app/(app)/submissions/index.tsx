@@ -9,7 +9,6 @@ import { EmptyState } from "@/components/EmptyState";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
-import { useExamSessions } from "@/hooks/use-exam-session";
 import { useSubmissions } from "@/hooks/use-submissions";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize } from "@/theme";
 import type { Skill, ExamSessionWithExam, Submission, SubmissionStatus } from "@/types/api";

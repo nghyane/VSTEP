@@ -17,7 +17,7 @@ import { Logo } from "@/components/Logo";
 import { useThemeColors, spacing, radius, fontSize } from "@/theme";
 export default function RegisterScreen() {
   const router = useRouter();
-  const { signIn } = useAuth();
+  const register = useAuth((s) => s.register);
   const c = useThemeColors();
 
   const [fullName, setFullName] = useState("");
@@ -48,14 +48,20 @@ export default function RegisterScreen() {
   }, [fullName, email, password]);
 
   async function handleRegister() {
+    if (!validate()) return;
     setErrors({});
     setLoading(true);
     try {
-      const mockUser = { id: "mock-user-1", email: email.trim() || "demo@vstep.vn", role: "learner", fullName: fullName.trim() || "Nguyễn Phát" };
-      await signIn("mock-access-token", "mock-refresh-token", mockUser);
+      await register({
+        email: email.trim(),
+        password,
+        nickname: fullName.trim() || "Learner",
+        target_level: "B2",
+        target_deadline: new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10),
+      });
       router.replace("/");
-    } catch {
-      setErrors({ general: "Đăng ký thất bại" });
+    } catch (e: any) {
+      setErrors({ general: e?.message ?? "Đăng ký thất bại" });
     } finally {
       setLoading(false);
     }

@@ -19,7 +19,7 @@ import { useThemeColors, spacing, radius, fontSize } from "@/theme";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { signIn } = useAuth();
+  const login = useAuth((s) => s.login);
   const c = useThemeColors();
 
   const [email, setEmail] = useState("");
@@ -44,14 +44,14 @@ export default function LoginScreen() {
   }, [email, password]);
 
   async function handleLogin() {
+    if (!validate()) return;
     setErrors({});
     setLoading(true);
     try {
-      const mockUser = { id: "mock-user-1", email: email.trim() || "demo@vstep.vn", role: "learner", fullName: "Nguyễn Phát" };
-      await signIn("mock-access-token", "mock-refresh-token", mockUser);
+      await login(email.trim(), password);
       router.replace("/");
-    } catch {
-      setErrors({ general: "Đăng nhập thất bại" });
+    } catch (e: any) {
+      setErrors({ general: e?.message ?? "Đăng nhập thất bại" });
     } finally {
       setLoading(false);
     }

@@ -26,7 +26,7 @@ type Tab = "overview" | "track";
 export default function OverviewScreen() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const profile = useAuth((s) => s.profile);
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("overview");
   const [topUpVisible, setTopUpVisible] = useState(false);
@@ -34,7 +34,7 @@ export default function OverviewScreen() {
   const { data: progress } = useProgress();
   const { data: activity } = useActivity(90);
 
-  const fullName = user?.fullName ?? "Học viên";
+  const fullName = profile?.nickname ?? "Học viên";
   const initials = fullName.split(" ").map((w) => w[0]).join("").slice(-2).toUpperCase();
   const stats = MOCK_OVERVIEW_STATS;
 

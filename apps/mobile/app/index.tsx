@@ -3,7 +3,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { LoadingScreen } from "@/components/LoadingScreen";
 
 export default function Index() {
-  const { user, isLoading } = useAuth();
+  const user = useAuth((s) => s.user);
+  const isLoading = useAuth((s) => s.isLoading);
 
   if (isLoading) return <LoadingScreen />;
 

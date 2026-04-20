@@ -28,7 +28,9 @@ function showComingSoon() {
 export default function ProfileScreen() {
   const c = useThemeColors();
   const router = useRouter();
-  const { user: authUser, signOut } = useAuth();
+  const authUser = useAuth((s) => s.user);
+  const profile = useAuth((s) => s.profile);
+  const signOut = useAuth((s) => s.logout);
   const { data: userData, isLoading } = useUser(authUser?.id ?? "");
   const uploadAvatar = useUploadAvatar(authUser?.id ?? "");
   const { enabled: hapticsEnabled, setEnabled: setHapticsEnabled, trigger } = useHaptics();
@@ -38,7 +40,7 @@ export default function ProfileScreen() {
   const u = userData ?? authUser;
   if (!u) return null;
 
-  const initials = (u.fullName ?? u.email)
+  const initials = ((profile?.nickname ?? u?.email ?? "") ?? u.email)
     .split(" ")
     .map((w: string) => w[0])
     .slice(0, 2)
@@ -103,7 +105,7 @@ export default function ProfileScreen() {
             )}
           </View>
         </HapticTouchable>
-        <Text style={[styles.name, { color: c.foreground }]}>{u.fullName ?? "Chưa đặt tên"}</Text>
+        <Text style={[styles.name, { color: c.foreground }]}>{(profile?.nickname ?? u?.email ?? "") ?? "Chưa đặt tên"}</Text>
         <Text style={[styles.email, { color: c.mutedForeground }]}>{u.email}</Text>
       </View>
 

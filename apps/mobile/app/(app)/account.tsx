@@ -15,7 +15,8 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 
 export default function AccountScreen() {
   const c = useThemeColors();
-  const { user: authUser } = useAuth();
+  const authUser = useAuth((s) => s.user);
+  const profile = useAuth((s) => s.profile);
   const { data: userData, isLoading } = useUser(authUser?.id ?? "");
 
   if (isLoading) return <LoadingScreen />;
@@ -26,7 +27,7 @@ export default function AccountScreen() {
   return (
     <ScreenWrapper noPadding>
       <BouncyScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <UpdateInfoSection userId={u.id} fullName={u.fullName ?? ""} email={u.email} colors={c} />
+        <UpdateInfoSection userId={u.id} fullName={profile?.nickname ?? ""} email={u.email} colors={c} />
         <ChangePasswordSection userId={u.id} colors={c} />
       </BouncyScrollView>
     </ScreenWrapper>

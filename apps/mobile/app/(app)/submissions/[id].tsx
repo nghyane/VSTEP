@@ -8,7 +8,6 @@ import { ErrorScreen } from "@/components/ErrorScreen";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
 import { useQuery } from "@tanstack/react-query";
-import { useExplain, type ExplainResponse } from "@/hooks/use-ai";
 import { ObjectiveResultView } from "@/components/ObjectiveResultView";
 import { WritingAnnotationsView } from "@/components/WritingAnnotationsView";
 import { RichFeedback, AnnotatedAnswer } from "@/components/RichFeedback";
