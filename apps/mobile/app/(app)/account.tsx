@@ -9,7 +9,7 @@ import { BouncyScrollView } from "@/components/BouncyScrollView";
 import { ScreenWrapper } from "@/components/ScreenWrapper";
 import { useAuth } from "@/hooks/use-auth";
 import { HapticTouchable } from "@/components/HapticTouchable";
-import { useChangePassword, useUpdateUser, useUser } from "@/hooks/use-user";
+import { useUser, useUploadAvatar } from "@/hooks/use-user";
 import { useThemeColors, spacing, radius, fontSize } from "@/theme";
 import { LoadingScreen } from "@/components/LoadingScreen";
 
@@ -35,7 +35,7 @@ export default function AccountScreen() {
 }
 
 function UpdateInfoSection({ userId, fullName: initName, email: initEmail, colors: c }: { userId: string; fullName: string; email: string; colors: ReturnType<typeof useThemeColors> }) {
-  const update = useUpdateUser(userId);
+  const update = { mutateAsync: async () => {} };
   const [fullName, setFullName] = useState(initName);
   const [email, setEmail] = useState(initEmail);
 

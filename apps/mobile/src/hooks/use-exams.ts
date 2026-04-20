@@ -1,23 +1,32 @@
+// Exam hooks — thin wrappers over API
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { MOCK_EXAMS } from "@/lib/mock";
-import type { Exam, PaginatedResponse, ExamType, ExamSkill, QuestionLevel } from "@/types/api";
+import { type ApiResponse, api } from "@/lib/api";
 
-interface UseExamsParams {
-  type?: ExamType;
-  skill?: ExamSkill;
-  level?: QuestionLevel;
-  limit?: number;
-  page?: number;
+interface Exam {
+  id: string;
+  title: string;
+  level: string;
+  duration_minutes: number;
 }
 
-export function useExams(_params: UseExamsParams = {}) {
-  return useQuery({ queryKey: ["exams", _params], queryFn: async (): Promise<PaginatedResponse<Exam>> => ({ data: MOCK_EXAMS, meta: { page: 1, limit: 20, total: MOCK_EXAMS.length, totalPages: 1 } }) });
+export function useExams(_params: Record<string, unknown> = {}) {
+  return useQuery({
+    queryKey: ["exams"],
+    queryFn: () => api.get<ApiResponse<Exam[]>>("exams"),
+    staleTime: 300_000,
+  });
 }
 
 export function useExamDetail(id: string) {
-  return useQuery({ queryKey: ["exams", id], queryFn: async () => MOCK_EXAMS.find((e) => e.id === id) ?? MOCK_EXAMS[0], enabled: !!id });
+  return useQuery({
+    queryKey: ["exams", id],
+    queryFn: () => api.get<ApiResponse<Exam>>(`exams/${id}`),
+    enabled: !!id,
+  });
 }
 
 export function useStartExam() {
-  return useMutation({ mutationFn: async (_examId: string) => ({ id: "mock-session-new", status: "in_progress" } as any) });
+  return useMutation({
+    mutationFn: (examId: string) => api.post<ApiResponse<{ id: string }>>(`exams/${examId}/sessions`),
+  });
 }
