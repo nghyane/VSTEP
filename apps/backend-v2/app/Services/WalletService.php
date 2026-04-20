@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\CoinSourceType;
 use App\Enums\CoinTransactionType;
 use App\Models\CoinTransaction;
 use App\Models\Profile;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -130,11 +130,6 @@ class WalletService
 
     private function resolveSourceType(Model $source): string
     {
-        $class = $source::class;
-
-        // Map FQCN → short key for ledger. Ví dụ:
-        // App\Models\WalletTopupOrder → wallet_topup_order
-        // App\Models\PromoCodeRedemption → promo_code_redemption
-        return Str::snake(class_basename($class));
+        return CoinSourceType::fromModel($source::class)->value;
     }
 }
