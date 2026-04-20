@@ -1,9 +1,7 @@
 import { useForm } from "@tanstack/react-form"
 import { inputClass } from "#/features/auth/styles"
 import { api } from "#/lib/api"
-import { getApiError } from "#/lib/api-error"
 import { useAuth } from "#/lib/auth-store"
-import { useToast } from "#/lib/toast-store"
 import { cn } from "#/lib/utils"
 
 function LevelButton({ value, current, onChange }: { value: string; current: string; onChange: (v: string) => void }) {
@@ -25,17 +23,12 @@ function LevelButton({ value, current, onChange }: { value: string; current: str
 
 export function OnboardingModal() {
 	const profile = useAuth((s) => s.profile)
-	const toast = useToast((s) => s.add)
 
 	const form = useForm({
 		defaultValues: { nickname: "", target_level: "B2", target_deadline: "" },
 		onSubmit: async ({ value }) => {
-			try {
-				const res = await api.post("profiles", { json: value }).json<{ data: typeof profile }>()
-				useAuth.setState({ profile: res.data })
-			} catch (e) {
-				toast(getApiError(e))
-			}
+			const res = await api.post("profiles", { json: value }).json<{ data: typeof profile }>()
+			useAuth.setState({ profile: res.data })
 		},
 	})
 

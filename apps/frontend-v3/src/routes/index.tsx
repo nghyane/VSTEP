@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { useEffect } from "react"
 import { AuthShell } from "#/features/auth/AuthShell"
 import { LoginForm } from "#/features/auth/LoginForm"
 import { RegisterForm } from "#/features/auth/RegisterForm"
@@ -19,10 +20,9 @@ function LandingPage() {
 	const navigate = useNavigate()
 	const { auth } = Route.useSearch()
 
-	if (isAuthenticated) {
-		navigate({ to: "/dashboard" })
-		return null
-	}
+	useEffect(() => {
+		if (isAuthenticated) navigate({ to: "/dashboard" })
+	}, [isAuthenticated, navigate])
 
 	function closeAuth() {
 		navigate({ to: "/", search: {} })

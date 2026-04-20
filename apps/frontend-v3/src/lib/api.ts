@@ -1,4 +1,6 @@
 import ky from "ky"
+import { getApiError } from "#/lib/api-error"
+import { useToast } from "#/lib/toast-store"
 import { tokenStorage } from "#/lib/token-storage"
 
 export const api = ky.create({
@@ -16,6 +18,12 @@ export const api = ky.create({
 					tokenStorage.clear()
 					window.location.replace("/")
 				}
+			},
+		],
+		beforeError: [
+			(error) => {
+				useToast.getState().add(getApiError(error))
+				return error as unknown as Error
 			},
 		],
 	},

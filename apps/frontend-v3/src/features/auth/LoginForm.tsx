@@ -2,22 +2,15 @@ import { useForm } from "@tanstack/react-form"
 import { Link } from "@tanstack/react-router"
 import { GoogleButton } from "#/features/auth/GoogleButton"
 import { inputClass } from "#/features/auth/styles"
-import { getApiError } from "#/lib/api-error"
 import { useAuth } from "#/lib/auth-store"
-import { useToast } from "#/lib/toast-store"
 
 export function LoginForm() {
 	const login = useAuth((s) => s.login)
-	const toast = useToast((s) => s.add)
 
 	const form = useForm({
 		defaultValues: { email: "", password: "" },
 		onSubmit: async ({ value }) => {
-			try {
-				await login(value.email, value.password)
-			} catch (e) {
-				toast(getApiError(e))
-			}
+			await login(value.email, value.password)
 		},
 	})
 
