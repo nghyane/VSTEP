@@ -1,6 +1,9 @@
 ---
 name: file-organization
-description: "Folder structure, type placement, naming conventions, export rules. Load when creating new features or files."
+description: >
+  Where files go and how they are named. Load before creating any new file,
+  folder, feature module, or route — or when deciding where to put a type,
+  component, or utility.
 ---
 
 # File Organization

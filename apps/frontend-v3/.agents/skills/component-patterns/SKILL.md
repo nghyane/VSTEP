@@ -1,6 +1,9 @@
 ---
 name: component-patterns
-description: "Duo-style UI components: buttons, cards, skill pills. Load when creating or styling components."
+description: >
+  How UI components are built and styled in this project (buttons, cards, pills,
+  colors, SVG icons). Load before creating, modifying, or styling any React
+  component.
 ---
 
 # Component Patterns
@@ -9,3 +12,5 @@ description: "Duo-style UI components: buttons, cards, skill pills. Load when cr
 - Skill config (colors, icons, routes): `src/lib/skills.ts`
 - SVG icons as React components: `vite-plugin-svgr`, use `currentColor`
 - Dynamic colors via `style={{ color: config.color }}`, not Tailwind class injection
+- Write UI elements explicitly — no `.map()` over config arrays for small fixed sets (buttons, nav items)
+- Use design token tint variants (`bg-*-tint` + `text-*`) instead of solid backgrounds for interactive states

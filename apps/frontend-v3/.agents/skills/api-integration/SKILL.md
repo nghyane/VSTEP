@@ -1,6 +1,9 @@
 ---
 name: api-integration
-description: "API client setup, TanStack Query patterns, request/response types. Load when creating queries, adding API calls, or debugging data fetching."
+description: >
+  How this project fetches data from the backend. Load before writing any code
+  that calls an API, creates a query hook, handles loading/error states, or
+  touches authentication tokens.
 ---
 
 # API Integration

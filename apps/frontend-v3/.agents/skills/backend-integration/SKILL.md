@@ -1,6 +1,9 @@
 ---
 name: backend-integration
-description: "Rules for modifying backend (apps/backend-v2) from FE context. Load when adding or changing API endpoints."
+description: >
+  Rules for touching the Laravel backend from this frontend repo. Load before
+  adding, changing, or removing any API endpoint, route, controller, or service
+  in apps/backend-v2.
 ---
 
 # Backend Integration
