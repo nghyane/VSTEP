@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-04-21T00:00:00.000Z" agent="VSTEP-capstone" version="24.0.0">
+  <diagram id="instructor-flow" name="Instructor Screen Flow">
+    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ============ PRE-LOGIN CLUSTER (bordered, yellow bg) ============ -->
+        <mxCell id="prelogin_box" value="Pre-Login" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#2F5FA0;strokeWidth=2;dashed=1;fontSize=14;fontStyle=1;fontColor=#2F5FA0;verticalAlign=top;align=left;spacingLeft=10;spacingTop=5;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="300" height="400" as="geometry" />
+        </mxCell>
+
+        <mxCell id="landing" value="Landing Page" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="100" y="100" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="login" value="User Login&#xa;(admin-provisioned)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="100" y="230" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ============ HUB: Dashboard ============ -->
+        <mxCell id="dashboard" value="Dashboard" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="460" y="230" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ============ FEATURES ============ -->
+        <mxCell id="schedule" value="Schedule&#xa;(my available slots)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="800" y="120" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="bookings_list" value="1-1 Bookings List&#xa;(learners who booked me)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="800" y="280" width="220" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="booking_detail" value="Booking Detail&#xa;(learner info + meet URL)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="280" width="220" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ============ LEGEND ============ -->
+        <mxCell id="legend_box" value="Legend" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#999999;strokeWidth=1;fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacingLeft=10;spacingTop=5;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="40" width="280" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="lg1" value="Normal screen" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;" vertex="1" parent="legend_box">
+          <mxGeometry x="10" y="30" width="140" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="lg2" value="Auth / Profile screen" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;" vertex="1" parent="legend_box">
+          <mxGeometry x="10" y="70" width="140" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="lg_txt" value="• Arrow: unidirectional navigation&#xa;• Pre-login cluster = dashed-border group" style="text;html=1;fontSize=9;align=left;verticalAlign=top;fontColor=#2F5FA0;" vertex="1" parent="legend_box">
+          <mxGeometry x="10" y="115" width="260" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ============ ARROWS ============ -->
+        <mxCell id="ar1" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="landing" target="login">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ar2" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="login" target="dashboard">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ar3" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="dashboard" target="schedule">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ar4" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="dashboard" target="bookings_list">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ar5" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="bookings_list" target="booking_detail">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

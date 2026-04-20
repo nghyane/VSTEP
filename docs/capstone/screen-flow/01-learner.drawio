@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-04-21T00:00:00.000Z" agent="VSTEP-capstone" version="24.0.0">
+  <diagram id="learner-flow" name="Learner Screen Flow">
+    <mxGraphModel dx="2400" dy="1400" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="1400" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ============ PRE-LOGIN CLUSTER (bordered, yellow bg) ============ -->
+        <mxCell id="prelogin_box" value="Pre-Login" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#2F5FA0;strokeWidth=2;dashed=1;fontSize=14;fontStyle=1;fontColor=#2F5FA0;verticalAlign=top;align=left;spacingLeft=10;spacingTop=5;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="320" height="760" as="geometry" />
+        </mxCell>
+
+        <mxCell id="landing" value="Landing Page" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="100" y="90" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="login" value="User Login" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="100" y="200" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="register" value="User Register" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="100" y="310" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="profile_sel" value="Profile Selection&#xa;(max 5 profiles)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="100" y="450" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="onboarding" value="Onboarding&#xa;(level / target / exam date)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="100" y="600" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ============ HUB: Overview (tabbed, green) ============ -->
+        <mxCell id="overview" value="Overview" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=13;fontStyle=1;verticalAlign=top;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="440" y="400" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="overview_t1" value="Summary" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;" vertex="1" parent="overview">
+          <mxGeometry x="10" y="45" width="95" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="overview_t2" value="Learning Path" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;" vertex="1" parent="overview">
+          <mxGeometry x="115" y="45" width="95" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ============ LUYỆN TẬP CLUSTER (top-right) ============ -->
+        <mxCell id="practice_sel" value="Practice Mode Selector" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="740" y="260" width="170" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="foundation_hub" value="Foundation Hub" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="950" y="80" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="skill_hub" value="Skill Hub" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;fontStyle=1;verticalAlign=top;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="950" y="360" width="200" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="skill_t1" value="Listen" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=9;" vertex="1" parent="skill_hub">
+          <mxGeometry x="5" y="30" width="45" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="skill_t2" value="Read" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=9;" vertex="1" parent="skill_hub">
+          <mxGeometry x="55" y="30" width="45" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="skill_t3" value="Write" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=9;" vertex="1" parent="skill_hub">
+          <mxGeometry x="105" y="30" width="45" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="skill_t4" value="Speak" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=9;" vertex="1" parent="skill_hub">
+          <mxGeometry x="155" y="30" width="45" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Foundation children (Vocab + Grammar) -->
+        <mxCell id="vocab_topics" value="Vocab Topics" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;verticalAlign=top;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="40" width="160" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="vt_t1" value="Level" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=8;" vertex="1" parent="vocab_topics">
+          <mxGeometry x="5" y="25" width="48" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="vt_t2" value="Task" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=8;" vertex="1" parent="vocab_topics">
+          <mxGeometry x="56" y="25" width="48" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="vt_t3" value="All" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=8;" vertex="1" parent="vocab_topics">
+          <mxGeometry x="107" y="25" width="48" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="vocab_quiz" value="Vocab Quiz" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;verticalAlign=top;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="1400" y="40" width="160" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="vq_t1" value="Flashcard" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=8;" vertex="1" parent="vocab_quiz">
+          <mxGeometry x="5" y="25" width="72" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="vq_t2" value="Review" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=8;" vertex="1" parent="vocab_quiz">
+          <mxGeometry x="80" y="25" width="75" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="grammar_points" value="Grammar Points" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;verticalAlign=top;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="150" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="gp_t1" value="Level" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=8;" vertex="1" parent="grammar_points">
+          <mxGeometry x="5" y="25" width="60" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="gp_t2" value="Task" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=8;" vertex="1" parent="grammar_points">
+          <mxGeometry x="68" y="25" width="60" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="gp_t3" value="Errors" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=8;" vertex="1" parent="grammar_points">
+          <mxGeometry x="131" y="25" width="64" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="grammar_detail" value="Grammar Detail" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;verticalAlign=top;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="1400" y="150" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="gd_t1" value="Theory" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=8;" vertex="1" parent="grammar_detail">
+          <mxGeometry x="5" y="25" width="80" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="gd_t2" value="Exercises" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=8;" vertex="1" parent="grammar_detail">
+          <mxGeometry x="90" y="25" width="85" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Skill Hub children (4 skills × list/session/result) -->
+        <mxCell id="listen_list" value="Listening List" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="270" width="140" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="listen_session" value="Listening Session" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1400" y="270" width="160" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="read_list" value="Reading List" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="340" width="140" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="read_session" value="Reading Session" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1400" y="340" width="160" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="write_list" value="Writing List" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="410" width="140" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="write_session" value="Writing Session" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1400" y="410" width="160" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="write_result" value="Writing Result&#xa;(AI Feedback)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1620" y="405" width="160" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="speak_list" value="Speaking List" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="480" width="140" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="speak_session" value="Speaking Session&#xa;(Recording)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1400" y="475" width="160" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="speak_result" value="Speaking Result" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1620" y="480" width="160" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ============ THI THỬ CLUSTER (middle-right) ============ -->
+        <mxCell id="exam_library" value="Exam Library" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="740" y="700" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="exam_detail" value="Exam Detail&#xa;(Section Selector)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="940" y="700" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="exam_session" value="Exam Session&#xa;(Full-screen)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1150" y="700" width="160" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="exam_result" value="Exam Result&#xa;(Score)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1370" y="700" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="exam_review" value="Exam Detail Review&#xa;(Per-question AI)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1570" y="700" width="170" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ============ KHÓA HỌC CLUSTER (bottom-right) ============ -->
+        <mxCell id="courses_list" value="Courses List" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;verticalAlign=top;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="740" y="850" width="170" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="cl_t1" value="Explore" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=9;" vertex="1" parent="courses_list">
+          <mxGeometry x="5" y="28" width="75" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="cl_t2" value="My Courses" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=9;" vertex="1" parent="courses_list">
+          <mxGeometry x="83" y="28" width="82" height="38" as="geometry" />
+        </mxCell>
+
+        <mxCell id="course_detail" value="Course Detail" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="960" y="860" width="150" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ============ MODALS (ovals) ============ -->
+        <mxCell id="topup_modal" value="TopUp Dialog&#xa;(coin recharge)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="460" y="600" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="exam_confirm" value="Exam Confirm Dialog&#xa;(submit/next skill)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="790" width="190" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="course_purchase" value="Course Purchase Dialog&#xa;(payment)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1160" y="960" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ============ LEGEND ============ -->
+        <mxCell id="legend_box" value="Legend" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#999999;strokeWidth=1;fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacingLeft=10;spacingTop=5;" vertex="1" parent="1">
+          <mxGeometry x="1830" y="40" width="300" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="lg1" value="Normal screen" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;" vertex="1" parent="legend_box">
+          <mxGeometry x="10" y="30" width="140" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="lg2" value="Auth / Profile screen" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;" vertex="1" parent="legend_box">
+          <mxGeometry x="10" y="70" width="140" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="lg3" value="Tabbed screen" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;verticalAlign=top;spacingTop=2;" vertex="1" parent="legend_box">
+          <mxGeometry x="10" y="110" width="140" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="lg3_tab1" value="Tab 1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=8;" vertex="1" parent="lg3">
+          <mxGeometry x="5" y="18" width="60" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="lg3_tab2" value="Tab 2" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=8;" vertex="1" parent="lg3">
+          <mxGeometry x="70" y="18" width="65" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="lg4" value="Modal / Popup" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;" vertex="1" parent="legend_box">
+          <mxGeometry x="10" y="160" width="140" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="lg_txt" value="• Tabbed screen: outer box + inner small boxes (each box = 1 tab)&#xa;• Arrow: unidirectional navigation&#xa;• Double arrow: back-and-forth navigation&#xa;• Dashed arrow: triggers a modal/popup" style="text;html=1;fontSize=9;align=left;verticalAlign=top;fontColor=#2F5FA0;" vertex="1" parent="legend_box">
+          <mxGeometry x="10" y="210" width="280" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- ============ ARROWS ============ -->
+        <!-- Pre-login flow -->
+        <mxCell id="ar1" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="landing" target="login">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ar2" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;startArrow=classic;" edge="1" parent="1" source="login" target="register">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ar3" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="login" target="profile_sel">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ar4" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="register" target="profile_sel">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ar5" value="new profile" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;fontSize=9;" edge="1" parent="1" source="profile_sel" target="onboarding">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ar6" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="onboarding" target="overview">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ar7" value="existing profile" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;dashed=1;fontSize=9;" edge="1" parent="1" source="profile_sel" target="overview">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Overview → main clusters -->
+        <mxCell id="ar10" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="overview" target="practice_sel">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ar11" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="overview" target="exam_library">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ar12" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="overview" target="courses_list">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ar13" value="coin button" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;dashed=1;fontSize=9;" edge="1" parent="1" source="overview" target="topup_modal">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Practice Mode Selector → Foundation / Skill Hubs -->
+        <mxCell id="ar20" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="practice_sel" target="foundation_hub">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ar21" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="practice_sel" target="skill_hub">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Foundation Hub → Vocab / Grammar -->
+        <mxCell id="ar30" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="foundation_hub" target="vocab_topics">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ar31" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="foundation_hub" target="grammar_points">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ar32" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="vocab_topics" target="vocab_quiz">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ar33" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="grammar_points" target="grammar_detail">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Skill Hub → 4 Skill lists -->
+        <mxCell id="ar40" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="skill_hub" target="listen_list">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ar41" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="skill_hub" target="read_list">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ar42" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="skill_hub" target="write_list">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ar43" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="skill_hub" target="speak_list">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- List → Session → Result -->
+        <mxCell id="ar50" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="listen_list" target="listen_session"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ar51" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="read_list" target="read_session"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ar52" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="write_list" target="write_session"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ar53" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="write_session" target="write_result"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ar54" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="speak_list" target="speak_session"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ar55" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="speak_session" target="speak_result"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- Exam flow -->
+        <mxCell id="ar60" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="exam_library" target="exam_detail"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ar61" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="exam_detail" target="exam_session"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ar62" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="exam_session" target="exam_result"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ar63" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="exam_result" target="exam_review"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ar64" value="submit / next" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;dashed=1;fontSize=9;" edge="1" parent="1" source="exam_session" target="exam_confirm"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <!-- Course flow -->
+        <mxCell id="ar70" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="courses_list" target="course_detail"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ar71" value="enroll" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;dashed=1;fontSize=9;" edge="1" parent="1" source="course_detail" target="course_purchase"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
