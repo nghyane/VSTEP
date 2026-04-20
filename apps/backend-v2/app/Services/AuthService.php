@@ -27,9 +27,9 @@ class AuthService
     /**
      * Register account + initial profile in single transaction.
      *
-     * @param  array{email:string,password:string,full_name?:string|null}  $accountData
-     * @param  array{nickname:string,target_level:string,target_deadline:string,entry_level?:string|null}  $profileData
-     * @return array{user:User,profile:Profile}
+     * @param  array{email:string,password:string}  $accountData
+     * @param  array{nickname:string,target_level:string,target_deadline:string}  $profileData
+     * @return array{user:User,profile:Profile,access_token:string,refresh_token:string,expires_in:int}
      */
     public function register(array $accountData, array $profileData): array
     {
@@ -38,7 +38,16 @@ class AuthService
 
             $profile = $this->profileService->createInitialProfile($user, $profileData);
 
-            return ['user' => $user, 'profile' => $profile];
+            $accessToken = $this->issueAccessToken($user, $profile);
+            [, $plainToken] = $this->createRefreshToken($user, null);
+
+            return [
+                'user' => $user,
+                'profile' => $profile,
+                'access_token' => $accessToken,
+                'refresh_token' => $plainToken,
+                'expires_in' => config('jwt.ttl') * 60,
+            ];
         });
     }
 
@@ -55,7 +64,7 @@ class AuthService
     {
         if (! JWTAuth::attempt(['email' => $email, 'password' => $password])) {
             throw ValidationException::withMessages([
-                'email' => ['Invalid email or password.'],
+                'email' => ['Email hoặc mật khẩu không đúng.'],
             ]);
         }
 

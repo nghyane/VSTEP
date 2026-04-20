@@ -13,13 +13,16 @@ export function AuthShell({ onClose, children }: Props) {
 					<Icon name="close" size="sm" />
 				</button>
 			</div>
-			<div className="flex-1 flex items-center justify-center px-6">
-				<div className="w-full max-w-[400px] text-center">
-					{children}
-					<p className="text-xs text-subtle mt-8">
-						Khi sử dụng, bạn đồng ý với <strong className="text-muted">Điều khoản</strong> và{" "}
-						<strong className="text-muted">Chính sách bảo mật</strong>
-					</p>
+			<div className="flex-1 flex items-center justify-center px-6 pb-8 overflow-y-auto">
+				<div className="flex flex-col md:flex-row items-center gap-6 md:gap-12">
+					<img src="/mascot/lac-wave.png" alt="Lạc" className="hidden md:block w-80 object-contain self-end mb-[-24px]" />
+					<div className="w-full md:w-[400px] md:shrink-0 text-center md:text-left">
+						{children}
+						<p className="text-xs text-subtle mt-6">
+							Khi sử dụng, bạn đồng ý với <strong className="text-muted">Điều khoản</strong> và{" "}
+							<strong className="text-muted">Chính sách bảo mật</strong>
+						</p>
+					</div>
 				</div>
 			</div>
 		</div>

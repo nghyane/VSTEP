@@ -43,7 +43,7 @@ Sau đó RFC 0002 mới xuống schema, RFC 0003 xuống API.
 4. Nickname unique trong 1 account, không global.
 5. Switch profile không cần password. JWT claim chứa `active_profile_id`.
 6. Profile reset: xóa learning data (progress, mastery, SRS), GIỮ xu và enrollments.
-7. Roles: `learner`, `admin`, `teacher`. Admin/teacher không có profile.
+7. Roles: `learner`, `teacher`, `staff`, `admin`. Admin/teacher/staff không có profile.
 
 ### Economy (xu)
 
@@ -162,7 +162,7 @@ Quản lý ai là ai trong hệ thống: login, phân quyền, hồ sơ học ri
 ### Ownership rules
 
 - Account owns profiles (1-n).
-- Account role decides: learner → có profiles; teacher/admin → không có profile, login trực tiếp dùng.
+- Account role decides: learner → có profiles; teacher/staff/admin → không có profile, login trực tiếp dùng.
 - Profile owns mọi learning state (tham chiếu từ context khác).
 - Nickname unique trong phạm vi account (application-level check).
 

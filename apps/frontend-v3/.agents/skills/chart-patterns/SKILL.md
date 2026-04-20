@@ -1,6 +1,8 @@
 ---
 name: chart-patterns
-description: "SVG chart specs: spider/radar, grouped bar + trend line, heatmap. Load when creating or modifying dashboard charts."
+description: >
+  Chart and data-visualization conventions (radar, bar, heatmap, trend lines).
+  Load before creating or modifying any chart, graph, or visual data display.
 ---
 
 # Chart Patterns
@@ -17,13 +19,3 @@ One line = overall average (primary-dark). Target dashed line (destructive).
 Reference: `src/features/dashboard/components/ScoreTrend.tsx`
 
 ## Heatmap
-
-grid-rows-7 grid-flow-col. Day labels Mon-Sun. 5 intensity levels using primary opacity.
-Reference: `src/features/dashboard/components/ActivityHeatmap.tsx`
-
-## Rules
-
-- Hide spider if total_tests < min_tests_required
-- Colors from `SKILL_CONFIG` (`lib/skills.ts`), never hardcode hex
-- Rounding via `round()` from `lib/utils.ts`
-- Data from API, no mock data in components

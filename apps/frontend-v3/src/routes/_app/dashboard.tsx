@@ -7,12 +7,8 @@ import { ProfileBanner } from "#/features/dashboard/components/ProfileBanner"
 import { ScoreTrend } from "#/features/dashboard/components/ScoreTrend"
 import { SpiderCard } from "#/features/dashboard/components/SpiderCard"
 import { StatsRow } from "#/features/dashboard/components/StatsRow"
-import { overviewQuery } from "#/features/dashboard/queries"
 
 export const Route = createFileRoute("/_app/dashboard")({
-	loader: ({ context: { queryClient } }) => {
-		queryClient.prefetchQuery(overviewQuery)
-	},
 	component: DashboardPage,
 })
 

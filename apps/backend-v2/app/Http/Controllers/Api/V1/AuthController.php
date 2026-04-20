@@ -27,15 +27,19 @@ class AuthController extends Controller
 
     public function register(RegisterRequest $request): JsonResponse
     {
+        $validated = $request->validated();
+
         $result = $this->authService->register(
-            $request->accountData(),
-            $request->profileData(),
+            ['email' => $validated['email'], 'password' => $validated['password']],
+            ['nickname' => $validated['nickname'], 'target_level' => $validated['target_level'], 'target_deadline' => $validated['target_deadline']],
         );
 
         return response()->json(['data' => [
             'user' => new UserResource($result['user']),
             'profile' => new ProfileResource($result['profile']),
-            'message' => 'Registration successful.',
+            'access_token' => $result['access_token'],
+            'refresh_token' => $result['refresh_token'],
+            'expires_in' => $result['expires_in'],
         ]], 201);
     }
 

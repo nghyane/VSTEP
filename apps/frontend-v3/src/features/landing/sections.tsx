@@ -8,6 +8,7 @@ export function LandingHero() {
 				<Icon name="check" size="xs" />
 				Miễn phí · 100 xu khi đăng ký
 			</div>
+			<img src="/mascot/lac-hero.png" alt="Lạc" className="w-40 h-40 object-contain mb-4" />
 			<h1 className="font-extrabold text-5xl md:text-6xl text-foreground leading-tight max-w-3xl">
 				Luyện thi VSTEP đạt B2 với AI
 			</h1>

@@ -9,11 +9,29 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from "./routes/__root"
+import { Route as FocusedRouteImport } from "./routes/_focused"
 import { Route as AppRouteImport } from "./routes/_app"
 import { Route as IndexRouteImport } from "./routes/index"
 import { Route as AppLuyenTapRouteImport } from "./routes/_app/luyen-tap"
+import { Route as AppHoSoRouteImport } from "./routes/_app/ho-so"
 import { Route as AppDashboardRouteImport } from "./routes/_app/dashboard"
+import { Route as AppLuyenTapIndexRouteImport } from "./routes/_app/luyen-tap/index"
+import { Route as FocusedVocabSrsReviewRouteImport } from "./routes/_focused/vocab/srs-review"
+import { Route as AppLuyenTapVietRouteImport } from "./routes/_app/luyen-tap/viet"
+import { Route as AppLuyenTapTuVungRouteImport } from "./routes/_app/luyen-tap/tu-vung"
+import { Route as AppLuyenTapNoiRouteImport } from "./routes/_app/luyen-tap/noi"
+import { Route as AppLuyenTapNguPhapRouteImport } from "./routes/_app/luyen-tap/ngu-phap"
+import { Route as AppLuyenTapNgheRouteImport } from "./routes/_app/luyen-tap/nghe"
+import { Route as AppLuyenTapDocRouteImport } from "./routes/_app/luyen-tap/doc"
+import { Route as AppLuyenTapTuVungIndexRouteImport } from "./routes/_app/luyen-tap/tu-vung/index"
+import { Route as FocusedVocabTopicIdFlashcardRouteImport } from "./routes/_focused/vocab/$topicId/flashcard"
+import { Route as FocusedVocabTopicIdExerciseRouteImport } from "./routes/_focused/vocab/$topicId/exercise"
+import { Route as AppLuyenTapTuVungTopicIdRouteImport } from "./routes/_app/luyen-tap/tu-vung/$topicId"
 
+const FocusedRoute = FocusedRouteImport.update({
+  id: "/_focused",
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRoute = AppRouteImport.update({
   id: "/_app",
   getParentRoute: () => rootRouteImport,
@@ -28,44 +46,207 @@ const AppLuyenTapRoute = AppLuyenTapRouteImport.update({
   path: "/luyen-tap",
   getParentRoute: () => AppRoute,
 } as any)
+const AppHoSoRoute = AppHoSoRouteImport.update({
+  id: "/ho-so",
+  path: "/ho-so",
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: "/dashboard",
   path: "/dashboard",
   getParentRoute: () => AppRoute,
 } as any)
+const AppLuyenTapIndexRoute = AppLuyenTapIndexRouteImport.update({
+  id: "/",
+  path: "/",
+  getParentRoute: () => AppLuyenTapRoute,
+} as any)
+const FocusedVocabSrsReviewRoute = FocusedVocabSrsReviewRouteImport.update({
+  id: "/vocab/srs-review",
+  path: "/vocab/srs-review",
+  getParentRoute: () => FocusedRoute,
+} as any)
+const AppLuyenTapVietRoute = AppLuyenTapVietRouteImport.update({
+  id: "/viet",
+  path: "/viet",
+  getParentRoute: () => AppLuyenTapRoute,
+} as any)
+const AppLuyenTapTuVungRoute = AppLuyenTapTuVungRouteImport.update({
+  id: "/tu-vung",
+  path: "/tu-vung",
+  getParentRoute: () => AppLuyenTapRoute,
+} as any)
+const AppLuyenTapNoiRoute = AppLuyenTapNoiRouteImport.update({
+  id: "/noi",
+  path: "/noi",
+  getParentRoute: () => AppLuyenTapRoute,
+} as any)
+const AppLuyenTapNguPhapRoute = AppLuyenTapNguPhapRouteImport.update({
+  id: "/ngu-phap",
+  path: "/ngu-phap",
+  getParentRoute: () => AppLuyenTapRoute,
+} as any)
+const AppLuyenTapNgheRoute = AppLuyenTapNgheRouteImport.update({
+  id: "/nghe",
+  path: "/nghe",
+  getParentRoute: () => AppLuyenTapRoute,
+} as any)
+const AppLuyenTapDocRoute = AppLuyenTapDocRouteImport.update({
+  id: "/doc",
+  path: "/doc",
+  getParentRoute: () => AppLuyenTapRoute,
+} as any)
+const AppLuyenTapTuVungIndexRoute = AppLuyenTapTuVungIndexRouteImport.update({
+  id: "/",
+  path: "/",
+  getParentRoute: () => AppLuyenTapTuVungRoute,
+} as any)
+const FocusedVocabTopicIdFlashcardRoute =
+  FocusedVocabTopicIdFlashcardRouteImport.update({
+    id: "/vocab/$topicId/flashcard",
+    path: "/vocab/$topicId/flashcard",
+    getParentRoute: () => FocusedRoute,
+  } as any)
+const FocusedVocabTopicIdExerciseRoute =
+  FocusedVocabTopicIdExerciseRouteImport.update({
+    id: "/vocab/$topicId/exercise",
+    path: "/vocab/$topicId/exercise",
+    getParentRoute: () => FocusedRoute,
+  } as any)
+const AppLuyenTapTuVungTopicIdRoute =
+  AppLuyenTapTuVungTopicIdRouteImport.update({
+    id: "/$topicId",
+    path: "/$topicId",
+    getParentRoute: () => AppLuyenTapTuVungRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
   "/dashboard": typeof AppDashboardRoute
-  "/luyen-tap": typeof AppLuyenTapRoute
+  "/ho-so": typeof AppHoSoRoute
+  "/luyen-tap": typeof AppLuyenTapRouteWithChildren
+  "/luyen-tap/doc": typeof AppLuyenTapDocRoute
+  "/luyen-tap/nghe": typeof AppLuyenTapNgheRoute
+  "/luyen-tap/ngu-phap": typeof AppLuyenTapNguPhapRoute
+  "/luyen-tap/noi": typeof AppLuyenTapNoiRoute
+  "/luyen-tap/tu-vung": typeof AppLuyenTapTuVungRouteWithChildren
+  "/luyen-tap/viet": typeof AppLuyenTapVietRoute
+  "/vocab/srs-review": typeof FocusedVocabSrsReviewRoute
+  "/luyen-tap/": typeof AppLuyenTapIndexRoute
+  "/luyen-tap/tu-vung/$topicId": typeof AppLuyenTapTuVungTopicIdRoute
+  "/vocab/$topicId/exercise": typeof FocusedVocabTopicIdExerciseRoute
+  "/vocab/$topicId/flashcard": typeof FocusedVocabTopicIdFlashcardRoute
+  "/luyen-tap/tu-vung/": typeof AppLuyenTapTuVungIndexRoute
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
   "/dashboard": typeof AppDashboardRoute
-  "/luyen-tap": typeof AppLuyenTapRoute
+  "/ho-so": typeof AppHoSoRoute
+  "/luyen-tap/doc": typeof AppLuyenTapDocRoute
+  "/luyen-tap/nghe": typeof AppLuyenTapNgheRoute
+  "/luyen-tap/ngu-phap": typeof AppLuyenTapNguPhapRoute
+  "/luyen-tap/noi": typeof AppLuyenTapNoiRoute
+  "/luyen-tap/viet": typeof AppLuyenTapVietRoute
+  "/vocab/srs-review": typeof FocusedVocabSrsReviewRoute
+  "/luyen-tap": typeof AppLuyenTapIndexRoute
+  "/luyen-tap/tu-vung/$topicId": typeof AppLuyenTapTuVungTopicIdRoute
+  "/vocab/$topicId/exercise": typeof FocusedVocabTopicIdExerciseRoute
+  "/vocab/$topicId/flashcard": typeof FocusedVocabTopicIdFlashcardRoute
+  "/luyen-tap/tu-vung": typeof AppLuyenTapTuVungIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   "/": typeof IndexRoute
   "/_app": typeof AppRouteWithChildren
+  "/_focused": typeof FocusedRouteWithChildren
   "/_app/dashboard": typeof AppDashboardRoute
-  "/_app/luyen-tap": typeof AppLuyenTapRoute
+  "/_app/ho-so": typeof AppHoSoRoute
+  "/_app/luyen-tap": typeof AppLuyenTapRouteWithChildren
+  "/_app/luyen-tap/doc": typeof AppLuyenTapDocRoute
+  "/_app/luyen-tap/nghe": typeof AppLuyenTapNgheRoute
+  "/_app/luyen-tap/ngu-phap": typeof AppLuyenTapNguPhapRoute
+  "/_app/luyen-tap/noi": typeof AppLuyenTapNoiRoute
+  "/_app/luyen-tap/tu-vung": typeof AppLuyenTapTuVungRouteWithChildren
+  "/_app/luyen-tap/viet": typeof AppLuyenTapVietRoute
+  "/_focused/vocab/srs-review": typeof FocusedVocabSrsReviewRoute
+  "/_app/luyen-tap/": typeof AppLuyenTapIndexRoute
+  "/_app/luyen-tap/tu-vung/$topicId": typeof AppLuyenTapTuVungTopicIdRoute
+  "/_focused/vocab/$topicId/exercise": typeof FocusedVocabTopicIdExerciseRoute
+  "/_focused/vocab/$topicId/flashcard": typeof FocusedVocabTopicIdFlashcardRoute
+  "/_app/luyen-tap/tu-vung/": typeof AppLuyenTapTuVungIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/" | "/dashboard" | "/luyen-tap"
+  fullPaths:
+    | "/"
+    | "/dashboard"
+    | "/ho-so"
+    | "/luyen-tap"
+    | "/luyen-tap/doc"
+    | "/luyen-tap/nghe"
+    | "/luyen-tap/ngu-phap"
+    | "/luyen-tap/noi"
+    | "/luyen-tap/tu-vung"
+    | "/luyen-tap/viet"
+    | "/vocab/srs-review"
+    | "/luyen-tap/"
+    | "/luyen-tap/tu-vung/$topicId"
+    | "/vocab/$topicId/exercise"
+    | "/vocab/$topicId/flashcard"
+    | "/luyen-tap/tu-vung/"
   fileRoutesByTo: FileRoutesByTo
-  to: "/" | "/dashboard" | "/luyen-tap"
-  id: "__root__" | "/" | "/_app" | "/_app/dashboard" | "/_app/luyen-tap"
+  to:
+    | "/"
+    | "/dashboard"
+    | "/ho-so"
+    | "/luyen-tap/doc"
+    | "/luyen-tap/nghe"
+    | "/luyen-tap/ngu-phap"
+    | "/luyen-tap/noi"
+    | "/luyen-tap/viet"
+    | "/vocab/srs-review"
+    | "/luyen-tap"
+    | "/luyen-tap/tu-vung/$topicId"
+    | "/vocab/$topicId/exercise"
+    | "/vocab/$topicId/flashcard"
+    | "/luyen-tap/tu-vung"
+  id:
+    | "__root__"
+    | "/"
+    | "/_app"
+    | "/_focused"
+    | "/_app/dashboard"
+    | "/_app/ho-so"
+    | "/_app/luyen-tap"
+    | "/_app/luyen-tap/doc"
+    | "/_app/luyen-tap/nghe"
+    | "/_app/luyen-tap/ngu-phap"
+    | "/_app/luyen-tap/noi"
+    | "/_app/luyen-tap/tu-vung"
+    | "/_app/luyen-tap/viet"
+    | "/_focused/vocab/srs-review"
+    | "/_app/luyen-tap/"
+    | "/_app/luyen-tap/tu-vung/$topicId"
+    | "/_focused/vocab/$topicId/exercise"
+    | "/_focused/vocab/$topicId/flashcard"
+    | "/_app/luyen-tap/tu-vung/"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  FocusedRoute: typeof FocusedRouteWithChildren
 }
 
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
+    "/_focused": {
+      id: "/_focused"
+      path: ""
+      fullPath: "/"
+      preLoaderRoute: typeof FocusedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/_app": {
       id: "/_app"
       path: ""
@@ -87,6 +268,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AppLuyenTapRouteImport
       parentRoute: typeof AppRoute
     }
+    "/_app/ho-so": {
+      id: "/_app/ho-so"
+      path: "/ho-so"
+      fullPath: "/ho-so"
+      preLoaderRoute: typeof AppHoSoRouteImport
+      parentRoute: typeof AppRoute
+    }
     "/_app/dashboard": {
       id: "/_app/dashboard"
       path: "/dashboard"
@@ -94,24 +282,163 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    "/_app/luyen-tap/": {
+      id: "/_app/luyen-tap/"
+      path: "/"
+      fullPath: "/luyen-tap/"
+      preLoaderRoute: typeof AppLuyenTapIndexRouteImport
+      parentRoute: typeof AppLuyenTapRoute
+    }
+    "/_focused/vocab/srs-review": {
+      id: "/_focused/vocab/srs-review"
+      path: "/vocab/srs-review"
+      fullPath: "/vocab/srs-review"
+      preLoaderRoute: typeof FocusedVocabSrsReviewRouteImport
+      parentRoute: typeof FocusedRoute
+    }
+    "/_app/luyen-tap/viet": {
+      id: "/_app/luyen-tap/viet"
+      path: "/viet"
+      fullPath: "/luyen-tap/viet"
+      preLoaderRoute: typeof AppLuyenTapVietRouteImport
+      parentRoute: typeof AppLuyenTapRoute
+    }
+    "/_app/luyen-tap/tu-vung": {
+      id: "/_app/luyen-tap/tu-vung"
+      path: "/tu-vung"
+      fullPath: "/luyen-tap/tu-vung"
+      preLoaderRoute: typeof AppLuyenTapTuVungRouteImport
+      parentRoute: typeof AppLuyenTapRoute
+    }
+    "/_app/luyen-tap/noi": {
+      id: "/_app/luyen-tap/noi"
+      path: "/noi"
+      fullPath: "/luyen-tap/noi"
+      preLoaderRoute: typeof AppLuyenTapNoiRouteImport
+      parentRoute: typeof AppLuyenTapRoute
+    }
+    "/_app/luyen-tap/ngu-phap": {
+      id: "/_app/luyen-tap/ngu-phap"
+      path: "/ngu-phap"
+      fullPath: "/luyen-tap/ngu-phap"
+      preLoaderRoute: typeof AppLuyenTapNguPhapRouteImport
+      parentRoute: typeof AppLuyenTapRoute
+    }
+    "/_app/luyen-tap/nghe": {
+      id: "/_app/luyen-tap/nghe"
+      path: "/nghe"
+      fullPath: "/luyen-tap/nghe"
+      preLoaderRoute: typeof AppLuyenTapNgheRouteImport
+      parentRoute: typeof AppLuyenTapRoute
+    }
+    "/_app/luyen-tap/doc": {
+      id: "/_app/luyen-tap/doc"
+      path: "/doc"
+      fullPath: "/luyen-tap/doc"
+      preLoaderRoute: typeof AppLuyenTapDocRouteImport
+      parentRoute: typeof AppLuyenTapRoute
+    }
+    "/_app/luyen-tap/tu-vung/": {
+      id: "/_app/luyen-tap/tu-vung/"
+      path: "/"
+      fullPath: "/luyen-tap/tu-vung/"
+      preLoaderRoute: typeof AppLuyenTapTuVungIndexRouteImport
+      parentRoute: typeof AppLuyenTapTuVungRoute
+    }
+    "/_focused/vocab/$topicId/flashcard": {
+      id: "/_focused/vocab/$topicId/flashcard"
+      path: "/vocab/$topicId/flashcard"
+      fullPath: "/vocab/$topicId/flashcard"
+      preLoaderRoute: typeof FocusedVocabTopicIdFlashcardRouteImport
+      parentRoute: typeof FocusedRoute
+    }
+    "/_focused/vocab/$topicId/exercise": {
+      id: "/_focused/vocab/$topicId/exercise"
+      path: "/vocab/$topicId/exercise"
+      fullPath: "/vocab/$topicId/exercise"
+      preLoaderRoute: typeof FocusedVocabTopicIdExerciseRouteImport
+      parentRoute: typeof FocusedRoute
+    }
+    "/_app/luyen-tap/tu-vung/$topicId": {
+      id: "/_app/luyen-tap/tu-vung/$topicId"
+      path: "/$topicId"
+      fullPath: "/luyen-tap/tu-vung/$topicId"
+      preLoaderRoute: typeof AppLuyenTapTuVungTopicIdRouteImport
+      parentRoute: typeof AppLuyenTapTuVungRoute
+    }
   }
 }
 
+interface AppLuyenTapTuVungRouteChildren {
+  AppLuyenTapTuVungTopicIdRoute: typeof AppLuyenTapTuVungTopicIdRoute
+  AppLuyenTapTuVungIndexRoute: typeof AppLuyenTapTuVungIndexRoute
+}
+
+const AppLuyenTapTuVungRouteChildren: AppLuyenTapTuVungRouteChildren = {
+  AppLuyenTapTuVungTopicIdRoute: AppLuyenTapTuVungTopicIdRoute,
+  AppLuyenTapTuVungIndexRoute: AppLuyenTapTuVungIndexRoute,
+}
+
+const AppLuyenTapTuVungRouteWithChildren =
+  AppLuyenTapTuVungRoute._addFileChildren(AppLuyenTapTuVungRouteChildren)
+
+interface AppLuyenTapRouteChildren {
+  AppLuyenTapDocRoute: typeof AppLuyenTapDocRoute
+  AppLuyenTapNgheRoute: typeof AppLuyenTapNgheRoute
+  AppLuyenTapNguPhapRoute: typeof AppLuyenTapNguPhapRoute
+  AppLuyenTapNoiRoute: typeof AppLuyenTapNoiRoute
+  AppLuyenTapTuVungRoute: typeof AppLuyenTapTuVungRouteWithChildren
+  AppLuyenTapVietRoute: typeof AppLuyenTapVietRoute
+  AppLuyenTapIndexRoute: typeof AppLuyenTapIndexRoute
+}
+
+const AppLuyenTapRouteChildren: AppLuyenTapRouteChildren = {
+  AppLuyenTapDocRoute: AppLuyenTapDocRoute,
+  AppLuyenTapNgheRoute: AppLuyenTapNgheRoute,
+  AppLuyenTapNguPhapRoute: AppLuyenTapNguPhapRoute,
+  AppLuyenTapNoiRoute: AppLuyenTapNoiRoute,
+  AppLuyenTapTuVungRoute: AppLuyenTapTuVungRouteWithChildren,
+  AppLuyenTapVietRoute: AppLuyenTapVietRoute,
+  AppLuyenTapIndexRoute: AppLuyenTapIndexRoute,
+}
+
+const AppLuyenTapRouteWithChildren = AppLuyenTapRoute._addFileChildren(
+  AppLuyenTapRouteChildren,
+)
+
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
-  AppLuyenTapRoute: typeof AppLuyenTapRoute
+  AppHoSoRoute: typeof AppHoSoRoute
+  AppLuyenTapRoute: typeof AppLuyenTapRouteWithChildren
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
-  AppLuyenTapRoute: AppLuyenTapRoute,
+  AppHoSoRoute: AppHoSoRoute,
+  AppLuyenTapRoute: AppLuyenTapRouteWithChildren,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface FocusedRouteChildren {
+  FocusedVocabSrsReviewRoute: typeof FocusedVocabSrsReviewRoute
+  FocusedVocabTopicIdExerciseRoute: typeof FocusedVocabTopicIdExerciseRoute
+  FocusedVocabTopicIdFlashcardRoute: typeof FocusedVocabTopicIdFlashcardRoute
+}
+
+const FocusedRouteChildren: FocusedRouteChildren = {
+  FocusedVocabSrsReviewRoute: FocusedVocabSrsReviewRoute,
+  FocusedVocabTopicIdExerciseRoute: FocusedVocabTopicIdExerciseRoute,
+  FocusedVocabTopicIdFlashcardRoute: FocusedVocabTopicIdFlashcardRoute,
+}
+
+const FocusedRouteWithChildren =
+  FocusedRoute._addFileChildren(FocusedRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  FocusedRoute: FocusedRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

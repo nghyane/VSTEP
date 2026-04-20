@@ -1,8 +1,7 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router"
+import { useEffect } from "react"
 import { Sidebar } from "#/components/Sidebar"
-import { AuthShell } from "#/features/auth/AuthShell"
-import { LoginForm } from "#/features/auth/LoginForm"
-import { useAuth } from "#/lib/auth-store"
+import { useAuth } from "#/lib/auth"
 
 export const Route = createFileRoute("/_app")({
 	component: AppLayout,
@@ -12,13 +11,11 @@ function AppLayout() {
 	const isAuthenticated = useAuth((s) => s.isAuthenticated)
 	const navigate = useNavigate()
 
-	if (!isAuthenticated) {
-		return (
-			<AuthShell onClose={() => navigate({ to: "/" })}>
-				<LoginForm />
-			</AuthShell>
-		)
-	}
+	useEffect(() => {
+		if (!isAuthenticated) navigate({ to: "/", search: { auth: "login" } })
+	}, [isAuthenticated, navigate])
+
+	if (!isAuthenticated) return null
 
 	return (
 		<div className="flex min-h-screen">

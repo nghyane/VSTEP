@@ -14,7 +14,7 @@ Commands: `bun run dev` · `bun run build` · `bun run lint`.
 ## State management
 
 - **Server data**: TanStack Query (`useQuery` + `select`). Không prop drill.
-- **Auth**: Zustand store (`lib/auth-store.ts`). Không Context/Provider.
+- **Auth**: Zustand store (`lib/auth.ts`). Không Context/Provider.
 - **Forms**: @tanstack/react-form (`useForm`). Không useState per field.
 - **URL state**: TanStack Router search params. Không useState cho modal/tab/step.
 - **Khi gặp case mới**: đánh giá trước — nếu state cần share > 1 component → Zustand. Nếu chỉ 1 component → useState OK. Nếu URL-representable → search params.
@@ -29,6 +29,9 @@ Commands: `bun run dev` · `bun run build` · `bun run lint`.
 
 ## Data rules (bất di bất dịch)
 
+- 1 User → nhiều Profile. 1 Profile = 1 Target (level + deadline). Không đổi target, tạo profile mới.
+- Profile = đơn vị tính tiền. Mỗi profile là 1 "khóa học".
+- Không test đầu vào. User tự chọn target.
 - Chart/spider = **chỉ exam** (graded). Drill score không vào chart.
 - Study time + streak = **chỉ drill**. Exam không cộng.
 - SRS adaptive **chỉ vocab**. Exam = đề cố định.

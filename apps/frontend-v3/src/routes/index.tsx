@@ -1,18 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { AuthChoose } from "#/features/auth/AuthChoose"
+import { useEffect } from "react"
 import { AuthShell } from "#/features/auth/AuthShell"
 import { LoginForm } from "#/features/auth/LoginForm"
-import { RegisterFormProvider, RegisterStep1, RegisterStep2 } from "#/features/auth/RegisterForm"
+import { RegisterForm } from "#/features/auth/RegisterForm"
 import { LandingCTA, LandingFeatures, LandingHero, LandingSkills } from "#/features/landing/sections"
-import { useAuth } from "#/lib/auth-store"
+import { useAuth } from "#/lib/auth"
 
-type AuthParam = "choose" | "login" | "register" | "register-target" | undefined
+type AuthParam = "login" | "register" | undefined
 
 export const Route = createFileRoute("/")({
 	validateSearch: (search: Record<string, unknown>): { auth?: AuthParam } => ({
-		auth: ["choose", "login", "register", "register-target"].includes(search.auth as string)
-			? (search.auth as AuthParam)
-			: undefined,
+		auth: ["login", "register"].includes(search.auth as string) ? (search.auth as AuthParam) : undefined,
 	}),
 	component: LandingPage,
 })
@@ -22,14 +20,9 @@ function LandingPage() {
 	const navigate = useNavigate()
 	const { auth } = Route.useSearch()
 
-	if (isAuthenticated) {
-		navigate({ to: "/dashboard" })
-		return null
-	}
-
-	function closeAuth() {
-		navigate({ to: "/", search: {} })
-	}
+	useEffect(() => {
+		if (isAuthenticated) navigate({ to: "/dashboard" })
+	}, [isAuthenticated, navigate])
 
 	return (
 		<div className="min-h-screen bg-surface">
@@ -47,15 +40,9 @@ function LandingPage() {
 			</footer>
 
 			{auth && (
-				<AuthShell onClose={closeAuth}>
-					{auth === "choose" && <AuthChoose />}
+				<AuthShell onClose={() => navigate({ to: "/", search: {} })}>
 					{auth === "login" && <LoginForm />}
-					{(auth === "register" || auth === "register-target") && (
-						<RegisterFormProvider>
-							{auth === "register" && <RegisterStep1 />}
-							{auth === "register-target" && <RegisterStep2 />}
-						</RegisterFormProvider>
-					)}
+					{auth === "register" && <RegisterForm />}
 				</AuthShell>
 			)}
 		</div>

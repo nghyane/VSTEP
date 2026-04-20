@@ -1,6 +1,8 @@
 ---
 name: layout-patterns
-description: "App shell, sidebar, header, adaptive content width, focus mode. Load when creating pages or modifying layout."
+description: >
+  App shell structure — sidebar, header, content width, focus mode. Load before
+  creating a new page or route, or changing how a page is laid out.
 ---
 
 # Layout Patterns

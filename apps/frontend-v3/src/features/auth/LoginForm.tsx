@@ -1,7 +1,8 @@
 import { useForm } from "@tanstack/react-form"
 import { Link } from "@tanstack/react-router"
+import { GoogleButton } from "#/features/auth/GoogleButton"
 import { inputClass } from "#/features/auth/styles"
-import { useAuth } from "#/lib/auth-store"
+import { useAuth } from "#/lib/auth"
 
 export function LoginForm() {
 	const login = useAuth((s) => s.login)
@@ -11,18 +12,23 @@ export function LoginForm() {
 		onSubmit: async ({ value }) => {
 			await login(value.email, value.password)
 		},
-		onSubmitInvalid: () => {},
 	})
 
 	return (
 		<>
-			<h1 className="font-extrabold text-2xl text-foreground mb-8">Đăng nhập</h1>
+			<h1 className="font-extrabold text-3xl text-foreground mb-4">Đăng nhập</h1>
+			<GoogleButton />
+			<div className="flex items-center gap-3 my-3">
+				<div className="flex-1 h-px bg-border" />
+				<span className="text-xs text-subtle font-bold">HOẶC</span>
+				<div className="flex-1 h-px bg-border" />
+			</div>
 			<form
 				onSubmit={(e) => {
 					e.preventDefault()
 					void form.handleSubmit()
 				}}
-				className="space-y-3"
+				className="space-y-2.5"
 			>
 				<form.Field name="email">
 					{(field) => (
@@ -48,9 +54,18 @@ export function LoginForm() {
 						/>
 					)}
 				</form.Field>
-				{form.state.errorMap.onSubmit && (
-					<p className="text-sm text-destructive font-bold">Email hoặc mật khẩu không đúng</p>
-				)}
+				<div className="flex items-center justify-between">
+					<label className="group flex items-center gap-2 cursor-pointer">
+						<input type="checkbox" className="sr-only" />
+						<div className="w-5 h-5 rounded-md border-2 border-border bg-surface group-has-checked:bg-primary group-has-checked:border-primary flex items-center justify-center transition">
+							<svg viewBox="0 0 12 10" className="w-3 h-2.5 opacity-0 group-has-checked:opacity-100 transition" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 5.5L4.5 9L11 1" /></svg>
+						</div>
+						<span className="text-xs font-bold text-muted">Ghi nhớ đăng nhập</span>
+					</label>
+					<button type="button" className="text-xs font-bold text-primary hover:underline">
+						Quên mật khẩu?
+					</button>
+				</div>
 				<button
 					type="submit"
 					disabled={form.state.isSubmitting}
@@ -59,13 +74,12 @@ export function LoginForm() {
 					{form.state.isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
 				</button>
 			</form>
-			<Link
-				to="/"
-				search={{ auth: "choose" }}
-				className="text-sm font-bold text-primary hover:underline mt-4 inline-block"
-			>
-				← Quay lại
-			</Link>
+			<p className="text-sm font-bold text-muted mt-3">
+				Chưa có tài khoản?
+				<Link to="/" search={{ auth: "register" }} className="text-primary hover:underline ml-1">
+					Đăng ký
+				</Link>
+			</p>
 		</>
 	)
 }
