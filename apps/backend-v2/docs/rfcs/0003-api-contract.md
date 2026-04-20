@@ -39,10 +39,8 @@ Chia theo 10 nhóm endpoint tương ứng business module.
 ### `POST /api/v1/auth/register` — public
 Tạo account + profile đầu + cấp 100 xu.
 
-Request: `{ email, password }`
-Response: `{ access_token, refresh_token, user, profile: null }`
-
-> **Updated**: Register giờ chỉ cần email+password. Profile tạo sau qua onboarding flow.
+Request: `{ email, password, nickname, target_level, target_deadline }`
+Response: `{ access_token, refresh_token, user, profile }`
 
 ### `POST /api/v1/auth/login` — public
 Login, mặc định active profile = profile đầu của account.

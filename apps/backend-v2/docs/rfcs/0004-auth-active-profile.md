@@ -67,14 +67,16 @@ Không revoke JWT cũ (short TTL). Client update token storage.
 ### Register flow
 
 ```
-POST /auth/register { email, password }
+POST /auth/register { email, password, nickname, target_level, target_deadline }
   DB transaction:
     → create account (role=learner)
-    → issue tokens
-  → return { access_token, refresh_token, user, profile: null }
+    → create profile (is_initial_profile=true)
+    → dispatch ProfileCreated event
+  → event listener:
+    → create coin_transaction (type=onboarding_bonus, delta=100) — system_configs['onboarding.initial_coins']
+  → issue tokens
+  → return { access_token, refresh_token, user, profile }
 ```
-
-> **Updated**: Register chỉ cần email+password. Profile tạo sau qua onboarding flow.
 
 ### Middleware chain
 
