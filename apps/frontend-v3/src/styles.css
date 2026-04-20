@@ -60,6 +60,8 @@
   --color-subtle: #8c8c9b;
   --color-placeholder: #afafaf;
   --color-border: #e5e5e5;
+  --color-border-light: #efefef;
+  --color-border-focus: #6bd43a;
   --color-surface: #ffffff;
   --color-background: #f7f7fa;
 
@@ -76,6 +78,8 @@
   --color-coin-dark: #dcaa00;
   --color-coin-tint: #fff5d2;
 
+  --color-more: #CE82FF;
+
   /* ═══ Radius ═══ */
   --radius-button: 13px;
   --radius-card: 16px;
@@ -91,6 +95,16 @@
 		background: var(--color-background);
 		color: var(--color-foreground);
 		-webkit-font-smoothing: antialiased;
+	}
+
+	@keyframes slideIn {
+		from { opacity: 0; transform: translateX(20px); }
+		to { opacity: 1; transform: translateX(0); }
+	}
+
+	@keyframes menuIn {
+		from { opacity: 0; transform: translateY(-8px) scale(0.95); }
+		to { opacity: 1; transform: translateY(0) scale(1); }
 	}
 }
 
