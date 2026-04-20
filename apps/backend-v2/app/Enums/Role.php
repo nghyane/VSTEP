@@ -8,15 +8,16 @@ enum Role: string
 {
     case Learner = 'learner';
     case Teacher = 'teacher';
-    case Instructor = 'instructor';
+    case Staff = 'staff';
     case Admin = 'admin';
 
     public function level(): int
     {
         return match ($this) {
             self::Learner => 0,
-            self::Teacher, self::Instructor => 1,
-            self::Admin => 2,
+            self::Teacher => 1,
+            self::Staff => 2,
+            self::Admin => 3,
         };
     }
 
