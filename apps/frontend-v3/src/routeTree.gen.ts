@@ -17,7 +17,6 @@ import { Route as AppHoSoRouteImport } from "./routes/_app/ho-so"
 import { Route as AppDashboardRouteImport } from "./routes/_app/dashboard"
 import { Route as AppLuyenTapIndexRouteImport } from "./routes/_app/luyen-tap/index"
 import { Route as FocusedVocabSrsReviewRouteImport } from "./routes/_focused/vocab/srs-review"
-import { Route as FocusedListeningMockRouteImport } from "./routes/_focused/listening/mock"
 import { Route as FocusedListeningExerciseIdRouteImport } from "./routes/_focused/listening/$exerciseId"
 import { Route as AppLuyenTapVietRouteImport } from "./routes/_app/luyen-tap/viet"
 import { Route as AppLuyenTapTuVungRouteImport } from "./routes/_app/luyen-tap/tu-vung"
@@ -70,11 +69,6 @@ const AppLuyenTapIndexRoute = AppLuyenTapIndexRouteImport.update({
 const FocusedVocabSrsReviewRoute = FocusedVocabSrsReviewRouteImport.update({
   id: "/vocab/srs-review",
   path: "/vocab/srs-review",
-  getParentRoute: () => FocusedRoute,
-} as any)
-const FocusedListeningMockRoute = FocusedListeningMockRouteImport.update({
-  id: "/listening/mock",
-  path: "/listening/mock",
   getParentRoute: () => FocusedRoute,
 } as any)
 const FocusedListeningExerciseIdRoute =
@@ -171,7 +165,6 @@ export interface FileRoutesByFullPath {
   "/luyen-tap/tu-vung": typeof AppLuyenTapTuVungRouteWithChildren
   "/luyen-tap/viet": typeof AppLuyenTapVietRoute
   "/listening/$exerciseId": typeof FocusedListeningExerciseIdRoute
-  "/listening/mock": typeof FocusedListeningMockRoute
   "/vocab/srs-review": typeof FocusedVocabSrsReviewRoute
   "/luyen-tap/": typeof AppLuyenTapIndexRoute
   "/luyen-tap/ngu-phap/$pointId": typeof AppLuyenTapNguPhapPointIdRoute
@@ -191,7 +184,6 @@ export interface FileRoutesByTo {
   "/luyen-tap/noi": typeof AppLuyenTapNoiRoute
   "/luyen-tap/viet": typeof AppLuyenTapVietRoute
   "/listening/$exerciseId": typeof FocusedListeningExerciseIdRoute
-  "/listening/mock": typeof FocusedListeningMockRoute
   "/vocab/srs-review": typeof FocusedVocabSrsReviewRoute
   "/luyen-tap": typeof AppLuyenTapIndexRoute
   "/luyen-tap/ngu-phap/$pointId": typeof AppLuyenTapNguPhapPointIdRoute
@@ -218,7 +210,6 @@ export interface FileRoutesById {
   "/_app/luyen-tap/tu-vung": typeof AppLuyenTapTuVungRouteWithChildren
   "/_app/luyen-tap/viet": typeof AppLuyenTapVietRoute
   "/_focused/listening/$exerciseId": typeof FocusedListeningExerciseIdRoute
-  "/_focused/listening/mock": typeof FocusedListeningMockRoute
   "/_focused/vocab/srs-review": typeof FocusedVocabSrsReviewRoute
   "/_app/luyen-tap/": typeof AppLuyenTapIndexRoute
   "/_app/luyen-tap/ngu-phap/$pointId": typeof AppLuyenTapNguPhapPointIdRoute
@@ -244,7 +235,6 @@ export interface FileRouteTypes {
     | "/luyen-tap/tu-vung"
     | "/luyen-tap/viet"
     | "/listening/$exerciseId"
-    | "/listening/mock"
     | "/vocab/srs-review"
     | "/luyen-tap/"
     | "/luyen-tap/ngu-phap/$pointId"
@@ -264,7 +254,6 @@ export interface FileRouteTypes {
     | "/luyen-tap/noi"
     | "/luyen-tap/viet"
     | "/listening/$exerciseId"
-    | "/listening/mock"
     | "/vocab/srs-review"
     | "/luyen-tap"
     | "/luyen-tap/ngu-phap/$pointId"
@@ -290,7 +279,6 @@ export interface FileRouteTypes {
     | "/_app/luyen-tap/tu-vung"
     | "/_app/luyen-tap/viet"
     | "/_focused/listening/$exerciseId"
-    | "/_focused/listening/mock"
     | "/_focused/vocab/srs-review"
     | "/_app/luyen-tap/"
     | "/_app/luyen-tap/ngu-phap/$pointId"
@@ -365,13 +353,6 @@ declare module "@tanstack/react-router" {
       path: "/vocab/srs-review"
       fullPath: "/vocab/srs-review"
       preLoaderRoute: typeof FocusedVocabSrsReviewRouteImport
-      parentRoute: typeof FocusedRoute
-    }
-    "/_focused/listening/mock": {
-      id: "/_focused/listening/mock"
-      path: "/listening/mock"
-      fullPath: "/listening/mock"
-      preLoaderRoute: typeof FocusedListeningMockRouteImport
       parentRoute: typeof FocusedRoute
     }
     "/_focused/listening/$exerciseId": {
@@ -560,7 +541,6 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface FocusedRouteChildren {
   FocusedListeningExerciseIdRoute: typeof FocusedListeningExerciseIdRoute
-  FocusedListeningMockRoute: typeof FocusedListeningMockRoute
   FocusedVocabSrsReviewRoute: typeof FocusedVocabSrsReviewRoute
   FocusedGrammarPointIdExerciseRoute: typeof FocusedGrammarPointIdExerciseRoute
   FocusedVocabTopicIdExerciseRoute: typeof FocusedVocabTopicIdExerciseRoute
@@ -569,7 +549,6 @@ interface FocusedRouteChildren {
 
 const FocusedRouteChildren: FocusedRouteChildren = {
   FocusedListeningExerciseIdRoute: FocusedListeningExerciseIdRoute,
-  FocusedListeningMockRoute: FocusedListeningMockRoute,
   FocusedVocabSrsReviewRoute: FocusedVocabSrsReviewRoute,
   FocusedGrammarPointIdExerciseRoute: FocusedGrammarPointIdExerciseRoute,
   FocusedVocabTopicIdExerciseRoute: FocusedVocabTopicIdExerciseRoute,

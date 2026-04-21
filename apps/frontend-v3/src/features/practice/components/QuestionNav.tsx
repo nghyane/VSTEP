@@ -11,7 +11,7 @@ export function QuestionNav({ questions, answers, result }: Props) {
 	const resultMap = result ? new Map(result.items.map((i) => [i.question_id, i])) : null
 
 	return (
-		<div className="flex flex-wrap justify-center gap-2 border-t-2 border-border px-4 py-3 bg-surface">
+		<>
 			{questions.map((q, qi) => {
 				const isAnswered = answers[q.id] !== undefined
 				const item = resultMap?.get(q.id)
@@ -22,19 +22,15 @@ export function QuestionNav({ questions, answers, result }: Props) {
 						? "border-primary bg-primary-tint text-primary"
 						: "border-destructive bg-destructive-tint text-destructive"
 				} else if (isAnswered) {
-					style = "border-primary bg-primary text-primary-foreground"
+					style = "border-skill-listening bg-skill-listening text-primary-foreground"
 				}
 
 				return (
-					<a
-						key={q.id}
-						href={`#q-${qi}`}
-						className={cn("w-10 h-10 rounded-xl border-2 border-b-4 flex items-center justify-center text-sm font-bold transition", style)}
-					>
+					<a key={q.id} href={`#q-${qi}`} className={cn("w-8 h-8 rounded-lg border-2 flex items-center justify-center text-xs font-bold transition shrink-0", style)}>
 						{qi + 1}
 					</a>
 				)
 			})}
-		</div>
+		</>
 	)
 }

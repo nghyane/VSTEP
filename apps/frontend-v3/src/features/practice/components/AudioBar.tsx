@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Icon } from "#/components/Icon"
 import { formatAudioTime } from "#/lib/utils"
+import { cn } from "#/lib/utils"
 
 interface Props {
 	src: string
+	onToggleSubtitle: () => void
+	subtitleOn: boolean
 }
 
-export function AudioBar({ src }: Props) {
+export function AudioBar({ src, onToggleSubtitle, subtitleOn }: Props) {
 	const audioRef = useRef<HTMLAudioElement>(null)
 	const barRef = useRef<HTMLDivElement>(null)
 	const [playing, setPlaying] = useState(false)
@@ -32,10 +35,12 @@ export function AudioBar({ src }: Props) {
 		if (audio.paused) { audio.play(); setPlaying(true) } else { audio.pause(); setPlaying(false) }
 	}, [])
 
-	const skip = useCallback((delta: number) => {
+	const replay = useCallback(() => {
 		const audio = audioRef.current
 		if (!audio) return
-		audio.currentTime = Math.max(0, Math.min(audio.currentTime + delta, audio.duration || 0))
+		audio.currentTime = 0
+		audio.play()
+		setPlaying(true)
 	}, [])
 
 	const seek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -48,26 +53,25 @@ export function AudioBar({ src }: Props) {
 	const progress = duration > 0 ? (currentTime / duration) * 100 : 0
 
 	return (
-		<div className="bg-surface border-t-2 border-border px-5 py-3">
-			<div className="flex items-center gap-4">
-				<button type="button" onClick={() => skip(-5)} className="w-8 h-8 rounded-full border-2 border-border flex items-center justify-center text-muted hover:text-foreground transition" aria-label="Tua lại 5s">
-					<Icon name="back" size="xs" />
-				</button>
-				<button type="button" onClick={toggle} className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-[0_4px_0_var(--color-primary-dark)] active:shadow-[0_2px_0_var(--color-primary-dark)] active:translate-y-[2px] transition" aria-label={playing ? "Tạm dừng" : "Phát"}>
-					<Icon name={playing ? "close" : "volume"} size="sm" />
-				</button>
-				<button type="button" onClick={() => skip(5)} className="w-8 h-8 rounded-full border-2 border-border flex items-center justify-center text-muted hover:text-foreground transition rotate-180" aria-label="Tua tới 5s">
-					<Icon name="back" size="xs" />
-				</button>
-
-				<span className="text-sm font-bold text-primary tabular-nums">{formatAudioTime(currentTime)}</span>
-
-				<div ref={barRef} onClick={seek} className="flex-1 h-3 bg-background rounded-full cursor-pointer relative border-2 border-border" role="slider" aria-label="Tiến trình" aria-valuemin={0} aria-valuemax={Math.round(duration)} aria-valuenow={Math.round(currentTime)}>
-					<div className="absolute inset-y-0 left-0 bg-primary rounded-full transition-[width]" style={{ width: `${progress}%` }} />
-				</div>
-
-				<span className="text-sm text-muted tabular-nums">{formatAudioTime(duration)}</span>
+		<div className="flex items-center gap-3">
+			<button type="button" onClick={toggle} className="w-10 h-10 rounded-full bg-skill-listening text-primary-foreground flex items-center justify-center shadow-[0_3px_0_oklch(0.45_0.15_240)] active:shadow-[0_1px_0_oklch(0.45_0.15_240)] active:translate-y-[2px] transition shrink-0" aria-label={playing ? "Tạm dừng" : "Phát"}>
+				<Icon name={playing ? "close" : "volume"} size="xs" />
+			</button>
+			<button type="button" onClick={replay} className="w-8 h-8 rounded-full border-2 border-border flex items-center justify-center text-muted hover:text-foreground transition shrink-0" aria-label="Nghe lại">
+				<Icon name="back" size="xs" />
+			</button>
+			<div ref={barRef} onClick={seek} className="flex-1 h-2 bg-background rounded-full relative border border-border cursor-pointer min-w-0">
+				<div className="absolute inset-y-0 left-0 bg-skill-listening rounded-full transition-[width]" style={{ width: `${progress}%` }} />
 			</div>
+			<span className="text-xs text-muted tabular-nums shrink-0">{formatAudioTime(currentTime)} / {formatAudioTime(duration)}</span>
+			<button
+				type="button"
+				onClick={onToggleSubtitle}
+				className={cn("w-8 h-8 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition shrink-0", subtitleOn ? "border-skill-listening bg-info-tint text-skill-listening" : "border-border text-muted")}
+				aria-label="Bật/tắt phụ đề"
+			>
+				CC
+			</button>
 			<audio ref={audioRef} src={src} preload="metadata" className="hidden" />
 		</div>
 	)
