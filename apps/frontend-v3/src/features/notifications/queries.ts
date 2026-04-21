@@ -11,6 +11,10 @@ export interface Notification {
 	created_at: string
 }
 
+export interface UnreadCount {
+	count: number
+}
+
 export interface NotificationListResponse {
 	data: Notification[]
 	total: number
@@ -18,12 +22,10 @@ export interface NotificationListResponse {
 
 export const unreadCountQuery = queryOptions({
 	queryKey: ["notifications", "unread-count"],
-	queryFn: () => api.get("notifications/unread-count").json<ApiResponse<{ count: number }>>(),
+	queryFn: () => api.get("notifications/unread-count").json<ApiResponse<UnreadCount>>(),
 })
 
 export const notificationsQuery = queryOptions({
 	queryKey: ["notifications"],
 	queryFn: () => api.get("notifications").json<NotificationListResponse>(),
 })
-
-export type { Notification as NotificationType }

@@ -22,6 +22,6 @@ export async function switchProfile(profileId: string, refreshToken: string) {
 }
 
 export async function createProfile(input: { nickname: string; target_level: string; target_deadline: string }) {
-	const { data } = await api.post("profiles", { json: input }).json<{ data: Profile }>()
+	const { data } = await api.post("profiles", { json: input }).json<ApiResponse<Profile>>()
 	return data
 }
