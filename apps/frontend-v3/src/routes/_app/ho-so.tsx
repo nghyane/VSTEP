@@ -14,11 +14,14 @@ export const Route = createFileRoute("/_app/ho-so")({
 
 function ProfilePage() {
 	const { profile: activeProfile, user } = useSession()
-	const { data } = useQuery(profilesQuery)
+	const { data, isLoading } = useQuery(profilesQuery)
 	const [showCreate, setShowCreate] = useState(false)
 	const { doSwitch, doCreate } = useProfileMutations()
 
-	const profiles = data?.data ?? []
+	if (isLoading) return <Header title="Hồ sơ" />
+	if (!data) return null
+
+	const profiles = data.data
 
 	return (
 		<>

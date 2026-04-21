@@ -13,7 +13,8 @@ export const Route = createFileRoute("/_focused/vocab/srs-review")({
 
 function SrsReviewPage() {
 	const { data } = useQuery(vocabSrsQueueQuery)
-	const s = useFlashcardSession(data?.data?.items ?? [])
+	const items = data ? data.data.items : []
+	const s = useFlashcardSession(items)
 	const back = { backTo: "/luyen-tap/tu-vung" }
 
 	if (!data) {

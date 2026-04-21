@@ -1,39 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { Icon } from "#/components/Icon"
-import { overviewQuery } from "#/features/dashboard/queries"
-import { skills } from "#/lib/skills"
-import { getTargetBand } from "#/lib/vstep"
-
-function selectNextAction(raw: {
-	data: {
-		stats: { streak: number }
-		chart: {
-			listening: number | null
-			reading: number | null
-			writing: number | null
-			speaking: number | null
-		} | null
-		profile: { target_level: string | null }
-	}
-}) {
-	const { stats, chart, profile } = raw.data
-	const targetBand = getTargetBand(profile.target_level)
-
-	let weakest = skills[0]
-	if (chart) {
-		let minGap = Number.POSITIVE_INFINITY
-		for (const s of skills) {
-			const score = chart[s.key] ?? 0
-			const gap = score - targetBand
-			if (gap < minGap) {
-				minGap = gap
-				weakest = s
-			}
-		}
-	}
-
-	return { streak: stats.streak, skill: weakest }
-}
+import { overviewQuery, selectNextAction } from "#/features/dashboard/queries"
 
 export function NextAction() {
 	const { data } = useQuery({ ...overviewQuery, select: selectNextAction })

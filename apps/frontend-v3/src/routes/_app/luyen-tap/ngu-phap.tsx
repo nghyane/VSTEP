@@ -9,7 +9,11 @@ export const Route = createFileRoute("/_app/luyen-tap/ngu-phap")({
 
 function GrammarPage() {
 	const { data, isLoading } = useQuery(grammarPointsQuery)
-	const points = data?.data ?? []
+
+	if (isLoading) return <Header title="Ngữ pháp" />
+	if (!data) return null
+
+	const points = data.data
 
 	return (
 		<>
@@ -17,9 +21,7 @@ function GrammarPage() {
 			<div className="px-10 pb-12">
 				<p className="text-sm text-subtle mb-5">Cấu trúc câu gắn level A2–C1</p>
 
-				{isLoading ? (
-					<p className="text-muted">Đang tải...</p>
-				) : points.length === 0 ? (
+				{points.length === 0 ? (
 					<div className="card p-10 text-center">
 						<img src="/mascot/lac-think.png" alt="" className="w-24 h-24 mx-auto mb-3 object-contain" />
 						<p className="text-sm font-bold text-subtle">Chưa có bài ngữ pháp nào</p>

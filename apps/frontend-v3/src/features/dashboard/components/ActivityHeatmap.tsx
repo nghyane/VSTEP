@@ -43,7 +43,10 @@ function buildGrid(data: ActivityDay[]): number[][] {
 
 export function ActivityHeatmap() {
 	const { data, isLoading } = useQuery(activityHeatmapQuery)
-	const activityData = data?.data ?? []
+
+	if (isLoading || !data) return null
+
+	const activityData = data.data
 	const weeks = buildGrid(activityData)
 	const totalDays = activityData.filter((d) => d.minutes > 0).length
 

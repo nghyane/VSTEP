@@ -16,9 +16,9 @@ export function Header({ title }: Props) {
 	const { data: streakData } = useQuery(streakQuery)
 	const { data: unreadData } = useQuery(unreadCountQuery)
 
-	const balance = walletData?.data.balance ?? 0
-	const streak = streakData?.data.current_streak ?? 0
-	const unread = unreadData?.data.count ?? 0
+	const balance = walletData ? walletData.data.balance : null
+	const streak = streakData ? streakData.data.current_streak : null
+	const unread = unreadData ? unreadData.data.count : 0
 	const initial = profile.nickname.charAt(0).toUpperCase()
 
 	return (
@@ -27,11 +27,11 @@ export function Header({ title }: Props) {
 			<div className="flex items-center gap-6">
 				<div className="flex items-center gap-2">
 					<StaticIcon name="gem-color" size="sm" />
-					<span className="font-bold text-base text-coin-dark">{balance}</span>
+					<span className="font-bold text-base text-coin-dark">{balance !== null ? balance : "–"}</span>
 				</div>
 				<div className="flex items-center gap-2">
 					<StaticIcon name="streak-sm" size="sm" />
-					<span className="font-bold text-base text-streak">{streak}</span>
+					<span className="font-bold text-base text-streak">{streak !== null ? streak : "–"}</span>
 				</div>
 				<ProfileDropdown unread={unread} initial={initial} />
 			</div>

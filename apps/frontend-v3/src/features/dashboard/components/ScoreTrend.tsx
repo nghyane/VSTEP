@@ -15,8 +15,11 @@ function computeAvg(scores: Record<string, number | null>): number {
 export function ScoreTrend() {
 	const { data: targetBand } = useQuery({ ...overviewQuery, select: selectTargetBand })
 	const { data, isLoading } = useQuery(examSessionsQuery)
-	const sessions = data?.data ?? []
-	const target = targetBand ?? 6.0
+
+	if (isLoading || !data || targetBand === undefined) return null
+
+	const sessions = data.data
+	const target = targetBand
 
 	if (isLoading) {
 		return (

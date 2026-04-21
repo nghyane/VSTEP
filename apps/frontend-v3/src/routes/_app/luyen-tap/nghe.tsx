@@ -9,7 +9,11 @@ export const Route = createFileRoute("/_app/luyen-tap/nghe")({
 
 function ListeningPage() {
 	const { data, isLoading } = useQuery(practiceExercisesQuery("listening"))
-	const exercises = data?.data ?? []
+
+	if (isLoading) return <Header title="Nghe" />
+	if (!data) return null
+
+	const exercises = data.data
 
 	return (
 		<>
@@ -17,9 +21,7 @@ function ListeningPage() {
 			<div className="px-10 pb-12">
 				<p className="text-sm text-subtle mb-5">3 phần · nghe hiểu · bật/tắt hỗ trợ</p>
 
-				{isLoading ? (
-					<p className="text-muted">Đang tải...</p>
-				) : exercises.length === 0 ? (
+				{exercises.length === 0 ? (
 					<div className="card p-10 text-center">
 						<img src="/mascot/lac-listen.png" alt="" className="w-24 h-24 mx-auto mb-3 object-contain" />
 						<p className="text-sm font-bold text-subtle">Chưa có bài nghe nào</p>

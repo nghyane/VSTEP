@@ -80,7 +80,7 @@ export function ProfileDropdown({ unread, initial }: Props) {
 		onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
 	})
 
-	const notifs = notifsData?.data ?? []
+	const notifs = notifsData ? notifsData.data : []
 
 	function toggle() {
 		const next = !open

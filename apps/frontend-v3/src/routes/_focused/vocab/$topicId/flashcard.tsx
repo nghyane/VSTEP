@@ -14,7 +14,8 @@ export const Route = createFileRoute("/_focused/vocab/$topicId/flashcard")({
 function FlashcardPage() {
 	const { topicId } = Route.useParams()
 	const { data } = useQuery(vocabTopicDetailQuery(topicId))
-	const s = useFlashcardSession(data?.data?.words ?? [])
+	const words = data ? data.data.words : []
+	const s = useFlashcardSession(words)
 	const back = { backTo: "/luyen-tap/tu-vung/$topicId", backParams: { topicId } }
 
 	if (!data) return <Loading {...back} />

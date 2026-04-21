@@ -21,7 +21,7 @@ function ExercisePage() {
 	const { topicId } = Route.useParams()
 	const { kind } = Route.useSearch()
 	const { data } = useQuery(vocabTopicDetailQuery(topicId))
-	const exercises = (data?.data?.exercises ?? []).filter((e) => e.kind === kind)
+	const exercises = data ? data.data.exercises.filter((e) => e.kind === kind) : []
 	const s = useExerciseSession(exercises, kind)
 	const back = { backTo: "/luyen-tap/tu-vung/$topicId", backParams: { topicId } }
 

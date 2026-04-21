@@ -4,23 +4,22 @@ import { vocabTopicsQuery } from "#/features/vocab/queries"
 
 export function TopicGrid() {
 	const { data, isLoading } = useQuery(vocabTopicsQuery)
-	const topics = data?.data ?? []
 
 	return (
 		<section>
 			<h3 className="font-extrabold text-xl text-foreground mb-1">Chủ đề</h3>
 			<p className="text-sm text-subtle mb-5">Chọn chủ đề để học từ mới</p>
 
-			{isLoading ? (
+			{isLoading || !data ? (
 				<p className="text-sm text-subtle">Đang tải...</p>
-			) : topics.length === 0 ? (
+			) : data.data.length === 0 ? (
 				<div className="card p-10 text-center">
 					<img src="/mascot/lac-think.png" alt="" className="w-24 h-24 mx-auto mb-3 object-contain" />
 					<p className="text-sm font-bold text-subtle">Chưa có chủ đề nào</p>
 				</div>
 			) : (
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-					{topics.map((t) => (
+					{data.data.map((t) => (
 						<Link
 							key={t.id}
 							to="/luyen-tap/tu-vung/$topicId"

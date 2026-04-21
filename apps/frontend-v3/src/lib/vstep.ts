@@ -6,8 +6,7 @@ export const levelToBand: Record<string, number> = {
 	C1: 8.5,
 }
 
-export function getTargetBand(targetLevel: string | null): number {
-	if (!targetLevel) return 6.0
+export function getTargetBand(targetLevel: string): number {
 	return levelToBand[targetLevel] ?? 6.0
 }
 

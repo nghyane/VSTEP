@@ -1,31 +1,10 @@
 import { useQuery } from "@tanstack/react-query"
 import { StaticIcon } from "#/components/Icon"
-import { overviewQuery } from "#/features/dashboard/queries"
+import { overviewQuery, selectStats } from "#/features/dashboard/queries"
 import { cn, formatMinutes } from "#/lib/utils"
 
-function selectStatsView(raw: {
-	data: {
-		stats: { total_tests: number; min_tests_required: number; total_study_minutes: number; streak: number }
-		chart: {
-			listening: number | null
-			reading: number | null
-			writing: number | null
-			speaking: number | null
-		} | null
-		profile: { target_level: string | null }
-	}
-}) {
-	const { stats, chart, profile } = raw.data
-	const scores = chart
-		? [chart.listening, chart.reading, chart.writing, chart.speaking].filter((v): v is number => v !== null)
-		: []
-	const avgBand =
-		scores.length > 0 ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10 : null
-	return { ...stats, avgBand, targetLevel: profile.target_level }
-}
-
 export function StatsRow() {
-	const { data: stats } = useQuery({ ...overviewQuery, select: selectStatsView })
+	const { data: stats } = useQuery({ ...overviewQuery, select: selectStats })
 	if (!stats) return null
 
 	return (
@@ -73,7 +52,7 @@ export function StatsRow() {
 								stats.avgBand !== null ? "text-foreground" : "text-subtle",
 							)}
 						>
-							{stats.avgBand ?? "—"}
+							{stats.avgBand !== null ? stats.avgBand : "—"}
 						</p>
 						{stats.avgBand === null && stats.total_tests < stats.min_tests_required && (
 							<p className="text-xs text-placeholder">
