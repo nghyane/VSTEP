@@ -71,6 +71,9 @@ Không ghi khi: typo fix, style tweak, thêm feature đơn giản theo pattern c
 
 ## Hard limits
 
-- File ≤ 300 lines. Function ≤ 50 lines. Props ≤ 3.
+- Function ≤ 50 lines. Props ≤ 3.
 - Route page ≤ 80 lines — chỉ compose.
+- Component file: 1 concern. Nhiều concern → tách file. Không limit dòng cứng.
+- Component dùng ≥ 2 nơi → shared (lib/ hoặc components/).
+- Hook file: 1 state machine (useReducer + useMutation cho 1 flow).
 - No `any`. No `console.log`. No commented-out code. No barrel files.
