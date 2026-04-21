@@ -2,12 +2,16 @@ import { useCallback, useEffect, useState } from "react"
 import { reviewWord } from "#/features/vocab/actions"
 import type { SrsRating, WordWithState } from "#/features/vocab/types"
 
+const KEY_TO_RATING: Record<string, SrsRating> = { "1": 1, "2": 2, "3": 3, "4": 4 }
+
+type Status = "empty" | "active" | "done"
+
 interface FlashcardSession {
-	current: WordWithState | undefined
-	total: number
+	status: Status
+	current: WordWithState | null
 	index: number
+	total: number
 	reviewed: number
-	done: boolean
 	revealed: boolean
 	submitting: boolean
 	reveal: () => void
@@ -25,9 +29,12 @@ export function useFlashcardSession(items: WordWithState[]): FlashcardSession {
 		if (items.length > 0) setQueue(items)
 	}, [items])
 
-	const current = queue[index]
 	const total = queue.length
-	const done = total > 0 && index >= total
+	const current = queue[index] ?? null
+
+	let status: Status = "active"
+	if (total === 0) status = "empty"
+	else if (index >= total) status = "done"
 
 	const reveal = useCallback(() => setRevealed(true), [])
 
@@ -42,21 +49,21 @@ export function useFlashcardSession(items: WordWithState[]): FlashcardSession {
 		setSubmitting(false)
 	}, [current, submitting])
 
-	// Keyboard: Space=reveal, 1-4=rate
 	useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
-			if (e.key === " ") {
+			if (e.key === " " && !revealed) {
 				e.preventDefault()
-				if (!revealed) reveal()
+				reveal()
+				return
 			}
-			if (revealed && !submitting) {
-				const r = Number(e.key)
-				if (r >= 1 && r <= 4) rate(r as SrsRating)
+			const rating = KEY_TO_RATING[e.key]
+			if (rating && revealed && !submitting) {
+				rate(rating)
 			}
 		}
 		window.addEventListener("keydown", onKeyDown)
 		return () => window.removeEventListener("keydown", onKeyDown)
 	}, [revealed, submitting, reveal, rate])
 
-	return { current, total, index: Math.min(index, total), reviewed, done, revealed, submitting, reveal, rate }
+	return { status, current, index, total, reviewed, revealed, submitting, reveal, rate }
 }

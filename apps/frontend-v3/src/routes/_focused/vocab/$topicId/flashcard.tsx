@@ -15,24 +15,42 @@ function FlashcardPage() {
 	const { topicId } = Route.useParams()
 	const { data } = useQuery(vocabTopicDetailQuery(topicId))
 	const s = useFlashcardSession(data?.data?.words ?? [])
+	const back = { backTo: "/luyen-tap/tu-vung/$topicId", backParams: { topicId } }
+
+	if (!data) return <Loading {...back} />
+
+	if (s.status === "empty") {
+		return <FocusEmpty {...back} title="Chưa có từ vựng" message="Chủ đề này chưa có từ nào." />
+	}
+
+	if (s.status === "done") {
+		return <FocusComplete {...back} total={s.reviewed} message={`Bạn đã ôn xong ${s.reviewed} lượt.`} />
+	}
 
 	return (
 		<div className="min-h-screen bg-background flex flex-col">
-			<FocusBar backTo="/luyen-tap/tu-vung/$topicId" backParams={{ topicId }} current={s.index} total={s.total} />
+			<FocusBar {...back} current={s.index} total={s.total} />
 			<div className="flex-1 flex items-center justify-center px-6 pb-8">
-				{!data ? (
-					<p className="text-muted">Đang tải...</p>
-				) : s.total === 0 ? (
-					<FocusEmpty backTo="/luyen-tap/tu-vung/$topicId" backParams={{ topicId }} title="Chưa có từ vựng" message="Chủ đề này chưa có từ nào." />
-				) : s.done ? (
-					<FocusComplete backTo="/luyen-tap/tu-vung/$topicId" backParams={{ topicId }} total={s.reviewed} message={`Bạn đã ôn xong ${s.reviewed} lượt.`} />
-				) : (
-					<div className="w-full max-w-lg space-y-4">
-						<FlashcardCard word={s.current!.word} revealed={s.revealed} onReveal={s.reveal} />
-						{s.revealed && <SrsRatingButtons disabled={s.submitting} onRate={s.rate} />}
-						<p className="text-xs text-subtle text-center">Space: xem nghĩa · 1-4: đánh giá</p>
-					</div>
-				)}
+				<div className="w-full max-w-lg space-y-4">
+					{s.current && (
+						<>
+							<FlashcardCard word={s.current.word} revealed={s.revealed} onReveal={s.reveal} />
+							{s.revealed && <SrsRatingButtons disabled={s.submitting} onRate={s.rate} />}
+						</>
+					)}
+					<p className="text-xs text-subtle text-center">Space: xem nghĩa · 1-4: đánh giá</p>
+				</div>
+			</div>
+		</div>
+	)
+}
+
+function Loading({ backTo, backParams }: { backTo: string; backParams?: Record<string, string> }) {
+	return (
+		<div className="min-h-screen bg-background flex flex-col">
+			<FocusBar backTo={backTo} backParams={backParams} current={0} total={0} />
+			<div className="flex-1 flex items-center justify-center">
+				<p className="text-muted">Đang tải...</p>
 			</div>
 		</div>
 	)

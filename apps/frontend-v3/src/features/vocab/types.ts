@@ -34,6 +34,11 @@ export interface WordWithState {
 	state: SrsState
 }
 
+export interface BackLink {
+	backTo: string
+	backParams?: Record<string, string>
+}
+
 export interface ReviewResponse {
 	state: SrsState
 	review_id: string

@@ -31,9 +31,15 @@ description: >
 - Components NEVER try/catch API calls for toast
 - Auth store NEVER handles errors — just throws
 
+## Auth
+
+- Store: `src/lib/auth.ts` — Zustand discriminated union state
+- `isAuthenticated: true` guarantees `user: User` + `profile: Profile` (non-null)
+- `useSession()` for components inside `_app` — returns typed `{ user, profile }`
+- `useAuth` for auth guards and login/register/logout actions
+
 ## Auth Redirects
 
 - `useEffect` watching `isAuthenticated` — never navigate() in render body
 - Landing (`/`): redirect to `/dashboard` when authenticated
 - App layout (`/_app`): redirect to `/?auth=login` when not authenticated
-- `_app.tsx` guard order: `!isAuthenticated` → null, else → Outlet

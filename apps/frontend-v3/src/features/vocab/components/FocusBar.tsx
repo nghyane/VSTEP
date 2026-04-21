@@ -1,9 +1,8 @@
 import { Link } from "@tanstack/react-router"
 import { Icon } from "#/components/Icon"
+import type { BackLink } from "#/features/vocab/types"
 
-interface Props {
-	backTo: string
-	backParams?: Record<string, string>
+interface Props extends BackLink {
 	current: number
 	total: number
 }
