@@ -16,6 +16,7 @@ const MOCK_QUESTIONS = [
 function ListeningMock() {
 	const [answers, setAnswers] = useState<Record<string, number>>({})
 	const [submitted, setSubmitted] = useState(false)
+	const [showSub, setShowSub] = useState(false)
 	const correctMap: Record<string, number> = { "1": 1, "2": 0, "3": 2 }
 	const answeredCount = Object.keys(answers).length
 
@@ -133,6 +134,20 @@ function ListeningMock() {
 
 			{/* ─── Sticky bottom ─── */}
 			<div className="shrink-0">
+				{/* Subtitle panel */}
+				{showSub && (
+					<div className="bg-surface border-t-2 border-border px-6 py-4 max-h-32 overflow-y-auto">
+						<p className="text-sm text-foreground leading-relaxed">
+							<span className="bg-info-tint text-skill-listening font-bold px-0.5 rounded">Excuse</span>{" "}
+							<span className="bg-info-tint text-skill-listening font-bold px-0.5 rounded">me,</span>{" "}
+							can you tell me how to get to the{" "}
+							<span className="font-bold text-foreground">post office</span>? I need to send a package.
+							Sure, go straight for about{" "}
+							<span className="font-bold text-foreground">10 minutes</span>, then turn right at the traffic light.
+						</p>
+					</div>
+				)}
+
 				{/* Audio bar */}
 				<div className="bg-surface border-t-2 border-border px-5 py-3">
 					<div className="flex items-center gap-4">
@@ -150,6 +165,15 @@ function ListeningMock() {
 							<div className="absolute inset-y-0 left-0 bg-skill-listening rounded-full w-0" />
 						</div>
 						<span className="text-sm text-muted tabular-nums">3:45</span>
+						{/* Subtitle toggle */}
+						<button
+							type="button"
+							onClick={() => setShowSub((v) => !v)}
+							className={cn("w-8 h-8 rounded-full border-2 border-b-4 flex items-center justify-center text-xs font-bold transition active:translate-y-[2px] active:border-b-2", showSub ? "border-skill-listening bg-info-tint text-skill-listening" : "border-border text-muted")}
+							aria-label="Bật/tắt phụ đề"
+						>
+							CC
+						</button>
 					</div>
 				</div>
 
