@@ -139,24 +139,39 @@ class VocabService
     }
 
     /**
-     * @return array{new: int, learning: int, review: int, items: array<int,array{word: VocabWord, state: FsrsState}>}
+     * @return array{new: int, learning: int, review: int, next_due_at: string|null, items: array<int,array{word: VocabWord, state: FsrsState}>}
      */
     public function buildDueQueue(Profile $profile, int $limit = 50): array
     {
         $now = now();
-        $states = ProfileVocabSrsState::query()
+        $learnAheadMinutes = 20;
+        $learnAheadCutoff = $now->copy()->addMinutes($learnAheadMinutes);
+
+        // 1. Cards due now (all kinds)
+        $dueNow = ProfileVocabSrsState::query()
             ->where('profile_id', $profile->id)
             ->where('due_at', '<=', $now)
             ->orderBy('due_at')
             ->limit($limit)
             ->get();
 
-        $wordIds = $states->pluck('word_id');
+        // 2. Learning cards due within learn-ahead window (not yet due but coming soon)
+        $learnAhead = ProfileVocabSrsState::query()
+            ->where('profile_id', $profile->id)
+            ->where('due_at', '>', $now)
+            ->where('due_at', '<=', $learnAheadCutoff)
+            ->whereIn('state_kind', ['learning', 'relearning'])
+            ->orderBy('due_at')
+            ->limit($limit)
+            ->get();
+
+        $allStates = $dueNow->merge($learnAhead)->unique('word_id')->take($limit);
+        $wordIds = $allStates->pluck('word_id');
         $words = VocabWord::query()->whereIn('id', $wordIds)->get()->keyBy('id');
 
         $counts = ['new' => 0, 'learning' => 0, 'review' => 0];
         $items = [];
-        foreach ($states as $row) {
+        foreach ($allStates as $row) {
             $state = $this->stateFromRow($row);
             $word = $words->get($row->word_id);
             if ($word === null) {
@@ -173,10 +188,22 @@ class VocabService
             }
         }
 
+        // Next due card outside current window
+        $nextDueAt = null;
+        if (count($items) === 0) {
+            $nextDue = ProfileVocabSrsState::query()
+                ->where('profile_id', $profile->id)
+                ->where('due_at', '>', $learnAheadCutoff)
+                ->orderBy('due_at')
+                ->value('due_at');
+            $nextDueAt = $nextDue?->toIso8601String();
+        }
+
         return [
             'new' => $counts['new'],
             'learning' => $counts['learning'],
             'review' => $counts['review'],
+            'next_due_at' => $nextDueAt,
             'items' => $items,
         ];
     }

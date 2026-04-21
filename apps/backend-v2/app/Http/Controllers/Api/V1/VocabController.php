@@ -69,6 +69,7 @@ class VocabController extends Controller
             'new_count' => $queue['new'],
             'learning_count' => $queue['learning'],
             'review_count' => $queue['review'],
+            'next_due_at' => $queue['next_due_at'],
             'items' => array_map(fn (array $pair) => [
                 'word' => (new VocabWordResource($pair['word']))->resolve($request),
                 'state' => $pair['state']->toArray($this->fsrsConfig),

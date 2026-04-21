@@ -60,6 +60,7 @@ export interface SrsQueueResponse {
 	new_count: number
 	learning_count: number
 	review_count: number
+	next_due_at: string | null
 	items: WordWithState[]
 }
 
