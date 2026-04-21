@@ -19,34 +19,75 @@ function ListeningMock() {
 	const [showSub, setShowSub] = useState(false)
 	const correctMap: Record<string, number> = { "1": 1, "2": 0, "3": 2 }
 	const answeredCount = Object.keys(answers).length
+	const score = Object.entries(answers).filter(([id, a]) => a === correctMap[id]).length
 
 	return (
 		<div className="flex flex-col h-screen bg-background">
 			{/* ─── Header ─── */}
-			<div className="flex items-center justify-between border-b-2 border-border bg-surface px-6 py-4 shrink-0">
-				<div className="flex items-center gap-4">
-					<Link to="/luyen-tap/nghe" className="p-1.5 hover:opacity-70">
-						<Icon name="close" size="sm" className="text-muted" />
-					</Link>
-					<div>
-						<h2 className="font-extrabold text-base text-foreground">Hỏi đường đến bưu điện</h2>
-						<p className="text-xs text-subtle">Part 1 · 3 câu · ~5 phút</p>
-					</div>
+			<div className="flex items-center gap-3 border-b-2 border-border bg-surface px-4 py-2.5 shrink-0">
+				<Link to="/luyen-tap/nghe" className="p-1 hover:opacity-70 shrink-0">
+					<Icon name="close" size="xs" className="text-muted" />
+				</Link>
+				<div className="flex-1 h-1.5 bg-border rounded-full overflow-hidden">
+					<div className="h-full bg-skill-listening rounded-full transition-all" style={{ width: `${(answeredCount / MOCK_QUESTIONS.length) * 100}%` }} />
 				</div>
-				<div className="flex items-center gap-2">
-					<span className="text-sm font-bold text-foreground">{answeredCount}</span>
-					<span className="text-sm text-subtle">/ {MOCK_QUESTIONS.length}</span>
-				</div>
+				<span className="text-xs font-bold text-muted shrink-0">{answeredCount}/{MOCK_QUESTIONS.length}</span>
 			</div>
 
-			{/* ─── Progress ─── */}
-			<div className="h-2 bg-border shrink-0">
-				<div className="h-full bg-skill-listening rounded-r-full transition-all" style={{ width: `${(answeredCount / MOCK_QUESTIONS.length) * 100}%` }} />
-			</div>
-
-			{/* ─── Questions (scroll) ─── */}
+			{/* ─── Scrollable content ─── */}
 			<div className="flex-1 overflow-y-auto">
-				<div className="max-w-3xl mx-auto px-6 py-8 space-y-8">
+				<div className="max-w-3xl mx-auto px-6 py-6 space-y-6">
+
+					{/* Audio player */}
+					<div className="card p-4">
+						<p className="text-xs font-bold text-skill-listening uppercase tracking-wide mb-3">Part 1 · Nghe hiểu ngắn</p>
+						<h2 className="font-bold text-lg text-foreground mb-1">Hỏi đường đến bưu điện</h2>
+						<p className="text-sm text-muted mb-4">Nghe đoạn hội thoại và trả lời câu hỏi</p>
+
+						{/* Play controls */}
+						<div className="flex items-center gap-3">
+							<button type="button" className="w-10 h-10 rounded-full bg-skill-listening text-primary-foreground flex items-center justify-center shadow-[0_3px_0_oklch(0.45_0.15_240)] active:shadow-[0_1px_0_oklch(0.45_0.15_240)] active:translate-y-[2px] transition shrink-0">
+								<Icon name="volume" size="xs" />
+							</button>
+							<div className="flex-1 h-2 bg-background rounded-full relative border border-border">
+								<div className="absolute inset-y-0 left-0 bg-skill-listening rounded-full w-0" />
+							</div>
+							<span className="text-xs text-muted tabular-nums">3:45</span>
+							<button type="button" className="w-8 h-8 rounded-full border-2 border-border flex items-center justify-center text-muted hover:text-foreground transition shrink-0" aria-label="Nghe lại">
+								<Icon name="back" size="xs" />
+							</button>
+							<button
+								type="button"
+								onClick={() => setShowSub((v) => !v)}
+								className={cn("w-8 h-8 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition shrink-0", showSub ? "border-skill-listening bg-info-tint text-skill-listening" : "border-border text-muted")}
+							>
+								CC
+							</button>
+						</div>
+
+						{/* Subtitle */}
+						{showSub && (
+							<p className="text-sm text-foreground leading-relaxed mt-3 pt-3 border-t border-border">
+								<span className="bg-info-tint text-skill-listening font-bold px-0.5 rounded">Excuse me,</span>{" "}
+								can you tell me how to get to the <strong>post office</strong>? Sure, go straight for about <strong>10 minutes</strong>, then turn right at the traffic light.
+							</p>
+						)}
+					</div>
+
+					{/* Celebration (if submitted) */}
+					{submitted && (
+						<div className="card p-6 text-center">
+							<img src="/mascot/lac-happy.png" alt="" className="w-20 h-20 mx-auto mb-3 object-contain" />
+							<p className="font-extrabold text-2xl text-foreground">{score}/{MOCK_QUESTIONS.length}</p>
+							<p className="text-sm text-muted mt-1">câu đúng</p>
+							<div className="flex justify-center gap-3 mt-4">
+								<button type="button" onClick={() => { setAnswers({}); setSubmitted(false) }} className="btn btn-secondary text-primary px-5 py-2">Làm lại</button>
+								<Link to="/luyen-tap/nghe" className="btn btn-primary px-5 py-2">Về danh sách</Link>
+							</div>
+						</div>
+					)}
+
+					{/* Questions */}
 					{MOCK_QUESTIONS.map((q, qi) => {
 						const selected = answers[q.id]
 						const correct = correctMap[q.id]
@@ -54,11 +95,11 @@ function ListeningMock() {
 
 						return (
 							<div key={q.id} id={`q-${qi}`}>
-								<p className="font-bold text-base text-foreground mb-4">
-									<span className="text-skill-listening mr-2">{qi + 1}.</span>
+								<p className="text-sm font-medium text-foreground mb-3">
+									<span className="text-skill-listening font-bold mr-1.5">{qi + 1}.</span>
 									{q.question}
 								</p>
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 									{q.options.map((opt, oi) => {
 										const letter = String.fromCharCode(65 + oi)
 										const isSelected = oi === selected
@@ -85,125 +126,49 @@ function ListeningMock() {
 												type="button"
 												disabled={submitted}
 												onClick={() => setAnswers((a) => ({ ...a, [q.id]: oi }))}
-												className={cn(
-													"flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 border-b-4 text-left transition",
-													"active:translate-y-[2px] active:border-b-2",
-													optClass,
-												)}
+												className={cn("flex items-center gap-2.5 px-3 py-2.5 rounded-xl border-2 border-b-4 text-left text-sm font-medium transition active:translate-y-[2px] active:border-b-2", optClass)}
 											>
-												<span className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 transition", badgeClass)}>
-													{letter}
-												</span>
-												<span className="text-sm font-bold text-foreground">{opt}</span>
+												<span className={cn("w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold shrink-0", badgeClass)}>{letter}</span>
+												<span>{opt}</span>
 											</button>
 										)
 									})}
 								</div>
-
-								{/* Explanation after submit */}
 								{submitted && isWrong && (
-									<div className="mt-3 rounded-xl border-2 border-destructive/20 bg-destructive-tint px-4 py-3">
-										<p className="text-xs font-bold text-destructive uppercase tracking-wide mb-1">Giải thích</p>
-										<p className="text-sm text-foreground">Đáp án đúng là {String.fromCharCode(65 + correct)}. Bưu điện nằm ở cuối đường, rẽ phải tại ngã tư.</p>
+									<div className="mt-2 rounded-lg border border-destructive/20 bg-destructive-tint px-3 py-2">
+										<p className="text-xs font-bold text-destructive mb-0.5">Giải thích</p>
+										<p className="text-sm text-foreground">Đáp án đúng là {String.fromCharCode(65 + correct)}.</p>
 									</div>
 								)}
 							</div>
 						)
 					})}
-
-					{/* Celebration */}
-					{submitted && (
-						<div className="card p-8 text-center">
-							<img src="/mascot/lac-happy.png" alt="" className="w-24 h-24 mx-auto mb-4 object-contain" />
-							<p className="font-extrabold text-3xl text-foreground">
-								{Object.entries(answers).filter(([id, a]) => a === correctMap[id]).length}/{MOCK_QUESTIONS.length}
-							</p>
-							<p className="text-sm text-muted mt-1">câu đúng</p>
-							<div className="flex justify-center gap-3 mt-6">
-								<button type="button" onClick={() => { setAnswers({}); setSubmitted(false) }} className="btn btn-secondary text-primary px-6 py-2.5">
-									Làm lại
-								</button>
-								<Link to="/luyen-tap/nghe" className="btn btn-primary px-6 py-2.5">
-									Về danh sách
-								</Link>
-							</div>
-						</div>
-					)}
 				</div>
 			</div>
 
-			{/* ─── Sticky bottom ─── */}
-			<div className="shrink-0">
-				{/* Subtitle panel */}
-				{showSub && (
-					<div className="bg-surface border-t-2 border-border px-6 py-3">
-						<p className="text-sm text-foreground leading-relaxed">
-							<span className="bg-info-tint text-skill-listening font-bold px-0.5 rounded">Excuse</span>{" "}
-							<span className="bg-info-tint text-skill-listening font-bold px-0.5 rounded">me,</span>{" "}
-							can you tell me how to get to the{" "}
-							<span className="font-bold text-foreground">post office</span>? I need to send a package.
-							Sure, go straight for about{" "}
-							<span className="font-bold text-foreground">10 minutes</span>, then turn right at the traffic light.
-						</p>
-					</div>
-				)}
+			{/* ─── Footer (sticky) ─── */}
+			<div className="flex items-center gap-2 border-t-2 border-border bg-surface px-4 py-2.5 shrink-0">
+				{MOCK_QUESTIONS.map((q, qi) => {
+					const isAnswered = answers[q.id] !== undefined
+					const isCorrect = submitted && answers[q.id] === correctMap[q.id]
+					const isWrong = submitted && isAnswered && answers[q.id] !== correctMap[q.id]
 
-				{/* Audio + Nav + Submit — compact */}
-				<div className="bg-surface border-t-2 border-border px-5 py-2.5 flex items-center gap-3">
-					{/* Play */}
-					<button type="button" className="w-10 h-10 rounded-full bg-skill-listening text-primary-foreground flex items-center justify-center shadow-[0_3px_0_oklch(0.45_0.15_240)] active:shadow-[0_1px_0_oklch(0.45_0.15_240)] active:translate-y-[2px] transition shrink-0">
-						<Icon name="volume" size="xs" />
+					let style = "border-border bg-surface text-muted"
+					if (isCorrect) style = "border-primary bg-primary-tint text-primary"
+					else if (isWrong) style = "border-destructive bg-destructive-tint text-destructive"
+					else if (isAnswered) style = "border-skill-listening bg-skill-listening text-primary-foreground"
+
+					return (
+						<a key={q.id} href={`#q-${qi}`} className={cn("w-8 h-8 rounded-lg border-2 flex items-center justify-center text-xs font-bold transition shrink-0", style)}>{qi + 1}</a>
+					)
+				})}
+				<div className="flex-1" />
+				{!submitted ? (
+					<button type="button" onClick={() => setSubmitted(true)} disabled={answeredCount < MOCK_QUESTIONS.length} className="btn btn-primary py-2 px-6 text-sm disabled:opacity-50">
+						Nộp bài
 					</button>
-					{/* Replay */}
-					<button type="button" className="w-8 h-8 rounded-full border-2 border-border flex items-center justify-center text-muted hover:text-foreground transition shrink-0" aria-label="Nghe lại">
-						<Icon name="back" size="xs" />
-					</button>
-					{/* Progress */}
-					<div className="flex-1 h-2 bg-background rounded-full relative border border-border min-w-0">
-						<div className="absolute inset-y-0 left-0 bg-skill-listening rounded-full w-0" />
-					</div>
-					<span className="text-xs text-muted tabular-nums shrink-0">3:45</span>
-					{/* CC */}
-					<button
-						type="button"
-						onClick={() => setShowSub((v) => !v)}
-						className={cn("w-7 h-7 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition shrink-0", showSub ? "border-skill-listening bg-info-tint text-skill-listening" : "border-border text-muted")}
-					>
-						CC
-					</button>
-					{/* Divider */}
-					<div className="w-px h-6 bg-border shrink-0" />
-					{/* Nav pills */}
-					{MOCK_QUESTIONS.map((q, qi) => {
-						const isAnswered = answers[q.id] !== undefined
-						const isCorrect = submitted && answers[q.id] === correctMap[q.id]
-						const isWrong = submitted && answers[q.id] !== undefined && answers[q.id] !== correctMap[q.id]
-
-						let style = "border-border bg-surface text-muted"
-						if (isCorrect) style = "border-primary bg-primary-tint text-primary"
-						else if (isWrong) style = "border-destructive bg-destructive-tint text-destructive"
-						else if (isAnswered) style = "border-skill-listening bg-skill-listening text-primary-foreground"
-
-						return (
-							<a key={q.id} href={`#q-${qi}`} className={cn("w-8 h-8 rounded-lg border-2 flex items-center justify-center text-xs font-bold transition shrink-0", style)}>
-								{qi + 1}
-							</a>
-						)
-					})}
-				</div>
-
-				{/* Submit */}
-				{!submitted && (
-					<div className="bg-surface px-6 py-2.5">
-						<button
-							type="button"
-							onClick={() => setSubmitted(true)}
-							disabled={answeredCount < MOCK_QUESTIONS.length}
-							className="btn btn-primary w-full py-3 text-base disabled:opacity-50"
-						>
-							NỘP BÀI ({answeredCount}/{MOCK_QUESTIONS.length})
-						</button>
-					</div>
+				) : (
+					<Link to="/luyen-tap/nghe" className="btn btn-primary py-2 px-6 text-sm">Xong</Link>
 				)}
 			</div>
 		</div>
