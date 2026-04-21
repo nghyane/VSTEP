@@ -23,8 +23,11 @@ export interface VocabWord {
 	vstep_tip: string | null
 }
 
-export interface SrsState {
-	kind: "new" | "learning" | "review" | "relearning"
+export interface FsrsState {
+	difficulty: number
+	stability: number
+	retrievability: number
+	lapses: number
 }
 
 export type SrsRating = 1 | 2 | 3 | 4
@@ -33,7 +36,7 @@ export type ExerciseKind = "mcq" | "fill_blank" | "word_form"
 
 export interface WordWithState {
 	word: VocabWord
-	state: SrsState
+	state: FsrsState
 }
 
 export interface BackLink {
@@ -42,7 +45,7 @@ export interface BackLink {
 }
 
 export interface ReviewResponse {
-	state: SrsState
+	state: FsrsState
 	review_id: string
 }
 
@@ -54,9 +57,8 @@ export interface AttemptResponse {
 
 export interface SrsQueueResponse {
 	new_count: number
-	learning_count: number
 	review_count: number
-	items: { word: VocabWord; state: SrsState }[]
+	items: WordWithState[]
 }
 
 export interface McqPayload {
@@ -86,6 +88,6 @@ export type VocabExercise =
 
 export interface TopicDetailResponse {
 	topic: VocabTopic
-	words: { word: VocabWord; state: SrsState }[]
+	words: WordWithState[]
 	exercises: VocabExercise[]
 }
