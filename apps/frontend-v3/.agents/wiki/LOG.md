@@ -13,3 +13,4 @@
 - 2025-04-21: Rewrote api-conventions.md — full standard: response formats, null handling, data flow, feature folder, mutations, store
 - 2025-04-21: Created fsrs-migration.md — FSRS v6 replaces SM-2, state model, frontend impact
 - 2025-04-21: Created srs-lessons.md — research first, fix root cause, RFC for cross-cutting changes
+- 2025-04-21: Created practice-ux.md — transcript free in practice, listening layout decisions
