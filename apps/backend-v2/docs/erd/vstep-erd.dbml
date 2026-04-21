@@ -1,0 +1,968 @@
+// VSTEP Database ERD
+// Generated: 2026-04-21
+
+// --- auth_profile ---
+
+Table profiles {
+  id uuid [pk, not null]
+  account_id uuid [not null]
+  nickname varchar(50) [not null]
+  target_level varchar(2) [not null]
+  target_deadline date [not null]
+  entry_level varchar(2)
+  avatar_color varchar(7)
+  is_initial_profile boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table users {
+  id uuid [pk, not null]
+  full_name varchar(255)
+  email varchar(255) [not null]
+  password varchar(255) [not null]
+  role varchar(20) [not null]
+  avatar_key varchar(255)
+  email_verified_at timestamp
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table notifications {
+  id bigint [pk, not null, increment]
+  profile_id uuid [not null]
+  type varchar(40) [not null]
+  title varchar(200) [not null]
+  body text
+  icon_key varchar(20) [not null]
+  payload json
+  dedup_key varchar(100)
+  read_at timestamp
+  created_at timestamp [not null, default: `now()`]
+}
+
+Table profile_daily_activity {
+  profile_id uuid [pk, not null]
+  date_local date [pk, not null]
+  drill_session_count integer [not null]
+  drill_duration_seconds integer [not null]
+  updated_at timestamp [not null, default: `now()`]
+}
+
+Table profile_onboarding_responses {
+  id uuid [pk, not null]
+  profile_id uuid [not null]
+  weaknesses json [not null]
+  motivation varchar(30)
+  raw_answers json [not null]
+  completed_at timestamp [not null]
+}
+
+Table profile_reset_events {
+  id bigint [pk, not null, increment]
+  profile_id uuid [not null]
+  reason text
+  wiped_entities json [not null]
+  reset_at timestamp [not null]
+}
+
+Table profile_streak_state {
+  profile_id uuid [pk, not null]
+  current_streak integer [not null]
+  longest_streak integer [not null]
+  last_active_date_local date
+  updated_at timestamp [not null, default: `now()`]
+}
+
+Table refresh_tokens {
+  id uuid [pk, not null]
+  user_id uuid [not null]
+  token varchar(255) [not null]
+  user_agent varchar(255)
+  expires_at timestamp [not null]
+  created_at timestamp [not null, default: `now()`]
+}
+
+// --- exam_content ---
+
+Table exam_versions {
+  id uuid [pk, not null]
+  exam_id uuid [not null]
+  version_number smallint [not null]
+  published_at timestamp
+  is_active boolean [not null]
+  created_at timestamp [not null, default: `now()`]
+}
+
+Table exam_version_listening_sections {
+  id uuid [pk, not null]
+  exam_version_id uuid [not null]
+  part smallint [not null]
+  part_title varchar(100) [not null]
+  duration_minutes smallint [not null]
+  audio_url varchar(500)
+  transcript text
+  display_order integer [not null]
+}
+
+Table exam_version_reading_passages {
+  id uuid [pk, not null]
+  exam_version_id uuid [not null]
+  part smallint [not null]
+  title varchar(200) [not null]
+  duration_minutes smallint [not null]
+  passage text [not null]
+  display_order integer [not null]
+}
+
+Table exam_version_speaking_parts {
+  id uuid [pk, not null]
+  exam_version_id uuid [not null]
+  part smallint [not null]
+  type varchar(20) [not null]
+  duration_minutes smallint [not null]
+  speaking_seconds smallint [not null]
+  content json [not null]
+  display_order integer [not null]
+}
+
+Table exam_version_writing_tasks {
+  id uuid [pk, not null]
+  exam_version_id uuid [not null]
+  part smallint [not null]
+  task_type varchar(20) [not null]
+  duration_minutes smallint [not null]
+  prompt text [not null]
+  min_words smallint [not null]
+  instructions json
+  display_order integer [not null]
+}
+
+Table exams {
+  id uuid [pk, not null]
+  slug varchar(80) [not null]
+  title varchar(200) [not null]
+  source_school varchar(100)
+  tags json
+  total_duration_minutes smallint [not null]
+  is_published boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table exam_version_listening_items {
+  id uuid [pk, not null]
+  section_id uuid [not null]
+  display_order integer [not null]
+  stem text [not null]
+  options json [not null]
+  correct_index smallint [not null]
+}
+
+Table exam_version_reading_items {
+  id uuid [pk, not null]
+  passage_id uuid [not null]
+  display_order integer [not null]
+  stem text [not null]
+  options json [not null]
+  correct_index smallint [not null]
+}
+
+// --- exam_session ---
+
+Table exam_sessions {
+  id uuid [pk, not null]
+  profile_id uuid [not null]
+  exam_version_id uuid [not null]
+  mode varchar(20) [not null]
+  selected_skills json [not null]
+  is_full_test boolean [not null]
+  time_extension_factor numeric(3,2) [not null]
+  started_at timestamp [not null]
+  server_deadline_at timestamp [not null]
+  submitted_at timestamp
+  status varchar(20) [not null]
+  coins_charged integer [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table grading_jobs {
+  id uuid [pk, not null]
+  submission_type varchar(40) [not null]
+  submission_id uuid [not null]
+  status varchar(20) [not null]
+  attempts smallint [not null]
+  last_error text
+  started_at timestamp
+  completed_at timestamp
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table exam_listening_play_log {
+  id bigint [pk, not null, increment]
+  session_id uuid [not null]
+  section_id uuid [not null]
+  played_at timestamp [not null]
+  client_ip varchar(45)
+}
+
+Table exam_mcq_answers {
+  id bigint [pk, not null, increment]
+  session_id uuid [not null]
+  item_ref_type varchar(30) [not null]
+  item_ref_id uuid [not null]
+  selected_index smallint [not null]
+  is_correct boolean [not null]
+  answered_at timestamp [not null]
+}
+
+Table exam_speaking_submissions {
+  id uuid [pk, not null]
+  session_id uuid [not null]
+  profile_id uuid [not null]
+  part_id uuid [not null]
+  audio_url varchar(500) [not null]
+  duration_seconds smallint [not null]
+  transcript text
+  submitted_at timestamp [not null]
+}
+
+Table exam_writing_submissions {
+  id uuid [pk, not null]
+  session_id uuid [not null]
+  profile_id uuid [not null]
+  task_id uuid [not null]
+  text text [not null]
+  word_count integer [not null]
+  submitted_at timestamp [not null]
+}
+
+Table speaking_grading_results {
+  id uuid [pk, not null]
+  job_id uuid [not null]
+  submission_type varchar(40) [not null]
+  submission_id uuid [not null]
+  version smallint [not null]
+  is_active boolean [not null]
+  rubric_scores json [not null]
+  overall_band numeric(3,1) [not null]
+  strengths json [not null]
+  improvements json [not null]
+  pronunciation_report json
+  transcript text
+  created_at timestamp [not null, default: `now()`]
+}
+
+Table writing_grading_results {
+  id uuid [pk, not null]
+  job_id uuid [not null]
+  submission_type varchar(40) [not null]
+  submission_id uuid [not null]
+  version smallint [not null]
+  is_active boolean [not null]
+  rubric_scores json [not null]
+  overall_band numeric(3,1) [not null]
+  strengths json [not null]
+  improvements json [not null]
+  rewrites json [not null]
+  annotations json [not null]
+  paragraph_feedback json
+  created_at timestamp [not null, default: `now()`]
+}
+
+// --- practice ---
+
+Table practice_sessions {
+  id uuid [pk, not null]
+  profile_id uuid [not null]
+  module varchar(30) [not null]
+  content_ref_type varchar(40) [not null]
+  content_ref_id uuid [not null]
+  started_at timestamp [not null]
+  ended_at timestamp
+  duration_seconds integer
+  support_levels_used json
+  created_at timestamp [not null, default: `now()`]
+}
+
+Table practice_writing_prompts {
+  id uuid [pk, not null]
+  slug varchar(80) [not null]
+  title varchar(200) [not null]
+  description text
+  part smallint [not null]
+  prompt text [not null]
+  min_words smallint [not null]
+  max_words smallint [not null]
+  required_points json
+  keywords json
+  sentence_starters json
+  sample_answer text
+  estimated_minutes smallint [not null]
+  is_published boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table practice_listening_exercises {
+  id uuid [pk, not null]
+  slug varchar(80) [not null]
+  title varchar(200) [not null]
+  description text
+  part smallint [not null]
+  audio_url varchar(500)
+  transcript text [not null]
+  vietnamese_transcript text
+  word_timestamps json
+  keywords json
+  estimated_minutes smallint [not null]
+  is_published boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table practice_reading_exercises {
+  id uuid [pk, not null]
+  slug varchar(80) [not null]
+  title varchar(200) [not null]
+  description text
+  part smallint [not null]
+  passage text [not null]
+  vietnamese_translation text
+  keywords json
+  estimated_minutes smallint [not null]
+  is_published boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table practice_speaking_drill_sentences {
+  id uuid [pk, not null]
+  drill_id uuid [not null]
+  display_order integer [not null]
+  text text [not null]
+  translation text
+}
+
+Table practice_speaking_drills {
+  id uuid [pk, not null]
+  slug varchar(80) [not null]
+  title varchar(200) [not null]
+  description text
+  level varchar(2) [not null]
+  estimated_minutes smallint [not null]
+  is_published boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table practice_listening_questions {
+  id uuid [pk, not null]
+  exercise_id uuid [not null]
+  display_order integer [not null]
+  question text [not null]
+  options json [not null]
+  correct_index smallint [not null]
+  explanation text [not null]
+}
+
+Table practice_mcq_answers {
+  id bigint [pk, not null, increment]
+  session_id uuid [not null]
+  question_type varchar(40) [not null]
+  question_id uuid [not null]
+  selected_index smallint [not null]
+  is_correct boolean [not null]
+  answered_at timestamp [not null]
+}
+
+Table practice_reading_questions {
+  id uuid [pk, not null]
+  exercise_id uuid [not null]
+  display_order integer [not null]
+  question text [not null]
+  options json [not null]
+  correct_index smallint [not null]
+  explanation text [not null]
+}
+
+Table practice_speaking_drill_attempts {
+  id bigint [pk, not null, increment]
+  session_id uuid [not null]
+  sentence_id uuid [not null]
+  mode varchar(20) [not null]
+  user_text text
+  accuracy_percent smallint
+  attempted_at timestamp [not null]
+}
+
+Table practice_speaking_submissions {
+  id uuid [pk, not null]
+  session_id uuid [not null]
+  profile_id uuid [not null]
+  task_ref_type varchar(30) [not null]
+  task_ref_id uuid [not null]
+  audio_url varchar(500) [not null]
+  duration_seconds smallint [not null]
+  transcript text
+  submitted_at timestamp [not null]
+}
+
+Table practice_speaking_tasks {
+  id uuid [pk, not null]
+  slug varchar(80) [not null]
+  title varchar(200) [not null]
+  part smallint [not null]
+  task_type varchar(20) [not null]
+  content json [not null]
+  estimated_minutes smallint [not null]
+  speaking_seconds smallint [not null]
+  is_published boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table practice_writing_outline_sections {
+  id uuid [pk, not null]
+  prompt_id uuid [not null]
+  title varchar(100) [not null]
+  description text
+  display_order integer [not null]
+}
+
+Table practice_writing_sample_markers {
+  id uuid [pk, not null]
+  prompt_id uuid [not null]
+  match text [not null]
+  occurrence smallint [not null]
+  side varchar(10) [not null]
+  color varchar(20) [not null]
+  label varchar(100) [not null]
+  detail text
+  display_order integer [not null]
+}
+
+Table practice_writing_submissions {
+  id uuid [pk, not null]
+  session_id uuid [not null]
+  profile_id uuid [not null]
+  prompt_id uuid [not null]
+  text text [not null]
+  word_count integer [not null]
+  submitted_at timestamp [not null]
+}
+
+Table practice_writing_template_sections {
+  id uuid [pk, not null]
+  prompt_id uuid [not null]
+  title varchar(100) [not null]
+  content text [not null]
+  display_order integer [not null]
+}
+
+// --- grammar_vocab ---
+
+Table grammar_points {
+  id uuid [pk, not null]
+  slug varchar(80) [not null]
+  name varchar(150) [not null]
+  vietnamese_name varchar(150)
+  summary text [not null]
+  category varchar(30) [not null]
+  display_order integer [not null]
+  is_published boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table vocab_topics {
+  id uuid [pk, not null]
+  slug varchar(80) [not null]
+  name varchar(150) [not null]
+  description text
+  level varchar(2) [not null]
+  icon_key varchar(30) [not null]
+  display_order integer [not null]
+  is_published boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table vocab_words {
+  id uuid [pk, not null]
+  topic_id uuid [not null]
+  word varchar(100) [not null]
+  phonetic varchar(100)
+  part_of_speech varchar(30) [not null]
+  definition text [not null]
+  example text
+  synonyms json
+  collocations json
+  word_family json
+  vstep_tip text
+  display_order integer [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table grammar_exercises {
+  id uuid [pk, not null]
+  grammar_point_id uuid [not null]
+  kind varchar(30) [not null]
+  payload json [not null]
+  explanation text [not null]
+  display_order integer [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table vocab_exercises {
+  id uuid [pk, not null]
+  topic_id uuid [not null]
+  kind varchar(20) [not null]
+  payload json [not null]
+  explanation text [not null]
+  display_order integer [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table grammar_common_mistakes {
+  id uuid [pk, not null]
+  grammar_point_id uuid [not null]
+  wrong text [not null]
+  correct text [not null]
+  explanation text [not null]
+  display_order integer [not null]
+}
+
+Table grammar_examples {
+  id uuid [pk, not null]
+  grammar_point_id uuid [not null]
+  en text [not null]
+  vi text [not null]
+  note text
+  display_order integer [not null]
+}
+
+Table grammar_point_functions {
+  grammar_point_id uuid [pk, not null]
+  function varchar(20) [pk, not null]
+}
+
+Table grammar_point_levels {
+  grammar_point_id uuid [pk, not null]
+  level varchar(2) [pk, not null]
+}
+
+Table grammar_point_tasks {
+  grammar_point_id uuid [pk, not null]
+  task varchar(10) [pk, not null]
+}
+
+Table grammar_structures {
+  id uuid [pk, not null]
+  grammar_point_id uuid [not null]
+  template text [not null]
+  description text
+  display_order integer [not null]
+}
+
+Table grammar_vstep_tips {
+  id uuid [pk, not null]
+  grammar_point_id uuid [not null]
+  task varchar(10) [not null]
+  tip text [not null]
+  example text [not null]
+  display_order integer [not null]
+}
+
+Table practice_grammar_attempts {
+  id bigint [pk, not null, increment]
+  profile_id uuid [not null]
+  grammar_point_id uuid [not null]
+  exercise_id uuid [not null]
+  session_id uuid
+  answer json [not null]
+  is_correct boolean [not null]
+  attempted_at timestamp [not null]
+}
+
+Table practice_vocab_exercise_attempts {
+  id bigint [pk, not null, increment]
+  profile_id uuid [not null]
+  exercise_id uuid [not null]
+  session_id uuid
+  answer json [not null]
+  is_correct boolean [not null]
+  attempted_at timestamp [not null]
+}
+
+Table practice_vocab_reviews {
+  id bigint [pk, not null, increment]
+  profile_id uuid [not null]
+  word_id uuid [not null]
+  session_id uuid
+  rating smallint [not null]
+  previous_state json [not null]
+  new_state json [not null]
+  reviewed_at timestamp [not null]
+}
+
+Table profile_grammar_mastery {
+  profile_id uuid [pk, not null]
+  grammar_point_id uuid [pk, not null]
+  attempts integer [not null]
+  correct integer [not null]
+  last_practiced_at timestamp
+  computed_level varchar(20) [not null]
+  updated_at timestamp [not null, default: `now()`]
+}
+
+Table profile_vocab_srs_states {
+  profile_id uuid [pk, not null]
+  word_id uuid [pk, not null]
+  difficulty float [not null, default: 0, note: 'FSRS difficulty 1-10, 0=new']
+  stability float [not null, default: 0, note: 'FSRS stability in days, 0=new']
+  due_at timestamp [not null]
+  lapses smallint [not null, default: 0]
+  last_review_at timestamp
+  updated_at timestamp [not null, default: `now()`]
+}
+
+Table vocab_topic_tasks {
+  topic_id uuid [pk, not null]
+  task varchar(10) [pk, not null]
+}
+
+// --- course_teacher ---
+
+Table courses {
+  id uuid [pk, not null]
+  slug varchar(80) [not null]
+  title varchar(200) [not null]
+  target_level varchar(2) [not null]
+  target_exam_school varchar(100)
+  description text
+  price_coins integer [not null]
+  bonus_coins integer [not null]
+  max_slots integer [not null]
+  max_slots_per_student smallint [not null]
+  start_date date [not null]
+  end_date date [not null]
+  required_full_tests smallint [not null]
+  commitment_window_days smallint [not null]
+  exam_cooldown_days smallint [not null]
+  livestream_url varchar(500)
+  teacher_id uuid [not null]
+  is_published boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table teacher_slots {
+  id uuid [pk, not null]
+  course_id uuid [not null]
+  teacher_id uuid [not null]
+  starts_at timestamp [not null]
+  duration_minutes smallint [not null]
+  status varchar(20) [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table course_enrollments {
+  id uuid [pk, not null]
+  profile_id uuid [not null]
+  course_id uuid [not null]
+  enrolled_at timestamp [not null]
+  coins_paid integer [not null]
+  bonus_coins_received integer [not null]
+  acknowledged_commitment boolean [not null]
+  coin_transaction_id bigint [not null]
+}
+
+Table course_schedule_items {
+  id uuid [pk, not null]
+  course_id uuid [not null]
+  session_number smallint [not null]
+  date date [not null]
+  start_time time [not null]
+  end_time time [not null]
+  topic varchar(100) [not null]
+}
+
+Table teacher_bookings {
+  id uuid [pk, not null]
+  slot_id uuid [not null]
+  profile_id uuid [not null]
+  submission_type varchar(40)
+  submission_id uuid
+  meet_url varchar(500)
+  status varchar(20) [not null]
+  booked_at timestamp [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table teacher_reviews {
+  id uuid [pk, not null]
+  booking_id uuid
+  teacher_id uuid [not null]
+  submission_type varchar(40)
+  submission_id uuid
+  content json [not null]
+  visible_to_student boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+// --- wallet_promo ---
+
+Table coin_transactions {
+  id bigint [pk, not null, increment]
+  profile_id uuid [not null]
+  type varchar(30) [not null]
+  delta integer [not null]
+  balance_after integer [not null]
+  source_type varchar(40)
+  source_id varchar(40)
+  metadata json
+  created_at timestamp [not null, default: `now()`]
+}
+
+Table promo_codes {
+  id uuid [pk, not null]
+  code varchar(50) [not null]
+  partner_name varchar(100)
+  amount_coins integer [not null]
+  max_total_uses integer
+  per_account_limit integer [not null]
+  expires_at timestamp
+  is_active boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table wallet_topup_packages {
+  id uuid [pk, not null]
+  label varchar(50) [not null]
+  amount_vnd integer [not null]
+  coins_base integer [not null]
+  bonus_coins integer [not null]
+  display_order integer [not null]
+  is_active boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table promo_code_redemptions {
+  id bigint [pk, not null, increment]
+  promo_code_id uuid [not null]
+  account_id uuid [not null]
+  profile_id uuid [not null]
+  coins_granted integer [not null]
+  coin_transaction_id bigint [not null]
+  redeemed_at timestamp [not null]
+}
+
+Table system_configs {
+  key varchar(80) [pk, not null]
+  value json [not null]
+  description text
+  updated_at timestamp [not null, default: `now()`]
+}
+
+Table wallet_topup_orders {
+  id uuid [pk, not null]
+  profile_id uuid [not null]
+  package_id uuid [not null]
+  amount_vnd integer [not null]
+  coins_to_credit integer [not null]
+  status varchar(20) [not null]
+  payment_provider varchar(30)
+  provider_ref varchar(100)
+  paid_at timestamp
+  created_at timestamp
+  updated_at timestamp
+}
+
+// Relationships
+Ref: profiles.account_id > users.id
+Ref: practice_sessions.profile_id > profiles.id
+Ref: exam_versions.exam_id > exams.id
+Ref: exam_sessions.exam_version_id > exam_versions.id
+Ref: exam_sessions.profile_id > profiles.id
+Ref: courses.teacher_id > users.id
+Ref: coin_transactions.profile_id > profiles.id
+Ref: exam_version_listening_sections.exam_version_id > exam_versions.id
+Ref: vocab_words.topic_id > vocab_topics.id
+Ref: exam_version_reading_passages.exam_version_id > exam_versions.id
+Ref: exam_version_speaking_parts.exam_version_id > exam_versions.id
+Ref: exam_version_writing_tasks.exam_version_id > exam_versions.id
+Ref: grammar_exercises.grammar_point_id > grammar_points.id
+Ref: practice_speaking_drill_sentences.drill_id > practice_speaking_drills.id
+Ref: teacher_slots.course_id > courses.id
+Ref: teacher_slots.teacher_id > users.id
+Ref: vocab_exercises.topic_id > vocab_topics.id
+Ref: course_enrollments.coin_transaction_id > coin_transactions.id
+Ref: course_enrollments.course_id > courses.id
+Ref: course_enrollments.profile_id > profiles.id
+Ref: course_schedule_items.course_id > courses.id
+Ref: exam_listening_play_log.section_id > exam_version_listening_sections.id
+Ref: exam_listening_play_log.session_id > exam_sessions.id
+Ref: exam_mcq_answers.session_id > exam_sessions.id
+Ref: exam_speaking_submissions.part_id > exam_version_speaking_parts.id
+Ref: exam_speaking_submissions.profile_id > profiles.id
+Ref: exam_speaking_submissions.session_id > exam_sessions.id
+Ref: exam_version_listening_items.section_id > exam_version_listening_sections.id
+Ref: exam_version_reading_items.passage_id > exam_version_reading_passages.id
+Ref: exam_writing_submissions.profile_id > profiles.id
+Ref: exam_writing_submissions.session_id > exam_sessions.id
+Ref: exam_writing_submissions.task_id > exam_version_writing_tasks.id
+Ref: grammar_common_mistakes.grammar_point_id > grammar_points.id
+Ref: grammar_examples.grammar_point_id > grammar_points.id
+Ref: grammar_point_functions.grammar_point_id > grammar_points.id
+Ref: grammar_point_levels.grammar_point_id > grammar_points.id
+Ref: grammar_point_tasks.grammar_point_id > grammar_points.id
+Ref: grammar_structures.grammar_point_id > grammar_points.id
+Ref: grammar_vstep_tips.grammar_point_id > grammar_points.id
+Ref: notifications.profile_id > profiles.id
+Ref: practice_grammar_attempts.exercise_id > grammar_exercises.id
+Ref: practice_grammar_attempts.grammar_point_id > grammar_points.id
+Ref: practice_grammar_attempts.profile_id > profiles.id
+Ref: practice_grammar_attempts.session_id > practice_sessions.id
+Ref: practice_listening_questions.exercise_id > practice_listening_exercises.id
+Ref: practice_mcq_answers.session_id > practice_sessions.id
+Ref: practice_reading_questions.exercise_id > practice_reading_exercises.id
+Ref: practice_speaking_drill_attempts.sentence_id > practice_speaking_drill_sentences.id
+Ref: practice_speaking_drill_attempts.session_id > practice_sessions.id
+Ref: practice_speaking_submissions.profile_id > profiles.id
+Ref: practice_speaking_submissions.session_id > practice_sessions.id
+Ref: practice_vocab_exercise_attempts.exercise_id > vocab_exercises.id
+Ref: practice_vocab_exercise_attempts.profile_id > profiles.id
+Ref: practice_vocab_exercise_attempts.session_id > practice_sessions.id
+Ref: practice_vocab_reviews.profile_id > profiles.id
+Ref: practice_vocab_reviews.session_id > practice_sessions.id
+Ref: practice_vocab_reviews.word_id > vocab_words.id
+Ref: practice_writing_outline_sections.prompt_id > practice_writing_prompts.id
+Ref: practice_writing_sample_markers.prompt_id > practice_writing_prompts.id
+Ref: practice_writing_submissions.profile_id > profiles.id
+Ref: practice_writing_submissions.prompt_id > practice_writing_prompts.id
+Ref: practice_writing_submissions.session_id > practice_sessions.id
+Ref: practice_writing_template_sections.prompt_id > practice_writing_prompts.id
+Ref: profile_daily_activity.profile_id > profiles.id
+Ref: profile_grammar_mastery.grammar_point_id > grammar_points.id
+Ref: profile_grammar_mastery.profile_id > profiles.id
+Ref: profile_onboarding_responses.profile_id > profiles.id
+Ref: profile_reset_events.profile_id > profiles.id
+Ref: profile_streak_state.profile_id > profiles.id
+Ref: profile_vocab_srs_states.profile_id > profiles.id
+Ref: profile_vocab_srs_states.word_id > vocab_words.id
+Ref: promo_code_redemptions.account_id > users.id
+Ref: promo_code_redemptions.coin_transaction_id > coin_transactions.id
+Ref: promo_code_redemptions.profile_id > profiles.id
+Ref: promo_code_redemptions.promo_code_id > promo_codes.id
+Ref: refresh_tokens.user_id > users.id
+Ref: speaking_grading_results.job_id > grading_jobs.id
+Ref: teacher_bookings.profile_id > profiles.id
+Ref: teacher_bookings.slot_id > teacher_slots.id
+Ref: teacher_reviews.teacher_id > users.id
+Ref: vocab_topic_tasks.topic_id > vocab_topics.id
+Ref: wallet_topup_orders.package_id > wallet_topup_packages.id
+Ref: wallet_topup_orders.profile_id > profiles.id
+Ref: writing_grading_results.job_id > grading_jobs.id
+
+TableGroup auth_profile {
+  users
+  refresh_tokens
+  profiles
+  profile_onboarding_responses
+  profile_daily_activity
+  profile_streak_state
+  profile_reset_events
+  notifications
+}
+
+TableGroup exam_content {
+  exams
+  exam_versions
+  exam_version_listening_sections
+  exam_version_listening_items
+  exam_version_reading_passages
+  exam_version_reading_items
+  exam_version_writing_tasks
+  exam_version_speaking_parts
+}
+
+TableGroup exam_session {
+  exam_sessions
+  exam_mcq_answers
+  exam_listening_play_log
+  exam_writing_submissions
+  exam_speaking_submissions
+  grading_jobs
+  writing_grading_results
+  speaking_grading_results
+}
+
+TableGroup practice {
+  practice_sessions
+  practice_mcq_answers
+  practice_listening_exercises
+  practice_listening_questions
+  practice_reading_exercises
+  practice_reading_questions
+  practice_writing_prompts
+  practice_writing_submissions
+  practice_writing_outline_sections
+  practice_writing_template_sections
+  practice_writing_sample_markers
+  practice_speaking_tasks
+  practice_speaking_submissions
+  practice_speaking_drills
+  practice_speaking_drill_sentences
+  practice_speaking_drill_attempts
+}
+
+TableGroup grammar_vocab {
+  grammar_points
+  grammar_structures
+  grammar_examples
+  grammar_common_mistakes
+  grammar_exercises
+  grammar_vstep_tips
+  grammar_point_functions
+  grammar_point_levels
+  grammar_point_tasks
+  profile_grammar_mastery
+  practice_grammar_attempts
+  vocab_topics
+  vocab_topic_tasks
+  vocab_words
+  vocab_exercises
+  practice_vocab_exercise_attempts
+  practice_vocab_reviews
+  profile_vocab_srs_states
+}
+
+TableGroup course_teacher {
+  courses
+  course_schedule_items
+  course_enrollments
+  teacher_slots
+  teacher_bookings
+  teacher_reviews
+}
+
+TableGroup wallet_promo {
+  coin_transactions
+  wallet_topup_packages
+  wallet_topup_orders
+  promo_codes
+  promo_code_redemptions
+  system_configs
+}
+
