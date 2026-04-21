@@ -16,7 +16,7 @@ export interface ListeningExercise {
 	audio_url: string
 	transcript: string | null
 	vietnamese_transcript: string | null
-	word_timestamps: { word: string; start: number; end: number }[]
+	word_timestamps: { word: string; offset: number; duration: number }[]
 	keywords: string[]
 	estimated_minutes: number | null
 }

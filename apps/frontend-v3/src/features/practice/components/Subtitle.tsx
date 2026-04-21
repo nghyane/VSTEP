@@ -2,8 +2,8 @@ import { cn } from "#/lib/utils"
 
 interface WordTimestamp {
 	word: string
-	start: number
-	end: number
+	offset: number
+	duration: number
 }
 
 interface Props {
@@ -14,12 +14,11 @@ interface Props {
 }
 
 export function Subtitle({ transcript, wordTimestamps, keywords, currentTime }: Props) {
-	// Word-by-word sync khi có timestamps
 	if (wordTimestamps.length > 0) {
 		return (
 			<p className="text-sm text-foreground leading-relaxed">
 				{wordTimestamps.map((wt, i) => {
-					const isActive = currentTime >= wt.start && currentTime <= wt.end
+					const isActive = currentTime >= wt.offset && currentTime <= wt.offset + wt.duration
 					return (
 						<span
 							key={i}
@@ -33,7 +32,6 @@ export function Subtitle({ transcript, wordTimestamps, keywords, currentTime }: 
 		)
 	}
 
-	// Fallback: highlight keywords trong transcript
 	if (keywords.length === 0) {
 		return <p className="text-sm text-foreground leading-relaxed">{transcript}</p>
 	}
@@ -45,10 +43,9 @@ export function Subtitle({ transcript, wordTimestamps, keywords, currentTime }: 
 		<p className="text-sm text-foreground leading-relaxed">
 			{parts.map((part, i) => {
 				const isKeyword = keywords.some((k) => k.toLowerCase() === part.toLowerCase())
-				if (isKeyword) {
-					return <strong key={i} className="text-skill-listening font-bold">{part}</strong>
-				}
-				return <span key={i}>{part}</span>
+				return isKeyword
+					? <strong key={i} className="text-skill-listening font-bold">{part}</strong>
+					: <span key={i}>{part}</span>
 			})}
 		</p>
 	)

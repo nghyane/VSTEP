@@ -64,7 +64,7 @@ export function ListeningInProgress({ detail, sessionId }: Props) {
 							<p className="font-extrabold text-2xl text-foreground">{session.result.score}/{session.result.total}</p>
 							<p className="text-sm text-muted mt-1">câu đúng</p>
 							<div className="flex justify-center gap-3 mt-4">
-								<Link to="/luyen-tap/nghe" className="btn btn-primary px-5 py-2">Về danh sách</Link>
+								<Link to="/luyen-tap/nghe" className="py-2 px-5 font-bold text-sm rounded-(--radius-button) text-primary-foreground bg-skill-listening shadow-[0_3px_0_oklch(0.45_0.15_240)] uppercase">Về danh sách</Link>
 							</div>
 						</div>
 					)}
@@ -83,7 +83,7 @@ export function ListeningInProgress({ detail, sessionId }: Props) {
 						type="button"
 						onClick={session.submit}
 						disabled={session.submitting || session.answeredCount < questions.length}
-						className="btn btn-primary py-2 px-6 text-sm disabled:opacity-50"
+						className="py-2 px-6 text-sm font-bold rounded-(--radius-button) text-primary-foreground bg-skill-listening shadow-[0_3px_0_oklch(0.45_0.15_240)] active:shadow-[0_1px_0_oklch(0.45_0.15_240)] active:translate-y-[2px] transition disabled:opacity-50 uppercase"
 					>
 						Nộp bài
 					</button>
