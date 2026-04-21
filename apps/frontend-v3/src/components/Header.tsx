@@ -4,14 +4,14 @@ import { ProfileDropdown } from "#/components/ProfileDropdown"
 import { streakQuery } from "#/features/dashboard/queries"
 import { unreadCountQuery } from "#/features/notifications/queries"
 import { walletBalanceQuery } from "#/features/wallet/queries"
-import { useProfile } from "#/lib/auth"
+import { useSession } from "#/lib/auth"
 
 interface Props {
 	title: string
 }
 
 export function Header({ title }: Props) {
-	const profile = useProfile()
+	const { profile } = useSession()
 	const { data: walletData } = useQuery(walletBalanceQuery)
 	const { data: streakData } = useQuery(streakQuery)
 	const { data: unreadData } = useQuery(unreadCountQuery)

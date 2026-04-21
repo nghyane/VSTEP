@@ -10,27 +10,37 @@ interface AuthResponse {
 	profile: Profile
 }
 
-interface AuthStore {
-	user: User | null
-	profile: Profile | null
-	isAuthenticated: boolean
+type AuthState =
+	| { isAuthenticated: false; user: null; profile: null }
+	| { isAuthenticated: true; user: User; profile: Profile }
+
+type AuthActions = {
 	login: (email: string, password: string) => Promise<void>
 	register: (data: { email: string; password: string; nickname: string; target_level: string; target_deadline: string }) => Promise<void>
 	logout: () => void
 }
 
-function authenticate(res: AuthResponse, set: (s: Partial<AuthStore>) => void) {
+type AuthStore = AuthState & AuthActions
+
+function getInitialState(): AuthState {
+	const user = tokens.getUser()
+	const profile = tokens.getProfile()
+	if (user && profile) return { isAuthenticated: true, user, profile }
+	return { isAuthenticated: false, user: null, profile: null }
+}
+
+function authenticate(res: AuthResponse, set: (s: AuthState) => void) {
 	tokens.setAccess(res.access_token)
 	tokens.setRefresh(res.refresh_token)
 	tokens.setUser(res.user)
 	tokens.setProfile(res.profile)
-	set({ user: res.user, profile: res.profile, isAuthenticated: true })
+	set({ isAuthenticated: true, user: res.user, profile: res.profile })
 }
 
+const LOGGED_OUT: AuthState = { isAuthenticated: false, user: null, profile: null }
+
 export const useAuth = create<AuthStore>()((set) => ({
-	user: tokens.getUser(),
-	profile: tokens.getProfile(),
-	isAuthenticated: tokens.getAccess() !== null,
+	...getInitialState(),
 
 	async login(email, password) {
 		const { data } = await api.post("auth/login", { json: { email, password } }).json<ApiResponse<AuthResponse>>()
@@ -44,15 +54,13 @@ export const useAuth = create<AuthStore>()((set) => ({
 
 	logout() {
 		tokens.clear()
-		set({ user: null, profile: null, isAuthenticated: false })
+		set(LOGGED_OUT)
 	},
 }))
 
-/** Use inside _app routes only — guaranteed non-null after auth guard */
-export function useProfile(): Profile {
-	return useAuth((s) => s.profile) as Profile
-}
-
-export function useUser(): User {
-	return useAuth((s) => s.user) as User
+/** Use inside _app routes — TypeScript narrows after isAuthenticated check */
+export function useSession() {
+	const state = useAuth()
+	if (!state.isAuthenticated) throw new Error("useSession used outside authenticated context")
+	return { user: state.user, profile: state.profile }
 }

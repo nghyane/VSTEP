@@ -36,4 +36,4 @@ description: >
 - `useEffect` watching `isAuthenticated` — never navigate() in render body
 - Landing (`/`): redirect to `/dashboard` when authenticated
 - App layout (`/_app`): redirect to `/?auth=login` when not authenticated
-- `_app.tsx` guard order: `!isAuthenticated` → null, `!profile` → OnboardingModal, else → Outlet
+- `_app.tsx` guard order: `!isAuthenticated` → null, else → Outlet

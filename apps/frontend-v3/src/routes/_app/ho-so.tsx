@@ -6,7 +6,7 @@ import { createProfile, switchProfile } from "#/features/profile/actions"
 import { ProfileCard } from "#/features/profile/components/ProfileCard"
 import { CreateProfileForm } from "#/features/profile/components/CreateProfileForm"
 import { profilesQuery } from "#/features/profile/queries"
-import { useProfile, useUser } from "#/lib/auth"
+import { useSession } from "#/lib/auth"
 import { tokens } from "#/lib/tokens"
 
 export const Route = createFileRoute("/_app/ho-so")({
@@ -14,8 +14,7 @@ export const Route = createFileRoute("/_app/ho-so")({
 })
 
 function ProfilePage() {
-	const activeProfile = useProfile()
-	const user = useUser()
+	const { profile: activeProfile, user } = useSession()
 	const { data } = useQuery(profilesQuery)
 	const [showCreate, setShowCreate] = useState(false)
 	const qc = useQueryClient()

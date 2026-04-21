@@ -29,6 +29,11 @@ export interface SrsState {
 
 export type SrsRating = 1 | 2 | 3 | 4
 
+export interface WordWithState {
+	word: VocabWord
+	state: SrsState
+}
+
 export interface ReviewResponse {
 	state: SrsState
 	review_id: string

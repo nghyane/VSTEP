@@ -3,7 +3,7 @@ import { useRef, useState } from "react"
 import { Icon, StaticIcon, type StaticIconName } from "#/components/Icon"
 import { notificationsQuery, unreadCountQuery, type Notification } from "#/features/notifications/queries"
 import { api } from "#/lib/api"
-import { useAuth, useProfile, useUser } from "#/lib/auth"
+import { useAuth, useSession } from "#/lib/auth"
 import { useClickOutside } from "#/lib/use-click-outside"
 
 const NOTIF_ICON: Record<string, StaticIconName> = {
@@ -53,8 +53,7 @@ interface Props {
 }
 
 export function ProfileDropdown({ unread, initial }: Props) {
-	const profile = useProfile()
-	const user = useUser()
+	const { profile, user } = useSession()
 	const logout = useAuth((s) => s.logout)
 	const { data: notifsData } = useQuery({ ...notificationsQuery, enabled: false })
 	const [open, setOpen] = useState(false)
