@@ -32,7 +32,7 @@ export function ListeningContent() {
 				const list = grouped.get(part) ?? []
 				return (
 					<section key={part}>
-						<h3 className="font-bold text-lg text-foreground">{label}</h3>
+						<h3 className="font-extrabold text-xl text-foreground">{label}</h3>
 						<p className="text-sm text-subtle mt-0.5 mb-4">{desc}</p>
 						{list.length === 0 ? (
 							<div className="card p-6 text-center">

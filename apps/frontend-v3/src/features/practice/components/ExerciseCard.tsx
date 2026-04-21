@@ -18,14 +18,14 @@ export function ExerciseCard({ title, description, meta, href, status = "not_sta
 		<div className="group relative card-interactive p-4 flex flex-col">
 			<div className="flex items-start gap-3">
 				<div className="min-w-0 flex-1">
-					<p className="text-sm font-bold text-foreground">{title}</p>
+					<p className="text-base font-bold text-foreground">{title}</p>
 					<p className="mt-0.5 text-xs text-muted">{meta}</p>
 				</div>
 				{status === "completed" && <span className="text-xs font-bold text-primary bg-primary-tint px-2 py-0.5 rounded-full">Hoàn thành</span>}
 				{status === "in_progress" && <span className="text-xs font-bold text-warning bg-warning-tint px-2 py-0.5 rounded-full">Đang làm</span>}
 			</div>
 
-			{description && <p className="mt-2 text-xs text-subtle line-clamp-2 flex-1">{description}</p>}
+			{description && <p className="mt-2 text-sm text-subtle line-clamp-2 flex-1">{description}</p>}
 
 			{hasProgress && (
 				<div className="mt-3">
@@ -43,7 +43,7 @@ export function ExerciseCard({ title, description, meta, href, status = "not_sta
 			)}
 
 			<div className="mt-3">
-				<span className={cn("btn text-xs py-1.5 px-4", status === "not_started" ? "btn-primary" : "btn-secondary text-primary")}>
+				<span className={cn("btn text-sm py-2 px-5", status === "not_started" ? "btn-primary" : "btn-secondary text-primary")}>
 					{status === "completed" ? "Làm lại" : status === "in_progress" ? "Tiếp tục" : "Bắt đầu"}
 				</span>
 			</div>
