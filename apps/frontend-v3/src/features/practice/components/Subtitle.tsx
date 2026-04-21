@@ -14,22 +14,16 @@ interface Props {
 }
 
 export function Subtitle({ transcript, wordTimestamps, keywords, currentTime }: Props) {
-	const keywordSet = new Set(keywords.map((k) => k.toLowerCase()))
-
+	// Word-by-word sync khi có timestamps
 	if (wordTimestamps.length > 0) {
 		return (
 			<p className="text-sm text-foreground leading-relaxed">
 				{wordTimestamps.map((wt, i) => {
 					const isActive = currentTime >= wt.start && currentTime <= wt.end
-					const isKeyword = keywordSet.has(wt.word.toLowerCase().replace(/[.,!?]/g, ""))
 					return (
 						<span
 							key={i}
-							className={cn(
-								"transition-colors",
-								isActive && "bg-info-tint text-skill-listening font-bold px-0.5 rounded",
-								isKeyword && !isActive && "font-bold",
-							)}
+							className={cn(isActive && "bg-info-tint text-skill-listening font-bold px-0.5 rounded")}
 						>
 							{wt.word}{" "}
 						</span>
@@ -39,5 +33,23 @@ export function Subtitle({ transcript, wordTimestamps, keywords, currentTime }: 
 		)
 	}
 
-	return <p className="text-sm text-foreground leading-relaxed">{transcript}</p>
+	// Fallback: highlight keywords trong transcript
+	if (keywords.length === 0) {
+		return <p className="text-sm text-foreground leading-relaxed">{transcript}</p>
+	}
+
+	const pattern = new RegExp(`(${keywords.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "gi")
+	const parts = transcript.split(pattern)
+
+	return (
+		<p className="text-sm text-foreground leading-relaxed">
+			{parts.map((part, i) => {
+				const isKeyword = keywords.some((k) => k.toLowerCase() === part.toLowerCase())
+				if (isKeyword) {
+					return <strong key={i} className="text-skill-listening font-bold">{part}</strong>
+				}
+				return <span key={i}>{part}</span>
+			})}
+		</p>
+	)
 }
