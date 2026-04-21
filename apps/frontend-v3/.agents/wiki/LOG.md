@@ -12,3 +12,4 @@
 - 2025-04-21: Updated anti-patterns.md — API calls outside useMutation, token manipulation outside store
 - 2025-04-21: Rewrote api-conventions.md — full standard: response formats, null handling, data flow, feature folder, mutations, store
 - 2025-04-21: Created fsrs-migration.md — FSRS v6 replaces SM-2, state model, frontend impact
+- 2025-04-21: Created srs-lessons.md — research first, fix root cause, RFC for cross-cutting changes
