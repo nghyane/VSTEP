@@ -39,10 +39,6 @@ export function ListeningContent() {
 		<div className="grid gap-6 lg:grid-cols-[220px_1fr]">
 			<SkillSidebar items={sidebarItems} activeKey={activePart} onSelect={setActivePart} accentClass="bg-info-tint text-info" />
 			<div className="space-y-4">
-				<div className="flex items-center justify-between">
-					<p className="text-sm font-bold text-foreground">{PART_LABELS[Number(activePart)]}</p>
-					<p className="text-xs text-subtle">{list.length} bài</p>
-				</div>
 				{list.length === 0 ? (
 					<p className="py-12 text-center text-sm text-subtle">Chưa có bài tập cho phần này.</p>
 				) : (
