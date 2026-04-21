@@ -8,7 +8,12 @@ interface Props {
 export function ExerciseFeedback({ result }: Props) {
 	if (!result) return null
 	return (
-		<div className={cn("card p-4", result.correct ? "border-primary bg-primary-tint" : "border-destructive bg-destructive-tint")}>
+		<div
+			className={cn(
+				"card p-4",
+				result.correct ? "border-primary bg-primary-tint" : "border-destructive bg-destructive-tint",
+			)}
+		>
 			<p className={cn("font-bold text-sm", result.correct ? "text-primary" : "text-destructive")}>
 				{result.correct ? "Chính xác!" : "Chưa đúng"}
 			</p>

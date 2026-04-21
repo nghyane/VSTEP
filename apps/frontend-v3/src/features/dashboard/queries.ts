@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query"
+import type { ActivityDay, ExamSessionResult, OverviewData, StreakData } from "#/features/dashboard/types"
 import { type ApiResponse, api } from "#/lib/api"
 import { getTargetBand } from "#/lib/vstep"
-import type { ActivityDay, ExamSessionResult, OverviewData, StreakData } from "#/features/dashboard/types"
 
 export const overviewQuery = queryOptions({
 	queryKey: ["overview"],

@@ -15,7 +15,9 @@ export function Toaster() {
 					onClick={() => remove(t.id)}
 					className="card flex items-center px-5 py-3 animate-[slideIn_0.2s_ease-out]"
 				>
-					<span className={`text-sm font-bold ${t.type === "error" ? "text-destructive" : "text-primary-dark"}`}>
+					<span
+						className={`text-sm font-bold ${t.type === "error" ? "text-destructive" : "text-primary-dark"}`}
+					>
 						{t.message}
 					</span>
 				</button>

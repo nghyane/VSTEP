@@ -53,9 +53,13 @@ export function useExerciseSession(exercises: VocabExercise[], kind: ExerciseKin
 	const [state, dispatch] = useReducer(reducer, { index: 0, selected: null, textAnswer: "", result: null })
 
 	const mutation = useMutation({
-		mutationFn: ({ id, answer }: { id: string; answer: Record<string, unknown> }) => attemptExercise(id, answer),
+		mutationFn: ({ id, answer }: { id: string; answer: Record<string, unknown> }) =>
+			attemptExercise(id, answer),
 		onSuccess: (res) => {
-			dispatch({ type: "answered", result: { correct: res.data.is_correct, explanation: res.data.explanation } })
+			dispatch({
+				type: "answered",
+				result: { correct: res.data.is_correct, explanation: res.data.explanation },
+			})
 		},
 	})
 

@@ -1,5 +1,5 @@
-import type { Profile } from "#/types/auth"
 import { cn } from "#/lib/utils"
+import type { Profile } from "#/types/auth"
 
 interface Props {
 	profile: Profile
@@ -15,16 +15,15 @@ export function ProfileCard({ profile, isActive, onSwitch }: Props) {
 			type="button"
 			onClick={onSwitch}
 			disabled={isActive}
-			className={cn(
-				"card-interactive p-5 text-left",
-				isActive && "border-primary bg-primary-tint",
-			)}
+			className={cn("card-interactive p-5 text-left", isActive && "border-primary bg-primary-tint")}
 		>
 			<div className="flex items-center gap-3 mb-3">
-				<div className={cn(
-					"w-10 h-10 rounded-full flex items-center justify-center font-display text-base shrink-0",
-					isActive ? "bg-primary text-primary-foreground" : "bg-muted text-primary-foreground",
-				)}>
+				<div
+					className={cn(
+						"w-10 h-10 rounded-full flex items-center justify-center font-display text-base shrink-0",
+						isActive ? "bg-primary text-primary-foreground" : "bg-muted text-primary-foreground",
+					)}
+				>
 					{initial}
 				</div>
 				{isActive && (

@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query"
-import { type ApiResponse, type PaginatedResponse, api } from "#/lib/api"
 import type { Notification, UnreadCount } from "#/features/notifications/types"
+import { type ApiResponse, api, type PaginatedResponse } from "#/lib/api"
 
 export const unreadCountQuery = queryOptions({
 	queryKey: ["notifications", "unread-count"],

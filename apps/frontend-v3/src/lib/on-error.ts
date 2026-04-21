@@ -13,6 +13,9 @@ export async function onError(error: unknown) {
 		return
 	}
 
-	const body: { message?: string } | null = await error.response.clone().json().catch(() => null)
+	const body: { message?: string } | null = await error.response
+		.clone()
+		.json()
+		.catch(() => null)
 	useToast.getState().add(body?.message ?? "Đã có lỗi xảy ra.")
 }

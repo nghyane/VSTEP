@@ -32,7 +32,9 @@ function SrsReviewPage() {
 	}
 
 	if (s.status === "done") {
-		return <FocusComplete {...back} total={s.reviewed} message={`Bạn đã ôn xong ${s.reviewed} lượt hôm nay.`} />
+		return (
+			<FocusComplete {...back} total={s.reviewed} message={`Bạn đã ôn xong ${s.reviewed} lượt hôm nay.`} />
+		)
 	}
 
 	return (

@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query"
-import { type ApiResponse, api } from "#/lib/api"
 import type { WalletBalance } from "#/features/wallet/types"
+import { type ApiResponse, api } from "#/lib/api"
 
 export const walletBalanceQuery = queryOptions({
 	queryKey: ["wallet", "balance"],

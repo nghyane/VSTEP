@@ -33,9 +33,7 @@ export function ProfileBanner() {
 				<div className="bg-white/15 rounded-2xl p-4 min-w-[200px]">
 					<p className="text-xs text-white/70 font-semibold mb-2">Mục tiêu</p>
 					<span className="font-display text-2xl text-primary-foreground">{profile.target_level}</span>
-					{profile.target_deadline && (
-						<p className="text-xs text-white/70 mt-1">{profile.target_deadline}</p>
-					)}
+					{profile.target_deadline && <p className="text-xs text-white/70 mt-1">{profile.target_deadline}</p>}
 				</div>
 			</div>
 		</section>

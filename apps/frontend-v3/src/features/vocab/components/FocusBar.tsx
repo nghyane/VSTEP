@@ -19,7 +19,9 @@ export function FocusBar({ backTo, backParams, current, total }: Props) {
 					style={{ width: `${total ? (current / total) * 100 : 0}%` }}
 				/>
 			</div>
-			<span className="text-sm font-bold text-muted">{current}/{total}</span>
+			<span className="text-sm font-bold text-muted">
+				{current}/{total}
+			</span>
 		</div>
 	)
 }

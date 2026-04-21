@@ -58,7 +58,18 @@ export function LoginForm() {
 					<label className="group flex items-center gap-2 cursor-pointer">
 						<input type="checkbox" className="sr-only" />
 						<div className="w-5 h-5 rounded-md border-2 border-border bg-surface group-has-checked:bg-primary group-has-checked:border-primary flex items-center justify-center transition">
-							<svg viewBox="0 0 12 10" className="w-3 h-2.5 opacity-0 group-has-checked:opacity-100 transition" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 5.5L4.5 9L11 1" /></svg>
+							<svg
+								viewBox="0 0 12 10"
+								aria-hidden="true"
+								className="w-3 h-2.5 opacity-0 group-has-checked:opacity-100 transition"
+								fill="none"
+								stroke="white"
+								strokeWidth="2"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+							>
+								<path d="M1 5.5L4.5 9L11 1" />
+							</svg>
 						</div>
 						<span className="text-xs font-bold text-muted">Ghi nhớ đăng nhập</span>
 					</label>

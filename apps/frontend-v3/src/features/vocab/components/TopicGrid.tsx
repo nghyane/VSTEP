@@ -21,16 +21,25 @@ export function TopicGrid() {
 			) : (
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 					{topics.map((t) => (
-						<Link key={t.id} to="/luyen-tap/tu-vung/$topicId" params={{ topicId: t.id }} className="card-interactive p-5">
+						<Link
+							key={t.id}
+							to="/luyen-tap/tu-vung/$topicId"
+							params={{ topicId: t.id }}
+							className="card-interactive p-5"
+						>
 							<div className="flex items-center justify-between mb-2">
 								<h4 className="font-bold text-base text-foreground">{t.name}</h4>
-								<span className="text-xs font-bold text-primary bg-primary-tint px-2 py-0.5 rounded-full shrink-0 ml-2">{t.level}</span>
+								<span className="text-xs font-bold text-primary bg-primary-tint px-2 py-0.5 rounded-full shrink-0 ml-2">
+									{t.level}
+								</span>
 							</div>
 							{t.description && <p className="text-sm text-subtle mb-3 line-clamp-2">{t.description}</p>}
 							{t.tasks.length > 0 && (
 								<div className="flex flex-wrap gap-1.5 mb-3">
 									{t.tasks.map((task) => (
-										<span key={task} className="text-xs text-muted bg-background px-2 py-0.5 rounded-full">{task}</span>
+										<span key={task} className="text-xs text-muted bg-background px-2 py-0.5 rounded-full">
+											{task}
+										</span>
 									))}
 								</div>
 							)}

@@ -53,15 +53,27 @@ function ExercisePage() {
 				<div className="w-full max-w-lg space-y-6">
 					<ExerciseQuestion exercise={s.current} />
 					{s.current.kind === "mcq" ? (
-						<McqOptions options={s.current.payload.options} selected={s.selected} result={s.result} onSelect={s.select} />
+						<McqOptions
+							options={s.current.payload.options}
+							selected={s.selected}
+							result={s.result}
+							onSelect={s.select}
+						/>
 					) : (
 						<TextInput kind={kind} value={s.textAnswer} disabled={!!s.result} onChange={s.setTextAnswer} />
 					)}
 					<ExerciseFeedback result={s.result} />
 					{s.result ? (
-						<button type="button" onClick={s.next} className="btn btn-primary w-full py-3.5 text-base">Tiếp tục</button>
+						<button type="button" onClick={s.next} className="btn btn-primary w-full py-3.5 text-base">
+							Tiếp tục
+						</button>
 					) : (
-						<button type="button" disabled={s.submitting || (kind === "mcq" ? s.selected === null : !s.textAnswer.trim())} onClick={s.submit} className="btn btn-primary w-full py-3.5 text-base disabled:opacity-50">
+						<button
+							type="button"
+							disabled={s.submitting || (kind === "mcq" ? s.selected === null : !s.textAnswer.trim())}
+							onClick={s.submit}
+							className="btn btn-primary w-full py-3.5 text-base disabled:opacity-50"
+						>
 							{s.submitting ? "Đang kiểm tra..." : "Kiểm tra"}
 						</button>
 					)}

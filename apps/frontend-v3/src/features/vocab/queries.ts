@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query"
-import { type ApiResponse, api } from "#/lib/api"
 import type { SrsQueueResponse, TopicDetailResponse, VocabTopic } from "#/features/vocab/types"
+import { type ApiResponse, api } from "#/lib/api"
 
 export const vocabTopicsQuery = queryOptions({
 	queryKey: ["vocab", "topics"],

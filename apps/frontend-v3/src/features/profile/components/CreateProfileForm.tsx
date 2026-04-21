@@ -1,5 +1,4 @@
 import { useForm } from "@tanstack/react-form"
-import { useState } from "react"
 import { inputClass } from "#/features/auth/styles"
 import { cn } from "#/lib/utils"
 
@@ -8,7 +7,15 @@ interface Props {
 	onCancel: () => void
 }
 
-function LevelButton({ value, current, onChange }: { value: string; current: string; onChange: (v: string) => void }) {
+function LevelButton({
+	value,
+	current,
+	onChange,
+}: {
+	value: string
+	current: string
+	onChange: (v: string) => void
+}) {
 	return (
 		<button
 			type="button"

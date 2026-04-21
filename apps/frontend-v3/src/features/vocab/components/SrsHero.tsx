@@ -21,15 +21,25 @@ export function SrsHero() {
 	return (
 		<section className="card overflow-hidden">
 			<div className="flex items-center gap-6 p-6 md:p-8">
-				<img src="/mascot/lac-vocabulary.png" alt="Lạc" className="w-36 h-36 object-contain shrink-0 hidden md:block" />
+				<img
+					src="/mascot/lac-vocabulary.png"
+					alt="Lạc"
+					className="w-36 h-36 object-contain shrink-0 hidden md:block"
+				/>
 				<div className="flex-1">
 					{totalDue > 0 ? (
 						<>
 							<h2 className="font-extrabold text-2xl text-foreground mb-3">Ôn tập hôm nay</h2>
 							<div className="flex gap-4 mb-5">
-								{queue.new_count > 0 && <span className="text-sm font-bold text-info">{queue.new_count} mới</span>}
-								{queue.learning_count > 0 && <span className="text-sm font-bold text-warning">{queue.learning_count} đang học</span>}
-								{queue.review_count > 0 && <span className="text-sm font-bold text-primary">{queue.review_count} ôn tập</span>}
+								{queue.new_count > 0 && (
+									<span className="text-sm font-bold text-info">{queue.new_count} mới</span>
+								)}
+								{queue.learning_count > 0 && (
+									<span className="text-sm font-bold text-warning">{queue.learning_count} đang học</span>
+								)}
+								{queue.review_count > 0 && (
+									<span className="text-sm font-bold text-primary">{queue.review_count} ôn tập</span>
+								)}
 							</div>
 							<Link to="/vocab/srs-review" className="btn btn-primary px-8 py-3 text-base">
 								Bắt đầu · {totalDue} từ

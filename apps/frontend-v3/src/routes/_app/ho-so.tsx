@@ -29,10 +29,19 @@ function ProfilePage() {
 					<p className="text-sm text-subtle mb-5">Mỗi mục tiêu là một lộ trình luyện tập riêng</p>
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 						{profiles.map((p) => (
-							<ProfileCard key={p.id} profile={p} isActive={p.id === activeProfile.id} onSwitch={() => doSwitch.mutate(p.id)} />
+							<ProfileCard
+								key={p.id}
+								profile={p}
+								isActive={p.id === activeProfile.id}
+								onSwitch={() => doSwitch.mutate(p.id)}
+							/>
 						))}
 						{!showCreate && (
-							<button type="button" onClick={() => setShowCreate(true)} className="card-interactive p-5 flex flex-col items-center justify-center text-center min-h-[140px]">
+							<button
+								type="button"
+								onClick={() => setShowCreate(true)}
+								className="card-interactive p-5 flex flex-col items-center justify-center text-center min-h-[140px]"
+							>
 								<span className="text-3xl text-subtle mb-2">+</span>
 								<span className="font-bold text-sm text-muted">Tạo mục tiêu mới</span>
 							</button>
