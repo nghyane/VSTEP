@@ -1,10 +1,37 @@
-import { useCallback, useState } from "react"
+import { useMutation } from "@tanstack/react-query"
+import { useReducer } from "react"
 import { attemptExercise } from "#/features/vocab/actions"
 import type { ExerciseKind, VocabExercise } from "#/features/vocab/types"
 
 export interface ExerciseResult {
 	correct: boolean
 	explanation: string | null
+}
+
+interface State {
+	index: number
+	selected: number | null
+	textAnswer: string
+	result: ExerciseResult | null
+}
+
+type Action =
+	| { type: "select"; index: number }
+	| { type: "text"; value: string }
+	| { type: "answered"; result: ExerciseResult }
+	| { type: "next" }
+
+function reducer(state: State, action: Action): State {
+	switch (action.type) {
+		case "select":
+			return { ...state, selected: action.index }
+		case "text":
+			return { ...state, textAnswer: action.value }
+		case "answered":
+			return { ...state, result: action.result }
+		case "next":
+			return { index: state.index + 1, selected: null, textAnswer: "", result: null }
+	}
 }
 
 interface ExerciseSession {
@@ -23,31 +50,37 @@ interface ExerciseSession {
 }
 
 export function useExerciseSession(exercises: VocabExercise[], kind: ExerciseKind): ExerciseSession {
-	const [index, setIndex] = useState(0)
-	const [selected, setSelected] = useState<number | null>(null)
-	const [textAnswer, setTextAnswer] = useState("")
-	const [result, setResult] = useState<ExerciseResult | null>(null)
-	const [submitting, setSubmitting] = useState(false)
+	const [state, dispatch] = useReducer(reducer, { index: 0, selected: null, textAnswer: "", result: null })
 
-	const current = exercises[index] ?? null
+	const mutation = useMutation({
+		mutationFn: ({ id, answer }: { id: string; answer: Record<string, unknown> }) => attemptExercise(id, answer),
+		onSuccess: (res) => {
+			dispatch({ type: "answered", result: { correct: res.data.is_correct, explanation: res.data.explanation } })
+		},
+	})
+
+	const current = exercises[state.index] ?? null
 	const total = exercises.length
-	const done = index >= total
+	const done = state.index >= total
 
-	const submit = useCallback(async () => {
-		if (!current || submitting) return
-		setSubmitting(true)
-		const answer = kind === "mcq" ? { selected_index: selected } : { text: textAnswer }
-		const res = await attemptExercise(current.id, answer)
-		setResult({ correct: res.data.is_correct, explanation: res.data.explanation })
-		setSubmitting(false)
-	}, [current, submitting, kind, selected, textAnswer])
+	function submit() {
+		if (!current || mutation.isPending) return
+		const answer = kind === "mcq" ? { selected_index: state.selected } : { text: state.textAnswer }
+		mutation.mutate({ id: current.id, answer })
+	}
 
-	const next = useCallback(() => {
-		setResult(null)
-		setSelected(null)
-		setTextAnswer("")
-		setIndex((i) => i + 1)
-	}, [])
-
-	return { current, total, index, done, selected, textAnswer, result, submitting, select: setSelected, setTextAnswer, submit, next }
+	return {
+		current,
+		total,
+		index: state.index,
+		done,
+		selected: state.selected,
+		textAnswer: state.textAnswer,
+		result: state.result,
+		submitting: mutation.isPending,
+		select: (i) => dispatch({ type: "select", index: i }),
+		setTextAnswer: (v) => dispatch({ type: "text", value: v }),
+		submit,
+		next: () => dispatch({ type: "next" }),
+	}
 }
