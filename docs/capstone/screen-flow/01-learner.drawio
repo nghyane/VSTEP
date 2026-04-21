@@ -8,7 +8,7 @@
 
         <!-- ============ PRE-LOGIN CLUSTER (bordered, yellow bg) ============ -->
         <mxCell id="prelogin_box" value="Pre-Login" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#2F5FA0;strokeWidth=2;dashed=1;fontSize=14;fontStyle=1;fontColor=#2F5FA0;verticalAlign=top;align=left;spacingLeft=10;spacingTop=5;" vertex="1" parent="1">
-          <mxGeometry x="40" y="40" width="320" height="760" as="geometry" />
+          <mxGeometry x="40" y="40" width="320" height="410" as="geometry" />
         </mxCell>
 
         <mxCell id="landing" value="Landing Page" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=12;" vertex="1" parent="1">
@@ -17,14 +17,28 @@
         <mxCell id="login" value="User Login" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=12;" vertex="1" parent="1">
           <mxGeometry x="100" y="200" width="200" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="register" value="User Register" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="100" y="310" width="200" height="50" as="geometry" />
+        <!-- Register là tabbed: gồm account fields + onboarding fields inline (không có screen riêng) -->
+        <mxCell id="register" value="User Register" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=12;verticalAlign=top;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="100" y="310" width="200" height="90" as="geometry" />
         </mxCell>
-        <mxCell id="profile_sel" value="Profile Selection&#xa;(max 5 profiles)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="100" y="450" width="200" height="60" as="geometry" />
+        <mxCell id="register_t1" value="Account" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=8;" vertex="1" parent="register">
+          <mxGeometry x="5" y="32" width="88" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="onboarding" value="Onboarding&#xa;(level / target / exam date)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="100" y="600" width="200" height="60" as="geometry" />
+        <mxCell id="register_t2" value="Target&#xa;(level / deadline)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=8;" vertex="1" parent="register">
+          <mxGeometry x="107" y="32" width="88" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ============ PROFILE PAGE (inside app, Auth/Profile style) ============ -->
+        <!-- Tabbed: danh sách profiles + inline CreateProfileForm (không navigate ra ngoài) -->
+        <!-- Tạo profile mới → switch profile → vẫn ở Profile Page, không có screen Onboarding riêng -->
+        <mxCell id="profile_page" value="Profile Page" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=12;fontStyle=1;verticalAlign=top;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="100" y="530" width="200" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="profile_t1" value="My Profiles" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=8;" vertex="1" parent="profile_page">
+          <mxGeometry x="5" y="32" width="88" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="profile_t2" value="Create Profile&#xa;(inline form)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=8;" vertex="1" parent="profile_page">
+          <mxGeometry x="107" y="32" width="88" height="58" as="geometry" />
         </mxCell>
 
         <!-- ============ HUB: Overview (tabbed, green) ============ -->
@@ -48,16 +62,16 @@
         <mxCell id="skill_hub" value="Skill Hub" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;fontStyle=1;verticalAlign=top;spacingTop=4;" vertex="1" parent="1">
           <mxGeometry x="950" y="360" width="200" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="skill_t1" value="Listen" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=9;" vertex="1" parent="skill_hub">
+        <mxCell id="skill_t1" value="Listening" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=9;" vertex="1" parent="skill_hub">
           <mxGeometry x="5" y="30" width="45" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="skill_t2" value="Read" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=9;" vertex="1" parent="skill_hub">
+        <mxCell id="skill_t2" value="Reading" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=9;" vertex="1" parent="skill_hub">
           <mxGeometry x="55" y="30" width="45" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="skill_t3" value="Write" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=9;" vertex="1" parent="skill_hub">
+        <mxCell id="skill_t3" value="Writing" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=9;" vertex="1" parent="skill_hub">
           <mxGeometry x="105" y="30" width="45" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="skill_t4" value="Speak" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=9;" vertex="1" parent="skill_hub">
+        <mxCell id="skill_t4" value="Speaking" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=9;" vertex="1" parent="skill_hub">
           <mxGeometry x="155" y="30" width="45" height="60" as="geometry" />
         </mxCell>
 
@@ -115,12 +129,18 @@
         <mxCell id="listen_session" value="Listening Session" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="1400" y="270" width="160" height="40" as="geometry" />
         </mxCell>
+        <mxCell id="listen_result" value="Listening Result" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="1620" y="270" width="160" height="40" as="geometry" />
+        </mxCell>
 
         <mxCell id="read_list" value="Reading List" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="1200" y="340" width="140" height="40" as="geometry" />
         </mxCell>
         <mxCell id="read_session" value="Reading Session" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="1400" y="340" width="160" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="read_result" value="Reading Result" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="1620" y="340" width="160" height="40" as="geometry" />
         </mxCell>
 
         <mxCell id="write_list" value="Writing List" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=11;" vertex="1" parent="1">
@@ -188,7 +208,7 @@
 
         <!-- ============ LEGEND ============ -->
         <mxCell id="legend_box" value="Legend" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#999999;strokeWidth=1;fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacingLeft=10;spacingTop=5;" vertex="1" parent="1">
-          <mxGeometry x="1830" y="40" width="300" height="280" as="geometry" />
+          <mxGeometry x="1830" y="40" width="300" height="310" as="geometry" />
         </mxCell>
         <mxCell id="lg1" value="Normal screen" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;" vertex="1" parent="legend_box">
           <mxGeometry x="10" y="30" width="140" height="32" as="geometry" />
@@ -208,11 +228,12 @@
         <mxCell id="lg4" value="Modal / Popup" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2F5FA0;fontColor=#2F5FA0;fontSize=10;" vertex="1" parent="legend_box">
           <mxGeometry x="10" y="160" width="140" height="35" as="geometry" />
         </mxCell>
-        <mxCell id="lg_txt" value="• Tabbed screen: outer box + inner small boxes (each box = 1 tab)&#xa;• Arrow: unidirectional navigation&#xa;• Double arrow: back-and-forth navigation&#xa;• Dashed arrow: triggers a modal/popup" style="text;html=1;fontSize=9;align=left;verticalAlign=top;fontColor=#2F5FA0;" vertex="1" parent="legend_box">
-          <mxGeometry x="10" y="210" width="280" height="70" as="geometry" />
+        <mxCell id="lg_txt" value="• Tabbed screen: outer box + inner small boxes (each box = 1 tab)&#xa;• Arrow: unidirectional navigation&#xa;• Double arrow: back-and-forth navigation&#xa;• Dashed arrow: triggers a modal/popup&#xa;• Login → auto-load latest profile, no selection screen&#xa;• Register includes onboarding fields inline (no separate screen)&#xa;• Create profile = inline form in Profile Page, no navigation away" style="text;html=1;fontSize=9;align=left;verticalAlign=top;fontColor=#2F5FA0;" vertex="1" parent="legend_box">
+          <mxGeometry x="10" y="210" width="280" height="90" as="geometry" />
         </mxCell>
 
         <!-- ============ ARROWS ============ -->
+
         <!-- Pre-login flow -->
         <mxCell id="ar1" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="landing" target="login">
           <mxGeometry relative="1" as="geometry" />
@@ -220,19 +241,23 @@
         <mxCell id="ar2" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;startArrow=classic;" edge="1" parent="1" source="login" target="register">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="ar3" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="login" target="profile_sel">
+
+        <!-- Login → Overview (auto-load profile mới nhất) -->
+        <mxCell id="ar3" value="auto-load latest profile" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;fontSize=9;" edge="1" parent="1" source="login" target="overview">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="ar4" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="register" target="profile_sel">
+        <!-- Register → Overview (profile đầu tiên được tạo luôn trong form đăng ký) -->
+        <mxCell id="ar4" value="profile created inline" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;fontSize=9;" edge="1" parent="1" source="register" target="overview">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="ar5" value="new profile" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;fontSize=9;" edge="1" parent="1" source="profile_sel" target="onboarding">
+
+        <!-- Overview ↔ Profile Page -->
+        <mxCell id="ar8" value="profile button" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;fontSize=9;" edge="1" parent="1" source="overview" target="profile_page">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="ar6" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="onboarding" target="overview">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="ar7" value="existing profile" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;dashed=1;fontSize=9;" edge="1" parent="1" source="profile_sel" target="overview">
+
+        <!-- Profile Page: tạo profile mới inline → switch → vẫn ở Profile Page (tự refresh) -->
+        <mxCell id="ar9" value="switch profile" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;fontSize=9;startArrow=classic;" edge="1" parent="1" source="profile_page" target="overview">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
 
@@ -288,7 +313,9 @@
 
         <!-- List → Session → Result -->
         <mxCell id="ar50" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="listen_list" target="listen_session"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ar50b" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="listen_session" target="listen_result"><mxGeometry relative="1" as="geometry" /></mxCell>
         <mxCell id="ar51" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="read_list" target="read_session"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="ar51b" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="read_session" target="read_result"><mxGeometry relative="1" as="geometry" /></mxCell>
         <mxCell id="ar52" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="write_list" target="write_session"><mxGeometry relative="1" as="geometry" /></mxCell>
         <mxCell id="ar53" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="write_session" target="write_result"><mxGeometry relative="1" as="geometry" /></mxCell>
         <mxCell id="ar54" style="endArrow=classic;html=1;strokeColor=#2F5FA0;strokeWidth=1.5;" edge="1" parent="1" source="speak_list" target="speak_session"><mxGeometry relative="1" as="geometry" /></mxCell>
