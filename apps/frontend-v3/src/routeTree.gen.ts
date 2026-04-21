@@ -27,6 +27,7 @@ import { Route as AppLuyenTapTuVungIndexRouteImport } from "./routes/_app/luyen-
 import { Route as AppLuyenTapNguPhapIndexRouteImport } from "./routes/_app/luyen-tap/ngu-phap/index"
 import { Route as FocusedVocabTopicIdFlashcardRouteImport } from "./routes/_focused/vocab/$topicId/flashcard"
 import { Route as FocusedVocabTopicIdExerciseRouteImport } from "./routes/_focused/vocab/$topicId/exercise"
+import { Route as FocusedGrammarPointIdExerciseRouteImport } from "./routes/_focused/grammar/$pointId/exercise"
 import { Route as AppLuyenTapTuVungTopicIdRouteImport } from "./routes/_app/luyen-tap/tu-vung/$topicId"
 import { Route as AppLuyenTapNguPhapPointIdRouteImport } from "./routes/_app/luyen-tap/ngu-phap/$pointId"
 
@@ -120,6 +121,12 @@ const FocusedVocabTopicIdExerciseRoute =
     path: "/vocab/$topicId/exercise",
     getParentRoute: () => FocusedRoute,
   } as any)
+const FocusedGrammarPointIdExerciseRoute =
+  FocusedGrammarPointIdExerciseRouteImport.update({
+    id: "/grammar/$pointId/exercise",
+    path: "/grammar/$pointId/exercise",
+    getParentRoute: () => FocusedRoute,
+  } as any)
 const AppLuyenTapTuVungTopicIdRoute =
   AppLuyenTapTuVungTopicIdRouteImport.update({
     id: "/$topicId",
@@ -148,6 +155,7 @@ export interface FileRoutesByFullPath {
   "/luyen-tap/": typeof AppLuyenTapIndexRoute
   "/luyen-tap/ngu-phap/$pointId": typeof AppLuyenTapNguPhapPointIdRoute
   "/luyen-tap/tu-vung/$topicId": typeof AppLuyenTapTuVungTopicIdRoute
+  "/grammar/$pointId/exercise": typeof FocusedGrammarPointIdExerciseRoute
   "/vocab/$topicId/exercise": typeof FocusedVocabTopicIdExerciseRoute
   "/vocab/$topicId/flashcard": typeof FocusedVocabTopicIdFlashcardRoute
   "/luyen-tap/ngu-phap/": typeof AppLuyenTapNguPhapIndexRoute
@@ -165,6 +173,7 @@ export interface FileRoutesByTo {
   "/luyen-tap": typeof AppLuyenTapIndexRoute
   "/luyen-tap/ngu-phap/$pointId": typeof AppLuyenTapNguPhapPointIdRoute
   "/luyen-tap/tu-vung/$topicId": typeof AppLuyenTapTuVungTopicIdRoute
+  "/grammar/$pointId/exercise": typeof FocusedGrammarPointIdExerciseRoute
   "/vocab/$topicId/exercise": typeof FocusedVocabTopicIdExerciseRoute
   "/vocab/$topicId/flashcard": typeof FocusedVocabTopicIdFlashcardRoute
   "/luyen-tap/ngu-phap": typeof AppLuyenTapNguPhapIndexRoute
@@ -188,6 +197,7 @@ export interface FileRoutesById {
   "/_app/luyen-tap/": typeof AppLuyenTapIndexRoute
   "/_app/luyen-tap/ngu-phap/$pointId": typeof AppLuyenTapNguPhapPointIdRoute
   "/_app/luyen-tap/tu-vung/$topicId": typeof AppLuyenTapTuVungTopicIdRoute
+  "/_focused/grammar/$pointId/exercise": typeof FocusedGrammarPointIdExerciseRoute
   "/_focused/vocab/$topicId/exercise": typeof FocusedVocabTopicIdExerciseRoute
   "/_focused/vocab/$topicId/flashcard": typeof FocusedVocabTopicIdFlashcardRoute
   "/_app/luyen-tap/ngu-phap/": typeof AppLuyenTapNguPhapIndexRoute
@@ -210,6 +220,7 @@ export interface FileRouteTypes {
     | "/luyen-tap/"
     | "/luyen-tap/ngu-phap/$pointId"
     | "/luyen-tap/tu-vung/$topicId"
+    | "/grammar/$pointId/exercise"
     | "/vocab/$topicId/exercise"
     | "/vocab/$topicId/flashcard"
     | "/luyen-tap/ngu-phap/"
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | "/luyen-tap"
     | "/luyen-tap/ngu-phap/$pointId"
     | "/luyen-tap/tu-vung/$topicId"
+    | "/grammar/$pointId/exercise"
     | "/vocab/$topicId/exercise"
     | "/vocab/$topicId/flashcard"
     | "/luyen-tap/ngu-phap"
@@ -249,6 +261,7 @@ export interface FileRouteTypes {
     | "/_app/luyen-tap/"
     | "/_app/luyen-tap/ngu-phap/$pointId"
     | "/_app/luyen-tap/tu-vung/$topicId"
+    | "/_focused/grammar/$pointId/exercise"
     | "/_focused/vocab/$topicId/exercise"
     | "/_focused/vocab/$topicId/flashcard"
     | "/_app/luyen-tap/ngu-phap/"
@@ -389,6 +402,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof FocusedVocabTopicIdExerciseRouteImport
       parentRoute: typeof FocusedRoute
     }
+    "/_focused/grammar/$pointId/exercise": {
+      id: "/_focused/grammar/$pointId/exercise"
+      path: "/grammar/$pointId/exercise"
+      fullPath: "/grammar/$pointId/exercise"
+      preLoaderRoute: typeof FocusedGrammarPointIdExerciseRouteImport
+      parentRoute: typeof FocusedRoute
+    }
     "/_app/luyen-tap/tu-vung/$topicId": {
       id: "/_app/luyen-tap/tu-vung/$topicId"
       path: "/$topicId"
@@ -472,12 +492,14 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface FocusedRouteChildren {
   FocusedVocabSrsReviewRoute: typeof FocusedVocabSrsReviewRoute
+  FocusedGrammarPointIdExerciseRoute: typeof FocusedGrammarPointIdExerciseRoute
   FocusedVocabTopicIdExerciseRoute: typeof FocusedVocabTopicIdExerciseRoute
   FocusedVocabTopicIdFlashcardRoute: typeof FocusedVocabTopicIdFlashcardRoute
 }
 
 const FocusedRouteChildren: FocusedRouteChildren = {
   FocusedVocabSrsReviewRoute: FocusedVocabSrsReviewRoute,
+  FocusedGrammarPointIdExerciseRoute: FocusedGrammarPointIdExerciseRoute,
   FocusedVocabTopicIdExerciseRoute: FocusedVocabTopicIdExerciseRoute,
   FocusedVocabTopicIdFlashcardRoute: FocusedVocabTopicIdFlashcardRoute,
 }
