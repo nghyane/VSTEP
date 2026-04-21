@@ -1,20 +1,17 @@
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import { ExerciseCard } from "#/features/practice/components/ExerciseCard"
-import { SkillSidebar } from "#/features/practice/components/SkillSidebar"
 import { listeningExercisesQuery } from "#/features/practice/queries"
 
-const PART_LABELS: Record<number, string> = {
-	1: "Nghe hiểu ngắn",
-	2: "Nghe hiểu hội thoại",
-	3: "Nghe hiểu bài giảng",
-}
+const PARTS = [
+	{ part: 1, label: "Part 1 — Nghe hiểu ngắn", desc: "Nghe đoạn hội thoại ngắn, trả lời câu hỏi" },
+	{ part: 2, label: "Part 2 — Nghe hiểu hội thoại", desc: "Nghe hội thoại dài, trả lời câu hỏi chi tiết" },
+	{ part: 3, label: "Part 3 — Nghe hiểu bài giảng", desc: "Nghe bài giảng/thuyết trình, trả lời câu hỏi" },
+]
 
 export function ListeningContent() {
 	const { data } = useQuery(listeningExercisesQuery)
-	const [activePart, setActivePart] = useState("1")
-
 	const exercises = data ? data.data : []
 
 	const grouped = useMemo(() => {
@@ -27,34 +24,36 @@ export function ListeningContent() {
 		return map
 	}, [exercises])
 
-	const sidebarItems = [1, 2, 3]
-		.map((p) => ({ key: String(p), label: PART_LABELS[p] ?? `Part ${p}`, count: grouped.get(p)?.length ?? 0 }))
-		.filter((i) => i.count > 0)
-
-	const list = grouped.get(Number(activePart)) ?? []
-
 	if (!data) return <p className="text-muted">Đang tải...</p>
 
 	return (
-		<div className="grid gap-6 lg:grid-cols-[220px_1fr]">
-			<SkillSidebar items={sidebarItems} activeKey={activePart} onSelect={setActivePart} accentClass="bg-info-tint text-info" />
-			<div className="space-y-4">
-				{list.length === 0 ? (
-					<p className="py-12 text-center text-sm text-subtle">Chưa có bài tập cho phần này.</p>
-				) : (
-					<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-						{list.map((ex) => (
-							<ExerciseCard
-								key={ex.id}
-								title={ex.title}
-								description={ex.description}
-								meta={ex.estimated_minutes ? `${ex.estimated_minutes} phút` : ""}
-								href={<Link to="/listening/$exerciseId" params={{ exerciseId: ex.id }} className="absolute inset-0 rounded-(--radius-card)" />}
-							/>
-						))}
-					</div>
-				)}
-			</div>
+		<div className="space-y-8">
+			{PARTS.map(({ part, label, desc }) => {
+				const list = grouped.get(part) ?? []
+				return (
+					<section key={part}>
+						<h3 className="font-bold text-lg text-foreground">{label}</h3>
+						<p className="text-sm text-subtle mt-0.5 mb-4">{desc}</p>
+						{list.length === 0 ? (
+							<div className="card p-6 text-center">
+								<p className="text-sm text-subtle">Sắp ra mắt</p>
+							</div>
+						) : (
+							<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+								{list.map((ex) => (
+									<ExerciseCard
+										key={ex.id}
+										title={ex.title}
+										description={ex.description}
+										meta={ex.estimated_minutes ? `${ex.estimated_minutes} phút` : ""}
+										href={<Link to="/listening/$exerciseId" params={{ exerciseId: ex.id }} className="absolute inset-0 rounded-(--radius-card)" />}
+									/>
+								))}
+							</div>
+						)}
+					</section>
+				)
+			})}
 		</div>
 	)
 }
