@@ -11,6 +11,13 @@ export function round(value: number, precision = 1): number {
 	return Math.round(value * factor) / factor
 }
 
+/** Format seconds → "1:23". */
+export function formatAudioTime(seconds: number): string {
+	const m = Math.floor(seconds / 60)
+	const s = Math.floor(seconds % 60)
+	return `${m}:${s.toString().padStart(2, "0")}`
+}
+
 /** Format minutes → "7h 20m" or "45m". */
 export function formatMinutes(m: number): string {
 	const h = Math.floor(m / 60)

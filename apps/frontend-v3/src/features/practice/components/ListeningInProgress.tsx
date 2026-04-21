@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router"
 import { AudioBar } from "#/features/practice/components/AudioBar"
-import { QuestionList, QuestionNav } from "#/features/practice/components/QuestionList"
+import { QuestionList } from "#/features/practice/components/QuestionList"
+import { QuestionNav } from "#/features/practice/components/QuestionNav"
 import type { ExerciseDetail } from "#/features/practice/types"
 import { useListeningSession } from "#/features/practice/use-listening-session"
 

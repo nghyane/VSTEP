@@ -1,14 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Icon } from "#/components/Icon"
+import { formatAudioTime } from "#/lib/utils"
 
 interface Props {
 	src: string
-}
-
-function formatTime(seconds: number): string {
-	const m = Math.floor(seconds / 60)
-	const s = Math.floor(seconds % 60)
-	return `${m}:${s.toString().padStart(2, "0")}`
 }
 
 export function AudioBar({ src }: Props) {
@@ -71,23 +66,23 @@ export function AudioBar({ src }: Props) {
 	return (
 		<div className="border-t border-border bg-surface px-4 py-2.5">
 			<div className="flex items-center gap-3">
-				<button type="button" onClick={() => skip(-5)} className="w-7 h-7 flex items-center justify-center rounded-full text-muted hover:bg-background">
+				<button type="button" onClick={() => skip(-5)} className="w-7 h-7 flex items-center justify-center rounded-full text-muted hover:bg-background" aria-label="Tua lại 5 giây">
 					<Icon name="back" size="xs" />
 				</button>
-				<button type="button" onClick={toggle} className="w-9 h-9 flex items-center justify-center rounded-full bg-primary text-primary-foreground">
-					<Icon name={playing ? "close" : "volume"} size="xs" />
+				<button type="button" onClick={toggle} className="w-10 h-10 flex items-center justify-center rounded-full bg-primary text-primary-foreground" aria-label={playing ? "Tạm dừng" : "Phát"}>
+					<Icon name={playing ? "timer" : "lightning"} size="sm" />
 				</button>
-				<button type="button" onClick={() => skip(5)} className="w-7 h-7 flex items-center justify-center rounded-full text-muted hover:bg-background rotate-180">
-					<Icon name="back" size="xs" />
+				<button type="button" onClick={() => skip(5)} className="w-7 h-7 flex items-center justify-center rounded-full text-muted hover:bg-background" aria-label="Tua tới 5 giây">
+					<Icon name="back" size="xs" className="rotate-180" />
 				</button>
 
-				<span className="text-xs font-bold text-primary tabular-nums w-10">{formatTime(currentTime)}</span>
+				<span className="text-xs font-bold text-primary tabular-nums w-10">{formatAudioTime(currentTime)}</span>
 
-				<div ref={barRef} onClick={seek} className="flex-1 h-1.5 bg-border rounded-full cursor-pointer relative">
+				<div ref={barRef} onClick={seek} className="flex-1 h-2 bg-background rounded-full cursor-pointer relative" role="slider" aria-label="Tiến trình audio" aria-valuemin={0} aria-valuemax={Math.round(duration)} aria-valuenow={Math.round(currentTime)}>
 					<div className="absolute inset-y-0 left-0 bg-primary rounded-full transition-[width]" style={{ width: `${progress}%` }} />
 				</div>
 
-				<span className="text-xs text-subtle tabular-nums w-10 text-right">{formatTime(duration)}</span>
+				<span className="text-xs text-subtle tabular-nums w-10 text-right">{formatAudioTime(duration)}</span>
 			</div>
 			<audio ref={audioRef} src={src} preload="metadata" className="hidden" />
 		</div>
