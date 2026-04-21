@@ -36,7 +36,7 @@ export interface PracticeSession {
 export interface SubmitResult {
 	score: number
 	total: number
-	items: { question_id: string; selected_index: number; correct_index: number; is_correct: boolean; explanation: string }[]
+	items: { question_id: string; is_correct: boolean; correct_index: number; explanation: string }[]
 	session: PracticeSession
 }
 
