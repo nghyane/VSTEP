@@ -14,8 +14,9 @@ export function ListeningInProgress({ detail, sessionId }: Props) {
 	const session = useListeningSession(sessionId, questions)
 
 	return (
-		<div className="flex flex-col min-h-screen bg-background">
-			<div className="flex items-center justify-between border-b border-border px-6 py-3">
+		<div className="flex flex-col h-screen bg-background">
+			{/* Header */}
+			<div className="flex items-center justify-between border-b border-border px-6 py-3 shrink-0">
 				<div>
 					<p className="text-sm font-bold text-foreground">{exercise.title}</p>
 					<p className="text-xs text-subtle">Part {exercise.part} · {questions.length} câu</p>
@@ -23,6 +24,7 @@ export function ListeningInProgress({ detail, sessionId }: Props) {
 				<p className="text-sm text-muted">{session.answeredCount}/{questions.length}</p>
 			</div>
 
+			{/* Questions — scrollable */}
 			<div className="flex-1 overflow-y-auto">
 				<div className="max-w-3xl mx-auto p-6">
 					<QuestionList questions={questions} answers={session.answers} result={session.result} onSelect={session.select} />
@@ -40,21 +42,23 @@ export function ListeningInProgress({ detail, sessionId }: Props) {
 				</div>
 			</div>
 
-			<AudioBar src={exercise.audio_url} />
-			<QuestionNav questions={questions} answers={session.answers} result={session.result} />
-
-			{!session.result && (
-				<div className="border-t border-border px-6 py-3">
-					<button
-						type="button"
-						onClick={session.submit}
-						disabled={session.submitting || session.answeredCount < questions.length}
-						className="btn btn-primary w-full py-3.5 text-base disabled:opacity-50"
-					>
-						{session.submitting ? "Đang chấm..." : `Nộp bài (${session.answeredCount}/${questions.length})`}
-					</button>
-				</div>
-			)}
+			{/* Sticky bottom: audio + nav + submit */}
+			<div className="shrink-0">
+				<AudioBar src={exercise.audio_url} />
+				<QuestionNav questions={questions} answers={session.answers} result={session.result} />
+				{!session.result && (
+					<div className="border-t border-border px-6 py-3">
+						<button
+							type="button"
+							onClick={session.submit}
+							disabled={session.submitting || session.answeredCount < questions.length}
+							className="btn btn-primary w-full py-3.5 text-base disabled:opacity-50"
+						>
+							{session.submitting ? "Đang chấm..." : `Nộp bài (${session.answeredCount}/${questions.length})`}
+						</button>
+					</div>
+				)}
+			</div>
 		</div>
 	)
 }
