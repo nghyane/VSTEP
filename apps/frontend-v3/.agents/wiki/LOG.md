@@ -10,3 +10,4 @@
 - 2025-04-21: Created state-patterns.md — useReducer vs useState, useMutation for all writes, mutation side effects
 - 2025-04-21: Updated auth-architecture.md — auth store owns all tokens, switchProfile action, no external helpers
 - 2025-04-21: Updated anti-patterns.md — API calls outside useMutation, token manipulation outside store
+- 2025-04-21: Rewrote api-conventions.md — full standard: response formats, null handling, data flow, feature folder, mutations, store

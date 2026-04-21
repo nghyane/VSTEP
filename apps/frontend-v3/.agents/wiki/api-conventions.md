@@ -1,41 +1,59 @@
-# API Conventions
+# API & Data Conventions
 
-## Response format
+## Response formats
 
-Backend luôn trả `{ data: T }`. Frontend dùng `ApiResponse<T>` từ `lib/api.ts`.
+Backend dùng Laravel Resource cho mọi endpoint:
 
-Paginated: `{ data: T[], total: number }` — không raw Laravel paginator.
-
-## api.ts
-
-Chỉ 1 responsibility: gắn JWT token vào request.
-Không error handling, không toast, không redirect.
-
-## Queries
-
-```ts
-// Đúng
-api.get("overview").json<ApiResponse<OverviewData>>()
-
-// Sai — inline type
-api.get("overview").json<{ data: { profile: {...} } }>()
+```
+Single:    { "data": T }
+Collection: { "data": T[] }
+Paginated:  { "data": T[], "meta": PaginationMeta, "links": PaginationLinks }
+Error:      { "message": string, "errors"?: Record<string, string[]> }
 ```
 
-Types luôn define trong `features/{name}/types.ts`.
+Frontend types:
+```ts
+interface ApiResponse<T> { data: T }
+interface PaginatedResponse<T> { data: T[]; meta: PaginationMeta; links: PaginationLinks }
+```
 
-## Error handling
+## Null handling
 
-Global `on-error.ts` registered trên QueryClient caches trong `main.tsx`.
-- 401 → logout
-- Else → toast `response.message`
+- API trả `null` → type `T | null`. JSON không có `undefined`.
+- Render: `{value && <Comp />}` hoặc `value ?? fallback`
+- Không `?.` trên guaranteed non-null (dùng `useSession()`)
+- Không `?? "fallback"` để giấu null — nếu null không expected thì type phải non-null
 
-Components KHÔNG try/catch. Auth store KHÔNG handle errors.
+## Data flow
 
-## Backend middleware
+```
+Laravel Resource → JSON → ky → .json<ApiResponse<T>>() → TanStack Query → component
+                                                          ↑
+                                                    types.ts defines T
+```
 
-- `auth:api` — verify JWT, set `$request->user()`.
-- `active-profile` — verify `active_profile_id` claim, set `$request->attributes->get('active_profile')`.
-- Missing profile → 403 (không phải 401).
+## Feature folder (bắt buộc)
+
+```
+features/{name}/
+  types.ts      — bắt buộc, kể cả 1 type
+  queries.ts    — reads (queryOptions + ApiResponse<T>)
+  actions.ts    — writes (pure async, return response)
+  use-*.ts      — complex state (useReducer + useMutation)
+  components/   — UI
+```
+
+## Mutations
+
+- actions.ts: pure API calls, return response, no side effects
+- use-*.ts: useMutation, side effects in onSuccess (dispatch reducer action)
+- Component không import `api`, không try/catch
+
+## Store
+
+- Discriminated union cho state machines (auth)
+- Store actions = single source of truth cho side effects (tokens, state)
+- Bên ngoài chỉ gọi actions
 
 ---
-See also: [[auth-architecture]] · [[anti-patterns]]
+See also: [[auth-architecture]] · [[state-patterns]] · [[anti-patterns]] · [[tanstack-query]]
