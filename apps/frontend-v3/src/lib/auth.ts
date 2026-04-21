@@ -17,6 +17,7 @@ type AuthState =
 type AuthActions = {
 	login: (email: string, password: string) => Promise<void>
 	register: (data: { email: string; password: string; nickname: string; target_level: string; target_deadline: string }) => Promise<void>
+	applyTokens: (response: { access_token: string; refresh_token: string; profile: Profile }) => void
 	logout: () => void
 }
 
@@ -39,7 +40,7 @@ function authenticate(res: AuthResponse, set: (s: AuthState) => void) {
 
 const LOGGED_OUT: AuthState = { isAuthenticated: false, user: null, profile: null }
 
-export const useAuth = create<AuthStore>()((set) => ({
+export const useAuth = create<AuthStore>()((set, get) => ({
 	...getInitialState(),
 
 	async login(email, password) {
@@ -50,6 +51,16 @@ export const useAuth = create<AuthStore>()((set) => ({
 	async register(input) {
 		const { data } = await api.post("auth/register", { json: input }).json<ApiResponse<AuthResponse>>()
 		authenticate(data, set)
+	},
+
+	applyTokens(response) {
+		tokens.setAccess(response.access_token)
+		tokens.setRefresh(response.refresh_token)
+		tokens.setProfile(response.profile)
+		const state = get()
+		if (state.isAuthenticated) {
+			set({ isAuthenticated: true, user: state.user, profile: response.profile })
+		}
 	},
 
 	logout() {
