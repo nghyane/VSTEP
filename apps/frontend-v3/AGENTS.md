@@ -53,6 +53,8 @@ Commands: `bun run dev` · `bun run build` · `bun run lint`.
 
 ## Workflow
 
+- Trước khi code: grep `.agents/wiki/` tìm kiến thức liên quan. Follow `[[links]]` nếu có.
+- Sau khi fix bug hoặc học pattern mới: ghi vào wiki + LOG.md.
 - Change >3 files: plan trước, confirm, rồi code.
 - Audit trước khi tạo mới. Grep existing patterns.
 - `bun run lint` sau mỗi edit. Không commit trừ khi user yêu cầu.
