@@ -8,3 +8,5 @@
 - 2025-04-21: Merged design-tokens, icon-patterns, provider-pattern into component-patterns skill
 - 2025-04-21: Moved api-integration architecture content to wiki (api-conventions, tanstack-query)
 - 2025-04-21: Created state-patterns.md — useReducer vs useState, useMutation for all writes, mutation side effects
+- 2025-04-21: Updated auth-architecture.md — auth store owns all tokens, switchProfile action, no external helpers
+- 2025-04-21: Updated anti-patterns.md — API calls outside useMutation, token manipulation outside store

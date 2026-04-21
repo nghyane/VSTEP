@@ -23,6 +23,16 @@ Lỗi đã gặp và cách fix. Tra cứu trước khi viết code mới.
 **Sai:** Mỗi component tự `try/catch` + `toast()`.
 **Đúng:** Global `on-error.ts` trên QueryClient. Components chỉ `await`.
 
+## API call ngoài useMutation
+
+**Sai:** `await api.post(...)` trong callback — 401 không bị catch.
+**Đúng:** Mọi write qua `useMutation` → QueryClient `onError` bắt.
+
+## Token manipulation ngoài auth store
+
+**Sai:** `tokens.setAccess()` trong hook/component. `applySwitch()` helper function.
+**Đúng:** Auth store (`lib/auth.ts`) là nơi duy nhất gọi `tokens.*`. Bên ngoài gọi store actions.
+
 ## API interceptor làm quá nhiều việc
 
 **Sai:** `api.ts` có `afterResponse` clear token + `beforeError` toast + redirect.
