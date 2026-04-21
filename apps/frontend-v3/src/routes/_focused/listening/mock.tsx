@@ -136,7 +136,7 @@ function ListeningMock() {
 			<div className="shrink-0">
 				{/* Subtitle panel */}
 				{showSub && (
-					<div className="bg-surface border-t-2 border-border px-6 py-4 max-h-32 overflow-y-auto">
+					<div className="bg-surface border-t-2 border-border px-6 py-3">
 						<p className="text-sm text-foreground leading-relaxed">
 							<span className="bg-info-tint text-skill-listening font-bold px-0.5 rounded">Excuse</span>{" "}
 							<span className="bg-info-tint text-skill-listening font-bold px-0.5 rounded">me,</span>{" "}
@@ -148,33 +148,32 @@ function ListeningMock() {
 					</div>
 				)}
 
-				{/* Audio bar */}
-				<div className="bg-surface border-t-2 border-border px-5 py-3">
-					<div className="flex items-center gap-4">
-						<button type="button" className="w-12 h-12 rounded-full bg-skill-listening text-primary-foreground flex items-center justify-center shadow-[0_4px_0_oklch(0.45_0.15_240)] active:shadow-[0_2px_0_oklch(0.45_0.15_240)] active:translate-y-[2px] transition">
-							<Icon name="volume" size="sm" />
-						</button>
-						<button type="button" className="w-8 h-8 rounded-full border-2 border-border border-b-4 flex items-center justify-center text-muted hover:text-foreground active:translate-y-[2px] active:border-b-2 transition" aria-label="Nghe lại">
-							<Icon name="back" size="xs" />
-						</button>
-						<span className="text-sm font-bold text-skill-listening tabular-nums">0:00</span>
-						<div className="flex-1 h-3 bg-background rounded-full relative border-2 border-border">
-							<div className="absolute inset-y-0 left-0 bg-skill-listening rounded-full w-0" />
-						</div>
-						<span className="text-sm text-muted tabular-nums">3:45</span>
-						<button
-							type="button"
-							onClick={() => setShowSub((v) => !v)}
-							className={cn("w-8 h-8 rounded-full border-2 border-b-4 flex items-center justify-center text-xs font-bold transition active:translate-y-[2px] active:border-b-2", showSub ? "border-skill-listening bg-info-tint text-skill-listening" : "border-border text-muted")}
-							aria-label="Bật/tắt phụ đề"
-						>
-							CC
-						</button>
+				{/* Audio + Nav + Submit — compact */}
+				<div className="bg-surface border-t-2 border-border px-5 py-2.5 flex items-center gap-3">
+					{/* Play */}
+					<button type="button" className="w-10 h-10 rounded-full bg-skill-listening text-primary-foreground flex items-center justify-center shadow-[0_3px_0_oklch(0.45_0.15_240)] active:shadow-[0_1px_0_oklch(0.45_0.15_240)] active:translate-y-[2px] transition shrink-0">
+						<Icon name="volume" size="xs" />
+					</button>
+					{/* Replay */}
+					<button type="button" className="w-8 h-8 rounded-full border-2 border-border flex items-center justify-center text-muted hover:text-foreground transition shrink-0" aria-label="Nghe lại">
+						<Icon name="back" size="xs" />
+					</button>
+					{/* Progress */}
+					<div className="flex-1 h-2 bg-background rounded-full relative border border-border min-w-0">
+						<div className="absolute inset-y-0 left-0 bg-skill-listening rounded-full w-0" />
 					</div>
-				</div>
-
-				{/* Question nav */}
-				<div className="flex justify-center gap-2 border-t-2 border-border bg-surface px-4 py-3">
+					<span className="text-xs text-muted tabular-nums shrink-0">3:45</span>
+					{/* CC */}
+					<button
+						type="button"
+						onClick={() => setShowSub((v) => !v)}
+						className={cn("w-7 h-7 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition shrink-0", showSub ? "border-skill-listening bg-info-tint text-skill-listening" : "border-border text-muted")}
+					>
+						CC
+					</button>
+					{/* Divider */}
+					<div className="w-px h-6 bg-border shrink-0" />
+					{/* Nav pills */}
 					{MOCK_QUESTIONS.map((q, qi) => {
 						const isAnswered = answers[q.id] !== undefined
 						const isCorrect = submitted && answers[q.id] === correctMap[q.id]
@@ -186,7 +185,7 @@ function ListeningMock() {
 						else if (isAnswered) style = "border-skill-listening bg-skill-listening text-primary-foreground"
 
 						return (
-							<a key={q.id} href={`#q-${qi}`} className={cn("w-10 h-10 rounded-xl border-2 border-b-4 flex items-center justify-center text-sm font-bold transition", style)}>
+							<a key={q.id} href={`#q-${qi}`} className={cn("w-8 h-8 rounded-lg border-2 flex items-center justify-center text-xs font-bold transition shrink-0", style)}>
 								{qi + 1}
 							</a>
 						)
@@ -195,12 +194,12 @@ function ListeningMock() {
 
 				{/* Submit */}
 				{!submitted && (
-					<div className="bg-surface px-6 py-3">
+					<div className="bg-surface px-6 py-2.5">
 						<button
 							type="button"
 							onClick={() => setSubmitted(true)}
 							disabled={answeredCount < MOCK_QUESTIONS.length}
-							className="btn btn-primary w-full py-4 text-base disabled:opacity-50"
+							className="btn btn-primary w-full py-3 text-base disabled:opacity-50"
 						>
 							NỘP BÀI ({answeredCount}/{MOCK_QUESTIONS.length})
 						</button>
