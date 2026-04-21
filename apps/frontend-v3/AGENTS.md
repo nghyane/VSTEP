@@ -14,7 +14,7 @@ Commands: `bun run dev` · `bun run build` · `bun run lint`.
 ## State management
 
 - **Server data**: TanStack Query (`useQuery` + `select`). Không prop drill.
-- **Auth**: Zustand store (`lib/auth.ts`). Không Context/Provider.
+- **Auth**: Zustand discriminated union (`lib/auth.ts`). `useSession()` cho _app context (typed non-null). `useAuth` cho guards + actions.
 - **Forms**: @tanstack/react-form (`useForm`). Không useState per field.
 - **URL state**: TanStack Router search params. Không useState cho modal/tab/step.
 - **Khi gặp case mới**: đánh giá trước — nếu state cần share > 1 component → Zustand. Nếu chỉ 1 component → useState OK. Nếu URL-representable → search params.
@@ -23,13 +23,15 @@ Commands: `bun run dev` · `bun run build` · `bun run lint`.
 ## Code rules
 
 - **No inline helpers.** Formatting, rounding, date — dùng `lib/utils.ts`. Không viết function cục bộ trong component.
-- **No hardcode values.** Colors dùng `SKILL_CONFIG` hoặc CSS variables. Không hex trong components.
+- **No hardcode values.** Colors dùng `skills` config hoặc CSS variables. Không hex trong components.
 - **No mock data trong components.** Data từ API (TanStack Query). Nếu API chưa có → tạo endpoint trước.
 - **Shared trước, inline sau.** Trước khi viết helper/type/constant → grep `lib/` và `types/` xem đã có chưa.
 - **No `as` casts trong business logic.** Chỉ chấp nhận ở DOM/React boundary. Dùng discriminated union, `===` check, early return.
+- **No `!` non-null assertions.** Dùng early return, null check, hoặc `?? fallback`.
 - **API response nhất quán.** Backend luôn trả `{ data: T }`. Frontend dùng `ApiResponse<T>`. Không inline type trong `.json<>()`.
-- **Error boundary.** Mọi route page wrap trong Error Boundary. Fallback UI khi component crash.
-- **Loading states nhất quán.** Dùng shared loading pattern, không mỗi component tự xử lý khác nhau.
+- **Error handling.** Global `on-error.ts` trên QueryClient. Components không try/catch cho toast.
+- **Error boundary.** Layout routes (`_app`, `_focused`) wrap Outlet trong ErrorBoundary.
+- **Loading states nhất quán.** Dùng shared `Loading` component.
 
 ## Data rules (bất di bất dịch)
 
@@ -46,8 +48,8 @@ Commands: `bun run dev` · `bun run build` · `bun run lint`.
 ## Layout
 
 - Sidebar 260px fixed. Content adaptive width.
-- Focus mode (thi): ẩn sidebar + header.
-- Card: `border-2 border-b-4 rounded-[16px]`. Button: `box-shadow bottom, rounded-[13px]`.
+- Focus mode (`_focused` layout): ẩn sidebar + header. Dùng `FocusBar`, `FocusComplete`, `FocusEmpty`.
+- Card: `border-2 border-b-4 rounded-(--radius-card)`. Button: `box-shadow bottom, rounded-(--radius-button)`.
 
 ## Workflow
 
@@ -57,7 +59,7 @@ Commands: `bun run dev` · `bun run build` · `bun run lint`.
 
 ## Hard limits
 
-- File ≤ 300 lines. Function ≤ 50 lines. Params ≤ 3.
+- File ≤ 300 lines. Function ≤ 50 lines. Props ≤ 3.
 - Route page ≤ 80 lines — chỉ compose.
 - No `any`. No `console.log`. No commented-out code. No barrel files.
 
