@@ -10,6 +10,12 @@ interface AuthResponse {
 	profile: Profile
 }
 
+interface SwitchResponse {
+	access_token: string
+	refresh_token: string
+	profile: Profile
+}
+
 type AuthState =
 	| { isAuthenticated: false; user: null; profile: null }
 	| { isAuthenticated: true; user: User; profile: Profile }
@@ -17,7 +23,7 @@ type AuthState =
 type AuthActions = {
 	login: (email: string, password: string) => Promise<void>
 	register: (data: { email: string; password: string; nickname: string; target_level: string; target_deadline: string }) => Promise<void>
-	applyTokens: (response: { access_token: string; refresh_token: string; profile: Profile }) => void
+	switchProfile: (profileId: string) => Promise<void>
 	logout: () => void
 }
 
@@ -30,46 +36,47 @@ function getInitialState(): AuthState {
 	return { isAuthenticated: false, user: null, profile: null }
 }
 
-function authenticate(res: AuthResponse, set: (s: AuthState) => void) {
-	tokens.setAccess(res.access_token)
-	tokens.setRefresh(res.refresh_token)
-	tokens.setUser(res.user)
-	tokens.setProfile(res.profile)
-	set({ isAuthenticated: true, user: res.user, profile: res.profile })
-}
-
-const LOGGED_OUT: AuthState = { isAuthenticated: false, user: null, profile: null }
-
 export const useAuth = create<AuthStore>()((set, get) => ({
 	...getInitialState(),
 
 	async login(email, password) {
 		const { data } = await api.post("auth/login", { json: { email, password } }).json<ApiResponse<AuthResponse>>()
-		authenticate(data, set)
+		tokens.setAccess(data.access_token)
+		tokens.setRefresh(data.refresh_token)
+		tokens.setUser(data.user)
+		tokens.setProfile(data.profile)
+		set({ isAuthenticated: true, user: data.user, profile: data.profile })
 	},
 
 	async register(input) {
 		const { data } = await api.post("auth/register", { json: input }).json<ApiResponse<AuthResponse>>()
-		authenticate(data, set)
+		tokens.setAccess(data.access_token)
+		tokens.setRefresh(data.refresh_token)
+		tokens.setUser(data.user)
+		tokens.setProfile(data.profile)
+		set({ isAuthenticated: true, user: data.user, profile: data.profile })
 	},
 
-	applyTokens(response) {
-		tokens.setAccess(response.access_token)
-		tokens.setRefresh(response.refresh_token)
-		tokens.setProfile(response.profile)
+	async switchProfile(profileId) {
+		const refreshToken = tokens.getRefresh() ?? ""
+		const { data } = await api
+			.post("auth/switch-profile", { json: { profile_id: profileId, refresh_token: refreshToken } })
+			.json<ApiResponse<SwitchResponse>>()
+		tokens.setAccess(data.access_token)
+		tokens.setRefresh(data.refresh_token)
+		tokens.setProfile(data.profile)
 		const state = get()
 		if (state.isAuthenticated) {
-			set({ isAuthenticated: true, user: state.user, profile: response.profile })
+			set({ isAuthenticated: true, user: state.user, profile: data.profile })
 		}
 	},
 
 	logout() {
 		tokens.clear()
-		set(LOGGED_OUT)
+		set({ isAuthenticated: false, user: null, profile: null })
 	},
 }))
 
-/** Use inside _app routes — TypeScript narrows after isAuthenticated check */
 export function useSession() {
 	const state = useAuth()
 	if (!state.isAuthenticated) throw new Error("useSession used outside authenticated context")
