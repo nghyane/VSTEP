@@ -32,7 +32,9 @@ function ReadingPage() {
 								<p className="text-xs font-bold text-skill-reading mb-1">Part {e.part}</p>
 								<h4 className="font-bold text-base text-foreground">{e.title}</h4>
 								{e.description && <p className="text-sm text-subtle mt-1">{e.description}</p>}
-								{e.estimated_minutes && <p className="text-xs text-muted mt-2">~{e.estimated_minutes} phút</p>}
+								{e.estimated_minutes && (
+									<p className="text-xs text-muted mt-2">~{e.estimated_minutes} phút</p>
+								)}
 							</div>
 						))}
 					</div>

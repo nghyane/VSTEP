@@ -30,7 +30,14 @@ export function GrammarQuestion({ exercise }: { exercise: GrammarExercise }) {
 	}
 }
 
-export function GrammarInput({ exercise, selected, textAnswer, result, onSelect, onText }: {
+export function GrammarInput({
+	exercise,
+	selected,
+	textAnswer,
+	result,
+	onSelect,
+	onText,
+}: {
 	exercise: GrammarExercise
 	selected: number | null
 	textAnswer: string
@@ -67,11 +74,12 @@ export function GrammarInput({ exercise, selected, textAnswer, result, onSelect,
 		)
 	}
 
-	const placeholder = exercise.kind === "error_correction"
-		? "Nhập câu đã sửa..."
-		: exercise.kind === "rewrite"
-			? "Viết lại câu..."
-			: "Điền từ..."
+	const placeholder =
+		exercise.kind === "error_correction"
+			? "Nhập câu đã sửa..."
+			: exercise.kind === "rewrite"
+				? "Viết lại câu..."
+				: "Điền từ..."
 
 	return (
 		<input
@@ -88,7 +96,12 @@ export function GrammarInput({ exercise, selected, textAnswer, result, onSelect,
 export function GrammarFeedback({ result }: { result: GrammarResult | null }) {
 	if (!result) return null
 	return (
-		<div className={cn("card p-4", result.correct ? "border-primary bg-primary-tint" : "border-destructive bg-destructive-tint")}>
+		<div
+			className={cn(
+				"card p-4",
+				result.correct ? "border-primary bg-primary-tint" : "border-destructive bg-destructive-tint",
+			)}
+		>
 			<p className={cn("font-bold text-sm", result.correct ? "text-primary" : "text-destructive")}>
 				{result.correct ? "Chính xác!" : "Chưa đúng"}
 			</p>

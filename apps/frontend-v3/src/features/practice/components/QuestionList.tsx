@@ -12,11 +12,23 @@ interface Props {
 
 function optionStyles(selected: number | undefined, oi: number, item: SubmitResult["items"][0] | undefined) {
 	if (item) {
-		if (oi === item.correct_index) return { badge: "bg-primary text-primary-foreground", option: "border-primary border-b-primary bg-primary-tint" }
-		if (oi === selected && !item.is_correct) return { badge: "bg-destructive text-primary-foreground", option: "border-destructive border-b-destructive bg-destructive-tint" }
+		if (oi === item.correct_index)
+			return {
+				badge: "bg-primary text-primary-foreground",
+				option: "border-primary border-b-primary bg-primary-tint",
+			}
+		if (oi === selected && !item.is_correct)
+			return {
+				badge: "bg-destructive text-primary-foreground",
+				option: "border-destructive border-b-destructive bg-destructive-tint",
+			}
 		return { badge: "bg-background text-subtle", option: "border-border" }
 	}
-	if (oi === selected) return { badge: "bg-primary text-primary-foreground", option: "border-primary border-b-primary bg-primary-tint" }
+	if (oi === selected)
+		return {
+			badge: "bg-primary text-primary-foreground",
+			option: "border-primary border-b-primary bg-primary-tint",
+		}
 	return { badge: "bg-background text-muted", option: "border-border hover:border-primary" }
 }
 
@@ -44,9 +56,17 @@ export function QuestionList({ questions, answers, result, onSelect }: Props) {
 										type="button"
 										disabled={!!result}
 										onClick={() => onSelect(q.id, oi)}
-										className={cn("flex items-center gap-3 px-4 py-3 rounded-(--radius-card) border-2 border-b-4 text-left transition", s.option)}
+										className={cn(
+											"flex items-center gap-3 px-4 py-3 rounded-(--radius-card) border-2 border-b-4 text-left transition",
+											s.option,
+										)}
 									>
-										<span className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shrink-0", s.badge)}>
+										<span
+											className={cn(
+												"w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shrink-0",
+												s.badge,
+											)}
+										>
 											{LETTERS[oi]}
 										</span>
 										<span className="text-sm font-bold text-foreground">{opt}</span>
@@ -54,9 +74,7 @@ export function QuestionList({ questions, answers, result, onSelect }: Props) {
 								)
 							})}
 						</div>
-						{item?.explanation && (
-							<p className="text-sm text-muted mt-3 pl-11">{item.explanation}</p>
-						)}
+						{item?.explanation && <p className="text-sm text-muted mt-3 pl-11">{item.explanation}</p>}
 					</div>
 				)
 			})}

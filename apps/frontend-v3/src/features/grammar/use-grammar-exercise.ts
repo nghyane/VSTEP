@@ -54,7 +54,8 @@ export function useGrammarExerciseSession(exercises: GrammarExercise[]): Grammar
 	const [state, dispatch] = useReducer(reducer, { index: 0, selected: null, textAnswer: "", result: null })
 
 	const mutation = useMutation({
-		mutationFn: ({ id, answer }: { id: string; answer: Record<string, unknown> }) => attemptGrammarExercise(id, answer),
+		mutationFn: ({ id, answer }: { id: string; answer: Record<string, unknown> }) =>
+			attemptGrammarExercise(id, answer),
 		onSuccess: (res) => {
 			dispatch({
 				type: "answered",
@@ -73,9 +74,7 @@ export function useGrammarExerciseSession(exercises: GrammarExercise[]): Grammar
 
 	function submit() {
 		if (!current || mutation.isPending) return
-		const answer = current.kind === "mcq"
-			? { selected_index: state.selected }
-			: { text: state.textAnswer }
+		const answer = current.kind === "mcq" ? { selected_index: state.selected } : { text: state.textAnswer }
 		mutation.mutate({ id: current.id, answer })
 	}
 

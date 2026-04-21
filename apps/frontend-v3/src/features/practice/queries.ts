@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query"
-import { type ApiResponse, api } from "#/lib/api"
 import type { ExerciseDetail, ListeningExerciseSummary, ReadingExercise } from "#/features/practice/types"
+import { type ApiResponse, api } from "#/lib/api"
 
 export const listeningExercisesQuery = queryOptions({
 	queryKey: ["practice", "listening", "exercises"],

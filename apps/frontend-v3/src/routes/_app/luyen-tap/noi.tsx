@@ -15,7 +15,9 @@ function SpeakingPage() {
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<div className="card p-6">
 						<h4 className="font-bold text-lg text-foreground mb-2">Drill phát âm</h4>
-						<p className="text-sm text-muted mb-4">Luyện phát âm từng câu. AI đánh giá pronunciation score.</p>
+						<p className="text-sm text-muted mb-4">
+							Luyện phát âm từng câu. AI đánh giá pronunciation score.
+						</p>
 						<span className="text-xs font-bold text-subtle">Ngắn · Lặp lại nhiều lần</span>
 					</div>
 					<div className="card p-6">

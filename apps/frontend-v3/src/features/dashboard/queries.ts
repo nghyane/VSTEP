@@ -76,8 +76,7 @@ export function selectStats(raw: ApiResponse<OverviewData>) {
 	const scores = chart
 		? [chart.listening, chart.reading, chart.writing, chart.speaking].filter((v): v is number => v !== null)
 		: []
-	const avgBand = scores.length > 0
-		? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10
-		: null
+	const avgBand =
+		scores.length > 0 ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10 : null
 	return { ...stats, avgBand, targetLevel: profile.target_level }
 }

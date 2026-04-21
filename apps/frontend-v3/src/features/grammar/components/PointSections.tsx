@@ -15,16 +15,22 @@ export function PointHeader({ detail }: { detail: GrammarPointDetail }) {
 						<span className="text-xs font-bold text-primary bg-primary-tint px-2.5 py-1 rounded-full">
 							{mastery.computed_level}
 						</span>
-						<p className="text-xs text-subtle mt-2">{mastery.accuracy_percent}% · {mastery.attempts} lần</p>
+						<p className="text-xs text-subtle mt-2">
+							{mastery.accuracy_percent}% · {mastery.attempts} lần
+						</p>
 					</div>
 				)}
 			</div>
 			<div className="flex flex-wrap gap-1.5 mt-4">
 				{point.levels.map((lv) => (
-					<span key={lv} className="text-xs font-bold text-primary bg-primary-tint px-2 py-0.5 rounded-full">{lv}</span>
+					<span key={lv} className="text-xs font-bold text-primary bg-primary-tint px-2 py-0.5 rounded-full">
+						{lv}
+					</span>
 				))}
 				{point.functions.map((f) => (
-					<span key={f} className="text-xs text-muted bg-background px-2 py-0.5 rounded-full">{f}</span>
+					<span key={f} className="text-xs text-muted bg-background px-2 py-0.5 rounded-full">
+						{f}
+					</span>
 				))}
 			</div>
 		</section>

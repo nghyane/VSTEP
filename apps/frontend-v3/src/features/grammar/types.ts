@@ -42,7 +42,12 @@ export type GrammarExerciseKind = "mcq" | "error_correction" | "fill_blank" | "r
 
 export type GrammarExercise =
 	| { id: string; kind: "mcq"; payload: { prompt: string; options: string[] }; display_order: number }
-	| { id: string; kind: "error_correction"; payload: { sentence: string; error_start: number; error_end: number }; display_order: number }
+	| {
+			id: string
+			kind: "error_correction"
+			payload: { sentence: string; error_start: number; error_end: number }
+			display_order: number
+	  }
 	| { id: string; kind: "fill_blank"; payload: { template: string }; display_order: number }
 	| { id: string; kind: "rewrite"; payload: { instruction: string; original: string }; display_order: number }
 

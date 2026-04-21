@@ -26,7 +26,14 @@ export function QuestionNav({ questions, answers, result }: Props) {
 				}
 
 				return (
-					<a key={q.id} href={`#q-${qi}`} className={cn("w-8 h-8 rounded-lg border-2 flex items-center justify-center text-xs font-bold transition shrink-0", style)}>
+					<a
+						key={q.id}
+						href={`#q-${qi}`}
+						className={cn(
+							"w-8 h-8 rounded-lg border-2 flex items-center justify-center text-xs font-bold transition shrink-0",
+							style,
+						)}
+					>
 						{qi + 1}
 					</a>
 				)

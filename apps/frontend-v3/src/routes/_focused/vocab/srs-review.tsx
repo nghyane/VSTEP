@@ -39,7 +39,9 @@ function SrsReviewPage() {
 
 	// Session done + refetched queue still empty → truly done
 	if (s.status === "done" && data.data.items.length === 0) {
-		return <FocusComplete {...back} total={s.reviewed} message={`Bạn đã ôn xong ${s.reviewed} lượt hôm nay.`} />
+		return (
+			<FocusComplete {...back} total={s.reviewed} message={`Bạn đã ôn xong ${s.reviewed} lượt hôm nay.`} />
+		)
 	}
 
 	if (s.status === "empty") {

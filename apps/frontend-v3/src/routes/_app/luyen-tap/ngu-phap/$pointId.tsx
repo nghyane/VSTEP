@@ -1,7 +1,13 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { Header } from "#/components/Header"
-import { CommonMistakes, Examples, PointHeader, Structures, VstepTips } from "#/features/grammar/components/PointSections"
+import {
+	CommonMistakes,
+	Examples,
+	PointHeader,
+	Structures,
+	VstepTips,
+} from "#/features/grammar/components/PointSections"
 import { grammarPointDetailQuery } from "#/features/grammar/queries"
 
 export const Route = createFileRoute("/_app/luyen-tap/ngu-phap/$pointId")({

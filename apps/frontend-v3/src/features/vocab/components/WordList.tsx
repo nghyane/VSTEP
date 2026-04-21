@@ -5,7 +5,8 @@ import { cn } from "#/lib/utils"
 
 function stateBadge(state: FsrsState): { text: string; color: string } {
 	if (state.kind === "new") return { text: "Mới", color: "bg-info-tint text-info" }
-	if (state.kind === "learning" || state.kind === "relearning") return { text: "Đang học", color: "bg-warning-tint text-warning" }
+	if (state.kind === "learning" || state.kind === "relearning")
+		return { text: "Đang học", color: "bg-warning-tint text-warning" }
 	const r = state.retrievability
 	if (r >= 0.9) return { text: `${Math.round(r * 100)}%`, color: "bg-primary-tint text-primary" }
 	if (r >= 0.7) return { text: `${Math.round(r * 100)}%`, color: "bg-warning-tint text-warning" }
@@ -42,13 +43,18 @@ export function WordList({ words }: Props) {
 					{words.map(({ word: w, state }) => {
 						const badge = stateBadge(state)
 						return (
-							<div key={w.id} className="flex items-start gap-4 px-5 py-3.5 border-b border-border last:border-b-0">
+							<div
+								key={w.id}
+								className="flex items-start gap-4 px-5 py-3.5 border-b border-border last:border-b-0"
+							>
 								<div className="flex-1 min-w-0">
 									<div className="flex items-center gap-2 mb-0.5">
 										<span className="font-bold text-sm text-foreground">{w.word}</span>
 										{w.phonetic && <span className="text-xs text-subtle">{w.phonetic}</span>}
 										{w.part_of_speech && (
-											<span className="text-xs text-muted bg-background px-1.5 py-0.5 rounded">{w.part_of_speech}</span>
+											<span className="text-xs text-muted bg-background px-1.5 py-0.5 rounded">
+												{w.part_of_speech}
+											</span>
 										)}
 									</div>
 									<p className="text-sm text-muted">{w.definition}</p>

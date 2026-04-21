@@ -13,7 +13,12 @@ interface Props {
 	accentClass?: string
 }
 
-export function SkillSidebar({ items, activeKey, onSelect, accentClass = "bg-primary-tint text-primary" }: Props) {
+export function SkillSidebar({
+	items,
+	activeKey,
+	onSelect,
+	accentClass = "bg-primary-tint text-primary",
+}: Props) {
 	return (
 		<>
 			{/* Desktop */}

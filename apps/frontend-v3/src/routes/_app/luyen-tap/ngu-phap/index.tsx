@@ -28,20 +28,28 @@ function GrammarPage() {
 				) : (
 					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 						{points.map((p) => (
-							<Link key={p.id} to="/luyen-tap/ngu-phap/$pointId" params={{ pointId: p.id }} className="card-interactive p-5">
+							<Link
+								key={p.id}
+								to="/luyen-tap/ngu-phap/$pointId"
+								params={{ pointId: p.id }}
+								className="card-interactive p-5"
+							>
 								<h4 className="font-bold text-base text-foreground">{p.name}</h4>
-								{p.vietnamese_name && (
-									<p className="text-sm text-muted mt-0.5">{p.vietnamese_name}</p>
-								)}
-								{p.summary && (
-									<p className="text-sm text-subtle mt-2 line-clamp-2">{p.summary}</p>
-								)}
+								{p.vietnamese_name && <p className="text-sm text-muted mt-0.5">{p.vietnamese_name}</p>}
+								{p.summary && <p className="text-sm text-subtle mt-2 line-clamp-2">{p.summary}</p>}
 								<div className="flex flex-wrap gap-1.5 mt-3">
 									{p.levels.map((lv) => (
-										<span key={lv} className="text-xs font-bold text-primary bg-primary-tint px-2 py-0.5 rounded-full">{lv}</span>
+										<span
+											key={lv}
+											className="text-xs font-bold text-primary bg-primary-tint px-2 py-0.5 rounded-full"
+										>
+											{lv}
+										</span>
 									))}
 									{p.tasks.map((t) => (
-										<span key={t} className="text-xs text-muted bg-background px-2 py-0.5 rounded-full">{t}</span>
+										<span key={t} className="text-xs text-muted bg-background px-2 py-0.5 rounded-full">
+											{t}
+										</span>
 									))}
 								</div>
 							</Link>

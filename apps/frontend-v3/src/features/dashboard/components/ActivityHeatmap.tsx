@@ -80,7 +80,6 @@ export function ActivityHeatmap() {
 					<div className="grid grid-rows-7 grid-flow-col gap-1">
 						{weeks.flat().map((lv, i) => (
 							<div
-								// biome-ignore lint/suspicious/noArrayIndexKey: static grid, stable order
 								key={i}
 								className={cn(
 									"h-4 rounded hover:ring-1 hover:ring-border cursor-pointer transition",

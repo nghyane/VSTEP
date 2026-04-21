@@ -15,12 +15,16 @@ function WritingPage() {
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<div className="card p-6">
 						<h4 className="font-bold text-lg text-foreground mb-2">Task 1 — Viết thư</h4>
-						<p className="text-sm text-muted mb-4">Viết thư theo tình huống. AI chấm cấu trúc, ngữ pháp, từ vựng.</p>
+						<p className="text-sm text-muted mb-4">
+							Viết thư theo tình huống. AI chấm cấu trúc, ngữ pháp, từ vựng.
+						</p>
 						<span className="text-xs font-bold text-subtle">~120 từ · 20 phút</span>
 					</div>
 					<div className="card p-6">
 						<h4 className="font-bold text-lg text-foreground mb-2">Task 2 — Viết luận</h4>
-						<p className="text-sm text-muted mb-4">Viết luận nghị luận. AI chấm lập luận, mạch lạc, ngôn ngữ.</p>
+						<p className="text-sm text-muted mb-4">
+							Viết luận nghị luận. AI chấm lập luận, mạch lạc, ngôn ngữ.
+						</p>
 						<span className="text-xs font-bold text-subtle">~250 từ · 40 phút</span>
 					</div>
 				</div>
