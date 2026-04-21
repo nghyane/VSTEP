@@ -1,10 +1,14 @@
 export interface GrammarPoint {
 	id: string
-	name: string
 	slug: string
-	level: string
-	description: string | null
+	name: string
+	vietnamese_name: string | null
+	summary: string | null
+	category: string | null
 	display_order: number
+	levels: string[]
+	tasks: string[]
+	functions: string[]
 }
 
 export interface GrammarStructure {
@@ -27,6 +31,13 @@ export interface GrammarMistake {
 	explanation: string | null
 }
 
+export interface GrammarVstepTip {
+	id: string
+	task: string
+	tip: string
+	example: string | null
+}
+
 export interface GrammarExercise {
 	id: string
 	kind: string
@@ -34,12 +45,20 @@ export interface GrammarExercise {
 	display_order: number
 }
 
+export interface GrammarMastery {
+	attempts: number
+	correct: number
+	accuracy_percent: number
+	computed_level: string
+	last_practiced_at: string | null
+}
+
 export interface GrammarPointDetail {
 	point: GrammarPoint
 	structures: GrammarStructure[]
 	examples: GrammarExample[]
 	common_mistakes: GrammarMistake[]
-	vstep_tips: { id: string; task: string; tip: string; example: string | null }[]
+	vstep_tips: GrammarVstepTip[]
 	exercises: GrammarExercise[]
-	mastery: { level: string; correct_count: number; total_count: number } | null
+	mastery: GrammarMastery | null
 }

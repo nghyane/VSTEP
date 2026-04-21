@@ -24,9 +24,11 @@ import { Route as AppLuyenTapNguPhapRouteImport } from "./routes/_app/luyen-tap/
 import { Route as AppLuyenTapNgheRouteImport } from "./routes/_app/luyen-tap/nghe"
 import { Route as AppLuyenTapDocRouteImport } from "./routes/_app/luyen-tap/doc"
 import { Route as AppLuyenTapTuVungIndexRouteImport } from "./routes/_app/luyen-tap/tu-vung/index"
+import { Route as AppLuyenTapNguPhapIndexRouteImport } from "./routes/_app/luyen-tap/ngu-phap/index"
 import { Route as FocusedVocabTopicIdFlashcardRouteImport } from "./routes/_focused/vocab/$topicId/flashcard"
 import { Route as FocusedVocabTopicIdExerciseRouteImport } from "./routes/_focused/vocab/$topicId/exercise"
 import { Route as AppLuyenTapTuVungTopicIdRouteImport } from "./routes/_app/luyen-tap/tu-vung/$topicId"
+import { Route as AppLuyenTapNguPhapPointIdRouteImport } from "./routes/_app/luyen-tap/ngu-phap/$pointId"
 
 const FocusedRoute = FocusedRouteImport.update({
   id: "/_focused",
@@ -101,6 +103,11 @@ const AppLuyenTapTuVungIndexRoute = AppLuyenTapTuVungIndexRouteImport.update({
   path: "/",
   getParentRoute: () => AppLuyenTapTuVungRoute,
 } as any)
+const AppLuyenTapNguPhapIndexRoute = AppLuyenTapNguPhapIndexRouteImport.update({
+  id: "/",
+  path: "/",
+  getParentRoute: () => AppLuyenTapNguPhapRoute,
+} as any)
 const FocusedVocabTopicIdFlashcardRoute =
   FocusedVocabTopicIdFlashcardRouteImport.update({
     id: "/vocab/$topicId/flashcard",
@@ -119,6 +126,12 @@ const AppLuyenTapTuVungTopicIdRoute =
     path: "/$topicId",
     getParentRoute: () => AppLuyenTapTuVungRoute,
   } as any)
+const AppLuyenTapNguPhapPointIdRoute =
+  AppLuyenTapNguPhapPointIdRouteImport.update({
+    id: "/$pointId",
+    path: "/$pointId",
+    getParentRoute: () => AppLuyenTapNguPhapRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
@@ -127,15 +140,17 @@ export interface FileRoutesByFullPath {
   "/luyen-tap": typeof AppLuyenTapRouteWithChildren
   "/luyen-tap/doc": typeof AppLuyenTapDocRoute
   "/luyen-tap/nghe": typeof AppLuyenTapNgheRoute
-  "/luyen-tap/ngu-phap": typeof AppLuyenTapNguPhapRoute
+  "/luyen-tap/ngu-phap": typeof AppLuyenTapNguPhapRouteWithChildren
   "/luyen-tap/noi": typeof AppLuyenTapNoiRoute
   "/luyen-tap/tu-vung": typeof AppLuyenTapTuVungRouteWithChildren
   "/luyen-tap/viet": typeof AppLuyenTapVietRoute
   "/vocab/srs-review": typeof FocusedVocabSrsReviewRoute
   "/luyen-tap/": typeof AppLuyenTapIndexRoute
+  "/luyen-tap/ngu-phap/$pointId": typeof AppLuyenTapNguPhapPointIdRoute
   "/luyen-tap/tu-vung/$topicId": typeof AppLuyenTapTuVungTopicIdRoute
   "/vocab/$topicId/exercise": typeof FocusedVocabTopicIdExerciseRoute
   "/vocab/$topicId/flashcard": typeof FocusedVocabTopicIdFlashcardRoute
+  "/luyen-tap/ngu-phap/": typeof AppLuyenTapNguPhapIndexRoute
   "/luyen-tap/tu-vung/": typeof AppLuyenTapTuVungIndexRoute
 }
 export interface FileRoutesByTo {
@@ -144,14 +159,15 @@ export interface FileRoutesByTo {
   "/ho-so": typeof AppHoSoRoute
   "/luyen-tap/doc": typeof AppLuyenTapDocRoute
   "/luyen-tap/nghe": typeof AppLuyenTapNgheRoute
-  "/luyen-tap/ngu-phap": typeof AppLuyenTapNguPhapRoute
   "/luyen-tap/noi": typeof AppLuyenTapNoiRoute
   "/luyen-tap/viet": typeof AppLuyenTapVietRoute
   "/vocab/srs-review": typeof FocusedVocabSrsReviewRoute
   "/luyen-tap": typeof AppLuyenTapIndexRoute
+  "/luyen-tap/ngu-phap/$pointId": typeof AppLuyenTapNguPhapPointIdRoute
   "/luyen-tap/tu-vung/$topicId": typeof AppLuyenTapTuVungTopicIdRoute
   "/vocab/$topicId/exercise": typeof FocusedVocabTopicIdExerciseRoute
   "/vocab/$topicId/flashcard": typeof FocusedVocabTopicIdFlashcardRoute
+  "/luyen-tap/ngu-phap": typeof AppLuyenTapNguPhapIndexRoute
   "/luyen-tap/tu-vung": typeof AppLuyenTapTuVungIndexRoute
 }
 export interface FileRoutesById {
@@ -164,15 +180,17 @@ export interface FileRoutesById {
   "/_app/luyen-tap": typeof AppLuyenTapRouteWithChildren
   "/_app/luyen-tap/doc": typeof AppLuyenTapDocRoute
   "/_app/luyen-tap/nghe": typeof AppLuyenTapNgheRoute
-  "/_app/luyen-tap/ngu-phap": typeof AppLuyenTapNguPhapRoute
+  "/_app/luyen-tap/ngu-phap": typeof AppLuyenTapNguPhapRouteWithChildren
   "/_app/luyen-tap/noi": typeof AppLuyenTapNoiRoute
   "/_app/luyen-tap/tu-vung": typeof AppLuyenTapTuVungRouteWithChildren
   "/_app/luyen-tap/viet": typeof AppLuyenTapVietRoute
   "/_focused/vocab/srs-review": typeof FocusedVocabSrsReviewRoute
   "/_app/luyen-tap/": typeof AppLuyenTapIndexRoute
+  "/_app/luyen-tap/ngu-phap/$pointId": typeof AppLuyenTapNguPhapPointIdRoute
   "/_app/luyen-tap/tu-vung/$topicId": typeof AppLuyenTapTuVungTopicIdRoute
   "/_focused/vocab/$topicId/exercise": typeof FocusedVocabTopicIdExerciseRoute
   "/_focused/vocab/$topicId/flashcard": typeof FocusedVocabTopicIdFlashcardRoute
+  "/_app/luyen-tap/ngu-phap/": typeof AppLuyenTapNguPhapIndexRoute
   "/_app/luyen-tap/tu-vung/": typeof AppLuyenTapTuVungIndexRoute
 }
 export interface FileRouteTypes {
@@ -190,9 +208,11 @@ export interface FileRouteTypes {
     | "/luyen-tap/viet"
     | "/vocab/srs-review"
     | "/luyen-tap/"
+    | "/luyen-tap/ngu-phap/$pointId"
     | "/luyen-tap/tu-vung/$topicId"
     | "/vocab/$topicId/exercise"
     | "/vocab/$topicId/flashcard"
+    | "/luyen-tap/ngu-phap/"
     | "/luyen-tap/tu-vung/"
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -201,14 +221,15 @@ export interface FileRouteTypes {
     | "/ho-so"
     | "/luyen-tap/doc"
     | "/luyen-tap/nghe"
-    | "/luyen-tap/ngu-phap"
     | "/luyen-tap/noi"
     | "/luyen-tap/viet"
     | "/vocab/srs-review"
     | "/luyen-tap"
+    | "/luyen-tap/ngu-phap/$pointId"
     | "/luyen-tap/tu-vung/$topicId"
     | "/vocab/$topicId/exercise"
     | "/vocab/$topicId/flashcard"
+    | "/luyen-tap/ngu-phap"
     | "/luyen-tap/tu-vung"
   id:
     | "__root__"
@@ -226,9 +247,11 @@ export interface FileRouteTypes {
     | "/_app/luyen-tap/viet"
     | "/_focused/vocab/srs-review"
     | "/_app/luyen-tap/"
+    | "/_app/luyen-tap/ngu-phap/$pointId"
     | "/_app/luyen-tap/tu-vung/$topicId"
     | "/_focused/vocab/$topicId/exercise"
     | "/_focused/vocab/$topicId/flashcard"
+    | "/_app/luyen-tap/ngu-phap/"
     | "/_app/luyen-tap/tu-vung/"
   fileRoutesById: FileRoutesById
 }
@@ -345,6 +368,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AppLuyenTapTuVungIndexRouteImport
       parentRoute: typeof AppLuyenTapTuVungRoute
     }
+    "/_app/luyen-tap/ngu-phap/": {
+      id: "/_app/luyen-tap/ngu-phap/"
+      path: "/"
+      fullPath: "/luyen-tap/ngu-phap/"
+      preLoaderRoute: typeof AppLuyenTapNguPhapIndexRouteImport
+      parentRoute: typeof AppLuyenTapNguPhapRoute
+    }
     "/_focused/vocab/$topicId/flashcard": {
       id: "/_focused/vocab/$topicId/flashcard"
       path: "/vocab/$topicId/flashcard"
@@ -366,8 +396,28 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AppLuyenTapTuVungTopicIdRouteImport
       parentRoute: typeof AppLuyenTapTuVungRoute
     }
+    "/_app/luyen-tap/ngu-phap/$pointId": {
+      id: "/_app/luyen-tap/ngu-phap/$pointId"
+      path: "/$pointId"
+      fullPath: "/luyen-tap/ngu-phap/$pointId"
+      preLoaderRoute: typeof AppLuyenTapNguPhapPointIdRouteImport
+      parentRoute: typeof AppLuyenTapNguPhapRoute
+    }
   }
 }
+
+interface AppLuyenTapNguPhapRouteChildren {
+  AppLuyenTapNguPhapPointIdRoute: typeof AppLuyenTapNguPhapPointIdRoute
+  AppLuyenTapNguPhapIndexRoute: typeof AppLuyenTapNguPhapIndexRoute
+}
+
+const AppLuyenTapNguPhapRouteChildren: AppLuyenTapNguPhapRouteChildren = {
+  AppLuyenTapNguPhapPointIdRoute: AppLuyenTapNguPhapPointIdRoute,
+  AppLuyenTapNguPhapIndexRoute: AppLuyenTapNguPhapIndexRoute,
+}
+
+const AppLuyenTapNguPhapRouteWithChildren =
+  AppLuyenTapNguPhapRoute._addFileChildren(AppLuyenTapNguPhapRouteChildren)
 
 interface AppLuyenTapTuVungRouteChildren {
   AppLuyenTapTuVungTopicIdRoute: typeof AppLuyenTapTuVungTopicIdRoute
@@ -385,7 +435,7 @@ const AppLuyenTapTuVungRouteWithChildren =
 interface AppLuyenTapRouteChildren {
   AppLuyenTapDocRoute: typeof AppLuyenTapDocRoute
   AppLuyenTapNgheRoute: typeof AppLuyenTapNgheRoute
-  AppLuyenTapNguPhapRoute: typeof AppLuyenTapNguPhapRoute
+  AppLuyenTapNguPhapRoute: typeof AppLuyenTapNguPhapRouteWithChildren
   AppLuyenTapNoiRoute: typeof AppLuyenTapNoiRoute
   AppLuyenTapTuVungRoute: typeof AppLuyenTapTuVungRouteWithChildren
   AppLuyenTapVietRoute: typeof AppLuyenTapVietRoute
@@ -395,7 +445,7 @@ interface AppLuyenTapRouteChildren {
 const AppLuyenTapRouteChildren: AppLuyenTapRouteChildren = {
   AppLuyenTapDocRoute: AppLuyenTapDocRoute,
   AppLuyenTapNgheRoute: AppLuyenTapNgheRoute,
-  AppLuyenTapNguPhapRoute: AppLuyenTapNguPhapRoute,
+  AppLuyenTapNguPhapRoute: AppLuyenTapNguPhapRouteWithChildren,
   AppLuyenTapNoiRoute: AppLuyenTapNoiRoute,
   AppLuyenTapTuVungRoute: AppLuyenTapTuVungRouteWithChildren,
   AppLuyenTapVietRoute: AppLuyenTapVietRoute,
