@@ -11,7 +11,7 @@ export function QuestionNav({ questions, answers, result }: Props) {
 	const resultMap = result ? new Map(result.items.map((i) => [i.question_id, i])) : null
 
 	return (
-		<div className="flex flex-wrap justify-center gap-1.5 border-t border-border px-4 py-2.5">
+		<div className="flex flex-wrap justify-center gap-2 border-t-2 border-border px-4 py-3 bg-surface">
 			{questions.map((q, qi) => {
 				const isAnswered = answers[q.id] !== undefined
 				const item = resultMap?.get(q.id)
@@ -29,7 +29,7 @@ export function QuestionNav({ questions, answers, result }: Props) {
 					<a
 						key={q.id}
 						href={`#q-${qi}`}
-						className={cn("w-8 h-8 rounded-lg border-2 flex items-center justify-center text-xs font-bold transition", style)}
+						className={cn("w-10 h-10 rounded-xl border-2 border-b-4 flex items-center justify-center text-sm font-bold transition", style)}
 					>
 						{qi + 1}
 					</a>
