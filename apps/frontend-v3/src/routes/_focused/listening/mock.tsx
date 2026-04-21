@@ -151,13 +151,10 @@ function ListeningMock() {
 				{/* Audio bar */}
 				<div className="bg-surface border-t-2 border-border px-5 py-3">
 					<div className="flex items-center gap-4">
-						<button type="button" className="w-8 h-8 rounded-full border-2 border-border border-b-4 flex items-center justify-center text-muted hover:text-foreground active:translate-y-[2px] active:border-b-2 transition">
-							<Icon name="back" size="xs" />
-						</button>
 						<button type="button" className="w-12 h-12 rounded-full bg-skill-listening text-primary-foreground flex items-center justify-center shadow-[0_4px_0_oklch(0.45_0.15_240)] active:shadow-[0_2px_0_oklch(0.45_0.15_240)] active:translate-y-[2px] transition">
 							<Icon name="volume" size="sm" />
 						</button>
-						<button type="button" className="w-8 h-8 rounded-full border-2 border-border border-b-4 flex items-center justify-center text-muted hover:text-foreground active:translate-y-[2px] active:border-b-2 transition rotate-180">
+						<button type="button" className="w-8 h-8 rounded-full border-2 border-border border-b-4 flex items-center justify-center text-muted hover:text-foreground active:translate-y-[2px] active:border-b-2 transition" aria-label="Nghe lại">
 							<Icon name="back" size="xs" />
 						</button>
 						<span className="text-sm font-bold text-skill-listening tabular-nums">0:00</span>
@@ -165,7 +162,6 @@ function ListeningMock() {
 							<div className="absolute inset-y-0 left-0 bg-skill-listening rounded-full w-0" />
 						</div>
 						<span className="text-sm text-muted tabular-nums">3:45</span>
-						{/* Subtitle toggle */}
 						<button
 							type="button"
 							onClick={() => setShowSub((v) => !v)}
