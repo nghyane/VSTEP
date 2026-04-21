@@ -1,4 +1,4 @@
-import type { SrsRating } from "#/features/vocab/actions"
+import type { SrsRating } from "#/features/vocab/types"
 
 interface Props {
 	disabled: boolean

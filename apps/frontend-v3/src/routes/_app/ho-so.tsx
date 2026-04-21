@@ -42,7 +42,11 @@ function ProfilePage() {
 
 				{showCreate && (
 					<CreateProfileForm
-						onSubmit={async (v) => { await doCreate.mutateAsync(v); setShowCreate(false) }}
+						onSubmit={async (v) => {
+							const created = await doCreate.mutateAsync(v)
+							await doSwitch.mutateAsync(created.data.id)
+							setShowCreate(false)
+						}}
 						onCancel={() => setShowCreate(false)}
 					/>
 				)}

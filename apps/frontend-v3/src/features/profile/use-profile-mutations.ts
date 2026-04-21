@@ -1,22 +1,31 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { createProfile, switchProfile } from "#/features/profile/actions"
+import { useAuth } from "#/lib/auth"
 import { tokens } from "#/lib/tokens"
+import type { SwitchProfileResponse } from "#/features/profile/types"
+
+function applySwitch(data: SwitchProfileResponse) {
+	tokens.setAccess(data.access_token)
+	tokens.setRefresh(data.refresh_token)
+	tokens.setProfile(data.profile)
+	useAuth.setState({ profile: data.profile })
+}
 
 export function useProfileMutations() {
 	const qc = useQueryClient()
-	const refreshToken = tokens.getRefresh() ?? ""
 
 	const doSwitch = useMutation({
-		mutationFn: (profileId: string) => switchProfile(profileId, refreshToken),
-		onSuccess: () => qc.invalidateQueries(),
+		mutationFn: (profileId: string) => switchProfile(profileId, tokens.getRefresh() ?? ""),
+		onSuccess: ({ data }) => {
+			applySwitch(data)
+			qc.invalidateQueries()
+		},
 	})
 
 	const doCreate = useMutation({
 		mutationFn: createProfile,
-		onSuccess: async (profile) => {
-			await qc.invalidateQueries({ queryKey: ["profiles"] })
-			await switchProfile(profile.id, refreshToken)
-			qc.invalidateQueries()
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ["profiles"] })
 		},
 	})
 
