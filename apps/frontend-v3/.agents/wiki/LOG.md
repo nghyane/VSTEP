@@ -7,3 +7,4 @@
 - 2025-04-21: Created tanstack-query.md — QueryClient setup, query/mutation patterns
 - 2025-04-21: Merged design-tokens, icon-patterns, provider-pattern into component-patterns skill
 - 2025-04-21: Moved api-integration architecture content to wiki (api-conventions, tanstack-query)
+- 2025-04-21: Created state-patterns.md — useReducer vs useState, useMutation for all writes, mutation side effects
