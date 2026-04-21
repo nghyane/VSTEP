@@ -27,7 +27,8 @@ Commands: `bun run dev` · `bun run build` · `bun run lint`.
 - **No mock data trong components.** Data từ API (TanStack Query). Nếu API chưa có → tạo endpoint trước.
 - **Shared trước, inline sau.** Trước khi viết helper/type/constant → grep `lib/` và `types/` xem đã có chưa.
 - **No `as` casts trong business logic.** Chỉ chấp nhận ở DOM/React boundary. Dùng discriminated union, `===` check, early return.
-- **No `!` non-null assertions.** Dùng early return, null check, hoặc `?? fallback`.
+- **No `!` non-null assertions.** Dùng early return, null check.
+- **No `?? fallback` để giấu loading/null.** Trust backend data. `??` chỉ cho domain logic (null score → 0 trên chart).
 - **API response nhất quán.** Backend luôn trả `{ data: T }`. Frontend dùng `ApiResponse<T>`. Không inline type trong `.json<>()`.
 - **Error handling.** Global `on-error.ts` trên QueryClient. Components không try/catch cho toast.
 - **Error boundary.** Layout routes (`_app`, `_focused`) wrap Outlet trong ErrorBoundary.
@@ -40,7 +41,7 @@ Commands: `bun run dev` · `bun run build` · `bun run lint`.
 - Không test đầu vào. User tự chọn target.
 - Chart/spider = **chỉ exam** (graded). Drill score không vào chart.
 - Study time + streak = **chỉ drill**. Exam không cộng.
-- SRS adaptive **chỉ vocab**. Exam = đề cố định.
+- FSRS adaptive **chỉ vocab**. Exam = đề cố định.
 - Không roadmap ép buộc. Tabs rời rạc.
 - Spider chart ẩn nếu < 5 bài thi.
 - Grading result: Strengths → Improvements → Rewrites. Không đổi.
