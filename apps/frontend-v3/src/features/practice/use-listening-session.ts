@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query"
-import { useReducer } from "react"
+import { useReducer, useRef } from "react"
 import { submitListeningSession } from "#/features/practice/actions"
-import type { McqQuestion, SubmitResult } from "#/features/practice/types"
+import type { SubmitResult } from "#/features/practice/types"
 
 interface State {
 	answers: Record<string, number>
@@ -30,25 +30,28 @@ interface ListeningSession {
 	submit: () => void
 }
 
-export function useListeningSession(sessionId: string | null, questions: McqQuestion[]): ListeningSession {
+export function useListeningSession(sessionId: string | null): ListeningSession {
 	const [state, dispatch] = useReducer(reducer, { answers: {}, result: null })
+	const answersRef = useRef(state.answers)
+	answersRef.current = state.answers
 
 	const mutation = useMutation({
 		mutationFn: () => {
 			if (!sessionId) throw new Error("No session")
-			const formatted = Object.entries(state.answers).map(([question_id, selected_index]) => ({ question_id, selected_index }))
+			const formatted = Object.entries(answersRef.current).map(([question_id, selected_index]) => ({
+				question_id,
+				selected_index,
+			}))
 			return submitListeningSession(sessionId, formatted)
 		},
 		onSuccess: (res) => dispatch({ type: "submitted", result: res.data }),
 	})
 
-	const answeredCount = Object.keys(state.answers).length
-
 	return {
 		answers: state.answers,
 		result: state.result,
 		submitting: mutation.isPending,
-		answeredCount,
+		answeredCount: Object.keys(state.answers).length,
 		select: (questionId, index) => dispatch({ type: "select", questionId, index }),
 		submit: () => mutation.mutate(),
 	}

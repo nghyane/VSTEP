@@ -46,7 +46,13 @@ export function ListeningContent() {
 										title={ex.title}
 										description={ex.description}
 										meta={ex.estimated_minutes ? `${ex.estimated_minutes} phút` : ""}
-										href={<Link to="/listening/$exerciseId" params={{ exerciseId: ex.id }} className="absolute inset-0 rounded-(--radius-card)" />}
+										overlay={
+											<Link
+												to="/listening/$exerciseId"
+												params={{ exerciseId: ex.id }}
+												className="absolute inset-0 rounded-(--radius-card)"
+											/>
+										}
 									/>
 								))}
 							</div>
