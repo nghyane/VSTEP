@@ -1,7 +1,7 @@
 ---
 RFC: 0012
 Title: Migrate SRS from SM-2 to FSRS
-Status: Draft
+Status: Implemented
 Created: 2025-04-21
 Updated: 2025-04-21
 Superseded by:
@@ -167,13 +167,13 @@ Chọn: **FSRS v6 pure PHP port** — cân bằng chính xác + đơn giản dep
 
 ## Implementation
 
-- [ ] `FsrsConfig.php` — 19 weights + settings
-- [ ] `FsrsState.php` — value object (difficulty, stability)
-- [ ] `FsrsScheduler.php` — port algorithm từ ts-fsrs
-- [ ] DB migration — alter `profile_vocab_srs_states`
+- [x] `FsrsConfig.php` — 19 weights + settings
+- [x] `FsrsState.php` — value object (difficulty, stability)
+- [x] `FsrsScheduler.php` — port algorithm từ ts-fsrs
+- [x] DB migration — alter `profile_vocab_srs_states`
 - [ ] Data migration — convert SM-2 → FSRS states
-- [ ] Update `VocabService` — dùng FsrsScheduler
-- [ ] Update `VocabController` — response shape
+- [x] Update `VocabService` — dùng FsrsScheduler
+- [x] Update `VocabController` — response shape
 - [ ] Frontend types — `SrsState` → `FsrsState`
 - [ ] Frontend components — retrievability display
-- [ ] Tests — scheduler unit tests
+- [x] Tests — scheduler unit tests
