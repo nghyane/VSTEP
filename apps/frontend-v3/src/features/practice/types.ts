@@ -1,3 +1,12 @@
+export interface ListeningExerciseSummary {
+	id: string
+	slug: string
+	title: string
+	description: string | null
+	part: number
+	estimated_minutes: number | null
+}
+
 export interface ListeningExercise {
 	id: string
 	slug: string

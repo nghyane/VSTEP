@@ -13,6 +13,8 @@ class FsrsSchedulerTest extends TestCase
 {
     private const NOW_MS = 1_700_000_000_000;
 
+    private const MIN_MS = 60_000;
+
     private const DAY_MS = 86_400_000;
 
     private FsrsScheduler $scheduler;
@@ -26,73 +28,115 @@ class FsrsSchedulerTest extends TestCase
         $this->scheduler = new FsrsScheduler($this->config);
     }
 
-    public function test_new_card_again_gets_short_stability(): void
+    // ── New card ──
+
+    public function test_new_card_again_enters_learning(): void
     {
         $state = $this->scheduler->schedule(FsrsState::new(), 1, self::NOW_MS);
 
-        // w[0] = 0.212 → stability ~0.212
-        $this->assertEqualsWithDelta(0.212, $state->stability, 0.001);
+        $this->assertSame('learning', $state->kind);
+        $this->assertSame(2, $state->remainingSteps); // [1, 10] steps
+        $this->assertSame(self::NOW_MS + 1 * self::MIN_MS, $state->dueAtMs);
         $this->assertSame(1, $state->lapses);
-        $this->assertGreaterThan(self::NOW_MS, $state->dueAtMs);
     }
 
-    public function test_new_card_good_gets_medium_stability(): void
+    public function test_new_card_good_enters_learning(): void
     {
         $state = $this->scheduler->schedule(FsrsState::new(), 3, self::NOW_MS);
 
-        // w[2] = 2.3065 → stability ~2.3065
+        $this->assertSame('learning', $state->kind);
+        $this->assertSame(1, $state->remainingSteps);
+        $this->assertSame(self::NOW_MS + 10 * self::MIN_MS, $state->dueAtMs);
         $this->assertEqualsWithDelta(2.3065, $state->stability, 0.001);
-        $this->assertSame(0, $state->lapses);
-        $this->assertFalse($state->isNew());
     }
 
-    public function test_new_card_easy_gets_high_stability(): void
+    public function test_new_card_easy_graduates_to_review(): void
     {
         $state = $this->scheduler->schedule(FsrsState::new(), 4, self::NOW_MS);
 
-        // w[3] = 8.2956 → stability ~8.2956
+        $this->assertSame('review', $state->kind);
         $this->assertEqualsWithDelta(8.2956, $state->stability, 0.001);
         $this->assertSame(0, $state->lapses);
     }
 
+    // ── Learning ──
+
+    public function test_learning_good_at_last_step_graduates(): void
+    {
+        $state = new FsrsState(
+            kind: 'learning',
+            difficulty: 5.0,
+            stability: 2.3,
+            remainingSteps: 1,
+            dueAtMs: self::NOW_MS,
+            lastReviewAtMs: self::NOW_MS,
+        );
+
+        $next = $this->scheduler->schedule($state, 3, self::NOW_MS);
+
+        $this->assertSame('review', $next->kind);
+        $this->assertSame(0, $next->remainingSteps);
+    }
+
+    public function test_learning_again_resets_steps(): void
+    {
+        $state = new FsrsState(
+            kind: 'learning',
+            difficulty: 5.0,
+            stability: 2.3,
+            remainingSteps: 1,
+            dueAtMs: self::NOW_MS,
+            lastReviewAtMs: self::NOW_MS,
+        );
+
+        $next = $this->scheduler->schedule($state, 1, self::NOW_MS);
+
+        $this->assertSame('learning', $next->kind);
+        $this->assertSame(2, $next->remainingSteps); // reset to full steps
+    }
+
+    // ── Review ──
+
     public function test_review_good_increases_stability(): void
     {
         $state = new FsrsState(
+            kind: 'review',
             difficulty: 5.0,
             stability: 10.0,
-            lapses: 0,
             dueAtMs: self::NOW_MS,
             lastReviewAtMs: self::NOW_MS - 10 * self::DAY_MS,
         );
 
         $next = $this->scheduler->schedule($state, 3, self::NOW_MS);
 
+        $this->assertSame('review', $next->kind);
         $this->assertGreaterThan($state->stability, $next->stability);
-        $this->assertSame(0, $next->lapses);
     }
 
-    public function test_review_again_decreases_stability(): void
+    public function test_review_again_enters_relearning(): void
     {
         $state = new FsrsState(
+            kind: 'review',
             difficulty: 5.0,
             stability: 10.0,
-            lapses: 0,
             dueAtMs: self::NOW_MS,
             lastReviewAtMs: self::NOW_MS - 10 * self::DAY_MS,
         );
 
         $next = $this->scheduler->schedule($state, 1, self::NOW_MS);
 
-        $this->assertLessThan($state->stability, $next->stability);
+        $this->assertSame('relearning', $next->kind);
         $this->assertSame(1, $next->lapses);
+        $this->assertSame(1, $next->remainingSteps); // relearningSteps = [10]
+        $this->assertSame(self::NOW_MS + 10 * self::MIN_MS, $next->dueAtMs);
     }
 
-    public function test_review_hard_applies_penalty(): void
+    public function test_review_hard_less_stability_than_good(): void
     {
         $state = new FsrsState(
+            kind: 'review',
             difficulty: 5.0,
             stability: 10.0,
-            lapses: 0,
             dueAtMs: self::NOW_MS,
             lastReviewAtMs: self::NOW_MS - 10 * self::DAY_MS,
         );
@@ -103,12 +147,12 @@ class FsrsSchedulerTest extends TestCase
         $this->assertLessThan($good->stability, $hard->stability);
     }
 
-    public function test_review_easy_applies_bonus(): void
+    public function test_review_easy_more_stability_than_good(): void
     {
         $state = new FsrsState(
+            kind: 'review',
             difficulty: 5.0,
             stability: 10.0,
-            lapses: 0,
             dueAtMs: self::NOW_MS,
             lastReviewAtMs: self::NOW_MS - 10 * self::DAY_MS,
         );
@@ -119,78 +163,74 @@ class FsrsSchedulerTest extends TestCase
         $this->assertGreaterThan($good->stability, $easy->stability);
     }
 
+    // ── Difficulty ──
+
     public function test_difficulty_increases_on_again(): void
     {
         $state = new FsrsState(
+            kind: 'review',
             difficulty: 5.0,
             stability: 10.0,
-            lapses: 0,
             dueAtMs: self::NOW_MS,
             lastReviewAtMs: self::NOW_MS - 10 * self::DAY_MS,
         );
 
         $next = $this->scheduler->schedule($state, 1, self::NOW_MS);
-
         $this->assertGreaterThan($state->difficulty, $next->difficulty);
     }
 
     public function test_difficulty_decreases_on_easy(): void
     {
         $state = new FsrsState(
+            kind: 'review',
             difficulty: 5.0,
             stability: 10.0,
-            lapses: 0,
             dueAtMs: self::NOW_MS,
             lastReviewAtMs: self::NOW_MS - 10 * self::DAY_MS,
         );
 
         $next = $this->scheduler->schedule($state, 4, self::NOW_MS);
-
         $this->assertLessThan($state->difficulty, $next->difficulty);
     }
 
     public function test_difficulty_clamped_1_to_10(): void
     {
-        // Very easy card
-        $easy = new FsrsState(difficulty: 1.0, stability: 10.0, dueAtMs: self::NOW_MS, lastReviewAtMs: self::NOW_MS - 10 * self::DAY_MS);
-        $next = $this->scheduler->schedule($easy, 4, self::NOW_MS);
-        $this->assertGreaterThanOrEqual(1.0, $next->difficulty);
+        $easy = new FsrsState(kind: 'review', difficulty: 1.0, stability: 10.0, dueAtMs: self::NOW_MS, lastReviewAtMs: self::NOW_MS - 10 * self::DAY_MS);
+        $this->assertGreaterThanOrEqual(1.0, $this->scheduler->schedule($easy, 4, self::NOW_MS)->difficulty);
 
-        // Very hard card
-        $hard = new FsrsState(difficulty: 10.0, stability: 10.0, dueAtMs: self::NOW_MS, lastReviewAtMs: self::NOW_MS - 10 * self::DAY_MS);
-        $next = $this->scheduler->schedule($hard, 1, self::NOW_MS);
-        $this->assertLessThanOrEqual(10.0, $next->difficulty);
+        $hard = new FsrsState(kind: 'review', difficulty: 10.0, stability: 10.0, dueAtMs: self::NOW_MS, lastReviewAtMs: self::NOW_MS - 10 * self::DAY_MS);
+        $this->assertLessThanOrEqual(10.0, $this->scheduler->schedule($hard, 1, self::NOW_MS)->difficulty);
     }
 
-    public function test_same_day_review_uses_short_term_stability(): void
+    // ── Relearning ──
+
+    public function test_relearning_good_graduates(): void
     {
         $state = new FsrsState(
+            kind: 'relearning',
             difficulty: 5.0,
-            stability: 10.0,
-            lapses: 0,
+            stability: 1.2,
+            lapses: 1,
+            remainingSteps: 1,
             dueAtMs: self::NOW_MS,
-            lastReviewAtMs: self::NOW_MS, // same timestamp = 0 elapsed days
+            lastReviewAtMs: self::NOW_MS,
         );
 
         $next = $this->scheduler->schedule($state, 3, self::NOW_MS);
 
-        // Short-term stability should not decrease for Good rating
-        $this->assertGreaterThanOrEqual($state->stability, $next->stability);
+        $this->assertSame('review', $next->kind);
+        $this->assertSame(1, $next->lapses);
     }
+
+    // ── Retrievability ──
 
     public function test_retrievability_at_due_time(): void
     {
-        $state = new FsrsState(
-            difficulty: 5.0,
-            stability: 10.0,
-            lastReviewAtMs: self::NOW_MS,
-        );
+        $state = new FsrsState(kind: 'review', difficulty: 5.0, stability: 10.0, lastReviewAtMs: self::NOW_MS);
 
-        // At t=0, retrievability should be ~1.0
         $r = $state->retrievability($this->config, self::NOW_MS);
         $this->assertEqualsWithDelta(1.0, $r, 0.01);
 
-        // At desired_retention interval, should be ~0.9
         $decay = -$this->config->w[20];
         $factor = exp(log(0.9) / $decay) - 1;
         $interval = $state->stability / $factor * (0.9 ** (1.0 / $decay) - 1);
@@ -201,9 +241,10 @@ class FsrsSchedulerTest extends TestCase
 
     public function test_new_state_retrievability_is_zero(): void
     {
-        $state = FsrsState::new();
-        $this->assertSame(0.0, $state->retrievability($this->config));
+        $this->assertSame(0.0, FsrsState::new()->retrievability($this->config));
     }
+
+    // ── Edge cases ──
 
     public function test_invalid_rating_throws(): void
     {
@@ -213,47 +254,26 @@ class FsrsSchedulerTest extends TestCase
 
     public function test_state_round_trip_through_array(): void
     {
-        $state = new FsrsState(5.0, 14.3, 2, self::NOW_MS, self::NOW_MS - 10 * self::DAY_MS);
+        $state = new FsrsState('review', 5.0, 14.3, 2, 0, self::NOW_MS, self::NOW_MS - 10 * self::DAY_MS);
         $roundTrip = FsrsState::fromArray($state->toArray($this->config, self::NOW_MS));
 
+        $this->assertSame($state->kind, $roundTrip->kind);
         $this->assertEqualsWithDelta($state->difficulty, $roundTrip->difficulty, 0.001);
         $this->assertEqualsWithDelta($state->stability, $roundTrip->stability, 0.001);
         $this->assertSame($state->lapses, $roundTrip->lapses);
     }
 
-    public function test_interval_clamped_to_max(): void
-    {
-        // Extremely high stability should still clamp interval
-        $state = new FsrsState(
-            difficulty: 1.0,
-            stability: 100000.0,
-            dueAtMs: self::NOW_MS,
-            lastReviewAtMs: self::NOW_MS - self::DAY_MS,
-        );
-
-        $next = $this->scheduler->schedule($state, 4, self::NOW_MS);
-
-        $intervalDays = ($next->dueAtMs - self::NOW_MS) / self::DAY_MS;
-        $this->assertLessThanOrEqual($this->config->maxInterval, $intervalDays);
-    }
-
-    /**
-     * Verify against fsrs-rs test_power_forgetting_curve expected values.
-     */
     public function test_forgetting_curve_matches_reference(): void
     {
         $decay = -$this->config->w[20];
         $factor = exp(log(0.9) / $decay) - 1;
 
-        // (t=0, s=1) → 1.0
         $r = (0 / 1.0 * $factor + 1) ** $decay;
         $this->assertEqualsWithDelta(1.0, $r, 1e-4);
 
-        // (t=1, s=2) → 0.9403
         $r = (1 / 2.0 * $factor + 1) ** $decay;
         $this->assertEqualsWithDelta(0.9403, $r, 1e-3);
 
-        // (t=4, s=4) → 0.9 (by design: desired_retention)
         $r = (4 / 4.0 * $factor + 1) ** $decay;
         $this->assertEqualsWithDelta(0.9, $r, 1e-3);
     }

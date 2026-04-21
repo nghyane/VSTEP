@@ -206,12 +206,8 @@ class ContentSeeder extends Seeder
             'is_active' => true, 'published_at' => now(),
         ]);
 
-        $ls = ExamVersionListeningSection::firstOrCreate(['exam_version_id' => $version->id, 'part' => 1], [
-            'part_title' => 'Phần 1 · Hội thoại ngắn', 'duration_minutes' => 7, 'display_order' => 0,
-        ]);
-        ExamVersionListeningItem::firstOrCreate(['section_id' => $ls->id, 'display_order' => 0], [
-            'stem' => 'What does the woman suggest?', 'options' => ['Going to a movie', 'Having dinner', 'Taking a walk', 'Reading a book'], 'correct_index' => 1,
-        ]);
+        // ── Listening: 3 parts, 14 sections, 35 items ──
+        $this->seedListeningSections($version);
 
         $rp = ExamVersionReadingPassage::firstOrCreate(['exam_version_id' => $version->id, 'part' => 1], [
             'title' => 'Bài đọc 1', 'duration_minutes' => 15, 'passage' => 'The rapid growth of technology has transformed education...', 'display_order' => 0,
@@ -231,5 +227,130 @@ class ContentSeeder extends Seeder
             'type' => 'social', 'duration_minutes' => 4, 'speaking_seconds' => 120,
             'content' => ['topics' => [['name' => 'Hobbies', 'questions' => ['What are your hobbies?', 'How often do you practice them?']]]], 'display_order' => 0,
         ]);
+    }
+
+    /**
+     * VSTEP Listening: Part 1 (8 announcements × 1Q), Part 2 (3 dialogues × 4Q), Part 3 (3 lectures × 5Q) = 35 items.
+     */
+    private function seedListeningSections(ExamVersion $version): void
+    {
+        $order = 0;
+
+        // ── Part 1: 8 short announcements, 1 question each ──
+        $p1 = [
+            ['title' => 'Airport Announcement', 'items' => [
+                ['What is the announcement about?', ['A gate change', 'A flight cancellation', 'A boarding call', 'A baggage claim'], 0],
+            ]],
+            ['title' => 'Library Notice', 'items' => [
+                ['When will the library close this week?', ['5 PM', '6 PM', '8 PM', '9 PM'], 2],
+            ]],
+            ['title' => 'Store Promotion', 'items' => [
+                ['What discount is being offered?', ['10%', '20%', '30%', '50%'], 1],
+            ]],
+            ['title' => 'Weather Report', 'items' => [
+                ['What weather is expected tomorrow?', ['Sunny', 'Rainy', 'Snowy', 'Cloudy'], 1],
+            ]],
+            ['title' => 'School Announcement', 'items' => [
+                ['What event is being announced?', ['A sports day', 'A field trip', 'A parent meeting', 'A book fair'], 2],
+            ]],
+            ['title' => 'Hospital Notice', 'items' => [
+                ['What should visitors do?', ['Register at reception', 'Wear a mask', 'Show ID', 'Call ahead'], 0],
+            ]],
+            ['title' => 'Train Station Update', 'items' => [
+                ['What is the cause of the delay?', ['Bad weather', 'Technical issue', 'Staff shortage', 'Construction'], 1],
+            ]],
+            ['title' => 'Office Memo', 'items' => [
+                ['What is the new policy about?', ['Dress code', 'Working hours', 'Parking', 'Remote work'], 3],
+            ]],
+        ];
+
+        foreach ($p1 as $s) {
+            $section = ExamVersionListeningSection::firstOrCreate(
+                ['exam_version_id' => $version->id, 'part' => 1, 'display_order' => $order],
+                ['part_title' => 'Part 1 · '.$s['title'], 'duration_minutes' => 1],
+            );
+            foreach ($s['items'] as $i => $item) {
+                ExamVersionListeningItem::firstOrCreate(
+                    ['section_id' => $section->id, 'display_order' => $i],
+                    ['stem' => $item[0], 'options' => $item[1], 'correct_index' => $item[2]],
+                );
+            }
+            $order++;
+        }
+
+        // ── Part 2: 3 extended dialogues, 4 questions each ──
+        $p2 = [
+            ['title' => 'Student & Professor', 'items' => [
+                ['What is the student\'s problem?', ['Missing assignment', 'Low grade', 'Schedule conflict', 'Tuition fee'], 2],
+                ['What does the professor suggest?', ['Drop the course', 'Talk to the dean', 'Change sections', 'Submit late'], 2],
+                ['When is the deadline?', ['Monday', 'Wednesday', 'Friday', 'Next week'], 3],
+                ['How does the student feel?', ['Relieved', 'Frustrated', 'Confused', 'Grateful'], 0],
+            ]],
+            ['title' => 'Hotel Reservation', 'items' => [
+                ['How many nights does the guest want to stay?', ['2', '3', '4', '5'], 1],
+                ['What type of room is available?', ['Single', 'Double', 'Suite', 'Deluxe'], 1],
+                ['What is included in the price?', ['Breakfast', 'Airport transfer', 'Spa access', 'Parking'], 0],
+                ['What does the receptionist ask for?', ['Passport', 'Credit card', 'Phone number', 'Email'], 0],
+            ]],
+            ['title' => 'Job Interview Discussion', 'items' => [
+                ['What position is being discussed?', ['Manager', 'Intern', 'Accountant', 'Marketing assistant'], 3],
+                ['What experience does the candidate have?', ['1 year', '2 years', '3 years', 'None'], 1],
+                ['What skill does the interviewer emphasize?', ['Leadership', 'Teamwork', 'Communication', 'Technical'], 2],
+                ['When will the result be announced?', ['Today', 'Tomorrow', 'Next week', 'In two weeks'], 2],
+            ]],
+        ];
+
+        foreach ($p2 as $s) {
+            $section = ExamVersionListeningSection::firstOrCreate(
+                ['exam_version_id' => $version->id, 'part' => 2, 'display_order' => $order],
+                ['part_title' => 'Part 2 · '.$s['title'], 'duration_minutes' => 4],
+            );
+            foreach ($s['items'] as $i => $item) {
+                ExamVersionListeningItem::firstOrCreate(
+                    ['section_id' => $section->id, 'display_order' => $i],
+                    ['stem' => $item[0], 'options' => $item[1], 'correct_index' => $item[2]],
+                );
+            }
+            $order++;
+        }
+
+        // ── Part 3: 3 lectures/talks, 5 questions each ──
+        $p3 = [
+            ['title' => 'Climate Change Lecture', 'items' => [
+                ['What is the main topic of the lecture?', ['Ocean pollution', 'Global warming effects', 'Renewable energy', 'Deforestation'], 1],
+                ['According to the speaker, what has increased by 1.1°C?', ['Ocean temperature', 'Global average temperature', 'Arctic temperature', 'City temperature'], 1],
+                ['What example does the speaker give?', ['Flooding in Europe', 'Drought in Africa', 'Melting ice caps', 'Forest fires'], 2],
+                ['What solution does the speaker propose?', ['Nuclear energy', 'Carbon tax', 'Reducing emissions', 'Planting trees'], 2],
+                ['What is the speaker\'s tone?', ['Optimistic', 'Neutral', 'Urgent', 'Pessimistic'], 2],
+            ]],
+            ['title' => 'History of the Internet', 'items' => [
+                ['When was ARPANET created?', ['1959', '1969', '1979', '1989'], 1],
+                ['What was the original purpose?', ['Entertainment', 'Military communication', 'Education', 'Commerce'], 1],
+                ['What invention made the internet popular?', ['Email', 'Social media', 'World Wide Web', 'Smartphones'], 2],
+                ['How many users does the speaker mention?', ['1 billion', '3 billion', '5 billion', '7 billion'], 2],
+                ['What concern does the speaker raise?', ['Cost', 'Speed', 'Privacy', 'Access'], 2],
+            ]],
+            ['title' => 'Nutrition and Health Talk', 'items' => [
+                ['What is the talk mainly about?', ['Exercise routines', 'Balanced diet', 'Mental health', 'Sleep habits'], 1],
+                ['How many servings of vegetables are recommended?', ['2', '3', '5', '7'], 2],
+                ['What does the speaker say about processed food?', ['It is convenient', 'It should be avoided', 'It is nutritious', 'It is cheap'], 1],
+                ['What nutrient does the speaker focus on?', ['Protein', 'Fiber', 'Vitamins', 'Iron'], 1],
+                ['What does the speaker recommend at the end?', ['See a doctor', 'Keep a food diary', 'Take supplements', 'Skip meals'], 1],
+            ]],
+        ];
+
+        foreach ($p3 as $s) {
+            $section = ExamVersionListeningSection::firstOrCreate(
+                ['exam_version_id' => $version->id, 'part' => 3, 'display_order' => $order],
+                ['part_title' => 'Part 3 · '.$s['title'], 'duration_minutes' => 6],
+            );
+            foreach ($s['items'] as $i => $item) {
+                ExamVersionListeningItem::firstOrCreate(
+                    ['section_id' => $section->id, 'display_order' => $i],
+                    ['stem' => $item[0], 'options' => $item[1], 'correct_index' => $item[2]],
+                );
+            }
+            $order++;
+        }
     }
 }

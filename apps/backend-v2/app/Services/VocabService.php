@@ -155,7 +155,7 @@ class VocabService
             ->limit($limit)
             ->get();
 
-        // 2. Learning cards due within learn-ahead window (not yet due but coming soon)
+        // 2. Learning cards due within learn-ahead window
         $learnAhead = ProfileVocabSrsState::query()
             ->where('profile_id', $profile->id)
             ->where('due_at', '>', $now)
@@ -165,7 +165,8 @@ class VocabService
             ->limit($limit)
             ->get();
 
-        $allStates = $dueNow->merge($learnAhead)->unique('word_id')->take($limit);
+        // concat() not merge() — model has null primaryKey, merge() deduplicates by key
+        $allStates = $dueNow->concat($learnAhead)->unique('word_id')->take($limit);
         $wordIds = $allStates->pluck('word_id');
         $words = VocabWord::query()->whereIn('id', $wordIds)->get()->keyBy('id');
 
