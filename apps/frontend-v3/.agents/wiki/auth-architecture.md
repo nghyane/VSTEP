@@ -32,3 +32,6 @@ Không onboarding modal, không 2-step.
 - `on-error.ts` trên QueryClient: 401 → `useAuth.getState().logout()`.
 - `_app.tsx` useEffect: `!isAuthenticated` → redirect landing.
 - `api.ts` KHÔNG handle 401. Không `window.location.replace`.
+
+---
+See also: [[api-conventions]] · [[anti-patterns]]

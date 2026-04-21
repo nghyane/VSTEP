@@ -47,3 +47,6 @@ Lỗi đã gặp và cách fix. Tra cứu trước khi viết code mới.
 
 **Sai:** Route page 140+ lines với hooks, handlers, sub-components inline.
 **Đúng:** Route page ≤ 80 lines, chỉ compose. Logic trong `use-*.ts`, UI trong `components/`.
+
+---
+See also: [[auth-architecture]] · [[api-conventions]]

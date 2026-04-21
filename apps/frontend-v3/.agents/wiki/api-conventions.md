@@ -36,3 +36,6 @@ Components KHÔNG try/catch. Auth store KHÔNG handle errors.
 - `auth:api` — verify JWT, set `$request->user()`.
 - `active-profile` — verify `active_profile_id` claim, set `$request->attributes->get('active_profile')`.
 - Missing profile → 403 (không phải 401).
+
+---
+See also: [[auth-architecture]] · [[anti-patterns]]
