@@ -26,6 +26,10 @@ Commands: `bun run dev` · `bun run build` · `bun run lint`.
 - **No hardcode values.** Colors dùng `SKILL_CONFIG` hoặc CSS variables. Không hex trong components.
 - **No mock data trong components.** Data từ API (TanStack Query). Nếu API chưa có → tạo endpoint trước.
 - **Shared trước, inline sau.** Trước khi viết helper/type/constant → grep `lib/` và `types/` xem đã có chưa.
+- **No `as` casts trong business logic.** Chỉ chấp nhận ở DOM/React boundary. Dùng discriminated union, `===` check, early return.
+- **API response nhất quán.** Backend luôn trả `{ data: T }`. Frontend dùng `ApiResponse<T>`. Không inline type trong `.json<>()`.
+- **Error boundary.** Mọi route page wrap trong Error Boundary. Fallback UI khi component crash.
+- **Loading states nhất quán.** Dùng shared loading pattern, không mỗi component tự xử lý khác nhau.
 
 ## Data rules (bất di bất dịch)
 
