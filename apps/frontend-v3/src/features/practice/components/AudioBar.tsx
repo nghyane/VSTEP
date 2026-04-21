@@ -7,9 +7,10 @@ interface Props {
 	src: string
 	onToggleSubtitle: () => void
 	subtitleOn: boolean
+	onTimeUpdate?: (time: number) => void
 }
 
-export function AudioBar({ src, onToggleSubtitle, subtitleOn }: Props) {
+export function AudioBar({ src, onToggleSubtitle, subtitleOn, onTimeUpdate }: Props) {
 	const audioRef = useRef<HTMLAudioElement>(null)
 	const barRef = useRef<HTMLDivElement>(null)
 	const [playing, setPlaying] = useState(false)
@@ -19,7 +20,7 @@ export function AudioBar({ src, onToggleSubtitle, subtitleOn }: Props) {
 	useEffect(() => {
 		const audio = audioRef.current
 		if (!audio) return
-		const onTime = () => setCurrentTime(audio.currentTime)
+		const onTime = () => { setCurrentTime(audio.currentTime); onTimeUpdate?.(audio.currentTime) }
 		const onDuration = () => { if (audio.duration && Number.isFinite(audio.duration)) setDuration(audio.duration) }
 		const onEnd = () => setPlaying(false)
 		audio.addEventListener("timeupdate", onTime)

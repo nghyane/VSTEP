@@ -4,6 +4,7 @@ import { Icon } from "#/components/Icon"
 import { AudioBar } from "#/features/practice/components/AudioBar"
 import { QuestionList } from "#/features/practice/components/QuestionList"
 import { QuestionNav } from "#/features/practice/components/QuestionNav"
+import { Subtitle } from "#/features/practice/components/Subtitle"
 import type { ExerciseDetail } from "#/features/practice/types"
 import { useListeningSession } from "#/features/practice/use-listening-session"
 
@@ -16,6 +17,7 @@ export function ListeningInProgress({ detail, sessionId }: Props) {
 	const { exercise, questions } = detail
 	const session = useListeningSession(sessionId, questions)
 	const [showSub, setShowSub] = useState(false)
+	const [audioTime, setAudioTime] = useState(0)
 
 	return (
 		<div className="flex flex-col h-screen bg-background">
@@ -33,7 +35,14 @@ export function ListeningInProgress({ detail, sessionId }: Props) {
 			{/* Sticky subtitle */}
 			{showSub && exercise.transcript && (
 				<div className="sticky top-0 z-10 bg-surface border-b border-border px-6 py-2.5 shrink-0">
-					<p className="text-sm text-foreground leading-relaxed max-w-3xl mx-auto">{exercise.transcript}</p>
+					<div className="max-w-3xl mx-auto">
+						<Subtitle
+							transcript={exercise.transcript}
+							wordTimestamps={exercise.word_timestamps}
+							keywords={exercise.keywords}
+							currentTime={audioTime}
+						/>
+					</div>
 				</div>
 			)}
 
@@ -45,7 +54,7 @@ export function ListeningInProgress({ detail, sessionId }: Props) {
 						<p className="text-xs font-bold text-skill-listening uppercase tracking-wide mb-2">Part {exercise.part}</p>
 						<h2 className="font-bold text-lg text-foreground mb-1">{exercise.title}</h2>
 						{exercise.description && <p className="text-sm text-muted mb-4">{exercise.description}</p>}
-						<AudioBar src={exercise.audio_url} onToggleSubtitle={() => setShowSub((v) => !v)} subtitleOn={showSub} />
+						<AudioBar src={exercise.audio_url} onToggleSubtitle={() => setShowSub((v) => !v)} subtitleOn={showSub} onTimeUpdate={setAudioTime} />
 					</div>
 
 					{/* Celebration */}
