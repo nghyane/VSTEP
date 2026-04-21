@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query"
-import { api, type ApiResponse } from "#/lib/api"
+import { type ApiResponse, api } from "#/lib/api"
 
-interface Notification {
+export interface Notification {
 	id: string
 	type: string
 	title: string
@@ -11,7 +11,7 @@ interface Notification {
 	created_at: string
 }
 
-interface NotificationPage {
+export interface NotificationListResponse {
 	data: Notification[]
 	total: number
 }
@@ -23,7 +23,7 @@ export const unreadCountQuery = queryOptions({
 
 export const notificationsQuery = queryOptions({
 	queryKey: ["notifications"],
-	queryFn: () => api.get("notifications").json<NotificationPage>(),
+	queryFn: () => api.get("notifications").json<NotificationListResponse>(),
 })
 
-export type { Notification }
+export type { Notification as NotificationType }

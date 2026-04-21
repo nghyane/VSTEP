@@ -23,7 +23,10 @@ class NotificationController extends Controller
             ->orderByDesc('created_at')
             ->paginate(20);
 
-        return response()->json($notifications);
+        return response()->json([
+            'data' => $notifications->items(),
+            'total' => $notifications->total(),
+        ]);
     }
 
     public function unreadCount(Request $request): JsonResponse
