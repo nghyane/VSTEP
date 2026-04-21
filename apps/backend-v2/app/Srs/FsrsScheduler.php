@@ -65,7 +65,12 @@ final class FsrsScheduler
 
         // Enter learning
         $stepIndex = $rating === 1 ? 0 : min($rating - 2, count($steps) - 1);
-        $delayMs = ($steps[$stepIndex] ?? $steps[0]) * self::MS_PER_MINUTE;
+        // Hard: average of first two steps. Again: first step. Good: second step.
+        if ($rating === 2 && count($steps) >= 2) {
+            $delayMs = (int) round(($steps[0] + $steps[1]) / 2 * self::MS_PER_MINUTE);
+        } else {
+            $delayMs = ($steps[$stepIndex] ?? $steps[0]) * self::MS_PER_MINUTE;
+        }
 
         return new FsrsState(
             kind: 'learning',
@@ -117,7 +122,15 @@ final class FsrsScheduler
         }
 
         $stepIndex = count($steps) - $newRemaining;
-        $delayMs = ($steps[$stepIndex] ?? $steps[0]) * self::MS_PER_MINUTE;
+        $currentStep = $steps[$stepIndex] ?? $steps[0];
+
+        // Hard: delay = average of current and next step (Anki behavior)
+        if ($rating === 2) {
+            $nextStep = $steps[$stepIndex + 1] ?? $currentStep;
+            $delayMs = (int) round(($currentStep + $nextStep) / 2 * self::MS_PER_MINUTE);
+        } else {
+            $delayMs = $currentStep * self::MS_PER_MINUTE;
+        }
 
         return new FsrsState(
             kind: $kind,
