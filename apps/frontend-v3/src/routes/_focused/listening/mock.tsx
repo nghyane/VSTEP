@@ -34,6 +34,16 @@ function ListeningMock() {
 				<span className="text-xs font-bold text-muted shrink-0">{answeredCount}/{MOCK_QUESTIONS.length}</span>
 			</div>
 
+			{/* ─── Subtitle (sticky khi CC bật) ─── */}
+			{showSub && (
+				<div className="sticky top-0 z-10 bg-surface border-b border-border px-6 py-2.5 shrink-0">
+					<p className="text-sm text-foreground leading-relaxed max-w-3xl mx-auto">
+						<span className="bg-info-tint text-skill-listening font-bold px-0.5 rounded">Excuse me,</span>{" "}
+						can you tell me how to get to the <strong>post office</strong>? Sure, go straight for about <strong>10 minutes</strong>, then turn right at the traffic light.
+					</p>
+				</div>
+			)}
+
 			{/* ─── Scrollable content ─── */}
 			<div className="flex-1 overflow-y-auto">
 				<div className="max-w-3xl mx-auto px-6 py-6 space-y-6">
@@ -64,14 +74,6 @@ function ListeningMock() {
 								CC
 							</button>
 						</div>
-
-						{/* Subtitle */}
-						{showSub && (
-							<p className="text-sm text-foreground leading-relaxed mt-3 pt-3 border-t border-border">
-								<span className="bg-info-tint text-skill-listening font-bold px-0.5 rounded">Excuse me,</span>{" "}
-								can you tell me how to get to the <strong>post office</strong>? Sure, go straight for about <strong>10 minutes</strong>, then turn right at the traffic light.
-							</p>
-						)}
 					</div>
 
 					{/* Celebration (if submitted) */}
