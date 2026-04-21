@@ -15,14 +15,14 @@ export function ExerciseCard({ title, description, meta, href, status = "not_sta
 	const hasProgress = status !== "not_started" && total && total > 0
 
 	return (
-		<div className="group relative card-interactive p-4 flex flex-col">
+		<div className="group relative card-interactive p-5 flex flex-col">
 			<div className="flex items-start gap-3">
 				<div className="min-w-0 flex-1">
 					<p className="text-base font-bold text-foreground">{title}</p>
-					<p className="mt-0.5 text-xs text-muted">{meta}</p>
+					<p className="mt-1 text-xs text-muted">{meta}</p>
 				</div>
-				{status === "completed" && <span className="text-xs font-bold text-primary bg-primary-tint px-2 py-0.5 rounded-full">Hoàn thành</span>}
-				{status === "in_progress" && <span className="text-xs font-bold text-warning bg-warning-tint px-2 py-0.5 rounded-full">Đang làm</span>}
+				{status === "completed" && <span className="text-xs font-bold text-primary bg-primary-tint px-2 py-0.5 rounded-full shrink-0">Hoàn thành</span>}
+				{status === "in_progress" && <span className="text-xs font-bold text-warning bg-warning-tint px-2 py-0.5 rounded-full shrink-0">Đang làm</span>}
 			</div>
 
 			{description && <p className="mt-2 text-sm text-subtle line-clamp-2 flex-1">{description}</p>}
@@ -41,12 +41,6 @@ export function ExerciseCard({ title, description, meta, href, status = "not_sta
 					</div>
 				</div>
 			)}
-
-			<div className="mt-3">
-				<span className={cn("btn text-sm py-2 px-5", status === "not_started" ? "btn-primary" : "btn-secondary text-primary")}>
-					{status === "completed" ? "Làm lại" : status === "in_progress" ? "Tiếp tục" : "Bắt đầu"}
-				</span>
-			</div>
 
 			{href}
 		</div>
