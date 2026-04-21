@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Ai\LocalOpenAiGateway;
-use App\Srs\SrsConfig;
+use App\Srs\FsrsConfig;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
@@ -16,7 +16,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(SrsConfig::class, fn () => SrsConfig::default());
+        $this->app->singleton(FsrsConfig::class, fn () => FsrsConfig::default());
 
         $this->app->resolving(AiManager::class, function (AiManager $ai, $app): void {
             $ai->extend('local', function ($app, array $config) {

@@ -16,7 +16,7 @@ export function SrsHero() {
 	if (!data) return null
 
 	const queue = data.data
-	const totalDue = queue.new_count + queue.review_count
+	const totalDue = queue.new_count + queue.learning_count + queue.review_count
 
 	return (
 		<section className="card overflow-hidden">
@@ -28,6 +28,7 @@ export function SrsHero() {
 							<h2 className="font-extrabold text-2xl text-foreground mb-3">Ôn tập hôm nay</h2>
 							<div className="flex gap-4 mb-5">
 								{queue.new_count > 0 && <span className="text-sm font-bold text-info">{queue.new_count} mới</span>}
+								{queue.learning_count > 0 && <span className="text-sm font-bold text-warning">{queue.learning_count} đang học</span>}
 								{queue.review_count > 0 && <span className="text-sm font-bold text-primary">{queue.review_count} ôn tập</span>}
 							</div>
 							<Link to="/vocab/srs-review" className="btn btn-primary px-8 py-3 text-base">

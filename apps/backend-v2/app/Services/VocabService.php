@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Enums\SrsStateKind;
 use App\Models\PracticeSession;
 use App\Models\PracticeVocabExerciseAttempt;
 use App\Models\PracticeVocabReview;
@@ -13,28 +12,28 @@ use App\Models\ProfileVocabSrsState;
 use App\Models\VocabExercise;
 use App\Models\VocabTopic;
 use App\Models\VocabWord;
-use App\Srs\SrsCardState;
-use App\Srs\SrsConfig;
-use App\Srs\SrsScheduler;
+use App\Srs\FsrsConfig;
+use App\Srs\FsrsScheduler;
+use App\Srs\FsrsState;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Vocabulary + SRS orchestration.
+ * Vocabulary + FSRS orchestration.
  *
  * Flow:
- * 1. User mở topic → getTopicForProfile() trả words + SRS state
+ * 1. User mở topic → getTopicForProfile() trả words + FSRS state
  * 2. User review 1 từ:
- *    - review(): load state → scheduler.nextState() → persist state + log review
+ *    - review(): load state → scheduler.schedule() → persist state + log review
  * 3. User làm exercise:
- *    - attemptExercise(): validate, log attempt, update support usage if session
+ *    - attemptExercise(): validate, log attempt
  * 4. Queue due hôm nay: buildDueQueue(profile, limit)
  */
 class VocabService
 {
     public function __construct(
-        private readonly SrsScheduler $scheduler,
-        private readonly SrsConfig $config,
+        private readonly FsrsScheduler $scheduler,
+        private readonly FsrsConfig $config,
     ) {}
 
     /**
@@ -50,9 +49,7 @@ class VocabService
     }
 
     /**
-     * Load topic + words + exercises + current SRS state cho profile.
-     *
-     * @return array{topic: VocabTopic, words: array<int,array{word: VocabWord, state: SrsCardState}>, exercises: Collection<int,VocabExercise>}
+     * @return array{topic: VocabTopic, words: array<int,array{word: VocabWord, state: FsrsState}>, exercises: Collection<int,VocabExercise>}
      */
     public function getTopicForProfile(VocabTopic $topic, Profile $profile): array
     {
@@ -78,9 +75,7 @@ class VocabService
     }
 
     /**
-     * Ghi review event + update SRS state atomic.
-     *
-     * @return array{review: PracticeVocabReview, state: SrsCardState}
+     * @return array{review: PracticeVocabReview, state: FsrsState}
      */
     public function review(
         Profile $profile,
@@ -97,7 +92,7 @@ class VocabService
 
             $previous = $this->stateFromRow($row);
             $nowMs = (int) (microtime(true) * 1000);
-            $next = $this->scheduler->nextState($previous, $rating, $nowMs);
+            $next = $this->scheduler->schedule($previous, $rating, $nowMs);
 
             $this->persistState($profile, $word, $next);
 
@@ -106,8 +101,8 @@ class VocabService
                 'word_id' => $word->id,
                 'session_id' => $session?->id,
                 'rating' => $rating,
-                'previous_state' => $previous->toArray(),
-                'new_state' => $next->toArray(),
+                'previous_state' => $previous->toArray($this->config, $nowMs),
+                'new_state' => $next->toArray($this->config, $nowMs),
                 'reviewed_at' => now(),
             ]);
 
@@ -144,9 +139,7 @@ class VocabService
     }
 
     /**
-     * Queue due cho profile hôm nay (+ overdue). Cross-topic.
-     *
-     * @return array{new: int, learning: int, review: int, items: array<int,array{word: VocabWord, state: SrsCardState}>}
+     * @return array{new: int, learning: int, review: int, items: array<int,array{word: VocabWord, state: FsrsState}>}
      */
     public function buildDueQueue(Profile $profile, int $limit = 50): array
     {
@@ -171,11 +164,13 @@ class VocabService
             }
 
             $items[] = ['word' => $word, 'state' => $state];
-            match ($state->kind) {
-                SrsStateKind::New => $counts['new']++,
-                SrsStateKind::Learning, SrsStateKind::Relearning => $counts['learning']++,
-                SrsStateKind::Review => $counts['review']++,
-            };
+            if ($state->isNew()) {
+                $counts['new']++;
+            } elseif ($state->isLearning()) {
+                $counts['learning']++;
+            } else {
+                $counts['review']++;
+            }
         }
 
         return [
@@ -186,39 +181,39 @@ class VocabService
         ];
     }
 
-    private function stateFromRow(?ProfileVocabSrsState $row): SrsCardState
+    private function stateFromRow(?ProfileVocabSrsState $row): FsrsState
     {
         if ($row === null) {
-            return SrsCardState::new();
+            return FsrsState::new();
         }
 
-        return SrsCardState::fromArray([
-            'kind' => $row->state_kind->value,
-            'due_at_ms' => $row->due_at ? (int) ($row->due_at->getTimestamp() * 1000) : null,
-            'remaining_steps' => $row->remaining_steps,
-            'interval_days' => $row->interval_days,
-            'ease_factor' => $row->ease_factor,
-            'lapses' => $row->lapses,
-            'review_interval_days' => $row->review_interval_days,
-            'review_ease_factor' => $row->review_ease_factor,
-        ]);
+        return new FsrsState(
+            kind: $row->state_kind ?? 'new',
+            difficulty: (float) $row->difficulty,
+            stability: (float) $row->stability,
+            lapses: (int) $row->lapses,
+            remainingSteps: (int) ($row->remaining_steps ?? 0),
+            dueAtMs: $row->due_at ? (int) ($row->due_at->getTimestamp() * 1000) : null,
+            lastReviewAtMs: $row->last_review_at ? (int) ($row->last_review_at->getTimestamp() * 1000) : null,
+        );
     }
 
-    private function persistState(Profile $profile, VocabWord $word, SrsCardState $state): void
+    private function persistState(Profile $profile, VocabWord $word, FsrsState $state): void
     {
         ProfileVocabSrsState::query()->updateOrInsert(
             ['profile_id' => $profile->id, 'word_id' => $word->id],
             [
-                'state_kind' => $state->kind->value,
+                'state_kind' => $state->kind,
+                'difficulty' => $state->difficulty,
+                'stability' => $state->stability,
+                'lapses' => $state->lapses,
+                'remaining_steps' => $state->remainingSteps,
                 'due_at' => $state->dueAtMs !== null
                     ? (new \DateTimeImmutable('@'.intdiv($state->dueAtMs, 1000)))->format('Y-m-d H:i:s')
                     : now()->format('Y-m-d H:i:s'),
-                'interval_days' => $state->intervalDays,
-                'ease_factor' => $state->easeFactor,
-                'lapses' => $state->lapses,
-                'remaining_steps' => $state->remainingSteps,
-                'review_interval_days' => $state->reviewIntervalDays,
-                'review_ease_factor' => $state->reviewEaseFactor,
+                'last_review_at' => $state->lastReviewAtMs !== null
+                    ? (new \DateTimeImmutable('@'.intdiv($state->lastReviewAtMs, 1000)))->format('Y-m-d H:i:s')
+                    : null,
                 'updated_at' => now()->format('Y-m-d H:i:s'),
             ],
         );

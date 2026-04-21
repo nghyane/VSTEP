@@ -1,0 +1,213 @@
+// Practice
+// Generated: 2026-04-21
+
+Table practice_sessions {
+  id uuid [pk, not null]
+  profile_id uuid [not null]
+  module varchar(30) [not null]
+  content_ref_type varchar(40) [not null]
+  content_ref_id uuid [not null]
+  started_at timestamp [not null]
+  ended_at timestamp
+  duration_seconds integer
+  support_levels_used json
+  created_at timestamp [not null, default: `now()`]
+}
+
+Table practice_mcq_answers {
+  id bigint [pk, not null, increment]
+  session_id uuid [not null]
+  question_type varchar(40) [not null]
+  question_id uuid [not null]
+  selected_index smallint [not null]
+  is_correct boolean [not null]
+  answered_at timestamp [not null]
+}
+
+Table practice_listening_exercises {
+  id uuid [pk, not null]
+  slug varchar(80) [not null]
+  title varchar(200) [not null]
+  description text
+  part smallint [not null]
+  audio_url varchar(500)
+  transcript text [not null]
+  vietnamese_transcript text
+  word_timestamps json
+  keywords json
+  estimated_minutes smallint [not null]
+  is_published boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table practice_listening_questions {
+  id uuid [pk, not null]
+  exercise_id uuid [not null]
+  display_order integer [not null]
+  question text [not null]
+  options json [not null]
+  correct_index smallint [not null]
+  explanation text [not null]
+}
+
+Table practice_reading_exercises {
+  id uuid [pk, not null]
+  slug varchar(80) [not null]
+  title varchar(200) [not null]
+  description text
+  part smallint [not null]
+  passage text [not null]
+  vietnamese_translation text
+  keywords json
+  estimated_minutes smallint [not null]
+  is_published boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table practice_reading_questions {
+  id uuid [pk, not null]
+  exercise_id uuid [not null]
+  display_order integer [not null]
+  question text [not null]
+  options json [not null]
+  correct_index smallint [not null]
+  explanation text [not null]
+}
+
+Table practice_writing_prompts {
+  id uuid [pk, not null]
+  slug varchar(80) [not null]
+  title varchar(200) [not null]
+  description text
+  part smallint [not null]
+  prompt text [not null]
+  min_words smallint [not null]
+  max_words smallint [not null]
+  required_points json
+  keywords json
+  sentence_starters json
+  sample_answer text
+  estimated_minutes smallint [not null]
+  is_published boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table practice_writing_submissions {
+  id uuid [pk, not null]
+  session_id uuid [not null]
+  profile_id uuid [not null]
+  prompt_id uuid [not null]
+  text text [not null]
+  word_count integer [not null]
+  submitted_at timestamp [not null]
+}
+
+Table practice_writing_outline_sections {
+  id uuid [pk, not null]
+  prompt_id uuid [not null]
+  title varchar(100) [not null]
+  description text
+  display_order integer [not null]
+}
+
+Table practice_writing_template_sections {
+  id uuid [pk, not null]
+  prompt_id uuid [not null]
+  title varchar(100) [not null]
+  content text [not null]
+  display_order integer [not null]
+}
+
+Table practice_writing_sample_markers {
+  id uuid [pk, not null]
+  prompt_id uuid [not null]
+  match text [not null]
+  occurrence smallint [not null]
+  side varchar(10) [not null]
+  color varchar(20) [not null]
+  label varchar(100) [not null]
+  detail text
+  display_order integer [not null]
+}
+
+Table practice_speaking_tasks {
+  id uuid [pk, not null]
+  slug varchar(80) [not null]
+  title varchar(200) [not null]
+  part smallint [not null]
+  task_type varchar(20) [not null]
+  content json [not null]
+  estimated_minutes smallint [not null]
+  speaking_seconds smallint [not null]
+  is_published boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table practice_speaking_submissions {
+  id uuid [pk, not null]
+  session_id uuid [not null]
+  profile_id uuid [not null]
+  task_ref_type varchar(30) [not null]
+  task_ref_id uuid [not null]
+  audio_url varchar(500) [not null]
+  duration_seconds smallint [not null]
+  transcript text
+  submitted_at timestamp [not null]
+}
+
+Table practice_speaking_drills {
+  id uuid [pk, not null]
+  slug varchar(80) [not null]
+  title varchar(200) [not null]
+  description text
+  level varchar(2) [not null]
+  estimated_minutes smallint [not null]
+  is_published boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table practice_speaking_drill_sentences {
+  id uuid [pk, not null]
+  drill_id uuid [not null]
+  display_order integer [not null]
+  text text [not null]
+  translation text
+}
+
+Table practice_speaking_drill_attempts {
+  id bigint [pk, not null, increment]
+  session_id uuid [not null]
+  sentence_id uuid [not null]
+  mode varchar(20) [not null]
+  user_text text
+  accuracy_percent smallint
+  attempted_at timestamp [not null]
+}
+
+// --- Referenced from other domains ---
+
+Table profiles {
+  id uuid [pk, not null]
+}
+
+// Relationships
+Ref: practice_sessions.profile_id > profiles.id
+Ref: practice_mcq_answers.session_id > practice_sessions.id
+Ref: practice_listening_questions.exercise_id > practice_listening_exercises.id
+Ref: practice_reading_questions.exercise_id > practice_reading_exercises.id
+Ref: practice_writing_submissions.profile_id > profiles.id
+Ref: practice_writing_submissions.prompt_id > practice_writing_prompts.id
+Ref: practice_writing_submissions.session_id > practice_sessions.id
+Ref: practice_writing_outline_sections.prompt_id > practice_writing_prompts.id
+Ref: practice_writing_template_sections.prompt_id > practice_writing_prompts.id
+Ref: practice_writing_sample_markers.prompt_id > practice_writing_prompts.id
+Ref: practice_speaking_submissions.profile_id > profiles.id
+Ref: practice_speaking_submissions.session_id > practice_sessions.id
+Ref: practice_speaking_drill_sentences.drill_id > practice_speaking_drills.id
+Ref: practice_speaking_drill_attempts.sentence_id > practice_speaking_drill_sentences.id
+Ref: practice_speaking_drill_attempts.session_id > practice_sessions.id

@@ -24,6 +24,7 @@ export interface VocabWord {
 }
 
 export interface FsrsState {
+	kind: "new" | "learning" | "review" | "relearning"
 	difficulty: number
 	stability: number
 	retrievability: number
@@ -57,6 +58,7 @@ export interface AttemptResponse {
 
 export interface SrsQueueResponse {
 	new_count: number
+	learning_count: number
 	review_count: number
 	items: WordWithState[]
 }

@@ -1,0 +1,215 @@
+// Grammar Vocab
+// Generated: 2026-04-21
+
+Table grammar_points {
+  id uuid [pk, not null]
+  slug varchar(80) [not null]
+  name varchar(150) [not null]
+  vietnamese_name varchar(150)
+  summary text [not null]
+  category varchar(30) [not null]
+  display_order integer [not null]
+  is_published boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table grammar_structures {
+  id uuid [pk, not null]
+  grammar_point_id uuid [not null]
+  template text [not null]
+  description text
+  display_order integer [not null]
+}
+
+Table grammar_examples {
+  id uuid [pk, not null]
+  grammar_point_id uuid [not null]
+  en text [not null]
+  vi text [not null]
+  note text
+  display_order integer [not null]
+}
+
+Table grammar_common_mistakes {
+  id uuid [pk, not null]
+  grammar_point_id uuid [not null]
+  wrong text [not null]
+  correct text [not null]
+  explanation text [not null]
+  display_order integer [not null]
+}
+
+Table grammar_exercises {
+  id uuid [pk, not null]
+  grammar_point_id uuid [not null]
+  kind varchar(30) [not null]
+  payload json [not null]
+  explanation text [not null]
+  display_order integer [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table grammar_vstep_tips {
+  id uuid [pk, not null]
+  grammar_point_id uuid [not null]
+  task varchar(10) [not null]
+  tip text [not null]
+  example text [not null]
+  display_order integer [not null]
+}
+
+Table grammar_point_functions {
+  grammar_point_id uuid [pk, not null]
+  function varchar(20) [pk, not null]
+}
+
+Table grammar_point_levels {
+  grammar_point_id uuid [pk, not null]
+  level varchar(2) [pk, not null]
+}
+
+Table grammar_point_tasks {
+  grammar_point_id uuid [pk, not null]
+  task varchar(10) [pk, not null]
+}
+
+Table profile_grammar_mastery {
+  profile_id uuid [pk, not null]
+  grammar_point_id uuid [pk, not null]
+  attempts integer [not null]
+  correct integer [not null]
+  last_practiced_at timestamp
+  computed_level varchar(20) [not null]
+  updated_at timestamp [not null, default: `now()`]
+}
+
+Table practice_grammar_attempts {
+  id bigint [pk, not null, increment]
+  profile_id uuid [not null]
+  grammar_point_id uuid [not null]
+  exercise_id uuid [not null]
+  session_id uuid
+  answer json [not null]
+  is_correct boolean [not null]
+  attempted_at timestamp [not null]
+}
+
+Table vocab_topics {
+  id uuid [pk, not null]
+  slug varchar(80) [not null]
+  name varchar(150) [not null]
+  description text
+  level varchar(2) [not null]
+  icon_key varchar(30) [not null]
+  display_order integer [not null]
+  is_published boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table vocab_topic_tasks {
+  topic_id uuid [pk, not null]
+  task varchar(10) [pk, not null]
+}
+
+Table vocab_words {
+  id uuid [pk, not null]
+  topic_id uuid [not null]
+  word varchar(100) [not null]
+  phonetic varchar(100)
+  part_of_speech varchar(30) [not null]
+  definition text [not null]
+  example text
+  synonyms json
+  collocations json
+  word_family json
+  vstep_tip text
+  display_order integer [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table vocab_exercises {
+  id uuid [pk, not null]
+  topic_id uuid [not null]
+  kind varchar(20) [not null]
+  payload json [not null]
+  explanation text [not null]
+  display_order integer [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table practice_vocab_exercise_attempts {
+  id bigint [pk, not null, increment]
+  profile_id uuid [not null]
+  exercise_id uuid [not null]
+  session_id uuid
+  answer json [not null]
+  is_correct boolean [not null]
+  attempted_at timestamp [not null]
+}
+
+Table practice_vocab_reviews {
+  id bigint [pk, not null, increment]
+  profile_id uuid [not null]
+  word_id uuid [not null]
+  session_id uuid
+  rating smallint [not null]
+  previous_state json [not null]
+  new_state json [not null]
+  reviewed_at timestamp [not null]
+}
+
+Table profile_vocab_srs_states {
+  profile_id uuid [pk, not null]
+  word_id uuid [pk, not null]
+  state_kind varchar(15) [not null]
+  due_at timestamp [not null]
+  interval_days integer
+  ease_factor numeric(4,2)
+  lapses smallint [not null]
+  remaining_steps smallint
+  review_interval_days integer
+  review_ease_factor numeric(4,2)
+  updated_at timestamp [not null, default: `now()`]
+}
+
+// --- Referenced from other domains ---
+
+Table profiles {
+  id uuid [pk, not null]
+}
+
+Table practice_sessions {
+  id uuid [pk, not null]
+}
+
+// Relationships
+Ref: grammar_structures.grammar_point_id > grammar_points.id
+Ref: grammar_examples.grammar_point_id > grammar_points.id
+Ref: grammar_common_mistakes.grammar_point_id > grammar_points.id
+Ref: grammar_exercises.grammar_point_id > grammar_points.id
+Ref: grammar_vstep_tips.grammar_point_id > grammar_points.id
+Ref: grammar_point_functions.grammar_point_id > grammar_points.id
+Ref: grammar_point_levels.grammar_point_id > grammar_points.id
+Ref: grammar_point_tasks.grammar_point_id > grammar_points.id
+Ref: profile_grammar_mastery.grammar_point_id > grammar_points.id
+Ref: profile_grammar_mastery.profile_id > profiles.id
+Ref: practice_grammar_attempts.exercise_id > grammar_exercises.id
+Ref: practice_grammar_attempts.grammar_point_id > grammar_points.id
+Ref: practice_grammar_attempts.profile_id > profiles.id
+Ref: practice_grammar_attempts.session_id > practice_sessions.id
+Ref: vocab_topic_tasks.topic_id > vocab_topics.id
+Ref: vocab_words.topic_id > vocab_topics.id
+Ref: vocab_exercises.topic_id > vocab_topics.id
+Ref: practice_vocab_exercise_attempts.exercise_id > vocab_exercises.id
+Ref: practice_vocab_exercise_attempts.profile_id > profiles.id
+Ref: practice_vocab_exercise_attempts.session_id > practice_sessions.id
+Ref: practice_vocab_reviews.profile_id > profiles.id
+Ref: practice_vocab_reviews.session_id > practice_sessions.id
+Ref: practice_vocab_reviews.word_id > vocab_words.id
+Ref: profile_vocab_srs_states.profile_id > profiles.id
+Ref: profile_vocab_srs_states.word_id > vocab_words.id

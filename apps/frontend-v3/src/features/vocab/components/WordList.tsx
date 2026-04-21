@@ -3,8 +3,9 @@ import { Icon } from "#/components/Icon"
 import type { FsrsState, WordWithState } from "#/features/vocab/types"
 import { cn } from "#/lib/utils"
 
-function retrievabilityBadge(state: FsrsState): { text: string; color: string } {
-	if (state.stability === 0) return { text: "Mới", color: "bg-info-tint text-info" }
+function stateBadge(state: FsrsState): { text: string; color: string } {
+	if (state.kind === "new") return { text: "Mới", color: "bg-info-tint text-info" }
+	if (state.kind === "learning" || state.kind === "relearning") return { text: "Đang học", color: "bg-warning-tint text-warning" }
 	const r = state.retrievability
 	if (r >= 0.9) return { text: `${Math.round(r * 100)}%`, color: "bg-primary-tint text-primary" }
 	if (r >= 0.7) return { text: `${Math.round(r * 100)}%`, color: "bg-warning-tint text-warning" }
@@ -39,7 +40,7 @@ export function WordList({ words }: Props) {
 			{open && (
 				<div className="border-t border-border">
 					{words.map(({ word: w, state }) => {
-						const badge = retrievabilityBadge(state)
+						const badge = stateBadge(state)
 						return (
 							<div key={w.id} className="flex items-start gap-4 px-5 py-3.5 border-b border-border last:border-b-0">
 								<div className="flex-1 min-w-0">

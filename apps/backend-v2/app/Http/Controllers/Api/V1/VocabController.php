@@ -16,6 +16,7 @@ use App\Models\VocabExercise;
 use App\Models\VocabTopic;
 use App\Models\VocabWord;
 use App\Services\VocabService;
+use App\Srs\FsrsConfig;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -24,6 +25,7 @@ class VocabController extends Controller
 {
     public function __construct(
         private readonly VocabService $vocabService,
+        private readonly FsrsConfig $fsrsConfig,
     ) {}
 
     public function topics(Request $request): AnonymousResourceCollection
@@ -48,7 +50,7 @@ class VocabController extends Controller
             'words' => array_map(
                 fn (array $pair) => [
                     'word' => (new VocabWordResource($pair['word']))->resolve($request),
-                    'state' => $pair['state']->toArray(),
+                    'state' => $pair['state']->toArray($this->fsrsConfig),
                 ],
                 $data['words'],
             ),
@@ -69,7 +71,7 @@ class VocabController extends Controller
             'review_count' => $queue['review'],
             'items' => array_map(fn (array $pair) => [
                 'word' => (new VocabWordResource($pair['word']))->resolve($request),
-                'state' => $pair['state']->toArray(),
+                'state' => $pair['state']->toArray($this->fsrsConfig),
             ], $queue['items']),
         ]]);
     }
@@ -95,7 +97,7 @@ class VocabController extends Controller
         );
 
         return response()->json(['data' => [
-            'state' => $result['state']->toArray(),
+            'state' => $result['state']->toArray($this->fsrsConfig),
             'review_id' => $result['review']->id,
         ]]);
     }

@@ -1,0 +1,91 @@
+// Auth Profile
+// Generated: 2026-04-21
+
+Table users {
+  id uuid [pk, not null]
+  full_name varchar(255)
+  email varchar(255) [not null]
+  password varchar(255) [not null]
+  role varchar(20) [not null]
+  avatar_key varchar(255)
+  email_verified_at timestamp
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table refresh_tokens {
+  id uuid [pk, not null]
+  user_id uuid [not null]
+  token varchar(255) [not null]
+  user_agent varchar(255)
+  expires_at timestamp [not null]
+  created_at timestamp [not null, default: `now()`]
+}
+
+Table profiles {
+  id uuid [pk, not null]
+  account_id uuid [not null]
+  nickname varchar(50) [not null]
+  target_level varchar(2) [not null]
+  target_deadline date [not null]
+  entry_level varchar(2)
+  avatar_color varchar(7)
+  is_initial_profile boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table profile_onboarding_responses {
+  id uuid [pk, not null]
+  profile_id uuid [not null]
+  weaknesses json [not null]
+  motivation varchar(30)
+  raw_answers json [not null]
+  completed_at timestamp [not null]
+}
+
+Table profile_daily_activity {
+  profile_id uuid [pk, not null]
+  date_local date [pk, not null]
+  drill_session_count integer [not null]
+  drill_duration_seconds integer [not null]
+  updated_at timestamp [not null, default: `now()`]
+}
+
+Table profile_streak_state {
+  profile_id uuid [pk, not null]
+  current_streak integer [not null]
+  longest_streak integer [not null]
+  last_active_date_local date
+  updated_at timestamp [not null, default: `now()`]
+}
+
+Table profile_reset_events {
+  id bigint [pk, not null, increment]
+  profile_id uuid [not null]
+  reason text
+  wiped_entities json [not null]
+  reset_at timestamp [not null]
+}
+
+Table notifications {
+  id bigint [pk, not null, increment]
+  profile_id uuid [not null]
+  type varchar(40) [not null]
+  title varchar(200) [not null]
+  body text
+  icon_key varchar(20) [not null]
+  payload json
+  dedup_key varchar(100)
+  read_at timestamp
+  created_at timestamp [not null, default: `now()`]
+}
+
+// Relationships
+Ref: refresh_tokens.user_id > users.id
+Ref: profiles.account_id > users.id
+Ref: profile_onboarding_responses.profile_id > profiles.id
+Ref: profile_daily_activity.profile_id > profiles.id
+Ref: profile_streak_state.profile_id > profiles.id
+Ref: profile_reset_events.profile_id > profiles.id
+Ref: notifications.profile_id > profiles.id

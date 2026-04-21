@@ -8,7 +8,7 @@ interface Props {
 }
 
 export function TopicHero({ topic, words, topicId }: Props) {
-	const newCount = words.filter((w) => w.state.stability === 0).length
+	const newCount = words.filter((w) => w.state.kind === "new").length
 	const learnedCount = words.length - newCount
 
 	return (

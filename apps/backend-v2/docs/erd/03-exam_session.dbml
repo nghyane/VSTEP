@@ -1,0 +1,141 @@
+// Exam Session
+// Generated: 2026-04-21
+
+Table exam_sessions {
+  id uuid [pk, not null]
+  profile_id uuid [not null]
+  exam_version_id uuid [not null]
+  mode varchar(20) [not null]
+  selected_skills json [not null]
+  is_full_test boolean [not null]
+  time_extension_factor numeric(3,2) [not null]
+  started_at timestamp [not null]
+  server_deadline_at timestamp [not null]
+  submitted_at timestamp
+  status varchar(20) [not null]
+  coins_charged integer [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table exam_mcq_answers {
+  id bigint [pk, not null, increment]
+  session_id uuid [not null]
+  item_ref_type varchar(30) [not null]
+  item_ref_id uuid [not null]
+  selected_index smallint [not null]
+  is_correct boolean [not null]
+  answered_at timestamp [not null]
+}
+
+Table exam_listening_play_log {
+  id bigint [pk, not null, increment]
+  session_id uuid [not null]
+  section_id uuid [not null]
+  played_at timestamp [not null]
+  client_ip varchar(45)
+}
+
+Table exam_writing_submissions {
+  id uuid [pk, not null]
+  session_id uuid [not null]
+  profile_id uuid [not null]
+  task_id uuid [not null]
+  text text [not null]
+  word_count integer [not null]
+  submitted_at timestamp [not null]
+}
+
+Table exam_speaking_submissions {
+  id uuid [pk, not null]
+  session_id uuid [not null]
+  profile_id uuid [not null]
+  part_id uuid [not null]
+  audio_url varchar(500) [not null]
+  duration_seconds smallint [not null]
+  transcript text
+  submitted_at timestamp [not null]
+}
+
+Table grading_jobs {
+  id uuid [pk, not null]
+  submission_type varchar(40) [not null]
+  submission_id uuid [not null]
+  status varchar(20) [not null]
+  attempts smallint [not null]
+  last_error text
+  started_at timestamp
+  completed_at timestamp
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table writing_grading_results {
+  id uuid [pk, not null]
+  job_id uuid [not null]
+  submission_type varchar(40) [not null]
+  submission_id uuid [not null]
+  version smallint [not null]
+  is_active boolean [not null]
+  rubric_scores json [not null]
+  overall_band numeric(3,1) [not null]
+  strengths json [not null]
+  improvements json [not null]
+  rewrites json [not null]
+  annotations json [not null]
+  paragraph_feedback json
+  created_at timestamp [not null, default: `now()`]
+}
+
+Table speaking_grading_results {
+  id uuid [pk, not null]
+  job_id uuid [not null]
+  submission_type varchar(40) [not null]
+  submission_id uuid [not null]
+  version smallint [not null]
+  is_active boolean [not null]
+  rubric_scores json [not null]
+  overall_band numeric(3,1) [not null]
+  strengths json [not null]
+  improvements json [not null]
+  pronunciation_report json
+  transcript text
+  created_at timestamp [not null, default: `now()`]
+}
+
+// --- Referenced from other domains ---
+
+Table exam_versions {
+  id uuid [pk, not null]
+}
+
+Table profiles {
+  id uuid [pk, not null]
+}
+
+Table exam_version_listening_sections {
+  id uuid [pk, not null]
+}
+
+Table exam_version_writing_tasks {
+  id uuid [pk, not null]
+}
+
+Table exam_version_speaking_parts {
+  id uuid [pk, not null]
+}
+
+// Relationships
+Ref: exam_sessions.exam_version_id > exam_versions.id
+Ref: exam_sessions.profile_id > profiles.id
+Ref: exam_mcq_answers.session_id > exam_sessions.id
+Ref: exam_listening_play_log.section_id > exam_version_listening_sections.id
+Ref: exam_listening_play_log.session_id > exam_sessions.id
+Ref: exam_writing_submissions.profile_id > profiles.id
+Ref: exam_writing_submissions.session_id > exam_sessions.id
+Ref: exam_writing_submissions.task_id > exam_version_writing_tasks.id
+Ref: exam_speaking_submissions.part_id > exam_version_speaking_parts.id
+Ref: exam_speaking_submissions.profile_id > profiles.id
+Ref: exam_speaking_submissions.session_id > exam_sessions.id
+Ref: writing_grading_results.job_id > grading_jobs.id
+Ref: speaking_grading_results.job_id > grading_jobs.id

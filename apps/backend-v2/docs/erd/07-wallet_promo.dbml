@@ -1,0 +1,89 @@
+// Wallet Promo
+// Generated: 2026-04-21
+
+Table coin_transactions {
+  id bigint [pk, not null, increment]
+  profile_id uuid [not null]
+  type varchar(30) [not null]
+  delta integer [not null]
+  balance_after integer [not null]
+  source_type varchar(40)
+  source_id varchar(40)
+  metadata json
+  created_at timestamp [not null, default: `now()`]
+}
+
+Table wallet_topup_packages {
+  id uuid [pk, not null]
+  label varchar(50) [not null]
+  amount_vnd integer [not null]
+  coins_base integer [not null]
+  bonus_coins integer [not null]
+  display_order integer [not null]
+  is_active boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table wallet_topup_orders {
+  id uuid [pk, not null]
+  profile_id uuid [not null]
+  package_id uuid [not null]
+  amount_vnd integer [not null]
+  coins_to_credit integer [not null]
+  status varchar(20) [not null]
+  payment_provider varchar(30)
+  provider_ref varchar(100)
+  paid_at timestamp
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table promo_codes {
+  id uuid [pk, not null]
+  code varchar(50) [not null]
+  partner_name varchar(100)
+  amount_coins integer [not null]
+  max_total_uses integer
+  per_account_limit integer [not null]
+  expires_at timestamp
+  is_active boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table promo_code_redemptions {
+  id bigint [pk, not null, increment]
+  promo_code_id uuid [not null]
+  account_id uuid [not null]
+  profile_id uuid [not null]
+  coins_granted integer [not null]
+  coin_transaction_id bigint [not null]
+  redeemed_at timestamp [not null]
+}
+
+Table system_configs {
+  key varchar(80) [pk, not null]
+  value json [not null]
+  description text
+  updated_at timestamp [not null, default: `now()`]
+}
+
+// --- Referenced from other domains ---
+
+Table profiles {
+  id uuid [pk, not null]
+}
+
+Table users {
+  id uuid [pk, not null]
+}
+
+// Relationships
+Ref: coin_transactions.profile_id > profiles.id
+Ref: wallet_topup_orders.package_id > wallet_topup_packages.id
+Ref: wallet_topup_orders.profile_id > profiles.id
+Ref: promo_code_redemptions.account_id > users.id
+Ref: promo_code_redemptions.coin_transaction_id > coin_transactions.id
+Ref: promo_code_redemptions.profile_id > profiles.id
+Ref: promo_code_redemptions.promo_code_id > promo_codes.id
