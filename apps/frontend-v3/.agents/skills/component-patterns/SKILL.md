@@ -1,9 +1,6 @@
 ---
 name: component-patterns
-description: >
-  How UI components are built and styled in this project (buttons, cards, pills,
-  colors, SVG icons). Load before creating, modifying, or styling any React
-  component.
+description: "UI component rules: type safety, props, styling, discriminated unions, no casts. Load when creating or styling components."
 ---
 
 # Component Patterns

@@ -1,8 +1,6 @@
 ---
 name: icon-patterns
-description: >
-  How to import, color, and create SVG icons. Load before adding a new icon,
-  changing icon colors, or importing an icon into a component.
+description: "Duo SVG icons: import, coloring, creating new icons. Load when adding or modifying icons."
 ---
 
 # Icon Patterns

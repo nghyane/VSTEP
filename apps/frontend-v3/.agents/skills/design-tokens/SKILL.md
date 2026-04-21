@@ -1,9 +1,6 @@
 ---
 name: design-tokens
-description: >
-  Color palette, typography scale, spacing, and border-radius tokens defined in
-  this project. Load before choosing any color, font size, spacing value, or
-  theme variable — especially when creating new components or pages.
+description: "Color tokens, typography, spacing, radius. Load when adding colors, adjusting theme, or reviewing token usage."
 ---
 
 # Design Tokens

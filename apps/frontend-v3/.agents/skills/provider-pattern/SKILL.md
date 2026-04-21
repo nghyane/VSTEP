@@ -1,8 +1,6 @@
 ---
 name: provider-pattern
-description: >
-  React context provider factory used in this project. Load before creating a
-  new context, provider, or global state hook.
+description: "React context provider factory with createStrictContext. Load when creating new providers or context."
 ---
 
 # Provider Pattern

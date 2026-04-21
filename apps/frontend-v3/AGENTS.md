@@ -62,7 +62,3 @@ Commands: `bun run dev` · `bun run build` · `bun run lint`.
 - File ≤ 300 lines. Function ≤ 50 lines. Props ≤ 3.
 - Route page ≤ 80 lines — chỉ compose.
 - No `any`. No `console.log`. No commented-out code. No barrel files.
-
-## Skills
-
-`.agents/skills/` — load khi cần. Pattern mới chưa có skill: dừng, báo user.
