@@ -13,7 +13,7 @@ export function ProfileBanner() {
 			<div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
 				<div className="flex items-center gap-5">
 					<div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-primary-foreground font-display text-3xl">
-						{profile.nickname?.charAt(0).toUpperCase() ?? "?"}
+						{profile.nickname.charAt(0).toUpperCase()}
 					</div>
 					<div>
 						<h3 className="font-extrabold text-3xl text-primary-foreground">Hi, {profile.nickname}</h3>
@@ -30,15 +30,13 @@ export function ProfileBanner() {
 					</div>
 				</div>
 
-				{profile.target_level && (
-					<div className="bg-white/15 rounded-2xl p-4 min-w-[200px]">
-						<p className="text-xs text-white/70 font-semibold mb-2">Mục tiêu</p>
-						<span className="font-display text-2xl text-primary-foreground">{profile.target_level}</span>
-						{profile.target_deadline && (
-							<p className="text-xs text-white/70 mt-1">{profile.target_deadline}</p>
-						)}
-					</div>
-				)}
+				<div className="bg-white/15 rounded-2xl p-4 min-w-[200px]">
+					<p className="text-xs text-white/70 font-semibold mb-2">Mục tiêu</p>
+					<span className="font-display text-2xl text-primary-foreground">{profile.target_level}</span>
+					{profile.target_deadline && (
+						<p className="text-xs text-white/70 mt-1">{profile.target_deadline}</p>
+					)}
+				</div>
 			</div>
 		</section>
 	)

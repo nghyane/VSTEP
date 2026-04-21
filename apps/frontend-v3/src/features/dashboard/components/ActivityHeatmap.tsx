@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
-import { type ActivityDay, activityHeatmapQuery } from "#/features/dashboard/queries"
+import { activityHeatmapQuery } from "#/features/dashboard/queries"
+import type { ActivityDay } from "#/features/dashboard/types"
 import { cn } from "#/lib/utils"
 import { heatmapLevels } from "#/lib/vstep"
 
