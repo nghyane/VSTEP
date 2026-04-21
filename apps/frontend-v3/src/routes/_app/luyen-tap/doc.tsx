@@ -1,17 +1,16 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { Header } from "#/components/Header"
-import { practiceExercisesQuery } from "#/features/practice/queries"
+import { readingExercisesQuery } from "#/features/practice/queries"
 
 export const Route = createFileRoute("/_app/luyen-tap/doc")({
 	component: ReadingPage,
 })
 
 function ReadingPage() {
-	const { data, isLoading } = useQuery(practiceExercisesQuery("reading"))
+	const { data } = useQuery(readingExercisesQuery)
 
-	if (isLoading) return <Header title="Đọc" />
-	if (!data) return null
+	if (!data) return <Header title="Đọc" />
 
 	const exercises = data.data
 
@@ -33,6 +32,7 @@ function ReadingPage() {
 								<p className="text-xs font-bold text-skill-reading mb-1">Part {e.part}</p>
 								<h4 className="font-bold text-base text-foreground">{e.title}</h4>
 								{e.description && <p className="text-sm text-subtle mt-1">{e.description}</p>}
+								{e.estimated_minutes && <p className="text-xs text-muted mt-2">~{e.estimated_minutes} phút</p>}
 							</div>
 						))}
 					</div>
