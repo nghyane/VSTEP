@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router"
 import { useEffect } from "react"
+import { ErrorBoundary } from "#/components/ErrorBoundary"
 import { Sidebar } from "#/components/Sidebar"
 import { useAuth } from "#/lib/auth"
 
@@ -21,7 +22,9 @@ function AppLayout() {
 		<div className="flex min-h-screen">
 			<Sidebar />
 			<main className="flex-1 min-w-0">
-				<Outlet />
+				<ErrorBoundary>
+					<Outlet />
+				</ErrorBoundary>
 			</main>
 		</div>
 	)
