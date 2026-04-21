@@ -1,17 +1,14 @@
 import { useCallback, useState } from "react"
 import { attemptExercise } from "#/features/vocab/actions"
-import type { VocabExercise } from "#/features/vocab/types"
+import type { ExerciseKind, VocabExercise } from "#/features/vocab/types"
 
-export type ExerciseKind = "mcq" | "fill_blank" | "word_form"
-
-interface ExerciseResult {
+export interface ExerciseResult {
 	correct: boolean
 	explanation: string | null
 }
 
 interface ExerciseSession {
-	current: VocabExercise | undefined
-	payload: Record<string, unknown> | undefined
+	current: VocabExercise | null
 	total: number
 	index: number
 	done: boolean
@@ -32,10 +29,9 @@ export function useExerciseSession(exercises: VocabExercise[], kind: ExerciseKin
 	const [result, setResult] = useState<ExerciseResult | null>(null)
 	const [submitting, setSubmitting] = useState(false)
 
-	const current = exercises[index]
+	const current = exercises[index] ?? null
 	const total = exercises.length
 	const done = index >= total
-	const payload = current?.payload
 
 	const submit = useCallback(async () => {
 		if (!current || submitting) return
@@ -53,7 +49,5 @@ export function useExerciseSession(exercises: VocabExercise[], kind: ExerciseKin
 		setIndex((i) => i + 1)
 	}, [])
 
-	return { current, payload, total, index, done, selected, textAnswer, result, submitting, select: setSelected, setTextAnswer, submit, next }
+	return { current, total, index, done, selected, textAnswer, result, submitting, select: setSelected, setTextAnswer, submit, next }
 }
-
-export type { ExerciseResult }

@@ -19,12 +19,18 @@ description: >
 - Skill config (colors, icons, routes): `src/lib/skills.ts`
 - SVG icons as React components: `vite-plugin-svgr`, use `currentColor`
 
+## Type safety
+
+- No `as` casts in business logic — only acceptable at boundaries (DOM events, React internals)
+- Discriminated unions for variant data (e.g. `VocabExercise` per `kind`)
+- `switch (x.kind)` for exhaustive handling — TS narrows payload type automatically
+- URL search params: validate with `===` checks, not `includes()` + cast
+- Hook returns: `null` for optional values, `status` field for state machines
+- No `!` non-null assertions — early return or `{value && <Comp />}`
+
 ## Code rules
 
 - Write UI elements explicitly — no `.map()` over config arrays for small fixed sets
 - Props ≤ 3 per component. Group related props into shared types (e.g. `BackLink`)
-- No `!` non-null assertions — use early return or null check (`{value && <Comp />}`)
-- No `as` type casts — use discriminated unions, early returns, or runtime checks
 - No inline type annotations on API responses — define in `types.ts`
-- Hook returns: use `status` field for state machines, `null` for optional values
 - Keyboard handlers: use lookup objects (`Record<string, T>`) instead of casting

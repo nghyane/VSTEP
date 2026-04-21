@@ -9,9 +9,10 @@ import { useAuth } from "#/lib/auth"
 type AuthParam = "login" | "register" | undefined
 
 export const Route = createFileRoute("/")({
-	validateSearch: (search: Record<string, unknown>): { auth?: AuthParam } => ({
-		auth: ["login", "register"].includes(search.auth as string) ? (search.auth as AuthParam) : undefined,
-	}),
+	validateSearch: (s: Record<string, unknown>): { auth?: AuthParam } => {
+		if (s.auth === "login" || s.auth === "register") return { auth: s.auth }
+		return {}
+	},
 	component: LandingPage,
 })
 

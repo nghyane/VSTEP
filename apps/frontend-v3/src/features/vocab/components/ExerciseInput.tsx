@@ -1,4 +1,5 @@
-import type { ExerciseKind, ExerciseResult } from "#/features/vocab/use-exercise-session"
+import type { ExerciseKind } from "#/features/vocab/types"
+import type { ExerciseResult } from "#/features/vocab/use-exercise-session"
 import { cn } from "#/lib/utils"
 
 interface McqProps {

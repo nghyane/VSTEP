@@ -29,6 +29,8 @@ export interface SrsState {
 
 export type SrsRating = 1 | 2 | 3 | 4
 
+export type ExerciseKind = "mcq" | "fill_blank" | "word_form"
+
 export interface WordWithState {
 	word: VocabWord
 	state: SrsState
@@ -57,12 +59,30 @@ export interface SrsQueueResponse {
 	items: { word: VocabWord; state: SrsState }[]
 }
 
-export interface VocabExercise {
+export interface McqPayload {
+	prompt: string
+	options: string[]
+}
+
+export interface FillBlankPayload {
+	sentence: string
+}
+
+export interface WordFormPayload {
+	instruction: string
+	sentence: string
+	root_word: string
+}
+
+interface BaseExercise {
 	id: string
-	kind: string
-	payload: Record<string, unknown>
 	display_order: number
 }
+
+export type VocabExercise =
+	| (BaseExercise & { kind: "mcq"; payload: McqPayload })
+	| (BaseExercise & { kind: "fill_blank"; payload: FillBlankPayload })
+	| (BaseExercise & { kind: "word_form"; payload: WordFormPayload })
 
 export interface TopicDetailResponse {
 	topic: VocabTopic
