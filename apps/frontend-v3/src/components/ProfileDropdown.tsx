@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRef, useState } from "react"
 import { Icon, StaticIcon, type StaticIconName } from "#/components/Icon"
-import { notificationsQuery, unreadCountQuery, type Notification } from "#/features/notifications/queries"
-import { api } from "#/lib/api"
+import { readAllNotifications } from "#/features/notifications/actions"
+import { notificationsQuery } from "#/features/notifications/queries"
+import type { Notification } from "#/features/notifications/types"
 import { useAuth, useSession } from "#/lib/auth"
 import { useClickOutside } from "#/lib/use-click-outside"
 
@@ -64,7 +65,7 @@ export function ProfileDropdown({ unread, initial }: Props) {
 	useClickOutside(menuRef, () => setOpen(false))
 
 	const readAll = useMutation({
-		mutationFn: () => api.post("notifications/read-all").json(),
+		mutationFn: readAllNotifications,
 		onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
 	})
 

@@ -1,10 +1,6 @@
 import { queryOptions } from "@tanstack/react-query"
 import { type ApiResponse, api } from "#/lib/api"
-
-export interface WalletBalance {
-	balance: number
-	last_transaction_at: string | null
-}
+import type { WalletBalance } from "#/features/wallet/types"
 
 export const walletBalanceQuery = queryOptions({
 	queryKey: ["wallet", "balance"],
