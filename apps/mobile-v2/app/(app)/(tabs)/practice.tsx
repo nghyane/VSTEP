@@ -89,7 +89,7 @@ export default function PracticeHubScreen() {
             <Chip label="Ngữ pháp" color={c.skillReading} />
           </View>
 
-          <DepthButton fullWidth onPress={() => router.push("/(app)/practice/foundation" as any)}>
+          <DepthButton fullWidth style={{ marginTop: spacing.sm }} onPress={() => router.push("/(app)/practice/foundation" as any)}>
             Bắt đầu nền tảng →
           </DepthButton>
         </HapticTouchable>
@@ -134,7 +134,7 @@ export default function PracticeHubScreen() {
             ))}
           </View>
 
-          <DepthButton variant="info" fullWidth onPress={() => router.push("/(app)/practice/skills" as any)}>
+          <DepthButton variant="info" fullWidth style={{ marginTop: spacing.sm }} onPress={() => router.push("/(app)/practice/skills" as any)}>
             Bắt đầu luyện kỹ năng →
           </DepthButton>
         </HapticTouchable>
