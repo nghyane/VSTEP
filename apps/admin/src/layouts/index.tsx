@@ -10,6 +10,7 @@ import {
   MessageOutlined,
   BankOutlined,
   LogoutOutlined,
+  GiftOutlined,
 } from '@ant-design/icons';
 import { ProLayout } from '@ant-design/pro-components';
 import { ConfigProvider, Dropdown, theme } from 'antd';
@@ -19,12 +20,13 @@ import { useEffect } from 'react';
 import './index.less';
 
 const route = {
-  routes: [
+  path: '/',
+  children: [
     { path: '/', name: 'Tổng quan', icon: <DashboardOutlined /> },
     {
       name: 'Nội dung',
       icon: <BookOutlined />,
-      routes: [
+      children: [
         { path: '/vocab', name: 'Từ vựng' },
         { path: '/grammar', name: 'Ngữ pháp' },
       ],
@@ -32,14 +34,14 @@ const route = {
     {
       name: 'Đề thi',
       icon: <FileTextOutlined />,
-      routes: [
+      children: [
         { path: '/exams', name: 'Danh sách đề' },
       ],
     },
     {
       name: 'Luyện tập',
       icon: <EditOutlined />,
-      routes: [
+      children: [
         { path: '/practice/listening', name: 'Nghe', icon: <SoundOutlined /> },
         { path: '/practice/reading', name: 'Đọc' },
         { path: '/practice/writing', name: 'Viết' },
@@ -48,17 +50,18 @@ const route = {
       ],
     },
     {
-      name: 'Người dùng',
+      name: 'Quản lý',
       icon: <TeamOutlined />,
-      routes: [
-        { path: '/users', name: 'Tài khoản' },
+      children: [
+        { path: '/users', name: 'Người dùng' },
         { path: '/courses', name: 'Khóa học', icon: <BankOutlined /> },
+        { path: '/promo', name: 'Mã khuyến mãi', icon: <GiftOutlined /> },
       ],
     },
     {
       name: 'Hệ thống',
       icon: <SettingOutlined />,
-      routes: [
+      children: [
         { path: '/settings', name: 'Cấu hình' },
       ],
     },
@@ -86,7 +89,6 @@ export default function Layout() {
         token: {
           fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
           borderRadius: 6,
-          colorPrimary: '#1677ff',
         },
       }}
     >
@@ -101,7 +103,7 @@ export default function Layout() {
         menuItemRender={(item, dom) => (
           <a onClick={() => item.path && history.push(item.path)}>{dom}</a>
         )}
-        menuProps={{ defaultOpenKeys: ['Nội dung', 'Đề thi', 'Luyện tập', 'Người dùng', 'Hệ thống'] }}
+        menuProps={{ defaultOpenAll: true }}
         avatarProps={{
           title: user?.full_name ?? 'Admin',
           size: 'small',
