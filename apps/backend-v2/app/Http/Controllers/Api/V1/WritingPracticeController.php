@@ -7,12 +7,14 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Practice\StartSessionRequest;
 use App\Http\Requests\Practice\UseSupportLevelRequest;
+use App\Http\Resources\WritingSubmissionHistoryResource;
 use App\Models\PracticeSession;
 use App\Models\Profile;
 use App\Services\PracticeSessionService;
 use App\Services\WritingPracticeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class WritingPracticeController extends Controller
 {
@@ -30,6 +32,15 @@ class WritingPracticeController extends Controller
             'part' => $p->part, 'min_words' => $p->min_words, 'max_words' => $p->max_words,
             'estimated_minutes' => $p->estimated_minutes,
         ])->values()]);
+    }
+
+    public function history(Request $request): AnonymousResourceCollection
+    {
+        $part = $request->integer('part') ?: null;
+
+        return WritingSubmissionHistoryResource::collection(
+            $this->writingService->history($this->profile($request), $part),
+        );
     }
 
     public function showPrompt(string $id): JsonResponse
