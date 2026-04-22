@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'topic_id',
@@ -34,5 +35,10 @@ class VocabWord extends BaseModel
     public function topic(): BelongsTo
     {
         return $this->belongsTo(VocabTopic::class, 'topic_id');
+    }
+
+    public function srsStates(): HasMany
+    {
+        return $this->hasMany(ProfileVocabSrsState::class, 'word_id');
     }
 }

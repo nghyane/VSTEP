@@ -8,6 +8,7 @@ export interface VocabTopic {
 	display_order: number
 	tasks: string[]
 	word_count?: number
+	learned_count?: number
 }
 
 export interface VocabWord {

@@ -9,3 +9,4 @@ bootstrap/cache/*
 .git
 tests/
 .phpunit.result.cache
+public/storage

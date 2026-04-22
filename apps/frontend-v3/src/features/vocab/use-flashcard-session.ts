@@ -51,8 +51,8 @@ export function useFlashcardSession(items: WordWithState[]): FlashcardSession {
 	const [state, dispatch] = useReducer(reducer, { queue: [], index: 0, reviewed: 0, revealed: false })
 
 	useEffect(() => {
-		if (items.length > 0) dispatch({ type: "init", items })
-	}, [items])
+		if (items.length > 0 && state.queue.length === 0) dispatch({ type: "init", items })
+	}, [items, state.queue.length])
 
 	const { queue, index, reviewed, revealed } = state
 	const total = queue.length
