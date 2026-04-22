@@ -1,0 +1,63 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Jobs;
+
+use App\Events\GradingCompleted;
+use App\Models\GradingJob;
+use App\Services\GradingService;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+/**
+ * Queue job xử lý grading cho speaking submission.
+ * Retry tối đa 3 lần (config grading.max_retries).
+ *
+ * Event dispatch trong DB::afterCommit() để đảm bảo transaction đã commit.
+ */
+class GradeSpeakingJob implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public int $maxAttempts = 3;
+
+    public function __construct(
+        public readonly string $gradingJobId,
+    ) {}
+
+    public function handle(GradingService $gradingService): void
+    {
+        $job = GradingJob::query()->find($this->gradingJobId);
+        if ($job === null) {
+            Log::error('GradeSpeakingJob: grading job not found', ['id' => $this->gradingJobId]);
+
+            return;
+        }
+
+        $gradingService->processSpeakingJob($job);
+
+        DB::afterCommit(fn () => GradingCompleted::dispatch($job->refresh()));
+    }
+
+    public function failed(\Throwable $exception): void
+    {
+        $job = GradingJob::query()->find($this->gradingJobId);
+        if ($job !== null) {
+            $job->update([
+                'status' => 'failed',
+                'last_error' => $exception->getMessage(),
+            ]);
+        }
+
+        Log::error('GradeSpeakingJob failed', [
+            'grading_job_id' => $this->gradingJobId,
+            'error' => $exception->getMessage(),
+        ]);
+    }
+}

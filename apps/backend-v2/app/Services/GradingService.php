@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Ai\Agents\StructuredGradingAgent;
+use App\Jobs\GradeSpeakingJob;
+use App\Jobs\GradeWritingJob;
+use App\Models\ExamSpeakingSubmission;
+use App\Models\ExamWritingSubmission;
 use App\Models\GradingJob;
 use App\Models\PracticeSpeakingSubmission;
 use App\Models\PracticeWritingSubmission;
@@ -15,15 +19,18 @@ use Illuminate\Support\Facades\Log;
 use Laravel\Ai\Responses\StructuredAgentResponse;
 
 /**
- * Grading pipeline — 2 layers:
+ * Grading pipeline — 3 layers:
  *
  * Layer 1: LanguageTool (grammar detection, offset-level, deterministic)
- * Layer 2: LLM via OpenAI-compatible endpoint (rubric scoring + narrative feedback)
+ * Layer 2: Rule-based scoring caps (deterministic, 0ms)
+ * Layer 3: LLM via OpenAI-compatible endpoint (rubric scoring + narrative feedback)
  *
  * Architecture:
  *   text → LanguageTool → annotations[]
  *   text + annotations context → LLM → rubric_scores + strengths + improvements + rewrites
- *   merge → writing_grading_results
+ *   merge → writing_grading_results / speaking_grading_results
+ *
+ * Queue: dispatch GradeWritingJob / GradeSpeakingJob (async, retry up to 3 times).
  */
 class GradingService
 {
@@ -58,7 +65,7 @@ class GradingService
             'status' => 'pending',
         ]);
 
-        $this->processWritingJob($job);
+        GradeWritingJob::dispatch($job->id);
 
         return $job->refresh();
     }
@@ -71,7 +78,7 @@ class GradingService
             'status' => 'pending',
         ]);
 
-        $this->processSpeakingJob($job);
+        GradeSpeakingJob::dispatch($job->id);
 
         return $job->refresh();
     }
@@ -83,7 +90,11 @@ class GradingService
 
             $submission = $this->loadWritingSubmission($job);
             $text = $submission?->text ?? '';
-            $promptText = $submission?->prompt?->prompt ?? '';
+            $promptText = match (true) {
+                $submission instanceof PracticeWritingSubmission => $submission?->prompt?->prompt ?? '',
+                $submission instanceof ExamWritingSubmission => $submission?->task?->prompt ?? '',
+                default => '',
+            };
 
             // Layer 1: LanguageTool grammar detection (rule-based, deterministic).
             $ltMatches = $this->languageTool->check($text);
@@ -268,12 +279,10 @@ Return ONLY valid JSON:
 }
 PROMPT;
 
-        $result = $this->callStructuredLlm(
+        return $this->callStructuredLlm(
             "Transcript:\n{$transcript}",
             $this->defaultSpeakingResult(),
         );
-
-        return $result;
     }
 
     /**
@@ -417,22 +426,22 @@ PROMPT;
         ];
     }
 
-    private function loadWritingSubmission(GradingJob $job): ?PracticeWritingSubmission
+    private function loadWritingSubmission(GradingJob $job): PracticeWritingSubmission|ExamWritingSubmission|null
     {
-        if ($job->submission_type === 'practice_writing') {
-            return PracticeWritingSubmission::query()->with('prompt')->find($job->submission_id);
-        }
-
-        return null;
+        return match ($job->submission_type) {
+            'practice_writing' => PracticeWritingSubmission::query()->with('prompt')->find($job->submission_id),
+            'exam_writing' => ExamWritingSubmission::query()->with('task')->find($job->submission_id),
+            default => null,
+        };
     }
 
-    private function loadSpeakingSubmission(GradingJob $job): ?PracticeSpeakingSubmission
+    private function loadSpeakingSubmission(GradingJob $job): PracticeSpeakingSubmission|ExamSpeakingSubmission|null
     {
-        if ($job->submission_type === 'practice_speaking') {
-            return PracticeSpeakingSubmission::query()->find($job->submission_id);
-        }
-
-        return null;
+        return match ($job->submission_type) {
+            'practice_speaking' => PracticeSpeakingSubmission::query()->find($job->submission_id),
+            'exam_speaking' => ExamSpeakingSubmission::query()->find($job->submission_id),
+            default => null,
+        };
     }
 
     /**
