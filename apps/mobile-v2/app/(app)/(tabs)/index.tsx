@@ -245,15 +245,15 @@ function SkillCard({
       onPress={onPress}
       activeOpacity={0.85}
     >
-      <View style={[styles.skillIconBg, { backgroundColor: color + "18" }]}>
-        <SkillIcon skill={skill} size={28} bare />
-      </View>
-      <View style={styles.skillInfo}>
-        <Text style={[styles.skillLabel, { color: c.mutedForeground }]}>{SKILL_META[skill].vi}</Text>
+      <View style={styles.skillTop}>
+        <View style={[styles.skillIconBg, { backgroundColor: color + "15" }]}>
+          <SkillIcon skill={skill} size={26} bare />
+        </View>
         <Text style={[styles.skillScore, { color: c.foreground }]}>
           {score !== null ? score.toFixed(1) : "—"}
         </Text>
       </View>
+      <Text style={[styles.skillLabel, { color: c.mutedForeground }]}>{SKILL_META[skill].vi}</Text>
       <View style={[styles.skillBar, { backgroundColor: color + "20" }]}>
         <View style={[styles.skillBarFill, { backgroundColor: color, width: score !== null ? `${Math.min(score / 10 * 100, 100)}%` : "0%" }]} />
       </View>
@@ -307,15 +307,15 @@ const styles = StyleSheet.create({
   statCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, padding: spacing.base, width: "48%", gap: 4 },
   statLabel: { fontSize: fontSize.xs },
   statValue: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },
-  sectionTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold, marginBottom: spacing.sm },
-  skillGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.base, marginBottom: spacing.base },
-  skillCard: { width: "47%", borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.base, gap: spacing.sm },
-  skillIconBg: { width: 52, height: 52, borderRadius: radius.lg, alignItems: "center", justifyContent: "center" },
-  skillInfo: { gap: 2 },
-  skillLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },
-  skillScore: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },
-  skillBar: { height: 5, borderRadius: radius.full, overflow: "hidden" },
-  skillBarFill: { height: 5, borderRadius: radius.full },
+  sectionTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold, marginBottom: spacing.md },
+  skillGrid: { gap: spacing.sm, marginBottom: spacing.base },
+  skillCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md },
+  skillTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  skillIconBg: { width: 48, height: 48, borderRadius: radius.lg, alignItems: "center", justifyContent: "center" },
+  skillLabel: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
+  skillScore: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
+  skillBar: { height: 6, borderRadius: radius.full, overflow: "hidden" },
+  skillBarFill: { height: 6, borderRadius: radius.full },
   chartCard: { marginBottom: spacing.base },
   chartTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold },
   chartSub: { fontSize: fontSize.sm, marginBottom: spacing.sm },
