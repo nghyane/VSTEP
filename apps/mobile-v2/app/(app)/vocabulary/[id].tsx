@@ -75,7 +75,7 @@ export default function VocabTopicDetailScreen() {
       {/* Bài tập bổ trợ */}
       {exercises.length > 0 ? (
         <View style={s.section}>
-          <Text style={[s.sectionLabel, { color: c.subtle }]}>Bài tập bổ trợ</Text>
+          <Text style={[s.sectionLabel, { color: c.foreground }]}>Bài tập bổ trợ</Text>
           <View style={s.modeGrid}>
             <ExerciseMode
               icon="check"
@@ -120,9 +120,11 @@ function ExerciseMode({ icon, title, desc, color, onPress }: {
       onPress={onPress}
       activeOpacity={0.8}
     >
-      <GameIcon name={icon} size={22} />
+      <View style={[s.modeIconWrap, { backgroundColor: color + "15" }]}>
+        <GameIcon name={icon} size={20} />
+      </View>
       <Text style={[s.modeTitle, { color: c.foreground }]}>{title}</Text>
-      <Text style={[s.modeDesc, { color }]}>{desc}</Text>
+      <Text style={[s.modeDesc, { color: c.subtle }]}>{desc}</Text>
     </HapticTouchable>
   );
 }
@@ -200,11 +202,12 @@ const s = StyleSheet.create({
   progressText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
 
   section: { gap: spacing.sm },
-  sectionLabel: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
+  sectionLabel: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
   modeGrid: { flexDirection: "row", gap: spacing.sm },
-  modeCard: { flex: 1, borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, padding: spacing.base, gap: 4 },
+  modeCard: { flex: 1, borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.base, gap: spacing.sm, alignItems: "flex-start" },
+  modeIconWrap: { width: 40, height: 40, borderRadius: radius.lg, alignItems: "center", justifyContent: "center" },
   modeTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
-  modeDesc: { fontSize: 10, fontFamily: fontFamily.medium },
+  modeDesc: { fontSize: 11, lineHeight: 16 },
 
   wordCard: { padding: 0, overflow: "hidden" },
   wordHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: spacing.lg },

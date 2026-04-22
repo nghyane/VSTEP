@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -28,16 +28,15 @@ export default function FlashcardScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data } = useVocabTopicDetail(id ?? "");
 
-  const words = data?.words ?? [];
-
-  const [index, setIndex] = useState(0);
+  const [queue, setQueue] = useState<WordWithState[] | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [reviewed, setReviewed] = useState(0);
 
+  const words = useMemo(() => queue ?? data?.words ?? [], [queue, data?.words]);
+  const current = words[0] ?? null;
   const total = words.length;
-  const done = index >= total;
-  const current = words[index] ?? null;
+  const progress = total > 0 ? reviewed / (reviewed + total) : 1;
 
   const handleRate = useCallback(async (rating: SrsRating) => {
     if (!current || submitting) return;
@@ -46,129 +45,115 @@ export default function FlashcardScreen() {
     try {
       await api.post("/api/v1/vocab/srs/review", { wordId: current.word.id, rating });
     } catch {
-      // offline-tolerant
+      // keep session moving even if request fails
     }
-    setSubmitting(false);
-    setRevealed(false);
-    setReviewed((r) => r + 1);
-    if (rating === 1) {
-      // re-queue: move current to end
-      // handled by just not advancing — simplified: advance anyway
-    }
-    setIndex((i) => i + 1);
-  }, [current, submitting]);
 
-  // Focus bar progress
-  const progress = total > 0 ? index / total : 0;
+    setQueue((prev) => {
+      const active = [...(prev ?? data?.words ?? [])];
+      const [head, ...rest] = active;
+      if (!head) return active;
+      return rating === 1 ? [...rest, head] : rest;
+    });
+    setReviewed((value) => value + 1);
+    setRevealed(false);
+    setSubmitting(false);
+  }, [current, data?.words, submitting]);
 
   return (
-    <View style={[s.root, { backgroundColor: c.background }]}>
-      {/* Focus bar */}
-      <View style={[s.focusBar, { paddingTop: insets.top + spacing.sm }]}>
+    <View style={[styles.root, { backgroundColor: c.background }]}>
+      <View style={[styles.focusBar, { paddingTop: insets.top + spacing.sm }]}>
         <HapticTouchable onPress={() => router.back()}>
           <Ionicons name="close" size={24} color={c.foreground} />
         </HapticTouchable>
-        <View style={[s.barTrack, { backgroundColor: c.muted }]}>
-          <View style={[s.barFill, { backgroundColor: c.primary, width: `${progress * 100}%` }]} />
+        <View style={[styles.track, { backgroundColor: c.muted }]}>
+          <View style={[styles.fill, { backgroundColor: c.primary, width: `${progress * 100}%` }]} />
         </View>
-        <Text style={[s.barCount, { color: c.subtle }]}>{index}/{total}</Text>
+        <Text style={[styles.counter, { color: c.subtle }]}>{reviewed}/{reviewed + total}</Text>
       </View>
 
-      {/* Content */}
-      <View style={s.content}>
-        {done ? (
-          <View style={s.doneWrap}>
+      <View style={styles.content}>
+        {!current ? (
+          <View style={styles.doneWrap}>
             <Ionicons name="checkmark-circle" size={56} color={c.success} />
-            <Text style={[s.doneTitle, { color: c.foreground }]}>{`Đã ôn xong ${reviewed} lượt!`}</Text>
+            <Text style={[styles.doneTitle, { color: c.foreground }]}>Bạn đã ôn xong!</Text>
+            <Text style={[styles.doneSub, { color: c.mutedForeground }]}>{`Bạn đã ôn xong ${reviewed} lượt.`}</Text>
             <DepthButton onPress={() => router.back()}>Quay lại</DepthButton>
           </View>
-        ) : current ? (
-          <View style={s.cardWrap}>
-            {/* Flashcard */}
-            <HapticTouchable
-              style={[s.flashcard, { backgroundColor: c.card, borderColor: c.border }]}
-              onPress={() => !revealed && setRevealed(true)}
-              activeOpacity={0.9}
-            >
-              <View style={s.cardCenter}>
-                <Text style={[s.wordBig, { color: c.foreground }]}>{current.word.word}</Text>
-                {current.word.phonetic ? (
-                  <Text style={[s.phonetic, { color: c.subtle }]}>{current.word.phonetic}</Text>
-                ) : null}
+        ) : (
+          <View style={styles.stack}>
+            <DepthCard style={styles.card}>
+              <View style={styles.frontSection}>
+                <Text style={[styles.word, { color: c.foreground }]}>{current.word.word}</Text>
+                {current.word.phonetic ? <Text style={[styles.phonetic, { color: c.subtle }]}>{current.word.phonetic}</Text> : null}
                 {current.word.partOfSpeech ? (
-                  <View style={[s.posPill, { backgroundColor: c.muted }]}>
-                    <Text style={[s.posText, { color: c.mutedForeground }]}>{current.word.partOfSpeech}</Text>
+                  <View style={[styles.posPill, { backgroundColor: c.muted }]}>
+                    <Text style={[styles.posText, { color: c.mutedForeground }]}>{current.word.partOfSpeech}</Text>
                   </View>
                 ) : null}
               </View>
 
               {revealed ? (
-                <View style={[s.revealSection, { borderTopColor: c.border }]}>
-                  <Text style={[s.definition, { color: c.foreground }]}>{current.word.definition}</Text>
-                  {current.word.example ? (
-                    <Text style={[s.example, { color: c.mutedForeground }]}>{`"${current.word.example}"`}</Text>
-                  ) : null}
+                <View style={[styles.answerSection, { borderTopColor: c.border }]}> 
+                  <Text style={[styles.definition, { color: c.foreground }]}>{current.word.definition}</Text>
+                  {current.word.example ? <Text style={[styles.example, { color: c.mutedForeground }]}>{`"${current.word.example}"`}</Text> : null}
                   {current.word.vstepTip ? (
-                    <View style={[s.tipBox, { backgroundColor: c.infoTint }]}>
-                      <Text style={[s.tipText, { color: c.info }]}>{current.word.vstepTip}</Text>
+                    <View style={[styles.tipBox, { backgroundColor: c.infoTint }]}> 
+                      <Text style={[styles.tipText, { color: c.info }]}>{current.word.vstepTip}</Text>
                     </View>
                   ) : null}
                 </View>
               ) : (
-                <DepthButton variant="secondary" onPress={() => setRevealed(true)} style={{ marginTop: spacing.lg }}>
-                  Xem nghĩa
-                </DepthButton>
+                <View style={styles.revealWrap}>
+                  <DepthButton variant="secondary" onPress={() => setRevealed(true)}>Xem nghĩa</DepthButton>
+                </View>
               )}
-            </HapticTouchable>
+            </DepthCard>
 
-            {/* Rating buttons */}
             {revealed ? (
-              <View style={s.ratingRow}>
-                {RATINGS.map((r) => (
+              <View style={styles.ratingGrid}>
+                {RATINGS.map((item) => (
                   <HapticTouchable
-                    key={r.label}
-                    style={[s.ratingBtn, { backgroundColor: r.bg, opacity: submitting ? 0.5 : 1 }]}
-                    onPress={() => handleRate(r.rating)}
+                    key={item.label}
+                    style={[styles.ratingButton, { backgroundColor: item.bg, opacity: submitting ? 0.5 : 1 }]}
+                    onPress={() => handleRate(item.rating)}
                     disabled={submitting}
                   >
-                    <Text style={[s.ratingLabel, { color: r.fg }]}>{r.label}</Text>
+                    <Text style={[styles.ratingText, { color: item.fg }]}>{item.label}</Text>
                   </HapticTouchable>
                 ))}
               </View>
             ) : null}
           </View>
-        ) : null}
+        )}
       </View>
     </View>
   );
 }
 
-const s = StyleSheet.create({
+const styles = StyleSheet.create({
   root: { flex: 1 },
   focusBar: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.xl, paddingBottom: spacing.md },
-  barTrack: { flex: 1, height: 8, borderRadius: radius.full, overflow: "hidden" },
-  barFill: { height: 8, borderRadius: radius.full },
-  barCount: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, minWidth: 36, textAlign: "right" },
-
-  content: { flex: 1, justifyContent: "center", paddingHorizontal: spacing.xl },
-
-  cardWrap: { gap: spacing.lg },
-  flashcard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius["2xl"], padding: spacing["2xl"], alignItems: "center" },
-  cardCenter: { alignItems: "center", gap: spacing.sm },
-  wordBig: { fontSize: 32, fontFamily: fontFamily.bold },
-  phonetic: { fontSize: fontSize.base },
-  posPill: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.sm },
+  track: { flex: 1, height: 8, borderRadius: radius.full, overflow: "hidden" },
+  fill: { height: 8, borderRadius: radius.full },
+  counter: { minWidth: 44, textAlign: "right", fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  content: { flex: 1, justifyContent: "center", paddingHorizontal: spacing.xl, paddingBottom: spacing.xl },
+  stack: { gap: spacing.lg },
+  card: { padding: spacing.xl, gap: spacing.lg },
+  frontSection: { alignItems: "center", gap: spacing.sm },
+  word: { fontSize: 34, fontFamily: fontFamily.extraBold, textAlign: "center" },
+  phonetic: { fontSize: fontSize.lg },
+  posPill: { paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radius.full },
   posText: { fontSize: fontSize.sm, fontFamily: fontFamily.medium },
-  revealSection: { borderTopWidth: 1, marginTop: spacing.lg, paddingTop: spacing.lg, alignItems: "center", gap: spacing.sm, width: "100%" },
-  definition: { fontSize: fontSize.lg, fontFamily: fontFamily.bold, textAlign: "center" },
-  example: { fontSize: fontSize.sm, fontStyle: "italic", textAlign: "center" },
-  tipBox: { padding: spacing.md, borderRadius: radius.lg, marginTop: spacing.sm, width: "100%" },
+  revealWrap: { alignItems: "center" },
+  answerSection: { borderTopWidth: 1, paddingTop: spacing.lg, alignItems: "center", gap: spacing.sm },
+  definition: { fontSize: fontSize.xl, fontFamily: fontFamily.bold, textAlign: "center" },
+  example: { fontSize: fontSize.base, fontStyle: "italic", textAlign: "center" },
+  tipBox: { width: "100%", padding: spacing.md, borderRadius: radius.lg },
   tipText: { fontSize: fontSize.xs, lineHeight: 18 },
-
-  ratingRow: { flexDirection: "row", gap: spacing.sm },
-  ratingBtn: { flex: 1, alignItems: "center", paddingVertical: spacing.base, borderRadius: radius.lg, borderWidth: 2, borderBottomWidth: 4, borderColor: "transparent" },
-  ratingLabel: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
-
-  doneWrap: { alignItems: "center", gap: spacing.lg },
-  doneTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.bold, textAlign: "center" },
+  ratingGrid: { flexDirection: "row", gap: spacing.sm },
+  ratingButton: { flex: 1, alignItems: "center", justifyContent: "center", minHeight: 48, borderRadius: radius.button },
+  ratingText: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
+  doneWrap: { alignItems: "center", gap: spacing.md },
+  doneTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.bold },
+  doneSub: { fontSize: fontSize.sm, textAlign: "center" },
 });

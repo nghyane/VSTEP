@@ -1,21 +1,12 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
-import { useRef, useState } from "react"
+import { useState } from "react"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { startExamSession } from "#/features/exam/actions"
 import { appConfigQuery } from "#/features/exam/queries"
 import type { ExamDetail, SkillKey } from "#/features/exam/types"
 import { walletBalanceQuery } from "#/features/wallet/queries"
 import { cn } from "#/lib/utils"
-
-const TIME_PRESETS = [
-	{ label: "10p", value: 10 },
-	{ label: "20p", value: 20 },
-	{ label: "30p", value: 30 },
-	{ label: "45p", value: 45 },
-] as const
-
-type DurationMode = number | "unlimited" | null
 
 interface Props {
 	detail: ExamDetail
@@ -43,10 +34,6 @@ function computeDuration(detail: ExamDetail, selected: Set<SkillKey>): number {
 
 export function BottomActionBar({ detail, selected }: Props) {
 	const navigate = useNavigate()
-	const [durationMode, setDurationMode] = useState<DurationMode>(null)
-	const [showCustom, setShowCustom] = useState(false)
-	const [customDraft, setCustomDraft] = useState("")
-	const inputRef = useRef<HTMLInputElement>(null)
 	const { data: walletData } = useQuery(walletBalanceQuery)
 	const { data: configData } = useQuery(appConfigQuery)
 
@@ -56,20 +43,22 @@ export function BottomActionBar({ detail, selected }: Props) {
 	const isFullTest = selected.size === 0
 	const cost = computeCost(selected, fullCost, perSkillCost)
 	const naturalMinutes = computeDuration(detail, selected)
+	const maxMinutes = naturalMinutes * 3
+
+	// duration state — always clamped to [naturalMinutes, maxMinutes]
+	const [duration, setDuration] = useState(naturalMinutes)
+
+	// reset to natural when selection changes and current value is stale
+	const clampedDuration = Math.max(naturalMinutes, Math.min(maxMinutes, duration))
+
 	const balance = walletData?.data.balance ?? null
 	const insufficient = balance !== null && balance < cost
 
-	const isChipActive = (v: number) => !showCustom && durationMode === v
-	const isRecommendedActive = !showCustom && durationMode === null
-	const isCustomSelected =
-		!showCustom && typeof durationMode === "number" && !TIME_PRESETS.some((p) => p.value === durationMode)
-	const isUnlimited = durationMode === "unlimited"
-
-	const timeLabel = isUnlimited
-		? "Không giới hạn"
-		: typeof durationMode === "number"
-			? `${durationMode} phút`
-			: `~${naturalMinutes} phút`
+	// fill % relative to the [natural, max] range
+	const fillPct =
+		maxMinutes > naturalMinutes
+			? ((clampedDuration - naturalMinutes) / (maxMinutes - naturalMinutes)) * 100
+			: 0
 
 	const mutation = useMutation({
 		mutationFn: () => {
@@ -85,43 +74,10 @@ export function BottomActionBar({ detail, selected }: Props) {
 			navigate({
 				to: "/phong-thi/$sessionId",
 				params: { sessionId: result.session_id },
+				search: { examId: detail.exam.id },
 			})
 		},
 	})
-
-	function handleSelectPreset(v: number) {
-		setShowCustom(false)
-		setDurationMode(v)
-	}
-
-	function handleSelectRecommended() {
-		setShowCustom(false)
-		setDurationMode(null)
-	}
-
-	function handleOpenCustom() {
-		setShowCustom(true)
-		setCustomDraft(isCustomSelected ? String(durationMode) : String(naturalMinutes))
-		setTimeout(() => inputRef.current?.focus(), 50)
-	}
-
-	function handleCustomConfirm() {
-		const parsed = parseInt(customDraft, 10)
-		if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 300) {
-			setDurationMode(parsed)
-		}
-		setShowCustom(false)
-	}
-
-	function handleCustomDraftChange(value: string) {
-		const digits = value.replace(/\D/g, "")
-		if (!digits) {
-			setCustomDraft("")
-			return
-		}
-		const bounded = Math.min(Math.max(parseInt(digits.slice(0, 3), 10), 1), 300)
-		setCustomDraft(String(bounded))
-	}
 
 	return (
 		<div
@@ -153,84 +109,55 @@ export function BottomActionBar({ detail, selected }: Props) {
 						<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-5">
 							{/* Summary */}
 							<div className="flex items-center gap-3">
-								<span className="flex items-center gap-1.5 text-sm font-bold text-foreground">
-									{selected.size} kỹ năng
-								</span>
+								<span className="text-sm font-bold text-foreground">{selected.size} kỹ năng</span>
 								<span className="flex items-center gap-1.5 text-sm text-muted">
 									<StaticIcon name="timer-md" size="xs" />
-									{timeLabel}
+									<span className="inline-block min-w-[3.5rem] tabular-nums">{clampedDuration} phút</span>
 								</span>
 							</div>
 
-							{/* Time picker */}
-							<div className="flex flex-wrap items-center gap-1.5">
-								<span className="text-xs text-subtle">Thời gian:</span>
-								<div className="flex flex-wrap items-center gap-1">
-									<button
-										type="button"
-										onClick={handleSelectRecommended}
-										className={cn(
-											"rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors",
-											isRecommendedActive
-												? "bg-primary text-white"
-												: "bg-background text-muted hover:bg-border-light",
-										)}
-									>
-										Gợi ý {naturalMinutes}p
-									</button>
+							{/* Duration slider */}
+							<div className="flex items-center gap-3">
+								<span className="text-xs text-subtle whitespace-nowrap">Thời gian:</span>
 
-									{TIME_PRESETS.map((p) => (
-										<button
-											key={p.label}
-											type="button"
-											onClick={() => handleSelectPreset(p.value)}
+								<div className="flex flex-col gap-0.5">
+									<input
+										type="range"
+										min={naturalMinutes}
+										max={maxMinutes}
+										step={1}
+										value={clampedDuration}
+										onChange={(e) => setDuration(Number(e.target.value))}
+										className="duration-slider w-36 sm:w-48"
+										style={{ "--fill-pct": `${fillPct}%` } as React.CSSProperties}
+									/>
+									{/* Tick labels: ×1 (natural) … ×2 … ×3 (max) */}
+									<div className="mt-2 flex w-36 justify-between sm:w-48">
+										<span
 											className={cn(
-												"rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors",
-												isChipActive(p.value)
-													? "bg-primary text-white"
-													: "bg-background text-muted hover:bg-border-light",
+												"text-[10px]",
+												clampedDuration === naturalMinutes ? "font-semibold text-primary" : "text-subtle",
 											)}
 										>
-											{p.label}
-										</button>
-									))}
-
-									{showCustom ? (
-										<input
-											ref={inputRef}
-											type="text"
-											inputMode="numeric"
-											autoComplete="off"
-											value={customDraft}
-											onChange={(e) => handleCustomDraftChange(e.target.value)}
-											onKeyDown={(e) => {
-												if (e.key === "Enter") handleCustomConfirm()
-												if (e.key === "Escape") setShowCustom(false)
-												if (
-													!/[0-9]/.test(e.key) &&
-													!["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"].includes(e.key)
-												) {
-													e.preventDefault()
-												}
-											}}
-											onBlur={handleCustomConfirm}
-											className="w-16 rounded-full border border-primary bg-surface px-2 py-0.5 text-center text-xs font-medium outline-none focus:ring-1 focus:ring-primary"
-											placeholder="phút"
-										/>
-									) : (
-										<button
-											type="button"
-											onClick={handleOpenCustom}
+											{naturalMinutes}p
+										</span>
+										<span
 											className={cn(
-												"rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors",
-												isCustomSelected
-													? "bg-primary text-white"
-													: "bg-background text-muted hover:bg-border-light",
+												"text-[10px]",
+												clampedDuration === naturalMinutes * 2 ? "font-semibold text-primary" : "text-subtle",
 											)}
 										>
-											{isCustomSelected ? `${durationMode}p` : "Tùy chỉnh"}
-										</button>
-									)}
+											{naturalMinutes * 2}p
+										</span>
+										<span
+											className={cn(
+												"text-[10px]",
+												clampedDuration === maxMinutes ? "font-semibold text-primary" : "text-subtle",
+											)}
+										>
+											{maxMinutes}p
+										</span>
+									</div>
 								</div>
 							</div>
 						</div>
