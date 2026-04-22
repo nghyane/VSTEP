@@ -72,5 +72,42 @@ Lỗi đã gặp và cách fix. Tra cứu trước khi viết code mới.
 ```
 Biome config: `lineWidth: 110`, `indentStyle: "tab"`. Luôn chạy `bunx biome check <files>` sau khi viết code.
 
+## Biome `useMediaCaption` — không cần suppress
+
+**Sai:** Thêm `{/* biome-ignore lint/a11y/useMediaCaption: ... */}` trước `<audio>`.
+Biome v3 config đã tắt rule này → suppression comment bị báo "no effect" (warning).
+
+**Đúng:** Chỉ dùng `<audio>` thẳng, không comment suppress.
+```tsx
+<audio ref={audioRef} src={url} preload="metadata" className="hidden" />
+```
+
+## useReducer — generic type parameters bắt buộc cho Map/Set trong initial state
+
+**Sai:** TS suy luận sai thành `Map<unknown, unknown>` / `Set<unknown>`, gây lỗi `TS2322`.
+```tsx
+useReducer(reducer, {
+  mcqAnswers: new Map(),     // ❌ Map<unknown, unknown>
+  speakingDone: new Set(),    // ❌ Set<unknown>
+})
+```
+
+**Đúng:** Chỉ định generic rõ ràng + `satisfies` cho object.
+```tsx
+useReducer(reducer, {
+  mcqAnswers: new Map<string, number>(),
+  speakingDone: new Set<string>(),
+} satisfies ExamState)
+```
+
+## Exam room — device-check phase bắt buộc trước khi vào phòng thi
+
+- Phase order: `device-check` → `active` → `submitting` → `submitted`.
+- Phase mặc định là `device-check`, không phải `active`.
+- Trong `device-check`: render `<DeviceCheckScreen />` với 3 card (cấu trúc, kiểm tra âm thanh, lưu ý), KHÔNG render header/timer/panels.
+- User bấm "Nhận đề & bắt đầu" → dispatch `START_EXAM` → chuyển sang `active`.
+- Listening có modal riêng (`ListeningReadinessModal`) hiện bên trong panel với countdown 3s trước khi cho phép start audio.
+- Audio listening KHÔNG dùng native `controls` — dùng hidden `<audio>` + custom progress bar ở bottom để enforce "phát một lần duy nhất" (VSTEP chuẩn).
+
 ---
-See also: [[auth-architecture]] · [[api-conventions]]
+See also: [[auth-architecture]] · [[api-conventions]] · [[state-patterns]]
