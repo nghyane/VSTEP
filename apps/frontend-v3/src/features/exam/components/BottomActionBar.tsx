@@ -1,11 +1,12 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { startExamSession } from "#/features/exam/actions"
 import { appConfigQuery } from "#/features/exam/queries"
 import type { ExamDetail, SkillKey } from "#/features/exam/types"
 import { walletBalanceQuery } from "#/features/wallet/queries"
+import { useToast } from "#/lib/toast"
 import { cn } from "#/lib/utils"
 
 interface Props {
@@ -48,7 +49,10 @@ export function BottomActionBar({ detail, selected }: Props) {
 	// duration state — always clamped to [naturalMinutes, maxMinutes]
 	const [duration, setDuration] = useState(naturalMinutes)
 
-	// reset to natural when selection changes and current value is stale
+	// reset về 1x mỗi khi selection thay đổi làm naturalMinutes thay đổi
+	useEffect(() => {
+		setDuration(naturalMinutes)
+	}, [naturalMinutes])
 	const clampedDuration = Math.max(naturalMinutes, Math.min(maxMinutes, duration))
 
 	const balance = walletData?.data.balance ?? null
@@ -71,6 +75,7 @@ export function BottomActionBar({ detail, selected }: Props) {
 			})
 		},
 		onSuccess: (result) => {
+			useToast.getState().add(`Đã trừ ${result.coins_charged} xu — chúc bạn làm bài tốt!`, "success")
 			navigate({
 				to: "/phong-thi/$sessionId",
 				params: { sessionId: result.session_id },

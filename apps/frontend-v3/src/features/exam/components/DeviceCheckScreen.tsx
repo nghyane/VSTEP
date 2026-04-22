@@ -141,11 +141,7 @@ export function DeviceCheckScreen({
 							Phí bài thi: {coinsCharged} xu
 						</span>
 					</div>
-					<button
-						type="button"
-						onClick={onStart}
-						className="w-full max-w-xs rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-90 active:scale-95"
-					>
+					<button type="button" onClick={onStart} className="btn btn-primary w-full max-w-xs">
 						Nhận đề & bắt đầu
 					</button>
 					<p className="text-xs text-muted">Thời gian sẽ bắt đầu tính khi bạn bấm nút trên</p>
