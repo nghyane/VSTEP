@@ -29,6 +29,7 @@ export default function AppLayout() {
       <Stack.Screen name="practice/[skill]" />
       <Stack.Screen name="practice/result/[id]" />
       <Stack.Screen name="vocabulary/index" />
+      <Stack.Screen name="vocabulary/[id]" />
       <Stack.Screen name="account" options={{ headerShown: true, title: "Tài khoản" }} />
       <Stack.Screen name="goal" options={{ headerShown: true, title: "Mục tiêu học tập" }} />
     </Stack>

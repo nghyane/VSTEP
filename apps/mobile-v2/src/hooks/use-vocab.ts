@@ -64,3 +64,16 @@ export function useVocabSrsQueue() {
     queryFn: () => api.get<SrsQueueResponse>("/api/v1/vocab/srs/queue"),
   });
 }
+
+export interface TopicDetailResponse {
+  topic: VocabTopic;
+  words: WordWithState[];
+}
+
+export function useVocabTopicDetail(id: string) {
+  return useQuery({
+    queryKey: ["vocab", "topics", id],
+    queryFn: () => api.get<TopicDetailResponse>(`/api/v1/vocab/topics/${id}`),
+    enabled: !!id,
+  });
+}
