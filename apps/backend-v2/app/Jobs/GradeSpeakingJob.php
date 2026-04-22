@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Events\GradingCompleted;
+use App\Events\GradingFailed;
 use App\Models\GradingJob;
 use App\Services\GradingService;
 use Illuminate\Bus\Queueable;
@@ -53,6 +54,8 @@ class GradeSpeakingJob implements ShouldQueue
                 'status' => 'failed',
                 'last_error' => $exception->getMessage(),
             ]);
+
+            GradingFailed::dispatch($job, $exception->getMessage());
         }
 
         Log::error('GradeSpeakingJob failed', [
