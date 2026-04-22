@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             SystemConfigSeeder::class,
             WalletSeeder::class,
             ContentSeeder::class,
+            UserSeeder::class,
         ]);
     }
 }
