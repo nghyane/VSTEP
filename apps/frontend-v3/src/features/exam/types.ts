@@ -1,5 +1,15 @@
 export type SkillKey = "listening" | "reading" | "writing" | "speaking"
 
+export interface ExamCostMeta {
+	full_test_coin_cost: number
+	per_skill_coin_cost: number
+}
+
+export interface ExamListResponse {
+	data: Exam[]
+	meta: ExamCostMeta
+}
+
 export interface Exam {
 	id: string
 	slug: string
