@@ -8,9 +8,9 @@ use App\Http\Controllers\Controller;
 use App\Models\SystemConfig;
 use Illuminate\Http\JsonResponse;
 
-class MetaController extends Controller
+class ConfigController extends Controller
 {
-    public function economy(): JsonResponse
+    public function show(): JsonResponse
     {
         $fullTestCost = (int) (SystemConfig::get('exam.full_test_cost_coins') ?? 25);
         $customPerSkillCost = (int) (SystemConfig::get('exam.custom_per_skill_coins') ?? 8);

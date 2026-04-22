@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature\Meta;
+namespace Tests\Feature\Config;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class EconomyMetaTest extends TestCase
+class EconomyConfigTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_economy_meta_returns_pricing_config(): void
+    public function test_config_returns_pricing_config(): void
     {
-        $response = $this->getJson('/api/v1/meta/economy');
+        $response = $this->getJson('/api/v1/config');
 
         $response->assertOk();
         $response->assertJsonPath('data.wallet.onboarding_initial_coins', 100);
