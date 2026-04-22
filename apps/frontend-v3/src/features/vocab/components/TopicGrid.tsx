@@ -42,7 +42,10 @@ export function TopicGrid() {
 									{t.tasks.length > 0 && (
 										<div className="flex flex-wrap gap-1.5">
 											{t.tasks.map((task) => (
-												<span key={task} className="text-xs text-muted bg-background px-2 py-0.5 rounded-full">
+												<span
+													key={task}
+													className="text-xs text-muted bg-background px-2 py-0.5 rounded-full"
+												>
 													{task}
 												</span>
 											))}

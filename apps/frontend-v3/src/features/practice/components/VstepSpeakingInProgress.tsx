@@ -17,7 +17,7 @@ function fmt(s: number): string {
 }
 
 export function VstepSpeakingInProgress({ task, sessionId }: Props) {
-	const [submitted, setSubmitted] = useState(false)
+	const [submissionId, setSubmissionId] = useState<string | null>(null)
 	const recorder = useVoiceRecorder(task.speaking_seconds)
 	const [countdown, setCountdown] = useState(task.speaking_seconds)
 	const startTime = useRef<number | null>(null)
@@ -43,7 +43,7 @@ export function VstepSpeakingInProgress({ task, sessionId }: Props) {
 			const duration = Math.round(recorder.elapsedMs / 1000)
 			return submitVstepSpeaking(sessionId, recorder.audioUrl ?? "", duration)
 		},
-		onSuccess: () => setSubmitted(true),
+		onSuccess: (res) => setSubmissionId(res.data.submission_id),
 	})
 
 	const handleRecord = useCallback(() => {
@@ -69,25 +69,39 @@ export function VstepSpeakingInProgress({ task, sessionId }: Props) {
 			{/* Content */}
 			<div className="flex-1 overflow-y-auto">
 				<div className="max-w-xl mx-auto px-6 py-8">
-					{submitted ? (
+					{submissionId ? (
 						<div className="text-center py-12">
 							<img src="/mascot/lac-happy.png" alt="" className="w-24 h-24 mx-auto mb-4 object-contain" />
 							<p className="font-extrabold text-2xl text-foreground">Đã nộp bài!</p>
 							<p className="text-sm text-muted mt-2">AI đang chấm bài nói của bạn</p>
-							<Link
-								to="/luyen-tap/noi"
-								className="btn btn-primary mt-6 px-8"
-								style={{ background: "var(--color-skill-speaking)" }}
-							>
-								Về danh sách
-							</Link>
+							<div className="flex items-center justify-center gap-3 mt-6">
+								<Link
+									to="/grading/speaking/$submissionId"
+									params={{ submissionId }}
+									className="btn px-8 text-primary-foreground"
+									style={
+										{
+											background: "var(--color-skill-speaking)",
+											"--btn-shadow": "var(--color-skill-speaking-dark)",
+										} as React.CSSProperties
+									}
+								>
+									Xem kết quả
+								</Link>
+								<Link
+									to="/luyen-tap/noi"
+									className="py-2 px-5 font-bold text-sm rounded-(--radius-button) border-2 border-border text-muted uppercase"
+								>
+									Về danh sách
+								</Link>
+							</div>
 						</div>
 					) : (
-						<div className="card p-0 overflow-hidden">
+						<div className="space-y-5">
 							{/* Task prompt */}
-							<div className="bg-skill-speaking/5 px-6 py-5 border-b-2 border-border">
-								<p className="text-xs font-bold text-skill-speaking uppercase tracking-wide mb-3">
-									Đề bài — Part {task.part}
+							<div className="card p-6">
+								<p className="text-xs font-bold text-skill-speaking bg-skill-speaking/10 px-2.5 py-1 rounded-full inline-block mb-3">
+									Part {task.part} · {task.task_type}
 								</p>
 								{task.content.topics.map((topic) => (
 									<div key={topic.name} className="mb-3 last:mb-0">
@@ -104,22 +118,20 @@ export function VstepSpeakingInProgress({ task, sessionId }: Props) {
 								))}
 							</div>
 
-							{/* Timer */}
-							<div className="px-6 py-4 border-b-2 border-border text-center">
-								<p className="text-xs font-bold text-muted mb-1">Thời gian còn lại</p>
-								<p
-									className={cn(
-										"text-3xl font-extrabold tabular-nums",
-										isRecording && countdown < 10 ? "text-warning" : "text-skill-speaking",
-									)}
-								>
-									{fmt(countdown)}
-								</p>
-								<p className="text-xs text-muted mt-1">/ {fmt(task.speaking_seconds)}</p>
-							</div>
+							{/* Timer + Record */}
+							<div className="card p-6 flex flex-col items-center gap-4">
+								<div className="text-center">
+									<p className="text-xs font-bold text-muted mb-1">Thời gian còn lại</p>
+									<p
+										className={cn(
+											"text-3xl font-extrabold tabular-nums",
+											isRecording && countdown < 10 ? "text-warning" : "text-skill-speaking",
+										)}
+									>
+										{fmt(countdown)}
+									</p>
+								</div>
 
-							{/* Record */}
-							<div className="flex flex-col items-center gap-3 px-6 py-6">
 								{isRecording && recorder.analyser ? (
 									<>
 										<button type="button" onClick={handleRecord} className="cursor-pointer">
@@ -133,7 +145,7 @@ export function VstepSpeakingInProgress({ task, sessionId }: Props) {
 											type="button"
 											onClick={handleRecord}
 											disabled={!!recorder.audioUrl}
-											className="h-14 min-w-52 rounded-full flex items-center justify-center gap-2 text-base font-bold bg-skill-speaking text-primary-foreground shadow-[0_4px_0] shadow-skill-speaking/40 transition active:translate-y-[2px] active:shadow-[0_2px_0] disabled:opacity-50"
+											className="h-14 min-w-52 rounded-full flex items-center justify-center gap-2 text-base font-bold bg-skill-speaking text-primary-foreground shadow-[0_4px_0_var(--color-skill-speaking-dark)] transition active:translate-y-[2px] active:shadow-[0_2px_0_var(--color-skill-speaking-dark)] disabled:opacity-50"
 										>
 											<Icon name="mic" size="xs" />
 											{recorder.audioUrl ? "Đã ghi xong" : "Bắt đầu nói"}
@@ -150,7 +162,7 @@ export function VstepSpeakingInProgress({ task, sessionId }: Props) {
 
 							{/* Playback + Submit */}
 							{recorder.audioUrl && (
-								<div className="px-6 pb-6 space-y-4">
+								<div className="space-y-4">
 									<div className="card p-4">
 										<p className="text-xs font-bold text-muted uppercase tracking-wide mb-2">
 											Bản ghi của bạn
@@ -163,7 +175,7 @@ export function VstepSpeakingInProgress({ task, sessionId }: Props) {
 										type="button"
 										onClick={() => submitMutation.mutate()}
 										disabled={submitMutation.isPending}
-										className="w-full h-12 rounded-(--radius-button) font-bold text-sm text-primary-foreground bg-skill-speaking shadow-[0_3px_0_oklch(0.45_0.18_280)] active:shadow-[0_1px_0_oklch(0.45_0.18_280)] active:translate-y-[2px] transition disabled:opacity-50 uppercase"
+										className="w-full h-12 rounded-(--radius-button) font-bold text-sm text-primary-foreground bg-skill-speaking shadow-[0_3px_0_var(--color-skill-speaking-dark)] active:shadow-[0_1px_0_var(--color-skill-speaking-dark)] active:translate-y-[2px] transition disabled:opacity-50 uppercase"
 									>
 										{submitMutation.isPending ? "Đang nộp..." : "Nộp bài"}
 									</button>

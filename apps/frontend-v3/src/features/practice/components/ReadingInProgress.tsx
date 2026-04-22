@@ -45,7 +45,7 @@ export function ReadingInProgress({ detail, session }: Props) {
 							<div className="flex justify-center gap-3 mt-4">
 								<Link
 									to="/luyen-tap/doc"
-									className="py-2 px-5 font-bold text-sm rounded-(--radius-button) text-primary-foreground bg-skill-reading shadow-[0_3px_0_oklch(0.45_0.12_145)] uppercase"
+									className="py-2 px-5 font-bold text-sm rounded-(--radius-button) text-primary-foreground bg-skill-reading shadow-[0_3px_0_var(--color-skill-reading-dark)] active:shadow-[0_1px_0_var(--color-skill-reading-dark)] active:translate-y-[2px] transition uppercase"
 								>
 									Về danh sách
 								</Link>
@@ -74,6 +74,7 @@ export function ReadingInProgress({ detail, session }: Props) {
 							answers={session.answers}
 							result={session.result}
 							onSelect={session.select}
+							accentColor="var(--color-skill-reading)"
 						/>
 					</div>
 				</div>
@@ -81,14 +82,19 @@ export function ReadingInProgress({ detail, session }: Props) {
 
 			{/* Footer */}
 			<div className="flex items-center gap-2 border-t-2 border-border bg-surface px-4 py-2.5 shrink-0">
-				<QuestionNav questions={questions} answers={session.answers} result={session.result} />
+				<QuestionNav
+					questions={questions}
+					answers={session.answers}
+					result={session.result}
+					accentColor="var(--color-skill-reading)"
+				/>
 				<div className="flex-1" />
 				{!session.result && (
 					<button
 						type="button"
 						onClick={session.submit}
 						disabled={session.submitting || session.answeredCount < questions.length}
-						className="py-2 px-6 text-sm font-bold rounded-(--radius-button) text-primary-foreground bg-skill-reading shadow-[0_3px_0_oklch(0.45_0.12_145)] active:shadow-[0_1px_0_oklch(0.45_0.12_145)] active:translate-y-[2px] transition disabled:opacity-50 uppercase"
+						className="py-2 px-6 text-sm font-bold rounded-(--radius-button) text-primary-foreground bg-skill-reading shadow-[0_3px_0_var(--color-skill-reading-dark)] active:shadow-[0_1px_0_var(--color-skill-reading-dark)] active:translate-y-[2px] transition disabled:opacity-50 uppercase"
 					>
 						Nộp bài
 					</button>

@@ -26,7 +26,13 @@ export function WritingPreview({ prompt, starting, onStart }: Props) {
 						type="button"
 						onClick={onStart}
 						disabled={starting}
-						className="btn btn-primary px-10 py-3.5 text-base mt-6 disabled:opacity-50"
+						className="btn px-10 py-3.5 text-base mt-6 text-primary-foreground disabled:opacity-50"
+						style={
+							{
+								background: "var(--color-skill-writing)",
+								"--btn-shadow": "var(--color-skill-writing-dark)",
+							} as React.CSSProperties
+						}
 					>
 						{starting ? "Đang bắt đầu..." : "Bắt đầu viết"}
 					</button>
