@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { HapticTouchable } from "@/components/HapticTouchable";
+import { DepthButton } from "@/components/DepthButton";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
@@ -18,24 +19,24 @@ const SKILL_ORDER: SkillKey[] = ["listening", "reading", "writing", "speaking"];
 
 const SKILL_META: Record<SkillKey, { label: string; shortLabel: string }> = {
   listening: { label: "Listening", shortLabel: "Nghe" },
-  reading: { label: "Reading", shortLabel: "Đọc" },
-  writing: { label: "Writing", shortLabel: "Viết" },
-  speaking: { label: "Speaking", shortLabel: "Nói" },
+  reading:   { label: "Reading",   shortLabel: "Đọc" },
+  writing:   { label: "Writing",   shortLabel: "Viết" },
+  speaking:  { label: "Speaking",  shortLabel: "Nói" },
 };
 
 function getSkillMinutes(skill: SkillKey, detail: ExamDetail): number {
   const v = detail.version;
   if (skill === "listening") return v.listeningSections.reduce((s, x) => s + x.durationMinutes, 0);
-  if (skill === "reading") return v.readingPassages.reduce((s, x) => s + x.durationMinutes, 0);
-  if (skill === "writing") return v.writingTasks.reduce((s, x) => s + x.durationMinutes, 0);
+  if (skill === "reading")   return v.readingPassages.reduce((s, x) => s + x.durationMinutes, 0);
+  if (skill === "writing")   return v.writingTasks.reduce((s, x) => s + x.durationMinutes, 0);
   return v.speakingParts.reduce((s, x) => s + x.durationMinutes, 0);
 }
 
 function getSkillCount(skill: SkillKey, detail: ExamDetail): number {
   const v = detail.version;
   if (skill === "listening") return v.listeningSections.reduce((s, x) => s + x.items.length, 0);
-  if (skill === "reading") return v.readingPassages.reduce((s, x) => s + x.items.length, 0);
-  if (skill === "writing") return v.writingTasks.length;
+  if (skill === "reading")   return v.readingPassages.reduce((s, x) => s + x.items.length, 0);
+  if (skill === "writing")   return v.writingTasks.length;
   return v.speakingParts.length;
 }
 
@@ -53,9 +54,9 @@ export default function ExamDetailScreen() {
   if (isLoading) return <LoadingScreen />;
   if (!detail) return null;
 
-  const { exam, version } = detail;
+  const { exam } = detail;
   const isFullTest = selected.size === 0;
-  const cost = computeSessionCost(selected.size === 0 ? 4 : selected.size);
+  const cost = computeSessionCost(isFullTest ? 4 : selected.size);
   const insufficient = coins < cost;
 
   const totalMinutes = isFullTest
@@ -72,10 +73,7 @@ export default function ExamDetailScreen() {
   }
 
   function handleStart() {
-    if (insufficient) {
-      setTopUpVisible(true);
-      return;
-    }
+    if (insufficient) { setTopUpVisible(true); return; }
     const skills = isFullTest ? SKILL_ORDER : Array.from(selected);
     startSession.mutate(
       { examId: exam.id, mode: isFullTest ? "full" : "custom", selectedSkills: skills },
@@ -88,7 +86,10 @@ export default function ExamDetailScreen() {
 
   return (
     <View style={[s.root, { backgroundColor: c.background }]}>
-      <ScrollView contentContainerStyle={[s.scroll, { paddingTop: insets.top + spacing.base }]}>
+      <ScrollView
+        contentContainerStyle={[s.scroll, { paddingTop: insets.top + spacing.base }]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Back */}
         <HapticTouchable style={s.backBtn} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={20} color={c.mutedForeground} />
@@ -113,7 +114,7 @@ export default function ExamDetailScreen() {
           </View>
         </View>
 
-        {/* Summary bar — 4 skills */}
+        {/* Summary bar */}
         <View style={[s.summaryBar, { backgroundColor: c.card, borderColor: c.border }]}>
           {SKILL_ORDER.map((skill, i) => {
             const color = useSkillColor(skill);
@@ -121,7 +122,10 @@ export default function ExamDetailScreen() {
             const count = getSkillCount(skill, detail);
             const unit = skill === "writing" || skill === "speaking" ? "phần" : "câu";
             return (
-              <View key={skill} style={[s.summaryCell, i > 0 && { borderLeftWidth: 1, borderLeftColor: c.border }]}>
+              <View
+                key={skill}
+                style={[s.summaryCell, i > 0 && { borderLeftWidth: 1, borderLeftColor: c.border }]}
+              >
                 <Text style={[s.summaryCellLabel, { color }]}>{SKILL_META[skill].shortLabel}</Text>
                 <Text style={[s.summaryCellMin, { color: c.foreground }]}>{minutes} phút</Text>
                 <Text style={[s.summaryCellCount, { color: c.mutedForeground }]}>{count} {unit}</Text>
@@ -144,32 +148,27 @@ export default function ExamDetailScreen() {
           const minutes = getSkillMinutes(skill, detail);
           const count = getSkillCount(skill, detail);
           const unit = skill === "writing" || skill === "speaking" ? "phần" : "câu";
-
           return (
             <HapticTouchable
               key={skill}
               style={[
                 s.skillRow,
-                { backgroundColor: isSelected ? color + "12" : c.card, borderColor: isSelected ? color + "60" : c.border },
+                {
+                  backgroundColor: isSelected ? color + "12" : c.card,
+                  borderColor: isSelected ? color + "60" : c.border,
+                },
               ]}
               onPress={() => toggleSkill(skill)}
               activeOpacity={0.8}
             >
-              {/* Checkbox */}
               <View style={[s.checkbox, { borderColor: isSelected ? color : c.border, backgroundColor: isSelected ? color : "transparent" }]}>
                 {isSelected && <Ionicons name="checkmark" size={12} color="#FFF" />}
               </View>
-
-              {/* Accent bar */}
               <View style={[s.accentBar, { backgroundColor: color }]} />
-
-              {/* Info */}
               <View style={{ flex: 1 }}>
                 <Text style={[s.skillLabel, { color }]}>{SKILL_META[skill].label}</Text>
                 <Text style={[s.skillDesc, { color: c.mutedForeground }]}>{SKILL_LABELS[skill]}</Text>
               </View>
-
-              {/* Stats */}
               <View style={s.skillStats}>
                 <Text style={[s.skillMin, { color: c.foreground }]}>{minutes} phút</Text>
                 <Text style={[s.skillCount, { color: c.mutedForeground }]}>{count} {unit}</Text>
@@ -178,7 +177,6 @@ export default function ExamDetailScreen() {
           );
         })}
 
-        {/* Mascot hint when all selected */}
         {selected.size === 4 && (
           <View style={s.mascotHint}>
             <Mascot name="happy" size={60} animation="bounce" />
@@ -190,7 +188,7 @@ export default function ExamDetailScreen() {
       </ScrollView>
 
       {/* Bottom action bar */}
-      <View style={[s.bottomBar, { backgroundColor: c.surface ?? c.card, borderTopColor: c.primary + "30" }]}>
+      <View style={[s.bottomBar, { backgroundColor: c.card, borderTopColor: c.primary + "30" }]}>
         <View style={s.bottomInfo}>
           <Text style={[s.bottomLabel, { color: c.foreground }]}>
             {isFullTest ? "Làm full test" : `${selected.size} kỹ năng`}
@@ -204,19 +202,18 @@ export default function ExamDetailScreen() {
             </View>
           </View>
         </View>
-        <HapticTouchable
-          style={[s.startBtn, { backgroundColor: insufficient ? c.muted : c.primary, opacity: startSession.isPending ? 0.7 : 1 }]}
+        <DepthButton
           onPress={handleStart}
           disabled={startSession.isPending}
+          variant={insufficient ? "secondary" : "primary"}
+          size="md"
         >
           {startSession.isPending
-            ? <ActivityIndicator color="#FFF" size="small" />
-            : <>
-                <Text style={s.startBtnText}>{isFullTest ? "Làm full test" : "Bắt đầu luyện tập"}</Text>
-                <Ionicons name="flash" size={16} color="#FFF" />
-              </>
-          }
-        </HapticTouchable>
+            ? "Đang bắt đầu..."
+            : isFullTest
+              ? "Làm full test"
+              : "Bắt đầu luyện tập"}
+        </DepthButton>
       </View>
 
       <TopUpDialog visible={topUpVisible} onClose={() => setTopUpVisible(false)} />
@@ -261,6 +258,4 @@ const s = StyleSheet.create({
   bottomMetaText: { fontSize: fontSize.xs },
   coinBadge: { flexDirection: "row", alignItems: "center", gap: 3 },
   coinText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
-  startBtn: { flexDirection: "row", alignItems: "center", gap: spacing.xs, borderRadius: radius.xl, paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
-  startBtnText: { color: "#FFF", fontSize: fontSize.sm, fontFamily: fontFamily.bold },
 });

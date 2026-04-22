@@ -14,6 +14,7 @@ import { HapticTouchable } from "@/components/HapticTouchable";
 import { Link, useRouter } from "expo-router";
 import { useAuth } from "@/hooks/use-auth";
 import { Logo } from "@/components/Logo";
+import { DepthButton } from "@/components/DepthButton";
 import { Mascot } from "@/components/Mascot";
 import { useThemeColors, spacing, radius, fontSize } from "@/theme";
 import { registerApi } from "@/lib/api";
@@ -165,19 +166,9 @@ export default function RegisterScreen() {
 
           {errors.general ? <Text style={[styles.error, { color: c.destructive }]}>{errors.general}</Text> : null}
 
-          <HapticTouchable
-            style={[styles.button, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
-            onPress={handleRegister}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={c.primaryForeground} />
-            ) : (
-              <Text style={[styles.buttonText, { color: c.primaryForeground }]}>
-                Tạo tài khoản
-              </Text>
-            )}
-          </HapticTouchable>
+          <DepthButton onPress={handleRegister} disabled={loading} size="lg" fullWidth>
+            {loading ? "Đang tạo tài khoản..." : "Tạo tài khoản"}
+          </DepthButton>
         </View>
 
         <View style={styles.footerRow}>
