@@ -80,7 +80,7 @@ export default function PracticeSkillScreen() {
       </View>
 
       <View style={[styles.header, { borderColor: color + "30", borderBottomColor: color }]}> 
-        <SkillIcon skill={validSkill} size={24} />
+        <SkillIcon skill={validSkill} size={24} bare />
         <Text style={[styles.title, { color }]}>{flow.title}</Text>
       </View>
 

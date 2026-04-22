@@ -144,7 +144,7 @@ function ExamCard({
             <View style={styles.tagRow}>
               {exam.tags.map((tag) => (
                 <View key={tag} style={[styles.tag, { backgroundColor: c.muted }]}> 
-                  <Text style={[styles.tagText, { color: c.mutedForeground }]}>#{tag}</Text>
+                  <Text style={[styles.tagText, { color: c.mutedForeground }]}>#{tag.replace(/^#+/, "")}</Text>
                 </View>
               ))}
             </View>
@@ -185,7 +185,7 @@ function SkillChip({ skill, label }: { skill: Skill; label: string }) {
   const color = useSkillColor(skill);
   return (
     <View style={[styles.chip, { backgroundColor: color + "15" }]}> 
-      <SkillIcon skill={skill} size={12} />
+      <SkillIcon skill={skill} size={12} bare />
       <Text style={[styles.chipText, { color }]}>{label}</Text>
     </View>
   );

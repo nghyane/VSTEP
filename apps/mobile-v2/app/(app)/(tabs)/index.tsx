@@ -144,7 +144,7 @@ export default function DashboardScreen() {
       <Animated.View style={toAnimStyle(2)}>
         <DepthCard style={styles.nextCard}>
           <View style={[styles.nextIcon, { backgroundColor: c.primaryTint }]}>
-            <SkillIcon skill={weakest} size={22} />
+            <SkillIcon skill={weakest} size={22} bare />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.nextTitle, { color: c.foreground }]}>Bài gợi ý hôm nay</Text>
@@ -245,7 +245,7 @@ function SkillCard({
       onPress={onPress}
       activeOpacity={0.8}
     >
-      <SkillIcon skill={skill} size={18} />
+      <SkillIcon skill={skill} size={22} bare />
       <Text style={[styles.skillLabel, { color: c.foreground }]}>{SKILL_META[skill].vi}</Text>
       <Text style={[styles.skillScore, { color }]}>{score !== null ? score.toFixed(1) : "—"}</Text>
     </HapticTouchable>
