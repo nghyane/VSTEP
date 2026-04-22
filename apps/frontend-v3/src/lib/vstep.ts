@@ -11,4 +11,4 @@ export function getTargetBand(targetLevel: string): number {
 }
 
 /** Heatmap intensity thresholds (minutes per day) */
-export const heatmapLevels = [0, 30, 60, 90] as const
+export const heatmapLevels = [5, 15, 25, 35] as const

@@ -19,7 +19,7 @@ function toLevel(minutes: number): number {
 const LEVEL_CLASSES = ["bg-border", "bg-primary/25", "bg-primary/50", "bg-primary/75", "bg-primary"]
 
 function buildGrid(data: ActivityDay[]): number[][] {
-	const map = new Map(data.map((d) => [d.date, d.minutes]))
+	const map = new Map(data.map((d) => [d.date.slice(0, 10), d.minutes]))
 	const today = new Date()
 	const start = new Date(today)
 	start.setDate(start.getDate() - WEEKS * DAYS)
