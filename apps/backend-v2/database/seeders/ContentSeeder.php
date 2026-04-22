@@ -8,16 +8,9 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 /**
- * One-time content seed from fixtures/content.json.
- *
- * Uses DB::table()->upsert() so it is safe to re-run:
- * - existing rows are updated in place
- * - new rows are inserted
- * - no rows are deleted
- *
- * Schema-agnostic: if columns are added/removed via migrations,
- * the JSON simply carries the old columns and the new ones get
- * their default values. No SQL to maintain.
+ * Content seed from fixtures/content.json.
+ * Truncates content tables then re-inserts — full replacement.
+ * Safe to re-run. Schema-agnostic: new columns get their DB defaults.
  */
 class ContentSeeder extends Seeder
 {
@@ -45,30 +38,6 @@ class ContentSeeder extends Seeder
         'exam_version_speaking_parts',
     ];
 
-    /** Primary key(s) per table — used as upsert conflict target. */
-    private const UNIQUE_BY = [
-        'vocab_topics' => ['id'],
-        'vocab_topic_tasks' => ['topic_id', 'task'],
-        'vocab_words' => ['id'],
-        'vocab_exercises' => ['id'],
-        'grammar_points' => ['id'],
-        'grammar_point_levels' => ['grammar_point_id', 'level'],
-        'grammar_point_tasks' => ['grammar_point_id', 'task'],
-        'grammar_structures' => ['id'],
-        'grammar_examples' => ['id'],
-        'grammar_common_mistakes' => ['id'],
-        'grammar_vstep_tips' => ['id'],
-        'grammar_exercises' => ['id'],
-        'exams' => ['id'],
-        'exam_versions' => ['id'],
-        'exam_version_listening_sections' => ['id'],
-        'exam_version_listening_items' => ['id'],
-        'exam_version_reading_passages' => ['id'],
-        'exam_version_reading_items' => ['id'],
-        'exam_version_writing_tasks' => ['id'],
-        'exam_version_speaking_parts' => ['id'],
-    ];
-
     public function run(): void
     {
         $path = database_path('fixtures/content.json');
@@ -83,21 +52,21 @@ class ContentSeeder extends Seeder
         $data = json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
 
         DB::transaction(function () use ($data) {
+            // Truncate in reverse dependency order to avoid FK violations
+            foreach (array_reverse(self::TABLES) as $table) {
+                DB::table($table)->truncate();
+            }
+
             foreach (self::TABLES as $table) {
                 $rows = $data[$table] ?? [];
                 if (empty($rows)) {
                     continue;
                 }
 
-                // Decode JSON string columns back to arrays for Eloquent
                 $rows = array_map([$this, 'decodeJsonColumns'], $rows);
 
-                // Chunk to avoid hitting parameter limits
                 foreach (array_chunk($rows, 100) as $chunk) {
-                    DB::table($table)->upsert(
-                        $chunk,
-                        self::UNIQUE_BY[$table],
-                    );
+                    DB::table($table)->insert($chunk);
                 }
 
                 $this->command->line("  {$table}: ".count($rows));
