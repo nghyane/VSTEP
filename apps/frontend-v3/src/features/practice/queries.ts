@@ -6,12 +6,14 @@ import type {
 	ReadingExerciseDetail,
 	SpeakingDrill,
 	SpeakingDrillDetail,
+	SpeakingHistoryItem,
 	SpeakingTask,
 	SpeakingTaskDetail,
+	WritingHistoryItem,
 	WritingPrompt,
 	WritingPromptDetail,
 } from "#/features/practice/types"
-import { type ApiResponse, api } from "#/lib/api"
+import { type ApiResponse, api, type PaginatedResponse } from "#/lib/api"
 
 export const listeningExercisesQuery = queryOptions({
 	queryKey: ["practice", "listening", "exercises"],
@@ -76,3 +78,13 @@ export const mcqProgressQuery = (skill: "listening" | "reading") =>
 				.get(`practice/${skill}/progress`)
 				.json<ApiResponse<Record<string, { score: number; total: number }>>>(),
 	})
+
+export const writingHistoryQuery = queryOptions({
+	queryKey: ["practice", "writing", "history"],
+	queryFn: () => api.get("practice/writing/history").json<PaginatedResponse<WritingHistoryItem>>(),
+})
+
+export const speakingVstepHistoryQuery = queryOptions({
+	queryKey: ["practice", "speaking", "vstep-history"],
+	queryFn: () => api.get("practice/speaking/vstep-history").json<PaginatedResponse<SpeakingHistoryItem>>(),
+})

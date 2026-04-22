@@ -126,7 +126,7 @@ services:
     build:
       context: ./apps/frontend-v3
       args:
-        VITE_API_URL: https://${DOMAIN:-api.vstepgo.com}
+        VITE_API_URL: https://${DOMAIN:-api.vstepgo.com}/api/v1
     expose:
       - "80"
     labels:

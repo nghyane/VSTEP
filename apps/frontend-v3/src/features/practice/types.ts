@@ -155,3 +155,17 @@ export interface SpeakingTaskDetail {
 	content: SpeakingTaskContent
 	speaking_seconds: number
 }
+
+export interface WritingHistoryItem {
+	id: string
+	submitted_at: string
+	word_count: number
+	prompt: { id: string; slug: string; title: string; part: number } | null
+}
+
+export interface SpeakingHistoryItem {
+	id: string
+	submitted_at: string
+	duration_seconds: number
+	task_ref_id: string
+}

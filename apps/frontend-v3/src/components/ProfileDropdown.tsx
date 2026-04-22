@@ -145,6 +145,14 @@ export function ProfileDropdown({ unread, initial }: Props) {
 							</MenuItem>
 							<MenuItem
 								onClick={() => {
+									setOpen(false)
+									navigate({ to: "/luyen-tap/ket-qua" })
+								}}
+							>
+								Kết quả AI chấm
+							</MenuItem>
+							<MenuItem
+								onClick={() => {
 									logout()
 									setOpen(false)
 								}}
