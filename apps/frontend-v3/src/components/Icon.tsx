@@ -21,6 +21,7 @@ import MicIcon from "#/assets/icons/microphone-small.svg?react"
 import challengeMedium from "#/assets/icons/monthly-challenge-medium.svg"
 import MoreIcon from "#/assets/icons/more-small.svg?react"
 import PencilIcon from "#/assets/icons/pencil-small.svg?react"
+import PlayIcon from "#/assets/icons/play-small.svg?react"
 import SearchIcon from "#/assets/icons/search-small.svg?react"
 import streakLarge from "#/assets/icons/streak-large.svg"
 import streakMedium from "#/assets/icons/streak-medium.svg"
@@ -52,6 +53,7 @@ export const icons = {
 	mic: MicIcon,
 	more: MoreIcon,
 	pencil: PencilIcon,
+	play: PlayIcon,
 	search: SearchIcon,
 	target: TargetSmallIcon,
 	timer: TimerSmallIcon,

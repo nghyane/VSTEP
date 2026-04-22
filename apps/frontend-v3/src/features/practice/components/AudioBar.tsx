@@ -18,7 +18,7 @@ export function AudioBar({ src, onTimeUpdate }: Props) {
 				className="w-10 h-10 rounded-full bg-skill-listening text-primary-foreground flex items-center justify-center shadow-[0_3px_0_oklch(0.45_0.15_240)] active:shadow-[0_1px_0_oklch(0.45_0.15_240)] active:translate-y-[2px] transition shrink-0"
 				aria-label={player.playing ? "Tạm dừng" : "Phát"}
 			>
-				<Icon name={player.playing ? "close" : "volume"} size="xs" />
+				<Icon name={player.playing ? "close" : "play"} size="xs" />
 			</button>
 			<div
 				ref={player.barRef}

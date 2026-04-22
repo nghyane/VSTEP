@@ -197,7 +197,7 @@ export function SpeakingDrillInProgress({ drill, sessionId }: Props) {
 										onClick={playing ? handleStop : handlePlay}
 										className="w-10 h-10 rounded-full bg-skill-speaking text-primary-foreground flex items-center justify-center shadow-[0_3px_0_oklch(0.45_0.18_280)] active:shadow-[0_1px_0_oklch(0.45_0.18_280)] active:translate-y-[2px] transition shrink-0"
 									>
-										<Icon name={playing ? "close" : "volume"} size="xs" />
+										<Icon name={playing ? "close" : "play"} size="xs" />
 									</button>
 									<div className="flex-1 h-2 bg-background rounded-full relative border border-border min-w-0">
 										<div
