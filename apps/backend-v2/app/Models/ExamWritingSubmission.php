@@ -6,6 +6,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Writing submission trong exam session.
@@ -43,5 +45,18 @@ class ExamWritingSubmission extends BaseModel
     public function task(): BelongsTo
     {
         return $this->belongsTo(ExamVersionWritingTask::class, 'task_id');
+    }
+
+    public function gradingJob(): HasOne
+    {
+        return $this->hasOne(GradingJob::class, 'submission_id')
+            ->where('submission_type', 'exam_writing')
+            ->latestOfMany();
+    }
+
+    public function gradingResults(): HasMany
+    {
+        return $this->hasMany(WritingGradingResult::class, 'submission_id')
+            ->where('submission_type', 'exam_writing');
     }
 }

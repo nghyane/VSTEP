@@ -128,6 +128,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/exam-sessions/{sessionId}', [ExamController::class, 'showSession']);
         Route::post('/exam-sessions/{sessionId}/submit', [ExamController::class, 'submit']);
         Route::post('/exam-sessions/{sessionId}/listening-played', [ExamController::class, 'logListeningPlayed']);
+        Route::get('/exam-sessions/{sessionId}/writing-results', [ExamController::class, 'writingResults']);
+        Route::get('/exam-sessions/{sessionId}/speaking-results', [ExamController::class, 'speakingResults']);
 
         // Grading.
         Route::get('/grading/jobs/{id}', [GradingController::class, 'showJob']);

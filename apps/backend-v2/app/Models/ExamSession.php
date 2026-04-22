@@ -41,4 +41,14 @@ class ExamSession extends BaseModel
     {
         return $this->hasMany(ExamMcqAnswer::class, 'session_id');
     }
+
+    public function writingSubmissions(): HasMany
+    {
+        return $this->hasMany(ExamWritingSubmission::class);
+    }
+
+    public function speakingSubmissions(): HasMany
+    {
+        return $this->hasMany(ExamSpeakingSubmission::class);
+    }
 }

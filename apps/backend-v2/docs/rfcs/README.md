@@ -13,6 +13,8 @@
 | 0012 | [Migrate SRS from SM-2 to FSRS](./0012-fsrs-migration.md) | Implemented | 2025-04-21 |
 | 0013 | [Admin Panel with Filament PHP](./0013-admin-filament.md) | Withdrawn | 2026-04-22 |
 | 0014 | [Admin Panel — Umi + Ant Design Pro](./0014-admin-panel-umi.md) | Accepted | 2026-04-22 |
+| 0017 | [Grading Event System](./0017-grading-events.md) | Proposed | 2026-04-23 |
+| 0018 | [Exam Submission — Complete Scoring Flow](./0018-exam-submission-scoring.md) | Draft | 2026-04-23 |
 
 ## Implement order
 

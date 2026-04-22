@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SubmitExamRequest;
+use App\Http\Resources\ExamSpeakingResultResource;
+use App\Http\Resources\ExamSubmitResultResource;
+use App\Http\Resources\ExamWritingResultResource;
 use App\Models\ExamListeningPlayLog;
 use App\Models\ExamSession;
 use App\Models\ExamVersion;
@@ -60,31 +64,50 @@ class ExamController extends Controller
         ]], 201);
     }
 
-    public function submit(Request $request, string $sessionId): JsonResponse
+    public function submit(SubmitExamRequest $request, string $sessionId): JsonResponse
     {
-        $request->validate([
-            'mcq_answers' => ['nullable', 'array'],
-            'mcq_answers.*.item_ref_type' => ['required', 'string'],
-            'mcq_answers.*.item_ref_id' => ['required', 'uuid'],
-            'mcq_answers.*.selected_index' => ['required', 'integer', 'min:0', 'max:3'],
-        ]);
-
         /** @var ExamSession $session */
         $session = ExamSession::query()->findOrFail($sessionId);
 
         $result = $this->examService->submit(
             $this->profile($request),
             $session,
-            $request->input('mcq_answers', []),
+            $request->validated('mcq_answers') ?? [],
+            $request->validated('writing_answers') ?? [],
+            $request->validated('speaking_answers') ?? [],
         );
 
-        return response()->json(['data' => [
-            'session_id' => $result['session']->id,
-            'status' => $result['session']->status,
-            'mcq_score' => $result['mcq_score'],
-            'mcq_total' => $result['mcq_total'],
-            'submitted_at' => $result['session']->submitted_at,
-        ]]);
+        return response()->json([
+            'data' => ExamSubmitResultResource::make($result)->toArray($request),
+        ]);
+    }
+
+    public function writingResults(Request $request, string $sessionId): JsonResponse
+    {
+        $session = ExamSession::query()
+            ->with(['writingSubmissions'])
+            ->findOrFail($sessionId);
+        if ($session->profile_id !== $this->profile($request)->id) {
+            abort(403);
+        }
+
+        $data = ExamWritingResultResource::collection($session->writingSubmissions);
+
+        return response()->json(['data' => $data]);
+    }
+
+    public function speakingResults(Request $request, string $sessionId): JsonResponse
+    {
+        $session = ExamSession::query()
+            ->with(['speakingSubmissions'])
+            ->findOrFail($sessionId);
+        if ($session->profile_id !== $this->profile($request)->id) {
+            abort(403);
+        }
+
+        $data = ExamSpeakingResultResource::collection($session->speakingSubmissions);
+
+        return response()->json(['data' => $data]);
     }
 
     public function mySessions(Request $request): JsonResponse
