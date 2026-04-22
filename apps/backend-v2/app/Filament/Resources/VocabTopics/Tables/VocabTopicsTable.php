@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filament\Resources\VocabTopics\Tables;
 
 use Filament\Actions\BulkActionGroup;
@@ -7,6 +9,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
 class VocabTopicsTable
@@ -15,40 +18,40 @@ class VocabTopicsTable
     {
         return $table
             ->columns([
-                TextColumn::make('id')
-                    ->label('ID'),
-                TextColumn::make('slug')
-                    ->searchable(),
                 TextColumn::make('name')
-                    ->searchable(),
+                    ->label('Chủ đề')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('bold'),
                 TextColumn::make('level')
-                    ->searchable(),
-                TextColumn::make('icon_key')
-                    ->searchable(),
+                    ->label('Trình độ')
+                    ->badge()
+                    ->sortable(),
+                TextColumn::make('words_count')
+                    ->label('Số từ')
+                    ->counts('words')
+                    ->sortable(),
                 TextColumn::make('display_order')
-                    ->numeric()
+                    ->label('Thứ tự')
                     ->sortable(),
                 IconColumn::make('is_published')
+                    ->label('Xuất bản')
                     ->boolean(),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                SelectFilter::make('level')
+                    ->label('Trình độ')
+                    ->options(['B1' => 'B1', 'B2' => 'B2', 'C1' => 'C1']),
             ])
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()->label('Sửa'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()->label('Xóa'),
                 ]),
-            ]);
+            ])
+            ->defaultSort('display_order')
+            ->striped();
     }
 }
