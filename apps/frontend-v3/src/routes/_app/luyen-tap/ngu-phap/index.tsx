@@ -10,13 +10,13 @@ export const Route = createFileRoute("/_app/luyen-tap/ngu-phap/")({
 function GrammarPage() {
 	const { data } = useQuery(grammarPointsQuery)
 
-	if (!data) return <Header title="Ngữ pháp" />
+	if (!data) return <Header title="Ngữ pháp" backTo="/luyen-tap" />
 
 	const points = data.data
 
 	return (
 		<>
-			<Header title="Ngữ pháp" />
+			<Header title="Ngữ pháp" backTo="/luyen-tap" />
 			<div className="px-10 pb-12">
 				<p className="text-sm text-subtle mb-5">Cấu trúc câu theo level · Luyện tập + VSTEP tips</p>
 

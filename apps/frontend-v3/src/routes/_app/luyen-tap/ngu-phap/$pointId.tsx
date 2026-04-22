@@ -18,14 +18,14 @@ function GrammarDetailPage() {
 	const { pointId } = Route.useParams()
 	const { data } = useQuery(grammarPointDetailQuery(pointId))
 
-	if (!data) return <Header title="Ngữ pháp" />
+	if (!data) return <Header title="Ngữ pháp" backTo="/luyen-tap/ngu-phap" />
 
 	const detail = data.data
 	const hasExercises = detail.exercises.length > 0
 
 	return (
 		<>
-			<Header title={detail.point.name} />
+			<Header title={detail.point.name} backTo="/luyen-tap/ngu-phap" />
 			<div className="px-10 pb-12 space-y-8">
 				<PointHeader detail={detail} />
 

@@ -20,14 +20,6 @@ export function AudioBar({ src, onTimeUpdate }: Props) {
 			>
 				<Icon name={player.playing ? "close" : "volume"} size="xs" />
 			</button>
-			<button
-				type="button"
-				onClick={player.replay}
-				className="w-8 h-8 rounded-full border-2 border-border flex items-center justify-center text-muted hover:text-foreground transition shrink-0"
-				aria-label="Nghe lại"
-			>
-				<Icon name="back" size="xs" />
-			</button>
 			<div
 				ref={player.barRef}
 				onClick={player.seek}

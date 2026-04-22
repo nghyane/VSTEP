@@ -30,3 +30,10 @@ export function formatShortDate(iso: string): string {
 	const d = new Date(iso)
 	return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`
 }
+
+/** Count words in a string. */
+export function countWords(text: string): number {
+	const trimmed = text.trim()
+	if (!trimmed) return 0
+	return trimmed.split(/\s+/).length
+}

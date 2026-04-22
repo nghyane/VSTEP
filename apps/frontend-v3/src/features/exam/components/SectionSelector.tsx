@@ -1,4 +1,3 @@
-import { Icon } from "#/components/Icon"
 import type { ExamDetail, SkillKey } from "#/features/exam/types"
 import { cn } from "#/lib/utils"
 
@@ -10,41 +9,51 @@ interface Props {
 
 const SKILL_META: Record<
 	SkillKey,
-	{ label: string; en: string; accentBg: string; accentText: string; accentCheck: string }
+	{ label: string; en: string; accentBg: string; accentText: string; selectedBg: string; checkBg: string }
 > = {
 	listening: {
 		label: "Nghe",
 		en: "Listening",
 		accentBg: "bg-skill-listening",
 		accentText: "text-skill-listening",
-		accentCheck: "bg-skill-listening border-skill-listening",
+		selectedBg: "bg-skill-listening/8",
+		checkBg: "bg-skill-listening border-skill-listening",
 	},
 	reading: {
 		label: "Đọc",
 		en: "Reading",
 		accentBg: "bg-skill-reading",
 		accentText: "text-skill-reading",
-		accentCheck: "bg-skill-reading border-skill-reading",
+		selectedBg: "bg-skill-reading/8",
+		checkBg: "bg-skill-reading border-skill-reading",
 	},
 	writing: {
 		label: "Viết",
 		en: "Writing",
 		accentBg: "bg-skill-writing",
 		accentText: "text-skill-writing",
-		accentCheck: "bg-skill-writing border-skill-writing",
+		selectedBg: "bg-skill-writing/8",
+		checkBg: "bg-skill-writing border-skill-writing",
 	},
 	speaking: {
 		label: "Nói",
 		en: "Speaking",
 		accentBg: "bg-skill-speaking",
 		accentText: "text-skill-speaking",
-		accentCheck: "bg-skill-speaking border-skill-speaking",
+		selectedBg: "bg-skill-speaking/8",
+		checkBg: "bg-skill-speaking border-skill-speaking",
 	},
 }
 
 const SKILL_ORDER: SkillKey[] = ["listening", "reading", "writing", "speaking"]
 
-interface SectionRow {
+const SPEAKING_TYPE_LABEL: Record<string, string> = {
+	social: "Giao tiếp xã hội",
+	solution: "Đề xuất giải pháp",
+	topic: "Thảo luận chủ đề",
+}
+
+interface PartRow {
 	id: string
 	label: string
 	itemCount: number
@@ -52,68 +61,70 @@ interface SectionRow {
 	durationMinutes: number
 }
 
-function getSkillSections(skill: SkillKey, detail: ExamDetail): SectionRow[] {
+function getPartRows(skill: SkillKey, detail: ExamDetail): PartRow[] {
 	const { version } = detail
+
 	if (skill === "listening") {
-		return [...version.listening_sections]
-			.sort((a, b) => a.display_order - b.display_order)
-			.map((s) => ({
-				id: s.id,
-				label: s.part_title,
-				itemCount: s.items.length,
+		const byPart = new Map<number, typeof version.listening_sections>()
+		for (const s of version.listening_sections) {
+			const arr = byPart.get(s.part) ?? []
+			arr.push(s)
+			byPart.set(s.part, arr)
+		}
+		return [...byPart.entries()]
+			.sort(([a], [b]) => a - b)
+			.map(([part, secs]) => ({
+				id: `listening-part-${part}`,
+				label: `Phần ${part}`,
+				itemCount: secs.reduce((s, x) => s + x.items.length, 0),
 				itemUnit: "câu",
-				durationMinutes: s.duration_minutes,
+				durationMinutes: secs.reduce((s, x) => s + x.duration_minutes, 0),
 			}))
 	}
+
 	if (skill === "reading") {
 		return [...version.reading_passages]
 			.sort((a, b) => a.display_order - b.display_order)
 			.map((p) => ({
 				id: p.id,
-				label: `Phần ${p.part} — ${p.title}`,
+				label: `Phần ${p.part}`,
 				itemCount: p.items.length,
 				itemUnit: "câu",
 				durationMinutes: p.duration_minutes,
 			}))
 	}
+
 	if (skill === "writing") {
 		return [...version.writing_tasks]
 			.sort((a, b) => a.display_order - b.display_order)
 			.map((t) => ({
 				id: t.id,
-				label: `Phần ${t.part} — ${t.task_type === "letter" ? "Viết thư" : "Viết luận"}`,
-				itemCount: t.min_words,
-				itemUnit: "từ tối thiểu",
+				label: `Phần ${t.part} — ${t.task_type === "letter" ? `Viết thư (~${t.min_words} từ)` : `Viết luận (~${t.min_words} từ)`}`,
+				itemCount: 1,
+				itemUnit: "bài",
 				durationMinutes: t.duration_minutes,
 			}))
 	}
-	// speaking
-	const TYPE_LABEL: Record<string, string> = {
-		social: "Giao tiếp xã hội",
-		solution: "Đề xuất giải pháp",
-		topic: "Thảo luận chủ đề",
-	}
+
 	return [...version.speaking_parts]
 		.sort((a, b) => a.display_order - b.display_order)
 		.map((p) => ({
 			id: p.id,
-			label: `Phần ${p.part} — ${TYPE_LABEL[p.type] ?? p.type}`,
+			label: `Phần ${p.part} — ${SPEAKING_TYPE_LABEL[p.type] ?? p.type}`,
 			itemCount: p.duration_minutes,
 			itemUnit: "phút",
 			durationMinutes: p.duration_minutes,
 		}))
 }
 
-function getSkillTotals(
-	skill: SkillKey,
-	detail: ExamDetail,
-): { minutes: number; count: number; unit: string } {
-	const sections = getSkillSections(skill, detail)
-	const minutes = sections.reduce((s, x) => s + x.durationMinutes, 0)
+function getSkillTotals(skill: SkillKey, detail: ExamDetail): { minutes: number; countLabel: string } {
+	const parts = getPartRows(skill, detail)
+	const minutes = parts.reduce((s, p) => s + p.durationMinutes, 0)
 	if (skill === "listening" || skill === "reading") {
-		return { minutes, count: sections.reduce((s, x) => s + x.itemCount, 0), unit: "câu" }
+		const total = parts.reduce((s, p) => s + p.itemCount, 0)
+		return { minutes, countLabel: `${total} câu` }
 	}
-	return { minutes, count: sections.length, unit: "phần" }
+	return { minutes, countLabel: `${parts.length} phần` }
 }
 
 export function SectionSelector({ detail, selected, onToggleSkill }: Props) {
@@ -122,7 +133,7 @@ export function SectionSelector({ detail, selected, onToggleSkill }: Props) {
 	return (
 		<div className="space-y-3">
 			<div className="flex items-center justify-between">
-				<h2 className="text-lg font-bold text-foreground">Chọn kỹ năng luyện tập</h2>
+				<h2 className="text-lg font-bold text-foreground">Chọn phần luyện tập</h2>
 				<p className="text-xs text-subtle">
 					{selected.size === 0 ? "Chưa chọn — sẽ làm full test" : `${selected.size} kỹ năng đã chọn`}
 				</p>
@@ -131,16 +142,18 @@ export function SectionSelector({ detail, selected, onToggleSkill }: Props) {
 			{SKILL_ORDER.map((skill) => {
 				const meta = SKILL_META[skill]
 				const isSelected = selected.has(skill)
-				const { minutes, count, unit } = getSkillTotals(skill, detail)
-				const sections = getSkillSections(skill, detail)
+				const { minutes, countLabel } = getSkillTotals(skill, detail)
+				const parts = getPartRows(skill, detail)
 
 				return (
-					<div
-						key={skill}
-						className={cn("card overflow-hidden transition-colors", isSelected ? "border-border" : "")}
-					>
-						{/* Skill header row — clickable to toggle */}
-						<label className="flex cursor-pointer items-center gap-4 px-5 py-4">
+					<div key={skill} className="card overflow-hidden">
+						{/* Skill header — click to toggle entire skill */}
+						<label
+							className={cn(
+								"flex cursor-pointer items-center gap-4 px-5 py-3.5 transition-colors",
+								isSelected ? meta.selectedBg : "hover:bg-background/60",
+							)}
+						>
 							<input
 								type="checkbox"
 								className="sr-only"
@@ -149,51 +162,60 @@ export function SectionSelector({ detail, selected, onToggleSkill }: Props) {
 								aria-label={meta.label}
 							/>
 
-							{/* Visual checkbox */}
+							{/* Checkbox */}
 							<div
 								className={cn(
-									"flex size-5 shrink-0 items-center justify-center rounded border-2 transition-colors",
-									isSelected ? meta.accentCheck : "border-border",
+									"flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition-all",
+									isSelected ? meta.checkBg : "border-border bg-surface",
 								)}
 							>
-								{isSelected && <Icon name="check" size="xs" className="text-white" />}
+								{isSelected && (
+									<svg
+										viewBox="0 0 12 10"
+										className="h-3 w-3 text-white"
+										fill="none"
+										stroke="currentColor"
+										strokeWidth="2.5"
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										aria-hidden="true"
+									>
+										<polyline points="1,5 4.5,8.5 11,1" />
+									</svg>
+								)}
 							</div>
 
 							{/* Accent bar */}
-							<div className={cn("h-8 w-1 rounded-full shrink-0", meta.accentBg)} />
+							<div className={cn("h-5 w-1 rounded-full shrink-0", meta.accentBg)} />
 
 							{/* Info */}
-							<div className="flex-1 min-w-0">
-								<p className={cn("text-sm font-bold", meta.accentText)}>{meta.label}</p>
-								<p className="text-xs text-subtle">{meta.en}</p>
-							</div>
+							<span className={cn("text-sm font-bold", meta.accentText)}>{meta.label}</span>
+							<span className="text-xs text-subtle tabular-nums">
+								{minutes} phút · {countLabel}
+							</span>
 
-							{/* Totals */}
-							<div className="shrink-0 text-right text-xs tabular-nums text-muted">
-								<p className="font-semibold">{minutes} phút</p>
-								<p>
-									{count} {unit}
-								</p>
-							</div>
+							<span className="ml-auto text-xs font-bold text-subtle">{isSelected ? "Bỏ chọn" : "Chọn"}</span>
 						</label>
 
-						{/* Section list — always visible */}
+						{/* Parts — view only, always visible */}
 						<div className="border-t border-border-light">
-							{sections.map((sec, idx) => (
+							{parts.map((part, idx) => (
 								<div
-									key={sec.id}
+									key={part.id}
 									className={cn(
-										"flex items-center gap-3 px-5 py-2.5 text-xs text-muted",
-										idx < sections.length - 1 && "border-b border-border-light",
-										isSelected ? "bg-background/60" : "bg-background/30",
+										"flex items-center gap-3 px-5 py-2.5",
+										idx < parts.length - 1 && "border-b border-border-light",
+										isSelected ? meta.selectedBg : "bg-background/30",
 									)}
 								>
-									<span className={cn("w-1 h-4 rounded-full shrink-0 opacity-40", meta.accentBg)} />
-									<span className="flex-1 min-w-0 truncate font-medium text-foreground/80">{sec.label}</span>
-									<span className="shrink-0 tabular-nums text-subtle">
-										{sec.itemCount} {sec.itemUnit}
+									<span className={cn("w-0.5 h-4 rounded-full shrink-0", meta.accentBg)} />
+									<span className="flex-1 text-sm text-foreground/80 font-medium">{part.label}</span>
+									<span className="shrink-0 text-xs tabular-nums text-subtle">
+										{part.itemCount} {part.itemUnit}
 									</span>
-									<span className="shrink-0 tabular-nums text-subtle">~{sec.durationMinutes} phút</span>
+									<span className="shrink-0 text-xs tabular-nums text-subtle">
+										~{part.durationMinutes} phút
+									</span>
 								</div>
 							))}
 						</div>

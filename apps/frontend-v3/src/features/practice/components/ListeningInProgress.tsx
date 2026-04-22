@@ -16,7 +16,7 @@ interface Props {
 
 export function ListeningInProgress({ detail, sessionId }: Props) {
 	const { exercise, questions } = detail
-	const session = useListeningSession(sessionId, questions)
+	const session = useListeningSession(sessionId)
 	const [showSub, setShowSub] = useState(false)
 	const [audioTime, setAudioTime] = useState(0)
 	const hasSub = !!exercise.transcript || exercise.word_timestamps.length > 0

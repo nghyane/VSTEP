@@ -2,7 +2,7 @@ import ky from "ky"
 import { tokens } from "#/lib/tokens"
 
 export const api = ky.create({
-	prefix: import.meta.env.VITE_API_URL || "http://localhost:8010/api/v1",
+	prefix: import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1",
 	hooks: {
 		beforeRequest: [
 			({ request }) => {
