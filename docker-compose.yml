@@ -93,12 +93,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ""
-      JWT_SECRET: vstep-dev-jwt-secret-change-in-production
       FILESYSTEM_DISK: s3
-      AWS_ENDPOINT: ${S3_ENDPOINT}
-      AWS_BUCKET: ${S3_BUCKET:-vstep}
-      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
-      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
       AWS_DEFAULT_REGION: auto
       AWS_USE_PATH_STYLE_ENDPOINT: "true"
       CORS_ALLOWED_ORIGINS: "*"
@@ -151,7 +146,10 @@ services:
       - ./apps/backend-v2/.env
     command: php artisan horizon
     environment:
-      APP_ENV: local
+      APP_NAME: VSTEP
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: https://${DOMAIN:-api.vstepgo.com}
       DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: 5432
@@ -164,7 +162,6 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ""
-      JWT_SECRET: vstep-dev-jwt-secret-change-in-production
     depends_on:
       - backend
     restart: unless-stopped
@@ -175,7 +172,6 @@ services:
     ports:
       - "8081:8010"
     environment:
-      langtool_languageModel: ""
       Java_Xms: 256m
       Java_Xmx: 512m
     healthcheck:
