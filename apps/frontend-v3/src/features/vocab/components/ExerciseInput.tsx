@@ -42,18 +42,33 @@ interface TextProps {
 	kind: ExerciseKind
 	value: string
 	disabled: boolean
+	onSubmit: () => void
+	submitting: boolean
 	onChange: (v: string) => void
 }
 
-export function TextInput({ kind, value, disabled, onChange }: TextProps) {
+export function TextInput({ kind, value, disabled, onSubmit, submitting, onChange }: TextProps) {
 	return (
-		<input
-			type="text"
-			value={value}
-			onChange={(e) => onChange(e.target.value)}
-			disabled={disabled}
-			placeholder={kind === "fill_blank" ? "Điền từ..." : "Nhập dạng từ đúng..."}
-			className="w-full h-12 px-4 rounded-(--radius-button) border-2 border-border-light bg-surface text-foreground text-base hover:border-border focus:border-border-focus focus:outline-none transition"
-		/>
+		<div className="flex gap-2">
+			<input
+				type="text"
+				value={value}
+				onChange={(e) => onChange(e.target.value)}
+				onKeyDown={(e) => e.key === "Enter" && !disabled && value.trim() && onSubmit()}
+				disabled={disabled}
+				placeholder={kind === "fill_blank" ? "Điền từ..." : "Nhập dạng từ đúng..."}
+				className="flex-1 h-14 px-5 rounded-(--radius-button) border-2 border-border bg-surface text-foreground text-lg focus:border-primary focus:outline-none transition"
+			/>
+			{!disabled && (
+				<button
+					type="button"
+					onClick={onSubmit}
+					disabled={!value.trim() || submitting}
+					className="btn btn-primary h-14 px-6 shrink-0 disabled:opacity-50"
+				>
+					{submitting ? "..." : "Kiểm tra"}
+				</button>
+			)}
+		</div>
 	)
 }

@@ -29,6 +29,7 @@ import { Route as AppLuyenTapTuVungRouteImport } from "./routes/_app/luyen-tap/t
 import { Route as AppLuyenTapNoiRouteImport } from "./routes/_app/luyen-tap/noi"
 import { Route as AppLuyenTapNguPhapRouteImport } from "./routes/_app/luyen-tap/ngu-phap"
 import { Route as AppLuyenTapNgheRouteImport } from "./routes/_app/luyen-tap/nghe"
+import { Route as AppLuyenTapKetQuaRouteImport } from "./routes/_app/luyen-tap/ket-qua"
 import { Route as AppLuyenTapDocRouteImport } from "./routes/_app/luyen-tap/doc"
 import { Route as AppLuyenTapTuVungIndexRouteImport } from "./routes/_app/luyen-tap/tu-vung/index"
 import { Route as AppLuyenTapNguPhapIndexRouteImport } from "./routes/_app/luyen-tap/ngu-phap/index"
@@ -144,6 +145,11 @@ const AppLuyenTapNgheRoute = AppLuyenTapNgheRouteImport.update({
   path: "/nghe",
   getParentRoute: () => AppLuyenTapRoute,
 } as any)
+const AppLuyenTapKetQuaRoute = AppLuyenTapKetQuaRouteImport.update({
+  id: "/ket-qua",
+  path: "/ket-qua",
+  getParentRoute: () => AppLuyenTapRoute,
+} as any)
 const AppLuyenTapDocRoute = AppLuyenTapDocRouteImport.update({
   id: "/doc",
   path: "/doc",
@@ -226,6 +232,7 @@ export interface FileRoutesByFullPath {
   "/luyen-tap": typeof AppLuyenTapRouteWithChildren
   "/thi-thu": typeof AppThiThuRouteWithChildren
   "/luyen-tap/doc": typeof AppLuyenTapDocRoute
+  "/luyen-tap/ket-qua": typeof AppLuyenTapKetQuaRoute
   "/luyen-tap/nghe": typeof AppLuyenTapNgheRouteWithChildren
   "/luyen-tap/ngu-phap": typeof AppLuyenTapNguPhapRouteWithChildren
   "/luyen-tap/noi": typeof AppLuyenTapNoiRoute
@@ -257,6 +264,7 @@ export interface FileRoutesByTo {
   "/dashboard": typeof AppDashboardRoute
   "/ho-so": typeof AppHoSoRoute
   "/luyen-tap/doc": typeof AppLuyenTapDocRoute
+  "/luyen-tap/ket-qua": typeof AppLuyenTapKetQuaRoute
   "/luyen-tap/noi": typeof AppLuyenTapNoiRoute
   "/luyen-tap/viet": typeof AppLuyenTapVietRoute
   "/thi-thu/$examId": typeof AppThiThuExamIdRoute
@@ -290,6 +298,7 @@ export interface FileRoutesById {
   "/_app/luyen-tap": typeof AppLuyenTapRouteWithChildren
   "/_app/thi-thu": typeof AppThiThuRouteWithChildren
   "/_app/luyen-tap/doc": typeof AppLuyenTapDocRoute
+  "/_app/luyen-tap/ket-qua": typeof AppLuyenTapKetQuaRoute
   "/_app/luyen-tap/nghe": typeof AppLuyenTapNgheRouteWithChildren
   "/_app/luyen-tap/ngu-phap": typeof AppLuyenTapNguPhapRouteWithChildren
   "/_app/luyen-tap/noi": typeof AppLuyenTapNoiRoute
@@ -325,6 +334,7 @@ export interface FileRouteTypes {
     | "/luyen-tap"
     | "/thi-thu"
     | "/luyen-tap/doc"
+    | "/luyen-tap/ket-qua"
     | "/luyen-tap/nghe"
     | "/luyen-tap/ngu-phap"
     | "/luyen-tap/noi"
@@ -356,6 +366,7 @@ export interface FileRouteTypes {
     | "/dashboard"
     | "/ho-so"
     | "/luyen-tap/doc"
+    | "/luyen-tap/ket-qua"
     | "/luyen-tap/noi"
     | "/luyen-tap/viet"
     | "/thi-thu/$examId"
@@ -388,6 +399,7 @@ export interface FileRouteTypes {
     | "/_app/luyen-tap"
     | "/_app/thi-thu"
     | "/_app/luyen-tap/doc"
+    | "/_app/luyen-tap/ket-qua"
     | "/_app/luyen-tap/nghe"
     | "/_app/luyen-tap/ngu-phap"
     | "/_app/luyen-tap/noi"
@@ -563,6 +575,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AppLuyenTapNgheRouteImport
       parentRoute: typeof AppLuyenTapRoute
     }
+    "/_app/luyen-tap/ket-qua": {
+      id: "/_app/luyen-tap/ket-qua"
+      path: "/ket-qua"
+      fullPath: "/luyen-tap/ket-qua"
+      preLoaderRoute: typeof AppLuyenTapKetQuaRouteImport
+      parentRoute: typeof AppLuyenTapRoute
+    }
     "/_app/luyen-tap/doc": {
       id: "/_app/luyen-tap/doc"
       path: "/doc"
@@ -697,6 +716,7 @@ const AppLuyenTapTuVungRouteWithChildren =
 
 interface AppLuyenTapRouteChildren {
   AppLuyenTapDocRoute: typeof AppLuyenTapDocRoute
+  AppLuyenTapKetQuaRoute: typeof AppLuyenTapKetQuaRoute
   AppLuyenTapNgheRoute: typeof AppLuyenTapNgheRouteWithChildren
   AppLuyenTapNguPhapRoute: typeof AppLuyenTapNguPhapRouteWithChildren
   AppLuyenTapNoiRoute: typeof AppLuyenTapNoiRoute
@@ -707,6 +727,7 @@ interface AppLuyenTapRouteChildren {
 
 const AppLuyenTapRouteChildren: AppLuyenTapRouteChildren = {
   AppLuyenTapDocRoute: AppLuyenTapDocRoute,
+  AppLuyenTapKetQuaRoute: AppLuyenTapKetQuaRoute,
   AppLuyenTapNgheRoute: AppLuyenTapNgheRouteWithChildren,
   AppLuyenTapNguPhapRoute: AppLuyenTapNguPhapRouteWithChildren,
   AppLuyenTapNoiRoute: AppLuyenTapNoiRoute,

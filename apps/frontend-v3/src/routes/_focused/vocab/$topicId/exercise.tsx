@@ -55,13 +55,15 @@ function ExercisePage() {
 
 	if (!s.current) return null
 
+	const isMcq = s.current.kind === "mcq"
+
 	return (
 		<div className="min-h-screen bg-background flex flex-col">
 			<FocusBar {...back} current={s.index} total={s.total} />
 			<div className="flex-1 flex items-center justify-center px-6 pb-8">
 				<div className="w-full max-w-lg space-y-6">
 					<ExerciseQuestion exercise={s.current} />
-					{s.current.kind === "mcq" ? (
+					{isMcq ? (
 						<McqOptions
 							options={s.current.payload.options}
 							selected={s.selected}
@@ -69,7 +71,14 @@ function ExercisePage() {
 							onSelect={s.select}
 						/>
 					) : (
-						<TextInput kind={kind} value={s.textAnswer} disabled={!!s.result} onChange={s.setTextAnswer} />
+						<TextInput
+							kind={kind}
+							value={s.textAnswer}
+							disabled={!!s.result}
+							onSubmit={s.submit}
+							submitting={s.submitting}
+							onChange={s.setTextAnswer}
+						/>
 					)}
 					<ExerciseFeedback result={s.result} />
 					{s.result ? (
@@ -77,14 +86,16 @@ function ExercisePage() {
 							Tiếp tục
 						</button>
 					) : (
-						<button
-							type="button"
-							disabled={s.submitting || (kind === "mcq" ? s.selected === null : !s.textAnswer.trim())}
-							onClick={s.submit}
-							className="btn btn-primary w-full py-3.5 text-base disabled:opacity-50"
-						>
-							{s.submitting ? "Đang kiểm tra..." : "Kiểm tra"}
-						</button>
+						isMcq && (
+							<button
+								type="button"
+								disabled={s.submitting || s.selected === null}
+								onClick={s.submit}
+								className="btn btn-primary w-full py-3.5 text-base disabled:opacity-50"
+							>
+								{s.submitting ? "Đang kiểm tra..." : "Kiểm tra"}
+							</button>
+						)
 					)}
 				</div>
 			</div>

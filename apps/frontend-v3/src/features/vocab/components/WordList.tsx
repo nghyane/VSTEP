@@ -1,16 +1,7 @@
 import { useState } from "react"
 import { Icon } from "#/components/Icon"
 import type { FsrsState, WordWithState } from "#/features/vocab/types"
-import { cn } from "#/lib/utils"
-
-function speak(text: string) {
-	if (!window.speechSynthesis) return
-	window.speechSynthesis.cancel()
-	const u = new SpeechSynthesisUtterance(text)
-	u.lang = "en-US"
-	u.rate = 0.9
-	window.speechSynthesis.speak(u)
-}
+import { cn, speak } from "#/lib/utils"
 
 function stateBadge(state: FsrsState): { text: string; color: string } {
 	if (state.kind === "new") return { text: "Mới", color: "bg-info-tint text-info" }
