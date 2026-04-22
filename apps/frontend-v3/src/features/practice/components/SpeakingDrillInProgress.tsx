@@ -137,8 +137,13 @@ export function SpeakingDrillInProgress({ drill, sessionId }: Props) {
 							</p>
 							<Link
 								to="/luyen-tap/noi"
-								className="btn btn-primary mt-6 px-8"
-								style={{ background: "var(--color-skill-speaking)" }}
+								className="btn mt-6 px-8 text-primary-foreground"
+								style={
+									{
+										background: "var(--color-skill-speaking)",
+										"--btn-shadow": "var(--color-skill-speaking-dark)",
+									} as React.CSSProperties
+								}
 							>
 								Về danh sách
 							</Link>
@@ -195,7 +200,7 @@ export function SpeakingDrillInProgress({ drill, sessionId }: Props) {
 									<button
 										type="button"
 										onClick={playing ? handleStop : handlePlay}
-										className="w-10 h-10 rounded-full bg-skill-speaking text-primary-foreground flex items-center justify-center shadow-[0_3px_0_oklch(0.45_0.18_280)] active:shadow-[0_1px_0_oklch(0.45_0.18_280)] active:translate-y-[2px] transition shrink-0"
+										className="w-10 h-10 rounded-full bg-skill-speaking text-primary-foreground flex items-center justify-center shadow-[0_3px_0_var(--color-skill-speaking-dark)] active:shadow-[0_1px_0_var(--color-skill-speaking-dark)] active:translate-y-[2px] transition shrink-0"
 									>
 										<Icon name={playing ? "close" : "play"} size="xs" />
 									</button>
@@ -228,7 +233,7 @@ export function SpeakingDrillInProgress({ drill, sessionId }: Props) {
 										<button
 											type="button"
 											onClick={handleRecord}
-											className="h-14 min-w-52 rounded-full flex items-center justify-center gap-2 text-base font-bold bg-skill-speaking text-primary-foreground shadow-[0_4px_0] shadow-skill-speaking/40 transition active:translate-y-[2px] active:shadow-[0_2px_0]"
+											className="h-14 min-w-52 rounded-full flex items-center justify-center gap-2 text-base font-bold bg-skill-speaking text-primary-foreground shadow-[0_4px_0_var(--color-skill-speaking-dark)] transition active:translate-y-[2px] active:shadow-[0_2px_0_var(--color-skill-speaking-dark)]"
 										>
 											<Icon name="mic" size="xs" />
 											{recorder.audioUrl ? "Ghi lại" : "Bắt đầu nhại"}
@@ -271,10 +276,7 @@ export function SpeakingDrillInProgress({ drill, sessionId }: Props) {
 			</div>
 
 			{/* Footer — sentence nav chips */}
-			<div className="flex items-center justify-center gap-2 border-t-2 border-border bg-surface px-4 py-2.5 shrink-0">
-				<span className="text-xs font-bold text-muted shrink-0 mr-2">
-					{done.size}/{sentences.length} câu
-				</span>
+			<div className="flex items-center gap-2 border-t-2 border-border bg-surface px-4 py-2.5 shrink-0">
 				{sentences.map((_, i) => (
 					<button
 						key={sentences[i].id}
@@ -285,9 +287,18 @@ export function SpeakingDrillInProgress({ drill, sessionId }: Props) {
 							i === current
 								? "border-skill-speaking bg-skill-speaking text-primary-foreground"
 								: done.has(i)
-									? "border-primary bg-primary-tint text-primary"
+									? "text-primary-foreground"
 									: "border-border bg-surface text-muted",
 						)}
+						style={
+							i !== current && done.has(i)
+								? {
+										borderColor: "var(--color-skill-speaking)",
+										backgroundColor: "color-mix(in oklch, var(--color-skill-speaking) 15%, transparent)",
+										color: "var(--color-skill-speaking)",
+									}
+								: undefined
+						}
 					>
 						{i + 1}
 					</button>
