@@ -94,7 +94,7 @@ services:
       AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
       AWS_DEFAULT_REGION: auto
       AWS_USE_PATH_STYLE_ENDPOINT: "true"
-      CORS_ALLOWED_ORIGINS: "https://${DOMAIN:-api.vstepgo.com},https://${FRONTEND_DOMAIN:-vstepgo.com}"
+      CORS_ALLOWED_ORIGINS: "*"
     networks:
       - default
       - traefik
