@@ -156,6 +156,8 @@ Route::prefix('v1')->group(function () {
     // Admin/Staff routes (role >= staff)
     Route::middleware(['auth:api', 'role:staff'])->prefix('admin')->group(function () {
         Route::get('/stats', [Admin\DashboardController::class, 'stats']);
+        Route::get('/alerts', [Admin\DashboardController::class, 'alerts']);
+        Route::get('/action-items', [Admin\DashboardController::class, 'actionItems']);
         Route::get('/content-status', [Admin\DashboardController::class, 'contentStatus']);
         Route::get('/recent-activity', [Admin\DashboardController::class, 'recentActivity']);
     });
