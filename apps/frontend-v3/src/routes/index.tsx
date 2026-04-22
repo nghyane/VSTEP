@@ -17,13 +17,13 @@ export const Route = createFileRoute("/")({
 })
 
 function LandingPage() {
-	const isAuthenticated = useAuth((s) => s.isAuthenticated)
+	const status = useAuth((s) => s.status)
 	const navigate = useNavigate()
 	const { auth } = Route.useSearch()
 
 	useEffect(() => {
-		if (isAuthenticated) navigate({ to: "/dashboard" })
-	}, [isAuthenticated, navigate])
+		if (status === "authenticated") navigate({ to: "/dashboard" })
+	}, [status, navigate])
 
 	return (
 		<div className="min-h-screen bg-surface">

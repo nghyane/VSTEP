@@ -1,23 +1,17 @@
-import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router"
-import { useEffect } from "react"
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
 import { ErrorBoundary } from "#/components/ErrorBoundary"
 import { Sidebar } from "#/components/Sidebar"
 import { useAuth } from "#/lib/auth"
 
 export const Route = createFileRoute("/_app")({
+	beforeLoad: () => {
+		const { status } = useAuth.getState()
+		if (status !== "authenticated") throw redirect({ to: "/", search: { auth: "login" } })
+	},
 	component: AppLayout,
 })
 
 function AppLayout() {
-	const isAuthenticated = useAuth((s) => s.isAuthenticated)
-	const navigate = useNavigate()
-
-	useEffect(() => {
-		if (!isAuthenticated) navigate({ to: "/", search: { auth: "login" } })
-	}, [isAuthenticated, navigate])
-
-	if (!isAuthenticated) return null
-
 	return (
 		<div className="flex min-h-screen">
 			<Sidebar />

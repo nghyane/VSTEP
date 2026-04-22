@@ -10,6 +10,12 @@ interface AuthResponse {
 	profile: Profile
 }
 
+interface RefreshResponse {
+	access_token: string
+	refresh_token: string
+	profile: Profile | null
+}
+
 interface SwitchResponse {
 	access_token: string
 	refresh_token: string
@@ -17,8 +23,9 @@ interface SwitchResponse {
 }
 
 type AuthState =
-	| { isAuthenticated: false; user: null; profile: null }
-	| { isAuthenticated: true; user: User; profile: Profile }
+	| { status: "idle" }
+	| { status: "authenticated"; user: User; profile: Profile }
+	| { status: "unauthenticated" }
 
 type AuthActions = {
 	login: (email: string, password: string) => Promise<void>
@@ -31,19 +38,17 @@ type AuthActions = {
 	}) => Promise<void>
 	switchProfile: (profileId: string) => Promise<void>
 	logout: () => void
+	_setAuthenticated: (user: User, profile: Profile) => void
+	_setUnauthenticated: () => void
 }
 
 type AuthStore = AuthState & AuthActions
 
-function getInitialState(): AuthState {
-	const user = tokens.getUser()
-	const profile = tokens.getProfile()
-	if (user && profile) return { isAuthenticated: true, user, profile }
-	return { isAuthenticated: false, user: null, profile: null }
-}
-
 export const useAuth = create<AuthStore>()((set, get) => ({
-	...getInitialState(),
+	status: "idle",
+
+	_setAuthenticated: (user, profile) => set({ status: "authenticated", user, profile }),
+	_setUnauthenticated: () => set({ status: "unauthenticated" }),
 
 	async login(email, password) {
 		const { data } = await api
@@ -52,8 +57,7 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 		tokens.setAccess(data.access_token)
 		tokens.setRefresh(data.refresh_token)
 		tokens.setUser(data.user)
-		tokens.setProfile(data.profile)
-		set({ isAuthenticated: true, user: data.user, profile: data.profile })
+		set({ status: "authenticated", user: data.user, profile: data.profile })
 	},
 
 	async register(input) {
@@ -61,32 +65,58 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 		tokens.setAccess(data.access_token)
 		tokens.setRefresh(data.refresh_token)
 		tokens.setUser(data.user)
-		tokens.setProfile(data.profile)
-		set({ isAuthenticated: true, user: data.user, profile: data.profile })
+		set({ status: "authenticated", user: data.user, profile: data.profile })
 	},
 
 	async switchProfile(profileId) {
-		const refreshToken = tokens.getRefresh() ?? ""
+		const refreshToken = tokens.getRefresh()
+		if (!refreshToken) throw new Error("No refresh token")
 		const { data } = await api
-			.post("auth/switch-profile", { json: { profile_id: profileId, refresh_token: refreshToken } })
+			.post("auth/switch-profile", {
+				json: { profile_id: profileId, refresh_token: refreshToken },
+			})
 			.json<ApiResponse<SwitchResponse>>()
 		tokens.setAccess(data.access_token)
 		tokens.setRefresh(data.refresh_token)
-		tokens.setProfile(data.profile)
 		const state = get()
-		if (state.isAuthenticated) {
-			set({ isAuthenticated: true, user: state.user, profile: data.profile })
+		if (state.status === "authenticated") {
+			set({ status: "authenticated", user: state.user, profile: data.profile })
 		}
 	},
 
 	logout() {
 		tokens.clear()
-		set({ isAuthenticated: false, user: null, profile: null })
+		set({ status: "unauthenticated" })
 	},
 }))
 
 export function useSession() {
 	const state = useAuth()
-	if (!state.isAuthenticated) throw new Error("useSession used outside authenticated context")
+	if (state.status !== "authenticated") throw new Error("useSession used outside authenticated context")
 	return { user: state.user, profile: state.profile }
+}
+
+export async function initAuth() {
+	const refreshToken = tokens.getRefresh()
+	if (!refreshToken) {
+		useAuth.getState()._setUnauthenticated()
+		return
+	}
+	try {
+		const { data } = await api
+			.post("auth/refresh", { json: { refresh_token: refreshToken } })
+			.json<ApiResponse<RefreshResponse>>()
+		tokens.setAccess(data.access_token)
+		tokens.setRefresh(data.refresh_token)
+		const user = tokens.getUser()
+		const profile = data.profile
+		if (user && profile) {
+			useAuth.getState()._setAuthenticated(user, profile)
+		} else {
+			useAuth.getState()._setUnauthenticated()
+		}
+	} catch {
+		tokens.clear()
+		useAuth.getState()._setUnauthenticated()
+	}
 }
