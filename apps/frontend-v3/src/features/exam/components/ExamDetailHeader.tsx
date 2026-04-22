@@ -50,9 +50,9 @@ export function ExamDetailHeader({ detail }: Props) {
 						{exam.tags.map((tag) => (
 							<span
 								key={tag}
-								className="inline-flex items-center rounded-full bg-background border border-border px-2.5 py-0.5 text-xs font-medium text-muted"
+								className="inline-flex items-center rounded-full bg-background border-2 border-border px-2.5 py-0.5 text-xs font-medium text-subtle"
 							>
-								#{tag}
+								{tag}
 							</span>
 						))}
 					</div>
