@@ -1,0 +1,22 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: 5.223.87.142
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/vstep
+            git pull origin main
+            docker compose --env-file .env build --no-cache backend horizon
+            docker compose --env-file .env up -d
+            docker compose --env-file .env exec -T backend php artisan migrate --force
