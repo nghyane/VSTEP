@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Services\ExamVersionValidator;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -60,8 +61,9 @@ class ContentSeeder extends Seeder
         /** @var array<string, list<array<string,mixed>>> $data */
         $data = json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
 
+        $this->validateExamFixtures($data);
+
         DB::transaction(function () use ($data) {
-            // Truncate in reverse dependency order to avoid FK violations
             foreach (array_reverse(self::TABLES) as $table) {
                 DB::table($table)->truncate();
             }
@@ -83,6 +85,64 @@ class ContentSeeder extends Seeder
         });
 
         $this->command->info('Content seeded from fixtures/content.json');
+    }
+
+    /**
+     * Validate exam version fixtures against VSTEP format before DB insert.
+     *
+     * @param  array<string, list<array<string,mixed>>>  $data
+     */
+    private function validateExamFixtures(array $data): void
+    {
+        $validator = new ExamVersionValidator;
+
+        $versions = $data['exam_versions'] ?? [];
+        if (empty($versions)) {
+            return;
+        }
+
+        // Index parent → version for grouping
+        $sectionsByVersion = collect($data['exam_version_listening_sections'] ?? [])
+            ->groupBy('exam_version_id');
+        $passagesByVersion = collect($data['exam_version_reading_passages'] ?? [])
+            ->groupBy('exam_version_id');
+        $writingByVersion = collect($data['exam_version_writing_tasks'] ?? [])
+            ->groupBy('exam_version_id');
+        $speakingByVersion = collect($data['exam_version_speaking_parts'] ?? [])
+            ->groupBy('exam_version_id');
+
+        // Index items by their direct parent FK (not version)
+        $itemsBySection = collect($data['exam_version_listening_items'] ?? [])
+            ->groupBy('section_id');
+        $itemsByPassage = collect($data['exam_version_reading_items'] ?? [])
+            ->groupBy('passage_id');
+
+        $errors = [];
+        foreach ($versions as $version) {
+            $vid = $version['id'];
+
+            $versionErrors = $validator->validateFixtureData(
+                collect($sectionsByVersion->get($vid, [])),
+                $itemsBySection,
+                collect($passagesByVersion->get($vid, [])),
+                $itemsByPassage,
+                collect($writingByVersion->get($vid, [])),
+                collect($speakingByVersion->get($vid, [])),
+            );
+
+            if ($versionErrors) {
+                $errors[] = "Exam version {$vid}: ".implode(' ', $versionErrors);
+            }
+        }
+
+        if ($errors) {
+            $this->command->error('Exam fixture validation failed:');
+            foreach ($errors as $error) {
+                $this->command->error("  - {$error}");
+            }
+
+            exit(1);
+        }
     }
 
     /**

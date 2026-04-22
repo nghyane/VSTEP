@@ -160,5 +160,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/action-items', [Admin\DashboardController::class, 'actionItems']);
         Route::get('/content-status', [Admin\DashboardController::class, 'contentStatus']);
         Route::get('/recent-activity', [Admin\DashboardController::class, 'recentActivity']);
+
+        // Exam management
+        Route::post('/exams/import', [Admin\ExamController::class, 'import']);
     });
 });
