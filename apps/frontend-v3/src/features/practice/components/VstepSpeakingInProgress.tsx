@@ -17,7 +17,7 @@ function fmt(s: number): string {
 }
 
 export function VstepSpeakingInProgress({ task, sessionId }: Props) {
-	const [submitted, setSubmitted] = useState(false)
+	const [submissionId, setSubmissionId] = useState<string | null>(null)
 	const recorder = useVoiceRecorder(task.speaking_seconds)
 	const [countdown, setCountdown] = useState(task.speaking_seconds)
 	const startTime = useRef<number | null>(null)
@@ -43,7 +43,7 @@ export function VstepSpeakingInProgress({ task, sessionId }: Props) {
 			const duration = Math.round(recorder.elapsedMs / 1000)
 			return submitVstepSpeaking(sessionId, recorder.audioUrl ?? "", duration)
 		},
-		onSuccess: () => setSubmitted(true),
+		onSuccess: (res) => setSubmissionId(res.data.submission_id),
 	})
 
 	const handleRecord = useCallback(() => {
@@ -69,18 +69,27 @@ export function VstepSpeakingInProgress({ task, sessionId }: Props) {
 			{/* Content */}
 			<div className="flex-1 overflow-y-auto">
 				<div className="max-w-xl mx-auto px-6 py-8">
-					{submitted ? (
+					{submissionId ? (
 						<div className="text-center py-12">
 							<img src="/mascot/lac-happy.png" alt="" className="w-24 h-24 mx-auto mb-4 object-contain" />
 							<p className="font-extrabold text-2xl text-foreground">Đã nộp bài!</p>
 							<p className="text-sm text-muted mt-2">AI đang chấm bài nói của bạn</p>
-							<Link
-								to="/luyen-tap/noi"
-								className="btn btn-primary mt-6 px-8"
-								style={{ background: "var(--color-skill-speaking)" }}
-							>
-								Về danh sách
-							</Link>
+							<div className="flex items-center justify-center gap-3 mt-6">
+								<Link
+									to="/grading/speaking/$submissionId"
+									params={{ submissionId }}
+									className="btn btn-primary px-8"
+									style={{ background: "var(--color-skill-speaking)" }}
+								>
+									Xem kết quả
+								</Link>
+								<Link
+									to="/luyen-tap/noi"
+									className="py-2 px-5 font-bold text-sm rounded-(--radius-button) border-2 border-border text-muted uppercase"
+								>
+									Về danh sách
+								</Link>
+							</div>
 						</div>
 					) : (
 						<div className="card p-0 overflow-hidden">

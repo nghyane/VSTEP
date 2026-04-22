@@ -54,12 +54,21 @@ export function WritingInProgress({ prompt, sessionId }: Props) {
 							<img src="/mascot/lac-happy.png" alt="" className="w-20 h-20 mx-auto mb-3 object-contain" />
 							<p className="font-extrabold text-xl text-foreground">Đã nộp bài!</p>
 							<p className="text-sm text-muted mt-1">{submission.word_count} từ · AI đang chấm bài</p>
-							<Link
-								to="/luyen-tap/viet"
-								className="inline-block mt-4 py-2 px-5 font-bold text-sm rounded-(--radius-button) text-primary-foreground bg-skill-writing shadow-[0_3px_0_oklch(0.55_0.15_160)] uppercase"
-							>
-								Về danh sách
-							</Link>
+							<div className="flex items-center justify-center gap-3 mt-4">
+								<Link
+									to="/grading/writing/$submissionId"
+									params={{ submissionId: submission.submission_id }}
+									className="py-2 px-5 font-bold text-sm rounded-(--radius-button) text-primary-foreground bg-skill-writing shadow-[0_3px_0_oklch(0.55_0.15_160)] uppercase"
+								>
+									Xem kết quả
+								</Link>
+								<Link
+									to="/luyen-tap/viet"
+									className="py-2 px-5 font-bold text-sm rounded-(--radius-button) border-2 border-border text-muted uppercase"
+								>
+									Về danh sách
+								</Link>
+							</div>
 						</div>
 					)}
 
