@@ -18,11 +18,11 @@ export function ListeningReadinessModal({ totalSections, totalQuestions, onReady
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-			<div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-			<div className="relative w-full max-w-md rounded-2xl bg-card p-6 shadow-xl space-y-5">
+			<div className="absolute inset-0 bg-foreground/60" />
+			<div className="card relative w-full max-w-md space-y-5 p-6">
 				{/* Icon + title */}
-				<div className="text-center space-y-3">
-					<div className="mx-auto flex size-16 items-center justify-center rounded-full bg-skill-listening/15 text-skill-listening">
+				<div className="space-y-3 text-center">
+					<div className="mx-auto flex size-16 items-center justify-center rounded-full bg-info-tint text-info">
 						<Icon name="volume" size="lg" />
 					</div>
 					<div className="space-y-1">
@@ -36,14 +36,14 @@ export function ListeningReadinessModal({ totalSections, totalQuestions, onReady
 				</div>
 
 				{/* Info box */}
-				<div className="rounded-xl border border-border bg-surface p-4 text-center text-sm text-muted space-y-1">
+				<div className="rounded-(--radius-card) border-2 border-border bg-background px-4 py-3 text-center text-sm text-muted">
 					<p>
-						Bài thi gồm <span className="font-semibold text-foreground">{totalSections} phần</span> với{" "}
-						<span className="font-semibold text-foreground">{totalQuestions} câu hỏi</span>.
+						Bài thi gồm <span className="font-bold text-foreground">{totalSections} phần</span> với{" "}
+						<span className="font-bold text-foreground">{totalQuestions} câu hỏi</span>.
 					</p>
-					<p>
-						Âm thanh mỗi phần chỉ phát <span className="font-semibold text-foreground">một lần duy nhất</span>
-						, không thể tua lại.
+					<p className="mt-1">
+						Âm thanh mỗi phần chỉ phát <span className="font-bold text-foreground">một lần duy nhất</span>,
+						không thể tua lại.
 					</p>
 				</div>
 
@@ -52,7 +52,7 @@ export function ListeningReadinessModal({ totalSections, totalQuestions, onReady
 					type="button"
 					onClick={onReady}
 					disabled={countdown > 0}
-					className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+					className="btn btn-primary w-full disabled:opacity-50"
 				>
 					{countdown > 0 ? `Sẵn sàng (${countdown}s)` : "Bắt đầu làm bài"}
 				</button>

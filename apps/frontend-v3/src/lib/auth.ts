@@ -1,6 +1,7 @@
 import { HTTPError } from "ky"
 import { create } from "zustand"
 import { type ApiResponse, api } from "#/lib/api"
+import { queryClient } from "#/lib/query-client"
 import { useToast } from "#/lib/toast"
 import { tokens } from "#/lib/tokens"
 import type { Profile, User } from "#/types/auth"
@@ -69,6 +70,7 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 			tokens.setAccess(data.access_token)
 			tokens.setRefresh(data.refresh_token)
 			tokens.setUser(data.user)
+			queryClient.clear()
 			set({ status: "authenticated", user: data.user, profile: data.profile })
 			useToast.getState().add("Đăng nhập thành công", "success")
 		} catch (e) {
@@ -82,6 +84,7 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 			tokens.setAccess(data.access_token)
 			tokens.setRefresh(data.refresh_token)
 			tokens.setUser(data.user)
+			queryClient.clear()
 			set({ status: "authenticated", user: data.user, profile: data.profile })
 			useToast.getState().add("Tạo tài khoản thành công", "success")
 		} catch (e) {
@@ -112,6 +115,7 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 
 	logout() {
 		tokens.clear()
+		queryClient.clear()
 		set({ status: "unauthenticated" })
 	},
 }))

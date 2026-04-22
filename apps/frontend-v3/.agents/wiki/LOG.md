@@ -16,4 +16,5 @@
 - 2025-04-21: Created practice-ux.md — transcript free in practice, listening layout decisions
 - 2026-04-22: Updated anti-patterns.md — Biome formatter JSX inline rule (lineWidth 110, bunx biome check after every edit)
 - 2026-04-22: Updated anti-patterns.md — useMediaCaption no-suppress, useReducer Map/Set generics, exam device-check phase mandatory
+- 2026-04-22: Created exam-color-system.md — exam room dùng primary cho interactive, skill color chỉ cho identifier
 - 2026-07-17: Created grading-fallback-bug.md — $systemPrompt never passed to callStructuredLlm, LLM had no instructions → always fallback 5.0

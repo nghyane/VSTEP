@@ -3,3 +3,4 @@ dist
 .tanstack
 .env
 src/routeTree.gen.ts
+imagefix
