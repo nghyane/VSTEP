@@ -1,0 +1,115 @@
+# Dev-only: postgres + redis + backend on localhost:8000
+# Usage: docker compose -f docker-compose.dev.yml up
+# Then run FE locally: cd apps/frontend-v3 && bun dev
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: vstep
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d vstep"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build: ./apps/backend-v2
+    volumes:
+      - ./apps/backend-v2:/app
+      - backend_vendor:/app/vendor
+    command: >
+      sh -c "
+        composer install --optimize-autoloader --quiet &&
+        php artisan migrate --force &&
+        php artisan db:seed --force --no-interaction --class=SystemConfigSeeder &&
+        php artisan db:seed --force --no-interaction --class=WalletSeeder &&
+        php artisan db:seed --force --no-interaction --class=ContentSeeder &&
+        php artisan db:seed --force --no-interaction --class=UserSeeder &&
+        php artisan storage:link 2>/dev/null;
+        php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000 --workers=auto --max-requests=500
+      "
+    ports:
+      - "8000:8000"
+    environment:
+      APP_NAME: VSTEP
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: vstep
+      DB_USERNAME: user
+      DB_PASSWORD: password
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+      REDIS_CLIENT: phpredis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      JWT_SECRET: vstep-dev-jwt-secret-change-in-production
+      CORS_ALLOWED_ORIGINS: "*"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: sync
+          path: ./apps/backend-v2/app
+          target: /app/app
+        - action: sync
+          path: ./apps/backend-v2/routes
+          target: /app/routes
+        - action: sync
+          path: ./apps/backend-v2/database
+          target: /app/database
+        - action: rebuild
+          path: ./apps/backend-v2/composer.json
+
+  horizon:
+    build: ./apps/backend-v2
+    command: php artisan horizon
+    environment:
+      APP_ENV: local
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: vstep
+      DB_USERNAME: user
+      DB_PASSWORD: password
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+      REDIS_CLIENT: phpredis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      JWT_SECRET: vstep-dev-jwt-secret-change-in-production
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+  backend_vendor:

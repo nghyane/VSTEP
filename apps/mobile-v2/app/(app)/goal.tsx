@@ -1,9 +1,10 @@
 // Goal screen — set/update learning target
 import { useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DepthButton } from "@/components/DepthButton";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { Mascot } from "@/components/Mascot";
 import { useAuth } from "@/hooks/use-auth";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
@@ -36,10 +37,10 @@ export default function GoalScreen() {
         {LEVELS.map((lvl) => {
           const active = selected === lvl;
           return (
-            <TouchableOpacity
+            <HapticTouchable
               key={lvl}
               onPress={() => setSelected(lvl)}
-              activeOpacity={0.8}
+              scalePress
               style={[
                 s.levelRow,
                 {
@@ -58,7 +59,7 @@ export default function GoalScreen() {
                   <Text style={s.checkMark}>✓</Text>
                 </View>
               )}
-            </TouchableOpacity>
+            </HapticTouchable>
           );
         })}
       </View>

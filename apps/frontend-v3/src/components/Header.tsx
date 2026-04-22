@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
-import { StaticIcon } from "#/components/Icon"
+import { Link } from "@tanstack/react-router"
+import { Icon, StaticIcon } from "#/components/Icon"
 import { ProfileDropdown } from "#/components/ProfileDropdown"
 import { streakQuery } from "#/features/dashboard/queries"
 import { unreadCountQuery } from "#/features/notifications/queries"
@@ -8,9 +9,10 @@ import { useSession } from "#/lib/auth"
 
 interface Props {
 	title: string
+	backTo?: string
 }
 
-export function Header({ title }: Props) {
+export function Header({ title, backTo }: Props) {
 	const { profile } = useSession()
 	const { data: walletData } = useQuery(walletBalanceQuery)
 	const { data: streakData } = useQuery(streakQuery)
@@ -23,7 +25,14 @@ export function Header({ title }: Props) {
 
 	return (
 		<div className="sticky top-0 z-10 bg-background px-10 pt-8 pb-5 flex items-center justify-between">
-			<h2 className="font-extrabold text-2xl text-foreground">{title}</h2>
+			<div className="flex items-center gap-3">
+				{backTo && (
+					<Link to={backTo} className="p-1 -ml-2 hover:opacity-70 transition">
+						<Icon name="back" size="sm" className="text-muted" />
+					</Link>
+				)}
+				<h2 className="font-extrabold text-2xl text-foreground">{title}</h2>
+			</div>
 			<div className="flex items-center gap-6">
 				<div className="flex items-center gap-2">
 					<StaticIcon name="gem-color" size="sm" />

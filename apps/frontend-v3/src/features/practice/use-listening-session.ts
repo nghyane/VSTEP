@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useReducer, useRef } from "react"
 import { submitListeningSession } from "#/features/practice/actions"
 import type { SubmitResult } from "#/features/practice/types"
@@ -34,6 +34,7 @@ export function useListeningSession(sessionId: string | null): ListeningSession 
 	const [state, dispatch] = useReducer(reducer, { answers: {}, result: null })
 	const answersRef = useRef(state.answers)
 	answersRef.current = state.answers
+	const qc = useQueryClient()
 
 	const mutation = useMutation({
 		mutationFn: () => {
@@ -44,7 +45,10 @@ export function useListeningSession(sessionId: string | null): ListeningSession 
 			}))
 			return submitListeningSession(sessionId, formatted)
 		},
-		onSuccess: (res) => dispatch({ type: "submitted", result: res.data }),
+		onSuccess: (res) => {
+			dispatch({ type: "submitted", result: res.data })
+			qc.invalidateQueries({ queryKey: ["practice", "listening", "progress"] })
+		},
 	})
 
 	return {

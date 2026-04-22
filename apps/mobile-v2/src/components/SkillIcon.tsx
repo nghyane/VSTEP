@@ -20,10 +20,15 @@ const SKILL_LABELS: Record<Skill, string> = {
 interface SkillIconProps {
   skill: Skill;
   size?: number;
+  /** Render icon trần, không có khung nền. Dùng trong SkillCard, chip inline. */
+  bare?: boolean;
 }
 
-export function SkillIcon({ skill, size = 20 }: SkillIconProps) {
+export function SkillIcon({ skill, size = 20, bare = false }: SkillIconProps) {
   const color = useSkillColor(skill);
+  if (bare) {
+    return <Ionicons name={SKILL_ICONS[skill]} size={size} color={color} />;
+  }
   return (
     <View style={[styles.container, { backgroundColor: color + "20" }]}>
       <Ionicons name={SKILL_ICONS[skill]} size={size} color={color} />

@@ -144,7 +144,7 @@ export default function DashboardScreen() {
       <Animated.View style={toAnimStyle(2)}>
         <DepthCard style={styles.nextCard}>
           <View style={[styles.nextIcon, { backgroundColor: c.primaryTint }]}>
-            <SkillIcon skill={weakest} size={22} />
+            <SkillIcon skill={weakest} size={22} bare />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.nextTitle, { color: c.foreground }]}>Bài gợi ý hôm nay</Text>
@@ -241,13 +241,22 @@ function SkillCard({
 
   return (
     <HapticTouchable
-      style={[styles.skillCard, { backgroundColor: c.card, borderColor: color + "30", borderBottomColor: color }]}
+      style={[styles.skillCard, { backgroundColor: c.card, borderColor: color + "40", borderBottomColor: color }]}
       onPress={onPress}
-      activeOpacity={0.8}
+      activeOpacity={0.85}
     >
-      <SkillIcon skill={skill} size={18} />
-      <Text style={[styles.skillLabel, { color: c.foreground }]}>{SKILL_META[skill].vi}</Text>
-      <Text style={[styles.skillScore, { color }]}>{score !== null ? score.toFixed(1) : "—"}</Text>
+      <View style={styles.skillTop}>
+        <View style={[styles.skillIconBg, { backgroundColor: color + "15" }]}>
+          <SkillIcon skill={skill} size={26} bare />
+        </View>
+        <Text style={[styles.skillScore, { color: c.foreground }]}>
+          {score !== null ? score.toFixed(1) : "—"}
+        </Text>
+      </View>
+      <Text style={[styles.skillLabel, { color: c.mutedForeground }]}>{SKILL_META[skill].vi}</Text>
+      <View style={[styles.skillBar, { backgroundColor: color + "20" }]}>
+        <View style={[styles.skillBarFill, { backgroundColor: color, width: score !== null ? `${Math.min(score / 10 * 100, 100)}%` : "0%" }]} />
+      </View>
     </HapticTouchable>
   );
 }
@@ -298,11 +307,15 @@ const styles = StyleSheet.create({
   statCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, padding: spacing.base, width: "48%", gap: 4 },
   statLabel: { fontSize: fontSize.xs },
   statValue: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },
-  sectionTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold, marginBottom: spacing.sm },
-  skillGrid: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.base },
-  skillCard: { flex: 1, borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, padding: spacing.md, alignItems: "center", gap: spacing.xs },
-  skillLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
-  skillScore: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold },
+  sectionTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold, marginBottom: spacing.md },
+  skillGrid: { gap: spacing.sm, marginBottom: spacing.base },
+  skillCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md },
+  skillTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  skillIconBg: { width: 48, height: 48, borderRadius: radius.lg, alignItems: "center", justifyContent: "center" },
+  skillLabel: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
+  skillScore: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
+  skillBar: { height: 6, borderRadius: radius.full, overflow: "hidden" },
+  skillBarFill: { height: 6, borderRadius: radius.full },
   chartCard: { marginBottom: spacing.base },
   chartTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold },
   chartSub: { fontSize: fontSize.sm, marginBottom: spacing.sm },

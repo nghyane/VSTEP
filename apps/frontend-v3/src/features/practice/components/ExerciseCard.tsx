@@ -18,37 +18,40 @@ interface Props {
 export function ExerciseCard({ title, description, meta, overlay, progress }: Props) {
 	const pct = progress ? Math.round((progress.score / progress.total) * 100) : 0
 	const hasBar = progress && progress.status !== "not_started" && progress.total > 0
+	const status = progress?.status ?? "not_started"
 
 	return (
-		<div className="group relative card-interactive p-5 flex flex-col">
-			<div className="flex items-start gap-3">
-				<div className="min-w-0 flex-1">
-					<p className="text-base font-bold text-foreground">{title}</p>
-					<p className="mt-1 text-xs text-muted">{meta}</p>
+		<div className="group relative card-interactive flex flex-col overflow-hidden">
+			<div className="p-5 flex flex-col flex-1">
+				<div className="flex items-start gap-3">
+					<div className="min-w-0 flex-1">
+						<p className="text-base font-bold text-foreground">{title}</p>
+						<p className="mt-1 text-xs text-muted">{meta}</p>
+					</div>
+					{status === "completed" && (
+						<span className="text-xs font-bold text-primary bg-primary-tint px-2 py-0.5 rounded-full shrink-0">
+							Hoàn thành
+						</span>
+					)}
+					{status === "in_progress" && (
+						<span className="text-xs font-bold text-warning bg-warning-tint px-2 py-0.5 rounded-full shrink-0">
+							Đang làm
+						</span>
+					)}
 				</div>
-				{progress?.status === "completed" && (
-					<span className="text-xs font-bold text-primary bg-primary-tint px-2 py-0.5 rounded-full shrink-0">
-						Hoàn thành
-					</span>
-				)}
-				{progress?.status === "in_progress" && (
-					<span className="text-xs font-bold text-warning bg-warning-tint px-2 py-0.5 rounded-full shrink-0">
-						Đang làm
-					</span>
-				)}
+
+				{description && <p className="mt-2 text-sm text-subtle line-clamp-2 flex-1">{description}</p>}
 			</div>
 
-			{description && <p className="mt-2 text-sm text-subtle line-clamp-2 flex-1">{description}</p>}
-
 			{hasBar && (
-				<div className="mt-3">
-					<div className="flex items-center justify-between text-xs text-muted tabular-nums">
+				<div className="mt-auto px-5 pb-4">
+					<div className="flex items-center justify-between text-xs text-muted tabular-nums mb-1">
 						<span>
 							{progress.score}/{progress.total} đúng
 						</span>
 						<span className="font-bold">{pct}%</span>
 					</div>
-					<div className="mt-1 h-2 bg-background rounded-full overflow-hidden">
+					<div className="h-1.5 bg-background rounded-full overflow-hidden">
 						<div
 							className={cn(
 								"h-full rounded-full transition-all",

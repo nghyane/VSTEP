@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { useMemo } from "react"
 import { ExerciseCard } from "#/features/practice/components/ExerciseCard"
-import { listeningExercisesQuery } from "#/features/practice/queries"
+import { listeningExercisesQuery, mcqProgressQuery } from "#/features/practice/queries"
 
 const PARTS = [
 	{ part: 1, label: "Part 1 — Nghe hiểu ngắn", desc: "Nghe đoạn hội thoại ngắn, trả lời câu hỏi" },
@@ -12,7 +12,9 @@ const PARTS = [
 
 export function ListeningContent() {
 	const { data } = useQuery(listeningExercisesQuery)
+	const { data: progressData } = useQuery(mcqProgressQuery("listening"))
 	const exercises = data ? data.data : []
+	const progress = progressData?.data ?? {}
 
 	const grouped = useMemo(() => {
 		const map = new Map<number, typeof exercises>()
@@ -40,21 +42,34 @@ export function ListeningContent() {
 							</div>
 						) : (
 							<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-								{list.map((ex) => (
-									<ExerciseCard
-										key={ex.id}
-										title={ex.title}
-										description={ex.description}
-										meta={ex.estimated_minutes ? `${ex.estimated_minutes} phút` : ""}
-										overlay={
-											<Link
-												to="/listening/$exerciseId"
-												params={{ exerciseId: ex.id }}
-												className="absolute inset-0 rounded-(--radius-card)"
-											/>
-										}
-									/>
-								))}
+								{list.map((ex) => {
+									const p = progress[ex.id]
+									const pct = p && p.total > 0 ? Math.round((p.score / p.total) * 100) : 0
+									return (
+										<ExerciseCard
+											key={ex.id}
+											title={ex.title}
+											description={ex.description}
+											meta={ex.estimated_minutes ? `${ex.estimated_minutes} phút` : ""}
+											progress={
+												p
+													? {
+															status: pct >= 80 ? "completed" : "in_progress",
+															score: p.score,
+															total: p.total,
+														}
+													: undefined
+											}
+											overlay={
+												<Link
+													to="/listening/$exerciseId"
+													params={{ exerciseId: ex.id }}
+													className="absolute inset-0 rounded-(--radius-card)"
+												/>
+											}
+										/>
+									)
+								})}
 							</div>
 						)}
 					</section>

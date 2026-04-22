@@ -31,7 +31,9 @@ export function StreakButton({ streak, activityByDay = {} }: StreakButtonProps) 
         style={[styles.btn, { backgroundColor: isActive ? c.streak + "15" : c.muted }]}
         onPress={() => setVisible(true)}
       >
-        <GameIcon name="fire" size={18} />
+        <View style={styles.iconWrap}>
+          <GameIcon name="fire" size={18} />
+        </View>
         <Text style={[styles.btnText, { color: isActive ? c.streak : c.mutedForeground }]}>
           {streak}
         </Text>
@@ -175,7 +177,8 @@ function buildCurrentWeek(activityByDay: Record<string, number>): WeekDay[] {
 
 const styles = StyleSheet.create({
   btn: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 14 },
-  btnText: { fontSize: 13, fontFamily: fontFamily.bold },
+  btnText: { fontSize: 13, fontFamily: fontFamily.bold, lineHeight: 18 },
+  iconWrap: { width: 18, height: 18, alignItems: "center", justifyContent: "center" },
   content: { paddingHorizontal: spacing.xl, paddingBottom: spacing["2xl"] },
   header: { padding: spacing.lg, marginHorizontal: -spacing.xl, marginTop: -6, marginBottom: spacing.lg },
   headerRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },

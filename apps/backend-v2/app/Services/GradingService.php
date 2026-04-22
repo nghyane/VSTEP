@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Ai\Agents\GradingAgent;
 use App\Models\GradingJob;
 use App\Models\PracticeSpeakingSubmission;
 use App\Models\PracticeWritingSubmission;
 use App\Models\SpeakingGradingResult;
 use App\Models\WritingGradingResult;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
  * Grading pipeline — 2 layers:
  *
  * Layer 1: LanguageTool (grammar detection, offset-level, deterministic)
- * Layer 2: LLM via Ollama OpenAI-compat (rubric scoring + narrative feedback)
+ * Layer 2: LLM via OpenAI-compatible endpoint (rubric scoring + narrative feedback)
  *
  * Architecture:
  *   text → LanguageTool → annotations[]
@@ -31,16 +31,22 @@ class GradingService
         private readonly AudioStorageService $audioService,
         private readonly LanguageToolService $languageTool,
         private readonly RuleBasedScoringService $ruleScoring,
+        private readonly GradingAgent $gradingAgent,
     ) {}
 
-    private function ollamaUrl(): string
+    private function llmBaseUrl(): string
     {
-        return rtrim(env('OLLAMA_URL', 'http://localhost:11434'), '/');
+        return rtrim((string) env('LLM_BASE_URL', 'http://localhost:11434'), '/');
     }
 
-    private function ollamaModel(): string
+    private function llmModel(): string
     {
-        return env('OLLAMA_GRADING_MODEL', 'gemini-3-flash-preview');
+        return (string) env('LLM_MODEL', 'gemini-3-flash-preview');
+    }
+
+    private function llmApiKey(): string
+    {
+        return (string) env('LLM_API_KEY', '');
     }
 
     public function enqueueWritingGrading(string $submissionType, string $submissionId): GradingJob
@@ -232,7 +238,7 @@ PROMPT;
 
         $userMessage = "Task prompt: {$promptText}\n\nStudent's writing:\n{$text}\n\nWord count: ".str_word_count($text).$errorContext;
 
-        return $this->callOllama($systemPrompt, $userMessage, $this->defaultWritingResult());
+        return $this->callLlm($systemPrompt, $userMessage, $this->defaultWritingResult());
     }
 
     /**
@@ -261,7 +267,7 @@ Return ONLY valid JSON:
 }
 PROMPT;
 
-        $result = $this->callOllama($systemPrompt, "Transcript:\n{$transcript}", $this->defaultSpeakingResult());
+        $result = $this->callLlm($systemPrompt, "Transcript:\n{$transcript}", $this->defaultSpeakingResult());
 
         return $result;
     }
@@ -269,29 +275,20 @@ PROMPT;
     /**
      * @return array<string,mixed>
      */
-    private function callOllama(string $systemPrompt, string $userMessage, array $fallback): array
+    private function callLlm(string $systemPrompt, string $userMessage, array $fallback): array
     {
         try {
-            $response = Http::timeout(60)->post($this->ollamaUrl().'/v1/chat/completions', [
-                'model' => $this->ollamaModel(),
-                'messages' => [
-                    ['role' => 'system', 'content' => $systemPrompt],
-                    ['role' => 'user', 'content' => $userMessage],
-                ],
-                'temperature' => 0.1,
-            ]);
+            $response = $this->gradingAgent->prompt(
+                prompt: $systemPrompt."\n\n".$userMessage,
+                provider: 'llm',
+                model: $this->llmModel(),
+                timeout: 60,
+            );
 
-            if (! $response->successful()) {
-                Log::error('Ollama grading call failed', ['status' => $response->status()]);
-
-                return $fallback;
-            }
-
-            $content = $response->json('choices.0.message.content', '');
+            $content = trim($response->text);
             $parsed = json_decode($content, true);
 
             if (! is_array($parsed) || ! isset($parsed['rubric_scores'])) {
-                // Try extract JSON from markdown code block.
                 if (preg_match('/```json\s*(.*?)\s*```/s', $content, $m)) {
                     $parsed = json_decode($m[1], true);
                 }
@@ -301,11 +298,19 @@ PROMPT;
                 return array_merge($fallback, $parsed);
             }
 
-            Log::warning('Ollama grading: could not parse JSON', ['content' => substr($content, 0, 500)]);
+            Log::warning('LLM grading: could not parse JSON', [
+                'content' => substr($content, 0, 500),
+                'url' => $this->llmBaseUrl(),
+                'model' => $this->llmModel(),
+            ]);
 
             return $fallback;
         } catch (\Throwable $e) {
-            Log::error('Ollama grading exception', ['error' => $e->getMessage()]);
+            Log::error('LLM grading exception', [
+                'error' => $e->getMessage(),
+                'url' => $this->llmBaseUrl(),
+                'model' => $this->llmModel(),
+            ]);
 
             return $fallback;
         }
