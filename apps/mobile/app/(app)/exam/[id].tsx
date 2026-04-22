@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { HapticTouchable } from "@/components/HapticTouchable";
+import { DepthButton } from "@/components/DepthButton";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
@@ -90,133 +91,15 @@ export default function ExamDetailScreen() {
     <View style={[s.root, { backgroundColor: c.background }]}>
       <ScrollView contentContainerStyle={[s.scroll, { paddingTop: insets.top + spacing.base }]}>
         {/* Back */}
-        <HapticTouchable style={s.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={20} color={c.mutedForeground} />
-          <Text style={[s.backText, { color: c.mutedForeground }]}>Thư viện đề thi</Text>
-        </HapticTouchable>
-
-        {/* Header */}
-        <View style={s.header}>
-          {exam.tags.length > 0 && (
-            <View style={s.tagRow}>
-              {exam.tags.map((tag) => (
-                <View key={tag} style={[s.tag, { backgroundColor: c.muted, borderColor: c.border }]}>
-                  <Text style={[s.tagText, { color: c.mutedForeground }]}>#{tag}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-          <Text style={[s.examTitle, { color: c.foreground }]}>{exam.title}</Text>
-          <View style={s.metaRow}>
-            <Ionicons name="time-outline" size={14} color={c.mutedForeground} />
-            <Text style={[s.metaText, { color: c.mutedForeground }]}>{exam.totalDurationMinutes} phút</Text>
-          </View>
-        </View>
-
-        {/* Summary bar — 4 skills */}
-        <View style={[s.summaryBar, { backgroundColor: c.card, borderColor: c.border }]}>
-          {SKILL_ORDER.map((skill, i) => {
-            const color = useSkillColor(skill);
-            const minutes = getSkillMinutes(skill, detail);
-            const count = getSkillCount(skill, detail);
-            const unit = skill === "writing" || skill === "speaking" ? "phần" : "câu";
-            return (
-              <View key={skill} style={[s.summaryCell, i > 0 && { borderLeftWidth: 1, borderLeftColor: c.border }]}>
-                <Text style={[s.summaryCellLabel, { color }]}>{SKILL_META[skill].shortLabel}</Text>
-                <Text style={[s.summaryCellMin, { color: c.foreground }]}>{minutes} phút</Text>
-                <Text style={[s.summaryCellCount, { color: c.mutedForeground }]}>{count} {unit}</Text>
-              </View>
-            );
-          })}
-        </View>
-
-        {/* Section selector */}
-        <View style={s.selectorHeader}>
-          <Text style={[s.selectorTitle, { color: c.foreground }]}>Chọn kỹ năng luyện tập</Text>
-          <Text style={[s.selectorHint, { color: c.mutedForeground }]}>
-            {selected.size === 0 ? "Chưa chọn — sẽ làm full test" : `${selected.size} kỹ năng đã chọn`}
-          </Text>
-        </View>
-
-        {SKILL_ORDER.map((skill) => {
-          const isSelected = selected.has(skill);
-          const color = useSkillColor(skill);
-          const minutes = getSkillMinutes(skill, detail);
-          const count = getSkillCount(skill, detail);
-          const unit = skill === "writing" || skill === "speaking" ? "phần" : "câu";
-
-          return (
-            <HapticTouchable
-              key={skill}
-              style={[
-                s.skillRow,
-                { backgroundColor: isSelected ? color + "12" : c.card, borderColor: isSelected ? color + "60" : c.border },
-              ]}
-              onPress={() => toggleSkill(skill)}
-              activeOpacity={0.8}
-            >
-              {/* Checkbox */}
-              <View style={[s.checkbox, { borderColor: isSelected ? color : c.border, backgroundColor: isSelected ? color : "transparent" }]}>
-                {isSelected && <Ionicons name="checkmark" size={12} color="#FFF" />}
-              </View>
-
-              {/* Accent bar */}
-              <View style={[s.accentBar, { backgroundColor: color }]} />
-
-              {/* Info */}
-              <View style={{ flex: 1 }}>
-                <Text style={[s.skillLabel, { color }]}>{SKILL_META[skill].label}</Text>
-                <Text style={[s.skillDesc, { color: c.mutedForeground }]}>{SKILL_LABELS[skill]}</Text>
-              </View>
-
-              {/* Stats */}
-              <View style={s.skillStats}>
-                <Text style={[s.skillMin, { color: c.foreground }]}>{minutes} phút</Text>
-                <Text style={[s.skillCount, { color: c.mutedForeground }]}>{count} {unit}</Text>
-              </View>
-            </HapticTouchable>
-          );
-        })}
-
-        {/* Mascot hint when all selected */}
-        {selected.size === 4 && (
-          <View style={s.mascotHint}>
-            <Mascot name="happy" size={60} animation="bounce" />
-            <Text style={[s.mascotText, { color: c.mutedForeground }]}>Full test! Cố lên nhé 💪</Text>
-          </View>
-        )}
-
-        <View style={{ height: 120 }} />
-      </ScrollView>
-
-      {/* Bottom action bar */}
-      <View style={[s.bottomBar, { backgroundColor: c.surface ?? c.card, borderTopColor: c.primary + "30" }]}>
-        <View style={s.bottomInfo}>
-          <Text style={[s.bottomLabel, { color: c.foreground }]}>
-            {isFullTest ? "Làm full test" : `${selected.size} kỹ năng`}
-          </Text>
-          <View style={s.bottomMeta}>
-            <Ionicons name="time-outline" size={13} color={c.mutedForeground} />
-            <Text style={[s.bottomMetaText, { color: c.mutedForeground }]}>~{totalMinutes} phút</Text>
-            <View style={s.coinBadge}>
-              <GameIcon name="coin" size={14} />
-              <Text style={[s.coinText, { color: insufficient ? c.destructive : c.coinDark }]}>{cost} xu</Text>
-            </View>
-          </View>
-        </View>
-        <HapticTouchable
-          style={[s.startBtn, { backgroundColor: insufficient ? c.muted : c.primary, opacity: startSession.isPending ? 0.7 : 1 }]}
+        <DepthButton
           onPress={handleStart}
           disabled={startSession.isPending}
+          variant={insufficient ? "secondary" : "primary"}
+          size="md"
+          fullWidth
         >
-          {startSession.isPending
-            ? <ActivityIndicator color="#FFF" size="small" />
-            : <>
-                <Text style={s.startBtnText}>{isFullTest ? "Làm full test" : "Bắt đầu luyện tập"}</Text>
-                <Ionicons name="flash" size={16} color="#FFF" />
-              </>
-          }
-        </HapticTouchable>
+          {startSession.isPending ? "Đang bắt đầu..." : isFullTest ? "Làm full test" : "Bắt đầu luyện tập"}
+        </DepthButton>
       </View>
 
       <TopUpDialog visible={topUpVisible} onClose={() => setTopUpVisible(false)} />

@@ -7,6 +7,7 @@ import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
 import { depthNeutral } from "@/theme/depth";
+import { DepthButton } from "@/components/DepthButton";
 import type { Skill } from "@/types/api";
 
 const SKILLS: { key: Skill; desc: string }[] = [

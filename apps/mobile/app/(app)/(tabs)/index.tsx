@@ -15,6 +15,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useOverview, useStreak } from "@/hooks/use-progress";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
 import { depthNeutral } from "@/theme/depth";
+import { DepthButton } from "@/components/DepthButton";
+import { DepthCard } from "@/components/DepthCard";
 import { useState } from "react";
 import type { Skill } from "@/types/api";
 
@@ -112,12 +114,7 @@ export default function DashboardScreen() {
             Gợi ý: Luyện {SKILL_META[weakest].label} · 15 phút · Giữ streak {(streakData?.currentStreak ?? 0) + 1} ngày
           </Text>
         </View>
-        <HapticTouchable
-          style={[s.nextBtn, { backgroundColor: c.primary }]}
-          onPress={() => router.push(`/(app)/practice/${weakest}`)}
-        >
-          <Text style={s.nextBtnText}>Bắt đầu</Text>
-        </HapticTouchable>
+        <DepthButton onPress={() => router.push(`/(app)/practice/${weakest}`)} size="sm">Bắt đầu</DepthButton>
       </View>
 
       {/* ── Stats Row ── */}

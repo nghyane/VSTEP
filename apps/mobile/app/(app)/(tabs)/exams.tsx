@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HapticTouchable } from "@/components/HapticTouchable";
+import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
 import { GameIcon } from "@/components/GameIcon";
 import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";

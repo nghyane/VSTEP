@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { HapticTouchable } from "@/components/HapticTouchable";
+import { DepthButton } from "@/components/DepthButton";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { MascotResult } from "@/components/MascotStates";
 import { useReadingExerciseDetail } from "@/features/practice/queries";
@@ -63,15 +64,9 @@ export default function ReadingExerciseScreen() {
           <Text style={[s.previewTitle, { color: c.foreground }]}>{exercise.title}</Text>
           {exercise.description && <Text style={[s.previewDesc, { color: c.subtle }]}>{exercise.description}</Text>}
           <Text style={[s.previewMeta, { color: c.subtle }]}>{questions.length} câu hỏi</Text>
-          <HapticTouchable
-            style={[s.startBtn, { backgroundColor: c.primary, opacity: starting ? 0.7 : 1 }]}
-            onPress={handleStart}
-            disabled={starting}
-          >
-            {starting
-              ? <ActivityIndicator color="#FFF" size="small" />
-              : <Text style={s.startBtnText}>Bắt đầu làm bài</Text>}
-          </HapticTouchable>
+          <DepthButton onPress={handleStart} disabled={starting} size="lg" fullWidth>
+              {starting ? "Đang bắt đầu..." : "Bắt đầu làm bài"}
+            </DepthButton>
         </View>
       </View>
     );
@@ -85,52 +80,9 @@ export default function ReadingExerciseScreen() {
           <Text style={[s.inTitle, { color: c.foreground }]}>{exercise.title}</Text>
           <Text style={[s.inMeta, { color: c.subtle }]}>Part {exercise.part} · {questions.length} câu</Text>
         </View>
-        <HapticTouchable
-          style={[s.passageToggle, { backgroundColor: showPassage ? c.primaryTint : c.muted }]}
-          onPress={() => setShowPassage(!showPassage)}
-        >
-          <Text style={[s.passageToggleText, { color: showPassage ? c.primaryDark : c.mutedForeground }]}>
-            {showPassage ? "Ẩn đoạn văn" : "Hiện đoạn văn"}
-          </Text>
-        </HapticTouchable>
-      </View>
-
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.xl, gap: spacing.lg }}>
-        {/* Passage */}
-        {showPassage && (
-          <View style={[s.passageBox, { backgroundColor: c.background, borderColor: c.border }]}>
-            <Text style={[s.passageText, { color: c.foreground }]}>{exercise.passage}</Text>
-          </View>
-        )}
-
-        {/* Questions */}
-        {questions.map((q, i) => (
-          <QuestionCard
-            key={q.id}
-            question={q}
-            index={i}
-            selected={session.answers[q.id] ?? null}
-            result={session.result}
-            onSelect={(idx) => session.select(q.id, idx)}
-          />
-        ))}
-        <View style={{ height: 60 }} />
-      </ScrollView>
-
-      {/* Submit */}
-      <View style={[s.bottom, { borderTopColor: c.border, paddingBottom: insets.bottom || spacing.base }]}>
-        <Text style={[s.progressText, { color: c.subtle }]}>{session.answeredCount}/{questions.length} câu đã trả lời</Text>
-        <HapticTouchable
-          style={[s.submitBtn, { backgroundColor: session.answeredCount < questions.length ? c.muted : c.primary, opacity: session.submitting ? 0.7 : 1 }]}
-          onPress={session.submit}
-          disabled={session.submitting || session.answeredCount < questions.length}
-        >
-          {session.submitting
-            ? <ActivityIndicator color="#FFF" size="small" />
-            : <Text style={[s.submitText, { color: session.answeredCount < questions.length ? c.mutedForeground : "#FFF" }]}>
-                Nộp bài
-              </Text>}
-        </HapticTouchable>
+        <DepthButton onPress={session.submit} disabled={session.submitting || session.answeredCount < questions.length} size="md" fullWidth>
+            {session.submitting ? "Đang chấm..." : `Nộp bài (${session.answeredCount}/${questions.length})`}
+          </DepthButton>
       </View>
     </View>
   );

@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import * as Haptics from "expo-haptics";
 import { HapticTouchable } from "@/components/HapticTouchable";
+import { DepthButton } from "@/components/DepthButton";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { MascotResult } from "@/components/MascotStates";
 import { useListeningExerciseDetail } from "@/features/practice/queries";
@@ -81,51 +82,9 @@ export default function ListeningExerciseScreen() {
     return (
       <View style={[s.root, { backgroundColor: c.background, paddingBottom: insets.bottom }]}>
         <View style={s.focusBar}>
-          <HapticTouchable onPress={() => router.back()}>
-            <Ionicons name="close" size={22} color={c.mutedForeground} />
-          </HapticTouchable>
-          <Text style={[s.focusTitle, { color: c.foreground }]}>{exercise.title}</Text>
-          <View style={{ width: 22 }} />
-        </View>
-        <MascotResult
-          score={session.result.score}
-          total={session.result.total}
-          onBack={() => router.back()}
-          backLabel="Quay lại danh sách"
-        />
-      </View>
-    );
-  }
-
-  // Preview (before start)
-  if (!sessionId) {
-    return (
-      <View style={[s.root, { backgroundColor: c.background }]}>
-        <View style={s.focusBar}>
-          <HapticTouchable onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={22} color={c.mutedForeground} />
-          </HapticTouchable>
-          <Text style={[s.focusTitle, { color: c.foreground }]}>Nghe</Text>
-          <View style={{ width: 22 }} />
-        </View>
-        <View style={s.preview}>
-          <View style={[s.partBadge, { backgroundColor: c.infoTint }]}>
-            <Text style={[s.partBadgeText, { color: c.info }]}>Part {exercise.part}</Text>
-          </View>
-          <Text style={[s.previewTitle, { color: c.foreground }]}>{exercise.title}</Text>
-          {exercise.description && (
-            <Text style={[s.previewDesc, { color: c.subtle }]}>{exercise.description}</Text>
-          )}
-          <Text style={[s.previewMeta, { color: c.subtle }]}>{questions.length} câu hỏi</Text>
-          <HapticTouchable
-            style={[s.startBtn, { backgroundColor: c.primary, opacity: starting ? 0.7 : 1 }]}
-            onPress={handleStart}
-            disabled={starting}
-          >
-            {starting
-              ? <ActivityIndicator color="#FFF" size="small" />
-              : <Text style={s.startBtnText}>Bắt đầu làm bài</Text>}
-          </HapticTouchable>
+          <DepthButton onPress={handleStart} disabled={starting} size="lg" fullWidth>
+              {starting ? "Đang bắt đầu..." : "Bắt đầu làm bài"}
+            </DepthButton>
         </View>
       </View>
     );
@@ -265,8 +224,6 @@ function fmt(ms: number): string {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-// Need to import useMcqSession for type — re-export from component
-import { useMcqSession } from "@/features/practice/use-mcq-session";
 
 const s = StyleSheet.create({
   root: { flex: 1 },
