@@ -245,9 +245,14 @@ function SkillCard({
       onPress={onPress}
       activeOpacity={0.8}
     >
-      <SkillIcon skill={skill} size={22} bare />
+      <View style={[styles.skillIconBg, { backgroundColor: color + "18" }]}>
+        <SkillIcon skill={skill} size={24} bare />
+      </View>
       <Text style={[styles.skillLabel, { color: c.foreground }]}>{SKILL_META[skill].vi}</Text>
-      <Text style={[styles.skillScore, { color }]}>{score !== null ? score.toFixed(1) : "—"}</Text>
+      <View style={[styles.skillDivider, { backgroundColor: color + "30" }]} />
+      <Text style={[styles.skillScore, { color }]}>
+        {score !== null ? score.toFixed(1) : "—"}
+      </Text>
     </HapticTouchable>
   );
 }
@@ -300,9 +305,11 @@ const styles = StyleSheet.create({
   statValue: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },
   sectionTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold, marginBottom: spacing.sm },
   skillGrid: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.base },
-  skillCard: { flex: 1, borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, padding: spacing.md, alignItems: "center", gap: spacing.xs },
+  skillCard: { flex: 1, borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, paddingVertical: spacing.md, paddingHorizontal: spacing.xs, alignItems: "center", gap: spacing.xs },
+  skillIconBg: { width: 44, height: 44, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
   skillLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
-  skillScore: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold },
+  skillDivider: { width: "80%", height: 1 },
+  skillScore: { fontSize: fontSize.base, fontFamily: fontFamily.extraBold },
   chartCard: { marginBottom: spacing.base },
   chartTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold },
   chartSub: { fontSize: fontSize.sm, marginBottom: spacing.sm },

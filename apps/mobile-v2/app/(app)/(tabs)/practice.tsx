@@ -118,26 +118,18 @@ export default function PracticeHubScreen() {
 
           <View style={styles.chipRow}>
             {SKILLS.map((skill) => (
-              <Chip key={skill.key} label={skill.label} color={skill.color} />
-            ))}
-          </View>
-
-          <View style={styles.skillIconRow}>
-            {SKILLS.map((skill) => (
-              <View key={skill.key} style={[styles.skillIconWrap, { backgroundColor: skill.color + "15" }]}>
+              <View key={skill.key} style={[styles.skillChip, { backgroundColor: skill.color + "15" }]}>
                 <Ionicons
                   name={
-                    skill.key === "listening"
-                      ? "headset-outline"
-                      : skill.key === "reading"
-                        ? "book-outline"
-                        : skill.key === "writing"
-                          ? "create-outline"
-                          : "mic-outline"
+                    skill.key === "listening" ? "headset-outline"
+                    : skill.key === "reading" ? "book-outline"
+                    : skill.key === "writing" ? "create-outline"
+                    : "mic-outline"
                   }
-                  size={20}
+                  size={14}
                   color={skill.color}
                 />
+                <Text style={[styles.skillChipText, { color: skill.color }]}>{skill.label}</Text>
               </View>
             ))}
           </View>
@@ -204,8 +196,8 @@ const styles = StyleSheet.create({
   chipRow: { flexDirection: "row", gap: spacing.sm, flexWrap: "wrap" },
   chip: { paddingHorizontal: spacing.md, paddingVertical: 4, borderRadius: radius.full },
   chipText: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
-  skillIconRow: { flexDirection: "row", gap: spacing.sm },
-  skillIconWrap: { width: 40, height: 40, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
+  skillChip: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.full },
+  skillChipText: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
   mascotRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginTop: spacing.sm },
   mascotBubble: { flex: 1, borderWidth: 1.5, borderRadius: radius.xl, padding: spacing.md },
   mascotText: { fontSize: fontSize.sm, lineHeight: 20, fontFamily: fontFamily.semiBold },
