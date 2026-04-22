@@ -107,10 +107,10 @@ export default function FoundationIndexScreen() {
         <DepthButton
           variant="secondary"
           fullWidth
-          onPress={() => router.back()}
+          onPress={() => router.push("/(app)/practice/grammar" as any)}
           style={{ marginTop: spacing.xs }}
         >
-          Sắp ra mắt
+          {`Xem ${grammarCount} điểm ngữ pháp`}
         </DepthButton>
       </DepthCard>
 
