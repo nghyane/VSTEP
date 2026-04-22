@@ -13,6 +13,7 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
+import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
 import { GameIcon } from "@/components/GameIcon";
 import { SkillIcon } from "@/components/SkillIcon";
@@ -138,7 +139,7 @@ function ExamCard({
 
   return (
     <Animated.View style={{ opacity: fadeAnim }}>
-      <HapticTouchable onPress={onPress} activeOpacity={0.8}>
+      <HapticTouchable activeOpacity={1}>
         <DepthCard>
           {exam.tags.length > 0 ? (
             <View style={styles.tagRow}>
@@ -170,10 +171,9 @@ function ExamCard({
               <GameIcon name="coin" size={16} />
               <Text style={[styles.coinText, { color: c.coinDark }]}>{FULL_TEST_COST} xu</Text>
             </View>
-            <View style={[styles.ctaBtn, { backgroundColor: c.primary }]}> 
-              <Text style={styles.ctaBtnText}>Xem chi tiết</Text>
-              <Ionicons name="arrow-forward" size={13} color="#FFF" />
-            </View>
+            <DepthButton size="sm" onPress={onPress}>
+              Xem chi tiết →
+            </DepthButton>
           </View>
         </DepthCard>
       </HapticTouchable>
@@ -213,6 +213,4 @@ const styles = StyleSheet.create({
   cardFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderTopWidth: 1, paddingTop: spacing.sm, marginTop: spacing.md },
   coinWrap: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   coinText: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
-  ctaBtn: { flexDirection: "row", alignItems: "center", gap: spacing.xs, borderRadius: radius.lg, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderBottomWidth: 4 },
-  ctaBtnText: { color: "#FFF", fontSize: fontSize.xs, fontFamily: fontFamily.bold },
 });

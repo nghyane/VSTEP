@@ -4,7 +4,7 @@ import { Animated, Pressable, StyleSheet, Text, type ViewStyle } from "react-nat
 import * as Haptics from "expo-haptics";
 import { fontSize, fontFamily, radius, spacing, useThemeColors } from "@/theme";
 
-type Variant = "primary" | "secondary" | "destructive" | "coin";
+type Variant = "primary" | "secondary" | "destructive" | "coin" | "info";
 type Size = "sm" | "md" | "lg";
 
 interface DepthButtonProps {
@@ -92,6 +92,8 @@ function getVariantColors(variant: Variant, c: ReturnType<typeof useThemeColors>
       return { bg: c.destructive, shadow: "#B71C1C", text: "#FFFFFF" };
     case "coin":
       return { bg: c.coin, shadow: c.coinDark, text: "#FFFFFF" };
+    case "info":
+      return { bg: c.info, shadow: "#0E7ABF", text: "#FFFFFF" };
     default:
       return { bg: c.primary, shadow: c.primaryDark, text: c.primaryForeground };
   }
