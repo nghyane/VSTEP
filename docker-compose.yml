@@ -1,4 +1,27 @@
 services:
+  traefik:
+    image: traefik:v2.11
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=traefik
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.le.acme.httpchallenge=true
+      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
+      - --certificatesresolvers.le.acme.email=${ACME_EMAIL:-admin@vstepgo.com}
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt:/letsencrypt
+    networks:
+      - default
+      - traefik
+    restart: unless-stopped
+
   postgres:
     image: postgres:17-alpine
     ports:
@@ -27,14 +50,17 @@ services:
       timeout: 3s
       retries: 5
 
-  # Laravel API — serves on :3000 for FE
+  # Laravel API
   backend:
     build: ./apps/backend-v2
     env_file:
       - ./apps/backend-v2/.env
+    volumes:
+      - ./apps/backend-v2:/app
+      - backend_vendor:/app/vendor
     command: >
       sh -c "
-        php artisan key:generate --force --no-interaction &&
+        composer install --no-dev --optimize-autoloader --quiet &&
         php artisan migrate --force &&
         php artisan db:seed --force --no-interaction --class=SystemConfigSeeder &&
         php artisan db:seed --force --no-interaction --class=WalletSeeder &&
@@ -43,13 +69,18 @@ services:
         php artisan storage:link 2>/dev/null;
         php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000 --workers=auto --max-requests=500
       "
-    ports:
-      - "3000:8000"
+    expose:
+      - "8000"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.backend.rule=Host(`${DOMAIN:-api.vstepgo.com}`)
+      - traefik.http.routers.backend.entrypoints=web,websecure
+      - traefik.http.services.backend.loadbalancer.server.port=8000
     environment:
       APP_NAME: VSTEP
-      APP_ENV: local
-      APP_DEBUG: "true"
-      APP_URL: http://localhost:3000
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: https://${DOMAIN:-api.vstepgo.com}
       DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: 5432
@@ -71,7 +102,12 @@ services:
       AWS_DEFAULT_REGION: auto
       AWS_USE_PATH_STYLE_ENDPOINT: "true"
       CORS_ALLOWED_ORIGINS: "*"
+    networks:
+      - default
+      - traefik
     depends_on:
+      traefik:
+        condition: service_started
       postgres:
         condition: service_healthy
       redis:
@@ -149,3 +185,9 @@ services:
 volumes:
   pgdata:
   redisdata:
+  letsencrypt:
+  backend_vendor:
+
+networks:
+  traefik:
+    external: true
