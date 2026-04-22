@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Api\V1\AudioController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CourseController;
@@ -7,6 +8,7 @@ use App\Http\Controllers\Api\V1\ExamController;
 use App\Http\Controllers\Api\V1\GradingController;
 use App\Http\Controllers\Api\V1\GrammarController;
 use App\Http\Controllers\Api\V1\McqPracticeController;
+use App\Http\Controllers\Api\V1\MetaController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OverviewController;
 use App\Http\Controllers\Api\V1\ProfileController;
@@ -37,6 +39,9 @@ Route::prefix('v1')->group(function () {
 
         return response()->json(['status' => $healthy ? 'ok' : 'degraded', ...$checks], $healthy ? 200 : 503);
     });
+
+    // Public meta/config for app bootstrapping.
+    Route::get('/meta/economy', [MetaController::class, 'economy']);
 
     // Auth (public, rate limited)
     Route::middleware('throttle:10,1')->group(function () {
@@ -145,5 +150,10 @@ Route::prefix('v1')->group(function () {
         Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
         Route::post('/notifications/read-all', [NotificationController::class, 'readAll']);
         Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
+    });
+
+    // Admin/Staff routes (role >= staff)
+    Route::middleware(['auth:api', 'role:staff'])->prefix('admin')->group(function () {
+        Route::get('/stats', [Admin\DashboardController::class, 'stats']);
     });
 });
