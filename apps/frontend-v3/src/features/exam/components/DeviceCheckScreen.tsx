@@ -9,7 +9,6 @@ interface Props {
 	activeSkills: SkillKey[]
 	skillDurationMinutes: Record<SkillKey, number>
 	totalDurationMinutes: number
-	coinsCharged: number
 	onStart: () => void
 }
 
@@ -25,7 +24,6 @@ export function DeviceCheckScreen({
 	activeSkills,
 	skillDurationMinutes,
 	totalDurationMinutes,
-	coinsCharged,
 	onStart,
 }: Props) {
 	const hasListening = activeSkills.includes("listening")
@@ -135,12 +133,6 @@ export function DeviceCheckScreen({
 
 				{/* Start button */}
 				<div className="flex flex-col items-center gap-3 pt-2">
-					<div className="flex items-center gap-2 text-xs">
-						<span className="inline-flex items-center gap-1.5 font-bold text-warning">
-							<Icon name="gem-mono" size="xs" className="text-warning" />
-							Phí bài thi: {coinsCharged} xu
-						</span>
-					</div>
 					<button type="button" onClick={onStart} className="btn btn-primary w-full max-w-xs">
 						Nhận đề & bắt đầu
 					</button>

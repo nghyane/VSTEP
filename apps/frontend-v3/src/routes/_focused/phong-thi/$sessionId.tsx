@@ -217,7 +217,6 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 				activeSkills={activeSkills}
 				skillDurationMinutes={skillDurationMinutes}
 				totalDurationMinutes={totalDurationMinutes}
-				coinsCharged={session.coins_charged}
 				onStart={handleStartExam}
 			/>
 		)
