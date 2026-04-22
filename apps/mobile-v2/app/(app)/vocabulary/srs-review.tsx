@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -7,6 +7,7 @@ import * as Haptics from "expo-haptics";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
+import { DepthCard } from "@/components/DepthCard";
 import { useVocabSrsQueue } from "@/hooks/use-vocab";
 import { api } from "@/lib/api";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
@@ -26,16 +27,16 @@ export default function SrsReviewScreen() {
   const insets = useSafeAreaInsets();
   const { data } = useVocabSrsQueue();
 
-  const items = data?.items ?? [];
-  const [index, setIndex] = useState(0);
+  const [queue, setQueue] = useState<typeof data.items | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [reviewed, setReviewed] = useState(0);
 
+  const items = useMemo(() => queue ?? data?.items ?? [], [queue, data?.items]);
   const total = items.length;
-  const done = index >= total;
-  const current = items[index] ?? null;
-  const progress = total > 0 ? index / total : 0;
+  const current = items[0] ?? null;
+  const done = total === 0 && reviewed > 0;
+  const progress = total > 0 ? reviewed / (reviewed + total) : 1;
 
   const handleRate = useCallback(async (rating: SrsRating) => {
     if (!current || submitting) return;
@@ -46,10 +47,15 @@ export default function SrsReviewScreen() {
     } catch {
       // ignore and continue
     }
+    setQueue((prev) => {
+      const active = [...(prev ?? data?.items ?? [])];
+      const [head, ...rest] = active;
+      if (!head) return active;
+      return rating === 1 ? [...rest, head] : rest;
+    });
     setSubmitting(false);
     setRevealed(false);
     setReviewed((r) => r + 1);
-    setIndex((i) => i + 1);
   }, [current, submitting]);
 
   return (
@@ -61,7 +67,7 @@ export default function SrsReviewScreen() {
         <View style={[s.barTrack, { backgroundColor: c.muted }]}>
           <View style={[s.barFill, { backgroundColor: c.primary, width: `${progress * 100}%` }]} />
         </View>
-        <Text style={[s.barCount, { color: c.subtle }]}>{index}/{total}</Text>
+        <Text style={[s.barCount, { color: c.subtle }]}>{reviewed}/{reviewed + total}</Text>
       </View>
 
       <View style={s.content}>
@@ -79,11 +85,8 @@ export default function SrsReviewScreen() {
           </View>
         ) : current ? (
           <View style={s.cardWrap}>
-            <HapticTouchable
-              style={[s.flashcard, { backgroundColor: c.card, borderColor: c.border }]}
-              onPress={() => !revealed && setRevealed(true)}
-              activeOpacity={0.9}
-            >
+            <HapticTouchable onPress={() => !revealed && setRevealed(true)} activeOpacity={0.9}>
+            <DepthCard style={s.flashcard}>
               <View style={s.cardCenter}>
                 <Text style={[s.wordBig, { color: c.foreground }]}>{current.word.word}</Text>
                 {current.word.phonetic ? <Text style={[s.phonetic, { color: c.subtle }]}>{current.word.phonetic}</Text> : null}
@@ -109,6 +112,7 @@ export default function SrsReviewScreen() {
                   Xem nghĩa
                 </DepthButton>
               )}
+            </DepthCard>
             </HapticTouchable>
 
             {revealed ? (
