@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\Role;
-use Filament\Models\Contracts\FilamentUser;
-use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -17,15 +15,10 @@ use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 
 #[Fillable(['full_name', 'email', 'password', 'role', 'avatar_key'])]
 #[Hidden(['password'])]
-class User extends Authenticatable implements FilamentUser, JWTSubject
+class User extends Authenticatable implements JWTSubject
 {
     use HasFactory;
     use HasUuids;
-
-    public function canAccessPanel(Panel $panel): bool
-    {
-        return $this->role === Role::Admin || $this->role === Role::Staff;
-    }
 
     protected function serializeDate(\DateTimeInterface $date): string
     {

@@ -1,19 +1,34 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { MOCK_NOTIFICATIONS } from "@/lib/mock";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import type { Notification, PaginatedResponse } from "@/types/api";
 
-export function useNotifications(_page = 1, _unreadOnly = false) {
-  return useQuery({ queryKey: ["notifications", _page], queryFn: async (): Promise<PaginatedResponse<Notification>> => ({ data: MOCK_NOTIFICATIONS, meta: { page: 1, limit: 20, total: MOCK_NOTIFICATIONS.length, totalPages: 1 } }) });
+export function useNotifications(page = 1) {
+  return useQuery({
+    queryKey: ["notifications", page],
+    queryFn: () => api.get<PaginatedResponse<Notification>>(`/api/v1/notifications?page=${page}`),
+  });
 }
 
 export function useUnreadCount() {
-  return useQuery({ queryKey: ["notifications-unread"], queryFn: async () => ({ count: MOCK_NOTIFICATIONS.filter((n) => !n.readAt).length }) });
-}
-
-export function useMarkRead() {
-  return useMutation({ mutationFn: async (_id: string) => ({ id: _id }) });
+  return useQuery({
+    queryKey: ["notifications", "unread-count"],
+    queryFn: () => api.get<{ count: number }>("/api/v1/notifications/unread-count"),
+    refetchInterval: 30_000,
+  });
 }
 
 export function useMarkAllRead() {
-  return useMutation({ mutationFn: async () => ({ updated: 0 }) });
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<{ marked: number }>("/api/v1/notifications/read-all"),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+  });
+}
+
+export function useDeleteNotification() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete<{ success: boolean }>(`/api/v1/notifications/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+  });
 }

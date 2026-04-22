@@ -29,8 +29,12 @@ Không component/hook nào import `tokens` trực tiếp (chỉ `auth.ts` và `a
 
 ## Register flow
 
-1 bước: email + password + nickname + target_level + target_deadline.
-Backend tạo account + profile + JWT (có `active_profile_id`).
+2 bước (UI), 1 API call:
+- Bước 1: email + password + confirm password (validate client-side, không call API).
+- Bước 2: nickname + target_level + target_deadline (onboarding layout).
+- Submit bước 2 → gọi `auth/register` 1 lần với toàn bộ data.
+- Backend tạo account + profile + JWT (có `active_profile_id`).
+- Credentials từ bước 1 được giữ trong `useState` của `RegisterForm` (không URL, không store).
 
 ## Profile model
 

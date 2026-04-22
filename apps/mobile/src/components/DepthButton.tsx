@@ -1,11 +1,12 @@
-// 3D Depth Button — Duolingo press effect (RFC 0002)
-// Active: translateY + border-bottom shrinks → "pressed in" illusion
+// 3D Depth Button — Duolingo press effect
+// Active: translateY(3px) + border-bottom shrinks → "pressed in" illusion
+// Synced with frontend-v3 .btn-primary { box-shadow: 0 4px 0 primary-dark }
 import { useRef, type ReactNode } from "react";
 import { Animated, Pressable, StyleSheet, Text, type ViewStyle } from "react-native";
 import * as Haptics from "expo-haptics";
 import { fontSize, fontFamily, radius, spacing, useThemeColors } from "@/theme";
 
-type Variant = "primary" | "secondary" | "success" | "destructive" | "coin";
+type Variant = "primary" | "secondary" | "destructive" | "coin";
 type Size = "sm" | "md" | "lg";
 
 interface DepthButtonProps {
@@ -15,6 +16,7 @@ interface DepthButtonProps {
   onPress?: () => void;
   disabled?: boolean;
   style?: ViewStyle;
+  fullWidth?: boolean;
 }
 
 export function DepthButton({
@@ -24,14 +26,15 @@ export function DepthButton({
   onPress,
   disabled = false,
   style,
+  fullWidth = false,
 }: DepthButtonProps) {
   const c = useThemeColors();
   const translateY = useRef(new Animated.Value(0)).current;
-  const { bg, borderTop, borderBottom, text } = getVariantColors(variant, c);
+  const { bg, shadow, text } = getVariantColors(variant, c);
   const sizeStyle = SIZE_MAP[size];
 
   function handlePressIn() {
-    Animated.timing(translateY, { toValue: 3, duration: 50, useNativeDriver: true }).start();
+    Animated.timing(translateY, { toValue: 4, duration: 60, useNativeDriver: true }).start();
   }
 
   function handlePressOut() {
@@ -50,6 +53,7 @@ export function DepthButton({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={disabled}
+      style={fullWidth ? { width: "100%" } : undefined}
     >
       <Animated.View
         style={[
@@ -57,16 +61,20 @@ export function DepthButton({
           sizeStyle,
           {
             backgroundColor: bg,
-            borderColor: borderTop,
-            borderBottomColor: borderBottom,
+            // 3D effect: top border = bg color (invisible), bottom border = shadow color
+            borderColor: bg,
+            borderBottomColor: shadow,
             opacity: disabled ? 0.5 : 1,
             transform: [{ translateY }],
           },
+          fullWidth && { width: "100%" },
           style,
         ]}
       >
         {typeof children === "string" ? (
-          <Text style={[styles.text, { color: text, fontSize: sizeStyle.fontSize }]}>{children}</Text>
+          <Text style={[styles.text, { color: text, fontSize: sizeStyle.fontSize }]}>
+            {children.toUpperCase()}
+          </Text>
         ) : (
           children
         )}
@@ -78,29 +86,26 @@ export function DepthButton({
 function getVariantColors(variant: Variant, c: ReturnType<typeof useThemeColors>) {
   switch (variant) {
     case "secondary":
-      return { bg: c.card, borderTop: c.depthBorderLight, borderBottom: c.depthBorderDark, text: c.foreground };
-    case "success":
-      return { bg: c.success, borderTop: "#16A34A", borderBottom: "#0D7A3A", text: c.successForeground };
+      return { bg: c.surface, shadow: "#CACACA", text: c.foreground };
     case "destructive":
-      return { bg: c.destructive, borderTop: "#C62828", borderBottom: "#8E1C1C", text: c.destructiveForeground };
+      return { bg: c.destructive, shadow: "#B71C1C", text: "#FFFFFF" };
     case "coin":
-      return { bg: c.coin, borderTop: c.coinDark, borderBottom: "#92400E", text: "#FFFFFF" };
-    default:
-      return { bg: c.primary, borderTop: "#1D4ED8", borderBottom: "#1E3A8A", text: c.primaryForeground };
+      return { bg: c.coin, shadow: c.coinDark, text: "#FFFFFF" };
+    default: // primary — green
+      return { bg: c.primary, shadow: c.primaryDark, text: c.primaryForeground };
   }
 }
 
 const SIZE_MAP = {
-  sm: { height: 36, paddingHorizontal: spacing.base, fontSize: fontSize.xs },
-  md: { height: 44, paddingHorizontal: spacing.xl, fontSize: fontSize.sm },
-  lg: { height: 52, paddingHorizontal: spacing["2xl"], fontSize: fontSize.base },
+  sm: { height: 36, paddingHorizontal: spacing.base, fontSize: fontSize.xs, borderRadius: radius.button },
+  md: { height: 44, paddingHorizontal: spacing.xl, fontSize: fontSize.sm, borderRadius: radius.button },
+  lg: { height: 52, paddingHorizontal: spacing["2xl"], fontSize: fontSize.base, borderRadius: radius.button },
 } as const;
 
 const styles = StyleSheet.create({
   button: {
-    borderWidth: 2,
+    borderWidth: 0,
     borderBottomWidth: 4,
-    borderRadius: radius.lg,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
@@ -108,5 +113,6 @@ const styles = StyleSheet.create({
   },
   text: {
     fontFamily: fontFamily.bold,
+    letterSpacing: 0.3,
   },
 });

@@ -12,14 +12,18 @@ import { Route as rootRouteImport } from "./routes/__root"
 import { Route as FocusedRouteImport } from "./routes/_focused"
 import { Route as AppRouteImport } from "./routes/_app"
 import { Route as IndexRouteImport } from "./routes/index"
+import { Route as AppThiThuRouteImport } from "./routes/_app/thi-thu"
 import { Route as AppLuyenTapRouteImport } from "./routes/_app/luyen-tap"
 import { Route as AppHoSoRouteImport } from "./routes/_app/ho-so"
 import { Route as AppDashboardRouteImport } from "./routes/_app/dashboard"
+import { Route as AppThiThuIndexRouteImport } from "./routes/_app/thi-thu/index"
 import { Route as AppLuyenTapIndexRouteImport } from "./routes/_app/luyen-tap/index"
 import { Route as FocusedWritingPromptIdRouteImport } from "./routes/_focused/writing/$promptId"
 import { Route as FocusedVocabSrsReviewRouteImport } from "./routes/_focused/vocab/srs-review"
 import { Route as FocusedReadingExerciseIdRouteImport } from "./routes/_focused/reading/$exerciseId"
+import { Route as FocusedPhongThiSessionIdRouteImport } from "./routes/_focused/phong-thi/$sessionId"
 import { Route as FocusedListeningExerciseIdRouteImport } from "./routes/_focused/listening/$exerciseId"
+import { Route as AppThiThuExamIdRouteImport } from "./routes/_app/thi-thu/$examId"
 import { Route as AppLuyenTapVietRouteImport } from "./routes/_app/luyen-tap/viet"
 import { Route as AppLuyenTapTuVungRouteImport } from "./routes/_app/luyen-tap/tu-vung"
 import { Route as AppLuyenTapNoiRouteImport } from "./routes/_app/luyen-tap/noi"
@@ -50,6 +54,11 @@ const IndexRoute = IndexRouteImport.update({
   path: "/",
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppThiThuRoute = AppThiThuRouteImport.update({
+  id: "/thi-thu",
+  path: "/thi-thu",
+  getParentRoute: () => AppRoute,
+} as any)
 const AppLuyenTapRoute = AppLuyenTapRouteImport.update({
   id: "/luyen-tap",
   path: "/luyen-tap",
@@ -64,6 +73,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   id: "/dashboard",
   path: "/dashboard",
   getParentRoute: () => AppRoute,
+} as any)
+const AppThiThuIndexRoute = AppThiThuIndexRouteImport.update({
+  id: "/",
+  path: "/",
+  getParentRoute: () => AppThiThuRoute,
 } as any)
 const AppLuyenTapIndexRoute = AppLuyenTapIndexRouteImport.update({
   id: "/",
@@ -86,12 +100,23 @@ const FocusedReadingExerciseIdRoute =
     path: "/reading/$exerciseId",
     getParentRoute: () => FocusedRoute,
   } as any)
+const FocusedPhongThiSessionIdRoute =
+  FocusedPhongThiSessionIdRouteImport.update({
+    id: "/phong-thi/$sessionId",
+    path: "/phong-thi/$sessionId",
+    getParentRoute: () => FocusedRoute,
+  } as any)
 const FocusedListeningExerciseIdRoute =
   FocusedListeningExerciseIdRouteImport.update({
     id: "/listening/$exerciseId",
     path: "/listening/$exerciseId",
     getParentRoute: () => FocusedRoute,
   } as any)
+const AppThiThuExamIdRoute = AppThiThuExamIdRouteImport.update({
+  id: "/$examId",
+  path: "/$examId",
+  getParentRoute: () => AppThiThuRoute,
+} as any)
 const AppLuyenTapVietRoute = AppLuyenTapVietRouteImport.update({
   id: "/viet",
   path: "/viet",
@@ -185,17 +210,21 @@ export interface FileRoutesByFullPath {
   "/dashboard": typeof AppDashboardRoute
   "/ho-so": typeof AppHoSoRoute
   "/luyen-tap": typeof AppLuyenTapRouteWithChildren
+  "/thi-thu": typeof AppThiThuRouteWithChildren
   "/luyen-tap/doc": typeof AppLuyenTapDocRoute
   "/luyen-tap/nghe": typeof AppLuyenTapNgheRouteWithChildren
   "/luyen-tap/ngu-phap": typeof AppLuyenTapNguPhapRouteWithChildren
   "/luyen-tap/noi": typeof AppLuyenTapNoiRoute
   "/luyen-tap/tu-vung": typeof AppLuyenTapTuVungRouteWithChildren
   "/luyen-tap/viet": typeof AppLuyenTapVietRoute
+  "/thi-thu/$examId": typeof AppThiThuExamIdRoute
   "/listening/$exerciseId": typeof FocusedListeningExerciseIdRoute
+  "/phong-thi/$sessionId": typeof FocusedPhongThiSessionIdRoute
   "/reading/$exerciseId": typeof FocusedReadingExerciseIdRoute
   "/vocab/srs-review": typeof FocusedVocabSrsReviewRoute
   "/writing/$promptId": typeof FocusedWritingPromptIdRoute
   "/luyen-tap/": typeof AppLuyenTapIndexRoute
+  "/thi-thu/": typeof AppThiThuIndexRoute
   "/luyen-tap/ngu-phap/$pointId": typeof AppLuyenTapNguPhapPointIdRoute
   "/luyen-tap/tu-vung/$topicId": typeof AppLuyenTapTuVungTopicIdRoute
   "/grammar/$pointId/exercise": typeof FocusedGrammarPointIdExerciseRoute
@@ -214,11 +243,14 @@ export interface FileRoutesByTo {
   "/luyen-tap/doc": typeof AppLuyenTapDocRoute
   "/luyen-tap/noi": typeof AppLuyenTapNoiRoute
   "/luyen-tap/viet": typeof AppLuyenTapVietRoute
+  "/thi-thu/$examId": typeof AppThiThuExamIdRoute
   "/listening/$exerciseId": typeof FocusedListeningExerciseIdRoute
+  "/phong-thi/$sessionId": typeof FocusedPhongThiSessionIdRoute
   "/reading/$exerciseId": typeof FocusedReadingExerciseIdRoute
   "/vocab/srs-review": typeof FocusedVocabSrsReviewRoute
   "/writing/$promptId": typeof FocusedWritingPromptIdRoute
   "/luyen-tap": typeof AppLuyenTapIndexRoute
+  "/thi-thu": typeof AppThiThuIndexRoute
   "/luyen-tap/ngu-phap/$pointId": typeof AppLuyenTapNguPhapPointIdRoute
   "/luyen-tap/tu-vung/$topicId": typeof AppLuyenTapTuVungTopicIdRoute
   "/grammar/$pointId/exercise": typeof FocusedGrammarPointIdExerciseRoute
@@ -238,17 +270,21 @@ export interface FileRoutesById {
   "/_app/dashboard": typeof AppDashboardRoute
   "/_app/ho-so": typeof AppHoSoRoute
   "/_app/luyen-tap": typeof AppLuyenTapRouteWithChildren
+  "/_app/thi-thu": typeof AppThiThuRouteWithChildren
   "/_app/luyen-tap/doc": typeof AppLuyenTapDocRoute
   "/_app/luyen-tap/nghe": typeof AppLuyenTapNgheRouteWithChildren
   "/_app/luyen-tap/ngu-phap": typeof AppLuyenTapNguPhapRouteWithChildren
   "/_app/luyen-tap/noi": typeof AppLuyenTapNoiRoute
   "/_app/luyen-tap/tu-vung": typeof AppLuyenTapTuVungRouteWithChildren
   "/_app/luyen-tap/viet": typeof AppLuyenTapVietRoute
+  "/_app/thi-thu/$examId": typeof AppThiThuExamIdRoute
   "/_focused/listening/$exerciseId": typeof FocusedListeningExerciseIdRoute
+  "/_focused/phong-thi/$sessionId": typeof FocusedPhongThiSessionIdRoute
   "/_focused/reading/$exerciseId": typeof FocusedReadingExerciseIdRoute
   "/_focused/vocab/srs-review": typeof FocusedVocabSrsReviewRoute
   "/_focused/writing/$promptId": typeof FocusedWritingPromptIdRoute
   "/_app/luyen-tap/": typeof AppLuyenTapIndexRoute
+  "/_app/thi-thu/": typeof AppThiThuIndexRoute
   "/_app/luyen-tap/ngu-phap/$pointId": typeof AppLuyenTapNguPhapPointIdRoute
   "/_app/luyen-tap/tu-vung/$topicId": typeof AppLuyenTapTuVungTopicIdRoute
   "/_focused/grammar/$pointId/exercise": typeof FocusedGrammarPointIdExerciseRoute
@@ -267,17 +303,21 @@ export interface FileRouteTypes {
     | "/dashboard"
     | "/ho-so"
     | "/luyen-tap"
+    | "/thi-thu"
     | "/luyen-tap/doc"
     | "/luyen-tap/nghe"
     | "/luyen-tap/ngu-phap"
     | "/luyen-tap/noi"
     | "/luyen-tap/tu-vung"
     | "/luyen-tap/viet"
+    | "/thi-thu/$examId"
     | "/listening/$exerciseId"
+    | "/phong-thi/$sessionId"
     | "/reading/$exerciseId"
     | "/vocab/srs-review"
     | "/writing/$promptId"
     | "/luyen-tap/"
+    | "/thi-thu/"
     | "/luyen-tap/ngu-phap/$pointId"
     | "/luyen-tap/tu-vung/$topicId"
     | "/grammar/$pointId/exercise"
@@ -296,11 +336,14 @@ export interface FileRouteTypes {
     | "/luyen-tap/doc"
     | "/luyen-tap/noi"
     | "/luyen-tap/viet"
+    | "/thi-thu/$examId"
     | "/listening/$exerciseId"
+    | "/phong-thi/$sessionId"
     | "/reading/$exerciseId"
     | "/vocab/srs-review"
     | "/writing/$promptId"
     | "/luyen-tap"
+    | "/thi-thu"
     | "/luyen-tap/ngu-phap/$pointId"
     | "/luyen-tap/tu-vung/$topicId"
     | "/grammar/$pointId/exercise"
@@ -319,17 +362,21 @@ export interface FileRouteTypes {
     | "/_app/dashboard"
     | "/_app/ho-so"
     | "/_app/luyen-tap"
+    | "/_app/thi-thu"
     | "/_app/luyen-tap/doc"
     | "/_app/luyen-tap/nghe"
     | "/_app/luyen-tap/ngu-phap"
     | "/_app/luyen-tap/noi"
     | "/_app/luyen-tap/tu-vung"
     | "/_app/luyen-tap/viet"
+    | "/_app/thi-thu/$examId"
     | "/_focused/listening/$exerciseId"
+    | "/_focused/phong-thi/$sessionId"
     | "/_focused/reading/$exerciseId"
     | "/_focused/vocab/srs-review"
     | "/_focused/writing/$promptId"
     | "/_app/luyen-tap/"
+    | "/_app/thi-thu/"
     | "/_app/luyen-tap/ngu-phap/$pointId"
     | "/_app/luyen-tap/tu-vung/$topicId"
     | "/_focused/grammar/$pointId/exercise"
@@ -371,6 +418,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/_app/thi-thu": {
+      id: "/_app/thi-thu"
+      path: "/thi-thu"
+      fullPath: "/thi-thu"
+      preLoaderRoute: typeof AppThiThuRouteImport
+      parentRoute: typeof AppRoute
+    }
     "/_app/luyen-tap": {
       id: "/_app/luyen-tap"
       path: "/luyen-tap"
@@ -391,6 +445,13 @@ declare module "@tanstack/react-router" {
       fullPath: "/dashboard"
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
+    }
+    "/_app/thi-thu/": {
+      id: "/_app/thi-thu/"
+      path: "/"
+      fullPath: "/thi-thu/"
+      preLoaderRoute: typeof AppThiThuIndexRouteImport
+      parentRoute: typeof AppThiThuRoute
     }
     "/_app/luyen-tap/": {
       id: "/_app/luyen-tap/"
@@ -420,12 +481,26 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof FocusedReadingExerciseIdRouteImport
       parentRoute: typeof FocusedRoute
     }
+    "/_focused/phong-thi/$sessionId": {
+      id: "/_focused/phong-thi/$sessionId"
+      path: "/phong-thi/$sessionId"
+      fullPath: "/phong-thi/$sessionId"
+      preLoaderRoute: typeof FocusedPhongThiSessionIdRouteImport
+      parentRoute: typeof FocusedRoute
+    }
     "/_focused/listening/$exerciseId": {
       id: "/_focused/listening/$exerciseId"
       path: "/listening/$exerciseId"
       fullPath: "/listening/$exerciseId"
       preLoaderRoute: typeof FocusedListeningExerciseIdRouteImport
       parentRoute: typeof FocusedRoute
+    }
+    "/_app/thi-thu/$examId": {
+      id: "/_app/thi-thu/$examId"
+      path: "/$examId"
+      fullPath: "/thi-thu/$examId"
+      preLoaderRoute: typeof AppThiThuExamIdRouteImport
+      parentRoute: typeof AppThiThuRoute
     }
     "/_app/luyen-tap/viet": {
       id: "/_app/luyen-tap/viet"
@@ -604,22 +679,39 @@ const AppLuyenTapRouteWithChildren = AppLuyenTapRoute._addFileChildren(
   AppLuyenTapRouteChildren,
 )
 
+interface AppThiThuRouteChildren {
+  AppThiThuExamIdRoute: typeof AppThiThuExamIdRoute
+  AppThiThuIndexRoute: typeof AppThiThuIndexRoute
+}
+
+const AppThiThuRouteChildren: AppThiThuRouteChildren = {
+  AppThiThuExamIdRoute: AppThiThuExamIdRoute,
+  AppThiThuIndexRoute: AppThiThuIndexRoute,
+}
+
+const AppThiThuRouteWithChildren = AppThiThuRoute._addFileChildren(
+  AppThiThuRouteChildren,
+)
+
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppHoSoRoute: typeof AppHoSoRoute
   AppLuyenTapRoute: typeof AppLuyenTapRouteWithChildren
+  AppThiThuRoute: typeof AppThiThuRouteWithChildren
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppHoSoRoute: AppHoSoRoute,
   AppLuyenTapRoute: AppLuyenTapRouteWithChildren,
+  AppThiThuRoute: AppThiThuRouteWithChildren,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface FocusedRouteChildren {
   FocusedListeningExerciseIdRoute: typeof FocusedListeningExerciseIdRoute
+  FocusedPhongThiSessionIdRoute: typeof FocusedPhongThiSessionIdRoute
   FocusedReadingExerciseIdRoute: typeof FocusedReadingExerciseIdRoute
   FocusedVocabSrsReviewRoute: typeof FocusedVocabSrsReviewRoute
   FocusedWritingPromptIdRoute: typeof FocusedWritingPromptIdRoute
@@ -632,6 +724,7 @@ interface FocusedRouteChildren {
 
 const FocusedRouteChildren: FocusedRouteChildren = {
   FocusedListeningExerciseIdRoute: FocusedListeningExerciseIdRoute,
+  FocusedPhongThiSessionIdRoute: FocusedPhongThiSessionIdRoute,
   FocusedReadingExerciseIdRoute: FocusedReadingExerciseIdRoute,
   FocusedVocabSrsReviewRoute: FocusedVocabSrsReviewRoute,
   FocusedWritingPromptIdRoute: FocusedWritingPromptIdRoute,

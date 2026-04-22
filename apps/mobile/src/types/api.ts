@@ -21,6 +21,25 @@ export interface AuthUser {
   email: string;
   role: string;
   fullName: string | null;
+  avatarKey: string | null;
+}
+
+export interface Profile {
+  id: string;
+  nickname: string;
+  targetLevel: string;
+  targetDeadline: string | null;
+  entryLevel: string | null;
+  avatarColor: string | null;
+  isInitialProfile: boolean;
+}
+
+export interface AuthResponse {
+  user: AuthUser;
+  profile: Profile | null;
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
 }
 
 export interface LoginResponse {
@@ -203,7 +222,6 @@ export interface GradingResult {
   confidence?: "high" | "medium" | "low";
   gradedAt?: string;
   scaffoldingType?: string;
-  // Objective fields
   correct?: number;
   total?: number;
   rawRatio?: number;

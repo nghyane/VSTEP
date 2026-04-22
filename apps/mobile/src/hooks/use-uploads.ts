@@ -1,9 +1,27 @@
 import { useMutation } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 
 export function usePresignUpload() {
-  return useMutation({ mutationFn: async (_body: { contentType: string; fileSize: number }) => ({ uploadUrl: "", headers: {}, audioPath: "mock-audio.webm", expiresIn: 3600 }) });
+  return useMutation({
+    mutationFn: (body: { contentType: string; fileSize: number }) =>
+      api.post<{ uploadUrl: string; headers: Record<string, string>; audioPath: string; expiresIn: number }>(
+        "/api/v1/audio/presign-upload",
+        body,
+      ),
+  });
 }
 
-export async function uploadToPresignedUrl(_url: string, _fileUri: string, _contentType: string, _headers?: Record<string, string>): Promise<void> {
-  // no-op in mock mode
+export async function uploadToPresignedUrl(
+  url: string,
+  fileUri: string,
+  contentType: string,
+  headers?: Record<string, string>,
+): Promise<void> {
+  const res = await fetch(fileUri);
+  const blob = await res.blob();
+  await fetch(url, {
+    method: "PUT",
+    headers: { "Content-Type": contentType, ...headers },
+    body: blob,
+  });
 }

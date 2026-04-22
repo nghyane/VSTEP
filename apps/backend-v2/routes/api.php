@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Api\V1\AudioController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\ConfigController;
 use App\Http\Controllers\Api\V1\CourseController;
 use App\Http\Controllers\Api\V1\ExamController;
 use App\Http\Controllers\Api\V1\GradingController;
@@ -37,6 +39,8 @@ Route::prefix('v1')->group(function () {
 
         return response()->json(['status' => $healthy ? 'ok' : 'degraded', ...$checks], $healthy ? 200 : 503);
     });
+
+    Route::get('/config', [ConfigController::class, 'show']);
 
     // Auth (public, rate limited)
     Route::middleware('throttle:10,1')->group(function () {
@@ -147,5 +151,12 @@ Route::prefix('v1')->group(function () {
         Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
         Route::post('/notifications/read-all', [NotificationController::class, 'readAll']);
         Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
+    });
+
+    // Admin/Staff routes (role >= staff)
+    Route::middleware(['auth:api', 'role:staff'])->prefix('admin')->group(function () {
+        Route::get('/stats', [Admin\DashboardController::class, 'stats']);
+        Route::get('/content-status', [Admin\DashboardController::class, 'contentStatus']);
+        Route::get('/recent-activity', [Admin\DashboardController::class, 'recentActivity']);
     });
 });

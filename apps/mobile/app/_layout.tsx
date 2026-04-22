@@ -10,10 +10,9 @@ import { queryClient } from "@/lib/query-client";
 import {
   saveTokens,
   clearTokens,
-  getStoredUser,
 } from "@/lib/auth";
 import { HapticsProvider } from "@/contexts/HapticsContext";
-import type { AuthUser } from "@/types/api";
+import type { AuthUser, Profile } from "@/types/api";
 import { loadCoins } from "@/features/coin/coin-store";
 import { loadStreakData } from "@/features/streak/streak-store";
 import { loadNotifications } from "@/features/notification/notification-store";
@@ -23,6 +22,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const [fontsLoaded] = useFonts({
@@ -36,12 +36,12 @@ export default function RootLayout() {
   useEffect(() => {
     (async () => {
       try {
-        const stored = await getStoredUser();
+        // Clear session on every app launch — always require login
+        await clearTokens();
         await loadCoins();
         await loadStreakData();
         await loadNotifications();
         await loadEnrollments();
-        if (stored) setUser(stored);
       } catch {
         // ignore
       } finally {
@@ -57,9 +57,10 @@ export default function RootLayout() {
   }, [isLoading, fontsLoaded]);
 
   const signIn = useCallback(
-    async (accessToken: string, refreshToken: string, u: AuthUser) => {
-      await saveTokens(accessToken, refreshToken, u);
+    async (accessToken: string, refreshToken: string, u: AuthUser, p: Profile | null) => {
+      await saveTokens(accessToken, refreshToken, u, p);
       setUser(u);
+      setProfile(p);
     },
     [],
   );
@@ -67,6 +68,7 @@ export default function RootLayout() {
   const signOut = useCallback(async () => {
     await clearTokens();
     setUser(null);
+    setProfile(null);
     queryClient.clear();
   }, []);
 
@@ -88,7 +90,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <AuthContext.Provider value={{ user, isLoading, signIn, signOut }}>
+        <AuthContext.Provider value={{ user, profile, isLoading, signIn, signOut }}>
           <HapticsProvider>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
