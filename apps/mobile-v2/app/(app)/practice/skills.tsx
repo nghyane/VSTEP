@@ -135,7 +135,7 @@ function SkillContent({ skill, onStart }: { skill: Skill; onStart: () => void })
       ))}
 
       <DepthButton fullWidth onPress={onStart} style={{ marginTop: spacing.base }}>
-        Bắt đầu luyện {current.label.toLowerCase()}
+        {`Bắt đầu luyện ${current.label.toLowerCase()}`}
       </DepthButton>
     </View>
   );

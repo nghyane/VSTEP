@@ -1,13 +1,19 @@
 export type SkillKey = "listening" | "reading" | "writing" | "speaking"
 
-export interface ExamCostMeta {
-	full_test_coin_cost: number
-	per_skill_coin_cost: number
-}
-
-export interface ExamListResponse {
-	data: Exam[]
-	meta: ExamCostMeta
+export interface AppConfig {
+	wallet: {
+		onboarding_initial_coins: number
+	}
+	pricing: {
+		exam: {
+			full_test_cost_coins: number
+			custom_per_skill_coins: number
+			max_cost_coins: number
+		}
+		practice: {
+			support_level_costs: Record<string, number>
+		}
+	}
 }
 
 export interface Exam {

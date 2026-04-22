@@ -3,12 +3,10 @@ import { useNavigate } from "@tanstack/react-router"
 import { useRef, useState } from "react"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { startExamSession } from "#/features/exam/actions"
+import { appConfigQuery } from "#/features/exam/queries"
 import type { ExamDetail, SkillKey } from "#/features/exam/types"
 import { walletBalanceQuery } from "#/features/wallet/queries"
 import { cn } from "#/lib/utils"
-
-const FULL_COST = 25
-const PER_SKILL_COST = 8
 
 const TIME_PRESETS = [
 	{ label: "10p", value: 10 },
@@ -24,9 +22,9 @@ interface Props {
 	selected: Set<SkillKey>
 }
 
-function computeCost(selected: Set<SkillKey>): number {
-	if (selected.size === 0 || selected.size === 4) return FULL_COST
-	return Math.min(FULL_COST, PER_SKILL_COST * selected.size)
+function computeCost(selected: Set<SkillKey>, fullCost: number, perSkill: number): number {
+	if (selected.size === 0 || selected.size === 4) return fullCost
+	return Math.min(fullCost, perSkill * selected.size)
 }
 
 function computeDuration(detail: ExamDetail, selected: Set<SkillKey>): number {
@@ -50,9 +48,13 @@ export function BottomActionBar({ detail, selected }: Props) {
 	const [customDraft, setCustomDraft] = useState("")
 	const inputRef = useRef<HTMLInputElement>(null)
 	const { data: walletData } = useQuery(walletBalanceQuery)
+	const { data: configData } = useQuery(appConfigQuery)
+
+	const fullCost = configData?.data.pricing.exam.full_test_cost_coins ?? 25
+	const perSkillCost = configData?.data.pricing.exam.custom_per_skill_coins ?? 8
 
 	const isFullTest = selected.size === 0
-	const cost = computeCost(selected)
+	const cost = computeCost(selected, fullCost, perSkillCost)
 	const naturalMinutes = computeDuration(detail, selected)
 	const balance = walletData?.data.balance ?? null
 	const insufficient = balance !== null && balance < cost
