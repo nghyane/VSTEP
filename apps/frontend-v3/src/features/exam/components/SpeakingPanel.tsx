@@ -194,127 +194,37 @@ function PartRecorder({ part, isDone, onDone }: PartRecorderProps) {
 	const remaining = part.speaking_seconds - elapsedSec
 
 	return (
-		<div className="space-y-5">
-			{/* Part header */}
-			<div className="flex flex-wrap items-center gap-3">
-				<span className="rounded-full border-2 border-b-4 border-skill-speaking/30 bg-skill-speaking/10 px-3 py-1 text-xs font-extrabold text-skill-speaking">
-					Phần {part.part}
-				</span>
-				<span className="text-sm font-semibold text-foreground">{typeLabel}</span>
-				<span className="ml-auto text-xs text-muted">
-					{part.duration_minutes} phút · {part.speaking_seconds}s ghi âm
-				</span>
-			</div>
-
-			{/* Content prompt */}
-			<PartContent part={part} />
-
-			{/* Recording card */}
-			<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-surface p-5 space-y-4">
-				{/* Status */}
-				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-2">
-						{recorder.state === "idle" && <span className="text-sm text-muted">Đọc đề rồi nhấn ghi âm</span>}
-						{recorder.state === "requesting" && (
-							<span className="text-sm text-muted">Đang xin quyền microphone...</span>
-						)}
-						{recorder.state === "recording" && (
-							<>
-								<span className="size-2.5 animate-pulse rounded-full bg-destructive" />
-								<span className="text-sm font-extrabold text-destructive">Đang ghi âm</span>
-							</>
-						)}
-						{recorder.state === "stopped" && (
-							<>
-								<svg
-									viewBox="0 0 16 16"
-									className="size-4 text-primary"
-									fill="none"
-									stroke="currentColor"
-									strokeWidth="2.5"
-									strokeLinecap="round"
-									aria-hidden="true"
-								>
-									<polyline points="2,8 6,12 14,4" />
-								</svg>
-								<span className="text-sm font-extrabold text-primary">Đã ghi xong</span>
-							</>
-						)}
-						{recorder.state === "denied" && (
-							<span className="text-sm font-bold text-destructive">Không có quyền microphone</span>
-						)}
-					</div>
-
-					{/* Countdown */}
-					{recorder.state === "recording" && (
-						<span
-							className={cn(
-								"font-mono text-sm font-extrabold tabular-nums",
-								remaining <= 10 ? "text-destructive" : "text-muted",
-							)}
-						>
-							{elapsedSec}s / {part.speaking_seconds}s
+		<div className="flex flex-1 overflow-hidden">
+			{/* Left: scrollable content */}
+			<ScrollArea className="w-1/2 border-r border-border">
+				<div className="space-y-5 px-7 py-6">
+					{/* Part header */}
+					<div className="flex flex-wrap items-center gap-3">
+						<span className="rounded-full border-2 border-b-4 border-skill-speaking/30 bg-skill-speaking/10 px-3 py-1 text-xs font-extrabold text-skill-speaking">
+							Phần {part.part}
 						</span>
-					)}
+						<span className="text-sm font-semibold text-foreground">{typeLabel}</span>
+						<span className="ml-auto text-xs text-muted">
+							{part.duration_minutes} phút · {part.speaking_seconds}s ghi âm
+						</span>
+					</div>
+
+					{/* Content prompt */}
+					<PartContent part={part} />
 				</div>
+			</ScrollArea>
 
-				{/* Real waveform when recording */}
-				{recorder.state === "recording" && recorder.analyser && (
-					<div className="flex items-center justify-center py-1">
-						<WaveformBars analyser={recorder.analyser} />
-					</div>
-				)}
-
-				{/* Playback */}
-				{recorder.audioUrl && recorder.state === "stopped" && (
-					<div>
-						<p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-muted">Bản ghi của bạn</p>
-						<audio src={recorder.audioUrl} controls className="w-full h-9">
-							<track kind="captions" />
-						</audio>
-					</div>
-				)}
-
-				{/* Actions */}
-				<div className="flex justify-center gap-3">
-					{recorder.state === "idle" && (
-						<button type="button" onClick={recorder.start} className="btn btn-primary">
-							<svg viewBox="0 0 16 16" className="size-4" fill="currentColor" aria-hidden="true">
-								<circle cx="8" cy="8" r="4" />
-								<circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" strokeWidth="1.5" />
-							</svg>
-							Bắt đầu ghi
-						</button>
-					)}
-					{recorder.state === "requesting" && (
-						<button type="button" disabled className="btn btn-primary opacity-60">
-							Đang xử lý...
-						</button>
-					)}
-					{recorder.state === "recording" && (
-						<button
-							type="button"
-							onClick={handleFinish}
-							className="flex items-center gap-2 rounded-(--radius-button) border-2 border-b-4 border-destructive/70 bg-destructive px-5 py-2 text-sm font-bold text-white transition-all active:translate-y-[2px] active:border-b-2 hover:opacity-90"
-						>
-							<span className="size-2.5 rounded-sm bg-white" />
-							Dừng ghi
-						</button>
-					)}
-					{recorder.state === "stopped" && (
-						<>
-							<button
-								type="button"
-								onClick={recorder.reset}
-								className="rounded-(--radius-button) border-2 border-b-4 border-border bg-surface px-5 py-2 text-sm font-bold text-muted transition-all active:translate-y-[2px] active:border-b-2 hover:border-primary/40 hover:text-foreground"
-							>
-								Ghi lại
-							</button>
-							{!isDone && (
-								<button type="button" onClick={handleFinish} className="btn btn-primary">
+			{/* Right: recording panel */}
+			<div className="flex w-1/2 flex-col justify-center bg-background px-7 py-6">
+				<div className="space-y-3">
+					{/* Compact done state — chỉ hiện khi isDone */}
+					{isDone ? (
+						<div className="rounded-(--radius-card) border-2 border-b-4 border-primary/30 bg-primary-tint p-3">
+							<div className="flex items-center justify-between gap-3">
+								<div className="flex items-center gap-2">
 									<svg
 										viewBox="0 0 16 16"
-										className="size-4"
+										className="size-4 shrink-0 text-primary"
 										fill="none"
 										stroke="currentColor"
 										strokeWidth="2.5"
@@ -323,33 +233,153 @@ function PartRecorder({ part, isDone, onDone }: PartRecorderProps) {
 									>
 										<polyline points="2,8 6,12 14,4" />
 									</svg>
-									Xác nhận
+									<span className="text-sm font-extrabold text-primary">Phần {part.part} đã hoàn thành</span>
+								</div>
+								<button
+									type="button"
+									onClick={recorder.reset}
+									className="shrink-0 rounded-(--radius-button) border-2 border-primary/30 bg-surface px-3 py-1 text-xs font-bold text-muted transition-all hover:border-primary/50 hover:text-foreground"
+								>
+									Ghi lại
 								</button>
+							</div>
+							{recorder.audioUrl && (
+								<audio src={recorder.audioUrl} controls className="mt-2 h-8 w-full">
+									<track kind="captions" />
+								</audio>
 							)}
+						</div>
+					) : (
+						<>
+							{/* Recording card — chỉ hiện khi chưa done */}
+							<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-surface p-4 space-y-4">
+								{/* Status row */}
+								<div className="flex items-center justify-center gap-2">
+									{recorder.state === "idle" && (
+										<span className="text-sm text-muted">Đọc đề rồi nhấn ghi âm</span>
+									)}
+									{recorder.state === "requesting" && (
+										<span className="text-sm text-muted">Đang xin quyền microphone...</span>
+									)}
+									{recorder.state === "recording" && (
+										<>
+											<span className="size-2.5 animate-pulse rounded-full bg-destructive" />
+											<span className="text-sm font-extrabold text-destructive">Đang ghi âm</span>
+										</>
+									)}
+									{recorder.state === "stopped" && (
+										<>
+											<svg
+												viewBox="0 0 16 16"
+												className="size-4 text-primary"
+												fill="none"
+												stroke="currentColor"
+												strokeWidth="2.5"
+												strokeLinecap="round"
+												aria-hidden="true"
+											>
+												<polyline points="2,8 6,12 14,4" />
+											</svg>
+											<span className="text-sm font-extrabold text-primary">Đã ghi xong</span>
+										</>
+									)}
+									{recorder.state === "denied" && (
+										<span className="text-sm font-bold text-destructive">Không có quyền microphone</span>
+									)}
+								</div>
+
+								{/* Countdown — căn giữa */}
+								{recorder.state === "recording" && (
+									<div className="flex justify-center">
+										<span
+											className={cn(
+												"font-mono text-sm font-extrabold tabular-nums",
+												remaining <= 10 ? "text-destructive" : "text-muted",
+											)}
+										>
+											{elapsedSec}s / {part.speaking_seconds}s
+										</span>
+									</div>
+								)}
+
+								{/* Waveform */}
+								{recorder.state === "recording" && recorder.analyser && (
+									<div className="flex items-center justify-center py-1">
+										<WaveformBars analyser={recorder.analyser} />
+									</div>
+								)}
+
+								{/* Playback */}
+								{recorder.audioUrl && recorder.state === "stopped" && (
+									<div>
+										<p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-muted">
+											Bản ghi của bạn
+										</p>
+										<audio src={recorder.audioUrl} controls className="h-9 w-full">
+											<track kind="captions" />
+										</audio>
+									</div>
+								)}
+
+								{/* Actions */}
+								<div className="flex justify-center gap-3">
+									{recorder.state === "idle" && (
+										<button type="button" onClick={recorder.start} className="btn btn-primary">
+											<svg viewBox="0 0 16 16" className="size-4" fill="currentColor" aria-hidden="true">
+												<circle cx="8" cy="8" r="4" />
+												<circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" strokeWidth="1.5" />
+											</svg>
+											Bắt đầu ghi
+										</button>
+									)}
+									{recorder.state === "requesting" && (
+										<button type="button" disabled className="btn btn-primary opacity-60">
+											Đang xử lý...
+										</button>
+									)}
+									{recorder.state === "recording" && (
+										<button
+											type="button"
+											onClick={handleFinish}
+											className="flex items-center gap-2 rounded-(--radius-button) border-2 border-b-4 border-destructive/70 bg-destructive px-5 py-2 text-sm font-bold text-white transition-all active:translate-y-[2px] active:border-b-2 hover:opacity-90"
+										>
+											<span className="size-2.5 rounded-sm bg-white" />
+											Dừng ghi
+										</button>
+									)}
+									{recorder.state === "stopped" && (
+										<>
+											<button
+												type="button"
+												onClick={recorder.reset}
+												className="rounded-(--radius-button) border-2 border-b-4 border-border bg-surface px-5 py-2 text-sm font-bold text-muted transition-all active:translate-y-[2px] active:border-b-2 hover:border-primary/40 hover:text-foreground"
+											>
+												Ghi lại
+											</button>
+											<button type="button" onClick={handleFinish} className="btn btn-primary">
+												<svg
+													viewBox="0 0 16 16"
+													className="size-4"
+													fill="none"
+													stroke="currentColor"
+													strokeWidth="2.5"
+													strokeLinecap="round"
+													aria-hidden="true"
+												>
+													<polyline points="2,8 6,12 14,4" />
+												</svg>
+												Xác nhận
+											</button>
+										</>
+									)}
+								</div>
+
+								{recorder.error && <p className="text-sm text-destructive">{recorder.error}</p>}
+							</div>
 						</>
 					)}
 				</div>
-
-				{recorder.error && <p className="text-sm text-destructive">{recorder.error}</p>}
 			</div>
-
-			{/* Done banner */}
-			{isDone && (
-				<div className="flex items-center gap-2 rounded-(--radius-button) border-2 border-b-4 border-primary/30 bg-primary-tint px-4 py-3">
-					<svg
-						viewBox="0 0 16 16"
-						className="size-4 shrink-0 text-primary"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2.5"
-						strokeLinecap="round"
-						aria-hidden="true"
-					>
-						<polyline points="2,8 6,12 14,4" />
-					</svg>
-					<span className="text-sm font-extrabold text-primary">Phần {part.part} đã hoàn thành</span>
-				</div>
-			)}
 		</div>
 	)
 }
@@ -363,18 +393,15 @@ export function SpeakingPanel({ parts, speakingDone, onMarkDone, footer }: Props
 
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden">
-			<ScrollArea className="flex-1 bg-background">
-				<div className="mx-auto max-w-lg px-5 py-6">
-					{active && (
-						<PartRecorder
-							key={active.id}
-							part={active}
-							isDone={speakingDone.has(active.id)}
-							onDone={onMarkDone}
-						/>
-					)}
-				</div>
-			</ScrollArea>
+			{/* PartRecorder owns its own scroll + fixed recording area */}
+			{active && (
+				<PartRecorder
+					key={active.id}
+					part={active}
+					isDone={speakingDone.has(active.id)}
+					onDone={onMarkDone}
+				/>
+			)}
 
 			{/* Part tabs */}
 			<div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-2.5">

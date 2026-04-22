@@ -100,6 +100,11 @@ export function useVoiceRecorder(maxSeconds: number): VoiceRecorder {
 	}, [state, audioUrl, maxMs, stop, cleanup])
 
 	const reset = useCallback(() => {
+		// Detach onstop trước để tránh race condition: onstop override state "idle"
+		if (recorderRef.current) {
+			recorderRef.current.onstop = null
+			recorderRef.current.ondataavailable = null
+		}
 		stop()
 		if (audioUrl) URL.revokeObjectURL(audioUrl)
 		chunksRef.current = []
