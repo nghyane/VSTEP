@@ -24,19 +24,19 @@ class CourseService
     /** @return Collection<int,Course> */
     public function listPublished(): Collection
     {
-        return Course::query()->where('is_published', true)->orderBy('start_date')->get();
+        return Course::query()->with('teacher:id,full_name')->where('is_published', true)->orderBy('start_date')->get();
     }
 
     public function getDetail(string $id): Course
     {
         /** @var Course $course */
-        $course = Course::query()->with(['scheduleItems', 'enrollments'])->findOrFail($id);
+        $course = Course::query()->with(['scheduleItems', 'enrollments', 'teacher:id,full_name'])->findOrFail($id);
 
         return $course;
     }
 
     /**
-     * Enroll profile in course. Atomic coin charge + bonus credit.
+     * Enroll profile in course. Payment is VND (external). Credit bonus coins.
      */
     public function enroll(Profile $profile, Course $course): CourseEnrollment
     {
@@ -48,15 +48,12 @@ class CourseService
         }
 
         return DB::transaction(function () use ($profile, $course) {
-            $tx = $this->walletService->spend($profile, $course->price_coins, CoinTransactionType::CoursePurchase);
-
             $enrollment = CourseEnrollment::create([
                 'profile_id' => $profile->id,
                 'course_id' => $course->id,
                 'enrolled_at' => now(),
-                'coins_paid' => $course->price_coins,
+                'coins_paid' => 0,
                 'bonus_coins_received' => $course->bonus_coins,
-                'coin_transaction_id' => $tx->id,
             ]);
 
             if ($course->bonus_coins > 0) {
