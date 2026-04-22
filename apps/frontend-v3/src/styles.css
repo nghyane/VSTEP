@@ -70,6 +70,10 @@
   --color-skill-reading: #7850c8;
   --color-skill-writing: #58cc02;
   --color-skill-speaking: #ffc800;
+  --color-skill-listening-dark: color-mix(in oklch, #1cb0f6 70%, black);
+  --color-skill-reading-dark: color-mix(in oklch, #7850c8 70%, black);
+  --color-skill-writing-dark: color-mix(in oklch, #58cc02 70%, black);
+  --color-skill-speaking-dark: color-mix(in oklch, #ffc800 70%, black);
 
   --color-streak: #ff7800;
   --color-streak-tint: #fff0dc;
@@ -126,17 +130,17 @@
 			transform 0.1s,
 			box-shadow 0.1s;
 		cursor: pointer;
+		--btn-shadow: transparent;
+		box-shadow: 0 4px 0 var(--btn-shadow);
 	}
 	.btn:active {
 		transform: translateY(2px);
+		box-shadow: 0 2px 0 var(--btn-shadow);
 	}
 	.btn-primary {
 		background: var(--color-primary);
 		color: var(--color-primary-foreground);
-		box-shadow: 0 4px 0 var(--color-primary-dark);
-	}
-	.btn-primary:active {
-		box-shadow: 0 2px 0 var(--color-primary-dark);
+		--btn-shadow: var(--color-primary-dark);
 	}
 	.btn-secondary {
 		background: var(--color-surface);

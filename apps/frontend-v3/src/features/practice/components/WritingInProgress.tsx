@@ -58,7 +58,7 @@ export function WritingInProgress({ prompt, sessionId }: Props) {
 								<Link
 									to="/grading/writing/$submissionId"
 									params={{ submissionId: submission.submission_id }}
-									className="py-2 px-5 font-bold text-sm rounded-(--radius-button) text-primary-foreground bg-skill-writing shadow-[0_3px_0_oklch(0.55_0.15_160)] uppercase"
+									className="py-2 px-5 font-bold text-sm rounded-(--radius-button) text-primary-foreground bg-skill-writing shadow-[0_3px_0_var(--color-skill-writing-dark)] uppercase"
 								>
 									Xem kết quả
 								</Link>
@@ -137,7 +137,7 @@ export function WritingInProgress({ prompt, sessionId }: Props) {
 						type="button"
 						onClick={() => mutation.mutate()}
 						disabled={mutation.isPending || wc === 0}
-						className="py-2 px-6 text-sm font-bold rounded-(--radius-button) text-primary-foreground bg-skill-writing shadow-[0_3px_0_oklch(0.55_0.15_160)] active:shadow-[0_1px_0_oklch(0.55_0.15_160)] active:translate-y-[2px] transition disabled:opacity-50 uppercase"
+						className="py-2 px-6 text-sm font-bold rounded-(--radius-button) text-primary-foreground bg-skill-writing shadow-[0_3px_0_var(--color-skill-writing-dark)] active:shadow-[0_1px_0_var(--color-skill-writing-dark)] active:translate-y-[2px] transition disabled:opacity-50 uppercase"
 					>
 						{mutation.isPending ? "Đang nộp..." : "Nộp bài"}
 					</button>
