@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query"
-import { useReducer } from "react"
+import { useEffect, useReducer } from "react"
 import { attemptExercise } from "#/features/vocab/actions"
 import type { ExerciseKind, VocabExercise } from "#/features/vocab/types"
 
@@ -9,6 +9,7 @@ export interface ExerciseResult {
 }
 
 interface State {
+	exercises: VocabExercise[]
 	index: number
 	selected: number | null
 	textAnswer: string
@@ -16,6 +17,7 @@ interface State {
 }
 
 type Action =
+	| { type: "init"; exercises: VocabExercise[] }
 	| { type: "select"; index: number }
 	| { type: "text"; value: string }
 	| { type: "answered"; result: ExerciseResult }
@@ -23,6 +25,8 @@ type Action =
 
 function reducer(state: State, action: Action): State {
 	switch (action.type) {
+		case "init":
+			return { exercises: action.exercises, index: 0, selected: null, textAnswer: "", result: null }
 		case "select":
 			return { ...state, selected: action.index }
 		case "text":
@@ -30,7 +34,7 @@ function reducer(state: State, action: Action): State {
 		case "answered":
 			return { ...state, result: action.result }
 		case "next":
-			return { index: state.index + 1, selected: null, textAnswer: "", result: null }
+			return { ...state, index: state.index + 1, selected: null, textAnswer: "", result: null }
 	}
 }
 
@@ -50,7 +54,21 @@ interface ExerciseSession {
 }
 
 export function useExerciseSession(exercises: VocabExercise[], kind: ExerciseKind): ExerciseSession {
-	const [state, dispatch] = useReducer(reducer, { index: 0, selected: null, textAnswer: "", result: null })
+	const [state, dispatch] = useReducer(reducer, {
+		exercises: [],
+		index: 0,
+		selected: null,
+		textAnswer: "",
+		result: null,
+	})
+
+	useEffect(() => {
+		if (exercises.length > 0 && state.exercises.length === 0) dispatch({ type: "init", exercises })
+	}, [exercises, state.exercises.length])
+
+	const total = state.exercises.length
+	const current = state.exercises[state.index] ?? null
+	const done = total > 0 && state.index >= total
 
 	const mutation = useMutation({
 		mutationFn: ({ id, answer }: { id: string; answer: Record<string, unknown> }) =>
@@ -62,10 +80,6 @@ export function useExerciseSession(exercises: VocabExercise[], kind: ExerciseKin
 			})
 		},
 	})
-
-	const current = exercises[state.index] ?? null
-	const total = exercises.length
-	const done = state.index >= total
 
 	function submit() {
 		if (!current || mutation.isPending) return

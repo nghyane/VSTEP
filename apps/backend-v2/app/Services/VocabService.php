@@ -39,10 +39,14 @@ class VocabService
     /**
      * @return Collection<int,VocabTopic>
      */
-    public function listPublishedTopics(): Collection
+    public function listPublishedTopics(Profile $profile): Collection
     {
         return VocabTopic::query()
             ->where('is_published', true)
+            ->withCount('words')
+            ->withCount(['words as learned_count' => function ($q) use ($profile) {
+                $q->whereHas('srsStates', fn ($sq) => $sq->where('profile_id', $profile->id));
+            }])
             ->orderBy('level')
             ->orderBy('display_order')
             ->get();
