@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\AudioController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CourseController;
+use App\Http\Controllers\Api\V1\ConfigController;
 use App\Http\Controllers\Api\V1\ExamController;
 use App\Http\Controllers\Api\V1\GradingController;
 use App\Http\Controllers\Api\V1\GrammarController;
@@ -112,6 +113,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/practice/speaking/vstep-sessions/{sessionId}/submit', [SpeakingPracticeController::class, 'submitVstep']);
 
         // Exams (mock test).
+        Route::get('/config/exam-costs', [ConfigController::class, 'examCosts']);
         Route::get('/exams', [ExamController::class, 'index']);
         Route::get('/exams/{id}', [ExamController::class, 'show']);
         Route::post('/exams/{examId}/sessions', [ExamController::class, 'startSession']);
