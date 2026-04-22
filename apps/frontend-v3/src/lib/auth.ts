@@ -1,7 +1,18 @@
+import { HTTPError } from "ky"
 import { create } from "zustand"
 import { type ApiResponse, api } from "#/lib/api"
+import { useToast } from "#/lib/toast"
 import { tokens } from "#/lib/tokens"
 import type { Profile, User } from "#/types/auth"
+
+function showError(error: unknown) {
+	if (error instanceof HTTPError) {
+		const body = error.data as { message?: string } | undefined
+		useToast.getState().add(body?.message ?? "Đã có lỗi xảy ra.")
+	} else {
+		useToast.getState().add("Đã có lỗi xảy ra.")
+	}
+}
 
 interface AuthResponse {
 	access_token: string
@@ -51,36 +62,51 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 	_setUnauthenticated: () => set({ status: "unauthenticated" }),
 
 	async login(email, password) {
-		const { data } = await api
-			.post("auth/login", { json: { email, password } })
-			.json<ApiResponse<AuthResponse>>()
-		tokens.setAccess(data.access_token)
-		tokens.setRefresh(data.refresh_token)
-		tokens.setUser(data.user)
-		set({ status: "authenticated", user: data.user, profile: data.profile })
+		try {
+			const { data } = await api
+				.post("auth/login", { json: { email, password } })
+				.json<ApiResponse<AuthResponse>>()
+			tokens.setAccess(data.access_token)
+			tokens.setRefresh(data.refresh_token)
+			tokens.setUser(data.user)
+			set({ status: "authenticated", user: data.user, profile: data.profile })
+			useToast.getState().add("Đăng nhập thành công", "success")
+		} catch (e) {
+			showError(e)
+		}
 	},
 
 	async register(input) {
-		const { data } = await api.post("auth/register", { json: input }).json<ApiResponse<AuthResponse>>()
-		tokens.setAccess(data.access_token)
-		tokens.setRefresh(data.refresh_token)
-		tokens.setUser(data.user)
-		set({ status: "authenticated", user: data.user, profile: data.profile })
+		try {
+			const { data } = await api.post("auth/register", { json: input }).json<ApiResponse<AuthResponse>>()
+			tokens.setAccess(data.access_token)
+			tokens.setRefresh(data.refresh_token)
+			tokens.setUser(data.user)
+			set({ status: "authenticated", user: data.user, profile: data.profile })
+			useToast.getState().add("Tạo tài khoản thành công", "success")
+		} catch (e) {
+			showError(e)
+		}
 	},
 
 	async switchProfile(profileId) {
-		const refreshToken = tokens.getRefresh()
-		if (!refreshToken) throw new Error("No refresh token")
-		const { data } = await api
-			.post("auth/switch-profile", {
-				json: { profile_id: profileId, refresh_token: refreshToken },
-			})
-			.json<ApiResponse<SwitchResponse>>()
-		tokens.setAccess(data.access_token)
-		tokens.setRefresh(data.refresh_token)
-		const state = get()
-		if (state.status === "authenticated") {
-			set({ status: "authenticated", user: state.user, profile: data.profile })
+		try {
+			const refreshToken = tokens.getRefresh()
+			if (!refreshToken) throw new Error("No refresh token")
+			const { data } = await api
+				.post("auth/switch-profile", {
+					json: { profile_id: profileId, refresh_token: refreshToken },
+				})
+				.json<ApiResponse<SwitchResponse>>()
+			tokens.setAccess(data.access_token)
+			tokens.setRefresh(data.refresh_token)
+			const state = get()
+			if (state.status === "authenticated") {
+				set({ status: "authenticated", user: state.user, profile: data.profile })
+			}
+			useToast.getState().add("Đã chuyển hồ sơ", "success")
+		} catch (e) {
+			showError(e)
 		}
 	},
 

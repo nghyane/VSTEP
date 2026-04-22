@@ -126,6 +126,24 @@ services:
         - action: rebuild
           path: ./apps/backend-v2/composer.json
 
+  # Frontend SPA
+  frontend:
+    build:
+      context: ./apps/frontend-v3
+      args:
+        VITE_API_URL: https://${DOMAIN:-api.vstepgo.com}
+    expose:
+      - "80"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.frontend.rule=Host(`${FRONTEND_DOMAIN:-vstepgo.com}`)
+      - traefik.http.routers.frontend.entrypoints=web,websecure
+      - traefik.http.services.frontend.loadbalancer.server.port=80
+    networks:
+      - default
+      - traefik
+    restart: unless-stopped
+
   # Laravel Horizon — queue dashboard + worker management
   horizon:
     build: ./apps/backend-v2

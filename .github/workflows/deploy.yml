@@ -18,4 +18,10 @@ jobs:
             cd /opt/vstep
             git checkout -- .
             git pull origin main
-            docker compose --env-file .env up -d --force-recreate backend horizon
+
+            # Rebuild frontend if its files changed
+            if git diff HEAD~1 --name-only | grep -q 'apps/frontend-v3/'; then
+              docker compose --env-file .env build frontend
+            fi
+
+            docker compose --env-file .env up -d --force-recreate backend horizon frontend
