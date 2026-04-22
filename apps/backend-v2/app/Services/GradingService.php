@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Ai\Agents\GradingAgent;
+use App\Ai\Agents\StructuredGradingAgent;
 use App\Models\GradingJob;
 use App\Models\PracticeSpeakingSubmission;
 use App\Models\PracticeWritingSubmission;
@@ -12,6 +12,7 @@ use App\Models\SpeakingGradingResult;
 use App\Models\WritingGradingResult;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Laravel\Ai\Responses\StructuredAgentResponse;
 
 /**
  * Grading pipeline — 2 layers:
@@ -31,7 +32,7 @@ class GradingService
         private readonly AudioStorageService $audioService,
         private readonly LanguageToolService $languageTool,
         private readonly RuleBasedScoringService $ruleScoring,
-        private readonly GradingAgent $gradingAgent,
+        private readonly StructuredGradingAgent $structuredGradingAgent,
     ) {}
 
     private function llmBaseUrl(): string
@@ -238,7 +239,7 @@ PROMPT;
 
         $userMessage = "Task prompt: {$promptText}\n\nStudent's writing:\n{$text}\n\nWord count: ".str_word_count($text).$errorContext;
 
-        return $this->callLlm($systemPrompt, $userMessage, $this->defaultWritingResult());
+        return $this->callStructuredLlm($userMessage, $this->defaultWritingResult());
     }
 
     /**
@@ -267,7 +268,10 @@ Return ONLY valid JSON:
 }
 PROMPT;
 
-        $result = $this->callLlm($systemPrompt, "Transcript:\n{$transcript}", $this->defaultSpeakingResult());
+        $result = $this->callStructuredLlm(
+            "Transcript:\n{$transcript}",
+            $this->defaultSpeakingResult(),
+        );
 
         return $result;
     }
@@ -275,38 +279,32 @@ PROMPT;
     /**
      * @return array<string,mixed>
      */
-    private function callLlm(string $systemPrompt, string $userMessage, array $fallback): array
+    private function callStructuredLlm(string $prompt, array $fallback): array
     {
         try {
-            $response = $this->gradingAgent->prompt(
-                prompt: $systemPrompt."\n\n".$userMessage,
+            $response = $this->structuredGradingAgent->prompt(
+                prompt: $prompt,
                 provider: 'llm',
                 model: $this->llmModel(),
-                timeout: 60,
             );
 
-            $content = trim($response->text);
-            $parsed = json_decode($content, true);
+            $structured = $response instanceof StructuredAgentResponse
+                ? $response->structured
+                : [];
 
-            if (! is_array($parsed) || ! isset($parsed['rubric_scores'])) {
-                if (preg_match('/```json\s*(.*?)\s*```/s', $content, $m)) {
-                    $parsed = json_decode($m[1], true);
-                }
+            if (is_array($structured) && isset($structured['rubric_scores'])) {
+                return $this->normalizeLlmResult(array_merge($fallback, $structured), $fallback);
             }
 
-            if (is_array($parsed) && isset($parsed['rubric_scores'])) {
-                return array_merge($fallback, $parsed);
-            }
-
-            Log::warning('LLM grading: could not parse JSON', [
-                'content' => substr($content, 0, 500),
+            Log::warning('Structured LLM grading: invalid structured output', [
+                'response' => $structured,
                 'url' => $this->llmBaseUrl(),
                 'model' => $this->llmModel(),
             ]);
 
             return $fallback;
         } catch (\Throwable $e) {
-            Log::error('LLM grading exception', [
+            Log::error('Structured LLM grading exception', [
                 'error' => $e->getMessage(),
                 'url' => $this->llmBaseUrl(),
                 'model' => $this->llmModel(),
@@ -326,6 +324,87 @@ PROMPT;
             'rewrites' => [],
             'annotations' => [],
         ];
+    }
+
+    /**
+     * @param  array<string,mixed>  $result
+     * @param  array<string,mixed>  $fallback
+     * @return array<string,mixed>
+     */
+    private function normalizeLlmResult(array $result, array $fallback): array
+    {
+        $rubricScores = is_array($result['rubric_scores'] ?? null) ? $result['rubric_scores'] : [];
+        $fallbackScores = is_array($fallback['rubric_scores'] ?? null) ? $fallback['rubric_scores'] : [];
+
+        $keyMap = [
+            'task_completion' => 'task_achievement',
+            'task_response' => 'task_achievement',
+            'content' => 'task_achievement',
+            'clarity' => 'coherence',
+            'organization' => 'coherence',
+            'style' => 'lexical',
+            'vocab' => 'lexical',
+            'vocabulary' => 'lexical',
+        ];
+
+        foreach ($keyMap as $from => $to) {
+            if (! array_key_exists($to, $rubricScores) && array_key_exists($from, $rubricScores)) {
+                $rubricScores[$to] = $rubricScores[$from];
+            }
+        }
+
+        foreach ($fallbackScores as $key => $value) {
+            $rubricScores[$key] = $this->normalizeNumericScore($rubricScores[$key] ?? $value, $value);
+        }
+
+        $result['rubric_scores'] = $rubricScores;
+        $result['overall_band'] = is_numeric($result['overall_band'] ?? null)
+            ? (float) $result['overall_band']
+            : $this->computeOverallBand($rubricScores);
+        $result['strengths'] = array_values(array_filter((array) ($result['strengths'] ?? []), fn ($item) => is_string($item) && $item !== ''));
+        $result['rewrites'] = array_values(is_array($result['rewrites'] ?? null) ? $result['rewrites'] : []);
+        $result['annotations'] = array_values(is_array($result['annotations'] ?? null) ? $result['annotations'] : []);
+        $result['improvements'] = $this->normalizeImprovements($result['improvements'] ?? $fallback['improvements'] ?? []);
+
+        return $result;
+    }
+
+    private function normalizeNumericScore(mixed $value, float $fallback): float
+    {
+        if (! is_numeric($value)) {
+            return $fallback;
+        }
+
+        return max(0.0, min(4.0, (float) $value));
+    }
+
+    /**
+     * @return array<int,array{message:string,explanation:string}>
+     */
+    private function normalizeImprovements(mixed $improvements): array
+    {
+        $items = is_array($improvements) ? $improvements : [];
+
+        return array_values(array_map(function (mixed $item): array {
+            if (is_string($item)) {
+                return [
+                    'message' => $item,
+                    'explanation' => $item,
+                ];
+            }
+
+            if (is_array($item)) {
+                return [
+                    'message' => (string) ($item['message'] ?? $item['explanation'] ?? 'Needs improvement'),
+                    'explanation' => (string) ($item['explanation'] ?? $item['message'] ?? 'Needs improvement'),
+                ];
+            }
+
+            return [
+                'message' => 'Needs improvement',
+                'explanation' => 'Needs improvement',
+            ];
+        }, $items));
     }
 
     private function defaultSpeakingResult(): array

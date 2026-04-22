@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Ai\ChatCompletionsGateway;
 use App\Ai\LocalOpenAiGateway;
 use App\Srs\FsrsConfig;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -22,6 +23,14 @@ class AppServiceProvider extends ServiceProvider
             $ai->extend('local', function ($app, array $config) {
                 return new OpenAiProvider(
                     new LocalOpenAiGateway($app['events']),
+                    $config,
+                    $app->make(Dispatcher::class),
+                );
+            });
+
+            $ai->extend('chat-completions', function ($app, array $config) {
+                return new OpenAiProvider(
+                    new ChatCompletionsGateway($app['events']),
                     $config,
                     $app->make(Dispatcher::class),
                 );
