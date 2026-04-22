@@ -27,6 +27,11 @@ class User extends Authenticatable implements FilamentUser, JWTSubject
         return $this->role === Role::Admin || $this->role === Role::Staff;
     }
 
+    public function getFilamentName(): string
+    {
+        return $this->full_name ?? $this->email;
+    }
+
     protected function serializeDate(\DateTimeInterface $date): string
     {
         return $date->format(\DateTimeInterface::ATOM);
