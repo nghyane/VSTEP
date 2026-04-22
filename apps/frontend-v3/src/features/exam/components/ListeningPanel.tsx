@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Icon } from "#/components/Icon"
+import { ScrollArea } from "#/components/ScrollArea"
 import { logListeningPlayed } from "#/features/exam/actions"
 import { MCQQuestion } from "#/features/exam/components/MCQQuestion"
 import type { ExamVersionListeningSection } from "#/features/exam/types"
@@ -150,7 +151,7 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 			)}
 
 			{/* Questions (scrollable) */}
-			<div className="flex-1 overflow-y-auto bg-background">
+			<ScrollArea className="flex-1 bg-background">
 				<div className="mx-auto max-w-3xl space-y-6 p-6">
 					<div className="flex items-center gap-3">
 						<span className="rounded-full border-2 border-b-4 border-skill-listening/30 bg-skill-listening/10 px-3 py-1 text-xs font-extrabold text-skill-listening">
@@ -170,9 +171,7 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 						</div>
 					))}
 				</div>
-			</div>
-
-			{/* Audio bar */}
+			</ScrollArea>
 			<div className="border-t-2 border-border bg-card px-4 py-2.5">
 				<div className="flex items-center gap-3">
 					{!isPlaying ? (
@@ -229,7 +228,7 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 								"flex size-8 items-center justify-center rounded-(--radius-button) border-2 border-b-4 text-xs font-extrabold transition-all active:translate-y-[2px] active:border-b-2",
 								isAnswered
 									? "border-primary/70 bg-primary text-white"
-									: "border-border bg-surface text-muted hover:border-skill-listening/50 hover:bg-skill-listening/8 hover:text-skill-listening",
+									: "border-border bg-surface text-muted hover:border-primary/40 hover:bg-primary/5 hover:text-primary",
 							)}
 						>
 							{i + 1}
@@ -262,7 +261,7 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 									"relative overflow-hidden rounded-(--radius-button) border-2 border-b-4 px-3 pb-2.5 pt-1.5 text-xs font-extrabold transition-all active:translate-y-[2px] active:border-b-2",
 									isActive
 										? "border-primary/70 bg-primary text-white"
-										: "border-border bg-surface text-muted hover:border-skill-listening/40 hover:bg-skill-listening/8 hover:text-skill-listening",
+										: "border-border bg-surface text-muted hover:border-primary/40 hover:bg-primary/5 hover:text-primary",
 								)}
 							>
 								<span className="inline-flex items-center gap-1.5">
@@ -279,7 +278,7 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 										isCurrentlyPlaying
 											? isActive
 												? "bg-white/45"
-												: "bg-skill-listening/30"
+												: "bg-primary/30"
 											: isActive
 												? "bg-white/30"
 												: "bg-border",
@@ -288,7 +287,7 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 									<span
 										className={cn(
 											"block h-full rounded-full transition-[width]",
-											isActive ? "bg-white" : "bg-skill-listening/50",
+											isActive ? "bg-white" : "bg-primary/50",
 										)}
 										style={{ width: `${pct}%` }}
 									/>

@@ -8,6 +8,7 @@ interface Props {
 	index: number
 	selectedIndex: number | undefined
 	onSelect: (itemId: string, selectedIndex: number) => void
+	skill?: "listening" | "reading"
 }
 
 export function MCQQuestion({ item, index, selectedIndex, onSelect }: Props) {
@@ -29,17 +30,17 @@ export function MCQQuestion({ item, index, selectedIndex, onSelect }: Props) {
 							onClick={() => onSelect(item.id, optIdx)}
 							aria-pressed={isSelected}
 							className={cn(
-								"flex w-full items-center gap-3 rounded-(--radius-card) border-2 border-b-4 px-4 py-3 text-left text-sm font-semibold transition-all active:translate-y-[2px] active:border-b-2",
+								"flex w-full items-center gap-3 rounded-(--radius-card) border-2 border-b-4 px-4 py-3 text-left text-sm font-semibold text-foreground transition-all active:translate-y-[2px] active:border-b-2",
 								isSelected
-									? "border-skill-listening bg-skill-listening/10 text-foreground"
-									: "border-border bg-surface text-foreground hover:border-skill-listening/40 hover:bg-skill-listening/5",
+									? "border-primary bg-primary/8"
+									: "border-border bg-surface hover:border-primary/40 hover:bg-primary/5",
 							)}
 						>
 							<span
 								className={cn(
 									"flex size-7 shrink-0 items-center justify-center rounded-full border-2 text-xs font-extrabold transition-colors",
 									isSelected
-										? "border-skill-listening bg-skill-listening text-white"
+										? "border-primary bg-primary text-white"
 										: "border-border bg-background text-muted",
 								)}
 							>

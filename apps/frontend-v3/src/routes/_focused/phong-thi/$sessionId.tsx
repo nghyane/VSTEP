@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { Suspense, useMemo, useState } from "react"
+import { type ReactNode, Suspense, useMemo, useState } from "react"
 import { DeviceCheckScreen } from "#/features/exam/components/DeviceCheckScreen"
 import { ExamRoomHeader } from "#/features/exam/components/ExamRoomHeader"
 import { ListeningPanel } from "#/features/exam/components/ListeningPanel"
@@ -46,7 +46,7 @@ const SKILL_COLOR: Record<SkillKey, string> = {
 interface ConfirmDialogProps {
 	open: boolean
 	title: string
-	description: string
+	description: ReactNode
 	warning?: string
 	confirmLabel: string
 	onConfirm: () => void
@@ -66,25 +66,69 @@ function ConfirmDialog({
 }: ConfirmDialogProps) {
 	if (!open) return null
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-			<div className="absolute inset-0 bg-foreground/60" onClick={onCancel} />
-			<div className="card relative w-full max-w-sm space-y-4 p-6">
-				<h2 className="text-base font-bold text-foreground">{title}</h2>
-				<p className="text-sm text-muted">{description}</p>
+		<div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+			<div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={onCancel} />
+			<div className="relative w-full max-w-sm rounded-(--radius-banner) border-2 border-border bg-surface p-6 shadow-xl">
+				{/* Close */}
+				<button
+					type="button"
+					onClick={onCancel}
+					className="absolute right-4 top-4 flex size-7 items-center justify-center rounded-full text-muted hover:bg-surface hover:text-foreground transition-colors"
+					aria-label="Đóng"
+				>
+					<svg
+						viewBox="0 0 16 16"
+						className="size-4"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+						strokeLinecap="round"
+						aria-hidden="true"
+					>
+						<path d="M3 3l10 10M13 3L3 13" />
+					</svg>
+				</button>
+
+				{/* Icon */}
+				<div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-warning-tint">
+					<svg
+						viewBox="0 0 24 24"
+						className="size-6 text-warning"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						aria-hidden="true"
+					>
+						<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+						<line x1="12" y1="9" x2="12" y2="13" />
+						<line x1="12" y1="17" x2="12.01" y2="17" />
+					</svg>
+				</div>
+
+				<h2 className="mb-2 text-center text-base font-extrabold text-foreground">{title}</h2>
+				<p className="mb-4 text-center text-sm leading-relaxed text-muted">{description}</p>
+
 				{warning && (
-					<p className="rounded-[--radius-button] bg-warning-tint px-3 py-2 text-sm font-bold text-warning">
+					<p className="mb-4 rounded-(--radius-button) bg-warning-tint px-3 py-2 text-xs font-bold text-warning">
 						{warning}
 					</p>
 				)}
-				<div className="flex gap-3 pt-1">
-					<button type="button" onClick={onCancel} className="btn btn-secondary flex-1">
+
+				<div className="flex gap-2">
+					<button
+						type="button"
+						onClick={onCancel}
+						className="flex-1 rounded-(--radius-button) border-2 border-b-4 border-border bg-surface px-4 py-2 text-sm font-bold text-foreground transition-all hover:bg-background active:translate-y-[2px] active:border-b-2"
+					>
 						Ở lại
 					</button>
 					<button
 						type="button"
 						onClick={onConfirm}
 						disabled={isLoading}
-						className="btn btn-primary flex-1 disabled:opacity-50"
+						className="flex-1 rounded-(--radius-button) bg-primary px-4 py-2 text-sm font-bold text-white shadow-[0_3px_0_var(--color-primary-dark)] transition-all hover:opacity-90 active:translate-y-[2px] active:shadow-[0_1px_0_var(--color-primary-dark)] disabled:opacity-50"
 					>
 						{isLoading ? "Đang nộp..." : confirmLabel}
 					</button>
@@ -245,6 +289,14 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 						passages={version.reading_passages}
 						mcqAnswers={state.mcqAnswers}
 						onAnswer={handleAnswerMcq}
+						footer={{
+							skillLabel: SKILL_LABEL.reading,
+							skillProgress,
+							isLastSkill,
+							isSubmitting,
+							onSubmit: handleShowConfirmSubmit,
+							onNext: handleShowConfirmNext,
+						}}
 					/>
 				)}
 				{currentSkill === "writing" && (
@@ -263,8 +315,8 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 				)}
 			</main>
 
-			{/* Footer — ẩn khi listening vì ListeningPanel tự nhúng footer */}
-			{currentSkill !== "listening" && (
+			{/* Footer — ẩn khi listening/reading vì panel tự nhúng footer */}
+			{currentSkill !== "listening" && currentSkill !== "reading" && (
 				<footer className="z-40 flex h-14 shrink-0 items-center justify-between border-t border-border bg-card px-5">
 					<div className="w-24" />
 
@@ -338,8 +390,13 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 			<ConfirmDialog
 				open={state.confirmNextSkill}
 				title={`Chuyển sang ${nextSkill ? SKILL_LABEL[nextSkill] : "phần tiếp"}?`}
-				description={`Sau khi chuyển, bạn sẽ không thể quay lại phần ${currentSkill ? SKILL_LABEL[currentSkill] : ""} để chỉnh sửa.`}
-				confirmLabel={`Chuyển sang ${nextSkill ? SKILL_LABEL[nextSkill] : "phần tiếp"} →`}
+				description={
+					<>
+						Sau khi chuyển, bạn sẽ <strong className="text-foreground">không thể quay lại</strong> phần{" "}
+						{currentSkill ? SKILL_LABEL[currentSkill] : ""} để chỉnh sửa.
+					</>
+				}
+				confirmLabel={`Chuyển sang ${nextSkill ? SKILL_LABEL[nextSkill] : "phần tiếp"}`}
 				onConfirm={handleConfirmNext}
 				onCancel={handleHideConfirmNext}
 			/>
