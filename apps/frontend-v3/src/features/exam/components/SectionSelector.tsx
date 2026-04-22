@@ -1,4 +1,7 @@
+import { useState } from "react"
+import { Icon } from "#/components/Icon"
 import type { ExamDetail, SkillKey } from "#/features/exam/types"
+import { skills } from "#/lib/skills"
 import { cn } from "#/lib/utils"
 
 interface Props {
@@ -7,39 +10,24 @@ interface Props {
 	onToggleSkill: (skill: SkillKey) => void
 }
 
-const SKILL_META: Record<
-	SkillKey,
-	{ label: string; en: string; accentBg: string; accentText: string; selectedBg: string; checkBg: string }
-> = {
+const SKILL_META: Record<SkillKey, { label: string; selectedBg: string; checkBg: string }> = {
 	listening: {
 		label: "Nghe",
-		en: "Listening",
-		accentBg: "bg-skill-listening",
-		accentText: "text-skill-listening",
 		selectedBg: "bg-skill-listening/8",
 		checkBg: "bg-skill-listening border-skill-listening",
 	},
 	reading: {
 		label: "Đọc",
-		en: "Reading",
-		accentBg: "bg-skill-reading",
-		accentText: "text-skill-reading",
 		selectedBg: "bg-skill-reading/8",
 		checkBg: "bg-skill-reading border-skill-reading",
 	},
 	writing: {
 		label: "Viết",
-		en: "Writing",
-		accentBg: "bg-skill-writing",
-		accentText: "text-skill-writing",
 		selectedBg: "bg-skill-writing/8",
 		checkBg: "bg-skill-writing border-skill-writing",
 	},
 	speaking: {
 		label: "Nói",
-		en: "Speaking",
-		accentBg: "bg-skill-speaking",
-		accentText: "text-skill-speaking",
 		selectedBg: "bg-skill-speaking/8",
 		checkBg: "bg-skill-speaking border-skill-speaking",
 	},
@@ -128,7 +116,17 @@ function getSkillTotals(skill: SkillKey, detail: ExamDetail): { minutes: number;
 }
 
 export function SectionSelector({ detail, selected, onToggleSkill }: Props) {
+	const [expanded, setExpanded] = useState<Set<SkillKey>>(new Set())
 	const isAllSelected = SKILL_ORDER.every((s) => selected.has(s))
+
+	function handleToggleExpand(skill: SkillKey) {
+		setExpanded((prev) => {
+			const next = new Set(prev)
+			if (next.has(skill)) next.delete(skill)
+			else next.add(skill)
+			return next
+		})
+	}
 
 	return (
 		<div className="space-y-3">
@@ -141,84 +139,112 @@ export function SectionSelector({ detail, selected, onToggleSkill }: Props) {
 
 			{SKILL_ORDER.map((skill) => {
 				const meta = SKILL_META[skill]
+				const skillDef = skills.find((s) => s.key === skill)
 				const isSelected = selected.has(skill)
+				const isExpanded = expanded.has(skill)
 				const { minutes, countLabel } = getSkillTotals(skill, detail)
 				const parts = getPartRows(skill, detail)
 
 				return (
 					<div key={skill} className="card overflow-hidden">
-						{/* Skill header — click to toggle entire skill */}
-						<label
+						{/* Skill header row */}
+						<div
 							className={cn(
-								"flex cursor-pointer items-center gap-4 px-5 py-3.5 transition-colors",
+								"flex items-center gap-4 px-5 py-3.5 transition-colors",
 								isSelected ? meta.selectedBg : "hover:bg-background/60",
 							)}
 						>
-							<input
-								type="checkbox"
-								className="sr-only"
-								checked={isSelected}
-								onChange={() => onToggleSkill(skill)}
-								aria-label={meta.label}
-							/>
-
-							{/* Checkbox */}
-							<div
-								className={cn(
-									"flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition-all",
-									isSelected ? meta.checkBg : "border-border bg-surface",
-								)}
-							>
-								{isSelected && (
-									<svg
-										viewBox="0 0 12 10"
-										className="h-3 w-3 text-white"
-										fill="none"
-										stroke="currentColor"
-										strokeWidth="2.5"
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										aria-hidden="true"
-									>
-										<polyline points="1,5 4.5,8.5 11,1" />
-									</svg>
-								)}
-							</div>
-
-							{/* Accent bar */}
-							<div className={cn("h-5 w-1 rounded-full shrink-0", meta.accentBg)} />
-
-							{/* Info */}
-							<span className={cn("text-sm font-bold", meta.accentText)}>{meta.label}</span>
-							<span className="text-xs text-subtle tabular-nums">
-								{minutes} phút · {countLabel}
-							</span>
-
-							<span className="ml-auto text-xs font-bold text-subtle">{isSelected ? "Bỏ chọn" : "Chọn"}</span>
-						</label>
-
-						{/* Parts — view only, always visible */}
-						<div className="border-t border-border-light">
-							{parts.map((part, idx) => (
+							{/* Checkbox — click selects/deselects skill */}
+							<label className="flex cursor-pointer items-center gap-4 flex-1 min-w-0">
+								<input
+									type="checkbox"
+									className="sr-only"
+									checked={isSelected}
+									onChange={() => onToggleSkill(skill)}
+									aria-label={meta.label}
+								/>
 								<div
-									key={part.id}
 									className={cn(
-										"flex items-center gap-3 px-5 py-2.5",
-										idx < parts.length - 1 && "border-b border-border-light",
-										isSelected ? meta.selectedBg : "bg-background/30",
+										"flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition-all",
+										isSelected ? meta.checkBg : "border-border bg-surface",
 									)}
 								>
-									<span className={cn("w-0.5 h-4 rounded-full shrink-0", meta.accentBg)} />
-									<span className="flex-1 text-sm text-foreground/80 font-medium">{part.label}</span>
-									<span className="shrink-0 text-xs tabular-nums text-subtle">
-										{part.itemCount} {part.itemUnit}
-									</span>
-									<span className="shrink-0 text-xs tabular-nums text-subtle">
-										~{part.durationMinutes} phút
-									</span>
+									{isSelected && (
+										<svg
+											viewBox="0 0 12 10"
+											className="h-3 w-3 text-white"
+											fill="none"
+											stroke="currentColor"
+											strokeWidth="2.5"
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											aria-hidden="true"
+										>
+											<polyline points="1,5 4.5,8.5 11,1" />
+										</svg>
+									)}
 								</div>
-							))}
+
+								{/* Skill info */}
+								{skillDef && <Icon name={skillDef.icon} size="xs" style={{ color: skillDef.color }} />}
+								<span className="text-sm font-bold" style={{ color: skillDef?.color }}>
+									{meta.label}
+								</span>
+								<span className="text-xs text-subtle tabular-nums">
+									{minutes} phút · {countLabel}
+								</span>
+
+								<span className="ml-auto text-xs font-bold text-subtle mr-3">
+									{isSelected ? "Bỏ chọn" : "Chọn"}
+								</span>
+							</label>
+
+							{/* Chevron — click expand/collapse parts */}
+							<button
+								type="button"
+								onClick={() => handleToggleExpand(skill)}
+								aria-label={isExpanded ? "Thu gọn" : "Mở rộng"}
+								aria-expanded={isExpanded}
+								className="shrink-0 flex items-center justify-center size-6 rounded-md text-muted hover:text-foreground hover:bg-border-light transition-colors"
+							>
+								<svg
+									viewBox="0 0 16 16"
+									className={cn("size-4 transition-transform duration-200", isExpanded && "rotate-180")}
+									fill="none"
+									stroke="currentColor"
+									strokeWidth="2"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									aria-hidden="true"
+								>
+									<polyline points="3,6 8,11 13,6" />
+								</svg>
+							</button>
 						</div>
+
+						{/* Parts dropdown — animated height collapse */}
+						{isExpanded && (
+							<div className="border-t border-border-light">
+								{parts.map((part, idx) => (
+									<div
+										key={part.id}
+										className={cn(
+											"flex items-center gap-3 px-5 py-2.5",
+											idx < parts.length - 1 && "border-b border-border-light",
+											isSelected ? meta.selectedBg : "bg-background/30",
+										)}
+									>
+										<span className="flex-1 text-sm text-foreground/80 font-medium">{part.label}</span>
+										<span className="shrink-0 text-xs tabular-nums text-subtle">
+											{part.itemCount} {part.itemUnit}
+										</span>
+										<span className="shrink-0 text-xs tabular-nums text-subtle">
+											~{part.durationMinutes} phút
+										</span>
+									</div>
+								))}
+							</div>
+						)}
 					</div>
 				)
 			})}

@@ -58,5 +58,19 @@ Lỗi đã gặp và cách fix. Tra cứu trước khi viết code mới.
 **Sai:** Route page 140+ lines với hooks, handlers, sub-components inline.
 **Đúng:** Route page ≤ 80 lines, chỉ compose. Logic trong `use-*.ts`, UI trong `components/`.
 
+## Biome formatter — JSX inline expression
+
+**Sai:** Multi-line `{condition && (\n  <Comp />\n)}` khi đủ ngắn để inline (line width 110).
+```tsx
+{skillDef && (
+  <Icon name={skillDef.icon} size="xs" style={{ color: skillDef.color }} />
+)}
+```
+**Đúng:** Inline khi toàn bộ expression ≤ 110 ký tự.
+```tsx
+{skillDef && <Icon name={skillDef.icon} size="xs" style={{ color: skillDef.color }} />}
+```
+Biome config: `lineWidth: 110`, `indentStyle: "tab"`. Luôn chạy `bunx biome check <files>` sau khi viết code.
+
 ---
 See also: [[auth-architecture]] · [[api-conventions]]

@@ -5,7 +5,7 @@ import { Header } from "#/components/Header"
 import { Icon } from "#/components/Icon"
 import { Loading } from "#/components/Loading"
 import { ExamCard } from "#/features/exam/components/ExamCard"
-import { examCostsQuery, examsQuery } from "#/features/exam/queries"
+import { appConfigQuery, examsQuery } from "#/features/exam/queries"
 import type { SkillKey } from "#/features/exam/types"
 import { cn } from "#/lib/utils"
 
@@ -46,10 +46,10 @@ const SKILL_ACTIVE_BG: Record<SkillKey, string> = {
 
 function ExamListContent() {
 	const { data: examsData } = useSuspenseQuery(examsQuery)
-	const { data: costsData } = useQuery(examCostsQuery)
+	const { data: configData } = useQuery(appConfigQuery)
 
 	const exams = examsData.data
-	const fullTestCoinCost = costsData?.data.full_test_coin_cost ?? null
+	const fullTestCoinCost = configData?.data.pricing.exam.full_test_cost_coins ?? null
 
 	const [search, setSearch] = useState("")
 	const [status, setStatus] = useState<StatusFilter>("Tất cả")
