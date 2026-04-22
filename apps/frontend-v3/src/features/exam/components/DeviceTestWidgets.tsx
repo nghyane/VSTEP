@@ -142,7 +142,7 @@ export function MicTest() {
 					<button
 						type="button"
 						onClick={handleRecord}
-						className="btn btn-primary flex items-center gap-2 text-xs"
+						className="btn btn-destructive flex items-center gap-2 text-xs"
 					>
 						<Icon name="mic" size="xs" className="text-white" />
 						{recorder.audioUrl ? "Thu lại" : "Thu âm"}

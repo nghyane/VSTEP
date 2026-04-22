@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
 import { Icon, StaticIcon } from "#/components/Icon"
@@ -35,6 +35,7 @@ function computeDuration(detail: ExamDetail, selected: Set<SkillKey>): number {
 
 export function BottomActionBar({ detail, selected }: Props) {
 	const navigate = useNavigate()
+	const qc = useQueryClient()
 	const { data: walletData } = useQuery(walletBalanceQuery)
 	const { data: configData } = useQuery(appConfigQuery)
 
@@ -75,6 +76,7 @@ export function BottomActionBar({ detail, selected }: Props) {
 			})
 		},
 		onSuccess: (result) => {
+			qc.invalidateQueries({ queryKey: ["wallet", "balance"] })
 			useToast.getState().add(`Đã trừ ${result.coins_charged} xu — chúc bạn làm bài tốt!`, "success")
 			navigate({
 				to: "/phong-thi/$sessionId",

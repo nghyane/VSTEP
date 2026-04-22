@@ -145,6 +145,14 @@
 			0 2px 0 var(--color-border),
 			inset 0 0 0 2px var(--color-border);
 	}
+	.btn-destructive {
+		background: var(--color-destructive);
+		color: #ffffff;
+		box-shadow: 0 4px 0 #b5322a;
+	}
+	.btn-destructive:active {
+		box-shadow: 0 2px 0 #b5322a;
+	}
 
 	.card {
 		background: var(--color-surface);
