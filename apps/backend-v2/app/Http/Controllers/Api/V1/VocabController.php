@@ -30,8 +30,9 @@ class VocabController extends Controller
 
     public function topics(Request $request): AnonymousResourceCollection
     {
+        $profile = $this->profile($request);
         $topics = $this->vocabService
-            ->listPublishedTopics()
+            ->listPublishedTopics($profile)
             ->load('tasks');
 
         return VocabTopicResource::collection($topics);

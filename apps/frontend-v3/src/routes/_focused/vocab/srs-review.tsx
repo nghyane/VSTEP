@@ -19,10 +19,10 @@ function SrsReviewPage() {
 	const s = useFlashcardSession(items)
 	const back = { backTo: "/luyen-tap/tu-vung" }
 
-	// Batch done → refetch queue (server includes learn-ahead cards)
 	useEffect(() => {
 		if (s.status === "done") {
-			qc.invalidateQueries({ queryKey: ["vocab", "srs", "queue"] })
+			qc.removeQueries({ queryKey: ["vocab", "srs", "queue"], exact: true })
+			qc.removeQueries({ queryKey: ["vocab", "topics"], exact: true })
 		}
 	}, [s.status, qc])
 
@@ -37,8 +37,7 @@ function SrsReviewPage() {
 		)
 	}
 
-	// Session done + refetched queue still empty → truly done
-	if (s.status === "done" && data.data.items.length === 0) {
+	if (s.status === "done") {
 		return (
 			<FocusComplete {...back} total={s.reviewed} message={`Bạn đã ôn xong ${s.reviewed} lượt hôm nay.`} />
 		)

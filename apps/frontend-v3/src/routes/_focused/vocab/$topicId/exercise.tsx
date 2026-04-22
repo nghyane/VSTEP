@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
+import { useEffect } from "react"
 import { ExerciseFeedback } from "#/features/vocab/components/ExerciseFeedback"
 import { McqOptions, TextInput } from "#/features/vocab/components/ExerciseInput"
 import { ExerciseQuestion } from "#/features/vocab/components/ExerciseQuestion"
@@ -18,12 +19,20 @@ export const Route = createFileRoute("/_focused/vocab/$topicId/exercise")({
 })
 
 function ExercisePage() {
+	const qc = useQueryClient()
 	const { topicId } = Route.useParams()
 	const { kind } = Route.useSearch()
 	const { data } = useQuery(vocabTopicDetailQuery(topicId))
 	const exercises = data ? data.data.exercises.filter((e) => e.kind === kind) : []
 	const s = useExerciseSession(exercises, kind)
 	const back = { backTo: "/luyen-tap/tu-vung/$topicId", backParams: { topicId } }
+
+	useEffect(() => {
+		if (s.done) {
+			qc.removeQueries({ queryKey: ["vocab", "topics", topicId] })
+			qc.removeQueries({ queryKey: ["vocab", "topics"], exact: true })
+		}
+	}, [s.done, qc, topicId])
 
 	if (!data) {
 		return (
