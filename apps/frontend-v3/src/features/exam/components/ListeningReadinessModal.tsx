@@ -36,7 +36,7 @@ export function ListeningReadinessModal({ totalSections, totalQuestions, onReady
 				</div>
 
 				{/* Info box */}
-				<div className="rounded-[--radius-card] border-2 border-border bg-background px-4 py-3 text-center text-sm text-muted">
+				<div className="rounded-(--radius-card) border-2 border-border bg-background px-4 py-3 text-center text-sm text-muted">
 					<p>
 						Bài thi gồm <span className="font-bold text-foreground">{totalSections} phần</span> với{" "}
 						<span className="font-bold text-foreground">{totalQuestions} câu hỏi</span>.

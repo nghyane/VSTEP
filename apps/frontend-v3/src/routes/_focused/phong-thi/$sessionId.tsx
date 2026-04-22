@@ -41,13 +41,6 @@ const SKILL_COLOR: Record<SkillKey, string> = {
 	speaking: "text-skill-speaking",
 }
 
-const SKILL_ACTIVE_BG: Record<SkillKey, string> = {
-	listening: "bg-skill-listening/15",
-	reading: "bg-skill-reading/15",
-	writing: "bg-skill-writing/15",
-	speaking: "bg-skill-speaking/15",
-}
-
 // ─── Dialogs ─────────────────────────────────────────────────────────────────
 
 interface ConfirmDialogProps {
@@ -222,45 +215,29 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 		)
 	}
 
+	const skillProgress = `${state.skillIdx + 1}/${activeSkills.length}`
+
 	return (
 		<div className="flex h-screen flex-col bg-background">
 			{/* Header */}
-			<ExamRoomHeader
-				remainingSeconds={remainingSeconds}
-				answeredMcq={answeredMcq}
-				totalMcq={totalMcq}
-				examTitle={exam.title}
-			/>
-
-			{/* Skill navigation tabs */}
-			<nav className="flex shrink-0 items-center gap-1 border-b border-border bg-card px-4 py-1.5">
-				{activeSkills.map((skill, idx) => {
-					const isCurrent = skill === currentSkill
-					const isPast = idx < state.skillIdx
-					return (
-						<div
-							key={skill}
-							className={cn(
-								"flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors",
-								isCurrent ? `${SKILL_ACTIVE_BG[skill]} ${SKILL_COLOR[skill]}` : "text-muted",
-								isPast && "text-subtle line-through",
-							)}
-						>
-							<span>{SKILL_LABEL[skill]}</span>
-							{isPast && <span className="text-xs">✓</span>}
-						</div>
-					)
-				})}
-			</nav>
+			<ExamRoomHeader remainingSeconds={remainingSeconds} answeredMcq={answeredMcq} totalMcq={totalMcq} />
 
 			{/* Skill panel */}
-			<main className="flex-1 overflow-hidden">
+			<main className="flex flex-1 flex-col overflow-hidden">
 				{currentSkill === "listening" && (
 					<ListeningPanel
 						sections={version.listening_sections}
 						sessionId={sessionId}
 						mcqAnswers={state.mcqAnswers}
 						onAnswer={handleAnswerMcq}
+						footer={{
+							skillLabel: SKILL_LABEL.listening,
+							skillProgress,
+							isLastSkill,
+							isSubmitting,
+							onSubmit: handleShowConfirmSubmit,
+							onNext: handleShowConfirmNext,
+						}}
 					/>
 				)}
 				{currentSkill === "reading" && (
@@ -286,64 +263,64 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 				)}
 			</main>
 
-			{/* Footer */}
-			<footer className="z-40 flex h-14 shrink-0 items-center justify-between border-t border-border bg-card px-5">
-				<div className="w-24" />
+			{/* Footer — ẩn khi listening vì ListeningPanel tự nhúng footer */}
+			{currentSkill !== "listening" && (
+				<footer className="z-40 flex h-14 shrink-0 items-center justify-between border-t border-border bg-card px-5">
+					<div className="w-24" />
 
-				{/* Current skill indicator */}
-				{currentSkill && (
-					<p className={cn("text-sm font-bold", SKILL_COLOR[currentSkill])}>
-						{SKILL_LABEL[currentSkill]}
-						<span className="ml-1 text-xs font-normal text-muted">
-							({state.skillIdx + 1}/{activeSkills.length})
-						</span>
-					</p>
-				)}
+					{/* Current skill indicator */}
+					{currentSkill && (
+						<p className={cn("text-sm font-bold", SKILL_COLOR[currentSkill])}>
+							{SKILL_LABEL[currentSkill]}
+							<span className="ml-1 text-xs font-normal text-muted">({skillProgress})</span>
+						</p>
+					)}
 
-				{/* Action button */}
-				{isLastSkill ? (
-					<button
-						type="button"
-						onClick={handleShowConfirmSubmit}
-						disabled={isSubmitting}
-						className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-					>
-						<svg
-							viewBox="0 0 16 16"
-							className="size-4"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="2"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							aria-hidden="true"
+					{/* Action button */}
+					{isLastSkill ? (
+						<button
+							type="button"
+							onClick={handleShowConfirmSubmit}
+							disabled={isSubmitting}
+							className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
 						>
-							<polyline points="2,8 6,12 14,4" />
-						</svg>
-						Nộp bài
-					</button>
-				) : (
-					<button
-						type="button"
-						onClick={handleShowConfirmNext}
-						className="flex items-center gap-2 rounded-xl border-2 border-border px-5 py-2 text-sm font-semibold text-foreground hover:bg-surface transition-colors"
-					>
-						Phần tiếp
-						<svg
-							viewBox="0 0 16 16"
-							className="size-4"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="2"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							aria-hidden="true"
+							<svg
+								viewBox="0 0 16 16"
+								className="size-4"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="2"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								aria-hidden="true"
+							>
+								<polyline points="2,8 6,12 14,4" />
+							</svg>
+							Nộp bài
+						</button>
+					) : (
+						<button
+							type="button"
+							onClick={handleShowConfirmNext}
+							className="flex items-center gap-2 rounded-xl border-2 border-border px-5 py-2 text-sm font-semibold text-foreground hover:bg-surface transition-colors"
 						>
-							<path d="M6 3l5 5-5 5" />
-						</svg>
-					</button>
-				)}
-			</footer>
+							Phần tiếp
+							<svg
+								viewBox="0 0 16 16"
+								className="size-4"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="2"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								aria-hidden="true"
+							>
+								<path d="M6 3l5 5-5 5" />
+							</svg>
+						</button>
+					)}
+				</footer>
+			)}
 
 			{/* Submit confirm dialog */}
 			<ConfirmDialog

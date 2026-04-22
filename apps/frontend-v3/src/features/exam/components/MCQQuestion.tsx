@@ -14,7 +14,7 @@ export function MCQQuestion({ item, index, selectedIndex, onSelect }: Props) {
 	return (
 		<div className="space-y-3">
 			<p className="text-sm font-semibold leading-relaxed text-foreground">
-				<span className="mr-2 text-muted">{index + 1}.</span>
+				<span className="mr-2 font-bold text-muted">{index + 1}.</span>
 				{item.stem}
 			</p>
 
@@ -27,18 +27,20 @@ export function MCQQuestion({ item, index, selectedIndex, onSelect }: Props) {
 							key={optIdx}
 							type="button"
 							onClick={() => onSelect(item.id, optIdx)}
-							className={cn(
-								"flex w-full items-start gap-3 rounded-xl border-2 px-4 py-3 text-left text-sm transition-all",
-								isSelected
-									? "border-primary bg-primary/8 text-foreground"
-									: "border-border bg-surface hover:border-primary/50 hover:bg-primary/4 text-foreground",
-							)}
 							aria-pressed={isSelected}
+							className={cn(
+								"flex w-full items-center gap-3 rounded-(--radius-card) border-2 border-b-4 px-4 py-3 text-left text-sm font-semibold transition-all active:translate-y-[2px] active:border-b-2",
+								isSelected
+									? "border-skill-listening bg-skill-listening/10 text-foreground"
+									: "border-border bg-surface text-foreground hover:border-skill-listening/40 hover:bg-skill-listening/5",
+							)}
 						>
 							<span
 								className={cn(
-									"flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold",
-									isSelected ? "bg-primary text-white" : "bg-border text-muted",
+									"flex size-7 shrink-0 items-center justify-center rounded-full border-2 text-xs font-extrabold transition-colors",
+									isSelected
+										? "border-skill-listening bg-skill-listening text-white"
+										: "border-border bg-background text-muted",
 								)}
 							>
 								{label}

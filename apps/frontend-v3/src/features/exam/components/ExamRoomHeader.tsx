@@ -5,7 +5,6 @@ interface Props {
 	remainingSeconds: number
 	answeredMcq: number
 	totalMcq: number
-	examTitle: string
 }
 
 function formatTime(seconds: number): string {
@@ -16,7 +15,7 @@ function formatTime(seconds: number): string {
 	return `${m}:${s}`
 }
 
-export function ExamRoomHeader({ remainingSeconds, answeredMcq, totalMcq, examTitle }: Props) {
+export function ExamRoomHeader({ remainingSeconds, answeredMcq, totalMcq }: Props) {
 	const isWarning = remainingSeconds <= 300
 	const isUrgent = remainingSeconds <= 60
 
@@ -50,12 +49,7 @@ export function ExamRoomHeader({ remainingSeconds, answeredMcq, totalMcq, examTi
 				{formatTime(remainingSeconds)}
 			</div>
 
-			{/* Exam title (center, truncate) */}
-			<p className="mx-4 hidden max-w-xs truncate text-sm font-semibold text-foreground sm:block">
-				{examTitle}
-			</p>
-
-			{/* Progress */}
+			{/* Progress (center) */}
 			<div className="flex items-center gap-1 text-sm">
 				<span className="font-bold tabular-nums text-foreground">{answeredMcq}</span>
 				<span className="text-muted">/{totalMcq} câu</span>

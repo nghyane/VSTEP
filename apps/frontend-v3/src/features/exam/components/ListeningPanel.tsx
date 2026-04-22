@@ -6,11 +6,21 @@ import type { ExamVersionListeningSection } from "#/features/exam/types"
 import { cn } from "#/lib/utils"
 import { ListeningReadinessModal } from "./ListeningReadinessModal"
 
+interface FooterAction {
+	skillLabel: string
+	skillProgress: string
+	isLastSkill: boolean
+	isSubmitting: boolean
+	onSubmit: () => void
+	onNext: () => void
+}
+
 interface Props {
 	sections: ExamVersionListeningSection[]
 	sessionId: string
 	mcqAnswers: Map<string, number>
 	onAnswer: (itemId: string, selectedIndex: number) => void
+	footer: FooterAction
 }
 
 function formatTime(seconds: number): string {
@@ -19,7 +29,7 @@ function formatTime(seconds: number): string {
 	return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
 }
 
-export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer }: Props) {
+export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, footer }: Props) {
 	const sorted = useMemo(() => [...sections].sort((a, b) => a.part - b.part), [sections])
 
 	const [isReady, setIsReady] = useState(false)
@@ -143,7 +153,7 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer }: Pr
 			<div className="flex-1 overflow-y-auto bg-background">
 				<div className="mx-auto max-w-3xl space-y-6 p-6">
 					<div className="flex items-center gap-3">
-						<span className="rounded-full bg-skill-listening/15 px-3 py-1 text-xs font-bold text-skill-listening">
+						<span className="rounded-full border-2 border-b-4 border-skill-listening/30 bg-skill-listening/10 px-3 py-1 text-xs font-extrabold text-skill-listening">
 							Phần {activeSection.part}
 						</span>
 						<span className="text-sm font-semibold text-foreground">{activeSection.part_title}</span>
@@ -162,24 +172,20 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer }: Pr
 				</div>
 			</div>
 
-			{/* Audio progress bar */}
-			<div className="border-t-2 border-border bg-card px-4 py-2">
+			{/* Audio bar */}
+			<div className="border-t-2 border-border bg-card px-4 py-2.5">
 				<div className="flex items-center gap-3">
 					{!isPlaying ? (
-						<button
-							type="button"
-							onClick={handleStartAudio}
-							className="flex items-center gap-2 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90 active:scale-95"
-						>
+						<button type="button" onClick={handleStartAudio} className="btn btn-primary px-4 py-1.5 text-xs">
 							<svg viewBox="0 0 16 16" className="size-3.5" fill="currentColor" aria-hidden="true">
 								<path d="M5 3L13 8L5 13V3Z" />
 							</svg>
 							Phát audio
 						</button>
 					) : (
-						<div className="flex items-center gap-2">
-							<Icon name="volume" size="xs" className="text-muted" />
-							<span className="font-mono text-xs font-bold tabular-nums text-primary">
+						<div className="flex items-center gap-2 rounded-full border-2 border-skill-listening/30 bg-skill-listening/10 px-3 py-1">
+							<Icon name="volume" size="xs" className="text-skill-listening" />
+							<span className="font-mono text-xs font-extrabold tabular-nums text-skill-listening">
 								{formatTime(currentTime)}
 							</span>
 							{playingIdx !== activeSectionIdx && (
@@ -187,16 +193,16 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer }: Pr
 							)}
 						</div>
 					)}
-					<div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-surface">
+					<div className="relative h-2 flex-1 overflow-hidden rounded-full bg-border">
 						<div
-							className="absolute inset-y-0 left-0 rounded-full bg-primary transition-[width] duration-300"
+							className="absolute inset-y-0 left-0 rounded-full bg-skill-listening transition-[width] duration-300"
 							style={{ width: `${progressPct}%` }}
 						/>
 					</div>
 					<span className="font-mono text-xs tabular-nums text-muted">{formatTime(duration)}</span>
 				</div>
 
-				{/* Hidden audio per section — preload metadata để có thể play sequentially */}
+				{/* Hidden audio per section */}
 				{sorted.map((sec, i) => (
 					<audio
 						key={sec.id}
@@ -220,10 +226,10 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer }: Pr
 							type="button"
 							onClick={() => handleJumpToItem(i)}
 							className={cn(
-								"flex size-8 items-center justify-center rounded-lg border-2 text-sm font-bold transition-colors active:scale-95",
+								"flex size-8 items-center justify-center rounded-(--radius-button) border-2 border-b-4 text-xs font-extrabold transition-all active:translate-y-[2px] active:border-b-2",
 								isAnswered
-									? "border-primary bg-primary text-white"
-									: "border-border bg-surface text-muted hover:border-primary/40 hover:bg-primary/5",
+									? "border-primary/70 bg-primary text-white"
+									: "border-border bg-surface text-muted hover:border-skill-listening/50 hover:bg-skill-listening/8 hover:text-skill-listening",
 							)}
 						>
 							{i + 1}
@@ -235,8 +241,8 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer }: Pr
 			{/* Section tabs + next */}
 			<div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-2.5">
 				<div className="flex min-w-0 items-center gap-2">
-					<Icon name="volume" size="xs" className="text-muted" />
-					<span className="text-sm font-bold text-foreground">Part {activeSectionIdx + 1}</span>
+					<Icon name="volume" size="xs" className="text-skill-listening" />
+					<span className="text-sm font-extrabold text-foreground">Part {activeSectionIdx + 1}</span>
 					<span className="text-xs text-muted">
 						đã làm {activeAnswered}/{activeTotal}
 					</span>
@@ -253,8 +259,10 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer }: Pr
 								type="button"
 								onClick={() => setActiveSectionIdx(i)}
 								className={cn(
-									"relative overflow-hidden rounded-full px-3 pb-2.5 pt-1.5 text-xs font-bold transition-colors",
-									isActive ? "bg-primary text-white" : "bg-surface text-muted hover:bg-surface/80",
+									"relative overflow-hidden rounded-(--radius-button) border-2 border-b-4 px-3 pb-2.5 pt-1.5 text-xs font-extrabold transition-all active:translate-y-[2px] active:border-b-2",
+									isActive
+										? "border-primary/70 bg-primary text-white"
+										: "border-border bg-surface text-muted hover:border-skill-listening/40 hover:bg-skill-listening/8 hover:text-skill-listening",
 								)}
 							>
 								<span className="inline-flex items-center gap-1.5">
@@ -263,6 +271,7 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer }: Pr
 										{meta.answered}/{meta.total}
 									</span>
 								</span>
+								{/* Progress underline */}
 								<span
 									className={cn(
 										"absolute inset-x-1 bottom-0.5 overflow-hidden rounded-full transition-all",
@@ -270,7 +279,7 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer }: Pr
 										isCurrentlyPlaying
 											? isActive
 												? "bg-white/45"
-												: "bg-primary/25"
+												: "bg-skill-listening/30"
 											: isActive
 												? "bg-white/30"
 												: "bg-border",
@@ -279,7 +288,7 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer }: Pr
 									<span
 										className={cn(
 											"block h-full rounded-full transition-[width]",
-											isActive ? "bg-white" : "bg-muted/60",
+											isActive ? "bg-white" : "bg-skill-listening/50",
 										)}
 										style={{ width: `${pct}%` }}
 									/>
@@ -290,11 +299,7 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer }: Pr
 				</div>
 
 				{activeSectionIdx < sorted.length - 1 ? (
-					<button
-						type="button"
-						onClick={handleNextSection}
-						className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90 active:scale-95"
-					>
+					<button type="button" onClick={handleNextSection} className="btn btn-primary px-3 py-1.5 text-xs">
 						Part {activeSectionIdx + 2}
 						<svg viewBox="0 0 16 16" className="size-3.5" fill="currentColor" aria-hidden="true">
 							<path d="M6 3l5 5-5 5V3z" />
@@ -302,6 +307,53 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer }: Pr
 					</button>
 				) : (
 					<div className="w-20" />
+				)}
+			</div>
+
+			{/* Global footer — skill indicator + submit/next action */}
+			<div className="z-40 flex h-14 shrink-0 items-center justify-between border-t border-border bg-card px-5">
+				<div className="w-24" />
+				<p className="text-sm font-extrabold text-skill-listening">
+					{footer.skillLabel}
+					<span className="ml-1 text-xs font-normal text-muted">({footer.skillProgress})</span>
+				</p>
+				{footer.isLastSkill ? (
+					<button
+						type="button"
+						onClick={footer.onSubmit}
+						disabled={footer.isSubmitting}
+						className="btn btn-primary disabled:opacity-60"
+					>
+						<svg
+							viewBox="0 0 16 16"
+							className="size-4"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2.5"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							aria-hidden="true"
+						>
+							<polyline points="2,8 6,12 14,4" />
+						</svg>
+						Nộp bài
+					</button>
+				) : (
+					<button type="button" onClick={footer.onNext} className="btn btn-secondary">
+						Phần tiếp
+						<svg
+							viewBox="0 0 16 16"
+							className="size-4"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							aria-hidden="true"
+						>
+							<path d="M6 3l5 5-5 5" />
+						</svg>
+					</button>
 				)}
 			</div>
 		</div>

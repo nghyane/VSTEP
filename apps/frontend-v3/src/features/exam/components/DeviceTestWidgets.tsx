@@ -114,7 +114,7 @@ export function MicTest() {
 		<div className="space-y-3">
 			<div
 				className={cn(
-					"flex h-12 items-center justify-center rounded-[--radius-card] border-2 border-border bg-background transition-colors",
+					"flex h-12 items-center justify-center rounded-(--radius-card) border-2 border-border bg-background transition-colors",
 					isRecording && "border-destructive/40 bg-destructive-tint",
 				)}
 			>
