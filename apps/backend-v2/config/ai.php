@@ -105,6 +105,19 @@ return [
             'url' => env('OLLAMA_BASE_URL', 'http://localhost:11434'),
         ],
 
+        'llm' => [
+            'driver' => 'local',
+            'key' => env('LLM_API_KEY'),
+            'url' => env('LLM_BASE_URL', 'https://ollama.com/api'),
+            'models' => [
+                'text' => [
+                    'default' => env('LLM_MODEL', 'gpt-5.4'),
+                    'cheapest' => env('LLM_MODEL', 'gpt-5.4'),
+                    'smartest' => env('LLM_MODEL', 'gpt-5.4'),
+                ],
+            ],
+        ],
+
         'openai' => [
             'driver' => 'openai',
             'key' => env('OPENAI_API_KEY'),
