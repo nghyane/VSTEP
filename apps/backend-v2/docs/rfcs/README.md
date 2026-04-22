@@ -11,6 +11,7 @@
 | 0007 | [AI Grading Pipeline — Layer Architecture](./0007-grading-layers.md) | Accepted | 2026-04-18 |
 | 0011 | [Role-Based Features — Teacher, Staff, Admin](./0011-role-based-features.md) | Draft | 2025-07-15 |
 | 0012 | [Migrate SRS from SM-2 to FSRS](./0012-fsrs-migration.md) | Implemented | 2025-04-21 |
+| 0013 | [Admin Panel with Filament PHP](./0013-admin-filament.md) | Draft | 2026-04-22 |
 
 ## Implement order
 

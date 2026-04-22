@@ -36,6 +36,14 @@ class ContentSeeder extends Seeder
         'exam_version_reading_items',
         'exam_version_writing_tasks',
         'exam_version_speaking_parts',
+        'practice_listening_exercises',
+        'practice_listening_questions',
+        'practice_reading_exercises',
+        'practice_reading_questions',
+        'practice_writing_prompts',
+        'practice_speaking_drills',
+        'practice_speaking_drill_sentences',
+        'practice_speaking_tasks',
     ];
 
     public function run(): void

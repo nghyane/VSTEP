@@ -1,0 +1,27 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: 5.223.87.142
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/vstep
+            git checkout -- .
+            git pull origin main
+
+            # Rebuild frontend if its files changed
+            if git diff HEAD~1 --name-only | grep -q 'apps/frontend-v3/'; then
+              docker compose --env-file .env build frontend
+            fi
+
+            docker compose --env-file .env up -d --force-recreate backend horizon frontend

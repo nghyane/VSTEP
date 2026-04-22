@@ -4,6 +4,7 @@ services:
     command:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=traefik
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
       - --certificatesresolvers.le.acme.httpchallenge=true
@@ -16,6 +17,9 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - letsencrypt:/letsencrypt
+    networks:
+      - default
+      - traefik
     restart: unless-stopped
 
   postgres:
@@ -51,9 +55,12 @@ services:
     build: ./apps/backend-v2
     env_file:
       - ./apps/backend-v2/.env
+    volumes:
+      - ./apps/backend-v2:/app
+      - backend_vendor:/app/vendor
     command: >
       sh -c "
-        php artisan key:generate --force --no-interaction &&
+        composer install --no-dev --optimize-autoloader --quiet &&
         php artisan migrate --force &&
         php artisan db:seed --force --no-interaction --class=SystemConfigSeeder &&
         php artisan db:seed --force --no-interaction --class=WalletSeeder &&
@@ -67,8 +74,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.backend.rule=Host(`${DOMAIN:-api.vstepgo.com}`)
-      - traefik.http.routers.backend.entrypoints=websecure
-      - traefik.http.routers.backend.tls.certresolver=le
+      - traefik.http.routers.backend.entrypoints=web,websecure
       - traefik.http.services.backend.loadbalancer.server.port=8000
     environment:
       APP_NAME: VSTEP
@@ -95,7 +101,7 @@ services:
       AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
       AWS_DEFAULT_REGION: auto
       AWS_USE_PATH_STYLE_ENDPOINT: "true"
-      CORS_ALLOWED_ORIGINS: "https://${DOMAIN:-api.vstepgo.com},https://${FRONTEND_DOMAIN:-vstepgo.com}"
+      CORS_ALLOWED_ORIGINS: "*"
     networks:
       - default
       - traefik
@@ -119,6 +125,24 @@ services:
           target: /app/database
         - action: rebuild
           path: ./apps/backend-v2/composer.json
+
+  # Frontend SPA
+  frontend:
+    build:
+      context: ./apps/frontend-v3
+      args:
+        VITE_API_URL: https://${DOMAIN:-api.vstepgo.com}
+    expose:
+      - "80"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.frontend.rule=Host(`${FRONTEND_DOMAIN:-vstepgo.com}`)
+      - traefik.http.routers.frontend.entrypoints=web,websecure
+      - traefik.http.services.frontend.loadbalancer.server.port=80
+    networks:
+      - default
+      - traefik
+    restart: unless-stopped
 
   # Laravel Horizon — queue dashboard + worker management
   horizon:
@@ -180,6 +204,7 @@ volumes:
   pgdata:
   redisdata:
   letsencrypt:
+  backend_vendor:
 
 networks:
   traefik:
