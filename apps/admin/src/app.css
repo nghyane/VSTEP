@@ -1,0 +1,183 @@
+@import "tailwindcss";
+
+/*
+  VSTEP Admin Design Tokens
+  Philosophy: professional, data-dense, neutral — ngược với learner app (playful).
+  Tham khảo: Linear, Vercel dashboard, Notion.
+  Rule: components dùng semantic names, KHÔNG hardcode hex.
+*/
+
+@theme {
+  /* ── Fonts ── */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* ── Brand ── */
+  --color-primary:          #2563eb; /* blue-600 */
+  --color-primary-hover:    #1d4ed8; /* blue-700 */
+  --color-primary-tint:     #eff6ff; /* blue-50  */
+  --color-primary-fg:       #ffffff;
+
+  /* ── Status ── */
+  --color-success:          #16a34a;
+  --color-success-tint:     #f0fdf4;
+  --color-warning:          #d97706;
+  --color-warning-tint:     #fffbeb;
+  --color-destructive:      #dc2626;
+  --color-destructive-tint: #fef2f2;
+  --color-info:             #0891b2;
+  --color-info-tint:        #ecfeff;
+
+  /* ── Neutrals (zinc scale) ── */
+  --color-foreground:       #09090b; /* zinc-950 */
+  --color-muted:            #52525b; /* zinc-600 */
+  --color-subtle:           #a1a1aa; /* zinc-400 */
+  --color-placeholder:      #d4d4d8; /* zinc-300 */
+  --color-border:           #e4e4e7; /* zinc-200 */
+  --color-border-focus:     #2563eb;
+  --color-surface:          #ffffff;
+  --color-surface-raised:   #fafafa; /* zinc-50  */
+  --color-background:       #f4f4f5; /* zinc-100 */
+
+  /* ── Sidebar ── */
+  --color-sidebar-bg:       #18181b; /* zinc-900 */
+  --color-sidebar-fg:       #e4e4e7; /* zinc-200 */
+  --color-sidebar-muted:    #71717a; /* zinc-500 */
+  --color-sidebar-active:   #2563eb;
+  --color-sidebar-active-bg:#1e3a8a22;
+  --color-sidebar-border:   #27272a; /* zinc-800 */
+
+  /* ── VSTEP domain (consistent với learner app) ── */
+  --color-skill-listening:  #0891b2;
+  --color-skill-reading:    #7c3aed;
+  --color-skill-writing:    #16a34a;
+  --color-skill-speaking:   #d97706;
+
+  /* ── Radius — flatter than learner app ── */
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;
+  --radius-xl:   12px;
+}
+
+/* ── Base ── */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body {
+    font-family: var(--font-sans);
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Scrollbar — thin, neutral */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+}
+
+/* ── Components ── */
+@layer components {
+  /* Button */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: var(--radius-md);
+    padding: 0.375rem 0.875rem;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.5;
+    cursor: pointer;
+    transition: background 0.1s, box-shadow 0.1s;
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: var(--color-primary);
+    color: var(--color-primary-fg);
+  }
+  .btn-primary:hover { background: var(--color-primary-hover); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--color-muted);
+  }
+  .btn-ghost:hover {
+    background: var(--color-surface-raised);
+    color: var(--color-foreground);
+  }
+
+  .btn-outline {
+    background: var(--color-surface);
+    color: var(--color-foreground);
+    box-shadow: inset 0 0 0 1px var(--color-border);
+  }
+  .btn-outline:hover { background: var(--color-surface-raised); }
+
+  .btn-destructive {
+    background: var(--color-destructive);
+    color: #fff;
+  }
+
+  /* Card */
+  .card {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+  }
+
+  /* Badge */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: var(--radius-sm);
+    padding: 0.125rem 0.5rem;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.6;
+  }
+  .badge-success  { background: var(--color-success-tint);     color: var(--color-success); }
+  .badge-warning  { background: var(--color-warning-tint);     color: var(--color-warning); }
+  .badge-error    { background: var(--color-destructive-tint); color: var(--color-destructive); }
+  .badge-info     { background: var(--color-info-tint);        color: var(--color-info); }
+  .badge-neutral  { background: var(--color-surface-raised);   color: var(--color-muted); box-shadow: inset 0 0 0 1px var(--color-border); }
+
+  /* Input */
+  .input {
+    width: 100%;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 0.375rem 0.75rem;
+    font-size: 13px;
+    color: var(--color-foreground);
+    outline: none;
+    transition: border-color 0.1s, box-shadow 0.1s;
+  }
+  .input:focus {
+    border-color: var(--color-border-focus);
+    box-shadow: 0 0 0 3px var(--color-primary-tint);
+  }
+  .input::placeholder { color: var(--color-placeholder); }
+
+  /* Table */
+  .table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .table th {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    font-weight: 500;
+    color: var(--color-muted);
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap;
+  }
+  .table td {
+    padding: 0.625rem 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-foreground);
+  }
+  .table tr:last-child td { border-bottom: none; }
+  .table tbody tr:hover td { background: var(--color-surface-raised); }
+}
