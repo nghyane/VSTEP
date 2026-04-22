@@ -23,14 +23,14 @@ function optionStyles(selected: number | undefined, oi: number, item: SubmitResu
 				badge: "bg-destructive text-primary-foreground",
 				option: "border-destructive border-b-destructive bg-destructive-tint",
 			}
-		return { badge: "bg-background text-subtle", option: "border-border" }
+		return { badge: "bg-background text-subtle", option: "border-border bg-surface" }
 	}
 	if (oi === selected)
 		return {
 			badge: "bg-primary text-primary-foreground",
 			option: "border-primary border-b-primary bg-primary-tint",
 		}
-	return { badge: "bg-background text-muted", option: "border-border hover:border-primary" }
+	return { badge: "bg-background text-muted", option: "border-border bg-surface hover:border-primary" }
 }
 
 export function QuestionList({ questions, answers, result, onSelect }: Props) {
