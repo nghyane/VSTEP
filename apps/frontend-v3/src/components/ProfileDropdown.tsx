@@ -5,6 +5,7 @@ import { readAllNotifications } from "#/features/notifications/actions"
 import { notificationsQuery } from "#/features/notifications/queries"
 import type { Notification } from "#/features/notifications/types"
 import { useAuth, useSession } from "#/lib/auth"
+import { useToast } from "#/lib/toast"
 import { useClickOutside } from "#/lib/use-click-outside"
 
 const NOTIF_ICON: Record<string, StaticIconName> = {
@@ -77,7 +78,10 @@ export function ProfileDropdown({ unread, initial }: Props) {
 
 	const readAll = useMutation({
 		mutationFn: readAllNotifications,
-		onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ["notifications"] })
+			useToast.getState().add("Đã đọc tất cả thông báo", "success")
+		},
 	})
 
 	const notifs = notifsData ? notifsData.data : []
