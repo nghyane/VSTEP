@@ -1,0 +1,52 @@
+[
+  {
+    "slug": "health-medicine",
+    "name": "Health & Medicine",
+    "description": "Từ vựng về sức khỏe, y tế, bệnh tật.",
+    "level": "B1",
+    "icon_key": "health",
+    "display_order": 3,
+    "tasks": ["SP1", "WT1"],
+    "words": [
+      {"word": "symptom", "phonetic": "/ˈsɪmp.təm/", "pos": "noun", "definition": "Triệu chứng", "example": "Fever is a common symptom.", "synonyms": ["sign", "indication"], "collocations": ["common symptom", "symptom of"]},
+      {"word": "diagnosis", "phonetic": "/ˌdaɪ.əɡˈnəʊ.sɪs/", "pos": "noun", "definition": "Chẩn đoán", "example": "Early diagnosis saves lives.", "synonyms": ["identification", "assessment"], "collocations": ["early diagnosis", "accurate diagnosis"]},
+      {"word": "prescription", "phonetic": "/prɪˈskrɪp.ʃən/", "pos": "noun", "definition": "Đơn thuốc", "example": "The doctor wrote a prescription.", "synonyms": ["medication order"], "collocations": ["write a prescription", "prescription drug"]},
+      {"word": "epidemic", "phonetic": "/ˌep.ɪˈdem.ɪk/", "pos": "noun", "definition": "Dịch bệnh", "example": "The flu epidemic spread quickly.", "synonyms": ["outbreak", "pandemic"], "collocations": ["flu epidemic", "epidemic disease"]},
+      {"word": "immunity", "phonetic": "/ɪˈmjuː.nɪ.ti/", "pos": "noun", "definition": "Miễn dịch", "example": "Vaccines build immunity.", "synonyms": ["resistance", "protection"], "collocations": ["build immunity", "herd immunity"]},
+      {"word": "chronic", "phonetic": "/ˈkrɒn.ɪk/", "pos": "adjective", "definition": "Mãn tính", "example": "He has chronic back pain.", "synonyms": ["persistent", "long-term"], "collocations": ["chronic disease", "chronic pain"]},
+      {"word": "nutrition", "phonetic": "/njuːˈtrɪʃ.ən/", "pos": "noun", "definition": "Dinh dưỡng", "example": "Good nutrition is essential.", "synonyms": ["diet", "nourishment"], "collocations": ["proper nutrition", "nutrition label"]},
+      {"word": "surgery", "phonetic": "/ˈsɜː.dʒər.i/", "pos": "noun", "definition": "Phẫu thuật", "example": "She underwent heart surgery.", "synonyms": ["operation", "procedure"], "collocations": ["undergo surgery", "heart surgery"]},
+      {"word": "prevention", "phonetic": "/prɪˈven.ʃən/", "pos": "noun", "definition": "Phòng ngừa", "example": "Prevention is better than cure.", "synonyms": ["precaution", "protection"], "collocations": ["disease prevention", "prevention program"]},
+      {"word": "obesity", "phonetic": "/əʊˈbiː.sɪ.ti/", "pos": "noun", "definition": "Béo phì", "example": "Obesity is a global health problem.", "synonyms": ["overweight", "excess weight"], "collocations": ["childhood obesity", "obesity rate"]}
+    ],
+    "exercises": [
+      {"kind": "mcq", "payload": {"prompt": "A ___ is a sign that shows you may have an illness.", "options": ["cure", "symptom", "surgery", "prescription"], "correct_index": 1}, "explanation": "Symptom = triệu chứng bệnh."},
+      {"kind": "fill_blank", "payload": {"sentence": "Vaccines help build ___ against diseases.", "accepted_answers": ["immunity", "resistance"]}, "explanation": "Immunity = khả năng miễn dịch."}
+    ]
+  },
+  {
+    "slug": "technology-innovation",
+    "name": "Technology & Innovation",
+    "description": "Từ vựng về công nghệ, đổi mới, kỹ thuật số.",
+    "level": "B2",
+    "icon_key": "technology",
+    "display_order": 4,
+    "tasks": ["SP2", "WT2"],
+    "words": [
+      {"word": "artificial intelligence", "phonetic": "/ˌɑː.tɪˈfɪʃ.əl ɪnˈtel.ɪ.dʒəns/", "pos": "noun", "definition": "Trí tuệ nhân tạo", "example": "AI is transforming industries.", "synonyms": ["AI", "machine intelligence"], "collocations": ["artificial intelligence system", "AI technology"]},
+      {"word": "automation", "phonetic": "/ˌɔː.təˈmeɪ.ʃən/", "pos": "noun", "definition": "Tự động hóa", "example": "Automation replaces manual jobs.", "synonyms": ["mechanization", "robotics"], "collocations": ["factory automation", "process automation"]},
+      {"word": "algorithm", "phonetic": "/ˈæl.ɡə.rɪ.ðəm/", "pos": "noun", "definition": "Thuật toán", "example": "Search engines use complex algorithms.", "synonyms": ["procedure", "formula"], "collocations": ["search algorithm", "machine learning algorithm"]},
+      {"word": "cybersecurity", "phonetic": "/ˌsaɪ.bəsɪˈkjʊər.ɪ.ti/", "pos": "noun", "definition": "An ninh mạng", "example": "Cybersecurity threats are increasing.", "synonyms": ["information security", "data protection"], "collocations": ["cybersecurity threat", "cybersecurity expert"]},
+      {"word": "innovation", "phonetic": "/ˌɪn.əˈveɪ.ʃən/", "pos": "noun", "definition": "Đổi mới sáng tạo", "example": "Innovation drives economic growth.", "synonyms": ["invention", "breakthrough"], "collocations": ["technological innovation", "drive innovation"]},
+      {"word": "bandwidth", "phonetic": "/ˈbænd.wɪdθ/", "pos": "noun", "definition": "Băng thông", "example": "Streaming requires high bandwidth.", "synonyms": ["data capacity", "throughput"], "collocations": ["high bandwidth", "bandwidth limit"]},
+      {"word": "virtual", "phonetic": "/ˈvɜː.tʃu.əl/", "pos": "adjective", "definition": "Ảo / trực tuyến", "example": "Virtual meetings save travel time.", "synonyms": ["online", "digital"], "collocations": ["virtual reality", "virtual meeting"]},
+      {"word": "prototype", "phonetic": "/ˈprəʊ.tə.taɪp/", "pos": "noun", "definition": "Nguyên mẫu", "example": "Engineers built a prototype.", "synonyms": ["model", "sample"], "collocations": ["build a prototype", "working prototype"]},
+      {"word": "disruption", "phonetic": "/dɪsˈrʌp.ʃən/", "pos": "noun", "definition": "Sự gián đoạn / đột phá", "example": "Digital disruption changed retail.", "synonyms": ["upheaval", "transformation"], "collocations": ["digital disruption", "market disruption"]},
+      {"word": "infrastructure", "phonetic": "/ˈɪn.frəˌstrʌk.tʃər/", "pos": "noun", "definition": "Cơ sở hạ tầng", "example": "Digital infrastructure needs investment.", "synonyms": ["framework", "foundation"], "collocations": ["digital infrastructure", "IT infrastructure"]}
+    ],
+    "exercises": [
+      {"kind": "mcq", "payload": {"prompt": "The use of machines to do work automatically is called ___.", "options": ["innovation", "algorithm", "automation", "disruption"], "correct_index": 2}, "explanation": "Automation = tự động hóa bằng máy móc."},
+      {"kind": "fill_blank", "payload": {"sentence": "The company developed a ___ before launching the final product.", "accepted_answers": ["prototype", "model"]}, "explanation": "Prototype = nguyên mẫu thử nghiệm."}
+    ]
+  }
+]

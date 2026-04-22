@@ -1,0 +1,52 @@
+[
+  {
+    "slug": "travel-tourism",
+    "name": "Travel & Tourism",
+    "description": "Từ vựng về du lịch, đi lại, khách sạn.",
+    "level": "B1",
+    "icon_key": "travel",
+    "display_order": 7,
+    "tasks": ["SP1", "WT1"],
+    "words": [
+      {"word": "itinerary", "phonetic": "/aɪˈtɪn.ər.ər.i/", "pos": "noun", "definition": "Lịch trình chuyến đi", "example": "She planned a detailed itinerary.", "synonyms": ["schedule", "route"], "collocations": ["travel itinerary", "detailed itinerary"]},
+      {"word": "accommodation", "phonetic": "/əˌkɒm.əˈdeɪ.ʃən/", "pos": "noun", "definition": "Chỗ ở", "example": "We booked accommodation in advance.", "synonyms": ["lodging", "housing"], "collocations": ["book accommodation", "budget accommodation"]},
+      {"word": "destination", "phonetic": "/ˌdes.tɪˈneɪ.ʃən/", "pos": "noun", "definition": "Điểm đến", "example": "Paris is a popular destination.", "synonyms": ["location", "place"], "collocations": ["tourist destination", "final destination"]},
+      {"word": "departure", "phonetic": "/dɪˈpɑː.tʃər/", "pos": "noun", "definition": "Sự khởi hành", "example": "The departure is at 6 AM.", "synonyms": ["leaving", "takeoff"], "collocations": ["departure time", "departure gate"]},
+      {"word": "transit", "phonetic": "/ˈtræn.zɪt/", "pos": "noun", "definition": "Quá cảnh / vận chuyển", "example": "We had a transit stop in Singapore.", "synonyms": ["transfer", "stopover"], "collocations": ["in transit", "transit visa"]},
+      {"word": "souvenir", "phonetic": "/ˌsuː.vəˈnɪər/", "pos": "noun", "definition": "Quà lưu niệm", "example": "She bought souvenirs for her family.", "synonyms": ["memento", "keepsake"], "collocations": ["buy souvenirs", "souvenir shop"]},
+      {"word": "excursion", "phonetic": "/ɪkˈskɜː.ʃən/", "pos": "noun", "definition": "Chuyến tham quan ngắn", "example": "We went on a day excursion.", "synonyms": ["trip", "outing"], "collocations": ["day excursion", "guided excursion"]},
+      {"word": "customs", "phonetic": "/ˈkʌs.təmz/", "pos": "noun", "definition": "Hải quan", "example": "We passed through customs quickly.", "synonyms": ["border control", "immigration"], "collocations": ["go through customs", "customs officer"]},
+      {"word": "reservation", "phonetic": "/ˌrez.əˈveɪ.ʃən/", "pos": "noun", "definition": "Đặt chỗ trước", "example": "I made a hotel reservation online.", "synonyms": ["booking", "appointment"], "collocations": ["make a reservation", "hotel reservation"]},
+      {"word": "backpacker", "phonetic": "/ˈbæk.pæk.ər/", "pos": "noun", "definition": "Khách du lịch bụi", "example": "Backpackers travel on a tight budget.", "synonyms": ["budget traveler", "wanderer"], "collocations": ["budget backpacker", "backpacker hostel"]}
+    ],
+    "exercises": [
+      {"kind": "mcq", "payload": {"prompt": "A plan showing the places you will visit on a trip is called an ___.", "options": ["accommodation", "itinerary", "reservation", "excursion"], "correct_index": 1}, "explanation": "Itinerary = lịch trình chi tiết chuyến đi."},
+      {"kind": "fill_blank", "payload": {"sentence": "All passengers must go through ___ before collecting their luggage.", "accepted_answers": ["customs", "immigration"]}, "explanation": "Customs = hải quan kiểm tra hàng hóa."}
+    ]
+  },
+  {
+    "slug": "economy-business",
+    "name": "Economy & Business",
+    "description": "Từ vựng về kinh tế, kinh doanh, tài chính.",
+    "level": "B2",
+    "icon_key": "economy",
+    "display_order": 8,
+    "tasks": ["SP2", "WT2"],
+    "words": [
+      {"word": "inflation", "phonetic": "/ɪnˈfleɪ.ʃən/", "pos": "noun", "definition": "Lạm phát", "example": "High inflation reduces purchasing power.", "synonyms": ["price rise", "cost increase"], "collocations": ["high inflation", "inflation rate"]},
+      {"word": "investment", "phonetic": "/ɪnˈvest.mənt/", "pos": "noun", "definition": "Đầu tư", "example": "Foreign investment boosts the economy.", "synonyms": ["funding", "capital"], "collocations": ["foreign investment", "return on investment"]},
+      {"word": "recession", "phonetic": "/rɪˈseʃ.ən/", "pos": "noun", "definition": "Suy thoái kinh tế", "example": "The recession caused job losses.", "synonyms": ["downturn", "slump"], "collocations": ["economic recession", "global recession"]},
+      {"word": "revenue", "phonetic": "/ˈrev.ɪ.njuː/", "pos": "noun", "definition": "Doanh thu", "example": "The company's revenue grew by 20%.", "synonyms": ["income", "earnings"], "collocations": ["annual revenue", "tax revenue"]},
+      {"word": "deficit", "phonetic": "/ˈdef.ɪ.sɪt/", "pos": "noun", "definition": "Thâm hụt", "example": "The budget deficit increased.", "synonyms": ["shortfall", "loss"], "collocations": ["budget deficit", "trade deficit"]},
+      {"word": "commodity", "phonetic": "/kəˈmɒd.ɪ.ti/", "pos": "noun", "definition": "Hàng hóa", "example": "Oil is a valuable commodity.", "synonyms": ["product", "goods"], "collocations": ["commodity price", "agricultural commodity"]},
+      {"word": "monopoly", "phonetic": "/məˈnɒp.ə.li/", "pos": "noun", "definition": "Độc quyền", "example": "The company has a monopoly.", "synonyms": ["dominance", "control"], "collocations": ["market monopoly", "break a monopoly"]},
+      {"word": "subsidy", "phonetic": "/ˈsʌb.sɪ.di/", "pos": "noun", "definition": "Trợ cấp", "example": "Farmers receive government subsidies.", "synonyms": ["grant", "support"], "collocations": ["government subsidy", "agricultural subsidy"]},
+      {"word": "tariff", "phonetic": "/ˈtær.ɪf/", "pos": "noun", "definition": "Thuế quan", "example": "Import tariffs protect local industry.", "synonyms": ["duty", "tax"], "collocations": ["import tariff", "trade tariff"]},
+      {"word": "bankruptcy", "phonetic": "/ˈbæŋk.rʌpt.si/", "pos": "noun", "definition": "Phá sản", "example": "The firm filed for bankruptcy.", "synonyms": ["insolvency", "failure"], "collocations": ["file for bankruptcy", "declare bankruptcy"]}
+    ],
+    "exercises": [
+      {"kind": "mcq", "payload": {"prompt": "A general rise in prices over time is called ___.", "options": ["recession", "deficit", "inflation", "subsidy"], "correct_index": 2}, "explanation": "Inflation = lạm phát, giá cả tăng liên tục."},
+      {"kind": "fill_blank", "payload": {"sentence": "The government provides ___ to help farmers cover their costs.", "accepted_answers": ["subsidies", "grants", "support"]}, "explanation": "Subsidy = trợ cấp tài chính từ nhà nước."}
+    ]
+  }
+]

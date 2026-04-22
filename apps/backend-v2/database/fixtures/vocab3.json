@@ -1,0 +1,52 @@
+[
+  {
+    "slug": "work-career",
+    "name": "Work & Career",
+    "description": "Từ vựng về công việc, nghề nghiệp, môi trường làm việc.",
+    "level": "B1",
+    "icon_key": "work",
+    "display_order": 5,
+    "tasks": ["SP1", "WT1"],
+    "words": [
+      {"word": "occupation", "phonetic": "/ˌɒk.jʊˈpeɪ.ʃən/", "pos": "noun", "definition": "Nghề nghiệp", "example": "What is your occupation?", "synonyms": ["profession", "job"], "collocations": ["current occupation", "skilled occupation"]},
+      {"word": "colleague", "phonetic": "/ˈkɒl.iːɡ/", "pos": "noun", "definition": "Đồng nghiệp", "example": "She gets along with her colleagues.", "synonyms": ["coworker", "associate"], "collocations": ["work colleague", "close colleague"]},
+      {"word": "promotion", "phonetic": "/prəˈməʊ.ʃən/", "pos": "noun", "definition": "Thăng chức", "example": "He received a promotion last month.", "synonyms": ["advancement", "upgrade"], "collocations": ["job promotion", "earn a promotion"]},
+      {"word": "redundancy", "phonetic": "/rɪˈdʌn.dən.si/", "pos": "noun", "definition": "Thất nghiệp do cắt giảm", "example": "Many workers faced redundancy.", "synonyms": ["layoff", "dismissal"], "collocations": ["face redundancy", "redundancy package"]},
+      {"word": "entrepreneur", "phonetic": "/ˌɒn.trə.prəˈnɜːr/", "pos": "noun", "definition": "Doanh nhân", "example": "She became a successful entrepreneur.", "synonyms": ["businessperson", "founder"], "collocations": ["young entrepreneur", "social entrepreneur"]},
+      {"word": "productivity", "phonetic": "/ˌprɒd.ʌkˈtɪv.ɪ.ti/", "pos": "noun", "definition": "Năng suất", "example": "Remote work increased productivity.", "synonyms": ["efficiency", "output"], "collocations": ["increase productivity", "worker productivity"]},
+      {"word": "negotiate", "phonetic": "/nɪˈɡəʊ.ʃi.eɪt/", "pos": "verb", "definition": "Đàm phán", "example": "She negotiated a higher salary.", "synonyms": ["bargain", "discuss"], "collocations": ["negotiate a deal", "negotiate salary"]},
+      {"word": "resignation", "phonetic": "/ˌrez.ɪɡˈneɪ.ʃən/", "pos": "noun", "definition": "Sự từ chức", "example": "He submitted his resignation.", "synonyms": ["quitting", "departure"], "collocations": ["letter of resignation", "submit resignation"]},
+      {"word": "internship", "phonetic": "/ˈɪn.tɜːn.ʃɪp/", "pos": "noun", "definition": "Thực tập", "example": "She completed a summer internship.", "synonyms": ["placement", "work experience"], "collocations": ["paid internship", "summer internship"]},
+      {"word": "deadline", "phonetic": "/ˈded.laɪn/", "pos": "noun", "definition": "Hạn chót", "example": "We must meet the project deadline.", "synonyms": ["due date", "cutoff"], "collocations": ["meet a deadline", "tight deadline"]}
+    ],
+    "exercises": [
+      {"kind": "mcq", "payload": {"prompt": "A person who starts their own business is called an ___.", "options": ["employee", "entrepreneur", "intern", "colleague"], "correct_index": 1}, "explanation": "Entrepreneur = người khởi nghiệp, tự kinh doanh."},
+      {"kind": "fill_blank", "payload": {"sentence": "She ___ a better salary before accepting the job offer.", "accepted_answers": ["negotiated", "discussed"]}, "explanation": "Negotiate = đàm phán điều kiện."}
+    ]
+  },
+  {
+    "slug": "society-community",
+    "name": "Society & Community",
+    "description": "Từ vựng về xã hội, cộng đồng, vấn đề xã hội.",
+    "level": "B2",
+    "icon_key": "society",
+    "display_order": 6,
+    "tasks": ["SP2", "WT2"],
+    "words": [
+      {"word": "inequality", "phonetic": "/ˌɪn.ɪˈkwɒl.ɪ.ti/", "pos": "noun", "definition": "Bất bình đẳng", "example": "Income inequality is growing.", "synonyms": ["disparity", "imbalance"], "collocations": ["social inequality", "income inequality"]},
+      {"word": "discrimination", "phonetic": "/dɪˌskrɪm.ɪˈneɪ.ʃən/", "pos": "noun", "definition": "Phân biệt đối xử", "example": "Discrimination is illegal.", "synonyms": ["prejudice", "bias"], "collocations": ["racial discrimination", "gender discrimination"]},
+      {"word": "volunteer", "phonetic": "/ˌvɒl.ənˈtɪər/", "pos": "noun/verb", "definition": "Tình nguyện viên / tình nguyện", "example": "She volunteers at a local shelter.", "synonyms": ["helper", "contributor"], "collocations": ["volunteer work", "community volunteer"]},
+      {"word": "poverty", "phonetic": "/ˈpɒv.ə.ti/", "pos": "noun", "definition": "Nghèo đói", "example": "Poverty affects millions worldwide.", "synonyms": ["deprivation", "hardship"], "collocations": ["extreme poverty", "poverty line"]},
+      {"word": "integration", "phonetic": "/ˌɪn.tɪˈɡreɪ.ʃən/", "pos": "noun", "definition": "Hội nhập", "example": "Social integration takes time.", "synonyms": ["inclusion", "assimilation"], "collocations": ["social integration", "cultural integration"]},
+      {"word": "welfare", "phonetic": "/ˈwel.feər/", "pos": "noun", "definition": "Phúc lợi", "example": "The government funds social welfare.", "synonyms": ["well-being", "benefit"], "collocations": ["social welfare", "welfare system"]},
+      {"word": "migration", "phonetic": "/maɪˈɡreɪ.ʃən/", "pos": "noun", "definition": "Di cư", "example": "Rural-urban migration is increasing.", "synonyms": ["movement", "relocation"], "collocations": ["rural migration", "mass migration"]},
+      {"word": "tolerance", "phonetic": "/ˈtɒl.ər.əns/", "pos": "noun", "definition": "Sự khoan dung", "example": "Tolerance promotes social harmony.", "synonyms": ["acceptance", "open-mindedness"], "collocations": ["cultural tolerance", "religious tolerance"]},
+      {"word": "empowerment", "phonetic": "/ɪmˈpaʊ.ə.mənt/", "pos": "noun", "definition": "Trao quyền", "example": "Women's empowerment is a priority.", "synonyms": ["enablement", "authorization"], "collocations": ["women's empowerment", "community empowerment"]},
+      {"word": "cohesion", "phonetic": "/kəʊˈhiː.ʒən/", "pos": "noun", "definition": "Sự gắn kết", "example": "Social cohesion reduces conflict.", "synonyms": ["unity", "solidarity"], "collocations": ["social cohesion", "community cohesion"]}
+    ],
+    "exercises": [
+      {"kind": "mcq", "payload": {"prompt": "Treating people unfairly because of their race or gender is called ___.", "options": ["integration", "tolerance", "discrimination", "welfare"], "correct_index": 2}, "explanation": "Discrimination = phân biệt đối xử."},
+      {"kind": "fill_blank", "payload": {"sentence": "The government introduced programs to reduce ___ among low-income families.", "accepted_answers": ["poverty", "inequality"]}, "explanation": "Poverty = tình trạng nghèo đói."}
+    ]
+  }
+]

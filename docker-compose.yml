@@ -36,9 +36,13 @@ services:
       sh -c "
         php artisan key:generate --force --no-interaction &&
         php artisan migrate --force &&
-        php artisan db:seed --force --no-interaction &&
+        php artisan db:seed --force --no-interaction --class=SystemConfigSeeder &&
+        php artisan db:seed --force --no-interaction --class=WalletSeeder &&
+        if ! php artisan tinker --execute='exit(App\Models\Exam::count() > 0 ? 0 : 1);' 2>/dev/null; then
+          php artisan db:seed --force --no-interaction --class=ContentSeeder;
+        fi &&
         php artisan storage:link 2>/dev/null;
-        php artisan serve --host=0.0.0.0 --port=8000
+        php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000 --workers=auto --max-requests=500
       "
     ports:
       - "3000:8000"

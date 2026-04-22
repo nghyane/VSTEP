@@ -1,0 +1,98 @@
+[
+  {
+    "slug": "present-perfect",
+    "name": "Present Perfect",
+    "vietnamese_name": "Thì hiện tại hoàn thành",
+    "summary": "Diễn tả hành động đã xảy ra trong quá khứ và có liên hệ với hiện tại, hoặc hành động xảy ra trong khoảng thời gian chưa kết thúc.",
+    "category": "foundation",
+    "display_order": 1,
+    "levels": ["B1", "B2"],
+    "tasks": ["WT2"],
+    "structures": [
+      {"template": "S + have/has + V3/ed", "description": "Khẳng định"},
+      {"template": "S + have/has + not + V3/ed", "description": "Phủ định"},
+      {"template": "Have/Has + S + V3/ed?", "description": "Nghi vấn"}
+    ],
+    "examples": [
+      {"en": "I have lived here for five years.", "vi": "Tôi đã sống ở đây 5 năm."},
+      {"en": "She has never visited Paris.", "vi": "Cô ấy chưa bao giờ đến Paris."},
+      {"en": "They have just finished the report.", "vi": "Họ vừa mới hoàn thành báo cáo."}
+    ],
+    "mistakes": [
+      {"wrong": "I have live here.", "correct": "I have lived here.", "explanation": "Phải dùng V3/ed sau have/has."},
+      {"wrong": "She has went to school.", "correct": "She has gone to school.", "explanation": "Go → gone (bất quy tắc)."}
+    ],
+    "vstep_tips": [
+      {"task": "WT2", "tip": "Dùng present perfect để nêu kinh nghiệm hoặc xu hướng trong essay.", "example": "Many students have experienced online learning in recent years."}
+    ],
+    "exercises": [
+      {"kind": "mcq", "payload": {"prompt": "She ___ (live) here since 2020.", "options": ["lived", "has lived", "is living", "was living"], "correct_index": 1}, "explanation": "Since + mốc thời gian → present perfect."},
+      {"kind": "fill_blank", "payload": {"template": "They ___ (not finish) the project yet.", "accepted_answers": ["haven't finished", "have not finished"]}, "explanation": "Yet dùng với present perfect phủ định."},
+      {"kind": "mcq", "payload": {"prompt": "I ___ never ___ sushi before.", "options": ["have / eaten", "had / eat", "am / eating", "was / eaten"], "correct_index": 0}, "explanation": "Never + present perfect để nói về kinh nghiệm."}
+    ]
+  },
+  {
+    "slug": "passive-voice",
+    "name": "Passive Voice",
+    "vietnamese_name": "Câu bị động",
+    "summary": "Dùng khi muốn nhấn mạnh đối tượng chịu tác động thay vì chủ thể thực hiện hành động.",
+    "category": "foundation",
+    "display_order": 2,
+    "levels": ["B1", "B2"],
+    "tasks": ["WT1", "WT2"],
+    "structures": [
+      {"template": "S + be + V3/ed (+ by + agent)", "description": "Bị động cơ bản"},
+      {"template": "S + have/has + been + V3/ed", "description": "Bị động thì hiện tại hoàn thành"},
+      {"template": "S + will + be + V3/ed", "description": "Bị động tương lai"}
+    ],
+    "examples": [
+      {"en": "The report was written by the manager.", "vi": "Báo cáo được viết bởi người quản lý."},
+      {"en": "The building has been renovated.", "vi": "Tòa nhà đã được cải tạo."},
+      {"en": "New policies will be introduced next year.", "vi": "Các chính sách mới sẽ được giới thiệu năm tới."}
+    ],
+    "mistakes": [
+      {"wrong": "The letter was wrote by her.", "correct": "The letter was written by her.", "explanation": "Write → written (bất quy tắc)."},
+      {"wrong": "It is being build.", "correct": "It is being built.", "explanation": "Build → built (bất quy tắc)."}
+    ],
+    "vstep_tips": [
+      {"task": "WT2", "tip": "Dùng bị động để viết văn học thuật, tránh dùng 'I' quá nhiều.", "example": "It has been argued that technology improves education."}
+    ],
+    "exercises": [
+      {"kind": "mcq", "payload": {"prompt": "The new bridge ___ last year.", "options": ["built", "was built", "has built", "is building"], "correct_index": 1}, "explanation": "Hành động hoàn thành trong quá khứ → was built."},
+      {"kind": "fill_blank", "payload": {"template": "English ___ (speak) in many countries.", "accepted_answers": ["is spoken", "is widely spoken"]}, "explanation": "Bị động thì hiện tại đơn."},
+      {"kind": "mcq", "payload": {"prompt": "The results ___ announced tomorrow.", "options": ["will announce", "will be announced", "are announced", "have announced"], "correct_index": 1}, "explanation": "Tương lai bị động: will be + V3."}
+    ]
+  },
+  {
+    "slug": "conditional-sentences",
+    "name": "Conditional Sentences",
+    "vietnamese_name": "Câu điều kiện",
+    "summary": "Diễn tả điều kiện và kết quả. Ba loại chính: type 1 (có thể xảy ra), type 2 (giả định), type 3 (không thể xảy ra).",
+    "category": "foundation",
+    "display_order": 3,
+    "levels": ["B1", "B2", "C1"],
+    "tasks": ["WT2"],
+    "structures": [
+      {"template": "If + S + V(present), S + will + V", "description": "Type 1 — điều kiện có thể xảy ra"},
+      {"template": "If + S + V(past), S + would + V", "description": "Type 2 — điều kiện giả định"},
+      {"template": "If + S + had + V3, S + would have + V3", "description": "Type 3 — điều kiện không thể xảy ra"}
+    ],
+    "examples": [
+      {"en": "If it rains, we will cancel the trip.", "vi": "Nếu trời mưa, chúng tôi sẽ hủy chuyến đi."},
+      {"en": "If I had more time, I would study harder.", "vi": "Nếu tôi có nhiều thời gian hơn, tôi sẽ học chăm hơn."},
+      {"en": "If she had studied, she would have passed.", "vi": "Nếu cô ấy đã học, cô ấy đã đỗ rồi."}
+    ],
+    "mistakes": [
+      {"wrong": "If I will go, I will call you.", "correct": "If I go, I will call you.", "explanation": "Mệnh đề if không dùng will."},
+      {"wrong": "If he studied, he will pass.", "correct": "If he studied, he would pass.", "explanation": "Type 2: if + past → would + V."}
+    ],
+    "vstep_tips": [
+      {"task": "WT2", "tip": "Dùng type 2 để đề xuất giải pháp giả định trong essay.", "example": "If governments invested more in education, poverty rates would decrease significantly."}
+    ],
+    "exercises": [
+      {"kind": "mcq", "payload": {"prompt": "If she ___ harder, she would get better grades.", "options": ["studies", "studied", "will study", "had studied"], "correct_index": 1}, "explanation": "Type 2: if + past simple → would + V."},
+      {"kind": "fill_blank", "payload": {"template": "If it ___ (not rain) tomorrow, we will go hiking.", "accepted_answers": ["doesn't rain", "does not rain"]}, "explanation": "Type 1: if + present simple."},
+      {"kind": "mcq", "payload": {"prompt": "If they had left earlier, they ___ the train.", "options": ["catch", "would catch", "would have caught", "had caught"], "correct_index": 2}, "explanation": "Type 3: would have + V3."}
+    ]
+  }
+]

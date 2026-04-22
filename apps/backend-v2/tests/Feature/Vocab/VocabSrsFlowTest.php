@@ -140,7 +140,7 @@ class VocabSrsFlowTest extends TestCase
 
         $response->assertOk();
         $responseData = $response->json('data');
-        $this->assertCount(1, $responseData['items'], 'Expected 1 item. Got: ' . json_encode($responseData));
+        $this->assertCount(1, $responseData['items'], 'Expected 1 item. Got: '.json_encode($responseData));
         $response->assertJsonPath('data.learning_count', 1);
         $response->assertJsonPath('data.items.0.word.id', $word1->id);
     }
