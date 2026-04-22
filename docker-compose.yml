@@ -55,9 +55,12 @@ services:
     build: ./apps/backend-v2
     env_file:
       - ./apps/backend-v2/.env
+    volumes:
+      - ./apps/backend-v2:/app
+      - backend_vendor:/app/vendor
     command: >
       sh -c "
-        php artisan key:generate --force --no-interaction &&
+        composer install --no-dev --optimize-autoloader --quiet &&
         php artisan migrate --force &&
         php artisan db:seed --force --no-interaction --class=SystemConfigSeeder &&
         php artisan db:seed --force --no-interaction --class=WalletSeeder &&
@@ -183,6 +186,7 @@ volumes:
   pgdata:
   redisdata:
   letsencrypt:
+  backend_vendor:
 
 networks:
   traefik:

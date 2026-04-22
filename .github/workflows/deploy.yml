@@ -16,7 +16,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /opt/vstep
+            git checkout -- .
             git pull origin main
-            docker compose --env-file .env build --no-cache backend horizon
-            docker compose --env-file .env up -d
-            docker compose --env-file .env exec -T backend php artisan migrate --force
+            docker compose --env-file .env up -d --force-recreate backend horizon
