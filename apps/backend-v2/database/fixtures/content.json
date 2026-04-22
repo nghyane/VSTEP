@@ -3333,14 +3333,84 @@
             "display_order": 9
         },
         {
-            "id": "019db189-8bfb-7139-ae9c-22a32b322d11",
+            "id": "019db189-8be9-713d-86b9-a285a9e5468b",
             "exam_version_id": "019da080-5446-713a-8891-aa19bf52ad17",
+            "part": 1,
+            "part_title": "Part 1 · Library Notice",
+            "duration_minutes": 1,
+            "audio_url": "/storage/audio/listening/exam_p1_01_019db189.mp3",
+            "transcript": "Dear students, please be informed that the university library will have adjusted hours this week due to maintenance work. From Monday to Friday, the library will close at 8 PM instead of the usual 10 PM. Regular hours will resume next Monday. We apologize for any inconvenience.",
+            "display_order": 1
+        },
+        {
+            "id": "019db359-0d96-70de-9a7c-c2680703314b",
+            "exam_version_id": "019db356-9de1-7328-a7dc-56af4e4756e7",
+            "part": 1,
+            "part_title": "Part 1 · Office Announcement",
+            "duration_minutes": 1,
+            "audio_url": "/storage/audio/listening/exam_p1_05_019db359.mp3",
+            "transcript": "Dear colleagues, the IT department will be performing system maintenance this Saturday from 8 AM to 2 PM. During this time, access to the company email and internal systems will be unavailable. Please save all important work before Friday evening.",
+            "display_order": 5
+        },
+        {
+            "id": "019db359-dcf4-7292-8bd0-289f2299bae1",
+            "exam_version_id": "019db356-9de1-7328-a7dc-56af4e4756e7",
             "part": 2,
-            "part_title": "Part 2 · Job Interview Discussion",
+            "part_title": "Part 2 · Doctor and Patient",
             "duration_minutes": 4,
-            "audio_url": "/storage/audio/listening/exam_p2_10_019db189.mp3",
-            "transcript": "Interviewer: Thank you for coming in today. I've reviewed your resume. You're applying for the marketing assistant position, correct?\nCandidate: Yes, that's right. I'm very interested in the role.\nInterviewer: I can see you have about two years of experience in digital marketing. Can you tell me about your previous role?\nCandidate: I worked at a small agency where I managed social media accounts and helped create content for various clients.\nInterviewer: That's good experience. For this position, we really emphasize communication skills, as you'll be working directly with clients and presenting campaign ideas.\nCandidate: I understand. In my previous role, I regularly presented reports to clients, so I'm comfortable with that.\nInterviewer: Excellent. We have a few more candidates to interview. We'll announce the results next week by email.\nCandidate: Thank you. I look forward to hearing from you.",
-            "display_order": 10
+            "audio_url": "/storage/audio/listening/exam_p2_08_019db359.mp3",
+            "transcript": "Doctor: Good morning. What seems to be the problem today?\nPatient: I have had a terrible headache for three days and I feel dizzy sometimes.\nDoctor: I see. Have you been sleeping well?\nPatient: Not really. I have been working very long hours this week.\nDoctor: That could be the cause. I would like to check your blood pressure. It seems slightly elevated. I am going to prescribe some medication and I strongly recommend you take a few days off work.\nPatient: Is it serious?\nDoctor: Not at this stage, but if you continue at this pace, it could become a problem. I would also suggest reducing your caffeine intake and drinking more water.\nPatient: How long should I take the medication?\nDoctor: For one week. Come back and see me if the headaches do not improve.",
+            "display_order": 8
+        },
+        {
+            "id": "019db35d-968a-70e8-8b96-fbb323ebbf78",
+            "exam_version_id": "019db356-9de3-72c7-a710-26c3b272542d",
+            "part": 1,
+            "part_title": "Part 1 · Gym Notice",
+            "duration_minutes": 1,
+            "audio_url": "/storage/audio/listening/exam_p1_01_019db35d.mp3",
+            "transcript": "Attention gym members. The swimming pool will be closed for maintenance from Monday to Wednesday next week. The gym and fitness classes will remain open as usual. We apologize for any inconvenience.",
+            "display_order": 1
+        },
+        {
+            "id": "019db35d-968c-716c-9a96-071f3782817d",
+            "exam_version_id": "019db356-9de3-72c7-a710-26c3b272542d",
+            "part": 1,
+            "part_title": "Part 1 · Bus Service Update",
+            "duration_minutes": 1,
+            "audio_url": "/storage/audio/listening/exam_p1_02_019db35d.mp3",
+            "transcript": "Passengers are advised that due to road construction on Le Loi Street, bus routes 12 and 15 will be diverted via Nguyen Trai Street from Monday. The diversion is expected to last approximately three weeks.",
+            "display_order": 2
+        },
+        {
+            "id": "019db35d-968e-70be-a259-ad8400db3a0f",
+            "exam_version_id": "019db356-9de3-72c7-a710-26c3b272542d",
+            "part": 1,
+            "part_title": "Part 1 · University Library",
+            "duration_minutes": 1,
+            "audio_url": "/storage/audio/listening/exam_p1_03_019db35d.mp3",
+            "transcript": "Dear students, the university library will extend its opening hours during the examination period. From next Monday, the library will be open from 7 AM to midnight, seven days a week.",
+            "display_order": 3
+        },
+        {
+            "id": "019db35d-968f-7301-b599-e241e692dd8a",
+            "exam_version_id": "019db356-9de3-72c7-a710-26c3b272542d",
+            "part": 1,
+            "part_title": "Part 1 · Restaurant Promotion",
+            "duration_minutes": 1,
+            "audio_url": "/storage/audio/listening/exam_p1_04_019db35d.mp3",
+            "transcript": "Good evening, diners. This month, every table of four or more receives a complimentary dessert platter. Simply mention this offer when ordering. The promotion runs until the end of the month.",
+            "display_order": 4
+        },
+        {
+            "id": "019db35a-7994-72a7-8f40-c3cdf2440294",
+            "exam_version_id": "019db356-9de1-7328-a7dc-56af4e4756e7",
+            "part": 3,
+            "part_title": "Part 3 · Urban Farming",
+            "duration_minutes": 6,
+            "audio_url": "/storage/audio/listening/exam_p3_12_019db35a.mp3",
+            "transcript": "Welcome to today lecture on urban farming, a growing movement that is transforming how cities think about food production. Urban farming refers to the practice of growing food within city boundaries, using spaces such as rooftops, balconies, vacant lots, and even indoor vertical farms.\n\nThe movement has gained momentum for several reasons. First, it addresses food security concerns in densely populated cities. By producing food locally, cities can reduce their dependence on long supply chains that are vulnerable to disruption. During the COVID-19 pandemic, for example, many urban farms played a crucial role in supplying fresh produce when distribution networks were strained.\n\nSecond, urban farming has environmental benefits. It reduces the carbon footprint associated with transporting food over long distances. Green roofs and vertical gardens also help regulate building temperatures, reducing energy consumption for heating and cooling.\n\nThird, urban farms create community spaces. Community gardens bring residents together, provide educational opportunities for children, and can improve mental health by connecting people with nature.\n\nHowever, urban farming faces significant challenges. Land in cities is expensive and scarce. Water usage can be high. And the scale of production is generally too small to feed entire urban populations. Urban farming is best understood as a supplement to, rather than a replacement for, conventional agriculture.\n\nDespite these limitations, the future of urban farming looks promising. Advances in vertical farming technology, hydroponics, and LED lighting are making indoor food production increasingly efficient and cost-effective.",
+            "display_order": 12
         },
         {
             "id": "019db189-8bfe-7156-af7c-3b6edf43f674",
@@ -3361,16 +3431,6 @@
             "audio_url": "/storage/audio/listening/exam_p3_12_019db189.mp3",
             "transcript": "Let's take a journey through the history of the internet. It all began in 1969 when the United States Department of Defense created ARPANET, a network designed for military communication during the Cold War. The original purpose was to create a communication system that could survive a nuclear attack. For the first two decades, the internet was mainly used by researchers and academics. The real transformation came in 1991 when Tim Berners-Lee invented the World Wide Web, making the internet accessible to ordinary people. Since then, the growth has been extraordinary. Today, there are approximately 5 billion internet users worldwide. However, this rapid growth has also raised serious concerns, particularly about privacy. Our personal data is constantly being collected, stored, and sometimes misused by companies and governments.",
             "display_order": 12
-        },
-        {
-            "id": "019db189-8be9-713d-86b9-a285a9e5468b",
-            "exam_version_id": "019da080-5446-713a-8891-aa19bf52ad17",
-            "part": 1,
-            "part_title": "Part 1 · Library Notice",
-            "duration_minutes": 1,
-            "audio_url": "/storage/audio/listening/exam_p1_01_019db189.mp3",
-            "transcript": "Dear students, please be informed that the university library will have adjusted hours this week due to maintenance work. From Monday to Friday, the library will close at 8 PM instead of the usual 10 PM. Regular hours will resume next Monday. We apologize for any inconvenience.",
-            "display_order": 1
         },
         {
             "id": "019db189-8bea-73f1-aaa4-29e5fd102400",
@@ -3423,26 +3483,6 @@
             "display_order": 7
         },
         {
-            "id": "019db359-0d96-70de-9a7c-c2680703314b",
-            "exam_version_id": "019db356-9de1-7328-a7dc-56af4e4756e7",
-            "part": 1,
-            "part_title": "Part 1 · Office Announcement",
-            "duration_minutes": 1,
-            "audio_url": "/storage/audio/listening/exam_p1_05_019db359.mp3",
-            "transcript": "Dear colleagues, the IT department will be performing system maintenance this Saturday from 8 AM to 2 PM. During this time, access to the company email and internal systems will be unavailable. Please save all important work before Friday evening.",
-            "display_order": 5
-        },
-        {
-            "id": "019db359-dcf4-7292-8bd0-289f2299bae1",
-            "exam_version_id": "019db356-9de1-7328-a7dc-56af4e4756e7",
-            "part": 2,
-            "part_title": "Part 2 · Doctor and Patient",
-            "duration_minutes": 4,
-            "audio_url": "/storage/audio/listening/exam_p2_08_019db359.mp3",
-            "transcript": "Doctor: Good morning. What seems to be the problem today?\nPatient: I have had a terrible headache for three days and I feel dizzy sometimes.\nDoctor: I see. Have you been sleeping well?\nPatient: Not really. I have been working very long hours this week.\nDoctor: That could be the cause. I would like to check your blood pressure. It seems slightly elevated. I am going to prescribe some medication and I strongly recommend you take a few days off work.\nPatient: Is it serious?\nDoctor: Not at this stage, but if you continue at this pace, it could become a problem. I would also suggest reducing your caffeine intake and drinking more water.\nPatient: How long should I take the medication?\nDoctor: For one week. Come back and see me if the headaches do not improve.",
-            "display_order": 8
-        },
-        {
             "id": "019db359-0d8f-71ed-9961-d7ece823e451",
             "exam_version_id": "019db356-9de1-7328-a7dc-56af4e4756e7",
             "part": 1,
@@ -3461,6 +3501,56 @@
             "audio_url": "/storage/audio/listening/exam_p1_00_019db189.mp3",
             "transcript": "Attention all passengers. Due to a last-minute change, Flight VN 205 to Da Nang will now depart from Gate B7 instead of Gate A3. Please proceed to Gate B7 immediately. Boarding will begin in fifteen minutes. Thank you for your understanding.",
             "display_order": 0
+        },
+        {
+            "id": "019db35d-9683-7333-a6b1-03241596b6dd",
+            "exam_version_id": "019db356-9de3-72c7-a710-26c3b272542d",
+            "part": 1,
+            "part_title": "Part 1 · Cinema Announcement",
+            "duration_minutes": 1,
+            "audio_url": "/storage/audio/listening/exam_p1_00_019db35d.mp3",
+            "transcript": "Welcome to Galaxy Cinema. Tonight screening of The Last Journey begins at 7:30 PM in Hall 3. Please note that mobile phones must be switched off during the film. Refreshments are available at the lobby counter. Enjoy the show.",
+            "display_order": 0
+        },
+        {
+            "id": "019db359-0d88-72a3-b77f-0586ffa36953",
+            "exam_version_id": "019db356-9de1-7328-a7dc-56af4e4756e7",
+            "part": 1,
+            "part_title": "Part 1 · Museum Announcement",
+            "duration_minutes": 1,
+            "audio_url": "/storage/audio/listening/exam_p1_00_019db359.mp3",
+            "transcript": "Attention visitors. The Egyptian exhibition on the third floor will close at 4 PM today for a private event. All other galleries remain open until 6 PM. Audio guides are available at the information desk on the ground floor.",
+            "display_order": 0
+        },
+        {
+            "id": "019db359-0d93-71cb-910b-05b246d1f012",
+            "exam_version_id": "019db356-9de1-7328-a7dc-56af4e4756e7",
+            "part": 1,
+            "part_title": "Part 1 · School Notice",
+            "duration_minutes": 1,
+            "audio_url": "/storage/audio/listening/exam_p1_03_019db359.mp3",
+            "transcript": "Good morning, students. Please be reminded that tomorrow is a public holiday and there will be no classes. School will resume on Wednesday. Students who have submitted assignments should check the online portal for feedback.",
+            "display_order": 3
+        },
+        {
+            "id": "019db35d-9691-70a1-9248-83caccc57d1a",
+            "exam_version_id": "019db356-9de3-72c7-a710-26c3b272542d",
+            "part": 1,
+            "part_title": "Part 1 · Airport Security",
+            "duration_minutes": 1,
+            "audio_url": "/storage/audio/listening/exam_p1_05_019db35d.mp3",
+            "transcript": "Attention all passengers. Please ensure all liquids in your carry-on baggage are in containers of 100 milliliters or less. Electronic devices must be removed from bags and placed in the tray separately.",
+            "display_order": 5
+        },
+        {
+            "id": "019db189-8bfb-7139-ae9c-22a32b322d11",
+            "exam_version_id": "019da080-5446-713a-8891-aa19bf52ad17",
+            "part": 2,
+            "part_title": "Part 2 · Job Interview Discussion",
+            "duration_minutes": 4,
+            "audio_url": "/storage/audio/listening/exam_p2_10_019db189.mp3",
+            "transcript": "Interviewer: Thank you for coming in today. I've reviewed your resume. You're applying for the marketing assistant position, correct?\nCandidate: Yes, that's right. I'm very interested in the role.\nInterviewer: I can see you have about two years of experience in digital marketing. Can you tell me about your previous role?\nCandidate: I worked at a small agency where I managed social media accounts and helped create content for various clients.\nInterviewer: That's good experience. For this position, we really emphasize communication skills, as you'll be working directly with clients and presenting campaign ideas.\nCandidate: I understand. In my previous role, I regularly presented reports to clients, so I'm comfortable with that.\nInterviewer: Excellent. We have a few more candidates to interview. We'll announce the results next week by email.\nCandidate: Thank you. I look forward to hearing from you.",
+            "display_order": 10
         },
         {
             "id": "019db359-0d91-73ac-ba2a-a3fca8101c9e",
@@ -3553,56 +3643,6 @@
             "display_order": 13
         },
         {
-            "id": "019db35d-968a-70e8-8b96-fbb323ebbf78",
-            "exam_version_id": "019db356-9de3-72c7-a710-26c3b272542d",
-            "part": 1,
-            "part_title": "Part 1 · Gym Notice",
-            "duration_minutes": 1,
-            "audio_url": "/storage/audio/listening/exam_p1_01_019db35d.mp3",
-            "transcript": "Attention gym members. The swimming pool will be closed for maintenance from Monday to Wednesday next week. The gym and fitness classes will remain open as usual. We apologize for any inconvenience.",
-            "display_order": 1
-        },
-        {
-            "id": "019db35d-968c-716c-9a96-071f3782817d",
-            "exam_version_id": "019db356-9de3-72c7-a710-26c3b272542d",
-            "part": 1,
-            "part_title": "Part 1 · Bus Service Update",
-            "duration_minutes": 1,
-            "audio_url": "/storage/audio/listening/exam_p1_02_019db35d.mp3",
-            "transcript": "Passengers are advised that due to road construction on Le Loi Street, bus routes 12 and 15 will be diverted via Nguyen Trai Street from Monday. The diversion is expected to last approximately three weeks.",
-            "display_order": 2
-        },
-        {
-            "id": "019db35d-968e-70be-a259-ad8400db3a0f",
-            "exam_version_id": "019db356-9de3-72c7-a710-26c3b272542d",
-            "part": 1,
-            "part_title": "Part 1 · University Library",
-            "duration_minutes": 1,
-            "audio_url": "/storage/audio/listening/exam_p1_03_019db35d.mp3",
-            "transcript": "Dear students, the university library will extend its opening hours during the examination period. From next Monday, the library will be open from 7 AM to midnight, seven days a week.",
-            "display_order": 3
-        },
-        {
-            "id": "019db35d-968f-7301-b599-e241e692dd8a",
-            "exam_version_id": "019db356-9de3-72c7-a710-26c3b272542d",
-            "part": 1,
-            "part_title": "Part 1 · Restaurant Promotion",
-            "duration_minutes": 1,
-            "audio_url": "/storage/audio/listening/exam_p1_04_019db35d.mp3",
-            "transcript": "Good evening, diners. This month, every table of four or more receives a complimentary dessert platter. Simply mention this offer when ordering. The promotion runs until the end of the month.",
-            "display_order": 4
-        },
-        {
-            "id": "019db35a-7994-72a7-8f40-c3cdf2440294",
-            "exam_version_id": "019db356-9de1-7328-a7dc-56af4e4756e7",
-            "part": 3,
-            "part_title": "Part 3 · Urban Farming",
-            "duration_minutes": 6,
-            "audio_url": "/storage/audio/listening/exam_p3_12_019db35a.mp3",
-            "transcript": "Welcome to today lecture on urban farming, a growing movement that is transforming how cities think about food production. Urban farming refers to the practice of growing food within city boundaries, using spaces such as rooftops, balconies, vacant lots, and even indoor vertical farms.\n\nThe movement has gained momentum for several reasons. First, it addresses food security concerns in densely populated cities. By producing food locally, cities can reduce their dependence on long supply chains that are vulnerable to disruption. During the COVID-19 pandemic, for example, many urban farms played a crucial role in supplying fresh produce when distribution networks were strained.\n\nSecond, urban farming has environmental benefits. It reduces the carbon footprint associated with transporting food over long distances. Green roofs and vertical gardens also help regulate building temperatures, reducing energy consumption for heating and cooling.\n\nThird, urban farms create community spaces. Community gardens bring residents together, provide educational opportunities for children, and can improve mental health by connecting people with nature.\n\nHowever, urban farming faces significant challenges. Land in cities is expensive and scarce. Water usage can be high. And the scale of production is generally too small to feed entire urban populations. Urban farming is best understood as a supplement to, rather than a replacement for, conventional agriculture.\n\nDespite these limitations, the future of urban farming looks promising. Advances in vertical farming technology, hydroponics, and LED lighting are making indoor food production increasingly efficient and cost-effective.",
-            "display_order": 12
-        },
-        {
             "id": "019db35e-09fd-71f7-a97c-2331c61daeb6",
             "exam_version_id": "019db356-9de3-72c7-a710-26c3b272542d",
             "part": 2,
@@ -3621,46 +3661,6 @@
             "audio_url": "/storage/audio/listening/exam_p3_11_019db35e.mp3",
             "transcript": "Good morning. Today I want to explore what psychological research tells us about happiness and well-being. For much of history, happiness was considered a philosophical concept. Today, it is a serious field of scientific inquiry.\n\nResearchers distinguish between two types of happiness. Hedonic happiness refers to the experience of pleasure and the absence of pain. Eudaimonic happiness refers to a deeper sense of meaning, purpose, and fulfillment. Studies suggest that eudaimonic happiness is more strongly associated with long-term well-being.\n\nOne of the most robust findings in happiness research is the importance of social connections. People with strong relationships consistently report higher levels of happiness than those who are socially isolated. The Harvard Study of Adult Development, which followed participants for over 80 years, found that the quality of relationships was the single strongest predictor of happiness and health in old age.\n\nMoney does have some relationship with happiness, but the effect is more limited than most people assume. Research suggests that happiness increases with income up to a point where basic needs and security are met, but beyond that, additional wealth has diminishing returns on well-being.\n\nGratitude practices have been shown to significantly boost happiness. People who regularly write down things they are grateful for report higher levels of positive emotion and life satisfaction. Exercise is another powerful happiness booster, with studies showing effects comparable to antidepressant medication for mild to moderate depression.\n\nThe good news is that happiness is not entirely determined by genetics or circumstances. Research suggests that approximately 40% of our happiness is within our control through intentional activities and mindset.",
             "display_order": 11
-        },
-        {
-            "id": "019db35d-9683-7333-a6b1-03241596b6dd",
-            "exam_version_id": "019db356-9de3-72c7-a710-26c3b272542d",
-            "part": 1,
-            "part_title": "Part 1 · Cinema Announcement",
-            "duration_minutes": 1,
-            "audio_url": "/storage/audio/listening/exam_p1_00_019db35d.mp3",
-            "transcript": "Welcome to Galaxy Cinema. Tonight screening of The Last Journey begins at 7:30 PM in Hall 3. Please note that mobile phones must be switched off during the film. Refreshments are available at the lobby counter. Enjoy the show.",
-            "display_order": 0
-        },
-        {
-            "id": "019db359-0d88-72a3-b77f-0586ffa36953",
-            "exam_version_id": "019db356-9de1-7328-a7dc-56af4e4756e7",
-            "part": 1,
-            "part_title": "Part 1 · Museum Announcement",
-            "duration_minutes": 1,
-            "audio_url": "/storage/audio/listening/exam_p1_00_019db359.mp3",
-            "transcript": "Attention visitors. The Egyptian exhibition on the third floor will close at 4 PM today for a private event. All other galleries remain open until 6 PM. Audio guides are available at the information desk on the ground floor.",
-            "display_order": 0
-        },
-        {
-            "id": "019db359-0d93-71cb-910b-05b246d1f012",
-            "exam_version_id": "019db356-9de1-7328-a7dc-56af4e4756e7",
-            "part": 1,
-            "part_title": "Part 1 · School Notice",
-            "duration_minutes": 1,
-            "audio_url": "/storage/audio/listening/exam_p1_03_019db359.mp3",
-            "transcript": "Good morning, students. Please be reminded that tomorrow is a public holiday and there will be no classes. School will resume on Wednesday. Students who have submitted assignments should check the online portal for feedback.",
-            "display_order": 3
-        },
-        {
-            "id": "019db35d-9691-70a1-9248-83caccc57d1a",
-            "exam_version_id": "019db356-9de3-72c7-a710-26c3b272542d",
-            "part": 1,
-            "part_title": "Part 1 · Airport Security",
-            "duration_minutes": 1,
-            "audio_url": "/storage/audio/listening/exam_p1_05_019db35d.mp3",
-            "transcript": "Attention all passengers. Please ensure all liquids in your carry-on baggage are in containers of 100 milliliters or less. Electronic devices must be removed from bags and placed in the tray separately.",
-            "display_order": 5
         },
         {
             "id": "019db35e-09f3-70a6-9e21-b4fdea38b17a",
@@ -4587,6 +4587,15 @@
     ],
     "exam_version_reading_passages": [
         {
+            "id": "019db35c-5104-72b5-a1b8-5e9d6e01a5f5",
+            "exam_version_id": "019db356-9de1-7328-a7dc-56af4e4756e7",
+            "part": 3,
+            "title": "Sleep Science and Modern Life",
+            "duration_minutes": 15,
+            "passage": "Sleep is one of the most fundamental biological needs, yet it is increasingly neglected in modern society. Research indicates that approximately one-third of adults in developed countries regularly fail to get the recommended seven to nine hours of sleep per night. The consequences of this widespread sleep deprivation are far-reaching and serious.\n\nSleep serves multiple critical functions. During sleep, the brain consolidates memories, processing and storing information acquired during waking hours. The body repairs tissues, synthesizes proteins, and releases growth hormones. The immune system is strengthened, and metabolic processes are regulated. Chronic sleep deprivation disrupts all of these functions.\n\nThe cognitive effects of insufficient sleep are well-documented. Sleep-deprived individuals show impaired attention, slower reaction times, and reduced ability to make complex decisions. Studies have found that being awake for 17 hours produces cognitive impairment equivalent to a blood alcohol level of 0.05%, and 24 hours of wakefulness is equivalent to 0.10%.\n\nThe health consequences extend beyond cognition. Chronic sleep deprivation is associated with increased risk of obesity, type 2 diabetes, cardiovascular disease, and depression. The relationship between sleep and weight is particularly well-established: sleep deprivation disrupts hormones that regulate appetite, leading to increased hunger and preference for high-calorie foods.\n\nModern technology is a significant contributor to sleep problems. The blue light emitted by smartphones, tablets, and computers suppresses melatonin production, the hormone that signals the body to prepare for sleep. Social media and streaming services provide endless entertainment that competes with sleep time.\n\nAddressing the sleep crisis requires both individual and societal changes. Individuals can improve sleep hygiene by maintaining consistent sleep schedules, creating dark and cool sleeping environments, and limiting screen time before bed. At a societal level, schools and workplaces could adjust their schedules to better align with natural sleep patterns.",
+            "display_order": 2
+        },
+        {
             "id": "019da080-5449-7128-aa11-5fe693a4b2df",
             "exam_version_id": "019da080-5446-713a-8891-aa19bf52ad17",
             "part": 1,
@@ -4594,6 +4603,15 @@
             "duration_minutes": 15,
             "passage": "Community libraries play an important role in modern society. They provide free access to books, computers, and the internet for people of all ages. Many libraries also offer educational programs such as reading clubs, language classes, and workshops for children and adults.\n\nIn recent years, libraries have changed significantly. They are no longer just places to borrow books. Today, many libraries have quiet study areas, meeting rooms, and even cafes. Some libraries lend unusual items such as tools, musical instruments, and board games.\n\nDespite the rise of digital technology, libraries remain popular. Studies show that library visits have increased in many countries. People visit libraries not only to borrow books but also to use computers, attend events, and meet other community members.\n\nLibraries also support lifelong learning. They help children develop reading habits from an early age. For adults, libraries provide resources for career development, including job search assistance and free online courses. Senior citizens benefit from large-print books and audiobooks.\n\nFunding is a major challenge for libraries. Many rely on government support, which can be reduced during economic downturns. Some libraries have introduced membership fees or fundraising events to supplement their income. Community support is essential for keeping libraries open and well-stocked.\n\nIn conclusion, libraries are vital community resources. They promote education, reduce inequality, and bring people together. Investing in libraries is investing in the future of society.",
             "display_order": 0
+        },
+        {
+            "id": "019db360-0c4c-70bd-8aeb-0b2bd34a1d3c",
+            "exam_version_id": "019db356-9de3-72c7-a710-26c3b272542d",
+            "part": 3,
+            "title": "The Neuroscience of Learning",
+            "duration_minutes": 15,
+            "passage": "Recent advances in neuroscience have transformed our understanding of how the brain learns and how this knowledge can be applied to improve education. The brain is not a fixed organ but a dynamic system that changes in response to experience, a property known as neuroplasticity.\n\nLearning occurs when neurons form new connections or strengthen existing ones. This process, called synaptic plasticity, is the cellular basis of memory and learning. The more frequently a neural pathway is activated, the stronger it becomes, which is why practice and repetition are fundamental to skill acquisition.\n\nSpaced repetition is one of the most well-supported learning strategies in cognitive science. Rather than studying material in one long session, spacing practice over time leads to significantly better long-term retention. This is because each time we retrieve information from memory, we strengthen the neural pathways associated with that information.\n\nThe testing effect, also known as retrieval practice, is another powerful learning strategy. Research consistently shows that testing yourself on material, rather than simply re-reading it, leads to much better retention. This is because the act of retrieval itself strengthens memory, even when the retrieval is unsuccessful.\n\nSleep plays a crucial role in learning and memory consolidation. During sleep, the brain replays and consolidates memories formed during waking hours. Studies show that students who sleep after studying retain significantly more information than those who stay awake. Chronic sleep deprivation impairs the formation of new memories.\n\nEmotional states also influence learning. Moderate levels of stress can enhance attention and memory formation, but chronic stress impairs cognitive function. Positive emotions and a sense of safety promote the kind of open, exploratory thinking that facilitates deep learning. This has important implications for classroom environments and teaching practices.",
+            "display_order": 2
         },
         {
             "id": "019db357-983f-729d-837c-ea1ed90d25c7",
@@ -4641,15 +4659,6 @@
             "display_order": 1
         },
         {
-            "id": "019db35c-5104-72b5-a1b8-5e9d6e01a5f5",
-            "exam_version_id": "019db356-9de1-7328-a7dc-56af4e4756e7",
-            "part": 3,
-            "title": "Sleep Science and Modern Life",
-            "duration_minutes": 15,
-            "passage": "Sleep is one of the most fundamental biological needs, yet it is increasingly neglected in modern society. Research indicates that approximately one-third of adults in developed countries regularly fail to get the recommended seven to nine hours of sleep per night. The consequences of this widespread sleep deprivation are far-reaching and serious.\n\nSleep serves multiple critical functions. During sleep, the brain consolidates memories, processing and storing information acquired during waking hours. The body repairs tissues, synthesizes proteins, and releases growth hormones. The immune system is strengthened, and metabolic processes are regulated. Chronic sleep deprivation disrupts all of these functions.\n\nThe cognitive effects of insufficient sleep are well-documented. Sleep-deprived individuals show impaired attention, slower reaction times, and reduced ability to make complex decisions. Studies have found that being awake for 17 hours produces cognitive impairment equivalent to a blood alcohol level of 0.05%, and 24 hours of wakefulness is equivalent to 0.10%.\n\nThe health consequences extend beyond cognition. Chronic sleep deprivation is associated with increased risk of obesity, type 2 diabetes, cardiovascular disease, and depression. The relationship between sleep and weight is particularly well-established: sleep deprivation disrupts hormones that regulate appetite, leading to increased hunger and preference for high-calorie foods.\n\nModern technology is a significant contributor to sleep problems. The blue light emitted by smartphones, tablets, and computers suppresses melatonin production, the hormone that signals the body to prepare for sleep. Social media and streaming services provide endless entertainment that competes with sleep time.\n\nAddressing the sleep crisis requires both individual and societal changes. Individuals can improve sleep hygiene by maintaining consistent sleep schedules, creating dark and cool sleeping environments, and limiting screen time before bed. At a societal level, schools and workplaces could adjust their schedules to better align with natural sleep patterns.",
-            "display_order": 2
-        },
-        {
             "id": "019db35c-c422-70a2-b549-09fb5f41b2a5",
             "exam_version_id": "019db356-9de1-7328-a7dc-56af4e4756e7",
             "part": 4,
@@ -4677,15 +4686,6 @@
             "display_order": 1
         },
         {
-            "id": "019db360-0c4c-70bd-8aeb-0b2bd34a1d3c",
-            "exam_version_id": "019db356-9de3-72c7-a710-26c3b272542d",
-            "part": 3,
-            "title": "The Neuroscience of Learning",
-            "duration_minutes": 15,
-            "passage": "Recent advances in neuroscience have transformed our understanding of how the brain learns and how this knowledge can be applied to improve education. The brain is not a fixed organ but a dynamic system that changes in response to experience, a property known as neuroplasticity.\n\nLearning occurs when neurons form new connections or strengthen existing ones. This process, called synaptic plasticity, is the cellular basis of memory and learning. The more frequently a neural pathway is activated, the stronger it becomes, which is why practice and repetition are fundamental to skill acquisition.\n\nSpaced repetition is one of the most well-supported learning strategies in cognitive science. Rather than studying material in one long session, spacing practice over time leads to significantly better long-term retention. This is because each time we retrieve information from memory, we strengthen the neural pathways associated with that information.\n\nThe testing effect, also known as retrieval practice, is another powerful learning strategy. Research consistently shows that testing yourself on material, rather than simply re-reading it, leads to much better retention. This is because the act of retrieval itself strengthens memory, even when the retrieval is unsuccessful.\n\nSleep plays a crucial role in learning and memory consolidation. During sleep, the brain replays and consolidates memories formed during waking hours. Studies show that students who sleep after studying retain significantly more information than those who stay awake. Chronic sleep deprivation impairs the formation of new memories.\n\nEmotional states also influence learning. Moderate levels of stress can enhance attention and memory formation, but chronic stress impairs cognitive function. Positive emotions and a sense of safety promote the kind of open, exploratory thinking that facilitates deep learning. This has important implications for classroom environments and teaching practices.",
-            "display_order": 2
-        },
-        {
             "id": "019db360-6dec-70de-8145-459360b59b8d",
             "exam_version_id": "019db356-9de3-72c7-a710-26c3b272542d",
             "part": 4,
@@ -4697,20 +4697,28 @@
     ],
     "exam_version_reading_items": [
         {
-            "id": "019da080-5449-7128-aa11-5fe6945d61ec",
-            "passage_id": "019da080-5449-7128-aa11-5fe693a4b2df",
-            "display_order": 0,
-            "stem": "What is the main idea of the passage?",
-            "options": "[\"Technology is harmful\",\"Technology transforms education\",\"Education is declining\",\"Students dislike technology\"]",
-            "correct_index": 1
-        },
-        {
             "id": "019db357-0093-70be-b583-4f614ce70da6",
             "passage_id": "019da080-5449-7128-aa11-5fe693a4b2df",
             "display_order": 1,
             "stem": "Which of the following is NOT mentioned as a library service?",
             "options": "[\"Reading clubs\",\"Language classes\",\"Cooking lessons\",\"Workshops\"]",
             "correct_index": 2
+        },
+        {
+            "id": "019db35c-c42d-72bb-a681-ce04a53f46a4",
+            "passage_id": "019db35c-c422-70a2-b549-09fb5f41b2a5",
+            "display_order": 5,
+            "stem": "What does the word accrue mean in paragraph 4?",
+            "options": "[\"Decrease\",\"Accumulate or build up\",\"Distribute equally\",\"Disappear\"]",
+            "correct_index": 1
+        },
+        {
+            "id": "019da080-5449-7128-aa11-5fe6945d61ec",
+            "passage_id": "019da080-5449-7128-aa11-5fe693a4b2df",
+            "display_order": 0,
+            "stem": "What is the main idea of the passage?",
+            "options": "[\"Technology is harmful\",\"Technology transforms education\",\"Education is declining\",\"Students dislike technology\"]",
+            "correct_index": 1
         },
         {
             "id": "019db357-0095-72ea-a73b-7e4295445934",
@@ -5297,14 +5305,6 @@
             "correct_index": 2
         },
         {
-            "id": "019db35c-c42d-72bb-a681-ce04a53f46a4",
-            "passage_id": "019db35c-c422-70a2-b549-09fb5f41b2a5",
-            "display_order": 5,
-            "stem": "What does the word accrue mean in paragraph 4?",
-            "options": "[\"Decrease\",\"Accumulate or build up\",\"Distribute equally\",\"Disappear\"]",
-            "correct_index": 1
-        },
-        {
             "id": "019db35c-c42e-70b6-bb38-0c3af069162f",
             "passage_id": "019db35c-c422-70a2-b549-09fb5f41b2a5",
             "display_order": 6,
@@ -5815,6 +5815,142 @@
             "speaking_seconds": 300,
             "content": "{\"topic\":\"Environmental Responsibility\",\"prompt\":\"Discuss the role of individuals, businesses, and governments in protecting the environment. Who has the greatest responsibility, and what actions should each take?\",\"follow_up_questions\":[\"Do you think individuals can make a real difference to environmental problems?\",\"Should businesses be legally required to reduce their environmental impact?\",\"What environmental policies have been most effective in your country?\"]}",
             "display_order": 2
+        }
+    ],
+    "practice_listening_exercises": [
+        {
+            "id": "019da080-543c-70e4-b0f3-a4b842bfda8c",
+            "slug": "directions-post-office",
+            "title": "Hỏi đường đến bưu điện",
+            "description": "Một người lạ hỏi đường.",
+            "part": 1,
+            "audio_url": "/storage/audio/listening/practice_directions-post-office_019da080.mp3",
+            "transcript": "Excuse me, could you tell me how to get to the post office?\nSure. Go straight ahead for two blocks, then turn left at the traffic lights.\nIs it far from here?\nNo, it's about a five-minute walk.",
+            "vietnamese_transcript": "Xin lỗi, bạn có thể chỉ đường đến bưu điện không?",
+            "word_timestamps": "[{\"word\": \"Excuse\", \"offset\": 0.105541, \"duration\": 0.597208}, {\"word\": \"me\", \"offset\": 0.716666, \"duration\": 0.236125}, {\"word\": \"could\", \"offset\": 1.175, \"duration\": 0.166666}, {\"word\": \"you\", \"offset\": 1.355541, \"duration\": 0.111125}, {\"word\": \"tell\", \"offset\": 1.480541, \"duration\": 0.208333}, {\"word\": \"me\", \"offset\": 1.716666, \"duration\": 0.125}, {\"word\": \"how\", \"offset\": 1.869458, \"duration\": 0.125}, {\"word\": \"to\", \"offset\": 2.008333, \"duration\": 0.111125}, {\"word\": \"get\", \"offset\": 2.133333, \"duration\": 0.180541}, {\"word\": \"to\", \"offset\": 2.327791, \"duration\": 0.097208}, {\"word\": \"the\", \"offset\": 2.438875, \"duration\": 0.138875}, {\"word\": \"post\", \"offset\": 2.591666, \"duration\": 0.361125}, {\"word\": \"office\", \"offset\": 2.980541, \"duration\": 0.527791}, {\"word\": \"Sure\", \"offset\": 4.486125, \"duration\": 0.652791}, {\"word\": \"Go\", \"offset\": 6.083333, \"duration\": 0.194458}, {\"word\": \"straight\", \"offset\": 6.291666, \"duration\": 0.361125}, {\"word\": \"ahead\", \"offset\": 6.666666, \"duration\": 0.263875}, {\"word\": \"for\", \"offset\": 6.958333, \"duration\": 0.166666}, {\"word\": \"two\", \"offset\": 7.152791, \"duration\": 0.194458}, {\"word\": \"blocks\", \"offset\": 7.361125, \"duration\": 0.458333}, {\"word\": \"then\", \"offset\": 8.041666, \"duration\": 0.208333}, {\"word\": \"turn\", \"offset\": 8.277791, \"duration\": 0.236125}, {\"word\": \"left\", \"offset\": 8.541666, \"duration\": 0.347208}, {\"word\": \"at\", \"offset\": 8.916666, \"duration\": 0.083333}, {\"word\": \"the\", \"offset\": 9.013875, \"duration\": 0.097208}, {\"word\": \"traffic\", \"offset\": 9.125, \"duration\": 0.416666}, {\"word\": \"lights\", \"offset\": 9.569458, \"duration\": 0.430541}, {\"word\": \"Is\", \"offset\": 10.958333, \"duration\": 0.208333}, {\"word\": \"it\", \"offset\": 11.194458, \"duration\": 0.125}, {\"word\": \"far\", \"offset\": 11.347208, \"duration\": 0.333333}, {\"word\": \"from\", \"offset\": 11.694458, \"duration\": 0.194458}, {\"word\": \"here\", \"offset\": 11.916666, \"duration\": 0.388875}, {\"word\": \"No\", \"offset\": 13.291666, \"duration\": 0.402791}, {\"word\": \"it's\", \"offset\": 13.930541, \"duration\": 0.166666}, {\"word\": \"about\", \"offset\": 14.111125, \"duration\": 0.277791}, {\"word\": \"a\", \"offset\": 14.416666, \"duration\": 0.069458}, {\"word\": \"five-minute\", \"offset\": 14.513875, \"duration\": 0.652791}, {\"word\": \"walk\", \"offset\": 15.180541, \"duration\": 0.458333}]",
+            "keywords": "[\"directions\",\"post office\",\"traffic lights\"]",
+            "estimated_minutes": 5,
+            "is_published": true,
+            "created_at": "2026-04-18 12:10:57",
+            "updated_at": "2026-04-18 12:10:57"
+        }
+    ],
+    "practice_listening_questions": [
+        {
+            "id": "019da080-543d-7199-a14c-315379c41ea4",
+            "exercise_id": "019da080-543c-70e4-b0f3-a4b842bfda8c",
+            "display_order": 0,
+            "question": "Where does the person want to go?",
+            "options": "[\"The bank\",\"The post office\",\"The hospital\",\"The school\"]",
+            "correct_index": 1,
+            "explanation": "The person asks for the post office."
+        },
+        {
+            "id": "019da080-543d-7199-a14c-315379fc55dc",
+            "exercise_id": "019da080-543c-70e4-b0f3-a4b842bfda8c",
+            "display_order": 1,
+            "question": "How far is it?",
+            "options": "[\"10 minutes\",\"5 minutes\",\"15 minutes\",\"20 minutes\"]",
+            "correct_index": 1,
+            "explanation": "About a five-minute walk."
+        }
+    ],
+    "practice_reading_exercises": [
+        {
+            "id": "019da080-543e-72c0-94fa-7ba545a85b33",
+            "slug": "restaurant-notice",
+            "title": "Thông báo nhà hàng",
+            "description": "Thông báo về giờ mở cửa.",
+            "part": 1,
+            "passage": "Welcome to The Green Leaf Restaurant!\n\nWe are pleased to announce that starting next Monday, we will open earlier at 7 a.m. to serve breakfast.",
+            "vietnamese_translation": "Chào mừng đến nhà hàng Green Leaf!",
+            "keywords": "[\"restaurant\",\"breakfast\",\"opening hours\"]",
+            "estimated_minutes": 10,
+            "is_published": true,
+            "created_at": "2026-04-18 12:10:57",
+            "updated_at": "2026-04-18 12:10:57"
+        }
+    ],
+    "practice_reading_questions": [
+        {
+            "id": "019da080-543f-72fb-8f07-4f6137698241",
+            "exercise_id": "019da080-543e-72c0-94fa-7ba545a85b33",
+            "display_order": 0,
+            "question": "What is the new opening time?",
+            "options": "[\"6 a.m.\",\"7 a.m.\",\"8 a.m.\",\"9 a.m.\"]",
+            "correct_index": 1,
+            "explanation": "The restaurant will open at 7 a.m."
+        }
+    ],
+    "practice_writing_prompts": [
+        {
+            "id": "019da080-5440-7042-b542-1d169b000131",
+            "slug": "apology-letter",
+            "title": "Thư xin lỗi bạn bè",
+            "description": "Viết thư xin lỗi vì đã quên sinh nhật.",
+            "part": 1,
+            "prompt": "You forgot your close friend's birthday party last weekend. Write a letter to your friend to:\n- Apologize for missing the party\n- Explain why you couldn't attend\n- Suggest a plan to make it up",
+            "min_words": 100,
+            "max_words": 150,
+            "required_points": "[\"apologize\",\"explain reason\",\"suggest plan\"]",
+            "keywords": "[\"apologize\",\"birthday\",\"make it up\"]",
+            "sentence_starters": "[\"I am writing to...\",\"I sincerely apologize for...\"]",
+            "sample_answer": "Dear Minh,\n\nI am writing to sincerely apologize for missing your birthday party last Saturday. I feel terrible about it.\n\nThe reason I couldn't attend was that my grandmother was suddenly hospitalized, and I had to rush to the hospital with my family. Everything happened so quickly that I didn't even have time to call you.\n\nTo make it up to you, I would like to invite you to dinner at your favorite restaurant this weekend. It will be my treat, and I promise to bring a special gift for you.\n\nOnce again, I am truly sorry. I hope you had a wonderful birthday despite my absence.\n\nBest wishes,\nLan",
+            "estimated_minutes": 20,
+            "is_published": true,
+            "created_at": "2026-04-18 12:10:57",
+            "updated_at": "2026-04-18 12:10:57"
+        }
+    ],
+    "practice_speaking_drills": [
+        {
+            "id": "019da080-5441-7151-a241-ef5973d41317",
+            "slug": "daily-routine-a2",
+            "title": "Daily routine",
+            "description": "Luyện các câu mô tả thói quen hằng ngày.",
+            "level": "A2",
+            "estimated_minutes": 4,
+            "is_published": true,
+            "created_at": "2026-04-18 12:10:57",
+            "updated_at": "2026-04-18 12:10:57"
+        }
+    ],
+    "practice_speaking_drill_sentences": [
+        {
+            "id": "019da080-5442-717a-9cea-38023fc0f1c2",
+            "drill_id": "019da080-5441-7151-a241-ef5973d41317",
+            "display_order": 0,
+            "text": "I usually wake up at seven in the morning.",
+            "translation": null
+        },
+        {
+            "id": "019da080-5443-702c-aa03-bf4c1e64b32d",
+            "drill_id": "019da080-5441-7151-a241-ef5973d41317",
+            "display_order": 1,
+            "text": "After breakfast, I take the bus to work.",
+            "translation": null
+        },
+        {
+            "id": "019da080-5443-702c-aa03-bf4c1ef3aa35",
+            "drill_id": "019da080-5441-7151-a241-ef5973d41317",
+            "display_order": 2,
+            "text": "I have lunch with my colleagues around noon.",
+            "translation": null
+        }
+    ],
+    "practice_speaking_tasks": [
+        {
+            "id": "019da080-5444-71b5-a64a-ce29029fbff7",
+            "slug": "social-interaction-p1",
+            "title": "Social Interaction",
+            "part": 1,
+            "task_type": "social",
+            "content": "{\"topics\":[{\"name\":\"Daily Life\",\"questions\":[\"Tell me about your daily routine.\",\"What do you usually do on weekends?\"]}]}",
+            "estimated_minutes": 4,
+            "speaking_seconds": 120,
+            "is_published": true,
+            "created_at": "2026-04-18 12:10:57",
+            "updated_at": "2026-04-18 12:10:57"
         }
     ]
 }
