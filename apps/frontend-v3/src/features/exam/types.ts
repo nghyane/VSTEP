@@ -72,6 +72,8 @@ export interface ExamVersionSpeakingPart {
 	part: number
 	type: string
 	duration_minutes: number
+	speaking_seconds: number
+	content: Record<string, unknown>
 	display_order: number
 }
 
