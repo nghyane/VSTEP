@@ -30,18 +30,18 @@ function ThiThuPage() {
 const STATUS_OPTIONS = ["Tất cả", "Chưa làm", "Đang làm dở", "Đã nộp"] as const
 type StatusFilter = (typeof STATUS_OPTIONS)[number]
 
-const SKILL_FILTER_OPTIONS: { key: SkillKey; label: string }[] = [
-	{ key: "listening", label: "Listening" },
-	{ key: "reading", label: "Reading" },
-	{ key: "writing", label: "Writing" },
-	{ key: "speaking", label: "Speaking" },
+const SKILL_FILTERS: { key: SkillKey; label: string; color: string }[] = [
+	{ key: "listening", label: "Listening", color: "text-skill-listening" },
+	{ key: "reading", label: "Reading", color: "text-skill-reading" },
+	{ key: "writing", label: "Writing", color: "text-skill-writing" },
+	{ key: "speaking", label: "Speaking", color: "text-skill-speaking" },
 ]
 
-const SKILL_COLORS: Record<SkillKey, string> = {
-	listening: "text-skill-listening",
-	reading: "text-skill-reading",
-	writing: "text-skill-writing",
-	speaking: "text-skill-speaking",
+const SKILL_ACTIVE_BG: Record<SkillKey, string> = {
+	listening: "bg-info-tint border-info",
+	reading: "bg-[#f3eeff] border-[#7850c8]",
+	writing: "bg-primary-tint border-primary",
+	speaking: "bg-warning-tint border-warning",
 }
 
 function ExamListContent() {
@@ -70,88 +70,86 @@ function ExamListContent() {
 	})
 
 	return (
-		<div className="flex gap-8 pt-2">
-			{/* Sidebar filters */}
-			<aside className="w-60 shrink-0 space-y-8">
+		<div className="space-y-5">
+			{/* Toolbar */}
+			<div className="flex flex-wrap items-center gap-3">
 				{/* Search */}
-				<div className="space-y-3">
-					<p className="text-xs font-bold tracking-wider text-subtle uppercase">Tìm kiếm</p>
-					<div className="relative">
-						<Icon
-							name="search"
-							size="xs"
-							className="absolute left-3 top-1/2 -translate-y-1/2 text-placeholder"
-						/>
-						<input
-							type="text"
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-							placeholder="Nhập tên đề thi..."
-							className="w-full rounded-(--radius-button) border-2 border-border bg-surface py-2 pl-9 pr-3 text-sm outline-none focus:border-border-focus transition-colors"
-						/>
-					</div>
+				<div className="relative">
+					<Icon
+						name="search"
+						size="xs"
+						className="absolute left-3 top-1/2 -translate-y-1/2 text-placeholder"
+					/>
+					<input
+						type="text"
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+						placeholder="Tìm tên đề thi..."
+						className="w-56 rounded-(--radius-button) border-2 border-border bg-surface py-2 pl-9 pr-3 text-sm outline-none focus:border-border-focus transition-colors"
+					/>
 				</div>
 
-				{/* Status */}
-				<div className="space-y-3">
-					<p className="text-xs font-bold tracking-wider text-subtle uppercase">Trạng thái</p>
-					<div className="space-y-2.5">
-						{STATUS_OPTIONS.map((opt) => (
-							<label
-								key={opt}
-								className="flex cursor-pointer items-center gap-3 text-sm font-medium text-muted hover:text-primary transition-colors"
+				{/* Divider */}
+				<div className="w-px h-6 bg-border" />
+
+				{/* Status pills */}
+				<div className="flex items-center gap-1.5">
+					{STATUS_OPTIONS.map((opt) => (
+						<button
+							key={opt}
+							type="button"
+							onClick={() => setStatus(opt)}
+							className={cn(
+								"px-3 py-1.5 rounded-(--radius-button) text-xs font-bold border-2 transition-colors cursor-pointer",
+								status === opt
+									? "bg-primary text-primary-foreground border-primary"
+									: "bg-surface text-muted border-border hover:border-border-focus hover:text-foreground",
+							)}
+						>
+							{opt}
+						</button>
+					))}
+				</div>
+
+				{/* Divider */}
+				<div className="w-px h-6 bg-border" />
+
+				{/* Skill pills */}
+				<div className="flex items-center gap-1.5">
+					{SKILL_FILTERS.map(({ key, label, color }) => {
+						const active = skills.has(key)
+						return (
+							<button
+								key={key}
+								type="button"
+								onClick={() => toggleSkill(key)}
+								className={cn(
+									"px-3 py-1.5 rounded-(--radius-button) text-xs font-bold border-2 transition-colors cursor-pointer",
+									active
+										? cn(SKILL_ACTIVE_BG[key], color)
+										: "bg-surface text-muted border-border hover:border-border-focus",
+								)}
 							>
-								<input
-									type="radio"
-									name="exam-status"
-									checked={status === opt}
-									onChange={() => setStatus(opt)}
-									className="size-4 accent-primary cursor-pointer"
-								/>
-								{opt}
-							</label>
-						))}
-					</div>
+								{label}
+							</button>
+						)
+					})}
 				</div>
-
-				{/* Skills */}
-				<div className="space-y-3">
-					<p className="text-xs font-bold tracking-wider text-subtle uppercase">Kỹ năng</p>
-					<div className="space-y-2.5">
-						{SKILL_FILTER_OPTIONS.map(({ key, label }) => {
-							const checked = skills.has(key)
-							return (
-								<label
-									key={key}
-									className="flex cursor-pointer items-center gap-3 text-sm font-medium text-muted hover:text-primary transition-colors"
-								>
-									<input
-										type="checkbox"
-										checked={checked}
-										onChange={() => toggleSkill(key)}
-										className="size-4 accent-primary cursor-pointer rounded"
-									/>
-									<span className={cn(checked ? SKILL_COLORS[key] : "")}>{label}</span>
-								</label>
-							)
-						})}
-					</div>
-				</div>
-			</aside>
-
-			{/* Exam grid */}
-			<div className="flex-1 min-w-0 space-y-4">
-				<p className="text-sm text-subtle">{filtered.length} đề thi</p>
-				{filtered.length === 0 ? (
-					<p className="text-sm text-subtle py-8 text-center">Không tìm thấy đề thi nào.</p>
-				) : (
-					<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-						{filtered.map((exam) => (
-							<ExamCard key={exam.id} exam={exam} fullTestCoinCost={fullTestCoinCost} />
-						))}
-					</div>
-				)}
 			</div>
+
+			{/* Count */}
+			<p className="text-sm text-subtle">{filtered.length} đề thi</p>
+
+			{/* Grid */}
+			{filtered.length === 0 ? (
+				<p className="text-sm text-subtle py-8 text-center">Không tìm thấy đề thi nào.</p>
+			) : (
+				<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+					{filtered.map((exam) => (
+						<ExamCard key={exam.id} exam={exam} fullTestCoinCost={fullTestCoinCost} />
+					))}
+				</div>
+			)}
 		</div>
 	)
 }
