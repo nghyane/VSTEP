@@ -74,24 +74,24 @@ function ConfirmDialog({
 	if (!open) return null
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-			<div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
-			<div className="relative w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4">
+			<div className="absolute inset-0 bg-foreground/60" onClick={onCancel} />
+			<div className="card relative w-full max-w-sm space-y-4 p-6">
 				<h2 className="text-base font-bold text-foreground">{title}</h2>
 				<p className="text-sm text-muted">{description}</p>
-				{warning && <p className="rounded-lg bg-warning/10 px-3 py-2 text-sm text-warning">{warning}</p>}
+				{warning && (
+					<p className="rounded-[--radius-button] bg-warning-tint px-3 py-2 text-sm font-bold text-warning">
+						{warning}
+					</p>
+				)}
 				<div className="flex gap-3 pt-1">
-					<button
-						type="button"
-						onClick={onCancel}
-						className="flex-1 rounded-xl border-2 border-border py-2.5 text-sm font-semibold text-muted hover:border-border hover:text-foreground transition-colors"
-					>
+					<button type="button" onClick={onCancel} className="btn btn-secondary flex-1">
 						Ở lại
 					</button>
 					<button
 						type="button"
 						onClick={onConfirm}
 						disabled={isLoading}
-						className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+						className="btn btn-primary flex-1 disabled:opacity-50"
 					>
 						{isLoading ? "Đang nộp..." : confirmLabel}
 					</button>

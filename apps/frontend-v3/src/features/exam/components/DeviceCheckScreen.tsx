@@ -56,7 +56,7 @@ export function DeviceCheckScreen({
 								const meta = skillByKey[sk]
 								return (
 									<li key={sk} className="flex items-center gap-2.5">
-										<span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-surface text-xs font-bold text-muted">
+										<span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-background text-xs font-bold text-muted">
 											{i + 1}
 										</span>
 										<span
