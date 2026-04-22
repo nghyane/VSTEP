@@ -26,6 +26,7 @@ class TopupService
 {
     public function __construct(
         private readonly WalletService $walletService,
+        private readonly NotificationService $notificationService,
     ) {}
 
     public function createOrder(
@@ -91,6 +92,15 @@ class TopupService
                 'status' => 'paid',
                 'paid_at' => now(),
             ]);
+
+            DB::afterCommit(fn () => $this->notificationService->push(
+                profile: $locked->profile,
+                type: 'topup_completed',
+                title: 'Nạp xu thành công',
+                body: "Bạn đã nhận {$locked->coins_to_credit} xu.",
+                iconKey: 'coin',
+                dedupKey: "topup:{$locked->id}",
+            ));
 
             return $locked;
         });

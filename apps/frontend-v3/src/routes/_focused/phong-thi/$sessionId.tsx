@@ -3,8 +3,10 @@ import { createFileRoute, Link } from "@tanstack/react-router"
 import { type ReactNode, Suspense, useMemo, useState } from "react"
 import { DeviceCheckScreen } from "#/features/exam/components/DeviceCheckScreen"
 import { ExamRoomHeader } from "#/features/exam/components/ExamRoomHeader"
+import { LacCoinMascot } from "#/features/exam/components/LacCoinMascot"
 import { ListeningPanel } from "#/features/exam/components/ListeningPanel"
 import { ReadingPanel } from "#/features/exam/components/ReadingPanel"
+import { ResultBackground } from "#/features/exam/components/ResultBackground"
 import { SpeakingPanel } from "#/features/exam/components/SpeakingPanel"
 import { WritingPanel } from "#/features/exam/components/WritingPanel"
 import { examDetailQuery, examSessionQuery } from "#/features/exam/queries"
@@ -111,7 +113,7 @@ function ConfirmDialog({
 				<p className="mb-4 text-center text-sm leading-relaxed text-muted">{description}</p>
 
 				{warning && (
-					<p className="mb-4 rounded-(--radius-button) bg-warning-tint px-3 py-2 text-xs font-bold text-warning">
+					<p className="mb-4 rounded-(--radius-button) bg-warning-tint px-3 py-2 text-center text-xs font-bold text-warning">
 						{warning}
 					</p>
 				)}
@@ -142,45 +144,104 @@ function ConfirmDialog({
 
 function ResultScreen({ result, examTitle }: { result: SubmitSessionResult; examTitle: string }) {
 	const pct = result.mcq_total > 0 ? Math.round((result.mcq_score / result.mcq_total) * 100) : 0
+	const scoreOn10 = result.mcq_total > 0 ? ((result.mcq_score / result.mcq_total) * 10).toFixed(1) : "0.0"
+
 	return (
-		<div className="flex h-screen flex-col items-center justify-center gap-8 px-6 text-center">
-			<div className="space-y-2">
-				<div className="mx-auto flex size-20 items-center justify-center rounded-full bg-success/15 text-success">
-					<svg
-						viewBox="0 0 24 24"
-						className="size-10"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2.5"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						aria-hidden="true"
-					>
-						<polyline points="20,6 9,17 4,12" />
-					</svg>
-				</div>
-				<h1 className="text-2xl font-extrabold text-foreground">Nộp bài thành công!</h1>
-				<p className="text-sm text-muted">{examTitle}</p>
-			</div>
+		<div className="relative flex min-h-screen flex-col items-center overflow-hidden">
+			<ResultBackground />
 
-			<div className="card w-full max-w-xs p-6 space-y-4">
-				<p className="text-sm font-semibold text-muted">Điểm MCQ (Nghe + Đọc)</p>
-				<div className="flex items-end justify-center gap-2">
-					<span className="text-5xl font-extrabold text-primary tabular-nums">{result.mcq_score}</span>
-					<span className="mb-1 text-xl text-muted">/ {result.mcq_total}</span>
-				</div>
-				<div className="h-2 w-full rounded-full bg-surface overflow-hidden">
-					<div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
-				</div>
-				<p className="text-xs text-muted">Writing và Speaking đang được AI chấm điểm</p>
-			</div>
+			{/* Content */}
+			<div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center px-4 py-12">
+				{/* Card */}
+				<div className="w-full max-w-3xl overflow-hidden rounded-(--radius-banner) border-2 border-b-4 border-white/20 bg-white shadow-2xl">
+					{/* Top: mascot + congrats */}
+					<div className="flex items-center gap-5 px-7 py-6">
+						<LacCoinMascot scoreLabel={scoreOn10} className="w-36 shrink-0 sm:w-44" />
 
-			<Link
-				to="/thi-thu"
-				className="rounded-xl bg-primary px-8 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
+						<div className="min-w-0 flex-1">
+							<p className="text-xs font-extrabold uppercase tracking-widest text-primary">Chúc mừng!</p>
+							<h1 className="mt-1 text-2xl font-extrabold text-foreground">Nộp bài thành công</h1>
+							<p className="mt-1 text-sm text-muted">{examTitle}</p>
+
+							{/* Score pills */}
+							<div className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1.5">
+								<ScorePill
+									value={result.mcq_score}
+									total={result.mcq_total}
+									label="câu đúng"
+									variant="success"
+								/>
+								<ScorePill
+									value={result.mcq_total - result.mcq_score}
+									total={result.mcq_total}
+									label="câu sai"
+									variant="danger"
+								/>
+							</div>
+						</div>
+					</div>
+
+					<div className="mx-6 h-px bg-border" />
+
+					{/* MCQ progress */}
+					<div className="px-7 py-5 space-y-3">
+						<div className="flex items-center justify-between text-sm">
+							<span className="font-extrabold text-foreground">Nghe + Đọc (MCQ)</span>
+							<span className="font-extrabold tabular-nums text-foreground">{pct}%</span>
+						</div>
+						<div className="h-3 w-full overflow-hidden rounded-full bg-border">
+							<div
+								className="h-full rounded-full bg-primary transition-all duration-700"
+								style={{ width: `${pct}%` }}
+							/>
+						</div>
+						<p className="text-xs text-muted">
+							Writing và Speaking đang được AI chấm — kết quả sẽ hiển thị sau vài phút.
+						</p>
+					</div>
+
+					<div className="mx-6 h-px bg-border" />
+
+					{/* Actions */}
+					<div className="flex justify-center gap-3 px-7 py-5">
+						<Link to="/thi-thu" className="btn btn-secondary">
+							Về danh sách đề
+						</Link>
+					</div>
+				</div>
+			</div>
+		</div>
+	)
+}
+
+function ScorePill({
+	value,
+	total,
+	label,
+	variant,
+}: {
+	value: number
+	total: number
+	label: string
+	variant: "success" | "danger"
+}) {
+	const isSuccess = variant === "success"
+	return (
+		<div className="inline-flex items-baseline gap-1.5">
+			<div
+				className={
+					isSuccess
+						? "inline-flex items-center rounded-(--radius-button) border-2 border-b-4 border-primary/30 bg-primary-tint px-2.5 py-1"
+						: "inline-flex items-center rounded-(--radius-button) border-2 border-b-4 border-destructive/30 bg-destructive-tint px-2.5 py-1"
+				}
 			>
-				Về danh sách đề thi
-			</Link>
+				<span
+					className={`text-base font-extrabold tabular-nums leading-none ${isSuccess ? "text-primary" : "text-destructive"}`}
+				>
+					{value}/{total}
+				</span>
+			</div>
+			<span className="text-xs text-muted">{label}</span>
 		</div>
 	)
 }

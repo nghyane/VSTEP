@@ -31,20 +31,47 @@ function formatTime(seconds: number): string {
 }
 
 export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, footer }: Props) {
-	const sorted = useMemo(() => [...sections].sort((a, b) => a.part - b.part), [sections])
+	// Sort by display_order then part
+	const sorted = useMemo(
+		() => [...sections].sort((a, b) => a.display_order - b.display_order || a.part - b.part),
+		[sections],
+	)
+
+	// Group sections by part number → Part 1 / Part 2 / Part 3
+	const partGroups = useMemo(() => {
+		const map = new Map<number, ExamVersionListeningSection[]>()
+		for (const sec of sorted) {
+			const list = map.get(sec.part) ?? []
+			list.push(sec)
+			map.set(sec.part, list)
+		}
+		return Array.from(map.entries())
+			.sort(([a], [b]) => a - b)
+			.map(([part, secs]) => ({ part, sections: secs }))
+	}, [sorted])
 
 	const [isReady, setIsReady] = useState(false)
-	const [activeSectionIdx, setActiveSectionIdx] = useState(0)
-	const [playingIdx, setPlayingIdx] = useState(-1)
+	const [activePartIdx, setActivePartIdx] = useState(0) // index trong partGroups
+	const [playingIdx, setPlayingIdx] = useState(-1) // index trong sorted (toàn bộ)
 	const [currentTime, setCurrentTime] = useState(0)
 	const [duration, setDuration] = useState(0)
 	const audioRefs = useRef<(HTMLAudioElement | null)[]>([])
 	const loggedSections = useRef<Set<string>>(new Set())
 
 	const isPlaying = playingIdx >= 0
-	const activeSection = sorted[activeSectionIdx]
 
-	// Sync progress bar từ audio đang phát
+	// Sections thuộc part đang active
+	const activeGroup = partGroups[activePartIdx]
+
+	// Index trong sorted của section đầu tiên đang playing
+	const playingPartIdx = useMemo(() => {
+		if (playingIdx < 0) return -1
+		const sec = sorted[playingIdx]
+		if (!sec) return -1
+		return partGroups.findIndex((g) => g.part === sec.part)
+	}, [playingIdx, sorted, partGroups])
+
+	// Sync progress bar
 	useEffect(() => {
 		if (playingIdx < 0) {
 			setCurrentTime(0)
@@ -62,7 +89,7 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 		return () => clearInterval(id)
 	}, [playingIdx])
 
-	// Auto-advance sang section kế tiếp khi audio kết thúc
+	// Auto-advance sequential audio
 	useEffect(() => {
 		if (!isReady) return
 		const cleanups: Array<() => void> = []
@@ -72,7 +99,12 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 			const onEnded = () => {
 				if (i < sorted.length - 1) {
 					setPlayingIdx(i + 1)
-					setActiveSectionIdx(i + 1)
+					// Auto switch active part when audio crosses part boundary
+					const nextSec = sorted[i + 1]
+					if (nextSec) {
+						const nextPartIdx = partGroups.findIndex((g) => g.part === nextSec.part)
+						if (nextPartIdx >= 0) setActivePartIdx(nextPartIdx)
+					}
 					audioRefs.current[i + 1]?.play().catch(() => null)
 				} else {
 					setPlayingIdx(-1)
@@ -84,9 +116,9 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 		return () => {
 			for (const fn of cleanups) fn()
 		}
-	}, [isReady, sorted])
+	}, [isReady, sorted, partGroups])
 
-	// Log khi section đầu tiên được phát
+	// Log played
 	const logPlayed = useCallback(
 		(sectionId: string) => {
 			if (loggedSections.current.has(sectionId)) return
@@ -101,50 +133,84 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 		const firstSection = sorted[0]
 		if (!firstSection) return
 		setPlayingIdx(0)
-		setActiveSectionIdx(0)
+		setActivePartIdx(0)
 		logPlayed(firstSection.id)
 		audioRefs.current[0]?.play().catch(() => null)
 	}, [isPlaying, sorted, logPlayed])
 
-	// Khi auto-advance, log section tiếp theo
 	useEffect(() => {
 		if (playingIdx < 0) return
 		const sec = sorted[playingIdx]
 		if (sec) logPlayed(sec.id)
 	}, [playingIdx, sorted, logPlayed])
 
-	const handleNextSection = useCallback(() => {
-		setActiveSectionIdx((i) => Math.min(i + 1, sorted.length - 1))
-	}, [sorted.length])
+	const handleNextPart = useCallback(() => {
+		setActivePartIdx((i) => Math.min(i + 1, partGroups.length - 1))
+	}, [partGroups.length])
 
-	const handleJumpToItem = useCallback((itemIndex: number) => {
+	const handleJumpToItem = useCallback((globalIdx: number) => {
 		document
-			.getElementById(`listening-item-${itemIndex}`)
+			.getElementById(`listening-item-${globalIdx}`)
 			?.scrollIntoView({ behavior: "smooth", block: "center" })
 	}, [])
 
 	const totalQuestions = sorted.reduce((sum, sec) => sum + sec.items.length, 0)
 	const progressPct = duration > 0 ? (currentTime / duration) * 100 : 0
 
-	const sectionsMeta = useMemo(
+	// Per-part meta: answered / total
+	const partsMeta = useMemo(
 		() =>
-			sorted.map((sec) => {
-				const answered = sec.items.filter((it) => mcqAnswers.has(it.id)).length
-				return { part: sec.part, total: sec.items.length, answered }
+			partGroups.map((g) => {
+				const total = g.sections.reduce((s, sec) => s + sec.items.length, 0)
+				const answered = g.sections.reduce(
+					(s, sec) => s + sec.items.filter((it) => mcqAnswers.has(it.id)).length,
+					0,
+				)
+				return { part: g.part, total, answered }
 			}),
-		[sorted, mcqAnswers],
+		[partGroups, mcqAnswers],
 	)
 
-	if (!activeSection) return null
+	// All items in active part (flattened, with global index offset)
+	const activeItems = useMemo(() => {
+		const items: Array<{
+			item: ExamVersionListeningSection["items"][0]
+			globalIdx: number
+			sectionTitle: string
+		}> = []
+		let globalIdx = 0
+		for (const sec of sorted) {
+			const inActivePart = sec.part === activeGroup?.part
+			for (const item of sec.items) {
+				if (inActivePart) {
+					items.push({ item, globalIdx, sectionTitle: sec.part_title })
+				}
+				globalIdx++
+			}
+		}
+		return items
+	}, [sorted, activeGroup])
 
-	const activeAnswered = sectionsMeta[activeSectionIdx]?.answered ?? 0
-	const activeTotal = sectionsMeta[activeSectionIdx]?.total ?? 0
+	// Global offset of first item in active part (for jump buttons)
+	const activePartGlobalOffset = useMemo(() => {
+		let offset = 0
+		for (const sec of sorted) {
+			if (sec.part === activeGroup?.part) break
+			offset += sec.items.length
+		}
+		return offset
+	}, [sorted, activeGroup])
+
+	const activePartAnswered = partsMeta[activePartIdx]?.answered ?? 0
+	const activePartTotal = partsMeta[activePartIdx]?.total ?? 0
+
+	if (partGroups.length === 0) return null
 
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden">
 			{!isReady && (
 				<ListeningReadinessModal
-					totalSections={sorted.length}
+					totalSections={partGroups.length}
 					totalQuestions={totalQuestions}
 					onReady={() => setIsReady(true)}
 				/>
@@ -153,18 +219,19 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 			{/* Questions (scrollable) */}
 			<ScrollArea className="flex-1 bg-background">
 				<div className="mx-auto max-w-3xl space-y-6 p-6">
+					{/* Part header */}
 					<div className="flex items-center gap-3">
 						<span className="rounded-full border-2 border-b-4 border-skill-listening/30 bg-skill-listening/10 px-3 py-1 text-xs font-extrabold text-skill-listening">
-							Phần {activeSection.part}
+							Part {activeGroup?.part}
 						</span>
-						<span className="text-sm font-semibold text-foreground">{activeSection.part_title}</span>
 					</div>
 
-					{activeSection.items.map((item, idx) => (
-						<div key={item.id} id={`listening-item-${idx}`}>
+					{/* All items in this part */}
+					{activeItems.map(({ item, globalIdx }) => (
+						<div key={item.id} id={`listening-item-${globalIdx}`}>
 							<MCQQuestion
 								item={item}
-								index={idx}
+								index={globalIdx - activePartGlobalOffset}
 								selectedIndex={mcqAnswers.get(item.id)}
 								onSelect={onAnswer}
 							/>
@@ -172,6 +239,8 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 					))}
 				</div>
 			</ScrollArea>
+
+			{/* Audio bar */}
 			<div className="border-t-2 border-border bg-card px-4 py-2.5">
 				<div className="flex items-center gap-3">
 					{!isPlaying ? (
@@ -187,8 +256,8 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 							<span className="font-mono text-xs font-extrabold tabular-nums text-skill-listening">
 								{formatTime(currentTime)}
 							</span>
-							{playingIdx !== activeSectionIdx && (
-								<span className="text-xs text-muted">(Part {playingIdx + 1})</span>
+							{playingPartIdx >= 0 && playingPartIdx !== activePartIdx && (
+								<span className="text-xs text-muted">(Part {sorted[playingIdx]?.part})</span>
 							)}
 						</div>
 					)}
@@ -215,15 +284,15 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 				))}
 			</div>
 
-			{/* Question number jump buttons */}
+			{/* Jump buttons — items trong active part */}
 			<div className="flex flex-wrap justify-center gap-1.5 border-t border-border bg-card px-4 py-2.5">
-				{activeSection.items.map((item, i) => {
+				{activeItems.map(({ item, globalIdx }, localI) => {
 					const isAnswered = mcqAnswers.has(item.id)
 					return (
 						<button
 							key={item.id}
 							type="button"
-							onClick={() => handleJumpToItem(i)}
+							onClick={() => handleJumpToItem(globalIdx)}
 							className={cn(
 								"flex size-8 items-center justify-center rounded-(--radius-button) border-2 border-b-4 text-xs font-extrabold transition-all active:translate-y-[2px] active:border-b-2",
 								isAnswered
@@ -231,32 +300,32 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 									: "border-border bg-surface text-muted hover:border-primary/40 hover:bg-primary/5 hover:text-primary",
 							)}
 						>
-							{i + 1}
+							{localI + 1}
 						</button>
 					)
 				})}
 			</div>
 
-			{/* Section tabs + next */}
+			{/* Part tabs + next */}
 			<div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-2.5">
 				<div className="flex min-w-0 items-center gap-2">
 					<Icon name="volume" size="xs" className="text-skill-listening" />
-					<span className="text-sm font-extrabold text-foreground">Part {activeSectionIdx + 1}</span>
+					<span className="text-sm font-extrabold text-foreground">Part {activeGroup?.part}</span>
 					<span className="text-xs text-muted">
-						đã làm {activeAnswered}/{activeTotal}
+						đã làm {activePartAnswered}/{activePartTotal}
 					</span>
 				</div>
 
 				<div className="flex items-center gap-1.5">
-					{sectionsMeta.map((meta, i) => {
-						const isActive = i === activeSectionIdx
-						const isCurrentlyPlaying = i === playingIdx
+					{partsMeta.map((meta, i) => {
+						const isActive = i === activePartIdx
+						const isCurrentlyPlaying = i === playingPartIdx
 						const pct = meta.total > 0 ? (meta.answered / meta.total) * 100 : 0
 						return (
 							<button
-								key={sorted[i]?.id ?? i}
+								key={meta.part}
 								type="button"
-								onClick={() => setActiveSectionIdx(i)}
+								onClick={() => setActivePartIdx(i)}
 								className={cn(
 									"relative overflow-hidden rounded-(--radius-button) border-2 border-b-4 px-3 pb-2.5 pt-1.5 text-xs font-extrabold transition-all active:translate-y-[2px] active:border-b-2",
 									isActive
@@ -265,12 +334,11 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 								)}
 							>
 								<span className="inline-flex items-center gap-1.5">
-									Part {i + 1}
+									Part {meta.part}
 									<span className="opacity-80">
 										{meta.answered}/{meta.total}
 									</span>
 								</span>
-								{/* Progress underline */}
 								<span
 									className={cn(
 										"absolute inset-x-1 bottom-0.5 overflow-hidden rounded-full transition-all",
@@ -297,9 +365,9 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 					})}
 				</div>
 
-				{activeSectionIdx < sorted.length - 1 ? (
-					<button type="button" onClick={handleNextSection} className="btn btn-primary px-3 py-1.5 text-xs">
-						Part {activeSectionIdx + 2}
+				{activePartIdx < partGroups.length - 1 ? (
+					<button type="button" onClick={handleNextPart} className="btn btn-primary px-3 py-1.5 text-xs">
+						Part {partGroups[activePartIdx + 1]?.part}
 						<svg viewBox="0 0 16 16" className="size-3.5" fill="currentColor" aria-hidden="true">
 							<path d="M6 3l5 5-5 5V3z" />
 						</svg>
@@ -309,7 +377,7 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 				)}
 			</div>
 
-			{/* Global footer — skill indicator + submit/next action */}
+			{/* Global footer */}
 			<div className="z-40 flex h-14 shrink-0 items-center justify-between border-t border-border bg-card px-5">
 				<div className="w-24" />
 				<p className="text-sm font-extrabold text-skill-listening">
