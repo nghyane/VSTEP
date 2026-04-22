@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { createProfile } from "#/features/profile/actions"
+import { createProfile, updateProfile } from "#/features/profile/actions"
+import type { UpdateProfileInput } from "#/features/profile/types"
 import { useAuth } from "#/lib/auth"
 import { useToast } from "#/lib/toast"
 
@@ -17,5 +18,16 @@ export function useProfileMutations() {
 		onSuccess: () => useToast.getState().add("Tạo mục tiêu thành công", "success"),
 	})
 
-	return { doSwitch, doCreate }
+	const doUpdate = useMutation({
+		mutationFn: (vars: { id: string } & UpdateProfileInput) => {
+			const { id, ...input } = vars
+			return updateProfile(id, input)
+		},
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ["profiles"] })
+			useToast.getState().add("Cập nhật hồ sơ thành công", "success")
+		},
+	})
+
+	return { doSwitch, doCreate, doUpdate }
 }
