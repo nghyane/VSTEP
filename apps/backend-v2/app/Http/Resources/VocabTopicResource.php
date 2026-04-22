@@ -28,6 +28,10 @@ class VocabTopicResource extends JsonResource
                 isset($this->resource->words_count),
                 fn () => $this->resource->words_count,
             ),
+            'learned_count' => $this->when(
+                isset($this->resource->learned_count),
+                fn () => $this->resource->learned_count,
+            ),
         ];
     }
 }

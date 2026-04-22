@@ -1,0 +1,22 @@
+﻿# Local development override - khong dung o production
+# Secrets (APP_KEY, JWT_SECRET...) nam trong apps/backend-v2/.env - khong hardcode o day
+services:
+  backend:
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  horizon:
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy

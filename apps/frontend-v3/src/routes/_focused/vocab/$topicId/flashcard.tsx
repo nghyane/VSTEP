@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
+import { useEffect } from "react"
 import { FlashcardCard } from "#/features/vocab/components/FlashcardCard"
 import { FocusBar } from "#/features/vocab/components/FocusBar"
 import { FocusComplete, FocusEmpty } from "#/features/vocab/components/FocusStates"
@@ -12,11 +13,19 @@ export const Route = createFileRoute("/_focused/vocab/$topicId/flashcard")({
 })
 
 function FlashcardPage() {
+	const qc = useQueryClient()
 	const { topicId } = Route.useParams()
 	const { data } = useQuery(vocabTopicDetailQuery(topicId))
 	const words = data ? data.data.words : []
 	const s = useFlashcardSession(words)
 	const back = { backTo: "/luyen-tap/tu-vung/$topicId", backParams: { topicId } }
+
+	useEffect(() => {
+		if (s.status === "done") {
+			qc.removeQueries({ queryKey: ["vocab", "topics", topicId] })
+			qc.removeQueries({ queryKey: ["vocab", "topics"], exact: true })
+		}
+	}, [s.status, qc, topicId])
 
 	if (!data) return <Loading {...back} />
 

@@ -14,3 +14,5 @@
 - 2025-04-21: Created fsrs-migration.md — FSRS v6 replaces SM-2, state model, frontend impact
 - 2025-04-21: Created srs-lessons.md — research first, fix root cause, RFC for cross-cutting changes
 - 2025-04-21: Created practice-ux.md — transcript free in practice, listening layout decisions
+- 2026-04-22: Updated anti-patterns.md — Biome formatter JSX inline rule (lineWidth 110, bunx biome check after every edit)
+- 2026-04-22: Updated anti-patterns.md — useMediaCaption no-suppress, useReducer Map/Set generics, exam device-check phase mandatory

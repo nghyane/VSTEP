@@ -24,10 +24,15 @@ export default function AppLayout() {
       <Stack.Screen name="submissions/[id]" options={{ headerShown: true, title: "Chi tiết bài nộp" }} />
       <Stack.Screen name="practice/index" />
       <Stack.Screen name="practice/foundation/index" />
+      <Stack.Screen name="practice/grammar/index" />
       <Stack.Screen name="practice/skills" />
       <Stack.Screen name="practice/[skill]" />
       <Stack.Screen name="practice/result/[id]" />
       <Stack.Screen name="vocabulary/index" />
+      <Stack.Screen name="vocabulary/[id]" />
+      <Stack.Screen name="vocabulary/srs-review" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="vocabulary/[id]/flashcard" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="vocabulary/[id]/exercise" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="account" options={{ headerShown: true, title: "Tài khoản" }} />
       <Stack.Screen name="goal" options={{ headerShown: true, title: "Mục tiêu học tập" }} />
     </Stack>

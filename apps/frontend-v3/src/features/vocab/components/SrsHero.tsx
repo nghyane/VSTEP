@@ -29,26 +29,20 @@ export function SrsHero() {
 				<div className="flex-1">
 					{totalDue > 0 ? (
 						<>
-							<h2 className="font-extrabold text-2xl text-foreground mb-3">Ôn tập hôm nay</h2>
-							<div className="flex gap-4 mb-5">
-								{queue.new_count > 0 && (
-									<span className="text-sm font-bold text-info">{queue.new_count} mới</span>
-								)}
-								{queue.learning_count > 0 && (
-									<span className="text-sm font-bold text-warning">{queue.learning_count} đang học</span>
-								)}
-								{queue.review_count > 0 && (
-									<span className="text-sm font-bold text-primary">{queue.review_count} ôn tập</span>
-								)}
-							</div>
+							<h2 className="font-extrabold text-2xl text-foreground mb-1">Ôn tập từ vựng</h2>
+							<p className="text-sm text-muted mb-4">
+								Bạn có {totalDue} từ cần ôn lại hôm nay để không bị quên
+							</p>
 							<Link to="/vocab/srs-review" className="btn btn-primary px-8 py-3 text-base">
-								Bắt đầu · {totalDue} từ
+								Bắt đầu ôn tập
 							</Link>
 						</>
 					) : (
 						<>
-							<h2 className="font-extrabold text-2xl text-foreground mb-2">Hôm nay đã ôn xong!</h2>
-							<p className="text-muted">Quay lại vào ngày mai hoặc chọn chủ đề mới bên dưới.</p>
+							<h2 className="font-extrabold text-2xl text-foreground mb-1">Tuyệt vời!</h2>
+							<p className="text-sm text-muted">
+								Bạn đã ôn xong tất cả từ vựng hôm nay. Hẹn gặp lại vào ngày mai!
+							</p>
 						</>
 					)}
 				</div>

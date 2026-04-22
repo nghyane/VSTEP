@@ -163,4 +163,51 @@
 	.card-interactive:hover {
 		transform: translateY(-2px);
 	}
+
+	/* ─── Duration slider ─── */
+	.duration-slider {
+		-webkit-appearance: none;
+		appearance: none;
+		height: 6px;
+		border-radius: 3px;
+		outline: none;
+		cursor: pointer;
+		background: linear-gradient(
+			to right,
+			var(--color-primary) 0%,
+			var(--color-primary) var(--fill-pct, 0%),
+			var(--color-border) var(--fill-pct, 0%),
+			var(--color-border) 100%
+		);
+	}
+	.duration-slider::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 18px;
+		height: 18px;
+		border-radius: 50%;
+		background: var(--color-primary);
+		box-shadow: 0 2px 0 var(--color-primary-dark);
+		border: 2px solid white;
+		transition: transform 0.1s;
+		cursor: grab;
+	}
+	.duration-slider::-webkit-slider-thumb:active {
+		transform: scale(1.2);
+		cursor: grabbing;
+	}
+	.duration-slider::-moz-range-thumb {
+		width: 18px;
+		height: 18px;
+		border-radius: 50%;
+		background: var(--color-primary);
+		box-shadow: 0 2px 0 var(--color-primary-dark);
+		border: 2px solid white;
+		cursor: grab;
+	}
+	.duration-slider::-moz-range-progress {
+		background: var(--color-primary);
+		height: 6px;
+		border-radius: 3px;
+	}
 }
