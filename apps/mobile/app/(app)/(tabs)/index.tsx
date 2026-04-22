@@ -10,11 +10,10 @@ import { SpiderChart } from "@/components/SpiderChart";
 import { ActivityHeatmap } from "@/components/ActivityHeatmap";
 import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
 import { useAuth } from "@/hooks/use-auth";
-import { useProgress, useActivity, usePracticeTrack } from "@/hooks/use-progress";
+import { useProgress, useActivity, useStreak } from "@/hooks/use-progress";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
 import { depthNeutral, depthSemantic } from "@/theme/depth";
 import type { Skill } from "@/types/api";
-import { MOCK_OVERVIEW_STATS, MOCK_PRACTICE_TRACK } from "@/lib/mock";
 import { GameIcon } from "@/components/GameIcon";
 import { useCoins } from "@/features/coin/coin-store";
 import { StreakButton } from "@/features/streak/StreakButton";
@@ -32,11 +31,15 @@ export default function OverviewScreen() {
   const [topUpVisible, setTopUpVisible] = useState(false);
   const coins = useCoins();
   const { data: progress } = useProgress();
-  const { data: activity } = useActivity(90);
+  const { data: activity } = useActivity();
+  const { data: streakData } = useStreak();
 
   const fullName = user?.fullName ?? "Học viên";
   const initials = fullName.split(" ").map((w) => w[0]).join("").slice(-2).toUpperCase();
-  const stats = MOCK_OVERVIEW_STATS;
+  const skills: { skill: string; attemptCount: number }[] = [];
+  const goal = progress?.profile ?? null;
+  const weakestSkill: string | null = null;
+  const daysLeft = progress?.profile?.daysUntilExam ?? null;
 
   return (
     <ScrollView style={[s.root, { backgroundColor: c.background }]} contentContainerStyle={[s.scroll, { paddingTop: insets.top }]}>
@@ -44,7 +47,7 @@ export default function OverviewScreen() {
       <View style={s.topBar}>
         <Text style={[s.topBarTitle, { color: c.foreground }]}>Tổng quan</Text>
         <View style={s.topBarRight}>
-          <StreakButton streak={activity?.streak ?? 0} activityByDay={(activity as any)?.activityByDay ?? {}} />
+          <StreakButton streak={streakData?.currentStreak ?? 0} activityByDay={{}} />
           <HapticTouchable style={[s.coinBadge, { backgroundColor: c.coin + "15" }]} onPress={() => setTopUpVisible(true)}>
             <GameIcon name="coin" size={16} />
             <Text style={[s.coinBadgeText, { color: c.coinDark }]}>{coins}</Text>
@@ -64,7 +67,7 @@ export default function OverviewScreen() {
           <View style={s.avatar}><Text style={s.avatarText}>{initials}</Text></View>
           <View style={{ flex: 1 }}>
             <Text style={s.greeting}>Hi, {fullName}</Text>
-            <Text style={s.greetingSub}>Còn <Text style={{ fontFamily: fontFamily.bold }}>{stats.daysLeft} ngày</Text> diễn ra kỳ thi. Giữ vững nhé!</Text>
+            <Text style={s.greetingSub}>Còn <Text style={{ fontFamily: fontFamily.bold }}>{daysLeft != null ? daysLeft + " ngày" : "—"}</Text> diễn ra kỳ thi. Giữ vững nhé!</Text>
           </View>
         </View>
         <View style={s.levelTrack}>
@@ -83,7 +86,7 @@ export default function OverviewScreen() {
 
       {/* ── Tab Content ── */}
       <View style={{ paddingHorizontal: spacing.xl, marginTop: spacing.base }}>
-        {tab === "overview" ? <OverviewTab stats={stats} /> : <PracticeTrackTab />}
+        {tab === "overview" ? <OverviewTab /> : <PracticeTrackTab />}
       </View>
 
       <View style={{ height: insets.bottom + 40 }} />
@@ -104,10 +107,10 @@ function LevelDot({ label, value, variant }: { label: string; value: string; var
 
 // ─── Overview Tab ─────────────────────────────────────────────────
 
-function OverviewTab({ stats }: { stats: typeof MOCK_OVERVIEW_STATS }) {
+function OverviewTab() {
   const c = useThemeColors();
   const { data: progress } = useProgress();
-  const skills = progress?.skills ?? [];
+  const totalTests = progress?.stats?.totalTests ?? 0;
   const spider = {
     listening: { current: 6.2, trend: "up" },
     reading: { current: 7.1, trend: "stable" },
@@ -124,14 +127,14 @@ function OverviewTab({ stats }: { stats: typeof MOCK_OVERVIEW_STATS }) {
     <View style={{ gap: spacing.base }}>
       {/* Stat Grid */}
       <View style={s.statGrid}>
-        <StatCard icon="scale-outline" label="Band còn thiếu" value={stats.avgScore > 0 ? `+${stats.bandGap.toFixed(1)}` : "—"} color={c.primary} />
-        <StatCard icon={stats.trend === "up" ? "trending-up-outline" : stats.trend === "down" ? "trending-down-outline" : "swap-horizontal-outline"} label="Xu hướng" value={trendLabel[stats.trend] ?? "—"} color={trendColor[stats.trend] ?? c.mutedForeground} />
-        <StatCard icon="checkmark-done-outline" label="Tổng bài test" value={String(stats.totalTests)} color={c.success} />
-        <StatCard icon="alert-circle-outline" label="Kỹ năng yếu" value={stats.weakestSkill ? weakLabel[stats.weakestSkill] ?? "—" : "—"} color={c.foreground} />
+        <StatCard icon="scale-outline" label="Band còn thiếu" value={"—"} color={c.primary} />
+        <StatCard icon="swap-horizontal-outline" label="Xu hướng" value="—" color={c.mutedForeground} />
+        <StatCard icon="checkmark-done-outline" label="Tổng bài test" value={String(totalTests)} color={c.success} />
+        <StatCard icon="alert-circle-outline" label="Kỹ năng yếu" value="—" color={c.foreground} />
       </View>
 
       {/* Exam Countdown */}
-      <ExamCountdown daysLeft={stats.daysLeft} />
+      {progress?.profile?.daysUntilExam != null && <ExamCountdown daysLeft={progress.profile.daysUntilExam} />}
 
       {/* Spider Chart */}
       <View style={[s.card, { }]}>
@@ -139,28 +142,6 @@ function OverviewTab({ stats }: { stats: typeof MOCK_OVERVIEW_STATS }) {
         <SpiderChart skills={spider} />
       </View>
 
-      {/* Doughnut Chart */}
-      <View style={[s.card, { }]}>
-        <Text style={[s.cardTitle, { color: c.foreground }]}>Phân bố bài tập</Text>
-        <View style={s.doughnutRow}>
-          {(["listening", "reading", "writing", "speaking"] as Skill[]).map((sk) => {
-            const info = skills.find((si: any) => si.skill === sk);
-            const count = info?.attemptCount ?? 0;
-            const total = skills.reduce((sum: number, si: any) => sum + (si.attemptCount ?? 0), 0) || 1;
-            const pct = Math.round((count / total) * 100);
-            const skColor = c[`skill${sk.charAt(0).toUpperCase() + sk.slice(1)}` as keyof typeof c] ?? c.primary;
-            return (
-              <View key={sk} style={s.doughnutItem}>
-                <View style={[s.doughnutBar, { backgroundColor: c.muted }]}>
-                  <View style={[s.doughnutFill, { backgroundColor: skColor, height: `${Math.max(pct, 5)}%` }]} />
-                </View>
-                <Text style={[s.doughnutLabel, { color: c.mutedForeground }]}>{SKILL_LABELS[sk]}</Text>
-                <Text style={[s.doughnutPct, { color: skColor }]}>{pct}%</Text>
-              </View>
-            );
-          })}
-        </View>
-      </View>
 
       {/* Activity Heatmap */}
       <ActivityHeatmap />
@@ -230,7 +211,6 @@ function ExamCountdown({ daysLeft }: { daysLeft: number }) {
 
 function PracticeTrackTab() {
   const c = useThemeColors();
-  const data = MOCK_PRACTICE_TRACK;
   const SKILLS: Skill[] = ["listening", "reading", "writing", "speaking"];
 
   return (
@@ -240,8 +220,7 @@ function PracticeTrackTab() {
         <Text style={[s.cardTitle, { color: c.foreground }]}>Điểm trung bình hàng tuần</Text>
         <View style={s.scoreGrid}>
           {SKILLS.map((sk) => {
-            const info = data.skills.find((s) => s.skill === sk);
-            const score = data.spider[sk]?.current ?? 0;
+            const score = chart[sk] ?? 0;
             const color = useSkillColor(sk);
             return (
               <View key={sk} style={[s.scoreCard, { borderColor: c.border, backgroundColor: c.card }]}>
@@ -260,11 +239,11 @@ function PracticeTrackTab() {
       {/* Test history */}
       <View style={[s.card, { }]}>
         <Text style={[s.cardTitle, { color: c.foreground }]}>Lịch sử Test Practice</Text>
-        {data.testSessions.length === 0 ? (
+        {true ? (
           <Text style={[s.emptyText, { color: c.mutedForeground }]}>Chưa có lịch sử test</Text>
         ) : (
           <View style={{ gap: spacing.sm }}>
-            {data.testSessions.map((sess) => {
+            {[].map((sess: any) => {
               const scores = [
                 sess.listeningScore != null && { skill: "listening" as Skill, score: sess.listeningScore },
                 sess.readingScore != null && { skill: "reading" as Skill, score: sess.readingScore },

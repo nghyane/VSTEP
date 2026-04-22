@@ -38,7 +38,7 @@ export default function ProfileScreen() {
   const u = userData ?? authUser;
   if (!u) return null;
 
-  const initials = (u.fullName ?? u.email)
+  const initials = (u.fullName ?? u.email ?? "")
     .split(" ")
     .map((w: string) => w[0])
     .slice(0, 2)

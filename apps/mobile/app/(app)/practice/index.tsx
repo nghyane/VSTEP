@@ -8,6 +8,7 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
 import { useProgress } from "@/hooks/use-progress";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize } from "@/theme";
+import { Mascot } from "@/components/Mascot";
 import type { Skill } from "@/types/api";
 
 const SKILL_ORDER: Skill[] = ["listening", "reading", "writing", "speaking"];
@@ -110,7 +111,8 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { padding: spacing.xl, paddingBottom: spacing["3xl"] },
   title: { fontSize: fontSize["2xl"], fontWeight: "700" },
-  subtitle: { fontSize: fontSize.sm, marginTop: spacing.xs, marginBottom: spacing.xl },
+  subtitle: { fontSize: fontSize.sm, marginTop: spacing.xs, marginBottom: spacing.base },
+  hero: { alignItems: "center", marginBottom: spacing.base },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
   card: {
     width: "48%",

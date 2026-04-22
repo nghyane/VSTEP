@@ -1,7 +1,7 @@
-import type { AuthUser, LoginResponse } from "@/types/api";
+import type { AuthUser, AuthResponse, Profile } from "@/types/api";
 import { getAccessToken, getRefreshToken, saveTokens, clearTokens } from "./auth";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://5.223.87.142:3000";
+const API_URL = process.env.EXPO_PUBLIC_API_URL || "https://api.vstepgo.com";
 
 // ---------------------------------------------------------------------------
 // snake_case ↔ camelCase transforms (for Laravel ↔ React Native convention bridge)
@@ -68,7 +68,7 @@ function unwrapData(obj: unknown): unknown {
 // ---------------------------------------------------------------------------
 
 function buildUrl(path: string): string {
-  return `${API_URL}${path.replace(/^\/api\//, "/api/v1/")}`;
+  return `${API_URL}${path}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -197,12 +197,12 @@ async function authRequest<T>(path: string, options: RequestInit = {}): Promise<
     }
 
     if (!refreshPromise) {
-      refreshPromise = request<{ accessToken: string; refreshToken: string; user: AuthUser }>("/api/auth/refresh", {
+      refreshPromise = request<{ accessToken: string; refreshToken: string; user: AuthUser; profile: Profile | null }>("/api/v1/auth/refresh", {
         method: "POST",
         body: JSON.stringify({ refreshToken: refresh }),
       })
         .then(async (res) => {
-          await saveTokens(res.accessToken, res.refreshToken, res.user);
+          await saveTokens(res.accessToken, res.refreshToken, res.user, res.profile);
         })
         .catch(async () => {
           await clearTokens();
@@ -290,21 +290,21 @@ export const api = {
 // ---------------------------------------------------------------------------
 
 export function loginApi(email: string, password: string) {
-  return request<LoginResponse>("/api/auth/login", {
+  return request<AuthResponse>("/api/v1/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
 }
 
-export function registerApi(email: string, password: string, fullName?: string) {
-  return request<{ user: AuthUser; message: string }>("/api/auth/register", {
+export function registerApi(email: string, password: string, nickname: string, targetLevel: string, targetDeadline: string) {
+  return request<AuthResponse>("/api/v1/auth/register", {
     method: "POST",
-    body: JSON.stringify({ email, password, fullName }),
+    body: JSON.stringify({ email, password, nickname, target_level: targetLevel, target_deadline: targetDeadline }),
   });
 }
 
 export function logoutApi(refreshToken: string, accessToken: string) {
-  return request<{ success: boolean }>("/api/auth/logout", {
+  return request<{ success: boolean }>("/api/v1/auth/logout", {
     method: "POST",
     body: JSON.stringify({ refreshToken }),
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -312,7 +312,7 @@ export function logoutApi(refreshToken: string, accessToken: string) {
 }
 
 export function getMeApi(accessToken: string) {
-  return request<AuthUser>("/api/auth/me", {
+  return request<AuthUser>("/api/v1/auth/me", {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 }
