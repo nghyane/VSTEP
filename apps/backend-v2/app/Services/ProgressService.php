@@ -193,7 +193,6 @@ class ProgressService
      */
     private function computeChart(Profile $profile, int $windowSize): array
     {
-        // Phase 1: return mock averages. Phase 2: compute from grading results per skill.
         $sessions = ExamSession::query()
             ->where('profile_id', $profile->id)
             ->whereIn('mode', ['custom', 'full'])
@@ -202,17 +201,47 @@ class ProgressService
             ->limit($windowSize)
             ->pluck('id');
 
-        $avgBand = WritingGradingResult::query()
-            ->whereIn('submission_id', $sessions)
+        $writingSubIds = DB::table('exam_writing_submissions')
+            ->whereIn('session_id', $sessions)
+            ->pluck('id');
+
+        $avgWriting = WritingGradingResult::query()
+            ->where('submission_type', 'exam_writing')
+            ->whereIn('submission_id', $writingSubIds)
             ->where('is_active', true)
             ->avg('overall_band');
 
+        $listeningAvg = $this->mcqAvgBand($sessions, 'listening');
+        $readingAvg = $this->mcqAvgBand($sessions, 'reading');
+
         return [
-            'listening' => null,
-            'reading' => null,
-            'writing' => $avgBand ? round((float) $avgBand, 1) : null,
+            'listening' => $listeningAvg,
+            'reading' => $readingAvg,
+            'writing' => $avgWriting ? round((float) $avgWriting, 1) : null,
             'speaking' => null,
             'sample_size' => $sessions->count(),
         ];
+    }
+
+    private function mcqAvgBand(\Illuminate\Support\Collection $sessionIds, string $skill): ?float
+    {
+        if ($sessionIds->isEmpty()) {
+            return null;
+        }
+
+        $results = DB::table('exam_mcq_answers')
+            ->whereIn('session_id', $sessionIds)
+            ->where('item_ref_type', $skill)
+            ->selectRaw('session_id, count(*) as total, sum(case when is_correct then 1 else 0 end) as correct')
+            ->groupBy('session_id')
+            ->get();
+
+        if ($results->isEmpty()) {
+            return null;
+        }
+
+        $bands = $results->map(fn ($r) => round($r->correct / $r->total * 10, 1));
+
+        return round($bands->avg(), 1);
     }
 }

@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\DTOs\ExamSubmitResult;
 use App\Enums\CoinTransactionType;
 use App\Models\Exam;
 use App\Models\ExamMcqAnswer;
 use App\Models\ExamSession;
+use App\Models\ExamSpeakingSubmission;
 use App\Models\ExamVersion;
+use App\Models\ExamWritingSubmission;
 use App\Models\Profile;
 use App\Models\SpeakingGradingResult;
 use App\Models\SystemConfig;
@@ -22,6 +25,7 @@ class ExamService
 {
     public function __construct(
         private readonly WalletService $walletService,
+        private readonly GradingService $gradingService,
     ) {}
 
     /** @return Collection<int,Exam> */
@@ -125,16 +129,19 @@ class ExamService
     }
 
     /**
-     * Submit exam. Chấm MCQ sync. Writing/speaking grading sẽ dispatch ở Slice 8.
+     * Submit exam. Chấm MCQ sync. Writing/speaking → tạo submission + dispatch grading jobs.
      *
      * @param  array<int,array{item_ref_type:string,item_ref_id:string,selected_index:int}>  $mcqAnswers
-     * @return array{session: ExamSession, mcq_score: int, mcq_total: int}
+     * @param  array<int,array{task_id:string,text:string,word_count:int}>  $writingAnswers
+     * @param  array<int,array{part_id:string,audio_url:string,duration_seconds:int}>  $speakingAnswers
      */
     public function submit(
         Profile $profile,
         ExamSession $session,
         array $mcqAnswers = [],
-    ): array {
+        array $writingAnswers = [],
+        array $speakingAnswers = [],
+    ): ExamSubmitResult {
         if ($session->profile_id !== $profile->id) {
             abort(403);
         }
@@ -142,7 +149,9 @@ class ExamService
             throw ValidationException::withMessages(['session' => ['Session not active.']]);
         }
 
-        return DB::transaction(function () use ($session, $mcqAnswers) {
+        return DB::transaction(function () use ($session, $mcqAnswers, $writingAnswers, $speakingAnswers) {
+            // ── 1. MCQ grading (sync) ──
+            $mcqPerItemResults = [];
             $mcqScore = 0;
             $mcqTotal = 0;
 
@@ -166,6 +175,14 @@ class ExamService
                     ['session_id' => $session->id, 'item_ref_type' => $refType, 'item_ref_id' => $refId],
                     ['selected_index' => $selected, 'is_correct' => $isCorrect, 'answered_at' => now()],
                 );
+
+                $mcqPerItemResults[] = [
+                    'item_ref_type' => $refType,
+                    'item_ref_id' => $refId,
+                    'selected_index' => $selected,
+                    'correct_index' => $correctIndex,
+                    'is_correct' => $isCorrect,
+                ];
             }
 
             $session->update([
@@ -173,11 +190,52 @@ class ExamService
                 'submitted_at' => now(),
             ]);
 
-            return [
-                'session' => $session->refresh(),
-                'mcq_score' => $mcqScore,
-                'mcq_total' => $mcqTotal,
-            ];
+            // ── 2. Writing submissions + grading jobs ──
+            $writingJobs = [];
+            foreach ($writingAnswers as $w) {
+                $submission = ExamWritingSubmission::create([
+                    'session_id' => $session->id,
+                    'profile_id' => $session->profile_id,
+                    'task_id' => $w['task_id'],
+                    'text' => $w['text'],
+                    'word_count' => $w['word_count'],
+                    'submitted_at' => now(),
+                ]);
+                $job = $this->gradingService->enqueueWritingGrading('exam_writing', $submission->id);
+                $writingJobs[] = [
+                    'submission_id' => $submission->id,
+                    'job_id' => $job->id,
+                    'status' => $job->status,
+                ];
+            }
+
+            // ── 3. Speaking submissions + grading jobs ──
+            $speakingJobs = [];
+            foreach ($speakingAnswers as $s) {
+                $submission = ExamSpeakingSubmission::create([
+                    'session_id' => $session->id,
+                    'profile_id' => $session->profile_id,
+                    'part_id' => $s['part_id'],
+                    'audio_url' => $s['audio_url'],
+                    'duration_seconds' => $s['duration_seconds'],
+                    'submitted_at' => now(),
+                ]);
+                $job = $this->gradingService->enqueueSpeakingGrading('exam_speaking', $submission->id);
+                $speakingJobs[] = [
+                    'submission_id' => $submission->id,
+                    'job_id' => $job->id,
+                    'status' => $job->status,
+                ];
+            }
+
+            return new ExamSubmitResult(
+                $session->refresh(),
+                $mcqScore,
+                $mcqTotal,
+                $mcqPerItemResults,
+                $writingJobs,
+                $speakingJobs,
+            );
         });
     }
 

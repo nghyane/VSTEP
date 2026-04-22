@@ -9,9 +9,10 @@ import { useAuth } from "#/lib/auth"
 type AuthParam = "login" | "register" | undefined
 
 export const Route = createFileRoute("/")({
-	validateSearch: (s: Record<string, unknown>): { auth?: AuthParam } => {
-		if (s.auth === "login" || s.auth === "register") return { auth: s.auth }
-		return {}
+	validateSearch: (s: Record<string, unknown>): { auth?: AuthParam; redirect?: string } => {
+		const auth = s.auth === "login" || s.auth === "register" ? s.auth : undefined
+		const redirect = typeof s.redirect === "string" ? s.redirect : undefined
+		return { auth, redirect }
 	},
 	component: LandingPage,
 })
@@ -19,11 +20,11 @@ export const Route = createFileRoute("/")({
 function LandingPage() {
 	const status = useAuth((s) => s.status)
 	const navigate = useNavigate()
-	const { auth } = Route.useSearch()
+	const { auth, redirect: redirectTo } = Route.useSearch()
 
 	useEffect(() => {
-		if (status === "authenticated") navigate({ to: "/dashboard" })
-	}, [status, navigate])
+		if (status === "authenticated") navigate({ to: redirectTo || "/dashboard" })
+	}, [status, navigate, redirectTo])
 
 	return (
 		<div className="min-h-screen bg-surface">

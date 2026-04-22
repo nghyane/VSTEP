@@ -19,7 +19,7 @@ function SpeakingGradingPage() {
 			</div>
 			<div className="flex-1 overflow-y-auto">
 				<div className="max-w-2xl mx-auto px-4 py-6">
-					<SpeakingResult submissionId={submissionId} backTo="/luyen-tap/noi" />
+					<SpeakingResult submissionId={submissionId} />
 				</div>
 			</div>
 		</div>

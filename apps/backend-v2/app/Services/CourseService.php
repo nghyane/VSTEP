@@ -19,6 +19,7 @@ class CourseService
 {
     public function __construct(
         private readonly WalletService $walletService,
+        private readonly NotificationService $notificationService,
     ) {}
 
     /** @return Collection<int,Course> */
@@ -59,6 +60,15 @@ class CourseService
             if ($course->bonus_coins > 0) {
                 $this->walletService->credit($profile, $course->bonus_coins, CoinTransactionType::OnboardingBonus, $enrollment, ['reason' => 'course_bonus']);
             }
+
+            DB::afterCommit(fn () => $this->notificationService->push(
+                profile: $profile,
+                type: 'course_enrolled',
+                title: 'Ghi danh thành công',
+                body: "Bạn đã tham gia khóa {$course->title}.",
+                iconKey: 'book',
+                dedupKey: "course_enroll:{$course->id}:{$profile->id}",
+            ));
 
             return $enrollment;
         });
@@ -122,7 +132,7 @@ class CourseService
             throw ValidationException::withMessages(['slots' => ['Maximum booking limit reached.']]);
         }
 
-        return DB::transaction(function () use ($profile, $slot, $submissionType, $submissionId) {
+        return DB::transaction(function () use ($profile, $course, $slot, $submissionType, $submissionId) {
             $locked = TeacherSlot::query()->whereKey($slot->id)->lockForUpdate()->first();
             if ($locked->status !== 'open') {
                 throw ValidationException::withMessages(['slot' => ['Slot no longer available.']]);
@@ -130,7 +140,7 @@ class CourseService
 
             $locked->update(['status' => 'booked']);
 
-            return TeacherBooking::create([
+            $booking = TeacherBooking::create([
                 'slot_id' => $slot->id,
                 'profile_id' => $profile->id,
                 'submission_type' => $submissionType,
@@ -138,6 +148,17 @@ class CourseService
                 'status' => 'booked',
                 'booked_at' => now(),
             ]);
+
+            DB::afterCommit(fn () => $this->notificationService->push(
+                profile: $profile,
+                type: 'booking_created',
+                title: 'Đặt lịch thành công',
+                body: 'Lịch hẹn đã được xác nhận. Chờ giáo viên gửi link meeting.',
+                iconKey: 'calendar',
+                dedupKey: "booking:{$booking->id}",
+            ));
+
+            return $booking;
         });
     }
 }
