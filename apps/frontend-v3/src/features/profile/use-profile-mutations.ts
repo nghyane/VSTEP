@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { createProfile } from "#/features/profile/actions"
 import { useAuth } from "#/lib/auth"
+import { useToast } from "#/lib/toast"
 
 export function useProfileMutations() {
 	const qc = useQueryClient()
@@ -13,6 +14,7 @@ export function useProfileMutations() {
 
 	const doCreate = useMutation({
 		mutationFn: createProfile,
+		onSuccess: () => useToast.getState().add("Tạo mục tiêu thành công", "success"),
 	})
 
 	return { doSwitch, doCreate }
