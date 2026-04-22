@@ -54,7 +54,7 @@ export default function SkillDetailScreen() {
 
       {/* Info card */}
       <DepthCard variant="skill" skillColor={color} style={s.infoCard}>
-        <Text style={[s.infoTitle, { color }]}>Thong tin ky nang</Text>
+        <Text style={[s.infoTitle, { color }]}>Thông tin kỹ năng</Text>
         <Text style={[s.infoText, { color: c.mutedForeground }]}>
           {getSkillInfo(skill)}
         </Text>
@@ -62,7 +62,7 @@ export default function SkillDetailScreen() {
 
       {/* Recommendations */}
       <DepthCard style={s.recoCard}>
-        <Text style={[s.recoTitle, { color: c.foreground }]}>Goi y luyen tap</Text>
+        <Text style={[s.recoTitle, { color: c.foreground }]}>Gợi ý luyện tập</Text>
         {getRecommendations(skill).map((r, i) => (
           <View key={i} style={[s.recoRow, { borderBottomColor: c.borderLight }]}>
             <View style={[s.recoDot, { backgroundColor: color }]} />
@@ -76,7 +76,7 @@ export default function SkillDetailScreen() {
         size="lg"
         onPress={() => router.push(`/(app)/practice/${skill}` as any)}
       >
-        Luyen tap ngay
+        LUYỆN TẬP NGAY
       </DepthButton>
 
       <View style={{ height: insets.bottom + 40 }} />
@@ -86,19 +86,19 @@ export default function SkillDetailScreen() {
 
 function getSkillInfo(skill: Skill): string {
   switch (skill) {
-    case "listening": return "Bai nghe VSTEP kiem tra kha nang hieu hoi thoai va bai giang. Gom 3 phan voi do kho tang dan.";
-    case "reading":   return "Bai doc VSTEP kiem tra kha nang hieu van ban. Gom 3 phan: van ban ngan, trung binh va dai.";
-    case "writing":   return "Bai viet VSTEP gom 2 phan: viet thu chinh thuc va bai luan phan tich.";
-    case "speaking":  return "Bai noi VSTEP kiem tra kha nang giao tiep tu phong van theo trinh do A2 den C1.";
+    case "listening": return "Bài nghe VSTEP kiểm tra khả năng hiểu hội thoại và bài giảng. Gồm 3 phần với độ khó tăng dần.";
+    case "reading":   return "Bài đọc VSTEP kiểm tra khả năng hiểu văn bản. Gồm 3 phần: văn bản ngắn, trung bình và dài.";
+    case "writing":   return "Bài viết VSTEP gồm 2 phần: viết thư chính thức và bài luận phân tích.";
+    case "speaking":  return "Bài nói VSTEP kiểm tra khả năng giao tiếp từ phỏng vấn theo trình độ A2 đến C1.";
   }
 }
 
 function getRecommendations(skill: Skill): string[] {
   switch (skill) {
-    case "listening": return ["Nghe podcast tieng Anh hang ngay 15 phut", "Luyen nghe chep chinh ta", "Chu y tu noi lien, am nuoc anh/my"];
-    case "reading":   return ["Doc bao tieng Anh 10 phut moi ngay", "Luyen ky nang skimming va scanning", "Mo rong tu vung theo chu de"];
-    case "writing":   return ["Viet diary tieng Anh moi ngay", "Hoc cau truc thu chinh thuc", "Luyen viet luan theo mau IELTS/VSTEP"];
-    case "speaking":  return ["Luyen noi to voi chinh minh", "Xem TED talks va bắt chước cach noi", "Ghi am ban than de kiem tra"];
+    case "listening": return ["Nghe podcast tiếng Anh hàng ngày 15 phút", "Luyện nghe chép chính tả", "Chú ý từ nối liền, âm nước Anh/Mỹ"];
+    case "reading":   return ["Đọc báo tiếng Anh 10 phút mỗi ngày", "Luyện kỹ năng skimming và scanning", "Mở rộng từ vựng theo chủ đề"];
+    case "writing":   return ["Viết diary tiếng Anh mỗi ngày", "Học cấu trúc thư chính thức", "Luyện viết luận theo mẫu IELTS/VSTEP"];
+    case "speaking":  return ["Luyện nói to với chính mình", "Xem TED talks và bắt chước cách nói", "Ghi âm bản thân để kiểm tra"];
   }
 }
 

@@ -144,7 +144,7 @@ export default function PracticeHubScreen() {
             ))}
           </View>
 
-          <View style={[styles.branchCta, { backgroundColor: c.info }]}>
+          <View style={[styles.branchCta, { backgroundColor: c.info, borderBottomColor: "#0E7ABF" }]}>
             <Text style={styles.branchCtaText}>Bắt đầu luyện kỹ năng</Text>
             <Ionicons name="arrow-forward" size={16} color="#FFF" />
           </View>
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
   chipText: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
   skillIconRow: { flexDirection: "row", gap: spacing.sm },
   skillIconWrap: { width: 40, height: 40, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
-  branchCta: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, paddingVertical: spacing.md, borderRadius: radius.xl },
+  branchCta: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, paddingVertical: spacing.md, borderRadius: radius.xl, borderWidth: 0, borderBottomWidth: 4, borderBottomColor: "#3D8B00" },
   branchCtaText: { color: "#FFF", fontSize: fontSize.sm, fontFamily: fontFamily.bold, letterSpacing: 0.3 },
   mascotRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginTop: spacing.sm },
   mascotBubble: { flex: 1, borderWidth: 1.5, borderRadius: radius.xl, padding: spacing.md },

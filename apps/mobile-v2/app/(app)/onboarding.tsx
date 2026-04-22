@@ -5,13 +5,13 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Mascot, type MascotName } from "@/components/Mascot";
 import { DepthButton } from "@/components/DepthButton";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 type Level = "B1" | "B2" | "C1";
@@ -71,13 +71,13 @@ export default function OnboardingScreen() {
       {/* Header */}
       <View style={[s.header, { paddingTop: insets.top + spacing.base }]}>
         {step > 0 ? (
-          <TouchableOpacity onPress={back} style={s.backBtn}>
+          <HapticTouchable onPress={back} style={s.backBtn} scalePress>
             <Text style={[s.backText, { color: c.mutedForeground }]}>Quay lại</Text>
-          </TouchableOpacity>
+          </HapticTouchable>
         ) : (
-          <TouchableOpacity onPress={() => router.replace("/(app)/(tabs)")} style={s.backBtn}>
+          <HapticTouchable onPress={() => router.replace("/(app)/(tabs)")} style={s.backBtn} scalePress>
             <Text style={[s.backText, { color: c.mutedForeground }]}>Bỏ qua</Text>
-          </TouchableOpacity>
+          </HapticTouchable>
         )}
         <Text style={[s.stepText, { color: c.subtle }]}>
           {step + 1}/{STEP_META.length}
@@ -104,16 +104,16 @@ export default function OnboardingScreen() {
           </View>
 
           <Text style={[s.title, { color: c.foreground }]}>
-            {step === 0 && "Chào mừng đến VSTEP!"}
-            {step === 1 && "Chọn band mục tiêu"}
-            {step === 2 && "Thời gian học mỗi ngày"}
-            {step === 3 && "Thời hạn hoàn thành"}
+            {step === 0 ? "Chào mừng đến VSTEP!" : null}
+            {step === 1 ? "Chọn band mục tiêu" : null}
+            {step === 2 ? "Thời gian học mỗi ngày" : null}
+            {step === 3 ? "Thời hạn hoàn thành" : null}
           </Text>
           <Text style={[s.desc, { color: c.mutedForeground }]}>
-            {step === 0 && "Hành trình chinh phục chứng chỉ tiếng Anh bắt đầu từ đây."}
-            {step === 1 && "Band VSTEP bạn muốn đạt được?"}
-            {step === 2 && "Bạn có thể dành bao nhiêu phút mỗi ngày?"}
-            {step === 3 && "Khi nào bạn muốn hoàn thành mục tiêu?"}
+            {step === 0 ? "Hành trình chinh phục chứng chỉ tiếng Anh bắt đầu từ đây." : null}
+            {step === 1 ? "Band VSTEP bạn muốn đạt được?" : null}
+            {step === 2 ? "Bạn có thể dành bao nhiêu phút mỗi ngày?" : null}
+            {step === 3 ? "Khi nào bạn muốn hoàn thành mục tiêu?" : null}
           </Text>
 
           {/* Step 0: Welcome */}
@@ -137,10 +137,10 @@ export default function OnboardingScreen() {
               {(["B1", "B2", "C1"] as Level[]).map((lvl, i) => {
                 const selected = target === lvl;
                 return (
-                  <TouchableOpacity
+                  <HapticTouchable
                     key={lvl}
                     onPress={() => setTarget(lvl)}
-                    activeOpacity={0.8}
+                    scalePress
                     style={[
                       s.optionCard,
                       {
@@ -161,7 +161,7 @@ export default function OnboardingScreen() {
                         <Text style={s.checkMark}>✓</Text>
                       </View>
                     )}
-                  </TouchableOpacity>
+                  </HapticTouchable>
                 );
               })}
             </View>
@@ -173,10 +173,10 @@ export default function OnboardingScreen() {
               {([15, 30, 45, 60] as StudyTime[]).map((mins) => {
                 const selected = studyTime === mins;
                 return (
-                  <TouchableOpacity
+                  <HapticTouchable
                     key={mins}
                     onPress={() => setStudyTime(mins)}
-                    activeOpacity={0.8}
+                    scalePress
                     style={[
                       s.timeCard,
                       {
@@ -192,7 +192,7 @@ export default function OnboardingScreen() {
                     <Text style={[s.timeUnit, { color: selected ? c.primaryDark : c.mutedForeground }]}>
                       phút/ngày
                     </Text>
-                  </TouchableOpacity>
+                  </HapticTouchable>
                 );
               })}
             </View>
@@ -209,10 +209,10 @@ export default function OnboardingScreen() {
               ]).map(({ key, label, desc }) => {
                 const selected = deadline === key;
                 return (
-                  <TouchableOpacity
+                  <HapticTouchable
                     key={key}
                     onPress={() => setDeadline(key)}
-                    activeOpacity={0.8}
+                    scalePress
                     style={[
                       s.optionCard,
                       {
@@ -233,7 +233,7 @@ export default function OnboardingScreen() {
                         <Text style={s.checkMark}>✓</Text>
                       </View>
                     )}
-                  </TouchableOpacity>
+                  </HapticTouchable>
                 );
               })}
             </View>

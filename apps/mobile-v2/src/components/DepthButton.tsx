@@ -1,5 +1,5 @@
 // 3D Depth Button — Duolingo press effect, synced with frontend-v3 .btn-primary
-import { useRef, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Animated, Pressable, StyleSheet, Text, type ViewStyle } from "react-native";
 import * as Haptics from "expo-haptics";
 import { fontSize, fontFamily, radius, spacing, useThemeColors } from "@/theme";
@@ -28,14 +28,17 @@ export function DepthButton({
 }: DepthButtonProps) {
   const c = useThemeColors();
   const translateY = useRef(new Animated.Value(0)).current;
+  const [pressed, setPressed] = useState(false);
   const { bg, shadow, text } = getVariantColors(variant, c);
   const sizeStyle = SIZE_MAP[size];
 
   function handlePressIn() {
+    setPressed(true);
     Animated.timing(translateY, { toValue: 4, duration: 60, useNativeDriver: true }).start();
   }
 
   function handlePressOut() {
+    setPressed(false);
     Animated.timing(translateY, { toValue: 0, duration: 100, useNativeDriver: true }).start();
   }
 
@@ -60,6 +63,7 @@ export function DepthButton({
           {
             backgroundColor: bg,
             borderColor: bg,
+            borderBottomWidth: pressed ? 0 : 4,
             borderBottomColor: shadow,
             opacity: disabled ? 0.5 : 1,
             transform: [{ translateY }],
@@ -102,7 +106,6 @@ const SIZE_MAP = {
 const styles = StyleSheet.create({
   button: {
     borderWidth: 0,
-    borderBottomWidth: 4,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",

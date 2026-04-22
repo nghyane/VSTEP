@@ -213,6 +213,6 @@ const styles = StyleSheet.create({
   cardFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderTopWidth: 1, paddingTop: spacing.sm, marginTop: spacing.md },
   coinWrap: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   coinText: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
-  ctaBtn: { flexDirection: "row", alignItems: "center", gap: spacing.xs, borderRadius: radius.lg, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  ctaBtn: { flexDirection: "row", alignItems: "center", gap: spacing.xs, borderRadius: radius.lg, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderBottomWidth: 4 },
   ctaBtnText: { color: "#FFF", fontSize: fontSize.xs, fontFamily: fontFamily.bold },
 });
