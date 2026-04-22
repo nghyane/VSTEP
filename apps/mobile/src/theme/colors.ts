@@ -1,57 +1,58 @@
-// Design tokens aligned with frontend-v2 RFC 0002 (Duolingo Gamification)
-// oklch values from src/styles.css converted to hex for React Native
-// 3D Depth pattern: border-top lighter, border-bottom darker
+// Design tokens — synced with frontend-v3 src/styles.css @theme block
+// Primary source of truth for all colors, spacing, radius, font
 
 export const colors = {
   light: {
-    // Primary — VSTEP blue (oklch 0.55 0.2 258)
-    primary: "#2563EB",
-    primaryForeground: "#FAFAFA",
+    // ── Primary (Duolingo green)
+    primary: "#58CC02",
+    primaryForeground: "#FFFFFF",
+    primaryDark: "#478700",
+    primaryLight: "#79D634",
+    primaryTint: "#E6F8D4",
 
-    // Base
-    background: "#FAFBFC",
-    foreground: "#1A1A2E",
+    // ── Base
+    background: "#F7F7FA",
+    foreground: "#1E1E28",
+    surface: "#FFFFFF",
+
+    // ── Card
     card: "#FFFFFF",
-    cardForeground: "#1A1A2E",
+    cardForeground: "#1E1E28",
 
-    // Muted
+    // ── Neutrals
     muted: "#F3F4F6",
-    mutedForeground: "#6B7280",
+    mutedForeground: "#4B4B5A",
+    subtle: "#8C8C9B",
+    placeholder: "#AFAFAF",
 
-    // Secondary
-    secondary: "#EEF2FF",
-    secondaryForeground: "#3730A3",
+    // ── Border
+    border: "#E5E5E5",
+    borderLight: "#EFEFEF",
+    borderFocus: "#6BD43A",
 
-    // Accent
-    accent: "#F3F4F6",
-    accentForeground: "#1A1A2E",
+    // ── Semantic
+    destructive: "#EA4335",
+    destructiveTint: "#FFE6E4",
+    warning: "#FF9B00",
+    warningTint: "#FFF0DC",
+    success: "#58CC02",
+    info: "#1CB0F6",
+    infoTint: "#DDF4FF",
 
-    // Semantic
-    destructive: "#E53935",
-    destructiveForeground: "#FAFAFA",
-    success: "#1DB954",
-    successForeground: "#FAFAFA",
-    warning: "#F5A623",
-    warningForeground: "#1A1A2E",
+    // ── Skills (exact from frontend-v3)
+    skillListening: "#1CB0F6",
+    skillReading: "#7850C8",
+    skillWriting: "#58CC02",
+    skillSpeaking: "#FFC800",
 
-    // Border
-    border: "#E5E7EB",
-    input: "#E5E7EB",
-    ring: "#2563EB",
+    // ── Streak
+    streak: "#FF7800",
+    streakTint: "#FFF0DC",
 
-    // 3D Depth borders (Duolingo signature)
-    depthBorderLight: "#D4D6DB",
-    depthBorderDark: "#ABABBA",
-
-    // Skill colors (oklch 0.65 0.18 hue — Duolingo-bright)
-    skillListening: "#4F8EF7",
-    skillReading: "#22B573",
-    skillWriting: "#9B5DE5",
-    skillSpeaking: "#E5A020",
-
-    // Coin (amber exception)
-    coin: "#F59E0B",
-    coinDark: "#D97706",
+    // ── Coin
+    coin: "#FFC800",
+    coinDark: "#DCAA00",
+    coinTint: "#FFF5D2",
   },
 } as const;
 
@@ -71,8 +72,12 @@ export const spacing = {
 export const radius = {
   sm: 8,
   md: 12,
+  // radius-button = 13px
+  button: 13,
+  // radius-card = 16px
   lg: 16,
   xl: 20,
+  // radius-banner = 24px
   "2xl": 24,
   full: 9999,
 } as const;

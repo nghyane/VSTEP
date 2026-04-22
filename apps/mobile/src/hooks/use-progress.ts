@@ -1,36 +1,87 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { MOCK_PROGRESS, MOCK_SPIDER, MOCK_ACTIVITY, MOCK_LEARNING_PATH, MOCK_PRACTICE_TRACK } from "@/lib/mock";
-import type { PracticeTrackData } from "@/lib/mock";
-import type { ActivityResponse, Goal, LearningPathResponse, ProgressOverview, SpiderChart } from "@/types/api";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 
-export function useProgress() {
-  return useQuery({ queryKey: ["progress"], queryFn: async (): Promise<ProgressOverview> => MOCK_PROGRESS });
+// Backend-v2 /overview response shape
+export interface OverviewData {
+  profile: {
+    nickname: string;
+    targetLevel: string;
+    targetDeadline: string | null;
+    daysUntilExam: number | null;
+  };
+  stats: {
+    totalTests: number;
+    minTestsRequired: number;
+    totalStudyMinutes: number;
+    streak: number;
+    longestStreak: number;
+  };
+  chart: {
+    listening: number | null;
+    reading: number | null;
+    writing: number | null;
+    speaking: number | null;
+    sampleSize: number;
+  } | null;
 }
 
+export interface HeatmapEntry {
+  date: string;
+  minutes: number;
+}
+
+export interface StreakData {
+  currentStreak: number;
+  longestStreak: number;
+  todaySessions: number;
+  dailyGoal: number;
+  lastActiveDate: string | null;
+}
+
+export function useOverview() {
+  return useQuery({
+    queryKey: ["overview"],
+    queryFn: () => api.get<OverviewData>("/api/v1/overview"),
+  });
+}
+
+export function useStreak() {
+  return useQuery({
+    queryKey: ["streak"],
+    queryFn: () => api.get<StreakData>("/api/v1/streak"),
+  });
+}
+
+export function useActivityHeatmap() {
+  return useQuery({
+    queryKey: ["activity-heatmap"],
+    queryFn: () => api.get<HeatmapEntry[]>("/api/v1/activity-heatmap"),
+  });
+}
+
+// Spider chart — derived from /overview chart field
 export function useSpiderChart() {
-  return useQuery({ queryKey: ["progress", "spider-chart"], queryFn: async (): Promise<SpiderChart> => MOCK_SPIDER });
+  return useQuery({
+    queryKey: ["overview"],
+    queryFn: () => api.get<OverviewData>("/api/v1/overview"),
+    select: (data) => data.chart,
+  });
 }
 
-export function useSkillDetail(skill: string, _source?: "practice" | "exam") {
-  return useQuery({ queryKey: ["progress", skill], queryFn: async () => ({ skill, submissions: [], recentScores: [] }), enabled: !!skill });
+// Skill detail — no dedicated endpoint in backend-v2 yet, derive from overview
+export function useSkillDetail(skill: string) {
+  return useQuery({
+    queryKey: ["overview"],
+    queryFn: () => api.get<OverviewData>("/api/v1/overview"),
+    enabled: !!skill,
+    select: (data) => ({
+      skill,
+      score: data.chart?.[skill as keyof typeof data.chart] ?? null,
+      recentScores: [] as { score: number; createdAt: string }[],
+    }),
+  });
 }
 
-export function useCreateGoal() {
-  return useMutation({ mutationFn: async (_body: { targetBand: string; deadline: string; dailyStudyTimeMinutes?: number }) => MOCK_PROGRESS.goal as Goal });
-}
-
-export function useUpdateGoal() {
-  return useMutation({ mutationFn: async (_body: { id: string; targetBand?: string; deadline?: string; dailyStudyTimeMinutes?: number }) => MOCK_PROGRESS.goal as Goal });
-}
-
-export function useActivity(days = 7) {
-  return useQuery({ queryKey: ["activity", days], queryFn: async (): Promise<ActivityResponse> => MOCK_ACTIVITY });
-}
-
-export function useLearningPath() {
-  return useQuery({ queryKey: ["learning-path"], queryFn: async (): Promise<LearningPathResponse> => MOCK_LEARNING_PATH });
-}
-
-export function usePracticeTrack() {
-  return useQuery({ queryKey: ["practice-track"], queryFn: async (): Promise<PracticeTrackData> => MOCK_PRACTICE_TRACK });
-}
+// Legacy aliases
+export const useProgress = useOverview;
+export const useActivity = useActivityHeatmap;

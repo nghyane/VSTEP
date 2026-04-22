@@ -1,47 +1,76 @@
 import { useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HapticTouchable } from "@/components/HapticTouchable";
+import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
 import { GameIcon } from "@/components/GameIcon";
 import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
 import { CoinButton } from "@/features/coin/CoinButton";
 import { TopUpDialog } from "@/features/coin/TopUpDialog";
 import { FULL_TEST_COST } from "@/features/coin/coin-store";
-import { useExams } from "@/hooks/use-exams";
-import { LoadingScreen } from "@/components/LoadingScreen";
+import { useExams, type Exam } from "@/hooks/use-exams";
+import { MascotEmpty } from "@/components/MascotStates";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
-import type { Exam, Skill } from "@/types/api";
 
-const SKILL_ORDER: Skill[] = ["listening", "reading", "writing", "speaking"];
+const SKILL_ORDER = ["listening", "reading", "writing", "speaking"] as const;
 
 export default function ExamsScreen() {
   const c = useThemeColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data, isLoading } = useExams({ type: "mock" });
+  const { data, isLoading } = useExams();
+  const [search, setSearch] = useState("");
   const [topUpVisible, setTopUpVisible] = useState(false);
 
-  if (isLoading) return <LoadingScreen />;
-  const exams = data?.data ?? [];
+  const exams = (data ?? []).filter((e) =>
+    e.title.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <ScrollView style={[s.root, { backgroundColor: c.background }]} contentContainerStyle={[s.scroll, { paddingTop: insets.top + spacing.xl }]}>
-      {/* Header with coin */}
+    <ScrollView
+      style={[s.root, { backgroundColor: c.background }]}
+      contentContainerStyle={[s.scroll, { paddingTop: insets.top + spacing.xl }]}
+      keyboardShouldPersistTaps="handled"
+    >
+      {/* Header */}
       <View style={s.headerRow}>
-        <View>
-          <Text style={[s.title, { color: c.foreground }]}>Thi thử VSTEP</Text>
-          <Text style={[s.subtitle, { color: c.mutedForeground }]}>Luyện đề bám sát cấu trúc thật</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={[s.title, { color: c.foreground }]}>Thư viện đề thi</Text>
+          <Text style={[s.subtitle, { color: c.mutedForeground }]}>Luyện đề bám sát cấu trúc VSTEP</Text>
         </View>
         <CoinButton onPress={() => setTopUpVisible(true)} />
       </View>
 
-      {/* Exam cards */}
+      {/* Search */}
+      <View style={[s.searchRow, { backgroundColor: c.card, borderColor: c.border }]}>
+        <Ionicons name="search-outline" size={16} color={c.mutedForeground} />
+        <TextInput
+          style={[s.searchInput, { color: c.foreground }]}
+          placeholder="Nhập tên đề thi..."
+          placeholderTextColor={c.mutedForeground}
+          value={search}
+          onChangeText={setSearch}
+          autoCapitalize="none"
+        />
+      </View>
+
+      {isLoading && <ActivityIndicator style={{ marginTop: spacing["2xl"] }} />}
+
+      {!isLoading && exams.length === 0 && (
+        <MascotEmpty mascot="think" title="Không tìm thấy đề thi nào" />
+      )}
+
+      {/* Exam list */}
       <View style={s.grid}>
         {exams.map((exam) => (
-          <ExamCard key={exam.id} exam={exam} onPress={() => router.push(`/(app)/exam/${exam.id}`)} />
+          <ExamCard
+            key={exam.id}
+            exam={exam}
+            onPress={() => router.push(`/(app)/exam/${exam.id}`)}
+          />
         ))}
       </View>
 
@@ -57,31 +86,44 @@ function ExamCard({ exam, onPress }: { exam: Exam; onPress: () => void }) {
   return (
     <HapticTouchable onPress={onPress} activeOpacity={0.8}>
       <DepthCard>
-        <Text style={[s.cardTitle, { color: c.foreground }]} numberOfLines={2}>{exam.title}</Text>
+        {/* Tags */}
+        {exam.tags.length > 0 && (
+          <View style={s.tagRow}>
+            {exam.tags.map((tag) => (
+              <View key={tag} style={[s.tag, { backgroundColor: c.muted, borderColor: c.border }]}>
+                <Text style={[s.tagText, { color: c.mutedForeground }]}>#{tag}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        <Text style={[s.cardTitle, { color: c.foreground }]} numberOfLines={2}>
+          {exam.title}
+        </Text>
 
         {/* Meta */}
         <View style={s.metaRow}>
           <Ionicons name="time-outline" size={14} color={c.mutedForeground} />
-          <Text style={[s.metaText, { color: c.mutedForeground }]}>172 phút</Text>
-          <Ionicons name="help-circle-outline" size={14} color={c.mutedForeground} style={{ marginLeft: spacing.md }} />
-          <Text style={[s.metaText, { color: c.mutedForeground }]}>80 câu</Text>
+          <Text style={[s.metaText, { color: c.mutedForeground }]}>
+            {exam.totalDurationMinutes} phút
+          </Text>
         </View>
 
         {/* Skill chips */}
         <View style={s.chipRow}>
           {SKILL_ORDER.map((sk) => (
-            <SkillChipInline key={sk} skill={sk} />
+            <SkillChip key={sk} skill={sk} />
           ))}
         </View>
 
-        {/* Footer — coin cost */}
+        {/* Footer */}
         <View style={[s.cardFooter, { borderTopColor: c.border }]}>
           <View style={s.coinCost}>
             <GameIcon name="coin" size={16} />
             <Text style={[s.coinText, { color: c.coinDark }]}>{FULL_TEST_COST} xu</Text>
           </View>
           <View style={[s.ctaBtn, { backgroundColor: c.primary }]}>
-            <Text style={s.ctaBtnText}>Làm bài</Text>
+            <Text style={s.ctaBtnText}>Xem đề</Text>
             <Ionicons name="arrow-forward" size={14} color="#FFF" />
           </View>
         </View>
@@ -90,30 +132,34 @@ function ExamCard({ exam, onPress }: { exam: Exam; onPress: () => void }) {
   );
 }
 
-function SkillChipInline({ skill }: { skill: Skill }) {
-  const color = useSkillColor(skill);
+function SkillChip({ skill }: { skill: string }) {
+  const color = useSkillColor(skill as any);
   return (
-    <View style={s.skillChip}>
-      <SkillIcon skill={skill} size={14} />
-      <Text style={[s.skillChipText, { color }]}>{SKILL_LABELS[skill]}</Text>
+    <View style={s.chip}>
+      <SkillIcon skill={skill as any} size={13} />
+      <Text style={[s.chipText, { color }]}>{SKILL_LABELS[skill as any]}</Text>
     </View>
   );
 }
 
 const s = StyleSheet.create({
   root: { flex: 1 },
-  scroll: { paddingHorizontal: spacing.xl },
-  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: spacing.xl },
+  scroll: { paddingHorizontal: spacing.xl, paddingBottom: spacing["3xl"] },
+  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: spacing.lg },
   title: { fontSize: fontSize["2xl"], fontFamily: fontFamily.bold },
   subtitle: { fontSize: fontSize.sm, marginTop: spacing.xs },
+  searchRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, borderWidth: 1.5, borderRadius: radius.xl, paddingHorizontal: spacing.base, paddingVertical: spacing.sm, marginBottom: spacing.xl },
+  searchInput: { flex: 1, fontSize: fontSize.sm, fontFamily: fontFamily.regular },
   grid: { gap: spacing.base },
-  // Card
-  cardTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.semiBold, lineHeight: 22 },
+  tagRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginBottom: spacing.xs },
+  tag: { borderWidth: 1, borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: 2 },
+  tagText: { fontSize: 10, fontFamily: fontFamily.medium },
+  cardTitle: { fontSize: fontSize.base, fontFamily: fontFamily.semiBold, lineHeight: 22 },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: spacing.sm },
   metaText: { fontSize: fontSize.sm },
   chipRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm, flexWrap: "wrap" },
-  skillChip: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "transparent" },
-  skillChipText: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
+  chip: { flexDirection: "row", alignItems: "center", gap: 4 },
+  chipText: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
   cardFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderTopWidth: 1, paddingTop: spacing.sm, marginTop: spacing.md },
   coinCost: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   coinText: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },

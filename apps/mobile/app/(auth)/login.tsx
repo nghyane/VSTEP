@@ -15,7 +15,10 @@ import { HapticTouchable } from "@/components/HapticTouchable";
 import { Link, useRouter } from "expo-router";
 import { useAuth } from "@/hooks/use-auth";
 import { Logo } from "@/components/Logo";
+import { DepthButton } from "@/components/DepthButton";
+import { Mascot } from "@/components/Mascot";
 import { useThemeColors, spacing, radius, fontSize } from "@/theme";
+import { loginApi } from "@/lib/api";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -44,14 +47,16 @@ export default function LoginScreen() {
   }, [email, password]);
 
   async function handleLogin() {
+    if (!validate()) return;
     setErrors({});
     setLoading(true);
     try {
-      const mockUser = { id: "mock-user-1", email: email.trim() || "demo@vstep.vn", role: "learner", fullName: "Nguyễn Phát" };
-      await signIn("mock-access-token", "mock-refresh-token", mockUser);
+      const res = await loginApi(email.trim(), password);
+      await signIn(res.accessToken, res.refreshToken, res.user, res.profile);
       router.replace("/");
-    } catch {
-      setErrors({ general: "Đăng nhập thất bại" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Đăng nhập thất bại";
+      setErrors({ general: msg });
     } finally {
       setLoading(false);
     }
@@ -67,7 +72,7 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
-          <Logo size="lg" />
+          <Mascot name="wave" size={100} animation="bounce" />
           <Text style={[styles.heading, { color: c.foreground }]}>
             Tham gia vào VSTEP
           </Text>
@@ -109,6 +114,7 @@ export default function LoginScreen() {
                 value={password}
                 onChangeText={(t) => { setPassword(t); if (errors.password) setErrors((p) => ({ ...p, password: undefined })); }}
                 secureTextEntry={!showPassword}
+                autoCapitalize="none"
               />
               <HapticTouchable
                 style={styles.eyeButton}
@@ -126,19 +132,9 @@ export default function LoginScreen() {
 
           {errors.general ? <Text style={[styles.error, { color: c.destructive }]}>{errors.general}</Text> : null}
 
-          <HapticTouchable
-            style={[styles.button, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={c.primaryForeground} />
-            ) : (
-              <Text style={[styles.buttonText, { color: c.primaryForeground }]}>
-                Đăng nhập
-              </Text>
-            )}
-          </HapticTouchable>
+          <DepthButton onPress={handleLogin} disabled={loading} size="lg" fullWidth>
+            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+          </DepthButton>
         </View>
 
         <View style={styles.footerRow}>

@@ -48,7 +48,7 @@ export function TopUpDialog({ visible, onClose }: TopUpDialogProps) {
           {PACKS.map((pack) => (
             <HapticTouchable
               key={pack.coins}
-              style={[styles.pack, { borderColor: pack.popular ? c.coin : c.depthBorderLight, borderBottomColor: pack.popular ? c.coinDark : c.depthBorderDark }]}
+              style={[styles.pack, { borderColor: pack.popular ? c.coin : "#E5E5E5", borderBottomColor: pack.popular ? c.coinDark : "#CACACA" }]}
               onPress={() => handleBuy(pack.coins)}
               activeOpacity={0.7}
             >
