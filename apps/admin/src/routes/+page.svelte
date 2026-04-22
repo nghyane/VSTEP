@@ -4,26 +4,16 @@
 
 <div class="p-8 space-y-6">
 	<div>
-		<h1 class="text-2xl font-semibold text-(--color-foreground)">Dashboard</h1>
-		<p class="text-sm text-(--color-muted) mt-1">Welcome back, {auth.user?.full_name}</p>
+		<h1 class="text-[16px] font-medium" style="color: #eeeffc;">Dashboard</h1>
+		<p class="text-[13px] mt-0.5" style="color: #858699;">Welcome back, {auth.user?.full_name}</p>
 	</div>
 
-	<div class="grid grid-cols-4 gap-4">
-		<div class="card p-5 space-y-1">
-			<p class="text-xs font-medium text-(--color-muted)">Total Users</p>
-			<p class="text-2xl font-semibold text-(--color-foreground)">—</p>
-		</div>
-		<div class="card p-5 space-y-1">
-			<p class="text-xs font-medium text-(--color-muted)">Active Exams</p>
-			<p class="text-2xl font-semibold text-(--color-foreground)">—</p>
-		</div>
-		<div class="card p-5 space-y-1">
-			<p class="text-xs font-medium text-(--color-muted)">Vocab Topics</p>
-			<p class="text-2xl font-semibold text-(--color-foreground)">—</p>
-		</div>
-		<div class="card p-5 space-y-1">
-			<p class="text-xs font-medium text-(--color-muted)">Grammar Points</p>
-			<p class="text-2xl font-semibold text-(--color-foreground)">—</p>
-		</div>
+	<div class="grid grid-cols-4 gap-3">
+		{#each ['Total Users', 'Active Exams', 'Vocab Topics', 'Grammar Points'] as label}
+			<div class="card p-4 space-y-2">
+				<p class="text-[12px]" style="color: #858699;">{label}</p>
+				<p class="text-[22px] font-medium" style="color: #eeeffc;">—</p>
+			</div>
+		{/each}
 	</div>
 </div>

@@ -1,66 +1,60 @@
 @import "tailwindcss";
 
 /*
-  VSTEP Admin Design Tokens
-  Philosophy: professional, data-dense, neutral — ngược với learner app (playful).
-  Tham khảo: Linear, Vercel dashboard, Notion.
-  Rule: components dùng semantic names, KHÔNG hardcode hex.
+  VSTEP Admin — Linear Design System tokens
+  Extracted from: figma.com/design/4GwMVQNSApf34GjbCJ6Oh2
 */
 
 @theme {
-  /* ── Fonts ── */
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  /* ── Brand ── */
-  --color-primary:          #2563eb; /* blue-600 */
-  --color-primary-hover:    #1d4ed8; /* blue-700 */
-  --color-primary-tint:     #eff6ff; /* blue-50  */
-  --color-primary-fg:       #ffffff;
+  /* ── Brand (Linear violet) ── */
+  --color-primary:          #575bc7;
+  --color-primary-hover:    #4a4eb8;
+  --color-primary-tint:     #1d1e2b;
+  --color-primary-fg:       #eeeffc;
 
   /* ── Status ── */
-  --color-success:          #16a34a;
-  --color-success-tint:     #f0fdf4;
-  --color-warning:          #d97706;
-  --color-warning-tint:     #fffbeb;
-  --color-destructive:      #dc2626;
-  --color-destructive-tint: #fef2f2;
-  --color-info:             #0891b2;
-  --color-info-tint:        #ecfeff;
+  --color-success:          #4caf50;
+  --color-success-tint:     #1a2e1a;
+  --color-warning:          #f59e0b;
+  --color-warning-tint:     #2a2010;
+  --color-destructive:      #ef4444;
+  --color-destructive-tint: #2a1010;
 
-  /* ── Neutrals (zinc scale) ── */
-  --color-foreground:       #09090b; /* zinc-950 */
-  --color-muted:            #52525b; /* zinc-600 */
-  --color-subtle:           #a1a1aa; /* zinc-400 */
-  --color-placeholder:      #d4d4d8; /* zinc-300 */
-  --color-border:           #e4e4e7; /* zinc-200 */
-  --color-border-focus:     #2563eb;
-  --color-surface:          #ffffff;
-  --color-surface-raised:   #fafafa; /* zinc-50  */
-  --color-background:       #f4f4f5; /* zinc-100 */
+  /* ── Neutrals (Linear dark) ── */
+  --color-foreground:       #eeeffc;   /* primary text */
+  --color-muted:            #d2d3e0;   /* secondary text */
+  --color-subtle:           #858699;   /* tertiary text */
+  --color-placeholder:      #5a5b6e;
+  --color-border:           #393a4b;
+  --color-border-focus:     #575bc7;
+  --color-surface:          #292a35;   /* card / input bg */
+  --color-surface-raised:   #2e2f3d;
+  --color-background:       #1d1e2b;   /* page bg */
 
   /* ── Sidebar ── */
-  --color-sidebar-bg:       #18181b; /* zinc-900 */
-  --color-sidebar-fg:       #e4e4e7; /* zinc-200 */
-  --color-sidebar-muted:    #71717a; /* zinc-500 */
-  --color-sidebar-active:   #2563eb;
-  --color-sidebar-active-bg:#1e3a8a22;
-  --color-sidebar-border:   #27272a; /* zinc-800 */
+  --color-sidebar-bg:       #1d1e2b;
+  --color-sidebar-fg:       #d2d3e0;
+  --color-sidebar-muted:    #858699;
+  --color-sidebar-active:   #d2d3e0;
+  --color-sidebar-active-bg:rgba(133,134,152,0.2);
+  --color-sidebar-border:   #292a35;
 
-  /* ── VSTEP domain (consistent với learner app) ── */
-  --color-skill-listening:  #0891b2;
-  --color-skill-reading:    #7c3aed;
-  --color-skill-writing:    #16a34a;
-  --color-skill-speaking:   #d97706;
+  /* ── VSTEP skills ── */
+  --color-skill-listening:  #38bdf8;
+  --color-skill-reading:    #a78bfa;
+  --color-skill-writing:    #4ade80;
+  --color-skill-speaking:   #fbbf24;
 
-  /* ── Radius — flatter than learner app ── */
-  --radius-sm:   4px;
-  --radius-md:   6px;
-  --radius-lg:   8px;
-  --radius-xl:   12px;
+  /* ── Radius (Linear uses 4px everywhere) ── */
+  --radius-sm:  3px;
+  --radius-md:  4px;
+  --radius-lg:  4px;
+  --radius-xl:  6px;
 }
 
-/* ── Base ── */
 @layer base {
   *, *::before, *::after { box-sizing: border-box; }
 
@@ -68,65 +62,67 @@
     font-family: var(--font-sans);
     background: var(--color-background);
     color: var(--color-foreground);
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Scrollbar — thin, neutral */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
 }
 
-/* ── Components ── */
 @layer components {
-  /* Button */
+  /* Button — Linear style: subtle bg, 1px border, shadow */
   .btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.375rem;
+    gap: 6px;
     border-radius: var(--radius-md);
-    padding: 0.375rem 0.875rem;
+    padding: 5px 10px;
     font-size: 13px;
-    font-weight: 500;
-    line-height: 1.5;
+    font-weight: 400;
     cursor: pointer;
-    transition: background 0.1s, box-shadow 0.1s;
+    transition: background 0.1s, opacity 0.1s;
     white-space: nowrap;
+    border: none;
+    line-height: normal;
   }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
   .btn-primary {
     background: var(--color-primary);
     color: var(--color-primary-fg);
+    box-shadow: 0 1px 1px rgba(0,0,0,0.15);
   }
-  .btn-primary:hover { background: var(--color-primary-hover); }
+  .btn-primary:hover:not(:disabled) { background: var(--color-primary-hover); }
+
+  /* Linear default button: dark bg + border */
+  .btn-default {
+    background: var(--color-surface);
+    color: var(--color-foreground);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 1px 1px rgba(0,0,0,0.15);
+  }
+  .btn-default:hover:not(:disabled) { background: var(--color-surface-raised); }
 
   .btn-ghost {
     background: transparent;
+    color: var(--color-subtle);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--color-sidebar-active-bg);
     color: var(--color-muted);
   }
-  .btn-ghost:hover {
-    background: var(--color-surface-raised);
-    color: var(--color-foreground);
-  }
 
-  .btn-outline {
-    background: var(--color-surface);
-    color: var(--color-foreground);
-    box-shadow: inset 0 0 0 1px var(--color-border);
-  }
-  .btn-outline:hover { background: var(--color-surface-raised); }
-
-  .btn-destructive {
-    background: var(--color-destructive);
-    color: #fff;
-  }
+  .btn-destructive { background: var(--color-destructive); color: #fff; }
 
   /* Card */
   .card {
     background: var(--color-surface);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     border: 1px solid var(--color-border);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
 
   /* Badge */
@@ -134,16 +130,15 @@
     display: inline-flex;
     align-items: center;
     border-radius: var(--radius-sm);
-    padding: 0.125rem 0.5rem;
+    padding: 1px 5px;
     font-size: 11px;
     font-weight: 500;
     line-height: 1.6;
   }
-  .badge-success  { background: var(--color-success-tint);     color: var(--color-success); }
-  .badge-warning  { background: var(--color-warning-tint);     color: var(--color-warning); }
-  .badge-error    { background: var(--color-destructive-tint); color: var(--color-destructive); }
-  .badge-info     { background: var(--color-info-tint);        color: var(--color-info); }
-  .badge-neutral  { background: var(--color-surface-raised);   color: var(--color-muted); box-shadow: inset 0 0 0 1px var(--color-border); }
+  .badge-success     { background: var(--color-success-tint);     color: var(--color-success); }
+  .badge-warning     { background: var(--color-warning-tint);     color: var(--color-warning); }
+  .badge-destructive { background: var(--color-destructive-tint); color: var(--color-destructive); }
+  .badge-neutral     { background: var(--color-surface); color: var(--color-subtle); border: 1px solid var(--color-border); }
 
   /* Input */
   .input {
@@ -151,15 +146,16 @@
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    padding: 0.375rem 0.75rem;
+    padding: 5px 10px;
     font-size: 13px;
     color: var(--color-foreground);
     outline: none;
     transition: border-color 0.1s, box-shadow 0.1s;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.15);
   }
   .input:focus {
     border-color: var(--color-border-focus);
-    box-shadow: 0 0 0 3px var(--color-primary-tint);
+    box-shadow: 0 0 0 2px rgba(87,91,199,0.25);
   }
   .input::placeholder { color: var(--color-placeholder); }
 
@@ -167,16 +163,17 @@
   .table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .table th {
     text-align: left;
-    padding: 0.5rem 0.75rem;
+    padding: 6px 12px;
     font-weight: 500;
-    color: var(--color-muted);
+    color: var(--color-subtle);
     border-bottom: 1px solid var(--color-border);
     white-space: nowrap;
+    font-size: 12px;
   }
   .table td {
-    padding: 0.625rem 0.75rem;
+    padding: 7px 12px;
     border-bottom: 1px solid var(--color-border);
-    color: var(--color-foreground);
+    color: var(--color-muted);
   }
   .table tr:last-child td { border-bottom: none; }
   .table tbody tr:hover td { background: var(--color-surface-raised); }

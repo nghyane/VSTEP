@@ -31,29 +31,29 @@
 	}
 </script>
 
-<div class="min-h-screen flex items-center justify-center bg-(--color-background)">
-	<div class="card w-full max-w-sm p-8 space-y-6">
+<div class="min-h-screen flex items-center justify-center" style="background: #1d1e2b;">
+	<div class="w-full max-w-[320px] space-y-6">
 		<div>
-			<h1 class="text-xl font-semibold text-(--color-foreground)">VSTEP Admin</h1>
-			<p class="text-sm text-(--color-muted) mt-1">Sign in to continue</p>
+			<p class="text-[13px]" style="color: #858699;">VSTEP Admin</p>
+			<h1 class="text-[20px] font-medium mt-1" style="color: #eeeffc;">Sign in</h1>
 		</div>
 
-		<form onsubmit={(e) => { e.preventDefault(); login(); }} class="space-y-4">
-			<div class="space-y-1">
-				<label class="text-xs font-medium text-(--color-muted)" for="email">Email</label>
+		<form onsubmit={(e) => { e.preventDefault(); login(); }} class="space-y-3">
+			<div class="space-y-1.5">
+				<label class="text-[12px]" style="color: #858699;" for="email">Email</label>
 				<input id="email" type="email" class="input" bind:value={email} required autocomplete="email" />
 			</div>
-			<div class="space-y-1">
-				<label class="text-xs font-medium text-(--color-muted)" for="password">Password</label>
+			<div class="space-y-1.5">
+				<label class="text-[12px]" style="color: #858699;" for="password">Password</label>
 				<input id="password" type="password" class="input" bind:value={password} required autocomplete="current-password" />
 			</div>
 
 			{#if error}
-				<p class="text-xs text-(--color-destructive)">{error}</p>
+				<p class="text-[12px]" style="color: #ef4444;">{error}</p>
 			{/if}
 
-			<button type="submit" class="btn btn-primary w-full justify-center" disabled={loading}>
-				{loading ? 'Signing in…' : 'Sign in'}
+			<button type="submit" class="btn btn-primary w-full justify-center mt-1" disabled={loading}>
+				{loading ? 'Signing in…' : 'Continue'}
 			</button>
 		</form>
 	</div>

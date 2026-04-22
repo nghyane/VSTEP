@@ -14,51 +14,62 @@
 	});
 
 	const nav = [
-		{ href: '/',        label: 'Dashboard',  icon: '▦' },
-		{ href: '/users',   label: 'Users',       icon: '👤' },
-		{ href: '/exams',   label: 'Exams',       icon: '📝' },
-		{ href: '/vocab',   label: 'Vocabulary',  icon: '📚' },
-		{ href: '/grammar', label: 'Grammar',     icon: '✏️' },
+		{ href: '/',        label: 'Dashboard' },
+		{ href: '/users',   label: 'Users' },
+		{ href: '/exams',   label: 'Exams' },
+		{ href: '/vocab',   label: 'Vocabulary' },
+		{ href: '/grammar', label: 'Grammar' },
 	];
 </script>
 
 {#if isLoginPage}
 	{@render children()}
 {:else if auth.isAuthenticated}
-	<div class="flex h-screen overflow-hidden">
-		<!-- Sidebar -->
-		<aside class="w-60 flex-shrink-0 flex flex-col bg-(--color-sidebar-bg) border-r border-(--color-sidebar-border)">
-			<div class="px-5 py-4 border-b border-(--color-sidebar-border)">
-				<span class="text-sm font-semibold text-(--color-sidebar-fg)">VSTEP Admin</span>
+	<div class="flex h-screen overflow-hidden" style="background: #1d1e2b;">
+		<!-- Sidebar — Linear style -->
+		<aside class="w-[220px] flex-shrink-0 flex flex-col" style="background: #1d1e2b; border-right: 1px solid #292a35;">
+
+			<!-- Workspace header -->
+			<div class="flex items-center gap-[9px] px-[9px] py-[6px] mt-2 mx-2 rounded-[4px] cursor-pointer hover:bg-[rgba(133,134,152,0.1)] transition-colors">
+				<div class="flex items-center justify-center rounded-[4px] size-[18px] shrink-0" style="background: #978200;">
+					<span class="text-[11px] font-normal leading-[1.1]" style="color: #eeeffc;">VS</span>
+				</div>
+				<span class="text-[13px] font-medium whitespace-nowrap" style="color: #eeeffc;">VSTEP Admin</span>
 			</div>
 
-			<nav class="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
+			<!-- Nav -->
+			<nav class="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto mt-2">
 				{#each nav as item}
 					<a
 						href={item.href}
-						class="flex items-center gap-2.5 px-3 py-2 rounded-(--radius-md) text-sm transition-colors
-							{page.url.pathname === item.href
-								? 'bg-(--color-sidebar-active-bg) text-(--color-sidebar-active) font-medium'
-								: 'text-(--color-sidebar-muted) hover:text-(--color-sidebar-fg) hover:bg-white/5'}"
+						class="flex items-center gap-[10px] px-[8px] py-[4.5px] rounded-[4px] text-[13px] transition-colors"
+						style={page.url.pathname === item.href
+							? 'background: rgba(133,134,152,0.2); color: #d2d3e0;'
+							: 'color: #858699;'}
+						onmouseenter={(e) => { if (page.url.pathname !== item.href) (e.currentTarget as HTMLElement).style.background = 'rgba(133,134,152,0.1)'; (e.currentTarget as HTMLElement).style.color = '#d2d3e0'; }}
+						onmouseleave={(e) => { if (page.url.pathname !== item.href) { (e.currentTarget as HTMLElement).style.background = ''; (e.currentTarget as HTMLElement).style.color = '#858699'; } }}
 					>
-						<span class="text-base leading-none">{item.icon}</span>
 						{item.label}
 					</a>
 				{/each}
 			</nav>
 
-			<div class="px-3 py-3 border-t border-(--color-sidebar-border)">
+			<!-- Bottom -->
+			<div class="px-2 py-3 space-y-0.5" style="border-top: 1px solid #292a35;">
 				<button
-					class="flex items-center gap-2 w-full px-3 py-2 rounded-(--radius-md) text-sm text-(--color-sidebar-muted) hover:text-(--color-sidebar-fg) hover:bg-white/5 transition-colors"
+					class="flex items-center gap-[9px] w-full px-[8px] py-[4.5px] rounded-[4px] text-[13px] transition-colors text-left"
+					style="color: #858699;"
+					onmouseenter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(133,134,152,0.1)'; (e.currentTarget as HTMLElement).style.color = '#d2d3e0'; }}
+					onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.background = ''; (e.currentTarget as HTMLElement).style.color = '#858699'; }}
 					onclick={() => { auth.clear(); goto('/login'); }}
 				>
-					<span>↩</span> Sign out
+					Sign out
 				</button>
 			</div>
 		</aside>
 
 		<!-- Content -->
-		<main class="flex-1 overflow-y-auto bg-(--color-background)">
+		<main class="flex-1 overflow-y-auto" style="background: #1d1e2b;">
 			{@render children()}
 		</main>
 	</div>
