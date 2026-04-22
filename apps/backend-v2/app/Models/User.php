@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\Role;
 use Filament\Models\Contracts\FilamentUser;
+use Filament\Models\Contracts\HasName;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -17,7 +18,7 @@ use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 
 #[Fillable(['full_name', 'email', 'password', 'role', 'avatar_key'])]
 #[Hidden(['password'])]
-class User extends Authenticatable implements FilamentUser, JWTSubject
+class User extends Authenticatable implements FilamentUser, HasName, JWTSubject
 {
     use HasFactory;
     use HasUuids;
