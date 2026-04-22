@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_app/luyen-tap/nghe/")({
 function ListeningPage() {
 	return (
 		<>
-			<Header title="Nghe" />
+			<Header title="Nghe" backTo="/luyen-tap" />
 			<div className="px-10 pb-12">
 				<p className="text-sm text-subtle mb-5">3 phần · nghe hiểu · bật/tắt hỗ trợ</p>
 				<ListeningContent />

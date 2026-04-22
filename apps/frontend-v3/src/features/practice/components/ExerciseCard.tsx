@@ -18,6 +18,7 @@ interface Props {
 export function ExerciseCard({ title, description, meta, overlay, progress }: Props) {
 	const pct = progress ? Math.round((progress.score / progress.total) * 100) : 0
 	const hasBar = progress && progress.status !== "not_started" && progress.total > 0
+	const status = progress?.status ?? "not_started"
 
 	return (
 		<div className="group relative card-interactive p-5 flex flex-col">
@@ -26,12 +27,12 @@ export function ExerciseCard({ title, description, meta, overlay, progress }: Pr
 					<p className="text-base font-bold text-foreground">{title}</p>
 					<p className="mt-1 text-xs text-muted">{meta}</p>
 				</div>
-				{progress?.status === "completed" && (
+				{status === "completed" && (
 					<span className="text-xs font-bold text-primary bg-primary-tint px-2 py-0.5 rounded-full shrink-0">
 						Hoàn thành
 					</span>
 				)}
-				{progress?.status === "in_progress" && (
+				{status === "in_progress" && (
 					<span className="text-xs font-bold text-warning bg-warning-tint px-2 py-0.5 rounded-full shrink-0">
 						Đang làm
 					</span>

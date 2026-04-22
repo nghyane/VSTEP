@@ -93,6 +93,8 @@ Route::prefix('v1')->group(function () {
             ->whereIn('skill', ['listening', 'reading']);
         Route::post('/practice/{skill}/sessions/{sessionId}/submit', [McqPracticeController::class, 'submit'])
             ->whereIn('skill', ['listening', 'reading']);
+        Route::get('/practice/{skill}/progress', [McqPracticeController::class, 'progress'])
+            ->whereIn('skill', ['listening', 'reading']);
 
         // Practice Writing.
         Route::get('/practice/writing/prompts', [WritingPracticeController::class, 'listPrompts']);

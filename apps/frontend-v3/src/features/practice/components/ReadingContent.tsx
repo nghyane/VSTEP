@@ -2,17 +2,22 @@ import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { useMemo } from "react"
 import { ExerciseCard } from "#/features/practice/components/ExerciseCard"
-import { listeningExercisesQuery, mcqProgressQuery } from "#/features/practice/queries"
+import { mcqProgressQuery, readingExercisesQuery } from "#/features/practice/queries"
 
 const PARTS = [
-	{ part: 1, label: "Part 1 — Nghe hiểu ngắn", desc: "Nghe đoạn hội thoại ngắn, trả lời câu hỏi" },
-	{ part: 2, label: "Part 2 — Nghe hiểu hội thoại", desc: "Nghe hội thoại dài, trả lời câu hỏi chi tiết" },
-	{ part: 3, label: "Part 3 — Nghe hiểu bài giảng", desc: "Nghe bài giảng/thuyết trình, trả lời câu hỏi" },
+	{ part: 1, label: "Part 1 — Đọc hiểu ngắn", desc: "Đọc đoạn văn ngắn, trả lời câu hỏi" },
+	{
+		part: 2,
+		label: "Part 2 — Đọc hiểu trung bình",
+		desc: "Đọc đoạn văn trung bình, trả lời câu hỏi chi tiết",
+	},
+	{ part: 3, label: "Part 3 — Đọc hiểu dài", desc: "Đọc bài viết dài, trả lời câu hỏi tổng hợp" },
+	{ part: 4, label: "Part 4 — Đọc hiểu nâng cao", desc: "Đọc văn bản học thuật, trả lời câu hỏi suy luận" },
 ]
 
-export function ListeningContent() {
-	const { data } = useQuery(listeningExercisesQuery)
-	const { data: progressData } = useQuery(mcqProgressQuery("listening"))
+export function ReadingContent() {
+	const { data } = useQuery(readingExercisesQuery)
+	const { data: progressData } = useQuery(mcqProgressQuery("reading"))
 	const exercises = data ? data.data : []
 	const progress = progressData?.data ?? {}
 
@@ -62,7 +67,7 @@ export function ListeningContent() {
 											}
 											overlay={
 												<Link
-													to="/listening/$exerciseId"
+													to="/reading/$exerciseId"
 													params={{ exerciseId: ex.id }}
 													className="absolute inset-0 rounded-(--radius-card)"
 												/>

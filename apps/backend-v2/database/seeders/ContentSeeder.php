@@ -41,6 +41,7 @@ class ContentSeeder extends Seeder
         'practice_reading_exercises',
         'practice_reading_questions',
         'practice_writing_prompts',
+        'practice_writing_sample_markers',
         'practice_speaking_drills',
         'practice_speaking_drill_sentences',
         'practice_speaking_tasks',

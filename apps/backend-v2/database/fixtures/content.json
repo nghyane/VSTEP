@@ -6319,7 +6319,7 @@
             "required_points": "[\"describe problems\",\"explain impact\",\"request compensation\"]",
             "keywords": "[\"complaint\",\"hotel\",\"service\",\"compensation\"]",
             "sentence_starters": "[\"I am writing to express my dissatisfaction with...\",\"During my stay, I experienced several problems...\"]",
-            "sample_answer": null,
+            "sample_answer": "Dear Sir or Madam,\n\nI am writing to express my dissatisfaction with my recent stay at your hotel from 5th to 8th of July.\n\nFirstly, the air conditioning in my room did not work properly, and despite reporting it twice to reception, no one came to fix it. Secondly, the room had not been cleaned before my arrival — there were used towels on the floor and the bin was full.\n\nThese problems seriously affected my stay. I could not sleep well due to the heat, and the dirty room made me feel very uncomfortable. I had chosen your hotel for a relaxing holiday, but instead I was stressed and disappointed.\n\nI would appreciate it if you could offer a partial refund or a complimentary stay to make up for this experience. I look forward to hearing from you soon.\n\nYours faithfully,\nNguyen Van Hung",
             "estimated_minutes": 15,
             "is_published": true,
             "created_at": "2026-04-22 08:22:52",
@@ -6337,7 +6337,7 @@
             "required_points": "[\"discuss both views\",\"give opinion\",\"use examples\"]",
             "keywords": "[\"smartphone\",\"children\",\"education\",\"screen time\"]",
             "sentence_starters": "[\"It is often argued that...\",\"On the other hand, proponents suggest...\"]",
-            "sample_answer": null,
+            "sample_answer": "In today's digital age, the question of whether children should be allowed to use smartphones is widely debated. While some believe that smartphones are harmful for young people, others argue that they can be valuable learning tools. In this essay, I will discuss both views and give my own opinion.\n\nOn the one hand, many parents and educators worry that smartphones expose children to inappropriate content, cyberbullying, and addiction. Studies have shown that excessive screen time can lead to poor concentration, sleep problems, and reduced physical activity. For example, a recent survey found that children who spend more than three hours a day on their phones perform worse at school than those who use them less.\n\nOn the other hand, smartphones offer many educational benefits. Children can access learning apps, watch educational videos, and practise languages through interactive platforms. During the COVID-19 pandemic, smartphones became essential tools for online learning, especially for students in rural areas who did not have computers.\n\nIn my opinion, the key is not to ban smartphones completely but to teach children how to use them responsibly. Parents should set clear rules about screen time and monitor the content their children access. Schools can also play a role by integrating digital literacy into the curriculum.\n\nIn conclusion, while smartphones do carry risks for young users, they also provide significant learning opportunities. With proper guidance, children can benefit from technology without being harmed by it.",
             "estimated_minutes": 35,
             "is_published": true,
             "created_at": "2026-04-22 08:22:52",
@@ -6355,7 +6355,7 @@
             "required_points": "[\"thank\",\"explain\",\"suggest alternative\"]",
             "keywords": "[\"graduation\",\"invitation\",\"celebrate\"]",
             "sentence_starters": "[\"Thank you so much for inviting me to...\",\"Unfortunately, I will not be able to attend because...\"]",
-            "sample_answer": null,
+            "sample_answer": "Dear Hoa,\n\nThank you so much for inviting me to your graduation ceremony next Saturday. I am really proud of you for completing your degree, and I wish I could be there to celebrate with you.\n\nUnfortunately, I will not be able to attend because I have a job interview that same morning. It is for a position I have been hoping to get for months, and I cannot reschedule it. I feel terrible about missing such an important day in your life.\n\nHowever, I would love to celebrate with you another way. How about we go out for dinner the following weekend? I know a wonderful restaurant downtown, and it will be my treat. I also have a special gift for you!\n\nOnce again, congratulations on your achievement. I am so happy for you.\n\nWarm regards,\nLinh",
             "estimated_minutes": 15,
             "is_published": true,
             "created_at": "2026-04-22 08:22:52",
@@ -6373,7 +6373,7 @@
             "required_points": "[\"discuss causes\",\"identify problems\",\"propose solutions\"]",
             "keywords": "[\"urbanization\",\"rural\",\"migration\",\"housing\"]",
             "sentence_starters": "[\"In recent decades, there has been a significant trend of...\",\"This migration is driven by several factors...\"]",
-            "sample_answer": null,
+            "sample_answer": "In recent decades, there has been a significant trend of people moving from rural areas to cities in search of better opportunities. This essay will discuss the main causes of urbanization, the problems it creates, and possible solutions.\n\nThere are several reasons why people migrate to cities. Firstly, cities offer more job opportunities, especially in industries such as technology, finance, and services. Many young people leave their villages because farming alone cannot provide a stable income. Secondly, cities have better education and healthcare facilities. Parents want their children to attend good schools and have access to modern hospitals.\n\nHowever, rapid urbanization creates serious problems. The most obvious issue is overcrowding, which leads to traffic congestion, air pollution, and a shortage of affordable housing. In Ho Chi Minh City, for example, millions of people spend hours commuting every day due to heavy traffic. Additionally, the growth of slum areas on the outskirts of cities creates poor living conditions and social inequality.\n\nTo address these problems, governments should invest in developing rural areas by building better infrastructure, schools, and hospitals. This would encourage people to stay in their hometowns. Furthermore, city planners need to improve public transport systems and build more affordable housing to accommodate the growing urban population.\n\nIn conclusion, while urbanization is driven by the search for better lives, it brings significant challenges. A balanced approach that develops both rural and urban areas is essential for sustainable growth.",
             "estimated_minutes": 35,
             "is_published": true,
             "created_at": "2026-04-22 08:22:52",
@@ -6619,6 +6619,63 @@
             "is_published": true,
             "created_at": "2026-04-22 08:23:21",
             "updated_at": "2026-04-22 08:23:21"
+        }
+    ],
+    "practice_writing_sample_markers": [
+        {
+            "id": "019db500-0001-7000-a000-000000000001",
+            "prompt_id": "019da080-5440-7042-b542-1d169b000131",
+            "match": "I am writing to sincerely apologize",
+            "occurrence": 1,
+            "side": "right",
+            "color": "blue",
+            "label": "Cấu trúc B1",
+            "detail": "I am writing to + V — câu mở đầu thư formal",
+            "display_order": 1
+        },
+        {
+            "id": "019db500-0001-7000-a000-000000000002",
+            "prompt_id": "019da080-5440-7042-b542-1d169b000131",
+            "match": "The reason I couldn't attend was that",
+            "occurrence": 1,
+            "side": "left",
+            "color": "yellow",
+            "label": "Giải thích lý do",
+            "detail": "The reason ... was that — cấu trúc giải thích nguyên nhân rõ ràng",
+            "display_order": 2
+        },
+        {
+            "id": "019db500-0001-7000-a000-000000000003",
+            "prompt_id": "019da080-5440-7042-b542-1d169b000131",
+            "match": "I would like to invite you to dinner",
+            "occurrence": 1,
+            "side": "right",
+            "color": "blue",
+            "label": "Nâng cấp B2",
+            "detail": "would like to + V — lịch sự hơn 'want to'",
+            "display_order": 3
+        },
+        {
+            "id": "019db500-0001-7000-a000-000000000004",
+            "prompt_id": "019da080-5440-7042-b542-1d169b000131",
+            "match": "Once again, I am truly sorry.",
+            "occurrence": 1,
+            "side": "left",
+            "color": "yellow",
+            "label": "Kết thư",
+            "detail": "Nhắc lại lời xin lỗi + chào kết đúng format",
+            "display_order": 4
+        },
+        {
+            "id": "019db500-0001-7000-a000-000000000005",
+            "prompt_id": "019da080-5440-7042-b542-1d169b000131",
+            "match": "Best wishes,",
+            "occurrence": 1,
+            "side": "left",
+            "color": "pink",
+            "label": "Lời chào kết",
+            "detail": "Best wishes — phù hợp thư bạn bè, thân mật nhưng lịch sự",
+            "display_order": 5
         }
     ]
 }

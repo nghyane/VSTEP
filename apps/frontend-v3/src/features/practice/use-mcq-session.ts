@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useReducer, useRef } from "react"
-import { submitListeningSession } from "#/features/practice/actions"
 import type { SubmitResult } from "#/features/practice/types"
 
 interface State {
@@ -21,7 +20,7 @@ function reducer(state: State, action: Action): State {
 	}
 }
 
-interface ListeningSession {
+export interface McqPracticeSession {
 	answers: Record<string, number>
 	result: SubmitResult | null
 	submitting: boolean
@@ -30,7 +29,14 @@ interface ListeningSession {
 	submit: () => void
 }
 
-export function useListeningSession(sessionId: string | null): ListeningSession {
+export function useMcqPracticeSession(
+	sessionId: string | null,
+	submitFn: (
+		sessionId: string,
+		answers: { question_id: string; selected_index: number }[],
+	) => Promise<{ data: SubmitResult }>,
+	skill?: "listening" | "reading",
+): McqPracticeSession {
 	const [state, dispatch] = useReducer(reducer, { answers: {}, result: null })
 	const answersRef = useRef(state.answers)
 	answersRef.current = state.answers
@@ -43,11 +49,11 @@ export function useListeningSession(sessionId: string | null): ListeningSession 
 				question_id,
 				selected_index,
 			}))
-			return submitListeningSession(sessionId, formatted)
+			return submitFn(sessionId, formatted)
 		},
 		onSuccess: (res) => {
 			dispatch({ type: "submitted", result: res.data })
-			qc.invalidateQueries({ queryKey: ["practice", "listening", "progress"] })
+			if (skill) qc.invalidateQueries({ queryKey: ["practice", skill, "progress"] })
 		},
 	})
 

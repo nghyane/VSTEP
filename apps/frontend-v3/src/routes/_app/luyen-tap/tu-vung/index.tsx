@@ -10,7 +10,7 @@ export const Route = createFileRoute("/_app/luyen-tap/tu-vung/")({
 function VocabPage() {
 	return (
 		<>
-			<Header title="Từ vựng" />
+			<Header title="Từ vựng" backTo="/luyen-tap" />
 			<div className="px-10 pb-12 space-y-8">
 				<SrsHero />
 				<TopicGrid />

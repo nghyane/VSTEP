@@ -14,14 +14,14 @@ function TopicDetailPage() {
 	const { topicId } = Route.useParams()
 	const { data, isLoading } = useQuery(vocabTopicDetailQuery(topicId))
 
-	if (isLoading) return <Header title="Từ vựng" />
+	if (isLoading) return <Header title="Từ vựng" backTo="/luyen-tap/tu-vung" />
 	if (!data?.data?.topic) return null
 
 	const { topic, words } = data.data
 
 	return (
 		<>
-			<Header title={topic.name} />
+			<Header title={topic.name} backTo="/luyen-tap/tu-vung" />
 			<div className="px-10 pb-12 space-y-6">
 				<TopicHero topic={topic} words={words} topicId={topicId} />
 				<ExerciseModes topicId={topicId} />

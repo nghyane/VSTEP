@@ -133,7 +133,14 @@ export function ProfileDropdown({ unread, initial }: Props) {
 									</span>
 								)}
 							</MenuItem>
-							<MenuItem onClick={() => setOpen(false)}>Chỉnh sửa hồ sơ</MenuItem>
+							<MenuItem
+								onClick={() => {
+									setOpen(false)
+									window.location.href = "/ho-so"
+								}}
+							>
+								Chỉnh sửa hồ sơ
+							</MenuItem>
 							<MenuItem
 								onClick={() => {
 									logout()

@@ -199,4 +199,52 @@ class McqSkillService
             default => throw new \InvalidArgumentException("Unknown MCQ skill {$skill}."),
         };
     }
+
+    /**
+     * Best score per exercise for a profile.
+     *
+     * @return array<string, array{score: int, total: int}>
+     */
+    public function exerciseProgress(Profile $profile, string $skill): array
+    {
+        $this->assertSkill($skill);
+        $refType = $this->contentRefType($skill);
+
+        $sessions = PracticeSession::query()
+            ->where('profile_id', $profile->id)
+            ->where('module', $skill)
+            ->where('content_ref_type', $refType)
+            ->whereNotNull('ended_at')
+            ->get();
+
+        $best = [];
+        foreach ($sessions as $session) {
+            $exerciseId = $session->content_ref_id;
+            $answers = PracticeMcqAnswer::query()->where('session_id', $session->id)->get();
+            $score = $answers->where('is_correct', true)->count();
+            $total = $answers->count();
+
+            if (! isset($best[$exerciseId]) || $score > $best[$exerciseId]['score']) {
+                $best[$exerciseId] = ['score' => $score, 'total' => $total];
+            }
+        }
+
+        return $best;
+    }
+
+    private function contentRefType(string $skill): string
+    {
+        return match ($skill) {
+            'listening' => 'practice_listening_exercise',
+            'reading' => 'practice_reading_exercise',
+            default => throw new \InvalidArgumentException("Unknown MCQ skill {$skill}."),
+        };
+    }
+
+    private function assertSkill(string $skill): void
+    {
+        if (! in_array($skill, ['listening', 'reading'], true)) {
+            throw new \InvalidArgumentException("Unknown MCQ skill {$skill}.");
+        }
+    }
 }

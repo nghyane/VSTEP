@@ -115,6 +115,15 @@ class McqPracticeController extends Controller
         ]]);
     }
 
+    public function progress(Request $request, string $skill): JsonResponse
+    {
+        $this->assertSkill($skill);
+
+        return response()->json([
+            'data' => $this->mcqService->exerciseProgress($this->profile($request), $skill),
+        ]);
+    }
+
     private function assertSkill(string $skill): void
     {
         if (! in_array($skill, ['listening', 'reading'], true)) {

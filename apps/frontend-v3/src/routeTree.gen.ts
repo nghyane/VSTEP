@@ -16,7 +16,9 @@ import { Route as AppLuyenTapRouteImport } from "./routes/_app/luyen-tap"
 import { Route as AppHoSoRouteImport } from "./routes/_app/ho-so"
 import { Route as AppDashboardRouteImport } from "./routes/_app/dashboard"
 import { Route as AppLuyenTapIndexRouteImport } from "./routes/_app/luyen-tap/index"
+import { Route as FocusedWritingPromptIdRouteImport } from "./routes/_focused/writing/$promptId"
 import { Route as FocusedVocabSrsReviewRouteImport } from "./routes/_focused/vocab/srs-review"
+import { Route as FocusedReadingExerciseIdRouteImport } from "./routes/_focused/reading/$exerciseId"
 import { Route as FocusedListeningExerciseIdRouteImport } from "./routes/_focused/listening/$exerciseId"
 import { Route as AppLuyenTapVietRouteImport } from "./routes/_app/luyen-tap/viet"
 import { Route as AppLuyenTapTuVungRouteImport } from "./routes/_app/luyen-tap/tu-vung"
@@ -29,6 +31,8 @@ import { Route as AppLuyenTapNguPhapIndexRouteImport } from "./routes/_app/luyen
 import { Route as AppLuyenTapNgheIndexRouteImport } from "./routes/_app/luyen-tap/nghe/index"
 import { Route as FocusedVocabTopicIdFlashcardRouteImport } from "./routes/_focused/vocab/$topicId/flashcard"
 import { Route as FocusedVocabTopicIdExerciseRouteImport } from "./routes/_focused/vocab/$topicId/exercise"
+import { Route as FocusedSpeakingTaskTaskIdRouteImport } from "./routes/_focused/speaking/task/$taskId"
+import { Route as FocusedSpeakingDrillDrillIdRouteImport } from "./routes/_focused/speaking/drill/$drillId"
 import { Route as FocusedGrammarPointIdExerciseRouteImport } from "./routes/_focused/grammar/$pointId/exercise"
 import { Route as AppLuyenTapTuVungTopicIdRouteImport } from "./routes/_app/luyen-tap/tu-vung/$topicId"
 import { Route as AppLuyenTapNguPhapPointIdRouteImport } from "./routes/_app/luyen-tap/ngu-phap/$pointId"
@@ -66,11 +70,22 @@ const AppLuyenTapIndexRoute = AppLuyenTapIndexRouteImport.update({
   path: "/",
   getParentRoute: () => AppLuyenTapRoute,
 } as any)
+const FocusedWritingPromptIdRoute = FocusedWritingPromptIdRouteImport.update({
+  id: "/writing/$promptId",
+  path: "/writing/$promptId",
+  getParentRoute: () => FocusedRoute,
+} as any)
 const FocusedVocabSrsReviewRoute = FocusedVocabSrsReviewRouteImport.update({
   id: "/vocab/srs-review",
   path: "/vocab/srs-review",
   getParentRoute: () => FocusedRoute,
 } as any)
+const FocusedReadingExerciseIdRoute =
+  FocusedReadingExerciseIdRouteImport.update({
+    id: "/reading/$exerciseId",
+    path: "/reading/$exerciseId",
+    getParentRoute: () => FocusedRoute,
+  } as any)
 const FocusedListeningExerciseIdRoute =
   FocusedListeningExerciseIdRouteImport.update({
     id: "/listening/$exerciseId",
@@ -134,6 +149,18 @@ const FocusedVocabTopicIdExerciseRoute =
     path: "/vocab/$topicId/exercise",
     getParentRoute: () => FocusedRoute,
   } as any)
+const FocusedSpeakingTaskTaskIdRoute =
+  FocusedSpeakingTaskTaskIdRouteImport.update({
+    id: "/speaking/task/$taskId",
+    path: "/speaking/task/$taskId",
+    getParentRoute: () => FocusedRoute,
+  } as any)
+const FocusedSpeakingDrillDrillIdRoute =
+  FocusedSpeakingDrillDrillIdRouteImport.update({
+    id: "/speaking/drill/$drillId",
+    path: "/speaking/drill/$drillId",
+    getParentRoute: () => FocusedRoute,
+  } as any)
 const FocusedGrammarPointIdExerciseRoute =
   FocusedGrammarPointIdExerciseRouteImport.update({
     id: "/grammar/$pointId/exercise",
@@ -165,11 +192,15 @@ export interface FileRoutesByFullPath {
   "/luyen-tap/tu-vung": typeof AppLuyenTapTuVungRouteWithChildren
   "/luyen-tap/viet": typeof AppLuyenTapVietRoute
   "/listening/$exerciseId": typeof FocusedListeningExerciseIdRoute
+  "/reading/$exerciseId": typeof FocusedReadingExerciseIdRoute
   "/vocab/srs-review": typeof FocusedVocabSrsReviewRoute
+  "/writing/$promptId": typeof FocusedWritingPromptIdRoute
   "/luyen-tap/": typeof AppLuyenTapIndexRoute
   "/luyen-tap/ngu-phap/$pointId": typeof AppLuyenTapNguPhapPointIdRoute
   "/luyen-tap/tu-vung/$topicId": typeof AppLuyenTapTuVungTopicIdRoute
   "/grammar/$pointId/exercise": typeof FocusedGrammarPointIdExerciseRoute
+  "/speaking/drill/$drillId": typeof FocusedSpeakingDrillDrillIdRoute
+  "/speaking/task/$taskId": typeof FocusedSpeakingTaskTaskIdRoute
   "/vocab/$topicId/exercise": typeof FocusedVocabTopicIdExerciseRoute
   "/vocab/$topicId/flashcard": typeof FocusedVocabTopicIdFlashcardRoute
   "/luyen-tap/nghe/": typeof AppLuyenTapNgheIndexRoute
@@ -184,11 +215,15 @@ export interface FileRoutesByTo {
   "/luyen-tap/noi": typeof AppLuyenTapNoiRoute
   "/luyen-tap/viet": typeof AppLuyenTapVietRoute
   "/listening/$exerciseId": typeof FocusedListeningExerciseIdRoute
+  "/reading/$exerciseId": typeof FocusedReadingExerciseIdRoute
   "/vocab/srs-review": typeof FocusedVocabSrsReviewRoute
+  "/writing/$promptId": typeof FocusedWritingPromptIdRoute
   "/luyen-tap": typeof AppLuyenTapIndexRoute
   "/luyen-tap/ngu-phap/$pointId": typeof AppLuyenTapNguPhapPointIdRoute
   "/luyen-tap/tu-vung/$topicId": typeof AppLuyenTapTuVungTopicIdRoute
   "/grammar/$pointId/exercise": typeof FocusedGrammarPointIdExerciseRoute
+  "/speaking/drill/$drillId": typeof FocusedSpeakingDrillDrillIdRoute
+  "/speaking/task/$taskId": typeof FocusedSpeakingTaskTaskIdRoute
   "/vocab/$topicId/exercise": typeof FocusedVocabTopicIdExerciseRoute
   "/vocab/$topicId/flashcard": typeof FocusedVocabTopicIdFlashcardRoute
   "/luyen-tap/nghe": typeof AppLuyenTapNgheIndexRoute
@@ -210,11 +245,15 @@ export interface FileRoutesById {
   "/_app/luyen-tap/tu-vung": typeof AppLuyenTapTuVungRouteWithChildren
   "/_app/luyen-tap/viet": typeof AppLuyenTapVietRoute
   "/_focused/listening/$exerciseId": typeof FocusedListeningExerciseIdRoute
+  "/_focused/reading/$exerciseId": typeof FocusedReadingExerciseIdRoute
   "/_focused/vocab/srs-review": typeof FocusedVocabSrsReviewRoute
+  "/_focused/writing/$promptId": typeof FocusedWritingPromptIdRoute
   "/_app/luyen-tap/": typeof AppLuyenTapIndexRoute
   "/_app/luyen-tap/ngu-phap/$pointId": typeof AppLuyenTapNguPhapPointIdRoute
   "/_app/luyen-tap/tu-vung/$topicId": typeof AppLuyenTapTuVungTopicIdRoute
   "/_focused/grammar/$pointId/exercise": typeof FocusedGrammarPointIdExerciseRoute
+  "/_focused/speaking/drill/$drillId": typeof FocusedSpeakingDrillDrillIdRoute
+  "/_focused/speaking/task/$taskId": typeof FocusedSpeakingTaskTaskIdRoute
   "/_focused/vocab/$topicId/exercise": typeof FocusedVocabTopicIdExerciseRoute
   "/_focused/vocab/$topicId/flashcard": typeof FocusedVocabTopicIdFlashcardRoute
   "/_app/luyen-tap/nghe/": typeof AppLuyenTapNgheIndexRoute
@@ -235,11 +274,15 @@ export interface FileRouteTypes {
     | "/luyen-tap/tu-vung"
     | "/luyen-tap/viet"
     | "/listening/$exerciseId"
+    | "/reading/$exerciseId"
     | "/vocab/srs-review"
+    | "/writing/$promptId"
     | "/luyen-tap/"
     | "/luyen-tap/ngu-phap/$pointId"
     | "/luyen-tap/tu-vung/$topicId"
     | "/grammar/$pointId/exercise"
+    | "/speaking/drill/$drillId"
+    | "/speaking/task/$taskId"
     | "/vocab/$topicId/exercise"
     | "/vocab/$topicId/flashcard"
     | "/luyen-tap/nghe/"
@@ -254,11 +297,15 @@ export interface FileRouteTypes {
     | "/luyen-tap/noi"
     | "/luyen-tap/viet"
     | "/listening/$exerciseId"
+    | "/reading/$exerciseId"
     | "/vocab/srs-review"
+    | "/writing/$promptId"
     | "/luyen-tap"
     | "/luyen-tap/ngu-phap/$pointId"
     | "/luyen-tap/tu-vung/$topicId"
     | "/grammar/$pointId/exercise"
+    | "/speaking/drill/$drillId"
+    | "/speaking/task/$taskId"
     | "/vocab/$topicId/exercise"
     | "/vocab/$topicId/flashcard"
     | "/luyen-tap/nghe"
@@ -279,11 +326,15 @@ export interface FileRouteTypes {
     | "/_app/luyen-tap/tu-vung"
     | "/_app/luyen-tap/viet"
     | "/_focused/listening/$exerciseId"
+    | "/_focused/reading/$exerciseId"
     | "/_focused/vocab/srs-review"
+    | "/_focused/writing/$promptId"
     | "/_app/luyen-tap/"
     | "/_app/luyen-tap/ngu-phap/$pointId"
     | "/_app/luyen-tap/tu-vung/$topicId"
     | "/_focused/grammar/$pointId/exercise"
+    | "/_focused/speaking/drill/$drillId"
+    | "/_focused/speaking/task/$taskId"
     | "/_focused/vocab/$topicId/exercise"
     | "/_focused/vocab/$topicId/flashcard"
     | "/_app/luyen-tap/nghe/"
@@ -348,11 +399,25 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AppLuyenTapIndexRouteImport
       parentRoute: typeof AppLuyenTapRoute
     }
+    "/_focused/writing/$promptId": {
+      id: "/_focused/writing/$promptId"
+      path: "/writing/$promptId"
+      fullPath: "/writing/$promptId"
+      preLoaderRoute: typeof FocusedWritingPromptIdRouteImport
+      parentRoute: typeof FocusedRoute
+    }
     "/_focused/vocab/srs-review": {
       id: "/_focused/vocab/srs-review"
       path: "/vocab/srs-review"
       fullPath: "/vocab/srs-review"
       preLoaderRoute: typeof FocusedVocabSrsReviewRouteImport
+      parentRoute: typeof FocusedRoute
+    }
+    "/_focused/reading/$exerciseId": {
+      id: "/_focused/reading/$exerciseId"
+      path: "/reading/$exerciseId"
+      fullPath: "/reading/$exerciseId"
+      preLoaderRoute: typeof FocusedReadingExerciseIdRouteImport
       parentRoute: typeof FocusedRoute
     }
     "/_focused/listening/$exerciseId": {
@@ -437,6 +502,20 @@ declare module "@tanstack/react-router" {
       path: "/vocab/$topicId/exercise"
       fullPath: "/vocab/$topicId/exercise"
       preLoaderRoute: typeof FocusedVocabTopicIdExerciseRouteImport
+      parentRoute: typeof FocusedRoute
+    }
+    "/_focused/speaking/task/$taskId": {
+      id: "/_focused/speaking/task/$taskId"
+      path: "/speaking/task/$taskId"
+      fullPath: "/speaking/task/$taskId"
+      preLoaderRoute: typeof FocusedSpeakingTaskTaskIdRouteImport
+      parentRoute: typeof FocusedRoute
+    }
+    "/_focused/speaking/drill/$drillId": {
+      id: "/_focused/speaking/drill/$drillId"
+      path: "/speaking/drill/$drillId"
+      fullPath: "/speaking/drill/$drillId"
+      preLoaderRoute: typeof FocusedSpeakingDrillDrillIdRouteImport
       parentRoute: typeof FocusedRoute
     }
     "/_focused/grammar/$pointId/exercise": {
@@ -541,16 +620,24 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface FocusedRouteChildren {
   FocusedListeningExerciseIdRoute: typeof FocusedListeningExerciseIdRoute
+  FocusedReadingExerciseIdRoute: typeof FocusedReadingExerciseIdRoute
   FocusedVocabSrsReviewRoute: typeof FocusedVocabSrsReviewRoute
+  FocusedWritingPromptIdRoute: typeof FocusedWritingPromptIdRoute
   FocusedGrammarPointIdExerciseRoute: typeof FocusedGrammarPointIdExerciseRoute
+  FocusedSpeakingDrillDrillIdRoute: typeof FocusedSpeakingDrillDrillIdRoute
+  FocusedSpeakingTaskTaskIdRoute: typeof FocusedSpeakingTaskTaskIdRoute
   FocusedVocabTopicIdExerciseRoute: typeof FocusedVocabTopicIdExerciseRoute
   FocusedVocabTopicIdFlashcardRoute: typeof FocusedVocabTopicIdFlashcardRoute
 }
 
 const FocusedRouteChildren: FocusedRouteChildren = {
   FocusedListeningExerciseIdRoute: FocusedListeningExerciseIdRoute,
+  FocusedReadingExerciseIdRoute: FocusedReadingExerciseIdRoute,
   FocusedVocabSrsReviewRoute: FocusedVocabSrsReviewRoute,
+  FocusedWritingPromptIdRoute: FocusedWritingPromptIdRoute,
   FocusedGrammarPointIdExerciseRoute: FocusedGrammarPointIdExerciseRoute,
+  FocusedSpeakingDrillDrillIdRoute: FocusedSpeakingDrillDrillIdRoute,
+  FocusedSpeakingTaskTaskIdRoute: FocusedSpeakingTaskTaskIdRoute,
   FocusedVocabTopicIdExerciseRoute: FocusedVocabTopicIdExerciseRoute,
   FocusedVocabTopicIdFlashcardRoute: FocusedVocabTopicIdFlashcardRoute,
 }
