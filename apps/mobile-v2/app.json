@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "VSTEP",
+    "slug": "vstep-mobile-v2",
+    "version": "2.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "vstep",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-image.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#58CC02"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.vstep.mobile.v2"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#58CC02"
+      },
+      "package": "com.vstep.mobile.v2",
+      "softwareKeyboardLayoutMode": "pan",
+      "usesCleartextTraffic": true
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-system-ui",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Cho phep VSTEP ghi am bai speaking"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "dbb38b89-9f0c-4a0c-94e1-1b17d5554246"
+      }
+    },
+    "owner": "khoiawesome"
+  }
+}

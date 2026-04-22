@@ -1,0 +1,295 @@
+// Onboarding — 4 bước theo docs: Chào mừng → Band mục tiêu → Thời gian học → Thời hạn
+import { useState, useRef, useEffect } from "react";
+import {
+  Animated,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Mascot, type MascotName } from "@/components/Mascot";
+import { DepthButton } from "@/components/DepthButton";
+import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+
+type Level = "B1" | "B2" | "C1";
+type StudyTime = 15 | 30 | 45 | 60;
+type Deadline = "3m" | "6m" | "1y" | "none";
+
+const STEP_META: { key: string; label: string; mascot: MascotName }[] = [
+  { key: "welcome", label: "Bắt đầu", mascot: "wave" },
+  { key: "target", label: "Mục tiêu", mascot: "hero" },
+  { key: "time", label: "Lịch học", mascot: "think" },
+  { key: "deadline", label: "Thời hạn", mascot: "levelup" },
+];
+
+export default function OnboardingScreen() {
+  const c = useThemeColors();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const [step, setStep] = useState(0);
+  const [target, setTarget] = useState<Level>("B2");
+  const [studyTime, setStudyTime] = useState<StudyTime>(30);
+  const [deadline, setDeadline] = useState<Deadline>("6m");
+
+  const progressAnim = useRef(new Animated.Value(0.25)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: (step + 1) / STEP_META.length,
+      duration: 400,
+      useNativeDriver: false,
+    }).start();
+    Animated.spring(slideAnim, {
+      toValue: 0,
+      tension: 80,
+      friction: 12,
+      useNativeDriver: true,
+    }).start();
+  }, [step]);
+
+  function next() {
+    if (step < STEP_META.length - 1) {
+      slideAnim.setValue(20);
+      setStep(step + 1);
+    } else {
+      router.replace("/(app)/(tabs)");
+    }
+  }
+
+  function back() {
+    if (step > 0) setStep(step - 1);
+  }
+
+  const meta = STEP_META[step];
+
+  return (
+    <View style={[s.root, { backgroundColor: c.background }]}>
+      {/* Header */}
+      <View style={[s.header, { paddingTop: insets.top + spacing.base }]}>
+        {step > 0 ? (
+          <TouchableOpacity onPress={back} style={s.backBtn}>
+            <Text style={[s.backText, { color: c.mutedForeground }]}>Quay lại</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity onPress={() => router.replace("/(app)/(tabs)")} style={s.backBtn}>
+            <Text style={[s.backText, { color: c.mutedForeground }]}>Bỏ qua</Text>
+          </TouchableOpacity>
+        )}
+        <Text style={[s.stepText, { color: c.subtle }]}>
+          {step + 1}/{STEP_META.length}
+        </Text>
+        <View style={s.backBtn} />
+      </View>
+
+      {/* Progress bar */}
+      <View style={[s.progressTrack, { backgroundColor: c.muted }]}>
+        <Animated.View
+          style={[s.progressBar, { backgroundColor: c.primary, width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] }) }]}
+        />
+      </View>
+
+      <ScrollView
+        contentContainerStyle={s.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Animated.View style={{ transform: [{ translateY: slideAnim }] }}>
+          {/* Mascot */}
+          <View style={s.mascotSection}>
+            <Mascot name={meta.mascot} size={110} animation="none" />
+          </View>
+
+          <Text style={[s.title, { color: c.foreground }]}>
+            {step === 0 && "Chào mừng đến VSTEP!"}
+            {step === 1 && "Chọn band mục tiêu"}
+            {step === 2 && "Thời gian học mỗi ngày"}
+            {step === 3 && "Thời hạn hoàn thành"}
+          </Text>
+          <Text style={[s.desc, { color: c.mutedForeground }]}>
+            {step === 0 && "Hành trình chinh phục chứng chỉ tiếng Anh bắt đầu từ đây."}
+            {step === 1 && "Band VSTEP bạn muốn đạt được?"}
+            {step === 2 && "Bạn có thể dành bao nhiêu phút mỗi ngày?"}
+            {step === 3 && "Khi nào bạn muốn hoàn thành mục tiêu?"}
+          </Text>
+
+          {/* Step 0: Welcome */}
+          {step === 0 && (
+            <View style={s.welcomeCard}>
+              <Text style={[s.welcomeItem, { color: c.foreground }]}>
+                VSTEP đánh giá 4 kỹ năng: Nghe, Đọc, Viết, Nói
+              </Text>
+              <Text style={[s.welcomeItem, { color: c.foreground }]}>
+                AI chấm điểm chi tiết, phản hồi từng câu
+              </Text>
+              <Text style={[s.welcomeItem, { color: c.foreground }]}>
+                Lộ trình luyện tập cá nhân hóa theo trình độ
+              </Text>
+            </View>
+          )}
+
+          {/* Step 1: Target Band */}
+          {step === 1 && (
+            <View style={s.optionList}>
+              {(["B1", "B2", "C1"] as Level[]).map((lvl, i) => {
+                const selected = target === lvl;
+                return (
+                  <TouchableOpacity
+                    key={lvl}
+                    onPress={() => setTarget(lvl)}
+                    activeOpacity={0.8}
+                    style={[
+                      s.optionCard,
+                      {
+                        borderColor: selected ? c.primary : c.border,
+                        borderBottomColor: selected ? c.primaryDark : "#CACACA",
+                        backgroundColor: selected ? c.primaryTint : c.surface,
+                      },
+                    ]}
+                  >
+                    <Text style={[s.optionLevel, { color: selected ? c.primary : c.foreground }]}>
+                      {lvl}
+                    </Text>
+                    <Text style={[s.optionDesc, { color: selected ? c.primaryDark : c.mutedForeground }]}>
+                      {lvl === "B1" ? "Trung cấp — giao tiếp cơ bản" : lvl === "B2" ? "Trên trung cấp — giao tiếp độc lập" : "Nâng cao — giao tiếp thành thạo"}
+                    </Text>
+                    {selected && (
+                      <View style={[s.checkBadge, { backgroundColor: c.primary }]}>
+                        <Text style={s.checkMark}>✓</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          {/* Step 2: Study Time */}
+          {step === 2 && (
+            <View style={s.timeGrid}>
+              {([15, 30, 45, 60] as StudyTime[]).map((mins) => {
+                const selected = studyTime === mins;
+                return (
+                  <TouchableOpacity
+                    key={mins}
+                    onPress={() => setStudyTime(mins)}
+                    activeOpacity={0.8}
+                    style={[
+                      s.timeCard,
+                      {
+                        borderColor: selected ? c.primary : c.border,
+                        borderBottomColor: selected ? c.primaryDark : "#CACACA",
+                        backgroundColor: selected ? c.primaryTint : c.surface,
+                      },
+                    ]}
+                  >
+                    <Text style={[s.timeValue, { color: selected ? c.primary : c.foreground }]}>
+                      {mins}
+                    </Text>
+                    <Text style={[s.timeUnit, { color: selected ? c.primaryDark : c.mutedForeground }]}>
+                      phút/ngày
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          {/* Step 3: Deadline */}
+          {step === 3 && (
+            <View style={s.optionList}>
+              {([
+                { key: "3m" as Deadline, label: "3 tháng", desc: "Cấp tốc" },
+                { key: "6m" as Deadline, label: "6 tháng", desc: "Phổ biến nhất" },
+                { key: "1y" as Deadline, label: "1 năm", desc: "Ổn định" },
+                { key: "none" as Deadline, label: "Không giới hạn", desc: "Tự do" },
+              ]).map(({ key, label, desc }) => {
+                const selected = deadline === key;
+                return (
+                  <TouchableOpacity
+                    key={key}
+                    onPress={() => setDeadline(key)}
+                    activeOpacity={0.8}
+                    style={[
+                      s.optionCard,
+                      {
+                        borderColor: selected ? c.primary : c.border,
+                        borderBottomColor: selected ? c.primaryDark : "#CACACA",
+                        backgroundColor: selected ? c.primaryTint : c.surface,
+                      },
+                    ]}
+                  >
+                    <Text style={[s.optionLevel, { color: selected ? c.primary : c.foreground }]}>
+                      {label}
+                    </Text>
+                    <Text style={[s.optionDesc, { color: selected ? c.primaryDark : c.mutedForeground }]}>
+                      {desc}
+                    </Text>
+                    {selected && (
+                      <View style={[s.checkBadge, { backgroundColor: c.primary }]}>
+                        <Text style={s.checkMark}>✓</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+        </Animated.View>
+      </ScrollView>
+
+      {/* CTA */}
+      <View style={[s.footer, { paddingBottom: insets.bottom + spacing.xl }]}>
+        <DepthButton fullWidth size="lg" onPress={next}>
+          {step === STEP_META.length - 1 ? "Bắt đầu học tập!" : "Tiếp theo"}
+        </DepthButton>
+      </View>
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  root: { flex: 1 },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.xl, paddingBottom: spacing.sm },
+  backBtn: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, minWidth: 60 },
+  backText: { fontSize: fontSize.sm, fontFamily: fontFamily.medium },
+  stepText: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
+  progressTrack: { height: 4, marginHorizontal: spacing.xl, borderRadius: 2, marginBottom: spacing.base },
+  progressBar: { height: "100%", borderRadius: 2 },
+  content: { paddingHorizontal: spacing.xl, paddingBottom: spacing["3xl"] },
+  mascotSection: { alignItems: "center", marginBottom: spacing.lg },
+  title: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold, textAlign: "center" },
+  desc: { fontSize: fontSize.sm, textAlign: "center", marginTop: spacing.xs, marginBottom: spacing.xl, lineHeight: 22 },
+  welcomeCard: { gap: spacing.base, paddingHorizontal: spacing.md },
+  welcomeItem: { fontSize: fontSize.base, lineHeight: 24 },
+  optionList: { gap: spacing.sm },
+  optionCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    borderWidth: 2,
+    borderBottomWidth: 4,
+    borderRadius: radius.xl,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+  },
+  optionLevel: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold, width: 36 },
+  optionDesc: { flex: 1, fontSize: fontSize.sm },
+  checkBadge: { width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  checkMark: { color: "#FFF", fontSize: 14, fontFamily: fontFamily.bold },
+  timeGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+  timeCard: {
+    width: "47%",
+    borderWidth: 2,
+    borderBottomWidth: 4,
+    borderRadius: radius.xl,
+    paddingVertical: spacing.lg,
+    alignItems: "center",
+  },
+  timeValue: { fontSize: 32, fontFamily: fontFamily.extraBold },
+  timeUnit: { fontSize: fontSize.xs, marginTop: spacing.xs },
+  footer: { paddingHorizontal: spacing.xl, paddingTop: spacing.base },
+});
