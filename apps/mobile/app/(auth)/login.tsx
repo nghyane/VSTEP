@@ -15,6 +15,7 @@ import { HapticTouchable } from "@/components/HapticTouchable";
 import { Link, useRouter } from "expo-router";
 import { useAuth } from "@/hooks/use-auth";
 import { Logo } from "@/components/Logo";
+import { DepthButton } from "@/components/DepthButton";
 import { Mascot } from "@/components/Mascot";
 import { useThemeColors, spacing, radius, fontSize } from "@/theme";
 import { loginApi } from "@/lib/api";
@@ -131,19 +132,9 @@ export default function LoginScreen() {
 
           {errors.general ? <Text style={[styles.error, { color: c.destructive }]}>{errors.general}</Text> : null}
 
-          <HapticTouchable
-            style={[styles.button, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={c.primaryForeground} />
-            ) : (
-              <Text style={[styles.buttonText, { color: c.primaryForeground }]}>
-                Đăng nhập
-              </Text>
-            )}
-          </HapticTouchable>
+          <DepthButton onPress={handleLogin} disabled={loading} size="lg" fullWidth>
+            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+          </DepthButton>
         </View>
 
         <View style={styles.footerRow}>
