@@ -57,14 +57,14 @@ function CourseDetailPage() {
 						)}
 					</div>
 
-					<div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-foreground">
+					<div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted">
 						<p>
-							📅 {fmtDate(course.start_date)} — {fmtDate(course.end_date)}
+							{fmtDate(course.start_date)} — {fmtDate(course.end_date)}
 						</p>
+						{course.schedule_items.length > 0 && <p>{course.schedule_items.length} buổi</p>}
 						<p>
-							👥 {sold_slots}/{course.max_slots} học viên
+							{sold_slots}/{course.max_slots} học viên
 						</p>
-						{course.schedule_items.length > 0 && <p>📚 {course.schedule_items.length} buổi</p>}
 					</div>
 
 					<div className="border-t-2 border-border pt-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
