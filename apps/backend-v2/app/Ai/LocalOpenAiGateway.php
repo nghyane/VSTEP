@@ -76,10 +76,21 @@ class LocalOpenAiGateway extends OpenAiGateway
     protected function client(Provider $provider, ?int $timeout = null): PendingRequest
     {
         $url = $provider->additionalConfiguration()['url'] ?? 'https://api.openai.com/v1';
+        $key = $provider->providerCredentials()['key'] ?? '';
+        $authHeader = $provider->additionalConfiguration()['auth_header'] ?? 'Authorization';
 
-        return Http::baseUrl($url)
-            ->withToken($provider->providerCredentials()['key'])
+        $request = Http::baseUrl($url)
             ->timeout($timeout ?? 90)
             ->throw();
+
+        if ($key !== '') {
+            if ($authHeader === 'Authorization') {
+                $request = $request->withToken($key);
+            } else {
+                $request = $request->withHeaders([$authHeader => 'Bearer '.$key]);
+            }
+        }
+
+        return $request;
     }
 }
