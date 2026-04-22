@@ -305,9 +305,9 @@ List published courses, có flags `enrolled`, `commitment_status`.
 Detail + schedule + enrollment status + commitment status.
 
 ### `POST /api/v1/courses/{id}/enroll` — jwt
-Mua course bằng xu. Atomic trừ xu + cấp bonus xu + tạo enrollment.
+Mua course bằng VND (payment external). Tạo enrollment + cấp bonus xu.
 
-Response: `{ enrollment_id, coins_charged, bonus_received, balance_after }` hoặc 402/409.
+Response: `{ enrollment_id, bonus_received }` hoặc 409 (full/already enrolled).
 
 ### `GET /api/v1/courses/{id}/my-slots` — jwt
 Slots available cho profile này (sau khi enrolled + commitment met).

@@ -44,6 +44,7 @@ services:
         php artisan db:seed --force --no-interaction --class=WalletSeeder &&
         php artisan db:seed --force --no-interaction --class=ContentSeeder &&
         php artisan db:seed --force --no-interaction --class=UserSeeder &&
+        php artisan db:seed --force --no-interaction --class=CourseSeeder &&
         php artisan storage:link 2>/dev/null;
         php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000 --workers=auto --max-requests=500
       "

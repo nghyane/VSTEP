@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query"
-import { Link } from "@tanstack/react-router"
 import { FeedbackSection } from "#/features/grading/components/FeedbackSection"
 import { RubricBar } from "#/features/grading/components/RubricBar"
 import { speakingGradingQuery } from "#/features/grading/queries"
@@ -17,24 +16,24 @@ const RUBRIC_LABELS: Record<string, string> = {
 
 interface Props {
 	submissionId: string
-	backTo: string
 }
 
-export function SpeakingResult({ submissionId, backTo }: Props) {
-	const { data, isLoading } = useQuery(speakingGradingQuery("practice_speaking", submissionId))
+export function SpeakingResult({ submissionId }: Props) {
+	const { data, isLoading } = useQuery({
+		...speakingGradingQuery("practice_speaking", submissionId),
+		refetchInterval: (query) => (query.state.data?.data ? false : 3000),
+	})
 	const result = data?.data
 
-	if (isLoading) {
-		return <p className="text-center text-muted py-12">Đang tải kết quả...</p>
-	}
-
-	if (!result) {
+	if (isLoading || !result) {
 		return (
 			<div className="text-center py-12">
-				<p className="text-muted mb-2">AI đang chấm bài, vui lòng quay lại sau.</p>
-				<Link to={backTo} className="text-sm font-bold text-primary">
-					Quay lại
-				</Link>
+				<img src="/mascot/lac-happy.png" alt="" className="w-20 h-20 mx-auto mb-4 object-contain" />
+				<p className="font-bold text-lg text-foreground">AI đang chấm bài...</p>
+				<p className="text-sm text-muted mt-1">Thường mất 10–30 giây, trang sẽ tự cập nhật</p>
+				<div className="mt-4 w-32 h-1.5 bg-background rounded-full mx-auto overflow-hidden">
+					<div className="h-full bg-skill-speaking rounded-full animate-pulse" style={{ width: "60%" }} />
+				</div>
 			</div>
 		)
 	}

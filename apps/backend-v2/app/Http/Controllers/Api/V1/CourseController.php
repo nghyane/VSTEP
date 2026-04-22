@@ -16,9 +16,18 @@ class CourseController extends Controller
 {
     public function __construct(private readonly CourseService $courseService) {}
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(['data' => $this->courseService->listPublished()]);
+        $courses = $this->courseService->listPublished();
+        $profile = $request->attributes->get('active_profile');
+        $enrolledIds = $profile
+            ? \App\Models\CourseEnrollment::query()->where('profile_id', $profile->id)->pluck('course_id')->all()
+            : [];
+
+        return response()->json([
+            'data' => $courses,
+            'enrolled_course_ids' => $enrolledIds,
+        ]);
     }
 
     public function show(string $id): JsonResponse
@@ -42,7 +51,6 @@ class CourseController extends Controller
 
         return response()->json(['data' => [
             'enrollment_id' => $enrollment->id,
-            'coins_paid' => $enrollment->coins_paid,
             'bonus_received' => $enrollment->bonus_coins_received,
         ]], 201);
     }
