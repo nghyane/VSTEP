@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useNavigate } from "@tanstack/react-router"
 import { useRef, useState } from "react"
 import { Icon, StaticIcon, type StaticIconName } from "#/components/Icon"
 import { readAllNotifications } from "#/features/notifications/actions"
@@ -69,6 +70,7 @@ export function ProfileDropdown({ unread, initial }: Props) {
 	const { profile, user } = useSession()
 	const logout = useAuth((s) => s.logout)
 	const { data: notifsData } = useQuery({ ...notificationsQuery, enabled: false })
+	const navigate = useNavigate()
 	const [open, setOpen] = useState(false)
 	const [tab, setTab] = useState<"menu" | "notifs">("menu")
 	const menuRef = useRef<HTMLDivElement>(null)
@@ -136,7 +138,7 @@ export function ProfileDropdown({ unread, initial }: Props) {
 							<MenuItem
 								onClick={() => {
 									setOpen(false)
-									window.location.href = "/ho-so"
+									navigate({ to: "/ho-so", search: { edit: true } })
 								}}
 							>
 								Chỉnh sửa hồ sơ
