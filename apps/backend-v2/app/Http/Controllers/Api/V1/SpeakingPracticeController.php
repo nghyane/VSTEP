@@ -6,12 +6,15 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Practice\StartSessionRequest;
+use App\Http\Resources\DrillSessionHistoryResource;
+use App\Http\Resources\SpeakingSubmissionHistoryResource;
 use App\Models\PracticeSession;
 use App\Models\Profile;
 use App\Services\PracticeSessionService;
 use App\Services\SpeakingPracticeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class SpeakingPracticeController extends Controller
 {
@@ -29,6 +32,22 @@ class SpeakingPracticeController extends Controller
             'id' => $d->id, 'slug' => $d->slug, 'title' => $d->title,
             'level' => $d->level, 'estimated_minutes' => $d->estimated_minutes,
         ])->values()]);
+    }
+
+    public function drillHistory(Request $request): AnonymousResourceCollection
+    {
+        return DrillSessionHistoryResource::collection(
+            $this->speakingService->drillHistory($this->profile($request)),
+        );
+    }
+
+    public function vstepHistory(Request $request): AnonymousResourceCollection
+    {
+        $part = $request->integer('part') ?: null;
+
+        return SpeakingSubmissionHistoryResource::collection(
+            $this->speakingService->vstepHistory($this->profile($request), $part),
+        );
     }
 
     public function showDrill(string $id): JsonResponse

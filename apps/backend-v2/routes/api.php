@@ -103,6 +103,7 @@ Route::prefix('v1')->group(function () {
         // Practice Writing.
         Route::get('/practice/writing/prompts', [WritingPracticeController::class, 'listPrompts']);
         Route::get('/practice/writing/prompts/{id}', [WritingPracticeController::class, 'showPrompt']);
+        Route::get('/practice/writing/history', [WritingPracticeController::class, 'history']);
         Route::post('/practice/writing/sessions', [WritingPracticeController::class, 'startSession']);
         Route::post('/practice/writing/sessions/{sessionId}/support', [WritingPracticeController::class, 'useSupport']);
         Route::post('/practice/writing/sessions/{sessionId}/submit', [WritingPracticeController::class, 'submit']);
@@ -112,6 +113,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/practice/speaking/drills/{id}', [SpeakingPracticeController::class, 'showDrill']);
         Route::get('/practice/speaking/tasks', [SpeakingPracticeController::class, 'listTasks']);
         Route::get('/practice/speaking/tasks/{id}', [SpeakingPracticeController::class, 'showTask']);
+        Route::get('/practice/speaking/drill-history', [SpeakingPracticeController::class, 'drillHistory']);
+        Route::get('/practice/speaking/vstep-history', [SpeakingPracticeController::class, 'vstepHistory']);
         Route::post('/practice/speaking/drill-sessions', [SpeakingPracticeController::class, 'startDrillSession']);
         Route::post('/practice/speaking/vstep-sessions', [SpeakingPracticeController::class, 'startVstepSession']);
         Route::post('/practice/speaking/drill-sessions/{sessionId}/attempt', [SpeakingPracticeController::class, 'drillAttempt']);
@@ -160,5 +163,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/action-items', [Admin\DashboardController::class, 'actionItems']);
         Route::get('/content-status', [Admin\DashboardController::class, 'contentStatus']);
         Route::get('/recent-activity', [Admin\DashboardController::class, 'recentActivity']);
+
+        // Exam management
+        Route::post('/exams/import', [Admin\ExamController::class, 'import']);
     });
 });

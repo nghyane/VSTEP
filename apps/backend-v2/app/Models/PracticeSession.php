@@ -6,6 +6,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 /**
  * Root session cho mọi drill (vocab/grammar/listening/reading/writing/speaking).
@@ -37,5 +39,15 @@ class PracticeSession extends BaseModel
     public function profile(): BelongsTo
     {
         return $this->belongsTo(Profile::class);
+    }
+
+    public function contentRef(): MorphTo
+    {
+        return $this->morphTo('content_ref');
+    }
+
+    public function drillAttempts(): HasMany
+    {
+        return $this->hasMany(PracticeSpeakingDrillAttempt::class, 'session_id');
     }
 }

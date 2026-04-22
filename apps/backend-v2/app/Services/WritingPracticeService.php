@@ -8,12 +8,10 @@ use App\Models\PracticeSession;
 use App\Models\PracticeWritingPrompt;
 use App\Models\PracticeWritingSubmission;
 use App\Models\Profile;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
 
-/**
- * Writing drill orchestration. Grading sẽ dispatch ở Slice 8.
- */
 class WritingPracticeService
 {
     public function __construct(
@@ -21,9 +19,7 @@ class WritingPracticeService
         private readonly GradingService $gradingService,
     ) {}
 
-    /**
-     * @return Collection<int,PracticeWritingPrompt>
-     */
+    /** @return Collection<int,PracticeWritingPrompt> */
     public function listPrompts(?int $part = null): Collection
     {
         $query = PracticeWritingPrompt::query()->where('is_published', true);
@@ -86,6 +82,18 @@ class WritingPracticeService
         $this->gradingService->enqueueWritingGrading('practice_writing', $submission->id);
 
         return $submission;
+    }
+
+    public function history(Profile $profile, ?int $part = null): LengthAwarePaginator
+    {
+        return PracticeWritingSubmission::query()
+            ->where('profile_id', $profile->id)
+            ->with(['prompt:id,slug,title,part'])
+            ->when($part !== null, fn ($q) => $q->whereHas(
+                'prompt', fn ($q) => $q->where('part', $part),
+            ))
+            ->orderByDesc('submitted_at')
+            ->paginate();
     }
 
     private function countWords(string $text): int

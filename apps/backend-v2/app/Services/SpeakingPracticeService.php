@@ -11,16 +11,10 @@ use App\Models\PracticeSpeakingDrillSentence;
 use App\Models\PracticeSpeakingSubmission;
 use App\Models\PracticeSpeakingTask;
 use App\Models\Profile;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
 
-/**
- * 2 product lines:
- * - Drill (dictation/shadowing): per-sentence accuracy, KHÔNG grading job
- * - VSTEP task: audio submission, sẽ grading AI ở Slice 8
- *
- * Module values: 'speaking_drill', 'speaking_vstep_practice'.
- */
 class SpeakingPracticeService
 {
     public function __construct(
@@ -28,9 +22,7 @@ class SpeakingPracticeService
         private readonly GradingService $gradingService,
     ) {}
 
-    /**
-     * @return Collection<int,PracticeSpeakingDrill>
-     */
+    /** @return Collection<int,PracticeSpeakingDrill> */
     public function listDrills(?string $level = null): Collection
     {
         $query = PracticeSpeakingDrill::query()->where('is_published', true);
@@ -51,9 +43,7 @@ class SpeakingPracticeService
         return $drill;
     }
 
-    /**
-     * @return Collection<int,PracticeSpeakingTask>
-     */
+    /** @return Collection<int,PracticeSpeakingTask> */
     public function listTasks(?int $part = null): Collection
     {
         $query = PracticeSpeakingTask::query()->where('is_published', true);
@@ -121,6 +111,29 @@ class SpeakingPracticeService
             'accuracy_percent' => $accuracyPercent,
             'attempted_at' => now(),
         ]);
+    }
+
+    public function vstepHistory(Profile $profile, ?int $part = null): LengthAwarePaginator
+    {
+        return PracticeSpeakingSubmission::query()
+            ->where('profile_id', $profile->id)
+            ->where('task_ref_type', 'practice_speaking_task')
+            ->when($part !== null, fn ($q) => $q->whereHas(
+                'speakingTask', fn ($q) => $q->where('part', $part),
+            ))
+            ->orderByDesc('submitted_at')
+            ->paginate();
+    }
+
+    public function drillHistory(Profile $profile): LengthAwarePaginator
+    {
+        return PracticeSession::query()
+            ->where('profile_id', $profile->id)
+            ->where('module', 'speaking_drill')
+            ->whereNotNull('ended_at')
+            ->withCount('drillAttempts')
+            ->orderByDesc('started_at')
+            ->paginate();
     }
 
     public function submitVstepPractice(
