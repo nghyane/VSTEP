@@ -41,6 +41,15 @@ export interface WordWithState {
   state: FsrsState;
 }
 
+export type ExerciseKind = "mcq" | "fill_blank" | "word_form";
+
+export interface VocabExercise {
+  id: string;
+  displayOrder: number;
+  kind: ExerciseKind;
+  payload: Record<string, unknown>;
+}
+
 export interface SrsQueueResponse {
   newCount: number;
   learningCount: number;
@@ -68,6 +77,7 @@ export function useVocabSrsQueue() {
 export interface TopicDetailResponse {
   topic: VocabTopic;
   words: WordWithState[];
+  exercises: VocabExercise[];
 }
 
 export function useVocabTopicDetail(id: string) {

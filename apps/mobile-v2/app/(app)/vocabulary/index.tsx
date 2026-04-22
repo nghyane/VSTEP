@@ -60,7 +60,7 @@ export default function VocabularyScreen() {
               </View>
             ) : null}
           </View>
-          <DepthButton fullWidth onPress={() => {}}>
+          <DepthButton fullWidth onPress={() => router.push("/(app)/vocabulary/srs-review" as any)}>
             {`Bắt đầu · ${dueCount} từ`}
           </DepthButton>
         </DepthCard>

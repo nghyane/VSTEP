@@ -30,6 +30,7 @@ export default function AppLayout() {
       <Stack.Screen name="practice/result/[id]" />
       <Stack.Screen name="vocabulary/index" />
       <Stack.Screen name="vocabulary/[id]" />
+      <Stack.Screen name="vocabulary/srs-review" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="vocabulary/[id]/flashcard" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="vocabulary/[id]/exercise" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="account" options={{ headerShown: true, title: "Tài khoản" }} />

@@ -27,7 +27,7 @@ export default function VocabTopicDetailScreen() {
   }
 
   const { topic, words } = data;
-  const exercises = ((data as any).exercises ?? []) as { id: string; kind: string }[];
+  const exercises = data.exercises;
   const newCount = words.filter((w) => w.state.kind === "new").length;
   const learnedCount = words.length - newCount;
   const progress = words.length > 0 ? learnedCount / words.length : 0;
