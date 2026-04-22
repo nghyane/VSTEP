@@ -24,4 +24,4 @@ jobs:
               docker compose --env-file .env build frontend
             fi
 
-            docker compose --env-file .env up -d --force-recreate backend horizon frontend
+            docker compose --env-file .env up -d --build --force-recreate backend horizon frontend
