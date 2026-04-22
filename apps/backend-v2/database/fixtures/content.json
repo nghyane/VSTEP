@@ -5833,6 +5833,86 @@
             "is_published": true,
             "created_at": "2026-04-18 12:10:57",
             "updated_at": "2026-04-18 12:10:57"
+        },
+        {
+            "id": "019db448-0478-7180-a3de-4c8173882744",
+            "slug": "weather-forecast",
+            "title": "Weather Forecast",
+            "description": null,
+            "part": 1,
+            "audio_url": null,
+            "transcript": "Good morning. Here is your weather update. Today will be mostly cloudy with temperatures around 28 degrees. There is a 60 percent chance of rain this afternoon, so please carry an umbrella. Tomorrow will be sunny and warmer, with highs of 32 degrees.",
+            "vietnamese_transcript": "Dự báo thời tiết buổi sáng.",
+            "word_timestamps": null,
+            "keywords": "[\"weather\",\"temperature\",\"rain\",\"umbrella\"]",
+            "estimated_minutes": 3,
+            "is_published": true,
+            "created_at": "2026-04-22 08:21:51",
+            "updated_at": "2026-04-22 08:21:51"
+        },
+        {
+            "id": "019db448-0483-711f-9475-b0beff2b2a74",
+            "slug": "hotel-check-in",
+            "title": "Hotel Check-in",
+            "description": null,
+            "part": 1,
+            "audio_url": null,
+            "transcript": "Receptionist: Good evening, welcome to the Grand Hotel. Do you have a reservation?\nGuest: Yes, under the name Johnson. I booked a double room for three nights.\nReceptionist: Let me check. Yes, I have your reservation. Room 405 on the fourth floor. Breakfast is served from 7 to 10 AM in the restaurant on the ground floor.\nGuest: Thank you. Is there Wi-Fi in the room?\nReceptionist: Yes, the password is on the card in your room. Enjoy your stay.",
+            "vietnamese_transcript": "Đăng ký khách sạn.",
+            "word_timestamps": null,
+            "keywords": "[\"hotel\",\"reservation\",\"room\",\"breakfast\"]",
+            "estimated_minutes": 4,
+            "is_published": true,
+            "created_at": "2026-04-22 08:21:51",
+            "updated_at": "2026-04-22 08:21:51"
+        },
+        {
+            "id": "019db448-0487-7011-bb6a-b214ea1c7dc3",
+            "slug": "train-announcement",
+            "title": "Train Station Announcement",
+            "description": null,
+            "part": 1,
+            "audio_url": null,
+            "transcript": "Attention passengers. The 9:15 express train to Da Nang has been delayed by approximately 20 minutes due to signal problems. The train will now depart at 9:35 from platform 2. We apologize for the inconvenience. Passengers traveling to Hue should take the 9:30 local service from platform 5.",
+            "vietnamese_transcript": "Thông báo ga tàu.",
+            "word_timestamps": null,
+            "keywords": "[\"train\",\"delay\",\"platform\",\"passengers\"]",
+            "estimated_minutes": 3,
+            "is_published": true,
+            "created_at": "2026-04-22 08:21:51",
+            "updated_at": "2026-04-22 08:21:51"
+        },
+        {
+            "id": "019db448-0489-7265-84c4-cc5a479a43a6",
+            "slug": "job-interview",
+            "title": "Job Interview Conversation",
+            "description": null,
+            "part": 2,
+            "audio_url": null,
+            "transcript": "Interviewer: So, tell me about your experience in marketing.\nCandidate: I have worked in digital marketing for three years at a small agency. I managed social media campaigns and created content for various clients.\nInterviewer: What do you consider your greatest strength?\nCandidate: I think my ability to analyze data and turn it into actionable strategies is my strongest skill.\nInterviewer: And why are you interested in this position?\nCandidate: I want to work for a larger company where I can take on more responsibility and lead a team.\nInterviewer: We will let you know our decision by next Friday.",
+            "vietnamese_transcript": "Phỏng vấn xin việc.",
+            "word_timestamps": null,
+            "keywords": "[\"interview\",\"marketing\",\"experience\",\"strength\"]",
+            "estimated_minutes": 6,
+            "is_published": true,
+            "created_at": "2026-04-22 08:21:51",
+            "updated_at": "2026-04-22 08:21:51"
+        },
+        {
+            "id": "019db448-048d-7125-b58a-b2b617f294c0",
+            "slug": "university-lecture-climate",
+            "title": "Climate and Agriculture Lecture",
+            "description": null,
+            "part": 3,
+            "audio_url": null,
+            "transcript": "Today we will examine how climate change affects agriculture worldwide. Rising temperatures are causing shifts in growing seasons. In tropical regions, increased heat stress reduces crop yields for staple foods like rice and wheat. Meanwhile, some northern regions are experiencing longer growing seasons, which could temporarily benefit certain crops.\n\nWater availability is another critical factor. Changes in rainfall patterns mean some areas face more frequent droughts while others experience flooding. Both extremes damage crops and reduce food production.\n\nFarmers are adapting through various strategies. Some are switching to drought-resistant crop varieties. Others are adopting precision irrigation systems that use water more efficiently. However, these adaptations require investment that many smallholder farmers cannot afford.\n\nGovernments and international organizations must support farmers through funding, research, and technology transfer to ensure global food security in a changing climate.",
+            "vietnamese_transcript": "Bài giảng về khí hậu và nông nghiệp.",
+            "word_timestamps": null,
+            "keywords": "[\"climate\",\"agriculture\",\"drought\",\"crops\",\"food security\"]",
+            "estimated_minutes": 8,
+            "is_published": true,
+            "created_at": "2026-04-22 08:21:51",
+            "updated_at": "2026-04-22 08:21:51"
         }
     ],
     "practice_listening_questions": [
@@ -5853,6 +5933,150 @@
             "options": "[\"10 minutes\",\"5 minutes\",\"15 minutes\",\"20 minutes\"]",
             "correct_index": 1,
             "explanation": "About a five-minute walk."
+        },
+        {
+            "id": "019db448-0481-7005-a03e-27a470ee0386",
+            "exercise_id": "019db448-0478-7180-a3de-4c8173882744",
+            "display_order": 0,
+            "question": "What is the weather like today?",
+            "options": "[\"Sunny\",\"Mostly cloudy\",\"Rainy all day\",\"Snowy\"]",
+            "correct_index": 1,
+            "explanation": "Today will be mostly cloudy."
+        },
+        {
+            "id": "019db448-0483-711f-9475-b0befe741dcd",
+            "exercise_id": "019db448-0478-7180-a3de-4c8173882744",
+            "display_order": 1,
+            "question": "What should people carry?",
+            "options": "[\"A jacket\",\"An umbrella\",\"Sunglasses\",\"A hat\"]",
+            "correct_index": 1,
+            "explanation": "60 percent chance of rain, carry an umbrella."
+        },
+        {
+            "id": "019db448-0484-70df-ac53-a185d1161ce7",
+            "exercise_id": "019db448-0483-711f-9475-b0beff2b2a74",
+            "display_order": 0,
+            "question": "What type of room did the guest book?",
+            "options": "[\"Single\",\"Double\",\"Suite\",\"Twin\"]",
+            "correct_index": 1,
+            "explanation": "A double room for three nights."
+        },
+        {
+            "id": "019db448-0485-73da-b0cc-4de2140be0b8",
+            "exercise_id": "019db448-0483-711f-9475-b0beff2b2a74",
+            "display_order": 1,
+            "question": "What floor is the room on?",
+            "options": "[\"Second\",\"Third\",\"Fourth\",\"Fifth\"]",
+            "correct_index": 2,
+            "explanation": "Room 405 on the fourth floor."
+        },
+        {
+            "id": "019db448-0486-7330-9d76-617df4888dd2",
+            "exercise_id": "019db448-0483-711f-9475-b0beff2b2a74",
+            "display_order": 2,
+            "question": "When is breakfast served?",
+            "options": "[\"6 to 9 AM\",\"7 to 10 AM\",\"8 to 11 AM\",\"7 to 9 AM\"]",
+            "correct_index": 1,
+            "explanation": "7 to 10 AM."
+        },
+        {
+            "id": "019db448-0487-7011-bb6a-b214ea95eb1f",
+            "exercise_id": "019db448-0487-7011-bb6a-b214ea1c7dc3",
+            "display_order": 0,
+            "question": "Why is the train delayed?",
+            "options": "[\"Bad weather\",\"Signal problems\",\"Staff shortage\",\"Track repair\"]",
+            "correct_index": 1,
+            "explanation": "Delayed due to signal problems."
+        },
+        {
+            "id": "019db448-0488-73f7-94ba-44ef91bfd658",
+            "exercise_id": "019db448-0487-7011-bb6a-b214ea1c7dc3",
+            "display_order": 1,
+            "question": "What time will the train now depart?",
+            "options": "[\"9:15\",\"9:20\",\"9:30\",\"9:35\"]",
+            "correct_index": 3,
+            "explanation": "The train will now depart at 9:35."
+        },
+        {
+            "id": "019db448-048a-71d1-9a39-f551ea683f1b",
+            "exercise_id": "019db448-0489-7265-84c4-cc5a479a43a6",
+            "display_order": 0,
+            "question": "How long has the candidate worked in marketing?",
+            "options": "[\"One year\",\"Two years\",\"Three years\",\"Five years\"]",
+            "correct_index": 2,
+            "explanation": "Three years at a small agency."
+        },
+        {
+            "id": "019db448-048b-706b-b809-81aed31670ad",
+            "exercise_id": "019db448-0489-7265-84c4-cc5a479a43a6",
+            "display_order": 1,
+            "question": "What does the candidate consider their greatest strength?",
+            "options": "[\"Creativity\",\"Data analysis\",\"Communication\",\"Leadership\"]",
+            "correct_index": 1,
+            "explanation": "Ability to analyze data."
+        },
+        {
+            "id": "019db448-048b-706b-b809-81aed31cf8c8",
+            "exercise_id": "019db448-0489-7265-84c4-cc5a479a43a6",
+            "display_order": 2,
+            "question": "Why does the candidate want this job?",
+            "options": "[\"Higher salary\",\"More responsibility and lead a team\",\"Closer to home\",\"Better benefits\"]",
+            "correct_index": 1,
+            "explanation": "Take on more responsibility and lead a team."
+        },
+        {
+            "id": "019db448-048c-73e1-bf0d-7efd267b52da",
+            "exercise_id": "019db448-0489-7265-84c4-cc5a479a43a6",
+            "display_order": 3,
+            "question": "When will the decision be announced?",
+            "options": "[\"Monday\",\"Wednesday\",\"Next Friday\",\"Next month\"]",
+            "correct_index": 2,
+            "explanation": "By next Friday."
+        },
+        {
+            "id": "019db448-048d-7125-b58a-b2b61867a88d",
+            "exercise_id": "019db448-048d-7125-b58a-b2b617f294c0",
+            "display_order": 0,
+            "question": "What is the main topic of the lecture?",
+            "options": "[\"Ocean pollution\",\"Climate change effects on agriculture\",\"Renewable energy\",\"Deforestation\"]",
+            "correct_index": 1,
+            "explanation": "How climate change affects agriculture."
+        },
+        {
+            "id": "019db448-048e-73d1-a66a-930af9a46cac",
+            "exercise_id": "019db448-048d-7125-b58a-b2b617f294c0",
+            "display_order": 1,
+            "question": "What happens to crop yields in tropical regions?",
+            "options": "[\"They increase\",\"They decrease due to heat stress\",\"They stay the same\",\"They double\"]",
+            "correct_index": 1,
+            "explanation": "Heat stress reduces crop yields."
+        },
+        {
+            "id": "019db448-048f-70b4-aceb-77beaf45edc3",
+            "exercise_id": "019db448-048d-7125-b58a-b2b617f294c0",
+            "display_order": 2,
+            "question": "What adaptation strategy is mentioned?",
+            "options": "[\"Moving to cities\",\"Switching to drought-resistant crops\",\"Stopping farming\",\"Using more pesticides\"]",
+            "correct_index": 1,
+            "explanation": "Switching to drought-resistant crop varieties."
+        },
+        {
+            "id": "019db448-048f-70b4-aceb-77beaf7a3d9f",
+            "exercise_id": "019db448-048d-7125-b58a-b2b617f294c0",
+            "display_order": 3,
+            "question": "What challenge do smallholder farmers face?",
+            "options": "[\"Too much rain\",\"Lack of investment for adaptations\",\"Too many crops\",\"Government restrictions\"]",
+            "correct_index": 1,
+            "explanation": "Adaptations require investment they cannot afford."
+        },
+        {
+            "id": "019db448-0490-716a-8203-b64c044c06ab",
+            "exercise_id": "019db448-048d-7125-b58a-b2b617f294c0",
+            "display_order": 4,
+            "question": "What does the speaker call for at the end?",
+            "options": "[\"More research only\",\"Government and international support for farmers\",\"Banning certain crops\",\"Reducing farming\"]",
+            "correct_index": 1,
+            "explanation": "Support through funding, research, and technology transfer."
         }
     ],
     "practice_reading_exercises": [
@@ -5869,6 +6093,62 @@
             "is_published": true,
             "created_at": "2026-04-18 12:10:57",
             "updated_at": "2026-04-18 12:10:57"
+        },
+        {
+            "id": "019db448-a0f7-723e-aba1-7b1b5f2bd292",
+            "slug": "email-office-party",
+            "title": "Office Party Email",
+            "description": null,
+            "part": 1,
+            "passage": "Dear colleagues,\n\nWe are pleased to invite you to the annual company party on Friday, December 15th, at 6 PM in the main conference hall. There will be food, drinks, and live music. Please confirm your attendance by December 10th by replying to this email. You are welcome to bring one guest. Dress code is smart casual.\n\nBest regards,\nHR Department",
+            "vietnamese_translation": "Thư mời tiệc công ty.",
+            "keywords": "[\"party\",\"invitation\",\"attendance\"]",
+            "estimated_minutes": 8,
+            "is_published": true,
+            "created_at": "2026-04-22 08:22:31",
+            "updated_at": "2026-04-22 08:22:31"
+        },
+        {
+            "id": "019db448-a101-7128-99af-9e49792b1db5",
+            "slug": "public-transport-article",
+            "title": "Public Transport in Cities",
+            "description": null,
+            "part": 2,
+            "passage": "Public transport plays a vital role in modern cities. Buses, trains, and metro systems move millions of people every day, reducing traffic congestion and air pollution. Cities with well-developed public transport networks tend to have lower carbon emissions per capita.\n\nHowever, many cities face challenges in maintaining and expanding their transport systems. Aging infrastructure requires expensive repairs. Growing populations put pressure on existing capacity. Funding is often insufficient, leading to overcrowded services and delays.\n\nSome cities have found innovative solutions. Singapore uses electronic road pricing to discourage private car use. Bogota in Colombia built a bus rapid transit system that serves millions at a fraction of the cost of a metro. Curitiba in Brazil pioneered dedicated bus lanes decades ago.\n\nInvesting in public transport is not just about moving people. It promotes social equity by providing affordable mobility for all income levels. It supports economic growth by connecting workers to jobs. And it contributes to environmental sustainability.",
+            "vietnamese_translation": "Bài đọc về giao thông công cộng.",
+            "keywords": "[\"transport\",\"cities\",\"pollution\",\"infrastructure\"]",
+            "estimated_minutes": 12,
+            "is_published": true,
+            "created_at": "2026-04-22 08:22:31",
+            "updated_at": "2026-04-22 08:22:31"
+        },
+        {
+            "id": "019db448-a106-7280-b1d3-ddd513a72272",
+            "slug": "ai-education-essay",
+            "title": "AI in Education",
+            "description": null,
+            "part": 3,
+            "passage": "Artificial intelligence is increasingly being used in educational settings around the world. From personalized learning platforms to automated grading systems, AI tools are changing how students learn and how teachers teach.\n\nProponents argue that AI can personalize education at scale. Adaptive learning systems analyze student performance in real time and adjust content difficulty accordingly. This means each student can learn at their own pace, receiving additional support where needed and advancing quickly through material they have mastered.\n\nAI-powered tools can also reduce teacher workload. Automated grading of multiple-choice tests and even essay scoring can free teachers to spend more time on direct instruction and mentoring. Chatbots can answer common student questions outside of class hours.\n\nHowever, critics raise important concerns. Over-reliance on AI may reduce human interaction, which is essential for developing social skills and emotional intelligence. There are also concerns about data privacy, algorithmic bias, and the digital divide between students who have access to technology and those who do not.\n\nThe key is to use AI as a tool that enhances rather than replaces human teaching. Teachers should remain at the center of education, using AI to support their work rather than being replaced by it.",
+            "vietnamese_translation": "Bài đọc về AI trong giáo dục.",
+            "keywords": "[\"AI\",\"education\",\"personalized\",\"automated\"]",
+            "estimated_minutes": 15,
+            "is_published": true,
+            "created_at": "2026-04-22 08:22:31",
+            "updated_at": "2026-04-22 08:22:31"
+        },
+        {
+            "id": "019db448-a10b-72a2-b666-e8e2c79a8fa9",
+            "slug": "sleep-health-notice",
+            "title": "Sleep and Health",
+            "description": null,
+            "part": 1,
+            "passage": "Getting enough sleep is essential for good health. Adults need 7 to 9 hours of sleep per night. During sleep, your body repairs itself and your brain processes information from the day. Lack of sleep can lead to poor concentration, weight gain, and a weakened immune system. To improve your sleep, try to go to bed at the same time every night, avoid screens before bedtime, and keep your bedroom cool and dark.",
+            "vietnamese_translation": "Thông tin về giấc ngủ và sức khỏe.",
+            "keywords": "[\"sleep\",\"health\",\"concentration\",\"immune\"]",
+            "estimated_minutes": 5,
+            "is_published": true,
+            "created_at": "2026-04-22 08:22:31",
+            "updated_at": "2026-04-22 08:22:31"
         }
     ],
     "practice_reading_questions": [
@@ -5880,6 +6160,132 @@
             "options": "[\"6 a.m.\",\"7 a.m.\",\"8 a.m.\",\"9 a.m.\"]",
             "correct_index": 1,
             "explanation": "The restaurant will open at 7 a.m."
+        },
+        {
+            "id": "019db448-a0fd-73d1-8e52-245abc9eb94f",
+            "exercise_id": "019db448-a0f7-723e-aba1-7b1b5f2bd292",
+            "display_order": 0,
+            "question": "When is the party?",
+            "options": "[\"December 10\",\"December 12\",\"December 15\",\"December 20\"]",
+            "correct_index": 2,
+            "explanation": "Friday, December 15th."
+        },
+        {
+            "id": "019db448-a100-735b-8ac1-c0ceaab12f69",
+            "exercise_id": "019db448-a0f7-723e-aba1-7b1b5f2bd292",
+            "display_order": 1,
+            "question": "What is the dress code?",
+            "options": "[\"Formal\",\"Casual\",\"Smart casual\",\"No dress code\"]",
+            "correct_index": 2,
+            "explanation": "Smart casual."
+        },
+        {
+            "id": "019db448-a100-735b-8ac1-c0ceab48b954",
+            "exercise_id": "019db448-a0f7-723e-aba1-7b1b5f2bd292",
+            "display_order": 2,
+            "question": "How many guests can each person bring?",
+            "options": "[\"None\",\"One\",\"Two\",\"Unlimited\"]",
+            "correct_index": 1,
+            "explanation": "Welcome to bring one guest."
+        },
+        {
+            "id": "019db448-a103-7154-a111-081a3774a573",
+            "exercise_id": "019db448-a101-7128-99af-9e49792b1db5",
+            "display_order": 0,
+            "question": "What benefit of public transport is mentioned first?",
+            "options": "[\"Lower cost\",\"Reducing congestion and pollution\",\"Faster travel\",\"More comfortable\"]",
+            "correct_index": 1,
+            "explanation": "Reducing traffic congestion and air pollution."
+        },
+        {
+            "id": "019db448-a104-7010-bdfc-89b7db585033",
+            "exercise_id": "019db448-a101-7128-99af-9e49792b1db5",
+            "display_order": 1,
+            "question": "What challenge do cities face?",
+            "options": "[\"Too many buses\",\"Aging infrastructure and insufficient funding\",\"Too few passengers\",\"Driver shortages\"]",
+            "correct_index": 1,
+            "explanation": "Aging infrastructure requires expensive repairs."
+        },
+        {
+            "id": "019db448-a105-704a-8e22-0e5d63ad955a",
+            "exercise_id": "019db448-a101-7128-99af-9e49792b1db5",
+            "display_order": 2,
+            "question": "What did Singapore implement?",
+            "options": "[\"Free public transport\",\"Electronic road pricing\",\"More highways\",\"Car sharing\"]",
+            "correct_index": 1,
+            "explanation": "Electronic road pricing."
+        },
+        {
+            "id": "019db448-a105-704a-8e22-0e5d63f2c4f1",
+            "exercise_id": "019db448-a101-7128-99af-9e49792b1db5",
+            "display_order": 3,
+            "question": "What does the author say public transport promotes?",
+            "options": "[\"Tourism\",\"Social equity\",\"Competition\",\"Private investment\"]",
+            "correct_index": 1,
+            "explanation": "Promotes social equity."
+        },
+        {
+            "id": "019db448-a107-70d5-80c7-cc7944f6ee96",
+            "exercise_id": "019db448-a106-7280-b1d3-ddd513a72272",
+            "display_order": 0,
+            "question": "What can adaptive learning systems do?",
+            "options": "[\"Replace teachers\",\"Adjust content based on student performance\",\"Grade essays perfectly\",\"Teach social skills\"]",
+            "correct_index": 1,
+            "explanation": "Analyze performance and adjust content difficulty."
+        },
+        {
+            "id": "019db448-a108-7043-b1bf-45d893e34b5b",
+            "exercise_id": "019db448-a106-7280-b1d3-ddd513a72272",
+            "display_order": 1,
+            "question": "How can AI reduce teacher workload?",
+            "options": "[\"By replacing teachers\",\"Through automated grading and chatbots\",\"By shortening school hours\",\"By reducing class sizes\"]",
+            "correct_index": 1,
+            "explanation": "Automated grading and chatbots."
+        },
+        {
+            "id": "019db448-a109-7340-865e-9380a4f3fa38",
+            "exercise_id": "019db448-a106-7280-b1d3-ddd513a72272",
+            "display_order": 2,
+            "question": "What concern do critics raise?",
+            "options": "[\"AI is too expensive\",\"Reduced human interaction and data privacy\",\"AI is too slow\",\"Students prefer AI\"]",
+            "correct_index": 1,
+            "explanation": "Over-reliance may reduce human interaction."
+        },
+        {
+            "id": "019db448-a10a-70e2-ac9d-e763ce153c7c",
+            "exercise_id": "019db448-a106-7280-b1d3-ddd513a72272",
+            "display_order": 3,
+            "question": "What is the author main argument?",
+            "options": "[\"AI should replace teachers\",\"AI should be banned\",\"AI should enhance not replace teaching\",\"AI is not useful\"]",
+            "correct_index": 2,
+            "explanation": "Use AI as a tool that enhances rather than replaces."
+        },
+        {
+            "id": "019db448-a10a-70e2-ac9d-e763ceda09be",
+            "exercise_id": "019db448-a106-7280-b1d3-ddd513a72272",
+            "display_order": 4,
+            "question": "What is the digital divide?",
+            "options": "[\"Gap between old and new AI\",\"Gap between students with and without tech access\",\"Gap between teachers and students\",\"Gap between schools\"]",
+            "correct_index": 1,
+            "explanation": "Between students who have access and those who do not."
+        },
+        {
+            "id": "019db448-a10c-710b-b497-3bb5b1e7e760",
+            "exercise_id": "019db448-a10b-72a2-b666-e8e2c79a8fa9",
+            "display_order": 0,
+            "question": "How much sleep do adults need?",
+            "options": "[\"5 to 6 hours\",\"7 to 9 hours\",\"10 to 12 hours\",\"4 to 5 hours\"]",
+            "correct_index": 1,
+            "explanation": "7 to 9 hours per night."
+        },
+        {
+            "id": "019db448-a10c-710b-b497-3bb5b2e402d6",
+            "exercise_id": "019db448-a10b-72a2-b666-e8e2c79a8fa9",
+            "display_order": 1,
+            "question": "What can lack of sleep cause?",
+            "options": "[\"Better memory\",\"Poor concentration and weight gain\",\"Increased energy\",\"Stronger immunity\"]",
+            "correct_index": 1,
+            "explanation": "Poor concentration, weight gain, weakened immune system."
         }
     ],
     "practice_writing_prompts": [
@@ -5900,6 +6306,78 @@
             "is_published": true,
             "created_at": "2026-04-18 12:10:57",
             "updated_at": "2026-04-18 12:10:57"
+        },
+        {
+            "id": "019db448-f2e6-70c4-ae37-c53090fe37ce",
+            "slug": "complaint-letter",
+            "title": "Thư khiếu nại dịch vụ",
+            "description": null,
+            "part": 1,
+            "prompt": "You recently stayed at a hotel and were unhappy with the service. Write a letter to the hotel manager to:\n- Describe the problems you experienced\n- Explain how they affected your stay\n- Request compensation or an apology",
+            "min_words": 100,
+            "max_words": 150,
+            "required_points": "[\"describe problems\",\"explain impact\",\"request compensation\"]",
+            "keywords": "[\"complaint\",\"hotel\",\"service\",\"compensation\"]",
+            "sentence_starters": "[\"I am writing to express my dissatisfaction with...\",\"During my stay, I experienced several problems...\"]",
+            "sample_answer": null,
+            "estimated_minutes": 15,
+            "is_published": true,
+            "created_at": "2026-04-22 08:22:52",
+            "updated_at": "2026-04-22 08:22:52"
+        },
+        {
+            "id": "019db448-f2ea-7331-be24-98e6f4da19ed",
+            "slug": "opinion-essay-technology",
+            "title": "Luận về công nghệ và trẻ em",
+            "description": null,
+            "part": 2,
+            "prompt": "Some people believe that children should not be allowed to use smartphones until they are 16 years old. Others think that smartphones are useful tools for learning. Discuss both views and give your own opinion.",
+            "min_words": 250,
+            "max_words": 350,
+            "required_points": "[\"discuss both views\",\"give opinion\",\"use examples\"]",
+            "keywords": "[\"smartphone\",\"children\",\"education\",\"screen time\"]",
+            "sentence_starters": "[\"It is often argued that...\",\"On the other hand, proponents suggest...\"]",
+            "sample_answer": null,
+            "estimated_minutes": 35,
+            "is_published": true,
+            "created_at": "2026-04-22 08:22:52",
+            "updated_at": "2026-04-22 08:22:52"
+        },
+        {
+            "id": "019db448-f2ea-7331-be24-98e6f4e725c4",
+            "slug": "invitation-reply",
+            "title": "Trả lời thư mời",
+            "description": null,
+            "part": 1,
+            "prompt": "A friend has invited you to their graduation ceremony, but you cannot attend. Write a letter to:\n- Thank them for the invitation\n- Explain why you cannot attend\n- Suggest an alternative way to celebrate together",
+            "min_words": 100,
+            "max_words": 150,
+            "required_points": "[\"thank\",\"explain\",\"suggest alternative\"]",
+            "keywords": "[\"graduation\",\"invitation\",\"celebrate\"]",
+            "sentence_starters": "[\"Thank you so much for inviting me to...\",\"Unfortunately, I will not be able to attend because...\"]",
+            "sample_answer": null,
+            "estimated_minutes": 15,
+            "is_published": true,
+            "created_at": "2026-04-22 08:22:52",
+            "updated_at": "2026-04-22 08:22:52"
+        },
+        {
+            "id": "019db448-f2eb-70e3-89e8-b31286da62e7",
+            "slug": "essay-urbanization",
+            "title": "Luận về đô thị hóa",
+            "description": null,
+            "part": 2,
+            "prompt": "More and more people are moving from rural areas to cities. What are the causes of this trend? What problems does it create, and how can these problems be solved?",
+            "min_words": 250,
+            "max_words": 350,
+            "required_points": "[\"discuss causes\",\"identify problems\",\"propose solutions\"]",
+            "keywords": "[\"urbanization\",\"rural\",\"migration\",\"housing\"]",
+            "sentence_starters": "[\"In recent decades, there has been a significant trend of...\",\"This migration is driven by several factors...\"]",
+            "sample_answer": null,
+            "estimated_minutes": 35,
+            "is_published": true,
+            "created_at": "2026-04-22 08:22:52",
+            "updated_at": "2026-04-22 08:22:52"
         }
     ],
     "practice_speaking_drills": [
@@ -5913,6 +6391,39 @@
             "is_published": true,
             "created_at": "2026-04-18 12:10:57",
             "updated_at": "2026-04-18 12:10:57"
+        },
+        {
+            "id": "019db449-6455-7102-a3c7-96e0fed79b45",
+            "slug": "travel-phrases-b1",
+            "title": "Travel Phrases",
+            "description": "Luyện các câu thường dùng khi du lịch.",
+            "level": "B1",
+            "estimated_minutes": 5,
+            "is_published": true,
+            "created_at": "2026-04-22 08:23:21",
+            "updated_at": "2026-04-22 08:23:21"
+        },
+        {
+            "id": "019db449-6460-71f7-a4ae-b26e4e97213a",
+            "slug": "workplace-communication-b2",
+            "title": "Workplace Communication",
+            "description": "Luyện giao tiếp nơi làm việc.",
+            "level": "B2",
+            "estimated_minutes": 5,
+            "is_published": true,
+            "created_at": "2026-04-22 08:23:21",
+            "updated_at": "2026-04-22 08:23:21"
+        },
+        {
+            "id": "019db449-6465-7084-9e94-d93303216a3a",
+            "slug": "academic-discussion-b2",
+            "title": "Academic Discussion",
+            "description": "Luyện thảo luận học thuật.",
+            "level": "B2",
+            "estimated_minutes": 6,
+            "is_published": true,
+            "created_at": "2026-04-22 08:23:21",
+            "updated_at": "2026-04-22 08:23:21"
         }
     ],
     "practice_speaking_drill_sentences": [
@@ -5936,6 +6447,111 @@
             "display_order": 2,
             "text": "I have lunch with my colleagues around noon.",
             "translation": null
+        },
+        {
+            "id": "019db449-645b-7225-8cc4-63a4f044fafe",
+            "drill_id": "019db449-6455-7102-a3c7-96e0fed79b45",
+            "display_order": 0,
+            "text": "Could you tell me how to get to the train station?",
+            "translation": null
+        },
+        {
+            "id": "019db449-645c-739d-8d11-64a6e01a3e6f",
+            "drill_id": "019db449-6455-7102-a3c7-96e0fed79b45",
+            "display_order": 1,
+            "text": "I would like to book a room for two nights, please.",
+            "translation": null
+        },
+        {
+            "id": "019db449-645d-723d-ab0f-8bd2a05aa2c5",
+            "drill_id": "019db449-6455-7102-a3c7-96e0fed79b45",
+            "display_order": 2,
+            "text": "What time does the museum close today?",
+            "translation": null
+        },
+        {
+            "id": "019db449-645e-71c1-983e-993da45027c7",
+            "drill_id": "019db449-6455-7102-a3c7-96e0fed79b45",
+            "display_order": 3,
+            "text": "Is there a restaurant nearby that you would recommend?",
+            "translation": null
+        },
+        {
+            "id": "019db449-645f-703e-b7b5-c436deaa5459",
+            "drill_id": "019db449-6455-7102-a3c7-96e0fed79b45",
+            "display_order": 4,
+            "text": "I need to change my flight to a later date.",
+            "translation": null
+        },
+        {
+            "id": "019db449-6461-7030-b220-6c454bcad7fb",
+            "drill_id": "019db449-6460-71f7-a4ae-b26e4e97213a",
+            "display_order": 0,
+            "text": "I would like to schedule a meeting to discuss the project timeline.",
+            "translation": null
+        },
+        {
+            "id": "019db449-6462-716d-99a5-98ce1a5146cb",
+            "drill_id": "019db449-6460-71f7-a4ae-b26e4e97213a",
+            "display_order": 1,
+            "text": "Could you send me the report by the end of the day?",
+            "translation": null
+        },
+        {
+            "id": "019db449-6463-729b-bc4d-a1d47984a6a7",
+            "drill_id": "019db449-6460-71f7-a4ae-b26e4e97213a",
+            "display_order": 2,
+            "text": "I think we should consider an alternative approach to this problem.",
+            "translation": null
+        },
+        {
+            "id": "019db449-6464-7105-84a8-5cdb0dfa8ace",
+            "drill_id": "019db449-6460-71f7-a4ae-b26e4e97213a",
+            "display_order": 3,
+            "text": "Thank you for your feedback. I will make the necessary changes.",
+            "translation": null
+        },
+        {
+            "id": "019db449-6464-7105-84a8-5cdb0ebea3e9",
+            "drill_id": "019db449-6460-71f7-a4ae-b26e4e97213a",
+            "display_order": 4,
+            "text": "I am afraid I will not be able to attend the conference next week.",
+            "translation": null
+        },
+        {
+            "id": "019db449-6466-712a-8cba-272f7e4e66cc",
+            "drill_id": "019db449-6465-7084-9e94-d93303216a3a",
+            "display_order": 0,
+            "text": "Research suggests that regular exercise improves cognitive function.",
+            "translation": null
+        },
+        {
+            "id": "019db449-6467-738a-93b1-93f4130ada61",
+            "drill_id": "019db449-6465-7084-9e94-d93303216a3a",
+            "display_order": 1,
+            "text": "There are several factors that contribute to climate change.",
+            "translation": null
+        },
+        {
+            "id": "019db449-6467-738a-93b1-93f4135e501b",
+            "drill_id": "019db449-6465-7084-9e94-d93303216a3a",
+            "display_order": 2,
+            "text": "The results of the study indicate a significant correlation.",
+            "translation": null
+        },
+        {
+            "id": "019db449-6468-7169-9746-554ea5a35949",
+            "drill_id": "019db449-6465-7084-9e94-d93303216a3a",
+            "display_order": 3,
+            "text": "In my opinion, the advantages outweigh the disadvantages.",
+            "translation": null
+        },
+        {
+            "id": "019db449-6468-7169-9746-554ea5f89b2e",
+            "drill_id": "019db449-6465-7084-9e94-d93303216a3a",
+            "display_order": 4,
+            "text": "This finding is consistent with previous research in the field.",
+            "translation": null
         }
     ],
     "practice_speaking_tasks": [
@@ -5951,6 +6567,58 @@
             "is_published": true,
             "created_at": "2026-04-18 12:10:57",
             "updated_at": "2026-04-18 12:10:57"
+        },
+        {
+            "id": "019db449-646b-7034-8cf7-be6114c17ccc",
+            "slug": "social-interaction-food",
+            "title": "Social Interaction: Food & Cooking",
+            "part": 1,
+            "task_type": "social",
+            "content": "{\"topics\":[{\"name\":\"Food\",\"questions\":[\"What is your favorite dish?\",\"Do you enjoy cooking? Why or why not?\",\"How often do you eat out?\"]},{\"name\":\"Healthy Eating\",\"questions\":[\"Do you think people in your country eat healthily?\",\"What changes could people make to eat better?\",\"How important is breakfast?\"]}]}",
+            "estimated_minutes": 4,
+            "speaking_seconds": 120,
+            "is_published": true,
+            "created_at": "2026-04-22 08:23:21",
+            "updated_at": "2026-04-22 08:23:21"
+        },
+        {
+            "id": "019db449-646c-7209-8837-cc9f98fa0725",
+            "slug": "solution-environment",
+            "title": "Solution Discussion: Environmental Problem",
+            "part": 2,
+            "task_type": "solution",
+            "content": "{\"situation\":\"Your city has a serious air pollution problem. Three solutions are being considered.\",\"solutions\":[\"Ban private cars from the city center\",\"Build more parks and green spaces\",\"Require factories to use cleaner technology\"],\"task\":\"Choose ONE solution and explain why it is the best.\"}",
+            "estimated_minutes": 4,
+            "speaking_seconds": 240,
+            "is_published": true,
+            "created_at": "2026-04-22 08:23:21",
+            "updated_at": "2026-04-22 08:23:21"
+        },
+        {
+            "id": "019db449-646d-738c-82b3-fded959e5939",
+            "slug": "topic-social-media",
+            "title": "Topic Development: Social Media Impact",
+            "part": 3,
+            "task_type": "topic",
+            "content": "{\"topic\":\"The Impact of Social Media on Young People\",\"prompt\":\"Discuss how social media affects young people today. Consider both positive and negative effects.\",\"follow_up_questions\":[\"Do you think social media does more harm than good for young people?\",\"How can parents help children use social media responsibly?\",\"Should schools teach students about social media literacy?\"]}",
+            "estimated_minutes": 5,
+            "speaking_seconds": 300,
+            "is_published": true,
+            "created_at": "2026-04-22 08:23:21",
+            "updated_at": "2026-04-22 08:23:21"
+        },
+        {
+            "id": "019db449-646d-738c-82b3-fded95fc5d0c",
+            "slug": "solution-education",
+            "title": "Solution Discussion: Improving Education",
+            "part": 2,
+            "task_type": "solution",
+            "content": "{\"situation\":\"Your school wants to improve student performance. Three options are being considered.\",\"solutions\":[\"Reduce class sizes to 20 students\",\"Introduce more technology in classrooms\",\"Extend school hours with extra tutoring\"],\"task\":\"Choose ONE solution and explain why it is the best.\"}",
+            "estimated_minutes": 4,
+            "speaking_seconds": 240,
+            "is_published": true,
+            "created_at": "2026-04-22 08:23:21",
+            "updated_at": "2026-04-22 08:23:21"
         }
     ]
 }
