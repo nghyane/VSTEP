@@ -13,6 +13,7 @@ use App\Models\ExamSpeakingSubmission;
 use App\Models\ExamVersion;
 use App\Models\ExamWritingSubmission;
 use App\Models\Profile;
+use App\Models\ProfileDailyActivity;
 use App\Models\SpeakingGradingResult;
 use App\Models\SystemConfig;
 use App\Models\WritingGradingResult;
@@ -185,6 +186,9 @@ class ExamService
                 ];
             }
 
+            // Record daily activity
+            ProfileDailyActivity::addActivity($session->profile_id, 'exam_session');
+
             $session->update([
                 'status' => 'submitted',
                 'submitted_at' => now(),
@@ -272,8 +276,12 @@ class ExamService
         return max($total, 1);
     }
 
-    /** @return array<string,int> key = "type:id", value = correct_index */
-    private function loadMcqItemMap(ExamSession $session): array
+    /**
+     * Load MCQ item answer map for a session.
+     *
+     * @return array<string,int> key = "type:id", value = correct_index
+     */
+    public function loadMcqItemMap(ExamSession $session): array
     {
         $version = $session->examVersion;
         $version->load(['listeningSections.items', 'readingPassages.items']);

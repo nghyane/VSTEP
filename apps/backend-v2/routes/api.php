@@ -124,15 +124,19 @@ Route::prefix('v1')->group(function () {
         Route::get('/exams', [ExamController::class, 'index']);
         Route::get('/exams/{id}', [ExamController::class, 'show']);
         Route::post('/exams/{examId}/sessions', [ExamController::class, 'startSession']);
+        Route::get('/exam-sessions/active', [ExamController::class, 'activeSession']);
         Route::get('/exam-sessions', [ExamController::class, 'mySessions']);
         Route::get('/exam-sessions/{sessionId}', [ExamController::class, 'showSession']);
+        Route::get('/exam-sessions/{sessionId}/results', [ExamController::class, 'sessionResults']);
         Route::post('/exam-sessions/{sessionId}/submit', [ExamController::class, 'submit']);
         Route::post('/exam-sessions/{sessionId}/listening-played', [ExamController::class, 'logListeningPlayed']);
+        Route::get('/exam-sessions/{sessionId}/listening-played', [ExamController::class, 'listeningPlaySummary']);
         Route::get('/exam-sessions/{sessionId}/writing-results', [ExamController::class, 'writingResults']);
         Route::get('/exam-sessions/{sessionId}/speaking-results', [ExamController::class, 'speakingResults']);
 
         // Grading.
         Route::get('/grading/jobs/{id}', [GradingController::class, 'showJob']);
+        Route::get('/grading/jobs/{id}/status', [GradingController::class, 'jobStatus']);
         Route::get('/grading/writing/{submissionType}/{submissionId}', [GradingController::class, 'writingResult']);
         Route::get('/grading/speaking/{submissionType}/{submissionId}', [GradingController::class, 'speakingResult']);
 

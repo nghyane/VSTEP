@@ -51,4 +51,9 @@ class ExamSession extends BaseModel
     {
         return $this->hasMany(ExamSpeakingSubmission::class);
     }
+
+    public function listeningPlayLogs(): HasMany
+    {
+        return $this->hasMany(ExamListeningPlayLog::class, 'session_id');
+    }
 }
