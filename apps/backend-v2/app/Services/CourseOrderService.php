@@ -50,6 +50,11 @@ class CourseOrderService
             throw ValidationException::withMessages(['course' => ['Khóa học chưa có giá.']]);
         }
 
+        // Check if user is already enrolled
+        if ($this->isEnrolled($profile, $course)) {
+            throw ValidationException::withMessages(['course' => ['Bạn đã ghi danh khóa học này.']]);
+        }
+
         // Check if user already has paid or pending order for this course
         $existing = CourseEnrollmentOrder::query()
             ->where('profile_id', $profile->id)
@@ -102,6 +107,20 @@ class CourseOrderService
                 throw ValidationException::withMessages([
                     'order' => ["Đơn hàng ở trạng thái {$locked->status} không thể xác nhận."],
                 ]);
+            }
+
+            // Guard: if enrollment already exists (edge case), still mark order paid
+            if (CourseEnrollment::query()
+                ->where('profile_id', $locked->profile_id)
+                ->where('course_id', $locked->course_id)
+                ->exists()
+            ) {
+                $locked->update([
+                    'status' => 'paid',
+                    'paid_at' => now(),
+                ]);
+
+                return $locked;
             }
 
             // Create enrollment
