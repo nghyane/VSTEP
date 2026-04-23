@@ -71,7 +71,7 @@ class CourseEnrollmentTest extends TestCase
 
         $slot = TeacherSlot::create([
             'course_id' => $course->id, 'teacher_id' => $course->teacher_id,
-            'starts_at' => now()->addDay(), 'status' => 'open',
+            'starts_at' => now()->addDay(), 'duration_minutes' => 45, 'status' => 'open',
         ]);
 
         // No full tests done → commitment pending → booking rejected
@@ -90,7 +90,13 @@ class CourseEnrollmentTest extends TestCase
         $this->withHeader('Authorization', "Bearer {$token}")
             ->postJson("/api/v1/courses/{$course->id}/enroll")->assertCreated();
 
-        // Simulate required full tests
+        // Reload enrollment to get enrolled_at
+        $enrollment = CourseEnrollment::query()
+            ->where('profile_id', $profile->id)
+            ->where('course_id', $course->id)
+            ->first();
+
+        // Simulate required full tests within the commitment window (from enrolled_at)
         $exam = Exam::create(['slug' => 'e1', 'title' => 'E', 'total_duration_minutes' => 60, 'is_published' => true]);
         $version = ExamVersion::create(['exam_id' => $exam->id, 'version_number' => 1, 'is_active' => true]);
         for ($i = 0; $i < $course->required_full_tests; $i++) {
@@ -98,14 +104,14 @@ class CourseEnrollmentTest extends TestCase
                 'profile_id' => $profile->id, 'exam_version_id' => $version->id,
                 'mode' => 'full', 'selected_skills' => ['listening', 'reading', 'writing', 'speaking'],
                 'is_full_test' => true, 'started_at' => now(), 'server_deadline_at' => now()->addHour(),
-                'submitted_at' => $course->start_date->addDays($course->exam_cooldown_days + 1),
+                'submitted_at' => $enrollment->enrolled_at->copy()->addDays($course->exam_cooldown_days + 1),
                 'status' => 'submitted', 'coins_charged' => 25,
             ]);
         }
 
         $slot = TeacherSlot::create([
             'course_id' => $course->id, 'teacher_id' => $course->teacher_id,
-            'starts_at' => now()->addDay(), 'status' => 'open',
+            'starts_at' => now()->addDay(), 'duration_minutes' => 45, 'status' => 'open',
         ]);
 
         $this->withHeader('Authorization', "Bearer {$token}")

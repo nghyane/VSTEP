@@ -12,6 +12,7 @@ use App\Models\ProfileStreakState;
 use App\Models\SystemConfig;
 use App\Models\WritingGradingResult;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -223,7 +224,7 @@ class ProgressService
         ];
     }
 
-    private function mcqAvgBand(\Illuminate\Support\Collection $sessionIds, string $skill): ?float
+    private function mcqAvgBand(Collection $sessionIds, string $skill): ?float
     {
         if ($sessionIds->isEmpty()) {
             return null;

@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Models\ExamSession;
 use App\Models\ExamVersion;
+use App\Models\GradingJob;
 use App\Models\Profile;
 use App\Models\ProfileDailyActivity;
 use App\Models\ProfileStreakState;
@@ -13,6 +14,7 @@ use App\Models\WritingGradingResult;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Seed dashboard demo data: streak, activity heatmap, exam sessions with grading.
@@ -149,7 +151,7 @@ class DashboardDemoSeeder extends Seeder
 
             // Writing submission + grading
             if ($writingTaskId) {
-                $subId = \Illuminate\Support\Str::uuid7();
+                $subId = Str::uuid7();
                 DB::table('exam_writing_submissions')->insert([
                     'id' => $subId,
                     'session_id' => $session->id,
@@ -160,7 +162,7 @@ class DashboardDemoSeeder extends Seeder
                     'submitted_at' => $submittedAt,
                 ]);
 
-                $job = \App\Models\GradingJob::create([
+                $job = GradingJob::create([
                     'submission_type' => 'exam_writing',
                     'submission_id' => $subId,
                     'status' => 'ready',

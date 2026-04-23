@@ -7,7 +7,6 @@ namespace Database\Seeders;
 use App\Enums\CoinTransactionType;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
-use App\Models\Profile;
 use App\Models\User;
 use App\Services\WalletService;
 use Illuminate\Database\Seeder;

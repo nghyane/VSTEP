@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Course;
+use App\Models\CourseEnrollment;
 use App\Models\Profile;
 use App\Models\TeacherSlot;
 use App\Services\CourseService;
@@ -21,7 +22,7 @@ class CourseController extends Controller
         $courses = $this->courseService->listPublished();
         $profile = $request->attributes->get('active_profile');
         $enrolledIds = $profile
-            ? \App\Models\CourseEnrollment::query()->where('profile_id', $profile->id)->pluck('course_id')->all()
+            ? CourseEnrollment::query()->where('profile_id', $profile->id)->pluck('course_id')->all()
             : [];
 
         return response()->json([

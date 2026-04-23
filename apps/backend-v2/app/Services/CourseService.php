@@ -41,6 +41,9 @@ class CourseService
      */
     public function enroll(Profile $profile, Course $course): CourseEnrollment
     {
+        if ($course->end_date->isPast()) {
+            throw ValidationException::withMessages(['course' => ['Course has ended.']]);
+        }
         if ($course->isFull()) {
             throw ValidationException::withMessages(['course' => ['Course is full.']]);
         }
@@ -90,7 +93,7 @@ class CourseService
             return ['phase' => 'not_enrolled', 'completed' => 0, 'required' => $course->required_full_tests];
         }
 
-        $windowStart = $course->start_date->addDays($course->exam_cooldown_days);
+        $windowStart = $enrollment->enrolled_at->copy()->addDays($course->exam_cooldown_days);
         $windowEnd = $windowStart->copy()->addDays($course->commitment_window_days);
 
         $completed = ExamSession::query()
@@ -117,6 +120,13 @@ class CourseService
         ?string $submissionType = null,
         ?string $submissionId = null,
     ): TeacherBooking {
+        if ($slot->course_id !== $course->id) {
+            throw ValidationException::withMessages(['slot' => ['Slot does not belong to this course.']]);
+        }
+        if ($slot->starts_at->isPast()) {
+            throw ValidationException::withMessages(['slot' => ['Slot has already passed.']]);
+        }
+
         $commitment = $this->commitmentStatus($profile, $course);
         if ($commitment['phase'] !== 'met') {
             throw ValidationException::withMessages(['commitment' => ['Commitment not met. Complete required full tests first.']]);
@@ -132,7 +142,7 @@ class CourseService
             throw ValidationException::withMessages(['slots' => ['Maximum booking limit reached.']]);
         }
 
-        return DB::transaction(function () use ($profile, $course, $slot, $submissionType, $submissionId) {
+        return DB::transaction(function () use ($profile, $slot, $submissionType, $submissionId) {
             $locked = TeacherSlot::query()->whereKey($slot->id)->lockForUpdate()->first();
             if ($locked->status !== 'open') {
                 throw ValidationException::withMessages(['slot' => ['Slot no longer available.']]);
