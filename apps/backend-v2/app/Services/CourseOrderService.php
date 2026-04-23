@@ -41,13 +41,13 @@ class CourseOrderService
         string $paymentProvider = 'mock',
     ): CourseEnrollmentOrder {
         if ($course->end_date->isPast()) {
-            throw ValidationException::withMessages(['course' => ['Course has ended.']]);
+            throw ValidationException::withMessages(['course' => ['Khóa học đã kết thúc.']]);
         }
         if ($course->isFull()) {
-            throw ValidationException::withMessages(['course' => ['Course is full.']]);
+            throw ValidationException::withMessages(['course' => ['Khóa học đã đủ học viên.']]);
         }
         if ($course->price_vnd <= 0) {
-            throw ValidationException::withMessages(['course' => ['Course price is not set.']]);
+            throw ValidationException::withMessages(['course' => ['Khóa học chưa có giá.']]);
         }
 
         // Check if user already has paid or pending order for this course
@@ -59,9 +59,9 @@ class CourseOrderService
 
         if ($existing !== null) {
             if ($existing->isPaid()) {
-                throw ValidationException::withMessages(['course' => ['Already enrolled.']]);
+                throw ValidationException::withMessages(['course' => ['Bạn đã ghi danh khóa học này.']]);
             }
-            throw ValidationException::withMessages(['course' => ['You have a pending payment for this course.']]);
+            throw ValidationException::withMessages(['course' => ['Bạn đang có đơn thanh toán chờ xác nhận cho khóa học này.']]);
         }
 
         $amount = $course->price_vnd;
@@ -100,7 +100,7 @@ class CourseOrderService
 
             if ($locked->status !== 'pending') {
                 throw ValidationException::withMessages([
-                    'order' => ["Order status {$locked->status} cannot be confirmed."],
+                    'order' => ["Đơn hàng ở trạng thái {$locked->status} không thể xác nhận."],
                 ]);
             }
 

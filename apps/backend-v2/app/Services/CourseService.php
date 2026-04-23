@@ -42,13 +42,13 @@ class CourseService
     public function enroll(Profile $profile, Course $course): CourseEnrollment
     {
         if ($course->end_date->isPast()) {
-            throw ValidationException::withMessages(['course' => ['Course has ended.']]);
+            throw ValidationException::withMessages(['course' => ['Khóa học đã kết thúc.']]);
         }
         if ($course->isFull()) {
-            throw ValidationException::withMessages(['course' => ['Course is full.']]);
+            throw ValidationException::withMessages(['course' => ['Khóa học đã đủ học viên.']]);
         }
         if (CourseEnrollment::query()->where('profile_id', $profile->id)->where('course_id', $course->id)->exists()) {
-            throw ValidationException::withMessages(['course' => ['Already enrolled.']]);
+            throw ValidationException::withMessages(['course' => ['Bạn đã ghi danh khóa học này.']]);
         }
 
         return DB::transaction(function () use ($profile, $course) {
@@ -121,15 +121,15 @@ class CourseService
         ?string $submissionId = null,
     ): TeacherBooking {
         if ($slot->course_id !== $course->id) {
-            throw ValidationException::withMessages(['slot' => ['Slot does not belong to this course.']]);
+            throw ValidationException::withMessages(['slot' => ['Slot không thuộc khóa học này.']]);
         }
         if ($slot->starts_at->isPast()) {
-            throw ValidationException::withMessages(['slot' => ['Slot has already passed.']]);
+            throw ValidationException::withMessages(['slot' => ['Slot đã qua.']]);
         }
 
         $commitment = $this->commitmentStatus($profile, $course);
         if ($commitment['phase'] !== 'met') {
-            throw ValidationException::withMessages(['commitment' => ['Commitment not met. Complete required full tests first.']]);
+            throw ValidationException::withMessages(['commitment' => ['Chưa hoàn thành cam kết. Vui lòng hoàn thành đủ số đề thi yêu cầu trước.']]);
         }
 
         $bookedCount = TeacherBooking::query()
@@ -139,13 +139,13 @@ class CourseService
             ->count();
 
         if ($bookedCount >= $course->max_slots_per_student) {
-            throw ValidationException::withMessages(['slots' => ['Maximum booking limit reached.']]);
+            throw ValidationException::withMessages(['slots' => ['Đã đạt giới hạn đăng ký slot tối đa.']]);
         }
 
         return DB::transaction(function () use ($profile, $slot, $submissionType, $submissionId) {
             $locked = TeacherSlot::query()->whereKey($slot->id)->lockForUpdate()->first();
             if ($locked->status !== 'open') {
-                throw ValidationException::withMessages(['slot' => ['Slot no longer available.']]);
+                throw ValidationException::withMessages(['slot' => ['Slot không còn khả dụng.']]);
             }
 
             $locked->update(['status' => 'booked']);

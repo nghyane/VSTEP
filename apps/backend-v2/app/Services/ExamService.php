@@ -75,7 +75,7 @@ class ExamService
         $exam = Exam::query()->findOrFail($examId);
         $version = $exam->activeVersion();
         if ($version === null) {
-            throw ValidationException::withMessages(['exam' => ['No active version.']]);
+            throw ValidationException::withMessages(['exam' => ['Không có phiên bản đang hoạt động.']]);
         }
         $version->load([
             'listeningSections.items', 'readingPassages.items',

@@ -112,7 +112,7 @@ class WalletService
 
             if ($next < 0) {
                 throw ValidationException::withMessages([
-                    'coins' => ['Insufficient balance: need '.abs($delta).", have {$current}."],
+                    'coins' => ['Không đủ xu. Cần '.abs($delta)." xu, hiện có {$current} xu."],
                 ]);
             }
 
