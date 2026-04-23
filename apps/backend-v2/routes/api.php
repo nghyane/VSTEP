@@ -152,7 +152,9 @@ Route::prefix('v1')->group(function () {
         // Courses.
         Route::get('/courses', [CourseController::class, 'index']);
         Route::get('/courses/{id}', [CourseController::class, 'show']);
-        Route::post('/courses/{id}/enroll', [CourseController::class, 'enroll']);
+        Route::post('/courses/{id}/enrollment-orders', [CourseController::class, 'createEnrollmentOrder']);
+        Route::get('/courses/enrollment-orders', [CourseController::class, 'enrollmentOrders']);
+        Route::post('/courses/enrollment-orders/{orderId}/confirm', [CourseController::class, 'confirmEnrollmentOrder']);
         Route::post('/courses/{courseId}/bookings', [CourseController::class, 'bookSlot']);
 
         // Notifications.
