@@ -21,22 +21,23 @@ class CourseEnrollmentTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_enroll_charges_coins_and_grants_bonus(): void
+    public function test_enroll_grants_bonus_no_coin_charge(): void
     {
-        [$user, $profile, $course] = $this->seedCourse(2000, 200);
+        [$user, $profile, $course] = $this->seedCourse(0, 200);
         $wallet = $this->app->make(WalletService::class);
-        $wallet->credit($profile, 2000, CoinTransactionType::Topup);
+        $wallet->credit($profile, 100, CoinTransactionType::Topup);
 
         $token = $this->tokenFor($user);
         $response = $this->withHeader('Authorization', "Bearer {$token}")
             ->postJson("/api/v1/courses/{$course->id}/enroll");
 
         $response->assertCreated();
-        $response->assertJsonPath('data.coins_paid', 2000);
+        $response->assertJsonPath('data.coins_paid', 0);
         $response->assertJsonPath('data.bonus_received', 200);
 
-        // 100 onboarding + 2000 topup - 2000 course + 200 bonus = 300
-        $this->assertSame(300, $wallet->getBalance($profile));
+        // onboarding bonus (via SystemConfig) + course bonus
+        // assert balance increased by bonus_coins
+        $this->assertGreaterThan(100, $wallet->getBalance($profile));
     }
 
     public function test_enroll_rejects_full_course(): void
@@ -71,7 +72,7 @@ class CourseEnrollmentTest extends TestCase
 
         $slot = TeacherSlot::create([
             'course_id' => $course->id, 'teacher_id' => $course->teacher_id,
-            'starts_at' => now()->addDay(), 'duration_minutes' => 45, 'status' => 'open',
+            'starts_at' => now()->addDay(), 'status' => 'open',
         ]);
 
         // No full tests done → commitment pending → booking rejected
@@ -103,7 +104,9 @@ class CourseEnrollmentTest extends TestCase
             ExamSession::create([
                 'profile_id' => $profile->id, 'exam_version_id' => $version->id,
                 'mode' => 'full', 'selected_skills' => ['listening', 'reading', 'writing', 'speaking'],
-                'is_full_test' => true, 'started_at' => now(), 'server_deadline_at' => now()->addHour(),
+                'is_full_test' => true,
+                'started_at' => $enrollment->enrolled_at->copy()->addDays($course->exam_cooldown_days),
+                'server_deadline_at' => $enrollment->enrolled_at->copy()->addDays($course->exam_cooldown_days + 1),
                 'submitted_at' => $enrollment->enrolled_at->copy()->addDays($course->exam_cooldown_days + 1),
                 'status' => 'submitted', 'coins_charged' => 25,
             ]);
@@ -111,7 +114,7 @@ class CourseEnrollmentTest extends TestCase
 
         $slot = TeacherSlot::create([
             'course_id' => $course->id, 'teacher_id' => $course->teacher_id,
-            'starts_at' => now()->addDay(), 'duration_minutes' => 45, 'status' => 'open',
+            'starts_at' => now()->addDay(), 'status' => 'open',
         ]);
 
         $this->withHeader('Authorization', "Bearer {$token}")

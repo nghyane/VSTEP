@@ -52,6 +52,7 @@ class CourseController extends Controller
 
         return response()->json(['data' => [
             'enrollment_id' => $enrollment->id,
+            'coins_paid' => $enrollment->coins_paid,
             'bonus_received' => $enrollment->bonus_coins_received,
         ]], 201);
     }
