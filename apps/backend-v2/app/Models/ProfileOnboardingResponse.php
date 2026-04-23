@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'profile_id',
+    'version',
     'weaknesses',
     'motivation',
     'raw_answers',
