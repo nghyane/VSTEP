@@ -6,13 +6,13 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ImportExamRequest;
-use App\Services\ExamService;
+use App\Services\ExamImportService;
 use Illuminate\Http\JsonResponse;
 
 class ExamController extends Controller
 {
     public function __construct(
-        private readonly ExamService $examService,
+        private readonly ExamImportService $examService,
     ) {}
 
     /**

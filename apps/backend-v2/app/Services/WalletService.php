@@ -24,6 +24,10 @@ use Illuminate\Validation\ValidationException;
  */
 class WalletService
 {
+    /**
+     * Read-only balance snapshot for display/API responses.
+     * Do not use this method for spend decisions; spend() re-checks under a profile row lock.
+     */
     public function getBalance(Profile $profile): int
     {
         $balance = CoinTransaction::query()

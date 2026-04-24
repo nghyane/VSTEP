@@ -14,14 +14,16 @@ use App\Models\ExamMcqAnswer;
 use App\Models\ExamSession;
 use App\Models\ExamVersion;
 use App\Models\Profile;
-use App\Services\ExamService;
+use App\Services\ExamScoringService;
+use App\Services\ExamSessionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ExamController extends Controller
 {
     public function __construct(
-        private readonly ExamService $examService,
+        private readonly ExamSessionService $examService,
+        private readonly ExamScoringService $scoringService,
     ) {}
 
     public function index(): JsonResponse
@@ -134,7 +136,7 @@ class ExamController extends Controller
             'started_at' => $session->started_at,
             'submitted_at' => $session->submitted_at,
             'scores' => in_array($session->status, ['submitted', 'graded'], true)
-                ? $this->examService->getSessionScores($session)
+                ? $this->scoringService->getSessionScores($session)
                 : null,
         ]);
 

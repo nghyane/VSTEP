@@ -32,7 +32,7 @@ use Laravel\Ai\Responses\StructuredAgentResponse;
  *
  * Queue: dispatch GradeWritingJob / GradeSpeakingJob (async, retry up to 3 times).
  */
-class GradingService
+class SpeakingGradingService
 {
     public function __construct(
         private readonly SpeechToTextService $sttService,
@@ -44,17 +44,17 @@ class GradingService
 
     private function llmBaseUrl(): string
     {
-        return rtrim((string) env('LLM_BASE_URL', 'http://localhost:11434'), '/');
+        return rtrim((string) config('grading.llm.base_url', 'http://localhost:11434'), '/');
     }
 
     private function llmModel(): string
     {
-        return (string) env('LLM_MODEL', 'gemini-3-flash-preview');
+        return (string) config('grading.llm.model', 'gemini-3-flash-preview');
     }
 
     private function llmApiKey(): string
     {
-        return (string) env('LLM_API_KEY', '');
+        return (string) config('grading.llm.api_key', '');
     }
 
     public function enqueueWritingGrading(string $submissionType, string $submissionId): GradingJob
@@ -70,7 +70,7 @@ class GradingService
         return $job->refresh();
     }
 
-    public function enqueueSpeakingGrading(string $submissionType, string $submissionId): GradingJob
+    public function enqueue(string $submissionType, string $submissionId): GradingJob
     {
         $job = GradingJob::create([
             'submission_type' => $submissionType,
@@ -148,7 +148,7 @@ class GradingService
         });
     }
 
-    public function processSpeakingJob(GradingJob $job): void
+    public function process(GradingJob $job): void
     {
         DB::transaction(function () use ($job) {
             $job->update(['status' => 'processing', 'started_at' => now(), 'attempts' => $job->attempts + 1]);

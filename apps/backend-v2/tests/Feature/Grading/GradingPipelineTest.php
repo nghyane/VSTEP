@@ -8,7 +8,7 @@ use App\Models\PracticeWritingPrompt;
 use App\Models\Profile;
 use App\Models\User;
 use App\Models\WritingGradingResult;
-use App\Services\GradingService;
+use App\Services\WritingGradingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -18,8 +18,8 @@ class GradingPipelineTest extends TestCase
 
     public function test_writing_grading_creates_job_and_result(): void
     {
-        $service = $this->app->make(GradingService::class);
-        $job = $service->enqueueWritingGrading('practice_writing', 'fake-sub-id');
+        $service = $this->app->make(WritingGradingService::class);
+        $job = $service->enqueue('practice_writing', 'fake-sub-id');
 
         $this->assertSame('ready', $job->status);
         $this->assertSame(1, $job->attempts);
@@ -39,9 +39,9 @@ class GradingPipelineTest extends TestCase
 
     public function test_regrade_creates_new_version_deactivates_old(): void
     {
-        $service = $this->app->make(GradingService::class);
-        $service->enqueueWritingGrading('practice_writing', 'sub-1');
-        $service->enqueueWritingGrading('practice_writing', 'sub-1');
+        $service = $this->app->make(WritingGradingService::class);
+        $service->enqueue('practice_writing', 'sub-1');
+        $service->enqueue('practice_writing', 'sub-1');
 
         $results = WritingGradingResult::query()
             ->where('submission_type', 'practice_writing')
@@ -90,8 +90,8 @@ class GradingPipelineTest extends TestCase
 
     public function test_grading_job_endpoint(): void
     {
-        $service = $this->app->make(GradingService::class);
-        $job = $service->enqueueWritingGrading('practice_writing', 'sub-x');
+        $service = $this->app->make(WritingGradingService::class);
+        $job = $service->enqueue('practice_writing', 'sub-x');
 
         $user = User::factory()->create();
         Profile::factory()->initial()->forAccount($user)->create();

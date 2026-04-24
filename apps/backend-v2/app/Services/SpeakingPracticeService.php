@@ -19,7 +19,7 @@ class SpeakingPracticeService
 {
     public function __construct(
         private readonly PracticeSessionService $sessionService,
-        private readonly GradingService $gradingService,
+        private readonly SpeakingGradingService $gradingService,
     ) {}
 
     /** @return Collection<int,PracticeSpeakingDrill> */
@@ -168,7 +168,7 @@ class SpeakingPracticeService
 
         $this->sessionService->complete($session);
 
-        $this->gradingService->enqueueSpeakingGrading('practice_speaking', $submission->id);
+        $this->gradingService->enqueue('practice_speaking', $submission->id);
 
         return $submission;
     }

@@ -18,9 +18,9 @@ Tài liệu tổng quan kiến trúc backend cho hội đồng chấm đồ án.
 
 ## Quy mô
 
-- 71 tables, 7 bounded contexts + 2 cross-cutting
-- 96 API routes (learner + teacher + admin)
-- 100 feature tests
+- 73 database tables, 7 bounded contexts + 2 cross-cutting
+- 88 API routes under `api/v1` (learner + staff/admin)
+- 88 feature tests, 112 tests total
 - 4 roles: Learner → Teacher → Staff → Admin
 
 ## Kiến trúc tổng quan
@@ -120,7 +120,9 @@ Chi tiết: [RFC 0001 §Economy](rfcs/0001-domain-map.md), [Design Decisions §2
 | 9 | Progress, Streak, Overview | ✅ |
 | 10 | Courses, Bookings, Notifications | ✅ |
 
-Chưa implement: Staff/Admin/Teacher panel APIs (RFC 0011 — Draft).
+Chưa implement đầy đủ: Staff/Admin/Teacher panel APIs (RFC 0011 — Draft).
+
+Service decomposition roadmap: `ExamService` và `GradingService` đang hoạt động nhưng lớn; kế hoạch tách theo capability được ghi tại [RFC 0020 — Exam and Grading Service Decomposition](rfcs/0020-exam-grading-service-decomposition.md).
 
 ## Tài liệu tham chiếu
 
