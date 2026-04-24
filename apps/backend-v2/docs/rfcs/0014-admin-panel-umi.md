@@ -1,10 +1,10 @@
 ---
 RFC: 0014
 Title: Admin Panel — Umi + Ant Design Pro
-Status: Accepted
+Status: Superseded
 Created: 2026-04-22
 Updated: 2026-04-22
-Superseded by:
+Superseded by: 0015
 ---
 
 # RFC 0014 — Admin Panel — Umi + Ant Design Pro
