@@ -44,17 +44,17 @@ class GradingService
 
     private function llmBaseUrl(): string
     {
-        return rtrim((string) env('LLM_BASE_URL', 'http://localhost:11434'), '/');
+        return rtrim((string) config('grading.llm.base_url', 'http://localhost:11434'), '/');
     }
 
     private function llmModel(): string
     {
-        return (string) env('LLM_MODEL', 'gemini-3-flash-preview');
+        return (string) config('grading.llm.model', 'gemini-3-flash-preview');
     }
 
     private function llmApiKey(): string
     {
-        return (string) env('LLM_API_KEY', '');
+        return (string) config('grading.llm.api_key', '');
     }
 
     public function enqueueWritingGrading(string $submissionType, string $submissionId): GradingJob
