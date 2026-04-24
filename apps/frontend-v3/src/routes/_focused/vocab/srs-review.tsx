@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useEffect } from "react"
+import { useCallback, useEffect } from "react"
 import { FlashcardCard } from "#/features/vocab/components/FlashcardCard"
 import { FocusBar } from "#/features/vocab/components/FocusBar"
 import { FocusComplete, FocusEmpty } from "#/features/vocab/components/FocusStates"
@@ -19,12 +19,12 @@ function SrsReviewPage() {
 	const s = useFlashcardSession(items)
 	const back = { backTo: "/luyen-tap/tu-vung" }
 
-	useEffect(() => {
-		if (s.status === "done") {
-			qc.removeQueries({ queryKey: ["vocab", "srs", "queue"], exact: true })
-			qc.removeQueries({ queryKey: ["vocab", "topics"], exact: true })
-		}
-	}, [s.status, qc])
+	const invalidate = useCallback(() => {
+		qc.invalidateQueries({ queryKey: ["vocab", "srs", "queue"], exact: true })
+		qc.invalidateQueries({ queryKey: ["vocab", "topics"], exact: true })
+	}, [qc])
+
+	useEffect(() => invalidate, [invalidate])
 
 	if (!data) {
 		return (

@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useEffect } from "react"
+import { useCallback, useEffect } from "react"
 import { ExerciseFeedback } from "#/features/vocab/components/ExerciseFeedback"
 import { McqOptions, TextInput } from "#/features/vocab/components/ExerciseInput"
 import { ExerciseQuestion } from "#/features/vocab/components/ExerciseQuestion"
@@ -27,12 +27,12 @@ function ExercisePage() {
 	const s = useExerciseSession(exercises, kind)
 	const back = { backTo: "/luyen-tap/tu-vung/$topicId", backParams: { topicId } }
 
-	useEffect(() => {
-		if (s.done) {
-			qc.removeQueries({ queryKey: ["vocab", "topics", topicId] })
-			qc.removeQueries({ queryKey: ["vocab", "topics"], exact: true })
-		}
-	}, [s.done, qc, topicId])
+	const invalidate = useCallback(() => {
+		qc.invalidateQueries({ queryKey: ["vocab", "topics", topicId] })
+		qc.invalidateQueries({ queryKey: ["vocab", "topics"], exact: true })
+	}, [qc, topicId])
+
+	useEffect(() => invalidate, [invalidate])
 
 	if (!data) {
 		return (
