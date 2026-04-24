@@ -40,4 +40,8 @@ return [
         'region' => env('AZURE_SPEECH_REGION', 'southeastasia'),
     ],
 
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+    ],
+
 ];

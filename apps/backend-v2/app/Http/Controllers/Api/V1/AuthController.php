@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\CompleteOnboardingRequest;
+use App\Http\Requests\Auth\GoogleLoginRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\LogoutRequest;
 use App\Http\Requests\Auth\RefreshRequest;
@@ -56,6 +58,46 @@ class AuthController extends Controller
             'profile' => $result['profile'] ? new ProfileResource($result['profile']) : null,
             'access_token' => $result['access_token'],
             'refresh_token' => $result['refresh_token'],
+            'expires_in' => $result['expires_in'],
+        ]]);
+    }
+
+    public function googleLogin(GoogleLoginRequest $request): JsonResponse
+    {
+        try {
+            $result = $this->authService->loginWithGoogle(
+                $request->validated('id_token'),
+                $request->userAgent(),
+            );
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => 'Token Google không hợp lệ.'], 401);
+        }
+
+        return response()->json(['data' => [
+            'user' => new UserResource($result['user']),
+            'profile' => $result['profile'] ? new ProfileResource($result['profile']) : null,
+            'access_token' => $result['access_token'],
+            'refresh_token' => $result['refresh_token'],
+            'expires_in' => $result['expires_in'],
+            'needs_onboarding' => $result['needs_onboarding'],
+            'suggested_nickname' => $result['suggested_nickname'],
+        ]]);
+    }
+
+    public function completeOnboarding(CompleteOnboardingRequest $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        $result = $this->authService->completeOnboarding($user, [
+            'nickname' => $request->validated('nickname'),
+            'target_level' => $request->validated('target_level'),
+            'target_deadline' => $request->validated('target_deadline'),
+        ]);
+
+        return response()->json(['data' => [
+            'profile' => new ProfileResource($result['profile']),
+            'access_token' => $result['access_token'],
             'expires_in' => $result['expires_in'],
         ]]);
     }

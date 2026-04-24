@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 
-#[Fillable(['full_name', 'email', 'password', 'role', 'avatar_key'])]
+#[Fillable(['full_name', 'email', 'password', 'role', 'avatar_key', 'google_id'])]
 #[Hidden(['password'])]
 class User extends Authenticatable implements JWTSubject
 {

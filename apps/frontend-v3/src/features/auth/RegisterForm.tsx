@@ -18,9 +18,11 @@ interface Step1Data {
 interface Step1Props {
 	initial: Step1Data
 	onNext: (data: Step1Data) => void
+	onGoogleToken: (idToken: string) => void
+	googleLoading: boolean
 }
 
-function Step1({ initial, onNext }: Step1Props) {
+function Step1({ initial, onNext, onGoogleToken, googleLoading }: Step1Props) {
 	const [email, setEmail] = useState(initial.email)
 	const [password, setPassword] = useState(initial.password)
 	const [confirm, setConfirm] = useState(initial.confirm)
@@ -42,14 +44,15 @@ function Step1({ initial, onNext }: Step1Props) {
 
 	return (
 		<>
-			<h1 className="font-extrabold text-3xl text-foreground mb-4">Tạo tài khoản</h1>
-			<GoogleButton />
-			<div className="flex items-center gap-3 my-3">
+			<h1 className="font-extrabold text-3xl text-foreground mb-1">Tạo tài khoản</h1>
+			<p className="text-sm text-subtle mb-5">Bắt đầu hành trình VSTEP của bạn hôm nay.</p>
+			<GoogleButton onToken={onGoogleToken} text="signup_with" disabled={googleLoading} />
+			<div className="flex items-center gap-3 my-4">
 				<div className="flex-1 h-px bg-border" />
 				<span className="text-xs text-subtle font-bold">HOẶC</span>
 				<div className="flex-1 h-px bg-border" />
 			</div>
-			<form onSubmit={handleSubmit} className="space-y-2.5">
+			<form onSubmit={handleSubmit} className="space-y-3">
 				<input
 					type="email"
 					placeholder="Email"
@@ -82,7 +85,7 @@ function Step1({ initial, onNext }: Step1Props) {
 					Tiếp tục
 				</button>
 			</form>
-			<p className="text-sm font-bold text-muted mt-3">
+			<p className="text-sm font-bold text-muted mt-4">
 				Đã có tài khoản?{" "}
 				<Link to="/" search={{ auth: "login" }} className="text-primary hover:underline">
 					Đăng nhập
@@ -101,6 +104,8 @@ interface Step2Props {
 	onBack: () => void
 	onSubmit: (nickname: string, level: Level, deadline: string) => Promise<void>
 	submitting: boolean
+	initialNickname?: string
+	googleMode: boolean
 }
 
 function LevelButton({
@@ -128,8 +133,8 @@ function LevelButton({
 	)
 }
 
-function Step2({ onBack, onSubmit, submitting }: Step2Props) {
-	const [nickname, setNickname] = useState("")
+function Step2({ onBack, onSubmit, submitting, initialNickname, googleMode }: Step2Props) {
+	const [nickname, setNickname] = useState(initialNickname ?? "")
 	const [level, setLevel] = useState<Level>("B2")
 	const [deadline, setDeadline] = useState("")
 	const [error, setError] = useState<string | null>(null)
@@ -152,15 +157,21 @@ function Step2({ onBack, onSubmit, submitting }: Step2Props) {
 		<div className="flex flex-col h-full">
 			{/* Fixed top — back + title */}
 			<div className="shrink-0">
-				<button
-					type="button"
-					onClick={onBack}
-					className="flex items-center gap-1 text-sm font-bold text-muted hover:text-foreground transition mb-4"
-				>
-					← Quay lại
-				</button>
-				<h1 className="font-extrabold text-3xl text-foreground mb-1">Gần xong rồi!</h1>
-				<p className="text-sm text-subtle mb-5">Hãy cho chúng mình biết thêm về bạn.</p>
+				{!googleMode && (
+					<button
+						type="button"
+						onClick={onBack}
+						className="flex items-center gap-1 text-sm font-bold text-muted hover:text-foreground transition mb-4"
+					>
+						← Quay lại
+					</button>
+				)}
+				<h1 className="font-extrabold text-3xl text-foreground mb-1">
+					{googleMode ? "Chào mừng!" : "Gần xong rồi!"}
+				</h1>
+				<p className="text-sm text-subtle mb-5">
+					{googleMode ? "Chọn nickname và mục tiêu để bắt đầu." : "Hãy cho chúng mình biết thêm về bạn."}
+				</p>
 			</div>
 
 			{/* Scrollable middle — nickname → date picker */}
@@ -216,26 +227,55 @@ function Step2({ onBack, onSubmit, submitting }: Step2Props) {
 
 // ─── Main component ────────────────────────────────────────────────────────
 
+type Flow = "password" | "google"
+
 export function RegisterForm() {
 	const register = useAuth((s) => s.register)
+	const loginWithGoogle = useAuth((s) => s.loginWithGoogle)
+	const completeOnboarding = useAuth((s) => s.completeOnboarding)
 	const [step, setStep] = useState<1 | 2>(1)
+	const [flow, setFlow] = useState<Flow>("password")
 	const [submitting, setSubmitting] = useState(false)
+	const [googleLoading, setGoogleLoading] = useState(false)
+	const [suggestedNickname, setSuggestedNickname] = useState<string | null>(null)
 	const [credentials, setCredentials] = useState<Step1Data>({
 		email: "",
 		password: "",
 		confirm: "",
 	})
 
+	async function handleGoogleToken(idToken: string) {
+		setGoogleLoading(true)
+		try {
+			const result = await loginWithGoogle(idToken)
+			if (result?.needsOnboarding) {
+				setFlow("google")
+				setSuggestedNickname(result.suggestedNickname)
+				setStep(2)
+			}
+		} finally {
+			setGoogleLoading(false)
+		}
+	}
+
 	async function handleFinalSubmit(nickname: string, level: Level, deadline: string) {
 		setSubmitting(true)
 		try {
-			await register({
-				email: credentials.email,
-				password: credentials.password,
-				nickname,
-				target_level: level,
-				target_deadline: deadline,
-			})
+			if (flow === "google") {
+				await completeOnboarding({
+					nickname,
+					target_level: level,
+					target_deadline: deadline,
+				})
+			} else {
+				await register({
+					email: credentials.email,
+					password: credentials.password,
+					nickname,
+					target_level: level,
+					target_deadline: deadline,
+				})
+			}
 		} finally {
 			setSubmitting(false)
 		}
@@ -247,11 +287,22 @@ export function RegisterForm() {
 				initial={credentials}
 				onNext={(data) => {
 					setCredentials(data)
+					setFlow("password")
 					setStep(2)
 				}}
+				onGoogleToken={handleGoogleToken}
+				googleLoading={googleLoading}
 			/>
 		)
 	}
 
-	return <Step2 onBack={() => setStep(1)} onSubmit={handleFinalSubmit} submitting={submitting} />
+	return (
+		<Step2
+			onBack={() => setStep(1)}
+			onSubmit={handleFinalSubmit}
+			submitting={submitting}
+			googleMode={flow === "google"}
+			initialNickname={suggestedNickname ?? undefined}
+		/>
+	)
 }

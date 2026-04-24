@@ -28,6 +28,7 @@ Route::prefix('v1')->group(function () {
     Route::middleware('throttle:10,1')->group(function () {
         Route::post('/auth/register', [AuthController::class, 'register']);
         Route::post('/auth/login', [AuthController::class, 'login']);
+        Route::post('/auth/google', [AuthController::class, 'googleLogin']);
         Route::post('/auth/refresh', [AuthController::class, 'refresh']);
     });
 
@@ -35,6 +36,7 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:api')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::post('/auth/switch-profile', [AuthController::class, 'switchProfile']);
+        Route::post('/auth/complete-onboarding', [AuthController::class, 'completeOnboarding']);
         Route::get('/auth/me', [AuthController::class, 'me']);
 
         // Profile CRUD — scoped by authenticated account.
