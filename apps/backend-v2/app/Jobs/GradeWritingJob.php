@@ -7,7 +7,7 @@ namespace App\Jobs;
 use App\Events\GradingCompleted;
 use App\Events\GradingFailed;
 use App\Models\GradingJob;
-use App\Services\GradingService;
+use App\Services\WritingGradingService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -32,7 +32,7 @@ class GradeWritingJob implements ShouldQueue
         public readonly string $gradingJobId,
     ) {}
 
-    public function handle(GradingService $gradingService): void
+    public function handle(WritingGradingService $gradingService): void
     {
         $job = GradingJob::query()->find($this->gradingJobId);
         if ($job === null) {
@@ -41,7 +41,7 @@ class GradeWritingJob implements ShouldQueue
             return;
         }
 
-        $gradingService->processWritingJob($job);
+        $gradingService->process($job);
 
         DB::afterCommit(fn () => GradingCompleted::dispatch($job->refresh()));
     }

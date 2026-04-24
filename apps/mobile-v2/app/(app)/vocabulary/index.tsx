@@ -38,7 +38,7 @@ export default function VocabularyScreen() {
         Học từ vựng theo chủ đề với hệ thống lặp lại có giãn cách (SRS).
       </Text>
 
-      {/* SRS Hero — ôn tập hôm nay */}
+      {/* SRS Hero */}
       {srsQueue && dueCount > 0 ? (
         <DepthCard variant="primary" style={s.srsCard}>
           <GameIcon name="lightning" size={32} />
@@ -88,7 +88,7 @@ export default function VocabularyScreen() {
         />
       ) : null}
 
-      {/* Topic Grid */}
+      {/* Topic Grid — matching FE v3 TopicGrid with progress bars */}
       {topics && topics.length > 0 ? (
         <View style={s.topicSection}>
           <Text style={[s.sectionTitle, { color: c.foreground }]}>Chủ đề</Text>
@@ -112,19 +112,26 @@ export default function VocabularyScreen() {
 
 function TopicCard({ topic, onPress }: { topic: VocabTopic; onPress: () => void }) {
   const c = useThemeColors();
+  const learned = topic.learnedCount ?? 0;
+  const total = topic.wordCount ?? 0;
+  const pct = total > 0 ? Math.round((learned / total) * 100) : 0;
 
   return (
     <HapticTouchable onPress={onPress} activeOpacity={0.85}>
       <DepthCard style={s.topicCard}>
         <View style={s.topicHeader}>
-          <Text style={[s.topicName, { color: c.foreground }]} numberOfLines={1}>{topic.name}</Text>
+          <Text style={[s.topicName, { color: c.foreground }]} numberOfLines={1}>
+            {topic.name}
+          </Text>
           <View style={[s.levelBadge, { backgroundColor: c.primaryTint }]}>
             <Text style={[s.levelText, { color: c.primary }]}>{topic.level}</Text>
           </View>
         </View>
 
         {topic.description ? (
-          <Text style={[s.topicDesc, { color: c.subtle }]} numberOfLines={2}>{topic.description}</Text>
+          <Text style={[s.topicDesc, { color: c.subtle }]} numberOfLines={2}>
+            {topic.description}
+          </Text>
         ) : null}
 
         {topic.tasks.length > 0 ? (
@@ -137,8 +144,21 @@ function TopicCard({ topic, onPress }: { topic: VocabTopic; onPress: () => void 
           </View>
         ) : null}
 
-        {topic.wordCount != null ? (
-          <Text style={[s.wordCount, { color: c.subtle }]}>{topic.wordCount} từ</Text>
+        {/* Progress bar — matching FE v3 */}
+        {total > 0 ? (
+          <View style={s.progressSection}>
+            <View style={s.progressLabelRow}>
+              <Text style={[s.progressLabel, { color: c.subtle }]}>
+                {learned}/{total} từ
+              </Text>
+              <Text style={[s.progressPct, { color: c.mutedForeground }]}>{pct}%</Text>
+            </View>
+            <View style={[s.progressTrack, { backgroundColor: c.muted }]}>
+              <View
+                style={[s.progressFill, { backgroundColor: c.primary, width: `${pct}%` }]}
+              />
+            </View>
+          </View>
         ) : null}
       </DepthCard>
     </HapticTouchable>
@@ -177,5 +197,12 @@ const s = StyleSheet.create({
   taskRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },
   taskPill: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
   taskText: { fontSize: 10, fontFamily: fontFamily.medium },
-  wordCount: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+
+  // Progress bar (FE v3 style)
+  progressSection: { marginTop: spacing.xs },
+  progressLabelRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 4 },
+  progressLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  progressPct: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  progressTrack: { height: 6, borderRadius: radius.full, overflow: "hidden" },
+  progressFill: { height: 6, borderRadius: radius.full },
 });

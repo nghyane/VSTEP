@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, redirect, useNavigate, useRouter } from "@tans
 import { useEffect } from "react"
 import { ErrorBoundary } from "#/components/ErrorBoundary"
 import { Sidebar } from "#/components/Sidebar"
+import { WelcomeGiftModal } from "#/features/onboarding/WelcomeGiftModal"
 import { useAuth } from "#/lib/auth"
 
 export const Route = createFileRoute("/_app")({
@@ -33,6 +34,7 @@ function AppLayout() {
 					<Outlet />
 				</ErrorBoundary>
 			</main>
+			<WelcomeGiftModal />
 		</div>
 	)
 }

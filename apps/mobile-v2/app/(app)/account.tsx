@@ -22,11 +22,11 @@ export default function AccountScreen() {
         <Text style={[s.value, { color: c.foreground }]}>{user?.email ?? "—"}</Text>
       </View>
       <View style={[s.card, { backgroundColor: c.surface, borderColor: c.border }]}>
-        <Text style={[s.label, { color: c.subtle }]}>Ho ten</Text>
+        <Text style={[s.label, { color: c.subtle }]}>Họ tên</Text>
         <Text style={[s.value, { color: c.foreground }]}>{user?.fullName ?? "—"}</Text>
       </View>
       <DepthButton variant="secondary" onPress={() => router.back()} fullWidth>
-        Quay lai
+        Quay lại
       </DepthButton>
     </ScrollView>
   );

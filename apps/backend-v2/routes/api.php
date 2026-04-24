@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\CourseController;
 use App\Http\Controllers\Api\V1\ExamController;
 use App\Http\Controllers\Api\V1\GradingController;
 use App\Http\Controllers\Api\V1\GrammarController;
+use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\McqPracticeController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OverviewController;
@@ -16,29 +17,10 @@ use App\Http\Controllers\Api\V1\SpeakingPracticeController;
 use App\Http\Controllers\Api\V1\VocabController;
 use App\Http\Controllers\Api\V1\WalletController;
 use App\Http\Controllers\Api\V1\WritingPracticeController;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
-    Route::get('/health', function () {
-        $checks = [];
-        try {
-            DB::select('SELECT 1');
-            $checks['db'] = 'ok';
-        } catch (Throwable) {
-            $checks['db'] = 'fail';
-        }
-        try {
-            Cache::store('redis')->get('health');
-            $checks['redis'] = 'ok';
-        } catch (Throwable) {
-            $checks['redis'] = 'fail';
-        }
-        $healthy = ! in_array('fail', $checks, true);
-
-        return response()->json(['status' => $healthy ? 'ok' : 'degraded', ...$checks], $healthy ? 200 : 503);
-    });
+    Route::get('/health', [HealthController::class, 'show']);
 
     Route::get('/config', [ConfigController::class, 'show']);
 
@@ -46,6 +28,7 @@ Route::prefix('v1')->group(function () {
     Route::middleware('throttle:10,1')->group(function () {
         Route::post('/auth/register', [AuthController::class, 'register']);
         Route::post('/auth/login', [AuthController::class, 'login']);
+        Route::post('/auth/google', [AuthController::class, 'googleLogin']);
         Route::post('/auth/refresh', [AuthController::class, 'refresh']);
     });
 
@@ -53,6 +36,7 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:api')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::post('/auth/switch-profile', [AuthController::class, 'switchProfile']);
+        Route::post('/auth/complete-onboarding', [AuthController::class, 'completeOnboarding']);
         Route::get('/auth/me', [AuthController::class, 'me']);
 
         // Profile CRUD — scoped by authenticated account.

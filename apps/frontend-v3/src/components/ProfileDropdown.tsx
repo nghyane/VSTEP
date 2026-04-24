@@ -10,7 +10,7 @@ import { useToast } from "#/lib/toast"
 import { useClickOutside } from "#/lib/use-click-outside"
 
 const NOTIF_ICON: Record<string, StaticIconName> = {
-	coin: "gem-color",
+	coin: "coin",
 	streak: "streak-sm",
 	trophy: "trophy",
 	target: "target-md",
@@ -27,7 +27,7 @@ function timeAgo(date: string): string {
 }
 
 function NotifItem({ notif }: { notif: Notification }) {
-	const icon = NOTIF_ICON[notif.icon_key ?? ""] ?? "gem-color"
+	const icon = NOTIF_ICON[notif.icon_key ?? ""] ?? "coin"
 	return (
 		<div className={`flex items-start gap-3 px-3 py-2.5 rounded-xl ${!notif.read_at ? "bg-background" : ""}`}>
 			<StaticIcon name={icon} size="sm" className="shrink-0 mt-0.5" />

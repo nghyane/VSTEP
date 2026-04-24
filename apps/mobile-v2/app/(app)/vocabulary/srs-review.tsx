@@ -8,7 +8,7 @@ import * as Haptics from "expo-haptics";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
-import { useVocabSrsQueue } from "@/hooks/use-vocab";
+import { useVocabSrsQueue, type WordWithState } from "@/hooks/use-vocab";
 import { api } from "@/lib/api";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
@@ -27,7 +27,7 @@ export default function SrsReviewScreen() {
   const insets = useSafeAreaInsets();
   const { data } = useVocabSrsQueue();
 
-  const [queue, setQueue] = useState<typeof data.items | null>(null);
+  const [queue, setQueue] = useState<WordWithState[] | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [reviewed, setReviewed] = useState(0);
@@ -56,7 +56,7 @@ export default function SrsReviewScreen() {
     setSubmitting(false);
     setRevealed(false);
     setReviewed((r) => r + 1);
-  }, [current, submitting]);
+  }, [current, submitting, data?.items]);
 
   return (
     <View style={[s.root, { backgroundColor: c.background }]}>

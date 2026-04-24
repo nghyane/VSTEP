@@ -12,14 +12,18 @@ class WalletSeeder extends Seeder
 {
     public function run(): void
     {
+        // Baseline: 300đ / xu. Bonus tăng dần theo size gói.
         $packages = [
-            ['Gói cơ bản', 50_000, 500, 0, 1],
-            ['Gói tiêu chuẩn', 200_000, 2_000, 200, 2],
-            ['Gói nâng cao', 500_000, 5_000, 500, 3],
+            ['Gói khởi đầu', 30_000, 100, 0, 1],
+            ['Gói cơ bản', 90_000, 300, 20, 2],
+            ['Gói phổ biến', 210_000, 700, 100, 3],
+            ['Gói tiết kiệm', 450_000, 1_500, 300, 4],
         ];
 
+        $labels = [];
         foreach ($packages as [$label, $vnd, $base, $bonus, $order]) {
-            WalletTopupPackage::firstOrCreate(
+            $labels[] = $label;
+            WalletTopupPackage::updateOrCreate(
                 ['label' => $label],
                 [
                     'amount_vnd' => $vnd,
@@ -30,6 +34,8 @@ class WalletSeeder extends Seeder
                 ],
             );
         }
+
+        WalletTopupPackage::whereNotIn('label', $labels)->update(['is_active' => false]);
 
         $codes = [
             ['DEAR_VSTEP', 'The Coffee House', 50, null, 1],

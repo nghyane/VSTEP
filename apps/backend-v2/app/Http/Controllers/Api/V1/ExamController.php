@@ -14,14 +14,16 @@ use App\Models\ExamMcqAnswer;
 use App\Models\ExamSession;
 use App\Models\ExamVersion;
 use App\Models\Profile;
-use App\Services\ExamService;
+use App\Services\ExamScoringService;
+use App\Services\ExamSessionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ExamController extends Controller
 {
     public function __construct(
-        private readonly ExamService $examService,
+        private readonly ExamSessionService $examService,
+        private readonly ExamScoringService $scoringService,
     ) {}
 
     public function index(): JsonResponse
@@ -115,33 +117,28 @@ class ExamController extends Controller
     {
         $profile = $this->profile($request);
         $status = $request->input('status');
-        $perPage = (int) $request->input('per_page', 20);
-        $perPage = min($perPage, 50);
 
         $query = ExamSession::query()
             ->where('profile_id', $profile->id)
-            ->orderByDesc('started_at');
+            ->orderByDesc('started_at')
+            ->limit(50);
 
         if ($status !== null && $status !== 'all') {
             $query->where('status', $status);
         }
 
-        $sessions = $query->paginate($perPage);
-
-        $sessions->getCollection()->transform(function (ExamSession $session) {
-            return [
-                'id' => $session->id,
-                'exam_version_id' => $session->exam_version_id,
-                'mode' => $session->mode,
-                'is_full_test' => $session->is_full_test,
-                'status' => $session->status,
-                'started_at' => $session->started_at,
-                'submitted_at' => $session->submitted_at,
-                'scores' => in_array($session->status, ['submitted', 'graded'], true)
-                    ? $this->examService->getSessionScores($session)
-                    : null,
-            ];
-        });
+        $sessions = $query->get()->map(fn (ExamSession $session) => [
+            'id' => $session->id,
+            'exam_version_id' => $session->exam_version_id,
+            'mode' => $session->mode,
+            'is_full_test' => $session->is_full_test,
+            'status' => $session->status,
+            'started_at' => $session->started_at,
+            'submitted_at' => $session->submitted_at,
+            'scores' => in_array($session->status, ['submitted', 'graded'], true)
+                ? $this->scoringService->getSessionScores($session)
+                : null,
+        ]);
 
         return response()->json(['data' => $sessions]);
     }

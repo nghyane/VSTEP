@@ -10,6 +10,7 @@ use App\Models\CourseEnrollment;
 use App\Models\CourseEnrollmentOrder;
 use App\Models\Profile;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -71,16 +72,24 @@ class CourseOrderService
 
         $amount = $course->price_vnd;
 
-        return CourseEnrollmentOrder::create([
-            'profile_id' => $profile->id,
-            'course_id' => $course->id,
-            'amount_vnd' => $amount,
-            'status' => 'pending',
-            'payment_provider' => $paymentProvider,
-            'provider_ref' => $paymentProvider === 'mock'
-                ? 'mock_'.Str::random(16)
-                : null,
-        ]);
+        try {
+            return CourseEnrollmentOrder::create([
+                'profile_id' => $profile->id,
+                'course_id' => $course->id,
+                'amount_vnd' => $amount,
+                'status' => 'pending',
+                'payment_provider' => $paymentProvider,
+                'provider_ref' => $paymentProvider === 'mock'
+                    ? 'mock_'.Str::random(16)
+                    : null,
+            ]);
+        } catch (QueryException $exception) {
+            if ($this->isUniqueConstraintViolation($exception)) {
+                throw ValidationException::withMessages(['course' => ['Bạn đang có đơn thanh toán chờ xác nhận cho khóa học này.']]);
+            }
+
+            throw $exception;
+        }
     }
 
     /**
@@ -176,6 +185,14 @@ class CourseOrderService
             ->with('course')
             ->orderByDesc('created_at')
             ->get();
+    }
+
+    private function isUniqueConstraintViolation(QueryException $exception): bool
+    {
+        $sqlState = $exception->errorInfo[0] ?? null;
+        $driverCode = $exception->errorInfo[1] ?? null;
+
+        return $sqlState === '23505' || $driverCode === 19;
     }
 
     private function isEnrolled(Profile $profile, Course $course): bool

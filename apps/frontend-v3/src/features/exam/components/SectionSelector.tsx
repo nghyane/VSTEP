@@ -146,7 +146,20 @@ export function SectionSelector({ detail, selected, onToggleSkill }: Props) {
 				const parts = getPartRows(skill, detail)
 
 				return (
-					<div key={skill} className="card overflow-hidden">
+					<div
+						key={skill}
+						className={cn(
+							"card overflow-hidden transition-[box-shadow,transform,border-color] duration-200",
+							isSelected && "-translate-y-0.5",
+						)}
+						style={{
+							boxShadow: `inset 6px 0 0 ${isSelected ? (skillDef?.color ?? "transparent") : "transparent"}`,
+							borderColor:
+								isSelected && skillDef?.color
+									? `color-mix(in srgb, ${skillDef.color} 35%, var(--color-border))`
+									: undefined,
+						}}
+					>
 						{/* Skill header row */}
 						<div
 							className={cn(
@@ -194,7 +207,14 @@ export function SectionSelector({ detail, selected, onToggleSkill }: Props) {
 									{minutes} phút · {countLabel}
 								</span>
 
-								<span className="ml-auto text-xs font-bold text-subtle mr-3">
+								<span
+									className={cn(
+										"ml-auto mr-3 text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full border-2 transition-colors",
+										isSelected
+											? "border-transparent bg-foreground/5 text-muted"
+											: "border-border text-foreground bg-surface",
+									)}
+								>
 									{isSelected ? "Bỏ chọn" : "Chọn"}
 								</span>
 							</label>

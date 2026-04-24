@@ -17,6 +17,7 @@ interface Props {
 	parts: ExamVersionSpeakingPart[]
 	speakingDone: Set<string>
 	onMarkDone: (partId: string) => void
+	onUnmarkDone: (partId: string) => void
 	footer: FooterAction
 }
 
@@ -61,12 +62,12 @@ function WaveformBars({ analyser }: { analyser: AnalyserNode }) {
 	}, [analyser])
 
 	return (
-		<div ref={barsRef} className="flex h-11 items-center justify-center gap-[3px]">
+		<div ref={barsRef} className="flex h-20 items-center justify-center gap-[4px]">
 			{Array.from({ length: BAR_COUNT }, (_, i) => (
 				<div
 					key={i}
-					className="w-1 rounded-full bg-primary transition-[height] duration-75"
-					style={{ height: "4px" }}
+					className="w-1.5 rounded-full bg-skill-speaking transition-[height] duration-75"
+					style={{ height: "6px" }}
 				/>
 			))}
 		</div>
@@ -79,18 +80,20 @@ function SocialContent({ content }: { content: Record<string, unknown> }) {
 	const topics = content.topics as Array<{ name: string; questions: string[] }> | undefined
 	if (!topics) return null
 	return (
-		<div className="space-y-4">
+		<div className="space-y-5">
 			{topics.map((topic) => (
 				<div key={topic.name}>
-					<p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-muted">{topic.name}</p>
+					<p className="mb-2.5 text-xs font-extrabold uppercase tracking-wide text-muted">{topic.name}</p>
 					<ul className="space-y-2">
 						{topic.questions.map((q, i) => (
 							<li
 								key={i}
-								className="flex gap-2 rounded-(--radius-card) border-2 border-border bg-surface p-3 text-sm"
+								className="flex items-start gap-3 rounded-(--radius-card) border-2 border-b-4 border-border bg-surface px-4 py-3 text-sm"
 							>
-								<span className="shrink-0 font-extrabold text-primary">{i + 1}.</span>
-								<span className="text-foreground">{q}</span>
+								<span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-skill-speaking/15 text-xs font-extrabold text-skill-speaking-dark">
+									{i + 1}
+								</span>
+								<span className="pt-0.5 leading-relaxed text-foreground">{q}</span>
 							</li>
 						))}
 					</ul>
@@ -179,9 +182,10 @@ interface PartRecorderProps {
 	part: ExamVersionSpeakingPart
 	isDone: boolean
 	onDone: (partId: string) => void
+	onUndone: (partId: string) => void
 }
 
-function PartRecorder({ part, isDone, onDone }: PartRecorderProps) {
+function PartRecorder({ part, isDone, onDone, onUndone }: PartRecorderProps) {
 	const recorder = useVoiceRecorder(part.speaking_seconds)
 	const typeLabel = PART_TYPE_LABEL[part.type] ?? part.type
 
@@ -189,6 +193,11 @@ function PartRecorder({ part, isDone, onDone }: PartRecorderProps) {
 		recorder.stop()
 		onDone(part.id)
 	}, [recorder, onDone, part.id])
+
+	const handleRedo = useCallback(() => {
+		recorder.reset()
+		onUndone(part.id)
+	}, [recorder, onUndone, part.id])
 
 	const elapsedSec = Math.round(recorder.elapsedMs / 1000)
 	const remaining = part.speaking_seconds - elapsedSec
@@ -215,63 +224,172 @@ function PartRecorder({ part, isDone, onDone }: PartRecorderProps) {
 			</ScrollArea>
 
 			{/* Right: recording panel */}
-			<div className="flex w-1/2 flex-col justify-center bg-background px-7 py-6">
-				<div className="space-y-3">
-					{/* Compact done state — chỉ hiện khi isDone */}
+			<div className="flex w-1/2 flex-col bg-background px-7 py-6">
+				<div className="mb-5 flex items-center justify-between">
+					<p className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-widest text-muted">
+						<svg
+							viewBox="0 0 16 16"
+							className="size-3.5 text-skill-speaking"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="1.8"
+							strokeLinecap="round"
+							aria-hidden="true"
+						>
+							<path d="M8 1a2.5 2.5 0 00-2.5 2.5v5a2.5 2.5 0 005 0V3.5A2.5 2.5 0 008 1z" />
+							<path d="M3 9a5 5 0 0010 0M8 14v2" />
+						</svg>
+						Bản ghi âm · Phần {part.part}
+					</p>
+					<span
+						className={cn(
+							"rounded-full border-2 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide",
+							isDone
+								? "border-primary/30 bg-primary-tint text-primary"
+								: recorder.state === "recording"
+									? "border-destructive/40 bg-destructive-tint text-destructive"
+									: recorder.state === "stopped"
+										? "border-primary/30 bg-primary-tint text-primary"
+										: "border-border bg-surface text-muted",
+						)}
+					>
+						{isDone
+							? "Đã xác nhận"
+							: recorder.state === "recording"
+								? "Đang ghi"
+								: recorder.state === "stopped"
+									? "Đã ghi xong"
+									: recorder.state === "requesting"
+										? "Đang xin quyền"
+										: recorder.state === "denied"
+											? "Từ chối quyền"
+											: "Sẵn sàng"}
+					</span>
+				</div>
+
+				<div className="flex flex-1 items-start justify-center pt-20">
 					{isDone ? (
-						<div className="rounded-(--radius-card) border-2 border-b-4 border-primary/30 bg-primary-tint p-3">
+						<div className="w-full max-w-md space-y-3 rounded-(--radius-card) border-2 border-b-4 border-primary/30 bg-primary-tint p-5">
 							<div className="flex items-center justify-between gap-3">
-								<div className="flex items-center gap-2">
-									<svg
-										viewBox="0 0 16 16"
-										className="size-4 shrink-0 text-primary"
-										fill="none"
-										stroke="currentColor"
-										strokeWidth="2.5"
-										strokeLinecap="round"
-										aria-hidden="true"
-									>
-										<polyline points="2,8 6,12 14,4" />
-									</svg>
-									<span className="text-sm font-extrabold text-primary">Phần {part.part} đã hoàn thành</span>
+								<div className="flex items-center gap-2.5">
+									<span className="flex size-8 items-center justify-center rounded-full border-2 border-b-4 border-primary/40 bg-primary text-white">
+										<svg
+											viewBox="0 0 16 16"
+											className="size-4"
+											fill="none"
+											stroke="currentColor"
+											strokeWidth="2.5"
+											strokeLinecap="round"
+											aria-hidden="true"
+										>
+											<polyline points="2,8 6,12 14,4" />
+										</svg>
+									</span>
+									<span className="text-sm font-extrabold text-primary-dark">
+										Phần {part.part} đã hoàn thành
+									</span>
 								</div>
 								<button
 									type="button"
-									onClick={recorder.reset}
-									className="shrink-0 rounded-(--radius-button) border-2 border-primary/30 bg-surface px-3 py-1 text-xs font-bold text-muted transition-all hover:border-primary/50 hover:text-foreground"
+									onClick={handleRedo}
+									className="shrink-0 rounded-(--radius-button) border-2 border-b-4 border-primary/30 bg-surface px-3 py-1.5 text-xs font-extrabold text-primary-dark transition-all active:translate-y-[2px] active:border-b-2 hover:border-primary/50"
 								>
 									Ghi lại
 								</button>
 							</div>
 							{recorder.audioUrl && (
-								<audio src={recorder.audioUrl} controls className="mt-2 h-8 w-full">
+								<audio src={recorder.audioUrl} controls className="h-9 w-full">
 									<track kind="captions" />
 								</audio>
 							)}
 						</div>
 					) : (
-						<>
-							{/* Recording card — chỉ hiện khi chưa done */}
-							<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-surface p-4 space-y-4">
-								{/* Status row */}
-								<div className="flex items-center justify-center gap-2">
-									{recorder.state === "idle" && (
-										<span className="text-sm text-muted">Đọc đề rồi nhấn ghi âm</span>
+						<div className="w-full max-w-md space-y-5 rounded-(--radius-card) border-2 border-b-4 border-border bg-surface p-6">
+							{/* Big timer */}
+							<div className="flex flex-col items-center gap-1.5">
+								<span
+									className={cn(
+										"font-mono text-4xl font-black tabular-nums transition-colors",
+										recorder.state === "recording" && remaining <= 10
+											? "text-destructive"
+											: recorder.state === "recording"
+												? "text-skill-speaking-dark"
+												: recorder.state === "stopped"
+													? "text-primary-dark"
+													: "text-muted/50",
 									)}
-									{recorder.state === "requesting" && (
-										<span className="text-sm text-muted">Đang xin quyền microphone...</span>
-									)}
-									{recorder.state === "recording" && (
-										<>
-											<span className="size-2.5 animate-pulse rounded-full bg-destructive" />
-											<span className="text-sm font-extrabold text-destructive">Đang ghi âm</span>
-										</>
-									)}
-									{recorder.state === "stopped" && (
-										<>
+								>
+									{String(Math.floor(elapsedSec / 60)).padStart(2, "0")}:
+									{String(elapsedSec % 60).padStart(2, "0")}
+								</span>
+								<span className="text-xs font-semibold text-muted">
+									Tối đa {Math.floor(part.speaking_seconds / 60)}:
+									{String(part.speaking_seconds % 60).padStart(2, "0")}
+								</span>
+							</div>
+
+							{/* Waveform / placeholder */}
+							<div className="flex h-20 items-center justify-center rounded-(--radius-button) border-2 border-dashed border-border/60 bg-background/60">
+								{recorder.state === "recording" && recorder.analyser ? (
+									<WaveformBars analyser={recorder.analyser} />
+								) : recorder.state === "stopped" && recorder.audioUrl ? (
+									<audio src={recorder.audioUrl} controls className="mx-3 h-9 w-full max-w-sm">
+										<track kind="captions" />
+									</audio>
+								) : (
+									<span className="text-xs font-semibold text-subtle">
+										{recorder.state === "requesting"
+											? "Đang xin quyền microphone…"
+											: recorder.state === "denied"
+												? "Không có quyền microphone"
+												: "Đọc đề bên trái rồi nhấn ghi âm"}
+									</span>
+								)}
+							</div>
+
+							{/* Actions */}
+							<div className="flex justify-center gap-3">
+								{recorder.state === "idle" && (
+									<button
+										type="button"
+										onClick={recorder.start}
+										className="flex items-center gap-2 rounded-(--radius-button) border-2 border-b-4 border-skill-speaking-dark bg-skill-speaking px-6 py-2.5 text-sm font-extrabold text-white transition-all active:translate-y-[2px] active:border-b-2 hover:brightness-105"
+									>
+										<span className="relative flex size-3 items-center justify-center">
+											<span className="absolute inset-0 animate-ping rounded-full bg-white/50" />
+											<span className="relative size-2.5 rounded-full bg-white" />
+										</span>
+										Bắt đầu ghi
+									</button>
+								)}
+								{recorder.state === "requesting" && (
+									<button type="button" disabled className="btn btn-primary opacity-60">
+										Đang xử lý…
+									</button>
+								)}
+								{recorder.state === "recording" && (
+									<button
+										type="button"
+										onClick={handleFinish}
+										className="flex items-center gap-2 rounded-(--radius-button) border-2 border-b-4 border-destructive/70 bg-destructive px-6 py-2.5 text-sm font-extrabold text-white transition-all active:translate-y-[2px] active:border-b-2 hover:brightness-105"
+									>
+										<span className="size-2.5 rounded-sm bg-white" />
+										Dừng ghi
+									</button>
+								)}
+								{recorder.state === "stopped" && (
+									<>
+										<button
+											type="button"
+											onClick={recorder.reset}
+											className="rounded-(--radius-button) border-2 border-b-4 border-border bg-surface px-5 py-2.5 text-sm font-extrabold text-muted transition-all active:translate-y-[2px] active:border-b-2 hover:border-primary/40 hover:text-foreground"
+										>
+											Ghi lại
+										</button>
+										<button type="button" onClick={handleFinish} className="btn btn-primary">
 											<svg
 												viewBox="0 0 16 16"
-												className="size-4 text-primary"
+												className="size-4"
 												fill="none"
 												stroke="currentColor"
 												strokeWidth="2.5"
@@ -280,103 +398,16 @@ function PartRecorder({ part, isDone, onDone }: PartRecorderProps) {
 											>
 												<polyline points="2,8 6,12 14,4" />
 											</svg>
-											<span className="text-sm font-extrabold text-primary">Đã ghi xong</span>
-										</>
-									)}
-									{recorder.state === "denied" && (
-										<span className="text-sm font-bold text-destructive">Không có quyền microphone</span>
-									)}
-								</div>
-
-								{/* Countdown — căn giữa */}
-								{recorder.state === "recording" && (
-									<div className="flex justify-center">
-										<span
-											className={cn(
-												"font-mono text-sm font-extrabold tabular-nums",
-												remaining <= 10 ? "text-destructive" : "text-muted",
-											)}
-										>
-											{elapsedSec}s / {part.speaking_seconds}s
-										</span>
-									</div>
-								)}
-
-								{/* Waveform */}
-								{recorder.state === "recording" && recorder.analyser && (
-									<div className="flex items-center justify-center py-1">
-										<WaveformBars analyser={recorder.analyser} />
-									</div>
-								)}
-
-								{/* Playback */}
-								{recorder.audioUrl && recorder.state === "stopped" && (
-									<div>
-										<p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-muted">
-											Bản ghi của bạn
-										</p>
-										<audio src={recorder.audioUrl} controls className="h-9 w-full">
-											<track kind="captions" />
-										</audio>
-									</div>
-								)}
-
-								{/* Actions */}
-								<div className="flex justify-center gap-3">
-									{recorder.state === "idle" && (
-										<button type="button" onClick={recorder.start} className="btn btn-primary">
-											<svg viewBox="0 0 16 16" className="size-4" fill="currentColor" aria-hidden="true">
-												<circle cx="8" cy="8" r="4" />
-												<circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" strokeWidth="1.5" />
-											</svg>
-											Bắt đầu ghi
+											Xác nhận
 										</button>
-									)}
-									{recorder.state === "requesting" && (
-										<button type="button" disabled className="btn btn-primary opacity-60">
-											Đang xử lý...
-										</button>
-									)}
-									{recorder.state === "recording" && (
-										<button
-											type="button"
-											onClick={handleFinish}
-											className="flex items-center gap-2 rounded-(--radius-button) border-2 border-b-4 border-destructive/70 bg-destructive px-5 py-2 text-sm font-bold text-white transition-all active:translate-y-[2px] active:border-b-2 hover:opacity-90"
-										>
-											<span className="size-2.5 rounded-sm bg-white" />
-											Dừng ghi
-										</button>
-									)}
-									{recorder.state === "stopped" && (
-										<>
-											<button
-												type="button"
-												onClick={recorder.reset}
-												className="rounded-(--radius-button) border-2 border-b-4 border-border bg-surface px-5 py-2 text-sm font-bold text-muted transition-all active:translate-y-[2px] active:border-b-2 hover:border-primary/40 hover:text-foreground"
-											>
-												Ghi lại
-											</button>
-											<button type="button" onClick={handleFinish} className="btn btn-primary">
-												<svg
-													viewBox="0 0 16 16"
-													className="size-4"
-													fill="none"
-													stroke="currentColor"
-													strokeWidth="2.5"
-													strokeLinecap="round"
-													aria-hidden="true"
-												>
-													<polyline points="2,8 6,12 14,4" />
-												</svg>
-												Xác nhận
-											</button>
-										</>
-									)}
-								</div>
-
-								{recorder.error && <p className="text-sm text-destructive">{recorder.error}</p>}
+									</>
+								)}
 							</div>
-						</>
+
+							{recorder.error && (
+								<p className="text-center text-xs font-bold text-destructive">{recorder.error}</p>
+							)}
+						</div>
 					)}
 				</div>
 			</div>
@@ -386,7 +417,7 @@ function PartRecorder({ part, isDone, onDone }: PartRecorderProps) {
 
 // ─── Main panel ───────────────────────────────────────────────────────────────
 
-export function SpeakingPanel({ parts, speakingDone, onMarkDone, footer }: Props) {
+export function SpeakingPanel({ parts, speakingDone, onMarkDone, onUnmarkDone, footer }: Props) {
 	const sorted = [...parts].sort((a, b) => a.display_order - b.display_order)
 	const [activeIdx, setActiveIdx] = useState(0)
 	const active = sorted[activeIdx]
@@ -400,11 +431,12 @@ export function SpeakingPanel({ parts, speakingDone, onMarkDone, footer }: Props
 					part={active}
 					isDone={speakingDone.has(active.id)}
 					onDone={onMarkDone}
+					onUndone={onUnmarkDone}
 				/>
 			)}
 
 			{/* Part tabs */}
-			<div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-2.5">
+			<div className="flex items-center justify-between gap-3 border-t-2 border-border/50 bg-card px-4 py-2.5">
 				<div className="flex items-center gap-2">
 					<svg
 						viewBox="0 0 16 16"
@@ -443,13 +475,13 @@ export function SpeakingPanel({ parts, speakingDone, onMarkDone, footer }: Props
 								</span>
 								<span
 									className={cn(
-										"absolute inset-x-1 bottom-0.5 h-0.5 overflow-hidden rounded-full",
-										isActive ? "bg-white/30" : done ? "bg-primary/30" : "bg-border",
+										"absolute inset-x-0 bottom-0 h-1 overflow-hidden",
+										isActive ? "bg-white/20" : "bg-primary/10",
 									)}
 								>
 									<span
 										className={cn(
-											"block h-full rounded-full",
+											"block h-full transition-[width] duration-300",
 											isActive ? "bg-white" : done ? "bg-primary" : "",
 										)}
 										style={{ width: done ? "100%" : "0%" }}
@@ -468,7 +500,7 @@ export function SpeakingPanel({ parts, speakingDone, onMarkDone, footer }: Props
 			</div>
 
 			{/* Global footer */}
-			<div className="z-40 flex h-14 shrink-0 items-center justify-between border-t border-border bg-card px-5">
+			<div className="z-40 flex h-14 shrink-0 items-center justify-between border-t-2 border-border/50 bg-card px-5">
 				<div className="w-24">
 					<p className="text-xs text-muted">
 						{speakingDone.size}/{sorted.length} hoàn thành

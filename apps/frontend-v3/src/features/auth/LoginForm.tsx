@@ -1,11 +1,27 @@
 import { useForm } from "@tanstack/react-form"
-import { Link } from "@tanstack/react-router"
+import { Link, useNavigate } from "@tanstack/react-router"
+import { useState } from "react"
 import { GoogleButton } from "#/features/auth/GoogleButton"
 import { inputClass } from "#/features/auth/styles"
 import { useAuth } from "#/lib/auth"
 
 export function LoginForm() {
 	const login = useAuth((s) => s.login)
+	const loginWithGoogle = useAuth((s) => s.loginWithGoogle)
+	const navigate = useNavigate()
+	const [googleLoading, setGoogleLoading] = useState(false)
+
+	async function handleGoogleToken(idToken: string) {
+		setGoogleLoading(true)
+		try {
+			const result = await loginWithGoogle(idToken)
+			if (result?.needsOnboarding) {
+				void navigate({ to: "/", search: { auth: "register" } })
+			}
+		} finally {
+			setGoogleLoading(false)
+		}
+	}
 
 	const form = useForm({
 		defaultValues: { email: "", password: "" },
@@ -18,7 +34,7 @@ export function LoginForm() {
 		<>
 			<h1 className="font-extrabold text-3xl text-foreground mb-1">Đăng nhập</h1>
 			<p className="text-sm text-subtle mb-5">Chào mừng bạn quay lại cùng Lạc.</p>
-			<GoogleButton />
+			<GoogleButton onToken={handleGoogleToken} text="signin_with" disabled={googleLoading} />
 			<div className="flex items-center gap-3 my-4">
 				<div className="flex-1 h-px bg-border" />
 				<span className="text-xs text-subtle font-bold">HOẶC</span>

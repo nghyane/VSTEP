@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ScrollArea } from "#/components/ScrollArea"
 import type { ExamVersionWritingTask } from "#/features/exam/types"
 import { cn } from "#/lib/utils"
@@ -55,86 +55,105 @@ export function WritingPanel({ tasks, writingAnswers, onAnswer, footer }: Props)
 		[sorted.length],
 	)
 
+	const textareaRef = useRef<HTMLTextAreaElement>(null)
+	const autoResize = useCallback(() => {
+		const el = textareaRef.current
+		if (!el) return
+		el.style.height = "auto"
+		el.style.height = `${el.scrollHeight}px`
+	}, [])
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: re-run when task or text changes
+	useEffect(() => {
+		autoResize()
+	}, [autoResize, activeTask?.id, currentText])
+
 	if (!activeTask) return null
 
 	const isUnder = wordCount < activeTask.min_words
 	const pct = activeTask.min_words > 0 ? Math.min(100, (wordCount / activeTask.min_words) * 100) : 0
+	const editorMinRows = Math.min(14, Math.max(10, Math.ceil(activeTask.min_words / 20)))
 
 	return (
-		<div className="flex flex-1 flex-col overflow-hidden">
-			{/* Split layout */}
-			<div className="flex flex-1 overflow-hidden">
-				{/* Prompt */}
-				<ScrollArea className="w-2/5 border-r border-border">
-					<div className="space-y-4 bg-background px-7 py-6">
-						<div className="flex flex-wrap items-center gap-2">
-							<span className="rounded-full border-2 border-b-4 border-skill-writing/30 bg-skill-writing/10 px-3 py-1 text-xs font-extrabold text-skill-writing">
-								Phần {activeTask.part}
-							</span>
-							<span className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-muted">
-								{TASK_TYPE_LABEL[activeTask.task_type] ?? activeTask.task_type}
-							</span>
-							<span className="ml-auto text-xs text-muted">{activeTask.duration_minutes} phút</span>
-						</div>
-
+		<div className="flex flex-1 flex-col overflow-hidden bg-background">
+			<ScrollArea className="flex-1">
+				<div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-5 px-6 py-6 lg:grid-cols-2">
+					{/* Prompt card */}
+					<div className="flex flex-col gap-3 lg:sticky lg:top-6 lg:self-start">
 						<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-surface p-5">
-							<p className="mb-1.5 text-xs font-extrabold uppercase tracking-wide text-muted">Đề bài</p>
+							<div className="mb-3 flex flex-wrap items-center gap-2">
+								<span className="rounded-full border-2 border-b-4 border-skill-writing/30 bg-skill-writing/10 px-3 py-1 text-xs font-extrabold text-skill-writing">
+									Phần {activeTask.part}
+								</span>
+								<span className="rounded-full border border-border bg-background px-3 py-1 text-xs font-semibold text-muted">
+									{TASK_TYPE_LABEL[activeTask.task_type] ?? activeTask.task_type}
+								</span>
+								<span className="ml-auto text-xs text-muted">{activeTask.duration_minutes} phút</span>
+							</div>
+							<p className="mb-2 text-[11px] font-extrabold uppercase tracking-wide text-muted">Đề bài</p>
 							<p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
 								{activeTask.prompt}
 							</p>
 						</div>
 
-						<p className="text-xs text-muted">Tối thiểu {activeTask.min_words} từ</p>
-					</div>
-				</ScrollArea>
-
-				{/* Editor */}
-				<div className="flex flex-1 flex-col gap-4 bg-background px-6 py-6">
-					<div className="flex items-center justify-between">
-						<p className="text-sm font-extrabold text-foreground">Bài làm</p>
-						<span
-							className={cn(
-								"text-xs font-bold tabular-nums",
-								wordCount >= activeTask.min_words
-									? "text-primary"
-									: isUnder && wordCount > 0
-										? "text-warning"
-										: "text-muted",
-							)}
-						>
-							{wordCount} / {activeTask.min_words} từ
-						</span>
+						<p className="pl-1 text-xs text-muted">Tối thiểu {activeTask.min_words} từ</p>
 					</div>
 
-					<textarea
-						value={currentText}
-						onChange={(e) => onAnswer(activeTask.id, e.target.value)}
-						placeholder="Viết bài làm của bạn ở đây..."
-						className="flex-1 resize-none rounded-(--radius-card) border-2 border-border bg-surface p-4 text-sm leading-relaxed text-foreground placeholder:text-placeholder outline-none transition-colors focus:border-primary"
-						aria-label={`Bài làm phần ${activeTask.part}`}
-					/>
-
-					{/* Word count progress bar */}
-					<div className="space-y-1.5">
-						<div className="h-1.5 overflow-hidden rounded-full bg-border">
-							<div
+					{/* Editor card */}
+					<div className="flex flex-col gap-3 rounded-(--radius-card) border-2 border-b-4 border-border bg-surface p-4">
+						<div className="flex items-center justify-between px-1">
+							<p className="text-sm font-extrabold text-foreground">Bài làm</p>
+							<span
 								className={cn(
-									"h-full rounded-full transition-[width] duration-300",
-									wordCount >= activeTask.min_words ? "bg-primary" : "bg-primary/50",
+									"text-xs font-bold tabular-nums",
+									wordCount >= activeTask.min_words
+										? "text-primary"
+										: isUnder && wordCount > 0
+											? "text-warning"
+											: "text-muted",
 								)}
-								style={{ width: `${pct}%` }}
-							/>
+							>
+								{wordCount} / {activeTask.min_words} từ
+							</span>
 						</div>
-						{isUnder && wordCount > 0 && (
-							<p className="text-xs text-warning">Còn thiếu {activeTask.min_words - wordCount} từ</p>
-						)}
-						{!isUnder && wordCount > 0 && <p className="text-xs text-primary font-bold">Đạt yêu cầu ✓</p>}
+
+						<ScrollArea className="max-h-[420px] rounded-(--radius-button) border-2 border-border/70 bg-background transition-all focus-within:border-primary/60 focus-within:ring-4 focus-within:ring-primary/10">
+							<textarea
+								ref={textareaRef}
+								value={currentText}
+								onChange={(e) => {
+									onAnswer(activeTask.id, e.target.value)
+									autoResize()
+								}}
+								placeholder="Viết bài làm của bạn ở đây..."
+								rows={editorMinRows}
+								className="block w-full resize-none overflow-hidden bg-transparent p-4 text-sm leading-relaxed text-foreground placeholder:text-placeholder outline-none"
+								aria-label={`Bài làm phần ${activeTask.part}`}
+							/>
+						</ScrollArea>
+
+						{/* Word count progress bar */}
+						<div className="space-y-1.5 px-1">
+							<div className="h-1.5 overflow-hidden rounded-full bg-border/60">
+								<div
+									className={cn(
+										"h-full rounded-full transition-[width] duration-300",
+										wordCount >= activeTask.min_words ? "bg-primary" : "bg-primary/50",
+									)}
+									style={{ width: `${pct}%` }}
+								/>
+							</div>
+							{isUnder && wordCount > 0 && (
+								<p className="text-xs text-warning">Còn thiếu {activeTask.min_words - wordCount} từ</p>
+							)}
+							{!isUnder && wordCount > 0 && <p className="text-xs font-bold text-primary">Đạt yêu cầu ✓</p>}
+						</div>
 					</div>
 				</div>
-			</div>
+			</ScrollArea>
 
 			{/* Task tabs + prev/next */}
-			<div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-2.5">
+			<div className="flex items-center justify-between gap-3 border-t-2 border-border/50 bg-card px-4 py-2.5">
 				{activeIdx > 0 ? (
 					<button
 						type="button"
@@ -172,14 +191,14 @@ export function WritingPanel({ tasks, writingAnswers, onAnswer, footer }: Props)
 								</span>
 								<span
 									className={cn(
-										"absolute inset-x-1 bottom-0.5 h-0.5 overflow-hidden rounded-full",
-										isActive ? "bg-white/30" : "bg-border",
+										"absolute inset-x-0 bottom-0 h-1 overflow-hidden",
+										isActive ? "bg-white/20" : "bg-primary/10",
 									)}
 								>
 									<span
 										className={cn(
-											"block h-full rounded-full transition-[width]",
-											isActive ? "bg-white" : "bg-primary/50",
+											"block h-full transition-[width] duration-300",
+											isActive ? "bg-white" : "bg-primary/70",
 										)}
 										style={{ width: `${tabPct}%` }}
 									/>
@@ -202,7 +221,7 @@ export function WritingPanel({ tasks, writingAnswers, onAnswer, footer }: Props)
 			</div>
 
 			{/* Global footer */}
-			<div className="z-40 flex h-14 shrink-0 items-center justify-between border-t border-border bg-card px-5">
+			<div className="z-40 flex h-14 shrink-0 items-center justify-between border-t-2 border-border/50 bg-card px-5">
 				<div className="w-24">
 					<p className="text-xs text-muted">
 						{wordCount}/{activeTask.min_words} từ

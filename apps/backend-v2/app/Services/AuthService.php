@@ -22,6 +22,7 @@ class AuthService
 
     public function __construct(
         private readonly ProfileService $profileService,
+        private readonly GoogleTokenVerifier $googleTokenVerifier,
     ) {}
 
     /**
@@ -159,6 +160,97 @@ class AuthService
             'expires_in' => config('jwt.ttl') * 60,
             'profile' => $profile,
         ];
+    }
+
+    /**
+     * Authenticate with a Google ID token. Creates user on first sign-in.
+     * Initial profile is NOT auto-created: frontend must call completeOnboarding
+     * when needs_onboarding=true.
+     *
+     * @return array{
+     *     user: User,
+     *     profile: Profile|null,
+     *     access_token: string,
+     *     refresh_token: string,
+     *     expires_in: int,
+     *     needs_onboarding: bool,
+     *     suggested_nickname: ?string,
+     * }
+     */
+    public function loginWithGoogle(string $idToken, ?string $userAgent = null): array
+    {
+        $payload = $this->googleTokenVerifier->verify($idToken);
+
+        if (! $payload['email_verified']) {
+            throw ValidationException::withMessages([
+                'id_token' => ['Email chưa được Google xác minh.'],
+            ]);
+        }
+
+        return DB::transaction(function () use ($payload, $userAgent) {
+            $user = User::where('google_id', $payload['sub'])->first()
+                ?? User::where('email', $payload['email'])->first();
+
+            if ($user === null) {
+                $user = User::create([
+                    'email' => $payload['email'],
+                    'google_id' => $payload['sub'],
+                    'full_name' => $payload['name'],
+                    'role' => Role::Learner,
+                ]);
+            } elseif ($user->google_id === null) {
+                $user->google_id = $payload['sub'];
+                if ($user->full_name === null && $payload['name'] !== null) {
+                    $user->full_name = $payload['name'];
+                }
+                $user->save();
+            }
+
+            $profile = $this->resolveDefaultProfile($user);
+            $accessToken = $this->issueAccessToken($user, $profile);
+            [, $plainToken] = $this->createRefreshToken($user, $userAgent);
+
+            return [
+                'user' => $user,
+                'profile' => $profile,
+                'access_token' => $accessToken,
+                'refresh_token' => $plainToken,
+                'expires_in' => config('jwt.ttl') * 60,
+                'needs_onboarding' => $user->role === Role::Learner && $profile === null,
+                'suggested_nickname' => $payload['name'],
+            ];
+        });
+    }
+
+    /**
+     * Create initial profile for an already-authenticated user (Google signup flow).
+     * Issues a fresh access token carrying the new active_profile_id.
+     *
+     * @param  array{nickname:string,target_level:string,target_deadline:string}  $profileData
+     * @return array{
+     *     profile: Profile,
+     *     access_token: string,
+     *     expires_in: int,
+     * }
+     */
+    public function completeOnboarding(User $user, array $profileData): array
+    {
+        if ($user->initialProfile() !== null) {
+            throw ValidationException::withMessages([
+                'profile' => ['Tài khoản đã hoàn tất onboarding.'],
+            ]);
+        }
+
+        return DB::transaction(function () use ($user, $profileData) {
+            $profile = $this->profileService->createInitialProfile($user, $profileData);
+            $accessToken = $this->issueAccessToken($user, $profile);
+
+            return [
+                'profile' => $profile,
+                'access_token' => $accessToken,
+                'expires_in' => config('jwt.ttl') * 60,
+            ];
+        });
     }
 
     public function logout(string $plainToken, User $user): void

@@ -26,7 +26,7 @@ const SKILL_ORDER = ["listening", "reading", "writing", "speaking"] as const
 
 export function ExamCard({ exam, fullTestCoinCost }: Props) {
 	return (
-		<div className="card p-5 flex flex-col gap-4">
+		<div className="card p-5 flex flex-col gap-4 hover:border-primary/40 hover:-translate-y-0.5 transition-all">
 			{/* Title + meta */}
 			<div className="space-y-1.5">
 				<p className="font-bold text-base leading-tight text-foreground">{exam.title}</p>
@@ -46,9 +46,17 @@ export function ExamCard({ exam, fullTestCoinCost }: Props) {
 			</div>
 
 			{/* Skills */}
-			<div className="flex flex-wrap gap-x-3 gap-y-1">
+			<div className="flex flex-wrap gap-1.5">
 				{SKILL_ORDER.map((skill) => (
-					<span key={skill} className={cn("text-xs font-semibold", SKILL_COLORS[skill])}>
+					<span
+						key={skill}
+						className={cn(
+							"inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-extrabold",
+							SKILL_COLORS[skill],
+						)}
+						style={{ backgroundColor: `color-mix(in srgb, currentColor 12%, transparent)` }}
+					>
+						<span className="size-1.5 rounded-full bg-current" />
 						{SKILL_LABELS[skill]}
 					</span>
 				))}
@@ -69,20 +77,25 @@ export function ExamCard({ exam, fullTestCoinCost }: Props) {
 			)}
 
 			{/* Footer: status + coin + CTA */}
-			<div className="flex items-center justify-between pt-2 border-t border-border-light">
-				<span className="text-xs text-subtle">Chưa làm</span>
+			<div className="flex items-center justify-between pt-3 border-t border-border-light mt-auto">
+				<span className="inline-flex items-center gap-1.5 text-xs font-bold text-subtle">
+					<span className="size-1.5 rounded-full bg-subtle" />
+					Chưa làm
+				</span>
 
-				<div className="flex items-center gap-3">
+				<div className="flex items-center gap-2">
 					{fullTestCoinCost !== null && (
-						<span className="flex items-center gap-1">
-							<StaticIcon name="gem-color" size="xs" />
-							<span className="text-xs font-bold text-coin-dark">{fullTestCoinCost}</span>
+						<span className="inline-flex items-center gap-1.5 px-1" title="Giá một lượt làm">
+							<StaticIcon name="coin" size="sm" />
+							<span className="text-sm font-extrabold text-coin-dark tabular-nums">
+								{fullTestCoinCost}
+							</span>
 						</span>
 					)}
 					<Link
 						to="/thi-thu/$examId"
 						params={{ examId: exam.id }}
-						className="btn btn-primary text-xs py-2 px-4"
+						className="btn btn-primary text-sm py-2 px-4"
 					>
 						Xem đề
 					</Link>
