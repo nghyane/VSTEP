@@ -138,18 +138,19 @@ function SectionBlock({
 	items: ExamVersionMcqItem[]
 	detailMap: Map<string, McqDetailItem>
 }) {
-	const correct = items.reduce((n, it) => n + (detailMap.get(it.id)?.is_correct ? 1 : 0), 0)
+	const sorted = [...items].sort((a, b) => a.display_order - b.display_order)
+	const correct = sorted.reduce((n, it) => n + (detailMap.get(it.id)?.is_correct ? 1 : 0), 0)
 	return (
 		<div className="px-6 py-5 sm:px-8">
 			<div className="mb-4 flex items-center justify-between">
 				<p className="text-base font-extrabold text-foreground">{title}</p>
 				<span className="text-sm tabular-nums text-subtle">
-					<span className="font-bold text-foreground">{correct}</span>/{items.length} đúng
+					<span className="font-bold text-foreground">{correct}</span>/{sorted.length} đúng
 				</span>
 			</div>
 
 			<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-				{items.map((item, idx) => (
+				{sorted.map((item, idx) => (
 					<ItemRow key={item.id} no={idx + 1} detail={detailMap.get(item.id) ?? null} />
 				))}
 			</div>

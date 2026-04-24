@@ -20,6 +20,7 @@ class ExamVersionReadingPassage extends BaseModel
 
     public function items(): HasMany
     {
-        return $this->hasMany(ExamVersionReadingItem::class, 'passage_id');
+        return $this->hasMany(ExamVersionReadingItem::class, 'passage_id')
+            ->orderBy('display_order');
     }
 }

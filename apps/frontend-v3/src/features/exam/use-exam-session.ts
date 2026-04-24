@@ -229,6 +229,8 @@ export function useExamSession({
 		onSuccess: (result) => {
 			dispatch({ type: "SUBMITTED" })
 			qc.invalidateQueries({ queryKey: ["exam-sessions", "active"] })
+			qc.invalidateQueries({ queryKey: ["exam-sessions", "mine"] })
+			qc.invalidateQueries({ queryKey: ["exam-sessions", session.id] })
 			onSubmitted(result)
 		},
 	})

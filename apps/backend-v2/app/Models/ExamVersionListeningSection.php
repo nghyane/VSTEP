@@ -20,6 +20,7 @@ class ExamVersionListeningSection extends BaseModel
 
     public function items(): HasMany
     {
-        return $this->hasMany(ExamVersionListeningItem::class, 'section_id');
+        return $this->hasMany(ExamVersionListeningItem::class, 'section_id')
+            ->orderBy('display_order');
     }
 }

@@ -12,8 +12,8 @@ import { ReadingPanel } from "#/features/exam/components/ReadingPanel"
 import { ResultBackground } from "#/features/exam/components/ResultBackground"
 import { SpeakingPanel } from "#/features/exam/components/SpeakingPanel"
 import { WritingPanel } from "#/features/exam/components/WritingPanel"
-import { examDetailQuery, examSessionQuery } from "#/features/exam/queries"
-import type { ExamVersion, SkillKey, SubmitSessionResult } from "#/features/exam/types"
+import { examDetailQuery, examSessionQuery, sessionResultsQuery } from "#/features/exam/queries"
+import type { Exam, ExamSessionData, ExamVersion, SkillKey, SubmitSessionResult } from "#/features/exam/types"
 import { useExamSession, useExamTimer } from "#/features/exam/use-exam-session"
 import { cn } from "#/lib/utils"
 
@@ -162,8 +162,7 @@ function ResultScreen({
 							<p className="text-sm text-subtle">Chúc mừng!</p>
 							<p className="mt-0.5 text-2xl font-extrabold text-foreground sm:text-3xl">Thí sinh</p>
 							<p className="mt-1 text-sm text-muted">
-								đã hoàn thành bài kiểm tra{" "}
-								<span className="font-bold text-foreground">{examTitle}</span>
+								đã hoàn thành bài kiểm tra <span className="font-bold text-foreground">{examTitle}</span>
 							</p>
 
 							<div className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1.5">
@@ -236,9 +235,7 @@ function ScorePill({
 			<div
 				className={cn(
 					"inline-flex items-center rounded-(--radius-button) border-2 border-b-4 px-3 py-1",
-					isSuccess
-						? "border-primary/30 bg-primary-tint"
-						: "border-destructive/30 bg-destructive-tint",
+					isSuccess ? "border-primary/30 bg-primary-tint" : "border-destructive/30 bg-destructive-tint",
 				)}
 			>
 				<span
@@ -293,12 +290,7 @@ function PerformanceTable({ rows }: { rows: PerfRow[] }) {
 								{row.pending ? (
 									<span className="text-subtle">—</span>
 								) : (
-									<span
-										className={cn(
-											"font-bold",
-											row.correct > 0 ? "text-primary" : "text-subtle",
-										)}
-									>
+									<span className={cn("font-bold", row.correct > 0 ? "text-primary" : "text-subtle")}>
 										{row.correct}
 									</span>
 								)}
@@ -307,9 +299,7 @@ function PerformanceTable({ rows }: { rows: PerfRow[] }) {
 								{row.pending ? (
 									<span className="text-subtle">—</span>
 								) : (
-									<span className={row.wrong > 0 ? "text-destructive" : "text-subtle"}>
-										{row.wrong}
-									</span>
+									<span className={row.wrong > 0 ? "text-destructive" : "text-subtle"}>{row.wrong}</span>
 								)}
 							</td>
 							<td className="px-4 py-3 text-center">
@@ -354,17 +344,85 @@ function PendingBadge() {
 	)
 }
 
+// ─── Submitted session view (re-render result from server) ───────────────────
+
+function SubmittedResultView({
+	sessionId,
+	exam,
+	version,
+	session,
+}: {
+	sessionId: string
+	exam: Exam
+	version: ExamVersion
+	session: ExamSessionData
+}) {
+	const { data: resultsRes } = useSuspenseQuery(sessionResultsQuery(sessionId))
+	const mcqDetail = resultsRes.data.mcq_detail
+	const total = mcqDetail.length
+	const score = mcqDetail.reduce((n, d) => n + (d.is_correct ? 1 : 0), 0)
+
+	const result: SubmitSessionResult = {
+		session_id: sessionId,
+		status: session.status,
+		submitted_at: session.submitted_at ?? "",
+		mcq: {
+			score,
+			total,
+			items: mcqDetail.map((d) => ({
+				item_ref_type: d.item_ref_type,
+				item_ref_id: d.item_ref_id,
+				selected_index: d.selected_index ?? -1,
+				correct_index: d.correct_index,
+				is_correct: d.is_correct,
+			})),
+		},
+		writing_jobs: [],
+		speaking_jobs: [],
+	}
+
+	return (
+		<ResultScreen
+			result={result}
+			examTitle={exam.title}
+			examId={exam.id}
+			sessionId={sessionId}
+			version={version}
+			activeSkills={session.selected_skills}
+		/>
+	)
+}
+
 // ─── Inner exam room (data loaded) ───────────────────────────────────────────
 
 function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) {
-	const navigate = useNavigate()
-	const [submitResult, setSubmitResult] = useState<SubmitSessionResult | null>(null)
-	const [confirmExit, setConfirmExit] = useState(false)
 	const { data: sessionRes } = useSuspenseQuery(examSessionQuery(sessionId))
 	const { data: examRes } = useSuspenseQuery(examDetailQuery(examId))
 
 	const session = sessionRes.data
 	const { version, exam } = examRes.data
+
+	if (session.status !== "active") {
+		return <SubmittedResultView sessionId={sessionId} exam={exam} version={version} session={session} />
+	}
+
+	return <ActiveExamRoom sessionId={sessionId} session={session} exam={exam} version={version} />
+}
+
+function ActiveExamRoom({
+	sessionId,
+	session,
+	exam,
+	version,
+}: {
+	sessionId: string
+	session: ExamSessionData
+	exam: Exam
+	version: ExamVersion
+}) {
+	const navigate = useNavigate()
+	const [submitResult, setSubmitResult] = useState<SubmitSessionResult | null>(null)
+	const [confirmExit, setConfirmExit] = useState(false)
 
 	const listeningItems = version.listening_sections.flatMap((s) => s.items)
 	const readingItems = version.reading_passages.flatMap((p) => p.items)
