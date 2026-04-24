@@ -24,7 +24,7 @@ class PracticeListeningExerciseFactory extends Factory
             'title' => ucfirst($title),
             'description' => fake()->sentence(),
             'part' => fake()->numberBetween(1, 3),
-            'audio_url' => 'https://example.com/audio/'.Str::random(8).'.mp3',
+            'audio_url' => 'audio/listening/'.Str::random(8).'.mp3',
             'transcript' => fake()->paragraph(),
             'vietnamese_transcript' => fake()->paragraph(),
             'word_timestamps' => [],

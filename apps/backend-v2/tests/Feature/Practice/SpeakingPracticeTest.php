@@ -69,7 +69,7 @@ class SpeakingPracticeTest extends TestCase
 
         $submit = $this->withHeader('Authorization', "Bearer {$token}")
             ->postJson("/api/v1/practice/speaking/vstep-sessions/{$sessionId}/submit", [
-                'audio_url' => 'https://r2.example.com/audio/test.webm',
+                'audio_url' => 'audio/speaking/test.webm',
                 'duration_seconds' => 90,
             ]);
         $submit->assertOk();
