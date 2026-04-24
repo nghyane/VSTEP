@@ -7,7 +7,7 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthContext } from "@/hooks/use-auth";
 import { queryClient } from "@/lib/query-client";
-import { saveTokens, clearTokens } from "@/lib/auth";
+import { saveTokens, clearTokens, getSavedUser, getSavedProfile } from "@/lib/auth";
 import { HapticsProvider } from "@/contexts/HapticsContext";
 import { loadCoins } from "@/features/coin/coin-store";
 import { loadStreakData } from "@/features/streak/streak-store";
@@ -32,10 +32,17 @@ export default function RootLayout() {
   useEffect(() => {
     (async () => {
       try {
-        await clearTokens();
-        await loadCoins();
-        await loadStreakData();
-        await loadNotifications();
+        const [savedUser, savedProfile] = await Promise.all([
+          getSavedUser(),
+          getSavedProfile(),
+          loadCoins(),
+          loadStreakData(),
+          loadNotifications(),
+        ]);
+        if (savedUser) {
+          setUser(savedUser);
+          setProfile(savedProfile);
+        }
       } catch {
         // ignore
       } finally {
@@ -53,6 +60,7 @@ export default function RootLayout() {
   const signIn = useCallback(
     async (accessToken: string, refreshToken: string, u: AuthUser, p: Profile | null) => {
       await saveTokens(accessToken, refreshToken, u, p);
+      queryClient.clear();
       setUser(u);
       setProfile(p);
     },

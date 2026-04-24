@@ -14,21 +14,11 @@ function computeAvg(scores: Record<string, number | null>): number {
 
 export function ScoreTrend() {
 	const { data: targetBand } = useQuery({ ...overviewQuery, select: selectTargetBand })
-	const { data, isLoading } = useQuery(examSessionsQuery)
+	const { data: sessions, isLoading } = useQuery(examSessionsQuery)
 
-	if (isLoading || !data || targetBand === undefined) return null
+	if (isLoading || !sessions || targetBand === undefined) return null
 
-	const sessions = data.data
 	const target = targetBand
-
-	if (isLoading) {
-		return (
-			<section className="card p-6">
-				<h3 className="font-extrabold text-lg text-foreground">Điểm qua các lần thi</h3>
-				<p className="text-sm text-subtle mt-1">Đang tải...</p>
-			</section>
-		)
-	}
 
 	if (sessions.length === 0) {
 		return (

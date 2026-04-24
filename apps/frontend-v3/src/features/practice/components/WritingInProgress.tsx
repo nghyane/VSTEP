@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Icon } from "#/components/Icon"
 import { submitWritingSession } from "#/features/practice/actions"
+import { TranslateSelection } from "#/features/practice/components/TranslateSelection"
 import type { SampleMarker, WritingPromptDetail, WritingSubmission } from "#/features/practice/types"
 import { cn, countWords } from "#/lib/utils"
 
@@ -79,7 +80,11 @@ export function WritingInProgress({ prompt, sessionId }: Props) {
 								<p className="text-xs font-bold text-skill-writing uppercase tracking-wide mb-2">
 									Đề bài — Task {prompt.part}
 								</p>
-								<p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">{prompt.prompt}</p>
+								<TranslateSelection>
+									<p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
+										{prompt.prompt}
+									</p>
+								</TranslateSelection>
 							</div>
 							{prompt.required_points.length > 0 && (
 								<div>
@@ -234,21 +239,23 @@ function SamplePanel({ answer, markers }: { answer: string; markers: SampleMarke
 
 			<div className="mx-auto w-full max-w-3xl card px-6 py-5">
 				<p className="text-xs font-bold text-skill-writing uppercase tracking-wide mb-3">Bài mẫu</p>
-				<p className="whitespace-pre-wrap text-sm leading-[2] text-foreground">
-					{segments.map((seg, i) =>
-						seg.marker ? (
-							<span
-								key={i}
-								data-anchor={seg.marker.id}
-								className={cn("rounded px-0.5", HIGHLIGHT_BG[seg.marker.color])}
-							>
-								{seg.text}
-							</span>
-						) : (
-							<span key={i}>{seg.text}</span>
-						),
-					)}
-				</p>
+				<TranslateSelection>
+					<p className="whitespace-pre-wrap text-sm leading-[2] text-foreground">
+						{segments.map((seg, i) =>
+							seg.marker ? (
+								<span
+									key={i}
+									data-anchor={seg.marker.id}
+									className={cn("rounded px-0.5", HIGHLIGHT_BG[seg.marker.color])}
+								>
+									{seg.text}
+								</span>
+							) : (
+								<span key={i}>{seg.text}</span>
+							),
+						)}
+					</p>
+				</TranslateSelection>
 			</div>
 
 			{leftMarkers.map((m, i) => (

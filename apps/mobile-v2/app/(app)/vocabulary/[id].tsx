@@ -118,13 +118,13 @@ function ExerciseMode({ icon, title, desc, color, onPress }: {
     <HapticTouchable
       style={[s.modeCard, { borderColor: c.border, borderBottomColor: c.border }]}
       onPress={onPress}
-      activeOpacity={0.8}
+      activeOpacity={0.85}
     >
       <View style={[s.modeIconWrap, { backgroundColor: color + "15" }]}>
-        <GameIcon name={icon} size={20} />
+        <GameIcon name={icon} size={22} />
       </View>
       <Text style={[s.modeTitle, { color: c.foreground }]}>{title}</Text>
-      <Text style={[s.modeDesc, { color: c.subtle }]}>{desc}</Text>
+      <Text style={[s.modeDesc, { color: c.mutedForeground }]}>{desc}</Text>
     </HapticTouchable>
   );
 }

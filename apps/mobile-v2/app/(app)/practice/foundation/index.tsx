@@ -105,7 +105,6 @@ export default function FoundationIndexScreen() {
         </View>
 
         <DepthButton
-          variant="secondary"
           fullWidth
           onPress={() => router.push("/(app)/practice/grammar" as any)}
           style={{ marginTop: spacing.xs }}

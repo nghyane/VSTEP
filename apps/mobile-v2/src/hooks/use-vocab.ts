@@ -13,6 +13,7 @@ export interface VocabTopic {
   displayOrder: number;
   tasks: string[];
   wordCount?: number;
+  learnedCount?: number;
 }
 
 export interface FsrsState {
