@@ -12,7 +12,13 @@ import { resolveAssetUrl } from "@/lib/asset-url";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
-import { useListeningExerciseDetail, useMcqSession, startListeningSession, submitListeningSession } from "@/hooks/use-practice";
+import { FocusHeader } from "@/components/FocusHeader";
+import { SubmitFooter } from "@/components/SubmitFooter";
+import { SupportPanel } from "@/components/SupportPanel";
+import {
+  useListeningExerciseDetail, useMcqSession,
+  startListeningSession, submitListeningSession,
+} from "@/hooks/use-practice";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { McqQuestion, SubmitResult } from "@/hooks/use-practice";
 
@@ -106,7 +112,10 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [showSub, setShowSub] = useState(false);
   const progressAnim = useRef(new Animated.Value(0)).current;
+
+  const hasSub = !!exercise.transcript || (exercise.wordTimestamps ?? []).length > 0;
 
   useEffect(() => {
     if (!exercise.audioUrl) return;
@@ -156,26 +165,33 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
   }
 
   function fmt(ms: number) {
-    const s = Math.floor(ms / 1000);
-    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+    const sec = Math.floor(ms / 1000);
+    return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
   }
 
   const pct = duration > 0 ? position / duration : 0;
 
   return (
     <View style={[s.root, { backgroundColor: c.background }]}>
-      {/* Top bar */}
-      <View style={[s.topBar, { paddingTop: insets.top + spacing.sm, borderBottomColor: c.borderLight }]}>
-        <HapticTouchable onPress={onBack} style={s.closeBtn}>
-          <Ionicons name="close" size={22} color={c.foreground} />
-        </HapticTouchable>
-        <View style={[s.progressTrack, { backgroundColor: c.muted }]}>
-          <View style={[s.progressFill, { backgroundColor: COLOR, width: `${(session.answeredCount / questions.length) * 100}%` }]} />
-        </View>
-        <Text style={[s.progressCount, { color: c.subtle }]}>{session.answeredCount}/{questions.length}</Text>
-      </View>
+      {/* Focus header */}
+      <FocusHeader
+        current={session.answeredCount}
+        total={questions.length}
+        accentColor={COLOR}
+        onClose={onBack}
+        c={c}
+      />
 
-      <ScrollView contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + 100 }]} showsVerticalScrollIndicator={false}>
+      {/* Subtitle toggle */}
+      {showSub && hasSub && (
+        <View style={[s.subCard, { backgroundColor: c.surface, borderColor: c.borderLight }]}>
+          <Text style={[s.subText, { color: c.mutedForeground }]}>
+            {exercise.vietnameseTranscript ?? exercise.transcript ?? "(Không có bản dịch)"}
+          </Text>
+        </View>
+      )}
+
+      <ScrollView contentContainerStyle={[s.panelScroll, { paddingBottom: insets.bottom + 80 }]}>
         {/* Audio card */}
         <View style={[s.audioCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
           <Text style={[s.audioPartLabel, { color: COLOR }]}>Part {exercise.part}</Text>
@@ -184,18 +200,27 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
             <Text style={[s.audioDesc, { color: c.mutedForeground }]}>{exercise.description}</Text>
           )}
           <View style={s.audioControls}>
-            <TouchableOpacity onPress={togglePlay} disabled={!sound || !!audioError} style={[s.playBtn, { backgroundColor: audioError ? c.mutedForeground : COLOR }]}>
-              <Ionicons name={playing ? "pause" : "play"} size={22} color="#fff" />
+            <TouchableOpacity
+              onPress={togglePlay}
+              disabled={!sound || !!audioError}
+              style={[s.playBtn, { backgroundColor: audioError ? c.mutedForeground : COLOR }]}
+            >
+              <Ionicons name={playing ? "pause" : "play"} size={20} color="#fff" />
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
               <View style={[s.audioTrack, { backgroundColor: c.muted }]}>
-                <Animated.View style={[s.audioFill, { backgroundColor: COLOR, width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] }) }]} />
+                <Animated.View style={[s.audioFill, { backgroundColor: COLOR, width: `${pct * 100}%` }]} />
               </View>
               <View style={s.audioTimes}>
                 <Text style={[s.audioTime, { color: c.subtle }]}>{fmt(position)}</Text>
                 <Text style={[s.audioTime, { color: c.subtle }]}>{fmt(duration)}</Text>
               </View>
             </View>
+            {hasSub && (
+              <TouchableOpacity onPress={() => setShowSub(!showSub)} style={s.subToggle}>
+                <Ionicons name={showSub ? "text" : "text-outline"} size={18} color={showSub ? COLOR : c.subtle} />
+              </TouchableOpacity>
+            )}
           </View>
           {audioError && <Text style={[s.audioError, { color: c.destructive }]}>{audioError}</Text>}
         </View>
@@ -205,6 +230,17 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
           <ResultCard result={session.result} onBack={onBack} c={c} />
         )}
 
+        {/* Support panel */}
+        {!session.result && (
+          <SupportPanel
+            skill="listening"
+            sessionId={sessionId}
+            hasTranscript={hasSub}
+            hasKeywords={(exercise.keywords ?? []).length > 0}
+            accentColor={COLOR}
+          />
+        )}
+
         {/* Questions */}
         {questions.map((q: McqQuestion, qi: number) => (
           <QuestionCard
@@ -212,25 +248,25 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
             question={q}
             index={qi}
             selected={session.answers[q.id] ?? null}
+            onSelect={(idx: number) => session.select(q.id, idx)}
             result={session.result}
-            onSelect={(i: number) => session.select(q.id, i)}
             color={COLOR}
             c={c}
           />
         ))}
       </ScrollView>
 
-      {/* Footer */}
+      {/* Submit footer */}
       {!session.result && (
-        <View style={[s.footer, { paddingBottom: insets.bottom + spacing.base, borderTopColor: c.borderLight }]}>
-          <DepthButton
-            fullWidth
-            disabled={session.submitting || session.answeredCount < questions.length}
-            onPress={session.submit}
-            style={{ backgroundColor: COLOR, borderColor: COLOR }}
-          >
-            {session.submitting ? "Đang nộp..." : `Nộp bài (${session.answeredCount}/${questions.length})`}
-          </DepthButton>
+        <View style={[s.footer, { borderTopColor: c.borderLight }]}>
+          <SubmitFooter
+            answeredCount={session.answeredCount}
+            total={questions.length}
+            submitting={session.submitting}
+            accentColor={COLOR}
+            onSubmit={() => session.submit()}
+            c={c}
+          />
         </View>
       )}
     </View>
@@ -242,53 +278,64 @@ function ResultCard({ result, onBack, c }: { result: SubmitResult; onBack: () =>
   return (
     <View style={[s.resultCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
       <Text style={[s.resultScore, { color: c.foreground }]}>{result.score}/{result.total}</Text>
-      <Text style={[s.resultSub, { color: c.mutedForeground }]}>câu đúng · {pct}%</Text>
-      <DepthButton variant="secondary" onPress={onBack} style={{ marginTop: spacing.md }}>Về danh sách</DepthButton>
+      <Text style={[s.resultPct, { color: c.mutedForeground }]}>{pct}% đúng</Text>
+      <DepthButton
+        onPress={onBack}
+        style={{ marginTop: spacing.md, backgroundColor: COLOR, borderColor: COLOR }}
+      >
+        Về danh sách
+      </DepthButton>
     </View>
   );
 }
 
-function QuestionCard({ question, index, selected, result, onSelect, color, c }: {
-  question: McqQuestion; index: number; selected: number | null;
-  result: SubmitResult | null; onSelect: (i: number) => void; color: string; c: any;
-}) {
-  const answered = !!result;
-  const item = result?.items.find((it) => it.questionId === question.id);
+function QuestionCard({ question, index, selected, onSelect, result, color, c }: any) {
+  const itemResult = result?.items.find((i: any) => i.questionId === question.id);
+  const isCorrect = itemResult?.isCorrect;
+  const hasResult = !!result;
 
   return (
     <View style={[s.questionCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
-      <Text style={[s.questionNum, { color: color }]}>Câu {index + 1}</Text>
+      <Text style={[s.questionLabel, { color: color }]}>Câu {index + 1}</Text>
       <Text style={[s.questionText, { color: c.foreground }]}>{question.question}</Text>
-      <View style={s.options}>
-        {question.options.map((opt, i) => {
-          const isSelected = selected === i;
-          const isCorrect = answered && item?.correctIndex === i;
-          const isWrong = answered && isSelected && !item?.isCorrect;
-          return (
-            <TouchableOpacity
-              key={i}
-              disabled={answered}
-              onPress={() => onSelect(i)}
-              style={[
-                s.option,
-                {
-                  borderColor: isCorrect ? color : isWrong ? "#EA4335" : isSelected ? color : c.border,
-                  backgroundColor: isCorrect ? color + "18" : isWrong ? "#FFE6E4" : isSelected ? color + "12" : c.background,
-                },
-              ]}
-            >
-              <View style={[s.optionDot, { borderColor: isCorrect ? color : isWrong ? "#EA4335" : isSelected ? color : c.border, backgroundColor: (isSelected || isCorrect) ? color : "transparent" }]}>
-                {(isSelected || isCorrect) && <View style={s.optionDotInner} />}
-              </View>
-              <Text style={[s.optionText, { color: isWrong ? "#EA4335" : isCorrect || isSelected ? color : c.foreground }]}>{opt}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-      {answered && item?.explanation && (
-        <View style={[s.explanation, { backgroundColor: c.muted }]}>
-          <Text style={[s.explanationText, { color: c.mutedForeground }]}>{item.explanation}</Text>
-        </View>
+      {question.options.map((opt: string, oi: number) => {
+        const isSelected = selected === oi;
+        let borderColor = c.border;
+        let bgColor = c.surface;
+        let textColor = c.foreground;
+
+        if (hasResult) {
+          if (oi === itemResult?.correctIndex) {
+            borderColor = "#58CC02";
+            bgColor = "#E6F8D4";
+            textColor = "#478700";
+          } else if (isSelected && !isCorrect) {
+            borderColor = "#EA4335";
+            bgColor = "#FFE6E4";
+            textColor = "#C03B2F";
+          }
+        } else if (isSelected) {
+          borderColor = color;
+          bgColor = color + "18";
+          textColor = color;
+        }
+
+        return (
+          <HapticTouchable
+            key={oi}
+            onPress={() => !hasResult && onSelect(oi)}
+            disabled={hasResult}
+            style={[s.option, { borderColor, backgroundColor: bgColor }]}
+          >
+            <Text style={[s.optionText, { color: textColor }]}>{opt}</Text>
+            {hasResult && oi === itemResult?.correctIndex && (
+              <Ionicons name="checkmark-circle" size={18} color="#58CC02" />
+            )}
+          </HapticTouchable>
+        );
+      })}
+      {hasResult && itemResult?.explanation && (
+        <Text style={[s.explanation, { color: c.mutedForeground }]}>{itemResult.explanation}</Text>
       )}
     </View>
   );
@@ -296,48 +343,39 @@ function QuestionCard({ question, index, selected, result, onSelect, color, c }:
 
 const s = StyleSheet.create({
   root: { flex: 1 },
-  fullCenter: { alignItems: "center", justifyContent: "center", padding: spacing.xl },
-  topBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.xl, paddingBottom: spacing.md, gap: spacing.md, borderBottomWidth: 1 },
-  closeBtn: { padding: 4 },
-  topBarTitle: { flex: 1, fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
-  partChip: { paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radius.full },
-  partChipText: { fontSize: 11, fontFamily: fontFamily.bold },
-  progressTrack: { flex: 1, height: 8, borderRadius: radius.full, overflow: "hidden" },
-  progressFill: { height: "100%", borderRadius: radius.full },
-  progressCount: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, minWidth: 32, textAlign: "right" },
-  scroll: { padding: spacing.xl, gap: spacing.lg },
-  // Preview
-  previewIcon: { width: 80, height: 80, borderRadius: 40, alignItems: "center", justifyContent: "center", marginBottom: spacing.lg },
+  fullCenter: { flex: 1, alignItems: "center", justifyContent: "center" },
+  topBar: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.xl, paddingVertical: spacing.sm },
+  closeBtn: { padding: spacing.xs },
+  topBarTitle: { fontSize: fontSize.base, fontFamily: fontFamily.bold, flex: 1 },
+  partChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.full },
+  partChipText: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
+  previewIcon: { width: 80, height: 80, borderRadius: 40, alignItems: "center", justifyContent: "center", marginBottom: spacing.xl },
   previewTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold, textAlign: "center" },
-  previewDesc: { fontSize: fontSize.sm, textAlign: "center", marginTop: spacing.sm, lineHeight: 20, paddingHorizontal: spacing.xl },
-  previewMeta: { fontSize: fontSize.sm, marginTop: spacing.sm },
-  // Audio card
+  previewDesc: { fontSize: fontSize.sm, textAlign: "center", marginTop: spacing.xs },
+  previewMeta: { fontSize: fontSize.xs, marginTop: spacing.xs, marginBottom: spacing.xl },
+  subCard: { borderWidth: 1, borderRadius: radius.lg, padding: spacing.md, marginHorizontal: spacing.xl, marginTop: spacing.xs },
+  subText: { fontSize: fontSize.sm, fontFamily: fontFamily.medium, lineHeight: 22 },
+  panelScroll: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, gap: spacing.md },
   audioCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },
   audioPartLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
   audioTitle: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
   audioDesc: { fontSize: fontSize.xs, lineHeight: 18 },
   audioControls: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginTop: spacing.sm },
-  playBtn: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  playBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   audioTrack: { height: 6, borderRadius: 3, overflow: "hidden" },
   audioFill: { height: "100%", borderRadius: 3 },
   audioTimes: { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
   audioTime: { fontSize: 10 },
   audioError: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },
-  // Result
-  resultCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.xl, alignItems: "center" },
+  subToggle: { padding: spacing.xs },
+  resultCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.xl, alignItems: "center", gap: spacing.xs },
   resultScore: { fontSize: fontSize["3xl"], fontFamily: fontFamily.extraBold },
-  resultSub: { fontSize: fontSize.sm, marginTop: 4 },
-  // Question
-  questionCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md },
-  questionNum: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
-  questionText: { fontSize: fontSize.base, fontFamily: fontFamily.semiBold, lineHeight: 24 },
-  options: { gap: spacing.sm },
-  option: { flexDirection: "row", alignItems: "center", gap: spacing.md, borderWidth: 2, borderRadius: radius.lg, padding: spacing.md },
-  optionDot: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, alignItems: "center", justifyContent: "center" },
-  optionDotInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#fff" },
-  optionText: { flex: 1, fontSize: fontSize.sm, lineHeight: 20 },
-  explanation: { borderRadius: radius.md, padding: spacing.md },
-  explanationText: { fontSize: fontSize.xs, lineHeight: 18 },
-  // Footer
-  footer: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, borderTopWidth: 1 },
+  resultPct: { fontSize: fontSize.sm },
+  questionCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },
+  questionLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
+  questionText: { fontSize: fontSize.base, fontFamily: fontFamily.bold, lineHeight: 22 },
+  option: { borderWidth: 1, borderRadius: radius.md, padding: spacing.md, gap: spacing.xs, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  optionText: { flex: 1, fontSize: fontSize.sm, fontFamily: fontFamily.medium },
+  explanation: { fontSize: fontSize.xs, fontFamily: fontFamily.medium, lineHeight: 18, marginTop: spacing.xs, paddingHorizontal: spacing.sm },
+  footer: { backgroundColor: "#FFFFFF" },
 });

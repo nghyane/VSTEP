@@ -14,6 +14,9 @@ export interface ListeningExercise {
   id: string; slug: string; title: string;
   description: string | null; part: number;
   audioUrl: string; transcript: string | null;
+  vietnameseTranscript: string | null;
+  wordTimestamps: { word: string; startMs: number; endMs: number }[];
+  keywords: string[];
   estimatedMinutes: number | null;
 }
 
@@ -32,10 +35,18 @@ export interface SubmitResult {
   items: { questionId: string; isCorrect: boolean; correctIndex: number; explanation: string }[];
 }
 
+export interface SupportResult {
+  coinsSpent: number;
+  balanceAfter: number;
+  supportLevelsUsed: { level: number; usedAt: string }[];
+}
+
 export interface ReadingExercise {
   id: string; slug: string; title: string;
   description: string | null; part: number;
-  passage: string; estimatedMinutes: number | null;
+  passage: string; vietnameseTranslation: string | null;
+  keywords: string[];
+  estimatedMinutes: number | null;
 }
 
 export interface ReadingExerciseDetail {
@@ -248,5 +259,16 @@ export async function submitSpeakingSession(sessionId: string, audioUrl: string,
   return api.post<{ submissionId: string; gradingStatus: string }>(
     `/api/v1/practice/speaking/vstep-sessions/${sessionId}/submit`,
     { audioUrl, durationSeconds },
+  );
+}
+
+export async function useSupport(
+  skill: "listening" | "reading",
+  sessionId: string,
+  level: number,
+) {
+  return api.post<SupportResult>(
+    `/api/v1/practice/${skill}/sessions/${sessionId}/support`,
+    { level },
   );
 }
