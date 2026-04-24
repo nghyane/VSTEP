@@ -105,6 +105,20 @@ return [
             'url' => env('OLLAMA_BASE_URL', 'http://localhost:11434'),
         ],
 
+        'llm' => [
+            'driver' => 'chat-completions',
+            'key' => env('LLM_API_KEY'),
+            'url' => env('LLM_BASE_URL', 'https://gateway.ai.cloudflare.com/v1/<account_id>/default/compat'),
+            'auth_header' => env('LLM_AUTH_HEADER', 'cf-aig-authorization'),
+            'models' => [
+                'text' => [
+                    'default' => env('LLM_MODEL', 'gpt-5.4'),
+                    'cheapest' => env('LLM_MODEL', 'gpt-5.4'),
+                    'smartest' => env('LLM_MODEL', 'gpt-5.4'),
+                ],
+            ],
+        ],
+
         'openai' => [
             'driver' => 'openai',
             'key' => env('OPENAI_API_KEY'),

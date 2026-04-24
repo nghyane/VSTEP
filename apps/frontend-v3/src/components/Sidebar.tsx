@@ -1,6 +1,6 @@
 import { Link, useMatchRoute } from "@tanstack/react-router"
 import { Icon, type IconName } from "#/components/Icon"
-import { useProfile } from "#/lib/auth"
+import { useSession } from "#/lib/auth"
 import { cn } from "#/lib/utils"
 
 const NAV_ITEMS: { label: string; icon: IconName; to: string }[] = [
@@ -12,7 +12,7 @@ const NAV_ITEMS: { label: string; icon: IconName; to: string }[] = [
 
 export function Sidebar() {
 	const matchRoute = useMatchRoute()
-	const profile = useProfile()
+	const { profile } = useSession()
 	const initial = profile.nickname.charAt(0).toUpperCase()
 	const profileActive = matchRoute({ to: "/ho-so", fuzzy: true })
 

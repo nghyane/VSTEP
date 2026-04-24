@@ -1,40 +1,72 @@
 import { useQuery } from "@tanstack/react-query"
-import { StaticIcon } from "#/components/Icon"
+import { Link } from "@tanstack/react-router"
+import { useState } from "react"
+import { Icon, StaticIcon } from "#/components/Icon"
 import { ProfileDropdown } from "#/components/ProfileDropdown"
 import { streakQuery } from "#/features/dashboard/queries"
 import { unreadCountQuery } from "#/features/notifications/queries"
 import { walletBalanceQuery } from "#/features/wallet/queries"
-import { useProfile } from "#/lib/auth"
+import { TopUpDialog } from "#/features/wallet/TopUpDialog"
+import { useSession } from "#/lib/auth"
 
 interface Props {
 	title: string
+	backTo?: string
 }
 
-export function Header({ title }: Props) {
-	const profile = useProfile()
+export function Header({ title, backTo }: Props) {
+	const { profile } = useSession()
 	const { data: walletData } = useQuery(walletBalanceQuery)
 	const { data: streakData } = useQuery(streakQuery)
 	const { data: unreadData } = useQuery(unreadCountQuery)
 
-	const balance = walletData?.data.balance ?? 0
-	const streak = streakData?.data.current_streak ?? 0
-	const unread = unreadData?.data.count ?? 0
+	const balance = walletData ? walletData.data.balance : null
+	const streak = streakData ? streakData.data.current_streak : null
+	const unread = unreadData ? unreadData.data.count : 0
 	const initial = profile.nickname.charAt(0).toUpperCase()
+	const [topupOpen, setTopupOpen] = useState(false)
 
 	return (
 		<div className="sticky top-0 z-10 bg-background px-10 pt-8 pb-5 flex items-center justify-between">
-			<h2 className="font-extrabold text-2xl text-foreground">{title}</h2>
-			<div className="flex items-center gap-6">
-				<div className="flex items-center gap-2">
-					<StaticIcon name="gem-color" size="sm" />
-					<span className="font-bold text-base text-coin-dark">{balance}</span>
-				</div>
-				<div className="flex items-center gap-2">
+			<div className="flex items-center gap-1">
+				{backTo && (
+					<Link to={backTo} className="p-1 -ml-2 hover:opacity-70 transition">
+						<Icon name="back" size="sm" className="text-muted" />
+					</Link>
+				)}
+				<h2 className="font-extrabold text-2xl text-foreground">{title}</h2>
+			</div>
+			<div className="flex items-center gap-3">
+				<button
+					type="button"
+					onClick={() => setTopupOpen(true)}
+					aria-label={`${balance ?? 0} xu — bấm để nạp thêm`}
+					className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-coin-tint border-2 border-coin/40 border-b-4 hover:bg-coin/25 hover:-translate-y-0.5 active:translate-y-0 active:border-b-2 transition-all"
+				>
+					<StaticIcon
+						name="coin"
+						size="sm"
+						className="origin-center group-hover:animate-[coinPinch_600ms_ease-in-out]"
+					/>
+					<span className="font-extrabold text-base text-coin-dark tabular-nums leading-none">
+						{balance !== null ? balance.toLocaleString("vi-VN") : "–"}
+					</span>
+					<span
+						aria-hidden
+						className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-coin/30 text-coin-dark font-extrabold text-xs leading-none opacity-60 group-hover:opacity-100 group-hover:bg-coin/50 transition"
+					>
+						+
+					</span>
+				</button>
+				<div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-streak-tint border-2 border-streak/30 border-b-4">
 					<StaticIcon name="streak-sm" size="sm" />
-					<span className="font-bold text-base text-streak">{streak}</span>
+					<span className="font-extrabold text-base text-streak tabular-nums leading-none">
+						{streak !== null ? streak : "–"}
+					</span>
 				</div>
 				<ProfileDropdown unread={unread} initial={initial} />
 			</div>
+			<TopUpDialog open={topupOpen} onClose={() => setTopupOpen(false)} />
 		</div>
 	)
 }

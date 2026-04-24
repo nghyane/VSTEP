@@ -8,6 +8,15 @@ export function useThemeColors(): ThemeColors {
 }
 
 export function useSkillColor(skill: string): string {
-  const key = `skill${skill.charAt(0).toUpperCase()}${skill.slice(1)}` as keyof ThemeColors;
-  return (colors.light[key] as string) ?? colors.light.primary;
+  const map: Record<string, string> = {
+    listening: colors.light.skillListening,
+    reading:   colors.light.skillReading,
+    writing:   colors.light.skillWriting,
+    speaking:  colors.light.skillSpeaking,
+  };
+  return map[skill] ?? colors.light.primary;
+}
+
+export function useDepthColors() {
+  return { borderLight: "#D4D6DB", borderDark: "#ABABBA" };
 }

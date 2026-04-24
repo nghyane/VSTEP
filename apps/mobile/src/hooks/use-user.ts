@@ -1,18 +1,35 @@
-// User hooks — profile data via API
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { type ApiResponse, api } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import type { User } from "@/types/api";
 
-export function useUser(_id: string) {
+export function useUser(userId: string) {
   return useQuery({
-    queryKey: ["auth", "me"],
-    queryFn: () => api.get<ApiResponse<{ user: any; profile: any }>>("auth/me"),
+    queryKey: ["users", userId],
+    queryFn: () => api.get<{ user: User; profile: unknown }>("/api/v1/auth/me"),
+    enabled: !!userId,
+    select: (data) => (data as any).user as User,
   });
 }
 
-export function useUploadAvatar(_id: string) {
+export function useChangePassword() {
   return useMutation({
-    mutationFn: async (_uri: string) => {
-      // TODO: implement avatar upload via presigned URL
-    },
+    mutationFn: (body: { currentPassword: string; newPassword: string }) =>
+      api.post<{ success: boolean }>("/api/v1/auth/change-password", body),
+  });
+}
+
+export function useUpdateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { fullName?: string | null }) =>
+      api.patch<User>("/api/v1/auth/me", body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
+  });
+}
+
+// Avatar upload not yet supported by backend-v2 — no-op stub
+export function useUploadAvatar(_userId: string) {
+  return useMutation({
+    mutationFn: async (_file: unknown) => ({ avatarKey: null }),
   });
 }

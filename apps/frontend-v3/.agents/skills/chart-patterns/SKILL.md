@@ -1,8 +1,6 @@
 ---
 name: chart-patterns
-description: >
-  Chart and data-visualization conventions (radar, bar, heatmap, trend lines).
-  Load before creating or modifying any chart, graph, or visual data display.
+description: "SVG chart specs: spider/radar, grouped bar + trend line, heatmap. Load when creating or modifying dashboard charts."
 ---
 
 # Chart Patterns

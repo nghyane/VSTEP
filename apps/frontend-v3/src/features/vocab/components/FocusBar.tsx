@@ -1,9 +1,8 @@
 import { Link } from "@tanstack/react-router"
 import { Icon } from "#/components/Icon"
+import type { BackLink } from "#/features/vocab/types"
 
-interface Props {
-	backTo: string
-	backParams?: Record<string, string>
+interface Props extends BackLink {
 	current: number
 	total: number
 }
@@ -20,7 +19,9 @@ export function FocusBar({ backTo, backParams, current, total }: Props) {
 					style={{ width: `${total ? (current / total) * 100 : 0}%` }}
 				/>
 			</div>
-			<span className="text-sm font-bold text-muted">{current}/{total}</span>
+			<span className="text-sm font-bold text-muted">
+				{current}/{total}
+			</span>
 		</div>
 	)
 }

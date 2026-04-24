@@ -1,0 +1,380 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-04-22T00:00:00.000Z" agent="VSTEP-capstone" version="24.0.0">
+  <diagram id="admin-flow" name="Admin Screen Flow">
+    <mxGraphModel dx="3600" dy="2400" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3600" pageHeight="2400" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="landing" value="Landing Page" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFD966;strokeColor=#333333;fontColor=#333333;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="100" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="login" value="Admin Login" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFD966;strokeColor=#333333;fontColor=#333333;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="220" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_land_login" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="landing" target="login" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="dashboard" value="Dashboard" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="240" y="220" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_login_dash" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="login" target="dashboard" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="grp_um" value="User Management" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#333333;strokeWidth=1;fontSize=11;fontStyle=1;verticalAlign=top;align=left;spacingLeft=6;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="450" y="40" width="460" height="290" as="geometry" />
+        </mxCell>
+
+        <mxCell id="um_list" value="User List" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="470" y="90" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="um_detail" value="User Detail" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="660" y="90" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="um_role" value="Change Role" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="660" y="200" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="um_grant" value="Grant Coins" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="470" y="200" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_dash_um" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="dashboard" target="um_list" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_umlist_detail" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="um_list" target="um_detail" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_detail_role" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="um_detail" target="um_role" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_detail_grant" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="um_detail" target="um_grant" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="grp_promo" value="Promo Codes" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#333333;strokeWidth=1;fontSize=11;fontStyle=1;verticalAlign=top;align=left;spacingLeft=6;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="990" y="40" width="460" height="290" as="geometry" />
+        </mxCell>
+
+        <mxCell id="promo_list" value="Promo Code List" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="90" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="promo_create" value="Promo&#xa;Create / Edit" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="90" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="promo_redeem" value="Redemption&#xa;History" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="200" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_dash_promo" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="dashboard" target="promo_list" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_promo_create" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="promo_list" target="promo_create" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_promo_redeem" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="promo_list" target="promo_redeem" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="grp_grading" value="AI Grading Monitor" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#333333;strokeWidth=1;fontSize=11;fontStyle=1;verticalAlign=top;align=left;spacingLeft=6;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="1530" y="40" width="400" height="290" as="geometry" />
+        </mxCell>
+
+        <mxCell id="gr_jobs" value="Grading Job List" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1550" y="90" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="gr_detail" value="Job Detail" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1740" y="90" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="gr_retry" value="Retry Failed Job" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1550" y="200" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_dash_gr" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="dashboard" target="gr_jobs" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_gr_detail" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="gr_jobs" target="gr_detail" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_gr_retry" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="gr_jobs" target="gr_retry" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="grp_wallet" value="Coin &amp; Wallet" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#333333;strokeWidth=1;fontSize=11;fontStyle=1;verticalAlign=top;align=left;spacingLeft=6;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="450" y="420" width="460" height="290" as="geometry" />
+        </mxCell>
+
+        <mxCell id="w_packages" value="Topup Package List" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="470" y="470" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="w_pkg_form" value="Package&#xa;Create / Edit" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="670" y="470" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="w_orders" value="Topup Order List" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="470" y="580" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="w_txlog" value="Coin Transaction&#xa;Log" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="670" y="580" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_dash_wallet" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="dashboard" target="w_packages" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_pkg_form" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="w_packages" target="w_pkg_form" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_wallet_orders" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="w_packages" target="w_orders" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_orders_txlog" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="w_orders" target="w_txlog" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="grp_exam" value="Exam Management" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#333333;strokeWidth=1;fontSize=11;fontStyle=1;verticalAlign=top;align=left;spacingLeft=6;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="990" y="420" width="460" height="420" as="geometry" />
+        </mxCell>
+
+        <mxCell id="exam_list" value="Exam List" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="470" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="exam_form" value="Exam&#xa;Create / Edit" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="470" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="exam_publish" value="Publish / Unpublish&#xa;Exam" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="580" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="exam_versions" value="Version Manager" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="580" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="exam_content" value="Version Content" style="rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="690" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="exam_content_l" value="Listening" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="800" width="80" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="exam_content_r" value="Reading" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="800" width="80" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="exam_content_w" value="Writing" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="800" width="80" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="exam_content_s" value="Speaking" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1270" y="800" width="80" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_dash_exam" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="dashboard" target="exam_list" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_exam_form" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="exam_list" target="exam_form" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_exam_publish" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="exam_list" target="exam_publish" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_exam_ver" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="exam_list" target="exam_versions" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ver_content" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="exam_versions" target="exam_content" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ec_l" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="exam_content" target="exam_content_l" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ec_r" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="exam_content" target="exam_content_r" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ec_w" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="exam_content" target="exam_content_w" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ec_s" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="exam_content" target="exam_content_s" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="grp_sc" value="System Config" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#333333;strokeWidth=1;fontSize=11;fontStyle=1;verticalAlign=top;align=left;spacingLeft=6;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="1530" y="420" width="400" height="420" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sc_list" value="Config Editor" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1550" y="470" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sc_exam_cost" value="Exam Costs" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1740" y="470" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sc_onboard" value="Onboarding&#xa;Bonus" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1550" y="580" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sc_streak" value="Streak &amp; Chart" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1740" y="580" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sc_grading" value="Grading &amp; Support" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1550" y="690" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_dash_sc" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="dashboard" target="sc_list" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_sc_exam" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="sc_list" target="sc_exam_cost" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_sc_onboard" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="sc_list" target="sc_onboard" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_sc_streak" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="sc_list" target="sc_streak" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_sc_grading" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="sc_list" target="sc_grading" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="grp_course" value="Course Management" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#333333;strokeWidth=1;fontSize=11;fontStyle=1;verticalAlign=top;align=left;spacingLeft=6;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="880" width="460" height="390" as="geometry" />
+        </mxCell>
+
+        <mxCell id="course_list" value="Course List" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="60" y="930" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="course_form" value="Course&#xa;Create / Edit" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="250" y="930" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="course_schedule" value="Schedule Items" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="60" y="1040" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="course_enroll" value="Enrollment List" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="250" y="1040" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="course_slots" value="Teacher Slots" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="60" y="1150" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="course_bookings" value="Slot Bookings" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="250" y="1150" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_dash_course" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="dashboard" target="course_list" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_course_form" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="course_list" target="course_form" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_course_sched" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="course_list" target="course_schedule" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_course_enroll" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="course_list" target="course_enroll" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_course_slots" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="course_list" target="course_slots" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_slots_book" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="course_slots" target="course_bookings" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="grp_content" value="Content Library" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#333333;strokeWidth=1;fontSize=11;fontStyle=1;verticalAlign=top;align=left;spacingLeft=6;spacingTop=4;" vertex="1" parent="1">
+          <mxGeometry x="560" y="880" width="460" height="390" as="geometry" />
+        </mxCell>
+
+        <mxCell id="content_hub" value="Content Hub" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="680" y="930" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cont_vocab" value="Vocab Topics" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="580" y="1040" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cont_vocab_detail" value="Topic Detail&#xa;+ Words" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="760" y="1040" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cont_grammar" value="Grammar Points" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="580" y="1150" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cont_grammar_detail" value="Point Detail&#xa;+ Exercises" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="760" y="1150" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="practice_hub" value="Practice Exercises" style="rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="880" y="1040" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="prac_listen" value="Listening" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="580" y="1260" width="80" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="prac_read" value="Reading" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="670" y="1260" width="80" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="prac_write" value="Writing" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="760" y="1260" width="80" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="prac_speak" value="Speaking" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontColor=#333333;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="850" y="1260" width="80" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_dash_content" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="dashboard" target="content_hub" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_hub_vocab" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="content_hub" target="cont_vocab" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_vocab_detail" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="cont_vocab" target="cont_vocab_detail" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_hub_grammar" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="content_hub" target="cont_grammar" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_grammar_detail" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="cont_grammar" target="cont_grammar_detail" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_hub_practice" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="content_hub" target="practice_hub" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_prac_listen" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="practice_hub" target="prac_listen" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_prac_read" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="practice_hub" target="prac_read" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_prac_write" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="practice_hub" target="prac_write" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_prac_speak" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="practice_hub" target="prac_speak" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

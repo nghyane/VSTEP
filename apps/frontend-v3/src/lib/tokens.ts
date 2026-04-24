@@ -1,13 +1,15 @@
 const KEYS = {
-	access: "vstep_access_token",
 	refresh: "vstep_refresh_token",
 	user: "vstep_user",
-	profile: "vstep_profile",
 } as const
 
+let _accessToken: string | null = null
+
 export const tokens = {
-	getAccess: () => localStorage.getItem(KEYS.access),
-	setAccess: (token: string) => localStorage.setItem(KEYS.access, token),
+	getAccess: () => _accessToken,
+	setAccess: (token: string) => {
+		_accessToken = token
+	},
 
 	getRefresh: () => localStorage.getItem(KEYS.refresh),
 	setRefresh: (token: string) => localStorage.setItem(KEYS.refresh, token),
@@ -18,13 +20,8 @@ export const tokens = {
 	},
 	setUser: (user: unknown) => localStorage.setItem(KEYS.user, JSON.stringify(user)),
 
-	getProfile: () => {
-		const raw = localStorage.getItem(KEYS.profile)
-		return raw ? JSON.parse(raw) : null
-	},
-	setProfile: (profile: unknown) => localStorage.setItem(KEYS.profile, JSON.stringify(profile)),
-
 	clear: () => {
+		_accessToken = null
 		for (const key of Object.values(KEYS)) localStorage.removeItem(key)
 	},
 }

@@ -15,11 +15,14 @@ import { HapticTouchable } from "@/components/HapticTouchable";
 import { Link, useRouter } from "expo-router";
 import { useAuth } from "@/hooks/use-auth";
 import { Logo } from "@/components/Logo";
+import { DepthButton } from "@/components/DepthButton";
+import { Mascot } from "@/components/Mascot";
 import { useThemeColors, spacing, radius, fontSize } from "@/theme";
+import { loginApi } from "@/lib/api";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const login = useAuth((s) => s.login);
+  const { signIn } = useAuth();
   const c = useThemeColors();
 
   const [email, setEmail] = useState("");
@@ -48,10 +51,12 @@ export default function LoginScreen() {
     setErrors({});
     setLoading(true);
     try {
-      await login(email.trim(), password);
+      const res = await loginApi(email.trim(), password);
+      await signIn(res.accessToken, res.refreshToken, res.user, res.profile);
       router.replace("/");
-    } catch (e: any) {
-      setErrors({ general: e?.message ?? "Đăng nhập thất bại" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Đăng nhập thất bại";
+      setErrors({ general: msg });
     } finally {
       setLoading(false);
     }
@@ -67,11 +72,11 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
-          <Logo size="lg" />
+          <Mascot name="wave" size={100} animation="bounce" />
           <Text style={[styles.heading, { color: c.foreground }]}>
             Tham gia vào VSTEP
           </Text>
-          <Text style={[styles.subtitle, { color: c.subtle }]}>
+          <Text style={[styles.subtitle, { color: c.mutedForeground }]}>
             Nền tảng luyện thi thông minh
           </Text>
         </View>
@@ -80,9 +85,9 @@ export default function LoginScreen() {
           <View style={styles.field}>
             <Text style={[styles.label, { color: c.foreground }]}>Email</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: c.surface, borderColor: errors.email ? c.destructive : c.border, color: c.foreground }]}
+              style={[styles.input, { backgroundColor: c.card, borderColor: errors.email ? c.destructive : c.border, color: c.foreground }]}
               placeholder="Hãy nhập email"
-              placeholderTextColor={c.subtle}
+              placeholderTextColor={c.mutedForeground}
               value={email}
               onChangeText={(t) => { setEmail(t); if (errors.email) setErrors((p) => ({ ...p, email: undefined })); }}
               keyboardType="email-address"
@@ -103,12 +108,13 @@ export default function LoginScreen() {
             </View>
             <View style={styles.passwordContainer}>
               <TextInput
-                style={[styles.passwordInput, { backgroundColor: c.surface, borderColor: errors.password ? c.destructive : c.border, color: c.foreground }]}
+                style={[styles.passwordInput, { backgroundColor: c.card, borderColor: errors.password ? c.destructive : c.border, color: c.foreground }]}
                 placeholder="Hãy nhập mật khẩu"
-                placeholderTextColor={c.subtle}
+                placeholderTextColor={c.mutedForeground}
                 value={password}
                 onChangeText={(t) => { setPassword(t); if (errors.password) setErrors((p) => ({ ...p, password: undefined })); }}
                 secureTextEntry={!showPassword}
+                autoCapitalize="none"
               />
               <HapticTouchable
                 style={styles.eyeButton}
@@ -117,7 +123,7 @@ export default function LoginScreen() {
                 <Ionicons
                   name={showPassword ? "eye-off" : "eye"}
                   size={fontSize.xl}
-                  color={c.subtle}
+                  color={c.mutedForeground}
                 />
               </HapticTouchable>
             </View>
@@ -126,30 +132,20 @@ export default function LoginScreen() {
 
           {errors.general ? <Text style={[styles.error, { color: c.destructive }]}>{errors.general}</Text> : null}
 
-          <HapticTouchable
-            style={[styles.button, { backgroundColor: c.primary, opacity: loading ? 0.7 : 1 }]}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={c.primaryForeground} />
-            ) : (
-              <Text style={[styles.buttonText, { color: c.primaryForeground }]}>
-                Đăng nhập
-              </Text>
-            )}
-          </HapticTouchable>
+          <DepthButton onPress={handleLogin} disabled={loading} size="lg" fullWidth>
+            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+          </DepthButton>
         </View>
 
         <View style={styles.footerRow}>
-          <Text style={[styles.footerText, { color: c.subtle }]}>Bạn chưa có tài khoản? </Text>
+          <Text style={[styles.footerText, { color: c.mutedForeground }]}>Bạn chưa có tài khoản? </Text>
           <Link href="/(auth)/register" asChild>
             <HapticTouchable>
               <Text style={[styles.footerLink, { color: c.primary }]}>Đăng ký</Text>
             </HapticTouchable>
           </Link>
         </View>
-        <Text style={[styles.version, { color: c.subtle }]}>Phiên bản 1.0.0</Text>
+        <Text style={[styles.version, { color: c.mutedForeground }]}>Phiên bản 1.0.0</Text>
       </BouncyScrollView>
     </KeyboardAvoidingView>
   );

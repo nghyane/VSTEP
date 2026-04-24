@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
-import { type ActivityDay, activityHeatmapQuery } from "#/features/dashboard/queries"
+import { activityHeatmapQuery } from "#/features/dashboard/queries"
+import type { ActivityDay } from "#/features/dashboard/types"
 import { cn } from "#/lib/utils"
 import { heatmapLevels } from "#/lib/vstep"
 
@@ -18,7 +19,7 @@ function toLevel(minutes: number): number {
 const LEVEL_CLASSES = ["bg-border", "bg-primary/25", "bg-primary/50", "bg-primary/75", "bg-primary"]
 
 function buildGrid(data: ActivityDay[]): number[][] {
-	const map = new Map(data.map((d) => [d.date, d.minutes]))
+	const map = new Map(data.map((d) => [d.date.slice(0, 10), d.minutes]))
 	const today = new Date()
 	const start = new Date(today)
 	start.setDate(start.getDate() - WEEKS * DAYS)
@@ -42,7 +43,10 @@ function buildGrid(data: ActivityDay[]): number[][] {
 
 export function ActivityHeatmap() {
 	const { data, isLoading } = useQuery(activityHeatmapQuery)
-	const activityData = data?.data ?? []
+
+	if (isLoading || !data) return null
+
+	const activityData = data.data
 	const weeks = buildGrid(activityData)
 	const totalDays = activityData.filter((d) => d.minutes > 0).length
 
@@ -76,7 +80,6 @@ export function ActivityHeatmap() {
 					<div className="grid grid-rows-7 grid-flow-col gap-1">
 						{weeks.flat().map((lv, i) => (
 							<div
-								// biome-ignore lint/suspicious/noArrayIndexKey: static grid, stable order
 								key={i}
 								className={cn(
 									"h-4 rounded hover:ring-1 hover:ring-border cursor-pointer transition",

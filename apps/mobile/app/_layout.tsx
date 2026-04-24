@@ -1,18 +1,29 @@
 import { useFonts } from "expo-font";
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useAuth } from "@/lib/auth-store";
+import { AuthContext } from "@/hooks/use-auth";
 import { queryClient } from "@/lib/query-client";
+import {
+  saveTokens,
+  clearTokens,
+} from "@/lib/auth";
 import { HapticsProvider } from "@/contexts/HapticsContext";
+import type { AuthUser, Profile } from "@/types/api";
+import { loadCoins } from "@/features/coin/coin-store";
+import { loadStreakData } from "@/features/streak/streak-store";
+import { loadNotifications } from "@/features/notification/notification-store";
+import { loadEnrollments } from "@/features/course/course-store";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
-  const { isAuthenticated, isLoading, init } = useAuth();
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [fontsLoaded] = useFonts({
     "Nunito-Regular": require("../assets/fonts/Nunito-Regular.ttf"),
@@ -24,35 +35,71 @@ export default function RootLayout() {
 
   useEffect(() => {
     (async () => {
-      await init();
+      try {
+        // Clear session on every app launch — always require login
+        await clearTokens();
+        await loadCoins();
+        await loadStreakData();
+        await loadNotifications();
+        await loadEnrollments();
+      } catch {
+        // ignore
+      } finally {
+        setIsLoading(false);
+      }
     })();
   }, []);
 
   useEffect(() => {
-    if (!isLoading && fontsLoaded) SplashScreen.hideAsync().catch(() => {});
+    if (!isLoading && fontsLoaded) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
   }, [isLoading, fontsLoaded]);
+
+  const signIn = useCallback(
+    async (accessToken: string, refreshToken: string, u: AuthUser, p: Profile | null) => {
+      await saveTokens(accessToken, refreshToken, u, p);
+      setUser(u);
+      setProfile(p);
+    },
+    [],
+  );
+
+  const signOut = useCallback(async () => {
+    await clearTokens();
+    setUser(null);
+    setProfile(null);
+    queryClient.clear();
+  }, []);
 
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
     if (isLoading || !fontsLoaded) return;
+
     const inAuthGroup = segments[0] === "(auth)";
-    if (!isAuthenticated && !inAuthGroup) router.replace("/(auth)/login");
-    else if (isAuthenticated && inAuthGroup) router.replace("/(app)/(tabs)");
-  }, [isAuthenticated, isLoading, fontsLoaded]);
+
+    if (!user && !inAuthGroup) {
+      router.replace("/(auth)/login");
+    } else if (user && inAuthGroup) {
+      router.replace("/(app)/(tabs)");
+    }
+  }, [user, isLoading, fontsLoaded]);
 
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <HapticsProvider>
+        <AuthContext.Provider value={{ user, profile, isLoading, signIn, signOut }}>
+          <HapticsProvider>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="(auth)" />
             <Stack.Screen name="(app)" />
           </Stack>
           <StatusBar style="dark" />
-        </HapticsProvider>
+          </HapticsProvider>
+        </AuthContext.Provider>
       </QueryClientProvider>
     </SafeAreaProvider>
   );

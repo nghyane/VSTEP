@@ -1,25 +1,19 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { QueryClientProvider } from "@tanstack/react-query"
 import { createRouter, RouterProvider } from "@tanstack/react-router"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
-import { onError } from "#/lib/on-error"
+import { SplashLoader } from "#/components/SplashLoader"
+import { queryClient } from "#/lib/query-client"
 import { routeTree } from "./routeTree.gen"
 import "./styles.css"
-
-const queryClient = new QueryClient({
-	defaultOptions: {
-		queries: { staleTime: 1000 * 60 * 5, retry: false },
-		mutations: { onError },
-	},
-})
-
-queryClient.getQueryCache().config.onError = onError
-queryClient.getMutationCache().config.onError = onError
 
 const router = createRouter({
 	routeTree,
 	context: { queryClient },
 	defaultPreload: "intent",
+	defaultPendingComponent: SplashLoader,
+	defaultPendingMs: 0,
+	defaultPendingMinMs: 300,
 })
 
 declare module "@tanstack/react-router" {

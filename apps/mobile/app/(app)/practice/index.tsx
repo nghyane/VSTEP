@@ -1,149 +1,150 @@
-import { StyleSheet, Text, View } from "react-native";
-import { BouncyScrollView } from "@/components/BouncyScrollView";
-import { Ionicons } from "@expo/vector-icons";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { ScreenWrapper } from "@/components/ScreenWrapper";
-import { LoadingScreen } from "@/components/LoadingScreen";
 import { SkillIcon, SKILL_LABELS } from "@/components/SkillIcon";
-import { useProgress } from "@/hooks/use-progress";
-import { useThemeColors, useSkillColor, spacing, radius, fontSize } from "@/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { depthNeutral } from "@/theme/depth";
+import { DepthButton } from "@/components/DepthButton";
 import type { Skill } from "@/types/api";
 
-const SKILL_ORDER: Skill[] = ["listening", "reading", "writing", "speaking"];
-
-const TREND_MAP: Record<string, { icon: string; label: string }> = {
-  up: { icon: "↑", label: "Tiến bộ" },
-  neutral: { icon: "→", label: "Ổn định" },
-  down: { icon: "↓", label: "Giảm" },
-};
+const SKILLS: { key: Skill; desc: string }[] = [
+  { key: "listening", desc: "3 phần · nghe hiểu" },
+  { key: "reading",   desc: "4 đoạn văn · đọc hiểu" },
+  { key: "writing",   desc: "Thư + luận · AI chấm" },
+  { key: "speaking",  desc: "3 phần · ghi âm + AI" },
+];
 
 export default function PracticeScreen() {
   const c = useThemeColors();
   const router = useRouter();
-  const { data, isLoading } = useProgress();
-
-  if (isLoading) return <LoadingScreen />;
-
-  const skills = data?.skills ?? [];
+  const insets = useSafeAreaInsets();
 
   return (
-    <ScreenWrapper noPadding>
-      <BouncyScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <Text style={[styles.title, { color: c.foreground }]}>Luyện tập</Text>
-        <Text style={[styles.subtitle, { color: c.subtle }]}>
-          Chọn kỹ năng để bắt đầu
-        </Text>
+    <ScrollView
+      style={[s.root, { backgroundColor: c.background }]}
+      contentContainerStyle={[s.scroll, { paddingTop: insets.top + spacing.base, paddingBottom: insets.bottom + spacing["3xl"] }]}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* ── Header ── */}
+      <Text style={[s.pageTitle, { color: c.foreground }]}>Luyện tập</Text>
 
-        <View style={styles.grid}>
-          {SKILL_ORDER.map((skill) => (
+      {/* ── Foundation Section ── */}
+      <View style={s.section}>
+        <Text style={[s.sectionTitle, { color: c.foreground }]}>Nền tảng</Text>
+        <Text style={[s.sectionSub, { color: c.subtle }]}>Từ vựng và ngữ pháp — gốc rễ mọi kỹ năng</Text>
+        <View style={s.foundationGrid}>
+          <FoundationCard
+            icon="flash"
+            color={c.skillWriting}
+            title="Từ vựng"
+            desc="Flashcard SRS · 60+ chủ đề theo level"
+            onPress={() => router.push("/(app)/practice/foundation/vocab")}
+          />
+          <FoundationCard
+            icon="clipboard"
+            color={c.skillReading}
+            title="Ngữ pháp"
+            desc="Cấu trúc câu gắn level A2–C1"
+            onPress={() => router.push("/(app)/practice/grammar")}
+          />
+        </View>
+      </View>
+
+      {/* ── Skills Section ── */}
+      <View style={s.section}>
+        <Text style={[s.sectionTitle, { color: c.foreground }]}>Kỹ năng</Text>
+        <Text style={[s.sectionSub, { color: c.subtle }]}>Luyện 4 kỹ năng VSTEP · bật/tắt hỗ trợ tùy nhu cầu</Text>
+        <View style={s.skillGrid}>
+          {SKILLS.map(({ key, desc }) => (
             <SkillCard
-              key={skill}
-              skill={skill}
-              progress={skills.find((s) => s.skill === skill)}
-              onPress={() => router.push(`/(app)/practice/${skill}`)}
+              key={key}
+              skill={key}
+              desc={desc}
+              onPress={() => router.push(`/(app)/practice/${key}`)}
             />
           ))}
         </View>
-
-        {/* Browse questions */}
-        <HapticTouchable
-          style={[styles.browseBtn, { backgroundColor: c.surface, borderColor: c.border }]}
-          onPress={() => router.push("/(app)/practice/browse")}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="search-outline" size={20} color={c.primary} />
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: c.foreground, fontWeight: "600", fontSize: fontSize.sm }}>Chọn câu hỏi cụ thể</Text>
-            <Text style={{ color: c.subtle, fontSize: fontSize.xs }}>Lọc theo Part, Level, dạng bài</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={c.subtle} />
-        </HapticTouchable>
-      </BouncyScrollView>
-    </ScreenWrapper>
+      </View>
+    </ScrollView>
   );
 }
 
-function SkillCard({
-  skill,
-  progress,
-  onPress,
-}: {
-  skill: Skill;
-  progress?: { currentLevel: string | null; attemptCount: number; streakCount?: number };
-  onPress: () => void;
-}) {
+function FoundationCard({
+  icon, color, title, desc, onPress,
+}: { icon: string; color: string; title: string; desc: string; onPress: () => void }) {
   const c = useThemeColors();
-  const skillColor = useSkillColor(skill);
-  const trend = TREND_MAP[((progress?.streakCount ?? 0) > 0 ? "up" : "neutral")];
-
   return (
     <HapticTouchable
-      style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}
+      style={[s.foundationCard, { backgroundColor: c.card }]}
       onPress={onPress}
-      activeOpacity={0.7}
+      activeOpacity={0.85}
     >
-      <View style={styles.cardHeader}>
-        <SkillIcon skill={skill} size={22} />
-        <Text style={[styles.levelBadge, { color: skillColor, backgroundColor: skillColor + "18" }]}>
-          {progress?.currentLevel ?? "—"}
-        </Text>
+      <View style={[s.foundationIcon, { backgroundColor: color + "18" }]}>
+        <Ionicons name={icon as any} size={24} color={color} />
       </View>
-
-      <Text style={[styles.cardTitle, { color: c.foreground }]}>{SKILL_LABELS[skill]}</Text>
-
-      <View style={styles.cardMeta}>
-        <Ionicons name="repeat-outline" size={14} color={c.subtle} />
-        <Text style={[styles.metaText, { color: c.subtle }]}>
-          {progress?.attemptCount ?? 0} lần
-        </Text>
+      <View style={{ flex: 1 }}>
+        <Text style={[s.foundationTitle, { color: c.foreground }]}>{title}</Text>
+        <Text style={[s.foundationDesc, { color: c.subtle }]}>{desc}</Text>
       </View>
-
-      <Text style={[styles.trendText, { color: c.subtle }]}>
-        {trend.icon} {trend.label}
-      </Text>
+      <Ionicons name="chevron-forward" size={18} color={c.placeholder} />
     </HapticTouchable>
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: { flex: 1 },
-  content: { padding: spacing.xl, paddingBottom: spacing["3xl"] },
-  title: { fontSize: fontSize["2xl"], fontWeight: "700" },
-  subtitle: { fontSize: fontSize.sm, marginTop: spacing.xs, marginBottom: spacing.xl },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
-  card: {
-    width: "48%",
-    borderWidth: 1,
-    borderRadius: radius.xl,
+function SkillCard({ skill, desc, onPress }: { skill: Skill; desc: string; onPress: () => void }) {
+  const c = useThemeColors();
+  const color = useSkillColor(skill);
+  return (
+    <HapticTouchable
+      style={[s.skillCard, { backgroundColor: c.card }]}
+      onPress={onPress}
+      activeOpacity={0.85}
+    >
+      <SkillIcon skill={skill} size={28} />
+      <Text style={[s.skillLabel, { color: c.foreground }]}>{SKILL_LABELS[skill]}</Text>
+      <Text style={[s.skillEn, { color: c.subtle }]}>{skill.charAt(0).toUpperCase() + skill.slice(1)}</Text>
+      <Text style={[s.skillDesc, { color: c.mutedForeground }]}>{desc}</Text>
+    </HapticTouchable>
+  );
+}
+
+const s = StyleSheet.create({
+  root: { flex: 1 },
+  scroll: { paddingHorizontal: spacing.xl },
+
+  pageTitle: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold, marginBottom: spacing.xl },
+
+  section: { marginBottom: spacing["2xl"] },
+  sectionTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold, marginBottom: 2 },
+  sectionSub: { fontSize: fontSize.sm, marginBottom: spacing.lg },
+
+  // Foundation (2 cards stacked)
+  foundationGrid: { gap: spacing.sm },
+  foundationCard: {
+    ...depthNeutral,
+    borderRadius: radius.lg,
     padding: spacing.base,
-    gap: spacing.sm,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  levelBadge: {
-    fontSize: fontSize.xs,
-    fontWeight: "700",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radius.sm,
-    overflow: "hidden",
-  },
-  cardTitle: { fontSize: fontSize.base, fontWeight: "600" },
-  cardMeta: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
-  metaText: { fontSize: fontSize.xs },
-  trendText: { fontSize: fontSize.xs },
-  browseBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
-    borderWidth: 1,
-    borderRadius: radius.xl,
-    padding: spacing.base,
-    marginTop: spacing.md,
   },
+  foundationIcon: { width: 48, height: 48, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
+  foundationTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.bold },
+  foundationDesc: { fontSize: fontSize.xs, marginTop: 2 },
+
+  // Skills (2x2 grid)
+  skillGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+  skillCard: {
+    ...depthNeutral,
+    borderRadius: radius.lg,
+    padding: spacing.base,
+    width: "48%",
+    gap: 2,
+  },
+  skillLabel: { fontSize: fontSize.base, fontFamily: fontFamily.bold, marginTop: spacing.sm },
+  skillEn: { fontSize: fontSize.xs },
+  skillDesc: { fontSize: fontSize.sm, marginTop: spacing.xs },
 });

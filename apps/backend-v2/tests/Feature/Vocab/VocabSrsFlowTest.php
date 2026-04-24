@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Vocab;
 
-use App\Enums\SrsStateKind;
 use App\Models\Profile;
 use App\Models\ProfileVocabSrsState;
 use App\Models\User;
@@ -41,7 +40,10 @@ class VocabSrsFlowTest extends TestCase
 
         $response->assertOk();
         $response->assertJsonCount(3, 'data.words');
+        // FSRS new state: kind=new, difficulty=0, stability=0
         $response->assertJsonPath('data.words.0.state.kind', 'new');
+        $response->assertJsonPath('data.words.0.state.difficulty', 0);
+        $response->assertJsonPath('data.words.0.state.stability', 0);
     }
 
     public function test_review_rating_good_creates_srs_state(): void
@@ -59,14 +61,16 @@ class VocabSrsFlowTest extends TestCase
             ]);
 
         $response->assertOk();
+        // FSRS: after first Good, enters learning (has steps)
         $response->assertJsonPath('data.state.kind', 'learning');
+        $response->assertJsonPath('data.state.lapses', 0);
 
         $state = ProfileVocabSrsState::query()
             ->where('profile_id', $profile->id)
             ->where('word_id', $word->id)
             ->first();
         $this->assertNotNull($state);
-        $this->assertSame(SrsStateKind::Learning, $state->state_kind);
+        $this->assertGreaterThan(0.0, $state->stability);
 
         $this->assertDatabaseHas('practice_vocab_reviews', [
             'profile_id' => $profile->id,
@@ -75,7 +79,7 @@ class VocabSrsFlowTest extends TestCase
         ]);
     }
 
-    public function test_multiple_reviews_progress_to_review_state(): void
+    public function test_multiple_reviews_graduate_to_review(): void
     {
         $user = User::factory()->create();
         $profile = Profile::factory()->initial()->forAccount($user)->create();
@@ -83,20 +87,17 @@ class VocabSrsFlowTest extends TestCase
 
         $token = $this->tokenFor($user);
 
-        // new → good → learning(1) → good → review
-        $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson('/api/v1/vocab/srs/review', ['word_id' => $word->id, 'rating' => 3])
-            ->assertOk();
-        $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson('/api/v1/vocab/srs/review', ['word_id' => $word->id, 'rating' => 3])
-            ->assertJsonPath('data.state.kind', 'review');
+        // First review: new → learning
+        $r1 = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/vocab/srs/review', ['word_id' => $word->id, 'rating' => 3]);
+        $r1->assertOk();
+        $r1->assertJsonPath('data.state.kind', 'learning');
 
-        $state = ProfileVocabSrsState::query()
-            ->where('profile_id', $profile->id)
-            ->where('word_id', $word->id)
-            ->first();
-        $this->assertSame(SrsStateKind::Review, $state->state_kind);
-        $this->assertSame(1, $state->interval_days);
+        // Second review: learning (1 step left) + Good → review
+        $r2 = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/vocab/srs/review', ['word_id' => $word->id, 'rating' => 3]);
+        $r2->assertOk();
+        $r2->assertJsonPath('data.state.kind', 'review');
     }
 
     public function test_queue_returns_due_words(): void
@@ -106,32 +107,31 @@ class VocabSrsFlowTest extends TestCase
         $word1 = VocabWord::factory()->create();
         $word2 = VocabWord::factory()->create();
 
-        // Manually insert due state for word1 (overdue), word2 (future)
+        // word1: due (overdue learning), word2: future
+        $dueAt = now()->subMinutes(10);
         ProfileVocabSrsState::query()->insert([
             'profile_id' => $profile->id,
             'word_id' => $word1->id,
             'state_kind' => 'learning',
-            'due_at' => now()->subMinutes(10)->format('Y-m-d H:i:s'),
-            'interval_days' => null,
-            'ease_factor' => null,
-            'remaining_steps' => 1,
+            'difficulty' => 5.0,
+            'stability' => 2.0,
+            'due_at' => $dueAt,
             'lapses' => 0,
-            'review_interval_days' => null,
-            'review_ease_factor' => null,
-            'updated_at' => now()->format('Y-m-d H:i:s'),
+            'remaining_steps' => 1,
+            'last_review_at' => now()->subDays(2),
+            'updated_at' => now(),
         ]);
         ProfileVocabSrsState::query()->insert([
             'profile_id' => $profile->id,
             'word_id' => $word2->id,
             'state_kind' => 'review',
-            'due_at' => now()->addDays(5)->format('Y-m-d H:i:s'),
-            'interval_days' => 5,
-            'ease_factor' => 2.5,
-            'remaining_steps' => null,
+            'difficulty' => 5.0,
+            'stability' => 10.0,
+            'due_at' => now()->addDays(5),
             'lapses' => 0,
-            'review_interval_days' => null,
-            'review_ease_factor' => null,
-            'updated_at' => now()->format('Y-m-d H:i:s'),
+            'remaining_steps' => 0,
+            'last_review_at' => now()->subDays(1),
+            'updated_at' => now(),
         ]);
 
         $token = $this->tokenFor($user);
@@ -139,8 +139,9 @@ class VocabSrsFlowTest extends TestCase
             ->getJson('/api/v1/vocab/srs/queue');
 
         $response->assertOk();
+        $responseData = $response->json('data');
+        $this->assertCount(1, $responseData['items'], 'Expected 1 item. Got: '.json_encode($responseData));
         $response->assertJsonPath('data.learning_count', 1);
-        $response->assertJsonCount(1, 'data.items');
         $response->assertJsonPath('data.items.0.word.id', $word1->id);
     }
 

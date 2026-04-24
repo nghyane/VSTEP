@@ -4,28 +4,26 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Enums\SrsStateKind;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Cache current Anki state per (profile, word).
- * Composite primary key. Không UUID id.
- * Source of truth: practice_vocab_reviews.
+ * FSRS state cache per (profile, word).
+ * Composite primary key. No UUID id.
+ * difficulty=0, stability=0 means "new".
  */
 #[Fillable([
     'profile_id',
     'word_id',
     'state_kind',
-    'due_at',
-    'interval_days',
-    'ease_factor',
+    'difficulty',
+    'stability',
     'lapses',
     'remaining_steps',
-    'review_interval_days',
-    'review_ease_factor',
+    'due_at',
+    'last_review_at',
 ])]
 class ProfileVocabSrsState extends Model
 {
@@ -40,10 +38,10 @@ class ProfileVocabSrsState extends Model
     protected function casts(): array
     {
         return [
-            'state_kind' => SrsStateKind::class,
+            'difficulty' => 'float',
+            'stability' => 'float',
             'due_at' => 'datetime',
-            'ease_factor' => 'float',
-            'review_ease_factor' => 'float',
+            'last_review_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
     }

@@ -1,77 +1,320 @@
-// API client — aligned with frontend-v3 lib/api.ts
-// Uses fetch + JWT interceptor. SecureStore for tokens.
-import * as SecureStore from "expo-secure-store";
+import type { AuthUser, AuthResponse, Profile } from "@/types/api";
+import { getAccessToken, getRefreshToken, saveTokens, clearTokens } from "./auth";
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8010/api/v1";
+const API_URL = process.env.EXPO_PUBLIC_API_URL || "https://api.vstepgo.com";
 
-const KEYS = {
-  access: "vstep_access_token",
-  refresh: "vstep_refresh_token",
-  user: "vstep_user",
-  profile: "vstep_profile",
-} as const;
+// ---------------------------------------------------------------------------
+// snake_case ↔ camelCase transforms (for Laravel ↔ React Native convention bridge)
+// ---------------------------------------------------------------------------
 
-// ─── Token storage ───────────────────────────────────────────────
-export const tokenStorage = {
-  getAccess: () => SecureStore.getItem(KEYS.access),
-  setAccess: (t: string) => SecureStore.setItemAsync(KEYS.access, t),
+function snakeToCamel(str: string): string {
+  return str.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+}
 
-  getRefresh: () => SecureStore.getItem(KEYS.refresh),
-  setRefresh: (t: string) => SecureStore.setItemAsync(KEYS.refresh, t),
+function camelToSnake(str: string): string {
+  return str.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+}
 
-  getUser: () => {
-    const raw = SecureStore.getItem(KEYS.user);
-    return raw ? JSON.parse(raw) : null;
-  },
-  setUser: (u: unknown) => SecureStore.setItemAsync(KEYS.user, JSON.stringify(u)),
+function transformKeys(obj: unknown, fn: (key: string) => string): unknown {
+  if (Array.isArray(obj)) return obj.map((item) => transformKeys(item, fn));
+  if (obj !== null && typeof obj === "object" && !(obj instanceof Date)) {
+    return Object.fromEntries(
+      Object.entries(obj as Record<string, unknown>).map(([k, v]) => [fn(k), transformKeys(v, fn)]),
+    );
+  }
+  return obj;
+}
 
-  getProfile: () => {
-    const raw = SecureStore.getItem(KEYS.profile);
-    return raw ? JSON.parse(raw) : null;
-  },
-  setProfile: (p: unknown) => SecureStore.setItemAsync(KEYS.profile, JSON.stringify(p ?? "null")),
+function toCamelCase<T>(obj: unknown): T {
+  return transformKeys(obj, snakeToCamel) as T;
+}
 
-  clear: async () => {
-    for (const key of Object.values(KEYS)) await SecureStore.deleteItemAsync(key);
-  },
+function toSnakeCase(obj: unknown): unknown {
+  return transformKeys(obj, camelToSnake);
+}
+
+// ---------------------------------------------------------------------------
+// Unwrap Laravel's { data: ... } wrapper
+// ---------------------------------------------------------------------------
+
+function unwrapData(obj: unknown): unknown {
+  if (obj && typeof obj === "object" && !Array.isArray(obj)) {
+    const rec = obj as Record<string, unknown>;
+    const keys = Object.keys(rec);
+
+    // Single-resource: { data: ... } → unwrap
+    if (keys.length === 1 && keys[0] === "data") {
+      return rec.data;
+    }
+
+    // Paginated: { data: [...], meta: { current_page, per_page, ... }, links }
+    // Normalize Laravel meta → PaginationMeta { page, limit, total, totalPages }
+    if (Array.isArray(rec.data) && rec.meta && typeof rec.meta === "object") {
+      const m = rec.meta as Record<string, unknown>;
+      rec.meta = {
+        page: m.current_page ?? m.page,
+        limit: m.per_page ?? m.limit,
+        total: m.total,
+        totalPages: m.last_page ?? m.totalPages,
+      };
+      delete rec.links;
+    }
+  }
+  return obj;
+}
+
+// ---------------------------------------------------------------------------
+// Auto-prefix /api/ → /api/v1/ for Laravel backend-v2
+// ---------------------------------------------------------------------------
+
+function buildUrl(path: string): string {
+  return `${API_URL}${path}`;
+}
+
+// ---------------------------------------------------------------------------
+// Error handling
+// ---------------------------------------------------------------------------
+
+const STATUS_MESSAGES: Record<number, string> = {
+  400: "Dữ liệu không hợp lệ",
+  401: "Phiên đăng nhập hết hạn, vui lòng đăng nhập lại",
+  403: "Bạn không có quyền thực hiện thao tác này",
+  404: "Không tìm thấy dữ liệu yêu cầu",
+  409: "Dữ liệu bị trùng lặp",
+  422: "Không thể xử lý yêu cầu",
+  500: "Lỗi hệ thống, vui lòng thử lại sau",
 };
 
-// ─── API response wrapper ────────────────────────────────────────
-export interface ApiResponse<T> {
-  data: T;
-}
+const ERROR_TRANSLATIONS: Record<string, string> = {
+  "Invalid credentials": "Email hoặc mật khẩu không đúng",
+  "Invalid credentials.": "Email hoặc mật khẩu không đúng",
+  "Invalid refresh token": "Phiên đăng nhập không hợp lệ",
+  "Current password is incorrect": "Mật khẩu hiện tại không đúng",
+  "Email already registered": "Email này đã được đăng ký",
+  "Email already in use": "Email này đã được sử dụng",
+  "You can only view your own profile": "Bạn chỉ có thể xem hồ sơ của mình",
+  "You can only update your own profile": "Bạn chỉ có thể cập nhật hồ sơ của mình",
+  "You can only change your own password": "Bạn chỉ có thể đổi mật khẩu của mình",
+  "Not found": "Không tìm thấy",
+  Unauthorized: "Chưa xác thực",
+  Conflict: "Dữ liệu bị trùng lặp",
+};
 
-// ─── Fetch wrapper ───────────────────────────────────────────────
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const headers: Record<string, string> = { "Content-Type": "application/json", Accept: "application/json" };
-  const token = tokenStorage.getAccess();
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  const res = await fetch(`${BASE_URL}/${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-
-  if (res.status === 401) {
-    await tokenStorage.clear();
-    throw new ApiError(401, "Unauthorized");
+function parseLaravelErrors(body: Record<string, unknown>): string | null {
+  if (body?.errors && typeof body.errors === "object" && !Array.isArray(body.errors)) {
+    const errors = body.errors as Record<string, string[]>;
+    const firstField = Object.keys(errors)[0];
+    if (firstField && errors[firstField]?.[0]) {
+      return errors[firstField][0];
+    }
   }
-
-  const json = await res.json();
-  if (!res.ok) throw new ApiError(res.status, json?.message ?? "Request failed");
-  return json as T;
+  return null;
 }
 
-export class ApiError extends Error {
-  constructor(public status: number, message: string) {
+class ApiError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
     super(message);
   }
 }
 
+// ---------------------------------------------------------------------------
+// Core request function
+// ---------------------------------------------------------------------------
+
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  // Transform JSON request body: camelCase → snake_case
+  let body = options.body;
+  if (body && typeof body === "string") {
+    try {
+      body = JSON.stringify(toSnakeCase(JSON.parse(body)));
+    } catch {
+      // not JSON, keep as-is
+    }
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(buildUrl(path), {
+      ...options,
+      body,
+      headers: { "Content-Type": "application/json", Accept: "application/json", ...options.headers },
+    });
+  } catch {
+    throw new ApiError(0, "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.");
+  }
+
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => ({}));
+    const serverMessage: string | undefined = errorBody?.error?.message ?? errorBody?.message;
+
+    // Backend returns 500 "Route [login] not defined" when unauthenticated
+    if (res.status === 500 && serverMessage && /route \[login\] not defined/i.test(serverMessage)) {
+      throw new ApiError(401, STATUS_MESSAGES[401]);
+    }
+
+    const validation = parseLaravelErrors(errorBody);
+    if (validation) throw new ApiError(res.status, validation);
+    const fallback = STATUS_MESSAGES[res.status] ?? "Đã có lỗi xảy ra";
+    const translated = serverMessage ? (ERROR_TRANSLATIONS[serverMessage] ?? fallback) : fallback;
+    throw new ApiError(res.status, translated);
+  }
+
+  // Transform response: unwrap { data } wrapper + snake_case → camelCase
+  const json = await res.json();
+  return toCamelCase<T>(unwrapData(json));
+}
+
+// ---------------------------------------------------------------------------
+// Authenticated request — injects Bearer token, handles 401 refresh
+// ---------------------------------------------------------------------------
+
+let refreshPromise: Promise<void> | null = null;
+
+async function authRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const accessToken = await getAccessToken();
+  if (!accessToken) {
+    await clearTokens();
+    throw new ApiError(401, "Not authenticated");
+  }
+
+  const authedOptions = {
+    ...options,
+    headers: { ...options.headers, Authorization: `Bearer ${accessToken}` },
+  };
+
+  try {
+    return await request<T>(path, authedOptions);
+  } catch (err) {
+    if (!(err instanceof ApiError) || err.status !== 401) throw err;
+
+    const refresh = await getRefreshToken();
+    if (!refresh) {
+      await clearTokens();
+      throw err;
+    }
+
+    if (!refreshPromise) {
+      refreshPromise = request<{ accessToken: string; refreshToken: string; user: AuthUser; profile: Profile | null }>("/api/v1/auth/refresh", {
+        method: "POST",
+        body: JSON.stringify({ refreshToken: refresh }),
+      })
+        .then(async (res) => {
+          await saveTokens(res.accessToken, res.refreshToken, res.user, res.profile);
+        })
+        .catch(async () => {
+          await clearTokens();
+          refreshPromise = null;
+          throw new ApiError(401, "Phiên đăng nhập hết hạn");
+        })
+        .finally(() => {
+          refreshPromise = null;
+        });
+    }
+
+    try {
+      await refreshPromise;
+    } catch {
+      throw new ApiError(401, "Phiên đăng nhập hết hạn");
+    }
+
+    const newToken = await getAccessToken();
+    if (!newToken) {
+      await clearTokens();
+      throw new ApiError(401, "Phiên đăng nhập hết hạn");
+    }
+
+    return request<T>(path, {
+      ...options,
+      headers: { ...options.headers, Authorization: `Bearer ${newToken}` },
+    });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// File upload (multipart — no JSON transform, but still unwrap + camelCase response)
+// ---------------------------------------------------------------------------
+
+async function uploadFile<T>(path: string, formData: FormData): Promise<T> {
+  const token = await getAccessToken();
+
+  let res: Response;
+  try {
+    res = await fetch(buildUrl(path), {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+  } catch {
+    throw new ApiError(0, "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.");
+  }
+
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => ({}));
+    if (res.status === 401) {
+      await clearTokens();
+      throw new ApiError(401, STATUS_MESSAGES[401]);
+    }
+    const validation = parseLaravelErrors(errorBody);
+    if (validation) throw new ApiError(res.status, validation);
+    const fallback = STATUS_MESSAGES[res.status] ?? "Đã có lỗi xảy ra";
+    const serverMessage: string | undefined = errorBody?.error?.message ?? errorBody?.message;
+    const translated = serverMessage ? (ERROR_TRANSLATIONS[serverMessage] ?? fallback) : fallback;
+    throw new ApiError(res.status, translated);
+  }
+
+  const json = await res.json();
+  return toCamelCase<T>(unwrapData(json));
+}
+
+// ---------------------------------------------------------------------------
+// Public API object (used by hooks)
+// ---------------------------------------------------------------------------
+
 export const api = {
-  get: <T>(path: string) => request<T>("GET", path),
-  post: <T>(path: string, body?: unknown) => request<T>("POST", path, body),
-  patch: <T>(path: string, body?: unknown) => request<T>("PATCH", path, body),
-  delete: <T>(path: string) => request<T>("DELETE", path),
+  get: <T>(path: string) => authRequest<T>(path),
+  post: <T>(path: string, body?: unknown) =>
+    authRequest<T>(path, { method: "POST", body: body ? JSON.stringify(body) : undefined }),
+  put: <T>(path: string, body?: unknown) =>
+    authRequest<T>(path, { method: "PUT", body: body ? JSON.stringify(body) : undefined }),
+  patch: <T>(path: string, body?: unknown) =>
+    authRequest<T>(path, { method: "PATCH", body: body ? JSON.stringify(body) : undefined }),
+  delete: <T>(path: string) => authRequest<T>(path, { method: "DELETE" }),
+  upload: <T>(path: string, formData: FormData) => uploadFile<T>(path, formData),
 };
+
+// ---------------------------------------------------------------------------
+// Auth endpoints (public — no Bearer token needed)
+// ---------------------------------------------------------------------------
+
+export function loginApi(email: string, password: string) {
+  return request<AuthResponse>("/api/v1/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export function registerApi(email: string, password: string, nickname: string, targetLevel: string, targetDeadline: string) {
+  return request<AuthResponse>("/api/v1/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ email, password, nickname, target_level: targetLevel, target_deadline: targetDeadline }),
+  });
+}
+
+export function logoutApi(refreshToken: string, accessToken: string) {
+  return request<{ success: boolean }>("/api/v1/auth/logout", {
+    method: "POST",
+    body: JSON.stringify({ refreshToken }),
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
+export function getMeApi(accessToken: string) {
+  return request<AuthUser>("/api/v1/auth/me", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+}
+
+export { ApiError };

@@ -29,6 +29,34 @@ class GradingController extends Controller
         ]]);
     }
 
+    public function jobStatus(string $id): JsonResponse
+    {
+        /** @var GradingJob $job */
+        $job = GradingJob::query()->findOrFail($id);
+
+        // If job is completed, include the active result
+        $result = null;
+        if ($job->status === 'completed') {
+            $result = $job->submission_type === 'exam_writing'
+                ? WritingGradingResult::query()
+                    ->where('job_id', $job->id)
+                    ->where('is_active', true)
+                    ->first()
+                : SpeakingGradingResult::query()
+                    ->where('job_id', $job->id)
+                    ->where('is_active', true)
+                    ->first();
+        }
+
+        return response()->json(['data' => [
+            'id' => $job->id,
+            'status' => $job->status,
+            'attempts' => $job->attempts,
+            'result' => $result,
+            'completed_at' => $job->completed_at,
+        ]]);
+    }
+
     public function writingResult(string $submissionType, string $submissionId): JsonResponse
     {
         $result = WritingGradingResult::query()

@@ -39,10 +39,8 @@ Chia theo 10 nhóm endpoint tương ứng business module.
 ### `POST /api/v1/auth/register` — public
 Tạo account + profile đầu + cấp 100 xu.
 
-Request: `{ email, password }`
-Response: `{ access_token, refresh_token, user, profile: null }`
-
-> **Updated**: Register giờ chỉ cần email+password. Profile tạo sau qua onboarding flow.
+Request: `{ email, password, nickname, target_level, target_deadline }`
+Response: `{ access_token, refresh_token, user, profile }`
 
 ### `POST /api/v1/auth/login` — public
 Login, mặc định active profile = profile đầu của account.
@@ -307,9 +305,9 @@ List published courses, có flags `enrolled`, `commitment_status`.
 Detail + schedule + enrollment status + commitment status.
 
 ### `POST /api/v1/courses/{id}/enroll` — jwt
-Mua course bằng xu. Atomic trừ xu + cấp bonus xu + tạo enrollment.
+Mua course bằng VND (payment external). Tạo enrollment + cấp bonus xu.
 
-Response: `{ enrollment_id, coins_charged, bonus_received, balance_after }` hoặc 402/409.
+Response: `{ enrollment_id, bonus_received }` hoặc 409 (full/already enrolled).
 
 ### `GET /api/v1/courses/{id}/my-slots` — jwt
 Slots available cho profile này (sau khi enrolled + commitment met).

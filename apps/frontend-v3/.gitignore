@@ -2,3 +2,5 @@ node_modules
 dist
 .tanstack
 .env
+src/routeTree.gen.ts
+imagefix

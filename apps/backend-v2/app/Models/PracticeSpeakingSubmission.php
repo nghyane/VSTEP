@@ -37,4 +37,9 @@ class PracticeSpeakingSubmission extends BaseModel
     {
         return $this->belongsTo(Profile::class);
     }
+
+    public function speakingTask(): BelongsTo
+    {
+        return $this->belongsTo(PracticeSpeakingTask::class, 'task_ref_id');
+    }
 }

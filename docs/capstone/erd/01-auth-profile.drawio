@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-04-20T00:00:00.000Z" agent="VSTEP-capstone" version="24.0.0">
+  <diagram id="auth-profile" name="01-auth-profile">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="826" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ============ ENTITIES ============ -->
+        <mxCell id="user" value="User" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=14;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="500" y="40" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="refreshToken" value="RefreshToken" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=14;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="200" y="300" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="profile" value="Profile" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=14;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="560" y="300" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="onboarding" value="OnboardingResponse" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=14;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="420" y="560" width="180" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="resetEvent" value="ResetEvent" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=14;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="760" y="560" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ============ RELATIONSHIPS (diamond) ============ -->
+        <mxCell id="issues" value="Issues" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=12;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="260" y="160" width="120" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="owns" value="Owns" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=12;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="560" y="160" width="120" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="submits" value="Submits" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=12;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="460" y="430" width="120" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="logs" value="Logs" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=12;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="760" y="430" width="120" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- ============ EDGES ============ -->
+        <!-- User -1- Issues -N- RefreshToken -->
+        <mxCell id="e_user_issues" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;edgeStyle=none;rounded=0;" edge="1" parent="1" source="user" target="issues">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l_user_issues" value="1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="e_user_issues">
+          <mxGeometry x="-0.6" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e_issues_refresh" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;edgeStyle=none;rounded=0;" edge="1" parent="1" source="issues" target="refreshToken">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l_issues_refresh" value="M" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="e_issues_refresh">
+          <mxGeometry x="0.6" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- User -1- Owns -N- Profile -->
+        <mxCell id="e_user_owns" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;edgeStyle=none;rounded=0;" edge="1" parent="1" source="user" target="owns">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l_user_owns" value="1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="e_user_owns">
+          <mxGeometry x="-0.6" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e_owns_profile" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;edgeStyle=none;rounded=0;" edge="1" parent="1" source="owns" target="profile">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l_owns_profile" value="M" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="e_owns_profile">
+          <mxGeometry x="0.6" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Profile -1- Submits -N- OnboardingResponse -->
+        <mxCell id="e_profile_submits" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;edgeStyle=none;rounded=0;" edge="1" parent="1" source="profile" target="submits">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l_profile_submits" value="1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="e_profile_submits">
+          <mxGeometry x="-0.6" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e_submits_onboarding" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;edgeStyle=none;rounded=0;" edge="1" parent="1" source="submits" target="onboarding">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l_submits_onboarding" value="M" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="e_submits_onboarding">
+          <mxGeometry x="0.6" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Profile -1- Logs -N- ResetEvent -->
+        <mxCell id="e_profile_logs" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;edgeStyle=none;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="profile" target="logs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l_profile_logs" value="1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="e_profile_logs">
+          <mxGeometry x="-0.6" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e_logs_reset" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;edgeStyle=none;rounded=0;" edge="1" parent="1" source="logs" target="resetEvent">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l_logs_reset" value="M" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="e_logs_reset">
+          <mxGeometry x="0.6" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

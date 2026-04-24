@@ -1,0 +1,108 @@
+// Course Teacher
+// Generated: 2026-04-21
+
+Table courses {
+  id uuid [pk, not null]
+  slug varchar(80) [not null]
+  title varchar(200) [not null]
+  target_level varchar(2) [not null]
+  target_exam_school varchar(100)
+  description text
+  price_coins integer [not null]
+  bonus_coins integer [not null]
+  max_slots integer [not null]
+  max_slots_per_student smallint [not null]
+  start_date date [not null]
+  end_date date [not null]
+  required_full_tests smallint [not null]
+  commitment_window_days smallint [not null]
+  exam_cooldown_days smallint [not null]
+  livestream_url varchar(500)
+  teacher_id uuid [not null]
+  is_published boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table course_schedule_items {
+  id uuid [pk, not null]
+  course_id uuid [not null]
+  session_number smallint [not null]
+  date date [not null]
+  start_time time [not null]
+  end_time time [not null]
+  topic varchar(100) [not null]
+}
+
+Table course_enrollments {
+  id uuid [pk, not null]
+  profile_id uuid [not null]
+  course_id uuid [not null]
+  enrolled_at timestamp [not null]
+  coins_paid integer [not null]
+  bonus_coins_received integer [not null]
+  acknowledged_commitment boolean [not null]
+  coin_transaction_id bigint [not null]
+}
+
+Table teacher_slots {
+  id uuid [pk, not null]
+  course_id uuid [not null]
+  teacher_id uuid [not null]
+  starts_at timestamp [not null]
+  duration_minutes smallint [not null]
+  status varchar(20) [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table teacher_bookings {
+  id uuid [pk, not null]
+  slot_id uuid [not null]
+  profile_id uuid [not null]
+  submission_type varchar(40)
+  submission_id uuid
+  meet_url varchar(500)
+  status varchar(20) [not null]
+  booked_at timestamp [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table teacher_reviews {
+  id uuid [pk, not null]
+  booking_id uuid
+  teacher_id uuid [not null]
+  submission_type varchar(40)
+  submission_id uuid
+  content json [not null]
+  visible_to_student boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+// --- Referenced from other domains ---
+
+Table users {
+  id uuid [pk, not null]
+}
+
+Table coin_transactions {
+  id bigint [pk, not null, increment]
+}
+
+Table profiles {
+  id uuid [pk, not null]
+}
+
+// Relationships
+Ref: courses.teacher_id > users.id
+Ref: course_schedule_items.course_id > courses.id
+Ref: course_enrollments.coin_transaction_id > coin_transactions.id
+Ref: course_enrollments.course_id > courses.id
+Ref: course_enrollments.profile_id > profiles.id
+Ref: teacher_slots.course_id > courses.id
+Ref: teacher_slots.teacher_id > users.id
+Ref: teacher_bookings.profile_id > profiles.id
+Ref: teacher_bookings.slot_id > teacher_slots.id
+Ref: teacher_reviews.teacher_id > users.id

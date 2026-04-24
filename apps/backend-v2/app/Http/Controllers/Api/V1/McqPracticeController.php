@@ -9,6 +9,7 @@ use App\Http\Requests\Practice\StartSessionRequest;
 use App\Http\Requests\Practice\SubmitMcqSessionRequest;
 use App\Http\Requests\Practice\UseSupportLevelRequest;
 use App\Http\Resources\PracticeListeningExerciseResource;
+use App\Http\Resources\PracticeListeningExerciseSummaryResource;
 use App\Http\Resources\PracticeMcqQuestionResource;
 use App\Http\Resources\PracticeReadingExerciseResource;
 use App\Http\Resources\PracticeSessionResource;
@@ -38,7 +39,7 @@ class McqPracticeController extends Controller
         $exercises = $this->mcqService->listExercises($skill, $part);
 
         return match ($skill) {
-            'listening' => PracticeListeningExerciseResource::collection($exercises),
+            'listening' => PracticeListeningExerciseSummaryResource::collection($exercises),
             'reading' => PracticeReadingExerciseResource::collection($exercises),
         };
     }
@@ -112,6 +113,15 @@ class McqPracticeController extends Controller
             'items' => $result['items'],
             'session' => (new PracticeSessionResource($result['session']))->resolve($request),
         ]]);
+    }
+
+    public function progress(Request $request, string $skill): JsonResponse
+    {
+        $this->assertSkill($skill);
+
+        return response()->json([
+            'data' => $this->mcqService->exerciseProgress($this->profile($request), $skill),
+        ]);
     }
 
     private function assertSkill(string $skill): void

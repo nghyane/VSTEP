@@ -1,0 +1,49 @@
+import { Stack } from "expo-router";
+import { useThemeColors, fontFamily } from "@/theme";
+
+export default function AppLayout() {
+  const c = useThemeColors();
+
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        headerStyle: { backgroundColor: c.surface },
+        headerTintColor: c.foreground,
+        headerTitleStyle: { fontFamily: fontFamily.semiBold },
+        contentStyle: { backgroundColor: c.background },
+      }}
+    >
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="onboarding" options={{ presentation: "modal", gestureEnabled: false }} />
+      <Stack.Screen name="exam/[id]" />
+      <Stack.Screen name="session/[id]" options={{ gestureEnabled: false }} />
+      <Stack.Screen name="exam-result/[id]" />
+      <Stack.Screen name="skill/[name]" options={{ headerShown: true, title: "Chi tiết kỹ năng" }} />
+      <Stack.Screen name="grading/writing/[submissionId]" options={{ headerShown: false }} />
+      <Stack.Screen name="grading/speaking/[submissionId]" options={{ headerShown: false }} />
+      <Stack.Screen name="practice/grammar/[pointId]/exercise" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="practice/listening/index" />
+      <Stack.Screen name="practice/listening/[exerciseId]" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="practice/reading/index" />
+      <Stack.Screen name="practice/reading/[exerciseId]" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="practice/writing/index" />
+      <Stack.Screen name="practice/writing/[promptId]" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="practice/speaking/index" />
+      <Stack.Screen name="practice/speaking/[taskId]" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="practice/index" />
+      <Stack.Screen name="practice/foundation/index" />
+      <Stack.Screen name="practice/grammar/index" />
+      <Stack.Screen name="practice/skills" />
+      <Stack.Screen name="practice/[skill]" />
+      <Stack.Screen name="practice/result/[id]" />
+      <Stack.Screen name="vocabulary/index" />
+      <Stack.Screen name="vocabulary/[id]" />
+      <Stack.Screen name="vocabulary/srs-review" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="vocabulary/[id]/flashcard" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="vocabulary/[id]/exercise" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="account" options={{ headerShown: true, title: "Tài khoản" }} />
+      <Stack.Screen name="goal" options={{ headerShown: true, title: "Mục tiêu học tập" }} />
+    </Stack>
+  );
+}

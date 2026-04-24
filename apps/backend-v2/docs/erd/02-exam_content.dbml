@@ -1,0 +1,94 @@
+// Exam Content
+// Generated: 2026-04-21
+
+Table exams {
+  id uuid [pk, not null]
+  slug varchar(80) [not null]
+  title varchar(200) [not null]
+  source_school varchar(100)
+  tags json
+  total_duration_minutes smallint [not null]
+  is_published boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table exam_versions {
+  id uuid [pk, not null]
+  exam_id uuid [not null]
+  version_number smallint [not null]
+  published_at timestamp
+  is_active boolean [not null]
+  created_at timestamp [not null, default: `now()`]
+}
+
+Table exam_version_listening_sections {
+  id uuid [pk, not null]
+  exam_version_id uuid [not null]
+  part smallint [not null]
+  part_title varchar(100) [not null]
+  duration_minutes smallint [not null]
+  audio_url varchar(500)
+  transcript text
+  display_order integer [not null]
+}
+
+Table exam_version_listening_items {
+  id uuid [pk, not null]
+  section_id uuid [not null]
+  display_order integer [not null]
+  stem text [not null]
+  options json [not null]
+  correct_index smallint [not null]
+}
+
+Table exam_version_reading_passages {
+  id uuid [pk, not null]
+  exam_version_id uuid [not null]
+  part smallint [not null]
+  title varchar(200) [not null]
+  duration_minutes smallint [not null]
+  passage text [not null]
+  display_order integer [not null]
+}
+
+Table exam_version_reading_items {
+  id uuid [pk, not null]
+  passage_id uuid [not null]
+  display_order integer [not null]
+  stem text [not null]
+  options json [not null]
+  correct_index smallint [not null]
+}
+
+Table exam_version_writing_tasks {
+  id uuid [pk, not null]
+  exam_version_id uuid [not null]
+  part smallint [not null]
+  task_type varchar(20) [not null]
+  duration_minutes smallint [not null]
+  prompt text [not null]
+  min_words smallint [not null]
+  instructions json
+  display_order integer [not null]
+}
+
+Table exam_version_speaking_parts {
+  id uuid [pk, not null]
+  exam_version_id uuid [not null]
+  part smallint [not null]
+  type varchar(20) [not null]
+  duration_minutes smallint [not null]
+  speaking_seconds smallint [not null]
+  content json [not null]
+  display_order integer [not null]
+}
+
+// Relationships
+Ref: exam_versions.exam_id > exams.id
+Ref: exam_version_listening_sections.exam_version_id > exam_versions.id
+Ref: exam_version_listening_items.section_id > exam_version_listening_sections.id
+Ref: exam_version_reading_passages.exam_version_id > exam_versions.id
+Ref: exam_version_reading_items.passage_id > exam_version_reading_passages.id
+Ref: exam_version_writing_tasks.exam_version_id > exam_versions.id
+Ref: exam_version_speaking_parts.exam_version_id > exam_versions.id

@@ -1,0 +1,52 @@
+# Auth Architecture
+
+## Discriminated union state
+
+```ts
+type AuthState =
+  | { isAuthenticated: false; user: null; profile: null }
+  | { isAuthenticated: true; user: User; profile: Profile }
+```
+
+Khi `isAuthenticated: true`, TS tự biết `user` và `profile` non-null.
+
+## Auth store — single source of truth cho tokens
+
+`lib/auth.ts` quản lý toàn bộ token lifecycle. Bên ngoài không biết về tokens:
+
+- `login()` — API + set tokens + set state
+- `register()` — API + set tokens + set state
+- `switchProfile()` — API + set tokens + set state
+- `logout()` — clear tokens + set state
+
+Không helper function ngoài store (không `authenticate()`, không `applyTokens()`).
+Không component/hook nào import `tokens` trực tiếp (chỉ `auth.ts` và `api.ts`).
+
+## useSession() vs useAuth
+
+- `useAuth` — cho auth guards, login/register/logout actions. Returns nullable state.
+- `useSession()` — cho components trong `_app`. Returns typed `{ user, profile }`. Throw nếu ngoài auth context.
+
+## Register flow
+
+2 bước (UI), 1 API call:
+- Bước 1: email + password + confirm password (validate client-side, không call API).
+- Bước 2: nickname + target_level + target_deadline (onboarding layout).
+- Submit bước 2 → gọi `auth/register` 1 lần với toàn bộ data.
+- Backend tạo account + profile + JWT (có `active_profile_id`).
+- Credentials từ bước 1 được giữ trong `useState` của `RegisterForm` (không URL, không store).
+
+## Profile model
+
+- 1 User → nhiều Profile. 1 Profile = 1 Target.
+- Đổi target = tạo profile mới, không update.
+- Switch profile = `auth.switchProfile()` → reissue JWT.
+
+## 401 handling
+
+- `on-error.ts` trên QueryClient: 401 → `useAuth.getState().logout()`.
+- `_app.tsx` useEffect: `!isAuthenticated` → redirect landing.
+- `api.ts` KHÔNG handle 401.
+
+---
+See also: [[api-conventions]] · [[anti-patterns]] · [[state-patterns]]

@@ -1,16 +1,36 @@
-// Design tokens — aligned with frontend-v3 styles.css @theme
-// Primary = Duolingo green (#58cc02), not blue
+// Design tokens — synced with frontend-v3 src/styles.css @theme block
+// Primary source of truth for all colors, spacing, radius, font
 
 export const colors = {
   light: {
-    // Primary — Duolingo green
+    // ── Primary (Duolingo green)
     primary: "#58CC02",
     primaryForeground: "#FFFFFF",
     primaryDark: "#478700",
     primaryLight: "#79D634",
     primaryTint: "#E6F8D4",
 
-    // Semantic
+    // ── Base
+    background: "#F7F7FA",
+    foreground: "#1E1E28",
+    surface: "#FFFFFF",
+
+    // ── Card
+    card: "#FFFFFF",
+    cardForeground: "#1E1E28",
+
+    // ── Neutrals
+    muted: "#F3F4F6",
+    mutedForeground: "#4B4B5A",
+    subtle: "#8C8C9B",
+    placeholder: "#AFAFAF",
+
+    // ── Border
+    border: "#E5E5E5",
+    borderLight: "#EFEFEF",
+    borderFocus: "#6BD43A",
+
+    // ── Semantic
     destructive: "#EA4335",
     destructiveTint: "#FFE6E4",
     warning: "#FF9B00",
@@ -19,33 +39,20 @@ export const colors = {
     info: "#1CB0F6",
     infoTint: "#DDF4FF",
 
-    // Neutrals
-    foreground: "#1E1E28",
-    muted: "#4B4B5A",
-    subtle: "#8C8C9B",
-    placeholder: "#AFAFAF",
-    border: "#E5E5E5",
-    surface: "#FFFFFF",
-    background: "#F7F7FA",
-
-    // Domain — skills
+    // ── Skills (exact from frontend-v3)
     skillListening: "#1CB0F6",
     skillReading: "#7850C8",
     skillWriting: "#58CC02",
     skillSpeaking: "#FFC800",
 
-    // Domain — streak
+    // ── Streak
     streak: "#FF7800",
     streakTint: "#FFF0DC",
 
-    // Domain — coin
+    // ── Coin
     coin: "#FFC800",
     coinDark: "#DCAA00",
     coinTint: "#FFF5D2",
-
-    // Depth borders (card: border-2 border-b-4 with border color)
-    depthBorderLight: "#E5E5E5",
-    depthBorderDark: "#CCCCCC",
   },
 } as const;
 
@@ -63,13 +70,14 @@ export const spacing = {
 } as const;
 
 export const radius = {
-  button: 13,
-  card: 16,
-  banner: 24,
   sm: 8,
   md: 12,
+  // radius-button = 13px
+  button: 13,
+  // radius-card = 16px
   lg: 16,
   xl: 20,
+  // radius-banner = 24px
   "2xl": 24,
   full: 9999,
 } as const;

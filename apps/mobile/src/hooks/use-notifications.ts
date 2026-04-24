@@ -1,28 +1,34 @@
-// Notification hooks — server-side notifications
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { type ApiResponse, api } from "@/lib/api";
+import { api } from "@/lib/api";
+import type { Notification, PaginatedResponse } from "@/types/api";
 
-export function useNotifications() {
+export function useNotifications(page = 1) {
   return useQuery({
-    queryKey: ["notifications"],
-    queryFn: () => api.get<ApiResponse<any[]>>("notifications"),
-    staleTime: 30_000,
+    queryKey: ["notifications", page],
+    queryFn: () => api.get<PaginatedResponse<Notification>>(`/api/v1/notifications?page=${page}`),
   });
 }
 
 export function useUnreadCount() {
-  const { data } = useQuery({
+  return useQuery({
     queryKey: ["notifications", "unread-count"],
-    queryFn: () => api.get<ApiResponse<{ count: number }>>("notifications/unread-count"),
-    staleTime: 30_000,
+    queryFn: () => api.get<{ count: number }>("/api/v1/notifications/unread-count"),
+    refetchInterval: 30_000,
   });
-  return data?.data.count ?? 0;
 }
 
 export function useMarkAllRead() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api.post("notifications/read-all"),
+    mutationFn: () => api.post<{ marked: number }>("/api/v1/notifications/read-all"),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+  });
+}
+
+export function useDeleteNotification() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete<{ success: boolean }>(`/api/v1/notifications/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
   });
 }

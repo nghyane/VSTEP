@@ -9,10 +9,12 @@ VSTEP exam practice platform with AI grading and adaptive learning. Capstone pro
 | App | Stack | Port | Entry |
 |-----|-------|------|-------|
 | **backend-v2** | PHP 8.4 · Laravel 13 · PostgreSQL · Redis | 8000 | `apps/backend-v2/` |
-| **frontend-v2** | TanStack Start · React 19 · TypeScript · Tailwind v4 · shadcn/ui | 5173 | `apps/frontend-v2/` |
-| **frontend** | [LEGACY] React 19 + Vite 7 | -- | `apps/frontend/` (reference only) |
+| **frontend-v3** | bun · Vite 8 · React 19 · TanStack Router + Query v5 · Tailwind v4 · Biome · ky · Recharts | 5173 | `apps/frontend-v3/` |
+| **mockup** | UI source of truth (design reference) | -- | `apps/mockup/` |
+| **frontend-v2** | [LEGACY] TanStack Start + shadcn/ui | -- | `apps/frontend-v2/` |
+| **frontend** | [LEGACY] React 19 + Vite 7 | -- | `apps/frontend/` |
 
-> **Active development:** `frontend-v2`. Legacy `frontend/` khong con phat trien, chi dung de reference spec.
+> **Active development:** `frontend-v3`. Legacy `frontend-v2/` và `frontend/` không còn phát triển — chỉ dùng để tham khảo spec cũ khi cần.
 
 ## Commands
 
@@ -27,13 +29,13 @@ php artisan db:seed           # Seed database
 ./vendor/bin/pint             # Lint + format
 ```
 
-### Frontend-v2 (`apps/frontend-v2/`)
+### Frontend-v3 (`apps/frontend-v3/`)
 
 ```bash
 bun install
-bun dev                       # Vite dev server
-bun test                      # Run tests
-bunx biome check --fix .      # Lint + format
+bun run dev                   # Vite dev server
+bun run build                 # Production build
+bun run lint                  # Biome lint + format
 ```
 
 ### Infrastructure
@@ -54,7 +56,7 @@ docker compose up -d          # Start PostgreSQL + Redis
 - **Lint after every edit.** Thứ tự bắt buộc sau mỗi thay đổi:
   1. `mcp__ide__getDiagnostics` — verify ngay, không đoán
   2. Nếu lỗi → fix → verify lại → `mcp__ide__getDiagnostics` lần cuối
-  3. Hết lỗi → `bunx biome check --fix ./src/<path/to/file.tsx>` (frontend-v2)
+  3. Hết lỗi → `bun run lint` (hoặc `bunx biome check --fix ./src/<path/to/file.tsx>`) cho frontend-v3
   4. Verify cuối → mới sang task tiếp theo
 - **Fail 3 lần cùng lỗi → đổi approach.** Không loop edit-đoán. Dùng `mcp__ide__getDiagnostics` để xác nhận lỗi thật, không phải đoán.
 - **Đọc code trước khi sửa.** Sửa nhỏ nhất có thể. Không refactor ngoài scope.
@@ -67,12 +69,15 @@ docker compose up -d          # Start PostgreSQL + Redis
 
 See `apps/backend-v2/AGENTS.md` for full Laravel conventions.
 
-### Frontend-v2
+### Frontend-v3
 
-Design spec: `apps/frontend-v2/docs/skill-design.md` -- **derive truc tiep tu source code frontend cu.**
-Moi spec deu co truy xuat ve file goc. Dung spec nay de implement frontend-v2.
+**Entry point bắt buộc đọc đầu tiên:** [apps/frontend-v3/AGENTS.md](apps/frontend-v3/AGENTS.md).
+**Wiki knowledge base (grep trước khi code):** [apps/frontend-v3/.agents/wiki/](apps/frontend-v3/.agents/wiki/).
 
-**Stack:** TanStack Start + React 19 + TypeScript + Tailwind v4 + shadcn/ui + Recharts
+Stack: bun · Vite 8 · React 19 · TanStack Router + Query v5 · Tailwind v4 · Biome · ky · Recharts.
+UI source of truth: `apps/mockup/`. Không dùng shadcn/MUI — custom components theo design tokens.
+
+Xem chi tiết rules (state, code, data, layout, hard limits) trong `apps/frontend-v3/AGENTS.md`.
 
 ### AI Grading Agent
 
@@ -96,10 +101,10 @@ Key files (backend-v2):
 
 ### Cross-App Communication
 
-- Frontend-v2 -> Backend: REST at `VITE_API_URL` (default `http://localhost:8000`)
-- AI Grading: Laravel Queue Jobs (Redis), no separate service
-- Speaking audio: presigned URL upload to R2 -> Azure Speech API -> Agent grading
-- Auth: JWT Bearer tokens (issued by backend, validated on each request).
+- Frontend-v3 -> Backend: REST at `VITE_API_URL` (default `http://localhost:8000`), HTTP client = `ky`.
+- AI Grading: Laravel Queue Jobs (Redis), no separate service.
+- Speaking audio: presigned URL upload to R2 -> Azure Speech API -> Agent grading.
+- Auth: JWT Bearer tokens (issued by backend, validated on each request). Frontend-v3 dùng Zustand discriminated union (`lib/auth.ts`).
 
 ### Database
 
@@ -122,96 +127,68 @@ See `apps/backend-v2/AGENTS.md` for Laravel-specific patterns:
 - Thin controllers, services for business logic
 - `./vendor/bin/pint` must pass before commit
 
-### Frontend-v2 (`apps/frontend-v2/`)
+### Frontend-v3 (`apps/frontend-v3/`)
 
-See `apps/frontend-v2/docs/skill-design.md` for full design spec. Key rules:
+Quy tắc đầy đủ nằm trong [apps/frontend-v3/AGENTS.md](apps/frontend-v3/AGENTS.md) — **đây là nguồn chuẩn, luôn đọc file này trước khi code**. Các điểm cốt lõi:
 
-**Rule 0.1 -- Khong boc background cho icon.**
-Icon (lucide, SVG) phai render tran, khong dat trong khung vuong/tron co `bg-*` rieng.
-Chi dung `text-*` cho mau icon.
+**Architecture flow:** Route → Component → Hook → Lib. Không vòng ngược.
 
-```tsx
-// Dung
-<Icon className="size-6 text-primary" />
+**State management:**
+- Server state: TanStack Query (`useQuery` + `select`). Không prop drill.
+- Client state: Zustand (auth, UI). `useSession()` cho `_app` context (typed non-null), `useAuth` cho guards + actions.
+- Form state: `@tanstack/react-form` (`useForm`). Không `useState` per field.
+- URL state: TanStack Router search params. Không `useState` cho modal/tab/step.
 
-// Sai
-<div className="flex size-10 rounded-xl bg-primary/10 text-primary">
-  <Icon className="size-5" />
-</div>
-```
+**Code rules (bất di bất dịch):**
+- No inline helpers — format/round/date dùng `lib/utils.ts`.
+- No hardcode values — colors qua design tokens / CSS variables, không hex trong components.
+- No mock data trong components — data từ API (TanStack Query). API chưa có → tạo endpoint trước.
+- Shared trước, inline sau — grep `lib/` và `types/` trước khi viết mới.
+- No `as` casts trong business logic. No `!` non-null assertions. No `?? fallback` để giấu loading/null.
+- API response nhất quán: backend trả `{ data: T }`, frontend dùng `ApiResponse<T>`.
+- Error handling: global `on-error.ts` trên QueryClient. Components không try/catch cho toast.
+- Layout routes (`_app`, `_focused`) wrap Outlet trong ErrorBoundary.
+- Loading states: shared `Loading` component.
 
-**Ngoai le duoc phep:** Avatar, button icon-only, chip/badge semantic that su.
+**Layout:**
+- Sidebar 260px fixed, content adaptive width.
+- Focus mode (`_focused` layout): ẩn sidebar + header, dùng `FocusBar`, `FocusComplete`, `FocusEmpty`.
+- Card: `border-2 border-b-4 rounded-(--radius-card)`.
+- Button: `box-shadow bottom, rounded-(--radius-button)`.
 
-**Rule 0.2 -- Hub card top-level dung `border bg-card`.**
-Card dieu huong lon o hub page dung `rounded-2xl border bg-card p-6 shadow-sm`.
-KHONG dung `bg-muted/50` (gay cam giac duc).
+**Assets:**
+- Icons: `assets/icons/*.svg` (Duo SVG). Không dùng `lucide-react` / `@hugeicons/react`.
+- Fonts: `public/fonts/` (Duolingo Sans + Feather).
 
-**Rule 0.3 -- Hover khong doi mau border.**
-Hover cua card chi nang nhẹ (`hover:-translate-y-0.5`) va tang shadow (`hover:shadow-md`).
-KHONG dung `hover:border-primary/30`. Giu border trung tinh.
+**Hard limits:**
+- Function ≤ 50 dòng. Props ≤ 3.
+- Route page ≤ 80 dòng — chỉ compose.
+- Component file: 1 concern. Nhiều concern → tách file.
+- Component dùng ≥ 2 nơi → shared (`lib/` hoặc `components/`).
+- Hook file: 1 state machine (useReducer + useMutation cho 1 flow).
+- No `any`. No `console.log`. No commented-out code. No barrel files.
 
-**Rule 0.4 -- Container width cho page noi dung.**
-KHONG dung full width sat mep. Luon dung:
+**Data rules (domain invariants):**
+- 1 User → nhiều Profile. 1 Profile = 1 Target (level + deadline). Không đổi target, tạo profile mới.
+- Profile = đơn vị tính tiền (mỗi profile = 1 "khóa học").
+- Không test đầu vào — user tự chọn target.
+- Chart/spider = **chỉ exam** (graded). Drill score không vào chart.
+- Study time + streak = **chỉ drill**. Exam không cộng.
+- FSRS adaptive **chỉ vocab**. Exam = đề cố định.
+- Spider chart ẩn nếu < 5 bài thi.
+- Grading result order: Strengths → Improvements → Rewrites.
 
-```tsx
-// Dung
-<div className="mx-auto w-full max-w-5xl space-y-6">
+**Workflow:**
+- Trước khi code: grep `.agents/wiki/` tìm kiến thức liên quan, follow `[[links]]`.
+- Change > 3 files: plan trước, confirm, rồi code.
+- Audit trước khi tạo mới — grep existing patterns.
+- `bun run lint` sau mỗi edit. Không commit trừ khi user yêu cầu.
 
-// Sai
-<div className="w-full space-y-6">
-```
+**Wiki (ghi `.agents/wiki/` + append `LOG.md`) khi:**
+- Fix bug phải sửa > 1 lần (root cause không obvious)
+- Phát hiện anti-pattern lặp lại
+- Thay đổi architecture decision (auth, API, state)
+- Research library/convention khác expectation
+- Refactor mà lý do không rõ từ code alone
 
-Default: `max-w-5xl`. Form/page hep: `max-w-4xl` hoac `max-w-3xl`.
-Chi dung full width khi that su can split layout rong.
-
-**Rule 0.5 -- Can chinh inline: icon / text / icon phai cung tam ngang.**
-Khi co nhieu phan tu khac loai (coin icon PNG, text, lucide icon) dat ben nhau
-tren cung 1 dong, KHONG dua vao `items-center` mac dinh — font metrics + PNG
-padding + SVG viewBox se lech tam.
-
-Pattern bat buoc:
-1. Bao moi phan tu trong wrapper **cung height** voi `flex items-center justify-center`.
-2. Text dung `leading-none` + boc them 1 span `translate-y-[1px]` neu glyph
-   ngoi lech len top (xay ra voi font `din-round`).
-3. PNG coin (lech do padding asymmetric) dung `-translate-y-px` de keo len.
-
-```tsx
-// Dung
-<div className="flex h-5 items-center gap-1">
-  <span className="flex size-5 items-center justify-center">
-    <CoinIcon size={20} className="-translate-y-px" />
-  </span>
-  <span className="flex h-5 items-center text-sm leading-none tabular-nums">
-    <span className="translate-y-[1px]">{value}</span>
-  </span>
-  <span className="flex size-5 items-center justify-center">
-    <Plus className="size-3" />
-  </span>
-</div>
-
-// Sai (dua vao items-center, khong bu glyph offset)
-<div className="flex items-center gap-1">
-  <CoinIcon size={20} />
-  <span className="text-sm">{value}</span>
-  <Plus className="size-3" />
-</div>
-```
-
-Kiem chung bang DevTools: chon span chua glyph, xem box hinh chu nhat. Neu glyph
-khong nam chinh giua hop thi phai bu `translate-y`.
-
-**Card style patterns:**
-
-| Pattern | Class | Dung khi |
-|---------|-------|---------|
-| Card noi dung chinh | `rounded-2xl bg-muted/50 p-5 shadow-sm` | StatCard, SpiderCard, GoalCard |
-| Card item trong list | `rounded-xl border bg-background p-4` | Weekly score cards, exam items |
-| Card hub top-level | `rounded-2xl border bg-card p-6 shadow-sm` | ModeCard, SkillCard |
-| Heatmap wrapper | `border-0 bg-muted/30` | ActivityHeatmap |
-
-**Icon library:** Dung `lucide-react` (khong dung `@hugeicons/react` nhu frontend cu).
-
-**Spacing pattern:**
-- Page section: `space-y-6`
-- Card content: `p-5`, Stat card: `p-4`, Mini box: `p-3`
-- Gap stat cards: `gap-4`, Gap charts: `gap-6`
+Không ghi khi: typo fix, style tweak, feature đơn giản theo pattern có sẵn.

@@ -1,12 +1,10 @@
-// TopUpDialog — xu purchase sheet (calls wallet API)
-import { useState } from "react";
-import { Alert, StyleSheet, Text, View } from "react-native";
-import { useQuery } from "@tanstack/react-query";
+// TopUpDialog — xu purchase sheet (aligned with frontend-v2 TopUpDialog)
+import { StyleSheet, Text, View } from "react-native";
 import { BottomSheet } from "@/components/BottomSheet";
 import { GameIcon } from "@/components/GameIcon";
 import { DepthButton } from "@/components/DepthButton";
 import { HapticTouchable } from "@/components/HapticTouchable";
-import { topup, topupPackagesQuery, useInvalidateWallet, useWalletBalance } from "@/features/wallet/queries";
+import { refundCoins, useCoins } from "@/features/coin/coin-store";
 import { fontSize, fontFamily, radius, spacing, useThemeColors } from "@/theme";
 
 interface TopUpDialogProps {
@@ -14,61 +12,50 @@ interface TopUpDialogProps {
   onClose: () => void;
 }
 
-// Fallback packages when API not available
-const FALLBACK_PACKAGES = [
-  { id: "p1", coins: 50, price_vnd: 19000, label: "19.000đ", is_popular: false },
-  { id: "p2", coins: 150, price_vnd: 49000, label: "49.000đ", is_popular: true },
-  { id: "p3", coins: 350, price_vnd: 99000, label: "99.000đ", is_popular: false },
-  { id: "p4", coins: 800, price_vnd: 199000, label: "199.000đ", is_popular: false },
-];
+const PACKS = [
+  { coins: 50, price: "19.000đ", popular: false },
+  { coins: 150, price: "49.000đ", popular: true },
+  { coins: 350, price: "99.000đ", popular: false },
+  { coins: 800, price: "199.000đ", popular: false },
+] as const;
 
 export function TopUpDialog({ visible, onClose }: TopUpDialogProps) {
   const c = useThemeColors();
-  const balance = useWalletBalance();
-  const invalidate = useInvalidateWallet();
-  const { data: packagesRes } = useQuery(topupPackagesQuery);
-  const packages = packagesRes?.data ?? FALLBACK_PACKAGES;
-  const [loading, setLoading] = useState(false);
+  const currentCoins = useCoins();
 
-  async function handleBuy(pkgId: string) {
-    setLoading(true);
-    try {
-      await topup(pkgId);
-      invalidate();
-      onClose();
-    } catch {
-      Alert.alert("Lỗi", "Không thể nạp xu. Thử lại sau.");
-    } finally {
-      setLoading(false);
-    }
+  function handleBuy(coins: number) {
+    refundCoins(coins);
+    onClose();
   }
 
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <View style={[styles.content, { backgroundColor: c.surface }]}>
+      <View style={[styles.content, { backgroundColor: c.card }]}>
+        {/* Header */}
         <View style={styles.header}>
           <GameIcon name="coin" size={24} />
           <Text style={[styles.title, { color: c.foreground }]}>Nạp xu</Text>
         </View>
 
-        <View style={[styles.balanceRow, { backgroundColor: c.background }]}>
-          <Text style={[styles.balanceLabel, { color: c.subtle }]}>Số dư hiện tại</Text>
-          <Text style={[styles.balanceValue, { color: c.coin }]}>{balance} xu</Text>
+        {/* Balance */}
+        <View style={[styles.balanceRow, { backgroundColor: c.muted }]}>
+          <Text style={[styles.balanceLabel, { color: c.mutedForeground }]}>Số dư hiện tại</Text>
+          <Text style={[styles.balanceValue, { color: c.coin }]}>{currentCoins} xu</Text>
         </View>
 
+        {/* Packs */}
         <View style={styles.packs}>
-          {packages.map((pack) => (
+          {PACKS.map((pack) => (
             <HapticTouchable
-              key={pack.id}
-              style={[styles.pack, { borderColor: pack.is_popular ? c.coin : c.border, borderBottomColor: pack.is_popular ? c.coinDark : c.depthBorderDark }]}
-              onPress={() => handleBuy(pack.id)}
+              key={pack.coins}
+              style={[styles.pack, { borderColor: pack.popular ? c.coin : "#E5E5E5", borderBottomColor: pack.popular ? c.coinDark : "#CACACA" }]}
+              onPress={() => handleBuy(pack.coins)}
               activeOpacity={0.7}
-              disabled={loading}
             >
-              {pack.is_popular && <View style={[styles.badge, { backgroundColor: c.coin }]}><Text style={styles.badgeText}>Phổ biến</Text></View>}
+              {pack.popular && <View style={[styles.badge, { backgroundColor: c.coin }]}><Text style={styles.badgeText}>Phổ biến</Text></View>}
               <GameIcon name="coin" size={28} />
               <Text style={[styles.packCoins, { color: c.foreground }]}>{pack.coins} xu</Text>
-              <Text style={[styles.packPrice, { color: c.subtle }]}>{pack.label ?? `${(pack.price_vnd / 1000).toFixed(0)}.000đ`}</Text>
+              <Text style={[styles.packPrice, { color: c.mutedForeground }]}>{pack.price}</Text>
             </HapticTouchable>
           ))}
         </View>

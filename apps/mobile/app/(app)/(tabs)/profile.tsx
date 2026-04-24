@@ -28,9 +28,7 @@ function showComingSoon() {
 export default function ProfileScreen() {
   const c = useThemeColors();
   const router = useRouter();
-  const authUser = useAuth((s) => s.user);
-  const profile = useAuth((s) => s.profile);
-  const signOut = useAuth((s) => s.logout);
+  const { user: authUser, signOut } = useAuth();
   const { data: userData, isLoading } = useUser(authUser?.id ?? "");
   const uploadAvatar = useUploadAvatar(authUser?.id ?? "");
   const { enabled: hapticsEnabled, setEnabled: setHapticsEnabled, trigger } = useHaptics();
@@ -40,7 +38,7 @@ export default function ProfileScreen() {
   const u = userData ?? authUser;
   if (!u) return null;
 
-  const initials = ((profile?.nickname ?? u?.email ?? "") ?? u.email)
+  const initials = (u.fullName ?? u.email ?? "")
     .split(" ")
     .map((w: string) => w[0])
     .slice(0, 2)
@@ -105,8 +103,8 @@ export default function ProfileScreen() {
             )}
           </View>
         </HapticTouchable>
-        <Text style={[styles.name, { color: c.foreground }]}>{(profile?.nickname ?? u?.email ?? "") ?? "Chưa đặt tên"}</Text>
-        <Text style={[styles.email, { color: c.subtle }]}>{u.email}</Text>
+        <Text style={[styles.name, { color: c.foreground }]}>{u.fullName ?? "Chưa đặt tên"}</Text>
+        <Text style={[styles.email, { color: c.mutedForeground }]}>{u.email}</Text>
       </View>
 
       {/* TÀI KHOẢN */}
@@ -119,7 +117,7 @@ export default function ProfileScreen() {
           >
             <Ionicons name="person-outline" size={20} color={c.foreground} />
             <Text style={[styles.rowText, { color: c.foreground }]}>Hồ sơ</Text>
-            <Ionicons name="chevron-forward" size={18} color={c.subtle} />
+            <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
           </HapticTouchable>
           <HapticTouchable
             style={[styles.row, styles.rowLast]}
@@ -127,7 +125,7 @@ export default function ProfileScreen() {
           >
             <Ionicons name="lock-closed-outline" size={20} color={c.foreground} />
             <Text style={[styles.rowText, { color: c.foreground }]}>Đổi mật khẩu</Text>
-            <Ionicons name="chevron-forward" size={18} color={c.subtle} />
+            <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
           </HapticTouchable>
         </View>
       </View>
@@ -142,7 +140,7 @@ export default function ProfileScreen() {
           >
             <Ionicons name="list-outline" size={20} color={c.foreground} />
             <Text style={[styles.rowText, { color: c.foreground }]}>Lịch sử bài nộp</Text>
-            <Ionicons name="chevron-forward" size={18} color={c.subtle} />
+            <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
           </HapticTouchable>
           <HapticTouchable
             style={[styles.row, styles.rowLast]}
@@ -150,7 +148,7 @@ export default function ProfileScreen() {
           >
             <Ionicons name="flag-outline" size={20} color={c.foreground} />
             <Text style={[styles.rowText, { color: c.foreground }]}>Mục tiêu học tập</Text>
-            <Ionicons name="chevron-forward" size={18} color={c.subtle} />
+            <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
           </HapticTouchable>
         </View>
       </View>
@@ -169,7 +167,7 @@ export default function ProfileScreen() {
                 if (v) trigger();
               }}
               trackColor={{ false: c.muted, true: c.primary + "60" }}
-              thumbColor={hapticsEnabled ? c.primary : c.subtle}
+              thumbColor={hapticsEnabled ? c.primary : c.mutedForeground}
             />
           </View>
           <HapticTouchable
@@ -178,7 +176,7 @@ export default function ProfileScreen() {
           >
             <Ionicons name="document-text-outline" size={20} color={c.foreground} />
             <Text style={[styles.rowText, { color: c.foreground }]}>Điều khoản & Điều kiện</Text>
-            <Ionicons name="chevron-forward" size={18} color={c.subtle} />
+            <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
           </HapticTouchable>
           <HapticTouchable
             style={[styles.row, { borderColor: c.border }]}
@@ -186,7 +184,7 @@ export default function ProfileScreen() {
           >
             <Ionicons name="shield-outline" size={20} color={c.foreground} />
             <Text style={[styles.rowText, { color: c.foreground }]}>Chính sách bảo mật</Text>
-            <Ionicons name="chevron-forward" size={18} color={c.subtle} />
+            <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
           </HapticTouchable>
           <HapticTouchable
             style={[styles.row, { borderColor: c.border }]}
@@ -194,7 +192,7 @@ export default function ProfileScreen() {
           >
             <Ionicons name="headset-outline" size={20} color={c.foreground} />
             <Text style={[styles.rowText, { color: c.foreground }]}>Liên hệ/ Hỗ trợ</Text>
-            <Ionicons name="chevron-forward" size={18} color={c.subtle} />
+            <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
           </HapticTouchable>
           <HapticTouchable
             style={styles.row}
@@ -206,7 +204,7 @@ export default function ProfileScreen() {
           <HapticTouchable style={[styles.row, { borderBottomColor: c.border }]} onPress={() => router.push("/(app)/courses/" as any)}>
             <Ionicons name="school-outline" size={20} color={c.primary} />
             <Text style={[styles.rowText, { color: c.primary }]}>Khóa học cấp tốc</Text>
-            <Ionicons name="chevron-forward" size={18} color={c.subtle} />
+            <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
           </HapticTouchable>
           <HapticTouchable
             style={[styles.row, styles.rowLast]}
@@ -218,7 +216,7 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      <Text style={[styles.version, { color: c.subtle }]}>Phiên bản 1.0.0</Text>
+      <Text style={[styles.version, { color: c.mutedForeground }]}>Phiên bản 1.0.0</Text>
     </BouncyScrollView>
     </ScreenWrapper>
   );

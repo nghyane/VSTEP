@@ -89,8 +89,8 @@ class ExamSessionTest extends TestCase
 
         $submit->assertOk();
         $submit->assertJsonPath('data.status', 'submitted');
-        $submit->assertJsonPath('data.mcq_score', 1);
-        $submit->assertJsonPath('data.mcq_total', 2);
+        $submit->assertJsonPath('data.mcq.score', 1);
+        $submit->assertJsonPath('data.mcq.total', 2);
     }
 
     public function test_submit_rejects_already_submitted(): void

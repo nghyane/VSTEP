@@ -7,6 +7,7 @@ namespace App\Listeners;
 use App\Enums\CoinTransactionType;
 use App\Events\ProfileCreated;
 use App\Models\SystemConfig;
+use App\Services\NotificationService;
 use App\Services\WalletService;
 
 /**
@@ -20,6 +21,7 @@ final class GrantOnboardingBonus
 {
     public function __construct(
         private readonly WalletService $walletService,
+        private readonly NotificationService $notificationService,
     ) {}
 
     public function handle(ProfileCreated $event): void
@@ -39,6 +41,15 @@ final class GrantOnboardingBonus
             type: CoinTransactionType::OnboardingBonus,
             source: $event->profile,
             metadata: ['reason' => 'initial_profile_created'],
+        );
+
+        $this->notificationService->push(
+            profile: $event->profile,
+            type: 'coin_received',
+            title: 'Chào mừng bạn đến với VSTEP!',
+            body: "Bạn đã nhận {$amount} xu khởi đầu. Hãy bắt đầu luyện tập!",
+            iconKey: 'gift',
+            dedupKey: "onboarding:{$event->profile->id}",
         );
     }
 }

@@ -1,13 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useNavigate } from "@tanstack/react-router"
 import { useRef, useState } from "react"
 import { Icon, StaticIcon, type StaticIconName } from "#/components/Icon"
-import { notificationsQuery, unreadCountQuery, type Notification } from "#/features/notifications/queries"
-import { api } from "#/lib/api"
-import { useAuth, useProfile, useUser } from "#/lib/auth"
+import { readAllNotifications } from "#/features/notifications/actions"
+import { notificationsQuery } from "#/features/notifications/queries"
+import type { Notification } from "#/features/notifications/types"
+import { useAuth, useSession } from "#/lib/auth"
+import { useToast } from "#/lib/toast"
 import { useClickOutside } from "#/lib/use-click-outside"
 
 const NOTIF_ICON: Record<string, StaticIconName> = {
-	coin: "gem-color",
+	coin: "coin",
 	streak: "streak-sm",
 	trophy: "trophy",
 	target: "target-md",
@@ -24,7 +27,7 @@ function timeAgo(date: string): string {
 }
 
 function NotifItem({ notif }: { notif: Notification }) {
-	const icon = NOTIF_ICON[notif.icon_key ?? ""] ?? "gem-color"
+	const icon = NOTIF_ICON[notif.icon_key ?? ""] ?? "coin"
 	return (
 		<div className={`flex items-start gap-3 px-3 py-2.5 rounded-xl ${!notif.read_at ? "bg-background" : ""}`}>
 			<StaticIcon name={icon} size="sm" className="shrink-0 mt-0.5" />
@@ -38,10 +41,21 @@ function NotifItem({ notif }: { notif: Notification }) {
 	)
 }
 
-function MenuItem({ children, onClick, destructive }: { children: React.ReactNode; onClick: () => void; destructive?: boolean }) {
+function MenuItem({
+	children,
+	onClick,
+	destructive,
+}: {
+	children: React.ReactNode
+	onClick: () => void
+	destructive?: boolean
+}) {
 	return (
-		<button type="button" onClick={onClick}
-			className={`w-full text-left px-4 py-3 text-sm font-bold uppercase tracking-wide transition hover:bg-background ${destructive ? "text-subtle" : "text-muted"}`}>
+		<button
+			type="button"
+			onClick={onClick}
+			className={`w-full text-left px-4 py-3 text-sm font-bold uppercase tracking-wide transition hover:bg-background ${destructive ? "text-subtle" : "text-muted"}`}
+		>
 			{children}
 		</button>
 	)
@@ -53,10 +67,10 @@ interface Props {
 }
 
 export function ProfileDropdown({ unread, initial }: Props) {
-	const profile = useProfile()
-	const user = useUser()
+	const { profile, user } = useSession()
 	const logout = useAuth((s) => s.logout)
 	const { data: notifsData } = useQuery({ ...notificationsQuery, enabled: false })
+	const navigate = useNavigate()
 	const [open, setOpen] = useState(false)
 	const [tab, setTab] = useState<"menu" | "notifs">("menu")
 	const menuRef = useRef<HTMLDivElement>(null)
@@ -65,11 +79,14 @@ export function ProfileDropdown({ unread, initial }: Props) {
 	useClickOutside(menuRef, () => setOpen(false))
 
 	const readAll = useMutation({
-		mutationFn: () => api.post("notifications/read-all").json(),
-		onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+		mutationFn: readAllNotifications,
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ["notifications"] })
+			useToast.getState().add("Đã đọc tất cả thông báo", "success")
+		},
 	})
 
-	const notifs = notifsData?.data ?? []
+	const notifs = notifsData ? notifsData.data : []
 
 	function toggle() {
 		const next = !open
@@ -80,10 +97,15 @@ export function ProfileDropdown({ unread, initial }: Props) {
 
 	return (
 		<div className="relative" ref={menuRef}>
-			<button type="button" onClick={toggle}
-				className="relative w-10 h-10 rounded-full bg-primary text-primary-foreground font-display text-base flex items-center justify-center hover:ring-2 hover:ring-primary/40 transition">
+			<button
+				type="button"
+				onClick={toggle}
+				className="relative w-10 h-10 rounded-full bg-primary text-primary-foreground font-display text-base flex items-center justify-center hover:ring-2 hover:ring-primary/40 transition"
+			>
 				{initial}
-				{unread > 0 && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-destructive border-2 border-background" />}
+				{unread > 0 && (
+					<span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-destructive border-2 border-background" />
+				)}
 			</button>
 
 			{open && (
@@ -99,28 +121,65 @@ export function ProfileDropdown({ unread, initial }: Props) {
 									<p className="text-xs text-subtle truncate">{user?.email}</p>
 								</div>
 								{profile.target_level && (
-									<span className="ml-auto text-xs font-bold text-primary bg-primary-tint px-2.5 py-1 rounded-full">{profile.target_level}</span>
+									<span className="ml-auto text-xs font-bold text-primary bg-primary-tint px-2.5 py-1 rounded-full">
+										{profile.target_level}
+									</span>
 								)}
 							</div>
 							<div className="h-px bg-border mx-3 my-1" />
 							<MenuItem onClick={() => setTab("notifs")}>
 								Thông báo
 								{unread > 0 && (
-									<span className="ml-1 text-xs font-bold text-primary-foreground bg-destructive px-2 py-0.5 rounded-full inline-flex items-center justify-center">{unread}</span>
+									<span className="ml-1 text-xs font-bold text-primary-foreground bg-destructive px-2 py-0.5 rounded-full inline-flex items-center justify-center">
+										{unread}
+									</span>
 								)}
 							</MenuItem>
-							<MenuItem onClick={() => setOpen(false)}>Chỉnh sửa hồ sơ</MenuItem>
-							<MenuItem onClick={() => { logout(); setOpen(false) }} destructive>Đăng xuất</MenuItem>
+							<MenuItem
+								onClick={() => {
+									setOpen(false)
+									navigate({ to: "/ho-so", search: { edit: true } })
+								}}
+							>
+								Chỉnh sửa hồ sơ
+							</MenuItem>
+							<MenuItem
+								onClick={() => {
+									setOpen(false)
+									navigate({ to: "/luyen-tap/ket-qua" })
+								}}
+							>
+								Kết quả AI chấm
+							</MenuItem>
+							<MenuItem
+								onClick={() => {
+									logout()
+									setOpen(false)
+								}}
+								destructive
+							>
+								Đăng xuất
+							</MenuItem>
 						</div>
 					) : (
 						<div>
 							<div className="flex items-center justify-between px-4 py-3">
-								<button type="button" onClick={() => setTab("menu")} className="flex items-center gap-1 text-sm font-bold text-primary">
+								<button
+									type="button"
+									onClick={() => setTab("menu")}
+									className="flex items-center gap-1 text-sm font-bold text-primary"
+								>
 									<Icon name="back" size="xs" />
 									Quay lại
 								</button>
 								{unread > 0 && (
-									<button type="button" onClick={() => readAll.mutate()} className="text-xs font-bold text-primary">Đọc tất cả</button>
+									<button
+										type="button"
+										onClick={() => readAll.mutate()}
+										className="text-xs font-bold text-primary"
+									>
+										Đọc tất cả
+									</button>
 								)}
 							</div>
 							<div className="h-px bg-border" />
@@ -131,7 +190,9 @@ export function ProfileDropdown({ unread, initial }: Props) {
 								</div>
 							) : (
 								<div className="max-h-72 overflow-y-auto p-2 space-y-1">
-									{notifs.map((n) => <NotifItem key={n.id} notif={n} />)}
+									{notifs.map((n) => (
+										<NotifItem key={n.id} notif={n} />
+									))}
 								</div>
 							)}
 						</div>

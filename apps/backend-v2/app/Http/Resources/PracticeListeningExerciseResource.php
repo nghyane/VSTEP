@@ -21,7 +21,7 @@ class PracticeListeningExerciseResource extends JsonResource
             'title' => $this->resource->title,
             'description' => $this->resource->description,
             'part' => $this->resource->part,
-            'audio_url' => $this->resource->audio_url,
+            'audio_url' => $this->resource->audio_url ? url($this->resource->audio_url) : null,
             'transcript' => $this->resource->transcript,
             'vietnamese_transcript' => $this->resource->vietnamese_transcript,
             'word_timestamps' => $this->resource->word_timestamps ?? [],

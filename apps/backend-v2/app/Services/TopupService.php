@@ -26,6 +26,7 @@ class TopupService
 {
     public function __construct(
         private readonly WalletService $walletService,
+        private readonly NotificationService $notificationService,
     ) {}
 
     public function createOrder(
@@ -35,7 +36,7 @@ class TopupService
     ): WalletTopupOrder {
         if (! $package->is_active) {
             throw ValidationException::withMessages([
-                'package' => ['Package is not available.'],
+                'package' => ['Gói này hiện không khả dụng.'],
             ]);
         }
 
@@ -72,7 +73,7 @@ class TopupService
 
             if ($locked->status !== 'pending') {
                 throw ValidationException::withMessages([
-                    'order' => ["Order status {$locked->status} cannot be confirmed."],
+                    'order' => ["Đơn hàng ở trạng thái {$locked->status} không thể xác nhận."],
                 ]);
             }
 
@@ -91,6 +92,15 @@ class TopupService
                 'status' => 'paid',
                 'paid_at' => now(),
             ]);
+
+            DB::afterCommit(fn () => $this->notificationService->push(
+                profile: $locked->profile,
+                type: 'topup_completed',
+                title: 'Nạp xu thành công',
+                body: "Bạn đã nhận {$locked->coins_to_credit} xu.",
+                iconKey: 'coin',
+                dedupKey: "topup:{$locked->id}",
+            ));
 
             return $locked;
         });

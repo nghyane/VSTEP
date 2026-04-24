@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-04-20T00:00:00.000Z" agent="VSTEP-capstone" version="24.0.0">
+  <diagram id="vocab-srs" name="Vocab + SRS">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="topic" value="VocabTopic" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=14;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="120" y="40" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="profile" value="Profile" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=14;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="40" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="word" value="VocabWord" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=14;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="380" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="exercise" value="VocabExercise" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=14;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="260" y="380" width="160" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="review" value="PracticeVocabReview" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=13;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="860" y="380" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="srs" value="ProfileVocabSrsState" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=13;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="380" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="attempt" value="PracticeVocabExerciseAttempt" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=12;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="1340" y="380" width="240" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Topic side relationships -->
+        <mxCell id="r_contains" value="Contains" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=12;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="60" y="200" width="120" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="r_hasex" value="HasExercise" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=11;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="280" y="200" width="130" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Profile side relationships -->
+        <mxCell id="r_records" value="Records" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=12;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="900" y="200" width="120" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="r_tracks" value="Tracks" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=12;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="200" width="120" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="r_attempts" value="Attempts" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=12;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="1400" y="200" width="120" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Cross relationships (below Row C) -->
+        <mxCell id="r_ofWord" value="OfWord" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=12;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="500" y="560" width="120" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="r_forWord" value="ForWord" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=12;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="640" y="700" width="120" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="r_ofEx" value="OfExercise" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=12;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="780" y="560" width="130" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Topic -1- Contains -N- Word -->
+        <mxCell id="v1" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="topic" target="r_contains"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lv1" value="1" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="v1"><mxGeometry x="-0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+        <mxCell id="v2" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="r_contains" target="word"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lv2" value="M" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="v2"><mxGeometry x="0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+
+        <!-- Topic -1- HasExercise -N- Exercise -->
+        <mxCell id="v3" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="topic" target="r_hasex"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lv3" value="1" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="v3"><mxGeometry x="-0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+        <mxCell id="v4" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="r_hasex" target="exercise"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lv4" value="M" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="v4"><mxGeometry x="0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+
+        <!-- Junction table: VocabTopicTask (migration 13) -->
+        <mxCell id="topicTask" value="VocabTopicTask" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=13;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="480" y="40" width="180" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="rMapsTask" value="MapsTask" style="rhombus;whiteSpace=wrap;html=1;fillColor=#5B9BD5;strokeColor=#2E75B6;fontColor=#FFFFFF;fontSize=11;fontStyle=1;gradientColor=#2E75B6;" vertex="1" parent="1">
+          <mxGeometry x="300" y="40" width="130" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="v17" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="topic" target="rMapsTask"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lv17" value="1" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="v17"><mxGeometry x="-0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+        <mxCell id="v18" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="rMapsTask" target="topicTask"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lv18" value="M" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="v18"><mxGeometry x="0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+
+        <!-- Profile -1- Records -N- Review -->
+        <mxCell id="v5" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="profile" target="r_records"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lv5" value="1" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="v5"><mxGeometry x="-0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+        <mxCell id="v6" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="r_records" target="review"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lv6" value="M" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="v6"><mxGeometry x="0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+
+        <!-- Profile -1- Tracks -N- SRS -->
+        <mxCell id="v7" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="profile" target="r_tracks"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lv7" value="1" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="v7"><mxGeometry x="-0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+        <mxCell id="v8" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="r_tracks" target="srs"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lv8" value="M" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="v8"><mxGeometry x="0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+
+        <!-- Profile -1- Attempts -N- Attempt -->
+        <mxCell id="v9" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="profile" target="r_attempts"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lv9" value="1" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="v9"><mxGeometry x="-0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+        <mxCell id="v10" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="r_attempts" target="attempt"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lv10" value="M" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="v10"><mxGeometry x="0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+
+        <!-- Review -N- OfWord -1- Word -->
+        <mxCell id="v11" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="review" target="r_ofWord"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lv11" value="M" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="v11"><mxGeometry x="-0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+        <mxCell id="v12" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="r_ofWord" target="word"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lv12" value="1" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="v12"><mxGeometry x="0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+
+        <!-- SRS -N- ForWord -1- Word -->
+        <mxCell id="v13" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="srs" target="r_forWord"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lv13" value="M" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="v13"><mxGeometry x="-0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+        <mxCell id="v14" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="r_forWord" target="word"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lv14" value="1" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="v14"><mxGeometry x="0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+
+        <!-- Attempt -N- OfExercise -1- Exercise -->
+        <mxCell id="v15" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="attempt" target="r_ofEx"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lv15" value="M" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="v15"><mxGeometry x="-0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+        <mxCell id="v16" style="endArrow=none;html=1;strokeColor=#2E75B6;strokeWidth=1.5;" edge="1" parent="1" source="r_ofEx" target="exercise"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="lv16" value="1" style="edgeLabel;html=1;fontSize=14;fontStyle=1;fontColor=#2E75B6;" vertex="1" connectable="0" parent="v16"><mxGeometry x="0.6" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

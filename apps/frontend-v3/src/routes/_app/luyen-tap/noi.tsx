@@ -1,16 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { Header } from "#/components/Header"
+import { SpeakingContent } from "#/features/practice/components/SpeakingContent"
 
 export const Route = createFileRoute("/_app/luyen-tap/noi")({
-	component: () => (
+	component: SpeakingPage,
+})
+
+function SpeakingPage() {
+	return (
 		<>
-			<Header title="Nói" />
+			<Header title="Nói" backTo="/luyen-tap" />
 			<div className="px-10 pb-12">
-				<div className="card p-10 text-center">
-					<img src="/mascot/lac-speak.png" alt="" className="w-24 h-24 mx-auto mb-3 object-contain" />
-					<p className="text-sm font-bold text-subtle">Sắp ra mắt</p>
-				</div>
+				<p className="text-sm text-subtle mb-5">3 phần · ghi âm + AI đánh giá phát âm</p>
+				<SpeakingContent />
 			</div>
 		</>
-	),
-})
+	)
+}

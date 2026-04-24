@@ -48,7 +48,7 @@ Sau đó RFC 0002 mới xuống schema, RFC 0003 xuống API.
 ### Economy (xu)
 
 8. Wallet gắn Profile, không gắn Account.
-9. Mọi giao dịch in-app dùng xu. VND chỉ xuất hiện ở top-up.
+9. Mọi giao dịch in-app dùng xu, trừ khóa học (mua bằng VND). VND xuất hiện ở top-up và mua khóa học.
 10. Top-up theo gói cố định (admin config).
 11. Xu khởi điểm 100 tặng khi tạo profile ĐẦU TIÊN của account. Profile thứ 2+ không được tặng.
 12. Promo code redemption track account-level (chống farm), xu cộng vào profile active.
@@ -86,7 +86,7 @@ Sau đó RFC 0002 mới xuống schema, RFC 0003 xuống API.
 
 ### Course & teacher
 
-32. Course mua bằng xu (2000-5000 theo level). Free slots 1-1 nằm trong course.
+32. Course mua bằng VND (tiền thật). Sau khi mua, cộng bonus xu vào tài khoản. Free slots 1-1 nằm trong course.
 33. Course có commitment: N full tests trong M ngày, có cooldown window ở đầu. Commitment không đủ = gate (không unlock teacher slot), KHÔNG penalty khóa tài khoản.
 
 ## Bounded contexts overview
@@ -222,7 +222,7 @@ course_purchase    -- mua course, âm
 ### Events consumed
 
 - `profile.created` → grant onboarding_bonus nếu profile đầu.
-- `course.purchased` → trừ xu (hoặc reverse: Commerce publish event sau khi Economy đã trừ thành công — xem cross-cutting).
+- `course.purchased` → VND payment confirmed. Economy credit bonus xu. Notifications push.
 
 ---
 
@@ -440,9 +440,9 @@ Bán khóa học bằng xu. Quản lý enrollment, commitment. Teacher slot 1-1 
 
 | Entity | Purpose |
 |---|---|
-| `courses` | Metadata: title, target_level, target_exam, description, price_coins, max_slots, max_slots_per_student, start_date, end_date, required_full_tests, commitment_window_days, exam_cooldown_days, livestream_url, teacher_id. |
+| `courses` | Metadata: title, target_level, target_exam, description, price_vnd, original_price_vnd, bonus_coins, max_slots, max_slots_per_student, start_date, end_date, required_full_tests, commitment_window_days, exam_cooldown_days, livestream_url, teacher_id. |
 | `course_schedule_items` | Lịch livestream tĩnh per course: date, start/end time, topic. |
-| `course_enrollments` | profile_id + course_id + enrolled_at + coins_paid + acknowledged_commitment. |
+| `course_enrollments` | profile_id + course_id + enrolled_at + bonus_coins_received + acknowledged_commitment. |
 | `course_commitment_status` | Derive snapshot (hoặc query live): phase (pending/met), completed_count, deadline_at. |
 | `teacher_slots` | 30-phút slots mở per course: teacher_id, course_id, starts_at, duration_minutes, status (open/booked/completed/cancelled). |
 | `teacher_bookings` | slot_id + profile_id + submission_ref (nullable) + meet_url (admin paste) + booked_at + status. |
@@ -461,7 +461,7 @@ Bán khóa học bằng xu. Quản lý enrollment, commitment. Teacher slot 1-1 
 
 ### Events published
 
-- `course.purchased` → Economy trừ xu `course_purchase`. Notifications push.
+- `course.purchased` → VND payment confirmed. Credit bonus xu. Notifications push.
 - `enrollment.created` → Progress reset cooldown counter cho commitment.
 - `booking.created` → Notifications push "đã book slot, chờ meet link".
 - `booking.meet_url_updated` → Notifications push student.

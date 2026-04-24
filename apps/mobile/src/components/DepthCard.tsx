@@ -1,4 +1,6 @@
-// DepthCard — V3 card pattern: border-2 border-b-4 rounded-[16px]
+// 3D Depth Card — Duolingo signature pattern
+// border: 2px solid border, border-bottom: 4px (darker) → illusion of depth
+// Synced with frontend-v3 .card { border: 2px solid border; border-bottom-width: 4px }
 import type { ReactNode } from "react";
 import { StyleSheet, View, type ViewStyle } from "react-native";
 import { radius, spacing, useThemeColors } from "@/theme";
@@ -13,12 +15,24 @@ interface DepthCardProps {
   style?: ViewStyle;
 }
 
-export function DepthCard({ children, variant = "neutral", skillColor, padding = spacing.lg, style }: DepthCardProps) {
+export function DepthCard({
+  children,
+  variant = "neutral",
+  skillColor,
+  padding = spacing.lg,
+  style,
+}: DepthCardProps) {
   const c = useThemeColors();
   const { borderTop, borderBottom, bg } = getColors(variant, skillColor, c);
 
   return (
-    <View style={[styles.card, { backgroundColor: bg, borderColor: borderTop, borderBottomColor: borderBottom, padding }, style]}>
+    <View
+      style={[
+        styles.card,
+        { backgroundColor: bg, borderColor: borderTop, borderBottomColor: borderBottom, padding },
+        style,
+      ]}
+    >
       {children}
     </View>
   );
@@ -27,20 +41,24 @@ export function DepthCard({ children, variant = "neutral", skillColor, padding =
 function getColors(variant: Variant, skillColor: string | undefined, c: ReturnType<typeof useThemeColors>) {
   switch (variant) {
     case "primary":
-      return { borderTop: c.primary + "25", borderBottom: c.primary + "66", bg: c.primaryTint };
+      return { borderTop: c.primary + "40", borderBottom: c.primaryDark, bg: c.primaryTint };
     case "success":
-      return { borderTop: c.success + "25", borderBottom: c.success + "66", bg: c.success + "1A" };
+      return { borderTop: c.primary + "40", borderBottom: c.primaryDark, bg: c.primaryTint };
     case "destructive":
-      return { borderTop: c.destructive + "25", borderBottom: c.destructive + "66", bg: c.destructiveTint };
+      return { borderTop: c.destructive + "40", borderBottom: c.destructive, bg: c.destructiveTint };
     case "skill": {
       const sc = skillColor ?? c.primary;
-      return { borderTop: sc + "33", borderBottom: sc + "80", bg: sc + "1A" };
+      return { borderTop: sc + "40", borderBottom: sc, bg: sc + "18" };
     }
-    default:
-      return { borderTop: c.border, borderBottom: c.depthBorderDark, bg: c.surface };
+    default: // neutral — matches frontend-v3 .card exactly
+      return { borderTop: "#E5E5E5", borderBottom: "#CACACA", bg: c.card };
   }
 }
 
 const styles = StyleSheet.create({
-  card: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.card },
+  card: {
+    borderWidth: 2,
+    borderBottomWidth: 4,
+    borderRadius: radius.lg,
+  },
 });

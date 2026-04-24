@@ -16,6 +16,7 @@ use App\Models\VocabExercise;
 use App\Models\VocabTopic;
 use App\Models\VocabWord;
 use App\Services\VocabService;
+use App\Srs\FsrsConfig;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -24,12 +25,14 @@ class VocabController extends Controller
 {
     public function __construct(
         private readonly VocabService $vocabService,
+        private readonly FsrsConfig $fsrsConfig,
     ) {}
 
     public function topics(Request $request): AnonymousResourceCollection
     {
+        $profile = $this->profile($request);
         $topics = $this->vocabService
-            ->listPublishedTopics()
+            ->listPublishedTopics($profile)
             ->load('tasks');
 
         return VocabTopicResource::collection($topics);
@@ -48,7 +51,7 @@ class VocabController extends Controller
             'words' => array_map(
                 fn (array $pair) => [
                     'word' => (new VocabWordResource($pair['word']))->resolve($request),
-                    'state' => $pair['state']->toArray(),
+                    'state' => $pair['state']->toArray($this->fsrsConfig),
                 ],
                 $data['words'],
             ),
@@ -67,9 +70,10 @@ class VocabController extends Controller
             'new_count' => $queue['new'],
             'learning_count' => $queue['learning'],
             'review_count' => $queue['review'],
+            'next_due_at' => $queue['next_due_at'],
             'items' => array_map(fn (array $pair) => [
                 'word' => (new VocabWordResource($pair['word']))->resolve($request),
-                'state' => $pair['state']->toArray(),
+                'state' => $pair['state']->toArray($this->fsrsConfig),
             ], $queue['items']),
         ]]);
     }
@@ -95,7 +99,7 @@ class VocabController extends Controller
         );
 
         return response()->json(['data' => [
-            'state' => $result['state']->toArray(),
+            'state' => $result['state']->toArray($this->fsrsConfig),
             'review_id' => $result['review']->id,
         ]]);
     }
