@@ -58,40 +58,49 @@ export function AudioTestPlayer() {
 	const progress = duration > 0 ? (currentTime / duration) * 100 : 0
 
 	return (
-		<div className="space-y-2">
-			<div className="card flex items-center gap-3 px-4 py-3">
+		<div className="space-y-3">
+			<div
+				className={cn(
+					"flex items-center gap-4 rounded-(--radius-card) border-2 border-b-4 bg-surface px-4 py-3 transition-colors",
+					passed ? "border-skill-listening/40 border-b-skill-listening/60" : "border-border",
+				)}
+			>
 				<button
 					type="button"
 					onClick={handleToggle}
 					aria-label={playing ? "Tạm dừng" : "Phát"}
-					className="btn btn-primary flex size-8 shrink-0 items-center justify-center rounded-full p-0"
-				>
-					{playing ? (
-						<Icon name="timer" size="xs" className="text-white" />
-					) : (
-						<Icon name="volume" size="xs" className="text-white" />
+					className={cn(
+						"relative flex size-11 shrink-0 items-center justify-center rounded-full border-2 border-b-4 text-white transition-all active:translate-y-[2px] active:border-b-2",
+						"border-skill-listening-dark bg-skill-listening hover:brightness-110",
 					)}
+				>
+					{!passed && <span className="absolute inset-0 animate-ping rounded-full bg-skill-listening/40" />}
+					<Icon name={playing ? "timer" : "volume"} size="sm" className="relative text-white" />
 				</button>
 
-				<span className="font-mono text-xs tabular-nums text-muted">
-					{formatTime(currentTime)} / {formatTime(duration)}
-				</span>
-
-				<div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-background">
-					<div
-						className="absolute inset-y-0 left-0 rounded-full bg-primary transition-[width] duration-200"
-						style={{ width: `${progress}%` }}
-					/>
+				<div className="flex min-w-0 flex-1 flex-col gap-1.5">
+					<div className="flex items-center justify-between">
+						<span className="text-xs font-extrabold text-foreground">
+							{playing ? "Đang phát" : passed ? "Đã kiểm tra" : "Bấm để phát thử"}
+						</span>
+						<span className="font-mono text-[11px] tabular-nums text-muted">
+							{formatTime(currentTime)} / {formatTime(duration)}
+						</span>
+					</div>
+					<div className="relative h-2 w-full overflow-hidden rounded-full bg-border/60">
+						<div
+							className="absolute inset-y-0 left-0 rounded-full bg-skill-listening transition-[width] duration-200"
+							style={{ width: `${progress}%` }}
+						/>
+					</div>
 				</div>
-
-				<Icon name="volume" size="xs" className="shrink-0 text-subtle" />
 			</div>
 
 			{passed && (
-				<p className="flex items-center gap-1.5 text-xs font-bold text-success">
+				<div className="flex items-center gap-2 rounded-full border-2 border-success/30 bg-success/10 px-3 py-1.5 text-xs font-extrabold text-success">
 					<Icon name="check" size="xs" />
 					Âm thanh hoạt động tốt
-				</p>
+				</div>
 			)}
 
 			<audio ref={audioRef} src={TEST_AUDIO_URL} preload="metadata" className="hidden" />
@@ -104,6 +113,7 @@ export function AudioTestPlayer() {
 export function MicTest() {
 	const recorder = useVoiceRecorder(5)
 	const isRecording = recorder.state === "recording"
+	const isDone = !isRecording && recorder.audioUrl !== null
 
 	const handleRecord = useCallback(() => {
 		if (isRecording) recorder.stop()
@@ -114,25 +124,33 @@ export function MicTest() {
 		<div className="space-y-3">
 			<div
 				className={cn(
-					"flex h-12 items-center justify-center rounded-(--radius-card) border-2 border-border bg-background transition-colors",
-					isRecording && "border-destructive/40 bg-destructive-tint",
+					"flex min-h-16 items-center justify-center rounded-(--radius-card) border-2 border-b-4 px-4 py-3 transition-colors",
+					isRecording && "border-destructive/40 border-b-destructive/60 bg-destructive-tint",
+					isDone && "border-success/40 border-b-success/60 bg-success/5",
+					!isRecording && !isDone && "border-border bg-surface",
 				)}
 			>
-				{recorder.state !== "recording" && recorder.audioUrl === null && (
-					<span className="text-xs text-subtle">Đặt mic sát miệng rồi bấm "Thu âm"</span>
+				{!isRecording && recorder.audioUrl === null && (
+					<div className="flex items-center gap-2 text-subtle">
+						<Icon name="mic" size="sm" className="text-skill-speaking" />
+						<span className="text-xs font-semibold">Đặt mic sát miệng rồi bấm "Thu âm"</span>
+					</div>
 				)}
 				{isRecording && (
-					<div className="flex items-center gap-2">
-						<span className="size-2 animate-pulse rounded-full bg-destructive" />
-						<span className="text-xs font-bold text-destructive">
-							Đang thu âm... {Math.round(recorder.elapsedMs / 1000)}s
+					<div className="flex items-center gap-3">
+						<span className="relative flex size-3 items-center justify-center">
+							<span className="absolute inset-0 animate-ping rounded-full bg-destructive/50" />
+							<span className="relative size-2.5 rounded-full bg-destructive" />
+						</span>
+						<span className="text-sm font-extrabold text-destructive tabular-nums">
+							Đang thu âm… {Math.round(recorder.elapsedMs / 1000)}s
 						</span>
 					</div>
 				)}
-				{!isRecording && recorder.audioUrl !== null && (
-					<div className="flex items-center gap-1.5 text-success">
-						<Icon name="check" size="xs" />
-						<span className="text-xs font-bold">Đã thu xong — microphone hoạt động</span>
+				{isDone && (
+					<div className="flex items-center gap-2 text-success">
+						<Icon name="check" size="sm" />
+						<span className="text-xs font-extrabold">Đã thu xong — microphone hoạt động</span>
 					</div>
 				)}
 			</div>
@@ -145,35 +163,36 @@ export function MicTest() {
 						className="btn btn-destructive flex items-center gap-2 text-xs"
 					>
 						<Icon name="mic" size="xs" className="text-white" />
-						{recorder.audioUrl ? "Thu lại" : "Thu âm"}
+						{recorder.audioUrl ? "Thu lại" : "Thu âm thử"}
 					</button>
 				)}
 				{isRecording && (
-					<button
-						type="button"
-						onClick={handleRecord}
-						className="btn btn-secondary flex items-center gap-2 text-xs"
-					>
-						<span className="size-2 rounded-sm bg-foreground" />
+					<button type="button" onClick={handleRecord} className="btn btn-secondary text-xs">
 						Dừng
 					</button>
 				)}
 			</div>
 
-			{recorder.error && <p className="text-xs font-bold text-destructive">{recorder.error}</p>}
-
-			{recorder.audioUrl && (
-				<div className="card space-y-2 p-3">
-					<p className="text-xs font-bold text-muted">Nghe lại bản ghi của bạn</p>
-					<audio src={recorder.audioUrl} controls className="h-9 w-full" />
+			{recorder.error && (
+				<div className="flex items-center gap-2 rounded-(--radius-button) border-2 border-destructive/30 bg-destructive-tint px-3 py-2 text-xs font-bold text-destructive">
+					<span
+						aria-hidden="true"
+						className="flex size-4 shrink-0 items-center justify-center rounded-full bg-destructive text-[10px] font-black text-white"
+					>
+						!
+					</span>
+					{recorder.error}
 				</div>
 			)}
 
 			{recorder.audioUrl && (
-				<p className="flex items-center gap-1.5 text-xs font-bold text-success">
-					<Icon name="check" size="xs" />
-					Microphone hoạt động tốt
-				</p>
+				<div className="space-y-2 rounded-(--radius-card) border-2 border-b-4 border-border bg-surface p-3">
+					<p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wide text-muted">
+						<Icon name="volume" size="xs" />
+						Nghe lại bản ghi
+					</p>
+					<audio src={recorder.audioUrl} controls className="h-9 w-full" />
+				</div>
 			)}
 		</div>
 	)
