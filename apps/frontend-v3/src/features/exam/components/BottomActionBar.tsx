@@ -192,11 +192,11 @@ function CostBadge({ cost, insufficient }: { cost: number; insufficient: boolean
 	return (
 		<span
 			className={cn(
-				"inline-flex items-center gap-1.5 text-sm font-bold whitespace-nowrap",
+				"inline-flex items-center gap-2 text-lg font-extrabold whitespace-nowrap tabular-nums",
 				insufficient ? "text-destructive" : "text-coin-dark",
 			)}
 		>
-			<StaticIcon name="coin" size="xs" className={insufficient ? "opacity-50 grayscale" : undefined} />
+			<StaticIcon name="coin" size="md" className={insufficient ? "opacity-50 grayscale" : undefined} />
 			{cost} xu
 		</span>
 	)
