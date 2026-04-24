@@ -55,15 +55,13 @@ function ExercisePage() {
 
 	if (!s.current) return null
 
-	const isMcq = s.current.kind === "mcq"
-
 	return (
 		<div className="min-h-screen bg-background flex flex-col">
 			<FocusBar {...back} current={s.index} total={s.total} />
 			<div className="flex-1 flex items-center justify-center px-6 pb-8">
 				<div className="w-full max-w-lg space-y-6">
 					<ExerciseQuestion exercise={s.current} />
-					{isMcq ? (
+					{s.current.kind === "mcq" ? (
 						<McqOptions
 							options={s.current.payload.options}
 							selected={s.selected}
@@ -86,7 +84,7 @@ function ExercisePage() {
 							Tiếp tục
 						</button>
 					) : (
-						isMcq && (
+						s.current.kind === "mcq" && (
 							<button
 								type="button"
 								disabled={s.submitting || s.selected === null}
