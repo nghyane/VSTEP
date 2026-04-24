@@ -1,4 +1,4 @@
-import { getAccessToken, getRefreshToken, saveTokens, clearTokens } from "./auth";
+import { getAccessToken, getRefreshToken, saveTokens, clearTokens, getSavedUser } from "./auth";
 import type { AuthUser, Profile } from "@/types/api";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://api.vstepgo.com";
@@ -82,26 +82,61 @@ async function request<T>(
 }
 
 async function tryRefresh(): Promise<boolean> {
-  const refreshToken = await getRefreshToken();
+  const refreshToken = await getRefreshToken().catch(() => null);
   if (!refreshToken) return false;
   try {
     const res = await fetch(`${API_URL}/api/v1/auth/refresh`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({ refresh_token: refreshToken }),
     });
     if (!res.ok) return false;
-    const json = (await res.json()) as {
-      access_token: string;
-      refresh_token: string;
-      user: AuthUser;
+    const json: unknown = await res.json();
+    const data = toCamelCase<{
+      accessToken: string;
+      refreshToken: string;
       profile: Profile | null;
-    };
-    await saveTokens(json.access_token, json.refresh_token, json.user, json.profile);
+    }>(unwrapData(json));
+    const user = await getSavedUser();
+    if (!user) return false;
+    await saveTokens(data.accessToken, data.refreshToken, user, data.profile);
     return true;
   } catch {
-    await clearTokens();
+    await clearTokens().catch(() => undefined);
     return false;
+  }
+}
+
+export async function refreshSession() {
+  const refreshToken = await getRefreshToken().catch(() => null);
+  if (!refreshToken) return null;
+
+  try {
+    const res = await fetch(`${API_URL}/api/v1/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+    if (!res.ok) {
+      await clearTokens().catch(() => undefined);
+      return null;
+    }
+    const json: unknown = await res.json();
+    const data = toCamelCase<{
+      accessToken: string;
+      refreshToken: string;
+      profile: Profile | null;
+    }>(unwrapData(json));
+    const user = await getSavedUser();
+    if (!user) {
+      await clearTokens().catch(() => undefined);
+      return null;
+    }
+    await saveTokens(data.accessToken, data.refreshToken, user, data.profile);
+    return { user, profile: data.profile };
+  } catch {
+    await clearTokens().catch(() => undefined);
+    return null;
   }
 }
 
@@ -137,12 +172,14 @@ export async function loginApi(email: string, password: string) {
 export async function registerApi(
   email: string,
   password: string,
-  fullName: string,
+  nickname: string,
+  targetLevel: string,
+  targetDeadline: string,
 ) {
   const res = await fetch(`${API_URL}/api/v1/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ email, password, full_name: fullName }),
+    body: JSON.stringify({ email, password, nickname, target_level: targetLevel, target_deadline: targetDeadline }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({})) as Record<string, unknown>;
@@ -155,4 +192,13 @@ export async function registerApi(
     user: AuthUser;
     profile: Profile | null;
   }>(unwrapData(json));
+}
+
+export async function completeOnboardingApi(nickname: string, targetLevel: string, targetDeadline: string) {
+  return api.post<{
+    accessToken: string;
+    expiresIn: number;
+    profile: Profile;
+    onboardingBonus?: { amount: number; granted: boolean };
+  }>("/api/v1/auth/complete-onboarding", { nickname, targetLevel, targetDeadline });
 }

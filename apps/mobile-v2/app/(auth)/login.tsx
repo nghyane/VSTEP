@@ -52,7 +52,7 @@ export default function LoginScreen() {
     try {
       const res = await loginApi(email.trim(), password);
       await signIn(res.accessToken, res.refreshToken, res.user, res.profile);
-      if (!res.profile || res.profile.isInitialProfile) {
+      if (!res.profile) {
         router.replace("/(app)/onboarding");
       } else {
         router.replace("/(app)/(tabs)");

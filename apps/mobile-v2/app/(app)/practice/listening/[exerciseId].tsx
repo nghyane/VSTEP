@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation } from "@tanstack/react-query";
 import { Audio } from "expo-av";
+import { resolveAssetUrl } from "@/lib/asset-url";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
@@ -104,40 +105,54 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
   const [playing, setPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [audioError, setAudioError] = useState<string | null>(null);
   const progressAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (!exercise.audioUrl) return;
-    let s: Audio.Sound;
+    setAudioError(null);
+    const audioUrl = resolveAssetUrl(exercise.audioUrl);
+    let s: Audio.Sound | null = null;
     (async () => {
-      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-      const { sound: loaded } = await Audio.Sound.createAsync(
-        { uri: exercise.audioUrl },
-        { shouldPlay: false },
-        (status) => {
-          if (!status.isLoaded) return;
-          setPosition(status.positionMillis ?? 0);
-          setDuration(status.durationMillis ?? 0);
-          setPlaying(status.isPlaying);
-          if (status.durationMillis && status.durationMillis > 0) {
-            Animated.timing(progressAnim, {
-              toValue: (status.positionMillis ?? 0) / status.durationMillis,
-              duration: 100,
-              useNativeDriver: false,
-            }).start();
-          }
-        },
-      );
-      s = loaded;
-      setSound(loaded);
+      try {
+        await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+        const { sound: loaded } = await Audio.Sound.createAsync(
+          { uri: audioUrl },
+          { shouldPlay: false },
+          (status) => {
+            if (!status.isLoaded) return;
+            setPosition(status.positionMillis ?? 0);
+            setDuration(status.durationMillis ?? 0);
+            setPlaying(status.isPlaying);
+            if (status.durationMillis && status.durationMillis > 0) {
+              Animated.timing(progressAnim, {
+                toValue: (status.positionMillis ?? 0) / status.durationMillis,
+                duration: 100,
+                useNativeDriver: false,
+              }).start();
+            }
+          },
+        );
+        s = loaded;
+        setSound(loaded);
+      } catch {
+        setSound(null);
+        setPlaying(false);
+        setAudioError("Không tải được audio. Vui lòng thử lại sau.");
+      }
     })();
-    return () => { s?.unloadAsync(); };
+    return () => { s?.unloadAsync().catch(() => undefined); };
   }, [exercise.audioUrl]);
 
   async function togglePlay() {
     if (!sound) return;
-    if (playing) await sound.pauseAsync();
-    else await sound.playAsync();
+    try {
+      if (playing) await sound.pauseAsync();
+      else await sound.playAsync();
+    } catch {
+      setPlaying(false);
+      setAudioError("Không phát được audio. Vui lòng thử lại sau.");
+    }
   }
 
   function fmt(ms: number) {
@@ -169,7 +184,7 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
             <Text style={[s.audioDesc, { color: c.mutedForeground }]}>{exercise.description}</Text>
           )}
           <View style={s.audioControls}>
-            <TouchableOpacity onPress={togglePlay} style={[s.playBtn, { backgroundColor: COLOR }]}>
+            <TouchableOpacity onPress={togglePlay} disabled={!sound || !!audioError} style={[s.playBtn, { backgroundColor: audioError ? c.mutedForeground : COLOR }]}>
               <Ionicons name={playing ? "pause" : "play"} size={22} color="#fff" />
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
@@ -182,6 +197,7 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
               </View>
             </View>
           </View>
+          {audioError && <Text style={[s.audioError, { color: c.destructive }]}>{audioError}</Text>}
         </View>
 
         {/* Result */}
@@ -306,6 +322,7 @@ const s = StyleSheet.create({
   audioFill: { height: "100%", borderRadius: 3 },
   audioTimes: { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
   audioTime: { fontSize: 10 },
+  audioError: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },
   // Result
   resultCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.xl, alignItems: "center" },
   resultScore: { fontSize: fontSize["3xl"], fontFamily: fontFamily.extraBold },

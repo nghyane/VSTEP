@@ -20,6 +20,12 @@ import { Mascot } from "@/components/Mascot";
 import { registerApi } from "@/lib/api";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
+function targetDeadlineFromNow(): string {
+  const date = new Date();
+  date.setMonth(date.getMonth() + 6);
+  return date.toISOString().slice(0, 10);
+}
+
 export default function RegisterScreen() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
@@ -40,7 +46,7 @@ export default function RegisterScreen() {
 
   const validate = useCallback(() => {
     const e: typeof errors = {};
-    if (!fullName.trim()) e.fullName = "Vui lòng nhập họ tên";
+    if (!fullName.trim()) e.fullName = "Vui lòng nhập tên hồ sơ";
     const trimmed = email.trim();
     if (!trimmed) {
       e.email = "Vui lòng nhập email";
@@ -57,9 +63,9 @@ export default function RegisterScreen() {
     setErrors({});
     setLoading(true);
     try {
-      const res = await registerApi(email.trim(), password, fullName.trim());
+      const res = await registerApi(email.trim(), password, fullName.trim(), "B2", targetDeadlineFromNow());
       await signIn(res.accessToken, res.refreshToken, res.user, res.profile);
-      router.replace("/(app)/onboarding");
+      router.replace("/(app)/(tabs)");
     } catch (err) {
       setErrors({ general: err instanceof Error ? err.message : "Đã xảy ra lỗi. Thử lại." });
     } finally {
@@ -102,12 +108,12 @@ export default function RegisterScreen() {
           )}
 
           <View style={s.fieldGroup}>
-            <Text style={[s.label, { color: c.foreground }]}>Họ và tên</Text>
+            <Text style={[s.label, { color: c.foreground }]}>Tên hồ sơ</Text>
             <View style={[s.inputWrap, { borderColor: errors.fullName ? c.destructive : fullName ? c.borderFocus : c.border }]}>
               <Ionicons name="person-outline" size={18} color={c.mutedForeground} />
               <TextInput
                 style={[s.input, { color: c.foreground }]}
-                placeholder="Nguyễn Văn A"
+                placeholder="Tên bạn muốn dùng"
                 placeholderTextColor={c.placeholder}
                 value={fullName}
                 onChangeText={setFullName}

@@ -1,7 +1,10 @@
 import { createContext, useContext } from "react";
 import type { AuthUser, Profile } from "@/types/api";
 
+export type AuthStatus = "initializing" | "authenticated" | "unauthenticated";
+
 interface AuthCtx {
+  status: AuthStatus;
   user: AuthUser | null;
   profile: Profile | null;
   isLoading: boolean;
@@ -15,6 +18,7 @@ interface AuthCtx {
 }
 
 export const AuthContext = createContext<AuthCtx>({
+  status: "initializing",
   user: null,
   profile: null,
   isLoading: true,

@@ -8,6 +8,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
+import { resolveAssetUrl } from "@/lib/asset-url";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
@@ -283,23 +284,38 @@ function ListeningPanel({ sections, sessionId, answers, onAnswer, c, insets }: a
   const section = sections[sectionIdx];
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [audioError, setAudioError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!section?.audioUrl) return;
-    let snd: Audio.Sound;
+    setAudioError(null);
+    const audioUrl = resolveAssetUrl(section.audioUrl);
+    let snd: Audio.Sound | null = null;
     (async () => {
-      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-      const { sound: loaded } = await Audio.Sound.createAsync({ uri: section.audioUrl }, { shouldPlay: false }, (st) => {
-        if (st.isLoaded) setPlaying(st.isPlaying);
-      });
-      snd = loaded; setSound(loaded);
+      try {
+        await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+        const { sound: loaded } = await Audio.Sound.createAsync({ uri: audioUrl }, { shouldPlay: false }, (st) => {
+          if (st.isLoaded) setPlaying(st.isPlaying);
+        });
+        snd = loaded;
+        setSound(loaded);
+      } catch {
+        setSound(null);
+        setPlaying(false);
+        setAudioError("Không tải được audio. Vui lòng thử lại sau.");
+      }
     })();
-    return () => { snd?.unloadAsync(); };
+    return () => { snd?.unloadAsync().catch(() => undefined); };
   }, [section?.id]);
 
   async function togglePlay() {
     if (!sound) return;
-    if (playing) await sound.pauseAsync(); else await sound.playAsync();
+    try {
+      if (playing) await sound.pauseAsync(); else await sound.playAsync();
+    } catch {
+      setPlaying(false);
+      setAudioError("Không phát được audio. Vui lòng thử lại sau.");
+    }
   }
 
   return (
@@ -315,10 +331,11 @@ function ListeningPanel({ sections, sessionId, answers, onAnswer, c, insets }: a
       )}
       <View style={[s.audioCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
         <Text style={[s.audioPartLabel, { color: "#1CB0F6" }]}>Part {section.part} · {section.partTitle}</Text>
-        <TouchableOpacity onPress={togglePlay} style={[s.playBtn, { backgroundColor: "#1CB0F6" }]}>
+        <TouchableOpacity onPress={togglePlay} disabled={!sound || !!audioError} style={[s.playBtn, { backgroundColor: audioError ? c.mutedForeground : "#1CB0F6" }]}>
           <Ionicons name={playing ? "pause" : "play"} size={22} color="#fff" />
           <Text style={s.playBtnText}>{playing ? "Tạm dừng" : "Phát audio"}</Text>
         </TouchableOpacity>
+        {audioError && <Text style={[s.audioError, { color: c.destructive }]}>{audioError}</Text>}
       </View>
       {section.items.map((item: ExamVersionMcqItem, qi: number) => (
         <McqCard key={item.id} item={item} index={qi} selected={answers.get(item.id) ?? null} onSelect={(idx: number) => onAnswer(item.id, idx)} color="#1CB0F6" c={c} />
@@ -590,6 +607,7 @@ const s = StyleSheet.create({
   audioPartLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
   playBtn: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderRadius: radius.full, alignSelf: "flex-start" },
   playBtnText: { color: "#fff", fontSize: fontSize.sm, fontFamily: fontFamily.bold },
+  audioError: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },
   // Passage
   passageCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md },
   passageTitle: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
