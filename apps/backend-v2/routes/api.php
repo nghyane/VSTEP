@@ -113,6 +113,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/exam-sessions/{sessionId}', [ExamController::class, 'showSession']);
         Route::get('/exam-sessions/{sessionId}/results', [ExamController::class, 'sessionResults']);
         Route::post('/exam-sessions/{sessionId}/submit', [ExamController::class, 'submit']);
+        Route::post('/exam-sessions/{sessionId}/abandon', [ExamController::class, 'abandon']);
         Route::post('/exam-sessions/{sessionId}/listening-played', [ExamController::class, 'logListeningPlayed']);
         Route::get('/exam-sessions/{sessionId}/listening-played', [ExamController::class, 'listeningPlaySummary']);
         Route::get('/exam-sessions/{sessionId}/writing-results', [ExamController::class, 'writingResults']);

@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useEffect, useReducer, useRef } from "react"
 import { submitExamSession } from "#/features/exam/actions"
 import type {
@@ -119,6 +119,63 @@ function buildMcqPayload(
 		}))
 }
 
+// ─── Draft persistence (localStorage) ────────────────────────────────────────
+// User có thể thoát giữa chừng (đóng tab, crash, refresh). BE không lưu draft
+// → persist MCQ / writing / speakingDone / skillIdx vào localStorage để user
+// quay lại có thể tiếp tục làm. Speaking audio URL nằm trong children nên user
+// vẫn phải ghi âm lại; các phần khác được khôi phục đầy đủ.
+
+const DRAFT_VERSION = 1
+const draftKey = (sessionId: string) => `exam-draft:v${DRAFT_VERSION}:${sessionId}`
+
+interface PersistedDraft {
+	skillIdx: number
+	mcqAnswers: Array<[string, number]>
+	writingAnswers: Array<[string, string]>
+	speakingDone: string[]
+	savedAt: number
+}
+
+function loadDraft(sessionId: string, deadlineAt: string): PersistedDraft | null {
+	if (typeof window === "undefined") return null
+	try {
+		const raw = window.localStorage.getItem(draftKey(sessionId))
+		if (!raw) return null
+		if (new Date(deadlineAt).getTime() <= Date.now()) {
+			window.localStorage.removeItem(draftKey(sessionId))
+			return null
+		}
+		return JSON.parse(raw) as PersistedDraft
+	} catch {
+		return null
+	}
+}
+
+function saveDraft(sessionId: string, state: ExamState): void {
+	if (typeof window === "undefined") return
+	try {
+		const payload: PersistedDraft = {
+			skillIdx: state.skillIdx,
+			mcqAnswers: Array.from(state.mcqAnswers),
+			writingAnswers: Array.from(state.writingAnswers),
+			speakingDone: Array.from(state.speakingDone),
+			savedAt: Date.now(),
+		}
+		window.localStorage.setItem(draftKey(sessionId), JSON.stringify(payload))
+	} catch {
+		// storage full / disabled — silently ignore
+	}
+}
+
+function clearDraft(sessionId: string): void {
+	if (typeof window === "undefined") return
+	try {
+		window.localStorage.removeItem(draftKey(sessionId))
+	} catch {
+		// ignore
+	}
+}
+
 // ─── Main hook ────────────────────────────────────────────────────────────────
 
 const SKILL_ORDER: SkillKey[] = ["listening", "reading", "writing", "speaking"]
@@ -138,20 +195,35 @@ export function useExamSession({
 }: UseExamSessionOptions) {
 	const activeSkills = SKILL_ORDER.filter((sk) => session.selected_skills.includes(sk))
 
-	const [state, dispatch] = useReducer(examReducer, {
-		phase: "device-check" as const,
-		skillIdx: 0,
-		mcqAnswers: new Map<string, number>(),
-		writingAnswers: new Map<string, string>(),
-		speakingDone: new Set<string>(),
-		confirmSubmit: false,
-		confirmNextSkill: false,
-	} satisfies ExamState)
+	const [state, dispatch] = useReducer(examReducer, undefined, (): ExamState => {
+		const draft = loadDraft(session.id, session.server_deadline_at)
+		return {
+			// Có draft => user đã bắt đầu làm => bỏ qua device-check
+			phase: draft ? "active" : "device-check",
+			skillIdx: draft?.skillIdx ?? 0,
+			mcqAnswers: new Map(draft?.mcqAnswers ?? []),
+			writingAnswers: new Map(draft?.writingAnswers ?? []),
+			speakingDone: new Set(draft?.speakingDone ?? []),
+			confirmSubmit: false,
+			confirmNextSkill: false,
+		}
+	})
 
+	// Persist draft khi state thay đổi trong lúc làm bài; xoá khi submit xong.
+	useEffect(() => {
+		if (state.phase === "active") {
+			saveDraft(session.id, state)
+		} else if (state.phase === "submitted") {
+			clearDraft(session.id)
+		}
+	}, [state, session.id])
+
+	const qc = useQueryClient()
 	const submitMutation = useMutation({
 		mutationFn: (payload: McqAnswerPayload[]) => submitExamSession(session.id, { mcq_answers: payload }),
 		onSuccess: (result) => {
 			dispatch({ type: "SUBMITTED" })
+			qc.invalidateQueries({ queryKey: ["exam-sessions", "active"] })
 			onSubmitted(result)
 		},
 	})

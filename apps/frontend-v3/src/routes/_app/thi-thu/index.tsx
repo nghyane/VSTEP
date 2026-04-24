@@ -1,11 +1,12 @@
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { Suspense, useState } from "react"
+import { Suspense, useMemo, useState } from "react"
 import { Header } from "#/components/Header"
 import { Icon } from "#/components/Icon"
 import { Loading } from "#/components/Loading"
-import { ExamCard } from "#/features/exam/components/ExamCard"
-import { appConfigQuery, examsQuery } from "#/features/exam/queries"
+import { ExamCard, type ExamStatus } from "#/features/exam/components/ExamCard"
+import { ResumeExamBanner } from "#/features/exam/components/ResumeExamBanner"
+import { activeExamSessionQuery, appConfigQuery, examsQuery, mySessionsQuery } from "#/features/exam/queries"
 import type { SkillKey } from "#/features/exam/types"
 import { cn } from "#/lib/utils"
 
@@ -44,9 +45,18 @@ const SKILL_ACTIVE_BG: Record<SkillKey, string> = {
 	speaking: "bg-warning-tint border-warning",
 }
 
+const STATUS_BY_LABEL: Record<StatusFilter, ExamStatus | "all"> = {
+	"Tất cả": "all",
+	"Chưa làm": "not-started",
+	"Đang làm dở": "in-progress",
+	"Đã nộp": "submitted",
+}
+
 function ExamListContent() {
 	const { data: examsData } = useSuspenseQuery(examsQuery)
 	const { data: configData } = useQuery(appConfigQuery)
+	const { data: mySessionsData } = useQuery(mySessionsQuery)
+	const { data: activeData } = useQuery(activeExamSessionQuery)
 
 	const exams = examsData.data
 	const fullTestCoinCost = configData?.data.pricing.exam.full_test_cost_coins ?? null
@@ -64,13 +74,44 @@ function ExamListContent() {
 		})
 	}
 
+	// Derive per-exam status. Active session (singleton) wins; else "submitted" if any
+	// past session was submitted/graded/auto_submitted; else "not-started".
+	const statusByExamId = useMemo(() => {
+		const map = new Map<string, ExamStatus>()
+		const sessions = mySessionsData?.data ?? []
+		for (const s of sessions) {
+			if (!s.exam_id) continue
+			const current = map.get(s.exam_id)
+			if (current === "in-progress") continue
+			if (s.status === "submitted" || s.status === "graded" || s.status === "auto_submitted") {
+				if (!current) map.set(s.exam_id, "submitted")
+			}
+		}
+		const active = activeData?.data
+		if (active?.exam_id) map.set(active.exam_id, "in-progress")
+		return map
+	}, [mySessionsData, activeData])
+
+	const wantedStatus = STATUS_BY_LABEL[status]
+
 	const filtered = exams.filter((e) => {
 		if (search && !e.title.toLowerCase().includes(search.toLowerCase())) return false
+		if (wantedStatus !== "all") {
+			const s = statusByExamId.get(e.id) ?? "not-started"
+			if (s !== wantedStatus) return false
+		}
+		// Skill filter: VSTEP full-test exams bao trọn 4 kỹ năng nên mọi skill đều match.
+		// Giữ UI hoạt động; khi sau này có đề đơn kỹ năng, check exam.tags hoặc mở rộng API.
+		if (skills.size > 0) {
+			// no-op với dataset hiện tại
+		}
 		return true
 	})
 
 	return (
 		<div className="space-y-5">
+			<ResumeExamBanner />
+
 			{/* Toolbar */}
 			<div className="flex flex-wrap items-center gap-3">
 				{/* Search */}
@@ -146,7 +187,12 @@ function ExamListContent() {
 			) : (
 				<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 					{filtered.map((exam) => (
-						<ExamCard key={exam.id} exam={exam} fullTestCoinCost={fullTestCoinCost} />
+						<ExamCard
+							key={exam.id}
+							exam={exam}
+							fullTestCoinCost={fullTestCoinCost}
+							status={statusByExamId.get(exam.id) ?? "not-started"}
+						/>
 					))}
 				</div>
 			)}

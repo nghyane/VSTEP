@@ -106,6 +106,31 @@ export interface StartSessionResult {
 	status: string
 }
 
+export interface ExamSessionSummary {
+	id: string
+	exam_id: string | null
+	exam_version_id: string
+	mode: "full" | "custom"
+	is_full_test: boolean
+	status: "active" | "submitted" | "graded" | "auto_submitted"
+	started_at: string
+	submitted_at: string | null
+	scores: unknown
+}
+
+export interface ActiveExamSession {
+	id: string
+	exam_id: string
+	exam_version_id: string
+	mode: "full" | "custom"
+	selected_skills: SkillKey[]
+	is_full_test: boolean
+	started_at: string
+	server_deadline_at: string
+	status: "active"
+	coins_charged: number
+}
+
 export interface ExamSessionData {
 	id: string
 	profile_id: string
