@@ -1,4 +1,3 @@
-// Onboarding — 4 bước theo docs: Chào mừng → Band mục tiêu → Thời gian học → Thời hạn
 import { useState, useRef, useEffect } from "react";
 import {
   Animated,
@@ -13,6 +12,10 @@ import { Mascot, type MascotName } from "@/components/Mascot";
 import { DepthButton } from "@/components/DepthButton";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { useAuth } from "@/hooks/use-auth";
+import { api } from "@/lib/api";
+import { getRefreshToken, saveTokens } from "@/lib/auth";
+import type { AuthUser, Profile } from "@/types/api";
 
 type Level = "B1" | "B2" | "C1";
 type StudyTime = 15 | 30 | 45 | 60;
@@ -29,6 +32,8 @@ export default function OnboardingScreen() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { user, profile, signIn } = useAuth();
+  const [finishing, setFinishing] = useState(false);
   const [step, setStep] = useState(0);
   const [target, setTarget] = useState<Level>("B2");
   const [studyTime, setStudyTime] = useState<StudyTime>(30);
@@ -51,12 +56,28 @@ export default function OnboardingScreen() {
     }).start();
   }, [step]);
 
-  function next() {
+  async function next() {
     if (step < STEP_META.length - 1) {
       slideAnim.setValue(20);
       setStep(step + 1);
     } else {
-      router.replace("/(app)/(tabs)");
+      // Bước cuối: switch-profile để reissue token với active_profile_id
+      if (!profile) { router.replace("/(app)/(tabs)"); return; }
+      setFinishing(true);
+      try {
+        const refreshToken = await getRefreshToken();
+        const res = await api.post<{ accessToken: string; refreshToken: string; profile: Profile }>(
+          "/api/v1/auth/switch-profile",
+          { profile_id: profile.id, refresh_token: refreshToken },
+        );
+        await saveTokens(res.accessToken, res.refreshToken, user!, res.profile);
+        await signIn(res.accessToken, res.refreshToken, user!, res.profile);
+      } catch {
+        // Nếu fail vẫn vào app, token cũ sẽ dùng được nếu đã có profile
+      } finally {
+        setFinishing(false);
+        router.replace("/(app)/(tabs)");
+      }
     }
   }
 
@@ -243,8 +264,8 @@ export default function OnboardingScreen() {
 
       {/* CTA */}
       <View style={[s.footer, { paddingBottom: insets.bottom + spacing.xl }]}>
-        <DepthButton fullWidth size="lg" onPress={next}>
-          {step === STEP_META.length - 1 ? "Bắt đầu học tập!" : "Tiếp theo"}
+        <DepthButton fullWidth size="lg" onPress={next} disabled={finishing}>
+          {finishing ? "Đang xử lý..." : step === STEP_META.length - 1 ? "Bắt đầu học tập!" : "Tiếp theo"}
         </DepthButton>
       </View>
     </View>

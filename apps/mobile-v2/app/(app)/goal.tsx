@@ -28,9 +28,9 @@ export default function GoalScreen() {
         <Mascot name="hero" size={100} animation="float" />
       </View>
 
-      <Text style={[s.title, { color: c.foreground }]}>Muc tieu VSTEP</Text>
+      <Text style={[s.title, { color: c.foreground }]}>Mục tiêu VSTEP</Text>
       <Text style={[s.sub, { color: c.mutedForeground }]}>
-        Chon band VSTEP ban muon dat duoc
+        Chọn band VSTEP bạn muốn đạt được
       </Text>
 
       <View style={s.levelList}>
@@ -65,7 +65,7 @@ export default function GoalScreen() {
       </View>
 
       <DepthButton fullWidth size="lg" onPress={() => router.back()}>
-        Luu muc tieu
+        Lưu mục tiêu
       </DepthButton>
     </ScrollView>
   );
@@ -73,11 +73,11 @@ export default function GoalScreen() {
 
 function getLevelDesc(level: Level): string {
   switch (level) {
-    case "A1": return "Nguoi moi bat dau";
-    case "A2": return "So cap";
-    case "B1": return "Trung cap";
-    case "B2": return "Tren trung cap";
-    case "C1": return "Nang cao";
+    case "A1": return "Người mới bắt đầu";
+    case "A2": return "Sơ cấp";
+    case "B1": return "Trung cấp";
+    case "B2": return "Trên trung cấp";
+    case "C1": return "Nâng cao";
   }
 }
 
