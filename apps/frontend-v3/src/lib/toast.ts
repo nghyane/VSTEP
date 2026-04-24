@@ -1,9 +1,9 @@
 import { create } from "zustand"
 
-interface Toast {
+export interface Toast {
 	id: number
 	message: string
-	type: "error" | "success"
+	type: "error" | "success" | "warning" | "info"
 }
 
 interface ToastStore {

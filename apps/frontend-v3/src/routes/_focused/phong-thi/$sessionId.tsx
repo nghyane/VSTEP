@@ -69,13 +69,18 @@ function ConfirmDialog({
 	if (!open) return null
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-			<div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={onCancel} />
-			<div className="relative w-full max-w-sm rounded-(--radius-banner) border-2 border-border bg-surface p-6 shadow-xl">
+			<button
+				type="button"
+				aria-label="Đóng"
+				onClick={onCancel}
+				className="absolute inset-0 bg-foreground/45 backdrop-blur-sm"
+			/>
+			<div className="relative w-full max-w-sm rounded-(--radius-card) border-2 border-b-4 border-border bg-card p-6 shadow-[0_12px_28px_rgb(0_0_0_/_0.12)] animate-[slideIn_0.18s_ease-out]">
 				{/* Close */}
 				<button
 					type="button"
 					onClick={onCancel}
-					className="absolute right-4 top-4 flex size-7 items-center justify-center rounded-full text-muted hover:bg-surface hover:text-foreground transition-colors"
+					className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface hover:text-foreground"
 					aria-label="Đóng"
 				>
 					<svg
@@ -83,7 +88,7 @@ function ConfirmDialog({
 						className="size-4"
 						fill="none"
 						stroke="currentColor"
-						strokeWidth="2"
+						strokeWidth="2.2"
 						strokeLinecap="round"
 						aria-hidden="true"
 					>
@@ -91,14 +96,14 @@ function ConfirmDialog({
 					</svg>
 				</button>
 
-				{/* Icon */}
-				<div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-warning-tint">
+				{/* Icon — raised warning chip */}
+				<div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full border-2 border-b-4 border-warning/30 bg-warning-tint">
 					<svg
 						viewBox="0 0 24 24"
-						className="size-6 text-warning"
+						className="size-7 text-warning"
 						fill="none"
 						stroke="currentColor"
-						strokeWidth="2"
+						strokeWidth="2.2"
 						strokeLinecap="round"
 						strokeLinejoin="round"
 						aria-hidden="true"
@@ -109,20 +114,26 @@ function ConfirmDialog({
 					</svg>
 				</div>
 
-				<h2 className="mb-2 text-center text-base font-extrabold text-foreground">{title}</h2>
-				<p className="mb-4 text-center text-sm leading-relaxed text-muted">{description}</p>
+				<h2 className="mb-1.5 text-center text-lg font-extrabold text-foreground">{title}</h2>
+				<p className="mb-5 text-center text-sm leading-relaxed text-muted">{description}</p>
 
 				{warning && (
-					<p className="mb-4 rounded-(--radius-button) bg-warning-tint px-3 py-2 text-center text-xs font-bold text-warning">
+					<div className="mb-5 flex items-center justify-center gap-2 rounded-(--radius-button) border-2 border-warning/30 bg-warning-tint px-3 py-2 text-center text-xs font-extrabold text-warning">
+						<span
+							aria-hidden="true"
+							className="flex size-4 shrink-0 items-center justify-center rounded-full bg-warning text-[10px] font-black text-white"
+						>
+							!
+						</span>
 						{warning}
-					</p>
+					</div>
 				)}
 
-				<div className="flex gap-2">
+				<div className="flex gap-2.5">
 					<button
 						type="button"
 						onClick={onCancel}
-						className="flex-1 rounded-(--radius-button) border-2 border-b-4 border-border bg-surface px-4 py-2 text-sm font-bold text-foreground transition-all hover:bg-background active:translate-y-[2px] active:border-b-2"
+						className="flex-1 rounded-(--radius-button) border-2 border-b-4 border-border bg-surface px-4 py-2.5 text-sm font-extrabold text-foreground transition-all hover:border-primary/40 active:translate-y-[2px] active:border-b-2"
 					>
 						Ở lại
 					</button>
@@ -130,9 +141,9 @@ function ConfirmDialog({
 						type="button"
 						onClick={onConfirm}
 						disabled={isLoading}
-						className="flex-1 rounded-(--radius-button) bg-primary px-4 py-2 text-sm font-bold text-white shadow-[0_3px_0_var(--color-primary-dark)] transition-all hover:opacity-90 active:translate-y-[2px] active:shadow-[0_1px_0_var(--color-primary-dark)] disabled:opacity-50"
+						className="btn btn-primary flex-1 text-sm disabled:cursor-not-allowed disabled:opacity-60"
 					>
-						{isLoading ? "Đang nộp..." : confirmLabel}
+						{isLoading ? "Đang nộp…" : confirmLabel}
 					</button>
 				</div>
 			</div>
@@ -276,6 +287,7 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 		handleAnswerMcq,
 		handleAnswerWriting,
 		handleMarkSpeakingDone,
+		handleUnmarkSpeakingDone,
 		handleConfirmNext,
 		handleShowConfirmNext,
 		handleHideConfirmNext,
@@ -380,6 +392,7 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 						parts={version.speaking_parts}
 						speakingDone={state.speakingDone}
 						onMarkDone={handleMarkSpeakingDone}
+						onUnmarkDone={handleUnmarkSpeakingDone}
 						footer={{
 							skillLabel: SKILL_LABEL.speaking,
 							skillProgress,

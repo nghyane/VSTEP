@@ -28,6 +28,7 @@ type ExamAction =
 	| { type: "ANSWER_MCQ"; itemId: string; selectedIndex: number }
 	| { type: "ANSWER_WRITING"; taskId: string; text: string }
 	| { type: "MARK_SPEAKING_DONE"; partId: string }
+	| { type: "UNMARK_SPEAKING_DONE"; partId: string }
 	| { type: "NEXT_SKILL" }
 	| { type: "SHOW_CONFIRM_SUBMIT" }
 	| { type: "HIDE_CONFIRM_SUBMIT" }
@@ -53,6 +54,11 @@ function examReducer(state: ExamState, action: ExamAction): ExamState {
 		case "MARK_SPEAKING_DONE": {
 			const next = new Set(state.speakingDone)
 			next.add(action.partId)
+			return { ...state, speakingDone: next }
+		}
+		case "UNMARK_SPEAKING_DONE": {
+			const next = new Set(state.speakingDone)
+			next.delete(action.partId)
 			return { ...state, speakingDone: next }
 		}
 		case "NEXT_SKILL":
@@ -164,6 +170,10 @@ export function useExamSession({
 		dispatch({ type: "MARK_SPEAKING_DONE", partId })
 	}, [])
 
+	const handleUnmarkSpeakingDone = useCallback((partId: string) => {
+		dispatch({ type: "UNMARK_SPEAKING_DONE", partId })
+	}, [])
+
 	const handleConfirmNext = useCallback(() => dispatch({ type: "NEXT_SKILL" }), [])
 	const handleShowConfirmNext = useCallback(() => dispatch({ type: "SHOW_CONFIRM_NEXT" }), [])
 	const handleHideConfirmNext = useCallback(() => dispatch({ type: "HIDE_CONFIRM_NEXT" }), [])
@@ -182,7 +192,9 @@ export function useExamSession({
 	const currentSkill = activeSkills[state.skillIdx] ?? activeSkills[0]
 	const isLastSkill = state.skillIdx >= activeSkills.length - 1
 	const nextSkill = activeSkills[state.skillIdx + 1] ?? null
-	const totalMcq = listeningItems.length + readingItems.length
+	const totalMcq =
+		(activeSkills.includes("listening") ? listeningItems.length : 0) +
+		(activeSkills.includes("reading") ? readingItems.length : 0)
 	const answeredMcq = state.mcqAnswers.size
 
 	return {
@@ -198,6 +210,7 @@ export function useExamSession({
 		handleAnswerMcq,
 		handleAnswerWriting,
 		handleMarkSpeakingDone,
+		handleUnmarkSpeakingDone,
 		handleConfirmNext,
 		handleShowConfirmNext,
 		handleHideConfirmNext,
