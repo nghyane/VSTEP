@@ -25,6 +25,16 @@ export function formatMinutes(m: number): string {
 	return h > 0 ? `${h}h ${min}m` : `${min}m`
 }
 
+/** Format VND amount → "30.000đ". */
+export function formatVnd(n: number): string {
+	return `${n.toLocaleString("vi-VN")}đ`
+}
+
+/** Format coin/number với phân cách nghìn kiểu VN. */
+export function formatNumber(n: number): string {
+	return n.toLocaleString("vi-VN")
+}
+
 /** Format ISO date → "05/04". */
 export function formatShortDate(iso: string): string {
 	const d = new Date(iso)

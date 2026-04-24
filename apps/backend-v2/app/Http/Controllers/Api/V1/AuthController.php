@@ -15,6 +15,7 @@ use App\Http\Requests\Auth\SwitchProfileRequest;
 use App\Http\Resources\ProfileResource;
 use App\Http\Resources\UserResource;
 use App\Models\Profile;
+use App\Models\SystemConfig;
 use App\Models\User;
 use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
@@ -42,6 +43,7 @@ class AuthController extends Controller
             'access_token' => $result['access_token'],
             'refresh_token' => $result['refresh_token'],
             'expires_in' => $result['expires_in'],
+            'onboarding_bonus' => $this->onboardingBonusPayload(),
         ]], 201);
     }
 
@@ -99,6 +101,7 @@ class AuthController extends Controller
             'profile' => new ProfileResource($result['profile']),
             'access_token' => $result['access_token'],
             'expires_in' => $result['expires_in'],
+            'onboarding_bonus' => $this->onboardingBonusPayload(),
         ]]);
     }
 
@@ -142,6 +145,16 @@ class AuthController extends Controller
         );
 
         return response()->json(['data' => ['success' => true]]);
+    }
+
+    /**
+     * @return array{amount:int,granted:bool}
+     */
+    private function onboardingBonusPayload(): array
+    {
+        $amount = (int) (SystemConfig::get('onboarding.initial_coins') ?? 0);
+
+        return ['amount' => $amount, 'granted' => $amount > 0];
     }
 
     public function me(Request $request): JsonResponse

@@ -196,7 +196,7 @@ function CostBadge({ cost, insufficient }: { cost: number; insufficient: boolean
 				insufficient ? "text-destructive" : "text-coin-dark",
 			)}
 		>
-			<StaticIcon name="gem-color" size="xs" className={insufficient ? "opacity-50 grayscale" : undefined} />
+			<StaticIcon name="coin" size="xs" className={insufficient ? "opacity-50 grayscale" : undefined} />
 			{cost} xu
 		</span>
 	)

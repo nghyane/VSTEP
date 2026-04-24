@@ -1,10 +1,12 @@
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
+import { useState } from "react"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { ProfileDropdown } from "#/components/ProfileDropdown"
 import { streakQuery } from "#/features/dashboard/queries"
 import { unreadCountQuery } from "#/features/notifications/queries"
 import { walletBalanceQuery } from "#/features/wallet/queries"
+import { TopUpDialog } from "#/features/wallet/TopUpDialog"
 import { useSession } from "#/lib/auth"
 
 interface Props {
@@ -22,6 +24,7 @@ export function Header({ title, backTo }: Props) {
 	const streak = streakData ? streakData.data.current_streak : null
 	const unread = unreadData ? unreadData.data.count : 0
 	const initial = profile.nickname.charAt(0).toUpperCase()
+	const [topupOpen, setTopupOpen] = useState(false)
 
 	return (
 		<div className="sticky top-0 z-10 bg-background px-10 pt-8 pb-5 flex items-center justify-between">
@@ -34,16 +37,26 @@ export function Header({ title, backTo }: Props) {
 				<h2 className="font-extrabold text-2xl text-foreground">{title}</h2>
 			</div>
 			<div className="flex items-center gap-6">
-				<div className="flex items-center gap-2">
-					<StaticIcon name="gem-color" size="sm" />
+				<button
+					type="button"
+					onClick={() => setTopupOpen(true)}
+					aria-label="Nạp xu"
+					className="group flex items-center gap-2 cursor-pointer"
+				>
+					<StaticIcon
+						name="coin"
+						size="sm"
+						className="origin-center group-hover:animate-[coinPinch_600ms_ease-in-out]"
+					/>
 					<span className="font-bold text-base text-coin-dark">{balance !== null ? balance : "–"}</span>
-				</div>
+				</button>
 				<div className="flex items-center gap-2">
 					<StaticIcon name="streak-sm" size="sm" />
 					<span className="font-bold text-base text-streak">{streak !== null ? streak : "–"}</span>
 				</div>
 				<ProfileDropdown unread={unread} initial={initial} />
 			</div>
+			<TopUpDialog open={topupOpen} onClose={() => setTopupOpen(false)} />
 		</div>
 	)
 }

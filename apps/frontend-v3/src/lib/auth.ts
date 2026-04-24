@@ -1,5 +1,6 @@
 import { HTTPError } from "ky"
 import { create } from "zustand"
+import { useWelcomeGift } from "#/features/onboarding/use-welcome-gift"
 import { type ApiResponse, api } from "#/lib/api"
 import { queryClient } from "#/lib/query-client"
 import { useToast } from "#/lib/toast"
@@ -15,11 +16,17 @@ function showError(error: unknown) {
 	}
 }
 
+interface OnboardingBonus {
+	amount: number
+	granted: boolean
+}
+
 interface AuthResponse {
 	access_token: string
 	refresh_token: string
 	user: User
 	profile: Profile
+	onboarding_bonus?: OnboardingBonus
 }
 
 interface GoogleLoginResponse {
@@ -35,6 +42,7 @@ interface CompleteOnboardingResponse {
 	access_token: string
 	expires_in: number
 	profile: Profile
+	onboarding_bonus?: OnboardingBonus
 }
 
 interface RefreshResponse {
@@ -112,7 +120,11 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 			tokens.setUser(data.user)
 			queryClient.clear()
 			set({ status: "authenticated", user: data.user, profile: data.profile })
-			useToast.getState().add("Tạo tài khoản thành công", "success")
+			if (data.onboarding_bonus?.granted) {
+				useWelcomeGift.getState().show(data.onboarding_bonus.amount)
+			} else {
+				useToast.getState().add("Tạo tài khoản thành công", "success")
+			}
 		} catch (e) {
 			showError(e)
 		}
@@ -153,7 +165,11 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 			const user = tokens.getUser()
 			if (user) {
 				set({ status: "authenticated", user, profile: data.profile })
-				useToast.getState().add("Hoàn tất thiết lập", "success")
+				if (data.onboarding_bonus?.granted) {
+					useWelcomeGift.getState().show(data.onboarding_bonus.amount)
+				} else {
+					useToast.getState().add("Hoàn tất thiết lập", "success")
+				}
 			}
 		} catch (e) {
 			showError(e)

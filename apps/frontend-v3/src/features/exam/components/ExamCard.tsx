@@ -75,7 +75,7 @@ export function ExamCard({ exam, fullTestCoinCost }: Props) {
 				<div className="flex items-center gap-3">
 					{fullTestCoinCost !== null && (
 						<span className="flex items-center gap-1">
-							<StaticIcon name="gem-color" size="xs" />
+							<StaticIcon name="coin" size="xs" />
 							<span className="text-xs font-bold text-coin-dark">{fullTestCoinCost}</span>
 						</span>
 					)}
