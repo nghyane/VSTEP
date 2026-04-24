@@ -20,7 +20,9 @@ class ExamVersionListeningSection extends BaseModel
 
     public function items(): HasMany
     {
+        // UUIDv7 id là tiebreaker ổn định (time-ordered) khi display_order trùng.
         return $this->hasMany(ExamVersionListeningItem::class, 'section_id')
-            ->orderBy('display_order');
+            ->orderBy('display_order')
+            ->orderBy('id');
     }
 }

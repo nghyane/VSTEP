@@ -27,27 +27,31 @@ class ExamVersion extends BaseModel
     {
         return $this->hasMany(ExamVersionListeningSection::class)
             ->orderBy('part')
-            ->orderBy('display_order');
+            ->orderBy('display_order')
+            ->orderBy('id');
     }
 
     public function readingPassages(): HasMany
     {
         return $this->hasMany(ExamVersionReadingPassage::class)
             ->orderBy('part')
-            ->orderBy('display_order');
+            ->orderBy('display_order')
+            ->orderBy('id');
     }
 
     public function writingTasks(): HasMany
     {
         return $this->hasMany(ExamVersionWritingTask::class)
             ->orderBy('part')
-            ->orderBy('display_order');
+            ->orderBy('display_order')
+            ->orderBy('id');
     }
 
     public function speakingParts(): HasMany
     {
         return $this->hasMany(ExamVersionSpeakingPart::class)
             ->orderBy('part')
-            ->orderBy('display_order');
+            ->orderBy('display_order')
+            ->orderBy('id');
     }
 }

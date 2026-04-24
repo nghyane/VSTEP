@@ -63,6 +63,19 @@ class ContentSeeder extends Seeder
 
         $this->validateExamFixtures($data);
 
+        // Fixture có nhiều item cùng display_order = 0 → sort không ổn định.
+        // Normalize lại theo thứ tự xuất hiện trong fixture (1-based per parent).
+        if (isset($data['exam_version_listening_items'])) {
+            $data['exam_version_listening_items'] = $this->normalizeDisplayOrder(
+                $data['exam_version_listening_items'], 'section_id'
+            );
+        }
+        if (isset($data['exam_version_reading_items'])) {
+            $data['exam_version_reading_items'] = $this->normalizeDisplayOrder(
+                $data['exam_version_reading_items'], 'passage_id'
+            );
+        }
+
         DB::transaction(function () use ($data) {
             foreach (array_reverse(self::TABLES) as $table) {
                 DB::table($table)->truncate();
@@ -143,6 +156,28 @@ class ContentSeeder extends Seeder
 
             exit(1);
         }
+    }
+
+    /**
+     * Reassign display_order = 1..N per parent, preserving current array order.
+     * Fix root cause: content.json has many items with display_order=0 → unstable sort.
+     *
+     * @param  list<array<string,mixed>>  $rows
+     * @return list<array<string,mixed>>
+     */
+    private function normalizeDisplayOrder(array $rows, string $parentKey): array
+    {
+        $counters = [];
+        foreach ($rows as &$row) {
+            $parent = $row[$parentKey] ?? null;
+            if ($parent === null) {
+                continue;
+            }
+            $counters[$parent] = ($counters[$parent] ?? 0) + 1;
+            $row['display_order'] = $counters[$parent];
+        }
+
+        return $rows;
     }
 
     /**
