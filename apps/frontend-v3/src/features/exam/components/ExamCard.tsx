@@ -1,30 +1,46 @@
 import { Link } from "@tanstack/react-router"
 import { Icon, StaticIcon } from "#/components/Icon"
-import type { Exam } from "#/features/exam/types"
-import { cn } from "#/lib/utils"
+import { SkillChip } from "#/components/SkillChip"
+import type { Exam, SkillKey } from "#/features/exam/types"
+
+export type ExamStatus = "not-started" | "in-progress" | "submitted"
 
 interface Props {
 	exam: Exam
 	fullTestCoinCost: number | null
+	status?: ExamStatus
 }
 
-const SKILL_COLORS: Record<string, string> = {
-	listening: "text-skill-listening",
-	reading: "text-skill-reading",
-	writing: "text-skill-writing",
-	speaking: "text-skill-speaking",
+const SKILL_ORDER: SkillKey[] = ["listening", "reading", "writing", "speaking"]
+
+function StatusBadge({ status }: { status: ExamStatus }) {
+	if (status === "in-progress") {
+		return (
+			<span className="inline-flex items-center gap-1.5 rounded-full border-2 border-b-4 border-warning/40 bg-warning-tint px-2.5 py-0.5 text-xs font-extrabold text-warning">
+				<span className="relative flex size-2">
+					<span className="absolute inline-flex size-full animate-ping rounded-full bg-warning opacity-60" />
+					<span className="relative inline-flex size-2 rounded-full bg-warning" />
+				</span>
+				Đang làm dở
+			</span>
+		)
+	}
+	if (status === "submitted") {
+		return (
+			<span className="inline-flex items-center gap-1.5 rounded-full border-2 border-b-4 border-primary/40 bg-primary-tint px-2.5 py-0.5 text-xs font-extrabold text-primary">
+				<Icon name="check" size="xs" className="text-primary" />
+				Đã nộp
+			</span>
+		)
+	}
+	return (
+		<span className="inline-flex items-center gap-1.5 rounded-full bg-background border-2 border-border px-2.5 py-0.5 text-xs font-bold text-subtle">
+			Chưa làm
+		</span>
+	)
 }
 
-const SKILL_LABELS: Record<string, string> = {
-	listening: "Listening",
-	reading: "Reading",
-	writing: "Writing",
-	speaking: "Speaking",
-}
-
-const SKILL_ORDER = ["listening", "reading", "writing", "speaking"] as const
-
-export function ExamCard({ exam, fullTestCoinCost }: Props) {
+export function ExamCard({ exam, fullTestCoinCost, status = "not-started" }: Props) {
 	return (
 		<div className="card p-5 flex flex-col gap-4 hover:border-primary/40 hover:-translate-y-0.5 transition-all">
 			{/* Title + meta */}
@@ -48,17 +64,7 @@ export function ExamCard({ exam, fullTestCoinCost }: Props) {
 			{/* Skills */}
 			<div className="flex flex-wrap gap-1.5">
 				{SKILL_ORDER.map((skill) => (
-					<span
-						key={skill}
-						className={cn(
-							"inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-extrabold",
-							SKILL_COLORS[skill],
-						)}
-						style={{ backgroundColor: `color-mix(in srgb, currentColor 12%, transparent)` }}
-					>
-						<span className="size-1.5 rounded-full bg-current" />
-						{SKILL_LABELS[skill]}
-					</span>
+					<SkillChip key={skill} skill={skill} size="sm" />
 				))}
 			</div>
 
@@ -78,18 +84,13 @@ export function ExamCard({ exam, fullTestCoinCost }: Props) {
 
 			{/* Footer: status + coin + CTA */}
 			<div className="flex items-center justify-between pt-3 border-t border-border-light mt-auto">
-				<span className="inline-flex items-center gap-1.5 text-xs font-bold text-subtle">
-					<span className="size-1.5 rounded-full bg-subtle" />
-					Chưa làm
-				</span>
+				<StatusBadge status={status} />
 
 				<div className="flex items-center gap-2">
 					{fullTestCoinCost !== null && (
 						<span className="inline-flex items-center gap-1.5 px-1" title="Giá một lượt làm">
 							<StaticIcon name="coin" size="sm" />
-							<span className="text-sm font-extrabold text-coin-dark tabular-nums">
-								{fullTestCoinCost}
-							</span>
+							<span className="text-sm font-extrabold text-coin-dark tabular-nums">{fullTestCoinCost}</span>
 						</span>
 					)}
 					<Link

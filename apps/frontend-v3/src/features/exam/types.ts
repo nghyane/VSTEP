@@ -106,6 +106,32 @@ export interface StartSessionResult {
 	status: string
 }
 
+export interface ExamSessionSummary {
+	id: string
+	exam_id: string | null
+	exam_version_id: string
+	mode: "full" | "custom"
+	is_full_test: boolean
+	status: "active" | "submitted" | "graded" | "auto_submitted"
+	started_at: string
+	submitted_at: string | null
+	scores: unknown
+}
+
+export interface ActiveExamSession {
+	id: string
+	exam_id: string
+	exam_title: string | null
+	exam_version_id: string
+	mode: "full" | "custom"
+	selected_skills: SkillKey[]
+	is_full_test: boolean
+	started_at: string
+	server_deadline_at: string
+	status: "active"
+	coins_charged: number
+}
+
 export interface ExamSessionData {
 	id: string
 	profile_id: string
@@ -127,16 +153,65 @@ export interface McqAnswerPayload {
 	selected_index: number
 }
 
+export interface WritingAnswerPayload {
+	task_id: string
+	text: string
+	word_count: number
+}
+
+export interface SpeakingAnswerPayload {
+	part_id: string
+	audio_url: string
+	duration_seconds: number
+}
+
 export interface SubmitSessionPayload {
 	mcq_answers: McqAnswerPayload[]
+	writing_answers?: WritingAnswerPayload[]
+	speaking_answers?: SpeakingAnswerPayload[]
+}
+
+export interface GradingJobRef {
+	submission_id: string
+	job_id: string
+	status: string
 }
 
 export interface SubmitSessionResult {
 	session_id: string
 	status: string
-	mcq_score: number
-	mcq_total: number
 	submitted_at: string
+	mcq: {
+		score: number
+		total: number
+		items: Array<{
+			item_ref_type: string
+			item_ref_id: string
+			selected_index: number
+			correct_index: number
+			is_correct: boolean
+		}>
+	}
+	writing_jobs: GradingJobRef[]
+	speaking_jobs: GradingJobRef[]
+}
+
+export interface McqDetailItem {
+	item_ref_type: "exam_listening_item" | "exam_reading_item"
+	item_ref_id: string
+	selected_index: number | null
+	correct_index: number
+	is_correct: boolean
+	answered_at: string | null
+}
+
+export interface SessionResultsData {
+	session: ExamSessionSummary
+	scores: unknown
+	mcq_detail: McqDetailItem[]
+	writing_feedback: unknown
+	speaking_feedback: unknown
+	listening_play_summary: Array<{ section_id: string; part: number; played: boolean }>
 }
 
 /** Derived UI model per skill — computed from ExamVersion */

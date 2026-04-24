@@ -119,6 +119,7 @@ class ExamController extends Controller
         $status = $request->input('status');
 
         $query = ExamSession::query()
+            ->with('examVersion:id,exam_id')
             ->where('profile_id', $profile->id)
             ->orderByDesc('started_at')
             ->limit(50);
@@ -129,6 +130,7 @@ class ExamController extends Controller
 
         $sessions = $query->get()->map(fn (ExamSession $session) => [
             'id' => $session->id,
+            'exam_id' => $session->examVersion?->exam_id,
             'exam_version_id' => $session->exam_version_id,
             'mode' => $session->mode,
             'is_full_test' => $session->is_full_test,
@@ -143,13 +145,33 @@ class ExamController extends Controller
         return response()->json(['data' => $sessions]);
     }
 
+    public function abandon(Request $request, string $sessionId): JsonResponse
+    {
+        /** @var ExamSession $session */
+        $session = ExamSession::query()->findOrFail($sessionId);
+        if ($session->profile_id !== $this->profile($request)->id) {
+            abort(403);
+        }
+        if ($session->status !== 'active') {
+            return response()->json(['data' => ['abandoned' => false]]);
+        }
+        $session->update([
+            'status' => 'auto_submitted',
+            'submitted_at' => now(),
+        ]);
+
+        return response()->json(['data' => ['abandoned' => true]]);
+    }
+
     public function activeSession(Request $request): JsonResponse
     {
         $profile = $this->profile($request);
 
         $session = ExamSession::query()
+            ->with('examVersion:id,exam_id', 'examVersion.exam:id,title')
             ->where('profile_id', $profile->id)
             ->where('status', 'active')
+            ->where('server_deadline_at', '>', now())
             ->latest('started_at')
             ->first();
 
@@ -159,6 +181,8 @@ class ExamController extends Controller
 
         return response()->json(['data' => [
             'id' => $session->id,
+            'exam_id' => $session->examVersion->exam_id,
+            'exam_title' => $session->examVersion->exam?->title,
             'exam_version_id' => $session->exam_version_id,
             'mode' => $session->mode,
             'selected_skills' => $session->selected_skills,
@@ -234,7 +258,7 @@ class ExamController extends Controller
             'examVersion.readingPassages.items',
         ]);
 
-        $mcqBand = $this->examService->getSessionScores($session);
+        $mcqBand = $this->scoringService->getSessionScores($session);
 
         // MCQ detail: per-item breakdown
         $mcqDetail = $this->buildMcqDetail($session);
@@ -344,7 +368,7 @@ class ExamController extends Controller
     /** @return array<int, array{item_ref_type: string, item_ref_id: string, selected_index: int, correct_index: int|null, is_correct: bool}> */
     private function buildMcqDetail(ExamSession $session): array
     {
-        $itemMap = $this->examService->loadMcqItemMap($session);
+        $itemMap = $this->scoringService->loadMcqItemMap($session);
 
         return $session->mcqAnswers->map(function (ExamMcqAnswer $answer) use ($itemMap) {
             $key = "{$answer->item_ref_type}:{$answer->item_ref_id}";

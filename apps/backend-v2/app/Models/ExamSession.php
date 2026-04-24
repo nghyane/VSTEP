@@ -44,12 +44,12 @@ class ExamSession extends BaseModel
 
     public function writingSubmissions(): HasMany
     {
-        return $this->hasMany(ExamWritingSubmission::class);
+        return $this->hasMany(ExamWritingSubmission::class, 'session_id');
     }
 
     public function speakingSubmissions(): HasMany
     {
-        return $this->hasMany(ExamSpeakingSubmission::class);
+        return $this->hasMany(ExamSpeakingSubmission::class, 'session_id');
     }
 
     public function listeningPlayLogs(): HasMany

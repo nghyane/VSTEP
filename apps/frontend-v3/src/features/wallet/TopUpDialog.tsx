@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { Loading } from "#/components/Loading"
 import { ScrollArea } from "#/components/ScrollArea"
@@ -23,8 +24,10 @@ export function TopUpDialog({ open, onClose }: Props) {
 	}, [open, onClose])
 
 	if (!open) return null
+	if (typeof document === "undefined") return null
 
-	return (
+	// Portal ra body để thoát containing block (parent dùng backdrop-filter).
+	return createPortal(
 		<div
 			className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fadeIn_200ms_ease-out] p-4"
 			role="dialog"
@@ -42,7 +45,8 @@ export function TopUpDialog({ open, onClose }: Props) {
 				</button>
 				<DialogBody onClose={onClose} />
 			</div>
-		</div>
+		</div>,
+		document.body,
 	)
 }
 
