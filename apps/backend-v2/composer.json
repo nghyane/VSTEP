@@ -1,9 +1,9 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "vstep/backend-v2",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "Laravel API for the VSTEP exam practice platform.",
+    "keywords": ["vstep", "laravel", "api", "exam-practice"],
     "license": "MIT",
     "require": {
         "php": "^8.3",
