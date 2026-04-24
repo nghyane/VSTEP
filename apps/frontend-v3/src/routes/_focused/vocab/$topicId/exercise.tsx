@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useEffect } from "react"
+import { useCallback, useEffect } from "react"
 import { ExerciseFeedback } from "#/features/vocab/components/ExerciseFeedback"
 import { McqOptions, TextInput } from "#/features/vocab/components/ExerciseInput"
 import { ExerciseQuestion } from "#/features/vocab/components/ExerciseQuestion"
@@ -27,12 +27,12 @@ function ExercisePage() {
 	const s = useExerciseSession(exercises, kind)
 	const back = { backTo: "/luyen-tap/tu-vung/$topicId", backParams: { topicId } }
 
-	useEffect(() => {
-		if (s.done) {
-			qc.removeQueries({ queryKey: ["vocab", "topics", topicId] })
-			qc.removeQueries({ queryKey: ["vocab", "topics"], exact: true })
-		}
-	}, [s.done, qc, topicId])
+	const invalidate = useCallback(() => {
+		qc.invalidateQueries({ queryKey: ["vocab", "topics", topicId] })
+		qc.invalidateQueries({ queryKey: ["vocab", "topics"], exact: true })
+	}, [qc, topicId])
+
+	useEffect(() => invalidate, [invalidate])
 
 	if (!data) {
 		return (
@@ -55,15 +55,13 @@ function ExercisePage() {
 
 	if (!s.current) return null
 
-	const isMcq = s.current.kind === "mcq"
-
 	return (
 		<div className="min-h-screen bg-background flex flex-col">
 			<FocusBar {...back} current={s.index} total={s.total} />
 			<div className="flex-1 flex items-center justify-center px-6 pb-8">
 				<div className="w-full max-w-lg space-y-6">
 					<ExerciseQuestion exercise={s.current} />
-					{isMcq ? (
+					{s.current.kind === "mcq" ? (
 						<McqOptions
 							options={s.current.payload.options}
 							selected={s.selected}
@@ -86,7 +84,7 @@ function ExercisePage() {
 							Tiếp tục
 						</button>
 					) : (
-						isMcq && (
+						s.current.kind === "mcq" && (
 							<button
 								type="button"
 								disabled={s.submitting || s.selected === null}
