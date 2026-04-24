@@ -130,6 +130,21 @@
 		100% { transform: scale(1.1) rotate(-6deg); }
 	}
 
+	@keyframes mascotBob {
+		0%, 100% { transform: translateY(0) rotate(-2deg); }
+		50% { transform: translateY(-8px) rotate(2deg); }
+	}
+
+	@keyframes float {
+		0%, 100% { transform: translateY(0) rotate(-4deg); opacity: 0.3; }
+		50% { transform: translateY(-12px) rotate(4deg); opacity: 0.7; }
+	}
+
+	@keyframes dotBounce {
+		0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+		40% { transform: translateY(-8px); opacity: 1; }
+	}
+
 	@keyframes coinPinch {
 		0% { transform: scale(1, 1) rotate(0); }
 		25% { transform: scale(0.75, 1.1) rotate(-8deg); }
