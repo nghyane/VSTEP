@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute, Link } from "@tanstack/react-router"
-import { type ReactNode, Suspense, useMemo, useState } from "react"
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
+import { type ReactNode, Suspense, useEffect, useMemo, useState } from "react"
 import { DeviceCheckScreen } from "#/features/exam/components/DeviceCheckScreen"
 import { ExamRoomHeader } from "#/features/exam/components/ExamRoomHeader"
 import { LacCoinMascot } from "#/features/exam/components/LacCoinMascot"
@@ -51,9 +51,12 @@ interface ConfirmDialogProps {
 	description: ReactNode
 	warning?: string
 	confirmLabel: string
+	cancelLabel?: string
 	onConfirm: () => void
 	onCancel: () => void
 	isLoading?: boolean
+	countdownSeconds?: number
+	destructive?: boolean
 }
 
 function ConfirmDialog({
@@ -62,11 +65,35 @@ function ConfirmDialog({
 	description,
 	warning,
 	confirmLabel,
+	cancelLabel = "Ở lại",
 	onConfirm,
 	onCancel,
 	isLoading,
+	countdownSeconds,
+	destructive,
 }: ConfirmDialogProps) {
+	const [remaining, setRemaining] = useState(countdownSeconds ?? 0)
+
+	useEffect(() => {
+		if (!open || !countdownSeconds) {
+			setRemaining(0)
+			return
+		}
+		setRemaining(countdownSeconds)
+		const t = setInterval(() => {
+			setRemaining((r) => {
+				if (r <= 1) {
+					clearInterval(t)
+					return 0
+				}
+				return r - 1
+			})
+		}, 1000)
+		return () => clearInterval(t)
+	}, [open, countdownSeconds])
+
 	if (!open) return null
+	const locked = remaining > 0
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center p-6">
 			<button
@@ -135,15 +162,20 @@ function ConfirmDialog({
 						onClick={onCancel}
 						className="flex-1 rounded-(--radius-button) border-2 border-b-4 border-border bg-surface px-4 py-2.5 text-sm font-extrabold text-foreground transition-all hover:border-primary/40 active:translate-y-[2px] active:border-b-2"
 					>
-						Ở lại
+						{cancelLabel}
 					</button>
 					<button
 						type="button"
 						onClick={onConfirm}
-						disabled={isLoading}
-						className="btn btn-primary flex-1 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+						disabled={isLoading || locked}
+						className={cn(
+							"flex-1 text-sm disabled:cursor-not-allowed disabled:opacity-60",
+							destructive
+								? "rounded-(--radius-button) border-2 border-b-4 border-destructive bg-destructive px-4 py-2.5 font-extrabold text-white transition-all hover:brightness-110 active:translate-y-[2px] active:border-b-2"
+								: "btn btn-primary",
+						)}
 					>
-						{isLoading ? "Đang nộp…" : confirmLabel}
+						{isLoading ? "Đang nộp…" : locked ? `${confirmLabel} (${remaining})` : confirmLabel}
 					</button>
 				</div>
 			</div>
@@ -260,7 +292,9 @@ function ScorePill({
 // ─── Inner exam room (data loaded) ───────────────────────────────────────────
 
 function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) {
+	const navigate = useNavigate()
 	const [submitResult, setSubmitResult] = useState<SubmitSessionResult | null>(null)
+	const [confirmExit, setConfirmExit] = useState(false)
 	const { data: sessionRes } = useSuspenseQuery(examSessionQuery(sessionId))
 	const { data: examRes } = useSuspenseQuery(examDetailQuery(examId))
 
@@ -315,6 +349,40 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 
 	const remainingSeconds = useExamTimer(session.server_deadline_at)
 
+	// Only the CURRENT (last) skill is actionable at submit time — other skills are locked
+	const currentSkillPending: { count: number; unit: string } | null = (() => {
+		if (currentSkill === "listening") {
+			const items = version.listening_sections.flatMap((s) => s.items)
+			const unanswered = items.filter((i) => !state.mcqAnswers.has(i.id)).length
+			return { count: unanswered, unit: "câu" }
+		}
+		if (currentSkill === "reading") {
+			const items = version.reading_passages.flatMap((p) => p.items)
+			const unanswered = items.filter((i) => !state.mcqAnswers.has(i.id)).length
+			return { count: unanswered, unit: "câu" }
+		}
+		if (currentSkill === "writing") {
+			const incomplete = version.writing_tasks.filter((t) => {
+				const text = state.writingAnswers.get(t.id) ?? ""
+				const wc = text.trim().split(/\s+/).filter(Boolean).length
+				return wc < t.min_words
+			}).length
+			return { count: incomplete, unit: "phần viết chưa đủ từ" }
+		}
+		if (currentSkill === "speaking") {
+			return {
+				count: version.speaking_parts.length - state.speakingDone.size,
+				unit: "phần chưa ghi âm",
+			}
+		}
+		return null
+	})()
+
+	const submitWarning =
+		currentSkillPending && currentSkillPending.count > 0 && currentSkill
+			? `Còn ${currentSkillPending.count} ${currentSkillPending.unit} ở phần ${SKILL_LABEL[currentSkill]}`
+			: undefined
+
 	if (submitResult) {
 		return <ResultScreen result={submitResult} examTitle={exam.title} />
 	}
@@ -337,7 +405,12 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 	return (
 		<div className="flex h-screen flex-col bg-background">
 			{/* Header */}
-			<ExamRoomHeader remainingSeconds={remainingSeconds} answeredMcq={answeredMcq} totalMcq={totalMcq} />
+			<ExamRoomHeader
+				remainingSeconds={remainingSeconds}
+				answeredMcq={answeredMcq}
+				totalMcq={totalMcq}
+				onExit={() => setConfirmExit(true)}
+			/>
 
 			{/* Skill panel */}
 			<main className="flex flex-1 flex-col overflow-hidden">
@@ -471,8 +544,14 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 			<ConfirmDialog
 				open={state.confirmSubmit}
 				title="Nộp bài?"
-				description="Sau khi nộp, bạn không thể chỉnh sửa câu trả lời."
-				warning={answeredMcq < totalMcq ? `⚠ Còn ${totalMcq - answeredMcq} câu chưa trả lời` : undefined}
+				description={
+					<>
+						Các kỹ năng trước đã chốt, không thể quay lại.
+						<br />
+						Sau khi nộp, bài thi sẽ được chấm và bạn không thể chỉnh sửa đáp án.
+					</>
+				}
+				warning={submitWarning}
 				confirmLabel="Nộp bài"
 				onConfirm={handleSubmit}
 				onCancel={handleHideConfirmSubmit}
@@ -492,6 +571,28 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 				confirmLabel={`Chuyển sang ${nextSkill ? SKILL_LABEL[nextSkill] : "phần tiếp"}`}
 				onConfirm={handleConfirmNext}
 				onCancel={handleHideConfirmNext}
+			/>
+
+			{/* Exit confirm dialog */}
+			<ConfirmDialog
+				open={confirmExit}
+				title="Thoát phòng thi?"
+				description={
+					<>
+						Tiến trình hiện tại <strong className="text-foreground">sẽ không được lưu</strong>. Bạn sẽ phải
+						bắt đầu lại từ đầu nếu quay lại đề này.
+					</>
+				}
+				warning="Đọc kỹ trước khi xác nhận"
+				confirmLabel="Thoát"
+				cancelLabel="Ở lại"
+				countdownSeconds={3}
+				destructive
+				onConfirm={() => {
+					setConfirmExit(false)
+					navigate({ to: "/thi-thu" })
+				}}
+				onCancel={() => setConfirmExit(false)}
 			/>
 		</div>
 	)

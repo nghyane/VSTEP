@@ -1,10 +1,10 @@
-import { Link } from "@tanstack/react-router"
 import { cn } from "#/lib/utils"
 
 interface Props {
 	remainingSeconds: number
 	answeredMcq: number
 	totalMcq: number
+	onExit: () => void
 }
 
 function formatTime(seconds: number): string {
@@ -15,7 +15,7 @@ function formatTime(seconds: number): string {
 	return `${m}:${s}`
 }
 
-export function ExamRoomHeader({ remainingSeconds, answeredMcq, totalMcq }: Props) {
+export function ExamRoomHeader({ remainingSeconds, answeredMcq, totalMcq, onExit }: Props) {
 	const isWarning = remainingSeconds <= 300
 	const isUrgent = remainingSeconds <= 60
 
@@ -56,8 +56,9 @@ export function ExamRoomHeader({ remainingSeconds, answeredMcq, totalMcq }: Prop
 			</div>
 
 			{/* Exit */}
-			<Link
-				to="/thi-thu"
+			<button
+				type="button"
+				onClick={onExit}
 				className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-muted hover:bg-surface hover:text-foreground transition-colors"
 				aria-label="Thoát"
 			>
@@ -74,7 +75,7 @@ export function ExamRoomHeader({ remainingSeconds, answeredMcq, totalMcq }: Prop
 					<path d="M10.5 11.5L13.5 8l-3-3.5M13.5 8H6M6 2.5H3a1 1 0 00-1 1v9a1 1 0 001 1h3" />
 				</svg>
 				<span className="hidden sm:inline">Thoát</span>
-			</Link>
+			</button>
 		</header>
 	)
 }
