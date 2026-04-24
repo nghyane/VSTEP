@@ -20,7 +20,7 @@ export function ExamRoomHeader({ remainingSeconds, answeredMcq, totalMcq }: Prop
 	const isUrgent = remainingSeconds <= 60
 
 	return (
-		<header className="z-40 flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-5">
+		<header className="z-40 flex h-14 shrink-0 items-center justify-between border-b-2 border-border/50 bg-card px-5">
 			{/* Timer */}
 			<div
 				className={cn(

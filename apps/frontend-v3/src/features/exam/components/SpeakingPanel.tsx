@@ -404,7 +404,7 @@ export function SpeakingPanel({ parts, speakingDone, onMarkDone, footer }: Props
 			)}
 
 			{/* Part tabs */}
-			<div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-2.5">
+			<div className="flex items-center justify-between gap-3 border-t-2 border-border/50 bg-card px-4 py-2.5">
 				<div className="flex items-center gap-2">
 					<svg
 						viewBox="0 0 16 16"
@@ -468,7 +468,7 @@ export function SpeakingPanel({ parts, speakingDone, onMarkDone, footer }: Props
 			</div>
 
 			{/* Global footer */}
-			<div className="z-40 flex h-14 shrink-0 items-center justify-between border-t border-border bg-card px-5">
+			<div className="z-40 flex h-14 shrink-0 items-center justify-between border-t-2 border-border/50 bg-card px-5">
 				<div className="w-24">
 					<p className="text-xs text-muted">
 						{speakingDone.size}/{sorted.length} hoàn thành

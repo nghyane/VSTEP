@@ -91,7 +91,7 @@ export function ReadingPanel({ passages, mcqAnswers, onAnswer, footer }: Props) 
 			</div>
 
 			{/* Jump buttons */}
-			<div className="flex flex-wrap justify-center gap-1.5 border-t border-border bg-card px-4 py-2.5">
+			<div className="flex flex-wrap justify-center gap-1.5 border-t-2 border-border/50 bg-card px-4 py-2.5">
 				{activePassage.items.map((item, i) => {
 					const isAnswered = mcqAnswers.has(item.id)
 					return (
@@ -113,7 +113,7 @@ export function ReadingPanel({ passages, mcqAnswers, onAnswer, footer }: Props) 
 			</div>
 
 			{/* Passage tabs + prev/next */}
-			<div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-2.5">
+			<div className="flex items-center justify-between gap-3 border-t-2 border-border/50 bg-card px-4 py-2.5">
 				{/* Prev */}
 				{activeIdx > 0 ? (
 					<button
@@ -186,7 +186,7 @@ export function ReadingPanel({ passages, mcqAnswers, onAnswer, footer }: Props) 
 			</div>
 
 			{/* Global footer — skill indicator + submit/next */}
-			<div className="z-40 flex h-14 shrink-0 items-center justify-between border-t border-border bg-card px-5">
+			<div className="z-40 flex h-14 shrink-0 items-center justify-between border-t-2 border-border/50 bg-card px-5">
 				<div className="w-24">
 					{activeMeta && (
 						<p className="text-xs text-muted">
@@ -194,7 +194,7 @@ export function ReadingPanel({ passages, mcqAnswers, onAnswer, footer }: Props) 
 						</p>
 					)}
 				</div>
-				<p className="text-sm font-extrabold text-foreground">
+				<p className="text-sm font-extrabold text-skill-reading">
 					{footer.skillLabel}
 					<span className="ml-1 text-xs font-normal text-muted">({footer.skillProgress})</span>
 				</p>
