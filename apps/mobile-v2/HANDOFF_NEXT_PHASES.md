@@ -3,7 +3,7 @@
 ## Current state
 
 - Branch: `mobile`
-- Latest commit: `e4ed26b chore(mobile-v2): update learner flow parity — mark Phase 1+3 done, integrate external commit notes`
+- Latest commit: `e1becae feat(mobile-v2): phase 4 — vocab/grammar final parity`
 - `main` đã merge vào `mobile` qua `4db545d`
 - Remote: `origin/mobile` đã push
 
@@ -31,7 +31,7 @@
 | 2 | Shared focused primitives | ✅ **gộp vào Phase 3** | FocusHeader, SubmitFooter, SupportPanel đã tạo |
 | 3 | Listening/Reading parity | ✅ **done** | Support API wired, type parity hoàn chỉnh, CC toggle, translation display, audio error handling |
 | 4 | Vocab/Grammar final parity | ✅ **done** | SRS review invalidate/refetch, reusable session hooks, shared primitives, grammar feedback states |
-| 5 | Writing async grading | ⏳ | Xem chi tiết bên dưới |
+| 5 | Writing async grading | ✅ **done** | History UI, explicit grading states, scrollable editor, support API wired, types parity |
 | 6 | Speaking + drill flow | ⏳ | Xem chi tiết bên dưới |
 | 7 | Exam room MCQ core | ⏳ | Xem chi tiết bên dưới |
 | 8 | Exam full submit/results | ⏳ | Xem chi tiết bên dưới |
@@ -58,25 +58,13 @@
 
 **Goal:** Writing có full async grading lifecycle.
 
-**Files cần inspect:**
-- FE-v3: `src/routes/_focused/writing/$promptId.tsx`, `src/routes/_focused/grading/writing.$submissionId.tsx`, `src/features/practice/components/WritingInProgress.tsx`, `src/features/grading/components/WritingResult.tsx`
-- Mobile: `app/(app)/practice/writing/`, `app/(app)/grading/writing/[submissionId].tsx`, `src/hooks/use-practice.ts`
-- Backend: `GET/POST /api/v1/practice/writing/*`, `GET /api/v1/grading/writing/practice_writing/{submissionId}`
-
-**Gaps cần xử lý:**
-- Writing history UI chưa có
-- Writing type thiếu: `keywords`, `sampleAnswer`, `sampleMarkers`
-- Grading screen poll result nhưng không hiện explicit job/status states
-- Writing editor cần scrollable (FE-v3 commit `ee836b5`)
-- TranslateSelection popup (FE-v3 commit `490b35f`) — cân nhắc port sang mobile
-- Support API cho writing sessions (`POST /practice/writing/sessions/{sessionId}/support`)
-
-**Definition of done:**
-- Writing history có UI hiển thị
-- Writing prompt detail có đầy đủ fields
-- Grading screen hiện states: pending → processing → completed/failed
-- Writing editor scrollable trên mobile
-- Support API wired cho writing sessions
+**Definition of done:** ✅
+- Writing history UI hiển thị với card list (history.tsx)
+- Writing prompt detail có đầy đủ fields: `keywords`, `sampleAnswer`, `sampleMarkers`, `outlineSections`, `templateSections`
+- Grading screen hiện explicit states: pending → processing → completed/failed với polling
+- Writing editor scrollable trên mobile (`scrollEnabled` + `textAlignVertical`)
+- Support API wired cho writing sessions (`SupportPanel` hỗ trợ `skill="writing"`)
+- History button thêm vào WritingListScreen header
 
 ---
 
@@ -330,7 +318,7 @@ Nếu tiếp tục từ đây:
 Bắt đầu từ **Phase 4**, không nhảy qua UI polish.
 
 1. ~~**Phase 4**~~ — Vocab/Grammar final parity (foundation hoàn thiện) ✅
-2. **Phase 5** — Writing async grading (writing flow + grading states)
+2. ~~**Phase 5**~~ — Writing async grading (writing flow + grading states) ✅
 3. **Phase 6** — Speaking + drill flow (upload audio, drill CRUD, grading)
 4. **Phase 7** — Exam room MCQ core (custom start, real data, timer)
 5. **Phase 8** — Exam full submit/results (writing/speaking answers, autosave, resume)

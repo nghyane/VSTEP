@@ -202,14 +202,8 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "POST /api/v1/practice/writing/sessions/{sessionId}/submit",
       "GET /api/v1/grading/writing/practice_writing/{submissionId}",
     ],
-    status: "partial",
-    gaps: [
-      "Writing history endpoint not represented in mobile UI.",
-      "Writing type omits keywords, sampleAnswer, and sampleMarkers from frontend-v3.",
-      "Grading screen polls result endpoint but does not show explicit job/status states.",
-      "Writing editor in frontend-v3 is scrollable (commit ee836b5) — mobile needs verify.",
-      "TranslateSelection popup added in frontend-v3 (commit 490b35f) — not in mobile.",
-    ],
+    status: "done",
+    gaps: ["TranslateSelection popup (commit 490b35f) — not in mobile yet."],
     nextPhase: 5,
   },
 

@@ -1,25 +1,16 @@
-import { useQuery } from "@tanstack/react-query";
-import { useLocalSearchParams, useRouter } from "expo-router";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
-import { api } from "@/lib/api";
+import { MascotEmpty } from "@/components/MascotStates";
+import { useWritingGradingResult } from "@/hooks/use-practice";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 const COLOR = "#58CC02";
 const COLOR_DARK = "#478700";
-
-interface WritingResult {
-  id: string;
-  rubricScores: { taskAchievement: number; coherence: number; lexical: number; grammar: number };
-  overallBand: number;
-  strengths: string[];
-  improvements: { message: string; explanation: string }[];
-  rewrites: { original: string; improved: string; reason: string }[];
-}
 
 const RUBRIC_LABELS: Record<string, string> = {
   taskAchievement: "Task Achievement",
@@ -34,12 +25,7 @@ export default function WritingGradingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["grading", "writing", submissionId],
-    queryFn: () => api.get<WritingResult | null>(`/api/v1/grading/writing/practice_writing/${submissionId}`),
-    retry: false,
-    refetchInterval: (q) => (!q.state.data ? 5000 : false),
-  });
+  const { data, isLoading, isError } = useWritingGradingResult(submissionId ?? "");
 
   return (
     <View style={[s.root, { backgroundColor: c.background }]}>
@@ -50,17 +36,54 @@ export default function WritingGradingScreen() {
         <Text style={[s.topBarTitle, { color: c.foreground }]}>Kết quả chấm bài viết</Text>
       </View>
 
-      <ScrollView contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + 40 }]} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + 40 }]}
+        showsVerticalScrollIndicator={false}
+      >
         {isLoading && (
-          <View style={s.center}><ActivityIndicator color={COLOR} size="large" /></View>
+          <View style={s.center}>
+            <ActivityIndicator color={COLOR} size="large" />
+            <Text style={[s.pendingTitle, { color: c.foreground, marginTop: spacing.lg }]}>
+              Đang tải kết quả...
+            </Text>
+          </View>
         )}
 
-        {!isLoading && !data && (
+        {isError && (
           <View style={s.center}>
-            <Ionicons name="time-outline" size={48} color={c.subtle} />
-            <Text style={[s.pendingTitle, { color: c.foreground }]}>AI đang chấm bài</Text>
-            <Text style={[s.pendingSub, { color: c.mutedForeground }]}>Vui lòng quay lại sau ít phút</Text>
-            <DepthButton variant="secondary" onPress={() => router.back()} style={{ marginTop: spacing.xl }}>
+            <MascotEmpty
+              mascot="think"
+              title="Lỗi kết nối"
+              subtitle="Không thể tải kết quả chấm. Vui lòng thử lại."
+            />
+            <DepthButton
+              variant="secondary"
+              onPress={() => router.back()}
+              style={{ marginTop: spacing.xl }}
+            >
+              Quay lại
+            </DepthButton>
+          </View>
+        )}
+
+        {!isLoading && !isError && !data && (
+          <View style={s.center}>
+            <Ionicons name="hourglass-outline" size={56} color={c.warning} />
+            <Text style={[s.pendingTitle, { color: c.foreground }]}>
+              AI đang chấm bài
+            </Text>
+            <Text style={[s.pendingSub, { color: c.mutedForeground }]}>
+              Quá trình chấm có thể mất vài phút. Vui lòng đợi...
+            </Text>
+            <View style={s.statusBadge}>
+              <ActivityIndicator color={c.warning} size="small" />
+              <Text style={[s.statusText, { color: c.warning }]}>Đang xử lý...</Text>
+            </View>
+            <DepthButton
+              variant="secondary"
+              onPress={() => router.back()}
+              style={{ marginTop: spacing.xl }}
+            >
               Về danh sách
             </DepthButton>
           </View>
@@ -69,7 +92,12 @@ export default function WritingGradingScreen() {
         {data && (
           <>
             {/* Overall score */}
-            <View style={[s.scoreCard, { backgroundColor: c.card, borderColor: COLOR + "40", borderBottomColor: COLOR_DARK }]}>
+            <View
+              style={[
+                s.scoreCard,
+                { backgroundColor: c.card, borderColor: COLOR + "40", borderBottomColor: COLOR_DARK },
+              ]}
+            >
               <Text style={[s.scoreLabel, { color: c.mutedForeground }]}>ĐIỂM TỔNG</Text>
               <Text style={[s.scoreValue, { color: COLOR }]}>{data.overallBand.toFixed(1)}</Text>
               <Text style={[s.scoreMax, { color: c.subtle }]}>/ 10</Text>
@@ -77,9 +105,16 @@ export default function WritingGradingScreen() {
 
             {/* Rubric */}
             <View style={[s.card, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
-              <Text style={[s.sectionLabel, { color: c.subtle }]}>RUBRIC</Text>
+              <Text style={[s.sectionLabel, { color: c.subtle }]}>RUBRIC CHI TIẾT</Text>
               {Object.entries(data.rubricScores).map(([key, score]) => (
-                <RubricRow key={key} label={RUBRIC_LABELS[key] ?? key} score={score} max={4} color={COLOR} c={c} />
+                <RubricRow
+                  key={key}
+                  label={RUBRIC_LABELS[key] ?? key}
+                  score={score}
+                  max={4}
+                  color={COLOR}
+                  c={c}
+                />
               ))}
             </View>
 
@@ -139,14 +174,26 @@ export default function WritingGradingScreen() {
   );
 }
 
-function RubricRow({ label, score, max, color, c }: { label: string; score: number; max: number; color: string; c: any }) {
+function RubricRow({
+  label,
+  score,
+  max,
+  color,
+  c,
+}: {
+  label: string;
+  score: number;
+  max: number;
+  color: string;
+  c: { foreground: string; muted: string };
+}) {
   const pct = score / max;
   return (
     <View style={s.rubricRow}>
       <Text style={[s.rubricLabel, { color: c.foreground }]}>{label}</Text>
       <View style={s.rubricRight}>
         <View style={[s.rubricTrack, { backgroundColor: c.muted }]}>
-          <View style={[s.rubricFill, { backgroundColor: color, width: `${pct * 100}%` as any }]} />
+          <View style={[s.rubricFill, { backgroundColor: color, width: `${pct * 100}%` }]} />
         </View>
         <Text style={[s.rubricScore, { color }]}>{score}/{max}</Text>
       </View>
@@ -156,28 +203,50 @@ function RubricRow({ label, score, max, color, c }: { label: string; score: numb
 
 const s = StyleSheet.create({
   root: { flex: 1 },
-  topBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.xl, paddingBottom: spacing.md, gap: spacing.md, borderBottomWidth: 1 },
-  closeBtn: { padding: 4 },
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.md,
+    gap: spacing.md,
+    borderBottomWidth: 1,
+  },
+  closeBtn: { padding: spacing.xs },
   topBarTitle: { flex: 1, fontSize: fontSize.base, fontFamily: fontFamily.bold },
   scroll: { padding: spacing.xl, gap: spacing.lg },
   center: { alignItems: "center", justifyContent: "center", paddingVertical: spacing["3xl"], gap: spacing.md },
   pendingTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.bold },
   pendingSub: { fontSize: fontSize.sm, textAlign: "center" },
-  scoreCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.xl, alignItems: "center", gap: 4 },
+  statusBadge: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.md },
+  statusText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
+  scoreCard: {
+    borderWidth: 2,
+    borderBottomWidth: 4,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    alignItems: "center",
+    gap: spacing.xs,
+  },
   scoreLabel: { fontSize: 10, fontFamily: fontFamily.bold, letterSpacing: 1 },
   scoreValue: { fontSize: 56, fontFamily: fontFamily.extraBold, lineHeight: 64 },
   scoreMax: { fontSize: fontSize.sm },
-  card: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md },
+  card: {
+    borderWidth: 2,
+    borderBottomWidth: 4,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
   sectionLabel: { fontSize: 10, fontFamily: fontFamily.bold, letterSpacing: 1 },
   feedRow: { flexDirection: "row", gap: spacing.sm, alignItems: "flex-start" },
   feedText: { flex: 1, fontSize: fontSize.sm, lineHeight: 20 },
-  impBlock: { gap: 4 },
+  impBlock: { gap: spacing.xs },
   impMsg: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   impExp: { fontSize: fontSize.xs, lineHeight: 18 },
-  rewriteBlock: { borderTopWidth: 1, paddingTop: spacing.md, gap: 4 },
+  rewriteBlock: { borderTopWidth: 1, paddingTop: spacing.md, gap: spacing.xs },
   rewriteLabel: { fontSize: 10, fontFamily: fontFamily.bold },
   rewriteText: { fontSize: fontSize.sm, lineHeight: 20 },
-  rewriteReason: { fontSize: fontSize.xs, fontStyle: "italic", marginTop: 4 },
+  rewriteReason: { fontSize: fontSize.xs, fontStyle: "italic", marginTop: spacing.xs },
   rubricRow: { gap: spacing.xs },
   rubricLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
   rubricRight: { flexDirection: "row", alignItems: "center", gap: spacing.sm },

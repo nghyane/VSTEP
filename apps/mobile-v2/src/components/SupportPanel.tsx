@@ -4,11 +4,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMutation } from "@tanstack/react-query";
 import { HapticTouchable } from "./HapticTouchable";
 import { useThemeColors, spacing, fontSize, fontFamily, radius } from "@/theme";
-import { useSupport, type SupportResult } from "@/hooks/use-practice";
+import { useSupport, useWritingSupport, type SupportResult } from "@/hooks/use-practice";
 import { addCoins } from "@/features/coin/coin-store";
 
 interface SupportPanelProps {
-  skill: "listening" | "reading";
+  skill: "listening" | "reading" | "writing";
   sessionId: string;
   hasTranscript: boolean;
   hasKeywords: boolean;
@@ -33,7 +33,12 @@ export function SupportPanel({ skill, sessionId, hasTranscript, hasKeywords, acc
   const availableOptions = options.filter((o): o is SupportOption => o.available);
 
   const mutation = useMutation({
-    mutationFn: ({ level }: { level: number }) => useSupport(skill, sessionId, level),
+    mutationFn: ({ level }: { level: number }) => {
+      if (skill === "writing") {
+        return useWritingSupport(sessionId, level);
+      }
+      return useSupport(skill, sessionId, level);
+    },
     onSuccess: (res: SupportResult) => {
       if (res.coinsSpent > 0) {
         addCoins(-res.coinsSpent);

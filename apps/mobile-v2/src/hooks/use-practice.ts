@@ -60,16 +60,54 @@ export interface WritingPrompt {
   estimatedMinutes: number | null;
 }
 
+export interface WritingSubmission {
+  submissionId: string; wordCount: number; submittedAt: string; gradingStatus: string;
+}
+
+export interface WritingOutlineSection {
+  id: string; displayOrder: number; title: string; content: string;
+}
+
+export interface WritingTemplateSection {
+  id: string; displayOrder: number; heading: string; body: string;
+}
+
 export interface WritingPromptDetail {
   id: string; slug: string; title: string;
   description: string | null; part: number;
   prompt: string; minWords: number; maxWords: number;
   requiredPoints: string[]; sentenceStarters: string[];
+  keywords: string[]; sampleAnswer: string | null;
+  sampleMarkers: { criterion: string; band: number; description: string }[];
+  outlineSections: WritingOutlineSection[];
+  templateSections: WritingTemplateSection[];
   estimatedMinutes: number | null;
 }
 
-export interface WritingSubmission {
-  submissionId: string; wordCount: number; gradingStatus: string;
+export interface WritingHistoryItem {
+  id: string;
+  submittedAt: string;
+  wordCount: number;
+  prompt: { id: string; slug: string; title: string; part: number } | null;
+}
+
+export interface GradingJobStatus {
+  id: string;
+  status: "pending" | "processing" | "ready" | "failed";
+  attempts: number;
+  result: WritingGradingResult | null;
+  completedAt: string | null;
+  lastError: string | null;
+}
+
+export interface WritingGradingResult {
+  rubricScores: { taskAchievement: number; coherence: number; lexical: number; grammar: number };
+  overallBand: number;
+  strengths: string[];
+  improvements: { message: string; explanation: string }[];
+  rewrites: { original: string; improved: string; reason: string }[];
+  annotations: unknown[];
+  paragraphFeedback: Record<string, string>[];
 }
 
 export interface SpeakingTask {
@@ -271,4 +309,70 @@ export async function useSupport(
     `/api/v1/practice/${skill}/sessions/${sessionId}/support`,
     { level },
   );
+}
+
+export async function useWritingSupport(sessionId: string, level: number) {
+  return api.post<SupportResult>(
+    `/api/v1/practice/writing/sessions/${sessionId}/support`,
+    { level },
+  );
+}
+
+// ── Writing history ──
+
+export interface WritingHistoryResponse {
+  data: WritingHistoryItem[];
+  links: { first: string; last: string; prev: string | null; next: string | null };
+  meta: { current_page: number; last_page: number; per_page: number; total: number };
+}
+
+export function useWritingHistory(part?: number) {
+  const params = part ? `?part=${part}` : "";
+  return useQuery({
+    queryKey: ["practice", "writing", "history", part],
+    queryFn: () => api.get<WritingHistoryResponse>(`/api/v1/practice/writing/history${params}`),
+    retry: false,
+    select: (res) => res.data,
+  });
+}
+
+// ── Grading job status polling ──
+
+export function useGradingJobStatus(jobId: string) {
+  return useQuery({
+    queryKey: ["grading", "job", jobId],
+    queryFn: () => api.get<GradingJobStatus>(`/api/v1/grading/jobs/${jobId}/status`),
+    refetchInterval: (q) => {
+      const status = q.state.data?.status;
+      return status === "ready" || status === "failed" ? false : 3000;
+    },
+    retry: false,
+  });
+}
+
+// ── Writing grading result ──
+
+export function useWritingGradingResult(submissionId: string) {
+  return useQuery({
+    queryKey: ["grading", "writing", "result", submissionId],
+    queryFn: () =>
+      api.get<WritingGradingResult | null>(
+        `/api/v1/grading/writing/practice_writing/${submissionId}`,
+      ),
+    refetchInterval: (q) => (q.state.data ? false : 5000),
+    retry: false,
+  });
+}
+
+// ── Writing support ──
+
+export function useWritingSupportMutation(sessionId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ level }: { level: number }) =>
+      useWritingSupport(sessionId, level),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["practice", "writing", "history"] });
+    },
+  });
 }
