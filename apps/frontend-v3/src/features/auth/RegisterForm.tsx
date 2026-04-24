@@ -42,14 +42,15 @@ function Step1({ initial, onNext }: Step1Props) {
 
 	return (
 		<>
-			<h1 className="font-extrabold text-3xl text-foreground mb-4">Tạo tài khoản</h1>
+			<h1 className="font-extrabold text-3xl text-foreground mb-1">Tạo tài khoản</h1>
+			<p className="text-sm text-subtle mb-5">Bắt đầu hành trình VSTEP của bạn hôm nay.</p>
 			<GoogleButton />
-			<div className="flex items-center gap-3 my-3">
+			<div className="flex items-center gap-3 my-4">
 				<div className="flex-1 h-px bg-border" />
 				<span className="text-xs text-subtle font-bold">HOẶC</span>
 				<div className="flex-1 h-px bg-border" />
 			</div>
-			<form onSubmit={handleSubmit} className="space-y-2.5">
+			<form onSubmit={handleSubmit} className="space-y-3">
 				<input
 					type="email"
 					placeholder="Email"
@@ -82,7 +83,7 @@ function Step1({ initial, onNext }: Step1Props) {
 					Tiếp tục
 				</button>
 			</form>
-			<p className="text-sm font-bold text-muted mt-3">
+			<p className="text-sm font-bold text-muted mt-4">
 				Đã có tài khoản?{" "}
 				<Link to="/" search={{ auth: "login" }} className="text-primary hover:underline">
 					Đăng nhập

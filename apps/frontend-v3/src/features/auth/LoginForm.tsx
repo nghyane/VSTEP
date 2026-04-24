@@ -16,9 +16,10 @@ export function LoginForm() {
 
 	return (
 		<>
-			<h1 className="font-extrabold text-3xl text-foreground mb-4">Đăng nhập</h1>
+			<h1 className="font-extrabold text-3xl text-foreground mb-1">Đăng nhập</h1>
+			<p className="text-sm text-subtle mb-5">Chào mừng bạn quay lại cùng Lạc.</p>
 			<GoogleButton />
-			<div className="flex items-center gap-3 my-3">
+			<div className="flex items-center gap-3 my-4">
 				<div className="flex-1 h-px bg-border" />
 				<span className="text-xs text-subtle font-bold">HOẶC</span>
 				<div className="flex-1 h-px bg-border" />
@@ -28,7 +29,7 @@ export function LoginForm() {
 					e.preventDefault()
 					void form.handleSubmit()
 				}}
-				className="space-y-2.5"
+				className="space-y-3"
 			>
 				<form.Field name="email">
 					{(field) => (
@@ -85,7 +86,7 @@ export function LoginForm() {
 					{form.state.isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
 				</button>
 			</form>
-			<p className="text-sm font-bold text-muted mt-3">
+			<p className="text-sm font-bold text-muted mt-4">
 				Chưa có tài khoản?
 				<Link to="/" search={{ auth: "register" }} className="text-primary hover:underline ml-1">
 					Đăng ký
