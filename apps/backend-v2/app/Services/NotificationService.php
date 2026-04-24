@@ -50,6 +50,15 @@ class NotificationService
             ->update(['read_at' => now()]);
     }
 
+    public function markRead(Profile $profile, string $notificationId): bool
+    {
+        return Notification::query()
+            ->where('profile_id', $profile->id)
+            ->where('id', $notificationId)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]) > 0;
+    }
+
     public function unreadCount(Profile $profile): int
     {
         return Notification::query()

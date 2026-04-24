@@ -2,9 +2,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { useRef, useState } from "react"
 import { Icon, StaticIcon, type StaticIconName } from "#/components/Icon"
-import { readAllNotifications } from "#/features/notifications/actions"
-import { notificationsQuery } from "#/features/notifications/queries"
-import type { Notification } from "#/features/notifications/types"
+import { readAllNotifications, readNotification } from "#/features/notifications/actions"
+import { notificationsQuery, unreadCountQuery } from "#/features/notifications/queries"
+import type { Notification, UnreadCount } from "#/features/notifications/types"
+import type { ApiResponse, PaginatedResponse } from "#/lib/api"
 import { useAuth, useSession } from "#/lib/auth"
 import { useToast } from "#/lib/toast"
 import { useClickOutside } from "#/lib/use-click-outside"
@@ -26,18 +27,27 @@ function timeAgo(date: string): string {
 	return `${Math.floor(hours / 24)} ngày trước`
 }
 
-function NotifItem({ notif }: { notif: Notification }) {
+function NotifItem({ notif, onRead }: { notif: Notification; onRead: (id: string) => void }) {
 	const icon = NOTIF_ICON[notif.icon_key ?? ""] ?? "coin"
+	const isUnread = !notif.read_at
 	return (
-		<div className={`flex items-start gap-3 px-3 py-2.5 rounded-xl ${!notif.read_at ? "bg-background" : ""}`}>
+		<button
+			type="button"
+			onClick={() => {
+				if (isUnread) onRead(notif.id)
+			}}
+			className={`flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
+				isUnread ? "bg-background hover:bg-border/40" : "hover:bg-background/60"
+			} ${isUnread ? "cursor-pointer" : "cursor-default"}`}
+		>
 			<StaticIcon name={icon} size="sm" className="shrink-0 mt-0.5" />
 			<div className="min-w-0 flex-1">
 				<p className="text-sm font-bold text-foreground leading-snug">{notif.title}</p>
 				{notif.body && <p className="text-xs text-muted mt-0.5 leading-snug">{notif.body}</p>}
 				<p className="text-xs text-subtle mt-1">{timeAgo(notif.created_at)}</p>
 			</div>
-			{!notif.read_at && <span className="w-2 h-2 rounded-full bg-primary shrink-0 mt-2" />}
-		</div>
+			{isUnread && <span className="w-2 h-2 rounded-full bg-primary shrink-0 mt-2" />}
+		</button>
 	)
 }
 
@@ -80,9 +90,61 @@ export function ProfileDropdown({ unread, initial }: Props) {
 
 	const readAll = useMutation({
 		mutationFn: readAllNotifications,
+		onMutate: async () => {
+			await qc.cancelQueries({ queryKey: ["notifications"] })
+			const prevList = qc.getQueryData<PaginatedResponse<Notification>>(notificationsQuery.queryKey)
+			const prevCount = qc.getQueryData<ApiResponse<UnreadCount>>(unreadCountQuery.queryKey)
+			const now = new Date().toISOString()
+			if (prevList) {
+				qc.setQueryData<PaginatedResponse<Notification>>(notificationsQuery.queryKey, {
+					...prevList,
+					data: prevList.data.map((n) => (n.read_at ? n : { ...n, read_at: now })),
+				})
+			}
+			qc.setQueryData<ApiResponse<UnreadCount>>(unreadCountQuery.queryKey, { data: { count: 0 } })
+			return { prevList, prevCount }
+		},
+		onError: (_e, _v, ctx) => {
+			if (ctx?.prevList) qc.setQueryData(notificationsQuery.queryKey, ctx.prevList)
+			if (ctx?.prevCount) qc.setQueryData(unreadCountQuery.queryKey, ctx.prevCount)
+		},
 		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: ["notifications"] })
 			useToast.getState().add("Đã đọc tất cả thông báo", "success")
+		},
+		onSettled: () => {
+			qc.invalidateQueries({ queryKey: ["notifications"] })
+		},
+	})
+
+	const readOne = useMutation({
+		mutationFn: readNotification,
+		onMutate: async (id: string) => {
+			await qc.cancelQueries({ queryKey: ["notifications"] })
+			const prevList = qc.getQueryData<PaginatedResponse<Notification>>(notificationsQuery.queryKey)
+			const prevCount = qc.getQueryData<ApiResponse<UnreadCount>>(unreadCountQuery.queryKey)
+			const now = new Date().toISOString()
+			if (prevList) {
+				qc.setQueryData<PaginatedResponse<Notification>>(notificationsQuery.queryKey, {
+					...prevList,
+					data: prevList.data.map((n) => (n.id === id && !n.read_at ? { ...n, read_at: now } : n)),
+				})
+			}
+			if (prevCount) {
+				const wasUnread = prevList?.data.find((n) => n.id === id)?.read_at === null
+				if (wasUnread) {
+					qc.setQueryData<ApiResponse<UnreadCount>>(unreadCountQuery.queryKey, {
+						data: { count: Math.max(0, prevCount.data.count - 1) },
+					})
+				}
+			}
+			return { prevList, prevCount }
+		},
+		onError: (_e, _id, ctx) => {
+			if (ctx?.prevList) qc.setQueryData(notificationsQuery.queryKey, ctx.prevList)
+			if (ctx?.prevCount) qc.setQueryData(unreadCountQuery.queryKey, ctx.prevCount)
+		},
+		onSettled: () => {
+			qc.invalidateQueries({ queryKey: ["notifications"] })
 		},
 	})
 
@@ -191,7 +253,7 @@ export function ProfileDropdown({ unread, initial }: Props) {
 							) : (
 								<div className="max-h-72 overflow-y-auto p-2 space-y-1">
 									{notifs.map((n) => (
-										<NotifItem key={n.id} notif={n} />
+										<NotifItem key={n.id} notif={n} onRead={(id) => readOne.mutate(id)} />
 									))}
 								</div>
 							)}
