@@ -168,7 +168,7 @@ class ExamController extends Controller
         $profile = $this->profile($request);
 
         $session = ExamSession::query()
-            ->with('examVersion:id,exam_id')
+            ->with('examVersion:id,exam_id', 'examVersion.exam:id,title')
             ->where('profile_id', $profile->id)
             ->where('status', 'active')
             ->where('server_deadline_at', '>', now())
@@ -182,6 +182,7 @@ class ExamController extends Controller
         return response()->json(['data' => [
             'id' => $session->id,
             'exam_id' => $session->examVersion->exam_id,
+            'exam_title' => $session->examVersion->exam?->title,
             'exam_version_id' => $session->exam_version_id,
             'mode' => $session->mode,
             'selected_skills' => $session->selected_skills,

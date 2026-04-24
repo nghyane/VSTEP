@@ -2,7 +2,6 @@ import { Link } from "@tanstack/react-router"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { SkillChip } from "#/components/SkillChip"
 import type { Exam, SkillKey } from "#/features/exam/types"
-import { cn } from "#/lib/utils"
 
 export type ExamStatus = "not-started" | "in-progress" | "submitted"
 
@@ -12,25 +11,34 @@ interface Props {
 	status?: ExamStatus
 }
 
-const STATUS_LABEL: Record<ExamStatus, string> = {
-	"not-started": "Chưa làm",
-	"in-progress": "Đang làm dở",
-	submitted: "Đã nộp",
-}
-
-const STATUS_DOT: Record<ExamStatus, string> = {
-	"not-started": "bg-subtle",
-	"in-progress": "bg-warning",
-	submitted: "bg-primary",
-}
-
-const STATUS_TEXT: Record<ExamStatus, string> = {
-	"not-started": "text-subtle",
-	"in-progress": "text-warning",
-	submitted: "text-primary",
-}
-
 const SKILL_ORDER: SkillKey[] = ["listening", "reading", "writing", "speaking"]
+
+function StatusBadge({ status }: { status: ExamStatus }) {
+	if (status === "in-progress") {
+		return (
+			<span className="inline-flex items-center gap-1.5 rounded-full border-2 border-b-4 border-warning/40 bg-warning-tint px-2.5 py-0.5 text-xs font-extrabold text-warning">
+				<span className="relative flex size-2">
+					<span className="absolute inline-flex size-full animate-ping rounded-full bg-warning opacity-60" />
+					<span className="relative inline-flex size-2 rounded-full bg-warning" />
+				</span>
+				Đang làm dở
+			</span>
+		)
+	}
+	if (status === "submitted") {
+		return (
+			<span className="inline-flex items-center gap-1.5 rounded-full border-2 border-b-4 border-primary/40 bg-primary-tint px-2.5 py-0.5 text-xs font-extrabold text-primary">
+				<Icon name="check" size="xs" className="text-primary" />
+				Đã nộp
+			</span>
+		)
+	}
+	return (
+		<span className="inline-flex items-center gap-1.5 rounded-full bg-background border-2 border-border px-2.5 py-0.5 text-xs font-bold text-subtle">
+			Chưa làm
+		</span>
+	)
+}
 
 export function ExamCard({ exam, fullTestCoinCost, status = "not-started" }: Props) {
 	return (
@@ -76,10 +84,7 @@ export function ExamCard({ exam, fullTestCoinCost, status = "not-started" }: Pro
 
 			{/* Footer: status + coin + CTA */}
 			<div className="flex items-center justify-between pt-3 border-t border-border-light mt-auto">
-				<span className={cn("inline-flex items-center gap-1.5 text-xs font-bold", STATUS_TEXT[status])}>
-					<span className={cn("size-1.5 rounded-full", STATUS_DOT[status])} />
-					{STATUS_LABEL[status]}
-				</span>
+				<StatusBadge status={status} />
 
 				<div className="flex items-center gap-2">
 					{fullTestCoinCost !== null && (

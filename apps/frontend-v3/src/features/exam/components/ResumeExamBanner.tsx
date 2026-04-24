@@ -20,16 +20,25 @@ export function ResumeExamBanner({ hideWhenExamId }: BannerProps = {}) {
 	const session = data?.data ?? null
 	if (!session || !session.exam_id) return null
 	if (hideWhenExamId && session.exam_id === hideWhenExamId) return null
-	return <Banner deadlineAt={session.server_deadline_at} examId={session.exam_id} sessionId={session.id} />
+	return (
+		<Banner
+			deadlineAt={session.server_deadline_at}
+			examId={session.exam_id}
+			examTitle={session.exam_title}
+			sessionId={session.id}
+		/>
+	)
 }
 
 function Banner({
 	deadlineAt,
 	examId,
+	examTitle,
 	sessionId,
 }: {
 	deadlineAt: string
 	examId: string
+	examTitle: string | null
 	sessionId: string
 }) {
 	const remaining = useExamTimer(deadlineAt)
@@ -42,7 +51,14 @@ function Banner({
 					<Icon name="timer" size="sm" className="text-warning" />
 				</div>
 				<div className="min-w-0">
-					<p className="text-sm font-extrabold text-foreground">Bạn có bài thi đang làm dở</p>
+					<p className="text-sm font-extrabold text-foreground">
+						Bạn có bài thi đang làm dở
+						{examTitle && (
+							<>
+								: <span className="text-warning">{examTitle}</span>
+							</>
+						)}
+					</p>
 					<p className="text-xs text-muted">
 						Thời gian còn lại:{" "}
 						<span className="font-bold tabular-nums text-warning">{formatRemaining(remaining)}</span>

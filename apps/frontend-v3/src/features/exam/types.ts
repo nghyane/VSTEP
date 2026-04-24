@@ -121,6 +121,7 @@ export interface ExamSessionSummary {
 export interface ActiveExamSession {
 	id: string
 	exam_id: string
+	exam_title: string | null
 	exam_version_id: string
 	mode: "full" | "custom"
 	selected_skills: SkillKey[]
