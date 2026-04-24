@@ -341,21 +341,15 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 								</span>
 								<span
 									className={cn(
-										"absolute inset-x-1 bottom-0.5 overflow-hidden rounded-full transition-all",
-										isCurrentlyPlaying ? "h-1 animate-pulse" : "h-0.5",
-										isCurrentlyPlaying
-											? isActive
-												? "bg-white/45"
-												: "bg-primary/30"
-											: isActive
-												? "bg-white/30"
-												: "bg-border",
+										"absolute inset-x-0 bottom-0 h-1 overflow-hidden transition-opacity",
+										isCurrentlyPlaying && "animate-pulse",
+										isActive ? "bg-white/20" : "bg-primary/10",
 									)}
 								>
 									<span
 										className={cn(
-											"block h-full rounded-full transition-[width]",
-											isActive ? "bg-white" : "bg-primary/50",
+											"block h-full transition-[width] duration-300",
+											isActive ? "bg-white" : "bg-primary/70",
 										)}
 										style={{ width: `${pct}%` }}
 									/>

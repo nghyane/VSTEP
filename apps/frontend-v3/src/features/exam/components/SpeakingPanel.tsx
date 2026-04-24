@@ -443,13 +443,13 @@ export function SpeakingPanel({ parts, speakingDone, onMarkDone, footer }: Props
 								</span>
 								<span
 									className={cn(
-										"absolute inset-x-1 bottom-0.5 h-0.5 overflow-hidden rounded-full",
-										isActive ? "bg-white/30" : done ? "bg-primary/30" : "bg-border",
+										"absolute inset-x-0 bottom-0 h-1 overflow-hidden",
+										isActive ? "bg-white/20" : "bg-primary/10",
 									)}
 								>
 									<span
 										className={cn(
-											"block h-full rounded-full",
+											"block h-full transition-[width] duration-300",
 											isActive ? "bg-white" : done ? "bg-primary" : "",
 										)}
 										style={{ width: done ? "100%" : "0%" }}
