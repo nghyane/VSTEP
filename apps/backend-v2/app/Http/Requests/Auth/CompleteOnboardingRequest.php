@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Auth;
 
+use App\Enums\VstepLevel;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class CompleteOnboardingRequest extends FormRequest
 {
@@ -17,7 +19,7 @@ class CompleteOnboardingRequest extends FormRequest
     {
         return [
             'nickname' => ['required', 'string', 'max:50'],
-            'target_level' => ['required', 'string', 'in:B1,B2,C1'],
+            'target_level' => ['required', 'string', Rule::enum(VstepLevel::class)->only(VstepLevel::targetOptions())],
             'target_deadline' => ['required', 'date', 'after:today'],
         ];
     }
