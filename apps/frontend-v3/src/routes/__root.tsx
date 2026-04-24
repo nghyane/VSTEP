@@ -8,7 +8,7 @@ interface RouterContext {
 }
 
 export const Route = createRootRouteWithContext<RouterContext>()({
-	loader: () => initAuth(),
+	beforeLoad: () => initAuth(),
 	component: () => (
 		<>
 			<Outlet />

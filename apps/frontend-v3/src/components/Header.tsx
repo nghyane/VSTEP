@@ -28,7 +28,7 @@ export function Header({ title, backTo }: Props) {
 
 	return (
 		<div className="sticky top-0 z-10 bg-background px-10 pt-8 pb-5 flex items-center justify-between">
-			<div className="flex items-center gap-3">
+			<div className="flex items-center gap-1">
 				{backTo && (
 					<Link to={backTo} className="p-1 -ml-2 hover:opacity-70 transition">
 						<Icon name="back" size="sm" className="text-muted" />
@@ -36,23 +36,33 @@ export function Header({ title, backTo }: Props) {
 				)}
 				<h2 className="font-extrabold text-2xl text-foreground">{title}</h2>
 			</div>
-			<div className="flex items-center gap-6">
+			<div className="flex items-center gap-3">
 				<button
 					type="button"
 					onClick={() => setTopupOpen(true)}
-					aria-label="Nạp xu"
-					className="group flex items-center gap-2 cursor-pointer"
+					aria-label={`${balance ?? 0} xu — bấm để nạp thêm`}
+					className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-coin-tint border-2 border-coin/40 border-b-4 hover:bg-coin/25 hover:-translate-y-0.5 active:translate-y-0 active:border-b-2 transition-all"
 				>
 					<StaticIcon
 						name="coin"
 						size="sm"
 						className="origin-center group-hover:animate-[coinPinch_600ms_ease-in-out]"
 					/>
-					<span className="font-bold text-base text-coin-dark">{balance !== null ? balance : "–"}</span>
+					<span className="font-extrabold text-base text-coin-dark tabular-nums leading-none">
+						{balance !== null ? balance.toLocaleString("vi-VN") : "–"}
+					</span>
+					<span
+						aria-hidden
+						className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-coin/30 text-coin-dark font-extrabold text-xs leading-none opacity-60 group-hover:opacity-100 group-hover:bg-coin/50 transition"
+					>
+						+
+					</span>
 				</button>
-				<div className="flex items-center gap-2">
+				<div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-streak-tint border-2 border-streak/30 border-b-4">
 					<StaticIcon name="streak-sm" size="sm" />
-					<span className="font-bold text-base text-streak">{streak !== null ? streak : "–"}</span>
+					<span className="font-extrabold text-base text-streak tabular-nums leading-none">
+						{streak !== null ? streak : "–"}
+					</span>
 				</div>
 				<ProfileDropdown unread={unread} initial={initial} />
 			</div>
