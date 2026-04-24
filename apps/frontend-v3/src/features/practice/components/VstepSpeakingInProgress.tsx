@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Icon } from "#/components/Icon"
 import { submitVstepSpeaking } from "#/features/practice/actions"
+import { TranslateSelection } from "#/features/practice/components/TranslateSelection"
 import type { SpeakingTaskDetail } from "#/features/practice/types"
 import { useVoiceRecorder } from "#/features/practice/use-voice-recorder"
 import { cn } from "#/lib/utils"
@@ -103,19 +104,21 @@ export function VstepSpeakingInProgress({ task, sessionId }: Props) {
 								<p className="text-xs font-bold text-skill-speaking bg-skill-speaking/10 px-2.5 py-1 rounded-full inline-block mb-3">
 									Part {task.part} · {task.task_type}
 								</p>
-								{task.content.topics.map((topic) => (
-									<div key={topic.name} className="mb-3 last:mb-0">
-										<p className="text-sm font-bold text-foreground mb-1">{topic.name}</p>
-										<ul className="space-y-1">
-											{topic.questions.map((q) => (
-												<li key={q} className="text-sm text-subtle flex gap-2">
-													<span className="text-skill-speaking shrink-0">•</span>
-													{q}
-												</li>
-											))}
-										</ul>
-									</div>
-								))}
+								<TranslateSelection>
+									{task.content.topics.map((topic) => (
+										<div key={topic.name} className="mb-3 last:mb-0">
+											<p className="text-sm font-bold text-foreground mb-1">{topic.name}</p>
+											<ul className="space-y-1">
+												{topic.questions.map((q) => (
+													<li key={q} className="text-sm text-subtle flex gap-2">
+														<span className="text-skill-speaking shrink-0">•</span>
+														{q}
+													</li>
+												))}
+											</ul>
+										</div>
+									))}
+								</TranslateSelection>
 							</div>
 
 							{/* Timer + Record */}

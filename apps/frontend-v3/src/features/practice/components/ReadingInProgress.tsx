@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router"
 import { Icon } from "#/components/Icon"
 import { QuestionList } from "#/features/practice/components/QuestionList"
 import { QuestionNav } from "#/features/practice/components/QuestionNav"
+import { TranslateSelection } from "#/features/practice/components/TranslateSelection"
 import type { ReadingExerciseDetail } from "#/features/practice/types"
 import type { McqPracticeSession } from "#/features/practice/use-mcq-session"
 
@@ -56,17 +57,19 @@ export function ReadingInProgress({ detail, session }: Props) {
 					{/* Two-column: passage + questions */}
 					<div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
 						{/* Passage */}
-						<div className="card p-6 self-start lg:sticky lg:top-6">
-							<p className="text-xs font-bold text-skill-reading uppercase tracking-wide mb-2">
-								Part {exercise.part}
-							</p>
-							<h2 className="font-bold text-lg text-foreground mb-4">{exercise.title}</h2>
-							<div className="text-sm leading-relaxed text-foreground/90 space-y-3">
-								{exercise.passage.split(/\n\n+/).map((para, i) => (
-									<p key={`p-${i}`}>{para}</p>
-								))}
+						<TranslateSelection>
+							<div className="card p-6 self-start lg:sticky lg:top-6">
+								<p className="text-xs font-bold text-skill-reading uppercase tracking-wide mb-2">
+									Part {exercise.part}
+								</p>
+								<h2 className="font-bold text-lg text-foreground mb-4">{exercise.title}</h2>
+								<div className="text-sm leading-relaxed text-foreground/90 space-y-3">
+									{exercise.passage.split(/\n\n+/).map((para, i) => (
+										<p key={`p-${i}`}>{para}</p>
+									))}
+								</div>
 							</div>
-						</div>
+						</TranslateSelection>
 
 						{/* Questions */}
 						<QuestionList
