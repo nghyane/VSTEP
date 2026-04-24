@@ -1,7 +1,7 @@
 ---
 RFC: 0020
 Title: Exam and Grading Service Decomposition
-Status: Draft
+Status: Implemented
 Created: 2026-04-24
 Updated: 2026-04-24
 Superseded by: —
@@ -178,11 +178,11 @@ Ví dụ `StartExamSessionService`, `SubmitExamSessionService`, `ImportExamServi
 
 ## Implementation
 
-- [ ] `ExamImportService`
-- [ ] `ExamSessionService`
-- [ ] `ExamScoringService`
-- [ ] `WritingGradingService`
-- [ ] `SpeakingGradingService`
-- [ ] Update controllers/jobs to inject target services directly
-- [ ] Remove facade/delegation methods from old large services
-- [ ] Tests
+- [x] `ExamImportService`
+- [x] `ExamSessionService`
+- [x] `ExamScoringService`
+- [x] `WritingGradingService`
+- [x] `SpeakingGradingService`
+- [x] Update controllers/jobs to inject target services directly
+- [x] Remove facade/delegation methods from old large services
+- [x] Tests

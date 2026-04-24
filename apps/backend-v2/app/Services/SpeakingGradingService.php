@@ -32,7 +32,7 @@ use Laravel\Ai\Responses\StructuredAgentResponse;
  *
  * Queue: dispatch GradeWritingJob / GradeSpeakingJob (async, retry up to 3 times).
  */
-class GradingService
+class SpeakingGradingService
 {
     public function __construct(
         private readonly SpeechToTextService $sttService,
@@ -70,7 +70,7 @@ class GradingService
         return $job->refresh();
     }
 
-    public function enqueueSpeakingGrading(string $submissionType, string $submissionId): GradingJob
+    public function enqueue(string $submissionType, string $submissionId): GradingJob
     {
         $job = GradingJob::create([
             'submission_type' => $submissionType,
@@ -148,7 +148,7 @@ class GradingService
         });
     }
 
-    public function processSpeakingJob(GradingJob $job): void
+    public function process(GradingJob $job): void
     {
         DB::transaction(function () use ($job) {
             $job->update(['status' => 'processing', 'started_at' => now(), 'attempts' => $job->attempts + 1]);

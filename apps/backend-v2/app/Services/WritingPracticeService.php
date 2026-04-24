@@ -16,7 +16,7 @@ class WritingPracticeService
 {
     public function __construct(
         private readonly PracticeSessionService $sessionService,
-        private readonly GradingService $gradingService,
+        private readonly WritingGradingService $gradingService,
     ) {}
 
     /** @return Collection<int,PracticeWritingPrompt> */
@@ -79,7 +79,7 @@ class WritingPracticeService
 
         $this->sessionService->complete($session);
 
-        $this->gradingService->enqueueWritingGrading('practice_writing', $submission->id);
+        $this->gradingService->enqueue('practice_writing', $submission->id);
 
         return $submission;
     }
