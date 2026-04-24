@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ScrollArea } from "#/components/ScrollArea"
 import type { ExamVersionWritingTask } from "#/features/exam/types"
 import { cn } from "#/lib/utils"
@@ -55,11 +55,24 @@ export function WritingPanel({ tasks, writingAnswers, onAnswer, footer }: Props)
 		[sorted.length],
 	)
 
+	const textareaRef = useRef<HTMLTextAreaElement>(null)
+	const autoResize = useCallback(() => {
+		const el = textareaRef.current
+		if (!el) return
+		el.style.height = "auto"
+		el.style.height = `${el.scrollHeight}px`
+	}, [])
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: re-run when task or text changes
+	useEffect(() => {
+		autoResize()
+	}, [autoResize, activeTask?.id, currentText])
+
 	if (!activeTask) return null
 
 	const isUnder = wordCount < activeTask.min_words
 	const pct = activeTask.min_words > 0 ? Math.min(100, (wordCount / activeTask.min_words) * 100) : 0
-	const editorRows = Math.min(22, Math.max(10, Math.ceil(activeTask.min_words / 12)))
+	const editorMinRows = Math.min(14, Math.max(10, Math.ceil(activeTask.min_words / 20)))
 
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden bg-background">
@@ -104,14 +117,20 @@ export function WritingPanel({ tasks, writingAnswers, onAnswer, footer }: Props)
 							</span>
 						</div>
 
-						<textarea
-							value={currentText}
-							onChange={(e) => onAnswer(activeTask.id, e.target.value)}
-							placeholder="Viết bài làm của bạn ở đây..."
-							rows={editorRows}
-							className="w-full resize-none rounded-(--radius-button) border-2 border-border/70 bg-background p-4 text-sm leading-relaxed text-foreground placeholder:text-placeholder outline-none transition-all focus:border-primary/60 focus:ring-4 focus:ring-primary/10"
-							aria-label={`Bài làm phần ${activeTask.part}`}
-						/>
+						<ScrollArea className="max-h-[420px] rounded-(--radius-button) border-2 border-border/70 bg-background transition-all focus-within:border-primary/60 focus-within:ring-4 focus-within:ring-primary/10">
+							<textarea
+								ref={textareaRef}
+								value={currentText}
+								onChange={(e) => {
+									onAnswer(activeTask.id, e.target.value)
+									autoResize()
+								}}
+								placeholder="Viết bài làm của bạn ở đây..."
+								rows={editorMinRows}
+								className="block w-full resize-none overflow-hidden bg-transparent p-4 text-sm leading-relaxed text-foreground placeholder:text-placeholder outline-none"
+								aria-label={`Bài làm phần ${activeTask.part}`}
+							/>
+						</ScrollArea>
 
 						{/* Word count progress bar */}
 						<div className="space-y-1.5 px-1">
