@@ -2,6 +2,7 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { Suspense, useEffect, useMemo, useState } from "react"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
+import { Icon } from "#/components/Icon"
 import { DeviceCheckScreen } from "#/features/exam/components/DeviceCheckScreen"
 import { ExamRoomHeader } from "#/features/exam/components/ExamRoomHeader"
 import { LacCoinMascot } from "#/features/exam/components/LacCoinMascot"
@@ -11,7 +12,7 @@ import { ResultBackground } from "#/features/exam/components/ResultBackground"
 import { SpeakingPanel } from "#/features/exam/components/SpeakingPanel"
 import { WritingPanel } from "#/features/exam/components/WritingPanel"
 import { examDetailQuery, examSessionQuery } from "#/features/exam/queries"
-import type { SkillKey, SubmitSessionResult } from "#/features/exam/types"
+import type { ExamVersion, SkillKey, SubmitSessionResult } from "#/features/exam/types"
 import { useExamSession, useExamTimer } from "#/features/exam/use-exam-session"
 import { cn } from "#/lib/utils"
 
@@ -46,59 +47,138 @@ const SKILL_COLOR: Record<SkillKey, string> = {
 
 // ─── Result screen (shown after submit) ──────────────────────────────────────
 
-function ResultScreen({ result, examTitle }: { result: SubmitSessionResult; examTitle: string }) {
+interface PerfRow {
+	label: string
+	total: number
+	correct: number
+	wrong: number
+	accuracyPct: number
+	pending?: boolean
+}
+
+function buildPerfRows(
+	version: ExamVersion,
+	activeSkills: SkillKey[],
+	items: SubmitSessionResult["mcq"]["items"],
+): PerfRow[] {
+	const correctByItemId = new Map<string, boolean>()
+	for (const it of items) correctByItemId.set(it.item_ref_id, it.is_correct)
+
+	const rows: PerfRow[] = []
+
+	if (activeSkills.includes("listening")) {
+		for (const sec of version.listening_sections) {
+			const total = sec.items.length
+			const correct = sec.items.reduce((n, it) => n + (correctByItemId.get(it.id) ? 1 : 0), 0)
+			rows.push({
+				label: `Nghe · Part ${sec.part} — ${sec.part_title}`,
+				total,
+				correct,
+				wrong: total - correct,
+				accuracyPct: total > 0 ? Math.round((correct / total) * 100) : 0,
+			})
+		}
+	}
+	if (activeSkills.includes("reading")) {
+		for (const p of version.reading_passages) {
+			const total = p.items.length
+			const correct = p.items.reduce((n, it) => n + (correctByItemId.get(it.id) ? 1 : 0), 0)
+			rows.push({
+				label: `Đọc · ${p.title}`,
+				total,
+				correct,
+				wrong: total - correct,
+				accuracyPct: total > 0 ? Math.round((correct / total) * 100) : 0,
+			})
+		}
+	}
+	if (activeSkills.includes("writing")) {
+		const n = version.writing_tasks.length
+		rows.push({ label: `Viết · ${n} bài`, total: n, correct: 0, wrong: 0, accuracyPct: 0, pending: true })
+	}
+	if (activeSkills.includes("speaking")) {
+		const n = version.speaking_parts.length
+		rows.push({ label: `Nói · ${n} phần`, total: n, correct: 0, wrong: 0, accuracyPct: 0, pending: true })
+	}
+	return rows
+}
+
+function ResultScreen({
+	result,
+	examTitle,
+	version,
+	activeSkills,
+}: {
+	result: SubmitSessionResult
+	examTitle: string
+	version: ExamVersion
+	activeSkills: SkillKey[]
+}) {
 	const { score: mcqScore, total: mcqTotal } = result.mcq
-	const pct = mcqTotal > 0 ? Math.round((mcqScore / mcqTotal) * 100) : 0
 	const scoreOn10 = mcqTotal > 0 ? ((mcqScore / mcqTotal) * 10).toFixed(1) : "0.0"
+	const rows = useMemo(
+		() => buildPerfRows(version, activeSkills, result.mcq.items),
+		[version, activeSkills, result.mcq.items],
+	)
+	const hasPending = rows.some((r) => r.pending)
 
 	return (
 		<div className="relative flex min-h-screen flex-col items-center overflow-hidden">
 			<ResultBackground />
 
-			{/* Content */}
-			<div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center px-4 py-12">
-				{/* Card */}
+			{/* Top-right "Hoàn thành" pill */}
+			<div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
+				<Link
+					to="/thi-thu"
+					className="inline-flex items-center gap-2 rounded-full border-2 border-white/40 bg-white/20 px-4 py-2 text-sm font-extrabold text-white backdrop-blur-sm transition-colors hover:bg-white/30"
+				>
+					<Icon name="check" size="xs" className="text-white" />
+					Hoàn thành
+				</Link>
+			</div>
+
+			<div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center px-4 py-10">
+				<h1 className="mb-5 text-xl font-extrabold text-white drop-shadow-sm">Kết quả</h1>
+
 				<div className="w-full max-w-3xl overflow-hidden rounded-(--radius-banner) border-2 border-b-4 border-white/20 bg-white shadow-2xl">
 					{/* Top: mascot + congrats */}
-					<div className="flex items-center gap-5 px-7 py-6">
-						<LacCoinMascot scoreLabel={scoreOn10} className="w-36 shrink-0 sm:w-44" />
+					<div className="flex items-center gap-5 px-8 py-6">
+						<LacCoinMascot scoreLabel={scoreOn10} className="w-40 shrink-0 sm:w-52" />
 
 						<div className="min-w-0 flex-1">
-							<p className="text-xs font-extrabold uppercase tracking-widest text-primary">Chúc mừng!</p>
-							<h1 className="mt-1 text-2xl font-extrabold text-foreground">Nộp bài thành công</h1>
-							<p className="mt-1 text-sm text-muted">{examTitle}</p>
+							<p className="text-sm text-subtle">Chúc mừng!</p>
+							<p className="mt-0.5 text-2xl font-extrabold text-foreground sm:text-3xl">Thí sinh</p>
+							<p className="mt-1 text-sm text-muted">
+								đã hoàn thành bài kiểm tra{" "}
+								<span className="font-bold text-foreground">{examTitle}</span>
+							</p>
 
-							{/* Score pills */}
 							<div className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1.5">
-								<ScorePill value={mcqScore} total={mcqTotal} label="câu đúng" variant="success" />
-								<ScorePill value={mcqTotal - mcqScore} total={mcqTotal} label="câu sai" variant="danger" />
+								<ScorePill value={mcqScore} total={mcqTotal} label="Số câu đúng" variant="success" />
+								<ScorePill
+									value={mcqTotal - mcqScore}
+									total={mcqTotal}
+									label="Câu trả lời sai"
+									variant="danger"
+								/>
 							</div>
 						</div>
 					</div>
 
 					<div className="mx-6 h-px bg-border" />
 
-					{/* MCQ progress */}
-					<div className="px-7 py-5 space-y-3">
-						<div className="flex items-center justify-between text-sm">
-							<span className="font-extrabold text-foreground">Nghe + Đọc (MCQ)</span>
-							<span className="font-extrabold tabular-nums text-foreground">{pct}%</span>
-						</div>
-						<div className="h-3 w-full overflow-hidden rounded-full bg-border">
-							<div
-								className="h-full rounded-full bg-primary transition-all duration-700"
-								style={{ width: `${pct}%` }}
-							/>
-						</div>
-						<p className="text-xs text-muted">
-							Writing và Speaking đang được AI chấm — kết quả sẽ hiển thị sau vài phút.
-						</p>
+					{/* Performance table */}
+					<div className="px-6 py-5">
+						<p className="mb-4 text-base font-extrabold text-foreground">Performance</p>
+						<PerformanceTable rows={rows} />
+						{hasPending && (
+							<p className="mt-3 text-xs text-muted">
+								Writing và Speaking đang được AI chấm — kết quả sẽ hiển thị sau vài phút.
+							</p>
+						)}
 					</div>
 
-					<div className="mx-6 h-px bg-border" />
-
-					{/* Actions */}
-					<div className="flex justify-center gap-3 px-7 py-5">
+					<div className="flex justify-center gap-3 px-6 pb-7">
 						<Link to="/thi-thu" className="btn btn-secondary">
 							Về danh sách đề
 						</Link>
@@ -122,22 +202,125 @@ function ScorePill({
 }) {
 	const isSuccess = variant === "success"
 	return (
-		<div className="inline-flex items-baseline gap-1.5">
+		<div className="inline-flex items-baseline gap-2">
 			<div
-				className={
+				className={cn(
+					"inline-flex items-center rounded-(--radius-button) border-2 border-b-4 px-3 py-1",
 					isSuccess
-						? "inline-flex items-center rounded-(--radius-button) border-2 border-b-4 border-primary/30 bg-primary-tint px-2.5 py-1"
-						: "inline-flex items-center rounded-(--radius-button) border-2 border-b-4 border-destructive/30 bg-destructive-tint px-2.5 py-1"
-				}
+						? "border-primary/30 bg-primary-tint"
+						: "border-destructive/30 bg-destructive-tint",
+				)}
 			>
 				<span
-					className={`text-base font-extrabold tabular-nums leading-none ${isSuccess ? "text-primary" : "text-destructive"}`}
+					className={cn(
+						"text-lg font-extrabold tabular-nums leading-none",
+						isSuccess ? "text-primary" : "text-destructive",
+					)}
 				>
 					{value}/{total}
 				</span>
 			</div>
 			<span className="text-xs text-muted">{label}</span>
 		</div>
+	)
+}
+
+function PerformanceTable({ rows }: { rows: PerfRow[] }) {
+	return (
+		<div className="overflow-x-auto rounded-(--radius-card) border-2 border-b-4 border-border">
+			<table className="w-full text-sm">
+				<thead>
+					<tr className="border-b-2 border-border bg-background">
+						<th className="px-4 py-3 text-left text-xs font-extrabold uppercase tracking-wide text-subtle">
+							Loại câu hỏi
+						</th>
+						<th className="px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide text-subtle">
+							Tổng
+						</th>
+						<th className="px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide text-subtle">
+							Đúng
+						</th>
+						<th className="px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide text-subtle">
+							Sai
+						</th>
+						<th className="px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide text-subtle">
+							Tỷ lệ
+						</th>
+					</tr>
+				</thead>
+				<tbody>
+					{rows.map((row, idx) => (
+						<tr
+							key={row.label}
+							className={cn(
+								"border-b border-border-light last:border-0",
+								idx % 2 === 1 && "bg-background/40",
+							)}
+						>
+							<td className="px-4 py-3 font-medium text-foreground">{row.label}</td>
+							<td className="px-4 py-3 text-center tabular-nums text-muted">{row.total}</td>
+							<td className="px-4 py-3 text-center tabular-nums">
+								{row.pending ? (
+									<span className="text-subtle">—</span>
+								) : (
+									<span
+										className={cn(
+											"font-bold",
+											row.correct > 0 ? "text-primary" : "text-subtle",
+										)}
+									>
+										{row.correct}
+									</span>
+								)}
+							</td>
+							<td className="px-4 py-3 text-center tabular-nums">
+								{row.pending ? (
+									<span className="text-subtle">—</span>
+								) : (
+									<span className={row.wrong > 0 ? "text-destructive" : "text-subtle"}>
+										{row.wrong}
+									</span>
+								)}
+							</td>
+							<td className="px-4 py-3 text-center">
+								{row.pending ? <PendingBadge /> : <AccuracyBadge pct={row.accuracyPct} />}
+							</td>
+						</tr>
+					))}
+				</tbody>
+			</table>
+		</div>
+	)
+}
+
+function AccuracyBadge({ pct }: { pct: number }) {
+	const tone =
+		pct >= 70
+			? "border-primary/30 bg-primary-tint text-primary"
+			: pct >= 40
+				? "border-warning/30 bg-warning-tint text-warning"
+				: "border-destructive/30 bg-destructive-tint text-destructive"
+	return (
+		<span
+			className={cn(
+				"inline-flex items-center justify-center rounded-full border-2 border-b-4 px-2.5 py-0.5 text-xs font-extrabold tabular-nums",
+				tone,
+			)}
+		>
+			{pct}%
+		</span>
+	)
+}
+
+function PendingBadge() {
+	return (
+		<span className="inline-flex items-center gap-1.5 rounded-full border-2 border-b-4 border-warning/30 bg-warning-tint px-2.5 py-0.5 text-xs font-extrabold text-warning">
+			<span className="relative flex size-1.5">
+				<span className="absolute inline-flex size-full animate-ping rounded-full bg-warning opacity-60" />
+				<span className="relative inline-flex size-1.5 rounded-full bg-warning" />
+			</span>
+			AI đang chấm
+		</span>
 	)
 }
 
@@ -248,7 +431,14 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 			: undefined
 
 	if (submitResult) {
-		return <ResultScreen result={submitResult} examTitle={exam.title} />
+		return (
+			<ResultScreen
+				result={submitResult}
+				examTitle={exam.title}
+				version={version}
+				activeSkills={activeSkills}
+			/>
+		)
 	}
 
 	// Device check phase — hiển thị trước khi vào phòng thi
