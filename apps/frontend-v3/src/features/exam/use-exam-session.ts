@@ -182,7 +182,9 @@ export function useExamSession({
 	const currentSkill = activeSkills[state.skillIdx] ?? activeSkills[0]
 	const isLastSkill = state.skillIdx >= activeSkills.length - 1
 	const nextSkill = activeSkills[state.skillIdx + 1] ?? null
-	const totalMcq = listeningItems.length + readingItems.length
+	const totalMcq =
+		(activeSkills.includes("listening") ? listeningItems.length : 0) +
+		(activeSkills.includes("reading") ? readingItems.length : 0)
 	const answeredMcq = state.mcqAnswers.size
 
 	return {

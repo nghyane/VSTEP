@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react"
 import { ScrollArea } from "#/components/ScrollArea"
+import { HighlightablePassage } from "#/features/exam/components/HighlightablePassage"
 import { MCQQuestion } from "#/features/exam/components/MCQQuestion"
 import type { ExamVersionReadingPassage } from "#/features/exam/types"
 import { cn } from "#/lib/utils"
@@ -66,9 +67,11 @@ export function ReadingPanel({ passages, mcqAnswers, onAnswer, footer }: Props) 
 							<span className="text-xs text-muted">{activePassage.duration_minutes} phút</span>
 						</div>
 						<h2 className="text-base font-bold text-foreground">{activePassage.title}</h2>
-						<div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-							{activePassage.passage}
-						</div>
+						<HighlightablePassage
+							text={activePassage.passage}
+							passageId={activePassage.id}
+							className="text-sm leading-relaxed text-foreground/90"
+						/>
 					</div>
 				</ScrollArea>
 
