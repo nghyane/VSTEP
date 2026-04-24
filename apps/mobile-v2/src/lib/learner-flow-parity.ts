@@ -86,12 +86,8 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "POST /api/v1/vocab/srs/review",
       "POST /api/v1/vocab/exercises/{id}/attempt",
     ],
-    status: "partial",
-    gaps: [
-      "SRS review batch completion invalidate/refetch fixed in frontend-v3 (commit 4cfbc2d) — needs verify on mobile.",
-      "Flashcard/exercise session logic is inline instead of reusable session hooks.",
-      "Focus empty/complete states are inline instead of shared primitives.",
-    ],
+    status: "done",
+    gaps: [],
     nextPhase: 4,
   },
 
@@ -116,8 +112,8 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "GET /api/v1/grammar/points/{id}",
       "POST /api/v1/grammar/exercises/{id}/attempt",
     ],
-    status: "partial",
-    gaps: ["Needs final parity check against frontend-v3 focused exercise UX and feedback states."],
+    status: "done",
+    gaps: [],
     nextPhase: 4,
   },
 
