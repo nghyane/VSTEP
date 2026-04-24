@@ -1,5 +1,6 @@
 import { Link, useMatchRoute } from "@tanstack/react-router"
 import { Icon, type IconName } from "#/components/Icon"
+import { Logo } from "#/components/Logo"
 import { useSession } from "#/lib/auth"
 import { cn } from "#/lib/utils"
 
@@ -19,8 +20,8 @@ export function Sidebar() {
 	return (
 		<aside className="w-[260px] shrink-0 bg-surface border-r border-border flex flex-col sticky top-0 h-screen">
 			<div className="px-7 py-7">
-				<Link to="/dashboard" className="font-display text-3xl text-primary">
-					VSTEP
+				<Link to="/dashboard">
+					<Logo size="lg" />
 				</Link>
 			</div>
 
