@@ -258,7 +258,7 @@ class ExamController extends Controller
             'examVersion.readingPassages.items',
         ]);
 
-        $mcqBand = $this->examService->getSessionScores($session);
+        $mcqBand = $this->scoringService->getSessionScores($session);
 
         // MCQ detail: per-item breakdown
         $mcqDetail = $this->buildMcqDetail($session);
@@ -368,7 +368,7 @@ class ExamController extends Controller
     /** @return array<int, array{item_ref_type: string, item_ref_id: string, selected_index: int, correct_index: int|null, is_correct: bool}> */
     private function buildMcqDetail(ExamSession $session): array
     {
-        $itemMap = $this->examService->loadMcqItemMap($session);
+        $itemMap = $this->scoringService->loadMcqItemMap($session);
 
         return $session->mcqAnswers->map(function (ExamMcqAnswer $answer) use ($itemMap) {
             $key = "{$answer->item_ref_type}:{$answer->item_ref_id}";

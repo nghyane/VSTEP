@@ -6,6 +6,7 @@ import type {
 	ExamDetail,
 	ExamSessionData,
 	ExamSessionSummary,
+	SessionResultsData,
 } from "#/features/exam/types"
 import { type ApiResponse, api } from "#/lib/api"
 
@@ -45,4 +46,12 @@ export const examSessionQuery = (sessionId: string) =>
 		queryFn: () => api.get(`exam-sessions/${sessionId}`).json<ApiResponse<ExamSessionData>>(),
 		staleTime: Number.POSITIVE_INFINITY,
 		retry: false,
+	})
+
+export const sessionResultsQuery = (sessionId: string) =>
+	queryOptions({
+		queryKey: ["exam-sessions", sessionId, "results"],
+		queryFn: () =>
+			api.get(`exam-sessions/${sessionId}/results`).json<ApiResponse<SessionResultsData>>(),
+		staleTime: 60_000,
 	})

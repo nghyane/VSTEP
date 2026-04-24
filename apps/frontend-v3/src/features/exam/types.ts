@@ -196,6 +196,24 @@ export interface SubmitSessionResult {
 	speaking_jobs: GradingJobRef[]
 }
 
+export interface McqDetailItem {
+	item_ref_type: "exam_listening_item" | "exam_reading_item"
+	item_ref_id: string
+	selected_index: number | null
+	correct_index: number
+	is_correct: boolean
+	answered_at: string | null
+}
+
+export interface SessionResultsData {
+	session: ExamSessionSummary
+	scores: unknown
+	mcq_detail: McqDetailItem[]
+	writing_feedback: unknown
+	speaking_feedback: unknown
+	listening_play_summary: Array<{ section_id: string; part: number; played: boolean }>
+}
+
 /** Derived UI model per skill — computed from ExamVersion */
 export interface SkillSection {
 	skill: SkillKey

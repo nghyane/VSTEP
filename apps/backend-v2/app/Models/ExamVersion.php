@@ -25,21 +25,29 @@ class ExamVersion extends BaseModel
 
     public function listeningSections(): HasMany
     {
-        return $this->hasMany(ExamVersionListeningSection::class);
+        return $this->hasMany(ExamVersionListeningSection::class)
+            ->orderBy('part')
+            ->orderBy('display_order');
     }
 
     public function readingPassages(): HasMany
     {
-        return $this->hasMany(ExamVersionReadingPassage::class);
+        return $this->hasMany(ExamVersionReadingPassage::class)
+            ->orderBy('part')
+            ->orderBy('display_order');
     }
 
     public function writingTasks(): HasMany
     {
-        return $this->hasMany(ExamVersionWritingTask::class);
+        return $this->hasMany(ExamVersionWritingTask::class)
+            ->orderBy('part')
+            ->orderBy('display_order');
     }
 
     public function speakingParts(): HasMany
     {
-        return $this->hasMany(ExamVersionSpeakingPart::class);
+        return $this->hasMany(ExamVersionSpeakingPart::class)
+            ->orderBy('part')
+            ->orderBy('display_order');
     }
 }

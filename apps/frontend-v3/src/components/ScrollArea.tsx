@@ -4,6 +4,14 @@ import { cn } from "#/lib/utils"
 interface Props {
 	children: React.ReactNode
 	className?: string
+	/** Extra class(es) for the thumb — dùng khi nền sáng và muốn thumb nổi rõ hơn. */
+	thumbClassName?: string
+	/**
+	 * Max-height cho viewport. Khác với `max-h-*` trong className (áp cho outer, viewport
+	 * dùng h-full nên không clamp): prop này áp inline max-height lên viewport → content
+	 * ngắn shrink theo content, content dài mới scroll. Đơn vị mặc định: px.
+	 */
+	maxHeight?: number | string
 }
 
 /**
@@ -11,7 +19,7 @@ interface Props {
  * Không dùng CSS ::-webkit-scrollbar (có OS arrow trên Windows).
  * Pattern từ Radix ScrollArea: viewport overflow:hidden + custom thumb div.
  */
-export function ScrollArea({ children, className }: Props) {
+export function ScrollArea({ children, className, thumbClassName, maxHeight }: Props) {
 	const viewportRef = useRef<HTMLDivElement>(null)
 	const thumbRef = useRef<HTMLDivElement>(null)
 	const trackRef = useRef<HTMLDivElement>(null)
@@ -93,11 +101,12 @@ export function ScrollArea({ children, className }: Props) {
 
 	return (
 		<div className={cn("relative overflow-hidden", className)}>
-			{/* Viewport — native scrollbar ẩn bằng overflow:hidden + padding trick */}
+			{/* Viewport — native scrollbar ẩn bằng scrollbar-width:none (không dùng padding trick
+			    để content flush với thumb, không có gap bên phải) */}
 			<div
 				ref={viewportRef}
-				className="h-full w-full overflow-y-scroll"
-				style={{ paddingRight: 20, marginRight: -20, boxSizing: "content-box" }}
+				className="scrollbar-none h-full w-full overflow-y-auto"
+				style={{ maxHeight: maxHeight ?? undefined }}
 			>
 				{children}
 			</div>
@@ -114,7 +123,10 @@ export function ScrollArea({ children, className }: Props) {
 					<div
 						ref={thumbRef}
 						onPointerDown={handleThumbPointerDown}
-						className="absolute right-0 w-1 rounded-full bg-border hover:bg-placeholder transition-colors cursor-grab active:cursor-grabbing"
+						className={cn(
+							"absolute right-0 w-1 rounded-full bg-border hover:bg-placeholder transition-colors cursor-grab active:cursor-grabbing",
+							thumbClassName,
+						)}
 						style={{ height: thumbHeight, top: thumbTop }}
 					/>
 				</div>

@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { Suspense, useEffect, useMemo, useState } from "react"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
 import { Icon } from "#/components/Icon"
+import { ScrollArea } from "#/components/ScrollArea"
 import { DeviceCheckScreen } from "#/features/exam/components/DeviceCheckScreen"
 import { ExamRoomHeader } from "#/features/exam/components/ExamRoomHeader"
 import { LacCoinMascot } from "#/features/exam/components/LacCoinMascot"
@@ -67,11 +68,14 @@ function buildPerfRows(
 	const rows: PerfRow[] = []
 
 	if (activeSkills.includes("listening")) {
-		for (const sec of version.listening_sections) {
+		const sorted = [...version.listening_sections].sort(
+			(a, b) => a.part - b.part || a.display_order - b.display_order,
+		)
+		for (const sec of sorted) {
 			const total = sec.items.length
 			const correct = sec.items.reduce((n, it) => n + (correctByItemId.get(it.id) ? 1 : 0), 0)
 			rows.push({
-				label: `Nghe · Part ${sec.part} — ${sec.part_title}`,
+				label: `Nghe · ${sec.part_title}`,
 				total,
 				correct,
 				wrong: total - correct,
@@ -80,7 +84,10 @@ function buildPerfRows(
 		}
 	}
 	if (activeSkills.includes("reading")) {
-		for (const p of version.reading_passages) {
+		const sorted = [...version.reading_passages].sort(
+			(a, b) => a.part - b.part || a.display_order - b.display_order,
+		)
+		for (const p of sorted) {
 			const total = p.items.length
 			const correct = p.items.reduce((n, it) => n + (correctByItemId.get(it.id) ? 1 : 0), 0)
 			rows.push({
@@ -106,16 +113,20 @@ function buildPerfRows(
 function ResultScreen({
 	result,
 	examTitle,
+	examId,
+	sessionId,
 	version,
 	activeSkills,
 }: {
 	result: SubmitSessionResult
 	examTitle: string
+	examId: string
+	sessionId: string
 	version: ExamVersion
 	activeSkills: SkillKey[]
 }) {
 	const { score: mcqScore, total: mcqTotal } = result.mcq
-	const scoreOn10 = mcqTotal > 0 ? ((mcqScore / mcqTotal) * 10).toFixed(1) : "0.0"
+	const scoreOn10 = mcqTotal > 0 ? (mcqScore / mcqTotal) * 10 : 0
 	const rows = useMemo(
 		() => buildPerfRows(version, activeSkills, result.mcq.items),
 		[version, activeSkills, result.mcq.items],
@@ -126,13 +137,15 @@ function ResultScreen({
 		<div className="relative flex min-h-screen flex-col items-center overflow-hidden">
 			<ResultBackground />
 
-			{/* Top-right "Hoàn thành" pill */}
+			{/* Top-right "Hoàn thành" pill — gamified */}
 			<div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
 				<Link
 					to="/thi-thu"
-					className="inline-flex items-center gap-2 rounded-full border-2 border-white/40 bg-white/20 px-4 py-2 text-sm font-extrabold text-white backdrop-blur-sm transition-colors hover:bg-white/30"
+					className="group inline-flex items-center gap-2.5 rounded-full border-2 border-b-4 border-white/50 bg-white/25 py-2 pl-2 pr-5 text-base font-extrabold text-white shadow-lg backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/35 active:translate-y-0 active:border-b-2"
 				>
-					<Icon name="check" size="xs" className="text-white" />
+					<span className="flex size-7 items-center justify-center rounded-full border-2 border-b-[3px] border-coin-dark bg-coin shadow-inner transition-transform group-hover:rotate-12">
+						<Icon name="check" size="xs" className="text-white" />
+					</span>
 					Hoàn thành
 				</Link>
 			</div>
@@ -143,7 +156,7 @@ function ResultScreen({
 				<div className="w-full max-w-3xl overflow-hidden rounded-(--radius-banner) border-2 border-b-4 border-white/20 bg-white shadow-2xl">
 					{/* Top: mascot + congrats */}
 					<div className="flex items-center gap-5 px-8 py-6">
-						<LacCoinMascot scoreLabel={scoreOn10} className="w-40 shrink-0 sm:w-52" />
+						<LacCoinMascot score={scoreOn10} className="w-40 shrink-0 sm:w-52" />
 
 						<div className="min-w-0 flex-1">
 							<p className="text-sm text-subtle">Chúc mừng!</p>
@@ -170,7 +183,13 @@ function ResultScreen({
 					{/* Performance table */}
 					<div className="px-6 py-5">
 						<p className="mb-4 text-base font-extrabold text-foreground">Performance</p>
-						<PerformanceTable rows={rows} />
+						<ScrollArea
+							className="rounded-(--radius-card) border-2 border-b-4 border-border"
+							maxHeight={320}
+							thumbClassName="w-1.5 bg-placeholder/70 hover:bg-subtle"
+						>
+							<PerformanceTable rows={rows} />
+						</ScrollArea>
 						{hasPending && (
 							<p className="mt-3 text-xs text-muted">
 								Writing và Speaking đang được AI chấm — kết quả sẽ hiển thị sau vài phút.
@@ -178,10 +197,21 @@ function ResultScreen({
 						)}
 					</div>
 
-					<div className="flex justify-center gap-3 px-6 pb-7">
+					<div className="flex flex-wrap justify-center gap-3 px-6 pb-7">
 						<Link to="/thi-thu" className="btn btn-secondary">
 							Về danh sách đề
 						</Link>
+						{mcqTotal > 0 && (
+							<Link
+								to="/phong-thi/$sessionId/chi-tiet"
+								params={{ sessionId }}
+								search={{ examId }}
+								className="btn btn-primary"
+							>
+								Xem chi tiết
+								<Icon name="lightning" size="xs" className="text-white" />
+							</Link>
+						)}
 					</div>
 				</div>
 			</div>
@@ -227,10 +257,10 @@ function ScorePill({
 
 function PerformanceTable({ rows }: { rows: PerfRow[] }) {
 	return (
-		<div className="overflow-x-auto rounded-(--radius-card) border-2 border-b-4 border-border">
+		<div className="overflow-x-auto">
 			<table className="w-full text-sm">
 				<thead>
-					<tr className="border-b-2 border-border bg-background">
+					<tr className="sticky top-0 z-10 border-b-2 border-border bg-background">
 						<th className="px-4 py-3 text-left text-xs font-extrabold uppercase tracking-wide text-subtle">
 							Loại câu hỏi
 						</th>
@@ -435,6 +465,8 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 			<ResultScreen
 				result={submitResult}
 				examTitle={exam.title}
+				examId={exam.id}
+				sessionId={session.id}
 				version={version}
 				activeSkills={activeSkills}
 			/>
