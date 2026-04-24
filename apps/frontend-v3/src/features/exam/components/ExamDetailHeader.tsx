@@ -1,16 +1,9 @@
 import { Icon, StaticIcon } from "#/components/Icon"
+import { SkillChip } from "#/components/SkillChip"
 import type { ExamDetail, SkillKey } from "#/features/exam/types"
-import { cn } from "#/lib/utils"
 
 interface Props {
 	detail: ExamDetail
-}
-
-const SKILL_META: Record<SkillKey, { label: string; colorClass: string }> = {
-	listening: { label: "Listening", colorClass: "text-skill-listening" },
-	reading: { label: "Reading", colorClass: "text-skill-reading" },
-	writing: { label: "Writing", colorClass: "text-skill-writing" },
-	speaking: { label: "Speaking", colorClass: "text-skill-speaking" },
 }
 
 const SKILL_ORDER: SkillKey[] = ["listening", "reading", "writing", "speaking"]
@@ -74,22 +67,9 @@ export function ExamDetailHeader({ detail }: Props) {
 
 			{/* Skill chips */}
 			<div className="flex flex-wrap gap-1.5">
-				{SKILL_ORDER.map((skill) => {
-					const meta = SKILL_META[skill]
-					return (
-						<span
-							key={skill}
-							className={cn(
-								"inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-extrabold",
-								meta.colorClass,
-							)}
-							style={{ backgroundColor: `color-mix(in srgb, currentColor 12%, transparent)` }}
-						>
-							<span className="size-1.5 rounded-full bg-current" />
-							{meta.label}
-						</span>
-					)
-				})}
+				{SKILL_ORDER.map((skill) => (
+					<SkillChip key={skill} skill={skill} size="md" />
+				))}
 			</div>
 		</div>
 	)

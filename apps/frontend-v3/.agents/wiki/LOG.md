@@ -19,3 +19,4 @@
 - 2026-04-22: Created exam-color-system.md — exam room dùng primary cho interactive, skill color chỉ cho identifier
 - 2026-07-17: Created grading-fallback-bug.md — $systemPrompt never passed to callStructuredLlm, LLM had no instructions → always fallback 5.0
 - 2026-04-24: Created auth-google.md — Google Sign-In via GSI renderButton, BE verifies JWKS with openssl_verify (no lib dep), needs_onboarding flow → Step2 completes initial profile
+- 2026-04-25: Updated anti-patterns.md — SkillChip shared component rule (no inline pill, no dot inside chip); created `components/SkillChip.tsx`

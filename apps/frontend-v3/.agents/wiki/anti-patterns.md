@@ -100,6 +100,28 @@ useReducer(reducer, {
 } satisfies ExamState)
 ```
 
+## Skill chip — dùng `SkillChip` shared, không inline
+
+**Sai:** mỗi component tự render pill cho kỹ năng + nhét thêm dot `<span className="size-1.5 rounded-full bg-current" />`.
+```tsx
+<span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full", SKILL_COLORS[skill])}>
+  <span className="size-1.5 rounded-full bg-current" />
+  Listening
+</span>
+```
+Hệ quả: dot không tải thêm thông tin (label + màu đã đủ phân biệt), gây noise thị giác. Khi một chip được sửa bỏ dot thì các chip còn lại ở trang khác vẫn còn → UI không đồng bộ.
+
+**Đúng:** dùng `SkillChip` trong `components/SkillChip.tsx`.
+```tsx
+import { SkillChip } from "#/components/SkillChip"
+<SkillChip skill="listening" size="sm" />
+```
+- Size `sm` (`px-2 py-0.5 text-[11px]`) cho card compact, `md` (`px-2.5 py-1 text-xs`) cho header.
+- Background tự tính qua `color-mix(... currentColor 12% ...)` đồng nhất khắp app.
+- KHÔNG thêm dot/icon vào label. Nếu cần nhấn mạnh trạng thái (vd. đang làm) — dùng badge riêng bên ngoài chip.
+
+Grep `SKILL_COLORS`, `skill-listening` trước khi viết chip mới để tránh duplicate.
+
 ## Exam room — device-check phase bắt buộc trước khi vào phòng thi
 
 - Phase order: `device-check` → `active` → `submitting` → `submitted`.

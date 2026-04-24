@@ -1,6 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { type ReactNode, Suspense, useEffect, useMemo, useState } from "react"
+import { Suspense, useEffect, useMemo, useState } from "react"
+import { ConfirmDialog } from "#/components/ConfirmDialog"
 import { DeviceCheckScreen } from "#/features/exam/components/DeviceCheckScreen"
 import { ExamRoomHeader } from "#/features/exam/components/ExamRoomHeader"
 import { LacCoinMascot } from "#/features/exam/components/LacCoinMascot"
@@ -41,146 +42,6 @@ const SKILL_COLOR: Record<SkillKey, string> = {
 	reading: "text-skill-reading",
 	writing: "text-skill-writing",
 	speaking: "text-skill-speaking",
-}
-
-// ─── Dialogs ─────────────────────────────────────────────────────────────────
-
-interface ConfirmDialogProps {
-	open: boolean
-	title: string
-	description: ReactNode
-	warning?: string
-	confirmLabel: string
-	cancelLabel?: string
-	onConfirm: () => void
-	onCancel: () => void
-	isLoading?: boolean
-	countdownSeconds?: number
-	destructive?: boolean
-}
-
-function ConfirmDialog({
-	open,
-	title,
-	description,
-	warning,
-	confirmLabel,
-	cancelLabel = "Ở lại",
-	onConfirm,
-	onCancel,
-	isLoading,
-	countdownSeconds,
-	destructive,
-}: ConfirmDialogProps) {
-	const [remaining, setRemaining] = useState(countdownSeconds ?? 0)
-
-	useEffect(() => {
-		if (!open || !countdownSeconds) {
-			setRemaining(0)
-			return
-		}
-		setRemaining(countdownSeconds)
-		const t = setInterval(() => {
-			setRemaining((r) => {
-				if (r <= 1) {
-					clearInterval(t)
-					return 0
-				}
-				return r - 1
-			})
-		}, 1000)
-		return () => clearInterval(t)
-	}, [open, countdownSeconds])
-
-	if (!open) return null
-	const locked = remaining > 0
-	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-			<button
-				type="button"
-				aria-label="Đóng"
-				onClick={onCancel}
-				className="absolute inset-0 bg-foreground/45 backdrop-blur-sm"
-			/>
-			<div className="relative w-full max-w-sm rounded-(--radius-card) border-2 border-b-4 border-border bg-card p-6 shadow-[0_12px_28px_rgb(0_0_0_/_0.12)] animate-[slideIn_0.18s_ease-out]">
-				{/* Close */}
-				<button
-					type="button"
-					onClick={onCancel}
-					className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface hover:text-foreground"
-					aria-label="Đóng"
-				>
-					<svg
-						viewBox="0 0 16 16"
-						className="size-4"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2.2"
-						strokeLinecap="round"
-						aria-hidden="true"
-					>
-						<path d="M3 3l10 10M13 3L3 13" />
-					</svg>
-				</button>
-
-				{/* Icon — raised warning chip */}
-				<div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full border-2 border-b-4 border-warning/30 bg-warning-tint">
-					<svg
-						viewBox="0 0 24 24"
-						className="size-7 text-warning"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2.2"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						aria-hidden="true"
-					>
-						<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-						<line x1="12" y1="9" x2="12" y2="13" />
-						<line x1="12" y1="17" x2="12.01" y2="17" />
-					</svg>
-				</div>
-
-				<h2 className="mb-1.5 text-center text-lg font-extrabold text-foreground">{title}</h2>
-				<p className="mb-5 text-center text-sm leading-relaxed text-muted">{description}</p>
-
-				{warning && (
-					<div className="mb-5 flex items-center justify-center gap-2 rounded-(--radius-button) border-2 border-warning/30 bg-warning-tint px-3 py-2 text-center text-xs font-extrabold text-warning">
-						<span
-							aria-hidden="true"
-							className="flex size-4 shrink-0 items-center justify-center rounded-full bg-warning text-[10px] font-black text-white"
-						>
-							!
-						</span>
-						{warning}
-					</div>
-				)}
-
-				<div className="flex gap-2.5">
-					<button
-						type="button"
-						onClick={onCancel}
-						className="flex-1 rounded-(--radius-button) border-2 border-b-4 border-border bg-surface px-4 py-2.5 text-sm font-extrabold text-foreground transition-all hover:border-primary/40 active:translate-y-[2px] active:border-b-2"
-					>
-						{cancelLabel}
-					</button>
-					<button
-						type="button"
-						onClick={onConfirm}
-						disabled={isLoading || locked}
-						className={cn(
-							"flex-1 text-sm disabled:cursor-not-allowed disabled:opacity-60",
-							destructive
-								? "rounded-(--radius-button) border-2 border-b-4 border-destructive bg-destructive px-4 py-2.5 font-extrabold text-white transition-all hover:brightness-110 active:translate-y-[2px] active:border-b-2"
-								: "btn btn-primary",
-						)}
-					>
-						{isLoading ? "Đang nộp…" : locked ? `${confirmLabel} (${remaining})` : confirmLabel}
-					</button>
-				</div>
-			</div>
-		</div>
-	)
 }
 
 // ─── Result screen (shown after submit) ──────────────────────────────────────
@@ -348,6 +209,17 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 	const totalDurationMinutes = activeSkills.reduce((sum, sk) => sum + skillDurationMinutes[sk], 0)
 
 	const remainingSeconds = useExamTimer(session.server_deadline_at)
+
+	// Cảnh báo khi user cố đóng tab / refresh / bấm back browser trong lúc làm bài.
+	useEffect(() => {
+		if (state.phase !== "active" || submitResult) return
+		const handler = (e: BeforeUnloadEvent) => {
+			e.preventDefault()
+			e.returnValue = ""
+		}
+		window.addEventListener("beforeunload", handler)
+		return () => window.removeEventListener("beforeunload", handler)
+	}, [state.phase, submitResult])
 
 	// Only the CURRENT (last) skill is actionable at submit time — other skills are locked
 	const currentSkillPending: { count: number; unit: string } | null = (() => {
@@ -553,6 +425,7 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 				}
 				warning={submitWarning}
 				confirmLabel="Nộp bài"
+				loadingLabel="Đang nộp…"
 				onConfirm={handleSubmit}
 				onCancel={handleHideConfirmSubmit}
 				isLoading={isSubmitting}
