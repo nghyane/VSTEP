@@ -153,16 +153,47 @@ export interface McqAnswerPayload {
 	selected_index: number
 }
 
+export interface WritingAnswerPayload {
+	task_id: string
+	text: string
+	word_count: number
+}
+
+export interface SpeakingAnswerPayload {
+	part_id: string
+	audio_url: string
+	duration_seconds: number
+}
+
 export interface SubmitSessionPayload {
 	mcq_answers: McqAnswerPayload[]
+	writing_answers?: WritingAnswerPayload[]
+	speaking_answers?: SpeakingAnswerPayload[]
+}
+
+export interface GradingJobRef {
+	submission_id: string
+	job_id: string
+	status: string
 }
 
 export interface SubmitSessionResult {
 	session_id: string
 	status: string
-	mcq_score: number
-	mcq_total: number
 	submitted_at: string
+	mcq: {
+		score: number
+		total: number
+		items: Array<{
+			item_ref_type: string
+			item_ref_id: string
+			selected_index: number
+			correct_index: number
+			is_correct: boolean
+		}>
+	}
+	writing_jobs: GradingJobRef[]
+	speaking_jobs: GradingJobRef[]
 }
 
 /** Derived UI model per skill — computed from ExamVersion */

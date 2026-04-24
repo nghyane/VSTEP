@@ -7,6 +7,7 @@ import { abandonExamSession, startExamSession } from "#/features/exam/actions"
 import { activeExamSessionQuery, appConfigQuery } from "#/features/exam/queries"
 import type { ExamDetail, SkillKey } from "#/features/exam/types"
 import { walletBalanceQuery } from "#/features/wallet/queries"
+import { TopUpDialog } from "#/features/wallet/TopUpDialog"
 import { useToast } from "#/lib/toast"
 import { cn } from "#/lib/utils"
 
@@ -45,6 +46,7 @@ export function BottomActionBar({ detail, selected }: Props) {
 
 	// Dialog: "Làm mới" (đang ở đề đang làm) hoặc "Bắt đầu đề khác" (đang có đề khác dở)
 	const [confirmReset, setConfirmReset] = useState(false)
+	const [showTopup, setShowTopup] = useState(false)
 
 	const fullCost = configData?.data.pricing.exam.full_test_cost_coins ?? 25
 	const perSkillCost = configData?.data.pricing.exam.custom_per_skill_coins ?? 8
@@ -101,6 +103,10 @@ export function BottomActionBar({ detail, selected }: Props) {
 	})
 
 	function handleStartClick() {
+		if (insufficient) {
+			setShowTopup(true)
+			return
+		}
 		if (activeSession) {
 			setConfirmReset(true)
 			return
@@ -136,16 +142,31 @@ export function BottomActionBar({ detail, selected }: Props) {
 							<button
 								type="button"
 								onClick={handleStartClick}
-								disabled={insufficient || mutation.isPending}
+								disabled={mutation.isPending}
 								className={cn(
-									"text-sm inline-flex items-center gap-2",
-									activeSameExam
-										? "rounded-(--radius-button) border-2 border-b-4 border-destructive bg-destructive px-4 py-2.5 font-extrabold text-white transition-all hover:brightness-110 active:translate-y-[2px] active:border-b-2 disabled:cursor-not-allowed disabled:opacity-60"
-										: "btn btn-primary",
+									"group text-sm inline-flex items-center gap-2",
+									insufficient
+										? "btn btn-coin"
+										: activeSameExam
+											? "rounded-(--radius-button) border-2 border-b-4 border-destructive bg-destructive px-4 py-2.5 font-extrabold text-white transition-all hover:brightness-110 active:translate-y-[2px] active:border-b-2 disabled:cursor-not-allowed disabled:opacity-60"
+											: "btn btn-primary",
 								)}
 							>
-								{activeSameExam ? "Làm mới" : "Làm full test"}
-								<Icon name="lightning" size="xs" className="text-white" />
+								{insufficient ? (
+									<>
+										<StaticIcon
+											name="coin"
+											size="xs"
+											className="relative group-hover:animate-[coinPinch_700ms_ease-in-out]"
+										/>
+										<span className="relative">Nạp xu</span>
+									</>
+								) : (
+									<>
+										{activeSameExam ? "Làm mới" : "Làm full test"}
+										<Icon name="lightning" size="xs" className="text-white" />
+									</>
+								)}
 							</button>
 						</div>
 					</div>
@@ -223,16 +244,31 @@ export function BottomActionBar({ detail, selected }: Props) {
 							<button
 								type="button"
 								onClick={handleStartClick}
-								disabled={insufficient || mutation.isPending}
+								disabled={mutation.isPending}
 								className={cn(
-									"text-sm inline-flex items-center gap-2",
-									activeSameExam
-										? "rounded-(--radius-button) border-2 border-b-4 border-destructive bg-destructive px-4 py-2.5 font-extrabold text-white transition-all hover:brightness-110 active:translate-y-[2px] active:border-b-2 disabled:cursor-not-allowed disabled:opacity-60"
-										: "btn btn-primary",
+									"group text-sm inline-flex items-center gap-2",
+									insufficient
+										? "btn btn-coin"
+										: activeSameExam
+											? "rounded-(--radius-button) border-2 border-b-4 border-destructive bg-destructive px-4 py-2.5 font-extrabold text-white transition-all hover:brightness-110 active:translate-y-[2px] active:border-b-2 disabled:cursor-not-allowed disabled:opacity-60"
+											: "btn btn-primary",
 								)}
 							>
-								{activeSameExam ? "Làm mới" : "Bắt đầu luyện tập"}
-								<Icon name="lightning" size="xs" className="text-white" />
+								{insufficient ? (
+									<>
+										<StaticIcon
+											name="coin"
+											size="xs"
+											className="relative group-hover:animate-[coinPinch_700ms_ease-in-out]"
+										/>
+										<span className="relative">Nạp xu</span>
+									</>
+								) : (
+									<>
+										{activeSameExam ? "Làm mới" : "Bắt đầu luyện tập"}
+										<Icon name="lightning" size="xs" className="text-white" />
+									</>
+								)}
 							</button>
 						</div>
 					</div>
@@ -264,6 +300,8 @@ export function BottomActionBar({ detail, selected }: Props) {
 				onConfirm={() => mutation.mutate()}
 				onCancel={() => setConfirmReset(false)}
 			/>
+
+			<TopUpDialog open={showTopup} onClose={() => setShowTopup(false)} />
 		</div>
 	)
 }

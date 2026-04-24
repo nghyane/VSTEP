@@ -4,9 +4,12 @@ import { submitExamSession } from "#/features/exam/actions"
 import type {
 	ExamSessionData,
 	ExamVersionMcqItem,
+	ExamVersionWritingTask,
 	McqAnswerPayload,
 	SkillKey,
+	SubmitSessionPayload,
 	SubmitSessionResult,
+	WritingAnswerPayload,
 } from "#/features/exam/types"
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -184,6 +187,7 @@ interface UseExamSessionOptions {
 	session: ExamSessionData
 	listeningItems: ExamVersionMcqItem[]
 	readingItems: ExamVersionMcqItem[]
+	writingTasks: ExamVersionWritingTask[]
 	onSubmitted: (result: SubmitSessionResult) => void
 }
 
@@ -191,6 +195,7 @@ export function useExamSession({
 	session,
 	listeningItems,
 	readingItems,
+	writingTasks,
 	onSubmitted,
 }: UseExamSessionOptions) {
 	const activeSkills = SKILL_ORDER.filter((sk) => session.selected_skills.includes(sk))
@@ -220,7 +225,7 @@ export function useExamSession({
 
 	const qc = useQueryClient()
 	const submitMutation = useMutation({
-		mutationFn: (payload: McqAnswerPayload[]) => submitExamSession(session.id, { mcq_answers: payload }),
+		mutationFn: (payload: SubmitSessionPayload) => submitExamSession(session.id, payload),
 		onSuccess: (result) => {
 			dispatch({ type: "SUBMITTED" })
 			qc.invalidateQueries({ queryKey: ["exam-sessions", "active"] })
@@ -254,12 +259,33 @@ export function useExamSession({
 
 	const handleSubmit = useCallback(() => {
 		dispatch({ type: "SUBMITTING" })
-		const payload = [
+		const mcq_answers: McqAnswerPayload[] = [
 			...buildMcqPayload(listeningItems, "exam_listening_item", state.mcqAnswers),
 			...buildMcqPayload(readingItems, "exam_reading_item", state.mcqAnswers),
 		]
-		submitMutation.mutate(payload)
-	}, [listeningItems, readingItems, state.mcqAnswers, submitMutation])
+		const writing_answers: WritingAnswerPayload[] = activeSkills.includes("writing")
+			? writingTasks
+					.map((task) => {
+						const text = (state.writingAnswers.get(task.id) ?? "").trim()
+						if (text.length === 0) return null
+						return {
+							task_id: task.id,
+							text,
+							word_count: text.split(/\s+/).filter(Boolean).length,
+						}
+					})
+					.filter((x): x is WritingAnswerPayload => x !== null)
+			: []
+		submitMutation.mutate({ mcq_answers, writing_answers })
+	}, [
+		activeSkills,
+		listeningItems,
+		readingItems,
+		writingTasks,
+		state.mcqAnswers,
+		state.writingAnswers,
+		submitMutation,
+	])
 
 	const currentSkill = activeSkills[state.skillIdx] ?? activeSkills[0]
 	const isLastSkill = state.skillIdx >= activeSkills.length - 1

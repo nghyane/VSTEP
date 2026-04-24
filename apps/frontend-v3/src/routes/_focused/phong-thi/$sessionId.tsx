@@ -47,8 +47,9 @@ const SKILL_COLOR: Record<SkillKey, string> = {
 // ─── Result screen (shown after submit) ──────────────────────────────────────
 
 function ResultScreen({ result, examTitle }: { result: SubmitSessionResult; examTitle: string }) {
-	const pct = result.mcq_total > 0 ? Math.round((result.mcq_score / result.mcq_total) * 100) : 0
-	const scoreOn10 = result.mcq_total > 0 ? ((result.mcq_score / result.mcq_total) * 10).toFixed(1) : "0.0"
+	const { score: mcqScore, total: mcqTotal } = result.mcq
+	const pct = mcqTotal > 0 ? Math.round((mcqScore / mcqTotal) * 100) : 0
+	const scoreOn10 = mcqTotal > 0 ? ((mcqScore / mcqTotal) * 10).toFixed(1) : "0.0"
 
 	return (
 		<div className="relative flex min-h-screen flex-col items-center overflow-hidden">
@@ -69,18 +70,8 @@ function ResultScreen({ result, examTitle }: { result: SubmitSessionResult; exam
 
 							{/* Score pills */}
 							<div className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1.5">
-								<ScorePill
-									value={result.mcq_score}
-									total={result.mcq_total}
-									label="câu đúng"
-									variant="success"
-								/>
-								<ScorePill
-									value={result.mcq_total - result.mcq_score}
-									total={result.mcq_total}
-									label="câu sai"
-									variant="danger"
-								/>
+								<ScorePill value={mcqScore} total={mcqTotal} label="câu đúng" variant="success" />
+								<ScorePill value={mcqTotal - mcqScore} total={mcqTotal} label="câu sai" variant="danger" />
 							</div>
 						</div>
 					</div>
@@ -193,6 +184,7 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 		session,
 		listeningItems,
 		readingItems,
+		writingTasks: version.writing_tasks,
 		onSubmitted: handleSubmitted,
 	})
 
