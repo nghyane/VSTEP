@@ -6,8 +6,9 @@ import { Loading } from "#/components/Loading"
 import { ScrollArea } from "#/components/ScrollArea"
 import { confirmTopupOrder, createTopupOrder } from "#/features/wallet/actions"
 import { topupPackagesQuery, walletBalanceQuery } from "#/features/wallet/queries"
+import { TopUpSuccessPopup } from "#/features/wallet/TopUpSuccessPopup"
 import type { TopupPackage } from "#/features/wallet/types"
-import { useToast } from "#/lib/toast"
+import { useCoinGain } from "#/lib/coin-gain"
 import { cn, formatNumber, formatVnd } from "#/lib/utils"
 
 interface Props {
@@ -16,6 +17,8 @@ interface Props {
 }
 
 export function TopUpDialog({ open, onClose }: Props) {
+	const [success, setSuccess] = useState<{ coins: number; balance: number } | null>(null)
+
 	useEffect(() => {
 		if (!open) return
 		const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose()
@@ -23,34 +26,63 @@ export function TopUpDialog({ open, onClose }: Props) {
 		return () => window.removeEventListener("keydown", onKey)
 	}, [open, onClose])
 
-	if (!open) return null
+	const handleSuccess = (coins: number, balance: number) => {
+		setSuccess({ coins, balance })
+		onClose()
+	}
+
+	const handleSuccessClose = () => {
+		const coins = success?.coins ?? 0
+		setSuccess(null)
+		if (coins > 0) {
+			// Defer until after popup unmount so user sees the header animation clearly.
+			setTimeout(() => useCoinGain.getState().trigger(coins), 220)
+		}
+	}
+
 	if (typeof document === "undefined") return null
 
-	// Portal ra body để thoát containing block (parent dùng backdrop-filter).
-	return createPortal(
-		<div
-			className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fadeIn_200ms_ease-out] p-4"
-			role="dialog"
-			aria-modal="true"
-			aria-label="Nạp xu"
-		>
-			<div className="card relative w-full max-w-5xl max-h-[92vh] overflow-hidden animate-[popIn_300ms_cubic-bezier(0.34,1.56,0.64,1)]">
-				<button
-					type="button"
-					onClick={onClose}
-					aria-label="Đóng"
-					className="absolute top-4 right-4 p-2 rounded-full hover:bg-background transition z-10"
-				>
-					<Icon name="close" size="sm" className="text-muted" />
-				</button>
-				<DialogBody onClose={onClose} />
-			</div>
-		</div>,
-		document.body,
+	return (
+		<>
+			{open &&
+				createPortal(
+					<div
+						className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fadeIn_200ms_ease-out] p-4"
+						role="dialog"
+						aria-modal="true"
+						aria-label="Nạp xu"
+					>
+						<div className="card relative w-full max-w-5xl max-h-[92vh] overflow-hidden animate-[popIn_300ms_cubic-bezier(0.34,1.56,0.64,1)]">
+							<button
+								type="button"
+								onClick={onClose}
+								aria-label="Đóng"
+								className="absolute top-4 right-4 p-2 rounded-full hover:bg-background transition z-10"
+							>
+								<Icon name="close" size="sm" className="text-muted" />
+							</button>
+							<DialogBody onSuccess={handleSuccess} onClose={onClose} />
+						</div>
+					</div>,
+					document.body,
+				)}
+			<TopUpSuccessPopup
+				open={success !== null}
+				coinsAdded={success?.coins ?? 0}
+				newBalance={success?.balance ?? 0}
+				onClose={handleSuccessClose}
+			/>
+		</>
 	)
 }
 
-function DialogBody({ onClose }: { onClose: () => void }) {
+function DialogBody({
+	onClose,
+	onSuccess,
+}: {
+	onClose: () => void
+	onSuccess: (coins: number, balance: number) => void
+}) {
 	const { data, isLoading } = useQuery(topupPackagesQuery)
 	const { data: walletData } = useQuery(walletBalanceQuery)
 	const packages = data?.data ?? []
@@ -91,7 +123,8 @@ function DialogBody({ onClose }: { onClose: () => void }) {
 					selectedId={selectedId}
 					onSelect={setSelectedId}
 					selected={selected}
-					onBuySuccess={onClose}
+					currentBalance={balance}
+					onBuySuccess={onSuccess}
 				/>
 			</ScrollArea>
 		</div>
@@ -187,13 +220,15 @@ function RightPanel({
 	selectedId,
 	onSelect,
 	selected,
+	currentBalance,
 	onBuySuccess,
 }: {
 	packages: TopupPackage[]
 	selectedId: string
 	onSelect: (id: string) => void
 	selected: TopupPackage
-	onBuySuccess: () => void
+	currentBalance: number
+	onBuySuccess: (coins: number, balance: number) => void
 }) {
 	return (
 		<div className="flex flex-col gap-6 p-6 md:p-8">
@@ -243,7 +278,7 @@ function RightPanel({
 				))}
 			</div>
 
-			<BuyButton pack={selected} onSuccess={onBuySuccess} />
+			<BuyButton pack={selected} currentBalance={currentBalance} onSuccess={onBuySuccess} />
 		</div>
 	)
 }
@@ -321,7 +356,15 @@ function PackCard({
 	)
 }
 
-function BuyButton({ pack, onSuccess }: { pack: TopupPackage; onSuccess: () => void }) {
+function BuyButton({
+	pack,
+	currentBalance,
+	onSuccess,
+}: {
+	pack: TopupPackage
+	currentBalance: number
+	onSuccess: (coins: number, balance: number) => void
+}) {
 	const queryClient = useQueryClient()
 
 	const mutation = useMutation({
@@ -331,8 +374,7 @@ function BuyButton({ pack, onSuccess }: { pack: TopupPackage; onSuccess: () => v
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: walletBalanceQuery.queryKey })
-			useToast.getState().add(`Nạp thành công +${formatNumber(pack.total_coins)} xu`, "success")
-			onSuccess()
+			onSuccess(pack.total_coins, currentBalance + pack.total_coins)
 		},
 	})
 

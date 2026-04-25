@@ -153,6 +153,24 @@
 		100% { transform: scale(1, 1) rotate(0); }
 	}
 
+	@keyframes coinFlyUp {
+		0% { opacity: 0; transform: translate(-50%, 0) scale(0.6); }
+		15% { opacity: 1; transform: translate(-50%, -8px) scale(1.15); }
+		70% { opacity: 1; transform: translate(-50%, -36px) scale(1); }
+		100% { opacity: 0; transform: translate(-50%, -56px) scale(0.9); }
+	}
+
+	@keyframes coinPulseRing {
+		0% { opacity: 0.7; transform: scale(0.6); }
+		100% { opacity: 0; transform: scale(2.2); }
+	}
+
+	@keyframes sparkleSpin {
+		0% { opacity: 0; transform: rotate(0) scale(0.4); }
+		30% { opacity: 1; transform: rotate(120deg) scale(1.1); }
+		100% { opacity: 0; transform: rotate(360deg) scale(0.6); }
+	}
+
 	@keyframes coinBurst {
 		0% {
 			opacity: 0;
