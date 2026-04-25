@@ -8,12 +8,13 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthContext, type AuthStatus } from "@/hooks/use-auth";
 import { queryClient } from "@/lib/query-client";
 import { saveTokens, clearTokens } from "@/lib/auth";
-import { refreshSession } from "@/lib/api";
+import { refreshSession, api } from "@/lib/api";
 import { HapticsProvider } from "@/contexts/HapticsContext";
 import { loadCoins } from "@/features/coin/coin-store";
 import { loadStreakData } from "@/features/streak/streak-store";
 import { loadNotifications } from "@/features/notification/notification-store";
 import type { AuthUser, Profile } from "@/types/api";
+import { loadDraft } from "@/lib/exam-draft";
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
@@ -21,6 +22,7 @@ export default function RootLayout() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [status, setStatus] = useState<AuthStatus>("initializing");
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 
   const [fontsLoaded] = useFonts({
     "Nunito-Regular":   require("../assets/fonts/Nunito-Regular.ttf"),
@@ -49,6 +51,30 @@ export default function RootLayout() {
       }
     })();
   }, []);
+
+  // Check for active exam session on mount
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    (async () => {
+      try {
+        const res = await api.get<{ id: string; examId: string; examVersionId: string; serverDeadlineAt: string } | null>("/api/v1/exam-sessions/active");
+        if (res?.id) {
+          setActiveSessionId(res.id);
+          // Check if deadline hasn't passed
+          const deadline = new Date(res.serverDeadlineAt).getTime();
+          if (Date.now() > deadline) {
+            // Session expired — clear it
+            setActiveSessionId(null);
+            return;
+          }
+          // Auto-resume: navigate to active session
+          router.replace(`/(app)/session/${res.id}?examId=${res.examId}`);
+        }
+      } catch {
+        // no active session or error — ignore
+      }
+    })();
+  }, [status]);
 
   useEffect(() => {
     if (status !== "initializing" && fontsLoaded) {
@@ -87,8 +113,11 @@ export default function RootLayout() {
       router.replace("/(app)/onboarding");
     } else if (status === "authenticated" && inAuthGroup) {
       router.replace("/(app)/(tabs)");
+    } else if (status === "authenticated" && activeSessionId && !segments.some((s) => s?.includes("session"))) {
+      // Show resume prompt when user has an active session
+      // We'll handle this in the dashboard or exams screen
     }
-  }, [status, profile, fontsLoaded, segments, router]);
+  }, [status, profile, fontsLoaded, segments, router, activeSessionId]);
 
   if (!fontsLoaded || status === "initializing") return null;
 

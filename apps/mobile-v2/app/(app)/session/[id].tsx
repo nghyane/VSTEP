@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import { resolveAssetUrl } from "@/lib/asset-url";
+import { presignUpload } from "@/hooks/use-practice";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
@@ -75,7 +76,7 @@ export default function SessionScreen() {
   }
 
   if (submitResult) {
-    return <ResultScreen result={submitResult} examTitle={examDetail.exam.title} onBack={() => router.replace("/(app)/(tabs)/exams" as any)} c={c} insets={insets} />;
+    return <ResultScreen result={submitResult} sessionId={sessionData.id} examTitle={examDetail.exam.title} c={c} insets={insets} />;
   }
 
   return (
@@ -97,7 +98,7 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: any) 
   const listeningItems: ExamVersionMcqItem[] = version.listeningSections.flatMap((s: any) => s.items);
   const readingItems: ExamVersionMcqItem[] = version.readingPassages.flatMap((p: any) => p.items);
 
-  const es = useExamSessionState(session, listeningItems, readingItems, onSubmitted);
+  const es = useExamSessionState(session, listeningItems, readingItems, version.writingTasks, version.speakingParts, onSubmitted);
   const remaining = useExamTimer(session.serverDeadlineAt);
 
   // Auto-submit khi hết giờ
@@ -185,7 +186,7 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: any) 
           <WritingPanel tasks={version.writingTasks} answers={es.state.writingAnswers} onAnswer={es.answerWriting} c={c} insets={insets} />
         )}
         {es.currentSkill === "speaking" && (
-          <SpeakingPanel parts={version.speakingParts} done={es.state.speakingDone} onDone={es.markSpeakingDone} c={c} insets={insets} />
+          <SpeakingPanel parts={version.speakingParts} done={es.state.speakingDone} onDone={es.markSpeakingDone} onSetSpeakingAnswer={es.setSpeakingAnswer} c={c} insets={insets} />
         )}
       </View>
 
@@ -511,39 +512,121 @@ function WritingPanel({ tasks, answers, onAnswer, c, insets }: any) {
 
 // ── Speaking Panel ──
 
-function SpeakingPanel({ parts, done, onDone, c, insets }: any) {
+interface SpeakingAnswer {
+  partId: string;
+  audioUrl: string | null;
+  durationSeconds: number;
+}
+
+function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: {
+  parts: { id: string; part: number; type: string; speakingSeconds: number }[];
+  done: Set<string>;
+  onDone: (partId: string) => void;
+  onSetSpeakingAnswer: (partId: string, answer: SpeakingAnswer) => void;
+  c: ReturnType<typeof useThemeColors>;
+  insets: { top: number; bottom: number; left: number; right: number };
+}) {
   const [partIdx, setPartIdx] = useState(0);
   const part = parts[partIdx];
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [audioUri, setAudioUri] = useState<string | null>(null);
   const [isRec, setIsRec] = useState(false);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const accentColor = themeColors.light.skillSpeaking;
   const accentDark = themeColors.light.skillSpeaking + "CC";
+
+  // Reset playback state when switching parts
+  useEffect(() => {
+    setAudioUri(null);
+    setIsRec(false);
+    setRecording(null);
+    sound?.unloadAsync().catch(() => undefined);
+    setSound(null);
+    setIsPlaying(false);
+  }, [partIdx]);
 
   async function startRec() {
     try {
       await Audio.requestPermissionsAsync();
       await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
       const { recording: rec } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-      setRecording(rec); setIsRec(true);
-    } catch { /* permission denied */ }
+      setRecording(rec);
+      setIsRec(true);
+    } catch {
+      // permission denied
+    }
   }
 
   async function stopRec() {
     if (!recording) return;
     await recording.stopAndUnloadAsync();
     await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
-    setAudioUri(recording.getURI());
-    setIsRec(false); setRecording(null);
+    const uri = recording.getURI();
+    setAudioUri(uri);
+    setIsRec(false);
+    setRecording(null);
+  }
+
+  async function uploadAudio(): Promise<string | null> {
+    if (!audioUri) return null;
+    setUploading(true);
+    try {
+      const presign = await presignUpload("exam_speaking");
+      const audioResponse = await fetch(audioUri);
+      const audioBlob = await audioResponse.blob();
+      await fetch(presign.uploadUrl, {
+        method: "PUT",
+        body: audioBlob,
+        headers: { "Content-Type": "audio/webm" },
+      });
+      return presign.audioKey;
+    } catch {
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleConfirmRecord() {
+    const audioKey = await uploadAudio();
+    if (!audioKey) return;
+    const duration = part.speakingSeconds;
+    const answer: SpeakingAnswer = { partId: part.id, audioUrl: audioKey, durationSeconds: duration };
+    onSetSpeakingAnswer(part.id, answer);
     onDone(part.id);
   }
+
+  async function handlePlayback() {
+    if (!audioUri) return;
+    try {
+      const { sound: newSound } = await Audio.Sound.createAsync({ uri: audioUri }, {}, (status) => {
+        if (status.isLoaded) setIsPlaying(status.isPlaying);
+      });
+      setSound(newSound);
+    } catch {
+      // playback error
+    }
+  }
+
+  function handleRerecord() {
+    sound?.unloadAsync().catch(() => undefined);
+    setSound(null);
+    setIsPlaying(false);
+    setAudioUri(null);
+    onSetSpeakingAnswer(part.id, { partId: part.id, audioUrl: null, durationSeconds: 0 });
+    done.delete(part.id);
+  }
+
+  const hasRecording = done.has(part.id);
 
   return (
     <ScrollView contentContainerStyle={[s.panelScroll, { paddingBottom: insets.bottom + 80 }]}>
       {parts.length > 1 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.sectionTabs}>
-          {parts.map((p: any, i: number) => (
-            <TouchableOpacity key={p.id} onPress={() => { setPartIdx(i); setAudioUri(null); setIsRec(false); }}
+          {parts.map((p, i: number) => (
+            <TouchableOpacity key={p.id} onPress={() => setPartIdx(i)}
               style={[s.sectionTab, { borderBottomColor: i === partIdx ? accentColor : "transparent" }]}>
               <Text style={[s.sectionTabText, { color: i === partIdx ? accentDark : c.mutedForeground }]}>Part {p.part}</Text>
             </TouchableOpacity>
@@ -555,14 +638,25 @@ function SpeakingPanel({ parts, done, onDone, c, insets }: any) {
         <Text style={[s.promptMeta, { color: c.mutedForeground }]}>{part.speakingSeconds}s · Ghi âm câu trả lời</Text>
       </View>
       <View style={[s.recCard, { backgroundColor: c.card, borderColor: isRec ? accentColor : c.border }]}>
-        <TouchableOpacity onPress={isRec ? stopRec : startRec} disabled={!!audioUri && !isRec}
-          style={[s.micBtn, { backgroundColor: audioUri ? c.muted : accentColor }]}>
-          <Ionicons name={isRec ? "stop" : "mic"} size={28} color={audioUri ? c.mutedForeground : "#fff"} />
-          <Text style={[s.micBtnText, { color: audioUri ? c.mutedForeground : "#fff" }]}>
-            {isRec ? "Dừng ghi" : audioUri ? "Đã ghi xong" : "Bắt đầu nói"}
-          </Text>
-        </TouchableOpacity>
-        {done.has(part.id) && (
+        {!audioUri && !hasRecording && (
+          <DepthButton onPress={isRec ? stopRec : startRec} disabled={isRec}>
+            {isRec ? "Dừng ghi âm" : "Bắt đầu nói"}
+          </DepthButton>
+        )}
+        {audioUri && !hasRecording && (
+          <>
+            <DepthButton variant="secondary" onPress={handlePlayback} disabled={isPlaying || uploading}>
+              {isPlaying ? "Đang phát..." : "Nghe lại"}
+            </DepthButton>
+            <DepthButton variant="secondary" onPress={handleRerecord} disabled={uploading}>
+              Ghi âm lại
+            </DepthButton>
+            <DepthButton onPress={handleConfirmRecord} disabled={uploading}>
+              {uploading ? "Đang tải lên..." : "Xác nhận & tiếp"}
+            </DepthButton>
+          </>
+        )}
+        {hasRecording && (
           <View style={s.doneRow}>
             <Ionicons name="checkmark-circle" size={16} color={themeColors.light.skillWriting} />
             <Text style={[s.doneText, { color: themeColors.light.skillWriting }]}>Đã ghi âm</Text>
@@ -627,7 +721,8 @@ function ConfirmModal({ visible, title, message, warning, confirmLabel, onConfir
 
 // ── Result Screen ──
 
-function ResultScreen({ result, examTitle, onBack, c, insets }: any) {
+function ResultScreen({ result, sessionId, examTitle, c, insets }: { result: SubmitSessionResult; sessionId: string; examTitle: string; c: ReturnType<typeof useThemeColors>; insets: { bottom: number } }) {
+  const router = useRouter();
   const pct = result.mcqTotal > 0 ? Math.round((result.mcqScore / result.mcqTotal) * 100) : 0;
   return (
     <View style={[s.center, { backgroundColor: c.background, paddingHorizontal: spacing.xl }]}>
@@ -644,7 +739,8 @@ function ResultScreen({ result, examTitle, onBack, c, insets }: any) {
         </View>
         <Text style={[s.resultAiNote, { color: c.subtle }]}>Writing và Speaking đang được AI chấm điểm</Text>
       </View>
-      <DepthButton fullWidth onPress={onBack} style={{ marginTop: spacing.xl }}>Về danh sách đề thi</DepthButton>
+      <DepthButton fullWidth onPress={() => router.replace(`/(app)/exam-result/${sessionId}`)} style={{ marginTop: spacing.xl }}>Xem chi tiết kết quả</DepthButton>
+      <DepthButton variant="secondary" fullWidth onPress={() => router.replace("/(app)/(tabs)/exams")} style={{ marginTop: spacing.sm }}>Về danh sách đề thi</DepthButton>
     </View>
   );
 }

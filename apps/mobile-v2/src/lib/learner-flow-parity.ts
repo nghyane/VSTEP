@@ -305,16 +305,9 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "GET /api/v1/exam-sessions/{sessionId}/writing-results",
       "GET /api/v1/exam-sessions/{sessionId}/speaking-results",
     ],
-    status: "partial",
-    gaps: [
-      "Exam submit payload is centered on MCQ answers; writing_answers and speaking_answers parity must be completed.",
-      "Autosave/resume behavior is not implemented.",
-      "Active session resume endpoint (GET /exam-sessions/active) is not used.",
-      "Writing/speaking async exam results are not fully modeled.",
-      "Speaking studio layout + re-record fix in frontend-v3 (commit b8e94d4) — mobile needs align.",
-      "Exam sessions returns array not paginator (commit 7a8be17) — mobile hook may need update.",
-    ],
-    nextPhase: 7,
+    status: "done",
+    gaps: [],
+    nextPhase: 8,
   },
 
   // ── Profile (Phase 9) ──

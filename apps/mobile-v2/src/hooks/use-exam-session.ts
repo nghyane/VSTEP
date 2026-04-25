@@ -1,12 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { api } from "@/lib/api";
-import type { ExamVersionMcqItem } from "@/types/api";
+import { saveDraft, clearDraft } from "@/lib/exam-draft";
+import type { ExamVersionMcqItem, ExamVersionWritingTask, ExamVersionSpeakingPart } from "@/types/api";
 
 // ── Types ──
 
 export interface ExamSessionData {
   id: string;
+  examId: string;
   examVersionId: string;
   mode: "full" | "custom";
   selectedSkills: string[];
@@ -23,12 +25,20 @@ export interface StartSessionResult {
   status: string;
 }
 
+export interface SubmitSessionPayload {
+  mcq_answers: McqAnswerPayload[];
+  writing_answers?: { task_id: string; text: string; word_count: number }[];
+  speaking_answers?: { part_id: string; audio_url: string; duration_seconds: number }[];
+}
+
 export interface SubmitSessionResult {
   sessionId: string;
   status: string;
   mcqScore: number;
   mcqTotal: number;
   submittedAt: string;
+  writingSubmitted: boolean;
+  speakingSubmitted: boolean;
 }
 
 export interface McqAnswerPayload {
@@ -85,10 +95,8 @@ export function useActiveExamSession() {
 
 export function useSubmitExamSession(sessionId: string) {
   return useMutation({
-    mutationFn: (mcqAnswers: McqAnswerPayload[]) =>
-      api.post<SubmitSessionResult>(`/api/v1/exam-sessions/${sessionId}/submit`, {
-        mcq_answers: mcqAnswers,
-      }),
+    mutationFn: (payload: SubmitSessionPayload) =>
+      api.post<SubmitSessionResult>(`/api/v1/exam-sessions/${sessionId}/submit`, payload),
   });
 }
 
@@ -114,6 +122,12 @@ export function useExamTimer(serverDeadlineAt: string): number {
   return remaining;
 }
 
+// ── Helpers ──
+
+function countWords(text: string): number {
+  return text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
+}
+
 // ── Exam session state machine ──
 
 type ExamPhase = "device-check" | "active" | "submitting" | "submitted";
@@ -121,12 +135,19 @@ type SkillKey = "listening" | "reading" | "writing" | "speaking";
 
 const SKILL_ORDER: SkillKey[] = ["listening", "reading", "writing", "speaking"];
 
+interface SpeakingAnswer {
+  partId: string;
+  audioUrl: string | null;
+  durationSeconds: number;
+}
+
 interface ExamState {
   phase: ExamPhase;
   skillIdx: number;
   mcqAnswers: Map<string, number>;
   writingAnswers: Map<string, string>;
   speakingDone: Set<string>;
+  speakingAnswers: Map<string, SpeakingAnswer>;
   confirmSubmit: boolean;
   confirmNextSkill: boolean;
 }
@@ -136,6 +157,7 @@ type ExamAction =
   | { type: "MCQ"; itemId: string; idx: number }
   | { type: "WRITING"; taskId: string; text: string }
   | { type: "SPEAKING_DONE"; partId: string }
+  | { type: "SET_SPEAKING_ANSWER"; partId: string; answer: SpeakingAnswer }
   | { type: "NEXT_SKILL" }
   | { type: "SHOW_CONFIRM_SUBMIT" } | { type: "HIDE_CONFIRM_SUBMIT" }
   | { type: "SHOW_CONFIRM_NEXT" } | { type: "HIDE_CONFIRM_NEXT" }
@@ -155,6 +177,10 @@ function reducer(state: ExamState, action: ExamAction): ExamState {
     case "SPEAKING_DONE": {
       const s = new Set(state.speakingDone); s.add(action.partId);
       return { ...state, speakingDone: s };
+    }
+    case "SET_SPEAKING_ANSWER": {
+      const m = new Map(state.speakingAnswers); m.set(action.partId, action.answer);
+      return { ...state, speakingAnswers: m };
     }
     case "NEXT_SKILL": return { ...state, skillIdx: state.skillIdx + 1, confirmNextSkill: false };
     case "SHOW_CONFIRM_SUBMIT": return { ...state, confirmSubmit: true };
@@ -181,6 +207,8 @@ export function useExamSessionState(
   session: ExamSessionData,
   listeningItems: ExamVersionMcqItem[],
   readingItems: ExamVersionMcqItem[],
+  writingTasks: ExamVersionWritingTask[],
+  speakingParts: ExamVersionSpeakingPart[],
   onSubmitted: (result: SubmitSessionResult) => void,
 ) {
   const [state, dispatch] = useReducer(reducer, {
@@ -189,6 +217,7 @@ export function useExamSessionState(
     mcqAnswers: new Map(),
     writingAnswers: new Map(),
     speakingDone: new Set(),
+    speakingAnswers: new Map<string, SpeakingAnswer>(),
     confirmSubmit: false,
     confirmNextSkill: false,
   } as ExamState);
@@ -215,14 +244,52 @@ export function useExamSessionState(
   const doSubmit = useCallback(() => {
     if (state.phase === "submitting" || state.phase === "submitted") return;
     dispatch({ type: "SUBMITTING" });
-    const payload = [
-      ...buildMcqPayload(listeningItems, "exam_listening_item", state.mcqAnswers),
-      ...buildMcqPayload(readingItems, "exam_reading_item", state.mcqAnswers),
-    ];
+    const payload: SubmitSessionPayload = {
+      mcq_answers: [
+        ...buildMcqPayload(listeningItems, "exam_listening_item", state.mcqAnswers),
+        ...buildMcqPayload(readingItems, "exam_reading_item", state.mcqAnswers),
+      ],
+    };
+    if (activeSkills.includes("writing")) {
+      payload.writing_answers = writingTasks.map((t) => ({
+        task_id: t.id,
+        text: state.writingAnswers.get(t.id) ?? "",
+        word_count: countWords(state.writingAnswers.get(t.id) ?? ""),
+      })).filter((a) => a.text.length > 0);
+    }
+    if (activeSkills.includes("speaking")) {
+      payload.speaking_answers = speakingParts
+        .map((p) => state.speakingAnswers.get(p.id))
+        .filter((a): a is SpeakingAnswer => a != null && a.audioUrl != null)
+        .map((a) => ({ part_id: a.partId, audio_url: a.audioUrl!, duration_seconds: a.durationSeconds }));
+    }
     submitMutation.mutate(payload, {
-      onSuccess: (res) => { dispatch({ type: "SUBMITTED" }); onSubmitted(res); },
+      onSuccess: (res) => {
+        dispatch({ type: "SUBMITTED" });
+        clearDraft(session.id);
+        onSubmitted(res);
+      },
+      onError: () => dispatch({ type: "HIDE_CONFIRM_SUBMIT" }),
     });
-  }, [state.phase, state.mcqAnswers, listeningItems, readingItems, submitMutation, onSubmitted]);
+  }, [state.phase, state.mcqAnswers, state.writingAnswers, state.speakingAnswers, listeningItems, readingItems, writingTasks, speakingParts, activeSkills, submitMutation, onSubmitted, session.id]);
+
+  // Autosave: persist answers to local storage every 30s
+  useEffect(() => {
+    const id = setInterval(() => {
+      const draft = {
+        sessionId: session.id,
+        examId: session.examVersionId,
+        mcqAnswers: Object.fromEntries(state.mcqAnswers),
+        writingAnswers: Object.fromEntries(state.writingAnswers),
+        speakingAudioKeys: Object.fromEntries(
+          Array.from(state.speakingAnswers.entries()).map(([k, v]) => [k, v.audioUrl ?? ""])
+        ),
+        savedAt: new Date().toISOString(),
+      };
+      saveDraft(draft);
+    }, 30_000);
+    return () => clearInterval(id);
+  }, [session.id, session.examVersionId, state.mcqAnswers, state.writingAnswers, state.speakingAnswers]);
 
   return {
     state,
@@ -237,6 +304,7 @@ export function useExamSessionState(
     answerMcq: (itemId: string, idx: number) => dispatch({ type: "MCQ", itemId, idx }),
     answerWriting: (taskId: string, text: string) => dispatch({ type: "WRITING", taskId, text }),
     markSpeakingDone: (partId: string) => dispatch({ type: "SPEAKING_DONE", partId }),
+    setSpeakingAnswer: (partId: string, answer: SpeakingAnswer) => dispatch({ type: "SET_SPEAKING_ANSWER", partId, answer }),
     nextSkillAction: () => dispatch({ type: "NEXT_SKILL" }),
     showConfirmSubmit: () => dispatch({ type: "SHOW_CONFIRM_SUBMIT" }),
     hideConfirmSubmit: () => dispatch({ type: "HIDE_CONFIRM_SUBMIT" }),
