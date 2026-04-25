@@ -210,6 +210,8 @@ export interface McqDetailItem {
 export interface SessionResultsData {
 	session: ExamSessionSummary
 	scores: unknown
+	/** Aggregate MCQ: score (đã chấm) / total (số câu trong scope, câu không đáp tính sai). */
+	mcq: { score: number; total: number }
 	mcq_detail: McqDetailItem[]
 	writing_feedback: unknown
 	speaking_feedback: unknown

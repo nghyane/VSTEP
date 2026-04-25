@@ -5,7 +5,7 @@ import { Icon } from "#/components/Icon"
 import { Loading } from "#/components/Loading"
 import { ResultBackground } from "#/features/exam/components/ResultBackground"
 import { examDetailQuery, examSessionQuery, sessionResultsQuery } from "#/features/exam/queries"
-import type { ExamVersionMcqItem, McqDetailItem } from "#/features/exam/types"
+import type { ExamVersionListeningSection, ExamVersionMcqItem, McqDetailItem } from "#/features/exam/types"
 import { cn } from "#/lib/utils"
 
 interface Search {
@@ -41,21 +41,16 @@ function ChiTietInner() {
 	const detailMap = new Map<string, McqDetailItem>()
 	for (const d of mcqDetail) detailMap.set(d.item_ref_id, d)
 
-	const totalCorrect = mcqDetail.reduce((n, d) => n + (d.is_correct ? 1 : 0), 0)
-	const totalQuestions = mcqDetail.length
+	const { score: totalCorrect, total: totalQuestions } = resultsRes.data.mcq
 	const scoreOn10 = totalQuestions > 0 ? (totalCorrect / totalQuestions) * 10 : 0
 
 	// BE trả sections không sort — sort theo part ASC rồi display_order ASC để hiển thị
 	// đúng thứ tự đề (Part 1 hết, Part 2 hết, ...). Không sort lệch theo creation time.
 	const listeningBlocks = selected.includes("listening")
-		? [...version.listening_sections].sort(
-				(a, b) => a.part - b.part || a.display_order - b.display_order,
-			)
+		? [...version.listening_sections].sort((a, b) => a.part - b.part || a.display_order - b.display_order)
 		: []
 	const readingBlocks = selected.includes("reading")
-		? [...version.reading_passages].sort(
-				(a, b) => a.part - b.part || a.display_order - b.display_order,
-			)
+		? [...version.reading_passages].sort((a, b) => a.part - b.part || a.display_order - b.display_order)
 		: []
 
 	return (
@@ -81,9 +76,7 @@ function ChiTietInner() {
 				<div className="w-full max-w-4xl overflow-hidden rounded-(--radius-banner) border-2 border-b-4 border-white/20 bg-white shadow-2xl">
 					{/* Header */}
 					<div className="border-b-2 border-border-light px-6 py-5 sm:px-8 sm:py-6">
-						<p className="text-xs font-extrabold uppercase tracking-widest text-subtle">
-							{exam.title}
-						</p>
+						<p className="text-xs font-extrabold uppercase tracking-widest text-subtle">{exam.title}</p>
 						<div className="mt-1 flex items-baseline gap-3">
 							<span className="text-4xl font-extrabold tabular-nums text-foreground">
 								{scoreOn10.toFixed(1)}
@@ -100,21 +93,16 @@ function ChiTietInner() {
 
 					{/* Sections */}
 					<div className="divide-y-2 divide-border-light">
-						{listeningBlocks.map((sec) => (
+						{groupListeningByPart(listeningBlocks).map((group) => (
 							<SectionBlock
-								key={sec.id}
-								title={`Nghe · ${sec.part_title}`}
-								items={sec.items}
+								key={`listening-${group.part}`}
+								title={`Nghe · Part ${group.part}`}
+								items={group.items}
 								detailMap={detailMap}
 							/>
 						))}
 						{readingBlocks.map((p) => (
-							<SectionBlock
-								key={p.id}
-								title={`Đọc · ${p.title}`}
-								items={p.items}
-								detailMap={detailMap}
-							/>
+							<SectionBlock key={p.id} title={`Đọc · ${p.title}`} items={p.items} detailMap={detailMap} />
 						))}
 					</div>
 
@@ -160,11 +148,34 @@ function SectionBlock({
 
 const LETTER = ["A", "B", "C", "D"] as const
 
+/** VSTEP Part 1 = 8 announcements × 1 item — 8 sections riêng nhìn vụn vặt.
+ * Gộp section cùng `part` thành 1 block, sort items theo (section.display_order, item.display_order). */
+function groupListeningByPart(
+	sections: ExamVersionListeningSection[],
+): Array<{ part: number; items: ExamVersionMcqItem[] }> {
+	const byPart = new Map<number, ExamVersionListeningSection[]>()
+	for (const sec of sections) {
+		const arr = byPart.get(sec.part) ?? []
+		arr.push(sec)
+		byPart.set(sec.part, arr)
+	}
+	const result: Array<{ part: number; items: ExamVersionMcqItem[] }> = []
+	for (const [part, secs] of [...byPart.entries()].sort((a, b) => a[0] - b[0])) {
+		const sortedSecs = [...secs].sort((a, b) => a.display_order - b.display_order)
+		const items: ExamVersionMcqItem[] = []
+		for (const sec of sortedSecs) {
+			const sortedItems = [...sec.items].sort((a, b) => a.display_order - b.display_order)
+			items.push(...sortedItems)
+		}
+		result.push({ part, items })
+	}
+	return result
+}
+
 function ItemRow({ no, detail }: { no: number; detail: McqDetailItem | null }) {
 	const correct = detail?.is_correct ?? false
 	const answered = detail?.selected_index !== null && detail?.selected_index !== undefined
-	const userLetter =
-		detail && answered ? LETTER[detail.selected_index as 0 | 1 | 2 | 3] : "—"
+	const userLetter = detail && answered ? LETTER[detail.selected_index as 0 | 1 | 2 | 3] : "—"
 	const correctLetter = detail ? LETTER[detail.correct_index as 0 | 1 | 2 | 3] : "—"
 
 	return (
@@ -199,13 +210,7 @@ function ItemRow({ no, detail }: { no: number; detail: McqDetailItem | null }) {
 	)
 }
 
-function LetterBadge({
-	letter,
-	tone,
-}: {
-	letter: string
-	tone: "success" | "danger" | "muted"
-}) {
+function LetterBadge({ letter, tone }: { letter: string; tone: "success" | "danger" | "muted" }) {
 	const cls =
 		tone === "success"
 			? "border-primary/40 bg-primary/10 text-primary"
@@ -223,4 +228,3 @@ function LetterBadge({
 		</span>
 	)
 }
-

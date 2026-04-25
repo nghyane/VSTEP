@@ -68,14 +68,20 @@ function buildPerfRows(
 	const rows: PerfRow[] = []
 
 	if (activeSkills.includes("listening")) {
-		const sorted = [...version.listening_sections].sort(
-			(a, b) => a.part - b.part || a.display_order - b.display_order,
-		)
-		for (const sec of sorted) {
-			const total = sec.items.length
-			const correct = sec.items.reduce((n, it) => n + (correctByItemId.get(it.id) ? 1 : 0), 0)
+		// Gộp section cùng `part` (VSTEP Part 1 = 8 announcements × 1 item, vụn vặt nếu hiển thị riêng).
+		const byPart = new Map<number, typeof version.listening_sections>()
+		for (const sec of version.listening_sections) {
+			const arr = byPart.get(sec.part) ?? []
+			arr.push(sec)
+			byPart.set(sec.part, arr)
+		}
+		const partsAsc = [...byPart.entries()].sort((a, b) => a[0] - b[0])
+		for (const [part, secs] of partsAsc) {
+			const allItems = secs.flatMap((s) => s.items)
+			const total = allItems.length
+			const correct = allItems.reduce((n, it) => n + (correctByItemId.get(it.id) ? 1 : 0), 0)
 			rows.push({
-				label: `Nghe · ${sec.part_title}`,
+				label: `Nghe · Part ${part}`,
 				total,
 				correct,
 				wrong: total - correct,
@@ -359,8 +365,7 @@ function SubmittedResultView({
 }) {
 	const { data: resultsRes } = useSuspenseQuery(sessionResultsQuery(sessionId))
 	const mcqDetail = resultsRes.data.mcq_detail
-	const total = mcqDetail.length
-	const score = mcqDetail.reduce((n, d) => n + (d.is_correct ? 1 : 0), 0)
+	const { score, total } = resultsRes.data.mcq
 
 	const result: SubmitSessionResult = {
 		session_id: sessionId,

@@ -260,8 +260,12 @@ class ExamController extends Controller
 
         $mcqBand = $this->scoringService->getSessionScores($session);
 
-        // MCQ detail: per-item breakdown
+        // MCQ detail: per-item breakdown (chỉ các câu đã đáp)
         $mcqDetail = $this->buildMcqDetail($session);
+
+        // MCQ summary: score + total. Total = số item trong selected_skills của version
+        // (câu không đáp tính sai → cùng logic với submit() để FE đọc trực tiếp).
+        $mcqSummary = $this->buildMcqSummary($session);
 
         // Writing feedback
         $writingFeedback = $session->writingSubmissions->map(function ($submission) {
@@ -312,6 +316,7 @@ class ExamController extends Controller
         return response()->json(['data' => [
             'session' => $this->formatSessionSummary($session),
             'scores' => $mcqBand,
+            'mcq' => $mcqSummary,
             'mcq_detail' => $mcqDetail,
             'writing_feedback' => $writingFeedback,
             'speaking_feedback' => $speakingFeedback,
@@ -365,12 +370,44 @@ class ExamController extends Controller
         ];
     }
 
-    /** @return array<int, array{item_ref_type: string, item_ref_id: string, selected_index: int, correct_index: int|null, is_correct: bool}> */
+    /**
+     * Aggregate MCQ score/total cho session đã submit. Total = số item thuộc selected_skills
+     * trong version (câu không trả lời tính sai). Cùng logic với ExamSessionService::submit().
+     *
+     * @return array{score: int, total: int}
+     */
+    private function buildMcqSummary(ExamSession $session): array
+    {
+        $itemMap = $this->scoringService->loadMcqItemMap($session);
+        $skills = $session->selected_skills ?? [];
+
+        $total = 0;
+        foreach (array_keys($itemMap) as $key) {
+            if (str_starts_with($key, 'exam_listening_item:') && in_array('listening', $skills, true)) {
+                $total++;
+            } elseif (str_starts_with($key, 'exam_reading_item:') && in_array('reading', $skills, true)) {
+                $total++;
+            }
+        }
+
+        $score = $session->mcqAnswers->where('is_correct', true)->count();
+
+        return ['score' => $score, 'total' => $total];
+    }
+
+    /**
+     * Per-item breakdown, sắp theo canonical order của version
+     * (Listening trước Reading; trong mỗi skill: theo part → section.display_order → item.display_order).
+     * BE là nguồn truth duy nhất về thứ tự — FE không cần sort lại.
+     *
+     * @return list<array{item_ref_type: string, item_ref_id: string, selected_index: int, correct_index: int|null, is_correct: bool, answered_at: mixed}>
+     */
     private function buildMcqDetail(ExamSession $session): array
     {
         $itemMap = $this->scoringService->loadMcqItemMap($session);
+        $rankMap = $this->buildItemRankMap($session);
 
-        return $session->mcqAnswers->map(function (ExamMcqAnswer $answer) use ($itemMap) {
+        $rows = $session->mcqAnswers->map(function (ExamMcqAnswer $answer) use ($itemMap) {
             $key = "{$answer->item_ref_type}:{$answer->item_ref_id}";
 
             return [
@@ -381,6 +418,40 @@ class ExamController extends Controller
                 'is_correct' => $answer->is_correct,
                 'answered_at' => $answer->answered_at,
             ];
-        })->toArray();
+        })->all();
+
+        usort($rows, function (array $a, array $b) use ($rankMap) {
+            $ra = $rankMap["{$a['item_ref_type']}:{$a['item_ref_id']}"] ?? PHP_INT_MAX;
+            $rb = $rankMap["{$b['item_ref_type']}:{$b['item_ref_id']}"] ?? PHP_INT_MAX;
+
+            return $ra <=> $rb;
+        });
+
+        return array_values($rows);
+    }
+
+    /**
+     * Map "type:id" → ordinal theo thứ tự render của đề.
+     * Listening sections đã sort theo (part, display_order, id), items theo (display_order, id) — chỉ cần đi tuần tự.
+     *
+     * @return array<string,int>
+     */
+    private function buildItemRankMap(ExamSession $session): array
+    {
+        $version = $session->examVersion;
+        $rank = [];
+        $i = 0;
+        foreach ($version->listeningSections as $section) {
+            foreach ($section->items as $item) {
+                $rank["exam_listening_item:{$item->id}"] = $i++;
+            }
+        }
+        foreach ($version->readingPassages as $passage) {
+            foreach ($passage->items as $item) {
+                $rank["exam_reading_item:{$item->id}"] = $i++;
+            }
+        }
+
+        return $rank;
     }
 }
