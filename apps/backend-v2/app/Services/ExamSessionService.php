@@ -26,6 +26,7 @@ class ExamSessionService
         private readonly ExamScoringService $scoringService,
         private readonly WritingGradingService $writingGradingService,
         private readonly SpeakingGradingService $speakingGradingService,
+        private readonly ProgressService $progressService,
     ) {}
 
     /** @return Collection<int,Exam> */
@@ -172,6 +173,10 @@ class ExamSessionService
                 'status' => 'submitted',
                 'submitted_at' => now(),
             ]);
+
+            // Streak: chỉ tính full test. RFC 0017 — defer khỏi transaction để rollback an toàn.
+            $progressService = $this->progressService;
+            DB::afterCommit(fn () => $progressService->recordExamCompletion($session->fresh()));
 
             // ── 2. Writing submissions + grading jobs ──
             $writingJobs = [];

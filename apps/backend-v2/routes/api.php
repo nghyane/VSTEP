@@ -132,6 +132,8 @@ Route::prefix('v1')->group(function () {
         // Overview & progress.
         Route::get('/overview', [OverviewController::class, 'overview']);
         Route::get('/streak', [OverviewController::class, 'streak']);
+        Route::post('/streak/milestones/{days}/claim', [OverviewController::class, 'claimStreakMilestone'])
+            ->whereNumber('days');
         Route::get('/activity-heatmap', [OverviewController::class, 'activityHeatmap']);
 
         // Courses.

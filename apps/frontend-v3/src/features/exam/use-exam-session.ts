@@ -232,6 +232,9 @@ export function useExamSession({
 			qc.invalidateQueries({ queryKey: ["exam-sessions", "mine"] })
 			qc.invalidateQueries({ queryKey: ["exam-sessions", session.id] })
 			qc.invalidateQueries({ queryKey: ["exams"] })
+			qc.invalidateQueries({ queryKey: ["streak"] })
+			qc.invalidateQueries({ queryKey: ["activity-heatmap"] })
+			qc.invalidateQueries({ queryKey: ["overview"] })
 			onSubmitted(result)
 		},
 	})

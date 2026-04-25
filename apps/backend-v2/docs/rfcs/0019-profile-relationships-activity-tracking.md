@@ -179,3 +179,21 @@ Dùng `profile_daily_activity` để suy ra streak (ngày nào có activity = st
 - [ ] Controller: thêm `POST /profiles/{id}/switch` endpoint
 - [ ] Controller: update `OverviewController` để dùng relationships mới
 - [ ] Tests: streak calculation, daily activity increment, onboarding versioning
+
+## Amendment 2026-04-25 — Streak source = full-test exam, không còn drill
+
+**Lý do:** luồng tiền của hệ thống nằm ở phòng thi (full test 25 xu, custom 8 xu/skill). Để khuyến khích user vào phòng thi, streak chuyển từ "drill practice" sang "full-test exam" (là điều kiện duy nhất để nâng streak).
+
+### Changes
+- `ProgressService::recordPracticeCompletion` không còn gọi `updateStreak` — drill chỉ track `profile_daily_activity` (study time).
+- `ProgressService::recordExamCompletion(ExamSession)` mới: skip nếu `is_full_test=false`. Hook tại:
+  - `ExamSessionService::submit()` — sau `status='submitted'`, dispatch trong `DB::afterCommit` (RFC 0017).
+  - `ForceSubmitExpiredExams::forceSubmit()` — sau `status='auto_submitted'`, cũng `DB::afterCommit`.
+  - KHÔNG hook `ExamController::abandon()` — abandon là user chủ động bỏ, không nên tính streak.
+- `updateStreak`: đếm nguồn đổi từ `profile_daily_activity.drill_session_count` sang `ExamSession` query (`is_full_test=true`, status ∈ `[submitted, auto_submitted, grading, graded]`, `submitted_at` trong local-day-bounds-utc). Vẫn upsert `ProfileStreakLog.active=true` cho ngày đó (giữ nguyên semantic của RFC 0019 §3).
+- `getStreak.today_sessions` = số full test submitted hôm nay (theo timezone config), không phải drill count.
+- `getActivityHeatmap`: trả `{date, count}` thay vì `{date, minutes}`. Đếm tất cả exam_session (full + custom) hoàn thành mỗi ngày — intensity theo số bài (1/2/3/4+). Không dùng binary `streak_log.active` vì user muốn thấy mức độ làm bài.
+- Migration `2026_04_25_000002_reset_streak_state_for_exam_semantic`: reset `current_streak`/`longest_streak`/`last_active_date_local` về 0/null vì semantic cũ (drill) không tương đương semantic mới (exam).
+
+### Daily goal
+`streak.daily_goal = 1`. 1 full test submit/ngày = giữ streak. Set thấp để vừa với cost barrier (full test 25 xu/lần) và không ép user farm exam.

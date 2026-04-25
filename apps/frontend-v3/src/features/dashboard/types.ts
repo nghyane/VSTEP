@@ -29,17 +29,32 @@ export interface OverviewData {
 	chart: OverviewChart | null
 }
 
+export interface StreakMilestone {
+	days: number
+	coins: number
+	claimed: boolean
+	claimed_at: string | null
+}
+
 export interface StreakData {
 	current_streak: number
 	longest_streak: number
 	today_sessions: number
 	daily_goal: number
 	last_active_date: string | null
+	milestones: StreakMilestone[]
+}
+
+export interface StreakClaimResult {
+	milestone_days: number
+	coins_granted: number
+	balance_after: number
+	claimed_at: string
 }
 
 export interface ActivityDay {
 	date: string
-	minutes: number
+	count: number
 }
 
 export interface ExamSessionResult {

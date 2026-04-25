@@ -8,6 +8,7 @@ use App\Models\ExamSession;
 use App\Models\PracticeSession;
 use App\Models\Profile;
 use App\Models\ProfileDailyActivity;
+use App\Models\ProfileStreakLog;
 use App\Models\ProfileStreakState;
 use App\Models\SystemConfig;
 use App\Models\WritingGradingResult;
@@ -18,14 +19,21 @@ use Illuminate\Support\Facades\DB;
 /**
  * Progress context: streak, study time, chart data.
  *
- * Streak = consecutive days with ≥ daily_goal drill sessions.
- * Study time = sum drill_duration_seconds.
+ * Streak = consecutive days với ≥ daily_goal **full-test exam sessions**
+ *   (is_full_test=true, status submitted|auto_submitted).
+ *   Drill practice KHÔNG tính streak — chỉ tính study time.
+ * Heatmap = số exam session (full + custom) hoàn thành mỗi ngày.
  * Chart = derive from exam_sessions (custom+full) with grading results.
  */
 class ProgressService
 {
+    public function __construct(
+        private readonly StreakMilestoneService $streakMilestoneService,
+    ) {}
+
     /**
-     * Record completed practice session → update daily activity + streak.
+     * Record completed practice session → chỉ update study time + heatmap drill,
+     * KHÔNG còn driver streak.
      */
     public function recordPracticeCompletion(PracticeSession $session): void
     {
@@ -57,9 +65,25 @@ class ProgressService
                     'updated_at' => now(),
                 ]);
             }
-
-            $this->updateStreak($session->profile_id, $dateLocal);
         });
+    }
+
+    /**
+     * Record completed exam session → update streak nếu là full test.
+     * Gọi sau khi `status` chuyển sang submitted hoặc auto_submitted.
+     * Caller phải defer ra ngoài transaction (DB::afterCommit) — RFC 0017.
+     */
+    public function recordExamCompletion(ExamSession $session): void
+    {
+        if (! $session->is_full_test) {
+            return; // streak chỉ tính full test
+        }
+
+        $tz = SystemConfig::get('streak.timezone') ?? 'Asia/Ho_Chi_Minh';
+        $submittedAt = $session->submitted_at ?? now();
+        $dateLocal = Carbon::parse($submittedAt, 'UTC')->setTimezone($tz)->toDateString();
+
+        $this->updateStreak($session->profile_id, $dateLocal);
     }
 
     /**
@@ -113,80 +137,120 @@ class ProgressService
         $streak = ProfileStreakState::query()->find($profile->id);
         $dailyGoal = (int) (SystemConfig::get('streak.daily_goal') ?? 1);
         $tz = SystemConfig::get('streak.timezone') ?? 'Asia/Ho_Chi_Minh';
-        $todayLocal = now()->setTimezone($tz)->toDateString();
+        [$startUtc, $endUtc] = $this->localDayBoundsUtc(Carbon::now($tz)->toDateString(), $tz);
 
-        $todayActivity = ProfileDailyActivity::query()
+        $todayCount = ExamSession::query()
             ->where('profile_id', $profile->id)
-            ->where('date_local', $todayLocal)
-            ->first();
+            ->where('is_full_test', true)
+            ->whereIn('status', ['submitted', 'auto_submitted', 'grading', 'graded'])
+            ->whereBetween('submitted_at', [$startUtc, $endUtc])
+            ->count();
 
         return [
             'current_streak' => $streak?->current_streak ?? 0,
             'longest_streak' => $streak?->longest_streak ?? 0,
-            'today_sessions' => $todayActivity?->drill_session_count ?? 0,
+            'today_sessions' => $todayCount,
             'daily_goal' => $dailyGoal,
             'last_active_date' => $streak?->last_active_date_local?->toDateString(),
+            'milestones' => $this->streakMilestoneService->listForProfile($profile),
         ];
     }
 
     /**
-     * Activity heatmap — drill duration per day for last N weeks.
+     * Activity heatmap — số bài exam (full + custom) hoàn thành mỗi ngày.
      *
-     * @return array<int, array{date: string, minutes: int}>
+     * @return array<int, array{date: string, count: int}>
      */
     public function getActivityHeatmap(Profile $profile, int $weeks = 12): array
     {
         $tz = SystemConfig::get('streak.timezone') ?? 'Asia/Ho_Chi_Minh';
         $endDate = Carbon::now($tz)->toDateString();
         $startDate = Carbon::now($tz)->subWeeks($weeks)->startOfWeek(Carbon::MONDAY)->toDateString();
+        [$startUtc] = $this->localDayBoundsUtc($startDate, $tz);
+        [, $endUtc] = $this->localDayBoundsUtc($endDate, $tz);
 
-        return ProfileDailyActivity::query()
+        $rows = ExamSession::query()
             ->where('profile_id', $profile->id)
-            ->whereBetween('date_local', [$startDate, $endDate])
-            ->orderBy('date_local')
-            ->get(['date_local', 'drill_duration_seconds'])
-            ->map(fn ($row) => [
-                'date' => $row->date_local,
-                'minutes' => (int) round($row->drill_duration_seconds / 60),
-            ])
-            ->all();
+            ->whereIn('status', ['submitted', 'auto_submitted', 'grading', 'graded'])
+            ->whereBetween('submitted_at', [$startUtc, $endUtc])
+            ->orderBy('submitted_at')
+            ->get(['submitted_at']);
+
+        $byDay = [];
+        foreach ($rows as $row) {
+            $date = Carbon::parse($row->submitted_at, 'UTC')->setTimezone($tz)->toDateString();
+            $byDay[$date] = ($byDay[$date] ?? 0) + 1;
+        }
+
+        $out = [];
+        foreach ($byDay as $date => $count) {
+            $out[] = ['date' => $date, 'count' => $count];
+        }
+        usort($out, fn ($a, $b) => strcmp($a['date'], $b['date']));
+
+        return $out;
+    }
+
+    /**
+     * @return array{0: \Carbon\Carbon, 1: \Carbon\Carbon}
+     */
+    private function localDayBoundsUtc(string $dateLocal, string $tz): array
+    {
+        return [
+            Carbon::parse($dateLocal, $tz)->startOfDay()->utc(),
+            Carbon::parse($dateLocal, $tz)->endOfDay()->utc(),
+        ];
     }
 
     private function updateStreak(string $profileId, string $dateLocal): void
     {
         $dailyGoal = (int) (SystemConfig::get('streak.daily_goal') ?? 1);
-        $todayCount = (int) ProfileDailyActivity::query()
+        $tz = SystemConfig::get('streak.timezone') ?? 'Asia/Ho_Chi_Minh';
+        [$startUtc, $endUtc] = $this->localDayBoundsUtc($dateLocal, $tz);
+
+        // Đếm full test đã hoàn thành trong ngày local (theo submitted_at).
+        $todayCount = ExamSession::query()
             ->where('profile_id', $profileId)
-            ->where('date_local', $dateLocal)
-            ->value('drill_session_count');
+            ->where('is_full_test', true)
+            ->whereIn('status', ['submitted', 'auto_submitted', 'grading', 'graded'])
+            ->whereBetween('submitted_at', [$startUtc, $endUtc])
+            ->count();
 
         if ($todayCount < $dailyGoal) {
             return;
         }
 
-        $state = ProfileStreakState::query()->find($profileId);
-        $lastDate = $state?->last_active_date_local?->toDateString();
-        $yesterday = Carbon::parse($dateLocal)->subDay()->toDateString();
+        DB::transaction(function () use ($profileId, $dateLocal) {
+            // Streak log entry (RFC 0019 §3 — append-only daily log cho contribution graph).
+            ProfileStreakLog::query()->updateOrInsert(
+                ['profile_id' => $profileId, 'date_local' => $dateLocal],
+                ['active' => true, 'created_at' => now()],
+            );
 
-        if ($lastDate === $dateLocal) {
-            return; // already counted today
-        }
+            $state = ProfileStreakState::query()->lockForUpdate()->find($profileId);
+            $lastDate = $state?->last_active_date_local?->toDateString();
+            $yesterday = Carbon::parse($dateLocal)->subDay()->toDateString();
 
-        $newStreak = ($lastDate === $yesterday)
-            ? ($state?->current_streak ?? 0) + 1
-            : 1;
+            if ($lastDate === $dateLocal) {
+                return; // already counted today
+            }
 
-        $longest = max($newStreak, $state?->longest_streak ?? 0);
+            $newStreak = ($lastDate === $yesterday)
+                ? ($state?->current_streak ?? 0) + 1
+                : 1;
 
-        ProfileStreakState::query()->updateOrInsert(
-            ['profile_id' => $profileId],
-            [
-                'current_streak' => $newStreak,
-                'longest_streak' => $longest,
-                'last_active_date_local' => $dateLocal,
-                'updated_at' => now(),
-            ],
-        );
+            $longest = max($newStreak, $state?->longest_streak ?? 0);
+
+            ProfileStreakState::query()->updateOrInsert(
+                ['profile_id' => $profileId],
+                [
+                    'current_streak' => $newStreak,
+                    'longest_streak' => $longest,
+                    'last_active_date_local' => $dateLocal,
+                    'updated_at' => now(),
+                ],
+            );
+        });
     }
 
     /**

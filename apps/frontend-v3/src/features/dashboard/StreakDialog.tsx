@@ -1,36 +1,18 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { DuoProgressBar } from "#/components/DuoProgressBar"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { ScrollArea } from "#/components/ScrollArea"
-import type { StreakData } from "#/features/dashboard/types"
+import { claimStreakMilestone } from "#/features/dashboard/actions"
+import type { StreakData, StreakMilestone } from "#/features/dashboard/types"
 import { useWelcomeGift } from "#/features/onboarding/use-welcome-gift"
 import { useCoinGain } from "#/lib/coin-gain"
 import { useToast } from "#/lib/toast"
 import { cn } from "#/lib/utils"
 
-// TODO: claim state lưu localStorage tạm — thay bằng API khi BE có endpoint claim milestone.
-const CLAIM_KEY = "vstep:streak-claimed:v1"
-
-function loadClaimed(): Set<number> {
-	if (typeof window === "undefined") return new Set()
-	try {
-		const raw = localStorage.getItem(CLAIM_KEY)
-		if (!raw) return new Set()
-		const arr = JSON.parse(raw) as unknown
-		return Array.isArray(arr) ? new Set(arr.filter((n): n is number => typeof n === "number")) : new Set()
-	} catch {
-		return new Set()
-	}
-}
-
-function persistClaimed(set: Set<number>) {
-	try {
-		localStorage.setItem(CLAIM_KEY, JSON.stringify([...set]))
-	} catch {
-		// ignore
-	}
-}
+// Mốc 30 dùng chest icon + popup lớn; các mốc nhỏ dùng coin + burst inline.
+const CHEST_DAYS = 30
 
 interface Props {
 	open: boolean
@@ -38,50 +20,39 @@ interface Props {
 	streak: StreakData
 }
 
-interface Milestone {
-	days: number
-	coins: number
-	icon: "coin" | "chest"
-}
-
-const MILESTONES: readonly Milestone[] = [
-	{ days: 7, coins: 100, icon: "coin" },
-	{ days: 14, coins: 250, icon: "coin" },
-	{ days: 30, coins: 500, icon: "chest" },
-] as const
-
 export function StreakDialog({ open, onClose, streak }: Props) {
-	const [claimed, setClaimed] = useState<Set<number>>(() => loadClaimed())
+	const qc = useQueryClient()
+	const [burstDays, setBurstDays] = useState<number | null>(null)
 
 	useEffect(() => {
 		if (!open) return
-		setClaimed(loadClaimed())
 		const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose()
 		window.addEventListener("keydown", onKey)
 		return () => window.removeEventListener("keydown", onKey)
 	}, [open, onClose])
 
-	const [burstDays, setBurstDays] = useState<number | null>(null)
+	const claimMutation = useMutation({
+		mutationFn: (m: StreakMilestone) => claimStreakMilestone(m.days),
+		onSuccess: (result, m) => {
+			qc.invalidateQueries({ queryKey: ["streak"] })
+			qc.invalidateQueries({ queryKey: ["wallet", "balance"] })
 
-	function handleClaim(m: Milestone) {
-		if (claimed.has(m.days)) return
-		const next = new Set(claimed)
-		next.add(m.days)
-		setClaimed(next)
-		persistClaimed(next)
+			if (m.days === CHEST_DAYS) {
+				onClose()
+				setTimeout(() => useWelcomeGift.getState().show(result.coins_granted, "streak-30"), 240)
+				return
+			}
 
-		if (m.icon === "chest") {
-			// Mốc lớn → reuse welcome-gift popup (chest mở + coin burst + count up).
-			onClose()
-			setTimeout(() => useWelcomeGift.getState().show(m.coins, "streak-30"), 240)
-			return
-		}
+			setBurstDays(m.days)
+			setTimeout(() => setBurstDays(null), 1200)
+			useToast.getState().add(`+${result.coins_granted} xu — phần thưởng mốc ${m.days} ngày!`, "success")
+			setTimeout(() => useCoinGain.getState().trigger(result.coins_granted), 220)
+		},
+	})
 
-		// Mốc nhỏ → toast + burst particles trên row + coin-gain trên header.
-		setBurstDays(m.days)
-		setTimeout(() => setBurstDays(null), 1200)
-		useToast.getState().add(`+${m.coins} xu — phần thưởng mốc ${m.days} ngày!`, "success")
-		setTimeout(() => useCoinGain.getState().trigger(m.coins), 220)
+	function handleClaim(m: StreakMilestone) {
+		if (m.claimed || claimMutation.isPending) return
+		claimMutation.mutate(m)
 	}
 
 	if (typeof document === "undefined" || !open) return null
@@ -138,7 +109,7 @@ export function StreakDialog({ open, onClose, streak }: Props) {
 								<span
 									className={cn("font-extrabold tabular-nums", goalReached ? "text-primary" : "text-warning")}
 								>
-									{done}/{goal} đề thi thử
+									{done}/{goal} bài thi
 								</span>
 							</div>
 							<DuoProgressBar
@@ -150,7 +121,7 @@ export function StreakDialog({ open, onClose, streak }: Props) {
 							<p className="text-xs text-muted">
 								{goalReached
 									? "Hoàn thành! Streak được giữ hôm nay."
-									: `Còn ${remaining} đề thi thử nữa để giữ streak`}
+									: `Còn ${remaining} bài thi nữa để giữ streak`}
 							</p>
 						</div>
 
@@ -160,13 +131,13 @@ export function StreakDialog({ open, onClose, streak }: Props) {
 								Mốc phần thưởng
 							</p>
 							<div className="space-y-2">
-								{MILESTONES.map((m) => (
+								{streak.milestones.map((m) => (
 									<MilestoneRow
 										key={m.days}
 										milestone={m}
 										streak={currentStreak}
-										isClaimed={claimed.has(m.days)}
 										isBursting={burstDays === m.days}
+										isPending={claimMutation.isPending && claimMutation.variables?.days === m.days}
 										onClaim={() => handleClaim(m)}
 									/>
 								))}
@@ -177,9 +148,9 @@ export function StreakDialog({ open, onClose, streak }: Props) {
 							<p className="text-xs font-bold uppercase tracking-wider text-subtle">Cách tham gia</p>
 							<ol className="space-y-1.5 text-xs text-foreground">
 								{[
-									`Hoàn thành ít nhất ${goal} đề thi thử mỗi ngày`,
+									`Hoàn thành ít nhất ${goal} bài thi mỗi ngày`,
 									"Không bỏ ngày nào để giữ streak",
-									...MILESTONES.map((m) => `Đạt mốc ${m.days} ngày → nhận ${m.coins} xu`),
+									...streak.milestones.map((m) => `Đạt mốc ${m.days} ngày → nhận ${m.coins} xu`),
 								].map((note, i) => (
 									<li key={note} className="flex gap-2">
 										<span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-info-tint text-[10px] font-extrabold text-info">
@@ -201,20 +172,22 @@ export function StreakDialog({ open, onClose, streak }: Props) {
 function MilestoneRow({
 	milestone,
 	streak,
-	isClaimed,
 	isBursting,
+	isPending,
 	onClaim,
 }: {
-	milestone: Milestone
+	milestone: StreakMilestone
 	streak: number
-	isClaimed: boolean
 	isBursting: boolean
+	isPending: boolean
 	onClaim: () => void
 }) {
 	const progress = Math.min(milestone.days, streak)
 	const pct = Math.round((progress / milestone.days) * 100)
 	const reached = streak >= milestone.days
+	const isClaimed = milestone.claimed
 	const canClaim = reached && !isClaimed
+	const isChest = milestone.days === CHEST_DAYS
 
 	return (
 		<div
@@ -260,15 +233,15 @@ function MilestoneRow({
 						</>
 					)}
 					{isClaimed ? (
-						milestone.icon === "chest" ? (
+						isChest ? (
 							<StaticIcon name="chest-open" size="sm" />
 						) : (
 							<Icon name="check" size="sm" className="text-primary-dark" />
 						)
 					) : (
 						<StaticIcon
-							name={milestone.icon === "chest" ? "chest" : "coin"}
-							size={milestone.icon === "chest" ? "sm" : "xs"}
+							name={isChest ? "chest" : "coin"}
+							size={isChest ? "sm" : "xs"}
 							className={cn(
 								canClaim ? "animate-[coinPinch_900ms_ease-in-out_infinite]" : "opacity-40 grayscale",
 							)}
@@ -294,9 +267,10 @@ function MilestoneRow({
 						<button
 							type="button"
 							onClick={onClaim}
-							className="btn btn-primary text-xs px-3 py-1.5 leading-none"
+							disabled={isPending}
+							className="btn btn-primary text-xs px-3 py-1.5 leading-none disabled:opacity-60 disabled:cursor-not-allowed"
 						>
-							Nhận xu
+							{isPending ? "Đang nhận…" : "Nhận xu"}
 						</button>
 					) : (
 						<span className="text-xs font-extrabold tabular-nums text-subtle">

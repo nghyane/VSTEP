@@ -8,10 +8,10 @@ const WEEKS = 12
 const DAYS = 7
 const DAY_LABELS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
 
-function toLevel(minutes: number): number {
-	if (minutes <= 0) return 0
+function toLevel(count: number): number {
+	if (count <= 0) return 0
 	for (let i = heatmapLevels.length - 1; i >= 0; i--) {
-		if (minutes >= heatmapLevels[i]) return i + 1
+		if (count >= heatmapLevels[i]) return i + 1
 	}
 	return 1
 }
@@ -19,7 +19,7 @@ function toLevel(minutes: number): number {
 const LEVEL_CLASSES = ["bg-border", "bg-primary/25", "bg-primary/50", "bg-primary/75", "bg-primary"]
 
 function buildGrid(data: ActivityDay[]): number[][] {
-	const map = new Map(data.map((d) => [d.date.slice(0, 10), d.minutes]))
+	const map = new Map(data.map((d) => [d.date.slice(0, 10), d.count]))
 	const today = new Date()
 	const start = new Date(today)
 	start.setDate(start.getDate() - WEEKS * DAYS)
@@ -48,16 +48,16 @@ export function ActivityHeatmap() {
 
 	const activityData = data.data
 	const weeks = buildGrid(activityData)
-	const totalDays = activityData.filter((d) => d.minutes > 0).length
+	const totalDays = activityData.filter((d) => d.count > 0).length
 
 	return (
 		<section className="card p-6">
 			<div className="flex items-start justify-between mb-5">
 				<div>
 					<h3 className="font-extrabold text-lg text-foreground">
-						{isLoading ? "Đang tải..." : "Hoạt động luyện tập"}
+						{isLoading ? "Đang tải..." : "Hoạt động làm bài thi"}
 					</h3>
-					<p className="text-sm text-subtle mt-1">{totalDays} ngày có luyện tập trong 12 tuần qua</p>
+					<p className="text-sm text-subtle mt-1">{totalDays} ngày có làm bài trong 12 tuần qua</p>
 				</div>
 				<div className="flex items-center gap-1.5 text-xs text-subtle">
 					<span>Ít</span>
