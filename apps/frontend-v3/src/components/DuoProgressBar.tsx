@@ -50,7 +50,11 @@ export function DuoProgressBar({ value, tone = "primary", heightPx = 12, classNa
 				{pct > 0 && (
 					<span
 						aria-hidden
-						className={cn("absolute left-1.5 right-1.5 top-1 h-0.5 rounded-full opacity-90", t.highlight)}
+						className={cn("absolute left-1.5 right-1.5 rounded-full opacity-90", t.highlight)}
+						style={{
+							top: Math.max(2, Math.round(heightPx * 0.28)),
+							height: Math.max(2, Math.round(heightPx * 0.18)),
+						}}
 					/>
 				)}
 			</div>

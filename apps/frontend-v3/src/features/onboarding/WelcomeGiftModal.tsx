@@ -1,11 +1,29 @@
 import { useEffect, useState } from "react"
 import { StaticIcon } from "#/components/Icon"
-import { useWelcomeGift } from "#/features/onboarding/use-welcome-gift"
+import { type GiftKind, useWelcomeGift } from "#/features/onboarding/use-welcome-gift"
 
 const COUNT_DURATION_MS = 1200
 
+const COPY: Record<GiftKind, { eyebrow: string; title: string; body: string; cta: string; aria: string }> = {
+	welcome: {
+		eyebrow: "Chào mừng đến VSTEP",
+		title: "Quà khởi đầu của bạn",
+		body: "Dùng xu để mở khóa gợi ý, mua đề thi và các tính năng luyện tập nâng cao.",
+		cta: "Bắt đầu học",
+		aria: "Chào mừng — quà tặng khởi đầu",
+	},
+	"streak-30": {
+		eyebrow: "Mốc 30 ngày streak",
+		title: "Tuyệt vời! Bạn vừa mở rương lớn",
+		body: "Phần thưởng cho 30 ngày học liên tục. Giữ vững phong độ để mở khóa nhiều mốc hơn nữa!",
+		cta: "Tiếp tục học",
+		aria: "Phần thưởng streak 30 ngày",
+	},
+}
+
 export function WelcomeGiftModal() {
 	const amount = useWelcomeGift((s) => s.amount)
+	const kind = useWelcomeGift((s) => s.kind)
 	const dismiss = useWelcomeGift((s) => s.dismiss)
 	const [opened, setOpened] = useState(false)
 	const [displayed, setDisplayed] = useState(0)
@@ -36,16 +54,18 @@ export function WelcomeGiftModal() {
 
 	if (amount === null) return null
 
+	const copy = COPY[kind]
+
 	return (
 		<div
 			className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fadeIn_200ms_ease-out]"
 			role="dialog"
 			aria-modal="true"
-			aria-label="Chào mừng — quà tặng khởi đầu"
+			aria-label={copy.aria}
 		>
 			<div className="card p-8 mx-4 w-full max-w-md text-center animate-[popIn_300ms_cubic-bezier(0.34,1.56,0.64,1)]">
-				<p className="text-sm font-bold uppercase tracking-wide text-primary-dark">Chào mừng đến VSTEP</p>
-				<h2 className="mt-1 text-2xl font-extrabold text-foreground">Quà khởi đầu của bạn</h2>
+				<p className="text-sm font-bold uppercase tracking-wide text-primary-dark">{copy.eyebrow}</p>
+				<h2 className="mt-1 text-2xl font-extrabold text-foreground">{copy.title}</h2>
 
 				<div className="relative mt-6 flex h-40 items-center justify-center">
 					{opened && (
@@ -108,12 +128,10 @@ export function WelcomeGiftModal() {
 					<StaticIcon name="coin-md" size="md" />
 					<span className="text-4xl font-extrabold text-foreground tabular-nums">+{displayed}</span>
 				</div>
-				<p className="mt-2 text-sm text-subtle">
-					Dùng xu để mở khóa gợi ý, mua đề thi và các tính năng luyện tập nâng cao.
-				</p>
+				<p className="mt-2 text-sm text-subtle">{copy.body}</p>
 
 				<button type="button" className="btn btn-primary mt-6 w-full py-3 font-extrabold" onClick={dismiss}>
-					Bắt đầu học
+					{copy.cta}
 				</button>
 			</div>
 		</div>

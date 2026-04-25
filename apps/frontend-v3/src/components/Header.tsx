@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { ProfileDropdown } from "#/components/ProfileDropdown"
 import { streakQuery } from "#/features/dashboard/queries"
+import { StreakDialog } from "#/features/dashboard/StreakDialog"
 import { unreadCountQuery } from "#/features/notifications/queries"
 import { walletBalanceQuery } from "#/features/wallet/queries"
 import { TopUpDialog } from "#/features/wallet/TopUpDialog"
@@ -23,10 +24,12 @@ export function Header({ title, backTo }: Props) {
 	const { data: unreadData } = useQuery(unreadCountQuery)
 
 	const balance = walletData ? walletData.data.balance : null
-	const streak = streakData ? streakData.data.current_streak : null
+	const streakInfo = streakData?.data ?? null
+	const streak = streakInfo ? streakInfo.current_streak : null
 	const unread = unreadData ? unreadData.data.count : 0
 	const initial = profile.nickname.charAt(0).toUpperCase()
 	const [topupOpen, setTopupOpen] = useState(false)
+	const [streakOpen, setStreakOpen] = useState(false)
 
 	const pulse = useCoinGain((s) => s.pulse)
 	const gainAmount = useCoinGain((s) => s.amount)
@@ -94,15 +97,24 @@ export function Header({ title, backTo }: Props) {
 						</>
 					)}
 				</div>
-				<div className="inline-flex shrink-0 items-center gap-2 px-3 py-1.5 rounded-full bg-streak-tint border-2 border-streak/30 border-b-4 whitespace-nowrap">
+				<button
+					type="button"
+					onClick={() => setStreakOpen(true)}
+					disabled={streakInfo === null}
+					aria-label={`Streak ${streak ?? 0} ngày — bấm để xem chi tiết`}
+					className="inline-flex shrink-0 items-center gap-2 px-3 py-1.5 rounded-full bg-streak-tint border-2 border-streak/30 border-b-4 whitespace-nowrap hover:bg-streak/15 hover:-translate-y-0.5 active:translate-y-0 active:border-b-2 transition-all disabled:cursor-default disabled:hover:translate-y-0"
+				>
 					<StaticIcon name="streak-sm" size="sm" />
 					<span className="font-extrabold text-base text-streak tabular-nums leading-none">
 						{streak !== null ? streak : "–"}
 					</span>
-				</div>
+				</button>
 				<ProfileDropdown unread={unread} initial={initial} />
 			</div>
 			<TopUpDialog open={topupOpen} onClose={() => setTopupOpen(false)} />
+			{streakInfo && (
+				<StreakDialog open={streakOpen} onClose={() => setStreakOpen(false)} streak={streakInfo} />
+			)}
 		</div>
 	)
 }
