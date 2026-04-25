@@ -1,7 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { HTTPError } from "ky"
 import { useCallback, useEffect, useReducer, useRef } from "react"
-import { submitExamSession } from "#/features/exam/actions"
+import { saveExamDraft, submitExamSession } from "#/features/exam/actions"
 import type {
+	ExamDraft,
+	ExamDraftPayload,
 	ExamSessionData,
 	ExamVersionMcqItem,
 	ExamVersionWritingTask,
@@ -11,6 +14,7 @@ import type {
 	SubmitSessionResult,
 	WritingAnswerPayload,
 } from "#/features/exam/types"
+import { useToast } from "#/lib/toast"
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -122,60 +126,27 @@ function buildMcqPayload(
 		}))
 }
 
-// ─── Draft persistence (localStorage) ────────────────────────────────────────
-// User có thể thoát giữa chừng (đóng tab, crash, refresh). BE không lưu draft
-// → persist MCQ / writing / speakingDone / skillIdx vào localStorage để user
-// quay lại có thể tiếp tục làm. Speaking audio URL nằm trong children nên user
-// vẫn phải ghi âm lại; các phần khác được khôi phục đầy đủ.
+// ─── Draft persistence (BE autosave) ─────────────────────────────────────────
+// User có thể thoát giữa chừng (đóng tab, crash, refresh). BE lưu draft snapshot
+// qua PUT /exam-sessions/{id}/draft (1 row/session). Reducer init đọc snapshot
+// đầu (initialDraft prop), effect debounce gọi mutation khi state thay đổi.
+// Speaking audio URL hiện tại không nằm trong reducer state → user vẫn phải ghi
+// âm lại sau khi resume; các phần khác được khôi phục đầy đủ.
 
-const DRAFT_VERSION = 1
-const draftKey = (sessionId: string) => `exam-draft:v${DRAFT_VERSION}:${sessionId}`
+const DRAFT_DEBOUNCE_MS = 1500
 
-interface PersistedDraft {
-	skillIdx: number
-	mcqAnswers: Array<[string, number]>
-	writingAnswers: Array<[string, string]>
-	speakingDone: string[]
-	savedAt: number
-}
-
-function loadDraft(sessionId: string, deadlineAt: string): PersistedDraft | null {
-	if (typeof window === "undefined") return null
-	try {
-		const raw = window.localStorage.getItem(draftKey(sessionId))
-		if (!raw) return null
-		if (new Date(deadlineAt).getTime() <= Date.now()) {
-			window.localStorage.removeItem(draftKey(sessionId))
-			return null
-		}
-		return JSON.parse(raw) as PersistedDraft
-	} catch {
-		return null
-	}
-}
-
-function saveDraft(sessionId: string, state: ExamState): void {
-	if (typeof window === "undefined") return
-	try {
-		const payload: PersistedDraft = {
-			skillIdx: state.skillIdx,
-			mcqAnswers: Array.from(state.mcqAnswers),
-			writingAnswers: Array.from(state.writingAnswers),
-			speakingDone: Array.from(state.speakingDone),
-			savedAt: Date.now(),
-		}
-		window.localStorage.setItem(draftKey(sessionId), JSON.stringify(payload))
-	} catch {
-		// storage full / disabled — silently ignore
-	}
-}
-
-function clearDraft(sessionId: string): void {
-	if (typeof window === "undefined") return
-	try {
-		window.localStorage.removeItem(draftKey(sessionId))
-	} catch {
-		// ignore
+function buildDraftPayload(state: ExamState): ExamDraftPayload {
+	return {
+		skill_idx: state.skillIdx,
+		mcq_answers: Array.from(state.mcqAnswers, ([itemId, idx]) => ({
+			item_ref_id: itemId,
+			selected_index: idx,
+		})),
+		writing_answers: Array.from(state.writingAnswers, ([taskId, text]) => ({
+			task_id: taskId,
+			text,
+		})),
+		speaking_marks: Array.from(state.speakingDone, (partId) => ({ part_id: partId })),
 	}
 }
 
@@ -188,6 +159,7 @@ interface UseExamSessionOptions {
 	listeningItems: ExamVersionMcqItem[]
 	readingItems: ExamVersionMcqItem[]
 	writingTasks: ExamVersionWritingTask[]
+	initialDraft: ExamDraft | null
 	onSubmitted: (result: SubmitSessionResult) => void
 }
 
@@ -196,34 +168,55 @@ export function useExamSession({
 	listeningItems,
 	readingItems,
 	writingTasks,
+	initialDraft,
 	onSubmitted,
 }: UseExamSessionOptions) {
 	const activeSkills = SKILL_ORDER.filter((sk) => session.selected_skills.includes(sk))
 
 	const [state, dispatch] = useReducer(examReducer, undefined, (): ExamState => {
-		const draft = loadDraft(session.id, session.server_deadline_at)
+		const expired = new Date(session.server_deadline_at).getTime() <= Date.now()
+		const draft = !expired ? initialDraft : null
 		return {
 			// Có draft => user đã bắt đầu làm => bỏ qua device-check
 			phase: draft ? "active" : "device-check",
-			skillIdx: draft?.skillIdx ?? 0,
-			mcqAnswers: new Map(draft?.mcqAnswers ?? []),
-			writingAnswers: new Map(draft?.writingAnswers ?? []),
-			speakingDone: new Set(draft?.speakingDone ?? []),
+			skillIdx: draft?.skill_idx ?? 0,
+			mcqAnswers: new Map((draft?.mcq_answers ?? []).map((m) => [m.item_ref_id, m.selected_index] as const)),
+			writingAnswers: new Map((draft?.writing_answers ?? []).map((w) => [w.task_id, w.text] as const)),
+			speakingDone: new Set((draft?.speaking_marks ?? []).map((s) => s.part_id)),
 			confirmSubmit: false,
 			confirmNextSkill: false,
 		}
 	})
 
-	// Persist draft khi state thay đổi trong lúc làm bài; xoá khi submit xong.
-	useEffect(() => {
-		if (state.phase === "active") {
-			saveDraft(session.id, state)
-		} else if (state.phase === "submitted") {
-			clearDraft(session.id)
-		}
-	}, [state, session.id])
-
 	const qc = useQueryClient()
+
+	// Toast cho lỗi autosave: chỉ hiện 1 lần / 60s để tránh spam khi BE down hoặc 5xx liên tục.
+	// 429 (rate-limited) → silent: lần save tiếp theo (sau debounce) sẽ tự retry.
+	const lastDraftToastAt = useRef(0)
+	const draftMutation = useMutation({
+		mutationFn: (payload: ExamDraftPayload) => saveExamDraft(session.id, payload),
+		onError: (error: unknown) => {
+			if (error instanceof HTTPError && error.response.status === 429) return
+			const now = Date.now()
+			if (now - lastDraftToastAt.current < 60_000) return
+			lastDraftToastAt.current = now
+			useToast.getState().add("Không lưu được tự động — kiểm tra kết nối mạng.")
+		},
+	})
+
+	// Debounced autosave: gom các thay đổi state trong DRAFT_DEBOUNCE_MS rồi PUT 1 lần.
+	const draftMutate = draftMutation.mutate
+	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+	useEffect(() => {
+		if (state.phase !== "active") return
+		const payload = buildDraftPayload(state)
+		if (debounceRef.current) clearTimeout(debounceRef.current)
+		debounceRef.current = setTimeout(() => draftMutate(payload), DRAFT_DEBOUNCE_MS)
+		return () => {
+			if (debounceRef.current) clearTimeout(debounceRef.current)
+		}
+	}, [state, draftMutate])
+
 	const submitMutation = useMutation({
 		mutationFn: (payload: SubmitSessionPayload) => submitExamSession(session.id, payload),
 		onSuccess: (result) => {

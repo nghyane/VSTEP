@@ -9,6 +9,7 @@ use App\Enums\CoinTransactionType;
 use App\Models\Exam;
 use App\Models\ExamMcqAnswer;
 use App\Models\ExamSession;
+use App\Models\ExamSessionDraft;
 use App\Models\ExamSpeakingSubmission;
 use App\Models\ExamVersion;
 use App\Models\ExamWritingSubmission;
@@ -71,6 +72,21 @@ class ExamSessionService
         $isFullTest = $mode === 'full' || count(array_intersect($selectedSkills, $allSkills)) === 4;
         if ($mode === 'full') {
             $selectedSkills = $allSkills;
+        }
+
+        // Chặn duplicate: 1 user × 1 đề chỉ được có 1 session active còn hạn.
+        // Defense-in-depth — FE đã hide nút "Bắt đầu" khi có active, BE chặn để bảo vệ
+        // direct-API call / race condition (double-click / 2 tab cùng bấm).
+        $hasActive = ExamSession::query()
+            ->where('profile_id', $profile->id)
+            ->where('exam_version_id', $version->id)
+            ->where('status', 'active')
+            ->where('server_deadline_at', '>', now())
+            ->exists();
+        if ($hasActive) {
+            throw ValidationException::withMessages([
+                'session' => ['Bạn đang có một lượt làm dở của đề này. Hãy tiếp tục hoặc hủy trước khi bắt đầu lượt mới.'],
+            ]);
         }
 
         $cost = $this->computeCost($selectedSkills);
@@ -174,6 +190,9 @@ class ExamSessionService
                 'submitted_at' => now(),
             ]);
 
+            // Submit thành công — xóa draft autosave (FE đã gửi state cuối cùng).
+            ExamSessionDraft::query()->where('session_id', $session->id)->delete();
+
             // Streak: chỉ tính full test. RFC 0017 — defer khỏi transaction để rollback an toàn.
             $progressService = $this->progressService;
             DB::afterCommit(fn () => $progressService->recordExamCompletion($session->fresh()));
@@ -258,5 +277,46 @@ class ExamSessionService
         }
 
         return max($total, 1);
+    }
+
+    public function getDraft(Profile $profile, ExamSession $session): ?ExamSessionDraft
+    {
+        if ($session->profile_id !== $profile->id) {
+            abort(403);
+        }
+
+        return ExamSessionDraft::query()->where('session_id', $session->id)->first();
+    }
+
+    /**
+     * Upsert draft autosave snapshot. Chỉ chấp nhận khi session đang active và chưa quá deadline —
+     * tránh restore lại đề đã đóng/đã submit.
+     *
+     * @param  array{
+     *   skill_idx:int,
+     *   mcq_answers:list<array{item_ref_type:string,item_ref_id:string,selected_index:int}>,
+     *   writing_answers:list<array{task_id:string,text:string}>,
+     *   speaking_marks:list<array{part_id:string,audio_url?:?string,duration_seconds?:?int}>,
+     * }  $payload
+     */
+    public function saveDraft(Profile $profile, ExamSession $session, array $payload): ExamSessionDraft
+    {
+        if ($session->profile_id !== $profile->id) {
+            abort(403);
+        }
+        if ($session->status !== 'active' || $session->server_deadline_at->isPast()) {
+            throw ValidationException::withMessages(['session' => ['Session not active.']]);
+        }
+
+        return ExamSessionDraft::query()->updateOrCreate(
+            ['session_id' => $session->id],
+            [
+                'skill_idx' => $payload['skill_idx'],
+                'mcq_answers' => $payload['mcq_answers'],
+                'writing_answers' => $payload['writing_answers'],
+                'speaking_marks' => $payload['speaking_marks'],
+                'saved_at' => now(),
+            ],
+        );
     }
 }

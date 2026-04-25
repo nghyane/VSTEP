@@ -12,8 +12,20 @@ import { ReadingPanel } from "#/features/exam/components/ReadingPanel"
 import { ResultBackground } from "#/features/exam/components/ResultBackground"
 import { SpeakingPanel } from "#/features/exam/components/SpeakingPanel"
 import { WritingPanel } from "#/features/exam/components/WritingPanel"
-import { examDetailQuery, examSessionQuery, sessionResultsQuery } from "#/features/exam/queries"
-import type { Exam, ExamSessionData, ExamVersion, SkillKey, SubmitSessionResult } from "#/features/exam/types"
+import {
+	examDetailQuery,
+	examDraftQuery,
+	examSessionQuery,
+	sessionResultsQuery,
+} from "#/features/exam/queries"
+import type {
+	Exam,
+	ExamDraft,
+	ExamSessionData,
+	ExamVersion,
+	SkillKey,
+	SubmitSessionResult,
+} from "#/features/exam/types"
 import { useExamSession, useExamTimer } from "#/features/exam/use-exam-session"
 import { cn } from "#/lib/utils"
 
@@ -403,15 +415,25 @@ function SubmittedResultView({
 function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) {
 	const { data: sessionRes } = useSuspenseQuery(examSessionQuery(sessionId))
 	const { data: examRes } = useSuspenseQuery(examDetailQuery(examId))
+	const { data: draftRes } = useSuspenseQuery(examDraftQuery(sessionId))
 
 	const session = sessionRes.data
 	const { version, exam } = examRes.data
+	const initialDraft = draftRes.data
 
 	if (session.status !== "active") {
 		return <SubmittedResultView sessionId={sessionId} exam={exam} version={version} session={session} />
 	}
 
-	return <ActiveExamRoom sessionId={sessionId} session={session} exam={exam} version={version} />
+	return (
+		<ActiveExamRoom
+			sessionId={sessionId}
+			session={session}
+			exam={exam}
+			version={version}
+			initialDraft={initialDraft}
+		/>
+	)
 }
 
 function ActiveExamRoom({
@@ -419,11 +441,13 @@ function ActiveExamRoom({
 	session,
 	exam,
 	version,
+	initialDraft,
 }: {
 	sessionId: string
 	session: ExamSessionData
 	exam: Exam
 	version: ExamVersion
+	initialDraft: ExamDraft | null
 }) {
 	const navigate = useNavigate()
 	const [submitResult, setSubmitResult] = useState<SubmitSessionResult | null>(null)
@@ -461,6 +485,7 @@ function ActiveExamRoom({
 		listeningItems,
 		readingItems,
 		writingTasks: version.writing_tasks,
+		initialDraft,
 		onSubmitted: handleSubmitted,
 	})
 

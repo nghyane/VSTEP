@@ -5,7 +5,6 @@ import { Icon } from "#/components/Icon"
 import { Loading } from "#/components/Loading"
 import { BottomActionBar } from "#/features/exam/components/BottomActionBar"
 import { ExamDetailHeader } from "#/features/exam/components/ExamDetailHeader"
-import { ResumeExamBanner } from "#/features/exam/components/ResumeExamBanner"
 import { SectionSelector } from "#/features/exam/components/SectionSelector"
 import { examDetailQuery } from "#/features/exam/queries"
 import type { SkillKey } from "#/features/exam/types"
@@ -38,8 +37,6 @@ function ExamDetailPage() {
 				<Icon name="back" size="xs" />
 				Thư viện đề thi
 			</Link>
-
-			<ResumeExamBanner hideWhenExamId={examId} />
 
 			<Suspense fallback={<Loading />}>
 				<ExamDetailContent examId={examId} selected={selected} onToggleSkill={handleToggleSkill} />

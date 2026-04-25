@@ -113,25 +113,13 @@ export interface ExamSessionSummary {
 	exam_id: string | null
 	exam_version_id: string
 	mode: "full" | "custom"
+	selected_skills: SkillKey[]
 	is_full_test: boolean
 	status: "active" | "submitted" | "graded" | "auto_submitted"
 	started_at: string
 	submitted_at: string | null
-	scores: unknown
-}
-
-export interface ActiveExamSession {
-	id: string
-	exam_id: string
-	exam_title: string | null
-	exam_version_id: string
-	mode: "full" | "custom"
-	selected_skills: SkillKey[]
-	is_full_test: boolean
-	started_at: string
 	server_deadline_at: string
-	status: "active"
-	coins_charged: number
+	scores: unknown
 }
 
 export interface ExamSessionData {
@@ -171,6 +159,34 @@ export interface SubmitSessionPayload {
 	mcq_answers: McqAnswerPayload[]
 	writing_answers?: WritingAnswerPayload[]
 	speaking_answers?: SpeakingAnswerPayload[]
+}
+
+export interface ExamDraftMcq {
+	item_ref_id: string
+	selected_index: number
+}
+
+export interface ExamDraftWriting {
+	task_id: string
+	text: string
+}
+
+export interface ExamDraftSpeakingMark {
+	part_id: string
+	audio_url?: string | null
+	duration_seconds?: number | null
+}
+
+export interface ExamDraftPayload {
+	skill_idx: number
+	mcq_answers: ExamDraftMcq[]
+	writing_answers: ExamDraftWriting[]
+	speaking_marks: ExamDraftSpeakingMark[]
+}
+
+export interface ExamDraft extends ExamDraftPayload {
+	session_id: string
+	saved_at: string
 }
 
 export interface GradingJobRef {

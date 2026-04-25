@@ -2,14 +2,42 @@ import { Link } from "@tanstack/react-router"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { SkillChip } from "#/components/SkillChip"
 import type { Exam, SkillKey } from "#/features/exam/types"
+import { useExamTimer } from "#/features/exam/use-exam-session"
 import { formatCompact } from "#/lib/utils"
 
 export type ExamStatus = "not-started" | "in-progress" | "submitted"
+
+export interface ActiveSummary {
+	sessionId: string
+	deadlineAt: string
+	isFullTest: boolean
+	selectedSkills: SkillKey[]
+}
 
 interface Props {
 	exam: Exam
 	fullTestCoinCost: number | null
 	status?: ExamStatus
+	active?: ActiveSummary
+}
+
+function formatRemaining(seconds: number): string {
+	const h = Math.floor(seconds / 3600)
+	const m = Math.floor((seconds % 3600) / 60)
+	const s = seconds % 60
+	if (h > 0) return `${h}h ${m.toString().padStart(2, "0")}p`
+	return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`
+}
+
+function ResumeCountdown({ deadlineAt }: { deadlineAt: string }) {
+	const remaining = useExamTimer(deadlineAt)
+	if (remaining <= 0) return null
+	return (
+		<span className="inline-flex items-center gap-1 text-xs text-warning font-bold tabular-nums">
+			<Icon name="timer" size="xs" />
+			{formatRemaining(remaining)}
+		</span>
+	)
 }
 
 const SKILL_ORDER: SkillKey[] = ["listening", "reading", "writing", "speaking"]
@@ -41,7 +69,7 @@ function StatusBadge({ status }: { status: ExamStatus }) {
 	)
 }
 
-export function ExamCard({ exam, fullTestCoinCost, status = "not-started" }: Props) {
+export function ExamCard({ exam, fullTestCoinCost, status = "not-started", active }: Props) {
 	return (
 		<div className="card p-5 flex flex-col gap-4 hover:border-primary/40 hover:-translate-y-0.5 transition-all">
 			{/* Title + meta */}
@@ -94,22 +122,37 @@ export function ExamCard({ exam, fullTestCoinCost, status = "not-started" }: Pro
 
 			{/* Footer: status + coin + CTA */}
 			<div className="flex items-center justify-between pt-3 border-t border-border-light mt-auto">
-				<StatusBadge status={status} />
+				<div className="flex items-center gap-2">
+					<StatusBadge status={status} />
+					{active && <ResumeCountdown deadlineAt={active.deadlineAt} />}
+				</div>
 
 				<div className="flex items-center gap-2">
-					{fullTestCoinCost !== null && (
+					{fullTestCoinCost !== null && !active && (
 						<span className="inline-flex items-center gap-1.5 px-1" title="Giá một lượt làm">
 							<StaticIcon name="coin" size="sm" />
 							<span className="text-sm font-extrabold text-coin-dark tabular-nums">{fullTestCoinCost}</span>
 						</span>
 					)}
-					<Link
-						to="/thi-thu/$examId"
-						params={{ examId: exam.id }}
-						className="btn btn-primary text-sm py-2 px-4"
-					>
-						Xem đề
-					</Link>
+					{active ? (
+						<Link
+							to="/phong-thi/$sessionId"
+							params={{ sessionId: active.sessionId }}
+							search={{ examId: exam.id }}
+							className="btn btn-primary text-sm py-2 px-4"
+						>
+							Làm tiếp
+							<Icon name="lightning" size="xs" className="text-white" />
+						</Link>
+					) : (
+						<Link
+							to="/thi-thu/$examId"
+							params={{ examId: exam.id }}
+							className="btn btn-primary text-sm py-2 px-4"
+						>
+							Xem đề
+						</Link>
+					)}
 				</div>
 			</div>
 		</div>

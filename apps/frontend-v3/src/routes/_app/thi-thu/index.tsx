@@ -4,9 +4,8 @@ import { Suspense, useMemo, useState } from "react"
 import { Header } from "#/components/Header"
 import { Icon } from "#/components/Icon"
 import { Loading } from "#/components/Loading"
-import { ExamCard, type ExamStatus } from "#/features/exam/components/ExamCard"
-import { ResumeExamBanner } from "#/features/exam/components/ResumeExamBanner"
-import { activeExamSessionQuery, appConfigQuery, examsQuery, mySessionsQuery } from "#/features/exam/queries"
+import { type ActiveSummary, ExamCard, type ExamStatus } from "#/features/exam/components/ExamCard"
+import { appConfigQuery, examsQuery, mySessionsQuery } from "#/features/exam/queries"
 import type { SkillKey } from "#/features/exam/types"
 import { cn } from "#/lib/utils"
 
@@ -56,7 +55,6 @@ function ExamListContent() {
 	const { data: examsData } = useSuspenseQuery(examsQuery)
 	const { data: configData } = useQuery(appConfigQuery)
 	const { data: mySessionsData } = useQuery(mySessionsQuery)
-	const { data: activeData } = useQuery(activeExamSessionQuery)
 
 	const exams = examsData.data
 	const fullTestCoinCost = configData?.data.pricing.exam.full_test_cost_coins ?? null
@@ -74,23 +72,37 @@ function ExamListContent() {
 		})
 	}
 
-	// Derive per-exam status. Active session (singleton) wins; else "submitted" if any
-	// past session was submitted/graded/auto_submitted; else "not-started".
-	const statusByExamId = useMemo(() => {
-		const map = new Map<string, ExamStatus>()
+	// Per-exam: active session (status=active && deadline > now) wins → "in-progress" + sessionId.
+	// Else "submitted" nếu từng nộp/grading/graded. Else "not-started".
+	// BE cho phép nhiều session active đồng thời → giữ MỌI active per exam (không singleton).
+	const { statusByExamId, activeByExamId } = useMemo(() => {
+		const statusMap = new Map<string, ExamStatus>()
+		const activeMap = new Map<string, ActiveSummary>()
 		const sessions = mySessionsData?.data ?? []
+		const now = Date.now()
 		for (const s of sessions) {
 			if (!s.exam_id) continue
-			const current = map.get(s.exam_id)
-			if (current === "in-progress") continue
-			if (s.status === "submitted" || s.status === "graded" || s.status === "auto_submitted") {
-				if (!current) map.set(s.exam_id, "submitted")
+			if (s.status === "active" && new Date(s.server_deadline_at).getTime() > now) {
+				if (!activeMap.has(s.exam_id)) {
+					activeMap.set(s.exam_id, {
+						sessionId: s.id,
+						deadlineAt: s.server_deadline_at,
+						isFullTest: s.is_full_test,
+						selectedSkills: s.selected_skills,
+					})
+					statusMap.set(s.exam_id, "in-progress")
+				}
+				continue
+			}
+			if (
+				!statusMap.has(s.exam_id) &&
+				(s.status === "submitted" || s.status === "graded" || s.status === "auto_submitted")
+			) {
+				statusMap.set(s.exam_id, "submitted")
 			}
 		}
-		const active = activeData?.data
-		if (active?.exam_id) map.set(active.exam_id, "in-progress")
-		return map
-	}, [mySessionsData, activeData])
+		return { statusByExamId: statusMap, activeByExamId: activeMap }
+	}, [mySessionsData])
 
 	const wantedStatus = STATUS_BY_LABEL[status]
 
@@ -110,8 +122,6 @@ function ExamListContent() {
 
 	return (
 		<div className="space-y-5">
-			<ResumeExamBanner />
-
 			{/* Toolbar */}
 			<div className="flex flex-wrap items-center gap-3">
 				{/* Search */}
@@ -192,6 +202,7 @@ function ExamListContent() {
 							exam={exam}
 							fullTestCoinCost={fullTestCoinCost}
 							status={statusByExamId.get(exam.id) ?? "not-started"}
+							active={activeByExamId.get(exam.id)}
 						/>
 					))}
 				</div>

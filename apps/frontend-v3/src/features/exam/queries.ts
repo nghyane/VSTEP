@@ -1,9 +1,9 @@
 import { queryOptions } from "@tanstack/react-query"
 import type {
-	ActiveExamSession,
 	AppConfig,
 	Exam,
 	ExamDetail,
+	ExamDraft,
 	ExamSessionData,
 	ExamSessionSummary,
 	SessionResultsData,
@@ -33,13 +33,6 @@ export const mySessionsQuery = queryOptions({
 	staleTime: 30_000,
 })
 
-export const activeExamSessionQuery = queryOptions({
-	queryKey: ["exam-sessions", "active"],
-	queryFn: () => api.get("exam-sessions/active").json<ApiResponse<ActiveExamSession | null>>(),
-	staleTime: 30_000,
-	refetchOnWindowFocus: true,
-})
-
 export const examSessionQuery = (sessionId: string) =>
 	queryOptions({
 		queryKey: ["exam-sessions", sessionId],
@@ -51,7 +44,14 @@ export const examSessionQuery = (sessionId: string) =>
 export const sessionResultsQuery = (sessionId: string) =>
 	queryOptions({
 		queryKey: ["exam-sessions", sessionId, "results"],
-		queryFn: () =>
-			api.get(`exam-sessions/${sessionId}/results`).json<ApiResponse<SessionResultsData>>(),
+		queryFn: () => api.get(`exam-sessions/${sessionId}/results`).json<ApiResponse<SessionResultsData>>(),
 		staleTime: 60_000,
+	})
+
+export const examDraftQuery = (sessionId: string) =>
+	queryOptions({
+		queryKey: ["exam-sessions", sessionId, "draft"],
+		queryFn: () => api.get(`exam-sessions/${sessionId}/draft`).json<ApiResponse<ExamDraft | null>>(),
+		staleTime: Number.POSITIVE_INFINITY,
+		retry: false,
 	})

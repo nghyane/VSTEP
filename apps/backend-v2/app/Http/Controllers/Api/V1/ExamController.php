@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SaveExamDraftRequest;
 use App\Http\Requests\SubmitExamRequest;
 use App\Http\Resources\ExamSpeakingResultResource;
 use App\Http\Resources\ExamSubmitResultResource;
@@ -12,6 +13,7 @@ use App\Http\Resources\ExamWritingResultResource;
 use App\Models\ExamListeningPlayLog;
 use App\Models\ExamMcqAnswer;
 use App\Models\ExamSession;
+use App\Models\ExamSessionDraft;
 use App\Models\ExamVersion;
 use App\Models\Profile;
 use App\Services\ExamScoringService;
@@ -133,10 +135,12 @@ class ExamController extends Controller
             'exam_id' => $session->examVersion?->exam_id,
             'exam_version_id' => $session->exam_version_id,
             'mode' => $session->mode,
+            'selected_skills' => $session->selected_skills,
             'is_full_test' => $session->is_full_test,
             'status' => $session->status,
             'started_at' => $session->started_at,
             'submitted_at' => $session->submitted_at,
+            'server_deadline_at' => $session->server_deadline_at,
             'scores' => in_array($session->status, ['submitted', 'auto_submitted', 'grading', 'graded'], true)
                 ? $this->scoringService->getSessionScores($session)
                 : null,
@@ -159,8 +163,50 @@ class ExamController extends Controller
             'status' => 'auto_submitted',
             'submitted_at' => now(),
         ]);
+        ExamSessionDraft::query()->where('session_id', $session->id)->delete();
 
         return response()->json(['data' => ['abandoned' => true]]);
+    }
+
+    public function getDraft(Request $request, string $sessionId): JsonResponse
+    {
+        /** @var ExamSession $session */
+        $session = ExamSession::query()->findOrFail($sessionId);
+        $draft = $this->examService->getDraft($this->profile($request), $session);
+
+        if ($draft === null) {
+            return response()->json(['data' => null]);
+        }
+
+        return response()->json(['data' => [
+            'session_id' => $draft->session_id,
+            'skill_idx' => $draft->skill_idx,
+            'mcq_answers' => $draft->mcq_answers,
+            'writing_answers' => $draft->writing_answers,
+            'speaking_marks' => $draft->speaking_marks,
+            'saved_at' => $draft->saved_at,
+        ]]);
+    }
+
+    public function saveDraft(SaveExamDraftRequest $request, string $sessionId): JsonResponse
+    {
+        /** @var ExamSession $session */
+        $session = ExamSession::query()->findOrFail($sessionId);
+        $draft = $this->examService->saveDraft($this->profile($request), $session, [
+            'skill_idx' => (int) $request->validated('skill_idx'),
+            'mcq_answers' => $request->validated('mcq_answers'),
+            'writing_answers' => $request->validated('writing_answers'),
+            'speaking_marks' => $request->validated('speaking_marks'),
+        ]);
+
+        return response()->json(['data' => [
+            'session_id' => $draft->session_id,
+            'skill_idx' => $draft->skill_idx,
+            'mcq_answers' => $draft->mcq_answers,
+            'writing_answers' => $draft->writing_answers,
+            'speaking_marks' => $draft->speaking_marks,
+            'saved_at' => $draft->saved_at,
+        ]]);
     }
 
     public function activeSession(Request $request): JsonResponse

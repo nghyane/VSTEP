@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Link, useNavigate } from "@tanstack/react-router"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { abandonExamSession, startExamSession } from "#/features/exam/actions"
-import { activeExamSessionQuery, appConfigQuery } from "#/features/exam/queries"
+import { appConfigQuery, mySessionsQuery } from "#/features/exam/queries"
 import type { ExamDetail, SkillKey } from "#/features/exam/types"
 import { walletBalanceQuery } from "#/features/wallet/queries"
 import { TopUpDialog } from "#/features/wallet/TopUpDialog"
@@ -40,11 +40,24 @@ export function BottomActionBar({ detail, selected }: Props) {
 	const qc = useQueryClient()
 	const { data: walletData } = useQuery(walletBalanceQuery)
 	const { data: configData } = useQuery(appConfigQuery)
-	const { data: activeData } = useQuery(activeExamSessionQuery)
-	const activeSession = activeData?.data ?? null
-	const activeSameExam = activeSession?.exam_id === detail.exam.id ? activeSession : null
+	const { data: mySessionsData } = useQuery(mySessionsQuery)
 
-	// Dialog: "Làm mới" (đang ở đề đang làm) hoặc "Bắt đầu đề khác" (đang có đề khác dở)
+	// Per-exam: tìm session active còn hạn của ĐÚNG đề này. BE cho phép nhiều active song song
+	// (đề này + đề khác) → chỉ quan tâm session của đề đang xem; đề khác để nguyên không động.
+	const activeSameExam = useMemo(() => {
+		const sessions = mySessionsData?.data ?? []
+		const now = Date.now()
+		return (
+			sessions.find(
+				(s) =>
+					s.exam_id === detail.exam.id &&
+					s.status === "active" &&
+					new Date(s.server_deadline_at).getTime() > now,
+			) ?? null
+		)
+	}, [mySessionsData, detail.exam.id])
+
+	// Dialog "Làm mới": chỉ khi user chủ động reset session của đề này.
 	const [confirmReset, setConfirmReset] = useState(false)
 	const [showTopup, setShowTopup] = useState(false)
 
@@ -76,9 +89,10 @@ export function BottomActionBar({ detail, selected }: Props) {
 
 	const mutation = useMutation({
 		mutationFn: async () => {
-			// Nếu đang có session active (cùng hoặc khác đề) và user đã xác nhận → huỷ trước.
-			if (activeSession) {
-				await abandonExamSession(activeSession.id)
+			// Chỉ huỷ session active CỦA ĐÚNG đề này khi user xác nhận "Làm mới".
+			// Session active của đề khác (nếu có) giữ nguyên — BE cho phép nhiều active song song.
+			if (activeSameExam) {
+				await abandonExamSession(activeSameExam.id)
 			}
 			const skills: SkillKey[] = isFullTest
 				? ["listening", "reading", "writing", "speaking"]
@@ -90,8 +104,7 @@ export function BottomActionBar({ detail, selected }: Props) {
 		},
 		onSuccess: (result) => {
 			qc.invalidateQueries({ queryKey: ["wallet", "balance"] })
-			qc.invalidateQueries({ queryKey: ["exam-sessions", "active"] })
-			qc.invalidateQueries({ queryKey: ["exam-sessions", "mine"] })
+			qc.invalidateQueries({ queryKey: ["exam-sessions"] })
 			setConfirmReset(false)
 			useToast.getState().add(`Đã trừ ${result.coins_charged} xu — chúc bạn làm bài tốt!`, "success")
 			navigate({
@@ -107,7 +120,7 @@ export function BottomActionBar({ detail, selected }: Props) {
 			setShowTopup(true)
 			return
 		}
-		if (activeSession) {
+		if (activeSameExam) {
 			setConfirmReset(true)
 			return
 		}
@@ -284,22 +297,15 @@ export function BottomActionBar({ detail, selected }: Props) {
 
 			<ConfirmDialog
 				open={confirmReset}
-				title={activeSameExam ? "Làm lại đề này?" : "Bỏ bài thi đang dở?"}
+				title="Làm lại đề này?"
 				description={
-					activeSameExam ? (
-						<>
-							Tiến trình bài thi hiện tại <strong className="text-foreground">sẽ bị huỷ</strong> và không hoàn
-							xu. Bạn sẽ mở một lượt thi mới từ đầu.
-						</>
-					) : (
-						<>
-							Bạn đang có một bài thi khác đang dở. Bắt đầu đề này sẽ{" "}
-							<strong className="text-foreground">huỷ bài cũ</strong> và không hoàn xu đã trả cho bài đó.
-						</>
-					)
+					<>
+						Tiến trình bài thi hiện tại <strong className="text-foreground">sẽ bị huỷ</strong> và không hoàn
+						xu. Bạn sẽ mở một lượt thi mới từ đầu.
+					</>
 				}
 				warning="Hành động không thể hoàn tác"
-				confirmLabel={activeSameExam ? "Làm mới" : "Bỏ và bắt đầu"}
+				confirmLabel="Làm mới"
 				cancelLabel="Quay lại"
 				loadingLabel="Đang xử lý…"
 				destructive
