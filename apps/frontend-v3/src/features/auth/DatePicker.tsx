@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { cn } from "#/lib/utils"
 
 interface Props {
@@ -42,6 +42,7 @@ export function DatePicker({ value, onChange }: Props) {
 	const [year, setYear] = useState<number>(parsed?.year ?? now.getFullYear())
 	const [month, setMonth] = useState<number | null>(parsed?.month ?? null)
 	const [day, setDay] = useState<number | null>(parsed?.day ?? null)
+	const dayPanelRef = useRef<HTMLDivElement>(null)
 
 	function selectYear(y: number) {
 		setYear(y)
@@ -55,6 +56,9 @@ export function DatePicker({ value, onChange }: Props) {
 		setMonth(m)
 		setDay(null)
 		onChange("")
+		requestAnimationFrame(() => {
+			dayPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+		})
 	}
 
 	function selectDay(d: number) {
@@ -109,7 +113,7 @@ export function DatePicker({ value, onChange }: Props) {
 
 			{/* Day — only after month selected */}
 			{month !== null && (
-				<div className="space-y-2">
+				<div ref={dayPanelRef} className="space-y-2 scroll-mt-4">
 					<p className="text-xs font-bold text-subtle">Chọn ngày</p>
 					<div className="grid grid-cols-7 gap-1">
 						{dayGrid.map((d) => (
