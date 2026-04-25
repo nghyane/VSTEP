@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\CheckEmailRequest;
 use App\Http\Requests\Auth\CompleteOnboardingRequest;
 use App\Http\Requests\Auth\GoogleLoginRequest;
 use App\Http\Requests\Auth\LoginRequest;
@@ -27,6 +28,11 @@ class AuthController extends Controller
     public function __construct(
         private readonly AuthService $authService,
     ) {}
+
+    public function checkEmail(CheckEmailRequest $request): JsonResponse
+    {
+        return response()->json(['data' => ['available' => true]]);
+    }
 
     public function register(RegisterRequest $request): JsonResponse
     {

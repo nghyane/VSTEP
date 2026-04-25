@@ -91,6 +91,23 @@ class ProgressService
      *
      * @return array<string,mixed>
      */
+    /**
+     * Effective streak = giá trị DB nếu last_active_date là hôm nay hoặc hôm qua;
+     * ngược lại 0 (streak đã đứt do không hoạt động).
+     */
+    private function effectiveStreak(?ProfileStreakState $state): int
+    {
+        if (! $state) {
+            return 0;
+        }
+        $tz = SystemConfig::get('streak.timezone') ?? 'Asia/Ho_Chi_Minh';
+        $today = Carbon::now($tz)->toDateString();
+        $yesterday = Carbon::now($tz)->subDay()->toDateString();
+        $last = $state->last_active_date_local?->toDateString();
+
+        return ($last === $today || $last === $yesterday) ? (int) $state->current_streak : 0;
+    }
+
     public function getOverview(Profile $profile): array
     {
         $streak = ProfileStreakState::query()->find($profile->id);
@@ -129,7 +146,7 @@ class ProgressService
                 'total_tests' => $examCount,
                 'min_tests_required' => $minTests,
                 'total_study_minutes' => (int) round($totalStudySeconds / 60),
-                'streak' => $streak?->current_streak ?? 0,
+                'streak' => $this->effectiveStreak($streak),
                 'longest_streak' => $streak?->longest_streak ?? 0,
             ],
             'chart' => $chartData,
@@ -151,7 +168,7 @@ class ProgressService
             ->count();
 
         return [
-            'current_streak' => $streak?->current_streak ?? 0,
+            'current_streak' => $this->effectiveStreak($streak),
             'longest_streak' => $streak?->longest_streak ?? 0,
             'today_sessions' => $todayCount,
             'daily_goal' => $dailyGoal,

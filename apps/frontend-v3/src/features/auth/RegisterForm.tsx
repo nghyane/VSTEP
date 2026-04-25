@@ -18,7 +18,7 @@ interface Step1Data {
 
 interface Step1Props {
 	initial: Step1Data
-	onNext: (data: Step1Data) => void
+	onNext: (data: Step1Data) => Promise<string | null>
 	onGoogleToken: (idToken: string) => void
 	googleLoading: boolean
 }
@@ -28,8 +28,9 @@ function Step1({ initial, onNext, onGoogleToken, googleLoading }: Step1Props) {
 	const [password, setPassword] = useState(initial.password)
 	const [confirm, setConfirm] = useState(initial.confirm)
 	const [error, setError] = useState<string | null>(null)
+	const [submitting, setSubmitting] = useState(false)
 
-	function handleSubmit(e: React.FormEvent) {
+	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault()
 		if (password.length < 8) {
 			setError("Mật khẩu tối thiểu 8 ký tự.")
@@ -40,7 +41,13 @@ function Step1({ initial, onNext, onGoogleToken, googleLoading }: Step1Props) {
 			return
 		}
 		setError(null)
-		onNext({ email, password, confirm })
+		setSubmitting(true)
+		try {
+			const message = await onNext({ email, password, confirm })
+			if (message) setError(message)
+		} finally {
+			setSubmitting(false)
+		}
 	}
 
 	return (
@@ -105,8 +112,12 @@ function Step1({ initial, onNext, onGoogleToken, googleLoading }: Step1Props) {
 						{error}
 					</p>
 				)}
-				<button type="submit" className="btn btn-primary w-full h-12 text-base">
-					Tiếp tục
+				<button
+					type="submit"
+					disabled={submitting}
+					className="btn btn-primary w-full h-12 text-base disabled:opacity-50"
+				>
+					{submitting ? "Đang gửi mã..." : "Tiếp tục"}
 				</button>
 			</form>
 
@@ -332,6 +343,7 @@ export function RegisterForm() {
 	const register = useAuth((s) => s.register)
 	const loginWithGoogle = useAuth((s) => s.loginWithGoogle)
 	const completeOnboarding = useAuth((s) => s.completeOnboarding)
+	const checkEmail = useAuth((s) => s.checkEmail)
 	const [step, setStep] = useState<1 | 2>(1)
 	const [flow, setFlow] = useState<Flow>("password")
 	const [submitting, setSubmitting] = useState(false)
@@ -382,15 +394,20 @@ export function RegisterForm() {
 		}
 	}
 
+	async function handleStep1Next(data: Step1Data) {
+		const result = await checkEmail(data.email)
+		if (!result.ok) return result.message
+		setCredentials(data)
+		setFlow("password")
+		setStep(2)
+		return null
+	}
+
 	if (step === 1) {
 		return (
 			<Step1
 				initial={credentials}
-				onNext={(data) => {
-					setCredentials(data)
-					setFlow("password")
-					setStep(2)
-				}}
+				onNext={handleStep1Next}
 				onGoogleToken={handleGoogleToken}
 				googleLoading={googleLoading}
 			/>

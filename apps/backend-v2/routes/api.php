@@ -30,6 +30,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/login', [AuthController::class, 'login']);
         Route::post('/auth/google', [AuthController::class, 'googleLogin']);
         Route::post('/auth/refresh', [AuthController::class, 'refresh']);
+        Route::post('/auth/email/check', [AuthController::class, 'checkEmail']);
     });
 
     // Auth (protected, no active profile required — admin/teacher fit here)

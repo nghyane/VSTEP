@@ -69,6 +69,7 @@ export interface GoogleLoginResult {
 
 type AuthActions = {
 	login: (email: string, password: string) => Promise<void>
+	checkEmail: (email: string) => Promise<{ ok: true } | { ok: false; message: string }>
 	register: (data: {
 		email: string
 		password: string
@@ -111,6 +112,20 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 			useToast.getState().add("Đăng nhập thành công", "success")
 		} catch (e) {
 			showError(e)
+		}
+	},
+
+	async checkEmail(email) {
+		try {
+			await api.post("auth/email/check", { json: { email } }).json<ApiResponse<{ available: boolean }>>()
+			return { ok: true }
+		} catch (e) {
+			if (e instanceof HTTPError) {
+				const body = e.data as { errors?: { email?: string[] }; message?: string } | undefined
+				const message = body?.errors?.email?.[0] ?? body?.message ?? "Email không hợp lệ."
+				return { ok: false, message }
+			}
+			return { ok: false, message: "Không kiểm tra được email. Hãy thử lại." }
 		}
 	},
 
