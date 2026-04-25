@@ -231,6 +231,7 @@ export function useExamSession({
 			qc.invalidateQueries({ queryKey: ["exam-sessions", "active"] })
 			qc.invalidateQueries({ queryKey: ["exam-sessions", "mine"] })
 			qc.invalidateQueries({ queryKey: ["exam-sessions", session.id] })
+			qc.invalidateQueries({ queryKey: ["exams"] })
 			onSubmitted(result)
 		},
 	})
