@@ -17,23 +17,41 @@ function toLevel(count: number): number {
 }
 
 const LEVEL_CLASSES = ["bg-border", "bg-primary/25", "bg-primary/50", "bg-primary/75", "bg-primary"]
+const LEVEL_LABELS = ["0", "1", "2", "3", "4+"]
 
-function buildGrid(data: ActivityDay[]): number[][] {
+type Cell = { level: number; count: number; date: string; future: boolean }
+
+function isoDate(d: Date): string {
+	const y = d.getFullYear()
+	const m = String(d.getMonth() + 1).padStart(2, "0")
+	const day = String(d.getDate()).padStart(2, "0")
+	return `${y}-${m}-${day}`
+}
+
+function formatDate(iso: string): string {
+	const [, m, d] = iso.split("-")
+	return `${d}/${m}`
+}
+
+function buildGrid(data: ActivityDay[]): Cell[][] {
 	const map = new Map(data.map((d) => [d.date.slice(0, 10), d.count]))
 	const today = new Date()
-	const start = new Date(today)
-	start.setDate(start.getDate() - WEEKS * DAYS)
-	// Align to Monday
-	const dow = (start.getDay() + 6) % 7
-	start.setDate(start.getDate() - dow)
+	const todayKey = isoDate(today)
+	// Align end to the Sunday of this week so today is included
+	const end = new Date(today)
+	const endDow = (end.getDay() + 6) % 7 // 0=Mon..6=Sun
+	end.setDate(end.getDate() + (6 - endDow))
+	const start = new Date(end)
+	start.setDate(start.getDate() - (WEEKS * DAYS - 1))
 
-	const weeks: number[][] = []
+	const weeks: Cell[][] = []
 	const cursor = new Date(start)
 	for (let w = 0; w < WEEKS; w++) {
-		const week: number[] = []
+		const week: Cell[] = []
 		for (let d = 0; d < DAYS; d++) {
-			const key = cursor.toISOString().slice(0, 10)
-			week.push(toLevel(map.get(key) ?? 0))
+			const key = isoDate(cursor)
+			const count = map.get(key) ?? 0
+			week.push({ level: toLevel(count), count, date: key, future: key > todayKey })
 			cursor.setDate(cursor.getDate() + 1)
 		}
 		weeks.push(week)
@@ -61,33 +79,49 @@ export function ActivityHeatmap() {
 				</div>
 				<div className="flex items-center gap-1.5 text-xs text-subtle">
 					<span>Ít</span>
-					{LEVEL_CLASSES.map((cls) => (
-						<span key={cls} className={cn("w-3.5 h-3.5 rounded", cls)} />
+					{LEVEL_CLASSES.map((cls, i) => (
+						<div key={cls} className="relative group">
+							<span className={cn("block w-4 h-4 rounded", cls)} />
+							<span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1 whitespace-nowrap rounded bg-foreground px-1.5 py-0.5 text-[10px] font-medium text-background opacity-0 group-hover:opacity-100 transition">
+								{LEVEL_LABELS[i]} bài
+								<span className="absolute left-1/2 top-full -translate-x-1/2 -mt-px w-0 h-0 border-l-[3px] border-r-[3px] border-t-[3px] border-l-transparent border-r-transparent border-t-foreground" />
+							</span>
+						</div>
 					))}
 					<span>Nhiều</span>
 				</div>
 			</div>
 
-			<div className="flex gap-1">
-				<div className="flex flex-col gap-1 pt-5 pr-2 shrink-0">
+			<div className="flex gap-2">
+				<div className="grid grid-rows-7 gap-1 shrink-0">
 					{DAY_LABELS.map((d) => (
-						<div key={d} className="h-4 text-xs text-subtle leading-4">
+						<div key={d} className="h-4 text-xs text-subtle leading-4 pr-1">
 							{d}
 						</div>
 					))}
 				</div>
-				<div className="flex-1 min-w-0">
-					<div className="grid grid-rows-7 grid-flow-col gap-1">
-						{weeks.flat().map((lv, i) => (
-							<div
-								key={i}
-								className={cn(
-									"h-4 rounded hover:ring-1 hover:ring-border cursor-pointer transition",
-									LEVEL_CLASSES[lv],
-								)}
-							/>
-						))}
-					</div>
+				<div
+					className="grid grid-rows-7 grid-flow-col gap-1 flex-1 min-w-0"
+					style={{ gridTemplateColumns: `repeat(${WEEKS}, minmax(0, 1fr))` }}
+				>
+					{weeks.flat().map((cell, i) =>
+						cell.future ? (
+							<div key={i} className="h-4" />
+						) : (
+							<div key={i} className="relative group h-4">
+								<div
+									className={cn(
+										"h-4 rounded hover:ring-1 hover:ring-border transition",
+										LEVEL_CLASSES[cell.level],
+									)}
+								/>
+								<span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1 whitespace-nowrap rounded bg-foreground px-1.5 py-0.5 text-[10px] font-medium text-background opacity-0 group-hover:opacity-100 transition z-10">
+									{formatDate(cell.date)} · {cell.count} bài
+									<span className="absolute left-1/2 top-full -translate-x-1/2 -mt-px w-0 h-0 border-l-[3px] border-r-[3px] border-t-[3px] border-l-transparent border-r-transparent border-t-foreground" />
+								</span>
+							</div>
+						),
+					)}
 				</div>
 			</div>
 		</section>

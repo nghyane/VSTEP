@@ -336,26 +336,29 @@ Dashboard data cho active profile.
 Response:
 ```json
 {
-  "profile": { "nickname", "target_level", "target_deadline", "days_until_exam" },
+  "profile": {
+    "nickname", "target_level", "target_deadline", "days_until_exam",
+    "entry_level": "A2",          // user tự đánh giá lúc onboarding (nullable)
+    "predicted_level": "B1"       // suy từ avg 4 band của chart; fallback = entry_level khi chart=null
+  },
   "stats": {
-    "estimated_band": null,  // null if < min_tests
-    "band_gap": null,
-    "weakest_skill": null,
-    "trend": null,
     "total_tests": 3,
     "min_tests_required": 5,
     "total_study_minutes": 420,
-    "streak": 7
+    "streak": 7,
+    "longest_streak": 12
   },
-  "spider_chart": null,  // or { listening, reading, writing, speaking }
-  "activity_heatmap": {...},
-  "next_action": {...}
+  "chart": null   // null nếu total_tests < min_tests_required, else { listening, reading, writing, speaking, sample_size }
 }
 ```
 
+`activity_heatmap` đã tách thành endpoint riêng `GET /api/v1/activity-heatmap`. `next_action` đã chuyển sang derive từ `streak.today_sessions/daily_goal` ở FE (không còn key trong response).
+
+**predicted_level mapping** (avg 4 band → level): ≥8.5 → C1, ≥6.0 → B2, ≥4.0 → B1, ≥3.5 → A2, else A1. Source: `ProgressService::predictLevel()`.
+
 ### `GET /api/v1/streak` — jwt
 
-Response: `{ current_streak, longest_streak, today_progress, daily_goal, last_active_date }`
+Response: `{ current_streak, longest_streak, today_sessions, daily_goal, last_active_date, milestones }`. `today_sessions` đếm full-test exam đã submit/auto_submit/grading/graded trong ngày local (RFC 0019 amendment).
 
 ### `GET /api/v1/practice-progress` — jwt
 Summary per skill: total exercises done, in_progress, completed.

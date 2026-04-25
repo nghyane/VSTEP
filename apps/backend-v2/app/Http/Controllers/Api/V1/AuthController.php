@@ -34,7 +34,7 @@ class AuthController extends Controller
 
         $result = $this->authService->register(
             ['email' => $validated['email'], 'password' => $validated['password']],
-            ['nickname' => $validated['nickname'], 'target_level' => $validated['target_level'], 'target_deadline' => $validated['target_deadline']],
+            ['nickname' => $validated['nickname'], 'target_level' => $validated['target_level'], 'target_deadline' => $validated['target_deadline'], 'entry_level' => $validated['entry_level'] ?? null],
         );
 
         return response()->json(['data' => [
@@ -93,6 +93,7 @@ class AuthController extends Controller
 
         $result = $this->authService->completeOnboarding($user, [
             'nickname' => $request->validated('nickname'),
+            'entry_level' => $request->validated('entry_level'),
             'target_level' => $request->validated('target_level'),
             'target_deadline' => $request->validated('target_deadline'),
         ]);

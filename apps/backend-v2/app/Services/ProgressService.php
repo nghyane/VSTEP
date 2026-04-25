@@ -112,6 +112,8 @@ class ProgressService
             $chartData = $this->computeChart($profile, $windowSize);
         }
 
+        $predictedLevel = $this->predictLevel($chartData, $profile->entry_level);
+
         return [
             'profile' => [
                 'nickname' => $profile->nickname,
@@ -120,6 +122,8 @@ class ProgressService
                 'days_until_exam' => $profile->target_deadline
                     ? (int) max(0, now()->diffInDays($profile->target_deadline, false))
                     : null,
+                'entry_level' => $profile->entry_level,
+                'predicted_level' => $predictedLevel,
             ],
             'stats' => [
                 'total_tests' => $examCount,
@@ -286,6 +290,40 @@ class ProgressService
             'speaking' => null,
             'sample_size' => $sessions->count(),
         ];
+    }
+
+    /**
+     * Suy đoán band hiện tại → VSTEP level. Khi chưa đủ data (chart=null),
+     * fallback về entry_level user tự đánh giá lúc onboarding.
+     *
+     * @param  array<string, float|int|null>|null  $chart
+     */
+    private function predictLevel(?array $chart, ?string $entryLevel): ?string
+    {
+        if ($chart === null) {
+            return $entryLevel;
+        }
+
+        $bands = array_filter([
+            $chart['listening'] ?? null,
+            $chart['reading'] ?? null,
+            $chart['writing'] ?? null,
+            $chart['speaking'] ?? null,
+        ], fn ($v) => $v !== null);
+
+        if (empty($bands)) {
+            return $entryLevel;
+        }
+
+        $avg = array_sum($bands) / count($bands);
+
+        return match (true) {
+            $avg >= 8.5 => 'C1',
+            $avg >= 6.0 => 'B2',
+            $avg >= 4.0 => 'B1',
+            $avg >= 3.5 => 'A2',
+            default => 'A1',
+        };
     }
 
     private function mcqAvgBand(Collection $sessionIds, string $skill): ?float

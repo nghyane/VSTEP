@@ -29,7 +29,7 @@ class AuthService
      * Register account + initial profile in single transaction.
      *
      * @param  array{email:string,password:string}  $accountData
-     * @param  array{nickname:string,target_level:string,target_deadline:string}  $profileData
+     * @param  array{nickname:string,target_level:string,target_deadline:string,entry_level?:string|null}  $profileData
      * @return array{user:User,profile:Profile,access_token:string,refresh_token:string,expires_in:int}
      */
     public function register(array $accountData, array $profileData): array
@@ -226,7 +226,7 @@ class AuthService
      * Create initial profile for an already-authenticated user (Google signup flow).
      * Issues a fresh access token carrying the new active_profile_id.
      *
-     * @param  array{nickname:string,target_level:string,target_deadline:string}  $profileData
+     * @param  array{nickname:string,target_level:string,target_deadline:string,entry_level?:string|null}  $profileData
      * @return array{
      *     profile: Profile,
      *     access_token: string,

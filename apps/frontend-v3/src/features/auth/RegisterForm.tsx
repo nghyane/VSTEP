@@ -3,6 +3,7 @@ import { useState } from "react"
 import { ScrollArea } from "#/components/ScrollArea"
 import { DatePicker } from "#/features/auth/DatePicker"
 import { GoogleButton } from "#/features/auth/GoogleButton"
+import { PasswordInput } from "#/features/auth/PasswordInput"
 import { inputClass } from "#/features/auth/styles"
 import { useAuth } from "#/lib/auth"
 import { cn } from "#/lib/utils"
@@ -59,7 +60,9 @@ function Step1({ initial, onNext, onGoogleToken, googleLoading }: Step1Props) {
 
 			<form onSubmit={handleSubmit} className="space-y-3">
 				<div className="space-y-1">
-					<label htmlFor="reg-email" className="text-xs font-bold text-muted uppercase">Email</label>
+					<label htmlFor="reg-email" className="text-xs font-bold text-muted uppercase">
+						Email
+					</label>
 					<input
 						id="reg-email"
 						type="email"
@@ -72,29 +75,29 @@ function Step1({ initial, onNext, onGoogleToken, googleLoading }: Step1Props) {
 					/>
 				</div>
 				<div className="space-y-1">
-					<label htmlFor="reg-password" className="text-xs font-bold text-muted uppercase">Mật khẩu</label>
-					<input
+					<label htmlFor="reg-password" className="text-xs font-bold text-muted uppercase">
+						Mật khẩu
+					</label>
+					<PasswordInput
 						id="reg-password"
-						type="password"
 						placeholder="Tối thiểu 8 ký tự"
 						required
 						autoComplete="new-password"
 						value={password}
-						onChange={(e) => setPassword(e.target.value)}
-						className={inputClass}
+						onChange={setPassword}
 					/>
 				</div>
 				<div className="space-y-1">
-					<label htmlFor="reg-confirm" className="text-xs font-bold text-muted uppercase">Nhập lại mật khẩu</label>
-					<input
+					<label htmlFor="reg-confirm" className="text-xs font-bold text-muted uppercase">
+						Nhập lại mật khẩu
+					</label>
+					<PasswordInput
 						id="reg-confirm"
-						type="password"
 						placeholder="Nhập lại mật khẩu"
 						required
 						autoComplete="new-password"
 						value={confirm}
-						onChange={(e) => setConfirm(e.target.value)}
-						className={inputClass}
+						onChange={setConfirm}
 					/>
 				</div>
 				{error && (
@@ -122,15 +125,31 @@ function Step1({ initial, onNext, onGoogleToken, googleLoading }: Step1Props) {
 const LEVELS = ["B1", "B2", "C1"] as const
 type Level = (typeof LEVELS)[number]
 
+const ENTRY_LEVELS = ["A1", "A2", "B1", "B2", "C1"] as const
+type EntryLevel = (typeof ENTRY_LEVELS)[number]
+
+const LEVEL_RANK: Record<EntryLevel, number> = { A1: 0, A2: 1, B1: 2, B2: 3, C1: 4 }
+
+/** Min months giữa hôm nay và ngày thi, theo độ chênh entry → target. */
+const MIN_PREP_MONTHS = [1, 3, 6, 12, 18] as const
+
 const LEVEL_INFO: Record<Level, string> = {
 	B1: "Giao tiếp cơ bản",
 	B2: "Phổ biến nhất",
 	C1: "Nâng cao",
 }
 
+function computeMinDate(entry: EntryLevel, target: Level): string {
+	const gap = LEVEL_RANK[target] - LEVEL_RANK[entry]
+	const months = MIN_PREP_MONTHS[Math.max(0, gap)] ?? MIN_PREP_MONTHS[MIN_PREP_MONTHS.length - 1]
+	const d = new Date()
+	d.setMonth(d.getMonth() + months)
+	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+
 interface Step2Props {
 	onBack: () => void
-	onSubmit: (nickname: string, level: Level, deadline: string) => Promise<void>
+	onSubmit: (nickname: string, entryLevel: EntryLevel, level: Level, deadline: string) => Promise<void>
 	submitting: boolean
 	initialNickname?: string
 	googleMode: boolean
@@ -138,9 +157,27 @@ interface Step2Props {
 
 function Step2({ onBack, onSubmit, submitting, initialNickname, googleMode }: Step2Props) {
 	const [nickname, setNickname] = useState(initialNickname ?? "")
+	const [entryLevel, setEntryLevel] = useState<EntryLevel>("A2")
 	const [level, setLevel] = useState<Level>("B2")
 	const [deadline, setDeadline] = useState("")
 	const [error, setError] = useState<string | null>(null)
+
+	const entryRank = LEVEL_RANK[entryLevel]
+	const availableTargets = LEVELS.filter((l) => LEVEL_RANK[l] >= entryRank)
+
+	function handlePickEntry(next: EntryLevel) {
+		setEntryLevel(next)
+		setDeadline("")
+		if (LEVEL_RANK[level] < LEVEL_RANK[next]) {
+			const fallback = LEVELS.find((l) => LEVEL_RANK[l] >= LEVEL_RANK[next])
+			if (fallback) setLevel(fallback)
+		}
+	}
+
+	function handlePickLevel(next: Level) {
+		setLevel(next)
+		setDeadline("")
+	}
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault()
@@ -153,7 +190,7 @@ function Step2({ onBack, onSubmit, submitting, initialNickname, googleMode }: St
 			return
 		}
 		setError(null)
-		await onSubmit(nickname.trim(), level, deadline)
+		await onSubmit(nickname.trim(), entryLevel, level, deadline)
 	}
 
 	return (
@@ -170,9 +207,6 @@ function Step2({ onBack, onSubmit, submitting, initialNickname, googleMode }: St
 					</button>
 				)}
 				<div className="text-center mb-6">
-					<div className="w-16 h-16 rounded-full bg-primary-tint flex items-center justify-center mx-auto mb-3">
-						<span className="text-3xl">🎯</span>
-					</div>
 					<h1 className="font-extrabold text-2xl text-foreground">
 						{googleMode ? "Chào mừng!" : "Thiết lập mục tiêu"}
 					</h1>
@@ -184,7 +218,7 @@ function Step2({ onBack, onSubmit, submitting, initialNickname, googleMode }: St
 
 			<form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1 gap-4">
 				<ScrollArea className="flex-1 min-h-0">
-					<div className="space-y-5 pb-1">
+					<div className="space-y-5 pb-1 pr-3">
 						<div className="space-y-1">
 							<label htmlFor="reg-nickname" className="text-xs font-bold text-muted uppercase">
 								Nickname
@@ -201,13 +235,40 @@ function Step2({ onBack, onSubmit, submitting, initialNickname, googleMode }: St
 						</div>
 
 						<div className="space-y-2">
-							<p className="text-xs font-bold text-muted uppercase">Mục tiêu trình độ</p>
-							<div className="grid grid-cols-3 gap-2">
-								{LEVELS.map((l) => (
+							<p className="text-xs font-bold text-muted uppercase">Trình độ hiện tại (tự đánh giá)</p>
+							<div className="grid grid-cols-5 gap-2">
+								{ENTRY_LEVELS.map((l) => (
 									<button
 										type="button"
 										key={l}
-										onClick={() => setLevel(l)}
+										onClick={() => handlePickEntry(l)}
+										className={cn(
+											"h-11 rounded-(--radius-button) font-bold text-sm border-2 border-b-4 transition",
+											entryLevel === l
+												? "bg-primary text-primary-foreground border-primary-dark"
+												: "bg-surface border-border text-foreground hover:border-primary/40",
+										)}
+									>
+										{l}
+									</button>
+								))}
+							</div>
+							<p className="text-[11px] text-subtle">
+								Dùng để gợi ý lộ trình ban đầu. Bạn sẽ được cập nhật "Dự đoán" sau khi làm đủ 5 bài thi thử.
+							</p>
+						</div>
+
+						<div className="space-y-2">
+							<p className="text-xs font-bold text-muted uppercase">Mục tiêu trình độ</p>
+							<div
+								className="grid gap-2"
+								style={{ gridTemplateColumns: `repeat(${availableTargets.length}, minmax(0, 1fr))` }}
+							>
+								{availableTargets.map((l) => (
+									<button
+										type="button"
+										key={l}
+										onClick={() => handlePickLevel(l)}
 										className={cn(
 											"relative h-14 rounded-(--radius-button) font-bold text-lg border-2 border-b-4 transition",
 											level === l
@@ -231,7 +292,15 @@ function Step2({ onBack, onSubmit, submitting, initialNickname, googleMode }: St
 
 						<div className="space-y-2">
 							<p className="text-xs font-bold text-muted uppercase">Ngày thi dự kiến</p>
-							<DatePicker value={deadline} onChange={setDeadline} />
+							<p className="text-[11px] text-subtle">
+								Tối thiểu {MIN_PREP_MONTHS[Math.max(0, LEVEL_RANK[level] - LEVEL_RANK[entryLevel])]} tháng để
+								đạt {entryLevel} → {level}.
+							</p>
+							<DatePicker
+								value={deadline}
+								onChange={setDeadline}
+								minDate={computeMinDate(entryLevel, level)}
+							/>
 						</div>
 					</div>
 				</ScrollArea>
@@ -288,12 +357,13 @@ export function RegisterForm() {
 		}
 	}
 
-	async function handleFinalSubmit(nickname: string, level: Level, deadline: string) {
+	async function handleFinalSubmit(nickname: string, entryLevel: EntryLevel, level: Level, deadline: string) {
 		setSubmitting(true)
 		try {
 			if (flow === "google") {
 				await completeOnboarding({
 					nickname,
+					entry_level: entryLevel,
 					target_level: level,
 					target_deadline: deadline,
 				})
@@ -302,6 +372,7 @@ export function RegisterForm() {
 					email: credentials.email,
 					password: credentials.password,
 					nickname,
+					entry_level: entryLevel,
 					target_level: level,
 					target_deadline: deadline,
 				})

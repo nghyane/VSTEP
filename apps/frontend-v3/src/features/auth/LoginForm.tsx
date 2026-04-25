@@ -2,6 +2,7 @@ import { useForm } from "@tanstack/react-form"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { useState } from "react"
 import { GoogleButton } from "#/features/auth/GoogleButton"
+import { PasswordInput } from "#/features/auth/PasswordInput"
 import { inputClass } from "#/features/auth/styles"
 import { useAuth } from "#/lib/auth"
 
@@ -53,7 +54,9 @@ export function LoginForm() {
 				className="space-y-3"
 			>
 				<div className="space-y-1">
-					<label htmlFor="login-email" className="text-xs font-bold text-muted uppercase">Email</label>
+					<label htmlFor="login-email" className="text-xs font-bold text-muted uppercase">
+						Email
+					</label>
 					<form.Field name="email">
 						{(field) => (
 							<input
@@ -70,18 +73,18 @@ export function LoginForm() {
 					</form.Field>
 				</div>
 				<div className="space-y-1">
-					<label htmlFor="login-password" className="text-xs font-bold text-muted uppercase">Mật khẩu</label>
+					<label htmlFor="login-password" className="text-xs font-bold text-muted uppercase">
+						Mật khẩu
+					</label>
 					<form.Field name="password">
 						{(field) => (
-							<input
+							<PasswordInput
 								id="login-password"
-								type="password"
 								placeholder="Nhập mật khẩu"
 								required
 								autoComplete="current-password"
 								value={field.state.value}
-								onChange={(e) => field.handleChange(e.target.value)}
-								className={inputClass}
+								onChange={field.handleChange}
 							/>
 						)}
 					</form.Field>

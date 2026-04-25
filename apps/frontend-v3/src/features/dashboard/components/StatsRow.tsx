@@ -9,8 +9,8 @@ export function StatsRow() {
 
 	return (
 		<section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-			<div className="card p-4">
-				<div className="flex items-center gap-3">
+			<div className="card p-4 flex items-center">
+				<div className="flex items-center gap-3 w-full">
 					<StaticIcon name="streak-md" size="lg" />
 					<div className="min-w-0">
 						<p className="text-sm text-subtle">Streak hiện tại</p>
@@ -18,8 +18,8 @@ export function StatsRow() {
 					</div>
 				</div>
 			</div>
-			<div className="card p-4">
-				<div className="flex items-center gap-3">
+			<div className="card p-4 flex items-center">
+				<div className="flex items-center gap-3 w-full">
 					<StaticIcon name="timer-md" size="lg" />
 					<div className="min-w-0">
 						<p className="text-sm text-subtle">Thời gian luyện tập</p>
@@ -29,8 +29,8 @@ export function StatsRow() {
 					</div>
 				</div>
 			</div>
-			<div className="card p-4">
-				<div className="flex items-center gap-3">
+			<div className="card p-4 flex items-center">
+				<div className="flex items-center gap-3 w-full">
 					<StaticIcon name="target-md" size="lg" />
 					<div className="min-w-0">
 						<p className="text-sm text-subtle">Bài thi thử</p>
@@ -41,8 +41,8 @@ export function StatsRow() {
 					</div>
 				</div>
 			</div>
-			<div className="card p-4">
-				<div className="flex items-center gap-3">
+			<div className="card p-4 flex items-center">
+				<div className="flex items-center gap-3 w-full">
 					<StaticIcon name="trophy" size="lg" />
 					<div className="min-w-0">
 						<p className="text-sm text-subtle">Band ước tính</p>

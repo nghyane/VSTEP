@@ -73,12 +73,14 @@ type AuthActions = {
 		email: string
 		password: string
 		nickname: string
+		entry_level: string
 		target_level: string
 		target_deadline: string
 	}) => Promise<void>
 	loginWithGoogle: (idToken: string) => Promise<GoogleLoginResult | null>
 	completeOnboarding: (data: {
 		nickname: string
+		entry_level: string
 		target_level: string
 		target_deadline: string
 	}) => Promise<void>

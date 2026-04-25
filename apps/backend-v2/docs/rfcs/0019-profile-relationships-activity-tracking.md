@@ -197,3 +197,30 @@ Dùng `profile_daily_activity` để suy ra streak (ngày nào có activity = st
 
 ### Daily goal
 `streak.daily_goal = 1`. 1 full test submit/ngày = giữ streak. Set thấp để vừa với cost barrier (full test 25 xu/lần) và không ép user farm exam.
+
+## Amendment 2026-04-25 (2) — entry_level + predicted_level trong /overview
+
+**Lý do:** Banner "Trình độ của bạn" trên dashboard cần 3 mốc Đầu vào → Dự đoán → Mục tiêu. Trước đây chỉ có `target_level` ở `profiles`; entry_level chưa được surface trong response.
+
+### Changes
+- `profiles.entry_level` đã có từ migration `2026_04_18_000003_create_profiles_table` (nullable enum VstepLevel A1–C1). Surface từ `ProfileService::createInitialProfile` đã save sẵn.
+- `RegisterRequest` + `CompleteOnboardingRequest`: thêm rule `'entry_level' => ['nullable', 'string', Rule::enum(VstepLevel::class)]`. Khác `target_level` (chỉ B1/B2/C1 qua `targetOptions()`) — entry_level chấp nhận cả A1/A2 vì là tự đánh giá ban đầu.
+- `AuthController::register/completeOnboarding` pass `entry_level` qua AuthService xuống ProfileService.
+- `ProgressService::getOverview()['profile']` thêm 2 key: `entry_level` (raw) + `predicted_level` (computed).
+
+### `predictLevel` algorithm
+`ProgressService::predictLevel(?array $chart, ?string $entryLevel)`:
+- chart=null (chưa đủ `chart.min_tests`) → fallback `entry_level`.
+- chart có data → avg 4 skill band, map:
+  - ≥ 8.5 → C1
+  - ≥ 6.0 → B2
+  - ≥ 4.0 → B1
+  - ≥ 3.5 → A2
+  - else → A1
+
+Ngưỡng đồng bộ với `frontend-v3/src/lib/vstep.ts levelToBand` để FE/BE thống nhất.
+
+### Tests cần bổ sung
+`ProgressStreakTest::test_overview_endpoint` cần assert thêm `entry_level`, `predicted_level` trong profile section. Bổ sung 2 case:
+- `predicted_level === entry_level` khi chart=null.
+- `predicted_level` khớp band mapping khi đủ data (mock chart avg).

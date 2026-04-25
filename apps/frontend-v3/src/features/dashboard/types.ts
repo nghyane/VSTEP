@@ -5,6 +5,8 @@ export interface OverviewProfile {
 	target_level: string
 	target_deadline: string | null
 	days_until_exam: number | null
+	entry_level: string | null
+	predicted_level: string | null
 }
 
 export interface OverviewStats {

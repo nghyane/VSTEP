@@ -154,8 +154,8 @@ Quản lý ai là ai trong hệ thống: login, phân quyền, hồ sơ học ri
 | Entity | Purpose |
 |---|---|
 | `accounts` | Entity login (email, password_hash, role). Teacher/admin không có profile. |
-| `profiles` | Đơn vị học tập của learner. Gắn target_level + target_deadline + nickname. |
-| `profile_onboarding_responses` | Lưu answers từ onboarding wizard (entry_level, weaknesses, motivation). |
+| `profiles` | Đơn vị học tập của learner. Gắn target_level + target_deadline + entry_level (tự đánh giá) + nickname. |
+| `profile_onboarding_responses` | Lưu answers chi tiết từ onboarding wizard (weaknesses, motivation). entry_level đã đẩy lên `profiles` từ RFC 0019 amendment 2026-04-25. |
 | `profile_reset_events` | Audit log cho mỗi lần profile reset. |
 | `refresh_tokens` | JWT refresh token rotation. Đã có sẵn ở backend. |
 

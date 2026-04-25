@@ -126,11 +126,16 @@ class ProgressStreakTest extends TestCase
 
         $response->assertOk();
         $response->assertJsonStructure(['data' => [
-            'profile' => ['nickname', 'target_level', 'target_deadline'],
+            'profile' => ['nickname', 'target_level', 'target_deadline', 'entry_level', 'predicted_level'],
             'stats' => ['total_tests', 'total_study_minutes', 'streak'],
             'chart',
         ]]);
         $response->assertJsonPath('data.chart', null); // < min_tests
+        // chart=null → predicted_level fallback = entry_level (RFC 0019 amendment 2026-04-25)
+        $response->assertJsonPath(
+            'data.profile.predicted_level',
+            $response->json('data.profile.entry_level'),
+        );
     }
 
     /**
