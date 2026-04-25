@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { DuoProgressBar } from "#/components/DuoProgressBar"
 import { ScrollArea } from "#/components/ScrollArea"
 import type { ExamVersionWritingTask } from "#/features/exam/types"
 import { cn } from "#/lib/utils"
@@ -134,15 +135,12 @@ export function WritingPanel({ tasks, writingAnswers, onAnswer, footer }: Props)
 
 						{/* Word count progress bar */}
 						<div className="space-y-1.5 px-1">
-							<div className="h-1.5 overflow-hidden rounded-full bg-border/60">
-								<div
-									className={cn(
-										"h-full rounded-full transition-[width] duration-300",
-										wordCount >= activeTask.min_words ? "bg-primary" : "bg-primary/50",
-									)}
-									style={{ width: `${pct}%` }}
-								/>
-							</div>
+							<DuoProgressBar
+								value={pct}
+								tone={wordCount >= activeTask.min_words ? "primary" : "warning"}
+								heightPx={12}
+								label={`${wordCount}/${activeTask.min_words} từ`}
+							/>
 							{isUnder && wordCount > 0 && (
 								<p className="text-xs text-warning">Còn thiếu {activeTask.min_words - wordCount} từ</p>
 							)}

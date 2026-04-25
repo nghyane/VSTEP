@@ -48,10 +48,12 @@
   --color-destructive-tint: #ffe6e4;
 
   --color-warning: #ff9b00;
+  --color-warning-light: #ffc04d;
   --color-warning-tint: #fff0dc;
 
   --color-success: #58cc02;
   --color-info: #1cb0f6;
+  --color-info-light: #6dd2ff;
   --color-info-tint: #ddf4ff;
 
   /* ═══ Neutrals — text, borders, backgrounds ═══ */
@@ -77,10 +79,12 @@
   --color-skill-speaking-dark: color-mix(in oklch, #ffc800 70%, black);
 
   --color-streak: #ff7800;
+  --color-streak-light: #ffaa55;
   --color-streak-tint: #fff0dc;
 
   --color-coin: #ffc800;
   --color-coin-dark: #d97706;
+  --color-coin-light: #fbe56d;
   --color-coin-tint: #fff5d2;
 
   --color-more: #CE82FF;
@@ -266,21 +270,57 @@
 		transform: translateY(-2px);
 	}
 
-	/* ─── Duration slider ─── */
+	/* ─── Duration slider — Duolingo style ─── */
+	/* Layering rõ ràng: track < fill < highlight < thumb (input track trong suốt, chỉ thumb hiện). */
+	.duration-slider-wrap {
+		position: relative;
+		display: block;
+		height: 14px;
+	}
+	.duration-slider-wrap > .duration-slider-track,
+	.duration-slider-wrap > .duration-slider-fill,
+	.duration-slider-wrap > .duration-slider-highlight {
+		position: absolute;
+		pointer-events: none;
+	}
+	.duration-slider-wrap > .duration-slider-track {
+		inset: 0;
+		border-radius: 999px;
+		background: var(--color-border);
+	}
+	.duration-slider-wrap > .duration-slider-fill {
+		left: 0;
+		top: 0;
+		height: 14px;
+		width: var(--fill-pct, 0%);
+		border-radius: 999px;
+		background: var(--color-primary);
+	}
+	.duration-slider-wrap > .duration-slider-highlight {
+		left: 6px;
+		top: 4px;
+		height: 2px;
+		width: max(0px, calc(var(--fill-pct, 0%) - 6px));
+		border-radius: 999px;
+		background: var(--color-primary-light);
+		opacity: 0.95;
+	}
+	/* Input nằm trên cùng nhưng track trong suốt — chỉ thumb tương tác và hiển thị. */
+	.duration-slider-wrap > .duration-slider {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 14px;
+	}
 	.duration-slider {
 		-webkit-appearance: none;
 		appearance: none;
-		height: 6px;
-		border-radius: 3px;
+		display: block;
+		height: 14px;
+		border-radius: 999px;
 		outline: none;
 		cursor: pointer;
-		background: linear-gradient(
-			to right,
-			var(--color-primary) 0%,
-			var(--color-primary) var(--fill-pct, 0%),
-			var(--color-border) var(--fill-pct, 0%),
-			var(--color-border) 100%
-		);
+		background: transparent;
 	}
 	.duration-slider::-webkit-slider-thumb {
 		-webkit-appearance: none;
@@ -308,8 +348,10 @@
 		cursor: grab;
 	}
 	.duration-slider::-moz-range-progress {
-		background: var(--color-primary);
-		height: 6px;
-		border-radius: 3px;
+		background: transparent;
+	}
+	.duration-slider::-moz-range-track {
+		background: transparent;
+		border: none;
 	}
 }

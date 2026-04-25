@@ -58,3 +58,4 @@ Component có yếu tố thưởng, đếm xu/streak, feedback thành công → 
 - Success popup: banner gradient + body với pulse ring + coin burst + tilted "+N" badge. KHÔNG emoji cạnh headline
 - Coin-gain animation: store `lib/coin-gain.ts`, trigger SAU khi popup đóng (delay ~220ms); Header listener dùng `useRef` so sánh pulse để fire 1 lần, tránh lặp khi route remount
 - Event lớn (nạp xu, level up) → popup, KHÔNG dùng toast
+- Thanh tiến độ (XP, word count, daily goal, streak) → dùng [`components/DuoProgressBar`](../../src/components/DuoProgressBar.tsx); chi tiết anatomy + token rules ở [`.agents/wiki/duo-progress-bar.md`](../../wiki/duo-progress-bar.md)

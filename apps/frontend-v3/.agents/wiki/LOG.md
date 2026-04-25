@@ -21,3 +21,4 @@
 - 2026-04-24: Created auth-google.md — Google Sign-In via GSI renderButton, BE verifies JWKS with openssl_verify (no lib dep), needs_onboarding flow → Step2 completes initial profile
 - 2026-04-25: Updated anti-patterns.md — SkillChip shared component rule (no inline pill, no dot inside chip); created `components/SkillChip.tsx`
 - 2026-04-25: Created gamification-ui.md — Duolingo-ish chip/popup/dropdown/notif patterns; coin-gain store + Header animation rules (single-fire via useRef, fire after popup close)
+- 2026-04-25: Created duo-progress-bar.md — track + fill + highlight stripe layering; reusable DuoProgressBar component; tone tokens (primary/coin/warning/info/streak each with `*-light` for highlight)

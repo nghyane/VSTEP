@@ -187,16 +187,23 @@ export function BottomActionBar({ detail, selected }: Props) {
 								<span className="text-xs text-subtle whitespace-nowrap">Thời gian:</span>
 
 								<div className="flex flex-col gap-0.5">
-									<input
-										type="range"
-										min={naturalMinutes}
-										max={maxMinutes}
-										step={1}
-										value={clampedDuration}
-										onChange={(e) => setDuration(Number(e.target.value))}
-										className="duration-slider w-36 sm:w-48"
+									<div
+										className="duration-slider-wrap w-36 sm:w-48"
 										style={{ "--fill-pct": `${fillPct}%` } as React.CSSProperties}
-									/>
+									>
+										<span aria-hidden className="duration-slider-track" />
+										<span aria-hidden className="duration-slider-fill" />
+										<span aria-hidden className="duration-slider-highlight" />
+										<input
+											type="range"
+											min={naturalMinutes}
+											max={maxMinutes}
+											step={1}
+											value={clampedDuration}
+											onChange={(e) => setDuration(Number(e.target.value))}
+											className="duration-slider"
+										/>
+									</div>
 									{/* Tick labels: ×1 (natural) … ×2 … ×3 (max) */}
 									<div className="mt-2 flex w-36 justify-between sm:w-48">
 										<span
