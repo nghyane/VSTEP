@@ -50,13 +50,13 @@ export function Header({ title, backTo }: Props) {
 				)}
 				<h2 className="font-extrabold text-2xl text-foreground">{title}</h2>
 			</div>
-			<div className="flex items-center gap-3">
-				<div className="relative">
+			<div className="flex items-center gap-3 shrink-0">
+				<div className="relative shrink-0">
 					<button
 						type="button"
 						onClick={() => setTopupOpen(true)}
 						aria-label={`${balance ?? 0} xu — bấm để nạp thêm`}
-						className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-coin-tint border-2 border-coin/40 border-b-4 hover:bg-coin/25 hover:-translate-y-0.5 active:translate-y-0 active:border-b-2 transition-all"
+						className="group inline-flex w-max items-center gap-2 px-3 py-1.5 rounded-full bg-coin-tint border-2 border-coin/40 border-b-4 hover:bg-coin/25 hover:-translate-y-0.5 active:translate-y-0 active:border-b-2 transition-all whitespace-nowrap"
 					>
 						<StaticIcon
 							name="coin"
@@ -86,14 +86,15 @@ export function Header({ title, backTo }: Props) {
 							<span
 								key={`fly-${animKey}`}
 								aria-hidden
-								className="pointer-events-none absolute left-1/2 top-0 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-coin text-coin-dark font-extrabold text-sm tabular-nums shadow-md whitespace-nowrap animate-[coinFlyUp_1300ms_cubic-bezier(0.34,1.56,0.64,1)_forwards]"
+								className="pointer-events-none absolute left-1/2 top-0 inline-flex w-max items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-coin text-coin-dark font-extrabold text-sm tabular-nums shadow-md whitespace-nowrap animate-[coinFlyUp_1300ms_cubic-bezier(0.34,1.56,0.64,1)_forwards]"
 							>
-								<StaticIcon name="coin" size="xs" className="h-3.5 w-auto" />+{formatNumber(gainAmount)}
+								<StaticIcon name="coin" size="xs" className="h-4 w-auto shrink-0" />
+								<span className="leading-none">+{formatNumber(gainAmount)}</span>
 							</span>
 						</>
 					)}
 				</div>
-				<div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-streak-tint border-2 border-streak/30 border-b-4">
+				<div className="inline-flex shrink-0 items-center gap-2 px-3 py-1.5 rounded-full bg-streak-tint border-2 border-streak/30 border-b-4 whitespace-nowrap">
 					<StaticIcon name="streak-sm" size="sm" />
 					<span className="font-extrabold text-base text-streak tabular-nums leading-none">
 						{streak !== null ? streak : "–"}

@@ -17,6 +17,13 @@ const NOTIF_ICON: Record<string, StaticIconName> = {
 	target: "target-md",
 }
 
+const NOTIF_TINT: Record<string, string> = {
+	coin: "bg-coin-tint",
+	streak: "bg-streak-tint",
+	trophy: "bg-warning-tint",
+	target: "bg-primary-tint",
+}
+
 function timeAgo(date: string): string {
 	const diff = Date.now() - new Date(date).getTime()
 	const mins = Math.floor(diff / 60000)
@@ -29,6 +36,7 @@ function timeAgo(date: string): string {
 
 function NotifItem({ notif, onRead }: { notif: Notification; onRead: (id: string) => void }) {
 	const icon = NOTIF_ICON[notif.icon_key ?? ""] ?? "coin"
+	const tint = NOTIF_TINT[notif.icon_key ?? ""] ?? "bg-coin-tint"
 	const isUnread = !notif.read_at
 	return (
 		<button
@@ -36,37 +44,63 @@ function NotifItem({ notif, onRead }: { notif: Notification; onRead: (id: string
 			onClick={() => {
 				if (isUnread) onRead(notif.id)
 			}}
-			className={`flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
-				isUnread ? "bg-background hover:bg-border/40" : "hover:bg-background/60"
-			} ${isUnread ? "cursor-pointer" : "cursor-default"}`}
+			className={`relative flex w-full items-start gap-3 rounded-(--radius-card) p-3 text-left transition ${
+				isUnread
+					? "bg-primary-tint/40 hover:bg-primary-tint/70 cursor-pointer"
+					: "hover:bg-background cursor-default"
+			}`}
 		>
-			<StaticIcon name={icon} size="sm" className="shrink-0 mt-0.5" />
-			<div className="min-w-0 flex-1">
-				<p className="text-sm font-bold text-foreground leading-snug">{notif.title}</p>
+			<span
+				className={`flex size-10 shrink-0 items-center justify-center rounded-full ${tint} border-2 border-border`}
+			>
+				<StaticIcon name={icon} size="sm" className="h-5 w-auto" />
+			</span>
+			<div className="min-w-0 flex-1 pt-0.5">
+				<p
+					className={`text-sm leading-snug ${isUnread ? "font-extrabold text-foreground" : "font-bold text-muted"}`}
+				>
+					{notif.title}
+				</p>
 				{notif.body && <p className="text-xs text-muted mt-0.5 leading-snug">{notif.body}</p>}
-				<p className="text-xs text-subtle mt-1">{timeAgo(notif.created_at)}</p>
+				<p className="text-[11px] font-bold text-subtle mt-1">{timeAgo(notif.created_at)}</p>
 			</div>
-			{isUnread && <span className="w-2 h-2 rounded-full bg-primary shrink-0 mt-2" />}
+			{isUnread && <span className="mt-2 size-2.5 shrink-0 rounded-full bg-primary ring-2 ring-primary/30" />}
 		</button>
 	)
 }
 
 function MenuItem({
+	iconNode,
 	children,
 	onClick,
 	destructive,
+	trailing,
 }: {
+	iconNode: React.ReactNode
 	children: React.ReactNode
 	onClick: () => void
 	destructive?: boolean
+	trailing?: React.ReactNode
 }) {
 	return (
 		<button
 			type="button"
 			onClick={onClick}
-			className={`w-full text-left px-4 py-3 text-sm font-bold uppercase tracking-wide transition hover:bg-background ${destructive ? "text-subtle" : "text-muted"}`}
+			className={`group flex w-full items-center gap-3 rounded-(--radius-card) px-3 py-2.5 text-left transition hover:bg-background ${
+				destructive ? "text-destructive" : "text-foreground"
+			}`}
 		>
-			{children}
+			<span
+				className={`flex size-9 shrink-0 items-center justify-center rounded-full border-2 ${
+					destructive
+						? "bg-destructive-tint border-destructive/20 text-destructive"
+						: "bg-background border-border text-muted group-hover:bg-surface group-hover:border-primary/30 group-hover:text-primary"
+				}`}
+			>
+				{iconNode}
+			</span>
+			<span className="flex-1 text-sm font-extrabold">{children}</span>
+			{trailing}
 		</button>
 	)
 }
@@ -171,87 +205,108 @@ export function ProfileDropdown({ unread, initial }: Props) {
 			</button>
 
 			{open && (
-				<div className="absolute right-0 top-full mt-3 w-72 bg-surface rounded-(--radius-banner) border-2 border-border overflow-hidden animate-[menuIn_0.15s_ease-out]">
+				<div className="absolute right-0 top-full mt-3 w-80 bg-surface rounded-(--radius-banner) border-2 border-border border-b-4 shadow-lg overflow-hidden animate-[menuIn_0.15s_ease-out]">
 					{tab === "menu" ? (
-						<div className="p-2">
-							<div className="flex items-center gap-3 px-4 py-3">
-								<div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-display text-base shrink-0">
-									{initial}
+						<div>
+							<div className="bg-gradient-to-b from-primary-tint/60 to-transparent px-4 pt-5 pb-4">
+								<div className="flex items-center gap-3">
+									<div className="size-12 rounded-full bg-primary border-2 border-primary-dark flex items-center justify-center text-primary-foreground font-display text-lg shrink-0 shadow-[0_2px_0_var(--color-primary-dark)]">
+										{initial}
+									</div>
+									<div className="min-w-0 flex-1">
+										<p className="text-base font-extrabold text-foreground truncate">{profile.nickname}</p>
+										<p className="text-xs text-subtle truncate">{user?.email}</p>
+									</div>
+									{profile.target_level && (
+										<span className="inline-flex items-center gap-1 text-xs font-extrabold text-primary-dark bg-primary-tint border-2 border-primary/30 border-b-[3px] px-2.5 py-1 rounded-full">
+											{profile.target_level}
+										</span>
+									)}
 								</div>
-								<div className="min-w-0">
-									<p className="text-sm font-bold text-foreground truncate">{profile.nickname}</p>
-									<p className="text-xs text-subtle truncate">{user?.email}</p>
-								</div>
-								{profile.target_level && (
-									<span className="ml-auto text-xs font-bold text-primary bg-primary-tint px-2.5 py-1 rounded-full">
-										{profile.target_level}
-									</span>
-								)}
 							</div>
-							<div className="h-px bg-border mx-3 my-1" />
-							<MenuItem onClick={() => setTab("notifs")}>
-								Thông báo
-								{unread > 0 && (
-									<span className="ml-1 text-xs font-bold text-primary-foreground bg-destructive px-2 py-0.5 rounded-full inline-flex items-center justify-center">
-										{unread}
-									</span>
-								)}
-							</MenuItem>
-							<MenuItem
-								onClick={() => {
-									setOpen(false)
-									navigate({ to: "/ho-so", search: { edit: true } })
-								}}
-							>
-								Chỉnh sửa hồ sơ
-							</MenuItem>
-							<MenuItem
-								onClick={() => {
-									setOpen(false)
-									navigate({ to: "/luyen-tap/ket-qua" })
-								}}
-							>
-								Kết quả AI chấm
-							</MenuItem>
-							<MenuItem
-								onClick={() => {
-									logout()
-									setOpen(false)
-								}}
-								destructive
-							>
-								Đăng xuất
-							</MenuItem>
+							<div className="p-2 space-y-0.5">
+								<MenuItem
+									iconNode={<StaticIcon name="bell" size="xs" className="h-4 w-auto" />}
+									onClick={() => setTab("notifs")}
+									trailing={
+										unread > 0 ? (
+											<span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-[11px] font-extrabold text-primary-foreground bg-destructive rounded-full">
+												{unread}
+											</span>
+										) : null
+									}
+								>
+									Thông báo
+								</MenuItem>
+								<MenuItem
+									iconNode={<Icon name="pencil" size="xs" />}
+									onClick={() => {
+										setOpen(false)
+										navigate({ to: "/ho-so", search: { edit: true } })
+									}}
+								>
+									Chỉnh sửa hồ sơ
+								</MenuItem>
+								<MenuItem
+									iconNode={<Icon name="clipboard" size="xs" />}
+									onClick={() => {
+										setOpen(false)
+										navigate({ to: "/luyen-tap/ket-qua" })
+									}}
+								>
+									Kết quả AI chấm
+								</MenuItem>
+								<div className="my-1 h-px bg-border" />
+								<MenuItem
+									iconNode={<Icon name="logout" size="xs" />}
+									onClick={() => {
+										logout()
+										setOpen(false)
+									}}
+									destructive
+								>
+									Đăng xuất
+								</MenuItem>
+							</div>
 						</div>
 					) : (
 						<div>
-							<div className="flex items-center justify-between px-4 py-3">
+							<div className="flex items-center justify-between gap-3 bg-gradient-to-b from-primary-tint/50 to-transparent px-4 py-3">
 								<button
 									type="button"
 									onClick={() => setTab("menu")}
-									className="flex items-center gap-1 text-sm font-bold text-primary"
+									className="inline-flex items-center gap-1 text-sm font-extrabold text-primary-dark hover:text-primary transition"
 								>
 									<Icon name="back" size="xs" />
 									Quay lại
 								</button>
-								{unread > 0 && (
-									<button
-										type="button"
-										onClick={() => readAll.mutate()}
-										className="text-xs font-bold text-primary"
-									>
-										Đọc tất cả
-									</button>
-								)}
+								<div className="flex items-center gap-2">
+									<span className="text-xs font-extrabold uppercase tracking-wider text-subtle">
+										Thông báo
+									</span>
+									{unread > 0 && (
+										<button
+											type="button"
+											onClick={() => readAll.mutate()}
+											className="text-[11px] font-extrabold uppercase tracking-wider text-primary-dark bg-primary-tint border-2 border-primary/30 border-b-[3px] hover:bg-primary/15 px-2 py-0.5 rounded-full transition"
+										>
+											Đọc tất cả
+										</button>
+									)}
+								</div>
 							</div>
-							<div className="h-px bg-border" />
 							{notifs.length === 0 ? (
-								<div className="px-4 py-10 text-center">
-									<img src="/mascot/lac-think.png" alt="" className="w-16 h-16 mx-auto mb-2 object-contain" />
-									<p className="text-sm font-bold text-subtle">Chưa có thông báo</p>
+								<div className="px-6 py-10 text-center">
+									<img
+										src="/mascot/lac-think.png"
+										alt=""
+										className="w-20 h-20 mx-auto mb-3 object-contain opacity-90"
+									/>
+									<p className="text-sm font-extrabold text-foreground">Chưa có thông báo</p>
+									<p className="text-xs text-subtle mt-1">Hộp thư trống — quay lại sau nhé!</p>
 								</div>
 							) : (
-								<div className="max-h-72 overflow-y-auto p-2 space-y-1">
+								<div className="max-h-80 overflow-y-auto p-2 space-y-1.5">
 									{notifs.map((n) => (
 										<NotifItem key={n.id} notif={n} onRead={(id) => readOne.mutate(id)} />
 									))}
