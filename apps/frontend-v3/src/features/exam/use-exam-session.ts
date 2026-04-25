@@ -195,6 +195,13 @@ export function useExamSession({
 	const lastDraftToastAt = useRef(0)
 	const draftMutation = useMutation({
 		mutationFn: (payload: ExamDraftPayload) => saveExamDraft(session.id, payload),
+		onSuccess: (result) => {
+			// Sync cache: examDraftQuery có staleTime=Infinity nên KHÔNG refetch khi user
+			// quay lại phòng thi cùng tab (SPA nav). Phải tự ghi lại để lần mount sau
+			// đọc đúng state mới — không thì sẽ load lại snapshot lần đầu, mất các thay
+			// đổi sau (lý do "draft chỉ lưu lần đầu").
+			qc.setQueryData(["exam-sessions", session.id, "draft"], { data: result })
+		},
 		onError: (error: unknown) => {
 			if (error instanceof HTTPError && error.response.status === 429) return
 			const now = Date.now()
