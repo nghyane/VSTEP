@@ -48,7 +48,7 @@ function getColors(variant: Variant, skillColor: string | undefined, c: ReturnTy
       return { borderTop: sc + "40", borderBottom: sc, bg: sc + "18" };
     }
     default:
-      return { borderTop: "#E5E5E5", borderBottom: "#CACACA", bg: c.card };
+      return { borderTop: c.border, borderBottom: c.mutedForeground, bg: c.card };
   }
 }
 

@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { useOverview } from "@/hooks/use-progress";
 import { getTargetBand } from "@/lib/vstep";
 import { useThemeColors, spacing, fontSize, fontFamily, radius } from "@/theme";
+import { useSkillColor } from "@/theme";
 import type { ExamSessionResult, Skill } from "@/types/api";
 
 const SKILLS: Skill[] = ["listening", "reading", "writing", "speaking"];
@@ -17,12 +18,15 @@ const SKILL_META: Record<Skill, { vi: string }> = {
   speaking: { vi: "Nói" },
 };
 
-const SKILL_COLORS: Record<Skill, string> = {
-  listening: "#1CB0F6",
-  reading: "#7850C8",
-  writing: "#58CC02",
-  speaking: "#FFC800",
-};
+function getSkillColor(skill: Skill, theme: ReturnType<typeof useThemeColors>): string {
+  const map: Record<Skill, string> = {
+    listening: theme.info,
+    reading: theme.skillReading,
+    writing: theme.primary,
+    speaking: theme.coin,
+  };
+  return map[skill];
+}
 
 function formatShortDate(iso: string): string {
   const d = new Date(iso);
@@ -81,7 +85,7 @@ export function ScoreTrend() {
             {tests.length} bài thi gần nhất
           </Text>
         </View>
-        <View style={styles.targetBadge}>
+        <View style={[styles.targetBadge, { backgroundColor: c.destructiveTint }]}>
           <Text style={[styles.targetBadgeText, { color: c.destructive }]}>
             Mục tiêu: {targetBand}
           </Text>
@@ -93,7 +97,7 @@ export function ScoreTrend() {
         {SKILLS.map((s) => (
           <View key={s} style={styles.legendItem}>
             <SkillIcon skill={s} size={14} bare />
-            <Text style={[styles.legendText, { color: SKILL_COLORS[s] }]}>
+            <Text style={[styles.legendText, { color: getSkillColor(s, c) }]}>
               {SKILL_META[s].vi}
             </Text>
           </View>
@@ -107,7 +111,7 @@ export function ScoreTrend() {
           const aboveTarget = avg >= targetBand;
 
           return (
-            <View key={test.id} style={styles.testRow}>
+            <View key={test.id} style={[styles.testRow, { borderBottomColor: c.border }]}>
               <View style={styles.testInfo}>
                 <Text style={[styles.testDate, { color: c.subtle }]}>
                   {formatShortDate(test.submittedAt)}
@@ -123,7 +127,7 @@ export function ScoreTrend() {
                           styles.scoreBar,
                           {
                             width: Math.max(4, ratio * 40),
-                            backgroundColor: SKILL_COLORS[skill],
+                            backgroundColor: getSkillColor(skill, c),
                             opacity: score > 0 ? 0.8 : 0.2,
                           },
                         ]}
@@ -175,7 +179,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
     borderRadius: radius.md,
-    backgroundColor: "#EA433515",
   },
   targetBadgeText: {
     fontSize: fontSize.xs,
@@ -204,7 +207,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E5E5",
   },
   testInfo: {
     flex: 1,

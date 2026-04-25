@@ -156,7 +156,7 @@ export default function CourseDetailScreen() {
         <DepthCard style={styles.scheduleCard}>
           <Text style={[styles.sectionTitle, { color: c.foreground }]}>Lịch học</Text>
           {course.scheduleItems.map((item: { id: string; sessionNumber: number; date: string; startTime: string; endTime: string; topic: string }) => (
-            <View key={item.id} style={styles.scheduleItem}>
+            <View key={item.id} style={[styles.scheduleItem, { borderBottomColor: c.border }]}>
               <View style={styles.scheduleTime}>
                 <Text style={[styles.timeText, { color: c.foreground }]}>Buổi {item.sessionNumber}</Text>
                 <Text style={[styles.timeSub, { color: c.subtle }]}>
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
   descText: { fontSize: fontSize.sm, lineHeight: 22 },
   sectionTitle: { fontSize: fontSize.base, fontFamily: fontFamily.bold, marginBottom: spacing.sm },
   scheduleCard: { padding: spacing.lg, gap: spacing.sm, marginBottom: spacing.base },
-  scheduleItem: { paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: "#E5E5E5" },
+  scheduleItem: { paddingVertical: spacing.sm, borderBottomWidth: 1 },
   scheduleTime: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   timeText: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
   timeSub: { fontSize: fontSize.xs },

@@ -119,7 +119,7 @@ function formatRelative(iso: string): string {
 const styles = StyleSheet.create({
   btn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   badge: { position: "absolute", top: -2, right: -2, minWidth: 16, height: 16, borderRadius: 8, alignItems: "center", justifyContent: "center", paddingHorizontal: 3 },
-  badgeText: { color: "#FFF", fontSize: 9, fontFamily: fontFamily.bold },
+  badgeText: { color: "#FFFFFF", fontSize: 9, fontFamily: fontFamily.bold },
   content: { paddingBottom: spacing["2xl"] },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderBottomWidth: 1 },
   title: { fontSize: fontSize.base, fontFamily: fontFamily.bold },

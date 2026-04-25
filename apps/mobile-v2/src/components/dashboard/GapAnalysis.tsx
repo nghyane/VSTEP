@@ -18,12 +18,12 @@ const SKILL_META: Record<Skill, { vi: string }> = {
 
 type GapStatus = "pass" | "gap" | "fail" | "none";
 
-function getSkillColor(skill: Skill): string {
+function getSkillColor(skill: Skill, c: ReturnType<typeof useThemeColors>): string {
   const map: Record<Skill, string> = {
-    listening: "#1CB0F6",
-    reading: "#7850C8",
-    writing: "#58CC02",
-    speaking: "#FFC800",
+    listening: c.skillListening,
+    reading: c.skillReading,
+    writing: c.skillWriting,
+    speaking: c.skillSpeaking,
   };
   return map[skill];
 }
@@ -126,7 +126,7 @@ function GapRow({
 
   return (
     <View style={styles.gapRow}>
-      <View style={[styles.dot, { backgroundColor: getSkillColor(skill) }]} />
+      <View style={[styles.dot, { backgroundColor: getSkillColor(skill, c) }]} />
       <Text style={[styles.gapLabel, { color: c.mutedForeground }]}>{SKILL_META[skill].vi}</Text>
       <View style={styles.gapScoreRow}>
         <Text style={[styles.gapScore, { color: scoreColor }]}>{scoreText}</Text>

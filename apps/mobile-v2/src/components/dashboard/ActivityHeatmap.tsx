@@ -12,7 +12,10 @@ const DAY_LABELS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 const CELL_SIZE = 12;
 const GAP = 2;
 
-const LEVEL_COLORS = ["#E5E5E5", "#58CC0240", "#58CC0280", "#58CC02BF", "#58CC02"];
+function levelColor(level: number, theme: { border: string; primary: string }): string {
+  const colors = [theme.border, `${theme.primary}40`, `${theme.primary}80`, `${theme.primary}BF`, theme.primary];
+  return colors[level] ?? theme.border;
+}
 
 function toLevel(minutes: number): number {
   if (minutes <= 0) return 0;
@@ -69,8 +72,8 @@ export function ActivityHeatmap() {
         </View>
         <View style={styles.legend}>
           <Text style={[styles.legendText, { color: c.subtle }]}>Ít</Text>
-          {LEVEL_COLORS.map((color, i) => (
-            <View key={i} style={[styles.legendCell, { backgroundColor: color }]} />
+          {[0, 1, 2, 3, 4].map((i) => (
+            <View key={i} style={[styles.legendCell, { backgroundColor: levelColor(i, c) }]} />
           ))}
           <Text style={[styles.legendText, { color: c.subtle }]}>Nhiều</Text>
         </View>
@@ -94,7 +97,7 @@ export function ActivityHeatmap() {
                   style={[
                     styles.cell,
                     {
-                      backgroundColor: LEVEL_COLORS[level],
+                      backgroundColor: levelColor(level, c),
                       width: CELL_SIZE,
                       height: CELL_SIZE,
                       borderRadius: radius.sm,
