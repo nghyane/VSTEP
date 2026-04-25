@@ -11,6 +11,7 @@ use App\Models\ProfileDailyActivity;
 use App\Models\ProfileStreakLog;
 use App\Models\ProfileStreakState;
 use App\Models\SystemConfig;
+use App\Models\SpeakingGradingResult;
 use App\Models\WritingGradingResult;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -282,7 +283,7 @@ class ProgressService
         $sessions = ExamSession::query()
             ->where('profile_id', $profile->id)
             ->whereIn('mode', ['custom', 'full'])
-            ->where('status', 'submitted')
+            ->whereIn('status', ['submitted', 'auto_submitted', 'grading', 'graded'])
             ->orderByDesc('submitted_at')
             ->limit($windowSize)
             ->pluck('id');
@@ -297,14 +298,24 @@ class ProgressService
             ->where('is_active', true)
             ->avg('overall_band');
 
-        $listeningAvg = $this->mcqAvgBand($sessions, 'listening');
-        $readingAvg = $this->mcqAvgBand($sessions, 'reading');
+        $speakingSubIds = DB::table('exam_speaking_submissions')
+            ->whereIn('session_id', $sessions)
+            ->pluck('id');
+
+        $avgSpeaking = SpeakingGradingResult::query()
+            ->where('submission_type', 'exam_speaking')
+            ->whereIn('submission_id', $speakingSubIds)
+            ->where('is_active', true)
+            ->avg('overall_band');
+
+        $listeningAvg = $this->mcqAvgBand($sessions, 'exam_listening_item');
+        $readingAvg = $this->mcqAvgBand($sessions, 'exam_reading_item');
 
         return [
             'listening' => $listeningAvg,
             'reading' => $readingAvg,
             'writing' => $avgWriting ? round((float) $avgWriting, 1) : null,
-            'speaking' => null,
+            'speaking' => $avgSpeaking ? round((float) $avgSpeaking, 1) : null,
             'sample_size' => $sessions->count(),
         ];
     }
@@ -343,7 +354,7 @@ class ProgressService
         };
     }
 
-    private function mcqAvgBand(Collection $sessionIds, string $skill): ?float
+    private function mcqAvgBand(Collection $sessionIds, string $itemRefType): ?float
     {
         if ($sessionIds->isEmpty()) {
             return null;
@@ -351,7 +362,7 @@ class ProgressService
 
         $results = DB::table('exam_mcq_answers')
             ->whereIn('session_id', $sessionIds)
-            ->where('item_ref_type', $skill)
+            ->where('item_ref_type', $itemRefType)
             ->selectRaw('session_id, count(*) as total, sum(case when is_correct then 1 else 0 end) as correct')
             ->groupBy('session_id')
             ->get();

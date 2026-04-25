@@ -40,14 +40,6 @@ export function selectSpider(raw: ApiResponse<OverviewData>) {
 	}
 }
 
-export function selectGap(raw: ApiResponse<OverviewData>) {
-	return {
-		chart: raw.data.chart,
-		targetBand: getTargetBand(raw.data.profile.target_level),
-		targetLevel: raw.data.profile.target_level,
-	}
-}
-
 export function selectTargetBand(raw: ApiResponse<OverviewData>) {
 	return getTargetBand(raw.data.profile.target_level)
 }
