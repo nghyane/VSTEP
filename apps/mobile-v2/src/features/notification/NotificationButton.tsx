@@ -1,34 +1,25 @@
 import { useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+
 import { BottomSheet } from "@/components/BottomSheet";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { GameIcon } from "@/components/GameIcon";
-import {
-  type AppNotification,
-  clearNotifications,
-  formatRelative,
-  markAllRead,
-  useNotifications,
-  useUnreadCount,
-} from "@/features/notification/notification-store";
+import { useDeleteNotification, useMarkAllRead, useNotifications, useUnreadCount } from "@/features/notification/queries";
+import type { Notification } from "@/features/notification/types";
 import { fontSize, fontFamily, radius, spacing, useThemeColors } from "@/theme";
 
 export function NotificationButton() {
   const c = useThemeColors();
   const [visible, setVisible] = useState(false);
-  const unread = useUnreadCount();
-
-  function handleOpen() {
-    setVisible(true);
-    if (unread > 0) markAllRead();
-  }
+  const { data: unreadData } = useUnreadCount();
+  const unread = unreadData?.count ?? 0;
 
   return (
     <>
       <HapticTouchable
         style={[styles.btn, { backgroundColor: c.muted }]}
-        onPress={handleOpen}
+        onPress={() => setVisible(true)}
       >
         <Ionicons
           name={unread > 0 ? "notifications" : "notifications-outline"}
@@ -48,16 +39,18 @@ export function NotificationButton() {
 
 function NotificationSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const c = useThemeColors();
-  const notifications = useNotifications();
+  const { data } = useNotifications();
+  const markAllRead = useMarkAllRead();
+  const notifications: Notification[] = data?.data ?? [];
 
   return (
     <BottomSheet visible={visible} onClose={onClose}>
       <View style={styles.content}>
         <View style={[styles.header, { borderBottomColor: c.border }]}>
-          <Text style={[styles.title, { color: c.foreground }]}>Thong bao</Text>
+          <Text style={[styles.title, { color: c.foreground }]}>Thông báo</Text>
           {notifications.length > 0 && (
-            <HapticTouchable onPress={() => { clearNotifications(); onClose(); }}>
-              <Text style={[styles.clearBtn, { color: c.destructive }]}>Xoa tat ca</Text>
+            <HapticTouchable onPress={() => { markAllRead.mutate(); onClose(); }}>
+              <Text style={[styles.clearBtn, { color: c.destructive }]}>Đánh dấu đã đọc</Text>
             </HapticTouchable>
           )}
         </View>
@@ -65,9 +58,9 @@ function NotificationSheet({ visible, onClose }: { visible: boolean; onClose: ()
         {notifications.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="sparkles-outline" size={32} color={c.mutedForeground + "60"} />
-            <Text style={[styles.emptyTitle, { color: c.foreground }]}>Chua co thong bao nao</Text>
+            <Text style={[styles.emptyTitle, { color: c.foreground }]}>Chưa có thông báo nào</Text>
             <Text style={[styles.emptyBody, { color: c.mutedForeground }]}>
-              Hoan thanh bai tap de nhan thong bao streak va thuong xu.
+              Hoàn thành bài tập để nhận thông báo streak và thưởng xu.
             </Text>
           </View>
         ) : (
@@ -84,27 +77,43 @@ function NotificationSheet({ visible, onClose }: { visible: boolean; onClose: ()
   );
 }
 
-function NotificationRow({ notification }: { notification: AppNotification }) {
+function NotificationRow({ notification }: { notification: Notification }) {
   const c = useThemeColors();
+  const deleteMutation = useDeleteNotification();
   const isUnread = notification.readAt === null;
 
   return (
-    <View style={[styles.row, isUnread && { backgroundColor: c.primary + "08" }]}>
+    <HapticTouchable
+      style={[styles.row, isUnread && { backgroundColor: c.primary + "08" }]}
+      onPress={() => deleteMutation.mutate(notification.id)}
+    >
       <View style={[styles.iconWrap, { backgroundColor: c.primaryTint }]}>
         <GameIcon name="notification" size={20} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={[styles.rowTitle, { color: c.foreground }]}>{notification.title}</Text>
         {notification.body && (
-          <Text style={[styles.rowBody, { color: c.mutedForeground }]}>{notification.body}</Text>
+          <Text style={[styles.rowBody, { color: c.mutedForeground }]} numberOfLines={2}>
+            {notification.body}
+          </Text>
         )}
         <Text style={[styles.rowTime, { color: c.mutedForeground }]}>
           {formatRelative(notification.createdAt)}
         </Text>
       </View>
       {isUnread && <View style={[styles.dot, { backgroundColor: c.primary }]} />}
-    </View>
+    </HapticTouchable>
   );
+}
+
+function formatRelative(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return "Vừa xong";
+  if (mins < 60) return `${mins} phút trước`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} giờ trước`;
+  return `${Math.floor(hours / 24)} ngày trước`;
 }
 
 const styles = StyleSheet.create({

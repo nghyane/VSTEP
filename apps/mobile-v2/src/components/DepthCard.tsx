@@ -10,7 +10,7 @@ interface DepthCardProps {
   variant?: Variant;
   skillColor?: string;
   padding?: number;
-  style?: ViewStyle;
+  style?: ViewStyle | ViewStyle[];
 }
 
 export function DepthCard({

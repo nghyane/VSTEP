@@ -330,15 +330,15 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
     area: "Notifications",
     flow: "Unread count, notification list, read all, delete",
     frontendV3: ["src/features/notifications"],
-    mobileV2: ["src/features/notification", "app/(app)/(tabs)/notifications.tsx"],
+    mobileV2: ["src/features/notification", "app/(app)/(tabs)/notifications.tsx", "app/(app)/notifications.tsx"],
     backendApi: [
       "GET /api/v1/notifications",
       "GET /api/v1/notifications/unread-count",
       "POST /api/v1/notifications/read-all",
       "DELETE /api/v1/notifications/{id}",
     ],
-    status: "partial",
-    gaps: ["Mobile notification tab redirects to dashboard; only button/store shell exists."],
+    status: "done",
+    gaps: [],
     nextPhase: 11,
   },
 
@@ -347,7 +347,7 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
     area: "Wallet",
     flow: "Balance, transactions, top up, promo redeem",
     frontendV3: ["src/features/wallet"],
-    mobileV2: ["src/features/coin"],
+    mobileV2: ["src/features/wallet", "src/features/coin", "app/(app)/wallet.tsx", "app/(app)/topup.tsx"],
     backendApi: [
       "GET /api/v1/wallet/balance",
       "GET /api/v1/wallet/transactions",
@@ -356,11 +356,8 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "POST /api/v1/wallet/topup/{orderId}/confirm",
       "POST /api/v1/wallet/promo-redeem",
     ],
-    status: "missing",
-    gaps: [
-      "Mobile coin feature is local/store-oriented and does not mirror backend wallet flow.",
-      "Welcome gift + top-up dialog polished in frontend-v3 (commit e4ab064) — not in mobile.",
-    ],
+    status: "done",
+    gaps: [],
     nextPhase: 11,
   },
 
@@ -369,7 +366,7 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
     area: "Courses",
     flow: "Course list, detail, enrollment, booking",
     frontendV3: ["src/routes/_app/khoa-hoc", "src/features/course"],
-    mobileV2: ["app/(app)/(tabs)/classes.tsx"],
+    mobileV2: ["app/(app)/(tabs)/classes.tsx", "app/(app)/classes.tsx", "app/(app)/courses/[courseId].tsx", "src/features/course"],
     backendApi: [
       "GET /api/v1/courses",
       "GET /api/v1/courses/{id}",
@@ -378,8 +375,8 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "POST /api/v1/courses/enrollment-orders/{orderId}/confirm",
       "POST /api/v1/courses/{courseId}/bookings",
     ],
-    status: "missing",
-    gaps: ["Classes tab redirects to dashboard; course learner flow is not implemented."],
+    status: "done",
+    gaps: [],
     nextPhase: 11,
   },
 ]

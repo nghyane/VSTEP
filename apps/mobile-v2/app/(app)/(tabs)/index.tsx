@@ -19,6 +19,7 @@ import { GapAnalysis } from "@/components/dashboard/GapAnalysis";
 import { ScoreTrend } from "@/components/dashboard/ScoreTrend";
 import { useAuth } from "@/hooks/use-auth";
 import { useOverview, useStreak } from "@/hooks/use-progress";
+import { getTargetBand } from "@/lib/vstep";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { Skill } from "@/types/api";
 

@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { GameIcon } from "@/components/GameIcon";
-import { useCoins } from "@/features/coin/coin-store";
+import { useWalletBalance } from "@/features/wallet/queries";
 import { fontSize, fontFamily, radius, spacing, useThemeColors } from "@/theme";
 
 interface CoinButtonProps {
@@ -10,7 +10,8 @@ interface CoinButtonProps {
 
 export function CoinButton({ onPress }: CoinButtonProps) {
   const c = useThemeColors();
-  const coins = useCoins();
+  const { data } = useWalletBalance();
+  const coins = data?.balance ?? 0;
 
   return (
     <HapticTouchable
