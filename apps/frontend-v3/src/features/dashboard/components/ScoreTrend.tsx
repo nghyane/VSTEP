@@ -7,7 +7,8 @@ const Y_MAX = 180
 const Y_MIN = 20
 const bandToY = (v: number) => Y_MAX - (v / 10) * (Y_MAX - Y_MIN)
 
-function computeAvg(scores: Record<string, number | null>): number {
+function computeAvg(scores: Record<string, number | null> | null): number {
+	if (!scores) return 0
 	const vals = skills.map((s) => scores[s.key]).filter((v): v is number => v !== null)
 	return vals.length > 0 ? round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0
 }
@@ -85,7 +86,7 @@ export function ScoreTrend() {
 					return (
 						<g key={test.id}>
 							{skills.map((s, si) => {
-								const v = test.scores[s.key] ?? 0
+								const v = test.scores?.[s.key] ?? 0
 								return (
 									<rect
 										key={s.key}
@@ -100,7 +101,7 @@ export function ScoreTrend() {
 								)
 							})}
 							<text x={cx} y={198} textAnchor="middle" fontSize="10" fill="var(--color-subtle)">
-								{formatShortDate(test.submitted_at)}
+								{test.submitted_at ? formatShortDate(test.submitted_at) : ""}
 							</text>
 						</g>
 					)

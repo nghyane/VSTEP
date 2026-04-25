@@ -520,7 +520,7 @@ function ActiveExamRoom({
 
 	const submitWarning =
 		currentSkillPending && currentSkillPending.count > 0 && currentSkill
-			? `Còn ${currentSkillPending.count} ${currentSkillPending.unit} ở phần ${SKILL_LABEL[currentSkill]}`
+			? `Còn ${currentSkillPending.count} ${currentSkillPending.unit} chưa làm ở phần ${SKILL_LABEL[currentSkill]}`
 			: undefined
 
 	if (submitResult) {
@@ -717,6 +717,11 @@ function ActiveExamRoom({
 						Sau khi chuyển, bạn sẽ <strong className="text-foreground">không thể quay lại</strong> phần{" "}
 						{currentSkill ? SKILL_LABEL[currentSkill] : ""} để chỉnh sửa.
 					</>
+				}
+				warning={
+					currentSkillPending && currentSkillPending.count > 0 && currentSkill
+						? `Còn ${currentSkillPending.count} ${currentSkillPending.unit} chưa làm ở phần ${SKILL_LABEL[currentSkill]}`
+						: undefined
 				}
 				confirmLabel={`Chuyển sang ${nextSkill ? SKILL_LABEL[nextSkill] : "phần tiếp"}`}
 				onConfirm={handleConfirmNext}

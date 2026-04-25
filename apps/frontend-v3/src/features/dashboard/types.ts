@@ -63,6 +63,7 @@ export interface ExamSessionResult {
 	id: string
 	mode: string
 	is_full_test: boolean
-	submitted_at: string
-	scores: Record<SkillKey, number | null>
+	status: string
+	submitted_at: string | null
+	scores: Record<SkillKey, number | null> | null
 }

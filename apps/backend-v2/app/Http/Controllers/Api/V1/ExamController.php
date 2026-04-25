@@ -137,7 +137,7 @@ class ExamController extends Controller
             'status' => $session->status,
             'started_at' => $session->started_at,
             'submitted_at' => $session->submitted_at,
-            'scores' => in_array($session->status, ['submitted', 'graded'], true)
+            'scores' => in_array($session->status, ['submitted', 'auto_submitted', 'grading', 'graded'], true)
                 ? $this->scoringService->getSessionScores($session)
                 : null,
         ]);
