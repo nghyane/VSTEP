@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
+import { Icon } from "#/components/Icon"
 import { examSessionsQuery, overviewQuery, selectTargetBand } from "#/features/dashboard/queries"
 import { skills } from "#/lib/skills"
 import { formatShortDate, round } from "#/lib/utils"
@@ -42,15 +43,14 @@ export function ScoreTrend() {
 
 			<div className="flex flex-wrap gap-2 mt-3 mb-4">
 				{skills.map((s) => (
-					<button
-						type="button"
+					<span
 						key={s.key}
 						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
 						style={{ color: s.color, background: `color-mix(in srgb, ${s.color} 10%, transparent)` }}
 					>
-						<span className="w-2 h-2 rounded-full" style={{ background: s.color }} />
+						<Icon name={s.icon} size="xs" />
 						{s.label}
-					</button>
+					</span>
 				))}
 				<span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-primary-dark">
 					<span className="w-4 h-0.5 bg-primary-dark rounded" />

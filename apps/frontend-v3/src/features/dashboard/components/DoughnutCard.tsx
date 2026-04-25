@@ -120,7 +120,7 @@ export function DoughnutCard() {
 								<Icon name={s.icon} size="xs" />
 							</span>
 							<span className="font-bold text-foreground">{s.label}</span>
-							<span className="ml-auto text-xs tabular-nums font-bold" style={{ color: s.color }}>
+							<span className="ml-auto text-lg tabular-nums font-extrabold" style={{ color: s.color }}>
 								{value}
 							</span>
 						</div>
