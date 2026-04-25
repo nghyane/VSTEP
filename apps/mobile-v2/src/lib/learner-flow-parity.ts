@@ -276,12 +276,8 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
     frontendV3: ["src/routes/_app/thi-thu/index.tsx", "src/routes/_app/thi-thu/$examId.tsx", "src/features/exam"],
     mobileV2: ["app/(app)/(tabs)/exams.tsx", "app/(app)/exam/[id].tsx", "src/hooks/use-exams.ts"],
     backendApi: ["GET /api/v1/exams", "GET /api/v1/exams/{id}", "GET /api/v1/config"],
-    status: "partial",
-    gaps: [
-      "Mobile starts full exam only; custom selected-skills flow from frontend-v3 is missing.",
-      "Config/pricing is not used on exam detail like frontend-v3.",
-      "Exam cards + detail header polished in frontend-v3 (commit 17d5380) — mobile needs align.",
-    ],
+    status: "done",
+    gaps: [],
     nextPhase: 7,
   },
 
@@ -316,8 +312,6 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "Active session resume endpoint (GET /exam-sessions/active) is not used.",
       "Writing/speaking async exam results are not fully modeled.",
       "Speaking studio layout + re-record fix in frontend-v3 (commit b8e94d4) — mobile needs align.",
-      "Passage highlighter in frontend-v3 (commit d0ead97) — mobile reading exam missing.",
-      "Submit warning scoped to selected skills in frontend-v3 — mobile missing.",
       "Exam sessions returns array not paginator (commit 7a8be17) — mobile hook may need update.",
     ],
     nextPhase: 7,

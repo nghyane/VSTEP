@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -7,20 +8,22 @@ import { useExam } from "@/hooks/use-exams";
 import { useStartExamSession } from "@/hooks/use-exam-session";
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
-import { GameIcon } from "@/components/GameIcon";
-import { MascotEmpty } from "@/components/MascotStates";
 import { HapticTouchable } from "@/components/HapticTouchable";
-import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { MascotEmpty } from "@/components/MascotStates";
+import { useThemeColors, colors as themeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
-const SKILL_COLORS: Record<string, string> = {
-  listening: "#1CB0F6",
-  reading: "#7850C8",
-  writing: "#58CC02",
-  speaking: "#FFC800",
+type SkillKey = "listening" | "reading" | "writing" | "speaking";
+
+const SKILL_META: Record<SkillKey, { label: string; color: string; icon: string }> = {
+  listening: { label: "Nghe", color: themeColors.light.skillListening, icon: "headset" },
+  reading: { label: "Đọc", color: themeColors.light.skillReading, icon: "book" },
+  writing: { label: "Viết", color: themeColors.light.skillWriting, icon: "create" },
+  speaking: { label: "Nói", color: themeColors.light.skillSpeaking, icon: "mic" },
 };
-const SKILL_LABELS: Record<string, string> = {
-  listening: "Nghe", reading: "Đọc", writing: "Viết", speaking: "Nói",
-};
+
+const SKILL_ORDER: SkillKey[] = ["listening", "reading", "writing", "speaking"];
+
+type ExamMode = "full" | "custom";
 
 export default function ExamDetailScreen() {
   const c = useThemeColors();
@@ -30,12 +33,8 @@ export default function ExamDetailScreen() {
   const { data: detail, isLoading } = useExam(id ?? "");
   const startMutation = useStartExamSession();
 
-  function handleStart() {
-    startMutation.mutate(
-      { examId: id ?? "", mode: "full" },
-      { onSuccess: (res) => router.push(`/(app)/session/${res.sessionId}?examId=${id}` as any) },
-    );
-  }
+  const [mode, setMode] = useState<ExamMode>("full");
+  const [selectedSkills, setSelectedSkills] = useState<SkillKey[]>(SKILL_ORDER);
 
   if (isLoading) {
     return <View style={[s.center, { backgroundColor: c.background }]}><ActivityIndicator color={c.primary} size="large" /></View>;
@@ -45,7 +44,8 @@ export default function ExamDetailScreen() {
   }
 
   const { exam, version } = detail;
-  const skills = ["listening", "reading", "writing", "speaking"].filter((sk) => {
+
+  const availableSkills = SKILL_ORDER.filter((sk) => {
     if (sk === "listening") return version.listeningSections.length > 0;
     if (sk === "reading") return version.readingPassages.length > 0;
     if (sk === "writing") return version.writingTasks.length > 0;
@@ -53,38 +53,79 @@ export default function ExamDetailScreen() {
     return false;
   });
 
+  // Khi chuyển sang custom, chỉ giữ lại các skill có trong available
+  if (mode === "custom" && selectedSkills.length !== availableSkills.length) {
+    setSelectedSkills(availableSkills);
+  }
+
+  const totalMcq =
+    version.listeningSections.reduce((sum, sec) => sum + sec.items.length, 0) +
+    version.readingPassages.reduce((sum, p) => sum + p.items.length, 0);
+  const totalFreeResponse = version.writingTasks.length + version.speakingParts.length;
+  const totalMinutes =
+    version.listeningSections.reduce((sum, sec) => sum + sec.durationMinutes, 0) +
+    version.readingPassages.reduce((sum, p) => sum + p.durationMinutes, 0) +
+    version.writingTasks.reduce((sum, t) => sum + t.durationMinutes, 0) +
+    version.speakingParts.reduce((sum, p) => sum + p.durationMinutes, 0);
+
+  function toggleSkill(sk: SkillKey) {
+    if (selectedSkills.includes(sk)) {
+      if (selectedSkills.length > 1) setSelectedSkills(selectedSkills.filter((s) => s !== sk));
+    } else {
+      setSelectedSkills([...selectedSkills, sk].sort((a, b) => SKILL_ORDER.indexOf(a) - SKILL_ORDER.indexOf(b)));
+    }
+  }
+
+  function handleStart() {
+    const finalSkills = mode === "full" ? availableSkills : selectedSkills;
+    startMutation.mutate(
+      { examId: id ?? "", mode, selectedSkills: finalSkills },
+      { onSuccess: (res) => router.push(`/(app)/session/${res.sessionId}?examId=${id}` as any) },
+    );
+  }
+
   return (
     <ScrollView
       style={[s.root, { backgroundColor: c.background }]}
       contentContainerStyle={[s.scroll, { paddingTop: insets.top + spacing.xl }]}
       showsVerticalScrollIndicator={false}
     >
+      {/* Back */}
       <HapticTouchable onPress={() => router.back()} style={s.backRow}>
         <Ionicons name="arrow-back" size={20} color={c.foreground} />
         <Text style={[s.backText, { color: c.foreground }]}>Thi thử</Text>
       </HapticTouchable>
 
-      {/* Header */}
+      {/* Header card */}
       <DepthCard style={s.headerCard}>
-        <View style={s.tagRow}>
-          {exam.tags.map((tag) => (
-            <View key={tag} style={[s.tag, { backgroundColor: c.muted }]}>
-              <Text style={[s.tagText, { color: c.mutedForeground }]}>#{tag}</Text>
-            </View>
-          ))}
-        </View>
+        {/* Tags */}
+        {exam.tags.length > 0 && (
+          <View style={s.tagRow}>
+            {exam.tags.map((tag) => (
+              <View key={tag} style={[s.tag, { backgroundColor: c.muted }]}>
+                <Text style={[s.tagText, { color: c.mutedForeground }]}>#{tag}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Title */}
         <Text style={[s.examTitle, { color: c.foreground }]}>{exam.title}</Text>
+
+        {/* Meta pills */}
         <View style={s.metaRow}>
-          <Ionicons name="time-outline" size={14} color={c.subtle} />
-          <Text style={[s.metaText, { color: c.mutedForeground }]}>{exam.totalDurationMinutes} phút</Text>
+          <MetaPill icon="time-outline" label={`${totalMinutes}`} unit="phút" c={c} />
+          <MetaPill icon="layers-outline" label="4" unit="kỹ năng" c={c} />
+          <MetaPill icon="clipboard-outline" label={`${totalMcq}`} unit="câu TN" c={c} />
+          <MetaPill icon="create-outline" label={`${totalFreeResponse}`} unit="tự luận" c={c} />
         </View>
       </DepthCard>
 
-      {/* Cấu trúc */}
+      {/* Skill chips */}
       <DepthCard style={s.structCard}>
         <Text style={[s.sectionLabel, { color: c.subtle }]}>CẤU TRÚC BÀI THI</Text>
-        {skills.map((sk, i) => {
-          const color = SKILL_COLORS[sk];
+        {availableSkills.map((sk, i) => {
+          const meta = SKILL_META[sk];
           let count = 0;
           let duration = 0;
           if (sk === "listening") { count = version.listeningSections.flatMap((s) => s.items).length; duration = version.listeningSections.reduce((a, s) => a + s.durationMinutes, 0); }
@@ -93,11 +134,11 @@ export default function ExamDetailScreen() {
           if (sk === "speaking") { count = version.speakingParts.length; duration = version.speakingParts.reduce((a, p) => a + p.durationMinutes, 0); }
           return (
             <View key={sk} style={[s.skillRow, i > 0 && { borderTopWidth: 1, borderTopColor: c.borderLight }]}>
-              <View style={[s.skillNum, { backgroundColor: color + "20" }]}>
-                <Text style={[s.skillNumText, { color }]}>{i + 1}</Text>
+              <View style={[s.skillNum, { backgroundColor: meta.color + "20" }]}>
+                <Text style={[s.skillNumText, { color: meta.color }]}>{i + 1}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[s.skillName, { color: c.foreground }]}>{SKILL_LABELS[sk]}</Text>
+                <Text style={[s.skillName, { color: c.foreground }]}>{meta.label}</Text>
                 <Text style={[s.skillMeta, { color: c.mutedForeground }]}>{count} câu · {duration} phút</Text>
               </View>
             </View>
@@ -105,7 +146,45 @@ export default function ExamDetailScreen() {
         })}
       </DepthCard>
 
-      {/* Lưu ý */}
+      {/* Mode selector */}
+      {availableSkills.length > 1 && (
+        <DepthCard style={s.modeCard}>
+          <Text style={[s.sectionLabel, { color: c.subtle }]}>CHẾ ĐỘ LÀM BÀI</Text>
+          <View style={s.modeRow}>
+            <HapticTouchable
+              onPress={() => setMode("full")}
+              style={[s.modeBtn, { borderColor: mode === "full" ? c.primary : c.border, backgroundColor: mode === "full" ? c.primaryTint : c.card }]}
+            >
+              <Ionicons name="checkmark-circle" size={18} color={mode === "full" ? c.primary : c.placeholder} />
+              <Text style={[s.modeBtnText, { color: mode === "full" ? c.primary : c.mutedForeground }]}>Đầy đủ</Text>
+            </HapticTouchable>
+            <HapticTouchable
+              onPress={() => setMode("custom")}
+              style={[s.modeBtn, { borderColor: mode === "custom" ? c.primary : c.border, backgroundColor: mode === "custom" ? c.primaryTint : c.card }]}
+            >
+              <Ionicons name="checkmark-circle" size={18} color={mode === "custom" ? c.primary : c.placeholder} />
+              <Text style={[s.modeBtnText, { color: mode === "custom" ? c.primary : c.mutedForeground }]}>Tùy chọn</Text>
+            </HapticTouchable>
+          </View>
+
+          {mode === "custom" && (
+            <View style={s.skillSelectRow}>
+              {availableSkills.map((sk) => {
+                const meta = SKILL_META[sk];
+                const selected = selectedSkills.includes(sk);
+                return (
+                  <HapticTouchable key={sk} onPress={() => toggleSkill(sk)} style={[s.skillChip, { borderColor: selected ? meta.color : c.border, backgroundColor: selected ? meta.color + "18" : c.card }]}>
+                    <Ionicons name={selected ? "checkmark-circle" : "ellipse-outline"} size={16} color={selected ? meta.color : c.placeholder} />
+                    <Text style={[s.skillChipText, { color: selected ? meta.color : c.mutedForeground }]}>{meta.label}</Text>
+                  </HapticTouchable>
+                );
+              })}
+            </View>
+          )}
+        </DepthCard>
+      )}
+
+      {/* Notes */}
       <DepthCard style={s.notesCard}>
         <Text style={[s.sectionLabel, { color: c.subtle }]}>LƯU Ý</Text>
         {[
@@ -126,7 +205,7 @@ export default function ExamDetailScreen() {
         onPress={handleStart}
         disabled={startMutation.isPending}
       >
-        {startMutation.isPending ? "Đang tạo phiên thi..." : "Nhận đề & bắt đầu"}
+        {startMutation.isPending ? "Đang tạo phiên thi..." : mode === "full" ? "Nhận đề & bắt đầu" : "Bắt đầu làm bài"}
       </DepthButton>
 
       {startMutation.isError && (
@@ -137,6 +216,16 @@ export default function ExamDetailScreen() {
 
       <View style={{ height: insets.bottom + 40 }} />
     </ScrollView>
+  );
+}
+
+function MetaPill({ icon, label, unit, c }: { icon: string; label: string; unit: string; c: ReturnType<typeof useThemeColors> }) {
+  return (
+    <View style={s.metaPill}>
+      <Ionicons name={icon as any} size={14} color={c.subtle} />
+      <Text style={[s.metaPillLabel, { color: c.foreground }]}>{label}</Text>
+      <Text style={[s.metaPillUnit, { color: c.mutedForeground }]}>{unit}</Text>
+    </View>
   );
 }
 
@@ -151,8 +240,10 @@ const s = StyleSheet.create({
   tag: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
   tagText: { fontSize: 10, fontFamily: fontFamily.medium },
   examTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold, lineHeight: 28 },
-  metaRow: { flexDirection: "row", alignItems: "center", gap: 4 },
-  metaText: { fontSize: fontSize.xs },
+  metaRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+  metaPill: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  metaPillLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  metaPillUnit: { fontSize: fontSize.xs },
   structCard: { gap: spacing.md },
   sectionLabel: { fontSize: 10, fontFamily: fontFamily.bold, letterSpacing: 1 },
   skillRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingTop: spacing.md },
@@ -160,6 +251,13 @@ const s = StyleSheet.create({
   skillNumText: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
   skillName: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   skillMeta: { fontSize: fontSize.xs, marginTop: 2 },
+  modeCard: { gap: spacing.md },
+  modeRow: { flexDirection: "row", gap: spacing.md },
+  modeBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, paddingVertical: spacing.sm, borderRadius: radius.md, borderWidth: 2 },
+  modeBtnText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
+  skillSelectRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+  skillChip: { flexDirection: "row", alignItems: "center", gap: spacing.xs, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.full, borderWidth: 2 },
+  skillChipText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   notesCard: { gap: spacing.sm },
   noteRow: { flexDirection: "row", gap: spacing.sm },
   noteText: { flex: 1, fontSize: fontSize.xs, lineHeight: 18 },

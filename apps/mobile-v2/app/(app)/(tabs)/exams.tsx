@@ -158,10 +158,23 @@ function ExamCard({
           <View style={styles.metaRow}>
             <Ionicons name="time-outline" size={13} color={c.subtle} />
             <Text style={[styles.metaText, { color: c.subtle }]}>{exam.totalDurationMinutes} phút</Text>
+            {exam.bestScore != null && (
+              <>
+                <Text style={[styles.metaDot, { color: c.subtle }]}>·</Text>
+                <Ionicons name="star-outline" size={13} color={c.coin} />
+                <Text style={[styles.metaText, { color: c.coinDark }]}>{exam.bestScore.toFixed(1)}</Text>
+              </>
+            )}
+            {exam.attemptCount != null && exam.attemptCount > 0 && (
+              <>
+                <Text style={[styles.metaDot, { color: c.subtle }]}>·</Text>
+                <Text style={[styles.metaText, { color: c.subtle }]}>{exam.attemptCount} lần thi</Text>
+              </>
+            )}
           </View>
 
           <View style={styles.skillRow}>
-            {SKILLS.map((skill) => (
+            {(exam.skill === "mixed" ? SKILLS : SKILLS.filter((s) => s.key === exam.skill)).map((skill) => (
               <SkillChip key={skill.key} skill={skill.key} label={skill.label} />
             ))}
           </View>
@@ -207,6 +220,7 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: fontSize.base, fontFamily: fontFamily.semiBold, lineHeight: 22 },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: spacing.xs },
   metaText: { fontSize: fontSize.xs },
+  metaDot: { fontSize: fontSize.sm },
   skillRow: { flexDirection: "row", gap: spacing.sm, flexWrap: "wrap", marginTop: spacing.xs },
   chip: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
   chipText: { fontSize: 11, fontFamily: fontFamily.semiBold },

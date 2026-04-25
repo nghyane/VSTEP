@@ -12,19 +12,24 @@ import { resolveAssetUrl } from "@/lib/asset-url";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
+import { AudioTestPlayer, MicTest } from "@/components/DeviceTestWidgets";
+import { HighlightablePassage } from "@/components/HighlightablePassage";
 import { useExam } from "@/hooks/use-exams";
 import {
   useExamSession, useExamSessionState, useExamTimer,
   type ExamSessionData, type SubmitSessionResult,
 } from "@/hooks/use-exam-session";
-import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { useThemeColors, spacing, radius, fontSize, fontFamily, colors as themeColors } from "@/theme";
 import type { ExamVersionMcqItem } from "@/types/api";
 
 const SKILL_COLOR: Record<string, string> = {
-  listening: "#1CB0F6", reading: "#7850C8", writing: "#58CC02", speaking: "#FFC800",
+  listening: themeColors.light.skillListening,
+  reading: themeColors.light.skillReading,
+  writing: themeColors.light.skillWriting,
+  speaking: themeColors.light.skillSpeaking,
 };
 const SKILL_LABEL: Record<string, string> = {
-  listening: "Nghe", reading: "Doc", writing: "Viet", speaking: "Noi",
+  listening: "Nghe", reading: "Đọc", writing: "Viết", speaking: "Nói",
 };
 
 // ── Helpers ──
@@ -240,38 +245,110 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: any) 
 function DeviceCheck({ exam, version, activeSkills, onStart, c, insets }: any) {
   const hasListening = activeSkills.includes("listening");
   const hasSpeaking = activeSkills.includes("speaking");
+  const skillByKey: Record<string, { label: string; minutes: number }> = {
+    listening: { label: "Nghe", minutes: version.listeningSections.reduce((a: number, s: any) => a + s.durationMinutes, 0) },
+    reading: { label: "Đọc", minutes: version.readingPassages.reduce((a: number, p: any) => a + p.durationMinutes, 0) },
+    writing: { label: "Viết", minutes: version.writingTasks.reduce((a: number, t: any) => a + t.durationMinutes, 0) },
+    speaking: { label: "Nói", minutes: version.speakingParts.reduce((a: number, p: any) => a + p.durationMinutes, 0) },
+  };
+  const totalMinutes = activeSkills.reduce((a: number, sk: string) => a + (skillByKey[sk]?.minutes ?? 0), 0);
+
   return (
     <ScrollView style={[s.root, { backgroundColor: c.background }]} contentContainerStyle={[s.scroll, { paddingTop: insets.top + spacing.xl }]}>
       <Text style={[s.dcTitle, { color: c.foreground }]}>{exam.title}</Text>
       <Text style={[s.dcSub, { color: c.mutedForeground }]}>Kiểm tra thiết bị trước khi bắt đầu</Text>
 
-      <View style={[s.dcCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
-        <Text style={[s.dcCardTitle, { color: c.subtle }]}>CẤU TRÚC BÀI THI</Text>
+      {/* Card 1: Exam structure */}
+      <View style={[s.dcCard, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View style={s.dcCardHeader}>
+          <View style={[s.dcNumBadge, { backgroundColor: c.primary }]}>
+            <Text style={s.dcNumText}>1</Text>
+          </View>
+          <Text style={[s.dcCardTitle, { color: c.foreground }]}>Cấu trúc bài thi</Text>
+        </View>
         {activeSkills.map((sk: string, i: number) => (
           <View key={sk} style={[s.dcSkillRow, i > 0 && { borderTopWidth: 1, borderTopColor: c.borderLight }]}>
-            <View style={[s.dcSkillDot, { backgroundColor: SKILL_COLOR[sk] }]} />
-            <Text style={[s.dcSkillName, { color: c.foreground }]}>{SKILL_LABEL[sk]}</Text>
+            <View style={[s.dcSkillDot, { backgroundColor: c.muted }]}>
+              <Text style={[s.dcSkillDotText, { color: c.mutedForeground }]}>{i + 1}</Text>
+            </View>
+            <View style={[s.dcSkillIcon, { backgroundColor: SKILL_COLOR[sk] + "20" }]}>
+              <Text style={{ fontSize: 10 }}>{sk === "listening" ? "🎧" : sk === "reading" ? "📖" : sk === "writing" ? "✍️" : "🎤"}</Text>
+            </View>
+            <Text style={{ color: c.foreground }}>
+              <Text style={[s.dcSkillName, { color: c.foreground }]}>{skillByKey[sk].label.toUpperCase()}</Text>
+              <Text style={[s.dcSkillTime, { color: c.mutedForeground }]}> – {skillByKey[sk].minutes} phút</Text>
+            </Text>
+          </View>
+        ))}
+        <View style={[s.dcTotalRow, { backgroundColor: c.surface, borderColor: c.border }]}>
+          <Text style={{ color: c.mutedForeground }}>Tổng thời gian: </Text>
+          <Text style={[s.dcTotalText, { color: c.foreground }]}>{totalMinutes} phút</Text>
+        </View>
+      </View>
+
+      {/* Card 2: Audio & Mic check */}
+      {(hasListening || hasSpeaking) && (
+        <View style={[s.dcCard, { backgroundColor: c.card, borderColor: c.border }]}>
+          <View style={s.dcCardHeader}>
+            <View style={[s.dcNumBadge, { backgroundColor: c.primary }]}>
+              <Text style={s.dcNumText}>2</Text>
+            </View>
+            <Text style={[s.dcCardTitle, { color: c.foreground }]}>Kiểm tra âm thanh</Text>
+          </View>
+
+          {hasListening && (
+            <View style={{ gap: spacing.sm }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
+                <Ionicons name="volume-high" size={14} color={c.subtle} />
+                <Text style={{ fontSize: fontSize.xs, fontFamily: fontFamily.semiBold, color: c.mutedForeground }}>Bước 1: Nghe đoạn audio</Text>
+              </View>
+              <AudioTestPlayer />
+            </View>
+          )}
+
+          {hasSpeaking && (
+            <View style={[hasListening && { borderTopWidth: 1, borderTopColor: c.borderLight, paddingTop: spacing.md }]}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs, marginBottom: spacing.sm }}>
+                <Ionicons name="mic" size={14} color={c.subtle} />
+                <Text style={{ fontSize: fontSize.xs, fontFamily: fontFamily.semiBold, color: c.mutedForeground }}>
+                  Bước {hasListening ? 2 : 1}: Thu âm thử → Nghe lại
+                </Text>
+              </View>
+              <MicTest />
+            </View>
+          )}
+        </View>
+      )}
+
+      {!hasListening && !hasSpeaking && (
+        <View style={[s.dcCard, { backgroundColor: c.card, borderColor: c.border }]}>
+          <Text style={[s.dcNote, { color: c.mutedForeground }]}>Bài thi này không yêu cầu kiểm tra âm thanh.</Text>
+        </View>
+      )}
+
+      {/* Card 3: Notes */}
+      <View style={[s.dcCard, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View style={s.dcCardHeader}>
+          <View style={[s.dcNumBadge, { backgroundColor: c.primary }]}>
+            <Text style={s.dcNumText}>3</Text>
+          </View>
+          <Text style={[s.dcCardTitle, { color: c.foreground }]}>Lưu ý</Text>
+        </View>
+        {[
+          "Sau khi chuyển phần, không thể quay lại phần trước.",
+          "Câu trả lời được tự động lưu trong quá trình làm bài.",
+          'Bấm "Phần tiếp" để sang kỹ năng kế tiếp.',
+          'Bấm "Nộp bài" khi đã hoàn thành tất cả phần.',
+        ].map((note) => (
+          <View key={note} style={s.dcNoteRow}>
+            <Text style={[s.dcNoteDot, { color: c.primary }]}>·</Text>
+            <Text style={[s.dcNote, { color: c.mutedForeground }]}>{note}</Text>
           </View>
         ))}
       </View>
 
-      {(hasListening || hasSpeaking) && (
-        <View style={[s.dcCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
-          <Text style={[s.dcCardTitle, { color: c.subtle }]}>KIỂM TRA ÂM THANH</Text>
-          {hasListening && <Text style={[s.dcNote, { color: c.mutedForeground }]}>· Đảm bảo loa/tai nghe hoạt động tốt</Text>}
-          {hasSpeaking && <Text style={[s.dcNote, { color: c.mutedForeground }]}>· Đảm bảo micro hoạt động và không bị chặn quyền</Text>}
-        </View>
-      )}
-
-      <View style={[s.dcCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
-        <Text style={[s.dcCardTitle, { color: c.subtle }]}>LƯU Ý</Text>
-        {["Sau khi chuyển phần, không thể quay lại.", "Thoát sẽ tự động nộp bài.", "Nghe/Đọc chấm ngay. Viết/Nói AI chấm sau."].map((n) => (
-          <Text key={n} style={[s.dcNote, { color: c.mutedForeground }]}>· {n}</Text>
-        ))}
-      </View>
-
       <DepthButton fullWidth size="lg" onPress={onStart}>Nhận đề & bắt đầu</DepthButton>
-      <Text style={[s.dcTimerNote, { color: c.subtle }]}>Thời gian bắt đầu tính khi bạn bấm nút trên</Text>
+      <Text style={[s.dcTimerNote, { color: c.subtle }]}>Thời gian sẽ bắt đầu tính khi bạn bấm nút trên</Text>
       <View style={{ height: insets.bottom + 40 }} />
     </ScrollView>
   );
@@ -318,27 +395,29 @@ function ListeningPanel({ sections, sessionId, answers, onAnswer, c, insets }: a
     }
   }
 
+  const color = themeColors.light.skillListening;
+
   return (
     <ScrollView contentContainerStyle={[s.panelScroll, { paddingBottom: insets.bottom + 80 }]}>
       {sections.length > 1 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.sectionTabs}>
           {sections.map((sec: any, i: number) => (
-            <TouchableOpacity key={sec.id} onPress={() => setSectionIdx(i)} style={[s.sectionTab, { borderBottomColor: i === sectionIdx ? "#1CB0F6" : "transparent" }]}>
-              <Text style={[s.sectionTabText, { color: i === sectionIdx ? "#1CB0F6" : c.mutedForeground }]}>Part {sec.part}</Text>
+            <TouchableOpacity key={sec.id} onPress={() => setSectionIdx(i)} style={[s.sectionTab, { borderBottomColor: i === sectionIdx ? color : "transparent" }]}>
+              <Text style={[s.sectionTabText, { color: i === sectionIdx ? color : c.mutedForeground }]}>Part {sec.part}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       )}
-      <View style={[s.audioCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
-        <Text style={[s.audioPartLabel, { color: "#1CB0F6" }]}>Part {section.part} · {section.partTitle}</Text>
-        <TouchableOpacity onPress={togglePlay} disabled={!sound || !!audioError} style={[s.playBtn, { backgroundColor: audioError ? c.mutedForeground : "#1CB0F6" }]}>
+      <View style={[s.audioCard, { backgroundColor: c.card, borderColor: c.border }]}>
+        <Text style={[s.audioPartLabel, { color }]}>Part {section.part} · {section.partTitle}</Text>
+        <TouchableOpacity onPress={togglePlay} disabled={!sound || !!audioError} style={[s.playBtn, { backgroundColor: audioError ? c.mutedForeground : color }]}>
           <Ionicons name={playing ? "pause" : "play"} size={22} color="#fff" />
           <Text style={s.playBtnText}>{playing ? "Tạm dừng" : "Phát audio"}</Text>
         </TouchableOpacity>
         {audioError && <Text style={[s.audioError, { color: c.destructive }]}>{audioError}</Text>}
       </View>
       {section.items.map((item: ExamVersionMcqItem, qi: number) => (
-        <McqCard key={item.id} item={item} index={qi} selected={answers.get(item.id) ?? null} onSelect={(idx: number) => onAnswer(item.id, idx)} color="#1CB0F6" c={c} />
+        <McqCard key={item.id} item={item} index={qi} selected={answers.get(item.id) ?? null} onSelect={(idx: number) => onAnswer(item.id, idx)} color={color} c={c} />
       ))}
     </ScrollView>
   );
@@ -350,36 +429,36 @@ function ReadingPanel({ passages, answers, onAnswer, c, insets }: any) {
   const [passageIdx, setPassageIdx] = useState(0);
   const [showPassage, setShowPassage] = useState(true);
   const passage = passages[passageIdx];
+  const color = themeColors.light.skillReading;
+
   return (
     <View style={{ flex: 1 }}>
       {passages.length > 1 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.sectionTabs}>
           {passages.map((p: any, i: number) => (
-            <TouchableOpacity key={p.id} onPress={() => setPassageIdx(i)} style={[s.sectionTab, { borderBottomColor: i === passageIdx ? "#7850C8" : "transparent" }]}>
-              <Text style={[s.sectionTabText, { color: i === passageIdx ? "#7850C8" : c.mutedForeground }]}>Part {p.part}</Text>
+            <TouchableOpacity key={p.id} onPress={() => setPassageIdx(i)} style={[s.sectionTab, { borderBottomColor: i === passageIdx ? color : "transparent" }]}>
+              <Text style={[s.sectionTabText, { color: i === passageIdx ? color : c.mutedForeground }]}>Part {p.part}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       )}
       <View style={[s.toggleRow, { borderBottomColor: c.borderLight }]}>
-        <TouchableOpacity style={[s.toggleBtn, showPassage && { borderBottomColor: "#7850C8", borderBottomWidth: 2 }]} onPress={() => setShowPassage(true)}>
-          <Text style={[s.toggleText, { color: showPassage ? "#7850C8" : c.mutedForeground }]}>Đoạn văn</Text>
+        <TouchableOpacity style={[s.toggleBtn, showPassage && { borderBottomColor: color, borderBottomWidth: 2 }]} onPress={() => setShowPassage(true)}>
+          <Text style={[s.toggleText, { color: showPassage ? color : c.mutedForeground }]}>Đoạn văn</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[s.toggleBtn, !showPassage && { borderBottomColor: "#7850C8", borderBottomWidth: 2 }]} onPress={() => setShowPassage(false)}>
-          <Text style={[s.toggleText, { color: !showPassage ? "#7850C8" : c.mutedForeground }]}>Câu hỏi</Text>
+        <TouchableOpacity style={[s.toggleBtn, !showPassage && { borderBottomColor: color, borderBottomWidth: 2 }]} onPress={() => setShowPassage(false)}>
+          <Text style={[s.toggleText, { color: !showPassage ? color : c.mutedForeground }]}>Câu hỏi</Text>
         </TouchableOpacity>
       </View>
       <ScrollView contentContainerStyle={[s.panelScroll, { paddingBottom: insets.bottom + 80 }]}>
         {showPassage ? (
-          <View style={[s.passageCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
-            <Text style={[s.passageTitle, { color: "#7850C8" }]}>Part {passage.part} · {passage.title}</Text>
-            {passage.passage.split(/\n\n+/).map((para: string, i: number) => (
-              <Text key={i} style={[s.passagePara, { color: c.foreground }]}>{para}</Text>
-            ))}
+          <View style={[s.passageCard, { backgroundColor: c.card, borderColor: c.border }]}>
+            <Text style={[s.passageTitle, { color }]}>Part {passage.part} · {passage.title}</Text>
+            <HighlightablePassage text={passage.passage} passageId={passage.id} />
           </View>
         ) : (
           passage.items.map((item: ExamVersionMcqItem, qi: number) => (
-            <McqCard key={item.id} item={item} index={qi} selected={answers.get(item.id) ?? null} onSelect={(idx: number) => onAnswer(item.id, idx)} color="#7850C8" c={c} />
+            <McqCard key={item.id} item={item} index={qi} selected={answers.get(item.id) ?? null} onSelect={(idx: number) => onAnswer(item.id, idx)} color={color} c={c} />
           ))
         )}
       </ScrollView>
@@ -395,24 +474,25 @@ function WritingPanel({ tasks, answers, onAnswer, c, insets }: any) {
   const text = answers.get(task.id) ?? "";
   const wc = text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
   const inRange = wc >= task.minWords;
+  const color = themeColors.light.skillWriting;
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       {tasks.length > 1 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.sectionTabs}>
           {tasks.map((t: any, i: number) => (
-            <TouchableOpacity key={t.id} onPress={() => setTaskIdx(i)} style={[s.sectionTab, { borderBottomColor: i === taskIdx ? "#58CC02" : "transparent" }]}>
-              <Text style={[s.sectionTabText, { color: i === taskIdx ? "#58CC02" : c.mutedForeground }]}>Task {t.part}</Text>
+            <TouchableOpacity key={t.id} onPress={() => setTaskIdx(i)} style={[s.sectionTab, { borderBottomColor: i === taskIdx ? color : "transparent" }]}>
+              <Text style={[s.sectionTabText, { color: i === taskIdx ? color : c.mutedForeground }]}>Task {t.part}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       )}
       <ScrollView contentContainerStyle={[s.panelScroll, { paddingBottom: insets.bottom + 80 }]} keyboardShouldPersistTaps="handled">
-        <View style={[s.promptCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
-          <Text style={[s.promptLabel, { color: "#58CC02" }]}>Task {task.part} · {task.taskType}</Text>
+        <View style={[s.promptCard, { backgroundColor: c.card, borderColor: c.border }]}>
+          <Text style={[s.promptLabel, { color }]}>Task {task.part} · {task.taskType}</Text>
           <Text style={[s.promptText, { color: c.foreground }]}>{task.prompt}</Text>
           <Text style={[s.promptMeta, { color: c.subtle }]}>Tối thiểu {task.minWords} từ</Text>
         </View>
-        <View style={[s.editorCard, { backgroundColor: c.card, borderColor: inRange ? "#58CC02" : c.border, borderBottomColor: inRange ? "#478700" : "#CACACA" }]}>
+        <View style={[s.editorCard, { backgroundColor: c.card, borderColor: inRange ? color : c.border }]}>
           <TextInput
             style={[s.editor, { color: c.foreground }]}
             value={text}
@@ -422,7 +502,7 @@ function WritingPanel({ tasks, answers, onAnswer, c, insets }: any) {
             multiline
             textAlignVertical="top"
           />
-          <Text style={[s.wcBadge, { color: inRange ? "#58CC02" : c.subtle }]}>{wc} / {task.minWords}+ từ</Text>
+          <Text style={[s.wcBadge, { color: inRange ? color : c.subtle }]}>{wc} / {task.minWords}+ từ</Text>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -437,6 +517,8 @@ function SpeakingPanel({ parts, done, onDone, c, insets }: any) {
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [audioUri, setAudioUri] = useState<string | null>(null);
   const [isRec, setIsRec] = useState(false);
+  const accentColor = themeColors.light.skillSpeaking;
+  const accentDark = themeColors.light.skillSpeaking + "CC";
 
   async function startRec() {
     try {
@@ -462,19 +544,19 @@ function SpeakingPanel({ parts, done, onDone, c, insets }: any) {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.sectionTabs}>
           {parts.map((p: any, i: number) => (
             <TouchableOpacity key={p.id} onPress={() => { setPartIdx(i); setAudioUri(null); setIsRec(false); }}
-              style={[s.sectionTab, { borderBottomColor: i === partIdx ? "#FFC800" : "transparent" }]}>
-              <Text style={[s.sectionTabText, { color: i === partIdx ? "#A07800" : c.mutedForeground }]}>Part {p.part}</Text>
+              style={[s.sectionTab, { borderBottomColor: i === partIdx ? accentColor : "transparent" }]}>
+              <Text style={[s.sectionTabText, { color: i === partIdx ? accentDark : c.mutedForeground }]}>Part {p.part}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       )}
-      <View style={[s.promptCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
-        <Text style={[s.promptLabel, { color: "#A07800" }]}>Part {part.part} · {part.type}</Text>
+      <View style={[s.promptCard, { backgroundColor: c.card, borderColor: c.border }]}>
+        <Text style={[s.promptLabel, { color: accentDark }]}>Part {part.part} · {part.type}</Text>
         <Text style={[s.promptMeta, { color: c.mutedForeground }]}>{part.speakingSeconds}s · Ghi âm câu trả lời</Text>
       </View>
-      <View style={[s.recCard, { backgroundColor: c.card, borderColor: isRec ? "#FFC800" : c.border, borderBottomColor: isRec ? "#DCAA00" : "#CACACA" }]}>
+      <View style={[s.recCard, { backgroundColor: c.card, borderColor: isRec ? accentColor : c.border }]}>
         <TouchableOpacity onPress={isRec ? stopRec : startRec} disabled={!!audioUri && !isRec}
-          style={[s.micBtn, { backgroundColor: audioUri ? c.muted : "#FFC800" }]}>
+          style={[s.micBtn, { backgroundColor: audioUri ? c.muted : accentColor }]}>
           <Ionicons name={isRec ? "stop" : "mic"} size={28} color={audioUri ? c.mutedForeground : "#fff"} />
           <Text style={[s.micBtnText, { color: audioUri ? c.mutedForeground : "#fff" }]}>
             {isRec ? "Dừng ghi" : audioUri ? "Đã ghi xong" : "Bắt đầu nói"}
@@ -482,8 +564,8 @@ function SpeakingPanel({ parts, done, onDone, c, insets }: any) {
         </TouchableOpacity>
         {done.has(part.id) && (
           <View style={s.doneRow}>
-            <Ionicons name="checkmark-circle" size={16} color="#58CC02" />
-            <Text style={[s.doneText, { color: "#58CC02" }]}>Đã ghi âm</Text>
+            <Ionicons name="checkmark-circle" size={16} color={themeColors.light.skillWriting} />
+            <Text style={[s.doneText, { color: themeColors.light.skillWriting }]}>Đã ghi âm</Text>
           </View>
         )}
       </View>
@@ -495,7 +577,7 @@ function SpeakingPanel({ parts, done, onDone, c, insets }: any) {
 
 function McqCard({ item, index, selected, onSelect, color, c }: any) {
   return (
-    <View style={[s.qCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
+    <View style={[s.qCard, { backgroundColor: c.card, borderColor: c.border }]}>
       <Text style={[s.qNum, { color }]}>Câu {index + 1}</Text>
       <Text style={[s.qStem, { color: c.foreground }]}>{item.stem}</Text>
       <View style={s.options}>
@@ -587,12 +669,22 @@ const s = StyleSheet.create({
   // Device check
   dcTitle: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold, textAlign: "center" },
   dcSub: { fontSize: fontSize.sm, textAlign: "center" },
-  dcCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },
+  dcCard: { borderWidth: 2, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },
   dcCardTitle: { fontSize: 10, fontFamily: fontFamily.bold, letterSpacing: 1 },
   dcSkillRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm },
-  dcSkillDot: { width: 10, height: 10, borderRadius: 5 },
+  dcSkillDot: { width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   dcSkillName: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   dcNote: { fontSize: fontSize.xs, lineHeight: 18 },
+  dcCardHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  dcNumBadge: { width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  dcNumText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, color: "#fff" },
+  dcSkillDotText: { fontSize: 10, fontFamily: fontFamily.bold, color: "#fff" },
+  dcSkillIcon: { width: 24, height: 24, borderRadius: 6, alignItems: "center", justifyContent: "center" },
+  dcSkillTime: { fontSize: fontSize.xs },
+  dcTotalRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md, borderWidth: 2, marginTop: spacing.sm },
+  dcTotalText: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
+  dcNoteRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
+  dcNoteDot: { fontSize: fontSize.xs, lineHeight: 18 },
   dcTimerNote: { fontSize: fontSize.xs, textAlign: "center" },
   // Panels
   panelScroll: { padding: spacing.xl, gap: spacing.lg },

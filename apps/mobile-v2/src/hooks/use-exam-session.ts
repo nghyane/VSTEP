@@ -54,9 +54,32 @@ export function useExamSession(sessionId: string) {
 export function useStartExamSession() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ examId, mode }: { examId: string; mode: "full" | "custom" }) =>
-      api.post<StartSessionResult>(`/api/v1/exams/${examId}/sessions`, { mode }),
+    mutationFn: ({
+      examId,
+      mode,
+      selectedSkills,
+      timeExtensionFactor,
+    }: {
+      examId: string;
+      mode: "full" | "custom";
+      selectedSkills?: string[];
+      timeExtensionFactor?: number;
+    }) =>
+      api.post<StartSessionResult>(`/api/v1/exams/${examId}/sessions`, {
+        mode,
+        selected_skills: selectedSkills ?? [],
+        time_extension_factor: timeExtensionFactor ?? 1.0,
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["exams"] }),
+  });
+}
+
+export function useActiveExamSession() {
+  return useQuery({
+    queryKey: ["exam-sessions", "active"],
+    queryFn: () => api.get<ExamSessionData>("/api/v1/exam-sessions/active"),
+    retry: false,
+    staleTime: 0,
   });
 }
 
@@ -176,8 +199,18 @@ export function useExamSessionState(
   const currentSkill = activeSkills[state.skillIdx] ?? activeSkills[0];
   const isLastSkill = state.skillIdx >= activeSkills.length - 1;
   const nextSkill = activeSkills[state.skillIdx + 1] ?? null;
-  const totalMcq = listeningItems.length + readingItems.length;
-  const answeredMcq = state.mcqAnswers.size;
+
+  const hasListening = activeSkills.includes("listening");
+  const hasReading = activeSkills.includes("reading");
+  const scopedMcqTotal = (hasListening ? listeningItems.length : 0) + (hasReading ? readingItems.length : 0);
+  const scopedAnsweredMcq = activeSkills.includes("listening")
+    ? [...state.mcqAnswers.keys()].filter((id) => listeningItems.some((i) => i.id === id)).length
+    : 0;
+  const scopedReadingAnswered = activeSkills.includes("reading")
+    ? [...state.mcqAnswers.keys()].filter((id) => readingItems.some((i) => i.id === id)).length
+    : 0;
+  const answeredMcq = scopedAnsweredMcq + scopedReadingAnswered;
+  const totalMcq = scopedMcqTotal;
 
   const doSubmit = useCallback(() => {
     if (state.phase === "submitting" || state.phase === "submitted") return;
