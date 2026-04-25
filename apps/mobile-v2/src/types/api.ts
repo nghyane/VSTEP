@@ -38,6 +38,8 @@ export interface Profile {
   entryLevel: string | null;
   avatarColor: string | null;
   isInitialProfile: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AuthResponse {

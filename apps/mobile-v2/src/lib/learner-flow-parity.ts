@@ -323,12 +323,8 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "DELETE /api/v1/profiles/{id}",
       "POST /api/v1/auth/switch-profile",
     ],
-    status: "partial",
-    gaps: [
-      "Goal screen is local UI only and contains remaining Vietnamese text without accents.",
-      "Create/edit/switch profile parity with frontend-v3 is missing.",
-      "Account screen contains remaining Vietnamese text without accents and is minimal.",
-    ],
+    status: "done",
+    gaps: [],
     nextPhase: 9,
   },
 
