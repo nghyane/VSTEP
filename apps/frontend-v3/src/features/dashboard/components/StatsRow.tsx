@@ -38,8 +38,8 @@ function gapLabel(current: number | null, targetBand: number): { text: string; t
 
 function deltaBadge(delta: number | null) {
 	if (delta === null || delta === 0) return null
-	if (delta > 0) return { text: `▲ +${delta.toFixed(1)}`, tone: "text-success" }
-	return { text: `▼ ${delta.toFixed(1)}`, tone: "text-destructive" }
+	if (delta > 0) return { text: `▲ +${delta.toFixed(1)} vs bài trước` }
+	return { text: `▼ ${Math.abs(delta).toFixed(1)} vs bài trước` }
 }
 
 function SkillCard({ skill, stat, targetBand }: { skill: Skill; stat: SkillStat; targetBand: number }) {
@@ -49,16 +49,14 @@ function SkillCard({ skill, stat, targetBand }: { skill: Skill; stat: SkillStat;
 		<div className="card p-4 flex flex-col gap-2">
 			<div className="flex items-center justify-between gap-2">
 				<SkillChip skill={skill.key} size="md" />
-				{badge && <span className={`text-xs font-bold ${badge.tone}`}>{badge.text}</span>}
+				{badge && <span className="text-[11px] font-bold text-subtle">{badge.text}</span>}
 			</div>
 			<p className="font-extrabold text-2xl text-foreground">
 				{stat.current !== null ? stat.current.toFixed(1) : "—"}
-				<span className="text-sm text-subtle font-normal"> / {targetBand}</span>
+				<span className="text-sm text-subtle font-normal"> / 10</span>
 			</p>
 			<p className={`text-xs font-bold ${gap.tone}`}>{gap.text}</p>
-			<a href={skill.route} className="btn btn-secondary text-xs mt-auto">
-				Luyện ngay →
-			</a>
+			<p className="text-[11px] text-subtle">Mục tiêu: {targetBand.toFixed(1)}</p>
 		</div>
 	)
 }

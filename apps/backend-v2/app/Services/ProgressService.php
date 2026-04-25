@@ -121,7 +121,7 @@ class ProgressService
         $examCount = ExamSession::query()
             ->where('profile_id', $profile->id)
             ->whereIn('mode', ['custom', 'full'])
-            ->where('status', 'submitted')
+            ->whereIn('status', ['submitted', 'auto_submitted', 'grading', 'graded'])
             ->count();
 
         $chartData = null;

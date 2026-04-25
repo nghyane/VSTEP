@@ -122,6 +122,36 @@ import { SkillChip } from "#/components/SkillChip"
 
 Grep `SKILL_COLORS`, `skill-listening` trước khi viết chip mới để tránh duplicate.
 
+## Invalidate sai prefix queryKey → cache stale, phải F5
+
+Lỗi đã lặp **nhiều lần**. TanStack Query invalidate match theo **prefix**, không match equality.
+
+**Sai:** Mutation `onSuccess` invalidate key con `["exam-sessions", "mine"]`, nhưng dashboard query dùng key cha `["exam-sessions"]`. Cha không match con → list không refetch → user phải F5.
+
+```ts
+// ❌ SAI — dashboard query ["exam-sessions"] không bị invalidate
+onSuccess: () => {
+  qc.invalidateQueries({ queryKey: ["exam-sessions", "mine"] })
+  qc.invalidateQueries({ queryKey: ["exam-sessions", "active"] })
+  qc.invalidateQueries({ queryKey: ["exam-sessions", session.id] })
+}
+```
+
+**Đúng:** Invalidate prefix cao nhất — match cả parent và mọi child key.
+
+```ts
+// ✅ ĐÚNG — match TẤT CẢ ["exam-sessions", ...]
+onSuccess: () => {
+  qc.invalidateQueries({ queryKey: ["exam-sessions"] })
+}
+```
+
+**Symptom**: "data mới chỉ hiện khi F5" → 99% là vấn đề này.
+
+**Audit trước mutation mới:** `grep -r 'queryKey: \["resource-name"' src/features/` — list tất cả key dùng prefix đó. Lấy prefix ngắn nhất, invalidate đúng nó.
+
+Chi tiết tra `tanstack-query.md` — section "Invalidation — match by prefix".
+
 ## Exam room — device-check phase bắt buộc trước khi vào phòng thi
 
 - Phase order: `device-check` → `active` → `submitting` → `submitted`.

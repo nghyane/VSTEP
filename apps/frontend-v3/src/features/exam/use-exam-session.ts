@@ -228,9 +228,7 @@ export function useExamSession({
 		mutationFn: (payload: SubmitSessionPayload) => submitExamSession(session.id, payload),
 		onSuccess: (result) => {
 			dispatch({ type: "SUBMITTED" })
-			qc.invalidateQueries({ queryKey: ["exam-sessions", "active"] })
-			qc.invalidateQueries({ queryKey: ["exam-sessions", "mine"] })
-			qc.invalidateQueries({ queryKey: ["exam-sessions", session.id] })
+			qc.invalidateQueries({ queryKey: ["exam-sessions"] })
 			qc.invalidateQueries({ queryKey: ["exams"] })
 			qc.invalidateQueries({ queryKey: ["streak"] })
 			qc.invalidateQueries({ queryKey: ["activity-heatmap"] })

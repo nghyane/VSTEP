@@ -22,3 +22,4 @@
 - 2026-04-25: Updated anti-patterns.md — SkillChip shared component rule (no inline pill, no dot inside chip); created `components/SkillChip.tsx`
 - 2026-04-25: Created gamification-ui.md — Duolingo-ish chip/popup/dropdown/notif patterns; coin-gain store + Header animation rules (single-fire via useRef, fire after popup close)
 - 2026-04-25: Created duo-progress-bar.md — track + fill + highlight stripe layering; reusable DuoProgressBar component; tone tokens (primary/coin/warning/info/streak each with `*-light` for highlight)
+- 2026-04-25: Updated tanstack-query.md + anti-patterns.md — invalidateQueries matches by prefix not equality; child key never invalidates parent; recurring "must F5" bug → always invalidate the shortest shared prefix

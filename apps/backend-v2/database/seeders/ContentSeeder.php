@@ -50,6 +50,12 @@ class ContentSeeder extends Seeder
 
     public function run(): void
     {
+        if (DB::table('exams')->exists() && env('CONTENT_SEEDER_FORCE') !== '1') {
+            $this->command->line('  ContentSeeder skipped — content already populated. Set CONTENT_SEEDER_FORCE=1 to force re-seed (will wipe user exam data).');
+
+            return;
+        }
+
         $path = database_path('fixtures/content.json');
 
         if (! file_exists($path)) {
