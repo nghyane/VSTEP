@@ -26,6 +26,8 @@ export interface Exam {
 	is_published: boolean
 	created_at: string
 	updated_at: string
+	/** Số lượt làm đã hoàn thành (submitted/graded/auto_submitted). Chỉ có ở list endpoint. */
+	attempts_count?: number
 }
 
 export interface ExamVersionMcqItem {

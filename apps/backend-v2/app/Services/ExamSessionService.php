@@ -31,7 +31,11 @@ class ExamSessionService
     /** @return Collection<int,Exam> */
     public function listPublished(): Collection
     {
-        return Exam::query()->where('is_published', true)->orderBy('created_at', 'desc')->get();
+        return Exam::query()
+            ->where('is_published', true)
+            ->withCount(['sessions as attempts_count' => fn ($q) => $q->whereIn('status', ['submitted', 'graded', 'auto_submitted'])])
+            ->orderBy('created_at', 'desc')
+            ->get();
     }
 
     public function getExamWithActiveVersion(string $examId): array
@@ -119,9 +123,20 @@ class ExamSessionService
             // ── 1. MCQ grading (sync) ──
             $mcqPerItemResults = [];
             $mcqScore = 0;
-            $mcqTotal = 0;
 
             $itemMap = $this->scoringService->loadMcqItemMap($session);
+
+            // Total = số câu MCQ thuộc các kỹ năng đã chọn trong session.
+            // Câu không trả lời tính là sai (total cố định, score chỉ lên khi đúng).
+            $skills = $session->selected_skills ?? [];
+            $mcqTotal = 0;
+            foreach ($itemMap as $key => $_correct) {
+                if (str_starts_with($key, 'exam_listening_item:') && in_array('listening', $skills, true)) {
+                    $mcqTotal++;
+                } elseif (str_starts_with($key, 'exam_reading_item:') && in_array('reading', $skills, true)) {
+                    $mcqTotal++;
+                }
+            }
 
             foreach ($mcqAnswers as $answer) {
                 $refType = $answer['item_ref_type'];
@@ -135,7 +150,6 @@ class ExamSessionService
                 if ($isCorrect) {
                     $mcqScore++;
                 }
-                $mcqTotal++;
 
                 ExamMcqAnswer::updateOrCreate(
                     ['session_id' => $session->id, 'item_ref_type' => $refType, 'item_ref_id' => $refId],

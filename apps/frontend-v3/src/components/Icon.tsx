@@ -34,6 +34,7 @@ import TrashIcon from "#/assets/icons/trash-small.svg?react"
 import trophySmall from "#/assets/icons/trophy-small.svg"
 import VolumeIcon from "#/assets/icons/volume-small.svg?react"
 import WeightsIcon from "#/assets/icons/weights-small.svg?react"
+import avatarNodding from "#/assets/icons/avatar-nodding.svg"
 import { cn } from "#/lib/utils"
 
 /** Mono-color icons (use currentColor, support dynamic color via style/className) */
@@ -78,6 +79,7 @@ export const staticIcons = {
 	"target-md": targetMedium,
 	"timer-md": timerMedium,
 	trophy: trophySmall,
+	"avatar-nodding": avatarNodding,
 } as const
 
 export type StaticIconName = keyof typeof staticIcons

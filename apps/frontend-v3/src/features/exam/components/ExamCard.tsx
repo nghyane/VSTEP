@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { SkillChip } from "#/components/SkillChip"
 import type { Exam, SkillKey } from "#/features/exam/types"
+import { formatCompact } from "#/lib/utils"
 
 export type ExamStatus = "not-started" | "in-progress" | "submitted"
 
@@ -56,6 +57,15 @@ export function ExamCard({ exam, fullTestCoinCost, status = "not-started" }: Pro
 						<span className="flex items-center gap-1.5">
 							<Icon name="graduation" size="xs" className="text-subtle" />
 							{exam.source_school}
+						</span>
+					)}
+					{exam.attempts_count !== undefined && (
+						<span
+							className="flex items-center gap-1.5"
+							title={`${exam.attempts_count.toLocaleString("vi-VN")} lượt thi`}
+						>
+							<StaticIcon name="avatar-nodding" size="sm" className="h-5 w-auto" />
+							<span className="font-bold tabular-nums">{formatCompact(exam.attempts_count)}</span> lượt thi
 						</span>
 					)}
 				</div>

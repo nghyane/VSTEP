@@ -35,6 +35,13 @@ export function formatNumber(n: number): string {
 	return n.toLocaleString("vi-VN")
 }
 
+/** Format số gọn: 999 → "999", 1500 → "1.5k", 1200000 → "1.2M". Dùng cho count hiển thị nhỏ gọn. */
+export function formatCompact(n: number): string {
+	if (n < 1000) return n.toString()
+	if (n < 1_000_000) return `${(n / 1000).toFixed(n < 10_000 ? 1 : 0).replace(/\.0$/, "")}k`
+	return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`
+}
+
 /** Format ISO date → "05/04". */
 export function formatShortDate(iso: string): string {
 	const d = new Date(iso)
