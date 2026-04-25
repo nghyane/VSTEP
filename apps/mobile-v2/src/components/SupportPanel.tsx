@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMutation } from "@tanstack/react-query";
 import { HapticTouchable } from "./HapticTouchable";
 import { useThemeColors, spacing, fontSize, fontFamily, radius } from "@/theme";
-import { useSupport, useWritingSupport, type SupportResult } from "@/hooks/use-practice";
+import { requestSupport, requestWritingSupport, type SupportResult } from "@/hooks/use-practice";
 import { addCoins } from "@/features/coin/coin-store";
 
 interface SupportPanelProps {
@@ -35,9 +35,9 @@ export function SupportPanel({ skill, sessionId, hasTranscript, hasKeywords, acc
   const mutation = useMutation({
     mutationFn: ({ level }: { level: number }) => {
       if (skill === "writing") {
-        return useWritingSupport(sessionId, level);
+        return requestWritingSupport(sessionId, level);
       }
-      return useSupport(skill, sessionId, level);
+      return requestSupport(skill, sessionId, level);
     },
     onSuccess: (res: SupportResult) => {
       if (res.coinsSpent > 0) {

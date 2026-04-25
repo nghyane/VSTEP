@@ -32,6 +32,25 @@ export default function SpeakingListScreen() {
         <Text style={[s.sub, { color: c.mutedForeground }]}>3 phần theo format VSTEP · Ghi âm + AI chấm</Text>
       </View>
 
+      <View style={s.quickActions}>
+        <HapticTouchable
+          scalePress
+          style={[s.quickCard, { backgroundColor: c.card, borderColor: c.border }]}
+          onPress={() => router.push("/(app)/practice/speaking/drills" as any)}
+        >
+          <Ionicons name="flash-outline" size={18} color={COLOR} />
+          <Text style={[s.quickText, { color: c.foreground }]}>Speaking Drills</Text>
+        </HapticTouchable>
+        <HapticTouchable
+          scalePress
+          style={[s.quickCard, { backgroundColor: c.card, borderColor: c.border }]}
+          onPress={() => router.push("/(app)/practice/speaking/history" as any)}
+        >
+          <Ionicons name="time-outline" size={18} color={COLOR} />
+          <Text style={[s.quickText, { color: c.foreground }]}>Lịch sử</Text>
+        </HapticTouchable>
+      </View>
+
       {isLoading && (
         <View style={s.center}><ActivityIndicator color={COLOR} size="large" /></View>
       )}
@@ -88,6 +107,9 @@ const s = StyleSheet.create({
   title: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
   sub: { fontSize: fontSize.sm, marginTop: spacing.xs },
   center: { paddingVertical: spacing["2xl"], alignItems: "center" },
+  quickActions: { flexDirection: "row", gap: spacing.sm },
+  quickCard: { flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm, borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, padding: spacing.md },
+  quickText: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
   sectionLabel: { fontSize: 10, fontFamily: fontFamily.bold, letterSpacing: 1, marginBottom: spacing.md },
   cardGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
   cardWrapper: { width: "47%" },

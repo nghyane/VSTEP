@@ -148,7 +148,7 @@ export default function GrammarDetailScreen() {
                   <Text style={[s.tipTask, { color: c.info }]}>{t.task}</Text>
                   <Text style={[s.tipText, { color: c.foreground }]}>{t.tip}</Text>
                   {t.example && (
-                    <Text style={[s.tipExample, { color: c.mutedForeground }]}>"{t.example}"</Text>
+                    <Text style={[s.tipExample, { color: c.mutedForeground }]}>{`"${t.example}"`}</Text>
                   )}
                 </DepthCard>
               ))}

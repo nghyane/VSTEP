@@ -110,6 +110,11 @@ export interface WritingGradingResult {
   paragraphFeedback: Record<string, string>[];
 }
 
+export interface SpeakingTopic {
+  name: string;
+  questions: string[];
+}
+
 export interface SpeakingTask {
   id: string; slug: string; title: string;
   part: number; taskType: string; speakingSeconds: number;
@@ -118,7 +123,61 @@ export interface SpeakingTask {
 export interface SpeakingTaskDetail {
   id: string; slug: string; title: string;
   part: number; taskType: string; speakingSeconds: number;
-  content: { topics: { name: string; questions: string[] }[] };
+  content: { topics: SpeakingTopic[] };
+}
+
+export interface SpeakingDrill {
+  id: string; slug: string; title: string;
+  level: string; estimatedMinutes: number | null;
+  description: string | null;
+}
+
+export interface SpeakingDrillSentence {
+  id: string; text: string; translation: string | null;
+}
+
+export interface SpeakingDrillDetail {
+  id: string; slug: string; title: string;
+  level: string; estimatedMinutes: number | null;
+  description: string | null;
+  sentences: SpeakingDrillSentence[];
+}
+
+export interface SpeakingVstepHistoryItem {
+  id: string; submittedAt: string;
+  durationSeconds: number; taskRefId: string;
+}
+
+export interface SpeakingDrillHistoryItem {
+  id: string; contentRefId: string;
+  startedAt: string; endedAt: string | null;
+  durationSeconds: number; attemptCount: number;
+}
+
+export interface SpeakingDrillAttemptResponse {
+  attemptId: string; accuracyPercent: number;
+}
+
+export interface SpeakingGradingResult {
+  rubricScores: { fluency: number; pronunciation: number; content: number; vocab: number; grammar: number };
+  overallBand: number;
+  strengths: string[];
+  improvements: { message: string; explanation: string }[];
+  pronunciationReport: { accuracyScore: number } | null;
+  transcript: string | null;
+}
+
+export interface PresignUploadResponse {
+  uploadUrl: string;
+  audioKey: string;
+}
+
+export async function presignUpload(context: "speaking" | "exam_speaking" = "speaking") {
+  return api.post<PresignUploadResponse>("/api/v1/audio/presign-upload", { context });
+}
+
+export async function presignDownload(audioKey: string) {
+  return api.post<{ downloadUrl: string }>("/api/v1/audio/presign-download", { audioKey });
 }
 
 export interface McqProgress {
@@ -200,6 +259,51 @@ export function useSpeakingTaskDetail(id: string) {
     queryFn: () => api.get<SpeakingTaskDetail>(`/api/v1/practice/speaking/tasks/${id}`),
     enabled: !!id,
     retry: false,
+  });
+}
+
+// ── Speaking Drill ──
+
+export function useSpeakingDrills(level?: string) {
+  const params = level ? `?level=${level}` : "";
+  return useQuery({
+    queryKey: ["practice", "speaking", "drills", level],
+    queryFn: () => api.get<SpeakingDrill[]>(`/api/v1/practice/speaking/drills${params}`),
+    retry: false,
+  });
+}
+
+export function useSpeakingDrillDetail(id: string) {
+  return useQuery({
+    queryKey: ["practice", "speaking", "drills", id],
+    queryFn: () => api.get<SpeakingDrillDetail>(`/api/v1/practice/speaking/drills/${id}`),
+    enabled: !!id,
+    retry: false,
+  });
+}
+
+export interface SpeakingHistoryResponse<T> {
+  data: T[];
+  links?: { first: string; last: string; prev: string | null; next: string | null };
+  meta?: { currentPage: number; lastPage: number; perPage: number; total: number };
+}
+
+export function useSpeakingDrillHistory() {
+  return useQuery({
+    queryKey: ["practice", "speaking", "drill-history"],
+    queryFn: () => api.get<SpeakingHistoryResponse<SpeakingDrillHistoryItem>>("/api/v1/practice/speaking/drill-history"),
+    retry: false,
+    select: (res) => res.data,
+  });
+}
+
+export function useSpeakingVstepHistory(part?: number) {
+  const params = part ? `?part=${part}` : "";
+  return useQuery({
+    queryKey: ["practice", "speaking", "vstep-history", part],
+    queryFn: () => api.get<SpeakingHistoryResponse<SpeakingVstepHistoryItem>>(`/api/v1/practice/speaking/vstep-history${params}`),
+    retry: false,
+    select: (res) => res.data,
   });
 }
 
@@ -293,6 +397,23 @@ export async function startSpeakingSession(taskId: string) {
   return api.post<{ sessionId: string; startedAt: string }>("/api/v1/practice/speaking/vstep-sessions", { exerciseId: taskId });
 }
 
+export async function startSpeakingDrillSession(drillId: string) {
+  return api.post<{ sessionId: string; startedAt: string }>("/api/v1/practice/speaking/drill-sessions", { exerciseId: drillId });
+}
+
+export async function submitSpeakingDrillAttempt(
+  sessionId: string,
+  sentenceId: string,
+  mode: "dictation" | "shadowing",
+  userText: string | null,
+  accuracyPercent: number | null,
+) {
+  return api.post<SpeakingDrillAttemptResponse>(
+    `/api/v1/practice/speaking/drill-sessions/${sessionId}/attempt`,
+    { sentenceId, mode, userText, accuracyPercent },
+  );
+}
+
 export async function submitSpeakingSession(sessionId: string, audioUrl: string, durationSeconds: number) {
   return api.post<{ submissionId: string; gradingStatus: string }>(
     `/api/v1/practice/speaking/vstep-sessions/${sessionId}/submit`,
@@ -300,7 +421,7 @@ export async function submitSpeakingSession(sessionId: string, audioUrl: string,
   );
 }
 
-export async function useSupport(
+export async function requestSupport(
   skill: "listening" | "reading",
   sessionId: string,
   level: number,
@@ -311,7 +432,7 @@ export async function useSupport(
   );
 }
 
-export async function useWritingSupport(sessionId: string, level: number) {
+export async function requestWritingSupport(sessionId: string, level: number) {
   return api.post<SupportResult>(
     `/api/v1/practice/writing/sessions/${sessionId}/support`,
     { level },
@@ -364,13 +485,25 @@ export function useWritingGradingResult(submissionId: string) {
   });
 }
 
+export function useSpeakingGradingResult(submissionId: string) {
+  return useQuery({
+    queryKey: ["grading", "speaking", "result", submissionId],
+    queryFn: () =>
+      api.get<SpeakingGradingResult | null>(
+        `/api/v1/grading/speaking/practice_speaking/${submissionId}`,
+      ),
+    refetchInterval: (q) => (q.state.data ? false : 5000),
+    retry: false,
+  });
+}
+
 // ── Writing support ──
 
 export function useWritingSupportMutation(sessionId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ level }: { level: number }) =>
-      useWritingSupport(sessionId, level),
+      requestWritingSupport(sessionId, level),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["practice", "writing", "history"] });
     },

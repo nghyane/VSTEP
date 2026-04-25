@@ -133,7 +133,7 @@ export default function FlashcardScreen() {
                   </Text>
                   {current.word.example ? (
                     <Text style={[styles.exampleText, { color: c.mutedForeground }]}>
-                      "{current.word.example}"
+                      {`"${current.word.example}"`}
                     </Text>
                   ) : null}
                   {current.word.vstepTip ? (

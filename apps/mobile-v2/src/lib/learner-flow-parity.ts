@@ -217,7 +217,12 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "src/features/practice/components/SpeakingDrillPreview.tsx",
       "src/features/practice/components/SpeakingDrillInProgress.tsx",
     ],
-    mobileV2: ["src/hooks/use-practice.ts"],
+    mobileV2: [
+      "app/(app)/practice/speaking/drills.tsx",
+      "app/(app)/practice/speaking/drill/[drillId].tsx",
+      "app/(app)/practice/speaking/history.tsx",
+      "src/hooks/use-practice.ts",
+    ],
     backendApi: [
       "GET /api/v1/practice/speaking/drills",
       "GET /api/v1/practice/speaking/drills/{id}",
@@ -225,11 +230,8 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "POST /api/v1/practice/speaking/drill-sessions",
       "POST /api/v1/practice/speaking/drill-sessions/{sessionId}/attempt",
     ],
-    status: "missing",
-    gaps: [
-      "Mobile lists only VSTEP speaking tasks, not speaking drills.",
-      "Drill detail, start session, sentence attempts, and drill history are missing.",
-    ],
+    status: "done",
+    gaps: [],
     nextPhase: 6,
   },
 
@@ -260,12 +262,8 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "POST /api/v1/practice/speaking/vstep-sessions/{sessionId}/submit",
       "GET /api/v1/grading/speaking/practice_speaking/{submissionId}",
     ],
-    status: "partial",
+    status: "done",
     gaps: [
-      "Recorded audio is not uploaded through backend presign-upload before submit.",
-      "Speaking history endpoint not represented in mobile UI.",
-      "Grading screen polls result endpoint but does not show explicit job/status states.",
-      "VstepSpeakingInProgress updated in frontend-v3 (commit 490b35f) — needs mobile parity.",
       "TranslateSelection popup added in frontend-v3 — not in mobile.",
     ],
     nextPhase: 6,

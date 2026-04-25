@@ -1,17 +1,31 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator, Animated, ScrollView, StyleSheet,
-  Text, TouchableOpacity, View,
+  ActivityIndicator,
+  Animated,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { useMutation } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useMutation } from "@tanstack/react-query";
 import { Audio } from "expo-av";
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
-import { useSpeakingTaskDetail, startSpeakingSession, submitSpeakingSession } from "@/hooks/use-practice";
+import { DepthCard } from "@/components/DepthCard";
+import { MascotResult } from "@/components/MascotStates";
+import {
+  useSpeakingTaskDetail,
+  startSpeakingSession,
+  submitSpeakingSession,
+  presignUpload,
+  type SpeakingTopic,
+} from "@/hooks/use-practice";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 const COLOR = "#FFC800";
@@ -76,15 +90,41 @@ export default function SpeakingExerciseScreen() {
     );
   }
 
-  return <RecordScreen detail={detail} sessionId={sessionId} onBack={() => router.back()} insets={insets} c={c} router={router} />;
+  return (
+    <RecordScreen
+      detail={detail}
+      sessionId={sessionId}
+      onBack={() => router.back()}
+      insets={insets}
+      c={c}
+      router={router}
+    />
+  );
 }
 
-function RecordScreen({ detail, sessionId, onBack, insets, c, router }: any) {
+interface RecordScreenProps {
+  detail: {
+    title: string;
+    part: number;
+    taskType: string;
+    speakingSeconds: number;
+    content: { topics: SpeakingTopic[] };
+  };
+  sessionId: string;
+  onBack: () => void;
+  insets: { top: number; bottom: number };
+  c: ReturnType<typeof useThemeColors>;
+  router: ReturnType<typeof useRouter>;
+}
+
+function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordScreenProps) {
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [audioUri, setAudioUri] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [submitted, setSubmitted] = useState<string | null>(null);
+  const [score, setScore] = useState(0);
+  const [totalSentences, setTotalSentences] = useState(0);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startRef = useRef<number | null>(null);
   const maxMs = detail.speakingSeconds * 1000;
@@ -106,7 +146,7 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: any) {
     }
   }, [isRecording]);
 
-  async function startRecording() {
+  const startRecording = useCallback(async () => {
     try {
       await Audio.requestPermissionsAsync();
       await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
@@ -124,11 +164,11 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: any) {
         if (el >= maxMs) stopRecording(rec);
       }, 100);
     } catch {
-      // permission denied — silently ignore, user sees no mic button
+      // permission denied — silently ignore
     }
-  }
+  }, [maxMs]);
 
-  async function stopRecording(rec?: Audio.Recording) {
+  const stopRecording = useCallback(async (rec?: Audio.Recording) => {
     const r = rec ?? recording;
     if (!r) return;
     if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
@@ -137,14 +177,65 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: any) {
     setAudioUri(r.getURI());
     setIsRecording(false);
     setRecording(null);
-  }
+  }, [recording]);
 
   useEffect(() => () => { if (tickRef.current) clearInterval(tickRef.current); }, []);
 
+  // Upload audio to presign URL, then submit
   const submitMutation = useMutation({
-    mutationFn: () => submitSpeakingSession(sessionId, audioUri ?? "", Math.round(elapsedMs / 1000)),
-    onSuccess: (res) => setSubmitted(res.submissionId),
+    mutationFn: async () => {
+      if (!audioUri) throw new Error("No audio file");
+
+      // Step 1: Get presigned upload URL
+      const presign = await presignUpload("speaking");
+
+      // Step 2: Upload raw audio bytes to presigned URL
+      const audioResponse = await fetch(audioUri);
+      const audioBlob = await audioResponse.blob();
+      await fetch(presign.uploadUrl, {
+        method: "PUT",
+        body: audioBlob,
+        headers: { "Content-Type": "audio/webm" },
+      });
+
+      // Step 3: Submit with audio_key
+      return submitSpeakingSession(sessionId, presign.audioKey, Math.round(elapsedMs / 1000));
+    },
+    onSuccess: (res) => {
+      setSubmitted(res.submissionId);
+      const allSentences = detail.content.topics.reduce(
+        (acc, t) => acc + t.questions.length,
+        0,
+      );
+      setTotalSentences(allSentences);
+      setScore(0);
+    },
   });
+
+  const handlePlayback = useCallback(async () => {
+    if (!audioUri) return;
+    const { sound } = await Audio.Sound.createAsync({ uri: audioUri });
+    await sound.playAsync();
+  }, [audioUri]);
+
+  if (submitted) {
+    return (
+      <View style={[s.root, { backgroundColor: c.background }]}>
+        <View style={[s.topBar, { paddingTop: insets.top + spacing.sm, borderBottomColor: c.borderLight }]}>
+          <HapticTouchable onPress={onBack} style={s.closeBtn}>
+            <Ionicons name="close" size={22} color={c.foreground} />
+          </HapticTouchable>
+          <Text style={[s.topBarTitle, { color: c.foreground }]}>Kết quả luyện nói</Text>
+        </View>
+        <MascotResult
+          score={score}
+          total={totalSentences}
+          onBack={onBack}
+          backLabel="Quay lại"
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={[s.root, { backgroundColor: c.background }]}>
@@ -159,103 +250,115 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: any) {
       </View>
 
       <ScrollView contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + 40 }]} showsVerticalScrollIndicator={false}>
-        {submitted ? (
-          <View style={[s.resultCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
-            <Ionicons name="checkmark-circle" size={48} color={COLOR} />
-            <Text style={[s.resultTitle, { color: c.foreground }]}>Đã nộp bài!</Text>
-            <Text style={[s.resultSub, { color: c.mutedForeground }]}>AI đang chấm bài nói của bạn</Text>
-            <DepthButton
-              onPress={() => router.push(`/(app)/grading/speaking/${submitted}` as any)}
-              style={{ backgroundColor: "#FFC800", borderColor: "#FFC800" }}
-            >
-              Xem kết quả
-            </DepthButton>
-            <DepthButton variant="secondary" onPress={onBack} style={{ marginTop: spacing.sm }}>Về danh sách</DepthButton>
+        {/* Prompt card */}
+        <DepthCard style={s.promptCard}>
+          <View style={[s.taskTypeBadge, { backgroundColor: COLOR + "25" }]}>
+            <Text style={[s.taskTypeText, { color: COLOR_TEXT }]}>Part {detail.part} · {detail.taskType}</Text>
           </View>
-        ) : (
-          <>
-            {/* Prompt card */}
-            <View style={[s.promptCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
-              <View style={[s.taskTypeBadge, { backgroundColor: COLOR + "25" }]}>
-                <Text style={[s.taskTypeText, { color: COLOR_TEXT }]}>Part {detail.part} · {detail.taskType}</Text>
-              </View>
-              {detail.content.topics.map((topic: any) => (
-                <View key={topic.name} style={s.topicBlock}>
-                  <Text style={[s.topicName, { color: c.foreground }]}>{topic.name}</Text>
-                  {topic.questions.map((q: string) => (
-                    <View key={q} style={s.topicQRow}>
-                      <Text style={{ color: COLOR }}>•</Text>
-                      <Text style={[s.topicQ, { color: c.subtle }]}>{q}</Text>
-                    </View>
-                  ))}
+          {detail.content.topics.map((topic) => (
+            <View key={topic.name} style={s.topicBlock}>
+              <Text style={[s.topicName, { color: c.foreground }]}>{topic.name}</Text>
+              {topic.questions.map((q) => (
+                <View key={q} style={s.topicQRow}>
+                  <Text style={{ color: COLOR }}>•</Text>
+                  <Text style={[s.topicQ, { color: c.subtle }]}>{q}</Text>
                 </View>
               ))}
             </View>
+          ))}
+        </DepthCard>
 
-            {/* Recorder card */}
-            <View style={[s.recorderCard, { backgroundColor: c.card, borderColor: isRecording ? COLOR : c.border, borderBottomColor: isRecording ? COLOR_DARK : "#CACACA" }]}>
-              {/* Countdown */}
-              <View style={s.countdownRow}>
-                <Text style={[s.countdownLabel, { color: c.mutedForeground }]}>Thời gian còn lại</Text>
-                <Text style={[s.countdown, { color: isRecording && countdown < 10 ? "#FF9B00" : COLOR_TEXT }]}>
-                  {fmt(countdown)}
-                </Text>
+        {/* Recorder card */}
+        <DepthCard
+          style={{
+            ...s.recorderCard,
+            borderColor: isRecording ? COLOR : c.border,
+            borderBottomColor: isRecording ? COLOR_DARK : "#CACACA",
+          }}
+        >
+          {/* Countdown */}
+          <View style={s.countdownRow}>
+            <Text style={[s.countdownLabel, { color: c.mutedForeground }]}>Thời gian còn lại</Text>
+            <Text style={[s.countdown, { color: isRecording && countdown < 10 ? "#FF9B00" : COLOR_TEXT }]}>
+              {fmt(countdown)}
+            </Text>
+          </View>
+
+          {/* Waveform / mic button */}
+          {isRecording ? (
+            <TouchableOpacity onPress={() => stopRecording()} style={s.waveformBtn}>
+              <View style={s.waveform}>
+                {Array.from({ length: 20 }, (_, i) => (
+                  <Animated.View
+                    key={i}
+                    style={[
+                      s.waveBar,
+                      { backgroundColor: COLOR },
+                      {
+                        transform: [{
+                          scaleY: barAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0.3 + (i % 3) * 0.2, 0.6 + (i % 5) * 0.3],
+                          }),
+                        }],
+                      },
+                    ]}
+                  />
+                ))}
               </View>
-
-              {/* Waveform / mic button */}
-              {isRecording ? (
-                <TouchableOpacity onPress={() => stopRecording()} style={s.waveformBtn}>
-                  <View style={s.waveform}>
-                    {Array.from({ length: 20 }, (_, i) => (
-                      <Animated.View
-                        key={i}
-                        style={[
-                          s.waveBar,
-                          { backgroundColor: COLOR },
-                          {
-                            transform: [{
-                              scaleY: barAnim.interpolate({
-                                inputRange: [0, 1],
-                                outputRange: [0.3 + (i % 3) * 0.2, 0.6 + (i % 5) * 0.3],
-                              }),
-                            }],
-                          },
-                        ]}
-                      />
-                    ))}
-                  </View>
-                  <Text style={[s.waveHint, { color: c.mutedForeground }]}>Bấm để dừng</Text>
-                </TouchableOpacity>
+              <Text style={[s.waveHint, { color: c.mutedForeground }]}>Bấm để dừng</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={s.micBtnWrap}>
+              {audioUri ? (
+                <>
+                  <TouchableOpacity onPress={handlePlayback} style={[s.micBtn, { backgroundColor: c.muted, borderBottomColor: "#CACACA" }]}>
+                    <Ionicons name="play" size={28} color={c.mutedForeground} />
+                    <Text style={[s.micBtnText, { color: c.mutedForeground }]}>Nghe lại</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={startRecording} style={[s.micBtn, { backgroundColor: COLOR, borderBottomColor: COLOR_DARK }]}>
+                    <Ionicons name="refresh" size={28} color="#fff" />
+                    <Text style={[s.micBtnText, { color: "#fff" }]}>Ghi âm lại</Text>
+                  </TouchableOpacity>
+                </>
               ) : (
-                <TouchableOpacity
-                  onPress={audioUri ? undefined : startRecording}
-                  disabled={!!audioUri}
-                  style={[s.micBtn, { backgroundColor: audioUri ? c.muted : COLOR, borderBottomColor: audioUri ? "#CACACA" : COLOR_DARK }]}
-                >
-                  <Ionicons name="mic" size={28} color={audioUri ? c.mutedForeground : "#fff"} />
-                  <Text style={[s.micBtnText, { color: audioUri ? c.mutedForeground : "#fff" }]}>
-                    {audioUri ? "Đã ghi xong" : "Bắt đầu nói"}
-                  </Text>
+                <TouchableOpacity onPress={startRecording} style={[s.micBtn, { backgroundColor: COLOR, borderBottomColor: COLOR_DARK }]}>
+                  <Ionicons name="mic" size={28} color="#fff" />
+                  <Text style={[s.micBtnText, { color: "#fff" }]}>Bắt đầu nói</Text>
                 </TouchableOpacity>
-              )}
-
-              {!isRecording && !audioUri && (
-                <Text style={[s.recHint, { color: c.subtle }]}>Đọc đề bài, chuẩn bị rồi bấm để ghi âm</Text>
               )}
             </View>
+          )}
 
-            {/* Submit */}
-            {audioUri && !isRecording && (
-              <DepthButton
-                fullWidth
-                disabled={submitMutation.isPending}
-                onPress={() => submitMutation.mutate()}
-                style={{ backgroundColor: COLOR, borderColor: COLOR }}
-              >
-                {submitMutation.isPending ? "Đang nộp..." : "Nộp bài"}
-              </DepthButton>
+          {!isRecording && !audioUri && (
+            <Text style={[s.recHint, { color: c.subtle }]}>Đọc đề bài, chuẩn bị rồi bấm để ghi âm</Text>
+          )}
+
+          {audioUri && !isRecording && (
+            <Text style={[s.recHint, { color: c.success }]}>Đã ghi xong — sẵn sàng nộp bài</Text>
+          )}
+        </DepthCard>
+
+        {/* Submit */}
+        {audioUri && !isRecording && (
+          <DepthButton
+            fullWidth
+            disabled={submitMutation.isPending}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              submitMutation.mutate();
+            }}
+            style={{ backgroundColor: COLOR, borderColor: COLOR }}
+          >
+            {submitMutation.isPending ? (
+              <View style={s.submittingRow}>
+                <ActivityIndicator color="#fff" size="small" />
+                <Text style={[s.micBtnText, { color: "#fff" }]}>Đang upload...</Text>
+              </View>
+            ) : (
+              "Nộp bài"
             )}
-          </>
+          </DepthButton>
         )}
       </ScrollView>
     </View>
@@ -293,11 +396,19 @@ const s = StyleSheet.create({
   waveform: { flexDirection: "row", alignItems: "center", gap: 3, height: 48 },
   waveBar: { width: 4, height: 24, borderRadius: 2 },
   waveHint: { fontSize: fontSize.xs },
+  micBtnWrap: { gap: spacing.sm, width: "100%" },
   micBtn: {
-    flexDirection: "row", alignItems: "center", gap: spacing.sm,
-    paddingHorizontal: spacing["2xl"], paddingVertical: spacing.md,
-    borderRadius: radius.full, borderWidth: 0, borderBottomWidth: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing["2xl"],
+    paddingVertical: spacing.md,
+    borderRadius: radius.full,
+    borderWidth: 0,
+    borderBottomWidth: 4,
   },
   micBtnText: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
   recHint: { fontSize: fontSize.xs, textAlign: "center" },
+  submittingRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm },
 });
