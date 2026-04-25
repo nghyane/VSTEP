@@ -45,6 +45,9 @@ export const colors = {
     skillWriting: "#58CC02",
     skillSpeaking: "#FFC800",
 
+    // Surface tint for interactive elements
+    surfaceTint: "#F3F4F6",
+
     // Streak
     streak: "#FF7800",
     streakTint: "#FFF0DC",

@@ -225,6 +225,21 @@ export interface StreakData {
 }
 
 // ============================================================
+// Exam Sessions
+// ============================================================
+
+export interface ExamSessionResult {
+  id: string;
+  examVersionId: string;
+  mode: string;
+  isFullTest: boolean;
+  status: string;
+  startedAt: string;
+  submittedAt: string | null;
+  scores: Record<Skill, number | null> | null;
+}
+
+// ============================================================
 // User
 // ============================================================
 
