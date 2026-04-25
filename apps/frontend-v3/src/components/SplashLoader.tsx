@@ -1,4 +1,5 @@
 import { StaticIcon, type StaticIconName } from "#/components/Icon"
+import { Logo } from "#/components/Logo"
 
 const ORBITERS: { icon: StaticIconName; top: string; left: string; delay: string }[] = [
 	{ icon: "trophy", top: "8%", left: "18%", delay: "0ms" },
@@ -31,7 +32,7 @@ export function SplashLoader() {
 				/>
 			</div>
 			<div className="flex flex-col items-center gap-3">
-				<span className="text-2xl font-extrabold tracking-tight text-primary">VSTEP</span>
+				<Logo size="lg" />
 				<div className="flex items-center gap-1.5">
 					{[0, 200, 400].map((delay) => (
 						<span

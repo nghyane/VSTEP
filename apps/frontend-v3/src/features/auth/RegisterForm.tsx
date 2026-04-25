@@ -44,50 +44,72 @@ function Step1({ initial, onNext, onGoogleToken, googleLoading }: Step1Props) {
 
 	return (
 		<>
-			<h1 className="font-extrabold text-3xl text-foreground mb-1">Tạo tài khoản</h1>
-			<p className="text-sm text-subtle mb-5">Bắt đầu hành trình VSTEP của bạn hôm nay.</p>
+			<div className="text-center mb-6">
+				<h1 className="font-extrabold text-2xl text-foreground">Tạo tài khoản</h1>
+				<p className="text-sm text-subtle mt-1">Bắt đầu hành trình VSTEP của bạn.</p>
+			</div>
+
 			<GoogleButton onToken={onGoogleToken} text="signup_with" disabled={googleLoading} />
-			<div className="flex items-center gap-3 my-4">
+
+			<div className="flex items-center gap-3 my-5">
 				<div className="flex-1 h-px bg-border" />
-				<span className="text-xs text-subtle font-bold">HOẶC</span>
+				<span className="text-[11px] text-placeholder font-bold uppercase">hoặc</span>
 				<div className="flex-1 h-px bg-border" />
 			</div>
+
 			<form onSubmit={handleSubmit} className="space-y-3">
-				<input
-					type="email"
-					placeholder="Email"
-					required
-					autoComplete="email"
-					value={email}
-					onChange={(e) => setEmail(e.target.value)}
-					className={inputClass}
-				/>
-				<input
-					type="password"
-					placeholder="Mật khẩu"
-					required
-					autoComplete="new-password"
-					value={password}
-					onChange={(e) => setPassword(e.target.value)}
-					className={inputClass}
-				/>
-				<input
-					type="password"
-					placeholder="Nhập lại mật khẩu"
-					required
-					autoComplete="new-password"
-					value={confirm}
-					onChange={(e) => setConfirm(e.target.value)}
-					className={inputClass}
-				/>
-				{error && <p className="text-sm font-bold text-destructive">{error}</p>}
+				<div className="space-y-1">
+					<label htmlFor="reg-email" className="text-xs font-bold text-muted uppercase">Email</label>
+					<input
+						id="reg-email"
+						type="email"
+						placeholder="email@example.com"
+						required
+						autoComplete="email"
+						value={email}
+						onChange={(e) => setEmail(e.target.value)}
+						className={inputClass}
+					/>
+				</div>
+				<div className="space-y-1">
+					<label htmlFor="reg-password" className="text-xs font-bold text-muted uppercase">Mật khẩu</label>
+					<input
+						id="reg-password"
+						type="password"
+						placeholder="Tối thiểu 8 ký tự"
+						required
+						autoComplete="new-password"
+						value={password}
+						onChange={(e) => setPassword(e.target.value)}
+						className={inputClass}
+					/>
+				</div>
+				<div className="space-y-1">
+					<label htmlFor="reg-confirm" className="text-xs font-bold text-muted uppercase">Nhập lại mật khẩu</label>
+					<input
+						id="reg-confirm"
+						type="password"
+						placeholder="Nhập lại mật khẩu"
+						required
+						autoComplete="new-password"
+						value={confirm}
+						onChange={(e) => setConfirm(e.target.value)}
+						className={inputClass}
+					/>
+				</div>
+				{error && (
+					<p className="text-sm font-bold text-destructive text-center bg-destructive/10 rounded-(--radius-button) py-2">
+						{error}
+					</p>
+				)}
 				<button type="submit" className="btn btn-primary w-full h-12 text-base">
 					Tiếp tục
 				</button>
 			</form>
-			<p className="text-sm font-bold text-muted mt-4">
+
+			<p className="text-sm text-muted mt-5 text-center">
 				Đã có tài khoản?{" "}
-				<Link to="/" search={{ auth: "login" }} className="text-primary hover:underline">
+				<Link to="/" search={{ auth: "login" }} className="font-bold text-primary hover:underline">
 					Đăng nhập
 				</Link>
 			</p>
@@ -100,37 +122,18 @@ function Step1({ initial, onNext, onGoogleToken, googleLoading }: Step1Props) {
 const LEVELS = ["B1", "B2", "C1"] as const
 type Level = (typeof LEVELS)[number]
 
+const LEVEL_INFO: Record<Level, string> = {
+	B1: "Giao tiếp cơ bản",
+	B2: "Phổ biến nhất",
+	C1: "Nâng cao",
+}
+
 interface Step2Props {
 	onBack: () => void
 	onSubmit: (nickname: string, level: Level, deadline: string) => Promise<void>
 	submitting: boolean
 	initialNickname?: string
 	googleMode: boolean
-}
-
-function LevelButton({
-	value,
-	current,
-	onChange,
-}: {
-	value: Level
-	current: Level
-	onChange: (v: Level) => void
-}) {
-	return (
-		<button
-			type="button"
-			onClick={() => onChange(value)}
-			className={cn(
-				"h-12 rounded-(--radius-button) font-bold text-base border-2 transition",
-				current === value
-					? "bg-primary text-primary-foreground border-primary-dark"
-					: "bg-surface border-border text-foreground hover:border-primary",
-			)}
-		>
-			{value}
-		</button>
-	)
 }
 
 function Step2({ onBack, onSubmit, submitting, initialNickname, googleMode }: Step2Props) {
@@ -155,31 +158,35 @@ function Step2({ onBack, onSubmit, submitting, initialNickname, googleMode }: St
 
 	return (
 		<div className="flex flex-col h-full">
-			{/* Fixed top — back + title */}
 			<div className="shrink-0">
 				{!googleMode && (
 					<button
 						type="button"
 						onClick={onBack}
-						className="flex items-center gap-1 text-sm font-bold text-muted hover:text-foreground transition mb-4"
+						className="flex items-center gap-1.5 text-sm font-bold text-muted hover:text-foreground transition mb-4"
 					>
-						← Quay lại
+						<span className="text-lg leading-none">←</span>
+						Quay lại
 					</button>
 				)}
-				<h1 className="font-extrabold text-3xl text-foreground mb-1">
-					{googleMode ? "Chào mừng!" : "Gần xong rồi!"}
-				</h1>
-				<p className="text-sm text-subtle mb-5">
-					{googleMode ? "Chọn nickname và mục tiêu để bắt đầu." : "Hãy cho chúng mình biết thêm về bạn."}
-				</p>
+				<div className="text-center mb-6">
+					<div className="w-16 h-16 rounded-full bg-primary-tint flex items-center justify-center mx-auto mb-3">
+						<span className="text-3xl">🎯</span>
+					</div>
+					<h1 className="font-extrabold text-2xl text-foreground">
+						{googleMode ? "Chào mừng!" : "Thiết lập mục tiêu"}
+					</h1>
+					<p className="text-sm text-subtle mt-1">
+						{googleMode ? "Chọn nickname và mục tiêu." : "Cho chúng mình biết thêm về bạn."}
+					</p>
+				</div>
 			</div>
 
-			{/* Scrollable middle — nickname → date picker */}
 			<form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1 gap-4">
 				<ScrollArea className="flex-1 min-h-0">
-					<div className="space-y-4 pb-1">
-						<div className="space-y-1.5">
-							<label htmlFor="reg-nickname" className="text-sm font-bold text-foreground">
+					<div className="space-y-5 pb-1">
+						<div className="space-y-1">
+							<label htmlFor="reg-nickname" className="text-xs font-bold text-muted uppercase">
 								Nickname
 							</label>
 							<input
@@ -193,31 +200,54 @@ function Step2({ onBack, onSubmit, submitting, initialNickname, googleMode }: St
 							/>
 						</div>
 
-						<div className="space-y-1.5">
-							<p className="text-sm font-bold text-foreground">Mục tiêu trình độ</p>
+						<div className="space-y-2">
+							<p className="text-xs font-bold text-muted uppercase">Mục tiêu trình độ</p>
 							<div className="grid grid-cols-3 gap-2">
 								{LEVELS.map((l) => (
-									<LevelButton key={l} value={l} current={level} onChange={setLevel} />
+									<button
+										type="button"
+										key={l}
+										onClick={() => setLevel(l)}
+										className={cn(
+											"relative h-14 rounded-(--radius-button) font-bold text-lg border-2 border-b-4 transition",
+											level === l
+												? "bg-primary text-primary-foreground border-primary-dark"
+												: "bg-surface border-border text-foreground hover:border-primary/40",
+										)}
+									>
+										{l}
+										<span
+											className={cn(
+												"block text-[10px] font-bold mt-[-2px]",
+												level === l ? "text-primary-foreground/80" : "text-subtle",
+											)}
+										>
+											{LEVEL_INFO[l]}
+										</span>
+									</button>
 								))}
 							</div>
 						</div>
 
 						<div className="space-y-2">
-							<p className="text-sm font-bold text-foreground">Ngày thi dự kiến</p>
+							<p className="text-xs font-bold text-muted uppercase">Ngày thi dự kiến</p>
 							<DatePicker value={deadline} onChange={setDeadline} />
 						</div>
 					</div>
 				</ScrollArea>
 
-				{/* Fixed bottom — error + submit */}
 				<div className="shrink-0 space-y-3 pt-2">
-					{error && <p className="text-sm font-bold text-destructive">{error}</p>}
+					{error && (
+						<p className="text-sm font-bold text-destructive text-center bg-destructive/10 rounded-(--radius-button) py-2">
+							{error}
+						</p>
+					)}
 					<button
 						type="submit"
 						disabled={submitting}
 						className="btn btn-primary w-full h-12 text-base disabled:opacity-50"
 					>
-						{submitting ? "Đang tạo tài khoản..." : "Tạo tài khoản"}
+						{submitting ? "Đang tạo..." : "Bắt đầu học"}
 					</button>
 				</div>
 			</form>

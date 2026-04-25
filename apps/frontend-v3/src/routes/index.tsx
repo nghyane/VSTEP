@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { useEffect } from "react"
+import { useEffect, useRef, useState } from "react"
+import { Logo } from "#/components/Logo"
 import { AuthShell } from "#/features/auth/AuthShell"
 import { LoginForm } from "#/features/auth/LoginForm"
 import { RegisterForm } from "#/features/auth/RegisterForm"
-import { LandingCTA, LandingFeatures, LandingHero, LandingSkills } from "#/features/landing/sections"
+import { LandingCTA, LandingFeatures, LandingHero, LandingSkills, LandingSocial } from "#/features/landing/sections"
 import { useAuth } from "#/lib/auth"
 
 type AuthParam = "login" | "register" | undefined
@@ -21,20 +22,46 @@ function LandingPage() {
 	const status = useAuth((s) => s.status)
 	const navigate = useNavigate()
 	const { auth, redirect: redirectTo } = Route.useSearch()
+	const ctaRef = useRef<HTMLDivElement>(null)
+	const [showBtn, setShowBtn] = useState(false)
 
 	useEffect(() => {
 		if (status === "authenticated") navigate({ to: redirectTo || "/dashboard" })
 	}, [status, navigate, redirectTo])
 
+	useEffect(() => {
+		const el = ctaRef.current
+		if (!el) return
+		const observer = new IntersectionObserver(([entry]) => setShowBtn(!entry.isIntersecting), { threshold: 0 })
+		observer.observe(el)
+		return () => observer.disconnect()
+	}, [])
+
 	return (
 		<div className="min-h-screen bg-surface">
-			<nav className="flex items-center px-8 py-5 max-w-6xl mx-auto">
-				<span className="font-display text-3xl text-primary">VSTEP</span>
+			<nav className="sticky top-0 z-40 bg-surface/95 backdrop-blur-sm border-b border-transparent transition-colors"
+				style={showBtn ? { borderBottomColor: "var(--color-border)" } : undefined}
+			>
+				<div className="flex items-center justify-between px-8 py-4 max-w-6xl mx-auto">
+					<Logo size="lg" />
+					<div
+						className={`transition-all duration-300 ${showBtn ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none"}`}
+					>
+						<button
+							type="button"
+							onClick={() => navigate({ to: "/", search: { auth: "register" } })}
+							className="btn btn-primary text-sm px-6 py-2.5"
+						>
+							Bắt đầu
+						</button>
+					</div>
+				</div>
 			</nav>
 
-			<LandingHero />
+			<LandingHero ctaRef={ctaRef} />
 			<LandingSkills />
 			<LandingFeatures />
+			<LandingSocial />
 			<LandingCTA />
 
 			<footer className="border-t border-border py-8 text-center text-sm text-subtle">
