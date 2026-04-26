@@ -63,10 +63,10 @@ export default function ExamResultScreen() {
     );
   }
 
-  const mcqListening = data.mcqDetail?.listening;
-  const mcqReading = data.mcqDetail?.reading;
-  const mcqTotal = (mcqListening?.total ?? 0) + (mcqReading?.total ?? 0);
-  const mcqCorrect = (mcqListening?.correct ?? 0) + (mcqReading?.correct ?? 0);
+  const mcqListening = summarizeMcq(data.mcqDetail, "exam_listening_item");
+  const mcqReading = summarizeMcq(data.mcqDetail, "exam_reading_item");
+  const mcqTotal = data.mcq?.total ?? (mcqListening.total + mcqReading.total);
+  const mcqCorrect = data.mcq?.score ?? (mcqListening.correct + mcqReading.correct);
   const mcqPct = mcqTotal > 0 ? Math.round((mcqCorrect / mcqTotal) * 100) : 0;
 
   return (
@@ -95,7 +95,7 @@ export default function ExamResultScreen() {
       </View>
 
       {/* Listening breakdown */}
-      {mcqListening != null && (
+      {mcqListening.total > 0 && (
         <View style={[s.subCard, { backgroundColor: c.card, borderColor: c.border }]}>
           <View style={s.subCardRow}>
             <Ionicons name="headset" size={16} color={c.skillListening} />
@@ -106,7 +106,7 @@ export default function ExamResultScreen() {
       )}
 
       {/* Reading breakdown */}
-      {mcqReading != null && (
+      {mcqReading.total > 0 && (
         <View style={[s.subCard, { backgroundColor: c.card, borderColor: c.border }]}>
           <View style={s.subCardRow}>
             <Ionicons name="book" size={16} color={c.skillReading} />
@@ -134,6 +134,16 @@ export default function ExamResultScreen() {
 }
 
 // ── Grading Status Card ──
+
+type McqDetailItem = NonNullable<ReturnType<typeof useExamSessionResults>["data"]>["mcqDetail"] extends (infer T)[] | null ? T : never;
+
+function summarizeMcq(items: McqDetailItem[] | null | undefined, itemRefType: string) {
+  const scoped = items?.filter((item) => item.itemRefType === itemRefType) ?? [];
+  return {
+    correct: scoped.filter((item) => item.isCorrect).length,
+    total: scoped.length,
+  };
+}
 
 function GradingCard({ label, icon, status, data, c }: { label: string; icon: string; status: string; data: { submissionId: string; overallBand: number | null }[]; c: ReturnType<typeof useThemeColors> }) {
   const color = GRADING_COLOR[status] ?? c.subtle;

@@ -16,10 +16,18 @@ export interface ExamSessionResults {
     speaking: number | null;
     overall: number | null;
   } | null;
-  mcqDetail: {
-    listening: { correct: number; total: number };
-    reading: { correct: number; total: number };
+  mcq?: {
+    score: number;
+    total: number;
   } | null;
+  mcqDetail: {
+    itemRefType: string;
+    itemRefId: string;
+    selectedIndex: number;
+    correctIndex: number | null;
+    isCorrect: boolean;
+    answeredAt: string;
+  }[] | null;
   writingFeedback: {
     submissionId: string;
     taskId: string;

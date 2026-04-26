@@ -169,6 +169,10 @@ export async function loginApi(email: string, password: string) {
   }>(unwrapData(json));
 }
 
+export async function checkEmailApi(email: string) {
+  return api.post<{ available: boolean }>("/api/v1/auth/email/check", { email });
+}
+
 export async function registerApi(
   email: string,
   password: string,

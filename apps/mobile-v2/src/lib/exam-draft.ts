@@ -2,12 +2,13 @@ import { Directory, File } from "expo-file-system";
 
 const DRAFT_DIR = new Directory("file:///drafts/");
 
-interface ExamDraft {
+export interface ExamDraft {
   sessionId: string;
   examId: string;
+  skillIdx: number;
   mcqAnswers: Record<string, number>;
   writingAnswers: Record<string, string>;
-  speakingAudioKeys: Record<string, string>;
+  speakingMarks: Record<string, string>;
   savedAt: string;
 }
 

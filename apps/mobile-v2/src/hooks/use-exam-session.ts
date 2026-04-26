@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { api } from "@/lib/api";
-import { saveDraft, clearDraft } from "@/lib/exam-draft";
+import { saveDraft, loadDraft, clearDraft, type ExamDraft } from "@/lib/exam-draft";
 import type { ExamVersionMcqItem, ExamVersionWritingTask, ExamVersionSpeakingPart } from "@/types/api";
 
 // ── Types ──
@@ -12,6 +12,8 @@ export interface ExamSessionData {
   examVersionId: string;
   mode: "full" | "custom";
   selectedSkills: string[];
+  examTitle?: string | null;
+  startedAt?: string;
   serverDeadlineAt: string;
   submittedAt: string | null;
   status: "active" | "submitted" | "graded";
@@ -41,6 +43,22 @@ export interface SubmitSessionResult {
   speakingSubmitted: boolean;
 }
 
+export interface ExamServerDraft {
+  sessionId: string;
+  skillIdx: number;
+  mcqAnswers: Record<string, number>;
+  writingAnswers: Record<string, string>;
+  speakingMarks: Record<string, string>;
+  savedAt: string;
+}
+
+export interface SaveExamDraftPayload {
+  skillIdx: number;
+  mcqAnswers: Record<string, number>;
+  writingAnswers: Record<string, string>;
+  speakingMarks: Record<string, string>;
+}
+
 export interface McqAnswerPayload {
   item_ref_type: string;
   item_ref_id: string;
@@ -56,6 +74,16 @@ export function useExamSession(sessionId: string) {
     enabled: !!sessionId,
     retry: false,
     staleTime: Infinity,
+  });
+}
+
+export function useExamDraft(sessionId: string) {
+  return useQuery({
+    queryKey: ["exam-sessions", sessionId, "draft"],
+    queryFn: () => api.get<ExamServerDraft | null>(`/api/v1/exam-sessions/${sessionId}/draft`),
+    enabled: !!sessionId,
+    retry: false,
+    staleTime: 0,
   });
 }
 
@@ -97,6 +125,27 @@ export function useSubmitExamSession(sessionId: string) {
   return useMutation({
     mutationFn: (payload: SubmitSessionPayload) =>
       api.post<SubmitSessionResult>(`/api/v1/exam-sessions/${sessionId}/submit`, payload),
+  });
+}
+
+export function useSaveExamDraft(sessionId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: SaveExamDraftPayload) =>
+      api.put<ExamServerDraft>(`/api/v1/exam-sessions/${sessionId}/draft`, payload),
+    onSuccess: (draft) => qc.setQueryData(["exam-sessions", sessionId, "draft"], draft),
+  });
+}
+
+export function useAbandonExamSession() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (sessionId: string) =>
+      api.post<{ abandoned: boolean }>(`/api/v1/exam-sessions/${sessionId}/abandon`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["exam-sessions"] });
+      void qc.invalidateQueries({ queryKey: ["exams"] });
+    },
   });
 }
 
@@ -158,6 +207,7 @@ type ExamAction =
   | { type: "WRITING"; taskId: string; text: string }
   | { type: "SPEAKING_DONE"; partId: string }
   | { type: "SET_SPEAKING_ANSWER"; partId: string; answer: SpeakingAnswer }
+  | { type: "RESTORE_DRAFT"; draft: ExamDraft }
   | { type: "NEXT_SKILL" }
   | { type: "SHOW_CONFIRM_SUBMIT" } | { type: "HIDE_CONFIRM_SUBMIT" }
   | { type: "SHOW_CONFIRM_NEXT" } | { type: "HIDE_CONFIRM_NEXT" }
@@ -182,6 +232,23 @@ function reducer(state: ExamState, action: ExamAction): ExamState {
       const m = new Map(state.speakingAnswers); m.set(action.partId, action.answer);
       return { ...state, speakingAnswers: m };
     }
+    case "RESTORE_DRAFT":
+      return {
+        ...state,
+        skillIdx: action.draft.skillIdx,
+        mcqAnswers: new Map(Object.entries(action.draft.mcqAnswers)),
+        writingAnswers: new Map(Object.entries(action.draft.writingAnswers)),
+        speakingAnswers: new Map(
+          Object.entries(action.draft.speakingMarks)
+            .filter(([, audioUrl]) => audioUrl.length > 0)
+            .map(([partId, audioUrl]) => [partId, { partId, audioUrl, durationSeconds: 0 }]),
+        ),
+        speakingDone: new Set(
+          Object.entries(action.draft.speakingMarks)
+            .filter(([, audioUrl]) => audioUrl.length > 0)
+            .map(([partId]) => partId),
+        ),
+      };
     case "NEXT_SKILL": return { ...state, skillIdx: state.skillIdx + 1, confirmNextSkill: false };
     case "SHOW_CONFIRM_SUBMIT": return { ...state, confirmSubmit: true };
     case "HIDE_CONFIRM_SUBMIT": return { ...state, confirmSubmit: false };
@@ -201,6 +268,18 @@ function buildMcqPayload(
   return items
     .filter((it) => answers.has(it.id))
     .map((it) => ({ item_ref_type: refType, item_ref_id: it.id, selected_index: answers.get(it.id)! }));
+}
+
+function toExamDraft(session: ExamSessionData, draft: ExamServerDraft): ExamDraft {
+  return {
+    sessionId: session.id,
+    examId: session.examVersionId,
+    skillIdx: draft.skillIdx,
+    mcqAnswers: draft.mcqAnswers,
+    writingAnswers: draft.writingAnswers,
+    speakingMarks: draft.speakingMarks,
+    savedAt: draft.savedAt,
+  };
 }
 
 export function useExamSessionState(
@@ -223,6 +302,9 @@ export function useExamSessionState(
   } as ExamState);
 
   const submitMutation = useSubmitExamSession(session.id);
+  const saveDraftMutation = useSaveExamDraft(session.id);
+  const serverDraft = useExamDraft(session.id);
+  const restoredDraftRef = useRef(false);
 
   const activeSkills = SKILL_ORDER.filter((sk) => session.selectedSkills.includes(sk));
   const currentSkill = activeSkills[state.skillIdx] ?? activeSkills[0];
@@ -231,6 +313,20 @@ export function useExamSessionState(
 
   const hasListening = activeSkills.includes("listening");
   const hasReading = activeSkills.includes("reading");
+
+  useEffect(() => {
+    if (restoredDraftRef.current || serverDraft.isLoading) return;
+    restoredDraftRef.current = true;
+    const restore = async () => {
+      const fallbackDraft = await loadDraft(session.id);
+      const draft = serverDraft.data
+        ? toExamDraft(session, serverDraft.data)
+        : fallbackDraft;
+      if (draft) dispatch({ type: "RESTORE_DRAFT", draft });
+    };
+    void restore();
+  }, [serverDraft.isLoading, serverDraft.data, session]);
+
   const scopedMcqTotal = (hasListening ? listeningItems.length : 0) + (hasReading ? readingItems.length : 0);
   const scopedAnsweredMcq = activeSkills.includes("listening")
     ? [...state.mcqAnswers.keys()].filter((id) => listeningItems.some((i) => i.id === id)).length
@@ -276,20 +372,27 @@ export function useExamSessionState(
   // Autosave: persist answers to local storage every 30s
   useEffect(() => {
     const id = setInterval(() => {
-      const draft = {
+      const draft: ExamDraft = {
         sessionId: session.id,
         examId: session.examVersionId,
+        skillIdx: state.skillIdx,
         mcqAnswers: Object.fromEntries(state.mcqAnswers),
         writingAnswers: Object.fromEntries(state.writingAnswers),
-        speakingAudioKeys: Object.fromEntries(
+        speakingMarks: Object.fromEntries(
           Array.from(state.speakingAnswers.entries()).map(([k, v]) => [k, v.audioUrl ?? ""])
         ),
         savedAt: new Date().toISOString(),
       };
       saveDraft(draft);
+      saveDraftMutation.mutate({
+        skillIdx: draft.skillIdx,
+        mcqAnswers: draft.mcqAnswers,
+        writingAnswers: draft.writingAnswers,
+        speakingMarks: draft.speakingMarks,
+      });
     }, 30_000);
     return () => clearInterval(id);
-  }, [session.id, session.examVersionId, state.mcqAnswers, state.writingAnswers, state.speakingAnswers]);
+  }, [session.id, session.examVersionId, state.skillIdx, state.mcqAnswers, state.writingAnswers, state.speakingAnswers, saveDraftMutation]);
 
   return {
     state,

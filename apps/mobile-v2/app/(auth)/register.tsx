@@ -17,7 +17,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Logo } from "@/components/Logo";
 import { DepthButton } from "@/components/DepthButton";
 import { Mascot } from "@/components/Mascot";
-import { registerApi } from "@/lib/api";
+import { checkEmailApi, registerApi } from "@/lib/api";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 function targetDeadlineFromNow(): string {
@@ -63,6 +63,11 @@ export default function RegisterScreen() {
     setErrors({});
     setLoading(true);
     try {
+      const emailStatus = await checkEmailApi(email.trim());
+      if (!emailStatus.available) {
+        setErrors({ email: "Email này đã được sử dụng" });
+        return;
+      }
       const res = await registerApi(email.trim(), password, fullName.trim(), "B2", targetDeadlineFromNow());
       await signIn(res.accessToken, res.refreshToken, res.user, res.profile);
       router.replace("/(app)/(tabs)");

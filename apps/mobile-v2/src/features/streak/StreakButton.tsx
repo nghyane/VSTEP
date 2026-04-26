@@ -6,13 +6,11 @@ import { HapticTouchable } from "@/components/HapticTouchable";
 import { GameIcon } from "@/components/GameIcon";
 import { DepthButton } from "@/components/DepthButton";
 import {
-  DAILY_GOAL,
-  STREAK_MILESTONES,
-  useClaimedMilestones,
+  useDailyGoal,
+  useStreakMilestones,
   useTodayProgress,
   claimMilestone,
 } from "@/features/streak/streak-store";
-import { addCoins } from "@/features/coin/coin-store";
 import { fontSize, fontFamily, radius, spacing, useThemeColors } from "@/theme";
 
 interface StreakButtonProps {
@@ -61,7 +59,8 @@ function StreakDialog({
 }) {
   const c = useThemeColors();
   const todayCount = useTodayProgress();
-  const claimedSet = useClaimedMilestones();
+  const dailyGoal = useDailyGoal();
+  const milestones = useStreakMilestones();
   const weekDays = buildCurrentWeek(activityByDay);
 
   return (
@@ -102,17 +101,17 @@ function StreakDialog({
           <Text
             style={[
               styles.progressValue,
-              { color: todayCount >= DAILY_GOAL ? c.success : c.primary },
+              { color: todayCount >= dailyGoal ? c.success : c.primary },
             ]}
           >
-            {todayCount}/{DAILY_GOAL} bai tap
+            {todayCount}/{dailyGoal} bai tap
           </Text>
         </View>
 
         <View style={styles.milestones}>
-          {STREAK_MILESTONES.map((m) => {
+          {milestones.map((m) => {
             const unlocked = streak >= m.days;
-            const isClaimed = claimedSet.has(m.days);
+            const isClaimed = m.claimed;
             return (
               <View key={m.days} style={[styles.milestone, { borderColor: unlocked ? c.coin : c.border }]}>
                 <GameIcon name={unlocked ? "trophy" : "lock"} size={24} />
@@ -125,8 +124,7 @@ function StreakDialog({
                     variant="coin"
                     size="sm"
                     onPress={() => {
-                      claimMilestone(m.days);
-                      addCoins(m.coins);
+                      void claimMilestone(m.days);
                     }}
                   >
                     Nhan

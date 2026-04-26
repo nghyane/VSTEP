@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   ScrollView,
   StyleSheet,
@@ -20,6 +21,7 @@ import { SkillIcon } from "@/components/SkillIcon";
 import { CoinButton } from "@/features/coin/CoinButton";
 import { FULL_TEST_COST } from "@/features/coin/coin-store";
 import { useExams, type Exam } from "@/hooks/use-exams";
+import { useAbandonExamSession, useActiveExamSession, type ExamSessionData } from "@/hooks/use-exam-session";
 import { MascotEmpty } from "@/components/MascotStates";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { Skill } from "@/types/api";
@@ -36,6 +38,7 @@ export default function ExamsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data, isLoading } = useExams();
+  const activeSession = useActiveExamSession();
   const [search, setSearch] = useState("");
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -67,6 +70,10 @@ export default function ExamsScreen() {
           </View>
           <CoinButton />
         </View>
+
+        {activeSession.data ? (
+          <ActiveSessionCard session={activeSession.data} />
+        ) : null}
 
         <View style={[styles.searchWrap, { backgroundColor: c.surface, borderColor: c.border }]}> 
           <Ionicons name="search-outline" size={17} color={c.subtle} />
@@ -113,6 +120,54 @@ export default function ExamsScreen() {
 
       <View style={{ height: insets.bottom + 40 }} />
     </ScrollView>
+  );
+}
+
+function ActiveSessionCard({ session }: { session: ExamSessionData }) {
+  const c = useThemeColors();
+  const router = useRouter();
+  const abandon = useAbandonExamSession();
+  const title = session.examTitle ?? "Bài thi đang làm";
+
+  const handleContinue = () => {
+    router.push(`/(app)/session/${session.id}?examId=${session.examId}` as any);
+  };
+
+  const handleAbandon = () => {
+    Alert.alert(
+      "Bỏ phiên thi?",
+      "Phiên thi hiện tại sẽ được nộp tự động và bạn có thể bắt đầu lại từ danh sách đề.",
+      [
+        { text: "Giữ lại", style: "cancel" },
+        {
+          text: "Bỏ phiên",
+          style: "destructive",
+          onPress: () => abandon.mutate(session.id),
+        },
+      ],
+    );
+  };
+
+  return (
+    <DepthCard style={styles.activeCard}>
+      <View style={styles.activeHeader}>
+        <View style={[styles.activeIcon, { backgroundColor: c.warningTint }]}> 
+          <Ionicons name="time-outline" size={18} color={c.warning} />
+        </View>
+        <View style={styles.activeTextWrap}>
+          <Text style={[styles.activeEyebrow, { color: c.warning }]}>Phiên thi đang diễn ra</Text>
+          <Text style={[styles.activeTitle, { color: c.foreground }]} numberOfLines={1}>{title}</Text>
+        </View>
+      </View>
+      <View style={styles.activeActions}>
+        <DepthButton variant="secondary" size="sm" onPress={handleAbandon} disabled={abandon.isPending}>
+          Bỏ phiên
+        </DepthButton>
+        <DepthButton size="sm" onPress={handleContinue}>
+          Tiếp tục
+        </DepthButton>
+      </View>
+    </DepthCard>
   );
 }
 
@@ -211,6 +266,13 @@ const styles = StyleSheet.create({
   title: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
   subtitle: { fontSize: fontSize.xs, marginTop: spacing.xs, lineHeight: 18 },
   searchWrap: { flexDirection: "row", alignItems: "center", gap: spacing.sm, borderWidth: 2, borderRadius: radius.xl, paddingHorizontal: spacing.base, paddingVertical: spacing.sm, marginBottom: spacing.xl },
+  activeCard: { marginBottom: spacing.base },
+  activeHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  activeIcon: { width: 36, height: 36, borderRadius: radius.full, alignItems: "center", justifyContent: "center" },
+  activeTextWrap: { flex: 1 },
+  activeEyebrow: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  activeTitle: { fontSize: fontSize.base, fontFamily: fontFamily.extraBold, marginTop: 2 },
+  activeActions: { flexDirection: "row", justifyContent: "flex-end", gap: spacing.sm, marginTop: spacing.base },
   searchInput: { flex: 1, fontSize: fontSize.sm, fontFamily: fontFamily.regular },
   loadingWrap: { paddingVertical: spacing["3xl"], alignItems: "center" },
   list: { gap: spacing.base },

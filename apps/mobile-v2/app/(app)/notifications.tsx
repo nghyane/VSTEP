@@ -1,7 +1,7 @@
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useDeleteNotification, useMarkAllRead, useNotifications } from "@/features/notification/queries";
+import { useDeleteNotification, useMarkAllRead, useMarkNotificationRead, useNotifications } from "@/features/notification/queries";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { GameIcon } from "@/components/GameIcon";
 import { fontSize, fontFamily, spacing, useThemeColors } from "@/theme";
@@ -53,12 +53,22 @@ export default function NotificationsScreen() {
 function NotificationRow({ n }: { n: Notification }) {
   const c = useThemeColors();
   const del = useDeleteNotification();
+  const markRead = useMarkNotificationRead();
   const unread = n.readAt === null;
+
+  const handlePress = () => {
+    if (unread) {
+      markRead.mutate(n.id);
+      return;
+    }
+    del.mutate(n.id);
+  };
 
   return (
     <HapticTouchable
       style={[styles.row, unread && { backgroundColor: c.primaryTint }]}
-      onPress={() => del.mutate(n.id)}
+      onPress={handlePress}
+      onLongPress={() => del.mutate(n.id)}
     >
       <View style={styles.rowIcon}>
         <GameIcon name="notification" size={20} />

@@ -17,10 +17,14 @@ export interface ReadAllResult {
   marked: number;
 }
 
+export interface ReadNotificationResult {
+  read: boolean;
+}
+
 export interface PaginatedNotifications {
   data: Notification[];
-  current_page: number;
-  last_page: number;
-  per_page: number;
+  currentPage: number;
+  lastPage: number;
+  perPage: number;
   total: number;
 }
