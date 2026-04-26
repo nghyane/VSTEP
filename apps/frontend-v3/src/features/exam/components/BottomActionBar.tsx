@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
-import { useEffect, useState } from "react"
+import { Link, useNavigate } from "@tanstack/react-router"
+import { useEffect, useMemo, useState } from "react"
+import { ConfirmDialog } from "#/components/ConfirmDialog"
 import { Icon, StaticIcon } from "#/components/Icon"
-import { startExamSession } from "#/features/exam/actions"
-import { appConfigQuery } from "#/features/exam/queries"
+import { abandonExamSession, startExamSession } from "#/features/exam/actions"
+import { appConfigQuery, mySessionsQuery } from "#/features/exam/queries"
 import type { ExamDetail, SkillKey } from "#/features/exam/types"
 import { walletBalanceQuery } from "#/features/wallet/queries"
+import { TopUpDialog } from "#/features/wallet/TopUpDialog"
 import { useToast } from "#/lib/toast"
 import { cn } from "#/lib/utils"
 
@@ -38,6 +40,26 @@ export function BottomActionBar({ detail, selected }: Props) {
 	const qc = useQueryClient()
 	const { data: walletData } = useQuery(walletBalanceQuery)
 	const { data: configData } = useQuery(appConfigQuery)
+	const { data: mySessionsData } = useQuery(mySessionsQuery)
+
+	// Per-exam: tìm session active còn hạn của ĐÚNG đề này. BE cho phép nhiều active song song
+	// (đề này + đề khác) → chỉ quan tâm session của đề đang xem; đề khác để nguyên không động.
+	const activeSameExam = useMemo(() => {
+		const sessions = mySessionsData?.data ?? []
+		const now = Date.now()
+		return (
+			sessions.find(
+				(s) =>
+					s.exam_id === detail.exam.id &&
+					s.status === "active" &&
+					new Date(s.server_deadline_at).getTime() > now,
+			) ?? null
+		)
+	}, [mySessionsData, detail.exam.id])
+
+	// Dialog "Làm mới": chỉ khi user chủ động reset session của đề này.
+	const [confirmReset, setConfirmReset] = useState(false)
+	const [showTopup, setShowTopup] = useState(false)
 
 	const fullCost = configData?.data.pricing.exam.full_test_cost_coins ?? 25
 	const perSkillCost = configData?.data.pricing.exam.custom_per_skill_coins ?? 8
@@ -66,7 +88,12 @@ export function BottomActionBar({ detail, selected }: Props) {
 			: 0
 
 	const mutation = useMutation({
-		mutationFn: () => {
+		mutationFn: async () => {
+			// Chỉ huỷ session active CỦA ĐÚNG đề này khi user xác nhận "Làm mới".
+			// Session active của đề khác (nếu có) giữ nguyên — BE cho phép nhiều active song song.
+			if (activeSameExam) {
+				await abandonExamSession(activeSameExam.id)
+			}
 			const skills: SkillKey[] = isFullTest
 				? ["listening", "reading", "writing", "speaking"]
 				: Array.from(selected)
@@ -77,6 +104,8 @@ export function BottomActionBar({ detail, selected }: Props) {
 		},
 		onSuccess: (result) => {
 			qc.invalidateQueries({ queryKey: ["wallet", "balance"] })
+			qc.invalidateQueries({ queryKey: ["exam-sessions"] })
+			setConfirmReset(false)
 			useToast.getState().add(`Đã trừ ${result.coins_charged} xu — chúc bạn làm bài tốt!`, "success")
 			navigate({
 				to: "/phong-thi/$sessionId",
@@ -85,6 +114,18 @@ export function BottomActionBar({ detail, selected }: Props) {
 			})
 		},
 	})
+
+	function handleStartClick() {
+		if (insufficient) {
+			setShowTopup(true)
+			return
+		}
+		if (activeSameExam) {
+			setConfirmReset(true)
+			return
+		}
+		mutation.mutate()
+	}
 
 	return (
 		<div
@@ -98,16 +139,47 @@ export function BottomActionBar({ detail, selected }: Props) {
 							<p className="text-sm font-bold text-foreground">Làm full test</p>
 							<p className="text-xs text-subtle">Toàn bộ 4 kỹ năng · {naturalMinutes} phút</p>
 						</div>
-						<div className="flex items-center gap-3">
+						<div className="flex flex-wrap items-center gap-3">
 							<CostBadge cost={cost} insufficient={insufficient} />
+							{activeSameExam && (
+								<Link
+									to="/phong-thi/$sessionId"
+									params={{ sessionId: activeSameExam.id }}
+									search={{ examId: detail.exam.id }}
+									className="btn btn-primary"
+								>
+									Tiếp tục làm bài
+									<Icon name="lightning" size="xs" className="text-white" />
+								</Link>
+							)}
 							<button
 								type="button"
-								onClick={() => mutation.mutate()}
-								disabled={insufficient || mutation.isPending}
-								className="btn btn-primary"
+								onClick={handleStartClick}
+								disabled={mutation.isPending}
+								className={cn(
+									"group text-sm inline-flex items-center gap-2",
+									insufficient
+										? "btn btn-coin"
+										: activeSameExam
+											? "rounded-(--radius-button) border-2 border-b-4 border-destructive bg-destructive px-4 py-2.5 font-extrabold text-white transition-all hover:brightness-110 active:translate-y-[2px] active:border-b-2 disabled:cursor-not-allowed disabled:opacity-60"
+											: "btn btn-primary",
+								)}
 							>
-								Làm full test
-								<Icon name="lightning" size="xs" className="text-white" />
+								{insufficient ? (
+									<>
+										<StaticIcon
+											name="coin"
+											size="xs"
+											className="relative group-hover:animate-[coinPinch_700ms_ease-in-out]"
+										/>
+										<span className="relative">Nạp xu</span>
+									</>
+								) : (
+									<>
+										{activeSameExam ? "Làm mới" : "Làm full test"}
+										<Icon name="lightning" size="xs" className="text-white" />
+									</>
+								)}
 							</button>
 						</div>
 					</div>
@@ -128,16 +200,23 @@ export function BottomActionBar({ detail, selected }: Props) {
 								<span className="text-xs text-subtle whitespace-nowrap">Thời gian:</span>
 
 								<div className="flex flex-col gap-0.5">
-									<input
-										type="range"
-										min={naturalMinutes}
-										max={maxMinutes}
-										step={1}
-										value={clampedDuration}
-										onChange={(e) => setDuration(Number(e.target.value))}
-										className="duration-slider w-36 sm:w-48"
+									<div
+										className="duration-slider-wrap w-36 sm:w-48"
 										style={{ "--fill-pct": `${fillPct}%` } as React.CSSProperties}
-									/>
+									>
+										<span aria-hidden className="duration-slider-track" />
+										<span aria-hidden className="duration-slider-fill" />
+										<span aria-hidden className="duration-slider-highlight" />
+										<input
+											type="range"
+											min={naturalMinutes}
+											max={maxMinutes}
+											step={1}
+											value={clampedDuration}
+											onChange={(e) => setDuration(Number(e.target.value))}
+											className="duration-slider"
+										/>
+									</div>
 									{/* Tick labels: ×1 (natural) … ×2 … ×3 (max) */}
 									<div className="mt-2 flex w-36 justify-between sm:w-48">
 										<span
@@ -169,21 +248,73 @@ export function BottomActionBar({ detail, selected }: Props) {
 							</div>
 						</div>
 
-						<div className="flex items-center gap-3">
+						<div className="flex flex-wrap items-center gap-3">
 							<CostBadge cost={cost} insufficient={insufficient} />
+							{activeSameExam && (
+								<Link
+									to="/phong-thi/$sessionId"
+									params={{ sessionId: activeSameExam.id }}
+									search={{ examId: detail.exam.id }}
+									className="btn btn-primary"
+								>
+									Tiếp tục
+									<Icon name="lightning" size="xs" className="text-white" />
+								</Link>
+							)}
 							<button
 								type="button"
-								onClick={() => mutation.mutate()}
-								disabled={insufficient || mutation.isPending}
-								className="btn btn-primary"
+								onClick={handleStartClick}
+								disabled={mutation.isPending}
+								className={cn(
+									"group text-sm inline-flex items-center gap-2",
+									insufficient
+										? "btn btn-coin"
+										: activeSameExam
+											? "rounded-(--radius-button) border-2 border-b-4 border-destructive bg-destructive px-4 py-2.5 font-extrabold text-white transition-all hover:brightness-110 active:translate-y-[2px] active:border-b-2 disabled:cursor-not-allowed disabled:opacity-60"
+											: "btn btn-primary",
+								)}
 							>
-								Bắt đầu luyện tập
-								<Icon name="lightning" size="xs" className="text-white" />
+								{insufficient ? (
+									<>
+										<StaticIcon
+											name="coin"
+											size="xs"
+											className="relative group-hover:animate-[coinPinch_700ms_ease-in-out]"
+										/>
+										<span className="relative">Nạp xu</span>
+									</>
+								) : (
+									<>
+										{activeSameExam ? "Làm mới" : "Bắt đầu luyện tập"}
+										<Icon name="lightning" size="xs" className="text-white" />
+									</>
+								)}
 							</button>
 						</div>
 					</div>
 				)}
 			</div>
+
+			<ConfirmDialog
+				open={confirmReset}
+				title="Làm lại đề này?"
+				description={
+					<>
+						Tiến trình bài thi hiện tại <strong className="text-foreground">sẽ bị huỷ</strong> và không hoàn
+						xu. Bạn sẽ mở một lượt thi mới từ đầu.
+					</>
+				}
+				warning="Hành động không thể hoàn tác"
+				confirmLabel="Làm mới"
+				cancelLabel="Quay lại"
+				loadingLabel="Đang xử lý…"
+				destructive
+				isLoading={mutation.isPending}
+				onConfirm={() => mutation.mutate()}
+				onCancel={() => setConfirmReset(false)}
+			/>
+
+			<TopUpDialog open={showTopup} onClose={() => setShowTopup(false)} />
 		</div>
 	)
 }

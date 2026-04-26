@@ -7,6 +7,7 @@ namespace App\Enums;
 use App\Models\CourseEnrollment;
 use App\Models\PracticeSession;
 use App\Models\Profile;
+use App\Models\ProfileStreakClaim;
 use App\Models\PromoCode;
 use App\Models\PromoCodeRedemption;
 use App\Models\WalletTopupOrder;
@@ -19,6 +20,7 @@ enum CoinSourceType: string
     case CourseEnrollment = 'course_enrollment';
     case PracticeSession = 'practice_session';
     case Profile = 'profile';
+    case StreakClaim = 'profile_streak_claim';
 
     /** Map Eloquent model → source type. */
     private const MODEL_MAP = [
@@ -28,6 +30,7 @@ enum CoinSourceType: string
         CourseEnrollment::class => self::CourseEnrollment,
         PracticeSession::class => self::PracticeSession,
         Profile::class => self::Profile,
+        ProfileStreakClaim::class => self::StreakClaim,
     ];
 
     public static function fromModel(string $class): self

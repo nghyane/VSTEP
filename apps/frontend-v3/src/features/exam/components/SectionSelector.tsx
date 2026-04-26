@@ -87,7 +87,7 @@ function getPartRows(skill: SkillKey, detail: ExamDetail): PartRow[] {
 			.sort((a, b) => a.display_order - b.display_order)
 			.map((t) => ({
 				id: t.id,
-				label: `Phần ${t.part} — ${t.task_type === "letter" ? `Viết thư (~${t.min_words} từ)` : `Viết luận (~${t.min_words} từ)`}`,
+				label: `Phần ${t.part} — ${t.task_type === "letter" ? `Viết thư (${t.min_words} từ)` : `Viết luận (${t.min_words} từ)`}`,
 				itemCount: 1,
 				itemUnit: "bài",
 				durationMinutes: t.duration_minutes,
@@ -259,7 +259,7 @@ export function SectionSelector({ detail, selected, onToggleSkill }: Props) {
 											{part.itemCount} {part.itemUnit}
 										</span>
 										<span className="shrink-0 text-xs tabular-nums text-subtle">
-											~{part.durationMinutes} phút
+											{part.durationMinutes} phút
 										</span>
 									</div>
 								))}

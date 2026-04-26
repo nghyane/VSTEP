@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { Header } from "#/components/Header"
 import { ActivityHeatmap } from "#/features/dashboard/components/ActivityHeatmap"
-import { GapAnalysis } from "#/features/dashboard/components/GapAnalysis"
+import { DoughnutCard } from "#/features/dashboard/components/DoughnutCard"
 import { NextAction } from "#/features/dashboard/components/NextAction"
 import { ProfileBanner } from "#/features/dashboard/components/ProfileBanner"
 import { ScoreTrend } from "#/features/dashboard/components/ScoreTrend"
@@ -23,7 +23,7 @@ function DashboardPage() {
 				<ActivityHeatmap />
 				<section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 					<SpiderCard />
-					<GapAnalysis />
+					<DoughnutCard />
 				</section>
 				<ScoreTrend />
 			</div>

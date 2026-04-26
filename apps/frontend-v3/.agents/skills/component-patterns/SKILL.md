@@ -48,3 +48,14 @@ Source of truth: `src/styles.css` `@theme` block.
 - Props ≤ 3 per component. Group related props into shared types
 - No inline type annotations on API responses — define in `types.ts`
 - Keyboard handlers: use lookup objects (`Record<string, T>`)
+
+## Gamification (chip / popup / dropdown / notif)
+
+Component có yếu tố thưởng, đếm xu/streak, feedback thành công → đọc [`.agents/wiki/gamification-ui.md`](../../wiki/gamification-ui.md):
+
+- Chip/card depth: `border-2 border-b-4` + tint background, KHÔNG solid color
+- Icon container: vòng tròn `size-9..12 border-2`, tách hẳn khỏi text
+- Success popup: banner gradient + body với pulse ring + coin burst + tilted "+N" badge. KHÔNG emoji cạnh headline
+- Coin-gain animation: store `lib/coin-gain.ts`, trigger SAU khi popup đóng (delay ~220ms); Header listener dùng `useRef` so sánh pulse để fire 1 lần, tránh lặp khi route remount
+- Event lớn (nạp xu, level up) → popup, KHÔNG dùng toast
+- Thanh tiến độ (XP, word count, daily goal, streak) → dùng [`components/DuoProgressBar`](../../src/components/DuoProgressBar.tsx); chi tiết anatomy + token rules ở [`.agents/wiki/duo-progress-bar.md`](../../wiki/duo-progress-bar.md)

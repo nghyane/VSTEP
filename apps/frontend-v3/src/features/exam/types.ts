@@ -26,6 +26,8 @@ export interface Exam {
 	is_published: boolean
 	created_at: string
 	updated_at: string
+	/** Số lượt làm đã hoàn thành (submitted/graded/auto_submitted). Chỉ có ở list endpoint. */
+	attempts_count?: number
 }
 
 export interface ExamVersionMcqItem {
@@ -106,6 +108,20 @@ export interface StartSessionResult {
 	status: string
 }
 
+export interface ExamSessionSummary {
+	id: string
+	exam_id: string | null
+	exam_version_id: string
+	mode: "full" | "custom"
+	selected_skills: SkillKey[]
+	is_full_test: boolean
+	status: "active" | "submitted" | "graded" | "auto_submitted"
+	started_at: string
+	submitted_at: string | null
+	server_deadline_at: string
+	scores: unknown
+}
+
 export interface ExamSessionData {
 	id: string
 	profile_id: string
@@ -127,16 +143,95 @@ export interface McqAnswerPayload {
 	selected_index: number
 }
 
+export interface WritingAnswerPayload {
+	task_id: string
+	text: string
+	word_count: number
+}
+
+export interface SpeakingAnswerPayload {
+	part_id: string
+	audio_url: string
+	duration_seconds: number
+}
+
 export interface SubmitSessionPayload {
 	mcq_answers: McqAnswerPayload[]
+	writing_answers?: WritingAnswerPayload[]
+	speaking_answers?: SpeakingAnswerPayload[]
+}
+
+export interface ExamDraftMcq {
+	item_ref_id: string
+	selected_index: number
+}
+
+export interface ExamDraftWriting {
+	task_id: string
+	text: string
+}
+
+export interface ExamDraftSpeakingMark {
+	part_id: string
+	audio_url?: string | null
+	duration_seconds?: number | null
+}
+
+export interface ExamDraftPayload {
+	skill_idx: number
+	mcq_answers: ExamDraftMcq[]
+	writing_answers: ExamDraftWriting[]
+	speaking_marks: ExamDraftSpeakingMark[]
+}
+
+export interface ExamDraft extends ExamDraftPayload {
+	session_id: string
+	saved_at: string
+}
+
+export interface GradingJobRef {
+	submission_id: string
+	job_id: string
+	status: string
 }
 
 export interface SubmitSessionResult {
 	session_id: string
 	status: string
-	mcq_score: number
-	mcq_total: number
 	submitted_at: string
+	mcq: {
+		score: number
+		total: number
+		items: Array<{
+			item_ref_type: string
+			item_ref_id: string
+			selected_index: number
+			correct_index: number
+			is_correct: boolean
+		}>
+	}
+	writing_jobs: GradingJobRef[]
+	speaking_jobs: GradingJobRef[]
+}
+
+export interface McqDetailItem {
+	item_ref_type: "exam_listening_item" | "exam_reading_item"
+	item_ref_id: string
+	selected_index: number | null
+	correct_index: number
+	is_correct: boolean
+	answered_at: string | null
+}
+
+export interface SessionResultsData {
+	session: ExamSessionSummary
+	scores: unknown
+	/** Aggregate MCQ: score (đã chấm) / total (số câu trong scope, câu không đáp tính sai). */
+	mcq: { score: number; total: number }
+	mcq_detail: McqDetailItem[]
+	writing_feedback: unknown
+	speaking_feedback: unknown
+	listening_play_summary: Array<{ section_id: string; part: number; played: boolean }>
 }
 
 /** Derived UI model per skill — computed from ExamVersion */

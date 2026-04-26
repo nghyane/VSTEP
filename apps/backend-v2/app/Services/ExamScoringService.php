@@ -46,18 +46,18 @@ class ExamScoringService
     public function getSessionScores(ExamSession $session): array
     {
         return [
-            'listening' => $this->mcqBand($session, 'listening'),
-            'reading' => $this->mcqBand($session, 'reading'),
+            'listening' => $this->mcqBand($session, 'exam_listening_item'),
+            'reading' => $this->mcqBand($session, 'exam_reading_item'),
             'writing' => $this->gradingBand('exam_writing', 'exam_writing_submissions', $session),
             'speaking' => $this->gradingBand('exam_speaking', 'exam_speaking_submissions', $session),
         ];
     }
 
-    private function mcqBand(ExamSession $session, string $skill): ?float
+    private function mcqBand(ExamSession $session, string $itemRefType): ?float
     {
         $answers = ExamMcqAnswer::query()
             ->where('session_id', $session->id)
-            ->where('item_ref_type', $skill)
+            ->where('item_ref_type', $itemRefType)
             ->get(['is_correct']);
 
         if ($answers->isEmpty()) {

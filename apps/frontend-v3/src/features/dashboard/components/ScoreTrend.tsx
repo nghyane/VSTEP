@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
+import { Icon } from "#/components/Icon"
 import { examSessionsQuery, overviewQuery, selectTargetBand } from "#/features/dashboard/queries"
 import { skills } from "#/lib/skills"
 import { formatShortDate, round } from "#/lib/utils"
@@ -7,7 +8,8 @@ const Y_MAX = 180
 const Y_MIN = 20
 const bandToY = (v: number) => Y_MAX - (v / 10) * (Y_MAX - Y_MIN)
 
-function computeAvg(scores: Record<string, number | null>): number {
+function computeAvg(scores: Record<string, number | null> | null): number {
+	if (!scores) return 0
 	const vals = skills.map((s) => scores[s.key]).filter((v): v is number => v !== null)
 	return vals.length > 0 ? round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0
 }
@@ -41,15 +43,14 @@ export function ScoreTrend() {
 
 			<div className="flex flex-wrap gap-2 mt-3 mb-4">
 				{skills.map((s) => (
-					<button
-						type="button"
+					<span
 						key={s.key}
 						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
 						style={{ color: s.color, background: `color-mix(in srgb, ${s.color} 10%, transparent)` }}
 					>
-						<span className="w-2 h-2 rounded-full" style={{ background: s.color }} />
+						<Icon name={s.icon} size="xs" />
 						{s.label}
-					</button>
+					</span>
 				))}
 				<span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-primary-dark">
 					<span className="w-4 h-0.5 bg-primary-dark rounded" />
@@ -85,7 +86,7 @@ export function ScoreTrend() {
 					return (
 						<g key={test.id}>
 							{skills.map((s, si) => {
-								const v = test.scores[s.key] ?? 0
+								const v = test.scores?.[s.key] ?? 0
 								return (
 									<rect
 										key={s.key}
@@ -100,7 +101,7 @@ export function ScoreTrend() {
 								)
 							})}
 							<text x={cx} y={198} textAnchor="middle" fontSize="10" fill="var(--color-subtle)">
-								{formatShortDate(test.submitted_at)}
+								{test.submitted_at ? formatShortDate(test.submitted_at) : ""}
 							</text>
 						</g>
 					)

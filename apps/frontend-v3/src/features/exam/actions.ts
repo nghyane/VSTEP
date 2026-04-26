@@ -1,4 +1,6 @@
 import type {
+	ExamDraft,
+	ExamDraftPayload,
 	StartSessionPayload,
 	StartSessionResult,
 	SubmitSessionPayload,
@@ -28,4 +30,16 @@ export async function submitExamSession(
 
 export async function logListeningPlayed(sessionId: string, sectionId: string): Promise<void> {
 	await api.post(`exam-sessions/${sessionId}/listening-played`, { json: { section_id: sectionId } })
+}
+
+export async function abandonExamSession(sessionId: string): Promise<{ abandoned: boolean }> {
+	const res = await api.post(`exam-sessions/${sessionId}/abandon`).json<ApiResponse<{ abandoned: boolean }>>()
+	return res.data
+}
+
+export async function saveExamDraft(sessionId: string, payload: ExamDraftPayload): Promise<ExamDraft> {
+	const res = await api
+		.put(`exam-sessions/${sessionId}/draft`, { json: payload })
+		.json<ApiResponse<ExamDraft>>()
+	return res.data
 }

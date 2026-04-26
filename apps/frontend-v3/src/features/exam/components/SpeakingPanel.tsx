@@ -313,7 +313,7 @@ function PartRecorder({ part, isDone, onDone, onUndone }: PartRecorderProps) {
 										recorder.state === "recording" && remaining <= 10
 											? "text-destructive"
 											: recorder.state === "recording"
-												? "text-skill-speaking-dark"
+												? "text-foreground"
 												: recorder.state === "stopped"
 													? "text-primary-dark"
 													: "text-muted/50",

@@ -5,6 +5,8 @@ export interface OverviewProfile {
 	target_level: string
 	target_deadline: string | null
 	days_until_exam: number | null
+	entry_level: string | null
+	predicted_level: string | null
 }
 
 export interface OverviewStats {
@@ -29,23 +31,39 @@ export interface OverviewData {
 	chart: OverviewChart | null
 }
 
+export interface StreakMilestone {
+	days: number
+	coins: number
+	claimed: boolean
+	claimed_at: string | null
+}
+
 export interface StreakData {
 	current_streak: number
 	longest_streak: number
 	today_sessions: number
 	daily_goal: number
 	last_active_date: string | null
+	milestones: StreakMilestone[]
+}
+
+export interface StreakClaimResult {
+	milestone_days: number
+	coins_granted: number
+	balance_after: number
+	claimed_at: string
 }
 
 export interface ActivityDay {
 	date: string
-	minutes: number
+	count: number
 }
 
 export interface ExamSessionResult {
 	id: string
 	mode: string
 	is_full_test: boolean
-	submitted_at: string
-	scores: Record<SkillKey, number | null>
+	status: string
+	submitted_at: string | null
+	scores: Record<SkillKey, number | null> | null
 }

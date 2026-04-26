@@ -1,13 +1,20 @@
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { HTTPError } from "ky"
 import { useCallback, useEffect, useReducer, useRef } from "react"
-import { submitExamSession } from "#/features/exam/actions"
+import { saveExamDraft, submitExamSession } from "#/features/exam/actions"
 import type {
+	ExamDraft,
+	ExamDraftPayload,
 	ExamSessionData,
 	ExamVersionMcqItem,
+	ExamVersionWritingTask,
 	McqAnswerPayload,
 	SkillKey,
+	SubmitSessionPayload,
 	SubmitSessionResult,
+	WritingAnswerPayload,
 } from "#/features/exam/types"
+import { useToast } from "#/lib/toast"
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -119,6 +126,30 @@ function buildMcqPayload(
 		}))
 }
 
+// ─── Draft persistence (BE autosave) ─────────────────────────────────────────
+// User có thể thoát giữa chừng (đóng tab, crash, refresh). BE lưu draft snapshot
+// qua PUT /exam-sessions/{id}/draft (1 row/session). Reducer init đọc snapshot
+// đầu (initialDraft prop), effect debounce gọi mutation khi state thay đổi.
+// Speaking audio URL hiện tại không nằm trong reducer state → user vẫn phải ghi
+// âm lại sau khi resume; các phần khác được khôi phục đầy đủ.
+
+const DRAFT_DEBOUNCE_MS = 1500
+
+function buildDraftPayload(state: ExamState): ExamDraftPayload {
+	return {
+		skill_idx: state.skillIdx,
+		mcq_answers: Array.from(state.mcqAnswers, ([itemId, idx]) => ({
+			item_ref_id: itemId,
+			selected_index: idx,
+		})),
+		writing_answers: Array.from(state.writingAnswers, ([taskId, text]) => ({
+			task_id: taskId,
+			text,
+		})),
+		speaking_marks: Array.from(state.speakingDone, (partId) => ({ part_id: partId })),
+	}
+}
+
 // ─── Main hook ────────────────────────────────────────────────────────────────
 
 const SKILL_ORDER: SkillKey[] = ["listening", "reading", "writing", "speaking"]
@@ -127,6 +158,8 @@ interface UseExamSessionOptions {
 	session: ExamSessionData
 	listeningItems: ExamVersionMcqItem[]
 	readingItems: ExamVersionMcqItem[]
+	writingTasks: ExamVersionWritingTask[]
+	initialDraft: ExamDraft | null
 	onSubmitted: (result: SubmitSessionResult) => void
 }
 
@@ -134,24 +167,72 @@ export function useExamSession({
 	session,
 	listeningItems,
 	readingItems,
+	writingTasks,
+	initialDraft,
 	onSubmitted,
 }: UseExamSessionOptions) {
 	const activeSkills = SKILL_ORDER.filter((sk) => session.selected_skills.includes(sk))
 
-	const [state, dispatch] = useReducer(examReducer, {
-		phase: "device-check" as const,
-		skillIdx: 0,
-		mcqAnswers: new Map<string, number>(),
-		writingAnswers: new Map<string, string>(),
-		speakingDone: new Set<string>(),
-		confirmSubmit: false,
-		confirmNextSkill: false,
-	} satisfies ExamState)
+	const [state, dispatch] = useReducer(examReducer, undefined, (): ExamState => {
+		const expired = new Date(session.server_deadline_at).getTime() <= Date.now()
+		const draft = !expired ? initialDraft : null
+		return {
+			// Có draft => user đã bắt đầu làm => bỏ qua device-check
+			phase: draft ? "active" : "device-check",
+			skillIdx: draft?.skill_idx ?? 0,
+			mcqAnswers: new Map((draft?.mcq_answers ?? []).map((m) => [m.item_ref_id, m.selected_index] as const)),
+			writingAnswers: new Map((draft?.writing_answers ?? []).map((w) => [w.task_id, w.text] as const)),
+			speakingDone: new Set((draft?.speaking_marks ?? []).map((s) => s.part_id)),
+			confirmSubmit: false,
+			confirmNextSkill: false,
+		}
+	})
+
+	const qc = useQueryClient()
+
+	// Toast cho lỗi autosave: chỉ hiện 1 lần / 60s để tránh spam khi BE down hoặc 5xx liên tục.
+	// 429 (rate-limited) → silent: lần save tiếp theo (sau debounce) sẽ tự retry.
+	const lastDraftToastAt = useRef(0)
+	const draftMutation = useMutation({
+		mutationFn: (payload: ExamDraftPayload) => saveExamDraft(session.id, payload),
+		onSuccess: (result) => {
+			// Sync cache: examDraftQuery có staleTime=Infinity nên KHÔNG refetch khi user
+			// quay lại phòng thi cùng tab (SPA nav). Phải tự ghi lại để lần mount sau
+			// đọc đúng state mới — không thì sẽ load lại snapshot lần đầu, mất các thay
+			// đổi sau (lý do "draft chỉ lưu lần đầu").
+			qc.setQueryData(["exam-sessions", session.id, "draft"], { data: result })
+		},
+		onError: (error: unknown) => {
+			if (error instanceof HTTPError && error.response.status === 429) return
+			const now = Date.now()
+			if (now - lastDraftToastAt.current < 60_000) return
+			lastDraftToastAt.current = now
+			useToast.getState().add("Không lưu được tự động — kiểm tra kết nối mạng.")
+		},
+	})
+
+	// Debounced autosave: gom các thay đổi state trong DRAFT_DEBOUNCE_MS rồi PUT 1 lần.
+	const draftMutate = draftMutation.mutate
+	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+	useEffect(() => {
+		if (state.phase !== "active") return
+		const payload = buildDraftPayload(state)
+		if (debounceRef.current) clearTimeout(debounceRef.current)
+		debounceRef.current = setTimeout(() => draftMutate(payload), DRAFT_DEBOUNCE_MS)
+		return () => {
+			if (debounceRef.current) clearTimeout(debounceRef.current)
+		}
+	}, [state, draftMutate])
 
 	const submitMutation = useMutation({
-		mutationFn: (payload: McqAnswerPayload[]) => submitExamSession(session.id, { mcq_answers: payload }),
+		mutationFn: (payload: SubmitSessionPayload) => submitExamSession(session.id, payload),
 		onSuccess: (result) => {
 			dispatch({ type: "SUBMITTED" })
+			qc.invalidateQueries({ queryKey: ["exam-sessions"] })
+			qc.invalidateQueries({ queryKey: ["exams"] })
+			qc.invalidateQueries({ queryKey: ["streak"] })
+			qc.invalidateQueries({ queryKey: ["activity-heatmap"] })
+			qc.invalidateQueries({ queryKey: ["overview"] })
 			onSubmitted(result)
 		},
 	})
@@ -182,12 +263,33 @@ export function useExamSession({
 
 	const handleSubmit = useCallback(() => {
 		dispatch({ type: "SUBMITTING" })
-		const payload = [
+		const mcq_answers: McqAnswerPayload[] = [
 			...buildMcqPayload(listeningItems, "exam_listening_item", state.mcqAnswers),
 			...buildMcqPayload(readingItems, "exam_reading_item", state.mcqAnswers),
 		]
-		submitMutation.mutate(payload)
-	}, [listeningItems, readingItems, state.mcqAnswers, submitMutation])
+		const writing_answers: WritingAnswerPayload[] = activeSkills.includes("writing")
+			? writingTasks
+					.map((task) => {
+						const text = (state.writingAnswers.get(task.id) ?? "").trim()
+						if (text.length === 0) return null
+						return {
+							task_id: task.id,
+							text,
+							word_count: text.split(/\s+/).filter(Boolean).length,
+						}
+					})
+					.filter((x): x is WritingAnswerPayload => x !== null)
+			: []
+		submitMutation.mutate({ mcq_answers, writing_answers })
+	}, [
+		activeSkills,
+		listeningItems,
+		readingItems,
+		writingTasks,
+		state.mcqAnswers,
+		state.writingAnswers,
+		submitMutation,
+	])
 
 	const currentSkill = activeSkills[state.skillIdx] ?? activeSkills[0]
 	const isLastSkill = state.skillIdx >= activeSkills.length - 1

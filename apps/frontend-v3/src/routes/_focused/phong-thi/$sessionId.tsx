@@ -1,6 +1,9 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute, Link } from "@tanstack/react-router"
-import { type ReactNode, Suspense, useMemo, useState } from "react"
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
+import { Suspense, useEffect, useMemo, useState } from "react"
+import { ConfirmDialog } from "#/components/ConfirmDialog"
+import { Icon } from "#/components/Icon"
+import { ScrollArea } from "#/components/ScrollArea"
 import { DeviceCheckScreen } from "#/features/exam/components/DeviceCheckScreen"
 import { ExamRoomHeader } from "#/features/exam/components/ExamRoomHeader"
 import { LacCoinMascot } from "#/features/exam/components/LacCoinMascot"
@@ -9,8 +12,20 @@ import { ReadingPanel } from "#/features/exam/components/ReadingPanel"
 import { ResultBackground } from "#/features/exam/components/ResultBackground"
 import { SpeakingPanel } from "#/features/exam/components/SpeakingPanel"
 import { WritingPanel } from "#/features/exam/components/WritingPanel"
-import { examDetailQuery, examSessionQuery } from "#/features/exam/queries"
-import type { SkillKey, SubmitSessionResult } from "#/features/exam/types"
+import {
+	examDetailQuery,
+	examDraftQuery,
+	examSessionQuery,
+	sessionResultsQuery,
+} from "#/features/exam/queries"
+import type {
+	Exam,
+	ExamDraft,
+	ExamSessionData,
+	ExamVersion,
+	SkillKey,
+	SubmitSessionResult,
+} from "#/features/exam/types"
 import { useExamSession, useExamTimer } from "#/features/exam/use-exam-session"
 import { cn } from "#/lib/utils"
 
@@ -43,149 +58,137 @@ const SKILL_COLOR: Record<SkillKey, string> = {
 	speaking: "text-skill-speaking",
 }
 
-// ─── Dialogs ─────────────────────────────────────────────────────────────────
-
-interface ConfirmDialogProps {
-	open: boolean
-	title: string
-	description: ReactNode
-	warning?: string
-	confirmLabel: string
-	onConfirm: () => void
-	onCancel: () => void
-	isLoading?: boolean
-}
-
-function ConfirmDialog({
-	open,
-	title,
-	description,
-	warning,
-	confirmLabel,
-	onConfirm,
-	onCancel,
-	isLoading,
-}: ConfirmDialogProps) {
-	if (!open) return null
-	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-			<button
-				type="button"
-				aria-label="Đóng"
-				onClick={onCancel}
-				className="absolute inset-0 bg-foreground/45 backdrop-blur-sm"
-			/>
-			<div className="relative w-full max-w-sm rounded-(--radius-card) border-2 border-b-4 border-border bg-card p-6 shadow-[0_12px_28px_rgb(0_0_0_/_0.12)] animate-[slideIn_0.18s_ease-out]">
-				{/* Close */}
-				<button
-					type="button"
-					onClick={onCancel}
-					className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface hover:text-foreground"
-					aria-label="Đóng"
-				>
-					<svg
-						viewBox="0 0 16 16"
-						className="size-4"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2.2"
-						strokeLinecap="round"
-						aria-hidden="true"
-					>
-						<path d="M3 3l10 10M13 3L3 13" />
-					</svg>
-				</button>
-
-				{/* Icon — raised warning chip */}
-				<div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full border-2 border-b-4 border-warning/30 bg-warning-tint">
-					<svg
-						viewBox="0 0 24 24"
-						className="size-7 text-warning"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2.2"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						aria-hidden="true"
-					>
-						<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-						<line x1="12" y1="9" x2="12" y2="13" />
-						<line x1="12" y1="17" x2="12.01" y2="17" />
-					</svg>
-				</div>
-
-				<h2 className="mb-1.5 text-center text-lg font-extrabold text-foreground">{title}</h2>
-				<p className="mb-5 text-center text-sm leading-relaxed text-muted">{description}</p>
-
-				{warning && (
-					<div className="mb-5 flex items-center justify-center gap-2 rounded-(--radius-button) border-2 border-warning/30 bg-warning-tint px-3 py-2 text-center text-xs font-extrabold text-warning">
-						<span
-							aria-hidden="true"
-							className="flex size-4 shrink-0 items-center justify-center rounded-full bg-warning text-[10px] font-black text-white"
-						>
-							!
-						</span>
-						{warning}
-					</div>
-				)}
-
-				<div className="flex gap-2.5">
-					<button
-						type="button"
-						onClick={onCancel}
-						className="flex-1 rounded-(--radius-button) border-2 border-b-4 border-border bg-surface px-4 py-2.5 text-sm font-extrabold text-foreground transition-all hover:border-primary/40 active:translate-y-[2px] active:border-b-2"
-					>
-						Ở lại
-					</button>
-					<button
-						type="button"
-						onClick={onConfirm}
-						disabled={isLoading}
-						className="btn btn-primary flex-1 text-sm disabled:cursor-not-allowed disabled:opacity-60"
-					>
-						{isLoading ? "Đang nộp…" : confirmLabel}
-					</button>
-				</div>
-			</div>
-		</div>
-	)
-}
-
 // ─── Result screen (shown after submit) ──────────────────────────────────────
 
-function ResultScreen({ result, examTitle }: { result: SubmitSessionResult; examTitle: string }) {
-	const pct = result.mcq_total > 0 ? Math.round((result.mcq_score / result.mcq_total) * 100) : 0
-	const scoreOn10 = result.mcq_total > 0 ? ((result.mcq_score / result.mcq_total) * 10).toFixed(1) : "0.0"
+interface PerfRow {
+	label: string
+	total: number
+	correct: number
+	wrong: number
+	accuracyPct: number
+	pending?: boolean
+}
+
+function buildPerfRows(
+	version: ExamVersion,
+	activeSkills: SkillKey[],
+	items: SubmitSessionResult["mcq"]["items"],
+): PerfRow[] {
+	const correctByItemId = new Map<string, boolean>()
+	for (const it of items) correctByItemId.set(it.item_ref_id, it.is_correct)
+
+	const rows: PerfRow[] = []
+
+	if (activeSkills.includes("listening")) {
+		// Gộp section cùng `part` (VSTEP Part 1 = 8 announcements × 1 item, vụn vặt nếu hiển thị riêng).
+		const byPart = new Map<number, typeof version.listening_sections>()
+		for (const sec of version.listening_sections) {
+			const arr = byPart.get(sec.part) ?? []
+			arr.push(sec)
+			byPart.set(sec.part, arr)
+		}
+		const partsAsc = [...byPart.entries()].sort((a, b) => a[0] - b[0])
+		for (const [part, secs] of partsAsc) {
+			const allItems = secs.flatMap((s) => s.items)
+			const total = allItems.length
+			const correct = allItems.reduce((n, it) => n + (correctByItemId.get(it.id) ? 1 : 0), 0)
+			rows.push({
+				label: `Nghe · Part ${part}`,
+				total,
+				correct,
+				wrong: total - correct,
+				accuracyPct: total > 0 ? Math.round((correct / total) * 100) : 0,
+			})
+		}
+	}
+	if (activeSkills.includes("reading")) {
+		const sorted = [...version.reading_passages].sort(
+			(a, b) => a.part - b.part || a.display_order - b.display_order,
+		)
+		for (const p of sorted) {
+			const total = p.items.length
+			const correct = p.items.reduce((n, it) => n + (correctByItemId.get(it.id) ? 1 : 0), 0)
+			rows.push({
+				label: `Đọc · ${p.title}`,
+				total,
+				correct,
+				wrong: total - correct,
+				accuracyPct: total > 0 ? Math.round((correct / total) * 100) : 0,
+			})
+		}
+	}
+	if (activeSkills.includes("writing")) {
+		const n = version.writing_tasks.length
+		rows.push({ label: `Viết · ${n} bài`, total: n, correct: 0, wrong: 0, accuracyPct: 0, pending: true })
+	}
+	if (activeSkills.includes("speaking")) {
+		const n = version.speaking_parts.length
+		rows.push({ label: `Nói · ${n} phần`, total: n, correct: 0, wrong: 0, accuracyPct: 0, pending: true })
+	}
+	return rows
+}
+
+function ResultScreen({
+	result,
+	examTitle,
+	examId,
+	sessionId,
+	version,
+	activeSkills,
+}: {
+	result: SubmitSessionResult
+	examTitle: string
+	examId: string
+	sessionId: string
+	version: ExamVersion
+	activeSkills: SkillKey[]
+}) {
+	const { score: mcqScore, total: mcqTotal } = result.mcq
+	const scoreOn10 = mcqTotal > 0 ? (mcqScore / mcqTotal) * 10 : 0
+	const rows = useMemo(
+		() => buildPerfRows(version, activeSkills, result.mcq.items),
+		[version, activeSkills, result.mcq.items],
+	)
+	const hasPending = rows.some((r) => r.pending)
 
 	return (
 		<div className="relative flex min-h-screen flex-col items-center overflow-hidden">
 			<ResultBackground />
 
-			{/* Content */}
-			<div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center px-4 py-12">
-				{/* Card */}
+			{/* Top-right "Hoàn thành" pill — gamified */}
+			<div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
+				<Link
+					to="/thi-thu"
+					className="group inline-flex items-center gap-2.5 rounded-full border-2 border-b-4 border-white/50 bg-white/25 py-2 pl-2 pr-5 text-base font-extrabold text-white shadow-lg backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/35 active:translate-y-0 active:border-b-2"
+				>
+					<span className="flex size-7 items-center justify-center rounded-full border-2 border-b-[3px] border-coin-dark bg-coin shadow-inner transition-transform group-hover:rotate-12">
+						<Icon name="check" size="xs" className="text-white" />
+					</span>
+					Hoàn thành
+				</Link>
+			</div>
+
+			<div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center px-4 py-10">
+				<h1 className="mb-5 text-xl font-extrabold text-white drop-shadow-sm">Kết quả</h1>
+
 				<div className="w-full max-w-3xl overflow-hidden rounded-(--radius-banner) border-2 border-b-4 border-white/20 bg-white shadow-2xl">
 					{/* Top: mascot + congrats */}
-					<div className="flex items-center gap-5 px-7 py-6">
-						<LacCoinMascot scoreLabel={scoreOn10} className="w-36 shrink-0 sm:w-44" />
+					<div className="flex items-center gap-5 px-8 py-6">
+						<LacCoinMascot score={scoreOn10} className="w-40 shrink-0 sm:w-52" />
 
 						<div className="min-w-0 flex-1">
-							<p className="text-xs font-extrabold uppercase tracking-widest text-primary">Chúc mừng!</p>
-							<h1 className="mt-1 text-2xl font-extrabold text-foreground">Nộp bài thành công</h1>
-							<p className="mt-1 text-sm text-muted">{examTitle}</p>
+							<p className="text-sm text-subtle">Chúc mừng!</p>
+							<p className="mt-0.5 text-2xl font-extrabold text-foreground sm:text-3xl">Thí sinh</p>
+							<p className="mt-1 text-sm text-muted">
+								đã hoàn thành bài kiểm tra <span className="font-bold text-foreground">{examTitle}</span>
+							</p>
 
-							{/* Score pills */}
 							<div className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1.5">
+								<ScorePill value={mcqScore} total={mcqTotal} label="Số câu đúng" variant="success" />
 								<ScorePill
-									value={result.mcq_score}
-									total={result.mcq_total}
-									label="câu đúng"
-									variant="success"
-								/>
-								<ScorePill
-									value={result.mcq_total - result.mcq_score}
-									total={result.mcq_total}
-									label="câu sai"
+									value={mcqTotal - mcqScore}
+									total={mcqTotal}
+									label="Câu trả lời sai"
 									variant="danger"
 								/>
 							</div>
@@ -194,30 +197,38 @@ function ResultScreen({ result, examTitle }: { result: SubmitSessionResult; exam
 
 					<div className="mx-6 h-px bg-border" />
 
-					{/* MCQ progress */}
-					<div className="px-7 py-5 space-y-3">
-						<div className="flex items-center justify-between text-sm">
-							<span className="font-extrabold text-foreground">Nghe + Đọc (MCQ)</span>
-							<span className="font-extrabold tabular-nums text-foreground">{pct}%</span>
-						</div>
-						<div className="h-3 w-full overflow-hidden rounded-full bg-border">
-							<div
-								className="h-full rounded-full bg-primary transition-all duration-700"
-								style={{ width: `${pct}%` }}
-							/>
-						</div>
-						<p className="text-xs text-muted">
-							Writing và Speaking đang được AI chấm — kết quả sẽ hiển thị sau vài phút.
-						</p>
+					{/* Performance table */}
+					<div className="px-6 py-5">
+						<p className="mb-4 text-base font-extrabold text-foreground">Performance</p>
+						<ScrollArea
+							className="rounded-(--radius-card) border-2 border-b-4 border-border"
+							maxHeight={320}
+							thumbClassName="w-1.5 bg-placeholder/70 hover:bg-subtle"
+						>
+							<PerformanceTable rows={rows} />
+						</ScrollArea>
+						{hasPending && (
+							<p className="mt-3 text-xs text-muted">
+								Writing và Speaking đang được AI chấm — kết quả sẽ hiển thị sau vài phút.
+							</p>
+						)}
 					</div>
 
-					<div className="mx-6 h-px bg-border" />
-
-					{/* Actions */}
-					<div className="flex justify-center gap-3 px-7 py-5">
+					<div className="flex flex-wrap justify-center gap-3 px-6 pb-7">
 						<Link to="/thi-thu" className="btn btn-secondary">
 							Về danh sách đề
 						</Link>
+						{mcqTotal > 0 && (
+							<Link
+								to="/phong-thi/$sessionId/chi-tiet"
+								params={{ sessionId }}
+								search={{ examId }}
+								className="btn btn-primary"
+							>
+								Xem chi tiết
+								<Icon name="lightning" size="xs" className="text-white" />
+							</Link>
+						)}
 					</div>
 				</div>
 			</div>
@@ -238,16 +249,18 @@ function ScorePill({
 }) {
 	const isSuccess = variant === "success"
 	return (
-		<div className="inline-flex items-baseline gap-1.5">
+		<div className="inline-flex items-baseline gap-2">
 			<div
-				className={
-					isSuccess
-						? "inline-flex items-center rounded-(--radius-button) border-2 border-b-4 border-primary/30 bg-primary-tint px-2.5 py-1"
-						: "inline-flex items-center rounded-(--radius-button) border-2 border-b-4 border-destructive/30 bg-destructive-tint px-2.5 py-1"
-				}
+				className={cn(
+					"inline-flex items-center rounded-(--radius-button) border-2 border-b-4 px-3 py-1",
+					isSuccess ? "border-primary/30 bg-primary-tint" : "border-destructive/30 bg-destructive-tint",
+				)}
 			>
 				<span
-					className={`text-base font-extrabold tabular-nums leading-none ${isSuccess ? "text-primary" : "text-destructive"}`}
+					className={cn(
+						"text-lg font-extrabold tabular-nums leading-none",
+						isSuccess ? "text-primary" : "text-destructive",
+					)}
 				>
 					{value}/{total}
 				</span>
@@ -257,15 +270,188 @@ function ScorePill({
 	)
 }
 
+function PerformanceTable({ rows }: { rows: PerfRow[] }) {
+	return (
+		<div className="overflow-x-auto">
+			<table className="w-full text-sm">
+				<thead>
+					<tr className="sticky top-0 z-10 border-b-2 border-border bg-background">
+						<th className="px-4 py-3 text-left text-xs font-extrabold uppercase tracking-wide text-subtle">
+							Loại câu hỏi
+						</th>
+						<th className="px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide text-subtle">
+							Tổng
+						</th>
+						<th className="px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide text-subtle">
+							Đúng
+						</th>
+						<th className="px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide text-subtle">
+							Sai
+						</th>
+						<th className="px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide text-subtle">
+							Tỷ lệ
+						</th>
+					</tr>
+				</thead>
+				<tbody>
+					{rows.map((row, idx) => (
+						<tr
+							key={row.label}
+							className={cn(
+								"border-b border-border-light last:border-0",
+								idx % 2 === 1 && "bg-background/40",
+							)}
+						>
+							<td className="px-4 py-3 font-medium text-foreground">{row.label}</td>
+							<td className="px-4 py-3 text-center tabular-nums text-muted">{row.total}</td>
+							<td className="px-4 py-3 text-center tabular-nums">
+								{row.pending ? (
+									<span className="text-subtle">—</span>
+								) : (
+									<span className={cn("font-bold", row.correct > 0 ? "text-primary" : "text-subtle")}>
+										{row.correct}
+									</span>
+								)}
+							</td>
+							<td className="px-4 py-3 text-center tabular-nums">
+								{row.pending ? (
+									<span className="text-subtle">—</span>
+								) : (
+									<span className={row.wrong > 0 ? "text-destructive" : "text-subtle"}>{row.wrong}</span>
+								)}
+							</td>
+							<td className="px-4 py-3 text-center">
+								{row.pending ? <PendingBadge /> : <AccuracyBadge pct={row.accuracyPct} />}
+							</td>
+						</tr>
+					))}
+				</tbody>
+			</table>
+		</div>
+	)
+}
+
+function AccuracyBadge({ pct }: { pct: number }) {
+	const tone =
+		pct >= 70
+			? "border-primary/30 bg-primary-tint text-primary"
+			: pct >= 40
+				? "border-warning/30 bg-warning-tint text-warning"
+				: "border-destructive/30 bg-destructive-tint text-destructive"
+	return (
+		<span
+			className={cn(
+				"inline-flex items-center justify-center rounded-full border-2 border-b-4 px-2.5 py-0.5 text-xs font-extrabold tabular-nums",
+				tone,
+			)}
+		>
+			{pct}%
+		</span>
+	)
+}
+
+function PendingBadge() {
+	return (
+		<span className="inline-flex items-center gap-1.5 rounded-full border-2 border-b-4 border-warning/30 bg-warning-tint px-2.5 py-0.5 text-xs font-extrabold text-warning">
+			<span className="relative flex size-1.5">
+				<span className="absolute inline-flex size-full animate-ping rounded-full bg-warning opacity-60" />
+				<span className="relative inline-flex size-1.5 rounded-full bg-warning" />
+			</span>
+			AI đang chấm
+		</span>
+	)
+}
+
+// ─── Submitted session view (re-render result from server) ───────────────────
+
+function SubmittedResultView({
+	sessionId,
+	exam,
+	version,
+	session,
+}: {
+	sessionId: string
+	exam: Exam
+	version: ExamVersion
+	session: ExamSessionData
+}) {
+	const { data: resultsRes } = useSuspenseQuery(sessionResultsQuery(sessionId))
+	const mcqDetail = resultsRes.data.mcq_detail
+	const { score, total } = resultsRes.data.mcq
+
+	const result: SubmitSessionResult = {
+		session_id: sessionId,
+		status: session.status,
+		submitted_at: session.submitted_at ?? "",
+		mcq: {
+			score,
+			total,
+			items: mcqDetail.map((d) => ({
+				item_ref_type: d.item_ref_type,
+				item_ref_id: d.item_ref_id,
+				selected_index: d.selected_index ?? -1,
+				correct_index: d.correct_index,
+				is_correct: d.is_correct,
+			})),
+		},
+		writing_jobs: [],
+		speaking_jobs: [],
+	}
+
+	return (
+		<ResultScreen
+			result={result}
+			examTitle={exam.title}
+			examId={exam.id}
+			sessionId={sessionId}
+			version={version}
+			activeSkills={session.selected_skills}
+		/>
+	)
+}
+
 // ─── Inner exam room (data loaded) ───────────────────────────────────────────
 
 function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) {
-	const [submitResult, setSubmitResult] = useState<SubmitSessionResult | null>(null)
 	const { data: sessionRes } = useSuspenseQuery(examSessionQuery(sessionId))
 	const { data: examRes } = useSuspenseQuery(examDetailQuery(examId))
+	const { data: draftRes } = useSuspenseQuery(examDraftQuery(sessionId))
 
 	const session = sessionRes.data
 	const { version, exam } = examRes.data
+	const initialDraft = draftRes.data
+
+	if (session.status !== "active") {
+		return <SubmittedResultView sessionId={sessionId} exam={exam} version={version} session={session} />
+	}
+
+	return (
+		<ActiveExamRoom
+			sessionId={sessionId}
+			session={session}
+			exam={exam}
+			version={version}
+			initialDraft={initialDraft}
+		/>
+	)
+}
+
+function ActiveExamRoom({
+	sessionId,
+	session,
+	exam,
+	version,
+	initialDraft,
+}: {
+	sessionId: string
+	session: ExamSessionData
+	exam: Exam
+	version: ExamVersion
+	initialDraft: ExamDraft | null
+}) {
+	const navigate = useNavigate()
+	const [submitResult, setSubmitResult] = useState<SubmitSessionResult | null>(null)
+	const [confirmExit, setConfirmExit] = useState(false)
 
 	const listeningItems = version.listening_sections.flatMap((s) => s.items)
 	const readingItems = version.reading_passages.flatMap((p) => p.items)
@@ -298,6 +484,8 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 		session,
 		listeningItems,
 		readingItems,
+		writingTasks: version.writing_tasks,
+		initialDraft,
 		onSubmitted: handleSubmitted,
 	})
 
@@ -315,8 +503,62 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 
 	const remainingSeconds = useExamTimer(session.server_deadline_at)
 
+	// Cảnh báo khi user cố đóng tab / refresh / bấm back browser trong lúc làm bài.
+	useEffect(() => {
+		if (state.phase !== "active" || submitResult) return
+		const handler = (e: BeforeUnloadEvent) => {
+			e.preventDefault()
+			e.returnValue = ""
+		}
+		window.addEventListener("beforeunload", handler)
+		return () => window.removeEventListener("beforeunload", handler)
+	}, [state.phase, submitResult])
+
+	// Only the CURRENT (last) skill is actionable at submit time — other skills are locked
+	const currentSkillPending: { count: number; unit: string } | null = (() => {
+		if (currentSkill === "listening") {
+			const items = version.listening_sections.flatMap((s) => s.items)
+			const unanswered = items.filter((i) => !state.mcqAnswers.has(i.id)).length
+			return { count: unanswered, unit: "câu" }
+		}
+		if (currentSkill === "reading") {
+			const items = version.reading_passages.flatMap((p) => p.items)
+			const unanswered = items.filter((i) => !state.mcqAnswers.has(i.id)).length
+			return { count: unanswered, unit: "câu" }
+		}
+		if (currentSkill === "writing") {
+			const incomplete = version.writing_tasks.filter((t) => {
+				const text = state.writingAnswers.get(t.id) ?? ""
+				const wc = text.trim().split(/\s+/).filter(Boolean).length
+				return wc < t.min_words
+			}).length
+			return { count: incomplete, unit: "phần viết chưa đủ từ" }
+		}
+		if (currentSkill === "speaking") {
+			return {
+				count: version.speaking_parts.length - state.speakingDone.size,
+				unit: "phần chưa ghi âm",
+			}
+		}
+		return null
+	})()
+
+	const submitWarning =
+		currentSkillPending && currentSkillPending.count > 0 && currentSkill
+			? `Còn ${currentSkillPending.count} ${currentSkillPending.unit} chưa làm ở phần ${SKILL_LABEL[currentSkill]}`
+			: undefined
+
 	if (submitResult) {
-		return <ResultScreen result={submitResult} examTitle={exam.title} />
+		return (
+			<ResultScreen
+				result={submitResult}
+				examTitle={exam.title}
+				examId={exam.id}
+				sessionId={session.id}
+				version={version}
+				activeSkills={activeSkills}
+			/>
+		)
 	}
 
 	// Device check phase — hiển thị trước khi vào phòng thi
@@ -337,7 +579,12 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 	return (
 		<div className="flex h-screen flex-col bg-background">
 			{/* Header */}
-			<ExamRoomHeader remainingSeconds={remainingSeconds} answeredMcq={answeredMcq} totalMcq={totalMcq} />
+			<ExamRoomHeader
+				remainingSeconds={remainingSeconds}
+				answeredMcq={answeredMcq}
+				totalMcq={totalMcq}
+				onExit={() => setConfirmExit(true)}
+			/>
 
 			{/* Skill panel */}
 			<main className="flex flex-1 flex-col overflow-hidden">
@@ -471,9 +718,16 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 			<ConfirmDialog
 				open={state.confirmSubmit}
 				title="Nộp bài?"
-				description="Sau khi nộp, bạn không thể chỉnh sửa câu trả lời."
-				warning={answeredMcq < totalMcq ? `⚠ Còn ${totalMcq - answeredMcq} câu chưa trả lời` : undefined}
+				description={
+					<>
+						Các kỹ năng trước đã chốt, không thể quay lại.
+						<br />
+						Sau khi nộp, bài thi sẽ được chấm và bạn không thể chỉnh sửa đáp án.
+					</>
+				}
+				warning={submitWarning}
 				confirmLabel="Nộp bài"
+				loadingLabel="Đang nộp…"
 				onConfirm={handleSubmit}
 				onCancel={handleHideConfirmSubmit}
 				isLoading={isSubmitting}
@@ -489,9 +743,36 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 						{currentSkill ? SKILL_LABEL[currentSkill] : ""} để chỉnh sửa.
 					</>
 				}
+				warning={
+					currentSkillPending && currentSkillPending.count > 0 && currentSkill
+						? `Còn ${currentSkillPending.count} ${currentSkillPending.unit} chưa làm ở phần ${SKILL_LABEL[currentSkill]}`
+						: undefined
+				}
 				confirmLabel={`Chuyển sang ${nextSkill ? SKILL_LABEL[nextSkill] : "phần tiếp"}`}
 				onConfirm={handleConfirmNext}
 				onCancel={handleHideConfirmNext}
+			/>
+
+			{/* Exit confirm dialog */}
+			<ConfirmDialog
+				open={confirmExit}
+				title="Thoát phòng thi?"
+				description={
+					<>
+						Tiến trình hiện tại <strong className="text-foreground">sẽ không được lưu</strong>. Bạn sẽ phải
+						bắt đầu lại từ đầu nếu quay lại đề này.
+					</>
+				}
+				warning="Đọc kỹ trước khi xác nhận"
+				confirmLabel="Thoát"
+				cancelLabel="Ở lại"
+				countdownSeconds={3}
+				destructive
+				onConfirm={() => {
+					setConfirmExit(false)
+					navigate({ to: "/thi-thu" })
+				}}
+				onCancel={() => setConfirmExit(false)}
 			/>
 		</div>
 	)

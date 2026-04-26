@@ -1,10 +1,13 @@
 // ?react imports — vite-plugin-svgr
+
+import avatarNodding from "#/assets/icons/avatar-nodding.svg"
 import BackIcon from "#/assets/icons/back-small.svg?react"
 // Static imports (multi-tone, not currentColor)
 import bellSmall from "#/assets/icons/bell-small.svg"
 import BookIcon from "#/assets/icons/book-default.svg?react"
 import CheckIcon from "#/assets/icons/check-small.svg?react"
 import chestMedium from "#/assets/icons/chest-medium.svg"
+import chestOpen from "#/assets/icons/chest-open.svg"
 import ClipboardIcon from "#/assets/icons/clipboard-small.svg?react"
 import CloseIcon from "#/assets/icons/close-small.svg?react"
 import coinMedium from "#/assets/icons/coin-medium.svg"
@@ -68,6 +71,7 @@ export type IconName = keyof typeof icons
 export const staticIcons = {
 	bell: bellSmall,
 	chest: chestMedium,
+	"chest-open": chestOpen,
 	challenge: challengeMedium,
 	coin: coinSmall,
 	"coin-md": coinMedium,
@@ -78,6 +82,7 @@ export const staticIcons = {
 	"target-md": targetMedium,
 	"timer-md": timerMedium,
 	trophy: trophySmall,
+	"avatar-nodding": avatarNodding,
 } as const
 
 export type StaticIconName = keyof typeof staticIcons

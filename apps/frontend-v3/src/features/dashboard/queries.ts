@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query"
 import type { ActivityDay, ExamSessionResult, OverviewData, StreakData } from "#/features/dashboard/types"
-import { type ApiResponse, api, type PaginatedResponse } from "#/lib/api"
+import { type ApiResponse, api } from "#/lib/api"
 import { skills } from "#/lib/skills"
 import { getTargetBand } from "#/lib/vstep"
 
@@ -21,8 +21,8 @@ export const activityHeatmapQuery = queryOptions({
 
 export const examSessionsQuery = queryOptions({
 	queryKey: ["exam-sessions"],
-	queryFn: () => api.get("exam-sessions").json<ApiResponse<PaginatedResponse<ExamSessionResult>>>(),
-	select: (raw) => raw.data.data,
+	queryFn: () => api.get("exam-sessions").json<ApiResponse<ExamSessionResult[]>>(),
+	select: (raw) => raw.data,
 })
 
 // Selectors
@@ -37,14 +37,6 @@ export function selectSpider(raw: ApiResponse<OverviewData>) {
 		targetBand: getTargetBand(raw.data.profile.target_level),
 		minTests: raw.data.stats.min_tests_required,
 		totalTests: raw.data.stats.total_tests,
-	}
-}
-
-export function selectGap(raw: ApiResponse<OverviewData>) {
-	return {
-		chart: raw.data.chart,
-		targetBand: getTargetBand(raw.data.profile.target_level),
-		targetLevel: raw.data.profile.target_level,
 	}
 }
 

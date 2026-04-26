@@ -19,6 +19,7 @@ class CompleteOnboardingRequest extends FormRequest
     {
         return [
             'nickname' => ['required', 'string', 'max:50'],
+            'entry_level' => ['nullable', 'string', Rule::enum(VstepLevel::class)],
             'target_level' => ['required', 'string', Rule::enum(VstepLevel::class)->only(VstepLevel::targetOptions())],
             'target_deadline' => ['required', 'date', 'after:today'],
         ];

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SaveExamDraftRequest;
 use App\Http\Requests\SubmitExamRequest;
 use App\Http\Resources\ExamSpeakingResultResource;
 use App\Http\Resources\ExamSubmitResultResource;
@@ -12,6 +13,7 @@ use App\Http\Resources\ExamWritingResultResource;
 use App\Models\ExamListeningPlayLog;
 use App\Models\ExamMcqAnswer;
 use App\Models\ExamSession;
+use App\Models\ExamSessionDraft;
 use App\Models\ExamVersion;
 use App\Models\Profile;
 use App\Services\ExamScoringService;
@@ -119,6 +121,7 @@ class ExamController extends Controller
         $status = $request->input('status');
 
         $query = ExamSession::query()
+            ->with('examVersion:id,exam_id')
             ->where('profile_id', $profile->id)
             ->orderByDesc('started_at')
             ->limit(50);
@@ -129,13 +132,16 @@ class ExamController extends Controller
 
         $sessions = $query->get()->map(fn (ExamSession $session) => [
             'id' => $session->id,
+            'exam_id' => $session->examVersion?->exam_id,
             'exam_version_id' => $session->exam_version_id,
             'mode' => $session->mode,
+            'selected_skills' => $session->selected_skills,
             'is_full_test' => $session->is_full_test,
             'status' => $session->status,
             'started_at' => $session->started_at,
             'submitted_at' => $session->submitted_at,
-            'scores' => in_array($session->status, ['submitted', 'graded'], true)
+            'server_deadline_at' => $session->server_deadline_at,
+            'scores' => in_array($session->status, ['submitted', 'auto_submitted', 'grading', 'graded'], true)
                 ? $this->scoringService->getSessionScores($session)
                 : null,
         ]);
@@ -143,13 +149,75 @@ class ExamController extends Controller
         return response()->json(['data' => $sessions]);
     }
 
+    public function abandon(Request $request, string $sessionId): JsonResponse
+    {
+        /** @var ExamSession $session */
+        $session = ExamSession::query()->findOrFail($sessionId);
+        if ($session->profile_id !== $this->profile($request)->id) {
+            abort(403);
+        }
+        if ($session->status !== 'active') {
+            return response()->json(['data' => ['abandoned' => false]]);
+        }
+        $session->update([
+            'status' => 'auto_submitted',
+            'submitted_at' => now(),
+        ]);
+        ExamSessionDraft::query()->where('session_id', $session->id)->delete();
+
+        return response()->json(['data' => ['abandoned' => true]]);
+    }
+
+    public function getDraft(Request $request, string $sessionId): JsonResponse
+    {
+        /** @var ExamSession $session */
+        $session = ExamSession::query()->findOrFail($sessionId);
+        $draft = $this->examService->getDraft($this->profile($request), $session);
+
+        if ($draft === null) {
+            return response()->json(['data' => null]);
+        }
+
+        return response()->json(['data' => [
+            'session_id' => $draft->session_id,
+            'skill_idx' => $draft->skill_idx,
+            'mcq_answers' => $draft->mcq_answers,
+            'writing_answers' => $draft->writing_answers,
+            'speaking_marks' => $draft->speaking_marks,
+            'saved_at' => $draft->saved_at,
+        ]]);
+    }
+
+    public function saveDraft(SaveExamDraftRequest $request, string $sessionId): JsonResponse
+    {
+        /** @var ExamSession $session */
+        $session = ExamSession::query()->findOrFail($sessionId);
+        $draft = $this->examService->saveDraft($this->profile($request), $session, [
+            'skill_idx' => (int) $request->validated('skill_idx'),
+            'mcq_answers' => $request->validated('mcq_answers'),
+            'writing_answers' => $request->validated('writing_answers'),
+            'speaking_marks' => $request->validated('speaking_marks'),
+        ]);
+
+        return response()->json(['data' => [
+            'session_id' => $draft->session_id,
+            'skill_idx' => $draft->skill_idx,
+            'mcq_answers' => $draft->mcq_answers,
+            'writing_answers' => $draft->writing_answers,
+            'speaking_marks' => $draft->speaking_marks,
+            'saved_at' => $draft->saved_at,
+        ]]);
+    }
+
     public function activeSession(Request $request): JsonResponse
     {
         $profile = $this->profile($request);
 
         $session = ExamSession::query()
+            ->with('examVersion:id,exam_id', 'examVersion.exam:id,title')
             ->where('profile_id', $profile->id)
             ->where('status', 'active')
+            ->where('server_deadline_at', '>', now())
             ->latest('started_at')
             ->first();
 
@@ -159,6 +227,8 @@ class ExamController extends Controller
 
         return response()->json(['data' => [
             'id' => $session->id,
+            'exam_id' => $session->examVersion->exam_id,
+            'exam_title' => $session->examVersion->exam?->title,
             'exam_version_id' => $session->exam_version_id,
             'mode' => $session->mode,
             'selected_skills' => $session->selected_skills,
@@ -234,10 +304,14 @@ class ExamController extends Controller
             'examVersion.readingPassages.items',
         ]);
 
-        $mcqBand = $this->examService->getSessionScores($session);
+        $mcqBand = $this->scoringService->getSessionScores($session);
 
-        // MCQ detail: per-item breakdown
+        // MCQ detail: per-item breakdown (chỉ các câu đã đáp)
         $mcqDetail = $this->buildMcqDetail($session);
+
+        // MCQ summary: score + total. Total = số item trong selected_skills của version
+        // (câu không đáp tính sai → cùng logic với submit() để FE đọc trực tiếp).
+        $mcqSummary = $this->buildMcqSummary($session);
 
         // Writing feedback
         $writingFeedback = $session->writingSubmissions->map(function ($submission) {
@@ -288,6 +362,7 @@ class ExamController extends Controller
         return response()->json(['data' => [
             'session' => $this->formatSessionSummary($session),
             'scores' => $mcqBand,
+            'mcq' => $mcqSummary,
             'mcq_detail' => $mcqDetail,
             'writing_feedback' => $writingFeedback,
             'speaking_feedback' => $speakingFeedback,
@@ -341,12 +416,44 @@ class ExamController extends Controller
         ];
     }
 
-    /** @return array<int, array{item_ref_type: string, item_ref_id: string, selected_index: int, correct_index: int|null, is_correct: bool}> */
+    /**
+     * Aggregate MCQ score/total cho session đã submit. Total = số item thuộc selected_skills
+     * trong version (câu không trả lời tính sai). Cùng logic với ExamSessionService::submit().
+     *
+     * @return array{score: int, total: int}
+     */
+    private function buildMcqSummary(ExamSession $session): array
+    {
+        $itemMap = $this->scoringService->loadMcqItemMap($session);
+        $skills = $session->selected_skills ?? [];
+
+        $total = 0;
+        foreach (array_keys($itemMap) as $key) {
+            if (str_starts_with($key, 'exam_listening_item:') && in_array('listening', $skills, true)) {
+                $total++;
+            } elseif (str_starts_with($key, 'exam_reading_item:') && in_array('reading', $skills, true)) {
+                $total++;
+            }
+        }
+
+        $score = $session->mcqAnswers->where('is_correct', true)->count();
+
+        return ['score' => $score, 'total' => $total];
+    }
+
+    /**
+     * Per-item breakdown, sắp theo canonical order của version
+     * (Listening trước Reading; trong mỗi skill: theo part → section.display_order → item.display_order).
+     * BE là nguồn truth duy nhất về thứ tự — FE không cần sort lại.
+     *
+     * @return list<array{item_ref_type: string, item_ref_id: string, selected_index: int, correct_index: int|null, is_correct: bool, answered_at: mixed}>
+     */
     private function buildMcqDetail(ExamSession $session): array
     {
-        $itemMap = $this->examService->loadMcqItemMap($session);
+        $itemMap = $this->scoringService->loadMcqItemMap($session);
+        $rankMap = $this->buildItemRankMap($session);
 
-        return $session->mcqAnswers->map(function (ExamMcqAnswer $answer) use ($itemMap) {
+        $rows = $session->mcqAnswers->map(function (ExamMcqAnswer $answer) use ($itemMap) {
             $key = "{$answer->item_ref_type}:{$answer->item_ref_id}";
 
             return [
@@ -357,6 +464,40 @@ class ExamController extends Controller
                 'is_correct' => $answer->is_correct,
                 'answered_at' => $answer->answered_at,
             ];
-        })->toArray();
+        })->all();
+
+        usort($rows, function (array $a, array $b) use ($rankMap) {
+            $ra = $rankMap["{$a['item_ref_type']}:{$a['item_ref_id']}"] ?? PHP_INT_MAX;
+            $rb = $rankMap["{$b['item_ref_type']}:{$b['item_ref_id']}"] ?? PHP_INT_MAX;
+
+            return $ra <=> $rb;
+        });
+
+        return array_values($rows);
+    }
+
+    /**
+     * Map "type:id" → ordinal theo thứ tự render của đề.
+     * Listening sections đã sort theo (part, display_order, id), items theo (display_order, id) — chỉ cần đi tuần tự.
+     *
+     * @return array<string,int>
+     */
+    private function buildItemRankMap(ExamSession $session): array
+    {
+        $version = $session->examVersion;
+        $rank = [];
+        $i = 0;
+        foreach ($version->listeningSections as $section) {
+            foreach ($section->items as $item) {
+                $rank["exam_listening_item:{$item->id}"] = $i++;
+            }
+        }
+        foreach ($version->readingPassages as $passage) {
+            foreach ($passage->items as $item) {
+                $rank["exam_reading_item:{$item->id}"] = $i++;
+            }
+        }
+
+        return $rank;
     }
 }

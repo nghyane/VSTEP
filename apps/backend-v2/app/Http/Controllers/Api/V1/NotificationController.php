@@ -40,6 +40,13 @@ class NotificationController extends Controller
         return response()->json(['data' => ['marked' => $count]]);
     }
 
+    public function read(Request $request, string $id): JsonResponse
+    {
+        $ok = $this->notificationService->markRead($this->profile($request), $id);
+
+        return response()->json(['data' => ['marked' => $ok]]);
+    }
+
     public function destroy(Request $request, string $id): JsonResponse
     {
         $notif = Notification::query()->findOrFail($id);

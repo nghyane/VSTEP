@@ -30,6 +30,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/login', [AuthController::class, 'login']);
         Route::post('/auth/google', [AuthController::class, 'googleLogin']);
         Route::post('/auth/refresh', [AuthController::class, 'refresh']);
+        Route::post('/auth/email/check', [AuthController::class, 'checkEmail']);
     });
 
     // Auth (protected, no active profile required — admin/teacher fit here)
@@ -113,6 +114,10 @@ Route::prefix('v1')->group(function () {
         Route::get('/exam-sessions/{sessionId}', [ExamController::class, 'showSession']);
         Route::get('/exam-sessions/{sessionId}/results', [ExamController::class, 'sessionResults']);
         Route::post('/exam-sessions/{sessionId}/submit', [ExamController::class, 'submit']);
+        Route::post('/exam-sessions/{sessionId}/abandon', [ExamController::class, 'abandon']);
+        Route::get('/exam-sessions/{sessionId}/draft', [ExamController::class, 'getDraft']);
+        Route::put('/exam-sessions/{sessionId}/draft', [ExamController::class, 'saveDraft'])
+            ->middleware('throttle:120,1');
         Route::post('/exam-sessions/{sessionId}/listening-played', [ExamController::class, 'logListeningPlayed']);
         Route::get('/exam-sessions/{sessionId}/listening-played', [ExamController::class, 'listeningPlaySummary']);
         Route::get('/exam-sessions/{sessionId}/writing-results', [ExamController::class, 'writingResults']);
@@ -131,6 +136,8 @@ Route::prefix('v1')->group(function () {
         // Overview & progress.
         Route::get('/overview', [OverviewController::class, 'overview']);
         Route::get('/streak', [OverviewController::class, 'streak']);
+        Route::post('/streak/milestones/{days}/claim', [OverviewController::class, 'claimStreakMilestone'])
+            ->whereNumber('days');
         Route::get('/activity-heatmap', [OverviewController::class, 'activityHeatmap']);
 
         // Courses.
@@ -145,6 +152,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/notifications', [NotificationController::class, 'index']);
         Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
         Route::post('/notifications/read-all', [NotificationController::class, 'readAll']);
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'read']);
         Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
     });
 

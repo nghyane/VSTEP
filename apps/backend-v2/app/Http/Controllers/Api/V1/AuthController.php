@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\CheckEmailRequest;
 use App\Http\Requests\Auth\CompleteOnboardingRequest;
 use App\Http\Requests\Auth\GoogleLoginRequest;
 use App\Http\Requests\Auth\LoginRequest;
@@ -28,13 +29,18 @@ class AuthController extends Controller
         private readonly AuthService $authService,
     ) {}
 
+    public function checkEmail(CheckEmailRequest $request): JsonResponse
+    {
+        return response()->json(['data' => ['available' => true]]);
+    }
+
     public function register(RegisterRequest $request): JsonResponse
     {
         $validated = $request->validated();
 
         $result = $this->authService->register(
             ['email' => $validated['email'], 'password' => $validated['password']],
-            ['nickname' => $validated['nickname'], 'target_level' => $validated['target_level'], 'target_deadline' => $validated['target_deadline']],
+            ['nickname' => $validated['nickname'], 'target_level' => $validated['target_level'], 'target_deadline' => $validated['target_deadline'], 'entry_level' => $validated['entry_level'] ?? null],
         );
 
         return response()->json(['data' => [
@@ -93,6 +99,7 @@ class AuthController extends Controller
 
         $result = $this->authService->completeOnboarding($user, [
             'nickname' => $request->validated('nickname'),
+            'entry_level' => $request->validated('entry_level'),
             'target_level' => $request->validated('target_level'),
             'target_deadline' => $request->validated('target_deadline'),
         ]);
