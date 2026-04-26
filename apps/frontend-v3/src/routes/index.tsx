@@ -4,7 +4,13 @@ import { Logo } from "#/components/Logo"
 import { AuthShell } from "#/features/auth/AuthShell"
 import { LoginForm } from "#/features/auth/LoginForm"
 import { RegisterForm } from "#/features/auth/RegisterForm"
-import { LandingCTA, LandingFeatures, LandingHero, LandingSkills, LandingSocial } from "#/features/landing/sections"
+import {
+	LandingCTA,
+	LandingFeatures,
+	LandingHero,
+	LandingSkills,
+	LandingSocial,
+} from "#/features/landing/sections"
 import { useAuth } from "#/lib/auth"
 
 type AuthParam = "login" | "register" | undefined
@@ -32,14 +38,17 @@ function LandingPage() {
 	useEffect(() => {
 		const el = ctaRef.current
 		if (!el) return
-		const observer = new IntersectionObserver(([entry]) => setShowBtn(!entry.isIntersecting), { threshold: 0 })
+		const observer = new IntersectionObserver(([entry]) => setShowBtn(!entry.isIntersecting), {
+			threshold: 0,
+		})
 		observer.observe(el)
 		return () => observer.disconnect()
 	}, [])
 
 	return (
 		<div className="min-h-screen bg-surface">
-			<nav className="sticky top-0 z-40 bg-surface/95 backdrop-blur-sm border-b border-transparent transition-colors"
+			<nav
+				className="sticky top-0 z-40 bg-surface/95 backdrop-blur-sm border-b border-transparent transition-colors"
 				style={showBtn ? { borderBottomColor: "var(--color-border)" } : undefined}
 			>
 				<div className="flex items-center justify-between px-8 py-4 max-w-6xl mx-auto">
