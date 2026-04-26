@@ -372,27 +372,32 @@ function ListeningPanel({ sections, sessionId, answers, onAnswer, c, insets }: a
     (async () => {
       try {
         await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-        const { sound: loaded } = await Audio.Sound.createAsync({ uri: audioUrl }, { shouldPlay: false }, (st) => {
-          if (st.isLoaded) setPlaying(st.isPlaying);
-        });
+        const { sound: loaded } = await Audio.Sound.createAsync(
+          { uri: audioUrl },
+          { shouldPlay: false },
+          (st) => {
+            if (st.isLoaded) setPlaying(st.isPlaying);
+          }
+        );
         snd = loaded;
         setSound(loaded);
-      } catch {
+      } catch (e: any) {
         setSound(null);
         setPlaying(false);
-        setAudioError("Không tải được audio. Vui lòng thử lại sau.");
+        setAudioError(`Không tải được audio: ${e?.message ?? e}`);
       }
     })();
     return () => { snd?.unloadAsync().catch(() => undefined); };
-  }, [section?.id]);
+  }, [section?.audioUrl]);
 
   async function togglePlay() {
     if (!sound) return;
     try {
+      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
       if (playing) await sound.pauseAsync(); else await sound.playAsync();
-    } catch {
+    } catch (e: any) {
       setPlaying(false);
-      setAudioError("Không phát được audio. Vui lòng thử lại sau.");
+      setAudioError(`Không phát được audio: ${e?.message ?? e}`);
     }
   }
 
@@ -534,6 +539,10 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [recError, setRecError] = useState<string | null>(null);
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startRef = useRef<number | null>(null);
   const accentColor = themeColors.light.skillSpeaking;
   const accentDark = themeColors.light.skillSpeaking + "CC";
 
@@ -545,25 +554,54 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
     sound?.unloadAsync().catch(() => undefined);
     setSound(null);
     setIsPlaying(false);
+    setRecError(null);
+    setElapsedMs(0);
+    if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
   }, [partIdx]);
 
+  // Cleanup on unmount
+  useEffect(() => () => {
+    if (tickRef.current) clearInterval(tickRef.current);
+  }, []);
+
   async function startRec() {
+    setRecError(null);
     try {
-      await Audio.requestPermissionsAsync();
+      const perm = await Audio.requestPermissionsAsync();
+      if (!perm.granted) {
+        setRecError("Không có quyền truy cập micro.");
+        return;
+      }
       await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
       const { recording: rec } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
       setRecording(rec);
       setIsRec(true);
+      setElapsedMs(0);
+      startRef.current = Date.now();
+      tickRef.current = setInterval(() => {
+        if (!startRef.current) return;
+        setElapsedMs(Date.now() - startRef.current);
+      }, 200);
     } catch {
-      // permission denied
+      setRecError("Không thể khởi tạo ghi âm.");
     }
   }
 
   async function stopRec() {
     if (!recording) return;
+    if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
     await recording.stopAndUnloadAsync();
-    await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      playsInSilentModeIOS: true,
+    });
     const uri = recording.getURI();
+    if (!uri) {
+      setRecError("Ghi âm thất bại, không có file.");
+      setIsRec(false);
+      setRecording(null);
+      return;
+    }
     setAudioUri(uri);
     setIsRec(false);
     setRecording(null);
@@ -591,7 +629,10 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
 
   async function handleConfirmRecord() {
     const audioKey = await uploadAudio();
-    if (!audioKey) return;
+    if (!audioKey) {
+      setRecError("Tải lên thất bại. Vui lòng thử lại.");
+      return;
+    }
     const duration = part.speakingSeconds;
     const answer: SpeakingAnswer = { partId: part.id, audioUrl: audioKey, durationSeconds: duration };
     onSetSpeakingAnswer(part.id, answer);
@@ -601,12 +642,17 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
   async function handlePlayback() {
     if (!audioUri) return;
     try {
-      const { sound: newSound } = await Audio.Sound.createAsync({ uri: audioUri }, {}, (status) => {
-        if (status.isLoaded) setIsPlaying(status.isPlaying);
-      });
+      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri: audioUri },
+        { shouldPlay: true },
+        (status) => {
+          if (status.isLoaded) setIsPlaying(status.isPlaying);
+        }
+      );
       setSound(newSound);
-    } catch {
-      // playback error
+    } catch (e: any) {
+      setRecError(`Không phát được: ${e?.message ?? e}`);
     }
   }
 
@@ -615,6 +661,8 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
     setSound(null);
     setIsPlaying(false);
     setAudioUri(null);
+    setRecError(null);
+    setElapsedMs(0);
     onSetSpeakingAnswer(part.id, { partId: part.id, audioUrl: null, durationSeconds: 0 });
     done.delete(part.id);
   }
@@ -639,9 +687,16 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
       </View>
       <View style={[s.recCard, { backgroundColor: c.card, borderColor: isRec ? accentColor : c.border }]}>
         {!audioUri && !hasRecording && (
-          <DepthButton onPress={isRec ? stopRec : startRec} disabled={isRec}>
-            {isRec ? "Dừng ghi âm" : "Bắt đầu nói"}
-          </DepthButton>
+          <>
+            {isRec && (
+              <Text style={[s.timerText, { color: accentDark }]}>
+                {Math.floor(elapsedMs / 1000)}s / {part.speakingSeconds}s
+              </Text>
+            )}
+            <DepthButton onPress={isRec ? stopRec : startRec} disabled={isRec}>
+              {isRec ? "Dừng ghi âm" : "Bắt đầu nói"}
+            </DepthButton>
+          </>
         )}
         {audioUri && !hasRecording && (
           <>
@@ -662,6 +717,7 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
             <Text style={[s.doneText, { color: themeColors.light.skillWriting }]}>Đã ghi âm</Text>
           </View>
         )}
+        {recError && <Text style={[s.errorText, { color: c.destructive }]}>{recError}</Text>}
       </View>
     </ScrollView>
   );
@@ -814,6 +870,7 @@ const s = StyleSheet.create({
   micBtnText: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
   doneRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   doneText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
+  errorText: { fontSize: fontSize.xs, fontFamily: fontFamily.medium, textAlign: "center" },
   // MCQ
   qCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md },
   qNum: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },

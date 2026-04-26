@@ -173,7 +173,7 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
     if (!r) return;
     if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
     await r.stopAndUnloadAsync();
-    await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+    await Audio.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: true });
     setAudioUri(r.getURI());
     setIsRecording(false);
     setRecording(null);
@@ -214,8 +214,11 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
 
   const handlePlayback = useCallback(async () => {
     if (!audioUri) return;
-    const { sound } = await Audio.Sound.createAsync({ uri: audioUri });
-    await sound.playAsync();
+    await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+    const { sound } = await Audio.Sound.createAsync(
+      { uri: audioUri },
+      { shouldPlay: true },
+    );
   }, [audioUri]);
 
   if (submitted) {

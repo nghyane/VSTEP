@@ -157,11 +157,12 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
   async function togglePlay() {
     if (!sound) return;
     try {
+      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
       if (playing) await sound.pauseAsync();
       else await sound.playAsync();
-    } catch {
+    } catch (e: any) {
       setPlaying(false);
-      setAudioError("Không phát được audio. Vui lòng thử lại sau.");
+      setAudioError(`Không phát được audio: ${e?.message ?? e}`);
     }
   }
 
