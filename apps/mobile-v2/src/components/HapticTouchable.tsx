@@ -33,6 +33,7 @@ export function HapticTouchable({ onPress, haptic = true, scalePress = false, ch
   const content = (
     <TouchableOpacity
       {...rest}
+      style={style}
       onPress={handlePress}
       onPressIn={scalePress ? handlePressIn : undefined}
       onPressOut={scalePress ? handlePressOut : undefined}

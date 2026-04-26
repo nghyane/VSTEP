@@ -23,8 +23,6 @@ const SKILL_META: Record<SkillKey, { label: string; color: string; icon: string 
 
 const SKILL_ORDER: SkillKey[] = ["listening", "reading", "writing", "speaking"];
 
-type ExamMode = "full" | "custom";
-
 export default function ExamDetailScreen() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
@@ -33,8 +31,8 @@ export default function ExamDetailScreen() {
   const { data: detail, isLoading } = useExam(id ?? "");
   const startMutation = useStartExamSession();
 
-  const [mode, setMode] = useState<ExamMode>("full");
-  const [selectedSkills, setSelectedSkills] = useState<SkillKey[]>(SKILL_ORDER);
+  const [selectedSkills, setSelectedSkills] = useState<Set<SkillKey>>(new Set(SKILL_ORDER));
+  const [expanded, setExpanded] = useState<Set<SkillKey>>(new Set());
 
   const version = detail?.version;
   const availableSkills = SKILL_ORDER.filter((sk) => {
@@ -54,6 +52,7 @@ export default function ExamDetailScreen() {
   }
 
   const { exam } = detail;
+  const isFull = selectedSkills.size === 0 || selectedSkills.size === availableSkills.length;
 
   const totalMcq =
     version.listeningSections.reduce((sum, sec) => sum + sec.items.length, 0) +
@@ -66,17 +65,27 @@ export default function ExamDetailScreen() {
     version.speakingParts.reduce((sum, p) => sum + p.durationMinutes, 0);
 
   function toggleSkill(sk: SkillKey) {
-    if (selectedSkills.includes(sk)) {
-      if (selectedSkills.length > 1) setSelectedSkills(selectedSkills.filter((s) => s !== sk));
-    } else {
-      setSelectedSkills([...selectedSkills, sk].sort((a, b) => SKILL_ORDER.indexOf(a) - SKILL_ORDER.indexOf(b)));
-    }
+    setSelectedSkills((prev) => {
+      const next = new Set(prev);
+      if (next.has(sk)) next.delete(sk);
+      else next.add(sk);
+      return next;
+    });
+  }
+
+  function toggleExpand(sk: SkillKey) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(sk)) next.delete(sk);
+      else next.add(sk);
+      return next;
+    });
   }
 
   function handleStart() {
-    const finalSkills = mode === "full" ? availableSkills : selectedSkills;
+    const finalSkills = isFull ? availableSkills : Array.from(selectedSkills).sort((a, b) => SKILL_ORDER.indexOf(a) - SKILL_ORDER.indexOf(b));
     startMutation.mutate(
-      { examId: id ?? "", mode, selectedSkills: finalSkills },
+      { examId: id ?? "", mode: isFull ? "full" : "custom", selectedSkills: finalSkills },
       { onSuccess: (res) => router.push(`/(app)/session/${res.sessionId}?examId=${id}` as any) },
     );
   }
@@ -95,7 +104,6 @@ export default function ExamDetailScreen() {
 
       {/* Header card */}
       <DepthCard style={s.headerCard}>
-        {/* Tags */}
         {exam.tags.length > 0 && (
           <View style={s.tagRow}>
             {exam.tags.map((tag) => (
@@ -105,11 +113,7 @@ export default function ExamDetailScreen() {
             ))}
           </View>
         )}
-
-        {/* Title */}
         <Text style={[s.examTitle, { color: c.foreground }]}>{exam.title}</Text>
-
-        {/* Meta pills */}
         <View style={s.metaRow}>
           <MetaPill icon="time-outline" label={`${totalMinutes}`} unit="phút" c={c} />
           <MetaPill icon="layers-outline" label="4" unit="kỹ năng" c={c} />
@@ -118,107 +122,92 @@ export default function ExamDetailScreen() {
         </View>
       </DepthCard>
 
-      {/* Skill chips */}
-      <DepthCard style={s.structCard}>
-        <Text style={[s.sectionLabel, { color: c.subtle }]}>CẤU TRÚC BÀI THI</Text>
+      {/* Skill selector rows — FE v3 SectionSelector pattern */}
+      <DepthCard style={s.sectionCard}>
+        <View style={s.sectionHeader}>
+          <Text style={[s.sectionLabel, { color: c.subtle }]}>CHỌN PHẦN LUYỆN TẬP</Text>
+          <Text style={[s.selectionCount, { color: c.mutedForeground }]}>
+            {selectedSkills.size === 0 ? "Chưa chọn — sẽ làm full test" : `${selectedSkills.size} kỹ năng đã chọn`}
+          </Text>
+        </View>
+
         {availableSkills.map((sk, i) => {
           const meta = SKILL_META[sk];
+          const isSelected = selectedSkills.has(sk);
+          const isExp = expanded.has(sk);
           let count = 0;
           let duration = 0;
           if (sk === "listening") { count = version.listeningSections.flatMap((s) => s.items).length; duration = version.listeningSections.reduce((a, s) => a + s.durationMinutes, 0); }
           if (sk === "reading") { count = version.readingPassages.flatMap((p) => p.items).length; duration = version.readingPassages.reduce((a, p) => a + p.durationMinutes, 0); }
           if (sk === "writing") { count = version.writingTasks.length; duration = version.writingTasks.reduce((a, t) => a + t.durationMinutes, 0); }
           if (sk === "speaking") { count = version.speakingParts.length; duration = version.speakingParts.reduce((a, p) => a + p.durationMinutes, 0); }
+
           return (
-            <View key={sk} style={[s.skillRow, i > 0 && { borderTopWidth: 1, borderTopColor: c.borderLight }]}>
-              <View style={[s.skillNum, { backgroundColor: meta.color + "20" }]}>
-                <Text style={[s.skillNumText, { color: meta.color }]}>{i + 1}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[s.skillName, { color: c.foreground }]}>{meta.label}</Text>
-                <Text style={[s.skillMeta, { color: c.mutedForeground }]}>{count} câu · {duration} phút</Text>
-              </View>
+            <View key={sk} style={[s.skillRowWrap, i > 0 && { borderTopWidth: 1, borderTopColor: c.borderLight }]}>
+              {/* Main row — tap anywhere to toggle selection */}
+              <HapticTouchable onPress={() => toggleSkill(sk)} style={s.skillRow}>
+                {/* Checkbox */}
+                <View style={[s.checkbox, {
+                  borderColor: isSelected ? meta.color : c.border,
+                  backgroundColor: isSelected ? meta.color : c.surface,
+                }]}>
+                  {isSelected && <Ionicons name="checkmark" size={12} color="#fff" />}
+                </View>
+
+                {/* Icon + label */}
+                <Ionicons name={meta.icon as any} size={18} color={meta.color} />
+                <Text style={[s.skillLabel, { color: meta.color }]}>{meta.label}</Text>
+                <Text style={[s.skillCount, { color: c.mutedForeground }]}>{count} câu · {duration} phút</Text>
+
+                {/* Badge */}
+                <View style={[s.badge, {
+                  borderColor: isSelected ? "transparent" : c.border,
+                  backgroundColor: isSelected ? `${c.foreground}0a` : c.surface,
+                }]}>
+                  <Text style={[s.badgeText, { color: isSelected ? c.mutedForeground : c.foreground }]}>
+                    {isSelected ? "Bỏ chọn" : "Chọn"}
+                  </Text>
+                </View>
+
+                {/* Chevron */}
+                <HapticTouchable onPress={(e: any) => { e.stopPropagation(); toggleExpand(sk); }} style={s.chevron}>
+                  <Ionicons name={isExp ? "chevron-up" : "chevron-down"} size={16} color={c.mutedForeground} />
+                </HapticTouchable>
+              </HapticTouchable>
+
+              {/* Expanded parts */}
+              {isExp && (
+                <View style={s.partsList}>
+                  {sk === "listening" && version.listeningSections.map((sec, idx) => (
+                    <View key={sec.id} style={[s.partRow, idx > 0 && { borderTopWidth: 1, borderTopColor: c.borderLight }, { backgroundColor: isSelected ? `${meta.color}0a` : c.background }]}>
+                      <Text style={[s.partLabel, { color: c.foreground }]}>Phần {sec.part}</Text>
+                      <Text style={[s.partMeta, { color: c.mutedForeground }]}>{sec.items.length} câu · {sec.durationMinutes} phút</Text>
+                    </View>
+                  ))}
+                  {sk === "reading" && version.readingPassages.map((p, idx) => (
+                    <View key={p.id} style={[s.partRow, idx > 0 && { borderTopWidth: 1, borderTopColor: c.borderLight }, { backgroundColor: isSelected ? `${meta.color}0a` : c.background }]}>
+                      <Text style={[s.partLabel, { color: c.foreground }]}>Phần {p.part}</Text>
+                      <Text style={[s.partMeta, { color: c.mutedForeground }]}>{p.items.length} câu · {p.durationMinutes} phút</Text>
+                    </View>
+                  ))}
+                  {sk === "writing" && version.writingTasks.map((t, idx) => (
+                    <View key={t.id} style={[s.partRow, idx > 0 && { borderTopWidth: 1, borderTopColor: c.borderLight }, { backgroundColor: isSelected ? `${meta.color}0a` : c.background }]}>
+                      <Text style={[s.partLabel, { color: c.foreground }]}>{t.taskType === "letter" ? `Viết thư (${t.minWords} từ)` : `Viết luận (${t.minWords} từ)`}</Text>
+                      <Text style={[s.partMeta, { color: c.mutedForeground }]}>1 bài · {t.durationMinutes} phút</Text>
+                    </View>
+                  ))}
+                  {sk === "speaking" && version.speakingParts.map((p, idx) => (
+                    <View key={p.id} style={[s.partRow, idx > 0 && { borderTopWidth: 1, borderTopColor: c.borderLight }, { backgroundColor: isSelected ? `${meta.color}0a` : c.background }]}>
+                      <Text style={[s.partLabel, { color: c.foreground }]}>{getSpeakingTypeLabel(p.type)}</Text>
+                      <Text style={[s.partMeta, { color: c.mutedForeground }]}>{p.durationMinutes} phút</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
           );
         })}
       </DepthCard>
-
-      {/* Mode selector — segmented toggle */}
-      {availableSkills.length > 1 && (
-        <DepthCard style={s.modeCard}>
-          <Text style={[s.sectionLabel, { color: c.subtle }]}>CHẾ ĐỘ LÀM BÀI</Text>
-          <View style={s.segmentedWrap}>
-            <View style={[s.segmented, { backgroundColor: c.muted }]}>
-              <HapticTouchable
-                onPress={() => {
-                  setMode("full");
-                  setSelectedSkills(availableSkills);
-                }}
-                style={[
-                  s.segment,
-                  mode === "full" && { backgroundColor: c.card },
-                ]}
-              >
-                {mode === "full" && (
-                  <View style={[s.segmentIndicator, { backgroundColor: c.primary }]} />
-                )}
-                <Text
-                  style={[
-                    s.segmentText,
-                    { color: mode === "full" ? c.primary : c.subtle },
-                  ]}
-                >
-                  Đầy đủ
-                </Text>
-              </HapticTouchable>
-              <HapticTouchable
-                onPress={() => setMode("custom")}
-                style={[
-                  s.segment,
-                  mode === "custom" && { backgroundColor: c.card },
-                ]}
-              >
-                {mode === "custom" && (
-                  <View style={[s.segmentIndicator, { backgroundColor: c.primary }]} />
-                )}
-                <Text
-                  style={[
-                    s.segmentText,
-                    { color: mode === "custom" ? c.primary : c.subtle },
-                  ]}
-                >
-                  Tùy chọn
-                </Text>
-              </HapticTouchable>
-            </View>
-          </View>
-
-          {mode === "custom" && (
-            <View style={s.skillSelectRow}>
-              {availableSkills.map((sk) => {
-                const meta = SKILL_META[sk];
-                const selected = selectedSkills.includes(sk);
-                return (
-                  <HapticTouchable
-                    key={sk}
-                    onPress={() => toggleSkill(sk)}
-                    style={[
-                      s.skillChip,
-                      {
-                        borderColor: selected ? meta.color : c.border,
-                        backgroundColor: selected ? meta.color + "18" : c.card,
-                      },
-                    ]}
-                  >
-                    <Ionicons name={selected ? "checkmark-circle" : "ellipse-outline"} size={16} color={selected ? meta.color : c.placeholder} />
-                    <Text style={[s.skillChipText, { color: selected ? meta.color : c.mutedForeground }]}>{meta.label}</Text>
-                  </HapticTouchable>
-                );
-              })}
-            </View>
-          )}
-        </DepthCard>
-      )}
 
       {/* Notes */}
       <DepthCard style={s.notesCard}>
@@ -241,7 +230,7 @@ export default function ExamDetailScreen() {
         onPress={handleStart}
         disabled={startMutation.isPending}
       >
-        {startMutation.isPending ? "Đang tạo phiên thi..." : mode === "full" ? "Nhận đề & bắt đầu" : "Bắt đầu làm bài"}
+        {startMutation.isPending ? "Đang tạo phiên thi..." : isFull ? "Nhận đề & bắt đầu" : "Bắt đầu làm bài"}
       </DepthButton>
 
       {startMutation.isError && (
@@ -253,6 +242,11 @@ export default function ExamDetailScreen() {
       <View style={{ height: insets.bottom + 40 }} />
     </ScrollView>
   );
+}
+
+function getSpeakingTypeLabel(type: string): string {
+  const map: Record<string, string> = { social: "Giao tiếp xã hội", solution: "Đề xuất giải pháp", topic: "Thảo luận chủ đề" };
+  return map[type] ?? type;
 }
 
 function MetaPill({ icon, label, unit, c }: { icon: string; label: string; unit: string; c: ReturnType<typeof useThemeColors> }) {
@@ -280,34 +274,22 @@ const s = StyleSheet.create({
   metaPill: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   metaPillLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
   metaPillUnit: { fontSize: fontSize.xs },
-  structCard: { gap: spacing.md },
+  sectionCard: { gap: spacing.md },
+  sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   sectionLabel: { fontSize: 10, fontFamily: fontFamily.bold, letterSpacing: 1 },
-  skillRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingTop: spacing.md },
-  skillNum: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-  skillNumText: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
-  skillName: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
-  skillMeta: { fontSize: fontSize.xs, marginTop: 2 },
-  modeCard: { gap: spacing.md },
-  segmentedWrap: { borderRadius: radius.md, overflow: "hidden" },
-  segmented: { flexDirection: "row", borderRadius: radius.md, overflow: "hidden", borderWidth: 2, borderColor: themeColors.light.border },
-  segment: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.sm,
-    gap: spacing.xs,
-  },
-  segmentIndicator: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  segmentText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
-  modeBtnText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
-  skillSelectRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  skillChip: { flexDirection: "row", alignItems: "center", gap: spacing.xs, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.full, borderWidth: 2 },
-  skillChipText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
+  selectionCount: { fontSize: fontSize.xs },
+  skillRowWrap: { paddingTop: spacing.md },
+  skillRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  checkbox: { width: 20, height: 20, borderRadius: 4, borderWidth: 2, alignItems: "center", justifyContent: "center" },
+  skillLabel: { fontSize: fontSize.sm, fontFamily: fontFamily.bold, flex: 1 },
+  skillCount: { fontSize: fontSize.xs },
+  badge: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full, borderWidth: 2 },
+  badgeText: { fontSize: 10, fontFamily: fontFamily.bold },
+  chevron: { padding: 4 },
+  partsList: { marginTop: spacing.xs },
+  partRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
+  partLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.medium, flex: 1 },
+  partMeta: { fontSize: fontSize.xs },
   notesCard: { gap: spacing.sm },
   noteRow: { flexDirection: "row", gap: spacing.sm },
   noteText: { flex: 1, fontSize: fontSize.xs, lineHeight: 18 },
