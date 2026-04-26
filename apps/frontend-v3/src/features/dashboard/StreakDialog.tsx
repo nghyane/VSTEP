@@ -88,7 +88,7 @@ export function StreakDialog({ open, onClose, streak }: Props) {
 					<Icon name="close" size="sm" className="text-muted" />
 				</button>
 
-				<ScrollArea className="max-h-[88vh]">
+				<ScrollArea maxHeight="88vh">
 					<div className="grid gap-4 p-6">
 						<div className="flex items-center gap-3">
 							<div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-streak-tint border-2 border-streak/30 border-b-4">

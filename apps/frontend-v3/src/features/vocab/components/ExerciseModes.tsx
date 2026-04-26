@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router"
-import { Icon } from "#/components/Icon"
+import { SkillIcon } from "#/components/SkillIcon"
 
 interface Props {
 	topicId: string
@@ -16,7 +16,7 @@ export function ExerciseModes({ topicId }: Props) {
 					search={{ kind: "mcq" }}
 					className="card-interactive p-4 text-left"
 				>
-					<Icon name="check" size="md" style={{ color: "var(--color-info)" }} className="mb-2" />
+					<SkillIcon name="dictionary" size="md" className="mb-2" />
 					<h4 className="font-bold text-sm text-foreground">Trắc nghiệm</h4>
 					<p className="text-xs text-subtle mt-0.5">Chọn đáp án đúng</p>
 				</Link>
@@ -26,7 +26,7 @@ export function ExerciseModes({ topicId }: Props) {
 					search={{ kind: "fill_blank" }}
 					className="card-interactive p-4 text-left"
 				>
-					<Icon name="pencil" size="md" style={{ color: "var(--color-skill-writing)" }} className="mb-2" />
+					<SkillIcon name="pencil" size="md" className="mb-2" />
 					<h4 className="font-bold text-sm text-foreground">Điền từ</h4>
 					<p className="text-xs text-subtle mt-0.5">Điền vào chỗ trống</p>
 				</Link>
@@ -36,7 +36,7 @@ export function ExerciseModes({ topicId }: Props) {
 					search={{ kind: "word_form" }}
 					className="card-interactive p-4 text-left"
 				>
-					<Icon name="book" size="md" style={{ color: "var(--color-skill-reading)" }} className="mb-2" />
+					<SkillIcon name="grammar" size="md" className="mb-2" />
 					<h4 className="font-bold text-sm text-foreground">Biến đổi từ</h4>
 					<p className="text-xs text-subtle mt-0.5">Chia dạng từ đúng</p>
 				</Link>

@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Icon } from "#/components/Icon"
+import { SkillIcon } from "#/components/SkillIcon"
 import type { ExamDetail, SkillKey } from "#/features/exam/types"
 import { skills } from "#/lib/skills"
 import { cn } from "#/lib/utils"
@@ -199,7 +199,7 @@ export function SectionSelector({ detail, selected, onToggleSkill }: Props) {
 								</div>
 
 								{/* Skill info */}
-								{skillDef && <Icon name={skillDef.icon} size="xs" style={{ color: skillDef.color }} />}
+								{skillDef && <SkillIcon name={skillDef.pngIcon} size="xs" />}
 								<span className="text-sm font-bold" style={{ color: skillDef?.color }}>
 									{meta.label}
 								</span>

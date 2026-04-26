@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { Icon } from "#/components/Icon"
+import { SkillIcon } from "#/components/SkillIcon"
 import { examSessionsQuery } from "#/features/dashboard/queries"
 import type { ExamSessionResult } from "#/features/dashboard/types"
 import { skills } from "#/lib/skills"
@@ -110,7 +110,7 @@ export function DoughnutCard() {
 					const value = counts[s.key] ?? 0
 					return (
 						<div key={s.key} className="flex items-center gap-2 rounded-(--radius-button) p-2 text-sm">
-							<Icon name={s.icon} size="xs" style={{ color: s.color }} />
+							<SkillIcon name={s.pngIcon} size="xs" />
 							<span className="font-bold text-foreground">{s.label}</span>
 							<span className="ml-auto text-lg tabular-nums font-extrabold" style={{ color: s.color }}>
 								{value}

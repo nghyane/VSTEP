@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { Icon } from "#/components/Icon"
+import { SkillIcon } from "#/components/SkillIcon"
 import { examSessionsQuery, overviewQuery, selectTargetBand } from "#/features/dashboard/queries"
 import { skills } from "#/lib/skills"
 import { formatShortDate, round } from "#/lib/utils"
@@ -48,7 +48,7 @@ export function ScoreTrend() {
 						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
 						style={{ color: s.color }}
 					>
-						<Icon name={s.icon} size="xs" />
+						<SkillIcon name={s.pngIcon} size="xs" />
 						{s.label}
 					</span>
 				))}
