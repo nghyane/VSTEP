@@ -13,6 +13,8 @@ interface SupportPanelProps {
   hasTranscript: boolean;
   hasKeywords: boolean;
   accentColor: string;
+  unlockedLevels?: number[];
+  onUnlock?: (level: number) => void;
 }
 
 interface SupportOption {
@@ -22,7 +24,15 @@ interface SupportOption {
   available: boolean;
 }
 
-export function SupportPanel({ skill, sessionId, hasTranscript, hasKeywords, accentColor }: SupportPanelProps) {
+export function SupportPanel({
+  skill,
+  sessionId,
+  hasTranscript,
+  hasKeywords,
+  accentColor,
+  unlockedLevels = [],
+  onUnlock,
+}: SupportPanelProps) {
   const c = useThemeColors();
   const [expanded, setExpanded] = useState(false);
 
@@ -42,6 +52,10 @@ export function SupportPanel({ skill, sessionId, hasTranscript, hasKeywords, acc
     onSuccess: (res: SupportResult) => {
       if (res.coinsSpent > 0) {
         addCoins(-res.coinsSpent);
+      }
+      const level = res.supportLevelsUsed.at(-1)?.level;
+      if (level != null) {
+        onUnlock?.(level);
       }
     },
   });
@@ -71,14 +85,26 @@ export function SupportPanel({ skill, sessionId, hasTranscript, hasKeywords, acc
             <HapticTouchable
               key={level}
               onPress={() => mutation.mutate({ level })}
-              disabled={mutation.isPending}
-              style={[s.optionRow, { borderColor: c.border }]}
+              disabled={mutation.isPending || unlockedLevels.includes(level)}
+              style={[
+                s.optionRow,
+                {
+                  borderColor: unlockedLevels.includes(level) ? accentColor : c.border,
+                  backgroundColor: unlockedLevels.includes(level) ? `${accentColor}14` : c.surface,
+                },
+              ]}
             >
-              <Ionicons name={icon} size={16} color={c.mutedForeground} />
+              <Ionicons
+                name={unlockedLevels.includes(level) ? "checkmark-circle" : icon}
+                size={16}
+                color={unlockedLevels.includes(level) ? accentColor : c.mutedForeground}
+              />
               <Text style={[s.optionText, { color: c.foreground }]}>{label}</Text>
-              {mutation.isPending && (
+              {unlockedLevels.includes(level) ? (
+                <Text style={[s.optionCost, { color: accentColor }]}>Đã mở</Text>
+              ) : mutation.isPending ? (
                 <Text style={[s.optionCost, { color: c.subtle }]}>Đang xử lý...</Text>
-              )}
+              ) : null}
             </HapticTouchable>
           ))}
         </View>

@@ -105,7 +105,8 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
   const { exercise, questions } = detail;
   const session = useMcqSession(sessionId, submitReadingSession, "reading");
   const [showPassage, setShowPassage] = useState(true);
-  const hasTranslation = !!exercise.vietnameseTranslation;
+  const [unlockedSupport, setUnlockedSupport] = useState<number[]>([]);
+  const hasTranslation = !!exercise.vietnameseTranslation && unlockedSupport.includes(2);
 
   return (
     <View style={[s.root, { backgroundColor: c.background }]}>
@@ -161,9 +162,11 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
           <SupportPanel
             skill="reading"
             sessionId={sessionId}
-            hasTranscript={hasTranslation}
+            hasTranscript={!!exercise.vietnameseTranslation}
             hasKeywords={(exercise.keywords ?? []).length > 0}
             accentColor={COLOR}
+            unlockedLevels={unlockedSupport}
+            onUnlock={(level) => setUnlockedSupport((prev) => (prev.includes(level) ? prev : [...prev, level]))}
           />
         )}
 

@@ -112,6 +112,7 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [unlockedSupport, setUnlockedSupport] = useState<number[]>([]);
   const [showSub, setShowSub] = useState(false);
   const progressAnim = useRef(new Animated.Value(0)).current;
 
@@ -238,6 +239,13 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
             hasTranscript={hasSub}
             hasKeywords={(exercise.keywords ?? []).length > 0}
             accentColor={COLOR}
+            unlockedLevels={unlockedSupport}
+            onUnlock={(level) => {
+              setUnlockedSupport((prev) => (prev.includes(level) ? prev : [...prev, level]));
+              if (level === 2) {
+                setShowSub(true);
+              }
+            }}
           />
         )}
 

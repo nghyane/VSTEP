@@ -112,9 +112,12 @@ interface EditorScreenProps {
 function EditorScreen({ detail, sessionId, onBack, insets, c, router }: EditorScreenProps) {
   const [text, setText] = useState("");
   const [submitted, setSubmitted] = useState<{ submissionId: string; wordCount: number } | null>(null);
+  const [unlockedSupport, setUnlockedSupport] = useState<number[]>([]);
   const wc = countWords(text);
   const inRange = wc >= detail.minWords && wc <= detail.maxWords;
   const over = wc > detail.maxWords;
+  const showKeywords = unlockedSupport.includes(1);
+  const showSampleAnswer = unlockedSupport.includes(2);
 
   const submitMutation = useMutation({
     mutationFn: () => submitWritingSession(sessionId, text),
@@ -166,7 +169,7 @@ function EditorScreen({ detail, sessionId, onBack, insets, c, router }: EditorSc
               <Text style={[s.promptLabel, { color: COLOR }]}>Đề bài — Task {detail.part}</Text>
               <Text style={[s.promptText, { color: c.foreground }]}>{detail.prompt}</Text>
 
-              {detail.keywords && detail.keywords.length > 0 && (
+              {showKeywords && detail.keywords && detail.keywords.length > 0 && (
                 <View style={s.keywordsSection}>
                   <Text style={[s.reqLabel, { color: c.mutedForeground }]}>Từ khóa gợi ý</Text>
                   <View style={s.startersRow}>
@@ -212,6 +215,8 @@ function EditorScreen({ detail, sessionId, onBack, insets, c, router }: EditorSc
               hasTranscript={!!detail.sampleAnswer}
               hasKeywords={!!(detail.keywords && detail.keywords.length > 0)}
               accentColor={COLOR}
+              unlockedLevels={unlockedSupport}
+              onUnlock={(level) => setUnlockedSupport((prev) => (prev.includes(level) ? prev : [...prev, level]))}
             />
 
             {/* Editor — scrollable */}
@@ -236,7 +241,7 @@ function EditorScreen({ detail, sessionId, onBack, insets, c, router }: EditorSc
             </DepthCard>
 
             {/* Sample answer (if available) */}
-            {detail.sampleAnswer && (
+            {showSampleAnswer && detail.sampleAnswer && (
               <DepthCard
                 style={{
                   ...s.sampleCard,

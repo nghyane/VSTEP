@@ -36,16 +36,9 @@ export default function ExamDetailScreen() {
   const [mode, setMode] = useState<ExamMode>("full");
   const [selectedSkills, setSelectedSkills] = useState<SkillKey[]>(SKILL_ORDER);
 
-  if (isLoading) {
-    return <View style={[s.center, { backgroundColor: c.background }]}><ActivityIndicator color={c.primary} size="large" /></View>;
-  }
-  if (!detail) {
-    return <MascotEmpty mascot="think" title="Không tìm thấy đề thi" subtitle="" />;
-  }
-
-  const { exam, version } = detail;
-
+  const version = detail?.version;
   const availableSkills = SKILL_ORDER.filter((sk) => {
+    if (!version) return false;
     if (sk === "listening") return version.listeningSections.length > 0;
     if (sk === "reading") return version.readingPassages.length > 0;
     if (sk === "writing") return version.writingTasks.length > 0;
@@ -53,10 +46,14 @@ export default function ExamDetailScreen() {
     return false;
   });
 
-  // Khi chuyển sang custom, chỉ giữ lại các skill có trong available
-  if (mode === "custom" && selectedSkills.length !== availableSkills.length) {
-    setSelectedSkills(availableSkills);
+  if (isLoading) {
+    return <View style={[s.center, { backgroundColor: c.background }]}><ActivityIndicator color={c.primary} size="large" /></View>;
   }
+  if (!detail || !version) {
+    return <MascotEmpty mascot="think" title="Không tìm thấy đề thi" subtitle="" />;
+  }
+
+  const { exam } = detail;
 
   const totalMcq =
     version.listeningSections.reduce((sum, sec) => sum + sec.items.length, 0) +
@@ -146,25 +143,54 @@ export default function ExamDetailScreen() {
         })}
       </DepthCard>
 
-      {/* Mode selector */}
+      {/* Mode selector — segmented toggle */}
       {availableSkills.length > 1 && (
         <DepthCard style={s.modeCard}>
           <Text style={[s.sectionLabel, { color: c.subtle }]}>CHẾ ĐỘ LÀM BÀI</Text>
-          <View style={s.modeRow}>
-            <HapticTouchable
-              onPress={() => setMode("full")}
-              style={[s.modeBtn, { borderColor: mode === "full" ? c.primary : c.border, backgroundColor: mode === "full" ? c.primaryTint : c.card }]}
-            >
-              <Ionicons name="checkmark-circle" size={18} color={mode === "full" ? c.primary : c.placeholder} />
-              <Text style={[s.modeBtnText, { color: mode === "full" ? c.primary : c.mutedForeground }]}>Đầy đủ</Text>
-            </HapticTouchable>
-            <HapticTouchable
-              onPress={() => setMode("custom")}
-              style={[s.modeBtn, { borderColor: mode === "custom" ? c.primary : c.border, backgroundColor: mode === "custom" ? c.primaryTint : c.card }]}
-            >
-              <Ionicons name="checkmark-circle" size={18} color={mode === "custom" ? c.primary : c.placeholder} />
-              <Text style={[s.modeBtnText, { color: mode === "custom" ? c.primary : c.mutedForeground }]}>Tùy chọn</Text>
-            </HapticTouchable>
+          <View style={s.segmentedWrap}>
+            <View style={[s.segmented, { backgroundColor: c.muted }]}>
+              <HapticTouchable
+                onPress={() => {
+                  setMode("full");
+                  setSelectedSkills(availableSkills);
+                }}
+                style={[
+                  s.segment,
+                  mode === "full" && { backgroundColor: c.card },
+                ]}
+              >
+                {mode === "full" && (
+                  <View style={[s.segmentIndicator, { backgroundColor: c.primary }]} />
+                )}
+                <Text
+                  style={[
+                    s.segmentText,
+                    { color: mode === "full" ? c.primary : c.subtle },
+                  ]}
+                >
+                  Đầy đủ
+                </Text>
+              </HapticTouchable>
+              <HapticTouchable
+                onPress={() => setMode("custom")}
+                style={[
+                  s.segment,
+                  mode === "custom" && { backgroundColor: c.card },
+                ]}
+              >
+                {mode === "custom" && (
+                  <View style={[s.segmentIndicator, { backgroundColor: c.primary }]} />
+                )}
+                <Text
+                  style={[
+                    s.segmentText,
+                    { color: mode === "custom" ? c.primary : c.subtle },
+                  ]}
+                >
+                  Tùy chọn
+                </Text>
+              </HapticTouchable>
+            </View>
           </View>
 
           {mode === "custom" && (
@@ -173,7 +199,17 @@ export default function ExamDetailScreen() {
                 const meta = SKILL_META[sk];
                 const selected = selectedSkills.includes(sk);
                 return (
-                  <HapticTouchable key={sk} onPress={() => toggleSkill(sk)} style={[s.skillChip, { borderColor: selected ? meta.color : c.border, backgroundColor: selected ? meta.color + "18" : c.card }]}>
+                  <HapticTouchable
+                    key={sk}
+                    onPress={() => toggleSkill(sk)}
+                    style={[
+                      s.skillChip,
+                      {
+                        borderColor: selected ? meta.color : c.border,
+                        backgroundColor: selected ? meta.color + "18" : c.card,
+                      },
+                    ]}
+                  >
                     <Ionicons name={selected ? "checkmark-circle" : "ellipse-outline"} size={16} color={selected ? meta.color : c.placeholder} />
                     <Text style={[s.skillChipText, { color: selected ? meta.color : c.mutedForeground }]}>{meta.label}</Text>
                   </HapticTouchable>
@@ -252,8 +288,22 @@ const s = StyleSheet.create({
   skillName: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   skillMeta: { fontSize: fontSize.xs, marginTop: 2 },
   modeCard: { gap: spacing.md },
-  modeRow: { flexDirection: "row", gap: spacing.md },
-  modeBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, paddingVertical: spacing.sm, borderRadius: radius.md, borderWidth: 2 },
+  segmentedWrap: { borderRadius: radius.md, overflow: "hidden" },
+  segmented: { flexDirection: "row", borderRadius: radius.md, overflow: "hidden", borderWidth: 2, borderColor: themeColors.light.border },
+  segment: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing.sm,
+    gap: spacing.xs,
+  },
+  segmentIndicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  segmentText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   modeBtnText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   skillSelectRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   skillChip: { flexDirection: "row", alignItems: "center", gap: spacing.xs, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.full, borderWidth: 2 },

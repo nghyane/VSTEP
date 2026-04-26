@@ -18,3 +18,12 @@ Key decisions:
 - Route guards via useEffect, not render body
 - No inline `.map()` for fixed UI sets — write explicit components
 - Props ≤ 3, components ≤ 80 lines (route pages)
+
+## 2026-04-27 — Mobile v2 parity, tooling, and support-flow fixes
+
+Key decisions:
+- Align exam draft persistence with backend using server draft autosave plus local file fallback.
+- Replace forced active-session auto-resume on app launch with a visible resume/abandon flow inside the exams tab.
+- Treat practice support as an unlock flow in UI state; writing keywords/sample answer, reading translation, and listening subtitles are now gated behind support actions instead of always visible.
+- Upgrade `eslint` to v9 because `eslint-config-expo/flat` requires the flat-config runtime that breaks under the previous ESLint 8 setup.
+- Keep notification tap behavior user-facing: unread items mark as read first, deletion moved to long press.
