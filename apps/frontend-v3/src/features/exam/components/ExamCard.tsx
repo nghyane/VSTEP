@@ -71,7 +71,7 @@ function StatusBadge({ status }: { status: ExamStatus }) {
 
 export function ExamCard({ exam, fullTestCoinCost, status = "not-started", active }: Props) {
 	return (
-		<div className="card p-5 flex flex-col gap-4 hover:border-primary/40 hover:-translate-y-0.5 transition-all">
+		<div className="card-interactive p-5 flex flex-col gap-4 cursor-default">
 			{/* Title + meta */}
 			<div className="space-y-1.5">
 				<p className="font-bold text-base leading-tight text-foreground">{exam.title}</p>

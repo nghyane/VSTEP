@@ -76,7 +76,7 @@ function MenuItem({
 	destructive,
 	trailing,
 }: {
-	iconNode: React.ReactNode
+	iconNode?: React.ReactNode
 	children: React.ReactNode
 	onClick: () => void
 	destructive?: boolean
@@ -90,15 +90,7 @@ function MenuItem({
 				destructive ? "text-destructive" : "text-foreground"
 			}`}
 		>
-			<span
-				className={`flex size-9 shrink-0 items-center justify-center rounded-full border-2 ${
-					destructive
-						? "bg-destructive-tint border-destructive/20 text-destructive"
-						: "bg-background border-border text-muted group-hover:bg-surface group-hover:border-primary/30 group-hover:text-primary"
-				}`}
-			>
-				{iconNode}
-			</span>
+			{iconNode}
 			<span className="flex-1 text-sm font-extrabold">{children}</span>
 			{trailing}
 		</button>
@@ -210,7 +202,7 @@ export function ProfileDropdown({ unread, initial }: Props) {
 						<div>
 							<div className="bg-gradient-to-b from-primary-tint/60 to-transparent px-4 pt-5 pb-4">
 								<div className="flex items-center gap-3">
-									<div className="size-12 rounded-full bg-primary border-2 border-primary-dark flex items-center justify-center text-primary-foreground font-display text-lg shrink-0 shadow-[0_2px_0_var(--color-primary-dark)]">
+									<div className="size-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-display text-lg shrink-0">
 										{initial}
 									</div>
 									<div className="min-w-0 flex-1">
@@ -226,7 +218,6 @@ export function ProfileDropdown({ unread, initial }: Props) {
 							</div>
 							<div className="p-2 space-y-0.5">
 								<MenuItem
-									iconNode={<StaticIcon name="bell" size="xs" className="h-4 w-auto" />}
 									onClick={() => setTab("notifs")}
 									trailing={
 										unread > 0 ? (
@@ -239,7 +230,6 @@ export function ProfileDropdown({ unread, initial }: Props) {
 									Thông báo
 								</MenuItem>
 								<MenuItem
-									iconNode={<Icon name="pencil" size="xs" />}
 									onClick={() => {
 										setOpen(false)
 										navigate({ to: "/ho-so", search: { edit: true } })
@@ -248,7 +238,6 @@ export function ProfileDropdown({ unread, initial }: Props) {
 									Chỉnh sửa hồ sơ
 								</MenuItem>
 								<MenuItem
-									iconNode={<Icon name="clipboard" size="xs" />}
 									onClick={() => {
 										setOpen(false)
 										navigate({ to: "/luyen-tap/ket-qua" })

@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router"
-import { Icon, type IconName, StaticIcon } from "#/components/Icon"
+import { Icon, StaticIcon } from "#/components/Icon"
+import { SkillIcon } from "#/components/SkillIcon"
 
 export function LandingHero({ ctaRef }: { ctaRef?: React.Ref<HTMLDivElement> }) {
 	return (
@@ -87,27 +88,23 @@ export function LandingSkills() {
 				</div>
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
 					<SkillCard
-						icon="volume"
+						pngIcon="headphones"
 						label="Nghe"
-						color="var(--color-skill-listening)"
 						details={["3 phần nghe hiểu", "Hỗ trợ nghe lại 2 lần", "Đề thi chuẩn VSTEP"]}
 					/>
 					<SkillCard
-						icon="book"
+						pngIcon="book"
 						label="Đọc"
-						color="var(--color-skill-reading)"
 						details={["4 đoạn văn · 40 câu", "Tra từ khi bôi đen", "Dịch tự động bằng AI"]}
 					/>
 					<SkillCard
-						icon="pencil"
+						pngIcon="pencil"
 						label="Viết"
-						color="var(--color-skill-writing)"
 						details={["Thư + bài luận", "AI chấm theo rubric", "Bài mẫu + phân tích"]}
 					/>
 					<SkillCard
-						icon="mic"
+						pngIcon="microphone"
 						label="Nói"
-						color="var(--color-skill-speaking)"
 						details={["3 phần theo format", "Ghi âm trực tiếp", "AI chấm phát âm + nội dung"]}
 					/>
 				</div>
@@ -117,23 +114,27 @@ export function LandingSkills() {
 }
 
 interface SkillCardProps {
-	icon: IconName
+	pngIcon: string
 	label: string
-	color: string
 	details: string[]
 }
 
-function SkillCard({ icon, label, color, details }: SkillCardProps) {
+function SkillCard({ pngIcon, label, details }: SkillCardProps) {
 	return (
 		<div className="card p-6 group hover:scale-[1.02] transition-transform">
 			<div className="flex items-center gap-3 mb-4">
-				<Icon name={icon} size="md" style={{ color }} />
+				<SkillIcon name={pngIcon} size="md" />
 				<h3 className="font-extrabold text-lg text-foreground">{label}</h3>
 			</div>
 			<ul className="space-y-2">
 				{details.map((d) => (
 					<li key={d} className="flex items-start gap-2 text-sm text-muted">
-						<svg viewBox="0 0 20 20" fill={color} className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true">
+						<svg
+							viewBox="0 0 20 20"
+							fill="var(--color-primary)"
+							className="w-4 h-4 shrink-0 mt-0.5"
+							aria-hidden="true"
+						>
 							<path
 								fillRule="evenodd"
 								d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
@@ -171,11 +172,16 @@ export function LandingFeatures() {
 							<div>
 								<h3 className="font-extrabold text-lg text-foreground">Thi thử chuẩn VSTEP</h3>
 								<p className="text-sm text-muted mt-2 leading-relaxed">
-									Đề thi từ ngân hàng đề HNUE, Văn Lang. Timer server đếm ngược chính xác. Format chuẩn Bộ GD&DT.
+									Đề thi từ ngân hàng đề HNUE, Văn Lang. Timer server đếm ngược chính xác. Format chuẩn Bộ
+									GD&DT.
 								</p>
 								<div className="flex gap-4 mt-4">
-									<span className="text-xs font-bold text-primary bg-primary-tint px-2.5 py-1 rounded-full">50+ đề thi</span>
-									<span className="text-xs font-bold text-primary bg-primary-tint px-2.5 py-1 rounded-full">Timer server</span>
+									<span className="text-xs font-bold text-primary bg-primary-tint px-2.5 py-1 rounded-full">
+										50+ đề thi
+									</span>
+									<span className="text-xs font-bold text-primary bg-primary-tint px-2.5 py-1 rounded-full">
+										Timer server
+									</span>
 								</div>
 							</div>
 						</div>
@@ -189,8 +195,12 @@ export function LandingFeatures() {
 									Từ vựng SRS nhớ lâu, ngữ pháp theo level, 4 kỹ năng với chế độ hỗ trợ thông minh.
 								</p>
 								<div className="flex gap-4 mt-4">
-									<span className="text-xs font-bold text-warning bg-warning/10 px-2.5 py-1 rounded-full">SRS algorithm</span>
-									<span className="text-xs font-bold text-warning bg-warning/10 px-2.5 py-1 rounded-full">Streak system</span>
+									<span className="text-xs font-bold text-warning bg-warning/10 px-2.5 py-1 rounded-full">
+										SRS algorithm
+									</span>
+									<span className="text-xs font-bold text-warning bg-warning/10 px-2.5 py-1 rounded-full">
+										Streak system
+									</span>
 								</div>
 							</div>
 						</div>
@@ -200,13 +210,22 @@ export function LandingFeatures() {
 						<div className="flex-1">
 							<h3 className="font-extrabold text-xl text-foreground">AI chấm bài chi tiết</h3>
 							<p className="text-sm text-muted mt-2 leading-relaxed max-w-lg">
-								Phân tích điểm mạnh, cần cải thiện, gợi ý viết lại từng câu. Chấm theo rubric chính thức của Bộ GD&DT.
+								Phân tích điểm mạnh, cần cải thiện, gợi ý viết lại từng câu. Chấm theo rubric chính thức của
+								Bộ GD&DT.
 							</p>
 							<div className="flex flex-wrap gap-3 mt-5">
-								<span className="text-xs font-bold text-primary bg-primary-tint px-3 py-1.5 rounded-full">Strengths</span>
-								<span className="text-xs font-bold text-primary bg-primary-tint px-3 py-1.5 rounded-full">Improvements</span>
-								<span className="text-xs font-bold text-primary bg-primary-tint px-3 py-1.5 rounded-full">Rewrites</span>
-								<span className="text-xs font-bold text-primary bg-primary-tint px-3 py-1.5 rounded-full">Rubric scoring</span>
+								<span className="text-xs font-bold text-primary bg-primary-tint px-3 py-1.5 rounded-full">
+									Strengths
+								</span>
+								<span className="text-xs font-bold text-primary bg-primary-tint px-3 py-1.5 rounded-full">
+									Improvements
+								</span>
+								<span className="text-xs font-bold text-primary bg-primary-tint px-3 py-1.5 rounded-full">
+									Rewrites
+								</span>
+								<span className="text-xs font-bold text-primary bg-primary-tint px-3 py-1.5 rounded-full">
+									Rubric scoring
+								</span>
 							</div>
 						</div>
 						<div className="shrink-0 mt-6 md:mt-0">
@@ -225,15 +244,19 @@ export function LandingSocial() {
 			<div className="max-w-6xl mx-auto px-8">
 				<div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12">
 					<div>
-						<h2 className="font-extrabold text-3xl md:text-4xl text-foreground">
-							Học viên nói gì?
-						</h2>
+						<h2 className="font-extrabold text-3xl md:text-4xl text-foreground">Học viên nói gì?</h2>
 						<p className="text-muted mt-2">Hơn 2,000 học viên đã đạt mục tiêu cùng VSTEP.</p>
 					</div>
 					<div className="flex items-center gap-3 shrink-0">
 						<div className="flex items-center gap-0.5">
 							{[1, 2, 3, 4, 5].map((s) => (
-								<svg key={s} viewBox="0 0 20 20" fill="var(--color-warning)" className="w-5 h-5" aria-hidden="true">
+								<svg
+									key={s}
+									viewBox="0 0 20 20"
+									fill="var(--color-warning)"
+									className="w-5 h-5"
+									aria-hidden="true"
+								>
 									<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 0 0 .95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 0 0-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 0 0-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 0 0-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 0 0 .951-.69l1.07-3.292z" />
 								</svg>
 							))}
@@ -248,21 +271,18 @@ export function LandingSocial() {
 						name="Minh Anh"
 						subtitle="SV Bách Khoa HCM"
 						avatar="/mascot/lac-happy.png"
-						color="var(--color-skill-reading)"
 					/>
 					<TestimonialCard
 						text="Phần thi thử giống format thật 95%. Mình quen tay nên vào phòng thi rất tự tin."
 						name="Hoàng Nam"
 						subtitle="SV Kinh tế Quốc dân"
 						avatar="/mascot/lac-speak.png"
-						color="var(--color-skill-listening)"
 					/>
 					<TestimonialCard
 						text="Streak system giúp mình duy trì thói quen học mỗi ngày. Không bỏ cuộc được!"
 						name="Thu Hà"
 						subtitle="SV Ngoại thương"
 						avatar="/mascot/lac-read.png"
-						color="var(--color-skill-writing)"
 					/>
 				</div>
 			</div>
@@ -275,16 +295,15 @@ interface TestimonialProps {
 	name: string
 	subtitle: string
 	avatar: string
-	color: string
 }
 
-function TestimonialCard({ text, name, subtitle, avatar, color }: TestimonialProps) {
+function TestimonialCard({ text, name, subtitle, avatar }: TestimonialProps) {
 	return (
 		<div className="card p-6">
 			<div className="flex items-center gap-3 mb-4">
 				<div
 					className="w-11 h-11 rounded-full flex items-center justify-center shrink-0"
-					style={{ background: `color-mix(in srgb, ${color} 15%, transparent)` }}
+					style={{ background: "var(--color-primary-tint)" }}
 				>
 					<img src={avatar} alt="" className="w-8 h-8 object-contain" />
 				</div>
@@ -303,9 +322,7 @@ export function LandingCTA() {
 		<section className="py-20">
 			<div className="max-w-3xl mx-auto px-8 text-center">
 				<img src="/mascot/lac-happy.png" alt="" className="w-24 h-24 object-contain mx-auto mb-5" />
-				<h2 className="font-extrabold text-3xl md:text-4xl text-foreground mb-3">
-					Sẵn sàng đạt mục tiêu?
-				</h2>
+				<h2 className="font-extrabold text-3xl md:text-4xl text-foreground mb-3">Sẵn sàng đạt mục tiêu?</h2>
 				<p className="text-muted text-lg mb-8 max-w-md mx-auto">
 					Đăng ký miễn phí, nhận 100 xu, bắt đầu luyện tập ngay hôm nay.
 				</p>

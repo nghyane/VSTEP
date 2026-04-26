@@ -9,13 +9,51 @@ interface PopupState {
 	bottom: number
 }
 
+const HINT_KEY = "vstep-translate-hint-seen"
+
 function isSingleWord(text: string): boolean {
 	return /^[a-zA-Z'-]+$/.test(text.trim())
+}
+
+function TranslateHint({ onDismiss }: { onDismiss: () => void }) {
+	const [visible, setVisible] = useState(false)
+
+	useEffect(() => {
+		const t = setTimeout(() => setVisible(true), 600)
+		return () => clearTimeout(t)
+	}, [])
+
+	if (!visible) return null
+
+	return (
+		<div className="flex items-center gap-2.5 rounded-(--radius-card) bg-foreground/90 backdrop-blur-sm px-3.5 py-2.5 mt-3 animate-[menuIn_0.2s_ease-out]">
+			<span className="text-[13px] text-primary-foreground leading-snug">
+				<span className="inline-block bg-primary/25 font-extrabold px-1.5 py-0.5 rounded text-[11px] mr-1.5 align-middle select-none">
+					TIP
+				</span>
+				Tô đen từ/câu tiếng Anh để xem nghĩa & phát âm
+			</span>
+			<button
+				type="button"
+				onClick={onDismiss}
+				className="shrink-0 text-primary-foreground/60 hover:text-primary-foreground text-xs font-bold transition"
+			>
+				OK
+			</button>
+		</div>
+	)
 }
 
 export function TranslateSelection({ children }: { children: React.ReactNode }) {
 	const containerRef = useRef<HTMLDivElement>(null)
 	const [popup, setPopup] = useState<PopupState | null>(null)
+	const [showHint, setShowHint] = useState(() => {
+		try {
+			return !sessionStorage.getItem(HINT_KEY)
+		} catch {
+			return false
+		}
+	})
 
 	const handleMouseUp = useCallback(() => {
 		requestAnimationFrame(() => {
@@ -32,8 +70,14 @@ export function TranslateSelection({ children }: { children: React.ReactNode }) 
 			}
 			const rect = range.getBoundingClientRect()
 			setPopup({ text, x: rect.left + rect.width / 2, y: rect.top, bottom: rect.bottom })
+			if (showHint) {
+				setShowHint(false)
+				try {
+					sessionStorage.setItem(HINT_KEY, "1")
+				} catch {}
+			}
 		})
-	}, [])
+	}, [showHint])
 
 	useEffect(() => {
 		if (!popup) return
@@ -47,6 +91,16 @@ export function TranslateSelection({ children }: { children: React.ReactNode }) 
 	return (
 		<div ref={containerRef} onMouseUp={handleMouseUp} onTouchEnd={handleMouseUp}>
 			{children}
+			{showHint && (
+				<TranslateHint
+					onDismiss={() => {
+						setShowHint(false)
+						try {
+							sessionStorage.setItem(HINT_KEY, "1")
+						} catch {}
+					}}
+				/>
+			)}
 			{popup &&
 				createPortal(
 					isSingleWord(popup.text) ? (
@@ -306,7 +360,14 @@ function TranslateIcon({ className }: { className?: string }) {
 
 function VolumeIcon() {
 	return (
-		<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="size-4" aria-hidden="true">
+		<svg
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth={2}
+			className="size-4"
+			aria-hidden="true"
+		>
 			<path d="M11 5 6 9H2v6h4l5 4V5ZM15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14" />
 		</svg>
 	)
