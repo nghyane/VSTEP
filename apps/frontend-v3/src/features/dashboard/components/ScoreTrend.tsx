@@ -46,7 +46,7 @@ export function ScoreTrend() {
 					<span
 						key={s.key}
 						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
-						style={{ color: s.color, background: `color-mix(in srgb, ${s.color} 10%, transparent)` }}
+						style={{ color: s.color }}
 					>
 						<Icon name={s.icon} size="xs" />
 						{s.label}

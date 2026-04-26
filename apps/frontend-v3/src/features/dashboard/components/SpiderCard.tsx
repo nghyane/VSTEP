@@ -149,12 +149,7 @@ export function SpiderCard() {
 					const v = values[i] ?? 0
 					return (
 						<div key={s.key} className="flex items-center gap-2 rounded-(--radius-button) p-2 text-sm">
-							<span
-								className="inline-flex size-6 items-center justify-center rounded-md"
-								style={{ background: `color-mix(in srgb, ${s.color} 15%, transparent)`, color: s.color }}
-							>
-								<Icon name={s.icon} size="xs" />
-							</span>
+							<Icon name={s.icon} size="xs" style={{ color: s.color }} />
 							<span className="font-bold text-foreground">{s.label}</span>
 							<span className="ml-auto text-lg tabular-nums font-extrabold" style={{ color: s.color }}>
 								{v > 0 ? v.toFixed(1) : "—"}
