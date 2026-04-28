@@ -2,6 +2,7 @@ import type { Profile } from "#/types/auth"
 
 export interface CreateProfileInput {
 	nickname: string
+	entry_level: string
 	target_level: string
 	target_deadline: string
 }

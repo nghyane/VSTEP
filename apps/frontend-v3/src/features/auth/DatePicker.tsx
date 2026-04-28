@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { cn } from "#/lib/utils"
 
 interface Props {
@@ -87,10 +87,14 @@ export function DatePicker({ value, onChange, minDate }: Props) {
 		setMonth(m)
 		setDay(null)
 		onChange("")
-		requestAnimationFrame(() => {
-			dayPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
-		})
 	}
+
+	// Scroll day panel vào view sau khi React commit (RAF trước commit
+	// → ref còn null vì panel chỉ mount khi month !== null).
+	useEffect(() => {
+		if (month === null) return
+		dayPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" })
+	}, [month])
 
 	function selectDay(d: number) {
 		if (month === null) return

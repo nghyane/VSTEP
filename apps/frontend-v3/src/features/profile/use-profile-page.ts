@@ -19,7 +19,12 @@ export function useProfilePage(edit?: boolean) {
 		navigate({ to: "/ho-so", search: {}, replace: true })
 	}
 
-	async function handleCreate(v: { nickname: string; target_level: string; target_deadline: string }) {
+	async function handleCreate(v: {
+		nickname: string
+		entry_level: string
+		target_level: string
+		target_deadline: string
+	}) {
 		await doSwitch.mutateAsync((await doCreate.mutateAsync(v)).data.id)
 		setShowCreate(false)
 	}
