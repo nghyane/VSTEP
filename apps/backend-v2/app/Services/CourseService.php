@@ -39,7 +39,9 @@ class CourseService
     public function getDetail(string $id): Course
     {
         /** @var Course $course */
-        $course = Course::query()->with(['scheduleItems', 'enrollments', 'teacher:id,full_name'])->findOrFail($id);
+        $course = Course::query()
+            ->with(['scheduleItems', 'enrollments', 'teacher:id,full_name,title,bio'])
+            ->findOrFail($id);
 
         return $course;
     }

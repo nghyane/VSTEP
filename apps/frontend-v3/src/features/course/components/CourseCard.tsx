@@ -1,14 +1,8 @@
 import { Link } from "@tanstack/react-router"
 import { DuoProgressBar } from "#/components/DuoProgressBar"
 import { StaticIcon } from "#/components/Icon"
-import type { Course } from "#/features/course/types"
+import { COURSE_LEVEL_LABELS, type Course } from "#/features/course/types"
 import { cn, formatDate, formatNumber, formatVnd } from "#/lib/utils"
-
-const LEVEL_LABELS: Record<string, string> = {
-	B1: "B1 · Trung cấp",
-	B2: "B2 · Trên trung cấp",
-	C1: "C1 · Cao cấp",
-}
 
 interface Props {
 	course: Course
@@ -27,7 +21,7 @@ export function CourseCard({ course, enrolled }: Props) {
 		<div className={cn("p-6 flex flex-col gap-4", ctaDisabled ? "card opacity-75" : "card-interactive")}>
 			<div className="flex items-center justify-between gap-2">
 				<span className="inline-flex items-center rounded-full border-2 border-border bg-surface px-2.5 py-0.5 text-xs font-bold text-foreground">
-					{LEVEL_LABELS[course.target_level] ?? course.target_level}
+					{COURSE_LEVEL_LABELS[course.target_level] ?? course.target_level}
 				</span>
 				<SlotBadge enrolled={enrolled} full={full} remaining={remaining} />
 			</div>

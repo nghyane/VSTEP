@@ -10,6 +10,14 @@ export interface CourseScheduleItem {
 export interface CourseTeacher {
 	id: string
 	full_name: string
+	title?: string | null
+	bio?: string | null
+}
+
+export const COURSE_LEVEL_LABELS: Record<string, string> = {
+	B1: "B1 · Trung cấp",
+	B2: "B2 · Trên trung cấp",
+	C1: "C1 · Cao cấp",
 }
 
 export interface Course {

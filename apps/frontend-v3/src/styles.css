@@ -294,6 +294,38 @@
 		transform: translateY(-2px);
 	}
 
+	/* ─── Schedule grid cells (course detail) ─── */
+	.schedule-cell-past {
+		background-image: repeating-linear-gradient(
+			135deg,
+			transparent 0,
+			transparent 8px,
+			rgb(0 0 0 / 0.05) 8px,
+			rgb(0 0 0 / 0.05) 9px
+		);
+	}
+	.schedule-cell-future {
+		position: relative;
+		transition: background-color 0.2s ease;
+	}
+	.schedule-cell-future::after {
+		content: "";
+		position: absolute;
+		left: 0;
+		bottom: 0;
+		height: 3px;
+		width: 0;
+		background: var(--color-primary);
+		border-radius: 2px;
+		transition: width 0.25s ease;
+	}
+	.schedule-cell-future:hover {
+		background-color: var(--color-primary-tint);
+	}
+	.schedule-cell-future:hover::after {
+		width: 100%;
+	}
+
 	/* ─── Duration slider — Duolingo style ─── */
 	/* Layering rõ ràng: track < fill < highlight < thumb (input track trong suốt, chỉ thumb hiện). */
 	.duration-slider-wrap {
