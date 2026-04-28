@@ -1,9 +1,15 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Header } from "#/components/Header"
 import { CourseCard } from "#/features/course/components/CourseCard"
+import { HotCoursesDialog } from "#/features/course/components/HotCoursesDialog"
 import { courseListQuery } from "#/features/course/queries"
+import type { Course } from "#/features/course/types"
 import { cn } from "#/lib/utils"
+
+const HOT_SNOOZE_KEY = "vstep:hot-courses-snoozed-until:v1"
+const HOT_SNOOZE_HOURS = 24
 
 type Tab = "explore" | "mine"
 const VALID_TABS: readonly Tab[] = ["explore", "mine"]
@@ -23,9 +29,44 @@ function CoursesPage() {
 
 	const list = tab === "mine" ? courses.filter((c) => enrolledIds.has(c.id)) : courses
 
+	const hotPair = useMemo<[Course, Course] | null>(() => {
+		const candidates = courses
+			.filter((c) => typeof c.sold_slots === "number" && c.sold_slots < c.max_slots && !enrolledIds.has(c.id))
+			.sort((a, b) => (b.sold_slots ?? 0) - (a.sold_slots ?? 0))
+		if (candidates.length < 2) return null
+		return [candidates[0], candidates[1]]
+	}, [courses, enrolledIds])
+
+	// User có khóa ACTIVE (đã enroll & chưa kết thúc) → ẩn — không spam người đang học.
+	// Khi khóa đó hết hạn mà chưa enroll khóa mới → popup tự hiện lại để remarketing.
+	// User đóng popup → snooze 24h (localStorage). Sau 24h: hiện lại nếu vẫn chưa active.
+	const hasActiveEnrollment = useMemo(() => {
+		const today = new Date()
+		today.setHours(0, 0, 0, 0)
+		return courses.some((c) => enrolledIds.has(c.id) && new Date(c.end_date) >= today)
+	}, [courses, enrolledIds])
+
+	const [hotOpen, setHotOpen] = useState(false)
+	const autoOpenedRef = useRef(false)
+	useEffect(() => {
+		if (autoOpenedRef.current) return
+		if (!hotPair) return
+		if (hasActiveEnrollment) return
+		const snoozedUntil = Number(localStorage.getItem(HOT_SNOOZE_KEY) ?? 0)
+		if (snoozedUntil > Date.now()) return
+		autoOpenedRef.current = true
+		setHotOpen(true)
+	}, [hotPair, hasActiveEnrollment])
+
+	const dismissHot = () => {
+		setHotOpen(false)
+		localStorage.setItem(HOT_SNOOZE_KEY, String(Date.now() + HOT_SNOOZE_HOURS * 60 * 60 * 1000))
+	}
+
 	return (
 		<>
 			<Header title="Khóa học" />
+			{hotPair && <HotCoursesDialog open={hotOpen} onClose={dismissHot} courses={hotPair} />}
 			<div className="px-10 pb-12 space-y-6 max-w-5xl mx-auto w-full">
 				<p className="text-sm text-muted">Học cùng giáo viên chấm thi VSTEP — ôn trúng đề sát ngày thi.</p>
 

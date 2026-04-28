@@ -61,9 +61,3 @@ export interface CourseListResponse {
 	data: Course[]
 	enrolled_course_ids: string[]
 }
-
-export interface EnrollResult {
-	enrollment_id: string
-	coins_paid: number
-	bonus_received: number
-}

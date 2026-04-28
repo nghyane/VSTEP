@@ -147,6 +147,26 @@
 		50% { transform: translateY(-8px) rotate(2deg); }
 	}
 
+	@keyframes mascotSadSway {
+		0%, 100% { transform: translateY(0) rotate(-4deg); }
+		25% { transform: translateY(2px) rotate(0); }
+		50% { transform: translateY(4px) rotate(4deg); }
+		75% { transform: translateY(2px) rotate(0); }
+	}
+
+	@keyframes mascotSadShake {
+		0%, 100% { transform: translateX(0); }
+		20%, 60% { transform: translateX(-3px); }
+		40%, 80% { transform: translateX(3px); }
+	}
+
+	@keyframes tearDrop {
+		0% { opacity: 0; transform: translate(-50%, 0) scale(0.6); }
+		15% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+		60% { opacity: 1; transform: translate(-50%, 60px) scale(1); }
+		100% { opacity: 0; transform: translate(-50%, 90px) scale(0.4); }
+	}
+
 	@keyframes float {
 		0%, 100% { transform: translateY(0) rotate(-4deg); opacity: 0.3; }
 		50% { transform: translateY(-12px) rotate(4deg); opacity: 0.7; }

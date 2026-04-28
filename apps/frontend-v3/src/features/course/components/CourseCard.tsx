@@ -33,7 +33,7 @@ export function CourseCard({ course, enrolled }: Props) {
 
 			<MetaRows course={course} sold={sold} />
 
-			<div className="border-t-2 border-border pt-4 flex items-end justify-between gap-3">
+			<div className="border-t-2 border-border pt-4 flex items-center justify-between gap-3">
 				<PriceBlock course={course} />
 				<span
 					className={cn("text-xs font-bold whitespace-nowrap", ctaDisabled ? "text-muted" : "text-primary")}

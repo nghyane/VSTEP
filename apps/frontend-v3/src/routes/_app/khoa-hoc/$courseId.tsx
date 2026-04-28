@@ -1,9 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
+import { useState } from "react"
 import { DuoProgressBar } from "#/components/DuoProgressBar"
 import { Header } from "#/components/Header"
 import { Icon, StaticIcon } from "#/components/Icon"
-import { enrollCourse } from "#/features/course/actions"
+import { EnrollDialog } from "#/features/course/components/EnrollDialog"
 import { courseDetailQuery } from "#/features/course/queries"
 import {
 	COURSE_LEVEL_LABELS,
@@ -226,11 +227,7 @@ function CourseInfo({
 }
 
 function EnrollCard({ course, remaining }: { course: CourseWithRelations; remaining: number }) {
-	const queryClient = useQueryClient()
-	const enroll = useMutation({
-		mutationFn: () => enrollCourse(course.id),
-		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["courses"] }),
-	})
+	const [dialogOpen, setDialogOpen] = useState(false)
 
 	const orig = course.original_price_vnd
 	const hasDiscount = orig !== null && orig > course.price_vnd
@@ -269,16 +266,18 @@ function EnrollCard({ course, remaining }: { course: CourseWithRelations; remain
 
 			<button
 				type="button"
-				disabled={full || enroll.isPending}
-				onClick={() => enroll.mutate()}
+				disabled={full}
+				onClick={() => setDialogOpen(true)}
 				className="btn btn-primary w-full py-3 text-sm font-bold disabled:opacity-50"
 			>
-				{enroll.isPending ? "Đang xử lý…" : full ? "Đã đầy" : "Đăng ký khóa học"}
+				{full ? "Đã đầy" : "Đăng ký khóa học"}
 			</button>
 
 			{!full && remaining <= 5 && (
 				<p className="text-xs font-bold text-warning text-center">Chỉ còn {remaining} chỗ cuối</p>
 			)}
+
+			<EnrollDialog open={dialogOpen} onClose={() => setDialogOpen(false)} course={course} />
 		</aside>
 	)
 }
