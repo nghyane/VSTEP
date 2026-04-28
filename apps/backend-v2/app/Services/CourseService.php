@@ -36,6 +36,51 @@ class CourseService
             ->get();
     }
 
+    /**
+     * Bundle list response cho FE: courses + enrolled_course_ids + enrollments map
+     * (next_session + commitment per khóa đã ghi danh).
+     *
+     * `enrollments` luôn trả stdClass để FE có shape `Record<courseId, {...}>` ổn định:
+     * khi không có khóa nào, PHP empty array serialize thành `[]` thay vì `{}`.
+     *
+     * @return array{data: Collection<int,Course>, enrolled_course_ids: list<string>, enrollments: \stdClass}
+     */
+    public function listForProfile(?Profile $profile): array
+    {
+        $courses = $this->listPublished();
+
+        if (! $profile) {
+            return [
+                'data' => $courses,
+                'enrolled_course_ids' => [],
+                'enrollments' => new \stdClass,
+            ];
+        }
+
+        $enrolledIds = CourseEnrollment::query()
+            ->where('profile_id', $profile->id)
+            ->whereIn('course_id', $courses->pluck('id'))
+            ->pluck('course_id');
+
+        $enrolledSet = $enrolledIds->flip();
+        $enrollments = new \stdClass;
+        foreach ($courses as $course) {
+            if (! $enrolledSet->has($course->id)) {
+                continue;
+            }
+            $enrollments->{$course->id} = [
+                'next_session' => $this->nextSession($course),
+                'commitment' => $this->commitmentStatus($profile, $course),
+            ];
+        }
+
+        return [
+            'data' => $courses,
+            'enrolled_course_ids' => $enrolledIds->values()->all(),
+            'enrollments' => $enrollments,
+        ];
+    }
+
     public function getDetail(string $id): Course
     {
         /** @var Course $course */
@@ -117,6 +162,34 @@ class CourseService
             'phase' => $completed >= $course->required_full_tests ? 'met' : 'pending',
             'completed' => $completed,
             'required' => $course->required_full_tests,
+        ];
+    }
+
+    /**
+     * Next upcoming session (date >= today). Null nếu hết lịch.
+     *
+     * @return array{id: string, session_number: int, date: string, start_time: string, end_time: string, topic: string}|null
+     */
+    public function nextSession(Course $course): ?array
+    {
+        $today = now()->startOfDay()->toDateString();
+        $session = $course->scheduleItems()
+            ->where('date', '>=', $today)
+            ->orderBy('date')
+            ->orderBy('start_time')
+            ->first();
+
+        if (! $session) {
+            return null;
+        }
+
+        return [
+            'id' => $session->id,
+            'session_number' => $session->session_number,
+            'date' => $session->date->toDateString(),
+            'start_time' => $session->start_time,
+            'end_time' => $session->end_time,
+            'topic' => $session->topic,
         ];
     }
 

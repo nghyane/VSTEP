@@ -26,6 +26,7 @@ function CoursesPage() {
 	const { data, isLoading } = useQuery(courseListQuery)
 	const courses = data?.data ?? []
 	const enrolledIds = new Set(data?.enrolled_course_ids ?? [])
+	const enrollments = data?.enrollments ?? {}
 
 	const list = tab === "mine" ? courses.filter((c) => enrolledIds.has(c.id)) : courses
 
@@ -103,7 +104,12 @@ function CoursesPage() {
 				) : (
 					<div className="grid gap-4 sm:grid-cols-2 items-start">
 						{list.map((c) => (
-							<CourseCard key={c.id} course={c} enrolled={enrolledIds.has(c.id)} />
+							<CourseCard
+								key={c.id}
+								course={c}
+								enrolled={enrolledIds.has(c.id)}
+								enrollment={enrollments[c.id] ?? null}
+							/>
 						))}
 					</div>
 				)}

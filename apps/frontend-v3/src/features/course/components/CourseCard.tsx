@@ -1,21 +1,29 @@
 import { Link } from "@tanstack/react-router"
 import { DuoProgressBar } from "#/components/DuoProgressBar"
-import { StaticIcon } from "#/components/Icon"
-import { COURSE_LEVEL_LABELS, type Course } from "#/features/course/types"
+import { Icon, StaticIcon } from "#/components/Icon"
+import {
+	COURSE_LEVEL_LABELS,
+	type Course,
+	type CourseScheduleItem,
+	type EnrollmentDetail,
+} from "#/features/course/types"
 import { cn, formatDate, formatNumber, formatVnd } from "#/lib/utils"
 
 interface Props {
 	course: Course
 	enrolled: boolean
+	enrollment?: EnrollmentDetail | null
 }
 
-export function CourseCard({ course, enrolled }: Props) {
+export function CourseCard({ course, enrolled, enrollment }: Props) {
+	if (enrolled) return <EnrolledCard course={course} enrollment={enrollment ?? null} />
+
 	const sold = course.sold_slots
 	const remaining = sold !== undefined ? Math.max(0, course.max_slots - sold) : null
 	const full = remaining === 0
-	const ctaDisabled = full && !enrolled
+	const ctaDisabled = full
 
-	const cta = enrolled ? "Vào khóa học →" : ctaDisabled ? "Chọn khóa khác" : "Xem chi tiết →"
+	const cta = ctaDisabled ? "Chọn khóa khác" : "Xem chi tiết →"
 
 	const card = (
 		<div className={cn("p-6 flex flex-col gap-4", ctaDisabled ? "card opacity-75" : "card-interactive")}>
@@ -23,7 +31,7 @@ export function CourseCard({ course, enrolled }: Props) {
 				<span className="inline-flex items-center rounded-full border-2 border-border bg-surface px-2.5 py-0.5 text-xs font-bold text-foreground">
 					{COURSE_LEVEL_LABELS[course.target_level] ?? course.target_level}
 				</span>
-				<SlotBadge enrolled={enrolled} full={full} remaining={remaining} />
+				<SlotBadge full={full} remaining={remaining} />
 			</div>
 
 			<div>
@@ -144,20 +152,139 @@ const BADGE_TONE_CLASS: Record<BadgeTone, string> = {
 	success: "bg-success/10 text-success",
 }
 
-function SlotBadge({
-	enrolled,
-	full,
-	remaining,
-}: {
-	enrolled: boolean
-	full: boolean
-	remaining: number | null
-}) {
-	if (enrolled) return <Badge tone="success">Đã mua</Badge>
+function SlotBadge({ full, remaining }: { full: boolean; remaining: number | null }) {
 	if (full) return <Badge tone="muted">Đã đầy</Badge>
 	if (remaining === null) return null
 	if (remaining <= 5) return <Badge tone="warning">Còn {remaining} chỗ</Badge>
 	return <Badge tone="info">Còn {remaining} chỗ</Badge>
+}
+
+function EnrolledCard({ course, enrollment }: { course: Course; enrollment: EnrollmentDetail | null }) {
+	const today = new Date()
+	today.setHours(0, 0, 0, 0)
+	const startMs = new Date(course.start_date).getTime()
+	const endMs = new Date(course.end_date).getTime()
+	const status =
+		endMs < today.getTime()
+			? { tone: "muted" as const, label: "Đã kết thúc", active: false }
+			: startMs > today.getTime()
+				? { tone: "info" as const, label: "Sắp khai giảng", active: false }
+				: { tone: "success" as const, label: "Đang học", active: true }
+
+	const next = enrollment?.next_session ?? null
+	const commitment = enrollment?.commitment ?? null
+
+	return (
+		<div className="card p-5 flex flex-col gap-4">
+			<div className="flex items-center justify-between gap-2">
+				<Badge tone={status.tone}>{status.label}</Badge>
+				{commitment && commitment.phase !== "not_enrolled" && <CommitmentChip commitment={commitment} />}
+			</div>
+
+			<div>
+				<p className="text-base font-extrabold leading-tight text-foreground">{course.title}</p>
+				<p className="text-xs text-muted mt-1.5 tabular-nums">
+					{formatDate(course.start_date)} — {formatDate(course.end_date)}
+				</p>
+			</div>
+
+			<NextSessionTile course={course} status={status} next={next} />
+
+			<div className="flex items-stretch gap-2 pt-1">
+				{status.active && course.livestream_url ? (
+					<>
+						<a
+							href={course.livestream_url}
+							target="_blank"
+							rel="noreferrer"
+							className="btn btn-primary flex-1 py-2.5 text-sm"
+						>
+							<Icon name="play" size="xs" className="text-white" />
+							Vào Zoom
+						</a>
+						<Link
+							to="/khoa-hoc/$courseId"
+							params={{ courseId: course.id }}
+							className="rounded-(--radius-button) border-2 border-b-4 border-border bg-surface inline-flex items-center justify-center px-4 py-2.5 text-sm font-extrabold uppercase tracking-wider text-foreground transition-all hover:border-primary/40 active:translate-y-[2px] active:border-b-2"
+						>
+							Chi tiết
+						</Link>
+					</>
+				) : (
+					<Link
+						to="/khoa-hoc/$courseId"
+						params={{ courseId: course.id }}
+						className="btn btn-primary w-full py-2.5 text-sm"
+					>
+						{status.active ? "Vào khóa học" : "Xem chi tiết"}
+					</Link>
+				)}
+			</div>
+		</div>
+	)
+}
+
+function NextSessionTile({
+	course,
+	status,
+	next,
+}: {
+	course: Course
+	status: { active: boolean; label: string }
+	next: CourseScheduleItem | null
+}) {
+	if (!status.active) {
+		return (
+			<div className="rounded-(--radius-card) border-2 border-border bg-background px-4 py-3 text-sm">
+				<p className="text-muted">
+					{status.label === "Đã kết thúc"
+						? `Khóa học đã kết thúc ngày ${formatDate(course.end_date)}.`
+						: `Khai giảng ngày ${formatDate(course.start_date)}.`}
+				</p>
+			</div>
+		)
+	}
+
+	if (!next) {
+		return (
+			<div className="rounded-(--radius-card) border-2 border-border bg-background px-4 py-3 text-sm">
+				<p className="text-muted">Chưa có buổi học nào sắp tới.</p>
+			</div>
+		)
+	}
+
+	return (
+		<div className="rounded-(--radius-card) border-2 border-primary/20 bg-primary-tint/40 px-4 py-3 flex items-start gap-3">
+			<div className="size-9 shrink-0 rounded-xl bg-primary text-white flex items-center justify-center">
+				<Icon name="timer" size="xs" className="text-white" />
+			</div>
+			<div className="flex-1 min-w-0 space-y-0.5">
+				<p className="text-[10px] font-extrabold uppercase tracking-wider text-primary-dark">
+					Buổi tiếp theo · Buổi {String(next.session_number).padStart(2, "0")}
+				</p>
+				<p className="text-sm font-extrabold text-foreground tabular-nums">
+					{formatDate(next.date)} · {next.start_time.slice(0, 5)}–{next.end_time.slice(0, 5)}
+				</p>
+				<p className="text-xs text-muted leading-snug truncate">{next.topic}</p>
+			</div>
+		</div>
+	)
+}
+
+function CommitmentChip({
+	commitment,
+}: {
+	commitment: { phase: string; completed: number; required: number }
+}) {
+	const tone: BadgeTone = commitment.phase === "met" ? "success" : "warning"
+	return (
+		<Badge tone={tone}>
+			<span className="tabular-nums">
+				{commitment.completed}/{commitment.required}
+			</span>
+			<span className="ml-1">bài thi</span>
+		</Badge>
+	)
 }
 
 function Badge({ children, tone }: { children: React.ReactNode; tone: BadgeTone }) {

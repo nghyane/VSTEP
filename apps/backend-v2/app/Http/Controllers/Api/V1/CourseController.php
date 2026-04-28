@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Course;
-use App\Models\CourseEnrollment;
 use App\Models\CourseEnrollmentOrder;
 use App\Models\Profile;
 use App\Models\TeacherSlot;
@@ -24,16 +23,9 @@ class CourseController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $courses = $this->courseService->listPublished();
         $profile = $request->attributes->get('active_profile');
-        $enrolledIds = $profile
-            ? CourseEnrollment::query()->where('profile_id', $profile->id)->pluck('course_id')->all()
-            : [];
 
-        return response()->json([
-            'data' => $courses,
-            'enrolled_course_ids' => $enrolledIds,
-        ]);
+        return response()->json($this->courseService->listForProfile($profile));
     }
 
     public function show(string $id): JsonResponse

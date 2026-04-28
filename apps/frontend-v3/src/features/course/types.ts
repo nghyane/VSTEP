@@ -57,7 +57,13 @@ export interface CommitmentStatus {
 	required: number
 }
 
+export interface EnrollmentDetail {
+	next_session: CourseScheduleItem | null
+	commitment: CommitmentStatus
+}
+
 export interface CourseListResponse {
 	data: Course[]
 	enrolled_course_ids: string[]
+	enrollments: Record<string, EnrollmentDetail>
 }
