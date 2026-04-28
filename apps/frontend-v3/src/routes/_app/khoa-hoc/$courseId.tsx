@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, Link } from "@tanstack/react-router"
 import { useState } from "react"
 import { DuoProgressBar } from "#/components/DuoProgressBar"
 import { Header } from "#/components/Header"
@@ -53,6 +53,8 @@ function CourseDetailPage() {
 					</div>
 				</div>
 
+				{commitment && commitment.phase !== "not_enrolled" && <CommitmentCard commitment={commitment} />}
+
 				{course.description && (
 					<div className="card p-6">
 						<p className="text-xs font-bold uppercase tracking-wide text-muted mb-2">Mô tả</p>
@@ -61,8 +63,6 @@ function CourseDetailPage() {
 						</p>
 					</div>
 				)}
-
-				{commitment && commitment.phase !== "not_enrolled" && <CommitmentCard commitment={commitment} />}
 
 				{course.schedule_items.length > 0 && <ScheduleCard items={course.schedule_items} />}
 
@@ -207,7 +207,7 @@ function CourseInfo({
 					<DuoProgressBar
 						value={Math.min(100, Math.round((sold_slots / course.max_slots) * 100))}
 						tone={remaining <= 5 ? "warning" : "primary"}
-						heightPx={6}
+						heightPx={10}
 						label="Tỉ lệ ghế đã đăng ký"
 					/>
 				</li>
@@ -305,22 +305,95 @@ function EnrolledCard({ livestreamUrl }: { livestreamUrl: string | null }) {
 
 function CommitmentCard({ commitment }: { commitment: CommitmentStatus }) {
 	const met = commitment.phase === "met"
+	const remaining = Math.max(0, commitment.required - commitment.completed)
+	const pct =
+		commitment.required > 0
+			? Math.min(100, Math.round((commitment.completed / commitment.required) * 100))
+			: 0
+
 	return (
-		<div className={cn("card p-6", met ? "border-success" : "border-warning")}>
-			<p className="text-xs font-bold uppercase tracking-wide text-muted mb-1">Cam kết kỷ luật</p>
-			<p className="text-sm text-foreground">
-				{commitment.completed}/{commitment.required} bài thi full-test
-			</p>
-			<div className="mt-3 h-2 rounded-full bg-border overflow-hidden">
+		<Link
+			to="/thi-thu"
+			className={cn(
+				"group card-interactive block p-6 relative overflow-hidden",
+				met ? "border-success" : "border-warning",
+			)}
+		>
+			<div className="relative flex items-start gap-4">
 				<div
-					className={cn("h-full rounded-full transition-all", met ? "bg-success" : "bg-warning")}
-					style={{ width: `${Math.min(100, (commitment.completed / commitment.required) * 100)}%` }}
-				/>
+					className={cn(
+						"size-14 shrink-0 rounded-2xl border-2 flex items-center justify-center text-white",
+						met ? "bg-success border-primary-dark" : "bg-warning border-[color:var(--color-warning-light)]",
+					)}
+					style={{ boxShadow: "0 4px 0 rgb(0 0 0 / 0.08)" }}
+				>
+					<Icon name={met ? "check" : "lightning"} size="md" className="text-white" />
+				</div>
+
+				<div className="flex-1 min-w-0 space-y-3">
+					<div className="flex items-start justify-between gap-3 flex-wrap">
+						<div className="min-w-0">
+							<p
+								className={cn(
+									"text-xs font-bold uppercase tracking-wider",
+									met ? "text-success" : "text-warning",
+								)}
+							>
+								Cam kết kỷ luật
+							</p>
+							<p className="font-extrabold text-foreground text-2xl leading-none mt-1.5">
+								<span className="tabular-nums">{commitment.completed}</span>
+								<span className="text-muted">/</span>
+								<span className="tabular-nums">{commitment.required}</span>
+								<span className="text-muted text-sm font-bold ml-1.5">bài thi full-test</span>
+							</p>
+						</div>
+
+						<span
+							className={cn(
+								"shrink-0 inline-flex items-center gap-1.5 rounded-(--radius-button) border-2 border-b-4 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider transition-all group-hover:-translate-y-0.5 group-active:translate-y-0 group-active:border-b-2",
+								met
+									? "bg-primary-tint border-success/40 text-success"
+									: "bg-warning-tint border-warning/40 text-warning",
+							)}
+						>
+							{met ? (
+								<>
+									<Icon name="check" size="xs" className="h-3 w-auto" />
+									Hoàn thành
+								</>
+							) : (
+								<>
+									<Icon name="play" size="xs" className="h-3 w-auto" />
+									Vào phòng thi
+								</>
+							)}
+						</span>
+					</div>
+
+					<DuoProgressBar
+						value={pct}
+						tone={met ? "primary" : "warning"}
+						heightPx={12}
+						label="Tiến độ cam kết kỷ luật"
+					/>
+
+					<p className="text-sm text-foreground leading-relaxed">
+						{met ? (
+							<span className="font-bold text-success">
+								Bạn đã hoàn thành cam kết — tiếp tục luyện đề để giữ phong độ.
+							</span>
+						) : (
+							<>
+								Còn <span className="font-extrabold tabular-nums text-warning">{remaining}</span> bài
+								full-test nữa để hoàn thành cam kết. Bấm vào ô này để{" "}
+								<span className="font-bold text-foreground">vào phòng thi ngay.</span>
+							</>
+						)}
+					</p>
+				</div>
 			</div>
-			<p className={cn("text-xs font-bold mt-2", met ? "text-success" : "text-warning")}>
-				{met ? "Đã hoàn thành cam kết" : "Chưa đủ — hãy thi thêm"}
-			</p>
-		</div>
+		</Link>
 	)
 }
 
