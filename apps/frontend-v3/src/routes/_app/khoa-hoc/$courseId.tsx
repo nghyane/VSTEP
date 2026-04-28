@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import { DuoProgressBar } from "#/components/DuoProgressBar"
 import { Header } from "#/components/Header"
-import { Icon, StaticIcon } from "#/components/Icon"
+import { Icon, type IconName, StaticIcon } from "#/components/Icon"
 import { EnrollDialog } from "#/features/course/components/EnrollDialog"
 import { courseDetailQuery } from "#/features/course/queries"
 import {
@@ -64,7 +65,9 @@ function CourseDetailPage() {
 					</div>
 				)}
 
-				{course.schedule_items.length > 0 && <ScheduleCard items={course.schedule_items} />}
+				{course.schedule_items.length > 0 && (
+					<ScheduleCard items={course.schedule_items} livestreamUrl={course.livestream_url} />
+				)}
 
 				{course.teacher && <TeacherCard teacher={course.teacher} />}
 
@@ -85,7 +88,7 @@ function TeacherCard({ teacher }: { teacher: CourseTeacher }) {
 	return (
 		<div className="card p-6">
 			<p className="text-xs font-bold uppercase tracking-wide text-muted mb-4">Giáo viên phụ trách</p>
-			<div className="flex items-start gap-4">
+			<div className="flex items-center gap-4">
 				<div className="size-14 shrink-0 rounded-full bg-primary-tint flex items-center justify-center font-extrabold text-primary">
 					{initials}
 				</div>
@@ -397,7 +400,14 @@ function CommitmentCard({ commitment }: { commitment: CommitmentStatus }) {
 	)
 }
 
-function ScheduleCard({ items }: { items: CourseScheduleItem[] }) {
+function ScheduleCard({
+	items,
+	livestreamUrl,
+}: {
+	items: CourseScheduleItem[]
+	livestreamUrl: string | null
+}) {
+	const [selected, setSelected] = useState<CourseScheduleItem | null>(null)
 	const weeks = buildWeeks(items)
 	const now = Date.now()
 	const DAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"] as const
@@ -418,11 +428,171 @@ function ScheduleCard({ items }: { items: CourseScheduleItem[] }) {
 				</div>
 				<div className="grid grid-cols-7 divide-x-2 divide-y-2 divide-border">
 					{weeks.flat().map((cell) => (
-						<DayCell key={cell.dateISO} cell={cell} now={now} />
+						<DayCell key={cell.dateISO} cell={cell} now={now} onSelect={setSelected} />
 					))}
 				</div>
 			</div>
+			<SessionDetailDialog
+				item={selected}
+				now={now}
+				livestreamUrl={livestreamUrl}
+				onClose={() => setSelected(null)}
+			/>
 		</div>
+	)
+}
+
+function SessionDetailDialog({
+	item,
+	now,
+	livestreamUrl,
+	onClose,
+}: {
+	item: CourseScheduleItem | null
+	now: number
+	livestreamUrl: string | null
+	onClose: () => void
+}) {
+	useEffect(() => {
+		if (!item) return
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === "Escape") onClose()
+		}
+		window.addEventListener("keydown", onKey)
+		return () => window.removeEventListener("keydown", onKey)
+	}, [item, onClose])
+
+	if (!item || typeof document === "undefined") return null
+
+	const cellTime = new Date(item.date).getTime()
+	const today = isSameDay(cellTime, now)
+	const past = !today && cellTime < now
+
+	const stateIcon: IconName = today ? "play" : past ? "check" : "timer"
+	const iconBlock = today
+		? "bg-primary border-primary-dark text-white"
+		: past
+			? "bg-border-light border-border text-muted"
+			: "bg-primary-tint border-primary/40 text-primary"
+
+	const chip = today
+		? "bg-primary border-primary-dark text-white"
+		: past
+			? "bg-border-light border-border text-muted"
+			: "bg-primary-tint border-primary/40 text-primary-dark"
+	const chipLabel = today ? "Hôm nay" : past ? "Đã qua" : "Sắp tới"
+
+	const bannerGradient = today
+		? "from-primary-tint to-transparent"
+		: past
+			? "from-border-light to-transparent"
+			: "from-primary-tint/60 to-transparent"
+
+	const showZoom = livestreamUrl !== null && !past
+
+	return createPortal(
+		<div
+			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-[fadeIn_220ms_ease-out]"
+			role="dialog"
+			aria-modal="true"
+			aria-label="Chi tiết buổi học"
+		>
+			<button
+				type="button"
+				aria-label="Đóng"
+				onClick={onClose}
+				className="absolute inset-0"
+			/>
+			<div className="card relative w-full max-w-md overflow-hidden animate-[popIn_400ms_cubic-bezier(0.34,1.56,0.64,1)]">
+				<button
+					type="button"
+					onClick={onClose}
+					aria-label="Đóng"
+					className="absolute right-4 top-4 z-10 flex size-8 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface hover:text-foreground"
+				>
+					<Icon name="close" size="xs" />
+				</button>
+
+				<div className={cn("relative bg-gradient-to-b px-7 pb-5 pt-7", bannerGradient)}>
+					<p
+						className={cn(
+							"text-[11px] font-extrabold uppercase tracking-[0.18em]",
+							past ? "text-muted" : "text-primary-dark",
+						)}
+					>
+						Lịch học chi tiết
+					</p>
+
+					<div className="mt-3 flex items-start gap-3.5">
+						<div
+							className={cn(
+								"size-14 shrink-0 rounded-2xl border-2 border-b-4 flex items-center justify-center",
+								iconBlock,
+							)}
+						>
+							<Icon name={stateIcon} size="md" />
+						</div>
+
+						<div className="flex-1 min-w-0 space-y-1.5">
+							<div className="flex items-center gap-2 flex-wrap">
+								<span className="text-xs font-extrabold uppercase tracking-wider tabular-nums text-foreground">
+									Buổi {pad(item.session_number)}
+								</span>
+								<span
+									className={cn(
+										"inline-flex items-center rounded-full border-2 border-b-4 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider",
+										chip,
+									)}
+								>
+									{chipLabel}
+								</span>
+							</div>
+							<h2 className="text-lg font-extrabold text-foreground leading-snug">{item.topic}</h2>
+						</div>
+					</div>
+				</div>
+
+				<div className="space-y-4 px-7 pb-6 pt-2">
+					<div className="grid grid-cols-2 gap-3">
+						<div className="space-y-1 rounded-(--radius-card) border-2 border-dashed border-border bg-background px-3.5 py-3">
+							<p className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Ngày học</p>
+							<p className="text-sm font-extrabold tabular-nums">{formatDate(item.date)}</p>
+						</div>
+						<div className="space-y-1 rounded-(--radius-card) border-2 border-dashed border-border bg-background px-3.5 py-3">
+							<p className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Thời gian</p>
+							<p className="text-sm font-extrabold tabular-nums">
+								{fmtTime(item.start_time)}–{fmtTime(item.end_time)}
+							</p>
+						</div>
+					</div>
+
+					{showZoom && livestreamUrl !== null && (
+						<a
+							href={livestreamUrl}
+							target="_blank"
+							rel="noreferrer"
+							className="btn btn-primary w-full py-3 text-sm"
+						>
+							<Icon name="play" size="xs" className="text-white" />
+							{today ? "Vào lớp Zoom ngay" : "Mở link Zoom"}
+						</a>
+					)}
+
+					{today && (
+						<p className="text-center text-xs font-bold text-primary-dark">
+							Buổi học đang diễn ra — vào lớp đúng giờ để không bỏ lỡ.
+						</p>
+					)}
+
+					{past && (
+						<p className="text-center text-xs text-muted">
+							Buổi học đã kết thúc. Bạn có thể xem lại nội dung trong tài liệu khóa học.
+						</p>
+					)}
+				</div>
+			</div>
+		</div>,
+		document.body,
 	)
 }
 
@@ -432,7 +602,15 @@ interface CellData {
 	item: CourseScheduleItem | null
 }
 
-function DayCell({ cell, now }: { cell: CellData; now: number }) {
+function DayCell({
+	cell,
+	now,
+	onSelect,
+}: {
+	cell: CellData
+	now: number
+	onSelect: (item: CourseScheduleItem) => void
+}) {
 	const cellTime = new Date(cell.dateISO).getTime()
 	const today = isSameDay(cellTime, now)
 	const past = !today && cellTime < now
@@ -447,9 +625,11 @@ function DayCell({ cell, now }: { cell: CellData; now: number }) {
 
 	const s = cell.item
 	return (
-		<div
+		<button
+			type="button"
+			onClick={() => onSelect(s)}
 			className={cn(
-				"min-h-24 p-2",
+				"min-h-24 p-2 text-left transition-colors hover:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset cursor-pointer",
 				past && "schedule-cell-past bg-surface opacity-70",
 				today && "bg-primary/15 ring-2 ring-primary ring-inset",
 				!past && !today && "schedule-cell-future bg-primary/5",
@@ -476,7 +656,7 @@ function DayCell({ cell, now }: { cell: CellData; now: number }) {
 			<p className={cn("mt-0.5 text-xs leading-tight", past ? "text-muted line-through" : "text-foreground")}>
 				{s.topic}
 			</p>
-		</div>
+		</button>
 	)
 }
 
