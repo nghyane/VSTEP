@@ -175,7 +175,7 @@ function EnrolledCard({ course, enrollment }: { course: Course; enrollment: Enro
 	const commitment = enrollment?.commitment ?? null
 
 	return (
-		<div className="card p-5 flex flex-col gap-4">
+		<div className="card p-5 flex flex-col gap-4 h-full">
 			<div className="flex items-center justify-between gap-2">
 				<Badge tone={status.tone}>{status.label}</Badge>
 				{commitment && commitment.phase !== "not_enrolled" && <CommitmentChip commitment={commitment} />}
@@ -190,14 +190,14 @@ function EnrolledCard({ course, enrollment }: { course: Course; enrollment: Enro
 
 			<NextSessionTile course={course} status={status} next={next} />
 
-			<div className="flex items-stretch gap-2 pt-1">
+			<div className="flex items-stretch gap-2 pt-1 mt-auto">
 				{status.active && course.livestream_url ? (
 					<>
 						<a
 							href={course.livestream_url}
 							target="_blank"
 							rel="noreferrer"
-							className="btn btn-primary flex-1 py-2.5 text-sm"
+							className="rounded-(--radius-button) border-2 border-b-4 border-primary-dark bg-primary inline-flex flex-1 items-center justify-center gap-2 px-4 py-2.5 text-sm font-extrabold uppercase tracking-wider text-primary-foreground transition-all hover:brightness-110 active:translate-y-[2px] active:border-b-2"
 						>
 							<Icon name="play" size="xs" className="text-white" />
 							Vào Zoom
@@ -214,7 +214,7 @@ function EnrolledCard({ course, enrollment }: { course: Course; enrollment: Enro
 					<Link
 						to="/khoa-hoc/$courseId"
 						params={{ courseId: course.id }}
-						className="btn btn-primary w-full py-2.5 text-sm"
+						className="rounded-(--radius-button) border-2 border-b-4 border-primary-dark bg-primary inline-flex w-full items-center justify-center gap-2 px-4 py-2.5 text-sm font-extrabold uppercase tracking-wider text-primary-foreground transition-all hover:brightness-110 active:translate-y-[2px] active:border-b-2"
 					>
 						{status.active ? "Vào khóa học" : "Xem chi tiết"}
 					</Link>
@@ -233,35 +233,57 @@ function NextSessionTile({
 	status: { active: boolean; label: string }
 	next: CourseScheduleItem | null
 }) {
-	if (!status.active) {
+	const ended = status.label === "Đã kết thúc"
+
+	if (ended) {
 		return (
-			<div className="rounded-(--radius-card) border-2 border-border bg-background px-4 py-3 text-sm">
-				<p className="text-muted">
-					{status.label === "Đã kết thúc"
-						? `Khóa học đã kết thúc ngày ${formatDate(course.end_date)}.`
-						: `Khai giảng ngày ${formatDate(course.start_date)}.`}
-				</p>
+			<div className="rounded-(--radius-card) border-2 border-border bg-background px-4 py-3 flex items-start gap-3">
+				<div className="size-9 shrink-0 rounded-xl bg-border text-muted flex items-center justify-center">
+					<Icon name="check" size="xs" className="text-muted" />
+				</div>
+				<div className="flex-1 min-w-0 space-y-0.5">
+					<p className="text-[10px] font-extrabold uppercase tracking-wider text-muted">
+						Khóa học đã kết thúc
+					</p>
+					<p className="text-sm font-extrabold text-foreground tabular-nums">{formatDate(course.end_date)}</p>
+					<p className="text-xs text-muted leading-snug">Xem lại tài liệu trong chi tiết khóa học.</p>
+				</div>
 			</div>
 		)
 	}
 
 	if (!next) {
 		return (
-			<div className="rounded-(--radius-card) border-2 border-border bg-background px-4 py-3 text-sm">
-				<p className="text-muted">Chưa có buổi học nào sắp tới.</p>
+			<div className="rounded-(--radius-card) border-2 border-border bg-background px-4 py-3 flex items-start gap-3">
+				<div className="size-9 shrink-0 rounded-xl bg-border text-muted flex items-center justify-center">
+					<Icon name="timer" size="xs" className="text-muted" />
+				</div>
+				<div className="flex-1 min-w-0 space-y-0.5">
+					<p className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Lịch học</p>
+					<p className="text-sm font-extrabold text-foreground">Chưa có buổi học nào sắp tới</p>
+					<p className="text-xs text-muted leading-snug">Giáo viên sẽ cập nhật lịch trước ngày khai giảng.</p>
+				</div>
 			</div>
 		)
 	}
 
+	const upcoming = !status.active
+	const eyebrow = upcoming
+		? `Buổi đầu · Buổi ${String(next.session_number).padStart(2, "0")}`
+		: `Buổi tiếp theo · Buổi ${String(next.session_number).padStart(2, "0")}`
+
 	return (
 		<div className="rounded-(--radius-card) border-2 border-primary/20 bg-primary-tint/40 px-4 py-3 flex items-start gap-3">
-			<div className="size-9 shrink-0 rounded-xl bg-primary text-white flex items-center justify-center">
-				<Icon name="timer" size="xs" className="text-white" />
+			<div
+				className={cn(
+					"size-9 shrink-0 rounded-xl text-white flex items-center justify-center",
+					upcoming ? "bg-primary-light" : "bg-primary",
+				)}
+			>
+				<Icon name={upcoming ? "target" : "timer"} size="xs" className="text-white" />
 			</div>
 			<div className="flex-1 min-w-0 space-y-0.5">
-				<p className="text-[10px] font-extrabold uppercase tracking-wider text-primary-dark">
-					Buổi tiếp theo · Buổi {String(next.session_number).padStart(2, "0")}
-				</p>
+				<p className="text-[10px] font-extrabold uppercase tracking-wider text-primary-dark">{eyebrow}</p>
 				<p className="text-sm font-extrabold text-foreground tabular-nums">
 					{formatDate(next.date)} · {next.start_time.slice(0, 5)}–{next.end_time.slice(0, 5)}
 				</p>

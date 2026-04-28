@@ -28,7 +28,10 @@ function CoursesPage() {
 	const enrolledIds = new Set(data?.enrolled_course_ids ?? [])
 	const enrollments = data?.enrollments ?? {}
 
-	const list = tab === "mine" ? courses.filter((c) => enrolledIds.has(c.id)) : courses
+	const list =
+		tab === "mine"
+			? courses.filter((c) => enrolledIds.has(c.id))
+			: courses.filter((c) => !enrolledIds.has(c.id))
 
 	const hotPair = useMemo<[Course, Course] | null>(() => {
 		const candidates = courses
@@ -81,7 +84,7 @@ function CoursesPage() {
 				</div>
 
 				{isLoading ? (
-					<div className="grid gap-4 sm:grid-cols-2 items-start">
+					<div className="grid gap-4 sm:grid-cols-2 items-stretch">
 						{Array.from({ length: 4 }, (_, i) => (
 							<div key={i} className="card h-64 animate-pulse bg-surface" />
 						))}
@@ -102,7 +105,7 @@ function CoursesPage() {
 						)}
 					</div>
 				) : (
-					<div className="grid gap-4 sm:grid-cols-2 items-start">
+					<div className="grid gap-4 sm:grid-cols-2 items-stretch">
 						{list.map((c) => (
 							<CourseCard
 								key={c.id}
