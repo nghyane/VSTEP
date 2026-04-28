@@ -1,28 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { useRef, useState } from "react"
-import { Icon, StaticIcon, type StaticIconName } from "#/components/Icon"
+import { Icon, type IconName, StaticIcon, type StaticIconName } from "#/components/Icon"
+import { ScrollArea } from "#/components/ScrollArea"
 import { readAllNotifications, readNotification } from "#/features/notifications/actions"
 import { notificationsQuery, unreadCountQuery } from "#/features/notifications/queries"
 import type { Notification, UnreadCount } from "#/features/notifications/types"
+import { visualForType } from "#/features/notifications/visuals"
 import type { ApiResponse, PaginatedResponse } from "#/lib/api"
 import { useAuth, useSession } from "#/lib/auth"
 import { useToast } from "#/lib/toast"
 import { useClickOutside } from "#/lib/use-click-outside"
-
-const NOTIF_ICON: Record<string, StaticIconName> = {
-	coin: "coin",
-	streak: "streak-sm",
-	trophy: "trophy",
-	target: "target-md",
-}
-
-const NOTIF_TINT: Record<string, string> = {
-	coin: "bg-coin-tint",
-	streak: "bg-streak-tint",
-	trophy: "bg-warning-tint",
-	target: "bg-primary-tint",
-}
+import { cn } from "#/lib/utils"
 
 function timeAgo(date: string): string {
 	const diff = Date.now() - new Date(date).getTime()
@@ -34,37 +23,68 @@ function timeAgo(date: string): string {
 	return `${Math.floor(hours / 24)} ngày trước`
 }
 
-function NotifItem({ notif, onRead }: { notif: Notification; onRead: (id: string) => void }) {
-	const icon = NOTIF_ICON[notif.icon_key ?? ""] ?? "coin"
-	const tint = NOTIF_TINT[notif.icon_key ?? ""] ?? "bg-coin-tint"
+const TONE_BORDER: Record<string, string> = {
+	coin: "border-border",
+	warning: "border-warning/30",
+	destructive: "border-destructive/40",
+	primary: "border-primary/30",
+	info: "border-info/30",
+}
+
+const TONE_DOT: Record<string, string> = {
+	coin: "bg-primary ring-primary/30",
+	warning: "bg-warning ring-warning/30",
+	destructive: "bg-destructive ring-destructive/30",
+	primary: "bg-primary ring-primary/30",
+	info: "bg-info ring-info/30",
+}
+
+function NotifItem({ notif, onActivate }: { notif: Notification; onActivate: (n: Notification) => void }) {
+	const visual = visualForType(notif.type)
 	const isUnread = !notif.read_at
 	return (
 		<button
 			type="button"
-			onClick={() => {
-				if (isUnread) onRead(notif.id)
-			}}
-			className={`relative flex w-full items-start gap-3 rounded-(--radius-card) p-3 text-left transition ${
+			onClick={() => onActivate(notif)}
+			className={cn(
+				"relative flex w-full items-start gap-3 rounded-(--radius-card) p-3 text-left transition cursor-pointer",
 				isUnread
-					? "bg-primary-tint/40 hover:bg-primary-tint/70 cursor-pointer"
-					: "hover:bg-background cursor-default"
-			}`}
+					? visual.tone === "destructive"
+						? "bg-destructive-tint/40 hover:bg-destructive-tint/70"
+						: "bg-primary-tint/40 hover:bg-primary-tint/70"
+					: "hover:bg-background",
+			)}
 		>
 			<span
-				className={`flex size-10 shrink-0 items-center justify-center rounded-full ${tint} border-2 border-border`}
+				className={cn(
+					"flex size-10 shrink-0 items-center justify-center rounded-full border-2",
+					visual.tintClass,
+					TONE_BORDER[visual.tone] ?? "border-border",
+				)}
 			>
-				<StaticIcon name={icon} size="sm" className="h-5 w-auto" />
+				{visual.iconKind === "static" ? (
+					<StaticIcon name={visual.iconName as StaticIconName} size="sm" className="h-5 w-auto" />
+				) : (
+					<Icon name={visual.iconName as IconName} size="sm" />
+				)}
 			</span>
 			<div className="min-w-0 flex-1 pt-0.5">
 				<p
-					className={`text-sm leading-snug ${isUnread ? "font-extrabold text-foreground" : "font-bold text-muted"}`}
+					className={cn(
+						"text-sm leading-snug",
+						isUnread ? "font-extrabold text-foreground" : "font-bold text-muted",
+					)}
 				>
 					{notif.title}
 				</p>
 				{notif.body && <p className="text-xs text-muted mt-0.5 leading-snug">{notif.body}</p>}
 				<p className="text-[11px] font-bold text-subtle mt-1">{timeAgo(notif.created_at)}</p>
 			</div>
-			{isUnread && <span className="mt-2 size-2.5 shrink-0 rounded-full bg-primary ring-2 ring-primary/30" />}
+			{isUnread && (
+				<span
+					className={cn("mt-2 size-2.5 shrink-0 rounded-full ring-2", TONE_DOT[visual.tone] ?? TONE_DOT.coin)}
+				/>
+			)}
 		</button>
 	)
 }
@@ -175,6 +195,15 @@ export function ProfileDropdown({ unread, initial }: Props) {
 	})
 
 	const notifs = notifsData ? notifsData.data : []
+
+	function activateNotif(n: Notification) {
+		if (!n.read_at) readOne.mutate(n.id)
+		const visual = visualForType(n.type)
+		if (visual.navigateTo) {
+			setOpen(false)
+			navigate({ to: visual.navigateTo })
+		}
+	}
 
 	function toggle() {
 		const next = !open
@@ -295,11 +324,13 @@ export function ProfileDropdown({ unread, initial }: Props) {
 									<p className="text-xs text-subtle mt-1">Hộp thư trống — quay lại sau nhé!</p>
 								</div>
 							) : (
-								<div className="max-h-80 overflow-y-auto p-2 space-y-1.5">
-									{notifs.map((n) => (
-										<NotifItem key={n.id} notif={n} onRead={(id) => readOne.mutate(id)} />
-									))}
-								</div>
+								<ScrollArea maxHeight="20rem">
+									<div className="p-2 space-y-1.5">
+										{notifs.map((n) => (
+											<NotifItem key={n.id} notif={n} onActivate={activateNotif} />
+										))}
+									</div>
+								</ScrollArea>
 							)}
 						</div>
 					)}
