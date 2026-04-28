@@ -48,6 +48,12 @@ export function formatShortDate(iso: string): string {
 	return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`
 }
 
+/** Format ISO date → "05/04/2026". */
+export function formatDate(iso: string): string {
+	const d = new Date(iso)
+	return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`
+}
+
 /** Format ISO date → "19 tháng 11, 2026". */
 export function formatVnDate(iso: string): string {
 	const d = new Date(iso)

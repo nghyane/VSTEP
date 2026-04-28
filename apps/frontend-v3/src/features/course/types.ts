@@ -7,6 +7,11 @@ export interface CourseScheduleItem {
 	topic: string
 }
 
+export interface CourseTeacher {
+	id: string
+	full_name: string
+}
+
 export interface Course {
 	id: string
 	slug: string
@@ -23,6 +28,9 @@ export interface Course {
 	required_full_tests: number
 	commitment_window_days: number
 	livestream_url: string | null
+	teacher: CourseTeacher | null
+	sold_slots?: number
+	schedule_items_count?: number
 }
 
 export interface CourseWithRelations extends Course {

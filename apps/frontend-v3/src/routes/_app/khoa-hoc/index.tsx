@@ -39,7 +39,7 @@ function CoursesPage() {
 				</div>
 
 				{isLoading ? (
-					<div className="grid gap-4 sm:grid-cols-2">
+					<div className="grid gap-4 sm:grid-cols-2 items-start">
 						{Array.from({ length: 4 }, (_, i) => (
 							<div key={i} className="card h-64 animate-pulse bg-surface" />
 						))}
@@ -60,7 +60,7 @@ function CoursesPage() {
 						)}
 					</div>
 				) : (
-					<div className="grid gap-4 sm:grid-cols-2">
+					<div className="grid gap-4 sm:grid-cols-2 items-start">
 						{list.map((c) => (
 							<CourseCard key={c.id} course={c} enrolled={enrolledIds.has(c.id)} />
 						))}

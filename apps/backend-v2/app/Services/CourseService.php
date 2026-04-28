@@ -25,7 +25,15 @@ class CourseService
     /** @return Collection<int,Course> */
     public function listPublished(): Collection
     {
-        return Course::query()->with('teacher:id,full_name')->where('is_published', true)->orderBy('start_date')->get();
+        return Course::query()
+            ->with('teacher:id,full_name')
+            ->withCount([
+                'enrollments as sold_slots',
+                'scheduleItems as schedule_items_count',
+            ])
+            ->where('is_published', true)
+            ->orderBy('start_date')
+            ->get();
     }
 
     public function getDetail(string $id): Course
