@@ -43,6 +43,9 @@ class CourseService
      * `enrollments` luôn trả stdClass để FE có shape `Record<courseId, {...}>` ổn định:
      * khi không có khóa nào, PHP empty array serialize thành `[]` thay vì `{}`.
      *
+     * Bảo mật: `livestream_url` chỉ được expose cho khóa user đã ghi danh — đây là core asset
+     * của khóa học, người chưa mua không được thấy.
+     *
      * @return array{data: Collection<int,Course>, enrolled_course_ids: list<string>, enrollments: \stdClass}
      */
     public function listForProfile(?Profile $profile): array
@@ -50,6 +53,8 @@ class CourseService
         $courses = $this->listPublished();
 
         if (! $profile) {
+            $courses->each(fn (Course $c) => $c->makeHidden('livestream_url'));
+
             return [
                 'data' => $courses,
                 'enrolled_course_ids' => [],
@@ -66,6 +71,8 @@ class CourseService
         $enrollments = new \stdClass;
         foreach ($courses as $course) {
             if (! $enrolledSet->has($course->id)) {
+                $course->makeHidden('livestream_url');
+
                 continue;
             }
             $enrollments->{$course->id} = [
@@ -133,9 +140,15 @@ class CourseService
     }
 
     /**
-     * Commitment status: pending/met based on full tests in window.
+     * Commitment status: pending / met / violated based on full tests in window.
      *
-     * @return array{phase: string, completed: int, required: int}
+     * Phases:
+     *  - not_enrolled: chưa ghi danh
+     *  - met: đã đủ required full tests trong window
+     *  - violated: now > windowEnd nhưng chưa đủ → khóa cam kết bị vi phạm
+     *  - pending: còn trong window và chưa đủ
+     *
+     * @return array{phase: string, completed: int, required: int, window_start_at: ?string, deadline_at: ?string}
      */
     public function commitmentStatus(Profile $profile, Course $course): array
     {
@@ -145,7 +158,13 @@ class CourseService
             ->first();
 
         if (! $enrollment) {
-            return ['phase' => 'not_enrolled', 'completed' => 0, 'required' => $course->required_full_tests];
+            return [
+                'phase' => 'not_enrolled',
+                'completed' => 0,
+                'required' => $course->required_full_tests,
+                'window_start_at' => null,
+                'deadline_at' => null,
+            ];
         }
 
         $windowStart = $enrollment->enrolled_at->copy()->addDays($course->exam_cooldown_days);
@@ -158,10 +177,18 @@ class CourseService
             ->whereBetween('submitted_at', [$windowStart, $windowEnd])
             ->count();
 
+        $phase = match (true) {
+            $completed >= $course->required_full_tests => 'met',
+            now()->gt($windowEnd) => 'violated',
+            default => 'pending',
+        };
+
         return [
-            'phase' => $completed >= $course->required_full_tests ? 'met' : 'pending',
+            'phase' => $phase,
             'completed' => $completed,
             'required' => $course->required_full_tests,
+            'window_start_at' => $windowStart->toIso8601String(),
+            'deadline_at' => $windowEnd->toIso8601String(),
         ];
     }
 

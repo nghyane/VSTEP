@@ -143,13 +143,14 @@ function PriceBlock({ course }: { course: Course }) {
 	)
 }
 
-type BadgeTone = "info" | "warning" | "muted" | "success"
+type BadgeTone = "info" | "warning" | "muted" | "success" | "destructive"
 
 const BADGE_TONE_CLASS: Record<BadgeTone, string> = {
 	info: "bg-primary/10 text-primary",
 	warning: "bg-warning/10 text-warning",
 	muted: "bg-border text-muted",
 	success: "bg-success/10 text-success",
+	destructive: "bg-destructive/10 text-destructive",
 }
 
 function SlotBadge({ full, remaining }: { full: boolean; remaining: number | null }) {
@@ -298,13 +299,14 @@ function CommitmentChip({
 }: {
 	commitment: { phase: string; completed: number; required: number }
 }) {
-	const tone: BadgeTone = commitment.phase === "met" ? "success" : "warning"
+	const tone: BadgeTone =
+		commitment.phase === "met" ? "success" : commitment.phase === "violated" ? "destructive" : "warning"
 	return (
 		<Badge tone={tone}>
 			<span className="tabular-nums">
 				{commitment.completed}/{commitment.required}
 			</span>
-			<span className="ml-1">bài thi</span>
+			<span className="ml-1">{commitment.phase === "violated" ? "quá hạn" : "bài thi"}</span>
 		</Badge>
 	)
 }

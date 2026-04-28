@@ -52,9 +52,11 @@ export interface CourseDetail {
 }
 
 export interface CommitmentStatus {
-	phase: "not_enrolled" | "pending" | "met"
+	phase: "not_enrolled" | "pending" | "met" | "violated"
 	completed: number
 	required: number
+	window_start_at: string | null
+	deadline_at: string | null
 }
 
 export interface EnrollmentDetail {

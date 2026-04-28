@@ -34,6 +34,12 @@ class CourseController extends Controller
         $profile = request()->attributes->get('active_profile');
         $commitment = $profile ? $this->courseService->commitmentStatus($profile, $course) : null;
 
+        // Bảo mật: livestream_url là core asset của khóa, chỉ user đã ghi danh được thấy.
+        $isEnrolled = $commitment !== null && $commitment['phase'] !== 'not_enrolled';
+        if (! $isEnrolled) {
+            $course->makeHidden('livestream_url');
+        }
+
         return response()->json(['data' => [
             'course' => $course,
             'sold_slots' => $course->soldSlots(),

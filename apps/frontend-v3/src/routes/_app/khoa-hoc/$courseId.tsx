@@ -66,7 +66,10 @@ function CourseDetailPage() {
 				)}
 
 				{course.schedule_items.length > 0 && (
-					<ScheduleCard items={course.schedule_items} livestreamUrl={course.livestream_url} />
+					<ScheduleCard
+						items={course.schedule_items}
+						livestreamUrl={enrolled ? (course.livestream_url ?? null) : null}
+					/>
 				)}
 
 				{course.teacher && <TeacherCard teacher={course.teacher} />}
@@ -287,7 +290,7 @@ function EnrollCard({ course, remaining }: { course: CourseWithRelations; remain
 
 function EnrolledCard({ livestreamUrl }: { livestreamUrl: string | null }) {
 	return (
-		<aside className="rounded-2xl border-2 border-success/30 bg-success/5 p-5 space-y-4 self-start">
+		<aside className="rounded-2xl border-2 border-success/30 bg-success/5 p-5 flex flex-col gap-4 self-center">
 			<p className="text-xs font-bold uppercase tracking-wider text-success text-center">Đã đăng ký</p>
 			<p className="text-sm text-foreground text-center leading-relaxed">
 				Khóa học đã sẵn sàng. Vào lớp đúng giờ để không bỏ lỡ buổi học.
@@ -308,40 +311,56 @@ function EnrolledCard({ livestreamUrl }: { livestreamUrl: string | null }) {
 
 function CommitmentCard({ commitment }: { commitment: CommitmentStatus }) {
 	const met = commitment.phase === "met"
+	const violated = commitment.phase === "violated"
 	const remaining = Math.max(0, commitment.required - commitment.completed)
 	const pct =
 		commitment.required > 0
 			? Math.min(100, Math.round((commitment.completed / commitment.required) * 100))
 			: 0
 
+	const deadlineMs = commitment.deadline_at ? new Date(commitment.deadline_at).getTime() : null
+	const daysLeft =
+		deadlineMs !== null ? Math.ceil((deadlineMs - Date.now()) / (1000 * 60 * 60 * 24)) : null
+	const urgent = !met && !violated && daysLeft !== null && daysLeft <= 3
+
+	const borderClass = met ? "border-success" : violated ? "border-destructive" : "border-warning"
+	const accentText = met ? "text-success" : violated ? "text-destructive" : "text-warning"
+	const iconBlockClass = met
+		? "bg-success border-primary-dark"
+		: violated
+			? "bg-destructive border-destructive"
+			: "bg-warning border-[color:var(--color-warning-light)]"
+	const iconName: IconName = met ? "check" : violated ? "close" : "lightning"
+	const chipClass = met
+		? "bg-primary-tint border-success/40 text-success"
+		: violated
+				? "bg-destructive-tint border-destructive/40 text-destructive"
+				: "bg-warning-tint border-warning/40 text-warning"
+	const progressTone: "primary" | "warning" = met ? "primary" : "warning"
+
 	return (
 		<Link
 			to="/thi-thu"
 			className={cn(
 				"group card-interactive block p-6 relative overflow-hidden",
-				met ? "border-success" : "border-warning",
+				borderClass,
 			)}
 		>
 			<div className="relative flex items-start gap-4">
 				<div
 					className={cn(
 						"size-14 shrink-0 rounded-2xl border-2 flex items-center justify-center text-white",
-						met ? "bg-success border-primary-dark" : "bg-warning border-[color:var(--color-warning-light)]",
+						iconBlockClass,
 					)}
 					style={{ boxShadow: "0 4px 0 rgb(0 0 0 / 0.08)" }}
 				>
-					<Icon name={met ? "check" : "lightning"} size="md" className="text-white" />
+					<Icon name={iconName} size="md" className="text-white" />
 				</div>
 
 				<div className="flex-1 min-w-0 space-y-3">
 					<div className="flex items-start justify-between gap-3 flex-wrap">
 						<div className="min-w-0">
-							<p
-								className={cn(
-									"text-xs font-bold uppercase tracking-wider",
-									met ? "text-success" : "text-warning",
-								)}
-							>
+							<p className={cn("text-xs font-bold uppercase tracking-wider", accentText)}>
 								Cam kết kỷ luật
 							</p>
 							<p className="font-extrabold text-foreground text-2xl leading-none mt-1.5">
@@ -355,15 +374,18 @@ function CommitmentCard({ commitment }: { commitment: CommitmentStatus }) {
 						<span
 							className={cn(
 								"shrink-0 inline-flex items-center gap-1.5 rounded-(--radius-button) border-2 border-b-4 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider transition-all group-hover:-translate-y-0.5 group-active:translate-y-0 group-active:border-b-2",
-								met
-									? "bg-primary-tint border-success/40 text-success"
-									: "bg-warning-tint border-warning/40 text-warning",
+								chipClass,
 							)}
 						>
 							{met ? (
 								<>
 									<Icon name="check" size="xs" className="h-3 w-auto" />
 									Hoàn thành
+								</>
+							) : violated ? (
+								<>
+									<Icon name="close" size="xs" className="h-3 w-auto" />
+									Đã quá hạn
 								</>
 							) : (
 								<>
@@ -376,20 +398,55 @@ function CommitmentCard({ commitment }: { commitment: CommitmentStatus }) {
 
 					<DuoProgressBar
 						value={pct}
-						tone={met ? "primary" : "warning"}
+						tone={progressTone}
 						heightPx={12}
 						label="Tiến độ cam kết kỷ luật"
 					/>
+
+					{commitment.deadline_at && (
+						<p
+							className={cn(
+								"text-xs font-bold inline-flex items-center gap-1.5",
+								violated ? "text-destructive" : urgent ? "text-warning" : "text-muted",
+							)}
+						>
+							<Icon name="timer" size="xs" />
+							<span>
+								Hạn chót:{" "}
+								<span className="tabular-nums">{formatDate(commitment.deadline_at)}</span>
+								{!met && !violated && daysLeft !== null && (
+									<span className="ml-1">
+										(còn <span className="tabular-nums">{Math.max(0, daysLeft)}</span> ngày)
+									</span>
+								)}
+							</span>
+						</p>
+					)}
 
 					<p className="text-sm text-foreground leading-relaxed">
 						{met ? (
 							<span className="font-bold text-success">
 								Bạn đã hoàn thành cam kết — tiếp tục luyện đề để giữ phong độ.
 							</span>
+						) : violated ? (
+							<span>
+								Cam kết đã <span className="font-bold text-destructive">vi phạm</span> — bạn chưa
+								hoàn thành đủ {commitment.required} bài full-test trong hạn. Liên hệ giáo viên để
+								được hỗ trợ.
+							</span>
 						) : (
 							<>
-								Còn <span className="font-extrabold tabular-nums text-warning">{remaining}</span> bài
-								full-test nữa để hoàn thành cam kết. Bấm vào ô này để{" "}
+								Còn <span className="font-extrabold tabular-nums text-warning">{remaining}</span>{" "}
+								bài full-test nữa để hoàn thành cam kết
+								{daysLeft !== null && daysLeft >= 0 && (
+									<>
+										{" "}
+										trong{" "}
+										<span className="font-extrabold tabular-nums text-warning">{daysLeft}</span>{" "}
+										ngày tới
+									</>
+								)}
+								. Bấm vào ô này để{" "}
 								<span className="font-bold text-foreground">vào phòng thi ngay.</span>
 							</>
 						)}
@@ -497,12 +554,7 @@ function SessionDetailDialog({
 			aria-modal="true"
 			aria-label="Chi tiết buổi học"
 		>
-			<button
-				type="button"
-				aria-label="Đóng"
-				onClick={onClose}
-				className="absolute inset-0"
-			/>
+			<button type="button" aria-label="Đóng" onClick={onClose} className="absolute inset-0" />
 			<div className="card relative w-full max-w-md overflow-hidden animate-[popIn_400ms_cubic-bezier(0.34,1.56,0.64,1)]">
 				<button
 					type="button"
