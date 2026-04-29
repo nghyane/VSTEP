@@ -9,6 +9,7 @@ import CheckIcon from "#/assets/icons/check-small.svg?react"
 import chestMedium from "#/assets/icons/chest-medium.svg"
 import chestOpen from "#/assets/icons/chest-open.svg"
 import ClipboardIcon from "#/assets/icons/clipboard-small.svg?react"
+import clipboardMedium from "#/assets/icons/clipboard-medium.svg"
 import CloseIcon from "#/assets/icons/close-small.svg?react"
 import coinMedium from "#/assets/icons/coin-medium.svg"
 import coinSmall from "#/assets/icons/coin-small.svg"
@@ -24,6 +25,7 @@ import MicIcon from "#/assets/icons/microphone-small.svg?react"
 import challengeMedium from "#/assets/icons/monthly-challenge-medium.svg"
 import MoreIcon from "#/assets/icons/more-small.svg?react"
 import PencilIcon from "#/assets/icons/pencil-small.svg?react"
+import pencilMedium from "#/assets/icons/pencil-medium.svg"
 import PlayIcon from "#/assets/icons/play-small.svg?react"
 import SearchIcon from "#/assets/icons/search-small.svg?react"
 import streakLarge from "#/assets/icons/streak-large.svg"
@@ -73,9 +75,11 @@ export const staticIcons = {
 	chest: chestMedium,
 	"chest-open": chestOpen,
 	challenge: challengeMedium,
+	"clipboard-md": clipboardMedium,
 	coin: coinSmall,
 	"coin-md": coinMedium,
 	flag: flagSmall,
+	"pencil-md": pencilMedium,
 	"streak-sm": streakSmall,
 	"streak-md": streakMedium,
 	"streak-lg": streakLarge,

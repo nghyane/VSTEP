@@ -1,4 +1,4 @@
-import { Icon, StaticIcon } from "#/components/Icon"
+import { StaticIcon } from "#/components/Icon"
 import { SkillChip } from "#/components/SkillChip"
 import type { ExamDetail, SkillKey } from "#/features/exam/types"
 
@@ -49,17 +49,17 @@ export function ExamDetailHeader({ detail }: Props) {
 					<span className="text-subtle">phút</span>
 				</MetaPill>
 				<MetaPill>
-					<Icon name="target" size="xs" className="text-subtle" />
+					<StaticIcon name="target-md" size="xs" />
 					<span className="font-bold text-foreground">4</span>
 					<span className="text-subtle">kỹ năng</span>
 				</MetaPill>
 				<MetaPill>
-					<Icon name="clipboard" size="xs" className="text-subtle" />
+					<StaticIcon name="clipboard-md" size="xs" />
 					<span className="font-bold text-foreground">{totalMcq}</span>
 					<span className="text-subtle">câu trắc nghiệm</span>
 				</MetaPill>
 				<MetaPill>
-					<Icon name="pencil" size="xs" className="text-subtle" />
+					<StaticIcon name="pencil-md" size="xs" />
 					<span className="font-bold text-foreground">{totalFreeResponse}</span>
 					<span className="text-subtle">phần tự luận</span>
 				</MetaPill>

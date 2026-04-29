@@ -12,11 +12,27 @@ export function useProfilePage(edit?: boolean) {
 	const { data, isLoading } = useQuery(profilesQuery)
 	const [showCreate, setShowCreate] = useState(false)
 	const [editing, setEditing] = useState<Profile | null>(edit ? activeProfile : null)
+	const [pendingSwitch, setPendingSwitch] = useState<Profile | null>(null)
 	const { doSwitch, doCreate, doUpdate } = useProfileMutations()
 
 	function closeEdit() {
 		setEditing(null)
 		navigate({ to: "/ho-so", search: {}, replace: true })
+	}
+
+	function requestSwitch(prof: Profile) {
+		if (prof.id === activeProfile.id) return
+		setPendingSwitch(prof)
+	}
+
+	async function confirmSwitch() {
+		if (!pendingSwitch) return
+		await doSwitch.mutateAsync(pendingSwitch.id)
+		setPendingSwitch(null)
+	}
+
+	function cancelSwitch() {
+		setPendingSwitch(null)
 	}
 
 	async function handleCreate(v: {
@@ -48,5 +64,9 @@ export function useProfilePage(edit?: boolean) {
 		handleCreate,
 		handleUpdate,
 		doSwitch,
+		pendingSwitch,
+		requestSwitch,
+		confirmSwitch,
+		cancelSwitch,
 	}
 }

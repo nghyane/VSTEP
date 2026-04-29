@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router"
 import { useEffect, useRef, useState } from "react"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { ProfileDropdown } from "#/components/ProfileDropdown"
+import { StreakIcon } from "#/components/StreakIcon"
 import { streakQuery } from "#/features/dashboard/queries"
 import { StreakDialog } from "#/features/dashboard/StreakDialog"
 import { unreadCountQuery } from "#/features/notifications/queries"
@@ -42,6 +43,17 @@ export function Header({ title, backTo }: Props) {
 		const t = setTimeout(() => setAnimKey(0), 1600)
 		return () => clearTimeout(t)
 	}, [pulse])
+
+	const [streakAnimKey, setStreakAnimKey] = useState(0)
+	function handleStreakClick() {
+		setStreakAnimKey((k) => k + 1)
+		setStreakOpen(true)
+	}
+	useEffect(() => {
+		if (streakAnimKey === 0) return
+		const t = setTimeout(() => setStreakAnimKey(0), 1000)
+		return () => clearTimeout(t)
+	}, [streakAnimKey])
 
 	return (
 		<div className="sticky top-0 z-10 bg-background px-10 pt-8 pb-5 flex items-center justify-between">
@@ -97,18 +109,35 @@ export function Header({ title, backTo }: Props) {
 						</>
 					)}
 				</div>
-				<button
-					type="button"
-					onClick={() => setStreakOpen(true)}
-					disabled={streakInfo === null}
-					aria-label={`Streak ${streak ?? 0} ngày — bấm để xem chi tiết`}
-					className="inline-flex shrink-0 items-center gap-2 px-3 py-1.5 rounded-full bg-streak-tint border-2 border-streak/30 border-b-4 whitespace-nowrap hover:bg-streak/15 hover:-translate-y-0.5 active:translate-y-0 active:border-b-2 transition-all disabled:cursor-default disabled:hover:translate-y-0"
-				>
-					<StaticIcon name="streak-sm" size="sm" />
-					<span className="font-extrabold text-base text-streak tabular-nums leading-none">
-						{streak !== null ? streak : "–"}
-					</span>
-				</button>
+				<div className="relative shrink-0">
+					<button
+						type="button"
+						onClick={handleStreakClick}
+						disabled={streakInfo === null}
+						aria-label={`Streak ${streak ?? 0} ngày — bấm để xem chi tiết`}
+						className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-streak-tint border-2 border-streak/30 border-b-4 whitespace-nowrap hover:bg-streak/15 hover:-translate-y-0.5 active:translate-y-0 active:border-b-2 transition-all disabled:cursor-default disabled:hover:translate-y-0"
+					>
+						<StreakIcon
+							size="sm"
+							burning={(streak ?? 0) > 0}
+							burnKey={streakAnimKey}
+							className={cn(
+								"origin-center group-hover:animate-[coinPinch_600ms_ease-in-out]",
+								streakAnimKey > 0 && "animate-[coinPinch_700ms_ease-in-out]",
+							)}
+						/>
+						<span className="font-extrabold text-base text-streak tabular-nums leading-none">
+							{streak !== null ? streak : "–"}
+						</span>
+					</button>
+					{streakAnimKey > 0 && (
+						<span
+							key={`streak-ring-${streakAnimKey}`}
+							aria-hidden
+							className="pointer-events-none absolute inset-0 rounded-full bg-streak/40 animate-[coinPulseRing_900ms_ease-out_forwards]"
+						/>
+					)}
+				</div>
 				<ProfileDropdown unread={unread} initial={initial} />
 			</div>
 			<TopUpDialog open={topupOpen} onClose={() => setTopupOpen(false)} />
