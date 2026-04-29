@@ -88,22 +88,22 @@ export function LandingSkills() {
 				</div>
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
 					<SkillCard
-						pngIcon="headphones"
+						pngIcon="listening"
 						label="Nghe"
 						details={["3 phần nghe hiểu", "Hỗ trợ nghe lại 2 lần", "Đề thi chuẩn VSTEP"]}
 					/>
 					<SkillCard
-						pngIcon="book"
+						pngIcon="reading"
 						label="Đọc"
 						details={["4 đoạn văn · 40 câu", "Tra từ khi bôi đen", "Dịch tự động bằng AI"]}
 					/>
 					<SkillCard
-						pngIcon="pencil"
+						pngIcon="writing"
 						label="Viết"
 						details={["Thư + bài luận", "AI chấm theo rubric", "Bài mẫu + phân tích"]}
 					/>
 					<SkillCard
-						pngIcon="microphone"
+						pngIcon="speaking"
 						label="Nói"
 						details={["3 phần theo format", "Ghi âm trực tiếp", "AI chấm phát âm + nội dung"]}
 					/>

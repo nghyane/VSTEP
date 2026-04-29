@@ -1,14 +1,19 @@
 import { Link, useMatchRoute } from "@tanstack/react-router"
 import { Icon, type IconName } from "#/components/Icon"
 import { Logo } from "#/components/Logo"
+import { SkillIcon } from "#/components/SkillIcon"
 import { useSession } from "#/lib/auth"
 import { cn } from "#/lib/utils"
 
-const NAV_ITEMS: { label: string; icon: IconName; to: string }[] = [
-	{ label: "Tổng quan", icon: "house", to: "/dashboard" },
-	{ label: "Luyện tập", icon: "weights", to: "/luyen-tap" },
-	{ label: "Thi thử", icon: "target", to: "/thi-thu" },
-	{ label: "Khóa học", icon: "guidebook", to: "/khoa-hoc" },
+type NavItem =
+	| { label: string; to: string; kind: "icon"; icon: IconName }
+	| { label: string; to: string; kind: "png"; png: string }
+
+const NAV_ITEMS: NavItem[] = [
+	{ label: "Tổng quan", to: "/dashboard", kind: "icon", icon: "house" },
+	{ label: "Luyện tập", to: "/luyen-tap", kind: "icon", icon: "weights" },
+	{ label: "Thi thử", to: "/thi-thu", kind: "png", png: "mock-exam" },
+	{ label: "Khóa học", to: "/khoa-hoc", kind: "png", png: "course" },
 ]
 
 export function Sidebar() {
@@ -38,7 +43,11 @@ export function Sidebar() {
 							)}
 						>
 							<span className="w-8 h-6 flex items-center justify-center shrink-0">
-								<Icon name={item.icon} size="sm" />
+								{item.kind === "icon" ? (
+									<Icon name={item.icon} size="sm" />
+								) : (
+									<SkillIcon name={item.png} size="md" className="-my-1" />
+								)}
 							</span>
 							<span className="text-base">{item.label}</span>
 						</Link>

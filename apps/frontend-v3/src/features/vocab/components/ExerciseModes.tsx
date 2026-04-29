@@ -16,7 +16,7 @@ export function ExerciseModes({ topicId }: Props) {
 					search={{ kind: "mcq" }}
 					className="card-interactive p-4 text-left"
 				>
-					<SkillIcon name="dictionary" size="md" className="mb-2" />
+					<SkillIcon name="vocabulary" size="md" className="mb-2" />
 					<h4 className="font-bold text-sm text-foreground">Trắc nghiệm</h4>
 					<p className="text-xs text-subtle mt-0.5">Chọn đáp án đúng</p>
 				</Link>
@@ -26,7 +26,7 @@ export function ExerciseModes({ topicId }: Props) {
 					search={{ kind: "fill_blank" }}
 					className="card-interactive p-4 text-left"
 				>
-					<SkillIcon name="pencil" size="md" className="mb-2" />
+					<SkillIcon name="writing" size="md" className="mb-2" />
 					<h4 className="font-bold text-sm text-foreground">Điền từ</h4>
 					<p className="text-xs text-subtle mt-0.5">Điền vào chỗ trống</p>
 				</Link>
