@@ -1,5 +1,9 @@
-﻿# Local development override - khong dung o production
-# Secrets (APP_KEY, JWT_SECRET...) nam trong apps/backend-v2/.env - khong hardcode o day
+# Local dev override — auto-loaded by `docker compose up`.
+# Production deploy: use `docker compose -f docker-compose.yml up` to skip this file.
+#
+# Secrets (APP_KEY, JWT_SECRET, ...) live in apps/backend-v2/.env (gitignored),
+# loaded via `env_file` declared in the base compose file.
+
 services:
   backend:
     ports:
@@ -8,15 +12,24 @@ services:
       APP_ENV: local
       APP_DEBUG: "true"
       APP_URL: http://localhost:8000
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+    # Extends base command with demo data seeders + dev composer install.
+    # Compose has no "append command" syntax, so we duplicate the base sequence.
+    command: >
+      sh -c "
+        composer install --optimize-autoloader --quiet &&
+        php artisan migrate --force &&
+        php artisan db:seed --force --no-interaction --class=SystemConfigSeeder &&
+        php artisan db:seed --force --no-interaction --class=WalletSeeder &&
+        php artisan db:seed --force --no-interaction --class=ContentSeeder &&
+        php artisan db:seed --force --no-interaction --class=UserSeeder &&
+        php artisan db:seed --force --no-interaction --class=CourseSeeder &&
+        php artisan db:seed --force --no-interaction --class=DashboardDemoSeeder &&
+        php artisan demo:streak learner@vstep.test 12 &&
+        php artisan storage:link 2>/dev/null;
+        php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000 --workers=auto --max-requests=500
+      "
 
   horizon:
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
