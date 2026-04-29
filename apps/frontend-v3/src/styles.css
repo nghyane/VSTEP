@@ -327,6 +327,29 @@
 		transform: translateY(-2px);
 	}
 
+	/* ─── Flip card (vocab practice) ─── */
+	.flip-scene {
+		perspective: 1400px;
+	}
+	.flip-inner {
+		position: relative;
+		width: 100%;
+		transform-style: preserve-3d;
+		transition: transform 0.55s cubic-bezier(0.4, 0.05, 0.2, 1);
+	}
+	.flip-inner.flipped {
+		transform: rotateY(180deg);
+	}
+	.flip-face {
+		backface-visibility: hidden;
+		-webkit-backface-visibility: hidden;
+	}
+	.flip-face-back {
+		position: absolute;
+		inset: 0;
+		transform: rotateY(180deg);
+	}
+
 	/* ─── Schedule grid cells (course detail) ─── */
 	.schedule-cell-past {
 		background-image: repeating-linear-gradient(

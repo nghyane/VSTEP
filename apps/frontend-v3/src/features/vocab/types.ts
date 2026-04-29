@@ -36,6 +36,8 @@ export type SrsRating = 1 | 2 | 3 | 4
 
 export type ExerciseKind = "mcq" | "fill_blank" | "word_form"
 
+export type PracticeMode = "flashcard" | "typing" | "listen" | "reverse" | "fill_blank" | "mixed"
+
 export interface WordWithState {
 	word: VocabWord
 	state: FsrsState

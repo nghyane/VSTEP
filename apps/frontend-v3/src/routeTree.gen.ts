@@ -37,8 +37,7 @@ import { Route as AppKhoaHocCourseIdRouteImport } from "./routes/_app/khoa-hoc/$
 import { Route as AppLuyenTapTuVungIndexRouteImport } from "./routes/_app/luyen-tap/tu-vung/index"
 import { Route as AppLuyenTapNguPhapIndexRouteImport } from "./routes/_app/luyen-tap/ngu-phap/index"
 import { Route as AppLuyenTapNgheIndexRouteImport } from "./routes/_app/luyen-tap/nghe/index"
-import { Route as FocusedVocabTopicIdFlashcardRouteImport } from "./routes/_focused/vocab/$topicId/flashcard"
-import { Route as FocusedVocabTopicIdExerciseRouteImport } from "./routes/_focused/vocab/$topicId/exercise"
+import { Route as FocusedVocabTopicIdPracticeRouteImport } from "./routes/_focused/vocab/$topicId/practice"
 import { Route as FocusedSpeakingTaskTaskIdRouteImport } from "./routes/_focused/speaking/task/$taskId"
 import { Route as FocusedSpeakingDrillDrillIdRouteImport } from "./routes/_focused/speaking/drill/$drillId"
 import { Route as FocusedPhongThiSessionIdChiTietRouteImport } from "./routes/_focused/phong-thi/$sessionId_.chi-tiet"
@@ -189,16 +188,10 @@ const AppLuyenTapNgheIndexRoute = AppLuyenTapNgheIndexRouteImport.update({
   path: "/",
   getParentRoute: () => AppLuyenTapNgheRoute,
 } as any)
-const FocusedVocabTopicIdFlashcardRoute =
-  FocusedVocabTopicIdFlashcardRouteImport.update({
-    id: "/vocab/$topicId/flashcard",
-    path: "/vocab/$topicId/flashcard",
-    getParentRoute: () => FocusedRoute,
-  } as any)
-const FocusedVocabTopicIdExerciseRoute =
-  FocusedVocabTopicIdExerciseRouteImport.update({
-    id: "/vocab/$topicId/exercise",
-    path: "/vocab/$topicId/exercise",
+const FocusedVocabTopicIdPracticeRoute =
+  FocusedVocabTopicIdPracticeRouteImport.update({
+    id: "/vocab/$topicId/practice",
+    path: "/vocab/$topicId/practice",
     getParentRoute: () => FocusedRoute,
   } as any)
 const FocusedSpeakingTaskTaskIdRoute =
@@ -282,8 +275,7 @@ export interface FileRoutesByFullPath {
   "/phong-thi/$sessionId/chi-tiet": typeof FocusedPhongThiSessionIdChiTietRoute
   "/speaking/drill/$drillId": typeof FocusedSpeakingDrillDrillIdRoute
   "/speaking/task/$taskId": typeof FocusedSpeakingTaskTaskIdRoute
-  "/vocab/$topicId/exercise": typeof FocusedVocabTopicIdExerciseRoute
-  "/vocab/$topicId/flashcard": typeof FocusedVocabTopicIdFlashcardRoute
+  "/vocab/$topicId/practice": typeof FocusedVocabTopicIdPracticeRoute
   "/luyen-tap/nghe/": typeof AppLuyenTapNgheIndexRoute
   "/luyen-tap/ngu-phap/": typeof AppLuyenTapNguPhapIndexRoute
   "/luyen-tap/tu-vung/": typeof AppLuyenTapTuVungIndexRoute
@@ -314,8 +306,7 @@ export interface FileRoutesByTo {
   "/phong-thi/$sessionId/chi-tiet": typeof FocusedPhongThiSessionIdChiTietRoute
   "/speaking/drill/$drillId": typeof FocusedSpeakingDrillDrillIdRoute
   "/speaking/task/$taskId": typeof FocusedSpeakingTaskTaskIdRoute
-  "/vocab/$topicId/exercise": typeof FocusedVocabTopicIdExerciseRoute
-  "/vocab/$topicId/flashcard": typeof FocusedVocabTopicIdFlashcardRoute
+  "/vocab/$topicId/practice": typeof FocusedVocabTopicIdPracticeRoute
   "/luyen-tap/nghe": typeof AppLuyenTapNgheIndexRoute
   "/luyen-tap/ngu-phap": typeof AppLuyenTapNguPhapIndexRoute
   "/luyen-tap/tu-vung": typeof AppLuyenTapTuVungIndexRoute
@@ -355,8 +346,7 @@ export interface FileRoutesById {
   "/_focused/phong-thi/$sessionId_/chi-tiet": typeof FocusedPhongThiSessionIdChiTietRoute
   "/_focused/speaking/drill/$drillId": typeof FocusedSpeakingDrillDrillIdRoute
   "/_focused/speaking/task/$taskId": typeof FocusedSpeakingTaskTaskIdRoute
-  "/_focused/vocab/$topicId/exercise": typeof FocusedVocabTopicIdExerciseRoute
-  "/_focused/vocab/$topicId/flashcard": typeof FocusedVocabTopicIdFlashcardRoute
+  "/_focused/vocab/$topicId/practice": typeof FocusedVocabTopicIdPracticeRoute
   "/_app/luyen-tap/nghe/": typeof AppLuyenTapNgheIndexRoute
   "/_app/luyen-tap/ngu-phap/": typeof AppLuyenTapNguPhapIndexRoute
   "/_app/luyen-tap/tu-vung/": typeof AppLuyenTapTuVungIndexRoute
@@ -395,8 +385,7 @@ export interface FileRouteTypes {
     | "/phong-thi/$sessionId/chi-tiet"
     | "/speaking/drill/$drillId"
     | "/speaking/task/$taskId"
-    | "/vocab/$topicId/exercise"
-    | "/vocab/$topicId/flashcard"
+    | "/vocab/$topicId/practice"
     | "/luyen-tap/nghe/"
     | "/luyen-tap/ngu-phap/"
     | "/luyen-tap/tu-vung/"
@@ -427,8 +416,7 @@ export interface FileRouteTypes {
     | "/phong-thi/$sessionId/chi-tiet"
     | "/speaking/drill/$drillId"
     | "/speaking/task/$taskId"
-    | "/vocab/$topicId/exercise"
-    | "/vocab/$topicId/flashcard"
+    | "/vocab/$topicId/practice"
     | "/luyen-tap/nghe"
     | "/luyen-tap/ngu-phap"
     | "/luyen-tap/tu-vung"
@@ -467,8 +455,7 @@ export interface FileRouteTypes {
     | "/_focused/phong-thi/$sessionId_/chi-tiet"
     | "/_focused/speaking/drill/$drillId"
     | "/_focused/speaking/task/$taskId"
-    | "/_focused/vocab/$topicId/exercise"
-    | "/_focused/vocab/$topicId/flashcard"
+    | "/_focused/vocab/$topicId/practice"
     | "/_app/luyen-tap/nghe/"
     | "/_app/luyen-tap/ngu-phap/"
     | "/_app/luyen-tap/tu-vung/"
@@ -678,18 +665,11 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AppLuyenTapNgheIndexRouteImport
       parentRoute: typeof AppLuyenTapNgheRoute
     }
-    "/_focused/vocab/$topicId/flashcard": {
-      id: "/_focused/vocab/$topicId/flashcard"
-      path: "/vocab/$topicId/flashcard"
-      fullPath: "/vocab/$topicId/flashcard"
-      preLoaderRoute: typeof FocusedVocabTopicIdFlashcardRouteImport
-      parentRoute: typeof FocusedRoute
-    }
-    "/_focused/vocab/$topicId/exercise": {
-      id: "/_focused/vocab/$topicId/exercise"
-      path: "/vocab/$topicId/exercise"
-      fullPath: "/vocab/$topicId/exercise"
-      preLoaderRoute: typeof FocusedVocabTopicIdExerciseRouteImport
+    "/_focused/vocab/$topicId/practice": {
+      id: "/_focused/vocab/$topicId/practice"
+      path: "/vocab/$topicId/practice"
+      fullPath: "/vocab/$topicId/practice"
+      preLoaderRoute: typeof FocusedVocabTopicIdPracticeRouteImport
       parentRoute: typeof FocusedRoute
     }
     "/_focused/speaking/task/$taskId": {
@@ -873,8 +853,7 @@ interface FocusedRouteChildren {
   FocusedPhongThiSessionIdChiTietRoute: typeof FocusedPhongThiSessionIdChiTietRoute
   FocusedSpeakingDrillDrillIdRoute: typeof FocusedSpeakingDrillDrillIdRoute
   FocusedSpeakingTaskTaskIdRoute: typeof FocusedSpeakingTaskTaskIdRoute
-  FocusedVocabTopicIdExerciseRoute: typeof FocusedVocabTopicIdExerciseRoute
-  FocusedVocabTopicIdFlashcardRoute: typeof FocusedVocabTopicIdFlashcardRoute
+  FocusedVocabTopicIdPracticeRoute: typeof FocusedVocabTopicIdPracticeRoute
 }
 
 const FocusedRouteChildren: FocusedRouteChildren = {
@@ -891,8 +870,7 @@ const FocusedRouteChildren: FocusedRouteChildren = {
   FocusedPhongThiSessionIdChiTietRoute: FocusedPhongThiSessionIdChiTietRoute,
   FocusedSpeakingDrillDrillIdRoute: FocusedSpeakingDrillDrillIdRoute,
   FocusedSpeakingTaskTaskIdRoute: FocusedSpeakingTaskTaskIdRoute,
-  FocusedVocabTopicIdExerciseRoute: FocusedVocabTopicIdExerciseRoute,
-  FocusedVocabTopicIdFlashcardRoute: FocusedVocabTopicIdFlashcardRoute,
+  FocusedVocabTopicIdPracticeRoute: FocusedVocabTopicIdPracticeRoute,
 }
 
 const FocusedRouteWithChildren =

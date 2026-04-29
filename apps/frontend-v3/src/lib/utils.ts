@@ -77,11 +77,84 @@ export function countWords(text: string): number {
 }
 
 /** Speak text via Web Speech API. */
-export function speak(text: string) {
-	if (!window.speechSynthesis) return
-	window.speechSynthesis.cancel()
+
+let cachedVoices: SpeechSynthesisVoice[] | null = null
+
+function loadVoices(): SpeechSynthesisVoice[] {
+	if (cachedVoices && cachedVoices.length > 0) return cachedVoices
+	const voices = window.speechSynthesis.getVoices()
+	if (voices.length > 0) cachedVoices = voices
+	return voices
+}
+
+if (typeof window !== "undefined" && window.speechSynthesis) {
+	window.speechSynthesis.onvoiceschanged = () => {
+		cachedVoices = window.speechSynthesis.getVoices()
+	}
+}
+
+// Voice quality ranking: prefer Microsoft Online voices (Aria, Jenny, Guy)
+// then fallback to Zira, avoid David (clips first words on Chromium).
+const VOICE_PREFERENCE = [
+	"Microsoft Aria Online",
+	"Microsoft Jenny Online",
+	"Microsoft Guy Online",
+	"Microsoft Ana Online",
+	"Microsoft AvaMultilingual Online",
+	"Microsoft AndrewMultilingual Online",
+	"Google US English",
+	"Microsoft Zira",
+	"Microsoft Mark",
+	"Samantha",
+	"Alex",
+] as const
+
+function rankVoice(name: string): number {
+	for (let i = 0; i < VOICE_PREFERENCE.length; i++) {
+		if (name.includes(VOICE_PREFERENCE[i])) return i
+	}
+	return VOICE_PREFERENCE.length
+}
+
+function pickEnglishVoice(): SpeechSynthesisVoice | undefined {
+	const voices = loadVoices()
+	const en = voices.filter((v) => v.lang.startsWith("en"))
+	if (en.length === 0) return undefined
+	return [...en].sort((a, b) => {
+		const ra = rankVoice(a.name)
+		const rb = rankVoice(b.name)
+		if (ra !== rb) return ra - rb
+		const usA = a.lang === "en-US" ? 0 : 1
+		const usB = b.lang === "en-US" ? 0 : 1
+		if (usA !== usB) return usA - usB
+		return Number(b.localService) - Number(a.localService)
+	})[0]
+}
+
+interface SpeakOptions {
+	rate?: number
+	onEnd?: () => void
+}
+
+export function speak(text: string, opts: SpeakOptions = {}) {
+	if (!window.speechSynthesis) {
+		opts.onEnd?.()
+		return
+	}
+	const synth = window.speechSynthesis
+	synth.cancel()
 	const u = new SpeechSynthesisUtterance(text)
 	u.lang = "en-US"
-	u.rate = 0.9
-	window.speechSynthesis.speak(u)
+	u.rate = opts.rate ?? 1
+	const voice = pickEnglishVoice()
+	if (voice) u.voice = voice
+	u.onend = () => opts.onEnd?.()
+	u.onerror = () => opts.onEnd?.()
+	synth.speak(u)
+}
+
+/** Cancel any ongoing speech. */
+export function stopSpeaking() {
+	if (!window.speechSynthesis) return
+	window.speechSynthesis.cancel()
 }

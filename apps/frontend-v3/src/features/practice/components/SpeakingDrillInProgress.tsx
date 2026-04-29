@@ -5,7 +5,7 @@ import { Icon } from "#/components/Icon"
 import { submitDrillAttempt } from "#/features/practice/actions"
 import type { SpeakingDrillDetail } from "#/features/practice/types"
 import { useVoiceRecorder } from "#/features/practice/use-voice-recorder"
-import { cn } from "#/lib/utils"
+import { cn, speak, stopSpeaking } from "#/lib/utils"
 
 interface Props {
 	drill: SpeakingDrillDetail
@@ -16,17 +16,8 @@ const SPEEDS = [0.75, 1, 1.25] as const
 const WPS = 2.25
 
 function speakText(text: string, rate: number): Promise<void> {
-	if (!("speechSynthesis" in window)) return Promise.resolve()
 	return new Promise((resolve) => {
-		const u = new SpeechSynthesisUtterance(text)
-		u.rate = rate
-		const voices = speechSynthesis.getVoices()
-		const en = voices.find((v) => v.lang.startsWith("en-US")) ?? voices.find((v) => v.lang.startsWith("en"))
-		if (en) u.voice = en
-		u.onend = () => resolve()
-		u.onerror = () => resolve()
-		speechSynthesis.cancel()
-		speechSynthesis.speak(u)
+		speak(text, { rate, onEnd: resolve })
 	})
 }
 
@@ -85,7 +76,7 @@ export function SpeakingDrillInProgress({ drill, sessionId }: Props) {
 	}, [sentence.text, speed])
 
 	const handleStop = useCallback(() => {
-		speechSynthesis.cancel()
+		stopSpeaking()
 		setPlaying(false)
 	}, [])
 
@@ -98,7 +89,7 @@ export function SpeakingDrillInProgress({ drill, sessionId }: Props) {
 	useEffect(() => {
 		if (prevIdx.current !== current) {
 			recorder.reset()
-			speechSynthesis.cancel()
+			stopSpeaking()
 			setPlaying(false)
 			prevIdx.current = current
 		}
