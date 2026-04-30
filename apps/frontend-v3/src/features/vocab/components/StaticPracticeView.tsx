@@ -19,7 +19,6 @@ interface Props {
 
 export function StaticPracticeView({ item, session }: Props) {
 	const needsInput = NEEDS_INPUT.includes(item.mode)
-	const isChecking = session.phase === "checking"
 	const isRevealed = session.phase === "reveal"
 	const tone =
 		session.correct === true
@@ -44,11 +43,7 @@ export function StaticPracticeView({ item, session }: Props) {
 
 			{/* Input + Check (typing / listen / fill_blank, before reveal) */}
 			{needsInput && !isRevealed && (
-				<InputBlock
-					item={item}
-					state={{ value: session.value, isChecking, correct: session.correct }}
-					actions={{ setValue: session.setValue, check: session.check, reveal: session.reveal }}
-				/>
+				<InputBlock mode={item.mode} keyId={item.entry.word.id} session={session} />
 			)}
 
 			{/* Reveal CTA (reverse only — flashcard handles its own flip) */}
@@ -60,8 +55,11 @@ export function StaticPracticeView({ item, session }: Props) {
 
 			{/* Reveal block */}
 			{isRevealed && (
-				<div className="card p-6 space-y-2 text-center">
-					<PracticeBack item={item} />
+				<div className="card p-6 space-y-3 text-center">
+					<PracticeBack
+						item={item}
+						review={needsInput ? { userAnswer: session.value, correct: session.correct === true } : null}
+					/>
 				</div>
 			)}
 		</div>
@@ -69,47 +67,36 @@ export function StaticPracticeView({ item, session }: Props) {
 }
 
 interface InputProps {
-	item: PracticeItem
-	state: { value: string; isChecking: boolean; correct: boolean | null }
-	actions: { setValue: (v: string) => void; check: () => void; reveal: () => void }
+	mode: PracticeItem["mode"]
+	keyId: string
+	session: PracticeSession
 }
 
-function InputBlock({ item, state, actions }: InputProps) {
-	const { value, isChecking, correct } = state
-	const placeholder = item.mode === "fill_blank" ? "Điền từ còn thiếu..." : "Gõ từ tiếng Anh..."
+function InputBlock({ mode, keyId, session }: InputProps) {
+	const placeholder = mode === "fill_blank" ? "Điền từ còn thiếu..." : "Gõ từ tiếng Anh..."
 
 	return (
 		<div className="space-y-3">
 			<input
-				key={item.entry.word.id}
+				key={keyId}
 				type="text"
-				value={value}
-				onChange={(e) => actions.setValue(e.target.value)}
+				value={session.value}
+				onChange={(e) => session.setValue(e.target.value)}
 				onKeyDown={(e) => {
-					if (e.key === "Enter" && !isChecking && value.trim()) actions.check()
+					if (e.key === "Enter" && session.value.trim()) session.check()
 				}}
-				disabled={isChecking}
 				ref={focusOnMount}
 				placeholder={placeholder}
-				className={cn(
-					"w-full h-14 px-5 rounded-(--radius-button) border-2 bg-surface text-foreground text-lg focus:outline-none transition",
-					isChecking && correct ? "border-primary bg-primary-tint" : "border-border focus:border-primary",
-				)}
+				className="w-full h-14 px-5 rounded-(--radius-button) border-2 border-border bg-surface text-foreground text-lg focus:border-primary focus:outline-none transition"
 			/>
-			{isChecking ? (
-				<button type="button" onClick={actions.reveal} className="btn btn-primary w-full py-3.5 text-base">
-					Tiếp tục
-				</button>
-			) : (
-				<button
-					type="button"
-					onClick={actions.check}
-					disabled={!value.trim()}
-					className="btn btn-primary w-full py-3.5 text-base disabled:opacity-50"
-				>
-					Kiểm tra
-				</button>
-			)}
+			<button
+				type="button"
+				onClick={session.check}
+				disabled={!session.value.trim()}
+				className="btn btn-primary w-full py-3.5 text-base disabled:opacity-50"
+			>
+				Kiểm tra
+			</button>
 		</div>
 	)
 }

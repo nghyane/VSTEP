@@ -18,14 +18,11 @@ features/vocab/
 ## Phase machine
 
 ```
-prompt → checking → reveal → (advance) → prompt
-              ↓
-         (wrong) → reveal trực tiếp
+prompt → reveal → (advance) → prompt
 ```
 
 - **prompt**: hiện câu hỏi mode-specific
-- **checking**: đúng → "Tiếp tục" để xem đáp án
-- **reveal**: hiện full đáp án (word + def + example + tip) + 4 nút rating
+- **reveal**: hiện full đáp án + so sánh câu trả lời user vs đáp án đúng (qua `PracticeBack` với prop `review`) + 4 nút rating
 
 ## 6 mode UI
 
@@ -40,14 +37,14 @@ prompt → checking → reveal → (advance) → prompt
 
 `fill_blank` generate FE-only từ `word.example` (regex mask), không cần exercises API. Nếu word không có example → skip word đó (filter trong `buildPracticeItems`).
 
-## Wrong → auto-reveal
+## Wrong/correct → single-click reveal
 
 `reducer` action `check`:
 ```ts
 case "check":
-  return { ...state, phase: action.correct ? "checking" : "reveal", correct: action.correct }
+  return { ...state, phase: "reveal", correct: action.correct }
 ```
-Sai → phase nhảy thẳng `reveal`, user thấy đáp án ngay. Đúng → `checking`, user click "Tiếp tục" để xem chi tiết.
+Cả đúng và sai đều nhảy thẳng `reveal` — 1 click "Kiểm tra" duy nhất. Banner so sánh trong `PracticeBack` (prop `review`) hiển thị đúng/sai + câu user ghõ vs đáp án đúng.
 
 ## Keyboard
 

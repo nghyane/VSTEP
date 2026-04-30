@@ -3,7 +3,7 @@ import { useEffect, useReducer } from "react"
 import { reviewWord } from "#/features/vocab/actions"
 import type { PracticeMode, SrsRating, WordWithState } from "#/features/vocab/types"
 
-export type Phase = "prompt" | "checking" | "reveal"
+export type Phase = "prompt" | "reveal"
 
 export interface PracticeItem {
 	entry: WordWithState
@@ -44,8 +44,8 @@ function reducer(state: State, action: Action): State {
 		case "value":
 			return { ...state, value: action.value }
 		case "check":
-			// Wrong answer auto-reveals so the user sees the correct word immediately.
-			return { ...state, phase: action.correct ? "checking" : "reveal", correct: action.correct }
+			// Both correct and wrong reveal immediately — single click flow.
+			return { ...state, phase: "reveal", correct: action.correct }
 		case "reveal":
 			return { ...state, phase: "reveal" }
 		case "advance":
