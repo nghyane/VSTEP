@@ -128,15 +128,15 @@ export default function FocusedExamRoom() {
         <View style={styles.deviceCheck}>
           <Ionicons name="headset-outline" size={48} color={c.primary} />
           <Text style={[styles.dcTitle, { color: c.foreground }]}>Kiểm tra thiết bị</Text>
-          <Text style={[styles.dcDesc, { color: c.mutedForeground }]}>
+          <Text style={[styles.dcDesc, { color: c.subtle }]}>
             Đảm bảo loa và micro hoạt động tốt trước khi bắt đầu.
           </Text>
 
-          <View style={[styles.dcInfoCard, { backgroundColor: c.muted }]}>
+          <View style={[styles.dcInfoCard, { backgroundColor: c.background }]}>
             <Text style={[styles.dcInfoTitle, { color: c.foreground }]}>Thông tin đề thi</Text>
-            <Text style={[styles.dcInfoRow, { color: c.mutedForeground }]}>⏱ {session.durationMinutes} phút</Text>
-            <Text style={[styles.dcInfoRow, { color: c.mutedForeground }]}>{activeSkills.map((s) => SKILL_VN[s]).join(" · ")}</Text>
-            <Text style={[styles.dcInfoRow, { color: c.mutedForeground }]}>{totalItems} câu hỏi</Text>
+            <Text style={[styles.dcInfoRow, { color: c.subtle }]}>⏱ {session.durationMinutes} phút</Text>
+            <Text style={[styles.dcInfoRow, { color: c.subtle }]}>{activeSkills.map((s) => SKILL_VN[s]).join(" · ")}</Text>
+            <Text style={[styles.dcInfoRow, { color: c.subtle }]}>{totalItems} câu hỏi</Text>
           </View>
 
           <HapticTouchable
@@ -148,7 +148,7 @@ export default function FocusedExamRoom() {
           </HapticTouchable>
 
           <HapticTouchable onPress={() => router.back()}>
-            <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm }}>← Quay lại</Text>
+            <Text style={{ color: c.subtle, fontSize: fontSize.sm }}>← Quay lại</Text>
           </HapticTouchable>
         </View>
       </View>
@@ -160,30 +160,30 @@ export default function FocusedExamRoom() {
   return (
     <View style={[styles.root, { backgroundColor: c.background }]}>
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: c.card, borderBottomColor: c.border, paddingTop: insets.top + 4 }]}>
-        <View style={[styles.timerPill, remaining <= 300 ? { backgroundColor: c.destructive + "18" } : { backgroundColor: c.muted }]}>
+      <View style={[styles.header, { backgroundColor: c.surface, borderBottomColor: c.border, paddingTop: insets.top + 4 }]}>
+        <View style={[styles.timerPill, remaining <= 300 ? { backgroundColor: c.destructive + "18" } : { backgroundColor: c.background }]}>
           <Ionicons name="time-outline" size={14} color={remaining <= 300 ? c.destructive : c.foreground} />
           <Text style={[styles.timerText, { color: remaining <= 300 ? c.destructive : c.foreground }]}>{formatTime(remaining)}</Text>
         </View>
 
-        <Text style={[styles.answeredText, { color: c.mutedForeground }]}>
+        <Text style={[styles.answeredText, { color: c.subtle }]}>
           <Text style={{ fontFamily: fontFamily.bold, color: c.foreground }}>{answeredCount}</Text>/{totalItems} đã trả lời
         </Text>
 
         <HapticTouchable onPress={() => Alert.alert("Thoát?", "Bạn sẽ mất tiến trình.", [{ text: "Ở lại" }, { text: "Thoát", style: "destructive", onPress: () => router.replace("/(app)/(tabs)/exams") }])}>
-          <Ionicons name="close" size={22} color={c.mutedForeground} />
+          <Ionicons name="close" size={22} color={c.subtle} />
         </HapticTouchable>
       </View>
 
       {/* Skill tabs */}
-      <View style={[styles.skillTabs, { backgroundColor: c.card, borderBottomColor: c.border }]}>
+      <View style={[styles.skillTabs, { backgroundColor: c.surface, borderBottomColor: c.border }]}>
         {activeSkills.map((sk, i) => {
           const active = i === skillIdx;
           const skColor = c[(`skill${sk.charAt(0).toUpperCase() + sk.slice(1)}`) as keyof typeof c] ?? c.primary;
           return (
             <View key={sk} style={[styles.skillTab, active && { borderBottomColor: skColor, borderBottomWidth: 3 }]}>
               <SkillIcon skill={sk} size={16} />
-              <Text style={[styles.skillTabText, { color: active ? skColor : c.mutedForeground }]}>{SKILL_VN[sk]}</Text>
+              <Text style={[styles.skillTabText, { color: active ? skColor : c.subtle }]}>{SKILL_VN[sk]}</Text>
             </View>
           );
         })}
@@ -198,11 +198,11 @@ export default function FocusedExamRoom() {
       </ScrollView>
 
       {/* Footer */}
-      <View style={[styles.footer, { backgroundColor: c.card, borderTopColor: c.border, paddingBottom: insets.bottom + 8 }]}>
+      <View style={[styles.footer, { backgroundColor: c.surface, borderTopColor: c.border, paddingBottom: insets.bottom + 8 }]}>
         <View style={{ width: 80 }} />
         <View style={styles.footerCenter}>
           <Text style={[styles.footerSkill, { color: c.foreground }]}>{currentSkill ? SKILL_VN[currentSkill] : ""}</Text>
-          <Text style={[styles.footerIdx, { color: c.mutedForeground }]}>({skillIdx + 1}/{activeSkills.length})</Text>
+          <Text style={[styles.footerIdx, { color: c.subtle }]}>({skillIdx + 1}/{activeSkills.length})</Text>
         </View>
         {isLast ? (
           <HapticTouchable style={[styles.footerBtn, { backgroundColor: c.primary }]} onPress={handleSubmit}>
@@ -235,7 +235,7 @@ function McqPanel({ items, answers, onAnswer }: { items: McqItem[]; answers: Rec
             return (
               <HapticTouchable
                 key={opt}
-                style={[styles.optionRow, { borderColor: selected ? c.primary : c.border, backgroundColor: selected ? c.primary + "0D" : c.card }]}
+                style={[styles.optionRow, { borderColor: selected ? c.primary : c.border, backgroundColor: selected ? c.primary + "0D" : c.surface }]}
                 onPress={() => onAnswer(item.id, letter)}
               >
                 <View style={[styles.optionDot, selected ? { backgroundColor: c.primary, borderColor: c.primary } : { borderColor: c.border }]}>
@@ -262,20 +262,20 @@ function WritingPanel({ tasks, texts, onChange }: { tasks: WritingTask[]; texts:
         const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
         return (
           <View key={task.id} style={{ gap: spacing.md }}>
-            <View style={[styles.promptCard, { backgroundColor: c.muted }]}>
-              <Text style={[styles.promptLabel, { color: c.mutedForeground }]}>ĐỀ BÀI</Text>
+            <View style={[styles.promptCard, { backgroundColor: c.background }]}>
+              <Text style={[styles.promptLabel, { color: c.subtle }]}>ĐỀ BÀI</Text>
               <Text style={[styles.promptText, { color: c.foreground }]}>{task.prompt}</Text>
             </View>
             <TextInput
-              style={[styles.writingInput, { backgroundColor: c.card, borderColor: c.border, color: c.foreground }]}
+              style={[styles.writingInput, { backgroundColor: c.surface, borderColor: c.border, color: c.foreground }]}
               multiline
               placeholder="Viết bài tại đây..."
-              placeholderTextColor={c.mutedForeground}
+              placeholderTextColor={c.subtle}
               value={text}
               onChangeText={(v) => onChange(task.id, v)}
               textAlignVertical="top"
             />
-            <Text style={[styles.wordCount, { color: wordCount >= task.minWords ? c.success : c.mutedForeground }]}>
+            <Text style={[styles.wordCount, { color: wordCount >= task.minWords ? c.success : c.subtle }]}>
               {wordCount}/{task.minWords} từ
             </Text>
           </View>
@@ -294,9 +294,9 @@ function SpeakingPanel({ parts, done, onDone }: { parts: SpeakingPart[]; done: S
       {parts.map((part) => {
         const isDone = done.has(part.id);
         return (
-          <View key={part.id} style={[styles.speakingCard, { borderColor: c.border, backgroundColor: c.card }]}>
+          <View key={part.id} style={[styles.speakingCard, { borderColor: c.border, backgroundColor: c.surface }]}>
             <Text style={[styles.speakingTitle, { color: c.foreground }]}>{part.title}</Text>
-            <Text style={[styles.speakingPrompt, { color: c.mutedForeground }]}>{part.prompt}</Text>
+            <Text style={[styles.speakingPrompt, { color: c.subtle }]}>{part.prompt}</Text>
             <HapticTouchable
               style={[styles.speakingBtn, isDone ? { backgroundColor: c.success } : { backgroundColor: c.primary }]}
               onPress={() => onDone(part.id)}

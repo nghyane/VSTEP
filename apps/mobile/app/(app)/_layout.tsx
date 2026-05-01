@@ -8,7 +8,7 @@ export default function AppLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        headerStyle: { backgroundColor: c.card },
+        headerStyle: { backgroundColor: c.surface },
         headerTintColor: c.foreground,
         headerTitleStyle: { fontFamily: fontFamily.semiBold },
         headerBackTitleVisible: false,

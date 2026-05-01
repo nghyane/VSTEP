@@ -1,5 +1,6 @@
-// Coin store — in-memory, initialized on app launch
+// Coin store — local cache backed by wallet API
 import { useSyncExternalStore } from "react";
+import { api } from "@/lib/api";
 export const FULL_TEST_COST = 100;
 
 let coins = 500;
@@ -10,7 +11,22 @@ function notify() {
 }
 
 export async function loadCoins() {
-  // Khởi tạo mặc định — không notify() vì coins đã = 500 khi khai báo
+  try {
+    const res = await api.get<{ balance: number } | null>("/api/v1/wallet/balance");
+    if (res?.balance !== undefined) {
+      coins = res.balance;
+      notify();
+    }
+  } catch {
+    // API not available yet — keep default
+  }
+}
+
+export function syncCoins(balance: number) {
+  if (coins !== balance) {
+    coins = balance;
+    notify();
+  }
 }
 
 export function addCoins(amount: number) {

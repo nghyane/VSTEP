@@ -112,10 +112,10 @@ export function AudioPlayer({ audioUrl, seekable = true }: AudioPlayerProps) {
   // Loading state while resolving presigned URL
   if (resolving) {
     return (
-      <View style={[styles.container, { backgroundColor: c.muted }]}>
+      <View style={[styles.container, { backgroundColor: c.background }]}>
         <View style={styles.controls}>
           <ActivityIndicator size="small" color={c.primary} />
-          <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs }}>Đang tải audio...</Text>
+          <Text style={{ color: c.subtle, fontSize: fontSize.xs }}>Đang tải audio...</Text>
         </View>
       </View>
     );
@@ -124,7 +124,7 @@ export function AudioPlayer({ audioUrl, seekable = true }: AudioPlayerProps) {
   // Error state
   if (presignError || loadError) {
     return (
-      <View style={[styles.container, { backgroundColor: c.muted }]}>
+      <View style={[styles.container, { backgroundColor: c.background }]}>
         <View style={styles.controls}>
           <Ionicons name="alert-circle-outline" size={20} color={c.destructive} />
           <Text style={{ color: c.destructive, fontSize: fontSize.xs }}>Không thể tải audio</Text>
@@ -134,7 +134,7 @@ export function AudioPlayer({ audioUrl, seekable = true }: AudioPlayerProps) {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: c.muted }]}>
+    <View style={[styles.container, { backgroundColor: c.background }]}>
       <View style={styles.controls}>
         {seekable && (
           <HapticTouchable onPress={() => skip(-5000)} style={styles.skipBtn}>
@@ -163,11 +163,11 @@ export function AudioPlayer({ audioUrl, seekable = true }: AudioPlayerProps) {
 
       {/* Progress bar */}
       <View style={styles.progressRow}>
-        <Text style={[styles.timeText, { color: c.mutedForeground }]}>{formatMs(positionMs)}</Text>
+        <Text style={[styles.timeText, { color: c.subtle }]}>{formatMs(positionMs)}</Text>
         <View style={[styles.progressTrack, { backgroundColor: c.border }]}>
           <View style={[styles.progressFill, { width: `${progress * 100}%` as any, backgroundColor: c.primary }]} />
         </View>
-        <Text style={[styles.timeText, { color: c.mutedForeground }]}>{formatMs(durationMs)}</Text>
+        <Text style={[styles.timeText, { color: c.subtle }]}>{formatMs(durationMs)}</Text>
       </View>
     </View>
   );

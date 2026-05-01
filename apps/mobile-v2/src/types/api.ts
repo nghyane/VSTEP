@@ -38,6 +38,8 @@ export interface Profile {
   entryLevel: string | null;
   avatarColor: string | null;
   isInitialProfile: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AuthResponse {
@@ -220,6 +222,21 @@ export interface StreakData {
   todaySessions: number;
   dailyGoal: number;
   lastActiveDate: string | null;
+}
+
+// ============================================================
+// Exam Sessions
+// ============================================================
+
+export interface ExamSessionResult {
+  id: string;
+  examVersionId: string;
+  mode: string;
+  isFullTest: boolean;
+  status: string;
+  startedAt: string;
+  submittedAt: string | null;
+  scores: Record<Skill, number | null> | null;
 }
 
 // ============================================================

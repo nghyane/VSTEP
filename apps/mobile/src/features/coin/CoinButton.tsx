@@ -1,8 +1,8 @@
-// CoinButton — topbar coin display (aligned with frontend-v2 CoinButton)
-import { StyleSheet, Text, View } from "react-native";
+// CoinButton — topbar coin display (reads from API wallet balance)
+import { StyleSheet, Text } from "react-native";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { GameIcon } from "@/components/GameIcon";
-import { useCoins } from "@/features/coin/coin-store";
+import { useWalletBalance } from "@/features/wallet/queries";
 import { fontSize, fontFamily, radius, spacing, useThemeColors } from "@/theme";
 
 interface CoinButtonProps {
@@ -11,12 +11,12 @@ interface CoinButtonProps {
 
 export function CoinButton({ onPress }: CoinButtonProps) {
   const c = useThemeColors();
-  const coins = useCoins();
+  const balance = useWalletBalance();
 
   return (
-    <HapticTouchable style={[styles.container, { backgroundColor: c.coin + "15" }]} onPress={onPress} activeOpacity={0.7}>
+    <HapticTouchable style={[styles.container, { backgroundColor: c.coinTint }]} onPress={onPress} activeOpacity={0.7}>
       <GameIcon name="coin" size={20} />
-      <Text style={[styles.text, { color: c.coinDark }]}>{coins}</Text>
+      <Text style={[styles.text, { color: c.coinDark }]}>{balance}</Text>
     </HapticTouchable>
   );
 }

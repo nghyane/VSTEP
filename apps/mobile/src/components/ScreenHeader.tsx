@@ -15,7 +15,7 @@ export function ScreenHeader({ title }: Props) {
   const router = useRouter();
 
   return (
-    <View style={[styles.header, { paddingTop: insets.top, backgroundColor: c.card, borderBottomColor: c.border }]}>
+    <View style={[styles.header, { paddingTop: insets.top, backgroundColor: c.surface, borderBottomColor: c.border }]}>
       <HapticTouchable style={styles.backBtn} onPress={() => router.back()}>
         <Ionicons name="chevron-back" size={24} color={c.foreground} />
       </HapticTouchable>

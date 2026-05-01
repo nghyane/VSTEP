@@ -13,13 +13,13 @@ import { DepthButton } from "@/components/DepthButton";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 import { useAuth } from "@/hooks/use-auth";
-import { api } from "@/lib/api";
+import { completeOnboardingApi } from "@/lib/api";
 import { getRefreshToken, saveTokens } from "@/lib/auth";
-import type { AuthUser, Profile } from "@/types/api";
+import type { AuthUser } from "@/types/api";
 
 type Level = "B1" | "B2" | "C1";
 type StudyTime = 15 | 30 | 45 | 60;
-type Deadline = "3m" | "6m" | "1y" | "none";
+type Deadline = "3m" | "6m" | "1y";
 
 const STEP_META: { key: string; label: string; mascot: MascotName }[] = [
   { key: "welcome", label: "Bắt đầu", mascot: "wave" },
@@ -27,6 +27,19 @@ const STEP_META: { key: string; label: string; mascot: MascotName }[] = [
   { key: "time", label: "Lịch học", mascot: "think" },
   { key: "deadline", label: "Thời hạn", mascot: "levelup" },
 ];
+
+function deadlineToDate(value: Deadline): string {
+  const date = new Date();
+  if (value === "3m") date.setMonth(date.getMonth() + 3);
+  if (value === "6m") date.setMonth(date.getMonth() + 6);
+  if (value === "1y") date.setFullYear(date.getFullYear() + 1);
+  return date.toISOString().slice(0, 10);
+}
+
+function defaultNickname(user: AuthUser | null): string {
+  if (user?.fullName) return user.fullName;
+  return user?.email.split("@")[0] ?? "Learner";
+}
 
 export default function OnboardingScreen() {
   const c = useThemeColors();
@@ -61,22 +74,18 @@ export default function OnboardingScreen() {
       slideAnim.setValue(20);
       setStep(step + 1);
     } else {
-      // Bước cuối: switch-profile để reissue token với active_profile_id
-      if (!profile) { router.replace("/(app)/(tabs)"); return; }
+      if (!user) { router.replace("/(auth)/login"); return; }
+      if (profile) { router.replace("/(app)/(tabs)"); return; }
       setFinishing(true);
       try {
         const refreshToken = await getRefreshToken();
-        const res = await api.post<{ accessToken: string; refreshToken: string; profile: Profile }>(
-          "/api/v1/auth/switch-profile",
-          { profile_id: profile.id, refresh_token: refreshToken },
-        );
-        await saveTokens(res.accessToken, res.refreshToken, user!, res.profile);
-        await signIn(res.accessToken, res.refreshToken, user!, res.profile);
-      } catch {
-        // Nếu fail vẫn vào app, token cũ sẽ dùng được nếu đã có profile
-      } finally {
-        setFinishing(false);
+        if (!refreshToken) throw new Error("Missing refresh token");
+        const res = await completeOnboardingApi(defaultNickname(user), target, deadlineToDate(deadline));
+        await saveTokens(res.accessToken, refreshToken, user, res.profile);
+        await signIn(res.accessToken, refreshToken, user, res.profile);
         router.replace("/(app)/(tabs)");
+      } catch {
+        setFinishing(false);
       }
     }
   }
@@ -226,7 +235,6 @@ export default function OnboardingScreen() {
                 { key: "3m" as Deadline, label: "3 tháng", desc: "Cấp tốc" },
                 { key: "6m" as Deadline, label: "6 tháng", desc: "Phổ biến nhất" },
                 { key: "1y" as Deadline, label: "1 năm", desc: "Ổn định" },
-                { key: "none" as Deadline, label: "Không giới hạn", desc: "Tự do" },
               ]).map(({ key, label, desc }) => {
                 const selected = deadline === key;
                 return (
