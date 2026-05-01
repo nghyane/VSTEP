@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'price_coins', 'bonus_coins', 'price_vnd', 'original_price_vnd',
     'max_slots', 'max_slots_per_student',
     'start_date', 'end_date', 'required_full_tests', 'commitment_window_days',
-    'exam_cooldown_days', 'livestream_url', 'teacher_id', 'is_published',
+    'livestream_url', 'teacher_id', 'is_published',
 ])]
 class Course extends BaseModel
 {

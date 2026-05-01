@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { useEffect, useMemo, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import { Header } from "#/components/Header"
 import { Icon } from "#/components/Icon"
 import { CourseCard } from "#/features/course/components/CourseCard"
@@ -103,7 +104,7 @@ function CoursesPage() {
 						<TabLink tab="mine" active={tab === "mine"} count={mineList.length}>
 							Khóa của tôi
 						</TabLink>
-						<BookOneOnOneCta enrolledCourseId={mineList[0]?.id ?? null} onLockedClick={triggerHintPulse} />
+						<BookOneOnOneCta enrolledCourses={mineList} onLockedClick={triggerHintPulse} />
 					</div>
 					<p className="text-base text-muted max-w-md leading-relaxed">
 						Học cùng giáo viên chấm thi VSTEP — ôn trúng đề sát ngày thi.
@@ -228,14 +229,16 @@ function CoursesPage() {
 }
 
 function BookOneOnOneCta({
-	enrolledCourseId,
+	enrolledCourses,
 	onLockedClick,
 }: {
-	enrolledCourseId: string | null
+	enrolledCourses: Course[]
 	onLockedClick: () => void
 }) {
 	const [shakeKey, setShakeKey] = useState(0)
-	if (!enrolledCourseId) {
+	const [pickerOpen, setPickerOpen] = useState(false)
+
+	if (enrolledCourses.length === 0) {
 		return (
 			<button
 				type="button"
@@ -268,18 +271,113 @@ function BookOneOnOneCta({
 			</button>
 		)
 	}
+
+	if (enrolledCourses.length === 1) {
+		return (
+			<Link
+				to="/khoa-hoc/$courseId/dat-lich-1-1"
+				params={{ courseId: enrolledCourses[0].id }}
+				className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-extrabold leading-none text-primary-dark hover:bg-primary-tint/70 transition-colors border-l-2 border-border ml-1 pl-3"
+			>
+				<Icon name="graduation" size="xs" className="h-4 w-auto shrink-0" />
+				<span className="translate-y-px">Đặt lịch 1-1</span>
+			</Link>
+		)
+	}
+
 	return (
-		<Link
-			to="/khoa-hoc/$courseId/dat-lich-1-1"
-			params={{ courseId: enrolledCourseId }}
-			className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-extrabold leading-none text-primary-dark hover:bg-primary-tint/70 transition-colors border-l-2 border-border ml-1 pl-3"
-		>
-			<Icon name="graduation" size="xs" className="h-4 w-auto shrink-0" />
-			<span className="translate-y-px">Đặt lịch 1-1</span>
-			<span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-primary/15 text-primary text-[10px] font-extrabold leading-none">
-				NEW
-			</span>
-		</Link>
+		<>
+			<button
+				type="button"
+				onClick={() => setPickerOpen(true)}
+				className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-extrabold leading-none text-primary-dark hover:bg-primary-tint/70 transition-colors border-l-2 border-border ml-1 pl-3"
+			>
+				<Icon name="graduation" size="xs" className="h-4 w-auto shrink-0" />
+				<span className="translate-y-px">Đặt lịch 1-1</span>
+				<span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-primary/15 text-primary text-[10px] font-extrabold leading-none tabular-nums">
+					{enrolledCourses.length}
+				</span>
+			</button>
+			<BookCoursePicker open={pickerOpen} courses={enrolledCourses} onClose={() => setPickerOpen(false)} />
+		</>
+	)
+}
+
+function BookCoursePicker({
+	open,
+	courses,
+	onClose,
+}: {
+	open: boolean
+	courses: Course[]
+	onClose: () => void
+}) {
+	useEffect(() => {
+		if (!open) return
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === "Escape") onClose()
+		}
+		window.addEventListener("keydown", onKey)
+		return () => window.removeEventListener("keydown", onKey)
+	}, [open, onClose])
+
+	if (!open || typeof document === "undefined") return null
+
+	return createPortal(
+		<div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+			<button
+				type="button"
+				aria-label="Đóng"
+				onClick={onClose}
+				className="absolute inset-0 bg-foreground/45 backdrop-blur-sm"
+			/>
+			<div className="relative w-full max-w-md rounded-(--radius-card) border-2 border-b-4 border-border bg-card overflow-hidden animate-[popIn_400ms_cubic-bezier(0.34,1.56,0.64,1)]">
+				<div className="bg-gradient-to-b from-primary-tint/70 to-transparent px-7 pt-6 pb-4">
+					<p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary-dark">
+						Đặt lịch 1-1
+					</p>
+					<h2 className="mt-2 text-lg font-extrabold text-foreground leading-snug">
+						Chọn khóa học để đặt lịch
+					</h2>
+					<p className="mt-1 text-xs text-muted leading-relaxed">
+						Mỗi khóa do 1 giảng viên phụ trách. Chọn khóa bạn muốn đặt buổi 1-1.
+					</p>
+				</div>
+				<div className="px-4 pb-5 pt-3 space-y-2">
+					{courses.map((c) => (
+						<Link
+							key={c.id}
+							to="/khoa-hoc/$courseId/dat-lich-1-1"
+							params={{ courseId: c.id }}
+							onClick={onClose}
+							className="group flex items-center gap-3 rounded-(--radius-card) border-2 border-b-4 border-border bg-background px-3.5 py-3 transition-all hover:-translate-y-0.5 hover:border-primary/40 active:translate-y-0 active:border-b-2"
+						>
+							<div className="size-10 shrink-0 rounded-xl border-2 border-b-4 border-primary/30 bg-primary-tint flex items-center justify-center text-primary">
+								<Icon name="graduation" size="sm" className="h-5 w-auto" />
+							</div>
+							<div className="flex-1 min-w-0">
+								<p className="font-extrabold text-foreground text-sm leading-snug truncate">{c.title}</p>
+								<p className="text-xs text-muted mt-0.5 truncate">
+									{c.teacher ? `Giảng viên: ${c.teacher.full_name}` : "Chưa có giảng viên"}
+								</p>
+							</div>
+							<span className="shrink-0 text-primary-dark text-sm font-extrabold opacity-60 group-hover:opacity-100 transition-opacity">
+								→
+							</span>
+						</Link>
+					))}
+				</div>
+				<button
+					type="button"
+					onClick={onClose}
+					aria-label="Đóng"
+					className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface hover:text-foreground"
+				>
+					<Icon name="close" size="xs" />
+				</button>
+			</div>
+		</div>,
+		document.body,
 	)
 }
 

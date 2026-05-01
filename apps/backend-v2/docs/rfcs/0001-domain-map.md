@@ -87,7 +87,7 @@ Sau đó RFC 0002 mới xuống schema, RFC 0003 xuống API.
 ### Course & teacher
 
 32. Course mua bằng VND (tiền thật). Sau khi mua, cộng bonus xu vào tài khoản. Free slots 1-1 nằm trong course.
-33. Course có commitment: N full tests trong M ngày, có cooldown window ở đầu. Commitment không đủ = gate (không unlock teacher slot), KHÔNG penalty khóa tài khoản.
+33. Course có commitment: N full tests trong M ngày kể từ `enrolled_at`. Commitment không đủ = gate (không unlock teacher slot), KHÔNG penalty khóa tài khoản. Default seed: 3 full-test trong 5 ngày — đủ thời gian để baseline trình độ học viên trước khi vào nội dung chính. Không có cooldown ở đầu (đơn giản hoá 2026-05: bỏ field `exam_cooldown_days`, mọi bài full-test sau enroll đều tính).
 
 ## Bounded contexts overview
 
@@ -440,7 +440,7 @@ Bán khóa học bằng xu. Quản lý enrollment, commitment. Teacher slot 1-1 
 
 | Entity | Purpose |
 |---|---|
-| `courses` | Metadata: title, target_level, target_exam, description, price_vnd, original_price_vnd, bonus_coins, max_slots, max_slots_per_student, start_date, end_date, required_full_tests, commitment_window_days, exam_cooldown_days, livestream_url, teacher_id. |
+| `courses` | Metadata: title, target_level, target_exam, description, price_vnd, original_price_vnd, bonus_coins, max_slots, max_slots_per_student, start_date, end_date, required_full_tests, commitment_window_days, livestream_url, teacher_id. |
 | `course_schedule_items` | Lịch livestream tĩnh per course: date, start/end time, topic. |
 | `course_enrollments` | profile_id + course_id + enrolled_at + bonus_coins_received + acknowledged_commitment. |
 | `course_commitment_status` | Derive snapshot (hoặc query live): phase (pending/met), completed_count, deadline_at. |
@@ -462,7 +462,7 @@ Bán khóa học bằng xu. Quản lý enrollment, commitment. Teacher slot 1-1 
 ### Events published
 
 - `course.purchased` → VND payment confirmed. Credit bonus xu. Notifications push.
-- `enrollment.created` → Progress reset cooldown counter cho commitment.
+- `enrollment.created` → Bắt đầu commitment window: deadline = `enrolled_at + commitment_window_days`. Mọi full-test submit từ thời điểm này đều tính vào commitment.
 - `booking.created` → Notifications push "đã book slot, chờ meet link".
 - `booking.meet_url_updated` → Notifications push student.
 - `booking.completed` → Grading trigger teacher review UI available.

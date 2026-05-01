@@ -78,3 +78,26 @@ Ghi lại các quyết định thiết kế quan trọng, lý do chọn, và tra
 
 **Trade-off:**
 - Không thể "undo" delete. Chấp nhận được vì admin action có confirm, và dữ liệu critical không cho phép xoá.
+
+---
+
+## 6. Course commitment đơn 1-mốc, không cooldown (2026-05)
+
+**Quyết định:** Commitment chỉ có 1 mốc duy nhất — `deadline = enrolled_at + commitment_window_days`. Bỏ field `exam_cooldown_days`. Default seed: 3 full-test trong 5 ngày.
+
+**Lý do:**
+- Cơ chế cũ (cooldown 3 ngày + window 14 ngày) tạo ra 2 mốc thời gian phải giải thích cho học viên — phức tạp không cần thiết.
+- Mục đích thực: ép học viên làm 3 bài full-test EARLY để baseline trình độ → giảng viên mới cá nhân hoá lộ trình. Window 14 ngày là quá dài cho mục đích baseline; thực tế học viên kỷ luật hoàn thành trong 3-5 ngày đầu.
+- "Cooldown ân hạn" không có ý nghĩa với baseline — bài thi đầu tiên càng sớm càng tốt.
+- Bug: với cooldown=3 + window=14, deadline có thể vượt `course.end_date` nếu enroll gần cuối khóa → cam kết kéo dài quá khóa, vô lý.
+
+**Hệ quả:**
+- 1 field `commitment_window_days` thay vì 2 → seeder/migration/UI text đơn giản hơn.
+- Không cần clamp deadline theo `course.end_date` (trong window 5 ngày, hiếm khi vượt khóa).
+- FE copy: "Cam kết X bài thi trong Y ngày" hiển thị đúng tự động qua `course.commitment_window_days`.
+
+**Trade-off:**
+- Mất khả năng "ân hạn 1-2 ngày đầu chưa đếm bài". Nếu sau này cần khoá dài có buổi orientation đầu, có thể thêm lại field — nhưng YAGNI.
+- Học viên enroll quá trễ (sát end_date) vẫn có 5 ngày deadline; có thể vượt end_date trong edge case này, chấp nhận.
+
+**Migration:** [`2026_05_01_000001_drop_exam_cooldown_days_from_courses.php`](../database/migrations/2026_05_01_000001_drop_exam_cooldown_days_from_courses.php).

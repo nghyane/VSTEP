@@ -953,8 +953,7 @@ Optional cache cho band estimate per skill. Recompute on exam.graded.
 | start_date | DATE | no | |
 | end_date | DATE | no | |
 | required_full_tests | SMALLINT | no | |
-| commitment_window_days | SMALLINT | no | |
-| exam_cooldown_days | SMALLINT | no | default 0 — N ngày đầu không được thi |
+| commitment_window_days | SMALLINT | no | số ngày tính từ `enrolled_at` để hoàn thành đủ `required_full_tests` (default seed 5) |
 | livestream_url | VARCHAR(500) | yes | |
 | teacher_id | UUID | no | fk → accounts.id RESTRICT |
 | is_published | BOOLEAN | no | default false |

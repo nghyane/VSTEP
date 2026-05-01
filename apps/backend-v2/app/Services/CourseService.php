@@ -167,7 +167,7 @@ class CourseService
             ];
         }
 
-        $windowStart = $enrollment->enrolled_at->copy()->addDays($course->exam_cooldown_days);
+        $windowStart = $enrollment->enrolled_at->copy();
         $windowEnd = $windowStart->copy()->addDays($course->commitment_window_days);
 
         $completed = ExamSession::query()
