@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { ConfirmDialog } from "#/components/ConfirmDialog"
 import { Header } from "#/components/Header"
 import { CreateProfileForm } from "#/features/profile/components/CreateProfileForm"
 import { EditProfileForm } from "#/features/profile/components/EditProfileForm"
@@ -39,7 +40,7 @@ function ProfilePage() {
 								key={prof.id}
 								profile={prof}
 								isActive={prof.id === p.activeProfile.id}
-								onSwitch={() => p.doSwitch.mutate(prof.id)}
+								onSwitch={() => p.requestSwitch(prof)}
 								onEdit={() => p.setEditing(prof)}
 							/>
 						))}
@@ -69,6 +70,27 @@ function ProfilePage() {
 				{p.editing && (
 					<EditProfileForm profile={p.editing} onSubmit={p.handleUpdate} onCancel={p.closeEdit} />
 				)}
+
+				<ConfirmDialog
+					open={!!p.pendingSwitch}
+					title="Chuyển hồ sơ?"
+					description={
+						p.pendingSwitch ? (
+							<>
+								Bạn sắp chuyển sang hồ sơ <strong>{p.pendingSwitch.nickname}</strong> (mục tiêu{" "}
+								{p.pendingSwitch.target_level}). Toàn bộ tiến trình luyện tập sẽ áp dụng cho hồ sơ này.
+							</>
+						) : (
+							""
+						)
+					}
+					confirmLabel="Chuyển hồ sơ"
+					cancelLabel="Huỷ"
+					loadingLabel="Đang chuyển…"
+					isLoading={p.doSwitch.isPending}
+					onConfirm={p.confirmSwitch}
+					onCancel={p.cancelSwitch}
+				/>
 
 				{/* Account */}
 				<section className="card p-6">

@@ -7,6 +7,16 @@ import { PasswordInput } from "#/features/auth/PasswordInput"
 import { inputClass } from "#/features/auth/styles"
 import { useAuth } from "#/lib/auth"
 import { cn } from "#/lib/utils"
+import {
+	availableTargets,
+	computeMinDate,
+	ENTRY_LEVELS,
+	type EntryLevel,
+	LEVEL_RANK,
+	minPrepMonths,
+	TARGET_LEVEL_INFO,
+	type TargetLevel,
+} from "#/lib/vstep"
 
 // ─── Step 1: credentials ───────────────────────────────────────────────────
 
@@ -133,34 +143,9 @@ function Step1({ initial, onNext, onGoogleToken, googleLoading }: Step1Props) {
 
 // ─── Step 2: onboarding ────────────────────────────────────────────────────
 
-const LEVELS = ["B1", "B2", "C1"] as const
-type Level = (typeof LEVELS)[number]
-
-const ENTRY_LEVELS = ["A1", "A2", "B1", "B2", "C1"] as const
-type EntryLevel = (typeof ENTRY_LEVELS)[number]
-
-const LEVEL_RANK: Record<EntryLevel, number> = { A1: 0, A2: 1, B1: 2, B2: 3, C1: 4 }
-
-/** Min months giữa hôm nay và ngày thi, theo độ chênh entry → target. */
-const MIN_PREP_MONTHS = [1, 3, 6, 12, 18] as const
-
-const LEVEL_INFO: Record<Level, string> = {
-	B1: "Giao tiếp cơ bản",
-	B2: "Phổ biến nhất",
-	C1: "Nâng cao",
-}
-
-function computeMinDate(entry: EntryLevel, target: Level): string {
-	const gap = LEVEL_RANK[target] - LEVEL_RANK[entry]
-	const months = MIN_PREP_MONTHS[Math.max(0, gap)] ?? MIN_PREP_MONTHS[MIN_PREP_MONTHS.length - 1]
-	const d = new Date()
-	d.setMonth(d.getMonth() + months)
-	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
-}
-
 interface Step2Props {
 	onBack: () => void
-	onSubmit: (nickname: string, entryLevel: EntryLevel, level: Level, deadline: string) => Promise<void>
+	onSubmit: (nickname: string, entryLevel: EntryLevel, level: TargetLevel, deadline: string) => Promise<void>
 	submitting: boolean
 	initialNickname?: string
 	googleMode: boolean
@@ -169,23 +154,22 @@ interface Step2Props {
 function Step2({ onBack, onSubmit, submitting, initialNickname, googleMode }: Step2Props) {
 	const [nickname, setNickname] = useState(initialNickname ?? "")
 	const [entryLevel, setEntryLevel] = useState<EntryLevel>("A2")
-	const [level, setLevel] = useState<Level>("B2")
+	const [level, setLevel] = useState<TargetLevel>("B2")
 	const [deadline, setDeadline] = useState("")
 	const [error, setError] = useState<string | null>(null)
 
-	const entryRank = LEVEL_RANK[entryLevel]
-	const availableTargets = LEVELS.filter((l) => LEVEL_RANK[l] >= entryRank)
+	const targets = availableTargets(entryLevel)
 
 	function handlePickEntry(next: EntryLevel) {
 		setEntryLevel(next)
 		setDeadline("")
 		if (LEVEL_RANK[level] < LEVEL_RANK[next]) {
-			const fallback = LEVELS.find((l) => LEVEL_RANK[l] >= LEVEL_RANK[next])
+			const fallback = availableTargets(next)[0]
 			if (fallback) setLevel(fallback)
 		}
 	}
 
-	function handlePickLevel(next: Level) {
+	function handlePickLevel(next: TargetLevel) {
 		setLevel(next)
 		setDeadline("")
 	}
@@ -273,9 +257,9 @@ function Step2({ onBack, onSubmit, submitting, initialNickname, googleMode }: St
 							<p className="text-xs font-bold text-muted uppercase">Mục tiêu trình độ</p>
 							<div
 								className="grid gap-2"
-								style={{ gridTemplateColumns: `repeat(${availableTargets.length}, minmax(0, 1fr))` }}
+								style={{ gridTemplateColumns: `repeat(${targets.length}, minmax(0, 1fr))` }}
 							>
-								{availableTargets.map((l) => (
+								{targets.map((l) => (
 									<button
 										type="button"
 										key={l}
@@ -294,7 +278,7 @@ function Step2({ onBack, onSubmit, submitting, initialNickname, googleMode }: St
 												level === l ? "text-primary-foreground/80" : "text-subtle",
 											)}
 										>
-											{LEVEL_INFO[l]}
+											{TARGET_LEVEL_INFO[l]}
 										</span>
 									</button>
 								))}
@@ -304,8 +288,7 @@ function Step2({ onBack, onSubmit, submitting, initialNickname, googleMode }: St
 						<div className="space-y-2">
 							<p className="text-xs font-bold text-muted uppercase">Ngày thi dự kiến</p>
 							<p className="text-[11px] text-subtle">
-								Tối thiểu {MIN_PREP_MONTHS[Math.max(0, LEVEL_RANK[level] - LEVEL_RANK[entryLevel])]} tháng để
-								đạt {entryLevel} → {level}.
+								Tối thiểu {minPrepMonths(entryLevel, level)} tháng để đạt {entryLevel} → {level}.
 							</p>
 							<DatePicker
 								value={deadline}
@@ -369,7 +352,12 @@ export function RegisterForm() {
 		}
 	}
 
-	async function handleFinalSubmit(nickname: string, entryLevel: EntryLevel, level: Level, deadline: string) {
+	async function handleFinalSubmit(
+		nickname: string,
+		entryLevel: EntryLevel,
+		level: TargetLevel,
+		deadline: string,
+	) {
 		setSubmitting(true)
 		try {
 			if (flow === "google") {

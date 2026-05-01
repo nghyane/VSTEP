@@ -1,14 +1,11 @@
 import { queryOptions } from "@tanstack/react-query"
 import type {
+	ConversationScenario,
+	ConversationSessionDetail,
 	ExerciseDetail,
 	ListeningExerciseSummary,
 	ReadingExercise,
 	ReadingExerciseDetail,
-	SpeakingDrill,
-	SpeakingDrillDetail,
-	SpeakingHistoryItem,
-	SpeakingTask,
-	SpeakingTaskDetail,
 	WritingHistoryItem,
 	WritingPrompt,
 	WritingPromptDetail,
@@ -48,28 +45,6 @@ export const writingPromptDetailQuery = (id: string) =>
 		queryFn: () => api.get(`practice/writing/prompts/${id}`).json<ApiResponse<WritingPromptDetail>>(),
 	})
 
-export const speakingDrillsQuery = queryOptions({
-	queryKey: ["practice", "speaking", "drills"],
-	queryFn: () => api.get("practice/speaking/drills").json<ApiResponse<SpeakingDrill[]>>(),
-})
-
-export const speakingDrillDetailQuery = (id: string) =>
-	queryOptions({
-		queryKey: ["practice", "speaking", "drills", id],
-		queryFn: () => api.get(`practice/speaking/drills/${id}`).json<ApiResponse<SpeakingDrillDetail>>(),
-	})
-
-export const speakingTasksQuery = queryOptions({
-	queryKey: ["practice", "speaking", "tasks"],
-	queryFn: () => api.get("practice/speaking/tasks").json<ApiResponse<SpeakingTask[]>>(),
-})
-
-export const speakingTaskDetailQuery = (id: string) =>
-	queryOptions({
-		queryKey: ["practice", "speaking", "tasks", id],
-		queryFn: () => api.get(`practice/speaking/tasks/${id}`).json<ApiResponse<SpeakingTaskDetail>>(),
-	})
-
 export const mcqProgressQuery = (skill: "listening" | "reading") =>
 	queryOptions({
 		queryKey: ["practice", skill, "progress"],
@@ -84,7 +59,14 @@ export const writingHistoryQuery = queryOptions({
 	queryFn: () => api.get("practice/writing/history").json<PaginatedResponse<WritingHistoryItem>>(),
 })
 
-export const speakingVstepHistoryQuery = queryOptions({
-	queryKey: ["practice", "speaking", "vstep-history"],
-	queryFn: () => api.get("practice/speaking/vstep-history").json<PaginatedResponse<SpeakingHistoryItem>>(),
+export const conversationScenariosQuery = queryOptions({
+	queryKey: ["practice", "speaking", "scenarios"],
+	queryFn: () => api.get("practice/speaking/scenarios").json<ApiResponse<ConversationScenario[]>>(),
 })
+
+export const conversationSessionQuery = (sessionId: string) =>
+	queryOptions({
+		queryKey: ["practice", "speaking", "conversations", sessionId],
+		queryFn: () =>
+			api.get(`practice/speaking/conversations/${sessionId}`).json<ApiResponse<ConversationSessionDetail>>(),
+	})

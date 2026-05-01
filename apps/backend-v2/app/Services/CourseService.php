@@ -25,13 +25,75 @@ class CourseService
     /** @return Collection<int,Course> */
     public function listPublished(): Collection
     {
-        return Course::query()->with('teacher:id,full_name')->where('is_published', true)->orderBy('start_date')->get();
+        return Course::query()
+            ->with('teacher:id,full_name')
+            ->withCount([
+                'enrollments as sold_slots',
+                'scheduleItems as schedule_items_count',
+            ])
+            ->where('is_published', true)
+            ->orderBy('start_date')
+            ->get();
+    }
+
+    /**
+     * Bundle list response cho FE: courses + enrolled_course_ids + enrollments map
+     * (next_session + commitment per khóa đã ghi danh).
+     *
+     * `enrollments` luôn trả stdClass để FE có shape `Record<courseId, {...}>` ổn định:
+     * khi không có khóa nào, PHP empty array serialize thành `[]` thay vì `{}`.
+     *
+     * Bảo mật: `livestream_url` chỉ được expose cho khóa user đã ghi danh — đây là core asset
+     * của khóa học, người chưa mua không được thấy.
+     *
+     * @return array{data: Collection<int,Course>, enrolled_course_ids: list<string>, enrollments: \stdClass}
+     */
+    public function listForProfile(?Profile $profile): array
+    {
+        $courses = $this->listPublished();
+
+        if (! $profile) {
+            $courses->each(fn (Course $c) => $c->makeHidden('livestream_url'));
+
+            return [
+                'data' => $courses,
+                'enrolled_course_ids' => [],
+                'enrollments' => new \stdClass,
+            ];
+        }
+
+        $enrolledIds = CourseEnrollment::query()
+            ->where('profile_id', $profile->id)
+            ->whereIn('course_id', $courses->pluck('id'))
+            ->pluck('course_id');
+
+        $enrolledSet = $enrolledIds->flip();
+        $enrollments = new \stdClass;
+        foreach ($courses as $course) {
+            if (! $enrolledSet->has($course->id)) {
+                $course->makeHidden('livestream_url');
+
+                continue;
+            }
+            $enrollments->{$course->id} = [
+                'next_session' => $this->nextSession($course),
+                'commitment' => $this->commitmentStatus($profile, $course),
+            ];
+        }
+
+        return [
+            'data' => $courses,
+            'enrolled_course_ids' => $enrolledIds->values()->all(),
+            'enrollments' => $enrollments,
+        ];
     }
 
     public function getDetail(string $id): Course
     {
         /** @var Course $course */
-        $course = Course::query()->with(['scheduleItems', 'enrollments', 'teacher:id,full_name'])->findOrFail($id);
+        $course = Course::query()
+            ->with(['scheduleItems', 'enrollments', 'teacher:id,full_name,title,bio'])
+            ->findOrFail($id);
 
         return $course;
     }
@@ -78,9 +140,15 @@ class CourseService
     }
 
     /**
-     * Commitment status: pending/met based on full tests in window.
+     * Commitment status: pending / met / violated based on full tests in window.
      *
-     * @return array{phase: string, completed: int, required: int}
+     * Phases:
+     *  - not_enrolled: chưa ghi danh
+     *  - met: đã đủ required full tests trong window
+     *  - violated: now > windowEnd nhưng chưa đủ → khóa cam kết bị vi phạm
+     *  - pending: còn trong window và chưa đủ
+     *
+     * @return array{phase: string, completed: int, required: int, window_start_at: ?string, deadline_at: ?string}
      */
     public function commitmentStatus(Profile $profile, Course $course): array
     {
@@ -90,10 +158,16 @@ class CourseService
             ->first();
 
         if (! $enrollment) {
-            return ['phase' => 'not_enrolled', 'completed' => 0, 'required' => $course->required_full_tests];
+            return [
+                'phase' => 'not_enrolled',
+                'completed' => 0,
+                'required' => $course->required_full_tests,
+                'window_start_at' => null,
+                'deadline_at' => null,
+            ];
         }
 
-        $windowStart = $enrollment->enrolled_at->copy()->addDays($course->exam_cooldown_days);
+        $windowStart = $enrollment->enrolled_at->copy();
         $windowEnd = $windowStart->copy()->addDays($course->commitment_window_days);
 
         $completed = ExamSession::query()
@@ -103,10 +177,46 @@ class CourseService
             ->whereBetween('submitted_at', [$windowStart, $windowEnd])
             ->count();
 
+        $phase = match (true) {
+            $completed >= $course->required_full_tests => 'met',
+            now()->gt($windowEnd) => 'violated',
+            default => 'pending',
+        };
+
         return [
-            'phase' => $completed >= $course->required_full_tests ? 'met' : 'pending',
+            'phase' => $phase,
             'completed' => $completed,
             'required' => $course->required_full_tests,
+            'window_start_at' => $windowStart->toIso8601String(),
+            'deadline_at' => $windowEnd->toIso8601String(),
+        ];
+    }
+
+    /**
+     * Next upcoming session (date >= today). Null nếu hết lịch.
+     *
+     * @return array{id: string, session_number: int, date: string, start_time: string, end_time: string, topic: string}|null
+     */
+    public function nextSession(Course $course): ?array
+    {
+        $today = now()->startOfDay()->toDateString();
+        $session = $course->scheduleItems()
+            ->where('date', '>=', $today)
+            ->orderBy('date')
+            ->orderBy('start_time')
+            ->first();
+
+        if (! $session) {
+            return null;
+        }
+
+        return [
+            'id' => $session->id,
+            'session_number' => $session->session_number,
+            'date' => $session->date->toDateString(),
+            'start_time' => $session->start_time,
+            'end_time' => $session->end_time,
+            'topic' => $session->topic,
         ];
     }
 

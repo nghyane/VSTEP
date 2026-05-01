@@ -147,6 +147,26 @@
 		50% { transform: translateY(-8px) rotate(2deg); }
 	}
 
+	@keyframes mascotSadSway {
+		0%, 100% { transform: translateY(0) rotate(-4deg); }
+		25% { transform: translateY(2px) rotate(0); }
+		50% { transform: translateY(4px) rotate(4deg); }
+		75% { transform: translateY(2px) rotate(0); }
+	}
+
+	@keyframes mascotSadShake {
+		0%, 100% { transform: translateX(0); }
+		20%, 60% { transform: translateX(-3px); }
+		40%, 80% { transform: translateX(3px); }
+	}
+
+	@keyframes tearDrop {
+		0% { opacity: 0; transform: translate(-50%, 0) scale(0.6); }
+		15% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+		60% { opacity: 1; transform: translate(-50%, 60px) scale(1); }
+		100% { opacity: 0; transform: translate(-50%, 90px) scale(0.4); }
+	}
+
 	@keyframes float {
 		0%, 100% { transform: translateY(0) rotate(-4deg); opacity: 0.3; }
 		50% { transform: translateY(-12px) rotate(4deg); opacity: 0.7; }
@@ -155,6 +175,11 @@
 	@keyframes dotBounce {
 		0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
 		40% { transform: translateY(-8px); opacity: 1; }
+	}
+
+	@keyframes micPulse {
+		0%, 100% { transform: scale(1); opacity: 0.25; }
+		50% { transform: scale(1.35); opacity: 0.08; }
 	}
 
 	@keyframes coinPinch {
@@ -175,6 +200,37 @@
 	@keyframes coinPulseRing {
 		0% { opacity: 0.7; transform: scale(0.6); }
 		100% { opacity: 0; transform: scale(2.2); }
+	}
+
+	@keyframes warningBlink {
+		0%, 100% {
+			box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+		}
+		50% {
+			box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.18);
+		}
+	}
+
+	@keyframes lockShake {
+		0%, 100% { transform: translateX(0); }
+		15% { transform: translateX(-3px) rotate(-2deg); }
+		30% { transform: translateX(3px) rotate(2deg); }
+		45% { transform: translateX(-2px) rotate(-1deg); }
+		60% { transform: translateX(2px) rotate(1deg); }
+		75% { transform: translateX(-1px); }
+	}
+
+	@keyframes flameOuterPulse {
+		0%, 100% { transform: scale(1); }
+		30% { transform: scale(1.06); }
+		60% { transform: scale(0.96); }
+	}
+
+	@keyframes flameInnerFlicker {
+		0%, 100% { transform: scaleY(1) scaleX(1); opacity: 1; }
+		25% { transform: scaleY(1.18) scaleX(0.92); opacity: 1; }
+		55% { transform: scaleY(0.85) scaleX(1.05); opacity: 0.9; }
+		80% { transform: scaleY(1.08) scaleX(0.96); opacity: 1; }
 	}
 
 	@keyframes sparkleSpin {
@@ -292,6 +348,61 @@
 	}
 	.card-interactive:hover {
 		transform: translateY(-2px);
+	}
+
+	/* ─── Flip card (vocab practice) ─── */
+	.flip-scene {
+		perspective: 1400px;
+	}
+	.flip-inner {
+		position: relative;
+		width: 100%;
+		transform-style: preserve-3d;
+		transition: transform 0.55s cubic-bezier(0.4, 0.05, 0.2, 1);
+	}
+	.flip-inner.flipped {
+		transform: rotateY(180deg);
+	}
+	.flip-face {
+		backface-visibility: hidden;
+		-webkit-backface-visibility: hidden;
+	}
+	.flip-face-back {
+		position: absolute;
+		inset: 0;
+		transform: rotateY(180deg);
+	}
+
+	/* ─── Schedule grid cells (course detail) ─── */
+	.schedule-cell-past {
+		background-image: repeating-linear-gradient(
+			135deg,
+			transparent 0,
+			transparent 8px,
+			rgb(0 0 0 / 0.05) 8px,
+			rgb(0 0 0 / 0.05) 9px
+		);
+	}
+	.schedule-cell-future {
+		position: relative;
+		transition: background-color 0.2s ease;
+	}
+	.schedule-cell-future::after {
+		content: "";
+		position: absolute;
+		left: 0;
+		bottom: 0;
+		height: 3px;
+		width: 0;
+		background: var(--color-primary);
+		border-radius: 2px;
+		transition: width 0.25s ease;
+	}
+	.schedule-cell-future:hover {
+		background-color: var(--color-primary-tint);
+	}
+	.schedule-cell-future:hover::after {
+		width: 100%;
 	}
 
 	/* ─── Duration slider — Duolingo style ─── */

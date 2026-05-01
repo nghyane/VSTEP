@@ -1,0 +1,289 @@
+/**
+ * MOCK DATA — TEMPORARY
+ * Xoá khi BE expose `/practice/speaking/shadowing/*`.
+ */
+
+import type { ShadowingAttempt, ShadowingLesson, ShadowingLessonDetail } from "#/features/practice/types"
+
+export const mockShadowingLessons: ShadowingLesson[] = [
+	{
+		id: "sh-star-wars",
+		slug: "star-wars-opening",
+		title: "Star Wars — Opening Crawl",
+		level: "B1",
+		segment_count: 10,
+		estimated_minutes: 15,
+	},
+	{
+		id: "sh-ted-talk",
+		slug: "ted-talk-motivation",
+		title: "TED Talk — The Power of Habit",
+		level: "B2",
+		segment_count: 24,
+		estimated_minutes: 20,
+	},
+	{
+		id: "sh-daily-routine",
+		slug: "daily-routine",
+		title: "My Daily Routine",
+		level: "A1",
+		segment_count: 8,
+		estimated_minutes: 8,
+	},
+	{
+		id: "sh-travel-airport",
+		slug: "travel-at-the-airport",
+		title: "At the Airport",
+		level: "A2",
+		segment_count: 10,
+		estimated_minutes: 12,
+	},
+	{
+		id: "sh-news-climate",
+		slug: "news-climate-change",
+		title: "News — Climate Change",
+		level: "B2",
+		segment_count: 12,
+		estimated_minutes: 18,
+	},
+	{
+		id: "sh-friends-sitcom",
+		slug: "friends-the-one-where",
+		title: "Friends — The One Where...",
+		level: "B1",
+		segment_count: 15,
+		estimated_minutes: 14,
+	},
+]
+
+export const mockShadowingDetail: ShadowingLessonDetail = {
+	id: "sh-star-wars",
+	slug: "star-wars-opening",
+	title: "Star Wars — Opening Crawl",
+	level: "B1",
+	audio_url: "",
+	segments: [
+		{
+			id: "seg-1",
+			index: 0,
+			text: "Dropping out of light speed, a fleet of rebel spaceships is greeted by a frenzy of laser blasts,",
+			ipa: "ˈdrɑːpɪŋ aʊt əv laɪt spiːd, ə fliːt əv ˈrɛbəl ˈspeɪsʃɪps ɪz ˈɡriːtɪd baɪ ə ˈfrɛnzi əv ˈleɪzər blæsts",
+			translation:
+				"Thoát ra khỏi tốc độ ánh sáng, một hạm đội tàu vũ trụ phiến quân bị chào đón bởi cơn cuồng nộ của tia laser,",
+			word_count: 18,
+			audio_start: 0,
+			audio_end: 6.5,
+		},
+		{
+			id: "seg-2",
+			index: 1,
+			text: "illuminating the sector with brilliant bursts of light.",
+			ipa: "ɪˈluːmɪn,eɪrɪŋ ðə ˈsɛktər wɪð ˈbrɪliənt bɜːrsts ʌv laɪt",
+			translation: "chiếu sáng cả khu vực bằng những tia sáng rực rỡ.",
+			word_count: 8,
+			audio_start: 6.5,
+			audio_end: 10.2,
+		},
+		{
+			id: "seg-3",
+			index: 2,
+			text: "The Rebel cruiser is under attack from the deadly Imperial Star Destroyer.",
+			ipa: "ðə ˈrɛbəl ˈkruːzər ɪz ˈʌndər əˈtæk frəm ðə ˈdɛdli ɪmˈpɪriəl stɑːr dɪˈstrɔɪər",
+			translation: "Tàu tuần dương Phiến quân đang bị tấn công bởi Ngôi sao Huỷ diệt Đế chế chết chóc.",
+			word_count: 12,
+			audio_start: 10.2,
+			audio_end: 15.0,
+		},
+		{
+			id: "seg-4",
+			index: 3,
+			text: "Amid the crossfire, a small spacecraft emerges from the chaos.",
+			ipa: "əˈmɪd ðə ˈkrɒsfaɪər, ə smɔːl ˈspeɪskræft ɪˈmɜːrdʒɪz frəm ðə ˈkeɪɒs",
+			translation: "Giữa làn đạn chéo, một tàu vũ trụ nhỏ xuất hiện từ hỗn loạn.",
+			word_count: 10,
+			audio_start: 15.0,
+			audio_end: 19.5,
+		},
+		{
+			id: "seg-5",
+			index: 4,
+			text: "It races toward the massive planet below, desperate to escape.",
+			ipa: "ɪt ˈreɪsɪz təˈwɔːrd ðə ˈmæsɪv ˈplænɪt bɪˈloʊ, ˈdɛspərɪt tuː ɪˈskeɪp",
+			translation: "Nó lao về phía hành tinh khổng lồ bên dưới, tuyệt vọng tìm cách thoát thân.",
+			word_count: 10,
+			audio_start: 19.5,
+			audio_end: 23.8,
+		},
+		{
+			id: "seg-6",
+			index: 5,
+			text: "The Imperial cruiser fires relentlessly, shaking the smaller vessel.",
+			ipa: "ðə ɪmˈpɪriəl ˈkruːzər ˈfaɪərz rɪˈlɛntləsli, ˈʃeɪkɪŋ ðə ˈsmɔːlər ˈvɛsəl",
+			translation: "Tàu tuần dương Đế chế bắn không ngừng, làm rung chuyển con tàu nhỏ hơn.",
+			word_count: 9,
+			audio_start: 23.8,
+			audio_end: 28.0,
+		},
+		{
+			id: "seg-7",
+			index: 6,
+			text: "Inside the Rebel ship, alarms blare and crew members rush to their stations.",
+			ipa: "ɪnˈsaɪd ðə ˈrɛbəl ʃɪp, əˈlɑːrmz blɛr ænd kruː ˈmɛmbərz rʌʃ tuː ðɛr ˈsteɪʃənz",
+			translation:
+				"Bên trong tàu Phiến quân, còi báo động vang lên và các thành viên phi hành đoàn chạy đến vị trí.",
+			word_count: 13,
+			audio_start: 28.0,
+			audio_end: 33.5,
+		},
+		{
+			id: "seg-8",
+			index: 7,
+			text: "A direct hit sends sparks flying across the corridor.",
+			ipa: "ə dɪˈrɛkt hɪt sɛndz spɑːrks ˈflaɪɪŋ əˈkrɒs ðə ˈkɒrɪdɔːr",
+			translation: "Một phát bắn trúng đích khiến tia lửa bay khắp hành lang.",
+			word_count: 9,
+			audio_start: 33.5,
+			audio_end: 37.0,
+		},
+		{
+			id: "seg-9",
+			index: 8,
+			text: "Two droids stumble through the smoke-filled passageway.",
+			ipa: "tuː drɔɪdz ˈstʌmbəl θruː ðə smoʊk-fɪld ˈpæsɪdʒweɪ",
+			translation: "Hai robot loạng choạng đi qua lối đi đầy khói.",
+			word_count: 7,
+			audio_start: 37.0,
+			audio_end: 40.5,
+		},
+		{
+			id: "seg-10",
+			index: 9,
+			text: "The golden protocol droid turns to his companion in panic.",
+			ipa: "ðə ˈɡoʊldən ˈproʊtəkɒl drɔɪd tɜːrnz tuː hɪz kəmˈpænjən ɪn ˈpænɪk",
+			translation: "Robot giao thức vàng quay sang bạn đồng hành trong hoảng loạn.",
+			word_count: 10,
+			audio_start: 40.5,
+			audio_end: 44.8,
+		},
+	],
+}
+
+const mockDailyRoutine: ShadowingLessonDetail = {
+	id: "sh-daily-routine",
+	slug: "daily-routine",
+	title: "My Daily Routine",
+	level: "A1",
+	audio_url: "",
+	segments: [
+		{ id: "dr-1", index: 0, text: "I wake up at seven o'clock every morning.", ipa: "aɪ weɪk ʌp æt ˈsɛvən əˈklɒk ˈɛvri ˈmɔːrnɪŋ", translation: "Tôi thức dậy lúc 7 giờ mỗi sáng.", word_count: 8, audio_start: 0, audio_end: 3 },
+		{ id: "dr-2", index: 1, text: "I brush my teeth and take a shower.", ipa: "aɪ brʌʃ maɪ tiːθ ænd teɪk ə ˈʃaʊər", translation: "Tôi đánh răng và tắm.", word_count: 8, audio_start: 3, audio_end: 6 },
+		{ id: "dr-3", index: 2, text: "Then I have breakfast with my family.", ipa: "ðɛn aɪ hæv ˈbrɛkfəst wɪð maɪ ˈfæmɪli", translation: "Sau đó tôi ăn sáng với gia đình.", word_count: 7, audio_start: 6, audio_end: 9 },
+		{ id: "dr-4", index: 3, text: "I usually eat bread and drink milk.", ipa: "aɪ ˈjuːʒuəli iːt brɛd ænd drɪŋk mɪlk", translation: "Tôi thường ăn bánh mì và uống sữa.", word_count: 7, audio_start: 9, audio_end: 12 },
+		{ id: "dr-5", index: 4, text: "I go to school by bus.", ipa: "aɪ ɡoʊ tuː skuːl baɪ bʌs", translation: "Tôi đi học bằng xe buýt.", word_count: 6, audio_start: 12, audio_end: 14 },
+		{ id: "dr-6", index: 5, text: "After school, I do my homework.", ipa: "ˈæftər skuːl aɪ duː maɪ ˈhoʊmwɜːrk", translation: "Sau giờ học, tôi làm bài tập.", word_count: 6, audio_start: 14, audio_end: 17 },
+		{ id: "dr-7", index: 6, text: "In the evening, I watch TV with my parents.", ipa: "ɪn ðə ˈiːvnɪŋ aɪ wɒtʃ tiːˈviː wɪð maɪ ˈpɛrənts", translation: "Buổi tối, tôi xem TV với bố mẹ.", word_count: 9, audio_start: 17, audio_end: 20 },
+		{ id: "dr-8", index: 7, text: "I go to bed at ten o'clock.", ipa: "aɪ ɡoʊ tuː bɛd æt tɛn əˈklɒk", translation: "Tôi đi ngủ lúc 10 giờ.", word_count: 7, audio_start: 20, audio_end: 23 },
+	],
+}
+
+const mockAirport: ShadowingLessonDetail = {
+	id: "sh-travel-airport",
+	slug: "travel-at-the-airport",
+	title: "At the Airport",
+	level: "A2",
+	audio_url: "",
+	segments: [
+		{ id: "ap-1", index: 0, text: "Excuse me, where is the check-in counter?", ipa: "ɪkˈskjuːz miː wɛr ɪz ðə ˈtʃɛkɪn ˈkaʊntər", translation: "Xin lỗi, quầy làm thủ tục ở đâu?", word_count: 8, audio_start: 0, audio_end: 3 },
+		{ id: "ap-2", index: 1, text: "I would like a window seat, please.", ipa: "aɪ wʊd laɪk ə ˈwɪndoʊ siːt pliːz", translation: "Tôi muốn ghế cạnh cửa sổ.", word_count: 7, audio_start: 3, audio_end: 6 },
+		{ id: "ap-3", index: 2, text: "How much luggage can I bring on board?", ipa: "haʊ mʌtʃ ˈlʌɡɪdʒ kæn aɪ brɪŋ ɒn bɔːrd", translation: "Tôi được mang bao nhiêu hành lý lên máy bay?", word_count: 8, audio_start: 6, audio_end: 9 },
+		{ id: "ap-4", index: 3, text: "My flight is delayed by two hours.", ipa: "maɪ flaɪt ɪz dɪˈleɪd baɪ tuː ˈaʊərz", translation: "Chuyến bay của tôi bị trễ 2 tiếng.", word_count: 7, audio_start: 9, audio_end: 12 },
+		{ id: "ap-5", index: 4, text: "Could you tell me which gate to go to?", ipa: "kʊd juː tɛl miː wɪtʃ ɡeɪt tuː ɡoʊ tuː", translation: "Bạn có thể cho tôi biết cửa nào không?", word_count: 9, audio_start: 12, audio_end: 15 },
+		{ id: "ap-6", index: 5, text: "I need to go through security first.", ipa: "aɪ niːd tuː ɡoʊ θruː sɪˈkjʊrɪti fɜːrst", translation: "Tôi cần qua kiểm tra an ninh trước.", word_count: 7, audio_start: 15, audio_end: 18 },
+		{ id: "ap-7", index: 6, text: "Please fasten your seatbelt during takeoff.", ipa: "pliːz ˈfæsən jɔːr ˈsiːtbɛlt ˈdjʊrɪŋ ˈteɪkɒf", translation: "Vui lòng thắt dây an toàn khi cất cánh.", word_count: 6, audio_start: 18, audio_end: 21 },
+		{ id: "ap-8", index: 7, text: "We will be landing in approximately thirty minutes.", ipa: "wiː wɪl biː ˈlændɪŋ ɪn əˈprɒksɪmətli ˈθɜːrti ˈmɪnɪts", translation: "Chúng tôi sẽ hạ cánh trong khoảng 30 phút.", word_count: 8, audio_start: 21, audio_end: 25 },
+		{ id: "ap-9", index: 8, text: "Where can I pick up my luggage?", ipa: "wɛr kæn aɪ pɪk ʌp maɪ ˈlʌɡɪdʒ", translation: "Tôi lấy hành lý ở đâu?", word_count: 7, audio_start: 25, audio_end: 28 },
+		{ id: "ap-10", index: 9, text: "I am looking for the taxi stand outside.", ipa: "aɪ æm ˈlʊkɪŋ fɔːr ðə ˈtæksi stænd aʊtˈsaɪd", translation: "Tôi đang tìm bến taxi bên ngoài.", word_count: 8, audio_start: 28, audio_end: 31 },
+	],
+}
+
+const mockClimate: ShadowingLessonDetail = {
+	id: "sh-news-climate",
+	slug: "news-climate-change",
+	title: "News — Climate Change",
+	level: "B2",
+	audio_url: "",
+	segments: [
+		{ id: "cl-1", index: 0, text: "Climate change is one of the most pressing issues of our time.", ipa: "ˈklaɪmɪt tʃeɪndʒ ɪz wʌn əv ðə moʊst ˈprɛsɪŋ ˈɪʃuːz əv ˈaʊər taɪm", translation: "Biến đổi khí hậu là một trong những vấn đề cấp bách nhất thời đại.", word_count: 12, audio_start: 0, audio_end: 5 },
+		{ id: "cl-2", index: 1, text: "Global temperatures have risen significantly over the past century.", ipa: "ˈɡloʊbəl ˈtɛmpərətʃərz hæv ˈrɪzən sɪɡˈnɪfɪkəntli ˈoʊvər ðə pæst ˈsɛntʃəri", translation: "Nhiệt độ toàn cầu đã tăng đáng kể trong thế kỷ qua.", word_count: 9, audio_start: 5, audio_end: 10 },
+		{ id: "cl-3", index: 2, text: "Scientists warn that immediate action is needed to reduce emissions.", ipa: "ˈsaɪəntɪsts wɔːrn ðæt ɪˈmiːdiət ˈækʃən ɪz ˈniːdɪd tuː rɪˈdjuːs ɪˈmɪʃənz", translation: "Các nhà khoa học cảnh báo cần hành động ngay để giảm khí thải.", word_count: 10, audio_start: 10, audio_end: 15 },
+		{ id: "cl-4", index: 3, text: "Renewable energy sources like solar and wind power are becoming more affordable.", ipa: "rɪˈnjuːəbəl ˈɛnərdʒi ˈsɔːrsɪz laɪk ˈsoʊlər ænd wɪnd ˈpaʊər ɑːr bɪˈkʌmɪŋ mɔːr əˈfɔːrdəbəl", translation: "Các nguồn năng lượng tái tạo như điện mặt trời và gió ngày càng rẻ hơn.", word_count: 12, audio_start: 15, audio_end: 21 },
+		{ id: "cl-5", index: 4, text: "Many countries have committed to reaching net zero by twenty fifty.", ipa: "ˈmɛni ˈkʌntriz hæv kəˈmɪtɪd tuː ˈriːtʃɪŋ nɛt ˈzɪroʊ baɪ ˈtwɛnti ˈfɪfti", translation: "Nhiều quốc gia cam kết đạt mức phát thải ròng bằng 0 vào năm 2050.", word_count: 11, audio_start: 21, audio_end: 26 },
+	],
+}
+
+const mockFriends: ShadowingLessonDetail = {
+	id: "sh-friends-sitcom",
+	slug: "friends-the-one-where",
+	title: "Friends — The One Where...",
+	level: "B1",
+	audio_url: "",
+	segments: [
+		{ id: "fr-1", index: 0, text: "Could this day get any worse?", ipa: "kʊd ðɪs deɪ ɡɛt ˈɛni wɜːrs", translation: "Ngày hôm nay có thể tệ hơn không?", word_count: 6, audio_start: 0, audio_end: 2.5 },
+		{ id: "fr-2", index: 1, text: "We were on a break!", ipa: "wiː wɜːr ɒn ə breɪk", translation: "Chúng tôi đã nghỉ mà!", word_count: 6, audio_start: 2.5, audio_end: 4.5 },
+		{ id: "fr-3", index: 2, text: "How you doing?", ipa: "haʊ juː ˈduːɪŋ", translation: "Bạn khỏe không?", word_count: 3, audio_start: 4.5, audio_end: 6 },
+		{ id: "fr-4", index: 3, text: "I am not great at giving advice. Can I interest you in a sarcastic comment?", ipa: "aɪ æm nɒt ɡreɪt æt ˈɡɪvɪŋ ədˈvaɪs kæn aɪ ˈɪntrɪst juː ɪn ə sɑːrˈkæstɪk ˈkɒmɛnt", translation: "Tôi không giỏi cho lời khuyên. Bạn có muốn nghe một bình luận mỉa mai không?", word_count: 15, audio_start: 6, audio_end: 11 },
+		{ id: "fr-5", index: 4, text: "Welcome to the real world. It sucks. You are gonna love it.", ipa: "ˈwɛlkəm tuː ðə rɪəl wɜːrld ɪt sʌks juː ɑːr ˈɡɒnə lʌv ɪt", translation: "Chào mừng đến thế giới thực. Nó tệ lắm. Bạn sẽ thích nó.", word_count: 12, audio_start: 11, audio_end: 15 },
+		{ id: "fr-6", index: 5, text: "I don't even have a plan. I don't even have a pla.", ipa: "aɪ doʊnt ˈiːvən hæv ə plæn aɪ doʊnt ˈiːvən hæv ə plæ", translation: "Tôi thậm chí không có kế hoạch. Tôi thậm chí không có kế ho...", word_count: 12, audio_start: 15, audio_end: 19 },
+		{ id: "fr-7", index: 6, text: "Pivot! Pivot! Pivot!", ipa: "ˈpɪvət ˈpɪvət ˈpɪvət", translation: "Xoay! Xoay! Xoay!", word_count: 3, audio_start: 19, audio_end: 21 },
+		{ id: "fr-8", index: 7, text: "It is a moo point. It is like a cow's opinion. It doesn't matter.", ipa: "ɪt ɪz ə muː pɔɪnt ɪt ɪz laɪk ə kaʊz əˈpɪnjən ɪt ˈdʌzənt ˈmætər", translation: "Đó là một quan điểm bò. Giống như ý kiến của con bò. Nó không quan trọng.", word_count: 14, audio_start: 21, audio_end: 26 },
+	],
+}
+
+const mockTedTalk: ShadowingLessonDetail = {
+	id: "sh-ted-talk",
+	slug: "ted-talk-motivation",
+	title: "TED Talk — The Power of Habit",
+	level: "B2",
+	audio_url: "",
+	segments: [
+		{ id: "ted-1", index: 0, text: "So how do habits work? It turns out every habit starts with a pattern called a habit loop.", ipa: "soʊ haʊ duː ˈhæbɪts wɜːrk ɪt tɜːrnz aʊt ˈɛvri ˈhæbɪt stɑːrts wɪð ə ˈpætərn kɔːld ə ˈhæbɪt luːp", translation: "Vậy thói quen hoạt động như thế nào? Hóa ra mọi thói quen đều bắt đầu với một khuôn mẫu gọi là vòng lặp thói quen.", word_count: 18, audio_start: 0, audio_end: 6 },
+		{ id: "ted-2", index: 1, text: "There is a cue, a trigger that tells your brain to go into automatic mode.", ipa: "ðɛr ɪz ə kjuː ə ˈtrɪɡər ðæt tɛlz jɔːr breɪn tuː ɡoʊ ˈɪntuː ˌɔːtəˈmætɪk moʊd", translation: "Có một tín hiệu, một kích hoạt bảo não bạn chuyển sang chế độ tự động.", word_count: 14, audio_start: 6, audio_end: 11 },
+		{ id: "ted-3", index: 2, text: "Then there is the routine, which can be physical or mental or emotional.", ipa: "ðɛn ðɛr ɪz ðə ruːˈtiːn wɪtʃ kæn biː ˈfɪzɪkəl ɔːr ˈmɛntəl ɔːr ɪˈmoʊʃənəl", translation: "Sau đó là thói quen, có thể là thể chất, tinh thần hoặc cảm xúc.", word_count: 12, audio_start: 11, audio_end: 16 },
+		{ id: "ted-4", index: 3, text: "And finally there is a reward, which helps your brain figure out if this loop is worth remembering.", ipa: "ænd ˈfaɪnəli ðɛr ɪz ə rɪˈwɔːrd wɪtʃ hɛlps jɔːr breɪn ˈfɪɡjər aʊt ɪf ðɪs luːp ɪz wɜːrθ rɪˈmɛmbərɪŋ", translation: "Và cuối cùng là phần thưởng, giúp não bạn xác định liệu vòng lặp này có đáng nhớ hay không.", word_count: 17, audio_start: 16, audio_end: 22 },
+		{ id: "ted-5", index: 4, text: "Over time, this loop becomes more and more automatic.", ipa: "ˈoʊvər taɪm ðɪs luːp bɪˈkʌmz mɔːr ænd mɔːr ˌɔːtəˈmætɪk", translation: "Theo thời gian, vòng lặp này trở nên ngày càng tự động.", word_count: 9, audio_start: 22, audio_end: 26 },
+		{ id: "ted-6", index: 5, text: "The cue and the reward become intertwined until a powerful sense of craving emerges.", ipa: "ðə kjuː ænd ðə rɪˈwɔːrd bɪˈkʌm ˌɪntərˈtwaɪnd ʌnˈtɪl ə ˈpaʊərfəl sɛns əv ˈkreɪvɪŋ ɪˈmɜːrdʒɪz", translation: "Tín hiệu và phần thưởng trở nên đan xen cho đến khi xuất hiện cảm giác thèm muốn mạnh mẽ.", word_count: 14, audio_start: 26, audio_end: 32 },
+		{ id: "ted-7", index: 6, text: "But the good news is that habits are not destiny.", ipa: "bʌt ðə ɡʊd njuːz ɪz ðæt ˈhæbɪts ɑːr nɒt ˈdɛstɪni", translation: "Nhưng tin tốt là thói quen không phải là định mệnh.", word_count: 10, audio_start: 32, audio_end: 36 },
+		{ id: "ted-8", index: 7, text: "You can change your habits if you understand how they work.", ipa: "juː kæn tʃeɪndʒ jɔːr ˈhæbɪts ɪf juː ˌʌndərˈstænd haʊ ðeɪ wɜːrk", translation: "Bạn có thể thay đổi thói quen nếu bạn hiểu cách chúng hoạt động.", word_count: 11, audio_start: 36, audio_end: 40 },
+		{ id: "ted-9", index: 8, text: "The key is to keep the same cue and the same reward but insert a new routine.", ipa: "ðə kiː ɪz tuː kiːp ðə seɪm kjuː ænd ðə seɪm rɪˈwɔːrd bʌt ɪnˈsɜːrt ə njuː ruːˈtiːn", translation: "Chìa khóa là giữ nguyên tín hiệu và phần thưởng nhưng thay đổi thói quen.", word_count: 16, audio_start: 40, audio_end: 46 },
+		{ id: "ted-10", index: 9, text: "That is what we call the golden rule of habit change.", ipa: "ðæt ɪz wɒt wiː kɔːl ðə ˈɡoʊldən ruːl əv ˈhæbɪt tʃeɪndʒ", translation: "Đó là cái mà chúng ta gọi là quy tắc vàng của việc thay đổi thói quen.", word_count: 11, audio_start: 46, audio_end: 50 },
+		{ id: "ted-11", index: 10, text: "Almost any behavior can be transformed if the cue and reward stay the same.", ipa: "ˈɔːlmoʊst ˈɛni bɪˈheɪvjər kæn biː trænsˈfɔːrmd ɪf ðə kjuː ænd rɪˈwɔːrd steɪ ðə seɪm", translation: "Hầu như bất kỳ hành vi nào cũng có thể được thay đổi nếu tín hiệu và phần thưởng giữ nguyên.", word_count: 13, audio_start: 50, audio_end: 55 },
+		{ id: "ted-12", index: 11, text: "This is how willpower becomes a habit, and this is how organizations and societies change.", ipa: "ðɪs ɪz haʊ ˈwɪlˌpaʊər bɪˈkʌmz ə ˈhæbɪt ænd ðɪs ɪz haʊ ˌɔːrɡənɪˈzeɪʃənz ænd səˈsaɪətiz tʃeɪndʒ", translation: "Đây là cách sức mạnh ý chí trở thành thói quen, và đây là cách tổ chức và xã hội thay đổi.", word_count: 14, audio_start: 55, audio_end: 61 },
+	],
+}
+
+export const mockShadowingDetails: Record<string, ShadowingLessonDetail> = {
+	"sh-star-wars": mockShadowingDetail,
+	"sh-ted-talk": mockTedTalk,
+	"sh-daily-routine": mockDailyRoutine,
+	"sh-travel-airport": mockAirport,
+	"sh-news-climate": mockClimate,
+	"sh-friends-sitcom": mockFriends,
+}
+
+export const mockAttemptForSegment2: ShadowingAttempt = {
+	transcript: "Illuminating the brilliant bust of light.",
+	accuracy_percent: 63,
+	correct_words: 5,
+	total_words: 8,
+	word_results: [
+		{ word: "illuminating", accuracy: "correct" },
+		{ word: "the", accuracy: "correct" },
+		{ word: "sector", accuracy: "wrong" },
+		{ word: "with", accuracy: "wrong" },
+		{ word: "brilliant", accuracy: "correct" },
+		{ word: "bursts", accuracy: "close" },
+		{ word: "of", accuracy: "correct" },
+		{ word: "light", accuracy: "correct" },
+	],
+	audio_url: null,
+}

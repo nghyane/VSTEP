@@ -172,9 +172,9 @@ class CourseEnrollmentTest extends TestCase
                 'profile_id' => $profile->id, 'exam_version_id' => $version->id,
                 'mode' => 'full', 'selected_skills' => ['listening', 'reading', 'writing', 'speaking'],
                 'is_full_test' => true,
-                'started_at' => $enrollment->enrolled_at->copy()->addDays($course->exam_cooldown_days),
-                'server_deadline_at' => $enrollment->enrolled_at->copy()->addDays($course->exam_cooldown_days + 1),
-                'submitted_at' => $enrollment->enrolled_at->copy()->addDays($course->exam_cooldown_days + 1),
+                'started_at' => $enrollment->enrolled_at->copy()->addHours(1),
+                'server_deadline_at' => $enrollment->enrolled_at->copy()->addDays(1),
+                'submitted_at' => $enrollment->enrolled_at->copy()->addDays(1),
                 'status' => 'submitted', 'coins_charged' => 25,
             ]);
         }
@@ -204,8 +204,8 @@ class CourseEnrollmentTest extends TestCase
             'slug' => 'crash-'.now()->timestamp, 'title' => 'Crash Course',
             'target_level' => 'B2', 'price_vnd' => $priceVnd, 'price_coins' => 0, 'bonus_coins' => $bonus,
             'max_slots' => $maxSlots, 'start_date' => now()->subDays(5), 'end_date' => now()->addMonth(),
-            'required_full_tests' => 3, 'commitment_window_days' => 20,
-            'exam_cooldown_days' => 5, 'teacher_id' => $teacher->id, 'is_published' => true,
+            'required_full_tests' => 3, 'commitment_window_days' => 5,
+            'teacher_id' => $teacher->id, 'is_published' => true,
         ]);
 
         return [$user, $profile, $course];
