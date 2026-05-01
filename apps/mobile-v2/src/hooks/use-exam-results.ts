@@ -34,10 +34,16 @@ export interface ExamSessionResults {
     wordCount: number;
     text: string;
     overallBand: number | null;
-    rubricScores: Record<string, number> | null;
+    rubricScores: {
+      taskAchievement: number;
+      coherence: number;
+      lexical: number;
+      grammar: number;
+    } | null;
     strengths: string[];
     improvements: { message: string; explanation: string }[];
     rewrites: { original: string; improved: string; reason: string }[];
+    paragraphFeedback: unknown;
   }[];
   speakingFeedback: {
     submissionId: string;
@@ -45,9 +51,16 @@ export interface ExamSessionResults {
     audioUrl: string | null;
     transcript: string | null;
     overallBand: number | null;
-    rubricScores: Record<string, number> | null;
+    rubricScores: {
+      fluency: number;
+      pronunciation: number;
+      content: number;
+      vocab: number;
+      grammar: number;
+    } | null;
     strengths: string[];
     improvements: { message: string; explanation: string }[];
+    pronunciationReport: { accuracyScore: number } | null;
   }[];
   listeningPlaySummary: {
     sectionId: string;
