@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -29,7 +30,10 @@ import {
   submitSpeakingConversationTurn,
   useSpeakingConversationReview,
 } from "@/hooks/use-practice";
+import { useSpeechToText, type MicState } from "@/hooks/useSpeechToText";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+
+const MAX_RECORD_SECONDS = 30;
 
 export default function SpeakingConversationScreen() {
   const { scenarioId } = useLocalSearchParams<{ scenarioId: string }>();
@@ -44,9 +48,38 @@ export default function SpeakingConversationScreen() {
   const [summary, setSummary] = useState<SpeakingConversationEndSummary | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [speakingTurnId, setSpeakingTurnId] = useState<string | null>(null);
+  const [micState, setMicState] = useState<MicState>("idle");
+  const micPulseAnim = useRef(new Animated.Value(0)).current;
+
+  const speechToText = useSpeechToText({
+    maxSeconds: MAX_RECORD_SECONDS,
+    language: "en-US",
+    onResult: (transcript) => {
+      setInput(transcript);
+      setMicState("idle");
+    },
+    onEnd: () => setMicState("idle"),
+    onError: () => setMicState("idle"),
+  });
+
   const review = useSpeakingConversationReview(session?.sessionId ?? "", !!summary);
   const speakingColor = c.skillSpeaking;
   const speakingText = c.coinDark;
+
+  // Mic pulse animation
+  useEffect(() => {
+    if (speechToText.state === "listening") {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(micPulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+          Animated.timing(micPulseAnim, { toValue: 0, duration: 800, useNativeDriver: true }),
+        ]),
+      ).start();
+    } else {
+      micPulseAnim.setValue(0);
+      Animated.timing(micPulseAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start();
+    }
+  }, [speechToText.state, micPulseAnim]);
 
   const startMutation = useMutation({
     mutationFn: () => startSpeakingConversation(scenarioId ?? ""),
@@ -150,6 +183,21 @@ export default function SpeakingConversationScreen() {
     turnMutation.mutate(text);
   };
 
+  const handleMicPress = () => {
+    if (micState === "listening") {
+      speechToText.stop();
+      setMicState("stopped");
+      return;
+    }
+    if (micState === "idle") {
+      setInput("");
+      speechToText.start();
+      setMicState("listening");
+    }
+  };
+
+  const isMicDisabled = turnMutation.isPending || speechToText.state === "listening" || !speechToText.isAvailable;
+
   if (startMutation.isPending || !session) {
     return (
       <View style={[s.center, { backgroundColor: c.background, paddingTop: insets.top }]}>
@@ -211,6 +259,14 @@ export default function SpeakingConversationScreen() {
           <TurnBubble key={turn.id} turn={turn} appendWord={appendWord} isSpeaking={speakingTurnId === turn.id} onSpeak={() => speakTurn(turn)} />
         ))}
 
+        {/* Pending turn indicator */}
+        {turnMutation.isPending && (
+          <View style={s.pendingRow}>
+            <View style={[s.pendingDot, { backgroundColor: speakingColor }]} />
+            <Text style={[s.pendingText, { color: c.mutedForeground }]}>Đang xử lý...</Text>
+          </View>
+        )}
+
         {errorText ? (
           <View style={[s.notice, { backgroundColor: c.warningTint, borderColor: c.warning }]}>
             <Text style={[s.noticeText, { color: c.foreground }]}>{errorText}</Text>
@@ -224,21 +280,71 @@ export default function SpeakingConversationScreen() {
 
       {!summary ? (
         <View style={[s.footer, { paddingBottom: insets.bottom + spacing.md, borderTopColor: c.borderLight, backgroundColor: c.surface }]}>
-          <TextInput
-            value={input}
-            onChangeText={setInput}
-            placeholder="Nhập câu trả lời hoặc transcript sau khi nói..."
-            placeholderTextColor={c.placeholder}
-            multiline
-            style={[s.input, { color: c.foreground, borderColor: c.border, backgroundColor: c.card }]}
-          />
-          <HapticTouchable
-            onPress={send}
-            disabled={input.trim().length === 0 || turnMutation.isPending}
-            style={[s.sendButton, { backgroundColor: speakingColor, opacity: input.trim().length === 0 ? 0.45 : 1 }]}
-          >
-            {turnMutation.isPending ? <ActivityIndicator color={c.foreground} /> : <Ionicons name="send" size={20} color={c.foreground} />}
-          </HapticTouchable>
+          {/* STT interim transcript */}
+          {speechToText.state === "listening" && (
+            <View style={[s.sttBlock, { backgroundColor: c.card, borderColor: c.border }]}>
+              <Text style={[s.sttLabel, { color: c.mutedForeground }]}>Đang nghe...</Text>
+              <Text style={[s.sttTranscript, { color: c.foreground }]} numberOfLines={2}>
+                {speechToText.transcript || "Nói vào micro..."}
+              </Text>
+              <View style={s.sttTimerRow}>
+                <Ionicons name="timer-outline" size={14} color={c.mutedForeground} />
+                <Text style={[s.sttTimer, { color: c.mutedForeground }]}>{speechToText.elapsed}s / {MAX_RECORD_SECONDS}s</Text>
+              </View>
+            </View>
+          )}
+
+          {/* Text input */}
+          <View style={s.inputRow}>
+            <TextInput
+              value={input}
+              onChangeText={setInput}
+              placeholder={speechToText.isAvailable ? "Nhập hoặc dùng micro để nói..." : "Nhập câu trả lời..."}
+              placeholderTextColor={c.placeholder}
+              multiline
+              style={[s.input, { color: c.foreground, borderColor: c.border, backgroundColor: c.card }]}
+            />
+            <HapticTouchable
+              onPress={send}
+              disabled={input.trim().length === 0 || turnMutation.isPending}
+              style={[s.sendButton, { backgroundColor: speakingColor, opacity: input.trim().length === 0 || turnMutation.isPending ? 0.45 : 1 }]}
+            >
+              {turnMutation.isPending ? <ActivityIndicator color={c.foreground} /> : <Ionicons name="send" size={20} color={c.foreground} />}
+            </HapticTouchable>
+          </View>
+
+          {/* Mic button */}
+          {speechToText.isAvailable && (
+            <View style={s.micRow}>
+              {speechToText.state === "listening" ? (
+                <Animated.View
+                  style={[
+                    s.micPulse,
+                    {
+                      opacity: micPulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.2, 0.6] }),
+                      transform: [{ scale: micPulseAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.3] }) }],
+                    },
+                  ]}
+                />
+              ) : null}
+              <DepthButton
+                onPress={handleMicPress}
+                disabled={isMicDisabled}
+                variant={speechToText.state === "listening" ? "destructive" : "secondary"}
+                size="sm"
+                style={s.micButton}
+              >
+                <Ionicons
+                  name={speechToText.state === "listening" ? "stop" : "mic"}
+                  size={18}
+                  color={speechToText.state === "listening" ? "#fff" : speakingColor}
+                />
+                <Text style={[s.micButtonText, { color: speechToText.state === "listening" ? "#fff" : speakingColor }]}>
+                  {speechToText.state === "listening" ? "Dừng" : "Nói"}
+                </Text>
+              </DepthButton>
+            </View>
+          )}
         </View>
       ) : (
         <View style={[s.doneFooter, { paddingBottom: insets.bottom + spacing.md, backgroundColor: c.surface, borderTopColor: c.borderLight }]}>
@@ -412,10 +518,23 @@ const s = StyleSheet.create({
   smallChipText: { fontSize: 11, fontFamily: fontFamily.semiBold },
   notice: { borderWidth: 1, borderRadius: radius.md, padding: spacing.md },
   noticeText: { fontSize: fontSize.sm, lineHeight: 20 },
-  footer: { flexDirection: "row", alignItems: "flex-end", gap: spacing.sm, paddingHorizontal: spacing.lg, paddingTop: spacing.md, borderTopWidth: 1 },
+  pendingRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs, paddingVertical: spacing.sm },
+  pendingDot: { width: 8, height: 8, borderRadius: 4 },
+  pendingText: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
+  footer: { gap: spacing.sm, paddingHorizontal: spacing.lg, paddingTop: spacing.md, borderTopWidth: 1 },
   doneFooter: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, borderTopWidth: 1 },
+  inputRow: { flexDirection: "row", alignItems: "flex-end", gap: spacing.sm },
   input: { flex: 1, maxHeight: 120, minHeight: 48, borderWidth: 2, borderRadius: radius.lg, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, fontSize: fontSize.sm, textAlignVertical: "top" },
   sendButton: { width: 48, height: 48, borderRadius: radius.full, alignItems: "center", justifyContent: "center" },
+  sttBlock: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.md, gap: spacing.xs },
+  sttLabel: { fontSize: 10, fontFamily: fontFamily.extraBold, letterSpacing: 1 },
+  sttTranscript: { fontSize: fontSize.sm, lineHeight: 21, fontFamily: fontFamily.medium },
+  sttTimerRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  sttTimer: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
+  micRow: { alignItems: "center", justifyContent: "center", paddingVertical: spacing.sm },
+  micPulse: { position: "absolute", width: 40, height: 40, borderRadius: 20, backgroundColor: c.destructiveTint ?? "#ff000020" },
+  micButton: { width: 100 },
+  micButtonText: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
   reviewCard: { gap: spacing.md, padding: spacing.lg },
   reviewTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold },
   reviewStats: { flexDirection: "row", gap: spacing.sm },
