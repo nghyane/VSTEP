@@ -29,7 +29,7 @@ class SubmitExamRequest extends FormRequest
             'writing_answers.*.word_count' => ['required_with:writing_answers', 'integer', 'min:0'],
             'speaking_answers' => ['nullable', 'array'],
             'speaking_answers.*.part_id' => ['required_with:speaking_answers', 'uuid'],
-            'speaking_answers.*.audio_url' => ['required_with:speaking_answers', 'url'],
+            'speaking_answers.*.audio_url' => ['required_with:speaking_answers', 'string', 'max:500'],
             'speaking_answers.*.duration_seconds' => ['required_with:speaking_answers', 'integer', 'min:1'],
         ];
     }
