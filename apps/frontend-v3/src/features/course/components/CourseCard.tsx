@@ -198,7 +198,7 @@ function EnrolledCard({ course, enrollment }: { course: Course; enrollment: Enro
 							href={course.livestream_url}
 							target="_blank"
 							rel="noreferrer"
-							className="rounded-(--radius-button) border-2 border-b-4 border-primary-dark bg-primary inline-flex flex-1 items-center justify-center gap-2 px-4 py-2.5 text-sm font-extrabold uppercase tracking-wider text-primary-foreground transition-all hover:brightness-110 active:translate-y-[2px] active:border-b-2"
+							className="btn btn-primary flex-1 text-sm"
 						>
 							<Icon name="play" size="xs" className="text-white" />
 							Vào Zoom
@@ -206,7 +206,7 @@ function EnrolledCard({ course, enrollment }: { course: Course; enrollment: Enro
 						<Link
 							to="/khoa-hoc/$courseId"
 							params={{ courseId: course.id }}
-							className="rounded-(--radius-button) border-2 border-b-4 border-border bg-surface inline-flex items-center justify-center px-4 py-2.5 text-sm font-extrabold uppercase tracking-wider text-foreground transition-all hover:border-primary/40 active:translate-y-[2px] active:border-b-2"
+							className="btn btn-secondary text-sm"
 						>
 							Chi tiết
 						</Link>
@@ -215,7 +215,7 @@ function EnrolledCard({ course, enrollment }: { course: Course; enrollment: Enro
 					<Link
 						to="/khoa-hoc/$courseId"
 						params={{ courseId: course.id }}
-						className="rounded-(--radius-button) border-2 border-b-4 border-primary-dark bg-primary inline-flex w-full items-center justify-center gap-2 px-4 py-2.5 text-sm font-extrabold uppercase tracking-wider text-primary-foreground transition-all hover:brightness-110 active:translate-y-[2px] active:border-b-2"
+						className="btn btn-primary w-full text-sm"
 					>
 						{status.active ? "Vào khóa học" : "Xem chi tiết"}
 					</Link>
