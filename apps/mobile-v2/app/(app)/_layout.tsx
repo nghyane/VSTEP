@@ -31,6 +31,8 @@ export default function AppLayout() {
       <Stack.Screen name="practice/writing/[promptId]" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="practice/speaking/index" />
       <Stack.Screen name="practice/speaking/[taskId]" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="practice/speaking/drill/[drillId]" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="practice/speaking/conversation/[scenarioId]" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="practice/index" />
       <Stack.Screen name="practice/foundation/index" />
       <Stack.Screen name="practice/grammar/index" />

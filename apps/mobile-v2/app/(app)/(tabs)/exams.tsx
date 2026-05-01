@@ -33,6 +33,15 @@ const SKILLS: { key: Skill; label: string }[] = [
   { key: "speaking", label: "Nói" },
 ];
 
+type StatusFilter = "all" | "not_started" | "in_progress" | "submitted";
+
+const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
+  { key: "all", label: "Tất cả" },
+  { key: "not_started", label: "Chưa làm" },
+  { key: "in_progress", label: "Đang làm" },
+  { key: "submitted", label: "Đã nộp" },
+];
+
 export default function ExamsScreen() {
   const c = useThemeColors();
   const router = useRouter();
@@ -40,6 +49,7 @@ export default function ExamsScreen() {
   const { data, isLoading } = useExams();
   const activeSession = useActiveExamSession();
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -51,9 +61,14 @@ export default function ExamsScreen() {
     }).start();
   }, []);
 
-  const exams = (data ?? []).filter((exam) =>
-    exam.title.toLowerCase().includes(search.toLowerCase()),
-  );
+  const exams = (data ?? []).filter((exam) => {
+    const matchesSearch = exam.title.toLowerCase().includes(search.toLowerCase());
+    if (!matchesSearch) return false;
+    if (statusFilter === "all") return true;
+    if (statusFilter === "not_started") return !exam.status && !exam.attemptCount;
+    if (statusFilter === "submitted") return exam.status === "submitted" || exam.status === "completed";
+    return exam.status === statusFilter;
+  });
 
   return (
     <ScrollView
@@ -91,6 +106,29 @@ export default function ExamsScreen() {
             </HapticTouchable>
           ) : null}
         </View>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+          {STATUS_FILTERS.map((filter) => {
+            const active = statusFilter === filter.key;
+            return (
+              <HapticTouchable
+                key={filter.key}
+                onPress={() => setStatusFilter(filter.key)}
+                style={[
+                  styles.filterChip,
+                  {
+                    backgroundColor: active ? c.primaryTint : c.surface,
+                    borderColor: active ? c.primary : c.border,
+                  },
+                ]}
+              >
+                <Text style={[styles.filterText, { color: active ? c.primaryDark : c.mutedForeground }]}>
+                  {filter.label}
+                </Text>
+              </HapticTouchable>
+            );
+          })}
+        </ScrollView>
       </Animated.View>
 
       {isLoading ? (
@@ -274,6 +312,9 @@ const styles = StyleSheet.create({
   activeTitle: { fontSize: fontSize.base, fontFamily: fontFamily.extraBold, marginTop: 2 },
   activeActions: { flexDirection: "row", justifyContent: "flex-end", gap: spacing.sm, marginTop: spacing.base },
   searchInput: { flex: 1, fontSize: fontSize.sm, fontFamily: fontFamily.regular },
+  filterRow: { gap: spacing.sm, paddingBottom: spacing.xl },
+  filterChip: { borderWidth: 2, borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  filterText: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
   loadingWrap: { paddingVertical: spacing["3xl"], alignItems: "center" },
   list: { gap: spacing.base },
   tagRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginBottom: spacing.xs },

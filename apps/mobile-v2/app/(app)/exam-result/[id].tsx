@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
 import { DepthButton } from "@/components/DepthButton";
+import { GradingErrorState, GradingLoadingState } from "@/components/GradingStates";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { MascotEmpty } from "@/components/MascotStates";
 import { useExamSessionResults, useGradingStatus } from "@/hooks/use-exam-results";
@@ -16,20 +17,12 @@ const GRADING_LABEL: Record<string, string> = {
   failed: "Lỗi chấm bài",
 };
 
-const GRADING_COLOR: Record<string, string> = {
-  pending: "#FF9B00",
-  processing: "#1CB0F6",
-  completed: "#58CC02",
-  failed: "#EA4335",
-};
-
 export default function ExamResultScreen() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { id: sessionId } = useLocalSearchParams<{ id: string }>();
-
-  const { data, isLoading, isError } = useExamSessionResults(sessionId ?? "");
+  const { data, isLoading, isError, isFetching, refetch } = useExamSessionResults(sessionId ?? "");
   const gradingStatus = useGradingStatus(sessionId ?? "");
 
   if (!sessionId) {
@@ -46,8 +39,7 @@ export default function ExamResultScreen() {
   if (isLoading && !data) {
     return (
       <View style={[s.center, { backgroundColor: c.background }]}>
-        <ActivityIndicator color={c.primary} size="large" />
-        <Text style={[s.loadingText, { color: c.mutedForeground }]}>Đang tải kết quả...</Text>
+        <GradingLoadingState label="Đang tải kết quả bài thi..." accentColor={c.primary} />
       </View>
     );
   }
@@ -55,10 +47,13 @@ export default function ExamResultScreen() {
   if (isError || !data) {
     return (
       <View style={[s.center, { backgroundColor: c.background }]}>
-        <MascotEmpty mascot="sad" title="Không thể tải kết quả" subtitle="Vui lòng thử lại sau." />
-        <DepthButton fullWidth onPress={() => router.replace("/(app)/(tabs)/exams")} style={{ marginTop: spacing.xl }}>
-          Về danh sách đề thi
-        </DepthButton>
+        <GradingErrorState
+          title="Không thể tải kết quả"
+          subtitle="Kết nối chưa ổn hoặc kết quả chưa sẵn sàng. Thử lại ngay hoặc quay về danh sách đề."
+          onRetry={() => void refetch()}
+          onBack={() => router.replace("/(app)/(tabs)/exams")}
+          retrying={isFetching}
+        />
       </View>
     );
   }
@@ -70,8 +65,11 @@ export default function ExamResultScreen() {
   const mcqPct = mcqTotal > 0 ? Math.round((mcqCorrect / mcqTotal) * 100) : 0;
 
   return (
-    <ScrollView style={[s.root, { backgroundColor: c.background }]} contentContainerStyle={[s.scroll, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing["3xl"] }]}>
-      {/* Header */}
+    <ScrollView
+      style={[s.root, { backgroundColor: c.background }]}
+      contentContainerStyle={[s.scroll, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing["3xl"] }]}
+      showsVerticalScrollIndicator={false}
+    >
       <HapticTouchable onPress={() => router.replace("/(app)/(tabs)/exams")} style={s.backRow}>
         <Ionicons name="arrow-back" size={20} color={c.foreground} />
         <Text style={[s.backText, { color: c.foreground }]}>Thi thử</Text>
@@ -79,7 +77,6 @@ export default function ExamResultScreen() {
 
       <Text style={[s.title, { color: c.foreground }]}>Kết quả bài thi</Text>
 
-      {/* MCQ Score Card */}
       <View style={[s.card, { backgroundColor: c.card, borderColor: c.border }]}>
         <View style={s.cardHeader}>
           <View style={[s.badge, { backgroundColor: c.primaryTint }]}>
@@ -89,13 +86,12 @@ export default function ExamResultScreen() {
         </View>
         <Text style={[s.bigScore, { color: c.primary }]}>{mcqCorrect}/{mcqTotal}</Text>
         <View style={[s.bar, { backgroundColor: c.muted }]}>
-          <View style={[s.fill, { backgroundColor: c.primary, width: `${mcqPct}%` as any }]} />
+          <View style={[s.fill, { backgroundColor: c.primary, width: `${mcqPct}%` }]} />
         </View>
         <Text style={[s.note, { color: c.subtle }]}>Câu trả lời đúng</Text>
       </View>
 
-      {/* Listening breakdown */}
-      {mcqListening.total > 0 && (
+      {mcqListening.total > 0 ? (
         <View style={[s.subCard, { backgroundColor: c.card, borderColor: c.border }]}>
           <View style={s.subCardRow}>
             <Ionicons name="headset" size={16} color={c.skillListening} />
@@ -103,10 +99,9 @@ export default function ExamResultScreen() {
             <Text style={[s.subCardValue, { color: c.mutedForeground }]}>{mcqListening.correct}/{mcqListening.total}</Text>
           </View>
         </View>
-      )}
+      ) : null}
 
-      {/* Reading breakdown */}
-      {mcqReading.total > 0 && (
+      {mcqReading.total > 0 ? (
         <View style={[s.subCard, { backgroundColor: c.card, borderColor: c.border }]}>
           <View style={s.subCardRow}>
             <Ionicons name="book" size={16} color={c.skillReading} />
@@ -114,17 +109,15 @@ export default function ExamResultScreen() {
             <Text style={[s.subCardValue, { color: c.mutedForeground }]}>{mcqReading.correct}/{mcqReading.total}</Text>
           </View>
         </View>
-      )}
+      ) : null}
 
-      {/* Writing grading status */}
-      {data.writingFeedback.length > 0 && (
-        <GradingCard label="Viết" icon="create" status={gradingStatus.writing} data={data.writingFeedback} c={c} />
-      )}
+      {data.writingFeedback.length > 0 ? (
+        <GradingCard skill="writing" label="Viết" icon="create" status={gradingStatus.writing} data={data.writingFeedback} />
+      ) : null}
 
-      {/* Speaking grading status */}
-      {data.speakingFeedback.length > 0 && (
-        <GradingCard label="Nói" icon="mic" status={gradingStatus.speaking} data={data.speakingFeedback} c={c} />
-      )}
+      {data.speakingFeedback.length > 0 ? (
+        <GradingCard skill="speaking" label="Nói" icon="mic" status={gradingStatus.speaking} data={data.speakingFeedback} />
+      ) : null}
 
       <DepthButton fullWidth onPress={() => router.replace("/(app)/(tabs)/exams")} style={{ marginTop: spacing.xl }}>
         Về danh sách đề thi
@@ -132,8 +125,6 @@ export default function ExamResultScreen() {
     </ScrollView>
   );
 }
-
-// ── Grading Status Card ──
 
 type McqDetailItem = NonNullable<ReturnType<typeof useExamSessionResults>["data"]>["mcqDetail"] extends (infer T)[] | null ? T : never;
 
@@ -145,20 +136,41 @@ function summarizeMcq(items: McqDetailItem[] | null | undefined, itemRefType: st
   };
 }
 
-function GradingCard({ label, icon, status, data, c }: { label: string; icon: string; status: string; data: { submissionId: string; overallBand: number | null }[]; c: ReturnType<typeof useThemeColors> }) {
-  const color = GRADING_COLOR[status] ?? c.subtle;
+function GradingCard({
+  skill,
+  label,
+  icon,
+  status,
+  data,
+}: {
+  skill: "writing" | "speaking";
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  status: string;
+  data: { submissionId: string; overallBand: number | null }[];
+}) {
+  const c = useThemeColors();
+  const router = useRouter();
+  const statusColor = status === "pending"
+    ? c.warning
+    : status === "processing"
+      ? c.info
+      : status === "completed"
+        ? c.success
+        : status === "failed"
+          ? c.destructive
+          : c.subtle;
+  const color = skill === "speaking" && status === "completed" ? c.coinDark : statusColor;
   const tint = `${color}20`;
   const labelStatus = GRADING_LABEL[status] ?? status;
-  const router = useRouter();
-
-  const allDone = data.every((d) => d.overallBand != null);
-  const anyDone = data.some((d) => d.overallBand != null);
+  const completedItems = data.filter((item) => item.overallBand != null);
+  const pendingCount = data.length - completedItems.length;
 
   return (
     <View style={[s.card, { backgroundColor: c.card, borderColor: c.border }]}>
       <View style={s.cardHeader}>
         <View style={[s.badge, { backgroundColor: tint }]}>
-          <Ionicons name={icon as any} size={18} color={color} />
+          <Ionicons name={icon} size={18} color={color} />
         </View>
         <Text style={[s.cardTitle, { color: c.foreground }]}>{label}</Text>
         <View style={[s.statusPill, { backgroundColor: tint }]}>
@@ -166,40 +178,44 @@ function GradingCard({ label, icon, status, data, c }: { label: string; icon: st
         </View>
       </View>
 
-      {allDone && anyDone && (
+      {completedItems.length > 0 ? (
         <View style={{ gap: spacing.sm }}>
-          {data.map((item) => (
-            <HapticTouchable key={item.submissionId} onPress={() => router.push(`/grading/${label.toLowerCase()}/${item.submissionId}` as any)} style={[s.resultRow, { borderColor: c.border }]}>
+          {completedItems.map((item) => (
+            <HapticTouchable
+              key={item.submissionId}
+              onPress={() => router.push(`/(app)/grading/${skill}/${item.submissionId}` as never)}
+              style={[s.resultRow, { borderColor: c.border }]}
+            >
               <Text style={[s.resultRowLabel, { color: c.foreground }]}>Bài {item.submissionId.slice(0, 8)}</Text>
               <Text style={[s.resultRowBand, { color }]}>{item.overallBand}</Text>
             </HapticTouchable>
           ))}
         </View>
-      )}
+      ) : null}
 
-      {!anyDone && (
-        <Text style={[s.note, { color: c.subtle }]}>
-          {status === "processing" ? "AI đang chấm bài..." : "Bài chờ chấm điểm"}
-        </Text>
-      )}
+      {pendingCount > 0 ? (
+        <View style={[s.pendingStrip, { backgroundColor: c.surfaceTint, borderColor: c.borderLight }]}>
+          <ActivityIndicator color={color} size="small" />
+          <Text style={[s.pendingStripText, { color: c.mutedForeground }]}>
+            {pendingCount} bài đang chấm, màn này sẽ tự cập nhật.
+          </Text>
+        </View>
+      ) : null}
     </View>
   );
 }
 
-// ── Styles ──
-
 const s = StyleSheet.create({
   root: { flex: 1 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center" },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: spacing.xl },
   scroll: { paddingHorizontal: spacing.xl, gap: spacing.lg },
   backRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   backText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   title: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold, textAlign: "center" },
-  loadingText: { fontSize: fontSize.sm, marginTop: spacing.md, fontFamily: fontFamily.medium },
   card: { borderWidth: 2, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   badge: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
-  cardTitle: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
+  cardTitle: { flex: 1, fontSize: fontSize.base, fontFamily: fontFamily.bold },
   bigScore: { fontSize: 48, fontFamily: fontFamily.extraBold, textAlign: "center" },
   bar: { width: "100%", height: 8, borderRadius: 4, overflow: "hidden" },
   fill: { height: "100%", borderRadius: 4 },
@@ -213,4 +229,6 @@ const s = StyleSheet.create({
   resultRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: spacing.sm, borderBottomWidth: 1 },
   resultRowLabel: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   resultRowBand: { fontSize: fontSize.base, fontFamily: fontFamily.extraBold },
+  pendingStrip: { flexDirection: "row", alignItems: "center", gap: spacing.sm, borderWidth: 1, borderRadius: radius.lg, padding: spacing.md },
+  pendingStripText: { flex: 1, fontSize: fontSize.xs, lineHeight: 18 },
 });

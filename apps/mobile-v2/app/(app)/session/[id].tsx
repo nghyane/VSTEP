@@ -541,6 +541,7 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
   const [uploading, setUploading] = useState(false);
   const [recError, setRecError] = useState<string | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
+  const [recordedSeconds, setRecordedSeconds] = useState(0);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startRef = useRef<number | null>(null);
   const accentColor = themeColors.light.skillSpeaking;
@@ -556,6 +557,7 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
     setIsPlaying(false);
     setRecError(null);
     setElapsedMs(0);
+    setRecordedSeconds(0);
     if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
   }, [partIdx]);
 
@@ -563,6 +565,12 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
   useEffect(() => () => {
     if (tickRef.current) clearInterval(tickRef.current);
   }, []);
+
+  useEffect(() => {
+    if (isRec && recording && elapsedMs >= part.speakingSeconds * 1000) {
+      void stopRec();
+    }
+  }, [elapsedMs, isRec, recording, part.speakingSeconds]);
 
   async function startRec() {
     setRecError(null);
@@ -580,7 +588,8 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
       startRef.current = Date.now();
       tickRef.current = setInterval(() => {
         if (!startRef.current) return;
-        setElapsedMs(Date.now() - startRef.current);
+        const nextElapsed = Date.now() - startRef.current;
+        setElapsedMs(nextElapsed);
       }, 200);
     } catch {
       setRecError("Không thể khởi tạo ghi âm.");
@@ -596,6 +605,7 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
       playsInSilentModeIOS: true,
     });
     const uri = recording.getURI();
+    const duration = Math.max(1, Math.round(elapsedMs / 1000));
     if (!uri) {
       setRecError("Ghi âm thất bại, không có file.");
       setIsRec(false);
@@ -603,6 +613,7 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
       return;
     }
     setAudioUri(uri);
+    setRecordedSeconds(duration);
     setIsRec(false);
     setRecording(null);
   }
@@ -633,7 +644,7 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
       setRecError("Tải lên thất bại. Vui lòng thử lại.");
       return;
     }
-    const duration = part.speakingSeconds;
+    const duration = recordedSeconds || Math.max(1, Math.round(elapsedMs / 1000));
     const answer: SpeakingAnswer = { partId: part.id, audioUrl: audioKey, durationSeconds: duration };
     onSetSpeakingAnswer(part.id, answer);
     onDone(part.id);
@@ -663,6 +674,7 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
     setAudioUri(null);
     setRecError(null);
     setElapsedMs(0);
+    setRecordedSeconds(0);
     onSetSpeakingAnswer(part.id, { partId: part.id, audioUrl: null, durationSeconds: 0 });
     done.delete(part.id);
   }
@@ -693,7 +705,7 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
                 {Math.floor(elapsedMs / 1000)}s / {part.speakingSeconds}s
               </Text>
             )}
-            <DepthButton onPress={isRec ? stopRec : startRec} disabled={isRec}>
+            <DepthButton onPress={isRec ? stopRec : startRec} disabled={uploading}>
               {isRec ? "Dừng ghi âm" : "Bắt đầu nói"}
             </DepthButton>
           </>
