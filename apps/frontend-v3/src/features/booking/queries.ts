@@ -3,6 +3,7 @@ import type { ApiResponse } from "#/lib/api"
 import type { BookingPageData, BookingSlot, BookingTeacher, SlotStatus } from "./types"
 
 const SESSION_MINUTES = 30
+export const BOOKING_COIN_COST = 50
 const HOURS_MORNING = [9, 10, 11]
 const HOURS_AFTERNOON = [14, 15, 16, 19, 20]
 const WEEKS_AHEAD = 4
