@@ -12,24 +12,14 @@ import {
   View,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMutation } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import * as Speech from "expo-speech";
 
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
 import { HapticTouchable } from "@/components/HapticTouchable";
-import {
-  endSpeakingConversation,
-  SpeakingConversationEndSummary,
-  SpeakingConversationSession,
-  SpeakingConversationTurn,
-  SpeakingConversationTurnFeedback,
-  startSpeakingConversation,
-  submitSpeakingConversationTurn,
-  useSpeakingConversationReview,
-} from "@/hooks/use-practice";
+import { useConversationSession } from "@/hooks/use-conversation-session";
+import { useSpeakingConversationReview } from "@/hooks/use-practice";
 import { useSpeechToText, type MicState } from "@/hooks/useSpeechToText";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
@@ -41,30 +31,24 @@ export default function SpeakingConversationScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
-  const startedRef = useRef(false);
-  const [session, setSession] = useState<SpeakingConversationSession | null>(null);
-  const [turns, setTurns] = useState<SpeakingConversationTurn[]>([]);
-  const [input, setInput] = useState("");
-  const [summary, setSummary] = useState<SpeakingConversationEndSummary | null>(null);
-  const [errorText, setErrorText] = useState<string | null>(null);
-  const [speakingTurnId, setSpeakingTurnId] = useState<string | null>(null);
-  const [micState, setMicState] = useState<MicState>("idle");
   const micPulseAnim = useRef(new Animated.Value(0)).current;
+
+  const conv = useConversationSession(scenarioId ?? "");
+  const review = useSpeakingConversationReview(conv.session?.sessionId ?? "", !!conv.summary);
+
+  const [micState, setMicState] = useState<MicState>("idle");
+  const [speakingTurnId, setSpeakingTurnId] = useState<string | null>(null);
 
   const speechToText = useSpeechToText({
     maxSeconds: MAX_RECORD_SECONDS,
     language: "en-US",
     onResult: (transcript) => {
-      setInput(transcript);
+      conv.setInput(transcript);
       setMicState("idle");
     },
     onEnd: () => setMicState("idle"),
     onError: () => setMicState("idle"),
   });
-
-  const review = useSpeakingConversationReview(session?.sessionId ?? "", !!summary);
-  const speakingColor = c.skillSpeaking;
-  const speakingText = c.coinDark;
 
   // Mic pulse animation
   useEffect(() => {
@@ -77,89 +61,36 @@ export default function SpeakingConversationScreen() {
       ).start();
     } else {
       micPulseAnim.setValue(0);
-      Animated.timing(micPulseAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start();
     }
   }, [speechToText.state, micPulseAnim]);
 
-  const startMutation = useMutation({
-    mutationFn: () => startSpeakingConversation(scenarioId ?? ""),
-    onSuccess: (res) => {
-      setSession(res);
-      setTurns(res.turns);
-      setErrorText(null);
-      const firstAi = res.turns.find((turn) => turn.role === "ai" || turn.role === "assistant");
-      if (firstAi) speakTurn(firstAi);
-    },
-    onError: () => setErrorText("Không thể bắt đầu hội thoại. Thử lại sau nhé."),
-  });
-
-  const turnMutation = useMutation({
-    mutationFn: (text: string) => {
-      if (!session) throw new Error("No conversation session");
-      return submitSpeakingConversationTurn(session.sessionId, text, 1);
-    },
-    onSuccess: (res) => {
-      setTurns((prev) => [...prev, res.userTurn, res.aiTurn]);
-      setInput("");
-      setErrorText(res.session.shouldEnd ? "Bạn đã đủ lượt mục tiêu. Có thể kết thúc để xem review." : null);
-      speakTurn(res.aiTurn);
-    },
-    onError: () => setErrorText("Tin nhắn chưa gửi được. Kiểm tra mạng rồi thử lại."),
-  });
-
-  const endMutation = useMutation({
-    mutationFn: () => {
-      if (!session) throw new Error("No conversation session");
-      return endSpeakingConversation(session.sessionId);
-    },
-    onSuccess: (res) => {
-      setSummary(res);
-      setErrorText(null);
-    },
-    onError: () => setErrorText("Chưa thể kết thúc phiên. Thử lại một lần nữa."),
-  });
-
-  useEffect(() => {
-    if (!scenarioId || startedRef.current) return;
-    startedRef.current = true;
-    startMutation.mutate();
-  }, [scenarioId, startMutation]);
-
-  useEffect(() => {
-    return () => {
-      Speech.stop();
-    };
-  }, []);
-
+  // Auto-scroll
   useEffect(() => {
     const handle = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
     return () => clearTimeout(handle);
-  }, [turns.length, summary]);
+  }, [conv.turns.length, conv.summary]);
 
   const progress = useMemo(() => {
-    if (!session) return "0/0";
-    const userTurns = turns.filter((turn) => turn.role === "user").length;
-    return `${userTurns}/${session.scenario.expectedTurns}`;
-  }, [session, turns]);
+    if (!conv.session) return "0/0";
+    const userTurns = conv.turns.filter((turn) => turn.role === "user").length;
+    return `${userTurns}/${conv.session.scenario.expectedTurns}`;
+  }, [conv.session, conv.turns]);
 
-  const appendWord = (word: string) => {
-    setInput((value) => (value.trim().length > 0 ? `${value.trim()} ${word}` : word));
-  };
-
-  const speakTurn = (turn: SpeakingConversationTurn) => {
-    Speech.stop();
-    setSpeakingTurnId(turn.id);
-    Speech.speak(turn.text, {
-      language: "en-US",
-      rate: 0.9,
-      onDone: () => setSpeakingTurnId(null),
-      onStopped: () => setSpeakingTurnId(null),
-      onError: () => setSpeakingTurnId(null),
-    });
+  const handleMicPress = () => {
+    if (micState === "listening") {
+      speechToText.stop();
+      setMicState("stopped");
+      return;
+    }
+    if (micState === "idle") {
+      conv.setInput("");
+      speechToText.start();
+      setMicState("listening");
+    }
   };
 
   const handleClose = () => {
-    if (summary) {
+    if (conv.summary) {
       router.back();
       return;
     }
@@ -171,44 +102,23 @@ export default function SpeakingConversationScreen() {
         {
           text: "Kết thúc",
           style: "destructive",
-          onPress: () => endMutation.mutate(undefined, { onSettled: () => router.back() }),
+          onPress: () => conv.endSession(),
         },
       ],
     );
   };
 
-  const send = () => {
-    const text = input.trim();
-    if (!text || turnMutation.isPending || summary) return;
-    turnMutation.mutate(text);
-  };
-
-  const handleMicPress = () => {
-    if (micState === "listening") {
-      speechToText.stop();
-      setMicState("stopped");
-      return;
-    }
-    if (micState === "idle") {
-      setInput("");
-      speechToText.start();
-      setMicState("listening");
-    }
-  };
-
-  const isMicDisabled = turnMutation.isPending || speechToText.state === "listening" || !speechToText.isAvailable;
-
-  if (startMutation.isPending || !session) {
+  if (conv.isStarting || !conv.session) {
     return (
-      <View style={[s.center, { backgroundColor: c.background, paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color={speakingColor} />
+      <View style={[s.center, { backgroundColor: c.background }]}>
+        <ActivityIndicator size="large" color={c.skillSpeaking} />
         <Text style={[s.loadingText, { color: c.mutedForeground }]}>Đang mở phòng roleplay...</Text>
-        {errorText ? <Text style={[s.errorText, { color: c.destructive }]}>{errorText}</Text> : null}
-        {startMutation.isError ? (
-          <DepthButton onPress={() => startMutation.mutate()} style={{ minWidth: 140, backgroundColor: speakingColor, borderColor: speakingColor }}>
+        {conv.errorText && <Text style={[s.errorText, { color: c.destructive }]}>{conv.errorText}</Text>}
+        {conv.isStartError && (
+          <DepthButton onPress={() => conv.retryStart()} style={{ minWidth: 140, backgroundColor: c.skillSpeaking, borderColor: c.skillSpeaking }}>
             Thử lại
           </DepthButton>
-        ) : null}
+        )}
       </View>
     );
   }
@@ -218,20 +128,20 @@ export default function SpeakingConversationScreen() {
       style={[s.root, { backgroundColor: c.background }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={[s.topBar, { paddingTop: insets.top + spacing.md, borderBottomColor: c.borderLight }]}>
+      <View style={[s.topBar, { borderBottomColor: c.borderLight }]}>
         <HapticTouchable onPress={handleClose} style={s.iconButton}>
           <Ionicons name="close" size={22} color={c.foreground} />
         </HapticTouchable>
         <View style={s.topCopy}>
-          <Text style={[s.topTitle, { color: c.foreground }]} numberOfLines={1}>{session.scenario.title}</Text>
-          <Text style={[s.topSub, { color: c.mutedForeground }]}>{session.scenario.characterName} · {progress} lượt</Text>
+          <Text style={[s.topTitle, { color: c.foreground }]} numberOfLines={1}>{conv.session.scenario.title}</Text>
+          <Text style={[s.topSub, { color: c.mutedForeground }]}>{conv.session.scenario.characterName} · {progress} lượt</Text>
         </View>
         <HapticTouchable
-          disabled={endMutation.isPending || !!summary}
-          onPress={() => endMutation.mutate()}
-          style={[s.endButton, { backgroundColor: c.coinTint, opacity: summary ? 0.5 : 1 }]}
+          disabled={conv.isEnding || !!conv.summary}
+          onPress={() => conv.endSession()}
+          style={[s.endButton, { backgroundColor: c.coinTint, opacity: conv.summary ? 0.5 : 1 }]}
         >
-          <Text style={[s.endText, { color: speakingText }]}>{endMutation.isPending ? "..." : "End"}</Text>
+          <Text style={[s.endText, { color: c.coinDark }]}>{conv.isEnding ? "..." : "End"}</Text>
         </HapticTouchable>
       </View>
 
@@ -242,45 +152,41 @@ export default function SpeakingConversationScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <DepthCard style={s.scenarioCard}>
-          <Text style={[s.scenarioLabel, { color: speakingText }]}>AI ROLEPLAY</Text>
-          <Text style={[s.scenarioTitle, { color: c.foreground }]}>{session.scenario.description ?? "Phản xạ nhanh bằng tiếng Anh với AI."}</Text>
-          {session.scenario.targetVocab.length > 0 ? (
+          <Text style={[s.scenarioLabel, { color: c.coinDark }]}>AI ROLEPLAY</Text>
+          <Text style={[s.scenarioTitle, { color: c.foreground }]}>{conv.session.scenario.description ?? "Phản xạ nhanh bằng tiếng Anh với AI."}</Text>
+          {conv.session.scenario.targetVocab.length > 0 && (
             <View style={s.chipRow}>
-              {session.scenario.targetVocab.slice(0, 6).map((word) => (
-                <HapticTouchable key={word} onPress={() => appendWord(word)} style={[s.vocabChip, { backgroundColor: c.coinTint }]}>
-                  <Text style={[s.vocabText, { color: speakingText }]}>{word}</Text>
+              {conv.session.scenario.targetVocab.slice(0, 6).map((word) => (
+                <HapticTouchable key={word} onPress={() => conv.appendWord(word)} style={[s.vocabChip, { backgroundColor: c.coinTint }]}>
+                  <Text style={[s.vocabText, { color: c.coinDark }]}>{word}</Text>
                 </HapticTouchable>
               ))}
             </View>
-          ) : null}
+          )}
         </DepthCard>
 
-        {turns.map((turn) => (
-          <TurnBubble key={turn.id} turn={turn} appendWord={appendWord} isSpeaking={speakingTurnId === turn.id} onSpeak={() => speakTurn(turn)} />
+        {conv.turns.map((turn) => (
+          <TurnBubble key={turn.id} turn={turn} appendWord={conv.appendWord} isSpeaking={speakingTurnId === turn.id} onSpeak={() => conv.speakTurn(turn)} />
         ))}
 
-        {/* Pending turn indicator */}
-        {turnMutation.isPending && (
+        {conv.isSubmitting && (
           <View style={s.pendingRow}>
-            <View style={[s.pendingDot, { backgroundColor: speakingColor }]} />
+            <View style={[s.pendingDot, { backgroundColor: c.skillSpeaking }]} />
             <Text style={[s.pendingText, { color: c.mutedForeground }]}>Đang xử lý...</Text>
           </View>
         )}
 
-        {errorText ? (
+        {conv.errorText && !conv.isStarting && (
           <View style={[s.notice, { backgroundColor: c.warningTint, borderColor: c.warning }]}>
-            <Text style={[s.noticeText, { color: c.foreground }]}>{errorText}</Text>
+            <Text style={[s.noticeText, { color: c.foreground }]}>{conv.errorText}</Text>
           </View>
-        ) : null}
+        )}
 
-        {summary ? (
-          <ReviewBlock summary={summary} review={review.data ?? null} loading={review.isLoading} />
-        ) : null}
+        {conv.summary && <ReviewBlock summary={conv.summary} review={review.data ?? null} loading={review.isLoading} c={c} />}
       </ScrollView>
 
-      {!summary ? (
+      {!conv.summary ? (
         <View style={[s.footer, { paddingBottom: insets.bottom + spacing.md, borderTopColor: c.borderLight, backgroundColor: c.surface }]}>
-          {/* STT interim transcript */}
           {speechToText.state === "listening" && (
             <View style={[s.sttBlock, { backgroundColor: c.card, borderColor: c.border }]}>
               <Text style={[s.sttLabel, { color: c.mutedForeground }]}>Đang nghe...</Text>
@@ -294,26 +200,24 @@ export default function SpeakingConversationScreen() {
             </View>
           )}
 
-          {/* Text input */}
           <View style={s.inputRow}>
             <TextInput
-              value={input}
-              onChangeText={setInput}
+              value={conv.input}
+              onChangeText={conv.setInput}
               placeholder={speechToText.isAvailable ? "Nhập hoặc dùng micro để nói..." : "Nhập câu trả lời..."}
               placeholderTextColor={c.placeholder}
               multiline
               style={[s.input, { color: c.foreground, borderColor: c.border, backgroundColor: c.card }]}
             />
             <HapticTouchable
-              onPress={send}
-              disabled={input.trim().length === 0 || turnMutation.isPending}
-              style={[s.sendButton, { backgroundColor: speakingColor, opacity: input.trim().length === 0 || turnMutation.isPending ? 0.45 : 1 }]}
+              onPress={conv.sendText}
+              disabled={conv.input.trim().length === 0 || conv.isSubmitting}
+              style={[s.sendButton, { backgroundColor: c.skillSpeaking, opacity: conv.input.trim().length === 0 || conv.isSubmitting ? 0.45 : 1 }]}
             >
-              {turnMutation.isPending ? <ActivityIndicator color={c.foreground} /> : <Ionicons name="send" size={20} color={c.foreground} />}
+              {conv.isSubmitting ? <ActivityIndicator color={c.foreground} /> : <Ionicons name="send" size={20} color={c.foreground} />}
             </HapticTouchable>
           </View>
 
-          {/* Mic button */}
           {speechToText.isAvailable && (
             <View style={s.micRow}>
               {speechToText.state === "listening" ? (
@@ -329,7 +233,7 @@ export default function SpeakingConversationScreen() {
               ) : null}
               <DepthButton
                 onPress={handleMicPress}
-                disabled={isMicDisabled}
+                disabled={!speechToText.isAvailable || speechToText.state === "listening"}
                 variant={speechToText.state === "listening" ? "destructive" : "secondary"}
                 size="sm"
                 style={s.micButton}
@@ -337,9 +241,9 @@ export default function SpeakingConversationScreen() {
                 <Ionicons
                   name={speechToText.state === "listening" ? "stop" : "mic"}
                   size={18}
-                  color={speechToText.state === "listening" ? "#fff" : speakingColor}
+                  color={speechToText.state === "listening" ? "#fff" : c.skillSpeaking}
                 />
-                <Text style={[s.micButtonText, { color: speechToText.state === "listening" ? "#fff" : speakingColor }]}>
+                <Text style={[s.micButtonText, { color: speechToText.state === "listening" ? "#fff" : c.skillSpeaking }]}>
                   {speechToText.state === "listening" ? "Dừng" : "Nói"}
                 </Text>
               </DepthButton>
@@ -348,7 +252,7 @@ export default function SpeakingConversationScreen() {
         </View>
       ) : (
         <View style={[s.doneFooter, { paddingBottom: insets.bottom + spacing.md, backgroundColor: c.surface, borderTopColor: c.borderLight }]}>
-          <DepthButton fullWidth onPress={() => router.back()} style={{ backgroundColor: speakingColor, borderColor: speakingColor }}>
+          <DepthButton fullWidth onPress={() => router.back()} style={{ backgroundColor: c.skillSpeaking, borderColor: c.skillSpeaking }}>
             Quay lại Speaking
           </DepthButton>
         </View>
@@ -363,7 +267,7 @@ function TurnBubble({
   isSpeaking,
   onSpeak,
 }: {
-  turn: SpeakingConversationTurn;
+  turn: { id: string; role: string; text: string; feedback: unknown; suggestedWords: string[] };
   appendWord: (word: string) => void;
   isSpeaking: boolean;
   onSpeak: () => void;
@@ -390,7 +294,7 @@ function TurnBubble({
           ) : null}
         </View>
         <Text style={[s.bubbleText, { color: c.foreground }]}>{turn.text}</Text>
-        {turn.feedback ? <TurnFeedback feedback={turn.feedback} /> : null}
+        {turn.feedback ? <TurnFeedback feedback={turn.feedback as { vocabCheck?: { used: boolean }[]; wordCount?: { used: number; target: number }; grammarOk: boolean | null; better: string | null }} /> : null}
         {turn.suggestedWords.length > 0 ? (
           <View style={s.chipRow}>
             {turn.suggestedWords.slice(0, 4).map((word) => (
@@ -405,7 +309,7 @@ function TurnBubble({
   );
 }
 
-function TurnFeedback({ feedback }: { feedback: SpeakingConversationTurnFeedback }) {
+function TurnFeedback({ feedback }: { feedback: { vocabCheck?: { used: boolean }[]; wordCount?: { used: number; target: number }; grammarOk: boolean | null; better: string | null } }) {
   const c = useThemeColors();
   const used = feedback.vocabCheck?.filter((item) => item.used).length ?? feedback.wordCount?.used ?? 0;
   const target = feedback.vocabCheck?.length ?? feedback.wordCount?.target ?? 0;
@@ -428,28 +332,29 @@ function ReviewBlock({
   summary,
   review,
   loading,
+  c,
 }: {
-  summary: SpeakingConversationEndSummary;
-  review: NonNullable<ReturnType<typeof useSpeakingConversationReview>["data"]> | null;
+  summary: { userTurnCount: number; vocabUsedPct: number; grammarOkPct: number };
+  review: { strengths: string[]; improvements: string[]; correctedSentences: { original: string; corrected: string; explanation: string }[]; tip: string | null } | null;
   loading: boolean;
+  c: ReturnType<typeof useThemeColors>;
 }) {
-  const c = useThemeColors();
   return (
     <DepthCard style={s.reviewCard}>
       <Text style={[s.reviewTitle, { color: c.foreground }]}>Review phiên nói</Text>
       <View style={s.reviewStats}>
-        <Stat label="Lượt" value={String(summary.userTurnCount)} />
-        <Stat label="Từ vựng" value={`${summary.vocabUsedPct}%`} />
-        <Stat label="Grammar" value={`${summary.grammarOkPct}%`} />
+        <Stat label="Lượt" value={String(summary.userTurnCount)} c={c} />
+        <Stat label="Từ vựng" value={`${summary.vocabUsedPct}%`} c={c} />
+        <Stat label="Grammar" value={`${summary.grammarOkPct}%`} c={c} />
       </View>
       {loading ? <ActivityIndicator color={c.skillSpeaking} /> : null}
-      {review?.strengths?.length ? <ReviewList title="Điểm tốt" items={review.strengths} /> : null}
-      {review?.improvements?.length ? <ReviewList title="Cần cải thiện" items={review.improvements} /> : null}
+      {review?.strengths?.length ? <ReviewList title="Điểm tốt" items={review.strengths} c={c} /> : null}
+      {review?.improvements?.length ? <ReviewList title="Cần cải thiện" items={review.improvements} c={c} /> : null}
       {review?.correctedSentences?.length ? (
         <View style={s.reviewSection}>
           <Text style={[s.reviewSectionTitle, { color: c.foreground }]}>Câu sửa nhanh</Text>
-          {review.correctedSentences.slice(0, 3).map((item) => (
-            <View key={`${item.original}-${item.corrected}`} style={[s.correction, { borderColor: c.border }]}>
+          {review.correctedSentences.slice(0, 3).map((item, i) => (
+            <View key={`${item.original}-${i}`} style={[s.correction, { borderColor: c.border }]}>
               <Text style={[s.correctionText, { color: c.mutedForeground }]}>{item.original}</Text>
               <Text style={[s.correctionText, { color: c.foreground }]}>{item.corrected}</Text>
             </View>
@@ -461,8 +366,7 @@ function ReviewBlock({
   );
 }
 
-function ReviewList({ title, items }: { title: string; items: string[] }) {
-  const c = useThemeColors();
+function ReviewList({ title, items, c }: { title: string; items: string[]; c: ReturnType<typeof useThemeColors> }) {
   return (
     <View style={s.reviewSection}>
       <Text style={[s.reviewSectionTitle, { color: c.foreground }]}>{title}</Text>
@@ -473,8 +377,7 @@ function ReviewList({ title, items }: { title: string; items: string[] }) {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
-  const c = useThemeColors();
+function Stat({ label, value, c }: { label: string; value: string; c: ReturnType<typeof useThemeColors> }) {
   return (
     <View style={[s.stat, { backgroundColor: c.coinTint }]}>
       <Text style={[s.statValue, { color: c.coinDark }]}>{value}</Text>
@@ -532,7 +435,7 @@ const s = StyleSheet.create({
   sttTimerRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   sttTimer: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
   micRow: { alignItems: "center", justifyContent: "center", paddingVertical: spacing.sm },
-  micPulse: { position: "absolute", width: 40, height: 40, borderRadius: 20, backgroundColor: c.destructiveTint ?? "#ff000020" },
+  micPulse: { position: "absolute", width: 40, height: 40, borderRadius: 20 },
   micButton: { width: 100 },
   micButtonText: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
   reviewCard: { gap: spacing.md, padding: spacing.lg },

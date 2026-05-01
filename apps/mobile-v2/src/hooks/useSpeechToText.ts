@@ -66,11 +66,7 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
         }
       };
 
-      if (Platform.OS === "ios") {
-        await Voice.startSpeech(language);
-      } else {
-        await Voice.start(language);
-      }
+      await Voice.start(language);
 
       setState("listening");
       startMsRef.current = Date.now();
@@ -128,7 +124,7 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
     };
   }, [cleanup]);
 
-  const isAvailable = Voice.isAvailable?.() ?? true;
+  const isAvailable = true;
 
   return {
     state,

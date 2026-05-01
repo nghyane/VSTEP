@@ -1,21 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator, Alert, BackHandler, KeyboardAvoidingView, Modal,
-  Platform, ScrollView, StyleSheet, Text, TextInput,
-  TouchableOpacity, View,
+  ActivityIndicator, Alert, BackHandler, KeyboardAvoidingView,
+  Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Audio } from "expo-av";
-import { resolveAssetUrl } from "@/lib/asset-url";
-import { presignUpload } from "@/hooks/use-practice";
 
-import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { AudioTestPlayer, MicTest } from "@/components/DeviceTestWidgets";
-import { HighlightablePassage } from "@/components/HighlightablePassage";
 import { SkillIcon } from "@/components/SkillIcon";
+import { ConfirmModal, ResultScreen } from "@/components/exam/ConfirmModal";
+import { ListeningPanel, ReadingPanel, WritingPanel } from "@/components/exam/ExamPanels";
+import { SpeakingPanel } from "@/components/exam/SpeakingPanel";
 import { useExam } from "@/hooks/use-exams";
 import {
   useExamSession, useExamSessionState, useExamTimer,
@@ -34,16 +32,11 @@ const SKILL_LABEL: Record<string, string> = {
   listening: "Nghe", reading: "Đọc", writing: "Viết", speaking: "Nói",
 };
 
-// ── Helpers ──
-
 function fmtTime(s: number) {
   const m = Math.floor(s / 60).toString().padStart(2, "0");
   const sec = (s % 60).toString().padStart(2, "0");
   return `${m}:${sec}`;
 }
-
-
-// ── Root screen ──
 
 export default function SessionScreen() {
   const { id, examId } = useLocalSearchParams<{ id: string; examId: string }>();
@@ -74,7 +67,15 @@ export default function SessionScreen() {
   }
 
   if (submitResult) {
-    return <ResultScreen result={submitResult} sessionId={sessionData.id} examTitle={examDetail.exam.title} c={c} insets={insets} />;
+    return (
+      <ResultScreen
+        result={submitResult}
+        sessionId={sessionData.id}
+        examTitle={examDetail.exam.title}
+        onGoToResult={() => router.replace(`/(app)/exam-result/${sessionData.id}`)}
+        onGoToExams={() => router.replace("/(app)/(tabs)/exams")}
+      />
+    );
   }
 
   return (
@@ -89,14 +90,28 @@ export default function SessionScreen() {
   );
 }
 
-// ── ExamRoom ──
+interface ExamRoomProps {
+  session: { id: string; serverDeadlineAt: string; selectedSkills: string[] };
+  examDetail: { exam: { title: string }; version: { listeningSections: unknown[]; readingPassages: unknown[]; writingTasks: unknown[]; speakingParts: unknown[] } };
+  onSubmitted: (result: SubmitSessionResult) => void;
+  c: ReturnType<typeof useThemeColors>;
+  insets: { top: number; bottom: number; left: number; right: number };
+  router: ReturnType<typeof useRouter>;
+}
 
-function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: any) {
+function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: ExamRoomProps) {
   const { version, exam } = examDetail;
-  const listeningItems: ExamVersionMcqItem[] = version.listeningSections.flatMap((s: any) => s.items);
-  const readingItems: ExamVersionMcqItem[] = version.readingPassages.flatMap((p: any) => p.items);
+  const listeningItems: ExamVersionMcqItem[] = (version.listeningSections as { items: ExamVersionMcqItem[] }[]).flatMap((s) => s.items);
+  const readingItems: ExamVersionMcqItem[] = (version.readingPassages as { items: ExamVersionMcqItem[] }[]).flatMap((p) => p.items);
 
-  const es = useExamSessionState(session, listeningItems, readingItems, version.writingTasks, version.speakingParts, onSubmitted);
+  const es = useExamSessionState(
+    session as Parameters<typeof useExamSessionState>[0],
+    listeningItems,
+    readingItems,
+    version.writingTasks as Parameters<typeof useExamSessionState>[3],
+    version.speakingParts as Parameters<typeof useExamSessionState>[4],
+    onSubmitted,
+  );
   const remaining = useExamTimer(session.serverDeadlineAt);
   const [speakingBusy, setSpeakingBusy] = useState(false);
 
@@ -127,7 +142,6 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: any) 
     ]);
   }, [guardSpeakingBusy, guardedSubmit]);
 
-  // Auto-submit khi hết giờ
   const autoSubmitted = useRef(false);
   useEffect(() => {
     if (remaining === 0 && !autoSubmitted.current && es.state.phase === "active" && !speakingBusy) {
@@ -136,7 +150,6 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: any) 
     }
   }, [remaining, es.state.phase, speakingBusy, guardedSubmit]);
 
-  // Back intercept
   useEffect(() => {
     if (es.state.phase !== "active") return;
     const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
@@ -166,7 +179,6 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: any) 
 
   return (
     <View style={[s.root, { backgroundColor: c.background }]}>
-      {/* Top bar */}
       <View style={[s.topBar, { paddingTop: insets.top + spacing.sm, borderBottomColor: c.borderLight }]}>
         <HapticTouchable
           style={[s.timerPill, { backgroundColor: timerBg }]}
@@ -188,20 +200,38 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: any) 
         </HapticTouchable>
       </View>
 
-      {/* Skill panel */}
       <View style={{ flex: 1 }}>
         {es.currentSkill === "listening" && (
-          <ListeningPanel sections={version.listeningSections} sessionId={session.id} answers={es.state.mcqAnswers} onAnswer={es.answerMcq} c={c} insets={insets} />
+          <ListeningPanel
+            sections={version.listeningSections as Parameters<typeof ListeningPanel>[0]["sections"]}
+            sessionId={session.id}
+            answers={es.state.mcqAnswers}
+            onAnswer={es.answerMcq}
+            c={c}
+            insets={insets}
+          />
         )}
         {es.currentSkill === "reading" && (
-          <ReadingPanel passages={version.readingPassages} answers={es.state.mcqAnswers} onAnswer={es.answerMcq} c={c} insets={insets} />
+          <ReadingPanel
+            passages={version.readingPassages as Parameters<typeof ReadingPanel>[0]["passages"]}
+            answers={es.state.mcqAnswers}
+            onAnswer={es.answerMcq}
+            c={c}
+            insets={insets}
+          />
         )}
         {es.currentSkill === "writing" && (
-          <WritingPanel tasks={version.writingTasks} answers={es.state.writingAnswers} onAnswer={es.answerWriting} c={c} insets={insets} />
+          <WritingPanel
+            tasks={version.writingTasks as Parameters<typeof WritingPanel>[0]["tasks"]}
+            answers={es.state.writingAnswers}
+            onAnswer={es.answerWriting}
+            c={c}
+            insets={insets}
+          />
         )}
         {es.currentSkill === "speaking" && (
           <SpeakingPanel
-            parts={version.speakingParts}
+            parts={version.speakingParts as Parameters<typeof SpeakingPanel>[0]["parts"]}
             done={es.state.speakingDone}
             onDone={es.markSpeakingDone}
             onSetSpeakingAnswer={es.setSpeakingAnswer}
@@ -213,7 +243,6 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: any) 
         )}
       </View>
 
-      {/* Bottom action bar */}
       <View style={[s.bottomBar, { paddingBottom: insets.bottom + spacing.sm, borderTopColor: c.borderLight }]}>
         <View style={s.skillIndicator}>
           <Text style={[s.skillLabel, { color: SKILL_COLOR[es.currentSkill] }]}>
@@ -238,7 +267,6 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: any) 
         )}
       </View>
 
-      {/* Confirm submit dialog */}
       <ConfirmModal
         visible={es.state.confirmSubmit}
         title="Nộp bài?"
@@ -247,10 +275,8 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: any) 
         confirmLabel={es.isSubmitting ? "Đang nộp..." : "Nộp bài"}
         onConfirm={guardedSubmit}
         onCancel={es.hideConfirmSubmit}
-        c={c}
       />
 
-      {/* Confirm next skill dialog */}
       <ConfirmModal
         visible={es.state.confirmNextSkill}
         title={`Chuyển sang ${es.nextSkill ? SKILL_LABEL[es.nextSkill] : "phần tiếp"}?`}
@@ -261,31 +287,41 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: any) 
           es.nextSkillAction();
         }}
         onCancel={es.hideConfirmNext}
-        c={c}
       />
     </View>
   );
 }
 
-// ── Device Check ──
+interface DeviceCheckProps {
+  exam: { title: string };
+  version: {
+    listeningSections: unknown[];
+    readingPassages: unknown[];
+    writingTasks: unknown[];
+    speakingParts: unknown[];
+  };
+  activeSkills: string[];
+  onStart: () => void;
+  c: ReturnType<typeof useThemeColors>;
+  insets: { top: number; bottom: number };
+}
 
-function DeviceCheck({ exam, version, activeSkills, onStart, c, insets }: any) {
+function DeviceCheck({ exam, version, activeSkills, onStart, c, insets }: DeviceCheckProps) {
   const hasListening = activeSkills.includes("listening");
   const hasSpeaking = activeSkills.includes("speaking");
   const skillByKey: Record<string, { label: string; minutes: number }> = {
-    listening: { label: "Nghe", minutes: version.listeningSections.reduce((a: number, s: any) => a + s.durationMinutes, 0) },
-    reading: { label: "Đọc", minutes: version.readingPassages.reduce((a: number, p: any) => a + p.durationMinutes, 0) },
-    writing: { label: "Viết", minutes: version.writingTasks.reduce((a: number, t: any) => a + t.durationMinutes, 0) },
-    speaking: { label: "Nói", minutes: version.speakingParts.reduce((a: number, p: any) => a + p.durationMinutes, 0) },
+    listening: { label: "Nghe", minutes: (version.listeningSections as { durationMinutes: number }[]).reduce((a, s) => a + s.durationMinutes, 0) },
+    reading: { label: "Đọc", minutes: (version.readingPassages as { durationMinutes: number }[]).reduce((a, p) => a + p.durationMinutes, 0) },
+    writing: { label: "Viết", minutes: (version.writingTasks as { durationMinutes: number }[]).reduce((a, t) => a + t.durationMinutes, 0) },
+    speaking: { label: "Nói", minutes: (version.speakingParts as { durationMinutes: number }[]).reduce((a, p) => a + p.durationMinutes, 0) },
   };
-  const totalMinutes = activeSkills.reduce((a: number, sk: string) => a + (skillByKey[sk]?.minutes ?? 0), 0);
+  const totalMinutes = activeSkills.reduce((a, sk) => a + (skillByKey[sk]?.minutes ?? 0), 0);
 
   return (
     <ScrollView style={[s.root, { backgroundColor: c.background }]} contentContainerStyle={[s.scroll, { paddingTop: insets.top + spacing.xl }]}>
       <Text style={[s.dcTitle, { color: c.foreground }]}>{exam.title}</Text>
       <Text style={[s.dcSub, { color: c.mutedForeground }]}>Kiểm tra thiết bị trước khi bắt đầu</Text>
 
-      {/* Card 1: Exam structure */}
       <View style={[s.dcCard, { backgroundColor: c.card, borderColor: c.border }]}>
         <View style={s.dcCardHeader}>
           <View style={[s.dcNumBadge, { backgroundColor: c.primary }]}>
@@ -293,7 +329,7 @@ function DeviceCheck({ exam, version, activeSkills, onStart, c, insets }: any) {
           </View>
           <Text style={[s.dcCardTitle, { color: c.foreground }]}>Cấu trúc bài thi</Text>
         </View>
-        {activeSkills.map((sk: string, i: number) => (
+        {activeSkills.map((sk, i) => (
           <View key={sk} style={[s.dcSkillRow, i > 0 && { borderTopWidth: 1, borderTopColor: c.borderLight }]}>
             <View style={[s.dcSkillDot, { backgroundColor: c.muted }]}>
               <Text style={[s.dcSkillDotText, { color: c.mutedForeground }]}>{i + 1}</Text>
@@ -311,7 +347,6 @@ function DeviceCheck({ exam, version, activeSkills, onStart, c, insets }: any) {
         </View>
       </View>
 
-      {/* Card 2: Audio & Mic check */}
       {(hasListening || hasSpeaking) && (
         <View style={[s.dcCard, { backgroundColor: c.card, borderColor: c.border }]}>
           <View style={s.dcCardHeader}>
@@ -351,7 +386,6 @@ function DeviceCheck({ exam, version, activeSkills, onStart, c, insets }: any) {
         </View>
       )}
 
-      {/* Card 3: Notes */}
       <View style={[s.dcCard, { backgroundColor: c.card, borderColor: c.border }]}>
         <View style={s.dcCardHeader}>
           <View style={[s.dcNumBadge, { backgroundColor: c.primary }]}>
@@ -379,523 +413,19 @@ function DeviceCheck({ exam, version, activeSkills, onStart, c, insets }: any) {
   );
 }
 
-// ── Listening Panel ──
-
-function ListeningPanel({ sections, sessionId, answers, onAnswer, c, insets }: any) {
-  const [sectionIdx, setSectionIdx] = useState(0);
-  const section = sections[sectionIdx];
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [playing, setPlaying] = useState(false);
-  const [audioError, setAudioError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!section?.audioUrl) return;
-    setAudioError(null);
-    const audioUrl = resolveAssetUrl(section.audioUrl);
-    let snd: Audio.Sound | null = null;
-    (async () => {
-      try {
-        await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-        const { sound: loaded } = await Audio.Sound.createAsync(
-          { uri: audioUrl },
-          { shouldPlay: false },
-          (st) => {
-            if (st.isLoaded) setPlaying(st.isPlaying);
-          }
-        );
-        snd = loaded;
-        setSound(loaded);
-      } catch (e: any) {
-        setSound(null);
-        setPlaying(false);
-        setAudioError(`Không tải được audio: ${e?.message ?? e}`);
-      }
-    })();
-    return () => { snd?.unloadAsync().catch(() => undefined); };
-  }, [section?.audioUrl]);
-
-  async function togglePlay() {
-    if (!sound) return;
-    try {
-      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-      if (playing) await sound.pauseAsync(); else await sound.playAsync();
-    } catch (e: any) {
-      setPlaying(false);
-      setAudioError(`Không phát được audio: ${e?.message ?? e}`);
-    }
-  }
-
-  const color = themeColors.light.skillListening;
-
-  return (
-    <ScrollView contentContainerStyle={[s.panelScroll, { paddingBottom: insets.bottom + 80 }]}>
-      {sections.length > 1 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.sectionTabs}>
-          {sections.map((sec: any, i: number) => (
-            <TouchableOpacity key={sec.id} onPress={() => setSectionIdx(i)} style={[s.sectionTab, { borderBottomColor: i === sectionIdx ? color : "transparent" }]}>
-              <Text style={[s.sectionTabText, { color: i === sectionIdx ? color : c.mutedForeground }]}>Part {sec.part}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
-      <View style={[s.audioCard, { backgroundColor: c.card, borderColor: c.border }]}>
-        <Text style={[s.audioPartLabel, { color }]}>Part {section.part} · {section.partTitle}</Text>
-        <TouchableOpacity onPress={togglePlay} disabled={!sound || !!audioError} style={[s.playBtn, { backgroundColor: audioError ? c.mutedForeground : color }]}>
-          <Ionicons name={playing ? "pause" : "play"} size={22} color="#fff" />
-          <Text style={s.playBtnText}>{playing ? "Tạm dừng" : "Phát audio"}</Text>
-        </TouchableOpacity>
-        {audioError && <Text style={[s.audioError, { color: c.destructive }]}>{audioError}</Text>}
-      </View>
-      {section.items.map((item: ExamVersionMcqItem, qi: number) => (
-        <McqCard key={item.id} item={item} index={qi} selected={answers.get(item.id) ?? null} onSelect={(idx: number) => onAnswer(item.id, idx)} color={color} c={c} />
-      ))}
-    </ScrollView>
-  );
-}
-
-// ── Reading Panel ──
-
-function ReadingPanel({ passages, answers, onAnswer, c, insets }: any) {
-  const [passageIdx, setPassageIdx] = useState(0);
-  const [showPassage, setShowPassage] = useState(true);
-  const passage = passages[passageIdx];
-  const color = themeColors.light.skillReading;
-
-  return (
-    <View style={{ flex: 1 }}>
-      {passages.length > 1 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.sectionTabs}>
-          {passages.map((p: any, i: number) => (
-            <TouchableOpacity key={p.id} onPress={() => setPassageIdx(i)} style={[s.sectionTab, { borderBottomColor: i === passageIdx ? color : "transparent" }]}>
-              <Text style={[s.sectionTabText, { color: i === passageIdx ? color : c.mutedForeground }]}>Part {p.part}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
-      <View style={[s.toggleRow, { borderBottomColor: c.borderLight }]}>
-        <TouchableOpacity style={[s.toggleBtn, showPassage && { borderBottomColor: color, borderBottomWidth: 2 }]} onPress={() => setShowPassage(true)}>
-          <Text style={[s.toggleText, { color: showPassage ? color : c.mutedForeground }]}>Đoạn văn</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[s.toggleBtn, !showPassage && { borderBottomColor: color, borderBottomWidth: 2 }]} onPress={() => setShowPassage(false)}>
-          <Text style={[s.toggleText, { color: !showPassage ? color : c.mutedForeground }]}>Câu hỏi</Text>
-        </TouchableOpacity>
-      </View>
-      <ScrollView contentContainerStyle={[s.panelScroll, { paddingBottom: insets.bottom + 80 }]}>
-        {showPassage ? (
-          <View style={[s.passageCard, { backgroundColor: c.card, borderColor: c.border }]}>
-            <Text style={[s.passageTitle, { color }]}>Part {passage.part} · {passage.title}</Text>
-            <HighlightablePassage text={passage.passage} passageId={passage.id} />
-          </View>
-        ) : (
-          passage.items.map((item: ExamVersionMcqItem, qi: number) => (
-            <McqCard key={item.id} item={item} index={qi} selected={answers.get(item.id) ?? null} onSelect={(idx: number) => onAnswer(item.id, idx)} color={color} c={c} />
-          ))
-        )}
-      </ScrollView>
-    </View>
-  );
-}
-
-// ── Writing Panel ──
-
-function WritingPanel({ tasks, answers, onAnswer, c, insets }: any) {
-  const [taskIdx, setTaskIdx] = useState(0);
-  const task = tasks[taskIdx];
-  const text = answers.get(task.id) ?? "";
-  const wc = text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
-  const inRange = wc >= task.minWords;
-  const color = themeColors.light.skillWriting;
-  return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      {tasks.length > 1 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.sectionTabs}>
-          {tasks.map((t: any, i: number) => (
-            <TouchableOpacity key={t.id} onPress={() => setTaskIdx(i)} style={[s.sectionTab, { borderBottomColor: i === taskIdx ? color : "transparent" }]}>
-              <Text style={[s.sectionTabText, { color: i === taskIdx ? color : c.mutedForeground }]}>Task {t.part}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
-      <ScrollView contentContainerStyle={[s.panelScroll, { paddingBottom: insets.bottom + 80 }]} keyboardShouldPersistTaps="handled">
-        <View style={[s.promptCard, { backgroundColor: c.card, borderColor: c.border }]}>
-          <Text style={[s.promptLabel, { color }]}>Task {task.part} · {task.taskType}</Text>
-          <Text style={[s.promptText, { color: c.foreground }]}>{task.prompt}</Text>
-          <Text style={[s.promptMeta, { color: c.subtle }]}>Tối thiểu {task.minWords} từ</Text>
-        </View>
-        <View style={[s.editorCard, { backgroundColor: c.card, borderColor: inRange ? color : c.border }]}>
-          <TextInput
-            style={[s.editor, { color: c.foreground }]}
-            value={text}
-            onChangeText={(v) => onAnswer(task.id, v)}
-            placeholder="Viết bài của bạn ở đây..."
-            placeholderTextColor={c.placeholder}
-            multiline
-            textAlignVertical="top"
-          />
-          <Text style={[s.wcBadge, { color: inRange ? color : c.subtle }]}>{wc} / {task.minWords}+ từ</Text>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
-  );
-}
-
-// ── Speaking Panel ──
-
-interface SpeakingAnswer {
-  partId: string;
-  audioUrl: string | null;
-  durationSeconds: number;
-}
-
-function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, onClearSpeakingAnswer, onBusyChange, c, insets }: {
-  parts: { id: string; part: number; type: string; speakingSeconds: number }[];
-  done: Set<string>;
-  onDone: (partId: string) => void;
-  onSetSpeakingAnswer: (partId: string, answer: SpeakingAnswer) => void;
-  onClearSpeakingAnswer: (partId: string) => void;
-  onBusyChange: (busy: boolean) => void;
-  c: ReturnType<typeof useThemeColors>;
-  insets: { top: number; bottom: number; left: number; right: number };
-}) {
-  const [partIdx, setPartIdx] = useState(0);
-  const part = parts[partIdx];
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
-  const [audioUri, setAudioUri] = useState<string | null>(null);
-  const [isRec, setIsRec] = useState(false);
-  const soundRef = useRef<Audio.Sound | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [recError, setRecError] = useState<string | null>(null);
-  const [elapsedMs, setElapsedMs] = useState(0);
-  const [recordedSeconds, setRecordedSeconds] = useState(0);
-  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const startRef = useRef<number | null>(null);
-  const accentColor = themeColors.light.skillSpeaking;
-  const accentDark = themeColors.light.skillSpeaking + "CC";
-  const isBusy = isRec || uploading;
-  const elapsedSeconds = Math.floor(elapsedMs / 1000);
-  const progressPct = Math.min(100, Math.round((elapsedSeconds / part.speakingSeconds) * 100));
-
-  useEffect(() => {
-    onBusyChange(isBusy);
-    return () => onBusyChange(false);
-  }, [isBusy, onBusyChange]);
-
-  // Reset playback state when switching parts
-  useEffect(() => {
-    setAudioUri(null);
-    setIsRec(false);
-    setRecording(null);
-    soundRef.current?.unloadAsync().catch(() => undefined);
-    soundRef.current = null;
-    setIsPlaying(false);
-    setRecError(null);
-    setElapsedMs(0);
-    setRecordedSeconds(0);
-    if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
-  }, [partIdx]);
-
-  // Cleanup on unmount
-  useEffect(() => () => {
-    if (tickRef.current) clearInterval(tickRef.current);
-    soundRef.current?.unloadAsync().catch(() => undefined);
-  }, []);
-
-  async function startRec() {
-    setRecError(null);
-    try {
-      const perm = await Audio.requestPermissionsAsync();
-      if (!perm.granted) {
-        setRecError("Không có quyền truy cập micro.");
-        return;
-      }
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-      const { recording: rec } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-      setRecording(rec);
-      setIsRec(true);
-      setElapsedMs(0);
-      startRef.current = Date.now();
-      tickRef.current = setInterval(() => {
-        if (!startRef.current) return;
-        const nextElapsed = Date.now() - startRef.current;
-        setElapsedMs(nextElapsed);
-      }, 200);
-    } catch {
-      setRecError("Không thể khởi tạo ghi âm.");
-    }
-  }
-
-  const stopRec = useCallback(async () => {
-    if (!recording) return;
-    if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
-    try {
-      await recording.stopAndUnloadAsync();
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
-      });
-      const uri = recording.getURI();
-      const duration = Math.max(1, Math.round(elapsedMs / 1000));
-      if (!uri) {
-        setRecError("Ghi âm thất bại, không có file.");
-        setIsRec(false);
-        setRecording(null);
-        return;
-      }
-      setAudioUri(uri);
-      setRecordedSeconds(duration);
-      setIsRec(false);
-      setRecording(null);
-    } catch {
-      setRecError("Không thể dừng ghi âm. Hãy thử ghi lại.");
-      setAudioUri(null);
-      setRecordedSeconds(0);
-      setIsRec(false);
-      setRecording(null);
-    }
-  }, [elapsedMs, recording]);
-
-  useEffect(() => {
-    if (isRec && recording && elapsedMs >= part.speakingSeconds * 1000) {
-      void stopRec();
-    }
-  }, [elapsedMs, isRec, part.speakingSeconds, recording, stopRec]);
-
-  async function uploadAudio(): Promise<string | null> {
-    if (!audioUri) return null;
-    setUploading(true);
-    try {
-      const presign = await presignUpload("exam_speaking");
-      const audioResponse = await fetch(audioUri);
-      const audioBlob = await audioResponse.blob();
-      await fetch(presign.uploadUrl, {
-        method: "PUT",
-        body: audioBlob,
-        headers: { "Content-Type": "audio/webm" },
-      }).then((res) => {
-        if (!res.ok) throw new Error("Upload failed");
-      });
-      return presign.audioKey;
-    } catch {
-      return null;
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  async function handleConfirmRecord() {
-    const audioKey = await uploadAudio();
-    if (!audioKey) {
-      setRecError("Tải lên thất bại. Vui lòng thử lại.");
-      return;
-    }
-    const duration = recordedSeconds || Math.max(1, Math.round(elapsedMs / 1000));
-    const answer: SpeakingAnswer = { partId: part.id, audioUrl: audioKey, durationSeconds: duration };
-    onSetSpeakingAnswer(part.id, answer);
-    onDone(part.id);
-  }
-
-  async function handlePlayback() {
-    if (!audioUri) return;
-    try {
-      await soundRef.current?.unloadAsync().catch(() => undefined);
-      soundRef.current = null;
-      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: audioUri },
-        { shouldPlay: true },
-        (status) => {
-          if (status.isLoaded) setIsPlaying(status.isPlaying);
-        }
-      );
-      soundRef.current = newSound;
-    } catch (e: unknown) {
-      setRecError(`Không phát được: ${e instanceof Error ? e.message : String(e)}`);
-    }
-  }
-
-  function handleRerecord() {
-    soundRef.current?.unloadAsync().catch(() => undefined);
-    soundRef.current = null;
-    setIsPlaying(false);
-    setAudioUri(null);
-    setRecError(null);
-    setElapsedMs(0);
-    setRecordedSeconds(0);
-    onClearSpeakingAnswer(part.id);
-  }
-
-  const hasRecording = done.has(part.id);
-
-  return (
-    <ScrollView contentContainerStyle={[s.panelScroll, { paddingBottom: insets.bottom + 80 }]}>
-      {parts.length > 1 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.sectionTabs}>
-          {parts.map((p, i: number) => (
-            <TouchableOpacity
-              key={p.id}
-              disabled={isBusy}
-              onPress={() => setPartIdx(i)}
-              style={[s.sectionTab, { borderBottomColor: i === partIdx ? accentColor : "transparent", opacity: isBusy && i !== partIdx ? 0.45 : 1 }]}
-            >
-              <Text style={[s.sectionTabText, { color: i === partIdx ? accentDark : c.mutedForeground }]}>Part {p.part}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
-      <View style={[s.promptCard, { backgroundColor: c.card, borderColor: c.border }]}>
-        <Text style={[s.promptLabel, { color: accentDark }]}>Part {part.part} · {part.type}</Text>
-        <Text style={[s.promptMeta, { color: c.mutedForeground }]}>{part.speakingSeconds}s · Ghi âm câu trả lời</Text>
-      </View>
-      <View style={[s.recCard, { backgroundColor: c.card, borderColor: isRec ? accentColor : c.border }]}>
-        <View style={[s.recStatusPill, { backgroundColor: isRec ? c.destructiveTint : uploading ? c.infoTint : hasRecording ? c.primaryTint : c.coinTint }]}>
-          <Ionicons
-            name={isRec ? "radio-button-on" : uploading ? "cloud-upload-outline" : hasRecording ? "checkmark-circle" : audioUri ? "play-circle-outline" : "mic-outline"}
-            size={15}
-            color={isRec ? c.destructive : uploading ? c.info : hasRecording ? c.primary : accentDark}
-          />
-          <Text style={[s.recStatusText, { color: isRec ? c.destructive : uploading ? c.info : hasRecording ? c.primaryDark : accentDark }]}>
-            {isRec ? "Đang ghi âm" : uploading ? "Đang tải lên" : hasRecording ? "Đã lưu câu trả lời" : audioUri ? "Sẵn sàng xác nhận" : "Sẵn sàng ghi"}
-          </Text>
-        </View>
-        {!audioUri && !hasRecording && (
-          <>
-            {isRec && (
-              <View style={s.recTimerBlock}>
-                <Text style={[s.timerText, { color: accentDark }]}>
-                  {elapsedSeconds}s / {part.speakingSeconds}s
-                </Text>
-                <View style={[s.recProgressTrack, { backgroundColor: c.borderLight }]}>
-                  <View style={[s.recProgressFill, { width: `${progressPct}%`, backgroundColor: accentColor }]} />
-                </View>
-              </View>
-            )}
-            <DepthButton onPress={isRec ? stopRec : startRec} disabled={uploading}>
-              {isRec ? "Dừng ghi âm" : "Bắt đầu nói"}
-            </DepthButton>
-          </>
-        )}
-        {audioUri && !hasRecording && (
-          <>
-            <DepthButton variant="secondary" onPress={handlePlayback} disabled={isPlaying || uploading}>
-              {isPlaying ? "Đang phát..." : "Nghe lại"}
-            </DepthButton>
-            <DepthButton variant="secondary" onPress={handleRerecord} disabled={uploading}>
-              Ghi âm lại
-            </DepthButton>
-            <DepthButton onPress={handleConfirmRecord} disabled={uploading}>
-              {uploading ? "Đang tải lên..." : "Xác nhận & tiếp"}
-            </DepthButton>
-          </>
-        )}
-        {hasRecording && (
-          <View style={s.doneRow}>
-            <Ionicons name="checkmark-circle" size={16} color={c.primary} />
-            <Text style={[s.doneText, { color: c.primaryDark }]}>Đã ghi âm · {recordedSeconds || part.speakingSeconds}s</Text>
-          </View>
-        )}
-        {recError && <Text style={[s.errorText, { color: c.destructive }]}>{recError}</Text>}
-      </View>
-    </ScrollView>
-  );
-}
-
-// ── MCQ Card ──
-
-function McqCard({ item, index, selected, onSelect, color, c }: any) {
-  return (
-    <View style={[s.qCard, { backgroundColor: c.card, borderColor: c.border }]}>
-      <Text style={[s.qNum, { color }]}>Câu {index + 1}</Text>
-      <Text style={[s.qStem, { color: c.foreground }]}>{item.stem}</Text>
-      <View style={s.options}>
-        {item.options.map((opt: string, i: number) => {
-          const sel = selected === i;
-          return (
-            <TouchableOpacity key={i} onPress={() => onSelect(i)}
-              style={[s.option, { borderColor: sel ? color : c.border, backgroundColor: sel ? color + "18" : c.card }]}>
-              <View style={[s.optDot, { borderColor: sel ? color : c.border, backgroundColor: sel ? color : "transparent" }]}>
-                {sel && <View style={s.optDotInner} />}
-              </View>
-              <Text style={[s.optText, { color: sel ? color : c.foreground }]}>{opt}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
-// ── Confirm Modal ──
-
-function ConfirmModal({ visible, title, message, warning, confirmLabel, onConfirm, onCancel, c }: any) {
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
-      <View style={s.modalOverlay}>
-        <View style={[s.modalBox, { backgroundColor: c.card, borderColor: c.border }]}>
-          <View style={[s.modalIcon, { backgroundColor: c.warningTint }]}>
-            <Ionicons name="warning-outline" size={24} color={c.warning} />
-          </View>
-          <Text style={[s.modalTitle, { color: c.foreground }]}>{title}</Text>
-          <Text style={[s.modalMsg, { color: c.mutedForeground }]}>{message}</Text>
-          {warning && (
-            <View style={[s.modalWarning, { backgroundColor: c.warningTint }]}>
-              <Text style={[s.modalWarningText, { color: c.warning }]}>{warning}</Text>
-            </View>
-          )}
-          <View style={s.modalBtns}>
-            <DepthButton variant="secondary" onPress={onCancel} style={{ flex: 1 }}>Ở lại</DepthButton>
-            <DepthButton onPress={onConfirm} style={{ flex: 1 }}>{confirmLabel}</DepthButton>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
-// ── Result Screen ──
-
-function ResultScreen({ result, sessionId, examTitle, c, insets }: { result: SubmitSessionResult; sessionId: string; examTitle: string; c: ReturnType<typeof useThemeColors>; insets: { bottom: number } }) {
-  const router = useRouter();
-  const pct = result.mcqTotal > 0 ? Math.round((result.mcqScore / result.mcqTotal) * 100) : 0;
-  return (
-    <View style={[s.center, { backgroundColor: c.background, paddingHorizontal: spacing.xl }]}>
-      <View style={[s.resultIcon, { backgroundColor: c.primaryTint }]}>
-        <Ionicons name="checkmark" size={40} color={c.primary} />
-      </View>
-      <Text style={[s.resultTitle, { color: c.foreground }]}>Nộp bài thành công!</Text>
-      <Text style={[s.resultExam, { color: c.mutedForeground }]}>{examTitle}</Text>
-      <View style={[s.resultCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: c.border }]}>
-        <Text style={[s.resultScoreLabel, { color: c.mutedForeground }]}>Điểm MCQ (Nghe + Đọc)</Text>
-        <Text style={[s.resultScore, { color: c.primary }]}>{result.mcqScore}<Text style={[s.resultTotal, { color: c.subtle }]}>/{result.mcqTotal}</Text></Text>
-        <View style={[s.resultBar, { backgroundColor: c.muted }]}>
-          <View style={[s.resultFill, { backgroundColor: c.primary, width: `${pct}%` }]} />
-        </View>
-        <Text style={[s.resultAiNote, { color: c.subtle }]}>Writing và Speaking đang được AI chấm điểm</Text>
-      </View>
-      <DepthButton fullWidth onPress={() => router.replace(`/(app)/exam-result/${sessionId}`)} style={{ marginTop: spacing.xl }}>Xem chi tiết kết quả</DepthButton>
-      <DepthButton variant="secondary" fullWidth onPress={() => router.replace("/(app)/(tabs)/exams")} style={{ marginTop: spacing.sm }}>Về danh sách đề thi</DepthButton>
-    </View>
-  );
-}
-
-// ── Styles ──
-
 const s = StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   scroll: { paddingHorizontal: spacing.xl, paddingBottom: spacing["3xl"] },
-  // Top bar
   topBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.xl, paddingBottom: spacing.md, gap: spacing.md, borderBottomWidth: 1 },
   timerPill: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: spacing.md, paddingVertical: 6, borderRadius: radius.full },
   timerText: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
   mcqProgress: { flex: 1, textAlign: "center", fontSize: fontSize.sm },
   exitBtn: { padding: 4 },
-  // Bottom bar
   bottomBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.xl, paddingTop: spacing.md, borderTopWidth: 1 },
   skillIndicator: { gap: 2 },
   skillLabel: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
   skillProgress: { fontSize: fontSize.xs },
-  // Device check
   dcTitle: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold, textAlign: "center" },
   dcSub: { fontSize: fontSize.sm, textAlign: "center" },
   dcCard: { borderWidth: 2, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },
@@ -908,78 +438,10 @@ const s = StyleSheet.create({
   dcNumBadge: { width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   dcNumText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, color: "#fff" },
   dcSkillDotText: { fontSize: 10, fontFamily: fontFamily.bold, color: "#fff" },
-  dcSkillIcon: { width: 24, height: 24, borderRadius: 6, alignItems: "center", justifyContent: "center" },
   dcSkillTime: { fontSize: fontSize.xs },
   dcTotalRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md, borderWidth: 2, marginTop: spacing.sm },
   dcTotalText: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
   dcNoteRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
   dcNoteDot: { fontSize: fontSize.xs, lineHeight: 18 },
   dcTimerNote: { fontSize: fontSize.xs, textAlign: "center" },
-  // Panels
-  panelScroll: { padding: spacing.xl, gap: spacing.lg },
-  sectionTabs: { borderBottomWidth: 1, flexGrow: 0 },
-  sectionTab: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, borderBottomWidth: 2 },
-  sectionTabText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
-  toggleRow: { flexDirection: "row", borderBottomWidth: 1 },
-  toggleBtn: { flex: 1, alignItems: "center", paddingVertical: spacing.md },
-  toggleText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
-  // Audio
-  audioCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },
-  audioPartLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
-  playBtn: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderRadius: radius.full, alignSelf: "flex-start" },
-  playBtnText: { color: "#fff", fontSize: fontSize.sm, fontFamily: fontFamily.bold },
-  audioError: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },
-  // Passage
-  passageCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md },
-  passageTitle: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
-  passagePara: { fontSize: fontSize.sm, lineHeight: 22 },
-  // Prompt / Writing
-  promptCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },
-  promptLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
-  promptText: { fontSize: fontSize.sm, lineHeight: 22 },
-  promptMeta: { fontSize: fontSize.xs },
-  editorCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, minHeight: 240 },
-  editor: { fontSize: fontSize.sm, lineHeight: 22, minHeight: 200 },
-  wcBadge: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, textAlign: "right", marginTop: spacing.sm },
-  // Speaking
-  recCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.xl, alignItems: "center", gap: spacing.lg },
-  recStatusPill: { flexDirection: "row", alignItems: "center", gap: spacing.xs, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.full },
-  recStatusText: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
-  recTimerBlock: { width: "100%", alignItems: "center", gap: spacing.sm },
-  recProgressTrack: { width: "100%", height: 8, borderRadius: radius.full, overflow: "hidden" },
-  recProgressFill: { height: "100%", borderRadius: radius.full },
-  micBtn: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing["2xl"], paddingVertical: spacing.md, borderRadius: radius.full },
-  micBtnText: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
-  doneRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
-  doneText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
-  errorText: { fontSize: fontSize.xs, fontFamily: fontFamily.medium, textAlign: "center" },
-  // MCQ
-  qCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md },
-  qNum: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
-  qStem: { fontSize: fontSize.base, fontFamily: fontFamily.semiBold, lineHeight: 24 },
-  options: { gap: spacing.sm },
-  option: { flexDirection: "row", alignItems: "center", gap: spacing.md, borderWidth: 2, borderRadius: radius.lg, padding: spacing.md },
-  optDot: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, alignItems: "center", justifyContent: "center" },
-  optDotInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#fff" },
-  optText: { flex: 1, fontSize: fontSize.sm, lineHeight: 20 },
-  // Modal
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center", padding: spacing.xl },
-  modalBox: { width: "100%", borderWidth: 2, borderRadius: radius.xl, padding: spacing.xl, gap: spacing.md },
-  modalIcon: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", alignSelf: "center" },
-  modalTitle: { fontSize: fontSize.base, fontFamily: fontFamily.extraBold, textAlign: "center" },
-  modalMsg: { fontSize: fontSize.sm, textAlign: "center", lineHeight: 20 },
-  modalWarning: { borderRadius: radius.md, padding: spacing.sm },
-  modalWarningText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
-  modalBtns: { flexDirection: "row", gap: spacing.md },
-  // Result
-  resultIcon: { width: 80, height: 80, borderRadius: 40, alignItems: "center", justifyContent: "center", marginBottom: spacing.lg },
-  resultTitle: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
-  resultExam: { fontSize: fontSize.sm, marginTop: spacing.xs },
-  resultCard: { width: "100%", borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.xl, alignItems: "center", gap: spacing.md, marginTop: spacing.xl },
-  resultScoreLabel: { fontSize: fontSize.sm },
-  resultScore: { fontSize: 56, fontFamily: fontFamily.extraBold },
-  resultTotal: { fontSize: fontSize.xl },
-  resultBar: { width: "100%", height: 8, borderRadius: 4, overflow: "hidden" },
-  resultFill: { height: "100%", borderRadius: 4 },
-  resultAiNote: { fontSize: fontSize.xs, textAlign: "center" },
 });
