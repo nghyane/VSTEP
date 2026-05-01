@@ -5,8 +5,33 @@ import { Icon } from "#/components/Icon"
 import { Loading } from "#/components/Loading"
 import { ResultBackground } from "#/features/exam/components/ResultBackground"
 import { examDetailQuery, examSessionQuery, sessionResultsQuery } from "#/features/exam/queries"
-import type { ExamVersionListeningSection, ExamVersionMcqItem, McqDetailItem } from "#/features/exam/types"
-import { cn } from "#/lib/utils"
+import type {
+	ExamVersionListeningSection,
+	ExamVersionMcqItem,
+	ExamVersionSpeakingPart,
+	ExamVersionWritingTask,
+	McqDetailItem,
+	SpeakingFeedbackItem,
+	WritingFeedbackItem,
+} from "#/features/exam/types"
+import { FeedbackSection, RewriteSection } from "#/features/grading/components/FeedbackSection"
+import { RubricBar } from "#/features/grading/components/RubricBar"
+import { cn, round } from "#/lib/utils"
+
+const WRITING_RUBRIC: Record<string, string> = {
+	task_achievement: "Task Achievement",
+	coherence: "Coherence & Cohesion",
+	lexical: "Lexical Resource",
+	grammar: "Grammar Range & Accuracy",
+}
+
+const SPEAKING_RUBRIC: Record<string, string> = {
+	fluency: "Fluency",
+	pronunciation: "Pronunciation",
+	content: "Content",
+	vocab: "Vocabulary",
+	grammar: "Grammar",
+}
 
 interface Search {
 	examId: string
@@ -52,6 +77,10 @@ function ChiTietInner() {
 	const readingBlocks = selected.includes("reading")
 		? [...version.reading_passages].sort((a, b) => a.part - b.part || a.display_order - b.display_order)
 		: []
+	const writingFeedback = selected.includes("writing") ? resultsRes.data.writing_feedback : []
+	const speakingFeedback = selected.includes("speaking") ? resultsRes.data.speaking_feedback : []
+	const writingTasksById = new Map(version.writing_tasks.map((t) => [t.id, t]))
+	const speakingPartsById = new Map(version.speaking_parts.map((p) => [p.id, p]))
 
 	return (
 		<div className="relative min-h-screen">
@@ -104,11 +133,27 @@ function ChiTietInner() {
 						{readingBlocks.map((p) => (
 							<SectionBlock key={p.id} title={`Đọc · ${p.title}`} items={p.items} detailMap={detailMap} />
 						))}
+						{writingFeedback.map((fb, i) => (
+							<WritingFeedbackBlock
+								key={fb.submission_id}
+								index={i + 1}
+								feedback={fb}
+								task={writingTasksById.get(fb.task_id)}
+							/>
+						))}
+						{speakingFeedback.map((fb, i) => (
+							<SpeakingFeedbackBlock
+								key={fb.submission_id}
+								index={i + 1}
+								feedback={fb}
+								part={speakingPartsById.get(fb.part_id)}
+							/>
+						))}
 					</div>
 
-					{totalQuestions === 0 && (
+					{totalQuestions === 0 && writingFeedback.length === 0 && speakingFeedback.length === 0 && (
 						<div className="px-6 py-10 text-center text-sm text-muted">
-							Bài thi này không có phần trắc nghiệm.
+							Bài thi này không có phần nào để hiển thị chi tiết.
 						</div>
 					)}
 				</div>
@@ -206,6 +251,195 @@ function ItemRow({ no, detail }: { no: number; detail: McqDetailItem | null }) {
 					</>
 				)}
 			</div>
+		</div>
+	)
+}
+
+function PendingFeedbackCard({ skill }: { skill: "viết" | "nói" }) {
+	return (
+		<div className="rounded-(--radius-card) border-2 border-b-4 border-warning/30 bg-warning-tint/40 p-5 text-center">
+			<img src="/mascot/lac-think.png" alt="" className="mx-auto mb-3 size-16 object-contain" />
+			<p className="font-extrabold text-foreground">AI đang chấm bài {skill}…</p>
+			<p className="mt-1 text-xs text-muted">Thường mất 10–30 giây, trang sẽ tự cập nhật.</p>
+		</div>
+	)
+}
+
+function BandPill({ band, color }: { band: number; color: string }) {
+	return (
+		<div
+			className="inline-flex items-baseline gap-1.5 rounded-full border-2 border-b-4 px-3 py-1"
+			style={{ borderColor: `${color}40`, backgroundColor: `${color}1a` }}
+		>
+			<span className="text-lg font-extrabold tabular-nums" style={{ color }}>
+				{round(band)}
+			</span>
+			<span className="text-xs font-bold text-muted">/10</span>
+		</div>
+	)
+}
+
+function WritingFeedbackBlock({
+	index,
+	feedback,
+	task,
+}: {
+	index: number
+	feedback: WritingFeedbackItem
+	task: ExamVersionWritingTask | undefined
+}) {
+	const color = "var(--color-skill-writing)"
+	return (
+		<div className="px-6 py-5 sm:px-8">
+			<div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+				<p className="text-base font-extrabold text-foreground">
+					Viết · Bài {index}
+					{task ? <span className="ml-2 text-xs font-medium text-muted">Part {task.part}</span> : null}
+				</p>
+				{feedback.overall_band !== null ? (
+					<BandPill band={feedback.overall_band} color={color} />
+				) : (
+					<span className="text-xs font-bold text-warning">AI đang chấm…</span>
+				)}
+			</div>
+
+			{feedback.overall_band === null ? (
+				<PendingFeedbackCard skill="viết" />
+			) : (
+				<div className="space-y-4">
+					{task?.prompt && (
+						<details className="rounded-(--radius-card) border-2 border-border bg-background/40">
+							<summary className="cursor-pointer px-4 py-2.5 text-xs font-extrabold uppercase tracking-wide text-subtle">
+								Đề bài
+							</summary>
+							<p className="whitespace-pre-wrap px-4 pb-3 text-sm text-foreground">{task.prompt}</p>
+						</details>
+					)}
+
+					<details className="rounded-(--radius-card) border-2 border-border bg-background/40" open>
+						<summary className="cursor-pointer px-4 py-2.5 text-xs font-extrabold uppercase tracking-wide text-subtle">
+							Bài làm của bạn
+							<span className="ml-2 font-medium normal-case text-muted">({feedback.word_count} từ)</span>
+						</summary>
+						<p className="whitespace-pre-wrap px-4 pb-3 pt-1 text-sm leading-relaxed text-foreground">
+							{feedback.text}
+						</p>
+					</details>
+
+					{feedback.rubric_scores && (
+						<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-card p-4 space-y-3">
+							<p className="text-xs font-extrabold uppercase tracking-wide text-subtle">Rubric</p>
+							{Object.entries(feedback.rubric_scores).map(([k, v]) => (
+								<RubricBar key={k} label={WRITING_RUBRIC[k] ?? k} score={v as number} max={4} color={color} />
+							))}
+						</div>
+					)}
+
+					{(feedback.strengths || feedback.improvements) && (
+						<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-card p-4">
+							<FeedbackSection
+								strengths={feedback.strengths ?? []}
+								improvements={feedback.improvements ?? []}
+							/>
+						</div>
+					)}
+
+					{feedback.rewrites && feedback.rewrites.length > 0 && (
+						<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-card p-4">
+							<RewriteSection rewrites={feedback.rewrites} />
+						</div>
+					)}
+				</div>
+			)}
+		</div>
+	)
+}
+
+function SpeakingFeedbackBlock({
+	index,
+	feedback,
+	part,
+}: {
+	index: number
+	feedback: SpeakingFeedbackItem
+	part: ExamVersionSpeakingPart | undefined
+}) {
+	const color = "var(--color-skill-speaking)"
+	return (
+		<div className="px-6 py-5 sm:px-8">
+			<div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+				<p className="text-base font-extrabold text-foreground">
+					Nói · Phần {index}
+					{part ? <span className="ml-2 text-xs font-medium text-muted">Part {part.part}</span> : null}
+				</p>
+				{feedback.overall_band !== null ? (
+					<BandPill band={feedback.overall_band} color={color} />
+				) : (
+					<span className="text-xs font-bold text-warning">AI đang chấm…</span>
+				)}
+			</div>
+
+			{feedback.overall_band === null ? (
+				<PendingFeedbackCard skill="nói" />
+			) : (
+				<div className="space-y-4">
+					{feedback.audio_url && (
+						<div className="rounded-(--radius-card) border-2 border-border bg-background/40 p-3">
+							<p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-subtle">Audio bạn ghi</p>
+							<audio src={feedback.audio_url} controls className="w-full">
+								<track kind="captions" />
+							</audio>
+						</div>
+					)}
+
+					{feedback.transcript && (
+						<details className="rounded-(--radius-card) border-2 border-border bg-background/40">
+							<summary className="cursor-pointer px-4 py-2.5 text-xs font-extrabold uppercase tracking-wide text-subtle">
+								Transcript
+							</summary>
+							<p className="whitespace-pre-wrap px-4 pb-3 text-sm text-foreground">{feedback.transcript}</p>
+						</details>
+					)}
+
+					{feedback.rubric_scores && (
+						<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-card p-4 space-y-3">
+							<p className="text-xs font-extrabold uppercase tracking-wide text-subtle">Rubric</p>
+							{Object.entries(feedback.rubric_scores).map(([k, v]) => (
+								<RubricBar
+									key={k}
+									label={SPEAKING_RUBRIC[k] ?? k}
+									score={v as number}
+									max={4}
+									color={color}
+								/>
+							))}
+						</div>
+					)}
+
+					{feedback.pronunciation_report && (
+						<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-card p-4">
+							<p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-subtle">
+								Phát âm (Azure)
+							</p>
+							<p className="text-sm">
+								<span className="font-extrabold text-foreground tabular-nums">
+									{round(feedback.pronunciation_report.accuracy_score)}
+								</span>
+								<span className="ml-1 text-muted">/100 — Accuracy</span>
+							</p>
+						</div>
+					)}
+
+					{(feedback.strengths || feedback.improvements) && (
+						<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-card p-4">
+							<FeedbackSection
+								strengths={feedback.strengths ?? []}
+								improvements={feedback.improvements ?? []}
+							/>
+						</div>
+					)}
+				</div>
+			)}
 		</div>
 	)
 }

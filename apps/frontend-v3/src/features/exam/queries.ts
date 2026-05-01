@@ -45,7 +45,17 @@ export const sessionResultsQuery = (sessionId: string) =>
 	queryOptions({
 		queryKey: ["exam-sessions", sessionId, "results"],
 		queryFn: () => api.get(`exam-sessions/${sessionId}/results`).json<ApiResponse<SessionResultsData>>(),
-		staleTime: 60_000,
+		staleTime: 5_000,
+		// Writing/Speaking được AI chấm async — poll mỗi 5s khi còn submission chưa có overall_band.
+		// Stop poll khi tất cả đã graded (hoặc không có writing/speaking submission nào).
+		refetchInterval: (query) => {
+			const data = query.state.data?.data
+			if (!data) return false
+			const hasPending =
+				data.writing_feedback.some((w) => w.overall_band === null) ||
+				data.speaking_feedback.some((s) => s.overall_band === null)
+			return hasPending ? 5_000 : false
+		},
 	})
 
 export const examDraftQuery = (sessionId: string) =>
