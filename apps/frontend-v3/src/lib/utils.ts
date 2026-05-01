@@ -93,16 +93,16 @@ if (typeof window !== "undefined" && window.speechSynthesis) {
 	}
 }
 
-// Voice quality ranking: prefer Microsoft Online voices (Aria, Jenny, Guy)
-// then fallback to Zira, avoid David (clips first words on Chromium).
+// Voice quality ranking: prefer Google voices (natural), then Microsoft Neural.
 const VOICE_PREFERENCE = [
-	"Microsoft Aria Online",
+	"Google US English",
+	"Google UK English Female",
 	"Microsoft Jenny Online",
 	"Microsoft Guy Online",
+	"Microsoft Aria Online",
 	"Microsoft Ana Online",
 	"Microsoft AvaMultilingual Online",
 	"Microsoft AndrewMultilingual Online",
-	"Google US English",
 	"Microsoft Zira",
 	"Microsoft Mark",
 	"Samantha",
@@ -116,7 +116,7 @@ function rankVoice(name: string): number {
 	return VOICE_PREFERENCE.length
 }
 
-function pickEnglishVoice(): SpeechSynthesisVoice | undefined {
+export function pickEnglishVoice(): SpeechSynthesisVoice | undefined {
 	const voices = loadVoices()
 	const en = voices.filter((v) => v.lang.startsWith("en"))
 	if (en.length === 0) return undefined
@@ -133,7 +133,27 @@ function pickEnglishVoice(): SpeechSynthesisVoice | undefined {
 
 interface SpeakOptions {
 	rate?: number
+	voice?: SpeechSynthesisVoice
 	onEnd?: () => void
+	onBoundary?: (charIndex: number) => void
+}
+
+/**
+ * Warm up Chrome TTS engine with a real word at zero volume.
+ * Must be called from a user gesture (click handler).
+ * Chrome clips the first few seconds of speech if the engine is cold.
+ */
+export function warmupTTS() {
+	if (!window.speechSynthesis) return
+	const synth = window.speechSynthesis
+	synth.cancel()
+	const u = new SpeechSynthesisUtterance("ready")
+	u.volume = 0.01
+	u.rate = 2
+	u.lang = "en-US"
+	const v = pickEnglishVoice()
+	if (v) u.voice = v
+	synth.speak(u)
 }
 
 export function speak(text: string, opts: SpeakOptions = {}) {
@@ -143,18 +163,158 @@ export function speak(text: string, opts: SpeakOptions = {}) {
 	}
 	const synth = window.speechSynthesis
 	synth.cancel()
-	const u = new SpeechSynthesisUtterance(text)
-	u.lang = "en-US"
-	u.rate = opts.rate ?? 1
-	const voice = pickEnglishVoice()
-	if (voice) u.voice = voice
-	u.onend = () => opts.onEnd?.()
-	u.onerror = () => opts.onEnd?.()
-	synth.speak(u)
+
+	const doSpeak = () => {
+		const v = opts.voice ?? pickEnglishVoice()
+
+		// Prepend filler "..." — Chrome clips the start of cold utterances.
+		// The filler gets clipped instead of the actual first word.
+		// Single utterance avoids queue timing issues.
+		const filler = "... "
+		const paddedText = filler + text
+
+		const u = new SpeechSynthesisUtterance(paddedText)
+		u.lang = "en-US"
+		u.rate = opts.rate ?? 1
+		if (v) u.voice = v
+		u.onend = () => opts.onEnd?.()
+		u.onerror = () => opts.onEnd?.()
+		if (opts.onBoundary) {
+			u.onboundary = (e) => {
+				if (e.name === "word" && e.charIndex >= filler.length) {
+					opts.onBoundary?.(e.charIndex - filler.length)
+				}
+			}
+		}
+		synth.speak(u)
+	}
+
+	if (synth.getVoices().length === 0) {
+		const onVoices = () => {
+			synth.removeEventListener("voiceschanged", onVoices)
+			setTimeout(doSpeak, 100)
+		}
+		synth.addEventListener("voiceschanged", onVoices)
+		setTimeout(() => {
+			synth.removeEventListener("voiceschanged", onVoices)
+			doSpeak()
+		}, 300)
+	} else {
+		setTimeout(doSpeak, 100)
+	}
+}
+
+export function getEnglishVoices(): SpeechSynthesisVoice[] {
+	if (!window.speechSynthesis) return []
+	return window.speechSynthesis.getVoices().filter((v) => v.lang.startsWith("en"))
 }
 
 /** Cancel any ongoing speech. */
 export function stopSpeaking() {
 	if (!window.speechSynthesis) return
 	window.speechSynthesis.cancel()
+}
+
+/** Translate text using Google Translate free API. */
+export async function translateText(text: string, from = "en", to = "vi"): Promise<string> {
+	const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&q=${encodeURIComponent(text)}`
+	const res = await fetch(url)
+	const data = await res.json()
+	const segments = data?.[0] as Array<[string]> | null
+	if (!segments) return text
+	return segments.map((s) => s[0]).join("")
+}
+
+/* ───── Word comparison for Shadowing ───── */
+
+function levenshtein(a: string, b: string): number {
+	const m = a.length
+	const n = b.length
+	const dp: number[][] = Array.from({ length: m + 1 }, (_, i) => [i])
+	for (let j = 0; j <= n; j++) dp[0][j] = j
+	for (let i = 1; i <= m; i++) {
+		for (let j = 1; j <= n; j++) {
+			dp[i][j] =
+				a[i - 1] === b[j - 1] ? dp[i - 1][j - 1] : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1])
+		}
+	}
+	return dp[m][n]
+}
+
+function matchScore(a: string, b: string): number {
+	if (a === b) return 3
+	if (a.length > 3 && levenshtein(a, b) <= 2) return 2
+	if (b.includes(a) || a.includes(b)) return 1
+	return 0
+}
+
+export interface WordCompareResult {
+	word: string
+	accuracy: "correct" | "wrong" | "close"
+	userSaid?: string
+}
+
+export function compareWords(
+	original: string,
+	transcript: string,
+): { results: WordCompareResult[]; correct: number } {
+	const clean = (s: string) =>
+		s
+			.toLowerCase()
+			.replace(/[.,!?;:'"]/g, "")
+			.split(/\s+/)
+			.filter(Boolean)
+	const origWords = clean(original)
+	const userWords = clean(transcript)
+
+	const m = origWords.length
+	const n = userWords.length
+	const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0))
+
+	for (let i = 1; i <= m; i++) {
+		for (let j = 1; j <= n; j++) {
+			const s = matchScore(origWords[i - 1], userWords[j - 1])
+			dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1] + s)
+		}
+	}
+
+	const alignment: (number | null)[] = Array(m).fill(null)
+	let i = m
+	let j = n
+	while (i > 0 && j > 0) {
+		const s = matchScore(origWords[i - 1], userWords[j - 1])
+		if (dp[i][j] === dp[i - 1][j - 1] + s && s > 0) {
+			alignment[i - 1] = j - 1
+			i--
+			j--
+		} else if (dp[i][j] === dp[i - 1][j]) {
+			i--
+		} else {
+			j--
+		}
+	}
+
+	let correct = 0
+	const results: WordCompareResult[] = origWords.map((w, idx) => {
+		const uIdx = alignment[idx]
+		if (uIdx === null) {
+			const merged = userWords.find((uw) => uw.includes(w) && uw !== w)
+			return { word: w, accuracy: "wrong", userSaid: merged }
+		}
+		const uw = userWords[uIdx]
+		if (uw === w) {
+			correct++
+			return { word: w, accuracy: "correct", userSaid: uw }
+		}
+		if (w.length > 3 && levenshtein(w, uw) <= 2) {
+			correct++
+			return { word: w, accuracy: "close", userSaid: uw }
+		}
+		if (uw.includes(w) || w.includes(uw)) {
+			correct++
+			return { word: w, accuracy: "close", userSaid: uw }
+		}
+		return { word: w, accuracy: "wrong", userSaid: uw }
+	})
+	return { results, correct }
 }

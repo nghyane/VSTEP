@@ -38,8 +38,8 @@ import { Route as AppLuyenTapTuVungIndexRouteImport } from "./routes/_app/luyen-
 import { Route as AppLuyenTapNguPhapIndexRouteImport } from "./routes/_app/luyen-tap/ngu-phap/index"
 import { Route as AppLuyenTapNgheIndexRouteImport } from "./routes/_app/luyen-tap/nghe/index"
 import { Route as FocusedVocabTopicIdPracticeRouteImport } from "./routes/_focused/vocab/$topicId/practice"
-import { Route as FocusedSpeakingTaskTaskIdRouteImport } from "./routes/_focused/speaking/task/$taskId"
-import { Route as FocusedSpeakingDrillDrillIdRouteImport } from "./routes/_focused/speaking/drill/$drillId"
+import { Route as FocusedSpeakingShadowingLessonIdRouteImport } from "./routes/_focused/speaking/shadowing/$lessonId"
+import { Route as FocusedSpeakingConversationScenarioIdRouteImport } from "./routes/_focused/speaking/conversation/$scenarioId"
 import { Route as FocusedPhongThiSessionIdChiTietRouteImport } from "./routes/_focused/phong-thi/$sessionId_.chi-tiet"
 import { Route as FocusedGrammarPointIdExerciseRouteImport } from "./routes/_focused/grammar/$pointId/exercise"
 import { Route as FocusedGradingWritingSubmissionIdRouteImport } from "./routes/_focused/grading/writing.$submissionId"
@@ -195,16 +195,16 @@ const FocusedVocabTopicIdPracticeRoute =
     path: "/vocab/$topicId/practice",
     getParentRoute: () => FocusedRoute,
   } as any)
-const FocusedSpeakingTaskTaskIdRoute =
-  FocusedSpeakingTaskTaskIdRouteImport.update({
-    id: "/speaking/task/$taskId",
-    path: "/speaking/task/$taskId",
+const FocusedSpeakingShadowingLessonIdRoute =
+  FocusedSpeakingShadowingLessonIdRouteImport.update({
+    id: "/speaking/shadowing/$lessonId",
+    path: "/speaking/shadowing/$lessonId",
     getParentRoute: () => FocusedRoute,
   } as any)
-const FocusedSpeakingDrillDrillIdRoute =
-  FocusedSpeakingDrillDrillIdRouteImport.update({
-    id: "/speaking/drill/$drillId",
-    path: "/speaking/drill/$drillId",
+const FocusedSpeakingConversationScenarioIdRoute =
+  FocusedSpeakingConversationScenarioIdRouteImport.update({
+    id: "/speaking/conversation/$scenarioId",
+    path: "/speaking/conversation/$scenarioId",
     getParentRoute: () => FocusedRoute,
   } as any)
 const FocusedPhongThiSessionIdChiTietRoute =
@@ -281,8 +281,8 @@ export interface FileRoutesByFullPath {
   "/grading/writing/$submissionId": typeof FocusedGradingWritingSubmissionIdRoute
   "/grammar/$pointId/exercise": typeof FocusedGrammarPointIdExerciseRoute
   "/phong-thi/$sessionId/chi-tiet": typeof FocusedPhongThiSessionIdChiTietRoute
-  "/speaking/drill/$drillId": typeof FocusedSpeakingDrillDrillIdRoute
-  "/speaking/task/$taskId": typeof FocusedSpeakingTaskTaskIdRoute
+  "/speaking/conversation/$scenarioId": typeof FocusedSpeakingConversationScenarioIdRoute
+  "/speaking/shadowing/$lessonId": typeof FocusedSpeakingShadowingLessonIdRoute
   "/vocab/$topicId/practice": typeof FocusedVocabTopicIdPracticeRoute
   "/luyen-tap/nghe/": typeof AppLuyenTapNgheIndexRoute
   "/luyen-tap/ngu-phap/": typeof AppLuyenTapNguPhapIndexRoute
@@ -313,8 +313,8 @@ export interface FileRoutesByTo {
   "/grading/writing/$submissionId": typeof FocusedGradingWritingSubmissionIdRoute
   "/grammar/$pointId/exercise": typeof FocusedGrammarPointIdExerciseRoute
   "/phong-thi/$sessionId/chi-tiet": typeof FocusedPhongThiSessionIdChiTietRoute
-  "/speaking/drill/$drillId": typeof FocusedSpeakingDrillDrillIdRoute
-  "/speaking/task/$taskId": typeof FocusedSpeakingTaskTaskIdRoute
+  "/speaking/conversation/$scenarioId": typeof FocusedSpeakingConversationScenarioIdRoute
+  "/speaking/shadowing/$lessonId": typeof FocusedSpeakingShadowingLessonIdRoute
   "/vocab/$topicId/practice": typeof FocusedVocabTopicIdPracticeRoute
   "/luyen-tap/nghe": typeof AppLuyenTapNgheIndexRoute
   "/luyen-tap/ngu-phap": typeof AppLuyenTapNguPhapIndexRoute
@@ -354,8 +354,8 @@ export interface FileRoutesById {
   "/_focused/grading/writing/$submissionId": typeof FocusedGradingWritingSubmissionIdRoute
   "/_focused/grammar/$pointId/exercise": typeof FocusedGrammarPointIdExerciseRoute
   "/_focused/phong-thi/$sessionId_/chi-tiet": typeof FocusedPhongThiSessionIdChiTietRoute
-  "/_focused/speaking/drill/$drillId": typeof FocusedSpeakingDrillDrillIdRoute
-  "/_focused/speaking/task/$taskId": typeof FocusedSpeakingTaskTaskIdRoute
+  "/_focused/speaking/conversation/$scenarioId": typeof FocusedSpeakingConversationScenarioIdRoute
+  "/_focused/speaking/shadowing/$lessonId": typeof FocusedSpeakingShadowingLessonIdRoute
   "/_focused/vocab/$topicId/practice": typeof FocusedVocabTopicIdPracticeRoute
   "/_app/luyen-tap/nghe/": typeof AppLuyenTapNgheIndexRoute
   "/_app/luyen-tap/ngu-phap/": typeof AppLuyenTapNguPhapIndexRoute
@@ -394,8 +394,8 @@ export interface FileRouteTypes {
     | "/grading/writing/$submissionId"
     | "/grammar/$pointId/exercise"
     | "/phong-thi/$sessionId/chi-tiet"
-    | "/speaking/drill/$drillId"
-    | "/speaking/task/$taskId"
+    | "/speaking/conversation/$scenarioId"
+    | "/speaking/shadowing/$lessonId"
     | "/vocab/$topicId/practice"
     | "/luyen-tap/nghe/"
     | "/luyen-tap/ngu-phap/"
@@ -426,8 +426,8 @@ export interface FileRouteTypes {
     | "/grading/writing/$submissionId"
     | "/grammar/$pointId/exercise"
     | "/phong-thi/$sessionId/chi-tiet"
-    | "/speaking/drill/$drillId"
-    | "/speaking/task/$taskId"
+    | "/speaking/conversation/$scenarioId"
+    | "/speaking/shadowing/$lessonId"
     | "/vocab/$topicId/practice"
     | "/luyen-tap/nghe"
     | "/luyen-tap/ngu-phap"
@@ -466,8 +466,8 @@ export interface FileRouteTypes {
     | "/_focused/grading/writing/$submissionId"
     | "/_focused/grammar/$pointId/exercise"
     | "/_focused/phong-thi/$sessionId_/chi-tiet"
-    | "/_focused/speaking/drill/$drillId"
-    | "/_focused/speaking/task/$taskId"
+    | "/_focused/speaking/conversation/$scenarioId"
+    | "/_focused/speaking/shadowing/$lessonId"
     | "/_focused/vocab/$topicId/practice"
     | "/_app/luyen-tap/nghe/"
     | "/_app/luyen-tap/ngu-phap/"
@@ -685,18 +685,18 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof FocusedVocabTopicIdPracticeRouteImport
       parentRoute: typeof FocusedRoute
     }
-    "/_focused/speaking/task/$taskId": {
-      id: "/_focused/speaking/task/$taskId"
-      path: "/speaking/task/$taskId"
-      fullPath: "/speaking/task/$taskId"
-      preLoaderRoute: typeof FocusedSpeakingTaskTaskIdRouteImport
+    "/_focused/speaking/shadowing/$lessonId": {
+      id: "/_focused/speaking/shadowing/$lessonId"
+      path: "/speaking/shadowing/$lessonId"
+      fullPath: "/speaking/shadowing/$lessonId"
+      preLoaderRoute: typeof FocusedSpeakingShadowingLessonIdRouteImport
       parentRoute: typeof FocusedRoute
     }
-    "/_focused/speaking/drill/$drillId": {
-      id: "/_focused/speaking/drill/$drillId"
-      path: "/speaking/drill/$drillId"
-      fullPath: "/speaking/drill/$drillId"
-      preLoaderRoute: typeof FocusedSpeakingDrillDrillIdRouteImport
+    "/_focused/speaking/conversation/$scenarioId": {
+      id: "/_focused/speaking/conversation/$scenarioId"
+      path: "/speaking/conversation/$scenarioId"
+      fullPath: "/speaking/conversation/$scenarioId"
+      preLoaderRoute: typeof FocusedSpeakingConversationScenarioIdRouteImport
       parentRoute: typeof FocusedRoute
     }
     "/_focused/phong-thi/$sessionId_/chi-tiet": {
@@ -873,8 +873,8 @@ interface FocusedRouteChildren {
   FocusedGradingWritingSubmissionIdRoute: typeof FocusedGradingWritingSubmissionIdRoute
   FocusedGrammarPointIdExerciseRoute: typeof FocusedGrammarPointIdExerciseRoute
   FocusedPhongThiSessionIdChiTietRoute: typeof FocusedPhongThiSessionIdChiTietRoute
-  FocusedSpeakingDrillDrillIdRoute: typeof FocusedSpeakingDrillDrillIdRoute
-  FocusedSpeakingTaskTaskIdRoute: typeof FocusedSpeakingTaskTaskIdRoute
+  FocusedSpeakingConversationScenarioIdRoute: typeof FocusedSpeakingConversationScenarioIdRoute
+  FocusedSpeakingShadowingLessonIdRoute: typeof FocusedSpeakingShadowingLessonIdRoute
   FocusedVocabTopicIdPracticeRoute: typeof FocusedVocabTopicIdPracticeRoute
 }
 
@@ -890,8 +890,9 @@ const FocusedRouteChildren: FocusedRouteChildren = {
     FocusedGradingWritingSubmissionIdRoute,
   FocusedGrammarPointIdExerciseRoute: FocusedGrammarPointIdExerciseRoute,
   FocusedPhongThiSessionIdChiTietRoute: FocusedPhongThiSessionIdChiTietRoute,
-  FocusedSpeakingDrillDrillIdRoute: FocusedSpeakingDrillDrillIdRoute,
-  FocusedSpeakingTaskTaskIdRoute: FocusedSpeakingTaskTaskIdRoute,
+  FocusedSpeakingConversationScenarioIdRoute:
+    FocusedSpeakingConversationScenarioIdRoute,
+  FocusedSpeakingShadowingLessonIdRoute: FocusedSpeakingShadowingLessonIdRoute,
   FocusedVocabTopicIdPracticeRoute: FocusedVocabTopicIdPracticeRoute,
 }
 

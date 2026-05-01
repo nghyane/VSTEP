@@ -91,7 +91,8 @@ class ChatCompletionsGateway extends LocalOpenAiGateway
             ));
         }
 
-        $text = trim((string) data_get($data, 'choices.0.message.content', ''));
+        $rawContent = data_get($data, 'choices.0.message.content', '');
+        $text = trim(is_array($rawContent) ? json_encode($rawContent) : (string) $rawContent);
         $usage = new Usage(
             (int) data_get($data, 'usage.prompt_tokens', 0),
             (int) data_get($data, 'usage.completion_tokens', 0),

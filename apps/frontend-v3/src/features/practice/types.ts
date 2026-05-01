@@ -115,45 +115,52 @@ export interface WritingSubmission {
 	grading_status: string
 }
 
-export interface SpeakingDrill {
+/* ───── Shadowing ───── */
+
+export interface ShadowingLesson {
 	id: string
 	slug: string
 	title: string
 	level: string
+	segment_count: number
 	estimated_minutes: number | null
 }
 
-export interface SpeakingDrillDetail {
+export type WordAccuracy = "correct" | "wrong" | "close"
+
+export interface ShadowingWordResult {
+	word: string
+	accuracy: WordAccuracy
+	userSaid?: string
+}
+
+export interface ShadowingSegment {
+	id: string
+	index: number
+	text: string
+	ipa: string
+	translation: string
+	word_count: number
+	audio_start: number
+	audio_end: number
+}
+
+export interface ShadowingAttempt {
+	transcript: string
+	accuracy_percent: number
+	correct_words: number
+	total_words: number
+	word_results: ShadowingWordResult[]
+	audio_url: string | null
+}
+
+export interface ShadowingLessonDetail {
 	id: string
 	slug: string
 	title: string
-	description: string | null
 	level: string
-	estimated_minutes: number | null
-	sentences: { id: string; text: string; translation: string }[]
-}
-
-export interface SpeakingTask {
-	id: string
-	slug: string
-	title: string
-	part: number
-	task_type: string
-	speaking_seconds: number
-}
-
-export interface SpeakingTaskContent {
-	topics: { name: string; questions: string[] }[]
-}
-
-export interface SpeakingTaskDetail {
-	id: string
-	slug: string
-	title: string
-	part: number
-	task_type: string
-	content: SpeakingTaskContent
-	speaking_seconds: number
+	audio_url: string
+	segments: ShadowingSegment[]
 }
 
 export interface WritingHistoryItem {
@@ -163,9 +170,52 @@ export interface WritingHistoryItem {
 	prompt: { id: string; slug: string; title: string; part: number } | null
 }
 
-export interface SpeakingHistoryItem {
+/* ───── Speaking Conversation (AI roleplay) ─────
+ * Spec proposal — pending BE. Layout review only.
+ */
+
+export interface ConversationScenario {
 	id: string
-	submitted_at: string
-	duration_seconds: number
-	task_ref_id: string
+	slug: string
+	title: string
+	level: string
+	character_name: string
+	character_voice: string
+	description: string
+	estimated_minutes: number
+}
+
+export interface ConversationVocabCheck {
+	phrase: string
+	used: boolean
+}
+
+export interface ConversationGrammarCorrection {
+	wrong: string
+	correct: string
+	explanation: string
+}
+
+export interface ConversationTurnFeedback {
+	word_count: { used: number; target: number }
+	grammar_ok: boolean
+	grammar_corrections: ConversationGrammarCorrection[]
+	vocab_check: ConversationVocabCheck[]
+	better: string | null
+}
+
+export type ConversationTurnRole = "ai" | "user"
+
+export interface ConversationTurn {
+	id: string
+	role: ConversationTurnRole
+	text: string
+	feedback: ConversationTurnFeedback | null
+	suggested_words: string[]
+}
+
+export interface ConversationSessionDetail {
+	session_id: string
+	scenario: ConversationScenario
+	turns: ConversationTurn[]
 }

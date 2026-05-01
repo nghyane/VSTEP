@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\McqPracticeController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OverviewController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\SpeakingConversationController;
 use App\Http\Controllers\Api\V1\SpeakingPracticeController;
 use App\Http\Controllers\Api\V1\VocabController;
 use App\Http\Controllers\Api\V1\WalletController;
@@ -104,6 +105,17 @@ Route::prefix('v1')->group(function () {
         Route::post('/practice/speaking/vstep-sessions', [SpeakingPracticeController::class, 'startVstepSession']);
         Route::post('/practice/speaking/drill-sessions/{sessionId}/attempt', [SpeakingPracticeController::class, 'drillAttempt']);
         Route::post('/practice/speaking/vstep-sessions/{sessionId}/submit', [SpeakingPracticeController::class, 'submitVstep']);
+
+        // Practice Speaking — conversation roleplay.
+        Route::get('/practice/speaking/scenarios', [SpeakingConversationController::class, 'listScenarios']);
+        Route::get('/practice/speaking/scenarios/{id}', [SpeakingConversationController::class, 'showScenario']);
+        Route::post('/practice/speaking/conversations', [SpeakingConversationController::class, 'start']);
+        Route::get('/practice/speaking/conversations/history', [SpeakingConversationController::class, 'history']);
+        Route::get('/practice/speaking/conversations/{sessionId}', [SpeakingConversationController::class, 'show']);
+        Route::post('/practice/speaking/conversations/{sessionId}/turn', [SpeakingConversationController::class, 'submitTurn']);
+        Route::post('/practice/speaking/conversations/{sessionId}/end', [SpeakingConversationController::class, 'end']);
+        Route::get('/practice/speaking/conversations/{sessionId}/review', [SpeakingConversationController::class, 'review']);
+        Route::post('/practice/speaking/pronunciation-review', [SpeakingConversationController::class, 'pronunciationReview']);
 
         // Exams (mock test).
         Route::get('/exams', [ExamController::class, 'index']);
