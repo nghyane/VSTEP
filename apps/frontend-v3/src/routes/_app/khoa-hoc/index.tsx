@@ -28,10 +28,9 @@ function CoursesPage() {
 	const enrolledIds = new Set(data?.enrolled_course_ids ?? [])
 	const enrollments = data?.enrollments ?? {}
 
-	const list =
-		tab === "mine"
-			? courses.filter((c) => enrolledIds.has(c.id))
-			: courses.filter((c) => !enrolledIds.has(c.id))
+	const exploreList = courses.filter((c) => !enrolledIds.has(c.id))
+	const mineList = courses.filter((c) => enrolledIds.has(c.id))
+	const list = tab === "mine" ? mineList : exploreList
 
 	const hotPair = useMemo<[Course, Course] | null>(() => {
 		const candidates = courses
@@ -72,15 +71,18 @@ function CoursesPage() {
 			<Header title="Khóa học" />
 			{hotPair && <HotCoursesDialog open={hotOpen} onClose={dismissHot} courses={hotPair} />}
 			<div className="px-10 pb-12 space-y-6 max-w-5xl mx-auto w-full">
-				<p className="text-sm text-muted">Học cùng giáo viên chấm thi VSTEP — ôn trúng đề sát ngày thi.</p>
-
-				<div className="flex gap-1 border-b-2 border-border">
-					<TabLink tab="explore" active={tab === "explore"}>
-						Khám phá
-					</TabLink>
-					<TabLink tab="mine" active={tab === "mine"}>
-						Khóa của tôi
-					</TabLink>
+				<div className="flex flex-wrap items-center gap-4">
+					<div className="inline-flex items-center gap-1 p-1 rounded-full bg-surface border-2 border-border shrink-0">
+						<TabLink tab="explore" active={tab === "explore"} count={exploreList.length}>
+							Khám phá
+						</TabLink>
+						<TabLink tab="mine" active={tab === "mine"} count={mineList.length}>
+							Khóa của tôi
+						</TabLink>
+					</div>
+					<p className="text-base text-muted max-w-md leading-relaxed">
+						Học cùng giáo viên chấm thi VSTEP — ôn trúng đề sát ngày thi.
+					</p>
 				</div>
 
 				{isLoading ? (
@@ -121,18 +123,37 @@ function CoursesPage() {
 	)
 }
 
-function TabLink({ tab, active, children }: { tab: Tab; active: boolean; children: React.ReactNode }) {
+function TabLink({
+	tab,
+	active,
+	count,
+	children,
+}: {
+	tab: Tab
+	active: boolean
+	count: number
+	children: React.ReactNode
+}) {
 	return (
 		<Link
 			to="/khoa-hoc"
 			search={{ tab }}
 			className={cn(
-				"relative px-4 py-3 text-sm font-bold transition-colors",
-				active ? "text-foreground" : "text-muted hover:text-foreground",
+				"inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-extrabold transition-all",
+				active
+					? "bg-background text-foreground border-2 border-border border-b-4 -translate-y-px"
+					: "text-muted hover:text-foreground",
 			)}
 		>
 			{children}
-			{active && <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary" />}
+			<span
+				className={cn(
+					"inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs tabular-nums leading-none",
+					active ? "bg-primary/15 text-primary" : "bg-border/70 text-muted",
+				)}
+			>
+				{count}
+			</span>
 		</Link>
 	)
 }
