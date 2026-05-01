@@ -207,6 +207,7 @@ type ExamAction =
   | { type: "WRITING"; taskId: string; text: string }
   | { type: "SPEAKING_DONE"; partId: string }
   | { type: "SET_SPEAKING_ANSWER"; partId: string; answer: SpeakingAnswer }
+  | { type: "CLEAR_SPEAKING"; partId: string }
   | { type: "RESTORE_DRAFT"; draft: ExamDraft }
   | { type: "NEXT_SKILL" }
   | { type: "SHOW_CONFIRM_SUBMIT" } | { type: "HIDE_CONFIRM_SUBMIT" }
@@ -231,6 +232,11 @@ function reducer(state: ExamState, action: ExamAction): ExamState {
     case "SET_SPEAKING_ANSWER": {
       const m = new Map(state.speakingAnswers); m.set(action.partId, action.answer);
       return { ...state, speakingAnswers: m };
+    }
+    case "CLEAR_SPEAKING": {
+      const s = new Set(state.speakingDone); s.delete(action.partId);
+      const m = new Map(state.speakingAnswers); m.delete(action.partId);
+      return { ...state, speakingDone: s, speakingAnswers: m };
     }
     case "RESTORE_DRAFT":
       return {
@@ -408,6 +414,7 @@ export function useExamSessionState(
     answerWriting: (taskId: string, text: string) => dispatch({ type: "WRITING", taskId, text }),
     markSpeakingDone: (partId: string) => dispatch({ type: "SPEAKING_DONE", partId }),
     setSpeakingAnswer: (partId: string, answer: SpeakingAnswer) => dispatch({ type: "SET_SPEAKING_ANSWER", partId, answer }),
+    clearSpeakingAnswer: (partId: string) => dispatch({ type: "CLEAR_SPEAKING", partId }),
     nextSkillAction: () => dispatch({ type: "NEXT_SKILL" }),
     showConfirmSubmit: () => dispatch({ type: "SHOW_CONFIRM_SUBMIT" }),
     hideConfirmSubmit: () => dispatch({ type: "HIDE_CONFIRM_SUBMIT" }),

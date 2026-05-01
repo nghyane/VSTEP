@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator, Alert, KeyboardAvoidingView, Modal,
+  ActivityIndicator, Alert, BackHandler, KeyboardAvoidingView, Modal,
   Platform, ScrollView, StyleSheet, Text, TextInput,
   TouchableOpacity, View,
 } from "react-native";
@@ -15,13 +15,14 @@ import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
 import { AudioTestPlayer, MicTest } from "@/components/DeviceTestWidgets";
 import { HighlightablePassage } from "@/components/HighlightablePassage";
+import { SkillIcon } from "@/components/SkillIcon";
 import { useExam } from "@/hooks/use-exams";
 import {
   useExamSession, useExamSessionState, useExamTimer,
-  type ExamSessionData, type SubmitSessionResult,
+  type SubmitSessionResult,
 } from "@/hooks/use-exam-session";
 import { useThemeColors, spacing, radius, fontSize, fontFamily, colors as themeColors } from "@/theme";
-import type { ExamVersionMcqItem } from "@/types/api";
+import type { ExamVersionMcqItem, Skill } from "@/types/api";
 
 const SKILL_COLOR: Record<string, string> = {
   listening: themeColors.light.skillListening,
@@ -41,9 +42,6 @@ function fmtTime(s: number) {
   return `${m}:${sec}`;
 }
 
-function countWords(t: string) {
-  return t.trim() === "" ? 0 : t.trim().split(/\s+/).length;
-}
 
 // ── Root screen ──
 
@@ -100,32 +98,53 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: any) 
 
   const es = useExamSessionState(session, listeningItems, readingItems, version.writingTasks, version.speakingParts, onSubmitted);
   const remaining = useExamTimer(session.serverDeadlineAt);
+  const [speakingBusy, setSpeakingBusy] = useState(false);
+
+  const guardSpeakingBusy = useCallback(() => {
+    if (!speakingBusy) return false;
+    Alert.alert(
+      "Đang xử lý ghi âm",
+      "Hãy dừng ghi âm hoặc đợi tải lên xong trước khi chuyển phần hoặc nộp bài.",
+    );
+    return true;
+  }, [speakingBusy]);
+
+  const guardedSubmit = useCallback(() => {
+    if (guardSpeakingBusy()) return;
+    es.submit();
+  }, [es, guardSpeakingBusy]);
+
+  const guardedNext = useCallback(() => {
+    if (guardSpeakingBusy()) return;
+    es.showConfirmNext();
+  }, [es, guardSpeakingBusy]);
+
+  const guardedExitSubmit = useCallback(() => {
+    if (guardSpeakingBusy()) return;
+    Alert.alert("Thoát phòng thi?", "Thoát sẽ tự động nộp bài ngay.", [
+      { text: "Ở lại", style: "cancel" },
+      { text: "Thoát & nộp", style: "destructive", onPress: guardedSubmit },
+    ]);
+  }, [guardSpeakingBusy, guardedSubmit]);
 
   // Auto-submit khi hết giờ
   const autoSubmitted = useRef(false);
   useEffect(() => {
-    if (remaining === 0 && !autoSubmitted.current && es.state.phase === "active") {
+    if (remaining === 0 && !autoSubmitted.current && es.state.phase === "active" && !speakingBusy) {
       autoSubmitted.current = true;
-      es.submit();
+      guardedSubmit();
     }
-  }, [remaining, es.state.phase]);
+  }, [remaining, es.state.phase, speakingBusy, guardedSubmit]);
 
   // Back intercept
   useEffect(() => {
     if (es.state.phase !== "active") return;
-    const handler = () => {
-      Alert.alert(
-        "Thoát phòng thi?",
-        "Thoát sẽ tự động nộp bài ngay. Tiếp tục?",
-        [
-          { text: "Ở lại", style: "cancel" },
-          { text: "Thoát & nộp bài", style: "destructive", onPress: () => es.submit() },
-        ],
-      );
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      guardedExitSubmit();
       return true;
-    };
-    return () => {};
-  }, [es.state.phase]);
+    });
+    return () => subscription.remove();
+  }, [es.state.phase, guardedExitSubmit]);
 
   if (es.state.phase === "device-check") {
     return (
@@ -163,12 +182,7 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: any) 
 
         <HapticTouchable
           style={s.exitBtn}
-          onPress={() => {
-            Alert.alert("Thoát phòng thi?", "Thoát sẽ tự động nộp bài ngay.", [
-              { text: "Ở lại", style: "cancel" },
-              { text: "Thoát & nộp", style: "destructive", onPress: () => es.submit() },
-            ]);
-          }}
+          onPress={guardedExitSubmit}
         >
           <Ionicons name="exit-outline" size={20} color={c.mutedForeground} />
         </HapticTouchable>
@@ -186,7 +200,16 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: any) 
           <WritingPanel tasks={version.writingTasks} answers={es.state.writingAnswers} onAnswer={es.answerWriting} c={c} insets={insets} />
         )}
         {es.currentSkill === "speaking" && (
-          <SpeakingPanel parts={version.speakingParts} done={es.state.speakingDone} onDone={es.markSpeakingDone} onSetSpeakingAnswer={es.setSpeakingAnswer} c={c} insets={insets} />
+          <SpeakingPanel
+            parts={version.speakingParts}
+            done={es.state.speakingDone}
+            onDone={es.markSpeakingDone}
+            onSetSpeakingAnswer={es.setSpeakingAnswer}
+            onClearSpeakingAnswer={es.clearSpeakingAnswer}
+            onBusyChange={setSpeakingBusy}
+            c={c}
+            insets={insets}
+          />
         )}
       </View>
 
@@ -202,15 +225,15 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: any) 
         </View>
         {es.isLastSkill ? (
           <DepthButton
-            disabled={es.isSubmitting || es.state.phase === "submitting"}
+            disabled={es.isSubmitting || es.state.phase === "submitting" || speakingBusy}
             onPress={es.showConfirmSubmit}
             style={{ minWidth: 120 }}
           >
-            {es.isSubmitting ? "Đang nộp..." : "Nộp bài"}
+            {speakingBusy ? "Đang lưu..." : es.isSubmitting ? "Đang nộp..." : "Nộp bài"}
           </DepthButton>
         ) : (
-          <DepthButton variant="secondary" onPress={es.showConfirmNext} style={{ minWidth: 120 }}>
-            Phần tiếp
+          <DepthButton variant="secondary" disabled={speakingBusy} onPress={guardedNext} style={{ minWidth: 120 }}>
+            {speakingBusy ? "Đang lưu..." : "Phần tiếp"}
           </DepthButton>
         )}
       </View>
@@ -222,7 +245,7 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: any) 
         message="Sau khi nộp, bạn không thể chỉnh sửa câu trả lời."
         warning={es.answeredMcq < es.totalMcq ? `Còn ${es.totalMcq - es.answeredMcq} câu chưa trả lời` : undefined}
         confirmLabel={es.isSubmitting ? "Đang nộp..." : "Nộp bài"}
-        onConfirm={es.submit}
+        onConfirm={guardedSubmit}
         onCancel={es.hideConfirmSubmit}
         c={c}
       />
@@ -233,7 +256,10 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: any) 
         title={`Chuyển sang ${es.nextSkill ? SKILL_LABEL[es.nextSkill] : "phần tiếp"}?`}
         message="Sau khi chuyển, bạn không thể quay lại phần này để chỉnh sửa."
         confirmLabel="Chuyển"
-        onConfirm={es.nextSkillAction}
+        onConfirm={() => {
+          if (guardSpeakingBusy()) return;
+          es.nextSkillAction();
+        }}
         onCancel={es.hideConfirmNext}
         c={c}
       />
@@ -272,9 +298,7 @@ function DeviceCheck({ exam, version, activeSkills, onStart, c, insets }: any) {
             <View style={[s.dcSkillDot, { backgroundColor: c.muted }]}>
               <Text style={[s.dcSkillDotText, { color: c.mutedForeground }]}>{i + 1}</Text>
             </View>
-            <View style={[s.dcSkillIcon, { backgroundColor: SKILL_COLOR[sk] + "20" }]}>
-              <Text style={{ fontSize: 10 }}>{sk === "listening" ? "🎧" : sk === "reading" ? "📖" : sk === "writing" ? "✍️" : "🎤"}</Text>
-            </View>
+            <SkillIcon skill={sk as Skill} size={15} />
             <Text style={{ color: c.foreground }}>
               <Text style={[s.dcSkillName, { color: c.foreground }]}>{skillByKey[sk].label.toUpperCase()}</Text>
               <Text style={[s.dcSkillTime, { color: c.mutedForeground }]}> – {skillByKey[sk].minutes} phút</Text>
@@ -523,11 +547,13 @@ interface SpeakingAnswer {
   durationSeconds: number;
 }
 
-function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: {
+function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, onClearSpeakingAnswer, onBusyChange, c, insets }: {
   parts: { id: string; part: number; type: string; speakingSeconds: number }[];
   done: Set<string>;
   onDone: (partId: string) => void;
   onSetSpeakingAnswer: (partId: string, answer: SpeakingAnswer) => void;
+  onClearSpeakingAnswer: (partId: string) => void;
+  onBusyChange: (busy: boolean) => void;
   c: ReturnType<typeof useThemeColors>;
   insets: { top: number; bottom: number; left: number; right: number };
 }) {
@@ -536,7 +562,7 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [audioUri, setAudioUri] = useState<string | null>(null);
   const [isRec, setIsRec] = useState(false);
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const soundRef = useRef<Audio.Sound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [recError, setRecError] = useState<string | null>(null);
@@ -546,14 +572,22 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
   const startRef = useRef<number | null>(null);
   const accentColor = themeColors.light.skillSpeaking;
   const accentDark = themeColors.light.skillSpeaking + "CC";
+  const isBusy = isRec || uploading;
+  const elapsedSeconds = Math.floor(elapsedMs / 1000);
+  const progressPct = Math.min(100, Math.round((elapsedSeconds / part.speakingSeconds) * 100));
+
+  useEffect(() => {
+    onBusyChange(isBusy);
+    return () => onBusyChange(false);
+  }, [isBusy, onBusyChange]);
 
   // Reset playback state when switching parts
   useEffect(() => {
     setAudioUri(null);
     setIsRec(false);
     setRecording(null);
-    sound?.unloadAsync().catch(() => undefined);
-    setSound(null);
+    soundRef.current?.unloadAsync().catch(() => undefined);
+    soundRef.current = null;
     setIsPlaying(false);
     setRecError(null);
     setElapsedMs(0);
@@ -564,13 +598,8 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
   // Cleanup on unmount
   useEffect(() => () => {
     if (tickRef.current) clearInterval(tickRef.current);
+    soundRef.current?.unloadAsync().catch(() => undefined);
   }, []);
-
-  useEffect(() => {
-    if (isRec && recording && elapsedMs >= part.speakingSeconds * 1000) {
-      void stopRec();
-    }
-  }, [elapsedMs, isRec, recording, part.speakingSeconds]);
 
   async function startRec() {
     setRecError(null);
@@ -596,27 +625,41 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
     }
   }
 
-  async function stopRec() {
+  const stopRec = useCallback(async () => {
     if (!recording) return;
     if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
-    await recording.stopAndUnloadAsync();
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      playsInSilentModeIOS: true,
-    });
-    const uri = recording.getURI();
-    const duration = Math.max(1, Math.round(elapsedMs / 1000));
-    if (!uri) {
-      setRecError("Ghi âm thất bại, không có file.");
+    try {
+      await recording.stopAndUnloadAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+      });
+      const uri = recording.getURI();
+      const duration = Math.max(1, Math.round(elapsedMs / 1000));
+      if (!uri) {
+        setRecError("Ghi âm thất bại, không có file.");
+        setIsRec(false);
+        setRecording(null);
+        return;
+      }
+      setAudioUri(uri);
+      setRecordedSeconds(duration);
       setIsRec(false);
       setRecording(null);
-      return;
+    } catch {
+      setRecError("Không thể dừng ghi âm. Hãy thử ghi lại.");
+      setAudioUri(null);
+      setRecordedSeconds(0);
+      setIsRec(false);
+      setRecording(null);
     }
-    setAudioUri(uri);
-    setRecordedSeconds(duration);
-    setIsRec(false);
-    setRecording(null);
-  }
+  }, [elapsedMs, recording]);
+
+  useEffect(() => {
+    if (isRec && recording && elapsedMs >= part.speakingSeconds * 1000) {
+      void stopRec();
+    }
+  }, [elapsedMs, isRec, part.speakingSeconds, recording, stopRec]);
 
   async function uploadAudio(): Promise<string | null> {
     if (!audioUri) return null;
@@ -629,6 +672,8 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
         method: "PUT",
         body: audioBlob,
         headers: { "Content-Type": "audio/webm" },
+      }).then((res) => {
+        if (!res.ok) throw new Error("Upload failed");
       });
       return presign.audioKey;
     } catch {
@@ -653,6 +698,8 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
   async function handlePlayback() {
     if (!audioUri) return;
     try {
+      await soundRef.current?.unloadAsync().catch(() => undefined);
+      soundRef.current = null;
       await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
       const { sound: newSound } = await Audio.Sound.createAsync(
         { uri: audioUri },
@@ -661,22 +708,21 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
           if (status.isLoaded) setIsPlaying(status.isPlaying);
         }
       );
-      setSound(newSound);
-    } catch (e: any) {
-      setRecError(`Không phát được: ${e?.message ?? e}`);
+      soundRef.current = newSound;
+    } catch (e: unknown) {
+      setRecError(`Không phát được: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
   function handleRerecord() {
-    sound?.unloadAsync().catch(() => undefined);
-    setSound(null);
+    soundRef.current?.unloadAsync().catch(() => undefined);
+    soundRef.current = null;
     setIsPlaying(false);
     setAudioUri(null);
     setRecError(null);
     setElapsedMs(0);
     setRecordedSeconds(0);
-    onSetSpeakingAnswer(part.id, { partId: part.id, audioUrl: null, durationSeconds: 0 });
-    done.delete(part.id);
+    onClearSpeakingAnswer(part.id);
   }
 
   const hasRecording = done.has(part.id);
@@ -686,8 +732,12 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
       {parts.length > 1 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.sectionTabs}>
           {parts.map((p, i: number) => (
-            <TouchableOpacity key={p.id} onPress={() => setPartIdx(i)}
-              style={[s.sectionTab, { borderBottomColor: i === partIdx ? accentColor : "transparent" }]}>
+            <TouchableOpacity
+              key={p.id}
+              disabled={isBusy}
+              onPress={() => setPartIdx(i)}
+              style={[s.sectionTab, { borderBottomColor: i === partIdx ? accentColor : "transparent", opacity: isBusy && i !== partIdx ? 0.45 : 1 }]}
+            >
               <Text style={[s.sectionTabText, { color: i === partIdx ? accentDark : c.mutedForeground }]}>Part {p.part}</Text>
             </TouchableOpacity>
           ))}
@@ -698,12 +748,27 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
         <Text style={[s.promptMeta, { color: c.mutedForeground }]}>{part.speakingSeconds}s · Ghi âm câu trả lời</Text>
       </View>
       <View style={[s.recCard, { backgroundColor: c.card, borderColor: isRec ? accentColor : c.border }]}>
+        <View style={[s.recStatusPill, { backgroundColor: isRec ? c.destructiveTint : uploading ? c.infoTint : hasRecording ? c.primaryTint : c.coinTint }]}>
+          <Ionicons
+            name={isRec ? "radio-button-on" : uploading ? "cloud-upload-outline" : hasRecording ? "checkmark-circle" : audioUri ? "play-circle-outline" : "mic-outline"}
+            size={15}
+            color={isRec ? c.destructive : uploading ? c.info : hasRecording ? c.primary : accentDark}
+          />
+          <Text style={[s.recStatusText, { color: isRec ? c.destructive : uploading ? c.info : hasRecording ? c.primaryDark : accentDark }]}>
+            {isRec ? "Đang ghi âm" : uploading ? "Đang tải lên" : hasRecording ? "Đã lưu câu trả lời" : audioUri ? "Sẵn sàng xác nhận" : "Sẵn sàng ghi"}
+          </Text>
+        </View>
         {!audioUri && !hasRecording && (
           <>
             {isRec && (
-              <Text style={[s.timerText, { color: accentDark }]}>
-                {Math.floor(elapsedMs / 1000)}s / {part.speakingSeconds}s
-              </Text>
+              <View style={s.recTimerBlock}>
+                <Text style={[s.timerText, { color: accentDark }]}>
+                  {elapsedSeconds}s / {part.speakingSeconds}s
+                </Text>
+                <View style={[s.recProgressTrack, { backgroundColor: c.borderLight }]}>
+                  <View style={[s.recProgressFill, { width: `${progressPct}%`, backgroundColor: accentColor }]} />
+                </View>
+              </View>
             )}
             <DepthButton onPress={isRec ? stopRec : startRec} disabled={uploading}>
               {isRec ? "Dừng ghi âm" : "Bắt đầu nói"}
@@ -725,8 +790,8 @@ function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, c, insets }: 
         )}
         {hasRecording && (
           <View style={s.doneRow}>
-            <Ionicons name="checkmark-circle" size={16} color={themeColors.light.skillWriting} />
-            <Text style={[s.doneText, { color: themeColors.light.skillWriting }]}>Đã ghi âm</Text>
+            <Ionicons name="checkmark-circle" size={16} color={c.primary} />
+            <Text style={[s.doneText, { color: c.primaryDark }]}>Đã ghi âm · {recordedSeconds || part.speakingSeconds}s</Text>
           </View>
         )}
         {recError && <Text style={[s.errorText, { color: c.destructive }]}>{recError}</Text>}
@@ -799,11 +864,11 @@ function ResultScreen({ result, sessionId, examTitle, c, insets }: { result: Sub
       </View>
       <Text style={[s.resultTitle, { color: c.foreground }]}>Nộp bài thành công!</Text>
       <Text style={[s.resultExam, { color: c.mutedForeground }]}>{examTitle}</Text>
-      <View style={[s.resultCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
+      <View style={[s.resultCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: c.border }]}>
         <Text style={[s.resultScoreLabel, { color: c.mutedForeground }]}>Điểm MCQ (Nghe + Đọc)</Text>
         <Text style={[s.resultScore, { color: c.primary }]}>{result.mcqScore}<Text style={[s.resultTotal, { color: c.subtle }]}>/{result.mcqTotal}</Text></Text>
         <View style={[s.resultBar, { backgroundColor: c.muted }]}>
-          <View style={[s.resultFill, { backgroundColor: c.primary, width: `${pct}%` as any }]} />
+          <View style={[s.resultFill, { backgroundColor: c.primary, width: `${pct}%` }]} />
         </View>
         <Text style={[s.resultAiNote, { color: c.subtle }]}>Writing và Speaking đang được AI chấm điểm</Text>
       </View>
@@ -878,6 +943,11 @@ const s = StyleSheet.create({
   wcBadge: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, textAlign: "right", marginTop: spacing.sm },
   // Speaking
   recCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.xl, alignItems: "center", gap: spacing.lg },
+  recStatusPill: { flexDirection: "row", alignItems: "center", gap: spacing.xs, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.full },
+  recStatusText: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
+  recTimerBlock: { width: "100%", alignItems: "center", gap: spacing.sm },
+  recProgressTrack: { width: "100%", height: 8, borderRadius: radius.full, overflow: "hidden" },
+  recProgressFill: { height: "100%", borderRadius: radius.full },
   micBtn: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing["2xl"], paddingVertical: spacing.md, borderRadius: radius.full },
   micBtnText: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
   doneRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
