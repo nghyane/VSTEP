@@ -55,6 +55,17 @@ export function Header({ title, backTo }: Props) {
 		return () => clearTimeout(t)
 	}, [streakAnimKey])
 
+	const [coinClickKey, setCoinClickKey] = useState(0)
+	function handleCoinClick() {
+		setCoinClickKey((k) => k + 1)
+		setTopupOpen(true)
+	}
+	useEffect(() => {
+		if (coinClickKey === 0) return
+		const t = setTimeout(() => setCoinClickKey(0), 1000)
+		return () => clearTimeout(t)
+	}, [coinClickKey])
+
 	return (
 		<div className="sticky top-0 z-10 bg-background px-10 pt-8 pb-5 flex items-center justify-between">
 			<div className="flex items-center gap-1">
@@ -69,7 +80,7 @@ export function Header({ title, backTo }: Props) {
 				<div className="relative shrink-0">
 					<button
 						type="button"
-						onClick={() => setTopupOpen(true)}
+						onClick={handleCoinClick}
 						aria-label={`${balance ?? 0} xu — bấm để nạp thêm`}
 						className="group inline-flex w-max items-center gap-2 px-3 py-1.5 rounded-full bg-coin-tint border-2 border-coin/40 border-b-4 hover:bg-coin/25 hover:-translate-y-0.5 active:translate-y-0 active:border-b-2 transition-all whitespace-nowrap"
 					>
@@ -79,6 +90,7 @@ export function Header({ title, backTo }: Props) {
 							className={cn(
 								"origin-center group-hover:animate-[coinPinch_600ms_ease-in-out]",
 								animKey > 0 && "animate-[coinPinch_700ms_ease-in-out]",
+								coinClickKey > 0 && "animate-[coinPinch_700ms_ease-in-out]",
 							)}
 						/>
 						<span className="font-extrabold text-base text-coin-dark tabular-nums leading-none">
@@ -91,6 +103,13 @@ export function Header({ title, backTo }: Props) {
 							+
 						</span>
 					</button>
+					{coinClickKey > 0 && (
+						<span
+							key={`click-ring-${coinClickKey}`}
+							aria-hidden
+							className="pointer-events-none absolute inset-0 rounded-full bg-coin/40 animate-[coinPulseRing_900ms_ease-out_forwards]"
+						/>
+					)}
 					{animKey > 0 && (
 						<>
 							<span
