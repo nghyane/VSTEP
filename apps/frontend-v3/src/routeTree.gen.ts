@@ -46,6 +46,7 @@ import { Route as FocusedGradingWritingSubmissionIdRouteImport } from "./routes/
 import { Route as FocusedGradingSpeakingSubmissionIdRouteImport } from "./routes/_focused/grading/speaking.$submissionId"
 import { Route as AppLuyenTapTuVungTopicIdRouteImport } from "./routes/_app/luyen-tap/tu-vung/$topicId"
 import { Route as AppLuyenTapNguPhapPointIdRouteImport } from "./routes/_app/luyen-tap/ngu-phap/$pointId"
+import { Route as AppKhoaHocCourseIdDatLich11RouteImport } from "./routes/_app/khoa-hoc/$courseId_.dat-lich-1-1"
 
 const FocusedRoute = FocusedRouteImport.update({
   id: "/_focused",
@@ -242,6 +243,12 @@ const AppLuyenTapNguPhapPointIdRoute =
     path: "/$pointId",
     getParentRoute: () => AppLuyenTapNguPhapRoute,
   } as any)
+const AppKhoaHocCourseIdDatLich11Route =
+  AppKhoaHocCourseIdDatLich11RouteImport.update({
+    id: "/$courseId_/dat-lich-1-1",
+    path: "/$courseId/dat-lich-1-1",
+    getParentRoute: () => AppKhoaHocRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
@@ -267,6 +274,7 @@ export interface FileRoutesByFullPath {
   "/khoa-hoc/": typeof AppKhoaHocIndexRoute
   "/luyen-tap/": typeof AppLuyenTapIndexRoute
   "/thi-thu/": typeof AppThiThuIndexRoute
+  "/khoa-hoc/$courseId/dat-lich-1-1": typeof AppKhoaHocCourseIdDatLich11Route
   "/luyen-tap/ngu-phap/$pointId": typeof AppLuyenTapNguPhapPointIdRoute
   "/luyen-tap/tu-vung/$topicId": typeof AppLuyenTapTuVungTopicIdRoute
   "/grading/speaking/$submissionId": typeof FocusedGradingSpeakingSubmissionIdRoute
@@ -298,6 +306,7 @@ export interface FileRoutesByTo {
   "/khoa-hoc": typeof AppKhoaHocIndexRoute
   "/luyen-tap": typeof AppLuyenTapIndexRoute
   "/thi-thu": typeof AppThiThuIndexRoute
+  "/khoa-hoc/$courseId/dat-lich-1-1": typeof AppKhoaHocCourseIdDatLich11Route
   "/luyen-tap/ngu-phap/$pointId": typeof AppLuyenTapNguPhapPointIdRoute
   "/luyen-tap/tu-vung/$topicId": typeof AppLuyenTapTuVungTopicIdRoute
   "/grading/speaking/$submissionId": typeof FocusedGradingSpeakingSubmissionIdRoute
@@ -338,6 +347,7 @@ export interface FileRoutesById {
   "/_app/khoa-hoc/": typeof AppKhoaHocIndexRoute
   "/_app/luyen-tap/": typeof AppLuyenTapIndexRoute
   "/_app/thi-thu/": typeof AppThiThuIndexRoute
+  "/_app/khoa-hoc/$courseId_/dat-lich-1-1": typeof AppKhoaHocCourseIdDatLich11Route
   "/_app/luyen-tap/ngu-phap/$pointId": typeof AppLuyenTapNguPhapPointIdRoute
   "/_app/luyen-tap/tu-vung/$topicId": typeof AppLuyenTapTuVungTopicIdRoute
   "/_focused/grading/speaking/$submissionId": typeof FocusedGradingSpeakingSubmissionIdRoute
@@ -377,6 +387,7 @@ export interface FileRouteTypes {
     | "/khoa-hoc/"
     | "/luyen-tap/"
     | "/thi-thu/"
+    | "/khoa-hoc/$courseId/dat-lich-1-1"
     | "/luyen-tap/ngu-phap/$pointId"
     | "/luyen-tap/tu-vung/$topicId"
     | "/grading/speaking/$submissionId"
@@ -408,6 +419,7 @@ export interface FileRouteTypes {
     | "/khoa-hoc"
     | "/luyen-tap"
     | "/thi-thu"
+    | "/khoa-hoc/$courseId/dat-lich-1-1"
     | "/luyen-tap/ngu-phap/$pointId"
     | "/luyen-tap/tu-vung/$topicId"
     | "/grading/speaking/$submissionId"
@@ -447,6 +459,7 @@ export interface FileRouteTypes {
     | "/_app/khoa-hoc/"
     | "/_app/luyen-tap/"
     | "/_app/thi-thu/"
+    | "/_app/khoa-hoc/$courseId_/dat-lich-1-1"
     | "/_app/luyen-tap/ngu-phap/$pointId"
     | "/_app/luyen-tap/tu-vung/$topicId"
     | "/_focused/grading/speaking/$submissionId"
@@ -728,17 +741,26 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AppLuyenTapNguPhapPointIdRouteImport
       parentRoute: typeof AppLuyenTapNguPhapRoute
     }
+    "/_app/khoa-hoc/$courseId_/dat-lich-1-1": {
+      id: "/_app/khoa-hoc/$courseId_/dat-lich-1-1"
+      path: "/$courseId/dat-lich-1-1"
+      fullPath: "/khoa-hoc/$courseId/dat-lich-1-1"
+      preLoaderRoute: typeof AppKhoaHocCourseIdDatLich11RouteImport
+      parentRoute: typeof AppKhoaHocRoute
+    }
   }
 }
 
 interface AppKhoaHocRouteChildren {
   AppKhoaHocCourseIdRoute: typeof AppKhoaHocCourseIdRoute
   AppKhoaHocIndexRoute: typeof AppKhoaHocIndexRoute
+  AppKhoaHocCourseIdDatLich11Route: typeof AppKhoaHocCourseIdDatLich11Route
 }
 
 const AppKhoaHocRouteChildren: AppKhoaHocRouteChildren = {
   AppKhoaHocCourseIdRoute: AppKhoaHocCourseIdRoute,
   AppKhoaHocIndexRoute: AppKhoaHocIndexRoute,
+  AppKhoaHocCourseIdDatLich11Route: AppKhoaHocCourseIdDatLich11Route,
 }
 
 const AppKhoaHocRouteWithChildren = AppKhoaHocRoute._addFileChildren(

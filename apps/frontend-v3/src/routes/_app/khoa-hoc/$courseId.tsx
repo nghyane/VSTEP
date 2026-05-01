@@ -47,7 +47,7 @@ function CourseDetailPage() {
 					<div className="grid gap-6 md:grid-cols-[1fr_minmax(260px,300px)]">
 						<CourseInfo course={course} sold_slots={sold_slots} enrolled={enrolled} remaining={remaining} />
 						{enrolled ? (
-							<EnrolledCard livestreamUrl={course.livestream_url} />
+							<EnrolledCard courseId={courseId} livestreamUrl={course.livestream_url} />
 						) : (
 							<EnrollCard course={course} remaining={remaining} />
 						)}
@@ -288,7 +288,7 @@ function EnrollCard({ course, remaining }: { course: CourseWithRelations; remain
 	)
 }
 
-function EnrolledCard({ livestreamUrl }: { livestreamUrl: string | null }) {
+function EnrolledCard({ courseId, livestreamUrl }: { courseId: string; livestreamUrl: string | null }) {
 	return (
 		<aside className="rounded-2xl border-2 border-success/30 bg-success/5 p-5 flex flex-col gap-4 self-center">
 			<p className="text-xs font-bold uppercase tracking-wider text-success text-center">Đã đăng ký</p>
@@ -305,6 +305,14 @@ function EnrolledCard({ livestreamUrl }: { livestreamUrl: string | null }) {
 					Vào Zoom
 				</a>
 			)}
+			<Link
+				to="/khoa-hoc/$courseId/dat-lich-1-1"
+				params={{ courseId }}
+				className="w-full inline-flex items-center justify-center gap-2 rounded-(--radius-button) border-2 border-b-4 border-primary/30 bg-primary-tint px-4 py-2.5 text-sm font-extrabold text-primary-dark transition-all hover:-translate-y-0.5 hover:bg-primary-tint/80 active:translate-y-0 active:border-b-2"
+			>
+				<Icon name="graduation" size="xs" />
+				Đặt lịch 1-1 với giảng viên
+			</Link>
 		</aside>
 	)
 }
@@ -319,8 +327,7 @@ function CommitmentCard({ commitment }: { commitment: CommitmentStatus }) {
 			: 0
 
 	const deadlineMs = commitment.deadline_at ? new Date(commitment.deadline_at).getTime() : null
-	const daysLeft =
-		deadlineMs !== null ? Math.ceil((deadlineMs - Date.now()) / (1000 * 60 * 60 * 24)) : null
+	const daysLeft = deadlineMs !== null ? Math.ceil((deadlineMs - Date.now()) / (1000 * 60 * 60 * 24)) : null
 	const urgent = !met && !violated && daysLeft !== null && daysLeft <= 3
 
 	const borderClass = met ? "border-success" : violated ? "border-destructive" : "border-warning"
@@ -334,17 +341,14 @@ function CommitmentCard({ commitment }: { commitment: CommitmentStatus }) {
 	const chipClass = met
 		? "bg-primary-tint border-success/40 text-success"
 		: violated
-				? "bg-destructive-tint border-destructive/40 text-destructive"
-				: "bg-warning-tint border-warning/40 text-warning"
+			? "bg-destructive-tint border-destructive/40 text-destructive"
+			: "bg-warning-tint border-warning/40 text-warning"
 	const progressTone: "primary" | "warning" = met ? "primary" : "warning"
 
 	return (
 		<Link
 			to="/thi-thu"
-			className={cn(
-				"group card-interactive block p-6 relative overflow-hidden",
-				borderClass,
-			)}
+			className={cn("group card-interactive block p-6 relative overflow-hidden", borderClass)}
 		>
 			<div className="relative flex items-start gap-4">
 				<div
@@ -360,9 +364,7 @@ function CommitmentCard({ commitment }: { commitment: CommitmentStatus }) {
 				<div className="flex-1 min-w-0 space-y-3">
 					<div className="flex items-start justify-between gap-3 flex-wrap">
 						<div className="min-w-0">
-							<p className={cn("text-xs font-bold uppercase tracking-wider", accentText)}>
-								Cam kết kỷ luật
-							</p>
+							<p className={cn("text-xs font-bold uppercase tracking-wider", accentText)}>Cam kết kỷ luật</p>
 							<p className="font-extrabold text-foreground text-2xl leading-none mt-1.5">
 								<span className="tabular-nums">{commitment.completed}</span>
 								<span className="text-muted">/</span>
@@ -396,12 +398,7 @@ function CommitmentCard({ commitment }: { commitment: CommitmentStatus }) {
 						</span>
 					</div>
 
-					<DuoProgressBar
-						value={pct}
-						tone={progressTone}
-						heightPx={12}
-						label="Tiến độ cam kết kỷ luật"
-					/>
+					<DuoProgressBar value={pct} tone={progressTone} heightPx={12} label="Tiến độ cam kết kỷ luật" />
 
 					{commitment.deadline_at && (
 						<p
@@ -412,8 +409,7 @@ function CommitmentCard({ commitment }: { commitment: CommitmentStatus }) {
 						>
 							<Icon name="timer" size="xs" />
 							<span>
-								Hạn chót:{" "}
-								<span className="tabular-nums">{formatDate(commitment.deadline_at)}</span>
+								Hạn chót: <span className="tabular-nums">{formatDate(commitment.deadline_at)}</span>
 								{!met && !violated && daysLeft !== null && (
 									<span className="ml-1">
 										(còn <span className="tabular-nums">{Math.max(0, daysLeft)}</span> ngày)
@@ -430,24 +426,21 @@ function CommitmentCard({ commitment }: { commitment: CommitmentStatus }) {
 							</span>
 						) : violated ? (
 							<span>
-								Cam kết đã <span className="font-bold text-destructive">vi phạm</span> — bạn chưa
-								hoàn thành đủ {commitment.required} bài full-test trong hạn. Liên hệ giáo viên để
-								được hỗ trợ.
+								Cam kết đã <span className="font-bold text-destructive">vi phạm</span> — bạn chưa hoàn thành
+								đủ {commitment.required} bài full-test trong hạn. Liên hệ giáo viên để được hỗ trợ.
 							</span>
 						) : (
 							<>
-								Còn <span className="font-extrabold tabular-nums text-warning">{remaining}</span>{" "}
-								bài full-test nữa để hoàn thành cam kết
+								Còn <span className="font-extrabold tabular-nums text-warning">{remaining}</span> bài
+								full-test nữa để hoàn thành cam kết
 								{daysLeft !== null && daysLeft >= 0 && (
 									<>
 										{" "}
-										trong{" "}
-										<span className="font-extrabold tabular-nums text-warning">{daysLeft}</span>{" "}
-										ngày tới
+										trong <span className="font-extrabold tabular-nums text-warning">{daysLeft}</span> ngày
+										tới
 									</>
 								)}
-								. Bấm vào ô này để{" "}
-								<span className="font-bold text-foreground">vào phòng thi ngay.</span>
+								. Bấm vào ô này để <span className="font-bold text-foreground">vào phòng thi ngay.</span>
 							</>
 						)}
 					</p>
