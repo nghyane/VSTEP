@@ -1,5 +1,5 @@
 // Practice
-// Generated: 2026-04-21
+// Generated: 2026-05-02
 
 Table practice_sessions {
   id uuid [pk, not null]

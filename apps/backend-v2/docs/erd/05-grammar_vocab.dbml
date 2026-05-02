@@ -1,5 +1,5 @@
 // Grammar Vocab
-// Generated: 2026-04-21
+// Generated: 2026-05-02
 
 Table grammar_points {
   id uuid [pk, not null]
@@ -166,15 +166,14 @@ Table practice_vocab_reviews {
 Table profile_vocab_srs_states {
   profile_id uuid [pk, not null]
   word_id uuid [pk, not null]
-  state_kind varchar(15) [not null]
   due_at timestamp [not null]
-  interval_days integer
-  ease_factor numeric(4,2)
   lapses smallint [not null]
-  remaining_steps smallint
-  review_interval_days integer
-  review_ease_factor numeric(4,2)
   updated_at timestamp [not null, default: `now()`]
+  difficulty double precision [not null]
+  stability double precision [not null]
+  last_review_at timestamp
+  state_kind varchar(15) [not null]
+  remaining_steps smallint [not null]
 }
 
 // --- Referenced from other domains ---
