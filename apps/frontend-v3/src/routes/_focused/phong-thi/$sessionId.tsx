@@ -244,13 +244,15 @@ function ResultScreen({
 							<PerformanceTable rows={rows} />
 						</ScrollArea>
 						{hasPending && (
-							<p className="mt-3 inline-flex items-center gap-2 text-xs text-muted">
-								<span className="relative flex size-1.5">
+							<div className="mt-3 inline-flex items-center gap-2 rounded-full border-2 border-warning/40 bg-warning/10 px-3 py-1.5">
+								<span className="relative flex size-1.5 shrink-0">
 									<span className="absolute inline-flex size-full animate-ping rounded-full bg-warning opacity-60" />
 									<span className="relative inline-flex size-1.5 rounded-full bg-warning" />
 								</span>
-								AI đang chấm Writing/Speaking — trang sẽ tự cập nhật khi xong (mỗi 5s).
-							</p>
+								<span className="text-[11px] font-extrabold text-foreground">
+									AI đang chấm — bạn có thể quay về sảnh, kết quả sẽ tự cập nhật
+								</span>
+							</div>
 						)}
 					</div>
 
