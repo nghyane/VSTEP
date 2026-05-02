@@ -17,6 +17,14 @@ use Illuminate\Validation\ValidationException;
 
 class CourseService
 {
+    /** Coin price per 30-min 1-1 booking. Mirrors FE BOOKING_COIN_COST. */
+    public const BOOKING_COIN_COST = 50;
+
+    /** Booking page slot grid: 1 tuần đã qua + 4 tuần tới. */
+    private const BOOKING_GRID_PAST_DAYS = 7;
+
+    private const BOOKING_GRID_FUTURE_DAYS = 35;
+
     public function __construct(
         private readonly WalletService $walletService,
         private readonly NotificationService $notificationService,
@@ -265,20 +273,128 @@ class CourseService
                 'profile_id' => $profile->id,
                 'submission_type' => $submissionType,
                 'submission_id' => $submissionId,
+                'meet_url' => $this->generateMeetUrl(),
                 'status' => 'booked',
                 'booked_at' => now(),
             ]);
+
+            // Trừ xu sau khi tạo booking để source_id reference được booking record.
+            $this->walletService->spend(
+                $profile,
+                self::BOOKING_COIN_COST,
+                CoinTransactionType::TeacherBooking,
+                $booking,
+                ['slot_id' => $slot->id, 'course_id' => $slot->course_id],
+            );
 
             DB::afterCommit(fn () => $this->notificationService->push(
                 profile: $profile,
                 type: 'booking_created',
                 title: 'Đặt lịch thành công',
-                body: 'Lịch hẹn đã được xác nhận. Chờ giáo viên gửi link meeting.',
+                body: 'Lịch hẹn đã được xác nhận. Link meeting đã sẵn sàng trong chi tiết booking.',
                 iconKey: 'calendar',
                 dedupKey: "booking:{$booking->id}",
             ));
 
             return $booking;
         });
+    }
+
+    /**
+     * Booking page payload cho FE (`BookingPageData`):
+     *  - teacher: thông tin giáo viên (id, full_name, title, bio)
+     *  - slots: tất cả slot trong cửa sổ hiển thị (-7d…+35d) + status đã suy luận theo profile hiện tại
+     *  - my_bookings_count: số booking active của profile cho course này
+     *
+     * Status mapping per slot:
+     *  - past: starts_at < now (bất kể status DB)
+     *  - booked_me: profile có TeacherBooking active trên slot
+     *  - booked_other: slot.status = 'booked' và không phải của profile
+     *  - available: slot.status = 'open'
+     *
+     * @return array{
+     *     teacher: array{id: string, full_name: string, title: ?string, bio: ?string},
+     *     slots: list<array{id: string, starts_at: string, duration_minutes: int, status: string, meet_url: ?string}>,
+     *     my_bookings_count: int,
+     *     max_bookings_per_student: int,
+     *     commitment: array{phase: string, completed: int, required: int, window_start_at: ?string, deadline_at: ?string},
+     * }
+     */
+    public function getBookingPageData(Profile $profile, Course $course): array
+    {
+        $course->loadMissing('teacher:id,full_name,title,bio');
+
+        $now = now();
+        $windowStart = $now->copy()->subDays(self::BOOKING_GRID_PAST_DAYS)->startOfDay();
+        $windowEnd = $now->copy()->addDays(self::BOOKING_GRID_FUTURE_DAYS)->endOfDay();
+
+        /** @var Collection<int,TeacherSlot> $slots */
+        $slots = TeacherSlot::query()
+            ->where('course_id', $course->id)
+            ->whereBetween('starts_at', [$windowStart, $windowEnd])
+            ->orderBy('starts_at')
+            ->get();
+
+        // Một query cho tất cả booking active của profile trong course
+        // → vừa map vào slots, vừa derive my_bookings_count (không gọi COUNT thứ 2).
+        $myBookings = TeacherBooking::query()
+            ->where('profile_id', $profile->id)
+            ->whereHas('slot', fn ($q) => $q->where('course_id', $course->id))
+            ->whereIn('status', ['booked', 'completed'])
+            ->get()
+            ->keyBy('slot_id');
+
+        $items = $slots->map(function (TeacherSlot $slot) use ($myBookings, $now) {
+            $mine = $myBookings->get($slot->id);
+            $status = match (true) {
+                $slot->starts_at->lt($now) => 'past',
+                $mine !== null => 'booked_me',
+                $slot->status === 'booked' => 'booked_other',
+                default => 'available',
+            };
+
+            return [
+                'id' => $slot->id,
+                'starts_at' => $slot->starts_at->toIso8601String(),
+                'duration_minutes' => (int) $slot->duration_minutes,
+                'status' => $status,
+                'meet_url' => $status === 'booked_me' ? $mine->meet_url : null,
+            ];
+        })->values()->all();
+
+        $teacher = $course->teacher;
+
+        return [
+            'teacher' => [
+                'id' => $teacher->id,
+                'full_name' => $teacher->full_name,
+                'title' => $teacher->title,
+                'bio' => $teacher->bio,
+            ],
+            'slots' => $items,
+            'my_bookings_count' => $myBookings->count(),
+            'max_bookings_per_student' => (int) $course->max_slots_per_student,
+            'commitment' => $this->commitmentStatus($profile, $course),
+        ];
+    }
+
+    /**
+     * Mock Google Meet URL. Production: teacher tự cập nhật qua PATCH /teacher/bookings/{id}.
+     * Định dạng `aaa-bbbb-ccc` (lowercase a-z) khớp với Meet thật để FE render link nhất quán.
+     */
+    private function generateMeetUrl(): string
+    {
+        $alphabet = 'abcdefghijklmnopqrstuvwxyz';
+        $pick = function (int $len) use ($alphabet): string {
+            $out = '';
+            $max = strlen($alphabet) - 1;
+            for ($i = 0; $i < $len; $i++) {
+                $out .= $alphabet[random_int(0, $max)];
+            }
+
+            return $out;
+        };
+
+        return 'https://meet.google.com/'.$pick(3).'-'.$pick(4).'-'.$pick(3);
     }
 }

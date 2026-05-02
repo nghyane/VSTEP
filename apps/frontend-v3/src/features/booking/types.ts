@@ -15,8 +15,20 @@ export interface BookingTeacher {
 	bio: string | null
 }
 
+export type CommitmentPhase = "not_enrolled" | "pending" | "met" | "violated"
+
+export interface BookingCommitment {
+	phase: CommitmentPhase
+	completed: number
+	required: number
+	window_start_at: string | null
+	deadline_at: string | null
+}
+
 export interface BookingPageData {
 	teacher: BookingTeacher
 	slots: BookingSlot[]
 	my_bookings_count: number
+	max_bookings_per_student: number
+	commitment: BookingCommitment
 }

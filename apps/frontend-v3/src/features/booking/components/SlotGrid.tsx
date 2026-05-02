@@ -9,6 +9,7 @@ const DAY_LABELS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"] as const
 interface Props {
 	slots: BookingSlot[]
 	weekStartMs: number
+	locked: boolean
 	onSelect: (slot: BookingSlot) => void
 }
 
@@ -21,7 +22,7 @@ interface CellSpec {
 	isToday: boolean
 }
 
-export function SlotGrid({ slots, weekStartMs, onSelect }: Props) {
+export function SlotGrid({ slots, weekStartMs, locked, onSelect }: Props) {
 	const now = Date.now()
 	const grid = useMemo(() => buildGrid(slots, weekStartMs, now), [slots, weekStartMs, now])
 	const days = grid.days
@@ -80,7 +81,12 @@ export function SlotGrid({ slots, weekStartMs, onSelect }: Props) {
 								{row.label}
 							</div>
 							{row.cells.map((cell) => (
-								<SlotCell key={`${cell.timeKey}-${cell.dateMs}`} cell={cell} onSelect={onSelect} />
+								<SlotCell
+									key={`${cell.timeKey}-${cell.dateMs}`}
+									cell={cell}
+									locked={locked}
+									onSelect={onSelect}
+								/>
 							))}
 						</div>
 					))}
@@ -90,7 +96,15 @@ export function SlotGrid({ slots, weekStartMs, onSelect }: Props) {
 	)
 }
 
-function SlotCell({ cell, onSelect }: { cell: CellSpec; onSelect: (slot: BookingSlot) => void }) {
+function SlotCell({
+	cell,
+	locked,
+	onSelect,
+}: {
+	cell: CellSpec
+	locked: boolean
+	onSelect: (slot: BookingSlot) => void
+}) {
 	const slot = cell.slot
 	if (!slot) {
 		return (
@@ -101,7 +115,8 @@ function SlotCell({ cell, onSelect }: { cell: CellSpec; onSelect: (slot: Booking
 	}
 	const status = slot.status
 	const styles = STATUS_STYLES[status]
-	const interactive = status === "available" || status === "booked_me"
+	// Locked: chặn click "available". `booked_me` vẫn cho xem chi tiết (read-only, không tốn xu).
+	const interactive = (!locked && status === "available") || status === "booked_me"
 	return (
 		<div
 			className={cn(
