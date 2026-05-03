@@ -67,6 +67,16 @@ export default function RootLayout() {
     [],
   );
 
+  const switchSession = useCallback(
+    async (accessToken: string, refreshToken: string, p: Profile) => {
+      if (!user) return;
+      await saveTokens(accessToken, refreshToken, user, p);
+      setProfile(p);
+      setStatus("authenticated");
+    },
+    [user],
+  );
+
   const signOut = useCallback(async () => {
     await clearTokens().catch(() => undefined);
     setUser(null);
@@ -95,7 +105,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <AuthContext.Provider value={{ status, user, profile, isLoading: false, signIn, signOut }}>
+        <AuthContext.Provider value={{ status, user, profile, isLoading: false, signIn, switchSession, signOut }}>
           <HapticsProvider>
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="index" />

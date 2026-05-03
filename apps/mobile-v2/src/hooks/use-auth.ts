@@ -14,6 +14,11 @@ interface AuthCtx {
     user: AuthUser,
     profile: Profile | null,
   ) => Promise<void>;
+  switchSession: (
+    accessToken: string,
+    refreshToken: string,
+    profile: Profile,
+  ) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -23,6 +28,7 @@ export const AuthContext = createContext<AuthCtx>({
   profile: null,
   isLoading: true,
   signIn: async () => undefined,
+  switchSession: async () => undefined,
   signOut: async () => undefined,
 });
 

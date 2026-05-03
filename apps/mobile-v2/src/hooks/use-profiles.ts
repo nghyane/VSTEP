@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { getRefreshToken } from "@/lib/auth";
+import { queryClient } from "@/lib/query-client";
 import type { Profile } from "@/types/api";
 
 // ── Types ──
@@ -13,6 +15,13 @@ export interface CreateProfileInput {
 export interface UpdateProfileInput {
   nickname?: string;
   targetDeadline?: string;
+}
+
+export interface SwitchProfileResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  profile: Profile;
 }
 
 // ── Queries ──
@@ -69,14 +78,17 @@ export function useDeleteProfile() {
 }
 
 export function useSwitchProfile() {
-  const qc = useQueryClient();
   return useMutation({
-    mutationFn: (profileId: string) =>
-      api.post<Profile>("/api/v1/auth/switch-profile", {
-        profile_id: profileId,
-      }),
+    mutationFn: async (profileId: string) => {
+      const refreshToken = await getRefreshToken();
+      if (!refreshToken) throw new Error("Missing refresh token");
+      return api.post<SwitchProfileResponse>("/api/v1/auth/switch-profile", {
+        profileId,
+        refreshToken,
+      });
+    },
     onSuccess: () => {
-      qc.invalidateQueries();
+      queryClient.clear();
     },
   });
 }

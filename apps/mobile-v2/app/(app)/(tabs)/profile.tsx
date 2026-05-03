@@ -15,29 +15,49 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
 import { DepthButton } from "@/components/DepthButton";
-import { DepthCard } from "@/components/DepthCard";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { Mascot } from "@/components/Mascot";
 import { useAuth } from "@/hooks/use-auth";
-import { useProfiles, useCreateProfile, useDeleteProfile, useResetProfile } from "@/hooks/use-profiles";
+import { useProfiles, useCreateProfile, useDeleteProfile, useResetProfile, useSwitchProfile } from "@/hooks/use-profiles";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { Profile } from "@/types/api";
 
-const AVATAR_COLORS = ["#58CC02", "#1CB0F6", "#7850C8", "#FF9B00", "#FFC800", "#EA4335"];
+const AVATAR_KEYS = ["primary", "info", "skillReading", "warning", "coin", "destructive"] as const;
 
 export default function ProfileScreen() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { profile: activeProfile, user, signOut } = useAuth();
+  const { profile: activeProfile, user, signOut, switchSession } = useAuth();
   const { data: profiles, isLoading } = useProfiles();
   const createMutation = useCreateProfile();
   const deleteMutation = useDeleteProfile();
   const resetMutation = useResetProfile();
+  const switchMutation = useSwitchProfile();
 
   const [showCreate, setShowCreate] = useState(false);
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  function handleSwitchProfile(p: Profile) {
+    if (p.id === activeProfile?.id || switchMutation.isPending) return;
+    Alert.alert(
+      "Chuyển hồ sơ?",
+      `Bạn sắp chuyển sang hồ sơ "${p.nickname}". Tiến trình luyện tập sẽ áp dụng cho hồ sơ này.`,
+      [
+        { text: "Hủy", style: "cancel" },
+        {
+          text: "Chuyển",
+          onPress: () => {
+            switchMutation.mutate(p.id, {
+              onSuccess: async (res) => {
+                await switchSession(res.accessToken, res.refreshToken, res.profile);
+              },
+            });
+          },
+        },
+      ],
+    );
+  }
 
   function handleSignOut() {
     Alert.alert("Đăng xuất", "Bạn chắc chắn muốn đăng xuất?", [
@@ -73,7 +93,6 @@ export default function ProfileScreen() {
           style: "destructive",
           onPress: () => {
             resetMutation.mutate(activeProfile.id);
-            setShowResetConfirm(false);
           },
         },
       ],
@@ -84,7 +103,7 @@ export default function ProfileScreen() {
 
   const displayName = activeProfile?.nickname ?? user?.fullName ?? user?.email ?? "Người dùng";
   const initial = displayName.charAt(0).toUpperCase();
-  const avatarColor = activeProfile?.avatarColor ?? AVATAR_COLORS[0];
+  const avatarColor = activeProfile?.avatarColor ?? c.primary;
   const targetLevel = activeProfile?.targetLevel ?? "Chưa đặt";
   const targetDeadline = activeProfile?.targetDeadline;
 
@@ -127,6 +146,8 @@ export default function ProfileScreen() {
                 key={p.id}
                 profile={p}
                 isActive={p.id === activeProfile?.id}
+                isSwitching={switchMutation.isPending && p.id !== activeProfile?.id}
+                onSwitch={handleSwitchProfile}
                 onDelete={handleDeleteProfile}
               />
             ))}
@@ -144,7 +165,7 @@ export default function ProfileScreen() {
       <View style={[s.menuGroup, { backgroundColor: c.card, borderColor: c.border }]}>
         <MenuRow icon="information-circle-outline" label="Tài khoản & Bảo mật" onPress={() => router.push("/(app)/account")} />
         <View style={[s.divider, { backgroundColor: c.borderLight }]} />
-        <MenuRow icon="refresh-outline" label="Đặt lại tiến trình học" onPress={() => setShowResetConfirm(true)} />
+        <MenuRow icon="refresh-outline" label="Đặt lại tiến trình học" onPress={handleResetProfile} />
         <View style={[s.divider, { backgroundColor: c.borderLight }]} />
         <MenuRow icon="help-circle-outline" label="Trung tâm hỗ trợ" onPress={() => Alert.alert("Hỗ trợ", "Liên hệ: support@vstepgo.com")} />
       </View>
@@ -168,13 +189,30 @@ export default function ProfileScreen() {
 
 // ── Profile Row ──
 
-function ProfileRow({ profile, isActive, onDelete }: { profile: Profile; isActive: boolean; onDelete: (p: Profile) => void }) {
+function ProfileRow({
+  profile,
+  isActive,
+  isSwitching,
+  onSwitch,
+  onDelete,
+}: {
+  profile: Profile;
+  isActive: boolean;
+  isSwitching: boolean;
+  onSwitch: (p: Profile) => void;
+  onDelete: (p: Profile) => void;
+}) {
   const c = useThemeColors();
   const initial = profile.nickname.charAt(0).toUpperCase();
-  const color = profile.avatarColor ?? AVATAR_COLORS[Math.abs(profile.id.charCodeAt(0)) % AVATAR_COLORS.length];
+  const color = profile.avatarColor ?? c[AVATAR_KEYS[Math.abs(profile.id.charCodeAt(0)) % AVATAR_KEYS.length]];
 
   return (
-    <View style={[s.profileRow, { backgroundColor: isActive ? c.primaryTint : c.card, borderColor: isActive ? c.primary : c.border }]}>
+    <HapticTouchable
+      scalePress={!isActive}
+      disabled={isActive || isSwitching}
+      onPress={() => onSwitch(profile)}
+      style={[s.profileRow, { backgroundColor: isActive ? c.primaryTint : c.card, borderColor: isActive ? c.primary : c.border }]}
+    >
       <View style={[s.profileAvatar, { backgroundColor: color }]}>
         <Text style={s.profileAvatarText}>{initial}</Text>
       </View>
@@ -190,12 +228,13 @@ function ProfileRow({ profile, isActive, onDelete }: { profile: Profile; isActiv
           <Text style={s.activeBadgeText}>Đang dùng</Text>
         </View>
       )}
+      {isSwitching && <ActivityIndicator size="small" color={c.primary} />}
       {!profile.isInitialProfile && (
-        <HapticTouchable style={s.deleteBtn} onPress={() => onDelete(profile)}>
+        <HapticTouchable style={s.deleteBtn} onPress={() => onDelete(profile)} disabled={isSwitching}>
           <Ionicons name="trash-outline" size={16} color={c.destructive} />
         </HapticTouchable>
       )}
-    </View>
+    </HapticTouchable>
   );
 }
 
@@ -302,7 +341,7 @@ const s = StyleSheet.create({
   scroll: { paddingHorizontal: spacing.xl, gap: spacing.lg },
   heroCard: { borderWidth: 2, borderRadius: radius.xl, padding: spacing.xl, alignItems: "center", gap: spacing.sm, position: "relative" },
   avatar: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center" },
-  avatarText: { color: "#FFF", fontSize: 32, fontFamily: fontFamily.extraBold },
+  avatarText: { color: "#FFFFFF", fontSize: 32, fontFamily: fontFamily.extraBold },
   heroName: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
   heroEmail: { fontSize: fontSize.sm },
   targetBadge: { flexDirection: "row", paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.full },
@@ -314,11 +353,11 @@ const s = StyleSheet.create({
   profileList: { gap: spacing.sm },
   profileRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, borderWidth: 2, borderRadius: radius.lg, padding: spacing.md },
   profileAvatar: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
-  profileAvatarText: { color: "#FFF", fontSize: 14, fontFamily: fontFamily.extraBold },
+  profileAvatarText: { color: "#FFFFFF", fontSize: 14, fontFamily: fontFamily.extraBold },
   profileName: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
   profileMeta: { fontSize: fontSize.xs },
   activeBadge: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
-  activeBadgeText: { color: "#FFF", fontSize: 10, fontFamily: fontFamily.bold },
+  activeBadgeText: { color: "#FFFFFF", fontSize: 10, fontFamily: fontFamily.bold },
   deleteBtn: { padding: spacing.xs },
   createBtnText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   menuGroup: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, overflow: "hidden" },
