@@ -5,6 +5,7 @@ import { GameIcon } from "@/components/GameIcon";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { fontSize, fontFamily, radius, spacing, useThemeColors } from "@/theme";
 import type { Course } from "@/features/course/types";
+import { formatDate, formatVnd } from "@/lib/utils";
 
 interface CourseCardProps {
   course: Course;
@@ -68,15 +69,6 @@ export function CourseCard({ course, enrolled, onPress }: CourseCardProps) {
       </DepthCard>
     </HapticTouchable>
   );
-}
-
-function formatVnd(amount: number): string {
-  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
 }
 
 const styles = StyleSheet.create({
