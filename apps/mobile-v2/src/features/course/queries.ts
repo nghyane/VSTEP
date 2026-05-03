@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
 import type {
+  BookingPageData,
   BookingResult,
   CourseDetail,
   CourseListResponse,
@@ -29,6 +30,15 @@ export function useEnrollmentOrders() {
   return useQuery({
     queryKey: ["courses", "enrollment-orders"] as const,
     queryFn: () => api.get<EnrollmentOrder[]>("/api/v1/courses/enrollment-orders"),
+  });
+}
+
+export function useBookingPage(courseId: string) {
+  return useQuery({
+    queryKey: ["booking", courseId] as const,
+    queryFn: () => api.get<BookingPageData>(`/api/v1/courses/${courseId}/bookings`),
+    enabled: !!courseId,
+    staleTime: 30_000,
   });
 }
 
@@ -64,12 +74,13 @@ export function useBookSlot() {
   return useMutation({
     mutationFn: (body: { courseId: string; slotId: string; submissionType?: string; submissionId?: string }) =>
       api.post<BookingResult>(`/api/v1/courses/${body.courseId}/bookings`, {
-        slot_id: body.slotId,
-        submission_type: body.submissionType,
-        submission_id: body.submissionId,
+        slotId: body.slotId,
+        submissionType: body.submissionType,
+        submissionId: body.submissionId,
       }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["courses"] });
+      void qc.invalidateQueries({ queryKey: ["booking"] });
     },
   });
 }

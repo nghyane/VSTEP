@@ -41,6 +41,7 @@ opencode.json.*.bak
 
 # Local AI/dev tooling folders
 docs/mobile-v2-fe-v3-handoff.md
+apps/mobile-v2/HANDOFF.md
 .agent
 .agents
 !apps/frontend-v2/.agents/
