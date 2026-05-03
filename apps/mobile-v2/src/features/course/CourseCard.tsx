@@ -4,17 +4,21 @@ import { DepthCard } from "@/components/DepthCard";
 import { GameIcon } from "@/components/GameIcon";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { fontSize, fontFamily, radius, spacing, useThemeColors } from "@/theme";
-import type { Course } from "@/features/course/types";
-import { formatDate, formatVnd } from "@/lib/utils";
+import type { Course, EnrollmentDetail } from "@/features/course/types";
+import { formatDate, formatNumber, formatVnd } from "@/lib/utils";
 
 interface CourseCardProps {
   course: Course;
   enrolled: boolean;
+  enrollment?: EnrollmentDetail | null;
   onPress: () => void;
 }
 
-export function CourseCard({ course, enrolled, onPress }: CourseCardProps) {
+export function CourseCard({ course, enrolled, enrollment, onPress }: CourseCardProps) {
   const c = useThemeColors();
+  const sold = course.soldSlots;
+  const remaining = sold === undefined ? null : Math.max(0, course.maxSlots - sold);
+  const commitment = enrollment?.commitment ?? null;
 
   return (
     <HapticTouchable onPress={onPress} activeOpacity={0.85}>
@@ -28,6 +32,13 @@ export function CourseCard({ course, enrolled, onPress }: CourseCardProps) {
               <Text style={[styles.enrolledText, { color: c.primaryDark }]}>Đã đăng ký</Text>
             </View>
           )}
+          {!enrolled && remaining !== null && (
+            <View style={[styles.enrolledBadge, { backgroundColor: remaining <= 5 ? c.warningTint : c.infoTint }]}>
+              <Text style={[styles.enrolledText, { color: remaining <= 5 ? c.warning : c.info }]}>
+                {remaining === 0 ? "Đã đầy" : `Còn ${remaining} chỗ`}
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.metaRow}>
@@ -38,10 +49,47 @@ export function CourseCard({ course, enrolled, onPress }: CourseCardProps) {
           <View style={styles.metaItem}>
             <GameIcon name="calendar" size={16} />
             <Text style={[styles.metaText, { color: c.mutedForeground }]}>
-              {formatDate(course.startDate)}
+              {formatDate(course.startDate)} · {course.scheduleItemsCount ?? 0} buổi
             </Text>
           </View>
         </View>
+
+        <View style={styles.metaRow}>
+          {course.teacher && (
+            <View style={styles.metaItem}>
+              <GameIcon name="graduation" size={16} />
+              <Text style={[styles.metaText, { color: c.mutedForeground }]} numberOfLines={1}>
+                {course.teacher.fullName}
+              </Text>
+            </View>
+          )}
+          {sold !== undefined && (
+            <View style={styles.metaItem}>
+              <GameIcon name="users" size={16} />
+              <Text style={[styles.metaText, { color: c.mutedForeground }]}>
+                {sold}/{course.maxSlots} học viên
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {enrolled && enrollment?.nextSession && (
+          <View style={[styles.nextBox, { backgroundColor: c.primaryTint, borderColor: c.primary + "40" }]}>
+            <Text style={[styles.nextLabel, { color: c.primaryDark }]}>Buổi tiếp theo</Text>
+            <Text style={[styles.nextText, { color: c.foreground }]} numberOfLines={1}>
+              {formatDate(enrollment.nextSession.date)} · {enrollment.nextSession.startTime} - {enrollment.nextSession.endTime}
+            </Text>
+            <Text style={[styles.nextTopic, { color: c.mutedForeground }]} numberOfLines={1}>
+              {enrollment.nextSession.topic}
+            </Text>
+          </View>
+        )}
+
+        {enrolled && commitment && commitment.phase !== "not_enrolled" && (
+          <Text style={[styles.commitmentText, { color: commitment.phase === "met" ? c.success : c.warning }]}>
+            Cam kết: {commitment.completed}/{commitment.required} bài thi
+          </Text>
+        )}
 
         {course.description && (
           <Text style={[styles.desc, { color: c.subtle }]} numberOfLines={2}>
@@ -61,7 +109,7 @@ export function CourseCard({ course, enrolled, onPress }: CourseCardProps) {
           {course.bonusCoins > 0 && (
             <View style={[styles.bonusBadge, { backgroundColor: c.coinTint }]}>
               <Text style={[styles.bonusText, { color: c.coinDark }]}>
-                +{course.bonusCoins} xu
+                +{formatNumber(course.bonusCoins)} xu
               </Text>
             </View>
           )}
@@ -113,6 +161,29 @@ const styles = StyleSheet.create({
   desc: {
     fontSize: fontSize.xs,
     lineHeight: 16,
+  },
+  nextBox: {
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: spacing.sm,
+    gap: 2,
+  },
+  nextLabel: {
+    fontSize: 10,
+    fontFamily: fontFamily.extraBold,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+  },
+  nextText: {
+    fontSize: fontSize.sm,
+    fontFamily: fontFamily.extraBold,
+  },
+  nextTopic: {
+    fontSize: fontSize.xs,
+  },
+  commitmentText: {
+    fontSize: fontSize.xs,
+    fontFamily: fontFamily.bold,
   },
   footer: {
     flexDirection: "row",

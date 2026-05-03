@@ -36,6 +36,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="classes"
+        options={{
+          title: "Khóa học",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="school-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: "Hồ sơ",
@@ -47,7 +56,6 @@ export default function TabLayout() {
       {/* Hidden routes */}
       <Tabs.Screen name="explore" options={{ href: null }} />
       <Tabs.Screen name="progress" options={{ href: null }} />
-      <Tabs.Screen name="classes" options={{ href: null }} />
       <Tabs.Screen name="notifications" options={{ href: null }} />
     </Tabs>
   );

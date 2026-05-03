@@ -41,18 +41,20 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
   // ── Dashboard (Phase 10) ──
   {
     area: "Dashboard",
-    flow: "Overview, stats, next action, spider chart",
+    flow: "Overview, stats, next action, spider chart, score trend details",
     frontendV3: [
       "src/routes/_app/dashboard.tsx",
       "src/features/dashboard/queries.ts",
       "src/features/dashboard/components",
     ],
-    mobileV2: ["app/(app)/(tabs)/index.tsx", "src/hooks/use-progress.ts"],
-    backendApi: ["GET /api/v1/overview", "GET /api/v1/streak", "GET /api/v1/activity-heatmap"],
-    status: "done",
-    gaps: [
-      "TranslateSelection popup added in frontend-v3 (commit 490b35f) — optional enhancement.",
+    mobileV2: [
+      "app/(app)/(tabs)/index.tsx",
+      "src/components/dashboard/ScoreTrend.tsx",
+      "src/hooks/use-progress.ts",
     ],
+    backendApi: ["GET /api/v1/overview", "GET /api/v1/streak", "GET /api/v1/activity-heatmap", "GET /api/v1/exam-sessions"],
+    status: "done",
+    gaps: [],
     nextPhase: 10,
   },
 
@@ -366,12 +368,19 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
     area: "Courses",
     flow: "Course list, detail, enrollment, booking",
     frontendV3: ["src/routes/_app/khoa-hoc", "src/features/course"],
-    mobileV2: ["app/(app)/(tabs)/classes.tsx", "app/(app)/classes.tsx", "app/(app)/courses/[courseId].tsx", "src/features/course"],
+    mobileV2: [
+      "app/(app)/(tabs)/classes.tsx",
+      "app/(app)/classes.tsx",
+      "app/(app)/courses/[courseId].tsx",
+      "app/(app)/courses/[courseId]/booking.tsx",
+      "src/features/course",
+    ],
     backendApi: [
       "GET /api/v1/courses",
       "GET /api/v1/courses/{id}",
       "POST /api/v1/courses/{id}/enrollment-orders",
       "GET /api/v1/courses/enrollment-orders",
+      "GET /api/v1/courses/{courseId}/bookings",
       "POST /api/v1/courses/enrollment-orders/{orderId}/confirm",
       "POST /api/v1/courses/{courseId}/bookings",
     ],
