@@ -314,11 +314,63 @@ Slots available cho profile này (sau khi enrolled + commitment met).
 
 Response: `{ slots: [...], remaining_student_slots }`
 
+### `GET /api/v1/courses/{id}/bookings` — jwt
+Booking page payload cho FE 1-1 (teacher + slot grid + đếm booking active của profile).
+
+Window: `[now-7d, now+35d]` (1 tuần đã qua + 4 tuần tới).
+
+Response:
+```json
+{
+  "data": {
+    "teacher": { "id", "full_name", "title": null, "bio": null },
+    "slots": [
+      {
+        "id": "uuid",
+        "starts_at": "ISO8601",
+        "duration_minutes": 30,
+        "status": "available | booked_other | booked_me | past",
+        "meet_url": "string | null"
+      }
+    ],
+    "my_bookings_count": 0,
+    "max_bookings_per_student": 2,
+    "commitment": {
+      "phase": "not_enrolled | pending | met | violated",
+      "completed": 0,
+      "required": 3,
+      "window_start_at": "ISO8601 | null",
+      "deadline_at": "ISO8601 | null"
+    }
+  }
+}
+```
+
+`meet_url` chỉ trả khi `status === "booked_me"`. Status `past` = `starts_at < now` (override status DB).
+
+`commitment.phase`:
+- `not_enrolled`: chưa ghi danh course (FE không nên reach state này — route gate ở chỗ khác).
+- `pending`: còn trong window và chưa hoàn thành đủ `required` đề thi đầy đủ → FE chặn book + hiện CTA "vào thi thử".
+- `met`: đủ điều kiện book lịch.
+- `violated`: hết window mà chưa đủ → mất quyền book vĩnh viễn cho course này.
+
 ### `POST /api/v1/courses/{id}/bookings` — jwt
-Book slot.
+Book slot. **Trừ 50 xu** (CoinTransactionType `teacher_booking`) — fail 422 nếu không đủ xu hoặc commitment chưa met.
 
 Request: `{ slot_id, submission_type?, submission_id? }`
-Response: `{ booking_id, slot, meet_url? }` hoặc 409 (slot taken, limit reached).
+Response (201):
+```json
+{
+  "data": {
+    "booking_id": "uuid",
+    "slot": { "id", "starts_at", "duration_minutes", "status": "booked_me", "meet_url" },
+    "coins_charged": 50
+  }
+}
+```
+Lỗi: 409 (slot taken / limit reached), 422 (commitment chưa met / không đủ xu).
+
+`meet_url` được BE auto-generate ở phase 1 (mock Google Meet); teacher sẽ override qua `PATCH /teacher/bookings/{id}` ở phase sau.
 
 ### `GET /api/v1/my/bookings` — jwt
 List booking active + past.

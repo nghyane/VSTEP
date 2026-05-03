@@ -5,8 +5,9 @@ import { createPortal } from "react-dom"
 import { Header } from "#/components/Header"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { Loading } from "#/components/Loading"
+import { CommitmentGate } from "#/features/booking/components/CommitmentGate"
 import { SlotGrid } from "#/features/booking/components/SlotGrid"
-import { BOOKING_COIN_COST, bookingPageQuery, bookSlotMock, seedTeacher } from "#/features/booking/queries"
+import { BOOKING_COIN_COST, bookingPageQuery, bookSlot } from "#/features/booking/queries"
 import type { BookingPageData, BookingSlot, BookingTeacher } from "#/features/booking/types"
 import { courseDetailQuery } from "#/features/course/queries"
 import { walletBalanceQuery } from "#/features/wallet/queries"
@@ -44,18 +45,6 @@ const FIREWORK_PARTICLES: FireworkParticle[] = [
 function BookingPage() {
 	const { courseId } = Route.useParams()
 	const courseRes = useQuery(courseDetailQuery(courseId))
-	const courseTeacher = courseRes.data?.data.course.teacher ?? null
-
-	useEffect(() => {
-		if (!courseTeacher) return
-		seedTeacher(courseId, {
-			id: courseTeacher.id,
-			full_name: courseTeacher.full_name,
-			title: courseTeacher.title ?? null,
-			bio: courseTeacher.bio ?? null,
-		})
-	}, [courseId, courseTeacher])
-
 	const { data, isLoading } = useQuery(bookingPageQuery(courseId))
 
 	const [weekOffset, setWeekOffset] = useState(0)
@@ -121,16 +110,18 @@ function BookingBody({
 	const { data: walletData } = useQuery(walletBalanceQuery)
 	const balance = walletData?.data.balance ?? null
 	const insufficient = balance !== null && balance < BOOKING_COIN_COST
+	const locked = data.commitment.phase !== "met"
+	const reachedLimit = data.my_bookings_count >= data.max_bookings_per_student
 
 	const mutation = useMutation({
-		mutationFn: (slot: BookingSlot) => bookSlotMock(courseId, slot.id),
-		onSuccess: (booked) => {
+		mutationFn: (slot: BookingSlot) => bookSlot(courseId, slot.id),
+		onSuccess: (res) => {
 			queryClient.setQueryData(["booking", courseId], (prev: { data: BookingPageData } | undefined) => {
 				if (!prev) return prev
 				return {
 					data: {
 						...prev.data,
-						slots: prev.data.slots.map((s) => (s.id === booked.id ? booked : s)),
+						slots: prev.data.slots.map((s) => (s.id === res.slot.id ? res.slot : s)),
 						my_bookings_count: prev.data.my_bookings_count + 1,
 					},
 				}
@@ -140,14 +131,15 @@ function BookingBody({
 				return {
 					data: {
 						...prev.data,
-						balance: Math.max(0, prev.data.balance - BOOKING_COIN_COST),
+						balance: Math.max(0, prev.data.balance - res.coins_charged),
 						last_transaction_at: new Date().toISOString(),
 					},
 				}
 			})
-			useToast.getState().add(`Đã trừ ${BOOKING_COIN_COST} xu cho buổi học 1-1`, "success")
+			queryClient.invalidateQueries({ queryKey: ["wallet"] })
+			useToast.getState().add(`Đã trừ ${res.coins_charged} xu cho buổi học 1-1`, "success")
 			setPending(null)
-			setSuccess(booked)
+			setSuccess(res.slot)
 		},
 	})
 
@@ -157,6 +149,14 @@ function BookingBody({
 	return (
 		<>
 			<TeacherCard teacher={data.teacher} myBookingsCount={data.my_bookings_count} />
+
+			<CommitmentGate commitment={data.commitment} />
+
+			{!locked && reachedLimit && (
+				<div className="card p-4 border-2 border-b-4 border-primary/30 bg-primary-tint/40 rounded-(--radius-card) text-sm font-extrabold text-primary-dark">
+					Bạn đã dùng hết {data.max_bookings_per_student} buổi học 1-1 cho khóa này. Không thể đặt thêm.
+				</div>
+			)}
 
 			<div className="flex items-center justify-between gap-3 flex-wrap">
 				<div className="min-w-0">
@@ -199,8 +199,10 @@ function BookingBody({
 			<SlotGrid
 				slots={data.slots}
 				weekStartMs={weekStartMs}
+				locked={locked || reachedLimit}
 				onSelect={(slot) => {
 					if (slot.status === "booked_me") setViewing(slot)
+					else if (locked || reachedLimit) return
 					else setPending(slot)
 				}}
 			/>

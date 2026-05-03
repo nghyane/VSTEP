@@ -1,5 +1,5 @@
 // Exam Session
-// Generated: 2026-04-21
+// Generated: 2026-05-02
 
 Table exam_sessions {
   id uuid [pk, not null]

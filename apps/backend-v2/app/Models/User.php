@@ -9,11 +9,12 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 
-#[Fillable(['full_name', 'email', 'password', 'role', 'avatar_key', 'google_id', 'title', 'bio'])]
+#[Fillable(['full_name', 'email', 'password', 'role', 'avatar_key', 'google_id', 'title', 'bio', 'active_profile_id'])]
 #[Hidden(['password'])]
 class User extends Authenticatable implements JWTSubject
 {
@@ -50,6 +51,11 @@ class User extends Authenticatable implements JWTSubject
     public function initialProfile(): ?Profile
     {
         return $this->profiles()->where('is_initial_profile', true)->first();
+    }
+
+    public function activeProfile(): BelongsTo
+    {
+        return $this->belongsTo(Profile::class, 'active_profile_id');
     }
 
     public function getJWTIdentifier(): mixed

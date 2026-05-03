@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
+import { useState } from "react"
 import { SkillIcon } from "#/components/SkillIcon"
 import { examSessionsQuery, overviewQuery, selectTargetBand } from "#/features/dashboard/queries"
 import { skills } from "#/lib/skills"
@@ -17,6 +18,7 @@ function computeAvg(scores: Record<string, number | null> | null): number {
 export function ScoreTrend() {
 	const { data: targetBand } = useQuery({ ...overviewQuery, select: selectTargetBand })
 	const { data: sessions, isLoading } = useQuery(examSessionsQuery)
+	const [activeIdx, setActiveIdx] = useState<number | null>(null)
 
 	if (isLoading || !sessions || targetBand === undefined) return null
 
@@ -83,6 +85,7 @@ export function ScoreTrend() {
 
 				{tests.map((test, ti) => {
 					const cx = centers[ti] ?? 0
+					const isActive = activeIdx === ti
 					return (
 						<g key={test.id}>
 							{skills.map((s, si) => {
@@ -96,13 +99,23 @@ export function ScoreTrend() {
 										height={Math.max(0, Y_MAX - bandToY(v))}
 										fill={s.color}
 										rx={3}
-										opacity={0.65}
+										opacity={isActive ? 0.95 : 0.65}
 									/>
 								)
 							})}
 							<text x={cx} y={198} textAnchor="middle" fontSize="10" fill="var(--color-subtle)">
 								{test.submitted_at ? formatShortDate(test.submitted_at) : ""}
 							</text>
+							{/* Hover hit-area: full chart-height column. Pointer-events visible only on this rect. */}
+							<rect
+								x={cx - 32}
+								y={Y_MIN}
+								width={64}
+								height={Y_MAX - Y_MIN}
+								fill="transparent"
+								onMouseEnter={() => setActiveIdx(ti)}
+								onMouseLeave={() => setActiveIdx(null)}
+							/>
 						</g>
 					)
 				})}
@@ -160,7 +173,98 @@ export function ScoreTrend() {
 						</g>
 					)
 				})}
+
+				{activeIdx !== null && tests[activeIdx] && (
+					<ScoreTooltip
+						test={tests[activeIdx]}
+						cx={centers[activeIdx] ?? 0}
+						submittedAt={tests[activeIdx].submitted_at}
+					/>
+				)}
 			</svg>
 		</section>
+	)
+}
+
+interface ScoreTooltipProps {
+	test: { scores: Record<string, number | null> | null }
+	cx: number
+	submittedAt: string | null
+}
+
+function ScoreTooltip({ test, cx, submittedAt }: ScoreTooltipProps) {
+	const TOOLTIP_W = 96
+	const TOOLTIP_H = 78
+	const PAD = 5
+	const ROW_H = 9
+	const FS = 7
+	const placeRight = cx < 300
+	const x = placeRight ? cx + 28 : cx - 28 - TOOLTIP_W
+	const y = 28
+	const avg = computeAvg(test.scores)
+	const headerY = y + 11
+	const firstRowY = y + 24
+	const dividerY = y + TOOLTIP_H - 14
+	const footerY = y + TOOLTIP_H - 5
+
+	return (
+		<g pointerEvents="none">
+			<rect
+				x={x}
+				y={y}
+				width={TOOLTIP_W}
+				height={TOOLTIP_H}
+				rx={6}
+				fill="var(--color-card)"
+				stroke="var(--color-border)"
+				strokeWidth={1}
+			/>
+			<text x={x + PAD} y={headerY} fontSize={FS} fontWeight="800" fill="var(--color-foreground)">
+				{submittedAt ? formatShortDate(submittedAt) : "—"}
+			</text>
+			{skills.map((s, idx) => {
+				const v = test.scores?.[s.key]
+				const rowY = firstRowY + idx * ROW_H
+				return (
+					<g key={s.key}>
+						<circle cx={x + PAD + 2} cy={rowY - 2} r={2} fill={s.color} />
+						<text x={x + PAD + 9} y={rowY} fontSize={FS} fill="var(--color-muted)">
+							{s.label}
+						</text>
+						<text
+							x={x + TOOLTIP_W - PAD}
+							y={rowY}
+							textAnchor="end"
+							fontSize={FS}
+							fontWeight="800"
+							fill="var(--color-foreground)"
+						>
+							{v === null || v === undefined ? "—" : round(v)}
+						</text>
+					</g>
+				)
+			})}
+			<line
+				x1={x + PAD}
+				y1={dividerY}
+				x2={x + TOOLTIP_W - PAD}
+				y2={dividerY}
+				stroke="var(--color-border)"
+				strokeWidth={0.75}
+			/>
+			<text x={x + PAD} y={footerY} fontSize={FS} fontWeight="800" fill="var(--color-primary-dark)">
+				Trung bình
+			</text>
+			<text
+				x={x + TOOLTIP_W - PAD}
+				y={footerY}
+				textAnchor="end"
+				fontSize={FS}
+				fontWeight="800"
+				fill="var(--color-primary-dark)"
+			>
+				{avg}
+			</text>
+		</g>
 	)
 }
