@@ -32,7 +32,14 @@ export function Logo({ className, size = "default", variant = "full" }: LogoProp
 			aria-label="VSTEP"
 			className={`inline-flex items-center gap-1.5 text-primary ${className ?? ""}`}
 		>
-			<svg width={markW} height={h} viewBox={MARK_VIEW_BOX} {...svgBaseProps} aria-hidden="true" focusable="false">
+			<svg
+				width={markW}
+				height={h}
+				viewBox={MARK_VIEW_BOX}
+				{...svgBaseProps}
+				aria-hidden="true"
+				focusable="false"
+			>
 				<title>V</title>
 				<path d="M 12 9 L 22 24 L 26 18 M 30 12 L 34 6" />
 			</svg>

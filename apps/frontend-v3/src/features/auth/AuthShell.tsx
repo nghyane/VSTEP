@@ -23,11 +23,7 @@ export function AuthShell({ onClose, children }: Props) {
 				<div className="absolute top-8 left-8">
 					<Logo size="lg" />
 				</div>
-				<img
-					src="/mascot/lac-wave.png"
-					alt="Lạc"
-					className="w-64 object-contain"
-				/>
+				<img src="/mascot/lac-wave.png" alt="Lạc" className="w-64 object-contain" />
 				<div className="text-center max-w-xs">
 					<h2 className="font-extrabold text-2xl text-foreground mb-2">Học vui, thi giỏi!</h2>
 					<p className="text-sm text-muted font-bold leading-relaxed">

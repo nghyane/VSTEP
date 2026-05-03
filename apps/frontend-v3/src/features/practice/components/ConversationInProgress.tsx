@@ -302,42 +302,43 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 					)}
 
 					{/* Completion card */}
-					{sessionState === "completed" && (() => {
-						const userTurnCount = turns.filter((t) => t.role === "user").length
-						return (
-							<div className="rounded-(--radius-card) border-2 border-b-4 border-skill-speaking/30 bg-surface p-6 text-center animate-[popIn_0.3s_ease-out]">
-								<div className="w-12 h-12 rounded-full bg-skill-speaking/15 flex items-center justify-center mx-auto mb-3">
-									<Icon name="check" size="md" className="text-skill-speaking" />
-								</div>
-								<p className="font-extrabold text-lg text-foreground">Hội thoại hoàn thành!</p>
-								{userTurnCount > 0 ? (
-									<>
+					{sessionState === "completed" &&
+						(() => {
+							const userTurnCount = turns.filter((t) => t.role === "user").length
+							return (
+								<div className="rounded-(--radius-card) border-2 border-b-4 border-skill-speaking/30 bg-surface p-6 text-center animate-[popIn_0.3s_ease-out]">
+									<div className="w-12 h-12 rounded-full bg-skill-speaking/15 flex items-center justify-center mx-auto mb-3">
+										<Icon name="check" size="md" className="text-skill-speaking" />
+									</div>
+									<p className="font-extrabold text-lg text-foreground">Hội thoại hoàn thành!</p>
+									{userTurnCount > 0 ? (
+										<>
+											<p className="text-sm text-muted mt-1">
+												Nhận phản hồi từ AI với gợi ý để cải thiện câu trả lời.
+											</p>
+											<button
+												type="button"
+												onClick={() => setShowReview(true)}
+												className="btn mt-4 px-6 text-primary-foreground"
+												style={
+													{
+														background: "var(--color-skill-speaking)",
+														"--btn-shadow": "var(--color-skill-speaking-dark)",
+													} as React.CSSProperties
+												}
+											>
+												<Icon name="lightning" size="xs" />
+												Xem đánh giá
+											</button>
+										</>
+									) : (
 										<p className="text-sm text-muted mt-1">
-											Nhận phản hồi từ AI với gợi ý để cải thiện câu trả lời.
+											Hãy thử lại và nói ít nhất một câu để nhận đánh giá.
 										</p>
-										<button
-											type="button"
-											onClick={() => setShowReview(true)}
-											className="btn mt-4 px-6 text-primary-foreground"
-											style={
-												{
-													background: "var(--color-skill-speaking)",
-													"--btn-shadow": "var(--color-skill-speaking-dark)",
-												} as React.CSSProperties
-											}
-										>
-											<Icon name="lightning" size="xs" />
-											Xem đánh giá
-										</button>
-									</>
-								) : (
-									<p className="text-sm text-muted mt-1">
-										Hãy thử lại và nói ít nhất một câu để nhận đánh giá.
-									</p>
-								)}
-							</div>
-						)
-					})()}
+									)}
+								</div>
+							)
+						})()}
 				</div>
 			</div>
 
