@@ -45,8 +45,6 @@ export default function TabLayout() {
         }}
       />
       {/* Hidden tabs — keep files but remove from nav */}
-      <Tabs.Screen name="explore" options={{ href: null }} />
-      <Tabs.Screen name="progress" options={{ href: null }} />
       <Tabs.Screen name="classes" options={{ href: null }} />
       <Tabs.Screen name="notifications" options={{ href: null }} />
     </Tabs>

@@ -108,6 +108,19 @@ class CourseController extends Controller
         ];
     }
 
+    /**
+     * Booking page payload (teacher + slots + my_bookings_count) cho FE 1-1 booking flow.
+     */
+    public function bookings(Request $request, string $courseId): JsonResponse
+    {
+        /** @var Course $course */
+        $course = Course::query()->findOrFail($courseId);
+
+        return response()->json([
+            'data' => $this->courseService->getBookingPageData($this->profile($request), $course),
+        ]);
+    }
+
     public function bookSlot(Request $request, string $courseId): JsonResponse
     {
         $request->validate([
@@ -127,8 +140,14 @@ class CourseController extends Controller
 
         return response()->json(['data' => [
             'booking_id' => $booking->id,
-            'slot_starts_at' => $slot->starts_at,
-            'meet_url' => $booking->meet_url,
+            'slot' => [
+                'id' => $slot->id,
+                'starts_at' => $slot->starts_at->toIso8601String(),
+                'duration_minutes' => (int) $slot->duration_minutes,
+                'status' => 'booked_me',
+                'meet_url' => $booking->meet_url,
+            ],
+            'coins_charged' => CourseService::BOOKING_COIN_COST,
         ]], 201);
     }
 

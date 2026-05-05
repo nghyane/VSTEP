@@ -53,21 +53,21 @@ export function StickyHeader({ scrollY, subtitle }: StickyHeaderProps) {
       <View style={styles.headerInner}>
         <View style={[styles.avatar, { backgroundColor: c.primary }]}>
           <Text style={styles.avatarText}>
-            {(user?.fullName ?? "?").charAt(0).toUpperCase()}
+            {(user?.email ?? "?").charAt(0).toUpperCase()}
           </Text>
         </View>
         <View style={styles.textWrap}>
           <Text style={[styles.headerTitle, { color: c.foreground }]} numberOfLines={1}>
-            Xin chào, {user?.fullName ?? "bạn"}
+            Xin chào, {user?.email ?? "bạn"}
           </Text>
           {subtitle ? (
-            <Text style={[styles.headerSub, { color: c.mutedForeground }]} numberOfLines={1}>
+            <Text style={[styles.headerSub, { color: c.subtle }]} numberOfLines={1}>
               {subtitle}
             </Text>
           ) : null}
         </View>
         <TouchableOpacity
-          style={[styles.bellBtn, { backgroundColor: c.muted }]}
+          style={[styles.bellBtn, { backgroundColor: c.background }]}
           onPress={() => router.push("/(app)/(tabs)/notifications")}
           activeOpacity={0.7}
         >

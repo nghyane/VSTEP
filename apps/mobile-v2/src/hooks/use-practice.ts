@@ -14,6 +14,9 @@ export interface ListeningExercise {
   id: string; slug: string; title: string;
   description: string | null; part: number;
   audioUrl: string; transcript: string | null;
+  vietnameseTranscript: string | null;
+  wordTimestamps: { word: string; startMs: number; endMs: number }[];
+  keywords: string[];
   estimatedMinutes: number | null;
 }
 
@@ -32,10 +35,18 @@ export interface SubmitResult {
   items: { questionId: string; isCorrect: boolean; correctIndex: number; explanation: string }[];
 }
 
+export interface SupportResult {
+  coinsSpent: number;
+  balanceAfter: number;
+  supportLevelsUsed: { level: number; usedAt: string }[];
+}
+
 export interface ReadingExercise {
   id: string; slug: string; title: string;
   description: string | null; part: number;
-  passage: string; estimatedMinutes: number | null;
+  passage: string; vietnameseTranslation: string | null;
+  keywords: string[];
+  estimatedMinutes: number | null;
 }
 
 export interface ReadingExerciseDetail {
@@ -49,16 +60,59 @@ export interface WritingPrompt {
   estimatedMinutes: number | null;
 }
 
+export interface WritingSubmission {
+  submissionId: string; wordCount: number; submittedAt: string; gradingStatus: string;
+}
+
+export interface WritingOutlineSection {
+  id: string; displayOrder: number; title: string; content: string;
+}
+
+export interface WritingTemplateSection {
+  id: string; displayOrder: number; heading: string; body: string;
+}
+
 export interface WritingPromptDetail {
   id: string; slug: string; title: string;
   description: string | null; part: number;
   prompt: string; minWords: number; maxWords: number;
   requiredPoints: string[]; sentenceStarters: string[];
+  keywords: string[]; sampleAnswer: string | null;
+  sampleMarkers: { criterion: string; band: number; description: string }[];
+  outlineSections: WritingOutlineSection[];
+  templateSections: WritingTemplateSection[];
   estimatedMinutes: number | null;
 }
 
-export interface WritingSubmission {
-  submissionId: string; wordCount: number; gradingStatus: string;
+export interface WritingHistoryItem {
+  id: string;
+  submittedAt: string;
+  wordCount: number;
+  prompt: { id: string; slug: string; title: string; part: number } | null;
+}
+
+export interface GradingJobStatus {
+  id: string;
+  status: "pending" | "processing" | "ready" | "failed";
+  attempts: number;
+  result: WritingGradingResult | null;
+  completedAt: string | null;
+  lastError: string | null;
+}
+
+export interface WritingGradingResult {
+  rubricScores: { taskAchievement: number; coherence: number; lexical: number; grammar: number } | null;
+  overallBand: number | null;
+  strengths: string[];
+  improvements: { message: string; explanation: string }[];
+  rewrites: { original: string; improved: string; reason: string }[];
+  annotations: unknown[];
+  paragraphFeedback: Record<string, string>[];
+}
+
+export interface SpeakingTopic {
+  name: string;
+  questions: string[];
 }
 
 export interface SpeakingTask {
@@ -69,7 +123,133 @@ export interface SpeakingTask {
 export interface SpeakingTaskDetail {
   id: string; slug: string; title: string;
   part: number; taskType: string; speakingSeconds: number;
-  content: { topics: { name: string; questions: string[] }[] };
+  content: { topics: SpeakingTopic[] };
+}
+
+export interface SpeakingDrill {
+  id: string; slug: string; title: string;
+  level: string; estimatedMinutes: number | null;
+  description: string | null;
+}
+
+export interface SpeakingDrillSentence {
+  id: string; text: string; translation: string | null;
+}
+
+export interface SpeakingDrillDetail {
+  id: string; slug: string; title: string;
+  level: string; estimatedMinutes: number | null;
+  description: string | null;
+  sentences: SpeakingDrillSentence[];
+}
+
+export interface SpeakingVstepHistoryItem {
+  id: string; submittedAt: string;
+  durationSeconds: number; taskRefId: string;
+}
+
+export interface SpeakingDrillHistoryItem {
+  id: string; contentRefId: string;
+  startedAt: string; endedAt: string | null;
+  durationSeconds: number; attemptCount: number;
+}
+
+export interface SpeakingDrillAttemptResponse {
+  attemptId: string; accuracyPercent: number;
+}
+
+export interface SpeakingConversationScenario {
+  id: string;
+  slug: string;
+  title: string;
+  level: string;
+  characterName: string;
+  characterVoice: string | null;
+  description: string | null;
+  estimatedMinutes: number | null;
+  targetVocab?: string[];
+  expectedTurns?: number;
+}
+
+export interface SpeakingConversationTurn {
+  id: string;
+  role: "user" | "assistant" | "ai";
+  text: string;
+  feedback: SpeakingConversationTurnFeedback | null;
+  suggestedWords: string[];
+}
+
+export interface SpeakingConversationTurnFeedback {
+  wordCount?: { used: number; target: number };
+  grammarOk?: boolean;
+  grammarCorrections?: { wrong?: string; correct?: string; explanation?: string }[];
+  vocabCheck?: { phrase: string; used: boolean }[];
+  better?: string | null;
+}
+
+export interface SpeakingConversationSession {
+  sessionId: string;
+  scenario: SpeakingConversationScenario & {
+    targetVocab: string[];
+    expectedTurns: number;
+  };
+  turns: SpeakingConversationTurn[];
+}
+
+export interface SpeakingConversationTurnResponse {
+  userTurn: SpeakingConversationTurn;
+  aiTurn: SpeakingConversationTurn;
+  session: {
+    userTurnCount: number;
+    expectedTurns: number;
+    shouldEnd: boolean;
+  };
+}
+
+export interface SpeakingConversationEndSummary {
+  sessionId: string;
+  durationSeconds: number;
+  userTurnCount: number;
+  vocabUsedCount: number;
+  vocabTargetCount: number;
+  grammarOkCount: number;
+  vocabUsedPct: number;
+  grammarOkPct: number;
+}
+
+export interface SpeakingConversationReview {
+  strengths: string[];
+  improvements: string[];
+  correctedSentences: { original: string; corrected: string; explanation: string }[];
+  tip: string | null;
+}
+
+export interface SpeakingPronunciationReview {
+  pronunciation?: string;
+  intonation?: string;
+  tip?: string;
+}
+
+export interface SpeakingGradingResult {
+  rubricScores: { fluency: number; pronunciation: number; content: number; vocab: number; grammar: number } | null;
+  overallBand: number | null;
+  strengths: string[];
+  improvements: { message: string; explanation: string }[];
+  pronunciationReport: { accuracyScore: number } | null;
+  transcript: string | null;
+}
+
+export interface PresignUploadResponse {
+  uploadUrl: string;
+  audioKey: string;
+}
+
+export async function presignUpload(context: "speaking" | "exam_speaking" = "speaking") {
+  return api.post<PresignUploadResponse>("/api/v1/audio/presign-upload", { context });
+}
+
+export async function presignDownload(audioKey: string) {
+  return api.post<{ downloadUrl: string }>("/api/v1/audio/presign-download", { audioKey });
 }
 
 export interface McqProgress {
@@ -151,6 +331,87 @@ export function useSpeakingTaskDetail(id: string) {
     queryFn: () => api.get<SpeakingTaskDetail>(`/api/v1/practice/speaking/tasks/${id}`),
     enabled: !!id,
     retry: false,
+  });
+}
+
+// ── Speaking Drill ──
+
+export function useSpeakingDrills(level?: string) {
+  const params = level ? `?level=${level}` : "";
+  return useQuery({
+    queryKey: ["practice", "speaking", "drills", level],
+    queryFn: () => api.get<SpeakingDrill[]>(`/api/v1/practice/speaking/drills${params}`),
+    retry: false,
+  });
+}
+
+export function useSpeakingDrillDetail(id: string) {
+  return useQuery({
+    queryKey: ["practice", "speaking", "drills", id],
+    queryFn: () => api.get<SpeakingDrillDetail>(`/api/v1/practice/speaking/drills/${id}`),
+    enabled: !!id,
+    retry: false,
+  });
+}
+
+export function useSpeakingConversationScenarios(level?: string) {
+  const params = level ? `?level=${level}` : "";
+  return useQuery({
+    queryKey: ["practice", "speaking", "conversation-scenarios", level],
+    queryFn: () => api.get<SpeakingConversationScenario[]>(`/api/v1/practice/speaking/scenarios${params}`),
+    retry: false,
+  });
+}
+
+export function useSpeakingConversationScenario(id: string) {
+  return useQuery({
+    queryKey: ["practice", "speaking", "conversation-scenarios", id],
+    queryFn: () => api.get<SpeakingConversationScenario>(`/api/v1/practice/speaking/scenarios/${id}`),
+    enabled: !!id,
+    retry: false,
+  });
+}
+
+export function useSpeakingConversationSession(sessionId: string) {
+  return useQuery({
+    queryKey: ["practice", "speaking", "conversation-session", sessionId],
+    queryFn: () => api.get<SpeakingConversationSession>(`/api/v1/practice/speaking/conversations/${sessionId}`),
+    enabled: !!sessionId,
+    retry: false,
+  });
+}
+
+export function useSpeakingConversationReview(sessionId: string, enabled = true) {
+  return useQuery({
+    queryKey: ["practice", "speaking", "conversation-review", sessionId],
+    queryFn: () => api.get<SpeakingConversationReview>(`/api/v1/practice/speaking/conversations/${sessionId}/review`),
+    enabled: enabled && !!sessionId,
+    retry: false,
+  });
+}
+
+export interface SpeakingHistoryResponse<T> {
+  data: T[];
+  links?: { first: string; last: string; prev: string | null; next: string | null };
+  meta?: { currentPage: number; lastPage: number; perPage: number; total: number };
+}
+
+export function useSpeakingDrillHistory() {
+  return useQuery({
+    queryKey: ["practice", "speaking", "drill-history"],
+    queryFn: () => api.get<SpeakingHistoryResponse<SpeakingDrillHistoryItem>>("/api/v1/practice/speaking/drill-history"),
+    retry: false,
+    select: (res) => res.data,
+  });
+}
+
+export function useSpeakingVstepHistory(part?: number) {
+  const params = part ? `?part=${part}` : "";
+  return useQuery({
+    queryKey: ["practice", "speaking", "vstep-history", part],
+    queryFn: () => api.get<SpeakingHistoryResponse<SpeakingVstepHistoryItem>>(`/api/v1/practice/speaking/vstep-history${params}`),
+    retry: false,
+    select: (res) => res.data,
   });
 }
 
@@ -244,9 +505,140 @@ export async function startSpeakingSession(taskId: string) {
   return api.post<{ sessionId: string; startedAt: string }>("/api/v1/practice/speaking/vstep-sessions", { exerciseId: taskId });
 }
 
+export async function startSpeakingDrillSession(drillId: string) {
+  return api.post<{ sessionId: string; startedAt: string }>("/api/v1/practice/speaking/drill-sessions", { exerciseId: drillId });
+}
+
+export async function submitSpeakingDrillAttempt(
+  sessionId: string,
+  sentenceId: string,
+  mode: "dictation" | "shadowing",
+  userText: string | null,
+  accuracyPercent: number | null,
+) {
+  return api.post<SpeakingDrillAttemptResponse>(
+    `/api/v1/practice/speaking/drill-sessions/${sessionId}/attempt`,
+    { sentenceId, mode, userText, accuracyPercent },
+  );
+}
+
+export async function startSpeakingConversation(scenarioId: string) {
+  return api.post<SpeakingConversationSession>("/api/v1/practice/speaking/conversations", { scenarioId });
+}
+
+export async function submitSpeakingConversationTurn(sessionId: string, text: string, confidence = 1) {
+  return api.post<SpeakingConversationTurnResponse>(
+    `/api/v1/practice/speaking/conversations/${sessionId}/turn`,
+    { text, confidence },
+  );
+}
+
+export async function endSpeakingConversation(sessionId: string) {
+  return api.post<SpeakingConversationEndSummary>(
+    `/api/v1/practice/speaking/conversations/${sessionId}/end`,
+    {},
+  );
+}
+
+export async function requestSpeakingPronunciationReview(original: string, transcript: string) {
+  return api.post<SpeakingPronunciationReview>(
+    "/api/v1/practice/speaking/pronunciation-review",
+    { original, transcript },
+  );
+}
+
 export async function submitSpeakingSession(sessionId: string, audioUrl: string, durationSeconds: number) {
   return api.post<{ submissionId: string; gradingStatus: string }>(
     `/api/v1/practice/speaking/vstep-sessions/${sessionId}/submit`,
     { audioUrl, durationSeconds },
   );
+}
+
+export async function requestSupport(
+  skill: "listening" | "reading",
+  sessionId: string,
+  level: number,
+) {
+  return api.post<SupportResult>(
+    `/api/v1/practice/${skill}/sessions/${sessionId}/support`,
+    { level },
+  );
+}
+
+export async function requestWritingSupport(sessionId: string, level: number) {
+  return api.post<SupportResult>(
+    `/api/v1/practice/writing/sessions/${sessionId}/support`,
+    { level },
+  );
+}
+
+// ── Writing history ──
+
+export interface WritingHistoryResponse {
+  data: WritingHistoryItem[];
+  links: { first: string; last: string; prev: string | null; next: string | null };
+  meta: { current_page: number; last_page: number; per_page: number; total: number };
+}
+
+export function useWritingHistory(part?: number) {
+  const params = part ? `?part=${part}` : "";
+  return useQuery({
+    queryKey: ["practice", "writing", "history", part],
+    queryFn: () => api.get<WritingHistoryResponse>(`/api/v1/practice/writing/history${params}`),
+    retry: false,
+    select: (res) => res.data,
+  });
+}
+
+// ── Grading job status polling ──
+
+export function useGradingJobStatus(jobId: string) {
+  return useQuery({
+    queryKey: ["grading", "job", jobId],
+    queryFn: () => api.get<GradingJobStatus>(`/api/v1/grading/jobs/${jobId}/status`),
+    refetchInterval: (q) => {
+      const status = q.state.data?.status;
+      return status === "ready" || status === "failed" ? false : 3000;
+    },
+    retry: false,
+  });
+}
+
+// ── Writing grading result ──
+
+export function useWritingGradingResult(submissionId: string) {
+  return useQuery({
+    queryKey: ["grading", "writing", "result", submissionId],
+    queryFn: () =>
+      api.get<WritingGradingResult | null>(
+        `/api/v1/grading/writing/practice_writing/${submissionId}`,
+      ),
+    refetchInterval: (q) => (q.state.data?.overallBand != null ? false : 5000),
+    retry: false,
+  });
+}
+
+export function useSpeakingGradingResult(submissionId: string) {
+  return useQuery({
+    queryKey: ["grading", "speaking", "result", submissionId],
+    queryFn: () =>
+      api.get<SpeakingGradingResult | null>(
+        `/api/v1/grading/speaking/practice_speaking/${submissionId}`,
+      ),
+    refetchInterval: (q) => (q.state.data?.overallBand != null ? false : 5000),
+    retry: false,
+  });
+}
+
+// ── Writing support ──
+
+export function useWritingSupportMutation(sessionId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ level }: { level: number }) =>
+      requestWritingSupport(sessionId, level),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["practice", "writing", "history"] });
+    },
+  });
 }

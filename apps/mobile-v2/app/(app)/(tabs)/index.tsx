@@ -14,8 +14,12 @@ import { Mascot } from "@/components/Mascot";
 import { StreakButton } from "@/features/streak/StreakButton";
 import { NotificationButton } from "@/features/notification/NotificationButton";
 import { CoinButton } from "@/features/coin/CoinButton";
+import { ActivityHeatmap } from "@/components/dashboard/ActivityHeatmap";
+import { GapAnalysis } from "@/components/dashboard/GapAnalysis";
+import { ScoreTrend } from "@/components/dashboard/ScoreTrend";
 import { useAuth } from "@/hooks/use-auth";
 import { useOverview, useStreak } from "@/hooks/use-progress";
+import { getTargetBand } from "@/lib/vstep";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { Skill } from "@/types/api";
 
@@ -62,10 +66,13 @@ export default function DashboardScreen() {
   const stats = overview?.stats;
   const chart = overview?.chart ?? null;
 
+  const targetBand = getTargetBand(targetLevel);
   const weakest = chart
-    ? SKILLS.reduce((weakestSkill, skill) =>
-        (chart[skill] ?? 0) < (chart[weakestSkill] ?? 0) ? skill : weakestSkill,
-      SKILLS[0])
+    ? SKILLS.reduce((weakestSkill, skill) => {
+        const gapSkill = (chart[skill] ?? 0) - targetBand;
+        const gapWeakest = (chart[weakestSkill] ?? 0) - targetBand;
+        return gapSkill < gapWeakest ? skill : weakestSkill;
+      }, SKILLS[0])
     : "listening";
 
   function toAnimStyle(index: number) {
@@ -163,6 +170,8 @@ export default function DashboardScreen() {
         <StatCard icon="crown" label="Band hiện tại" value={chart ? computeAvgBand(chart) : "—"} accent={c.coin} />
       </Animated.View>
 
+      <ActivityHeatmap />
+
       <Animated.View style={toAnimStyle(4)}>
         <Text style={[styles.sectionTitle, { color: c.foreground }]}>4 kỹ năng</Text>
         <View style={styles.skillGrid}>
@@ -198,6 +207,9 @@ export default function DashboardScreen() {
             </View>
           </DepthCard>
         ) : null}
+
+        <GapAnalysis />
+        <ScoreTrend />
       </Animated.View>
 
       <View style={{ height: insets.bottom + 40 }} />

@@ -1,5 +1,5 @@
 // Course Teacher
-// Generated: 2026-05-01
+// Generated: 2026-05-02
 
 Table courses {
   id uuid [pk, not null]

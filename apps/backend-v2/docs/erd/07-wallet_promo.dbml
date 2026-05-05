@@ -1,5 +1,5 @@
 // Wallet Promo
-// Generated: 2026-04-21
+// Generated: 2026-05-02
 
 Table coin_transactions {
   id bigint [pk, not null, increment]

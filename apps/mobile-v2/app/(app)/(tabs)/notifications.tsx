@@ -1,2 +1,5 @@
-import { Redirect } from "expo-router";
-export default function NotificationsTab() { return <Redirect href="/(app)/(tabs)" />; }
+import NotificationsScreen from "./notifications";
+
+export default function NotificationsTab() {
+  return <NotificationsScreen />;
+}

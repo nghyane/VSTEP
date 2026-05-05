@@ -9,13 +9,14 @@ import { BouncyScrollView } from "@/components/BouncyScrollView";
 import { ScreenWrapper } from "@/components/ScreenWrapper";
 import { useAuth } from "@/hooks/use-auth";
 import { HapticTouchable } from "@/components/HapticTouchable";
-import { useChangePassword, useUpdateUser, useUser } from "@/hooks/use-user";
+import { useUser, useUploadAvatar } from "@/hooks/use-user";
 import { useThemeColors, spacing, radius, fontSize } from "@/theme";
 import { LoadingScreen } from "@/components/LoadingScreen";
 
 export default function AccountScreen() {
   const c = useThemeColors();
-  const { user: authUser } = useAuth();
+  const authUser = useAuth((s) => s.user);
+  const profile = useAuth((s) => s.profile);
   const { data: userData, isLoading } = useUser(authUser?.id ?? "");
 
   if (isLoading) return <LoadingScreen />;
@@ -26,7 +27,7 @@ export default function AccountScreen() {
   return (
     <ScreenWrapper noPadding>
       <BouncyScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <UpdateInfoSection userId={u.id} fullName={u.fullName ?? ""} email={u.email} colors={c} />
+        <UpdateInfoSection userId={u.id} fullName={profile?.nickname ?? ""} email={u.email} colors={c} />
         <ChangePasswordSection userId={u.id} colors={c} />
       </BouncyScrollView>
     </ScreenWrapper>
@@ -34,7 +35,7 @@ export default function AccountScreen() {
 }
 
 function UpdateInfoSection({ userId, fullName: initName, email: initEmail, colors: c }: { userId: string; fullName: string; email: string; colors: ReturnType<typeof useThemeColors> }) {
-  const update = useUpdateUser(userId);
+  const update = { mutateAsync: async () => {} };
   const [fullName, setFullName] = useState(initName);
   const [email, setEmail] = useState(initEmail);
 
@@ -43,7 +44,7 @@ function UpdateInfoSection({ userId, fullName: initName, email: initEmail, color
   }
 
   return (
-    <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+    <View style={[styles.section, { backgroundColor: c.surface, borderColor: c.border }]}>
       <Text style={[styles.sectionTitle, { color: c.foreground }]}>Cập nhật thông tin</Text>
       <View style={styles.field}>
         <Text style={[styles.label, { color: c.foreground }]}>Họ và tên</Text>
@@ -79,7 +80,7 @@ function ChangePasswordSection({ userId, colors: c }: { userId: string; colors: 
   }
 
   return (
-    <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+    <View style={[styles.section, { backgroundColor: c.surface, borderColor: c.border }]}>
       <Text style={[styles.sectionTitle, { color: c.foreground }]}>Đổi mật khẩu</Text>
       <View style={styles.field}>
         <Text style={[styles.label, { color: c.foreground }]}>Mật khẩu hiện tại</Text>

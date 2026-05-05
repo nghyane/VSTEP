@@ -126,7 +126,7 @@ export function ConfirmDialog({
 					<button
 						type="button"
 						onClick={onCancel}
-						className="flex-1 rounded-(--radius-button) border-2 border-b-4 border-border bg-surface px-4 py-2.5 text-sm font-extrabold text-foreground transition-all hover:border-primary/40 active:translate-y-[2px] active:border-b-2"
+						className="btn btn-secondary flex-1 shadow-[0_4px_0_var(--color-border),inset_0_0_0_2px_var(--color-border)] active:shadow-[0_2px_0_var(--color-border),inset_0_0_0_2px_var(--color-border)]"
 					>
 						{cancelLabel}
 					</button>
@@ -135,10 +135,8 @@ export function ConfirmDialog({
 						onClick={onConfirm}
 						disabled={isLoading || locked}
 						className={cn(
-							"flex-1 text-sm disabled:cursor-not-allowed disabled:opacity-60",
-							destructive
-								? "rounded-(--radius-button) border-2 border-b-4 border-destructive bg-destructive px-4 py-2.5 font-extrabold text-white transition-all hover:brightness-110 active:translate-y-[2px] active:border-b-2"
-								: "btn btn-primary",
+							"btn flex-1 disabled:cursor-not-allowed disabled:opacity-60",
+							destructive ? "btn-destructive" : "btn-primary",
 						)}
 					>
 						{isLoading ? loadingLabel : locked ? `${confirmLabel} (${remaining})` : confirmLabel}

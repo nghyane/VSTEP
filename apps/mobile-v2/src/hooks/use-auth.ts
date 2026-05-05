@@ -1,7 +1,10 @@
 import { createContext, useContext } from "react";
 import type { AuthUser, Profile } from "@/types/api";
 
+export type AuthStatus = "initializing" | "authenticated" | "unauthenticated";
+
 interface AuthCtx {
+  status: AuthStatus;
   user: AuthUser | null;
   profile: Profile | null;
   isLoading: boolean;
@@ -11,14 +14,21 @@ interface AuthCtx {
     user: AuthUser,
     profile: Profile | null,
   ) => Promise<void>;
+  switchSession: (
+    accessToken: string,
+    refreshToken: string,
+    profile: Profile,
+  ) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthCtx>({
+  status: "initializing",
   user: null,
   profile: null,
   isLoading: true,
   signIn: async () => undefined,
+  switchSession: async () => undefined,
   signOut: async () => undefined,
 });
 

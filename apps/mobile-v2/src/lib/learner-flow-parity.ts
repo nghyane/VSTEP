@@ -12,18 +12,15 @@ export interface LearnerFlowParityItem {
 }
 
 export const learnerFlowParity: LearnerFlowParityItem[] = [
+  // ── Auth (Phase 1 — DONE) ──
   {
     area: "Auth",
     flow: "Launch restore session, refresh token, route guard",
     frontendV3: ["src/lib/auth.ts", "src/routes/_app.tsx"],
     mobileV2: ["app/_layout.tsx", "src/lib/auth.ts", "src/lib/api.ts", "src/hooks/use-auth.ts"],
     backendApi: ["POST /api/v1/auth/refresh", "GET /api/v1/auth/me"],
-    status: "partial",
-    gaps: [
-      "App launch restores cached user/profile before validating refresh token.",
-      "Auth state is boolean/null based instead of explicit idle/authenticated/unauthenticated states.",
-      "Route guard does not wait on an authoritative refresh result.",
-    ],
+    status: "done",
+    gaps: [],
     nextPhase: 1,
   },
   {
@@ -36,13 +33,12 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "POST /api/v1/auth/register",
       "POST /api/v1/auth/complete-onboarding",
     ],
-    status: "partial",
-    gaps: [
-      "Onboarding has UI flow, but profile/target persistence must be verified against backend response shape.",
-      "Register mobile payload uses fullName while backend/frontend-v3 register flow is nickname + target fields.",
-    ],
+    status: "done",
+    gaps: [],
     nextPhase: 1,
   },
+
+  // ── Dashboard (Phase 10) ──
   {
     area: "Dashboard",
     flow: "Overview, stats, next action, spider chart",
@@ -53,14 +49,14 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
     ],
     mobileV2: ["app/(app)/(tabs)/index.tsx", "src/hooks/use-progress.ts"],
     backendApi: ["GET /api/v1/overview", "GET /api/v1/streak", "GET /api/v1/activity-heatmap"],
-    status: "partial",
+    status: "done",
     gaps: [
-      "Activity heatmap is queried by hook but not rendered on dashboard.",
-      "GapAnalysis and ScoreTrend from frontend-v3 are missing.",
-      "Next action weakest-skill logic is simpler than frontend-v3 target-band gap logic.",
+      "TranslateSelection popup added in frontend-v3 (commit 490b35f) — optional enhancement.",
     ],
     nextPhase: 10,
   },
+
+  // ── Foundation — Vocabulary (Phase 4) ──
   {
     area: "Foundation",
     flow: "Vocabulary index, topic detail, flashcard, exercise, SRS review",
@@ -87,14 +83,12 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "POST /api/v1/vocab/srs/review",
       "POST /api/v1/vocab/exercises/{id}/attempt",
     ],
-    status: "partial",
-    gaps: [
-      "SRS review does not yet mirror frontend-v3 batch completion invalidate/refetch behavior.",
-      "Flashcard/exercise session logic is inline instead of reusable session hooks.",
-      "Focus empty/complete states are inline instead of shared primitives.",
-    ],
+    status: "done",
+    gaps: [],
     nextPhase: 4,
   },
+
+  // ── Foundation — Grammar (Phase 4) ──
   {
     area: "Foundation",
     flow: "Grammar list, point detail, exercise attempt",
@@ -115,10 +109,12 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "GET /api/v1/grammar/points/{id}",
       "POST /api/v1/grammar/exercises/{id}/attempt",
     ],
-    status: "partial",
-    gaps: ["Needs final parity check against frontend-v3 focused exercise UX and feedback states."],
+    status: "done",
+    gaps: [],
     nextPhase: 4,
   },
+
+  // ── Practice — Listening (Phase 3 — DONE) ──
   {
     area: "Practice",
     flow: "Listening objective practice",
@@ -139,16 +135,15 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "GET /api/v1/practice/listening/exercises/{id}",
       "POST /api/v1/practice/listening/sessions",
       "POST /api/v1/practice/listening/sessions/{sessionId}/submit",
+      "POST /api/v1/practice/listening/sessions/{sessionId}/support",
       "GET /api/v1/practice/listening/progress",
     ],
-    status: "partial",
-    gaps: [
-      "Support-level API is not wired for mobile listening.",
-      "Listening type omits vietnameseTranscript, wordTimestamps, and keywords present in frontend-v3.",
-      "Focused primitives are screen-local instead of shared.",
-    ],
+    status: "done",
+    gaps: [],
     nextPhase: 3,
   },
+
+  // ── Practice — Reading (Phase 3 — DONE) ──
   {
     area: "Practice",
     flow: "Reading objective practice",
@@ -169,16 +164,15 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "GET /api/v1/practice/reading/exercises/{id}",
       "POST /api/v1/practice/reading/sessions",
       "POST /api/v1/practice/reading/sessions/{sessionId}/submit",
+      "POST /api/v1/practice/reading/sessions/{sessionId}/support",
       "GET /api/v1/practice/reading/progress",
     ],
-    status: "partial",
-    gaps: [
-      "Support-level API is not wired for mobile reading.",
-      "Reading type omits vietnameseTranslation and keywords present in frontend-v3.",
-      "Focused primitives are screen-local instead of shared.",
-    ],
+    status: "done",
+    gaps: [],
     nextPhase: 3,
   },
+
+  // ── Practice — Writing (Phase 5) ──
   {
     area: "Practice",
     flow: "Writing subjective practice with async grading",
@@ -201,17 +195,16 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "GET /api/v1/practice/writing/prompts/{id}",
       "GET /api/v1/practice/writing/history",
       "POST /api/v1/practice/writing/sessions",
+      "POST /api/v1/practice/writing/sessions/{sessionId}/support",
       "POST /api/v1/practice/writing/sessions/{sessionId}/submit",
       "GET /api/v1/grading/writing/practice_writing/{submissionId}",
     ],
-    status: "partial",
-    gaps: [
-      "History endpoint is not represented in mobile UI.",
-      "Writing type omits keywords, sampleAnswer, and sampleMarkers from frontend-v3.",
-      "Grading screen polls result endpoint directly but does not show job/status states explicitly.",
-    ],
+    status: "done",
+    gaps: ["TranslateSelection popup (commit 490b35f) — not in mobile yet."],
     nextPhase: 5,
   },
+
+  // ── Practice — Speaking Drill (Phase 6) ──
   {
     area: "Practice",
     flow: "Speaking drill practice",
@@ -221,7 +214,12 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "src/features/practice/components/SpeakingDrillPreview.tsx",
       "src/features/practice/components/SpeakingDrillInProgress.tsx",
     ],
-    mobileV2: ["src/hooks/use-practice.ts"],
+    mobileV2: [
+      "app/(app)/practice/speaking/drills.tsx",
+      "app/(app)/practice/speaking/drill/[drillId].tsx",
+      "app/(app)/practice/speaking/history.tsx",
+      "src/hooks/use-practice.ts",
+    ],
     backendApi: [
       "GET /api/v1/practice/speaking/drills",
       "GET /api/v1/practice/speaking/drills/{id}",
@@ -229,13 +227,12 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "POST /api/v1/practice/speaking/drill-sessions",
       "POST /api/v1/practice/speaking/drill-sessions/{sessionId}/attempt",
     ],
-    status: "missing",
-    gaps: [
-      "Mobile lists only VSTEP speaking tasks, not speaking drills.",
-      "Drill detail, start session, sentence attempts, and drill history are missing.",
-    ],
+    status: "done",
+    gaps: [],
     nextPhase: 6,
   },
+
+  // ── Practice — Speaking VSTEP (Phase 6) ──
   {
     area: "Practice",
     flow: "Speaking VSTEP practice with audio upload and async grading",
@@ -262,27 +259,26 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "POST /api/v1/practice/speaking/vstep-sessions/{sessionId}/submit",
       "GET /api/v1/grading/speaking/practice_speaking/{submissionId}",
     ],
-    status: "partial",
+    status: "done",
     gaps: [
-      "Recorded audio is not uploaded through backend presign-upload before submit.",
-      "History endpoint is not represented in mobile UI.",
-      "Grading screen polls result endpoint directly but does not show job/status states explicitly.",
+      "TranslateSelection popup added in frontend-v3 — not in mobile.",
     ],
     nextPhase: 6,
   },
+
+  // ── Exam — List/Detail (Phase 7) ──
   {
     area: "Exam",
     flow: "Exam list and detail",
     frontendV3: ["src/routes/_app/thi-thu/index.tsx", "src/routes/_app/thi-thu/$examId.tsx", "src/features/exam"],
     mobileV2: ["app/(app)/(tabs)/exams.tsx", "app/(app)/exam/[id].tsx", "src/hooks/use-exams.ts"],
     backendApi: ["GET /api/v1/exams", "GET /api/v1/exams/{id}", "GET /api/v1/config"],
-    status: "partial",
-    gaps: [
-      "Mobile starts full exam only; custom selected-skills flow from frontend-v3 is missing.",
-      "Config/pricing is not used on exam detail like frontend-v3.",
-    ],
+    status: "done",
+    gaps: [],
     nextPhase: 7,
   },
+
+  // ── Exam — Room/Submit/Result (Phase 7 + 8) ──
   {
     area: "Exam",
     flow: "Exam room, timer, answers, submit, result",
@@ -293,26 +289,25 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "src/features/exam/components/ReadingPanel.tsx",
       "src/features/exam/components/WritingPanel.tsx",
       "src/features/exam/components/SpeakingPanel.tsx",
+      "src/features/exam/components/DeviceTestWidgets.tsx",
     ],
     mobileV2: ["app/(app)/session/[id].tsx", "app/(app)/exam-result/[id].tsx", "src/hooks/use-exam-session.ts"],
     backendApi: [
       "POST /api/v1/exams/{examId}/sessions",
       "GET /api/v1/exam-sessions/{sessionId}",
+      "GET /api/v1/exam-sessions/active",
       "POST /api/v1/exam-sessions/{sessionId}/submit",
       "POST /api/v1/exam-sessions/{sessionId}/listening-played",
       "GET /api/v1/exam-sessions/{sessionId}/results",
       "GET /api/v1/exam-sessions/{sessionId}/writing-results",
       "GET /api/v1/exam-sessions/{sessionId}/speaking-results",
     ],
-    status: "partial",
-    gaps: [
-      "Exam submit payload is centered on MCQ answers; writing_answers and speaking_answers parity must be completed.",
-      "Autosave/resume behavior is not implemented.",
-      "Active session resume endpoint is not used.",
-      "Writing/speaking async exam results are not fully modeled.",
-    ],
-    nextPhase: 7,
+    status: "done",
+    gaps: [],
+    nextPhase: 8,
   },
+
+  // ── Profile (Phase 9) ──
   {
     area: "Profile",
     flow: "Profiles, active profile, create/edit/switch, account info",
@@ -325,34 +320,34 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "DELETE /api/v1/profiles/{id}",
       "POST /api/v1/auth/switch-profile",
     ],
-    status: "partial",
-    gaps: [
-      "Goal screen is local UI only and contains remaining Vietnamese text without accents.",
-      "Create/edit/switch profile parity with frontend-v3 is missing.",
-      "Account screen contains remaining Vietnamese text without accents and is minimal.",
-    ],
+    status: "done",
+    gaps: [],
     nextPhase: 9,
   },
+
+  // ── Notifications (Phase 11) ──
   {
     area: "Notifications",
     flow: "Unread count, notification list, read all, delete",
     frontendV3: ["src/features/notifications"],
-    mobileV2: ["src/features/notification", "app/(app)/(tabs)/notifications.tsx"],
+    mobileV2: ["src/features/notification", "app/(app)/(tabs)/notifications.tsx", "app/(app)/notifications.tsx"],
     backendApi: [
       "GET /api/v1/notifications",
       "GET /api/v1/notifications/unread-count",
       "POST /api/v1/notifications/read-all",
       "DELETE /api/v1/notifications/{id}",
     ],
-    status: "partial",
-    gaps: ["Mobile notification tab redirects to dashboard; only button/store shell exists."],
+    status: "done",
+    gaps: [],
     nextPhase: 11,
   },
+
+  // ── Wallet (Phase 11) ──
   {
     area: "Wallet",
     flow: "Balance, transactions, top up, promo redeem",
     frontendV3: ["src/features/wallet"],
-    mobileV2: ["src/features/coin"],
+    mobileV2: ["src/features/wallet", "src/features/coin", "app/(app)/wallet.tsx", "app/(app)/topup.tsx"],
     backendApi: [
       "GET /api/v1/wallet/balance",
       "GET /api/v1/wallet/transactions",
@@ -361,15 +356,17 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "POST /api/v1/wallet/topup/{orderId}/confirm",
       "POST /api/v1/wallet/promo-redeem",
     ],
-    status: "missing",
-    gaps: ["Mobile coin feature is local/store-oriented and does not mirror backend wallet flow."],
+    status: "done",
+    gaps: [],
     nextPhase: 11,
   },
+
+  // ── Courses (Phase 11) ──
   {
     area: "Courses",
     flow: "Course list, detail, enrollment, booking",
     frontendV3: ["src/routes/_app/khoa-hoc", "src/features/course"],
-    mobileV2: ["app/(app)/(tabs)/classes.tsx"],
+    mobileV2: ["app/(app)/(tabs)/classes.tsx", "app/(app)/classes.tsx", "app/(app)/courses/[courseId].tsx", "src/features/course"],
     backendApi: [
       "GET /api/v1/courses",
       "GET /api/v1/courses/{id}",
@@ -378,8 +375,8 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "POST /api/v1/courses/enrollment-orders/{orderId}/confirm",
       "POST /api/v1/courses/{courseId}/bookings",
     ],
-    status: "missing",
-    gaps: ["Classes tab redirects to dashboard; course learner flow is not implemented."],
+    status: "done",
+    gaps: [],
     nextPhase: 11,
   },
 ]

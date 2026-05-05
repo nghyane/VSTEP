@@ -12,9 +12,9 @@ export function EmptyState({ icon = "document-text-outline", title, subtitle }: 
   const c = useThemeColors();
   return (
     <View style={styles.container}>
-      <Ionicons name={icon} size={48} color={c.mutedForeground} />
+      <Ionicons name={icon} size={48} color={c.subtle} />
       <Text style={[styles.title, { color: c.foreground }]}>{title}</Text>
-      {subtitle && <Text style={[styles.subtitle, { color: c.mutedForeground }]}>{subtitle}</Text>}
+      {subtitle && <Text style={[styles.subtitle, { color: c.subtle }]}>{subtitle}</Text>}
     </View>
   );
 }

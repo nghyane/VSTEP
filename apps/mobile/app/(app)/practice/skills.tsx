@@ -126,7 +126,7 @@ export default function SkillHubScreen() {
             <HapticTouchable key={skill} style={styles.tab} onPress={() => handleSkillChange(skill)}>
               <View style={styles.tabInner}>
                 <SkillIcon skill={skill} size={16} />
-                <Text style={[styles.tabLabel, { color: active ? color : c.mutedForeground, fontFamily: active ? fontFamily.semiBold : fontFamily.medium }]}>
+                <Text style={[styles.tabLabel, { color: active ? color : c.subtle, fontFamily: active ? fontFamily.semiBold : fontFamily.medium }]}>
                   {SKILL_VN[skill]}
                 </Text>
               </View>
@@ -148,7 +148,7 @@ export default function SkillHubScreen() {
                 style={[styles.chip, { borderColor: active ? color : c.border, backgroundColor: active ? color + "15" : "transparent" }]}
                 onPress={() => setActiveCat(cat.key)}
               >
-                <Text style={[styles.chipText, { color: active ? color : c.mutedForeground }]}>{cat.label}</Text>
+                <Text style={[styles.chipText, { color: active ? color : c.subtle }]}>{cat.label}</Text>
               </HapticTouchable>
             );
           })}
@@ -157,7 +157,7 @@ export default function SkillHubScreen() {
         {/* Header */}
         <View style={styles.listHeader}>
           <Text style={[styles.listHeaderLabel, { color: c.foreground }]}>{activeCatLabel}</Text>
-          <Text style={[styles.listHeaderCount, { color: c.mutedForeground }]}>{exercises.length} bài</Text>
+          <Text style={[styles.listHeaderCount, { color: c.subtle }]}>{exercises.length} bài</Text>
         </View>
 
         {/* Exercise cards grid */}
@@ -168,7 +168,7 @@ export default function SkillHubScreen() {
         </View>
 
         {exercises.length === 0 && (
-          <Text style={[styles.empty, { color: c.mutedForeground }]}>Chưa có bài tập cho phần này.</Text>
+          <Text style={[styles.empty, { color: c.subtle }]}>Chưa có bài tập cho phần này.</Text>
         )}
 
         <View style={{ height: insets.bottom + 40 }} />
@@ -186,7 +186,7 @@ function ExerciseCard({ exercise: ex, skill, onPress }: { exercise: MockExercise
   const hasProgress = ex.status !== "not_started" && ex.total && ex.total > 0;
 
   return (
-    <HapticTouchable style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]} onPress={onPress} activeOpacity={0.7}>
+    <HapticTouchable style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.cardTop}>
         <Text style={[styles.cardTitle, { color: c.foreground }]} numberOfLines={1}>{ex.title}</Text>
         {ex.status !== "not_started" && (
@@ -197,22 +197,22 @@ function ExerciseCard({ exercise: ex, skill, onPress }: { exercise: MockExercise
           </View>
         )}
       </View>
-      <Text style={[styles.cardDesc, { color: c.mutedForeground }]} numberOfLines={2}>{ex.description}</Text>
+      <Text style={[styles.cardDesc, { color: c.subtle }]} numberOfLines={2}>{ex.description}</Text>
       <View style={styles.cardMeta}>
-        <Text style={[styles.cardMetaText, { color: c.mutedForeground }]}>{ex.meta}</Text>
+        <Text style={[styles.cardMetaText, { color: c.subtle }]}>{ex.meta}</Text>
         {ex.total !== undefined && (
-          <View style={[styles.countPill, { backgroundColor: c.muted }]}>
-            <Text style={[styles.countText, { color: c.mutedForeground }]}>{ex.total} câu</Text>
+          <View style={[styles.countPill, { backgroundColor: c.background }]}>
+            <Text style={[styles.countText, { color: c.subtle }]}>{ex.total} câu</Text>
           </View>
         )}
       </View>
       {hasProgress && (
         <View style={styles.progressWrap}>
           <View style={styles.progressMeta}>
-            <Text style={[styles.progressText, { color: c.mutedForeground }]}>{ex.score}/{ex.total} đúng</Text>
-            <Text style={[styles.progressText, { color: c.mutedForeground }]}>{pct}%</Text>
+            <Text style={[styles.progressText, { color: c.subtle }]}>{ex.score}/{ex.total} đúng</Text>
+            <Text style={[styles.progressText, { color: c.subtle }]}>{pct}%</Text>
           </View>
-          <View style={[styles.progressTrack, { backgroundColor: c.muted }]}>
+          <View style={[styles.progressTrack, { backgroundColor: c.background }]}>
             <View style={[styles.progressFill, { width: `${pct}%`, backgroundColor: pct >= 80 ? c.success : pct >= 50 ? c.primary : c.warning }]} />
           </View>
         </View>

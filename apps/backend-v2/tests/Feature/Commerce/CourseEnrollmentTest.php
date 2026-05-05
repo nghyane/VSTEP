@@ -12,6 +12,7 @@ use App\Models\ExamVersion;
 use App\Models\Profile;
 use App\Models\TeacherSlot;
 use App\Models\User;
+use App\Enums\CoinTransactionType;
 use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -184,14 +185,97 @@ class CourseEnrollmentTest extends TestCase
             'starts_at' => now()->addDay(), 'status' => 'open',
         ]);
 
+        // Booking trừ 50 xu — credit đủ trước khi book.
+        $wallet = $this->app->make(WalletService::class);
+        $wallet->credit($profile, 100, CoinTransactionType::AdminGrant);
+
         $this->withHeader('Authorization', "Bearer {$token}")
             ->postJson("/api/v1/courses/{$course->id}/bookings", ['slot_id' => $slot->id])
-            ->assertCreated();
+            ->assertCreated()
+            ->assertJsonPath('data.slot.status', 'booked_me')
+            ->assertJsonPath('data.coins_charged', 50);
 
         $this->assertDatabaseHas('teacher_bookings', [
             'profile_id' => $profile->id, 'slot_id' => $slot->id, 'status' => 'booked',
         ]);
         $this->assertDatabaseHas('teacher_slots', ['id' => $slot->id, 'status' => 'booked']);
+        $this->assertSame(50, $wallet->getBalance($profile));
+    }
+
+    public function test_booking_page_returns_teacher_and_slot_grid(): void
+    {
+        [$user, $profile, $course] = $this->seedCourse(100_000, 0);
+        $token = $this->tokenFor($user);
+
+        $futureSlot = TeacherSlot::create([
+            'course_id' => $course->id, 'teacher_id' => $course->teacher_id,
+            'starts_at' => now()->addDays(2), 'status' => 'open',
+        ]);
+        $bookedByOther = TeacherSlot::create([
+            'course_id' => $course->id, 'teacher_id' => $course->teacher_id,
+            'starts_at' => now()->addDays(3), 'status' => 'booked',
+        ]);
+        $pastSlot = TeacherSlot::create([
+            'course_id' => $course->id, 'teacher_id' => $course->teacher_id,
+            'starts_at' => now()->subDays(2), 'status' => 'open',
+        ]);
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson("/api/v1/courses/{$course->id}/bookings");
+
+        $response->assertOk()
+            ->assertJsonPath('data.teacher.id', $course->teacher_id)
+            ->assertJsonPath('data.my_bookings_count', 0);
+
+        $byId = collect($response->json('data.slots'))->keyBy('id');
+        $this->assertSame('available', $byId[$futureSlot->id]['status']);
+        $this->assertSame('booked_other', $byId[$bookedByOther->id]['status']);
+        $this->assertSame('past', $byId[$pastSlot->id]['status']);
+        $this->assertNull($byId[$futureSlot->id]['meet_url']);
+    }
+
+    public function test_booking_fails_when_insufficient_coins(): void
+    {
+        [$user, $profile, $course] = $this->seedCourse(100_000, 0);
+        $token = $this->tokenFor($user);
+
+        // Confirm enrollment + meet commitment (re-uses helper inline).
+        $order = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders")
+            ->json('data');
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/courses/enrollment-orders/{$order['id']}/confirm")
+            ->assertOk();
+
+        $enrollment = CourseEnrollment::query()
+            ->where('profile_id', $profile->id)->where('course_id', $course->id)->first();
+
+        $exam = Exam::create(['slug' => 'e2', 'title' => 'E2', 'total_duration_minutes' => 60, 'is_published' => true]);
+        $version = ExamVersion::create(['exam_id' => $exam->id, 'version_number' => 1, 'is_active' => true]);
+        for ($i = 0; $i < $course->required_full_tests; $i++) {
+            ExamSession::create([
+                'profile_id' => $profile->id, 'exam_version_id' => $version->id,
+                'mode' => 'full', 'selected_skills' => ['listening', 'reading', 'writing', 'speaking'],
+                'is_full_test' => true,
+                'started_at' => $enrollment->enrolled_at->copy()->addHours(1),
+                'server_deadline_at' => $enrollment->enrolled_at->copy()->addDays(1),
+                'submitted_at' => $enrollment->enrolled_at->copy()->addDays(1),
+                'status' => 'submitted', 'coins_charged' => 25,
+            ]);
+        }
+
+        $slot = TeacherSlot::create([
+            'course_id' => $course->id, 'teacher_id' => $course->teacher_id,
+            'starts_at' => now()->addDay(), 'status' => 'open',
+        ]);
+
+        // Wallet trống — phải bị reject 422 và slot vẫn open.
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/courses/{$course->id}/bookings", ['slot_id' => $slot->id])
+            ->assertStatus(422);
+
+        $this->assertDatabaseHas('teacher_slots', ['id' => $slot->id, 'status' => 'open']);
+        $this->assertDatabaseMissing('teacher_bookings', ['slot_id' => $slot->id]);
     }
 
     private function seedCourse(int $priceVnd, int $bonus, int $maxSlots = 20): array

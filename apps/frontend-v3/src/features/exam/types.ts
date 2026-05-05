@@ -223,14 +223,52 @@ export interface McqDetailItem {
 	answered_at: string | null
 }
 
+import type { Improvement, Rewrite } from "#/features/grading/types"
+
+export interface WritingFeedbackItem {
+	submission_id: string
+	task_id: string
+	word_count: number
+	text: string
+	overall_band: number | null
+	rubric_scores: {
+		task_achievement: number
+		coherence: number
+		lexical: number
+		grammar: number
+	} | null
+	strengths: string[] | null
+	improvements: Improvement[] | null
+	rewrites: Rewrite[] | null
+	paragraph_feedback: unknown
+}
+
+export interface SpeakingFeedbackItem {
+	submission_id: string
+	part_id: string
+	audio_url: string | null
+	transcript: string | null
+	overall_band: number | null
+	rubric_scores: {
+		fluency: number
+		pronunciation: number
+		content: number
+		vocab: number
+		grammar: number
+	} | null
+	strengths: string[] | null
+	improvements: Improvement[] | null
+	pronunciation_report: { accuracy_score: number } | null
+}
+
 export interface SessionResultsData {
 	session: ExamSessionSummary
 	scores: unknown
 	/** Aggregate MCQ: score (đã chấm) / total (số câu trong scope, câu không đáp tính sai). */
 	mcq: { score: number; total: number }
 	mcq_detail: McqDetailItem[]
-	writing_feedback: unknown
-	speaking_feedback: unknown
+	writing_feedback: WritingFeedbackItem[]
+	speaking_feedback: SpeakingFeedbackItem[]
 	listening_play_summary: Array<{ section_id: string; part: number; played: boolean }>
 }
 

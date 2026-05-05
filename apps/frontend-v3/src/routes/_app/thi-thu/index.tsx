@@ -51,6 +51,26 @@ const STATUS_BY_LABEL: Record<StatusFilter, ExamStatus | "all"> = {
 	"Đã nộp": "submitted",
 }
 
+function EmptyExams({ hasFilter, onReset }: { hasFilter: boolean; onReset: () => void }) {
+	const mascot = hasFilter ? "/mascot/lac-think.png" : "/mascot/lac-sad.png"
+	const title = hasFilter ? "Không tìm thấy đề thi phù hợp" : "Chưa có đề thi nào"
+	const message = hasFilter
+		? "Thử bỏ bớt bộ lọc hoặc tìm với từ khóa khác nhé!"
+		: "Đề thi sẽ xuất hiện tại đây ngay khi sẵn sàng. Quay lại sau nha!"
+	return (
+		<div className="flex flex-col items-center justify-center py-16 text-center">
+			<img src={mascot} alt="" className="w-36 h-36 object-contain mb-1" />
+			<h3 className="font-extrabold text-xl text-foreground mb-2">{title}</h3>
+			<p className="text-sm text-muted max-w-sm mb-6">{message}</p>
+			{hasFilter && (
+				<button type="button" onClick={onReset} className="btn btn-primary px-6 py-2.5 text-sm">
+					Xóa bộ lọc
+				</button>
+			)}
+		</div>
+	)
+}
+
 function ExamListContent() {
 	const { data: examsData } = useSuspenseQuery(examsQuery)
 	const { data: configData } = useQuery(appConfigQuery)
@@ -193,7 +213,14 @@ function ExamListContent() {
 
 			{/* Grid */}
 			{filtered.length === 0 ? (
-				<p className="text-sm text-subtle py-8 text-center">Không tìm thấy đề thi nào.</p>
+				<EmptyExams
+					hasFilter={search.length > 0 || status !== "Tất cả" || skills.size > 0}
+					onReset={() => {
+						setSearch("")
+						setStatus("Tất cả")
+						setSkills(new Set())
+					}}
+				/>
 			) : (
 				<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 					{filtered.map((exam) => (

@@ -1,16 +1,21 @@
 // Auth Profile
-// Generated: 2026-04-21
+// Generated: 2026-05-02
 
 Table users {
   id uuid [pk, not null]
   full_name varchar(255)
   email varchar(255) [not null]
-  password varchar(255) [not null]
+  password varchar(255)
   role varchar(20) [not null]
   avatar_key varchar(255)
   email_verified_at timestamp
   created_at timestamp
   updated_at timestamp
+  remember_token varchar(100)
+  google_id varchar(255)
+  title varchar(100)
+  bio text
+  active_profile_id uuid
 }
 
 Table refresh_tokens {
@@ -42,6 +47,7 @@ Table profile_onboarding_responses {
   motivation varchar(30)
   raw_answers json [not null]
   completed_at timestamp [not null]
+  version integer [not null]
 }
 
 Table profile_daily_activity {
@@ -50,6 +56,17 @@ Table profile_daily_activity {
   drill_session_count integer [not null]
   drill_duration_seconds integer [not null]
   updated_at timestamp [not null, default: `now()`]
+  mcq_count integer [not null]
+  mcq_correct_count integer [not null]
+  reading_exercise_count integer [not null]
+  listening_exercise_count integer [not null]
+  writing_submission_count integer [not null]
+  speaking_submission_count integer [not null]
+  vocab_review_count integer [not null]
+  exam_session_count integer [not null]
+  total_duration_seconds integer [not null]
+  coins_earned integer [not null]
+  coins_spent integer [not null]
 }
 
 Table profile_streak_state {
@@ -82,6 +99,7 @@ Table notifications {
 }
 
 // Relationships
+Ref: users.active_profile_id > profiles.id
 Ref: refresh_tokens.user_id > users.id
 Ref: profiles.account_id > users.id
 Ref: profile_onboarding_responses.profile_id > profiles.id

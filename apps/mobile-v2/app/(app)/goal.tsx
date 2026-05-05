@@ -1,12 +1,13 @@
-// Goal screen — set/update learning target
 import { useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import { DepthButton } from "@/components/DepthButton";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { Mascot } from "@/components/Mascot";
 import { useAuth } from "@/hooks/use-auth";
+import { useUpdateProfile } from "@/hooks/use-profiles";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 type Level = "A1" | "A2" | "B1" | "B2" | "C1";
@@ -17,7 +18,18 @@ export default function GoalScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { profile } = useAuth();
+  const updateMutation = useUpdateProfile();
+
   const [selected, setSelected] = useState<Level>((profile?.targetLevel as Level) ?? "B2");
+  const [deadline, setDeadline] = useState(profile?.targetDeadline ?? "");
+
+  function handleSave() {
+    if (!profile) return;
+    updateMutation.mutate(
+      { id: profile.id, targetDeadline: deadline || undefined },
+      { onSuccess: () => router.back() },
+    );
+  }
 
   return (
     <ScrollView
@@ -45,7 +57,6 @@ export default function GoalScreen() {
                 s.levelRow,
                 {
                   borderColor: active ? c.primary : c.border,
-                  borderBottomColor: active ? c.primaryDark : "#CACACA",
                   backgroundColor: active ? c.primaryTint : c.surface,
                 },
               ]}
@@ -64,8 +75,20 @@ export default function GoalScreen() {
         })}
       </View>
 
-      <DepthButton fullWidth size="lg" onPress={() => router.back()}>
-        Lưu mục tiêu
+      <Text style={[s.deadlineLabel, { color: c.mutedForeground }]}>Ngày thi dự kiến (không bắt buộc)</Text>
+      <View style={[s.deadlineInput, { backgroundColor: c.surface, borderColor: c.border }]}>
+        <Text style={[s.deadlineText, { color: deadline ? c.foreground : c.placeholder }]}>
+          {deadline || "Chọn ngày thi..."}
+        </Text>
+      </View>
+
+      <DepthButton
+        fullWidth
+        size="lg"
+        onPress={handleSave}
+        disabled={updateMutation.isPending}
+      >
+        {updateMutation.isPending ? <ActivityIndicator color="#fff" /> : "Lưu mục tiêu"}
       </DepthButton>
     </ScrollView>
   );
@@ -93,4 +116,7 @@ const s = StyleSheet.create({
   lvlDesc: { flex: 1, fontSize: fontSize.sm },
   check: { width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   checkMark: { color: "#FFF", fontSize: 14, fontFamily: fontFamily.bold },
+  deadlineLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
+  deadlineInput: { borderWidth: 2, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  deadlineText: { fontSize: fontSize.sm },
 });

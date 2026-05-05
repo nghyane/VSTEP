@@ -79,12 +79,12 @@ export default function GoalScreen() {
             <Ionicons name="flag" size={48} color={c.primary} />
             <Text style={{ color: c.foreground, fontWeight: "700", fontSize: fontSize.xl }}>Mục tiêu: {existingGoal.targetBand}</Text>
             {existingGoal.deadline && (
-              <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm }}>
+              <Text style={{ color: c.subtle, fontSize: fontSize.sm }}>
                 Deadline: {new Date(existingGoal.deadline).toLocaleDateString("vi-VN")}
               </Text>
             )}
             {existingGoal.dailyStudyTimeMinutes && (
-              <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm }}>
+              <Text style={{ color: c.subtle, fontSize: fontSize.sm }}>
                 Luyện tập: {existingGoal.dailyStudyTimeMinutes} phút/ngày
               </Text>
             )}
@@ -119,11 +119,11 @@ export default function GoalScreen() {
                 key={b.value}
                 activeOpacity={0.7}
                 onPress={() => setTargetBand(b.value)}
-                style={[styles.optionCard, { borderColor: selected ? c.primary : c.border, backgroundColor: selected ? c.primary + "08" : c.card }]}
+                style={[styles.optionCard, { borderColor: selected ? c.primary : c.border, backgroundColor: selected ? c.primary + "08" : c.surface }]}
               >
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.optionTitle, { color: c.foreground }]}>{b.value} ({b.score})</Text>
-                  <Text style={[styles.optionSub, { color: c.mutedForeground }]}>{b.desc}</Text>
+                  <Text style={[styles.optionSub, { color: c.subtle }]}>{b.desc}</Text>
                 </View>
                 {selected && <Ionicons name="checkmark-circle" size={22} color={c.primary} />}
               </HapticTouchable>
@@ -141,11 +141,11 @@ export default function GoalScreen() {
                 key={d.value}
                 activeOpacity={0.7}
                 onPress={() => setDailyMinutes(d.value)}
-                style={[styles.optionCard, { borderColor: selected ? c.primary : c.border, backgroundColor: selected ? c.primary + "08" : c.card }]}
+                style={[styles.optionCard, { borderColor: selected ? c.primary : c.border, backgroundColor: selected ? c.primary + "08" : c.surface }]}
               >
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.optionTitle, { color: c.foreground }]}>{d.label}</Text>
-                  <Text style={[styles.optionSub, { color: c.mutedForeground }]}>{d.sub}</Text>
+                  <Text style={[styles.optionSub, { color: c.subtle }]}>{d.sub}</Text>
                 </View>
                 {selected && <Ionicons name="checkmark-circle" size={22} color={c.primary} />}
               </HapticTouchable>
@@ -163,7 +163,7 @@ export default function GoalScreen() {
                 key={t.value}
                 activeOpacity={0.7}
                 onPress={() => setTimeline(t.value)}
-                style={[styles.optionCard, { borderColor: selected ? c.primary : c.border, backgroundColor: selected ? c.primary + "08" : c.card }]}
+                style={[styles.optionCard, { borderColor: selected ? c.primary : c.border, backgroundColor: selected ? c.primary + "08" : c.surface }]}
               >
                 <Text style={[styles.optionTitle, { color: c.foreground, flex: 1 }]}>{t.label}</Text>
                 {selected && <Ionicons name="checkmark-circle" size={22} color={c.primary} />}

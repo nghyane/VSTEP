@@ -24,7 +24,9 @@ import type {
 	ExamSessionData,
 	ExamVersion,
 	SkillKey,
+	SpeakingFeedbackItem,
 	SubmitSessionResult,
+	WritingFeedbackItem,
 } from "#/features/exam/types"
 import { useExamSession, useExamTimer } from "#/features/exam/use-exam-session"
 import { cn } from "#/lib/utils"
@@ -67,12 +69,16 @@ interface PerfRow {
 	wrong: number
 	accuracyPct: number
 	pending?: boolean
+	/** AI band 0–10 (writing/speaking) — chỉ set khi đã graded */
+	band?: number
 }
 
 function buildPerfRows(
 	version: ExamVersion,
 	activeSkills: SkillKey[],
 	items: SubmitSessionResult["mcq"]["items"],
+	writingFeedback: WritingFeedbackItem[] = [],
+	speakingFeedback: SpeakingFeedbackItem[] = [],
 ): PerfRow[] {
 	const correctByItemId = new Map<string, boolean>()
 	for (const it of items) correctByItemId.set(it.item_ref_id, it.is_correct)
@@ -119,11 +125,37 @@ function buildPerfRows(
 	}
 	if (activeSkills.includes("writing")) {
 		const n = version.writing_tasks.length
-		rows.push({ label: `Viết · ${n} bài`, total: n, correct: 0, wrong: 0, accuracyPct: 0, pending: true })
+		const graded = writingFeedback.filter((w) => w.overall_band !== null)
+		const allGraded = writingFeedback.length > 0 && graded.length === writingFeedback.length
+		const avg = allGraded
+			? graded.reduce((sum, w) => sum + (w.overall_band ?? 0), 0) / graded.length
+			: undefined
+		rows.push({
+			label: `Viết · ${n} bài`,
+			total: n,
+			correct: 0,
+			wrong: 0,
+			accuracyPct: avg !== undefined ? Math.round((avg / 10) * 100) : 0,
+			pending: !allGraded,
+			band: avg,
+		})
 	}
 	if (activeSkills.includes("speaking")) {
 		const n = version.speaking_parts.length
-		rows.push({ label: `Nói · ${n} phần`, total: n, correct: 0, wrong: 0, accuracyPct: 0, pending: true })
+		const graded = speakingFeedback.filter((s) => s.overall_band !== null)
+		const allGraded = speakingFeedback.length > 0 && graded.length === speakingFeedback.length
+		const avg = allGraded
+			? graded.reduce((sum, s) => sum + (s.overall_band ?? 0), 0) / graded.length
+			: undefined
+		rows.push({
+			label: `Nói · ${n} phần`,
+			total: n,
+			correct: 0,
+			wrong: 0,
+			accuracyPct: avg !== undefined ? Math.round((avg / 10) * 100) : 0,
+			pending: !allGraded,
+			band: avg,
+		})
 	}
 	return rows
 }
@@ -135,6 +167,8 @@ function ResultScreen({
 	sessionId,
 	version,
 	activeSkills,
+	writingFeedback,
+	speakingFeedback,
 }: {
 	result: SubmitSessionResult
 	examTitle: string
@@ -142,12 +176,14 @@ function ResultScreen({
 	sessionId: string
 	version: ExamVersion
 	activeSkills: SkillKey[]
+	writingFeedback?: WritingFeedbackItem[]
+	speakingFeedback?: SpeakingFeedbackItem[]
 }) {
 	const { score: mcqScore, total: mcqTotal } = result.mcq
 	const scoreOn10 = mcqTotal > 0 ? (mcqScore / mcqTotal) * 10 : 0
 	const rows = useMemo(
-		() => buildPerfRows(version, activeSkills, result.mcq.items),
-		[version, activeSkills, result.mcq.items],
+		() => buildPerfRows(version, activeSkills, result.mcq.items, writingFeedback, speakingFeedback),
+		[version, activeSkills, result.mcq.items, writingFeedback, speakingFeedback],
 	)
 	const hasPending = rows.some((r) => r.pending)
 
@@ -208,9 +244,15 @@ function ResultScreen({
 							<PerformanceTable rows={rows} />
 						</ScrollArea>
 						{hasPending && (
-							<p className="mt-3 text-xs text-muted">
-								Writing và Speaking đang được AI chấm — kết quả sẽ hiển thị sau vài phút.
-							</p>
+							<div className="mt-3 inline-flex items-center gap-2 rounded-full border-2 border-warning/40 bg-warning/10 px-3 py-1.5">
+								<span className="relative flex size-1.5 shrink-0">
+									<span className="absolute inline-flex size-full animate-ping rounded-full bg-warning opacity-60" />
+									<span className="relative inline-flex size-1.5 rounded-full bg-warning" />
+								</span>
+								<span className="text-[11px] font-extrabold text-foreground">
+									AI đang chấm — bạn có thể quay về sảnh, kết quả sẽ tự cập nhật
+								</span>
+							</div>
 						)}
 					</div>
 
@@ -218,7 +260,9 @@ function ResultScreen({
 						<Link to="/thi-thu" className="btn btn-secondary">
 							Về danh sách đề
 						</Link>
-						{mcqTotal > 0 && (
+						{(mcqTotal > 0 ||
+							(writingFeedback && writingFeedback.length > 0) ||
+							(speakingFeedback && speakingFeedback.length > 0)) && (
 							<Link
 								to="/phong-thi/$sessionId/chi-tiet"
 								params={{ sessionId }}
@@ -321,13 +365,38 @@ function PerformanceTable({ rows }: { rows: PerfRow[] }) {
 								)}
 							</td>
 							<td className="px-4 py-3 text-center">
-								{row.pending ? <PendingBadge /> : <AccuracyBadge pct={row.accuracyPct} />}
+								{row.pending ? (
+									<PendingBadge />
+								) : row.band !== undefined ? (
+									<BandBadge band={row.band} />
+								) : (
+									<AccuracyBadge pct={row.accuracyPct} />
+								)}
 							</td>
 						</tr>
 					))}
 				</tbody>
 			</table>
 		</div>
+	)
+}
+
+function BandBadge({ band }: { band: number }) {
+	const tone =
+		band >= 7
+			? "border-primary/30 bg-primary-tint text-primary"
+			: band >= 5
+				? "border-warning/30 bg-warning-tint text-warning"
+				: "border-destructive/30 bg-destructive-tint text-destructive"
+	return (
+		<span
+			className={cn(
+				"inline-flex items-center justify-center rounded-full border-2 border-b-4 px-2.5 py-0.5 text-xs font-extrabold tabular-nums",
+				tone,
+			)}
+		>
+			Band {band.toFixed(1)}
+		</span>
 	)
 }
 
@@ -406,6 +475,8 @@ function SubmittedResultView({
 			sessionId={sessionId}
 			version={version}
 			activeSkills={session.selected_skills}
+			writingFeedback={resultsRes.data.writing_feedback}
+			speakingFeedback={resultsRes.data.speaking_feedback}
 		/>
 	)
 }
@@ -549,15 +620,28 @@ function ActiveExamRoom({
 			: undefined
 
 	if (submitResult) {
+		// Đi qua SubmittedResultView để dùng sessionResultsQuery (poll mỗi 5s tới khi
+		// AI chấm xong Writing/Speaking). Nếu chỉ render từ submitResult local thì pending mãi.
 		return (
-			<ResultScreen
-				result={submitResult}
-				examTitle={exam.title}
-				examId={exam.id}
-				sessionId={session.id}
-				version={version}
-				activeSkills={activeSkills}
-			/>
+			<Suspense
+				fallback={
+					<ResultScreen
+						result={submitResult}
+						examTitle={exam.title}
+						examId={exam.id}
+						sessionId={session.id}
+						version={version}
+						activeSkills={activeSkills}
+					/>
+				}
+			>
+				<SubmittedResultView
+					sessionId={session.id}
+					exam={exam}
+					version={version}
+					session={{ ...session, status: "submitted" }}
+				/>
+			</Suspense>
 		)
 	}
 
