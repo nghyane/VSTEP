@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { Icon } from "#/components/Icon"
 import { cn } from "#/lib/utils"
 
 interface Progress {
@@ -13,7 +14,9 @@ interface Props {
 	meta: string
 	overlay: ReactNode
 	progress?: Progress
+	progressLabel?: string
 	level?: string
+	tag?: string
 }
 
 const LEVEL_COLORS: Record<string, string> = {
@@ -25,7 +28,16 @@ const LEVEL_COLORS: Record<string, string> = {
 	C2: "bg-skill-reading/15 text-skill-reading border-skill-reading/30",
 }
 
-export function ExerciseCard({ title, description, meta, overlay, progress, level }: Props) {
+export function ExerciseCard({
+	title,
+	description,
+	meta,
+	overlay,
+	progress,
+	progressLabel,
+	level,
+	tag,
+}: Props) {
 	const pct = progress ? Math.round((progress.score / progress.total) * 100) : 0
 	const hasBar = progress && progress.status !== "not_started" && progress.total > 0
 	const status = progress?.status ?? "not_started"
@@ -48,32 +60,39 @@ export function ExerciseCard({ title, description, meta, overlay, progress, leve
 			)}
 
 			<div className="p-5 flex flex-col flex-1">
-				<div className="flex items-start gap-3">
-					<div className="min-w-0 flex-1">
-						<p className="text-base font-bold text-foreground">{title}</p>
-						<p className="mt-1 text-xs text-muted">{meta}</p>
-					</div>
-					{status === "completed" && (
-						<span className="text-xs font-bold text-primary bg-primary-tint px-2 py-0.5 rounded-full shrink-0">
-							Hoàn thành
-						</span>
-					)}
-					{status === "in_progress" && (
-						<span className="text-xs font-bold text-warning bg-warning-tint px-2 py-0.5 rounded-full shrink-0">
-							Đang làm
-						</span>
-					)}
+				<div className="min-w-0 pr-12">
+					<p className="text-base font-bold text-foreground">{title}</p>
+					<p className="mt-1 text-xs text-muted">{meta}</p>
 				</div>
 
 				{description && <p className="mt-2 text-sm text-subtle line-clamp-2 flex-1">{description}</p>}
+
+				{tag && (
+					<div className="mt-3 flex items-center gap-1.5">
+						<Icon name="check" size="xs" className="text-success" />
+						<span className="text-xs font-bold text-success">{tag}</span>
+					</div>
+				)}
 			</div>
 
 			{hasBar && (
 				<div className="mt-auto px-5 pb-4">
 					<div className="flex items-center justify-between text-xs text-muted tabular-nums mb-1">
-						<span>
-							{progress.score}/{progress.total} đúng
-						</span>
+						<div className="flex items-center gap-2">
+							<span>
+								{progress.score}/{progress.total} {progressLabel ?? "đúng"}
+							</span>
+							{status === "completed" && (
+								<span className="text-[10px] font-bold text-primary bg-primary-tint px-1.5 py-0.5 rounded-full">
+									Hoàn thành
+								</span>
+							)}
+							{status === "in_progress" && (
+								<span className="text-[10px] font-bold text-warning bg-warning-tint px-1.5 py-0.5 rounded-full">
+									Đang làm
+								</span>
+							)}
+						</div>
 						<span className="font-bold">{pct}%</span>
 					</div>
 					<div className="h-1.5 bg-background rounded-full overflow-hidden">

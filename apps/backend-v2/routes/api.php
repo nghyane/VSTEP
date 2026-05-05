@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\McqPracticeController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OverviewController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\ShadowingProgressController;
 use App\Http\Controllers\Api\V1\SpeakingConversationController;
 use App\Http\Controllers\Api\V1\SpeakingPracticeController;
 use App\Http\Controllers\Api\V1\VocabController;
@@ -116,6 +117,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/practice/speaking/conversations/{sessionId}/end', [SpeakingConversationController::class, 'end']);
         Route::get('/practice/speaking/conversations/{sessionId}/review', [SpeakingConversationController::class, 'review']);
         Route::post('/practice/speaking/pronunciation-review', [SpeakingConversationController::class, 'pronunciationReview']);
+
+        // Practice Speaking — shadowing progress.
+        Route::get('/practice/speaking/shadowing/progress', [ShadowingProgressController::class, 'index']);
+        Route::post('/practice/speaking/shadowing/progress', [ShadowingProgressController::class, 'store']);
 
         // Exams (mock test).
         Route::get('/exams', [ExamController::class, 'index']);

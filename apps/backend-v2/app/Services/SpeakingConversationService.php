@@ -47,8 +47,9 @@ class SpeakingConversationService
     public function startSession(Profile $profile, string $scenarioId): array
     {
         $scenario = $this->getScenario($scenarioId);
+        $openingIpa = $this->generateIpa($scenario->opening_line);
 
-        return DB::transaction(function () use ($profile, $scenario) {
+        return DB::transaction(function () use ($profile, $scenario, $openingIpa) {
             $session = PracticeSpeakingConversationSession::create([
                 'profile_id' => $profile->id,
                 'scenario_id' => $scenario->id,
@@ -63,6 +64,7 @@ class SpeakingConversationService
                 'text' => $scenario->opening_line,
                 'suggested_words' => $scenario->target_vocab ?? [],
             ]);
+            $turn->setAttribute('ipa', $openingIpa);
 
             return ['session' => $session, 'turns' => [$turn]];
         });
@@ -97,9 +99,10 @@ class SpeakingConversationService
         $llmResult = $this->processTurn($scenario, $turnsSerialized, $text, $suggestedVocab);
         $gradingResult = $llmResult['feedback'];
         $replyText = $llmResult['reply'];
+        $replyIpa = $llmResult['reply_ipa'];
         $suggestedWords = $llmResult['suggested_words'];
 
-        return DB::transaction(function () use ($session, $text, $gradingResult, $replyText, $suggestedWords, $nextIndex, $suggestedVocab) {
+        return DB::transaction(function () use ($session, $text, $gradingResult, $replyText, $replyIpa, $suggestedWords, $nextIndex, $suggestedVocab) {
             $userTurn = PracticeSpeakingConversationTurn::create([
                 'session_id' => $session->id,
                 'turn_index' => $nextIndex,
@@ -115,6 +118,7 @@ class SpeakingConversationService
                 'text' => $replyText,
                 'suggested_words' => $suggestedWords,
             ]);
+            $aiTurn->setAttribute('ipa', $replyIpa);
 
             $vocabUsed = collect($gradingResult['vocab_check'] ?? [])->filter(fn ($v) => $v['used'])->count();
             $session->increment('user_turn_count');
@@ -176,7 +180,7 @@ class SpeakingConversationService
     /**
      * Single LLM call: grade user turn + generate AI reply.
      *
-     * @return array{feedback: array, reply: string, suggested_words: string[]}
+     * @return array{feedback: array, reply: string, reply_ipa: string|null, suggested_words: string[]}
      */
     private function processTurn(PracticeSpeakingScenario $scenario, string $turnsSerialized, string $userText, array $vocabToCheck): array
     {
@@ -199,12 +203,15 @@ class SpeakingConversationService
             ."   - grammar_ok: set false if there are grammatical errors.\n"
             ."   - grammar_corrections: array of {wrong, correct, explanation(in Vietnamese)} for each grammar mistake. Empty array if no errors.\n"
             ."   - better: rewrite the user's sentence in natural English. Always provide this.\n"
+            ."   - user_ipa: IPA phonetic transcription of the user's ORIGINAL sentence as they said it. Always provide this.\n"
+            ."   - better_ipa: IPA phonetic transcription of the 'better' sentence (e.g. \"aɪ wʊd laɪk tuː ɡoʊ\"). Always provide this.\n"
             ."2. REPLY as {$scenario->character_name}:\n"
             ."   - Write 1-2 natural sentences (max 30 words).\n"
             ."   - Your reply MUST be grammatically correct English.\n"
             ."   - Your reply MUST end with a question to continue the conversation.\n"
             ."   - Do NOT repeat phrases or stutter.\n"
-            ."3. SUGGEST 2-4 short phrases the user could say next (each ≤ 4 words).";
+            ."3. SUGGEST 2-4 short phrases the user could say next (each ≤ 4 words).\n"
+            ."4. REPLY_IPA: provide IPA phonetic transcription of your reply as \"reply_ipa\" field. Always provide this.";
 
         $fallbackFeedback = [
             'word_count' => ['used' => 0, 'target' => count($targetVocab)],
@@ -212,6 +219,8 @@ class SpeakingConversationService
             'grammar_corrections' => [],
             'vocab_check' => collect($targetVocab)->map(fn ($p) => ['phrase' => $p, 'used' => Str::contains($lowerText, Str::lower($p))])->toArray(),
             'better' => $userText,
+            'user_ipa' => null,
+            'better_ipa' => null,
         ];
 
         try {
@@ -253,6 +262,7 @@ class SpeakingConversationService
         return [
             'feedback' => $fallbackFeedback,
             'reply' => "That's interesting! Tell me more.",
+            'reply_ipa' => null,
             'suggested_words' => ['Tell me more', 'I think', 'What about you'],
         ];
     }
@@ -406,8 +416,11 @@ class SpeakingConversationService
                 'grammar_corrections' => $grammarCorrections,
                 'vocab_check' => $completeVocab,
                 'better' => $better,
+                'user_ipa' => $feedback['user_ipa'] ?? null,
+                'better_ipa' => $feedback['better_ipa'] ?? null,
             ],
             'reply' => $reply,
+            'reply_ipa' => $data['reply_ipa'] ?? $data['ipa'] ?? null,
             'suggested_words' => is_array($suggestions) ? array_values($suggestions) : [],
         ];
     }
@@ -462,5 +475,39 @@ class SpeakingConversationService
         }
 
         return $fallback;
+    }
+
+    /**
+     * Generate IPA transcription for a given English text via LLM.
+     */
+    private function generateIpa(string $text): ?string
+    {
+        try {
+            $url = rtrim((string) config('ai.providers.workers-ai.url', ''), '/').'/chat/completions';
+            $key = (string) config('ai.providers.workers-ai.key', '');
+            $authHeader = (string) config('ai.providers.workers-ai.auth_header', 'cf-aig-authorization');
+            $model = (string) config('ai.providers.workers-ai.models.text.default');
+
+            $httpResponse = \Illuminate\Support\Facades\Http::withHeaders([
+                $authHeader => 'Bearer '.$key,
+            ])->timeout(10)->post($url, [
+                'model' => $model,
+                'messages' => [['role' => 'user', 'content' => "Convert this English text to IPA phonetic transcription. Respond with ONLY the IPA string, nothing else.\n\nText: \"{$text}\""]],
+                'max_tokens' => 200,
+            ]);
+
+            $content = data_get($httpResponse->json(), 'choices.0.message.content', '');
+            if (is_array($content)) {
+                $content = collect($content)->pluck('text')->implode('');
+            }
+            $content = trim((string) $content, " \t\n\r\0\x0B/");
+            if (! empty($content) && mb_strlen($content) > 2) {
+                return $content;
+            }
+        } catch (\Throwable $e) {
+            Log::warning('IPA generation failed', ['error' => $e->getMessage()]);
+        }
+
+        return null;
     }
 }

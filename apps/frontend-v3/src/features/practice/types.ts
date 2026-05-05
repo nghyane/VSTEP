@@ -202,6 +202,7 @@ export interface ConversationTurnFeedback {
 	grammar_corrections: ConversationGrammarCorrection[]
 	vocab_check: ConversationVocabCheck[]
 	better: string | null
+	better_ipa: string | null
 }
 
 export type ConversationTurnRole = "ai" | "user"
@@ -210,6 +211,7 @@ export interface ConversationTurn {
 	id: string
 	role: ConversationTurnRole
 	text: string
+	ipa: string | null
 	feedback: ConversationTurnFeedback | null
 	suggested_words: string[]
 }
@@ -218,4 +220,13 @@ export interface ConversationSessionDetail {
 	session_id: string
 	scenario: ConversationScenario
 	turns: ConversationTurn[]
+}
+
+export interface ConversationHistoryItem {
+	id: string
+	scenario: { id: string; title: string; level: string }
+	ended_at: string
+	duration_seconds: number
+	user_turn_count: number
+	vocab_used_pct: number
 }

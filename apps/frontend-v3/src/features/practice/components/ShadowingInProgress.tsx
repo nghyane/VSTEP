@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { useEffect, useRef, useState } from "react"
 import { Icon } from "#/components/Icon"
@@ -6,6 +7,7 @@ import {
 	ShadowingSegmentView,
 } from "#/features/practice/components/ShadowingSegmentView"
 import { ShadowingSidebar } from "#/features/practice/components/ShadowingSidebar"
+import { shadowingProgressQuery, useMarkShadowingDone } from "#/features/practice/shadowing-progress"
 import type { ShadowingLessonDetail } from "#/features/practice/types"
 import { cn, compareWords, pickEnglishVoice, speak, stopSpeaking, warmupTTS } from "#/lib/utils"
 
@@ -17,8 +19,12 @@ type MicState = "idle" | "listening" | "speaking" | "recording"
 
 export function ShadowingInProgress({ lesson }: Props) {
 	const { segments } = lesson
+	const { data: progressData } = useQuery(shadowingProgressQuery)
+	const markDoneMut = useMarkShadowingDone()
+	const persistedDone = new Set((progressData?.data?.[lesson.id] ?? []).map((p) => p.segment_index))
 	const [current, setCurrent] = useState(0)
 	const [done, setDone] = useState<Set<number>>(new Set())
+	const mergedDone = new Set([...persistedDone, ...done])
 	const [voice, setVoice] = useState<SpeechSynthesisVoice | undefined>(() => pickEnglishVoice())
 	const [mic, setMic] = useState<MicState>("idle")
 	const [speakingCharIndex, setSpeakingCharIndex] = useState(-1)
@@ -29,6 +35,7 @@ export function ShadowingInProgress({ lesson }: Props) {
 	const recognitionRef = useRef<{ stop: () => void } | null>(null)
 	const stoppedRef = useRef(false)
 	const timerRef = useRef<number | null>(null)
+	const autoPlayedRef = useRef(false)
 
 	const segment = segments[current]
 	const attempt = attempts.get(current) ?? null
@@ -43,6 +50,27 @@ export function ShadowingInProgress({ lesson }: Props) {
 		return () => window.speechSynthesis?.removeEventListener("voiceschanged", load)
 	}, [voice])
 
+	// Auto-play first segment on mount
+	useEffect(() => {
+		if (autoPlayedRef.current || !voice) return
+		autoPlayedRef.current = true
+		stopSpeaking()
+		warmupTTS()
+		setMic("speaking")
+		setSpeakingCharIndex(-1)
+		setTimeout(() => {
+			speak(segment.text, {
+				rate: 0.85,
+				voice,
+				onBoundary: (ci) => setSpeakingCharIndex(ci),
+				onEnd: () => {
+					setMic("idle")
+					setSpeakingCharIndex(-1)
+				},
+			})
+		}, 500)
+	}, [voice, segment.text])
+
 	const handleListen = () => {
 		if (mic === "speaking") {
 			stopSpeaking()
@@ -52,18 +80,21 @@ export function ShadowingInProgress({ lesson }: Props) {
 		}
 		if (mic !== "idle") return
 
+		stopSpeaking()
 		warmupTTS()
 		setMic("speaking")
 		setSpeakingCharIndex(-1)
-		speak(segment.text, {
-			rate: 0.85,
-			voice,
-			onBoundary: (ci) => setSpeakingCharIndex(ci),
-			onEnd: () => {
-				setMic("idle")
-				setSpeakingCharIndex(-1)
-			},
-		})
+		setTimeout(() => {
+			speak(segment.text, {
+				rate: 0.85,
+				voice,
+				onBoundary: (ci) => setSpeakingCharIndex(ci),
+				onEnd: () => {
+					setMic("idle")
+					setSpeakingCharIndex(-1)
+				},
+			})
+		}, 500)
 	}
 
 	const handleRecord = () => {
@@ -119,7 +150,11 @@ export function ShadowingInProgress({ lesson }: Props) {
 				setAttempts((prev) =>
 					new Map(prev).set(current, { transcript: text, wordResults: results, correctCount: correct }),
 				)
-				if (correct / segment.word_count >= 0.5) setDone((prev) => new Set(prev).add(current))
+				if (correct / segment.word_count >= 0.5) {
+					setDone((prev) => new Set(prev).add(current))
+					const pct = Math.round((correct / segment.word_count) * 100)
+					markDoneMut.mutate({ lesson_id: lesson.id, segment_index: current, accuracy_percent: pct })
+				}
 			} else {
 				setEmptyWarning(true)
 				setTimeout(() => setEmptyWarning(false), 3000)
@@ -164,8 +199,9 @@ export function ShadowingInProgress({ lesson }: Props) {
 		if (prevSegment.current === current) return
 		prevSegment.current = current
 		if (!voice) return
-		// Small delay for render
+		// Small delay for TTS engine to be ready (matches conversation pattern)
 		const t = setTimeout(() => {
+			stopSpeaking()
 			warmupTTS()
 			setMic("speaking")
 			setSpeakingCharIndex(-1)
@@ -178,7 +214,7 @@ export function ShadowingInProgress({ lesson }: Props) {
 					setSpeakingCharIndex(-1)
 				},
 			})
-		}, 300)
+		}, 500)
 		return () => clearTimeout(t)
 	})
 
@@ -200,11 +236,11 @@ export function ShadowingInProgress({ lesson }: Props) {
 				<div className="flex-1 h-1.5 bg-border rounded-full overflow-hidden">
 					<div
 						className="h-full bg-skill-speaking rounded-full transition-all"
-						style={{ width: `${(done.size / segments.length) * 100}%` }}
+						style={{ width: `${(mergedDone.size / segments.length) * 100}%` }}
 					/>
 				</div>
 				<span className="text-xs font-bold text-muted shrink-0">
-					{done.size}/{segments.length}
+					{mergedDone.size}/{segments.length}
 				</span>
 				<button
 					type="button"
@@ -311,7 +347,7 @@ export function ShadowingInProgress({ lesson }: Props) {
 						sidebarOpen ? "block" : "hidden lg:block",
 					)}
 				>
-					<ShadowingSidebar segments={segments} current={current} done={done} onSelect={goTo} />
+					<ShadowingSidebar segments={segments} current={current} done={mergedDone} onSelect={goTo} />
 				</div>
 			</div>
 		</div>

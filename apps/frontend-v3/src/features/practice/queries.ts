@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query"
 import type {
+	ConversationHistoryItem,
 	ConversationScenario,
 	ConversationSessionDetail,
 	ExerciseDetail,
@@ -70,3 +71,11 @@ export const conversationSessionQuery = (sessionId: string) =>
 		queryFn: () =>
 			api.get(`practice/speaking/conversations/${sessionId}`).json<ApiResponse<ConversationSessionDetail>>(),
 	})
+
+export const conversationHistoryQuery = queryOptions({
+	queryKey: ["practice", "speaking", "conversations", "history"],
+	queryFn: () =>
+		api
+			.get("practice/speaking/conversations/history")
+			.json<{ data: ConversationHistoryItem[]; meta: { total: number } }>(),
+})
