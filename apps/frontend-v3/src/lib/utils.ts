@@ -136,6 +136,8 @@ interface SpeakOptions {
 	voice?: SpeechSynthesisVoice
 	onEnd?: () => void
 	onBoundary?: (charIndex: number) => void
+	/** Skip synth.cancel() before speaking */
+	skipCancel?: boolean
 }
 
 /**
@@ -146,7 +148,7 @@ interface SpeakOptions {
 export function warmupTTS() {
 	if (!window.speechSynthesis) return
 	const synth = window.speechSynthesis
-	synth.cancel()
+	if (!opts.skipCancel) synth.cancel()
 	const u = new SpeechSynthesisUtterance("ready")
 	u.volume = 0.01
 	u.rate = 2
@@ -187,6 +189,17 @@ export function speak(text: string, opts: SpeakOptions = {}) {
 			}
 		}
 		synth.speak(u)
+
+		// Chrome stops speech after ~15s. Workaround: pause/resume periodically.
+		const keepAlive = setInterval(() => {
+			if (!synth.speaking) { clearInterval(keepAlive); return }
+			synth.pause()
+			synth.resume()
+		}, 10000)
+		const origOnEnd = u.onend
+		u.onend = (ev) => { clearInterval(keepAlive); origOnEnd?.call(u, ev) }
+		const origOnError = u.onerror
+		u.onerror = (ev) => { clearInterval(keepAlive); origOnError?.call(u, ev) }
 	}
 
 	if (synth.getVoices().length === 0) {

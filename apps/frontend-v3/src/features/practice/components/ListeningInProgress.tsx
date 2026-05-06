@@ -5,8 +5,10 @@ import { AudioBar } from "#/features/practice/components/AudioBar"
 import { QuestionList } from "#/features/practice/components/QuestionList"
 import { QuestionNav } from "#/features/practice/components/QuestionNav"
 import { Subtitle } from "#/features/practice/components/Subtitle"
+import { TTSAudioBar } from "#/features/practice/components/TTSAudioBar"
 import type { ExerciseDetail } from "#/features/practice/types"
 import { useListeningSession } from "#/features/practice/use-listening-session"
+import { useTTSPlayer } from "#/features/practice/use-tts-player"
 import { cn } from "#/lib/utils"
 
 interface Props {
@@ -19,6 +21,10 @@ export function ListeningInProgress({ detail, sessionId }: Props) {
 	const session = useListeningSession(sessionId)
 	const [showSub, setShowSub] = useState(false)
 	const [audioTime, setAudioTime] = useState(0)
+
+	const hasAudio = !!exercise.audio_url
+	const hasTTS = !hasAudio && !!exercise.transcript
+	const tts = useTTSPlayer(hasTTS ? exercise.transcript : null)
 	const hasSub = !!exercise.transcript || exercise.word_timestamps.length > 0
 
 	return (
@@ -39,11 +45,17 @@ export function ListeningInProgress({ detail, sessionId }: Props) {
 				</span>
 			</div>
 
-			{/* Sticky subtitle */}
+			{/* Subtitle panel */}
 			{showSub && hasSub && (
-				<div className="sticky top-0 z-10 bg-surface border-b border-border px-6 py-2.5 shrink-0">
+				<div className="bg-surface border-b border-border px-6 py-3 shrink-0 overflow-y-auto max-h-[40vh]">
 					<div className="max-w-3xl mx-auto">
-						<Subtitle exercise={exercise} currentTime={audioTime} />
+						<Subtitle
+							exercise={exercise}
+							currentTime={audioTime}
+							activeWordIndex={hasTTS ? tts.activeWordIndex : undefined}
+							activeTurnIndex={hasTTS ? tts.activeTurnIndex : undefined}
+							turns={hasTTS ? tts.turns : undefined}
+						/>
 					</div>
 				</div>
 			)}
@@ -60,7 +72,13 @@ export function ListeningInProgress({ detail, sessionId }: Props) {
 						{exercise.description && <p className="text-sm text-muted mb-4">{exercise.description}</p>}
 						<div className="flex items-center gap-3">
 							<div className="flex-1 min-w-0">
-								<AudioBar src={exercise.audio_url} onTimeUpdate={setAudioTime} />
+								{hasAudio ? (
+									<AudioBar src={exercise.audio_url} onTimeUpdate={setAudioTime} />
+								) : hasTTS ? (
+									<TTSAudioBar player={tts} />
+								) : (
+									<p className="text-sm text-muted italic">Không có audio</p>
+								)}
 							</div>
 							{hasSub && (
 								<button

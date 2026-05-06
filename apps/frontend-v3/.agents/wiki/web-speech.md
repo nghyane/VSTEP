@@ -47,5 +47,23 @@ function speakText(text: string, rate: number): Promise<void> {
 
 KHÔNG dùng `useEffect(() => stopSpeaking, [])` vì StrictMode dev mount→unmount→mount sẽ fire `cancel()` ngay sau `speak()` → trigger error `interrupted`.
 
+## Chrome `onboundary` không fire với Google voices
+
+Google voices ("Google US English", "Google UK English Female") là **remote/cloud voices** — Chrome stream audio về nhưng KHÔNG parse word boundaries. `SpeechSynthesisUtterance.onboundary` sẽ không bao giờ fire.
+
+Microsoft voices (online và desktop) fire `onboundary` đúng. macOS native voices cũng fire.
+
+**Workaround cho word-level highlight**: dùng dual-mode — start timer ước lượng (~400ms/word / rate), nếu `onboundary` fire thì clear timer và dùng exact position. Xem `use-tts-player.ts`.
+
+## Chrome 15s speech timeout
+
+Chrome tự dừng `speechSynthesis` sau ~15 giây (bug từ 2018, chưa fix). Workaround: `setInterval` mỗi 10s gọi `synth.pause()` + `synth.resume()`. Đã thêm vào `speak()` trong `lib/utils.ts`.
+
+## Filler prefix cho Chrome cold start
+
+`speak()` prepend `"... "` trước text thật. Chrome clip filler thay vì clip từ đầu tiên. `onBoundary` charIndex được offset lại: `charIndex - filler.length`.
+
+`skipCancel` option: khi chain nhiều utterance liên tiếp (dialogue turns), pass `skipCancel: true` để tránh `synth.cancel()` giữa các turns.
+
 ---
 See also: [[anti-patterns]]
