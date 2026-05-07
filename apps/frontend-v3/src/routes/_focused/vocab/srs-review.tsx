@@ -1,9 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { useCallback, useEffect } from "react"
-import { FlashcardCard } from "#/features/vocab/components/FlashcardCard"
 import { FocusBar } from "#/features/vocab/components/FocusBar"
 import { FocusComplete, FocusEmpty } from "#/features/vocab/components/FocusStates"
+import { SrsFlipCard } from "#/features/vocab/components/SrsFlipCard"
 import { SrsRatingButtons } from "#/features/vocab/components/SrsRatingButtons"
 import { vocabSrsQueueQuery } from "#/features/vocab/queries"
 import { useFlashcardSession } from "#/features/vocab/use-flashcard-session"
@@ -54,16 +54,11 @@ function SrsReviewPage() {
 				<div className="w-full max-w-lg space-y-4">
 					{s.current && (
 						<>
-							<FlashcardCard
-								word={s.current.word}
-								revealed={s.revealed}
-								direction="front"
-								onReveal={s.reveal}
-							/>
+							<SrsFlipCard word={s.current.word} flipped={s.revealed} onFlip={s.reveal} />
 							{s.revealed && <SrsRatingButtons disabled={s.submitting} onRate={s.rate} />}
 						</>
 					)}
-					<p className="text-xs text-subtle text-center">Space: xem nghĩa · 1-4: đánh giá</p>
+					<p className="text-xs text-subtle text-center">Space: lật thẻ · 1-4: đánh giá</p>
 				</div>
 			</div>
 		</div>

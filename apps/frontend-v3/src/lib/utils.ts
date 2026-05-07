@@ -148,7 +148,7 @@ interface SpeakOptions {
 export function warmupTTS() {
 	if (!window.speechSynthesis) return
 	const synth = window.speechSynthesis
-	if (!opts.skipCancel) synth.cancel()
+	synth.cancel()
 	const u = new SpeechSynthesisUtterance("ready")
 	u.volume = 0.01
 	u.rate = 2

@@ -63,7 +63,7 @@ Chrome tự dừng `speechSynthesis` sau ~15 giây (bug từ 2018, chưa fix). W
 
 `speak()` prepend `"... "` trước text thật. Chrome clip filler thay vì clip từ đầu tiên. `onBoundary` charIndex được offset lại: `charIndex - filler.length`.
 
-`skipCancel` option: khi chain nhiều utterance liên tiếp (dialogue turns), pass `skipCancel: true` để tránh `synth.cancel()` giữa các turns.
+`skipCancel` option: đã xóa. Trước đây `warmupTTS()` có `if (!opts.skipCancel)` nhưng `opts` không phải parameter của `warmupTTS` → runtime crash "opts is not defined" khi vào speaking practice. `speak()` cũng không bao giờ check `skipCancel`. Option đã dead code từ đầu.
 
 ---
 See also: [[anti-patterns]]
