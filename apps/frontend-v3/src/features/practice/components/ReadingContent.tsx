@@ -12,7 +12,11 @@ const PARTS = [
 		desc: "Đọc đoạn văn trung bình, trả lời câu hỏi chi tiết",
 	},
 	{ part: 3, label: "Part 3 — Đọc hiểu dài", desc: "Đọc bài viết dài, trả lời câu hỏi tổng hợp" },
-	{ part: 4, label: "Part 4 — Đọc hiểu nâng cao", desc: "Đọc văn bản học thuật, trả lời câu hỏi suy luận" },
+	{
+		part: 4,
+		label: "Part 4 — Đọc hiểu nâng cao",
+		desc: "Đọc văn bản học thuật, trả lời câu hỏi suy luận",
+	},
 ]
 
 export function ReadingContent() {
