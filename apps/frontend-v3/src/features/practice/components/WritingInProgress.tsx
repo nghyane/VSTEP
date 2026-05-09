@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Icon } from "#/components/Icon"
 import { submitWritingSession } from "#/features/practice/actions"
 import { TranslateSelection } from "#/features/practice/components/TranslateSelection"
+import { WritingReviewPopup } from "#/features/practice/components/WritingReviewPopup"
+import { WritingWordProgress } from "#/features/practice/components/WritingWordProgress"
 import type { SampleMarker, WritingPromptDetail, WritingSubmission } from "#/features/practice/types"
 import { cn, countWords } from "#/lib/utils"
 
@@ -16,15 +18,35 @@ export function WritingInProgress({ prompt, sessionId }: Props) {
 	const [text, setText] = useState("")
 	const [submission, setSubmission] = useState<WritingSubmission | null>(null)
 	const [showSample, setShowSample] = useState(false)
+	const [showReview, setShowReview] = useState(false)
+	const textareaRef = useRef<HTMLTextAreaElement>(null)
 	const wc = countWords(text)
-	const inRange = wc >= prompt.min_words && wc <= prompt.max_words
-	const over = wc > prompt.max_words
 	const hasSample = !!prompt.sample_answer
 
 	const mutation = useMutation({
 		mutationFn: () => submitWritingSession(sessionId, text),
 		onSuccess: (res) => setSubmission(res.data),
 	})
+
+	const handleInsertText = useCallback(
+		(insert: string) => {
+			const ta = textareaRef.current
+			if (!ta) return
+			const start = ta.selectionStart
+			const before = text.slice(0, start)
+			const after = text.slice(start)
+			const spaceBefore = before.length > 0 && !before.endsWith(" ") && !before.endsWith("\n") ? " " : ""
+			const spaceAfter = after.length > 0 && !after.startsWith(" ") && !after.startsWith("\n") ? " " : ""
+			const newText = before + spaceBefore + insert + spaceAfter + after
+			setText(newText)
+			requestAnimationFrame(() => {
+				const pos = start + spaceBefore.length + insert.length + spaceAfter.length
+				ta.setSelectionRange(pos, pos)
+				ta.focus()
+			})
+		},
+		[text],
+	)
 
 	return (
 		<div className="flex flex-col h-screen bg-background">
@@ -56,13 +78,13 @@ export function WritingInProgress({ prompt, sessionId }: Props) {
 							<p className="font-extrabold text-xl text-foreground">Đã nộp bài!</p>
 							<p className="text-sm text-muted mt-1">{submission.word_count} từ · AI đang chấm bài</p>
 							<div className="flex items-center justify-center gap-3 mt-4">
-								<Link
-									to="/grading/writing/$submissionId"
-									params={{ submissionId: submission.submission_id }}
+								<button
+									type="button"
+									onClick={() => setShowReview(true)}
 									className="py-2 px-5 font-bold text-sm rounded-(--radius-button) text-primary-foreground bg-skill-writing shadow-[0_3px_0_var(--color-skill-writing-dark)] uppercase"
 								>
 									Xem kết quả
-								</Link>
+								</button>
 								<Link
 									to="/luyen-tap/viet"
 									className="py-2 px-5 font-bold text-sm rounded-(--radius-button) border-2 border-border text-muted uppercase"
@@ -104,9 +126,14 @@ export function WritingInProgress({ prompt, sessionId }: Props) {
 									<p className="text-xs font-bold text-muted mb-1">Gợi ý mở đầu</p>
 									<div className="flex flex-wrap gap-1.5">
 										{prompt.sentence_starters.map((s) => (
-											<span key={s} className="text-xs bg-background px-2 py-1 rounded-lg text-subtle">
+											<button
+												key={s}
+												type="button"
+												onClick={() => handleInsertText(s)}
+												className="text-xs bg-background px-2 py-1 rounded-lg text-subtle hover:text-foreground hover:bg-skill-writing/10 transition cursor-pointer"
+											>
 												{s}
-											</span>
+											</button>
 										))}
 									</div>
 								</div>
@@ -114,22 +141,16 @@ export function WritingInProgress({ prompt, sessionId }: Props) {
 						</div>
 
 						{/* Editor */}
-						<div className="relative">
+						<div className="space-y-3">
 							<textarea
+								ref={textareaRef}
 								value={text}
 								onChange={(e) => setText(e.target.value)}
 								disabled={!!submission}
 								placeholder="Viết bài của bạn ở đây..."
-								className="w-full min-h-[500px] p-5 pb-10 text-sm leading-relaxed text-foreground bg-surface border-2 border-border rounded-xl resize-y focus:outline-none focus:border-primary disabled:opacity-60"
+								className="w-full min-h-[500px] p-5 pb-14 text-sm leading-relaxed text-foreground bg-surface border-2 border-border rounded-xl resize-y focus:outline-none focus:border-primary disabled:opacity-60"
 							/>
-							<span
-								className={cn(
-									"absolute bottom-4 right-4 text-xs font-bold tabular-nums",
-									inRange ? "text-primary" : over ? "text-destructive" : "text-muted",
-								)}
-							>
-								{wc} / {prompt.min_words}–{prompt.max_words} từ
-							</span>
+							<WritingWordProgress count={wc} min={prompt.min_words} max={prompt.max_words} />
 						</div>
 					</div>
 				</div>
@@ -166,6 +187,11 @@ export function WritingInProgress({ prompt, sessionId }: Props) {
 						<SamplePanel answer={prompt.sample_answer ?? ""} markers={prompt.sample_markers} />
 					</div>
 				</div>
+			)}
+
+			{/* Review popup — inline grading result */}
+			{showReview && submission && (
+				<WritingReviewPopup submissionId={submission.submission_id} onClose={() => setShowReview(false)} />
 			)}
 		</div>
 	)

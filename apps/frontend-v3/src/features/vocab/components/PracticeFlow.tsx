@@ -37,7 +37,7 @@ export function PracticeFlow({ words, mode, back }: Props) {
 	if (!s.current) return null
 
 	const flipped = s.phase === "reveal"
-	const isFlipMode = s.current.mode === "flashcard"
+	const isFlipMode = s.current.mode === "flashcard" || s.current.mode === "reverse"
 
 	return (
 		<div className="min-h-screen bg-background flex flex-col">
@@ -74,7 +74,12 @@ function usePracticeKeyboard(s: PracticeSession) {
 			if (!s.current) return
 			const isInput = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement
 			// Space → flip flashcard (only flashcard mode, not when typing in input)
-			if (e.key === " " && s.current.mode === "flashcard" && s.phase === "prompt" && !isInput) {
+			if (
+				e.key === " " &&
+				(s.current.mode === "flashcard" || s.current.mode === "reverse") &&
+				s.phase === "prompt" &&
+				!isInput
+			) {
 				e.preventDefault()
 				s.reveal()
 				return

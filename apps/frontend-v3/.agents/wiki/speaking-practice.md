@@ -34,13 +34,32 @@ Old drill/VSTEP speaking features removed entirely — replaced by these 2 modes
 - `better` always populated (fallback = user text).
 - Reply must end with question — prompt enforces, no code append.
 
+### IPA Phonetic Transcription
+- Backend generates IPA via LLM prompt — no external API, no client-side dictionary.
+- Conversation: `reply_ipa` (AI reply), `user_ipa` (user's spoken text), `better_ipa` (improved version). All from same LLM call.
+- Opening line: separate lightweight LLM call in `generateIpa()` during `startSession()`.
+- Frontend: toggle "Phiên âm" button per turn, shows `/{ipa}/` text below buttons.
+- Shadowing: IPA pre-defined in segment data (not generated).
+
 ### Translate
 - Google Translate free API: `translate.googleapis.com/translate_a/single?client=gtx`.
 - `translateText()` in `lib/utils.ts`. Per-bubble toggle button.
 
 ## Shadowing
 
-### No backend needed
+### Shadowing Progress (DB)
+- `practice_shadowing_progress` table: profile_id + lesson_id + segment_index + accuracy_percent.
+- `GET /practice/speaking/shadowing/progress` — returns all progress grouped by lesson.
+- `POST /practice/speaking/shadowing/progress` — upsert segment completion.
+- Frontend: `shadowingProgressQuery` + `useMarkShadowingDone()` mutation.
+- Progress bar on ExerciseCard: X/Y đoạn.
+
+### TTS Auto-play + Delay Fix
+- Shadowing auto-plays first segment on mount via `useEffect` + `autoPlayedRef`.
+- All speak calls use `setTimeout(..., 500)` delay + `stopSpeaking()` before new speak — matches Conversation pattern.
+- Fixes Chrome TTS clipping first words when switching segments quickly.
+
+### No backend for audio
 - TTS reads model sentence (Web Speech API).
 - SpeechRecognition captures user speech.
 - `compareWords()` in `lib/utils.ts` — DP alignment (not positional) handles word merging (e.g. "lightspeed" vs "light speed").
@@ -65,14 +84,18 @@ Positional comparison fails when words merge/split. DP alignment (like diff):
 ## Files
 
 ### Backend
-- `database/migrations/2026_05_01_000001..000004` — scenarios table + seeds (8 scenarios)
+- `database/migrations/2026_05_01_000001..000004` — scenarios table + seeds (21 scenarios (A1×4, A2×5, B1×5, B2×4, C1×3))
 - `app/Models/PracticeSpeaking{Scenario,ConversationSession,ConversationTurn}.php`
 - `app/Ai/Agents/Conversation{TurnAgent,ReviewAgent}.php`
 - `app/Services/SpeakingConversationService.php` — direct HTTP to Workers AI
 - `app/Http/Controllers/Api/V1/SpeakingConversationController.php` — 9 endpoints
+- `app/Http/Controllers/Api/V1/ShadowingProgressController.php` — 2 endpoints
+- `app/Models/PracticeShadowingProgress.php`
 
 ### Frontend
-- `src/features/practice/components/Conversation*.tsx` — 7 components
-- `src/features/practice/components/Shadowing*.tsx` — 4 components
-- `src/features/practice/mock-shadowing.ts` — 6 lessons with segments
+- `src/features/practice/components/Conversation*.tsx` — 7 components (TurnView: IPA + phiên âm button)
+- `src/features/practice/components/Shadowing*.tsx` — 4 components (auto-play, 500ms delay)
+- `src/features/practice/components/SpeakingFilters.tsx` — level (A1–C1) + status filter
+- `src/features/practice/shadowing-progress.ts` — query + mutation for DB progress
+- `src/features/practice/mock-shadowing.ts` — 10 lessons with segments (A1–C1)
 - `src/lib/utils.ts` — `speak()`, `warmupTTS()`, `translateText()`, `compareWords()`

@@ -28,6 +28,10 @@ function GrammarDetailPage() {
 			<Header title={detail.point.name} backTo="/luyen-tap/ngu-phap" />
 			<div className="px-10 pb-12 space-y-8">
 				<PointHeader detail={detail} />
+				<Structures structures={detail.structures} />
+				<Examples examples={detail.examples} />
+				<CommonMistakes mistakes={detail.common_mistakes} />
+				<VstepTips tips={detail.vstep_tips} />
 
 				{hasExercises && (
 					<section className="text-center">
@@ -40,11 +44,6 @@ function GrammarDetailPage() {
 						</Link>
 					</section>
 				)}
-
-				<Structures structures={detail.structures} />
-				<Examples examples={detail.examples} />
-				<CommonMistakes mistakes={detail.common_mistakes} />
-				<VstepTips tips={detail.vstep_tips} />
 			</div>
 		</>
 	)

@@ -92,7 +92,7 @@ export function ConversationHeader({ scenario, onEnd, onBack, voice, onVoiceChan
 					type="button"
 					onClick={() => setOpen((v) => !v)}
 					className={cn(
-						"flex items-center gap-2 px-3 h-9 rounded-(--radius-button) border-2 border-b-4 bg-surface text-xs font-bold transition shrink-0",
+						"flex items-center gap-2 px-3 h-9 rounded-(--radius-button) border-2 border-b-4 bg-surface text-xs font-bold transition shrink-0 active:translate-y-[1px] active:border-b-2",
 						open
 							? "border-skill-speaking text-skill-speaking"
 							: "border-border text-muted hover:text-foreground",

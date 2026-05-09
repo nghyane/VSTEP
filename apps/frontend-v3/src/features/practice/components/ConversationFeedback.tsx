@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { Icon } from "#/components/Icon"
 import type { ConversationTurnFeedback } from "#/features/practice/types"
-import { cn } from "#/lib/utils"
+import { cn, speak } from "#/lib/utils"
 
 interface Props {
 	feedback: ConversationTurnFeedback
@@ -87,7 +87,18 @@ export function ConversationFeedback({ feedback }: Props) {
 								Cách nói tốt hơn
 							</p>
 						</div>
-						<p className="text-sm font-bold text-foreground">{feedback.better}</p>
+						<div className="flex items-center gap-2">
+							<p className="text-sm font-bold text-foreground flex-1">{feedback.better}</p>
+							<button
+								type="button"
+								onClick={() => speak(feedback.better ?? "")}
+								className="shrink-0 p-1.5 rounded-(--radius-button) text-info hover:bg-info/10 transition"
+								aria-label="Nghe phát âm"
+							>
+								<Icon name="volume" size="xs" />
+							</button>
+						</div>
+						{feedback.better_ipa && <p className="text-xs text-muted italic mt-1">/{feedback.better_ipa}/</p>}
 					</div>
 				</div>
 			)}

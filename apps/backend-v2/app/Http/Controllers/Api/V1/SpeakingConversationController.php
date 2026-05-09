@@ -187,10 +187,16 @@ class SpeakingConversationController extends Controller
 
     private function formatTurn($turn): array
     {
+        $ipa = $turn->getAttribute('ipa');
+        if (! $ipa && $turn->role === 'user' && is_array($turn->feedback)) {
+            $ipa = $turn->feedback['user_ipa'] ?? null;
+        }
+
         return [
             'id' => $turn->id,
             'role' => $turn->role,
             'text' => $turn->text,
+            'ipa' => $ipa,
             'feedback' => $turn->feedback,
             'suggested_words' => $turn->suggested_words ?? [],
         ];

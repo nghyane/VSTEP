@@ -11,11 +11,20 @@ interface Props {
 	highlightCharIndex?: number
 }
 
-function TranslateButton({ text, align = "left" }: { text: string; align?: "left" | "right" }) {
+function TurnActions({
+	text,
+	ipa,
+	align = "left",
+}: {
+	text: string
+	ipa?: string | null
+	align?: "left" | "right"
+}) {
+	const [showIpa, setShowIpa] = useState(false)
 	const [translation, setTranslation] = useState<string | null>(null)
 	const [loading, setLoading] = useState(false)
 
-	const toggle = async () => {
+	const toggleTranslate = async () => {
 		if (translation) {
 			setTranslation(null)
 			return
@@ -27,24 +36,47 @@ function TranslateButton({ text, align = "left" }: { text: string; align?: "left
 	}
 
 	return (
-		<div className={cn(align === "right" && "text-right")}>
-			<button
-				type="button"
-				onClick={toggle}
-				disabled={loading}
-				className={cn(
-					"inline-flex items-center gap-1.5 px-2.5 py-1 rounded-(--radius-button) border-2 border-b-4 text-xs font-bold transition mt-2",
-					"active:translate-y-[1px] active:border-b-2",
-					translation
-						? "border-skill-speaking/40 bg-skill-speaking/10 text-skill-speaking"
-						: "border-border bg-surface text-subtle hover:text-foreground hover:border-skill-speaking/30",
+		<div className="mt-2 space-y-1.5">
+			<div className={cn("flex items-center gap-1.5 flex-wrap", align === "right" && "justify-end")}>
+				{ipa && (
+					<button
+						type="button"
+						onClick={() => setShowIpa((v) => !v)}
+						className={cn(
+							"inline-flex items-center gap-1.5 px-2.5 py-1 rounded-(--radius-button) border-2 border-b-4 text-xs font-bold transition",
+							"active:translate-y-[1px] active:border-b-2",
+							showIpa
+								? "border-info/40 bg-info/10 text-info"
+								: "border-border bg-surface text-subtle hover:text-foreground hover:border-info/30",
+						)}
+					>
+						<span className="text-[11px] font-black">T</span>
+						{showIpa ? "Ẩn phiên âm" : "Phiên âm"}
+					</button>
 				)}
-			>
-				<Icon name="swap" size="xs" />
-				{loading ? "Đang dịch..." : translation ? "Ẩn dịch" : "Dịch"}
-			</button>
+				<button
+					type="button"
+					onClick={toggleTranslate}
+					disabled={loading}
+					className={cn(
+						"inline-flex items-center gap-1.5 px-2.5 py-1 rounded-(--radius-button) border-2 border-b-4 text-xs font-bold transition",
+						"active:translate-y-[1px] active:border-b-2",
+						translation
+							? "border-skill-speaking/40 bg-skill-speaking/10 text-skill-speaking"
+							: "border-border bg-surface text-subtle hover:text-foreground hover:border-skill-speaking/30",
+					)}
+				>
+					<Icon name="swap" size="xs" />
+					{loading ? "Đang dịch..." : translation ? "Ẩn dịch" : "Dịch"}
+				</button>
+			</div>
+
+			{showIpa && ipa && (
+				<p className={cn("text-sm text-muted italic px-1", align === "right" && "text-right")}>/{ipa}/</p>
+			)}
+
 			{translation && (
-				<p className={cn("text-sm text-muted italic mt-1.5 px-1", align === "right" && "text-right")}>
+				<p className={cn("text-sm text-muted italic px-1", align === "right" && "text-right")}>
 					{translation}
 				</p>
 			)}
@@ -64,7 +96,6 @@ function HighlightText({ text, charIndex }: { text: string; charIndex: number })
 		return result
 	}, [text])
 
-	// Find which word is being spoken based on charIndex
 	let activeIdx = -1
 	if (charIndex >= 0) {
 		for (let i = words.length - 1; i >= 0; i--) {
@@ -110,7 +141,7 @@ export function ConversationTurnView({ turn, scenario, isSpeaking, highlightChar
 							<p className="text-[15px] text-foreground leading-relaxed">{turn.text}</p>
 						)}
 					</div>
-					<TranslateButton text={turn.text} />
+					<TurnActions text={turn.text} ipa={turn.ipa} />
 				</div>
 			</div>
 		)
@@ -126,7 +157,7 @@ export function ConversationTurnView({ turn, scenario, isSpeaking, highlightChar
 					<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-surface px-4 py-3">
 						<p className="text-[15px] text-foreground leading-relaxed">{turn.text}</p>
 					</div>
-					<TranslateButton text={turn.text} align="right" />
+					<TurnActions text={turn.text} ipa={turn.ipa} align="right" />
 				</div>
 			</div>
 			{turn.feedback && (
