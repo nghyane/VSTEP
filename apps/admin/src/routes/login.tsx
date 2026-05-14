@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "#/components/Button"
 import { Input } from "#/components/Input"
 import { type ApiResponse, api, extractError } from "#/lib/api"
-import { useAuth } from "#/lib/auth"
+import { type AdminRole, useAuth } from "#/lib/auth"
 
 interface LoginResponse {
 	access_token: string
@@ -51,8 +51,8 @@ function LoginPage() {
 			})
 			window.location.href = "/"
 		},
-		onError: (err) => {
-			const { message } = extractError(err)
+		onError: async (err) => {
+			const { message } = await extractError(err)
 			setError(message || "Đăng nhập thất bại")
 		},
 	})

@@ -13,9 +13,9 @@ use App\Models\Profile;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Laravel\Ai\Responses\StructuredAgentResponse;
 
 class SpeakingConversationService
 {
@@ -198,7 +198,7 @@ class SpeakingConversationService
             ."User just said: \"{$userText}\"\n\n"
             ."INSTRUCTIONS (follow exactly):\n"
             ."1. GRADE the user's sentence:\n"
-            ."   - Target phrases: ".json_encode($preCheck)."\n"
+            .'   - Target phrases: '.json_encode($preCheck)."\n"
             ."   - For each phrase, set used=true if user said it or a close paraphrase.\n"
             ."   - grammar_ok: set false if there are grammatical errors.\n"
             ."   - grammar_corrections: array of {wrong, correct, explanation(in Vietnamese)} for each grammar mistake. Empty array if no errors.\n"
@@ -211,7 +211,7 @@ class SpeakingConversationService
             ."   - Your reply MUST end with a question to continue the conversation.\n"
             ."   - Do NOT repeat phrases or stutter.\n"
             ."3. SUGGEST 2-4 short phrases the user could say next (each ≤ 4 words).\n"
-            ."4. REPLY_IPA: provide IPA phonetic transcription of your reply as \"reply_ipa\" field. Always provide this.";
+            .'4. REPLY_IPA: provide IPA phonetic transcription of your reply as "reply_ipa" field. Always provide this.';
 
         $fallbackFeedback = [
             'word_count' => ['used' => 0, 'target' => count($targetVocab)],
@@ -230,7 +230,7 @@ class SpeakingConversationService
             $authHeader = (string) config('ai.providers.workers-ai.auth_header', 'cf-aig-authorization');
             $model = (string) config('ai.providers.workers-ai.models.text.default');
 
-            $httpResponse = \Illuminate\Support\Facades\Http::withHeaders([
+            $httpResponse = Http::withHeaders([
                 $authHeader => 'Bearer '.$key,
             ])->timeout(30)->post($url, [
                 'model' => $model,
@@ -289,7 +289,7 @@ class SpeakingConversationService
             ."- strengths: array of 2-3 specific things the user did well (in Vietnamese, reference actual phrases)\n"
             ."- improvements: array of 2-3 specific things to improve (in Vietnamese, reference actual mistakes)\n"
             ."- corrected_sentences: array of {original, corrected, explanation} for EACH user sentence that has errors (in Vietnamese). Skip correct sentences.\n"
-            ."- tip: one practical actionable tip (in Vietnamese)";
+            .'- tip: one practical actionable tip (in Vietnamese)';
 
         $fallback = [
             'strengths' => ['Giao tiếp tự tin', 'Hiểu được ngữ cảnh hội thoại'],
@@ -305,7 +305,7 @@ class SpeakingConversationService
             $authHeader = (string) config('ai.providers.workers-ai.auth_header', 'cf-aig-authorization');
             $model = (string) config('ai.providers.workers-ai.models.text.default', '@cf/meta/llama-4-scout-17b-16e-instruct');
 
-            $response = \Illuminate\Support\Facades\Http::withHeaders([
+            $response = Http::withHeaders([
                 $authHeader => 'Bearer '.$key,
             ])->timeout(30)->post($url, [
                 'model' => $model,
@@ -436,7 +436,7 @@ class SpeakingConversationService
             ."Compare and analyze. Respond ONLY with valid JSON (no markdown), with these fields:\n"
             ."- pronunciation: specific feedback on which words were mispronounced and how to fix (in Vietnamese, 2-3 sentences)\n"
             ."- intonation: feedback on rhythm, stress, linking sounds (in Vietnamese, 1-2 sentences)\n"
-            ."- tip: one practical tip to improve (in Vietnamese, 1 sentence)";
+            .'- tip: one practical tip to improve (in Vietnamese, 1 sentence)';
 
         $fallback = [
             'pronunciation' => 'Hãy chú ý phát âm rõ từng từ và nghe lại câu mẫu.',
@@ -450,7 +450,7 @@ class SpeakingConversationService
             $authHeader = (string) config('ai.providers.workers-ai.auth_header', 'cf-aig-authorization');
             $model = (string) config('ai.providers.workers-ai.models.text.default');
 
-            $response = \Illuminate\Support\Facades\Http::withHeaders([
+            $response = Http::withHeaders([
                 $authHeader => 'Bearer '.$key,
             ])->timeout(30)->post($url, [
                 'model' => $model,
@@ -488,7 +488,7 @@ class SpeakingConversationService
             $authHeader = (string) config('ai.providers.workers-ai.auth_header', 'cf-aig-authorization');
             $model = (string) config('ai.providers.workers-ai.models.text.default');
 
-            $httpResponse = \Illuminate\Support\Facades\Http::withHeaders([
+            $httpResponse = Http::withHeaders([
                 $authHeader => 'Bearer '.$key,
             ])->timeout(10)->post($url, [
                 'model' => $model,

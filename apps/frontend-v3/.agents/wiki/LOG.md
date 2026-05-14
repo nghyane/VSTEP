@@ -18,6 +18,7 @@
 - 2026-04-22: Updated anti-patterns.md — useMediaCaption no-suppress, useReducer Map/Set generics, exam device-check phase mandatory
 - 2026-04-22: Created exam-color-system.md — exam room dùng primary cho interactive, skill color chỉ cho identifier
 - 2026-07-17: Created grading-fallback-bug.md — $systemPrompt never passed to callStructuredLlm, LLM had no instructions → always fallback 5.0
+- 2026-05-14: Audit toàn bộ thay đổi branch hiện tại. Backend: tạo AdminSpeakingDrillService, AdminSpeakingTaskService, AdminWritingService để fix thin-controller violation. Admin frontend: route pages > 100 lines là tech debt tồn đọng, cần split components dần.
 - 2026-04-24: Created auth-google.md — Google Sign-In via GSI renderButton, BE verifies JWKS with openssl_verify (no lib dep), needs_onboarding flow → Step2 completes initial profile
 - 2026-04-25: Updated anti-patterns.md — SkillChip shared component rule (no inline pill, no dot inside chip); created `components/SkillChip.tsx`
 - 2026-04-25: Created gamification-ui.md — Duolingo-ish chip/popup/dropdown/notif patterns; coin-gain store + Header animation rules (single-fire via useRef, fire after popup close)

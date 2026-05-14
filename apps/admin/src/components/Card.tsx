@@ -1,10 +1,10 @@
-import type { HTMLAttributes } from "react"
+import type { HTMLAttributes, ReactNode } from "react"
 import { cn } from "#/lib/utils"
 
-interface CardProps extends HTMLAttributes<HTMLDivElement> {
-	title?: string | JSX.Element | null
+interface CardProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
+	title?: ReactNode
 	description?: string
-	action?: JSX.Element | null
+	action?: ReactNode
 	padded?: boolean
 }
 

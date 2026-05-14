@@ -5,12 +5,14 @@ export function Toaster() {
 		<SonnerToaster
 			position="top-right"
 			duration={4000}
-			classNames={{
-				toast: "rounded-lg border border-border bg-surface shadow-lg",
-				title: "text-sm font-medium text-foreground",
-				description: "text-xs text-muted",
-				success: "border-success",
-				error: "border-danger",
+			toastOptions={{
+				classNames: {
+					toast: "rounded-lg border border-border bg-surface shadow-lg",
+					title: "text-sm font-medium text-foreground",
+					description: "text-xs text-muted",
+					success: "border-success",
+					error: "border-danger",
+				},
 			}}
 		/>
 	)
