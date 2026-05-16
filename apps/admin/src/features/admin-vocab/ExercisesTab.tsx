@@ -1,4 +1,5 @@
-import { Pencil, Plus, Trash2 } from "lucide-react"
+import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons"
+import { Empty, Flex, Typography } from "antd"
 import { useState } from "react"
 import { Badge } from "#/components/Badge"
 import { Button } from "#/components/Button"
@@ -49,53 +50,55 @@ export function ExercisesTab({ topicId, exercises }: Props) {
 
 	return (
 		<>
-			<div className="mb-4 flex items-center justify-between">
-				<p className="text-sm text-muted">{exercises.length} bài tập.</p>
-				<Button icon={<Plus className="size-4" />} onClick={() => setCreateOpen(true)}>
+			<Flex justify="space-between" align="center" style={{ marginBottom: 16 }}>
+				<Typography.Text type="secondary">{exercises.length} bài tập.</Typography.Text>
+				<Button icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
 					Thêm bài tập
 				</Button>
-			</div>
+			</Flex>
 
 			{exercises.length === 0 ? (
-				<div className="rounded-(--radius-card) border border-dashed border-border bg-surface px-6 py-10 text-center text-sm text-muted">
-					Chưa có bài tập nào.
-				</div>
+				<Empty description="Chưa có bài tập nào." />
 			) : (
-				<ul className="flex flex-col gap-2">
+				<Flex vertical gap={8}>
 					{exercises.map((ex) => (
-						<li
+						<Flex
 							key={ex.id}
-							className="flex items-start justify-between gap-3 rounded-(--radius-card) border border-border bg-surface px-4 py-3"
+							align="flex-start"
+							justify="space-between"
+							gap={12}
+							style={{
+								padding: "12px 16px",
+								border: "1px solid rgba(0,0,0,0.06)",
+								borderRadius: 8,
+								background: "#fff",
+							}}
 						>
-							<div className="min-w-0 flex-1">
-								<div className="mb-1 flex items-center gap-2">
+							<div style={{ minWidth: 0, flex: 1 }}>
+								<Flex align="center" gap={8} style={{ marginBottom: 4 }}>
 									<Badge variant="info">{KIND_LABEL[ex.kind]}</Badge>
-									<span className="text-xs text-subtle">#{ex.display_order}</span>
-								</div>
-								<p className="text-sm text-foreground line-clamp-2">{summary(ex)}</p>
-								<p className="mt-1 text-xs text-muted line-clamp-1">{ex.explanation}</p>
-							</div>
-							<div className="flex gap-1">
-								<button
-									type="button"
-									className="rounded-md p-1.5 text-muted hover:bg-surface-muted hover:text-foreground"
-									onClick={() => setEditing(ex)}
-									aria-label="Sửa"
+									<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+										#{ex.display_order}
+									</Typography.Text>
+								</Flex>
+								<Typography.Paragraph ellipsis={{ rows: 2 }} style={{ marginBottom: 4 }}>
+									{summary(ex)}
+								</Typography.Paragraph>
+								<Typography.Paragraph
+									type="secondary"
+									ellipsis={{ rows: 1 }}
+									style={{ marginBottom: 0, fontSize: 12 }}
 								>
-									<Pencil className="size-3.5" />
-								</button>
-								<button
-									type="button"
-									className="rounded-md p-1.5 text-muted hover:bg-danger-tint hover:text-danger"
-									onClick={() => setDeleting(ex)}
-									aria-label="Xoá"
-								>
-									<Trash2 className="size-3.5" />
-								</button>
+									{ex.explanation}
+								</Typography.Paragraph>
 							</div>
-						</li>
+							<Flex gap={4}>
+								<Button variant="ghost" size="sm" icon={<EditOutlined />} onClick={() => setEditing(ex)} />
+								<Button variant="ghost" size="sm" icon={<DeleteOutlined />} onClick={() => setDeleting(ex)} />
+							</Flex>
+						</Flex>
 					))}
-				</ul>
+				</Flex>
 			)}
 
 			<Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Thêm bài tập" size="lg">

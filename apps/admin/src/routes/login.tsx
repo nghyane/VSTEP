@@ -1,8 +1,7 @@
 import { useMutation } from "@tanstack/react-query"
 import { createFileRoute, redirect } from "@tanstack/react-router"
+import { Alert, Button, Card, Flex, Form, Input, Typography } from "antd"
 import { useState } from "react"
-import { Button } from "#/components/Button"
-import { Input } from "#/components/Input"
 import { type ApiResponse, api, extractError } from "#/lib/api"
 import { type AdminRole, useAuth } from "#/lib/auth"
 
@@ -58,52 +57,44 @@ function LoginPage() {
 	})
 
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-background px-4">
-			<form
-				onSubmit={(e) => {
-					e.preventDefault()
-					setError(null)
-					mutation.mutate()
-				}}
-				className="w-full max-w-sm rounded-(--radius-card) border border-border bg-surface p-6 shadow-sm"
-			>
-				<div className="mb-5">
-					<h1 className="text-lg font-semibold tracking-tight">VSTEP Admin</h1>
-					<p className="mt-1 text-sm text-muted">Đăng nhập để tiếp tục.</p>
-				</div>
-				<div className="flex flex-col gap-3">
-					<div className="flex flex-col gap-1.5">
-						<label htmlFor="email" className="text-xs font-medium text-muted">
-							Email
-						</label>
+		<Flex justify="center" align="center" style={{ minHeight: "100vh", padding: 16 }}>
+			<Card style={{ width: "100%", maxWidth: 380 }}>
+				<Typography.Title level={4} style={{ margin: 0 }}>
+					VSTEP Admin
+				</Typography.Title>
+				<Typography.Text type="secondary" style={{ display: "block", marginBottom: 20 }}>
+					Đăng nhập để tiếp tục.
+				</Typography.Text>
+				<Form
+					layout="vertical"
+					onFinish={() => {
+						setError(null)
+						mutation.mutate()
+					}}
+				>
+					<Form.Item label="Email" required>
 						<Input
 							id="email"
 							type="email"
-							required
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}
 							autoComplete="email"
 						/>
-					</div>
-					<div className="flex flex-col gap-1.5">
-						<label htmlFor="password" className="text-xs font-medium text-muted">
-							Mật khẩu
-						</label>
-						<Input
+					</Form.Item>
+					<Form.Item label="Mật khẩu" required>
+						<Input.Password
 							id="password"
-							type="password"
-							required
 							value={password}
 							onChange={(e) => setPassword(e.target.value)}
 							autoComplete="current-password"
 						/>
-					</div>
-					{error && <div className="rounded-md bg-danger-tint px-3 py-2 text-xs text-danger">{error}</div>}
-					<Button type="submit" size="lg" loading={mutation.isPending}>
+					</Form.Item>
+					{error && <Alert type="error" description={error} style={{ marginBottom: 12 }} />}
+					<Button type="primary" htmlType="submit" size="large" loading={mutation.isPending} block>
 						Đăng nhập
 					</Button>
-				</div>
-			</form>
-		</div>
+				</Form>
+			</Card>
+		</Flex>
 	)
 }

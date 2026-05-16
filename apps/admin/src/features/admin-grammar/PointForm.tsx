@@ -1,3 +1,4 @@
+import { Alert, Flex } from "antd"
 import { type FormEvent, useState } from "react"
 import { Button } from "#/components/Button"
 import { FormField } from "#/components/FormField"
@@ -62,111 +63,133 @@ export function PointForm({ initial, onSubmit, onCancel, submitting }: Props) {
 	}
 
 	return (
-		<form onSubmit={handle} className="flex flex-col gap-4">
-			<div className="grid grid-cols-2 gap-3">
-				<FormField label="Slug" htmlFor="slug" required error={errors.slug} helper="Không trùng, không dấu.">
-					<Input
-						id="slug"
-						value={state.slug}
-						onChange={(e) => set("slug", e.target.value)}
-						placeholder="past-simple"
-						invalid={!!errors.slug}
-					/>
-				</FormField>
-				<FormField label="Tên (EN)" htmlFor="name" required error={errors.name}>
-					<Input
-						id="name"
-						value={state.name}
-						onChange={(e) => set("name", e.target.value)}
-						invalid={!!errors.name}
-					/>
-				</FormField>
-			</div>
+		<form onSubmit={handle}>
+			<Flex vertical gap={16}>
+				<Flex gap={12}>
+					<div style={{ flex: 1 }}>
+						<FormField
+							label="Slug"
+							htmlFor="slug"
+							required
+							error={errors.slug}
+							helper="Không trùng, không dấu."
+						>
+							<Input
+								id="slug"
+								value={state.slug}
+								onChange={(e) => set("slug", e.target.value)}
+								placeholder="past-simple"
+								invalid={!!errors.slug}
+							/>
+						</FormField>
+					</div>
+					<div style={{ flex: 1 }}>
+						<FormField label="Tên (EN)" htmlFor="name" required error={errors.name}>
+							<Input
+								id="name"
+								value={state.name}
+								onChange={(e) => set("name", e.target.value)}
+								invalid={!!errors.name}
+							/>
+						</FormField>
+					</div>
+				</Flex>
 
-			<FormField label="Tên tiếng Việt" htmlFor="vn_name" error={errors.vietnamese_name}>
-				<Input
-					id="vn_name"
-					value={state.vietnamese_name ?? ""}
-					onChange={(e) => set("vietnamese_name", e.target.value)}
+				<FormField label="Tên tiếng Việt" htmlFor="vn_name" error={errors.vietnamese_name}>
+					<Input
+						id="vn_name"
+						value={state.vietnamese_name ?? ""}
+						onChange={(e) => set("vietnamese_name", e.target.value)}
+					/>
+				</FormField>
+
+				<FormField label="Tóm tắt" htmlFor="summary" required error={errors.summary}>
+					<Textarea
+						id="summary"
+						value={state.summary}
+						onChange={(e) => set("summary", e.target.value)}
+						rows={2}
+						invalid={!!errors.summary}
+					/>
+				</FormField>
+
+				<Flex gap={12}>
+					<div style={{ flex: 1 }}>
+						<FormField label="Category" htmlFor="category" required error={errors.category}>
+							<Select
+								id="category"
+								value={state.category}
+								onChange={(e) => set("category", e.target.value as GrammarCategory)}
+							>
+								{GRAMMAR_CATEGORIES.map((c) => (
+									<option key={c.value} value={c.value}>
+										{c.label}
+									</option>
+								))}
+							</Select>
+						</FormField>
+					</div>
+					<div style={{ flex: 1 }}>
+						<FormField label="Thứ tự" htmlFor="display_order" error={errors.display_order}>
+							<Input
+								id="display_order"
+								type="number"
+								value={state.display_order}
+								onChange={(e) => set("display_order", Number(e.target.value))}
+							/>
+						</FormField>
+					</div>
+				</Flex>
+
+				<Flex gap={12}>
+					<div style={{ flex: 1 }}>
+						<FormField label="Levels" error={errors.levels} helper="A2 / B1 / B2 / C1">
+							<TagInput
+								value={state.levels}
+								onChange={(v) => set("levels", v as GrammarLevel[])}
+								allowed={[...GRAMMAR_LEVELS]}
+								placeholder="B1, B2…"
+							/>
+						</FormField>
+					</div>
+					<div style={{ flex: 1 }}>
+						<FormField label="VSTEP tasks" error={errors.tasks} helper="WT1, SP2…">
+							<TagInput
+								value={state.tasks}
+								onChange={(v) => set("tasks", v as GrammarTask[])}
+								allowed={GRAMMAR_TASKS}
+							/>
+						</FormField>
+					</div>
+					<div style={{ flex: 1 }}>
+						<FormField label="Functions" error={errors.functions} helper="Tự do.">
+							<TagInput
+								value={state.functions}
+								onChange={(v) => set("functions", v)}
+								placeholder="expressing time…"
+							/>
+						</FormField>
+					</div>
+				</Flex>
+
+				<Switch
+					id="is_published"
+					checked={state.is_published}
+					onChange={(v) => set("is_published", v)}
+					label="Đã xuất bản"
 				/>
-			</FormField>
 
-			<FormField label="Tóm tắt" htmlFor="summary" required error={errors.summary}>
-				<Textarea
-					id="summary"
-					value={state.summary}
-					onChange={(e) => set("summary", e.target.value)}
-					rows={2}
-					invalid={!!errors.summary}
-				/>
-			</FormField>
+				{generic && <Alert type="error" message={generic} showIcon />}
 
-			<div className="grid grid-cols-2 gap-3">
-				<FormField label="Category" htmlFor="category" required error={errors.category}>
-					<Select
-						id="category"
-						value={state.category}
-						onChange={(e) => set("category", e.target.value as GrammarCategory)}
-					>
-						{GRAMMAR_CATEGORIES.map((c) => (
-							<option key={c.value} value={c.value}>
-								{c.label}
-							</option>
-						))}
-					</Select>
-				</FormField>
-				<FormField label="Thứ tự" htmlFor="display_order" error={errors.display_order}>
-					<Input
-						id="display_order"
-						type="number"
-						value={state.display_order}
-						onChange={(e) => set("display_order", Number(e.target.value))}
-					/>
-				</FormField>
-			</div>
-
-			<div className="grid grid-cols-3 gap-3">
-				<FormField label="Levels" error={errors.levels} helper="A2 / B1 / B2 / C1">
-					<TagInput
-						value={state.levels}
-						onChange={(v) => set("levels", v as GrammarLevel[])}
-						allowed={[...GRAMMAR_LEVELS]}
-						placeholder="B1, B2…"
-					/>
-				</FormField>
-				<FormField label="VSTEP tasks" error={errors.tasks} helper="WT1, SP2…">
-					<TagInput
-						value={state.tasks}
-						onChange={(v) => set("tasks", v as GrammarTask[])}
-						allowed={GRAMMAR_TASKS}
-					/>
-				</FormField>
-				<FormField label="Functions" error={errors.functions} helper="Tự do.">
-					<TagInput
-						value={state.functions}
-						onChange={(v) => set("functions", v)}
-						placeholder="expressing time…"
-					/>
-				</FormField>
-			</div>
-
-			<Switch
-				id="is_published"
-				checked={state.is_published}
-				onChange={(v) => set("is_published", v)}
-				label="Đã xuất bản"
-			/>
-
-			{generic && <div className="rounded-md bg-danger-tint px-3 py-2 text-xs text-danger">{generic}</div>}
-
-			<div className="flex justify-end gap-2 pt-2">
-				<Button variant="ghost" onClick={onCancel} disabled={submitting}>
-					Huỷ
-				</Button>
-				<Button type="submit" loading={submitting}>
-					{initial ? "Cập nhật" : "Tạo điểm ngữ pháp"}
-				</Button>
-			</div>
+				<Flex justify="end" gap={8} style={{ paddingTop: 8 }}>
+					<Button variant="ghost" onClick={onCancel} disabled={submitting}>
+						Huỷ
+					</Button>
+					<Button type="submit" loading={submitting}>
+						{initial ? "Cập nhật" : "Tạo điểm ngữ pháp"}
+					</Button>
+				</Flex>
+			</Flex>
 		</form>
 	)
 }

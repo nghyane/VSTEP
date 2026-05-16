@@ -1,3 +1,4 @@
+import { Alert, Flex } from "antd"
 import { type FormEvent, useState } from "react"
 import { Button } from "#/components/Button"
 import { FormField } from "#/components/FormField"
@@ -56,100 +57,116 @@ export function WordForm({ initial, onSubmit, onCancel, submitting }: Props) {
 	}
 
 	return (
-		<form onSubmit={handle} className="flex flex-col gap-4">
-			<div className="grid grid-cols-2 gap-3">
-				<FormField label="Từ" htmlFor="word" required error={errors.word}>
-					<Input
-						id="word"
-						value={state.word}
-						onChange={(e) => set("word", e.target.value)}
-						invalid={!!errors.word}
+		<form onSubmit={handle}>
+			<Flex vertical gap={16}>
+				<Flex gap={12}>
+					<div style={{ flex: 1 }}>
+						<FormField label="Từ" htmlFor="word" required error={errors.word}>
+							<Input
+								id="word"
+								value={state.word}
+								onChange={(e) => set("word", e.target.value)}
+								invalid={!!errors.word}
+							/>
+						</FormField>
+					</div>
+					<div style={{ flex: 1 }}>
+						<FormField label="Phiên âm IPA" htmlFor="phonetic" error={errors.phonetic}>
+							<Input
+								id="phonetic"
+								value={state.phonetic ?? ""}
+								onChange={(e) => set("phonetic", e.target.value)}
+								placeholder="/.../"
+							/>
+						</FormField>
+					</div>
+				</Flex>
+
+				<Flex gap={12}>
+					<div style={{ flex: 1 }}>
+						<FormField label="Loại từ" htmlFor="pos" required error={errors.part_of_speech}>
+							<Select
+								id="pos"
+								value={state.part_of_speech}
+								onChange={(e) => set("part_of_speech", e.target.value)}
+							>
+								{POS.map((p) => (
+									<option key={p} value={p}>
+										{p}
+									</option>
+								))}
+							</Select>
+						</FormField>
+					</div>
+					<div style={{ flex: 1 }}>
+						<FormField label="Thứ tự" htmlFor="display_order" error={errors.display_order}>
+							<Input
+								id="display_order"
+								type="number"
+								value={state.display_order}
+								onChange={(e) => set("display_order", Number(e.target.value))}
+							/>
+						</FormField>
+					</div>
+				</Flex>
+
+				<FormField label="Định nghĩa" htmlFor="definition" required error={errors.definition}>
+					<Textarea
+						id="definition"
+						value={state.definition}
+						onChange={(e) => set("definition", e.target.value)}
+						rows={2}
+						invalid={!!errors.definition}
 					/>
 				</FormField>
-				<FormField label="Phiên âm IPA" htmlFor="phonetic" error={errors.phonetic}>
-					<Input
-						id="phonetic"
-						value={state.phonetic ?? ""}
-						onChange={(e) => set("phonetic", e.target.value)}
-						placeholder="/.../"
+
+				<FormField label="Ví dụ" htmlFor="example" error={errors.example}>
+					<Textarea
+						id="example"
+						value={state.example ?? ""}
+						onChange={(e) => set("example", e.target.value)}
+						rows={2}
 					/>
 				</FormField>
-			</div>
 
-			<div className="grid grid-cols-2 gap-3">
-				<FormField label="Loại từ" htmlFor="pos" required error={errors.part_of_speech}>
-					<Select
-						id="pos"
-						value={state.part_of_speech}
-						onChange={(e) => set("part_of_speech", e.target.value)}
-					>
-						{POS.map((p) => (
-							<option key={p} value={p}>
-								{p}
-							</option>
-						))}
-					</Select>
-				</FormField>
-				<FormField label="Thứ tự" htmlFor="display_order" error={errors.display_order}>
-					<Input
-						id="display_order"
-						type="number"
-						value={state.display_order}
-						onChange={(e) => set("display_order", Number(e.target.value))}
+				<Flex gap={12}>
+					<div style={{ flex: 1 }}>
+						<FormField label="Đồng nghĩa">
+							<TagInput value={state.synonyms} onChange={(v) => set("synonyms", v)} />
+						</FormField>
+					</div>
+					<div style={{ flex: 1 }}>
+						<FormField label="Cụm từ">
+							<TagInput value={state.collocations} onChange={(v) => set("collocations", v)} />
+						</FormField>
+					</div>
+					<div style={{ flex: 1 }}>
+						<FormField label="Họ từ">
+							<TagInput value={state.word_family} onChange={(v) => set("word_family", v)} />
+						</FormField>
+					</div>
+				</Flex>
+
+				<FormField label="VSTEP tip" htmlFor="vstep_tip" error={errors.vstep_tip}>
+					<Textarea
+						id="vstep_tip"
+						value={state.vstep_tip ?? ""}
+						onChange={(e) => set("vstep_tip", e.target.value)}
+						rows={2}
 					/>
 				</FormField>
-			</div>
 
-			<FormField label="Định nghĩa" htmlFor="definition" required error={errors.definition}>
-				<Textarea
-					id="definition"
-					value={state.definition}
-					onChange={(e) => set("definition", e.target.value)}
-					rows={2}
-					invalid={!!errors.definition}
-				/>
-			</FormField>
+				{generic && <Alert type="error" message={generic} showIcon />}
 
-			<FormField label="Ví dụ" htmlFor="example" error={errors.example}>
-				<Textarea
-					id="example"
-					value={state.example ?? ""}
-					onChange={(e) => set("example", e.target.value)}
-					rows={2}
-				/>
-			</FormField>
-
-			<div className="grid grid-cols-3 gap-3">
-				<FormField label="Đồng nghĩa">
-					<TagInput value={state.synonyms} onChange={(v) => set("synonyms", v)} />
-				</FormField>
-				<FormField label="Cụm từ">
-					<TagInput value={state.collocations} onChange={(v) => set("collocations", v)} />
-				</FormField>
-				<FormField label="Họ từ">
-					<TagInput value={state.word_family} onChange={(v) => set("word_family", v)} />
-				</FormField>
-			</div>
-
-			<FormField label="VSTEP tip" htmlFor="vstep_tip" error={errors.vstep_tip}>
-				<Textarea
-					id="vstep_tip"
-					value={state.vstep_tip ?? ""}
-					onChange={(e) => set("vstep_tip", e.target.value)}
-					rows={2}
-				/>
-			</FormField>
-
-			{generic && <div className="rounded-md bg-danger-tint px-3 py-2 text-xs text-danger">{generic}</div>}
-
-			<div className="flex justify-end gap-2 pt-2">
-				<Button variant="ghost" onClick={onCancel} disabled={submitting}>
-					Huỷ
-				</Button>
-				<Button type="submit" loading={submitting}>
-					{initial ? "Cập nhật" : "Thêm từ"}
-				</Button>
-			</div>
+				<Flex justify="end" gap={8} style={{ paddingTop: 8 }}>
+					<Button variant="ghost" onClick={onCancel} disabled={submitting}>
+						Huỷ
+					</Button>
+					<Button type="submit" loading={submitting}>
+						{initial ? "Cập nhật" : "Thêm từ"}
+					</Button>
+				</Flex>
+			</Flex>
 		</form>
 	)
 }

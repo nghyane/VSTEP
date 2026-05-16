@@ -1,4 +1,5 @@
-import { Pencil, Plus, Trash2 } from "lucide-react"
+import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons"
+import { Card, Empty, Flex, Typography } from "antd"
 import { useState } from "react"
 import { Badge } from "#/components/Badge"
 import { Button } from "#/components/Button"
@@ -40,58 +41,62 @@ export function WritingMarkersTab({ promptId, markers }: Props) {
 	}
 
 	return (
-		<div className="flex flex-col gap-3">
-			<div className="flex items-center justify-between">
-				<span className="text-sm text-muted">{markers.length} marker</span>
-				<Button icon={<Plus className="size-4" />} onClick={() => setCreateOpen(true)}>
+		<Flex vertical gap={12}>
+			<Flex justify="space-between" align="center">
+				<Typography.Text type="secondary">{markers.length} marker</Typography.Text>
+				<Button icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
 					Thêm marker
 				</Button>
-			</div>
+			</Flex>
 
 			{markers.length === 0 ? (
-				<div className="rounded-(--radius-card) border border-dashed border-border bg-surface px-6 py-12 text-center text-sm text-muted">
-					Chưa có marker nào. Marker dùng để AI highlight đoạn quan trọng trong bài mẫu.
-				</div>
+				<Empty description="Chưa có marker nào. Marker dùng để AI highlight đoạn quan trọng trong bài mẫu." />
 			) : (
-				<ul className="flex flex-col gap-2">
+				<Flex vertical gap={8}>
 					{markers.map((m) => (
-						<li
-							key={m.id}
-							className="flex items-start justify-between gap-3 rounded-(--radius-card) border border-border bg-surface p-4"
-						>
-							<div className="flex-1">
-								<div className="mb-1 flex flex-wrap items-center gap-2">
-									<Badge>{m.label}</Badge>
-									<Badge variant="info">{m.side === "left" ? "← Trái" : "Phải →"}</Badge>
-									<Badge>{m.color}</Badge>
-									<span className="text-xs text-muted">lần #{m.occurrence}</span>
+						<Card key={m.id} size="small">
+							<Flex justify="space-between" align="flex-start" gap={12}>
+								<div style={{ flex: 1 }}>
+									<Flex wrap="wrap" align="center" gap={8} style={{ marginBottom: 4 }}>
+										<Badge>{m.label}</Badge>
+										<Badge variant="info">{m.side === "left" ? "← Trái" : "Phải →"}</Badge>
+										<Badge>{m.color}</Badge>
+										<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+											lần #{m.occurrence}
+										</Typography.Text>
+									</Flex>
+									<div style={{ fontSize: 12 }}>
+										Match: <span style={{ fontFamily: "monospace" }}>"{m.match}"</span>
+									</div>
+									{m.detail && (
+										<Typography.Paragraph
+											type="secondary"
+											style={{ marginTop: 4, marginBottom: 0, fontSize: 12 }}
+										>
+											{m.detail}
+										</Typography.Paragraph>
+									)}
 								</div>
-								<div className="text-xs text-foreground">
-									Match: <span className="font-mono">"{m.match}"</span>
-								</div>
-								{m.detail && <p className="mt-1 text-xs text-subtle">{m.detail}</p>}
-							</div>
-							<div className="flex gap-1">
-								<button
-									type="button"
-									onClick={() => setEditing(m)}
-									className="rounded-md p-1.5 text-muted hover:bg-surface-muted hover:text-foreground"
-									aria-label="Sửa"
-								>
-									<Pencil className="size-3.5" />
-								</button>
-								<button
-									type="button"
-									onClick={() => setDeleting(m)}
-									className="rounded-md p-1.5 text-muted hover:bg-danger-tint hover:text-danger"
-									aria-label="Xoá"
-								>
-									<Trash2 className="size-3.5" />
-								</button>
-							</div>
-						</li>
+								<Flex gap={4}>
+									<Button
+										variant="ghost"
+										size="sm"
+										icon={<EditOutlined />}
+										onClick={() => setEditing(m)}
+										aria-label="Sửa"
+									/>
+									<Button
+										variant="ghost"
+										size="sm"
+										icon={<DeleteOutlined />}
+										onClick={() => setDeleting(m)}
+										aria-label="Xoá"
+									/>
+								</Flex>
+							</Flex>
+						</Card>
 					))}
-				</ul>
+				</Flex>
 			)}
 
 			<Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Thêm marker" size="lg">
@@ -129,6 +134,6 @@ export function WritingMarkersTab({ promptId, markers }: Props) {
 				description={deleting ? `Xoá marker "${deleting.label}"?` : undefined}
 				loading={remove.isPending}
 			/>
-		</div>
+		</Flex>
 	)
 }

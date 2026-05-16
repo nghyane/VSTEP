@@ -1,10 +1,9 @@
+import { ArrowLeftOutlined } from "@ant-design/icons"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { ArrowLeft } from "lucide-react"
-import { Badge } from "#/components/Badge"
+import { Skeleton as AntSkeleton, Flex, Space, Tag } from "antd"
 import { Card } from "#/components/Card"
 import { PageHeader } from "#/components/PageHeader"
-import { Skeleton } from "#/components/Skeleton"
 import { Switch } from "#/components/Switch"
 import { Tabs } from "#/components/Tabs"
 import { showError, showSuccess } from "#/components/Toaster"
@@ -46,10 +45,9 @@ function ReadingDetailPage() {
 
 	if (isLoading || !data) {
 		return (
-			<div className="flex flex-col gap-4">
-				<Skeleton className="h-12 w-64" />
-				<Skeleton className="h-64 w-full" />
-			</div>
+			<Flex vertical gap={16}>
+				<AntSkeleton active />
+			</Flex>
 		)
 	}
 
@@ -65,13 +63,13 @@ function ReadingDetailPage() {
 	}
 
 	return (
-		<div className="flex flex-col gap-6">
+		<Flex vertical gap={24}>
 			<div>
 				<Link
 					to="/practice/reading"
-					className="mb-2 inline-flex items-center gap-1.5 text-xs text-muted hover:text-foreground"
+					style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 8 }}
 				>
-					<ArrowLeft className="size-3.5" /> Danh sách
+					<ArrowLeftOutlined /> Danh sách
 				</Link>
 				<PageHeader
 					title={exercise.title}
@@ -85,10 +83,10 @@ function ReadingDetailPage() {
 						/>
 					}
 				/>
-				<div className="mt-2 flex flex-wrap gap-1">
-					<Badge>Part {exercise.part}</Badge>
-					<Badge variant="info">{exercise.estimated_minutes} phút</Badge>
-				</div>
+				<Space size={4} wrap style={{ marginTop: 8 }}>
+					<Tag>Part {exercise.part}</Tag>
+					<Tag color="blue">{exercise.estimated_minutes} phút</Tag>
+				</Space>
 			</div>
 
 			<Tabs
@@ -117,6 +115,6 @@ function ReadingDetailPage() {
 			{tab === "questions" && (
 				<McqQuestionsTab questions={questions} create={createQ} update={updateQ} remove={removeQ} />
 			)}
-		</div>
+		</Flex>
 	)
 }

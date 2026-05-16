@@ -1,3 +1,4 @@
+import { Alert, Flex, Typography } from "antd"
 import { type FormEvent, useState } from "react"
 import { Button } from "#/components/Button"
 import { FormField } from "#/components/FormField"
@@ -65,57 +66,65 @@ export function ExerciseEditor({ initial, onSubmit, onCancel, submitting }: Prop
 	}
 
 	return (
-		<form onSubmit={handle} className="flex flex-col gap-4">
-			<FormField label="Loại bài tập" htmlFor="kind" required>
-				<Select
-					id="kind"
-					value={kind}
-					onChange={(e) => changeKind(e.target.value as GrammarExerciseKind)}
-					disabled={!!initial}
-				>
-					<option value="mcq">Trắc nghiệm (MCQ)</option>
-					<option value="error_correction">Sửa lỗi</option>
-					<option value="fill_blank">Điền vào chỗ trống</option>
-					<option value="rewrite">Viết lại câu</option>
-				</Select>
-				{initial && <p className="mt-1 text-xs text-subtle">Không thể đổi loại. Xoá và tạo lại nếu cần.</p>}
-			</FormField>
+		<form onSubmit={handle}>
+			<Flex vertical gap={16}>
+				<FormField label="Loại bài tập" htmlFor="kind" required>
+					<Select
+						id="kind"
+						value={kind}
+						onChange={(e) => changeKind(e.target.value as GrammarExerciseKind)}
+						disabled={!!initial}
+					>
+						<option value="mcq">Trắc nghiệm (MCQ)</option>
+						<option value="error_correction">Sửa lỗi</option>
+						<option value="fill_blank">Điền vào chỗ trống</option>
+						<option value="rewrite">Viết lại câu</option>
+					</Select>
+					{initial && (
+						<Typography.Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: "block" }}>
+							Không thể đổi loại. Xoá và tạo lại nếu cần.
+						</Typography.Text>
+					)}
+				</FormField>
 
-			{kind === "mcq" && <McqFields payload={payload as McqPayload} onChange={setPayload} errors={errors} />}
-			{kind === "error_correction" && (
-				<ErrorCorrectionFields
-					payload={payload as ErrorCorrectionPayload}
-					onChange={setPayload}
-					errors={errors}
-				/>
-			)}
-			{kind === "fill_blank" && (
-				<FillBlankFields payload={payload as FillBlankPayload} onChange={setPayload} errors={errors} />
-			)}
-			{kind === "rewrite" && (
-				<RewriteFields payload={payload as RewritePayload} onChange={setPayload} errors={errors} />
-			)}
+				{kind === "mcq" && (
+					<McqFields payload={payload as McqPayload} onChange={setPayload} errors={errors} />
+				)}
+				{kind === "error_correction" && (
+					<ErrorCorrectionFields
+						payload={payload as ErrorCorrectionPayload}
+						onChange={setPayload}
+						errors={errors}
+					/>
+				)}
+				{kind === "fill_blank" && (
+					<FillBlankFields payload={payload as FillBlankPayload} onChange={setPayload} errors={errors} />
+				)}
+				{kind === "rewrite" && (
+					<RewriteFields payload={payload as RewritePayload} onChange={setPayload} errors={errors} />
+				)}
 
-			<FormField label="Giải thích đáp án" htmlFor="explanation" required error={errors.explanation}>
-				<Textarea
-					id="explanation"
-					value={explanation}
-					onChange={(e) => setExplanation(e.target.value)}
-					rows={2}
-					invalid={!!errors.explanation}
-				/>
-			</FormField>
+				<FormField label="Giải thích đáp án" htmlFor="explanation" required error={errors.explanation}>
+					<Textarea
+						id="explanation"
+						value={explanation}
+						onChange={(e) => setExplanation(e.target.value)}
+						rows={2}
+						invalid={!!errors.explanation}
+					/>
+				</FormField>
 
-			{generic && <div className="rounded-md bg-danger-tint px-3 py-2 text-xs text-danger">{generic}</div>}
+				{generic && <Alert type="error" message={generic} showIcon />}
 
-			<div className="flex justify-end gap-2 pt-2">
-				<Button variant="ghost" onClick={onCancel} disabled={submitting}>
-					Huỷ
-				</Button>
-				<Button type="submit" loading={submitting}>
-					{initial ? "Cập nhật" : "Tạo bài tập"}
-				</Button>
-			</div>
+				<Flex justify="end" gap={8} style={{ paddingTop: 8 }}>
+					<Button variant="ghost" onClick={onCancel} disabled={submitting}>
+						Huỷ
+					</Button>
+					<Button type="submit" loading={submitting}>
+						{initial ? "Cập nhật" : "Tạo bài tập"}
+					</Button>
+				</Flex>
+			</Flex>
 		</form>
 	)
 }
@@ -143,10 +152,12 @@ function McqFields({ payload, onChange, errors }: McqProps) {
 					rows={2}
 				/>
 			</FormField>
-			<div className="flex flex-col gap-2">
-				<span className="text-xs font-medium text-muted">4 phương án</span>
+			<Flex vertical gap={8}>
+				<Typography.Text type="secondary" style={{ fontSize: 12, fontWeight: 500 }}>
+					4 phương án
+				</Typography.Text>
 				{payload.options.map((opt, i) => (
-					<div key={i} className="flex items-center gap-2">
+					<Flex key={i} align="center" gap={8}>
 						<input
 							type="radio"
 							name="correct_index"
@@ -154,16 +165,22 @@ function McqFields({ payload, onChange, errors }: McqProps) {
 							onChange={() => onChange({ ...payload, correct_index: i })}
 							aria-label={`Đáp án đúng: ${String.fromCharCode(65 + i)}`}
 						/>
-						<span className="w-4 text-xs text-muted">{String.fromCharCode(65 + i)}.</span>
-						<Input
-							value={opt}
-							onChange={(e) => setOption(i, e.target.value)}
-							invalid={!!errors[`payload.options.${i}`]}
-						/>
-					</div>
+						<Typography.Text type="secondary" style={{ width: 16, fontSize: 12 }}>
+							{String.fromCharCode(65 + i)}.
+						</Typography.Text>
+						<div style={{ flex: 1 }}>
+							<Input
+								value={opt}
+								onChange={(e) => setOption(i, e.target.value)}
+								invalid={!!errors[`payload.options.${i}`]}
+							/>
+						</div>
+					</Flex>
 				))}
-				<p className="text-xs text-subtle">Bấm radio cạnh phương án đúng.</p>
-			</div>
+				<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+					Bấm radio cạnh phương án đúng.
+				</Typography.Text>
+			</Flex>
 		</>
 	)
 }
@@ -185,30 +202,39 @@ function ErrorCorrectionFields({ payload, onChange, errors }: EcProps) {
 					placeholder="I has a book."
 				/>
 			</FormField>
-			<div className="grid grid-cols-2 gap-3">
-				<FormField
-					label="Vị trí bắt đầu lỗi"
-					htmlFor="ec_start"
-					required
-					error={errors["payload.error_start"]}
-					helper="Chỉ số ký tự (0-based)."
-				>
-					<Input
-						id="ec_start"
-						type="number"
-						value={payload.error_start}
-						onChange={(e) => onChange({ ...payload, error_start: Number(e.target.value) })}
-					/>
-				</FormField>
-				<FormField label="Vị trí kết thúc lỗi" htmlFor="ec_end" required error={errors["payload.error_end"]}>
-					<Input
-						id="ec_end"
-						type="number"
-						value={payload.error_end}
-						onChange={(e) => onChange({ ...payload, error_end: Number(e.target.value) })}
-					/>
-				</FormField>
-			</div>
+			<Flex gap={12}>
+				<div style={{ flex: 1 }}>
+					<FormField
+						label="Vị trí bắt đầu lỗi"
+						htmlFor="ec_start"
+						required
+						error={errors["payload.error_start"]}
+						helper="Chỉ số ký tự (0-based)."
+					>
+						<Input
+							id="ec_start"
+							type="number"
+							value={payload.error_start}
+							onChange={(e) => onChange({ ...payload, error_start: Number(e.target.value) })}
+						/>
+					</FormField>
+				</div>
+				<div style={{ flex: 1 }}>
+					<FormField
+						label="Vị trí kết thúc lỗi"
+						htmlFor="ec_end"
+						required
+						error={errors["payload.error_end"]}
+					>
+						<Input
+							id="ec_end"
+							type="number"
+							value={payload.error_end}
+							onChange={(e) => onChange({ ...payload, error_end: Number(e.target.value) })}
+						/>
+					</FormField>
+				</div>
+			</Flex>
 			<FormField label="Câu đúng" htmlFor="ec_correction" required error={errors["payload.correction"]}>
 				<Input
 					id="ec_correction"

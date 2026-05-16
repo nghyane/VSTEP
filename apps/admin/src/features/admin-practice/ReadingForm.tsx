@@ -1,3 +1,4 @@
+import { Alert, Col, Flex, Row } from "antd"
 import { type FormEvent, useState } from "react"
 import { Button } from "#/components/Button"
 import { FormField } from "#/components/FormField"
@@ -53,91 +54,107 @@ export function ReadingForm({ initial, onSubmit, onCancel, submitting }: Props) 
 	}
 
 	return (
-		<form onSubmit={handle} className="flex flex-col gap-4">
-			<div className="grid grid-cols-2 gap-3">
-				<FormField label="Slug" htmlFor="slug" required error={errors.slug}>
-					<Input
-						id="slug"
-						value={state.slug}
-						onChange={(e) => set("slug", e.target.value)}
-						invalid={!!errors.slug}
+		<form onSubmit={handle}>
+			<Flex vertical gap={16}>
+				<Row gutter={12}>
+					<Col span={12}>
+						<FormField label="Slug" htmlFor="slug" required error={errors.slug}>
+							<Input
+								id="slug"
+								value={state.slug}
+								onChange={(e) => set("slug", e.target.value)}
+								invalid={!!errors.slug}
+							/>
+						</FormField>
+					</Col>
+					<Col span={12}>
+						<FormField label="Tiêu đề" htmlFor="title" required error={errors.title}>
+							<Input
+								id="title"
+								value={state.title}
+								onChange={(e) => set("title", e.target.value)}
+								invalid={!!errors.title}
+							/>
+						</FormField>
+					</Col>
+				</Row>
+
+				<FormField label="Mô tả" htmlFor="description" error={errors.description}>
+					<Textarea
+						id="description"
+						value={state.description ?? ""}
+						onChange={(e) => set("description", e.target.value)}
+						rows={2}
 					/>
 				</FormField>
-				<FormField label="Tiêu đề" htmlFor="title" required error={errors.title}>
-					<Input
-						id="title"
-						value={state.title}
-						onChange={(e) => set("title", e.target.value)}
-						invalid={!!errors.title}
+
+				<Row gutter={12}>
+					<Col span={8}>
+						<FormField label="Part" htmlFor="part" required error={errors.part}>
+							<Select id="part" value={state.part} onChange={(e) => set("part", Number(e.target.value))}>
+								<option value={1}>Part 1</option>
+								<option value={2}>Part 2</option>
+								<option value={3}>Part 3</option>
+								<option value={4}>Part 4</option>
+							</Select>
+						</FormField>
+					</Col>
+					<Col span={8}>
+						<FormField label="Thời lượng (phút)" htmlFor="minutes" required error={errors.estimated_minutes}>
+							<Input
+								id="minutes"
+								type="number"
+								min={1}
+								value={state.estimated_minutes}
+								onChange={(e) => set("estimated_minutes", Number(e.target.value))}
+							/>
+						</FormField>
+					</Col>
+					<Col span={8}>
+						<Flex align="end" style={{ height: "100%", paddingBottom: 8 }}>
+							<Switch
+								checked={state.is_published}
+								onChange={(v) => set("is_published", v)}
+								label="Đã xuất bản"
+							/>
+						</Flex>
+					</Col>
+				</Row>
+
+				<FormField label="Bài đọc (EN)" htmlFor="passage" required error={errors.passage}>
+					<Textarea
+						id="passage"
+						value={state.passage}
+						onChange={(e) => set("passage", e.target.value)}
+						rows={8}
+						invalid={!!errors.passage}
 					/>
 				</FormField>
-			</div>
 
-			<FormField label="Mô tả" htmlFor="description" error={errors.description}>
-				<Textarea
-					id="description"
-					value={state.description ?? ""}
-					onChange={(e) => set("description", e.target.value)}
-					rows={2}
-				/>
-			</FormField>
-
-			<div className="grid grid-cols-3 gap-3">
-				<FormField label="Part" htmlFor="part" required error={errors.part}>
-					<Select id="part" value={state.part} onChange={(e) => set("part", Number(e.target.value))}>
-						<option value={1}>Part 1</option>
-						<option value={2}>Part 2</option>
-						<option value={3}>Part 3</option>
-						<option value={4}>Part 4</option>
-					</Select>
-				</FormField>
-				<FormField label="Thời lượng (phút)" htmlFor="minutes" required error={errors.estimated_minutes}>
-					<Input
-						id="minutes"
-						type="number"
-						min={1}
-						value={state.estimated_minutes}
-						onChange={(e) => set("estimated_minutes", Number(e.target.value))}
+				<FormField label="Bản dịch tiếng Việt" htmlFor="vn_translation" error={errors.vietnamese_translation}>
+					<Textarea
+						id="vn_translation"
+						value={state.vietnamese_translation ?? ""}
+						onChange={(e) => set("vietnamese_translation", e.target.value)}
+						rows={4}
 					/>
 				</FormField>
-				<div className="flex items-end pb-2">
-					<Switch checked={state.is_published} onChange={(v) => set("is_published", v)} label="Đã xuất bản" />
-				</div>
-			</div>
 
-			<FormField label="Bài đọc (EN)" htmlFor="passage" required error={errors.passage}>
-				<Textarea
-					id="passage"
-					value={state.passage}
-					onChange={(e) => set("passage", e.target.value)}
-					rows={8}
-					invalid={!!errors.passage}
-				/>
-			</FormField>
+				<FormField label="Keywords" error={errors.keywords}>
+					<TagInput value={state.keywords} onChange={(v) => set("keywords", v)} />
+				</FormField>
 
-			<FormField label="Bản dịch tiếng Việt" htmlFor="vn_translation" error={errors.vietnamese_translation}>
-				<Textarea
-					id="vn_translation"
-					value={state.vietnamese_translation ?? ""}
-					onChange={(e) => set("vietnamese_translation", e.target.value)}
-					rows={4}
-				/>
-			</FormField>
+				{generic && <Alert type="error" message={generic} showIcon />}
 
-			<FormField label="Keywords" error={errors.keywords}>
-				<TagInput value={state.keywords} onChange={(v) => set("keywords", v)} />
-			</FormField>
-
-			{generic && <div className="rounded-md bg-danger-tint px-3 py-2 text-xs text-danger">{generic}</div>}
-
-			<div className="flex justify-end gap-2 pt-2">
-				<Button variant="ghost" onClick={onCancel} disabled={submitting}>
-					Huỷ
-				</Button>
-				<Button type="submit" loading={submitting}>
-					{initial ? "Cập nhật" : "Tạo bài đọc"}
-				</Button>
-			</div>
+				<Flex justify="end" gap={8} style={{ paddingTop: 8 }}>
+					<Button variant="ghost" onClick={onCancel} disabled={submitting}>
+						Huỷ
+					</Button>
+					<Button type="submit" loading={submitting}>
+						{initial ? "Cập nhật" : "Tạo bài đọc"}
+					</Button>
+				</Flex>
+			</Flex>
 		</form>
 	)
 }

@@ -1,4 +1,5 @@
-import { Pencil, Plus, Trash2 } from "lucide-react"
+import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons"
+import { Empty, Flex, Typography } from "antd"
 import { type ReactNode, useState } from "react"
 import { Button } from "#/components/Button"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
@@ -61,46 +62,43 @@ export function ChildList<T extends Identified, F>({
 
 	return (
 		<>
-			<div className="mb-4 flex items-center justify-between">
-				<p className="text-sm text-muted">{items.length} mục.</p>
-				<Button icon={<Plus className="size-4" />} onClick={() => setCreateOpen(true)}>
+			<Flex justify="space-between" align="center" style={{ marginBottom: 16 }}>
+				<Typography.Text type="secondary">{items.length} mục.</Typography.Text>
+				<Button icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
 					{addLabel}
 				</Button>
-			</div>
+			</Flex>
 
 			{items.length === 0 ? (
-				<div className="rounded-(--radius-card) border border-dashed border-border bg-surface px-6 py-10 text-center text-sm text-muted">
-					{emptyLabel}
-				</div>
+				<Empty description={emptyLabel} />
 			) : (
-				<ul className="flex flex-col gap-2">
+				<Flex vertical gap={8}>
 					{items.map((item) => (
-						<li
+						<Flex
 							key={item.id}
-							className="flex items-start justify-between gap-3 rounded-(--radius-card) border border-border bg-surface px-4 py-3"
+							align="flex-start"
+							justify="space-between"
+							gap={12}
+							style={{
+								padding: "12px 16px",
+								border: "1px solid rgba(0,0,0,0.06)",
+								borderRadius: 8,
+								background: "#fff",
+							}}
 						>
-							<div className="min-w-0 flex-1">{renderItem(item)}</div>
-							<div className="flex shrink-0 gap-1">
-								<button
-									type="button"
-									className="rounded-md p-1.5 text-muted hover:bg-surface-muted hover:text-foreground"
-									onClick={() => setEditing(item)}
-									aria-label="Sửa"
-								>
-									<Pencil className="size-3.5" />
-								</button>
-								<button
-									type="button"
-									className="rounded-md p-1.5 text-muted hover:bg-danger-tint hover:text-danger"
+							<div style={{ minWidth: 0, flex: 1 }}>{renderItem(item)}</div>
+							<Flex gap={4} style={{ flexShrink: 0 }}>
+								<Button variant="ghost" size="sm" icon={<EditOutlined />} onClick={() => setEditing(item)} />
+								<Button
+									variant="ghost"
+									size="sm"
+									icon={<DeleteOutlined />}
 									onClick={() => setDeleting(item)}
-									aria-label="Xoá"
-								>
-									<Trash2 className="size-3.5" />
-								</button>
-							</div>
-						</li>
+								/>
+							</Flex>
+						</Flex>
 					))}
-				</ul>
+				</Flex>
 			)}
 
 			<Modal open={createOpen} onClose={() => setCreateOpen(false)} title={modalTitle.create} size="lg">

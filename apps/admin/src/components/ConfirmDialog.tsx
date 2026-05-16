@@ -1,5 +1,4 @@
-import { Button } from "#/components/Button"
-import { Modal } from "#/components/Modal"
+import { Modal } from "antd"
 
 interface Props {
 	open: boolean
@@ -25,15 +24,18 @@ export function ConfirmDialog({
 	variant = "danger",
 }: Props) {
 	return (
-		<Modal open={open} onClose={onClose} title={title} description={description} size="sm">
-			<div className="flex justify-end gap-2">
-				<Button variant="ghost" onClick={onClose} disabled={loading}>
-					{cancelLabel}
-				</Button>
-				<Button variant={variant} onClick={onConfirm} loading={loading}>
-					{confirmLabel}
-				</Button>
-			</div>
+		<Modal
+			open={open}
+			title={title}
+			onCancel={onClose}
+			onOk={onConfirm}
+			okText={confirmLabel}
+			cancelText={cancelLabel}
+			confirmLoading={loading}
+			okButtonProps={{ danger: variant === "danger" }}
+			destroyOnHidden
+		>
+			{description}
 		</Modal>
 	)
 }

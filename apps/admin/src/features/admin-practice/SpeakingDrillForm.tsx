@@ -1,3 +1,4 @@
+import { Alert, Col, Flex, Row } from "antd"
 import { type FormEvent, useState } from "react"
 import { Button } from "#/components/Button"
 import { FormField } from "#/components/FormField"
@@ -51,73 +52,89 @@ export function SpeakingDrillForm({ initial, onSubmit, onCancel, submitting }: P
 	}
 
 	return (
-		<form onSubmit={handle} className="flex flex-col gap-4">
-			<div className="grid grid-cols-2 gap-3">
-				<FormField label="Slug" htmlFor="slug" required error={errors.slug}>
-					<Input
-						id="slug"
-						value={state.slug}
-						onChange={(e) => set("slug", e.target.value)}
-						invalid={!!errors.slug}
+		<form onSubmit={handle}>
+			<Flex vertical gap={16}>
+				<Row gutter={12}>
+					<Col span={12}>
+						<FormField label="Slug" htmlFor="slug" required error={errors.slug}>
+							<Input
+								id="slug"
+								value={state.slug}
+								onChange={(e) => set("slug", e.target.value)}
+								invalid={!!errors.slug}
+							/>
+						</FormField>
+					</Col>
+					<Col span={12}>
+						<FormField label="Tiêu đề" htmlFor="title" required error={errors.title}>
+							<Input
+								id="title"
+								value={state.title}
+								onChange={(e) => set("title", e.target.value)}
+								invalid={!!errors.title}
+							/>
+						</FormField>
+					</Col>
+				</Row>
+
+				<FormField label="Mô tả" htmlFor="description" error={errors.description}>
+					<Textarea
+						id="description"
+						value={state.description ?? ""}
+						onChange={(e) => set("description", e.target.value)}
+						rows={2}
 					/>
 				</FormField>
-				<FormField label="Tiêu đề" htmlFor="title" required error={errors.title}>
-					<Input
-						id="title"
-						value={state.title}
-						onChange={(e) => set("title", e.target.value)}
-						invalid={!!errors.title}
-					/>
-				</FormField>
-			</div>
 
-			<FormField label="Mô tả" htmlFor="description" error={errors.description}>
-				<Textarea
-					id="description"
-					value={state.description ?? ""}
-					onChange={(e) => set("description", e.target.value)}
-					rows={2}
-				/>
-			</FormField>
+				<Row gutter={12}>
+					<Col span={8}>
+						<FormField label="Level" htmlFor="level" required error={errors.level}>
+							<Select
+								id="level"
+								value={state.level}
+								onChange={(e) => set("level", e.target.value as SpeakingDrillFormInput["level"])}
+							>
+								{LEVELS.map((l) => (
+									<option key={l} value={l}>
+										{l}
+									</option>
+								))}
+							</Select>
+						</FormField>
+					</Col>
+					<Col span={8}>
+						<FormField label="Thời lượng (phút)" htmlFor="minutes" required error={errors.estimated_minutes}>
+							<Input
+								id="minutes"
+								type="number"
+								min={1}
+								value={state.estimated_minutes}
+								onChange={(e) => set("estimated_minutes", Number(e.target.value))}
+							/>
+						</FormField>
+					</Col>
+					<Col span={8}>
+						<Flex align="end" style={{ height: "100%", paddingBottom: 8 }}>
+							<Switch
+								checked={state.is_published}
+								onChange={(v) => set("is_published", v)}
+								label="Đã xuất bản"
+							/>
+						</Flex>
+					</Col>
+				</Row>
 
-			<div className="grid grid-cols-3 gap-3">
-				<FormField label="Level" htmlFor="level" required error={errors.level}>
-					<Select
-						id="level"
-						value={state.level}
-						onChange={(e) => set("level", e.target.value as SpeakingDrillFormInput["level"])}
-					>
-						{LEVELS.map((l) => (
-							<option key={l} value={l}>
-								{l}
-							</option>
-						))}
-					</Select>
-				</FormField>
-				<FormField label="Thời lượng (phút)" htmlFor="minutes" required error={errors.estimated_minutes}>
-					<Input
-						id="minutes"
-						type="number"
-						min={1}
-						value={state.estimated_minutes}
-						onChange={(e) => set("estimated_minutes", Number(e.target.value))}
-					/>
-				</FormField>
-				<div className="flex items-end pb-2">
-					<Switch checked={state.is_published} onChange={(v) => set("is_published", v)} label="Đã xuất bản" />
-				</div>
-			</div>
+				{generic && <Alert type="error" message={generic} showIcon />}
 
-			{generic && <div className="rounded-md bg-danger-tint px-3 py-2 text-xs text-danger">{generic}</div>}
-
-			<div className="flex justify-end gap-2 pt-2">
-				<Button variant="ghost" onClick={onCancel} disabled={submitting}>
-					Huỷ
-				</Button>
-				<Button type="submit" loading={submitting}>
-					{initial ? "Cập nhật" : "Tạo bài phát âm"}
-				</Button>
-			</div>
+				<Flex justify="end" gap={8} style={{ paddingTop: 8 }}>
+					<Button variant="ghost" onClick={onCancel} disabled={submitting}>
+						Huỷ
+					</Button>
+					<Button type="submit" loading={submitting}>
+						{initial ? "Cập nhật" : "Tạo bài phát âm"}
+					</Button>
+				</Flex>
+			</Flex>
 		</form>
 	)
 }

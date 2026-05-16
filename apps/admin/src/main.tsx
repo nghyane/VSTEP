@@ -1,5 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { createRouter, RouterProvider } from "@tanstack/react-router"
+import { App as AntdApp, ConfigProvider } from "antd"
+import viVN from "antd/locale/vi_VN"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { routeTree } from "./routeTree.gen"
@@ -28,8 +30,22 @@ if (!rootEl) throw new Error("#root missing")
 
 createRoot(rootEl).render(
 	<StrictMode>
-		<QueryClientProvider client={queryClient}>
-			<RouterProvider router={router} />
-		</QueryClientProvider>
+		<ConfigProvider
+			locale={viVN}
+			theme={{
+				token: {
+					colorPrimary: "#2563eb",
+					borderRadius: 8,
+					fontFamily:
+						'-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+				},
+			}}
+		>
+			<AntdApp>
+				<QueryClientProvider client={queryClient}>
+					<RouterProvider router={router} />
+				</QueryClientProvider>
+			</AntdApp>
+		</ConfigProvider>
 	</StrictMode>,
 )

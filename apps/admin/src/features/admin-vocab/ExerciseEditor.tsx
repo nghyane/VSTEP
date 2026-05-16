@@ -1,3 +1,4 @@
+import { Alert, Flex, Typography } from "antd"
 import { type FormEvent, useState } from "react"
 import { Button } from "#/components/Button"
 import { FormField } from "#/components/FormField"
@@ -65,61 +66,65 @@ export function ExerciseEditor({ initial, onSubmit, onCancel, submitting }: Prop
 	}
 
 	return (
-		<form onSubmit={handle} className="flex flex-col gap-4">
-			<FormField label="Loại bài tập" htmlFor="kind" required>
-				<Select
-					id="kind"
-					value={kind}
-					onChange={(e) => changeKind(e.target.value as VocabExerciseKind)}
-					disabled={!!initial}
-				>
-					<option value="mcq">Trắc nghiệm (MCQ)</option>
-					<option value="fill_blank">Điền vào chỗ trống</option>
-					<option value="word_form">Chia dạng từ</option>
-				</Select>
-				{initial && (
-					<p className="mt-1 text-xs text-subtle">Không thể đổi loại sau khi tạo. Xoá và tạo lại nếu cần.</p>
+		<form onSubmit={handle}>
+			<Flex vertical gap={16}>
+				<FormField label="Loại bài tập" htmlFor="kind" required>
+					<Select
+						id="kind"
+						value={kind}
+						onChange={(e) => changeKind(e.target.value as VocabExerciseKind)}
+						disabled={!!initial}
+					>
+						<option value="mcq">Trắc nghiệm (MCQ)</option>
+						<option value="fill_blank">Điền vào chỗ trống</option>
+						<option value="word_form">Chia dạng từ</option>
+					</Select>
+					{initial && (
+						<Typography.Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: "block" }}>
+							Không thể đổi loại sau khi tạo. Xoá và tạo lại nếu cần.
+						</Typography.Text>
+					)}
+				</FormField>
+
+				{kind === "mcq" && (
+					<McqFields payload={payload as McqPayload} onChange={(p) => setPayload(p)} errors={errors} />
 				)}
-			</FormField>
+				{kind === "fill_blank" && (
+					<FillBlankFields
+						payload={payload as FillBlankPayload}
+						onChange={(p) => setPayload(p)}
+						errors={errors}
+					/>
+				)}
+				{kind === "word_form" && (
+					<WordFormFields
+						payload={payload as WordFormPayload}
+						onChange={(p) => setPayload(p)}
+						errors={errors}
+					/>
+				)}
 
-			{kind === "mcq" && (
-				<McqFields payload={payload as McqPayload} onChange={(p) => setPayload(p)} errors={errors} />
-			)}
-			{kind === "fill_blank" && (
-				<FillBlankFields
-					payload={payload as FillBlankPayload}
-					onChange={(p) => setPayload(p)}
-					errors={errors}
-				/>
-			)}
-			{kind === "word_form" && (
-				<WordFormFields
-					payload={payload as WordFormPayload}
-					onChange={(p) => setPayload(p)}
-					errors={errors}
-				/>
-			)}
+				<FormField label="Giải thích đáp án" htmlFor="explanation" required error={errors.explanation}>
+					<Textarea
+						id="explanation"
+						value={explanation}
+						onChange={(e) => setExplanation(e.target.value)}
+						rows={2}
+						invalid={!!errors.explanation}
+					/>
+				</FormField>
 
-			<FormField label="Giải thích đáp án" htmlFor="explanation" required error={errors.explanation}>
-				<Textarea
-					id="explanation"
-					value={explanation}
-					onChange={(e) => setExplanation(e.target.value)}
-					rows={2}
-					invalid={!!errors.explanation}
-				/>
-			</FormField>
+				{generic && <Alert type="error" message={generic} showIcon />}
 
-			{generic && <div className="rounded-md bg-danger-tint px-3 py-2 text-xs text-danger">{generic}</div>}
-
-			<div className="flex justify-end gap-2 pt-2">
-				<Button variant="ghost" onClick={onCancel} disabled={submitting}>
-					Huỷ
-				</Button>
-				<Button type="submit" loading={submitting}>
-					{initial ? "Cập nhật" : "Tạo bài tập"}
-				</Button>
-			</div>
+				<Flex justify="end" gap={8} style={{ paddingTop: 8 }}>
+					<Button variant="ghost" onClick={onCancel} disabled={submitting}>
+						Huỷ
+					</Button>
+					<Button type="submit" loading={submitting}>
+						{initial ? "Cập nhật" : "Tạo bài tập"}
+					</Button>
+				</Flex>
+			</Flex>
 		</form>
 	)
 }
@@ -147,10 +152,12 @@ function McqFields({ payload, onChange, errors }: McqFieldsProps) {
 					rows={2}
 				/>
 			</FormField>
-			<div className="flex flex-col gap-2">
-				<span className="text-xs font-medium text-muted">4 phương án</span>
+			<Flex vertical gap={8}>
+				<Typography.Text type="secondary" style={{ fontSize: 12, fontWeight: 500 }}>
+					4 phương án
+				</Typography.Text>
 				{payload.options.map((opt, i) => (
-					<div key={i} className="flex items-center gap-2">
+					<Flex key={i} align="center" gap={8}>
 						<input
 							type="radio"
 							name="correct_index"
@@ -158,16 +165,22 @@ function McqFields({ payload, onChange, errors }: McqFieldsProps) {
 							onChange={() => onChange({ ...payload, correct_index: i })}
 							aria-label={`Đáp án đúng: ${String.fromCharCode(65 + i)}`}
 						/>
-						<span className="w-4 text-xs text-muted">{String.fromCharCode(65 + i)}.</span>
-						<Input
-							value={opt}
-							onChange={(e) => setOption(i, e.target.value)}
-							invalid={!!errors[`payload.options.${i}`]}
-						/>
-					</div>
+						<Typography.Text type="secondary" style={{ width: 16, fontSize: 12 }}>
+							{String.fromCharCode(65 + i)}.
+						</Typography.Text>
+						<div style={{ flex: 1 }}>
+							<Input
+								value={opt}
+								onChange={(e) => setOption(i, e.target.value)}
+								invalid={!!errors[`payload.options.${i}`]}
+							/>
+						</div>
+					</Flex>
 				))}
-				<p className="text-xs text-subtle">Bấm radio cạnh phương án đúng.</p>
-			</div>
+				<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+					Bấm radio cạnh phương án đúng.
+				</Typography.Text>
+			</Flex>
 		</>
 	)
 }
@@ -222,28 +235,32 @@ function WordFormFields({ payload, onChange, errors }: WordFormFieldsProps) {
 					placeholder="Chia dạng danh từ của:"
 				/>
 			</FormField>
-			<div className="grid grid-cols-2 gap-3">
-				<FormField label="Từ gốc" htmlFor="root_word" required error={errors["payload.root_word"]}>
-					<Input
-						id="root_word"
-						value={payload.root_word}
-						onChange={(e) => onChange({ ...payload, root_word: e.target.value })}
-					/>
-				</FormField>
-				<FormField
-					label="Câu chứa chỗ trống"
-					htmlFor="wf_sentence"
-					required
-					error={errors["payload.sentence"]}
-				>
-					<Input
-						id="wf_sentence"
-						value={payload.sentence}
-						onChange={(e) => onChange({ ...payload, sentence: e.target.value })}
-						placeholder="Everyone wants ___."
-					/>
-				</FormField>
-			</div>
+			<Flex gap={12}>
+				<div style={{ flex: 1 }}>
+					<FormField label="Từ gốc" htmlFor="root_word" required error={errors["payload.root_word"]}>
+						<Input
+							id="root_word"
+							value={payload.root_word}
+							onChange={(e) => onChange({ ...payload, root_word: e.target.value })}
+						/>
+					</FormField>
+				</div>
+				<div style={{ flex: 1 }}>
+					<FormField
+						label="Câu chứa chỗ trống"
+						htmlFor="wf_sentence"
+						required
+						error={errors["payload.sentence"]}
+					>
+						<Input
+							id="wf_sentence"
+							value={payload.sentence}
+							onChange={(e) => onChange({ ...payload, sentence: e.target.value })}
+							placeholder="Everyone wants ___."
+						/>
+					</FormField>
+				</div>
+			</Flex>
 			<FormField
 				label="Đáp án chấp nhận"
 				required

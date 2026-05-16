@@ -1,3 +1,4 @@
+import { Alert, Flex } from "antd"
 import { type FormEvent, useState } from "react"
 import { Button } from "#/components/Button"
 import { FormField } from "#/components/FormField"
@@ -41,53 +42,55 @@ export function TipForm({ initial, onSubmit, onCancel, submitting }: Props) {
 	}
 
 	return (
-		<form onSubmit={handle} className="flex flex-col gap-4">
-			<FormField label="VSTEP Task" htmlFor="task" required error={errors.task}>
-				<Select id="task" value={task} onChange={(e) => setTask(e.target.value as GrammarTask)}>
-					{GRAMMAR_TASKS.map((t) => (
-						<option key={t} value={t}>
-							{t}
-						</option>
-					))}
-				</Select>
-			</FormField>
-			<FormField label="Mẹo" htmlFor="tip" required error={errors.tip}>
-				<Textarea
-					id="tip"
-					value={tip}
-					onChange={(e) => setTip(e.target.value)}
-					rows={3}
-					invalid={!!errors.tip}
-				/>
-			</FormField>
-			<FormField label="Ví dụ áp dụng" htmlFor="example" required error={errors.example}>
-				<Textarea
-					id="example"
-					value={example}
-					onChange={(e) => setExample(e.target.value)}
-					rows={2}
-					invalid={!!errors.example}
-				/>
-			</FormField>
-			<FormField label="Thứ tự" htmlFor="display_order">
-				<Input
-					id="display_order"
-					type="number"
-					value={displayOrder}
-					onChange={(e) => setDisplayOrder(Number(e.target.value))}
-				/>
-			</FormField>
+		<form onSubmit={handle}>
+			<Flex vertical gap={16}>
+				<FormField label="VSTEP Task" htmlFor="task" required error={errors.task}>
+					<Select id="task" value={task} onChange={(e) => setTask(e.target.value as GrammarTask)}>
+						{GRAMMAR_TASKS.map((t) => (
+							<option key={t} value={t}>
+								{t}
+							</option>
+						))}
+					</Select>
+				</FormField>
+				<FormField label="Mẹo" htmlFor="tip" required error={errors.tip}>
+					<Textarea
+						id="tip"
+						value={tip}
+						onChange={(e) => setTip(e.target.value)}
+						rows={3}
+						invalid={!!errors.tip}
+					/>
+				</FormField>
+				<FormField label="Ví dụ áp dụng" htmlFor="example" required error={errors.example}>
+					<Textarea
+						id="example"
+						value={example}
+						onChange={(e) => setExample(e.target.value)}
+						rows={2}
+						invalid={!!errors.example}
+					/>
+				</FormField>
+				<FormField label="Thứ tự" htmlFor="display_order">
+					<Input
+						id="display_order"
+						type="number"
+						value={displayOrder}
+						onChange={(e) => setDisplayOrder(Number(e.target.value))}
+					/>
+				</FormField>
 
-			{generic && <div className="rounded-md bg-danger-tint px-3 py-2 text-xs text-danger">{generic}</div>}
+				{generic && <Alert type="error" message={generic} showIcon />}
 
-			<div className="flex justify-end gap-2 pt-2">
-				<Button variant="ghost" onClick={onCancel} disabled={submitting}>
-					Huỷ
-				</Button>
-				<Button type="submit" loading={submitting}>
-					{initial ? "Cập nhật" : "Thêm tip"}
-				</Button>
-			</div>
+				<Flex justify="end" gap={8} style={{ paddingTop: 8 }}>
+					<Button variant="ghost" onClick={onCancel} disabled={submitting}>
+						Huỷ
+					</Button>
+					<Button type="submit" loading={submitting}>
+						{initial ? "Cập nhật" : "Thêm tip"}
+					</Button>
+				</Flex>
+			</Flex>
 		</form>
 	)
 }

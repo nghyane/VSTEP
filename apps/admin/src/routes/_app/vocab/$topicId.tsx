@@ -1,11 +1,10 @@
+import { ArrowLeftOutlined } from "@ant-design/icons"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { ArrowLeft } from "lucide-react"
+import { Flex, Skeleton, Space, Tag, Typography } from "antd"
 import { useState } from "react"
-import { Badge } from "#/components/Badge"
 import { Card } from "#/components/Card"
 import { PageHeader } from "#/components/PageHeader"
-import { Skeleton } from "#/components/Skeleton"
 import { Switch } from "#/components/Switch"
 import { Tabs } from "#/components/Tabs"
 import { showError, showSuccess } from "#/components/Toaster"
@@ -40,10 +39,10 @@ function TopicDetailPage() {
 
 	if (isLoading || !data) {
 		return (
-			<div className="flex flex-col gap-4">
-				<Skeleton className="h-12 w-64" />
-				<Skeleton className="h-64 w-full" />
-			</div>
+			<Flex vertical gap={16}>
+				<Skeleton active paragraph={{ rows: 1 }} />
+				<Skeleton active paragraph={{ rows: 6 }} />
+			</Flex>
 		)
 	}
 
@@ -60,36 +59,33 @@ function TopicDetailPage() {
 	}
 
 	return (
-		<div className="flex flex-col gap-6">
+		<Flex vertical gap={24}>
 			<div>
-				<Link
-					to="/vocab"
-					className="mb-2 inline-flex items-center gap-1.5 text-xs text-muted hover:text-foreground"
-				>
-					<ArrowLeft className="size-3.5" /> Danh sách
+				<Link to="/vocab" style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+					<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+						<ArrowLeftOutlined /> Danh sách
+					</Typography.Text>
 				</Link>
 				<PageHeader
 					title={topic.name}
 					subtitle={topic.description ?? "—"}
 					action={
-						<div className="flex items-center gap-3">
-							<Switch
-								checked={topic.is_published}
-								onChange={togglePub}
-								label={topic.is_published ? "Xuất bản" : "Nháp"}
-								disabled={setPub.isPending}
-							/>
-						</div>
+						<Switch
+							checked={topic.is_published}
+							onChange={togglePub}
+							label={topic.is_published ? "Xuất bản" : "Nháp"}
+							disabled={setPub.isPending}
+						/>
 					}
 				/>
-				<div className="mt-2 flex flex-wrap gap-1">
-					<Badge>{topic.level}</Badge>
+				<Space size={4} wrap style={{ marginTop: 8 }}>
+					<Tag>{topic.level}</Tag>
 					{topic.tasks.map((t) => (
-						<Badge key={t} variant="info">
+						<Tag key={t} color="blue">
 							{t}
-						</Badge>
+						</Tag>
 					))}
-				</div>
+				</Space>
 			</div>
 
 			<Tabs
@@ -114,13 +110,17 @@ function TopicDetailPage() {
 							showSuccess("Đã lưu thay đổi.")
 						}}
 					/>
-					{savingMsg && <p className="mt-2 text-xs text-success">{savingMsg}</p>}
+					{savingMsg && (
+						<Typography.Text type="success" style={{ fontSize: 12, marginTop: 8, display: "block" }}>
+							{savingMsg}
+						</Typography.Text>
+					)}
 				</Card>
 			)}
 
 			{tab === "words" && <WordsTab topicId={topicId} words={words} />}
 
 			{tab === "exercises" && <ExercisesTab topicId={topicId} exercises={exercises} />}
-		</div>
+		</Flex>
 	)
 }

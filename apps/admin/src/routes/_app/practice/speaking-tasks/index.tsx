@@ -1,15 +1,13 @@
+import { DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { Eye, Pencil, Plus, Search as SearchIcon, Trash2 } from "lucide-react"
+import { Input as AntInput, Empty, Flex, Space, Table, Tag, Typography } from "antd"
 import { useState } from "react"
-import { Badge } from "#/components/Badge"
 import { Button } from "#/components/Button"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
-import { Input } from "#/components/Input"
 import { Modal } from "#/components/Modal"
 import { PageHeader } from "#/components/PageHeader"
 import { Select } from "#/components/Select"
-import { Skeleton } from "#/components/Skeleton"
 import { showError, showSuccess } from "#/components/Toaster"
 import { SpeakingTaskForm } from "#/features/admin-practice/SpeakingTaskForm"
 import {
@@ -80,157 +78,131 @@ function SpeakingTaskListPage() {
 	}
 
 	return (
-		<div className="flex flex-col gap-6">
+		<Flex vertical gap={24}>
 			<PageHeader
 				title="Bài nói (VSTEP)"
 				subtitle="Quản lý task speaking — social, solution, topic."
 				action={
-					<Button icon={<Plus className="size-4" />} onClick={() => setCreateOpen(true)}>
+					<Button icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
 						Tạo bài nói
 					</Button>
 				}
 			/>
 
-			<div className="flex flex-wrap items-center gap-2">
-				<div className="relative max-w-xs flex-1">
-					<SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
-					<Input
-						className="pl-9"
-						placeholder="Tìm theo tiêu đề hoặc slug…"
-						value={draftQ}
-						onChange={(e) => setDraftQ(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === "Enter") setSearch({ q: draftQ })
-						}}
-					/>
+			<Flex wrap align="center" gap={8}>
+				<AntInput
+					prefix={<SearchOutlined />}
+					placeholder="Tìm theo tiêu đề hoặc slug…"
+					value={draftQ}
+					onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDraftQ(e.target.value)}
+					onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+						if (e.key === "Enter") setSearch({ q: draftQ })
+					}}
+					style={{ maxWidth: 280, flex: 1 }}
+				/>
+				<div style={{ width: 144 }}>
+					<Select
+						value={is_published}
+						onChange={(e) => setSearch({ is_published: e.target.value as Search["is_published"] })}
+					>
+						<option value="all">Tất cả</option>
+						<option value="yes">Đã xuất bản</option>
+						<option value="no">Bản nháp</option>
+					</Select>
 				</div>
-				<Select
-					className="w-36"
-					value={is_published}
-					onChange={(e) => setSearch({ is_published: e.target.value as Search["is_published"] })}
-				>
-					<option value="all">Tất cả</option>
-					<option value="yes">Đã xuất bản</option>
-					<option value="no">Bản nháp</option>
-				</Select>
-				<Select
-					className="w-32"
-					value={part ?? ""}
-					onChange={(e) => setSearch({ part: e.target.value ? Number(e.target.value) : undefined })}
-				>
-					<option value="">Mọi part</option>
-					<option value={1}>Part 1</option>
-					<option value={2}>Part 2</option>
-					<option value={3}>Part 3</option>
-				</Select>
-			</div>
+				<div style={{ width: 128 }}>
+					<Select
+						value={part ?? ""}
+						onChange={(e) => setSearch({ part: e.target.value ? Number(e.target.value) : undefined })}
+					>
+						<option value="">Mọi part</option>
+						<option value={1}>Part 1</option>
+						<option value={2}>Part 2</option>
+						<option value={3}>Part 3</option>
+					</Select>
+				</div>
+			</Flex>
 
-			{isLoading ? (
-				<div className="flex flex-col gap-2">
-					{[0, 1, 2, 3, 4].map((i) => (
-						<Skeleton key={i} className="h-14 w-full" />
-					))}
-				</div>
-			) : data?.data.length === 0 ? (
-				<div className="rounded-(--radius-card) border border-dashed border-border bg-surface px-6 py-12 text-center text-sm text-muted">
-					Chưa có bài nói nào.
-				</div>
+			{!isLoading && data?.data.length === 0 ? (
+				<Empty description="Chưa có bài nói nào." />
 			) : (
-				<div className="overflow-hidden rounded-(--radius-card) border border-border bg-surface">
-					<table className="w-full text-sm">
-						<thead>
-							<tr className="border-b border-border bg-surface-muted/50">
-								<th className="h-10 px-4 text-left text-xs font-medium text-muted">Slug</th>
-								<th className="h-10 px-4 text-left text-xs font-medium text-muted">Tiêu đề</th>
-								<th className="h-10 px-4 text-left text-xs font-medium text-muted">Part</th>
-								<th className="h-10 px-4 text-left text-xs font-medium text-muted">Type</th>
-								<th className="h-10 px-4 text-left text-xs font-medium text-muted">Phút</th>
-								<th className="h-10 px-4 text-left text-xs font-medium text-muted">Trạng thái</th>
-								<th className="h-10 w-32 px-4" />
-							</tr>
-						</thead>
-						<tbody>
-							{data?.data.map((t) => (
-								<tr key={t.id} className="border-b border-border last:border-b-0 hover:bg-surface-muted/30">
-									<td className="px-4 py-3 font-mono text-xs text-muted">{t.slug}</td>
-									<td className="px-4 py-3 font-medium text-foreground">{t.title}</td>
-									<td className="px-4 py-3">
-										<Badge>Part {t.part}</Badge>
-									</td>
-									<td className="px-4 py-3">
-										<Badge variant="info">{t.task_type}</Badge>
-									</td>
-									<td className="px-4 py-3 text-muted">{t.estimated_minutes}</td>
-									<td className="px-4 py-3">
-										<button
-											type="button"
-											onClick={() => togglePublish(t)}
-											className="text-left"
-											aria-label="Đổi trạng thái xuất bản"
-										>
-											<Badge variant={t.is_published ? "success" : "warning"}>
-												{t.is_published ? "Xuất bản" : "Nháp"}
-											</Badge>
-										</button>
-									</td>
-									<td className="px-4 py-3">
-										<div className="flex justify-end gap-1">
-											<Link
-												to="/practice/speaking-tasks/$taskId"
-												params={{ taskId: t.id }}
-												className="rounded-md p-1.5 text-muted hover:bg-surface-muted hover:text-foreground"
-												aria-label="Xem chi tiết"
-											>
-												<Eye className="size-3.5" />
-											</Link>
-											<Link
-												to="/practice/speaking-tasks/$taskId"
-												params={{ taskId: t.id }}
-												className="rounded-md p-1.5 text-muted hover:bg-surface-muted hover:text-foreground"
-												aria-label="Sửa"
-											>
-												<Pencil className="size-3.5" />
-											</Link>
-											<button
-												type="button"
-												onClick={() => setDeleting(t)}
-												className="rounded-md p-1.5 text-muted hover:bg-danger-tint hover:text-danger"
-												aria-label="Xoá"
-											>
-												<Trash2 className="size-3.5" />
-											</button>
-										</div>
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-					{data && data.meta.last_page > 1 && (
-						<div className="flex items-center justify-between border-t border-border px-4 py-3">
-							<div className="text-xs text-muted">
-								Trang {data.meta.current_page} / {data.meta.last_page} · {data.meta.total} bài
-							</div>
-							<div className="flex gap-1">
+				<Table
+					rowKey="id"
+					loading={isLoading}
+					dataSource={data?.data ?? []}
+					pagination={
+						data && data.meta.last_page > 1
+							? {
+									current: data.meta.current_page,
+									total: data.meta.total,
+									pageSize: data.meta.per_page,
+									onChange: (p) => setSearch({ page: p }),
+									showSizeChanger: false,
+								}
+							: false
+					}
+					columns={[
+						{
+							title: "Slug",
+							dataIndex: "slug",
+							render: (v: string) => (
+								<Typography.Text type="secondary" style={{ fontFamily: "monospace", fontSize: 12 }}>
+									{v}
+								</Typography.Text>
+							),
+						},
+						{ title: "Tiêu đề", dataIndex: "title", render: (v: string) => <strong>{v}</strong> },
+						{ title: "Part", dataIndex: "part", render: (v: number) => <Tag>Part {v}</Tag> },
+						{
+							title: "Type",
+							dataIndex: "task_type",
+							render: (v: string) => <Tag color="blue">{v}</Tag>,
+						},
+						{ title: "Phút", dataIndex: "estimated_minutes" },
+						{
+							title: "Trạng thái",
+							render: (_, t: AdminSpeakingTask) => (
 								<button
 									type="button"
-									className="h-8 rounded-md border border-border px-3 text-xs text-muted hover:bg-surface-muted disabled:opacity-50"
-									onClick={() => setSearch({ page: page - 1 })}
-									disabled={page <= 1}
+									onClick={() => togglePublish(t)}
+									style={{ background: "none", border: 0, padding: 0, cursor: "pointer" }}
+									aria-label="Đổi trạng thái xuất bản"
 								>
-									Trước
+									<Tag color={t.is_published ? "success" : "warning"}>
+										{t.is_published ? "Xuất bản" : "Nháp"}
+									</Tag>
 								</button>
-								<button
-									type="button"
-									className="h-8 rounded-md border border-border px-3 text-xs text-muted hover:bg-surface-muted disabled:opacity-50"
-									onClick={() => setSearch({ page: page + 1 })}
-									disabled={page >= data.meta.last_page}
-								>
-									Sau
-								</button>
-							</div>
-						</div>
-					)}
-				</div>
+							),
+						},
+						{
+							title: "",
+							width: 128,
+							align: "right" as const,
+							render: (_, t: AdminSpeakingTask) => (
+								<Space size={4}>
+									<Link
+										to="/practice/speaking-tasks/$taskId"
+										params={{ taskId: t.id }}
+										aria-label="Xem chi tiết"
+									>
+										<EyeOutlined />
+									</Link>
+									<Link to="/practice/speaking-tasks/$taskId" params={{ taskId: t.id }} aria-label="Sửa">
+										<EditOutlined />
+									</Link>
+									<button
+										type="button"
+										onClick={() => setDeleting(t)}
+										style={{ background: "none", border: 0, padding: 4, cursor: "pointer" }}
+										aria-label="Xoá"
+									>
+										<DeleteOutlined />
+									</button>
+								</Space>
+							),
+						},
+					]}
+				/>
 			)}
 
 			<Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Tạo bài nói" size="lg">
@@ -253,6 +225,6 @@ function SpeakingTaskListPage() {
 				description={deleting ? `Xoá bài "${deleting.title}"?` : undefined}
 				loading={remove.isPending}
 			/>
-		</div>
+		</Flex>
 	)
 }

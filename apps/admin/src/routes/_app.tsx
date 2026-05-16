@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
+import { Layout } from "antd"
 import { Sidebar } from "#/components/Sidebar"
 import { Topbar } from "#/components/Topbar"
 import { useAuth } from "#/lib/auth"
@@ -14,14 +15,14 @@ export const Route = createFileRoute("/_app")({
 
 function AppLayout() {
 	return (
-		<div className="flex min-h-screen">
+		<Layout hasSider style={{ minHeight: "100vh" }}>
 			<Sidebar />
-			<div className="flex min-w-0 flex-1 flex-col">
+			<Layout>
 				<Topbar />
-				<main className="flex-1 overflow-y-auto p-6">
+				<Layout.Content style={{ padding: 24 }}>
 					<Outlet />
-				</main>
-			</div>
-		</div>
+				</Layout.Content>
+			</Layout>
+		</Layout>
 	)
 }

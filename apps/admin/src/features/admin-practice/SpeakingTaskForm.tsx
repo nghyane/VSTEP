@@ -1,3 +1,4 @@
+import { Alert, Col, Flex, Row } from "antd"
 import { type FormEvent, useState } from "react"
 import { Button } from "#/components/Button"
 import { FormField } from "#/components/FormField"
@@ -77,96 +78,115 @@ export function SpeakingTaskForm({ initial, onSubmit, onCancel, submitting }: Pr
 	}
 
 	return (
-		<form onSubmit={handle} className="flex flex-col gap-4">
-			<div className="grid grid-cols-2 gap-3">
-				<FormField label="Slug" htmlFor="slug" required error={errors.slug}>
-					<Input id="slug" value={slug} onChange={(e) => setSlug(e.target.value)} invalid={!!errors.slug} />
-				</FormField>
-				<FormField label="Tiêu đề" htmlFor="title" required error={errors.title}>
-					<Input
-						id="title"
-						value={title}
-						onChange={(e) => setTitle(e.target.value)}
-						invalid={!!errors.title}
-					/>
-				</FormField>
-			</div>
+		<form onSubmit={handle}>
+			<Flex vertical gap={16}>
+				<Row gutter={12}>
+					<Col span={12}>
+						<FormField label="Slug" htmlFor="slug" required error={errors.slug}>
+							<Input
+								id="slug"
+								value={slug}
+								onChange={(e) => setSlug(e.target.value)}
+								invalid={!!errors.slug}
+							/>
+						</FormField>
+					</Col>
+					<Col span={12}>
+						<FormField label="Tiêu đề" htmlFor="title" required error={errors.title}>
+							<Input
+								id="title"
+								value={title}
+								onChange={(e) => setTitle(e.target.value)}
+								invalid={!!errors.title}
+							/>
+						</FormField>
+					</Col>
+				</Row>
 
-			<div className="grid grid-cols-4 gap-3">
-				<FormField label="Part" htmlFor="part" required error={errors.part}>
-					<Select id="part" value={part} onChange={(e) => setPart(Number(e.target.value) as 1 | 2 | 3)}>
-						<option value={1}>Part 1 (Social)</option>
-						<option value={2}>Part 2 (Solution)</option>
-						<option value={3}>Part 3 (Topic)</option>
-					</Select>
-				</FormField>
-				<FormField label="Task type" htmlFor="task_type" required error={errors.task_type}>
-					<Select
-						id="task_type"
-						value={taskType}
-						onChange={(e) => setTaskType(e.target.value as SpeakingTaskType)}
-					>
-						{TASK_TYPES.map((t) => (
-							<option key={t} value={t}>
-								{t}
-							</option>
-						))}
-					</Select>
-				</FormField>
-				<FormField label="Thời lượng (phút)" htmlFor="minutes" required error={errors.estimated_minutes}>
-					<Input
-						id="minutes"
-						type="number"
-						min={1}
-						value={minutes}
-						onChange={(e) => setMinutes(Number(e.target.value))}
-					/>
-				</FormField>
+				<Row gutter={12}>
+					<Col span={6}>
+						<FormField label="Part" htmlFor="part" required error={errors.part}>
+							<Select id="part" value={part} onChange={(e) => setPart(Number(e.target.value) as 1 | 2 | 3)}>
+								<option value={1}>Part 1 (Social)</option>
+								<option value={2}>Part 2 (Solution)</option>
+								<option value={3}>Part 3 (Topic)</option>
+							</Select>
+						</FormField>
+					</Col>
+					<Col span={6}>
+						<FormField label="Task type" htmlFor="task_type" required error={errors.task_type}>
+							<Select
+								id="task_type"
+								value={taskType}
+								onChange={(e) => setTaskType(e.target.value as SpeakingTaskType)}
+							>
+								{TASK_TYPES.map((t) => (
+									<option key={t} value={t}>
+										{t}
+									</option>
+								))}
+							</Select>
+						</FormField>
+					</Col>
+					<Col span={6}>
+						<FormField label="Thời lượng (phút)" htmlFor="minutes" required error={errors.estimated_minutes}>
+							<Input
+								id="minutes"
+								type="number"
+								min={1}
+								value={minutes}
+								onChange={(e) => setMinutes(Number(e.target.value))}
+							/>
+						</FormField>
+					</Col>
+					<Col span={6}>
+						<FormField
+							label="Speaking (giây)"
+							htmlFor="speaking_seconds"
+							required
+							error={errors.speaking_seconds}
+						>
+							<Input
+								id="speaking_seconds"
+								type="number"
+								min={1}
+								value={speakingSeconds}
+								onChange={(e) => setSpeakingSeconds(Number(e.target.value))}
+							/>
+						</FormField>
+					</Col>
+				</Row>
+
 				<FormField
-					label="Speaking (giây)"
-					htmlFor="speaking_seconds"
+					label="Content (JSON)"
+					htmlFor="content"
 					required
-					error={errors.speaking_seconds}
+					error={jsonError ? [jsonError] : errors.content}
+					helper="Shape phụ thuộc task_type. Social: { questions: [...] }. Solution: { situation, question }. Topic: { topic, cues: [...] }."
 				>
-					<Input
-						id="speaking_seconds"
-						type="number"
-						min={1}
-						value={speakingSeconds}
-						onChange={(e) => setSpeakingSeconds(Number(e.target.value))}
+					<Textarea
+						id="content"
+						value={contentJson}
+						onChange={(e) => setContentJson(e.target.value)}
+						rows={10}
+						invalid={!!jsonError}
+						style={{ fontFamily: "monospace", fontSize: 12 }}
 					/>
 				</FormField>
-			</div>
 
-			<FormField
-				label="Content (JSON)"
-				htmlFor="content"
-				required
-				error={jsonError ? [jsonError] : errors.content}
-				helper="Shape phụ thuộc task_type. Social: { questions: [...] }. Solution: { situation, question }. Topic: { topic, cues: [...] }."
-			>
-				<Textarea
-					id="content"
-					value={contentJson}
-					onChange={(e) => setContentJson(e.target.value)}
-					rows={10}
-					invalid={!!jsonError}
-					className="font-mono text-xs"
-				/>
-			</FormField>
+				<Switch checked={isPublished} onChange={setIsPublished} label="Đã xuất bản" />
 
-			<Switch checked={isPublished} onChange={setIsPublished} label="Đã xuất bản" />
+				{generic && <Alert type="error" message={generic} showIcon />}
 
-			{generic && <div className="rounded-md bg-danger-tint px-3 py-2 text-xs text-danger">{generic}</div>}
-
-			<div className="flex justify-end gap-2 pt-2">
-				<Button variant="ghost" onClick={onCancel} disabled={submitting}>
-					Huỷ
-				</Button>
-				<Button type="submit" loading={submitting}>
-					{initial ? "Cập nhật" : "Tạo bài nói"}
-				</Button>
-			</div>
+				<Flex justify="end" gap={8} style={{ paddingTop: 8 }}>
+					<Button variant="ghost" onClick={onCancel} disabled={submitting}>
+						Huỷ
+					</Button>
+					<Button type="submit" loading={submitting}>
+						{initial ? "Cập nhật" : "Tạo bài nói"}
+					</Button>
+				</Flex>
+			</Flex>
 		</form>
 	)
 }

@@ -1,3 +1,4 @@
+import { Alert, Col, Flex, Row } from "antd"
 import { type FormEvent, useState } from "react"
 import { Button } from "#/components/Button"
 import { FormField } from "#/components/FormField"
@@ -45,75 +46,90 @@ export function WritingMarkerForm({ initial, onSubmit, onCancel, submitting }: P
 	}
 
 	return (
-		<form onSubmit={handle} className="flex flex-col gap-4">
-			<FormField
-				label="Chuỗi cần annotate"
-				htmlFor="match"
-				required
-				error={errors.match}
-				helper="Tìm khớp trong sample_answer."
-			>
-				<Input id="match" value={match} onChange={(e) => setMatch(e.target.value)} invalid={!!errors.match} />
-			</FormField>
-			<div className="grid grid-cols-2 gap-3">
-				<FormField label="Lần xuất hiện thứ" htmlFor="occurrence" error={errors.occurrence}>
+		<form onSubmit={handle}>
+			<Flex vertical gap={16}>
+				<FormField
+					label="Chuỗi cần annotate"
+					htmlFor="match"
+					required
+					error={errors.match}
+					helper="Tìm khớp trong sample_answer."
+				>
 					<Input
-						id="occurrence"
-						type="number"
-						min={1}
-						value={occurrence}
-						onChange={(e) => setOccurrence(Number(e.target.value))}
+						id="match"
+						value={match}
+						onChange={(e) => setMatch(e.target.value)}
+						invalid={!!errors.match}
 					/>
 				</FormField>
-				<FormField label="Vị trí annotation" htmlFor="side" required error={errors.side}>
-					<Select id="side" value={side} onChange={(e) => setSide(e.target.value as MarkerSide)}>
-						<option value="left">Bên trái</option>
-						<option value="right">Bên phải</option>
-					</Select>
-				</FormField>
-			</div>
-			<div className="grid grid-cols-2 gap-3">
-				<FormField label="Màu" htmlFor="color" required error={errors.color}>
-					<Select id="color" value={color} onChange={(e) => setColor(e.target.value)}>
-						{COLORS.map((c) => (
-							<option key={c} value={c}>
-								{c}
-							</option>
-						))}
-					</Select>
-				</FormField>
-				<FormField label="Thứ tự" htmlFor="display_order">
+				<Row gutter={12}>
+					<Col span={12}>
+						<FormField label="Lần xuất hiện thứ" htmlFor="occurrence" error={errors.occurrence}>
+							<Input
+								id="occurrence"
+								type="number"
+								min={1}
+								value={occurrence}
+								onChange={(e) => setOccurrence(Number(e.target.value))}
+							/>
+						</FormField>
+					</Col>
+					<Col span={12}>
+						<FormField label="Vị trí annotation" htmlFor="side" required error={errors.side}>
+							<Select id="side" value={side} onChange={(e) => setSide(e.target.value as MarkerSide)}>
+								<option value="left">Bên trái</option>
+								<option value="right">Bên phải</option>
+							</Select>
+						</FormField>
+					</Col>
+				</Row>
+				<Row gutter={12}>
+					<Col span={12}>
+						<FormField label="Màu" htmlFor="color" required error={errors.color}>
+							<Select id="color" value={color} onChange={(e) => setColor(e.target.value)}>
+								{COLORS.map((c) => (
+									<option key={c} value={c}>
+										{c}
+									</option>
+								))}
+							</Select>
+						</FormField>
+					</Col>
+					<Col span={12}>
+						<FormField label="Thứ tự" htmlFor="display_order">
+							<Input
+								id="display_order"
+								type="number"
+								value={displayOrder}
+								onChange={(e) => setDisplayOrder(Number(e.target.value))}
+							/>
+						</FormField>
+					</Col>
+				</Row>
+				<FormField label="Nhãn" htmlFor="label" required error={errors.label}>
 					<Input
-						id="display_order"
-						type="number"
-						value={displayOrder}
-						onChange={(e) => setDisplayOrder(Number(e.target.value))}
+						id="label"
+						value={label}
+						onChange={(e) => setLabel(e.target.value)}
+						invalid={!!errors.label}
+						placeholder="vd: Câu mở đầu"
 					/>
 				</FormField>
-			</div>
-			<FormField label="Nhãn" htmlFor="label" required error={errors.label}>
-				<Input
-					id="label"
-					value={label}
-					onChange={(e) => setLabel(e.target.value)}
-					invalid={!!errors.label}
-					placeholder="vd: Câu mở đầu"
-				/>
-			</FormField>
-			<FormField label="Chi tiết" htmlFor="detail" error={errors.detail}>
-				<Textarea id="detail" value={detail ?? ""} onChange={(e) => setDetail(e.target.value)} rows={2} />
-			</FormField>
+				<FormField label="Chi tiết" htmlFor="detail" error={errors.detail}>
+					<Textarea id="detail" value={detail ?? ""} onChange={(e) => setDetail(e.target.value)} rows={2} />
+				</FormField>
 
-			{generic && <div className="rounded-md bg-danger-tint px-3 py-2 text-xs text-danger">{generic}</div>}
+				{generic && <Alert type="error" message={generic} showIcon />}
 
-			<div className="flex justify-end gap-2 pt-2">
-				<Button variant="ghost" onClick={onCancel} disabled={submitting}>
-					Huỷ
-				</Button>
-				<Button type="submit" loading={submitting}>
-					{initial ? "Cập nhật" : "Thêm marker"}
-				</Button>
-			</div>
+				<Flex justify="end" gap={8} style={{ paddingTop: 8 }}>
+					<Button variant="ghost" onClick={onCancel} disabled={submitting}>
+						Huỷ
+					</Button>
+					<Button type="submit" loading={submitting}>
+						{initial ? "Cập nhật" : "Thêm marker"}
+					</Button>
+				</Flex>
+			</Flex>
 		</form>
 	)
 }

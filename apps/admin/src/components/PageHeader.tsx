@@ -1,5 +1,5 @@
+import { Flex, Typography } from "antd"
 import type { HTMLAttributes, ReactNode } from "react"
-import { cn } from "#/lib/utils"
 
 interface Props extends HTMLAttributes<HTMLDivElement> {
 	title: string
@@ -7,18 +7,21 @@ interface Props extends HTMLAttributes<HTMLDivElement> {
 	action?: ReactNode
 }
 
-export function PageHeader({ title, subtitle, action, className, children, ...rest }: Props) {
+export function PageHeader({ title, subtitle, action, className, children }: Props) {
 	return (
-		<div
-			className={cn("flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between", className)}
-			{...rest}
-		>
+		<Flex className={className} justify="space-between" align="center" wrap="wrap" gap={12}>
 			<div>
-				<h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
-				{subtitle && <p className="mt-1 text-sm text-muted">{subtitle}</p>}
+				<Typography.Title level={3} style={{ margin: 0 }}>
+					{title}
+				</Typography.Title>
+				{subtitle && (
+					<Typography.Text type="secondary" style={{ marginTop: 4, display: "block" }}>
+						{subtitle}
+					</Typography.Text>
+				)}
 			</div>
 			{action}
 			{children}
-		</div>
+		</Flex>
 	)
 }

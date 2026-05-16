@@ -1,3 +1,4 @@
+import { Alert, Flex } from "antd"
 import { type FormEvent, useState } from "react"
 import { Button } from "#/components/Button"
 import { FormField } from "#/components/FormField"
@@ -39,46 +40,53 @@ export function MistakeForm({ initial, onSubmit, onCancel, submitting }: Props) 
 	}
 
 	return (
-		<form onSubmit={handle} className="flex flex-col gap-4">
-			<FormField label="Lỗi sai" htmlFor="wrong" required error={errors.wrong}>
-				<Input id="wrong" value={wrong} onChange={(e) => setWrong(e.target.value)} invalid={!!errors.wrong} />
-			</FormField>
-			<FormField label="Câu đúng" htmlFor="correct" required error={errors.correct}>
-				<Input
-					id="correct"
-					value={correct}
-					onChange={(e) => setCorrect(e.target.value)}
-					invalid={!!errors.correct}
-				/>
-			</FormField>
-			<FormField label="Giải thích" htmlFor="explanation" required error={errors.explanation}>
-				<Textarea
-					id="explanation"
-					value={explanation}
-					onChange={(e) => setExplanation(e.target.value)}
-					rows={3}
-					invalid={!!errors.explanation}
-				/>
-			</FormField>
-			<FormField label="Thứ tự" htmlFor="display_order">
-				<Input
-					id="display_order"
-					type="number"
-					value={displayOrder}
-					onChange={(e) => setDisplayOrder(Number(e.target.value))}
-				/>
-			</FormField>
+		<form onSubmit={handle}>
+			<Flex vertical gap={16}>
+				<FormField label="Lỗi sai" htmlFor="wrong" required error={errors.wrong}>
+					<Input
+						id="wrong"
+						value={wrong}
+						onChange={(e) => setWrong(e.target.value)}
+						invalid={!!errors.wrong}
+					/>
+				</FormField>
+				<FormField label="Câu đúng" htmlFor="correct" required error={errors.correct}>
+					<Input
+						id="correct"
+						value={correct}
+						onChange={(e) => setCorrect(e.target.value)}
+						invalid={!!errors.correct}
+					/>
+				</FormField>
+				<FormField label="Giải thích" htmlFor="explanation" required error={errors.explanation}>
+					<Textarea
+						id="explanation"
+						value={explanation}
+						onChange={(e) => setExplanation(e.target.value)}
+						rows={3}
+						invalid={!!errors.explanation}
+					/>
+				</FormField>
+				<FormField label="Thứ tự" htmlFor="display_order">
+					<Input
+						id="display_order"
+						type="number"
+						value={displayOrder}
+						onChange={(e) => setDisplayOrder(Number(e.target.value))}
+					/>
+				</FormField>
 
-			{generic && <div className="rounded-md bg-danger-tint px-3 py-2 text-xs text-danger">{generic}</div>}
+				{generic && <Alert type="error" message={generic} showIcon />}
 
-			<div className="flex justify-end gap-2 pt-2">
-				<Button variant="ghost" onClick={onCancel} disabled={submitting}>
-					Huỷ
-				</Button>
-				<Button type="submit" loading={submitting}>
-					{initial ? "Cập nhật" : "Thêm lỗi"}
-				</Button>
-			</div>
+				<Flex justify="end" gap={8} style={{ paddingTop: 8 }}>
+					<Button variant="ghost" onClick={onCancel} disabled={submitting}>
+						Huỷ
+					</Button>
+					<Button type="submit" loading={submitting}>
+						{initial ? "Cập nhật" : "Thêm lỗi"}
+					</Button>
+				</Flex>
+			</Flex>
 		</form>
 	)
 }

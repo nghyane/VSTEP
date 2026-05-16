@@ -1,4 +1,5 @@
-import { Pencil, Plus, Trash2 } from "lucide-react"
+import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons"
+import { Card, Empty, Flex, Typography } from "antd"
 import { useState } from "react"
 import { Button } from "#/components/Button"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
@@ -39,51 +40,55 @@ export function SpeakingDrillSentencesTab({ drillId, sentences }: Props) {
 	}
 
 	return (
-		<div className="flex flex-col gap-3">
-			<div className="flex items-center justify-between">
-				<span className="text-sm text-muted">{sentences.length} câu</span>
-				<Button icon={<Plus className="size-4" />} onClick={() => setCreateOpen(true)}>
+		<Flex vertical gap={12}>
+			<Flex justify="space-between" align="center">
+				<Typography.Text type="secondary">{sentences.length} câu</Typography.Text>
+				<Button icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
 					Thêm câu
 				</Button>
-			</div>
+			</Flex>
 
 			{sentences.length === 0 ? (
-				<div className="rounded-(--radius-card) border border-dashed border-border bg-surface px-6 py-12 text-center text-sm text-muted">
-					Chưa có câu nào.
-				</div>
+				<Empty description="Chưa có câu nào." />
 			) : (
-				<ol className="flex flex-col gap-2">
+				<Flex vertical gap={8}>
 					{sentences.map((s, idx) => (
-						<li
-							key={s.id}
-							className="flex items-start justify-between gap-3 rounded-(--radius-card) border border-border bg-surface p-4"
-						>
-							<div className="flex-1">
-								<div className="mb-1 text-xs text-muted">Câu {idx + 1}</div>
-								<div className="text-sm font-medium text-foreground">{s.text}</div>
-								{s.translation && <p className="mt-1 text-xs text-subtle">{s.translation}</p>}
-							</div>
-							<div className="flex gap-1">
-								<button
-									type="button"
-									onClick={() => setEditing(s)}
-									className="rounded-md p-1.5 text-muted hover:bg-surface-muted hover:text-foreground"
-									aria-label="Sửa"
-								>
-									<Pencil className="size-3.5" />
-								</button>
-								<button
-									type="button"
-									onClick={() => setDeleting(s)}
-									className="rounded-md p-1.5 text-muted hover:bg-danger-tint hover:text-danger"
-									aria-label="Xoá"
-								>
-									<Trash2 className="size-3.5" />
-								</button>
-							</div>
-						</li>
+						<Card key={s.id} size="small">
+							<Flex justify="space-between" align="flex-start" gap={12}>
+								<div style={{ flex: 1 }}>
+									<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+										Câu {idx + 1}
+									</Typography.Text>
+									<div style={{ fontWeight: 500, marginTop: 2 }}>{s.text}</div>
+									{s.translation && (
+										<Typography.Paragraph
+											type="secondary"
+											style={{ marginTop: 4, marginBottom: 0, fontSize: 12 }}
+										>
+											{s.translation}
+										</Typography.Paragraph>
+									)}
+								</div>
+								<Flex gap={4}>
+									<Button
+										variant="ghost"
+										size="sm"
+										icon={<EditOutlined />}
+										onClick={() => setEditing(s)}
+										aria-label="Sửa"
+									/>
+									<Button
+										variant="ghost"
+										size="sm"
+										icon={<DeleteOutlined />}
+										onClick={() => setDeleting(s)}
+										aria-label="Xoá"
+									/>
+								</Flex>
+							</Flex>
+						</Card>
 					))}
-				</ol>
+				</Flex>
 			)}
 
 			<Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Thêm câu" size="lg">
@@ -121,6 +126,6 @@ export function SpeakingDrillSentencesTab({ drillId, sentences }: Props) {
 				description="Xoá câu này khỏi bài phát âm?"
 				loading={remove.isPending}
 			/>
-		</div>
+		</Flex>
 	)
 }

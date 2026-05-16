@@ -1,3 +1,4 @@
+import { Alert, Flex } from "antd"
 import { type FormEvent, useState } from "react"
 import { Button } from "#/components/Button"
 import { FormField } from "#/components/FormField"
@@ -41,43 +42,45 @@ export function SpeakingDrillSentenceForm({ initial, onSubmit, onCancel, submitt
 	}
 
 	return (
-		<form onSubmit={handle} className="flex flex-col gap-4">
-			<FormField label="Câu (EN)" htmlFor="text" required error={errors.text}>
-				<Textarea
-					id="text"
-					value={text}
-					onChange={(e) => setText(e.target.value)}
-					rows={2}
-					invalid={!!errors.text}
-				/>
-			</FormField>
-			<FormField label="Dịch (VI)" htmlFor="translation" error={errors.translation}>
-				<Textarea
-					id="translation"
-					value={translation ?? ""}
-					onChange={(e) => setTranslation(e.target.value)}
-					rows={2}
-				/>
-			</FormField>
-			<FormField label="Thứ tự" htmlFor="display_order">
-				<Input
-					id="display_order"
-					type="number"
-					value={displayOrder}
-					onChange={(e) => setDisplayOrder(Number(e.target.value))}
-				/>
-			</FormField>
+		<form onSubmit={handle}>
+			<Flex vertical gap={16}>
+				<FormField label="Câu (EN)" htmlFor="text" required error={errors.text}>
+					<Textarea
+						id="text"
+						value={text}
+						onChange={(e) => setText(e.target.value)}
+						rows={2}
+						invalid={!!errors.text}
+					/>
+				</FormField>
+				<FormField label="Dịch (VI)" htmlFor="translation" error={errors.translation}>
+					<Textarea
+						id="translation"
+						value={translation ?? ""}
+						onChange={(e) => setTranslation(e.target.value)}
+						rows={2}
+					/>
+				</FormField>
+				<FormField label="Thứ tự" htmlFor="display_order">
+					<Input
+						id="display_order"
+						type="number"
+						value={displayOrder}
+						onChange={(e) => setDisplayOrder(Number(e.target.value))}
+					/>
+				</FormField>
 
-			{generic && <div className="rounded-md bg-danger-tint px-3 py-2 text-xs text-danger">{generic}</div>}
+				{generic && <Alert type="error" message={generic} showIcon />}
 
-			<div className="flex justify-end gap-2 pt-2">
-				<Button variant="ghost" onClick={onCancel} disabled={submitting}>
-					Huỷ
-				</Button>
-				<Button type="submit" loading={submitting}>
-					{initial ? "Cập nhật" : "Thêm câu"}
-				</Button>
-			</div>
+				<Flex justify="end" gap={8} style={{ paddingTop: 8 }}>
+					<Button variant="ghost" onClick={onCancel} disabled={submitting}>
+						Huỷ
+					</Button>
+					<Button type="submit" loading={submitting}>
+						{initial ? "Cập nhật" : "Thêm câu"}
+					</Button>
+				</Flex>
+			</Flex>
 		</form>
 	)
 }

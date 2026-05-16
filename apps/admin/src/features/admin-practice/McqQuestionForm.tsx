@@ -1,3 +1,4 @@
+import { Alert, Flex, Typography } from "antd"
 import { type FormEvent, useState } from "react"
 import { Button } from "#/components/Button"
 import { FormField } from "#/components/FormField"
@@ -54,65 +55,75 @@ export function McqQuestionForm({ initial, onSubmit, onCancel, submitting }: Pro
 	}
 
 	return (
-		<form onSubmit={handle} className="flex flex-col gap-4">
-			<FormField label="Câu hỏi" htmlFor="q" required error={errors.question}>
-				<Textarea
-					id="q"
-					value={question}
-					onChange={(e) => setQuestion(e.target.value)}
-					rows={2}
-					invalid={!!errors.question}
-				/>
-			</FormField>
-			<div className="flex flex-col gap-2">
-				<span className="text-xs font-medium text-muted">4 phương án</span>
-				{options.map((opt, i) => (
-					<div key={i} className="flex items-center gap-2">
-						<input
-							type="radio"
-							name="correct_index"
-							checked={correctIndex === i}
-							onChange={() => setCorrectIndex(i)}
-							aria-label={`Đáp án đúng ${String.fromCharCode(65 + i)}`}
-						/>
-						<span className="w-4 text-xs text-muted">{String.fromCharCode(65 + i)}.</span>
-						<Input
-							value={opt}
-							onChange={(e) => setOption(i, e.target.value)}
-							invalid={!!errors[`options.${i}`]}
-						/>
-					</div>
-				))}
-				<p className="text-xs text-subtle">Bấm radio cạnh phương án đúng.</p>
-			</div>
-			<FormField label="Giải thích" htmlFor="explanation" required error={errors.explanation}>
-				<Textarea
-					id="explanation"
-					value={explanation}
-					onChange={(e) => setExplanation(e.target.value)}
-					rows={2}
-					invalid={!!errors.explanation}
-				/>
-			</FormField>
-			<FormField label="Thứ tự" htmlFor="display_order">
-				<Input
-					id="display_order"
-					type="number"
-					value={displayOrder}
-					onChange={(e) => setDisplayOrder(Number(e.target.value))}
-				/>
-			</FormField>
+		<form onSubmit={handle}>
+			<Flex vertical gap={16}>
+				<FormField label="Câu hỏi" htmlFor="q" required error={errors.question}>
+					<Textarea
+						id="q"
+						value={question}
+						onChange={(e) => setQuestion(e.target.value)}
+						rows={2}
+						invalid={!!errors.question}
+					/>
+				</FormField>
+				<Flex vertical gap={8}>
+					<Typography.Text type="secondary" style={{ fontSize: 12, fontWeight: 500 }}>
+						4 phương án
+					</Typography.Text>
+					{options.map((opt, i) => (
+						<Flex key={i} align="center" gap={8}>
+							<input
+								type="radio"
+								name="correct_index"
+								checked={correctIndex === i}
+								onChange={() => setCorrectIndex(i)}
+								aria-label={`Đáp án đúng ${String.fromCharCode(65 + i)}`}
+							/>
+							<Typography.Text type="secondary" style={{ width: 16, fontSize: 12 }}>
+								{String.fromCharCode(65 + i)}.
+							</Typography.Text>
+							<div style={{ flex: 1 }}>
+								<Input
+									value={opt}
+									onChange={(e) => setOption(i, e.target.value)}
+									invalid={!!errors[`options.${i}`]}
+								/>
+							</div>
+						</Flex>
+					))}
+					<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+						Bấm radio cạnh phương án đúng.
+					</Typography.Text>
+				</Flex>
+				<FormField label="Giải thích" htmlFor="explanation" required error={errors.explanation}>
+					<Textarea
+						id="explanation"
+						value={explanation}
+						onChange={(e) => setExplanation(e.target.value)}
+						rows={2}
+						invalid={!!errors.explanation}
+					/>
+				</FormField>
+				<FormField label="Thứ tự" htmlFor="display_order">
+					<Input
+						id="display_order"
+						type="number"
+						value={displayOrder}
+						onChange={(e) => setDisplayOrder(Number(e.target.value))}
+					/>
+				</FormField>
 
-			{generic && <div className="rounded-md bg-danger-tint px-3 py-2 text-xs text-danger">{generic}</div>}
+				{generic && <Alert type="error" message={generic} showIcon />}
 
-			<div className="flex justify-end gap-2 pt-2">
-				<Button variant="ghost" onClick={onCancel} disabled={submitting}>
-					Huỷ
-				</Button>
-				<Button type="submit" loading={submitting}>
-					{initial ? "Cập nhật" : "Thêm câu hỏi"}
-				</Button>
-			</div>
+				<Flex justify="end" gap={8} style={{ paddingTop: 8 }}>
+					<Button variant="ghost" onClick={onCancel} disabled={submitting}>
+						Huỷ
+					</Button>
+					<Button type="submit" loading={submitting}>
+						{initial ? "Cập nhật" : "Thêm câu hỏi"}
+					</Button>
+				</Flex>
+			</Flex>
 		</form>
 	)
 }

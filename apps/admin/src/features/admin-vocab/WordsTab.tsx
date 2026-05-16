@@ -1,4 +1,6 @@
-import { Pencil, Plus, Trash2 } from "lucide-react"
+import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons"
+import { Flex, Table, Typography } from "antd"
+import type { ColumnsType } from "antd/es/table"
 import { useState } from "react"
 import { Button } from "#/components/Button"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
@@ -34,68 +36,47 @@ export function WordsTab({ topicId, words }: Props) {
 		}
 	}
 
+	const columns: ColumnsType<AdminVocabWord> = [
+		{ title: "#", dataIndex: "display_order", width: 60 },
+		{ title: "Từ", dataIndex: "word", render: (v: string) => <strong>{v}</strong> },
+		{ title: "IPA", dataIndex: "phonetic", render: (v: string | null) => v ?? "—" },
+		{ title: "Loại", dataIndex: "part_of_speech" },
+		{
+			title: "Định nghĩa",
+			dataIndex: "definition",
+			ellipsis: true,
+		},
+		{
+			title: "",
+			key: "actions",
+			width: 100,
+			align: "right",
+			render: (_: unknown, w: AdminVocabWord) => (
+				<Flex gap={4} justify="end">
+					<Button variant="ghost" size="sm" icon={<EditOutlined />} onClick={() => setEditing(w)} />
+					<Button variant="ghost" size="sm" icon={<DeleteOutlined />} onClick={() => setDeleting(w)} />
+				</Flex>
+			),
+		},
+	]
+
 	return (
 		<>
-			<div className="mb-4 flex items-center justify-between">
-				<p className="text-sm text-muted">{words.length} từ.</p>
-				<Button icon={<Plus className="size-4" />} onClick={() => setCreateOpen(true)}>
+			<Flex justify="space-between" align="center" style={{ marginBottom: 16 }}>
+				<Typography.Text type="secondary">{words.length} từ.</Typography.Text>
+				<Button icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
 					Thêm từ
 				</Button>
-			</div>
+			</Flex>
 
-			{words.length === 0 ? (
-				<div className="rounded-(--radius-card) border border-dashed border-border bg-surface px-6 py-10 text-center text-sm text-muted">
-					Chưa có từ nào trong chủ đề này.
-				</div>
-			) : (
-				<div className="overflow-hidden rounded-(--radius-card) border border-border bg-surface">
-					<table className="w-full text-sm">
-						<thead>
-							<tr className="border-b border-border bg-surface-muted/50">
-								<th className="h-10 px-4 text-left text-xs font-medium text-muted">#</th>
-								<th className="h-10 px-4 text-left text-xs font-medium text-muted">Từ</th>
-								<th className="h-10 px-4 text-left text-xs font-medium text-muted">IPA</th>
-								<th className="h-10 px-4 text-left text-xs font-medium text-muted">Loại</th>
-								<th className="h-10 px-4 text-left text-xs font-medium text-muted">Định nghĩa</th>
-								<th className="h-10 w-24 px-4" />
-							</tr>
-						</thead>
-						<tbody>
-							{words.map((w) => (
-								<tr key={w.id} className="border-b border-border last:border-b-0 hover:bg-surface-muted/30">
-									<td className="px-4 py-3 text-muted">{w.display_order}</td>
-									<td className="px-4 py-3 font-medium text-foreground">{w.word}</td>
-									<td className="px-4 py-3 text-muted">{w.phonetic ?? "—"}</td>
-									<td className="px-4 py-3 text-muted">{w.part_of_speech}</td>
-									<td className="px-4 py-3 text-muted">
-										<span className="line-clamp-1 max-w-xs">{w.definition}</span>
-									</td>
-									<td className="px-4 py-3">
-										<div className="flex justify-end gap-1">
-											<button
-												type="button"
-												className="rounded-md p-1.5 text-muted hover:bg-surface-muted hover:text-foreground"
-												onClick={() => setEditing(w)}
-												aria-label="Sửa"
-											>
-												<Pencil className="size-3.5" />
-											</button>
-											<button
-												type="button"
-												className="rounded-md p-1.5 text-muted hover:bg-danger-tint hover:text-danger"
-												onClick={() => setDeleting(w)}
-												aria-label="Xoá"
-											>
-												<Trash2 className="size-3.5" />
-											</button>
-										</div>
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
-			)}
+			<Table<AdminVocabWord>
+				columns={columns}
+				dataSource={words}
+				rowKey="id"
+				pagination={false}
+				size="small"
+				locale={{ emptyText: "Chưa có từ nào trong chủ đề này." }}
+			/>
 
 			<Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Thêm từ mới" size="lg">
 				<WordForm

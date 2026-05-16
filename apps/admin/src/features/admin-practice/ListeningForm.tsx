@@ -1,3 +1,4 @@
+import { Alert, Col, Flex, Row } from "antd"
 import { type FormEvent, useState } from "react"
 import { Button } from "#/components/Button"
 import { FormField } from "#/components/FormField"
@@ -55,105 +56,121 @@ export function ListeningForm({ initial, onSubmit, onCancel, submitting }: Props
 	}
 
 	return (
-		<form onSubmit={handle} className="flex flex-col gap-4">
-			<div className="grid grid-cols-2 gap-3">
-				<FormField label="Slug" htmlFor="slug" required error={errors.slug}>
-					<Input
-						id="slug"
-						value={state.slug}
-						onChange={(e) => set("slug", e.target.value)}
-						placeholder="listening-part-1-conv-1"
-						invalid={!!errors.slug}
+		<form onSubmit={handle}>
+			<Flex vertical gap={16}>
+				<Row gutter={12}>
+					<Col span={12}>
+						<FormField label="Slug" htmlFor="slug" required error={errors.slug}>
+							<Input
+								id="slug"
+								value={state.slug}
+								onChange={(e) => set("slug", e.target.value)}
+								placeholder="listening-part-1-conv-1"
+								invalid={!!errors.slug}
+							/>
+						</FormField>
+					</Col>
+					<Col span={12}>
+						<FormField label="Tiêu đề" htmlFor="title" required error={errors.title}>
+							<Input
+								id="title"
+								value={state.title}
+								onChange={(e) => set("title", e.target.value)}
+								invalid={!!errors.title}
+							/>
+						</FormField>
+					</Col>
+				</Row>
+
+				<FormField label="Mô tả" htmlFor="description" error={errors.description}>
+					<Textarea
+						id="description"
+						value={state.description ?? ""}
+						onChange={(e) => set("description", e.target.value)}
+						rows={2}
 					/>
 				</FormField>
-				<FormField label="Tiêu đề" htmlFor="title" required error={errors.title}>
+
+				<Row gutter={12}>
+					<Col span={8}>
+						<FormField label="Part" htmlFor="part" required error={errors.part}>
+							<Select id="part" value={state.part} onChange={(e) => set("part", Number(e.target.value))}>
+								<option value={1}>Part 1 — Short conversations</option>
+								<option value={2}>Part 2 — Talks</option>
+								<option value={3}>Part 3 — Long talks</option>
+							</Select>
+						</FormField>
+					</Col>
+					<Col span={8}>
+						<FormField label="Thời lượng (phút)" htmlFor="minutes" required error={errors.estimated_minutes}>
+							<Input
+								id="minutes"
+								type="number"
+								min={1}
+								value={state.estimated_minutes}
+								onChange={(e) => set("estimated_minutes", Number(e.target.value))}
+							/>
+						</FormField>
+					</Col>
+					<Col span={8}>
+						<Flex align="end" style={{ height: "100%", paddingBottom: 8 }}>
+							<Switch
+								checked={state.is_published}
+								onChange={(v) => set("is_published", v)}
+								label="Đã xuất bản"
+							/>
+						</Flex>
+					</Col>
+				</Row>
+
+				<FormField
+					label="Audio URL"
+					htmlFor="audio_url"
+					error={errors.audio_url}
+					helper="R2 key hoặc URL public."
+				>
 					<Input
-						id="title"
-						value={state.title}
-						onChange={(e) => set("title", e.target.value)}
-						invalid={!!errors.title}
+						id="audio_url"
+						value={state.audio_url ?? ""}
+						onChange={(e) => set("audio_url", e.target.value)}
+						placeholder="r2/listening/part1-conv1.mp3"
 					/>
 				</FormField>
-			</div>
 
-			<FormField label="Mô tả" htmlFor="description" error={errors.description}>
-				<Textarea
-					id="description"
-					value={state.description ?? ""}
-					onChange={(e) => set("description", e.target.value)}
-					rows={2}
-				/>
-			</FormField>
-
-			<div className="grid grid-cols-3 gap-3">
-				<FormField label="Part" htmlFor="part" required error={errors.part}>
-					<Select id="part" value={state.part} onChange={(e) => set("part", Number(e.target.value))}>
-						<option value={1}>Part 1 — Short conversations</option>
-						<option value={2}>Part 2 — Talks</option>
-						<option value={3}>Part 3 — Long talks</option>
-					</Select>
-				</FormField>
-				<FormField label="Thời lượng (phút)" htmlFor="minutes" required error={errors.estimated_minutes}>
-					<Input
-						id="minutes"
-						type="number"
-						min={1}
-						value={state.estimated_minutes}
-						onChange={(e) => set("estimated_minutes", Number(e.target.value))}
+				<FormField label="Transcript (EN)" htmlFor="transcript" required error={errors.transcript}>
+					<Textarea
+						id="transcript"
+						value={state.transcript}
+						onChange={(e) => set("transcript", e.target.value)}
+						rows={4}
+						invalid={!!errors.transcript}
 					/>
 				</FormField>
-				<div className="flex items-end pb-2">
-					<Switch checked={state.is_published} onChange={(v) => set("is_published", v)} label="Đã xuất bản" />
-				</div>
-			</div>
 
-			<FormField
-				label="Audio URL"
-				htmlFor="audio_url"
-				error={errors.audio_url}
-				helper="R2 key hoặc URL public."
-			>
-				<Input
-					id="audio_url"
-					value={state.audio_url ?? ""}
-					onChange={(e) => set("audio_url", e.target.value)}
-					placeholder="r2/listening/part1-conv1.mp3"
-				/>
-			</FormField>
+				<FormField label="Transcript Việt" htmlFor="vn_transcript" error={errors.vietnamese_transcript}>
+					<Textarea
+						id="vn_transcript"
+						value={state.vietnamese_transcript ?? ""}
+						onChange={(e) => set("vietnamese_transcript", e.target.value)}
+						rows={3}
+					/>
+				</FormField>
 
-			<FormField label="Transcript (EN)" htmlFor="transcript" required error={errors.transcript}>
-				<Textarea
-					id="transcript"
-					value={state.transcript}
-					onChange={(e) => set("transcript", e.target.value)}
-					rows={4}
-					invalid={!!errors.transcript}
-				/>
-			</FormField>
+				<FormField label="Keywords" error={errors.keywords} helper="Enter để thêm.">
+					<TagInput value={state.keywords} onChange={(v) => set("keywords", v)} />
+				</FormField>
 
-			<FormField label="Transcript Việt" htmlFor="vn_transcript" error={errors.vietnamese_transcript}>
-				<Textarea
-					id="vn_transcript"
-					value={state.vietnamese_transcript ?? ""}
-					onChange={(e) => set("vietnamese_transcript", e.target.value)}
-					rows={3}
-				/>
-			</FormField>
+				{generic && <Alert type="error" message={generic} showIcon />}
 
-			<FormField label="Keywords" error={errors.keywords} helper="Enter để thêm.">
-				<TagInput value={state.keywords} onChange={(v) => set("keywords", v)} />
-			</FormField>
-
-			{generic && <div className="rounded-md bg-danger-tint px-3 py-2 text-xs text-danger">{generic}</div>}
-
-			<div className="flex justify-end gap-2 pt-2">
-				<Button variant="ghost" onClick={onCancel} disabled={submitting}>
-					Huỷ
-				</Button>
-				<Button type="submit" loading={submitting}>
-					{initial ? "Cập nhật" : "Tạo bài nghe"}
-				</Button>
-			</div>
+				<Flex justify="end" gap={8} style={{ paddingTop: 8 }}>
+					<Button variant="ghost" onClick={onCancel} disabled={submitting}>
+						Huỷ
+					</Button>
+					<Button type="submit" loading={submitting}>
+						{initial ? "Cập nhật" : "Tạo bài nghe"}
+					</Button>
+				</Flex>
+			</Flex>
 		</form>
 	)
 }

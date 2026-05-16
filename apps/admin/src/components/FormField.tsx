@@ -1,5 +1,5 @@
+import { Form } from "antd"
 import type { ReactNode } from "react"
-import { cn } from "#/lib/utils"
 
 interface Props {
 	label: string
@@ -13,19 +13,17 @@ interface Props {
 
 export function FormField({ label, htmlFor, required, error, helper, children, className }: Props) {
 	const errorText = Array.isArray(error) ? error[0] : error
-
 	return (
-		<div className={cn("flex flex-col gap-1.5", className)}>
-			<label htmlFor={htmlFor} className="text-xs font-medium text-muted">
-				{label}
-				{required && <span className="ml-1 text-danger">*</span>}
-			</label>
+		<Form.Item
+			className={className}
+			label={label}
+			htmlFor={htmlFor}
+			required={required}
+			validateStatus={errorText ? "error" : undefined}
+			help={errorText ?? helper}
+			style={{ marginBottom: 12 }}
+		>
 			{children}
-			{errorText ? (
-				<p className="text-xs text-danger">{errorText}</p>
-			) : helper ? (
-				<p className="text-xs text-subtle">{helper}</p>
-			) : null}
-		</div>
+		</Form.Item>
 	)
 }

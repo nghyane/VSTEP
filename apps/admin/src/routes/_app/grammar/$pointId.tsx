@@ -1,10 +1,9 @@
+import { ArrowLeftOutlined } from "@ant-design/icons"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { ArrowLeft } from "lucide-react"
-import { Badge } from "#/components/Badge"
+import { Flex, Skeleton, Space, Tag, Typography } from "antd"
 import { Card } from "#/components/Card"
 import { PageHeader } from "#/components/PageHeader"
-import { Skeleton } from "#/components/Skeleton"
 import { Switch } from "#/components/Switch"
 import { Tabs } from "#/components/Tabs"
 import { showError, showSuccess } from "#/components/Toaster"
@@ -72,10 +71,10 @@ function PointDetailPage() {
 
 	if (isLoading || !data) {
 		return (
-			<div className="flex flex-col gap-4">
-				<Skeleton className="h-12 w-64" />
-				<Skeleton className="h-64 w-full" />
-			</div>
+			<Flex vertical gap={16}>
+				<Skeleton active paragraph={{ rows: 1 }} />
+				<Skeleton active paragraph={{ rows: 6 }} />
+			</Flex>
 		)
 	}
 
@@ -92,13 +91,12 @@ function PointDetailPage() {
 	}
 
 	return (
-		<div className="flex flex-col gap-6">
+		<Flex vertical gap={24}>
 			<div>
-				<Link
-					to="/grammar"
-					className="mb-2 inline-flex items-center gap-1.5 text-xs text-muted hover:text-foreground"
-				>
-					<ArrowLeft className="size-3.5" /> Danh sách
+				<Link to="/grammar" style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+					<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+						<ArrowLeftOutlined /> Danh sách
+					</Typography.Text>
 				</Link>
 				<PageHeader
 					title={point.name}
@@ -112,17 +110,17 @@ function PointDetailPage() {
 						/>
 					}
 				/>
-				<div className="mt-2 flex flex-wrap gap-1">
-					<Badge>{point.category}</Badge>
+				<Space size={4} wrap style={{ marginTop: 8 }}>
+					<Tag>{point.category}</Tag>
 					{point.levels.map((l) => (
-						<Badge key={l}>{l}</Badge>
+						<Tag key={l}>{l}</Tag>
 					))}
 					{point.tasks.map((t) => (
-						<Badge key={t} variant="info">
+						<Tag key={t} color="blue">
 							{t}
-						</Badge>
+						</Tag>
 					))}
-				</div>
+				</Space>
 			</div>
 
 			<Tabs
@@ -161,8 +159,16 @@ function PointDetailPage() {
 					confirmDelete={(it) => `Xoá cấu trúc "${it.template}"?`}
 					renderItem={(it) => (
 						<>
-							<p className="font-mono text-sm text-foreground">{it.template}</p>
-							{it.description && <p className="mt-1 text-xs text-muted">{it.description}</p>}
+							<Typography.Text style={{ fontFamily: "monospace", fontSize: 14 }}>
+								{it.template}
+							</Typography.Text>
+							{it.description && (
+								<div style={{ marginTop: 4 }}>
+									<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+										{it.description}
+									</Typography.Text>
+								</div>
+							)}
 						</>
 					)}
 					renderForm={(p) => <StructureForm {...p} />}
@@ -183,9 +189,19 @@ function PointDetailPage() {
 					confirmDelete={(it) => `Xoá ví dụ "${it.en}"?`}
 					renderItem={(it) => (
 						<>
-							<p className="text-sm text-foreground">{it.en}</p>
-							<p className="text-xs text-muted">{it.vi}</p>
-							{it.note && <p className="mt-1 text-xs text-subtle">{it.note}</p>}
+							<Typography.Text style={{ fontSize: 14 }}>{it.en}</Typography.Text>
+							<div>
+								<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+									{it.vi}
+								</Typography.Text>
+							</div>
+							{it.note && (
+								<div style={{ marginTop: 4 }}>
+									<Typography.Text type="secondary" style={{ fontSize: 12, fontStyle: "italic" }}>
+										{it.note}
+									</Typography.Text>
+								</div>
+							)}
 						</>
 					)}
 					renderForm={(p) => <ExampleForm {...p} />}
@@ -206,9 +222,19 @@ function PointDetailPage() {
 					confirmDelete={(it) => `Xoá lỗi "${it.wrong}"?`}
 					renderItem={(it) => (
 						<>
-							<p className="text-sm text-danger line-through">{it.wrong}</p>
-							<p className="text-sm text-success">{it.correct}</p>
-							<p className="mt-1 text-xs text-muted">{it.explanation}</p>
+							<Typography.Text type="danger" delete style={{ fontSize: 14 }}>
+								{it.wrong}
+							</Typography.Text>
+							<div>
+								<Typography.Text type="success" style={{ fontSize: 14 }}>
+									{it.correct}
+								</Typography.Text>
+							</div>
+							<div style={{ marginTop: 4 }}>
+								<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+									{it.explanation}
+								</Typography.Text>
+							</div>
 						</>
 					)}
 					renderForm={(p) => <MistakeForm {...p} />}
@@ -229,11 +255,15 @@ function PointDetailPage() {
 					confirmDelete={(it) => `Xoá mẹo cho task ${it.task}?`}
 					renderItem={(it) => (
 						<>
-							<div className="mb-1">
-								<Badge variant="info">{it.task}</Badge>
+							<div style={{ marginBottom: 4 }}>
+								<Tag color="blue">{it.task}</Tag>
 							</div>
-							<p className="text-sm text-foreground">{it.tip}</p>
-							<p className="mt-1 text-xs text-muted italic">{it.example}</p>
+							<Typography.Text style={{ fontSize: 14 }}>{it.tip}</Typography.Text>
+							<div style={{ marginTop: 4 }}>
+								<Typography.Text type="secondary" style={{ fontSize: 12, fontStyle: "italic" }}>
+									{it.example}
+								</Typography.Text>
+							</div>
 						</>
 					)}
 					renderForm={(p) => <TipForm {...p} />}
@@ -246,6 +276,6 @@ function PointDetailPage() {
 			)}
 
 			{tab === "exercises" && <ExercisesTab pointId={pointId} exercises={exercises} />}
-		</div>
+		</Flex>
 	)
 }

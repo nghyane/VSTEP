@@ -1,21 +1,22 @@
+import {
+	BookOutlined,
+	CheckCircleOutlined,
+	ClockCircleOutlined,
+	ExclamationCircleOutlined,
+	FileTextOutlined,
+	ReadOutlined,
+	RiseOutlined,
+	TeamOutlined,
+	WarningOutlined,
+} from "@ant-design/icons"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import {
-	AlertTriangle,
-	BookOpen,
-	CheckCircle,
-	Clock,
-	FileText,
-	GraduationCap,
-	TrendingUp,
-	Users,
-} from "lucide-react"
+import { Alert, Col, Flex, Row, Space, Tag, Typography } from "antd"
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { Badge } from "#/components/Badge"
 import { Card } from "#/components/Card"
 import { Skeleton } from "#/components/Skeleton"
 import { type ApiResponse, api } from "#/lib/api"
-import { cn } from "#/lib/utils"
 
 export const Route = createFileRoute("/_app/")({
 	component: DashboardPage,
@@ -61,7 +62,10 @@ interface ActivityItem {
 	happened_at: string
 }
 
-const COLORS = ["oklch(0.58 0.18 255)", "oklch(0.5 0.18 255)", "oklch(0.45 0.15 255)"]
+const PUBLISHED_COLOR = "#1677ff"
+const DRAFT_COLOR = "#d9d9d9"
+const MUTED_COLOR = "rgba(0,0,0,0.45)"
+const BORDER_COLOR = "rgba(0,0,0,0.06)"
 
 function DashboardPage() {
 	const { data: stats, isLoading } = useQuery({
@@ -97,60 +101,60 @@ function DashboardPage() {
 	const totalAlerts = actionItems?.reduce((sum, i) => sum + i.badge, 0) ?? 0
 
 	return (
-		<div className="flex flex-col gap-6">
+		<Flex vertical gap={24}>
 			{alerts && alerts.length > 0 && <AlertsBanner alerts={alerts} />}
 
-			<div className="flex items-center justify-between">
+			<Flex justify="space-between" align="center">
 				<div>
-					<h1 className="text-2xl font-semibold tracking-tight text-foreground">Tổng quan</h1>
-					<p className="mt-1 text-sm text-muted">Tình trạng hệ thống và hoạt động gần đây.</p>
+					<Typography.Title level={3} style={{ margin: 0 }}>
+						Tổng quan
+					</Typography.Title>
+					<Typography.Text type="secondary" style={{ fontSize: 14 }}>
+						Tình trạng hệ thống và hoạt động gần đây.
+					</Typography.Text>
 				</div>
 				{totalAlerts > 0 && (
-					<div className="flex items-center gap-2 rounded-md bg-danger-tint px-3 py-1.5 text-sm text-danger">
-						<AlertTriangle className="size-4" />
-						<span>{totalAlerts} việc cần xử lý</span>
-					</div>
+					<Tag color="error" icon={<WarningOutlined />} style={{ padding: "4px 10px", fontSize: 13 }}>
+						{totalAlerts} việc cần xử lý
+					</Tag>
 				)}
-			</div>
+			</Flex>
 
 			<StatsRow stats={stats} loading={isLoading} />
 
-			<div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-				<div className="lg:col-span-2">
+			<Row gutter={[24, 24]}>
+				<Col xs={24} lg={16}>
 					<ContentChart data={contentStatus} />
-				</div>
-				<ActionList items={actionItems} />
-			</div>
+				</Col>
+				<Col xs={24} lg={8}>
+					<ActionList items={actionItems} />
+				</Col>
+			</Row>
 
 			<ActivityTimeline items={recentActivity} />
-		</div>
+		</Flex>
 	)
 }
-
-/* ─── Alerts Banner ─────────────────────────────────── */
 
 function AlertsBanner({ alerts }: { alerts: AlertItem[] }) {
 	const hasError = alerts.some((a) => a.type === "error")
 	return (
-		<div
-			className={cn(
-				"flex items-start gap-3 rounded-(--radius-card) border p-4",
-				hasError ? "border-danger/30 bg-danger-tint" : "border-warning/30 bg-warning-tint",
-			)}
-		>
-			<AlertTriangle className={cn("mt-0.5 size-5 shrink-0", hasError ? "text-danger" : "text-warning")} />
-			<div className="flex flex-col gap-1">
-				{alerts.map((a, i) => (
-					<span key={i} className="text-sm font-medium text-foreground">
-						{a.message}
-					</span>
-				))}
-			</div>
-		</div>
+		<Alert
+			type={hasError ? "error" : "warning"}
+			showIcon
+			icon={hasError ? <ExclamationCircleOutlined /> : <WarningOutlined />}
+			message={
+				<Flex vertical gap={4}>
+					{alerts.map((a, i) => (
+						<span key={i} style={{ fontSize: 14, fontWeight: 500 }}>
+							{a.message}
+						</span>
+					))}
+				</Flex>
+			}
+		/>
 	)
 }
-
-/* ─── Stats Row ─────────────────────────────────────── */
 
 function StatsRow({ stats, loading }: { stats: StatsData | undefined; loading: boolean }) {
 	if (loading) return <StatsSkeleton />
@@ -162,78 +166,116 @@ function StatsRow({ stats, loading }: { stats: StatsData | undefined; loading: b
 			value: formatNum(stats.users_total),
 			trend: `${stats.users_today} hôm nay`,
 			trendPositive: true,
-			icon: Users,
-			color: "text-primary",
+			icon: <TeamOutlined />,
+			iconColor: "#1677ff",
 		},
 		{
 			title: "Phiên đang hoạt động",
 			value: formatNum(stats.sessions_active),
 			trend: `${stats.sessions_stuck} quá hạn`,
 			trendPositive: stats.sessions_stuck === 0,
-			icon: GraduationCap,
-			color: stats.sessions_stuck > 0 ? "text-danger" : "text-success",
+			icon: <ReadOutlined />,
+			iconColor: stats.sessions_stuck > 0 ? "#ff4d4f" : "#52c41a",
 		},
 		{
 			title: "Chấm bài hôm nay",
 			value: formatNum(stats.grading_done_today),
 			trend: `${stats.grading_pending} chờ · ${stats.grading_failed} lỗi`,
 			trendPositive: stats.grading_failed === 0,
-			icon: FileText,
-			color: stats.grading_failed > 0 ? "text-warning" : "text-success",
+			icon: <FileTextOutlined />,
+			iconColor: stats.grading_failed > 0 ? "#faad14" : "#52c41a",
 		},
 		{
 			title: "Nội dung",
 			value: formatNum(stats.exams_published),
 			trend: `${stats.vocab_topics} từ vựng · ${stats.grammar_points} ngữ pháp`,
 			trendPositive: true,
-			icon: BookOpen,
-			color: "text-primary",
+			icon: <BookOutlined />,
+			iconColor: "#1677ff",
 		},
 	]
 
 	return (
-		<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+		<Row gutter={[16, 16]}>
 			{items.map((item) => (
-				<div key={item.title} className="rounded-(--radius-card) border border-border bg-surface p-5">
-					<div className="flex items-start justify-between">
-						<div>
-							<p className="text-xs font-medium text-muted">{item.title}</p>
-							<p className="mt-2 text-3xl font-semibold tracking-tight text-foreground">{item.value}</p>
-							<div className="mt-2 flex items-center gap-1.5">
-								<TrendingUp className={cn("size-3.5", item.trendPositive ? "text-success" : "text-danger")} />
-								<span className="text-xs text-muted">{item.trend}</span>
+				<Col key={item.title} xs={24} sm={12} xl={6}>
+					<div
+						style={{
+							border: `1px solid ${BORDER_COLOR}`,
+							borderRadius: 8,
+							background: "#fff",
+							padding: 20,
+						}}
+					>
+						<Flex justify="space-between" align="flex-start">
+							<div>
+								<Typography.Text type="secondary" style={{ fontSize: 12, fontWeight: 500 }}>
+									{item.title}
+								</Typography.Text>
+								<div style={{ marginTop: 8, fontSize: 28, fontWeight: 600, lineHeight: 1.2 }}>
+									{item.value}
+								</div>
+								<Flex align="center" gap={6} style={{ marginTop: 8 }}>
+									<RiseOutlined
+										style={{
+											fontSize: 13,
+											color: item.trendPositive ? "#52c41a" : "#ff4d4f",
+										}}
+									/>
+									<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+										{item.trend}
+									</Typography.Text>
+								</Flex>
 							</div>
-						</div>
-						<div
-							className={cn(
-								"flex size-10 items-center justify-center rounded-lg bg-surface-muted",
-								item.color,
-							)}
-						>
-							<item.icon className="size-5" />
-						</div>
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									width: 40,
+									height: 40,
+									borderRadius: 8,
+									background: "#fafafa",
+									color: item.iconColor,
+									fontSize: 20,
+								}}
+							>
+								{item.icon}
+							</div>
+						</Flex>
 					</div>
-				</div>
+				</Col>
 			))}
-		</div>
+		</Row>
 	)
 }
 
 function StatsSkeleton() {
 	return (
-		<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+		<Row gutter={[16, 16]}>
 			{[0, 1, 2, 3].map((i) => (
-				<div key={i} className="rounded-(--radius-card) border border-border bg-surface p-5">
-					<Skeleton className="h-3 w-16" />
-					<Skeleton className="mt-2 h-8 w-20" />
-					<Skeleton className="mt-2 h-3 w-32" />
-				</div>
+				<Col key={i} xs={24} sm={12} xl={6}>
+					<div
+						style={{
+							border: `1px solid ${BORDER_COLOR}`,
+							borderRadius: 8,
+							background: "#fff",
+							padding: 20,
+						}}
+					>
+						<div style={{ marginBottom: 8 }}>
+							<Skeleton />
+						</div>
+						<div style={{ marginBottom: 8 }}>
+							<Skeleton />
+						</div>
+						<Skeleton />
+					</div>
+				</Col>
 			))}
-		</div>
+		</Row>
 	)
 }
-
-/* ─── Content Chart ─────────────────────────────────── */
 
 function ContentChart({ data }: { data: ContentStatusItem[] | undefined }) {
 	const chartData =
@@ -246,26 +288,21 @@ function ContentChart({ data }: { data: ContentStatusItem[] | undefined }) {
 
 	return (
 		<Card title="Trạng thái nội dung" description="Số lượng đã xuất bản so với bản nháp">
-			<div className="mt-4 flex h-56">
+			<div style={{ marginTop: 16, height: 224, display: "flex" }}>
 				<ResponsiveContainer width="100%" height="100%">
 					<BarChart data={chartData} barGap={2}>
 						<XAxis
 							dataKey="name"
-							tick={{ fontSize: 11, fill: "oklch(0.45 0.01 260)" }}
+							tick={{ fontSize: 11, fill: MUTED_COLOR }}
 							axisLine={false}
 							tickLine={false}
 						/>
-						<YAxis
-							tick={{ fontSize: 11, fill: "oklch(0.45 0.01 260)" }}
-							axisLine={false}
-							tickLine={false}
-							width={30}
-						/>
+						<YAxis tick={{ fontSize: 11, fill: MUTED_COLOR }} axisLine={false} tickLine={false} width={30} />
 						<Tooltip
-							cursor={{ fill: "oklch(0.97 0.005 260)" }}
+							cursor={{ fill: "#fafafa" }}
 							contentStyle={{
-								background: "oklch(1 0 0)",
-								border: "1px solid oklch(0.92 0.005 260)",
+								background: "#fff",
+								border: `1px solid ${BORDER_COLOR}`,
 								borderRadius: "8px",
 								fontSize: "12px",
 								boxShadow: "0 2px 8px rgba(15,23,42,0.06)",
@@ -273,37 +310,53 @@ function ContentChart({ data }: { data: ContentStatusItem[] | undefined }) {
 						/>
 						<Bar dataKey="published" name="Đã XB" radius={[4, 4, 0, 0]}>
 							{chartData.map((_entry, index) => (
-								<Cell key={index} fill={COLORS[index % COLORS.length]} />
+								<Cell key={index} fill={PUBLISHED_COLOR} />
 							))}
 						</Bar>
-						<Bar dataKey="draft" name="Nháp" fill="oklch(0.92 0.005 260)" radius={[4, 4, 0, 0]} />
+						<Bar dataKey="draft" name="Nháp" fill={DRAFT_COLOR} radius={[4, 4, 0, 0]} />
 					</BarChart>
 				</ResponsiveContainer>
 			</div>
-			<div className="mt-3 flex items-center gap-4 text-xs text-muted">
-				<div className="flex items-center gap-1.5">
-					<span className="size-2.5 rounded-sm bg-primary" />
+			<Flex align="center" gap={16} style={{ marginTop: 12, fontSize: 12, color: MUTED_COLOR }}>
+				<Flex align="center" gap={6}>
+					<span
+						style={{
+							width: 10,
+							height: 10,
+							borderRadius: 2,
+							background: PUBLISHED_COLOR,
+							display: "inline-block",
+						}}
+					/>
 					Đã xuất bản
-				</div>
-				<div className="flex items-center gap-1.5">
-					<span className="size-2.5 rounded-sm bg-border" />
+				</Flex>
+				<Flex align="center" gap={6}>
+					<span
+						style={{
+							width: 10,
+							height: 10,
+							borderRadius: 2,
+							background: DRAFT_COLOR,
+							display: "inline-block",
+						}}
+					/>
 					Nháp
-				</div>
-			</div>
+				</Flex>
+			</Flex>
 		</Card>
 	)
 }
-
-/* ─── Action List ───────────────────────────────────── */
 
 function ActionList({ items }: { items: ActionItem[] | undefined }) {
 	if (!items || items.length === 0) {
 		return (
 			<Card title="Cần xử lý" description="Không có việc nào tồn đọng">
-				<div className="flex flex-col items-center justify-center py-10 text-center">
-					<CheckCircle className="size-8 text-success" />
-					<p className="mt-2 text-sm text-muted">Tất cả đã ổn.</p>
-				</div>
+				<Flex vertical align="center" justify="center" style={{ padding: "40px 0", textAlign: "center" }}>
+					<CheckCircleOutlined style={{ fontSize: 32, color: "#52c41a" }} />
+					<Typography.Text type="secondary" style={{ fontSize: 14, marginTop: 8 }}>
+						Tất cả đã ổn.
+					</Typography.Text>
+				</Flex>
 			</Card>
 		)
 	}
@@ -316,25 +369,29 @@ function ActionList({ items }: { items: ActionItem[] | undefined }) {
 			description="Nội dung chưa xuất bản hoặc có lỗi"
 			action={<Badge variant="danger">{total}</Badge>}
 		>
-			<ul className="mt-1 flex flex-col gap-1">
+			<Space direction="vertical" size={4} style={{ width: "100%", marginTop: 4 }}>
 				{items.map((item, i) => (
-					<li
+					<Flex
 						key={i}
-						className="flex items-center justify-between rounded-md px-3 py-2.5 text-sm transition-colors hover:bg-surface-muted"
+						justify="space-between"
+						align="center"
+						style={{
+							padding: "10px 12px",
+							borderRadius: 6,
+							fontSize: 14,
+						}}
 					>
-						<div className="flex items-center gap-2">
-							<Clock className="size-4 text-muted" />
-							<span className="text-foreground">{item.label}</span>
-						</div>
+						<Flex align="center" gap={8}>
+							<ClockCircleOutlined style={{ color: MUTED_COLOR }} />
+							<span>{item.label}</span>
+						</Flex>
 						<Badge variant="warning">{item.badge}</Badge>
-					</li>
+					</Flex>
 				))}
-			</ul>
+			</Space>
 		</Card>
 	)
 }
-
-/* ─── Activity Timeline ─────────────────────────────── */
 
 const ACTION_META: Record<string, { label: string; variant: "default" | "success" | "info" }> = {
 	user_registered: { label: "Đăng ký mới", variant: "success" },
@@ -347,37 +404,48 @@ function ActivityTimeline({ items }: { items: ActivityItem[] | undefined }) {
 	return (
 		<Card title="Hoạt động gần đây" description="5 sự kiện mới nhất">
 			{!items || items.length === 0 ? (
-				<div className="flex flex-col items-center justify-center py-10 text-center">
-					<Clock className="size-8 text-subtle" />
-					<p className="mt-2 text-sm text-muted">Chưa có hoạt động nào.</p>
-				</div>
+				<Flex vertical align="center" justify="center" style={{ padding: "40px 0", textAlign: "center" }}>
+					<ClockCircleOutlined style={{ fontSize: 32, color: MUTED_COLOR }} />
+					<Typography.Text type="secondary" style={{ fontSize: 14, marginTop: 8 }}>
+						Chưa có hoạt động nào.
+					</Typography.Text>
+				</Flex>
 			) : (
-				<div className="mt-4 flex flex-col gap-0">
+				<Flex vertical style={{ marginTop: 16 }}>
 					{items.map((item, i) => {
 						const meta = ACTION_META[item.action] ?? { label: item.action, variant: "default" as const }
 						return (
-							<div key={i} className="flex gap-4">
-								<div className="flex flex-col items-center">
-									<div className="mt-1.5 size-2.5 rounded-full bg-border ring-4 ring-surface" />
-									{i < items.length - 1 && <div className="w-px flex-1 bg-border" />}
-								</div>
-								<div className="flex-1 pb-6">
-									<div className="flex items-center gap-2">
+							<Flex key={i} gap={16}>
+								<Flex vertical align="center">
+									<div
+										style={{
+											marginTop: 6,
+											width: 10,
+											height: 10,
+											borderRadius: "50%",
+											background: "#d9d9d9",
+											boxShadow: "0 0 0 4px #fff",
+										}}
+									/>
+									{i < items.length - 1 && <div style={{ width: 1, flex: 1, background: "#f0f0f0" }} />}
+								</Flex>
+								<div style={{ flex: 1, paddingBottom: 24 }}>
+									<Flex align="center" gap={8}>
 										<Badge variant={meta.variant}>{meta.label}</Badge>
-										<span className="text-sm text-foreground">{item.detail}</span>
-									</div>
-									<p className="mt-1 text-xs text-muted">{formatDate(item.happened_at)}</p>
+										<span style={{ fontSize: 14 }}>{item.detail}</span>
+									</Flex>
+									<Typography.Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: "block" }}>
+										{formatDate(item.happened_at)}
+									</Typography.Text>
 								</div>
-							</div>
+							</Flex>
 						)
 					})}
-				</div>
+				</Flex>
 			)}
 		</Card>
 	)
 }
-
-/* ─── Helpers ───────────────────────────────────────── */
 
 function formatNum(n: number): string {
 	return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n)

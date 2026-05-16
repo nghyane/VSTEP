@@ -1,4 +1,5 @@
-import { Pencil, Plus, Trash2 } from "lucide-react"
+import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons"
+import { Card, Col, Empty, Flex, Row, Tag, Typography } from "antd"
 import { useState } from "react"
 import { Button } from "#/components/Button"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
@@ -37,65 +38,67 @@ export function McqQuestionsTab({ questions, create, update, remove }: Props) {
 	}
 
 	return (
-		<div className="flex flex-col gap-3">
-			<div className="flex items-center justify-between">
-				<span className="text-sm text-muted">{questions.length} câu hỏi</span>
-				<Button icon={<Plus className="size-4" />} onClick={() => setCreateOpen(true)}>
+		<Flex vertical gap={12}>
+			<Flex justify="space-between" align="center">
+				<Typography.Text type="secondary">{questions.length} câu hỏi</Typography.Text>
+				<Button icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
 					Thêm câu hỏi
 				</Button>
-			</div>
+			</Flex>
 
 			{questions.length === 0 ? (
-				<div className="rounded-(--radius-card) border border-dashed border-border bg-surface px-6 py-12 text-center text-sm text-muted">
-					Chưa có câu hỏi nào.
-				</div>
+				<Empty description="Chưa có câu hỏi nào." />
 			) : (
-				<ol className="flex flex-col gap-2">
+				<Flex vertical gap={8}>
 					{questions.map((q, idx) => (
-						<li key={q.id} className="rounded-(--radius-card) border border-border bg-surface p-4">
-							<div className="mb-2 flex items-start justify-between gap-3">
-								<div className="flex-1">
-									<div className="text-xs text-muted">Câu {idx + 1}</div>
-									<div className="mt-1 text-sm font-medium text-foreground">{q.question}</div>
+						<Card key={q.id} size="small">
+							<Flex justify="space-between" align="flex-start" gap={12} style={{ marginBottom: 8 }}>
+								<div style={{ flex: 1 }}>
+									<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+										Câu {idx + 1}
+									</Typography.Text>
+									<div style={{ marginTop: 4, fontWeight: 500 }}>{q.question}</div>
 								</div>
-								<div className="flex gap-1">
-									<button
-										type="button"
+								<Flex gap={4}>
+									<Button
+										variant="ghost"
+										size="sm"
+										icon={<EditOutlined />}
 										onClick={() => setEditing(q)}
-										className="rounded-md p-1.5 text-muted hover:bg-surface-muted hover:text-foreground"
 										aria-label="Sửa"
-									>
-										<Pencil className="size-3.5" />
-									</button>
-									<button
-										type="button"
+									/>
+									<Button
+										variant="ghost"
+										size="sm"
+										icon={<DeleteOutlined />}
 										onClick={() => setDeleting(q)}
-										className="rounded-md p-1.5 text-muted hover:bg-danger-tint hover:text-danger"
 										aria-label="Xoá"
-									>
-										<Trash2 className="size-3.5" />
-									</button>
-								</div>
-							</div>
-							<ul className="grid grid-cols-2 gap-1 text-xs">
+									/>
+								</Flex>
+							</Flex>
+							<Row gutter={[8, 8]}>
 								{q.options.map((opt, i) => (
-									<li
-										key={i}
-										className={
-											i === q.correct_index
-												? "rounded-md bg-success-tint px-2 py-1 text-success"
-												: "rounded-md bg-surface-muted px-2 py-1 text-muted"
-										}
-									>
-										<span className="mr-1 font-mono">{String.fromCharCode(65 + i)}.</span>
-										{opt}
-									</li>
+									<Col span={12} key={i}>
+										<Tag color={i === q.correct_index ? "success" : "default"} style={{ width: "100%" }}>
+											<span style={{ fontFamily: "monospace", marginRight: 4 }}>
+												{String.fromCharCode(65 + i)}.
+											</span>
+											{opt}
+										</Tag>
+									</Col>
 								))}
-							</ul>
-							{q.explanation && <p className="mt-2 text-xs text-subtle">Giải thích: {q.explanation}</p>}
-						</li>
+							</Row>
+							{q.explanation && (
+								<Typography.Paragraph
+									type="secondary"
+									style={{ marginTop: 8, marginBottom: 0, fontSize: 12 }}
+								>
+									Giải thích: {q.explanation}
+								</Typography.Paragraph>
+							)}
+						</Card>
 					))}
-				</ol>
+				</Flex>
 			)}
 
 			<Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Thêm câu hỏi" size="lg">
@@ -133,6 +136,6 @@ export function McqQuestionsTab({ questions, create, update, remove }: Props) {
 				description={deleting ? "Xoá câu hỏi này khỏi bài tập?" : undefined}
 				loading={remove.isPending}
 			/>
-		</div>
+		</Flex>
 	)
 }
