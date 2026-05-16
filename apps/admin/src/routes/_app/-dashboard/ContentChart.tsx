@@ -5,11 +5,17 @@ import { CHART_COLORS } from "./utils"
 
 export function ContentChart({ data, loading }: { data: ContentStatusItem[] | undefined; loading: boolean }) {
 	return (
-		<Card title="Trạng thái nội dung" styles={{ body: { padding: 16 } }}>
+		<Card
+			title="Trạng thái nội dung"
+			style={{ height: "100%" }}
+			styles={{
+				body: { padding: 16, height: "calc(100% - 56px)", display: "flex", flexDirection: "column" },
+			}}
+		>
 			{loading ? (
 				<Skeleton active paragraph={{ rows: 5 }} />
 			) : (
-				<div style={{ width: "100%", height: 240 }}>
+				<div style={{ width: "100%", flex: 1, minHeight: 220 }}>
 					<ResponsiveContainer width="100%" height="100%">
 						<BarChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
 							<CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.light} />

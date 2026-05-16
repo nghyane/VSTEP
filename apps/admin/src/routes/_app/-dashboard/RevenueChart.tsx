@@ -5,11 +5,17 @@ import { CHART_COLORS, formatShortDate, formatVnd } from "./utils"
 
 export function RevenueChart({ data, loading }: { data: RevenueTrendRow[] | undefined; loading: boolean }) {
 	return (
-		<Card title="Doanh thu 30 ngày" styles={{ body: { padding: 16 } }}>
+		<Card
+			title="Doanh thu 30 ngày"
+			style={{ height: "100%" }}
+			styles={{
+				body: { padding: 16, height: "calc(100% - 56px)", display: "flex", flexDirection: "column" },
+			}}
+		>
 			{loading ? (
 				<Skeleton active paragraph={{ rows: 6 }} />
 			) : (
-				<div style={{ width: "100%", height: 280 }}>
+				<div style={{ width: "100%", flex: 1, minHeight: 240 }}>
 					<ResponsiveContainer width="100%" height="100%">
 						<AreaChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
 							<defs>

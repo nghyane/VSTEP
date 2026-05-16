@@ -13,7 +13,7 @@ const TABS: Array<{ key: SkillKey; label: string }> = [
 
 export function TopContentTabs({ data, loading }: { data: TopContent | undefined; loading: boolean }) {
 	return (
-		<Card title="Nội dung được luyện nhiều nhất" styles={{ body: { padding: 8 } }}>
+		<Card title="Nội dung được luyện nhiều nhất" style={{ height: "100%" }} styles={{ body: { padding: 8 } }}>
 			{loading ? (
 				<Skeleton active />
 			) : !data ? (

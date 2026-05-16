@@ -8,6 +8,7 @@ export function PromoStatsCard({ data, loading }: { data: PromoStats | undefined
 		<Card
 			title="Khuyến mãi (Promo)"
 			extra={<GiftOutlined style={{ color: "#ec4899" }} />}
+			style={{ height: "100%" }}
 			styles={{ body: { padding: 16 } }}
 		>
 			{loading ? (

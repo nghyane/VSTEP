@@ -13,7 +13,13 @@ export function ProfileSegmentsCard({
 	loading: boolean
 }) {
 	return (
-		<Card title="Phân khúc profile" styles={{ body: { padding: 16 } }}>
+		<Card
+			title="Phân khúc profile"
+			style={{ height: "100%" }}
+			styles={{
+				body: { padding: 16, height: "calc(100% - 56px)", display: "flex", flexDirection: "column" },
+			}}
+		>
 			{loading ? (
 				<Skeleton active />
 			) : !data ? null : (

@@ -5,7 +5,11 @@ import type { ActionItem } from "./types"
 export function ActionList({ items }: { items: ActionItem[] | undefined }) {
 	if (!items || items.length === 0) {
 		return (
-			<Card title="Cần xử lý">
+			<Card
+				title="Cần xử lý"
+				style={{ height: "100%" }}
+				styles={{ body: { height: "calc(100% - 56px)", display: "flex", alignItems: "center", justifyContent: "center" } }}
+			>
 				<Empty
 					image={<CheckCircleOutlined style={{ fontSize: 32, color: "#10b981" }} />}
 					description="Tất cả đã ổn"
@@ -17,7 +21,7 @@ export function ActionList({ items }: { items: ActionItem[] | undefined }) {
 	const total = items.reduce((sum, i) => sum + i.badge, 0)
 
 	return (
-		<Card title="Cần xử lý" extra={<Tag color="error">{total}</Tag>}>
+		<Card title="Cần xử lý" extra={<Tag color="error">{total}</Tag>} style={{ height: "100%" }}>
 			<List
 				size="small"
 				dataSource={items}
