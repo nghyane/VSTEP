@@ -182,6 +182,20 @@ Route::prefix('v1')->group(function () {
         Route::get('/content-status', [Admin\DashboardController::class, 'contentStatus']);
         Route::get('/recent-activity', [Admin\DashboardController::class, 'recentActivity']);
 
+        // Analytics — finance, growth, activity, distribution
+        Route::prefix('analytics')->group(function () {
+            Route::get('/revenue-overview', [Admin\AnalyticsController::class, 'revenueOverview']);
+            Route::get('/revenue-trend', [Admin\AnalyticsController::class, 'revenueTrend']);
+            Route::get('/user-growth', [Admin\AnalyticsController::class, 'userGrowth']);
+            Route::get('/wallet-economy', [Admin\AnalyticsController::class, 'walletEconomy']);
+            Route::get('/practice-activity', [Admin\AnalyticsController::class, 'practiceActivity']);
+            Route::get('/grading-throughput', [Admin\AnalyticsController::class, 'gradingThroughput']);
+            Route::get('/profile-segments', [Admin\AnalyticsController::class, 'profileSegments']);
+            Route::get('/streak-distribution', [Admin\AnalyticsController::class, 'streakDistribution']);
+            Route::get('/promo-stats', [Admin\AnalyticsController::class, 'promoStats']);
+            Route::get('/top-content', [Admin\AnalyticsController::class, 'topContent']);
+        });
+
         // Exam management
         Route::post('/exams/import', [Admin\ExamController::class, 'import']);
 
