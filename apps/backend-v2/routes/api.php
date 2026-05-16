@@ -182,6 +182,13 @@ Route::prefix('v1')->group(function () {
         Route::get('/content-status', [Admin\DashboardController::class, 'contentStatus']);
         Route::get('/recent-activity', [Admin\DashboardController::class, 'recentActivity']);
 
+        // System config — ADMIN ONLY (nested middleware role:admin overrides parent role:staff)
+        Route::middleware('role:admin')->prefix('system-config')->group(function () {
+            Route::get('/', [Admin\SystemConfigController::class, 'index']);
+            Route::get('/{key}', [Admin\SystemConfigController::class, 'show'])->where('key', '[a-zA-Z0-9._-]+');
+            Route::patch('/{key}', [Admin\SystemConfigController::class, 'update'])->where('key', '[a-zA-Z0-9._-]+');
+        });
+
         // Analytics — finance, growth, activity, distribution
         Route::prefix('analytics')->group(function () {
             Route::get('/revenue-overview', [Admin\AnalyticsController::class, 'revenueOverview']);

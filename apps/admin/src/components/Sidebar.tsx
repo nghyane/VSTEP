@@ -11,6 +11,8 @@ import {
 } from "@ant-design/icons"
 import { Link, useLocation } from "@tanstack/react-router"
 import { Layout, Menu, type MenuProps, Tag } from "antd"
+import { useMemo } from "react"
+import { useAuth } from "#/lib/auth"
 
 type ItemType = NonNullable<MenuProps["items"]>[number]
 type AnyTo = Parameters<typeof Link>[0]["to"]
@@ -29,63 +31,71 @@ const labelWithTag = (text: string) => (
 	</span>
 )
 
-const items: ItemType[] = [
-	{
-		type: "group",
-		label: "Tổng quan",
-		children: [{ key: "/", icon: <HomeOutlined />, label: <Link to={t("/")}>Dashboard</Link> }],
-	},
-	{
-		type: "group",
-		label: "Nội dung",
-		children: [
-			{ key: "/vocab", icon: <BookOutlined />, label: <Link to={t("/vocab")}>Từ vựng</Link> },
-			{ key: "/grammar", icon: <EditOutlined />, label: <Link to={t("/grammar")}>Ngữ pháp</Link> },
-		],
-	},
-	{
-		type: "group",
-		label: "Đề thi",
-		children: [{ key: "/exams", icon: <ProfileOutlined />, label: <Link to={t("/exams")}>Danh sách đề</Link> }],
-	},
-	{
-		type: "group",
-		label: "Luyện tập",
-		children: [
-			{
-				key: "practice",
-				icon: <ReadOutlined />,
-				label: "Kỹ năng",
-				children: [
-					{ key: "/practice/listening", label: <Link to={t("/practice/listening")}>Nghe</Link> },
-					{ key: "/practice/reading", label: <Link to={t("/practice/reading")}>Đọc</Link> },
-					{ key: "/practice/writing", label: <Link to={t("/practice/writing")}>Viết</Link> },
-					{
-						key: "/practice/speaking-drills",
-						label: <Link to={t("/practice/speaking-drills")}>Phát âm</Link>,
-					},
-					{ key: "/practice/speaking-tasks", label: <Link to={t("/practice/speaking-tasks")}>Nói</Link> },
-				],
-			},
-		],
-	},
-	{
-		type: "group",
-		label: "Quản lý",
-		children: [
-			{ key: "/users", icon: <TeamOutlined />, label: <Link to={t("/users")}>{labelWithTag("Người dùng")}</Link> },
-			{ key: "/courses", icon: <DatabaseOutlined />, label: <Link to={t("/courses")}>{labelWithTag("Khóa học")}</Link> },
-			{ key: "/promo", icon: <GiftOutlined />, label: <Link to={t("/promo")}>{labelWithTag("Khuyến mãi")}</Link> },
-		],
-	},
-	{
-		type: "group",
-		label: "Hệ thống",
-		children: [
-			{ key: "/settings", icon: <SettingOutlined />, label: <Link to={t("/settings")}>{labelWithTag("Cấu hình")}</Link> },
-		],
-	},
-]
+function buildItems(isAdmin: boolean): ItemType[] {
+	const items: ItemType[] = [
+		{
+			type: "group",
+			label: "Tổng quan",
+			children: [{ key: "/", icon: <HomeOutlined />, label: <Link to={t("/")}>Dashboard</Link> }],
+		},
+		{
+			type: "group",
+			label: "Nội dung",
+			children: [
+				{ key: "/vocab", icon: <BookOutlined />, label: <Link to={t("/vocab")}>Từ vựng</Link> },
+				{ key: "/grammar", icon: <EditOutlined />, label: <Link to={t("/grammar")}>Ngữ pháp</Link> },
+			],
+		},
+		{
+			type: "group",
+			label: "Đề thi",
+			children: [{ key: "/exams", icon: <ProfileOutlined />, label: <Link to={t("/exams")}>Danh sách đề</Link> }],
+		},
+		{
+			type: "group",
+			label: "Luyện tập",
+			children: [
+				{
+					key: "practice",
+					icon: <ReadOutlined />,
+					label: "Kỹ năng",
+					children: [
+						{ key: "/practice/listening", label: <Link to={t("/practice/listening")}>Nghe</Link> },
+						{ key: "/practice/reading", label: <Link to={t("/practice/reading")}>Đọc</Link> },
+						{ key: "/practice/writing", label: <Link to={t("/practice/writing")}>Viết</Link> },
+						{
+							key: "/practice/speaking-drills",
+							label: <Link to={t("/practice/speaking-drills")}>Phát âm</Link>,
+						},
+						{ key: "/practice/speaking-tasks", label: <Link to={t("/practice/speaking-tasks")}>Nói</Link> },
+					],
+				},
+			],
+		},
+		{
+			type: "group",
+			label: "Quản lý",
+			children: [
+				{ key: "/users", icon: <TeamOutlined />, label: <Link to={t("/users")}>{labelWithTag("Người dùng")}</Link> },
+				{ key: "/courses", icon: <DatabaseOutlined />, label: <Link to={t("/courses")}>{labelWithTag("Khóa học")}</Link> },
+				{ key: "/promo", icon: <GiftOutlined />, label: <Link to={t("/promo")}>{labelWithTag("Khuyến mãi")}</Link> },
+			],
+		},
+	]
+
+	// Hệ thống — Cấu hình: ADMIN ONLY (staff/teacher không thấy menu)
+	if (isAdmin) {
+		items.push({
+			type: "group",
+			label: "Hệ thống",
+			children: [
+				{ key: "/settings", icon: <SettingOutlined />, label: <Link to={t("/settings")}>Cấu hình</Link> },
+			],
+		})
+	}
+
+	return items
+}
 
 const FLAT_KEYS = [
 	"/",
@@ -105,6 +115,9 @@ const FLAT_KEYS = [
 
 export function Sidebar() {
 	const { pathname } = useLocation()
+	const role = useAuth((s) => s.user?.role)
+	const items = useMemo(() => buildItems(role === "admin"), [role])
+
 	const selected =
 		FLAT_KEYS.filter((k) => (k === "/" ? pathname === "/" : pathname.startsWith(k))).sort(
 			(a, b) => b.length - a.length,

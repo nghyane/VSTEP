@@ -1,16 +1,24 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, redirect } from "@tanstack/react-router"
 import { Result } from "antd"
+import { useAuth } from "#/lib/auth"
+import { SettingsPage } from "./-settings/SettingsPage"
 
 export const Route = createFileRoute("/_app/settings/")({
-	component: SettingsPage,
+	beforeLoad: () => {
+		const user = useAuth.getState().user
+		if (!user || user.role !== "admin") {
+			throw redirect({ to: "/" })
+		}
+	},
+	component: SettingsRoute,
 })
 
-function SettingsPage() {
-	return (
-		<Result
-			status="info"
-			title="Cấu hình hệ thống"
-			subTitle="Trang đang được xây dựng. Backend chưa có endpoint System Config editor."
-		/>
-	)
+function SettingsRoute() {
+	const user = useAuth((s) => s.user)
+	if (!user || user.role !== "admin") {
+		return (
+			<Result status="403" title="Không có quyền truy cập" subTitle="Cấu hình hệ thống chỉ dành cho Admin." />
+		)
+	}
+	return <SettingsPage />
 }

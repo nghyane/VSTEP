@@ -14,3 +14,10 @@ body {
 * {
 	box-sizing: border-box;
 }
+
+/* Settings: bỏ bo góc của HEADER cell trong Table (giữ bo của Card ngoài) */
+.settings-table .ant-table-thead > tr > th:first-child,
+.settings-table .ant-table-thead > tr > th:last-child {
+	border-radius: 0 !important;
+}
+
