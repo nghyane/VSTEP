@@ -26,6 +26,7 @@ class StoreCourseRequest extends FormRequest
             'target_level' => ['required', 'string', Rule::in($targetLevels)],
             'target_exam_school' => ['nullable', 'string', 'max:100'],
             'description' => ['nullable', 'string'],
+            'rules' => ['nullable', 'string', 'max:5000'],
             // price_coins: legacy field. Mọi course mua bằng VND (RFC 0003 §8).
             // Service default 0; không expose ở form admin.
             'price_coins' => ['nullable', 'integer', 'min:0'],

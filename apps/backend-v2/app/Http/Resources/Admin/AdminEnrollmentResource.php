@@ -24,6 +24,7 @@ class AdminEnrollmentResource extends JsonResource
             'coins_paid' => (int) $this->resource->coins_paid,
             'bonus_coins_received' => (int) $this->resource->bonus_coins_received,
             'acknowledged_commitment' => (bool) $this->resource->acknowledged_commitment,
+            'commitment_signature' => $this->resource->commitment_signature,
             'profile' => $profile === null ? null : [
                 'id' => $profile->id,
                 'nickname' => $profile->nickname,

@@ -22,6 +22,7 @@ class AdminCourseResource extends JsonResource
             'target_level' => $this->resource->target_level,
             'target_exam_school' => $this->resource->target_exam_school,
             'description' => $this->resource->description,
+            'rules' => $this->resource->rules,
             'price_coins' => (int) $this->resource->price_coins,
             'bonus_coins' => (int) $this->resource->bonus_coins,
             'price_vnd' => (int) $this->resource->price_vnd,

@@ -95,6 +95,7 @@ return [
         'slug' => 'Slug',
         'title' => 'Tiêu đề',
         'description' => 'Mô tả',
+        'rules' => 'Nội quy khóa',
         'target_exam_school' => 'Trường thi',
         'price_coins' => 'Giá (xu)',
         'bonus_coins' => 'Xu tặng khi ghi danh',

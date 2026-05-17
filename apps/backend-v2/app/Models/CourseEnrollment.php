@@ -9,7 +9,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'profile_id', 'course_id', 'enrolled_at', 'coins_paid',
-    'bonus_coins_received', 'acknowledged_commitment', 'coin_transaction_id',
+    'bonus_coins_received', 'acknowledged_commitment', 'commitment_signature',
+    'coin_transaction_id',
 ])]
 class CourseEnrollment extends BaseModel
 {

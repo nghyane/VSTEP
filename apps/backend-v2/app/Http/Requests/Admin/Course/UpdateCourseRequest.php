@@ -30,6 +30,7 @@ class UpdateCourseRequest extends FormRequest
             'target_level' => ['sometimes', 'string', Rule::in($targetLevels)],
             'target_exam_school' => ['sometimes', 'nullable', 'string', 'max:100'],
             'description' => ['sometimes', 'nullable', 'string'],
+            'rules' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'price_coins' => ['sometimes', 'integer', 'min:0'],
             'bonus_coins' => ['sometimes', 'integer', 'min:0'],
             'price_vnd' => ['sometimes', 'integer', 'min:0'],
