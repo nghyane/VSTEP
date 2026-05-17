@@ -100,26 +100,38 @@ export function EnrollmentsTab({ courseId }: Props) {
 					columns={[
 						{
 							title: "Học viên",
-							render: (_, r: AdminEnrollment) => (
-								<Flex vertical gap={2}>
-									<strong>{r.account?.full_name ?? "—"}</strong>
-									<Typography.Text type="secondary" style={{ fontSize: 12 }}>
-										{r.account?.email ?? "—"}
-									</Typography.Text>
-									{r.profile?.nickname && (
-										<Typography.Text type="secondary" style={{ fontSize: 12 }}>
-											Nickname: {r.profile.nickname}
-										</Typography.Text>
-									)}
-								</Flex>
-							),
+							render: (_, r: AdminEnrollment) => {
+								// Tên hiển thị: full_name (Google OAuth) → nickname (profile) → email.
+								// Register form không bắt full_name nên đa số account thường rỗng → fallback.
+								const fullName = r.account?.full_name?.trim()
+								const nickname = r.profile?.nickname?.trim()
+								const email = r.account?.email ?? "—"
+								const displayName = fullName || nickname || email
+								const showEmailLine = displayName !== email
+								const showNicknameLine = !!nickname && displayName !== nickname
+								return (
+									<Flex vertical gap={2}>
+										<strong>{displayName}</strong>
+										{showEmailLine && (
+											<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+												{email}
+											</Typography.Text>
+										)}
+										{showNicknameLine && (
+											<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+												Nickname: {nickname}
+											</Typography.Text>
+										)}
+									</Flex>
+								)
+							},
 						},
 						{
 							title: "Mục tiêu",
 							width: 160,
 							render: (_, r: AdminEnrollment) =>
 								r.profile?.target_level ? (
-									<Flex vertical gap={2}>
+									<Flex vertical gap={2} align="flex-start">
 										<Tag color="blue" style={{ marginInlineEnd: 0 }}>
 											{r.profile.target_level}
 										</Tag>
