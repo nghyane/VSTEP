@@ -5,19 +5,39 @@ import viVN from "antd/locale/vi_VN"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { showError } from "#/components/Toaster"
+import { extractError } from "#/lib/api"
 import { routeTree } from "./routeTree.gen"
 import "./styles.css"
 
-let lastNetworkToastAt = 0
-function handleQueryError(err: unknown) {
-	// Network error = ky/fetch threw without a response (BE down, DNS, offline).
-	// HTTP errors (401/403/500…) carry a Response; những lỗi đó để feature tự xử lý.
+// Dedupe toast khi nhiều query/mutation fail cùng lúc (BE down → mọi query fail).
+let lastToastAt = 0
+function toastDeduped(message: string): void {
+	const now = Date.now()
+	if (now - lastToastAt < 3000) return
+	lastToastAt = now
+	showError(message)
+}
+
+/**
+ * Queries không có catch ở feature → global toast cho mọi lỗi.
+ * - 401 đã được api.ts xử lý (clearAuth + redirect /login), bỏ qua.
+ * - 422 trên query rất hiếm; vẫn toast để debug.
+ */
+async function handleQueryError(err: unknown): Promise<void> {
+	const status = (err as { response?: Response })?.response?.status
+	if (status === 401) return
+	const x = await extractError(err)
+	toastDeduped(x.message)
+}
+
+/**
+ * Mutations có catch ở feature (form/list) → global CHỈ toast lỗi mạng.
+ * HTTP errors để feature tự hiển thị (field-level errors, banner đỏ trong modal, v.v.).
+ */
+function handleMutationError(err: unknown): void {
 	const hasResponse = Boolean((err as { response?: Response })?.response)
 	if (hasResponse) return
-	const now = Date.now()
-	if (now - lastNetworkToastAt < 5000) return
-	lastNetworkToastAt = now
-	showError("Không kết nối được server", "Kiểm tra kết nối hoặc thử lại sau")
+	toastDeduped("Không kết nối được server. Kiểm tra kết nối và thử lại.")
 }
 
 const queryClient = new QueryClient({
@@ -25,7 +45,7 @@ const queryClient = new QueryClient({
 		queries: { staleTime: 1000 * 60, retry: false },
 	},
 	queryCache: new QueryCache({ onError: handleQueryError }),
-	mutationCache: new MutationCache({ onError: handleQueryError }),
+	mutationCache: new MutationCache({ onError: handleMutationError }),
 })
 
 const router = createRouter({

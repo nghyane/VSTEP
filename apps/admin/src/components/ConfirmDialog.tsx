@@ -33,6 +33,7 @@ export function ConfirmDialog({
 			cancelText={cancelLabel}
 			confirmLoading={loading}
 			okButtonProps={{ danger: variant === "danger" }}
+			centered
 			destroyOnHidden
 		>
 			{description}
