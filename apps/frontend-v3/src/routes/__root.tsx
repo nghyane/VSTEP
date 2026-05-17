@@ -1,6 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query"
 import { createRootRouteWithContext, Link, Outlet } from "@tanstack/react-router"
 import { Toaster } from "#/components/Toaster"
+import { RoleRejectedDialog } from "#/features/auth/RoleRejectedDialog"
 import { initAuth, useAuth } from "#/lib/auth"
 
 interface RouterContext {
@@ -17,6 +18,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 		<>
 			<Outlet />
 			<Toaster />
+			<RoleRejectedDialog />
 		</>
 	),
 	notFoundComponent: NotFoundScreen,
