@@ -34,12 +34,13 @@ class DashboardController extends Controller
                 ->where('server_deadline_at', '<', now())
                 ->count(),
 
-            // Grading
-            'grading_pending' => DB::table('grading_results')->where('status', 'pending')->count(),
-            'grading_failed' => DB::table('grading_results')->where('status', 'failed')->count(),
-            'grading_done_today' => DB::table('grading_results')
-                ->where('status', 'done')
-                ->where('updated_at', '>=', $today)
+            // Grading — track qua grading_jobs (schema mới đã tách writing/speaking_grading_results
+            // chỉ lưu kết quả; status flow nằm ở grading_jobs: pending → ready/failed).
+            'grading_pending' => DB::table('grading_jobs')->where('status', 'pending')->count(),
+            'grading_failed' => DB::table('grading_jobs')->where('status', 'failed')->count(),
+            'grading_done_today' => DB::table('grading_jobs')
+                ->where('status', 'ready')
+                ->where('completed_at', '>=', $today)
                 ->count(),
 
             // Content
@@ -55,7 +56,7 @@ class DashboardController extends Controller
     {
         $alerts = [];
 
-        $failedJobs = DB::table('grading_results')->where('status', 'failed')->count();
+        $failedJobs = DB::table('grading_jobs')->where('status', 'failed')->count();
         if ($failedJobs > 0) {
             $alerts[] = [
                 'type' => 'error',
@@ -104,7 +105,7 @@ class DashboardController extends Controller
             ];
         }
 
-        $failedJobs = DB::table('grading_results')->where('status', 'failed')->count();
+        $failedJobs = DB::table('grading_jobs')->where('status', 'failed')->count();
         if ($failedJobs > 0) {
             $items[] = [
                 'label' => "{$failedJobs} grading job cần retry",
