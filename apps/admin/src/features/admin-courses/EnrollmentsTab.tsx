@@ -1,9 +1,10 @@
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons"
+import { DeleteOutlined, FileSearchOutlined, PlusOutlined } from "@ant-design/icons"
 import { useQuery } from "@tanstack/react-query"
 import { Switch as AntdSwitch, Empty, Flex, Space, Table, Tag, Typography } from "antd"
 import { useState } from "react"
 import { Button } from "#/components/Button"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
+import { Modal } from "#/components/Modal"
 import { showError, showSuccess } from "#/components/Toaster"
 import { AddEnrollmentDialog } from "#/features/admin-courses/AddEnrollmentDialog"
 import {
@@ -40,6 +41,7 @@ export function EnrollmentsTab({ courseId }: Props) {
 	const [page, setPage] = useState(1)
 	const [deleting, setDeleting] = useState<AdminEnrollment | null>(null)
 	const [addOpen, setAddOpen] = useState(false)
+	const [viewingSignature, setViewingSignature] = useState<AdminEnrollment | null>(null)
 	const { data, isLoading } = useQuery(enrollmentsQuery(courseId, page))
 	const rows = data?.data ?? []
 
@@ -169,10 +171,26 @@ export function EnrollmentsTab({ courseId }: Props) {
 						},
 						{
 							title: "",
-							width: 64,
+							width: 96,
 							align: "right" as const,
 							render: (_, r: AdminEnrollment) => (
 								<Space size={4}>
+									<button
+										type="button"
+										onClick={() => setViewingSignature(r)}
+										disabled={!r.commitment_signature}
+										style={{
+											background: "none",
+											border: 0,
+											padding: 4,
+											cursor: r.commitment_signature ? "pointer" : "not-allowed",
+											color: r.commitment_signature ? "#2563eb" : "#cbd5e1",
+										}}
+										aria-label="Xem chữ ký cam kết"
+										title={r.commitment_signature ? "Xem chữ ký cam kết" : "Chưa có chữ ký"}
+									>
+										<FileSearchOutlined />
+									</button>
 									<button
 										type="button"
 										onClick={() => setDeleting(r)}
@@ -196,6 +214,37 @@ export function EnrollmentsTab({ courseId }: Props) {
 			)}
 
 			<AddEnrollmentDialog open={addOpen} onClose={() => setAddOpen(false)} courseId={courseId} />
+
+			<Modal
+				open={!!viewingSignature}
+				onClose={() => setViewingSignature(null)}
+				title="Chữ ký cam kết của học viên"
+				description={
+					viewingSignature
+						? `${viewingSignature.account?.full_name ?? viewingSignature.profile?.nickname ?? "Học viên"} · ${formatDate(viewingSignature.enrolled_at)}`
+						: undefined
+				}
+				size="md"
+			>
+				{viewingSignature?.commitment_signature && (
+					<div
+						style={{
+							border: "1px solid #e2e8f0",
+							borderRadius: 12,
+							padding: 16,
+							background: "#fff",
+						}}
+					>
+						{/* Render qua <img src=data:...> để SVG <script> KHÔNG execute (XSS guard).
+						    BE đã validate starts_with:<svg nhưng vẫn defense-in-depth. */}
+						<img
+							src={`data:image/svg+xml;utf8,${encodeURIComponent(viewingSignature.commitment_signature)}`}
+							alt="Chữ ký cam kết"
+							style={{ width: "100%", maxHeight: 240, objectFit: "contain", display: "block" }}
+						/>
+					</div>
+				)}
+			</Modal>
 
 			<ConfirmDialog
 				open={!!deleting}

@@ -60,6 +60,7 @@ export function CourseForm({ initial, onSubmit, onCancel, submitting }: Props) {
 		target_level: initial?.target_level ?? "B1",
 		target_exam_school: initial?.target_exam_school ?? "",
 		description: initial?.description ?? "",
+		rules: initial?.rules ?? "",
 		bonus_coins: initial?.bonus_coins ?? 0,
 		price_vnd: initial?.price_vnd ?? 0,
 		original_price_vnd: initial?.original_price_vnd ?? null,
@@ -89,6 +90,7 @@ export function CourseForm({ initial, onSubmit, onCancel, submitting }: Props) {
 				...state,
 				target_exam_school: state.target_exam_school || null,
 				description: state.description || null,
+				rules: state.rules || null,
 				livestream_url: state.livestream_url || null,
 			})
 		} catch (err) {
@@ -150,6 +152,22 @@ export function CourseForm({ initial, onSubmit, onCancel, submitting }: Props) {
 						onChange={(e) => set("description", e.target.value)}
 						rows={2}
 						invalid={!!errors.description}
+					/>
+				</FormField>
+
+				<FormField
+					label="Nội quy khóa"
+					htmlFor="rules"
+					error={errors.rules}
+					helper="Hiển thị trong dialog ghi danh, học viên đọc và ký xác nhận trước khi thanh toán. Để trống nếu không có nội quy riêng."
+				>
+					<Textarea
+						id="rules"
+						value={state.rules ?? ""}
+						onChange={(e) => set("rules", e.target.value)}
+						rows={5}
+						invalid={!!errors.rules}
+						placeholder="VD: Đi học đúng giờ, không quay/chụp tài liệu, vắng buổi học phải báo trước 1 ngày..."
 					/>
 				</FormField>
 

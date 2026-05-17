@@ -14,6 +14,7 @@ export interface AdminCourse {
 	target_level: CourseTargetLevel
 	target_exam_school: string | null
 	description: string | null
+	rules: string | null
 	price_coins: number
 	bonus_coins: number
 	price_vnd: number
@@ -40,6 +41,7 @@ export interface CourseFormInput {
 	target_level: CourseTargetLevel
 	target_exam_school: string | null
 	description: string | null
+	rules: string | null
 	bonus_coins: number
 	price_vnd: number
 	original_price_vnd: number | null
@@ -102,6 +104,7 @@ export interface AdminEnrollment {
 	coins_paid: number
 	bonus_coins_received: number
 	acknowledged_commitment: boolean
+	commitment_signature: string | null
 	profile: {
 		id: string
 		nickname: string | null
