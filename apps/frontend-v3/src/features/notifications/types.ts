@@ -8,6 +8,7 @@ export type NotificationType =
 	| "grading_completed"
 	| "grading_failed"
 	| "course_enrolled"
+	| "course_unenrolled"
 	| "booking_created"
 
 export interface Notification {
