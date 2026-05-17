@@ -47,19 +47,44 @@ export interface ApiError {
 }
 
 /**
+ * Trả message tiếng Việt cho HTTP status khi BE không kèm body.
+ */
+function vietnameseStatusMessage(status: number): string {
+	if (status === 400) return "Yêu cầu không hợp lệ."
+	if (status === 401) return "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại."
+	if (status === 403) return "Bạn không có quyền thực hiện thao tác này."
+	if (status === 404) return "Không tìm thấy tài nguyên."
+	if (status === 409) return "Xung đột dữ liệu, vui lòng tải lại trang."
+	if (status === 422) return "Dữ liệu không hợp lệ."
+	if (status === 429) return "Quá nhiều yêu cầu, vui lòng thử lại sau."
+	if (status >= 500) return "Lỗi máy chủ, vui lòng thử lại."
+	return "Đã xảy ra lỗi không xác định."
+}
+
+/**
  * Đọc body lỗi từ ky error (cần await — ky không pre-parse body).
- * Dùng duck-typing thay vì instanceof để tránh mismatch khi ky bundle multiple copies.
+ * - Ưu tiên `message` + `errors` từ BE (đã localize sang tiếng Việt).
+ * - Nếu BE không kèm body / parse fail → fallback theo status code.
+ * - Nếu là lỗi mạng (không có response) → "Không kết nối được server".
+ * Không bao giờ trả về raw `err.message` của ky vì đó là chuỗi tiếng Anh.
  */
 export async function extractError(err: unknown): Promise<ApiError> {
 	const response = (err as { response?: Response })?.response
+
 	if (response && typeof response.clone === "function") {
 		try {
-			const data = (await response.clone().json()) as ApiError
-			if (data?.message) return data
+			const data = (await response.clone().json()) as Partial<ApiError>
+			if (data && (data.message || data.errors)) {
+				return {
+					message: data.message ?? vietnameseStatusMessage(response.status),
+					errors: data.errors,
+				}
+			}
 		} catch {
-			// non-JSON body
+			// non-JSON body — fallthrough
 		}
+		return { message: vietnameseStatusMessage(response.status) }
 	}
-	if (err instanceof Error) return { message: err.message }
-	return { message: "Unknown error" }
+
+	return { message: "Không kết nối được server. Kiểm tra kết nối mạng và thử lại." }
 }

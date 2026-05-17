@@ -19,7 +19,10 @@ type AnyTo = Parameters<typeof Link>[0]["to"]
 const t = (s: string) => s as unknown as AnyTo
 
 const soonTag = (
-	<Tag color="default" style={{ marginInlineStart: 8, marginInlineEnd: 0, fontSize: 10, lineHeight: "16px", padding: "0 4px" }}>
+	<Tag
+		color="default"
+		style={{ marginInlineStart: 8, marginInlineEnd: 0, fontSize: 10, lineHeight: "16px", padding: "0 4px" }}
+	>
 		Sắp ra
 	</Tag>
 )
@@ -49,7 +52,9 @@ function buildItems(isAdmin: boolean): ItemType[] {
 		{
 			type: "group",
 			label: "Đề thi",
-			children: [{ key: "/exams", icon: <ProfileOutlined />, label: <Link to={t("/exams")}>Danh sách đề</Link> }],
+			children: [
+				{ key: "/exams", icon: <ProfileOutlined />, label: <Link to={t("/exams")}>Danh sách đề</Link> },
+			],
 		},
 		{
 			type: "group",
@@ -76,9 +81,17 @@ function buildItems(isAdmin: boolean): ItemType[] {
 			type: "group",
 			label: "Quản lý",
 			children: [
-				{ key: "/users", icon: <TeamOutlined />, label: <Link to={t("/users")}>{labelWithTag("Người dùng")}</Link> },
-				{ key: "/courses", icon: <DatabaseOutlined />, label: <Link to={t("/courses")}>{labelWithTag("Khóa học")}</Link> },
-				{ key: "/promo", icon: <GiftOutlined />, label: <Link to={t("/promo")}>{labelWithTag("Khuyến mãi")}</Link> },
+				{
+					key: "/users",
+					icon: <TeamOutlined />,
+					label: <Link to={t("/users")}>{labelWithTag("Người dùng")}</Link>,
+				},
+				{ key: "/courses", icon: <DatabaseOutlined />, label: <Link to={t("/courses")}>Khóa học</Link> },
+				{
+					key: "/promo",
+					icon: <GiftOutlined />,
+					label: <Link to={t("/promo")}>{labelWithTag("Khuyến mãi")}</Link>,
+				},
 			],
 		},
 	]

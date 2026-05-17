@@ -336,6 +336,20 @@ Route::prefix('v1')->group(function () {
         Route::patch('/practice/speaking-drill-sentences/{sentenceId}', [Admin\SpeakingDrillController::class, 'updateSentence'])->whereUuid('sentenceId');
         Route::delete('/practice/speaking-drill-sentences/{sentenceId}', [Admin\SpeakingDrillController::class, 'destroySentence'])->whereUuid('sentenceId');
 
+        // Users — picker endpoints (full CRUD sẽ thêm sau, RFC 0011)
+        Route::get('/users/teachers', [Admin\UserController::class, 'teachers']);
+
+        // Courses — quản lý khóa học (gán teacher, schedule, pricing)
+        Route::prefix('courses')->group(function () {
+            Route::get('/', [Admin\CourseController::class, 'index']);
+            Route::post('/', [Admin\CourseController::class, 'store']);
+            Route::get('/{id}', [Admin\CourseController::class, 'show'])->whereUuid('id');
+            Route::patch('/{id}', [Admin\CourseController::class, 'update'])->whereUuid('id');
+            Route::delete('/{id}', [Admin\CourseController::class, 'destroy'])->whereUuid('id');
+            Route::post('/{id}/publish', [Admin\CourseController::class, 'publish'])->whereUuid('id');
+            Route::post('/{id}/unpublish', [Admin\CourseController::class, 'unpublish'])->whereUuid('id');
+        });
+
         // Practice Speaking — Tasks (VSTEP)
         Route::prefix('practice/speaking-tasks')->group(function () {
             Route::get('/', [Admin\SpeakingTaskController::class, 'indexTasks']);
