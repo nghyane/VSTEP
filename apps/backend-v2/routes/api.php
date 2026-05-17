@@ -338,6 +338,7 @@ Route::prefix('v1')->group(function () {
 
         // Users — picker endpoints (full CRUD sẽ thêm sau, RFC 0011)
         Route::get('/users/teachers', [Admin\UserController::class, 'teachers']);
+        Route::get('/profiles/search', [Admin\UserController::class, 'searchProfiles']);
 
         // Courses — quản lý khóa học (gán teacher, schedule, pricing)
         Route::prefix('courses')->group(function () {
@@ -348,7 +349,21 @@ Route::prefix('v1')->group(function () {
             Route::delete('/{id}', [Admin\CourseController::class, 'destroy'])->whereUuid('id');
             Route::post('/{id}/publish', [Admin\CourseController::class, 'publish'])->whereUuid('id');
             Route::post('/{id}/unpublish', [Admin\CourseController::class, 'unpublish'])->whereUuid('id');
+
+            // Schedule items — buổi học chung của khóa
+            Route::get('/{id}/schedule-items', [Admin\CourseController::class, 'indexScheduleItems'])->whereUuid('id');
+            Route::post('/{id}/schedule-items', [Admin\CourseController::class, 'storeScheduleItem'])->whereUuid('id');
+
+            // Enrollments — danh sách học viên đã ghi danh + thêm thủ công
+            Route::get('/{id}/enrollments', [Admin\CourseController::class, 'indexEnrollments'])->whereUuid('id');
+            Route::post('/{id}/enrollments', [Admin\CourseController::class, 'storeEnrollment'])->whereUuid('id');
         });
+        Route::patch('/schedule-items/{itemId}', [Admin\CourseController::class, 'updateScheduleItem'])->whereUuid('itemId');
+        Route::delete('/schedule-items/{itemId}', [Admin\CourseController::class, 'destroyScheduleItem'])->whereUuid('itemId');
+
+        // Enrollment management (admin can unenroll + override commitment)
+        Route::patch('/enrollments/{enrollmentId}/commitment', [Admin\CourseController::class, 'setEnrollmentCommitment'])->whereUuid('enrollmentId');
+        Route::delete('/enrollments/{enrollmentId}', [Admin\CourseController::class, 'destroyEnrollment'])->whereUuid('enrollmentId');
 
         // Practice Speaking — Tasks (VSTEP)
         Route::prefix('practice/speaking-tasks')->group(function () {

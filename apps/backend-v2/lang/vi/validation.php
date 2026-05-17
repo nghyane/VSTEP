@@ -109,5 +109,11 @@ return [
         'livestream_url' => 'Livestream URL',
         'teacher_id' => 'Giáo viên',
         'is_published' => 'Đã xuất bản',
+
+        // Schedule items
+        'session_number' => 'Số buổi',
+        'start_time' => 'Giờ bắt đầu',
+        'end_time' => 'Giờ kết thúc',
+        'topic' => 'Chủ đề',
     ],
 ];

@@ -1,9 +1,13 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query"
 import type {
 	AdminCourse,
+	AdminEnrollment,
+	AdminScheduleItem,
 	CourseFormInput,
 	CourseListFilters,
+	ScheduleItemFormInput,
 	TeacherOption,
+	UserPickerResult,
 } from "#/features/admin-courses/types"
 import { type ApiResponse, api, type PaginatedResponse } from "#/lib/api"
 
@@ -86,5 +90,111 @@ export function useSetCoursePublished() {
 			invalidateList(qc)
 			invalidateDetail(qc, id)
 		},
+	})
+}
+
+// ─── Schedule items ──────────────────────────────────────
+
+export const scheduleItemsQuery = (courseId: string) =>
+	queryOptions({
+		queryKey: ["admin", "courses", "schedule-items", courseId],
+		queryFn: () =>
+			api.get(`admin/courses/${courseId}/schedule-items`).json<ApiResponse<AdminScheduleItem[]>>(),
+	})
+
+function invalidateScheduleItems(qc: ReturnType<typeof useQueryClient>, courseId: string): void {
+	qc.invalidateQueries({ queryKey: ["admin", "courses", "schedule-items", courseId] })
+	invalidateDetail(qc, courseId)
+}
+
+export function useCreateScheduleItem(courseId: string) {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: (input: ScheduleItemFormInput) =>
+			api
+				.post(`admin/courses/${courseId}/schedule-items`, { json: input })
+				.json<ApiResponse<AdminScheduleItem>>(),
+		onSuccess: () => invalidateScheduleItems(qc, courseId),
+	})
+}
+
+export function useUpdateScheduleItem(courseId: string) {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: ({ id, input }: { id: string; input: Partial<ScheduleItemFormInput> }) =>
+			api.patch(`admin/schedule-items/${id}`, { json: input }).json<ApiResponse<AdminScheduleItem>>(),
+		onSuccess: () => invalidateScheduleItems(qc, courseId),
+	})
+}
+
+export function useDeleteScheduleItem(courseId: string) {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: (id: string) => api.delete(`admin/schedule-items/${id}`),
+		onSuccess: () => invalidateScheduleItems(qc, courseId),
+	})
+}
+
+// ─── Enrollments (read-only) ─────────────────────────────
+
+export const enrollmentsQuery = (courseId: string, page: number) =>
+	queryOptions({
+		queryKey: ["admin", "courses", "enrollments", courseId, page],
+		queryFn: () =>
+			api
+				.get(`admin/courses/${courseId}/enrollments?page=${page}&per_page=20`)
+				.json<PaginatedResponse<AdminEnrollment>>(),
+		staleTime: 30_000,
+	})
+
+function invalidateEnrollments(qc: ReturnType<typeof useQueryClient>, courseId: string): void {
+	// Bất kể page nào — invalidate theo prefix [admin, courses, enrollments, courseId].
+	qc.invalidateQueries({ queryKey: ["admin", "courses", "enrollments", courseId] })
+	// Course detail có enrollment_count → invalidate luôn.
+	invalidateDetail(qc, courseId)
+}
+
+export const profileSearchQuery = (q: string, courseId: string) =>
+	queryOptions({
+		queryKey: ["admin", "profiles", "search", courseId, q],
+		queryFn: () => {
+			const params = new URLSearchParams({ course_id: courseId, q })
+			return api.get(`admin/profiles/search?${params.toString()}`).json<ApiResponse<UserPickerResult[]>>()
+		},
+		staleTime: 10_000,
+	})
+
+export function useCreateEnrollment(courseId: string) {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: (profileId: string) =>
+			api
+				.post(`admin/courses/${courseId}/enrollments`, { json: { profile_id: profileId } })
+				.json<ApiResponse<AdminEnrollment>>(),
+		onSuccess: () => {
+			invalidateEnrollments(qc, courseId)
+			qc.invalidateQueries({ queryKey: ["admin", "profiles", "search", courseId] })
+		},
+	})
+}
+
+export function useDeleteEnrollment(courseId: string) {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: (id: string) => api.delete(`admin/enrollments/${id}`),
+		onSuccess: () => invalidateEnrollments(qc, courseId),
+	})
+}
+
+export function useSetEnrollmentCommitment(courseId: string) {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: ({ id, acknowledged }: { id: string; acknowledged: boolean }) =>
+			api
+				.patch(`admin/enrollments/${id}/commitment`, {
+					json: { acknowledged_commitment: acknowledged },
+				})
+				.json<ApiResponse<AdminEnrollment>>(),
+		onSuccess: () => invalidateEnrollments(qc, courseId),
 	})
 }

@@ -5,17 +5,29 @@ import { Skeleton as AntSkeleton, Flex, Space, Tag } from "antd"
 import { Card } from "#/components/Card"
 import { PageHeader } from "#/components/PageHeader"
 import { Switch } from "#/components/Switch"
+import { Tabs } from "#/components/Tabs"
 import { showError, showSuccess } from "#/components/Toaster"
 import { CourseForm } from "#/features/admin-courses/CourseForm"
+import { EnrollmentsTab } from "#/features/admin-courses/EnrollmentsTab"
 import { courseDetailQuery, useSetCoursePublished, useUpdateCourse } from "#/features/admin-courses/queries"
+import { ScheduleItemsTab } from "#/features/admin-courses/ScheduleItemsTab"
 import { extractError } from "#/lib/api"
 
+interface Search {
+	tab?: "info" | "schedule" | "enrollments"
+}
+
 export const Route = createFileRoute("/_app/courses/$courseId")({
+	validateSearch: (s: Record<string, unknown>): Search => ({
+		tab: s.tab === "info" || s.tab === "schedule" || s.tab === "enrollments" ? s.tab : undefined,
+	}),
 	component: CourseDetailPage,
 })
 
 function CourseDetailPage() {
 	const { courseId } = Route.useParams()
+	const search = Route.useSearch()
+	const tab = search.tab ?? "info"
 	const navigate = useNavigate({ from: "/courses/$courseId" })
 
 	const { data, isLoading } = useQuery(courseDetailQuery(courseId))
@@ -46,7 +58,13 @@ function CourseDetailPage() {
 			<div>
 				<Link
 					to="/courses"
-					style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 8 }}
+					style={{
+						fontSize: 12,
+						display: "inline-flex",
+						alignItems: "center",
+						gap: 6,
+						marginBottom: 8,
+					}}
 				>
 					<ArrowLeftOutlined /> Danh sách
 				</Link>
@@ -75,17 +93,51 @@ function CourseDetailPage() {
 				</Space>
 			</div>
 
-			<Card title="Cập nhật khóa học">
-				<CourseForm
-					initial={course}
-					submitting={update.isPending}
-					onCancel={() => navigate({ to: "/courses" })}
-					onSubmit={async (input) => {
-						await update.mutateAsync(input)
-						showSuccess("Đã lưu thay đổi.")
-					}}
-				/>
-			</Card>
+			<Tabs
+				tabs={[
+					{ label: "Thông tin", value: "info" },
+					{
+						label: `Buổi học${course.schedule_item_count != null ? ` (${course.schedule_item_count})` : ""}`,
+						value: "schedule",
+					},
+					{
+						label: `Học viên${course.enrollment_count != null ? ` (${course.enrollment_count})` : ""}`,
+						value: "enrollments",
+					},
+				]}
+				active={tab}
+				onChange={(v) => navigate({ search: { tab: v as Search["tab"] } })}
+			/>
+
+			{tab === "info" && (
+				<Card title="Cập nhật khóa học">
+					<CourseForm
+						initial={course}
+						submitting={update.isPending}
+						onCancel={() => navigate({ to: "/courses" })}
+						onSubmit={async (input) => {
+							await update.mutateAsync(input)
+							showSuccess("Đã lưu thay đổi.")
+						}}
+					/>
+				</Card>
+			)}
+
+			{tab === "schedule" && (
+				<Card title="Lịch các buổi học">
+					<ScheduleItemsTab
+						courseId={courseId}
+						courseStartDate={course.start_date}
+						courseEndDate={course.end_date}
+					/>
+				</Card>
+			)}
+
+			{tab === "enrollments" && (
+				<Card title="Học viên đã ghi danh">
+					<EnrollmentsTab courseId={courseId} />
+				</Card>
+			)}
 		</Flex>
 	)
 }

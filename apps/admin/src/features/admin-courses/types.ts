@@ -62,3 +62,55 @@ export interface CourseListFilters {
 	target_level?: CourseTargetLevel | ""
 	teacher_id?: string
 }
+
+export interface AdminScheduleItem {
+	id: string
+	course_id: string
+	session_number: number
+	date: string // YYYY-MM-DD
+	start_time: string // HH:mm
+	end_time: string // HH:mm
+	topic: string
+}
+
+export interface ScheduleItemFormInput {
+	session_number?: number | null
+	date: string
+	start_time: string
+	end_time: string
+	topic: string
+}
+
+export interface ProfilePickerItem {
+	id: string
+	nickname: string | null
+	target_level: string | null
+	target_deadline: string | null
+	is_enrolled: boolean
+}
+
+export interface UserPickerResult {
+	id: string
+	display_name: string | null
+	email: string
+	profiles: ProfilePickerItem[]
+}
+
+export interface AdminEnrollment {
+	id: string
+	enrolled_at: string
+	coins_paid: number
+	bonus_coins_received: number
+	acknowledged_commitment: boolean
+	profile: {
+		id: string
+		nickname: string | null
+		target_level: string | null
+		target_deadline: string | null
+	} | null
+	account: {
+		id: string
+		full_name: string
+		email: string
+	} | null
+}
