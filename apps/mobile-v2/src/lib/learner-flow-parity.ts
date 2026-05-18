@@ -197,6 +197,8 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "app/(app)/practice/writing/index.tsx",
       "app/(app)/practice/writing/[promptId].tsx",
       "app/(app)/grading/writing/[submissionId].tsx",
+      "src/components/WritingReviewSheet.tsx",
+      "src/components/WritingWordProgress.tsx",
       "src/hooks/use-practice.ts",
     ],
     backendApi: [
