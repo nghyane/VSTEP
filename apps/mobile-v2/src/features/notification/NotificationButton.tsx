@@ -7,7 +7,7 @@ import { HapticTouchable } from "@/components/HapticTouchable";
 import { GameIcon } from "@/components/GameIcon";
 import { useDeleteNotification, useMarkAllRead, useNotifications, useUnreadCount } from "@/features/notification/queries";
 import type { Notification } from "@/features/notification/types";
-import { fontSize, fontFamily, radius, spacing, useThemeColors } from "@/theme";
+import { fontSize, fontFamily, spacing, useThemeColors } from "@/theme";
 
 export function NotificationButton() {
   const c = useThemeColors();

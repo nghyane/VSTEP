@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator, Alert, BackHandler, KeyboardAvoidingView,
-  Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View,
+  ActivityIndicator, Alert, BackHandler,
+  ScrollView, StyleSheet, Text, View,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

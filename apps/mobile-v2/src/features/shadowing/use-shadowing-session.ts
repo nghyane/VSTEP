@@ -133,6 +133,9 @@ export function useShadowingSession(lesson: ShadowingLessonDetail) {
     lastSpokenRef.current = state.current;
     const timer = setTimeout(() => speakSegment(segment.text), 350);
     return () => clearTimeout(timer);
+    // state.current is a reducer-state number (snapshot), not a React ref's
+    // .current. The lint rule misidentifies it as mutable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.current, segment, speakSegment]);
 
   // Cleanup on unmount.

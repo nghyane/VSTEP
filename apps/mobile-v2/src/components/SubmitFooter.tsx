@@ -1,5 +1,4 @@
 import { StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { HapticTouchable } from "./HapticTouchable";
 import { spacing, fontSize, fontFamily, radius } from "@/theme";
 import type { ThemeColors } from "@/theme";
