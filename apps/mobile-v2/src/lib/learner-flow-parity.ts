@@ -76,6 +76,9 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "app/(app)/vocabulary/[id]/flashcard.tsx",
       "app/(app)/vocabulary/[id]/exercise.tsx",
       "app/(app)/vocabulary/srs-review.tsx",
+      "src/components/FlipCard.tsx",
+      "src/components/SrsFlipCard.tsx",
+      "src/components/SrsRatingButtons.tsx",
       "src/hooks/use-vocab.ts",
     ],
     backendApi: [
