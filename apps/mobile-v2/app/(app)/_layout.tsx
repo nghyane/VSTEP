@@ -38,7 +38,6 @@ export default function AppLayout() {
       <Stack.Screen name="practice/grammar/index" />
       <Stack.Screen name="practice/skills" />
       <Stack.Screen name="practice/[skill]" />
-      <Stack.Screen name="practice/result/[id]" />
       <Stack.Screen name="vocabulary/index" />
       <Stack.Screen name="vocabulary/[id]" />
       <Stack.Screen name="vocabulary/srs-review" options={{ headerShown: false, gestureEnabled: false }} />

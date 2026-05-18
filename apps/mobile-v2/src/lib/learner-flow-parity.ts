@@ -130,6 +130,8 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
     mobileV2: [
       "app/(app)/practice/listening/index.tsx",
       "app/(app)/practice/listening/[exerciseId].tsx",
+      "src/components/McqQuestionCard.tsx",
+      "src/components/McqResultCard.tsx",
       "src/hooks/use-practice.ts",
     ],
     backendApi: [
@@ -159,6 +161,8 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
     mobileV2: [
       "app/(app)/practice/reading/index.tsx",
       "app/(app)/practice/reading/[exerciseId].tsx",
+      "src/components/McqQuestionCard.tsx",
+      "src/components/McqResultCard.tsx",
       "src/hooks/use-practice.ts",
     ],
     backendApi: [
