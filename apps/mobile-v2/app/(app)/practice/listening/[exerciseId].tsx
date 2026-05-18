@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator, Animated, ScrollView, StyleSheet,
-  Text, TouchableOpacity, View,
+  Text, View,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -203,13 +203,13 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
             <Text style={[s.audioDesc, { color: c.mutedForeground }]}>{exercise.description}</Text>
           )}
           <View style={s.audioControls}>
-            <TouchableOpacity
+            <HapticTouchable
               onPress={togglePlay}
               disabled={!sound || !!audioError}
               style={[s.playBtn, { backgroundColor: audioError ? c.mutedForeground : COLOR }]}
             >
               <Ionicons name={playing ? "pause" : "play"} size={20} color="#fff" />
-            </TouchableOpacity>
+            </HapticTouchable>
             <View style={{ flex: 1 }}>
               <View style={[s.audioTrack, { backgroundColor: c.muted }]}>
                 <Animated.View style={[s.audioFill, { backgroundColor: COLOR, width: `${pct * 100}%` }]} />
@@ -220,9 +220,9 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
               </View>
             </View>
             {hasSub && (
-              <TouchableOpacity onPress={() => setShowSub(!showSub)} style={s.subToggle}>
+              <HapticTouchable onPress={() => setShowSub(!showSub)} style={s.subToggle}>
                 <Ionicons name={showSub ? "text" : "text-outline"} size={18} color={showSub ? COLOR : c.subtle} />
-              </TouchableOpacity>
+              </HapticTouchable>
             )}
           </View>
           {audioError && <Text style={[s.audioError, { color: c.destructive }]}>{audioError}</Text>}
