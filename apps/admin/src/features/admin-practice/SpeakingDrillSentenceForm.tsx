@@ -19,7 +19,11 @@ interface Props {
 
 export function SpeakingDrillSentenceForm({ initial, onSubmit, onCancel, submitting }: Props) {
 	const [text, setText] = useState(initial?.text ?? "")
+	const [ipa, setIpa] = useState(initial?.ipa ?? "")
 	const [translation, setTranslation] = useState(initial?.translation ?? "")
+	const [wordCount, setWordCount] = useState(initial?.word_count ?? 0)
+	const [audioStart, setAudioStart] = useState<number | "">(initial?.audio_start ?? "")
+	const [audioEnd, setAudioEnd] = useState<number | "">(initial?.audio_end ?? "")
 	const [displayOrder, setDisplayOrder] = useState(initial?.display_order ?? 0)
 	const [errors, setErrors] = useState<Record<string, string[]>>({})
 	const [generic, setGeneric] = useState<string | null>(null)
@@ -29,7 +33,15 @@ export function SpeakingDrillSentenceForm({ initial, onSubmit, onCancel, submitt
 		setErrors({})
 		setGeneric(null)
 		try {
-			await onSubmit({ text, translation, display_order: displayOrder })
+			await onSubmit({
+				text,
+				ipa: ipa || null,
+				translation: translation || null,
+				word_count: wordCount,
+				audio_start: audioStart === "" ? null : audioStart,
+				audio_end: audioEnd === "" ? null : audioEnd,
+				display_order: displayOrder,
+			})
 		} catch (err) {
 			const x = await extractError(err)
 			if (x.errors) {
@@ -53,6 +65,14 @@ export function SpeakingDrillSentenceForm({ initial, onSubmit, onCancel, submitt
 						invalid={!!errors.text}
 					/>
 				</FormField>
+				<FormField label="Phiên âm IPA" htmlFor="ipa" error={errors.ipa}>
+					<Input
+						id="ipa"
+						value={ipa}
+						onChange={(e) => setIpa(e.target.value)}
+						placeholder="/həˈloʊ wɝːld/"
+					/>
+				</FormField>
 				<FormField label="Dịch (VI)" htmlFor="translation" error={errors.translation}>
 					<Textarea
 						id="translation"
@@ -61,6 +81,39 @@ export function SpeakingDrillSentenceForm({ initial, onSubmit, onCancel, submitt
 						rows={2}
 					/>
 				</FormField>
+				<Flex gap={16}>
+					<FormField label="Số từ" htmlFor="word_count" style={{ flex: 1 }}>
+						<Input
+							id="word_count"
+							type="number"
+							min={0}
+							value={wordCount}
+							onChange={(e) => setWordCount(Number(e.target.value))}
+						/>
+					</FormField>
+					<FormField label="Audio start (s)" htmlFor="audio_start" style={{ flex: 1 }}>
+						<Input
+							id="audio_start"
+							type="number"
+							step={0.001}
+							min={0}
+							value={audioStart}
+							onChange={(e) => setAudioStart(e.target.value === "" ? "" : Number(e.target.value))}
+							placeholder="0.000"
+						/>
+					</FormField>
+					<FormField label="Audio end (s)" htmlFor="audio_end" style={{ flex: 1 }}>
+						<Input
+							id="audio_end"
+							type="number"
+							step={0.001}
+							min={0}
+							value={audioEnd}
+							onChange={(e) => setAudioEnd(e.target.value === "" ? "" : Number(e.target.value))}
+							placeholder="0.000"
+						/>
+					</FormField>
+				</Flex>
 				<FormField label="Thứ tự" htmlFor="display_order">
 					<Input
 						id="display_order"

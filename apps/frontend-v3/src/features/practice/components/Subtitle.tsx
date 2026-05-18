@@ -1,6 +1,6 @@
 import { useMemo } from "react"
-import type { DialogueTurn } from "#/features/practice/use-tts-player"
 import type { ListeningExercise } from "#/features/practice/types"
+import type { DialogueTurn } from "#/features/practice/use-tts-player"
 import { cn } from "#/lib/utils"
 
 interface Props {
@@ -74,9 +74,7 @@ function TTSDialogueSubtitle({
 			{/* Content */}
 			<div className={cn("flex-1 min-w-0", isRight && "flex flex-col items-end")}>
 				{isDialogue && turn.speaker && (
-					<p className={cn("text-xs font-bold text-muted mb-1", isRight && "text-right")}>
-						{turn.speaker}
-					</p>
+					<p className={cn("text-xs font-bold text-muted mb-1", isRight && "text-right")}>{turn.speaker}</p>
 				)}
 				<div
 					className={cn(
@@ -140,10 +138,7 @@ function TTSMonologueSubtitle({
 					return (
 						<span key={wi}>
 							<span
-								className={cn(
-									"transition-colors duration-200",
-									spoken ? "text-foreground" : "text-muted/40",
-								)}
+								className={cn("transition-colors duration-200", spoken ? "text-foreground" : "text-muted/40")}
 							>
 								{word}
 							</span>

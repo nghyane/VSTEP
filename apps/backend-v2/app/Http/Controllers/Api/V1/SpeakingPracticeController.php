@@ -29,8 +29,12 @@ class SpeakingPracticeController extends Controller
         $drills = $this->speakingService->listDrills($level);
 
         return response()->json(['data' => $drills->map(fn ($d) => [
-            'id' => $d->id, 'slug' => $d->slug, 'title' => $d->title,
-            'level' => $d->level, 'estimated_minutes' => $d->estimated_minutes,
+            'id' => $d->id,
+            'slug' => $d->slug,
+            'title' => $d->title,
+            'level' => $d->level,
+            'segment_count' => $d->sentences_count ?? $d->sentences()->count(),
+            'estimated_minutes' => $d->estimated_minutes,
         ])->values()]);
     }
 
@@ -55,12 +59,21 @@ class SpeakingPracticeController extends Controller
         $drill = $this->speakingService->getDrillWithSentences($id);
 
         return response()->json(['data' => [
-            'id' => $drill->id, 'slug' => $drill->slug, 'title' => $drill->title,
-            'description' => $drill->description, 'level' => $drill->level,
-            'estimated_minutes' => $drill->estimated_minutes,
-            'sentences' => $drill->sentences->map(fn ($s) => [
-                'id' => $s->id, 'text' => $s->text, 'translation' => $s->translation,
-            ])->values(),
+            'id' => $drill->id,
+            'slug' => $drill->slug,
+            'title' => $drill->title,
+            'level' => $drill->level,
+            'audio_url' => $drill->audio_url ?? '',
+            'segments' => $drill->sentences->values()->map(fn ($s) => [
+                'id' => $s->id,
+                'index' => (int) $s->display_order,
+                'text' => $s->text,
+                'ipa' => $s->ipa ?? '',
+                'translation' => $s->translation ?? '',
+                'word_count' => $s->word_count ?? str_word_count($s->text),
+                'audio_start' => $s->audio_start !== null ? (float) $s->audio_start : 0.0,
+                'audio_end' => $s->audio_end !== null ? (float) $s->audio_end : 0.0,
+            ]),
         ]]);
     }
 

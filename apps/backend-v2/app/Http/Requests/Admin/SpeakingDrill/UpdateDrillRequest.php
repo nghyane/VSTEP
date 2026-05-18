@@ -25,8 +25,9 @@ class UpdateDrillRequest extends FormRequest
             ],
             'title' => ['sometimes', 'string', 'max:200'],
             'description' => ['sometimes', 'nullable', 'string'],
-            'level' => ['sometimes', 'string', 'in:A2,B1,B2,C1'],
+            'level' => ['sometimes', 'string', 'in:A1,A2,B1,B2,C1'],
             'estimated_minutes' => ['sometimes', 'integer', 'min:1'],
+            'audio_url' => ['sometimes', 'nullable', 'string', 'max:500'],
             'is_published' => ['sometimes', 'boolean'],
         ];
     }

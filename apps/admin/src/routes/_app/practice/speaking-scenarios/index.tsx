@@ -9,24 +9,24 @@ import { Modal } from "#/components/Modal"
 import { PageHeader } from "#/components/PageHeader"
 import { Select } from "#/components/Select"
 import { showError, showSuccess } from "#/components/Toaster"
-import { SpeakingTaskForm } from "#/features/admin-practice/SpeakingTaskForm"
+import { SpeakingScenarioForm } from "#/features/admin-practice/SpeakingScenarioForm"
 import {
-	speakingTaskListQuery,
-	useCreateSpeakingTask,
-	useDeleteSpeakingTask,
-	useSetSpeakingTaskPublished,
-} from "#/features/admin-practice/speaking-task"
-import type { AdminSpeakingTask } from "#/features/admin-practice/types"
+	speakingScenarioListQuery,
+	useCreateSpeakingScenario,
+	useDeleteSpeakingScenario,
+	useSetSpeakingScenarioPublished,
+} from "#/features/admin-practice/speaking-scenario"
+import type { AdminSpeakingScenario } from "#/features/admin-practice/types"
 import { extractError } from "#/lib/api"
 
 interface Search {
 	page?: number
 	q?: string
 	is_published?: "all" | "yes" | "no"
-	part?: number
+	level?: string
 }
 
-export const Route = createFileRoute("/_app/practice/speaking-tasks/")({
+export const Route = createFileRoute("/_app/practice/speaking-scenarios/")({
 	validateSearch: (s: Record<string, unknown>): Search => ({
 		page: typeof s.page === "number" ? s.page : undefined,
 		q: typeof s.q === "string" ? s.q : undefined,
@@ -34,24 +34,24 @@ export const Route = createFileRoute("/_app/practice/speaking-tasks/")({
 			s.is_published === "yes" || s.is_published === "no" || s.is_published === "all"
 				? s.is_published
 				: undefined,
-		part: typeof s.part === "number" ? s.part : undefined,
+		level: typeof s.level === "string" ? s.level : undefined,
 	}),
-	component: SpeakingTaskListPage,
+	component: SpeakingScenarioListPage,
 })
 
-function SpeakingTaskListPage() {
-	const navigate = useNavigate({ from: "/practice/speaking-tasks/" })
+function SpeakingScenarioListPage() {
+	const navigate = useNavigate({ from: "/practice/speaking-scenarios/" })
 	const search = Route.useSearch()
-	const { page = 1, q = "", is_published = "all", part } = search
+	const { page = 1, q = "", is_published = "all", level = "" } = search
 
 	const [draftQ, setDraftQ] = useState(q)
 	const [createOpen, setCreateOpen] = useState(false)
-	const [deleting, setDeleting] = useState<AdminSpeakingTask | null>(null)
+	const [deleting, setDeleting] = useState<AdminSpeakingScenario | null>(null)
 
-	const { data, isLoading } = useQuery(speakingTaskListQuery({ page, q, is_published, part, per_page: 20 }))
-	const create = useCreateSpeakingTask()
-	const setPub = useSetSpeakingTaskPublished()
-	const remove = useDeleteSpeakingTask()
+	const { data, isLoading } = useQuery(speakingScenarioListQuery({ page, q, is_published, level, per_page: 20 }))
+	const create = useCreateSpeakingScenario()
+	const setPub = useSetSpeakingScenarioPublished()
+	const remove = useDeleteSpeakingScenario()
 
 	function setSearch(next: Partial<Search>): void {
 		navigate({ search: { ...search, ...next, page: next.page ?? 1 } })
@@ -61,14 +61,14 @@ function SpeakingTaskListPage() {
 		if (!deleting) return
 		try {
 			await remove.mutateAsync(deleting.id)
-			showSuccess("Đã xoá bài nói.")
+			showSuccess("Đã xoá kịch bản.")
 			setDeleting(null)
 		} catch (err) {
 			showError((await extractError(err)).message)
 		}
 	}
 
-	async function togglePublish(t: AdminSpeakingTask): Promise<void> {
+	async function togglePublish(t: AdminSpeakingScenario): Promise<void> {
 		try {
 			await setPub.mutateAsync({ id: t.id, published: !t.is_published })
 			showSuccess(t.is_published ? "Đã ẩn xuất bản." : "Đã xuất bản.")
@@ -80,11 +80,11 @@ function SpeakingTaskListPage() {
 	return (
 		<Flex vertical gap={24}>
 			<PageHeader
-				title="Bài nói (VSTEP)"
-				subtitle="Quản lý task speaking — social, solution, topic."
+				title="Hội thoại AI"
+				subtitle="Quản lý kịch bản roleplay với nhân vật AI."
 				action={
 					<Button icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
-						Tạo bài nói
+						Tạo kịch bản
 					</Button>
 				}
 			/>
@@ -111,20 +111,19 @@ function SpeakingTaskListPage() {
 					</Select>
 				</div>
 				<div style={{ width: 128 }}>
-					<Select
-						value={part ?? ""}
-						onChange={(e) => setSearch({ part: e.target.value ? Number(e.target.value) : undefined })}
-					>
-						<option value="">Mọi part</option>
-						<option value={1}>Part 1</option>
-						<option value={2}>Part 2</option>
-						<option value={3}>Part 3</option>
+					<Select value={level} onChange={(e) => setSearch({ level: e.target.value })}>
+						<option value="">Mọi level</option>
+						<option value="A1">A1</option>
+						<option value="A2">A2</option>
+						<option value="B1">B1</option>
+						<option value="B2">B2</option>
+						<option value="C1">C1</option>
 					</Select>
 				</div>
 			</Flex>
 
 			{!isLoading && data?.data.length === 0 ? (
-				<Empty description="Chưa có bài nói nào." />
+				<Empty description="Chưa có kịch bản nào." />
 			) : (
 				<Table
 					rowKey="id"
@@ -152,16 +151,13 @@ function SpeakingTaskListPage() {
 							),
 						},
 						{ title: "Tiêu đề", dataIndex: "title", render: (v: string) => <strong>{v}</strong> },
-						{ title: "Part", dataIndex: "part", render: (v: number) => <Tag>Part {v}</Tag> },
-						{
-							title: "Type",
-							dataIndex: "task_type",
-							render: (v: string) => <Tag color="blue">{v}</Tag>,
-						},
+						{ title: "Nhân vật", dataIndex: "character_name" },
+						{ title: "Level", dataIndex: "level", render: (v: string) => <Tag>{v}</Tag> },
 						{ title: "Phút", dataIndex: "estimated_minutes" },
+						{ title: "Lượt", dataIndex: "expected_turns" },
 						{
 							title: "Trạng thái",
-							render: (_, t: AdminSpeakingTask) => (
+							render: (_, t: AdminSpeakingScenario) => (
 								<button
 									type="button"
 									onClick={() => togglePublish(t)}
@@ -178,16 +174,16 @@ function SpeakingTaskListPage() {
 							title: "",
 							width: 128,
 							align: "right" as const,
-							render: (_, t: AdminSpeakingTask) => (
+							render: (_, t: AdminSpeakingScenario) => (
 								<Space size={4}>
 									<Link
-										to="/practice/speaking-tasks/$taskId"
-										params={{ taskId: t.id }}
+										to="/practice/speaking-scenarios/$scenarioId"
+										params={{ scenarioId: t.id }}
 										aria-label="Xem chi tiết"
 									>
 										<EyeOutlined />
 									</Link>
-									<Link to="/practice/speaking-tasks/$taskId" params={{ taskId: t.id }} aria-label="Sửa">
+									<Link to="/practice/speaking-scenarios/$scenarioId" params={{ scenarioId: t.id }} aria-label="Sửa">
 										<EditOutlined />
 									</Link>
 									<button
@@ -205,13 +201,13 @@ function SpeakingTaskListPage() {
 				/>
 			)}
 
-			<Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Tạo bài nói" size="lg">
-				<SpeakingTaskForm
+			<Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Tạo kịch bản hội thoại" size="lg">
+				<SpeakingScenarioForm
 					submitting={create.isPending}
 					onCancel={() => setCreateOpen(false)}
 					onSubmit={async (input) => {
 						await create.mutateAsync(input)
-						showSuccess("Đã tạo bài.")
+						showSuccess("Đã tạo kịch bản.")
 						setCreateOpen(false)
 					}}
 				/>
@@ -221,8 +217,8 @@ function SpeakingTaskListPage() {
 				open={!!deleting}
 				onClose={() => setDeleting(null)}
 				onConfirm={onDelete}
-				title="Xoá bài nói"
-				description={deleting ? `Xoá bài "${deleting.title}"?` : undefined}
+				title="Xoá kịch bản"
+				description={deleting ? `Xoá kịch bản "${deleting.title}"?` : undefined}
 				loading={remove.isPending}
 			/>
 		</Flex>

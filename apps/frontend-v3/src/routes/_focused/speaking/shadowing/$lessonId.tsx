@@ -1,6 +1,7 @@
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { ShadowingInProgress } from "#/features/practice/components/ShadowingInProgress"
-import { mockShadowingDetails } from "#/features/practice/mock-shadowing"
+import { shadowingLessonDetailQuery } from "#/features/practice/queries"
 
 export const Route = createFileRoute("/_focused/speaking/shadowing/$lessonId")({
 	component: ShadowingPage,
@@ -8,7 +9,8 @@ export const Route = createFileRoute("/_focused/speaking/shadowing/$lessonId")({
 
 function ShadowingPage() {
 	const { lessonId } = Route.useParams()
-	const lesson = mockShadowingDetails[lessonId] ?? null
+	const { data } = useSuspenseQuery(shadowingLessonDetailQuery(lessonId))
+	const lesson = data?.data ?? null
 
 	if (!lesson) {
 		return (

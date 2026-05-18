@@ -137,8 +137,9 @@ export interface AdminSpeakingDrill {
 	slug: string
 	title: string
 	description: string | null
-	level: "A2" | "B1" | "B2" | "C1"
+	level: "A1" | "A2" | "B1" | "B2" | "C1"
 	estimated_minutes: number
+	audio_url: string | null
 	is_published: boolean
 	sentence_count?: number
 	created_at: string
@@ -150,7 +151,11 @@ export interface AdminSpeakingDrillSentence {
 	drill_id: string
 	display_order: number
 	text: string
+	ipa: string | null
 	translation: string | null
+	word_count: number
+	audio_start: number | null
+	audio_end: number | null
 }
 
 export type SpeakingDrillFormInput = Omit<
@@ -165,25 +170,27 @@ export interface AdminSpeakingDrillDetail {
 	sentences: AdminSpeakingDrillSentence[]
 }
 
-// ─── Speaking Task ───────────────────────────────────────
+// ─── Speaking Scenario ───────────────────────────────────
 
-export type SpeakingTaskType = "social" | "solution" | "topic"
-
-export interface AdminSpeakingTask {
+export interface AdminSpeakingScenario {
 	id: string
 	slug: string
 	title: string
-	part: 1 | 2 | 3
-	task_type: SpeakingTaskType
-	content: Record<string, unknown>
+	level: "A1" | "A2" | "B1" | "B2" | "C1"
+	character_name: string
+	character_voice_label: string
+	description: string
+	system_prompt: string
+	opening_line: string
+	target_vocab: string[]
 	estimated_minutes: number
-	speaking_seconds: number
+	expected_turns: number
 	is_published: boolean
 	created_at: string
 	updated_at: string
 }
 
-export type SpeakingTaskFormInput = Omit<AdminSpeakingTask, "id" | "created_at" | "updated_at">
+export type SpeakingScenarioFormInput = Omit<AdminSpeakingScenario, "id" | "created_at" | "updated_at">
 
 // ─── Filters ─────────────────────────────────────────────
 

@@ -16,7 +16,7 @@ interface Props {
 	submitting?: boolean
 }
 
-const LEVELS: SpeakingDrillFormInput["level"][] = ["A2", "B1", "B2", "C1"]
+const LEVELS: SpeakingDrillFormInput["level"][] = ["A1", "A2", "B1", "B2", "C1"]
 
 export function SpeakingDrillForm({ initial, onSubmit, onCancel, submitting }: Props) {
 	const [state, setState] = useState<SpeakingDrillFormInput>({
@@ -25,6 +25,7 @@ export function SpeakingDrillForm({ initial, onSubmit, onCancel, submitting }: P
 		description: initial?.description ?? "",
 		level: initial?.level ?? "B1",
 		estimated_minutes: initial?.estimated_minutes ?? 10,
+		audio_url: initial?.audio_url ?? "",
 		is_published: initial?.is_published ?? false,
 	})
 	const [errors, setErrors] = useState<Record<string, string[]>>({})
@@ -83,6 +84,15 @@ export function SpeakingDrillForm({ initial, onSubmit, onCancel, submitting }: P
 						value={state.description ?? ""}
 						onChange={(e) => set("description", e.target.value)}
 						rows={2}
+					/>
+				</FormField>
+
+				<FormField label="Audio URL" htmlFor="audio_url" error={errors.audio_url}>
+					<Input
+						id="audio_url"
+						value={state.audio_url ?? ""}
+						onChange={(e) => set("audio_url", e.target.value || null)}
+						placeholder="https://cdn.example.com/audio.mp3"
 					/>
 				</FormField>
 

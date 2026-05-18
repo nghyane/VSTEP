@@ -375,5 +375,16 @@ Route::prefix('v1')->group(function () {
             Route::post('/{id}/publish', [Admin\SpeakingTaskController::class, 'publishTask'])->whereUuid('id');
             Route::post('/{id}/unpublish', [Admin\SpeakingTaskController::class, 'unpublishTask'])->whereUuid('id');
         });
+
+        // Practice Speaking — Scenarios (Hội thoại AI)
+        Route::prefix('practice/speaking-scenarios')->group(function () {
+            Route::get('/', [Admin\SpeakingScenarioController::class, 'index']);
+            Route::post('/', [Admin\SpeakingScenarioController::class, 'store']);
+            Route::get('/{id}', [Admin\SpeakingScenarioController::class, 'show'])->whereUuid('id');
+            Route::patch('/{id}', [Admin\SpeakingScenarioController::class, 'update'])->whereUuid('id');
+            Route::delete('/{id}', [Admin\SpeakingScenarioController::class, 'destroy'])->whereUuid('id');
+            Route::post('/{id}/publish', [Admin\SpeakingScenarioController::class, 'publish'])->whereUuid('id');
+            Route::post('/{id}/unpublish', [Admin\SpeakingScenarioController::class, 'unpublish'])->whereUuid('id');
+        });
     });
 });

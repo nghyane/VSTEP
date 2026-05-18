@@ -109,7 +109,9 @@ function WritingDetailPage() {
 				</Card>
 			)}
 
-			{tab === "markers" && <WritingMarkersTab promptId={promptId} markers={markers} />}
+			{tab === "markers" && (
+				<WritingMarkersTab promptId={promptId} sampleAnswer={prompt.sample_answer} markers={markers} />
+			)}
 		</Flex>
 	)
 }

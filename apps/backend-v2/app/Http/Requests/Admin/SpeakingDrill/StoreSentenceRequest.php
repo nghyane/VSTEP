@@ -17,7 +17,11 @@ class StoreSentenceRequest extends FormRequest
     {
         return [
             'text' => ['required', 'string'],
+            'ipa' => ['nullable', 'string', 'max:500'],
             'translation' => ['nullable', 'string'],
+            'word_count' => ['nullable', 'integer', 'min:0'],
+            'audio_start' => ['nullable', 'numeric', 'min:0'],
+            'audio_end' => ['nullable', 'numeric', 'min:0'],
             'display_order' => ['nullable', 'integer'],
         ];
     }

@@ -7,6 +7,8 @@ import type {
 	ListeningExerciseSummary,
 	ReadingExercise,
 	ReadingExerciseDetail,
+	ShadowingLesson,
+	ShadowingLessonDetail,
 	WritingHistoryItem,
 	WritingPrompt,
 	WritingPromptDetail,
@@ -79,3 +81,14 @@ export const conversationHistoryQuery = queryOptions({
 			.get("practice/speaking/conversations/history")
 			.json<{ data: ConversationHistoryItem[]; meta: { total: number } }>(),
 })
+
+export const shadowingLessonsQuery = queryOptions({
+	queryKey: ["practice", "speaking", "shadowing", "lessons"],
+	queryFn: () => api.get("practice/speaking/drills").json<ApiResponse<ShadowingLesson[]>>(),
+})
+
+export const shadowingLessonDetailQuery = (id: string) =>
+	queryOptions({
+		queryKey: ["practice", "speaking", "shadowing", "lessons", id],
+		queryFn: () => api.get(`practice/speaking/drills/${id}`).json<ApiResponse<ShadowingLessonDetail>>(),
+	})

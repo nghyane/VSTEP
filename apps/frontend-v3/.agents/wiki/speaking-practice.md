@@ -97,5 +97,24 @@ Positional comparison fails when words merge/split. DP alignment (like diff):
 - `src/features/practice/components/Shadowing*.tsx` — 4 components (auto-play, 500ms delay)
 - `src/features/practice/components/SpeakingFilters.tsx` — level (A1–C1) + status filter
 - `src/features/practice/shadowing-progress.ts` — query + mutation for DB progress
-- `src/features/practice/mock-shadowing.ts` — 10 lessons with segments (A1–C1)
+- `src/features/practice/queries.ts` — `shadowingLessonsQuery`, `shadowingLessonDetailQuery` (API, no mock)
 - `src/lib/utils.ts` — `speak()`, `warmupTTS()`, `translateText()`, `compareWords()`
+
+## Migration Notes (2026-05-18)
+
+### Mock data → API
+- Deleted `mock-shadowing.ts` and `mock-conversation.ts` — all data now from backend API.
+- `SpeakingContent.tsx` uses `shadowingLessonsQuery` instead of `mockShadowingLessons`.
+- `shadowing/$lessonId.tsx` uses `shadowingLessonDetailQuery` instead of `mockShadowingDetails`.
+- Backend migration `2026_05_18_000002_seed_shadowing_drills.php` seeds 10 shadowing lessons from former mock data.
+
+### Shadowing fields added to backend
+- `practice_speaking_drills`: added `audio_url`
+- `practice_speaking_drill_sentences`: added `ipa`, `word_count`, `audio_start`, `audio_end`
+- API `GET /practice/speaking/drills` returns `segment_count` (via `withCount`).
+- API `GET /practice/speaking/drills/{id}` returns `segments[]` with full timing data.
+
+### Admin UI
+- Speaking Drills form: added Audio URL, IPA, word count, audio timing fields.
+- Speaking Scenarios (Hội thoại AI): new CRUD at `/practice/speaking-scenarios`.
+- Removed Speaking Tasks (VSTEP format) — not used by FE.

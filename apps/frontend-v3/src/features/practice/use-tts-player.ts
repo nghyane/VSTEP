@@ -32,7 +32,10 @@ export interface TTSPlayer {
 const SPEAKER_RE = /^([A-Z][A-Za-z\s]+):\s*/
 
 function parseDialogue(transcript: string): DialogueTurn[] {
-	const rawLines = transcript.split(/\n+/).map((l) => l.trim()).filter(Boolean)
+	const rawLines = transcript
+		.split(/\n+/)
+		.map((l) => l.trim())
+		.filter(Boolean)
 	const turns: DialogueTurn[] = []
 	let lastSpeaker = ""
 
@@ -95,7 +98,11 @@ function computeWordPositions(text: string): { start: number; end: number }[] {
 }
 
 /** Map a charIndex from onBoundary to a global word index */
-function findWordAtChar(charIndex: number, positions: { start: number; end: number }[], globalStart: number): number {
+function findWordAtChar(
+	charIndex: number,
+	positions: { start: number; end: number }[],
+	globalStart: number,
+): number {
 	for (let i = 0; i < positions.length; i++) {
 		if (charIndex >= positions[i].start && charIndex < positions[i].end) return globalStart + i
 	}
@@ -240,7 +247,15 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
 	const progress = totalWords > 0 && activeWordIndex >= 0 ? ((activeWordIndex + 1) / totalWords) * 100 : 0
 
 	return {
-		playing, activeWordIndex, activeTurnIndex, totalWords, progress,
-		turns, speed, setSpeed, toggle, replay,
+		playing,
+		activeWordIndex,
+		activeTurnIndex,
+		totalWords,
+		progress,
+		turns,
+		speed,
+		setSpeed,
+		toggle,
+		replay,
 	}
 }

@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'description',
     'level',
     'estimated_minutes',
+    'audio_url',
     'is_published',
 ])]
 class PracticeSpeakingDrill extends BaseModel

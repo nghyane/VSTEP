@@ -68,11 +68,14 @@ function buildItems(isAdmin: boolean): ItemType[] {
 						{ key: "/practice/listening", label: <Link to={t("/practice/listening")}>Nghe</Link> },
 						{ key: "/practice/reading", label: <Link to={t("/practice/reading")}>Đọc</Link> },
 						{ key: "/practice/writing", label: <Link to={t("/practice/writing")}>Viết</Link> },
-						{
-							key: "/practice/speaking-drills",
-							label: <Link to={t("/practice/speaking-drills")}>Phát âm</Link>,
-						},
-						{ key: "/practice/speaking-tasks", label: <Link to={t("/practice/speaking-tasks")}>Nói</Link> },
+					{
+						key: "/practice/speaking-drills",
+						label: <Link to={t("/practice/speaking-drills")}>Phát âm</Link>,
+					},
+					{
+						key: "/practice/speaking-scenarios",
+						label: <Link to={t("/practice/speaking-scenarios")}>Hội thoại AI</Link>,
+					},
 					],
 				},
 			],
@@ -119,7 +122,7 @@ const FLAT_KEYS = [
 	"/practice/reading",
 	"/practice/writing",
 	"/practice/speaking-drills",
-	"/practice/speaking-tasks",
+	"/practice/speaking-scenarios",
 	"/users",
 	"/courses",
 	"/promo",

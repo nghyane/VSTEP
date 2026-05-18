@@ -7,15 +7,21 @@ import {
 	SpeakingFilters,
 	type StatusFilter,
 } from "#/features/practice/components/SpeakingFilters"
-import { mockShadowingLessons } from "#/features/practice/mock-shadowing"
-import { conversationHistoryQuery, conversationScenariosQuery } from "#/features/practice/queries"
+import {
+	conversationHistoryQuery,
+	conversationScenariosQuery,
+	shadowingLessonsQuery,
+} from "#/features/practice/queries"
 import { shadowingProgressQuery } from "#/features/practice/shadowing-progress"
+import type { ShadowingLesson } from "#/features/practice/types"
 
 export function SpeakingContent() {
 	const { data: scenariosData } = useQuery(conversationScenariosQuery)
 	const { data: historyData } = useQuery(conversationHistoryQuery)
 	const { data: shadowingData } = useQuery(shadowingProgressQuery)
+	const { data: lessonsData } = useQuery(shadowingLessonsQuery)
 	const scenarios = scenariosData?.data ?? []
+	const shadowingLessons = lessonsData?.data ?? []
 	const shadowingProgress = shadowingData?.data ?? {}
 
 	const [level, setLevel] = useState<Level | null>(null)
@@ -28,7 +34,7 @@ export function SpeakingContent() {
 	}, [historyData])
 
 	const filteredShadowing = useMemo(() => {
-		return mockShadowingLessons.filter((l) => {
+		return shadowingLessons.filter((l) => {
 			if (level && l.level.toUpperCase() !== level) return false
 			if (status === "Tất cả") return true
 			const doneCount = new Set((shadowingProgress[l.id] ?? []).map((p) => p.segment_index)).size
@@ -37,7 +43,7 @@ export function SpeakingContent() {
 			if (status === "Đang làm") return doneCount > 0 && pct < 100
 			return pct >= 100
 		})
-	}, [level, status, shadowingProgress])
+	}, [shadowingLessons, level, status, shadowingProgress])
 
 	const filteredScenarios = useMemo(() => {
 		return scenarios.filter((s) => {
@@ -62,7 +68,7 @@ function ShadowingSection({
 	lessons,
 	progress,
 }: {
-	lessons: typeof mockShadowingLessons
+	lessons: ShadowingLesson[]
 	progress: Record<string, { segment_index: number }[]>
 }) {
 	return (
