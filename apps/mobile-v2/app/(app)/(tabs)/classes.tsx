@@ -1,5 +1,5 @@
-import ClassesScreen from "./classes";
+import { ClassesContent } from "@/features/course/ClassesContent";
 
 export default function ClassesTab() {
-  return <ClassesScreen />;
+  return <ClassesContent />;
 }

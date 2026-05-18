@@ -12,6 +12,7 @@ import {
   useCreateEnrollmentOrder,
 } from "@/features/course/queries";
 import { useWalletBalance } from "@/features/wallet/queries";
+import { formatDate, formatNumber, formatVnd } from "@/lib/utils";
 import { fontSize, fontFamily, radius, spacing, useThemeColors } from "@/theme";
 
 export default function CourseDetailScreen() {
@@ -61,10 +62,10 @@ export default function CourseDetailScreen() {
       if (balance < course.priceVnd) {
         Alert.alert(
           "Số dư không đủ",
-          `Bạn cần ${formatVnd(course.priceVnd)} để đăng ký. Số dư hiện tại: ${balance.toLocaleString("vi-VN")} xu.`,
+          `Bạn cần ${formatVnd(course.priceVnd)} để đăng ký. Số dư hiện tại: ${formatNumber(balance)} xu.`,
           [
             { text: "Hủy", style: "cancel" },
-            { text: "Nạp xu", onPress: () => router.push("/(app)/topup" as any) },
+            { text: "Nạp xu", onPress: () => router.push("/(app)/topup" as never) },
           ],
         );
       } else {
@@ -143,6 +144,18 @@ export default function CourseDetailScreen() {
             </DepthButton>
           )}
         </View>
+        {enrolled && (
+          <View style={styles.bookingAction}>
+            <DepthButton
+              variant="secondary"
+              size="lg"
+              fullWidth
+              onPress={() => router.push(`/(app)/courses/${courseId}/booking` as never)}
+            >
+              Đặt lịch 1-1 với giảng viên
+            </DepthButton>
+          </View>
+        )}
       </DepthCard>
 
       {course.description && (
@@ -190,15 +203,6 @@ export default function CourseDetailScreen() {
   );
 }
 
-function formatVnd(amount: number): string {
-  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-}
-
 const styles = StyleSheet.create({
   root: { flex: 1 },
   content: { paddingHorizontal: spacing.xl },
@@ -215,6 +219,7 @@ const styles = StyleSheet.create({
   metaItem: { flexDirection: "row", alignItems: "center", gap: 4 },
   metaText: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },
   actionRow: { marginTop: spacing.md },
+  bookingAction: { marginTop: spacing.xs },
   enrolledMsg: { fontSize: fontSize.sm, fontFamily: fontFamily.bold, textAlign: "center" },
   descCard: { padding: spacing.lg, gap: spacing.sm, marginBottom: spacing.base },
   descText: { fontSize: fontSize.sm, lineHeight: 22 },

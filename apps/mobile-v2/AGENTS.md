@@ -79,7 +79,7 @@ Source of truth: `src/theme/colors.ts` synced with `apps/frontend-v3/src/styles.
 
 ### Mandatory before coding (each new session)
 
-1. Read `AGENTS.md` and `.agents/skills/handoff/SKILL.md` only as the session bootstrap.
+1. Read `AGENTS.md`, `.agents/skills/handoff/SKILL.md`, and `HANDOFF.md` only as the session bootstrap.
 2. Read `src/lib/learner-flow-parity.ts` — check feature status.
 3. Load only the task-relevant skills from the handoff skill mapping.
 4. Read wiki files only when the loaded skill explicitly references them or the task needs deeper implementation details.
@@ -123,7 +123,7 @@ Source of truth: `src/theme/colors.ts` synced with `apps/frontend-v3/src/styles.
 ## Session Rules (immutable)
 
 ### Before coding ANYTHING
-- ✅ Read `AGENTS.md` + `.agents/skills/handoff/SKILL.md` as bootstrap
+- ✅ Read `AGENTS.md` + `.agents/skills/handoff/SKILL.md` + `HANDOFF.md` as bootstrap
 - ✅ Read `learner-flow-parity.ts` — know feature status
 - ✅ Load only task-relevant skills
 - ✅ Read wiki files only on demand for deeper details

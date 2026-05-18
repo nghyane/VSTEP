@@ -112,11 +112,31 @@ export default function ExamResultScreen() {
       ) : null}
 
       {data.writingFeedback.length > 0 ? (
-        <GradingCard skill="writing" label="Viết" icon="create" status={gradingStatus.writing} data={data.writingFeedback} />
+        <GradingCard
+          skill="writing"
+          label="Viết"
+          icon="create"
+          status={gradingStatus.writing}
+          data={data.writingFeedback.map((item, idx) => ({
+            submissionId: item.submissionId,
+            overallBand: item.overallBand,
+            label: `Task ${idx + 1}`,
+          }))}
+        />
       ) : null}
 
       {data.speakingFeedback.length > 0 ? (
-        <GradingCard skill="speaking" label="Nói" icon="mic" status={gradingStatus.speaking} data={data.speakingFeedback} />
+        <GradingCard
+          skill="speaking"
+          label="Nói"
+          icon="mic"
+          status={gradingStatus.speaking}
+          data={data.speakingFeedback.map((item, idx) => ({
+            submissionId: item.submissionId,
+            overallBand: item.overallBand,
+            label: `Part ${idx + 1}`,
+          }))}
+        />
       ) : null}
 
       <DepthButton fullWidth onPress={() => router.replace("/(app)/(tabs)/exams")} style={{ marginTop: spacing.xl }}>
@@ -147,7 +167,7 @@ function GradingCard({
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
   status: string;
-  data: { submissionId: string; overallBand: number | null }[];
+  data: { submissionId: string; overallBand: number | null; label: string }[];
 }) {
   const c = useThemeColors();
   const router = useRouter();
@@ -186,8 +206,12 @@ function GradingCard({
               onPress={() => router.push(`/(app)/grading/${skill}/${item.submissionId}` as never)}
               style={[s.resultRow, { borderColor: c.border }]}
             >
-              <Text style={[s.resultRowLabel, { color: c.foreground }]}>Bài {item.submissionId.slice(0, 8)}</Text>
-              <Text style={[s.resultRowBand, { color }]}>{item.overallBand}</Text>
+              <Text style={[s.resultRowLabel, { color: c.foreground }]}>{item.label}</Text>
+              <View style={s.resultRowRight}>
+                <Text style={[s.resultRowBand, { color }]}>{item.overallBand}</Text>
+                <Text style={[s.resultRowSlash, { color: c.subtle }]}>/10</Text>
+                <Ionicons name="chevron-forward" size={14} color={c.subtle} />
+              </View>
             </HapticTouchable>
           ))}
         </View>
@@ -200,6 +224,10 @@ function GradingCard({
             {pendingCount} bài đang chấm, màn này sẽ tự cập nhật.
           </Text>
         </View>
+      ) : null}
+
+      {completedItems.length > 0 ? (
+        <Text style={[s.tapHint, { color: c.subtle }]}>Chạm để xem chi tiết rubric, điểm mạnh, cần cải thiện.</Text>
       ) : null}
     </View>
   );
@@ -228,7 +256,10 @@ const s = StyleSheet.create({
   statusText: { fontSize: 10, fontFamily: fontFamily.bold },
   resultRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: spacing.sm, borderBottomWidth: 1 },
   resultRowLabel: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
+  resultRowRight: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   resultRowBand: { fontSize: fontSize.base, fontFamily: fontFamily.extraBold },
+  resultRowSlash: { fontSize: fontSize.xs },
   pendingStrip: { flexDirection: "row", alignItems: "center", gap: spacing.sm, borderWidth: 1, borderRadius: radius.lg, padding: spacing.md },
   pendingStripText: { flex: 1, fontSize: fontSize.xs, lineHeight: 18 },
+  tapHint: { fontSize: fontSize.xs, fontStyle: "italic", textAlign: "center" },
 });

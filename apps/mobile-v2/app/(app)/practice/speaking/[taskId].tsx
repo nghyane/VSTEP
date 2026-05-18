@@ -5,7 +5,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useMutation } from "@tanstack/react-query";
@@ -215,10 +214,7 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
   const handlePlayback = useCallback(async () => {
     if (!audioUri) return;
     await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-    const { sound } = await Audio.Sound.createAsync(
-      { uri: audioUri },
-      { shouldPlay: true },
-    );
+    await Audio.Sound.createAsync({ uri: audioUri }, { shouldPlay: true });
   }, [audioUri]);
 
   if (submitted) {
@@ -289,7 +285,7 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
 
           {/* Waveform / mic button */}
           {isRecording ? (
-            <TouchableOpacity onPress={() => stopRecording()} style={s.waveformBtn}>
+            <HapticTouchable onPress={() => stopRecording()} style={s.waveformBtn}>
               <View style={s.waveform}>
                 {Array.from({ length: 20 }, (_, i) => (
                   <Animated.View
@@ -310,25 +306,25 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
                 ))}
               </View>
               <Text style={[s.waveHint, { color: c.mutedForeground }]}>Bấm để dừng</Text>
-            </TouchableOpacity>
+            </HapticTouchable>
           ) : (
             <View style={s.micBtnWrap}>
               {audioUri ? (
                 <>
-                  <TouchableOpacity onPress={handlePlayback} style={[s.micBtn, { backgroundColor: c.muted, borderBottomColor: "#CACACA" }]}>
+                  <HapticTouchable onPress={handlePlayback} style={[s.micBtn, { backgroundColor: c.muted, borderBottomColor: "#CACACA" }]}>
                     <Ionicons name="play" size={28} color={c.mutedForeground} />
                     <Text style={[s.micBtnText, { color: c.mutedForeground }]}>Nghe lại</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={startRecording} style={[s.micBtn, { backgroundColor: COLOR, borderBottomColor: COLOR_DARK }]}>
+                  </HapticTouchable>
+                  <HapticTouchable onPress={startRecording} style={[s.micBtn, { backgroundColor: COLOR, borderBottomColor: COLOR_DARK }]}>
                     <Ionicons name="refresh" size={28} color="#fff" />
                     <Text style={[s.micBtnText, { color: "#fff" }]}>Ghi âm lại</Text>
-                  </TouchableOpacity>
+                  </HapticTouchable>
                 </>
               ) : (
-                <TouchableOpacity onPress={startRecording} style={[s.micBtn, { backgroundColor: COLOR, borderBottomColor: COLOR_DARK }]}>
+                <HapticTouchable onPress={startRecording} style={[s.micBtn, { backgroundColor: COLOR, borderBottomColor: COLOR_DARK }]}>
                   <Ionicons name="mic" size={28} color="#fff" />
                   <Text style={[s.micBtnText, { color: "#fff" }]}>Bắt đầu nói</Text>
-                </TouchableOpacity>
+                </HapticTouchable>
               )}
             </View>
           )}

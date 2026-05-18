@@ -103,25 +103,21 @@ export function ShadowingWordChips({ words }: Props) {
 								<p className="text-xs text-muted italic">Gần đúng — hãy chú ý phát âm rõ hơn.</p>
 							</>
 						)}
-						{active.accuracy === "wrong" && (
+						{active.accuracy === "wrong" && active.userSaid ? (
 							<>
-								{active.userSaid ? (
-									<>
-										<p className="text-sm text-foreground">
-											<span className="text-muted">Bạn nói: </span>
-											<span className="font-bold text-destructive">"{active.userSaid}"</span>
-										</p>
-										<p className="text-xs text-muted italic">
-											Từ đúng là "{active.word}" — hãy nghe lại và chú ý phát âm từ này.
-										</p>
-									</>
-								) : (
-									<p className="text-xs text-destructive italic">
-										Bạn chưa nói đến từ này — hãy thử nhại lại câu đầy đủ.
-									</p>
-								)}
+								<p className="text-sm text-foreground">
+									<span className="text-muted">Bạn nói: </span>
+									<span className="font-bold text-destructive">"{active.userSaid}"</span>
+								</p>
+								<p className="text-xs text-muted italic">
+									Từ đúng là "{active.word}" — hãy nghe lại và chú ý phát âm từ này.
+								</p>
 							</>
-						)}
+						) : active.accuracy === "wrong" ? (
+							<p className="text-xs text-destructive italic">
+								Bạn chưa nói đến từ này — hãy thử nhại lại câu đầy đủ.
+							</p>
+						) : null}
 					</div>
 				</div>
 			)}

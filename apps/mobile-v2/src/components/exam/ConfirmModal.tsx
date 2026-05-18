@@ -1,8 +1,6 @@
-import { StyleSheet, Text, View } from "react-native";
-import { Modal } from "react-native";
+import { Modal, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { DepthButton } from "@/components/DepthButton";
-import { HapticTouchable } from "@/components/HapticTouchable";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 interface ConfirmModalProps {
