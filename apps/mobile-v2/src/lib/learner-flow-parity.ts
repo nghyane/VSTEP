@@ -243,6 +243,37 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
     nextPhase: 6,
   },
 
+  // ── Practice — Speaking Conversation (Phase 6) ──
+  {
+    area: "Practice",
+    flow: "AI roleplay conversation with IPA + translate + feedback panel per turn",
+    frontendV3: [
+      "src/routes/_focused/speaking/conversation/$scenarioId.tsx",
+      "src/features/practice/components/ConversationInProgress.tsx",
+      "src/features/practice/components/ConversationTurnView.tsx",
+      "src/features/practice/components/ConversationFeedback.tsx",
+    ],
+    mobileV2: [
+      "app/(app)/practice/speaking/conversation/[scenarioId].tsx",
+      "src/components/ConversationTurnView.tsx",
+      "src/components/ConversationFeedback.tsx",
+      "src/hooks/use-conversation-session.ts",
+      "src/hooks/use-practice.ts",
+      "src/lib/translate.ts",
+    ],
+    backendApi: [
+      "GET /api/v1/practice/speaking/scenarios",
+      "GET /api/v1/practice/speaking/scenarios/{id}",
+      "POST /api/v1/practice/speaking/conversations",
+      "POST /api/v1/practice/speaking/conversations/{sessionId}/turn",
+      "POST /api/v1/practice/speaking/conversations/{sessionId}/end",
+      "GET /api/v1/practice/speaking/conversations/{sessionId}/review",
+    ],
+    status: "done",
+    gaps: [],
+    nextPhase: 6,
+  },
+
   // ── Practice — Speaking Shadowing (Phase B) ──
   {
     area: "Practice",

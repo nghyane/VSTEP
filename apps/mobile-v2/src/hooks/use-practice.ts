@@ -175,6 +175,7 @@ export interface SpeakingConversationTurn {
   id: string;
   role: "user" | "assistant" | "ai";
   text: string;
+  ipa: string | null;
   feedback: SpeakingConversationTurnFeedback | null;
   suggestedWords: string[];
 }
@@ -185,6 +186,8 @@ export interface SpeakingConversationTurnFeedback {
   grammarCorrections?: { wrong?: string; correct?: string; explanation?: string }[];
   vocabCheck?: { phrase: string; used: boolean }[];
   better?: string | null;
+  betterIpa?: string | null;
+  userIpa?: string | null;
 }
 
 export interface SpeakingConversationSession {

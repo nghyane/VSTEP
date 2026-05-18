@@ -15,6 +15,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
+import { ConversationTurnView } from "@/components/ConversationTurnView";
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
 import { HapticTouchable } from "@/components/HapticTouchable";
@@ -123,6 +124,8 @@ export default function SpeakingConversationScreen() {
     );
   }
 
+  const session = conv.session;
+
   return (
     <KeyboardAvoidingView
       style={[s.root, { backgroundColor: c.background }]}
@@ -133,8 +136,8 @@ export default function SpeakingConversationScreen() {
           <Ionicons name="close" size={22} color={c.foreground} />
         </HapticTouchable>
         <View style={s.topCopy}>
-          <Text style={[s.topTitle, { color: c.foreground }]} numberOfLines={1}>{conv.session.scenario.title}</Text>
-          <Text style={[s.topSub, { color: c.mutedForeground }]}>{conv.session.scenario.characterName} · {progress} lượt</Text>
+          <Text style={[s.topTitle, { color: c.foreground }]} numberOfLines={1}>{session.scenario.title}</Text>
+          <Text style={[s.topSub, { color: c.mutedForeground }]}>{session.scenario.characterName} · {progress} lượt</Text>
         </View>
         <HapticTouchable
           disabled={conv.isEnding || !!conv.summary}
@@ -153,10 +156,10 @@ export default function SpeakingConversationScreen() {
       >
         <DepthCard style={s.scenarioCard}>
           <Text style={[s.scenarioLabel, { color: c.coinDark }]}>AI ROLEPLAY</Text>
-          <Text style={[s.scenarioTitle, { color: c.foreground }]}>{conv.session.scenario.description ?? "Phản xạ nhanh bằng tiếng Anh với AI."}</Text>
-          {conv.session.scenario.targetVocab.length > 0 && (
+          <Text style={[s.scenarioTitle, { color: c.foreground }]}>{session.scenario.description ?? "Phản xạ nhanh bằng tiếng Anh với AI."}</Text>
+          {session.scenario.targetVocab.length > 0 && (
             <View style={s.chipRow}>
-              {conv.session.scenario.targetVocab.slice(0, 6).map((word) => (
+              {session.scenario.targetVocab.slice(0, 6).map((word) => (
                 <HapticTouchable key={word} onPress={() => conv.appendWord(word)} style={[s.vocabChip, { backgroundColor: c.coinTint }]}>
                   <Text style={[s.vocabText, { color: c.coinDark }]}>{word}</Text>
                 </HapticTouchable>
@@ -166,7 +169,14 @@ export default function SpeakingConversationScreen() {
         </DepthCard>
 
         {conv.turns.map((turn) => (
-          <TurnBubble key={turn.id} turn={turn} appendWord={conv.appendWord} isSpeaking={speakingTurnId === turn.id} onSpeak={() => conv.speakTurn(turn)} />
+          <ConversationTurnView
+            key={turn.id}
+            turn={turn}
+            scenario={session.scenario}
+            isSpeaking={speakingTurnId === turn.id}
+            onSpeak={() => conv.speakTurn(turn)}
+            onAppendWord={conv.appendWord}
+          />
         ))}
 
         {conv.isSubmitting && (
@@ -258,73 +268,6 @@ export default function SpeakingConversationScreen() {
         </View>
       )}
     </KeyboardAvoidingView>
-  );
-}
-
-function TurnBubble({
-  turn,
-  appendWord,
-  isSpeaking,
-  onSpeak,
-}: {
-  turn: { id: string; role: string; text: string; feedback: unknown; suggestedWords: string[] };
-  appendWord: (word: string) => void;
-  isSpeaking: boolean;
-  onSpeak: () => void;
-}) {
-  const c = useThemeColors();
-  const isUser = turn.role === "user";
-  return (
-    <View style={[s.turnWrap, isUser ? s.turnRight : s.turnLeft]}>
-      <View
-        style={[
-          s.bubble,
-          {
-            backgroundColor: isUser ? c.coinTint : c.card,
-            borderColor: isUser ? c.skillSpeaking : c.border,
-          },
-        ]}
-      >
-        <View style={s.bubbleHeader}>
-          <Text style={[s.bubbleRole, { color: isUser ? c.coinDark : c.subtle }]}>{isUser ? "Bạn" : "AI"}</Text>
-          {!isUser ? (
-            <HapticTouchable onPress={onSpeak} style={[s.speakMini, { backgroundColor: isSpeaking ? c.coinTint : c.surfaceTint }]}>
-              <Ionicons name={isSpeaking ? "volume-high" : "volume-medium-outline"} size={14} color={c.coinDark} />
-            </HapticTouchable>
-          ) : null}
-        </View>
-        <Text style={[s.bubbleText, { color: c.foreground }]}>{turn.text}</Text>
-        {turn.feedback ? <TurnFeedback feedback={turn.feedback as { vocabCheck?: { used: boolean }[]; wordCount?: { used: number; target: number }; grammarOk: boolean | null; better: string | null }} /> : null}
-        {turn.suggestedWords.length > 0 ? (
-          <View style={s.chipRow}>
-            {turn.suggestedWords.slice(0, 4).map((word) => (
-              <HapticTouchable key={word} onPress={() => appendWord(word)} style={[s.smallChip, { backgroundColor: c.surfaceTint }]}>
-                <Text style={[s.smallChipText, { color: c.foreground }]}>{word}</Text>
-              </HapticTouchable>
-            ))}
-          </View>
-        ) : null}
-      </View>
-    </View>
-  );
-}
-
-function TurnFeedback({ feedback }: { feedback: { vocabCheck?: { used: boolean }[]; wordCount?: { used: number; target: number }; grammarOk: boolean | null; better: string | null } }) {
-  const c = useThemeColors();
-  const used = feedback.vocabCheck?.filter((item) => item.used).length ?? feedback.wordCount?.used ?? 0;
-  const target = feedback.vocabCheck?.length ?? feedback.wordCount?.target ?? 0;
-  return (
-    <View style={[s.feedbackBox, { backgroundColor: c.surfaceTint, borderColor: c.borderLight }]}>
-      <View style={s.feedbackLine}>
-        <Ionicons name={feedback.grammarOk === false ? "alert-circle-outline" : "checkmark-circle-outline"} size={15} color={feedback.grammarOk === false ? c.warning : c.success} />
-        <Text style={[s.feedback, { color: c.mutedForeground }]}>
-          Grammar {feedback.grammarOk === false ? "cần sửa" : "ổn"}{target > 0 ? ` · vocab ${used}/${target}` : ""}
-        </Text>
-      </View>
-      {feedback.better && (
-        <Text style={[s.feedbackBetter, { color: c.foreground }]}>{feedback.better}</Text>
-      )}
-    </View>
   );
 }
 
