@@ -37,7 +37,7 @@ export default function SpeakingListScreen() {
         <HapticTouchable
           scalePress
           style={[s.quickCard, { backgroundColor: c.card, borderColor: c.border }]}
-          onPress={() => router.push("/(app)/practice/speaking/drills" as never)}
+          onPress={() => router.push("/(app)/practice/speaking/shadowing" as never)}
         >
           <Ionicons name="volume-high-outline" size={18} color={speakingColor} />
           <View style={s.quickCopy}>

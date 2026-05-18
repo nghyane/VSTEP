@@ -243,6 +243,38 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
     nextPhase: 6,
   },
 
+  // ── Practice — Speaking Shadowing (Phase B) ──
+  {
+    area: "Practice",
+    flow: "Shadowing lessons — segment-by-segment shadow with persisted progress",
+    frontendV3: [
+      "src/routes/_focused/speaking/shadowing/$lessonId.tsx",
+      "src/features/practice/components/ShadowingInProgress.tsx",
+      "src/features/practice/components/ShadowingSegmentView.tsx",
+      "src/features/practice/shadowing-progress.ts",
+      "src/features/practice/mock-shadowing.ts",
+    ],
+    mobileV2: [
+      "app/(app)/practice/speaking/shadowing/index.tsx",
+      "app/(app)/practice/speaking/shadowing/[lessonId].tsx",
+      "src/features/shadowing/mock-shadowing.ts",
+      "src/features/shadowing/use-shadowing-session.ts",
+      "src/features/shadowing/use-shadowing-progress.ts",
+      "src/features/shadowing/ShadowingSegmentCard.tsx",
+      "src/features/shadowing/types.ts",
+      "src/lib/word-compare.ts",
+    ],
+    backendApi: [
+      "GET /api/v1/practice/speaking/shadowing/progress",
+      "POST /api/v1/practice/speaking/shadowing/progress",
+    ],
+    status: "done",
+    gaps: [
+      "Shadowing lessons are mock — BE chưa expose /practice/speaking/shadowing/* lessons.",
+    ],
+    nextPhase: 6,
+  },
+
   // ── Practice — Speaking VSTEP (Phase 6) ──
   {
     area: "Practice",
