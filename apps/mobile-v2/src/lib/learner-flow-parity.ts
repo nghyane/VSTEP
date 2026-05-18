@@ -448,7 +448,6 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
     frontendV3: ["src/routes/_app/khoa-hoc", "src/features/course"],
     mobileV2: [
       "app/(app)/(tabs)/classes.tsx",
-      "app/(app)/classes.tsx",
       "app/(app)/courses/[courseId].tsx",
       "app/(app)/courses/[courseId]/booking.tsx",
       "src/features/course",

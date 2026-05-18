@@ -214,10 +214,7 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
   const handlePlayback = useCallback(async () => {
     if (!audioUri) return;
     await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-    const { sound } = await Audio.Sound.createAsync(
-      { uri: audioUri },
-      { shouldPlay: true },
-    );
+    await Audio.Sound.createAsync({ uri: audioUri }, { shouldPlay: true });
   }, [audioUri]);
 
   if (submitted) {

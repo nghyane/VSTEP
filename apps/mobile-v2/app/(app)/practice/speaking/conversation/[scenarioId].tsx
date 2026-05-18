@@ -174,7 +174,15 @@ export default function SpeakingConversationScreen() {
             turn={turn}
             scenario={session.scenario}
             isSpeaking={speakingTurnId === turn.id}
-            onSpeak={() => conv.speakTurn(turn)}
+            onSpeak={() => {
+              setSpeakingTurnId(turn.id);
+              conv.speakTurn(turn);
+              // Roughly 90ms per character — clear highlight after estimated playback.
+              const ms = Math.max(2000, turn.text.length * 90);
+              setTimeout(() => {
+                setSpeakingTurnId((current) => (current === turn.id ? null : current));
+              }, ms);
+            }}
             onAppendWord={conv.appendWord}
           />
         ))}
@@ -348,20 +356,6 @@ const s = StyleSheet.create({
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   vocabChip: { paddingHorizontal: spacing.sm, paddingVertical: 6, borderRadius: radius.full },
   vocabText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
-  turnWrap: { width: "100%" },
-  turnLeft: { alignItems: "flex-start" },
-  turnRight: { alignItems: "flex-end" },
-  bubble: { maxWidth: "86%", borderWidth: 2, borderRadius: radius.lg, padding: spacing.md, gap: spacing.xs },
-  bubbleHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  bubbleRole: { fontSize: 10, fontFamily: fontFamily.extraBold },
-  speakMini: { width: 28, height: 28, borderRadius: radius.full, alignItems: "center", justifyContent: "center" },
-  bubbleText: { fontSize: fontSize.sm, lineHeight: 21 },
-  feedback: { fontSize: fontSize.xs, lineHeight: 18 },
-  feedbackBox: { borderWidth: 1, borderRadius: radius.md, padding: spacing.sm, gap: spacing.xs },
-  feedbackLine: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
-  feedbackBetter: { fontSize: fontSize.xs, lineHeight: 18, fontFamily: fontFamily.semiBold },
-  smallChip: { paddingHorizontal: spacing.sm, paddingVertical: 5, borderRadius: radius.full },
-  smallChipText: { fontSize: 11, fontFamily: fontFamily.semiBold },
   notice: { borderWidth: 1, borderRadius: radius.md, padding: spacing.md },
   noticeText: { fontSize: fontSize.sm, lineHeight: 20 },
   pendingRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs, paddingVertical: spacing.sm },
