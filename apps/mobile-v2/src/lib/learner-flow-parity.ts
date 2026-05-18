@@ -371,7 +371,7 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "src/features/exam/components/SpeakingPanel.tsx",
       "src/features/exam/components/DeviceTestWidgets.tsx",
     ],
-    mobileV2: ["app/(app)/session/[id].tsx", "app/(app)/exam-result/[id].tsx", "src/hooks/use-exam-session.ts"],
+    mobileV2: ["app/(app)/session/[id].tsx", "app/(app)/exam-result/[id].tsx", "src/hooks/use-exam-session.ts", "src/hooks/use-exam-results.ts"],
     backendApi: [
       "POST /api/v1/exams/{examId}/sessions",
       "GET /api/v1/exam-sessions/{sessionId}",
