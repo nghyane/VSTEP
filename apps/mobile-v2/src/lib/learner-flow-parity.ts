@@ -255,8 +255,11 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
     ],
     mobileV2: [
       "app/(app)/practice/speaking/conversation/[scenarioId].tsx",
+      "app/(app)/practice/speaking/index.tsx",
       "src/components/ConversationTurnView.tsx",
       "src/components/ConversationFeedback.tsx",
+      "src/components/LevelFilters.tsx",
+      "src/components/StatusFilters.tsx",
       "src/hooks/use-conversation-session.ts",
       "src/hooks/use-practice.ts",
       "src/lib/translate.ts",
@@ -288,6 +291,8 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
     mobileV2: [
       "app/(app)/practice/speaking/shadowing/index.tsx",
       "app/(app)/practice/speaking/shadowing/[lessonId].tsx",
+      "src/components/LevelFilters.tsx",
+      "src/components/StatusFilters.tsx",
       "src/features/shadowing/mock-shadowing.ts",
       "src/features/shadowing/use-shadowing-session.ts",
       "src/features/shadowing/use-shadowing-progress.ts",

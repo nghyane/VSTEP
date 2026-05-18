@@ -1,5 +1,6 @@
 // Shadowing lesson list — mirrors apps/frontend-v3/src/features/practice/components/SpeakingContent.tsx
 // ShadowingSection. Each lesson card shows level + segment count + progress.
+import { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -7,6 +8,8 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { DepthCard } from "@/components/DepthCard";
 import { HapticTouchable } from "@/components/HapticTouchable";
+import { LevelFilters, type Level } from "@/components/LevelFilters";
+import { StatusFilters, type StatusFilter } from "@/components/StatusFilters";
 import { mockShadowingLessons } from "@/features/shadowing/mock-shadowing";
 import { useShadowingProgress } from "@/features/shadowing/use-shadowing-progress";
 import {
@@ -24,6 +27,25 @@ export default function ShadowingListScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data: progress } = useShadowingProgress();
+
+  const [level, setLevel] = useState<Level | null>(null);
+  const [status, setStatus] = useState<StatusFilter>("Tất cả");
+
+  // Apply level + status filters using persisted progress data.
+  const lessons = useMemo(() => {
+    return mockShadowingLessons.filter((lesson) => {
+      if (level && lesson.level.toUpperCase() !== level) return false;
+      if (status === "Tất cả") return true;
+      const doneCount = new Set(
+        (progress?.[lesson.id] ?? []).map((p) => p.segmentIndex),
+      ).size;
+      const total = lesson.segmentCount;
+      const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+      if (status === "Chưa làm") return doneCount === 0;
+      if (status === "Đang làm") return doneCount > 0 && pct < 100;
+      return pct >= 100;
+    });
+  }, [level, status, progress]);
 
   return (
     <ScrollView
@@ -43,8 +65,30 @@ export default function ShadowingListScreen() {
         </Text>
       </View>
 
+      <View style={s.filtersStack}>
+        <LevelFilters level={level} onLevelChange={setLevel} />
+        <StatusFilters status={status} onStatusChange={setStatus} />
+      </View>
+
+      {lessons.length === 0 ? (
+        <View
+          style={[
+            s.emptyStrip,
+            {
+              backgroundColor: c.card,
+              borderColor: c.border,
+              borderBottomColor: "#CACACA",
+            },
+          ]}
+        >
+          <Text style={[s.emptyText, { color: c.mutedForeground }]}>
+            Không có bài nào phù hợp với bộ lọc.
+          </Text>
+        </View>
+      ) : null}
+
       <View style={s.list}>
-        {mockShadowingLessons.map((lesson) => {
+        {lessons.map((lesson) => {
           const doneCount = new Set(
             (progress?.[lesson.id] ?? []).map((p) => p.segmentIndex),
           ).size;
@@ -179,4 +223,12 @@ const s = StyleSheet.create({
     marginTop: spacing.xs,
   },
   progressFill: { height: "100%", borderRadius: radius.full },
+  filtersStack: { gap: spacing.sm },
+  emptyStrip: {
+    borderWidth: 2,
+    borderBottomWidth: 4,
+    borderRadius: radius.lg,
+    padding: spacing.base,
+  },
+  emptyText: { fontSize: fontSize.sm, textAlign: "center" },
 });

@@ -1,11 +1,18 @@
+import { useMemo, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
+import { LevelFilters, type Level } from "@/components/LevelFilters";
 import { MascotEmpty } from "@/components/MascotStates";
-import { useSpeakingConversationScenarios, useSpeakingTasks } from "@/hooks/use-practice";
+import { StatusFilters, type StatusFilter } from "@/components/StatusFilters";
+import {
+  useSpeakingConversationHistory,
+  useSpeakingConversationScenarios,
+  useSpeakingTasks,
+} from "@/hooks/use-practice";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 export default function SpeakingListScreen() {
@@ -16,6 +23,30 @@ export default function SpeakingListScreen() {
   const speakingText = c.coinDark;
   const { data: tasks, isLoading, isError } = useSpeakingTasks();
   const { data: scenarios, isLoading: scenariosLoading } = useSpeakingConversationScenarios();
+  const { data: history } = useSpeakingConversationHistory();
+
+  const [level, setLevel] = useState<Level | null>(null);
+  const [status, setStatus] = useState<StatusFilter>("Tất cả");
+
+  // Build a set of completed scenario IDs to drive the status filter.
+  const completedScenarios = useMemo(() => {
+    const set = new Set<string>();
+    for (const item of history ?? []) set.add(item.scenario.id);
+    return set;
+  }, [history]);
+
+  // Apply both level + status filters to the AI roleplay list.
+  const filteredScenarios = useMemo(() => {
+    if (!scenarios) return scenarios;
+    return scenarios.filter((sc) => {
+      if (level && sc.level.toUpperCase() !== level) return false;
+      if (status === "Tất cả") return true;
+      const done = completedScenarios.has(sc.id);
+      if (status === "Chưa làm") return !done;
+      if (status === "Đang làm") return false; // conversation doesn't expose in-progress state
+      return done; // Hoàn thành
+    });
+  }, [scenarios, level, status, completedScenarios]);
 
   return (
     <ScrollView
@@ -60,10 +91,14 @@ export default function SpeakingListScreen() {
 
       <View>
         <Text style={[s.sectionLabel, { color: c.subtle }]}>AI ROLEPLAY</Text>
+        <View style={s.filtersStack}>
+          <LevelFilters level={level} onLevelChange={setLevel} />
+          <StatusFilters status={status} onStatusChange={setStatus} />
+        </View>
         {scenariosLoading && <ActivityIndicator color={speakingColor} style={s.inlineLoader} />}
-        {!scenariosLoading && scenarios && scenarios.length > 0 && (
+        {!scenariosLoading && filteredScenarios && filteredScenarios.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.scenarioRow}>
-            {scenarios.map((scenario) => (
+            {filteredScenarios.map((scenario) => (
               <HapticTouchable
                 key={scenario.id}
                 scalePress
@@ -80,13 +115,22 @@ export default function SpeakingListScreen() {
                 <Text style={[s.scenarioDesc, { color: c.subtle }]} numberOfLines={2}>
                   {scenario.description ?? "Luyện phản xạ hội thoại với AI."}
                 </Text>
+                {completedScenarios.has(scenario.id) ? (
+                  <View style={[s.doneBadge, { backgroundColor: c.primaryTint }]}>
+                    <Text style={[s.doneBadgeText, { color: c.primaryDark }]}>Đã luyện</Text>
+                  </View>
+                ) : null}
               </HapticTouchable>
             ))}
           </ScrollView>
         )}
-        {!scenariosLoading && (!scenarios || scenarios.length === 0) && (
+        {!scenariosLoading && (!filteredScenarios || filteredScenarios.length === 0) && (
           <View style={[s.emptyStrip, { backgroundColor: c.card, borderColor: c.border }]}>
-            <Text style={[s.emptyText, { color: c.mutedForeground }]}>Chưa có kịch bản roleplay từ server.</Text>
+            <Text style={[s.emptyText, { color: c.mutedForeground }]}>
+              {scenarios && scenarios.length > 0
+                ? "Không có bài nào phù hợp với bộ lọc."
+                : "Chưa có kịch bản roleplay từ server."}
+            </Text>
           </View>
         )}
       </View>
@@ -177,6 +221,14 @@ const s = StyleSheet.create({
   scenarioDesc: { fontSize: fontSize.xs, lineHeight: 17 },
   emptyStrip: { borderWidth: 2, borderRadius: radius.lg, padding: spacing.base },
   emptyText: { fontSize: fontSize.sm, textAlign: "center" },
+  filtersStack: { gap: spacing.sm, marginBottom: spacing.md },
+  doneBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.full,
+  },
+  doneBadgeText: { fontSize: 10, fontFamily: fontFamily.bold },
   actionIcon: { width: 44, height: 44, borderRadius: radius.full, alignItems: "center", justifyContent: "center" },
   errorText: { fontSize: 14, textAlign: "center" },
   cardGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },

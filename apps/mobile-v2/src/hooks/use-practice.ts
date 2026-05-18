@@ -393,6 +393,27 @@ export function useSpeakingConversationReview(sessionId: string, enabled = true)
   });
 }
 
+export interface SpeakingConversationHistoryItem {
+  id: string;
+  scenario: { id: string; title: string; level: string };
+  endedAt: string;
+  durationSeconds: number;
+  userTurnCount: number;
+  vocabUsedPct: number;
+}
+
+export function useSpeakingConversationHistory() {
+  return useQuery({
+    queryKey: ["practice", "speaking", "conversation-history"],
+    queryFn: () =>
+      api.get<SpeakingHistoryResponse<SpeakingConversationHistoryItem>>(
+        "/api/v1/practice/speaking/conversations/history",
+      ),
+    retry: false,
+    select: (res) => res.data,
+  });
+}
+
 export interface SpeakingHistoryResponse<T> {
   data: T[];
   links?: { first: string; last: string; prev: string | null; next: string | null };
