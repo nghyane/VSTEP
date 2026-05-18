@@ -13,7 +13,11 @@ interface EnrollmentOrder {
  * 1) tạo pending order → 2) confirm mock payment → tạo enrollment + credit bonus xu.
  * Wrap thành 1 promise để FE caller chỉ cần `mutate()`.
  */
-export async function enrollCourse(courseId: string) {
+export async function enrollCourse(courseId: string, commitmentSignature: string) {
 	const create = await api.post(`courses/${courseId}/enrollment-orders`).json<ApiResponse<EnrollmentOrder>>()
-	return api.post(`courses/enrollment-orders/${create.data.id}/confirm`).json<ApiResponse<EnrollmentOrder>>()
+	return api
+		.post(`courses/enrollment-orders/${create.data.id}/confirm`, {
+			json: { commitment_signature: commitmentSignature },
+		})
+		.json<ApiResponse<EnrollmentOrder>>()
 }

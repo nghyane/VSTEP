@@ -161,5 +161,12 @@ Chi tiết tra `tanstack-query.md` — section "Invalidation — match by prefix
 - Listening có modal riêng (`ListeningReadinessModal`) hiện bên trong panel với countdown 3s trước khi cho phép start audio.
 - Audio listening KHÔNG dùng native `controls` — dùng hidden `<audio>` + custom progress bar ở bottom để enforce "phát một lần duy nhất" (VSTEP chuẩn).
 
+## Admin app — route pages > 100 lines (tech debt)
+
+Admin routes trong `apps/admin/src/routes/_app/` hiện vượt 100 lines giới hạn (một số lên tới 280+ lines). Pattern cần theo:
+- Route page chỉ compose components, ≤ 100 lines.
+- Logic phức tạp (filter state, form handlers, sub-tables) → tách vào component riêng trong `src/features/admin-<domain>/`.
+- Khi thêm tính năng mới vào admin route, split trước, compose sau.
+
 ---
 See also: [[auth-architecture]] · [[api-conventions]] · [[state-patterns]]

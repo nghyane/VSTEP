@@ -1,108 +1,176 @@
-import { Link, useLocation } from "@tanstack/react-router"
 import {
-	BookOpen,
-	ClipboardList,
-	Database,
-	Globe,
-	Headphones,
-	Home,
-	LayoutGrid,
-	Pencil,
-	Settings,
-	Speaker,
-	Users,
-} from "lucide-react"
-import { cn } from "#/lib/utils"
+	BookOutlined,
+	DatabaseOutlined,
+	EditOutlined,
+	GiftOutlined,
+	HomeOutlined,
+	ProfileOutlined,
+	ReadOutlined,
+	SettingOutlined,
+	TeamOutlined,
+} from "@ant-design/icons"
+import { Link, useLocation } from "@tanstack/react-router"
+import { Layout, Menu, type MenuProps, Tag } from "antd"
+import { useMemo } from "react"
+import { useAuth } from "#/lib/auth"
 
-interface NavItem {
-	label: string
-	to: string
-	icon: React.ComponentType<{ className?: string }>
+type ItemType = NonNullable<MenuProps["items"]>[number]
+type AnyTo = Parameters<typeof Link>[0]["to"]
+const t = (s: string) => s as unknown as AnyTo
+
+const soonTag = (
+	<Tag
+		color="default"
+		style={{ marginInlineStart: 8, marginInlineEnd: 0, fontSize: 10, lineHeight: "16px", padding: "0 4px" }}
+	>
+		Sắp ra
+	</Tag>
+)
+
+const labelWithTag = (text: string) => (
+	<span style={{ display: "inline-flex", alignItems: "center" }}>
+		{text}
+		{soonTag}
+	</span>
+)
+
+function buildItems(isAdmin: boolean): ItemType[] {
+	const items: ItemType[] = [
+		{
+			type: "group",
+			label: "Tổng quan",
+			children: [{ key: "/", icon: <HomeOutlined />, label: <Link to={t("/")}>Dashboard</Link> }],
+		},
+		{
+			type: "group",
+			label: "Nội dung",
+			children: [
+				{ key: "/vocab", icon: <BookOutlined />, label: <Link to={t("/vocab")}>Từ vựng</Link> },
+				{ key: "/grammar", icon: <EditOutlined />, label: <Link to={t("/grammar")}>Ngữ pháp</Link> },
+			],
+		},
+		{
+			type: "group",
+			label: "Đề thi",
+			children: [
+				{ key: "/exams", icon: <ProfileOutlined />, label: <Link to={t("/exams")}>Danh sách đề</Link> },
+			],
+		},
+		{
+			type: "group",
+			label: "Luyện tập",
+			children: [
+				{
+					key: "practice",
+					icon: <ReadOutlined />,
+					label: "Kỹ năng",
+					children: [
+						{ key: "/practice/listening", label: <Link to={t("/practice/listening")}>Nghe</Link> },
+						{ key: "/practice/reading", label: <Link to={t("/practice/reading")}>Đọc</Link> },
+						{ key: "/practice/writing", label: <Link to={t("/practice/writing")}>Viết</Link> },
+						{
+							key: "/practice/speaking-drills",
+							label: <Link to={t("/practice/speaking-drills")}>Phát âm</Link>,
+						},
+						{ key: "/practice/speaking-tasks", label: <Link to={t("/practice/speaking-tasks")}>Nói</Link> },
+					],
+				},
+			],
+		},
+		{
+			type: "group",
+			label: "Quản lý",
+			children: [
+				{
+					key: "/users",
+					icon: <TeamOutlined />,
+					label: <Link to={t("/users")}>{labelWithTag("Người dùng")}</Link>,
+				},
+				{ key: "/courses", icon: <DatabaseOutlined />, label: <Link to={t("/courses")}>Khóa học</Link> },
+				{
+					key: "/promo",
+					icon: <GiftOutlined />,
+					label: <Link to={t("/promo")}>{labelWithTag("Khuyến mãi")}</Link>,
+				},
+			],
+		},
+	]
+
+	// Hệ thống — Cấu hình: ADMIN ONLY (staff/teacher không thấy menu)
+	if (isAdmin) {
+		items.push({
+			type: "group",
+			label: "Hệ thống",
+			children: [
+				{ key: "/settings", icon: <SettingOutlined />, label: <Link to={t("/settings")}>Cấu hình</Link> },
+			],
+		})
+	}
+
+	return items
 }
 
-interface NavGroup {
-	label: string
-	items: NavItem[]
-}
-
-const groups: NavGroup[] = [
-	{
-		label: "Tổng quan",
-		items: [{ label: "Dashboard", to: "/", icon: Home }],
-	},
-	{
-		label: "Nội dung",
-		items: [
-			{ label: "Từ vựng", to: "/vocab", icon: BookOpen },
-			{ label: "Ngữ pháp", to: "/grammar", icon: Pencil },
-		],
-	},
-	{
-		label: "Đề thi",
-		items: [{ label: "Danh sách đề", to: "/exams", icon: ClipboardList }],
-	},
-	{
-		label: "Luyện tập",
-		items: [
-			{ label: "Nghe", to: "/practice/listening", icon: Headphones },
-			{ label: "Đọc", to: "/practice/reading", icon: Globe },
-			{ label: "Viết", to: "/practice/writing", icon: Pencil },
-			{ label: "Phát âm", to: "/practice/speaking-drills", icon: Speaker },
-			{ label: "Nói", to: "/practice/speaking-tasks", icon: LayoutGrid },
-		],
-	},
-	{
-		label: "Quản lý",
-		items: [
-			{ label: "Người dùng", to: "/users", icon: Users },
-			{ label: "Khóa học", to: "/courses", icon: Database },
-			{ label: "Khuyến mãi", to: "/promo", icon: LayoutGrid },
-		],
-	},
-	{
-		label: "Hệ thống",
-		items: [{ label: "Cấu hình", to: "/settings", icon: Settings }],
-	},
+const FLAT_KEYS = [
+	"/",
+	"/vocab",
+	"/grammar",
+	"/exams",
+	"/practice/listening",
+	"/practice/reading",
+	"/practice/writing",
+	"/practice/speaking-drills",
+	"/practice/speaking-tasks",
+	"/users",
+	"/courses",
+	"/promo",
+	"/settings",
 ]
 
 export function Sidebar() {
 	const { pathname } = useLocation()
+	const role = useAuth((s) => s.user?.role)
+	const items = useMemo(() => buildItems(role === "admin"), [role])
+
+	const selected =
+		FLAT_KEYS.filter((k) => (k === "/" ? pathname === "/" : pathname.startsWith(k))).sort(
+			(a, b) => b.length - a.length,
+		)[0] ?? "/"
+
+	const openKeys = pathname.startsWith("/practice") ? ["practice"] : []
 
 	return (
-		<aside className="flex h-screen w-60 shrink-0 flex-col border-r border-border bg-surface">
-			<div className="flex h-14 items-center border-b border-border px-5">
-				<span className="text-sm font-semibold tracking-tight">VSTEP Admin</span>
+		<Layout.Sider
+			width={240}
+			theme="light"
+			style={{
+				position: "sticky",
+				top: 0,
+				left: 0,
+				height: "100vh",
+				overflow: "auto",
+				borderRight: "1px solid rgba(5,5,5,0.06)",
+			}}
+		>
+			<div
+				style={{
+					display: "flex",
+					height: 56,
+					alignItems: "center",
+					padding: "0 20px",
+					borderBottom: "1px solid rgba(5,5,5,0.06)",
+					fontWeight: 600,
+					fontSize: 14,
+				}}
+			>
+				VSTEP Admin
 			</div>
-			<nav className="flex-1 overflow-y-auto px-3 py-4">
-				{groups.map((group) => (
-					<div key={group.label} className="mb-5">
-						<div className="mb-1 px-2 text-[11px] font-semibold uppercase tracking-wider text-subtle">
-							{group.label}
-						</div>
-						<ul className="flex flex-col gap-0.5">
-							{group.items.map((item) => {
-								const Icon = item.icon
-								const active = pathname === item.to || (item.to !== "/" && pathname.startsWith(item.to))
-								return (
-									<li key={item.to}>
-										<Link
-											to={item.to}
-											className={cn(
-												"flex h-8 items-center gap-2.5 rounded-md px-2 text-sm text-muted transition-colors",
-												"hover:bg-surface-muted hover:text-foreground",
-												active && "bg-surface-muted font-medium text-foreground",
-											)}
-										>
-											<Icon className="size-4 shrink-0" />
-											{item.label}
-										</Link>
-									</li>
-								)
-							})}
-						</ul>
-					</div>
-				))}
-			</nav>
-		</aside>
+			<Menu
+				mode="inline"
+				selectedKeys={[selected]}
+				defaultOpenKeys={openKeys}
+				items={items}
+				style={{ borderInlineEnd: "none" }}
+			/>
+		</Layout.Sider>
 	)
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Commerce;
 
+use App\Enums\CoinTransactionType;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\Exam;
@@ -12,7 +13,6 @@ use App\Models\ExamVersion;
 use App\Models\Profile;
 use App\Models\TeacherSlot;
 use App\Models\User;
-use App\Enums\CoinTransactionType;
 use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

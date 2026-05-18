@@ -4,26 +4,38 @@ import { type GiftKind, useWelcomeGift } from "#/features/onboarding/use-welcome
 
 const COUNT_DURATION_MS = 1200
 
-const COPY: Record<GiftKind, { eyebrow: string; title: string; body: string; cta: string; aria: string }> = {
-	welcome: {
+interface GiftCopy {
+	eyebrow: string
+	title: string
+	body: string
+	cta: string
+	aria: string
+}
+
+function copyFor(kind: GiftKind, streakDays: number | null): GiftCopy {
+	if (kind === "streak-chest") {
+		const days = streakDays ?? 0
+		return {
+			eyebrow: `Mốc ${days} ngày streak`,
+			title: "Tuyệt vời! Bạn vừa mở rương lớn",
+			body: `Phần thưởng cho ${days} ngày học liên tục. Giữ vững phong độ để mở khóa nhiều mốc hơn nữa!`,
+			cta: "Tiếp tục học",
+			aria: `Phần thưởng streak ${days} ngày`,
+		}
+	}
+	return {
 		eyebrow: "Chào mừng đến VSTEP",
 		title: "Quà khởi đầu của bạn",
 		body: "Dùng xu để mở khóa gợi ý, mua đề thi và các tính năng luyện tập nâng cao.",
 		cta: "Bắt đầu học",
 		aria: "Chào mừng — quà tặng khởi đầu",
-	},
-	"streak-30": {
-		eyebrow: "Mốc 30 ngày streak",
-		title: "Tuyệt vời! Bạn vừa mở rương lớn",
-		body: "Phần thưởng cho 30 ngày học liên tục. Giữ vững phong độ để mở khóa nhiều mốc hơn nữa!",
-		cta: "Tiếp tục học",
-		aria: "Phần thưởng streak 30 ngày",
-	},
+	}
 }
 
 export function WelcomeGiftModal() {
 	const amount = useWelcomeGift((s) => s.amount)
 	const kind = useWelcomeGift((s) => s.kind)
+	const streakDays = useWelcomeGift((s) => s.streakDays)
 	const dismiss = useWelcomeGift((s) => s.dismiss)
 	const [opened, setOpened] = useState(false)
 	const [displayed, setDisplayed] = useState(0)
@@ -54,7 +66,7 @@ export function WelcomeGiftModal() {
 
 	if (amount === null) return null
 
-	const copy = COPY[kind]
+	const copy = copyFor(kind, streakDays)
 
 	return (
 		<div

@@ -95,10 +95,12 @@ class CourseOrderService
     /**
      * Confirm payment: create enrollment + credit bonus coins.
      * Idempotent: nếu đã paid → return order không duplicate.
+     * $commitmentSignature: SVG do FE signature pad sinh, null nếu thiếu (BE
+     * không enforce non-null vì admin manual enroll cũng đi qua flow khác).
      */
-    public function confirm(CourseEnrollmentOrder $order): CourseEnrollmentOrder
+    public function confirm(CourseEnrollmentOrder $order, ?string $commitmentSignature = null): CourseEnrollmentOrder
     {
-        return DB::transaction(function () use ($order) {
+        return DB::transaction(function () use ($order, $commitmentSignature) {
             $locked = CourseEnrollmentOrder::query()
                 ->whereKey($order->id)
                 ->lockForUpdate()
@@ -139,6 +141,7 @@ class CourseOrderService
                 'enrolled_at' => now(),
                 'coins_paid' => 0,
                 'bonus_coins_received' => $locked->course->bonus_coins,
+                'commitment_signature' => $commitmentSignature,
             ]);
 
             // Credit bonus coins

@@ -72,12 +72,19 @@ class CourseController extends Controller
      */
     public function confirmEnrollmentOrder(Request $request, string $orderId): JsonResponse
     {
+        $validated = $request->validate([
+            // SVG do signature pad sinh; ~5KB/chữ ký bình thường. Cap 50KB cho
+            // safe (chống abuse paste payload to). starts_with để loại payload
+            // lạ ngoài SVG.
+            'commitment_signature' => ['nullable', 'string', 'max:51200', 'starts_with:<svg'],
+        ]);
+
         $order = CourseEnrollmentOrder::query()->findOrFail($orderId);
         if ($order->profile_id !== $this->profile($request)->id) {
             abort(403);
         }
 
-        $confirmed = $this->courseOrderService->confirm($order);
+        $confirmed = $this->courseOrderService->confirm($order, $validated['commitment_signature'] ?? null);
 
         return response()->json(['data' => $this->formatOrder($confirmed)]);
     }

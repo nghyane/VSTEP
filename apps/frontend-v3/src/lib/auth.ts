@@ -62,12 +62,22 @@ type AuthState =
 	| { status: "authenticated"; user: User; profile: Profile }
 	| { status: "unauthenticated" }
 
+/**
+ * Trang user FE chỉ phục vụ vai trò "learner". Admin/teacher/staff đăng nhập
+ * bằng tài khoản của họ ở trang admin riêng — vào đây sẽ vỡ vì không có
+ * profile/onboarding. Reject ngay sau login + show mascot lạc buồn (xem
+ * RoleRejectedDialog mount ở __root.tsx).
+ */
+const LEARNER_ROLE = "learner"
+
 export interface GoogleLoginResult {
 	needsOnboarding: boolean
 	suggestedNickname: string | null
 }
 
 type AuthActions = {
+	roleRejected: { role: string; email: string } | null
+	dismissRoleRejected: () => void
 	login: (email: string, password: string) => Promise<void>
 	checkEmail: (email: string) => Promise<{ ok: true } | { ok: false; message: string }>
 	register: (data: {
@@ -95,20 +105,30 @@ type AuthStore = AuthState & AuthActions
 
 export const useAuth = create<AuthStore>()((set, get) => ({
 	status: "idle",
+	roleRejected: null,
 
 	_setAuthenticated: (user, profile) => set({ status: "authenticated", user, profile }),
 	_setUnauthenticated: () => set({ status: "unauthenticated" }),
+
+	dismissRoleRejected: () => set({ roleRejected: null }),
 
 	async login(email, password) {
 		try {
 			const { data } = await api
 				.post("auth/login", { json: { email, password } })
 				.json<ApiResponse<AuthResponse>>()
+			if (data.user.role !== LEARNER_ROLE) {
+				// Clear hết token + cache để khỏi rò qua reload, KHÔNG set authenticated.
+				tokens.clear()
+				queryClient.clear()
+				set({ status: "unauthenticated", roleRejected: { role: data.user.role, email: data.user.email } })
+				return
+			}
 			tokens.setAccess(data.access_token)
 			tokens.setRefresh(data.refresh_token)
 			tokens.setUser(data.user)
 			queryClient.clear()
-			set({ status: "authenticated", user: data.user, profile: data.profile })
+			set({ status: "authenticated", user: data.user, profile: data.profile, roleRejected: null })
 			useToast.getState().add("Đăng nhập thành công", "success")
 		} catch (e) {
 			showError(e)
@@ -152,6 +172,12 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 			const { data } = await api
 				.post("auth/google", { json: { id_token: idToken } })
 				.json<ApiResponse<GoogleLoginResponse>>()
+			if (data.user.role !== LEARNER_ROLE) {
+				tokens.clear()
+				queryClient.clear()
+				set({ status: "unauthenticated", roleRejected: { role: data.user.role, email: data.user.email } })
+				return null
+			}
 			tokens.setAccess(data.access_token)
 			tokens.setRefresh(data.refresh_token)
 			tokens.setUser(data.user)
@@ -241,6 +267,15 @@ export async function initAuth() {
 		tokens.setRefresh(data.refresh_token)
 		const user = tokens.getUser()
 		const profile = data.profile
+		if (user && user.role !== LEARNER_ROLE) {
+			// Guard: token cũ của admin/teacher → reset session.
+			tokens.clear()
+			useAuth.setState({
+				status: "unauthenticated",
+				roleRejected: { role: user.role, email: user.email },
+			})
+			return
+		}
 		if (user && profile) {
 			useAuth.getState()._setAuthenticated(user, profile)
 		} else {

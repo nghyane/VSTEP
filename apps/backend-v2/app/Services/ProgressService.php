@@ -10,8 +10,8 @@ use App\Models\Profile;
 use App\Models\ProfileDailyActivity;
 use App\Models\ProfileStreakLog;
 use App\Models\ProfileStreakState;
-use App\Models\SystemConfig;
 use App\Models\SpeakingGradingResult;
+use App\Models\SystemConfig;
 use App\Models\WritingGradingResult;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -214,7 +214,7 @@ class ProgressService
     }
 
     /**
-     * @return array{0: \Carbon\Carbon, 1: \Carbon\Carbon}
+     * @return array{0: Carbon, 1: Carbon}
      */
     private function localDayBoundsUtc(string $dateLocal, string $tz): array
     {

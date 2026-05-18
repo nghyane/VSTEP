@@ -27,6 +27,7 @@ export interface Course {
 	target_level: string
 	target_exam_school: string | null
 	description: string | null
+	rules: string | null
 	price_vnd: number
 	original_price_vnd: number | null
 	bonus_coins: number

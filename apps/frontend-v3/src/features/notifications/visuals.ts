@@ -47,6 +47,13 @@ const VISUALS: Record<NotificationType, NotifVisual> = {
 		tone: "primary",
 		navigateTo: "/khoa-hoc",
 	},
+	course_unenrolled: {
+		iconKind: "regular",
+		iconName: "trash",
+		tintClass: "bg-destructive-tint",
+		tone: "destructive",
+		navigateTo: "/khoa-hoc",
+	},
 	booking_created: {
 		iconKind: "regular",
 		iconName: "timer",

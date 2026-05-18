@@ -1,17 +1,19 @@
 import { create } from "zustand"
 
-export type GiftKind = "welcome" | "streak-30"
+export type GiftKind = "welcome" | "streak-chest"
 
 interface WelcomeGiftState {
 	amount: number | null
 	kind: GiftKind
-	show: (amount: number, kind?: GiftKind) => void
+	streakDays: number | null
+	show: (amount: number, kind?: GiftKind, streakDays?: number) => void
 	dismiss: () => void
 }
 
 export const useWelcomeGift = create<WelcomeGiftState>()((set) => ({
 	amount: null,
 	kind: "welcome",
-	show: (amount, kind = "welcome") => set({ amount, kind }),
+	streakDays: null,
+	show: (amount, kind = "welcome", streakDays = null) => set({ amount, kind, streakDays }),
 	dismiss: () => set({ amount: null }),
 }))

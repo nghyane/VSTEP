@@ -11,8 +11,14 @@ import { useCoinGain } from "#/lib/coin-gain"
 import { useToast } from "#/lib/toast"
 import { cn } from "#/lib/utils"
 
-// Mốc 30 dùng chest icon + popup lớn; các mốc nhỏ dùng coin + burst inline.
-const CHEST_DAYS = 30
+// Mốc có coins lớn nhất → "chest" (icon rương + popup lớn).
+// Tiebreak: chọn mốc có days lớn nhất. Trả null nếu list rỗng.
+function pickChestDays(milestones: StreakMilestone[]): number | null {
+	if (milestones.length === 0) return null
+	return milestones.reduce((best, m) =>
+		m.coins > best.coins || (m.coins === best.coins && m.days > best.days) ? m : best,
+	).days
+}
 
 interface Props {
 	open: boolean
@@ -23,6 +29,7 @@ interface Props {
 export function StreakDialog({ open, onClose, streak }: Props) {
 	const qc = useQueryClient()
 	const [burstDays, setBurstDays] = useState<number | null>(null)
+	const chestDays = pickChestDays(streak.milestones)
 
 	useEffect(() => {
 		if (!open) return
@@ -37,9 +44,9 @@ export function StreakDialog({ open, onClose, streak }: Props) {
 			qc.invalidateQueries({ queryKey: ["streak"] })
 			qc.invalidateQueries({ queryKey: ["wallet", "balance"] })
 
-			if (m.days === CHEST_DAYS) {
+			if (m.days === chestDays) {
 				onClose()
-				setTimeout(() => useWelcomeGift.getState().show(result.coins_granted, "streak-30"), 240)
+				setTimeout(() => useWelcomeGift.getState().show(result.coins_granted, "streak-chest", m.days), 240)
 				return
 			}
 
@@ -136,6 +143,7 @@ export function StreakDialog({ open, onClose, streak }: Props) {
 										key={m.days}
 										milestone={m}
 										streak={currentStreak}
+										isChest={m.days === chestDays}
 										isBursting={burstDays === m.days}
 										isPending={claimMutation.isPending && claimMutation.variables?.days === m.days}
 										onClaim={() => handleClaim(m)}
@@ -172,12 +180,14 @@ export function StreakDialog({ open, onClose, streak }: Props) {
 function MilestoneRow({
 	milestone,
 	streak,
+	isChest,
 	isBursting,
 	isPending,
 	onClaim,
 }: {
 	milestone: StreakMilestone
 	streak: number
+	isChest: boolean
 	isBursting: boolean
 	isPending: boolean
 	onClaim: () => void
@@ -187,7 +197,6 @@ function MilestoneRow({
 	const reached = streak >= milestone.days
 	const isClaimed = milestone.claimed
 	const canClaim = reached && !isClaimed
-	const isChest = milestone.days === CHEST_DAYS
 
 	return (
 		<div

@@ -1,29 +1,17 @@
-import { Toaster as SonnerToaster, toast } from "sonner"
+import { message } from "antd"
 
 export function Toaster() {
-	return (
-		<SonnerToaster
-			position="top-right"
-			duration={4000}
-			classNames={{
-				toast: "rounded-lg border border-border bg-surface shadow-lg",
-				title: "text-sm font-medium text-foreground",
-				description: "text-xs text-muted",
-				success: "border-success",
-				error: "border-danger",
-			}}
-		/>
-	)
+	return null
 }
 
-export function showSuccess(message: string, description?: string) {
-	toast.success(message, { description })
+export function showSuccess(text: string, description?: string) {
+	message.success(description ? `${text} — ${description}` : text)
 }
 
-export function showError(message: string, description?: string) {
-	toast.error(message, { description })
+export function showError(text: string, description?: string) {
+	message.error(description ? `${text} — ${description}` : text)
 }
 
-export function showInfo(message: string, description?: string) {
-	toast.info(message, { description })
+export function showInfo(text: string, description?: string) {
+	message.info(description ? `${text} — ${description}` : text)
 }

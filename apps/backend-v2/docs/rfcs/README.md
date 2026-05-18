@@ -18,6 +18,7 @@
 | 0019 | [Profile Relationships, Activity Tracking & UX Gaps](./0019-profile-relationships-activity-tracking.md) | Accepted | 2026-04-23 |
 | 0020 | [Exam and Grading Service Decomposition](./0020-exam-grading-service-decomposition.md) | Implemented | 2026-04-24 |
 | 0021 | [Google ID Token Verification via Official PHP Client](./0021-google-token-verification.md) | Implemented | 2026-04-24 |
+| 0022 | [Admin Content Management Pattern (Vocab as reference)](./0022-admin-content-management-pattern.md) | Draft | 2026-05-11 |
 
 ## Implement order
 
