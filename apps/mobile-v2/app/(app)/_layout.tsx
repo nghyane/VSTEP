@@ -38,6 +38,7 @@ export default function AppLayout() {
       <Stack.Screen name="practice/index" />
       <Stack.Screen name="practice/foundation/index" />
       <Stack.Screen name="practice/grammar/index" />
+      <Stack.Screen name="practice/results" />
       <Stack.Screen name="practice/skills" />
       <Stack.Screen name="practice/[skill]" />
       <Stack.Screen name="vocabulary/index" />

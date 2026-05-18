@@ -25,6 +25,7 @@ export default function PracticeHubScreen() {
     new Animated.Value(0),
     new Animated.Value(0),
     new Animated.Value(0),
+    new Animated.Value(0),
   ]).current;
 
   useEffect(() => {
@@ -140,6 +141,25 @@ export default function PracticeHubScreen() {
         </HapticTouchable>
       </Animated.View>
 
+      <Animated.View style={animStyle(3)}>
+        <HapticTouchable
+          scalePress
+          style={[styles.resultsCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}
+          onPress={() => router.push("/(app)/practice/results" as any)}
+        >
+          <View style={[styles.resultsIcon, { backgroundColor: c.skillWriting + "1A" }]}>
+            <Ionicons name="trophy-outline" size={22} color={c.skillWriting} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.resultsTitle, { color: c.foreground }]}>Kết quả AI chấm</Text>
+            <Text style={[styles.resultsSub, { color: c.mutedForeground }]}>
+              Xem lại các bài Viết đã được AI chấm điểm chi tiết.
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={c.subtle} />
+        </HapticTouchable>
+      </Animated.View>
+
       <View style={styles.mascotRow}>
         <Mascot name="hero" size={72} animation="none" />
         <View style={[styles.mascotBubble, { backgroundColor: c.primaryTint, borderColor: c.borderFocus }]}>
@@ -198,6 +218,24 @@ const styles = StyleSheet.create({
   chipText: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
   skillChip: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: spacing.base, paddingVertical: spacing.sm, borderRadius: radius.full },
   skillChipText: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
+  resultsCard: {
+    borderWidth: 2,
+    borderBottomWidth: 4,
+    borderRadius: radius.xl,
+    padding: spacing.base,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  resultsIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  resultsTitle: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
+  resultsSub: { fontSize: fontSize.xs, marginTop: 2, lineHeight: 18 },
   mascotRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginTop: spacing.sm },
   mascotBubble: { flex: 1, borderWidth: 1.5, borderRadius: radius.xl, padding: spacing.md },
   mascotText: { fontSize: fontSize.sm, lineHeight: 20, fontFamily: fontFamily.semiBold },

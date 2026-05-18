@@ -196,6 +196,7 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
     mobileV2: [
       "app/(app)/practice/writing/index.tsx",
       "app/(app)/practice/writing/[promptId].tsx",
+      "app/(app)/practice/results.tsx",
       "app/(app)/grading/writing/[submissionId].tsx",
       "src/components/WritingReviewSheet.tsx",
       "src/components/WritingWordProgress.tsx",
