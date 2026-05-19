@@ -35,6 +35,7 @@ class StoreCourseRequest extends FormRequest
             'original_price_vnd' => ['nullable', 'integer', 'min:0'],
             'max_slots' => ['required', 'integer', 'min:1'],
             'max_slots_per_student' => ['nullable', 'integer', 'min:1'],
+            'booking_coin_cost' => ['nullable', 'integer', 'min:0', 'max:10000'],
             'start_date' => ['required', 'date', 'after_or_equal:today'],
             'end_date' => ['required', 'date', 'after:start_date'],
             'required_full_tests' => ['required', 'integer', 'min:0'],

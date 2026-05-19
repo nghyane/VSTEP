@@ -21,6 +21,7 @@ export interface AdminCourse {
 	original_price_vnd: number | null
 	max_slots: number
 	max_slots_per_student: number
+	booking_coin_cost: number
 	start_date: string
 	end_date: string
 	required_full_tests: number
@@ -47,6 +48,7 @@ export interface CourseFormInput {
 	original_price_vnd: number | null
 	max_slots: number
 	max_slots_per_student: number
+	booking_coin_cost: number
 	start_date: string
 	end_date: string
 	required_full_tests: number
@@ -96,6 +98,59 @@ export interface UserPickerResult {
 	display_name: string | null
 	email: string
 	profiles: ProfilePickerItem[]
+}
+
+export interface AdminTeacherSlot {
+	id: string
+	course_id: string
+	teacher_id: string
+	starts_at: string
+	duration_minutes: number
+	status: "open" | "booked" | "completed" | "cancelled"
+	booking: {
+		id: string
+		meet_url: string | null
+		status: string
+		booked_at: string
+		profile: {
+			id: string
+			nickname: string | null
+			full_name: string | null
+			email: string | null
+		} | null
+	} | null
+}
+
+export interface SlotFormInput {
+	starts_at: string // ISO datetime
+	duration_minutes: number
+}
+
+export interface BulkSlotsInput {
+	start_date: string // YYYY-MM-DD
+	end_date: string
+	weekdays: number[] // 0=CN, 1=T2, ..., 6=T7
+	times: string[] // HH:mm
+	duration_minutes: number
+}
+
+export interface AdminTeacherBooking {
+	id: string
+	meet_url: string | null
+	status: "booked" | "completed" | "cancelled"
+	booked_at: string
+	slot: {
+		id: string
+		course_id: string
+		starts_at: string
+		duration_minutes: number
+	} | null
+	profile: {
+		id: string
+		nickname: string | null
+		full_name: string | null
+		email: string | null
+	} | null
 }
 
 export interface AdminEnrollment {

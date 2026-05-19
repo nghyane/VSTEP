@@ -154,7 +154,7 @@ class CourseController extends Controller
                 'status' => 'booked_me',
                 'meet_url' => $booking->meet_url,
             ],
-            'coins_charged' => CourseService::BOOKING_COIN_COST,
+            'coins_charged' => (int) ($course->booking_coin_cost ?? CourseService::BOOKING_COIN_COST_FALLBACK),
         ]], 201);
     }
 

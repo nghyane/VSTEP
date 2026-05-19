@@ -30,5 +30,6 @@ export interface BookingPageData {
 	slots: BookingSlot[]
 	my_bookings_count: number
 	max_bookings_per_student: number
+	booking_coin_cost: number
 	commitment: BookingCommitment
 }

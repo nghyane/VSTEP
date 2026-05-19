@@ -7,7 +7,7 @@ import { Icon, StaticIcon } from "#/components/Icon"
 import { Loading } from "#/components/Loading"
 import { CommitmentGate } from "#/features/booking/components/CommitmentGate"
 import { SlotGrid } from "#/features/booking/components/SlotGrid"
-import { BOOKING_COIN_COST, bookingPageQuery, bookSlot } from "#/features/booking/queries"
+import { bookingPageQuery, bookSlot } from "#/features/booking/queries"
 import type { BookingPageData, BookingSlot, BookingTeacher } from "#/features/booking/types"
 import { courseDetailQuery } from "#/features/course/queries"
 import { walletBalanceQuery } from "#/features/wallet/queries"
@@ -109,7 +109,8 @@ function BookingBody({
 	const [viewing, setViewing] = useState<BookingSlot | null>(null)
 	const { data: walletData } = useQuery(walletBalanceQuery)
 	const balance = walletData?.data.balance ?? null
-	const insufficient = balance !== null && balance < BOOKING_COIN_COST
+	const bookingCost = data.booking_coin_cost
+	const insufficient = balance !== null && balance < bookingCost
 	const locked = data.commitment.phase !== "met"
 	const reachedLimit = data.my_bookings_count >= data.max_bookings_per_student
 
@@ -138,6 +139,7 @@ function BookingBody({
 			})
 			queryClient.invalidateQueries({ queryKey: ["wallet"] })
 			useToast.getState().add(`Đã trừ ${res.coins_charged} xu cho buổi học 1-1`, "success")
+			// Note: res.coins_charged đã là cost thực tế trả về từ BE, không phải hard-code.
 			setPending(null)
 			setSuccess(res.slot)
 		},
@@ -210,6 +212,7 @@ function BookingBody({
 			<ConfirmBookingDialog
 				slot={pending}
 				teacher={data.teacher}
+				cost={bookingCost}
 				isLoading={mutation.isPending}
 				balance={balance}
 				insufficient={insufficient}
@@ -309,6 +312,7 @@ function Legend() {
 function ConfirmBookingDialog({
 	slot,
 	teacher,
+	cost,
 	isLoading,
 	balance,
 	insufficient,
@@ -317,6 +321,7 @@ function ConfirmBookingDialog({
 }: {
 	slot: BookingSlot | null
 	teacher: BookingTeacher
+	cost: number
 	isLoading: boolean
 	balance: number | null
 	insufficient: boolean
@@ -347,7 +352,7 @@ function ConfirmBookingDialog({
 	if (!slot || typeof document === "undefined") return null
 	const start = new Date(slot.starts_at)
 	const end = new Date(start.getTime() + slot.duration_minutes * 60 * 1000)
-	const remaining = balance !== null ? Math.max(0, balance - BOOKING_COIN_COST) : null
+	const remaining = balance !== null ? Math.max(0, balance - cost) : null
 
 	return createPortal(
 		<div className="fixed inset-0 z-50 flex items-center justify-center p-6">
@@ -382,7 +387,7 @@ function ConfirmBookingDialog({
 									Trừ vào ví
 								</p>
 								<p className="text-xl font-extrabold tabular-nums text-coin-dark">
-									−{BOOKING_COIN_COST}
+									−{cost}
 									<span className="ml-1 text-sm font-extrabold text-coin-dark/60">xu</span>
 								</p>
 							</div>

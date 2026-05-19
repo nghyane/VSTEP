@@ -31,6 +31,7 @@ class AdminCourseResource extends JsonResource
                 : null,
             'max_slots' => (int) $this->resource->max_slots,
             'max_slots_per_student' => (int) $this->resource->max_slots_per_student,
+            'booking_coin_cost' => (int) $this->resource->booking_coin_cost,
             'start_date' => $this->resource->start_date,
             'end_date' => $this->resource->end_date,
             'required_full_tests' => (int) $this->resource->required_full_tests,

@@ -2,8 +2,6 @@ import { queryOptions } from "@tanstack/react-query"
 import { type ApiResponse, api } from "#/lib/api"
 import type { BookingPageData, BookingSlot } from "./types"
 
-export const BOOKING_COIN_COST = 50
-
 export const bookingPageQuery = (courseId: string) =>
 	queryOptions({
 		queryKey: ["booking", courseId],

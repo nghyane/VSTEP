@@ -17,8 +17,8 @@ use Illuminate\Validation\ValidationException;
 
 class CourseService
 {
-    /** Coin price per 30-min 1-1 booking. Mirrors FE BOOKING_COIN_COST. */
-    public const BOOKING_COIN_COST = 50;
+    /** Fallback xu/booking khi course chưa set (chỉ áp khi DB column null, mặc định DB = 50). */
+    public const BOOKING_COIN_COST_FALLBACK = 50;
 
     /** Booking page slot grid: 1 tuần đã qua + 4 tuần tới. */
     private const BOOKING_GRID_PAST_DAYS = 7;
@@ -260,7 +260,9 @@ class CourseService
             throw ValidationException::withMessages(['slots' => ['Đã đạt giới hạn đăng ký slot tối đa.']]);
         }
 
-        return DB::transaction(function () use ($profile, $slot, $submissionType, $submissionId) {
+        $cost = (int) ($slot->course->booking_coin_cost ?? $course->booking_coin_cost ?? self::BOOKING_COIN_COST_FALLBACK);
+
+        return DB::transaction(function () use ($profile, $slot, $submissionType, $submissionId, $cost) {
             $locked = TeacherSlot::query()->whereKey($slot->id)->lockForUpdate()->first();
             if ($locked->status !== 'open') {
                 throw ValidationException::withMessages(['slot' => ['Slot không còn khả dụng.']]);
@@ -281,7 +283,7 @@ class CourseService
             // Trừ xu sau khi tạo booking để source_id reference được booking record.
             $this->walletService->spend(
                 $profile,
-                self::BOOKING_COIN_COST,
+                $cost,
                 CoinTransactionType::TeacherBooking,
                 $booking,
                 ['slot_id' => $slot->id, 'course_id' => $slot->course_id],
@@ -374,6 +376,7 @@ class CourseService
             'slots' => $items,
             'my_bookings_count' => $myBookings->count(),
             'max_bookings_per_student' => (int) $course->max_slots_per_student,
+            'booking_coin_cost' => (int) ($course->booking_coin_cost ?? self::BOOKING_COIN_COST_FALLBACK),
             'commitment' => $this->commitmentStatus($profile, $course),
         ];
     }

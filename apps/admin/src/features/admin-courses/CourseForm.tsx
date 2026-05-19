@@ -14,7 +14,7 @@ import {
 	type CourseFormInput,
 	type CourseTargetLevel,
 } from "#/features/admin-courses/types"
-import { extractError } from "#/lib/api"
+import { extractError, formatApiErrorBanner } from "#/lib/api"
 
 interface Props {
 	initial?: AdminCourse
@@ -66,6 +66,7 @@ export function CourseForm({ initial, onSubmit, onCancel, submitting }: Props) {
 		original_price_vnd: initial?.original_price_vnd ?? null,
 		max_slots: initial?.max_slots ?? 20,
 		max_slots_per_student: initial?.max_slots_per_student ?? 2,
+		booking_coin_cost: initial?.booking_coin_cost ?? 50,
 		start_date: toDateInput(initial?.start_date),
 		end_date: toDateInput(initial?.end_date),
 		required_full_tests: initial?.required_full_tests ?? 3,
@@ -97,8 +98,6 @@ export function CourseForm({ initial, onSubmit, onCancel, submitting }: Props) {
 			const x = await extractError(err)
 			if (x.errors && Object.keys(x.errors).length > 0) {
 				setErrors(x.errors)
-				// Field errors đã hiển thị dưới từng input — banner chỉ cần nhắc 1 dòng.
-				setGeneric("Vui lòng kiểm tra các trường được đánh dấu đỏ.")
 				// Scroll field lỗi đầu tiên vào tầm nhìn — modal có scroll riêng.
 				const firstKey = Object.keys(x.errors)[0]
 				if (firstKey) {
@@ -106,9 +105,8 @@ export function CourseForm({ initial, onSubmit, onCancel, submitting }: Props) {
 						document.getElementById(firstKey)?.scrollIntoView({ behavior: "smooth", block: "center" })
 					})
 				}
-			} else {
-				setGeneric(x.message)
 			}
+			setGeneric(formatApiErrorBanner(x))
 		}
 	}
 
@@ -333,6 +331,24 @@ export function CourseForm({ initial, onSubmit, onCancel, submitting }: Props) {
 								value={state.bonus_coins}
 								onChange={(e) => set("bonus_coins", Number(e.target.value))}
 								invalid={!!errors.bonus_coins}
+							/>
+						</FormField>
+					</Col>
+					<Col span={12}>
+						<FormField
+							label="Xu/buổi học 1-1"
+							htmlFor="booking_coin_cost"
+							error={errors.booking_coin_cost}
+							helper="Xu trừ khi học viên đặt 1 buổi học riêng với giáo viên"
+						>
+							<Input
+								id="booking_coin_cost"
+								type="number"
+								min={0}
+								max={10000}
+								value={state.booking_coin_cost}
+								onChange={(e) => set("booking_coin_cost", Number(e.target.value))}
+								invalid={!!errors.booking_coin_cost}
 							/>
 						</FormField>
 					</Col>
