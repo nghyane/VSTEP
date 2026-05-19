@@ -233,6 +233,12 @@ export function useExamSession({
 			qc.invalidateQueries({ queryKey: ["streak"] })
 			qc.invalidateQueries({ queryKey: ["activity-heatmap"] })
 			qc.invalidateQueries({ queryKey: ["overview"] })
+			// Bài full-test đếm vào commitment của các khóa đã ghi danh; cả course list
+			// và detail (["courses"] + ["courses", id]) đều lấy commitment status → must
+			// invalidate prefix shortest để cả 2 refetch ngay, không phải F5. Booking
+			// page query (["booking", courseId]) cũng cần update commitment.completed.
+			qc.invalidateQueries({ queryKey: ["courses"] })
+			qc.invalidateQueries({ queryKey: ["booking"] })
 			onSubmitted(result)
 		},
 	})
