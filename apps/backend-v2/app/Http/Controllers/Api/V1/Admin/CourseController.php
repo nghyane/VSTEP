@@ -5,18 +5,27 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Course\BulkStoreSlotsRequest;
 use App\Http\Requests\Admin\Course\StoreCourseRequest;
 use App\Http\Requests\Admin\Course\StoreScheduleItemRequest;
+use App\Http\Requests\Admin\Course\StoreSlotRequest;
+use App\Http\Requests\Admin\Course\UpdateBookingRequest;
 use App\Http\Requests\Admin\Course\UpdateCourseRequest;
 use App\Http\Requests\Admin\Course\UpdateScheduleItemRequest;
+use App\Http\Requests\Admin\Course\UpdateSlotRequest;
 use App\Http\Resources\Admin\AdminCourseResource;
 use App\Http\Resources\Admin\AdminEnrollmentResource;
 use App\Http\Resources\Admin\AdminScheduleItemResource;
+use App\Http\Resources\Admin\AdminTeacherBookingResource;
+use App\Http\Resources\Admin\AdminTeacherSlotResource;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\CourseScheduleItem;
 use App\Models\Profile;
+use App\Models\TeacherBooking;
+use App\Models\TeacherSlot;
 use App\Services\Admin\AdminCourseService;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -195,5 +204,87 @@ class CourseController extends Controller
         return new AdminEnrollmentResource(
             $this->service->setEnrollmentCommitment($enrollment, (bool) $validated['acknowledged_commitment']),
         );
+    }
+
+    // ─── Teacher slots (lịch rảnh 1-1) ─────────────────────
+
+    public function indexSlots(Request $request, string $id): AnonymousResourceCollection
+    {
+        /** @var Course $course */
+        $course = Course::query()->findOrFail($id);
+        $start = $request->filled('start') ? CarbonImmutable::parse($request->string('start')->toString()) : null;
+        $end = $request->filled('end') ? CarbonImmutable::parse($request->string('end')->toString()) : null;
+
+        return AdminTeacherSlotResource::collection($this->service->listSlots($course, $start, $end));
+    }
+
+    public function storeSlot(StoreSlotRequest $request, string $id): JsonResponse
+    {
+        /** @var Course $course */
+        $course = Course::query()->findOrFail($id);
+        $slot = $this->service->createSlot($course, $request->validated());
+
+        return (new AdminTeacherSlotResource($slot->load('bookings.profile.account')))
+            ->response()->setStatusCode(201);
+    }
+
+    public function bulkStoreSlots(BulkStoreSlotsRequest $request, string $id): JsonResponse
+    {
+        /** @var Course $course */
+        $course = Course::query()->findOrFail($id);
+        $result = $this->service->bulkCreateSlots($course, $request->validated());
+
+        return response()->json(['data' => $result], 201);
+    }
+
+    public function updateSlot(UpdateSlotRequest $request, string $slotId): AdminTeacherSlotResource
+    {
+        /** @var TeacherSlot $slot */
+        $slot = TeacherSlot::query()->with('course')->findOrFail($slotId);
+
+        return new AdminTeacherSlotResource(
+            $this->service->updateSlot($slot, $request->validated())->load('bookings.profile.account'),
+        );
+    }
+
+    public function destroySlot(string $slotId): Response
+    {
+        /** @var TeacherSlot $slot */
+        $slot = TeacherSlot::query()->findOrFail($slotId);
+        $this->service->deleteSlot($slot);
+
+        return response()->noContent();
+    }
+
+    // ─── Teacher bookings (admin quản lý booking 1-1) ──────
+
+    public function indexBookings(Request $request, string $id): ResourceCollection
+    {
+        /** @var Course $course */
+        $course = Course::query()->findOrFail($id);
+        $perPage = max(1, min((int) $request->integer('per_page', 20), 100));
+
+        return AdminTeacherBookingResource::collection(
+            $this->service->listBookings($course)->paginate($perPage),
+        );
+    }
+
+    public function updateBooking(UpdateBookingRequest $request, string $bookingId): AdminTeacherBookingResource
+    {
+        /** @var TeacherBooking $booking */
+        $booking = TeacherBooking::query()->findOrFail($bookingId);
+        $validated = $request->validated();
+
+        return new AdminTeacherBookingResource(
+            $this->service->updateBookingMeetUrl($booking, $validated['meet_url'] ?? null),
+        );
+    }
+
+    public function cancelBooking(string $bookingId): AdminTeacherBookingResource
+    {
+        /** @var TeacherBooking $booking */
+        $booking = TeacherBooking::query()->findOrFail($bookingId);
+
+        return new AdminTeacherBookingResource($this->service->cancelBooking($booking));
     }
 }

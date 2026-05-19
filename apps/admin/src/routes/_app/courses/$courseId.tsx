@@ -7,19 +7,25 @@ import { PageHeader } from "#/components/PageHeader"
 import { Switch } from "#/components/Switch"
 import { Tabs } from "#/components/Tabs"
 import { showError, showSuccess } from "#/components/Toaster"
+import { BookingsTab } from "#/features/admin-courses/BookingsTab"
 import { CourseForm } from "#/features/admin-courses/CourseForm"
 import { EnrollmentsTab } from "#/features/admin-courses/EnrollmentsTab"
 import { courseDetailQuery, useSetCoursePublished, useUpdateCourse } from "#/features/admin-courses/queries"
 import { ScheduleItemsTab } from "#/features/admin-courses/ScheduleItemsTab"
+import { SlotsTab } from "#/features/admin-courses/SlotsTab"
 import { extractError } from "#/lib/api"
 
+type CourseTab = "info" | "schedule" | "enrollments" | "slots" | "bookings"
+
 interface Search {
-	tab?: "info" | "schedule" | "enrollments"
+	tab?: CourseTab
 }
+
+const TABS: CourseTab[] = ["info", "schedule", "enrollments", "slots", "bookings"]
 
 export const Route = createFileRoute("/_app/courses/$courseId")({
 	validateSearch: (s: Record<string, unknown>): Search => ({
-		tab: s.tab === "info" || s.tab === "schedule" || s.tab === "enrollments" ? s.tab : undefined,
+		tab: TABS.includes(s.tab as CourseTab) ? (s.tab as CourseTab) : undefined,
 	}),
 	component: CourseDetailPage,
 })
@@ -104,6 +110,8 @@ function CourseDetailPage() {
 						label: `Học viên${course.enrollment_count != null ? ` (${course.enrollment_count})` : ""}`,
 						value: "enrollments",
 					},
+					{ label: "Lịch 1-1", value: "slots" },
+					{ label: "Booking 1-1", value: "bookings" },
 				]}
 				active={tab}
 				onChange={(v) => navigate({ search: { tab: v as Search["tab"] } })}
@@ -136,6 +144,18 @@ function CourseDetailPage() {
 			{tab === "enrollments" && (
 				<Card title="Học viên đã ghi danh">
 					<EnrollmentsTab courseId={courseId} />
+				</Card>
+			)}
+
+			{tab === "slots" && (
+				<Card title="Lịch rảnh giáo viên — buổi 1-1">
+					<SlotsTab courseId={courseId} courseStartDate={course.start_date} courseEndDate={course.end_date} />
+				</Card>
+			)}
+
+			{tab === "bookings" && (
+				<Card title="Booking 1-1 đã đặt">
+					<BookingsTab courseId={courseId} />
 				</Card>
 			)}
 		</Flex>

@@ -3,9 +3,13 @@ import type {
 	AdminCourse,
 	AdminEnrollment,
 	AdminScheduleItem,
+	AdminTeacherBooking,
+	AdminTeacherSlot,
+	BulkSlotsInput,
 	CourseFormInput,
 	CourseListFilters,
 	ScheduleItemFormInput,
+	SlotFormInput,
 	TeacherOption,
 	UserPickerResult,
 } from "#/features/admin-courses/types"
@@ -196,5 +200,93 @@ export function useSetEnrollmentCommitment(courseId: string) {
 				})
 				.json<ApiResponse<AdminEnrollment>>(),
 		onSuccess: () => invalidateEnrollments(qc, courseId),
+	})
+}
+
+// ─── Teacher slots ───────────────────────────────────────
+
+export const slotsQuery = (courseId: string) =>
+	queryOptions({
+		queryKey: ["admin", "courses", "slots", courseId],
+		queryFn: () => api.get(`admin/courses/${courseId}/slots`).json<ApiResponse<AdminTeacherSlot[]>>(),
+		staleTime: 15_000,
+	})
+
+function invalidateSlots(qc: ReturnType<typeof useQueryClient>, courseId: string): void {
+	qc.invalidateQueries({ queryKey: ["admin", "courses", "slots", courseId] })
+}
+
+export function useCreateSlot(courseId: string) {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: (input: SlotFormInput) =>
+			api.post(`admin/courses/${courseId}/slots`, { json: input }).json<ApiResponse<AdminTeacherSlot>>(),
+		onSuccess: () => invalidateSlots(qc, courseId),
+	})
+}
+
+export function useBulkCreateSlots(courseId: string) {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: (input: BulkSlotsInput) =>
+			api
+				.post(`admin/courses/${courseId}/slots/bulk`, { json: input })
+				.json<ApiResponse<{ created: number; skipped: number }>>(),
+		onSuccess: () => invalidateSlots(qc, courseId),
+	})
+}
+
+export function useUpdateSlot(courseId: string) {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: ({ id, input }: { id: string; input: Partial<SlotFormInput> }) =>
+			api.patch(`admin/slots/${id}`, { json: input }).json<ApiResponse<AdminTeacherSlot>>(),
+		onSuccess: () => invalidateSlots(qc, courseId),
+	})
+}
+
+export function useDeleteSlot(courseId: string) {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: (id: string) => api.delete(`admin/slots/${id}`),
+		onSuccess: () => invalidateSlots(qc, courseId),
+	})
+}
+
+// ─── Teacher bookings (admin) ────────────────────────────
+
+export const bookingsQuery = (courseId: string, page: number) =>
+	queryOptions({
+		queryKey: ["admin", "courses", "bookings", courseId, page],
+		queryFn: () =>
+			api
+				.get(`admin/courses/${courseId}/bookings?page=${page}&per_page=20`)
+				.json<PaginatedResponse<AdminTeacherBooking>>(),
+		staleTime: 15_000,
+	})
+
+function invalidateBookingsAndSlots(qc: ReturnType<typeof useQueryClient>, courseId: string): void {
+	// Cancel booking thay đổi cả slot status (booked→open), nên invalidate luôn slot tab.
+	qc.invalidateQueries({ queryKey: ["admin", "courses", "bookings", courseId] })
+	invalidateSlots(qc, courseId)
+}
+
+export function useUpdateBookingMeetUrl(courseId: string) {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: ({ id, meetUrl }: { id: string; meetUrl: string | null }) =>
+			api
+				.patch(`admin/bookings/${id}`, { json: { meet_url: meetUrl } })
+				.json<ApiResponse<AdminTeacherBooking>>(),
+		onSuccess: () => invalidateBookingsAndSlots(qc, courseId),
+	})
+}
+
+export function useCancelBooking(courseId: string) {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: (id: string) =>
+			api.post(`admin/bookings/${id}/cancel`).json<ApiResponse<AdminTeacherBooking>>(),
+		onSuccess: () => invalidateBookingsAndSlots(qc, courseId),
 	})
 }

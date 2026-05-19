@@ -357,9 +357,25 @@ Route::prefix('v1')->group(function () {
             // Enrollments — danh sách học viên đã ghi danh + thêm thủ công
             Route::get('/{id}/enrollments', [Admin\CourseController::class, 'indexEnrollments'])->whereUuid('id');
             Route::post('/{id}/enrollments', [Admin\CourseController::class, 'storeEnrollment'])->whereUuid('id');
+
+            // Teacher slots — lịch rảnh 1-1 (admin sắp xếp)
+            Route::get('/{id}/slots', [Admin\CourseController::class, 'indexSlots'])->whereUuid('id');
+            Route::post('/{id}/slots', [Admin\CourseController::class, 'storeSlot'])->whereUuid('id');
+            Route::post('/{id}/slots/bulk', [Admin\CourseController::class, 'bulkStoreSlots'])->whereUuid('id');
+
+            // Bookings — học viên đã đặt slot (admin sửa meet_url + cancel + refund)
+            Route::get('/{id}/bookings', [Admin\CourseController::class, 'indexBookings'])->whereUuid('id');
         });
         Route::patch('/schedule-items/{itemId}', [Admin\CourseController::class, 'updateScheduleItem'])->whereUuid('itemId');
         Route::delete('/schedule-items/{itemId}', [Admin\CourseController::class, 'destroyScheduleItem'])->whereUuid('itemId');
+
+        // Slot management (admin sửa/xóa slot khi chưa có booking)
+        Route::patch('/slots/{slotId}', [Admin\CourseController::class, 'updateSlot'])->whereUuid('slotId');
+        Route::delete('/slots/{slotId}', [Admin\CourseController::class, 'destroySlot'])->whereUuid('slotId');
+
+        // Booking management (admin sửa meet_url + cancel kèm refund)
+        Route::patch('/bookings/{bookingId}', [Admin\CourseController::class, 'updateBooking'])->whereUuid('bookingId');
+        Route::post('/bookings/{bookingId}/cancel', [Admin\CourseController::class, 'cancelBooking'])->whereUuid('bookingId');
 
         // Enrollment management (admin can unenroll + override commitment)
         Route::patch('/enrollments/{enrollmentId}/commitment', [Admin\CourseController::class, 'setEnrollmentCommitment'])->whereUuid('enrollmentId');
