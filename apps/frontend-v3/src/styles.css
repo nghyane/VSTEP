@@ -266,6 +266,15 @@
 			transform: translate(-50%, -50%) rotate(var(--angle)) translateY(calc(-1 * var(--dist))) rotate(calc(-1 * var(--angle))) scale(1);
 		}
 	}
+
+	/* Card celebrate-then-fade khi user dismiss commitment đã met. Chỉ animate visual
+	   (scale + opacity + translate) — height collapse được wrapper grid-template-rows
+	   ngoài xử lý riêng để không squash content gây overflow lúc đang scale. */
+	@keyframes cardDismiss {
+		0% { opacity: 1; transform: scale(1) translateY(0); }
+		20% { opacity: 1; transform: scale(1.04) translateY(0); }
+		100% { opacity: 0; transform: scale(0.9) translateY(-12px); }
+	}
 }
 
 /* ─── COMPONENTS ──────────────────────────────────── */

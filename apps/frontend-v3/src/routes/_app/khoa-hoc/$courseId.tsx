@@ -54,7 +54,9 @@ function CourseDetailPage() {
 					</div>
 				</div>
 
-				{commitment && commitment.phase !== "not_enrolled" && <CommitmentCard commitment={commitment} />}
+				{commitment && commitment.phase !== "not_enrolled" && (
+					<CommitmentCard commitment={commitment} courseId={courseId} />
+				)}
 
 				{course.description && (
 					<div className="card p-6">
@@ -317,9 +319,35 @@ function EnrolledCard({ courseId, livestreamUrl }: { courseId: string; livestrea
 	)
 }
 
-function CommitmentCard({ commitment }: { commitment: CommitmentStatus }) {
+function CommitmentCard({ commitment, courseId }: { commitment: CommitmentStatus; courseId: string }) {
 	const met = commitment.phase === "met"
 	const violated = commitment.phase === "violated"
+
+	// Dismiss persistent qua localStorage theo courseId: khi user đã ăn mừng cam kết
+	// xong, không cần thấy lại card này mỗi lần vào course. Chỉ áp khi met (pending
+	// hay violated thì luôn cần thấy để hành động).
+	const storageKey = `commitment-dismissed:${courseId}`
+	const [dismissed, setDismissed] = useState<boolean>(() => {
+		if (typeof window === "undefined") return false
+		return window.localStorage.getItem(storageKey) === "1"
+	})
+	const [dismissing, setDismissing] = useState(false)
+
+	function handleDismiss(e: React.MouseEvent) {
+		// Chip nằm trong <Link> → phải chặn navigate trước khi bắt đầu animation.
+		e.preventDefault()
+		e.stopPropagation()
+		if (dismissing) return
+		setDismissing(true)
+		// Khớp duration 600ms của keyframe cardDismiss bên dưới.
+		window.setTimeout(() => {
+			window.localStorage.setItem(storageKey, "1")
+			setDismissed(true)
+		}, 600)
+	}
+
+	if (met && dismissed) return null
+
 	const remaining = Math.max(0, commitment.required - commitment.completed)
 	const pct =
 		commitment.required > 0
@@ -346,107 +374,144 @@ function CommitmentCard({ commitment }: { commitment: CommitmentStatus }) {
 	const progressTone: "primary" | "warning" = met ? "primary" : "warning"
 
 	return (
-		<Link
-			to="/thi-thu"
-			className={cn("group card-interactive block p-6 relative overflow-hidden", borderClass)}
+		// 2 lớp: outer wrapper dùng grid-template-rows để xẹp chiều cao mượt (1fr→0fr),
+		// inner Link chỉ animate scale + opacity + translate. Tách ra để content không
+		// bị bóp/clip lúc đang scale như cách max-height cũ.
+		<div
+			style={{
+				display: "grid",
+				gridTemplateRows: dismissing ? "0fr" : "1fr",
+				transition: "grid-template-rows 550ms cubic-bezier(0.4, 0, 0.2, 1)",
+			}}
 		>
-			<div className="relative flex items-start gap-4">
-				<div
-					className={cn(
-						"size-14 shrink-0 rounded-2xl border-2 flex items-center justify-center text-white",
-						iconBlockClass,
-					)}
-					style={{ boxShadow: "0 4px 0 rgb(0 0 0 / 0.08)" }}
+			<div style={{ overflow: "hidden", minHeight: 0 }}>
+				<Link
+					to="/thi-thu"
+					// Không dùng `card-interactive` để bỏ hover lift — user chỉ muốn animation
+					// dismiss lúc click khi met, không cần feedback rê chuột ở bất kỳ state nào.
+					className={cn("group card block p-6 relative overflow-hidden cursor-pointer", borderClass)}
+					style={
+						dismissing
+							? {
+									animation: "cardDismiss 500ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
+									pointerEvents: "none",
+								}
+							: undefined
+					}
 				>
-					<Icon name={iconName} size="md" className="text-white" />
-				</div>
-
-				<div className="flex-1 min-w-0 space-y-3">
-					<div className="flex items-start justify-between gap-3 flex-wrap">
-						<div className="min-w-0">
-							<p className={cn("text-xs font-bold uppercase tracking-wider", accentText)}>Cam kết kỷ luật</p>
-							<p className="font-extrabold text-foreground text-2xl leading-none mt-1.5">
-								<span className="tabular-nums">{commitment.completed}</span>
-								<span className="text-muted">/</span>
-								<span className="tabular-nums">{commitment.required}</span>
-								<span className="text-muted text-sm font-bold ml-1.5">bài thi full-test</span>
-							</p>
+					<div className="relative flex items-start gap-4">
+						<div
+							className={cn(
+								"size-14 shrink-0 rounded-2xl border-2 flex items-center justify-center text-white",
+								iconBlockClass,
+							)}
+							style={{ boxShadow: "0 4px 0 rgb(0 0 0 / 0.08)" }}
+						>
+							<Icon name={iconName} size="md" className="text-white" />
 						</div>
 
-						<span
-							className={cn(
-								"shrink-0 inline-flex items-center gap-1.5 rounded-(--radius-button) border-2 border-b-4 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider transition-all group-hover:-translate-y-0.5 group-active:translate-y-0 group-active:border-b-2",
-								chipClass,
-							)}
-						>
-							{met ? (
-								<>
-									<Icon name="check" size="xs" className="h-3 w-auto" />
-									Hoàn thành
-								</>
-							) : violated ? (
-								<>
-									<Icon name="close" size="xs" className="h-3 w-auto" />
-									Đã quá hạn
-								</>
-							) : (
-								<>
-									<Icon name="play" size="xs" className="h-3 w-auto" />
-									Vào phòng thi
-								</>
-							)}
-						</span>
-					</div>
+						<div className="flex-1 min-w-0 space-y-3">
+							<div className="flex items-start justify-between gap-3 flex-wrap">
+								<div className="min-w-0">
+									<p className={cn("text-xs font-bold uppercase tracking-wider", accentText)}>
+										Cam kết kỷ luật
+									</p>
+									<p className="font-extrabold text-foreground text-2xl leading-none mt-1.5">
+										<span className="tabular-nums">{commitment.completed}</span>
+										<span className="text-muted">/</span>
+										<span className="tabular-nums">{commitment.required}</span>
+										<span className="text-muted text-sm font-bold ml-1.5">bài thi full-test</span>
+									</p>
+								</div>
 
-					<DuoProgressBar value={pct} tone={progressTone} heightPx={12} label="Tiến độ cam kết kỷ luật" />
-
-					{commitment.deadline_at && (
-						<p
-							className={cn(
-								"text-xs font-bold inline-flex items-center gap-1.5",
-								violated ? "text-destructive" : urgent ? "text-warning" : "text-muted",
-							)}
-						>
-							<Icon name="timer" size="xs" />
-							<span>
-								Hạn chót: <span className="tabular-nums">{formatDate(commitment.deadline_at)}</span>
-								{!met && !violated && daysLeft !== null && (
-									<span className="ml-1">
-										(còn <span className="tabular-nums">{Math.max(0, daysLeft)}</span> ngày)
+								{met ? (
+									<button
+										type="button"
+										onClick={handleDismiss}
+										title="Bấm để ẩn cam kết đã hoàn thành"
+										className={cn(
+											"shrink-0 inline-flex items-center gap-1.5 rounded-(--radius-button) border-2 border-b-4 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider cursor-pointer",
+											chipClass,
+										)}
+									>
+										<Icon name="check" size="xs" className="h-3 w-auto" />
+										Hoàn thành
+									</button>
+								) : (
+									<span
+										className={cn(
+											// Giữ press feedback (active translate + border collapse) cho cảm giác
+											// nhấn nút Duo; chỉ bỏ hover lift theo yêu cầu của user.
+											"shrink-0 inline-flex items-center gap-1.5 rounded-(--radius-button) border-2 border-b-4 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider transition-all group-active:translate-y-[2px] group-active:border-b-2",
+											chipClass,
+										)}
+									>
+										{violated ? (
+											<>
+												<Icon name="close" size="xs" className="h-3 w-auto" />
+												Đã quá hạn
+											</>
+										) : (
+											<>
+												<Icon name="play" size="xs" className="h-3 w-auto" />
+												Vào phòng thi
+											</>
+										)}
 									</span>
 								)}
-							</span>
-						</p>
-					)}
+							</div>
 
-					<p className="text-sm text-foreground leading-relaxed">
-						{met ? (
-							<span className="font-bold text-success">
-								Bạn đã hoàn thành cam kết — tiếp tục luyện đề để giữ phong độ.
-							</span>
-						) : violated ? (
-							<span>
-								Cam kết đã <span className="font-bold text-destructive">vi phạm</span> — bạn chưa hoàn thành
-								đủ {commitment.required} bài full-test trong hạn. Liên hệ giáo viên để được hỗ trợ.
-							</span>
-						) : (
-							<>
-								Còn <span className="font-extrabold tabular-nums text-warning">{remaining}</span> bài
-								full-test nữa để hoàn thành cam kết
-								{daysLeft !== null && daysLeft >= 0 && (
+							<DuoProgressBar value={pct} tone={progressTone} heightPx={12} label="Tiến độ cam kết kỷ luật" />
+
+							{commitment.deadline_at && (
+								<p
+									className={cn(
+										"text-xs font-bold inline-flex items-center gap-1.5",
+										violated ? "text-destructive" : urgent ? "text-warning" : "text-muted",
+									)}
+								>
+									<Icon name="timer" size="xs" />
+									<span>
+										Hạn chót: <span className="tabular-nums">{formatDate(commitment.deadline_at)}</span>
+										{!met && !violated && daysLeft !== null && (
+											<span className="ml-1">
+												(còn <span className="tabular-nums">{Math.max(0, daysLeft)}</span> ngày)
+											</span>
+										)}
+									</span>
+								</p>
+							)}
+
+							<p className="text-sm text-foreground leading-relaxed">
+								{met ? (
+									<span className="font-bold text-success">
+										Bạn đã hoàn thành cam kết — tiếp tục luyện đề để giữ phong độ.
+									</span>
+								) : violated ? (
+									<span>
+										Cam kết đã <span className="font-bold text-destructive">vi phạm</span> — bạn chưa hoàn
+										thành đủ {commitment.required} bài full-test trong hạn. Liên hệ giáo viên để được hỗ trợ.
+									</span>
+								) : (
 									<>
-										{" "}
-										trong <span className="font-extrabold tabular-nums text-warning">{daysLeft}</span> ngày
-										tới
+										Còn <span className="font-extrabold tabular-nums text-warning">{remaining}</span> bài
+										full-test nữa để hoàn thành cam kết
+										{daysLeft !== null && daysLeft >= 0 && (
+											<>
+												{" "}
+												trong <span className="font-extrabold tabular-nums text-warning">{daysLeft}</span>{" "}
+												ngày tới
+											</>
+										)}
+										. Bấm vào ô này để <span className="font-bold text-foreground">vào phòng thi ngay.</span>
 									</>
 								)}
-								. Bấm vào ô này để <span className="font-bold text-foreground">vào phòng thi ngay.</span>
-							</>
-						)}
-					</p>
-				</div>
+							</p>
+						</div>
+					</div>
+				</Link>
 			</div>
-		</Link>
+		</div>
 	)
 }
 
