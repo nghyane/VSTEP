@@ -61,6 +61,13 @@ const VISUALS: Record<NotificationType, NotifVisual> = {
 		tone: "info",
 		navigateTo: "/khoa-hoc",
 	},
+	booking_cancelled: {
+		iconKind: "regular",
+		iconName: "trash",
+		tintClass: "bg-destructive-tint",
+		tone: "destructive",
+		navigateTo: "/khoa-hoc",
+	},
 }
 
 const FALLBACK: NotifVisual = {
