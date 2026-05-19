@@ -181,8 +181,19 @@ class AdminCourseService
         $courseTitle = $course?->title ?? 'khóa học';
         $courseId = $course?->id;
 
-        DB::transaction(function () use ($enrollment) {
+        DB::transaction(function () use ($enrollment, $profile, $courseId) {
             $enrollment->delete();
+            // Cleanup paid/pending orders để học viên có thể ghi danh lại khóa sau khi
+            // admin hủy. Partial unique index uq_course_order_active chỉ áp khi status
+            // IN ('pending', 'paid'); chuyển sang 'cancelled' → index không chặn order
+            // mới + CourseOrderService.createOrder không còn thấy "duplicate".
+            if ($profile !== null && $courseId !== null) {
+                CourseEnrollmentOrder::query()
+                    ->where('profile_id', $profile->id)
+                    ->where('course_id', $courseId)
+                    ->whereIn('status', ['pending', 'paid'])
+                    ->update(['status' => 'cancelled']);
+            }
         });
 
         if ($profile !== null) {

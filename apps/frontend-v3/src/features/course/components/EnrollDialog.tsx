@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { HTTPError } from "ky"
 import { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { StaticIcon } from "#/components/Icon"
@@ -43,8 +44,19 @@ export function EnrollDialog({ open, onClose, course }: Props) {
 			// Defer tới lúc user đóng popup (xem handleSuccessClose).
 			setPhase("success")
 		},
-		onError: (e: Error) => {
-			setErrorMessage(e.message || undefined)
+		onError: async (e: unknown) => {
+			// 2 nguồn lỗi: (a) local throw "Vui lòng ký..." → dùng e.message trực tiếp;
+			// (b) HTTPError từ BE (422 v.v.) → đọc body.message để hiện tiếng Việt thay
+			// vì raw ky error "Request failed with status code 422".
+			if (e instanceof HTTPError) {
+				const body = (await e.response
+					.clone()
+					.json()
+					.catch(() => null)) as { message?: string } | null
+				setErrorMessage(body?.message ?? "Đã có lỗi xảy ra. Vui lòng thử lại.")
+			} else if (e instanceof Error) {
+				setErrorMessage(e.message)
+			}
 			setPhase("failure")
 		},
 	})
