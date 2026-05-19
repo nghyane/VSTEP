@@ -68,6 +68,20 @@ function vietnameseStatusMessage(status: number): string {
  * - Nếu là lỗi mạng (không có response) → "Không kết nối được server".
  * Không bao giờ trả về raw `err.message` của ky vì đó là chuỗi tiếng Anh.
  */
+/**
+ * Tạo banner text cho form từ ApiError. Ưu tiên:
+ *  1. Gộp tất cả field errors thành 1 chuỗi → admin thấy lý do cụ thể ngay.
+ *  2. `message` từ BE nếu không có field errors.
+ *  3. Fallback "Đã có lỗi" (hiếm khi tới — extractError đã guard).
+ *
+ * Dùng chung cho mọi form admin để FE hiển thị nhất quán + không giấu lỗi
+ * BE đằng sau banner generic.
+ */
+export function formatApiErrorBanner(x: ApiError): string {
+	const fieldText = x.errors ? Object.values(x.errors).flat().join(" • ") : ""
+	return fieldText || x.message || "Đã có lỗi xảy ra."
+}
+
 export async function extractError(err: unknown): Promise<ApiError> {
 	const response = (err as { response?: Response })?.response
 

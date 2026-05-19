@@ -4,7 +4,7 @@ import { Button } from "#/components/Button"
 import { FormField } from "#/components/FormField"
 import { Input } from "#/components/Input"
 import type { AdminScheduleItem, ScheduleItemFormInput } from "#/features/admin-courses/types"
-import { extractError } from "#/lib/api"
+import { extractError, formatApiErrorBanner } from "#/lib/api"
 
 interface Props {
 	initial?: AdminScheduleItem
@@ -56,10 +56,8 @@ export function ScheduleItemForm({
 			const x = await extractError(err)
 			if (x.errors && Object.keys(x.errors).length > 0) {
 				setErrors(x.errors)
-				setGeneric("Vui lòng kiểm tra các trường được đánh dấu đỏ.")
-			} else {
-				setGeneric(x.message)
 			}
+			setGeneric(formatApiErrorBanner(x))
 		}
 	}
 
