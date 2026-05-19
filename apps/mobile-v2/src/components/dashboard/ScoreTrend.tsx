@@ -1,13 +1,14 @@
+import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 
 import { DepthCard } from "@/components/DepthCard";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { SkillIcon } from "@/components/SkillIcon";
 import { api } from "@/lib/api";
 import { useOverview } from "@/hooks/use-progress";
 import { getTargetBand } from "@/lib/vstep";
-import { useThemeColors, spacing, fontSize, fontFamily, radius } from "@/theme";
-import { useSkillColor } from "@/theme";
+import { useThemeColors, spacing, fontSize, fontFamily, radius, type ThemeColors } from "@/theme";
 import type { ExamSessionResult, Skill } from "@/types/api";
 
 const SKILLS: Skill[] = ["listening", "reading", "writing", "speaking"];
@@ -41,6 +42,7 @@ function computeAvg(scores: Record<Skill, number | null>): number {
 
 export function ScoreTrend() {
   const c = useThemeColors();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const { data: overview } = useOverview();
   const { data, isLoading } = useQuery({
     queryKey: ["exam-sessions"],
@@ -111,48 +113,77 @@ export function ScoreTrend() {
           const aboveTarget = avg >= targetBand;
 
           return (
-            <View key={test.id} style={[styles.testRow, { borderBottomColor: c.border }]}>
-              <View style={styles.testInfo}>
-                <Text style={[styles.testDate, { color: c.subtle }]}>
-                  {formatShortDate(test.submittedAt)}
-                </Text>
-                <View style={styles.scoreDots}>
-                  {SKILLS.map((skill) => {
-                    const score = test.scores[skill] ?? 0;
-                    const ratio = score / 10;
-                    return (
-                      <View
-                        key={skill}
-                        style={[
-                          styles.scoreBar,
-                          {
-                            width: Math.max(4, ratio * 40),
-                            backgroundColor: getSkillColor(skill, c),
-                            opacity: score > 0 ? 0.8 : 0.2,
-                          },
-                        ]}
-                      />
-                    );
-                  })}
-                </View>
-              </View>
-              <View style={styles.avgBadge}>
-                <Text
-                  style={[
-                    styles.avgValue,
-                    {
-                      color: aboveTarget ? c.success : c.destructive,
-                    },
-                  ]}
-                >
-                  {avg.toFixed(1)}
-                </Text>
-              </View>
-            </View>
+            <ScoreRow
+              key={test.id}
+              test={test}
+              avg={avg}
+              aboveTarget={aboveTarget}
+              expanded={expandedId === test.id}
+              onPress={() => setExpandedId(expandedId === test.id ? null : test.id)}
+            />
           );
         })}
       </View>
     </DepthCard>
+  );
+}
+
+interface ScoreRowProps {
+  test: ExamSessionResult & { scores: Record<Skill, number | null>; submittedAt: string };
+  avg: number;
+  aboveTarget: boolean;
+  expanded: boolean;
+  onPress: () => void;
+}
+
+function ScoreRow({ test, avg, aboveTarget, expanded, onPress }: ScoreRowProps) {
+  const c = useThemeColors();
+
+  return (
+    <HapticTouchable onPress={onPress} activeOpacity={0.85} scalePress>
+      <View style={[styles.testRow, { borderBottomColor: c.border }]}>
+        <View style={styles.testInfo}>
+          <Text style={[styles.testDate, { color: c.subtle }]}>{formatShortDate(test.submittedAt)}</Text>
+          <ScoreBars scores={test.scores} colors={c} />
+          {expanded && <SkillBreakdown scores={test.scores} />}
+        </View>
+        <View style={styles.avgBadge}>
+          <Text style={[styles.avgValue, { color: aboveTarget ? c.success : c.destructive }]}>{avg.toFixed(1)}</Text>
+          <Text style={[styles.expandHint, { color: c.subtle }]}>{expanded ? "Ẩn" : "Chi tiết"}</Text>
+        </View>
+      </View>
+    </HapticTouchable>
+  );
+}
+
+function ScoreBars({ scores, colors }: { scores: Record<Skill, number | null>; colors: ThemeColors }) {
+  return (
+    <View style={styles.scoreDots}>
+      {SKILLS.map((skill) => {
+        const score = scores[skill] ?? 0;
+        const ratio = score / 10;
+        return (
+          <View
+            key={skill}
+            style={[styles.scoreBar, { width: Math.max(4, ratio * 40), backgroundColor: getSkillColor(skill, colors), opacity: score > 0 ? 0.8 : 0.2 }]}
+          />
+        );
+      })}
+    </View>
+  );
+}
+
+function SkillBreakdown({ scores }: { scores: Record<Skill, number | null> }) {
+  const c = useThemeColors();
+  return (
+    <View style={styles.breakdown}>
+      {SKILLS.map((skill) => (
+        <View key={skill} style={styles.breakdownItem}>
+          <Text style={[styles.breakdownLabel, { color: getSkillColor(skill, c) }]}>{SKILL_META[skill].vi}</Text>
+          <Text style={[styles.breakdownValue, { color: c.foreground }]}>{scores[skill]?.toFixed(1) ?? "—"}</Text>
+        </View>
+      ))}
+    </View>
   );
 }
 
@@ -230,6 +261,27 @@ const styles = StyleSheet.create({
   },
   avgValue: {
     fontSize: fontSize.base,
+    fontFamily: fontFamily.extraBold,
+  },
+  expandHint: {
+    fontSize: 10,
+    fontFamily: fontFamily.bold,
+  },
+  breakdown: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  breakdownItem: {
+    minWidth: 70,
+  },
+  breakdownLabel: {
+    fontSize: 10,
+    fontFamily: fontFamily.extraBold,
+  },
+  breakdownValue: {
+    fontSize: fontSize.sm,
     fontFamily: fontFamily.extraBold,
   },
 });

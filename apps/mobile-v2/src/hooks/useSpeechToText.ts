@@ -1,5 +1,4 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Platform } from "react-native";
 import Voice, { type SpeechResultsEvent, type SpeechErrorEvent } from "@react-native-voice/voice";
 
 export type MicState = "idle" | "listening" | "stopped";

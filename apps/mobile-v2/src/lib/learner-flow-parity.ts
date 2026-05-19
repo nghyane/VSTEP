@@ -41,18 +41,20 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
   // ── Dashboard (Phase 10) ──
   {
     area: "Dashboard",
-    flow: "Overview, stats, next action, spider chart",
+    flow: "Overview, stats, next action, spider chart, score trend details",
     frontendV3: [
       "src/routes/_app/dashboard.tsx",
       "src/features/dashboard/queries.ts",
       "src/features/dashboard/components",
     ],
-    mobileV2: ["app/(app)/(tabs)/index.tsx", "src/hooks/use-progress.ts"],
-    backendApi: ["GET /api/v1/overview", "GET /api/v1/streak", "GET /api/v1/activity-heatmap"],
-    status: "done",
-    gaps: [
-      "TranslateSelection popup added in frontend-v3 (commit 490b35f) — optional enhancement.",
+    mobileV2: [
+      "app/(app)/(tabs)/index.tsx",
+      "src/components/dashboard/ScoreTrend.tsx",
+      "src/hooks/use-progress.ts",
     ],
+    backendApi: ["GET /api/v1/overview", "GET /api/v1/streak", "GET /api/v1/activity-heatmap", "GET /api/v1/exam-sessions"],
+    status: "done",
+    gaps: [],
     nextPhase: 10,
   },
 
@@ -74,6 +76,9 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "app/(app)/vocabulary/[id]/flashcard.tsx",
       "app/(app)/vocabulary/[id]/exercise.tsx",
       "app/(app)/vocabulary/srs-review.tsx",
+      "src/components/FlipCard.tsx",
+      "src/components/SrsFlipCard.tsx",
+      "src/components/SrsRatingButtons.tsx",
       "src/hooks/use-vocab.ts",
     ],
     backendApi: [
@@ -128,6 +133,8 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
     mobileV2: [
       "app/(app)/practice/listening/index.tsx",
       "app/(app)/practice/listening/[exerciseId].tsx",
+      "src/components/McqQuestionCard.tsx",
+      "src/components/McqResultCard.tsx",
       "src/hooks/use-practice.ts",
     ],
     backendApi: [
@@ -157,6 +164,8 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
     mobileV2: [
       "app/(app)/practice/reading/index.tsx",
       "app/(app)/practice/reading/[exerciseId].tsx",
+      "src/components/McqQuestionCard.tsx",
+      "src/components/McqResultCard.tsx",
       "src/hooks/use-practice.ts",
     ],
     backendApi: [
@@ -187,7 +196,10 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
     mobileV2: [
       "app/(app)/practice/writing/index.tsx",
       "app/(app)/practice/writing/[promptId].tsx",
+      "app/(app)/practice/results.tsx",
       "app/(app)/grading/writing/[submissionId].tsx",
+      "src/components/WritingReviewSheet.tsx",
+      "src/components/WritingWordProgress.tsx",
       "src/hooks/use-practice.ts",
     ],
     backendApi: [
@@ -229,6 +241,74 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
     ],
     status: "done",
     gaps: [],
+    nextPhase: 6,
+  },
+
+  // ── Practice — Speaking Conversation (Phase 6) ──
+  {
+    area: "Practice",
+    flow: "AI roleplay conversation with IPA + translate + feedback panel per turn",
+    frontendV3: [
+      "src/routes/_focused/speaking/conversation/$scenarioId.tsx",
+      "src/features/practice/components/ConversationInProgress.tsx",
+      "src/features/practice/components/ConversationTurnView.tsx",
+      "src/features/practice/components/ConversationFeedback.tsx",
+    ],
+    mobileV2: [
+      "app/(app)/practice/speaking/conversation/[scenarioId].tsx",
+      "app/(app)/practice/speaking/index.tsx",
+      "src/components/ConversationTurnView.tsx",
+      "src/components/ConversationFeedback.tsx",
+      "src/components/LevelFilters.tsx",
+      "src/components/StatusFilters.tsx",
+      "src/hooks/use-conversation-session.ts",
+      "src/hooks/use-practice.ts",
+      "src/lib/translate.ts",
+    ],
+    backendApi: [
+      "GET /api/v1/practice/speaking/scenarios",
+      "GET /api/v1/practice/speaking/scenarios/{id}",
+      "POST /api/v1/practice/speaking/conversations",
+      "POST /api/v1/practice/speaking/conversations/{sessionId}/turn",
+      "POST /api/v1/practice/speaking/conversations/{sessionId}/end",
+      "GET /api/v1/practice/speaking/conversations/{sessionId}/review",
+    ],
+    status: "done",
+    gaps: [],
+    nextPhase: 6,
+  },
+
+  // ── Practice — Speaking Shadowing (Phase B) ──
+  {
+    area: "Practice",
+    flow: "Shadowing lessons — segment-by-segment shadow with persisted progress",
+    frontendV3: [
+      "src/routes/_focused/speaking/shadowing/$lessonId.tsx",
+      "src/features/practice/components/ShadowingInProgress.tsx",
+      "src/features/practice/components/ShadowingSegmentView.tsx",
+      "src/features/practice/shadowing-progress.ts",
+      "src/features/practice/mock-shadowing.ts",
+    ],
+    mobileV2: [
+      "app/(app)/practice/speaking/shadowing/index.tsx",
+      "app/(app)/practice/speaking/shadowing/[lessonId].tsx",
+      "src/components/LevelFilters.tsx",
+      "src/components/StatusFilters.tsx",
+      "src/features/shadowing/mock-shadowing.ts",
+      "src/features/shadowing/use-shadowing-session.ts",
+      "src/features/shadowing/use-shadowing-progress.ts",
+      "src/features/shadowing/ShadowingSegmentCard.tsx",
+      "src/features/shadowing/types.ts",
+      "src/lib/word-compare.ts",
+    ],
+    backendApi: [
+      "GET /api/v1/practice/speaking/shadowing/progress",
+      "POST /api/v1/practice/speaking/shadowing/progress",
+    ],
+    status: "done",
+    gaps: [
+      "Shadowing lessons are mock — BE chưa expose /practice/speaking/shadowing/* lessons.",
+    ],
     nextPhase: 6,
   },
 
@@ -291,7 +371,7 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "src/features/exam/components/SpeakingPanel.tsx",
       "src/features/exam/components/DeviceTestWidgets.tsx",
     ],
-    mobileV2: ["app/(app)/session/[id].tsx", "app/(app)/exam-result/[id].tsx", "src/hooks/use-exam-session.ts"],
+    mobileV2: ["app/(app)/session/[id].tsx", "app/(app)/exam-result/[id].tsx", "src/hooks/use-exam-session.ts", "src/hooks/use-exam-results.ts"],
     backendApi: [
       "POST /api/v1/exams/{examId}/sessions",
       "GET /api/v1/exam-sessions/{sessionId}",
@@ -366,12 +446,18 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
     area: "Courses",
     flow: "Course list, detail, enrollment, booking",
     frontendV3: ["src/routes/_app/khoa-hoc", "src/features/course"],
-    mobileV2: ["app/(app)/(tabs)/classes.tsx", "app/(app)/classes.tsx", "app/(app)/courses/[courseId].tsx", "src/features/course"],
+    mobileV2: [
+      "app/(app)/(tabs)/classes.tsx",
+      "app/(app)/courses/[courseId].tsx",
+      "app/(app)/courses/[courseId]/booking.tsx",
+      "src/features/course",
+    ],
     backendApi: [
       "GET /api/v1/courses",
       "GET /api/v1/courses/{id}",
       "POST /api/v1/courses/{id}/enrollment-orders",
       "GET /api/v1/courses/enrollment-orders",
+      "GET /api/v1/courses/{courseId}/bookings",
       "POST /api/v1/courses/enrollment-orders/{orderId}/confirm",
       "POST /api/v1/courses/{courseId}/bookings",
     ],

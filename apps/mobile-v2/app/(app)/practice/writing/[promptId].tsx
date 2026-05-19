@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  type TextInputSelectionChangeEventData,
+  type NativeSyntheticEvent,
   View,
 } from "react-native";
 import { useMutation } from "@tanstack/react-query";
@@ -19,6 +22,8 @@ import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
 import { SupportPanel } from "@/components/SupportPanel";
+import { WritingReviewSheet } from "@/components/WritingReviewSheet";
+import { WritingWordProgress } from "@/components/WritingWordProgress";
 import {
   useWritingPromptDetail,
   startWritingSession,
@@ -95,7 +100,6 @@ export default function WritingExerciseScreen() {
       onBack={() => router.back()}
       insets={insets}
       c={c}
-      router={router}
     />
   );
 }
@@ -106,24 +110,47 @@ interface EditorScreenProps {
   onBack: () => void;
   insets: { top: number; bottom: number };
   c: ReturnType<typeof useThemeColors>;
-  router: ReturnType<typeof useRouter>;
 }
 
-function EditorScreen({ detail, sessionId, onBack, insets, c, router }: EditorScreenProps) {
+function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProps) {
   const [text, setText] = useState("");
+  const [selection, setSelection] = useState({ start: 0, end: 0 });
   const [submitted, setSubmitted] = useState<{ submissionId: string; wordCount: number } | null>(null);
+  const [showReview, setShowReview] = useState(false);
   const [unlockedSupport, setUnlockedSupport] = useState<number[]>([]);
+  const inputRef = useRef<TextInput>(null);
   const wc = countWords(text);
   const inRange = wc >= detail.minWords && wc <= detail.maxWords;
-  const over = wc > detail.maxWords;
   const showKeywords = unlockedSupport.includes(1);
   const showSampleAnswer = unlockedSupport.includes(2);
 
   const submitMutation = useMutation({
     mutationFn: () => submitWritingSession(sessionId, text),
-    onSuccess: (res) =>
-      setSubmitted({ submissionId: res.submissionId, wordCount: res.wordCount }),
+    onSuccess: (res) => {
+      setSubmitted({ submissionId: res.submissionId, wordCount: res.wordCount });
+      setShowReview(true);
+    },
   });
+
+  function handleSelectionChange(e: NativeSyntheticEvent<TextInputSelectionChangeEventData>) {
+    setSelection(e.nativeEvent.selection);
+  }
+
+  // Insert a sentence starter (or keyword) at the current cursor position.
+  // Mirrors handleInsertText in apps/frontend-v3 WritingInProgress.tsx.
+  function insertAtCursor(insert: string) {
+    if (submitted) return;
+    const start = selection.start;
+    const before = text.slice(0, start);
+    const after = text.slice(start);
+    const spaceBefore = before.length > 0 && !before.endsWith(" ") && !before.endsWith("\n") ? " " : "";
+    const spaceAfter = after.length > 0 && !after.startsWith(" ") && !after.startsWith("\n") ? " " : "";
+    const next = before + spaceBefore + insert + spaceAfter + after;
+    setText(next);
+    const pos = start + spaceBefore.length + insert.length + spaceAfter.length;
+    setSelection({ start: pos, end: pos });
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }
 
   return (
     <KeyboardAvoidingView
@@ -135,9 +162,14 @@ function EditorScreen({ detail, sessionId, onBack, insets, c, router }: EditorSc
           <Ionicons name="close" size={22} color={c.foreground} />
         </HapticTouchable>
         <Text style={[s.topBarTitle, { color: c.foreground }]} numberOfLines={1}>{detail.title}</Text>
-        <Text style={[s.wordCount, { color: over ? "#EA4335" : inRange ? COLOR : c.subtle }]}>
-          {wc}/{detail.minWords}–{detail.maxWords}
-        </Text>
+        <View style={[s.partChip, { backgroundColor: COLOR + "18" }]}>
+          <Text style={[s.partChipText, { color: COLOR }]}>Task {detail.part}</Text>
+        </View>
+      </View>
+
+      {/* Word progress bar — mirrors WritingWordProgress in FE v3 */}
+      <View style={[s.progressRow, { backgroundColor: c.surface, borderBottomColor: c.borderLight }]}>
+        <WritingWordProgress count={wc} min={detail.minWords} max={detail.maxWords} />
       </View>
 
       <ScrollView
@@ -153,7 +185,7 @@ function EditorScreen({ detail, sessionId, onBack, insets, c, router }: EditorSc
               {submitted.wordCount} từ · AI đang chấm bài
             </Text>
             <DepthButton
-              onPress={() => router.push(`/(app)/grading/writing/${submitted.submissionId}` as any)}
+              onPress={() => setShowReview(true)}
               style={{ marginTop: spacing.md, backgroundColor: COLOR, borderColor: COLOR }}
             >
               Xem kết quả
@@ -174,9 +206,16 @@ function EditorScreen({ detail, sessionId, onBack, insets, c, router }: EditorSc
                   <Text style={[s.reqLabel, { color: c.mutedForeground }]}>Từ khóa gợi ý</Text>
                   <View style={s.startersRow}>
                     {detail.keywords.map((kw) => (
-                      <View key={kw} style={[s.starterChip, { backgroundColor: c.infoTint }]}>
+                      <Pressable
+                        key={kw}
+                        onPress={() => insertAtCursor(kw)}
+                        style={({ pressed }) => [
+                          s.starterChip,
+                          { backgroundColor: c.infoTint, opacity: pressed ? 0.7 : 1 },
+                        ]}
+                      >
                         <Text style={[s.starterText, { color: c.info }]}>{kw}</Text>
-                      </View>
+                      </Pressable>
                     ))}
                   </View>
                 </View>
@@ -196,12 +235,19 @@ function EditorScreen({ detail, sessionId, onBack, insets, c, router }: EditorSc
 
               {detail.sentenceStarters.length > 0 && (
                 <View style={s.startersSection}>
-                  <Text style={[s.reqLabel, { color: c.mutedForeground }]}>Gợi ý mở đầu</Text>
+                  <Text style={[s.reqLabel, { color: c.mutedForeground }]}>Gợi ý mở đầu · nhấn để chèn</Text>
                   <View style={s.startersRow}>
                     {detail.sentenceStarters.map((st) => (
-                      <View key={st} style={[s.starterChip, { backgroundColor: c.muted }]}>
+                      <Pressable
+                        key={st}
+                        onPress={() => insertAtCursor(st)}
+                        style={({ pressed }) => [
+                          s.starterChip,
+                          { backgroundColor: c.muted, opacity: pressed ? 0.7 : 1 },
+                        ]}
+                      >
                         <Text style={[s.starterText, { color: c.mutedForeground }]}>{st}</Text>
-                      </View>
+                      </Pressable>
                     ))}
                   </View>
                 </View>
@@ -229,9 +275,12 @@ function EditorScreen({ detail, sessionId, onBack, insets, c, router }: EditorSc
               }}
             >
               <TextInput
+                ref={inputRef}
                 style={[s.editor, { color: c.foreground }]}
                 value={text}
                 onChangeText={setText}
+                onSelectionChange={handleSelectionChange}
+                selection={selection}
                 placeholder="Viết bài của bạn ở đây..."
                 placeholderTextColor={c.placeholder}
                 multiline
@@ -271,6 +320,15 @@ function EditorScreen({ detail, sessionId, onBack, insets, c, router }: EditorSc
           </DepthButton>
         </View>
       )}
+
+      {/* Inline grading sheet — polls every 5s via useWritingGradingResult */}
+      {submitted ? (
+        <WritingReviewSheet
+          visible={showReview}
+          submissionId={submitted.submissionId}
+          onClose={() => setShowReview(false)}
+        />
+      ) : null}
     </KeyboardAvoidingView>
   );
 }
@@ -290,7 +348,11 @@ const s = StyleSheet.create({
   topBarTitle: { flex: 1, fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   partChip: { paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radius.full },
   partChipText: { fontSize: 11, fontFamily: fontFamily.bold },
-  wordCount: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  progressRow: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+  },
   previewIcon: { width: 80, height: 80, borderRadius: 40, alignItems: "center", justifyContent: "center", marginBottom: spacing.lg },
   previewTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold, textAlign: "center", paddingHorizontal: spacing.xl },
   previewMeta: { fontSize: fontSize.sm, marginTop: spacing.sm },

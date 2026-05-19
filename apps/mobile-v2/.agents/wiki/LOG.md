@@ -27,3 +27,11 @@ Key decisions:
 - Treat practice support as an unlock flow in UI state; writing keywords/sample answer, reading translation, and listening subtitles are now gated behind support actions instead of always visible.
 - Upgrade `eslint` to v9 because `eslint-config-expo/flat` requires the flat-config runtime that breaks under the previous ESLint 8 setup.
 - Keep notification tap behavior user-facing: unread items mark as read first, deletion moved to long press.
+
+## 2026-05-03 — Course booking mobile parity
+
+Key decisions:
+- Implement the FE v3 1-1 booking flow as a mobile-native screen under `courses/[courseId]/booking`, not as a web-style grid.
+- Keep booking UI in course feature components and keep the route wrapper minimal.
+- Update booking and wallet query caches optimistically from the booking mutation result before invalidation so success state is visible immediately.
+- Centralize new course/date/number formatting in `src/lib/utils.ts` for touched course files.

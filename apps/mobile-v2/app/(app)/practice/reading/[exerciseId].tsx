@@ -11,6 +11,8 @@ import { useMutation } from "@tanstack/react-query";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
 import { FocusHeader } from "@/components/FocusHeader";
+import { McqQuestionCard } from "@/components/McqQuestionCard";
+import { McqResultCard } from "@/components/McqResultCard";
 import { SubmitFooter } from "@/components/SubmitFooter";
 import { SupportPanel } from "@/components/SupportPanel";
 import {
@@ -18,7 +20,7 @@ import {
   startReadingSession, submitReadingSession,
 } from "@/hooks/use-practice";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
-import type { McqQuestion, SubmitResult } from "@/hooks/use-practice";
+import type { McqQuestion } from "@/hooks/use-practice";
 
 const COLOR = "#7850C8";
 
@@ -152,9 +154,9 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
           </View>
         )}
 
-        {/* Result */}
+        {/* Result — mirrors FE v3 ReadingInProgress celebration card */}
         {session.result && (
-          <ResultCard result={session.result} onBack={onBack} c={c} />
+          <McqResultCard result={session.result} accentColor={COLOR} onBack={onBack} />
         )}
 
         {/* Support panel */}
@@ -170,17 +172,16 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
           />
         )}
 
-        {/* Questions */}
+        {/* Questions — McqQuestionCard mirrors FE v3 QuestionList */}
         {!showPassage && questions.map((q: McqQuestion, qi: number) => (
-          <QuestionCard
+          <McqQuestionCard
             key={q.id}
             question={q}
             index={qi}
             selected={session.answers[q.id] ?? null}
             onSelect={(idx: number) => session.select(q.id, idx)}
             result={session.result}
-            color={COLOR}
-            c={c}
+            accentColor={COLOR}
           />
         ))}
       </ScrollView>
@@ -197,74 +198,6 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
             c={c}
           />
         </View>
-      )}
-    </View>
-  );
-}
-
-function ResultCard({ result, onBack, c }: { result: SubmitResult; onBack: () => void; c: any }) {
-  const pct = Math.round((result.score / result.total) * 100);
-  return (
-    <View style={[s.resultCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
-      <Text style={[s.resultScore, { color: c.foreground }]}>{result.score}/{result.total}</Text>
-      <Text style={[s.resultPct, { color: c.mutedForeground }]}>{pct}% đúng</Text>
-      <DepthButton
-        onPress={onBack}
-        style={{ marginTop: spacing.md, backgroundColor: COLOR, borderColor: COLOR }}
-      >
-        Về danh sách
-      </DepthButton>
-    </View>
-  );
-}
-
-function QuestionCard({ question, index, selected, onSelect, result, color, c }: any) {
-  const itemResult = result?.items.find((i: any) => i.questionId === question.id);
-  const isCorrect = itemResult?.isCorrect;
-  const hasResult = !!result;
-
-  return (
-    <View style={[s.questionCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
-      <Text style={[s.questionLabel, { color: color }]}>Câu {index + 1}</Text>
-      <Text style={[s.questionText, { color: c.foreground }]}>{question.question}</Text>
-      {question.options.map((opt: string, oi: number) => {
-        const isSelected = selected === oi;
-        let borderColor = c.border;
-        let bgColor = c.surface;
-        let textColor = c.foreground;
-
-        if (hasResult) {
-          if (oi === itemResult?.correctIndex) {
-            borderColor = "#58CC02";
-            bgColor = "#E6F8D4";
-            textColor = "#478700";
-          } else if (isSelected && !isCorrect) {
-            borderColor = "#EA4335";
-            bgColor = "#FFE6E4";
-            textColor = "#C03B2F";
-          }
-        } else if (isSelected) {
-          borderColor = color;
-          bgColor = color + "18";
-          textColor = color;
-        }
-
-        return (
-          <HapticTouchable
-            key={oi}
-            onPress={() => !hasResult && onSelect(oi)}
-            disabled={hasResult}
-            style={[s.option, { borderColor, backgroundColor: bgColor }]}
-          >
-            <Text style={[s.optionText, { color: textColor }]}>{opt}</Text>
-            {hasResult && oi === itemResult?.correctIndex && (
-              <Ionicons name="checkmark-circle" size={18} color="#58CC02" />
-            )}
-          </HapticTouchable>
-        );
-      })}
-      {hasResult && itemResult?.explanation && (
-        <Text style={[s.explanation, { color: c.mutedForeground }]}>{itemResult.explanation}</Text>
       )}
     </View>
   );
@@ -291,14 +224,5 @@ const s = StyleSheet.create({
   passagePara: { fontSize: fontSize.sm, lineHeight: 22 },
   translationWrap: { flexDirection: "row", alignItems: "flex-start", gap: spacing.xs, marginTop: spacing.sm, padding: spacing.sm, backgroundColor: "#F7F6F3", borderRadius: radius.md },
   translationText: { flex: 1, fontSize: fontSize.xs, lineHeight: 18, fontStyle: "italic" },
-  resultCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.xl, alignItems: "center", gap: spacing.xs },
-  resultScore: { fontSize: fontSize["3xl"], fontFamily: fontFamily.extraBold },
-  resultPct: { fontSize: fontSize.sm },
-  questionCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },
-  questionLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
-  questionText: { fontSize: fontSize.base, fontFamily: fontFamily.bold, lineHeight: 22 },
-  option: { borderWidth: 1, borderRadius: radius.md, padding: spacing.md, gap: spacing.xs, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  optionText: { flex: 1, fontSize: fontSize.sm, fontFamily: fontFamily.medium },
-  explanation: { fontSize: fontSize.xs, fontFamily: fontFamily.medium, lineHeight: 18, marginTop: spacing.xs, paddingHorizontal: spacing.sm },
   footer: { backgroundColor: "#FFFFFF" },
 });

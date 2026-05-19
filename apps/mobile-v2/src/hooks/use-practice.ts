@@ -175,6 +175,7 @@ export interface SpeakingConversationTurn {
   id: string;
   role: "user" | "assistant" | "ai";
   text: string;
+  ipa: string | null;
   feedback: SpeakingConversationTurnFeedback | null;
   suggestedWords: string[];
 }
@@ -185,6 +186,8 @@ export interface SpeakingConversationTurnFeedback {
   grammarCorrections?: { wrong?: string; correct?: string; explanation?: string }[];
   vocabCheck?: { phrase: string; used: boolean }[];
   better?: string | null;
+  betterIpa?: string | null;
+  userIpa?: string | null;
 }
 
 export interface SpeakingConversationSession {
@@ -387,6 +390,27 @@ export function useSpeakingConversationReview(sessionId: string, enabled = true)
     queryFn: () => api.get<SpeakingConversationReview>(`/api/v1/practice/speaking/conversations/${sessionId}/review`),
     enabled: enabled && !!sessionId,
     retry: false,
+  });
+}
+
+export interface SpeakingConversationHistoryItem {
+  id: string;
+  scenario: { id: string; title: string; level: string };
+  endedAt: string;
+  durationSeconds: number;
+  userTurnCount: number;
+  vocabUsedPct: number;
+}
+
+export function useSpeakingConversationHistory() {
+  return useQuery({
+    queryKey: ["practice", "speaking", "conversation-history"],
+    queryFn: () =>
+      api.get<SpeakingHistoryResponse<SpeakingConversationHistoryItem>>(
+        "/api/v1/practice/speaking/conversations/history",
+      ),
+    retry: false,
+    select: (res) => res.data,
   });
 }
 
