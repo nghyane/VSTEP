@@ -40,6 +40,13 @@ class CourseController extends Controller
             $course->makeHidden('livestream_url');
         }
 
+        // Course đã unpublish chỉ accessible cho học viên đã ghi danh (giữ
+        // quyền xem chi tiết khóa họ đã mua) — người ngoài fetch trực tiếp
+        // bằng id → 404 để không lộ thông tin khóa đang đóng.
+        if (! $course->is_published && ! $isEnrolled) {
+            abort(404);
+        }
+
         return response()->json(['data' => [
             'course' => $course,
             'sold_slots' => $course->soldSlots(),

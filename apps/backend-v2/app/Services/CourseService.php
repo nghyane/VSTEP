@@ -58,9 +58,8 @@ class CourseService
      */
     public function listForProfile(?Profile $profile): array
     {
-        $courses = $this->listPublished();
-
         if (! $profile) {
+            $courses = $this->listPublished();
             $courses->each(fn (Course $c) => $c->makeHidden('livestream_url'));
 
             return [
@@ -70,11 +69,33 @@ class CourseService
             ];
         }
 
+        // Học viên đã ghi danh phải thấy khóa của họ kể cả khi admin tạm đóng
+        // ghi danh (toggle is_published=false). Đóng ghi danh = chặn người
+        // mới mua, không phải xóa course khỏi "Khóa của tôi".
         $enrolledIds = CourseEnrollment::query()
             ->where('profile_id', $profile->id)
-            ->whereIn('course_id', $courses->pluck('id'))
             ->pluck('course_id');
 
+        $courses = Course::query()
+            ->with('teacher:id,full_name')
+            ->withCount([
+                'enrollments as sold_slots',
+                'scheduleItems as schedule_items_count',
+            ])
+            ->where(function ($q) use ($enrolledIds) {
+                $q->where('is_published', true);
+                if ($enrolledIds->isNotEmpty()) {
+                    $q->orWhereIn('id', $enrolledIds);
+                }
+            })
+            ->orderBy('start_date')
+            ->get();
+
+        // Sau filter union ở trên, $enrolledIds có thể chứa course không nằm
+        // trong $courses (vd profile có nhiều enrollment cũ với khóa đã xóa).
+        // Intersect lại để FE chỉ thấy id thuộc list trả về.
+        $courseIdSet = $courses->pluck('id')->flip();
+        $enrolledIds = $enrolledIds->filter(fn ($id) => $courseIdSet->has($id))->values();
         $enrolledSet = $enrolledIds->flip();
         $enrollments = new \stdClass;
         foreach ($courses as $course) {

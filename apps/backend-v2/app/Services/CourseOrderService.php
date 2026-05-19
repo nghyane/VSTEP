@@ -41,6 +41,9 @@ class CourseOrderService
         Course $course,
         string $paymentProvider = 'mock',
     ): CourseEnrollmentOrder {
+        if (! $course->is_published) {
+            throw ValidationException::withMessages(['course' => ['Khóa học đang đóng ghi danh.']]);
+        }
         if ($course->end_date->isPast()) {
             throw ValidationException::withMessages(['course' => ['Khóa học đã kết thúc.']]);
         }
