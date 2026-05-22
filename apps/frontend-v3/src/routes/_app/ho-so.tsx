@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useState } from "react"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
 import { Header } from "#/components/Header"
+import { ChangePasswordDialog } from "#/features/profile/components/ChangePasswordDialog"
 import { CreateProfileForm } from "#/features/profile/components/CreateProfileForm"
 import { EditProfileForm } from "#/features/profile/components/EditProfileForm"
 import { useProfilePage } from "#/features/profile/use-profile-page"
@@ -23,6 +25,7 @@ function daysUntil(deadline: string): number {
 function ProfilePage() {
 	const { edit } = Route.useSearch()
 	const p = useProfilePage(edit)
+	const [showChangePassword, setShowChangePassword] = useState(false)
 
 	if (p.isLoading || !p.profiles) return <Header title="Hồ sơ" />
 
@@ -102,8 +105,23 @@ function ProfilePage() {
 						<span className="text-sm text-muted">Email</span>
 						<span className="text-sm font-bold text-foreground">{p.user.email}</span>
 					</div>
+					<div className="flex items-center justify-between gap-4 py-3 border-t border-border">
+						<div className="min-w-0">
+							<p className="text-sm text-muted">Mật khẩu</p>
+							<p className="text-xs text-subtle mt-0.5">Đổi mật khẩu định kỳ để bảo vệ tài khoản.</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setShowChangePassword(true)}
+							className="btn btn-secondary text-sm font-bold px-4 py-2 whitespace-nowrap"
+						>
+							Đổi mật khẩu
+						</button>
+					</div>
 				</section>
 			</div>
+
+			<ChangePasswordDialog open={showChangePassword} onClose={() => setShowChangePassword(false)} />
 		</>
 	)
 }
