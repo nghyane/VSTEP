@@ -39,20 +39,19 @@ final class NotificationController extends Controller
         return response()->json(['data' => ['marked' => $count]]);
     }
 
-    public function read(Request $request, string $id): JsonResponse
+    public function read(Request $request, Notification $notification): JsonResponse
     {
-        $ok = $this->notificationService->markRead($request->profile(), $id);
+        $ok = $this->notificationService->markRead($request->profile(), $notification->id);
 
         return response()->json(['data' => ['marked' => $ok]]);
     }
 
-    public function destroy(Request $request, string $id): JsonResponse
+    public function destroy(Request $request, Notification $notification): JsonResponse
     {
-        $notif = Notification::query()->findOrFail($id);
-        if ((string) $notif->profile_id !== $request->profile()->id) {
+        if ((string) $notification->profile_id !== $request->profile()->id) {
             abort(403);
         }
-        $notif->delete();
+        $notification->delete();
 
         return response()->json(['data' => ['success' => true]]);
     }

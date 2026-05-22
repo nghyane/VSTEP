@@ -10,6 +10,7 @@ use App\Http\Requests\LogListeningPlayedRequest;
 use App\Http\Requests\SaveExamDraftRequest;
 use App\Http\Requests\StartExamSessionRequest;
 use App\Http\Requests\SubmitExamRequest;
+use App\Http\Resources\ExamSessionListResource;
 use App\Http\Resources\ExamSpeakingResultResource;
 use App\Http\Resources\ExamSubmitResultResource;
 use App\Http\Resources\ExamWritingResultResource;
@@ -69,14 +70,11 @@ final class ExamController extends Controller
         ]], 201);
     }
 
-    public function submit(SubmitExamRequest $request, string $sessionId): JsonResponse
+    public function submit(SubmitExamRequest $request, ExamSession $examSession): JsonResponse
     {
-        /** @var ExamSession $session */
-        $session = ExamSession::query()->findOrFail($sessionId);
-
         $result = $this->examService->submit(
             $request->profile(),
-            $session,
+            $examSession,
             $request->validated('mcq_answers') ?? [],
             $request->validated('writing_answers') ?? [],
             $request->validated('speaking_answers') ?? [],
@@ -87,28 +85,20 @@ final class ExamController extends Controller
         ]);
     }
 
-    public function writingResults(Request $request, string $sessionId): JsonResponse
+    public function writingResults(Request $request, ExamSession $examSession): JsonResponse
     {
-        $session = ExamSession::query()
-            ->with(['writingSubmissions'])
-            ->findOrFail($sessionId);
-        Gate::authorize('view', $session);
+        Gate::authorize('view', $examSession);
+        $examSession->load('writingSubmissions');
 
-        $data = ExamWritingResultResource::collection($session->writingSubmissions);
-
-        return response()->json(['data' => $data]);
+        return response()->json(['data' => ExamWritingResultResource::collection($examSession->writingSubmissions)]);
     }
 
-    public function speakingResults(Request $request, string $sessionId): JsonResponse
+    public function speakingResults(Request $request, ExamSession $examSession): JsonResponse
     {
-        $session = ExamSession::query()
-            ->with(['speakingSubmissions'])
-            ->findOrFail($sessionId);
-        Gate::authorize('view', $session);
+        Gate::authorize('view', $examSession);
+        $examSession->load('speakingSubmissions');
 
-        $data = ExamSpeakingResultResource::collection($session->speakingSubmissions);
-
-        return response()->json(['data' => $data]);
+        return response()->json(['data' => ExamSpeakingResultResource::collection($examSession->speakingSubmissions)]);
     }
 
     public function mySessions(Request $request): JsonResponse
@@ -126,73 +116,45 @@ final class ExamController extends Controller
             $query->where('status', $status);
         }
 
-        $sessions = $query->get()->map(fn (ExamSession $session) => [
-            'id' => $session->id,
-            'exam_id' => $session->examVersion?->exam_id,
-            'exam_version_id' => $session->exam_version_id,
-            'mode' => $session->mode,
-            'selected_skills' => $session->selected_skills,
-            'is_full_test' => $session->is_full_test,
-            'status' => $session->status,
-            'started_at' => $session->started_at,
-            'submitted_at' => $session->submitted_at,
-            'server_deadline_at' => $session->server_deadline_at,
-            'scores' => $session->status->isTerminal()
-                ? $this->scoringService->getSessionScores($session)
-                : null,
-        ]);
+        $sessions = $query->get()->map(
+            fn (ExamSession $session) => (new ExamSessionListResource($session, $this->scoringService))->toArray($request)
+        );
 
         return response()->json(['data' => $sessions]);
     }
 
-    public function abandon(Request $request, string $sessionId): JsonResponse
+    public function abandon(Request $request, ExamSession $examSession): JsonResponse
     {
-        /** @var ExamSession $session */
-        $session = ExamSession::query()->findOrFail($sessionId);
-        Gate::authorize('update', $session);
-        if ($session->status !== ExamSessionStatus::Active) {
+        Gate::authorize('update', $examSession);
+        if ($examSession->status !== ExamSessionStatus::Active) {
             return response()->json(['data' => ['abandoned' => false]]);
         }
-
-        DB::transaction(function () use ($session) {
-            $session->update([
-                'status' => ExamSessionStatus::AutoSubmitted,
-                'submitted_at' => now(),
-            ]);
-            ExamSessionDraft::query()->where('session_id', $session->id)->delete();
+        DB::transaction(function () use ($examSession) {
+            $examSession->update(['status' => ExamSessionStatus::AutoSubmitted, 'submitted_at' => now()]);
+            ExamSessionDraft::query()->where('session_id', $examSession->id)->delete();
         });
-
-        $progressService = $this->progressService;
-        DB::afterCommit(fn () => $progressService->recordExamCompletion($session->fresh()));
+        DB::afterCommit(fn () => $this->progressService->recordExamCompletion($examSession->fresh()));
 
         return response()->json(['data' => ['abandoned' => true]]);
     }
 
-    public function getDraft(Request $request, string $sessionId): JsonResponse
+    public function getDraft(Request $request, ExamSession $examSession): JsonResponse
     {
-        /** @var ExamSession $session */
-        $session = ExamSession::query()->findOrFail($sessionId);
-        $draft = $this->examService->getDraft($request->profile(), $session);
-
+        $draft = $this->examService->getDraft($request->profile(), $examSession);
         if ($draft === null) {
             return response()->json(['data' => null]);
         }
 
         return response()->json(['data' => [
-            'session_id' => $draft->session_id,
-            'skill_idx' => $draft->skill_idx,
-            'mcq_answers' => $draft->mcq_answers,
-            'writing_answers' => $draft->writing_answers,
-            'speaking_marks' => $draft->speaking_marks,
-            'saved_at' => $draft->saved_at,
+            'session_id' => $draft->session_id, 'skill_idx' => $draft->skill_idx,
+            'mcq_answers' => $draft->mcq_answers, 'writing_answers' => $draft->writing_answers,
+            'speaking_marks' => $draft->speaking_marks, 'saved_at' => $draft->saved_at,
         ]]);
     }
 
-    public function saveDraft(SaveExamDraftRequest $request, string $sessionId): JsonResponse
+    public function saveDraft(SaveExamDraftRequest $request, ExamSession $examSession): JsonResponse
     {
-        /** @var ExamSession $session */
-        $session = ExamSession::query()->findOrFail($sessionId);
-        $draft = $this->examService->saveDraft($request->profile(), $session, [
+        $draft = $this->examService->saveDraft($request->profile(), $examSession, [
             'skill_idx' => (int) $request->validated('skill_idx'),
             'mcq_answers' => $request->validated('mcq_answers'),
             'writing_answers' => $request->validated('writing_answers'),
@@ -200,12 +162,9 @@ final class ExamController extends Controller
         ]);
 
         return response()->json(['data' => [
-            'session_id' => $draft->session_id,
-            'skill_idx' => $draft->skill_idx,
-            'mcq_answers' => $draft->mcq_answers,
-            'writing_answers' => $draft->writing_answers,
-            'speaking_marks' => $draft->speaking_marks,
-            'saved_at' => $draft->saved_at,
+            'session_id' => $draft->session_id, 'skill_idx' => $draft->skill_idx,
+            'mcq_answers' => $draft->mcq_answers, 'writing_answers' => $draft->writing_answers,
+            'speaking_marks' => $draft->speaking_marks, 'saved_at' => $draft->saved_at,
         ]]);
     }
 
@@ -240,53 +199,43 @@ final class ExamController extends Controller
         ]]);
     }
 
-    public function showSession(Request $request, string $sessionId): JsonResponse
+    public function showSession(Request $request, ExamSession $examSession): JsonResponse
     {
-        /** @var ExamSession $session */
-        $session = ExamSession::query()->findOrFail($sessionId);
-        Gate::authorize('view', $session);
+        Gate::authorize('view', $examSession);
 
-        return response()->json(['data' => $session]);
+        return response()->json(['data' => $examSession]);
     }
 
-    public function logListeningPlayed(LogListeningPlayedRequest $request, string $sessionId): JsonResponse
+    public function logListeningPlayed(LogListeningPlayedRequest $request, ExamSession $examSession): JsonResponse
     {
         $validated = $request->validated();
-        /** @var ExamSession $session */
-        $session = ExamSession::query()->findOrFail($sessionId);
-        Gate::authorize('update', $session);
-        if ($session->status !== ExamSessionStatus::Active) {
+        Gate::authorize('update', $examSession);
+        if ($examSession->status !== ExamSessionStatus::Active) {
             return response()->json(['data' => ['error' => 'Session is not active.']], 409);
         }
-
         $log = ExamListeningPlayLog::firstOrCreate(
-            ['session_id' => $session->id, 'section_id' => $validated['section_id']],
+            ['session_id' => $examSession->id, 'section_id' => $validated['section_id']],
             ['played_at' => now(), 'client_ip' => $request->ip()],
         );
 
-        if (! $log->wasRecentlyCreated) {
-            return response()->json(['data' => ['already_played' => true]], 409);
-        }
-
-        return response()->json(['data' => ['played_at' => $log->played_at]]);
+        return $log->wasRecentlyCreated
+            ? response()->json(['data' => ['played_at' => $log->played_at]])
+            : response()->json(['data' => ['already_played' => true]], 409);
     }
 
-    public function sessionResults(Request $request, string $sessionId): JsonResponse
+    public function sessionResults(Request $request, ExamSession $examSession): JsonResponse
     {
-        /** @var ExamSession $session */
-        $session = ExamSession::query()->findOrFail($sessionId);
-        Gate::authorize('view', $session);
+        Gate::authorize('view', $examSession);
 
-        if (! $session->status->isTerminal()) {
+        if (! $examSession->status->isTerminal()) {
             return response()->json(['data' => [
-                'session' => $this->formatSessionSummary($session),
+                'session' => $this->formatSessionSummary($examSession),
                 'scores' => null,
                 'message' => 'Session not yet submitted or graded.',
             ]]);
         }
 
-        // Eager load all result data in one query set
-        $session->load([
+        $examSession->load([
             'mcqAnswers',
             'writingSubmissions.gradingResults',
             'speakingSubmissions.gradingResults',
@@ -295,17 +244,11 @@ final class ExamController extends Controller
             'listeningPlayLogs',
         ]);
 
-        $mcqBand = $this->scoringService->getSessionScores($session);
+        $mcqBand = $this->scoringService->getSessionScores($examSession);
+        $mcqDetail = $this->buildMcqDetail($examSession);
+        $mcqSummary = $this->buildMcqSummary($examSession);
 
-        // MCQ detail: per-item breakdown (chỉ các câu đã đáp)
-        $mcqDetail = $this->buildMcqDetail($session);
-
-        // MCQ summary: score + total. Total = số item trong selected_skills của version
-        // (câu không đáp tính sai — cùng logic với submit() để FE đọc trực tiếp).
-        $mcqSummary = $this->buildMcqSummary($session);
-
-        // Writing feedback
-        $writingFeedback = $session->writingSubmissions->map(function ($submission) {
+        $writingFeedback = $examSession->writingSubmissions->map(function ($submission) {
             $result = $submission->gradingResults->where('is_active', true)->first();
 
             return [
@@ -322,8 +265,7 @@ final class ExamController extends Controller
             ];
         });
 
-        // Speaking feedback
-        $speakingFeedback = $session->speakingSubmissions->map(function ($submission) {
+        $speakingFeedback = $examSession->speakingSubmissions->map(function ($submission) {
             $result = $submission->gradingResults->where('is_active', true)->first();
 
             return [
@@ -339,9 +281,8 @@ final class ExamController extends Controller
             ];
         });
 
-        // Listening play log summary
-        $listeningSections = $session->examVersion->listeningSections;
-        $playedSectionIds = $session->listeningPlayLogs->pluck('section_id')->toArray();
+        $listeningSections = $examSession->examVersion->listeningSections;
+        $playedSectionIds = $examSession->listeningPlayLogs->pluck('section_id')->toArray();
         $listeningPlaySummary = $listeningSections->map(function ($section) use ($playedSectionIds) {
             return [
                 'section_id' => $section->id,
@@ -351,7 +292,7 @@ final class ExamController extends Controller
         });
 
         return response()->json(['data' => [
-            'session' => $this->formatSessionSummary($session),
+            'session' => $this->formatSessionSummary($examSession),
             'scores' => $mcqBand,
             'mcq' => $mcqSummary,
             'mcq_detail' => $mcqDetail,
@@ -361,24 +302,20 @@ final class ExamController extends Controller
         ]]);
     }
 
-    public function listeningPlaySummary(Request $request, string $sessionId): JsonResponse
+    public function listeningPlaySummary(Request $request, ExamSession $examSession): JsonResponse
     {
-        /** @var ExamSession $session */
-        $session = ExamSession::query()->with(['examVersion.listeningSections'])->findOrFail($sessionId);
-        Gate::authorize('view', $session);
+        Gate::authorize('view', $examSession);
+        $examSession->loadMissing(['examVersion.listeningSections']);
 
         $playedSectionIds = ExamListeningPlayLog::query()
-            ->where('session_id', $session->id)
-            ->pluck('section_id')
-            ->toArray();
+            ->where('session_id', $examSession->id)
+            ->pluck('section_id')->toArray();
 
-        $summary = $session->examVersion->listeningSections->map(function ($section) use ($playedSectionIds) {
-            return [
-                'section_id' => $section->id,
-                'part' => $section->part,
-                'played' => in_array($section->id, $playedSectionIds, true),
-            ];
-        });
+        $summary = $examSession->examVersion->listeningSections->map(fn ($section) => [
+            'section_id' => $section->id,
+            'part' => $section->part,
+            'played' => in_array($section->id, $playedSectionIds, true),
+        ]);
 
         return response()->json(['data' => $summary]);
     }

@@ -11,7 +11,6 @@ use App\Http\Resources\CoinTransactionResource;
 use App\Http\Resources\WalletTopupOrderResource;
 use App\Http\Resources\WalletTopupPackageResource;
 use App\Models\CoinTransaction;
-use App\Models\Profile;
 use App\Models\WalletTopupOrder;
 use App\Models\WalletTopupPackage;
 use App\Services\PromoService;
@@ -91,17 +90,13 @@ final class WalletController extends Controller
     /**
      * Mock confirm endpoint. Real gateway sẽ dùng webhook riêng.
      */
-    public function confirmTopup(Request $request, string $orderId): JsonResponse
+    public function confirmTopup(Request $request, WalletTopupOrder $walletTopupOrder): JsonResponse
     {
-        $profile = $request->profile();
-        /** @var WalletTopupOrder $order */
-        $order = WalletTopupOrder::query()->findOrFail($orderId);
-
-        if ($order->profile_id !== $profile->id) {
+        if ($walletTopupOrder->profile_id !== $request->profile()->id) {
             abort(403, 'Order does not belong to active profile.');
         }
 
-        $confirmed = $this->topupService->confirm($order);
+        $confirmed = $this->topupService->confirm($walletTopupOrder);
 
         return response()->json([
             'data' => new WalletTopupOrderResource($confirmed),

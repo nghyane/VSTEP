@@ -7,6 +7,11 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Practice\StartConversationRequest;
 use App\Http\Requests\Practice\SubmitTurnRequest;
+use App\Http\Resources\ConversationHistoryResource;
+use App\Http\Resources\ConversationTurnResource;
+use App\Http\Resources\ScenarioDetailResource;
+use App\Http\Resources\ScenarioSummaryResource;
+use App\Models\PracticeSpeakingConversationSession;
 use App\Services\SpeakingConversationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,25 +27,14 @@ final class SpeakingConversationController extends Controller
         $level = $request->string('level')->toString() ?: null;
         $scenarios = $this->service->listScenarios($level);
 
-        return response()->json(['data' => $scenarios->map(fn ($s) => [
-            'id' => $s->id, 'slug' => $s->slug, 'title' => $s->title,
-            'level' => $s->level, 'character_name' => $s->character_name,
-            'character_voice' => $s->character_voice_label,
-            'description' => $s->description, 'estimated_minutes' => $s->estimated_minutes,
-        ])->values()]);
+        return response()->json(['data' => ScenarioSummaryResource::collection($scenarios)]);
     }
 
     public function showScenario(string $id): JsonResponse
     {
         $s = $this->service->getScenario($id);
 
-        return response()->json(['data' => [
-            'id' => $s->id, 'slug' => $s->slug, 'title' => $s->title,
-            'level' => $s->level, 'character_name' => $s->character_name,
-            'character_voice' => $s->character_voice_label,
-            'description' => $s->description, 'estimated_minutes' => $s->estimated_minutes,
-            'target_vocab' => $s->target_vocab, 'expected_turns' => $s->expected_turns,
-        ]]);
+        return response()->json(['data' => ScenarioDetailResource::make($s)]);
     }
 
     public function start(StartConversationRequest $request): JsonResponse
@@ -55,38 +49,23 @@ final class SpeakingConversationController extends Controller
 
         return response()->json(['data' => [
             'session_id' => $session->id,
-            'scenario' => [
-                'id' => $scenario->id, 'slug' => $scenario->slug, 'title' => $scenario->title,
-                'level' => $scenario->level, 'character_name' => $scenario->character_name,
-                'character_voice' => $scenario->character_voice_label,
-                'description' => $scenario->description, 'estimated_minutes' => $scenario->estimated_minutes,
-                'target_vocab' => $scenario->target_vocab, 'expected_turns' => $scenario->expected_turns,
-            ],
-            'turns' => collect($result['turns'])->map(fn ($t) => $this->formatTurn($t))->toArray(),
+            'scenario' => ScenarioDetailResource::make($scenario),
+            'turns' => ConversationTurnResource::collection(collect($result['turns'])),
         ]], 201);
     }
 
-    public function submitTurn(SubmitTurnRequest $request, string $sessionId): JsonResponse
+    public function submitTurn(SubmitTurnRequest $request, PracticeSpeakingConversationSession $conversationSession): JsonResponse
     {
         $confidence = (float) ($request->validated('confidence') ?? 1.0);
         if ($confidence > 0 && $confidence < 0.2) {
-            return response()->json([
-                'error' => 'low_confidence',
-                'message' => 'Không nghe rõ. Vui lòng nói lại.',
-            ], 422);
+            return response()->json(['error' => 'low_confidence', 'message' => 'Không nghe rõ. Vui lòng nói lại.'], 422);
         }
-
-        $result = $this->service->submitTurn(
-            $request->profile(),
-            $sessionId,
-            $request->validated('text'),
-        );
-
+        $result = $this->service->submitTurn($request->profile(), $conversationSession->id, $request->validated('text'));
         $session = $result['session'];
 
         return response()->json(['data' => [
-            'user_turn' => $this->formatTurn($result['user_turn']),
-            'ai_turn' => $this->formatTurn($result['ai_turn']),
+            'user_turn' => ConversationTurnResource::make($result['user_turn']),
+            'ai_turn' => ConversationTurnResource::make($result['ai_turn']),
             'session' => [
                 'user_turn_count' => $session->user_turn_count,
                 'expected_turns' => $session->scenario->expected_turns,
@@ -95,9 +74,9 @@ final class SpeakingConversationController extends Controller
         ]]);
     }
 
-    public function end(Request $request, string $sessionId): JsonResponse
+    public function end(Request $request, PracticeSpeakingConversationSession $conversationSession): JsonResponse
     {
-        $session = $this->service->endSession($request->profile(), $sessionId);
+        $session = $this->service->endSession($request->profile(), $conversationSession->id);
         $vocabPct = $session->vocab_target_count > 0
             ? (int) round($session->vocab_used_count / $session->vocab_target_count * 100)
             : 0;
@@ -117,21 +96,15 @@ final class SpeakingConversationController extends Controller
         ]]);
     }
 
-    public function show(Request $request, string $sessionId): JsonResponse
+    public function show(Request $request, PracticeSpeakingConversationSession $conversationSession): JsonResponse
     {
-        $session = $this->service->getSession($request->profile(), $sessionId);
+        $session = $this->service->getSession($request->profile(), $conversationSession->id);
         $scenario = $session->scenario;
 
         return response()->json(['data' => [
             'session_id' => $session->id,
-            'scenario' => [
-                'id' => $scenario->id, 'slug' => $scenario->slug, 'title' => $scenario->title,
-                'level' => $scenario->level, 'character_name' => $scenario->character_name,
-                'character_voice' => $scenario->character_voice_label,
-                'description' => $scenario->description, 'estimated_minutes' => $scenario->estimated_minutes,
-                'target_vocab' => $scenario->target_vocab, 'expected_turns' => $scenario->expected_turns,
-            ],
-            'turns' => $session->turns->map(fn ($t) => $this->formatTurn($t))->toArray(),
+            'scenario' => ScenarioDetailResource::make($scenario),
+            'turns' => ConversationTurnResource::collection($session->turns),
         ]]);
     }
 
@@ -139,34 +112,17 @@ final class SpeakingConversationController extends Controller
     {
         $paginator = $this->service->listHistory($request->profile());
 
-        return response()->json([
-            'data' => collect($paginator->items())->map(fn ($s) => [
-                'id' => $s->id,
-                'scenario' => [
-                    'id' => $s->scenario->id,
-                    'title' => $s->scenario->title,
-                    'level' => $s->scenario->level,
-                ],
-                'ended_at' => $s->ended_at,
-                'duration_seconds' => $s->duration_seconds,
-                'user_turn_count' => $s->user_turn_count,
-                'vocab_used_pct' => $s->vocab_target_count > 0
-                    ? (int) round($s->vocab_used_count / $s->vocab_target_count * 100)
-                    : 0,
-            ]),
-            'meta' => [
+        return ConversationHistoryResource::collection($paginator->items())
+            ->additional(['meta' => [
                 'current_page' => $paginator->currentPage(),
                 'last_page' => $paginator->lastPage(),
                 'total' => $paginator->total(),
-            ],
-        ]);
+            ]])->response();
     }
 
-    public function review(Request $request, string $sessionId): JsonResponse
+    public function review(Request $request, PracticeSpeakingConversationSession $conversationSession): JsonResponse
     {
-        $result = $this->service->reviewSession($request->profile(), $sessionId);
-
-        return response()->json(['data' => $result]);
+        return response()->json(['data' => $this->service->reviewSession($request->profile(), $conversationSession->id)]);
     }
 
     public function pronunciationReview(Request $request): JsonResponse
@@ -182,22 +138,5 @@ final class SpeakingConversationController extends Controller
         );
 
         return response()->json(['data' => $result]);
-    }
-
-    private function formatTurn($turn): array
-    {
-        $ipa = $turn->getAttribute('ipa');
-        if (! $ipa && $turn->role === 'user' && is_array($turn->feedback)) {
-            $ipa = $turn->feedback['user_ipa'] ?? null;
-        }
-
-        return [
-            'id' => $turn->id,
-            'role' => $turn->role,
-            'text' => $turn->text,
-            'ipa' => $ipa,
-            'feedback' => $turn->feedback,
-            'suggested_words' => $turn->suggested_words ?? [],
-        ];
     }
 }

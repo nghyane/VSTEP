@@ -216,8 +216,7 @@ final class ExamSessionService
             ExamSessionDraft::query()->where('session_id', $session->id)->delete();
 
             // Streak: chỉ tính full test. RFC 0017 — defer khỏi transaction để rollback an toàn.
-            $progressService = $this->progressService;
-            DB::afterCommit(fn () => $progressService->recordExamCompletion($session->fresh()));
+            DB::afterCommit(fn () => $this->progressService->recordExamCompletion($session->fresh()));
 
             // ── 2. Writing submissions + grading jobs ──
             $writingJobs = [];

@@ -7,13 +7,16 @@ namespace App\Http\Requests;
 use App\Models\ExamSession;
 use App\Models\ExamVersion;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Validator;
 
 final class SubmitExamRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $session = $this->route('exam_session');
+
+        return $session instanceof ExamSession && Gate::allows('update', $session);
     }
 
     public function rules(): array
@@ -36,13 +39,12 @@ final class SubmitExamRequest extends FormRequest
 
     public function after(): array
     {
-        $sessionId = $this->route('sessionId');
         /** @var ExamSession|null $session */
-        $session = ExamSession::query()->find($sessionId);
+        $session = $this->route('exam_session');
 
-        if ($session === null) {
+        if (! $session instanceof ExamSession) {
             return [
-                fn () => $this->validator()->errors()->add('session', 'Session not found.'),
+                fn (Validator $validator) => $validator->errors()->add('session', 'Session not found.'),
             ];
         }
 

@@ -107,7 +107,7 @@ final class AdminVocabService
 
     public function setPublished(VocabTopic $topic, bool $value): VocabTopic
     {
-        $topic->forceFill(['is_published' => $value])->save();
+        $topic->update(['is_published' => $value]);
 
         return $topic->fresh()->load('tasks')->loadCount(['words', 'exercises']);
     }

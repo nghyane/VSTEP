@@ -6,9 +6,9 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BookSlotRequest;
+use App\Http\Resources\EnrollmentOrderResource;
 use App\Models\Course;
 use App\Models\CourseEnrollmentOrder;
-use App\Models\Profile;
 use App\Models\TeacherSlot;
 use App\Services\CourseOrderService;
 use App\Services\CourseService;
@@ -29,9 +29,9 @@ final class CourseController extends Controller
         return response()->json($this->courseService->listForProfile($profile));
     }
 
-    public function show(Request $request, string $id): JsonResponse
+    public function show(Request $request, Course $course): JsonResponse
     {
-        $course = $this->courseService->getDetail($id);
+        $course->loadMissing(['scheduleItems', 'enrollments', 'teacher:id,full_name,title,bio']);
         $profile = $request->attributes->get('active_profile');
         $commitment = $profile ? $this->courseService->commitmentStatus($profile, $course) : null;
 
@@ -61,40 +61,33 @@ final class CourseController extends Controller
      * Create enrollment order. Returns order with pending status.
      * FE uses order_id to confirm payment.
      */
-    public function createEnrollmentOrder(Request $request, string $id): JsonResponse
+    public function createEnrollmentOrder(Request $request, Course $course): JsonResponse
     {
-        /** @var Course $course */
-        $course = Course::query()->findOrFail($id);
-
         $order = $this->courseOrderService->createOrder(
             $request->profile(),
             $course,
             'mock',
         );
 
-        return response()->json(['data' => $this->formatOrder($order)], 201);
+        return response()->json(['data' => EnrollmentOrderResource::make($order)], 201);
     }
 
     /**
      * Confirm payment (mock). Creates enrollment + credits bonus coins.
      */
-    public function confirmEnrollmentOrder(Request $request, string $orderId): JsonResponse
+    public function confirmEnrollmentOrder(Request $request, CourseEnrollmentOrder $enrollmentOrder): JsonResponse
     {
         $validated = $request->validate([
-            // SVG do signature pad sinh; ~5KB/chữ ký bình thường. Cap 50KB cho
-            // safe (chống abuse paste payload to). starts_with để loại payload
-            // lạ ngoài SVG.
             'commitment_signature' => ['nullable', 'string', 'max:51200', 'starts_with:<svg'],
         ]);
 
-        $order = CourseEnrollmentOrder::query()->findOrFail($orderId);
-        if ($order->profile_id !== $request->profile()->id) {
+        if ($enrollmentOrder->profile_id !== $request->profile()->id) {
             abort(403);
         }
 
-        $confirmed = $this->courseOrderService->confirm($order, $validated['commitment_signature'] ?? null);
+        $confirmed = $this->courseOrderService->confirm($enrollmentOrder, $validated['commitment_signature'] ?? null);
 
-        return response()->json(['data' => $this->formatOrder($confirmed)]);
+        return response()->json(['data' => EnrollmentOrderResource::make($confirmed)]);
     }
 
     /**
@@ -102,46 +95,24 @@ final class CourseController extends Controller
      */
     public function enrollmentOrders(Request $request): JsonResponse
     {
-        $orders = $this->courseOrderService->getProfileOrders($request->profile());
-
-        return response()->json([
-            'data' => $orders->map(fn (CourseEnrollmentOrder $o) => $this->formatOrder($o)),
-        ]);
-    }
-
-    private function formatOrder(CourseEnrollmentOrder $order): array
-    {
-        return [
-            'id' => $order->id,
-            'course_id' => $order->course_id,
-            'course_title' => $order->course?->title,
-            'amount_vnd' => $order->amount_vnd,
-            'status' => $order->status,
-            'payment_provider' => $order->payment_provider,
-            'paid_at' => $order->paid_at,
-            'created_at' => $order->created_at,
-        ];
+        return EnrollmentOrderResource::collection(
+            $this->courseOrderService->getProfileOrders($request->profile())
+        )->response();
     }
 
     /**
      * Booking page payload (teacher + slots + my_bookings_count) cho FE 1-1 booking flow.
      */
-    public function bookings(Request $request, string $courseId): JsonResponse
+    public function bookings(Request $request, Course $course): JsonResponse
     {
-        /** @var Course $course */
-        $course = Course::query()->findOrFail($courseId);
-
         return response()->json([
             'data' => $this->courseService->getBookingPageData($request->profile(), $course),
         ]);
     }
 
-    public function bookSlot(BookSlotRequest $request, string $courseId): JsonResponse
+    public function bookSlot(BookSlotRequest $request, Course $course): JsonResponse
     {
         $validated = $request->validated();
-        /** @var Course $course */
-        $course = Course::query()->findOrFail($courseId);
-        /** @var TeacherSlot $slot */
         $slot = TeacherSlot::query()->findOrFail($validated['slot_id']);
 
         $booking = $this->courseService->bookSlot(

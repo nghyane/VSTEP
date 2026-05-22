@@ -16,12 +16,41 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /opt/vstep
-            git checkout -- .
+
+            # Backup .env trước khi pull — git checkout -- . sẽ không xóa
+            # file untracked nhưng pull có thể conflict nếu .env bị track
+            # Backup phòng trường hợp .env bị overwrite bởi example file
+            [ -f apps/backend-v2/.env ] && cp apps/backend-v2/.env apps/backend-v2/.env.deploy-backup
+
             git pull origin main
 
-            # Rebuild frontend if its files changed
+            # Restore .env nếu bị overwrite
+            if [ -f apps/backend-v2/.env.deploy-backup ]; then
+              cp apps/backend-v2/.env.deploy-backup apps/backend-v2/.env
+              rm apps/backend-v2/.env.deploy-backup
+            fi
+
+            # Rebuild frontend only if its files changed
             if git diff HEAD~1 --name-only | grep -q 'apps/frontend-v3/'; then
               docker compose --env-file .env build frontend
             fi
 
-            docker compose --env-file .env up -d --build --force-recreate backend horizon frontend
+            # Rebuild admin only if its files changed
+            if git diff HEAD~1 --name-only | grep -q 'apps/admin/'; then
+              docker compose --env-file .env build admin
+            fi
+
+            # Always rebuild + recreate backend/horizon (code changes)
+            docker compose --env-file .env up -d --build --force-recreate backend horizon
+
+            # Recreate frontend/admin only if they were rebuilt
+            if git diff HEAD~1 --name-only | grep -q 'apps/frontend-v3/'; then
+              docker compose --env-file .env up -d --force-recreate frontend
+            fi
+
+            if git diff HEAD~1 --name-only | grep -q 'apps/admin/'; then
+              docker compose --env-file .env up -d --force-recreate admin
+            fi
+
+            # Cleanup old images
+            docker image prune -f
