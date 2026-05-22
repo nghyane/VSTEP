@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\CoinTransactionType;
+use App\Enums\IconKey;
+use App\Enums\NotificationType;
+use App\Enums\OrderStatus;
 use App\Models\Profile;
 use App\Models\WalletTopupOrder;
 use App\Models\WalletTopupPackage;
@@ -22,7 +25,7 @@ use Illuminate\Validation\ValidationException;
  *
  * Real gateway integration (phase 2): provider webhook → confirm.
  */
-class TopupService
+final class TopupService
 {
     public function __construct(
         private readonly WalletService $walletService,
@@ -45,7 +48,7 @@ class TopupService
             'package_id' => $package->id,
             'amount_vnd' => $package->amount_vnd,
             'coins_to_credit' => $package->totalCoins(),
-            'status' => 'pending',
+            'status' => OrderStatus::Pending,
             'payment_provider' => $paymentProvider,
             'provider_ref' => 'mock_'.Str::random(16),
         ]);
@@ -67,13 +70,13 @@ class TopupService
                 throw new \RuntimeException('Order not found during confirm.');
             }
 
-            if ($locked->status === 'paid') {
+            if ($locked->status === OrderStatus::Paid) {
                 return $locked;
             }
 
-            if ($locked->status !== 'pending') {
+            if ($locked->status !== OrderStatus::Pending) {
                 throw ValidationException::withMessages([
-                    'order' => ["Đơn hàng ở trạng thái {$locked->status} không thể xác nhận."],
+                    'order' => ["Đơn hàng ở trạng thái {$locked->status->value} không thể xác nhận."],
                 ]);
             }
 
@@ -89,16 +92,16 @@ class TopupService
             );
 
             $locked->update([
-                'status' => 'paid',
+                'status' => OrderStatus::Paid,
                 'paid_at' => now(),
             ]);
 
             DB::afterCommit(fn () => $this->notificationService->push(
                 profile: $locked->profile,
-                type: 'topup_completed',
+                type: NotificationType::TopupCompleted,
                 title: 'Nạp xu thành công',
                 body: "Bạn đã nhận {$locked->coins_to_credit} xu.",
-                iconKey: 'coin',
+                iconKey: IconKey::Coin,
                 dedupKey: "topup:{$locked->id}",
             ));
 

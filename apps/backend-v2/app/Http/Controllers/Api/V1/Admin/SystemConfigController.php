@@ -11,7 +11,7 @@ use App\Services\Admin\SystemConfigService;
 use App\Support\SystemConfigSchemas;
 use Illuminate\Http\JsonResponse;
 
-class SystemConfigController extends Controller
+final class SystemConfigController extends Controller
 {
     public function __construct(private readonly SystemConfigService $service) {}
 

@@ -18,7 +18,7 @@ use Illuminate\Validation\ValidationException;
  * Idempotent: 1 claim/(profile, milestone_days). Tham chiếu config
  * `streak.milestones` cho danh sách mốc + số xu.
  */
-class StreakMilestoneService
+final class StreakMilestoneService
 {
     public function __construct(
         private readonly WalletService $walletService,

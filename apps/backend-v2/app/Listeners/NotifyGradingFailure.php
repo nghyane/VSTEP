@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Listeners;
 
+use App\Enums\IconKey;
+use App\Enums\NotificationType;
 use App\Events\GradingFailed;
 use App\Models\ExamSpeakingSubmission;
 use App\Models\ExamWritingSubmission;
@@ -35,18 +37,18 @@ final class NotifyGradingFailure
         match ($job->submission_type) {
             'practice_writing', 'practice_speaking' => $this->notificationService->push(
                 $profile,
-                type: 'grading_failed',
+                type: NotificationType::GradingFailed,
                 title: 'Chấm bài thất bại',
                 body: 'Không thể chấm bài của bạn. Vui lòng thử lại sau.',
-                iconKey: 'alert',
+                iconKey: IconKey::Alert,
                 dedupKey: $dedupKey,
             ),
             'exam_writing', 'exam_speaking' => $this->notificationService->push(
                 $profile,
-                type: 'grading_failed',
+                type: NotificationType::GradingFailed,
                 title: 'Chấm bài thi thất bại',
                 body: 'Không thể chấm bài thi của bạn. Vui lòng liên hệ hỗ trợ.',
-                iconKey: 'alert',
+                iconKey: IconKey::Alert,
                 dedupKey: $dedupKey,
             ),
             default => null,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Exceptions\NotOwnerException;
 use App\Models\PracticeSession;
 use App\Models\PracticeSpeakingDrill;
 use App\Models\PracticeSpeakingDrillAttempt;
@@ -15,7 +16,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
 
-class SpeakingPracticeService
+final class SpeakingPracticeService
 {
     public function __construct(
         private readonly PracticeSessionService $sessionService,
@@ -89,7 +90,7 @@ class SpeakingPracticeService
         ?int $accuracyPercent,
     ): PracticeSpeakingDrillAttempt {
         if ($session->profile_id !== $profile->id) {
-            abort(403, 'Session does not belong to active profile.');
+            throw new NotOwnerException;
         }
         if ($session->module !== 'speaking_drill') {
             throw ValidationException::withMessages([
@@ -145,7 +146,7 @@ class SpeakingPracticeService
         int $durationSeconds,
     ): PracticeSpeakingSubmission {
         if ($session->profile_id !== $profile->id) {
-            abort(403, 'Session does not belong to active profile.');
+            throw new NotOwnerException;
         }
         if ($session->module !== 'speaking_vstep_practice') {
             throw ValidationException::withMessages([

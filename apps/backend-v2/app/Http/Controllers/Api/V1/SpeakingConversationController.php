@@ -7,12 +7,11 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Practice\StartConversationRequest;
 use App\Http\Requests\Practice\SubmitTurnRequest;
-use App\Models\Profile;
 use App\Services\SpeakingConversationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class SpeakingConversationController extends Controller
+final class SpeakingConversationController extends Controller
 {
     public function __construct(
         private readonly SpeakingConversationService $service,
@@ -47,7 +46,7 @@ class SpeakingConversationController extends Controller
     public function start(StartConversationRequest $request): JsonResponse
     {
         $result = $this->service->startSession(
-            $this->profile($request),
+            $request->profile(),
             $request->validated('scenario_id'),
         );
 
@@ -78,7 +77,7 @@ class SpeakingConversationController extends Controller
         }
 
         $result = $this->service->submitTurn(
-            $this->profile($request),
+            $request->profile(),
             $sessionId,
             $request->validated('text'),
         );
@@ -98,7 +97,7 @@ class SpeakingConversationController extends Controller
 
     public function end(Request $request, string $sessionId): JsonResponse
     {
-        $session = $this->service->endSession($this->profile($request), $sessionId);
+        $session = $this->service->endSession($request->profile(), $sessionId);
         $vocabPct = $session->vocab_target_count > 0
             ? (int) round($session->vocab_used_count / $session->vocab_target_count * 100)
             : 0;
@@ -120,7 +119,7 @@ class SpeakingConversationController extends Controller
 
     public function show(Request $request, string $sessionId): JsonResponse
     {
-        $session = $this->service->getSession($this->profile($request), $sessionId);
+        $session = $this->service->getSession($request->profile(), $sessionId);
         $scenario = $session->scenario;
 
         return response()->json(['data' => [
@@ -138,7 +137,7 @@ class SpeakingConversationController extends Controller
 
     public function history(Request $request): JsonResponse
     {
-        $paginator = $this->service->listHistory($this->profile($request));
+        $paginator = $this->service->listHistory($request->profile());
 
         return response()->json([
             'data' => collect($paginator->items())->map(fn ($s) => [
@@ -165,7 +164,7 @@ class SpeakingConversationController extends Controller
 
     public function review(Request $request, string $sessionId): JsonResponse
     {
-        $result = $this->service->reviewSession($this->profile($request), $sessionId);
+        $result = $this->service->reviewSession($request->profile(), $sessionId);
 
         return response()->json(['data' => $result]);
     }
@@ -200,10 +199,5 @@ class SpeakingConversationController extends Controller
             'feedback' => $turn->feedback,
             'suggested_words' => $turn->suggested_words ?? [],
         ];
-    }
-
-    private function profile(Request $request): Profile
-    {
-        return $request->attributes->get('active_profile');
     }
 }

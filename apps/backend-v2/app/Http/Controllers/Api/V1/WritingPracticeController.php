@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\GradingJobStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Practice\StartSessionRequest;
 use App\Http\Requests\Practice\UseSupportLevelRequest;
 use App\Http\Resources\WritingSubmissionHistoryResource;
 use App\Models\PracticeSession;
-use App\Models\Profile;
 use App\Services\PracticeSessionService;
 use App\Services\WritingPracticeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
-class WritingPracticeController extends Controller
+final class WritingPracticeController extends Controller
 {
     public function __construct(
         private readonly WritingPracticeService $writingService,
@@ -39,7 +39,7 @@ class WritingPracticeController extends Controller
         $part = $request->integer('part') ?: null;
 
         return WritingSubmissionHistoryResource::collection(
-            $this->writingService->history($this->profile($request), $part),
+            $this->writingService->history($request->profile(), $part),
         );
     }
 
@@ -63,7 +63,7 @@ class WritingPracticeController extends Controller
     public function startSession(StartSessionRequest $request): JsonResponse
     {
         $session = $this->writingService->startSession(
-            $this->profile($request),
+            $request->profile(),
             $request->validated('exercise_id'),
         );
 
@@ -78,7 +78,7 @@ class WritingPracticeController extends Controller
         $session = PracticeSession::query()->findOrFail($sessionId);
 
         return response()->json(['data' => $this->sessionService->useSupportLevel(
-            $session, $this->profile($request), (int) $request->validated('level'),
+            $session, $request->profile(), (int) $request->validated('level'),
         )]);
     }
 
@@ -89,19 +89,14 @@ class WritingPracticeController extends Controller
         $session = PracticeSession::query()->findOrFail($sessionId);
 
         $submission = $this->writingService->submit(
-            $this->profile($request), $session, $request->input('text'),
+            $request->profile(), $session, $request->input('text'),
         );
 
         return response()->json(['data' => [
             'submission_id' => $submission->id,
             'word_count' => $submission->word_count,
             'submitted_at' => $submission->submitted_at,
-            'grading_status' => 'pending',
+            'grading_status' => GradingJobStatus::Pending->value,
         ]]);
-    }
-
-    private function profile(Request $request): Profile
-    {
-        return $request->attributes->get('active_profile');
     }
 }

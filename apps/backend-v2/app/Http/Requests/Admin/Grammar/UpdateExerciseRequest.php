@@ -10,7 +10,7 @@ use Illuminate\Foundation\Http\FormRequest;
  * Không cho đổi `kind` sau khi tạo. Validate payload lỏng — service strip
  * key thừa theo kind hiện có khi persist.
  */
-class UpdateExerciseRequest extends FormRequest
+final class UpdateExerciseRequest extends FormRequest
 {
     public function authorize(): bool
     {

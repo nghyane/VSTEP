@@ -9,7 +9,7 @@ use App\Enums\VstepLevel;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreCourseRequest extends FormRequest
+final class StoreCourseRequest extends FormRequest
 {
     public function authorize(): bool
     {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\ConversationStatus;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -27,6 +28,7 @@ class PracticeSpeakingConversationSession extends BaseModel
         return [
             'started_at' => 'datetime',
             'ended_at' => 'datetime',
+            'status' => ConversationStatus::class,
         ];
     }
 

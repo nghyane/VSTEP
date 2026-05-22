@@ -13,7 +13,7 @@ use RuntimeException;
  * Google recommends the platform client library for production token validation
  * instead of hand-rolled JWKS/JWT verification.
  */
-class GoogleTokenVerifier
+final class GoogleTokenVerifier
 {
     /**
      * @return array{sub:string,email:string,email_verified:bool,name:?string,picture:?string}

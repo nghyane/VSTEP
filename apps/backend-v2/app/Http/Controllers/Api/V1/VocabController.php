@@ -11,7 +11,6 @@ use App\Http\Resources\VocabExerciseResource;
 use App\Http\Resources\VocabTopicResource;
 use App\Http\Resources\VocabWordResource;
 use App\Models\PracticeSession;
-use App\Models\Profile;
 use App\Models\VocabExercise;
 use App\Models\VocabTopic;
 use App\Models\VocabWord;
@@ -21,7 +20,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
-class VocabController extends Controller
+final class VocabController extends Controller
 {
     public function __construct(
         private readonly VocabService $vocabService,
@@ -30,7 +29,7 @@ class VocabController extends Controller
 
     public function topics(Request $request): AnonymousResourceCollection
     {
-        $profile = $this->profile($request);
+        $profile = $request->profile();
         $topics = $this->vocabService
             ->listPublishedTopics($profile)
             ->load('tasks');
@@ -42,7 +41,7 @@ class VocabController extends Controller
     {
         /** @var VocabTopic $topic */
         $topic = VocabTopic::query()->with('tasks')->findOrFail($id);
-        $profile = $this->profile($request);
+        $profile = $request->profile();
 
         $data = $this->vocabService->getTopicForProfile($topic, $profile);
 
@@ -61,7 +60,7 @@ class VocabController extends Controller
 
     public function srsQueue(Request $request): JsonResponse
     {
-        $profile = $this->profile($request);
+        $profile = $request->profile();
         $limit = min((int) $request->integer('limit', 50), 200);
 
         $queue = $this->vocabService->buildDueQueue($profile, $limit);
@@ -80,7 +79,7 @@ class VocabController extends Controller
 
     public function review(ReviewWordRequest $request): JsonResponse
     {
-        $profile = $this->profile($request);
+        $profile = $request->profile();
         /** @var VocabWord $word */
         $word = VocabWord::query()->findOrFail($request->validated('word_id'));
 
@@ -106,7 +105,7 @@ class VocabController extends Controller
 
     public function attemptExercise(AttemptExerciseRequest $request, string $id): JsonResponse
     {
-        $profile = $this->profile($request);
+        $profile = $request->profile();
         /** @var VocabExercise $exercise */
         $exercise = VocabExercise::query()->findOrFail($id);
 
@@ -126,13 +125,5 @@ class VocabController extends Controller
             'is_correct' => $result['is_correct'],
             'explanation' => $result['explanation'],
         ]]);
-    }
-
-    private function profile(Request $request): Profile
-    {
-        /** @var Profile $profile */
-        $profile = $request->attributes->get('active_profile');
-
-        return $profile;
     }
 }

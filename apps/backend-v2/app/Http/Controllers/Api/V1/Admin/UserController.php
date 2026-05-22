@@ -9,10 +9,11 @@ use App\Http\Controllers\Controller;
 use App\Models\CourseEnrollment;
 use App\Models\Profile;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class UserController extends Controller
+final class UserController extends Controller
 {
     /**
      * Picker dropdown — danh sách giáo viên để gán vào course/slot.
@@ -66,7 +67,7 @@ class UserController extends Controller
             });
         }
 
-        /** @var \Illuminate\Database\Eloquent\Collection<int, User> $users */
+        /** @var Collection<int, User> $users */
         $users = $userQuery->get(['id', 'full_name', 'email']);
 
         if ($users->isEmpty()) {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\CoinTransactionType;
+use App\Exceptions\NotOwnerException;
 use App\Models\PracticeSession;
 use App\Models\Profile;
 use App\Models\SystemConfig;
@@ -23,7 +24,7 @@ use Illuminate\Validation\ValidationException;
  * 3. complete(): set ended_at + duration_seconds. Progress context sẽ
  *    listen event này ở Slice 9 (streak + study time).
  */
-class PracticeSessionService
+final class PracticeSessionService
 {
     public function __construct(
         private readonly WalletService $walletService,
@@ -56,7 +57,7 @@ class PracticeSessionService
         int $level,
     ): array {
         if ($session->profile_id !== $profile->id) {
-            abort(403, 'Session does not belong to active profile.');
+            throw new NotOwnerException;
         }
 
         $costs = SystemConfig::get('support.level_costs') ?? [];

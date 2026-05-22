@@ -7,7 +7,7 @@ namespace App\Http\Requests\Admin\Vocab;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class UpdateTopicRequest extends FormRequest
+final class UpdateTopicRequest extends FormRequest
 {
     public function authorize(): bool
     {

@@ -6,7 +6,7 @@ namespace App\Http\Requests\Practice;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class SubmitMcqSessionRequest extends FormRequest
+final class SubmitMcqSessionRequest extends FormRequest
 {
     public function authorize(): bool
     {

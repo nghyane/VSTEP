@@ -21,7 +21,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Response;
 
-class ReadingController extends Controller
+final class ReadingController extends Controller
 {
     public function __construct(
         private readonly AdminMcqPracticeService $service,

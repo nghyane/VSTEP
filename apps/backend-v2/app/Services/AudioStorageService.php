@@ -19,7 +19,7 @@ use Illuminate\Support\Str;
  *
  * Download: presigned GET URL scoped per profile (15 min TTL).
  */
-class AudioStorageService
+final class AudioStorageService
 {
     private const UPLOAD_TTL_MINUTES = 15;
 

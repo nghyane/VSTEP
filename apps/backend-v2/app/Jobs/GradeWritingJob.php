@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Enums\GradingJobStatus;
 use App\Events\GradingCompleted;
 use App\Events\GradingFailed;
 use App\Models\GradingJob;
@@ -22,7 +23,7 @@ use Illuminate\Support\Facades\Log;
  *
  * Event dispatch trong DB::afterCommit() để đảm bảo transaction đã commit.
  */
-class GradeWritingJob implements ShouldQueue
+final class GradeWritingJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -51,7 +52,7 @@ class GradeWritingJob implements ShouldQueue
         $job = GradingJob::query()->find($this->gradingJobId);
         if ($job !== null) {
             $job->update([
-                'status' => 'failed',
+                'status' => GradingJobStatus::Failed,
                 'last_error' => $exception->getMessage(),
             ]);
 

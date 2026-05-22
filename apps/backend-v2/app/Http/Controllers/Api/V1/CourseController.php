@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\BookSlotRequest;
 use App\Models\Course;
 use App\Models\CourseEnrollmentOrder;
 use App\Models\Profile;
@@ -14,7 +15,7 @@ use App\Services\CourseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class CourseController extends Controller
+final class CourseController extends Controller
 {
     public function __construct(
         private readonly CourseService $courseService,
@@ -28,10 +29,10 @@ class CourseController extends Controller
         return response()->json($this->courseService->listForProfile($profile));
     }
 
-    public function show(string $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $course = $this->courseService->getDetail($id);
-        $profile = request()->attributes->get('active_profile');
+        $profile = $request->attributes->get('active_profile');
         $commitment = $profile ? $this->courseService->commitmentStatus($profile, $course) : null;
 
         // Bảo mật: livestream_url là core asset của khóa, chỉ user đã ghi danh được thấy.
@@ -66,7 +67,7 @@ class CourseController extends Controller
         $course = Course::query()->findOrFail($id);
 
         $order = $this->courseOrderService->createOrder(
-            $this->profile($request),
+            $request->profile(),
             $course,
             'mock',
         );
@@ -87,7 +88,7 @@ class CourseController extends Controller
         ]);
 
         $order = CourseEnrollmentOrder::query()->findOrFail($orderId);
-        if ($order->profile_id !== $this->profile($request)->id) {
+        if ($order->profile_id !== $request->profile()->id) {
             abort(403);
         }
 
@@ -101,7 +102,7 @@ class CourseController extends Controller
      */
     public function enrollmentOrders(Request $request): JsonResponse
     {
-        $orders = $this->courseOrderService->getProfileOrders($this->profile($request));
+        $orders = $this->courseOrderService->getProfileOrders($request->profile());
 
         return response()->json([
             'data' => $orders->map(fn (CourseEnrollmentOrder $o) => $this->formatOrder($o)),
@@ -131,25 +132,21 @@ class CourseController extends Controller
         $course = Course::query()->findOrFail($courseId);
 
         return response()->json([
-            'data' => $this->courseService->getBookingPageData($this->profile($request), $course),
+            'data' => $this->courseService->getBookingPageData($request->profile(), $course),
         ]);
     }
 
-    public function bookSlot(Request $request, string $courseId): JsonResponse
+    public function bookSlot(BookSlotRequest $request, string $courseId): JsonResponse
     {
-        $request->validate([
-            'slot_id' => ['required', 'uuid'],
-            'submission_type' => ['nullable', 'string'],
-            'submission_id' => ['nullable', 'uuid'],
-        ]);
+        $validated = $request->validated();
         /** @var Course $course */
         $course = Course::query()->findOrFail($courseId);
         /** @var TeacherSlot $slot */
-        $slot = TeacherSlot::query()->findOrFail($request->input('slot_id'));
+        $slot = TeacherSlot::query()->findOrFail($validated['slot_id']);
 
         $booking = $this->courseService->bookSlot(
-            $this->profile($request), $course, $slot,
-            $request->input('submission_type'), $request->input('submission_id'),
+            $request->profile(), $course, $slot,
+            $validated['submission_type'] ?? null, $validated['submission_id'] ?? null,
         );
 
         return response()->json(['data' => [
@@ -163,10 +160,5 @@ class CourseController extends Controller
             ],
             'coins_charged' => (int) ($course->booking_coin_cost ?? CourseService::BOOKING_COIN_COST_FALLBACK),
         ]], 201);
-    }
-
-    private function profile(Request $request): Profile
-    {
-        return $request->attributes->get('active_profile');
     }
 }

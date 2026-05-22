@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Enums\ExamSessionStatus;
 use App\Models\ExamMcqAnswer;
 use App\Models\ExamSession;
+use App\Models\ExamSessionDraft;
 use App\Services\ProgressService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -20,17 +22,17 @@ use Illuminate\Support\Facades\Log;
  * Chạy mỗi 5 phút qua scheduler.
  *
  * Logic: status='active' AND server_deadline_at < now() → force submit
- * với MCQ answers đã save qua auto-save, tạo grading jobs cho
- * writing/speaking submissions nếu có.
+ * với MCQ answers đã save qua auto-save. Writing/speaking không có
+ * submission rows (draft chỉ lưu text/marks) nên chỉ grade MCQ.
  */
-class ForceSubmitExpiredExams implements ShouldQueue
+final class ForceSubmitExpiredExams implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public function handle(ProgressService $progressService): void
     {
         $expired = ExamSession::query()
-            ->where('status', 'active')
+            ->where('status', ExamSessionStatus::Active)
             ->where('server_deadline_at', '<', now())
             ->get();
 
@@ -87,9 +89,12 @@ class ForceSubmitExpiredExams implements ShouldQueue
 
         // Update session status
         $session->update([
-            'status' => 'auto_submitted',
+            'status' => ExamSessionStatus::AutoSubmitted,
             'submitted_at' => $session->server_deadline_at,
         ]);
+
+        // Xóa draft autosave — cùng pattern submit() và abandon().
+        ExamSessionDraft::query()->where('session_id', $session->id)->delete();
 
         // Streak: chỉ tính full test. RFC 0017 — defer ngoài transaction để rollback an toàn.
         DB::afterCommit(fn () => $progressService->recordExamCompletion($session->fresh()));

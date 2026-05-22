@@ -14,7 +14,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
-class AuthService
+final class AuthService
 {
     private const MAX_REFRESH_TOKENS = 3;
 

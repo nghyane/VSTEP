@@ -6,7 +6,7 @@ namespace App\Http\Requests\Admin\Grammar;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateTipRequest extends FormRequest
+final class UpdateTipRequest extends FormRequest
 {
     public function authorize(): bool
     {

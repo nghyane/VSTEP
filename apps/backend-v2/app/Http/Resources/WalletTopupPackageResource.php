@@ -11,7 +11,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /**
  * @property-read WalletTopupPackage $resource
  */
-class WalletTopupPackageResource extends JsonResource
+final class WalletTopupPackageResource extends JsonResource
 {
     public function toArray(Request $request): array
     {

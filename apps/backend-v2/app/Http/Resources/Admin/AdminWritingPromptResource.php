@@ -11,7 +11,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /**
  * @property-read PracticeWritingPrompt $resource
  */
-class AdminWritingPromptResource extends JsonResource
+final class AdminWritingPromptResource extends JsonResource
 {
     public function toArray(Request $request): array
     {

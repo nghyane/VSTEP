@@ -7,7 +7,7 @@ namespace App\Services;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
-class HealthCheckService
+final class HealthCheckService
 {
     /** @return array{status:string,db:string,redis:string} */
     public function check(): array

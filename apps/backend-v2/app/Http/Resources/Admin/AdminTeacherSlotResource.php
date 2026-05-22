@@ -12,7 +12,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /**
  * @property-read TeacherSlot $resource
  */
-class AdminTeacherSlotResource extends JsonResource
+final class AdminTeacherSlotResource extends JsonResource
 {
     public function toArray(Request $request): array
     {

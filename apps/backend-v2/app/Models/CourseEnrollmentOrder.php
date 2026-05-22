@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\OrderStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -27,7 +28,7 @@ class CourseEnrollmentOrder extends BaseModel
 
     protected function casts(): array
     {
-        return ['paid_at' => 'datetime'];
+        return ['paid_at' => 'datetime', 'status' => OrderStatus::class];
     }
 
     public function profile(): BelongsTo
@@ -42,6 +43,6 @@ class CourseEnrollmentOrder extends BaseModel
 
     public function isPaid(): bool
     {
-        return $this->status === 'paid';
+        return $this->status === OrderStatus::Paid;
     }
 }

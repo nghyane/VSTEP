@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\Profile;
 use App\Services\AudioStorageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,7 +12,7 @@ use Illuminate\Http\Request;
 /**
  * Audio presigned URL endpoints for client-side upload/download.
  */
-class AudioController extends Controller
+final class AudioController extends Controller
 {
     public function __construct(
         private readonly AudioStorageService $audioService,
@@ -28,7 +27,7 @@ class AudioController extends Controller
             'context' => ['nullable', 'string', 'in:speaking,exam_speaking'],
         ]);
 
-        $profile = $this->profile($request);
+        $profile = $request->profile();
         $result = $this->audioService->presignUpload(
             $profile->id,
             $request->input('context', 'speaking'),
@@ -49,10 +48,5 @@ class AudioController extends Controller
         $url = $this->audioService->presignDownload($request->input('audio_key'));
 
         return response()->json(['data' => ['download_url' => $url]]);
-    }
-
-    private function profile(Request $request): Profile
-    {
-        return $request->attributes->get('active_profile');
     }
 }

@@ -14,7 +14,7 @@ use Illuminate\Validation\Rule;
  * - fill_blank        → payload { template, accepted_answers[] }
  * - rewrite           → payload { instruction, original, accepted_answers[] }
  */
-class StoreExerciseRequest extends FormRequest
+final class StoreExerciseRequest extends FormRequest
 {
     public function authorize(): bool
     {

@@ -8,7 +8,7 @@ use App\Models\PracticeSpeakingDrill;
 use App\Models\PracticeSpeakingDrillSentence;
 use Illuminate\Database\Eloquent\Builder;
 
-class AdminSpeakingDrillService
+final class AdminSpeakingDrillService
 {
     /**
      * @param  array<string,mixed>  $filters

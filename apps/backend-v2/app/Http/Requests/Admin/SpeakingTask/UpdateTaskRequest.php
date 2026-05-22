@@ -7,7 +7,7 @@ namespace App\Http\Requests\Admin\SpeakingTask;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class UpdateTaskRequest extends FormRequest
+final class UpdateTaskRequest extends FormRequest
 {
     public function authorize(): bool
     {

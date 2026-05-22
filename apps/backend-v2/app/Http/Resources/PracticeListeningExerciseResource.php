@@ -11,7 +11,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /**
  * @property-read PracticeListeningExercise $resource
  */
-class PracticeListeningExerciseResource extends JsonResource
+final class PracticeListeningExerciseResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
@@ -21,7 +21,7 @@ class PracticeListeningExerciseResource extends JsonResource
             'title' => $this->resource->title,
             'description' => $this->resource->description,
             'part' => $this->resource->part,
-            'audio_url' => $this->resource->audio_url ? url($this->resource->audio_url) : null,
+            'audio_url' => $this->resource->audio_url,
             'transcript' => $this->resource->transcript,
             'vietnamese_transcript' => $this->resource->vietnamese_transcript,
             'word_timestamps' => $this->resource->word_timestamps ?? [],

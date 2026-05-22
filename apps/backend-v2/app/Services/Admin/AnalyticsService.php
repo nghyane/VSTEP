@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Admin;
 
+use App\Enums\OrderStatus;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -38,7 +39,7 @@ final class AnalyticsService
         $month = now()->subDays(30)->startOfDay();
 
         $sumPaid = fn (string $table, Carbon $since): int => (int) DB::table($table)
-            ->where('status', 'paid')
+            ->where('status', OrderStatus::Paid->value)
             ->where('paid_at', '>=', $since)
             ->sum('amount_vnd');
 
@@ -66,8 +67,8 @@ final class AnalyticsService
                 'week' => $topupWeek + $courseWeek,
                 'month' => $topupMonth + $courseMonth,
             ],
-            'pending_orders' => (int) DB::table('wallet_topup_orders')->where('status', 'pending')->count()
-                + (int) DB::table('course_enrollment_orders')->where('status', 'pending')->count(),
+            'pending_orders' => (int) DB::table('wallet_topup_orders')->where('status', OrderStatus::Pending->value)->count()
+                + (int) DB::table('course_enrollment_orders')->where('status', OrderStatus::Pending->value)->count(),
         ];
     }
 
@@ -83,7 +84,7 @@ final class AnalyticsService
 
         $topup = DB::table('wallet_topup_orders')
             ->selectRaw('DATE(paid_at) as day, SUM(amount_vnd) as total')
-            ->where('status', 'paid')
+            ->where('status', OrderStatus::Paid->value)
             ->where('paid_at', '>=', $from)
             ->groupBy('day')
             ->pluck('total', 'day')
@@ -92,7 +93,7 @@ final class AnalyticsService
 
         $course = DB::table('course_enrollment_orders')
             ->selectRaw('DATE(paid_at) as day, SUM(amount_vnd) as total')
-            ->where('status', 'paid')
+            ->where('status', OrderStatus::Paid->value)
             ->where('paid_at', '>=', $from)
             ->groupBy('day')
             ->pluck('total', 'day')
@@ -157,7 +158,7 @@ final class AnalyticsService
 
         $topPackages = DB::table('wallet_topup_orders as o')
             ->join('wallet_topup_packages as p', 'p.id', '=', 'o.package_id')
-            ->where('o.status', 'paid')
+            ->where('o.status', OrderStatus::Paid->value)
             ->selectRaw('p.label, COUNT(*) as orders, SUM(o.amount_vnd) as revenue_vnd')
             ->groupBy('p.id', 'p.label')
             ->orderByDesc('orders')
@@ -174,9 +175,9 @@ final class AnalyticsService
             'coins_minted' => $minted,
             'coins_spent' => $spent,
             'coins_circulating' => $minted - $spent,
-            'topup_orders_paid' => (int) DB::table('wallet_topup_orders')->where('status', 'paid')->count(),
-            'topup_orders_pending' => (int) DB::table('wallet_topup_orders')->where('status', 'pending')->count(),
-            'topup_orders_failed' => (int) DB::table('wallet_topup_orders')->whereIn('status', ['failed', 'expired'])->count(),
+            'topup_orders_paid' => (int) DB::table('wallet_topup_orders')->where('status', OrderStatus::Paid->value)->count(),
+            'topup_orders_pending' => (int) DB::table('wallet_topup_orders')->where('status', OrderStatus::Pending->value)->count(),
+            'topup_orders_failed' => (int) DB::table('wallet_topup_orders')->whereIn('status', [OrderStatus::Failed->value, OrderStatus::Expired->value])->count(),
             'top_packages' => $topPackages,
         ];
     }

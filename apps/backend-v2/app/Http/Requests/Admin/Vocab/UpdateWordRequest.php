@@ -6,7 +6,7 @@ namespace App\Http\Requests\Admin\Vocab;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateWordRequest extends FormRequest
+final class UpdateWordRequest extends FormRequest
 {
     public function authorize(): bool
     {

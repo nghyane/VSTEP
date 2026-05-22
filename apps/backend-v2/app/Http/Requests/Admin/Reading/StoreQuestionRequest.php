@@ -6,7 +6,7 @@ namespace App\Http\Requests\Admin\Reading;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreQuestionRequest extends FormRequest
+final class StoreQuestionRequest extends FormRequest
 {
     public function authorize(): bool
     {

@@ -13,7 +13,7 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
 
-class SpeakingScenarioController extends Controller
+final class SpeakingScenarioController extends Controller
 {
     public function index(Request $request): ResourceCollection
     {

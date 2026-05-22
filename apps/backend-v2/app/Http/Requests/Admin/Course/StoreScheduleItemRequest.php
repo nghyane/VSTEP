@@ -7,7 +7,7 @@ namespace App\Http\Requests\Admin\Course;
 use App\Models\Course;
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreScheduleItemRequest extends FormRequest
+final class StoreScheduleItemRequest extends FormRequest
 {
     public function authorize(): bool
     {

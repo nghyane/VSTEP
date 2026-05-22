@@ -6,6 +6,9 @@ namespace App\Services;
 
 use App\Ai\Agents\ConversationReviewAgent;
 use App\Ai\Agents\ConversationTurnAgent;
+use App\Enums\ConversationStatus;
+use App\Exceptions\NotOwnerException;
+use App\Exceptions\ResourceNotActiveException;
 use App\Models\PracticeSpeakingConversationSession;
 use App\Models\PracticeSpeakingConversationTurn;
 use App\Models\PracticeSpeakingScenario;
@@ -17,7 +20,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
-class SpeakingConversationService
+final class SpeakingConversationService
 {
     public function __construct(
         private readonly ConversationTurnAgent $turnAgent,
@@ -53,7 +56,7 @@ class SpeakingConversationService
             $session = PracticeSpeakingConversationSession::create([
                 'profile_id' => $profile->id,
                 'scenario_id' => $scenario->id,
-                'status' => 'active',
+                'status' => ConversationStatus::Active,
                 'started_at' => now(),
             ]);
 
@@ -79,10 +82,10 @@ class SpeakingConversationService
         $session = PracticeSpeakingConversationSession::query()->findOrFail($sessionId);
 
         if ($session->profile_id !== $profile->id) {
-            abort(403, 'Session does not belong to active profile.');
+            throw new NotOwnerException;
         }
-        if ($session->status !== 'active') {
-            abort(409, 'Session already ended.');
+        if ($session->status !== ConversationStatus::Active) {
+            throw new ResourceNotActiveException('Session already ended.');
         }
 
         $scenario = $session->scenario;
@@ -138,14 +141,14 @@ class SpeakingConversationService
         $session = PracticeSpeakingConversationSession::query()->findOrFail($sessionId);
 
         if ($session->profile_id !== $profile->id) {
-            abort(403, 'Session does not belong to active profile.');
+            throw new NotOwnerException;
         }
-        if ($session->status !== 'active') {
-            abort(409, 'Session already ended.');
+        if ($session->status !== ConversationStatus::Active) {
+            throw new ResourceNotActiveException('Session already ended.');
         }
 
         $session->update([
-            'status' => 'ended',
+            'status' => ConversationStatus::Ended,
             'ended_at' => now(),
             'duration_seconds' => (int) now()->diffInSeconds($session->started_at),
         ]);
@@ -161,7 +164,7 @@ class SpeakingConversationService
             ->findOrFail($sessionId);
 
         if ($session->profile_id !== $profile->id) {
-            abort(403, 'Session does not belong to active profile.');
+            throw new NotOwnerException;
         }
 
         return $session;
@@ -172,7 +175,7 @@ class SpeakingConversationService
         return PracticeSpeakingConversationSession::query()
             ->with('scenario:id,title,level,slug')
             ->where('profile_id', $profile->id)
-            ->where('status', 'ended')
+            ->where('status', ConversationStatus::Ended)
             ->orderByDesc('ended_at')
             ->paginate(20);
     }

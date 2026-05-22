@@ -4,20 +4,22 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\IconKey;
+use App\Enums\NotificationType;
 use App\Models\Notification;
 use App\Models\Profile;
 
-class NotificationService
+final class NotificationService
 {
     /**
      * Push notification. Dedup by dedup_key per profile.
      */
     public function push(
         Profile $profile,
-        string $type,
+        NotificationType $type,
         string $title,
         ?string $body = null,
-        string $iconKey = 'coin',
+        IconKey $iconKey = IconKey::Coin,
         ?array $payload = null,
         ?string $dedupKey = null,
     ): ?Notification {
@@ -33,10 +35,10 @@ class NotificationService
 
         return Notification::create([
             'profile_id' => $profile->id,
-            'type' => $type,
+            'type' => $type->value,
             'title' => $title,
             'body' => $body,
-            'icon_key' => $iconKey,
+            'icon_key' => $iconKey->value,
             'payload' => $payload,
             'dedup_key' => $dedupKey,
         ]);

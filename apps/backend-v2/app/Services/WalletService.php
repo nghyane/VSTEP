@@ -22,7 +22,7 @@ use Illuminate\Validation\ValidationException;
  *
  * KHÔNG service nào khác được write `coin_transactions` trực tiếp.
  */
-class WalletService
+final class WalletService
 {
     /**
      * Read-only balance snapshot for display/API responses.

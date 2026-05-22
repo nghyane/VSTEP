@@ -8,7 +8,7 @@ use App\Models\PracticeWritingPrompt;
 use App\Models\PracticeWritingSampleMarker;
 use Illuminate\Database\Eloquent\Builder;
 
-class AdminWritingService
+final class AdminWritingService
 {
     /**
      * @param  array<string,mixed>  $filters

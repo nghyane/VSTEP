@@ -6,7 +6,7 @@ namespace App\Http\Requests\Admin\Writing;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StorePromptRequest extends FormRequest
+final class StorePromptRequest extends FormRequest
 {
     public function authorize(): bool
     {

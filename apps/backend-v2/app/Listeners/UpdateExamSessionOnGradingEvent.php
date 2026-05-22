@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Listeners;
 
+use App\Enums\ExamSessionStatus;
+use App\Enums\GradingJobStatus;
 use App\Events\GradingCompleted;
 use App\Events\GradingFailed;
 use App\Models\ExamSession;
@@ -32,18 +34,18 @@ final class UpdateExamSessionOnGradingEvent
             return;
         }
 
-        if (! in_array($session->status, ['submitted', 'grading'], true)) {
+        if (! in_array($session->status, [ExamSessionStatus::Submitted, ExamSessionStatus::Grading], true)) {
             return;
         }
 
         if ($this->allJobsTerminal($session)) {
-            $session->update(['status' => 'graded']);
+            $session->update(['status' => ExamSessionStatus::Graded]);
             Log::info('Exam session marked as graded', [
                 'session_id' => $session->id,
                 'trigger' => $event::class,
             ]);
-        } elseif ($session->status !== 'grading') {
-            $session->update(['status' => 'grading']);
+        } elseif ($session->status !== ExamSessionStatus::Grading) {
+            $session->update(['status' => ExamSessionStatus::Grading]);
         }
     }
 
@@ -89,7 +91,7 @@ final class UpdateExamSessionOnGradingEvent
             ->whereIn('submission_id', function ($q) use ($table, $session) {
                 $q->select('id')->from($table)->where('session_id', $session->id);
             })
-            ->whereIn('status', ['ready', 'failed'])
+            ->whereIn('status', [GradingJobStatus::Ready, GradingJobStatus::Failed])
             ->count();
     }
 }

@@ -32,7 +32,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Response;
 
-class CourseController extends Controller
+final class CourseController extends Controller
 {
     public function __construct(private readonly AdminCourseService $service) {}
 

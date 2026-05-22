@@ -7,7 +7,7 @@ namespace App\Http\Requests\Admin\Grammar;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class UpdatePointRequest extends FormRequest
+final class UpdatePointRequest extends FormRequest
 {
     public function authorize(): bool
     {

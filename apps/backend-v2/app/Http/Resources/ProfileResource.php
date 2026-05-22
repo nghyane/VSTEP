@@ -11,7 +11,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /**
  * @property-read Profile $resource
  */
-class ProfileResource extends JsonResource
+final class ProfileResource extends JsonResource
 {
     public function toArray(Request $request): array
     {

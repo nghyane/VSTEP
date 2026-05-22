@@ -6,18 +6,17 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Notification;
-use App\Models\Profile;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class NotificationController extends Controller
+final class NotificationController extends Controller
 {
     public function __construct(private readonly NotificationService $notificationService) {}
 
     public function index(Request $request): JsonResponse
     {
-        $profile = $this->profile($request);
+        $profile = $request->profile();
         $notifications = Notification::query()
             ->where('profile_id', $profile->id)
             ->orderByDesc('created_at')
@@ -29,20 +28,20 @@ class NotificationController extends Controller
     public function unreadCount(Request $request): JsonResponse
     {
         return response()->json(['data' => [
-            'count' => $this->notificationService->unreadCount($this->profile($request)),
+            'count' => $this->notificationService->unreadCount($request->profile()),
         ]]);
     }
 
     public function readAll(Request $request): JsonResponse
     {
-        $count = $this->notificationService->markAllRead($this->profile($request));
+        $count = $this->notificationService->markAllRead($request->profile());
 
         return response()->json(['data' => ['marked' => $count]]);
     }
 
     public function read(Request $request, string $id): JsonResponse
     {
-        $ok = $this->notificationService->markRead($this->profile($request), $id);
+        $ok = $this->notificationService->markRead($request->profile(), $id);
 
         return response()->json(['data' => ['marked' => $ok]]);
     }
@@ -50,16 +49,11 @@ class NotificationController extends Controller
     public function destroy(Request $request, string $id): JsonResponse
     {
         $notif = Notification::query()->findOrFail($id);
-        if ((string) $notif->profile_id !== $this->profile($request)->id) {
+        if ((string) $notif->profile_id !== $request->profile()->id) {
             abort(403);
         }
         $notif->delete();
 
         return response()->json(['data' => ['success' => true]]);
-    }
-
-    private function profile(Request $request): Profile
-    {
-        return $request->attributes->get('active_profile');
     }
 }

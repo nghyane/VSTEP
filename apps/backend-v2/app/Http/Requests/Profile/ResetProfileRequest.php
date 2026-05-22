@@ -6,7 +6,7 @@ namespace App\Http\Requests\Profile;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ResetProfileRequest extends FormRequest
+final class ResetProfileRequest extends FormRequest
 {
     public function authorize(): bool
     {

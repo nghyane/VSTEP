@@ -10,7 +10,7 @@ use Illuminate\Foundation\Http\FormRequest;
  * Tasks ∈ (WT1, WT2, SP1, SP2, SP3, READ) — VSTEP task codes.
  * Level theo CEFR: A2/B1/B2/C1.
  */
-class StoreTopicRequest extends FormRequest
+final class StoreTopicRequest extends FormRequest
 {
     public function authorize(): bool
     {

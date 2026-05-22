@@ -13,7 +13,7 @@ namespace App\Services;
  * Triết lý: LLM giỏi đánh giá tổng thể nhưng hay "generous".
  * Rules đảm bảo: nhiều lỗi grammar → grammar score PHẢI thấp.
  */
-class RuleBasedScoringService
+final class RuleBasedScoringService
 {
     /**
      * @param  array<int,array<string,mixed>>  $languageToolErrors

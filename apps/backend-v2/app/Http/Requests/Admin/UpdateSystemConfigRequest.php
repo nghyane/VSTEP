@@ -8,7 +8,7 @@ use App\Support\SystemConfigSchemas;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class UpdateSystemConfigRequest extends FormRequest
+final class UpdateSystemConfigRequest extends FormRequest
 {
     public function authorize(): bool
     {

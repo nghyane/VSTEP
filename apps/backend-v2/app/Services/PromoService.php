@@ -22,7 +22,7 @@ use Illuminate\Validation\ValidationException;
  *
  * Xu vào profile được chỉ định (thường là active profile).
  */
-class PromoService
+final class PromoService
 {
     public function __construct(
         private readonly WalletService $walletService,

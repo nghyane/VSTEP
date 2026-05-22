@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
  *
  * Env: LANGUAGETOOL_URL (default http://localhost:8081)
  */
-class LanguageToolService
+final class LanguageToolService
 {
     private function baseUrl(): string
     {

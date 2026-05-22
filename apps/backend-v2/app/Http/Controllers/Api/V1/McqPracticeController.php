@@ -14,7 +14,6 @@ use App\Http\Resources\PracticeMcqQuestionResource;
 use App\Http\Resources\PracticeReadingExerciseResource;
 use App\Http\Resources\PracticeSessionResource;
 use App\Models\PracticeSession;
-use App\Models\Profile;
 use App\Services\McqSkillService;
 use App\Services\PracticeSessionService;
 use Illuminate\Http\JsonResponse;
@@ -25,7 +24,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  * Unified controller cho listening + reading drill practice.
  * Skill lấy từ URL prefix: /practice/{skill}/... với skill ∈ (listening, reading).
  */
-class McqPracticeController extends Controller
+final class McqPracticeController extends Controller
 {
     public function __construct(
         private readonly McqSkillService $mcqService,
@@ -67,7 +66,7 @@ class McqPracticeController extends Controller
     public function startSession(StartSessionRequest $request, string $skill): JsonResponse
     {
         $this->assertSkill($skill);
-        $profile = $this->profile($request);
+        $profile = $request->profile();
 
         $session = $this->mcqService->startSession(
             $profile,
@@ -83,7 +82,7 @@ class McqPracticeController extends Controller
     public function useSupport(UseSupportLevelRequest $request, string $skill, string $sessionId): JsonResponse
     {
         $this->assertSkill($skill);
-        $profile = $this->profile($request);
+        $profile = $request->profile();
         /** @var PracticeSession $session */
         $session = PracticeSession::query()->findOrFail($sessionId);
 
@@ -99,7 +98,7 @@ class McqPracticeController extends Controller
     public function submit(SubmitMcqSessionRequest $request, string $skill, string $sessionId): JsonResponse
     {
         $this->assertSkill($skill);
-        $profile = $this->profile($request);
+        $profile = $request->profile();
         /** @var PracticeSession $session */
         $session = PracticeSession::query()->findOrFail($sessionId);
 
@@ -120,7 +119,7 @@ class McqPracticeController extends Controller
         $this->assertSkill($skill);
 
         return response()->json([
-            'data' => $this->mcqService->exerciseProgress($this->profile($request), $skill),
+            'data' => $this->mcqService->exerciseProgress($request->profile(), $skill),
         ]);
     }
 
@@ -129,13 +128,5 @@ class McqPracticeController extends Controller
         if (! in_array($skill, ['listening', 'reading'], true)) {
             abort(404, 'Unknown skill.');
         }
-    }
-
-    private function profile(Request $request): Profile
-    {
-        /** @var Profile $profile */
-        $profile = $request->attributes->get('active_profile');
-
-        return $profile;
     }
 }

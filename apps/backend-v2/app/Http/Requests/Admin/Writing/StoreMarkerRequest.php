@@ -11,7 +11,7 @@ use Illuminate\Foundation\Http\FormRequest;
  * side ∈ (left, right) — chỉ định phía render annotation trong UI.
  * color ∈ HEX hoặc semantic key (vd "blue", "green").
  */
-class StoreMarkerRequest extends FormRequest
+final class StoreMarkerRequest extends FormRequest
 {
     public function authorize(): bool
     {

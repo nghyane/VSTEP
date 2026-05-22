@@ -6,7 +6,7 @@ namespace App\Http\Requests\Admin\SpeakingDrill;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreSentenceRequest extends FormRequest
+final class StoreSentenceRequest extends FormRequest
 {
     public function authorize(): bool
     {

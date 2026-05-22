@@ -28,7 +28,7 @@ use Illuminate\Validation\ValidationException;
  * Phase 1 chỉ wipe learning state (SRS, mastery, activity) — tables này sẽ
  * được tạo ở các slice sau. Reset event log vẫn ghi snapshot cho audit.
  */
-class ProfileService
+final class ProfileService
 {
     /**
      * @param  array{nickname:string,target_level:string,target_deadline:string,entry_level?:string|null}  $data

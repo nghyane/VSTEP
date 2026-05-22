@@ -8,7 +8,7 @@ use App\Enums\VstepLevel;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class CompleteOnboardingRequest extends FormRequest
+final class CompleteOnboardingRequest extends FormRequest
 {
     public function authorize(): bool
     {

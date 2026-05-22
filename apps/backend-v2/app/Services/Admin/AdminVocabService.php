@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
  * Topic ↔ tasks (M-N) is synced inline qua field `tasks: string[]`.
  * Children (words, exercises) tách endpoint riêng.
  */
-class AdminVocabService
+final class AdminVocabService
 {
     /**
      * @param  array<string,mixed>  $filters

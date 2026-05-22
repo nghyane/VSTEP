@@ -6,7 +6,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class SaveExamDraftRequest extends FormRequest
+final class SaveExamDraftRequest extends FormRequest
 {
     public function authorize(): bool
     {

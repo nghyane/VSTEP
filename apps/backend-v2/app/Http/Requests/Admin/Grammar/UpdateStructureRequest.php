@@ -6,7 +6,7 @@ namespace App\Http\Requests\Admin\Grammar;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateStructureRequest extends FormRequest
+final class UpdateStructureRequest extends FormRequest
 {
     public function authorize(): bool
     {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Exceptions\NotOwnerException;
 use App\Models\PracticeListeningExercise;
 use App\Models\PracticeListeningQuestion;
 use App\Models\PracticeMcqAnswer;
@@ -24,7 +25,7 @@ use Illuminate\Validation\ValidationException;
  *
  * Submit KHÔNG tạo job, chấm ngay vì MCQ là objective scoring.
  */
-class McqSkillService
+final class McqSkillService
 {
     public function __construct(
         private readonly PracticeSessionService $sessionService,
@@ -84,7 +85,7 @@ class McqSkillService
         array $answers,
     ): array {
         if ($session->profile_id !== $profile->id) {
-            abort(403, 'Session does not belong to active profile.');
+            throw new NotOwnerException;
         }
         if ($session->module !== $skill) {
             throw ValidationException::withMessages([
