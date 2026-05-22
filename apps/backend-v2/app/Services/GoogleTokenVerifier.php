@@ -18,7 +18,7 @@ final class GoogleTokenVerifier
     /**
      * @return array{sub:string,email:string,email_verified:bool,name:?string,picture:?string}
      *
-     * @throws RuntimeException when token is invalid, expired, or signature fails.
+     * @throws InvalidGoogleTokenException when token is invalid, expired, or signature fails.
      */
     public function verify(string $idToken): array
     {
