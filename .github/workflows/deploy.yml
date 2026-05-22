@@ -1,8 +1,17 @@
-name: Deploy to Production
+name: Deploy Backend to Production
 
 on:
   push:
     branches: [main]
+    paths:
+      - 'apps/backend-v2/**'
+      - 'docker-compose.yml'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+# Frontend/admin SPA deployments live in build-images.yml — they build the
+# image on the Actions runner and the VPS only pulls. Building Vite on the
+# small VPS used to OOM and freeze SSH; keep heavy builds in CI.
 
 jobs:
   deploy:
@@ -17,40 +26,20 @@ jobs:
           script: |
             cd /opt/vstep
 
-            # Backup .env trước khi pull — git checkout -- . sẽ không xóa
-            # file untracked nhưng pull có thể conflict nếu .env bị track
-            # Backup phòng trường hợp .env bị overwrite bởi example file
+            # Preserve host-managed secrets (.env is gitignored but pull may
+            # touch the working tree). Backup → pull → restore is paranoid
+            # but cheap.
             [ -f apps/backend-v2/.env ] && cp apps/backend-v2/.env apps/backend-v2/.env.deploy-backup
 
             git pull origin main
 
-            # Restore .env nếu bị overwrite
             if [ -f apps/backend-v2/.env.deploy-backup ]; then
               cp apps/backend-v2/.env.deploy-backup apps/backend-v2/.env
               rm apps/backend-v2/.env.deploy-backup
             fi
 
-            # Rebuild frontend if its files OR build args (docker-compose.yml) changed
-            if git diff HEAD~1 --name-only | grep -qE '^(apps/frontend-v3/|docker-compose\.yml$)'; then
-              docker compose --env-file .env build frontend
-            fi
-
-            # Rebuild admin if its files OR build args changed
-            if git diff HEAD~1 --name-only | grep -qE '^(apps/admin/|docker-compose\.yml$)'; then
-              docker compose --env-file .env build admin
-            fi
-
-            # Always rebuild + recreate backend/horizon (code changes)
+            # Backend + horizon: build locally (PHP/Octane is light), then
+            # recreate. FE/admin are untouched here.
             docker compose --env-file .env up -d --build --force-recreate backend horizon
 
-            # Recreate frontend/admin only if they were rebuilt
-            if git diff HEAD~1 --name-only | grep -qE '^(apps/frontend-v3/|docker-compose\.yml$)'; then
-              docker compose --env-file .env up -d --force-recreate frontend
-            fi
-
-            if git diff HEAD~1 --name-only | grep -qE '^(apps/admin/|docker-compose\.yml$)'; then
-              docker compose --env-file .env up -d --force-recreate admin
-            fi
-
-            # Cleanup old images
             docker image prune -f
