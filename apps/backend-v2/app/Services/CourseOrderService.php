@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Enums\CoinTransactionType;
+use App\Enums\OrderStatus;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\CourseEnrollmentOrder;
@@ -20,7 +20,7 @@ use Illuminate\Validation\ValidationException;
  *
  * Phase 1 (mock):
  * - create order → status=pending
- * - confirm() → mark paid, create enrollment, credit bonus coins
+ * - confirm() → mark paid, create enrollment via CourseService
  *
  * Phase 2 (real gateway):
  * - create order → redirect to gateway
@@ -29,7 +29,7 @@ use Illuminate\Validation\ValidationException;
 class CourseOrderService
 {
     public function __construct(
-        private readonly WalletService $walletService,
+        private readonly CourseService $courseService,
         private readonly NotificationService $notificationService,
     ) {}
 
@@ -63,7 +63,7 @@ class CourseOrderService
         $existing = CourseEnrollmentOrder::query()
             ->where('profile_id', $profile->id)
             ->where('course_id', $course->id)
-            ->whereIn('status', ['pending', 'paid'])
+            ->whereIn('status', OrderStatus::activeValues())
             ->first();
 
         if ($existing !== null) {
@@ -80,7 +80,7 @@ class CourseOrderService
                 'profile_id' => $profile->id,
                 'course_id' => $course->id,
                 'amount_vnd' => $amount,
-                'status' => 'pending',
+                'status' => OrderStatus::Pending,
                 'payment_provider' => $paymentProvider,
                 'provider_ref' => $paymentProvider === 'mock'
                     ? 'mock_'.Str::random(16)
@@ -117,9 +117,9 @@ class CourseOrderService
                 return $locked;
             }
 
-            if ($locked->status !== 'pending') {
+            if ($locked->status !== OrderStatus::Pending) {
                 throw ValidationException::withMessages([
-                    'order' => ["Đơn hàng ở trạng thái {$locked->status} không thể xác nhận."],
+                    'order' => ["Đơn hàng ở trạng thái {$locked->status->value} không thể xác nhận."],
                 ]);
             }
 
@@ -130,48 +130,26 @@ class CourseOrderService
                 ->exists()
             ) {
                 $locked->update([
-                    'status' => 'paid',
+                    'status' => OrderStatus::Paid,
                     'paid_at' => now(),
                 ]);
 
                 return $locked;
             }
 
-            // Create enrollment
-            $enrollment = CourseEnrollment::create([
-                'profile_id' => $locked->profile_id,
-                'course_id' => $locked->course_id,
-                'enrolled_at' => now(),
-                'coins_paid' => 0,
-                'bonus_coins_received' => $locked->course->bonus_coins,
-                'commitment_signature' => $commitmentSignature,
-            ]);
-
-            // Credit bonus coins
-            if ($locked->course->bonus_coins > 0) {
-                $this->walletService->credit(
-                    profile: $locked->profile,
-                    amount: $locked->course->bonus_coins,
-                    type: CoinTransactionType::OnboardingBonus,
-                    source: $enrollment,
-                    metadata: ['reason' => 'course_bonus'],
-                );
-            }
+            // Create enrollment via single source of truth
+            $this->courseService->createEnrollment(
+                profile: $locked->profile,
+                course: $locked->course,
+                creditBonus: true,
+                commitmentSignature: $commitmentSignature,
+            );
 
             // Mark order paid
             $locked->update([
-                'status' => 'paid',
+                'status' => OrderStatus::Paid,
                 'paid_at' => now(),
             ]);
-
-            DB::afterCommit(fn () => $this->notificationService->push(
-                profile: $locked->profile,
-                type: 'course_enrolled',
-                title: 'Ghi danh thành công',
-                body: "Bạn đã tham gia khóa {$locked->course->title}.",
-                iconKey: 'book',
-                dedupKey: "course_enroll:{$locked->course->id}:{$locked->profile->id}",
-            ));
 
             return $locked;
         });
