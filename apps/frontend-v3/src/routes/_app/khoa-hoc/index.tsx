@@ -31,17 +31,33 @@ function CoursesPage() {
 	const enrolledIds = new Set(data?.enrolled_course_ids ?? [])
 	const enrollments = data?.enrollments ?? {}
 
-	const exploreList = courses.filter((c) => !enrolledIds.has(c.id))
+	// Khóa hết hạn (end_date < hôm nay) không thể đăng ký mới → ẩn khỏi Khám phá.
+	// Khóa "Của tôi" vẫn giữ để học viên xem lại lịch sử / tài liệu (CourseCard đã có
+	// badge "Đã kết thúc" cho enrolled state).
+	const todayMs = useMemo(() => {
+		const d = new Date()
+		d.setHours(0, 0, 0, 0)
+		return d.getTime()
+	}, [])
+	const isExpired = (c: Course) => new Date(c.end_date).getTime() < todayMs
+
+	const exploreList = courses.filter((c) => !enrolledIds.has(c.id) && !isExpired(c))
 	const mineList = courses.filter((c) => enrolledIds.has(c.id))
 	const list = tab === "mine" ? mineList : exploreList
 
 	const hotPair = useMemo<[Course, Course] | null>(() => {
 		const candidates = courses
-			.filter((c) => typeof c.sold_slots === "number" && c.sold_slots < c.max_slots && !enrolledIds.has(c.id))
+			.filter(
+				(c) =>
+					typeof c.sold_slots === "number" &&
+					c.sold_slots < c.max_slots &&
+					!enrolledIds.has(c.id) &&
+					new Date(c.end_date).getTime() >= todayMs,
+			)
 			.sort((a, b) => (b.sold_slots ?? 0) - (a.sold_slots ?? 0))
 		if (candidates.length < 2) return null
 		return [candidates[0], candidates[1]]
-	}, [courses, enrolledIds])
+	}, [courses, enrolledIds, todayMs])
 
 	// User có khóa ACTIVE (đã enroll & chưa kết thúc) → ẩn — không spam người đang học.
 	// Khi khóa đó hết hạn mà chưa enroll khóa mới → popup tự hiện lại để remarketing.

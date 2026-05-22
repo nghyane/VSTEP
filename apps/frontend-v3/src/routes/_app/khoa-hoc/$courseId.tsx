@@ -14,7 +14,7 @@ import {
 	type CourseTeacher,
 	type CourseWithRelations,
 } from "#/features/course/types"
-import { cn, formatDate, formatNumber, formatVnd, isSameDay } from "#/lib/utils"
+import { cn, formatDate, formatNumber, formatVnd, isSameDay, safeExternalUrl } from "#/lib/utils"
 
 export const Route = createFileRoute("/_app/khoa-hoc/$courseId")({
 	component: CourseDetailPage,
@@ -38,6 +38,9 @@ function CourseDetailPage() {
 	const { course, sold_slots, commitment } = data.data
 	const enrolled = commitment !== null && commitment.phase !== "not_enrolled"
 	const remaining = course.max_slots - sold_slots
+	const today = new Date()
+	today.setHours(0, 0, 0, 0)
+	const expired = new Date(course.end_date).getTime() < today.getTime()
 
 	return (
 		<>
@@ -45,9 +48,17 @@ function CourseDetailPage() {
 			<div className="px-10 pb-12 space-y-6 max-w-5xl mx-auto w-full">
 				<div className="card p-6">
 					<div className="grid gap-6 md:grid-cols-[1fr_minmax(260px,300px)]">
-						<CourseInfo course={course} sold_slots={sold_slots} enrolled={enrolled} remaining={remaining} />
+						<CourseInfo
+							course={course}
+							sold_slots={sold_slots}
+							enrolled={enrolled}
+							remaining={remaining}
+							expired={expired}
+						/>
 						{enrolled ? (
-							<EnrolledCard courseId={courseId} livestreamUrl={course.livestream_url} />
+							<EnrolledCard courseId={courseId} livestreamUrl={course.livestream_url} expired={expired} />
+						) : expired ? (
+							<ExpiredCard endDate={course.end_date} />
 						) : (
 							<EnrollCard course={course} remaining={remaining} />
 						)}
@@ -70,7 +81,7 @@ function CourseDetailPage() {
 				{course.schedule_items.length > 0 && (
 					<ScheduleCard
 						items={course.schedule_items}
-						livestreamUrl={enrolled ? (course.livestream_url ?? null) : null}
+						livestreamUrl={enrolled ? safeExternalUrl(course.livestream_url) : null}
 					/>
 				)}
 
@@ -141,11 +152,13 @@ function CourseInfo({
 	sold_slots,
 	enrolled,
 	remaining,
+	expired,
 }: {
 	course: CourseWithRelations
 	sold_slots: number
 	enrolled: boolean
 	remaining: number
+	expired: boolean
 }) {
 	const sessions = course.schedule_items.length
 	return (
@@ -154,18 +167,28 @@ function CourseInfo({
 				<span className="inline-flex items-center rounded-full border-2 border-border bg-surface px-2.5 py-0.5 text-xs font-bold text-foreground">
 					{COURSE_LEVEL_LABELS[course.target_level] ?? course.target_level}
 				</span>
-				{enrolled && (
-					<span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-success/10 text-success">
-						Đã đăng ký
+				{expired ? (
+					<span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-border text-muted">
+						Đã kết thúc
 					</span>
-				)}
-				{!enrolled && remaining <= 5 && remaining > 0 && (
-					<span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-warning/10 text-warning">
-						Còn {remaining} chỗ
-					</span>
-				)}
-				{!enrolled && remaining <= 0 && (
-					<span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-border text-muted">Đã đầy</span>
+				) : (
+					<>
+						{enrolled && (
+							<span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-success/10 text-success">
+								Đã đăng ký
+							</span>
+						)}
+						{!enrolled && remaining <= 5 && remaining > 0 && (
+							<span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-warning/10 text-warning">
+								Còn {remaining} chỗ
+							</span>
+						)}
+						{!enrolled && remaining <= 0 && (
+							<span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-border text-muted">
+								Đã đầy
+							</span>
+						)}
+					</>
 				)}
 			</div>
 
@@ -290,16 +313,35 @@ function EnrollCard({ course, remaining }: { course: CourseWithRelations; remain
 	)
 }
 
-function EnrolledCard({ courseId, livestreamUrl }: { courseId: string; livestreamUrl: string | null }) {
+function EnrolledCard({
+	courseId,
+	livestreamUrl,
+	expired,
+}: {
+	courseId: string
+	livestreamUrl: string | null
+	expired: boolean
+}) {
+	const safeLivestream = safeExternalUrl(livestreamUrl)
+	if (expired) {
+		return (
+			<aside className="rounded-2xl border-2 border-border bg-surface p-5 flex flex-col gap-3 self-center text-center">
+				<p className="text-xs font-bold uppercase tracking-wider text-muted">Khóa đã kết thúc</p>
+				<p className="text-sm text-foreground leading-relaxed">
+					Bạn vẫn có thể xem lại tài liệu và lịch học của khóa này.
+				</p>
+			</aside>
+		)
+	}
 	return (
 		<aside className="rounded-2xl border-2 border-success/30 bg-success/5 p-5 flex flex-col gap-4 self-center">
 			<p className="text-xs font-bold uppercase tracking-wider text-success text-center">Đã đăng ký</p>
 			<p className="text-sm text-foreground text-center leading-relaxed">
 				Khóa học đã sẵn sàng. Vào lớp đúng giờ để không bỏ lỡ buổi học.
 			</p>
-			{livestreamUrl && (
+			{safeLivestream && (
 				<a
-					href={livestreamUrl}
+					href={safeLivestream}
 					target="_blank"
 					rel="noreferrer"
 					className="btn btn-primary w-full py-3 text-sm font-bold inline-flex items-center justify-center"
@@ -314,6 +356,25 @@ function EnrolledCard({ courseId, livestreamUrl }: { courseId: string; livestrea
 			>
 				<Icon name="graduation" size="xs" />
 				Đặt lịch 1-1 với giảng viên
+			</Link>
+		</aside>
+	)
+}
+
+function ExpiredCard({ endDate }: { endDate: string }) {
+	return (
+		<aside className="rounded-2xl border-2 border-border bg-surface p-5 flex flex-col gap-3 self-start text-center">
+			<p className="text-xs font-bold uppercase tracking-wider text-muted">Đã kết thúc</p>
+			<p className="text-sm text-foreground leading-relaxed">
+				Khóa học đã kết thúc ngày <span className="font-extrabold tabular-nums">{formatDate(endDate)}</span>{" "}
+				và không còn mở ghi danh.
+			</p>
+			<Link
+				to="/khoa-hoc"
+				search={{ tab: "explore" }}
+				className="btn btn-secondary w-full py-3 text-sm font-bold"
+			>
+				Xem khóa khác
 			</Link>
 		</aside>
 	)

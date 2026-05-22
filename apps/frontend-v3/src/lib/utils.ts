@@ -69,6 +69,24 @@ export function formatVnDate(iso: string): string {
 	return `${d.getDate()} tháng ${d.getMonth() + 1}, ${d.getFullYear()}`
 }
 
+/**
+ * Trả về URL nếu là absolute http(s) URL hợp lệ; ngược lại trả null.
+ * Tránh trường hợp admin nhập bậy ("ádfasdfds") → browser treat as relative
+ * → navigate sang /khoa-hoc/ádfasdfds → BE crash UUID lookup.
+ */
+export function safeExternalUrl(value: string | null | undefined): string | null {
+	if (!value) return null
+	const trimmed = value.trim()
+	if (!trimmed) return null
+	try {
+		const u = new URL(trimmed)
+		if (u.protocol !== "http:" && u.protocol !== "https:") return null
+		return u.toString()
+	} catch {
+		return null
+	}
+}
+
 /** Count words in a string. */
 export function countWords(text: string): number {
 	const trimmed = text.trim()

@@ -7,7 +7,7 @@ import {
 	type CourseScheduleItem,
 	type EnrollmentDetail,
 } from "#/features/course/types"
-import { cn, formatDate, formatNumber, formatVnd } from "#/lib/utils"
+import { cn, formatDate, formatNumber, formatVnd, safeExternalUrl } from "#/lib/utils"
 
 interface Props {
 	course: Course
@@ -191,36 +191,43 @@ function EnrolledCard({ course, enrollment }: { course: Course; enrollment: Enro
 
 			<NextSessionTile course={course} status={status} next={next} />
 
-			<div className="flex items-stretch gap-2 pt-1 mt-auto">
-				{status.active && course.livestream_url ? (
-					<>
-						<a
-							href={course.livestream_url}
-							target="_blank"
-							rel="noreferrer"
-							className="btn btn-primary flex-1 text-sm"
-						>
-							<Icon name="play" size="xs" className="text-white" />
-							Vào Zoom
-						</a>
-						<Link
-							to="/khoa-hoc/$courseId"
-							params={{ courseId: course.id }}
-							className="btn btn-secondary text-sm"
-						>
-							Chi tiết
-						</Link>
-					</>
-				) : (
+			<EnrolledCardActions course={course} status={status} />
+		</div>
+	)
+}
+
+function EnrolledCardActions({ course, status }: { course: Course; status: { active: boolean } }) {
+	const safeLivestream = safeExternalUrl(course.livestream_url)
+	return (
+		<div className="flex items-stretch gap-2 pt-1 mt-auto">
+			{status.active && safeLivestream ? (
+				<>
+					<a
+						href={safeLivestream}
+						target="_blank"
+						rel="noreferrer"
+						className="btn btn-primary flex-1 text-sm"
+					>
+						<Icon name="play" size="xs" className="text-white" />
+						Vào Zoom
+					</a>
 					<Link
 						to="/khoa-hoc/$courseId"
 						params={{ courseId: course.id }}
-						className="btn btn-primary w-full text-sm"
+						className="btn btn-secondary text-sm"
 					>
-						{status.active ? "Vào khóa học" : "Xem chi tiết"}
+						Chi tiết
 					</Link>
-				)}
-			</div>
+				</>
+			) : (
+				<Link
+					to="/khoa-hoc/$courseId"
+					params={{ courseId: course.id }}
+					className="btn btn-primary w-full text-sm"
+				>
+					{status.active ? "Vào khóa học" : "Xem chi tiết"}
+				</Link>
+			)}
 		</div>
 	)
 }
