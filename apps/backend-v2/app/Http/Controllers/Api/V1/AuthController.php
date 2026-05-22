@@ -21,6 +21,7 @@ use App\Models\User;
 use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 final class AuthController extends Controller
@@ -72,14 +73,10 @@ final class AuthController extends Controller
 
     public function googleLogin(GoogleLoginRequest $request): JsonResponse
     {
-        try {
-            $result = $this->authService->loginWithGoogle(
-                $request->validated('id_token'),
-                $request->userAgent(),
-            );
-        } catch (\RuntimeException $e) {
-            return response()->json(['message' => 'Token Google không hợp lệ.'], 401);
-        }
+        $result = $this->authService->loginWithGoogle(
+            $request->validated('id_token'),
+            $request->userAgent(),
+        );
 
         return response()->json(['data' => [
             'user' => new UserResource($result['user']),
@@ -172,7 +169,7 @@ final class AuthController extends Controller
         $profileId = $payload->get('active_profile_id');
 
         $profile = null;
-        if (is_string($profileId) && $profileId !== '') {
+        if (is_string($profileId) && $profileId !== '' && Str::isUuid($profileId)) {
             $candidate = Profile::query()->find($profileId);
             if ($candidate !== null && $candidate->account_id === $user->id) {
                 $profile = $candidate;

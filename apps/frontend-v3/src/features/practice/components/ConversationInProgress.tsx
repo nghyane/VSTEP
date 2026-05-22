@@ -1,4 +1,5 @@
 import { useMutation } from "@tanstack/react-query"
+import { HTTPError } from "ky"
 import { useEffect, useRef, useState } from "react"
 import { Icon } from "#/components/Icon"
 import { endConversation, submitConversationTurn } from "#/features/practice/actions"
@@ -8,6 +9,7 @@ import { ConversationScenarioCard } from "#/features/practice/components/Convers
 import { ConversationSuggestions } from "#/features/practice/components/ConversationSuggestions"
 import { ConversationTurnView } from "#/features/practice/components/ConversationTurnView"
 import type { ConversationSessionDetail, ConversationTurn } from "#/features/practice/types"
+import { useToast } from "#/lib/toast"
 import { pickEnglishVoice, speak, stopSpeaking, warmupTTS } from "#/lib/utils"
 
 interface Props {
@@ -92,7 +94,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 		warmupTTS()
 		setTurns((prev) => [
 			...prev,
-			{ id: "pending-user", role: "user", text, feedback: null, suggested_words: [] },
+			{ id: "pending-user", role: "user", text, ipa: null, feedback: null, suggested_words: [] },
 		])
 		setMic("thinking")
 		turnMutation.mutate({ text, confidence: 0.9 })
@@ -132,9 +134,20 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 				}
 			}, 500)
 		},
-		onError: () => {
+		onError: async (error) => {
+			// Remove optimistic pending turn so user can re-record.
 			setTurns((prev) => prev.filter((t) => t.id !== "pending-user"))
 			setMic("idle")
+			submittedRef.current = false
+
+			// 503: AI service unavailable → show retry message
+			if (error instanceof HTTPError && error.response.status === 503) {
+				const body = (await error.response.json().catch(() => null)) as { message?: string } | null
+				useToast.getState().add(body?.message ?? "AI tạm thời không phản hồi. Vui lòng thử lại sau.")
+				return
+			}
+
+			useToast.getState().add("Không gửi được câu trả lời. Vui lòng thử lại.")
 		},
 	})
 

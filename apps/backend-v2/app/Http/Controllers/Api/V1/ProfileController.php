@@ -15,6 +15,7 @@ use App\Services\ProfileService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Gate;
 
 final class ProfileController extends Controller
 {
@@ -24,9 +25,9 @@ final class ProfileController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
-        $profiles = $this->profileService->listForAccount($request->user());
-
-        return ProfileResource::collection($profiles);
+        return ProfileResource::collection(
+            $this->profileService->listForAccount($request->user()),
+        );
     }
 
     public function store(CreateProfileRequest $request): JsonResponse
@@ -40,35 +41,33 @@ final class ProfileController extends Controller
         ], 201);
     }
 
-    public function show(Request $request, string $id): ProfileResource
+    public function show(Profile $profile): ProfileResource
     {
-        $profile = $this->findOwnedProfile($request, $id);
+        Gate::authorize('view', $profile);
 
         return new ProfileResource($profile);
     }
 
-    public function update(UpdateProfileRequest $request, string $id): ProfileResource
+    public function update(UpdateProfileRequest $request, Profile $profile): ProfileResource
     {
-        $profile = $this->findOwnedProfile($request, $id);
+        Gate::authorize('update', $profile);
         /** @var array{nickname?:string,target_level?:string,target_deadline?:string,entry_level?:string|null} $data */
         $data = $request->validated();
 
-        $updated = $this->profileService->update($profile, $data);
-
-        return new ProfileResource($updated);
+        return new ProfileResource($this->profileService->update($profile, $data));
     }
 
-    public function destroy(Request $request, string $id): JsonResponse
+    public function destroy(Profile $profile): JsonResponse
     {
-        $profile = $this->findOwnedProfile($request, $id);
+        Gate::authorize('delete', $profile);
         $this->profileService->delete($profile);
 
         return response()->json(['data' => ['success' => true]]);
     }
 
-    public function reset(ResetProfileRequest $request, string $id): JsonResponse
+    public function reset(ResetProfileRequest $request, Profile $profile): JsonResponse
     {
-        $profile = $this->findOwnedProfile($request, $id);
+        Gate::authorize('reset', $profile);
         $event = $this->profileService->reset(
             $profile,
             $request->validated('reason'),
@@ -81,9 +80,9 @@ final class ProfileController extends Controller
         ]]);
     }
 
-    public function onboarding(SubmitOnboardingRequest $request, string $id): JsonResponse
+    public function onboarding(SubmitOnboardingRequest $request, Profile $profile): JsonResponse
     {
-        $profile = $this->findOwnedProfile($request, $id);
+        Gate::authorize('update', $profile);
         /** @var array{weaknesses:array<int,string>,motivation:string|null,raw_answers:array<string,mixed>} $data */
         $data = $request->validated();
 
@@ -93,17 +92,5 @@ final class ProfileController extends Controller
             'profile_id' => $response->profile_id,
             'completed_at' => $response->completed_at,
         ]]);
-    }
-
-    private function findOwnedProfile(Request $request, string $id): Profile
-    {
-        /** @var Profile $profile */
-        $profile = Profile::query()->findOrFail($id);
-
-        if ($profile->account_id !== $request->user()->id) {
-            abort(403, 'Profile does not belong to authenticated user.');
-        }
-
-        return $profile;
     }
 }

@@ -21,3 +21,21 @@ export const Input = forwardRef<InputRef, Props>(function Input(
 		/>
 	)
 })
+
+/**
+ * Password input với icon mắt (visibilityToggle của antd) — dùng cho các
+ * form đổi/khởi tạo mật khẩu. Cùng API `invalid` để show error border.
+ */
+export const PasswordInput = forwardRef<InputRef, Omit<Props, "type">>(function PasswordInput(
+	{ invalid, className, ...rest },
+	ref,
+) {
+	return (
+		<AntdInput.Password
+			ref={ref}
+			status={invalid ? "error" : undefined}
+			className={className}
+			{...(rest as Record<string, unknown>)}
+		/>
+	)
+})

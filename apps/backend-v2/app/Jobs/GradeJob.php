@@ -8,7 +8,7 @@ use App\Enums\GradingJobStatus;
 use App\Events\GradingCompleted;
 use App\Events\GradingFailed;
 use App\Models\GradingJob;
-use App\Services\SpeakingGradingService;
+use App\Services\Grading\GradingService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -18,26 +18,25 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Queue job xử lý grading cho speaking submission.
- * Retry tối đa 3 lần (config grading.max_retries).
+ * Unified grading queue job. Replaces GradeWritingJob + GradeSpeakingJob.
  *
- * Event dispatch trong DB::afterCommit() để đảm bảo transaction đã commit.
+ * Strategy resolution happens inside GradingService::process() based on
+ * the GradingJob's submission_type. Retry/fail behavior governed by
+ * Laravel's queue worker — max 3 attempts.
  */
-final class GradeSpeakingJob implements ShouldQueue
+final class GradeJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $maxAttempts = 3;
 
-    public function __construct(
-        public readonly string $gradingJobId,
-    ) {}
+    public function __construct(public readonly string $gradingJobId) {}
 
-    public function handle(SpeakingGradingService $gradingService): void
+    public function handle(GradingService $gradingService): void
     {
         $job = GradingJob::query()->find($this->gradingJobId);
         if ($job === null) {
-            Log::error('GradeSpeakingJob: grading job not found', ['id' => $this->gradingJobId]);
+            Log::error('GradeJob: grading job not found', ['id' => $this->gradingJobId]);
 
             return;
         }
@@ -59,7 +58,7 @@ final class GradeSpeakingJob implements ShouldQueue
             GradingFailed::dispatch($job, $exception->getMessage());
         }
 
-        Log::error('GradeSpeakingJob failed', [
+        Log::error('GradeJob failed after max attempts', [
             'grading_job_id' => $this->gradingJobId,
             'error' => $exception->getMessage(),
         ]);

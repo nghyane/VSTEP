@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Enums\GradingJobStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Practice\StartSessionRequest;
+use App\Http\Requests\Practice\SubmitWritingPracticeRequest;
 use App\Http\Requests\Practice\UseSupportLevelRequest;
 use App\Http\Resources\WritingPromptDetailResource;
 use App\Http\Resources\WritingPromptSummaryResource;
@@ -17,6 +18,7 @@ use App\Services\WritingPracticeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Gate;
 
 final class WritingPracticeController extends Controller
 {
@@ -64,17 +66,19 @@ final class WritingPracticeController extends Controller
 
     public function useSupport(UseSupportLevelRequest $request, PracticeSession $practiceSession): JsonResponse
     {
+        Gate::authorize('update', $practiceSession);
+
         return response()->json(['data' => $this->sessionService->useSupportLevel(
             $practiceSession, $request->profile(), (int) $request->validated('level'),
         )]);
     }
 
-    public function submit(Request $request, PracticeSession $practiceSession): JsonResponse
+    public function submit(SubmitWritingPracticeRequest $request, PracticeSession $practiceSession): JsonResponse
     {
-        $request->validate(['text' => ['required', 'string', 'min:1']]);
+        Gate::authorize('submit', $practiceSession);
 
         $submission = $this->writingService->submit(
-            $request->profile(), $practiceSession, $request->input('text'),
+            $practiceSession, $request->validated('text'),
         );
 
         return response()->json(['data' => [

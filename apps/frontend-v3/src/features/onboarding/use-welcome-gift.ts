@@ -6,7 +6,7 @@ interface WelcomeGiftState {
 	amount: number | null
 	kind: GiftKind
 	streakDays: number | null
-	show: (amount: number, kind?: GiftKind, streakDays?: number) => void
+	show: (amount: number, kind?: GiftKind, streakDays?: number | null) => void
 	dismiss: () => void
 }
 

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Exceptions\InvalidGoogleTokenException;
 use Google\Client as GoogleClient;
-use RuntimeException;
 
 /**
  * Verifies Google ID tokens using Google's official PHP client.
@@ -24,12 +24,12 @@ final class GoogleTokenVerifier
     {
         $clientId = (string) config('services.google.client_id');
         if ($clientId === '') {
-            throw new RuntimeException('Google client ID not configured.');
+            throw new \RuntimeException('Google client ID not configured.');
         }
 
         $payload = (new GoogleClient(['client_id' => $clientId]))->verifyIdToken($idToken);
         if (! is_array($payload)) {
-            throw new RuntimeException('Invalid Google ID token.');
+            throw new InvalidGoogleTokenException;
         }
 
         $this->validateRequiredClaims($payload);
@@ -47,7 +47,7 @@ final class GoogleTokenVerifier
     private function validateRequiredClaims(array $payload): void
     {
         if (empty($payload['sub']) || empty($payload['email'])) {
-            throw new RuntimeException('Google ID token missing required claims.');
+            throw new InvalidGoogleTokenException;
         }
     }
 }

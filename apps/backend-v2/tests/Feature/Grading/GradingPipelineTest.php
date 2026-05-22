@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Tests\Feature\Grading;
 
 use App\Enums\GradingJobStatus;
+use App\Models\PracticeSession;
 use App\Models\PracticeWritingPrompt;
+use App\Models\PracticeWritingSubmission;
 use App\Models\Profile;
 use App\Models\User;
 use App\Models\WritingGradingResult;
-use App\Services\WritingGradingService;
+use App\Services\Grading\GradingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class GradingPipelineTest extends TestCase
@@ -20,15 +21,17 @@ class GradingPipelineTest extends TestCase
 
     public function test_writing_grading_creates_job_and_result(): void
     {
-        $service = $this->app->make(WritingGradingService::class);
-        $job = $service->enqueue('practice_writing', (string) Str::uuid());
+        $service = $this->app->make(GradingService::class);
+        $submission = $this->createWritingSubmission();
+
+        $job = $service->enqueue('practice_writing', $submission->id);
 
         $this->assertSame(GradingJobStatus::Ready, $job->status);
         $this->assertSame(1, $job->attempts);
 
         $result = WritingGradingResult::query()
             ->where('submission_type', 'practice_writing')
-            ->where('submission_id', $job->submission_id)
+            ->where('submission_id', $submission->id)
             ->where('is_active', true)
             ->first();
 
@@ -41,14 +44,19 @@ class GradingPipelineTest extends TestCase
 
     public function test_regrade_creates_new_version_deactivates_old(): void
     {
-        $service = $this->app->make(WritingGradingService::class);
-        $subId = (string) Str::uuid();
-        $service->enqueue('practice_writing', $subId);
-        $service->enqueue('practice_writing', $subId);
+        $service = $this->app->make(GradingService::class);
+        $submission = $this->createWritingSubmission();
+
+        // First grading completes synchronously (queue=sync) → job becomes Ready.
+        $service->enqueue('practice_writing', $submission->id);
+
+        // Re-enqueue is only allowed once active job finished — partial unique index
+        // blocks duplicate pending/processing jobs. After Ready, new enqueue allowed.
+        $service->enqueue('practice_writing', $submission->id);
 
         $results = WritingGradingResult::query()
             ->where('submission_type', 'practice_writing')
-            ->where('submission_id', $subId)
+            ->where('submission_id', $submission->id)
             ->orderBy('version')
             ->get();
 
@@ -93,11 +101,10 @@ class GradingPipelineTest extends TestCase
 
     public function test_grading_job_endpoint(): void
     {
-        $service = $this->app->make(WritingGradingService::class);
-        $job = $service->enqueue('practice_writing', (string) Str::uuid());
+        $service = $this->app->make(GradingService::class);
+        [$submission, $user] = $this->createWritingSubmissionWithOwner();
+        $job = $service->enqueue('practice_writing', $submission->id);
 
-        $user = User::factory()->create();
-        Profile::factory()->initial()->forAccount($user)->create();
         $token = $this->postJson('/api/v1/auth/login', [
             'email' => $user->email, 'password' => 'password',
         ])->json('data.access_token');
@@ -106,5 +113,58 @@ class GradingPipelineTest extends TestCase
             ->getJson("/api/v1/grading/jobs/{$job->id}")
             ->assertOk()
             ->assertJsonPath('data.status', 'ready');
+    }
+
+    public function test_grading_job_endpoint_rejects_non_owner(): void
+    {
+        $service = $this->app->make(GradingService::class);
+        [$submission] = $this->createWritingSubmissionWithOwner();
+        $job = $service->enqueue('practice_writing', $submission->id);
+
+        // Different account
+        $intruder = User::factory()->create();
+        Profile::factory()->initial()->forAccount($intruder)->create();
+        $token = $this->postJson('/api/v1/auth/login', [
+            'email' => $intruder->email, 'password' => 'password',
+        ])->json('data.access_token');
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson("/api/v1/grading/jobs/{$job->id}")
+            ->assertForbidden();
+    }
+
+    private function createWritingSubmission(): PracticeWritingSubmission
+    {
+        return $this->createWritingSubmissionWithOwner()[0];
+    }
+
+    /**
+     * @return array{PracticeWritingSubmission, User}
+     */
+    private function createWritingSubmissionWithOwner(): array
+    {
+        $user = User::factory()->create();
+        $profile = Profile::factory()->initial()->forAccount($user)->create();
+        $prompt = PracticeWritingPrompt::factory()->create();
+        $session = PracticeSession::create([
+            'profile_id' => $profile->id,
+            'module' => 'writing',
+            'content_ref_type' => 'practice_writing_prompt',
+            'content_ref_id' => $prompt->id,
+            'started_at' => now(),
+            'ended_at' => now(),
+            'duration_seconds' => 60,
+        ]);
+
+        $submission = PracticeWritingSubmission::create([
+            'session_id' => $session->id,
+            'profile_id' => $profile->id,
+            'prompt_id' => $prompt->id,
+            'text' => 'Dear Sir, I am writing to apologize for the inconvenience.',
+            'word_count' => 10,
+            'submitted_at' => now(),
+        ]);
+
+        return [$submission, $user];
     }
 }

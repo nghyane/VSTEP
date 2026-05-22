@@ -7,6 +7,7 @@ namespace App\Http\Requests\Auth;
 use App\Enums\VstepLevel;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 final class RegisterRequest extends FormRequest
 {
@@ -19,7 +20,7 @@ final class RegisterRequest extends FormRequest
     {
         return [
             'email' => ['required', 'email', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:6'],
+            'password' => ['required', 'string', Password::min(8)->mixedCase()->numbers()],
             'nickname' => ['required', 'string', 'max:50'],
             'entry_level' => ['nullable', 'string', Rule::enum(VstepLevel::class)],
             'target_level' => ['required', 'string', Rule::enum(VstepLevel::class)->only(VstepLevel::targetOptions())],

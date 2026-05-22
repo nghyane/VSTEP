@@ -50,4 +50,9 @@ class PracticeSession extends BaseModel
     {
         return $this->hasMany(PracticeSpeakingDrillAttempt::class, 'session_id');
     }
+
+    public function mcqAnswers(): HasMany
+    {
+        return $this->hasMany(PracticeMcqAnswer::class, 'session_id');
+    }
 }

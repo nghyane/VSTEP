@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Api\V1\AudioController;
+use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ConfigController;
 use App\Http\Controllers\Api\V1\CourseController;
@@ -36,20 +37,23 @@ Route::prefix('v1')->group(function () {
     });
 
     // Auth (protected, no active profile required — admin/teacher fit here)
-    Route::middleware('auth:api')->group(function () {
+    Route::middleware(['auth:api', 'throttle:60,1'])->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::post('/auth/switch-profile', [AuthController::class, 'switchProfile']);
         Route::post('/auth/complete-onboarding', [AuthController::class, 'completeOnboarding']);
         Route::get('/auth/me', [AuthController::class, 'me']);
 
+        // Self-service account ops (mọi role dùng được).
+        Route::post('/me/change-password', [AccountController::class, 'changePassword']);
+
         // Profile CRUD — scoped by authenticated account.
         Route::get('/profiles', [ProfileController::class, 'index']);
         Route::post('/profiles', [ProfileController::class, 'store']);
-        Route::get('/profiles/{id}', [ProfileController::class, 'show']);
-        Route::patch('/profiles/{id}', [ProfileController::class, 'update']);
-        Route::delete('/profiles/{id}', [ProfileController::class, 'destroy']);
-        Route::post('/profiles/{id}/reset', [ProfileController::class, 'reset']);
-        Route::post('/profiles/{id}/onboarding', [ProfileController::class, 'onboarding']);
+        Route::get('/profiles/{profile}', [ProfileController::class, 'show']);
+        Route::patch('/profiles/{profile}', [ProfileController::class, 'update']);
+        Route::delete('/profiles/{profile}', [ProfileController::class, 'destroy']);
+        Route::post('/profiles/{profile}/reset', [ProfileController::class, 'reset']);
+        Route::post('/profiles/{profile}/onboarding', [ProfileController::class, 'onboarding']);
     });
 
     // Learner routes requiring active profile context.
@@ -116,7 +120,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/practice/speaking/conversations/{conversation_session}/turn', [SpeakingConversationController::class, 'submitTurn']);
         Route::post('/practice/speaking/conversations/{conversation_session}/end', [SpeakingConversationController::class, 'end']);
         Route::get('/practice/speaking/conversations/{conversation_session}/review', [SpeakingConversationController::class, 'review']);
-        Route::post('/practice/speaking/pronunciation-review', [SpeakingConversationController::class, 'pronunciationReview']);
+        Route::post('/practice/speaking/pronunciation-review', [SpeakingConversationController::class, 'pronunciationReview'])
+            ->middleware('throttle:'.config('practice.rate_limits.pronunciation_review'));
 
         // Practice Speaking — shadowing progress.
         Route::get('/practice/speaking/shadowing/progress', [ShadowingProgressController::class, 'index']);
@@ -141,10 +146,14 @@ Route::prefix('v1')->group(function () {
         Route::get('/exam-sessions/{exam_session}/speaking-results', [ExamController::class, 'speakingResults']);
 
         // Grading.
-        Route::get('/grading/jobs/{id}', [GradingController::class, 'showJob']);
-        Route::get('/grading/jobs/{id}/status', [GradingController::class, 'jobStatus']);
-        Route::get('/grading/writing/{submissionType}/{submissionId}', [GradingController::class, 'writingResult']);
-        Route::get('/grading/speaking/{submissionType}/{submissionId}', [GradingController::class, 'speakingResult']);
+        Route::get('/grading/jobs/{grading_job}', [GradingController::class, 'showJob']);
+        Route::get('/grading/jobs/{grading_job}/status', [GradingController::class, 'jobStatus']);
+        Route::get('/grading/writing/{submissionType}/{submissionId}', [GradingController::class, 'writingResult'])
+            ->whereIn('submissionType', ['practice_writing', 'exam_writing'])
+            ->whereUuid('submissionId');
+        Route::get('/grading/speaking/{submissionType}/{submissionId}', [GradingController::class, 'speakingResult'])
+            ->whereIn('submissionType', ['practice_speaking', 'exam_speaking'])
+            ->whereUuid('submissionId');
 
         // Audio presigned URLs (R2).
         Route::post('/audio/presign-upload', [AudioController::class, 'presignUpload']);
@@ -336,9 +345,22 @@ Route::prefix('v1')->group(function () {
         Route::patch('/practice/speaking-drill-sentences/{sentenceId}', [Admin\SpeakingDrillController::class, 'updateSentence'])->whereUuid('sentenceId');
         Route::delete('/practice/speaking-drill-sentences/{sentenceId}', [Admin\SpeakingDrillController::class, 'destroySentence'])->whereUuid('sentenceId');
 
-        // Users — picker endpoints (full CRUD sẽ thêm sau, RFC 0011)
+        // Users — picker endpoints (read-only) còn dùng cho staff.
         Route::get('/users/teachers', [Admin\UserController::class, 'teachers']);
         Route::get('/profiles/search', [Admin\UserController::class, 'searchProfiles']);
+
+        // User management — ADMIN ONLY (nested middleware override role:staff parent).
+        // Soft deactivate, không hard delete. Role chỉ set lúc create.
+        Route::middleware('role:admin')->prefix('users')->group(function () {
+            Route::get('/', [Admin\UserController::class, 'index']);
+            Route::post('/', [Admin\UserController::class, 'store']);
+            Route::get('/{id}', [Admin\UserController::class, 'show'])->whereUuid('id');
+            Route::patch('/{id}', [Admin\UserController::class, 'update'])->whereUuid('id');
+            Route::post('/{id}/deactivate', [Admin\UserController::class, 'deactivate'])->whereUuid('id');
+            Route::post('/{id}/activate', [Admin\UserController::class, 'activate'])->whereUuid('id');
+            Route::post('/{id}/reset-password', [Admin\UserController::class, 'resetPassword'])->whereUuid('id');
+            Route::get('/{id}/teacher-active-courses', [Admin\UserController::class, 'teacherActiveCourses'])->whereUuid('id');
+        });
 
         // Courses — quản lý khóa học (gán teacher, schedule, pricing)
         Route::prefix('courses')->group(function () {

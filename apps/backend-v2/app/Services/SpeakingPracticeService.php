@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Exceptions\NotOwnerException;
 use App\Models\PracticeSession;
 use App\Models\PracticeSpeakingDrill;
 use App\Models\PracticeSpeakingDrillAttempt;
@@ -12,15 +11,17 @@ use App\Models\PracticeSpeakingDrillSentence;
 use App\Models\PracticeSpeakingSubmission;
 use App\Models\PracticeSpeakingTask;
 use App\Models\Profile;
+use App\Services\Grading\GradingService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 final class SpeakingPracticeService
 {
     public function __construct(
         private readonly PracticeSessionService $sessionService,
-        private readonly SpeakingGradingService $gradingService,
+        private readonly GradingService $gradingService,
     ) {}
 
     /** @return Collection<int,PracticeSpeakingDrill> */
@@ -82,16 +83,12 @@ final class SpeakingPracticeService
     }
 
     public function logDrillAttempt(
-        Profile $profile,
         PracticeSession $session,
         string $sentenceId,
         string $mode,
         ?string $userText,
         ?int $accuracyPercent,
     ): PracticeSpeakingDrillAttempt {
-        if ($session->profile_id !== $profile->id) {
-            throw new NotOwnerException;
-        }
         if ($session->module !== 'speaking_drill') {
             throw ValidationException::withMessages([
                 'session' => ['Session is not a drill session.'],
@@ -140,14 +137,10 @@ final class SpeakingPracticeService
     }
 
     public function submitVstepPractice(
-        Profile $profile,
         PracticeSession $session,
         string $audioUrl,
         int $durationSeconds,
     ): PracticeSpeakingSubmission {
-        if ($session->profile_id !== $profile->id) {
-            throw new NotOwnerException;
-        }
         if ($session->module !== 'speaking_vstep_practice') {
             throw ValidationException::withMessages([
                 'session' => ['Session is not a VSTEP practice session.'],
@@ -159,20 +152,32 @@ final class SpeakingPracticeService
             ]);
         }
 
-        $submission = PracticeSpeakingSubmission::create([
-            'session_id' => $session->id,
-            'profile_id' => $profile->id,
-            'task_ref_type' => 'practice_speaking_task',
-            'task_ref_id' => $session->content_ref_id,
-            'audio_url' => $audioUrl,
-            'duration_seconds' => $durationSeconds,
-            'submitted_at' => now(),
-        ]);
+        return DB::transaction(function () use ($session, $audioUrl, $durationSeconds) {
+            $locked = PracticeSession::query()
+                ->whereKey($session->id)
+                ->lockForUpdate()
+                ->first();
 
-        $this->sessionService->complete($session);
+            if ($locked->ended_at !== null) {
+                throw ValidationException::withMessages([
+                    'session' => ['Session already submitted.'],
+                ]);
+            }
 
-        $this->gradingService->enqueue('practice_speaking', $submission->id);
+            $submission = PracticeSpeakingSubmission::create([
+                'session_id' => $locked->id,
+                'profile_id' => $locked->profile_id,
+                'task_ref_type' => 'practice_speaking_task',
+                'task_ref_id' => $locked->content_ref_id,
+                'audio_url' => $audioUrl,
+                'duration_seconds' => $durationSeconds,
+                'submitted_at' => now(),
+            ]);
 
-        return $submission;
+            $this->sessionService->complete($locked);
+            $this->gradingService->enqueue('practice_speaking', $submission->id);
+
+            return $submission;
+        });
     }
 }

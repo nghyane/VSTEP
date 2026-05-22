@@ -4,20 +4,21 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Exceptions\NotOwnerException;
 use App\Models\PracticeSession;
 use App\Models\PracticeWritingPrompt;
 use App\Models\PracticeWritingSubmission;
 use App\Models\Profile;
+use App\Services\Grading\GradingService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 final class WritingPracticeService
 {
     public function __construct(
         private readonly PracticeSessionService $sessionService,
-        private readonly WritingGradingService $gradingService,
+        private readonly GradingService $gradingService,
     ) {}
 
     /** @return Collection<int,PracticeWritingPrompt> */
@@ -50,13 +51,9 @@ final class WritingPracticeService
     }
 
     public function submit(
-        Profile $profile,
         PracticeSession $session,
         string $text,
     ): PracticeWritingSubmission {
-        if ($session->profile_id !== $profile->id) {
-            throw new NotOwnerException;
-        }
         if ($session->module !== 'writing') {
             throw ValidationException::withMessages([
                 'session' => ['Session module is not writing.'],
@@ -69,18 +66,36 @@ final class WritingPracticeService
         }
 
         $wordCount = $this->countWords($text);
-        $submission = PracticeWritingSubmission::create([
-            'session_id' => $session->id,
-            'profile_id' => $profile->id,
-            'prompt_id' => $session->content_ref_id,
-            'text' => $text,
-            'word_count' => $wordCount,
-            'submitted_at' => now(),
-        ]);
 
-        $this->sessionService->complete($session);
+        $submission = DB::transaction(function () use ($session, $text, $wordCount) {
+            $locked = PracticeSession::query()
+                ->whereKey($session->id)
+                ->lockForUpdate()
+                ->first();
 
-        $this->gradingService->enqueue('practice_writing', $submission->id);
+            if ($locked->ended_at !== null) {
+                throw ValidationException::withMessages([
+                    'session' => ['Session already submitted.'],
+                ]);
+            }
+
+            $submission = PracticeWritingSubmission::create([
+                'session_id' => $locked->id,
+                'profile_id' => $locked->profile_id,
+                'prompt_id' => $locked->content_ref_id,
+                'text' => $text,
+                'word_count' => $wordCount,
+                'submitted_at' => now(),
+            ]);
+
+            $this->sessionService->complete($locked);
+
+            // Enqueue inside transaction — GradingService defers dispatch
+            // to DB::afterCommit, ensuring submission row is visible to worker.
+            $this->gradingService->enqueue('practice_writing', $submission->id);
+
+            return $submission;
+        });
 
         return $submission;
     }
