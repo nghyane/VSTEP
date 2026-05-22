@@ -10,6 +10,7 @@ use App\Http\Requests\LogListeningPlayedRequest;
 use App\Http\Requests\SaveExamDraftRequest;
 use App\Http\Requests\StartExamSessionRequest;
 use App\Http\Requests\SubmitExamRequest;
+use App\Http\Resources\ExamSessionListResource;
 use App\Http\Resources\ExamSpeakingResultResource;
 use App\Http\Resources\ExamSubmitResultResource;
 use App\Http\Resources\ExamWritingResultResource;
@@ -115,21 +116,9 @@ final class ExamController extends Controller
             $query->where('status', $status);
         }
 
-        $sessions = $query->get()->map(fn (ExamSession $session) => [
-            'id' => $session->id,
-            'exam_id' => $session->examVersion?->exam_id,
-            'exam_version_id' => $session->exam_version_id,
-            'mode' => $session->mode,
-            'selected_skills' => $session->selected_skills,
-            'is_full_test' => $session->is_full_test,
-            'status' => $session->status,
-            'started_at' => $session->started_at,
-            'submitted_at' => $session->submitted_at,
-            'server_deadline_at' => $session->server_deadline_at,
-            'scores' => $session->status->isTerminal()
-                ? $this->scoringService->getSessionScores($session)
-                : null,
-        ]);
+        $sessions = $query->get()->map(
+            fn (ExamSession $session) => (new ExamSessionListResource($session, $this->scoringService))->toArray($request)
+        );
 
         return response()->json(['data' => $sessions]);
     }
@@ -144,8 +133,7 @@ final class ExamController extends Controller
             $examSession->update(['status' => ExamSessionStatus::AutoSubmitted, 'submitted_at' => now()]);
             ExamSessionDraft::query()->where('session_id', $examSession->id)->delete();
         });
-        $progressService = $this->progressService;
-        DB::afterCommit(fn () => $progressService->recordExamCompletion($examSession->fresh()));
+        DB::afterCommit(fn () => $this->progressService->recordExamCompletion($examSession->fresh()));
 
         return response()->json(['data' => ['abandoned' => true]]);
     }

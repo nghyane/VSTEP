@@ -9,8 +9,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Practice\DrillAttemptRequest;
 use App\Http\Requests\Practice\StartSessionRequest;
 use App\Http\Requests\Practice\SubmitVstepRequest;
+use App\Http\Resources\DrillDetailResource;
 use App\Http\Resources\DrillSessionHistoryResource;
+use App\Http\Resources\DrillSummaryResource;
 use App\Http\Resources\SpeakingSubmissionHistoryResource;
+use App\Http\Resources\SpeakingTaskDetailResource;
+use App\Http\Resources\SpeakingTaskSummaryResource;
 use App\Models\PracticeSession;
 use App\Services\PracticeSessionService;
 use App\Services\SpeakingPracticeService;
@@ -30,14 +34,7 @@ final class SpeakingPracticeController extends Controller
         $level = $request->string('level')->toString() ?: null;
         $drills = $this->speakingService->listDrills($level);
 
-        return response()->json(['data' => $drills->map(fn ($d) => [
-            'id' => $d->id,
-            'slug' => $d->slug,
-            'title' => $d->title,
-            'level' => $d->level,
-            'segment_count' => $d->sentences_count ?? $d->sentences()->count(),
-            'estimated_minutes' => $d->estimated_minutes,
-        ])->values()]);
+        return response()->json(['data' => DrillSummaryResource::collection($drills)]);
     }
 
     public function drillHistory(Request $request): AnonymousResourceCollection
@@ -60,23 +57,7 @@ final class SpeakingPracticeController extends Controller
     {
         $drill = $this->speakingService->getDrillWithSentences($id);
 
-        return response()->json(['data' => [
-            'id' => $drill->id,
-            'slug' => $drill->slug,
-            'title' => $drill->title,
-            'level' => $drill->level,
-            'audio_url' => $drill->audio_url ?? '',
-            'segments' => $drill->sentences->values()->map(fn ($s) => [
-                'id' => $s->id,
-                'index' => (int) $s->display_order,
-                'text' => $s->text,
-                'ipa' => $s->ipa ?? '',
-                'translation' => $s->translation ?? '',
-                'word_count' => $s->word_count ?? str_word_count($s->text),
-                'audio_start' => $s->audio_start !== null ? (float) $s->audio_start : 0.0,
-                'audio_end' => $s->audio_end !== null ? (float) $s->audio_end : 0.0,
-            ]),
-        ]]);
+        return response()->json(['data' => DrillDetailResource::make($drill)]);
     }
 
     public function listTasks(Request $request): JsonResponse
@@ -84,22 +65,14 @@ final class SpeakingPracticeController extends Controller
         $part = $request->integer('part') ?: null;
         $tasks = $this->speakingService->listTasks($part);
 
-        return response()->json(['data' => $tasks->map(fn ($t) => [
-            'id' => $t->id, 'slug' => $t->slug, 'title' => $t->title,
-            'part' => $t->part, 'task_type' => $t->task_type,
-            'speaking_seconds' => $t->speaking_seconds,
-        ])->values()]);
+        return response()->json(['data' => SpeakingTaskSummaryResource::collection($tasks)]);
     }
 
     public function showTask(string $id): JsonResponse
     {
         $task = $this->speakingService->getTask($id);
 
-        return response()->json(['data' => [
-            'id' => $task->id, 'slug' => $task->slug, 'title' => $task->title,
-            'part' => $task->part, 'task_type' => $task->task_type,
-            'content' => $task->content, 'speaking_seconds' => $task->speaking_seconds,
-        ]]);
+        return response()->json(['data' => SpeakingTaskDetailResource::make($task)]);
     }
 
     public function startDrillSession(StartSessionRequest $request): JsonResponse

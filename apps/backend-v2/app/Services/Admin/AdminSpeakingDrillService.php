@@ -64,7 +64,7 @@ final class AdminSpeakingDrillService
 
     public function setPublished(PracticeSpeakingDrill $drill, bool $value): PracticeSpeakingDrill
     {
-        $drill->forceFill(['is_published' => $value])->save();
+        $drill->update(['is_published' => $value]);
 
         return $drill->fresh();
     }

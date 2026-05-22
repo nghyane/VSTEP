@@ -64,7 +64,7 @@ final class AdminWritingService
 
     public function setPublished(PracticeWritingPrompt $prompt, bool $value): PracticeWritingPrompt
     {
-        $prompt->forceFill(['is_published' => $value])->save();
+        $prompt->update(['is_published' => $value]);
 
         return $prompt->fresh();
     }

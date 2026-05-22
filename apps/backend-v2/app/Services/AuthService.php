@@ -308,7 +308,7 @@ final class AuthService
             return;
         }
 
-        $user->forceFill(['active_profile_id' => $profile?->id])->save();
+        $user->update(['active_profile_id' => $profile?->id]);
     }
 
     private function issueAccessToken(User $user, ?Profile $profile): string

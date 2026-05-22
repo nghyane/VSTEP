@@ -125,7 +125,7 @@ final class AdminCourseService
 
     public function setPublished(Course $course, bool $value): Course
     {
-        $course->forceFill(['is_published' => $value])->save();
+        $course->update(['is_published' => $value]);
 
         return $course->fresh(['teacher']);
     }
@@ -240,7 +240,7 @@ final class AdminCourseService
 
     public function setEnrollmentCommitment(CourseEnrollment $enrollment, bool $value): CourseEnrollment
     {
-        $enrollment->forceFill(['acknowledged_commitment' => $value])->save();
+        $enrollment->update(['acknowledged_commitment' => $value]);
 
         return $enrollment->fresh(['profile.account']);
     }
@@ -482,7 +482,7 @@ final class AdminCourseService
             ]);
         }
 
-        $booking->forceFill(['meet_url' => $meetUrl])->save();
+        $booking->update(['meet_url' => $meetUrl]);
 
         return $booking->fresh(['slot', 'profile.account']);
     }
@@ -518,11 +518,11 @@ final class AdminCourseService
         $refundAmount = $originalTx !== null ? abs((int) $originalTx->delta) : 0;
 
         DB::transaction(function () use ($booking, $slot, $profile, $refundAmount) {
-            $booking->forceFill(['status' => BookingStatus::Cancelled])->save();
+            $booking->update(['status' => BookingStatus::Cancelled]);
 
             // Free slot lại để học viên khác (hoặc chính học viên đó) có thể book.
             if ($slot !== null && $slot->status === SlotStatus::Booked) {
-                $slot->forceFill(['status' => SlotStatus::Open])->save();
+                $slot->update(['status' => SlotStatus::Open]);
             }
 
             if ($profile !== null && $refundAmount > 0) {

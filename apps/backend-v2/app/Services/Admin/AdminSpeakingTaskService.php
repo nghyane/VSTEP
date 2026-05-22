@@ -63,7 +63,7 @@ final class AdminSpeakingTaskService
 
     public function setPublished(PracticeSpeakingTask $task, bool $value): PracticeSpeakingTask
     {
-        $task->forceFill(['is_published' => $value])->save();
+        $task->update(['is_published' => $value]);
 
         return $task->fresh();
     }

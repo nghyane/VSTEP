@@ -75,7 +75,7 @@ final class AdminMcqPracticeService
 
     public function setPublished(Model $exercise, bool $value): Model
     {
-        $exercise->forceFill(['is_published' => $value])->save();
+        $exercise->update(['is_published' => $value]);
 
         return $exercise->fresh();
     }

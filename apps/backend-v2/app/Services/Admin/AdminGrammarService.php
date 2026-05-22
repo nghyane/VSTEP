@@ -129,7 +129,7 @@ final class AdminGrammarService
 
     public function setPublished(GrammarPoint $point, bool $value): GrammarPoint
     {
-        $point->forceFill(['is_published' => $value])->save();
+        $point->update(['is_published' => $value]);
 
         return $point->fresh()
             ->load(['levels', 'tasks', 'functions'])

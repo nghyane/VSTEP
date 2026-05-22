@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BookSlotRequest;
+use App\Http\Resources\EnrollmentOrderResource;
 use App\Models\Course;
 use App\Models\CourseEnrollmentOrder;
 use App\Models\TeacherSlot;
@@ -68,7 +69,7 @@ final class CourseController extends Controller
             'mock',
         );
 
-        return response()->json(['data' => $this->formatOrder($order)], 201);
+        return response()->json(['data' => EnrollmentOrderResource::make($order)], 201);
     }
 
     /**
@@ -86,7 +87,7 @@ final class CourseController extends Controller
 
         $confirmed = $this->courseOrderService->confirm($enrollmentOrder, $validated['commitment_signature'] ?? null);
 
-        return response()->json(['data' => $this->formatOrder($confirmed)]);
+        return response()->json(['data' => EnrollmentOrderResource::make($confirmed)]);
     }
 
     /**
@@ -94,25 +95,9 @@ final class CourseController extends Controller
      */
     public function enrollmentOrders(Request $request): JsonResponse
     {
-        $orders = $this->courseOrderService->getProfileOrders($request->profile());
-
-        return response()->json([
-            'data' => $orders->map(fn (CourseEnrollmentOrder $o) => $this->formatOrder($o)),
-        ]);
-    }
-
-    private function formatOrder(CourseEnrollmentOrder $order): array
-    {
-        return [
-            'id' => $order->id,
-            'course_id' => $order->course_id,
-            'course_title' => $order->course?->title,
-            'amount_vnd' => $order->amount_vnd,
-            'status' => $order->status,
-            'payment_provider' => $order->payment_provider,
-            'paid_at' => $order->paid_at,
-            'created_at' => $order->created_at,
-        ];
+        return EnrollmentOrderResource::collection(
+            $this->courseOrderService->getProfileOrders($request->profile())
+        )->response();
     }
 
     /**
