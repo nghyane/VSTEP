@@ -53,7 +53,13 @@ export default function RegisterScreen() {
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
       e.email = "Email không hợp lệ";
     }
-    if (!password || password.length < 8) e.password = "Mật khẩu tối thiểu 8 ký tự";
+    if (!password || password.length < 8) {
+      e.password = "Mật khẩu tối thiểu 8 ký tự";
+    } else if (!/[a-z]/.test(password) || !/[A-Z]/.test(password)) {
+      e.password = "Mật khẩu phải có cả chữ hoa và chữ thường";
+    } else if (!/\d/.test(password)) {
+      e.password = "Mật khẩu phải có ít nhất một chữ số";
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   }, [fullName, email, password]);
@@ -151,7 +157,7 @@ export default function RegisterScreen() {
               <Ionicons name="lock-closed-outline" size={18} color={c.mutedForeground} />
               <TextInput
                 style={[s.input, { color: c.foreground }]}
-                placeholder="Tối thiểu 8 ký tự"
+                placeholder="≥8 ký tự, có chữ hoa, chữ thường, số"
                 placeholderTextColor={c.placeholder}
                 value={password}
                 onChangeText={setPassword}
@@ -161,7 +167,11 @@ export default function RegisterScreen() {
                 <Ionicons name={showPw ? "eye-off-outline" : "eye-outline"} size={18} color={c.mutedForeground} />
               </TouchableOpacity>
             </View>
-            {errors.password && <Text style={[s.fieldError, { color: c.destructive }]}>{errors.password}</Text>}
+            {errors.password ? (
+              <Text style={[s.fieldError, { color: c.destructive }]}>{errors.password}</Text>
+            ) : (
+              <Text style={[s.fieldHint, { color: c.mutedForeground }]}>Tối thiểu 8 ký tự, có chữ hoa, chữ thường và chữ số.</Text>
+            )}
           </View>
 
           <DepthButton onPress={handleRegister} fullWidth disabled={loading}>
@@ -213,6 +223,7 @@ const s = StyleSheet.create({
   inputWrap: { flexDirection: "row", alignItems: "center", gap: spacing.sm, borderWidth: 2, borderRadius: radius.lg, paddingHorizontal: spacing.base, paddingVertical: spacing.sm, backgroundColor: "#FAFAFA" },
   input: { flex: 1, fontSize: fontSize.base, fontFamily: fontFamily.regular, minHeight: 28 },
   fieldError: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },
+  fieldHint: { fontSize: fontSize.xs, fontFamily: fontFamily.regular },
   footer: { flexDirection: "row", justifyContent: "center", alignItems: "center" },
   footerText: { fontSize: fontSize.sm },
   footerLink: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },

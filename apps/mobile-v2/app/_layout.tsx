@@ -1,5 +1,6 @@
 import { useFonts } from "expo-font";
 import { useEffect, useState, useCallback } from "react";
+import { Alert } from "react-native";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -34,11 +35,19 @@ export default function RootLayout() {
     (async () => {
       try {
         const session = await refreshSession();
-        if (session) {
+        if (session.status === "ok") {
           setUser(session.user);
           setProfile(session.profile);
           setStatus("authenticated");
         } else {
+          if (session.status === "expired") {
+            // Refresh token bị reject (BE rotate sang SHA-256 / TTL hết / revoke).
+            // Báo user để họ biết tại sao bị bật về login thay vì silent redirect.
+            Alert.alert(
+              "Phiên đăng nhập đã hết hạn",
+              "Vui lòng đăng nhập lại để tiếp tục.",
+            );
+          }
           setStatus("unauthenticated");
         }
         await Promise.all([loadCoins(), loadStreakData(), loadNotifications()]).catch(() => undefined);

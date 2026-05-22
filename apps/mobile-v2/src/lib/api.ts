@@ -107,9 +107,19 @@ async function tryRefresh(): Promise<boolean> {
   }
 }
 
-export async function refreshSession() {
+export type RefreshSessionResult =
+  | { status: "ok"; user: AuthUser; profile: Profile | null }
+  | { status: "expired" }
+  | { status: "none" };
+
+// Refresh persisted session on app launch. Distinguishes:
+// - "ok": refresh succeeded, caller restores authenticated state.
+// - "expired": there was a refresh token but BE rejected it (token rotated
+//   format / TTL hết / revoke). Caller hiển thị Alert "Phiên đã hết hạn".
+// - "none": chưa có refresh token (lần đầu cài app hoặc đã sign out).
+export async function refreshSession(): Promise<RefreshSessionResult> {
   const refreshToken = await getRefreshToken().catch(() => null);
-  if (!refreshToken) return null;
+  if (!refreshToken) return { status: "none" };
 
   try {
     const res = await fetch(`${API_URL}/api/v1/auth/refresh`, {
@@ -119,7 +129,7 @@ export async function refreshSession() {
     });
     if (!res.ok) {
       await clearTokens().catch(() => undefined);
-      return null;
+      return { status: "expired" };
     }
     const json: unknown = await res.json();
     const data = toCamelCase<{
@@ -130,13 +140,13 @@ export async function refreshSession() {
     const user = await getSavedUser();
     if (!user) {
       await clearTokens().catch(() => undefined);
-      return null;
+      return { status: "expired" };
     }
     await saveTokens(data.accessToken, data.refreshToken, user, data.profile);
-    return { user, profile: data.profile };
+    return { status: "ok", user, profile: data.profile };
   } catch {
-    await clearTokens().catch(() => undefined);
-    return null;
+    // Network error — không xoá tokens, không báo hết phiên (user offline).
+    return { status: "none" };
   }
 }
 
