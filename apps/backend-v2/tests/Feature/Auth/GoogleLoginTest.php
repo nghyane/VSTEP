@@ -116,6 +116,22 @@ class GoogleLoginTest extends TestCase
         $response->assertJsonValidationErrors('id_token');
     }
 
+    public function test_malformed_token_returns_401(): void
+    {
+        // google/apiclient throws raw firebase/php-jwt exceptions
+        // (UnexpectedValueException etc) for garbage input. Verifier
+        // must normalize those to our InvalidGoogleTokenException 401.
+        $this->mock(GoogleClient::class, function ($mock) {
+            $mock->shouldReceive('verifyIdToken')
+                ->andThrow(new \UnexpectedValueException('Wrong number of segments'));
+        });
+
+        $response = $this->postJson('/api/v1/auth/google', ['id_token' => 'not.a.real.jwt']);
+
+        $response->assertStatus(401);
+        $response->assertJsonPath('message', 'Token Google không hợp lệ.');
+    }
+
     public function test_mixed_case_existing_email_links_to_lowercase_token_email(): void
     {
         // Simulates a user who registered before the email mutator existed

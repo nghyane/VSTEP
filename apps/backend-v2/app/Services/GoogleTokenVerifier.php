@@ -24,7 +24,15 @@ final class GoogleTokenVerifier
      */
     public function verify(string $idToken): array
     {
-        $payload = $this->client->verifyIdToken($idToken);
+        try {
+            $payload = $this->client->verifyIdToken($idToken);
+        } catch (\Throwable) {
+            // google/apiclient surfaces malformed/decode errors as raw
+            // firebase/php-jwt exceptions (UnexpectedValueException,
+            // SignatureInvalidException, …). Normalize them to our 401.
+            throw new InvalidGoogleTokenException;
+        }
+
         if (! is_array($payload)) {
             throw new InvalidGoogleTokenException;
         }
