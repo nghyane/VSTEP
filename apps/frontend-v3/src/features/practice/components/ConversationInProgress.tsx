@@ -92,7 +92,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 		warmupTTS()
 		setTurns((prev) => [
 			...prev,
-			{ id: "pending-user", role: "user", text, feedback: null, suggested_words: [] },
+			{ id: "pending-user", role: "user", text, ipa: null, feedback: null, suggested_words: [] },
 		])
 		setMic("thinking")
 		turnMutation.mutate({ text, confidence: 0.9 })
