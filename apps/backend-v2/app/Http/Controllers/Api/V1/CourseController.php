@@ -67,7 +67,7 @@ final class CourseController extends Controller
         $course = Course::query()->findOrFail($id);
 
         $order = $this->courseOrderService->createOrder(
-            $this->profile($request),
+            $request->profile(),
             $course,
             'mock',
         );
@@ -88,7 +88,7 @@ final class CourseController extends Controller
         ]);
 
         $order = CourseEnrollmentOrder::query()->findOrFail($orderId);
-        if ($order->profile_id !== $this->profile($request)->id) {
+        if ($order->profile_id !== $request->profile()->id) {
             abort(403);
         }
 
@@ -102,7 +102,7 @@ final class CourseController extends Controller
      */
     public function enrollmentOrders(Request $request): JsonResponse
     {
-        $orders = $this->courseOrderService->getProfileOrders($this->profile($request));
+        $orders = $this->courseOrderService->getProfileOrders($request->profile());
 
         return response()->json([
             'data' => $orders->map(fn (CourseEnrollmentOrder $o) => $this->formatOrder($o)),
@@ -132,7 +132,7 @@ final class CourseController extends Controller
         $course = Course::query()->findOrFail($courseId);
 
         return response()->json([
-            'data' => $this->courseService->getBookingPageData($this->profile($request), $course),
+            'data' => $this->courseService->getBookingPageData($request->profile(), $course),
         ]);
     }
 
@@ -145,7 +145,7 @@ final class CourseController extends Controller
         $slot = TeacherSlot::query()->findOrFail($validated['slot_id']);
 
         $booking = $this->courseService->bookSlot(
-            $this->profile($request), $course, $slot,
+            $request->profile(), $course, $slot,
             $validated['submission_type'] ?? null, $validated['submission_id'] ?? null,
         );
 
@@ -160,10 +160,5 @@ final class CourseController extends Controller
             ],
             'coins_charged' => (int) ($course->booking_coin_cost ?? CourseService::BOOKING_COIN_COST_FALLBACK),
         ]], 201);
-    }
-
-    private function profile(Request $request): Profile
-    {
-        return $request->attributes->get('active_profile');
     }
 }

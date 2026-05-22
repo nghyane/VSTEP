@@ -12,7 +12,6 @@ use App\Http\Resources\GrammarPointResource;
 use App\Models\GrammarExercise;
 use App\Models\GrammarPoint;
 use App\Models\PracticeSession;
-use App\Models\Profile;
 use App\Services\GrammarService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -33,7 +32,7 @@ final class GrammarController extends Controller
     {
         /** @var GrammarPoint $point */
         $point = GrammarPoint::query()->findOrFail($id);
-        $profile = $this->profile($request);
+        $profile = $request->profile();
 
         $data = $this->grammarService->getPointForProfile($point, $profile);
         $point = $data['point'];
@@ -62,7 +61,7 @@ final class GrammarController extends Controller
 
     public function attemptExercise(AttemptExerciseRequest $request, string $id): JsonResponse
     {
-        $profile = $this->profile($request);
+        $profile = $request->profile();
         /** @var GrammarExercise $exercise */
         $exercise = GrammarExercise::query()->findOrFail($id);
 
@@ -83,13 +82,5 @@ final class GrammarController extends Controller
             'explanation' => $result['explanation'],
             'mastery' => (new GrammarMasteryResource($result['mastery']))->resolve($request),
         ]]);
-    }
-
-    private function profile(Request $request): Profile
-    {
-        /** @var Profile $profile */
-        $profile = $request->attributes->get('active_profile');
-
-        return $profile;
     }
 }

@@ -35,7 +35,7 @@ final class WalletController extends Controller
 
     public function balance(Request $request): JsonResponse
     {
-        $profile = $this->profile($request);
+        $profile = $request->profile();
         $balance = $this->walletService->getBalance($profile);
         $last = CoinTransaction::query()
             ->where('profile_id', $profile->id)
@@ -50,7 +50,7 @@ final class WalletController extends Controller
 
     public function transactions(Request $request): AnonymousResourceCollection
     {
-        $profile = $this->profile($request);
+        $profile = $request->profile();
         $perPage = min((int) $request->integer('per_page', 20), 100);
 
         $page = CoinTransaction::query()
@@ -73,7 +73,7 @@ final class WalletController extends Controller
 
     public function createTopup(CreateTopupOrderRequest $request): JsonResponse
     {
-        $profile = $this->profile($request);
+        $profile = $request->profile();
         /** @var WalletTopupPackage $package */
         $package = WalletTopupPackage::query()->findOrFail($request->validated('package_id'));
 
@@ -93,7 +93,7 @@ final class WalletController extends Controller
      */
     public function confirmTopup(Request $request, string $orderId): JsonResponse
     {
-        $profile = $this->profile($request);
+        $profile = $request->profile();
         /** @var WalletTopupOrder $order */
         $order = WalletTopupOrder::query()->findOrFail($orderId);
 
@@ -110,7 +110,7 @@ final class WalletController extends Controller
 
     public function redeemPromo(PromoRedeemRequest $request): JsonResponse
     {
-        $profile = $this->profile($request);
+        $profile = $request->profile();
         $redemption = $this->promoService->redeem(
             $request->user(),
             $profile,
@@ -123,13 +123,5 @@ final class WalletController extends Controller
             'transaction_id' => $redemption->coin_transaction_id,
             'redeemed_at' => $redemption->redeemed_at,
         ]]);
-    }
-
-    private function profile(Request $request): Profile
-    {
-        /** @var Profile $profile */
-        $profile = $request->attributes->get('active_profile');
-
-        return $profile;
     }
 }

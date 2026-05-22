@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\Profile;
 use App\Services\ProgressService;
 use App\Services\StreakMilestoneService;
 use Illuminate\Http\JsonResponse;
@@ -21,33 +20,28 @@ final class OverviewController extends Controller
     public function overview(Request $request): JsonResponse
     {
         return response()->json([
-            'data' => $this->progressService->getOverview($this->profile($request)),
+            'data' => $this->progressService->getOverview($request->profile()),
         ]);
     }
 
     public function streak(Request $request): JsonResponse
     {
         return response()->json([
-            'data' => $this->progressService->getStreak($this->profile($request)),
+            'data' => $this->progressService->getStreak($request->profile()),
         ]);
     }
 
     public function activityHeatmap(Request $request): JsonResponse
     {
         return response()->json([
-            'data' => $this->progressService->getActivityHeatmap($this->profile($request)),
+            'data' => $this->progressService->getActivityHeatmap($request->profile()),
         ]);
     }
 
     public function claimStreakMilestone(Request $request, int $days): JsonResponse
     {
         return response()->json([
-            'data' => $this->streakMilestoneService->claim($this->profile($request), $days),
+            'data' => $this->streakMilestoneService->claim($request->profile(), $days),
         ]);
-    }
-
-    private function profile(Request $request): Profile
-    {
-        return $request->attributes->get('active_profile');
     }
 }

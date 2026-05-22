@@ -10,7 +10,6 @@ use App\Http\Requests\Practice\StartSessionRequest;
 use App\Http\Requests\Practice\UseSupportLevelRequest;
 use App\Http\Resources\WritingSubmissionHistoryResource;
 use App\Models\PracticeSession;
-use App\Models\Profile;
 use App\Services\PracticeSessionService;
 use App\Services\WritingPracticeService;
 use Illuminate\Http\JsonResponse;
@@ -40,7 +39,7 @@ final class WritingPracticeController extends Controller
         $part = $request->integer('part') ?: null;
 
         return WritingSubmissionHistoryResource::collection(
-            $this->writingService->history($this->profile($request), $part),
+            $this->writingService->history($request->profile(), $part),
         );
     }
 
@@ -64,7 +63,7 @@ final class WritingPracticeController extends Controller
     public function startSession(StartSessionRequest $request): JsonResponse
     {
         $session = $this->writingService->startSession(
-            $this->profile($request),
+            $request->profile(),
             $request->validated('exercise_id'),
         );
 
@@ -79,7 +78,7 @@ final class WritingPracticeController extends Controller
         $session = PracticeSession::query()->findOrFail($sessionId);
 
         return response()->json(['data' => $this->sessionService->useSupportLevel(
-            $session, $this->profile($request), (int) $request->validated('level'),
+            $session, $request->profile(), (int) $request->validated('level'),
         )]);
     }
 
@@ -90,7 +89,7 @@ final class WritingPracticeController extends Controller
         $session = PracticeSession::query()->findOrFail($sessionId);
 
         $submission = $this->writingService->submit(
-            $this->profile($request), $session, $request->input('text'),
+            $request->profile(), $session, $request->input('text'),
         );
 
         return response()->json(['data' => [
@@ -99,10 +98,5 @@ final class WritingPracticeController extends Controller
             'submitted_at' => $submission->submitted_at,
             'grading_status' => GradingJobStatus::Pending->value,
         ]]);
-    }
-
-    private function profile(Request $request): Profile
-    {
-        return $request->attributes->get('active_profile');
     }
 }

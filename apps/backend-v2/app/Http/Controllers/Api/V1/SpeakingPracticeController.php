@@ -10,7 +10,6 @@ use App\Http\Requests\Practice\StartSessionRequest;
 use App\Http\Resources\DrillSessionHistoryResource;
 use App\Http\Resources\SpeakingSubmissionHistoryResource;
 use App\Models\PracticeSession;
-use App\Models\Profile;
 use App\Services\PracticeSessionService;
 use App\Services\SpeakingPracticeService;
 use Illuminate\Http\JsonResponse;
@@ -42,7 +41,7 @@ final class SpeakingPracticeController extends Controller
     public function drillHistory(Request $request): AnonymousResourceCollection
     {
         return DrillSessionHistoryResource::collection(
-            $this->speakingService->drillHistory($this->profile($request)),
+            $this->speakingService->drillHistory($request->profile()),
         );
     }
 
@@ -51,7 +50,7 @@ final class SpeakingPracticeController extends Controller
         $part = $request->integer('part') ?: null;
 
         return SpeakingSubmissionHistoryResource::collection(
-            $this->speakingService->vstepHistory($this->profile($request), $part),
+            $this->speakingService->vstepHistory($request->profile(), $part),
         );
     }
 
@@ -104,7 +103,7 @@ final class SpeakingPracticeController extends Controller
     public function startDrillSession(StartSessionRequest $request): JsonResponse
     {
         $session = $this->speakingService->startDrillSession(
-            $this->profile($request), $request->validated('exercise_id'),
+            $request->profile(), $request->validated('exercise_id'),
         );
 
         return response()->json(['data' => [
@@ -115,7 +114,7 @@ final class SpeakingPracticeController extends Controller
     public function startVstepSession(StartSessionRequest $request): JsonResponse
     {
         $session = $this->speakingService->startVstepPracticeSession(
-            $this->profile($request), $request->validated('exercise_id'),
+            $request->profile(), $request->validated('exercise_id'),
         );
 
         return response()->json(['data' => [
@@ -135,7 +134,7 @@ final class SpeakingPracticeController extends Controller
         $session = PracticeSession::query()->findOrFail($sessionId);
 
         $attempt = $this->speakingService->logDrillAttempt(
-            $this->profile($request), $session,
+            $request->profile(), $session,
             $request->input('sentence_id'), $request->input('mode'),
             $request->input('user_text'), $request->integer('accuracy_percent'),
         );
@@ -155,7 +154,7 @@ final class SpeakingPracticeController extends Controller
         $session = PracticeSession::query()->findOrFail($sessionId);
 
         $submission = $this->speakingService->submitVstepPractice(
-            $this->profile($request), $session,
+            $request->profile(), $session,
             $request->input('audio_url'), $request->integer('duration_seconds'),
         );
 
@@ -163,10 +162,5 @@ final class SpeakingPracticeController extends Controller
             'submission_id' => $submission->id,
             'grading_status' => GradingJobStatus::Pending->value,
         ]]);
-    }
-
-    private function profile(Request $request): Profile
-    {
-        return $request->attributes->get('active_profile');
     }
 }

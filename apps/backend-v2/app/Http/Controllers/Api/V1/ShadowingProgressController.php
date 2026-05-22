@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\PracticeShadowingProgress;
-use App\Models\Profile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -18,7 +17,7 @@ final class ShadowingProgressController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $profile = $this->profile($request);
+        $profile = $request->profile();
 
         $rows = PracticeShadowingProgress::query()
             ->where('profile_id', $profile->id)
@@ -47,7 +46,7 @@ final class ShadowingProgressController extends Controller
             'accuracy_percent' => 'required|integer|min:0|max:100',
         ]);
 
-        $profile = $this->profile($request);
+        $profile = $request->profile();
 
         $progress = PracticeShadowingProgress::query()->updateOrCreate(
             [
@@ -65,10 +64,5 @@ final class ShadowingProgressController extends Controller
             'segment_index' => $progress->segment_index,
             'accuracy_percent' => $progress->accuracy_percent,
         ]], 201);
-    }
-
-    private function profile(Request $request): Profile
-    {
-        return $request->attributes->get('active_profile');
     }
 }

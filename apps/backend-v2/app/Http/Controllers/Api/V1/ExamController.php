@@ -18,13 +18,13 @@ use App\Models\ExamMcqAnswer;
 use App\Models\ExamSession;
 use App\Models\ExamSessionDraft;
 use App\Models\ExamVersion;
-use App\Models\Profile;
 use App\Services\ExamScoringService;
 use App\Services\ExamSessionService;
 use App\Services\ProgressService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 final class ExamController extends Controller
 {
@@ -54,7 +54,7 @@ final class ExamController extends Controller
         $version = $data['version'];
 
         $session = $this->examService->startSession(
-            $this->profile($request),
+            $request->profile(),
             $version,
             $validated['mode'],
             $validated['selected_skills'] ?? [],
@@ -75,7 +75,7 @@ final class ExamController extends Controller
         $session = ExamSession::query()->findOrFail($sessionId);
 
         $result = $this->examService->submit(
-            $this->profile($request),
+            $request->profile(),
             $session,
             $request->validated('mcq_answers') ?? [],
             $request->validated('writing_answers') ?? [],
@@ -92,9 +92,7 @@ final class ExamController extends Controller
         $session = ExamSession::query()
             ->with(['writingSubmissions'])
             ->findOrFail($sessionId);
-        if ($session->profile_id !== $this->profile($request)->id) {
-            abort(403);
-        }
+        Gate::authorize('view', $session);
 
         $data = ExamWritingResultResource::collection($session->writingSubmissions);
 
@@ -106,9 +104,7 @@ final class ExamController extends Controller
         $session = ExamSession::query()
             ->with(['speakingSubmissions'])
             ->findOrFail($sessionId);
-        if ($session->profile_id !== $this->profile($request)->id) {
-            abort(403);
-        }
+        Gate::authorize('view', $session);
 
         $data = ExamSpeakingResultResource::collection($session->speakingSubmissions);
 
@@ -117,7 +113,7 @@ final class ExamController extends Controller
 
     public function mySessions(Request $request): JsonResponse
     {
-        $profile = $this->profile($request);
+        $profile = $request->profile();
         $status = $request->input('status');
 
         $query = ExamSession::query()
@@ -153,9 +149,7 @@ final class ExamController extends Controller
     {
         /** @var ExamSession $session */
         $session = ExamSession::query()->findOrFail($sessionId);
-        if ($session->profile_id !== $this->profile($request)->id) {
-            abort(403);
-        }
+        Gate::authorize('update', $session);
         if ($session->status !== ExamSessionStatus::Active) {
             return response()->json(['data' => ['abandoned' => false]]);
         }
@@ -178,7 +172,7 @@ final class ExamController extends Controller
     {
         /** @var ExamSession $session */
         $session = ExamSession::query()->findOrFail($sessionId);
-        $draft = $this->examService->getDraft($this->profile($request), $session);
+        $draft = $this->examService->getDraft($request->profile(), $session);
 
         if ($draft === null) {
             return response()->json(['data' => null]);
@@ -198,7 +192,7 @@ final class ExamController extends Controller
     {
         /** @var ExamSession $session */
         $session = ExamSession::query()->findOrFail($sessionId);
-        $draft = $this->examService->saveDraft($this->profile($request), $session, [
+        $draft = $this->examService->saveDraft($request->profile(), $session, [
             'skill_idx' => (int) $request->validated('skill_idx'),
             'mcq_answers' => $request->validated('mcq_answers'),
             'writing_answers' => $request->validated('writing_answers'),
@@ -217,7 +211,7 @@ final class ExamController extends Controller
 
     public function activeSession(Request $request): JsonResponse
     {
-        $profile = $this->profile($request);
+        $profile = $request->profile();
 
         $session = ExamSession::query()
             ->with('examVersion:id,exam_id', 'examVersion.exam:id,title')
@@ -250,9 +244,7 @@ final class ExamController extends Controller
     {
         /** @var ExamSession $session */
         $session = ExamSession::query()->findOrFail($sessionId);
-        if ($session->profile_id !== $this->profile($request)->id) {
-            abort(403);
-        }
+        Gate::authorize('view', $session);
 
         return response()->json(['data' => $session]);
     }
@@ -262,9 +254,7 @@ final class ExamController extends Controller
         $validated = $request->validated();
         /** @var ExamSession $session */
         $session = ExamSession::query()->findOrFail($sessionId);
-        if ($session->profile_id !== $this->profile($request)->id) {
-            abort(403);
-        }
+        Gate::authorize('update', $session);
         if ($session->status !== ExamSessionStatus::Active) {
             return response()->json(['data' => ['error' => 'Session is not active.']], 409);
         }
@@ -285,9 +275,7 @@ final class ExamController extends Controller
     {
         /** @var ExamSession $session */
         $session = ExamSession::query()->findOrFail($sessionId);
-        if ($session->profile_id !== $this->profile($request)->id) {
-            abort(403);
-        }
+        Gate::authorize('view', $session);
 
         if (! $session->status->isTerminal()) {
             return response()->json(['data' => [
@@ -377,9 +365,7 @@ final class ExamController extends Controller
     {
         /** @var ExamSession $session */
         $session = ExamSession::query()->with(['examVersion.listeningSections'])->findOrFail($sessionId);
-        if ($session->profile_id !== $this->profile($request)->id) {
-            abort(403);
-        }
+        Gate::authorize('view', $session);
 
         $playedSectionIds = ExamListeningPlayLog::query()
             ->where('session_id', $session->id)
@@ -395,11 +381,6 @@ final class ExamController extends Controller
         });
 
         return response()->json(['data' => $summary]);
-    }
-
-    private function profile(Request $request): Profile
-    {
-        return $request->attributes->get('active_profile');
     }
 
     /** @return array<string, mixed> */
