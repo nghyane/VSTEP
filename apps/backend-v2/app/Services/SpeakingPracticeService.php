@@ -25,7 +25,9 @@ class SpeakingPracticeService
     /** @return Collection<int,PracticeSpeakingDrill> */
     public function listDrills(?string $level = null): Collection
     {
-        $query = PracticeSpeakingDrill::query()->where('is_published', true);
+        $query = PracticeSpeakingDrill::query()
+            ->where('is_published', true)
+            ->withCount('sentences');
         if ($level !== null) {
             $query->where('level', $level);
         }

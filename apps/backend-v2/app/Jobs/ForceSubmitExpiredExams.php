@@ -6,11 +6,13 @@ namespace App\Jobs;
 
 use App\Models\ExamMcqAnswer;
 use App\Models\ExamSession;
+use App\Services\ProgressService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -25,7 +27,7 @@ class ForceSubmitExpiredExams implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function handle(): void
+    public function handle(ProgressService $progressService): void
     {
         $expired = ExamSession::query()
             ->where('status', 'active')
@@ -34,7 +36,7 @@ class ForceSubmitExpiredExams implements ShouldQueue
 
         foreach ($expired as $session) {
             try {
-                $this->forceSubmit($session);
+                $this->forceSubmit($session, $progressService);
             } catch (\Throwable $e) {
                 Log::error('Force-submit failed for expired exam session', [
                     'session_id' => $session->id,
@@ -48,7 +50,7 @@ class ForceSubmitExpiredExams implements ShouldQueue
         }
     }
 
-    private function forceSubmit(ExamSession $session): void
+    private function forceSubmit(ExamSession $session, ProgressService $progressService): void
     {
         $version = $session->examVersion;
         $version->load(['listeningSections.items', 'readingPassages.items', 'writingTasks', 'speakingParts']);
@@ -88,6 +90,9 @@ class ForceSubmitExpiredExams implements ShouldQueue
             'status' => 'auto_submitted',
             'submitted_at' => $session->server_deadline_at,
         ]);
+
+        // Streak: chỉ tính full test. RFC 0017 — defer ngoài transaction để rollback an toàn.
+        DB::afterCommit(fn () => $progressService->recordExamCompletion($session->fresh()));
 
         Log::info('Force-submitted expired exam session', [
             'session_id' => $session->id,

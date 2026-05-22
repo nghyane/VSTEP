@@ -4,3 +4,7 @@ import { type ApiResponse, api } from "#/lib/api"
 export async function readAllNotifications() {
 	return api.post("notifications/read-all").json<ApiResponse<ReadAllResult>>()
 }
+
+export async function readNotification(id: string) {
+	return api.post(`notifications/${id}/read`).json<ApiResponse<{ marked: boolean }>>()
+}

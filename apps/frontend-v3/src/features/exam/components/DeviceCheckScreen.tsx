@@ -1,4 +1,5 @@
 import { Icon } from "#/components/Icon"
+import { SkillIcon } from "#/components/SkillIcon"
 import type { SkillKey } from "#/lib/skills"
 import { skills } from "#/lib/skills"
 import { cn } from "#/lib/utils"
@@ -57,12 +58,7 @@ export function DeviceCheckScreen({
 										<span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-background text-xs font-bold text-muted">
 											{i + 1}
 										</span>
-										<span
-											className="flex size-6 shrink-0 items-center justify-center rounded-lg text-white"
-											style={{ backgroundColor: meta?.color }}
-										>
-											{meta && <Icon name={meta.icon} size="xs" />}
-										</span>
+										{meta && <SkillIcon name={meta.pngIcon} size="sm" className="shrink-0" />}
 										<span className="text-foreground">
 											<span className="font-bold">{meta?.label.toUpperCase()}</span>
 											<span className="text-muted"> – {skillDurationMinutes[sk]} phút</span>

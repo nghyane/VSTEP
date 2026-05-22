@@ -3,7 +3,6 @@
 import { useEffect, useRef } from "react";
 import {
   Animated,
-  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -13,7 +12,7 @@ import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useThemeColors, spacing, fontFamily, radius } from "@/theme";
 import { useHaptics } from "@/contexts/HapticsContext";
 
-const HIDDEN_TABS = new Set(["notifications", "classes", "explore", "progress"]);
+const HIDDEN_TABS = new Set(["notifications", "explore", "progress"]);
 
 export function CustomTabBar({ state, descriptors, navigation, insets }: BottomTabBarProps) {
   const c = useThemeColors();

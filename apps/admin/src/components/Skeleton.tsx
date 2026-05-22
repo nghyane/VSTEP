@@ -1,9 +1,9 @@
-import { cn } from "#/lib/utils"
+import { Skeleton as AntdSkeleton } from "antd"
 
 interface Props {
 	className?: string
 }
 
 export function Skeleton({ className }: Props) {
-	return <div className={cn("animate-pulse rounded-(--radius-input) bg-surface-muted", className)} />
+	return <AntdSkeleton.Input active size="default" block className={className} />
 }

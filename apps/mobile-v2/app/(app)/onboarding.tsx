@@ -1,4 +1,3 @@
-// Onboarding — 4 bước theo docs: Chào mừng → Band mục tiêu → Thời gian học → Thời hạn
 import { useState, useRef, useEffect } from "react";
 import {
   Animated,
@@ -13,10 +12,14 @@ import { Mascot, type MascotName } from "@/components/Mascot";
 import { DepthButton } from "@/components/DepthButton";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { useAuth } from "@/hooks/use-auth";
+import { completeOnboardingApi } from "@/lib/api";
+import { getRefreshToken, saveTokens } from "@/lib/auth";
+import type { AuthUser } from "@/types/api";
 
 type Level = "B1" | "B2" | "C1";
 type StudyTime = 15 | 30 | 45 | 60;
-type Deadline = "3m" | "6m" | "1y" | "none";
+type Deadline = "3m" | "6m" | "1y";
 
 const STEP_META: { key: string; label: string; mascot: MascotName }[] = [
   { key: "welcome", label: "Bắt đầu", mascot: "wave" },
@@ -25,10 +28,25 @@ const STEP_META: { key: string; label: string; mascot: MascotName }[] = [
   { key: "deadline", label: "Thời hạn", mascot: "levelup" },
 ];
 
+function deadlineToDate(value: Deadline): string {
+  const date = new Date();
+  if (value === "3m") date.setMonth(date.getMonth() + 3);
+  if (value === "6m") date.setMonth(date.getMonth() + 6);
+  if (value === "1y") date.setFullYear(date.getFullYear() + 1);
+  return date.toISOString().slice(0, 10);
+}
+
+function defaultNickname(user: AuthUser | null): string {
+  if (user?.fullName) return user.fullName;
+  return user?.email.split("@")[0] ?? "Learner";
+}
+
 export default function OnboardingScreen() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { user, profile, signIn } = useAuth();
+  const [finishing, setFinishing] = useState(false);
   const [step, setStep] = useState(0);
   const [target, setTarget] = useState<Level>("B2");
   const [studyTime, setStudyTime] = useState<StudyTime>(30);
@@ -51,12 +69,24 @@ export default function OnboardingScreen() {
     }).start();
   }, [step]);
 
-  function next() {
+  async function next() {
     if (step < STEP_META.length - 1) {
       slideAnim.setValue(20);
       setStep(step + 1);
     } else {
-      router.replace("/(app)/(tabs)");
+      if (!user) { router.replace("/(auth)/login"); return; }
+      if (profile) { router.replace("/(app)/(tabs)"); return; }
+      setFinishing(true);
+      try {
+        const refreshToken = await getRefreshToken();
+        if (!refreshToken) throw new Error("Missing refresh token");
+        const res = await completeOnboardingApi(defaultNickname(user), target, deadlineToDate(deadline));
+        await saveTokens(res.accessToken, refreshToken, user, res.profile);
+        await signIn(res.accessToken, refreshToken, user, res.profile);
+        router.replace("/(app)/(tabs)");
+      } catch {
+        setFinishing(false);
+      }
     }
   }
 
@@ -205,7 +235,6 @@ export default function OnboardingScreen() {
                 { key: "3m" as Deadline, label: "3 tháng", desc: "Cấp tốc" },
                 { key: "6m" as Deadline, label: "6 tháng", desc: "Phổ biến nhất" },
                 { key: "1y" as Deadline, label: "1 năm", desc: "Ổn định" },
-                { key: "none" as Deadline, label: "Không giới hạn", desc: "Tự do" },
               ]).map(({ key, label, desc }) => {
                 const selected = deadline === key;
                 return (
@@ -243,8 +272,8 @@ export default function OnboardingScreen() {
 
       {/* CTA */}
       <View style={[s.footer, { paddingBottom: insets.bottom + spacing.xl }]}>
-        <DepthButton fullWidth size="lg" onPress={next}>
-          {step === STEP_META.length - 1 ? "Bắt đầu học tập!" : "Tiếp theo"}
+        <DepthButton fullWidth size="lg" onPress={next} disabled={finishing}>
+          {finishing ? "Đang xử lý..." : step === STEP_META.length - 1 ? "Bắt đầu học tập!" : "Tiếp theo"}
         </DepthButton>
       </View>
     </View>

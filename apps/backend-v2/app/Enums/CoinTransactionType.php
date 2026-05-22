@@ -11,7 +11,7 @@ namespace App\Enums;
  * - Topup, OnboardingBonus, PromoRedeem, AdminGrant
  *
  * Negative types (delta < 0):
- * - SupportLevelUse, ExamCustom, ExamFull, CoursePurchase
+ * - SupportLevelUse, ExamCustom, ExamFull, CoursePurchase, TeacherBooking
  */
 enum CoinTransactionType: string
 {
@@ -19,15 +19,17 @@ enum CoinTransactionType: string
     case OnboardingBonus = 'onboarding_bonus';
     case PromoRedeem = 'promo_redeem';
     case AdminGrant = 'admin_grant';
+    case StreakMilestone = 'streak_milestone';
     case SupportLevelUse = 'support_level_use';
     case ExamCustom = 'exam_custom';
     case ExamFull = 'exam_full';
     case CoursePurchase = 'course_purchase';
+    case TeacherBooking = 'teacher_booking';
 
     public function isCredit(): bool
     {
         return match ($this) {
-            self::Topup, self::OnboardingBonus, self::PromoRedeem, self::AdminGrant => true,
+            self::Topup, self::OnboardingBonus, self::PromoRedeem, self::AdminGrant, self::StreakMilestone => true,
             default => false,
         };
     }

@@ -1,6 +1,7 @@
-// Notification store — in-memory list
+// Notification store — local cache backed by API
 // getSnapshot luôn trả stable reference (module-level variables)
 import { useSyncExternalStore } from "react";
+import { api } from "@/lib/api";
 
 export interface AppNotification {
   id: string;
@@ -22,9 +23,31 @@ function recount() {
 }
 
 export async function loadNotifications() {
-  // Không notify() nếu state không đổi thật
-  notifications = [];
-  unreadCount = 0;
+  try {
+    const res = await api.get<{ data: { id: string; title: string; body: string | null; read_at: string | null; created_at: string }[] } | null>("/api/v1/notifications");
+    if (res?.data) {
+      notifications = res.data.map((n) => ({
+        id: n.id,
+        title: n.title,
+        body: n.body,
+        iconKey: "notification",
+        readAt: n.read_at,
+        createdAt: n.created_at,
+      }));
+      recount();
+      notify();
+    }
+  } catch {
+    // API not available yet — keep empty
+    notifications = [];
+    unreadCount = 0;
+  }
+}
+
+export function syncNotifications(items: AppNotification[]) {
+  notifications = items;
+  recount();
+  notify();
 }
 
 export function addNotification(n: Omit<AppNotification, "id" | "readAt" | "createdAt">) {
@@ -52,11 +75,11 @@ export function clearNotifications() {
 export function formatRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return "Vua xong";
-  if (mins < 60) return `${mins} phut truoc`;
+  if (mins < 1) return "Vừa xong";
+  if (mins < 60) return `${mins} phút trước`;
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} gio truoc`;
-  return `${Math.floor(hours / 24)} ngay truoc`;
+  if (hours < 24) return `${hours} giờ trước`;
+  return `${Math.floor(hours / 24)} ngày trước`;
 }
 
 export function useNotifications() {

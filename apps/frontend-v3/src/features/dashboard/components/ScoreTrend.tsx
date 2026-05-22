@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
+import { useState } from "react"
+import { SkillIcon } from "#/components/SkillIcon"
 import { examSessionsQuery, overviewQuery, selectTargetBand } from "#/features/dashboard/queries"
 import { skills } from "#/lib/skills"
 import { formatShortDate, round } from "#/lib/utils"
@@ -7,28 +9,20 @@ const Y_MAX = 180
 const Y_MIN = 20
 const bandToY = (v: number) => Y_MAX - (v / 10) * (Y_MAX - Y_MIN)
 
-function computeAvg(scores: Record<string, number | null>): number {
+function computeAvg(scores: Record<string, number | null> | null): number {
+	if (!scores) return 0
 	const vals = skills.map((s) => scores[s.key]).filter((v): v is number => v !== null)
 	return vals.length > 0 ? round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0
 }
 
 export function ScoreTrend() {
 	const { data: targetBand } = useQuery({ ...overviewQuery, select: selectTargetBand })
-	const { data, isLoading } = useQuery(examSessionsQuery)
+	const { data: sessions, isLoading } = useQuery(examSessionsQuery)
+	const [activeIdx, setActiveIdx] = useState<number | null>(null)
 
-	if (isLoading || !data || targetBand === undefined) return null
+	if (isLoading || !sessions || targetBand === undefined) return null
 
-	const sessions = data.data
 	const target = targetBand
-
-	if (isLoading) {
-		return (
-			<section className="card p-6">
-				<h3 className="font-extrabold text-lg text-foreground">Điểm qua các lần thi</h3>
-				<p className="text-sm text-subtle mt-1">Đang tải...</p>
-			</section>
-		)
-	}
 
 	if (sessions.length === 0) {
 		return (
@@ -51,15 +45,14 @@ export function ScoreTrend() {
 
 			<div className="flex flex-wrap gap-2 mt-3 mb-4">
 				{skills.map((s) => (
-					<button
-						type="button"
+					<span
 						key={s.key}
 						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
-						style={{ color: s.color, background: `color-mix(in srgb, ${s.color} 10%, transparent)` }}
+						style={{ color: s.color }}
 					>
-						<span className="w-2 h-2 rounded-full" style={{ background: s.color }} />
+						<SkillIcon name={s.pngIcon} size="xs" />
 						{s.label}
-					</button>
+					</span>
 				))}
 				<span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-primary-dark">
 					<span className="w-4 h-0.5 bg-primary-dark rounded" />
@@ -92,10 +85,11 @@ export function ScoreTrend() {
 
 				{tests.map((test, ti) => {
 					const cx = centers[ti] ?? 0
+					const isActive = activeIdx === ti
 					return (
 						<g key={test.id}>
 							{skills.map((s, si) => {
-								const v = test.scores[s.key] ?? 0
+								const v = test.scores?.[s.key] ?? 0
 								return (
 									<rect
 										key={s.key}
@@ -105,13 +99,23 @@ export function ScoreTrend() {
 										height={Math.max(0, Y_MAX - bandToY(v))}
 										fill={s.color}
 										rx={3}
-										opacity={0.65}
+										opacity={isActive ? 0.95 : 0.65}
 									/>
 								)
 							})}
 							<text x={cx} y={198} textAnchor="middle" fontSize="10" fill="var(--color-subtle)">
-								{formatShortDate(test.submitted_at)}
+								{test.submitted_at ? formatShortDate(test.submitted_at) : ""}
 							</text>
+							{/* Hover hit-area: full chart-height column. Pointer-events visible only on this rect. */}
+							<rect
+								x={cx - 32}
+								y={Y_MIN}
+								width={64}
+								height={Y_MAX - Y_MIN}
+								fill="transparent"
+								onMouseEnter={() => setActiveIdx(ti)}
+								onMouseLeave={() => setActiveIdx(null)}
+							/>
 						</g>
 					)
 				})}
@@ -169,7 +173,98 @@ export function ScoreTrend() {
 						</g>
 					)
 				})}
+
+				{activeIdx !== null && tests[activeIdx] && (
+					<ScoreTooltip
+						test={tests[activeIdx]}
+						cx={centers[activeIdx] ?? 0}
+						submittedAt={tests[activeIdx].submitted_at}
+					/>
+				)}
 			</svg>
 		</section>
+	)
+}
+
+interface ScoreTooltipProps {
+	test: { scores: Record<string, number | null> | null }
+	cx: number
+	submittedAt: string | null
+}
+
+function ScoreTooltip({ test, cx, submittedAt }: ScoreTooltipProps) {
+	const TOOLTIP_W = 96
+	const TOOLTIP_H = 78
+	const PAD = 5
+	const ROW_H = 9
+	const FS = 7
+	const placeRight = cx < 300
+	const x = placeRight ? cx + 28 : cx - 28 - TOOLTIP_W
+	const y = 28
+	const avg = computeAvg(test.scores)
+	const headerY = y + 11
+	const firstRowY = y + 24
+	const dividerY = y + TOOLTIP_H - 14
+	const footerY = y + TOOLTIP_H - 5
+
+	return (
+		<g pointerEvents="none">
+			<rect
+				x={x}
+				y={y}
+				width={TOOLTIP_W}
+				height={TOOLTIP_H}
+				rx={6}
+				fill="var(--color-card)"
+				stroke="var(--color-border)"
+				strokeWidth={1}
+			/>
+			<text x={x + PAD} y={headerY} fontSize={FS} fontWeight="800" fill="var(--color-foreground)">
+				{submittedAt ? formatShortDate(submittedAt) : "—"}
+			</text>
+			{skills.map((s, idx) => {
+				const v = test.scores?.[s.key]
+				const rowY = firstRowY + idx * ROW_H
+				return (
+					<g key={s.key}>
+						<circle cx={x + PAD + 2} cy={rowY - 2} r={2} fill={s.color} />
+						<text x={x + PAD + 9} y={rowY} fontSize={FS} fill="var(--color-muted)">
+							{s.label}
+						</text>
+						<text
+							x={x + TOOLTIP_W - PAD}
+							y={rowY}
+							textAnchor="end"
+							fontSize={FS}
+							fontWeight="800"
+							fill="var(--color-foreground)"
+						>
+							{v === null || v === undefined ? "—" : round(v)}
+						</text>
+					</g>
+				)
+			})}
+			<line
+				x1={x + PAD}
+				y1={dividerY}
+				x2={x + TOOLTIP_W - PAD}
+				y2={dividerY}
+				stroke="var(--color-border)"
+				strokeWidth={0.75}
+			/>
+			<text x={x + PAD} y={footerY} fontSize={FS} fontWeight="800" fill="var(--color-primary-dark)">
+				Trung bình
+			</text>
+			<text
+				x={x + TOOLTIP_W - PAD}
+				y={footerY}
+				textAnchor="end"
+				fontSize={FS}
+				fontWeight="800"
+				fill="var(--color-primary-dark)"
+			>
+				{avg}
+			</text>
+		</g>
 	)
 }

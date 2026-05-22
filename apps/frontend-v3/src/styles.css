@@ -48,10 +48,12 @@
   --color-destructive-tint: #ffe6e4;
 
   --color-warning: #ff9b00;
+  --color-warning-light: #ffc04d;
   --color-warning-tint: #fff0dc;
 
   --color-success: #58cc02;
   --color-info: #1cb0f6;
+  --color-info-light: #6dd2ff;
   --color-info-tint: #ddf4ff;
 
   /* ═══ Neutrals — text, borders, backgrounds ═══ */
@@ -77,10 +79,12 @@
   --color-skill-speaking-dark: color-mix(in oklch, #ffc800 70%, black);
 
   --color-streak: #ff7800;
+  --color-streak-light: #ffaa55;
   --color-streak-tint: #fff0dc;
 
   --color-coin: #ffc800;
-  --color-coin-dark: #dcaa00;
+  --color-coin-dark: #d97706;
+  --color-coin-light: #fbe56d;
   --color-coin-tint: #fff5d2;
 
   --color-more: #CE82FF;
@@ -111,9 +115,177 @@
 		from { opacity: 0; transform: translateY(-8px) scale(0.95); }
 		to { opacity: 1; transform: translateY(0) scale(1); }
 	}
+
+	@keyframes fadeIn {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+
+	@keyframes popIn {
+		0% { opacity: 0; transform: scale(0.8) translateY(20px); }
+		100% { opacity: 1; transform: scale(1) translateY(0); }
+	}
+
+	@keyframes chestPop {
+		0% { transform: scale(1) rotate(0); }
+		30% { transform: scale(0.9) rotate(-4deg); }
+		55% { transform: scale(1.25) rotate(8deg); }
+		75% { transform: scale(1.05) rotate(-4deg); }
+		100% { transform: scale(1.1) rotate(-6deg); }
+	}
+
+	@keyframes chestShake {
+		0% { transform: scale(1) rotate(0); }
+		25% { transform: scale(1.1) rotate(-8deg); }
+		50% { transform: scale(1.15) rotate(6deg); }
+		75% { transform: scale(1.12) rotate(-4deg); }
+		100% { transform: scale(1.1) rotate(-6deg); }
+	}
+
+	@keyframes mascotBob {
+		0%, 100% { transform: translateY(0) rotate(-2deg); }
+		50% { transform: translateY(-8px) rotate(2deg); }
+	}
+
+	@keyframes mascotSadSway {
+		0%, 100% { transform: translateY(0) rotate(-4deg); }
+		25% { transform: translateY(2px) rotate(0); }
+		50% { transform: translateY(4px) rotate(4deg); }
+		75% { transform: translateY(2px) rotate(0); }
+	}
+
+	@keyframes mascotSadShake {
+		0%, 100% { transform: translateX(0); }
+		20%, 60% { transform: translateX(-3px); }
+		40%, 80% { transform: translateX(3px); }
+	}
+
+	@keyframes tearDrop {
+		0% { opacity: 0; transform: translate(-50%, 0) scale(0.6); }
+		15% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+		60% { opacity: 1; transform: translate(-50%, 60px) scale(1); }
+		100% { opacity: 0; transform: translate(-50%, 90px) scale(0.4); }
+	}
+
+	@keyframes float {
+		0%, 100% { transform: translateY(0) rotate(-4deg); opacity: 0.3; }
+		50% { transform: translateY(-12px) rotate(4deg); opacity: 0.7; }
+	}
+
+	@keyframes dotBounce {
+		0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+		40% { transform: translateY(-8px); opacity: 1; }
+	}
+
+	@keyframes micPulse {
+		0%, 100% { transform: scale(1); opacity: 0.25; }
+		50% { transform: scale(1.35); opacity: 0.08; }
+	}
+
+	@keyframes coinPinch {
+		0% { transform: scale(1, 1) rotate(0); }
+		25% { transform: scale(0.75, 1.1) rotate(-8deg); }
+		50% { transform: scale(1.15, 0.9) rotate(4deg); }
+		75% { transform: scale(0.95, 1.05) rotate(-2deg); }
+		100% { transform: scale(1, 1) rotate(0); }
+	}
+
+	@keyframes coinFlyUp {
+		0% { opacity: 0; transform: translate(-50%, 0) scale(0.6); }
+		15% { opacity: 1; transform: translate(-50%, -8px) scale(1.15); }
+		70% { opacity: 1; transform: translate(-50%, -36px) scale(1); }
+		100% { opacity: 0; transform: translate(-50%, -56px) scale(0.9); }
+	}
+
+	@keyframes coinPulseRing {
+		0% { opacity: 0.7; transform: scale(0.6); }
+		100% { opacity: 0; transform: scale(2.2); }
+	}
+
+	@keyframes warningBlink {
+		0%, 100% {
+			box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+		}
+		50% {
+			box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.18);
+		}
+	}
+
+	@keyframes lockShake {
+		0%, 100% { transform: translateX(0); }
+		15% { transform: translateX(-3px) rotate(-2deg); }
+		30% { transform: translateX(3px) rotate(2deg); }
+		45% { transform: translateX(-2px) rotate(-1deg); }
+		60% { transform: translateX(2px) rotate(1deg); }
+		75% { transform: translateX(-1px); }
+	}
+
+	@keyframes flameOuterPulse {
+		0%, 100% { transform: scale(1); }
+		30% { transform: scale(1.06); }
+		60% { transform: scale(0.96); }
+	}
+
+	@keyframes flameInnerFlicker {
+		0%, 100% { transform: scaleY(1) scaleX(1); opacity: 1; }
+		25% { transform: scaleY(1.18) scaleX(0.92); opacity: 1; }
+		55% { transform: scaleY(0.85) scaleX(1.05); opacity: 0.9; }
+		80% { transform: scaleY(1.08) scaleX(0.96); opacity: 1; }
+	}
+
+	@keyframes sparkleSpin {
+		0% { opacity: 0; transform: rotate(0) scale(0.4); }
+		30% { opacity: 1; transform: rotate(120deg) scale(1.1); }
+		100% { opacity: 0; transform: rotate(360deg) scale(0.6); }
+	}
+
+	@keyframes coinFountain {
+		0% {
+			opacity: 0;
+			transform: translate(-50%, 0) scale(0.4) rotate(0);
+		}
+		15% { opacity: 1; }
+		60% {
+			opacity: 1;
+			transform: translate(calc(-50% + var(--dx) * 0.6), calc(-1 * var(--rise))) scale(1) rotate(180deg);
+		}
+		100% {
+			opacity: 0;
+			transform: translate(calc(-50% + var(--dx)), calc(-1 * var(--rise) + 40px)) scale(0.85) rotate(360deg);
+		}
+	}
+
+	@keyframes coinBurst {
+		0% {
+			opacity: 0;
+			transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0) rotate(calc(-1 * var(--angle))) scale(0.5);
+		}
+		20% { opacity: 1; }
+		100% {
+			opacity: 0;
+			transform: translate(-50%, -50%) rotate(var(--angle)) translateY(calc(-1 * var(--dist))) rotate(calc(-1 * var(--angle))) scale(1);
+		}
+	}
+
+	/* Card celebrate-then-fade khi user dismiss commitment đã met. Chỉ animate visual
+	   (scale + opacity + translate) — height collapse được wrapper grid-template-rows
+	   ngoài xử lý riêng để không squash content gây overflow lúc đang scale. */
+	@keyframes cardDismiss {
+		0% { opacity: 1; transform: scale(1) translateY(0); }
+		20% { opacity: 1; transform: scale(1.04) translateY(0); }
+		100% { opacity: 0; transform: scale(0.9) translateY(-12px); }
+	}
 }
 
 /* ─── COMPONENTS ──────────────────────────────────── */
+
+@utility scrollbar-none {
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+	&::-webkit-scrollbar {
+		display: none;
+	}
+}
 
 @layer components {
 	.btn {
@@ -158,6 +330,16 @@
 	.btn-destructive:active {
 		box-shadow: 0 2px 0 #b5322a;
 	}
+	/* Match v2 insufficient-coins button (bg-amber-500): light silver border + darker gray pedestal */
+	.btn-coin {
+		background: #f59e0b;
+		color: #ffffff;
+		border: 2px solid var(--color-border);
+		--btn-shadow: #c4c4c4;
+	}
+	.btn-coin:hover {
+		background: color-mix(in srgb, #f59e0b 88%, white);
+	}
 
 	.card {
 		background: var(--color-surface);
@@ -177,21 +359,112 @@
 		transform: translateY(-2px);
 	}
 
-	/* ─── Duration slider ─── */
+	/* ─── Flip card (vocab practice) ─── */
+	.flip-scene {
+		perspective: 1400px;
+	}
+	.flip-inner {
+		position: relative;
+		width: 100%;
+		transform-style: preserve-3d;
+		transition: transform 0.55s cubic-bezier(0.4, 0.05, 0.2, 1);
+	}
+	.flip-inner.flipped {
+		transform: rotateY(180deg);
+	}
+	.flip-face {
+		backface-visibility: hidden;
+		-webkit-backface-visibility: hidden;
+	}
+	.flip-face-back {
+		position: absolute;
+		inset: 0;
+		transform: rotateY(180deg);
+	}
+
+	/* ─── Schedule grid cells (course detail) ─── */
+	.schedule-cell-past {
+		background-image: repeating-linear-gradient(
+			135deg,
+			transparent 0,
+			transparent 8px,
+			rgb(0 0 0 / 0.05) 8px,
+			rgb(0 0 0 / 0.05) 9px
+		);
+	}
+	.schedule-cell-future {
+		position: relative;
+		transition: background-color 0.2s ease;
+	}
+	.schedule-cell-future::after {
+		content: "";
+		position: absolute;
+		left: 0;
+		bottom: 0;
+		height: 3px;
+		width: 0;
+		background: var(--color-primary);
+		border-radius: 2px;
+		transition: width 0.25s ease;
+	}
+	.schedule-cell-future:hover {
+		background-color: var(--color-primary-tint);
+	}
+	.schedule-cell-future:hover::after {
+		width: 100%;
+	}
+
+	/* ─── Duration slider — Duolingo style ─── */
+	/* Layering rõ ràng: track < fill < highlight < thumb (input track trong suốt, chỉ thumb hiện). */
+	.duration-slider-wrap {
+		position: relative;
+		display: block;
+		height: 14px;
+	}
+	.duration-slider-wrap > .duration-slider-track,
+	.duration-slider-wrap > .duration-slider-fill,
+	.duration-slider-wrap > .duration-slider-highlight {
+		position: absolute;
+		pointer-events: none;
+	}
+	.duration-slider-wrap > .duration-slider-track {
+		inset: 0;
+		border-radius: 999px;
+		background: var(--color-border);
+	}
+	.duration-slider-wrap > .duration-slider-fill {
+		left: 0;
+		top: 0;
+		height: 14px;
+		width: var(--fill-pct, 0%);
+		border-radius: 999px;
+		background: var(--color-primary);
+	}
+	.duration-slider-wrap > .duration-slider-highlight {
+		left: 6px;
+		top: 4px;
+		height: 2px;
+		width: max(0px, calc(var(--fill-pct, 0%) - 6px));
+		border-radius: 999px;
+		background: var(--color-primary-light);
+		opacity: 0.95;
+	}
+	/* Input nằm trên cùng nhưng track trong suốt — chỉ thumb tương tác và hiển thị. */
+	.duration-slider-wrap > .duration-slider {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 14px;
+	}
 	.duration-slider {
 		-webkit-appearance: none;
 		appearance: none;
-		height: 6px;
-		border-radius: 3px;
+		display: block;
+		height: 14px;
+		border-radius: 999px;
 		outline: none;
 		cursor: pointer;
-		background: linear-gradient(
-			to right,
-			var(--color-primary) 0%,
-			var(--color-primary) var(--fill-pct, 0%),
-			var(--color-border) var(--fill-pct, 0%),
-			var(--color-border) 100%
-		);
+		background: transparent;
 	}
 	.duration-slider::-webkit-slider-thumb {
 		-webkit-appearance: none;
@@ -219,8 +492,10 @@
 		cursor: grab;
 	}
 	.duration-slider::-moz-range-progress {
-		background: var(--color-primary);
-		height: 6px;
-		border-radius: 3px;
+		background: transparent;
+	}
+	.duration-slider::-moz-range-track {
+		background: transparent;
+		border: none;
 	}
 }

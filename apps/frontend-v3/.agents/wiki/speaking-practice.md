@@ -1,0 +1,120 @@
+# Speaking Practice — Conversation AI + Shadowing
+
+Created: 2026-05-01
+
+## Architecture Decision
+
+Speaking practice split into 2 independent modes:
+- **Hội thoại AI** (Conversation): roleplay with AI character, turn-based dialogue
+- **Shadowing**: listen + repeat sentences, word-level accuracy comparison
+
+Old drill/VSTEP speaking features removed entirely — replaced by these 2 modes.
+
+## Conversation AI
+
+### STT: Web Speech API (browser-native)
+- `SpeechRecognition` runs on FE, sends text to BE. No Azure STT, no audio upload.
+- `continuous = true` + `interimResults = true` — keeps recognition alive up to 30s.
+- Auto-restart on Chrome silence timeout via `onend` handler.
+- `stoppedRef` flag prevents double submit (stop button vs onend race condition).
+
+### TTS: Web Speech API
+- Chrome TTS cold start clips first words. Fix: prepend `"... "` filler to utterance text. Filler gets clipped instead of content.
+- `onboundary` event tracks `charIndex` for word-by-word highlight (mờ → đen).
+- `warmupTTS()` speaks "ready" at volume 0.01 before first speak — called on user gesture.
+- Voice picker: dropdown in header, `getEnglishVoices()` + `pickEnglishVoice()` for default.
+
+### LLM: Workers AI (Cloudflare)
+- Provider: `workers-ai` in `config/ai.php`. Model: `@cf/meta/llama-4-scout-17b-16e-instruct`.
+- OpenAI via Cloudflare gateway quota exceeded → switched to Workers AI (free).
+- Workers AI returns `content` as array (not string) → `ChatCompletionsGateway.php` line 94 fixed to handle both.
+- Agent framework `StructuredAgentResponse` fails with Workers AI → conversation/review use direct `Http::post` + manual JSON parse.
+- LLM returns varying key names (`feedback`/`grade`, `reply`/`response`, `vocab_check`/`used`) → `normalizeTurnResponse()` handles all variants.
+- `word_count` computed BE-side from `vocab_check` array, not trusted from LLM.
+- `better` always populated (fallback = user text).
+- Reply must end with question — prompt enforces, no code append.
+
+### IPA Phonetic Transcription
+- Backend generates IPA via LLM prompt — no external API, no client-side dictionary.
+- Conversation: `reply_ipa` (AI reply), `user_ipa` (user's spoken text), `better_ipa` (improved version). All from same LLM call.
+- Opening line: separate lightweight LLM call in `generateIpa()` during `startSession()`.
+- Frontend: toggle "Phiên âm" button per turn, shows `/{ipa}/` text below buttons.
+- Shadowing: IPA pre-defined in segment data (not generated).
+
+### Translate
+- Google Translate free API: `translate.googleapis.com/translate_a/single?client=gtx`.
+- `translateText()` in `lib/utils.ts`. Per-bubble toggle button.
+
+## Shadowing
+
+### Shadowing Progress (DB)
+- `practice_shadowing_progress` table: profile_id + lesson_id + segment_index + accuracy_percent.
+- `GET /practice/speaking/shadowing/progress` — returns all progress grouped by lesson.
+- `POST /practice/speaking/shadowing/progress` — upsert segment completion.
+- Frontend: `shadowingProgressQuery` + `useMarkShadowingDone()` mutation.
+- Progress bar on ExerciseCard: X/Y đoạn.
+
+### TTS Auto-play + Delay Fix
+- Shadowing auto-plays first segment on mount via `useEffect` + `autoPlayedRef`.
+- All speak calls use `setTimeout(..., 500)` delay + `stopSpeaking()` before new speak — matches Conversation pattern.
+- Fixes Chrome TTS clipping first words when switching segments quickly.
+
+### No backend for audio
+- TTS reads model sentence (Web Speech API).
+- SpeechRecognition captures user speech.
+- `compareWords()` in `lib/utils.ts` — DP alignment (not positional) handles word merging (e.g. "lightspeed" vs "light speed").
+- `levenshtein()` for close match detection (edit distance ≤ 2).
+- Pronunciation review: `POST /practice/speaking/pronunciation-review` — sends original + transcript to LLM.
+
+### Word comparison algorithm
+Positional comparison fails when words merge/split. DP alignment (like diff):
+1. Score each pair: exact=3, levenshtein≤2=2, contains=1, none=0
+2. DP maximize total score
+3. Backtrack alignment
+4. Unaligned original words → check merged user words (`uw.includes(w)`)
+
+## Anti-patterns discovered
+
+1. **Chrome SpeechRecognition `continuous=true`**: still auto-stops after ~6s silence. Must auto-restart in `onend`.
+2. **Chrome TTS after SpeechRecognition**: audio context switch causes cold start. Need warmup.
+3. **Chrome TTS `synth.cancel()` + immediate `speak()`**: silently fails. Need 50-100ms delay.
+4. **Two-utterance queue for warmup**: unreliable timing. Single utterance with `"... "` prefix is more robust.
+5. **`SpeechRecognition.stop()` triggers `onend`**: must use flag (`stoppedRef`) to prevent double submit.
+
+## Files
+
+### Backend
+- `database/migrations/2026_05_01_000001..000004` — scenarios table + seeds (21 scenarios (A1×4, A2×5, B1×5, B2×4, C1×3))
+- `app/Models/PracticeSpeaking{Scenario,ConversationSession,ConversationTurn}.php`
+- `app/Ai/Agents/Conversation{TurnAgent,ReviewAgent}.php`
+- `app/Services/SpeakingConversationService.php` — direct HTTP to Workers AI
+- `app/Http/Controllers/Api/V1/SpeakingConversationController.php` — 9 endpoints
+- `app/Http/Controllers/Api/V1/ShadowingProgressController.php` — 2 endpoints
+- `app/Models/PracticeShadowingProgress.php`
+
+### Frontend
+- `src/features/practice/components/Conversation*.tsx` — 7 components (TurnView: IPA + phiên âm button)
+- `src/features/practice/components/Shadowing*.tsx` — 4 components (auto-play, 500ms delay)
+- `src/features/practice/components/SpeakingFilters.tsx` — level (A1–C1) + status filter
+- `src/features/practice/shadowing-progress.ts` — query + mutation for DB progress
+- `src/features/practice/queries.ts` — `shadowingLessonsQuery`, `shadowingLessonDetailQuery` (API, no mock)
+- `src/lib/utils.ts` — `speak()`, `warmupTTS()`, `translateText()`, `compareWords()`
+
+## Migration Notes (2026-05-18)
+
+### Mock data → API
+- Deleted `mock-shadowing.ts` and `mock-conversation.ts` — all data now from backend API.
+- `SpeakingContent.tsx` uses `shadowingLessonsQuery` instead of `mockShadowingLessons`.
+- `shadowing/$lessonId.tsx` uses `shadowingLessonDetailQuery` instead of `mockShadowingDetails`.
+- Backend migration `2026_05_18_000002_seed_shadowing_drills.php` seeds 10 shadowing lessons from former mock data.
+
+### Shadowing fields added to backend
+- `practice_speaking_drills`: added `audio_url`
+- `practice_speaking_drill_sentences`: added `ipa`, `word_count`, `audio_start`, `audio_end`
+- API `GET /practice/speaking/drills` returns `segment_count` (via `withCount`).
+- API `GET /practice/speaking/drills/{id}` returns `segments[]` with full timing data.
+
+### Admin UI
+- Speaking Drills form: added Audio URL, IPA, word count, audio timing fields.
+- Speaking Scenarios (Hội thoại AI): new CRUD at `/practice/speaking-scenarios`.
+- Removed Speaking Tasks (VSTEP format) — not used by FE.

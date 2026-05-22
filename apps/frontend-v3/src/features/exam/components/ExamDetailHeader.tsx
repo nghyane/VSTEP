@@ -1,16 +1,9 @@
 import { StaticIcon } from "#/components/Icon"
+import { SkillChip } from "#/components/SkillChip"
 import type { ExamDetail, SkillKey } from "#/features/exam/types"
-import { cn } from "#/lib/utils"
 
 interface Props {
 	detail: ExamDetail
-}
-
-const SKILL_META: Record<SkillKey, { label: string; colorClass: string }> = {
-	listening: { label: "Listening", colorClass: "text-skill-listening" },
-	reading: { label: "Reading", colorClass: "text-skill-reading" },
-	writing: { label: "Writing", colorClass: "text-skill-writing" },
-	speaking: { label: "Speaking", colorClass: "text-skill-speaking" },
 }
 
 const SKILL_ORDER: SkillKey[] = ["listening", "reading", "writing", "speaking"]
@@ -22,6 +15,12 @@ export function ExamDetailHeader({ detail }: Props) {
 		version.listening_sections.reduce((s, x) => s + x.items.length, 0) +
 		version.reading_passages.reduce((s, x) => s + x.items.length, 0)
 	const totalFreeResponse = version.writing_tasks.length + version.speaking_parts.length
+	// Tính tổng phút từ parts (nguồn thật) thay vì field BE có thể lệch.
+	const totalMinutes =
+		version.listening_sections.reduce((s, x) => s + x.duration_minutes, 0) +
+		version.reading_passages.reduce((s, x) => s + x.duration_minutes, 0) +
+		version.writing_tasks.reduce((s, x) => s + x.duration_minutes, 0) +
+		version.speaking_parts.reduce((s, x) => s + x.duration_minutes, 0)
 
 	return (
 		<div className="space-y-4">
@@ -43,30 +42,43 @@ export function ExamDetailHeader({ detail }: Props) {
 			</div>
 
 			{/* Aggregate meta */}
-			<div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted">
-				<span className="flex items-center gap-1.5">
+			<div className="flex flex-wrap items-center gap-2 text-sm">
+				<MetaPill>
 					<StaticIcon name="timer-md" size="xs" />
-					{exam.total_duration_minutes} phút
-				</span>
-				<span className="text-border">·</span>
-				<span>4 kỹ năng</span>
-				<span className="text-border">·</span>
-				<span>{totalMcq} câu trắc nghiệm</span>
-				<span className="text-border">·</span>
-				<span>{totalFreeResponse} phần tự luận</span>
+					<span className="font-bold text-foreground">{totalMinutes}</span>
+					<span className="text-subtle">phút</span>
+				</MetaPill>
+				<MetaPill>
+					<StaticIcon name="target-md" size="xs" />
+					<span className="font-bold text-foreground">4</span>
+					<span className="text-subtle">kỹ năng</span>
+				</MetaPill>
+				<MetaPill>
+					<StaticIcon name="clipboard-md" size="xs" />
+					<span className="font-bold text-foreground">{totalMcq}</span>
+					<span className="text-subtle">câu trắc nghiệm</span>
+				</MetaPill>
+				<MetaPill>
+					<StaticIcon name="pencil-md" size="xs" />
+					<span className="font-bold text-foreground">{totalFreeResponse}</span>
+					<span className="text-subtle">phần tự luận</span>
+				</MetaPill>
 			</div>
 
 			{/* Skill chips */}
-			<div className="flex flex-wrap gap-2">
-				{SKILL_ORDER.map((skill) => {
-					const meta = SKILL_META[skill]
-					return (
-						<span key={skill} className={cn("text-sm font-semibold", meta.colorClass)}>
-							{meta.label}
-						</span>
-					)
-				})}
+			<div className="flex flex-wrap gap-1.5">
+				{SKILL_ORDER.map((skill) => (
+					<SkillChip key={skill} skill={skill} size="md" />
+				))}
 			</div>
 		</div>
+	)
+}
+
+function MetaPill({ children }: { children: React.ReactNode }) {
+	return (
+		<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-background border border-border-light text-xs">
+			{children}
+		</span>
 	)
 }

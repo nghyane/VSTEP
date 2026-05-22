@@ -2,7 +2,7 @@
 import { useEffect, useRef } from "react";
 import { Animated, Dimensions, StyleSheet } from "react-native";
 import Svg, { Polygon, Circle, Line, Text as SvgText, G } from "react-native-svg";
-import { useThemeColors, spacing } from "@/theme";
+import { useThemeColors } from "@/theme";
 import type { Skill } from "@/types/api";
 
 const SCREEN_W = Dimensions.get("window").width;

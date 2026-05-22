@@ -1,32 +1,77 @@
 import { Link } from "@tanstack/react-router"
 import { Icon, StaticIcon } from "#/components/Icon"
-import type { Exam } from "#/features/exam/types"
-import { cn } from "#/lib/utils"
+import { SkillChip } from "#/components/SkillChip"
+import type { Exam, SkillKey } from "#/features/exam/types"
+import { useExamTimer } from "#/features/exam/use-exam-session"
+import { formatCompact } from "#/lib/utils"
+
+export type ExamStatus = "not-started" | "in-progress" | "submitted"
+
+export interface ActiveSummary {
+	sessionId: string
+	deadlineAt: string
+	isFullTest: boolean
+	selectedSkills: SkillKey[]
+}
 
 interface Props {
 	exam: Exam
 	fullTestCoinCost: number | null
+	status?: ExamStatus
+	active?: ActiveSummary
 }
 
-const SKILL_COLORS: Record<string, string> = {
-	listening: "text-skill-listening",
-	reading: "text-skill-reading",
-	writing: "text-skill-writing",
-	speaking: "text-skill-speaking",
+function formatRemaining(seconds: number): string {
+	const h = Math.floor(seconds / 3600)
+	const m = Math.floor((seconds % 3600) / 60)
+	const s = seconds % 60
+	if (h > 0) return `${h}h ${m.toString().padStart(2, "0")}p`
+	return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`
 }
 
-const SKILL_LABELS: Record<string, string> = {
-	listening: "Listening",
-	reading: "Reading",
-	writing: "Writing",
-	speaking: "Speaking",
-}
-
-const SKILL_ORDER = ["listening", "reading", "writing", "speaking"] as const
-
-export function ExamCard({ exam, fullTestCoinCost }: Props) {
+function ResumeCountdown({ deadlineAt }: { deadlineAt: string }) {
+	const remaining = useExamTimer(deadlineAt)
+	if (remaining <= 0) return null
 	return (
-		<div className="card p-5 flex flex-col gap-4">
+		<span className="inline-flex items-center gap-1 text-xs text-warning font-bold tabular-nums">
+			<Icon name="timer" size="xs" />
+			{formatRemaining(remaining)}
+		</span>
+	)
+}
+
+const SKILL_ORDER: SkillKey[] = ["listening", "reading", "writing", "speaking"]
+
+function StatusBadge({ status }: { status: ExamStatus }) {
+	if (status === "in-progress") {
+		return (
+			<span className="inline-flex items-center gap-1.5 rounded-full border-2 border-b-4 border-warning/40 bg-warning-tint px-2.5 py-0.5 text-xs font-extrabold text-warning">
+				<span className="relative flex size-2">
+					<span className="absolute inline-flex size-full animate-ping rounded-full bg-warning opacity-60" />
+					<span className="relative inline-flex size-2 rounded-full bg-warning" />
+				</span>
+				Đang làm dở
+			</span>
+		)
+	}
+	if (status === "submitted") {
+		return (
+			<span className="inline-flex items-center gap-1.5 rounded-full border-2 border-b-4 border-primary/40 bg-primary-tint px-2.5 py-0.5 text-xs font-extrabold text-primary">
+				<Icon name="check" size="xs" className="text-primary" />
+				Đã nộp
+			</span>
+		)
+	}
+	return (
+		<span className="inline-flex items-center gap-1.5 rounded-full bg-background border-2 border-border px-2.5 py-0.5 text-xs font-bold text-subtle">
+			Chưa làm
+		</span>
+	)
+}
+
+export function ExamCard({ exam, fullTestCoinCost, status = "not-started", active }: Props) {
+	return (
+		<div className="card-interactive p-5 flex flex-col gap-4 cursor-default">
 			{/* Title + meta */}
 			<div className="space-y-1.5">
 				<p className="font-bold text-base leading-tight text-foreground">{exam.title}</p>
@@ -42,15 +87,22 @@ export function ExamCard({ exam, fullTestCoinCost }: Props) {
 							{exam.source_school}
 						</span>
 					)}
+					{exam.attempts_count !== undefined && (
+						<span
+							className="flex items-center gap-1.5"
+							title={`${exam.attempts_count.toLocaleString("vi-VN")} lượt thi`}
+						>
+							<StaticIcon name="avatar-nodding" size="sm" className="h-5 w-auto" />
+							<span className="font-bold tabular-nums">{formatCompact(exam.attempts_count)}</span> lượt thi
+						</span>
+					)}
 				</div>
 			</div>
 
 			{/* Skills */}
-			<div className="flex flex-wrap gap-x-3 gap-y-1">
+			<div className="flex flex-wrap gap-1.5">
 				{SKILL_ORDER.map((skill) => (
-					<span key={skill} className={cn("text-xs font-semibold", SKILL_COLORS[skill])}>
-						{SKILL_LABELS[skill]}
-					</span>
+					<SkillChip key={skill} skill={skill} size="sm" />
 				))}
 			</div>
 
@@ -69,23 +121,38 @@ export function ExamCard({ exam, fullTestCoinCost }: Props) {
 			)}
 
 			{/* Footer: status + coin + CTA */}
-			<div className="flex items-center justify-between pt-2 border-t border-border-light">
-				<span className="text-xs text-subtle">Chưa làm</span>
+			<div className="flex items-center justify-between pt-3 border-t border-border-light mt-auto">
+				<div className="flex items-center gap-2">
+					<StatusBadge status={status} />
+					{active && <ResumeCountdown deadlineAt={active.deadlineAt} />}
+				</div>
 
-				<div className="flex items-center gap-3">
-					{fullTestCoinCost !== null && (
-						<span className="flex items-center gap-1">
-							<StaticIcon name="gem-color" size="xs" />
-							<span className="text-xs font-bold text-coin-dark">{fullTestCoinCost}</span>
+				<div className="flex items-center gap-2">
+					{fullTestCoinCost !== null && !active && (
+						<span className="inline-flex items-center gap-1.5 px-1" title="Giá một lượt làm">
+							<StaticIcon name="coin" size="sm" />
+							<span className="text-sm font-extrabold text-coin-dark tabular-nums">{fullTestCoinCost}</span>
 						</span>
 					)}
-					<Link
-						to="/thi-thu/$examId"
-						params={{ examId: exam.id }}
-						className="btn btn-primary text-xs py-2 px-4"
-					>
-						Xem đề
-					</Link>
+					{active ? (
+						<Link
+							to="/phong-thi/$sessionId"
+							params={{ sessionId: active.sessionId }}
+							search={{ examId: exam.id }}
+							className="btn btn-primary text-sm py-2 px-4"
+						>
+							Làm tiếp
+							<Icon name="lightning" size="xs" className="text-white" />
+						</Link>
+					) : (
+						<Link
+							to="/thi-thu/$examId"
+							params={{ examId: exam.id }}
+							className="btn btn-primary text-sm py-2 px-4"
+						>
+							Xem đề
+						</Link>
+					)}
 				</div>
 			</div>
 		</div>

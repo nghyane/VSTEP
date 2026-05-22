@@ -1,32 +1,32 @@
-import type { HTMLAttributes } from "react"
-import { cn } from "#/lib/utils"
+import { Card as AntdCard } from "antd"
+import type { HTMLAttributes, ReactNode } from "react"
 
-interface CardProps extends HTMLAttributes<HTMLDivElement> {
-	title?: string | JSX.Element | null
+interface CardProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
+	title?: ReactNode
 	description?: string
-	action?: JSX.Element | null
+	action?: ReactNode
 	padded?: boolean
 }
 
-export function Card({ title, description, action, padded = true, className, children, ...rest }: CardProps) {
+export function Card({ title, description, action, padded = true, className, children }: CardProps) {
+	const header =
+		title || description ? (
+			<div>
+				{title && <div style={{ fontSize: 14, fontWeight: 600 }}>{title}</div>}
+				{description && (
+					<div style={{ marginTop: 4, fontSize: 12, color: "rgba(0,0,0,0.45)" }}>{description}</div>
+				)}
+			</div>
+		) : null
+
 	return (
-		<div
-			className={cn(
-				"rounded-(--radius-card) border border-border bg-surface shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
-				className,
-			)}
-			{...rest}
+		<AntdCard
+			className={className}
+			title={header}
+			extra={action}
+			styles={{ body: { padding: padded ? 20 : 0 } }}
 		>
-			{(title || action) && (
-				<div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
-					<div>
-						{title && <h3 className="text-sm font-semibold text-foreground">{title}</h3>}
-						{description && <p className="mt-1 text-xs text-muted">{description}</p>}
-					</div>
-					{action}
-				</div>
-			)}
-			<div className={cn(padded && "p-5")}>{children}</div>
-		</div>
+			{children}
+		</AntdCard>
 	)
 }

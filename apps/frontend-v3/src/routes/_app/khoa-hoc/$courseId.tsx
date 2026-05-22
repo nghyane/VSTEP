@@ -1,10 +1,20 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { createFileRoute } from "@tanstack/react-router"
+import { useQuery } from "@tanstack/react-query"
+import { createFileRoute, Link } from "@tanstack/react-router"
+import { useEffect, useState } from "react"
+import { createPortal } from "react-dom"
+import { DuoProgressBar } from "#/components/DuoProgressBar"
 import { Header } from "#/components/Header"
-import { enrollCourse } from "#/features/course/actions"
+import { Icon, type IconName, StaticIcon } from "#/components/Icon"
+import { EnrollDialog } from "#/features/course/components/EnrollDialog"
 import { courseDetailQuery } from "#/features/course/queries"
-import type { CommitmentStatus, CourseScheduleItem } from "#/features/course/types"
-import { cn } from "#/lib/utils"
+import {
+	COURSE_LEVEL_LABELS,
+	type CommitmentStatus,
+	type CourseScheduleItem,
+	type CourseTeacher,
+	type CourseWithRelations,
+} from "#/features/course/types"
+import { cn, formatDate, formatNumber, formatVnd, isSameDay } from "#/lib/utils"
 
 export const Route = createFileRoute("/_app/khoa-hoc/$courseId")({
 	component: CourseDetailPage,
@@ -33,64 +43,20 @@ function CourseDetailPage() {
 		<>
 			<Header title={course.title} backTo="/khoa-hoc" />
 			<div className="px-10 pb-12 space-y-6 max-w-5xl mx-auto w-full">
-				<div className="card p-6 space-y-5">
-					<div className="flex items-center gap-2 flex-wrap">
-						<span className="text-xs font-bold px-2.5 py-0.5 rounded-full border-2 border-border bg-surface">
-							{course.target_level}
-						</span>
-						{enrolled && (
-							<span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-success/10 text-success">
-								Đã đăng ký
-							</span>
-						)}
-						{!enrolled && remaining <= 5 && remaining > 0 && (
-							<span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-warning/10 text-warning">
-								Còn {remaining} chỗ
-							</span>
-						)}
-					</div>
-
-					<div>
-						<h1 className="font-extrabold text-xl text-foreground">{course.title}</h1>
-						{course.target_exam_school && (
-							<p className="text-sm text-muted mt-1">{course.target_exam_school}</p>
-						)}
-					</div>
-
-					<div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted">
-						<p>
-							{fmtDate(course.start_date)} — {fmtDate(course.end_date)}
-						</p>
-						{course.schedule_items.length > 0 && <p>{course.schedule_items.length} buổi</p>}
-						<p>
-							{sold_slots}/{course.max_slots} học viên
-						</p>
-					</div>
-
-					<div className="border-t-2 border-border pt-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+				<div className="card p-6">
+					<div className="grid gap-6 md:grid-cols-[1fr_minmax(260px,300px)]">
+						<CourseInfo course={course} sold_slots={sold_slots} enrolled={enrolled} remaining={remaining} />
 						{enrolled ? (
-							course.livestream_url && (
-								<a
-									href={course.livestream_url}
-									target="_blank"
-									rel="noreferrer"
-									className="btn btn-primary px-6 py-2.5 text-sm font-bold inline-block"
-								>
-									Vào Zoom
-								</a>
-							)
+							<EnrolledCard courseId={courseId} livestreamUrl={course.livestream_url} />
 						) : (
-							<EnrollAction
-								courseId={course.id}
-								priceVnd={course.price_vnd}
-								originalPriceVnd={course.original_price_vnd}
-								bonus={course.bonus_coins}
-								full={remaining <= 0}
-								remaining={remaining}
-							/>
+							<EnrollCard course={course} remaining={remaining} />
 						)}
 					</div>
 				</div>
+
+				{commitment && commitment.phase !== "not_enrolled" && (
+					<CommitmentCard commitment={commitment} courseId={courseId} />
+				)}
 
 				{course.description && (
 					<div className="card p-6">
@@ -101,95 +67,462 @@ function CourseDetailPage() {
 					</div>
 				)}
 
-				{commitment && commitment.phase !== "not_enrolled" && <CommitmentCard commitment={commitment} />}
+				{course.schedule_items.length > 0 && (
+					<ScheduleCard
+						items={course.schedule_items}
+						livestreamUrl={enrolled ? (course.livestream_url ?? null) : null}
+					/>
+				)}
 
-				{course.schedule_items.length > 0 && <ScheduleCard items={course.schedule_items} />}
+				{course.teacher && <TeacherCard teacher={course.teacher} />}
+
+				<CommitmentsCard />
 			</div>
 		</>
 	)
 }
 
-function EnrollAction({
-	courseId,
-	priceVnd,
-	originalPriceVnd,
-	bonus,
-	full,
-	remaining,
-}: {
-	courseId: string
-	priceVnd: number
-	originalPriceVnd: number | null
-	bonus: number
-	full: boolean
-	remaining: number
-}) {
-	const queryClient = useQueryClient()
-	const enroll = useMutation({
-		mutationFn: () => enrollCourse(courseId),
-		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["courses"] }),
-	})
-
-	const hasDiscount = originalPriceVnd !== null && originalPriceVnd > priceVnd
-	const discountPct = hasDiscount ? Math.round((1 - priceVnd / originalPriceVnd) * 100) : 0
+function TeacherCard({ teacher }: { teacher: CourseTeacher }) {
+	const initials = teacher.full_name
+		.split(/\s+/)
+		.map((w) => w[0])
+		.join("")
+		.slice(-2)
+		.toUpperCase()
 
 	return (
-		<div className="flex flex-col items-start gap-3">
-			<p className="text-xs font-bold uppercase tracking-wide text-muted">Học phí</p>
-			{hasDiscount && (
-				<div className="flex items-center gap-2">
-					<span className="text-sm text-muted line-through tabular-nums">{fmtVnd(originalPriceVnd)}</span>
-					<span className="text-xs font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">
-						-{discountPct}%
+		<div className="card p-6">
+			<p className="text-xs font-bold uppercase tracking-wide text-muted mb-4">Giáo viên phụ trách</p>
+			<div className="flex items-center gap-4">
+				<div className="size-14 shrink-0 rounded-full bg-primary-tint flex items-center justify-center font-extrabold text-primary">
+					{initials}
+				</div>
+				<div className="flex-1 min-w-0 space-y-1.5">
+					<p className="font-bold text-foreground">{teacher.full_name}</p>
+					{teacher.title && (
+						<p className="text-sm flex items-center gap-1.5 text-foreground">
+							<Icon name="graduation" size="xs" className="text-muted shrink-0" />
+							<span className="font-bold">{teacher.title}</span>
+						</p>
+					)}
+					{teacher.bio && <p className="text-sm text-foreground leading-relaxed pt-1">{teacher.bio}</p>}
+				</div>
+			</div>
+		</div>
+	)
+}
+
+const COMMITMENTS = [
+	"Tỉ lệ đạt trên 98% với học viên học đúng lộ trình.",
+	"Miễn phí học lại nếu chưa đạt mục tiêu sau khóa.",
+	"Giảng viên dạy sát định dạng đề và tiêu chí chấm điểm VSTEP.",
+] as const
+
+function CommitmentsCard() {
+	return (
+		<div className="card p-6">
+			<p className="text-xs font-bold uppercase tracking-wide text-muted mb-4">Cam kết từ Luyện Thi VSTEP</p>
+			<ul className="space-y-3">
+				{COMMITMENTS.map((c) => (
+					<li key={c} className="flex items-start gap-3 text-sm text-foreground">
+						<span className="size-5 shrink-0 rounded-full bg-primary/10 text-primary inline-flex items-center justify-center mt-0.5">
+							<Icon name="check" size="xs" className="h-3 w-auto" />
+						</span>
+						<span>{c}</span>
+					</li>
+				))}
+			</ul>
+		</div>
+	)
+}
+
+function CourseInfo({
+	course,
+	sold_slots,
+	enrolled,
+	remaining,
+}: {
+	course: CourseWithRelations
+	sold_slots: number
+	enrolled: boolean
+	remaining: number
+}) {
+	const sessions = course.schedule_items.length
+	return (
+		<div className="space-y-5 min-w-0">
+			<div className="flex items-center gap-2 flex-wrap">
+				<span className="inline-flex items-center rounded-full border-2 border-border bg-surface px-2.5 py-0.5 text-xs font-bold text-foreground">
+					{COURSE_LEVEL_LABELS[course.target_level] ?? course.target_level}
+				</span>
+				{enrolled && (
+					<span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-success/10 text-success">
+						Đã đăng ký
+					</span>
+				)}
+				{!enrolled && remaining <= 5 && remaining > 0 && (
+					<span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-warning/10 text-warning">
+						Còn {remaining} chỗ
+					</span>
+				)}
+				{!enrolled && remaining <= 0 && (
+					<span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-border text-muted">Đã đầy</span>
+				)}
+			</div>
+
+			<div>
+				<h1 className="font-extrabold text-2xl text-foreground leading-tight">{course.title}</h1>
+				{course.target_exam_school && (
+					<p className="text-sm text-muted mt-1.5">{course.target_exam_school}</p>
+				)}
+			</div>
+
+			<ul className="space-y-2 text-sm text-foreground">
+				<li className="flex items-center gap-2">
+					<Icon name="target" size="xs" className="text-muted shrink-0" />
+					<span>
+						<span className="font-bold tabular-nums">{formatDate(course.start_date)}</span>
+						<span className="text-muted"> — </span>
+						<span className="font-bold tabular-nums">{formatDate(course.end_date)}</span>
+					</span>
+				</li>
+				{course.teacher && (
+					<li className="flex items-center gap-2">
+						<Icon name="graduation" size="xs" className="text-muted shrink-0" />
+						<span>
+							<span className="text-muted">Giáo viên: </span>
+							<span className="font-bold">{course.teacher.full_name}</span>
+						</span>
+					</li>
+				)}
+				{sessions > 0 && (
+					<li className="flex items-center gap-2">
+						<Icon name="timer" size="xs" className="text-muted shrink-0" />
+						<span>
+							<span className="font-bold tabular-nums">{sessions}</span>
+							<span> buổi</span>
+						</span>
+					</li>
+				)}
+				<li className="space-y-1.5">
+					<div className="flex items-center gap-2">
+						<StaticIcon name="avatar-nodding" size="sm" className="h-5 w-auto shrink-0" />
+						<span>
+							<span className="font-bold tabular-nums">{sold_slots}</span>
+							<span className="font-bold">/{course.max_slots}</span>
+							<span className="text-muted"> học viên</span>
+						</span>
+					</div>
+					<DuoProgressBar
+						value={Math.min(100, Math.round((sold_slots / course.max_slots) * 100))}
+						tone={remaining <= 5 ? "warning" : "primary"}
+						heightPx={10}
+						label="Tỉ lệ ghế đã đăng ký"
+					/>
+				</li>
+				<li className="flex items-center gap-2">
+					<Icon name="clipboard" size="xs" className="text-muted shrink-0" />
+					<span>
+						<span className="text-muted">Cam kết </span>
+						<span className="font-bold tabular-nums">{course.required_full_tests}</span>
+						<span> bài thi trong </span>
+						<span className="font-bold tabular-nums">{course.commitment_window_days}</span>
+						<span> ngày</span>
+					</span>
+				</li>
+			</ul>
+		</div>
+	)
+}
+
+function EnrollCard({ course, remaining }: { course: CourseWithRelations; remaining: number }) {
+	const [dialogOpen, setDialogOpen] = useState(false)
+
+	const orig = course.original_price_vnd
+	const hasDiscount = orig !== null && orig > course.price_vnd
+	const discountPct = hasDiscount ? Math.round((1 - course.price_vnd / orig) * 100) : 0
+	const full = remaining <= 0
+
+	return (
+		<aside className="rounded-2xl border-2 border-border bg-surface p-5 space-y-4 self-start">
+			<p className="text-xs font-bold uppercase tracking-wider text-muted text-center">Học phí</p>
+
+			<div className="text-center space-y-1">
+				{hasDiscount && (
+					<div className="flex items-center justify-center gap-2">
+						<span className="text-sm text-muted line-through tabular-nums">{formatVnd(orig)}</span>
+						<span className="text-xs font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">
+							-{discountPct}%
+						</span>
+					</div>
+				)}
+				<p className="text-2xl font-extrabold text-foreground tabular-nums leading-none">
+					{formatVnd(course.price_vnd)}
+				</p>
+				{hasDiscount && (
+					<p className="text-xs font-bold text-success">Tiết kiệm {formatVnd(orig - course.price_vnd)}</p>
+				)}
+			</div>
+
+			{course.bonus_coins > 0 && (
+				<div className="flex justify-center">
+					<span className="inline-flex items-center gap-1 rounded-full bg-coin-tint px-2.5 py-1 text-xs font-bold text-coin-dark">
+						<StaticIcon name="coin" size="xs" className="h-3.5 w-auto" />
+						Tặng kèm {formatNumber(course.bonus_coins)} xu
 					</span>
 				</div>
 			)}
-			<p className="text-2xl font-extrabold text-foreground tabular-nums">{fmtVnd(priceVnd)}</p>
-			{hasDiscount && (
-				<p className="text-xs font-bold text-success">Tiết kiệm {fmtVnd(originalPriceVnd - priceVnd)}</p>
-			)}
-			{bonus > 0 && (
-				<span className="text-xs font-bold text-coin-dark bg-coin-dark/10 px-2.5 py-1 rounded-full">
-					Tặng kèm {bonus.toLocaleString("vi-VN")} xu
-				</span>
-			)}
+
 			<button
 				type="button"
-				disabled={full || enroll.isPending}
-				onClick={() => enroll.mutate()}
-				className="btn btn-primary px-8 py-3 text-sm font-bold disabled:opacity-50 w-full md:w-auto"
+				disabled={full}
+				onClick={() => setDialogOpen(true)}
+				className="btn btn-primary w-full py-3 text-sm font-bold disabled:opacity-50"
 			>
-				{enroll.isPending ? "Đang xử lý…" : full ? "Đã đầy" : "Đăng ký khóa học"}
+				{full ? "Đã đầy" : "Đăng ký khóa học"}
 			</button>
+
 			{!full && remaining <= 5 && (
-				<p className="text-xs font-bold text-warning">Chỉ còn {remaining} chỗ cuối</p>
+				<p className="text-xs font-bold text-warning text-center">Chỉ còn {remaining} chỗ cuối</p>
 			)}
-		</div>
+
+			<EnrollDialog open={dialogOpen} onClose={() => setDialogOpen(false)} course={course} />
+		</aside>
 	)
 }
 
-function CommitmentCard({ commitment }: { commitment: CommitmentStatus }) {
-	const met = commitment.phase === "met"
+function EnrolledCard({ courseId, livestreamUrl }: { courseId: string; livestreamUrl: string | null }) {
 	return (
-		<div className={cn("card p-6", met ? "border-success" : "border-warning")}>
-			<p className="text-xs font-bold uppercase tracking-wide text-muted mb-1">Cam kết kỷ luật</p>
-			<p className="text-sm text-foreground">
-				{commitment.completed}/{commitment.required} bài thi full-test
+		<aside className="rounded-2xl border-2 border-success/30 bg-success/5 p-5 flex flex-col gap-4 self-center">
+			<p className="text-xs font-bold uppercase tracking-wider text-success text-center">Đã đăng ký</p>
+			<p className="text-sm text-foreground text-center leading-relaxed">
+				Khóa học đã sẵn sàng. Vào lớp đúng giờ để không bỏ lỡ buổi học.
 			</p>
-			<div className="mt-3 h-2 rounded-full bg-border overflow-hidden">
-				<div
-					className={cn("h-full rounded-full transition-all", met ? "bg-success" : "bg-warning")}
-					style={{ width: `${Math.min(100, (commitment.completed / commitment.required) * 100)}%` }}
-				/>
+			{livestreamUrl && (
+				<a
+					href={livestreamUrl}
+					target="_blank"
+					rel="noreferrer"
+					className="btn btn-primary w-full py-3 text-sm font-bold inline-flex items-center justify-center"
+				>
+					Vào Zoom
+				</a>
+			)}
+			<Link
+				to="/khoa-hoc/$courseId/dat-lich-1-1"
+				params={{ courseId }}
+				className="w-full inline-flex items-center justify-center gap-2 rounded-(--radius-button) border-2 border-b-4 border-primary/30 bg-primary-tint px-4 py-2.5 text-sm font-extrabold text-primary-dark transition-all hover:-translate-y-0.5 hover:bg-primary-tint/80 active:translate-y-0 active:border-b-2"
+			>
+				<Icon name="graduation" size="xs" />
+				Đặt lịch 1-1 với giảng viên
+			</Link>
+		</aside>
+	)
+}
+
+function CommitmentCard({ commitment, courseId }: { commitment: CommitmentStatus; courseId: string }) {
+	const met = commitment.phase === "met"
+	const violated = commitment.phase === "violated"
+
+	// Dismiss persistent qua localStorage theo courseId: khi user đã ăn mừng cam kết
+	// xong, không cần thấy lại card này mỗi lần vào course. Chỉ áp khi met (pending
+	// hay violated thì luôn cần thấy để hành động).
+	const storageKey = `commitment-dismissed:${courseId}`
+	const [dismissed, setDismissed] = useState<boolean>(() => {
+		if (typeof window === "undefined") return false
+		return window.localStorage.getItem(storageKey) === "1"
+	})
+	const [dismissing, setDismissing] = useState(false)
+
+	function handleDismiss(e: React.MouseEvent) {
+		// Chip nằm trong <Link> → phải chặn navigate trước khi bắt đầu animation.
+		e.preventDefault()
+		e.stopPropagation()
+		if (dismissing) return
+		setDismissing(true)
+		// Khớp duration 600ms của keyframe cardDismiss bên dưới.
+		window.setTimeout(() => {
+			window.localStorage.setItem(storageKey, "1")
+			setDismissed(true)
+		}, 600)
+	}
+
+	if (met && dismissed) return null
+
+	const remaining = Math.max(0, commitment.required - commitment.completed)
+	const pct =
+		commitment.required > 0
+			? Math.min(100, Math.round((commitment.completed / commitment.required) * 100))
+			: 0
+
+	const deadlineMs = commitment.deadline_at ? new Date(commitment.deadline_at).getTime() : null
+	const daysLeft = deadlineMs !== null ? Math.ceil((deadlineMs - Date.now()) / (1000 * 60 * 60 * 24)) : null
+	const urgent = !met && !violated && daysLeft !== null && daysLeft <= 3
+
+	const borderClass = met ? "border-success" : violated ? "border-destructive" : "border-warning"
+	const accentText = met ? "text-success" : violated ? "text-destructive" : "text-warning"
+	const iconBlockClass = met
+		? "bg-success border-primary-dark"
+		: violated
+			? "bg-destructive border-destructive"
+			: "bg-warning border-[color:var(--color-warning-light)]"
+	const iconName: IconName = met ? "check" : violated ? "close" : "lightning"
+	const chipClass = met
+		? "bg-primary-tint border-success/40 text-success"
+		: violated
+			? "bg-destructive-tint border-destructive/40 text-destructive"
+			: "bg-warning-tint border-warning/40 text-warning"
+	const progressTone: "primary" | "warning" = met ? "primary" : "warning"
+
+	return (
+		// 2 lớp: outer wrapper dùng grid-template-rows để xẹp chiều cao mượt (1fr→0fr),
+		// inner Link chỉ animate scale + opacity + translate. Tách ra để content không
+		// bị bóp/clip lúc đang scale như cách max-height cũ.
+		<div
+			style={{
+				display: "grid",
+				gridTemplateRows: dismissing ? "0fr" : "1fr",
+				transition: "grid-template-rows 550ms cubic-bezier(0.4, 0, 0.2, 1)",
+			}}
+		>
+			<div style={{ overflow: "hidden", minHeight: 0 }}>
+				<Link
+					to="/thi-thu"
+					// Không dùng `card-interactive` để bỏ hover lift — user chỉ muốn animation
+					// dismiss lúc click khi met, không cần feedback rê chuột ở bất kỳ state nào.
+					className={cn("group card block p-6 relative overflow-hidden cursor-pointer", borderClass)}
+					style={
+						dismissing
+							? {
+									animation: "cardDismiss 500ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
+									pointerEvents: "none",
+								}
+							: undefined
+					}
+				>
+					<div className="relative flex items-start gap-4">
+						<div
+							className={cn(
+								"size-14 shrink-0 rounded-2xl border-2 flex items-center justify-center text-white",
+								iconBlockClass,
+							)}
+							style={{ boxShadow: "0 4px 0 rgb(0 0 0 / 0.08)" }}
+						>
+							<Icon name={iconName} size="md" className="text-white" />
+						</div>
+
+						<div className="flex-1 min-w-0 space-y-3">
+							<div className="flex items-start justify-between gap-3 flex-wrap">
+								<div className="min-w-0">
+									<p className={cn("text-xs font-bold uppercase tracking-wider", accentText)}>
+										Cam kết kỷ luật
+									</p>
+									<p className="font-extrabold text-foreground text-2xl leading-none mt-1.5">
+										<span className="tabular-nums">{commitment.completed}</span>
+										<span className="text-muted">/</span>
+										<span className="tabular-nums">{commitment.required}</span>
+										<span className="text-muted text-sm font-bold ml-1.5">bài thi full-test</span>
+									</p>
+								</div>
+
+								{met ? (
+									<button
+										type="button"
+										onClick={handleDismiss}
+										title="Bấm để ẩn cam kết đã hoàn thành"
+										className={cn(
+											"shrink-0 inline-flex items-center gap-1.5 rounded-(--radius-button) border-2 border-b-4 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider cursor-pointer",
+											chipClass,
+										)}
+									>
+										<Icon name="check" size="xs" className="h-3 w-auto" />
+										Hoàn thành
+									</button>
+								) : (
+									<span
+										className={cn(
+											// Giữ press feedback (active translate + border collapse) cho cảm giác
+											// nhấn nút Duo; chỉ bỏ hover lift theo yêu cầu của user.
+											"shrink-0 inline-flex items-center gap-1.5 rounded-(--radius-button) border-2 border-b-4 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider transition-all group-active:translate-y-[2px] group-active:border-b-2",
+											chipClass,
+										)}
+									>
+										{violated ? (
+											<>
+												<Icon name="close" size="xs" className="h-3 w-auto" />
+												Đã quá hạn
+											</>
+										) : (
+											<>
+												<Icon name="play" size="xs" className="h-3 w-auto" />
+												Vào phòng thi
+											</>
+										)}
+									</span>
+								)}
+							</div>
+
+							<DuoProgressBar value={pct} tone={progressTone} heightPx={12} label="Tiến độ cam kết kỷ luật" />
+
+							{commitment.deadline_at && (
+								<p
+									className={cn(
+										"text-xs font-bold inline-flex items-center gap-1.5",
+										violated ? "text-destructive" : urgent ? "text-warning" : "text-muted",
+									)}
+								>
+									<Icon name="timer" size="xs" />
+									<span>
+										Hạn chót: <span className="tabular-nums">{formatDate(commitment.deadline_at)}</span>
+										{!met && !violated && daysLeft !== null && (
+											<span className="ml-1">
+												(còn <span className="tabular-nums">{Math.max(0, daysLeft)}</span> ngày)
+											</span>
+										)}
+									</span>
+								</p>
+							)}
+
+							<p className="text-sm text-foreground leading-relaxed">
+								{met ? (
+									<span className="font-bold text-success">
+										Bạn đã hoàn thành cam kết — tiếp tục luyện đề để giữ phong độ.
+									</span>
+								) : violated ? (
+									<span>
+										Cam kết đã <span className="font-bold text-destructive">vi phạm</span> — bạn chưa hoàn
+										thành đủ {commitment.required} bài full-test trong hạn. Liên hệ giáo viên để được hỗ trợ.
+									</span>
+								) : (
+									<>
+										Còn <span className="font-extrabold tabular-nums text-warning">{remaining}</span> bài
+										full-test nữa để hoàn thành cam kết
+										{daysLeft !== null && daysLeft >= 0 && (
+											<>
+												{" "}
+												trong <span className="font-extrabold tabular-nums text-warning">{daysLeft}</span>{" "}
+												ngày tới
+											</>
+										)}
+										. Bấm vào ô này để <span className="font-bold text-foreground">vào phòng thi ngay.</span>
+									</>
+								)}
+							</p>
+						</div>
+					</div>
+				</Link>
 			</div>
-			<p className={cn("text-xs font-bold mt-2", met ? "text-success" : "text-warning")}>
-				{met ? "Đã hoàn thành cam kết" : "Chưa đủ — hãy thi thêm"}
-			</p>
 		</div>
 	)
 }
 
-function ScheduleCard({ items }: { items: CourseScheduleItem[] }) {
+function ScheduleCard({
+	items,
+	livestreamUrl,
+}: {
+	items: CourseScheduleItem[]
+	livestreamUrl: string | null
+}) {
+	const [selected, setSelected] = useState<CourseScheduleItem | null>(null)
 	const weeks = buildWeeks(items)
 	const now = Date.now()
 	const DAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"] as const
@@ -210,11 +543,166 @@ function ScheduleCard({ items }: { items: CourseScheduleItem[] }) {
 				</div>
 				<div className="grid grid-cols-7 divide-x-2 divide-y-2 divide-border">
 					{weeks.flat().map((cell) => (
-						<DayCell key={cell.dateISO} cell={cell} now={now} />
+						<DayCell key={cell.dateISO} cell={cell} now={now} onSelect={setSelected} />
 					))}
 				</div>
 			</div>
+			<SessionDetailDialog
+				item={selected}
+				now={now}
+				livestreamUrl={livestreamUrl}
+				onClose={() => setSelected(null)}
+			/>
 		</div>
+	)
+}
+
+function SessionDetailDialog({
+	item,
+	now,
+	livestreamUrl,
+	onClose,
+}: {
+	item: CourseScheduleItem | null
+	now: number
+	livestreamUrl: string | null
+	onClose: () => void
+}) {
+	useEffect(() => {
+		if (!item) return
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === "Escape") onClose()
+		}
+		window.addEventListener("keydown", onKey)
+		return () => window.removeEventListener("keydown", onKey)
+	}, [item, onClose])
+
+	if (!item || typeof document === "undefined") return null
+
+	const cellTime = new Date(item.date).getTime()
+	const today = isSameDay(cellTime, now)
+	const past = !today && cellTime < now
+
+	const stateIcon: IconName = today ? "play" : past ? "check" : "timer"
+	const iconBlock = today
+		? "bg-primary border-primary-dark text-white"
+		: past
+			? "bg-border-light border-border text-muted"
+			: "bg-primary-tint border-primary/40 text-primary"
+
+	const chip = today
+		? "bg-primary border-primary-dark text-white"
+		: past
+			? "bg-border-light border-border text-muted"
+			: "bg-primary-tint border-primary/40 text-primary-dark"
+	const chipLabel = today ? "Hôm nay" : past ? "Đã qua" : "Sắp tới"
+
+	const bannerGradient = today
+		? "from-primary-tint to-transparent"
+		: past
+			? "from-border-light to-transparent"
+			: "from-primary-tint/60 to-transparent"
+
+	const showZoom = livestreamUrl !== null && !past
+
+	return createPortal(
+		<div
+			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-[fadeIn_220ms_ease-out]"
+			role="dialog"
+			aria-modal="true"
+			aria-label="Chi tiết buổi học"
+		>
+			<button type="button" aria-label="Đóng" onClick={onClose} className="absolute inset-0" />
+			<div className="card relative w-full max-w-md overflow-hidden animate-[popIn_400ms_cubic-bezier(0.34,1.56,0.64,1)]">
+				<button
+					type="button"
+					onClick={onClose}
+					aria-label="Đóng"
+					className="absolute right-4 top-4 z-10 flex size-8 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface hover:text-foreground"
+				>
+					<Icon name="close" size="xs" />
+				</button>
+
+				<div className={cn("relative bg-gradient-to-b px-7 pb-5 pt-7", bannerGradient)}>
+					<p
+						className={cn(
+							"text-[11px] font-extrabold uppercase tracking-[0.18em]",
+							past ? "text-muted" : "text-primary-dark",
+						)}
+					>
+						Lịch học chi tiết
+					</p>
+
+					<div className="mt-3 flex items-start gap-3.5">
+						<div
+							className={cn(
+								"size-14 shrink-0 rounded-2xl border-2 border-b-4 flex items-center justify-center",
+								iconBlock,
+							)}
+						>
+							<Icon name={stateIcon} size="md" />
+						</div>
+
+						<div className="flex-1 min-w-0 space-y-1.5">
+							<div className="flex items-center gap-2 flex-wrap">
+								<span className="text-xs font-extrabold uppercase tracking-wider tabular-nums text-foreground">
+									Buổi {pad(item.session_number)}
+								</span>
+								<span
+									className={cn(
+										"inline-flex items-center rounded-full border-2 border-b-4 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider",
+										chip,
+									)}
+								>
+									{chipLabel}
+								</span>
+							</div>
+							<h2 className="text-lg font-extrabold text-foreground leading-snug">{item.topic}</h2>
+						</div>
+					</div>
+				</div>
+
+				<div className="space-y-4 px-7 pb-6 pt-2">
+					<div className="grid grid-cols-2 gap-3">
+						<div className="space-y-1 rounded-(--radius-card) border-2 border-dashed border-border bg-background px-3.5 py-3">
+							<p className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Ngày học</p>
+							<p className="text-sm font-extrabold tabular-nums">{formatDate(item.date)}</p>
+						</div>
+						<div className="space-y-1 rounded-(--radius-card) border-2 border-dashed border-border bg-background px-3.5 py-3">
+							<p className="text-[10px] font-extrabold uppercase tracking-wider text-muted">Thời gian</p>
+							<p className="text-sm font-extrabold tabular-nums">
+								{fmtTime(item.start_time)}–{fmtTime(item.end_time)}
+							</p>
+						</div>
+					</div>
+
+					{showZoom && livestreamUrl !== null && (
+						<a
+							href={livestreamUrl}
+							target="_blank"
+							rel="noreferrer"
+							className="btn btn-primary w-full py-3 text-sm"
+						>
+							<Icon name="play" size="xs" className="text-white" />
+							{today ? "Vào lớp Zoom ngay" : "Mở link Zoom"}
+						</a>
+					)}
+
+					{today && (
+						<p className="text-center text-xs font-bold text-primary-dark">
+							Buổi học đang diễn ra — vào lớp đúng giờ để không bỏ lỡ.
+						</p>
+					)}
+
+					{past && (
+						<p className="text-center text-xs text-muted">
+							Buổi học đã kết thúc. Bạn có thể xem lại nội dung trong tài liệu khóa học.
+						</p>
+					)}
+				</div>
+			</div>
+		</div>,
+		document.body,
 	)
 }
 
@@ -224,8 +712,18 @@ interface CellData {
 	item: CourseScheduleItem | null
 }
 
-function DayCell({ cell, now }: { cell: CellData; now: number }) {
-	const past = new Date(cell.dateISO).getTime() < now - 86400000
+function DayCell({
+	cell,
+	now,
+	onSelect,
+}: {
+	cell: CellData
+	now: number
+	onSelect: (item: CourseScheduleItem) => void
+}) {
+	const cellTime = new Date(cell.dateISO).getTime()
+	const today = isSameDay(cellTime, now)
+	const past = !today && cellTime < now
 
 	if (!cell.item) {
 		return (
@@ -237,20 +735,38 @@ function DayCell({ cell, now }: { cell: CellData; now: number }) {
 
 	const s = cell.item
 	return (
-		<div className={cn("min-h-24 p-2", past ? "bg-surface" : "bg-primary/5")}>
+		<button
+			type="button"
+			onClick={() => onSelect(s)}
+			className={cn(
+				"min-h-24 p-2 text-left transition-colors hover:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset cursor-pointer",
+				past && "schedule-cell-past bg-surface opacity-70",
+				today && "bg-primary/15 ring-2 ring-primary ring-inset",
+				!past && !today && "schedule-cell-future bg-primary/5",
+			)}
+		>
 			<div className="flex items-baseline justify-between">
 				<span
-					className={cn("text-xs font-bold uppercase tabular-nums", past ? "text-muted" : "text-primary")}
+					className={cn(
+						"text-xs font-bold uppercase tabular-nums",
+						past ? "text-muted line-through" : "text-primary",
+					)}
 				>
-					Buổi {pad(s.session_number)}
+					{today ? "Hôm nay" : `Buổi ${pad(s.session_number)}`}
 				</span>
-				<span className="text-xs text-muted/60 tabular-nums">{pad(cell.day)}</span>
+				<span className={cn("text-xs tabular-nums", past ? "text-muted/40" : "text-muted/60")}>
+					{pad(cell.day)}
+				</span>
 			</div>
-			<p className={cn("mt-1 text-xs font-bold tabular-nums leading-tight", past && "line-through")}>
+			<p
+				className={cn("mt-1 text-xs font-bold tabular-nums leading-tight", past && "line-through text-muted")}
+			>
 				{fmtTime(s.start_time)}–{fmtTime(s.end_time)}
 			</p>
-			<p className={cn("mt-0.5 text-xs leading-tight", past ? "text-muted" : "text-foreground")}>{s.topic}</p>
-		</div>
+			<p className={cn("mt-0.5 text-xs leading-tight", past ? "text-muted line-through" : "text-foreground")}>
+				{s.topic}
+			</p>
+		</button>
 	)
 }
 
@@ -305,15 +821,6 @@ function pad(n: number): string {
 	return String(n).padStart(2, "0")
 }
 
-function fmtDate(iso: string): string {
-	const d = new Date(iso)
-	return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`
-}
-
 function fmtTime(time: string): string {
 	return time.slice(0, 5)
-}
-
-function fmtVnd(n: number): string {
-	return `${n.toLocaleString("vi-VN")}đ`
 }

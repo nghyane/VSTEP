@@ -140,6 +140,24 @@ services:
       - traefik
     restart: unless-stopped
 
+  # Admin SPA
+  admin:
+    build:
+      context: ./apps/admin
+      args:
+        VITE_API_URL: https://${DOMAIN:-api.vstepgo.com}/api/v1
+    expose:
+      - "80"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.admin.rule=Host(`${ADMIN_DOMAIN:-admin.vstepgo.com}`)
+      - traefik.http.routers.admin.entrypoints=web,websecure
+      - traefik.http.services.admin.loadbalancer.server.port=80
+    networks:
+      - default
+      - traefik
+    restart: unless-stopped
+
   # Laravel Horizon — queue dashboard + worker management
   horizon:
     build: ./apps/backend-v2

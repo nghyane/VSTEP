@@ -29,7 +29,7 @@ class AuthService
      * Register account + initial profile in single transaction.
      *
      * @param  array{email:string,password:string}  $accountData
-     * @param  array{nickname:string,target_level:string,target_deadline:string}  $profileData
+     * @param  array{nickname:string,target_level:string,target_deadline:string,entry_level?:string|null}  $profileData
      * @return array{user:User,profile:Profile,access_token:string,refresh_token:string,expires_in:int}
      */
     public function register(array $accountData, array $profileData): array
@@ -71,7 +71,8 @@ class AuthService
 
         /** @var User $user */
         $user = JWTAuth::user();
-        $profile = $this->resolveDefaultProfile($user);
+        $profile = $this->resolveActiveProfile($user);
+        $this->persistActiveProfile($user, $profile);
         $accessToken = $this->issueAccessToken($user, $profile);
         [, $plainToken] = $this->createRefreshToken($user, $userAgent);
 
@@ -110,7 +111,8 @@ class AuthService
         $refreshToken->delete();
         [, $newPlainToken] = $this->createRefreshToken($user, $userAgent);
 
-        $profile = $this->resolveDefaultProfile($user);
+        // Đọc active profile đã persist trước; fallback về default chỉ khi user chưa từng switch.
+        $profile = $this->resolveActiveProfile($user);
         $accessToken = $this->issueAccessToken($user, $profile);
 
         return [
@@ -150,6 +152,8 @@ class AuthService
 
         $oldToken = $this->findRefreshToken($oldRefreshToken, $user->id);
         $oldToken?->delete();
+
+        $this->persistActiveProfile($user, $profile);
 
         [, $newPlainToken] = $this->createRefreshToken($user, $userAgent);
         $accessToken = $this->issueAccessToken($user, $profile);
@@ -206,7 +210,8 @@ class AuthService
                 $user->save();
             }
 
-            $profile = $this->resolveDefaultProfile($user);
+            $profile = $this->resolveActiveProfile($user);
+            $this->persistActiveProfile($user, $profile);
             $accessToken = $this->issueAccessToken($user, $profile);
             [, $plainToken] = $this->createRefreshToken($user, $userAgent);
 
@@ -226,7 +231,7 @@ class AuthService
      * Create initial profile for an already-authenticated user (Google signup flow).
      * Issues a fresh access token carrying the new active_profile_id.
      *
-     * @param  array{nickname:string,target_level:string,target_deadline:string}  $profileData
+     * @param  array{nickname:string,target_level:string,target_deadline:string,entry_level?:string|null}  $profileData
      * @return array{
      *     profile: Profile,
      *     access_token: string,
@@ -243,6 +248,7 @@ class AuthService
 
         return DB::transaction(function () use ($user, $profileData) {
             $profile = $this->profileService->createInitialProfile($user, $profileData);
+            $this->persistActiveProfile($user, $profile);
             $accessToken = $this->issueAccessToken($user, $profile);
 
             return [
@@ -273,6 +279,36 @@ class AuthService
 
         return $user->initialProfile()
             ?? $user->profiles()->orderBy('created_at')->first();
+    }
+
+    /**
+     * Active profile cho /refresh: ưu tiên profile đã persist trên users.active_profile_id
+     * (set khi switchProfile hoặc onboarding); fall back về default nếu user chưa từng switch
+     * hoặc profile cũ đã bị xoá (FK nullOnDelete đã set null sẵn).
+     */
+    private function resolveActiveProfile(User $user): ?Profile
+    {
+        if ($user->role !== Role::Learner) {
+            return null;
+        }
+
+        if ($user->active_profile_id !== null) {
+            $active = $user->activeProfile()->first();
+            if ($active !== null) {
+                return $active;
+            }
+        }
+
+        return $this->resolveDefaultProfile($user);
+    }
+
+    private function persistActiveProfile(User $user, ?Profile $profile): void
+    {
+        if ($user->active_profile_id === ($profile?->id)) {
+            return;
+        }
+
+        $user->forceFill(['active_profile_id' => $profile?->id])->save();
     }
 
     private function issueAccessToken(User $user, ?Profile $profile): string

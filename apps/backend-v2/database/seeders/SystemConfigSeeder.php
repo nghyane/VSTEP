@@ -24,6 +24,10 @@ class SystemConfigSeeder extends Seeder
             // Streak (chỉ từ drill practice sessions).
             'streak.daily_goal' => [1, 'Số practice session/ngày để giữ streak.'],
             'streak.timezone' => ['Asia/Ho_Chi_Minh', 'Timezone dùng tính date_local.'],
+            'streak.milestones' => [
+                [['days' => 7, 'coins' => 100], ['days' => 14, 'coins' => 250], ['days' => 30, 'coins' => 500]],
+                'Mốc thưởng xu khi đạt streak X ngày liên tục.',
+            ],
 
             // Grading pipeline.
             'grading.max_retries' => [3, 'Số retry tối đa cho grading job.'],

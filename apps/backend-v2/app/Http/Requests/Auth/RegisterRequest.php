@@ -21,6 +21,7 @@ class RegisterRequest extends FormRequest
             'email' => ['required', 'email', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6'],
             'nickname' => ['required', 'string', 'max:50'],
+            'entry_level' => ['nullable', 'string', Rule::enum(VstepLevel::class)],
             'target_level' => ['required', 'string', Rule::enum(VstepLevel::class)->only(VstepLevel::targetOptions())],
             'target_deadline' => ['required', 'date', 'after:today'],
         ];

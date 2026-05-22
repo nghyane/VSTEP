@@ -119,6 +119,18 @@ return [
             ],
         ],
 
+        'workers-ai' => [
+            'driver' => 'chat-completions',
+            'key' => env('LLM_API_KEY'),
+            'url' => env('WORKERS_AI_URL', 'https://gateway.ai.cloudflare.com/v1/11a58966d1289d0387eebba638a19cc3/vstep/workers-ai/v1'),
+            'auth_header' => env('LLM_AUTH_HEADER', 'cf-aig-authorization'),
+            'models' => [
+                'text' => [
+                    'default' => env('WORKERS_AI_MODEL', '@cf/meta/llama-4-scout-17b-16e-instruct'),
+                ],
+            ],
+        ],
+
         'openai' => [
             'driver' => 'openai',
             'key' => env('OPENAI_API_KEY'),

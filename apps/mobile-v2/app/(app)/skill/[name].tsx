@@ -2,12 +2,11 @@
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import { SkillIcon } from "@/components/SkillIcon";
 import { DepthCard } from "@/components/DepthCard";
 import { DepthButton } from "@/components/DepthButton";
 import { Mascot } from "@/components/Mascot";
-import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { useThemeColors, useSkillColor, spacing, fontSize, fontFamily } from "@/theme";
 import { useSkillDetail } from "@/hooks/use-progress";
 import type { Skill } from "@/types/api";
 import type { MascotName } from "@/components/Mascot";

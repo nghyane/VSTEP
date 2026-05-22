@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import type { Exam } from "@/types/api";
+import type { Exam, ExamDetail } from "@/types/api";
 
-export type { Exam };
+export type { Exam, ExamDetail };
 
 export function useExams() {
   return useQuery({
@@ -14,7 +14,7 @@ export function useExams() {
 export function useExam(id: string) {
   return useQuery({
     queryKey: ["exam", id],
-    queryFn: () => api.get<Exam>(`/api/v1/exams/${id}`),
+    queryFn: () => api.get<ExamDetail>(`/api/v1/exams/${id}`),
     enabled: !!id,
   });
 }

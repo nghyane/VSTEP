@@ -3,7 +3,7 @@ RFC: 0004
 Title: Auth, JWT Claims & Active Profile
 Status: Draft
 Created: 2026-04-18
-Updated: 2026-04-18
+Updated: 2026-05-02
 Superseded by: —
 ---
 
@@ -57,12 +57,49 @@ POST /auth/switch-profile { profile_id }
   → verify JWT (current access token)
   → verify profile belongs to account (SELECT WHERE account_id = sub AND id = profile_id)
   → 403 nếu không thuộc
+  → persist users.active_profile_id = profile_id  // 2026-05-02
   → issue new JWT với active_profile_id mới
   → rotate refresh_token
   → return { access_token, refresh_token, active_profile }
 ```
 
 Không revoke JWT cũ (short TTL). Client update token storage.
+
+### Active profile persistence (2026-05-02)
+
+JWT access token có TTL ngắn (15 min). Refresh token DB row chỉ chứa `user_id` —
+không gắn profile. Trước fix, `/auth/refresh` luôn trả `resolveDefaultProfile($user)`
+(initial profile) → user switch sang profile B, hard-reload (Ctrl+Shift+R) → JWT
+hết hạn → FE call `/auth/refresh` → BE trả profile A → mất ngữ cảnh.
+
+**Fix:** thêm cột `users.active_profile_id` (UUID nullable, FK → `profiles.id`,
+`nullOnDelete`). Cột này là **source of truth duy nhất** cho "profile đang active
+cross-session" — không lưu ở refresh token table (vốn chỉ track session độc lập).
+
+Persist points (mọi flow set/đổi profile):
+- `login`, `loginWithGoogle` — sau khi resolve profile, lưu vào DB.
+- `switchProfile` — persist trước khi reissue token.
+- `completeOnboarding` — set lần đầu khi tạo initial profile.
+
+Read points:
+- `/auth/refresh` đọc `users.active_profile_id` qua helper `resolveActiveProfile($user)`:
+  1. Nếu `role !== Learner` → return null (admin/teacher giữ semantic cũ).
+  2. Nếu `active_profile_id` set + profile còn tồn tại → return profile đó.
+  3. Fallback `resolveDefaultProfile($user)` (initial → first by created_at).
+
+`resolveActiveProfile` cũng được dùng trong `login` để khi user logout/login lại
+trên cùng device, FE không bị mất profile đã chọn lần trước.
+
+### Profile deletion rule
+
+- Không cho xóa profile cuối của account (còn ít nhất 1 để avoid orphan state).
+- Nếu xóa profile đang active:
+  - DB tự set `users.active_profile_id = NULL` qua FK `nullOnDelete`.
+  - **Lần refresh kế tiếp** sẽ fallback về default profile qua `resolveActiveProfile`.
+  - Không cần BE chủ động reissue JWT đang chạy — JWT cũ vẫn dùng đến hết TTL với
+    profile cũ ID; mọi endpoint sẽ 404/403 khi load profile đó (đã xoá) nên thực
+    chất user buộc phải refresh — và refresh sẽ trả default. An toàn hơn so với
+    "auto reissue" vì không cần user online lúc xoá.
 
 ### Register flow
 
@@ -115,11 +152,6 @@ public function authorize(): bool
     return $profile->account_id === auth()->id();
 }
 ```
-
-### Profile deletion rule
-
-- Không cho xóa profile cuối của account (còn ít nhất 1 để avoid orphan state).
-- Nếu xóa active profile → backend auto switch sang profile khác → reissue JWT.
 
 ## Role hierarchy
 

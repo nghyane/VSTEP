@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\CheckEmailRequest;
 use App\Http\Requests\Auth\CompleteOnboardingRequest;
 use App\Http\Requests\Auth\GoogleLoginRequest;
 use App\Http\Requests\Auth\LoginRequest;
@@ -15,6 +16,7 @@ use App\Http\Requests\Auth\SwitchProfileRequest;
 use App\Http\Resources\ProfileResource;
 use App\Http\Resources\UserResource;
 use App\Models\Profile;
+use App\Models\SystemConfig;
 use App\Models\User;
 use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
@@ -27,13 +29,18 @@ class AuthController extends Controller
         private readonly AuthService $authService,
     ) {}
 
+    public function checkEmail(CheckEmailRequest $request): JsonResponse
+    {
+        return response()->json(['data' => ['available' => true]]);
+    }
+
     public function register(RegisterRequest $request): JsonResponse
     {
         $validated = $request->validated();
 
         $result = $this->authService->register(
             ['email' => $validated['email'], 'password' => $validated['password']],
-            ['nickname' => $validated['nickname'], 'target_level' => $validated['target_level'], 'target_deadline' => $validated['target_deadline']],
+            ['nickname' => $validated['nickname'], 'target_level' => $validated['target_level'], 'target_deadline' => $validated['target_deadline'], 'entry_level' => $validated['entry_level'] ?? null],
         );
 
         return response()->json(['data' => [
@@ -42,6 +49,7 @@ class AuthController extends Controller
             'access_token' => $result['access_token'],
             'refresh_token' => $result['refresh_token'],
             'expires_in' => $result['expires_in'],
+            'onboarding_bonus' => $this->onboardingBonusPayload(),
         ]], 201);
     }
 
@@ -91,6 +99,7 @@ class AuthController extends Controller
 
         $result = $this->authService->completeOnboarding($user, [
             'nickname' => $request->validated('nickname'),
+            'entry_level' => $request->validated('entry_level'),
             'target_level' => $request->validated('target_level'),
             'target_deadline' => $request->validated('target_deadline'),
         ]);
@@ -99,6 +108,7 @@ class AuthController extends Controller
             'profile' => new ProfileResource($result['profile']),
             'access_token' => $result['access_token'],
             'expires_in' => $result['expires_in'],
+            'onboarding_bonus' => $this->onboardingBonusPayload(),
         ]]);
     }
 
@@ -142,6 +152,16 @@ class AuthController extends Controller
         );
 
         return response()->json(['data' => ['success' => true]]);
+    }
+
+    /**
+     * @return array{amount:int,granted:bool}
+     */
+    private function onboardingBonusPayload(): array
+    {
+        $amount = (int) (SystemConfig::get('onboarding.initial_coins') ?? 0);
+
+        return ['amount' => $amount, 'granted' => $amount > 0];
     }
 
     public function me(Request $request): JsonResponse

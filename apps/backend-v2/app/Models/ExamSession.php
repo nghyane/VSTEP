@@ -7,6 +7,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'profile_id', 'exam_version_id', 'mode', 'selected_skills', 'is_full_test',
@@ -44,16 +45,21 @@ class ExamSession extends BaseModel
 
     public function writingSubmissions(): HasMany
     {
-        return $this->hasMany(ExamWritingSubmission::class);
+        return $this->hasMany(ExamWritingSubmission::class, 'session_id');
     }
 
     public function speakingSubmissions(): HasMany
     {
-        return $this->hasMany(ExamSpeakingSubmission::class);
+        return $this->hasMany(ExamSpeakingSubmission::class, 'session_id');
     }
 
     public function listeningPlayLogs(): HasMany
     {
         return $this->hasMany(ExamListeningPlayLog::class, 'session_id');
+    }
+
+    public function draft(): HasOne
+    {
+        return $this->hasOne(ExamSessionDraft::class, 'session_id');
     }
 }

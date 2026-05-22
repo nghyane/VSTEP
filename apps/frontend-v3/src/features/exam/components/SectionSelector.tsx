@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Icon } from "#/components/Icon"
+import { SkillIcon } from "#/components/SkillIcon"
 import type { ExamDetail, SkillKey } from "#/features/exam/types"
 import { skills } from "#/lib/skills"
 import { cn } from "#/lib/utils"
@@ -87,7 +87,7 @@ function getPartRows(skill: SkillKey, detail: ExamDetail): PartRow[] {
 			.sort((a, b) => a.display_order - b.display_order)
 			.map((t) => ({
 				id: t.id,
-				label: `Phần ${t.part} — ${t.task_type === "letter" ? `Viết thư (~${t.min_words} từ)` : `Viết luận (~${t.min_words} từ)`}`,
+				label: `Phần ${t.part} — ${t.task_type === "letter" ? `Viết thư (${t.min_words} từ)` : `Viết luận (${t.min_words} từ)`}`,
 				itemCount: 1,
 				itemUnit: "bài",
 				durationMinutes: t.duration_minutes,
@@ -146,7 +146,20 @@ export function SectionSelector({ detail, selected, onToggleSkill }: Props) {
 				const parts = getPartRows(skill, detail)
 
 				return (
-					<div key={skill} className="card overflow-hidden">
+					<div
+						key={skill}
+						className={cn(
+							"card overflow-hidden transition-[box-shadow,transform,border-color] duration-200",
+							isSelected && "-translate-y-0.5",
+						)}
+						style={{
+							boxShadow: `inset 6px 0 0 ${isSelected ? (skillDef?.color ?? "transparent") : "transparent"}`,
+							borderColor:
+								isSelected && skillDef?.color
+									? `color-mix(in srgb, ${skillDef.color} 35%, var(--color-border))`
+									: undefined,
+						}}
+					>
 						{/* Skill header row */}
 						<div
 							className={cn(
@@ -186,7 +199,7 @@ export function SectionSelector({ detail, selected, onToggleSkill }: Props) {
 								</div>
 
 								{/* Skill info */}
-								{skillDef && <Icon name={skillDef.icon} size="xs" style={{ color: skillDef.color }} />}
+								{skillDef && <SkillIcon name={skillDef.pngIcon} size="xs" />}
 								<span className="text-sm font-bold" style={{ color: skillDef?.color }}>
 									{meta.label}
 								</span>
@@ -194,7 +207,14 @@ export function SectionSelector({ detail, selected, onToggleSkill }: Props) {
 									{minutes} phút · {countLabel}
 								</span>
 
-								<span className="ml-auto text-xs font-bold text-subtle mr-3">
+								<span
+									className={cn(
+										"ml-auto mr-3 text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full border-2 transition-colors",
+										isSelected
+											? "border-transparent bg-foreground/5 text-muted"
+											: "border-border text-foreground bg-surface",
+									)}
+								>
 									{isSelected ? "Bỏ chọn" : "Chọn"}
 								</span>
 							</label>
@@ -239,7 +259,7 @@ export function SectionSelector({ detail, selected, onToggleSkill }: Props) {
 											{part.itemCount} {part.itemUnit}
 										</span>
 										<span className="shrink-0 text-xs tabular-nums text-subtle">
-											~{part.durationMinutes} phút
+											{part.durationMinutes} phút
 										</span>
 									</div>
 								))}

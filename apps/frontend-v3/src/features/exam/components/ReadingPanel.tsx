@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react"
 import { ScrollArea } from "#/components/ScrollArea"
+import { HighlightablePassage } from "#/features/exam/components/HighlightablePassage"
 import { MCQQuestion } from "#/features/exam/components/MCQQuestion"
 import type { ExamVersionReadingPassage } from "#/features/exam/types"
 import { cn } from "#/lib/utils"
@@ -66,9 +67,11 @@ export function ReadingPanel({ passages, mcqAnswers, onAnswer, footer }: Props) 
 							<span className="text-xs text-muted">{activePassage.duration_minutes} phút</span>
 						</div>
 						<h2 className="text-base font-bold text-foreground">{activePassage.title}</h2>
-						<div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-							{activePassage.passage}
-						</div>
+						<HighlightablePassage
+							text={activePassage.passage}
+							passageId={activePassage.id}
+							className="text-sm leading-relaxed text-foreground/90"
+						/>
 					</div>
 				</ScrollArea>
 
@@ -91,7 +94,7 @@ export function ReadingPanel({ passages, mcqAnswers, onAnswer, footer }: Props) 
 			</div>
 
 			{/* Jump buttons */}
-			<div className="flex flex-wrap justify-center gap-1.5 border-t border-border bg-card px-4 py-2.5">
+			<div className="flex flex-wrap justify-center gap-1.5 border-t-2 border-border/50 bg-card px-4 py-2.5">
 				{activePassage.items.map((item, i) => {
 					const isAnswered = mcqAnswers.has(item.id)
 					return (
@@ -113,7 +116,7 @@ export function ReadingPanel({ passages, mcqAnswers, onAnswer, footer }: Props) 
 			</div>
 
 			{/* Passage tabs + prev/next */}
-			<div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-2.5">
+			<div className="flex items-center justify-between gap-3 border-t-2 border-border/50 bg-card px-4 py-2.5">
 				{/* Prev */}
 				{activeIdx > 0 ? (
 					<button
@@ -155,14 +158,14 @@ export function ReadingPanel({ passages, mcqAnswers, onAnswer, footer }: Props) 
 								</span>
 								<span
 									className={cn(
-										"absolute inset-x-1 bottom-0.5 h-0.5 overflow-hidden rounded-full",
-										isActive ? "bg-white/30" : "bg-border",
+										"absolute inset-x-0 bottom-0 h-1 overflow-hidden",
+										isActive ? "bg-white/20" : "bg-primary/10",
 									)}
 								>
 									<span
 										className={cn(
-											"block h-full rounded-full transition-[width]",
-											isActive ? "bg-white" : "bg-primary/50",
+											"block h-full transition-[width] duration-300",
+											isActive ? "bg-white" : "bg-primary/70",
 										)}
 										style={{ width: `${pct}%` }}
 									/>
@@ -186,7 +189,7 @@ export function ReadingPanel({ passages, mcqAnswers, onAnswer, footer }: Props) 
 			</div>
 
 			{/* Global footer — skill indicator + submit/next */}
-			<div className="z-40 flex h-14 shrink-0 items-center justify-between border-t border-border bg-card px-5">
+			<div className="z-40 flex h-14 shrink-0 items-center justify-between border-t-2 border-border/50 bg-card px-5">
 				<div className="w-24">
 					{activeMeta && (
 						<p className="text-xs text-muted">
@@ -194,7 +197,7 @@ export function ReadingPanel({ passages, mcqAnswers, onAnswer, footer }: Props) 
 						</p>
 					)}
 				</div>
-				<p className="text-sm font-extrabold text-foreground">
+				<p className="text-sm font-extrabold text-skill-reading">
 					{footer.skillLabel}
 					<span className="ml-1 text-xs font-normal text-muted">({footer.skillProgress})</span>
 				</p>

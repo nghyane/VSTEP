@@ -17,22 +17,36 @@ export default function AppLayout() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="onboarding" options={{ presentation: "modal", gestureEnabled: false }} />
       <Stack.Screen name="exam/[id]" />
-      <Stack.Screen name="session/[id]" />
+      <Stack.Screen name="session/[id]" options={{ gestureEnabled: false }} />
       <Stack.Screen name="exam-result/[id]" />
       <Stack.Screen name="skill/[name]" options={{ headerShown: true, title: "Chi tiết kỹ năng" }} />
-      <Stack.Screen name="submissions/index" />
-      <Stack.Screen name="submissions/[id]" options={{ headerShown: true, title: "Chi tiết bài nộp" }} />
+      <Stack.Screen name="grading/writing/[submissionId]" options={{ headerShown: false }} />
+      <Stack.Screen name="grading/speaking/[submissionId]" options={{ headerShown: false }} />
+      <Stack.Screen name="practice/grammar/[pointId]/exercise" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="practice/listening/index" />
+      <Stack.Screen name="practice/listening/[exerciseId]" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="practice/reading/index" />
+      <Stack.Screen name="practice/reading/[exerciseId]" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="practice/writing/index" />
+      <Stack.Screen name="practice/writing/[promptId]" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="practice/speaking/index" />
+      <Stack.Screen name="practice/speaking/[taskId]" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="practice/speaking/drill/[drillId]" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="practice/speaking/conversation/[scenarioId]" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="practice/speaking/shadowing/index" />
+      <Stack.Screen name="practice/speaking/shadowing/[lessonId]" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="practice/index" />
       <Stack.Screen name="practice/foundation/index" />
       <Stack.Screen name="practice/grammar/index" />
+      <Stack.Screen name="practice/results" />
       <Stack.Screen name="practice/skills" />
       <Stack.Screen name="practice/[skill]" />
-      <Stack.Screen name="practice/result/[id]" />
       <Stack.Screen name="vocabulary/index" />
       <Stack.Screen name="vocabulary/[id]" />
       <Stack.Screen name="vocabulary/srs-review" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="vocabulary/[id]/flashcard" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="vocabulary/[id]/exercise" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="courses/[courseId]/booking" options={{ headerShown: false }} />
       <Stack.Screen name="account" options={{ headerShown: true, title: "Tài khoản" }} />
       <Stack.Screen name="goal" options={{ headerShown: true, title: "Mục tiêu học tập" }} />
     </Stack>

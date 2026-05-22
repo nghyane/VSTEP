@@ -1,4 +1,4 @@
-import { cn } from "#/lib/utils"
+import { Tabs as AntdTabs } from "antd"
 
 interface TabItem {
 	label: string
@@ -14,21 +14,11 @@ interface Props {
 
 export function Tabs({ tabs, active, onChange, className }: Props) {
 	return (
-		<div className={cn("flex gap-1 border-b border-border", className)}>
-			{tabs.map((tab) => (
-				<button
-					key={tab.value}
-					type="button"
-					className={cn(
-						"border-b-2 border-transparent px-4 py-2 text-sm font-medium text-muted transition-colors",
-						"hover:text-foreground",
-						tab.value === active && "border-primary text-primary",
-					)}
-					onClick={() => onChange(tab.value)}
-				>
-					{tab.label}
-				</button>
-			))}
-		</div>
+		<AntdTabs
+			className={className}
+			activeKey={active}
+			onChange={onChange}
+			items={tabs.map((t) => ({ key: t.value, label: t.label }))}
+		/>
 	)
 }

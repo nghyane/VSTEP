@@ -285,7 +285,7 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 			</div>
 
 			{/* Jump buttons — items trong active part */}
-			<div className="flex flex-wrap justify-center gap-1.5 border-t border-border bg-card px-4 py-2.5">
+			<div className="flex flex-wrap justify-center gap-1.5 border-t-2 border-border/50 bg-card px-4 py-2.5">
 				{activeItems.map(({ item, globalIdx }, localI) => {
 					const isAnswered = mcqAnswers.has(item.id)
 					return (
@@ -307,7 +307,7 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 			</div>
 
 			{/* Part tabs + next */}
-			<div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-2.5">
+			<div className="flex items-center justify-between gap-3 border-t-2 border-border/50 bg-card px-4 py-2.5">
 				<div className="flex min-w-0 items-center gap-2">
 					<Icon name="volume" size="xs" className="text-skill-listening" />
 					<span className="text-sm font-extrabold text-foreground">Part {activeGroup?.part}</span>
@@ -341,21 +341,15 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 								</span>
 								<span
 									className={cn(
-										"absolute inset-x-1 bottom-0.5 overflow-hidden rounded-full transition-all",
-										isCurrentlyPlaying ? "h-1 animate-pulse" : "h-0.5",
-										isCurrentlyPlaying
-											? isActive
-												? "bg-white/45"
-												: "bg-primary/30"
-											: isActive
-												? "bg-white/30"
-												: "bg-border",
+										"absolute inset-x-0 bottom-0 h-1 overflow-hidden transition-opacity",
+										isCurrentlyPlaying && "animate-pulse",
+										isActive ? "bg-white/20" : "bg-primary/10",
 									)}
 								>
 									<span
 										className={cn(
-											"block h-full rounded-full transition-[width]",
-											isActive ? "bg-white" : "bg-primary/50",
+											"block h-full transition-[width] duration-300",
+											isActive ? "bg-white" : "bg-primary/70",
 										)}
 										style={{ width: `${pct}%` }}
 									/>
@@ -378,7 +372,7 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 			</div>
 
 			{/* Global footer */}
-			<div className="z-40 flex h-14 shrink-0 items-center justify-between border-t border-border bg-card px-5">
+			<div className="z-40 flex h-14 shrink-0 items-center justify-between border-t-2 border-border/50 bg-card px-5">
 				<div className="w-24" />
 				<p className="text-sm font-extrabold text-skill-listening">
 					{footer.skillLabel}

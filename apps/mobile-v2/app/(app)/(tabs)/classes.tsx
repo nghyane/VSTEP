@@ -1,2 +1,5 @@
-import { Redirect } from "expo-router";
-export default function ClassesTab() { return <Redirect href="/(app)/(tabs)" />; }
+import { ClassesContent } from "@/features/course/ClassesContent";
+
+export default function ClassesTab() {
+  return <ClassesContent />;
+}

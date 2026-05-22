@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   ScrollView,
   StyleSheet,
@@ -20,6 +21,7 @@ import { SkillIcon } from "@/components/SkillIcon";
 import { CoinButton } from "@/features/coin/CoinButton";
 import { FULL_TEST_COST } from "@/features/coin/coin-store";
 import { useExams, type Exam } from "@/hooks/use-exams";
+import { useAbandonExamSession, useActiveExamSession, type ExamSessionData } from "@/hooks/use-exam-session";
 import { MascotEmpty } from "@/components/MascotStates";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { Skill } from "@/types/api";
@@ -31,12 +33,23 @@ const SKILLS: { key: Skill; label: string }[] = [
   { key: "speaking", label: "Nói" },
 ];
 
+type StatusFilter = "all" | "not_started" | "in_progress" | "submitted";
+
+const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
+  { key: "all", label: "Tất cả" },
+  { key: "not_started", label: "Chưa làm" },
+  { key: "in_progress", label: "Đang làm" },
+  { key: "submitted", label: "Đã nộp" },
+];
+
 export default function ExamsScreen() {
   const c = useThemeColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data, isLoading } = useExams();
+  const activeSession = useActiveExamSession();
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -48,9 +61,14 @@ export default function ExamsScreen() {
     }).start();
   }, []);
 
-  const exams = (data ?? []).filter((exam) =>
-    exam.title.toLowerCase().includes(search.toLowerCase()),
-  );
+  const exams = (data ?? []).filter((exam) => {
+    const matchesSearch = exam.title.toLowerCase().includes(search.toLowerCase());
+    if (!matchesSearch) return false;
+    if (statusFilter === "all") return true;
+    if (statusFilter === "not_started") return !exam.status && !exam.attemptCount;
+    if (statusFilter === "submitted") return exam.status === "submitted" || exam.status === "completed";
+    return exam.status === statusFilter;
+  });
 
   return (
     <ScrollView
@@ -68,6 +86,10 @@ export default function ExamsScreen() {
           <CoinButton />
         </View>
 
+        {activeSession.data ? (
+          <ActiveSessionCard session={activeSession.data} />
+        ) : null}
+
         <View style={[styles.searchWrap, { backgroundColor: c.surface, borderColor: c.border }]}> 
           <Ionicons name="search-outline" size={17} color={c.subtle} />
           <TextInput
@@ -84,6 +106,29 @@ export default function ExamsScreen() {
             </HapticTouchable>
           ) : null}
         </View>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+          {STATUS_FILTERS.map((filter) => {
+            const active = statusFilter === filter.key;
+            return (
+              <HapticTouchable
+                key={filter.key}
+                onPress={() => setStatusFilter(filter.key)}
+                style={[
+                  styles.filterChip,
+                  {
+                    backgroundColor: active ? c.primaryTint : c.surface,
+                    borderColor: active ? c.primary : c.border,
+                  },
+                ]}
+              >
+                <Text style={[styles.filterText, { color: active ? c.primaryDark : c.mutedForeground }]}>
+                  {filter.label}
+                </Text>
+              </HapticTouchable>
+            );
+          })}
+        </ScrollView>
       </Animated.View>
 
       {isLoading ? (
@@ -113,6 +158,54 @@ export default function ExamsScreen() {
 
       <View style={{ height: insets.bottom + 40 }} />
     </ScrollView>
+  );
+}
+
+function ActiveSessionCard({ session }: { session: ExamSessionData }) {
+  const c = useThemeColors();
+  const router = useRouter();
+  const abandon = useAbandonExamSession();
+  const title = session.examTitle ?? "Bài thi đang làm";
+
+  const handleContinue = () => {
+    router.push(`/(app)/session/${session.id}?examId=${session.examId}` as any);
+  };
+
+  const handleAbandon = () => {
+    Alert.alert(
+      "Bỏ phiên thi?",
+      "Phiên thi hiện tại sẽ được nộp tự động và bạn có thể bắt đầu lại từ danh sách đề.",
+      [
+        { text: "Giữ lại", style: "cancel" },
+        {
+          text: "Bỏ phiên",
+          style: "destructive",
+          onPress: () => abandon.mutate(session.id),
+        },
+      ],
+    );
+  };
+
+  return (
+    <DepthCard style={styles.activeCard}>
+      <View style={styles.activeHeader}>
+        <View style={[styles.activeIcon, { backgroundColor: c.warningTint }]}> 
+          <Ionicons name="time-outline" size={18} color={c.warning} />
+        </View>
+        <View style={styles.activeTextWrap}>
+          <Text style={[styles.activeEyebrow, { color: c.warning }]}>Phiên thi đang diễn ra</Text>
+          <Text style={[styles.activeTitle, { color: c.foreground }]} numberOfLines={1}>{title}</Text>
+        </View>
+      </View>
+      <View style={styles.activeActions}>
+        <DepthButton variant="secondary" size="sm" onPress={handleAbandon} disabled={abandon.isPending}>
+          Bỏ phiên
+        </DepthButton>
+        <DepthButton size="sm" onPress={handleContinue}>
+          Tiếp tục
+        </DepthButton>
+      </View>
+    </DepthCard>
   );
 }
 
@@ -158,10 +251,23 @@ function ExamCard({
           <View style={styles.metaRow}>
             <Ionicons name="time-outline" size={13} color={c.subtle} />
             <Text style={[styles.metaText, { color: c.subtle }]}>{exam.totalDurationMinutes} phút</Text>
+            {exam.bestScore != null && (
+              <>
+                <Text style={[styles.metaDot, { color: c.subtle }]}>·</Text>
+                <Ionicons name="star-outline" size={13} color={c.coin} />
+                <Text style={[styles.metaText, { color: c.coinDark }]}>{exam.bestScore.toFixed(1)}</Text>
+              </>
+            )}
+            {exam.attemptCount != null && exam.attemptCount > 0 && (
+              <>
+                <Text style={[styles.metaDot, { color: c.subtle }]}>·</Text>
+                <Text style={[styles.metaText, { color: c.subtle }]}>{exam.attemptCount} lần thi</Text>
+              </>
+            )}
           </View>
 
           <View style={styles.skillRow}>
-            {SKILLS.map((skill) => (
+            {(exam.skill === "mixed" ? SKILLS : SKILLS.filter((s) => s.key === exam.skill)).map((skill) => (
               <SkillChip key={skill.key} skill={skill.key} label={skill.label} />
             ))}
           </View>
@@ -198,7 +304,17 @@ const styles = StyleSheet.create({
   title: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
   subtitle: { fontSize: fontSize.xs, marginTop: spacing.xs, lineHeight: 18 },
   searchWrap: { flexDirection: "row", alignItems: "center", gap: spacing.sm, borderWidth: 2, borderRadius: radius.xl, paddingHorizontal: spacing.base, paddingVertical: spacing.sm, marginBottom: spacing.xl },
+  activeCard: { marginBottom: spacing.base },
+  activeHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  activeIcon: { width: 36, height: 36, borderRadius: radius.full, alignItems: "center", justifyContent: "center" },
+  activeTextWrap: { flex: 1 },
+  activeEyebrow: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  activeTitle: { fontSize: fontSize.base, fontFamily: fontFamily.extraBold, marginTop: 2 },
+  activeActions: { flexDirection: "row", justifyContent: "flex-end", gap: spacing.sm, marginTop: spacing.base },
   searchInput: { flex: 1, fontSize: fontSize.sm, fontFamily: fontFamily.regular },
+  filterRow: { gap: spacing.sm, paddingBottom: spacing.xl },
+  filterChip: { borderWidth: 2, borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  filterText: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
   loadingWrap: { paddingVertical: spacing["3xl"], alignItems: "center" },
   list: { gap: spacing.base },
   tagRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginBottom: spacing.xs },
@@ -207,6 +323,7 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: fontSize.base, fontFamily: fontFamily.semiBold, lineHeight: 22 },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: spacing.xs },
   metaText: { fontSize: fontSize.xs },
+  metaDot: { fontSize: fontSize.sm },
   skillRow: { flexDirection: "row", gap: spacing.sm, flexWrap: "wrap", marginTop: spacing.xs },
   chip: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
   chipText: { fontSize: 11, fontFamily: fontFamily.semiBold },

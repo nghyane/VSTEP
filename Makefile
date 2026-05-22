@@ -6,7 +6,7 @@ TUNNEL_SESSION := vstep-tunnel
 FE_PORT := 8080
 API_PORT := 3000
 
-.PHONY: dev deploy deploy-backend deploy-frontend setup-frontend-service logs ssh tunnel tunnel-stop generate-vocab generate-sentences generate-all
+.PHONY: dev deploy deploy-backend deploy-frontend setup-frontend-service logs ssh tunnel tunnel-stop generate-vocab generate-sentences generate-all seed db-status
 
 dev: tunnel
 	cd $(LOCAL_BE) && npx concurrently -c "#22c55e,#93c5fd,#c4b5fd,#fb7185" "php artisan serve --host=127.0.0.1 --port=8010" "php artisan horizon" "php artisan pail --timeout=0" "printf 'E2E demo: http://127.0.0.1:8010/internal/e2e-demo\n' && while true; do sleep 3600; done" --names=server,horizon,logs,demo --kill-others
@@ -49,3 +49,12 @@ generate-all: tunnel
 
 generate-audio: tunnel
 	uv run scripts/generate-audio.py
+
+# Re-seed local docker DB (idempotent — chạy bất cứ lúc nào nghi data bị wipe).
+# Tất cả seeder dùng updateOrCreate/guard → an toàn re-run nhiều lần.
+seed:
+	docker compose exec -T backend php artisan db:seed --force --no-interaction
+
+# Check seed status (đếm rows các bảng quan trọng).
+db-status:
+	@docker compose exec -T postgres psql -U user -d vstep -c "SELECT 'exams' AS t, count(*) FROM exams UNION ALL SELECT 'exam_versions', count(*) FROM exam_versions UNION ALL SELECT 'system_configs', count(*) FROM system_configs UNION ALL SELECT 'wallet_topup_packages', count(*) FROM wallet_topup_packages UNION ALL SELECT 'vocab_topics', count(*) FROM vocab_topics UNION ALL SELECT 'users', count(*) FROM users;"

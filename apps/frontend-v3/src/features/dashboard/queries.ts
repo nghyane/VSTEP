@@ -22,6 +22,7 @@ export const activityHeatmapQuery = queryOptions({
 export const examSessionsQuery = queryOptions({
 	queryKey: ["exam-sessions"],
 	queryFn: () => api.get("exam-sessions").json<ApiResponse<ExamSessionResult[]>>(),
+	select: (raw) => raw.data,
 })
 
 // Selectors
@@ -36,14 +37,6 @@ export function selectSpider(raw: ApiResponse<OverviewData>) {
 		targetBand: getTargetBand(raw.data.profile.target_level),
 		minTests: raw.data.stats.min_tests_required,
 		totalTests: raw.data.stats.total_tests,
-	}
-}
-
-export function selectGap(raw: ApiResponse<OverviewData>) {
-	return {
-		chart: raw.data.chart,
-		targetBand: getTargetBand(raw.data.profile.target_level),
-		targetLevel: raw.data.profile.target_level,
 	}
 }
 

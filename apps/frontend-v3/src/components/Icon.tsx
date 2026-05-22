@@ -1,31 +1,42 @@
 // ?react imports — vite-plugin-svgr
+
+import avatarNodding from "#/assets/icons/avatar-nodding.svg"
 import BackIcon from "#/assets/icons/back-small.svg?react"
 // Static imports (multi-tone, not currentColor)
 import bellSmall from "#/assets/icons/bell-small.svg"
 import BookIcon from "#/assets/icons/book-default.svg?react"
 import CheckIcon from "#/assets/icons/check-small.svg?react"
 import chestMedium from "#/assets/icons/chest-medium.svg"
+import chestOpen from "#/assets/icons/chest-open.svg"
+import clipboardMedium from "#/assets/icons/clipboard-medium.svg"
 import ClipboardIcon from "#/assets/icons/clipboard-small.svg?react"
 import CloseIcon from "#/assets/icons/close-small.svg?react"
+import coinMedium from "#/assets/icons/coin-medium.svg"
+import coinSmall from "#/assets/icons/coin-small.svg"
+import CoinSmallIcon from "#/assets/icons/coin-small.svg?react"
 import FaceIcon from "#/assets/icons/face-small.svg?react"
+import FillBlankIcon from "#/assets/icons/fill-blank-small.svg?react"
 import flagSmall from "#/assets/icons/flag-small.svg"
-import gemMedium from "#/assets/icons/gem-medium.svg"
-import gemSmall from "#/assets/icons/gem-small.svg"
-import GemSmallIcon from "#/assets/icons/gem-small.svg?react"
+import FlashcardIcon from "#/assets/icons/flashcard-small.svg?react"
 import GraduationIcon from "#/assets/icons/graduation-small.svg?react"
 import GuidebookIcon from "#/assets/icons/guidebook-small.svg?react"
+import HeadphonesIcon from "#/assets/icons/headphones-small.svg?react"
 import HouseIcon from "#/assets/icons/house-small.svg?react"
+import KeyboardIcon from "#/assets/icons/keyboard-small.svg?react"
 import LightningIcon from "#/assets/icons/lightning-small.svg?react"
 import LogoutIcon from "#/assets/icons/logout-small.svg?react"
 import MicIcon from "#/assets/icons/microphone-small.svg?react"
 import challengeMedium from "#/assets/icons/monthly-challenge-medium.svg"
 import MoreIcon from "#/assets/icons/more-small.svg?react"
+import pencilMedium from "#/assets/icons/pencil-medium.svg"
 import PencilIcon from "#/assets/icons/pencil-small.svg?react"
 import PlayIcon from "#/assets/icons/play-small.svg?react"
 import SearchIcon from "#/assets/icons/search-small.svg?react"
+import ShuffleIcon from "#/assets/icons/shuffle-small.svg?react"
 import streakLarge from "#/assets/icons/streak-large.svg"
 import streakMedium from "#/assets/icons/streak-medium.svg"
 import streakSmall from "#/assets/icons/streak-small.svg"
+import SwapIcon from "#/assets/icons/swap-small.svg?react"
 import targetMedium from "#/assets/icons/target-medium.svg"
 import TargetSmallIcon from "#/assets/icons/target-small.svg?react"
 import timerMedium from "#/assets/icons/timer-medium.svg"
@@ -43,11 +54,15 @@ export const icons = {
 	check: CheckIcon,
 	clipboard: ClipboardIcon,
 	close: CloseIcon,
+	"coin-mono": CoinSmallIcon,
 	face: FaceIcon,
-	"gem-mono": GemSmallIcon,
+	"fill-blank": FillBlankIcon,
+	flashcard: FlashcardIcon,
 	graduation: GraduationIcon,
 	guidebook: GuidebookIcon,
+	headphones: HeadphonesIcon,
 	house: HouseIcon,
+	keyboard: KeyboardIcon,
 	lightning: LightningIcon,
 	logout: LogoutIcon,
 	mic: MicIcon,
@@ -55,6 +70,8 @@ export const icons = {
 	pencil: PencilIcon,
 	play: PlayIcon,
 	search: SearchIcon,
+	shuffle: ShuffleIcon,
+	swap: SwapIcon,
 	target: TargetSmallIcon,
 	timer: TimerSmallIcon,
 	trash: TrashIcon,
@@ -68,16 +85,20 @@ export type IconName = keyof typeof icons
 export const staticIcons = {
 	bell: bellSmall,
 	chest: chestMedium,
+	"chest-open": chestOpen,
 	challenge: challengeMedium,
+	"clipboard-md": clipboardMedium,
+	coin: coinSmall,
+	"coin-md": coinMedium,
 	flag: flagSmall,
-	"gem-color": gemSmall,
-	"gem-color-md": gemMedium,
+	"pencil-md": pencilMedium,
 	"streak-sm": streakSmall,
 	"streak-md": streakMedium,
 	"streak-lg": streakLarge,
 	"target-md": targetMedium,
 	"timer-md": timerMedium,
 	trophy: trophySmall,
+	"avatar-nodding": avatarNodding,
 } as const
 
 export type StaticIconName = keyof typeof staticIcons

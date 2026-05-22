@@ -1,4 +1,6 @@
 import type {
+	ConversationSessionDetail,
+	ConversationTurn,
 	PracticeSession,
 	SubmitResult,
 	SupportResult,
@@ -54,34 +56,55 @@ export async function submitWritingSession(sessionId: string, text: string) {
 		.json<ApiResponse<WritingSubmission>>()
 }
 
-export async function startSpeakingDrillSession(exerciseId: string) {
+export async function startConversation(scenarioId: string) {
 	return api
-		.post("practice/speaking/drill-sessions", { json: { exercise_id: exerciseId } })
-		.json<ApiResponse<{ session_id: string; started_at: string }>>()
+		.post("practice/speaking/conversations", { json: { scenario_id: scenarioId } })
+		.json<ApiResponse<ConversationSessionDetail>>()
 }
 
-export async function submitDrillAttempt(
-	sessionId: string,
-	sentenceId: string,
-	mode: "dictation" | "shadowing",
-) {
-	return api
-		.post(`practice/speaking/drill-sessions/${sessionId}/attempt`, {
-			json: { sentence_id: sentenceId, mode },
-		})
-		.json<ApiResponse<{ attempt_id: string; accuracy_percent: number | null }>>()
+export async function submitConversationTurn(sessionId: string, text: string, confidence: number) {
+	return api.post(`practice/speaking/conversations/${sessionId}/turn`, { json: { text, confidence } }).json<
+		ApiResponse<{
+			user_turn: ConversationTurn
+			ai_turn: ConversationTurn
+			session: { user_turn_count: number; expected_turns: number; should_end: boolean }
+		}>
+	>()
 }
 
-export async function startVstepSpeakingSession(exerciseId: string) {
-	return api
-		.post("practice/speaking/vstep-sessions", { json: { exercise_id: exerciseId } })
-		.json<ApiResponse<{ session_id: string; started_at: string }>>()
+export async function endConversation(sessionId: string) {
+	return api.post(`practice/speaking/conversations/${sessionId}/end`).json<
+		ApiResponse<{
+			session_id: string
+			duration_seconds: number
+			user_turn_count: number
+			vocab_used_pct: number
+			grammar_ok_pct: number
+		}>
+	>()
 }
 
-export async function submitVstepSpeaking(sessionId: string, audioUrl: string, durationSeconds: number) {
+export interface ConversationReview {
+	strengths: string[]
+	improvements: string[]
+	corrected_sentences: { original: string; corrected: string; explanation: string }[]
+	tip: string
+}
+
+export async function getConversationReview(sessionId: string) {
 	return api
-		.post(`practice/speaking/vstep-sessions/${sessionId}/submit`, {
-			json: { audio_url: audioUrl, duration_seconds: durationSeconds },
-		})
-		.json<ApiResponse<{ submission_id: string; grading_status: string }>>()
+		.get(`practice/speaking/conversations/${sessionId}/review`)
+		.json<ApiResponse<ConversationReview>>()
+}
+
+export interface PronunciationReview {
+	pronunciation: string
+	intonation: string
+	tip: string
+}
+
+export async function getPronunciationReview(original: string, transcript: string) {
+	return api
+		.post("practice/speaking/pronunciation-review", { json: { original, transcript } })
+		.json<ApiResponse<PronunciationReview>>()
 }

@@ -3328,7 +3328,7 @@
             "part": 2,
             "part_title": "Part 2 · Hotel Reservation",
             "duration_minutes": 4,
-            "audio_url": "audio/listening/exam_p2_09_019db189.mp3",
+            "audio_url": "/storage/audio/listening/exam_p2_09_019db189.mp3",
             "transcript": "Receptionist: Good afternoon, Grand Palace Hotel. How may I help you?\nGuest: Hello, I'd like to book a room for three nights, from the 15th to the 18th of next month.\nReceptionist: Let me check availability. For those dates, we have a double room available on the 8th floor with a city view.\nGuest: That sounds nice. What's the rate?\nReceptionist: It's 1.2 million dong per night, and that includes breakfast for two.\nGuest: Does it include anything else, like airport transfer?\nReceptionist: I'm afraid the airport transfer is an additional charge. But breakfast is included in the room rate.\nGuest: Alright, I'll take it.\nReceptionist: Wonderful. Could I have your passport number to complete the reservation?\nGuest: Sure, let me get it.",
             "display_order": 9
         },
@@ -3338,7 +3338,7 @@
             "part": 1,
             "part_title": "Part 1 · Library Notice",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_01_019db189.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_01_019db189.mp3",
             "transcript": "Dear students, please be informed that the university library will have adjusted hours this week due to maintenance work. From Monday to Friday, the library will close at 8 PM instead of the usual 10 PM. Regular hours will resume next Monday. We apologize for any inconvenience.",
             "display_order": 1
         },
@@ -3348,7 +3348,7 @@
             "part": 1,
             "part_title": "Part 1 · Office Announcement",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_05_019db359.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_05_019db359.mp3",
             "transcript": "Dear colleagues, the IT department will be performing system maintenance this Saturday from 8 AM to 2 PM. During this time, access to the company email and internal systems will be unavailable. Please save all important work before Friday evening.",
             "display_order": 5
         },
@@ -3358,7 +3358,7 @@
             "part": 2,
             "part_title": "Part 2 · Doctor and Patient",
             "duration_minutes": 4,
-            "audio_url": "audio/listening/exam_p2_08_019db359.mp3",
+            "audio_url": "/storage/audio/listening/exam_p2_08_019db359.mp3",
             "transcript": "Doctor: Good morning. What seems to be the problem today?\nPatient: I have had a terrible headache for three days and I feel dizzy sometimes.\nDoctor: I see. Have you been sleeping well?\nPatient: Not really. I have been working very long hours this week.\nDoctor: That could be the cause. I would like to check your blood pressure. It seems slightly elevated. I am going to prescribe some medication and I strongly recommend you take a few days off work.\nPatient: Is it serious?\nDoctor: Not at this stage, but if you continue at this pace, it could become a problem. I would also suggest reducing your caffeine intake and drinking more water.\nPatient: How long should I take the medication?\nDoctor: For one week. Come back and see me if the headaches do not improve.",
             "display_order": 8
         },
@@ -3368,7 +3368,7 @@
             "part": 1,
             "part_title": "Part 1 · Gym Notice",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_01_019db35d.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_01_019db35d.mp3",
             "transcript": "Attention gym members. The swimming pool will be closed for maintenance from Monday to Wednesday next week. The gym and fitness classes will remain open as usual. We apologize for any inconvenience.",
             "display_order": 1
         },
@@ -3378,7 +3378,7 @@
             "part": 1,
             "part_title": "Part 1 · Bus Service Update",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_02_019db35d.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_02_019db35d.mp3",
             "transcript": "Passengers are advised that due to road construction on Le Loi Street, bus routes 12 and 15 will be diverted via Nguyen Trai Street from Monday. The diversion is expected to last approximately three weeks.",
             "display_order": 2
         },
@@ -3388,7 +3388,7 @@
             "part": 1,
             "part_title": "Part 1 · University Library",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_03_019db35d.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_03_019db35d.mp3",
             "transcript": "Dear students, the university library will extend its opening hours during the examination period. From next Monday, the library will be open from 7 AM to midnight, seven days a week.",
             "display_order": 3
         },
@@ -3398,7 +3398,7 @@
             "part": 1,
             "part_title": "Part 1 · Restaurant Promotion",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_04_019db35d.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_04_019db35d.mp3",
             "transcript": "Good evening, diners. This month, every table of four or more receives a complimentary dessert platter. Simply mention this offer when ordering. The promotion runs until the end of the month.",
             "display_order": 4
         },
@@ -3408,7 +3408,7 @@
             "part": 3,
             "part_title": "Part 3 · Urban Farming",
             "duration_minutes": 6,
-            "audio_url": "audio/listening/exam_p3_12_019db35a.mp3",
+            "audio_url": "/storage/audio/listening/exam_p3_12_019db35a.mp3",
             "transcript": "Welcome to today lecture on urban farming, a growing movement that is transforming how cities think about food production. Urban farming refers to the practice of growing food within city boundaries, using spaces such as rooftops, balconies, vacant lots, and even indoor vertical farms.\n\nThe movement has gained momentum for several reasons. First, it addresses food security concerns in densely populated cities. By producing food locally, cities can reduce their dependence on long supply chains that are vulnerable to disruption. During the COVID-19 pandemic, for example, many urban farms played a crucial role in supplying fresh produce when distribution networks were strained.\n\nSecond, urban farming has environmental benefits. It reduces the carbon footprint associated with transporting food over long distances. Green roofs and vertical gardens also help regulate building temperatures, reducing energy consumption for heating and cooling.\n\nThird, urban farms create community spaces. Community gardens bring residents together, provide educational opportunities for children, and can improve mental health by connecting people with nature.\n\nHowever, urban farming faces significant challenges. Land in cities is expensive and scarce. Water usage can be high. And the scale of production is generally too small to feed entire urban populations. Urban farming is best understood as a supplement to, rather than a replacement for, conventional agriculture.\n\nDespite these limitations, the future of urban farming looks promising. Advances in vertical farming technology, hydroponics, and LED lighting are making indoor food production increasingly efficient and cost-effective.",
             "display_order": 12
         },
@@ -3418,7 +3418,7 @@
             "part": 3,
             "part_title": "Part 3 · Climate Change Lecture",
             "duration_minutes": 6,
-            "audio_url": "audio/listening/exam_p3_11_019db189.mp3",
+            "audio_url": "/storage/audio/listening/exam_p3_11_019db189.mp3",
             "transcript": "Good morning, everyone. Today I want to discuss the effects of global warming on our planet. As you may know, the global average temperature has increased by approximately 1.1 degrees Celsius since the pre-industrial era. This may seem like a small number, but its effects are enormous. One of the most visible consequences is the melting of polar ice caps. The Arctic ice sheet has been shrinking at an alarming rate, losing about 13 percent per decade. This contributes to rising sea levels, which threaten coastal communities worldwide. Scientists warn that if we don't take urgent action to reduce greenhouse gas emissions, we could see a temperature increase of 3 degrees or more by the end of this century. The situation is urgent, and we must act now. Reducing carbon emissions through renewable energy, better transportation, and changes in consumption patterns are all essential steps.",
             "display_order": 11
         },
@@ -3428,7 +3428,7 @@
             "part": 3,
             "part_title": "Part 3 · History of the Internet",
             "duration_minutes": 6,
-            "audio_url": "audio/listening/exam_p3_12_019db189.mp3",
+            "audio_url": "/storage/audio/listening/exam_p3_12_019db189.mp3",
             "transcript": "Let's take a journey through the history of the internet. It all began in 1969 when the United States Department of Defense created ARPANET, a network designed for military communication during the Cold War. The original purpose was to create a communication system that could survive a nuclear attack. For the first two decades, the internet was mainly used by researchers and academics. The real transformation came in 1991 when Tim Berners-Lee invented the World Wide Web, making the internet accessible to ordinary people. Since then, the growth has been extraordinary. Today, there are approximately 5 billion internet users worldwide. However, this rapid growth has also raised serious concerns, particularly about privacy. Our personal data is constantly being collected, stored, and sometimes misused by companies and governments.",
             "display_order": 12
         },
@@ -3438,7 +3438,7 @@
             "part": 1,
             "part_title": "Part 1 · Store Promotion",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_02_019db189.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_02_019db189.mp3",
             "transcript": "Welcome to MegaMart! This weekend only, enjoy a special 20 percent discount on all electronics, including laptops, tablets, and smartphones. Visit our electronics department on the second floor. This offer is valid until Sunday at closing time. Don't miss out!",
             "display_order": 2
         },
@@ -3448,7 +3448,7 @@
             "part": 1,
             "part_title": "Part 1 · Weather Report",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_03_019db189.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_03_019db189.mp3",
             "transcript": "Good morning. Here is your weather update for the Ho Chi Minh City area. Today will be mostly sunny with temperatures reaching 34 degrees. However, tomorrow we expect heavy rain throughout the day with possible thunderstorms in the afternoon. Residents are advised to carry umbrellas.",
             "display_order": 3
         },
@@ -3458,7 +3458,7 @@
             "part": 1,
             "part_title": "Part 1 · Hospital Notice",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_05_019db189.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_05_019db189.mp3",
             "transcript": "Attention all visitors. For the safety of our patients, all visitors must register at the reception desk on the ground floor before entering the patient wards. Please have your identification ready. Visiting hours are from 9 AM to 11 AM and 2 PM to 4 PM daily.",
             "display_order": 5
         },
@@ -3468,7 +3468,7 @@
             "part": 1,
             "part_title": "Part 1 · Train Station Update",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_06_019db189.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_06_019db189.mp3",
             "transcript": "We regret to inform passengers that the 3:15 PM express train to Hanoi is currently delayed by approximately 45 minutes due to a technical issue with the signaling system. Engineers are working to resolve the problem. We will provide further updates shortly. Thank you for your patience.",
             "display_order": 6
         },
@@ -3478,7 +3478,7 @@
             "part": 1,
             "part_title": "Part 1 · Office Memo",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_07_019db189.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_07_019db189.mp3",
             "transcript": "Dear colleagues, starting from next Monday, the company will implement a new remote work policy. Employees may work from home up to three days per week, subject to manager approval. Please review the detailed guidelines on the company intranet and discuss your schedule with your team leader.",
             "display_order": 7
         },
@@ -3488,7 +3488,7 @@
             "part": 1,
             "part_title": "Part 1 · Flight Announcement",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_01_019db359.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_01_019db359.mp3",
             "transcript": "Ladies and gentlemen, this is a final boarding call for passengers on flight VN 318 to Ho Chi Minh City. Please proceed immediately to gate C12. The gate will close in ten minutes. Thank you.",
             "display_order": 1
         },
@@ -3498,7 +3498,7 @@
             "part": 1,
             "part_title": "Part 1 · Airport Announcement",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_00_019db189.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_00_019db189.mp3",
             "transcript": "Attention all passengers. Due to a last-minute change, Flight VN 205 to Da Nang will now depart from Gate B7 instead of Gate A3. Please proceed to Gate B7 immediately. Boarding will begin in fifteen minutes. Thank you for your understanding.",
             "display_order": 0
         },
@@ -3508,7 +3508,7 @@
             "part": 1,
             "part_title": "Part 1 · Cinema Announcement",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_00_019db35d.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_00_019db35d.mp3",
             "transcript": "Welcome to Galaxy Cinema. Tonight screening of The Last Journey begins at 7:30 PM in Hall 3. Please note that mobile phones must be switched off during the film. Refreshments are available at the lobby counter. Enjoy the show.",
             "display_order": 0
         },
@@ -3518,7 +3518,7 @@
             "part": 1,
             "part_title": "Part 1 · Museum Announcement",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_00_019db359.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_00_019db359.mp3",
             "transcript": "Attention visitors. The Egyptian exhibition on the third floor will close at 4 PM today for a private event. All other galleries remain open until 6 PM. Audio guides are available at the information desk on the ground floor.",
             "display_order": 0
         },
@@ -3528,7 +3528,7 @@
             "part": 1,
             "part_title": "Part 1 · School Notice",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_03_019db359.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_03_019db359.mp3",
             "transcript": "Good morning, students. Please be reminded that tomorrow is a public holiday and there will be no classes. School will resume on Wednesday. Students who have submitted assignments should check the online portal for feedback.",
             "display_order": 3
         },
@@ -3538,7 +3538,7 @@
             "part": 1,
             "part_title": "Part 1 · Airport Security",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_05_019db35d.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_05_019db35d.mp3",
             "transcript": "Attention all passengers. Please ensure all liquids in your carry-on baggage are in containers of 100 milliliters or less. Electronic devices must be removed from bags and placed in the tray separately.",
             "display_order": 5
         },
@@ -3548,7 +3548,7 @@
             "part": 2,
             "part_title": "Part 2 · Job Interview Discussion",
             "duration_minutes": 4,
-            "audio_url": "audio/listening/exam_p2_10_019db189.mp3",
+            "audio_url": "/storage/audio/listening/exam_p2_10_019db189.mp3",
             "transcript": "Interviewer: Thank you for coming in today. I've reviewed your resume. You're applying for the marketing assistant position, correct?\nCandidate: Yes, that's right. I'm very interested in the role.\nInterviewer: I can see you have about two years of experience in digital marketing. Can you tell me about your previous role?\nCandidate: I worked at a small agency where I managed social media accounts and helped create content for various clients.\nInterviewer: That's good experience. For this position, we really emphasize communication skills, as you'll be working directly with clients and presenting campaign ideas.\nCandidate: I understand. In my previous role, I regularly presented reports to clients, so I'm comfortable with that.\nInterviewer: Excellent. We have a few more candidates to interview. We'll announce the results next week by email.\nCandidate: Thank you. I look forward to hearing from you.",
             "display_order": 10
         },
@@ -3558,7 +3558,7 @@
             "part": 1,
             "part_title": "Part 1 · Supermarket Notice",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_02_019db359.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_02_019db359.mp3",
             "transcript": "Attention shoppers. Our bakery section is offering a special buy-two-get-one-free promotion on all bread products today only. This offer is available while stocks last. Thank you for shopping with us.",
             "display_order": 2
         },
@@ -3568,7 +3568,7 @@
             "part": 1,
             "part_title": "Part 1 · Weather Update",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_04_019db359.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_04_019db359.mp3",
             "transcript": "This is your morning weather update. Expect heavy rain and strong winds throughout the day in the northern provinces. Residents are advised to stay indoors if possible and avoid coastal areas. The storm is expected to pass by tomorrow morning.",
             "display_order": 4
         },
@@ -3578,7 +3578,7 @@
             "part": 1,
             "part_title": "Part 1 · School Announcement",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_04_019db189.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_04_019db189.mp3",
             "transcript": "Good morning, students. This is a reminder that the annual parent-teacher meeting will be held this Friday in the school auditorium from 2 PM to 5 PM. All students are required to inform their parents. Please collect the invitation letters from your homeroom teachers today.",
             "display_order": 4
         },
@@ -3588,7 +3588,7 @@
             "part": 1,
             "part_title": "Part 1 · Hospital Notice",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_06_019db359.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_06_019db359.mp3",
             "transcript": "Visiting hours at City General Hospital have been updated. Visitors are now permitted between 10 AM and 12 PM and between 3 PM and 5 PM daily. A maximum of two visitors per patient is allowed at any time. Please check in at reception upon arrival.",
             "display_order": 6
         },
@@ -3598,7 +3598,7 @@
             "part": 1,
             "part_title": "Part 1 · Company Announcement",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_06_019db35d.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_06_019db35d.mp3",
             "transcript": "Dear team, we are pleased to announce that our company has been awarded the National Excellence in Customer Service Award for the third consecutive year. A celebration lunch will be held this Friday at noon.",
             "display_order": 6
         },
@@ -3608,7 +3608,7 @@
             "part": 1,
             "part_title": "Part 1 · Train Announcement",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_07_019db359.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_07_019db359.mp3",
             "transcript": "The 2:45 PM service to Da Nang is now ready for boarding on platform 3. This train makes stops at Hue and Dong Ha. Passengers are reminded to keep their tickets ready for inspection. Doors will close in five minutes.",
             "display_order": 7
         },
@@ -3618,7 +3618,7 @@
             "part": 1,
             "part_title": "Part 1 · Health Clinic Notice",
             "duration_minutes": 1,
-            "audio_url": "audio/listening/exam_p1_07_019db35d.mp3",
+            "audio_url": "/storage/audio/listening/exam_p1_07_019db35d.mp3",
             "transcript": "The community health clinic will be offering free blood pressure and diabetes screenings this Saturday from 9 AM to 1 PM. No appointment is necessary. This service is available to all residents aged 40 and above.",
             "display_order": 7
         },
@@ -3628,7 +3628,7 @@
             "part": 2,
             "part_title": "Part 2 · Apartment Rental",
             "duration_minutes": 4,
-            "audio_url": "audio/listening/exam_p2_09_019db359.mp3",
+            "audio_url": "/storage/audio/listening/exam_p2_09_019db359.mp3",
             "transcript": "Agent: Hello, I understand you are looking for a two-bedroom apartment?\nTenant: Yes, ideally near the city center and within my budget of 8 million dong per month.\nAgent: I have a lovely apartment on Nguyen Hue Street. It is on the fifth floor with a great view. The rent is 7.5 million per month.\nTenant: That sounds good. Is it furnished?\nAgent: Yes, fully furnished with air conditioning in all rooms. Utilities are not included though.\nTenant: What about parking?\nAgent: There is one parking space included. Additional spaces cost 500,000 dong per month.\nTenant: When is it available?\nAgent: From the first of next month. You would need to pay two months deposit upfront.\nTenant: I would like to view it this weekend if possible.\nAgent: Of course. How about Saturday at 10 AM?",
             "display_order": 9
         },
@@ -3638,7 +3638,7 @@
             "part": 3,
             "part_title": "Part 3 · Nutrition and Health Talk",
             "duration_minutes": 6,
-            "audio_url": "audio/listening/exam_p3_13_019db189.mp3",
+            "audio_url": "/storage/audio/listening/exam_p3_13_019db189.mp3",
             "transcript": "Thank you for joining today's health seminar. I'd like to talk about the importance of maintaining a balanced diet. Many people underestimate how much their food choices affect their overall health. Nutritionists recommend eating at least five servings of fruits and vegetables every day. These provide essential vitamins, minerals, and fiber that our bodies need. Speaking of fiber, this is the nutrient I want to focus on today. Fiber helps with digestion, reduces cholesterol, and can even help prevent certain types of cancer. Unfortunately, many people rely too heavily on processed food. While it may be convenient, processed food should be avoided as much as possible because it's often high in sugar, salt, and unhealthy fats. My recommendation is simple: start keeping a food diary. Write down everything you eat for two weeks. You'll be surprised at the patterns you discover, and it will help you make better choices.",
             "display_order": 13
         },
@@ -3648,7 +3648,7 @@
             "part": 2,
             "part_title": "Part 2 · Workplace Conflict",
             "duration_minutes": 4,
-            "audio_url": "audio/listening/exam_p2_09_019db35e.mp3",
+            "audio_url": "/storage/audio/listening/exam_p2_09_019db35e.mp3",
             "transcript": "Manager: Come in, please sit down. I understand there has been some tension between you and your colleague recently.\nEmployee: Yes, I am sorry to bring this up, but I feel my contributions to the project are not being acknowledged.\nManager: Can you give me a specific example?\nEmployee: Last week, I developed the entire marketing strategy, but in the presentation to the board, only my colleague was credited.\nManager: I see. That does sound frustrating. Did you speak to your colleague about this?\nEmployee: I tried, but they said it was an oversight and it would not happen again.\nManager: I appreciate you bringing this to me. Going forward, I will ensure that all team contributions are properly documented and credited. I will also speak with your colleague.\nEmployee: Thank you. I just want to be recognized for my work.\nManager: That is completely reasonable. Let us schedule a team meeting next week to establish clearer guidelines for project attribution.",
             "display_order": 9
         },
@@ -3658,7 +3658,7 @@
             "part": 3,
             "part_title": "Part 3 · The Science of Happiness",
             "duration_minutes": 6,
-            "audio_url": "audio/listening/exam_p3_11_019db35e.mp3",
+            "audio_url": "/storage/audio/listening/exam_p3_11_019db35e.mp3",
             "transcript": "Good morning. Today I want to explore what psychological research tells us about happiness and well-being. For much of history, happiness was considered a philosophical concept. Today, it is a serious field of scientific inquiry.\n\nResearchers distinguish between two types of happiness. Hedonic happiness refers to the experience of pleasure and the absence of pain. Eudaimonic happiness refers to a deeper sense of meaning, purpose, and fulfillment. Studies suggest that eudaimonic happiness is more strongly associated with long-term well-being.\n\nOne of the most robust findings in happiness research is the importance of social connections. People with strong relationships consistently report higher levels of happiness than those who are socially isolated. The Harvard Study of Adult Development, which followed participants for over 80 years, found that the quality of relationships was the single strongest predictor of happiness and health in old age.\n\nMoney does have some relationship with happiness, but the effect is more limited than most people assume. Research suggests that happiness increases with income up to a point where basic needs and security are met, but beyond that, additional wealth has diminishing returns on well-being.\n\nGratitude practices have been shown to significantly boost happiness. People who regularly write down things they are grateful for report higher levels of positive emotion and life satisfaction. Exercise is another powerful happiness booster, with studies showing effects comparable to antidepressant medication for mild to moderate depression.\n\nThe good news is that happiness is not entirely determined by genetics or circumstances. Research suggests that approximately 40% of our happiness is within our control through intentional activities and mindset.",
             "display_order": 11
         },
@@ -3668,7 +3668,7 @@
             "part": 2,
             "part_title": "Part 2 · Travel Agency",
             "duration_minutes": 4,
-            "audio_url": "audio/listening/exam_p2_08_019db35e.mp3",
+            "audio_url": "/storage/audio/listening/exam_p2_08_019db35e.mp3",
             "transcript": "Agent: Good afternoon, Sun Travel Agency. How can I help you?\nCustomer: Hi, I am planning a trip to Japan for two weeks in April. Can you help me with a package?\nAgent: Absolutely. We have an excellent 14-day package that includes flights, hotels, and a guided tour of Tokyo, Kyoto, and Osaka.\nCustomer: That sounds great. What is the price?\nAgent: The standard package is 45 million dong per person, including all accommodation and breakfast daily.\nCustomer: Does it include the bullet train between cities?\nAgent: Yes, the Shinkansen pass is included. You would need to budget separately for lunches, dinners, and personal shopping.\nCustomer: What about travel insurance?\nAgent: We strongly recommend it. We can arrange comprehensive travel insurance for an additional 2 million dong.\nCustomer: I will need to discuss it with my partner first. Can I call back tomorrow?\nAgent: Of course. I will hold the current pricing until Friday.",
             "display_order": 8
         },
@@ -3678,7 +3678,7 @@
             "part": 2,
             "part_title": "Part 2 · Student & Professor",
             "duration_minutes": 4,
-            "audio_url": "audio/listening/exam_p2_08_019db189.mp3",
+            "audio_url": "/storage/audio/listening/exam_p2_08_019db189.mp3",
             "transcript": "Student: Excuse me, Professor Nguyen. Do you have a moment? I need to talk about my schedule.\nProfessor: Of course, come in. What seems to be the problem?\nStudent: Well, I just realized that my Biology lab and my English class are at the same time on Wednesdays. There's a schedule conflict.\nProfessor: I see. Have you checked if there are other sections available for either course?\nStudent: I looked, but the only other Biology section is already full.\nProfessor: In that case, I'd suggest you change to a different English section. There should be openings in the Tuesday-Thursday section.\nStudent: Oh, that would work! When is the deadline to make changes?\nProfessor: You have until next week to submit the change request through the online portal.\nStudent: Thank you so much, Professor. I'm really relieved. I was worried I'd have to drop one of the courses.\nProfessor: No problem. Just make sure you complete the change before the deadline.",
             "display_order": 8
         },
@@ -3688,7 +3688,7 @@
             "part": 2,
             "part_title": "Part 2 · Environmental Project",
             "duration_minutes": 4,
-            "audio_url": "audio/listening/exam_p2_10_019db35e.mp3",
+            "audio_url": "/storage/audio/listening/exam_p2_10_019db35e.mp3",
             "transcript": "Interviewer: Thank you for joining us today. Can you tell us about your community environmental project?\nActivist: Of course. We started the Green Neighborhood Initiative three years ago. Our main goal is to reduce plastic waste in our local area.\nInterviewer: What specific actions have you taken?\nActivist: We have organized monthly clean-up events, installed recycling stations in the neighborhood, and run educational workshops in local schools.\nInterviewer: What has been the biggest challenge?\nActivist: Getting people to change their habits. Many residents understand the problem intellectually but find it difficult to change their daily routines.\nInterviewer: Have you seen measurable results?\nActivist: Yes, we have reduced plastic waste in our area by approximately 40% over three years. We have also inspired three neighboring communities to start similar initiatives.\nInterviewer: What are your plans for the future?\nActivist: We want to expand our school program and work with local businesses to eliminate single-use plastics entirely.",
             "display_order": 10
         },
@@ -3698,7 +3698,7 @@
             "part": 2,
             "part_title": "Part 2 · University Enrollment",
             "duration_minutes": 4,
-            "audio_url": "audio/listening/exam_p2_10_019db359.mp3",
+            "audio_url": "/storage/audio/listening/exam_p2_10_019db359.mp3",
             "transcript": "Student: Excuse me, I need help with my course enrollment. I cannot access the online system.\nAdvisor: Let me check your account. What is your student ID?\nStudent: It is 20240156.\nAdvisor: I see the problem. Your account was temporarily suspended because your tuition fee payment has not been processed yet.\nStudent: But I paid last week by bank transfer.\nAdvisor: Do you have the transaction receipt?\nStudent: Yes, I have it on my phone.\nAdvisor: Perfect. I can process this manually and restore your access within 24 hours. You should also email a copy of the receipt to the finance department.\nStudent: Will I be able to enroll in all my courses?\nAdvisor: Yes, as long as you enroll before the deadline, which is this Friday at 5 PM.\nStudent: Thank you so much. I was worried I would miss the deadline.",
             "display_order": 10
         },
@@ -3708,7 +3708,7 @@
             "part": 3,
             "part_title": "Part 3 · The Benefits of Bilingualism",
             "duration_minutes": 6,
-            "audio_url": "audio/listening/exam_p3_11_019db35a.mp3",
+            "audio_url": "/storage/audio/listening/exam_p3_11_019db35a.mp3",
             "transcript": "Good afternoon, everyone. Today I want to discuss the cognitive and social benefits of being bilingual. Research over the past two decades has consistently shown that speaking two languages provides significant advantages beyond simple communication.\n\nFirst, bilingual individuals show enhanced executive function. This refers to the ability to focus attention, switch between tasks, and ignore irrelevant information. Because bilinguals constantly manage two language systems, their brains become more efficient at these cognitive control tasks.\n\nSecond, studies suggest that bilingualism may delay the onset of dementia by an average of four to five years. The mental exercise of managing two languages appears to build cognitive reserve, which helps the brain compensate for age-related decline.\n\nThird, bilingual children often demonstrate greater cultural awareness and empathy. Exposure to two languages means exposure to two cultures, which broadens perspective and improves social skills.\n\nHowever, it is important to note that bilingualism does not make children smarter in all areas. Academic performance depends on many factors including teaching quality, socioeconomic background, and individual motivation. The cognitive benefits are specific to executive function and certain memory tasks.\n\nIn conclusion, the evidence strongly supports encouraging bilingual education. The benefits extend beyond language skills to include cognitive health, cultural understanding, and social development.",
             "display_order": 11
         },
@@ -3718,7 +3718,7 @@
             "part": 3,
             "part_title": "Part 3 · Renewable Energy Transition",
             "duration_minutes": 6,
-            "audio_url": "audio/listening/exam_p3_12_019db35e.mp3",
+            "audio_url": "/storage/audio/listening/exam_p3_12_019db35e.mp3",
             "transcript": "Welcome to this lecture on the global transition to renewable energy. The shift away from fossil fuels toward clean energy sources is one of the defining challenges and opportunities of our time.\n\nThe case for renewable energy is compelling. Fossil fuels are finite resources that will eventually be exhausted. More urgently, burning them releases carbon dioxide and other greenhouse gases that are driving climate change. The scientific consensus is clear: to limit global warming to 1.5 degrees Celsius above pre-industrial levels, global carbon emissions must reach net zero by 2050.\n\nSolar and wind power have experienced dramatic cost reductions over the past decade. The cost of solar electricity has fallen by approximately 90% since 2010, making it now the cheapest source of electricity in history in many parts of the world. Wind power has seen similar cost reductions.\n\nHowever, the transition faces significant challenges. Renewable energy sources are intermittent: the sun does not always shine and the wind does not always blow. This requires investment in energy storage technologies, particularly batteries, and in grid infrastructure to balance supply and demand.\n\nThe transition also has social dimensions. Communities that depend on coal mining and fossil fuel industries face economic disruption. A just transition requires investment in retraining workers and developing alternative economic opportunities in affected regions.\n\nDespite these challenges, the momentum behind renewable energy is accelerating. Many countries have set ambitious targets for carbon neutrality. Investment in clean energy now exceeds investment in fossil fuels globally. The question is no longer whether the transition will happen, but how quickly and equitably it can be achieved.",
             "display_order": 12
         },
@@ -3728,7 +3728,7 @@
             "part": 3,
             "part_title": "Part 3 · The History of Money",
             "duration_minutes": 6,
-            "audio_url": "audio/listening/exam_p3_13_019db35a.mp3",
+            "audio_url": "/storage/audio/listening/exam_p3_13_019db35a.mp3",
             "transcript": "Today I want to take you through the fascinating history of money, from ancient barter systems to modern digital currencies. Understanding how money evolved helps us appreciate its role in society and economy.\n\nBefore money existed, people used barter, exchanging goods and services directly. While barter worked in small communities, it had a fundamental problem: the double coincidence of wants. You needed to find someone who had what you wanted and wanted what you had. This was inefficient and limited trade.\n\nThe solution was commodity money, where objects with intrinsic value, such as grain, cattle, or shells, were used as a medium of exchange. Around 600 BCE, the Lydians in modern-day Turkey are credited with minting the first metal coins. These coins had a standardized weight and were stamped with official marks to guarantee their value.\n\nPaper money originated in China during the Tang Dynasty around 700 CE. Merchants found it inconvenient to carry heavy coins, so they deposited them with trusted agents and received paper receipts. These receipts gradually became accepted as payment themselves.\n\nThe gold standard, adopted by many countries in the 19th century, tied the value of paper money to a fixed amount of gold. This provided stability but limited governments ability to respond to economic crises. Most countries abandoned the gold standard during the 20th century.\n\nToday, we use fiat money, which has value because governments declare it legal tender, not because it is backed by a physical commodity. The latest development is digital currency, including cryptocurrencies like Bitcoin, which operate without central bank control.",
             "display_order": 13
         },
@@ -3738,7 +3738,7 @@
             "part": 3,
             "part_title": "Part 3 · The Evolution of Language",
             "duration_minutes": 6,
-            "audio_url": "audio/listening/exam_p3_13_019db35e.mp3",
+            "audio_url": "/storage/audio/listening/exam_p3_13_019db35e.mp3",
             "transcript": "Today I want to discuss one of the most fascinating questions in linguistics: how did human language evolve? Language is uniquely human. While other animals communicate, no other species has developed a system of communication with the complexity, flexibility, and expressive power of human language.\n\nThe origins of language are difficult to study because language leaves no direct fossil record. Researchers must rely on indirect evidence, including the anatomy of ancient human skulls, the development of symbolic behavior in the archaeological record, and comparisons with other primates.\n\nOne influential theory is that language evolved gradually from earlier forms of communication. Our ancestors may have begun with simple calls and gestures, gradually developing more complex vocalizations. The development of the hyoid bone, which supports the tongue and enables complex speech sounds, is an important anatomical marker. Modern-shaped hyoid bones have been found in Neanderthal fossils, suggesting they may have had some capacity for speech.\n\nAnother theory proposes that language emerged relatively suddenly as a result of a genetic mutation that rewired the brain for symbolic thinking. This view is supported by the apparent explosion of symbolic behavior in the archaeological record around 50,000 years ago, including cave paintings, jewelry, and complex tools.\n\nLanguage is not just a communication tool. It shapes how we think. The Sapir-Whorf hypothesis proposes that the language we speak influences our perception of reality. While the strong version of this hypothesis has been largely rejected, research does show that language affects certain aspects of cognition, including color perception and spatial reasoning.\n\nUnderstanding language evolution helps us understand what makes us human. Language enables culture, cooperation, and the accumulation of knowledge across generations.",
             "display_order": 13
         }
@@ -5821,13 +5821,13 @@
         {
             "id": "019da080-543c-70e4-b0f3-a4b842bfda8c",
             "slug": "directions-post-office",
-            "title": "Hỏi đường đến bưu điện",
-            "description": "Một người lạ hỏi đường.",
+            "title": "Asking for Directions",
+            "description": "A short conversation about directions to the post office.",
             "part": 1,
-            "audio_url": "audio/listening/practice_directions-post-office_019da080.mp3",
-            "transcript": "Excuse me, could you tell me how to get to the post office?\nSure. Go straight ahead for two blocks, then turn left at the traffic lights.\nIs it far from here?\nNo, it's about a five-minute walk.",
-            "vietnamese_transcript": "Xin lỗi, bạn có thể chỉ đường đến bưu điện không?",
-            "word_timestamps": "[{\"word\": \"Excuse\", \"offset\": 0.105541, \"duration\": 0.597208}, {\"word\": \"me\", \"offset\": 0.716666, \"duration\": 0.236125}, {\"word\": \"could\", \"offset\": 1.175, \"duration\": 0.166666}, {\"word\": \"you\", \"offset\": 1.355541, \"duration\": 0.111125}, {\"word\": \"tell\", \"offset\": 1.480541, \"duration\": 0.208333}, {\"word\": \"me\", \"offset\": 1.716666, \"duration\": 0.125}, {\"word\": \"how\", \"offset\": 1.869458, \"duration\": 0.125}, {\"word\": \"to\", \"offset\": 2.008333, \"duration\": 0.111125}, {\"word\": \"get\", \"offset\": 2.133333, \"duration\": 0.180541}, {\"word\": \"to\", \"offset\": 2.327791, \"duration\": 0.097208}, {\"word\": \"the\", \"offset\": 2.438875, \"duration\": 0.138875}, {\"word\": \"post\", \"offset\": 2.591666, \"duration\": 0.361125}, {\"word\": \"office\", \"offset\": 2.980541, \"duration\": 0.527791}, {\"word\": \"Sure\", \"offset\": 4.486125, \"duration\": 0.652791}, {\"word\": \"Go\", \"offset\": 6.083333, \"duration\": 0.194458}, {\"word\": \"straight\", \"offset\": 6.291666, \"duration\": 0.361125}, {\"word\": \"ahead\", \"offset\": 6.666666, \"duration\": 0.263875}, {\"word\": \"for\", \"offset\": 6.958333, \"duration\": 0.166666}, {\"word\": \"two\", \"offset\": 7.152791, \"duration\": 0.194458}, {\"word\": \"blocks\", \"offset\": 7.361125, \"duration\": 0.458333}, {\"word\": \"then\", \"offset\": 8.041666, \"duration\": 0.208333}, {\"word\": \"turn\", \"offset\": 8.277791, \"duration\": 0.236125}, {\"word\": \"left\", \"offset\": 8.541666, \"duration\": 0.347208}, {\"word\": \"at\", \"offset\": 8.916666, \"duration\": 0.083333}, {\"word\": \"the\", \"offset\": 9.013875, \"duration\": 0.097208}, {\"word\": \"traffic\", \"offset\": 9.125, \"duration\": 0.416666}, {\"word\": \"lights\", \"offset\": 9.569458, \"duration\": 0.430541}, {\"word\": \"Is\", \"offset\": 10.958333, \"duration\": 0.208333}, {\"word\": \"it\", \"offset\": 11.194458, \"duration\": 0.125}, {\"word\": \"far\", \"offset\": 11.347208, \"duration\": 0.333333}, {\"word\": \"from\", \"offset\": 11.694458, \"duration\": 0.194458}, {\"word\": \"here\", \"offset\": 11.916666, \"duration\": 0.388875}, {\"word\": \"No\", \"offset\": 13.291666, \"duration\": 0.402791}, {\"word\": \"it's\", \"offset\": 13.930541, \"duration\": 0.166666}, {\"word\": \"about\", \"offset\": 14.111125, \"duration\": 0.277791}, {\"word\": \"a\", \"offset\": 14.416666, \"duration\": 0.069458}, {\"word\": \"five-minute\", \"offset\": 14.513875, \"duration\": 0.652791}, {\"word\": \"walk\", \"offset\": 15.180541, \"duration\": 0.458333}]",
+            "audio_url": null,
+            "transcript": "Woman: Excuse me, could you tell me how to get to the post office?\nMan: Sure. Go straight ahead for two blocks, then turn left at the traffic lights.\nWoman: Is it far from here?\nMan: No, it's about a five-minute walk.",
+            "vietnamese_transcript": "Hỏi đường đến bưu điện.",
+            "word_timestamps": null,
             "keywords": "[\"directions\",\"post office\",\"traffic lights\"]",
             "estimated_minutes": 5,
             "is_published": true,
@@ -5838,7 +5838,7 @@
             "id": "019db448-0478-7180-a3de-4c8173882744",
             "slug": "weather-forecast",
             "title": "Weather Forecast",
-            "description": null,
+            "description": "Listen to a short weather report and answer questions.",
             "part": 1,
             "audio_url": null,
             "transcript": "Good morning. Here is your weather update. Today will be mostly cloudy with temperatures around 28 degrees. There is a 60 percent chance of rain this afternoon, so please carry an umbrella. Tomorrow will be sunny and warmer, with highs of 32 degrees.",
@@ -5854,7 +5854,7 @@
             "id": "019db448-0483-711f-9475-b0beff2b2a74",
             "slug": "hotel-check-in",
             "title": "Hotel Check-in",
-            "description": null,
+            "description": "A guest checks into a hotel and asks about services.",
             "part": 1,
             "audio_url": null,
             "transcript": "Receptionist: Good evening, welcome to the Grand Hotel. Do you have a reservation?\nGuest: Yes, under the name Johnson. I booked a double room for three nights.\nReceptionist: Let me check. Yes, I have your reservation. Room 405 on the fourth floor. Breakfast is served from 7 to 10 AM in the restaurant on the ground floor.\nGuest: Thank you. Is there Wi-Fi in the room?\nReceptionist: Yes, the password is on the card in your room. Enjoy your stay.",
@@ -5870,7 +5870,7 @@
             "id": "019db448-0487-7011-bb6a-b214ea1c7dc3",
             "slug": "train-announcement",
             "title": "Train Station Announcement",
-            "description": null,
+            "description": "Listen to a train station announcement about schedule changes.",
             "part": 1,
             "audio_url": null,
             "transcript": "Attention passengers. The 9:15 express train to Da Nang has been delayed by approximately 20 minutes due to signal problems. The train will now depart at 9:35 from platform 2. We apologize for the inconvenience. Passengers traveling to Hue should take the 9:30 local service from platform 5.",
@@ -5886,7 +5886,7 @@
             "id": "019db448-0489-7265-84c4-cc5a479a43a6",
             "slug": "job-interview",
             "title": "Job Interview Conversation",
-            "description": null,
+            "description": "A candidate discusses experience and career goals with an interviewer.",
             "part": 2,
             "audio_url": null,
             "transcript": "Interviewer: So, tell me about your experience in marketing.\nCandidate: I have worked in digital marketing for three years at a small agency. I managed social media campaigns and created content for various clients.\nInterviewer: What do you consider your greatest strength?\nCandidate: I think my ability to analyze data and turn it into actionable strategies is my strongest skill.\nInterviewer: And why are you interested in this position?\nCandidate: I want to work for a larger company where I can take on more responsibility and lead a team.\nInterviewer: We will let you know our decision by next Friday.",
@@ -5902,7 +5902,7 @@
             "id": "019db448-048d-7125-b58a-b2b617f294c0",
             "slug": "university-lecture-climate",
             "title": "Climate and Agriculture Lecture",
-            "description": null,
+            "description": "A university lecture about how climate change affects farming worldwide.",
             "part": 3,
             "audio_url": null,
             "transcript": "Today we will examine how climate change affects agriculture worldwide. Rising temperatures are causing shifts in growing seasons. In tropical regions, increased heat stress reduces crop yields for staple foods like rice and wheat. Meanwhile, some northern regions are experiencing longer growing seasons, which could temporarily benefit certain crops.\n\nWater availability is another critical factor. Changes in rainfall patterns mean some areas face more frequent droughts while others experience flooding. Both extremes damage crops and reduce food production.\n\nFarmers are adapting through various strategies. Some are switching to drought-resistant crop varieties. Others are adopting precision irrigation systems that use water more efficiently. However, these adaptations require investment that many smallholder farmers cannot afford.\n\nGovernments and international organizations must support farmers through funding, research, and technology transfer to ensure global food security in a changing climate.",

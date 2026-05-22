@@ -1,5 +1,6 @@
 import { HTTPError } from "ky"
 import { create } from "zustand"
+import { useWelcomeGift } from "#/features/onboarding/use-welcome-gift"
 import { type ApiResponse, api } from "#/lib/api"
 import { queryClient } from "#/lib/query-client"
 import { useToast } from "#/lib/toast"
@@ -15,11 +16,17 @@ function showError(error: unknown) {
 	}
 }
 
+interface OnboardingBonus {
+	amount: number
+	granted: boolean
+}
+
 interface AuthResponse {
 	access_token: string
 	refresh_token: string
 	user: User
 	profile: Profile
+	onboarding_bonus?: OnboardingBonus
 }
 
 interface GoogleLoginResponse {
@@ -35,6 +42,7 @@ interface CompleteOnboardingResponse {
 	access_token: string
 	expires_in: number
 	profile: Profile
+	onboarding_bonus?: OnboardingBonus
 }
 
 interface RefreshResponse {
@@ -54,23 +62,36 @@ type AuthState =
 	| { status: "authenticated"; user: User; profile: Profile }
 	| { status: "unauthenticated" }
 
+/**
+ * Trang user FE chỉ phục vụ vai trò "learner". Admin/teacher/staff đăng nhập
+ * bằng tài khoản của họ ở trang admin riêng — vào đây sẽ vỡ vì không có
+ * profile/onboarding. Reject ngay sau login + show mascot lạc buồn (xem
+ * RoleRejectedDialog mount ở __root.tsx).
+ */
+const LEARNER_ROLE = "learner"
+
 export interface GoogleLoginResult {
 	needsOnboarding: boolean
 	suggestedNickname: string | null
 }
 
 type AuthActions = {
+	roleRejected: { role: string; email: string } | null
+	dismissRoleRejected: () => void
 	login: (email: string, password: string) => Promise<void>
+	checkEmail: (email: string) => Promise<{ ok: true } | { ok: false; message: string }>
 	register: (data: {
 		email: string
 		password: string
 		nickname: string
+		entry_level: string
 		target_level: string
 		target_deadline: string
 	}) => Promise<void>
 	loginWithGoogle: (idToken: string) => Promise<GoogleLoginResult | null>
 	completeOnboarding: (data: {
 		nickname: string
+		entry_level: string
 		target_level: string
 		target_deadline: string
 	}) => Promise<void>
@@ -84,23 +105,47 @@ type AuthStore = AuthState & AuthActions
 
 export const useAuth = create<AuthStore>()((set, get) => ({
 	status: "idle",
+	roleRejected: null,
 
 	_setAuthenticated: (user, profile) => set({ status: "authenticated", user, profile }),
 	_setUnauthenticated: () => set({ status: "unauthenticated" }),
+
+	dismissRoleRejected: () => set({ roleRejected: null }),
 
 	async login(email, password) {
 		try {
 			const { data } = await api
 				.post("auth/login", { json: { email, password } })
 				.json<ApiResponse<AuthResponse>>()
+			if (data.user.role !== LEARNER_ROLE) {
+				// Clear hết token + cache để khỏi rò qua reload, KHÔNG set authenticated.
+				tokens.clear()
+				queryClient.clear()
+				set({ status: "unauthenticated", roleRejected: { role: data.user.role, email: data.user.email } })
+				return
+			}
 			tokens.setAccess(data.access_token)
 			tokens.setRefresh(data.refresh_token)
 			tokens.setUser(data.user)
 			queryClient.clear()
-			set({ status: "authenticated", user: data.user, profile: data.profile })
+			set({ status: "authenticated", user: data.user, profile: data.profile, roleRejected: null })
 			useToast.getState().add("Đăng nhập thành công", "success")
 		} catch (e) {
 			showError(e)
+		}
+	},
+
+	async checkEmail(email) {
+		try {
+			await api.post("auth/email/check", { json: { email } }).json<ApiResponse<{ available: boolean }>>()
+			return { ok: true }
+		} catch (e) {
+			if (e instanceof HTTPError) {
+				const body = e.data as { errors?: { email?: string[] }; message?: string } | undefined
+				const message = body?.errors?.email?.[0] ?? body?.message ?? "Email không hợp lệ."
+				return { ok: false, message }
+			}
+			return { ok: false, message: "Không kiểm tra được email. Hãy thử lại." }
 		}
 	},
 
@@ -112,7 +157,11 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 			tokens.setUser(data.user)
 			queryClient.clear()
 			set({ status: "authenticated", user: data.user, profile: data.profile })
-			useToast.getState().add("Tạo tài khoản thành công", "success")
+			if (data.onboarding_bonus?.granted) {
+				useWelcomeGift.getState().show(data.onboarding_bonus.amount)
+			} else {
+				useToast.getState().add("Tạo tài khoản thành công", "success")
+			}
 		} catch (e) {
 			showError(e)
 		}
@@ -123,6 +172,12 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 			const { data } = await api
 				.post("auth/google", { json: { id_token: idToken } })
 				.json<ApiResponse<GoogleLoginResponse>>()
+			if (data.user.role !== LEARNER_ROLE) {
+				tokens.clear()
+				queryClient.clear()
+				set({ status: "unauthenticated", roleRejected: { role: data.user.role, email: data.user.email } })
+				return null
+			}
 			tokens.setAccess(data.access_token)
 			tokens.setRefresh(data.refresh_token)
 			tokens.setUser(data.user)
@@ -153,7 +208,11 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 			const user = tokens.getUser()
 			if (user) {
 				set({ status: "authenticated", user, profile: data.profile })
-				useToast.getState().add("Hoàn tất thiết lập", "success")
+				if (data.onboarding_bonus?.granted) {
+					useWelcomeGift.getState().show(data.onboarding_bonus.amount)
+				} else {
+					useToast.getState().add("Hoàn tất thiết lập", "success")
+				}
 			}
 		} catch (e) {
 			showError(e)
@@ -208,6 +267,15 @@ export async function initAuth() {
 		tokens.setRefresh(data.refresh_token)
 		const user = tokens.getUser()
 		const profile = data.profile
+		if (user && user.role !== LEARNER_ROLE) {
+			// Guard: token cũ của admin/teacher → reset session.
+			tokens.clear()
+			useAuth.setState({
+				status: "unauthenticated",
+				roleRejected: { role: user.role, email: user.email },
+			})
+			return
+		}
 		if (user && profile) {
 			useAuth.getState()._setAuthenticated(user, profile)
 		} else {

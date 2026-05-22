@@ -26,7 +26,7 @@ export function ResultSummaryCard({ correct, total }: Props) {
   const rating = ratingLabel(pct);
 
   return (
-    <View style={[styles.card, { backgroundColor: c.muted }]}>
+    <View style={[styles.card, { backgroundColor: c.background }]}>
       <View style={styles.circleWrap}>
         <Svg width={SIZE} height={SIZE}>
           <Circle cx={SIZE / 2} cy={SIZE / 2} r={R} stroke={c.border} strokeWidth={STROKE} fill="none" />

@@ -38,6 +38,8 @@ export interface Profile {
   entryLevel: string | null;
   avatarColor: string | null;
   isInitialProfile: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AuthResponse {
@@ -73,6 +75,69 @@ export interface ExamSession {
   startedAt: string;
   submittedAt: string | null;
   answers: Record<string, string>;
+}
+
+export interface ExamVersionListeningSection {
+  id: string;
+  part: number;
+  partTitle: string;
+  durationMinutes: number;
+  audioUrl: string;
+  transcript: string | null;
+  displayOrder: number;
+  items: ExamVersionMcqItem[];
+}
+
+export interface ExamVersionMcqItem {
+  id: string;
+  displayOrder: number;
+  stem: string;
+  options: [string, string, string, string];
+  correctIndex: number;
+}
+
+export interface ExamVersionReadingPassage {
+  id: string;
+  part: number;
+  title: string;
+  durationMinutes: number;
+  passage: string;
+  displayOrder: number;
+  items: ExamVersionMcqItem[];
+}
+
+export interface ExamVersionWritingTask {
+  id: string;
+  part: number;
+  taskType: string;
+  durationMinutes: number;
+  prompt: string;
+  minWords: number;
+  displayOrder: number;
+}
+
+export interface ExamVersionSpeakingPart {
+  id: string;
+  part: number;
+  type: string;
+  durationMinutes: number;
+  displayOrder: number;
+}
+
+export interface ExamVersion {
+  id: string;
+  versionNumber: number;
+  isActive: boolean;
+  publishedAt: string;
+  listeningSections: ExamVersionListeningSection[];
+  readingPassages: ExamVersionReadingPassage[];
+  writingTasks: ExamVersionWritingTask[];
+  speakingParts: ExamVersionSpeakingPart[];
+}
+
+export interface ExamDetail {
+  exam: Exam;
+  version: ExamVersion;
 }
 
 // ============================================================
@@ -157,6 +222,21 @@ export interface StreakData {
   todaySessions: number;
   dailyGoal: number;
   lastActiveDate: string | null;
+}
+
+// ============================================================
+// Exam Sessions
+// ============================================================
+
+export interface ExamSessionResult {
+  id: string;
+  examVersionId: string;
+  mode: string;
+  isFullTest: boolean;
+  status: string;
+  startedAt: string;
+  submittedAt: string | null;
+  scores: Record<Skill, number | null> | null;
 }
 
 // ============================================================

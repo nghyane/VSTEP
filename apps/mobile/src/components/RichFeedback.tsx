@@ -136,10 +136,10 @@ export function RichFeedback({ feedback, scrollToAnswer }: Props) {
 
         if (block.type === "correction") {
           return (
-            <HapticTouchable key={i} style={[styles.correctionCard, { backgroundColor: c.muted }]} onPress={scrollToAnswer} activeOpacity={0.7}>
+            <HapticTouchable key={i} style={[styles.correctionCard, { backgroundColor: c.background }]} onPress={scrollToAnswer} activeOpacity={0.7}>
               <Text style={styles.strikeText}>{block.original}</Text>
               <View style={styles.arrowRow}>
-                <Ionicons name="arrow-forward" size={14} color={c.mutedForeground} />
+                <Ionicons name="arrow-forward" size={14} color={c.subtle} />
                 <Text style={styles.fixText}>{block.fix}</Text>
               </View>
             </HapticTouchable>

@@ -7,6 +7,19 @@ export interface CourseScheduleItem {
 	topic: string
 }
 
+export interface CourseTeacher {
+	id: string
+	full_name: string
+	title?: string | null
+	bio?: string | null
+}
+
+export const COURSE_LEVEL_LABELS: Record<string, string> = {
+	B1: "B1 · Trung cấp",
+	B2: "B2 · Trên trung cấp",
+	C1: "C1 · Cao cấp",
+}
+
 export interface Course {
 	id: string
 	slug: string
@@ -14,6 +27,7 @@ export interface Course {
 	target_level: string
 	target_exam_school: string | null
 	description: string | null
+	rules: string | null
 	price_vnd: number
 	original_price_vnd: number | null
 	bonus_coins: number
@@ -23,6 +37,9 @@ export interface Course {
 	required_full_tests: number
 	commitment_window_days: number
 	livestream_url: string | null
+	teacher: CourseTeacher | null
+	sold_slots?: number
+	schedule_items_count?: number
 }
 
 export interface CourseWithRelations extends Course {
@@ -36,18 +53,20 @@ export interface CourseDetail {
 }
 
 export interface CommitmentStatus {
-	phase: "not_enrolled" | "pending" | "met"
+	phase: "not_enrolled" | "pending" | "met" | "violated"
 	completed: number
 	required: number
+	window_start_at: string | null
+	deadline_at: string | null
+}
+
+export interface EnrollmentDetail {
+	next_session: CourseScheduleItem | null
+	commitment: CommitmentStatus
 }
 
 export interface CourseListResponse {
 	data: Course[]
 	enrolled_course_ids: string[]
-}
-
-export interface EnrollResult {
-	enrollment_id: string
-	coins_paid: number
-	bonus_received: number
+	enrollments: Record<string, EnrollmentDetail>
 }

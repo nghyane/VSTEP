@@ -1,5 +1,5 @@
+import { Button as AntdButton, type ButtonProps as AntdButtonProps } from "antd"
 import type { ButtonHTMLAttributes, ReactNode } from "react"
-import { cn } from "#/lib/utils"
 
 type Variant = "primary" | "secondary" | "ghost" | "danger"
 type Size = "sm" | "md" | "lg"
@@ -11,21 +11,17 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 	icon?: ReactNode
 }
 
-const base =
-	"inline-flex items-center justify-center gap-2 font-medium rounded-(--radius-button) " +
-	"transition-colors disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-2 focus-visible:outline-offset-2"
-
-const variants: Record<Variant, string> = {
-	primary: "bg-primary text-primary-foreground hover:bg-primary-hover",
-	secondary: "bg-surface text-foreground border border-border hover:bg-surface-muted",
-	ghost: "bg-transparent text-foreground hover:bg-surface-muted",
-	danger: "bg-danger text-white hover:opacity-90",
+const typeMap: Record<Variant, AntdButtonProps["type"]> = {
+	primary: "primary",
+	secondary: "default",
+	ghost: "text",
+	danger: "primary",
 }
 
-const sizes: Record<Size, string> = {
-	sm: "h-8 px-3 text-xs",
-	md: "h-9 px-4 text-sm",
-	lg: "h-11 px-6 text-sm",
+const sizeMap: Record<Size, AntdButtonProps["size"]> = {
+	sm: "small",
+	md: "middle",
+	lg: "large",
 }
 
 export function Button({
@@ -36,21 +32,22 @@ export function Button({
 	className,
 	children,
 	disabled,
-	...rest
+	onClick,
+	type,
 }: Props) {
 	return (
-		<button
-			type="button"
-			className={cn(base, variants[variant], sizes[size], className)}
-			disabled={disabled || loading}
-			{...rest}
+		<AntdButton
+			type={typeMap[variant]}
+			danger={variant === "danger"}
+			size={sizeMap[size]}
+			loading={loading}
+			icon={icon}
+			disabled={disabled}
+			className={className}
+			onClick={onClick as AntdButtonProps["onClick"]}
+			htmlType={type ?? "button"}
 		>
-			{loading ? (
-				<span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-			) : (
-				icon
-			)}
 			{children}
-		</button>
+		</AntdButton>
 	)
 }

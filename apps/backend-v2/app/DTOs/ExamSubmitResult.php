@@ -14,7 +14,7 @@ final readonly class ExamSubmitResult
 {
     /**
      * @param  int  $mcqScore  Số câu MCQ đúng
-     * @param  int  $mcqTotal  Tổng số câu MCQ đã trả lời
+     * @param  int  $mcqTotal  Tổng số câu MCQ thuộc các kỹ năng đã chọn (câu không trả lời tính là sai)
      * @param  list<array{item_ref_type:string,item_ref_id:string,selected_index:int,correct_index:int,is_correct:bool}>  $mcqPerItemResults
      * @param  list<array{submission_id:string,job_id:string,status:string}>  $writingJobs
      * @param  list<array{submission_id:string,job_id:string,status:string}>  $speakingJobs

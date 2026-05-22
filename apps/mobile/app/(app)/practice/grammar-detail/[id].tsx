@@ -163,7 +163,7 @@ export default function GrammarDetailScreen() {
     <View style={[styles.root, { backgroundColor: c.background }]}>
       <ScreenHeader title={point.name} />
       <ScrollView contentContainerStyle={styles.scroll} key={tab}>
-        <Text style={[styles.vnName, { color: c.mutedForeground }]}>{point.vietnameseName}</Text>
+        <Text style={[styles.vnName, { color: c.subtle }]}>{point.vietnameseName}</Text>
         <Text style={[styles.summary, { color: c.foreground }]}>{point.summary}</Text>
         <SegmentedTabs
           tabs={[{ key: "theory", label: "Lý thuyết" }, { key: "practice", label: "Luyện tập" }, { key: "tips", label: "Mẹo thi" }]}
@@ -190,7 +190,7 @@ function TheoryTab({ data }: { data: PointData }) {
       </Section>
       <Section title="Cấu trúc">
         {data.structures.map((s, i) => (
-          <View key={i} style={[styles.structureBox, { backgroundColor: c.muted }]}>
+          <View key={i} style={[styles.structureBox, { backgroundColor: c.background }]}>
             <Text style={[styles.structureText, { color: c.foreground }]}>{s}</Text>
           </View>
         ))}
@@ -199,7 +199,7 @@ function TheoryTab({ data }: { data: PointData }) {
         {data.examples.map((ex, i) => (
           <View key={i} style={[styles.exampleCard, { borderColor: c.border }]}>
             <Text style={[styles.exEn, { color: c.foreground }]}>{ex.en}</Text>
-            <Text style={[styles.exVi, { color: c.mutedForeground }]}>{ex.vi}</Text>
+            <Text style={[styles.exVi, { color: c.subtle }]}>{ex.vi}</Text>
             {ex.note && <Text style={[styles.exNote, { color: c.primary }]}>💡 {ex.note}</Text>}
           </View>
         ))}
@@ -246,7 +246,7 @@ function PracticeTab({ exercises }: { exercises: Exercise[] }) {
       <View style={styles.doneWrap}>
         <Ionicons name="trophy" size={48} color={c.warning} />
         <Text style={[styles.doneTitle, { color: c.foreground }]}>Hoàn thành!</Text>
-        <Text style={[styles.doneScore, { color: c.mutedForeground }]}>Đúng: {correct}/{exercises.length}</Text>
+        <Text style={[styles.doneScore, { color: c.subtle }]}>Đúng: {correct}/{exercises.length}</Text>
         <HapticTouchable style={[styles.actionBtn, { backgroundColor: c.primary }]} onPress={() => { setIndex(0); setCorrect(0); }}>
           <Text style={styles.actionBtnText}>Làm lại</Text>
         </HapticTouchable>
@@ -263,14 +263,14 @@ function PracticeTab({ exercises }: { exercises: Exercise[] }) {
   return (
     <View style={styles.tabContent}>
       <View style={styles.practiceHeader}>
-        <Text style={[styles.counter, { color: c.mutedForeground }]}>Câu {index + 1} / {exercises.length}</Text>
+        <Text style={[styles.counter, { color: c.subtle }]}>Câu {index + 1} / {exercises.length}</Text>
         <Text style={[styles.counter, { color: c.foreground }]}>Đúng: {correct}</Text>
       </View>
-      <View style={[styles.progressTrack, { backgroundColor: c.muted }]}>
+      <View style={[styles.progressTrack, { backgroundColor: c.background }]}>
         <View style={[styles.progressFill, { backgroundColor: c.primary, width: `${(index / exercises.length) * 100}%` }]} />
       </View>
 
-      <View style={[styles.exerciseCard, { backgroundColor: c.card, borderColor: c.border }]}>
+      <View style={[styles.exerciseCard, { backgroundColor: c.surface, borderColor: c.border }]}>
         <View style={styles.kindRow}>
           <Text style={[styles.kindBadge, { color: ex.kind === "mcq" ? c.primary : c.warning, backgroundColor: (ex.kind === "mcq" ? c.primary : c.warning) + "15" }]}>
             {ex.kind === "mcq" ? "Trắc nghiệm" : "Điền từ"}
@@ -285,7 +285,7 @@ function PracticeTab({ exercises }: { exercises: Exercise[] }) {
           return (
             <HapticTouchable key={opt} style={[styles.optionBtn, { borderColor: showOk ? c.success : showBad ? c.destructive : isSel ? c.primary : c.border }]} onPress={() => !submitted && setSelected(i)} disabled={submitted}>
               <View style={[styles.optLetter, { backgroundColor: showOk ? c.success : showBad ? c.destructive : isSel ? c.primary : c.muted }]}>
-                <Text style={{ color: (isSel || showOk || showBad) ? "#fff" : c.mutedForeground, fontSize: 12, fontFamily: fontFamily.bold }}>{String.fromCharCode(65 + i)}</Text>
+                <Text style={{ color: (isSel || showOk || showBad) ? "#fff" : c.subtle, fontSize: 12, fontFamily: fontFamily.bold }}>{String.fromCharCode(65 + i)}</Text>
               </View>
               <Text style={[styles.optText, { color: c.foreground }]}>{opt}</Text>
             </HapticTouchable>
@@ -293,14 +293,14 @@ function PracticeTab({ exercises }: { exercises: Exercise[] }) {
         })}
 
         {ex.kind === "fill-blank" && (
-          <TextInput style={[styles.fillInput, { borderColor: submitted ? (isCorrectFill ? c.success : c.destructive) : c.border, color: c.foreground }]} placeholder="Nhập đáp án..." placeholderTextColor={c.mutedForeground} value={fillAnswer} onChangeText={setFillAnswer} editable={!submitted} autoCapitalize="none" />
+          <TextInput style={[styles.fillInput, { borderColor: submitted ? (isCorrectFill ? c.success : c.destructive) : c.border, color: c.foreground }]} placeholder="Nhập đáp án..." placeholderTextColor={c.subtle} value={fillAnswer} onChangeText={setFillAnswer} editable={!submitted} autoCapitalize="none" />
         )}
 
         {ex.kind === "error-correction" && (
           <View style={{ gap: spacing.md }}>
             <View style={styles.kindRow}><Text style={[styles.kindBadge, { color: c.destructive, backgroundColor: c.destructive + "15" }]}>Sửa lỗi</Text></View>
             <Text style={[styles.prompt, { color: c.foreground }]}>{ex.sentence}</Text>
-            <TextInput style={[styles.fillInput, { borderColor: submitted ? (isCorrectFill ? c.success : c.destructive) : c.border, color: c.foreground }]} placeholder="Viết lại câu đúng..." placeholderTextColor={c.mutedForeground} value={fillAnswer} onChangeText={setFillAnswer} editable={!submitted} autoCapitalize="none" />
+            <TextInput style={[styles.fillInput, { borderColor: submitted ? (isCorrectFill ? c.success : c.destructive) : c.border, color: c.foreground }]} placeholder="Viết lại câu đúng..." placeholderTextColor={c.subtle} value={fillAnswer} onChangeText={setFillAnswer} editable={!submitted} autoCapitalize="none" />
             {submitted && !isCorrectFill && <Text style={{ color: c.success, fontSize: fontSize.sm }}>Đáp án: {ex.correction}</Text>}
           </View>
         )}
@@ -308,9 +308,9 @@ function PracticeTab({ exercises }: { exercises: Exercise[] }) {
         {ex.kind === "rewrite" && (
           <View style={{ gap: spacing.md }}>
             <View style={styles.kindRow}><Text style={[styles.kindBadge, { color: c.skillWriting, backgroundColor: c.skillWriting + "15" }]}>Viết lại câu</Text></View>
-            <Text style={[styles.prompt, { color: c.mutedForeground }]}>{ex.instruction}</Text>
+            <Text style={[styles.prompt, { color: c.subtle }]}>{ex.instruction}</Text>
             <Text style={[styles.prompt, { color: c.foreground }]}>{ex.original}</Text>
-            <TextInput style={[styles.fillInput, { borderColor: submitted ? (isCorrectFill ? c.success : c.destructive) : c.border, color: c.foreground }]} placeholder="Viết lại câu..." placeholderTextColor={c.mutedForeground} value={fillAnswer} onChangeText={setFillAnswer} editable={!submitted} autoCapitalize="none" />
+            <TextInput style={[styles.fillInput, { borderColor: submitted ? (isCorrectFill ? c.success : c.destructive) : c.border, color: c.foreground }]} placeholder="Viết lại câu..." placeholderTextColor={c.subtle} value={fillAnswer} onChangeText={setFillAnswer} editable={!submitted} autoCapitalize="none" />
           </View>
         )}
 
@@ -345,13 +345,13 @@ function VstepTipsTab({ tips, mistakes }: { tips: VstepTip[]; mistakes: Mistake[
         <View style={{ gap: spacing.sm }}>
           <Text style={[styles.sectionTitle, { color: c.foreground }]}>Mẹo thi VSTEP</Text>
           {tips.map((t, i) => (
-            <View key={i} style={[styles.mistakeCard, { borderColor: c.border, backgroundColor: c.card }]}>
+            <View key={i} style={[styles.mistakeCard, { borderColor: c.border, backgroundColor: c.surface }]}>
               <View style={[styles.taskBadge, { backgroundColor: c.primary + "15" }]}>
                 <Text style={[styles.taskBadgeText, { color: c.primary }]}>{t.task}</Text>
               </View>
               <Text style={[styles.tipText, { color: c.foreground }]}>{t.tip}</Text>
               <View style={[styles.exampleBox, { borderLeftColor: c.primary }]}>
-                <Text style={[styles.exampleBoxText, { color: c.mutedForeground }]}>{t.example}</Text>
+                <Text style={[styles.exampleBoxText, { color: c.subtle }]}>{t.example}</Text>
               </View>
             </View>
           ))}
@@ -361,7 +361,7 @@ function VstepTipsTab({ tips, mistakes }: { tips: VstepTip[]; mistakes: Mistake[
         <View style={{ gap: spacing.sm }}>
           <Text style={[styles.sectionTitle, { color: c.foreground }]}>Lỗi thường gặp</Text>
           {mistakes.map((m, i) => (
-            <View key={i} style={[styles.mistakeCard, { borderColor: c.border, backgroundColor: c.card }]}>
+            <View key={i} style={[styles.mistakeCard, { borderColor: c.border, backgroundColor: c.surface }]}>
               <View style={styles.mistakeRow}>
                 <Ionicons name="close-circle" size={16} color={c.destructive} />
                 <Text style={[styles.mistakeWrong, { color: c.destructive }]}>{m.wrong}</Text>
@@ -370,7 +370,7 @@ function VstepTipsTab({ tips, mistakes }: { tips: VstepTip[]; mistakes: Mistake[
                 <Ionicons name="checkmark-circle" size={16} color={c.success} />
                 <Text style={[styles.mistakeCorrect, { color: c.success }]}>{m.correct}</Text>
               </View>
-              <Text style={[styles.mistakeExpl, { color: c.mutedForeground }]}>{m.explanation}</Text>
+              <Text style={[styles.mistakeExpl, { color: c.subtle }]}>{m.explanation}</Text>
             </View>
           ))}
         </View>

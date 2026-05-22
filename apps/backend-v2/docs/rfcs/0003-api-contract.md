@@ -314,11 +314,63 @@ Slots available cho profile này (sau khi enrolled + commitment met).
 
 Response: `{ slots: [...], remaining_student_slots }`
 
+### `GET /api/v1/courses/{id}/bookings` — jwt
+Booking page payload cho FE 1-1 (teacher + slot grid + đếm booking active của profile).
+
+Window: `[now-7d, now+35d]` (1 tuần đã qua + 4 tuần tới).
+
+Response:
+```json
+{
+  "data": {
+    "teacher": { "id", "full_name", "title": null, "bio": null },
+    "slots": [
+      {
+        "id": "uuid",
+        "starts_at": "ISO8601",
+        "duration_minutes": 30,
+        "status": "available | booked_other | booked_me | past",
+        "meet_url": "string | null"
+      }
+    ],
+    "my_bookings_count": 0,
+    "max_bookings_per_student": 2,
+    "commitment": {
+      "phase": "not_enrolled | pending | met | violated",
+      "completed": 0,
+      "required": 3,
+      "window_start_at": "ISO8601 | null",
+      "deadline_at": "ISO8601 | null"
+    }
+  }
+}
+```
+
+`meet_url` chỉ trả khi `status === "booked_me"`. Status `past` = `starts_at < now` (override status DB).
+
+`commitment.phase`:
+- `not_enrolled`: chưa ghi danh course (FE không nên reach state này — route gate ở chỗ khác).
+- `pending`: còn trong window và chưa hoàn thành đủ `required` đề thi đầy đủ → FE chặn book + hiện CTA "vào thi thử".
+- `met`: đủ điều kiện book lịch.
+- `violated`: hết window mà chưa đủ → mất quyền book vĩnh viễn cho course này.
+
 ### `POST /api/v1/courses/{id}/bookings` — jwt
-Book slot.
+Book slot. **Trừ 50 xu** (CoinTransactionType `teacher_booking`) — fail 422 nếu không đủ xu hoặc commitment chưa met.
 
 Request: `{ slot_id, submission_type?, submission_id? }`
-Response: `{ booking_id, slot, meet_url? }` hoặc 409 (slot taken, limit reached).
+Response (201):
+```json
+{
+  "data": {
+    "booking_id": "uuid",
+    "slot": { "id", "starts_at", "duration_minutes", "status": "booked_me", "meet_url" },
+    "coins_charged": 50
+  }
+}
+```
+Lỗi: 409 (slot taken / limit reached), 422 (commitment chưa met / không đủ xu).
+
+`meet_url` được BE auto-generate ở phase 1 (mock Google Meet); teacher sẽ override qua `PATCH /teacher/bookings/{id}` ở phase sau.
 
 ### `GET /api/v1/my/bookings` — jwt
 List booking active + past.
@@ -336,26 +388,29 @@ Dashboard data cho active profile.
 Response:
 ```json
 {
-  "profile": { "nickname", "target_level", "target_deadline", "days_until_exam" },
+  "profile": {
+    "nickname", "target_level", "target_deadline", "days_until_exam",
+    "entry_level": "A2",          // user tự đánh giá lúc onboarding (nullable)
+    "predicted_level": "B1"       // suy từ avg 4 band của chart; fallback = entry_level khi chart=null
+  },
   "stats": {
-    "estimated_band": null,  // null if < min_tests
-    "band_gap": null,
-    "weakest_skill": null,
-    "trend": null,
     "total_tests": 3,
     "min_tests_required": 5,
     "total_study_minutes": 420,
-    "streak": 7
+    "streak": 7,
+    "longest_streak": 12
   },
-  "spider_chart": null,  // or { listening, reading, writing, speaking }
-  "activity_heatmap": {...},
-  "next_action": {...}
+  "chart": null   // null nếu total_tests < min_tests_required, else { listening, reading, writing, speaking, sample_size }
 }
 ```
 
+`activity_heatmap` đã tách thành endpoint riêng `GET /api/v1/activity-heatmap`. `next_action` đã chuyển sang derive từ `streak.today_sessions/daily_goal` ở FE (không còn key trong response).
+
+**predicted_level mapping** (avg 4 band → level): ≥8.5 → C1, ≥6.0 → B2, ≥4.0 → B1, ≥3.5 → A2, else A1. Source: `ProgressService::predictLevel()`.
+
 ### `GET /api/v1/streak` — jwt
 
-Response: `{ current_streak, longest_streak, today_progress, daily_goal, last_active_date }`
+Response: `{ current_streak, longest_streak, today_sessions, daily_goal, last_active_date, milestones }`. `today_sessions` đếm full-test exam đã submit/auto_submit/grading/graded trong ngày local (RFC 0019 amendment).
 
 ### `GET /api/v1/practice-progress` — jwt
 Summary per skill: total exercises done, in_progress, completed.

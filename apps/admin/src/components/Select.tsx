@@ -1,33 +1,69 @@
-import { ChevronDown } from "lucide-react"
-import type { SelectHTMLAttributes } from "react"
-import { forwardRef } from "react"
-import { cn } from "#/lib/utils"
+import { Select as AntdSelect } from "antd"
+import { Children, forwardRef, isValidElement, type ReactNode, type SelectHTMLAttributes } from "react"
 
-interface Props extends SelectHTMLAttributes<HTMLSelectElement> {
+interface Props extends Omit<SelectHTMLAttributes<HTMLSelectElement>, "onChange" | "size"> {
 	invalid?: boolean
-	children: React.ReactNode
+	children: ReactNode
+	onChange?: SelectHTMLAttributes<HTMLSelectElement>["onChange"]
+	placeholder?: string
+}
+
+interface OptionLike {
+	value: string | number
+	label: ReactNode
+	disabled?: boolean
+}
+
+function flattenOptions(children: ReactNode): OptionLike[] {
+	const opts: OptionLike[] = []
+	Children.forEach(children, (child) => {
+		if (!isValidElement(child)) return
+		const el = child as React.ReactElement<{
+			value?: string | number
+			children?: ReactNode
+			disabled?: boolean
+			label?: string
+		}>
+		if (el.type === "option") {
+			opts.push({
+				value: el.props.value ?? "",
+				label: el.props.children ?? "",
+				disabled: el.props.disabled,
+			})
+		} else if (el.type === "optgroup") {
+			opts.push(...flattenOptions(el.props.children))
+		}
+	})
+	return opts
 }
 
 export const Select = forwardRef<HTMLSelectElement, Props>(function Select(
-	{ invalid, className, children, ...rest },
-	ref,
+	{ invalid, className, children, value, defaultValue, onChange, disabled, name, id, placeholder },
+	_ref,
 ) {
+	const options = flattenOptions(children)
+
+	function handleChange(next: unknown) {
+		if (!onChange) return
+		const synthetic = {
+			target: { value: next as string, name },
+			currentTarget: { value: next as string, name },
+		} as unknown as React.ChangeEvent<HTMLSelectElement>
+		onChange(synthetic)
+	}
+
 	return (
-		<div className="relative">
-			<select
-				ref={ref}
-				className={cn(
-					"h-9 w-full appearance-none rounded-(--radius-input) border border-border bg-surface px-3 pr-8 text-sm text-foreground",
-					"focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20",
-					"disabled:bg-surface-muted disabled:text-subtle",
-					invalid ? "border-danger" : "border-border",
-					className,
-				)}
-				{...rest}
-			>
-				{children}
-			</select>
-			<ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
-		</div>
+		<AntdSelect
+			id={id}
+			status={invalid ? "error" : undefined}
+			className={className}
+			style={{ width: "100%" }}
+			value={value as string | number | undefined}
+			defaultValue={defaultValue as string | number | undefined}
+			onChange={handleChange}
+			disabled={disabled}
+			placeholder={placeholder}
+			options={options}
+		/>
 	)
 })

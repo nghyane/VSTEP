@@ -21,7 +21,13 @@ class UserSeeder extends Seeder
     {
         $users = [
             ['email' => 'learner@vstep.test', 'full_name' => 'Demo Learner', 'role' => Role::Learner],
-            ['email' => 'teacher@vstep.test', 'full_name' => 'Demo Teacher', 'role' => Role::Teacher],
+            [
+                'email' => 'teacher@vstep.test',
+                'full_name' => 'Demo Teacher',
+                'role' => Role::Teacher,
+                'title' => 'Tiến sĩ Ngôn ngữ Anh · VSTEP C1',
+                'bio' => '12 năm giảng dạy ĐH, chuyên luyện thi VSTEP B2/C1. Chấm thi chính thức tại ĐHSP Hà Nội.',
+            ],
             ['email' => 'staff@vstep.test',   'full_name' => 'Demo Staff',   'role' => Role::Staff],
             ['email' => 'admin@vstep.test',   'full_name' => 'Demo Admin',   'role' => Role::Admin],
         ];
@@ -29,7 +35,13 @@ class UserSeeder extends Seeder
         foreach ($users as $u) {
             $user = User::updateOrCreate(
                 ['email' => $u['email']],
-                ['full_name' => $u['full_name'], 'role' => $u['role'], 'password' => Hash::make('password')],
+                [
+                    'full_name' => $u['full_name'],
+                    'role' => $u['role'],
+                    'password' => Hash::make('password'),
+                    'title' => $u['title'] ?? null,
+                    'bio' => $u['bio'] ?? null,
+                ],
             );
 
             if ($u['role'] === Role::Learner && ! $user->initialProfile()) {

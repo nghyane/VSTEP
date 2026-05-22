@@ -31,7 +31,7 @@ export default function SkillDetailScreen() {
   if (!data) return <ErrorScreen message="Kỹ năng không hợp lệ" />;
 
   const trend = trendDisplay[data.trend];
-  const trendColor = trend.type === "success" ? c.success : trend.type === "destructive" ? c.destructive : trend.type === "warning" ? c.warning : c.mutedForeground;
+  const trendColor = trend.type === "success" ? c.success : trend.type === "destructive" ? c.destructive : trend.type === "warning" ? c.warning : c.subtle;
   const prog = data.progress;
 
   return (
@@ -47,19 +47,19 @@ export default function SkillDetailScreen() {
       </View>
 
       {/* Score History */}
-      <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+      <View style={[styles.section, { backgroundColor: c.surface, borderColor: c.border }]}>
         <Text style={[styles.sectionTitle, { color: c.foreground }]}>Lịch sử điểm số</Text>
         {data.recentScores.length === 0 ? (
-          <Text style={{ color: c.mutedForeground, fontSize: fontSize.sm }}>Chưa có dữ liệu</Text>
+          <Text style={{ color: c.subtle, fontSize: fontSize.sm }}>Chưa có dữ liệu</Text>
         ) : (
           data.recentScores.map((s, i) => {
             const pct = Math.min(100, (s.score / 10) * 100);
             return (
               <View key={`${s.createdAt}-${i}`} style={styles.scoreRow}>
-                <Text style={[styles.scoreDate, { color: c.mutedForeground }]}>
+                <Text style={[styles.scoreDate, { color: c.subtle }]}>
                   {new Date(s.createdAt).toLocaleDateString("vi-VN")}
                 </Text>
-                <View style={[styles.barBg, { backgroundColor: c.muted }]}>
+                <View style={[styles.barBg, { backgroundColor: c.background }]}>
                   <View style={[styles.barFill, { backgroundColor: skillColor, width: `${pct}%` }]} />
                 </View>
                 <Text style={[styles.scoreValue, { color: c.foreground }]}>{s.score.toFixed(1)}</Text>
@@ -70,7 +70,7 @@ export default function SkillDetailScreen() {
       </View>
 
       {/* Summary Stats */}
-      <View style={[styles.section, { backgroundColor: c.card, borderColor: c.border }]}>
+      <View style={[styles.section, { backgroundColor: c.surface, borderColor: c.border }]}>
         <Text style={[styles.sectionTitle, { color: c.foreground }]}>Thống kê</Text>
         <View style={styles.summaryRow}>
           <SummaryItem label="Điểm trung bình" value={data.windowAvg != null ? `${data.windowAvg.toFixed(1)}/10` : "—"} colors={c} />
@@ -84,8 +84,8 @@ export default function SkillDetailScreen() {
 
 function StatCard({ label, value, colors: c, valueColor }: { label: string; value: string; colors: any; valueColor?: string }) {
   return (
-    <View style={[styles.statCard, { backgroundColor: c.muted }]}>
-      <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs }}>{label}</Text>
+    <View style={[styles.statCard, { backgroundColor: c.background }]}>
+      <Text style={{ color: c.subtle, fontSize: fontSize.xs }}>{label}</Text>
       <Text style={{ color: valueColor ?? c.foreground, fontSize: fontSize.lg, fontWeight: "700", marginTop: 4 }}>{value}</Text>
     </View>
   );
@@ -94,7 +94,7 @@ function StatCard({ label, value, colors: c, valueColor }: { label: string; valu
 function SummaryItem({ label, value, colors: c }: { label: string; value: string; colors: any }) {
   return (
     <View style={{ flex: 1 }}>
-      <Text style={{ color: c.mutedForeground, fontSize: fontSize.xs }}>{label}</Text>
+      <Text style={{ color: c.subtle, fontSize: fontSize.xs }}>{label}</Text>
       <Text style={{ color: c.foreground, fontSize: fontSize.lg, fontWeight: "700", marginTop: 4 }}>{value}</Text>
     </View>
   );

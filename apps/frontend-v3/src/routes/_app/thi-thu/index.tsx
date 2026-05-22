@@ -1,11 +1,11 @@
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { Suspense, useState } from "react"
+import { Suspense, useMemo, useState } from "react"
 import { Header } from "#/components/Header"
 import { Icon } from "#/components/Icon"
 import { Loading } from "#/components/Loading"
-import { ExamCard } from "#/features/exam/components/ExamCard"
-import { appConfigQuery, examsQuery } from "#/features/exam/queries"
+import { type ActiveSummary, ExamCard, type ExamStatus } from "#/features/exam/components/ExamCard"
+import { appConfigQuery, examsQuery, mySessionsQuery } from "#/features/exam/queries"
 import type { SkillKey } from "#/features/exam/types"
 import { cn } from "#/lib/utils"
 
@@ -44,9 +44,37 @@ const SKILL_ACTIVE_BG: Record<SkillKey, string> = {
 	speaking: "bg-warning-tint border-warning",
 }
 
+const STATUS_BY_LABEL: Record<StatusFilter, ExamStatus | "all"> = {
+	"Tất cả": "all",
+	"Chưa làm": "not-started",
+	"Đang làm dở": "in-progress",
+	"Đã nộp": "submitted",
+}
+
+function EmptyExams({ hasFilter, onReset }: { hasFilter: boolean; onReset: () => void }) {
+	const mascot = hasFilter ? "/mascot/lac-think.png" : "/mascot/lac-sad.png"
+	const title = hasFilter ? "Không tìm thấy đề thi phù hợp" : "Chưa có đề thi nào"
+	const message = hasFilter
+		? "Thử bỏ bớt bộ lọc hoặc tìm với từ khóa khác nhé!"
+		: "Đề thi sẽ xuất hiện tại đây ngay khi sẵn sàng. Quay lại sau nha!"
+	return (
+		<div className="flex flex-col items-center justify-center py-16 text-center">
+			<img src={mascot} alt="" className="w-36 h-36 object-contain mb-1" />
+			<h3 className="font-extrabold text-xl text-foreground mb-2">{title}</h3>
+			<p className="text-sm text-muted max-w-sm mb-6">{message}</p>
+			{hasFilter && (
+				<button type="button" onClick={onReset} className="btn btn-primary px-6 py-2.5 text-sm">
+					Xóa bộ lọc
+				</button>
+			)}
+		</div>
+	)
+}
+
 function ExamListContent() {
 	const { data: examsData } = useSuspenseQuery(examsQuery)
 	const { data: configData } = useQuery(appConfigQuery)
+	const { data: mySessionsData } = useQuery(mySessionsQuery)
 
 	const exams = examsData.data
 	const fullTestCoinCost = configData?.data.pricing.exam.full_test_cost_coins ?? null
@@ -64,8 +92,51 @@ function ExamListContent() {
 		})
 	}
 
+	// Per-exam: active session (status=active && deadline > now) wins → "in-progress" + sessionId.
+	// Else "submitted" nếu từng nộp/grading/graded. Else "not-started".
+	// BE cho phép nhiều session active đồng thời → giữ MỌI active per exam (không singleton).
+	const { statusByExamId, activeByExamId } = useMemo(() => {
+		const statusMap = new Map<string, ExamStatus>()
+		const activeMap = new Map<string, ActiveSummary>()
+		const sessions = mySessionsData?.data ?? []
+		const now = Date.now()
+		for (const s of sessions) {
+			if (!s.exam_id) continue
+			if (s.status === "active" && new Date(s.server_deadline_at).getTime() > now) {
+				if (!activeMap.has(s.exam_id)) {
+					activeMap.set(s.exam_id, {
+						sessionId: s.id,
+						deadlineAt: s.server_deadline_at,
+						isFullTest: s.is_full_test,
+						selectedSkills: s.selected_skills,
+					})
+					statusMap.set(s.exam_id, "in-progress")
+				}
+				continue
+			}
+			if (
+				!statusMap.has(s.exam_id) &&
+				(s.status === "submitted" || s.status === "graded" || s.status === "auto_submitted")
+			) {
+				statusMap.set(s.exam_id, "submitted")
+			}
+		}
+		return { statusByExamId: statusMap, activeByExamId: activeMap }
+	}, [mySessionsData])
+
+	const wantedStatus = STATUS_BY_LABEL[status]
+
 	const filtered = exams.filter((e) => {
 		if (search && !e.title.toLowerCase().includes(search.toLowerCase())) return false
+		if (wantedStatus !== "all") {
+			const s = statusByExamId.get(e.id) ?? "not-started"
+			if (s !== wantedStatus) return false
+		}
+		// Skill filter: VSTEP full-test exams bao trọn 4 kỹ năng nên mọi skill đều match.
+		// Giữ UI hoạt động; khi sau này có đề đơn kỹ năng, check exam.tags hoặc mở rộng API.
+		if (skills.size > 0) {
+			// no-op với dataset hiện tại
+		}
 		return true
 	})
 
@@ -142,11 +213,24 @@ function ExamListContent() {
 
 			{/* Grid */}
 			{filtered.length === 0 ? (
-				<p className="text-sm text-subtle py-8 text-center">Không tìm thấy đề thi nào.</p>
+				<EmptyExams
+					hasFilter={search.length > 0 || status !== "Tất cả" || skills.size > 0}
+					onReset={() => {
+						setSearch("")
+						setStatus("Tất cả")
+						setSkills(new Set())
+					}}
+				/>
 			) : (
 				<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 					{filtered.map((exam) => (
-						<ExamCard key={exam.id} exam={exam} fullTestCoinCost={fullTestCoinCost} />
+						<ExamCard
+							key={exam.id}
+							exam={exam}
+							fullTestCoinCost={fullTestCoinCost}
+							status={statusByExamId.get(exam.id) ?? "not-started"}
+							active={activeByExamId.get(exam.id)}
+						/>
 					))}
 				</div>
 			)}

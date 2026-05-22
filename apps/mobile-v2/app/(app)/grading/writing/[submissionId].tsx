@@ -1,0 +1,168 @@
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+
+import { DepthButton } from "@/components/DepthButton";
+import { GradingErrorState, GradingLoadingState, GradingPendingState } from "@/components/GradingStates";
+import { HapticTouchable } from "@/components/HapticTouchable";
+import { useWritingGradingResult } from "@/hooks/use-practice";
+import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+
+const RUBRIC_LABELS: Record<string, string> = {
+  taskAchievement: "Task Achievement",
+  coherence: "Coherence & Cohesion",
+  lexical: "Lexical Resource",
+  grammar: "Grammar Range & Accuracy",
+};
+
+export default function WritingGradingScreen() {
+  const { submissionId } = useLocalSearchParams<{ submissionId: string }>();
+  const c = useThemeColors();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const accent = c.skillWriting;
+  const { data, isLoading, isError, isFetching, refetch } = useWritingGradingResult(submissionId ?? "");
+  const resultReady = data?.overallBand != null;
+
+  return (
+    <View style={[s.root, { backgroundColor: c.background }]}>
+      <View style={[s.topBar, { paddingTop: insets.top + spacing.sm, borderBottomColor: c.borderLight }]}>
+        <HapticTouchable onPress={() => router.back()} style={s.closeBtn}>
+          <Ionicons name="arrow-back" size={22} color={c.foreground} />
+        </HapticTouchable>
+        <Text style={[s.topBarTitle, { color: c.foreground }]}>Kết quả chấm bài viết</Text>
+      </View>
+
+      <ScrollView contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + 40 }]} showsVerticalScrollIndicator={false}>
+        {isLoading && !data ? (
+          <GradingLoadingState label="Đang tải kết quả chấm bài viết..." accentColor={accent} />
+        ) : null}
+
+        {isError ? (
+          <GradingErrorState
+            title="Lỗi kết nối"
+            subtitle="Không thể tải kết quả chấm bài viết. Thử lại ngay hoặc quay về danh sách."
+            onRetry={() => void refetch()}
+            onBack={() => router.back()}
+            retrying={isFetching}
+          />
+        ) : null}
+
+        {!isLoading && !isError && !resultReady ? (
+          <GradingPendingState
+            title="AI đang chấm bài"
+            subtitle="Kết quả sẽ tự cập nhật vài giây một lần. Cứ bình tĩnh, máy đang sửa từng câu."
+            accentColor={c.warning}
+            onBack={() => router.back()}
+          />
+        ) : null}
+
+        {data && resultReady ? (
+          <>
+            <View style={[s.scoreCard, { backgroundColor: c.card, borderColor: c.primaryTint, borderBottomColor: c.primaryDark }]}>
+              <Text style={[s.scoreLabel, { color: c.mutedForeground }]}>ĐIỂM TỔNG</Text>
+              <Text style={[s.scoreValue, { color: accent }]}>{(data.overallBand ?? 0).toFixed(1)}</Text>
+              <Text style={[s.scoreMax, { color: c.subtle }]}>/ 10</Text>
+            </View>
+
+            <View style={[s.card, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: c.border }]}>
+              <Text style={[s.sectionLabel, { color: c.subtle }]}>RUBRIC CHI TIẾT</Text>
+              {Object.entries(data.rubricScores ?? {}).map(([key, score]) => (
+                <RubricRow key={key} label={RUBRIC_LABELS[key] ?? key} score={score} max={4} color={accent} />
+              ))}
+            </View>
+
+            {data.strengths.length > 0 ? (
+              <View style={[s.card, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: c.border }]}>
+                <Text style={[s.sectionLabel, { color: c.subtle }]}>ĐIỂM MẠNH</Text>
+                {data.strengths.map((item) => (
+                  <View key={item} style={s.feedRow}>
+                    <Ionicons name="checkmark-circle" size={16} color={accent} />
+                    <Text style={[s.feedText, { color: c.foreground }]}>{item}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
+            {data.improvements.length > 0 ? (
+              <View style={[s.card, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: c.border }]}>
+                <Text style={[s.sectionLabel, { color: c.subtle }]}>CẦN CẢI THIỆN</Text>
+                {data.improvements.map((item) => (
+                  <View key={`${item.message}-${item.explanation}`} style={s.impBlock}>
+                    <Text style={[s.impMsg, { color: c.foreground }]}>{item.message}</Text>
+                    {item.explanation ? <Text style={[s.impExp, { color: c.mutedForeground }]}>{item.explanation}</Text> : null}
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
+            {data.rewrites.length > 0 ? (
+              <View style={[s.card, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: c.border }]}>
+                <Text style={[s.sectionLabel, { color: c.subtle }]}>GỢI Ý VIẾT LẠI</Text>
+                {data.rewrites.map((item) => (
+                  <View key={`${item.original}-${item.improved}`} style={[s.rewriteBlock, { borderColor: c.borderLight }]}>
+                    <Text style={[s.rewriteLabel, { color: c.destructive }]}>Gốc</Text>
+                    <Text style={[s.rewriteText, { color: c.foreground }]}>{item.original}</Text>
+                    <Text style={[s.rewriteLabel, { color: accent, marginTop: spacing.sm }]}>Cải thiện</Text>
+                    <Text style={[s.rewriteText, { color: c.foreground }]}>{item.improved}</Text>
+                    {item.reason ? <Text style={[s.rewriteReason, { color: c.subtle }]}>{item.reason}</Text> : null}
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
+            <DepthButton variant="secondary" fullWidth onPress={() => router.back()}>
+              Về danh sách
+            </DepthButton>
+          </>
+        ) : null}
+      </ScrollView>
+    </View>
+  );
+}
+
+function RubricRow({ label, score, max, color }: { label: string; score: number; max: number; color: string }) {
+  const c = useThemeColors();
+  const pct = score / max;
+  return (
+    <View style={s.rubricRow}>
+      <Text style={[s.rubricLabel, { color: c.foreground }]}>{label}</Text>
+      <View style={s.rubricRight}>
+        <View style={[s.rubricTrack, { backgroundColor: c.muted }]}>
+          <View style={[s.rubricFill, { backgroundColor: color, width: `${pct * 100}%` }]} />
+        </View>
+        <Text style={[s.rubricScore, { color }]}>{score}/{max}</Text>
+      </View>
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  root: { flex: 1 },
+  topBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.xl, paddingBottom: spacing.md, gap: spacing.md, borderBottomWidth: 1 },
+  closeBtn: { padding: spacing.xs },
+  topBarTitle: { flex: 1, fontSize: fontSize.base, fontFamily: fontFamily.bold },
+  scroll: { padding: spacing.xl, gap: spacing.lg },
+  scoreCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.xl, alignItems: "center", gap: spacing.xs },
+  scoreLabel: { fontSize: 10, fontFamily: fontFamily.bold, letterSpacing: 1 },
+  scoreValue: { fontSize: 56, fontFamily: fontFamily.extraBold, lineHeight: 64 },
+  scoreMax: { fontSize: fontSize.sm },
+  card: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md },
+  sectionLabel: { fontSize: 10, fontFamily: fontFamily.bold, letterSpacing: 1 },
+  feedRow: { flexDirection: "row", gap: spacing.sm, alignItems: "flex-start" },
+  feedText: { flex: 1, fontSize: fontSize.sm, lineHeight: 20 },
+  impBlock: { gap: spacing.xs },
+  impMsg: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
+  impExp: { fontSize: fontSize.xs, lineHeight: 18 },
+  rewriteBlock: { borderTopWidth: 1, paddingTop: spacing.md, gap: spacing.xs },
+  rewriteLabel: { fontSize: 10, fontFamily: fontFamily.bold },
+  rewriteText: { fontSize: fontSize.sm, lineHeight: 20 },
+  rewriteReason: { fontSize: fontSize.xs, fontStyle: "italic", marginTop: spacing.xs },
+  rubricRow: { gap: spacing.xs },
+  rubricLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
+  rubricRight: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  rubricTrack: { flex: 1, height: 8, borderRadius: 4, overflow: "hidden" },
+  rubricFill: { height: "100%", borderRadius: 4 },
+  rubricScore: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, minWidth: 28, textAlign: "right" },
+});
