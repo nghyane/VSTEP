@@ -21,3 +21,7 @@ export async function uploadAvatar(file: File) {
 	body.append("avatar", file)
 	return api.post("me/avatar", { body }).json<ApiResponse<{ avatar_url: string; avatar_key: null }>>()
 }
+
+export async function changePassword(input: { current_password: string; new_password: string }) {
+	return api.post("me/change-password", { json: input }).json<ApiResponse<{ success: boolean }>>()
+}
