@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Exceptions\NotOwnerException;
 use App\Models\PracticeSession;
 use App\Models\PracticeWritingPrompt;
 use App\Models\PracticeWritingSubmission;
@@ -54,7 +55,7 @@ final class WritingPracticeService
         string $text,
     ): PracticeWritingSubmission {
         if ($session->profile_id !== $profile->id) {
-            abort(403, 'Session does not belong to active profile.');
+            throw new NotOwnerException;
         }
         if ($session->module !== 'writing') {
             throw ValidationException::withMessages([

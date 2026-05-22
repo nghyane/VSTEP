@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\CoinTransactionType;
+use App\Exceptions\NotOwnerException;
 use App\Models\PracticeSession;
 use App\Models\Profile;
 use App\Models\SystemConfig;
@@ -56,7 +57,7 @@ final class PracticeSessionService
         int $level,
     ): array {
         if ($session->profile_id !== $profile->id) {
-            abort(403, 'Session does not belong to active profile.');
+            throw new NotOwnerException;
         }
 
         $costs = SystemConfig::get('support.level_costs') ?? [];

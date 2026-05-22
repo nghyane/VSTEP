@@ -7,6 +7,7 @@ namespace App\Services;
 use App\DTOs\ExamSubmitResult;
 use App\Enums\CoinTransactionType;
 use App\Enums\ExamSessionStatus;
+use App\Exceptions\NotOwnerException;
 use App\Models\Exam;
 use App\Models\ExamMcqAnswer;
 use App\Models\ExamSession;
@@ -148,7 +149,7 @@ final class ExamSessionService
         array $speakingAnswers = [],
     ): ExamSubmitResult {
         if ($session->profile_id !== $profile->id) {
-            abort(403);
+            throw new NotOwnerException;
         }
         if ($session->status !== ExamSessionStatus::Active) {
             throw ValidationException::withMessages(['session' => ['Session not active.']]);
@@ -303,7 +304,7 @@ final class ExamSessionService
     public function getDraft(Profile $profile, ExamSession $session): ?ExamSessionDraft
     {
         if ($session->profile_id !== $profile->id) {
-            abort(403);
+            throw new NotOwnerException;
         }
 
         return ExamSessionDraft::query()->where('session_id', $session->id)->first();
@@ -323,7 +324,7 @@ final class ExamSessionService
     public function saveDraft(Profile $profile, ExamSession $session, array $payload): ExamSessionDraft
     {
         if ($session->profile_id !== $profile->id) {
-            abort(403);
+            throw new NotOwnerException;
         }
         if ($session->status !== ExamSessionStatus::Active || $session->server_deadline_at->isPast()) {
             throw ValidationException::withMessages(['session' => ['Session not active.']]);

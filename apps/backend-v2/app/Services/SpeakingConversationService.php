@@ -7,6 +7,8 @@ namespace App\Services;
 use App\Ai\Agents\ConversationReviewAgent;
 use App\Ai\Agents\ConversationTurnAgent;
 use App\Enums\ConversationStatus;
+use App\Exceptions\NotOwnerException;
+use App\Exceptions\ResourceNotActiveException;
 use App\Models\PracticeSpeakingConversationSession;
 use App\Models\PracticeSpeakingConversationTurn;
 use App\Models\PracticeSpeakingScenario;
@@ -80,10 +82,10 @@ final class SpeakingConversationService
         $session = PracticeSpeakingConversationSession::query()->findOrFail($sessionId);
 
         if ($session->profile_id !== $profile->id) {
-            abort(403, 'Session does not belong to active profile.');
+            throw new NotOwnerException;
         }
         if ($session->status !== ConversationStatus::Active) {
-            abort(409, 'Session already ended.');
+            throw new ResourceNotActiveException('Session already ended.');
         }
 
         $scenario = $session->scenario;
@@ -139,10 +141,10 @@ final class SpeakingConversationService
         $session = PracticeSpeakingConversationSession::query()->findOrFail($sessionId);
 
         if ($session->profile_id !== $profile->id) {
-            abort(403, 'Session does not belong to active profile.');
+            throw new NotOwnerException;
         }
         if ($session->status !== ConversationStatus::Active) {
-            abort(409, 'Session already ended.');
+            throw new ResourceNotActiveException('Session already ended.');
         }
 
         $session->update([
@@ -162,7 +164,7 @@ final class SpeakingConversationService
             ->findOrFail($sessionId);
 
         if ($session->profile_id !== $profile->id) {
-            abort(403, 'Session does not belong to active profile.');
+            throw new NotOwnerException;
         }
 
         return $session;
