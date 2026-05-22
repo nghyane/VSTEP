@@ -94,6 +94,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ""
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-644444548899-q6kldv6576f2gjoccrm3i3s9sqlbetce.apps.googleusercontent.com}
       FILESYSTEM_DISK: s3
       AWS_DEFAULT_REGION: auto
       AWS_USE_PATH_STYLE_ENDPOINT: "true"
@@ -128,6 +129,7 @@ services:
       context: ./apps/frontend-v3
       args:
         VITE_API_URL: https://${DOMAIN:-api.vstepgo.com}/api/v1
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-644444548899-q6kldv6576f2gjoccrm3i3s9sqlbetce.apps.googleusercontent.com}
     expose:
       - "80"
     labels:

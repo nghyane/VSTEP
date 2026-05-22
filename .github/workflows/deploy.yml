@@ -30,13 +30,13 @@ jobs:
               rm apps/backend-v2/.env.deploy-backup
             fi
 
-            # Rebuild frontend only if its files changed
-            if git diff HEAD~1 --name-only | grep -q 'apps/frontend-v3/'; then
+            # Rebuild frontend if its files OR build args (docker-compose.yml) changed
+            if git diff HEAD~1 --name-only | grep -qE '^(apps/frontend-v3/|docker-compose\.yml$)'; then
               docker compose --env-file .env build frontend
             fi
 
-            # Rebuild admin only if its files changed
-            if git diff HEAD~1 --name-only | grep -q 'apps/admin/'; then
+            # Rebuild admin if its files OR build args changed
+            if git diff HEAD~1 --name-only | grep -qE '^(apps/admin/|docker-compose\.yml$)'; then
               docker compose --env-file .env build admin
             fi
 
@@ -44,11 +44,11 @@ jobs:
             docker compose --env-file .env up -d --build --force-recreate backend horizon
 
             # Recreate frontend/admin only if they were rebuilt
-            if git diff HEAD~1 --name-only | grep -q 'apps/frontend-v3/'; then
+            if git diff HEAD~1 --name-only | grep -qE '^(apps/frontend-v3/|docker-compose\.yml$)'; then
               docker compose --env-file .env up -d --force-recreate frontend
             fi
 
-            if git diff HEAD~1 --name-only | grep -q 'apps/admin/'; then
+            if git diff HEAD~1 --name-only | grep -qE '^(apps/admin/|docker-compose\.yml$)'; then
               docker compose --env-file .env up -d --force-recreate admin
             fi
 
