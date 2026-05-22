@@ -1,4 +1,21 @@
 import type { GrammarPointDetail } from "#/features/grammar/types"
+import { LEVEL_COLORS, type Level } from "#/features/practice/components/LevelFilters"
+import { cn } from "#/lib/utils"
+
+function LevelTag({ level, className }: { level: string; className?: string }) {
+	const colors = LEVEL_COLORS[level.toUpperCase() as Level]
+	return (
+		<span
+			className={cn(
+				"text-xs font-bold px-2 py-0.5 rounded-full border",
+				colors ? cn(colors.active, colors.text) : "text-primary bg-primary-tint border-transparent",
+				className,
+			)}
+		>
+			{level}
+		</span>
+	)
+}
 
 export function PointHeader({ detail }: { detail: GrammarPointDetail }) {
 	const { point, mastery } = detail
@@ -12,9 +29,7 @@ export function PointHeader({ detail }: { detail: GrammarPointDetail }) {
 				</div>
 				{mastery && (
 					<div className="text-right shrink-0 ml-4">
-						<span className="text-xs font-bold text-primary bg-primary-tint px-2.5 py-1 rounded-full">
-							{mastery.computed_level}
-						</span>
+						<LevelTag level={mastery.computed_level} className="px-2.5 py-1" />
 						<p className="text-xs text-subtle mt-2">
 							{mastery.accuracy_percent}% · {mastery.attempts} lần
 						</p>
@@ -23,9 +38,7 @@ export function PointHeader({ detail }: { detail: GrammarPointDetail }) {
 			</div>
 			<div className="flex flex-wrap gap-1.5 mt-4">
 				{point.levels.map((lv) => (
-					<span key={lv} className="text-xs font-bold text-primary bg-primary-tint px-2 py-0.5 rounded-full">
-						{lv}
-					</span>
+					<LevelTag key={lv} level={lv} />
 				))}
 				{point.functions.map((f) => (
 					<span key={f} className="text-xs text-muted bg-background px-2 py-0.5 rounded-full">
