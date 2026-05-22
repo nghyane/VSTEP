@@ -22,6 +22,7 @@ export interface TTSPlayer {
 	activeTurnIndex: number
 	totalWords: number
 	progress: number
+	wordDuration: number
 	turns: DialogueTurn[]
 	speed: TTSSpeed
 	setSpeed: (s: TTSSpeed) => void
@@ -252,6 +253,7 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
 		activeTurnIndex,
 		totalWords,
 		progress,
+		wordDuration: msPerWord(speed),
 		turns,
 		speed,
 		setSpeed,
