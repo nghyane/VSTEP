@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
+import { HTTPError } from "ky"
 import { Icon } from "#/components/Icon"
 import { type ConversationReview, getConversationReview } from "#/features/practice/actions"
 
@@ -67,10 +68,12 @@ function ReviewContent({ review }: { review: ConversationReview }) {
 }
 
 export function ConversationReviewPopup({ sessionId, turnCount, onClose }: Props) {
-	const { data, isPending, isError, refetch } = useQuery({
+	const { data, isPending, isError, error, refetch } = useQuery({
 		queryKey: ["conversation-review", sessionId],
 		queryFn: () => getConversationReview(sessionId),
 	})
+
+	const isServiceDown = error instanceof HTTPError && error.response.status === 503
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
@@ -102,7 +105,11 @@ export function ConversationReviewPopup({ sessionId, turnCount, onClose }: Props
 
 				{isError && (
 					<div className="text-center py-6">
-						<p className="text-sm text-destructive mb-3">Không thể tải đánh giá.</p>
+						<p className="text-sm text-destructive mb-3">
+							{isServiceDown
+								? "AI tạm thời không phản hồi. Vui lòng thử lại sau."
+								: "Không thể tải đánh giá."}
+						</p>
 						<button type="button" onClick={() => refetch()} className="btn btn-secondary px-6">
 							Thử lại
 						</button>

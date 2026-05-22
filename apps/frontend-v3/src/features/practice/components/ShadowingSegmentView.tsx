@@ -1,4 +1,5 @@
 import { useMutation } from "@tanstack/react-query"
+import { HTTPError } from "ky"
 import { useState } from "react"
 import { Icon } from "#/components/Icon"
 import { getPronunciationReview, type PronunciationReview } from "#/features/practice/actions"
@@ -78,7 +79,19 @@ function TranslateButton({ text }: { text: string }) {
 	)
 }
 
-function ReviewPopup({ review, onClose }: { review: PronunciationReview | null; onClose: () => void }) {
+function ReviewPopup({
+	review,
+	isError,
+	isServiceDown,
+	onRetry,
+	onClose,
+}: {
+	review: PronunciationReview | null
+	isError: boolean
+	isServiceDown: boolean
+	onRetry: () => void
+	onClose: () => void
+}) {
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
 			<div className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-(--radius-card) border-2 border-b-4 border-border bg-surface p-6 shadow-xl mx-4 animate-[popIn_0.25s_ease-out]">
@@ -88,7 +101,18 @@ function ReviewPopup({ review, onClose }: { review: PronunciationReview | null; 
 						<Icon name="close" size="sm" />
 					</button>
 				</div>
-				{!review ? (
+				{isError ? (
+					<div className="text-center py-6">
+						<p className="text-sm text-destructive mb-3">
+							{isServiceDown
+								? "AI tạm thời không phản hồi. Vui lòng thử lại sau."
+								: "Không thể tải nhận xét."}
+						</p>
+						<button type="button" onClick={onRetry} className="btn btn-secondary px-6">
+							Thử lại
+						</button>
+					</div>
+				) : !review ? (
 					<div className="text-center py-8">
 						<div className="flex justify-center gap-1.5 mb-3">
 							<div className="w-2.5 h-2.5 rounded-full bg-skill-speaking animate-[dotBounce_1.2s_ease-in-out_infinite]" />
@@ -224,7 +248,15 @@ export function ShadowingSegmentView({ segment, isSpeaking, speakingCharIndex, o
 			)}
 
 			{showReview && (
-				<ReviewPopup review={reviewMutation.data?.data ?? null} onClose={() => setShowReview(false)} />
+				<ReviewPopup
+					review={reviewMutation.data?.data ?? null}
+					isError={reviewMutation.isError}
+					isServiceDown={
+						reviewMutation.error instanceof HTTPError && reviewMutation.error.response.status === 503
+					}
+					onRetry={() => reviewMutation.mutate()}
+					onClose={() => setShowReview(false)}
+				/>
 			)}
 		</div>
 	)
