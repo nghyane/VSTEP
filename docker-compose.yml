@@ -94,6 +94,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ""
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-644444548899-q6kldv6576f2gjoccrm3i3s9sqlbetce.apps.googleusercontent.com}
       FILESYSTEM_DISK: s3
       AWS_DEFAULT_REGION: auto
       AWS_USE_PATH_STYLE_ENDPOINT: "true"
@@ -122,12 +123,10 @@ services:
         - action: rebuild
           path: ./apps/backend-v2/composer.json
 
-  # Frontend SPA
+  # Frontend SPA — image built in CI (ghcr.io), VPS only pulls
   frontend:
-    build:
-      context: ./apps/frontend-v3
-      args:
-        VITE_API_URL: https://${DOMAIN:-api.vstepgo.com}/api/v1
+    image: ghcr.io/${IMAGE_OWNER:-nghyane}/vstep-frontend:${IMAGE_TAG:-main}
+    pull_policy: always
     expose:
       - "80"
     labels:
@@ -140,12 +139,10 @@ services:
       - traefik
     restart: unless-stopped
 
-  # Admin SPA
+  # Admin SPA — image built in CI (ghcr.io), VPS only pulls
   admin:
-    build:
-      context: ./apps/admin
-      args:
-        VITE_API_URL: https://${DOMAIN:-api.vstepgo.com}/api/v1
+    image: ghcr.io/${IMAGE_OWNER:-nghyane}/vstep-admin:${IMAGE_TAG:-main}
+    pull_policy: always
     expose:
       - "80"
     labels:

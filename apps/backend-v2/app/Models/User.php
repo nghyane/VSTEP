@@ -7,11 +7,13 @@ namespace App\Models;
 use App\Enums\Role;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Str;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 
 #[Fillable(['full_name', 'email', 'password', 'role', 'avatar_key', 'google_id', 'title', 'bio', 'active_profile_id', 'email_verified_at', 'deactivated_at'])]
@@ -34,6 +36,20 @@ class User extends Authenticatable implements JWTSubject
             'email_verified_at' => 'datetime',
             'deactivated_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Normalize email to lowercase at write boundary. Postgres compares
+     * case-sensitively; Google ID tokens always return lowercase. Storing
+     * lowercase means every lookup (password login, Google linking, unique
+     * index, refresh) hits the same canonical form — no whereRaw, no
+     * duplicate rows, no case-related account-takeover surface.
+     */
+    protected function email(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value === null ? null : Str::lower($value),
+        );
     }
 
     public function isDeactivated(): bool

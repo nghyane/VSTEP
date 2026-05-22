@@ -8,6 +8,7 @@ use App\Enums\Role;
 use App\Models\Course;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -126,9 +127,9 @@ final class AdminUserService
      * Trả về list khóa active mà teacher đang phụ trách.
      * Course active = end_date >= today.
      *
-     * @return \Illuminate\Support\Collection<int, Course>
+     * @return Collection<int, Course>
      */
-    public function activeCoursesOf(User $teacher): \Illuminate\Support\Collection
+    public function activeCoursesOf(User $teacher): Collection
     {
         return Course::query()
             ->where('teacher_id', $teacher->id)

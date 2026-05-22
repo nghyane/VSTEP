@@ -215,6 +215,9 @@ final class AuthService
             ]);
         }
 
+        // User::$email is mutated to lowercase on write, so equality on the
+        // raw token email matches every existing row. No whereRaw, no extra
+        // normalization layer here \u2014 the canonical form lives in the model.
         return DB::transaction(function () use ($payload, $userAgent) {
             $user = User::where('google_id', $payload['sub'])->first();
 
