@@ -7,7 +7,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['user_id', 'token', 'user_agent', 'expires_at'])]
+#[Fillable(['user_id', 'token_hash', 'user_agent', 'expires_at'])]
 class RefreshToken extends BaseModel
 {
     public $timestamps = false;
