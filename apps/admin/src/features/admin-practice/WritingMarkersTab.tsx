@@ -1,6 +1,6 @@
-import { PlusOutlined } from "@ant-design/icons"
-import { Empty, Flex, Typography } from "antd"
-import { useState } from "react"
+import { PlusOutlined, WarningOutlined } from "@ant-design/icons"
+import { Alert, Empty, Flex, Typography } from "antd"
+import { useEffect, useState } from "react"
 import { Button } from "#/components/Button"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
 import { Modal } from "#/components/Modal"
@@ -21,6 +21,8 @@ interface Props {
 	markers: AdminWritingMarker[]
 }
 
+const MARKER_WARN_THRESHOLD = 8
+
 type EditorMode =
 	| { type: "idle" }
 	| { type: "create"; selection: { text: string; occurrence: number } }
@@ -33,6 +35,9 @@ export function WritingMarkersTab({ promptId, sampleAnswer, markers }: Props) {
 
 	const [mode, setMode] = useState<EditorMode>({ type: "idle" })
 	const [deleteConfirm, setDeleteConfirm] = useState<AdminWritingMarker | null>(null)
+	const [localMarkers, setLocalMarkers] = useState<AdminWritingMarker[]>(markers)
+
+	useEffect(() => { setLocalMarkers(markers) }, [markers])
 
 	const activeMarkerId = mode.type === "edit" ? mode.marker.id : null
 
@@ -55,6 +60,25 @@ export function WritingMarkersTab({ promptId, sampleAnswer, markers }: Props) {
 			}
 			setMode({ type: "idle" })
 		} catch (err) {
+			showError((await extractError(err)).message)
+		}
+	}
+
+	async function handleReorder(updated: AdminWritingMarker[]) {
+		const snapshot = localMarkers
+		setLocalMarkers((prev) => {
+			const map = new Map(updated.map((m) => [m.id, m]))
+			return prev.map((m) => map.get(m.id) ?? m)
+		})
+		try {
+			await Promise.all(
+				updated.map((m) =>
+					update.mutateAsync({ id: m.id, input: { display_order: m.display_order, side: m.side } }),
+				),
+			)
+			showSuccess("Đã cập nhật thứ tự marker.")
+		} catch (err) {
+			setLocalMarkers(snapshot)
 			showError((await extractError(err)).message)
 		}
 	}
@@ -96,6 +120,16 @@ export function WritingMarkersTab({ promptId, sampleAnswer, markers }: Props) {
 
 	return (
 		<Flex vertical gap={16}>
+			{/* Warning: too many markers */}
+			{localMarkers.length >= MARKER_WARN_THRESHOLD && (
+				<Alert
+					type="warning"
+					icon={<WarningOutlined />}
+					showIcon
+					message={`${localMarkers.length} markers — Nhiều marker có thể làm preview khó đọc. Cân nhắc gộp hoặc bỏ bớt.`}
+				/>
+			)}
+
 			{/* Toolbar */}
 			<Flex align="center" gap={12}>
 				<Button
@@ -114,10 +148,11 @@ export function WritingMarkersTab({ promptId, sampleAnswer, markers }: Props) {
 			{/* Preview with side markers and bezier lines */}
 			<MarkerPreview
 				sampleAnswer={sampleAnswer}
-				markers={markers}
+				markers={localMarkers}
 				activeMarkerId={activeMarkerId}
 				onMarkerClick={handleMarkerClick}
 				onTextSelect={handleTextSelect}
+				onReorder={handleReorder}
 			/>
 
 			{/* Editor Modal */}
