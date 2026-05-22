@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'description',
     'system_prompt',
     'opening_line',
+    'opening_line_ipa',
     'target_vocab',
     'estimated_minutes',
     'expected_turns',

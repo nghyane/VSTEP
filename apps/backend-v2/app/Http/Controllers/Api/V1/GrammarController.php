@@ -16,6 +16,7 @@ use App\Services\GrammarService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Gate;
 
 final class GrammarController extends Controller
 {
@@ -65,11 +66,11 @@ final class GrammarController extends Controller
         /** @var GrammarExercise $exercise */
         $exercise = GrammarExercise::query()->findOrFail($id);
 
-        $session = $request->validated('session_id')
-            ? PracticeSession::query()->find($request->validated('session_id'))
-            : null;
-        if ($session !== null && $session->profile_id !== $profile->id) {
-            abort(403, 'Session does not belong to active profile.');
+        $sessionId = $request->validated('session_id');
+        $session = null;
+        if ($sessionId !== null) {
+            $session = PracticeSession::query()->findOrFail($sessionId);
+            Gate::authorize('view', $session);
         }
 
         /** @var array<string,mixed> $answer */

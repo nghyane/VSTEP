@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Practice\PronunciationReviewRequest;
 use App\Http\Requests\Practice\StartConversationRequest;
 use App\Http\Requests\Practice\SubmitTurnRequest;
 use App\Http\Resources\ConversationHistoryResource;
@@ -15,6 +16,7 @@ use App\Models\PracticeSpeakingConversationSession;
 use App\Services\SpeakingConversationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 final class SpeakingConversationController extends Controller
 {
@@ -56,11 +58,13 @@ final class SpeakingConversationController extends Controller
 
     public function submitTurn(SubmitTurnRequest $request, PracticeSpeakingConversationSession $conversationSession): JsonResponse
     {
+        Gate::authorize('update', $conversationSession);
+
         $confidence = (float) ($request->validated('confidence') ?? 1.0);
         if ($confidence > 0 && $confidence < 0.2) {
             return response()->json(['error' => 'low_confidence', 'message' => 'Không nghe rõ. Vui lòng nói lại.'], 422);
         }
-        $result = $this->service->submitTurn($request->profile(), $conversationSession->id, $request->validated('text'));
+        $result = $this->service->submitTurn($conversationSession, $request->validated('text'));
         $session = $result['session'];
 
         return response()->json(['data' => [
@@ -76,7 +80,8 @@ final class SpeakingConversationController extends Controller
 
     public function end(Request $request, PracticeSpeakingConversationSession $conversationSession): JsonResponse
     {
-        $session = $this->service->endSession($request->profile(), $conversationSession->id);
+        Gate::authorize('update', $conversationSession);
+        $session = $this->service->endSession($conversationSession);
         $vocabPct = $session->vocab_target_count > 0
             ? (int) round($session->vocab_used_count / $session->vocab_target_count * 100)
             : 0;
@@ -98,7 +103,8 @@ final class SpeakingConversationController extends Controller
 
     public function show(Request $request, PracticeSpeakingConversationSession $conversationSession): JsonResponse
     {
-        $session = $this->service->getSession($request->profile(), $conversationSession->id);
+        Gate::authorize('view', $conversationSession);
+        $session = $this->service->getSession($conversationSession);
         $scenario = $session->scenario;
 
         return response()->json(['data' => [
@@ -122,19 +128,16 @@ final class SpeakingConversationController extends Controller
 
     public function review(Request $request, PracticeSpeakingConversationSession $conversationSession): JsonResponse
     {
-        return response()->json(['data' => $this->service->reviewSession($request->profile(), $conversationSession->id)]);
+        Gate::authorize('view', $conversationSession);
+
+        return response()->json(['data' => $this->service->reviewSession($conversationSession)]);
     }
 
-    public function pronunciationReview(Request $request): JsonResponse
+    public function pronunciationReview(PronunciationReviewRequest $request): JsonResponse
     {
-        $request->validate([
-            'original' => ['required', 'string', 'max:500'],
-            'transcript' => ['required', 'string', 'max:500'],
-        ]);
-
         $result = $this->service->pronunciationReview(
-            $request->input('original'),
-            $request->input('transcript'),
+            $request->validated('original'),
+            $request->validated('transcript'),
         );
 
         return response()->json(['data' => $result]);

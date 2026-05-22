@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
+use App\Http\Controllers\Concerns\ResolvesPublishedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SpeakingTask\StoreTaskRequest;
 use App\Http\Requests\Admin\SpeakingTask\UpdateTaskRequest;
@@ -17,6 +18,8 @@ use Illuminate\Http\Response;
 
 final class SpeakingTaskController extends Controller
 {
+    use ResolvesPublishedFilter;
+
     public function __construct(private readonly AdminSpeakingTaskService $service) {}
 
     public function indexTasks(Request $request): ResourceCollection
@@ -29,7 +32,7 @@ final class SpeakingTaskController extends Controller
         ];
 
         if ($request->has('is_published')) {
-            $filters['is_published'] = filter_var($request->input('is_published'), FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
+            $filters['is_published'] = $this->resolvePublishedFilter($request);
         }
 
         return AdminSpeakingTaskResource::collection(

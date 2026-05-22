@@ -35,6 +35,10 @@ final class GradingService
     /**
      * Create job + dispatch. Idempotent via partial unique index on
      * (submission_type, submission_id) WHERE status IN (pending, processing).
+     *
+     * If called inside an active DB transaction, dispatch is deferred until
+     * commit (DB::afterCommit). This ensures the queued job can find the
+     * grading_jobs row regardless of caller's transaction boundary.
      */
     public function enqueue(string $submissionType, string $submissionId): GradingJob
     {
@@ -57,7 +61,14 @@ final class GradingService
             throw $e;
         }
 
-        GradeJob::dispatch($job->id);
+        // Defer dispatch when inside a transaction — guarantees grading_jobs
+        // row is committed before the queue worker tries to load it.
+        $jobId = $job->id;
+        if (DB::transactionLevel() > 0) {
+            DB::afterCommit(fn () => GradeJob::dispatch($jobId));
+        } else {
+            GradeJob::dispatch($jobId);
+        }
 
         return $job->refresh();
     }

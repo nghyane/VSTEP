@@ -19,6 +19,7 @@ use App\Services\PracticeSessionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * Unified controller cho listening + reading drill practice.
@@ -82,6 +83,7 @@ final class McqPracticeController extends Controller
     public function useSupport(UseSupportLevelRequest $request, string $skill, PracticeSession $practiceSession): JsonResponse
     {
         $this->assertSkill($skill);
+        Gate::authorize('update', $practiceSession);
 
         return response()->json(['data' => $this->sessionService->useSupportLevel(
             $practiceSession,
@@ -93,8 +95,9 @@ final class McqPracticeController extends Controller
     public function submit(SubmitMcqSessionRequest $request, string $skill, PracticeSession $practiceSession): JsonResponse
     {
         $this->assertSkill($skill);
+        Gate::authorize('submit', $practiceSession);
         $answers = $request->validated('answers');
-        $result = $this->mcqService->submitSession($request->profile(), $practiceSession, $skill, $answers);
+        $result = $this->mcqService->submitSession($practiceSession, $skill, $answers);
 
         return response()->json(['data' => [
             'score' => $result['score'],

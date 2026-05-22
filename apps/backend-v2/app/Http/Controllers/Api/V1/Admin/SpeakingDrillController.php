@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
+use App\Http\Controllers\Concerns\ResolvesPublishedFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SpeakingDrill\StoreDrillRequest;
 use App\Http\Requests\Admin\SpeakingDrill\StoreSentenceRequest;
@@ -22,6 +23,8 @@ use Illuminate\Http\Response;
 
 final class SpeakingDrillController extends Controller
 {
+    use ResolvesPublishedFilter;
+
     public function __construct(private readonly AdminSpeakingDrillService $service) {}
 
     public function indexDrills(Request $request): ResourceCollection
@@ -34,7 +37,7 @@ final class SpeakingDrillController extends Controller
         ];
 
         if ($request->has('is_published')) {
-            $filters['is_published'] = filter_var($request->input('is_published'), FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
+            $filters['is_published'] = $this->resolvePublishedFilter($request);
         }
 
         return AdminSpeakingDrillResource::collection(

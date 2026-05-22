@@ -7,7 +7,7 @@ namespace App\Services;
 use App\Ai\Agents\ConversationReviewAgent;
 use App\Ai\Agents\ConversationTurnAgent;
 use App\Enums\ConversationStatus;
-use App\Exceptions\NotOwnerException;
+use App\Exceptions\AiServiceUnavailableException;
 use App\Exceptions\ResourceNotActiveException;
 use App\Models\PracticeSpeakingConversationSession;
 use App\Models\PracticeSpeakingConversationTurn;
@@ -15,10 +15,12 @@ use App\Models\PracticeSpeakingScenario;
 use App\Models\Profile;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 final class SpeakingConversationService
 {
@@ -50,64 +52,82 @@ final class SpeakingConversationService
     public function startSession(Profile $profile, string $scenarioId): array
     {
         $scenario = $this->getScenario($scenarioId);
-        $openingIpa = $this->generateIpa($scenario->opening_line);
 
-        return DB::transaction(function () use ($profile, $scenario, $openingIpa) {
-            $session = PracticeSpeakingConversationSession::create([
-                'profile_id' => $profile->id,
-                'scenario_id' => $scenario->id,
-                'status' => ConversationStatus::Active,
-                'started_at' => now(),
-            ]);
+        // Use cached IPA if available — populated by admin scenario CRUD.
+        // Fallback to runtime generation for backward compat.
+        $openingIpa = $scenario->opening_line_ipa ?: $this->generateIpa($scenario->opening_line);
 
-            $turn = PracticeSpeakingConversationTurn::create([
-                'session_id' => $session->id,
-                'turn_index' => 0,
-                'role' => 'ai',
-                'text' => $scenario->opening_line,
-                'suggested_words' => $scenario->target_vocab ?? [],
-            ]);
-            $turn->setAttribute('ipa', $openingIpa);
+        try {
+            return DB::transaction(function () use ($profile, $scenario, $openingIpa) {
+                $session = PracticeSpeakingConversationSession::create([
+                    'profile_id' => $profile->id,
+                    'scenario_id' => $scenario->id,
+                    'status' => ConversationStatus::Active,
+                    'started_at' => now(),
+                ]);
 
-            return ['session' => $session, 'turns' => [$turn]];
-        });
+                $turn = PracticeSpeakingConversationTurn::create([
+                    'session_id' => $session->id,
+                    'turn_index' => 0,
+                    'role' => 'ai',
+                    'text' => $scenario->opening_line,
+                    'suggested_words' => $scenario->target_vocab ?? [],
+                ]);
+                $turn->setAttribute('ipa', $openingIpa);
+
+                return ['session' => $session, 'turns' => [$turn]];
+            });
+        } catch (QueryException $e) {
+            // Partial unique index — already has active session for (profile, scenario).
+            if (($e->errorInfo[0] ?? null) === '23505') {
+                throw ValidationException::withMessages([
+                    'session' => ['Bạn đang có 1 cuộc hội thoại đang diễn ra với scenario này. Hãy kết thúc trước khi bắt đầu mới.'],
+                ]);
+            }
+            throw $e;
+        }
     }
 
     /**
      * @return array{user_turn: PracticeSpeakingConversationTurn, ai_turn: PracticeSpeakingConversationTurn, session: PracticeSpeakingConversationSession}
      */
-    public function submitTurn(Profile $profile, string $sessionId, string $text): array
+    public function submitTurn(PracticeSpeakingConversationSession $session, string $text): array
     {
-        /** @var PracticeSpeakingConversationSession $session */
-        $session = PracticeSpeakingConversationSession::query()->findOrFail($sessionId);
-
-        if ($session->profile_id !== $profile->id) {
-            throw new NotOwnerException;
-        }
         if ($session->status !== ConversationStatus::Active) {
             throw new ResourceNotActiveException('Session already ended.');
         }
 
         $scenario = $session->scenario;
         $priorTurns = $session->turns()->get();
-        $nextIndex = $priorTurns->count();
 
         $turnsSerialized = $priorTurns->map(fn ($t) => ($t->role === 'ai' ? $scenario->character_name : 'User').': '.$t->text)->implode("\n");
 
-        // Get suggested_words from the last AI turn — these are what user saw as "Thử dùng các từ sau"
+        // suggested_words from last AI turn — what user saw as "Thử dùng các từ sau"
         $lastAiTurn = $priorTurns->where('role', 'ai')->last();
         $suggestedVocab = $lastAiTurn?->suggested_words ?? $scenario->target_vocab ?? [];
 
-        // Single LLM call: grade + reply
+        // LLM call OUTSIDE transaction (slow, no DB lock held).
         $llmResult = $this->processTurn($scenario, $turnsSerialized, $text, $suggestedVocab);
-        $gradingResult = $llmResult['feedback'];
-        $replyText = $llmResult['reply'];
-        $replyIpa = $llmResult['reply_ipa'];
-        $suggestedWords = $llmResult['suggested_words'];
 
-        return DB::transaction(function () use ($session, $text, $gradingResult, $replyText, $replyIpa, $suggestedWords, $nextIndex, $suggestedVocab) {
+        // DB writes — transaction + lock to serialize concurrent submitTurn calls.
+        return DB::transaction(function () use ($session, $text, $llmResult, $suggestedVocab) {
+            $locked = PracticeSpeakingConversationSession::query()
+                ->whereKey($session->id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($locked->status !== ConversationStatus::Active) {
+                throw new ResourceNotActiveException('Session already ended.');
+            }
+
+            // Recompute nextIndex from locked state — concurrent submits
+            // may have inserted turns between our LLM call and this point.
+            $nextIndex = (int) ($locked->turns()->max('turn_index') ?? -1) + 1;
+
+            $gradingResult = $llmResult['feedback'];
+
             $userTurn = PracticeSpeakingConversationTurn::create([
-                'session_id' => $session->id,
+                'session_id' => $locked->id,
                 'turn_index' => $nextIndex,
                 'role' => 'user',
                 'text' => $text,
@@ -115,34 +135,31 @@ final class SpeakingConversationService
             ]);
 
             $aiTurn = PracticeSpeakingConversationTurn::create([
-                'session_id' => $session->id,
+                'session_id' => $locked->id,
                 'turn_index' => $nextIndex + 1,
                 'role' => 'ai',
-                'text' => $replyText,
-                'suggested_words' => $suggestedWords,
+                'text' => $llmResult['reply'],
+                'suggested_words' => $llmResult['suggested_words'],
             ]);
-            $aiTurn->setAttribute('ipa', $replyIpa);
+            $aiTurn->setAttribute('ipa', $llmResult['reply_ipa']);
 
+            // Batch update — single UPDATE thay vì 4 increments.
             $vocabUsed = collect($gradingResult['vocab_check'] ?? [])->filter(fn ($v) => $v['used'])->count();
-            $session->increment('user_turn_count');
-            $session->increment('vocab_used_count', $vocabUsed);
-            $session->increment('vocab_target_count', count($suggestedVocab));
-            if ($gradingResult['grammar_ok'] ?? false) {
-                $session->increment('grammar_ok_count');
-            }
+            $grammarOk = (bool) ($gradingResult['grammar_ok'] ?? false);
 
-            return ['user_turn' => $userTurn, 'ai_turn' => $aiTurn, 'session' => $session->refresh()];
+            $locked->update([
+                'user_turn_count' => $locked->user_turn_count + 1,
+                'vocab_used_count' => $locked->vocab_used_count + $vocabUsed,
+                'vocab_target_count' => $locked->vocab_target_count + count($suggestedVocab),
+                'grammar_ok_count' => $locked->grammar_ok_count + ($grammarOk ? 1 : 0),
+            ]);
+
+            return ['user_turn' => $userTurn, 'ai_turn' => $aiTurn, 'session' => $locked->refresh()];
         });
     }
 
-    public function endSession(Profile $profile, string $sessionId): PracticeSpeakingConversationSession
+    public function endSession(PracticeSpeakingConversationSession $session): PracticeSpeakingConversationSession
     {
-        /** @var PracticeSpeakingConversationSession $session */
-        $session = PracticeSpeakingConversationSession::query()->findOrFail($sessionId);
-
-        if ($session->profile_id !== $profile->id) {
-            throw new NotOwnerException;
-        }
         if ($session->status !== ConversationStatus::Active) {
             throw new ResourceNotActiveException('Session already ended.');
         }
@@ -156,18 +173,9 @@ final class SpeakingConversationService
         return $session->refresh();
     }
 
-    public function getSession(Profile $profile, string $sessionId): PracticeSpeakingConversationSession
+    public function getSession(PracticeSpeakingConversationSession $session): PracticeSpeakingConversationSession
     {
-        /** @var PracticeSpeakingConversationSession $session */
-        $session = PracticeSpeakingConversationSession::query()
-            ->with(['scenario', 'turns'])
-            ->findOrFail($sessionId);
-
-        if ($session->profile_id !== $profile->id) {
-            throw new NotOwnerException;
-        }
-
-        return $session;
+        return $session->loadMissing(['scenario', 'turns']);
     }
 
     public function listHistory(Profile $profile): LengthAwarePaginator
@@ -216,71 +224,35 @@ final class SpeakingConversationService
             ."3. SUGGEST 2-4 short phrases the user could say next (each ≤ 4 words).\n"
             .'4. REPLY_IPA: provide IPA phonetic transcription of your reply as "reply_ipa" field. Always provide this.';
 
-        $fallbackFeedback = [
-            'word_count' => ['used' => 0, 'target' => count($targetVocab)],
-            'grammar_ok' => true,
-            'grammar_corrections' => [],
-            'vocab_check' => collect($targetVocab)->map(fn ($p) => ['phrase' => $p, 'used' => Str::contains($lowerText, Str::lower($p))])->toArray(),
-            'better' => $userText,
-            'user_ipa' => null,
-            'better_ipa' => null,
-        ];
-
         try {
-            // Direct HTTP call — bypass agent framework (Workers AI returns content as array)
-            $url = rtrim((string) config('ai.providers.workers-ai.url', ''), '/').'/chat/completions';
-            $key = (string) config('ai.providers.workers-ai.key', '');
-            $authHeader = (string) config('ai.providers.workers-ai.auth_header', 'cf-aig-authorization');
-            $model = (string) config('ai.providers.workers-ai.models.text.default');
-
-            $httpResponse = Http::withHeaders([
-                $authHeader => 'Bearer '.$key,
-            ])->timeout(30)->post($url, [
-                'model' => $model,
-                'messages' => [['role' => 'user', 'content' => $prompt."\n\nRespond ONLY with valid JSON, no markdown."]],
-                'max_tokens' => 800,
-            ]);
-
-            $data = $httpResponse->json();
-            $content = data_get($data, 'choices.0.message.content', '');
-            if (is_array($content)) {
-                $content = json_encode($content);
-            }
-            if (preg_match('/```(?:json)?\s*([\s\S]*?)```/', $content, $m)) {
-                $content = trim($m[1]);
-            }
-            $structured = json_decode($content, true);
-
-            // LLM may nest data differently — normalize
-            $parsed = $this->normalizeTurnResponse($structured, $targetVocab, $lowerText, $userText);
-            if ($parsed) {
-                return $parsed;
-            }
-
-            Log::warning('ConversationTurn LLM: invalid structure', ['response' => $structured]);
+            $structured = $this->callConversationLlm(
+                $prompt."\n\nRespond ONLY with valid JSON, no markdown.",
+                maxTokens: 800,
+            );
         } catch (\Throwable $e) {
-            Log::warning('ConversationTurn LLM failed, using fallback', ['error' => $e->getMessage()]);
+            Log::warning('ConversationTurn LLM failed', ['error' => $e->getMessage()]);
+            throw new AiServiceUnavailableException;
         }
 
-        return [
-            'feedback' => $fallbackFeedback,
-            'reply' => "That's interesting! Tell me more.",
-            'reply_ipa' => null,
-            'suggested_words' => ['Tell me more', 'I think', 'What about you'],
-        ];
+        $parsed = $this->normalizeTurnResponse($structured, $targetVocab, $lowerText, $userText);
+        if ($parsed === null) {
+            Log::warning('ConversationTurn LLM: invalid structure', ['response' => $structured]);
+            throw new AiServiceUnavailableException;
+        }
+
+        return $parsed;
     }
 
     /**
      * @return array{overall_score: int, strengths: string[], improvements: string[], corrected_sentences: array, tip: string}
      */
-    public function reviewSession(Profile $profile, string $sessionId): array
+    public function reviewSession(PracticeSpeakingConversationSession $session): array
     {
-        $session = $this->getSession($profile, $sessionId);
+        $session->loadMissing(['scenario', 'turns']);
         $scenario = $session->scenario;
         $turns = $session->turns;
 
         $turnsSerialized = $turns->map(fn ($t) => ($t->role === 'ai' ? $scenario->character_name : 'User').': '.$t->text)->implode("\n");
-
         $userSentences = $turns->where('role', 'user')->pluck('text')->implode("\n");
 
         $prompt = "You are an English teacher reviewing a conversation practice.\n"
@@ -294,50 +266,19 @@ final class SpeakingConversationService
             ."- corrected_sentences: array of {original, corrected, explanation} for EACH user sentence that has errors (in Vietnamese). Skip correct sentences.\n"
             .'- tip: one practical actionable tip (in Vietnamese)';
 
-        $fallback = [
-            'strengths' => ['Giao tiếp tự tin', 'Hiểu được ngữ cảnh hội thoại'],
-            'improvements' => ['Cần cải thiện ngữ pháp', 'Sử dụng từ vựng đa dạng hơn'],
-            'corrected_sentences' => [],
-            'tip' => 'Hãy luyện tập thêm các mẫu câu giao tiếp hàng ngày.',
-        ];
-
         try {
-            // Direct HTTP call — bypass agent framework (Workers AI returns content as array)
-            $url = rtrim((string) config('ai.providers.workers-ai.url', ''), '/').'/chat/completions';
-            $key = (string) config('ai.providers.workers-ai.key', '');
-            $authHeader = (string) config('ai.providers.workers-ai.auth_header', 'cf-aig-authorization');
-            $model = (string) config('ai.providers.workers-ai.models.text.default', '@cf/meta/llama-4-scout-17b-16e-instruct');
-
-            $response = Http::withHeaders([
-                $authHeader => 'Bearer '.$key,
-            ])->timeout(30)->post($url, [
-                'model' => $model,
-                'messages' => [['role' => 'user', 'content' => $prompt]],
-                'max_tokens' => 1000,
-            ]);
-
-            $data = $response->json();
-            $content = data_get($data, 'choices.0.message.content', '');
-            if (is_array($content)) {
-                $content = json_encode($content);
-            }
-
-            // Strip markdown wrapper if present
-            if (preg_match('/```(?:json)?\s*([\s\S]*?)```/', $content, $m)) {
-                $content = trim($m[1]);
-            }
-
-            $parsed = json_decode($content, true);
-            if (is_array($parsed) && isset($parsed['strengths'])) {
-                return $parsed;
-            }
-
-            Log::warning('ConversationReview: could not parse', ['content' => $content]);
+            $parsed = $this->callConversationLlm($prompt, maxTokens: 1000);
         } catch (\Throwable $e) {
             Log::warning('ConversationReview LLM failed', ['error' => $e->getMessage()]);
+            throw new AiServiceUnavailableException;
         }
 
-        return $fallback;
+        if (! isset($parsed['strengths'])) {
+            Log::warning('ConversationReview: could not parse', ['parsed' => $parsed]);
+            throw new AiServiceUnavailableException;
+        }
+
+        return $parsed;
     }
 
     /**
@@ -441,49 +382,25 @@ final class SpeakingConversationService
             ."- intonation: feedback on rhythm, stress, linking sounds (in Vietnamese, 1-2 sentences)\n"
             .'- tip: one practical tip to improve (in Vietnamese, 1 sentence)';
 
-        $fallback = [
-            'pronunciation' => 'Hãy chú ý phát âm rõ từng từ và nghe lại câu mẫu.',
-            'intonation' => 'Cố gắng bắt chước ngữ điệu tự nhiên của câu gốc.',
-            'tip' => 'Luyện tập nhại theo nhiều lần để cải thiện.',
-        ];
-
         try {
-            $url = rtrim((string) config('ai.providers.workers-ai.url', ''), '/').'/chat/completions';
-            $key = (string) config('ai.providers.workers-ai.key', '');
-            $authHeader = (string) config('ai.providers.workers-ai.auth_header', 'cf-aig-authorization');
-            $model = (string) config('ai.providers.workers-ai.models.text.default');
-
-            $response = Http::withHeaders([
-                $authHeader => 'Bearer '.$key,
-            ])->timeout(30)->post($url, [
-                'model' => $model,
-                'messages' => [['role' => 'user', 'content' => $prompt]],
-                'max_tokens' => 500,
-            ]);
-
-            $data = $response->json();
-            $content = data_get($data, 'choices.0.message.content', '');
-            if (is_array($content)) {
-                $content = json_encode($content);
-            }
-            if (preg_match('/```(?:json)?\s*([\s\S]*?)```/', $content, $m)) {
-                $content = trim($m[1]);
-            }
-            $parsed = json_decode($content, true);
-            if (is_array($parsed) && isset($parsed['pronunciation'])) {
-                return $parsed;
-            }
+            $parsed = $this->callConversationLlm($prompt, maxTokens: 500);
         } catch (\Throwable $e) {
             Log::warning('PronunciationReview LLM failed', ['error' => $e->getMessage()]);
+            throw new AiServiceUnavailableException;
         }
 
-        return $fallback;
+        if (! isset($parsed['pronunciation'])) {
+            throw new AiServiceUnavailableException;
+        }
+
+        return $parsed;
     }
 
     /**
      * Generate IPA transcription for a given English text via LLM.
+     * Returns null on failure — IPA is optional UI hint, not critical.
      */
-    private function generateIpa(string $text): ?string
+    public function generateIpa(string $text): ?string
     {
         try {
             $url = rtrim((string) config('ai.providers.workers-ai.url', ''), '/').'/chat/completions';
@@ -512,5 +429,49 @@ final class SpeakingConversationService
         }
 
         return null;
+    }
+
+    /**
+     * Shared LLM call helper — Workers AI returns `content` as array.
+     * Throws \RuntimeException on HTTP/parse failure so caller decides
+     * (throw AiServiceUnavailableException OR fallback for optional ops).
+     *
+     * @return array<string,mixed>
+     */
+    private function callConversationLlm(string $prompt, int $maxTokens): array
+    {
+        $url = rtrim((string) config('ai.providers.workers-ai.url', ''), '/').'/chat/completions';
+        $key = (string) config('ai.providers.workers-ai.key', '');
+        $authHeader = (string) config('ai.providers.workers-ai.auth_header', 'cf-aig-authorization');
+        $model = (string) config('ai.providers.workers-ai.models.text.default');
+
+        $response = Http::withHeaders([$authHeader => 'Bearer '.$key])
+            ->timeout(30)
+            ->post($url, [
+                'model' => $model,
+                'messages' => [['role' => 'user', 'content' => $prompt]],
+                'max_tokens' => $maxTokens,
+            ]);
+
+        if (! $response->successful()) {
+            throw new \RuntimeException("Conversation LLM HTTP {$response->status()}");
+        }
+
+        $content = data_get($response->json(), 'choices.0.message.content', '');
+        if (is_array($content)) {
+            $content = json_encode($content);
+        }
+
+        // Strip markdown wrapper if present.
+        if (preg_match('/```(?:json)?\s*([\s\S]*?)```/', $content, $m)) {
+            $content = trim($m[1]);
+        }
+
+        $parsed = json_decode((string) $content, true);
+        if (! is_array($parsed)) {
+            throw new \RuntimeException('Conversation LLM returned non-JSON');
+        }
+
+        return $parsed;
     }
 }

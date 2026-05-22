@@ -120,7 +120,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/practice/speaking/conversations/{conversation_session}/turn', [SpeakingConversationController::class, 'submitTurn']);
         Route::post('/practice/speaking/conversations/{conversation_session}/end', [SpeakingConversationController::class, 'end']);
         Route::get('/practice/speaking/conversations/{conversation_session}/review', [SpeakingConversationController::class, 'review']);
-        Route::post('/practice/speaking/pronunciation-review', [SpeakingConversationController::class, 'pronunciationReview']);
+        Route::post('/practice/speaking/pronunciation-review', [SpeakingConversationController::class, 'pronunciationReview'])
+            ->middleware('throttle:'.config('practice.rate_limits.pronunciation_review'));
 
         // Practice Speaking — shadowing progress.
         Route::get('/practice/speaking/shadowing/progress', [ShadowingProgressController::class, 'index']);
