@@ -103,7 +103,7 @@ class ProgressStreakTest extends TestCase
         $this->createFullTestSession($profile, $version, now()->subMinutes(30));
 
         $token = $this->postJson('/api/v1/auth/login', [
-            'email' => $profile->user->email, 'password' => 'password',
+            'email' => $profile->account->email, 'password' => 'password',
         ])->json('data.access_token');
 
         $this->withHeader('Authorization', "Bearer {$token}")

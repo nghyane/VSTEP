@@ -202,7 +202,7 @@ class CourseEnrollmentTest extends TestCase
             'profile_id' => $profile->id, 'slot_id' => $slot->id, 'status' => BookingStatus::Booked->value,
         ]);
         $this->assertDatabaseHas('teacher_slots', ['id' => $slot->id, 'status' => SlotStatus::Booked->value]);
-        $this->assertSame(50, $wallet->getBalance($profile));
+        $this->assertSame(150, $wallet->getBalance($profile));
     }
 
     public function test_booking_page_returns_teacher_and_slot_grid(): void
@@ -272,7 +272,13 @@ class CourseEnrollmentTest extends TestCase
             'starts_at' => now()->addDay(), 'status' => SlotStatus::Open,
         ]);
 
-        // Wallet trống — phải bị reject 422 và slot vẫn open.
+        // Drain onboarding bonus để wallet trống — phải bị reject 422 và slot vẫn open.
+        $wallet = $this->app->make(WalletService::class);
+        $balance = $wallet->getBalance($profile);
+        if ($balance > 0) {
+            $wallet->spend($profile, $balance, CoinTransactionType::ExamFull);
+        }
+
         $this->withHeader('Authorization', "Bearer {$token}")
             ->postJson("/api/v1/courses/{$course->id}/bookings", ['slot_id' => $slot->id])
             ->assertStatus(422);

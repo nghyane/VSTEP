@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\WritingGradingResult;
 use App\Services\WritingGradingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class GradingPipelineTest extends TestCase
@@ -20,14 +21,14 @@ class GradingPipelineTest extends TestCase
     public function test_writing_grading_creates_job_and_result(): void
     {
         $service = $this->app->make(WritingGradingService::class);
-        $job = $service->enqueue('practice_writing', 'fake-sub-id');
+        $job = $service->enqueue('practice_writing', (string) Str::uuid());
 
         $this->assertSame(GradingJobStatus::Ready, $job->status);
         $this->assertSame(1, $job->attempts);
 
         $result = WritingGradingResult::query()
             ->where('submission_type', 'practice_writing')
-            ->where('submission_id', 'fake-sub-id')
+            ->where('submission_id', $job->submission_id)
             ->where('is_active', true)
             ->first();
 
@@ -41,12 +42,13 @@ class GradingPipelineTest extends TestCase
     public function test_regrade_creates_new_version_deactivates_old(): void
     {
         $service = $this->app->make(WritingGradingService::class);
-        $service->enqueue('practice_writing', 'sub-1');
-        $service->enqueue('practice_writing', 'sub-1');
+        $subId = (string) Str::uuid();
+        $service->enqueue('practice_writing', $subId);
+        $service->enqueue('practice_writing', $subId);
 
         $results = WritingGradingResult::query()
             ->where('submission_type', 'practice_writing')
-            ->where('submission_id', 'sub-1')
+            ->where('submission_id', $subId)
             ->orderBy('version')
             ->get();
 
@@ -92,7 +94,7 @@ class GradingPipelineTest extends TestCase
     public function test_grading_job_endpoint(): void
     {
         $service = $this->app->make(WritingGradingService::class);
-        $job = $service->enqueue('practice_writing', 'sub-x');
+        $job = $service->enqueue('practice_writing', (string) Str::uuid());
 
         $user = User::factory()->create();
         Profile::factory()->initial()->forAccount($user)->create();
