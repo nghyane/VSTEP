@@ -52,7 +52,7 @@ final class NotificationService
             ->update(['read_at' => now()]);
     }
 
-    public function markRead(Profile $profile, string $notificationId): bool
+    public function markRead(Profile $profile, int $notificationId): bool
     {
         return Notification::query()
             ->where('profile_id', $profile->id)
