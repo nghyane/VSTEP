@@ -6,7 +6,7 @@ namespace App\Http\Requests\Admin\Writing;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateMarkerRequest extends FormRequest
+final class UpdateMarkerRequest extends FormRequest
 {
     public function authorize(): bool
     {

@@ -26,7 +26,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class ExamController extends Controller
+final class ExamController extends Controller
 {
     public function __construct(
         private readonly ExamSessionService $examService,

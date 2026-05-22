@@ -8,7 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SystemConfig;
 use Illuminate\Http\JsonResponse;
 
-class ConfigController extends Controller
+final class ConfigController extends Controller
 {
     public function show(): JsonResponse
     {

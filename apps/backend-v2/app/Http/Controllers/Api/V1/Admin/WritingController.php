@@ -20,7 +20,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Response;
 
-class WritingController extends Controller
+final class WritingController extends Controller
 {
     public function __construct(private readonly AdminWritingService $service) {}
 

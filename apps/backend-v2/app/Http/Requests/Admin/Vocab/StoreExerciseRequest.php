@@ -13,7 +13,7 @@ use Illuminate\Validation\Rule;
  * - fill_blank  → payload { sentence, accepted_answers[] }
  * - word_form   → payload { instruction, sentence, root_word, accepted_answers[] }
  */
-class StoreExerciseRequest extends FormRequest
+final class StoreExerciseRequest extends FormRequest
 {
     public function authorize(): bool
     {

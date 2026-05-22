@@ -9,7 +9,7 @@ use App\Services\Admin\AnalyticsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class AnalyticsController extends Controller
+final class AnalyticsController extends Controller
 {
     public function __construct(private readonly AnalyticsService $analytics) {}
 

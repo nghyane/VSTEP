@@ -9,7 +9,7 @@ use App\Models\ExamVersion;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
-class SubmitExamRequest extends FormRequest
+final class SubmitExamRequest extends FormRequest
 {
     public function authorize(): bool
     {

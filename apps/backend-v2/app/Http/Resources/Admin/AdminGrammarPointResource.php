@@ -11,7 +11,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /**
  * @property-read GrammarPoint $resource
  */
-class AdminGrammarPointResource extends JsonResource
+final class AdminGrammarPointResource extends JsonResource
 {
     public function toArray(Request $request): array
     {

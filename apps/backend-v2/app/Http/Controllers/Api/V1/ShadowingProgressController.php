@@ -10,7 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
-class ShadowingProgressController extends Controller
+final class ShadowingProgressController extends Controller
 {
     /**
      * GET /practice/speaking/shadowing/progress

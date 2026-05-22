@@ -23,7 +23,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
-class AuthController extends Controller
+final class AuthController extends Controller
 {
     public function __construct(
         private readonly AuthService $authService,

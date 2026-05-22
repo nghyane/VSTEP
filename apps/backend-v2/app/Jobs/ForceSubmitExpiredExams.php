@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\Log;
  * với MCQ answers đã save qua auto-save. Writing/speaking không có
  * submission rows (draft chỉ lưu text/marks) nên chỉ grade MCQ.
  */
-class ForceSubmitExpiredExams implements ShouldQueue
+final class ForceSubmitExpiredExams implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 

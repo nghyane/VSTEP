@@ -6,7 +6,7 @@ namespace App\Http\Requests\Wallet;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class CreateTopupOrderRequest extends FormRequest
+final class CreateTopupOrderRequest extends FormRequest
 {
     public function authorize(): bool
     {

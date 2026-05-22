@@ -21,7 +21,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
-class ExamSessionService
+final class ExamSessionService
 {
     /** Grace period cho submit sau deadline — clock skew FE/BE. */
     private const SUBMIT_GRACE_SECONDS = 30;

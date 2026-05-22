@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
-class SpeakingConversationService
+final class SpeakingConversationService
 {
     public function __construct(
         private readonly ConversationTurnAgent $turnAgent,

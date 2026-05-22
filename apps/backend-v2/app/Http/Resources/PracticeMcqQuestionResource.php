@@ -12,7 +12,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * MCQ question resource — HIDE correct_index + explanation until submission.
  * Caller quyết định có include correct_index không (showAnswer flag).
  */
-class PracticeMcqQuestionResource extends JsonResource
+final class PracticeMcqQuestionResource extends JsonResource
 {
     /**
      * @var Model

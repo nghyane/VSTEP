@@ -6,7 +6,7 @@ namespace App\Http\Requests\Practice;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UseSupportLevelRequest extends FormRequest
+final class UseSupportLevelRequest extends FormRequest
 {
     public function authorize(): bool
     {

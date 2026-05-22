@@ -20,7 +20,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Response;
 
-class SpeakingDrillController extends Controller
+final class SpeakingDrillController extends Controller
 {
     public function __construct(private readonly AdminSpeakingDrillService $service) {}
 

@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
-class CourseService
+final class CourseService
 {
     /** Fallback xu/booking khi course chưa set (chỉ áp khi DB column null, mặc định DB = 50). */
     public const BOOKING_COIN_COST_FALLBACK = 50;

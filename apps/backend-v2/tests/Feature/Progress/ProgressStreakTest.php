@@ -15,8 +15,8 @@ use App\Models\ProfileStreakLog;
 use App\Models\ProfileStreakState;
 use App\Models\User;
 use App\Services\ProgressService;
+use Carbon\CarbonInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class ProgressStreakTest extends TestCase
@@ -159,7 +159,7 @@ class ProgressStreakTest extends TestCase
         return [$profile, $version];
     }
 
-    private function createFullTestSession(Profile $profile, ExamVersion $version, Carbon $submittedAt): ExamSession
+    private function createFullTestSession(Profile $profile, ExamVersion $version, CarbonInterface $submittedAt): ExamSession
     {
         return ExamSession::create([
             'profile_id' => $profile->id,

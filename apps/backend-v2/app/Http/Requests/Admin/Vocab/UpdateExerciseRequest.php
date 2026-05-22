@@ -12,7 +12,7 @@ use Illuminate\Foundation\Http\FormRequest;
  * Validate payload lỏng: chấp nhận mọi sub-field. Service strip key thừa theo
  * kind hiện có khi persist. Tighten validation per-kind sau nếu cần.
  */
-class UpdateExerciseRequest extends FormRequest
+final class UpdateExerciseRequest extends FormRequest
 {
     public function authorize(): bool
     {

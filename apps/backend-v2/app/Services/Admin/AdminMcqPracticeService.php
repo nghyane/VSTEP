@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
  *
  * Reused for: Listening, Reading. Writing/Speaking phức tạp hơn → service riêng.
  */
-class AdminMcqPracticeService
+final class AdminMcqPracticeService
 {
     /**
      * @param  class-string<Model>  $exerciseClass

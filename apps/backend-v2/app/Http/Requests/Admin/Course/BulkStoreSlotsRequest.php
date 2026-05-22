@@ -10,7 +10,7 @@ use Illuminate\Foundation\Http\FormRequest;
  * Bulk-generate slot pattern. Ví dụ: từ 2026-06-01 → 2026-06-28, các thứ {2, 4, 6},
  * giờ bắt đầu {"19:00", "19:30", "20:00"}, mỗi slot 30 phút → BE tự rải.
  */
-class BulkStoreSlotsRequest extends FormRequest
+final class BulkStoreSlotsRequest extends FormRequest
 {
     public function authorize(): bool
     {

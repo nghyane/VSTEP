@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
-class ExamImportService
+final class ExamImportService
 {
     /**
      * Import a complete exam with version and all content.

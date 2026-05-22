@@ -27,7 +27,7 @@ use Illuminate\Support\Facades\DB;
  * Heatmap = số exam session (full + custom) hoàn thành mỗi ngày.
  * Chart = derive from exam_sessions (custom+full) with grading results.
  */
-class ProgressService
+final class ProgressService
 {
     public function __construct(
         private readonly StreakMilestoneService $streakMilestoneService,

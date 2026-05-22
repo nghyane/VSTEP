@@ -23,7 +23,7 @@ use Illuminate\Validation\ValidationException;
  * 3. complete(): set ended_at + duration_seconds. Progress context sẽ
  *    listen event này ở Slice 9 (streak + study time).
  */
-class PracticeSessionService
+final class PracticeSessionService
 {
     public function __construct(
         private readonly WalletService $walletService,

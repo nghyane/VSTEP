@@ -7,7 +7,7 @@ namespace App\Services;
 use App\Models\Notification;
 use App\Models\Profile;
 
-class NotificationService
+final class NotificationService
 {
     /**
      * Push notification. Dedup by dedup_key per profile.

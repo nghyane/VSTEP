@@ -19,7 +19,7 @@ use Illuminate\Validation\ValidationException;
  *   // Seeder layer (raw fixture arrays)
  *   $errors = $validator->validateFixtureData($sections, $sectionItems, ...);
  */
-class ExamVersionValidator
+final class ExamVersionValidator
 {
     private array $rules;
 

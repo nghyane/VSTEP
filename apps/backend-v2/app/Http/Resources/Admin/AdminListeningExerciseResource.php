@@ -11,7 +11,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /**
  * @property-read PracticeListeningExercise $resource
  */
-class AdminListeningExerciseResource extends JsonResource
+final class AdminListeningExerciseResource extends JsonResource
 {
     public function toArray(Request $request): array
     {

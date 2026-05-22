@@ -6,7 +6,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class LogListeningPlayedRequest extends FormRequest
+final class LogListeningPlayedRequest extends FormRequest
 {
     public function authorize(): bool
     {

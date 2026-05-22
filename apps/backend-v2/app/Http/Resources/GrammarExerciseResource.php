@@ -13,7 +13,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  *
  * Hide correct_index / correction / accepted_answers from learner payload.
  */
-class GrammarExerciseResource extends JsonResource
+final class GrammarExerciseResource extends JsonResource
 {
     public function toArray(Request $request): array
     {

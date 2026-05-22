@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\Log;
  *
  * Event dispatch trong DB::afterCommit() để đảm bảo transaction đã commit.
  */
-class GradeWritingJob implements ShouldQueue
+final class GradeWritingJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 

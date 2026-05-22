@@ -6,7 +6,7 @@ namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class CheckEmailRequest extends FormRequest
+final class CheckEmailRequest extends FormRequest
 {
     public function authorize(): bool
     {

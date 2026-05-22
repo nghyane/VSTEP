@@ -7,7 +7,7 @@ namespace App\Http\Requests\Admin\SpeakingDrill;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class UpdateDrillRequest extends FormRequest
+final class UpdateDrillRequest extends FormRequest
 {
     public function authorize(): bool
     {

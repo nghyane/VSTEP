@@ -11,7 +11,7 @@ use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class NotificationController extends Controller
+final class NotificationController extends Controller
 {
     public function __construct(private readonly NotificationService $notificationService) {}
 

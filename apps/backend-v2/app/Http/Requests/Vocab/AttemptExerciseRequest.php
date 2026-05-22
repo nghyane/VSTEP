@@ -6,7 +6,7 @@ namespace App\Http\Requests\Vocab;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class AttemptExerciseRequest extends FormRequest
+final class AttemptExerciseRequest extends FormRequest
 {
     public function authorize(): bool
     {

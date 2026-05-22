@@ -33,7 +33,7 @@ use Laravel\Ai\Responses\StructuredAgentResponse;
  *
  * Queue: dispatch GradeWritingJob / GradeSpeakingJob (async, retry up to 3 times).
  */
-class SpeakingGradingService
+final class SpeakingGradingService
 {
     public function __construct(
         private readonly SpeechToTextService $sttService,

@@ -8,7 +8,7 @@ use App\Models\ExamWritingSubmission;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class ExamWritingResultResource extends JsonResource
+final class ExamWritingResultResource extends JsonResource
 {
     /** @var ExamWritingSubmission */
     public $resource;

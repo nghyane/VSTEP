@@ -16,7 +16,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
-class ProfileController extends Controller
+final class ProfileController extends Controller
 {
     public function __construct(
         private readonly ProfileService $profileService,

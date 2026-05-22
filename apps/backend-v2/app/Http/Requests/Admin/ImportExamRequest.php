@@ -8,7 +8,7 @@ use App\Services\ExamVersionValidator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
-class ImportExamRequest extends FormRequest
+final class ImportExamRequest extends FormRequest
 {
     public function authorize(): bool
     {

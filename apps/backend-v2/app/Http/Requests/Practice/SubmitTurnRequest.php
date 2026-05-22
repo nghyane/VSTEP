@@ -6,7 +6,7 @@ namespace App\Http\Requests\Practice;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class SubmitTurnRequest extends FormRequest
+final class SubmitTurnRequest extends FormRequest
 {
     public function authorize(): bool
     {

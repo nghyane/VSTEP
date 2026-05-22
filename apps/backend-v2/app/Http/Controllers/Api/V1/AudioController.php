@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 /**
  * Audio presigned URL endpoints for client-side upload/download.
  */
-class AudioController extends Controller
+final class AudioController extends Controller
 {
     public function __construct(
         private readonly AudioStorageService $audioService,

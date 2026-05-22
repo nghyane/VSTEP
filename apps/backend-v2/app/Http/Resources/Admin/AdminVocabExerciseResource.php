@@ -14,7 +14,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  *
  * @property-read VocabExercise $resource
  */
-class AdminVocabExerciseResource extends JsonResource
+final class AdminVocabExerciseResource extends JsonResource
 {
     public function toArray(Request $request): array
     {

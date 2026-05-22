@@ -25,7 +25,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Http\Response;
 
-class VocabController extends Controller
+final class VocabController extends Controller
 {
     public function __construct(
         private readonly AdminVocabService $service,

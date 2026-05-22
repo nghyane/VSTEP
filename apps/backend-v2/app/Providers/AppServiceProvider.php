@@ -7,8 +7,10 @@ namespace App\Providers;
 use App\Ai\ChatCompletionsGateway;
 use App\Ai\LocalOpenAiGateway;
 use App\Srs\FsrsConfig;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Ai\AiManager;
 use Laravel\Ai\Providers\OpenAiProvider;
@@ -41,5 +43,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Model::shouldBeStrict(! app()->isProduction());
+        Date::use(CarbonImmutable::class);
     }
 }

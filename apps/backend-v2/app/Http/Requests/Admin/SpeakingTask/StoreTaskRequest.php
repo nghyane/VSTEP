@@ -11,7 +11,7 @@ use Illuminate\Foundation\Http\FormRequest;
  * part 1 = social, part 2 = solution, part 3 = topic.
  * content shape free-form JSON per part — admin tự nhập đúng schema.
  */
-class StoreTaskRequest extends FormRequest
+final class StoreTaskRequest extends FormRequest
 {
     public function authorize(): bool
     {

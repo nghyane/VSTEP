@@ -24,7 +24,7 @@ use Illuminate\Validation\ValidationException;
  *
  * Submit KHÔNG tạo job, chấm ngay vì MCQ là objective scoring.
  */
-class McqSkillService
+final class McqSkillService
 {
     public function __construct(
         private readonly PracticeSessionService $sessionService,

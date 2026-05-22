@@ -12,7 +12,7 @@ use Illuminate\Foundation\Http\FormRequest;
  * tasks[] ∈ WT1/WT2/SP1/SP2/SP3/READ.
  * functions[] — free-form string (vd: "expressing time", "comparison").
  */
-class StorePointRequest extends FormRequest
+final class StorePointRequest extends FormRequest
 {
     public function authorize(): bool
     {

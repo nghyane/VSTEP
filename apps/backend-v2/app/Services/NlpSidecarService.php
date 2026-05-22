@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Log;
  * Graceful fallback: returns empty/null when sidecar unavailable.
  * Env: NLP_SIDECAR_URL (default http://localhost:8082)
  */
-class NlpSidecarService
+final class NlpSidecarService
 {
     private function baseUrl(): string
     {

@@ -29,7 +29,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
-class AdminCourseService
+final class AdminCourseService
 {
     public function __construct(
         private readonly CourseService $courseService,

@@ -7,7 +7,7 @@ namespace App\Http\Requests\Admin\Listening;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class UpdateExerciseRequest extends FormRequest
+final class UpdateExerciseRequest extends FormRequest
 {
     public function authorize(): bool
     {

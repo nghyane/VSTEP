@@ -10,7 +10,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
-class DashboardController extends Controller
+final class DashboardController extends Controller
 {
     public function stats(): JsonResponse
     {

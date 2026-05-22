@@ -14,7 +14,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * Payload được expose nhưng client KHÔNG được tin correct_index —
  * server verify. FE chỉ dùng để render options/sentences.
  */
-class VocabExerciseResource extends JsonResource
+final class VocabExerciseResource extends JsonResource
 {
     public function toArray(Request $request): array
     {

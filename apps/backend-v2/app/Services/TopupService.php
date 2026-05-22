@@ -23,7 +23,7 @@ use Illuminate\Validation\ValidationException;
  *
  * Real gateway integration (phase 2): provider webhook → confirm.
  */
-class TopupService
+final class TopupService
 {
     public function __construct(
         private readonly WalletService $walletService,

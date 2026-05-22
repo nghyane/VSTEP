@@ -7,7 +7,7 @@ namespace App\Services\Admin;
 use App\Models\PracticeSpeakingTask;
 use Illuminate\Database\Eloquent\Builder;
 
-class AdminSpeakingTaskService
+final class AdminSpeakingTaskService
 {
     /**
      * @param  array<string,mixed>  $filters

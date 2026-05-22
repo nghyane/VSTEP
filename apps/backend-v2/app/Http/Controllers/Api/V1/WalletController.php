@@ -25,7 +25,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  * Wallet endpoints cho active profile.
  * Route group mount middleware `active-profile` → guarantee $profile hiện diện.
  */
-class WalletController extends Controller
+final class WalletController extends Controller
 {
     public function __construct(
         private readonly WalletService $walletService,

@@ -12,7 +12,7 @@ use App\Services\SpeakingConversationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class SpeakingConversationController extends Controller
+final class SpeakingConversationController extends Controller
 {
     public function __construct(
         private readonly SpeakingConversationService $service,

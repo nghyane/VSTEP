@@ -25,7 +25,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  * Unified controller cho listening + reading drill practice.
  * Skill lấy từ URL prefix: /practice/{skill}/... với skill ∈ (listening, reading).
  */
-class McqPracticeController extends Controller
+final class McqPracticeController extends Controller
 {
     public function __construct(
         private readonly McqSkillService $mcqService,

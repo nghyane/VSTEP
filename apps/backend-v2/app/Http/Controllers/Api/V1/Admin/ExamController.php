@@ -9,7 +9,7 @@ use App\Http\Requests\Admin\ImportExamRequest;
 use App\Services\ExamImportService;
 use Illuminate\Http\JsonResponse;
 
-class ExamController extends Controller
+final class ExamController extends Controller
 {
     public function __construct(
         private readonly ExamImportService $examService,

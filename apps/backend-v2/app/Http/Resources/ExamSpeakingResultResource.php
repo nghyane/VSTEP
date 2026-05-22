@@ -8,7 +8,7 @@ use App\Models\ExamSpeakingSubmission;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class ExamSpeakingResultResource extends JsonResource
+final class ExamSpeakingResultResource extends JsonResource
 {
     /** @var ExamSpeakingSubmission */
     public $resource;

@@ -17,7 +17,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
-class WritingPracticeController extends Controller
+final class WritingPracticeController extends Controller
 {
     public function __construct(
         private readonly WritingPracticeService $writingService,

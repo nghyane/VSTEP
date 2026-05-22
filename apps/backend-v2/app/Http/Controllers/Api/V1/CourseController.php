@@ -15,7 +15,7 @@ use App\Services\CourseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class CourseController extends Controller
+final class CourseController extends Controller
 {
     public function __construct(
         private readonly CourseService $courseService,

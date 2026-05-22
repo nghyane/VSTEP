@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
  * Point ↔ levels/tasks/functions (M-N) sync inline qua field tương ứng.
  * Children (structures, examples, mistakes, tips, exercises) endpoint riêng.
  */
-class AdminGrammarService
+final class AdminGrammarService
 {
     /**
      * @param  array<string,mixed>  $filters

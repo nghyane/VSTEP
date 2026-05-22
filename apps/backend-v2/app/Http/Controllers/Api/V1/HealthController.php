@@ -8,7 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Services\HealthCheckService;
 use Illuminate\Http\JsonResponse;
 
-class HealthController extends Controller
+final class HealthController extends Controller
 {
     public function __construct(
         private readonly HealthCheckService $healthCheckService,

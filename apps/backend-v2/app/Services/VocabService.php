@@ -29,7 +29,7 @@ use Illuminate\Support\Facades\DB;
  *    - attemptExercise(): validate, log attempt
  * 4. Queue due hôm nay: buildDueQueue(profile, limit)
  */
-class VocabService
+final class VocabService
 {
     public function __construct(
         private readonly FsrsScheduler $scheduler,

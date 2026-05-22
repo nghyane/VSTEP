@@ -26,7 +26,7 @@ use Illuminate\Validation\ValidationException;
  * - create order → redirect to gateway
  * - webhook callback → confirm()
  */
-class CourseOrderService
+final class CourseOrderService
 {
     public function __construct(
         private readonly CourseService $courseService,

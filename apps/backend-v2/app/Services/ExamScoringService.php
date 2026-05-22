@@ -10,7 +10,7 @@ use App\Models\SpeakingGradingResult;
 use App\Models\WritingGradingResult;
 use Illuminate\Support\Collection;
 
-class ExamScoringService
+final class ExamScoringService
 {
     /**
      * Load MCQ item answer map for a session.

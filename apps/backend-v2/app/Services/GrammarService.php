@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\DB;
  * No SRS (rule #27). Mastery = simple accuracy tracking với thresholds
  * (xem Enums\MasteryLevel::compute).
  */
-class GrammarService
+final class GrammarService
 {
     /**
      * @return Collection<int,GrammarPoint>

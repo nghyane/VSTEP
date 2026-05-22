@@ -11,7 +11,7 @@ use App\Models\SpeakingGradingResult;
 use App\Models\WritingGradingResult;
 use Illuminate\Http\JsonResponse;
 
-class GradingController extends Controller
+final class GradingController extends Controller
 {
     public function showJob(string $id): JsonResponse
     {

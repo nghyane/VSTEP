@@ -11,7 +11,7 @@ use App\Services\StreakMilestoneService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class OverviewController extends Controller
+final class OverviewController extends Controller
 {
     public function __construct(
         private readonly ProgressService $progressService,
