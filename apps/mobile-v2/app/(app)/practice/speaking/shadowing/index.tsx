@@ -1,7 +1,7 @@
 // Shadowing lesson list — mirrors apps/frontend-v3/src/features/practice/components/SpeakingContent.tsx
 // ShadowingSection. Each lesson card shows level + segment count + progress.
 import { useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -9,8 +9,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { DepthCard } from "@/components/DepthCard";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { LevelFilters, type Level } from "@/components/LevelFilters";
+import { MascotEmpty } from "@/components/MascotStates";
 import { StatusFilters, type StatusFilter } from "@/components/StatusFilters";
-import { mockShadowingLessons } from "@/features/shadowing/mock-shadowing";
+import { useShadowingLessons } from "@/features/shadowing/use-shadowing-lessons";
 import { useShadowingProgress } from "@/features/shadowing/use-shadowing-progress";
 import {
   fontFamily,
@@ -27,13 +28,15 @@ export default function ShadowingListScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data: progress } = useShadowingProgress();
+  const { data: allLessons, isLoading, isError } = useShadowingLessons();
 
   const [level, setLevel] = useState<Level | null>(null);
   const [status, setStatus] = useState<StatusFilter>("Tất cả");
 
   // Apply level + status filters using persisted progress data.
   const lessons = useMemo(() => {
-    return mockShadowingLessons.filter((lesson) => {
+    if (!allLessons) return [];
+    return allLessons.filter((lesson) => {
       if (level && lesson.level.toUpperCase() !== level) return false;
       if (status === "Tất cả") return true;
       const doneCount = new Set(
@@ -45,7 +48,7 @@ export default function ShadowingListScreen() {
       if (status === "Đang làm") return doneCount > 0 && pct < 100;
       return pct >= 100;
     });
-  }, [level, status, progress]);
+  }, [allLessons, level, status, progress]);
 
   return (
     <ScrollView
@@ -70,7 +73,21 @@ export default function ShadowingListScreen() {
         <StatusFilters status={status} onStatusChange={setStatus} />
       </View>
 
-      {lessons.length === 0 ? (
+      {isLoading ? (
+        <View style={s.loadingWrap}>
+          <ActivityIndicator color={COLOR} size="large" />
+        </View>
+      ) : null}
+
+      {isError ? (
+        <MascotEmpty
+          mascot="think"
+          title="Không tải được danh sách"
+          subtitle="Kiểm tra kết nối và thử lại."
+        />
+      ) : null}
+
+      {!isLoading && !isError && lessons.length === 0 ? (
         <View
           style={[
             s.emptyStrip,
@@ -82,7 +99,9 @@ export default function ShadowingListScreen() {
           ]}
         >
           <Text style={[s.emptyText, { color: c.mutedForeground }]}>
-            Không có bài nào phù hợp với bộ lọc.
+            {allLessons && allLessons.length > 0
+              ? "Không có bài nào phù hợp với bộ lọc."
+              : "Chưa có bài shadowing nào. Nội dung đang được cập nhật."}
           </Text>
         </View>
       ) : null}
@@ -224,6 +243,7 @@ const s = StyleSheet.create({
   },
   progressFill: { height: "100%", borderRadius: radius.full },
   filtersStack: { gap: spacing.sm },
+  loadingWrap: { paddingVertical: spacing.xl, alignItems: "center" },
   emptyStrip: {
     borderWidth: 2,
     borderBottomWidth: 4,

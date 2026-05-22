@@ -129,18 +129,25 @@ export interface SpeakingTaskDetail {
 export interface SpeakingDrill {
   id: string; slug: string; title: string;
   level: string; estimatedMinutes: number | null;
-  description: string | null;
-}
-
-export interface SpeakingDrillSentence {
-  id: string; text: string; translation: string | null;
+  segmentCount: number;
 }
 
 export interface SpeakingDrillDetail {
   id: string; slug: string; title: string;
-  level: string; estimatedMinutes: number | null;
-  description: string | null;
-  sentences: SpeakingDrillSentence[];
+  level: string;
+  audioUrl: string;
+  segments: SpeakingDrillSegment[];
+}
+
+export interface SpeakingDrillSegment {
+  id: string;
+  index: number;
+  text: string;
+  ipa: string;
+  translation: string;
+  wordCount: number;
+  audioStart: number;
+  audioEnd: number;
 }
 
 export interface SpeakingVstepHistoryItem {

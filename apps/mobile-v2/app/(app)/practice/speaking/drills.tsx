@@ -63,7 +63,7 @@ export default function SpeakingDrillsScreen() {
                 </View>
                 <View style={s.metaRow}>
                   <Ionicons name="mic-outline" size={14} color={COLOR_TEXT} />
-                  <Text style={[s.metaText, { color: c.mutedForeground }]}> {drill.estimatedMinutes ?? 5} phút</Text>
+                  <Text style={[s.metaText, { color: c.mutedForeground }]}> {drill.segmentCount} đoạn · {drill.estimatedMinutes ?? 5} phút</Text>
                 </View>
               </DepthCard>
             </HapticTouchable>

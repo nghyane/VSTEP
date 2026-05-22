@@ -1,7 +1,7 @@
 // Shadowing session screen — segment-by-segment shadow practice.
 // Mirrors apps/frontend-v3/src/features/practice/components/ShadowingInProgress.tsx
 // adapted to React Native + expo-speech + mobile useSpeechToText hook.
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -10,8 +10,9 @@ import { DepthButton } from "@/components/DepthButton";
 import { FocusHeader } from "@/components/FocusHeader";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { MascotEmpty } from "@/components/MascotStates";
-import { mockShadowingDetails } from "@/features/shadowing/mock-shadowing";
 import { ShadowingSegmentCard } from "@/features/shadowing/ShadowingSegmentCard";
+import type { ShadowingLessonDetail } from "@/features/shadowing/types";
+import { useShadowingLessonDetail } from "@/features/shadowing/use-shadowing-lessons";
 import { useShadowingSession } from "@/features/shadowing/use-shadowing-session";
 import {
   fontFamily,
@@ -28,9 +29,17 @@ export default function ShadowingLessonScreen() {
   const c = useThemeColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const lesson = lessonId ? mockShadowingDetails[lessonId] : null;
+  const { data: lesson, isLoading, isError } = useShadowingLessonDetail(lessonId ?? "");
 
-  if (!lesson) {
+  if (isLoading) {
+    return (
+      <View style={[s.center, { backgroundColor: c.background }]}>
+        <ActivityIndicator color={COLOR} size="large" />
+      </View>
+    );
+  }
+
+  if (isError || !lesson) {
     return (
       <View style={[s.center, { backgroundColor: c.background }]}>
         <MascotEmpty
@@ -53,7 +62,7 @@ export default function ShadowingLessonScreen() {
 }
 
 interface SessionViewProps {
-  lesson: NonNullable<(typeof mockShadowingDetails)[string]>;
+  lesson: ShadowingLessonDetail;
   insets: { top: number; bottom: number };
   c: ReturnType<typeof useThemeColors>;
   onBack: () => void;

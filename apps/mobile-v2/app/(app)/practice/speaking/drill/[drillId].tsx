@@ -61,7 +61,6 @@ export default function SpeakingDrillDetailScreen() {
             <Text style={[s.levelText, { color: speakingText }]}>{drill.level}</Text>
           </View>
           <Text style={[s.title, { color: c.foreground }]}>{drill.title}</Text>
-          {drill.description ? <Text style={[s.sub, { color: c.mutedForeground }]}>{drill.description}</Text> : null}
           <View style={s.previewMetaRow}>
             <View style={[s.previewMeta, { backgroundColor: c.coinTint }]}>
               <Ionicons name="volume-high-outline" size={16} color={speakingText} />
@@ -69,10 +68,10 @@ export default function SpeakingDrillDetailScreen() {
             </View>
             <View style={[s.previewMeta, { backgroundColor: c.surfaceTint }]}>
               <Ionicons name="create-outline" size={16} color={c.foreground} />
-              <Text style={[s.previewMetaText, { color: c.foreground }]}>{drill.sentences.length} câu</Text>
+              <Text style={[s.previewMetaText, { color: c.foreground }]}>{drill.segments.length} câu</Text>
             </View>
           </View>
-          <Text style={[s.meta, { color: c.subtle }]}>{drill.estimatedMinutes ?? 5} phút · TTS mẫu + feedback từng câu</Text>
+          <Text style={[s.meta, { color: c.subtle }]}>TTS mẫu + feedback từng câu</Text>
           <DepthButton onPress={() => startMutation.mutate()} disabled={startMutation.isPending} style={{ backgroundColor: speakingColor, borderColor: speakingColor }}>
             {startMutation.isPending ? "Đang bắt đầu..." : "Bắt đầu drill"}
           </DepthButton>
@@ -92,14 +91,14 @@ function DrillSessionScreen({ drill, sessionId, onBack }: { drill: SpeakingDrill
   const [mode, setMode] = useState<DrillMode>("shadowing");
   const [scores, setScores] = useState<AttemptScore[]>([]);
   const [lastFeedback, setLastFeedback] = useState<AttemptScore | null>(null);
-  const current = drill.sentences[index] ?? null;
-  const done = index >= drill.sentences.length;
+  const current = drill.segments[index] ?? null;
+  const done = index >= drill.segments.length;
   const gradedScores = scores.flatMap((score) => (score.accuracy == null ? [] : [score.accuracy]));
   const avg = useMemo(
     () => gradedScores.length ? Math.round(gradedScores.reduce((a, b) => a + b, 0) / gradedScores.length) : 100,
     [gradedScores],
   );
-  const progressPct = Math.round(((Math.min(index + 1, drill.sentences.length)) / drill.sentences.length) * 100);
+  const progressPct = Math.round(((Math.min(index + 1, drill.segments.length)) / drill.segments.length) * 100);
   const speakingColor = c.skillSpeaking;
   const speakingText = c.coinDark;
 
@@ -117,7 +116,7 @@ function DrillSessionScreen({ drill, sessionId, onBack }: { drill: SpeakingDrill
 
   const attemptMutation = useMutation({
     mutationFn: () => {
-      if (!current) throw new Error("No sentence");
+      if (!current) throw new Error("No segment");
       const trimmed = answer.trim();
       const pct = trimmed.length > 0 ? accuracyFor(current.text, trimmed) : null;
       return submitSpeakingDrillAttempt(sessionId, current.id, mode, trimmed || null, pct);
@@ -147,7 +146,7 @@ function DrillSessionScreen({ drill, sessionId, onBack }: { drill: SpeakingDrill
           <Ionicons name="close" size={22} color={c.foreground} />
         </HapticTouchable>
         <View style={s.topCenter}>
-          <Text style={[s.topTitle, { color: c.foreground }]}>{index + 1}/{drill.sentences.length}</Text>
+          <Text style={[s.topTitle, { color: c.foreground }]}>{index + 1}/{drill.segments.length}</Text>
           <View style={[s.progressTrack, { backgroundColor: c.borderLight }]}>
             <View style={[s.progressFill, { width: `${progressPct}%`, backgroundColor: speakingColor }]} />
           </View>
