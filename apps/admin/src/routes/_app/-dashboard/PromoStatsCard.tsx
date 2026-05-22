@@ -16,7 +16,7 @@ export function PromoStatsCard({ data, loading }: { data: PromoStats | undefined
 			) : !data ? (
 				<Empty description="—" image={Empty.PRESENTED_IMAGE_SIMPLE} />
 			) : (
-				<Space direction="vertical" size={12} style={{ width: "100%" }}>
+				<Space orientation="vertical" size={12} style={{ width: "100%" }}>
 					<Space size={24}>
 						<Statistic title="Hôm nay" value={data.redemptions_today} />
 						<Statistic title="7 ngày" value={data.redemptions_week} />

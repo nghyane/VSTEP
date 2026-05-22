@@ -1,7 +1,15 @@
-import { DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons"
+import {
+	ClockCircleOutlined,
+	DeleteOutlined,
+	EditOutlined,
+	ExclamationCircleOutlined,
+	EyeOutlined,
+	PlusOutlined,
+	SearchOutlined,
+} from "@ant-design/icons"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { Input as AntInput, Empty, Flex, Space, Table, Tag, Typography } from "antd"
+import { Alert, Input as AntInput, Empty, Flex, Space, Table, Tag, Typography } from "antd"
 import { useState } from "react"
 import { Button } from "#/components/Button"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
@@ -28,6 +36,70 @@ interface Search {
 	q?: string
 	is_published?: "all" | "yes" | "no"
 	target_level?: CourseTargetLevel | ""
+}
+
+const EXPIRING_SOON_DAYS = 7
+
+function startOfTodayMs(): number {
+	const d = new Date()
+	d.setHours(0, 0, 0, 0)
+	return d.getTime()
+}
+
+function daysUntil(endDate: string): number {
+	const end = new Date(endDate)
+	end.setHours(0, 0, 0, 0)
+	return Math.round((end.getTime() - startOfTodayMs()) / (1000 * 60 * 60 * 24))
+}
+
+function isExpired(endDate: string): boolean {
+	return daysUntil(endDate) < 0
+}
+
+function countExpiryWarnings(courses: AdminCourse[] | undefined): { expired: number; expiring: number } {
+	if (!courses) return { expired: 0, expiring: 0 }
+	let expired = 0
+	let expiring = 0
+	for (const c of courses) {
+		const days = daysUntil(c.end_date)
+		if (days < 0 && c.is_published) expired++
+		else if (days >= 0 && days <= EXPIRING_SOON_DAYS && c.is_published) expiring++
+	}
+	return { expired, expiring }
+}
+
+function ExpiryCell({ endDate }: { endDate: string }) {
+	const days = daysUntil(endDate)
+	const dateStr = new Date(endDate).toLocaleDateString("vi-VN")
+	if (days < 0) {
+		return (
+			<Space size={4}>
+				<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+					{dateStr}
+				</Typography.Text>
+				<Tag color="error" icon={<ExclamationCircleOutlined />} style={{ marginInlineEnd: 0 }}>
+					Hết hạn {-days}d
+				</Tag>
+			</Space>
+		)
+	}
+	if (days <= EXPIRING_SOON_DAYS) {
+		return (
+			<Space size={4}>
+				<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+					{dateStr}
+				</Typography.Text>
+				<Tag color="warning" icon={<ClockCircleOutlined />} style={{ marginInlineEnd: 0 }}>
+					Còn {days}d
+				</Tag>
+			</Space>
+		)
+	}
+	return (
+		<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+			{dateStr}
+		</Typography.Text>
+	)
 }
 
 export const Route = createFileRoute("/_app/courses/")({
@@ -63,6 +135,8 @@ function CoursesListPage() {
 		navigate({ search: { ...search, ...next, page: next.page ?? 1 } })
 	}
 
+	const expiryStats = countExpiryWarnings(data?.data)
+
 	async function onDelete(): Promise<void> {
 		if (!deleting) return
 		try {
@@ -94,6 +168,30 @@ function CoursesListPage() {
 					</Button>
 				}
 			/>
+
+			{(expiryStats.expired > 0 || expiryStats.expiring > 0) && (
+				<Alert
+					type={expiryStats.expired > 0 ? "warning" : "info"}
+					showIcon
+					icon={<ExclamationCircleOutlined />}
+					message={
+						<Space wrap>
+							{expiryStats.expired > 0 && (
+								<span>
+									<strong>{expiryStats.expired}</strong> khóa đã hết hạn nhưng vẫn đang mở ghi danh — nên đóng
+									để học viên không thấy.
+								</span>
+							)}
+							{expiryStats.expiring > 0 && (
+								<span>
+									<strong>{expiryStats.expiring}</strong> khóa sắp hết hạn trong {EXPIRING_SOON_DAYS} ngày
+									tới.
+								</span>
+							)}
+						</Space>
+					}
+				/>
+			)}
 
 			<Flex wrap align="center" gap={8}>
 				<AntInput
@@ -178,19 +276,33 @@ function CoursesListPage() {
 							render: (_, c: AdminCourse) => `${c.enrollment_count ?? 0}/${c.max_slots}`,
 						},
 						{
+							title: "Lịch",
+							render: (_, c: AdminCourse) => <ExpiryCell endDate={c.end_date} />,
+						},
+						{
 							title: "Trạng thái",
-							render: (_, c: AdminCourse) => (
-								<button
-									type="button"
-									onClick={() => togglePublish(c)}
-									style={{ background: "none", border: 0, padding: 0, cursor: "pointer" }}
-									aria-label="Đổi trạng thái ghi danh"
-								>
-									<Tag color={c.is_published ? "success" : "warning"}>
-										{c.is_published ? "Đang mở" : "Đã đóng"}
-									</Tag>
-								</button>
-							),
+							render: (_, c: AdminCourse) => {
+								const expired = isExpired(c.end_date)
+								return (
+									<Space orientation="vertical" size={4} align="start">
+										<button
+											type="button"
+											onClick={() => togglePublish(c)}
+											style={{ background: "none", border: 0, padding: 0, cursor: "pointer" }}
+											aria-label="Đổi trạng thái ghi danh"
+										>
+											<Tag color={c.is_published ? "success" : "warning"}>
+												{c.is_published ? "Đang mở" : "Đã đóng"}
+											</Tag>
+										</button>
+										{expired && c.is_published && (
+											<Tag color="error" style={{ marginInlineEnd: 0 }}>
+												Cần đóng
+											</Tag>
+										)}
+									</Space>
+								)
+							},
 						},
 						{
 							title: "",

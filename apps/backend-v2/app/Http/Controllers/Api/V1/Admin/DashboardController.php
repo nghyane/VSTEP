@@ -91,6 +91,20 @@ final class DashboardController extends Controller
             ];
         }
 
+        // Khóa đã hết hạn (end_date < hôm nay) mà vẫn published → học viên trên trang
+        // user thấy được nhưng không enroll/dùng được. Admin cần unpublish để dọn list.
+        $expiredPublishedCourses = DB::table('courses')
+            ->where('is_published', true)
+            ->whereDate('end_date', '<', now()->toDateString())
+            ->count();
+        if ($expiredPublishedCourses > 0) {
+            $alerts[] = [
+                'type' => 'warning',
+                'message' => "{$expiredPublishedCourses} khóa học đã hết hạn nhưng vẫn đang published",
+                'action' => '/courses',
+            ];
+        }
+
         return response()->json(['data' => $alerts]);
     }
 

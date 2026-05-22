@@ -50,6 +50,10 @@ export const teacherOptionsQuery = () =>
 
 function invalidateList(qc: ReturnType<typeof useQueryClient>): void {
 	qc.invalidateQueries({ queryKey: ["admin", "courses", "list"] })
+	// Course mutations (publish/unpublish, create, delete, update end_date) đều có thể
+	// thay đổi alert "khóa expired vẫn đang published" → invalidate luôn để banner +
+	// bell Topbar không phải F5 mới đồng bộ.
+	qc.invalidateQueries({ queryKey: ["admin", "alerts"] })
 }
 
 function invalidateDetail(qc: ReturnType<typeof useQueryClient>, id: string): void {

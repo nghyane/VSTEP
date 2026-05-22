@@ -15,7 +15,10 @@ export function ContentChart({ data, loading }: { data: ContentStatusItem[] | un
 			{loading ? (
 				<Skeleton active paragraph={{ rows: 5 }} />
 			) : (
-				<div style={{ width: "100%", flex: 1, minHeight: 220 }}>
+				// Pin chiều cao tuyệt đối — ResponsiveContainer cần parent có height đã
+				// settle ở first paint, nếu để flex:1 trong Card height:100% mà parent Col
+				// không cố định chiều cao thì lần measure đầu = 0 → recharts warn -1×-1.
+				<div style={{ width: "100%", height: 280 }}>
 					<ResponsiveContainer width="100%" height="100%">
 						<BarChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
 							<CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.light} />

@@ -183,7 +183,7 @@ function MilestonesEditor({ value, onChange }: { value: Milestone[]; onChange: (
 	const add = () => onChange([...value, { days: 7, coins: 100 }])
 
 	return (
-		<Space direction="vertical" style={{ width: "100%" }} size={8}>
+		<Space orientation="vertical" style={{ width: "100%" }} size={8}>
 			{value.map((m, idx) => (
 				<Space key={idx} align="center">
 					<InputNumber
@@ -231,7 +231,7 @@ function LevelCostsEditor({
 	}
 
 	return (
-		<Space direction="vertical" style={{ width: "100%" }} size={8}>
+		<Space orientation="vertical" style={{ width: "100%" }} size={8}>
 			{entries.map(([level, coins]) => (
 				<Space key={level} align="center">
 					<InputNumber value={Number(level)} disabled addonBefore="Level" style={{ width: 140 }} />

@@ -1,7 +1,7 @@
 import { ArrowRightOutlined, LockOutlined, MailOutlined } from "@ant-design/icons"
 import { useMutation } from "@tanstack/react-query"
 import { createFileRoute, redirect } from "@tanstack/react-router"
-import { Alert, Button, Form, Input, theme, Typography } from "antd"
+import { Alert, Button, Form, Input, Typography, theme } from "antd"
 import { useState } from "react"
 import { type ApiResponse, api, extractError } from "#/lib/api"
 import { type AdminRole, useAuth } from "#/lib/auth"
@@ -30,12 +30,12 @@ const HERO_IMAGE_URL =
 function LoginPage() {
 	const { token } = theme.useToken()
 	const setSession = useAuth((s) => s.setSession)
-	const [email, setEmail] = useState("")
-	const [password, setPassword] = useState("")
+	const [form] = Form.useForm<{ email: string; password: string }>()
 	const [error, setError] = useState<string | null>(null)
 
 	const mutation = useMutation({
 		mutationFn: async () => {
+			const { email, password } = form.getFieldsValue()
 			const res = await api
 				.post("auth/login", { json: { email, password } })
 				.json<ApiResponse<LoginResponse>>()
@@ -92,10 +92,13 @@ function LoginPage() {
 							Quản trị nội dung & đánh giá VSTEP
 						</div>
 						<div style={{ fontSize: 16, opacity: 0.9, maxWidth: 520, lineHeight: 1.6 }}>
-							Hệ thống quản lý đề thi, từ vựng, ngữ pháp và luyện tập 4 kỹ năng. Theo dõi doanh thu, người dùng và hoạt động học tập theo thời gian thực.
+							Hệ thống quản lý đề thi, từ vựng, ngữ pháp và luyện tập 4 kỹ năng. Theo dõi doanh thu, người
+							dùng và hoạt động học tập theo thời gian thực.
 						</div>
 					</div>
-					<div style={{ fontSize: 13, opacity: 0.7 }}>© {new Date().getFullYear()} VSTEP Practice Platform</div>
+					<div style={{ fontSize: 13, opacity: 0.7 }}>
+						© {new Date().getFullYear()} VSTEP Practice Platform
+					</div>
 				</div>
 			</div>
 
@@ -119,6 +122,7 @@ function LoginPage() {
 					</Typography.Text>
 
 					<Form
+						form={form}
 						layout="vertical"
 						size="large"
 						requiredMark={false}
@@ -127,25 +131,32 @@ function LoginPage() {
 							mutation.mutate()
 						}}
 					>
-						<Form.Item label={<span style={{ fontWeight: 500 }}>Email</span>}>
+						<Form.Item
+							name="email"
+							label={<span style={{ fontWeight: 500 }}>Email</span>}
+							rules={[
+								{ required: true, message: "Vui lòng nhập email." },
+								{ type: "email", message: "Email không hợp lệ." },
+							]}
+						>
 							<Input
 								id="email"
-								type="email"
 								prefix={<MailOutlined style={{ color: token.colorTextPlaceholder, marginInlineEnd: 4 }} />}
 								placeholder="admin@vstep.test"
-								value={email}
-								onChange={(e) => setEmail(e.target.value)}
 								autoComplete="email"
 								style={{ height: 48 }}
 							/>
 						</Form.Item>
-						<Form.Item label={<span style={{ fontWeight: 500 }}>Mật khẩu</span>} style={{ marginBottom: 12 }}>
+						<Form.Item
+							name="password"
+							label={<span style={{ fontWeight: 500 }}>Mật khẩu</span>}
+							style={{ marginBottom: 12 }}
+							rules={[{ required: true, message: "Vui lòng nhập mật khẩu." }]}
+						>
 							<Input.Password
 								id="password"
 								prefix={<LockOutlined style={{ color: token.colorTextPlaceholder, marginInlineEnd: 4 }} />}
 								placeholder="Nhập mật khẩu"
-								value={password}
-								onChange={(e) => setPassword(e.target.value)}
 								autoComplete="current-password"
 								style={{ height: 48 }}
 							/>
