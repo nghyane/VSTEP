@@ -6,7 +6,9 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\ExamSessionStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\LogListeningPlayedRequest;
 use App\Http\Requests\SaveExamDraftRequest;
+use App\Http\Requests\StartExamSessionRequest;
 use App\Http\Requests\SubmitExamRequest;
 use App\Http\Resources\ExamSpeakingResultResource;
 use App\Http\Resources\ExamSubmitResultResource;
@@ -44,15 +46,9 @@ class ExamController extends Controller
         return response()->json(['data' => $data]);
     }
 
-    public function startSession(Request $request, string $examId): JsonResponse
+    public function startSession(StartExamSessionRequest $request, string $examId): JsonResponse
     {
-        $request->validate([
-            'mode' => ['required', 'in:custom,full'],
-            'selected_skills' => ['required_if:mode,custom', 'array'],
-            'selected_skills.*' => ['string', 'in:listening,reading,writing,speaking'],
-            'time_extension_factor' => ['nullable', 'numeric', 'min:1', 'max:3'],
-        ]);
-
+        $validated = $request->validated();
         $data = $this->examService->getExamWithActiveVersion($examId);
         /** @var ExamVersion $version */
         $version = $data['version'];
@@ -60,9 +56,9 @@ class ExamController extends Controller
         $session = $this->examService->startSession(
             $this->profile($request),
             $version,
-            $request->input('mode'),
-            $request->input('selected_skills', []),
-            (float) $request->input('time_extension_factor', 1.0),
+            $validated['mode'],
+            $validated['selected_skills'] ?? [],
+            (float) ($validated['time_extension_factor'] ?? 1.0),
         );
 
         return response()->json(['data' => [
@@ -163,11 +159,14 @@ class ExamController extends Controller
         if ($session->status !== ExamSessionStatus::Active) {
             return response()->json(['data' => ['abandoned' => false]]);
         }
-        $session->update([
-            'status' => ExamSessionStatus::AutoSubmitted,
-            'submitted_at' => now(),
-        ]);
-        ExamSessionDraft::query()->where('session_id', $session->id)->delete();
+
+        DB::transaction(function () use ($session) {
+            $session->update([
+                'status' => ExamSessionStatus::AutoSubmitted,
+                'submitted_at' => now(),
+            ]);
+            ExamSessionDraft::query()->where('session_id', $session->id)->delete();
+        });
 
         $progressService = $this->progressService;
         DB::afterCommit(fn () => $progressService->recordExamCompletion($session->fresh()));
@@ -258,32 +257,28 @@ class ExamController extends Controller
         return response()->json(['data' => $session]);
     }
 
-    public function logListeningPlayed(Request $request, string $sessionId): JsonResponse
+    public function logListeningPlayed(LogListeningPlayedRequest $request, string $sessionId): JsonResponse
     {
-        $request->validate(['section_id' => ['required', 'uuid']]);
+        $validated = $request->validated();
         /** @var ExamSession $session */
         $session = ExamSession::query()->findOrFail($sessionId);
         if ($session->profile_id !== $this->profile($request)->id) {
             abort(403);
         }
+        if ($session->status !== ExamSessionStatus::Active) {
+            return response()->json(['data' => ['error' => 'Session is not active.']], 409);
+        }
 
-        $exists = ExamListeningPlayLog::query()
-            ->where('session_id', $session->id)
-            ->where('section_id', $request->input('section_id'))
-            ->exists();
+        $log = ExamListeningPlayLog::firstOrCreate(
+            ['session_id' => $session->id, 'section_id' => $validated['section_id']],
+            ['played_at' => now(), 'client_ip' => $request->ip()],
+        );
 
-        if ($exists) {
+        if (! $log->wasRecentlyCreated) {
             return response()->json(['data' => ['already_played' => true]], 409);
         }
 
-        ExamListeningPlayLog::create([
-            'session_id' => $session->id,
-            'section_id' => $request->input('section_id'),
-            'played_at' => now(),
-            'client_ip' => $request->ip(),
-        ]);
-
-        return response()->json(['data' => ['played_at' => now()]]);
+        return response()->json(['data' => ['played_at' => $log->played_at]]);
     }
 
     public function sessionResults(Request $request, string $sessionId): JsonResponse
@@ -294,7 +289,7 @@ class ExamController extends Controller
             abort(403);
         }
 
-        if (! in_array($session->status, [ExamSessionStatus::Submitted, ExamSessionStatus::Graded], true)) {
+        if (! $session->status->isTerminal()) {
             return response()->json(['data' => [
                 'session' => $this->formatSessionSummary($session),
                 'scores' => null,
@@ -309,6 +304,7 @@ class ExamController extends Controller
             'speakingSubmissions.gradingResults',
             'examVersion.listeningSections.items',
             'examVersion.readingPassages.items',
+            'listeningPlayLogs',
         ]);
 
         $mcqBand = $this->scoringService->getSessionScores($session);
@@ -317,7 +313,7 @@ class ExamController extends Controller
         $mcqDetail = $this->buildMcqDetail($session);
 
         // MCQ summary: score + total. Total = số item trong selected_skills của version
-        // (câu không đáp tính sai → cùng logic với submit() để FE đọc trực tiếp).
+        // (câu không đáp tính sai — cùng logic với submit() để FE đọc trực tiếp).
         $mcqSummary = $this->buildMcqSummary($session);
 
         // Writing feedback
