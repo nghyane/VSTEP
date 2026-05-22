@@ -1,9 +1,12 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
 import { DepthButton } from "@/components/DepthButton";
+import { HapticTouchable } from "@/components/HapticTouchable";
+import { ChangePasswordDialog } from "@/features/profile/ChangePasswordDialog";
 import { useAuth } from "@/hooks/use-auth";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
@@ -12,6 +15,7 @@ export default function AccountScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user, profile } = useAuth();
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   return (
     <ScrollView
@@ -34,6 +38,21 @@ export default function AccountScreen() {
           )}
         </View>
       )}
+
+      <View style={s.sectionGap}>
+        <Text style={[s.sectionLabel, { color: c.subtle }]}>BẢO MẬT</Text>
+        <HapticTouchable
+          onPress={() => setShowChangePassword(true)}
+          style={[s.actionRow, { backgroundColor: c.card, borderColor: c.border }]}
+        >
+          <Ionicons name="lock-closed-outline" size={18} color={c.mutedForeground} />
+          <View style={{ flex: 1 }}>
+            <Text style={[s.infoLabel, { color: c.subtle }]}>Mật khẩu</Text>
+            <Text style={[s.infoValue, { color: c.foreground }]}>••••••••</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={c.subtle} />
+        </HapticTouchable>
+      </View>
 
       <DepthButton
         variant="secondary"
@@ -62,6 +81,14 @@ export default function AccountScreen() {
       <DepthButton fullWidth onPress={() => router.back()} style={{ marginTop: spacing.lg }}>
         Quay lại
       </DepthButton>
+
+      <ChangePasswordDialog
+        visible={showChangePassword}
+        onClose={() => setShowChangePassword(false)}
+        onSuccess={() =>
+          Alert.alert("Đổi mật khẩu thành công", "Hãy ghi nhớ mật khẩu mới của bạn.")
+        }
+      />
     </ScrollView>
   );
 }
@@ -99,4 +126,14 @@ const s = StyleSheet.create({
   infoValue: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
   sectionGap: { gap: spacing.sm, marginTop: spacing.sm },
   sectionLabel: { fontSize: 10, fontFamily: fontFamily.bold, letterSpacing: 1, marginBottom: spacing.xs },
+  actionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    borderWidth: 2,
+    borderBottomWidth: 4,
+    borderRadius: radius.xl,
+    padding: spacing.base,
+    borderBottomColor: "#CACACA",
+  },
 });
