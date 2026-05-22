@@ -19,6 +19,7 @@ export interface StatsData {
 export interface AlertItem {
 	type: "error" | "warning"
 	message: string
+	action?: string
 }
 
 export interface ActionItem {

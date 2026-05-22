@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Admin;
 
 use App\Enums\OrderStatus;
-use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -38,7 +38,7 @@ final class AnalyticsService
         $week = now()->subDays(7)->startOfDay();
         $month = now()->subDays(30)->startOfDay();
 
-        $sumPaid = fn (string $table, Carbon $since): int => (int) DB::table($table)
+        $sumPaid = fn (string $table, CarbonInterface $since): int => (int) DB::table($table)
             ->where('status', OrderStatus::Paid->value)
             ->where('paid_at', '>=', $since)
             ->sum('amount_vnd');
