@@ -79,32 +79,22 @@ final class McqPracticeController extends Controller
         ], 201);
     }
 
-    public function useSupport(UseSupportLevelRequest $request, string $skill, string $sessionId): JsonResponse
+    public function useSupport(UseSupportLevelRequest $request, string $skill, PracticeSession $practiceSession): JsonResponse
     {
         $this->assertSkill($skill);
-        $profile = $request->profile();
-        /** @var PracticeSession $session */
-        $session = PracticeSession::query()->findOrFail($sessionId);
 
-        $result = $this->sessionService->useSupportLevel(
-            $session,
-            $profile,
+        return response()->json(['data' => $this->sessionService->useSupportLevel(
+            $practiceSession,
+            $request->profile(),
             (int) $request->validated('level'),
-        );
-
-        return response()->json(['data' => $result]);
+        )]);
     }
 
-    public function submit(SubmitMcqSessionRequest $request, string $skill, string $sessionId): JsonResponse
+    public function submit(SubmitMcqSessionRequest $request, string $skill, PracticeSession $practiceSession): JsonResponse
     {
         $this->assertSkill($skill);
-        $profile = $request->profile();
-        /** @var PracticeSession $session */
-        $session = PracticeSession::query()->findOrFail($sessionId);
-
-        /** @var array<int,array{question_id:string,selected_index:int}> $answers */
         $answers = $request->validated('answers');
-        $result = $this->mcqService->submitSession($profile, $session, $skill, $answers);
+        $result = $this->mcqService->submitSession($request->profile(), $practiceSession, $skill, $answers);
 
         return response()->json(['data' => [
             'score' => $result['score'],

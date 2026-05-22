@@ -6,7 +6,9 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\GradingJobStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Practice\DrillAttemptRequest;
 use App\Http\Requests\Practice\StartSessionRequest;
+use App\Http\Requests\Practice\SubmitVstepRequest;
 use App\Http\Resources\DrillSessionHistoryResource;
 use App\Http\Resources\SpeakingSubmissionHistoryResource;
 use App\Models\PracticeSession;
@@ -122,21 +124,12 @@ final class SpeakingPracticeController extends Controller
         ]], 201);
     }
 
-    public function drillAttempt(Request $request, string $sessionId): JsonResponse
+    public function drillAttempt(DrillAttemptRequest $request, PracticeSession $practiceSession): JsonResponse
     {
-        $request->validate([
-            'sentence_id' => ['required', 'uuid'],
-            'mode' => ['required', 'string', 'in:dictation,shadowing'],
-            'user_text' => ['nullable', 'string'],
-            'accuracy_percent' => ['nullable', 'integer', 'min:0', 'max:100'],
-        ]);
-        /** @var PracticeSession $session */
-        $session = PracticeSession::query()->findOrFail($sessionId);
-
         $attempt = $this->speakingService->logDrillAttempt(
-            $request->profile(), $session,
-            $request->input('sentence_id'), $request->input('mode'),
-            $request->input('user_text'), $request->integer('accuracy_percent'),
+            $request->profile(), $practiceSession,
+            $request->validated('sentence_id'), $request->validated('mode'),
+            $request->validated('user_text'), (int) ($request->validated('accuracy_percent') ?? 0),
         );
 
         return response()->json(['data' => [
@@ -144,18 +137,11 @@ final class SpeakingPracticeController extends Controller
         ]]);
     }
 
-    public function submitVstep(Request $request, string $sessionId): JsonResponse
+    public function submitVstep(SubmitVstepRequest $request, PracticeSession $practiceSession): JsonResponse
     {
-        $request->validate([
-            'audio_url' => ['required', 'string', 'max:500'],
-            'duration_seconds' => ['required', 'integer', 'min:1'],
-        ]);
-        /** @var PracticeSession $session */
-        $session = PracticeSession::query()->findOrFail($sessionId);
-
         $submission = $this->speakingService->submitVstepPractice(
-            $request->profile(), $session,
-            $request->input('audio_url'), $request->integer('duration_seconds'),
+            $request->profile(), $practiceSession,
+            $request->validated('audio_url'), (int) $request->validated('duration_seconds'),
         );
 
         return response()->json(['data' => [

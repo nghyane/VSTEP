@@ -58,7 +58,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/wallet/transactions', [WalletController::class, 'transactions']);
         Route::get('/wallet/topup-packages', [WalletController::class, 'topupPackages']);
         Route::post('/wallet/topup', [WalletController::class, 'createTopup']);
-        Route::post('/wallet/topup/{orderId}/confirm', [WalletController::class, 'confirmTopup']);
+        Route::post('/wallet/topup/{wallet_topup_order}/confirm', [WalletController::class, 'confirmTopup']);
         Route::post('/wallet/promo-redeem', [WalletController::class, 'redeemPromo']);
 
         // Vocabulary foundation.
@@ -80,9 +80,9 @@ Route::prefix('v1')->group(function () {
             ->whereIn('skill', ['listening', 'reading']);
         Route::post('/practice/{skill}/sessions', [McqPracticeController::class, 'startSession'])
             ->whereIn('skill', ['listening', 'reading']);
-        Route::post('/practice/{skill}/sessions/{sessionId}/support', [McqPracticeController::class, 'useSupport'])
+        Route::post('/practice/{skill}/sessions/{practice_session}/support', [McqPracticeController::class, 'useSupport'])
             ->whereIn('skill', ['listening', 'reading']);
-        Route::post('/practice/{skill}/sessions/{sessionId}/submit', [McqPracticeController::class, 'submit'])
+        Route::post('/practice/{skill}/sessions/{practice_session}/submit', [McqPracticeController::class, 'submit'])
             ->whereIn('skill', ['listening', 'reading']);
         Route::get('/practice/{skill}/progress', [McqPracticeController::class, 'progress'])
             ->whereIn('skill', ['listening', 'reading']);
@@ -92,8 +92,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/practice/writing/prompts/{id}', [WritingPracticeController::class, 'showPrompt']);
         Route::get('/practice/writing/history', [WritingPracticeController::class, 'history']);
         Route::post('/practice/writing/sessions', [WritingPracticeController::class, 'startSession']);
-        Route::post('/practice/writing/sessions/{sessionId}/support', [WritingPracticeController::class, 'useSupport']);
-        Route::post('/practice/writing/sessions/{sessionId}/submit', [WritingPracticeController::class, 'submit']);
+        Route::post('/practice/writing/sessions/{practice_session}/support', [WritingPracticeController::class, 'useSupport']);
+        Route::post('/practice/writing/sessions/{practice_session}/submit', [WritingPracticeController::class, 'submit']);
 
         // Practice Speaking — drill + VSTEP.
         Route::get('/practice/speaking/drills', [SpeakingPracticeController::class, 'listDrills']);
@@ -104,18 +104,18 @@ Route::prefix('v1')->group(function () {
         Route::get('/practice/speaking/vstep-history', [SpeakingPracticeController::class, 'vstepHistory']);
         Route::post('/practice/speaking/drill-sessions', [SpeakingPracticeController::class, 'startDrillSession']);
         Route::post('/practice/speaking/vstep-sessions', [SpeakingPracticeController::class, 'startVstepSession']);
-        Route::post('/practice/speaking/drill-sessions/{sessionId}/attempt', [SpeakingPracticeController::class, 'drillAttempt']);
-        Route::post('/practice/speaking/vstep-sessions/{sessionId}/submit', [SpeakingPracticeController::class, 'submitVstep']);
+        Route::post('/practice/speaking/drill-sessions/{practice_session}/attempt', [SpeakingPracticeController::class, 'drillAttempt']);
+        Route::post('/practice/speaking/vstep-sessions/{practice_session}/submit', [SpeakingPracticeController::class, 'submitVstep']);
 
         // Practice Speaking — conversation roleplay.
         Route::get('/practice/speaking/scenarios', [SpeakingConversationController::class, 'listScenarios']);
         Route::get('/practice/speaking/scenarios/{id}', [SpeakingConversationController::class, 'showScenario']);
         Route::post('/practice/speaking/conversations', [SpeakingConversationController::class, 'start']);
         Route::get('/practice/speaking/conversations/history', [SpeakingConversationController::class, 'history']);
-        Route::get('/practice/speaking/conversations/{sessionId}', [SpeakingConversationController::class, 'show']);
-        Route::post('/practice/speaking/conversations/{sessionId}/turn', [SpeakingConversationController::class, 'submitTurn']);
-        Route::post('/practice/speaking/conversations/{sessionId}/end', [SpeakingConversationController::class, 'end']);
-        Route::get('/practice/speaking/conversations/{sessionId}/review', [SpeakingConversationController::class, 'review']);
+        Route::get('/practice/speaking/conversations/{conversation_session}', [SpeakingConversationController::class, 'show']);
+        Route::post('/practice/speaking/conversations/{conversation_session}/turn', [SpeakingConversationController::class, 'submitTurn']);
+        Route::post('/practice/speaking/conversations/{conversation_session}/end', [SpeakingConversationController::class, 'end']);
+        Route::get('/practice/speaking/conversations/{conversation_session}/review', [SpeakingConversationController::class, 'review']);
         Route::post('/practice/speaking/pronunciation-review', [SpeakingConversationController::class, 'pronunciationReview']);
 
         // Practice Speaking — shadowing progress.
@@ -128,17 +128,17 @@ Route::prefix('v1')->group(function () {
         Route::post('/exams/{examId}/sessions', [ExamController::class, 'startSession']);
         Route::get('/exam-sessions/active', [ExamController::class, 'activeSession']);
         Route::get('/exam-sessions', [ExamController::class, 'mySessions']);
-        Route::get('/exam-sessions/{sessionId}', [ExamController::class, 'showSession']);
-        Route::get('/exam-sessions/{sessionId}/results', [ExamController::class, 'sessionResults']);
-        Route::post('/exam-sessions/{sessionId}/submit', [ExamController::class, 'submit']);
-        Route::post('/exam-sessions/{sessionId}/abandon', [ExamController::class, 'abandon']);
-        Route::get('/exam-sessions/{sessionId}/draft', [ExamController::class, 'getDraft']);
-        Route::put('/exam-sessions/{sessionId}/draft', [ExamController::class, 'saveDraft'])
+        Route::get('/exam-sessions/{exam_session}', [ExamController::class, 'showSession']);
+        Route::get('/exam-sessions/{exam_session}/results', [ExamController::class, 'sessionResults']);
+        Route::post('/exam-sessions/{exam_session}/submit', [ExamController::class, 'submit']);
+        Route::post('/exam-sessions/{exam_session}/abandon', [ExamController::class, 'abandon']);
+        Route::get('/exam-sessions/{exam_session}/draft', [ExamController::class, 'getDraft']);
+        Route::put('/exam-sessions/{exam_session}/draft', [ExamController::class, 'saveDraft'])
             ->middleware('throttle:120,1');
-        Route::post('/exam-sessions/{sessionId}/listening-played', [ExamController::class, 'logListeningPlayed']);
-        Route::get('/exam-sessions/{sessionId}/listening-played', [ExamController::class, 'listeningPlaySummary']);
-        Route::get('/exam-sessions/{sessionId}/writing-results', [ExamController::class, 'writingResults']);
-        Route::get('/exam-sessions/{sessionId}/speaking-results', [ExamController::class, 'speakingResults']);
+        Route::post('/exam-sessions/{exam_session}/listening-played', [ExamController::class, 'logListeningPlayed']);
+        Route::get('/exam-sessions/{exam_session}/listening-played', [ExamController::class, 'listeningPlaySummary']);
+        Route::get('/exam-sessions/{exam_session}/writing-results', [ExamController::class, 'writingResults']);
+        Route::get('/exam-sessions/{exam_session}/speaking-results', [ExamController::class, 'speakingResults']);
 
         // Grading.
         Route::get('/grading/jobs/{id}', [GradingController::class, 'showJob']);
@@ -159,19 +159,19 @@ Route::prefix('v1')->group(function () {
 
         // Courses.
         Route::get('/courses', [CourseController::class, 'index']);
-        Route::get('/courses/{id}', [CourseController::class, 'show']);
-        Route::post('/courses/{id}/enrollment-orders', [CourseController::class, 'createEnrollmentOrder']);
+        Route::get('/courses/{course}', [CourseController::class, 'show']);
+        Route::post('/courses/{course}/enrollment-orders', [CourseController::class, 'createEnrollmentOrder']);
         Route::get('/courses/enrollment-orders', [CourseController::class, 'enrollmentOrders']);
-        Route::post('/courses/enrollment-orders/{orderId}/confirm', [CourseController::class, 'confirmEnrollmentOrder']);
-        Route::get('/courses/{courseId}/bookings', [CourseController::class, 'bookings']);
-        Route::post('/courses/{courseId}/bookings', [CourseController::class, 'bookSlot']);
+        Route::post('/courses/enrollment-orders/{enrollment_order}/confirm', [CourseController::class, 'confirmEnrollmentOrder']);
+        Route::get('/courses/{course}/bookings', [CourseController::class, 'bookings']);
+        Route::post('/courses/{course}/bookings', [CourseController::class, 'bookSlot']);
 
         // Notifications.
         Route::get('/notifications', [NotificationController::class, 'index']);
         Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
         Route::post('/notifications/read-all', [NotificationController::class, 'readAll']);
-        Route::post('/notifications/{id}/read', [NotificationController::class, 'read']);
-        Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
+        Route::post('/notifications/{notification}/read', [NotificationController::class, 'read']);
+        Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy']);
     });
 
     // Admin/Staff routes (role >= staff)

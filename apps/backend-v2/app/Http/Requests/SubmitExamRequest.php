@@ -36,13 +36,12 @@ final class SubmitExamRequest extends FormRequest
 
     public function after(): array
     {
-        $sessionId = $this->route('sessionId');
         /** @var ExamSession|null $session */
-        $session = ExamSession::query()->find($sessionId);
+        $session = $this->route('exam_session');
 
-        if ($session === null) {
+        if (! $session instanceof ExamSession) {
             return [
-                fn () => $this->validator()->errors()->add('session', 'Session not found.'),
+                fn (Validator $validator) => $validator->errors()->add('session', 'Session not found.'),
             ];
         }
 

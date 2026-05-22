@@ -72,24 +72,19 @@ final class WritingPracticeController extends Controller
         ]], 201);
     }
 
-    public function useSupport(UseSupportLevelRequest $request, string $sessionId): JsonResponse
+    public function useSupport(UseSupportLevelRequest $request, PracticeSession $practiceSession): JsonResponse
     {
-        /** @var PracticeSession $session */
-        $session = PracticeSession::query()->findOrFail($sessionId);
-
         return response()->json(['data' => $this->sessionService->useSupportLevel(
-            $session, $request->profile(), (int) $request->validated('level'),
+            $practiceSession, $request->profile(), (int) $request->validated('level'),
         )]);
     }
 
-    public function submit(Request $request, string $sessionId): JsonResponse
+    public function submit(Request $request, PracticeSession $practiceSession): JsonResponse
     {
         $request->validate(['text' => ['required', 'string', 'min:1']]);
-        /** @var PracticeSession $session */
-        $session = PracticeSession::query()->findOrFail($sessionId);
 
         $submission = $this->writingService->submit(
-            $request->profile(), $session, $request->input('text'),
+            $request->profile(), $practiceSession, $request->input('text'),
         );
 
         return response()->json(['data' => [
