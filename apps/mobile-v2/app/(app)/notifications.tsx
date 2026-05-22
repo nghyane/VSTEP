@@ -1,9 +1,11 @@
 import { FlatList, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useDeleteNotification, useMarkAllRead, useMarkNotificationRead, useNotifications } from "@/features/notification/queries";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { GameIcon } from "@/components/GameIcon";
+import { toneColors, visualForType } from "@/features/notification/visuals";
 import { fontSize, fontFamily, spacing, useThemeColors } from "@/theme";
 import type { Notification } from "@/features/notification/types";
 
@@ -55,6 +57,8 @@ function NotificationRow({ n }: { n: Notification }) {
   const del = useDeleteNotification();
   const markRead = useMarkNotificationRead();
   const unread = n.readAt === null;
+  const visual = visualForType(n.type);
+  const tone = toneColors(visual.tone, c);
 
   const handlePress = () => {
     if (unread) {
@@ -70,8 +74,8 @@ function NotificationRow({ n }: { n: Notification }) {
       onPress={handlePress}
       onLongPress={() => del.mutate(n.id)}
     >
-      <View style={styles.rowIcon}>
-        <GameIcon name="notification" size={20} />
+      <View style={[styles.rowIcon, { backgroundColor: tone.tint }]}>
+        <Ionicons name={visual.iconName} size={18} color={tone.accent} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={[styles.rowTitle, { color: c.foreground }]}>{n.title}</Text>

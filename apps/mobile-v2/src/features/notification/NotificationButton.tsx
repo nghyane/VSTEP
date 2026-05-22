@@ -4,8 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { BottomSheet } from "@/components/BottomSheet";
 import { HapticTouchable } from "@/components/HapticTouchable";
-import { GameIcon } from "@/components/GameIcon";
 import { useDeleteNotification, useMarkAllRead, useNotifications, useUnreadCount } from "@/features/notification/queries";
+import { toneColors, visualForType } from "@/features/notification/visuals";
 import type { Notification } from "@/features/notification/types";
 import { fontSize, fontFamily, spacing, useThemeColors } from "@/theme";
 
@@ -81,14 +81,16 @@ function NotificationRow({ notification }: { notification: Notification }) {
   const c = useThemeColors();
   const deleteMutation = useDeleteNotification();
   const isUnread = notification.readAt === null;
+  const visual = visualForType(notification.type);
+  const tone = toneColors(visual.tone, c);
 
   return (
     <HapticTouchable
       style={[styles.row, isUnread && { backgroundColor: c.primary + "08" }]}
       onPress={() => deleteMutation.mutate(notification.id)}
     >
-      <View style={[styles.iconWrap, { backgroundColor: c.primaryTint }]}>
-        <GameIcon name="notification" size={20} />
+      <View style={[styles.iconWrap, { backgroundColor: tone.tint }]}>
+        <Ionicons name={visual.iconName} size={18} color={tone.accent} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={[styles.rowTitle, { color: c.foreground }]}>{notification.title}</Text>
