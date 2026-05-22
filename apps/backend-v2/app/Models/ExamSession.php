@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\ExamSessionStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -25,6 +26,7 @@ class ExamSession extends BaseModel
             'started_at' => 'datetime',
             'server_deadline_at' => 'datetime',
             'submitted_at' => 'datetime',
+            'status' => ExamSessionStatus::class,
         ];
     }
 

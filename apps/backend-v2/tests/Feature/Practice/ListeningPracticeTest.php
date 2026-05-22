@@ -48,6 +48,8 @@ class ListeningPracticeTest extends TestCase
         $response->assertOk();
         $this->assertArrayNotHasKey('correct_index', $response->json('data.questions.0'));
         $this->assertArrayNotHasKey('explanation', $response->json('data.questions.0'));
+        $this->assertSame($exercise->audio_url, $response->json('data.exercise.audio_url'));
+        $this->assertStringStartsWith('audio/listening/', $response->json('data.exercise.audio_url'));
     }
 
     public function test_full_mcq_flow_start_support_submit(): void

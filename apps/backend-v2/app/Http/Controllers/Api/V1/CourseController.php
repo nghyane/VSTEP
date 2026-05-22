@@ -28,10 +28,10 @@ class CourseController extends Controller
         return response()->json($this->courseService->listForProfile($profile));
     }
 
-    public function show(string $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $course = $this->courseService->getDetail($id);
-        $profile = request()->attributes->get('active_profile');
+        $profile = $request->attributes->get('active_profile');
         $commitment = $profile ? $this->courseService->commitmentStatus($profile, $course) : null;
 
         // Bảo mật: livestream_url là core asset của khóa, chỉ user đã ghi danh được thấy.

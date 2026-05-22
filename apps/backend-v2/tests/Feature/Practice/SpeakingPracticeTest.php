@@ -18,14 +18,16 @@ class SpeakingPracticeTest extends TestCase
 
     public function test_list_drills_filter_by_level(): void
     {
-        PracticeSpeakingDrill::factory()->create(['level' => 'B1']);
-        PracticeSpeakingDrill::factory()->create(['level' => 'B2']);
+        // Seeder migration creates drills — count existing B1 + our new one.
+        $existingB1 = PracticeSpeakingDrill::query()->where('level', 'B1')->count();
+        PracticeSpeakingDrill::factory()->create(['level' => 'B1', 'is_published' => true]);
+        PracticeSpeakingDrill::factory()->create(['level' => 'B2', 'is_published' => true]);
 
         $token = $this->loginLearner();
         $this->withHeader('Authorization', "Bearer {$token}")
             ->getJson('/api/v1/practice/speaking/drills?level=B1')
             ->assertOk()
-            ->assertJsonCount(1, 'data');
+            ->assertJsonCount($existingB1 + 1, 'data');
     }
 
     public function test_drill_session_attempt_flow(): void
@@ -69,7 +71,7 @@ class SpeakingPracticeTest extends TestCase
 
         $submit = $this->withHeader('Authorization', "Bearer {$token}")
             ->postJson("/api/v1/practice/speaking/vstep-sessions/{$sessionId}/submit", [
-                'audio_url' => 'https://r2.example.com/audio/test.webm',
+                'audio_url' => 'audio/speaking/test.webm',
                 'duration_seconds' => 90,
             ]);
         $submit->assertOk();

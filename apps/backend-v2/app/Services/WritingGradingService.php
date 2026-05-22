@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Ai\Agents\StructuredGradingAgent;
+use App\Enums\GradingJobStatus;
 use App\Jobs\GradeSpeakingJob;
 use App\Jobs\GradeWritingJob;
 use App\Models\ExamSpeakingSubmission;
@@ -62,7 +63,7 @@ class WritingGradingService
         $job = GradingJob::create([
             'submission_type' => $submissionType,
             'submission_id' => $submissionId,
-            'status' => 'pending',
+            'status' => GradingJobStatus::Pending,
         ]);
 
         GradeWritingJob::dispatch($job->id);
@@ -75,7 +76,7 @@ class WritingGradingService
         $job = GradingJob::create([
             'submission_type' => $submissionType,
             'submission_id' => $submissionId,
-            'status' => 'pending',
+            'status' => GradingJobStatus::Pending,
         ]);
 
         GradeSpeakingJob::dispatch($job->id);
@@ -86,7 +87,7 @@ class WritingGradingService
     public function process(GradingJob $job): void
     {
         DB::transaction(function () use ($job) {
-            $job->update(['status' => 'processing', 'started_at' => now(), 'attempts' => $job->attempts + 1]);
+            $job->update(['status' => GradingJobStatus::Processing, 'started_at' => now(), 'attempts' => $job->attempts + 1]);
 
             $submission = $this->loadWritingSubmission($job);
             $text = $submission?->text ?? '';
@@ -144,14 +145,14 @@ class WritingGradingService
                 'paragraph_feedback' => [],
             ]);
 
-            $job->update(['status' => 'ready', 'completed_at' => now()]);
+            $job->update(['status' => GradingJobStatus::Ready, 'completed_at' => now()]);
         });
     }
 
     public function processSpeakingJob(GradingJob $job): void
     {
         DB::transaction(function () use ($job) {
-            $job->update(['status' => 'processing', 'started_at' => now(), 'attempts' => $job->attempts + 1]);
+            $job->update(['status' => GradingJobStatus::Processing, 'started_at' => now(), 'attempts' => $job->attempts + 1]);
 
             $submission = $this->loadSpeakingSubmission($job);
             $transcript = 'Transcript unavailable.';
@@ -194,7 +195,7 @@ class WritingGradingService
                 'transcript' => $transcript,
             ]);
 
-            $job->update(['status' => 'ready', 'completed_at' => now()]);
+            $job->update(['status' => GradingJobStatus::Ready, 'completed_at' => now()]);
         });
     }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\GradingJobStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Practice\StartSessionRequest;
 use App\Http\Resources\DrillSessionHistoryResource;
@@ -160,7 +161,7 @@ class SpeakingPracticeController extends Controller
 
         return response()->json(['data' => [
             'submission_id' => $submission->id,
-            'grading_status' => 'pending',
+            'grading_status' => GradingJobStatus::Pending->value,
         ]]);
     }
 

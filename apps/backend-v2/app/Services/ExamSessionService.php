@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\DTOs\ExamSubmitResult;
 use App\Enums\CoinTransactionType;
+use App\Enums\ExamSessionStatus;
 use App\Models\Exam;
 use App\Models\ExamMcqAnswer;
 use App\Models\ExamSession;
@@ -22,6 +23,9 @@ use Illuminate\Validation\ValidationException;
 
 class ExamSessionService
 {
+    /** Grace period cho submit sau deadline — clock skew FE/BE. */
+    private const SUBMIT_GRACE_SECONDS = 30;
+
     public function __construct(
         private readonly WalletService $walletService,
         private readonly ExamScoringService $scoringService,
@@ -35,7 +39,7 @@ class ExamSessionService
     {
         return Exam::query()
             ->where('is_published', true)
-            ->withCount(['sessions as attempts_count' => fn ($q) => $q->whereIn('status', ['submitted', 'graded', 'auto_submitted'])])
+            ->withCount(['sessions as attempts_count' => fn ($q) => $q->whereIn('status', ExamSessionStatus::countableValues())])
             ->orderBy('created_at', 'desc')
             ->get();
     }
@@ -74,13 +78,12 @@ class ExamSessionService
             $selectedSkills = $allSkills;
         }
 
-        // Chặn duplicate: 1 user × 1 đề chỉ được có 1 session active còn hạn.
-        // Defense-in-depth — FE đã hide nút "Bắt đầu" khi có active, BE chặn để bảo vệ
-        // direct-API call / race condition (double-click / 2 tab cùng bấm).
+        // Fast-path: reject trước khi vào transaction nếu đã có session active.
+        // Concurrency guard thật nằm trong transaction sau spend lock (P5-A fix).
         $hasActive = ExamSession::query()
             ->where('profile_id', $profile->id)
             ->where('exam_version_id', $version->id)
-            ->where('status', 'active')
+            ->where('status', ExamSessionStatus::Active)
             ->where('server_deadline_at', '>', now())
             ->exists();
         if ($hasActive) {
@@ -98,7 +101,22 @@ class ExamSessionService
             $timeExtensionFactor, $cost, $deadlineMinutes,
         ) {
             $type = $isFullTest ? CoinTransactionType::ExamFull : CoinTransactionType::ExamCustom;
+            // spend() locks profile row → serializes concurrent requests.
             $this->walletService->spend($profile, $cost, $type);
+
+            // Re-check after lock — nếu request B đã tạo session trong lúc A chờ lock,
+            // detect ở đây và rollback (coin refund nhờ transaction).
+            $stillActive = ExamSession::query()
+                ->where('profile_id', $profile->id)
+                ->where('exam_version_id', $version->id)
+                ->where('status', ExamSessionStatus::Active)
+                ->where('server_deadline_at', '>', now())
+                ->exists();
+            if ($stillActive) {
+                throw ValidationException::withMessages([
+                    'session' => ['Bạn đang có một lượt làm dở của đề này. Hãy tiếp tục hoặc hủy trước khi bắt đầu lượt mới.'],
+                ]);
+            }
 
             return ExamSession::create([
                 'profile_id' => $profile->id,
@@ -109,7 +127,7 @@ class ExamSessionService
                 'time_extension_factor' => $timeExtensionFactor,
                 'started_at' => now(),
                 'server_deadline_at' => now()->addMinutes($deadlineMinutes),
-                'status' => 'active',
+                'status' => ExamSessionStatus::Active,
                 'coins_charged' => $cost,
             ]);
         });
@@ -132,8 +150,11 @@ class ExamSessionService
         if ($session->profile_id !== $profile->id) {
             abort(403);
         }
-        if (! in_array($session->status, ['active'], true)) {
+        if ($session->status !== ExamSessionStatus::Active) {
             throw ValidationException::withMessages(['session' => ['Session not active.']]);
+        }
+        if ($session->server_deadline_at->addSeconds(self::SUBMIT_GRACE_SECONDS)->isPast()) {
+            throw ValidationException::withMessages(['session' => ['Session đã hết hạn.']]);
         }
 
         return DB::transaction(function () use ($session, $mcqAnswers, $writingAnswers, $speakingAnswers) {
@@ -186,7 +207,7 @@ class ExamSessionService
             ProfileDailyActivity::addActivity($session->profile_id, 'exam_session');
 
             $session->update([
-                'status' => 'submitted',
+                'status' => ExamSessionStatus::Submitted,
                 'submitted_at' => now(),
             ]);
 
@@ -304,7 +325,7 @@ class ExamSessionService
         if ($session->profile_id !== $profile->id) {
             abort(403);
         }
-        if ($session->status !== 'active' || $session->server_deadline_at->isPast()) {
+        if ($session->status !== ExamSessionStatus::Active || $session->server_deadline_at->isPast()) {
             throw ValidationException::withMessages(['session' => ['Session not active.']]);
         }
 
