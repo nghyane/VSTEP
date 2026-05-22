@@ -16,6 +16,7 @@ use App\Services\SpeechToText;
 use App\Services\SpeechToTextService;
 use App\Srs\FsrsConfig;
 use Carbon\CarbonImmutable;
+use Google\Client as GoogleClient;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -29,6 +30,18 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(FsrsConfig::class, fn () => FsrsConfig::default());
+
+        // Google OAuth client — singleton so JWKS cache + Guzzle client are
+        // reused across Octane requests. Verifying client_id at boot fails
+        // fast in production if the env is missing.
+        $this->app->singleton(GoogleClient::class, function () {
+            $clientId = (string) config('services.google.client_id');
+            if ($clientId === '') {
+                throw new \RuntimeException('GOOGLE_CLIENT_ID is not configured.');
+            }
+
+            return new GoogleClient(['client_id' => $clientId]);
+        });
 
         // Default LLM grader implementation.
         $this->app->bind(LlmGrader::class, LlmGradingService::class);

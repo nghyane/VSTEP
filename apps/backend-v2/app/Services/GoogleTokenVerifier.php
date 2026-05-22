@@ -10,11 +10,13 @@ use Google\Client as GoogleClient;
 /**
  * Verifies Google ID tokens using Google's official PHP client.
  *
- * Google recommends the platform client library for production token validation
- * instead of hand-rolled JWKS/JWT verification.
+ * The GoogleClient instance is a singleton bound in AppServiceProvider so
+ * its internal JWKS cache + Guzzle client are reused across Octane requests.
  */
 final class GoogleTokenVerifier
 {
+    public function __construct(private readonly GoogleClient $client) {}
+
     /**
      * @return array{sub:string,email:string,email_verified:bool,name:?string,picture:?string}
      *
@@ -22,12 +24,7 @@ final class GoogleTokenVerifier
      */
     public function verify(string $idToken): array
     {
-        $clientId = (string) config('services.google.client_id');
-        if ($clientId === '') {
-            throw new \RuntimeException('Google client ID not configured.');
-        }
-
-        $payload = (new GoogleClient(['client_id' => $clientId]))->verifyIdToken($idToken);
+        $payload = $this->client->verifyIdToken($idToken);
         if (! is_array($payload)) {
             throw new InvalidGoogleTokenException;
         }

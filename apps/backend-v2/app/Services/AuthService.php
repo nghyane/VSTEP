@@ -215,16 +215,14 @@ final class AuthService
             ]);
         }
 
-        // Google trả email lowercase, nhưng user có thể đã đăng ký bằng password
-        // với mixed case (Postgres so sánh case-sensitive). Normalize để link đúng
-        // account thay vì tạo trùng → vi phạm unique index.
-        $normalizedEmail = strtolower($payload['email']);
-
-        return DB::transaction(function () use ($payload, $normalizedEmail, $userAgent) {
+        // User::$email is mutated to lowercase on write, so equality on the
+        // raw token email matches every existing row. No whereRaw, no extra
+        // normalization layer here \u2014 the canonical form lives in the model.
+        return DB::transaction(function () use ($payload, $userAgent) {
             $user = User::where('google_id', $payload['sub'])->first();
 
             if ($user === null) {
-                $existing = User::whereRaw('LOWER(email) = ?', [$normalizedEmail])->first();
+                $existing = User::where('email', $payload['email'])->first();
 
                 if ($existing !== null && $existing->email_verified_at === null) {
                     // Account takeover prevention: email đã đăng ký nhưng chưa verify.
@@ -243,7 +241,7 @@ final class AuthService
                 } else {
                     // New user. Google đã verify email — mark verified.
                     $user = User::create([
-                        'email' => $normalizedEmail,
+                        'email' => $payload['email'],
                         'google_id' => $payload['sub'],
                         'full_name' => $payload['name'],
                         'role' => Role::Learner,
