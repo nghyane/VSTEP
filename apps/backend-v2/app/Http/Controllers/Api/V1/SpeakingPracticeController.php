@@ -21,6 +21,7 @@ use App\Services\SpeakingPracticeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Gate;
 
 final class SpeakingPracticeController extends Controller
 {
@@ -99,8 +100,9 @@ final class SpeakingPracticeController extends Controller
 
     public function drillAttempt(DrillAttemptRequest $request, PracticeSession $practiceSession): JsonResponse
     {
+        Gate::authorize('update', $practiceSession);
         $attempt = $this->speakingService->logDrillAttempt(
-            $request->profile(), $practiceSession,
+            $practiceSession,
             $request->validated('sentence_id'), $request->validated('mode'),
             $request->validated('user_text'), (int) ($request->validated('accuracy_percent') ?? 0),
         );
@@ -112,8 +114,9 @@ final class SpeakingPracticeController extends Controller
 
     public function submitVstep(SubmitVstepRequest $request, PracticeSession $practiceSession): JsonResponse
     {
+        Gate::authorize('submit', $practiceSession);
         $submission = $this->speakingService->submitVstepPractice(
-            $request->profile(), $practiceSession,
+            $practiceSession,
             $request->validated('audio_url'), (int) $request->validated('duration_seconds'),
         );
 

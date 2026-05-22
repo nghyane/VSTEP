@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\AdminSpeakingScenarioResource;
 use App\Models\PracticeSpeakingScenario;
+use App\Services\SpeakingConversationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
@@ -15,6 +16,10 @@ use Illuminate\Validation\Rule;
 
 final class SpeakingScenarioController extends Controller
 {
+    public function __construct(
+        private readonly SpeakingConversationService $conversationService,
+    ) {}
+
     public function index(Request $request): ResourceCollection
     {
         $perPage = max(1, min((int) $request->integer('per_page', 20), 100));
@@ -59,6 +64,10 @@ final class SpeakingScenarioController extends Controller
             'is_published' => ['nullable', 'boolean'],
         ]);
 
+        // Generate IPA for opening_line synchronously — cached on row so
+        // runtime startSession doesn't need to call LLM. Failure is OK (nullable).
+        $data['opening_line_ipa'] = $this->conversationService->generateIpa($data['opening_line']);
+
         $scenario = PracticeSpeakingScenario::query()->create($data);
 
         return (new AdminSpeakingScenarioResource($scenario))->response()->setStatusCode(201);
@@ -92,6 +101,11 @@ final class SpeakingScenarioController extends Controller
             'expected_turns' => ['sometimes', 'integer', 'min:2'],
             'is_published' => ['sometimes', 'boolean'],
         ]);
+
+        // Re-generate IPA if opening_line changed.
+        if (array_key_exists('opening_line', $data) && $data['opening_line'] !== $scenario->opening_line) {
+            $data['opening_line_ipa'] = $this->conversationService->generateIpa($data['opening_line']);
+        }
 
         $scenario->update($data);
 

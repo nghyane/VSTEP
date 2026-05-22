@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Exceptions\NotOwnerException;
 use App\Models\PracticeListeningExercise;
 use App\Models\PracticeListeningQuestion;
 use App\Models\PracticeMcqAnswer;
@@ -79,14 +78,10 @@ final class McqSkillService
      * @return array{score: int, total: int, items: array<int,array{question_id:string,is_correct:bool,correct_index:int,explanation:string}>, session: PracticeSession}
      */
     public function submitSession(
-        Profile $profile,
         PracticeSession $session,
         string $skill,
         array $answers,
     ): array {
-        if ($session->profile_id !== $profile->id) {
-            throw new NotOwnerException;
-        }
         if ($session->module !== $skill) {
             throw ValidationException::withMessages([
                 'skill' => ["Session module ({$session->module}) does not match skill ({$skill})."],
@@ -108,6 +103,17 @@ final class McqSkillService
             ->keyBy('id');
 
         return DB::transaction(function () use ($session, $answers, $questionMap, $questionType) {
+            $locked = PracticeSession::query()
+                ->whereKey($session->id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($locked->ended_at !== null) {
+                throw ValidationException::withMessages([
+                    'session' => ['Session already submitted.'],
+                ]);
+            }
+
             $items = [];
             $correctCount = 0;
             foreach ($answers as $answer) {
@@ -128,7 +134,7 @@ final class McqSkillService
 
                 PracticeMcqAnswer::updateOrCreate(
                     [
-                        'session_id' => $session->id,
+                        'session_id' => $locked->id,
                         'question_type' => $questionType,
                         'question_id' => $question->id,
                     ],
@@ -147,13 +153,13 @@ final class McqSkillService
                 ];
             }
 
-            $this->sessionService->complete($session);
+            $this->sessionService->complete($locked);
 
             return [
                 'score' => $correctCount,
                 'total' => $questionMap->count(),
                 'items' => $items,
-                'session' => $session->refresh(),
+                'session' => $locked->refresh(),
             ];
         });
     }
@@ -216,12 +222,13 @@ final class McqSkillService
             ->where('module', $skill)
             ->where('content_ref_type', $refType)
             ->whereNotNull('ended_at')
+            ->with('mcqAnswers:id,session_id,is_correct')
             ->get();
 
         $best = [];
         foreach ($sessions as $session) {
             $exerciseId = $session->content_ref_id;
-            $answers = PracticeMcqAnswer::query()->where('session_id', $session->id)->get();
+            $answers = $session->mcqAnswers;
             $score = $answers->where('is_correct', true)->count();
             $total = $answers->count();
 
