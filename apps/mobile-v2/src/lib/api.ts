@@ -47,6 +47,20 @@ function unwrapData(obj: unknown): unknown {
 
 // ── HTTP client ──
 
+// Rich error carrying HTTP status + body so consumers can branch on 503 / 422
+// without parsing message strings. Backward-compat: `message` keeps the
+// original "HTTP {status}: {text}" format some screens may still display.
+export class ApiError extends Error {
+  readonly status: number;
+  readonly body: unknown;
+  constructor(status: number, text: string, body: unknown) {
+    super(`HTTP ${status}: ${text}`);
+    this.name = "ApiError";
+    this.status = status;
+    this.body = body;
+  }
+}
+
 async function request<T>(
   method: string,
   path: string,
@@ -69,12 +83,20 @@ async function request<T>(
   if (res.status === 401 && !isRetry) {
     const refreshed = await tryRefresh();
     if (refreshed) return request<T>(method, path, body, true);
-    throw new Error("UNAUTHORIZED");
+    throw new ApiError(401, "UNAUTHORIZED", null);
   }
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`HTTP ${res.status}: ${text}`);
+    let parsed: unknown = null;
+    if (text) {
+      try {
+        parsed = toCamelCase(JSON.parse(text));
+      } catch {
+        parsed = null;
+      }
+    }
+    throw new ApiError(res.status, text, parsed);
   }
 
   const json: unknown = await res.json().catch(() => ({}));

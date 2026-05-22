@@ -1,4 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
+import { ApiError } from "@/lib/api";
 import { clearTokens } from "@/lib/auth";
 
 export const queryClient = new QueryClient({
@@ -10,10 +11,14 @@ export const queryClient = new QueryClient({
     },
     mutations: {
       onError: (error: unknown) => {
-        const message = error instanceof Error ? error.message : "";
-
-        // 401 → clear tokens so next render routes to login
-        if (message === "UNAUTHORIZED") {
+        // 401 → clear tokens so next render routes to login.
+        // Message-string fallback kept for older code paths still throwing
+        // plain Error("UNAUTHORIZED").
+        if (error instanceof ApiError && error.status === 401) {
+          void clearTokens();
+          return;
+        }
+        if (error instanceof Error && error.message === "UNAUTHORIZED") {
           void clearTokens();
           return;
         }

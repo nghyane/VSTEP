@@ -109,17 +109,58 @@ export default function SpeakingConversationScreen() {
     );
   };
 
-  if (conv.isStarting || !conv.session) {
+  if (conv.isStarting) {
     return (
       <View style={[s.center, { backgroundColor: c.background }]}>
         <ActivityIndicator size="large" color={c.skillSpeaking} />
         <Text style={[s.loadingText, { color: c.mutedForeground }]}>Đang mở phòng roleplay...</Text>
-        {conv.errorText && <Text style={[s.errorText, { color: c.destructive }]}>{conv.errorText}</Text>}
-        {conv.isStartError && (
-          <DepthButton onPress={() => conv.retryStart()} style={{ minWidth: 140, backgroundColor: c.skillSpeaking, borderColor: c.skillSpeaking }}>
-            Thử lại
+      </View>
+    );
+  }
+
+  if (conv.isStartError) {
+    // BE Flow 6 (commit 3ff8a4a) introduced 422 active-conflict + 503 service-down.
+    // - active-conflict → no retry; user must end the prior session.
+    // - service-down / generic → retry button.
+    const isConflict = conv.startErrorKind === "active-conflict";
+    return (
+      <View style={[s.center, { backgroundColor: c.background }]}>
+        <Ionicons
+          name={isConflict ? "warning-outline" : "cloud-offline-outline"}
+          size={48}
+          color={c.destructive}
+        />
+        <Text style={[s.errorTitle, { color: c.foreground }]}>
+          {isConflict ? "Phiên hội thoại đang mở" : "Không thể bắt đầu"}
+        </Text>
+        <Text style={[s.errorText, { color: c.mutedForeground }]}>
+          {conv.startErrorMessage ?? "Vui lòng thử lại."}
+        </Text>
+        <View style={s.errorActions}>
+          {!isConflict && (
+            <DepthButton
+              onPress={() => conv.retryStart()}
+              style={{ minWidth: 140, backgroundColor: c.skillSpeaking, borderColor: c.skillSpeaking }}
+            >
+              Thử lại
+            </DepthButton>
+          )}
+          <DepthButton
+            variant="secondary"
+            onPress={() => router.back()}
+            style={{ minWidth: 140 }}
+          >
+            Quay lại
           </DepthButton>
-        )}
+        </View>
+      </View>
+    );
+  }
+
+  if (!conv.session) {
+    return (
+      <View style={[s.center, { backgroundColor: c.background }]}>
+        <ActivityIndicator size="large" color={c.skillSpeaking} />
       </View>
     );
   }
@@ -341,7 +382,9 @@ const s = StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.xl, gap: spacing.md },
   loadingText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
-  errorText: { fontSize: fontSize.sm, textAlign: "center" },
+  errorTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold, textAlign: "center" },
+  errorText: { fontSize: fontSize.sm, textAlign: "center", lineHeight: 20 },
+  errorActions: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm },
   topBar: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.lg, paddingBottom: spacing.md, borderBottomWidth: 1 },
   iconButton: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
   topCopy: { flex: 1 },
