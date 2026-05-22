@@ -7,6 +7,13 @@ namespace App\Providers;
 use App\Ai\ChatCompletionsGateway;
 use App\Ai\LocalOpenAiGateway;
 use App\Models\Profile;
+use App\Services\Grading\GradingStrategyResolver;
+use App\Services\Grading\LlmGrader;
+use App\Services\Grading\LlmGradingService;
+use App\Services\Grading\SpeakingGradingStrategy;
+use App\Services\Grading\WritingGradingStrategy;
+use App\Services\SpeechToText;
+use App\Services\SpeechToTextService;
 use App\Srs\FsrsConfig;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -22,6 +29,18 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(FsrsConfig::class, fn () => FsrsConfig::default());
+
+        // Default LLM grader implementation.
+        $this->app->bind(LlmGrader::class, LlmGradingService::class);
+
+        // Default Speech-to-Text implementation.
+        $this->app->bind(SpeechToText::class, SpeechToTextService::class);
+
+        // Grading strategy registry — explicit list, ordered.
+        $this->app->singleton(GradingStrategyResolver::class, fn ($app) => new GradingStrategyResolver([
+            $app->make(WritingGradingStrategy::class),
+            $app->make(SpeakingGradingStrategy::class),
+        ]));
 
         $this->app->resolving(AiManager::class, function (AiManager $ai, $app): void {
             $ai->extend('local', function ($app, array $config) {

@@ -9,6 +9,7 @@ use App\Models\PracticeSession;
 use App\Models\PracticeWritingPrompt;
 use App\Models\PracticeWritingSubmission;
 use App\Models\Profile;
+use App\Services\Grading\GradingService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
@@ -17,7 +18,7 @@ final class WritingPracticeService
 {
     public function __construct(
         private readonly PracticeSessionService $sessionService,
-        private readonly WritingGradingService $gradingService,
+        private readonly GradingService $gradingService,
     ) {}
 
     /** @return Collection<int,PracticeWritingPrompt> */

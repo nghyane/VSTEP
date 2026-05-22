@@ -18,6 +18,7 @@ use App\Models\ExamWritingSubmission;
 use App\Models\Profile;
 use App\Models\ProfileDailyActivity;
 use App\Models\SystemConfig;
+use App\Services\Grading\GradingService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -30,8 +31,7 @@ final class ExamSessionService
     public function __construct(
         private readonly WalletService $walletService,
         private readonly ExamScoringService $scoringService,
-        private readonly WritingGradingService $writingGradingService,
-        private readonly SpeakingGradingService $speakingGradingService,
+        private readonly GradingService $gradingService,
         private readonly ProgressService $progressService,
     ) {}
 
@@ -229,7 +229,7 @@ final class ExamSessionService
                     'word_count' => $w['word_count'],
                     'submitted_at' => now(),
                 ]);
-                $job = $this->writingGradingService->enqueue('exam_writing', $submission->id);
+                $job = $this->gradingService->enqueue('exam_writing', $submission->id);
                 $writingJobs[] = [
                     'submission_id' => $submission->id,
                     'job_id' => $job->id,
@@ -248,7 +248,7 @@ final class ExamSessionService
                     'duration_seconds' => $s['duration_seconds'],
                     'submitted_at' => now(),
                 ]);
-                $job = $this->speakingGradingService->enqueue('exam_speaking', $submission->id);
+                $job = $this->gradingService->enqueue('exam_speaking', $submission->id);
                 $speakingJobs[] = [
                     'submission_id' => $submission->id,
                     'job_id' => $job->id,

@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
  *
  * Env: AZURE_SPEECH_KEY, AZURE_SPEECH_REGION (default: southeastasia).
  */
-final class SpeechToTextService
+final class SpeechToTextService implements SpeechToText
 {
     private function key(): string
     {
