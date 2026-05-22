@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Listeners;
 
 use App\Enums\CoinTransactionType;
+use App\Enums\IconKey;
+use App\Enums\NotificationType;
 use App\Events\ProfileCreated;
 use App\Models\SystemConfig;
 use App\Services\NotificationService;
@@ -45,10 +47,10 @@ final class GrantOnboardingBonus
 
         $this->notificationService->push(
             profile: $event->profile,
-            type: 'coin_received',
+            type: NotificationType::CoinReceived,
             title: 'Chào mừng bạn đến với VSTEP!',
             body: "Bạn đã nhận {$amount} xu khởi đầu. Hãy bắt đầu luyện tập!",
-            iconKey: 'gift',
+            iconKey: IconKey::Gift,
             dedupKey: "onboarding:{$event->profile->id}",
         );
     }

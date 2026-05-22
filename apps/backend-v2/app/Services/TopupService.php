@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\CoinTransactionType;
+use App\Enums\IconKey;
+use App\Enums\NotificationType;
 use App\Enums\OrderStatus;
 use App\Models\Profile;
 use App\Models\WalletTopupOrder;
@@ -96,10 +98,10 @@ final class TopupService
 
             DB::afterCommit(fn () => $this->notificationService->push(
                 profile: $locked->profile,
-                type: 'topup_completed',
+                type: NotificationType::TopupCompleted,
                 title: 'Nạp xu thành công',
                 body: "Bạn đã nhận {$locked->coins_to_credit} xu.",
-                iconKey: 'coin',
+                iconKey: IconKey::Coin,
                 dedupKey: "topup:{$locked->id}",
             ));
 

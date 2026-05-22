@@ -7,6 +7,8 @@ namespace App\Services;
 use App\Enums\BookingStatus;
 use App\Enums\CoinTransactionType;
 use App\Enums\ExamSessionStatus;
+use App\Enums\IconKey;
+use App\Enums\NotificationType;
 use App\Enums\SlotStatus;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
@@ -192,10 +194,10 @@ final class CourseService
         $body = $notiBody ?? "Bạn đã tham gia khóa {$locked->title}.";
         DB::afterCommit(fn () => $this->notificationService->push(
             profile: $profile,
-            type: 'course_enrolled',
+            type: NotificationType::CourseEnrolled,
             title: $title,
             body: $body,
-            iconKey: 'book',
+            iconKey: IconKey::Book,
             dedupKey: "course_enroll:{$locked->id}:{$profile->id}",
         ));
 
@@ -346,10 +348,10 @@ final class CourseService
 
             DB::afterCommit(fn () => $this->notificationService->push(
                 profile: $profile,
-                type: 'booking_created',
+                type: NotificationType::BookingCreated,
                 title: 'Đặt lịch thành công',
                 body: 'Lịch hẹn đã được xác nhận. Link meeting đã sẵn sàng trong chi tiết booking.',
-                iconKey: 'calendar',
+                iconKey: IconKey::Calendar,
                 dedupKey: "booking:{$booking->id}",
             ));
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Listeners;
 
+use App\Enums\IconKey;
+use App\Enums\NotificationType;
 use App\Events\GradingCompleted;
 use App\Models\ExamSpeakingSubmission;
 use App\Models\ExamWritingSubmission;
@@ -35,26 +37,26 @@ final class SendGradingNotification
         match ($job->submission_type) {
             'practice_writing' => $this->notificationService->push(
                 $profile,
-                type: 'grading_completed',
+                type: NotificationType::GradingCompleted,
                 title: 'Bài viết đã chấm xong',
                 body: 'Kết quả chấm bài viết của bạn đã sẵn sàng.',
-                iconKey: 'check',
+                iconKey: IconKey::Check,
                 dedupKey: $dedupKey,
             ),
             'practice_speaking' => $this->notificationService->push(
                 $profile,
-                type: 'grading_completed',
+                type: NotificationType::GradingCompleted,
                 title: 'Bài nói đã chấm xong',
                 body: 'Kết quả chấm bài nói của bạn đã sẵn sàng.',
-                iconKey: 'mic',
+                iconKey: IconKey::Mic,
                 dedupKey: $dedupKey,
             ),
             'exam_writing', 'exam_speaking' => $this->notificationService->push(
                 $profile,
-                type: 'grading_completed',
+                type: NotificationType::GradingCompleted,
                 title: 'Bài thi đã chấm xong',
                 body: 'Kết quả chấm bài thi của bạn đã sẵn sàng.',
-                iconKey: 'award',
+                iconKey: IconKey::Award,
                 dedupKey: $dedupKey,
             ),
             default => null,

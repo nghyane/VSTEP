@@ -7,6 +7,8 @@ namespace App\Services\Admin;
 use App\Enums\BookingStatus;
 use App\Enums\CoinSourceType;
 use App\Enums\CoinTransactionType;
+use App\Enums\IconKey;
+use App\Enums\NotificationType;
 use App\Enums\OrderStatus;
 use App\Enums\SlotStatus;
 use App\Models\CoinTransaction;
@@ -206,11 +208,11 @@ final class AdminCourseService
             // Sau commit để chắc chắn DB đã xóa trước khi gửi noti.
             DB::afterCommit(fn () => $this->notificationService->push(
                 profile: $profile,
-                type: 'course_unenrolled',
+                type: NotificationType::CourseUnenrolled,
                 title: 'Bạn đã bị hủy ghi danh',
                 body: "Admin đã hủy ghi danh của bạn khỏi khóa \"{$courseTitle}\". "
                     .'Nếu cần làm rõ, vui lòng liên hệ trung tâm.',
-                iconKey: 'alert',
+                iconKey: IconKey::Alert,
                 payload: $courseId !== null ? ['course_id' => $courseId] : null,
             ));
         }
@@ -542,10 +544,10 @@ final class AdminCourseService
                 : '';
             DB::afterCommit(fn () => $this->notificationService->push(
                 profile: $profile,
-                type: 'booking_cancelled',
+                type: NotificationType::BookingCancelled,
                 title: 'Buổi học 1-1 đã bị hủy',
                 body: "Admin đã hủy buổi {$startsAt} của khóa \"{$courseTitle}\".{$bodyRefund} Nếu cần làm rõ, vui lòng liên hệ trung tâm.",
-                iconKey: 'alert',
+                iconKey: IconKey::Alert,
                 payload: [
                     'booking_id' => $booking->id,
                     'refunded' => $refundAmount,
