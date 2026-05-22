@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\Role;
+use App\Exceptions\GoogleAccountConflictException;
 use App\Models\Profile;
 use App\Models\RefreshToken;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
@@ -35,7 +35,11 @@ final class AuthService
     public function register(array $accountData, array $profileData): array
     {
         return DB::transaction(function () use ($accountData, $profileData) {
-            $user = User::create([...$accountData, 'role' => Role::Learner]);
+            $user = User::create([
+                ...$accountData,
+                'role' => Role::Learner,
+                'email_verified_at' => now(),
+            ]);
 
             $profile = $this->profileService->createInitialProfile($user, $profileData);
 
@@ -169,6 +173,12 @@ final class AuthService
 
         $this->persistActiveProfile($user, $profile);
 
+        // Invalidate current JWT (access token cũ vẫn carry active_profile_id cũ).
+        // Sau switch, FE phải dùng access token mới — token cũ blacklist ngay.
+        if (JWTAuth::getToken()) {
+            JWTAuth::invalidate(JWTAuth::getToken());
+        }
+
         [, $newPlainToken] = $this->createRefreshToken($user, $userAgent);
         $accessToken = $this->issueAccessToken($user, $profile);
 
@@ -206,22 +216,35 @@ final class AuthService
         }
 
         return DB::transaction(function () use ($payload, $userAgent) {
-            $user = User::where('google_id', $payload['sub'])->first()
-                ?? User::where('email', $payload['email'])->first();
+            $user = User::where('google_id', $payload['sub'])->first();
 
             if ($user === null) {
-                $user = User::create([
-                    'email' => $payload['email'],
-                    'google_id' => $payload['sub'],
-                    'full_name' => $payload['name'],
-                    'role' => Role::Learner,
-                ]);
-            } elseif ($user->google_id === null) {
-                $user->google_id = $payload['sub'];
-                if ($user->full_name === null && $payload['name'] !== null) {
-                    $user->full_name = $payload['name'];
+                $existing = User::where('email', $payload['email'])->first();
+
+                if ($existing !== null && $existing->email_verified_at === null) {
+                    // Account takeover prevention: email đã đăng ký nhưng chưa verify.
+                    // Attacker có thể tạo Google account với email của victim để chiếm tài khoản.
+                    throw new GoogleAccountConflictException;
                 }
-                $user->save();
+
+                if ($existing !== null) {
+                    // Verified account — link Google ID.
+                    $user = $existing;
+                    $user->google_id = $payload['sub'];
+                    if ($user->full_name === null && $payload['name'] !== null) {
+                        $user->full_name = $payload['name'];
+                    }
+                    $user->save();
+                } else {
+                    // New user. Google đã verify email — mark verified.
+                    $user = User::create([
+                        'email' => $payload['email'],
+                        'google_id' => $payload['sub'],
+                        'full_name' => $payload['name'],
+                        'role' => Role::Learner,
+                        'email_verified_at' => now(),
+                    ]);
+                }
             }
 
             if ($user->isDeactivated()) {
@@ -343,15 +366,13 @@ final class AuthService
 
     private function findRefreshToken(string $plainToken, ?string $userId = null): ?RefreshToken
     {
-        $query = RefreshToken::query()->when($userId, fn ($q, $v) => $q->where('user_id', $v));
-
-        foreach ($query->cursor() as $token) {
-            if (Hash::check($plainToken, $token->token)) {
-                return $token;
-            }
+        $hash = hash('sha256', $plainToken);
+        $query = RefreshToken::query()->where('token_hash', $hash);
+        if ($userId !== null) {
+            $query->where('user_id', $userId);
         }
 
-        return null;
+        return $query->first();
     }
 
     /**
@@ -359,29 +380,34 @@ final class AuthService
      */
     private function createRefreshToken(User $user, ?string $userAgent): array
     {
-        RefreshToken::where('user_id', $user->id)
-            ->where('expires_at', '<', now())
-            ->delete();
+        return DB::transaction(function () use ($user, $userAgent) {
+            // Lock user row to serialize concurrent token issuance.
+            User::query()->whereKey($user->id)->lockForUpdate()->first();
 
-        $keep = self::MAX_REFRESH_TOKENS - 1;
-        $allIds = RefreshToken::where('user_id', $user->id)
-            ->orderByDesc('created_at')
-            ->pluck('id');
-        $staleIds = $allIds->slice($keep)->values();
+            RefreshToken::where('user_id', $user->id)
+                ->where('expires_at', '<', now())
+                ->delete();
 
-        if ($staleIds->isNotEmpty()) {
-            RefreshToken::whereIn('id', $staleIds)->delete();
-        }
+            $keep = self::MAX_REFRESH_TOKENS - 1;
+            $allIds = RefreshToken::where('user_id', $user->id)
+                ->orderByDesc('created_at')
+                ->pluck('id');
+            $staleIds = $allIds->slice($keep)->values();
 
-        $plainToken = Str::random(64);
+            if ($staleIds->isNotEmpty()) {
+                RefreshToken::whereIn('id', $staleIds)->delete();
+            }
 
-        $refreshToken = RefreshToken::create([
-            'user_id' => $user->id,
-            'token' => Hash::make($plainToken),
-            'user_agent' => $userAgent,
-            'expires_at' => now()->addDays(self::REFRESH_TOKEN_DAYS),
-        ]);
+            $plainToken = Str::random(64);
 
-        return [$refreshToken, $plainToken];
+            $refreshToken = RefreshToken::create([
+                'user_id' => $user->id,
+                'token_hash' => hash('sha256', $plainToken),
+                'user_agent' => $userAgent,
+                'expires_at' => now()->addDays(self::REFRESH_TOKEN_DAYS),
+            ]);
+
+            return [$refreshToken, $plainToken];
+        });
     }
 }

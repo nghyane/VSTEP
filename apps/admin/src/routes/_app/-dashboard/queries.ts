@@ -20,11 +20,15 @@ import type {
 
 const get = <T>(path: string) => api.get(path).json<ApiResponse<T>>()
 
+const STALE_1M = 60_000
+const STALE_5M = 300_000
+
 export const useStats = () =>
 	useQuery({
 		queryKey: ["admin", "stats"],
 		queryFn: () => get<StatsData>("admin/stats"),
 		select: (r) => r.data,
+		staleTime: STALE_1M,
 	})
 
 export const useAlerts = () =>
@@ -32,6 +36,7 @@ export const useAlerts = () =>
 		queryKey: ["admin", "alerts"],
 		queryFn: () => get<AlertItem[]>("admin/alerts"),
 		select: (r) => r.data,
+		staleTime: STALE_1M,
 	})
 
 export const useActionItems = () =>
@@ -39,6 +44,7 @@ export const useActionItems = () =>
 		queryKey: ["admin", "action-items"],
 		queryFn: () => get<ActionItem[]>("admin/action-items"),
 		select: (r) => r.data,
+		staleTime: STALE_1M,
 	})
 
 export const useContentStatus = () =>
@@ -46,6 +52,7 @@ export const useContentStatus = () =>
 		queryKey: ["admin", "content-status"],
 		queryFn: () => get<ContentStatusItem[]>("admin/content-status"),
 		select: (r) => r.data,
+		staleTime: STALE_1M,
 	})
 
 export const useRecentActivity = () =>
@@ -53,6 +60,7 @@ export const useRecentActivity = () =>
 		queryKey: ["admin", "recent-activity"],
 		queryFn: () => get<ActivityItem[]>("admin/recent-activity"),
 		select: (r) => r.data,
+		staleTime: STALE_1M,
 	})
 
 export const useRevenueOverview = () =>
@@ -60,6 +68,7 @@ export const useRevenueOverview = () =>
 		queryKey: ["admin", "analytics", "revenue-overview"],
 		queryFn: () => get<RevenueOverview>("admin/analytics/revenue-overview"),
 		select: (r) => r.data,
+		staleTime: STALE_5M,
 	})
 
 export const useRevenueTrend = (days = 30) =>
@@ -67,6 +76,7 @@ export const useRevenueTrend = (days = 30) =>
 		queryKey: ["admin", "analytics", "revenue-trend", days],
 		queryFn: () => get<RevenueTrendRow[]>(`admin/analytics/revenue-trend?days=${days}`),
 		select: (r) => r.data,
+		staleTime: STALE_5M,
 	})
 
 export const useUserGrowth = (days = 30) =>
@@ -74,6 +84,7 @@ export const useUserGrowth = (days = 30) =>
 		queryKey: ["admin", "analytics", "user-growth", days],
 		queryFn: () => get<UserGrowthRow[]>(`admin/analytics/user-growth?days=${days}`),
 		select: (r) => r.data,
+		staleTime: STALE_5M,
 	})
 
 export const useWalletEconomy = () =>
@@ -81,6 +92,7 @@ export const useWalletEconomy = () =>
 		queryKey: ["admin", "analytics", "wallet-economy"],
 		queryFn: () => get<WalletEconomy>("admin/analytics/wallet-economy"),
 		select: (r) => r.data,
+		staleTime: STALE_5M,
 	})
 
 export const usePracticeActivity = (days = 30) =>
@@ -88,6 +100,7 @@ export const usePracticeActivity = (days = 30) =>
 		queryKey: ["admin", "analytics", "practice-activity", days],
 		queryFn: () => get<PracticeActivityRow[]>(`admin/analytics/practice-activity?days=${days}`),
 		select: (r) => r.data,
+		staleTime: STALE_5M,
 	})
 
 export const useGradingThroughput = (days = 30) =>
@@ -95,6 +108,7 @@ export const useGradingThroughput = (days = 30) =>
 		queryKey: ["admin", "analytics", "grading-throughput", days],
 		queryFn: () => get<GradingThroughputRow[]>(`admin/analytics/grading-throughput?days=${days}`),
 		select: (r) => r.data,
+		staleTime: STALE_5M,
 	})
 
 export const useProfileSegments = () =>
@@ -102,6 +116,7 @@ export const useProfileSegments = () =>
 		queryKey: ["admin", "analytics", "profile-segments"],
 		queryFn: () => get<ProfileSegments>("admin/analytics/profile-segments"),
 		select: (r) => r.data,
+		staleTime: STALE_5M,
 	})
 
 export const useStreakDistribution = () =>
@@ -109,6 +124,7 @@ export const useStreakDistribution = () =>
 		queryKey: ["admin", "analytics", "streak-distribution"],
 		queryFn: () => get<StreakBucket[]>("admin/analytics/streak-distribution"),
 		select: (r) => r.data,
+		staleTime: STALE_5M,
 	})
 
 export const usePromoStats = () =>
@@ -116,6 +132,7 @@ export const usePromoStats = () =>
 		queryKey: ["admin", "analytics", "promo-stats"],
 		queryFn: () => get<PromoStats>("admin/analytics/promo-stats"),
 		select: (r) => r.data,
+		staleTime: STALE_5M,
 	})
 
 export const useTopContent = () =>
@@ -123,4 +140,5 @@ export const useTopContent = () =>
 		queryKey: ["admin", "analytics", "top-content"],
 		queryFn: () => get<TopContent>("admin/analytics/top-content"),
 		select: (r) => r.data,
+		staleTime: STALE_5M,
 	})

@@ -18,7 +18,7 @@ class RegisterTest extends TestCase
     {
         $response = $this->postJson('/api/v1/auth/register', [
             'email' => 'phat@example.com',
-            'password' => 'secret123',
+            'password' => 'Secret123',
             'full_name' => 'Nguyễn Phát',
             'nickname' => 'phat-b2',
             'target_level' => 'B2',
@@ -59,7 +59,7 @@ class RegisterTest extends TestCase
 
         $response = $this->postJson('/api/v1/auth/register', [
             'email' => 'taken@example.com',
-            'password' => 'secret123',
+            'password' => 'Secret123',
             'nickname' => 'new-profile',
             'target_level' => 'B2',
             'target_deadline' => now()->addMonths(3)->toDateString(),
@@ -73,7 +73,7 @@ class RegisterTest extends TestCase
     {
         $response = $this->postJson('/api/v1/auth/register', [
             'email' => 'new@example.com',
-            'password' => 'secret123',
+            'password' => 'Secret123',
             'nickname' => 'x',
             'target_level' => 'A1',
             'target_deadline' => now()->addMonth()->toDateString(),
@@ -87,7 +87,7 @@ class RegisterTest extends TestCase
     {
         $response = $this->postJson('/api/v1/auth/register', [
             'email' => 'past@example.com',
-            'password' => 'secret123',
+            'password' => 'Secret123',
             'nickname' => 'x',
             'target_level' => 'B2',
             'target_deadline' => now()->subDay()->toDateString(),

@@ -46,6 +46,14 @@ function Step1({ initial, onNext, onGoogleToken, googleLoading }: Step1Props) {
 			setError("Mật khẩu tối thiểu 8 ký tự.")
 			return
 		}
+		if (!/[a-z]/.test(password) || !/[A-Z]/.test(password)) {
+			setError("Mật khẩu phải có cả chữ hoa và chữ thường.")
+			return
+		}
+		if (!/\d/.test(password)) {
+			setError("Mật khẩu phải có ít nhất một chữ số.")
+			return
+		}
 		if (password !== confirm) {
 			setError("Mật khẩu nhập lại không khớp.")
 			return
@@ -97,7 +105,7 @@ function Step1({ initial, onNext, onGoogleToken, googleLoading }: Step1Props) {
 					</label>
 					<PasswordInput
 						id="reg-password"
-						placeholder="Tối thiểu 8 ký tự"
+						placeholder="≥8 ký tự, có chữ hoa, chữ thường, số"
 						required
 						autoComplete="new-password"
 						value={password}

@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
 import { Layout } from "antd"
+import { ErrorBoundary } from "#/components/ErrorBoundary"
 import { Sidebar } from "#/components/Sidebar"
 import { Topbar } from "#/components/Topbar"
 import { useAuth } from "#/lib/auth"
@@ -19,9 +20,11 @@ function AppLayout() {
 			<Sidebar />
 			<Layout>
 				<Topbar />
-				<Layout.Content style={{ padding: 24 }}>
+			<Layout.Content style={{ padding: 24 }}>
+				<ErrorBoundary>
 					<Outlet />
-				</Layout.Content>
+				</ErrorBoundary>
+			</Layout.Content>
 			</Layout>
 		</Layout>
 	)

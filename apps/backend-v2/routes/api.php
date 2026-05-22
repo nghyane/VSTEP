@@ -37,7 +37,7 @@ Route::prefix('v1')->group(function () {
     });
 
     // Auth (protected, no active profile required — admin/teacher fit here)
-    Route::middleware('auth:api')->group(function () {
+    Route::middleware(['auth:api', 'throttle:60,1'])->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::post('/auth/switch-profile', [AuthController::class, 'switchProfile']);
         Route::post('/auth/complete-onboarding', [AuthController::class, 'completeOnboarding']);
@@ -49,11 +49,11 @@ Route::prefix('v1')->group(function () {
         // Profile CRUD — scoped by authenticated account.
         Route::get('/profiles', [ProfileController::class, 'index']);
         Route::post('/profiles', [ProfileController::class, 'store']);
-        Route::get('/profiles/{id}', [ProfileController::class, 'show']);
-        Route::patch('/profiles/{id}', [ProfileController::class, 'update']);
-        Route::delete('/profiles/{id}', [ProfileController::class, 'destroy']);
-        Route::post('/profiles/{id}/reset', [ProfileController::class, 'reset']);
-        Route::post('/profiles/{id}/onboarding', [ProfileController::class, 'onboarding']);
+        Route::get('/profiles/{profile}', [ProfileController::class, 'show']);
+        Route::patch('/profiles/{profile}', [ProfileController::class, 'update']);
+        Route::delete('/profiles/{profile}', [ProfileController::class, 'destroy']);
+        Route::post('/profiles/{profile}/reset', [ProfileController::class, 'reset']);
+        Route::post('/profiles/{profile}/onboarding', [ProfileController::class, 'onboarding']);
     });
 
     // Learner routes requiring active profile context.
@@ -145,10 +145,14 @@ Route::prefix('v1')->group(function () {
         Route::get('/exam-sessions/{exam_session}/speaking-results', [ExamController::class, 'speakingResults']);
 
         // Grading.
-        Route::get('/grading/jobs/{id}', [GradingController::class, 'showJob']);
-        Route::get('/grading/jobs/{id}/status', [GradingController::class, 'jobStatus']);
-        Route::get('/grading/writing/{submissionType}/{submissionId}', [GradingController::class, 'writingResult']);
-        Route::get('/grading/speaking/{submissionType}/{submissionId}', [GradingController::class, 'speakingResult']);
+        Route::get('/grading/jobs/{grading_job}', [GradingController::class, 'showJob']);
+        Route::get('/grading/jobs/{grading_job}/status', [GradingController::class, 'jobStatus']);
+        Route::get('/grading/writing/{submissionType}/{submissionId}', [GradingController::class, 'writingResult'])
+            ->whereIn('submissionType', ['practice_writing', 'exam_writing'])
+            ->whereUuid('submissionId');
+        Route::get('/grading/speaking/{submissionType}/{submissionId}', [GradingController::class, 'speakingResult'])
+            ->whereIn('submissionType', ['practice_speaking', 'exam_speaking'])
+            ->whereUuid('submissionId');
 
         // Audio presigned URLs (R2).
         Route::post('/audio/presign-upload', [AudioController::class, 'presignUpload']);

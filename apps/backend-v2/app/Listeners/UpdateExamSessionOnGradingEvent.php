@@ -12,6 +12,7 @@ use App\Models\ExamSession;
 use App\Models\ExamSpeakingSubmission;
 use App\Models\ExamWritingSubmission;
 use App\Models\GradingJob;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -19,6 +20,8 @@ use Illuminate\Support\Facades\Log;
  *
  * Exam session chuyển sang 'graded' khi tất cả writing/speaking grading jobs
  * đã ở trạng thái terminal (ready hoặc failed).
+ *
+ * Concurrency: row lock trên exam_sessions để 2 events đồng thời không double-update.
  */
 final class UpdateExamSessionOnGradingEvent
 {
@@ -29,41 +32,52 @@ final class UpdateExamSessionOnGradingEvent
             return;
         }
 
-        $session = $this->resolveExamSession($job);
-        if ($session === null) {
+        $sessionId = $this->resolveSessionId($job);
+        if ($sessionId === null) {
             return;
         }
 
-        if (! in_array($session->status, [ExamSessionStatus::Submitted, ExamSessionStatus::Grading], true)) {
-            return;
-        }
+        DB::transaction(function () use ($sessionId, $event) {
+            $session = ExamSession::query()
+                ->whereKey($sessionId)
+                ->lockForUpdate()
+                ->first();
 
-        if ($this->allJobsTerminal($session)) {
-            $session->update(['status' => ExamSessionStatus::Graded]);
-            Log::info('Exam session marked as graded', [
-                'session_id' => $session->id,
-                'trigger' => $event::class,
-            ]);
-        } elseif ($session->status !== ExamSessionStatus::Grading) {
-            $session->update(['status' => ExamSessionStatus::Grading]);
-        }
+            if ($session === null) {
+                return;
+            }
+
+            if (! in_array($session->status, [ExamSessionStatus::Submitted, ExamSessionStatus::Grading], true)) {
+                return;
+            }
+
+            if ($this->allJobsTerminal($session)) {
+                $session->update(['status' => ExamSessionStatus::Graded]);
+                Log::info('Exam session marked as graded', [
+                    'session_id' => $session->id,
+                    'trigger' => $event::class,
+                ]);
+
+                return;
+            }
+
+            if ($session->status !== ExamSessionStatus::Grading) {
+                $session->update(['status' => ExamSessionStatus::Grading]);
+            }
+        });
     }
 
-    private function resolveExamSession(GradingJob $job): ?ExamSession
+    private function resolveSessionId(GradingJob $job): ?string
     {
-        $sessionId = match ($job->submission_type) {
+        return match ($job->submission_type) {
             'exam_writing' => ExamWritingSubmission::query()
-                ->where('id', $job->submission_id)
+                ->whereKey($job->submission_id)
                 ->value('session_id'),
             'exam_speaking' => ExamSpeakingSubmission::query()
-                ->where('id', $job->submission_id)
+                ->whereKey($job->submission_id)
                 ->value('session_id'),
             default => null,
         };
-
-        return $sessionId !== null
-            ? ExamSession::query()->find($sessionId)
-            : null;
     }
 
     private function allJobsTerminal(ExamSession $session): bool

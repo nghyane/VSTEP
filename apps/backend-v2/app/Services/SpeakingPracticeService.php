@@ -12,6 +12,7 @@ use App\Models\PracticeSpeakingDrillSentence;
 use App\Models\PracticeSpeakingSubmission;
 use App\Models\PracticeSpeakingTask;
 use App\Models\Profile;
+use App\Services\Grading\GradingService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
@@ -20,7 +21,7 @@ final class SpeakingPracticeService
 {
     public function __construct(
         private readonly PracticeSessionService $sessionService,
-        private readonly SpeakingGradingService $gradingService,
+        private readonly GradingService $gradingService,
     ) {}
 
     /** @return Collection<int,PracticeSpeakingDrill> */
