@@ -8,7 +8,7 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { BookingCommitmentGate } from "@/features/course/BookingCommitmentGate";
 import { BookingSlotList } from "@/features/course/BookingSlotList";
 import { BookingTeacherCard } from "@/features/course/BookingTeacherCard";
-import { BOOKING_COIN_COST, useBookingPage, useBookSlot } from "@/features/course/queries";
+import { BOOKING_COIN_COST_FALLBACK, useBookingPage, useBookSlot } from "@/features/course/queries";
 import type { BookingSlot } from "@/features/course/types";
 import { useWalletBalance } from "@/features/wallet/queries";
 import { formatNumber, formatTime, formatWeekdayDate } from "@/lib/utils";
@@ -27,7 +27,8 @@ export function CourseBookingContent({ courseId }: { courseId: string }) {
   const locked = data.commitment.phase !== "met";
   const reachedLimit = data.myBookingsCount >= data.maxBookingsPerStudent;
   const balance = wallet?.balance ?? null;
-  const insufficient = balance !== null && balance < BOOKING_COIN_COST;
+  const coinCost = data.bookingCoinCost ?? BOOKING_COIN_COST_FALLBACK;
+  const insufficient = balance !== null && balance < coinCost;
 
   function handleSelect(slot: BookingSlot) {
     if (slot.status === "booked_me") return showBookedSlot(slot);
@@ -36,7 +37,7 @@ export function CourseBookingContent({ courseId }: { courseId: string }) {
   }
 
   function confirmBooking(slot: BookingSlot) {
-    Alert.alert("Xác nhận đặt lịch", `${formatWeekdayDate(slot.startsAt)} lúc ${formatTime(slot.startsAt)}. Phí: ${BOOKING_COIN_COST} xu.`, [
+    Alert.alert("Xác nhận đặt lịch", `${formatWeekdayDate(slot.startsAt)} lúc ${formatTime(slot.startsAt)}. Phí: ${coinCost} xu.`, [
       { text: "Hủy", style: "cancel" },
       { text: insufficient ? "Nạp xu" : "Đặt lịch", onPress: () => (insufficient ? router.push("/(app)/topup" as never) : book(slot)) },
     ]);

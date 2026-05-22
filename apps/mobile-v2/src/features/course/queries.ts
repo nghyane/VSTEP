@@ -10,7 +10,10 @@ import type {
 } from "@/features/course/types";
 import type { WalletBalance } from "@/features/wallet/types";
 
-export const BOOKING_COIN_COST = 50;
+// Fallback for the rare case where the BookingPageData query hasn't loaded yet.
+// Source of truth is `data.bookingCoinCost` from GET /courses/{id}/bookings
+// (BE commit 7aec9fb made it per-course; default 50 server-side).
+export const BOOKING_COIN_COST_FALLBACK = 50;
 
 export const coursesQuery = {
   queryKey: ["courses"] as const,

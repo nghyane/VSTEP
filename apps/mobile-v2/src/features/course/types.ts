@@ -113,6 +113,9 @@ export interface BookingPageData {
   slots: BookingSlot[];
   myBookingsCount: number;
   maxBookingsPerStudent: number;
+  // Per-course coin cost (BE commit 7aec9fb). Older course rows without the
+  // column default to 50 server-side, so this is always populated.
+  bookingCoinCost: number;
   commitment: BookingCommitment;
 }
 
