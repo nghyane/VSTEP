@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Admin;
 
 use App\Enums\BookingStatus;
+use App\Enums\CoinSourceType;
 use App\Enums\CoinTransactionType;
 use App\Enums\OrderStatus;
 use App\Enums\SlotStatus;
@@ -507,7 +508,7 @@ class AdminCourseService
 
         // Tìm coin tx gốc để biết refund bao nhiêu xu.
         $originalTx = CoinTransaction::query()
-            ->where('source_type', TeacherBooking::class)
+            ->where('source_type', CoinSourceType::TeacherBooking->value)
             ->where('source_id', $booking->id)
             ->where('type', CoinTransactionType::TeacherBooking->value)
             ->orderBy('id')

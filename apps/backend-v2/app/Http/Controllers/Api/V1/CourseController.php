@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\BookSlotRequest;
 use App\Models\Course;
 use App\Models\CourseEnrollmentOrder;
 use App\Models\Profile;
@@ -135,21 +136,17 @@ class CourseController extends Controller
         ]);
     }
 
-    public function bookSlot(Request $request, string $courseId): JsonResponse
+    public function bookSlot(BookSlotRequest $request, string $courseId): JsonResponse
     {
-        $request->validate([
-            'slot_id' => ['required', 'uuid'],
-            'submission_type' => ['nullable', 'string'],
-            'submission_id' => ['nullable', 'uuid'],
-        ]);
+        $validated = $request->validated();
         /** @var Course $course */
         $course = Course::query()->findOrFail($courseId);
         /** @var TeacherSlot $slot */
-        $slot = TeacherSlot::query()->findOrFail($request->input('slot_id'));
+        $slot = TeacherSlot::query()->findOrFail($validated['slot_id']);
 
         $booking = $this->courseService->bookSlot(
             $this->profile($request), $course, $slot,
-            $request->input('submission_type'), $request->input('submission_id'),
+            $validated['submission_type'] ?? null, $validated['submission_id'] ?? null,
         );
 
         return response()->json(['data' => [
