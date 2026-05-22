@@ -22,6 +22,24 @@ export const api = ky.create({
 				}
 			},
 		],
+		// Cache body parsed sang error._parsedBody trước khi ky throw — sau khi
+		// throw, response.body có thể đã bị consume + clone() có thể fail. Cách
+		// này extractError luôn đọc được payload BE (message + errors) thay vì
+		// rơi xuống fallback generic theo HTTP status.
+		beforeError: [
+			async (state) => {
+				const httpErr = state.error as Error & { response?: Response }
+				if (httpErr.response) {
+					try {
+						const body = (await httpErr.response.clone().json()) as Partial<ApiError>
+						;(httpErr as { _parsedBody?: Partial<ApiError> })._parsedBody = body
+					} catch {
+						// non-JSON body (vd HTML 500 page) — extractError sẽ fallback
+					}
+				}
+				return httpErr
+			},
+		],
 	},
 })
 
@@ -83,7 +101,17 @@ export function formatApiErrorBanner(x: ApiError): string {
 }
 
 export async function extractError(err: unknown): Promise<ApiError> {
+	// Ưu tiên payload đã cache trong beforeError hook (đã parse 1 lần ngay
+	// khi response về, an toàn với body đã consume).
+	const cached = (err as { _parsedBody?: Partial<ApiError> })?._parsedBody
 	const response = (err as { response?: Response })?.response
+
+	if (cached && (cached.message || cached.errors)) {
+		return {
+			message: cached.message ?? vietnameseStatusMessage(response?.status ?? 0),
+			errors: cached.errors,
+		}
+	}
 
 	if (response && typeof response.clone === "function") {
 		try {

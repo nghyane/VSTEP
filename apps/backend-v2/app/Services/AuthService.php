@@ -71,6 +71,12 @@ final class AuthService
 
         /** @var User $user */
         $user = JWTAuth::user();
+        if ($user->isDeactivated()) {
+            // Trả message qua field email để FE hiện chung 1 ô lỗi giống login fail.
+            throw ValidationException::withMessages([
+                'email' => ['Tài khoản đã bị vô hiệu hoá. Liên hệ quản trị viên để được hỗ trợ.'],
+            ]);
+        }
         $profile = $this->resolveActiveProfile($user);
         $this->persistActiveProfile($user, $profile);
         $accessToken = $this->issueAccessToken($user, $profile);
@@ -107,6 +113,14 @@ final class AuthService
 
         /** @var User $user */
         $user = $refreshToken->user;
+        if ($user->isDeactivated()) {
+            // Refresh token còn TTL nhưng account đã bị vô hiệu hoá → revoke session.
+            $refreshToken->delete();
+
+            throw ValidationException::withMessages([
+                'refresh_token' => ['Tài khoản đã bị vô hiệu hoá.'],
+            ]);
+        }
 
         $refreshToken->delete();
         [, $newPlainToken] = $this->createRefreshToken($user, $userAgent);
@@ -208,6 +222,12 @@ final class AuthService
                     $user->full_name = $payload['name'];
                 }
                 $user->save();
+            }
+
+            if ($user->isDeactivated()) {
+                throw ValidationException::withMessages([
+                    'id_token' => ['Tài khoản đã bị vô hiệu hoá. Liên hệ quản trị viên để được hỗ trợ.'],
+                ]);
             }
 
             $profile = $this->resolveActiveProfile($user);
