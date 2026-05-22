@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -18,7 +19,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Wipe existing rows — bcrypt hashes không convert được sang SHA-256.
+        // Wipe trước khi đổi schema: bcrypt hashes không convert được sang
+        // SHA-256, và cột mới `token_hash` NOT NULL — không truncate sẽ vi phạm
+        // NOT NULL trên bất kỳ DB nào có session hiện hành (CI fresh thì không
+        // gặp, dev/prod với data thật thì migration FAIL).
+        DB::table('refresh_tokens')->truncate();
+
         Schema::table('refresh_tokens', function (Blueprint $table) {
             $table->dropColumn('token');
         });

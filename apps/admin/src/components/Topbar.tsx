@@ -1,5 +1,6 @@
 import {
 	BellOutlined,
+	KeyOutlined,
 	LogoutOutlined,
 	SearchOutlined,
 	UserOutlined,
@@ -7,6 +8,8 @@ import {
 } from "@ant-design/icons"
 import { useNavigate } from "@tanstack/react-router"
 import { Avatar, Badge, Button, Dropdown, Empty, Input, Space, Spin, Tag, Typography } from "antd"
+import { useState } from "react"
+import { ChangeMyPasswordModal } from "#/features/admin-users/ChangeMyPasswordModal"
 import { useAuth } from "#/lib/auth"
 import { useAlerts } from "#/routes/_app/-dashboard/queries"
 import type { AlertItem } from "#/routes/_app/-dashboard/types"
@@ -17,6 +20,7 @@ export function Topbar() {
 	const navigate = useNavigate()
 	const { data: alerts, isLoading } = useAlerts()
 	const count = alerts?.length ?? 0
+	const [changePwOpen, setChangePwOpen] = useState(false)
 
 	function logout() {
 		clear()
@@ -65,10 +69,18 @@ export function Topbar() {
 						<div style={{ fontSize: 11, color: "rgba(0,0,0,0.45)" }}>{roleLabel(user?.role)}</div>
 					</div>
 				</Space>
+				<Button
+					type="text"
+					icon={<KeyOutlined />}
+					onClick={() => setChangePwOpen(true)}
+					title="Đổi mật khẩu"
+					aria-label="Đổi mật khẩu"
+				/>
 				<Button type="text" icon={<LogoutOutlined />} onClick={logout}>
 					Đăng xuất
 				</Button>
 			</Space>
+			<ChangeMyPasswordModal open={changePwOpen} onClose={() => setChangePwOpen(false)} />
 		</header>
 	)
 }

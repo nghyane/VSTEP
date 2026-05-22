@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 
-#[Fillable(['full_name', 'email', 'password', 'role', 'avatar_key', 'google_id', 'title', 'bio', 'active_profile_id', 'email_verified_at'])]
+#[Fillable(['full_name', 'email', 'password', 'role', 'avatar_key', 'google_id', 'title', 'bio', 'active_profile_id', 'email_verified_at', 'deactivated_at'])]
 #[Hidden(['password'])]
 class User extends Authenticatable implements JWTSubject
 {
@@ -32,7 +32,13 @@ class User extends Authenticatable implements JWTSubject
             'password' => 'hashed',
             'role' => Role::class,
             'email_verified_at' => 'datetime',
+            'deactivated_at' => 'datetime',
         ];
+    }
+
+    public function isDeactivated(): bool
+    {
+        return $this->deactivated_at !== null;
     }
 
     public function refreshTokens(): HasMany

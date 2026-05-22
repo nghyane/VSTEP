@@ -6,15 +6,97 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\DeactivateUserRequest;
+use App\Http\Requests\Admin\StoreUserRequest;
+use App\Http\Requests\Admin\UpdateUserRequest;
+use App\Http\Resources\Admin\AdminUserResource;
 use App\Models\CourseEnrollment;
 use App\Models\Profile;
 use App\Models\User;
+use App\Services\Admin\AdminUserService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Request;
 
 final class UserController extends Controller
 {
+    public function __construct(private readonly AdminUserService $service) {}
+
+    public function index(Request $request): AnonymousResourceCollection
+    {
+        $q = $request->string('q')->toString() ?: null;
+        $role = $request->string('role')->toString() ?: null;
+        $perPage = min(100, max(1, (int) $request->integer('per_page', 20)));
+
+        return AdminUserResource::collection($this->service->list($q, $role)->paginate($perPage));
+    }
+
+    public function show(string $id): AdminUserResource
+    {
+        $user = $this->service->show($id);
+        if ($user->role === Role::Teacher) {
+            // Gắn collection lên model như virtual attr để Resource đọc qua
+            // $this->when() — tránh response shape khác biệt giữa show/list.
+            $user->setAttribute('active_courses', $this->service->activeCoursesOf($user)->values());
+        }
+
+        return new AdminUserResource($user);
+    }
+
+    public function store(StoreUserRequest $request): JsonResponse
+    {
+        $user = $this->service->create($request->validated());
+
+        return (new AdminUserResource($user))->response()->setStatusCode(201);
+    }
+
+    public function update(UpdateUserRequest $request, string $id): AdminUserResource
+    {
+        $user = $this->service->show($id);
+        $this->service->update($user, $request->validated());
+
+        return new AdminUserResource($user);
+    }
+
+    public function deactivate(DeactivateUserRequest $request, string $id): JsonResponse
+    {
+        $target = $this->service->show($id);
+        /** @var User $actor */
+        $actor = $request->user();
+        /** @var list<array{course_id:string,new_teacher_id:string}> $reassignments */
+        $reassignments = $request->input('reassignments', []);
+        $this->service->deactivate($actor, $target, $reassignments);
+
+        return response()->json(['data' => ['success' => true]]);
+    }
+
+    public function activate(string $id): JsonResponse
+    {
+        $target = $this->service->show($id);
+        $this->service->activate($target);
+
+        return response()->json(['data' => ['success' => true]]);
+    }
+
+    public function resetPassword(string $id): JsonResponse
+    {
+        $target = $this->service->show($id);
+        $newPassword = $this->service->resetPassword($target);
+
+        return response()->json(['data' => ['new_password' => $newPassword]]);
+    }
+
+    public function teacherActiveCourses(string $id): JsonResponse
+    {
+        $target = $this->service->show($id);
+        if ($target->role !== Role::Teacher) {
+            return response()->json(['data' => []]);
+        }
+
+        return response()->json(['data' => $this->service->activeCoursesOf($target)->values()]);
+    }
+
     /**
      * Picker dropdown — danh sách giáo viên để gán vào course/slot.
      * Trả tối thiểu để tránh leak PII.
@@ -23,6 +105,7 @@ final class UserController extends Controller
     {
         $teachers = User::query()
             ->where('role', Role::Teacher->value)
+            ->whereNull('deactivated_at')
             ->orderBy('full_name')
             ->get(['id', 'full_name', 'email']);
 
@@ -51,6 +134,7 @@ final class UserController extends Controller
 
         $userQuery = User::query()
             ->where('role', Role::Learner->value)
+            ->whereNull('deactivated_at')
             ->orderBy('full_name')
             ->limit(20);
 

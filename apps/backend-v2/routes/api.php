@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Api\V1\AudioController;
+use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ConfigController;
 use App\Http\Controllers\Api\V1\CourseController;
@@ -41,6 +42,9 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/switch-profile', [AuthController::class, 'switchProfile']);
         Route::post('/auth/complete-onboarding', [AuthController::class, 'completeOnboarding']);
         Route::get('/auth/me', [AuthController::class, 'me']);
+
+        // Self-service account ops (mọi role dùng được).
+        Route::post('/me/change-password', [AccountController::class, 'changePassword']);
 
         // Profile CRUD — scoped by authenticated account.
         Route::get('/profiles', [ProfileController::class, 'index']);
@@ -341,9 +345,22 @@ Route::prefix('v1')->group(function () {
         Route::patch('/practice/speaking-drill-sentences/{sentenceId}', [Admin\SpeakingDrillController::class, 'updateSentence'])->whereUuid('sentenceId');
         Route::delete('/practice/speaking-drill-sentences/{sentenceId}', [Admin\SpeakingDrillController::class, 'destroySentence'])->whereUuid('sentenceId');
 
-        // Users — picker endpoints (full CRUD sẽ thêm sau, RFC 0011)
+        // Users — picker endpoints (read-only) còn dùng cho staff.
         Route::get('/users/teachers', [Admin\UserController::class, 'teachers']);
         Route::get('/profiles/search', [Admin\UserController::class, 'searchProfiles']);
+
+        // User management — ADMIN ONLY (nested middleware override role:staff parent).
+        // Soft deactivate, không hard delete. Role chỉ set lúc create.
+        Route::middleware('role:admin')->prefix('users')->group(function () {
+            Route::get('/', [Admin\UserController::class, 'index']);
+            Route::post('/', [Admin\UserController::class, 'store']);
+            Route::get('/{id}', [Admin\UserController::class, 'show'])->whereUuid('id');
+            Route::patch('/{id}', [Admin\UserController::class, 'update'])->whereUuid('id');
+            Route::post('/{id}/deactivate', [Admin\UserController::class, 'deactivate'])->whereUuid('id');
+            Route::post('/{id}/activate', [Admin\UserController::class, 'activate'])->whereUuid('id');
+            Route::post('/{id}/reset-password', [Admin\UserController::class, 'resetPassword'])->whereUuid('id');
+            Route::get('/{id}/teacher-active-courses', [Admin\UserController::class, 'teacherActiveCourses'])->whereUuid('id');
+        });
 
         // Courses — quản lý khóa học (gán teacher, schedule, pricing)
         Route::prefix('courses')->group(function () {
