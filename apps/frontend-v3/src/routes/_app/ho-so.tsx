@@ -4,6 +4,7 @@ import { Header } from "#/components/Header"
 import { CreateProfileForm } from "#/features/profile/components/CreateProfileForm"
 import { EditProfileForm } from "#/features/profile/components/EditProfileForm"
 import { useProfilePage } from "#/features/profile/use-profile-page"
+import { PromoRedeemCard } from "#/features/wallet/PromoRedeemCard"
 import { cn } from "#/lib/utils"
 import type { Profile } from "#/types/auth"
 
@@ -91,6 +92,8 @@ function ProfilePage() {
 					onConfirm={p.confirmSwitch}
 					onCancel={p.cancelSwitch}
 				/>
+
+				<PromoRedeemCard />
 
 				{/* Account */}
 				<section className="card p-6">

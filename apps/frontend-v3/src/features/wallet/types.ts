@@ -13,6 +13,13 @@ export interface TopupPackage {
 	display_order: number
 }
 
+export interface PromoRedeemResult {
+	coins_granted: number
+	balance_after: number
+	transaction_id: string
+	redeemed_at: string
+}
+
 export interface TopupOrder {
 	id: string
 	profile_id: string
