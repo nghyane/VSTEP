@@ -70,17 +70,23 @@ Route::middleware('role:admin')    // level >= 3
 | CRUD | `/staff/practice-*/*` | Quản lý practice content |
 | **Operations** | | |
 | GET | `/staff/enrollments` | Danh sách enrollment |
-| CRUD | `/staff/promo-codes` | Quản lý promo codes |
 | POST | `/staff/notifications` | Gửi notification |
 
 ### Admin APIs (level >= 3)
 
 | Method | Endpoint | Mô tả |
 |--------|----------|--------|
-| GET | `/admin/users` | Danh sách users (filter role) |
-| POST | `/admin/users` | Tạo user (teacher/staff) |
-| PATCH | `/admin/users/{id}` | Sửa user (role, status) |
-| DELETE | `/admin/users/{id}` | Xoá user |
+| GET | `/admin/users` | Danh sách users (filter role + search) |
+| POST | `/admin/users` | Tạo user (learner/teacher/staff). Role bất biến sau create. |
+| PATCH | `/admin/users/{id}` | Sửa info (không sửa email/role/password). |
+| POST | `/admin/users/{id}/deactivate` | Soft deactivate (teacher có khoá active phải kèm reassignments). |
+| POST | `/admin/users/{id}/activate` | Mở khoá lại. |
+| POST | `/admin/users/{id}/reset-password` | Sinh password mới, trả 1 lần. |
+| POST | `/me/change-password` | Self-service đổi password (mọi role). |
+| GET | `/admin/promo-codes` | List + filter q/status (active/inactive/expired) |
+| POST | `/admin/promo-codes` | Tạo mã (code uppercase, unique) |
+| POST | `/admin/promo-codes/generate-code` | Sinh code random 8 ký tự không gây nhầm (no 0/O, 1/I/L) |
+| PATCH | `/admin/promo-codes/{id}` | Sửa quota / hạn / is_active. Code text bất biến sau khi có redemption. |
 | CRUD | `/admin/topup-packages` | Quản lý gói nạp |
 | GET | `/admin/topup-orders` | Xem orders |
 | PATCH | `/admin/topup-orders/{id}` | Duyệt/từ chối |

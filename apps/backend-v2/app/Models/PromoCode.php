@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'code',
@@ -23,6 +24,11 @@ class PromoCode extends BaseModel
             'expires_at' => 'datetime',
             'is_active' => 'boolean',
         ];
+    }
+
+    public function redemptions(): HasMany
+    {
+        return $this->hasMany(PromoCodeRedemption::class);
     }
 
     public function isUsable(?\DateTimeInterface $now = null): bool
