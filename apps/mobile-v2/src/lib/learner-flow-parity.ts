@@ -278,7 +278,7 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
     nextPhase: 6,
   },
 
-  // ── Practice — Speaking Shadowing (Phase B) ──
+  // ── Practice — Speaking Shadowing (Phase B + J2) ──
   {
     area: "Practice",
     flow: "Shadowing lessons — segment-by-segment shadow with persisted progress",
@@ -287,14 +287,14 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "src/features/practice/components/ShadowingInProgress.tsx",
       "src/features/practice/components/ShadowingSegmentView.tsx",
       "src/features/practice/shadowing-progress.ts",
-      "src/features/practice/mock-shadowing.ts",
+      "src/features/practice/queries.ts",
     ],
     mobileV2: [
       "app/(app)/practice/speaking/shadowing/index.tsx",
       "app/(app)/practice/speaking/shadowing/[lessonId].tsx",
       "src/components/LevelFilters.tsx",
       "src/components/StatusFilters.tsx",
-      "src/features/shadowing/mock-shadowing.ts",
+      "src/features/shadowing/use-shadowing-lessons.ts",
       "src/features/shadowing/use-shadowing-session.ts",
       "src/features/shadowing/use-shadowing-progress.ts",
       "src/features/shadowing/ShadowingSegmentCard.tsx",
@@ -302,13 +302,13 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "src/lib/word-compare.ts",
     ],
     backendApi: [
+      "GET /api/v1/practice/speaking/drills",
+      "GET /api/v1/practice/speaking/drills/{id}",
       "GET /api/v1/practice/speaking/shadowing/progress",
       "POST /api/v1/practice/speaking/shadowing/progress",
     ],
     status: "done",
-    gaps: [
-      "Shadowing lessons are mock — BE chưa expose /practice/speaking/shadowing/* lessons.",
-    ],
+    gaps: [],
     nextPhase: 6,
   },
 
